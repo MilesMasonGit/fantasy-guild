@@ -76,17 +76,17 @@ describe('the Lucky scene', () => {
     it('each Token\'s card lists its rare finds with their chances, Lucky counted', () => {
         expect(setUpLuckyScene()).toEqual({ ok: true });
         const near = instanceOf(QA_LUCKY.NEAR_VEIN);
-        const makes = tokenCardModel(near.typeId, near.id).blocks.find(b => b.id === CARD_BLOCK.RECIPE).makes;
-        expect(makes.map(m => [m.itemId, m.chance, !!m.rare])).toEqual([
-            ['item_copper_ore', null, false],
-            ['item_quartz', 37.5, true],
-            ['item_gold_ore', 12.5, true]
-        ]);
+        const recipe = tokenCardModel(near.typeId, near.id).blocks.find(b => b.id === CARD_BLOCK.RECIPE);
+        expect(recipe.makes.map(m => [m.itemId, m.chance])).toEqual([['item_copper_ore', null]]);
+        expect(recipe.rare.chance).toBe(50);
+        expect(recipe.rare.rows.map(r => [r.itemId, r.chance])).toEqual([['item_quartz', 37.5], ['item_gold_ore', 12.5]]);
         const goblin = instanceOf(QA_LUCKY.GOBLIN);
-        const drops = tokenCardModel(goblin.typeId, goblin.id).blocks.find(b => b.id === CARD_BLOCK.DROPS).drops;
-        expect(drops.map(d => [d.itemId, d.chance])).toEqual([['item_bones', 100], ['item_quartz', 37.5], ['item_gold_ore', 12.5]]);
+        const drops = tokenCardModel(goblin.typeId, goblin.id).blocks.find(b => b.id === CARD_BLOCK.DROPS);
+        expect(drops.drops.map(d => [d.itemId, d.chance])).toEqual([['item_bones', 100]]);
+        expect(drops.rare.rows.map(r => [r.itemId, r.chance])).toEqual([['item_quartz', 37.5], ['item_gold_ore', 12.5]]);
         // Off the mat (the Encyclopedia's card, a picker), the table's own chance.
-        const plain = tokenCardModel(QA_LUCKY.STAR_VEIN).blocks.find(b => b.id === CARD_BLOCK.RECIPE).makes;
-        expect(plain.filter(m => m.rare).map(m => m.chance)).toEqual([7.5, 2.5]);
+        const plain = tokenCardModel(QA_LUCKY.STAR_VEIN).blocks.find(b => b.id === CARD_BLOCK.RECIPE).rare;
+        expect(plain.chance).toBe(10);
+        expect(plain.rows.map(r => r.chance)).toEqual([7.5, 2.5]);
     });
 });

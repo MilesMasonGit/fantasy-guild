@@ -35,7 +35,8 @@ export function watchRareDrops() {
     return EventBus.subscribe(BOARD_EVENTS.RARE_DROP, (p) => recordRareDrop(p), UI_LISTENER);
 }
 
-const STAR_COLOUR = '#fff3b0';
+/** The rare twinkle's colour; the card's Rare finds chance wears it too. */
+export const STAR_COLOUR = '#fff3b0';
 /** The star's flicker, one effect frame a letter: shown twice, then gone. */
 const FLICKER = 'VVHVVH';
 

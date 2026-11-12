@@ -726,6 +726,26 @@
             "perk": "{hero}'s {perk}",
             "carried": "{hero}'s {effect}",
             "guild": "The guild"
+        },
+        "limit": {
+            "speedFloor": "Held at the limit: {counted} of {total} counts",
+            "minCycle": "Held at the shortest cycle: {counted} of {total} counts",
+            "minRest": "Held at the shortest rest: {counted} of {total} counts",
+            "certain": "Held at certain: {counted} of {total} counts",
+            "never": "Held at never: {counted} of {total} counts",
+            "nothingLeft": "Held at nothing left: {counted} of {total} counts",
+            "atLeastOne": "Held at one at least: {counted} of {total} counts",
+            "whole": "Rounded to whole: {counted} of {total} counts"
+        },
+        "card": {
+            "total": "Total",
+            "heroTitle": "Hero Effects",
+            "heroSub": "What {hero} has that works here",
+            "onItem": "{effect} on {item}",
+            "luckyBase": "Rare finds {base} before Lucky, {final} with it",
+            "rareFinds": "Rare finds",
+            "rareTip": "A roll on this Token's own rare table each time it pays out. Click to see what it can find",
+            "drops": "Drops"
         }
     }
 }

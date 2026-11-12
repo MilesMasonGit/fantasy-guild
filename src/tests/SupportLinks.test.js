@@ -20,7 +20,7 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
-import { supportTag, FLOOR_NOTE } from '../ui/components/board/supportTags.js';
+import { supportTag } from '../ui/components/board/supportTags.js';
 import { tokenCardModel, liveCardSources, CARD_BLOCK } from '../ui/components/board/tokenCard.js';
 import { tokenOutline } from '../ui/components/board/spriteOutline.js';
 import { setLit, isLit, subscribeLit } from '../ui/components/board/supportLit.js';
@@ -195,24 +195,28 @@ describe('⭐ on inspect: Boosted by and Boosts', () => {
         expect(SupportLinks.boosts(well.id).map(r => r.id)).toEqual([field.id]);
         expect(SupportLinks.boosts(field.id)).toEqual([]);
 
+        // What boosts the Field is its badges' hovers now: the card keeps no Boosted by list.
+        InventoryManager.addItem(SEED, 1);
+        expect(StationRecipe.setSelectedRecipe(field, WHEAT)).toBe(true);
         const model = tokenCardModel('sl_field', field.id, liveCardSources());
-        const block = model.blocks.find(b => b.id === CARD_BLOCK.SUPPORT);
-        expect(block.boostedBy.map(r => [r.name, r.tags])).toEqual([
-            ['Fixture Well', ['−50 % grow']], ['Fixture Composter', ['+2 harvests']]
-        ]);
-        expect(block.floor).toEqual([]);
+        expect(model.blocks.some(b => b.id === CARD_BLOCK.SUPPORT)).toBe(false);
+        expect(model.effects.effects.find(b => b.key === 'growth').sources.map(src => src.tokenId)).toEqual([well.id]);
+        expect(model.effects.effects.find(b => b.key === 'abundance').sources.map(src => src.tokenId)).toEqual([composter.id]);
         const wellCard = tokenCardModel('sl_well', well.id, liveCardSources());
         expect(wellCard.blocks.find(b => b.id === CARD_BLOCK.SUPPORT).boosts.map(r => r.name)).toEqual(['Fixture Field']);
     });
 
-    it('notes the floor when speed-ups are held there', () => {
+    it('the floor shows as a held Growth badge, no note of its own', () => {
         const field = arrive('sl_field', AT);
         arrive('sl_well', NEAR);
         expect(SupportLinks.floorHits(field.id)).toEqual({ work: false, grow: false });
         arrive('sl_well', { x: 650, y: 500 });   // −100 %: held at −80 %
         expect(SupportLinks.floorHits(field.id).grow).toBe(true);
-        const block = tokenCardModel('sl_field', field.id, liveCardSources()).blocks.find(b => b.id === CARD_BLOCK.SUPPORT);
-        expect(block.floor).toEqual([FLOOR_NOTE.grow]);
+        InventoryManager.addItem(SEED, 1);
+        expect(StationRecipe.setSelectedRecipe(field, WHEAT)).toBe(true);
+        const model = tokenCardModel('sl_field', field.id, liveCardSources());
+        expect(model.blocks.some(b => b.id === CARD_BLOCK.SUPPORT)).toBe(false);
+        expect(model.effects.effects.find(b => b.key === 'growth')).toMatchObject({ held: true, counted: 80 });
     });
 
     it('a Token trading no support shows no block, and a card off the mat none', () => {
