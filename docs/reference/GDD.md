@@ -793,7 +793,18 @@ less micromanagement than area flags).
   drag there. Orders land **on the mat only**: a right-click on the Bank, the
   Shop or a card over it is no order, nor is one while the Bank is open or in
   Demolish. The selection stays after the order, so a second right-click
-  corrects the first. With a Token selected a right-click orders no hero.
+  corrects the first.
+- **Right-click moves** (brief 610 S3; owner, 2026-11-11). With a movable
+  Token selected (one you could drag, an enemy too), **a right-click on the mat
+  moves it there exactly as dropping it there would** (it is the drop: the same
+  placement checks, the nudge to the nearest legal spot, a hero working it
+  walking after it). A refused spot gives the drag's reason and the Token
+  stays. A moved Token flies to its new spot in flying loot's short arc (about
+  half a second) and lands with a one-pixel bounce; the flight is only drawn,
+  the Token is on its new spot at once. The selection stays after the move.
+  **While a Token is selected**, the pointer on the mat carries its drag ghost,
+  and a Token that uses reach shows its reach ring where it would land, with
+  the dots on what it would reach, as while dragging it. Off the mat they go.
 - **While a hero is selected**, the pointer on the mat shows the drag's hints
   before the right-click: every Token they could be sent to glows (kept up to
   date while they stay selected), the dashed gold line runs from the hero to
