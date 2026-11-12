@@ -3,7 +3,7 @@
 import { ModifierAggregator, applyThreeBucket, combineMultipliers, combinePercentages } from '../effects/ModifierAggregator.js';
 import { getGlobalAggregator, aimedModifiers } from '../effects/GuildModifiers.js';
 import { TARGET_CATEGORIES, EFFECT_TYPES } from '../effects/constants.js';
-import { floorSpeedUp, MIN_WORK_CYCLE_MS, flooredWorkTime, authoredWorkMs } from './workTime.js';
+import { floorSpeedUp, MIN_WORK_CYCLE_MS, flooredWorkTime } from './workTime.js';
 import { nearby, reachFrom, tokensAround, reachRadius, centreOf, distanceSq, neighbourIds } from './nearby.js';
 import { onMatTuningChanged } from '../../config/matTuning.js';
 import { getTokenType, registryVersion } from '../../config/registries/tokenRegistry.js';
@@ -885,7 +885,7 @@ export function explainAxis(instanceId, effectType, base, category = TARGET_CATE
 }
 
 // The floors live in a pure module the progression ledger's rate calculator shares; kept exported here for every older reader.
-export { floorSpeedUp, MIN_WORK_CYCLE_MS, authoredWorkMs };
+export { floorSpeedUp, MIN_WORK_CYCLE_MS };
 
 /**
  * How long one round of work at Token `instanceId` takes, given its authored time: the Work Time
