@@ -7,6 +7,23 @@ build green) · bench-queued · eye-check · merged.*
 
 **Owner, 2026-11-06 (behind the week's target): up to four code builders at once this week** (plus one read-only); the director still runs suites, builds and benches one at a time. **Owner, 2026-11-06 late morning, away at work:** the director may start new briefs and merge pieces on the gate without a full look; the owner answers questions remotely (screenshots to the phone). Look changes merged this way are listed for the owner's next look in `docs/active/eyecheck/2026-11-06_merged_while_away.md`.
 
+## Director, briefs 590 and 600 (owner, 2026-11-11: both at once; effect renames T-403 after 590; retirements T-400 to T-402 checked now, owner deletes in the CMS)
+
+*Wed 11 Nov, evening, batch proposed and started. Where we are: 590 P2 (Refresh) building in `fx`, 600 B1 (badge look page) building in `b1`. Next: 590 P1 (Preservation), then P3 (Lucky and rare tables) on the same branch; 600 B2 (the breakdown) once B1 is done; then T-403 renames, 600 B3 and B4. Owner: pick a badge look when the page is ready; delete the 13 Lore stars, `effect_restocks_neighbours` and `effect_keen_line` in the CMS and Sync on main whenever convenient (checked below). Blockers: none.*
+
+**Retirement check (T-400 to T-402), 2026-11-11.** The 13 Lore stars are leaves: each hangs off its skill's speed star (the four combat ones off Infirmary and Larder), nothing links on from them, none opens a world ring, so no other star's price or the map changes. The Hall goes from 50 to 37 stars. Code: only a doc-comment example in `src/config/hallStars.js` and a CMS test with its own inline data name one; nothing breaks. The render goldens list `effect_keen_line` and `effect_restocks_neighbours`: regenerated in the T-401/T-402 cleanup. ⚠️ The War Camp constellation holds only the four combat Lore stars, so it ends up empty (question below). Construction keeps one star.
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| 590 P2: Refresh | builder | `feat/effects-590` (`fx`) | building | Wed | |
+| 590 P1: Preservation | engineer | same branch | queued after P2 | | |
+| 590 P3: Lucky and rare tables | engineer | same branch | queued after P1 | | |
+| 600 B1: badge look page | builder | `feat/badge-look` (`b1`) | building | Wed | |
+| 600 B2: the breakdown | engineer | tbd | queued after B1 | | |
+| T-403: effect names | builder-lite | tbd | queued after 590 | | |
+| 600 B3, B4: the card, the Hero drawer badge | builder, builder-lite | tbd | queued after 590 and B2 | | |
+| T-400 to T-402 cleanup | builder-lite | tbd | waits for the owner's CMS deletions | | |
+
 ## Director, briefs 560 and 570 (owner, 2026-11-10: first batch 560 R1 + 570 D1 + D3; three builders at once this week; Tab stops on draggable buttons kept)
 
 *Wed 11 Nov, night. Where we are: merged and pushed overnight, each with the engine check the same: the Shop (refunds, the Shop lowered to its header, rings clipped), Limes on the Starter Camp, five more Limes tips, Fields paying their seed at the first harvest, default font Silkscreen, enemy camp row keys. Next: the owner marks the Star ideas page (https://claude.ai/artifact/MA3s5YoeYwbJWktxinB3Xh); Limes's lessons wait for the buildings (T-307). Owner: pick Silkscreen in Settings, Display, if wanted (a stored choice keeps SilkPixel); edit Limes's words in `src/systems/quests/limesText.js` when ready. Blockers: none.*
@@ -267,6 +284,8 @@ Owner 2026-11-01: Guild Hall H1 and the walker glide need no look (marked looked
 None open.
 
 ## Questions for the owner
+
+- **The empty War Camp** (T-400, 2026-11-11): deleting the four combat Lore stars leaves the War Camp constellation with no stars. A: delete the constellation too in the CMS (recommended; combat stars can bring it back later). B: keep the empty name on the Hall map as a placeholder for future combat stars.
 
 - ~~Native buttons that can be dragged are still Tab stops~~ answered 2026-11-10: keep them (A).
 
