@@ -19,10 +19,10 @@ build green) · bench-queued · eye-check · merged.*
 | 590 P1: Preservation | engineer | same branch | building | Wed | |
 | 590 P3: Lucky and rare tables | engineer | same branch | queued after P1 | | |
 | 600 B1: badge look page | builder | `feat/badge-look` (`b1`) 2ef50210 | ready: three looks (A chips, B inline strip, C named list), screenshots sent to the owner; builder recommends A; **owner pick 2026-11-11: A, chips, laid out as a stat block: a grid of 3 columns (2 rows on a busy card, more rows only if more than six badges); Lucky in the main row and on the Rare finds heading** | Wed | Wed |
-| 600 B2: the breakdown | engineer | `feat/effect-breakdown` (`b2`) | building | Wed | |
+| 600 B2: the breakdown | engineer | `feat/effect-breakdown` (`b2`) dc29debf | **bench-queued** (01:00 window; it reroutes `resolveAxis` and `growTimeOf` through one shared walk, so the work check plus an engine timing compare against main): 647 files green (agent); director read the `TileModifiers` diff (same bucket order and sums); 590 plugs in by key; open for B3: an Efficiency badge that rounds to 0 (gold with a note, or hidden) | Wed | Wed |
 | T-403: effect names | builder-lite | tbd | queued after 590 | | |
 | 600 B3, B4: the card, the Hero drawer badge | builder, builder-lite | tbd | queued after 590 and B2 | | |
-| T-400 to T-402 cleanup | builder-lite | tbd | waits for the owner's CMS deletions | | |
+| T-400 to T-402 cleanup | builder-lite | tbd | T-400 done (owner Sync e9407799, exactly the 13 Lore stars); War Camp and `effect_restocks_neighbours` deleted by change pack (Sync 9cb64c83), render golden refreshed (824200fd, three Restock lines out); left: the `restocks` keyword code (after 590, same files) and T-402 (the rod's new buff first) | | |
 
 ## Director, briefs 560 and 570 (owner, 2026-11-10: first batch 560 R1 + 570 D1 + D3; three builders at once this week; Tab stops on draggable buttons kept)
 
