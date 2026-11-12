@@ -271,6 +271,98 @@ describe('⭐ single click selects, double-click inspects (a hero on the mat)', 
     });
 });
 
+describe('⭐ a click again on what is selected clears it (owner, 2026-11-12)', () => {
+    /** A browser's double-click: two clicks counting up (`detail`), then the dblclick. */
+    function realDoubleClick(el, point = {}) {
+        fireEvent.pointerDown(el, { pointerId: 1, isPrimary: true, button: 0, ...point });
+        fireEvent.click(el, { ...point, detail: 1 });
+        fireEvent.pointerDown(el, { pointerId: 1, isPrimary: true, button: 0, ...point });
+        fireEvent.click(el, { ...point, detail: 2 });
+        fireEvent.doubleClick(el, { ...point, detail: 2 });
+    }
+    const singleClick = (el, point = {}) => {
+        fireEvent.pointerDown(el, { pointerId: 1, isPrimary: true, button: 0, ...point });
+        fireEvent.click(el, { ...point, detail: 1 });
+    };
+
+    it.each([
+        ['a movable Token', () => placeAt('fixture_producer', 600, 500)],
+        ['an enemy', () => enemyAt(900, 500)]
+    ])('%s: a second single click clears it and its gold outline', (_label, make) => {
+        const t = make();
+        const { container } = mount();
+        act(() => singleClick(hitOf(container, t.id), at(t)));
+        expect(selectedTokenId()).toBe(t.id);
+        act(() => singleClick(hitOf(container, t.id), at(t)));
+        expect(getSelection()).toBeNull();
+        expect(artOf(container, t.id).getAttribute('data-outline')).not.toBe('select');
+        act(() => singleClick(hitOf(container, t.id), at(t)));
+        expect(selectedTokenId()).toBe(t.id);
+    });
+
+    it('a hero on the mat: a second single click clears them', () => {
+        heroOnMat('h1');
+        const { container } = mount();
+        const figure = container.querySelector('[data-board-hero="h1"]');
+        act(() => { fireEvent.click(figure, { detail: 1 }); });
+        expect(selectedHeroId()).toBe('h1');
+        act(() => { fireEvent.click(figure, { detail: 1 }); });
+        expect(getSelection()).toBeNull();
+        expect(figure.getAttribute('data-outline')).not.toBe('select');
+    });
+
+    it.each([
+        ['not yet selected', false],
+        ['already selected', true]
+    ])('a double-click on a Token %s ends with it selected and its card open', (_label, before) => {
+        const t = placeAt('fixture_producer', 600, 500);
+        const onInspectToken = vi.fn();
+        const { container } = mount({ onInspectToken });
+        if (before) act(() => singleClick(hitOf(container, t.id), at(t)));
+        act(() => realDoubleClick(hitOf(container, t.id), at(t)));
+        expect(selectedTokenId()).toBe(t.id);
+        expect(onInspectToken).toHaveBeenCalledTimes(1);
+        expect(artOf(container, t.id).getAttribute('data-outline')).toBe('select');
+    });
+
+    it.each([
+        ['not yet selected', false],
+        ['already selected', true]
+    ])('a double-click on a hero %s ends with them selected and their drawer asked for', (_label, before) => {
+        heroOnMat('h1');
+        const opened = [];
+        const off = EventBus.subscribe(UI_EVENTS.INSPECT_HERO, (p) => opened.push(p.heroId));
+        const { container } = mount();
+        const figure = container.querySelector('[data-board-hero="h1"]');
+        if (before) act(() => { fireEvent.click(figure, { detail: 1 }); });
+        act(() => realDoubleClick(figure));
+        expect(selectedHeroId()).toBe('h1');
+        expect(opened).toEqual(['h1']);
+        off();
+    });
+
+    it('a drag of the selected hero does not clear them: the drop’s own click is no click again', async () => {
+        heroOnMat('h1');
+        const { container } = mount();
+        const figure = container.querySelector('[data-board-hero="h1"]');
+        act(() => { fireEvent.click(figure, { detail: 1 }); });
+        expect(selectedHeroId()).toBe('h1');
+        const ptr = (x, y) => ({ pointerId: 1, isPrimary: true, button: 0, clientX: x, clientY: y });
+        act(() => {
+            fireEvent.pointerDown(figure, ptr(600, 400));
+            fireEvent.pointerMove(document, ptr(630, 400));
+        });
+        await act(async () => { fireEvent.pointerMove(document, ptr(900, 700)); await new Promise(r => setTimeout(r, 30)); });
+        expect(document.body.classList.contains('gi-dnd-active')).toBe(true);
+        await act(async () => {
+            fireEvent.pointerUp(document, ptr(900, 700));
+            fireEvent.click(figure, { ...ptr(900, 700), detail: 1 });
+            await new Promise(r => setTimeout(r, 30));
+        });
+        expect(selectedHeroId()).toBe('h1');
+    });
+});
+
 describe('⭐ what clears the selection', () => {
     it('a click on blank mat; not a click that ends a drag', () => {
         const t = placeAt('fixture_producer', 600, 500);

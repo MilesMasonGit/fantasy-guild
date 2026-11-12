@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import React from 'react';
 import { render, cleanup, fireEvent, act } from '@testing-library/react';
 
@@ -12,7 +14,7 @@ import { GameState } from '../state/GameState.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
-import { selectHero, clearSelection, getSelection } from '../ui/hooks/useMatSelection.js';
+import { selectHero, clickHero, clearSelection, getSelection } from '../ui/hooks/useMatSelection.js';
 
 /**
  * ⭐ **The hero bar selects** (brief 610 S1). A single click on a hero's card selects them (a gold
@@ -42,15 +44,15 @@ describe('⭐ the hero bar', () => {
         const onSelectHero = vi.fn();
         const onDoubleClickHero = vi.fn();
         const view = mount({ onSelectHero, onDoubleClickHero });
-        fireEvent.click(figure(view, 'h1'));
-        expect(onSelectHero).toHaveBeenCalledWith('h1');
+        fireEvent.click(figure(view, 'h1'), { detail: 1 });
+        expect(onSelectHero).toHaveBeenCalledWith('h1', true);
         expect(onDoubleClickHero).not.toHaveBeenCalled();
         fireEvent.doubleClick(figure(view, 'h1'));
         expect(onDoubleClickHero).toHaveBeenCalledWith('h1');
     });
 
     it('the selected hero\'s card is marked picked; a new pick moves the mark', () => {
-        const view = mount({ onSelectHero: selectHero });
+        const view = mount({ onSelectHero: clickHero });
         expect(figure(view, 'h1').getAttribute('data-dock-picked')).toBeNull();
         act(() => { fireEvent.click(figure(view, 'h1')); });
         expect(getSelection()).toEqual({ kind: 'hero', id: 'h1' });
@@ -60,5 +62,37 @@ describe('⭐ the hero bar', () => {
         expect(figure(view, 'h2').getAttribute('data-dock-picked')).toBe('true');
         act(() => clearSelection());
         expect(figure(view, 'h2').getAttribute('data-dock-picked')).toBeNull();
+    });
+    it('a click again on the selected hero\'s card clears them (owner, 2026-11-12)', () => {
+        // The bar's handlers as ReactRoot gives them: a click is `clickHero`, a double-click selects.
+        const view = mount({ onSelectHero: clickHero, onDoubleClickHero: selectHero });
+        act(() => { fireEvent.click(figure(view, 'h1'), { detail: 1 }); });
+        expect(getSelection()).toEqual({ kind: 'hero', id: 'h1' });
+        act(() => { fireEvent.click(figure(view, 'h1'), { detail: 1 }); });
+        expect(getSelection()).toBeNull();
+        expect(figure(view, 'h1').getAttribute('data-dock-picked')).toBeNull();
+    });
+
+    it.each([
+        ['not yet selected', false],
+        ['already selected', true]
+    ])('a double-click on a card %s ends with the hero selected and the drawer asked for', (_label, before) => {
+        const onDoubleClickHero = vi.fn(selectHero);
+        const view = mount({ onSelectHero: clickHero, onDoubleClickHero });
+        if (before) act(() => { fireEvent.click(figure(view, 'h1'), { detail: 1 }); });
+        act(() => {
+            fireEvent.click(figure(view, 'h1'), { detail: 1 });
+            fireEvent.click(figure(view, 'h1'), { detail: 2 });
+            fireEvent.doubleClick(figure(view, 'h1'), { detail: 2 });
+        });
+        expect(getSelection()).toEqual({ kind: 'hero', id: 'h1' });
+        expect(onDoubleClickHero).toHaveBeenCalledWith('h1');
+        expect(figure(view, 'h1').getAttribute('data-dock-picked')).toBe('true');
+    });
+
+    it('ReactRoot hands the bar a click as clickHero and a double-click as a select with the drawer', () => {
+        const code = fs.readFileSync(path.resolve(__dirname, '../ui/ReactRoot.jsx'), 'utf8');
+        expect(code).toMatch(/pickHeroOnBar = React\.useCallback\(\(id, single = false\) => \{\s*clickHero\(id, single\);/);
+        expect(code).toMatch(/inspectHeroOnBar = React\.useCallback\(\(id\) => \{\s*selectHero\(id\);\s*setInspectHeroId\(id\);/);
     });
 });

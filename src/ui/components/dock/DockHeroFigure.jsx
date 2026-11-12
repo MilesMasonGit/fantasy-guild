@@ -10,6 +10,7 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { AnimatedHeroSprite } from '../board/AnimatedHeroSprite.jsx';
 import { PixelArt } from '../base/TokenSprite.jsx';
+import { isSingleClick } from '../../hooks/useMatSelection.js';
 import { FlagMark } from '../board/FlagMark.jsx';
 import { rosterStateOf, rosterAlertOf, rosterBubbleLine, ROSTER_ALERT } from '../board/flagText.js';
 import { setRosterHover } from '../board/orderLit.js';
@@ -42,7 +43,8 @@ import { onPoll } from '../board/frameClock.js';
  * frame re-renders nothing: not this figure, and not the slot, whose reorder animation would
  * measure its layout again.
  * A click selects the hero (`useMatSelection.js`: a gold outline here and on the mat, their job
- * lit); a double-click opens their Hero drawer too. Hovering outlines them and lights
+ * lit), or clears them when they are the one selected; a double-click selects them and opens their
+ * Hero drawer too. Hovering outlines them and lights
  * their job; dragging carries their flag, as on the mat: dropped on the mat it gives an order,
  * dropped on another roster hero it reorders. Drop an item to equip.
  * ⚠️ Two components on purpose. dnd-kit re-renders every component holding a drag hook at each
@@ -210,10 +212,10 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
             data-dock-picked={picked ? 'true' : undefined}
             data-dock-wounded={isWounded ? 'true' : undefined}
             data-dock-art-offset={offset}
-            onClick={() => {
+            onClick={(e) => {
                 if (justDroppedRef.current) return;
                 clearHeroBubbles(heroId);
-                onSelect?.(heroId);
+                onSelect?.(heroId, isSingleClick(e));
             }}
             onDoubleClick={(e) => {
                 e.stopPropagation();

@@ -13,6 +13,8 @@ import { pushEscapeLayer } from '../utils/escapeLayers.js';
  * The mat's selection: one hero or one movable Token, or nothing. **The one place it lives**:
  * the gold outline on the mat and the hero bar, and the orders given to what is selected, all
  * read it here.
+ * A single click on what is selected clears it ({@link clickHero}, {@link clickToken}); a
+ * double-click always ends selected.
  * UI state only: never saved, cleared by a click on blank mat, Escape, leaving the mat (a full
  * screen view, travel, a load) or a map mode coming on ({@link useSelectionClearing}). The Bank
  * and the Shop lie over the mat and keep it.
@@ -75,6 +77,42 @@ export function pickToken(instanceId) {
     set({ kind: SELECTION_KIND.TOKEN, id: instance.id });
     return true;
 }
+
+/**
+ * A click on a hero: selects them or, a single click ({@link isSingleClick}) on the one selected,
+ * clears the selection.
+ * @param {boolean} [single] false for the second click of a double-click, which only selects
+ * @returns {boolean} whether the hero is now selected
+ */
+export function clickHero(heroId, single = true) {
+    if (single && heroId && selectedHeroId() === heroId) {
+        set(null);
+        return false;
+    }
+    selectHero(heroId);
+    return !!heroId && selectedHeroId() === heroId;
+}
+
+/**
+ * A click on a Token on the mat: a pick ({@link pickToken}) or, a single click on the one selected,
+ * a clear.
+ * @param {boolean} [single] false for the second click of a double-click, which only picks
+ * @returns {boolean} whether the Token is now selected
+ */
+export function clickToken(instanceId, single = true) {
+    if (single && instanceId && selectedTokenId() === instanceId) {
+        set(null);
+        return false;
+    }
+    return pickToken(instanceId);
+}
+
+/**
+ * Whether a click is a plain single click, so a click on what is already selected clears it: not
+ * the second click of a double-click (`detail` 2 and up), which selects, so a double-click ends
+ * with its thing selected whichever way its first click went.
+ */
+export const isSingleClick = (e) => !(e?.detail > 1);
 
 /** The selected hero's id, or null. */
 export function selectedHeroId() {

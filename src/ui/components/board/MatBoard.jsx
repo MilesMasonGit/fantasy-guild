@@ -17,7 +17,6 @@ import { HeroBubbleLayer } from './HeroBubbleLayer.jsx';
 import { strikesLive, heroAnimationState, hitSkillOf, hitsOnAttack } from './hitAnimations.js';
 import { FlagLayer } from './FlagLayer.jsx';
 import { OrderDragLine } from './OrderDragLine.jsx';
-import { SelectedTokenHints } from './SelectedTokenHints.jsx';
 import { heroOutline } from './spriteOutline.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
 import { WorkPlateLayer } from './WorkPlateLayer.jsx';
@@ -58,7 +57,7 @@ import { MatFxLayer } from './fx/MatFxLayer.jsx';
 import { MatLimes } from '../limes/MatLimes.jsx';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
-import { useSelection, pickToken, selectHero, clearSelection, SELECTION_KIND } from '../../hooks/useMatSelection.js';
+import { useSelection, clickToken, clickHero, clearSelection, SELECTION_KIND } from '../../hooks/useMatSelection.js';
 
 /**
  * The playmat as it is actually drawn. Every Token, hero and flag is drawn at its own mat
@@ -369,9 +368,10 @@ export const MatBoard = React.memo(function MatBoard({
     useEffect(() => watchRegionSettle(), []);
 
     /**
-     * The mat's selection (`useMatSelection.js`): a single click picks, a double-click inspects
-     * and picks. Read here and handed to each Token and hero as a prop, as the hover is, so a
-     * pick redraws only the two Tokens whose outline changed.
+     * The mat's selection (`useMatSelection.js`): a single click picks, or clears what is already
+     * picked (`single`: `isSingleClick`); a double-click inspects and picks. Read here and handed
+     * to each Token and hero as a prop, as the hover is, so a pick redraws only the two Tokens
+     * whose outline changed.
      */
     const selection = useSelection();
     const pickedTokenId = selection?.kind === SELECTION_KIND.TOKEN ? selection.id : null;
@@ -380,12 +380,12 @@ export const MatBoard = React.memo(function MatBoard({
     const inspectedTokenRef = useRef(inspectedTokenId);
     inspectedTokenRef.current = inspectedTokenId;
     // A pick of something else closes an open Token card (a pick of its own Token keeps it).
-    const handlePickToken = useCallback((instanceId) => {
-        pickToken(instanceId);
+    const handlePickToken = useCallback((instanceId, single = false) => {
+        clickToken(instanceId, single);
         if (inspectedTokenRef.current && inspectedTokenRef.current !== instanceId) onClearInspect?.();
     }, [onClearInspect]);
-    const handlePickHero = useCallback((heroId) => {
-        selectHero(heroId);
+    const handlePickHero = useCallback((heroId, single = false) => {
+        clickHero(heroId, single);
         if (inspectedTokenRef.current) onClearInspect?.();
     }, [onClearInspect]);
 
@@ -673,8 +673,6 @@ export const MatBoard = React.memo(function MatBoard({
             <OrderLighting />
             {/* `MAT_Z.RINGS`: and a marching dashed line from them to where they would be sent. */}
             <OrderDragLine matRef={rootRef} />
-            {/* A selected Token's ghost at the pointer, and where a right-click would move it (the ring's). */}
-            <SelectedTokenHints matRef={rootRef} />
 
             {/* `MAT_Z.RINGS`: the reach ring of the Token hovered or in the hand, and its dots. */}
             {ringsDrawn && <MatRings hoveredCentre={hoveredCentre} boardTokens={tokens} matRef={rootRef} />}

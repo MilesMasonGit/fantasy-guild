@@ -15,7 +15,7 @@ import { useEncyclopediaBack } from './hooks/useEncyclopediaBack.js';
 import { useHeroSheetRequests } from './hooks/useHeroSheetRequests.js';
 import { useOneBottomDrawer } from './hooks/useOneBottomDrawer.js';
 import { useWorldMapRequests } from './hooks/useWorldMapRequests.js';
-import { selectHero, useSelectionClearing } from './hooks/useMatSelection.js';
+import { selectHero, clickHero, useSelectionClearing } from './hooks/useMatSelection.js';
 
 import Board from './components/board/Board.jsx';
 import BankDrawer from './components/drawer/BankDrawer.jsx';
@@ -180,10 +180,10 @@ const ReactRoot = () => {
 
     const [inspectHeroId, setInspectHeroId] = React.useState(null);
     const closeInspectHero = React.useCallback(() => setInspectHeroId(null), []);
-    // The hero bar: a click selects the hero (and closes another hero's drawer); a double-click
-    // opens theirs too.
-    const pickHeroOnBar = React.useCallback((id) => {
-        selectHero(id);
+    // The hero bar: a click selects the hero, or clears them when they are the one selected (and
+    // closes another hero's drawer); a double-click selects them and opens theirs too.
+    const pickHeroOnBar = React.useCallback((id, single = false) => {
+        clickHero(id, single);
         setInspectHeroId(prev => (prev && prev !== id ? null : prev));
     }, []);
     const inspectHeroOnBar = React.useCallback((id) => {

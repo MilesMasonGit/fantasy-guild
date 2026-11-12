@@ -38,7 +38,6 @@ import { setMapMode, MAP_MODE } from '../ui/hooks/useMapMode.js';
 import { selectHero, pickToken, clearSelection, getSelection, selectedHeroId, selectedTokenId } from '../ui/hooks/useMatSelection.js';
 import { TOKEN_FLIGHT_FX, TOKEN_FLIGHT_MS } from '../ui/components/board/tokenFlight.js';
 import { HOP_POSES, HOP_POSE_MS } from '../ui/utils/lootArc.js';
-import { getTokenPreview } from '../ui/components/board/selectedTokenPreview.js';
 import * as fixtures from '../../bench/fixtures.mjs';
 
 // A hero's figure takes a press only on a drawn pixel; jsdom draws none.
@@ -566,7 +565,7 @@ describe('⭐ orders land on the mat only', () => {
     });
 });
 
-describe('⭐ while a hero is selected, the drag’s hints show at the pointer', () => {
+describe('⭐ while a hero is selected, the drag’s hints show at the pointer, with no line (owner, 2026-11-12)', () => {
     const drag = (value) => ({ isDragging: false, activePayload: null, ...value });
 
     it('every Token they could be sent to glows, kept up to date while selected; out once cleared or while anything is carried', async () => {
@@ -591,7 +590,7 @@ describe('⭐ while a hero is selected, the drag’s hints show at the pointer',
         expect(orderLitOf(tree.id)).toBeNull();
     });
 
-    function mountLine() {
+    function mountLine(value = drag()) {
         const matEl = document.createElement('div');
         matEl.setAttribute('data-mat-board', '');
         matEl.getBoundingClientRect = () => ({ left: 0, top: 0, width: matW(), height: matH(), right: matW(), bottom: matH() });
@@ -599,7 +598,7 @@ describe('⭐ while a hero is selected, the drag’s hints show at the pointer',
         matEl.appendChild(ground);
         const panel = document.createElement('div');
         document.body.append(matEl, panel);
-        const view = render(h(DeckDndContext.Provider, { value: drag() }, h(OrderDragLine, { matRef: { current: matEl } })));
+        const view = render(h(DeckDndContext.Provider, { value }, h(OrderDragLine, { matRef: { current: matEl } })));
         const move = (target, x, y) => act(async () => {
             target.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: x, clientY: y }));
             await new Promise(r => setTimeout(r, 50));
@@ -609,19 +608,31 @@ describe('⭐ while a hero is selected, the drag’s hints show at the pointer',
         return { view, ground, panel, move, dashes, done };
     }
 
-    it('the dashed gold line runs from the hero to the pointer on the mat, with the drag hint marks over the Token under it', async () => {
+    it('no dashed line follows the pointer; the drag hint marks stand over the Token under it', async () => {
         const [hero] = newBoard({ prior: false });
         Orders.orderAt(hero.id, { x: 300, y: 860 });
         const tree = fixtures.placeAt('rc_tree', 600, 300);
         selectHero(hero.id);
         const line = mountLine();
-        expect(line.view.container.querySelector(`svg[data-order-line="${hero.id}"]`)).toBeTruthy();
         await line.move(line.ground, 1200, 800);
-        expect(line.dashes().length).toBeGreaterThan(0);
+        expect(line.view.container.querySelector('svg[data-order-line]')).toBeNull();
+        expect(line.dashes()).toBeNull();
         expect(hintsOf(hero.id)).toBeNull();
         await line.move(line.ground, tree.x, tree.y);
         expect(line.view.container.querySelector(`[data-order-aim="${tree.id}"]`)).toBeTruthy();
         expect(hintsOf(hero.id)).toMatchObject({ kind: 'work', skill: { skillId: 'forestry', pass: true } });
+        expect(line.view.container.querySelector('svg[data-order-line]')).toBeNull();
+        line.done();
+    });
+
+    it('a real drag of the selected hero still draws the dashed line to the pointer', async () => {
+        const [hero] = newBoard({ prior: false });
+        Orders.orderAt(hero.id, { x: 300, y: 860 });
+        selectHero(hero.id);
+        const line = mountLine(drag({ isDragging: true, activePayload: heroPayload(hero) }));
+        expect(line.view.container.querySelector(`svg[data-order-line="${hero.id}"]`)).toBeTruthy();
+        await line.move(line.ground, 1200, 800);
+        expect(line.dashes().length).toBeGreaterThan(0);
         line.done();
     });
 
@@ -635,28 +646,34 @@ describe('⭐ while a hero is selected, the drag’s hints show at the pointer',
         line.done();
     });
 
-    it('off the mat (a panel, the hero bar) or under the Bank: nothing shown, and no frame asked for until the pointer is back', async () => {
+    it('off the mat (a panel, the hero bar) or under the Bank: nothing shown, and no frame asked for while the pointer is off or still', async () => {
         const [hero] = newBoard({ prior: false });
         Orders.orderAt(hero.id, { x: 300, y: 860 });
         const tree = fixtures.placeAt('rc_tree', 600, 300);
         selectHero(hero.id);
         const line = mountLine();
+        const aimed = () => line.view.container.querySelector(`[data-order-aim="${tree.id}"]`);
         await line.move(line.ground, tree.x, tree.y);
-        expect(line.dashes().length).toBeGreaterThan(0);
+        expect(aimed()).toBeTruthy();
+        // A still pointer on the mat asks for no frame: with no line there is nothing to march.
+        let frames = vi.spyOn(window, 'requestAnimationFrame');
+        await act(async () => { await new Promise(r => setTimeout(r, 80)); });
+        expect(frames).not.toHaveBeenCalled();
+        frames.mockRestore();
         await line.move(line.panel, tree.x, tree.y);
-        expect(line.dashes()).toBe('');
         expect(hintsOf(hero.id)).toBeNull();
         expect(line.view.container.querySelector('[data-order-aim]')).toBeNull();
-        const frames = vi.spyOn(window, 'requestAnimationFrame');
+        frames = vi.spyOn(window, 'requestAnimationFrame');
+        await line.move(line.panel, tree.x + 10, tree.y);
         await act(async () => { await new Promise(r => setTimeout(r, 80)); });
         expect(frames).not.toHaveBeenCalled();
         await line.move(line.ground, tree.x, tree.y);
         expect(frames).toHaveBeenCalled();
-        expect(line.dashes().length).toBeGreaterThan(0);
+        expect(aimed()).toBeTruthy();
         frames.mockRestore();
         setMatBankLocked(true);
         await line.move(line.ground, tree.x, tree.y);
-        expect(line.dashes()).toBe('');
+        expect(line.view.container.querySelector('[data-order-aim]')).toBeNull();
         line.done();
     });
 
@@ -863,47 +880,51 @@ describe('⭐ a right-click with a Token selected moves it, as a drop there does
             expect(selectedTokenId()).toBe(goblin.id);
         });
 
-        it('while a Token is selected the pointer on the mat shows its ghost and, for a camp, the reach ring with its dots', async () => {
+        it('while a Token is selected nothing follows the pointer: no ghost, no reach ring, no dots (owner, 2026-11-12)', async () => {
             newBoard({ prior: false });
             const camp = fixtures.placeAt('rc_logging', 400, 300);
             const tree = fixtures.placeAt('rc_tree', 1300, 700);
+            const goblin = fixtures.placeAt('bench_goblin', 600, 800);
             const { container, mat, move } = mount();
-            act(() => { pickToken(camp.id); });
-            const ghost = document.querySelector(`[data-selected-ghost="${camp.id}"]`);
-            expect(ghost).toBeTruthy();
-            expect(ghost.style.visibility).toBe('hidden');
-            await move(mat, 1200, 700);
-            expect(ghost.style.visibility).toBe('visible');
-            expect(ghost.style.transform).toContain('translate(1200px, 700px)');
-            const ring = container.querySelector('[data-near-ring]');
-            expect(ring?.getAttribute('data-cx')).toBe('1200');
-            expect(ring?.getAttribute('data-cy')).toBe('700');
-            expect(container.querySelector(`[data-reach-dot="${tree.id}"]`)).toBeTruthy();
-            // Off the mat: gone, and no frame asked for while it stays off.
-            const panel = document.createElement('div');
-            document.body.appendChild(panel);
-            await move(panel, 1200, 700);
-            expect(ghost.style.visibility).toBe('hidden');
-            expect(container.querySelector('[data-near-ring]')).toBeNull();
-            expect(getTokenPreview()).toBeNull();
-            const frames = vi.spyOn(window, 'requestAnimationFrame');
-            await act(async () => { await new Promise(r => setTimeout(r, 80)); });
-            expect(frames).not.toHaveBeenCalled();
-            frames.mockRestore();
-            panel.remove();
-            // Cleared: no ghost.
-            act(() => { clearSelection(); });
-            expect(document.querySelector('[data-selected-ghost]')).toBeNull();
+            for (const picked of [camp, goblin]) {
+                act(() => { pickToken(picked.id); });
+                const frames = vi.spyOn(window, 'requestAnimationFrame');
+                await move(mat, 1200, 700);
+                frames.mockRestore();
+                expect(document.querySelector('[data-selected-ghost]')).toBeNull();
+                expect(container.querySelector('[data-near-ring]')).toBeNull();
+                expect(container.querySelector(`[data-reach-dot="${tree.id}"]`)).toBeNull();
+                expect(document.body.classList.contains('gi-dnd-active')).toBe(false);
+                // The gold outline on the selected Token stays.
+                expect(container.querySelector(`[data-token-art][data-token-id="${picked.id}"]`).getAttribute('data-outline')).toBe('select');
+            }
         });
 
-        it('a Token with no reach (an enemy) shows its ghost and no ring', async () => {
+        it('a real drag of the selected camp still shows the reach ring and its dots where it would land', async () => {
             newBoard({ prior: false });
-            const goblin = fixtures.placeAt('bench_goblin', 600, 300);
-            const { container, mat, move } = mount();
-            act(() => { pickToken(goblin.id); });
-            await move(mat, 1200, 700);
-            expect(document.querySelector(`[data-selected-ghost="${goblin.id}"]`).style.visibility).toBe('visible');
-            expect(container.querySelector('[data-near-ring]')).toBeNull();
+            const camp = fixtures.placeAt('rc_logging', 400, 300);
+            const tree = fixtures.placeAt('rc_tree', 1300, 700);
+            const { container } = mount();
+            act(() => { pickToken(camp.id); });
+            const hit = container.querySelector(`[data-token-hit="${camp.id}"]`);
+            const ptr = (x, y) => ({ pointerId: 1, isPrimary: true, button: 0, clientX: x, clientY: y });
+            act(() => {
+                fireEvent.pointerDown(hit, ptr(400, 300));
+                fireEvent.pointerMove(document, ptr(430, 300));
+            });
+            await act(async () => { fireEvent.pointerMove(document, ptr(1200, 700)); await new Promise(r => setTimeout(r, 50)); });
+            expect(document.body.classList.contains('gi-dnd-active')).toBe(true);
+            expect(container.querySelector('[data-near-ring]')).toBeTruthy();
+            expect(container.querySelector(`[data-reach-dot="${tree.id}"]`)).toBeTruthy();
+            // The drop, and the click the browser sends right after it on the Token let go: no
+            // click again on the selected Token, so it stays selected.
+            await act(async () => {
+                fireEvent.pointerUp(document, ptr(1200, 700));
+                fireEvent.click(hit, ptr(1200, 700));
+                await new Promise(r => setTimeout(r, 30));
+            });
+            expect(selectedTokenId()).toBe(camp.id);
+            document.body.classList.remove('gi-dnd-active');
         });
     });
 });

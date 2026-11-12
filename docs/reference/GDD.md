@@ -750,8 +750,8 @@ Heroes do not choose their own work: **the player sends each hero to a job by
 dragging them** (hero orders, brief 260; owner 2026-10-28: one hero, one job,
 less micromanagement than area flags).
 - **Heroes live on the mat.** One with no job waits in a row in front of the
-  Guild Hall. The hero bar is the roster: a click selects a hero, a double-click
-  opens their Hero drawer; it says on hover what they are doing, wears a yellow
+  Guild Hall. The hero bar is the roster: a click selects a hero (a click again
+  on the selected one clears it), a double-click opens their Hero drawer; it says on hover what they are doing, wears a yellow
   alert when only the player can get them going or a red one when wounded, and
   can be dragged from.
 - **Selecting** (brief 610 S1; owner, 2026-11-11). One thing is selected at a
@@ -759,7 +759,10 @@ less micromanagement than area flags).
   2026-11-11), never a Token that stays where it stands. **A single click
   selects**, on the mat or on the
   hero bar (from any screen); **a double-click inspects** (a Token's card, a
-  hero's drawer) and selects too. The selected one wears a **gold outline**, one
+  hero's drawer) and selects too. **A single click again on what is selected
+  clears it** (owner, 2026-11-12), on the mat or the hero bar; a double-click
+  always ends with it selected, whichever way its first click went, and a drag
+  of the selected one keeps it. The selected one wears a **gold outline**, one
   art pixel like the white hover outline, on the mat and on the hero's bar card,
   and a selected hero's job lights as on hover. A single click on a fixed Token
   only clears the selection; a double-click still inspects it. The
@@ -802,14 +805,14 @@ less micromanagement than area flags).
   stays. A moved Token flies to its new spot in flying loot's short arc (about
   half a second) and lands with a one-pixel bounce; the flight is only drawn,
   the Token is on its new spot at once. The selection stays after the move.
-  **While a Token is selected**, the pointer on the mat carries its drag ghost,
-  and a Token that uses reach shows its reach ring where it would land, with
-  the dots on what it would reach, as while dragging it. Off the mat they go.
+  **While a Token is selected nothing follows the pointer** (owner,
+  2026-11-12): no ghost, no reach ring, no dots; only its gold outline shows.
+  A real drag still shows them.
 - **While a hero is selected**, the pointer on the mat shows the drag's hints
   before the right-click: every Token they could be sent to glows (kept up to
-  date while they stay selected), the dashed gold line runs from the hero to
-  the pointer (its end on the centre of a Token they can work), and over a
-  Token the drag hints and the drop's reason show as below. Off the mat (a
+  date while they stay selected), and over a Token the drag hints and the
+  drop's reason show as below. **No dashed line** follows the pointer while
+  they are only selected (owner, 2026-11-12); a drag of them still draws it. Off the mat (a
   panel, the hero bar) they go; a drag takes their place while it lasts. After
   a right-click stops the selected hero the marks go out until the pointer is
   on another Token, so their yellow "needs a job" mark shows at once.

@@ -46,6 +46,7 @@ import { takeSettle, playSettle } from './fx/regionSettle.js';
 import { useSupportLit } from './supportLit.js';
 import { useOrderLit } from './orderLit.js';
 import { walkerGlide } from './walkerGlide.js';
+import { isSingleClick } from '../../hooks/useMatSelection.js';
 
 /**
  * A walking enemy's boxes follow the engine without React. While `on`, each `ENEMIES_WALKED`
@@ -580,7 +581,7 @@ export const MatToken = React.memo(function MatToken({
                 data-token-state-sprite={stateSprite || undefined}
                 data-token-fixed={fixed ? 'true' : undefined}
                 data-token-protected={demolishProtected ? 'true' : undefined}
-                onClick={() => {
+                onClick={(e) => {
                     if (dragging) return;
                     // In a map mode a click acts on the Token and does nothing else; it never
                     // claims a quest.
@@ -599,8 +600,9 @@ export const MatToken = React.memo(function MatToken({
                         }
                         return;
                     }
-                    // A single click picks (selects a movable Token); a double-click inspects.
-                    onPick?.(id);
+                    // A single click picks (selects a movable Token), or clears it when it is the one
+                    // selected; a double-click inspects.
+                    onPick?.(id, isSingleClick(e));
                 }}
                 onDoubleClick={(e) => {
                     if (mapMode || dragging) return;

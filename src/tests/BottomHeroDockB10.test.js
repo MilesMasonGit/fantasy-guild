@@ -144,7 +144,7 @@ describe('B10 horizontal hero dock', () => {
         const onDoubleClickHero = vi.fn();
         const view = mount({ onSelectHero, onDoubleClickHero });
         fireEvent.click(figure(view, 'h2'));
-        expect(onSelectHero).toHaveBeenCalledWith('h2');
+        expect(onSelectHero).toHaveBeenCalledWith('h2', true);
         fireEvent.doubleClick(figure(view, 'h3'));
         expect(onDoubleClickHero).toHaveBeenCalledWith('h3');
     });

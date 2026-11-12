@@ -17,7 +17,8 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  * Each hero idles at the mat's own art size, cut off at the waist by the strip's bottom edge,
  * with a name, an HP bar and what they are doing (idle, busy, hurt) over the head
  * (`DockHeroFigure`). Every hero is also on the mat: a click selects them (a gold outline here and
- * on the mat, their job lit), a double-click opens their Hero drawer, hovering lights them and
+ * on the mat, their job lit) or, on the one selected, clears them; a double-click opens their Hero
+ * drawer; hovering lights them and
  * their job, and dragging one gives them an order.
  */
 export const BottomHeroDock = ({

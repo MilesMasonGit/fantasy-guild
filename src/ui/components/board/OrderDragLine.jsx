@@ -38,18 +38,18 @@ const carriesHero = (payload) => !!payload?.heroId && payload.kind === DRAG_KIND
  * Over a Token the hero can work, the carried flag and the line's end snap to the Token's centre;
  * over one they cannot, a red bubble over it says why ("Needs Pickaxe"), as the drop would. Over any
  * Token the carried hero's drag hint marks stand centred over its sprite, under that bubble.
- * **A selected hero** (`useMatSelection.js`) shows the same, nothing carried, while the pointer is
- * on the mat itself: what a right-click there would do, by the same aim. Off the mat (a panel over
- * it, the hero bar) or while the Bank covers it, it shows nothing; any drag takes its place.
+ * **A selected hero** (`useMatSelection.js`), nothing carried, shows the marks and the red bubble
+ * over the Token under the pointer while it is on the mat itself (what a right-click there would
+ * do, by the same aim), but **no line** (owner, 2026-11-12). Off the mat (a panel over it, the hero
+ * bar) or while the Bank covers it, it shows nothing; any drag takes its place.
  * Nothing is mounted at rest; while carried, one `<svg>` whose two paths are rewritten once per
  * animation frame (`frameClock.onFrame`, paused with the drawing), and the ghost moved, never
  * through React: only the bubble and marks are React's, redrawn as the Token under the pointer
- * changes (`orderAim.js`). A selected hero's loop is the same one, run only while the pointer is
- * on the mat, so a selection held with the pointer elsewhere costs no frame at all. Once the selected
- * hero is stopped by right-click their marks go out until the pointer moves onto another Token, so
- * their yellow "needs a job" mark shows at once (`onSelectedStop`). A hero with no
- * figure on the mat (none today: every hero stands on it) draws no line. Under reduced motion the
- * dashes stand still.
+ * changes (`orderAim.js`). A selected hero's aim runs once per frame the pointer moved, so a still
+ * pointer or one off the mat costs no frame at all. Once the selected hero is stopped by
+ * right-click their marks go out until the pointer moves onto another Token, so their yellow
+ * "needs a job" mark shows at once (`onSelectedStop`). A hero with no figure on the mat (none
+ * today: every hero stands on it) draws no line. Under reduced motion the dashes stand still.
  */
 export const OrderDragLine = memo(function OrderDragLine({ matRef }) {
     const { isDragging, activePayload } = useActiveDrag();
@@ -152,10 +152,11 @@ function MarchingLine({ heroId, session, matRef }) {
                 return;
             }
             // Selected: only the mat itself takes a right-click order (never a panel over it, the
-            // hero bar, or the mat under the Bank), so the hints show only there. Off it, the next
-            // frame puts them out and the loop stops until the pointer is back.
+            // hero bar, or the mat under the Bank), so the hints show only there. Off it, one more
+            // frame puts them out, and none is asked for until the pointer is back.
             const matEl = matRef?.current || null;
             if (!onMatItself(matEl, e.target) || isMatBankLocked()) {
+                if (pointer) start();
                 pointer = null;
                 return;
             }
@@ -163,7 +164,11 @@ function MarchingLine({ heroId, session, matRef }) {
             pointer = { x: e.clientX, y: e.clientY };
             start();
         };
-        const onLeavePage = (e) => { if (!carried && !e.relatedTarget) pointer = null; };
+        const onLeavePage = (e) => {
+            if (carried || e.relatedTarget || !pointer) return;
+            pointer = null;
+            start();
+        };
         const onResize = () => { if (!carried) rectSession = {}; };
         const offStop = carried ? null : onSelectedStop((id) => {
             if (id !== heroId || quiet) return;
@@ -188,6 +193,11 @@ function MarchingLine({ heroId, session, matRef }) {
                 // Every hero's marks, worked out once per Token entered (`dragHints.js`).
                 setHintTarget(aimed.instance);
             }
+            // A selected hero draws no line, and its aim waits for the pointer to move again.
+            if (!carried) {
+                stop();
+                return;
+            }
             const to = aimed.snap ? { x: aimed.instance.x, y: aimed.instance.y } : at;
             if (aimed.snap && rect) {
                 const s = rect.width / matW();
@@ -199,9 +209,6 @@ function MarchingLine({ heroId, session, matRef }) {
                 const phase = still ? 0 : ((now - t0) / 1000) * MARCH_PX_PER_S;
                 d = dashedLinePath(cell(from), cell(to), phase);
             }
-            // A selected hero's line with the pointer off the mat has just been put out: nothing
-            // moves until it is back.
-            if (!carried && !pointer) stop();
             if (d === last) return;
             last = d;
             goldRef.current?.setAttribute('d', d);
@@ -226,7 +233,7 @@ function MarchingLine({ heroId, session, matRef }) {
 
     return (
         <>
-        <svg
+        {session && <svg
             data-order-line={heroId}
             aria-hidden="true"
             className="absolute left-0 top-0 overflow-visible pointer-events-none"
@@ -238,7 +245,7 @@ function MarchingLine({ heroId, session, matRef }) {
                 <path ref={shadowRef} d="" transform={`translate(${artScale} ${artScale}) scale(${artScale})`} fill={LINE_SHADOW} />
                 <path ref={goldRef} d="" transform={`scale(${artScale})`} fill={LINE_GOLD} />
             </g>
-        </svg>
+        </svg>}
         {target && <AimedLabel heroId={heroId} instance={target.instance} reason={target.reason} fit={fit} matH={mat.h} />}
         </>
     );

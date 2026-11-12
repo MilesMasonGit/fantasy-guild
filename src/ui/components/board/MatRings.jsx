@@ -10,7 +10,6 @@ import { DRAG_KIND } from '../../dnd/dragConstants.js';
 import { pointerToMat, matRectForDrag } from './matPoint.js';
 import { showsNearRing, reachDotsAt } from '../../../systems/board/reachDisplay.js';
 import { ReachRing } from './CampReachRing.jsx';
-import { useTokenPreview } from './selectedTokenPreview.js';
 
 const NEAR_RING_ATTRS = Object.freeze({ 'data-near-ring': 'true' });
 
@@ -23,9 +22,7 @@ const NEAR_RING_ATTRS = Object.freeze({ 'data-near-ring': 'true' });
  * * **dragging** one, from the Shop or across the mat: the ring sits where the Token would REALLY
  * land. With free placement that is the cursor itself when there is room, and the nudged spot
  * when there is not, so the ring is an honest preview of the drop rather than a copy of the
- * pointer. When there is no room within nudge reach the drop would fly back, and there is no ring;
- * * **selected**, with the pointer on the mat: the same, where a right-click would move it
- * (`SelectedTokenHints`).
+ * pointer. When there is no room within nudge reach the drop would fly back, and there is no ring.
  * Every Token inside the ring wears a dot (`reachDisplay.reachDotsAt`, the engine's own test).
  * The ring of a camp lit through its hero is `CampReachRing`'s.
  */
@@ -74,26 +71,21 @@ export function useTokenDragLanding(matRef) {
     }
 
     const point = pointerToMat(pointer, matRectForDrag(matEl, activePayload));
-    const result = point ? tokenLandingAt(activePayload.typeId, point, activePayload.from?.instanceId || null) : null;
+    let result = null;
+    if (point) {
+        // Where this very Token would land, itself excluded so a Token being
+        // moved does not block its own preview.
+        const movingId = activePayload.from?.instanceId || null;
+        const spot = MatPlacement.findSpot(activePayload.typeId, clampToMat(point), {
+            excludeId: movingId,
+            siteOf: movingId ? siteTypeOf(BoardState.getTokenById(movingId)) : null
+        });
+        result = spot ? { x: spot.x, y: spot.y, typeId: activePayload.typeId } : null;
+    }
 
     cachedInputs = { pointer, activePayload, matEl };
     cachedResult = result;
     return result;
-}
-
-/**
- * Where a Token of `typeId` let go at mat `point` would land (`{ x, y, typeId }`), or null when it
- * would be refused for want of room: the placement's own search. `movingId`, a Token on the mat
- * being moved, is left out, so it does not block its own preview. The drag's landing above and a
- * selected Token's preview (`SelectedTokenHints`) both ask here.
- */
-export function tokenLandingAt(typeId, point, movingId = null) {
-    if (!point) return null;
-    const spot = MatPlacement.findSpot(typeId, clampToMat(point), {
-        excludeId: movingId,
-        siteOf: movingId ? siteTypeOf(BoardState.getTokenById(movingId)) : null
-    });
-    return spot ? { x: spot.x, y: spot.y, typeId } : null;
 }
 
 /**
@@ -106,7 +98,6 @@ export const MatRings = React.memo(function MatRings({ hoveredCentre = null, boa
     const radius = useReachRadius();
     const { isDragging, activePayload } = useActiveDrag();
     const landing = useTokenDragLanding(matRef);
-    const preview = useTokenPreview();
 
     let centre = null;
     let selfId = null;
@@ -114,12 +105,6 @@ export const MatRings = React.memo(function MatRings({ hoveredCentre = null, boa
         if (landing && showsNearRing(landing.typeId)) {
             centre = landing;
             selfId = activePayload?.from?.instanceId || null;
-        }
-    } else if (preview) {
-        // A selected Token's preview at the pointer stands in for the drag's landing.
-        if (preview.landing && showsNearRing(preview.landing.typeId)) {
-            centre = preview.landing;
-            selfId = preview.landing.id;
         }
     } else if (hoveredCentre) {
         centre = hoveredCentre;

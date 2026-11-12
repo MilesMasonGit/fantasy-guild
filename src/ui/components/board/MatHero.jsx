@@ -33,6 +33,7 @@ import { PROBLEM_SPRITE, PROBLEM_MARK_ART_PX, SEVERITY } from './problemMark.js'
 import { Tooltip } from '../base/Tooltip.jsx';
 import { t } from '../../../i18n/index.js';
 import { HeroDragMarks, markMatPx } from './DragMarks.jsx';
+import { isSingleClick } from '../../hooks/useMatSelection.js';
 
 /**
  * The events that move a hero's health in a fight: the engine changes `hp` in place and says so
@@ -319,11 +320,12 @@ const MatHeroBody = memo(function MatHeroBody({
             data-hero-limp={limp ? 'true' : undefined}
             data-outline={outline || undefined}
             aria-label={name || 'Hero'}
-            // A single click selects the hero; a double-click opens their Hero drawer too.
+            // A single click selects the hero, or clears them when they are the one selected; a
+            // double-click selects them and opens their Hero drawer too.
             onClick={(e) => {
                 if (!opaque(e)) return;
                 e.stopPropagation();
-                onPick?.(heroId);
+                onPick?.(heroId, isSingleClick(e));
             }}
             onDoubleClick={(e) => {
                 if (!opaque(e)) return;
