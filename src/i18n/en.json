@@ -593,6 +593,7 @@
         "walkingSpot": "Walking",
         "waitingFor": "Waiting for {token}",
         "campIdle": "Nothing to work near {camp}",
+        "warCampIdle": "Nothing to fight near {camp}",
         "idleHere": "Idle here",
         "needsJob": "Needs a job",
         "idle": "Idle",

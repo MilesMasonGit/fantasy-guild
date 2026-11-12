@@ -1,7 +1,7 @@
 // camps: a Token that hands the heroes sent to it every job of its skill in its reach
 
 import { getTokenType, registryVersion } from '../../config/registries/tokenRegistry.js';
-import { fieldOf, campOf } from '../../config/registries/tokenConstants.js';
+import { fieldOf, campOf, isWarCampBlock } from '../../config/registries/tokenConstants.js';
 import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { stationSkillOf } from '../effects/statements.js';
 import * as BoardState from './BoardState.js';
@@ -27,6 +27,13 @@ import { centreOf, distanceSq, reachRadius } from './nearby.js';
  * Foundation, a spawner, an enemy, the Guild Hall or a Token marked for
  * demolition (that is the demolisher's job).
  *
+ * A **War Camp** is a camp whose skill is a combat style (`tokenConstants.isWarCampBlock`): its work
+ * is every enemy standing in its reach, whoever spawned it or none, fought one at a time in the style
+ * of the weapon in the hero's hands. Enemies stand still, so the hero goes to each. ⚠️ An enemy a
+ * War Camp hero has taken stays theirs until it falls, wherever it now stands ({@link keepsWork}): a
+ * crowded fight steps its enemy up to a mat step aside (`FightRoom`), which can carry it out of the
+ * reach mid-fight, and letting go there would end the fight with the enemy whole again.
+ *
  * An **enemy camp** is any working spawner of enemies (the Goblin Camp, a boss's camp of one): no
  * block needed. A hero ordered onto one hunts what it spawned (the enemies tethered to it,
  * `instance.tether`) and waits for the next when it stands empty.
@@ -42,6 +49,11 @@ export { campOf };
 export function campOfInstance(instance) {
     if (!instance?.typeId || Demolition.isMarked(instance)) return null;
     return campOf(getTokenType(instance.typeId));
+}
+
+/** Whether a Token on the mat is a War Camp: a camp of a combat style, not marked for demolition. */
+export function isWarCamp(instance) {
+    return isWarCampBlock(campOfInstance(instance));
 }
 
 /** Each spawner type's enemies, memoised per type id on the registry's version (`SpawnerSystem.familyOf`). */
@@ -76,12 +88,14 @@ export function isCampLike(instance) {
 }
 
 /**
- * Whether a Token type is the kind of work a camp of `block` hands out, wherever it stands: its own
- * work names the camp's skill, and it is not a station (a Field excepted), a Foundation, a spawner,
- * an enemy, another camp or the Guild Hall.
+ * Whether a Token type is the kind of work a camp of `block` hands out, wherever it stands: for a
+ * War Camp, an enemy; for any other camp, a Token whose own work names the camp's skill and that is
+ * not a station (a Field excepted), a Foundation, a spawner, an enemy, another camp or the Guild
+ * Hall.
  */
 export function worksType(block, def) {
     if (!block || !def) return false;
+    if (isWarCampBlock(block)) return isEnemyDef(def);
     if (def.config?.skill !== block.skill || def.requiresHero === false) return false;
     if (isEnemyDef(def) || def.spawner || def.foundation || def.camp || def.isGuildHall) return false;
     return !stationSkillOf(def) || fieldOf(def) != null;
@@ -96,8 +110,8 @@ export function reaches(camp, point) {
 
 /**
  * Whether `instance` is work `camp` hands out right now (not yet checked against any hero): for a
- * work camp, a Token of its kind ({@link worksType}) standing in its reach and not marked for
- * demolition; for an enemy camp, an enemy it spawned.
+ * work camp (a War Camp too), a Token of its kind ({@link worksType}) standing in its reach and not
+ * marked for demolition; for an enemy camp, an enemy it spawned.
  */
 export function isCampWork(camp, instance) {
     if (!camp || !instance || instance.id === camp.id) return false;
@@ -107,6 +121,16 @@ export function isCampWork(camp, instance) {
         return worksType(block, getTokenType(instance.typeId)) && reaches(camp, centreOf(instance));
     }
     return isEnemyCamp(camp) && instance.tether === camp.id && isEnemyDef(getTokenType(instance.typeId));
+}
+
+/**
+ * Whether `instance`, which a hero has already taken from `camp`, is still theirs to keep: what the
+ * camp hands out now ({@link isCampWork}), or, at a War Camp, the enemy they took wherever it now
+ * stands, until it falls (the file comment says why).
+ */
+export function keepsWork(camp, instance) {
+    if (isWarCamp(camp) && instance?.id !== camp.id && isEnemyDef(getTokenType(instance?.typeId))) return true;
+    return isCampWork(camp, instance);
 }
 
 /** Every Token `camp` hands out now, in the mat's order (unsorted). Empty for a Token that is not a camp. */
@@ -123,8 +147,8 @@ export function campWork(camp) {
 }
 
 /**
- * The ring a camp shows on hover, `{ x, y, r }` in mat units: a work camp's reach, the standard
- * one. Null for any other Token, an enemy camp included: its enemies stand where they spawned, so
+ * The ring a camp shows on hover, `{ x, y, r }` in mat units: a work camp's reach (a War Camp's too),
+ * the standard one. Null for any other Token, an enemy camp included: its enemies stand where they spawned, so
  * it has no ground.
  */
 export function reachRingOf(instance) {

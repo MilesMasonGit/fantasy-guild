@@ -13,6 +13,8 @@
 // these imports and fails if a named export goes missing. This comment only
 // exists to explain that failure to whoever hits it.
 
+import { isCombatSkill } from './skillRegistry.js';
+
 /**
  * The canonical sets a Token's classification fields may draw from.
  *
@@ -341,6 +343,21 @@ export function campOf(def) {
     const skill = typeof block.skill === 'string' ? block.skill.trim() : '';
     if (!skill) return null;
     return { skill };
+}
+
+/**
+ * ⭐ **A War Camp** is a camp whose skill is one of the combat styles (`camp: { skill: 'melee' }`,
+ * any of the four). A hero sent to it fights every enemy in its reach, one at a time, in the style of
+ * the weapon in their hands: the style the block names is only the mark, never a limit
+ * (`systems/board/Camps.js`).
+ */
+export function isWarCampBlock(block) {
+    return !!block && isCombatSkill(block.skill);
+}
+
+/** Whether a Token type is a War Camp ({@link isWarCampBlock}). */
+export function isWarCamp(def) {
+    return isWarCampBlock(campOf(def));
 }
 
 /**

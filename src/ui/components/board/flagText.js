@@ -5,6 +5,7 @@ import * as Demolition from '../../../systems/board/Demolition.js';
 import * as Growth from '../../../systems/board/Growth.js';
 import { tokenName, getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { isEnemyDef } from '../../../config/registries/enemyProfile.js';
+import { isWarCamp } from '../../../config/registries/tokenConstants.js';
 import { getAllItems } from '../../../config/registries/itemRegistry.js';
 import { neededToolOf, toolNeedPhrase } from '../../../config/registries/toolKinds.js';
 import { withArticle } from '../../../systems/effects/toolNames.js';
@@ -120,7 +121,10 @@ export function dockStatusLine(status) {
         case 'idle':
             if (status.needsJob) return t('orders.needsJob');
             if (status.waitingFor) return t('orders.waitingFor', { token: token(status.waitingFor) });
-            if (status.campId) return t('orders.campIdle', { camp: token(BoardState.getTokenById(status.campId)?.typeId) });
+            if (status.campId) {
+                const campType = BoardState.getTokenById(status.campId)?.typeId;
+                return t(isWarCamp(getTokenType(campType)) ? 'orders.warCampIdle' : 'orders.campIdle', { camp: token(campType) });
+            }
             return status.order === 'spot' ? t('orders.idleHere') : t('orders.idle');
         case 'returning': return status.limping ? t('orders.limpingHome') : t('orders.headingHome');
         default: return t('orders.atHall');
