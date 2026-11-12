@@ -180,7 +180,8 @@ describe('rare-find boosts have their own strength targets', () => {
         expect(saved.boostTargets.rareConsumable).toEqual([{ tier: 0, pct: 100 }, { tier: 6, pct: 200 }]);
         expect(saved.boostTargets.rareSupport).toEqual([{ tier: 0, pct: 50 }]);
         expect(boostTargetAt(saved, 'rareConsumable', 1)).toBe(100);
-        expect(boostTargetAt(saved, 'rareConsumable', 4)).toBe(200);
+        expect(boostTargetAt(saved, 'rareConsumable', 5)).toBe(100);
+        expect(boostTargetAt(saved, 'rareConsumable', 6)).toBe(200);
         expect(boostTargetAt(saved, 'rareSupport', 3)).toBe(50);
         expect(boostTargetAt(saved, 'consumable', 4)).toBe(20);
         // A kind the owner emptied stays empty.
