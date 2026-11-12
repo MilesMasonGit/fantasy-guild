@@ -19,8 +19,8 @@ build green) · bench-queued · eye-check · merged.*
 | 620 E1: Giant Harvest | engineer | `feat/giant-harvest` (`fx`) bed8bd4b | **eye-check waiting** (page tab giant, `_builds/2026-11-12-giant-harvest` = slim panel + E1 + a scene button, scratch 6abfecbe in `s3`); 8389 green (agent), work same; owner question on building bonus drops in the tab. After the look: wire the button on the branch over the slim panel, merge, then delete the scene | Thu | |
 | 620 E2: XP for Everyone | engineer | `feat/xp-for-everyone` (`rt`) 7391ec09 | **merged** 0f2f3499, pushed (665 files green, work same; no eye-check until a star uses it). Owner 2026-11-12: existing level-up animations are enough, so the new +N float and alert go (option C, follow-up queued when a builder is free) | Thu | Thu |
 | XP for Everyone shows the normal level-up animations (owner: existing are enough) | builder-lite | tbd | queued (third code job; waits for a free slot) | Thu | |
-| 620 E4: combat stars per style | builder | `feat/combat-stars` (`rt`) | building | Thu | |
-| 630 B2: the War Camp rule | engineer | `feat/war-camp` (`b2`) | building | Thu | |
+| 620 E4: combat stars per style | builder | `feat/combat-stars` (`rt`) 8140d948 | ready: 8416 green (agent); director gate and work check running. No eye-check until a star uses it; content agent authors the four constellations (C1) | Thu | |
+| 630 B2: the War Camp rule | engineer | `feat/war-camp` (`b2`) c9801991 | ready: 8422 green (agent); fixing the one-tick idle blip after a kill (also the Goblin Camp hunter) before the eye-check; marker: a camp whose skill is a combat style | Thu | |
 
 ## Director, briefs 590 and 600 (owner, 2026-11-11: both at once; effect renames T-403 after 590; retirements T-400 to T-402 checked now, owner deletes in the CMS)
 
@@ -312,6 +312,9 @@ Owner 2026-11-01: Guild Hall H1 and the walker glide need no look (marked looked
 None open.
 
 ## Questions for the owner
+
+- **War Camp, for the look:** bosses and guardians in a War Camp's reach, fought like every enemy (A, built) or skipped (B)?
+- **For the planning agent:** the Guard Tower now that enemies never attack: keep it as the no-hero way to stop spawns (A), drop it (B), or make it a War Camp variant (C).
 
 - ~~The rare twinkle; the Work potion label~~ **Answered 2026-11-11: leave the twinkle off (A); rename to Potion (B, done on `feat/effects-590` 2e6e78c5).**
 - ~~Enemies and selecting~~ **Answered 2026-11-11: B, enemies are selectable** like any draggable Token (sent to the S2 engineer).
