@@ -1,6 +1,6 @@
 // The QA panel's Limes section: make Limes speak by itself, on the mat or through a screen's small
 // Limes, with the gold outline on a target, as the lessons will.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useState } from 'react';
 import { openLimesStep, closeLimesStep, noteLimesMoved, LIMES_MAT } from '../components/limes/limesStore.js';

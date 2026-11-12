@@ -12,8 +12,9 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 
 /**
  * ⭐ The mat's size and the bounty numbers are game values, not Mat Tuner numbers, and a shipped
- * build has no Debug Mode and no QA tools (GDD §16: owner ruling 2026-10-06). The dev and perf
- * builds keep the tuner, which there starts at the game values.
+ * build (`vite build --mode ship`) has no Debug Mode and no QA tools (GDD §16: owner ruling
+ * 2026-10-06). The dev, perf and test builds (a plain `vite build`) keep the tuner, which there
+ * starts at the game values.
  */
 
 const TUNING_KEY = 'fantasy_guild_mat_tuning';
@@ -60,7 +61,7 @@ describe('the game values', () => {
 
 describe('a shipped build uses the game values whatever the tuner once stored', () => {
     it('the mat is MAT_STEPS, the bounties the quest game values, every other tuner number its default', async () => {
-        const { tuning, geometry, quests, reach, nearby } = await loadAs('production');
+        const { tuning, geometry, quests, reach, nearby } = await loadAs('ship');
         expect(geometry.matSteps()).toBe(12);
         expect(geometry.matW()).toBe(1920);
         expect(geometry.matH()).toBe(1040);
@@ -86,6 +87,14 @@ describe('a shipped build uses the game values whatever the tuner once stored', 
         const { geometry } = await loadAs('perf');
         expect(geometry.matSteps()).toBe(6);
     });
+
+    it('and a test build (a plain vite build, the owner’s desktop builds), whose QA panel has the Mat Tuner', async () => {
+        const { tuning, geometry, quests } = await loadAs('production');
+        expect(geometry.matSteps()).toBe(6);
+        expect(quests.questCap()).toBe(9);
+        expect(tuning.setMatTuning('matSteps', 8)).toBe(true);
+        expect(geometry.matSteps()).toBe(8);
+    });
 });
 
 describe('Settings has no Dev Tools tab in a shipped build', () => {
@@ -97,9 +106,10 @@ describe('Settings has no Dev Tools tab in a shipped build', () => {
     });
     afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
-    it('shipped: no Debug Mode anywhere', () => {
+    // Debug Mode only matters in a perf build, so a test build has no switch either.
+    it.each(['ship', 'production'])('%s: no Debug Mode anywhere', (mode) => {
         vi.stubEnv('DEV', false);
-        vi.stubEnv('MODE', 'production');
+        vi.stubEnv('MODE', mode);
         render(React.createElement(SettingsModal, { isOpen: true, onClose: () => {} }));
         expect(tabLabels().some(t => t.includes('Dev Tools'))).toBe(false);
         expect(document.body.textContent).not.toContain('Debug Mode');

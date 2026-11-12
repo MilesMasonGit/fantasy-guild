@@ -1,5 +1,5 @@
 // The QA panel's encounters section: one click sets up a guardian's camp, a boss's den and a Summoning Circle.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useState } from 'react';
 import { setUpEncountersScene } from './encountersDev.js';

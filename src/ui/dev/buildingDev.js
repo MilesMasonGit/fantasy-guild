@@ -1,5 +1,5 @@
 // The QA panel's building-nodes check: Wood Foundations on Stone, at the shore and on grass, and test builds that need each
-// ⚠️ DEV BUILDS ONLY: reached from `AtlasDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: reached from `AtlasDevSection`, which TestDashboard renders behind `QA_TOOLS`.
 
 import * as BoardState from '../../systems/board/BoardState.js';
 import * as Placement from '../../systems/board/Placement.js';

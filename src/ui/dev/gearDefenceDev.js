@@ -1,5 +1,5 @@
 // the QA panel's gear and defence check: armour and a shield resisting a Venomous enemy, a mage with and without a chestplate, a spear sundering a crab
-// ⚠️ DEV BUILDS ONLY: reached from `GearDefenceDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: reached from `GearDefenceDevSection`, which TestDashboard renders behind `QA_TOOLS`.
 
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';

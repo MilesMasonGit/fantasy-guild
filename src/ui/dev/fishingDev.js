@@ -1,5 +1,5 @@
 // the QA panel's fishing check (brief 230 S5): a lake, a river and a sea, each fished its own way, and a Dock
-// ⚠️ DEV BUILDS ONLY: reached from `FishingDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: reached from `FishingDevSection`, which TestDashboard renders behind `QA_TOOLS`.
 
 import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';

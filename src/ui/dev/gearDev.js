@@ -1,5 +1,5 @@
 // the QA panel's gear checks: a full Bank, and an older save whose heroes share one tool
-// ⚠️ DEV BUILDS ONLY: reached from `GearDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: reached from `GearDevSection`, which TestDashboard renders behind `QA_TOOLS`.
 
 import { GameState } from '../../state/GameState.js';
 import { SaveManager } from '../../systems/core/SaveManager.js';

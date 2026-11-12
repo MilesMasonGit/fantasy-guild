@@ -24,7 +24,9 @@
  * value into a module constant would freeze it at import.
  */
 
-/** Tile step in mat units, repeated here so this config file imports nothing. */
+import { QA_TOOLS } from './buildFlags.js';
+
+/** Tile step in mat units, repeated here so this config file imports nothing but the build flags. */
 const STEP_U = 160;
 
 /**
@@ -182,8 +184,8 @@ const RETIRED_DEFAULTS = Object.freeze({
     matSteps: [11]
 });
 
-/** Whether this build has a Mat Tuner: a dev or a perf build, never a shipped one. */
-const TUNABLE = !!(import.meta.env?.DEV || import.meta.env?.MODE === 'perf');
+/** Whether this build has a Mat Tuner: a dev, test (QA_TOOLS) or perf build, never a ship build. */
+const TUNABLE = !!(QA_TOOLS || import.meta.env?.MODE === 'perf');
 
 /** @type {Record<string, number>} */
 let values = { ...DEFAULTS };

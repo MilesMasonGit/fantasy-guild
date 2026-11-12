@@ -1,5 +1,5 @@
 // The QA panel's combat screen section: one click sets up two fights and an enemy nobody has fought; one a crowd of fights; one plays time away.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useState } from 'react';
 import { setUpCombatScreenScene, setUpCombatCrowd, playTimeAway } from './combatScreenDev.js';

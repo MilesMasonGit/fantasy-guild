@@ -1,5 +1,5 @@
 // the QA panel's enemy moves check: the owner's chicken (Peck, Scratch, Flutter) on a hero in Physical-resistant gear
-// ⚠️ DEV BUILDS ONLY: reached from `EnemyMovesDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: reached from `EnemyMovesDevSection`, which TestDashboard renders behind `QA_TOOLS`.
 
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';

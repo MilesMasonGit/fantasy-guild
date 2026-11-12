@@ -1,6 +1,6 @@
 // The QA panel's hero orders section: a work-beside-a-camp scene, a knock-out, a heal, an
 // old save with one pinned flag and one area flag, loaded, and the tutorial's two order steps.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useState } from 'react';
 import { setUpDragHintsScene, setUpHeroAlertsScene, levelUpAHero, setUpOrdersScene, knockOutAHero, healEveryone, loadOldFlagsSave, jumpTutorialTo, TUTORIAL_JUMPS } from './ordersDev.js';

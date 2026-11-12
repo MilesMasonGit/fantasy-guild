@@ -34,6 +34,7 @@ import HallSky from './components/board/HallSky.jsx';
 import HallCamera from './components/board/HallCamera.jsx';
 import { HallUpgradeDrawer, HERO_BAR_CLEAR_PX } from './components/drawer/HallUpgradeDrawer.jsx';
 import { getUpgradeDef } from '../config/guildUpgrades.js';
+import { QA_TOOLS } from '../config/buildFlags.js';
 import { TokenInspectPopup } from './components/board/TokenInspectPopup.jsx';
 import { FightPanelPopup } from './components/combat/FightPanelPopup.jsx';
 import { FightTabStrip } from './components/combat/FightTab.jsx';
@@ -397,8 +398,8 @@ const ReactRoot = () => {
                 </div>
             </div>
 
-            {/* Debug Mode exists in dev and perf builds only; a shipped build has no QA tools. */}
-            {(import.meta.env.DEV || (import.meta.env.MODE === 'perf' && debugMode)) && (
+            {/* The QA panel: dev and test builds always, a perf build behind Debug Mode, a ship build never. */}
+            {(QA_TOOLS || (import.meta.env.MODE === 'perf' && debugMode)) && (
                 <>
                     <TestDashboard />
                     {/**

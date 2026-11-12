@@ -1,5 +1,5 @@
 // the QA panel's work consumables check (brief 230 S6b): a forester with a Birdwatcher and a Coffee, and a miner who keeps theirs
-// ⚠️ DEV BUILDS ONLY: reached from `WorkConsumablesDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: reached from `WorkConsumablesDevSection`, which TestDashboard renders behind `QA_TOOLS`.
 
 import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';

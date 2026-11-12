@@ -1,5 +1,5 @@
 // the QA panel's Mining check (brief 230 S3): a vein that rests and refills all at once, drawn as the shared empty rock while it rests; Mines doubling its ore (not its gem), a Minecart speeding it
-// ⚠️ DEV BUILDS ONLY: reached from `MiningDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: reached from `MiningDevSection`, which TestDashboard renders behind `QA_TOOLS`.
 
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';

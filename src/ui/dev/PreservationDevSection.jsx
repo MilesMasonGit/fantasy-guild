@@ -1,5 +1,5 @@
 // The QA panel's Preservation section: a forge whose Ore a building keeps and one a Hall star keeps half the time, and an archer whose arrows a building keeps.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useEffect, useState } from 'react';
 import { setUpPreservationForges, setUpPreservationArcher, preservationReadout } from './preservationDev.js';

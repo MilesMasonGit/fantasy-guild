@@ -1,5 +1,5 @@
 // The QA panel's Mat dials: the free playmat's rules, collapsed until opened.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useState, useCallback } from 'react';
 import { RotateCcw } from 'lucide-react';

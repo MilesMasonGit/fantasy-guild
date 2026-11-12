@@ -1,5 +1,5 @@
 // The QA panel's Animation section: one button per mat effect, so each can be looked at on demand.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useState } from 'react';
 import { enemies, worked, everyToken, some, playOn, neighbours, dropLootFrom, dropRareFrom, setUpAnimationScene } from './animationDev.js';

@@ -1,5 +1,5 @@
 // The QA panel's Forestry section (brief 230 S2a): one click lays out a Forest that plants and regrows, a forester waiting on a Stump, a wild Stump with no Forest, and a Stump stopped for want of its seedling.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useEffect, useState } from 'react';
 import { setUpForestryScene, giveBirchSeedling, forestryReadout } from './forestryDev.js';

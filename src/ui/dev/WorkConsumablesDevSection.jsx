@@ -1,5 +1,5 @@
 // The QA panel's work consumables section (brief 230 S6b): one click sets a forester with a Birdwatcher and a Coffee beside a miner who keeps their Birdwatcher.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useEffect, useState } from 'react';
 import { setUpWorkConsumablesScene, workConsumablesReadout } from './workConsumablesDev.js';

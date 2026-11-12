@@ -1,5 +1,5 @@
 // The QA panel's tools-that-break section: a brittle woodaxe and sword, worked until they break.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useEffect, useState } from 'react';
 import { setUpBreakScene, rearmBreakScene, playBreakTimeAway, breakReadout, QA_BREAK_CHANCE } from './toolsBreakDev.js';

@@ -1,5 +1,5 @@
-// QA scenes for camps (brief 260 O2). DEV BUILDS ONLY: `CampsDevSection` is rendered behind
-// `import.meta.env.DEV`.
+// QA scenes for camps (brief 260 O2). QA BUILDS ONLY: `CampsDevSection` is rendered behind
+// `QA_TOOLS`.
 
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';

@@ -1,5 +1,5 @@
 // the QA panel's Orchards check (brief 230 S2b): fruit trees picked bare that fruit again in place beside their Orchard, an Orchard planting within its reach, a Bare tree with no Orchard staying Bare
-// ⚠️ DEV BUILDS ONLY: reached from `OrchardDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: reached from `OrchardDevSection`, which TestDashboard renders behind `QA_TOOLS`.
 
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';

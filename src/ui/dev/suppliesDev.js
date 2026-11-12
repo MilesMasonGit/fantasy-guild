@@ -1,5 +1,5 @@
 // the QA panel's supplies check: two heroes fighting Cows, one with two elixirs, one with food and a drink
-// ⚠️ DEV BUILDS ONLY: reached from `SuppliesDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: reached from `SuppliesDevSection`, which TestDashboard renders behind `QA_TOOLS`.
 
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';

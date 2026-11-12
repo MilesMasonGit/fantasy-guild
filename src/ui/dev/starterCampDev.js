@@ -1,5 +1,5 @@
 // The QA panel's Starter Camp tools: lay out the mat, then save it to the CMS
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders the section behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders the section behind `QA_TOOLS`.
 
 import { getTokenType, tokenName, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from '../../systems/board/BoardState.js';

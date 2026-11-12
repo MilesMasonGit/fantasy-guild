@@ -1,5 +1,5 @@
 // the QA panel's Lucky check: rare drop tables on two veins and an enemy, raised by a Lucky building and a Lucky Hall star
-// ⚠️ DEV BUILDS ONLY: reached from `LuckyDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: reached from `LuckyDevSection`, which TestDashboard renders behind `QA_TOOLS`.
 
 import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';

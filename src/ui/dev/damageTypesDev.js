@@ -1,5 +1,5 @@
 // the QA panel's damage types check: a Fire wand and an Ice wand against a Fire Elemental, a bow shooting arrows at a crab
-// ⚠️ DEV BUILDS ONLY: reached from `DamageTypesDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: reached from `DamageTypesDevSection`, which TestDashboard renders behind `QA_TOOLS`.
 
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';

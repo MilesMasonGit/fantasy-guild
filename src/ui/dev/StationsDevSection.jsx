@@ -1,5 +1,5 @@
 // The QA panel's station pools section (brief 230 S6a): one click lays out a Furnace that offers only smelting and a Smithy that offers only smithing.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useEffect, useState } from 'react';
 import { setUpStationsScene, stationsReadout } from './stationsDev.js';

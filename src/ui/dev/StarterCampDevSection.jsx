@@ -1,5 +1,5 @@
 // The QA panel's Starter Camp section.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useMemo, useState } from 'react';
 import { getAllTokenTypes } from '../../config/registries/tokenRegistry.js';

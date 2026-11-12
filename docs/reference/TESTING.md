@@ -66,6 +66,13 @@ port `preview_start` returns**, never a guessed one: another chat may hold
 `javascript_tool` first; a screenshot is the last resort (retry once, then
 switch method). Most past browser failures came from fighting a hidden pane.
 
+**Builds and the QA panel.** The dev server and a plain `npm run build` (and so
+`npm run tauri:build`, the owner's desktop test builds) carry the QA panel and
+its dev sections (`QA_TOOLS` in `src/config/buildFlags.js`). `npm run build:ship`
+and `npm run tauri:build:ship` leave them out: **a release is always made with
+`tauri:build:ship`**. `npm run build:perf` keeps its own rule (the panel behind
+Debug Mode, the perf section only).
+
 **Reading state.** Prefer `read_page`, `read_console_messages` and
 `javascript_tool` probes on `window.Game` and `window.GameState` (every entry
 and what it is for: [`WINDOW_GAME.md`](WINDOW_GAME.md)). Dynamic

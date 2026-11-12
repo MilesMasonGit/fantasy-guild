@@ -1,5 +1,5 @@
 // The QA panel's world map tools: pay for the frontier without playing for it
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders the Atlas section behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders the Atlas section behind `QA_TOOLS`.
 
 import * as World from '../../systems/world/World.js';
 import { CELL_STATE } from '../../systems/world/frontier.js';

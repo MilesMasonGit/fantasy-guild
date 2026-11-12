@@ -1,5 +1,5 @@
 // the QA panel's tools-that-break check: a brittle woodaxe and a brittle sword, worked until they break
-// ⚠️ DEV BUILDS ONLY: reached from `ToolsBreakDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: reached from `ToolsBreakDevSection`, which TestDashboard renders behind `QA_TOOLS`.
 
 import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
