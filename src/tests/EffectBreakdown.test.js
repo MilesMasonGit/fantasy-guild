@@ -59,11 +59,16 @@ const BAR = 'eb_bar';
 const SEED = 'eb_seed';
 const WHEAT_ITEM = 'eb_wheat';
 const GLOVES = 'eb_gloves';
+const QUIVER = 'eb_quiver';
 
 registerEffects({
     eb_quick_hands: {
         id: 'eb_quick_hands', name: 'Quick Hands',
         statements: [{ ...makeStatement(KEYWORD.PROVIDES), payload: { type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.05 } }]
+    },
+    eb_quiver_care: {
+        id: 'eb_quiver_care', name: 'Quiver Care',
+        statements: [{ ...makeStatement(KEYWORD.PROVIDES), payload: { type: EFFECT_TYPES.PRESERVATION, bucket: 'flat', value: 6, category: 'ammo' } }]
     },
     eb_draught: {
         id: 'eb_draught', name: 'Draught',
@@ -78,6 +83,7 @@ registerItems({
     [BAR]: item(BAR, 'Fixture Bar'),
     [SEED]: item(SEED, 'Fixture Seed'),
     [WHEAT_ITEM]: item(WHEAT_ITEM, 'Fixture Wheat'),
+    [QUIVER]: item(QUIVER, 'Quiver', { type: 'tool', effects: [{ effectId: 'eb_quiver_care', scale: 1 }] }),
     [GLOVES]: item(GLOVES, 'Gloves', { type: 'tool', effects: [{ effectId: 'eb_quick_hands', scale: 1 }] })
 });
 
@@ -318,6 +324,17 @@ describe('a hero\'s gear counts only while they work the Token', () => {
         const after = effectBreakdown(vein.id);
         expect(badge(after, EFFECT_KEY.SPEED).total).toBeCloseTo(15);
         expect(after.hero).toBeNull();
+    });
+
+    it('a carried rule narrowed to a kind reaches a read that names the item and its kind', () => {
+        hire({ equipment: [QUIVER] });
+        const vein = arrive(VEIN);
+        Orders.orderAt(HERO, AT);
+        // `CycleSavings.keepsCarried` asks with a list: the item, then its kind.
+        expect(TileModifiers.resolveAxis(vein.id, EFFECT_TYPES.PRESERVATION, 0, ['item_arrow', 'ammo'])).toBe(6);
+        expect(TileModifiers.resolveAxis(vein.id, EFFECT_TYPES.PRESERVATION, 0, 'item_arrow')).toBe(0);
+        expect(TileModifiers.explainAxis(vein.id, EFFECT_TYPES.PRESERVATION, 0, ['item_arrow', 'ammo']).contributions)
+            .toEqual([expect.objectContaining({ scope: 'hero', bucket: 'flat', value: 6 })]);
     });
 
     it('what a hero carries for a while is its own kind of line', () => {
