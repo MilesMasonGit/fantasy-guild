@@ -804,7 +804,7 @@ describe('drinks, work potions and fight elixirs', () => {
         expect(consumed.find(p => p.itemId === COFFEE)?.preserved).toBeUndefined();
     });
 
-    it('a work potion drunk every cycle is kept by a Work potion rule, not by a Drink one', () => {
+    it('a work potion drunk every cycle is kept by a Potion rule, not by a Drink one', () => {
         InventoryManager.addItem(TEA, 10);
         minerOn('pv_potion_keep', [TEA]);
         run(3200);
