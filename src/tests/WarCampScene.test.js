@@ -12,6 +12,7 @@ import * as Flags from '../systems/board/Flags.js';
 import { AudioSystem } from '../systems/core/AudioSystem.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
+import { STANDARD_REACH_U } from '../config/registries/reachRegistry.js';
 import { flagStatusLine } from '../ui/components/board/flagText.js';
 import { setUpWarCamp } from '../ui/dev/warCampScene.js';
 import * as fixtures from '../../bench/fixtures.mjs';
@@ -51,11 +52,15 @@ describe('⭐ the War Camp QA scene', () => {
         GameState.initNew();
         InventoryManager.init();
         BoardCombat.clearAll();
-        fixtures.placeAt('token_guild_hall', Math.round(matW() / 2), Math.round(matH() / 2));
+        const hall = fixtures.placeAt('token_guild_hall', Math.round(matW() / 2), Math.round(matH() / 2));
+        // A Goblin Camp where the Starter Camp has one, left below the Hall: the scene keeps clear of it.
+        const goblins = fixtures.placeAt('token_goblin_camp', hall.x - 480, hall.y + 327);
 
         const res = setUpWarCamp();
         expect(res).toMatchObject({ ok: true, inReach: 4 });
+        expect(res.where).not.toBe('left below the Hall');
         const camp = BoardState.getTokenById(res.campId);
+        expect(Math.hypot(goblins.x - camp.x, goblins.y - camp.y)).toBeGreaterThan(STANDARD_REACH_U + 200);
         expect(Camps.isWarCamp(camp)).toBe(true);
         const hand = GameState.state.heroes.find(h => h.name === res.name);
         expect(Flags.pinnedIdOf(hand.id)).toBe(camp.id);

@@ -10,6 +10,7 @@ import * as MatPlacement from '../../systems/board/MatPlacement.js';
 import * as HeroMotion from '../../systems/board/HeroMotion.js';
 import * as Camps from '../../systems/board/Camps.js';
 import * as Orders from '../../systems/board/Orders.js';
+import { reachRadius } from '../../systems/board/nearby.js';
 import * as HeroManager from '../../systems/hero/HeroManager.js';
 import * as EquipmentManager from '../../systems/equipment/EquipmentManager.js';
 import { InventoryManager } from '../../systems/inventory/InventoryManager.js';
@@ -33,6 +34,9 @@ const IN_REACH = Object.freeze([
 
 /** One goblin laid just outside its reach, never fought. */
 const OUTSIDE = Object.freeze({ typeId: 'token_goblin', dx: 300, dy: 70 });
+
+/** How far past the reach an enemy camp must stand: its spawns land round it. */
+const CAMP_CLEARANCE = 200;
 
 /** Where the camp is tried, from the Hall: left below it, right below, left above, right above. */
 const TRIES = Object.freeze([
@@ -73,7 +77,8 @@ function qaFighter(name, level) {
  * a Crab) and a Goblin just outside it, and a QA Fighter at 40 (Iron Sword, Steak) sent to it. They
  * walk out, fight the nearest enemy in reach, then the next, one at a time, leave the Goblin outside
  * alone and wait at the camp once none is left ("Nothing to fight near QA War Camp"). Tried left
- * below the Hall, then right below, left above and right above, wherever everything fits.
+ * below the Hall, then right below, left above and right above, wherever everything fits clear of
+ * every enemy camp (the Starter Camp's Goblin Camp included).
  * ⚠️ Changes the game, like Spawn Party.
  * @returns {{ ok: boolean, error?: string, where?: string, name?: string, campId?: string, inReach?: number, outsideId?: string }}
  */
@@ -90,6 +95,11 @@ export function setUpWarCamp() {
     for (const [where, off] of TRIES) {
         const camp = put(QA_WAR_CAMP, { x: hall.x + off.x, y: hall.y + off.y }, 60);
         if (!camp) continue;
+        // Clear of every enemy camp, so its spawns never land in the reach and the wait shows.
+        if (BoardState.tokens().some(t => Camps.isEnemyCamp(t) && Math.hypot(t.x - camp.x, t.y - camp.y) <= reachRadius() + CAMP_CLEARANCE)) {
+            BoardState.removeToken(camp.id);
+            continue;
+        }
         const laid = [];
         let fits = true;
         for (const e of [...IN_REACH, OUTSIDE]) {
