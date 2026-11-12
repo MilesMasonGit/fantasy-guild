@@ -29,7 +29,7 @@ export const CARRIED_KINDS = Object.freeze([
     { id: CARRIED_KIND.AMMO, label: 'Ammo', phrase: 'ammo', hint: 'An arrow, each time a Ranged hero shoots one.' },
     { id: CARRIED_KIND.FOOD, label: 'Food', phrase: 'Food', hint: 'A meal, each time a hurt hero eats one, in a fight or out.' },
     { id: CARRIED_KIND.DRINK, label: 'Drink', phrase: 'a drink', hint: 'A drink, each time a hero starts a new dose as a work cycle starts.' },
-    { id: CARRIED_KIND.POTION, label: 'Work potion', phrase: 'a work potion', hint: 'A work potion, drunk for each cycle of its skill.' },
+    { id: CARRIED_KIND.POTION, label: 'Work potion', phrase: 'a work potion', hint: 'A work potion, drunk for each cycle of its skill; also a Consumable its own rule spends as it fires.' },
     { id: CARRIED_KIND.ELIXIR, label: 'Fight elixir', phrase: 'a fight elixir', hint: 'An elixir, each time a new dose is drunk as a fight starts.' },
     { id: CARRIED_KIND.BAIT, label: 'Bait', phrase: 'bait', hint: 'Bait, each time a catch would spend one.' }
 ]);

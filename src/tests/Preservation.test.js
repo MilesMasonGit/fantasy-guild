@@ -79,6 +79,9 @@ const WORM = 'pv_worm';
 const ROD = 'pv_rod';
 const TROUT = 'pv_trout';
 const SALMON = 'pv_salmon';
+const KIT = 'pv_kit';
+const PIE = 'pv_pie';
+const LURE = 'pv_lure';
 
 const forTheCycle = (effectId, skill = null) => ({
     ...makeStatement(KEYWORD.APPLIES),
@@ -91,13 +94,21 @@ const forTheFight = (effectId) => ({
     when: { event: 'COMBAT_ENGAGED', scope: 'self' },
     payload: { effectId, scale: 1, durationMs: 0, forFight: true, chance: 100 }
 });
+/** A grant of one Bar that spends one of the item carrying it each time it fires, on `when` (null: each cycle's end). */
+const selfSpending = (when) => ({
+    ...makeStatement(KEYWORD.GRANTS), when, chargeDelta: -1,
+    payload: { type: 'BONUS_DROP', itemId: 'pv_bar', quantity: 1, chance: 100 }
+});
 const boost = (type, value) => ({ ...makeStatement(KEYWORD.PROVIDES), payload: { type, bucket: 'percentage', value }, to: null });
 registerEffects({
     pv_fx_quick: { id: 'pv_fx_quick', name: 'Quick', statements: [boost('WORK_TIME', -0.1)] },
     pv_fx_coffee: { id: 'pv_fx_coffee', name: 'Coffee Drink', statements: [forTheCycle('pv_fx_quick')] },
     pv_fx_tea: { id: 'pv_fx_tea', name: 'Mining Tea', statements: [forTheCycle('pv_fx_quick', 'mining')] },
     pv_fx_valor: { id: 'pv_fx_valor', name: 'Valor', statements: [{ ...boost('DAMAGE', 1), payload: { type: 'DAMAGE', bucket: 'flat', value: 1 } }] },
-    pv_fx_elixir: { id: 'pv_fx_elixir', name: 'Elixir of Valor', statements: [forTheFight('pv_fx_valor')] }
+    pv_fx_elixir: { id: 'pv_fx_elixir', name: 'Elixir of Valor', statements: [forTheFight('pv_fx_valor')] },
+    // Items that spend themselves as their rule fires: one unit a firing (`HeroEffects.payLoadoutCost`).
+    pv_fx_kit: { id: 'pv_fx_kit', name: 'Prepared', statements: [selfSpending({ event: 'CYCLE_START', scope: 'self' })] },
+    pv_fx_lure: { id: 'pv_fx_lure', name: 'Lure', statements: [selfSpending(null)] }
 });
 
 const material = (id, name, extra = {}) => ({ id, name, type: 'material', stackable: true, equipSlot: '', sprite: 'i_wheat', ...extra });
@@ -115,7 +126,10 @@ registerItems({
     [TEA]: material(TEA, 'Mining Tea', { equipSlot: 'consumable', effects: [{ effectId: 'pv_fx_tea' }] }),
     [ELIXIR]: material(ELIXIR, 'Valor', { equipSlot: 'consumable', effects: [{ effectId: 'pv_fx_elixir' }] }),
     [WORM]: material(WORM, 'Worm', { equipSlot: 'consumable' }),
-    [ROD]: { id: ROD, name: 'Wooden Rod', type: 'tool', equipSlot: 'hand', stackable: true, sprite: 'i_rod_wood', tool: { kind: 'fishing_rod', tier: 1 } }
+    [ROD]: { id: ROD, name: 'Wooden Rod', type: 'tool', equipSlot: 'hand', stackable: true, sprite: 'i_rod_wood', tool: { kind: 'fishing_rod', tier: 1 } },
+    [KIT]: material(KIT, 'Prep Kit', { equipSlot: 'trinket', effects: [{ effectId: 'pv_fx_kit' }] }),
+    [PIE]: material(PIE, 'Lucky Pie', { type: 'food', equipSlot: 'food', restoreAmount: 5, effects: [{ effectId: 'pv_fx_kit' }] }),
+    [LURE]: material(LURE, 'Shiny Lure', { equipSlot: 'trinket', effects: [{ effectId: 'pv_fx_lure' }] })
 });
 
 registerRecipePools({
@@ -184,6 +198,9 @@ registerTokenTypes({
     pv_drink_keep: building('pv_drink_keep', [keeps(AT_VEIN, 100, CARRIED_KIND.DRINK)]),
     pv_potion_keep: building('pv_potion_keep', [keeps(AT_VEIN, 100, CARRIED_KIND.POTION)]),
     pv_mining_keep: building('pv_mining_keep', [keeps(AT_VEIN, 100, 'mining')]),
+    pv_kit_keep: building('pv_kit_keep', [keeps(AT_VEIN, 100, KIT)]),
+    pv_kit_keep_0: building('pv_kit_keep_0', [keeps(AT_VEIN, 0, KIT)]),
+    pv_lure_keep: building('pv_lure_keep', [keeps(AT_VEIN, 100, LURE)]),
     pv_lake: {
         id: 'pv_lake', name: 'Lake', tokenType: 'resource', rarity: 'common', theme: 'fixture', sprite: 't_lake_small', requiresHero: true,
         uses: null, tags: ['water'],
@@ -541,18 +558,27 @@ describe('a Field\'s owed seed', () => {
         return field;
     }
 
-    it('stays owed after a harvest that kept its materials, and the next harvest pays it', () => {
+    it('is never paid for that crop when the harvest that owed it kept its materials (owner, 2026-11-11)', () => {
         holdStar(100, { category: 'farming' });
         const field = ripeField();
         run(1100);
         expect(made(WHEAT)).toBe(1);
         expect(Fields.fieldState(field).load).toBe(2);
-        expect(field.field.seedOwed).toBe(true);
+        expect(field.field.seedOwed).toBeUndefined();
         expect(InventoryManager.getItemCount(SEED)).toBe(1);
 
+        // Without the rule, the crop's later harvests owe nothing: the seed stays in the Bank.
         dropStar();
+        run(2000);
+        expect(made(WHEAT)).toBe(3);
+        expect(InventoryManager.getItemCount(SEED)).toBe(1);
+
+        // The last harvest sowed the next crop, which owes its own seed; its first harvest pays it.
+        expect(Fields.stageOf(field)).toBe(Fields.STAGE.GROWING);
+        run(20200);
+        expect(Fields.stageOf(field)).toBe(Fields.STAGE.RIPE);
+        expect(field.field.seedOwed).toBe(true);
         run(1000);
-        expect(made(WHEAT)).toBe(2);
         expect(field.field.seedOwed).toBeUndefined();
         expect(InventoryManager.getItemCount(SEED)).toBe(0);
     });
@@ -813,6 +839,80 @@ describe('drinks, work potions and fight elixirs', () => {
         minerOn('pv_mining_keep', [COFFEE]);
         run(1500);
         expect(InventoryManager.getItemCount(COFFEE)).toBe(2);
+    });
+});
+
+describe('items that spend themselves as their rule fires (owner, 2026-11-11)', () => {
+    /** A miner on the vein carrying `grid`, with 5 of each in the Bank and `beside` next to the vein. */
+    function minerCarrying(beside, grid) {
+        const miner = makeHero('miner');
+        grid.forEach((id, i) => { miner.equipment[i] = id; InventoryManager.addItem(id, 5); });
+        put('pv_vein', HERE);
+        if (beside) put(beside, BESIDE);
+        Orders.orderAt(miner.id, HERE);
+        return miner;
+    }
+
+    it('at 100 %, a kit spent as each cycle starts fires every time and stays in the Bank', () => {
+        minerCarrying('pv_kit_keep', [KIT]);
+        run(3200);
+        expect(SpriteLayer.countOnBoard(BAR)).toBeGreaterThanOrEqual(3);
+        expect(InventoryManager.getItemCount(KIT)).toBe(5);
+    });
+
+    it('at 0 % and with no rule, each firing spends one', () => {
+        minerCarrying('pv_kit_keep_0', [KIT]);
+        run(3200);
+        const fired = SpriteLayer.countOnBoard(BAR);
+        expect(fired).toBeGreaterThanOrEqual(3);
+        expect(InventoryManager.getItemCount(KIT)).toBe(5 - fired);
+    });
+
+    it('a rule keeping Food keeps a Food that spends itself, beside a rule naming another item', () => {
+        put('pv_food_keep_vein', BELOW);
+        minerCarrying('pv_lure_keep', [PIE]);
+        run(3200);
+        expect(SpriteLayer.countOnBoard(BAR)).toBeGreaterThanOrEqual(3);
+        expect(InventoryManager.getItemCount(PIE)).toBe(5);
+    });
+
+    it('a grant spent as each cycle ends is kept too, from a Hall star naming the item', () => {
+        holdStar(100, { category: LURE });
+        minerCarrying(null, [LURE]);
+        run(3200);
+        expect(SpriteLayer.countOnBoard(BAR)).toBeGreaterThanOrEqual(3);
+        expect(InventoryManager.getItemCount(LURE)).toBe(5);
+
+        dropStar();
+        const before = SpriteLayer.countOnBoard(BAR);
+        run(2000);
+        const fired = SpriteLayer.countOnBoard(BAR) - before;
+        expect(fired).toBeGreaterThanOrEqual(2);
+        expect(InventoryManager.getItemCount(LURE)).toBe(5 - fired);
+    });
+
+    it('⚠️ draws once per firing when a rule offers the chance, and nothing without one', () => {
+        const draws = (beside) => {
+            GameState.initNew();
+            TileModifiers.clearAll();
+            SpriteLayer.init();
+            InventoryManager.init();
+            GameState.state.heroes = [];
+            minerCarrying(beside, [KIT]);
+            const spy = vi.spyOn(Math, 'random');
+            const before = SpriteLayer.countOnBoard(BAR);
+            run(3200);
+            const n = spy.mock.calls.length;
+            spy.mockRestore();
+            return { n, fired: SpriteLayer.countOnBoard(BAR) - before };
+        };
+        const none = draws(null);
+        expect(draws('pv_kit_keep_0').n).toBe(none.n);
+        // A rule elsewhere (the lure's) offers this kit nothing: no draw.
+        expect(draws('pv_lure_keep').n).toBe(none.n);
+        const kept = draws('pv_kit_keep');
+        expect(kept.fired).toBe(none.fired);
+        expect(kept.n).toBe(none.n + kept.fired);
     });
 });
 

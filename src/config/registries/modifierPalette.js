@@ -402,7 +402,7 @@ export const MODIFIER_PALETTE = [
         categories: 'skillOrCarried',
         shape: MODIFIER_SHAPES.PROC,
         group: 'Support',
-        hint: 'A chance a cycle uses none of its materials; it also keeps ammo, Food, drinks, potions and bait from being used up. In percent. Pick a skill to keep only that work\'s materials, or a kind of carried thing (Ammo, Food…) or one item to keep only those.'
+        hint: 'A chance a cycle uses none of its materials; it also keeps ammo, Food, drinks, potions and bait from being used up, and an item its own rule spends as it fires. In percent. Pick a skill to keep only that work\'s materials, or a kind of carried thing (Ammo, Food…) or one item to keep only those.'
     },
     {
         /**

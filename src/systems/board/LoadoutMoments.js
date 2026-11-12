@@ -2,6 +2,7 @@
 
 import * as HeroManager from '../hero/HeroManager.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
+import * as CycleSavings from './CycleSavings.js';
 import * as StatusApplication from './StatusApplication.js';
 import * as DealDamage from './DealDamage.js';
 import * as EffectActions from './EffectActions.js';
@@ -135,7 +136,8 @@ export function fire(instanceId, heroId, eventId) {
         }
 
         if (!acted) continue;
-        if (!statement.dosed) HeroEffects.payLoadoutCost(statement);
+        // Preservation may keep the item (`CycleSavings.payItemRule`), read here at the Token or the enemy.
+        if (!statement.dosed) CycleSavings.payItemRule(instanceId, statement);
         // A dose says itself once, in the hero's "used" bubble as it is drunk, not on every firing.
         if (!statement.dosed) EffectFeedback.announce(instanceId, statement);
         fired += 1;

@@ -287,8 +287,8 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     );
     const failed = failChance > 0 && Math.random() * 100 < failChance;
 
-    // The cycle still runs, makes its outputs and spends its charges; a Field's owed seed stays
-    // owed, and a build that kept its materials remembers paying nothing.
+    // The cycle still runs, makes its outputs and spends its charges; a Field's owed seed is never
+    // paid for that crop, and a build that kept its materials remembers paying nothing.
     const preserved = keepChance > 0 && !failed && CycleSavings.rollChance(keepChance);
     if (keepChance > 0 && !preserved) pay();
 
@@ -376,7 +376,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
             // could apply a status the hero cannot afford.
             if (!HeroEffects.canPayLoadoutCost(application)) continue;
             if (StatusApplication.applyAt(id, application)) {
-                HeroEffects.payLoadoutCost(application);
+                CycleSavings.payItemRule(id, application);
                 EffectFeedback.announce(id, application);
             }
         }
@@ -411,7 +411,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
 
     // A Field spends one harvest of its load; the last sows its crop again, growing from the moment
     // this cycle ended (`overMs` into the tick), or stops it without a seed (`Fields.js`).
-    if (isField) Fields.harvested(instance, def, { overMs, refreshed, preserved });
+    if (isField) Fields.harvested(instance, def, { overMs, refreshed });
 
     // The board's universal unit of work. One kill counts as one cycle too, so combat feeds this
     // exactly as production does.
