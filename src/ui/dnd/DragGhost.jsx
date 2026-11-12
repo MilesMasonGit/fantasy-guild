@@ -103,8 +103,9 @@ export const FlagGhost = ({ payload }) => {
  * down-right (the only Tokens with a shadow at all) and a few pixels of upward offset, like a
  * real object picked up off a table. A 'slight' scale-up is impossible: from a 64px source
  * there is nothing between 128 and 192, and anything between them lands off the pixel grid.
+ * A selected Token's preview at the pointer is this ghost too (`SelectedTokenHints`).
  */
-const TokenGhost = ({ payload }) => {
+export const TokenGhost = ({ payload }) => {
     const artScale = boardArtSteps(liveBoardFit());
     const size = tokenSizeFor(TOKEN_SURFACE.CARRY, payload.typeId, artScale);
     return (

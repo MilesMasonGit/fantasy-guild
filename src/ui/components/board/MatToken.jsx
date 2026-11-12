@@ -40,6 +40,7 @@ import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { useDrawn, isDrawn } from '../../dev/perf/drawSwitches.js';
 import { QuestPosterItem } from './QuestPoster.jsx';
 import { takeSpawn, playSpawn } from './spawnMotion.js';
+import { TOKEN_FLIGHT_FX, TOKEN_FLIGHT_MS, playTokenFlight } from './tokenFlight.js';
 import { FX_FRAME_MS, playPoses } from './fx/pixelSteps.js';
 import { takeSettle, playSettle } from './fx/regionSettle.js';
 import { useSupportLit } from './supportLit.js';
@@ -292,6 +293,16 @@ export const MatToken = React.memo(function MatToken({
         return () => clearTimeout(timer);
     }, [dragging]);
 
+    // Moved by right-click (`tokenFlight.js`): the engine has it on its new spot already, and it
+    // flies there from `flight` (its old point) instead of sliding. Kept for the flight's length.
+    const [flight, setFlight] = React.useState(null);
+    React.useEffect(() => {
+        if (!flight) return undefined;
+        const timer = setTimeout(() => setFlight(null), TOKEN_FLIGHT_MS + 80);
+        return () => clearTimeout(timer);
+    }, [flight]);
+    const still = skipSlide || !!flight;
+
     const [landing, setLanding] = React.useState(false);
     const landingTimer = React.useRef(null);
     const land = () => {
@@ -358,7 +369,7 @@ export const MatToken = React.memo(function MatToken({
         id,
         boxHalf,
         pxPerUnit: fit * (globalThis.devicePixelRatio || 1),
-        still: skipSlide || !walkDrawn,
+        still: still || !walkDrawn,
         px,
         py,
         artRef,
@@ -371,7 +382,7 @@ export const MatToken = React.memo(function MatToken({
         willChange: 'contents',
         width: boxPx,
         height: boxPx,
-        transition: skipSlide || (walking && !walkDrawn)
+        transition: still || (walking && !walkDrawn)
             ? 'none'
             : walking
                 ? (walkGlide ?? 'none')
@@ -381,7 +392,7 @@ export const MatToken = React.memo(function MatToken({
         top,
         width: boxPx,
         height: boxPx,
-        transition: skipSlide
+        transition: still
             ? 'none'
             : walking
                 ? `left ${TICK_INTERVAL_MS}ms linear, top ${TICK_INTERVAL_MS}ms linear`
@@ -421,8 +432,25 @@ export const MatToken = React.memo(function MatToken({
         const wait = takeSettle(id);
         if (wait != null && isDrawn('tokenFx')) playSettle([artRef.current, overlayRef.current], wait);
     };
-    useTokenEvent(UI_EVENTS.UI_TOKEN_FX, id, (p) => { if (p?.fx === 'settle') settle(); });
+    useTokenEvent(UI_EVENTS.UI_TOKEN_FX, id, (p) => {
+        if (p?.fx === 'settle') settle();
+        else if (p?.fx === TOKEN_FLIGHT_FX) setFlight({ x: p.fromX, y: p.fromY });
+    });
     React.useLayoutEffect(settle, []);   // eslint-disable-line react-hooks/exhaustive-deps
+
+    // The flight plays once the box stands on its new spot: that draw may come before or after the
+    // one that holds `flight`, so it waits for the point to differ from where it flew from.
+    const flownRef = React.useRef(null);
+    React.useLayoutEffect(() => {
+        if (!flight || flownRef.current === flight) return;
+        const dx = flight.x - px;
+        const dy = flight.y - py;
+        if (!Number.isFinite(dx) || !Number.isFinite(dy) || (dx === 0 && dy === 0)) return;
+        flownRef.current = flight;
+        if (!isDrawn('tokenFx')) return;
+        playTokenFlight(artRef.current, dx, dy, { unit: artScale });
+        playTokenFlight(overlayRef.current, dx, dy, { unit: artScale });
+    }, [flight, px, py]);   // eslint-disable-line react-hooks/exhaustive-deps
 
     // Just spawned: pops out of its spawner and slides to its spot, on both boxes alike. Read once,
     // at mount, so a Token already on the mat never replays it.

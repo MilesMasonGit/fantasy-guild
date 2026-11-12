@@ -96,6 +96,11 @@ export function useSelectedHeroId() {
     return useSyncExternalStore(subscribeSelection, selectedHeroId, selectedHeroId);
 }
 
+/** React: the selected Token's instance id, or null. */
+export function useSelectedTokenId() {
+    return useSyncExternalStore(subscribeSelection, selectedTokenId, selectedTokenId);
+}
+
 /**
  * Drop a selection whose hero or Token is no longer there (a Token used up, moved off the mat or
  * turned into another; a hero dismissed).

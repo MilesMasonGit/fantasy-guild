@@ -17,6 +17,7 @@ import { HeroBubbleLayer } from './HeroBubbleLayer.jsx';
 import { strikesLive, heroAnimationState, hitSkillOf, hitsOnAttack } from './hitAnimations.js';
 import { FlagLayer } from './FlagLayer.jsx';
 import { OrderDragLine } from './OrderDragLine.jsx';
+import { SelectedTokenHints } from './SelectedTokenHints.jsx';
 import { heroOutline } from './spriteOutline.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
 import { WorkPlateLayer } from './WorkPlateLayer.jsx';
@@ -672,6 +673,8 @@ export const MatBoard = React.memo(function MatBoard({
             <OrderLighting />
             {/* `MAT_Z.RINGS`: and a marching dashed line from them to where they would be sent. */}
             <OrderDragLine matRef={rootRef} />
+            {/* A selected Token's ghost at the pointer, and where a right-click would move it (the ring's). */}
+            <SelectedTokenHints matRef={rootRef} />
 
             {/* `MAT_Z.RINGS`: the reach ring of the Token hovered or in the hand, and its dots. */}
             {ringsDrawn && <MatRings hoveredCentre={hoveredCentre} boardTokens={tokens} matRef={rootRef} />}

@@ -72,6 +72,16 @@ export function spawnPeak(dx, dy, over = 0, unit = 1) {
  */
 export function playSpawn(el, dx, dy, { unit = 1, over = 0 } = {}) {
     const poses = arcPoses(dx, dy, { unit, peak: spawnPeak(dx, dy, over, unit), steps: SPAWN_STEPS, ms: SPAWN_POSE_MS });
+    return playTokenHop(el, poses, unit);
+}
+
+/**
+ * A hop's poses (`arcPoses`) played on one of a mat Token's boxes, as the spawn's pop-out plays
+ * them: added on top of the box's own transform, on the main thread while it plays (the warnings
+ * at {@link playSpawn}). The right-click move's flight plays here too (`tokenFlight.js`).
+ * @returns {Animation|null}
+ */
+export function playTokenHop(el, poses, unit = 1) {
     const { keyframes, duration } = heldPoses(poses.map(({ ms, x, y }) => ({ ms, x, y })), { unit });
     const anim = animateFx(el, keyframes, { duration, composite: 'add' });
     if (!anim) return null;

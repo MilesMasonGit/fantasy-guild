@@ -21,7 +21,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../systems/core/engineEvents.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { resetMatTuning } from '../config/matTuning.js';
+import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { DeckDndProvider, DeckDndContext } from '../ui/dnd/DndKit.jsx';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
@@ -35,7 +35,10 @@ import { dropOnMat, matAccepts } from '../ui/components/board/dropOnMat.js';
 import { rightClickAt, rightClickEvent } from '../ui/components/board/rightClickOrders.js';
 import { setMatBankLocked } from '../ui/hooks/useMatBankLock.js';
 import { setMapMode, MAP_MODE } from '../ui/hooks/useMapMode.js';
-import { selectHero, pickToken, clearSelection, getSelection, selectedHeroId } from '../ui/hooks/useMatSelection.js';
+import { selectHero, pickToken, clearSelection, getSelection, selectedHeroId, selectedTokenId } from '../ui/hooks/useMatSelection.js';
+import { TOKEN_FLIGHT_FX, TOKEN_FLIGHT_MS } from '../ui/components/board/tokenFlight.js';
+import { HOP_POSES, HOP_POSE_MS } from '../ui/utils/lootArc.js';
+import { getTokenPreview } from '../ui/components/board/selectedTokenPreview.js';
 import * as fixtures from '../../bench/fixtures.mjs';
 
 // A hero's figure takes a press only on a drawn pixel; jsdom draws none.
@@ -551,15 +554,15 @@ describe('⭐ orders land on the mat only', () => {
         expect(Flags.needsJob(hero.id)).toBe(false);
     });
 
-    it('a selected Token (an enemy too) orders no hero: its move is the next phase', () => {
+    it('a selected Token (an enemy too) orders no hero: a right-click moves the Token', () => {
         const [hero] = newBoard();
         const goblin = fixtures.placeAt('bench_goblin', 600, 300);
-        const tree = fixtures.placeAt('rc_tree', 900, 300);
         expect(pickToken(goblin.id)).toBe(true);
         const before = JSON.stringify(BoardState.getFlags());
-        expect(rightClickAt({ x: tree.x, y: tree.y })).toBeNull();
-        expect(rightClickAt(PRIOR, { heroUnder: hero.id })).toBeNull();
+        expect(rightClickAt({ x: 1200, y: 700 })).toMatchObject({ success: true });
+        expect(rightClickAt({ x: 1300, y: 760 }, { heroUnder: hero.id })).toMatchObject({ success: true });
         expect(JSON.stringify(BoardState.getFlags())).toBe(before);
+        expect(Flags.needsJob(hero.id)).toBe(false);
     });
 });
 
@@ -664,5 +667,243 @@ describe('⭐ while a hero is selected, the drag’s hints show at the pointer',
         expect(view.container.querySelector('svg')).toBeNull();
         act(() => { pickToken(tree.id); });
         expect(view.container.querySelector('svg')).toBeNull();
+    });
+});
+
+describe('⭐ a right-click with a Token selected moves it, as a drop there does', () => {
+    /** The Token dropped there, as the mat's drag gives it (`MatTokenGrab`'s payload). */
+    function dropToken(token, point) {
+        const payload = { kind: DRAG_KIND.TOKEN, typeId: token.typeId, from: { instanceId: token.id } };
+        return matAccepts(payload) ? dropOnMat(payload, point) : null;
+    }
+    function rightClickToken(token, point) {
+        pickToken(token.id);
+        return rightClickAt(point);
+    }
+
+    /**
+     * What a move did, comparable between two boards built alike: every Token by type and place,
+     * the callouts said, the working hero's job and where they are, now and a second later.
+     */
+    function moveOutcome(build, act) {
+        const { token, point, hero = null } = build();
+        const label = new Map(BoardState.tokens().map(t => [t.id, `${t.typeId}#${t.x},${t.y}`]));
+        const norm = (v) => {
+            let str = JSON.stringify(v ?? null);
+            for (const [id, name] of label) str = str.split(id).join(name);
+            return JSON.parse(str);
+        };
+        const said = [];
+        const offs = [
+            EventBus.subscribe(UI_EVENTS.UI_TOKEN_ALERT, (p) => said.push(p)),
+            EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, (p) => said.push(p)),
+            // Health regen ticks on a clock of its own, whichever way the move was made.
+            EventBus.subscribe(ENGINE_EVENTS.HEROES_UPDATED, (p) => { if (p?.source !== 'regen') said.push({ updated: p }); })
+        ];
+        const look = () => norm({
+            tokens: BoardState.tokens().map(t => ({ id: t.id, x: t.x, y: t.y, cycle: t.cycleElapsedMs ?? 0 })),
+            hero: hero && {
+                works: BoardState.workTokenOf(hero.id),
+                body: { ...BoardState.heroBodyOf(hero.id) },
+                status: (({ state, instanceId }) => ({ state, instanceId }))(Flags.statusOf(hero.id))
+            }
+        });
+        const result = act(token, point);
+        const now = look();
+        run(1000);
+        const later = look();
+        for (const off of offs) off();
+        return norm({ result, said, now, later });
+    }
+
+    function bothWays(build) {
+        clearSelection();
+        const byDrop = moveOutcome(build, dropToken);
+        const byRightClick = moveOutcome(build, rightClickToken);
+        clearSelection();
+        return { byDrop, byRightClick };
+    }
+
+    const cases = [
+        ['a free spot: the Token worked moves, its hero walks after it', () => {
+            const [hero] = newBoard();
+            const token = BoardState.getTokenById(BoardState.workTokenOf(hero.id));
+            return { token, hero, point: { x: 700, y: 820 } };
+        }],
+        ['a crowded spot: nudged to the nearest legal one', () => {
+            const [hero] = newBoard();
+            const token = BoardState.getTokenById(BoardState.workTokenOf(hero.id));
+            const vein = fixtures.placeAt('rc_vein', 900, 600);
+            return { token, hero, point: { x: vein.x + 10, y: vein.y } };
+        }],
+        ['an enemy', () => {
+            newBoard();
+            return { token: fixtures.placeAt('bench_goblin', 600, 300), point: { x: 1200, y: 760 } };
+        }],
+        ['a refusal: no room within reach', () => {
+            const [hero] = newBoard();
+            const token = BoardState.getTokenById(BoardState.workTokenOf(hero.id));
+            const vein = fixtures.placeAt('rc_vein', 900, 600);
+            setMatTuning('nudgeReach', 0);
+            return { token, hero, point: { x: vein.x + 10, y: vein.y } };
+        }]
+    ];
+
+    it.each(cases)('%s', (_label, build) => {
+        const { byDrop, byRightClick } = bothWays(build);
+        expect(byRightClick).toEqual(byDrop);
+        expect(byDrop.result).toBeTruthy();
+    });
+
+    it('the cases above did what each should, so the comparison is not of two no-ops', () => {
+        const [free, crowded, enemy, refused] = cases.map(([, build]) => bothWays(build).byRightClick);
+        const at = (o, prefix) => o.now.tokens.find(t => t.id.startsWith(prefix));
+        expect(free.result).toMatchObject({ success: true, x: 700, y: 820, nudged: false });
+        expect(at(free, 'rc_tree')).toMatchObject({ x: 700, y: 820 });
+        // The hero keeps the job and walks towards its new spot.
+        expect(free.later.hero.works).toMatch(/^rc_tree#/);
+        const d = (o) => Math.hypot(o.hero.body.x - 700, o.hero.body.y - 820);
+        expect(d(free.later)).toBeLessThan(d(free.now));
+        expect(crowded.result).toMatchObject({ success: true, nudged: true });
+        expect(enemy.result).toMatchObject({ success: true, x: 1200, y: 760 });
+        expect(at(enemy, 'bench_goblin')).toMatchObject({ x: 1200, y: 760 });
+        expect(refused.result).toMatchObject({ success: false, full: true });
+        expect(refused.said.find(p => p.type === 'drop_rejected')).toBeTruthy();
+        // Refused, it stays where it stood.
+        expect(at(refused, 'rc_tree')).toMatchObject({ x: PRIOR.x, y: PRIOR.y });
+    });
+
+    it('a refused move leaves the Token, flies nothing, and keeps the selection', () => {
+        const [hero] = newBoard();
+        const tree = BoardState.getTokenById(BoardState.workTokenOf(hero.id));
+        const vein = fixtures.placeAt('rc_vein', 900, 600);
+        setMatTuning('nudgeReach', 0);
+        const flights = [];
+        const off = EventBus.subscribe(UI_EVENTS.UI_TOKEN_FX, (p) => flights.push(p));
+        expect(rightClickToken(tree, { x: vein.x + 10, y: vein.y })).toMatchObject({ success: false });
+        off();
+        expect(BoardState.getTokenById(tree.id)).toMatchObject({ x: PRIOR.x, y: PRIOR.y });
+        expect(BoardState.workTokenOf(hero.id)).toBe(tree.id);
+        expect(flights).toEqual([]);
+        expect(selectedTokenId()).toBe(tree.id);
+    });
+
+    it('a move flies from where it stood, and the selection stays for the next', () => {
+        newBoard();
+        const goblin = fixtures.placeAt('bench_goblin', 600, 300);
+        const flights = [];
+        const off = EventBus.subscribe(UI_EVENTS.UI_TOKEN_FX, (p) => flights.push(p));
+        rightClickToken(goblin, { x: 1200, y: 760 });
+        expect(flights).toEqual([{ instanceId: goblin.id, fx: TOKEN_FLIGHT_FX, fromX: 600, fromY: 300 }]);
+        expect(selectedTokenId()).toBe(goblin.id);
+        rightClickAt({ x: 900, y: 700 });
+        off();
+        expect(BoardState.getTokenById(goblin.id)).toMatchObject({ x: 900, y: 700 });
+        expect(flights[1]).toMatchObject({ fromX: 1200, fromY: 760 });
+        expect(selectedTokenId()).toBe(goblin.id);
+    });
+
+    it('no move while the Bank covers the mat or in Demolish', () => {
+        newBoard();
+        const goblin = fixtures.placeAt('bench_goblin', 600, 300);
+        pickToken(goblin.id);
+        setMatBankLocked(true);
+        expect(rightClickAt({ x: 1200, y: 760 })).toBeNull();
+        setMatBankLocked(false);
+        setMapMode(MAP_MODE.DEMOLISH);
+        expect(rightClickAt({ x: 1200, y: 760 })).toBeNull();
+        expect(BoardState.getTokenById(goblin.id)).toMatchObject({ x: 600, y: 300 });
+    });
+
+    describe('on the mat', () => {
+        let animations;
+        beforeEach(() => {
+            animations = [];
+            HTMLElement.prototype.animate = function (keyframes, options) {
+                const anim = { el: this, keyframes, options, cancel() {}, onfinish: null, oncancel: null };
+                animations.push(anim);
+                return anim;
+            };
+        });
+        afterEach(() => { delete HTMLElement.prototype.animate; });
+
+        function mount() {
+            const view = render(h(DeckDndProvider, null, h(MatFitProvider, { value: 1 }, h(MatBoard))));
+            const mat = view.container.querySelector('[data-mat-board]');
+            mat.getBoundingClientRect = () => ({ left: 0, top: 0, x: 0, y: 0, width: matW(), height: matH(), right: matW(), bottom: matH() });
+            const move = (target, x, y) => act(async () => {
+                target.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: x, clientY: y }));
+                await new Promise(r => setTimeout(r, 50));
+            });
+            return { ...view, mat, move };
+        }
+
+        it('a right-click on the mat flies the Token in loot’s arc, on both its boxes, with no slide', async () => {
+            newBoard();
+            const goblin = fixtures.placeAt('bench_goblin', 600, 300);
+            const { container, mat } = mount();
+            act(() => { pickToken(goblin.id); });
+            await act(async () => { fireEvent.contextMenu(mat, { clientX: 1200, clientY: 760 }); await Promise.resolve(); });
+            expect(BoardState.getTokenById(goblin.id)).toMatchObject({ x: 1200, y: 760 });
+            const art = container.querySelector(`[data-token-art][data-token-id="${goblin.id}"]`);
+            const flown = animations.filter(a => a.options?.composite === 'add' && a.options.duration === TOKEN_FLIGHT_MS);
+            expect(TOKEN_FLIGHT_MS).toBe((HOP_POSES + 2) * HOP_POSE_MS);
+            expect(flown).toHaveLength(2);
+            expect(flown.map(a => a.el)).toContain(art);
+            // It starts at its old spot (600 - 1200 across), rises above the line between, and lands.
+            const first = flown[0].keyframes[0].transform;
+            expect(first).toMatch(/^translate\(-600px, -460px\)/);
+            const ys = flown[0].keyframes.map(k => Number(/translate\([^,]+, (-?[\d.]+)px\)/.exec(k.transform)?.[1]));
+            const xs = flown[0].keyframes.map(k => Number(/translate\((-?[\d.]+)px/.exec(k.transform)?.[1]));
+            const mid = Math.floor(HOP_POSES / 2);
+            expect(ys[mid]).toBeLessThan(-460 * (1 - mid / HOP_POSES));
+            expect(xs.at(-1)).toBe(0);
+            // The box does not also slide over from the old spot.
+            expect(art.style.transition).toBe('none');
+            expect(selectedTokenId()).toBe(goblin.id);
+        });
+
+        it('while a Token is selected the pointer on the mat shows its ghost and, for a camp, the reach ring with its dots', async () => {
+            newBoard({ prior: false });
+            const camp = fixtures.placeAt('rc_logging', 400, 300);
+            const tree = fixtures.placeAt('rc_tree', 1300, 700);
+            const { container, mat, move } = mount();
+            act(() => { pickToken(camp.id); });
+            const ghost = document.querySelector(`[data-selected-ghost="${camp.id}"]`);
+            expect(ghost).toBeTruthy();
+            expect(ghost.style.visibility).toBe('hidden');
+            await move(mat, 1200, 700);
+            expect(ghost.style.visibility).toBe('visible');
+            expect(ghost.style.transform).toContain('translate(1200px, 700px)');
+            const ring = container.querySelector('[data-near-ring]');
+            expect(ring?.getAttribute('data-cx')).toBe('1200');
+            expect(ring?.getAttribute('data-cy')).toBe('700');
+            expect(container.querySelector(`[data-reach-dot="${tree.id}"]`)).toBeTruthy();
+            // Off the mat: gone, and no frame asked for while it stays off.
+            const panel = document.createElement('div');
+            document.body.appendChild(panel);
+            await move(panel, 1200, 700);
+            expect(ghost.style.visibility).toBe('hidden');
+            expect(container.querySelector('[data-near-ring]')).toBeNull();
+            expect(getTokenPreview()).toBeNull();
+            const frames = vi.spyOn(window, 'requestAnimationFrame');
+            await act(async () => { await new Promise(r => setTimeout(r, 80)); });
+            expect(frames).not.toHaveBeenCalled();
+            frames.mockRestore();
+            panel.remove();
+            // Cleared: no ghost.
+            act(() => { clearSelection(); });
+            expect(document.querySelector('[data-selected-ghost]')).toBeNull();
+        });
+
+        it('a Token with no reach (an enemy) shows its ghost and no ring', async () => {
+            newBoard({ prior: false });
+            const goblin = fixtures.placeAt('bench_goblin', 600, 300);
+            const { container, mat, move } = mount();
+            act(() => { pickToken(goblin.id); });
+            await move(mat, 1200, 700);
+            expect(document.querySelector(`[data-selected-ghost="${goblin.id}"]`).style.visibility).toBe('visible');
+            expect(container.querySelector('[data-near-ring]')).toBeNull();
+        });
     });
 });

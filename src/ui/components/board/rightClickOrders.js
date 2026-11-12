@@ -7,6 +7,7 @@ import { pointerToMat, onMatItself } from './matPoint.js';
 import { isMatBankLocked } from '../../hooks/useMatBankLock.js';
 import { getMapMode } from '../../hooks/useMapMode.js';
 import { getSelection, SELECTION_KIND } from '../../hooks/useMatSelection.js';
+import { announceFlight } from './tokenFlight.js';
 
 /**
  * A right-click on the mat: an order for what is selected (`useMatSelection.js`), by **exactly
@@ -17,7 +18,8 @@ import { getSelection, SELECTION_KIND } from '../../hooks/useMatSelection.js';
  * wait on bare ground. On their **own job** (`Orders.ownJobAt`: the Token their order names, or
  * the one they work or fight), or on their **own figure**, they stop instead (`Orders.stop`): a
  * job cannot be given twice. A stop puts the pointer's hints out ({@link onSelectedStop}).
- * - **A Token selected**: its move ({@link moveSelectedToken}).
+ * - **A Token selected**: what dropping it there does: it moves there, or is refused and stays
+ * ({@link moveSelectedToken}).
  * - **Nothing selected**: a right-click on a hero's drawn pixel, or on the Token a hero works,
  * stops that hero.
  * Never in a map mode (a click there acts on the Token only), nor while the Bank covers the mat
@@ -65,12 +67,22 @@ function stopSelected(heroId) {
 }
 
 /**
- * A right-click with a Token selected: moves it there through the drop's placement checks.
- * Brief 610 S3 builds it; until then it gives no order (a selected enemy never orders a hero).
- * @returns null
+ * A right-click with a Token selected: the very drop of that Token there (`dropOnMat`, with the
+ * payload a Token carried across the mat has), so the placement checks, the refusal said over it
+ * and the hero working it walking after it are the drop's own. A refused spot leaves it where it
+ * stands. A Token that moved flies there in loot's arc (`tokenFlight.js`: drawing only).
+ * @returns the placement result, or null when the right-click gave none
  */
-export function moveSelectedToken(_instanceId, _point) {
-    return null;
+export function moveSelectedToken(instanceId, point) {
+    const token = BoardState.getTokenById(instanceId);
+    if (!token) return null;
+    const payload = { kind: DRAG_KIND.TOKEN, typeId: token.typeId, from: { instanceId } };
+    if (!matAccepts(payload)) return null;
+    const from = { x: token.x, y: token.y };
+    const result = dropOnMat(payload, point);
+    const now = BoardState.getTokenById(instanceId);
+    if (result?.success && now && (now.x !== from.x || now.y !== from.y)) announceFlight(instanceId, from);
+    return result;
 }
 
 /** With nothing selected: the hero right-clicked, or the one working the Token there, stops. */
