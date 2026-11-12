@@ -157,5 +157,5 @@ export function firstReachText(at, tierLabel) {
     const levels = Object.entries(at.levels || {}).sort((a, b) => b[1] - a[1]).map(([skill, level]) => LEDGER_ENGINE_TEXT.level(skill, level));
     const find = at.oneOffFind && !at.oneOffOnly && at.oneOffFind.tier < at.tier
         ? `a one-off find at ${tierLabel(at.oneOffFind.tier)} (${at.oneOffFind.name})` : '';
-    return [tierLabel(at.tier) + (at.luckOnly ? ' (luck)' : ''), levels.join(', '), find].filter(Boolean).join(' · ');
+    return [tierLabel(at.tier) + (at.luckOnly ? ' (luck)' : at.rareOnly ? ' (rare)' : ''), levels.join(', '), find].filter(Boolean).join(' · ');
 }

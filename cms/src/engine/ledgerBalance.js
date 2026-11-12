@@ -43,7 +43,7 @@ export function changeText(p) {
 
 /** The can't-fix list by cause, in the order a reader acts on them: content first, the Hall last. */
 export function cantFixGroups(cantFix = []) {
-    const order = [CANT_FIX.CONTENT, CANT_FIX.ONE_OFF, CANT_FIX.WORLD, CANT_FIX.CHAIN, CANT_FIX.LIMIT, CANT_FIX.FLOOR, CANT_FIX.UNTIMED, CANT_FIX.LUCK, CANT_FIX.OTHER, CANT_FIX.HALL];
+    const order = [CANT_FIX.CONTENT, CANT_FIX.ONE_OFF, CANT_FIX.WORLD, CANT_FIX.CHAIN, CANT_FIX.LIMIT, CANT_FIX.FLOOR, CANT_FIX.UNTIMED, CANT_FIX.RARE, CANT_FIX.LUCK, CANT_FIX.OTHER, CANT_FIX.HALL];
     const groups = new Map();
     for (const c of cantFix) {
         if (!groups.has(c.cause)) groups.set(c.cause, []);

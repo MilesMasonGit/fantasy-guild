@@ -144,11 +144,11 @@ describe('the tab', { timeout: 20000 }, () => {
         fireEvent.change(view.getByLabelText('Filter by group'), { target: { value: 'C' } });
         const shown = [...view.container.querySelectorAll('[data-finding]')].map((r) => r.getAttribute('data-finding'));
         expect(shown.length).toBeGreaterThan(0);
-        expect(shown.every((c) => ['luck-only', 'fragile', 'shop-only'].includes(c))).toBe(true);
-        fireEvent.change(view.getByLabelText('Filter by check'), { target: { value: 'luck-only' } });
+        expect(shown.every((c) => ['luck-only', 'rare-steady', 'fragile', 'shop-only'].includes(c))).toBe(true);
+        fireEvent.change(view.getByLabelText('Filter by check'), { target: { value: 'shop-only' } });
         // The problem's own link is the one in the list.
-        fireEvent.click(view.getAllByText('Fire Elemental').find((el) => el.closest('[data-finding]')));
-        expect(view.getByLabelText('Ledger page of Fire Elemental')).toBeTruthy();
+        fireEvent.click(view.getAllByText('Wood Foundation').find((el) => el.closest('[data-finding]')));
+        expect(view.getByLabelText('Ledger page of Wood Foundation')).toBeTruthy();
     });
 
     it('opens an item page from a row: sources, uses, path, problems and the layered tree', () => {

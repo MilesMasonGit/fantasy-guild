@@ -3,7 +3,7 @@
 // A Starter Camp of copper, coal and oak with a Furnace and a Goblin Camp; a Shop that sells a
 // Foundation the Smithy is built on; world tables with the Chief's Tent, which spawns the Goblin
 // Chief, on ring 1 and iron on ring 2 (`LEDGER_WORLD_RAW`); water with a baited pool; a bonus drop;
-// Passive Production; a luck-only drop; an item nothing makes; and one Planned stub of each kind.
+// Passive Production; a 3 % drop; an item nothing makes; and one Planned stub of each kind.
 
 import { normaliseWorldTables } from '../../config/worldTablesShape.js';
 

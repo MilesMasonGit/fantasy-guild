@@ -128,12 +128,21 @@ describe('reach: one-off finds', () => {
 });
 
 describe('reach: luck, never and Planned', () => {
-    it('calls a drop under 5 % with no sure way luck only, and says when a sure way comes', () => {
+    it('judges a drop under 5 % on repeatable work by finds a day, and keeps luck for a source that wears out', () => {
         const honey = reachOf(itemKey('item_honey'));
         expect(LUCK_BELOW).toBe(0.05);
-        expect(honey).toMatchObject({ tier: 0, sureTier: 2, luckOnly: true, chance: 0.03 });
-        expect(reachOf(tokenKey('token_fire_elemental'))).toMatchObject({ tier: 2, sureTier: null, luckOnly: true });
+        // 3 % on 12-second fights against goblins the camp keeps spawning: about 216 a day, a steady source.
+        expect(honey).toMatchObject({ tier: 0, sureTier: 0, luckOnly: false, rareOnly: false, chance: 0.03 });
+        expect(honey.findsPerDay).toBeCloseTo(216, 6);
+        // 2 % a 12-second Iron Vein cycle: about 144 Fire Elementals a day.
+        expect(reachOf(tokenKey('token_fire_elemental'))).toMatchObject({ tier: 2, sureTier: 2, luckOnly: false, rareOnly: false });
         expect(describePath(ledger().reach, itemKey('item_honey'))).toBe('Honey ← Goblin (Combat 5, 3%) ← Goblin Camp ← in the Starter Camp');
+        // A Honey Cache of two charges in the camp, the only source: luck, with the hive's sure way at plane 2.
+        const ws = ledgerContent();
+        ws.tokens.token_goblin.config.outputs = ws.tokens.token_goblin.config.outputs.filter((o) => o.itemId !== 'item_honey');
+        ws.tokens.token_honey_cache = { id: 'token_honey_cache', name: 'Honey Cache', uses: 2, config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 1, inputs: [], outputs: [{ itemId: 'item_honey', chance: 3, minQty: 1, maxQty: 1 }] } };
+        ws.starterCamp.tokens.push({ typeId: 'token_honey_cache', x: 900, y: 100 });
+        expect(buildLedger(ws).reachOf(itemKey('item_honey'))).toMatchObject({ tier: 0, sureTier: 2, luckOnly: true, rareOnly: false, via: tokenKey('token_honey_cache') });
     });
 
     it('says never for what nothing makes', () => {

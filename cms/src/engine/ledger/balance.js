@@ -1,6 +1,6 @@
 // the progression ledger's balancing preview: numbers proposed so the Typical profile follows the pace
 
-import { buildLedger, HOW, COMBAT, LUCK_BELOW, parseKey, itemKey, tokenKey, recipeKey } from '../../../../src/systems/progression/ledger/engine.js';
+import { buildLedger, HOW, COMBAT, FIND, LEDGER_ENGINE_TEXT, findsPerDay, parseKey, itemKey, tokenKey, recipeKey } from '../../../../src/systems/progression/ledger/engine.js';
 import { buildPace, PACE_TEXT } from './pace.js';
 import { PROFILE, BOOST_KIND, BOOST_KIND_TEXT } from './profiles.js';
 import { LIFECYCLE } from './rates.js';
@@ -47,6 +47,7 @@ export const CANT_FIX = Object.freeze({
     CONTENT: 'content',
     ONE_OFF: 'one-off',
     LUCK: 'luck',
+    RARE: 'rare',
     WORLD: 'world',
     FLOOR: 'floor',
     HALL: 'hall',
@@ -60,7 +61,7 @@ export const CANT_FIX = Object.freeze({
 export const BALANCE_TEXT = Object.freeze({
     lever: Object.freeze({ xp: 'XP a cycle', gate: 'Level gate', cost: 'Cost', time: 'Time', boost: 'Boost strength' }),
     cause: Object.freeze({
-        content: 'Needs content', 'one-off': 'A source that wears out', luck: 'Luck', world: 'World tables',
+        content: 'Needs content', 'one-off': 'A source that wears out', luck: 'Luck', rare: 'A rare find', world: 'World tables',
         floor: 'The XP floor', hall: 'Guild Hall pass', untimed: 'Not timed', chain: 'A chain of first finds',
         limit: 'At its cap', other: 'Other'
     }),
@@ -80,7 +81,7 @@ const DEFAULT_ROUNDS = 4;
 /** The axes a boost's strength is read on (`rates.js`): their values are what a boost proposal weakens. */
 const RATE_AXES = new Set([
     EFFECT_TYPES.WORK_TIME, EFFECT_TYPES.YIELD, EFFECT_TYPES.XP_BONUS, EFFECT_TYPES.LOOT_MULT, EFFECT_TYPES.DOUBLE_DROP,
-    EFFECT_TYPES.INPUT_COST, EFFECT_TYPES.GROW_TIME, EFFECT_TYPES.CROP_LOAD, EFFECT_TYPES.CATCH_WEIGHT
+    EFFECT_TYPES.INPUT_COST, EFFECT_TYPES.GROW_TIME, EFFECT_TYPES.CROP_LOAD, EFFECT_TYPES.CATCH_WEIGHT, EFFECT_TYPES.LUCKY
 ]);
 
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -142,7 +143,7 @@ export function applyProposals(content, proposals) {
 // ── the pace and its summary ─────────────────────────────────────────────────────────────────────
 
 function evaluate(content, settings) {
-    const ledger = buildLedger(content);
+    const ledger = buildLedger(content, { steadyPerDay: settings.steadyFindsPerDay });
     return { content, ledger, pace: buildPace(content, ledger, settings) };
 }
 
@@ -359,7 +360,7 @@ function boostPass(state) {
             last = signature;
             const trial = structuredClone(state.content);
             for (const v of next) setPath(recordOf(trial, v.kind, v.id), v.path, v.to);
-            const p = buildPace(trial, buildLedger(trial), state.settings);
+            const p = buildPace(trial, buildLedger(trial, { steadyPerDay: state.settings.steadyFindsPerDay }), state.settings);
             gain = Math.max(0, ...g.works.map(w => p.boostGain(w.work.target, g.kind, PROFILE.MAXED, w.tier) ?? 0));
             if (!best || gain < best.gain) best = { gain, next };
         }
@@ -804,8 +805,14 @@ function stepCause(state, key, own = false) {
     for (const step of steps) {
         const rule = ledger.reach.get(step.key)?.rule;
         const give = rule?.gives?.find(g => g.key === step.key);
-        if (rule && [HOW.DROP, HOW.WORK, HOW.CATCH, HOW.BONUS, HOW.SPAWN, HOW.TURN].includes(rule.how) && give && give.chance < LUCK_BELOW && step.own > 0) {
-            return { cause: CANT_FIX.LUCK, words: `comes only by luck: a ${Math.round(give.chance * 1000) / 10} % chance from ${rule.via ? name(rule.via) : 'its source'}; a sure source or a higher chance is a design call` };
+        if (!rule || !give || step.own <= 0 || ![HOW.DROP, HOW.WORK, HOW.CATCH, HOW.BONUS, HOW.SPAWN, HOW.TURN].includes(rule.how)) continue;
+        const find = ledger.findClass(rule, give);
+        const chance = `a ${Math.round(give.chance * 1000) / 10} % chance from ${rule.via ? name(rule.via) : 'its source'}`;
+        if (find === FIND.LUCK) {
+            return { cause: CANT_FIX.LUCK, words: `comes only by luck: ${chance}; a sure source or a higher chance is a design call` };
+        }
+        if (find === FIND.RARE) {
+            return { cause: CANT_FIX.RARE, words: `is a rare find: ${chance}, ${LEDGER_ENGINE_TEXT.perDay(findsPerDay(rule, give))} for one hero; more heroes on it, a rare-find boost or a higher chance is a design call` };
         }
     }
     if (!path.complete) return { cause: CANT_FIX.UNTIMED, words: 'its path has steps the calculator cannot time (a fight\'s levels, a bounty, trading maps up), so its time is a floor' };

@@ -55,8 +55,22 @@ import { STRICT_RINGS, SKILL_OF, EXTRA_KIND } from '../../../config/worldTablesS
  * Pure apart from one live read: `buildWorld` asks `getUpgradeDef('wishing_well')` for the Well's price.
  */
 
-/** A drop under this chance (with no sure way to the same thing) is luck only. */
+/**
+ * A chance at or above this is a sure way, whatever the source. Under it, a source that wears out
+ * (a Token with Charges nothing brings back) is luck; repeatable work is judged by finds a day.
+ */
 export const LUCK_BELOW = 0.05;
+
+/**
+ * Repeatable work under `LUCK_BELOW` is a steady source when one hero working it all day, unboosted,
+ * finds at least this many a day (`findsPerDay`); under it the find is rare but steady, never luck.
+ */
+export const STEADY_FINDS_PER_DAY = 1;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** How a give comes: a steady source, a rare but steady one, or luck. */
+export const FIND = Object.freeze({ STEADY: 'steady', RARE: 'rare', LUCK: 'luck' });
 
 /**
  * The pseudo-skill a fight is filed under. Its level is the enemy's level, which sets how hard the
@@ -121,7 +135,13 @@ export const LEDGER_ENGINE_TEXT = Object.freeze({
     ring: (ring) => `Ring ${ring} opened`,
     someWorlds: 'in some worlds',
     level: (skill, level) => `${skill === COMBAT ? 'Combat' : skill.charAt(0).toUpperCase() + skill.slice(1)} ${level}`,
-    chance: (p) => `${Math.round(p * 1000) / 10}%`,
+    /** A chance as a percent to one place; a rare one under 0.1 % to two figures ("0.014%"), never "0%". */
+    chance: (p) => (p > 0 && p < 0.001 ? `${Number((p * 100).toPrecision(2))}%` : `${Math.round(p * 1000) / 10}%`),
+    /** Finds a day in words: "about 8.6 a day", "about 0.7 a day", "about 1 in 12 days"; "finds a day unknown" when null. */
+    perDay: (n) => (!Number.isFinite(n) ? 'finds a day unknown'
+        : n >= 10 ? `about ${Math.round(n)} a day`
+            : n >= 0.1 ? `about ${Math.round(n * 10) / 10} a day`
+                : n > 0 ? `about 1 in ${Math.round(1 / n)} days` : 'none a day'),
     never: 'never',
     planned: 'planned',
     wedge: (line, ring) => `${line} ring ${ring}`
@@ -224,9 +244,11 @@ export function isOneOff(def) {
  * things. Planned records are kept by name only (`planned`) and make nothing.
  *
  * A rule: `{ id, how, via, needs: key[], tool: key|null, gives: [{ key, chance, perCycle, maybe }],
- * floor, gates: [{ skill, level }], cycleMs, inputs: [{ key, quantity }], passive, oneOff }`. `oneOff`
- * marks the work of a one-off find (a chest the world places); `maybe` a give only some
- * worlds hold, never a sure way. It fires at the
+ * floor, gates: [{ skill, level }], cycleMs, rollMs, inputs: [{ key, quantity }], passive, oneOff, repeatable }`.
+ * `oneOff` marks the work of a one-off find (a chest the world places); `repeatable` work that keeps
+ * rolling (not a one-off find, nor the work of a Token that wears out for good); `rollMs` the time
+ * between its rolls when it is not `cycleMs` (a fight, a spawner, a bonus on one Token's work), for
+ * finds a day; `maybe` a give only some worlds hold, never a sure way. It fires at the
  * lowest tier where every need (and its tool) is reached, and never below its `floor`. `via` is the
  * record that does the work, which a path follows back; `inputs` what one cycle spends, which a tree
  * follows down.
@@ -269,7 +291,7 @@ export function buildWorld(content = {}) {
 
     const rules = [];
     const add = (rule) => rules.push({
-        needs: [], tool: null, gives: [], floor: 0, gates: [], cycleMs: null, inputs: [], passive: false, oneOff: false, ...rule
+        needs: [], tool: null, gives: [], floor: 0, gates: [], cycleMs: null, rollMs: null, inputs: [], passive: false, oneOff: false, ...rule
     });
     const inputsOf = (entries) => list(entries)
         .filter(e => text(e.itemId))
@@ -339,6 +361,7 @@ export function buildWorld(content = {}) {
             if (spawns.length) {
                 add({
                     id: `spawn:${id}`, how: HOW.SPAWN, via: self, needs: [self, ...needKeys(upkeep)], inputs: upkeep,
+                    rollMs: finite(Number(def.spawner.intervalMs), null),
                     gives: spawns.map(s => ({ key: tokenKey(s.typeId), chance: total > 0 ? weightOf(s) / total : 1 }))
                 });
             }
@@ -392,8 +415,8 @@ export function buildWorld(content = {}) {
             if (drops.length || rare.length) {
                 add({
                     id: `drop:${id}`, how: HOW.DROP, via: self, needs: [self], gates: gate(COMBAT, def.enemy.level),
-                    // No fight time is authored, so a drop has no cycle a tree could price.
-                    cycleMs: null,
+                    // A tree does not price a fight, but its fight time still says how many kills a day bring.
+                    cycleMs: null, rollMs: finite(Number(def.config?.cycleTimeMs), null),
                     gives: [...drops.map(o => ({ key: itemKey(o.itemId), chance: chanceOf(o), perCycle: quantityOf(o) * chanceOf(o) })), ...rare]
                 });
             }
@@ -522,8 +545,11 @@ export function buildWorld(content = {}) {
             const target = statement.to?.mode === 'id' && text(statement.to.value) ? [tokenKey(statement.to.value)] : [];
             grantsOf(statement).forEach((payload, j) => {
                 const chance = Math.max(0, Math.min(1, finite(Number(payload.chance), 100) / 100));
+                // A bonus rolls on each cycle of the work it is granted to: known when the rule names one Token.
+                const onWork = target.length ? tokens[parseKey(target[0]).id] : null;
                 add({
                     id: `bonus:${self}:${i}:${j}`, how: HOW.BONUS, via: self, needs: [self, ...target],
+                    rollMs: finite(Number(onWork?.config?.cycleTimeMs), null),
                     gives: [{ key: itemKey(payload.itemId), chance, perCycle: chance * Math.max(0, finite(Number(payload.quantity), 1)) }]
                 });
             });
@@ -533,7 +559,9 @@ export function buildWorld(content = {}) {
                 const chance = Math.max(0, Math.min(1, finite(Number(payload.chance), 100) / 100));
                 add({
                     id: `effect-spawn:${self}:${i}`, how: HOW.SPAWN, via: self, needs: [self],
-                    tool: kind === 'token' ? heroToolOf(tokens[id]) : null, gives: [{ key: tokenKey(payload.typeId), chance }]
+                    tool: kind === 'token' ? heroToolOf(tokens[id]) : null, gives: [{ key: tokenKey(payload.typeId), chance }],
+                    // A Token's spawn on its own cycle rolls once a cycle.
+                    rollMs: kind === 'token' && statement.when?.event === 'SELF_CYCLE_COMPLETE' ? finite(Number(tokens[id]?.config?.cycleTimeMs), null) : null
                 });
             }
         });
@@ -562,6 +590,11 @@ export function buildWorld(content = {}) {
         if (isOneOff(tokens[parseKey(rule.via).id]) && placers.length && placers.every(how => how === HOW.WORLD)) {
             rule.oneOff = true;
         }
+    }
+    // Repeatable work keeps rolling: none of a one-off find, nor of a Token that wears out for good.
+    for (const rule of rules) {
+        const viaToken = rule.via?.startsWith('token:') ? tokens[parseKey(rule.via).id] : null;
+        rule.repeatable = !rule.oneOff && !(viaToken && isOneOff(viaToken));
     }
 
     for (const [key, need] of toolNeeds) names.set(key, need.kinds ? need.kinds.join(' or ') : `${need.kind} ${need.minTier}+`);
@@ -719,24 +752,50 @@ function worldRules(tables, { add, names, placeable, ringNeeds = () => [] }) {
 
 // ── reach ───────────────────────────────────────────────────────────────────────────────────────
 
-/** Reach values compare tier first, then sure before luck, then the lower level gate, then the shorter path. */
+/** Reach values compare tier first, then steady before rare before luck, then the lower level gate, then the shorter path. */
 function better(a, b) {
     if (!b) return true;
     if (a.tier !== b.tier) return a.tier < b.tier;
     if (a.luck !== b.luck) return !a.luck;
+    if (a.rare !== b.rare) return !a.rare;
     if (a.gate !== b.gate) return a.gate < b.gate;
     return a.depth < b.depth;
 }
 
-const isSure = (give, luckBelow) => give.maybe !== true && give.chance >= luckBelow;
-const needsOf = (rule) => (rule.tool ? [...rule.needs, rule.tool] : rule.needs);
+/**
+ * Finds a day of one give for one hero working its source all day, unboosted: the rolls a day times
+ * the chance. Null when the rule has no known time between rolls.
+ */
+export function findsPerDay(rule, give) {
+    const every = Number.isFinite(rule?.rollMs) && rule.rollMs > 0 ? rule.rollMs : rule?.cycleMs;
+    if (!(Number.isFinite(every) && every > 0) || !Number.isFinite(give?.chance)) return null;
+    return (DAY_MS / every) * give.chance;
+}
 
 /**
- * The fixpoint: for every key the best way in (`better`), over the rules, sure gives only when
- * `sureOnly`; a one-off find's work left out, or taken as luck when `finds`. Values only ever improve
- * and are finitely many, so it ends; a key nothing reaches is absent.
+ * How a give comes (`FIND`). A world that holds it only sometimes, or a one-off find, is luck; a
+ * chance at or over `luckBelow` is steady. Under it, repeatable work is steady at `steadyPerDay`
+ * finds a day or more and rare but steady below that (or when its time between rolls is unknown);
+ * work that wears out is luck.
  */
-function settle(world, { luckBelow, sureOnly, finds = false }) {
+export function findClassOf(rule, give, { luckBelow = LUCK_BELOW, steadyPerDay = STEADY_FINDS_PER_DAY } = {}) {
+    if (give.maybe === true || rule.oneOff) return FIND.LUCK;
+    if (give.chance >= luckBelow) return FIND.STEADY;
+    if (!rule.repeatable) return FIND.LUCK;
+    const perDay = findsPerDay(rule, give);
+    return perDay !== null && perDay >= steadyPerDay ? FIND.STEADY : FIND.RARE;
+}
+
+const needsOf = (rule) => (rule.tool ? [...rule.needs, rule.tool] : rule.needs);
+const STEADY_OR_RARE = 'steady-or-rare';
+
+/**
+ * The fixpoint: for every key the best way in (`better`), over the rules, steady gives only when
+ * `only` is 'steady', steady and rare ones when 'steady-or-rare'; a one-off find's work left out, or
+ * taken as luck when `finds`. Values only ever improve and are finitely many, so it ends; a key
+ * nothing reaches is absent.
+ */
+function settle(world, { classes, only = null, finds = false }) {
     const best = new Map();
     let changed = true;
     while (changed) {
@@ -745,6 +804,7 @@ function settle(world, { luckBelow, sureOnly, finds = false }) {
             if (rule.oneOff && !finds) continue;
             let tier = rule.floor;
             let luck = false;
+            let rare = false;
             let gateLevel = rule.gates.reduce((top, g) => Math.max(top, g.level), 0);
             let depth = 0;
             let ok = true;
@@ -753,19 +813,21 @@ function settle(world, { luckBelow, sureOnly, finds = false }) {
                 if (!at) { ok = false; break; }
                 tier = Math.max(tier, at.tier);
                 luck = luck || at.luck;
+                rare = rare || at.rare;
                 gateLevel = Math.max(gateLevel, at.gate);
                 depth = Math.max(depth, at.depth);
             }
             if (!ok) continue;
-            for (const give of rule.gives) {
-                const sure = isSure(give, luckBelow);
-                if (sureOnly && !sure) continue;
-                const cand = { tier, luck: luck || !sure || rule.oneOff, gate: gateLevel, depth: depth + 1, rule, give };
+            rule.gives.forEach((give, i) => {
+                const cls = classes.get(rule)[i];
+                if (only === FIND.STEADY && cls !== FIND.STEADY) return;
+                if (only === STEADY_OR_RARE && cls === FIND.LUCK) return;
+                const cand = { tier, luck: luck || cls === FIND.LUCK, rare: rare || cls === FIND.RARE, gate: gateLevel, depth: depth + 1, rule, give };
                 if (better(cand, best.get(give.key))) {
                     best.set(give.key, cand);
                     changed = true;
                 }
-            }
+            });
         }
     }
     return best;
@@ -778,18 +840,22 @@ function settle(world, { luckBelow, sureOnly, finds = false }) {
  * earliest carries it on the side (`oneOffFind`). An entry only a one-off find gets, itself or down
  * its chain, is reached through it, as luck only (`oneOffOnly`).
  *
- * @returns {Map<string, {key, kind, id, name, planned, tier, sureTier, luckOnly, oneOffOnly, oneOffFind, how, via, chance, maybe, levels, gate, depth, rule}>}
+ * @returns {Map<string, {key, kind, id, name, planned, tier, sureTier, luckOnly, rareOnly, oneOffOnly, oneOffFind, how, via, chance, findsPerDay, maybe, levels, gate, depth, rule}>}
  *   one entry per item, Token and recipe key (and the tool and wedge keys rules need). `tier` is
- *   null when it is never reachable; `sureTier` the lowest tier without luck (null: only ever by luck,
- *   or never); `luckOnly` that at its tier only a drop under `luckBelow` gets it (luck anywhere on its
- *   path counts); `maybe` that the world holds it only sometimes; `levels` the highest level per skill the whole path asks (`combat`: the toughest
+ *   null when it is never reachable; `sureTier` the lowest tier by steady sources alone (null: never
+ *   that way); `luckOnly` that at its tier only luck gets it (`findClassOf`: a source that wears out
+ *   under `luckBelow`, a one-off find, a world that holds it only sometimes; luck anywhere on its
+ *   path counts); `rareOnly` that at its tier, without luck, only a rare but steady find gets it;
+ *   `findsPerDay` the finds a day of the give that reaches it (null when its time is unknown); `maybe` that the world holds it only sometimes; `levels` the highest level per skill the whole path asks (`combat`: the toughest
  *   enemy on it), `gate` the highest single one; `depth` the steps from an origin. A Planned entry
  *   has `planned: true` and no tier.
  */
-export function computeReach(world, { luckBelow = LUCK_BELOW } = {}) {
-    const any = settle(world, { luckBelow, sureOnly: false });
-    const sure = settle(world, { luckBelow, sureOnly: true });
-    const withFinds = world.rules.some(r => r.oneOff) ? settle(world, { luckBelow, sureOnly: false, finds: true }) : any;
+export function computeReach(world, { luckBelow = LUCK_BELOW, steadyPerDay = STEADY_FINDS_PER_DAY } = {}) {
+    const classes = new Map(world.rules.map(rule => [rule, rule.gives.map(give => findClassOf(rule, give, { luckBelow, steadyPerDay }))]));
+    const any = settle(world, { classes });
+    const sure = settle(world, { classes, only: FIND.STEADY });
+    const noLuck = settle(world, { classes, only: STEADY_OR_RARE });
+    const withFinds = world.rules.some(r => r.oneOff) ? settle(world, { classes, finds: true }) : any;
     const bestOf = (key) => any.get(key) ?? withFinds.get(key);
 
     const levelsMemo = new Map();
@@ -822,12 +888,14 @@ export function computeReach(world, { luckBelow = LUCK_BELOW } = {}) {
         const at = world.planned.has(key) ? null : bestOf(key);
         if (!at) {
             out.set(key, {
-                ...base, planned: world.planned.has(key), tier: null, sureTier: null, luckOnly: false, oneOffOnly: false, oneOffFind: null,
-                how: null, via: null, chance: null, maybe: false, levels: {}, gate: null, depth: 0, rule: null
+                ...base, planned: world.planned.has(key), tier: null, sureTier: null, luckOnly: false, rareOnly: false, oneOffOnly: false, oneOffFind: null,
+                how: null, via: null, chance: null, findsPerDay: null, maybe: false, levels: {}, gate: null, depth: 0, rule: null
             });
             continue;
         }
         const surely = sure.get(key);
+        const unlucky = noLuck.get(key);
+        const luckOnly = !unlucky || unlucky.tier > at.tier;
         const levels = levelsOf(key, new Set());
         const top = Object.entries(levels).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
         out.set(key, {
@@ -835,12 +903,14 @@ export function computeReach(world, { luckBelow = LUCK_BELOW } = {}) {
             planned: false,
             tier: at.tier,
             sureTier: surely ? surely.tier : null,
-            luckOnly: !surely || surely.tier > at.tier,
+            luckOnly,
+            rareOnly: !luckOnly && (!surely || surely.tier > at.tier),
             oneOffOnly: !any.has(key),
             oneOffFind: null,
             how: at.rule.how,
             via: at.rule.via,
             chance: at.give.chance,
+            findsPerDay: findsPerDay(at.rule, at.give),
             maybe: at.give.maybe === true,
             levels,
             gate: top ? { skill: top[0], level: top[1] } : null,
@@ -1091,16 +1161,18 @@ export function hubsOf(world) {
  * The ledger over a whole workspace or `data/`: the world, every entry's reach, and a tree (with its
  * figures) for any item asked.
  *
- * @returns {{ world, reach, reachOf(key), pathOf(key), hubs(), treeOf(itemId) }}
+ * @returns {{ world, reach, reachOf(key), pathOf(key), findClass(rule, give), hubs(), treeOf(itemId) }}
  */
-export function buildLedger(content, { luckBelow = LUCK_BELOW, cycleTimeOf = null } = {}) {
+export function buildLedger(content, { luckBelow = LUCK_BELOW, steadyPerDay = STEADY_FINDS_PER_DAY, cycleTimeOf = null } = {}) {
     const world = buildWorld(content);
-    const reach = computeReach(world, { luckBelow });
+    const reach = computeReach(world, { luckBelow, steadyPerDay });
     return {
         world,
         reach,
         reachOf: (key) => reach.get(key) ?? null,
         pathOf: (key) => describePath(reach, key, { luckBelow }),
+        /** How a rule's give comes (`FIND`), by this ledger's luck line and steady threshold. */
+        findClass: (rule, give) => findClassOf(rule, give, { luckBelow, steadyPerDay }),
         hubs: () => hubsOf(world),
         treeOf: (itemId) => {
             const tree = ingredientTree(world, reach, itemId, { cycleTimeOf });

@@ -51,7 +51,7 @@ Status: approved 2026-11-07 (the rules: [BALANCE_RULES.md](../reference/BALANCE_
 - **A rate is judged as finds a day**, not as a chance: (86,400 seconds ÷ cycle seconds) × chance, for one hero working all day. A rare item's rate is set from how many a day it should give, and boosts (work potions, Rare Finds buildings) multiply that.
 - **Basic materials feed the hunt**: herbs, wood and ore become the potions and boosts that make rare finds farmable. Rare-find potions are therefore a main reason to run Alchemy, and their strength is a balancing target of its own.
 - **A one-off find** (a Fallen Star, a Shipwreck) that wears out for good is still luck and isn't a steady source. Only repeatable work counts.
-- ⚠️ **The ledger disagrees today**: it warns on any drop under 5 % with no sure way (`LUCK_BELOW`), so every rare find will show as "Luck only". T-336 changes it to finds a day.
+- **The ledger judges it so** (T-336): under 5 %, repeatable work is a steady source at 1 find a day or more for one hero (a Ledger setting) and "rare but steady" below it; only a source that wears out is "Luck only". Rare-find potions and Rare Finds buildings have their own boost targets in the Ledger settings.
 
 ### After the critical review (owner, 2026-11-07)
 

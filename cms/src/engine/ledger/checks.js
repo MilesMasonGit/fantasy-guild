@@ -17,7 +17,9 @@ export { isOneOff };
  * - **B. Plan against data**: where the owner's plan (`plan.tier`, Planned stubs) and what the
  *   content actually does disagree.
  * - **C. Luck and access**: things only luck, a one-off find or the
- *   Shop gives. Average luck only: a chance is a chance, never a lucky or unlucky run.
+ *   Shop gives, and things only a rare find on repeatable work gives (rare but steady: judged by
+ *   finds a day, `findClassOf` in the engine). Average luck only: a chance is a chance, never a
+ *   lucky or unlucky run.
  *
  * Severities: `block` breaks something in the game; `warn` is a problem to look at; `info` a fact
  * worth knowing. A Parked entry is silenced: it is kept on purpose. A Planned stub is not in the
@@ -62,6 +64,7 @@ export const CHECKS = Object.freeze({
     'no-tier': { group: 'B', severity: SEVERITY.INFO, label: 'No tier set' },
     'orphan-stub': { group: 'B', severity: SEVERITY.INFO, label: 'A Planned stub nothing points to' },
     'luck-only': { group: 'C', severity: SEVERITY.WARN, label: 'Luck only' },
+    'rare-steady': { group: 'C', severity: SEVERITY.INFO, label: 'Rare but steady' },
     fragile: { group: 'C', severity: SEVERITY.WARN, label: 'A single fragile source' },
     'shop-only': { group: 'C', severity: SEVERITY.INFO, label: 'Shop only' },
     wall: { group: 'D', severity: SEVERITY.WARN, label: 'A wall: levels far slower than the curve' },
@@ -258,6 +261,12 @@ export function runChecks(ledger, content = {}, { extra = [] } = {}) {
             if (find) add('luck-only', key, `Only ever through a one-off find (${nameOf(find)}), which wears out for good, and no sure way.`, { related: [find] });
             else if (at.sureTier === null) add('luck-only', key, `Only ever by luck: ${how}${from}, and no sure way.`);
             else add('luck-only', key, `Only by luck at ${tierLabel(at.tier)} (${how}${from}); a sure way from ${tierLabel(at.sureTier)}.`, { severity: SEVERITY.INFO });
+        }
+        if (reachable && at.rareOnly) {
+            const how = [Number.isFinite(at.chance) ? LEDGER_ENGINE_TEXT.chance(at.chance) : null, LEDGER_ENGINE_TEXT.perDay(at.findsPerDay)].filter(Boolean).join(', ');
+            const from = at.via ? ` from ${nameOf(at.via)}` : '';
+            const later = at.sureTier === null ? 'no steady way' : `a steady way from ${tierLabel(at.sureTier)}`;
+            add('rare-steady', key, `Rare but steady at ${tierLabel(at.tier)}: ${how}${from}, for one hero working all day; ${later}.`);
         }
         if (kind === 'item' && reachable) {
             const producing = givers.filter((r) => PRODUCING.has(r.how) && Number.isInteger(ruleTier(reach, r)));

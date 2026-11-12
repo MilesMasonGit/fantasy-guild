@@ -201,7 +201,6 @@ The review listed numbers no rule sets yet; each needs a rule when its chain is 
 
 - **The ladder's pace curve and stage budgets in the ledger's settings** (T-294).
 - **The new XP table in the game** (T-337).
-- **Rare finds judged by finds a day, and rare-find boosts with their own target** (T-336).
 - **Longer doses, a ledger that counts gatherers per crafter, and the speed budget** (T-338).
 - **A script that writes these numbers onto the Planned entries**, once they're in the CMS (T-305): a brief for the director.
 - **Combat's power curve**: its own segment.
