@@ -791,15 +791,27 @@ export function furl(heroId, reason = 'recall') {
 
 /**
  * The weapon `heroId` swung broke at their kill (`GEAR_BROKE`, `use: 'fight'`). Anyone may fight
- * barehanded, so a kept order would have them punch on: the order lapses where they stand, marked
- * `needsJob` as a job gone for good is, and their fight ends with the kill. A broken tool needs
- * nothing here: the order stays, and the hero lets go of a Token they can no longer work.
+ * barehanded, so a kept order would have them punch on: the order lapses where they stand
+ * ({@link stop}), and their fight ends with the kill. A broken tool needs nothing here: the order
+ * stays, and the hero lets go of a Token they can no longer work.
  */
 function stopAfterBrokenWeapon({ heroId, use } = {}) {
     if (use !== 'fight') return;
+    stop(heroId);
+}
+
+/**
+ * Stop `heroId` where they stand: their Token order lapses at their body's point, marked
+ * `needsJob` as a job gone for good is (the yellow mark), and they wait there for a new order.
+ * What they leave is let go as a recall lets it go: the Token's progress resets and a fight ends
+ * at once, the enemy whole again for the next to engage it. A hero with no Token order (waiting
+ * on bare ground, or home) has nothing to stop.
+ * @returns {boolean} whether there was an order to stop
+ */
+export function stop(heroId) {
     const r = rt();
     const flag = BoardState.flagOf(heroId);
-    if (!r || !flag || isSpot(flag)) return;
+    if (!r || !flag || isSpot(flag)) return false;
     quiet++;
     try {
         release(heroId);
@@ -815,6 +827,7 @@ function stopAfterBrokenWeapon({ heroId, use } = {}) {
         quiet--;
     }
     announceMoved(heroId);
+    return true;
 }
 
 /**

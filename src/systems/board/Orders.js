@@ -1,4 +1,4 @@
-// the player's orders: where a hero dropped on the mat goes, and why not
+// the player's orders: where a hero dropped or right-clicked on the mat goes, and why not
 
 import { EventBus } from '../core/EventBus.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
@@ -29,6 +29,8 @@ import { workConfigOf } from './StationRecipe.js';
  * - on the Guild Hall: home, to wait there (`Flags.sendHome`);
  * - on bare ground: they go there and idle (`Flags.orderSpot`).
  * A hero healing from a defeat takes no order until healed.
+ * A right-click with a hero selected gives the very same order (`rightClickOrders.js` hands it to
+ * `dropOnMat`), except on the hero's own job, which stops them ({@link ownJobAt}, {@link stop}).
  *
  * Results carry `success`, and on a refusal `reason` (the words) and `instanceId` (the Token it is
  * said over), so `dropOnMat.announce` can say it where it was aimed.
@@ -131,4 +133,38 @@ export function sendHome(heroId) {
 export function jobTokenOf(heroId) {
     const flag = BoardState.flagOf(heroId);
     return typeof flag?.pinnedTo === 'string' ? BoardState.getTokenById(flag.pinnedTo) : null;
+}
+
+/**
+ * Whether `instance` is what `heroId` is busy with: the Token their order names (a camp or an enemy
+ * camp included), or the one they work, walk to or fight (their claim, a camp's Token too). A job
+ * cannot be given twice, so an order there stops them instead ({@link ownJobAt}).
+ */
+export function isOwnJob(heroId, instance) {
+    if (!heroId || !instance?.id) return false;
+    if (Flags.pinnedIdOf(heroId) === instance.id) return true;
+    return BoardState.claimOfHero(heroId)?.instanceId === instance.id;
+}
+
+/**
+ * The Token at mat `point` when it is `heroId`'s own job ({@link isOwnJob}), or null: the right-click
+ * there stops them ({@link stop}) where a drop would change nothing. The drop's own hit test
+ * (`Flags.tokenAtPoint`), so the two never disagree at a Token's edge.
+ */
+export function ownJobAt(heroId, point) {
+    if (!heroId || !point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return null;
+    const target = Flags.tokenAtPoint(point);
+    return target && isOwnJob(heroId, target) ? target : null;
+}
+
+/**
+ * Stop `heroId` where they stand (`Flags.stop`): they wait there with the "needs a job" mark, the
+ * Token they leave reset and a fight ended as a recall leaves them. A hero with no Token order
+ * (waiting on bare ground, or home) has nothing to stop: nothing changes.
+ */
+export function stop(heroId) {
+    if (!heroId) return { success: false, reason: t('orders.noHero') };
+    const stopped = Flags.stop(heroId);
+    if (stopped) EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'order' });
+    return { success: true, order: 'stop', unchanged: !stopped };
 }

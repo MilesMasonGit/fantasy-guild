@@ -8,9 +8,9 @@
  * - `AlphaPointerSensor`'s activator refuses a press inside `[data-board-origin]` while this
  * is on, the same way a map mode does, so no Token, flag or hero drag can START from the
  * mat.
- * - `Board.jsx`'s `matAccepts` refuses every payload while this is on, so dnd-kit never calls
+ * - `matAccepts` (`dropOnMat.js`) refuses every payload while this is on, so dnd-kit never calls
  * the mat's `onDrop`: nothing can land there either, including a Token or flag dragged from
- * elsewhere.
+ * elsewhere. A right-click on the mat gives no order then either (`rightClickOrders.js`).
  * UI state only: never saved, and it is the Bank drawer's open/closed state, not a mode the
  * player toggles directly.
  */

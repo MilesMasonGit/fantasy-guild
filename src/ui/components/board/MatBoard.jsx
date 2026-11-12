@@ -27,7 +27,7 @@ import { TerrainCanvas } from './TerrainCanvas.jsx';
 import { AmbientLife, createGroundPictures } from './AmbientLife.jsx';
 import { TerrainGridOverlay } from './TerrainGridOverlay.jsx';
 import { MAT_EDGE, MAT_EDGE_CSS } from './groundScreen.js';
-import { announce } from './dropOnMat.js';
+import { rightClickEvent } from './rightClickOrders.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
@@ -42,7 +42,6 @@ import * as Flags from '../../../systems/board/Flags.js';
 import * as Occupation from '../../../systems/board/Occupation.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import * as EnemyMotion from '../../../systems/board/EnemyMotion.js';
-import * as Orders from '../../../systems/board/Orders.js';
 import * as Camps from '../../../systems/board/Camps.js';
 import { OrderLighting, lightHeroJob } from './OrderLighting.jsx';
 import { useRosterHover } from './orderLit.js';
@@ -402,11 +401,12 @@ export const MatBoard = React.memo(function MatBoard({
         clearSelection();
     }, []);
 
-    // A right-click on a hero (or the Token they work) sends them home to the Guild Hall.
-    const handleRecallHero = useCallback((heroId) => {
-        const at = BoardState.displayPointOf(heroId);
-        announce(Orders.sendHome(heroId), at);
-    }, []);
+    /**
+     * A right-click anywhere on the mat is an order for what is selected, or with nothing selected
+     * a stop for the hero right-clicked or working the Token there (`rightClickOrders.js`).
+     */
+    const handleMatRightClick = useCallback((e) => { rightClickEvent(e, rootRef.current); }, []);
+    const handleHeroRightClick = useCallback((heroId, e) => { rightClickEvent(e, rootRef.current, heroId); }, []);
 
     // A hero hovered on the mat or on their roster tab: outlined, and their job lights (their
     // sheet's, when none is hovered).
@@ -546,6 +546,7 @@ export const MatBoard = React.memo(function MatBoard({
             onPointerLeave={clearHover}
             onPointerDownCapture={handleMatPointerDown}
             onClick={handleMatClick}
+            onContextMenu={handleMatRightClick}
         >
             {/**
              * 0: the mat itself, a plain darker surface with a rounded light edge and no soft
@@ -614,7 +615,6 @@ export const MatBoard = React.memo(function MatBoard({
                     onPick={handlePickToken}
                     onClearInspect={onClearInspect}
                     onOpenRecipes={onOpenRecipes}
-                    onRecallHero={handleRecallHero}
                     mapMode={mapMode}
                     onModeClick={handleModeClick}
                     dragging={carriedId === t.id}
@@ -652,7 +652,7 @@ export const MatBoard = React.memo(function MatBoard({
                         })}
                         onHover={handleHoverHero}
                         onPick={handlePickHero}
-                        onRecall={handleRecallHero}
+                        onRightClick={handleHeroRightClick}
                         animationState={animState}
                         moving={h.moving}
                         facing={h.facing}

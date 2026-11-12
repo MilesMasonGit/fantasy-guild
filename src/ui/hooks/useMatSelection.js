@@ -1,8 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import * as BoardState from '../../systems/board/BoardState.js';
 import * as FixedTokens from '../../systems/board/FixedTokens.js';
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
-import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { GameState } from '../../state/GameState.js';
 import { activeRegionId } from '../../systems/atlas/Atlas.js';
 import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
@@ -56,17 +54,16 @@ export function selectHero(heroId) {
 
 /**
  * Whether a Token on the mat can be selected: one the player could drag today (not fixed:
- * `FixedTokens.isFixed`), and not an enemy.
+ * `FixedTokens.isFixed`), an enemy included.
  */
 export function isSelectableToken(instance) {
     if (!instance) return false;
-    if (isEnemyDef(getTokenType(instance.typeId))) return false;
     return !FixedTokens.isFixed(instance);
 }
 
 /**
- * A pick of a Token on the mat: a movable one is selected; an unmovable one (an enemy, a fixed
- * Token) only clears the selection.
+ * A pick of a Token on the mat: a movable one is selected; an unmovable one (a fixed Token) only
+ * clears the selection.
  * @returns {boolean} whether the Token is now selected
  */
 export function pickToken(instanceId) {

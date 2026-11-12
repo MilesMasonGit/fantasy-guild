@@ -246,7 +246,7 @@ const MatHeroBody = memo(function MatHeroBody({
     outline = null,
     onHover,
     onPick,
-    onRecall,
+    onRightClick,
     animationState = 'idle',
     moving = false,
     facing = 1,
@@ -331,11 +331,13 @@ const MatHeroBody = memo(function MatHeroBody({
                 onPick?.(heroId);
                 EventBus.publish(UI_EVENTS.INSPECT_HERO, { heroId });
             }}
+            // A right-click on a drawn pixel is the hero's (`rightClickOrders.js`); through a
+            // see-through one it goes on to the mat, to whatever is under it.
             onContextMenu={(e) => {
                 if (!opaque(e)) return;
                 e.preventDefault();
                 e.stopPropagation();
-                onRecall?.(heroId);
+                onRightClick?.(heroId, e);
             }}
             onMouseEnter={() => onHover?.(heroId)}
             onMouseLeave={() => onHover?.(null)}

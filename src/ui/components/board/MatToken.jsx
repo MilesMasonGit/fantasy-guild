@@ -161,7 +161,6 @@ export const MatToken = React.memo(function MatToken({
     onPick,
     onClearInspect,
     onOpenRecipes,
-    onRecallHero,
     mapMode = null,
     onModeClick,
     dragging = false,
@@ -444,14 +443,6 @@ export const MatToken = React.memo(function MatToken({
         [typeId, id, heroId, alert, usesRemaining]
     );
 
-    const handleContextMenu = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        // In a map mode a click only acts on the Token; nobody is sent home.
-        if (mapMode) return;
-        if (heroId) onRecallHero?.(heroId);
-    };
-
     // The skill whose hit animation this Token plays when struck.
     const hitSkill = React.useMemo(() => hitSkillOf(def), [def]);
 
@@ -561,7 +552,6 @@ export const MatToken = React.memo(function MatToken({
                 data-token-state-sprite={stateSprite || undefined}
                 data-token-fixed={fixed ? 'true' : undefined}
                 data-token-protected={demolishProtected ? 'true' : undefined}
-                onContextMenu={handleContextMenu}
                 onClick={() => {
                     if (dragging) return;
                     // In a map mode a click acts on the Token and does nothing else; it never

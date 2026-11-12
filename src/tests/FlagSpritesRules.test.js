@@ -24,6 +24,7 @@ import { DRAG_KIND, rosterFlagPayload } from '../ui/dnd/dragConstants.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
 import { matAccepts } from '../ui/components/board/Board.jsx';
+import { clearSelection } from '../ui/hooks/useMatSelection.js';
 import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { FlagGhost } from '../ui/dnd/DragGhost.jsx';
 import { HeroEditModal } from '../ui/modals/HeroEditModal.jsx';
@@ -189,7 +190,9 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
         expect(workTileOf('h1')).toBe(15);
     });
 
-    it('a double-click on a board hero opens the sheet, right-click sends them home', () => {
+    // Brief 610 S2: a right-click no longer sends a hero home (home is the Guild Hall); with
+    // nothing selected it stops them where they stand.
+    it('a double-click on a board hero opens the sheet; with nothing selected a right-click stops them, never sends them home', () => {
         put(15, FOREST);
         Orders.orderAt('h1', C(15));
         const inspected = [];
@@ -200,11 +203,13 @@ describe('FP-76 — the player never moves a hero: dragging one drags their flag
         fireEvent.click(drawn);
         expect(inspected).toEqual([]);
         fireEvent.doubleClick(drawn);
+        clearSelection();
         fireEvent.contextMenu(drawn);
         unsub();
 
         expect(inspected).toEqual(['h1']);
-        expect(BoardState.flagOf('h1')).toBeNull();
+        expect(BoardState.flagOf('h1')).toMatchObject({ spot: true, needsJob: true });
+        expect(BoardState.flagOf('h1').pinnedTo).toBeUndefined();
     });
 });
 

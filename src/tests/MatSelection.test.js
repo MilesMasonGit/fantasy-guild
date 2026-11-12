@@ -44,9 +44,10 @@ vi.mock('../ui/utils/alphaHitTest.js', async (importOriginal) => {
 
 /**
  * ⭐ **Selecting on the mat** (brief 610 S1, `concept_rts_controls.md`). One selection: a hero or
- * a movable Token. A single click selects; a double-click inspects and selects. An unmovable
- * Token (an enemy, a fixed Token) is never selected: a single click only clears. The selection
- * is drawn in gold and clears on blank mat, Escape, leaving the mat, travel and a map mode.
+ * a movable Token, an enemy you could drag included (owner, 2026-11-11). A single click selects; a
+ * double-click inspects and selects. A fixed Token is never selected: a single click only clears.
+ * The selection is drawn in gold and clears on blank mat, Escape, leaving the mat, travel and a map
+ * mode.
  */
 
 registerTokenTypes({
@@ -108,7 +109,7 @@ afterEach(async () => {
 });
 
 describe('⭐ what can be selected', () => {
-    it('a movable Token and the Guild Hall; never a fixed Token or an enemy', () => {
+    it('a movable Token, the Guild Hall and an enemy you could drag; never a fixed Token', () => {
         const bought = placeAt('fixture_producer', 300, 300);
         const hall = placeAt('token_guild_hall', 900, 600);
         const node = fixtureAt(600, 300);
@@ -116,7 +117,7 @@ describe('⭐ what can be selected', () => {
         expect(isSelectableToken(bought)).toBe(true);
         expect(isSelectableToken(hall)).toBe(true);
         expect(isSelectableToken(node)).toBe(false);
-        expect(isSelectableToken(goblin)).toBe(false);
+        expect(isSelectableToken(goblin)).toBe(true);
     });
 
     it('one at a time: a new pick replaces the old, a hero or a Token alike', () => {
@@ -133,16 +134,15 @@ describe('⭐ what can be selected', () => {
         expect(selectedHeroId()).toBeNull();
     });
 
-    it('a pick of an unmovable Token clears the selection', () => {
+    it('a pick of an unmovable Token clears the selection; a pick of an enemy selects it', () => {
         const a = placeAt('fixture_producer', 300, 300);
         const goblin = enemyAt(600, 300);
         const node = fixtureAt(900, 300);
         pickToken(a.id);
-        expect(pickToken(goblin.id)).toBe(false);
+        expect(pickToken(node.id)).toBe(false);
         expect(getSelection()).toBeNull();
-        pickToken(a.id);
-        pickToken(node.id);
-        expect(getSelection()).toBeNull();
+        expect(pickToken(goblin.id)).toBe(true);
+        expect(getSelection()).toEqual({ kind: SELECTION_KIND.TOKEN, id: goblin.id });
     });
 
     it('nothing is selected while a map mode is on', () => {
@@ -190,19 +190,33 @@ describe('⭐ single click selects, double-click inspects (a Token on the mat)',
 
     it('an unmovable Token: a single click only clears; a double-click inspects and selects nothing', () => {
         const a = placeAt('fixture_producer', 300, 300);
-        const goblin = enemyAt(900, 500);
+        const node = fixtureAt(900, 500);
         const onInspectToken = vi.fn();
         const { container } = mount({ onInspectToken });
         act(() => click(hitOf(container, a.id), at(a)));
         expect(selectedTokenId()).toBe(a.id);
-        act(() => click(hitOf(container, goblin.id), at(goblin)));
+        act(() => click(hitOf(container, node.id), at(node)));
         expect(getSelection()).toBeNull();
         expect(onInspectToken).not.toHaveBeenCalled();
-        expect(artOf(container, goblin.id).getAttribute('data-outline')).not.toBe('select');
+        expect(artOf(container, node.id).getAttribute('data-outline')).not.toBe('select');
 
+        act(() => doubleClick(hitOf(container, node.id), at(node)));
+        expect(onInspectToken).toHaveBeenCalledWith('fixture_producer', expect.anything(), node.id);
+        expect(getSelection()).toBeNull();
+    });
+
+    it('an enemy you could drag: a single click selects it in gold; a double-click inspects and selects', () => {
+        const goblin = enemyAt(900, 500);
+        const onInspectToken = vi.fn();
+        const { container } = mount({ onInspectToken });
+        act(() => click(hitOf(container, goblin.id), at(goblin)));
+        expect(selectedTokenId()).toBe(goblin.id);
+        expect(onInspectToken).not.toHaveBeenCalled();
+        expect(artOf(container, goblin.id).getAttribute('data-outline')).toBe('select');
+        clearSelection();
         act(() => doubleClick(hitOf(container, goblin.id), at(goblin)));
         expect(onInspectToken).toHaveBeenCalledWith('sel_enemy', expect.anything(), goblin.id);
-        expect(getSelection()).toBeNull();
+        expect(selectedTokenId()).toBe(goblin.id);
     });
 
     it('a single click of another Token closes the open card; one of its own Token keeps it', () => {
