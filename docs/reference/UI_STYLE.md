@@ -95,10 +95,10 @@ the CMS, the Encyclopedia, Limes's lines and the docs. A source's own name
 | **Abundance** | A Token kind holds more charges before it rests | Crop Load | the Token |
 
 Bonus Drop (a source adds an item the Token does not make, such as
-Birdwatcher's bird nests) keeps its name. The badge row is the owner's
-picture, not yet designed: on the Token inspection, a row of badges for the
-effects on the whole Token, each hoverable for a breakdown of where it comes
-from; an item's effects sit beside that item on the drop table.
+Birdwatcher's bird nests) keeps its name. The badges these names go on
+are designed in [concept_effect_badges.md](../active/concept_effect_badges.md)
+(brief 600): a row under the Token card's stats line in this table's order,
+each hoverable for its sources; an item's effects sit on that item's line.
 
 ## Density
 

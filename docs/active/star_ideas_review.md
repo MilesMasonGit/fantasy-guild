@@ -156,7 +156,7 @@ Not raised again unless the owner brings them back.
 1. ~~**Stars vs Buildings**~~ (done 2026-11-11, above; rank sizes still open): for each family, is it a Star (tiny, global,
    ranked) or a Building effect (big, in reach), or both at different
    sizes; and the rank sizes.
-2. **Effect icons on the Token card**: which effects get an icon, what the
+2. ~~**Effect icons on the Token card**~~ (done 2026-11-11: [concept_effect_badges.md](concept_effect_badges.md), brief 600): which effects get an icon, what the
    hover says, how several stack. The owner's picture (2026-11-11): a badge
    row on the Token inspection for whole-Token effects, each hoverable for a
    breakdown of its sources; item effects (Double Item) as a badge on that
