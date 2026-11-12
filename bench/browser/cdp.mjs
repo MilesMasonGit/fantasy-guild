@@ -244,6 +244,13 @@ export class Page {
         await this.mouse('mouseReleased', x, y, { button: 'left', buttons: 0, clickCount: 1 });
     }
 
+    /** A real double-click: the second press carries clickCount 2, so the browser fires dblclick. */
+    async doubleClick(x, y) {
+        await this.click(x, y);
+        await this.mouse('mousePressed', x, y, { button: 'left', buttons: 1, clickCount: 2 });
+        await this.mouse('mouseReleased', x, y, { button: 'left', buttons: 0, clickCount: 2 });
+    }
+
     async key(key, code = key, keyCode = 0) {
         await this.send('Input.dispatchKeyEvent', { type: 'keyDown', key, code, windowsVirtualKeyCode: keyCode });
         await this.send('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode: keyCode });
