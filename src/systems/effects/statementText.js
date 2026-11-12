@@ -3,7 +3,7 @@ import { statusBlockOf } from './effectLibrary.js';
 import { MODIFIER_SHAPES } from '../../config/registries/modifierPalette.js';
 import { getTriggerEvent, isFightMoment, isCarriedMoment, everyOf, healthBelowOf, momentWords } from '../../config/registries/triggerRegistry.js';
 import { getRestrictionKind, limitOf } from '../../config/registries/restrictionPalette.js';
-import { getSkill } from '../../config/registries/skillRegistry.js';
+import { getSkill, COMBAT_SKILL_IDS } from '../../config/registries/skillRegistry.js';
 import { REACH, reachOf } from '../../config/registries/reachRegistry.js';
 import { getRole } from '../../config/registries/roleRegistry.js';
 import { filtersPhrase } from '../../config/registries/filterRegistry.js';
@@ -449,6 +449,19 @@ function heroSkillSegments(statement) {
     return segs(' at ', d(getSkill(category)?.name || category, categorySlot(statement)));
 }
 
+/**
+ * ", but only for Melee fighters" — a combat style narrowing (`categories: 'combatStyle'`), or
+ * nothing. Any other category there matches no fighter and is not said (the audit names it).
+ */
+function styleScopeSegments(statement, carried) {
+    const category = statement?.payload?.category;
+    if (effectEntryOf(statement)?.categories !== 'combatStyle' || !category) return [];
+    const id = String(category).toLowerCase();
+    if (!COMBAT_SKILL_IDS.includes(id)) return [];
+    const style = d(getSkill(id)?.name || category, categorySlot(statement));
+    return carried ? segs(', but only as a ', style, ' fighter') : segs(', but only for ', style, ' fighters');
+}
+
 /** Whether the effect phrase already names the rule's narrowing: an item's, or Preservation's own. */
 function namesItsNarrowing(statement) {
     const categories = effectEntryOf(statement)?.categories;
@@ -705,7 +718,7 @@ function bodySegments(statement, names) {
             }
 
             if (entry?.heroOnly) {
-                return segs(lead, effectSegments(statement, names), ' in combat', reach);
+                return segs(lead, effectSegments(statement, names), ' in combat', styleScopeSegments(statement, carried), reach);
             }
             if (carried) return segs(lead, effectSegments(statement, names, true), heroSkillSegments(statement));
             return segs(d('Provides', K), ' ', effectSegments(statement, names), ' ',

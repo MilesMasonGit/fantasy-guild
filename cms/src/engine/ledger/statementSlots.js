@@ -17,7 +17,7 @@ import { RESTRICTION_KINDS, getRestrictionKind } from '../../../../src/config/re
 import { FILTER_KINDS, filtersOf } from '../../../../src/config/registries/filterRegistry.js';
 import { MAGNITUDE_KIND, statsForRoles } from '../../../../src/config/registries/magnitudeRegistry.js';
 import { PLACEMENTS, placementOf } from '../../../../src/config/registries/placementRegistry.js';
-import { getAllSkills } from '../../../../src/config/registries/skillRegistry.js';
+import { getAllSkills, getSkill, COMBAT_SKILL_IDS } from '../../../../src/config/registries/skillRegistry.js';
 import { CARRIED_KINDS } from '../../../../src/config/registries/carriedKinds.js';
 import { DAMAGE_GROUPS, DAMAGE_TYPES, typesOfGroup, damageTypeLabel } from '../../../../src/config/registries/damageTypes.js';
 import { STATION_KINDS, stationKindLabel } from '../../../../src/config/registries/tokenConstants.js';
@@ -92,6 +92,12 @@ function roleOptions(statement) {
 
 /** Every skill, as options — from the game registry, so the CMS can never offer one it lacks. */
 const skillOptions = () => Object.values(getAllSkills() || {}).map(s => option(s.id, s.name || s.id));
+
+/** Damage, Swing Time and Accuracy name the style a hero fights in (the weapon's), never a work skill. */
+const styleOptions = () => [
+    option('', 'Any style', 'Every fighter, whatever they fight with.'),
+    ...COMBAT_SKILL_IDS.map(id => option(id, getSkill(id)?.name || id, `Only heroes fighting ${getSkill(id)?.name || id}.`))
+];
 
 /**
  * What Preservation may keep: everything, a skill's materials, a kind of thing a hero carries, or
@@ -349,6 +355,8 @@ function payloadSlots(statement, ctx) {
                                 ...Object.values(ctx?.items || {}).map(i => option(i.id, i.name || i.id))]
                         : entry.categories === 'skillOrCarried'
                             ? carriedOptions(ctx)
+                        : entry.categories === 'combatStyle'
+                            ? styleOptions()
                             : [option('', 'Any skill', 'No narrowing — the usual case.'), ...skillOptions()],
                     patch: v => {
                         const next = { ...payload };

@@ -528,7 +528,10 @@ export function syncAggregator(hero) {
         if (!getPaletteEntry(payload.type)?.heroOnly) continue;
         const value = Number(payload.value);
         if (!Number.isFinite(value) || value === 0) continue;
-        hero.aggregator.addModifier({ type: payload.type, value, bucket: 'percentage', source });
+        hero.aggregator.addModifier({
+            type: payload.type, value, bucket: 'percentage', source,
+            ...(payload.category ? { target: { category: payload.category } } : {})
+        });
     }
 }
 
