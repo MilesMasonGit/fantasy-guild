@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   Plus, X, Trash2, Search, ArrowUp, ArrowDown, Zap, Wrench, Package,
-  Gauge, Truck, Repeat, HandCoins, Ban, Sparkles, Factory, GraduationCap
+  Gauge, Repeat, HandCoins, Ban, Sparkles, Factory, GraduationCap
 } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { Library, Pencil } from 'lucide-react';
@@ -27,7 +27,6 @@ const KEYWORD_ICON = {
   [KEYWORD.GRANTS]: HandCoins,
   [KEYWORD.ACTS_AS]: Wrench,
   [KEYWORD.REQUIRES]: Package,
-  [KEYWORD.RESTOCKS]: Truck,
   [KEYWORD.CONVERTS]: Repeat,
   [KEYWORD.CANNOT]: Ban,
   [KEYWORD.APPLIES]: Sparkles,

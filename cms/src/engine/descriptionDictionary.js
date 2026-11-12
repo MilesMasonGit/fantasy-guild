@@ -150,7 +150,7 @@ export function getTraitClauses(token) {
   if (!token) return [];
   const clauses = [];
 
-  // ⚠️ No clause promises that a `manager` Token restocks stations: a Manager is decided by what it restocks, and a Restocks statement says so.
+  // ⚠️ No clause promises that a `manager` Token restocks stations: a Manager is decided by what it restocks.
 
   // A camp is worked through the Tokens in its reach, never itself: its own clause says so.
   if (token.requiresHero === false && !campOf(token)) {

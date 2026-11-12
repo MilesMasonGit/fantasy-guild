@@ -87,7 +87,7 @@
         "id": { "type": "string", "description": "stm_ followed by letters and digits; unique and stable." },
         "keyword": {
           "type": "string",
-          "enum": ["provides", "grants", "acts_as", "requires", "restocks", "converts", "cannot", "applies", "deals", "heals", "restores", "removes", "spawns", "transforms", "station", "promotes"],
+          "enum": ["provides", "grants", "acts_as", "requires", "converts", "cannot", "applies", "deals", "heals", "restores", "removes", "spawns", "transforms", "station", "promotes"],
           "description": "KEYWORD (src/systems/effects/statements.js); what each accepts is its KEYWORDS row. promotes is retired and does nothing."
         },
         "payload": { "$ref": "#/$defs/payload" },
@@ -165,7 +165,7 @@
         "stationKind": { "type": "string", "description": "A STATION_KINDS id narrowing a station's recipe pool." },
         "tag": { "type": "string", "description": "acts_as and requires: the capability tag." },
         "tier": { "type": "number", "description": "The tag's tier (a whole number)." },
-        "tokenIds": { "type": "array", "items": { "type": "string" }, "description": "Token ids (restocks)." },
+        "tokenIds": { "type": "array", "items": { "type": "string" }, "description": "Token ids (requires)." },
         "itemId": { "type": "string" },
         "quantity": { "type": "number" },
         "chance": { "type": "number", "description": "Percent 0 to 100." },

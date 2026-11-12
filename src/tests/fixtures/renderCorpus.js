@@ -301,8 +301,6 @@ export function buildCorpus() {
     }
     addS('requires:tag:player:unknown-tool', S(KEYWORD.REQUIRES, { payload: { tag: 'fishing_net', minTier: 2 } }), playerNames);
     addS('requires:blank:player', S(KEYWORD.REQUIRES, { payload: {} }), playerNames);
-    addS('restocks', S(KEYWORD.RESTOCKS, { payload: { tokenIds: [FIX.token, 'fixture_seafood_producer'] } }), shippedNames);
-    addS('restocks:blank', S(KEYWORD.RESTOCKS, { payload: {} }));
     addS('converts:blank', S(KEYWORD.CONVERTS, { payload: {} }));
     addS('converts:multi', S(KEYWORD.CONVERTS, { payload: {
         consumes: [{ itemId: FIX.item, quantity: 2 }, { itemId: FIX.item2 }],

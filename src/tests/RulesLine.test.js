@@ -431,16 +431,6 @@ describe('⭐ what the forms held, edited in the line (P4)', () => {
         expect(latest().payload.max).toBe(5);
     });
 
-    it('Restocks: ticks Tokens in the panel', () => {
-        const { word, panel, latest, line } = mount([makeStatement(KEYWORD.RESTOCKS)]);
-        fireEvent.click(word('tokenIds'));
-        const boxes = panel().querySelectorAll('[data-list-option] input[type="checkbox"]');
-        expect(boxes).toHaveLength(2);
-        fireEvent.click(boxes[0]);
-        expect(latest().payload.tokenIds).toEqual(['tok_oak']);
-        expect(line().textContent).toContain('Restocks nearby Oak Tree from the Guild Bank');
-    });
-
     it('Provides: scopes to a skill from the row beneath the line', () => {
         const { container, panel, latest, line } = mount([{
             ...makeStatement(KEYWORD.PROVIDES), payload: { type: 'YIELD', bucket: 'percentage', value: 0.1 }

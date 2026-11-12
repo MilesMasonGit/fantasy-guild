@@ -74,8 +74,6 @@ export function provisionalName(statement, nameOf = titleCase) {
             return payload.produces?.[0]?.itemId
                 ? `${nameOf(payload.produces[0].itemId)} Conversion`
                 : 'Conversion';
-        case KEYWORD.RESTOCKS:
-            return 'Restocks Neighbours';
         case KEYWORD.APPLIES:
             return payload.statusId ? `Applies ${titleCase(payload.statusId)}` : 'Applies a Status';
         case KEYWORD.CANNOT:

@@ -9,8 +9,7 @@ import { hasCatchPools } from './catchPools.js';
  *
  * ## Why the picker went
  * A classification you choose can disagree with the thing it classifies. A classification you
- * *read off* the rules cannot. Managers are retired: a Restocks rule is still read here
- * for the label, but nothing in the engine acts on it.
+ * *read off* the rules cannot. Managers are retired: no rule derives that type any more.
  *
  * ## But the field still gets written into the file
  * Deleting it would break three real things that are not the engine: the
@@ -25,7 +24,7 @@ import { hasCatchPools } from './catchPools.js';
  * "consumes goods, produces currency" is a real signal and the rung derives like
  * every other one.
  *
- * ⚠️ The currency rung sits **above** Restocks and Acts as. Minting currency is the
+ * ⚠️ The currency rung sits **above** Acts as. Minting currency is the
  * most distinctive thing a Token can
  * do, and a Market that also handed a capability to its neighbours would
  * otherwise file itself as a `context`.
@@ -36,7 +35,7 @@ import { hasCatchPools } from './catchPools.js';
  * A Token is a station because it carries a `Works as` statement, and that
  * statement's skill is its recipe pool — so the type and the pool cannot disagree.
  *
- * The rung sits **above** Restocks and Acts as: a Token that both crafts and hands its neighbours a capability is a station first.
+ * The rung sits **above** Acts as: a Token that both crafts and hands its neighbours a capability is a station first.
  *
  * ## `enemy` — the one rung that is *told*, not read
  * ⚠️ Every other rung above reads a rule the Token already carries. This one
@@ -95,7 +94,6 @@ export function deriveTokenType(def) {
     // station — its pool comes from `foundation.skill`, not a Works as rule.
     if (def.foundation) return { type: 'station', why: 'it is a Foundation that buildings are built on' };
 
-    if (has(KEYWORD.RESTOCKS)) return { type: 'manager', why: 'it restocks its neighbours' };
     if (has(KEYWORD.ACTS_AS)) return { type: 'context', why: 'it acts as a tool for its neighbours' };
 
     // An authored Market that does not actually sell anything. Preserved rather

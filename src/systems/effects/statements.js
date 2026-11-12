@@ -28,7 +28,6 @@ export const KEYWORD = Object.freeze({
     GRANTS: 'grants',
     ACTS_AS: 'acts_as',
     REQUIRES: 'requires',
-    RESTOCKS: 'restocks',
     CONVERTS: 'converts',
     CANNOT: 'cannot',
     APPLIES: 'applies',
@@ -52,15 +51,15 @@ export const WHEN = Object.freeze({
 /**
  * Every keyword, with what it accepts.
  *
- * `filter` says whether the statement may name which neighbours it reaches. `Acts as`,
- * `Requires` and `Restocks` have none: a capability goes to every neighbour, a requirement
- * is about this Token, and a restock list is its own filter.
+ * `filter` says whether the statement may name which neighbours it reaches. `Acts as`
+ * and `Requires` have none: a capability goes to every neighbour and a requirement
+ * is about this Token.
  *
  * ⚠️ `Converts` has a filter that names a SINGLE destination, not a set; see its row.
  *
  * `reach` says how far the statement carries (`reachRegistry.js`), independent of `filter`.
- * It is omitted on purpose for: `Requires` and `Works as` (about this Token), `Acts as` and
- * `Restocks` (no filter, and reach alone would be half a targeting vocabulary and a real
+ * It is omitted on purpose for: `Requires` and `Works as` (about this Token), `Acts as`
+ * (no filter, and reach alone would be half a targeting vocabulary and a real
  * balance change), `Converts` (already names one destination) and `Cannot` (a placement
  * restriction read once by `Placement.js`).
  */
@@ -103,14 +102,6 @@ export const KEYWORDS = Object.freeze([
         filter: false,
         when: WHEN.NEVER,
         upkeep: false
-    },
-    {
-        id: KEYWORD.RESTOCKS,
-        label: 'Restocks',
-        blurb: 'Keeps named neighbours supplied from the Guild Bank when they run dry.',
-        filter: false,
-        when: WHEN.NEVER,
-        upkeep: true
     },
     {
         /**
@@ -376,8 +367,6 @@ export function blankPayload(keywordId) {
             return { tag: '', tier: 1 };
         case KEYWORD.REQUIRES:
             return { tag: '', minTier: 1 };
-        case KEYWORD.RESTOCKS:
-            return { tokenIds: [] };
         case KEYWORD.CONVERTS:
             return { type: 'CONVERT', consumes: [], produces: [], chance: 100 };
         case KEYWORD.CANNOT:
@@ -480,13 +469,13 @@ export function statementsWith(def, keywordId) {
 }
 
 /** Keywords that are about neighbours by definition — no reach field to read. */
-const NEIGHBOUR_KEYWORDS = new Set([KEYWORD.ACTS_AS, KEYWORD.REQUIRES, KEYWORD.RESTOCKS, KEYWORD.CANNOT]);
+const NEIGHBOUR_KEYWORDS = new Set([KEYWORD.ACTS_AS, KEYWORD.REQUIRES, KEYWORD.CANNOT]);
 
 /**
  * Whether any of a Token's rules act on, or depend on, what is NEAR it (the rule for showing
  * its Near ring).
  *
- * Yes for: `Acts as`, `Requires`, `Restocks` and `Cannot`; `Provides`, `Grants` and `Applies`
+ * Yes for: `Acts as`, `Requires` and `Cannot`; `Provides`, `Grants` and `Applies`
  * reaching past the Token itself; a "when a nearby Token..." moment; a "for each nearby..."
  * count.
  *

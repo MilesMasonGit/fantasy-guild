@@ -74,9 +74,6 @@ describe('The rules text is the rule, rendered', () => {
         expect(say(KEYWORD.REQUIRES, { payload: { tag: 'pickaxe', minTier: 1 } }))
             .toBe('Requires a nearby Tier 1 pickaxe.');
 
-        expect(say(KEYWORD.RESTOCKS, { payload: { tokenIds: ['fixture_producer'] } }))
-            .toBe('Restocks nearby Fixture Producer from the Guild Bank.');
-
         expect(say(KEYWORD.GRANTS, {
             to: { mode: 'all' },
             payload: { type: EFFECT_TYPES.BONUS_DROP, itemId: 'item_copper_ore', quantity: 2, chance: 25 }
@@ -234,6 +231,14 @@ describe('Acts as — one capability channel', () => {
     });
 });
 
+describe('a retired keyword left in an old save', () => {
+    it('is ignored rather than thrown on', () => {
+        const old = { id: 'x', keyword: 'restocks', payload: { tokenIds: ['a'] } };
+        expect(() => renderStatement(old, names)).not.toThrow();
+        expect(deriveTokenType({ statements: [old] }).type).not.toBe('manager');
+    });
+});
+
 describe('The Token type is read off the rules, never picked', () => {
     const derive = def => deriveTokenType(def).type;
 
@@ -245,7 +250,6 @@ describe('The Token type is read off the rules, never picked', () => {
         // A leftover `mapId` says nothing: maps are items.
         expect(derive({ mapId: 'map_x' })).not.toBe('map');
         expect(derive({ statements: [{ keyword: KEYWORD.STATION, payload: { skill: 'cooking' } }] })).toBe('station');
-        expect(derive({ statements: [{ keyword: KEYWORD.RESTOCKS, payload: { tokenIds: ['a'] } }] })).toBe('manager');
         expect(derive({ statements: [{ keyword: KEYWORD.ACTS_AS, payload: { tag: 'axe' } }] })).toBe('context');
         expect(derive({ config: { outputs: [{ itemId: 'o' }] } })).toBe('resource');
         expect(derive({ config: { outputs: [{ itemId: 'o' }] }, requiresHero: false })).toBe('passive');

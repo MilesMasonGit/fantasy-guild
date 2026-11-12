@@ -570,14 +570,6 @@ export const FIXTURE_TOKENS = {
         manages: ['fixture_producer']
     },
 
-    /** The same Manager, authored as a **Restocks** statement (owner Q6). */
-    fixture_restocker: {
-        id: 'fixture_restocker', name: 'Fixture Restocker', tokenType: 'manager',
-        rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_social',
-        statements: [
-            { id: 'stm_restock', keyword: 'restocks', payload: { tokenIds: ['fixture_producer'] } }
-        ]
-    },
     /** A manager for the enemy fixture, proving one economic model. */
     fixture_enemy_manager: {
         id: 'fixture_enemy_manager', name: 'Fixture Enemy Manager', tokenType: 'manager',
