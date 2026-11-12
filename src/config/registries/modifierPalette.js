@@ -290,6 +290,24 @@ export const MODIFIER_PALETTE = [
         inverted: true,
         hint: 'How long the Guild Hall\'s lap takes: its outputs (Passive Production) arrive once a lap. A negative value is a shorter lap. Speed-ups stack, but together cut at most 80% of the time.'
     },
+    {
+        /**
+         * Read off the held ranks (`hallModifiers.xpForEveryoneOf`), never an aggregator: a rank bought
+         * gives every hero on the roster the difference, once (`GuildUpgradeManager.purchaseRanks`), and
+         * a hero who joins later arrives with the whole (`HeroLifecycle`). ⚠️ As every star rank, a
+         * rank lists the star's whole gift so far, so a rank listing no more than the one before gives
+         * nothing (the boot audit names it).
+         */
+        type: EFFECT_TYPES.XP_FOR_EVERYONE,
+        label: 'XP for Everyone',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        guildOnly: true,
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Guild',
+        hint: 'XP every hero gets in every skill, once, when the rank is bought; a hero who joins later arrives with it. A rank lists the star\'s whole gift so far: rank 3 of 100 a rank lists 300.'
+    },
 
     // --- Support ------------------------------------------------------------
     {

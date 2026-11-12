@@ -205,6 +205,12 @@ function effectSegments(statement, names, onHero = false) {
         return segs(d(`${size} ${more}`, 'value'), ' ', d(size === '1' ? 'bite' : 'bites', 'type'), ' of ', d(fish, categorySlot(statement)));
     }
 
+    // "250 XP in every skill": whole XP, never below 0, as `hallModifiers.xpForEveryoneOf` gives it.
+    if (payload.type === EFFECT_TYPES.XP_FOR_EVERYONE) {
+        const xp = Math.max(0, Math.round(Number(payload.value) || 0));
+        return segs(d(String(xp), 'value'), ' ', d('XP in every skill', 'type'));
+    }
+
     // "no change to XP": an all-capitals name stays as written.
     const label = entry.label === entry.label.toUpperCase() ? entry.label : entry.label.toLowerCase();
     const value = Number(payload.value);
@@ -628,6 +634,10 @@ function bodySegments(statement, names) {
                         d(payload.category ? kind : '…', categorySlot(statement)), ' ', d(Math.abs(n) === 1 ? 'slot' : 'slots', 'type'));
                 }
                 if (payload.type === EFFECT_TYPES.PASSIVE_LAP) return segs(d('Makes', K), ' the Guild Hall\'s lap ', effectSegments(statement, names));
+                // "in all": a rank lists the star's whole gift so far, not what that rank adds.
+                if (payload.type === EFFECT_TYPES.XP_FOR_EVERYONE) {
+                    return segs(d('Gives', K), ' every hero ', effectSegments(statement, names), ' in all, recruits too');
+                }
                 if (entry.reads) return segs(d('Makes', K), ' every hero ', effectSegments(statement, names));
                 return segs(d('Provides', K), ' ', effectSegments(statement, names), ' to every hero');
             }

@@ -2,8 +2,10 @@ import { GameState } from '../../../state/GameState.js';
 import { EventBus } from '../../core/EventBus.js';
 import { logger } from '../../../utils/Logger.js';
 import { generateHero } from '../HeroGenerator.js';
-import { rehydrateHero } from './HeroRehydration.js';
-import { rosterLimitForRank } from '../../../config/guildUpgrades.js';
+import { rehydrateHero, updateHeroFromSkills } from './HeroRehydration.js';
+import { rosterLimitForRank, authoredStars } from '../../../config/guildUpgrades.js';
+import { xpForEveryoneOf } from '../../progression/hallModifiers.js';
+import { addXpToEverySkill } from '../everySkillXp.js';
 import { ENGINE_EVENTS } from '../../core/engineEvents.js';
 import { ensureFlagColour } from '../../board/FlagColours.js';
 
@@ -30,6 +32,18 @@ export function isRosterFull() {
     return GameState.heroes.length >= getRosterLimit();
 }
 
+/**
+ * A hero joining the roster brings the Guild Hall's XP for Everyone: the whole gift of the ranks
+ * held now, in every skill, as if they had been there for every purchase. Worked out from the stars
+ * and the saved ranks at that moment and then kept in the hero's own skills, so no counter is
+ * saved and a load (which rehydrates, never comes through here) gives nothing again. Arriving is
+ * not levelling up: nothing is announced but the recruit.
+ */
+function arriveWithHallXp(hero) {
+    const amount = xpForEveryoneOf(authoredStars(), GameState.state?.progress?.guildUpgrades || {});
+    if (addXpToEverySkill(hero, amount).length) updateHeroFromSkills(hero);
+}
+
 export function createHero(options = {}, silent = false) {
     // Honours the same cap as addHero, or this is a back door around the limit.
     if (isRosterFull()) {
@@ -39,6 +53,9 @@ export function createHero(options = {}, silent = false) {
 
     const hero = generateHero(options);
     rehydrateHero(hero);
+    arriveWithHallXp(hero);
+    // A new recruit arrives rested: whatever max HP the Hall's XP gave them, they hold in full.
+    if (hero.hp) hero.hp.current = hero.hp.max;
     GameState.heroes.push(hero);
     ensureFlagColour(hero.id);
 
@@ -74,6 +91,7 @@ export function addHero(heroData) {
     }
 
     rehydrateHero(heroData);
+    arriveWithHallXp(heroData);
     GameState.heroes.push(heroData);
     ensureFlagColour(heroData.id);
     logger.info('HeroLifecycle', `Added hero "${heroData.name}" to the roster`);

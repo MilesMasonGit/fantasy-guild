@@ -5,7 +5,7 @@ import { BUILT_IN_CONSTELLATIONS, BUILT_IN_UPGRADE_IDS, HALL_NODE } from '../../
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { KEYWORD } from '../effects/statements.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
-import { hallRulesOf, RETIRED_AXIS } from '../progression/hallModifiers.js';
+import { hallRulesOf, xpForEveryoneOf, RETIRED_AXIS } from '../progression/hallModifiers.js';
 
 /** A Provides rule's palette row when its axis is retired (Camp Reach), else null. */
 function retiredEntryOf(statement) {
@@ -87,6 +87,28 @@ export function hallStarFindings({ sky, items = {}, tokens = {} } = {}) {
                 push(star, 'ranks', `rank ${r}'s rule ${skipped.index + 1} is left out: ${skipped.reason}. A star holds standing Provides rules only.`);
             }
         });
+        auditXpForEveryone(star, push);
     }
     return out;
+}
+
+/**
+ * XP for Everyone gives, at a purchase, what the rank lists beyond the rank before: a rank written as
+ * "100 a rank" rather than as the whole so far gives nothing from its second rank on.
+ */
+function auditXpForEveryone(star, push) {
+    const gives = (rank) => rank.rules.some(s => s?.keyword === KEYWORD.PROVIDES && s.payload?.type === EFFECT_TYPES.XP_FOR_EVERYONE);
+    if (!star.ranks.some(gives)) return;
+    const WHOLE = 'A rank lists the star\'s whole gift so far (rank 3 of 100 a rank lists 300).';
+    let before = 0;
+    star.ranks.forEach((rank, i) => {
+        const r = i + 1;
+        const listed = xpForEveryoneOf([star], { [star.id]: r });
+        if (listed <= before && (gives(rank) || before > 0)) {
+            push(star, 'ranks', r === 1
+                ? `rank 1 gives no XP for Everyone: it lists ${listed} XP.`
+                : `rank ${r} gives no XP for Everyone at its purchase: it lists ${listed} XP, no more than rank ${r - 1} does. ${WHOLE}`);
+        }
+        before = Math.max(before, listed);
+    });
 }

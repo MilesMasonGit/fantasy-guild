@@ -157,6 +157,14 @@ function ruleEffect(statement, names) {
             sentence: 'The Guild Hall\'s outputs arrive more often: its lap is shorter.'
         };
     }
+    if (payload.type === EFFECT_TYPES.XP_FOR_EVERYONE) {
+        const xp = Math.max(0, Math.round(Number(payload.value) || 0));
+        return {
+            phrase: 'get XP in every skill',
+            amount: `${xp} XP in every skill`,
+            sentence: 'Every hero gets XP in every skill, once a rank; recruits arrive with it.'
+        };
+    }
     if (payload.type === EFFECT_TYPES.LOADOUT_SLOTS) {
         const n = Number(payload.value) || 0;
         const kind = getCategoryInfo(payload.category)?.label || payload.category || 'item';

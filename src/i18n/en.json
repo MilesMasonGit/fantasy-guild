@@ -602,6 +602,7 @@
     },
     "heroBar": {
         "perk": "Perk: {perk}",
+        "giftLevels": { "one": "+{count} level!", "other": "+{count} levels!" },
         "equipped": "Equipped {item}",
         "equippedStack": "Equipped {item} x{count}",
         "unequipped": "Unequipped {item}",

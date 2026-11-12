@@ -9,6 +9,9 @@ const ICON_ART_PX = 16;
 /** Stepped frames per number the roll passes, so it moves in visible jumps, never smoothly. */
 const ROLL_FRAMES_PER_VALUE = 8;
 
+/** A Guild Hall gift's float shows the Upgrade button's icon (16 art pixels, like a skill's). */
+const GIFT_ICON = '/assets/ui/u_upgrade.png';
+
 /**
  * One levelled skill over a hero's head: its icon and its level, free of any frame. The old
  * level flashes a gold outline, then rolls up like an odometer to the new one; at the end of
@@ -21,12 +24,13 @@ const ROLL_FRAMES_PER_VALUE = 8;
 const LevelUpFloat = memo(function LevelUpFloat({ f, unit, fit }) {
     useSpriteFxVersion();
     const [shownAt] = useState(() => Date.now());
-    const values = rollValues(f.from, f.to);
+    // A Guild Hall gift's float says the levels it gave in all, with nothing to roll.
+    const values = f.together ? [`+${f.levels}`] : rollValues(f.from, f.to);
     const rolls = values.length > 1;
     const roll = rollMs(values);
     const fadeDelay = Math.max(0, f.at + FLOAT_MS - FADE_MS - shownAt);
 
-    const { spritePath } = skillArt(f.skillId || f.skillName);
+    const spritePath = f.together ? GIFT_ICON : skillArt(f.skillId || f.skillName).spritePath;
     const iconPx = ICON_ART_PX * unit;
     const src = spritePath.startsWith('assets/') ? `/${spritePath}` : spritePath;
     const shadow = shadowLayer(src, iconPx, fit);
@@ -48,7 +52,7 @@ const LevelUpFloat = memo(function LevelUpFloat({ f, unit, fit }) {
                 {shadow && <span aria-hidden="true" style={layerStyle(shadow.url, shadow.offset, shadow.offset, iconPx, iconPx)} />}
                 <img
                     src={src}
-                    alt={f.skillName}
+                    alt={f.together ? 'XP for Everyone' : f.skillName}
                     draggable={false}
                     style={{ position: 'relative', width: iconPx, height: iconPx, maxWidth: 'none', imageRendering: 'pixelated' }}
                 />
@@ -96,6 +100,6 @@ const LevelUpFloat = memo(function LevelUpFloat({ f, unit, fit }) {
 /** A hero's levelled skills, side by side. */
 export const LevelUpFloats = ({ floats, unit, fit }) => (
     <div data-level-floats className="flex items-end justify-center" style={{ gap: unit * 4 }}>
-        {floats.map(f => <LevelUpFloat key={`${f.key}:${f.from}`} f={f} unit={unit} fit={fit} />)}
+        {floats.map(f => <LevelUpFloat key={`${f.key}:${f.together ? f.levels : f.from}`} f={f} unit={unit} fit={fit} />)}
     </div>
 );

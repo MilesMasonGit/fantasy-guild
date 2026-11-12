@@ -10,7 +10,7 @@ import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
 import * as ItemStubs from './itemStubs.js';
 import * as Banners from './banners.js';
 import { TONE } from './bannerKinds.js';
-import { recipesUnlockedByLevelUp } from './recipeUnlocks.js';
+import { recipesUnlockedByLevelUp, recipesUnlockedByGift } from './recipeUnlocks.js';
 import { hasNews } from './catchUpNews.js';
 import * as Atlas from '../atlas/Atlas.js';
 import { defaultBannerFor } from '../../config/areaBanners.js';
@@ -94,6 +94,24 @@ export const ROUTES = [
                 sprite: itemSprite(unlocked[0].outputs?.[0]?.itemId),
                 subjects: heroId ? [{ type: 'hero', id: heroId }] : []
             });
+        }
+    },
+    {
+        // A Guild Hall gift (XP for Everyone) raised every hero at once: one banner for all it unlocked.
+        event: ENGINE_EVENTS.XP_FOR_EVERYONE_GIVEN, to: 'banner:recipe',
+        handle: ({ heroes } = {}) => {
+            const batch = ++giftBatches;
+            const rows = recipesUnlockedByGift(listRecipes(), GameState.heroes, heroes);
+            for (const { heroId, recipes } of rows) {
+                const name = (heroes || []).find(r => r.heroId === heroId)?.heroName || heroOf(heroId)?.name || 'A hero';
+                Banners.push({
+                    kind: 'recipe',
+                    groupKey: `xp_for_everyone:${batch}`,
+                    parts: { heroes: [name], recipes: recipes.map(r => r.name || r.id) },
+                    sprite: itemSprite(recipes[0].outputs?.[0]?.itemId),
+                    subjects: [{ type: 'hero', id: heroId }]
+                });
+            }
         }
     },
     {
@@ -238,6 +256,8 @@ export function deliverCatchUpNews(news) {
 }
 
 let newsBatches = 0;
+/** Guild Hall gifts so far: each one's recipe banners share a group, so they are one banner. */
+let giftBatches = 0;
 
 /** The sound a banner makes as it comes on screen: a chime, or a warning tone for a problem. */
 export const BANNER_SOUND = Object.freeze({ [TONE.MILESTONE]: 'quest_claim', [TONE.PROBLEM]: 'invasion' });
