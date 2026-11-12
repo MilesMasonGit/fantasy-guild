@@ -85,7 +85,7 @@ const luckyExtra = (badge) => (badge.key === EFFECT_KEY.LUCKY
 export const EffectChip = ({ badge, small = false, className }) => {
     const tone = badgeTone(badge);
     return (
-        <Tooltip title={<TipTitle glyph={EFFECT_GLYPH[badge.key]}>{badge.name}</TipTitle>} content={<BadgeTipBody badge={badge} extra={luckyExtra(badge)} />} maxWidth={320}>
+        <Tooltip title={<TipTitle glyph={EFFECT_GLYPH[badge.key]}>{badge.name}</TipTitle>} content={<BadgeTipBody badge={badge} extra={luckyExtra(badge)} />} maxWidth={360}>
             <span
                 data-effect-badge={badge.key}
                 data-effect-badge-item={badge.itemId}
@@ -127,7 +127,7 @@ const HeroChip = ({ hero, heroDef, badgeOf }) => {
                 data-effect-badge-hero={hero.heroId}
                 title=""
                 onClick={stop}
-                className="inline-flex items-center self-start px-0.5 py-px bg-black/65 border-2 border-white/20 cursor-help"
+                className="inline-flex items-center justify-self-start self-start px-0.5 py-px bg-black/65 border-2 border-white/20 cursor-help"
             >
                 {face ? <Face src={face} /> : <PixelGlyph name="unknown" className="text-white" />}
             </span>

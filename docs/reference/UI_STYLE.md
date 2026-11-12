@@ -100,6 +100,22 @@ are designed in [concept_effect_badges.md](../active/concept_effect_badges.md)
 (brief 600): a row under the Token card's stats line in this table's order,
 each hoverable for its sources; an item's effects sit on that item's line.
 
+**Badges (brief 600, the owner's look A, 2026-11-11).** A badge is a **chip**: the effect's 8 × 8
+icon at 2× and its number, on a dark well with a 2 px faint edge, no rounding. The Token card's chips
+stand **under the stats line** (an enemy's under its combat line) as a **stat block three to a row**
+(two rows on a busy card), in the table's order, the **Hero Effects** chip last with the working
+hero's face; an effect at zero or one that cannot apply has no chip, and a Token nothing boosts has
+no row. Numbers come only from the effect breakdown (`EffectBreakdown.js`), never summed in the UI:
+a percent is signed (`+23%`), a chance plain (`8%`), a count signed (`+2`); green, red when it works
+against, **gold** with a gold edge when a limit holds it, the chip then showing what counts. The
+hover lists one line per source with its amount, then the total, then the limit note ("Held at the
+limit: +80% of +95% counts"). An **item's chip** is the same at 1× with a 1 px edge, just before the
+count on its line: Double Item on a Makes or Drops line, Efficiency on a Needs line (whose count is
+the cost a cycle can take, rounded up). A rare drop table is its own **Rare finds** group under
+Drops, its chance in the rare twinkle's colour and Lucky's chip on its heading (Lucky also sits in
+the row); a click opens the finds with their odds. "Boosted by" is gone from the card: the hovers
+name each source; a building's own Boosts list stays.
+
 ## Density
 
 - **Tight and game-like**: one line per skill or stat, small but readable
