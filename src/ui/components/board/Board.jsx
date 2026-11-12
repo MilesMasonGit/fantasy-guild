@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useBoardScale } from '../../hooks/useBoardScale.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
-import { dropOnMat } from './dropOnMat.js';
+import { dropOnMat, matAccepts } from './dropOnMat.js';
 import { pointerToMat } from './matPoint.js';
 import { MatBoard } from './MatBoard.jsx';
 import { PerfProfiler } from '../../dev/perf/PerfProfiler.jsx';
@@ -9,30 +9,18 @@ import { ErrorBoundary } from '../base/ErrorBoundary.jsx';
 import { MatFitProvider, setLiveMatFit } from './MatFitContext.jsx';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
-import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
+import { DND_SURFACE } from '../../dnd/dragConstants.js';
 import { requestRecipeList } from './recipeFlip.js';
 import { isShopPayload, pointerOverShopPanel } from '../drawer/ShopPanel.jsx';
-import { isMatBankLocked } from '../../hooks/useMatBankLock.js';
 
 /**
  * The playmat: one drop surface, scaled to fit, with `MatBoard` drawing what is on it.
  * This file owns only two things: **how big the mat is drawn** and **that the whole mat is a
  * single drop target**. Everything drawn on the mat is
- * `MatBoard`'s, and everything that happens on a drop is `dropOnMat`'s.
+ * `MatBoard`'s, and everything that happens on a drop is `dropOnMat`'s, what the mat takes
+ * included (`matAccepts`, shared with the right-click's orders).
  */
-
-/**
- * What the playmat's own drop target takes: any Token, and a flag with a hero.
- * While the Bank is open the mat takes nothing at all: the Bank covers it, and dnd-kit never
- * calls `onDrop` for a target whose `accepts` refuses the payload, so this one check is enough
- * to make every drop onto the mat a miss while the Bank is open.
- */
-export function matAccepts(p) {
-    if (isMatBankLocked()) return false;
-    if (p?.kind === DRAG_KIND.TOKEN) return true;
-    if (p?.kind === DRAG_KIND.FLAG) return !!p.heroId;
-    return false;
-}
+export { matAccepts };
 
 /**
  * How the mat is fitted to the window: CSS `zoom`, never `transform: scale`.

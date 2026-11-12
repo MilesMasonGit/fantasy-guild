@@ -1,5 +1,5 @@
 // The QA panel's supplies section: one click sets up a fight with elixirs and one with food.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useState } from 'react';
 import { setUpSuppliesScene } from './suppliesDev.js';

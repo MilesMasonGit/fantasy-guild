@@ -1,5 +1,5 @@
 // The QA panel's Bank section: Bank Tabs ranks, a Bank of every kind, an older save, one click each.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useState } from 'react';
 import { devSetBankTabs, devBankEveryKind, devOldBankSlotsSave } from './bankDev.js';

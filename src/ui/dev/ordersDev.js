@@ -1,5 +1,5 @@
-// QA scenes for hero orders (brief 260 O1). DEV BUILDS ONLY: `OrdersDevSection` is rendered behind
-// `import.meta.env.DEV`.
+// QA scenes for hero orders (brief 260 O1). QA BUILDS ONLY: `OrdersDevSection` is rendered behind
+// `QA_TOOLS`.
 
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';

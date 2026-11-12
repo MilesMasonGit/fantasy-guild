@@ -5,7 +5,7 @@ import { useMatSize } from '../../hooks/useMatSize.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { boardScaleAt, tokenSizeFor, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { MAT_Z } from './matLayers.js';
-import { pointerToMat, matRectForDrag } from './matPoint.js';
+import { pointerToMat, matRectForDrag, onMatItself } from './matPoint.js';
 import { dashedLinePath, MARCH_PX_PER_S } from './orderLine.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import { matW } from '../../../config/matGeometry.js';
@@ -17,6 +17,10 @@ import { calloutTopOf } from './CalloutLayer.jsx';
 import { setHintTarget } from './dragHints.js';
 import { HeroDragMarks, markMatPx } from './DragMarks.jsx';
 import { opaqueBoundsOf } from '../../utils/alphaHitTest.js';
+import { onFrame } from './frameClock.js';
+import { useSelectedHeroId } from '../../hooks/useMatSelection.js';
+import { isMatBankLocked } from '../../hooks/useMatBankLock.js';
+import { onSelectedStop } from './rightClickOrders.js';
 
 /** The line: one art pixel of gold over a black copy one art pixel down-right, as the camp ring. */
 const LINE_GOLD = 'var(--color-gi-gold)';
@@ -34,15 +38,28 @@ const carriesHero = (payload) => !!payload?.heroId && payload.kind === DRAG_KIND
  * Over a Token the hero can work, the carried flag and the line's end snap to the Token's centre;
  * over one they cannot, a red bubble over it says why ("Needs Pickaxe"), as the drop would. Over any
  * Token the carried hero's drag hint marks stand centred over its sprite, under that bubble.
+ * **A selected hero** (`useMatSelection.js`), nothing carried, shows the marks and the red bubble
+ * over the Token under the pointer while it is on the mat itself (what a right-click there would
+ * do, by the same aim), but **no line** (owner, 2026-11-12). Off the mat (a panel over it, the hero
+ * bar) or while the Bank covers it, it shows nothing; any drag takes its place.
  * Nothing is mounted at rest; while carried, one `<svg>` whose two paths are rewritten once per
- * animation frame, and the ghost moved, never through React: only the bubble and marks are React's, redrawn
- * as the Token under the pointer changes (`orderAim.js`). A hero with no figure on the mat (none
+ * animation frame (`frameClock.onFrame`, paused with the drawing), and the ghost moved, never
+ * through React: only the bubble and marks are React's, redrawn as the Token under the pointer
+ * changes (`orderAim.js`). A selected hero's aim runs once per frame the pointer moved, so a still
+ * pointer or one off the mat costs no frame at all. Once the selected hero is stopped by
+ * right-click their marks go out until the pointer moves onto another Token, so their yellow
+ * "needs a job" mark shows at once (`onSelectedStop`). A hero with no figure on the mat (none
  * today: every hero stands on it) draws no line. Under reduced motion the dashes stand still.
  */
 export const OrderDragLine = memo(function OrderDragLine({ matRef }) {
     const { isDragging, activePayload } = useActiveDrag();
-    if (!isDragging || !carriesHero(activePayload)) return null;
-    return <MarchingLine heroId={activePayload.heroId} session={activePayload} matRef={matRef} />;
+    const selectedHero = useSelectedHeroId();
+    if (isDragging) {
+        if (!carriesHero(activePayload)) return null;
+        return <MarchingLine key="carried" heroId={activePayload.heroId} session={activePayload} matRef={matRef} />;
+    }
+    if (!selectedHero) return null;
+    return <MarchingLine key="selected" heroId={selectedHero} session={null} matRef={matRef} />;
 });
 
 /**
@@ -111,38 +128,81 @@ function MarchingLine({ heroId, session, matRef }) {
     const [target, setTarget] = useState(null);
 
     useEffect(() => {
+        // Carried (`session`: the drag's payload) or selected (none): one aim, one line, one loop.
+        const carried = !!session;
         let pointer = null;
-        let frame = 0;
+        let stopFrames = null;
         let last = '';
-        const ghost = createGhostSnap(heroId);
-        const regions = snapshotDndRegions();
+        const ghost = carried ? createGhostSnap(heroId) : null;
+        const regions = carried ? snapshotDndRegions() : null;
+        // The mat's box, read once per drag; a selection outlasts a drag, so it is read again each
+        // time the pointer comes back onto the mat or the window is resized, never per frame.
+        let rectSession = session || {};
         let aimed = null;
+        // Put out by a stop, until the aim moves off the Token it was on.
+        let quiet = false;
         const aim = createOrderAim(heroId);
         const still = reducedMotion();
         const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
-        const onMove = (e) => { pointer = { x: e.clientX, y: e.clientY }; };
-        const draw = (now) => {
-            frame = requestAnimationFrame(draw);
+        const start = () => { if (!stopFrames) stopFrames = onFrame(draw); };
+        const stop = () => { stopFrames?.(); stopFrames = null; };
+        const onMove = (e) => {
+            if (carried) {
+                pointer = { x: e.clientX, y: e.clientY };
+                return;
+            }
+            // Selected: only the mat itself takes a right-click order (never a panel over it, the
+            // hero bar, or the mat under the Bank), so the hints show only there. Off it, one more
+            // frame puts them out, and none is asked for until the pointer is back.
+            const matEl = matRef?.current || null;
+            if (!onMatItself(matEl, e.target) || isMatBankLocked()) {
+                if (pointer) start();
+                pointer = null;
+                return;
+            }
+            if (!pointer) rectSession = {};
+            pointer = { x: e.clientX, y: e.clientY };
+            start();
+        };
+        const onLeavePage = (e) => {
+            if (carried || e.relatedTarget || !pointer) return;
+            pointer = null;
+            start();
+        };
+        const onResize = () => { if (!carried) rectSession = {}; };
+        const offStop = carried ? null : onSelectedStop((id) => {
+            if (id !== heroId || quiet) return;
+            quiet = true;
+            setTarget(null);
+            setHintTarget(null);
+        });
+        function draw(now) {
             const from = HeroMotion.heroPointOf(heroId);
             const matEl = matRef?.current || null;
             // Over the bar, the Bank's column or a drawer a drop gives no order, so nothing here
             // says it would. Worked out here, not from the provider's surface, so crossing a region redraws nothing.
-            const overDrawer = pointer && surfaceWithinRegions(pointer.x, pointer.y, regions) === DND_SURFACE.DRAWER;
-            const rect = pointer && matEl && !overDrawer ? matRectForDrag(matEl, session) : null;
+            const overDrawer = carried && pointer && surfaceWithinRegions(pointer.x, pointer.y, regions) === DND_SURFACE.DRAWER;
+            const rect = pointer && matEl && !overDrawer ? matRectForDrag(matEl, rectSession) : null;
             const at = rect ? pointerToMat(pointer, rect) : null;
             // The drop's own hit test, on the pointer: snapping moves the flag, never the aim.
             const aimNow = aim(at);
             if (aimNow !== aimed) {
                 aimed = aimNow;
+                quiet = false;
                 setTarget(aimed.instance ? { instance: aimed.instance, reason: aimed.reason } : null);
                 // Every hero's marks, worked out once per Token entered (`dragHints.js`).
                 setHintTarget(aimed.instance);
             }
+            // A selected hero draws no line, and its aim waits for the pointer to move again.
+            if (!carried) {
+                stop();
+                return;
+            }
             const to = aimed.snap ? { x: aimed.instance.x, y: aimed.instance.y } : at;
             if (aimed.snap && rect) {
                 const s = rect.width / matW();
-                ghost.stand({ x: rect.left + to.x * s, y: rect.top + to.y * s });
-            } else ghost.stand(null);
+                ghost?.stand({ x: rect.left + to.x * s, y: rect.top + to.y * s });
+            } else ghost?.stand(null);
             let d = '';
             if (from && to) {
                 const cell = (p) => ({ x: Math.floor(p.x / artScale), y: Math.floor(p.y / artScale) });
@@ -153,20 +213,27 @@ function MarchingLine({ heroId, session, matRef }) {
             last = d;
             goldRef.current?.setAttribute('d', d);
             shadowRef.current?.setAttribute('d', d);
-        };
+        }
         window.addEventListener('pointermove', onMove, { passive: true });
-        if (typeof requestAnimationFrame === 'function') frame = requestAnimationFrame(draw);
+        if (!carried) {
+            window.addEventListener('pointerout', onLeavePage, { passive: true });
+            window.addEventListener('resize', onResize);
+        }
+        if (carried) start();
         return () => {
             window.removeEventListener('pointermove', onMove);
-            if (frame && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frame);
-            ghost.stop();
+            window.removeEventListener('pointerout', onLeavePage);
+            window.removeEventListener('resize', onResize);
+            offStop?.();
+            stop();
+            ghost?.stop();
             setHintTarget(null);
         };
     }, [heroId, session, matRef, artScale]);
 
     return (
         <>
-        <svg
+        {session && <svg
             data-order-line={heroId}
             aria-hidden="true"
             className="absolute left-0 top-0 overflow-visible pointer-events-none"
@@ -178,7 +245,7 @@ function MarchingLine({ heroId, session, matRef }) {
                 <path ref={shadowRef} d="" transform={`translate(${artScale} ${artScale}) scale(${artScale})`} fill={LINE_SHADOW} />
                 <path ref={goldRef} d="" transform={`scale(${artScale})`} fill={LINE_GOLD} />
             </g>
-        </svg>
+        </svg>}
         {target && <AimedLabel heroId={heroId} instance={target.instance} reason={target.reason} fit={fit} matH={mat.h} />}
         </>
     );

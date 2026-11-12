@@ -1,7 +1,6 @@
 import { EFFECT_TYPES } from '../../../systems/effects/constants.js';
 import { getPaletteEntry } from '../../../config/registries/modifierPalette.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
-import { MAX_SPEED_UP_CUT } from '../../../config/loopConstants.js';
 
 /**
  * A support's effect as the few words a tag says: "−25 % grow", "×2 Copper Ore 25 %",
@@ -61,11 +60,3 @@ export function supportTag(payload, itemName = (id) => getItem(id)?.name || null
         }
     }
 }
-
-const CUT = `${MINUS}${Math.round(MAX_SPEED_UP_CUT * 100)} %`;
-
-/** The card's note when speed-ups stack past the standard floor and are held there. */
-export const FLOOR_NOTE = Object.freeze({
-    work: `Work held at ${CUT}, the most speed-ups can cut`,
-    grow: `Growth held at ${CUT}, the most speed-ups can cut`
-});

@@ -1,5 +1,5 @@
 // the QA panel's statuses check: a Venomous enemy, a burning attacker and a boss with all four moves, against fed heroes
-// ⚠️ DEV BUILDS ONLY: reached from `StatusesDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: reached from `StatusesDevSection`, which TestDashboard renders behind `QA_TOOLS`.
 
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';

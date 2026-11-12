@@ -2,8 +2,8 @@
 // of each moment, and the star to buy. `GuildHallDevSection` writes the ranks and puts the star's
 // price in the Bank; the purchase itself is the player's click (the star, then Upgrade), so the
 // ceremony plays as it does in play.
-// ⚠️ DEV BUILDS ONLY: reached from `GuildHallDevSection`, which TestDashboard renders behind
-// `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: reached from `GuildHallDevSection`, which TestDashboard renders behind
+// `QA_TOOLS`.
 
 import { CONSTELLATIONS, GUILD_UPGRADES, getUpgradeDef, isUpgradeAccessible } from '../../config/guildUpgrades.js';
 import { ceremonyFor, constellationStars } from '../components/board/hallCeremony.js';

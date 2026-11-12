@@ -1,5 +1,5 @@
 // The QA panel's enemy moves section: one click sets up the owner's chicken (Peck, Scratch, Flutter) on a hero in Physical-resistant gear.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useState } from 'react';
 import { setUpEnemyMovesScene } from './enemyMovesDev.js';

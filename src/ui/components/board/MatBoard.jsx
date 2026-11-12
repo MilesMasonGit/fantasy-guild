@@ -27,7 +27,7 @@ import { TerrainCanvas } from './TerrainCanvas.jsx';
 import { AmbientLife, createGroundPictures } from './AmbientLife.jsx';
 import { TerrainGridOverlay } from './TerrainGridOverlay.jsx';
 import { MAT_EDGE, MAT_EDGE_CSS } from './groundScreen.js';
-import { announce } from './dropOnMat.js';
+import { rightClickEvent } from './rightClickOrders.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
@@ -42,7 +42,6 @@ import * as Flags from '../../../systems/board/Flags.js';
 import * as Occupation from '../../../systems/board/Occupation.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import * as EnemyMotion from '../../../systems/board/EnemyMotion.js';
-import * as Orders from '../../../systems/board/Orders.js';
 import * as Camps from '../../../systems/board/Camps.js';
 import { OrderLighting, lightHeroJob } from './OrderLighting.jsx';
 import { useRosterHover } from './orderLit.js';
@@ -57,7 +56,8 @@ import { watchRegionSettle } from './fx/regionSettle.js';
 import { MatFxLayer } from './fx/MatFxLayer.jsx';
 import { MatLimes } from '../limes/MatLimes.jsx';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
+import { useSelection, clickToken, clickHero, clearSelection, SELECTION_KIND } from '../../hooks/useMatSelection.js';
 
 /**
  * The playmat as it is actually drawn. Every Token, hero and flag is drawn at its own mat
@@ -367,19 +367,59 @@ export const MatBoard = React.memo(function MatBoard({
     useEffect(() => watchSpawns(), []);
     useEffect(() => watchRegionSettle(), []);
 
-    // A right-click on a hero (or the Token they work) sends them home to the Guild Hall.
-    const handleRecallHero = useCallback((heroId) => {
-        const at = BoardState.displayPointOf(heroId);
-        announce(Orders.sendHome(heroId), at);
+    /**
+     * The mat's selection (`useMatSelection.js`): a single click picks, or clears what is already
+     * picked (`single`: `isSingleClick`); a double-click inspects and picks. Read here and handed
+     * to each Token and hero as a prop, as the hover is, so a pick redraws only the two Tokens
+     * whose outline changed.
+     */
+    const selection = useSelection();
+    const pickedTokenId = selection?.kind === SELECTION_KIND.TOKEN ? selection.id : null;
+    const pickedHeroId = selection?.kind === SELECTION_KIND.HERO ? selection.id : null;
+    // Read when a pick happens, so the handlers stay the same and no Token redraws for them.
+    const inspectedTokenRef = useRef(inspectedTokenId);
+    inspectedTokenRef.current = inspectedTokenId;
+    // A pick of something else closes an open Token card (a pick of its own Token keeps it).
+    const handlePickToken = useCallback((instanceId, single = false) => {
+        clickToken(instanceId, single);
+        if (inspectedTokenRef.current && inspectedTokenRef.current !== instanceId) onClearInspect?.();
+    }, [onClearInspect]);
+    const handlePickHero = useCallback((heroId, single = false) => {
+        clickHero(heroId, single);
+        if (inspectedTokenRef.current) onClearInspect?.();
+    }, [onClearInspect]);
+
+    /**
+     * A click on blank mat clears the selection. Not one that ends a drag (the press moved), and
+     * not one on anything that takes a click of its own (a Token, a hero, a flag, a button).
+     */
+    const pressAtRef = useRef(null);
+    const handleMatPointerDown = useCallback((e) => { pressAtRef.current = { x: e.clientX, y: e.clientY }; }, []);
+    const handleMatClick = useCallback((e) => {
+        const at = pressAtRef.current;
+        if (at && Math.hypot(e.clientX - at.x, e.clientY - at.y) > CLICK_SLOP_PX) return;
+        if (e.target?.closest?.(TAKES_ITS_OWN_CLICK)) return;
+        clearSelection();
     }, []);
+
+    /**
+     * A right-click anywhere on the mat is an order for what is selected, or with nothing selected
+     * a stop for the hero right-clicked or working the Token there (`rightClickOrders.js`).
+     */
+    const handleMatRightClick = useCallback((e) => { rightClickEvent(e, rootRef.current); }, []);
+    const handleHeroRightClick = useCallback((heroId, e) => { rightClickEvent(e, rootRef.current, heroId); }, []);
 
     // A hero hovered on the mat or on their roster tab: outlined, and their job lights (their
     // sheet's, when none is hovered).
     const rosterHover = useRosterHover();
     const litHeroId = hoverHeroId || rosterHover || null;
+    // A selected hero's job lights too, and follows a new order while they stay selected.
+    const jobHeroId = litHeroId || pickedHeroId || inspectedHeroId || null;
     useEffect(() => {
-        lightHeroJob(litHeroId || inspectedHeroId || null);
-    }, [litHeroId, inspectedHeroId]);
+        lightHeroJob(jobHeroId);
+        if (!jobHeroId) return undefined;
+        return EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, () => lightHeroJob(jobHeroId), UI_LISTENER);
+    }, [jobHeroId]);
 
     // A click on a Token in Demolish mode marks or unmarks it; an engine refusal is said over the
     // Token.
@@ -464,14 +504,14 @@ export const MatBoard = React.memo(function MatBoard({
      */
     const campRing = useMemo(() => {
         if (hoveredCentre) return null;
-        const heroId = rest.heroId || (rest.tokenId ? workedBy.get(rest.tokenId) : null) || litHeroId || inspectedHeroId;
+        const heroId = rest.heroId || (rest.tokenId ? workedBy.get(rest.tokenId) : null) || litHeroId || pickedHeroId || inspectedHeroId;
         const jobId = heroId ? heroes.find(h => h.heroId === heroId)?.jobId : null;
         const job = jobId && jobId !== carriedId ? BoardState.getTokenById(jobId) : null;
         const camp = job && Camps.isCampLike(job) ? job : null;
         const ring = camp ? Camps.reachRingOf(camp) : null;
         return ring ? { campId: camp.id, ...ring } : null;
     // `tokens`: a camp moved by the player moves its ring (the ring reads the camp's live point).
-    }, [hoveredCentre, rest.tokenId, rest.heroId, carriedId, litHeroId, inspectedHeroId, heroes, tokens, workedBy]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [hoveredCentre, rest.tokenId, rest.heroId, carriedId, litHeroId, pickedHeroId, inspectedHeroId, heroes, tokens, workedBy]); // eslint-disable-line react-hooks/exhaustive-deps
     // Keyed by value, so a hero's walking step does not redraw the ring.
     const campRingKey = campRing ? `${campRing.campId}|${campRing.x}|${campRing.y}|${campRing.r}` : '';
     const campRingShown = useMemo(() => campRing, [campRingKey]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -505,6 +545,9 @@ export const MatBoard = React.memo(function MatBoard({
             style={{ width: mat.w, height: mat.h, '--map-mode-cursor': mapModeCursor(mapMode) || undefined }}
             onPointerMove={handlePointerMove}
             onPointerLeave={clearHover}
+            onPointerDownCapture={handleMatPointerDown}
+            onClick={handleMatClick}
+            onContextMenu={handleMatRightClick}
         >
             {/**
              * 0: the mat itself, a plain darker surface with a rounded light edge and no soft
@@ -567,11 +610,12 @@ export const MatBoard = React.memo(function MatBoard({
                     isHovered={hoveredId === t.id}
                     isRested={rest.tokenId === t.id}
                     selected={inspectedTokenId != null && inspectedTokenId === t.id}
+                    picked={pickedTokenId === t.id}
                     hasHero={workedBy.has(t.id)}
                     onInspectToken={onInspectToken}
+                    onPick={handlePickToken}
                     onClearInspect={onClearInspect}
                     onOpenRecipes={onOpenRecipes}
-                    onRecallHero={handleRecallHero}
                     mapMode={mapMode}
                     onModeClick={handleModeClick}
                     dragging={carriedId === t.id}
@@ -601,13 +645,15 @@ export const MatBoard = React.memo(function MatBoard({
                         top={place.top}
                         z={heroZ(h)}
                         outline={heroOutline({
+                            picked: pickedHeroId === h.heroId,
                             hovered: litHeroId === h.heroId || (h.tokenId != null && hoveredId === h.tokenId),
                             selected: inspectedHeroId === h.heroId,
                             working: h.state === 'working',
                             stuck: h.stuck
                         })}
                         onHover={handleHoverHero}
-                        onRecall={handleRecallHero}
+                        onPick={handlePickHero}
+                        onRightClick={handleHeroRightClick}
                         animationState={animState}
                         moving={h.moving}
                         facing={h.facing}
@@ -706,6 +752,12 @@ export const MatBoard = React.memo(function MatBoard({
         </div>
     );
 });
+
+/** How far a press may move and still be a click on blank mat, in screen pixels (a drag starts at 8). */
+const CLICK_SLOP_PX = 6;
+
+/** What takes a click of its own on the mat, so a click there is not one on blank mat. */
+const TAKES_ITS_OWN_CLICK = 'button, a, [data-token-id], [data-token-hit], [data-work-plate], [data-limes], [data-tooltip]';
 
 /** How far behind its Token a Token order's flag sorts, in mat units: behind it, in front of the line above. */
 const FLAG_BEHIND = 0.5;

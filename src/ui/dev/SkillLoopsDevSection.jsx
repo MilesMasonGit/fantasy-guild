@@ -1,5 +1,5 @@
 // The QA panel's skill loops section (brief 230 S1a, S1b): one click lays out Grow Time, the 80 % floor, a fixed vein and stations that never wear; another, a miner waiting for a resting vein and a furnace out of coal.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useEffect, useState } from 'react';
 import { setUpSkillLoopsScene, skillLoopsReadout, setUpWaitingScene, addCoalVein, waitingReadout } from './skillLoopsDev.js';

@@ -1,5 +1,5 @@
 // The QA panel's fishing section (brief 230 S5): one click lays out a lake, a river and a sea, each fished its own way, and a Dock.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useEffect, useState } from 'react';
 import { setUpFishingScene, fishingReadout } from './fishingDev.js';

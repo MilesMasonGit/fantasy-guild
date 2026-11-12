@@ -28,6 +28,9 @@ import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { lookUpRibbon, lookUpToken, lookUpRecipe, lookUpItem } from '../encyclopedia/encyclopediaLink.js';
 import { t } from '../../../i18n/index.js';
 import { onPoll } from './frameClock.js';
+import { EffectBadgeGrid, EffectChip, ItemBadges } from './EffectBadges.jsx';
+import { EFFECT_KEY } from '../../../systems/board/EffectBreakdown.js';
+import { STAR_COLOUR } from './fx/rareTwinkle.js';
 
 /** The activity scenes are 256 px square; they only ever draw at whole multiples of it. */
 export const CARD_ART_PX = 256;
@@ -175,8 +178,17 @@ const HpBar = ({ cur, max }) => {
     );
 };
 
-/** The basic information in one block: as many cells to a row as fit, the HP bar across the top. */
-const StatsSection = ({ blocks }) => {
+/** The item line's badges for `itemId` in a breakdown's `outputs` or `inputs`, or nothing. */
+const itemBadges = (lines, itemId) => {
+    const line = (lines || []).find(l => l.itemId === itemId);
+    return line ? <ItemBadges line={line} /> : undefined;
+};
+
+/**
+ * The basic information in one block: as many cells to a row as fit, the HP bar across the top,
+ * the effect badges under them.
+ */
+const StatsSection = ({ blocks, effects }) => {
     const hp = blocks.find(b => b.id === CARD_BLOCK.HP);
     const cells = blocks.filter(b => b.id !== CARD_BLOCK.HP);
     return (
@@ -191,6 +203,7 @@ const StatsSection = ({ blocks }) => {
                     })}
                 </div>
             )}
+            <EffectBadgeGrid breakdown={effects} heroDef={effects?.heroId ? (GameState.state?.heroes || []).find(h => h?.id === effects.heroId) : null} />
         </Section>
     );
 };
@@ -232,7 +245,7 @@ const RecipeChoice = ({ block, instanceId, onChangeRecipe }) => {
 };
 
 /** What the work takes: the tools a hero or the spot must have, and the items it uses up. */
-const RequiresSection = ({ block }) => {
+const RequiresSection = ({ block, effects }) => {
     if (!block.needs.length && !block.tools.length) return null;
     return (
         <Section data-card-block="requires">
@@ -259,7 +272,17 @@ const RequiresSection = ({ block }) => {
             {block.needs.length > 0 && (
                 <div data-card-needs className="flex flex-col gap-1">
                     {block.needs.map(n => (
-                        <EntityRibbon key={n.itemId} kind="item" id={n.itemId} have={n.have} required={n.need} size="sm" wrap onInspect={lookUpRibbon} />
+                        <EntityRibbon
+                            key={n.itemId}
+                            kind="item"
+                            id={n.itemId}
+                            have={n.have}
+                            required={n.need}
+                            badge={itemBadges(effects?.inputs, n.itemId)}
+                            size="sm"
+                            wrap
+                            onInspect={lookUpRibbon}
+                        />
                     ))}
                 </div>
             )}
@@ -267,7 +290,7 @@ const RequiresSection = ({ block }) => {
     );
 };
 
-const MakesSection = ({ makes }) => {
+const MakesSection = ({ makes, effects }) => {
     if (!makes.length) return null;
     return (
         <Section data-card-block="makes">
@@ -275,12 +298,13 @@ const MakesSection = ({ makes }) => {
             <div data-card-makes className="flex flex-col gap-1">
                 {makes.map(m => (
                     <EntityRibbon
-                        key={m.rare ? `rare:${m.itemId}` : m.itemId}
+                        key={m.itemId}
                         kind="item"
                         id={m.itemId}
                         minQty={m.min}
                         maxQty={m.max}
                         chance={m.chance != null ? `${m.chance}%` : undefined}
+                        badge={itemBadges(effects?.outputs, m.itemId)}
                         size="sm"
                         wrap
                         onInspect={lookUpRibbon}
@@ -292,8 +316,8 @@ const MakesSection = ({ makes }) => {
 };
 
 // Each catch lands one, so the odds stand where a count would.
-const CatchRibbons = ({ catches }) => catches.map(c => (
-    <EntityRibbon key={c.itemId} kind="item" id={c.itemId} countText={`${c.chance}%`} size="sm" wrap onInspect={lookUpRibbon} />
+const CatchRibbons = ({ catches, outputs }) => catches.map(c => (
+    <EntityRibbon key={c.itemId} kind="item" id={c.itemId} countText={`${c.chance}%`} badge={itemBadges(outputs, c.itemId)} size="sm" wrap onInspect={lookUpRibbon} />
 ));
 
 /** A list that opens on a click, shut to begin with. */
@@ -317,7 +341,7 @@ const Collapsed = ({ label, children, ...rest }) => {
 };
 
 /** A water's catches: what the hero on it lands now, then the rest shut away by tool. */
-const CatchSection = ({ catches: { heroName, setup, unable, groups } }) => (
+const CatchSection = ({ catches: { heroName, setup, unable, groups }, effects }) => (
     <Section data-card-block="catch">
         {setup && (
             <div data-card-catch-setup className="flex flex-col gap-1">
@@ -325,7 +349,7 @@ const CatchSection = ({ catches: { heroName, setup, unable, groups } }) => (
                 <span data-card-catch-gear className="ui-text-small text-gi-muted">
                     {setup.baitName ? `${setup.toolName} with ${setup.baitName}` : `${setup.toolName}, no bait`}
                 </span>
-                <CatchRibbons catches={setup.catches} />
+                <CatchRibbons catches={setup.catches} outputs={effects?.outputs} />
             </div>
         )}
         {unable && (
@@ -363,13 +387,13 @@ const EventsSection = ({ lines }) => (
 );
 
 /**
- * One Token in reach and what passes between: its art, its name and the effects in green. Its own
- * row rather than a ribbon, so a long name or tag wraps instead of being cut off.
+ * One Token in reach this one boosts: its art, its name and the effects in green. Its own row
+ * rather than a ribbon, so a long name or tag wraps instead of being cut off.
  */
-const SupportRow = ({ row, kind }) => (
-    <Tooltip title={kind === 'by' ? `${row.name} gives this ${row.tags.join(', ')}` : `This gives ${row.name} ${row.tags.join(', ')}`}>
+const SupportRow = ({ row }) => (
+    <Tooltip title={`This gives ${row.name} ${row.tags.join(', ')}`}>
         <div
-            data-card-support={kind}
+            data-card-support="to"
             data-card-support-tags={row.tags.join('|')}
             className="flex items-center gap-2 border border-white/40 p-1 cursor-help"
         >
@@ -386,32 +410,81 @@ const SupportRow = ({ row, kind }) => (
     </Tooltip>
 );
 
-const SupportSection = ({ boostedBy, boosts, floor }) => (
+const SupportSection = ({ boosts }) => (
     <Section data-card-block="support">
-        {boostedBy.length > 0 && (
-            <div data-card-boosted-by className="flex flex-col gap-1">
-                <Heading>Boosted by</Heading>
-                {boostedBy.map(r => <SupportRow key={r.id} row={r} kind="by" />)}
-            </div>
-        )}
-        {floor.map(note => (
-            <span key={note} data-card-floor className="ui-text-small" style={{ color: 'var(--color-ui-gold)' }}>{note}</span>
-        ))}
-        {boosts.length > 0 && (
-            <div data-card-boosts className="flex flex-col gap-1">
-                <Heading>Boosts</Heading>
-                {boosts.map(r => <SupportRow key={r.id} row={r} kind="to" />)}
-            </div>
-        )}
+        <div data-card-boosts className="flex flex-col gap-1">
+            <Heading>Boosts</Heading>
+            {boosts.map(r => <SupportRow key={r.id} row={r} />)}
+        </div>
     </Section>
 );
 
-const DropsSection = ({ drops }) => (
+const rareQty = (r) => (r.min === 1 && r.max === 1 ? undefined : r.min === r.max ? `×${r.min}` : `×${r.min}–${r.max}`);
+
+/**
+ * The rare drop table as one group: its chance in the twinkle's colour and the Lucky badge on its
+ * heading; a click opens the list of what it can find, each at its odds, and another shuts it.
+ */
+const RareFinds = ({ rare, lucky }) => {
+    const [open, setOpen] = useState(false);
+    return (
+        <div data-card-rare={open ? 'open' : 'shut'} className="flex flex-col gap-1">
+            <Tooltip title={t('effectBadges.card.rareFinds')} lines={[t('effectBadges.card.rareTip')]}>
+                <button
+                    type="button"
+                    data-card-rare-toggle
+                    aria-expanded={open}
+                    onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }}
+                    className="flex items-center gap-1.5 self-stretch text-left ui-text-body text-gi-text hover:text-white cursor-pointer"
+                >
+                    <span className="inline-flex" style={open ? undefined : { transform: 'rotate(-90deg)' }}><PixelTriangle dir="down" /></span>
+                    <span className="font-bold">{t('effectBadges.card.rareFinds')}</span>
+                    <span data-card-rare-chance className="font-bold tabular-nums" style={{ color: STAR_COLOUR }}>{`${rare.chance}%`}</span>
+                    <span className="flex-1" />
+                    {lucky && <EffectChip badge={lucky} small />}
+                </button>
+            </Tooltip>
+            {open && (
+                <div data-card-rare-list className="flex flex-col gap-1 pl-3">
+                    {rare.rows.map(r => (
+                        <EntityRibbon
+                            key={r.itemId}
+                            kind="item"
+                            id={r.itemId}
+                            subtitle={rareQty(r)}
+                            countText={`${r.chance}%`}
+                            size="sm"
+                            wrap
+                            onInspect={lookUpRibbon}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+const luckyOf = (effects) => effects?.effects.find(b => b.key === EFFECT_KEY.LUCKY) || null;
+
+/** An enemy's drops, or a Token's rare finds alone under the same heading. */
+const DropsSection = ({ drops = [], rare, effects }) => (
     <Section data-card-block="drops">
-        <Heading>Drops</Heading>
+        <Heading>{t('effectBadges.card.drops')}</Heading>
         {drops.map(d => (
-            <EntityRibbon key={d.rare ? `rare:${d.itemId}` : d.itemId} kind="item" id={d.itemId} minQty={d.min} maxQty={d.max} chance={`${d.chance}%`} size="sm" wrap onInspect={lookUpRibbon} />
+            <EntityRibbon
+                key={d.itemId}
+                kind="item"
+                id={d.itemId}
+                minQty={d.min}
+                maxQty={d.max}
+                chance={`${d.chance}%`}
+                badge={itemBadges(effects?.outputs, d.itemId)}
+                size="sm"
+                wrap
+                onInspect={lookUpRibbon}
+            />
         ))}
+        {rare && <RareFinds rare={rare} lucky={luckyOf(effects)} />}
     </Section>
 );
 
@@ -565,9 +638,9 @@ const STAT_BLOCKS = new Set([CARD_BLOCK.HP, CARD_BLOCK.COMBAT, CARD_BLOCK.WORK, 
 
 /**
  * The Token card: the card a click on a Token opens. A header with the name, then one panel of
- * sections following `tokenCardModel`: the stat block, the recipe picked, Requires, Makes or a
- * water's catches, Events, Boosted by, Drops. A section with nothing to say is left out. Every
- * icon and number explains itself on hover.
+ * sections following `tokenCardModel`: the stat block with its effect badges, the recipe picked,
+ * Requires, Makes, Rare finds or a water's catches, Events, Boosts, Drops. A section with nothing
+ * to say is left out. Every icon and number explains itself on hover.
  */
 export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewChange = null }) => {
     const def = getTokenType(typeId);
@@ -595,18 +668,20 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
         if (StationRecipe.setSelectedRecipe(BoardState.getTokenById(instanceId), recipeId, def)) setView('card');
     };
 
+    const { effects } = model;
     const stats = model.blocks.filter(b => STAT_BLOCKS.has(b.id));
     const sections = model.blocks.flatMap(block => {
         switch (block.id) {
             case CARD_BLOCK.RECIPE: return [
                 <RecipeChoice key="recipe" block={block} instanceId={instanceId} onChangeRecipe={() => setView('recipes')} />,
-                <RequiresSection key="requires" block={block} />,
-                <MakesSection key="makes" makes={block.makes} />,
-                block.catches ? <CatchSection key="catch" catches={block.catches} /> : null
+                <RequiresSection key="requires" block={block} effects={effects} />,
+                <MakesSection key="makes" makes={block.makes} effects={effects} />,
+                block.rare ? <DropsSection key="rare" rare={block.rare} effects={effects} /> : null,
+                block.catches ? <CatchSection key="catch" catches={block.catches} effects={effects} /> : null
             ];
             case CARD_BLOCK.LIFECYCLE: return [<EventsSection key="lifecycle" lines={block.lines} />];
-            case CARD_BLOCK.SUPPORT: return [<SupportSection key="support" {...block} />];
-            case CARD_BLOCK.DROPS: return [<DropsSection key="drops" drops={block.drops} />];
+            case CARD_BLOCK.SUPPORT: return [<SupportSection key="support" boosts={block.boosts} />];
+            case CARD_BLOCK.DROPS: return [<DropsSection key="drops" drops={block.drops} rare={block.rare} effects={effects} />];
             case CARD_BLOCK.MORE: return [<MoreBlock key="more" typeId={typeId} />];
             default: return [];
         }
@@ -628,7 +703,7 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
         </div>
     ) : (
         <>
-            {stats.length > 0 && <StatsSection blocks={stats} />}
+            {stats.length > 0 && <StatsSection blocks={stats} effects={effects} />}
             {sections}
             {instanceId != null && <LeaveMatControl instanceId={instanceId} />}
         </>

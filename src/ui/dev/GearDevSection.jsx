@@ -1,5 +1,5 @@
 // The QA panel's gear section: a full Bank and an older save's shared tool, one click each.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useState } from 'react';
 import { devFillBank, devShareOneTool } from './gearDev.js';

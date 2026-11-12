@@ -1,5 +1,5 @@
 // The QA panel's Orchards section (brief 230 S2b): one click lays out an Orchard with a fruiting and a Bare apple tree and a picker, and a lone Bare tree with no Orchard; a second click puts an Orchard beside the lone one.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useEffect, useState } from 'react';
 import { setUpOrchardScene, putOrchardByLoneTree, orchardReadout } from './orchardDev.js';

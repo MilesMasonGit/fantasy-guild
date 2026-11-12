@@ -750,16 +750,72 @@ Heroes do not choose their own work: **the player sends each hero to a job by
 dragging them** (hero orders, brief 260; owner 2026-10-28: one hero, one job,
 less micromanagement than area flags).
 - **Heroes live on the mat.** One with no job waits in a row in front of the
-  Guild Hall. The hero bar is the roster: it finds a hero on the mat, opens
-  their sheet, says on hover what they are doing, wears a yellow alert when only
-  the player can get them going or a red one when wounded, and can be dragged from.
+  Guild Hall. The hero bar is the roster: a click selects a hero (a click again
+  on the selected one clears it), a double-click opens their Hero drawer; it says on hover what they are doing, wears a yellow
+  alert when only the player can get them going or a red one when wounded, and
+  can be dragged from.
+- **Selecting** (brief 610 S1; owner, 2026-11-11). One thing is selected at a
+  time: a hero, or a Token the player could drag, an enemy included (owner,
+  2026-11-11), never a Token that stays where it stands. **A single click
+  selects**, on the mat or on the
+  hero bar (from any screen); **a double-click inspects** (a Token's card, a
+  hero's drawer) and selects too. **A single click again on what is selected
+  clears it** (owner, 2026-11-12), on the mat or the hero bar; a double-click
+  always ends with it selected, whichever way its first click went, and a drag
+  of the selected one keeps it. The selected one wears a **gold outline**, one
+  art pixel like the white hover outline, on the mat and on the hero's bar card,
+  and a selected hero's job lights as on hover. A single click on a fixed Token
+  only clears the selection; a double-click still inspects it. The
+  selection clears on a click on blank mat, Escape (once no panel is open over
+  it), a new pick, leaving the mat (the World Map, the Guild Hall, travel, a
+  load) or a map mode coming on (Demolish); opening the Bank, the Shop or the
+  Encyclopedia keeps it. An open Token card or Hero drawer closes on a single
+  click of something else; a click of its own Token or hero keeps it. Other
+  single clicks on a Token are unchanged: the recipe gear and the problem mark
+  open the recipes, a finished quest is claimed. Drag and drop work as before,
+  with or without a selection. The selection is not saved.
 - **Drag a hero onto a Token** they can work (their figure, their job flag, or
   their figure on the hero bar): they walk there and work **only that Token**,
   a tree, a vein, a station, a Field, an enemy or a boss (a retired Promotion
   Token is nothing to work: K1).
   Onto **bare ground**: they walk there and wait (the flag marks the spot until
-  they arrive). Onto the **Guild Hall**: they go home. **Right-click** a hero
-  to send them home.
+  they arrive). Onto the **Guild Hall**: they go home.
+- **Right-click orders** (brief 610 S2; owner, 2026-11-11). With a hero
+  selected, **a right-click on the mat gives exactly the order dropping them
+  there gives** (it is the drop: work the Token, fight the enemy, hunt from an
+  enemy camp, work from a camp, home on the Guild Hall, wait on bare ground),
+  with the drop's refusals in the same red bubble ("Needs Pickaxe"). A
+  right-click on **the job they already have** (the Token their order names, a
+  camp too, or the Token or enemy they work or fight there), or on **their own
+  figure**, **stops them**: a job can't be given twice. They wait where they stand with the yellow "needs a
+  job" mark; the Token they leave loses its progress and a fight ends at once,
+  the enemy whole again for the next to engage it, as a recall leaves them.
+  With **nothing selected**, a right-click on a hero, or on the Token a hero
+  works, stops that hero; one with no job is left alone. **A right-click no
+  longer sends a hero home**: home is a right-click on the Guild Hall, or a
+  drag there. Orders land **on the mat only**: a right-click on the Bank, the
+  Shop or a card over it is no order, nor is one while the Bank is open or in
+  Demolish. The selection stays after the order, so a second right-click
+  corrects the first.
+- **Right-click moves** (brief 610 S3; owner, 2026-11-11). With a movable
+  Token selected (one you could drag, an enemy too), **a right-click on the mat
+  moves it there exactly as dropping it there would** (it is the drop: the same
+  placement checks, the nudge to the nearest legal spot, a hero working it
+  walking after it). A refused spot gives the drag's reason and the Token
+  stays. A moved Token flies to its new spot in flying loot's short arc (about
+  half a second) and lands with a one-pixel bounce; the flight is only drawn,
+  the Token is on its new spot at once. The selection stays after the move.
+  **While a Token is selected nothing follows the pointer** (owner,
+  2026-11-12): no ghost, no reach ring, no dots; only its gold outline shows.
+  A real drag still shows them.
+- **While a hero is selected**, the pointer on the mat shows the drag's hints
+  before the right-click: every Token they could be sent to glows (kept up to
+  date while they stay selected), and over a Token the drag hints and the
+  drop's reason show as below. **No dashed line** follows the pointer while
+  they are only selected (owner, 2026-11-12); a drag of them still draws it. Off the mat (a
+  panel, the hero bar) they go; a drag takes their place while it lasts. After
+  a right-click stops the selected hero the marks go out until the pointer is
+  on another Token, so their yellow "needs a job" mark shows at once.
 - **While a hero is carried**, every Token they could work glows, a dashed gold
   line runs from the hero to the pointer, and the flag snaps onto a Token they
   can work; over one they cannot, a red bubble says why. **A drop on a Token
@@ -795,8 +851,8 @@ less micromanagement than area flags).
   yellow **"needs a job"** mark, and they say "I need a job."
 - **One hero per link** (owner): a hero no longer mines and then smelts on
   their own. A miner feeds the Bank and the Furnace's hero draws from it.
-- **Sticky**: a hero never leaves mid-cycle. A new order or a recall resets
-  the progress of the Token left behind; a moved Token keeps its hero and its
+- **Sticky**: a hero never leaves mid-cycle. A new order, a stop or a recall
+  resets the progress of the Token left behind; a moved Token keeps its hero and its
   progress (the hero walks after it).
 - **Camps** (brief 260 O2) are Tokens built on a Foundation, each naming a
   skill (CMS: the Camp block): **Logging Camp** (Forestry),
@@ -823,7 +879,8 @@ less micromanagement than area flags).
   flag a hero waiting where it stood.
 - **Speech bubbles** are for moments (going idle, a job gone, a Token used
   up). Max 3 per hero. Lines: [`speech_bubble_lines.md`](speech_bubble_lines.md).
-- *(`Flags.js`, the orders and the claims; `Orders.js`, the drop; `Camps.js`)*
+- *(`Flags.js`, the orders and the claims; `Orders.js`, the drop and the stop;
+  `rightClickOrders.js`, the right-click; `Camps.js`)*
 
 ---
 
@@ -1794,7 +1851,7 @@ drawers**. The menu can be flipped to the right.
     12–20 s, slow 20–30 s, heavy 30–120 s; slower by `1 + (level−1)/70`.
   - The simulator still speaks of "gold per hour" as an abstract design
     currency; the game has no gold.
-- **Dev tools** (dev builds, or a perf build with Debug Mode on; shipped builds have none): QA panel (give
+- **Dev tools** (dev and test builds, or a perf build with Debug Mode on; a ship build, `tauri:build:ship`, has none): QA panel (give
   items, advance time, hire heroes, …), **Mat Tuner** (mat size, Token cap,
   quest cap, radii, speeds — stored per device, not in the save), FPS counter.
   Dev build only: the **Perf HUD** and stress boards (`?stress=realistic`), and

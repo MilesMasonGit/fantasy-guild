@@ -1,6 +1,6 @@
 // The QA panel's notification checks: real game paths where they cost nothing, display-only
 // banners where the real path would cost the save something (a knock-out loses gear).
-// ⚠️ DEV BUILDS ONLY.
+// ⚠️ QA BUILDS ONLY.
 
 import { GameState } from '../../state/GameState.js';
 import { InventoryManager } from '../../systems/inventory/InventoryManager.js';

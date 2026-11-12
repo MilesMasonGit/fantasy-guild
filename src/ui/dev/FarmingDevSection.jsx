@@ -1,5 +1,5 @@
 // The QA panel's Farming section (brief 230 S4): one click lays out Fields in every state (wild and ripe, growing beside a Well, ripe beside a Composter and a Beehive, a Herb Garden stopped for a seed, one with nothing picked) and a farmer working them.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useEffect, useState } from 'react';
 import { setUpFarmingScene, giveSageSeeds, farmingReadout } from './farmingDev.js';

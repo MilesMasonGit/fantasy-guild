@@ -27,15 +27,18 @@ function onKeyDown(e) {
 }
 
 /**
- * Put a layer on top. Returns its removal.
+ * Put a layer on top, or with `bottom` under every open layer (the mat's selection: Escape
+ * clears it only once nothing else is open). Returns its removal.
  * @param {((e: KeyboardEvent) => void) | null} onEscape
+ * @param {{ bottom?: boolean }} [options]
  */
-export function pushEscapeLayer(onEscape) {
+export function pushEscapeLayer(onEscape, { bottom = false } = {}) {
     const layer = { onEscape };
     if (layers.length === 0 && typeof window !== 'undefined') {
         window.addEventListener('keydown', onKeyDown, true);
     }
-    layers.push(layer);
+    if (bottom) layers.unshift(layer);
+    else layers.push(layer);
     return () => {
         const i = layers.indexOf(layer);
         if (i !== -1) layers.splice(i, 1);

@@ -1,5 +1,5 @@
 // the QA panel's Refresh check: a building's Refresh keeping a vein's charges, a Hall star's keeping another's
-// ⚠️ DEV BUILDS ONLY: reached from `RefreshDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: reached from `RefreshDevSection`, which TestDashboard renders behind `QA_TOOLS`.
 
 import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';

@@ -1,5 +1,5 @@
 // The QA panel's Terrain tools: a dev Region of each biome, one click away, for the ground's eye-check
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders the section behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders the section behind `QA_TOOLS`.
 
 import * as Atlas from '../../systems/atlas/Atlas.js';
 import * as BoardState from '../../systems/board/BoardState.js';

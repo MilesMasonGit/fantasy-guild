@@ -1,5 +1,5 @@
 // The QA panel's Bank checks: Bank Tabs ranks, a Bank of every kind, an older save with Bank Slots.
-// ⚠️ DEV BUILDS ONLY: reached from `BankDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: reached from `BankDevSection`, which TestDashboard renders behind `QA_TOOLS`.
 
 import { GameState } from '../../state/GameState.js';
 import { SaveManager } from '../../systems/core/SaveManager.js';

@@ -1,5 +1,5 @@
 // The QA panel's statuses section: one click sets up a Venomous enemy, a burning attacker and a boss with its four moves.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useEffect, useState } from 'react';
 import { setUpStatusesScene, statusesReadout } from './statusesDev.js';

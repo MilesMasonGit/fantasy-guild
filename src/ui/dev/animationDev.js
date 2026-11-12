@@ -1,6 +1,6 @@
 // The QA panel's Animation section: each of the mat's effects played on demand, through the same
 // code the game's own trigger runs, so the owner can look at one without waiting for it.
-// ⚠️ DEV BUILDS ONLY (reached only through AnimationDevSection, rendered behind `import.meta.env.DEV`).
+// ⚠️ QA BUILDS ONLY (reached only through AnimationDevSection, rendered behind `QA_TOOLS`).
 // The effect buttons change nothing in the game: they publish only `UI_EVENTS.UI_TOKEN_FX` (and
 // `BOARD_EVENTS.RARE_DROP`, which only the mat hears) or call the effect modules' play functions.
 // The scene set-up and the loot buttons do change it, like the panel's Spawn Party and Scatter Loot.

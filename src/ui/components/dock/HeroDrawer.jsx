@@ -60,6 +60,9 @@ export const HeroDrawer = ({
 
         const handlePointerDown = (e) => {
             if (asideRef.current && asideRef.current.contains(e.target)) return;
+            // A click on this hero on the mat selects them and keeps their drawer: only a click
+            // of something else closes it.
+            if (e.target.closest?.('[data-board-hero]')?.getAttribute('data-board-hero') === selectedHeroId) return;
             if (
                 // The bar's own click picks or toggles a hero.
                 e.target.closest('[data-bottom-hero-dock]') ||

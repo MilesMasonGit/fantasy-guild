@@ -1,5 +1,5 @@
 // The QA panel's Atlas section: the world map's prices met, fixture places settled, and the run's world in words.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useState } from 'react';
 import * as World from '../../systems/world/World.js';

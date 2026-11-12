@@ -1,5 +1,5 @@
 // The QA panel's damage types section: one click sets up three fights showing Resisted, Weak! and a bow spending arrows.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useState } from 'react';
 import { setUpDamageTypesScene } from './damageTypesDev.js';

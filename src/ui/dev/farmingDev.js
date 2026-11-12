@@ -1,5 +1,5 @@
 // the QA panel's Farming check (brief 230 S4): Fields that grow themselves (empty, growing, ripe, stopped), a Well, a Composter and a Beehive in reach, a map's ready-planted wild patch
-// ⚠️ DEV BUILDS ONLY: reached from `FarmingDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: reached from `FarmingDevSection`, which TestDashboard renders behind `QA_TOOLS`.
 
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';

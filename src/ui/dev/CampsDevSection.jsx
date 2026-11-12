@@ -1,6 +1,6 @@
 // The QA panel's camps section (brief 260 O2): the four camps of the change pack as test Tokens,
 // with work in each reach and a hand for each, and a hunting scene at a Goblin Camp.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useState } from 'react';
 import { placeCamps, sendCampHands, huntAtGoblinCamp, placeReachEdge } from './campsDev.js';

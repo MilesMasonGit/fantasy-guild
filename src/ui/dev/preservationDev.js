@@ -1,5 +1,5 @@
 // the QA panel's Preservation check: a building and a Hall star keeping a forge's Ore, a building keeping an archer's arrows
-// ⚠️ DEV BUILDS ONLY: reached from `PreservationDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: reached from `PreservationDevSection`, which TestDashboard renders behind `QA_TOOLS`.
 
 import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';

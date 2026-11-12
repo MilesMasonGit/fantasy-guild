@@ -18,10 +18,11 @@ export async function centreOf(page, selector) {
     })()`);
 }
 
-async function clickSelector(page, selector) {
+async function clickSelector(page, selector, { double = false } = {}) {
     const at = await centreOf(page, selector);
     if (!at) throw new Error(`nothing to click: ${selector}`);
-    await page.click(at.x, at.y);
+    if (double) await page.doubleClick(at.x, at.y);
+    else await page.click(at.x, at.y);
     return at;
 }
 
@@ -30,9 +31,9 @@ async function clickSelector(page, selector) {
  * board can be lost, so it is retried, but only while the thing is still shut (a second click
  * on an open toggle would close it).
  */
-export async function clickUntil(page, selector, opened, what, tries = 3) {
+export async function clickUntil(page, selector, opened, what, tries = 3, { double = false } = {}) {
     for (let i = 1; i <= tries; i++) {
-        await clickSelector(page, selector);
+        await clickSelector(page, selector, { double });
         try {
             await page.waitFor(opened, { timeoutMs: 4000, what });
             return i;
@@ -58,10 +59,11 @@ async function openShop(page) {
 }
 
 async function openInspect(page) {
-    // The dock figure's strip sits at the bottom edge; its visible part is the target.
-    const n = await clickUntil(page, '[data-dock-hero]', `!!document.querySelector('[data-dock-selected="true"]')`, 'the hero inspection sheet');
+    // The dock figure's strip sits at the bottom edge; its visible part is the target. A single
+    // click only selects the hero; a double-click opens the sheet.
+    const n = await clickUntil(page, '[data-dock-hero]', `!!document.querySelector('[data-dock-selected="true"]')`, 'the hero inspection sheet', 3, { double: true });
     await sleep(300);
-    return `clicked the first dock hero (real input${n > 1 ? `, ${n} clicks` : ''})`;
+    return `double-clicked the first dock hero (real input${n > 1 ? `, ${n} tries` : ''})`;
 }
 
 /**

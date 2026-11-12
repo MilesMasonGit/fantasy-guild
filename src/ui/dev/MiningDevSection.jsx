@@ -1,5 +1,5 @@
 // The QA panel's Mining section (brief 230 S3): one click lays out a vein with two Mines and a Minecart round it, worked by a miner, and an empty vein drawn as the shared empty rock.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useEffect, useState } from 'react';
 import { setUpMiningScene, miningReadout } from './miningDev.js';

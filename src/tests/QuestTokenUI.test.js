@@ -233,12 +233,14 @@ describe('click to claim (B6.2, FB-41)', () => {
         expect(onInspectToken).not.toHaveBeenCalled();
     });
 
-    it('clicking a quest not yet done does not claim; it inspects as any Token', () => {
+    it('clicking a quest not yet done does not claim; a double-click inspects it as any Token', () => {
         const q = spawn(hunt());
         const before = SpriteLayer.getSprites().length;
         const onInspectToken = vi.fn();
         const { container } = mount(tokenEl(q, { onInspectToken }));
         act(() => { fireEvent.click(art(container, q)); });
+        expect(onInspectToken).not.toHaveBeenCalled();
+        act(() => { fireEvent.doubleClick(art(container, q)); });
         expect(BoardState.getTokenById(q.id)).toBeTruthy();
         expect(SpriteLayer.getSprites().length).toBe(before);
         expect(onInspectToken).toHaveBeenCalledTimes(1);

@@ -100,6 +100,13 @@ player for these is T-138 (built when the first strips exist).
   - **Away summary** (NEW 2026-11-06, brief 440 A1): a small **on the mat** mark beside an
     item's count in "While you were away" when some of it still lies on the mat, 8 × 8 at
     2×, a placeholder in `PixelGlyph` (`mat`, a little 2 × 2 tile grid) until drawn.
+  - **Effect badges** (NEW 2026-11-12, brief 600 B3): one icon per named effect, on the Token
+    card's badge chips (8 × 8 at 2× in the row, 1× on an item line's chip). Placeholders in
+    `PixelGlyph` until drawn (the effect → icon map is `EFFECT_GLYPH` in
+    `src/ui/components/board/effectBadgeText.js`; swapping a picture in is a small code change):
+    Speed (`clock`), Yield (`plus`), Growth (`grow`), XP (`star`), Double Loot and Double Item
+    (`x2`), Preservation (`jar`), Refresh (`regrow`), Lucky (`sparkle`), Efficiency (`less`, a down
+    arrow), Abundance (`charges`). The Hero Effects chip uses the working hero's 16 × 16 face.
   - **The problem mark is on the mat now** (brief 120 C1), 16 × 16, drawn at
     the Token's own pixel size at a Token's centre with a hard black shadow.
     The placeholder is today's `ui/u_alert_yellow.png` and `ui/u_alert_red.png`;

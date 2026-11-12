@@ -1,5 +1,5 @@
 // The QA panel's gear and defence section: one click sets up four fights showing armour and a shield resisting, a style's damage cut, Venom and Sunder.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useState } from 'react';
 import { setUpGearDefenceScene } from './gearDefenceDev.js';

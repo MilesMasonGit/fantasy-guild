@@ -1,6 +1,6 @@
 // The QA panel's milestone perks section: a hero one log short of Forestry 10, and a forester at 30
 // arriving by a load.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useState } from 'react';
 import { setUpForestryTen, loadForesterAtThirty } from './perksDev.js';

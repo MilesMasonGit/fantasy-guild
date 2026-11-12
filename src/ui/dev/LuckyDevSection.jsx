@@ -1,5 +1,5 @@
 // The QA panel's Lucky section: one click lays out two veins and an enemy with rare drop tables, raised by a Lucky building and a Lucky Hall star.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useEffect, useState } from 'react';
 import { setUpLuckyScene, luckyReadout } from './luckyDev.js';

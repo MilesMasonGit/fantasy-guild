@@ -17,6 +17,7 @@ import { getRegion } from '../atlas/Atlas.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { applyXpBonus } from '../hero/xpBonus.js';
 import { getCombatXpAward, getHeroCombatStyle } from '../combat/CombatFormulas.js';
+import { carriedKindOf } from '../hero/carriedKind.js';
 import * as BoardState from './BoardState.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as Fields from './Fields.js';
@@ -384,6 +385,25 @@ export function effectBreakdown(instanceId) {
         effects, outputs, inputs,
         hero: heroBlock(ctx, effects, outputs, inputs)
     };
+}
+
+/**
+ * The Preservation badge for something a hero carries: the chance item `itemId` is not used up,
+ * asked as `CycleSavings.keepsCarried` asks (the item, then its kind) at the Token the hero works
+ * now, else the guild's stars alone, so it is the chance the engine rolls. A fight reads the enemy
+ * Token instead, which cannot be known ahead. Null at zero, with no such hero, or for an item that
+ * is never used up.
+ * ⚠️ Read only: no draw, no state written.
+ *
+ * @returns {EffectBadge|null}
+ */
+export function carriedPreservation(heroId, itemId) {
+    const type = EFFECT_TYPES.PRESERVATION;
+    const kind = type && HeroManager.getHero(heroId) ? carriedKindOf(itemId) : null;
+    if (!kind) return null;
+    const at = BoardState.workTokenOf(heroId);
+    const row = { key: EFFECT_KEY.PRESERVATION, unit: UNIT.CHANCE, sign: 1 };
+    return badgeOf(row, chance(at, type, [itemId, kind]), { id: at, near: null }, itemId);
 }
 
 /** One badge from a row's numbers, or null at zero. */

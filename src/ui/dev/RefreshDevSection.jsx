@@ -1,5 +1,5 @@
 // The QA panel's Refresh section: one click lays out a vein beside a building giving Refresh 100 %, and a vein a Hall star gives Refresh 50 %, each with a miner.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useEffect, useState } from 'react';
 import { setUpRefreshScene, refreshReadout } from './refreshDev.js';

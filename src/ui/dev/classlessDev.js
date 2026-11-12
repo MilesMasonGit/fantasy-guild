@@ -1,5 +1,5 @@
-// QA scenes for classless heroes (brief 270 K1). DEV BUILDS ONLY: `ClasslessDevSection` is rendered
-// behind `import.meta.env.DEV`.
+// QA scenes for classless heroes (brief 270 K1). QA BUILDS ONLY: `ClasslessDevSection` is rendered
+// behind `QA_TOOLS`.
 
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';

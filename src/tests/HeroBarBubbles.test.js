@@ -138,7 +138,7 @@ describe('the hero bar level-up bubbles', () => {
         level('h1', 'Mining', 24, 25);
         level('h2', 'Fishing', 9, 10);
         fireEvent.click(figure(view, 'h1'));
-        expect(onSelectHero).toHaveBeenCalledWith('h1');
+        expect(onSelectHero).toHaveBeenCalledWith('h1', true);
         expect(bubbles(view, 'h1')).toEqual([]);
         expect(bubbles(view, 'h2')).toEqual(['10 Fishing!']);
     });

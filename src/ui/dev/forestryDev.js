@@ -1,5 +1,5 @@
 // the QA panel's Forestry check (brief 230 S2a): a Forest that plants and regrows, a felled Oak becoming a Stump then a Sapling, a wild Stump with no Forest, a Stump stopped for want of its seedling
-// ⚠️ DEV BUILDS ONLY: reached from `ForestryDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: reached from `ForestryDevSection`, which TestDashboard renders behind `QA_TOOLS`.
 
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';

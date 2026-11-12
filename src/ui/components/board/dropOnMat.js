@@ -7,6 +7,21 @@ import * as Hand from '../../../systems/board/Hand.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
+import { isMatBankLocked } from '../../hooks/useMatBankLock.js';
+
+/**
+ * What the playmat takes (its drop target's `accepts`, `Board.jsx`; the right-click's orders,
+ * `rightClickOrders.js`): any Token, and a flag with a hero.
+ * While the Bank is open the mat takes nothing at all: the Bank covers it, and dnd-kit never
+ * calls `onDrop` for a target whose `accepts` refuses the payload, so this one check is enough
+ * to make every drop onto the mat a miss while the Bank is open.
+ */
+export function matAccepts(p) {
+    if (isMatBankLocked()) return false;
+    if (p?.kind === DRAG_KIND.TOKEN) return true;
+    if (p?.kind === DRAG_KIND.FLAG) return !!p.heroId;
+    return false;
+}
 
 /**
  * Everything dropped on the playmat lands through `dropOnMat(payload, point)`: a drag payload

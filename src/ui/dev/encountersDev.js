@@ -1,5 +1,5 @@
 // the QA panel's encounters check: a guardian's camp by a rich vein, a boss's den and a Summoning Circle, heroes flagged
-// ⚠️ DEV BUILDS ONLY: reached from `EncountersDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: reached from `EncountersDevSection`, which TestDashboard renders behind `QA_TOOLS`.
 
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';

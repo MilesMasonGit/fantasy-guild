@@ -1,6 +1,6 @@
 // The QA panel's classless heroes section (brief 270 K1): a new hero against Goblins with a sword
 // then a bow, and an Iron Sword asking Melee 15.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useState } from 'react';
 import { setUpClasslessScene, giveGatedIronSword } from './classlessDev.js';

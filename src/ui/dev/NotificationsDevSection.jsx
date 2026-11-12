@@ -1,5 +1,5 @@
 // The QA panel's Notifications section: every eye-check of the item stubs and banners by a click.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useState } from 'react';
 import {

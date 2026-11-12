@@ -21,6 +21,9 @@ import * as Fields from '../../../systems/board/Fields.js';
 import * as Fishing from '../../../systems/board/Fishing.js';
 import * as Demolition from '../../../systems/board/Demolition.js';
 import * as RareTables from '../../../systems/board/RareTables.js';
+import { effectBreakdown } from '../../../systems/board/EffectBreakdown.js';
+import { exactInputQuantity } from '../../../systems/board/InputCost.js';
+import { mostByChance } from '../../../utils/RNG.js';
 import { workTimeOf, resolveAxis } from '../../../systems/board/TileModifiers.js';
 import { EFFECT_TYPES } from '../../../systems/effects/constants.js';
 import { GameState } from '../../../state/GameState.js';
@@ -31,7 +34,7 @@ import { formatClock } from '../drawer/lifecycleLines.js';
 import { landmarkLines } from '../drawer/landmarkLines.js';
 import * as SupportLinks from '../../../systems/board/supportLinks.js';
 import { reachRadius } from '../../../systems/board/nearby.js';
-import { supportTag, FLOOR_NOTE } from './supportTags.js';
+import { supportTag } from './supportTags.js';
 
 /**
  * The Token card's content as plain data: which blocks it shows, top to bottom, and what each
@@ -117,6 +120,11 @@ export function liveCardSources() {
         fishingOf: Fishing.fishingOf,
         catchWeight: (instanceId, itemId, weight) => resolveAxis(instanceId, EFFECT_TYPES.CATCH_WEIGHT, weight, itemId),
         rareChance: RareTables.rareChanceAt,
+        effects: effectBreakdown,
+        // The most a cycle can take of an input, as the check before it starts asks (`InputCost.costedInputs`).
+        inputMost: (instance, quantity) => mostByChance(exactInputQuantity(
+            instance.id, quantity, StationRecipe.workConfigOf(getTokenType(instance.typeId), instance)?.skill
+        )),
         effectiveIO,
         workTime: workTimeOf,
         available: availableOf,
@@ -132,11 +140,7 @@ export function liveCardSources() {
         nextTurn: TimedChanges.nextTurnRoll,
         passive: (instance) => ({ lines: PassiveProduction.linesOf(instance), nextInMs: PassiveProduction.nextInMs(instance), lapMs: PassiveProduction.lapMs() }),
         fightOf: BoardCombat.getFight,
-        supports: (instanceId) => ({
-            boostedBy: SupportLinks.boostedBy(instanceId),
-            boosts: SupportLinks.boosts(instanceId),
-            floor: SupportLinks.floorHits(instanceId)
-        }),
+        supports: (instanceId) => ({ boosts: SupportLinks.boosts(instanceId) }),
         demolishMs: Demolition.DEMOLISH_MS,
         demolitionConfig: Demolition.DEMOLITION_CONFIG,
         allTypes: getAllTokenTypes,
@@ -229,22 +233,32 @@ function rareChanceText(chance) {
 }
 
 /**
- * The rare drop table's entries as chance rows, after the Token's own lines: each at its own chance,
- * the table's (Lucky counted, on a Token on the mat) times its share. `rare` marks them.
+ * The Rare finds group: the rare drop table's chance (Lucky counted, on a Token on the mat) and its
+ * entries, each at the table's chance times its share. Null for a Token with no table.
+ * @returns {{ chance: number, rows: Array<{itemId: string, min: number, max: number, chance: number}> }|null}
  */
-function rareRowsOf(def, instance, src, skill) {
+function rareBlockOf(def, instance, src, skill) {
     const table = rareTableOf(def);
-    if (!table) return [];
+    if (!table) return null;
     const chance = instance && src.rareChance ? src.rareChance(instance.id, def, skill) : table.chance;
-    return rareEntryChances(table, chance).map(({ entry, chance: c }) => ({
-        itemId: entry.itemId, min: entry.minQty, max: entry.maxQty, chance: rareChanceText(c), rare: true
+    const rows = rareEntryChances(table, chance).map(({ entry, chance: c }) => ({
+        itemId: entry.itemId, min: entry.minQty, max: entry.maxQty, chance: rareChanceText(c)
     }));
+    return { chance: rareChanceText(chance), rows };
 }
 
-function needsOf(inputs, src) {
+/**
+ * The Needs rows: on the mat, what a cycle can take of each input once Efficiency counts (its cost
+ * rounded up, as the check before a cycle asks), coloured against that; off it, the recipe's own.
+ */
+function needsOf(inputs, src, instance) {
     return (Array.isArray(inputs) ? inputs : [])
         .filter(i => i?.itemId && Number(i.quantity) > 0)
-        .map(i => ({ itemId: i.itemId, need: Number(i.quantity), have: Math.floor(src.available(i.itemId) || 0) }));
+        .map(i => {
+            const authored = Number(i.quantity);
+            const need = instance && src.inputMost ? src.inputMost(instance, authored) : authored;
+            return { itemId: i.itemId, need, have: Math.floor(src.available(i.itemId) || 0) };
+        });
 }
 
 /** Weights as a pool's odds in percent, one decimal at most, in pool order. */
@@ -460,12 +474,13 @@ function spawnLine(def, status, src) {
 }
 
 /**
- * The card for one Token, as `{ enemy, name, art, blocks }`. `blocks` is in display order and
- * holds only the blocks that apply.
+ * The card for one Token, as `{ enemy, name, art, blocks, effects }`. `blocks` is in display order
+ * and holds only the blocks that apply; `effects` is the badges' breakdown, on the mat only.
  *
  * A Token's card: name; work (skill, level, XP); cycle (time, charges); the current recipe
- * (needs, tools, makes or a water's catches, and a station's Change recipe); lifecycle lines; drops.
- * An enemy's card: name; HP; combat (style, level, XP a kill); drops.
+ * (needs, tools, makes, rare finds or a water's catches, and a station's Change recipe); lifecycle
+ * lines; what it boosts.
+ * An enemy's card: name; HP; combat (style, level, XP a kill); drops and rare finds.
  * The card draws `hp`, `combat`, `work` and `cycle` together as its stat block.
  * After them, `more`: what the card's layout has no block for yet (a landmark's challenge, a
  * buff, the stations a tool Token drives).
@@ -484,9 +499,10 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
         const hp = fight?.combat?.enemyHp;
         blocks.push({ id: CARD_BLOCK.HP, cur: hp ? hp.current : enemy.hp, max: hp ? hp.max : enemy.hp });
         blocks.push({ id: CARD_BLOCK.COMBAT, skillId: enemy.combatType, level: enemy.level, xp: enemy.xpAwarded });
-        const drops = [...dropsOf(def.config?.outputs), ...rareRowsOf(def, instance, src, def.config?.skill || '')];
-        if (drops.length) blocks.push({ id: CARD_BLOCK.DROPS, drops });
-        return { enemy: true, name, art, blocks };
+        const drops = dropsOf(def.config?.outputs);
+        const rare = rareBlockOf(def, instance, src, def.config?.skill || '');
+        if (drops.length || rare) blocks.push({ id: CARD_BLOCK.DROPS, drops, rare });
+        return { enemy: true, name, art, blocks, effects: effectsOf(instance, src) };
     }
 
     const marked = instance?.demolish === true;
@@ -521,10 +537,11 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
         // Water makes no Outputs: what bites depends on the tool and bait (`catches`).
         const water = hasCatchPools(def);
         const outputs = isStation ? (recipe?.outputs || []) : water ? [] : (def.config?.outputs || []);
-        const needs = needsOf(inputs, src);
+        const needs = needsOf(inputs, src, instance);
         const tools = toolsOf(def, recipe, src);
         // A build drops nothing, so a Foundation's rare table (if one were authored) never rolls.
-        const makes = [...makesOf(outputs), ...(def.foundation ? [] : rareRowsOf(def, instance, src, def.config?.skill))];
+        const makes = makesOf(outputs);
+        const rare = def.foundation ? null : rareBlockOf(def, instance, src, def.config?.skill);
         const change = isStation && instance
             ? {
                 label: def.foundation ? 'Choose what to build' : isField ? 'Change crop' : 'Change recipe',
@@ -533,8 +550,8 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
             }
             : null;
         const catches = water ? catchBlockOf(def, instance, src) : null;
-        if (needs.length || tools.length || makes.length || change || catches) {
-            blocks.push({ id: CARD_BLOCK.RECIPE, recipeName: recipe?.name || null, recipeId: recipe?.id || null, needs, tools, makes, change, catches });
+        if (needs.length || tools.length || makes.length || rare || change || catches) {
+            blocks.push({ id: CARD_BLOCK.RECIPE, recipeName: recipe?.name || null, recipeId: recipe?.id || null, needs, tools, makes, rare, change, catches });
         }
     }
 
@@ -550,23 +567,25 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
         drives: drivenBy(def, src.allTypes()).length > 0
     };
     if (more.landmark || more.buff || more.drives) blocks.push({ id: CARD_BLOCK.MORE, ...more });
-    return { enemy: false, name, art, blocks };
+    return { enemy: false, name, art, blocks, effects: effectsOf(instance, src) };
+}
+
+/** The effect badges' numbers for a Token on the mat (`effectBreakdown`), else null. */
+function effectsOf(instance, src) {
+    return instance && src.effects ? (src.effects(instance.id) || null) : null;
 }
 
 /**
- * What boosts this Token and what it boosts, one row per Token in reach with its effects as tags,
- * and a note when its speed-ups are held at the floor. Null when it trades no support.
+ * What this Token boosts, one row per Token in reach with its effects as tags. Null when it boosts
+ * nothing. What boosts it is the badge row's hovers (`effectBreakdown`).
  */
 function supportBlock(links, src) {
     if (!links) return null;
-    const rows = (list) => (list || []).map(r => ({
+    const boosts = (links.boosts || []).map(r => ({
         id: r.id, typeId: r.typeId, name: src.tokenName(r.typeId), tags: r.payloads.map(p => supportTag(p, src.itemName))
     }));
-    const boostedBy = rows(links.boostedBy);
-    const boosts = rows(links.boosts);
-    const floor = [links.floor?.work && FLOOR_NOTE.work, links.floor?.grow && FLOOR_NOTE.grow].filter(Boolean);
-    if (!boostedBy.length && !boosts.length && !floor.length) return null;
-    return { id: CARD_BLOCK.SUPPORT, boostedBy, boosts, floor };
+    if (!boosts.length) return null;
+    return { id: CARD_BLOCK.SUPPORT, boosts };
 }
 
 /** Seconds as the cycle line writes them: `4s`, `2.5s`. */

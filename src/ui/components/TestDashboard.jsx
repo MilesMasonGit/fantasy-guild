@@ -38,6 +38,7 @@ import { MiningDevSection } from '../dev/MiningDevSection.jsx';
 import { RefreshDevSection } from '../dev/RefreshDevSection.jsx';
 import { PreservationDevSection } from '../dev/PreservationDevSection.jsx';
 import { LuckyDevSection } from '../dev/LuckyDevSection.jsx';
+import { BadgesDevSection } from '../dev/BadgesDevSection.jsx';
 import { OrchardDevSection } from '../dev/OrchardDevSection.jsx';
 import { FishingDevSection } from '../dev/FishingDevSection.jsx';
 import { StationsDevSection } from '../dev/StationsDevSection.jsx';
@@ -53,6 +54,7 @@ import { StyleSheetPage } from '../dev/StyleSheetPage.jsx';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
 import { CloseX } from './base/CloseX.jsx';
+import { QA_TOOLS } from '../../config/buildFlags.js';
 
 const DEV_ADVANCE_MAX_MINUTES = (DEV_ADVANCE_STEP_MS * DEV_ADVANCE_MAX_STEPS) / 60_000;
 const devInputClass = 'min-w-0 px-2 py-1 rounded bg-gi-base border border-gi-border text-xs text-gi-text focus:outline-none focus:border-gi-primary/50';
@@ -314,38 +316,39 @@ export const TestDashboard = React.memo(() => {
                          * normal production build with Debug Mode on still has no harness.
                          */}
                         {(import.meta.env.DEV || import.meta.env.MODE === 'perf') && <PerfDevSection />}
-                        {import.meta.env.DEV && <MatTunerDevSection />}
-                        {import.meta.env.DEV && <LimesDevSection />}
-                        {import.meta.env.DEV && <StarterCampDevSection />}
-                        {import.meta.env.DEV && <ClasslessDevSection />}
-                        {import.meta.env.DEV && <PerksDevSection />}
-                        {import.meta.env.DEV && <OrdersDevSection />}
-                        {import.meta.env.DEV && <CampsDevSection />}
-                        {import.meta.env.DEV && <AtlasDevSection />}
-                        {import.meta.env.DEV && <GuildHallDevSection />}
-                        {import.meta.env.DEV && <EncountersDevSection />}
-                        {import.meta.env.DEV && <GearDevSection />}
-                        {import.meta.env.DEV && <ToolsBreakDevSection />}
-                        {import.meta.env.DEV && <BankDevSection />}
-                        {import.meta.env.DEV && <SuppliesDevSection />}
-                        {import.meta.env.DEV && <StatusesDevSection />}
-                        {import.meta.env.DEV && <CombatScreenDevSection />}
-                        {import.meta.env.DEV && <DamageTypesDevSection />}
-                        {import.meta.env.DEV && <GearDefenceDevSection />}
-                        {import.meta.env.DEV && <EnemyMovesDevSection />}
-                        {import.meta.env.DEV && <SkillLoopsDevSection />}
-                        {import.meta.env.DEV && <ForestryDevSection />}
-                        {import.meta.env.DEV && <MiningDevSection />}
-                        {import.meta.env.DEV && <RefreshDevSection />}
-                        {import.meta.env.DEV && <PreservationDevSection />}
-                        {import.meta.env.DEV && <LuckyDevSection />}
-                        {import.meta.env.DEV && <OrchardDevSection />}
-                        {import.meta.env.DEV && <AnimationDevSection />}
-                        {import.meta.env.DEV && <NotificationsDevSection />}
-                        {import.meta.env.DEV && <StationsDevSection />}
-                        {import.meta.env.DEV && <FishingDevSection />}
-                        {import.meta.env.DEV && <WorkConsumablesDevSection />}
-                        {import.meta.env.DEV && <FarmingDevSection />}
+                        {QA_TOOLS && <MatTunerDevSection />}
+                        {QA_TOOLS && <LimesDevSection />}
+                        {QA_TOOLS && <StarterCampDevSection />}
+                        {QA_TOOLS && <ClasslessDevSection />}
+                        {QA_TOOLS && <PerksDevSection />}
+                        {QA_TOOLS && <OrdersDevSection />}
+                        {QA_TOOLS && <CampsDevSection />}
+                        {QA_TOOLS && <AtlasDevSection />}
+                        {QA_TOOLS && <GuildHallDevSection />}
+                        {QA_TOOLS && <EncountersDevSection />}
+                        {QA_TOOLS && <GearDevSection />}
+                        {QA_TOOLS && <ToolsBreakDevSection />}
+                        {QA_TOOLS && <BankDevSection />}
+                        {QA_TOOLS && <SuppliesDevSection />}
+                        {QA_TOOLS && <StatusesDevSection />}
+                        {QA_TOOLS && <CombatScreenDevSection />}
+                        {QA_TOOLS && <DamageTypesDevSection />}
+                        {QA_TOOLS && <GearDefenceDevSection />}
+                        {QA_TOOLS && <EnemyMovesDevSection />}
+                        {QA_TOOLS && <SkillLoopsDevSection />}
+                        {QA_TOOLS && <ForestryDevSection />}
+                        {QA_TOOLS && <MiningDevSection />}
+                        {QA_TOOLS && <RefreshDevSection />}
+                        {QA_TOOLS && <PreservationDevSection />}
+                        {QA_TOOLS && <LuckyDevSection />}
+                        {QA_TOOLS && <BadgesDevSection />}
+                        {QA_TOOLS && <OrchardDevSection />}
+                        {QA_TOOLS && <AnimationDevSection />}
+                        {QA_TOOLS && <NotificationsDevSection />}
+                        {QA_TOOLS && <StationsDevSection />}
+                        {QA_TOOLS && <FishingDevSection />}
+                        {QA_TOOLS && <WorkConsumablesDevSection />}
+                        {QA_TOOLS && <FarmingDevSection />}
                         <div className="mb-3 pb-3 border-b border-gi-border space-y-2">
                             <div>
                                 <div className={devLabelClass}>Give item</div>

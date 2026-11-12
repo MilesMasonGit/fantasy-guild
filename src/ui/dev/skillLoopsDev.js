@@ -1,5 +1,5 @@
 // the QA panel's skill loops check (brief 230 S1a, S1b): Grow Time, the 80 % floor, a fixed vein, stations and supports that never wear; a miner waiting for a resting vein, a furnace out of coal
-// ⚠️ DEV BUILDS ONLY: reached from `SkillLoopsDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: reached from `SkillLoopsDevSection`, which TestDashboard renders behind `QA_TOOLS`.
 
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';

@@ -1,5 +1,5 @@
-// QA scenes for milestone perks. DEV BUILDS ONLY: `PerksDevSection` is rendered behind
-// `import.meta.env.DEV`.
+// QA scenes for milestone perks. QA BUILDS ONLY: `PerksDevSection` is rendered behind
+// `QA_TOOLS`.
 
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';

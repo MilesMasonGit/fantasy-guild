@@ -15,6 +15,7 @@ import { useEncyclopediaBack } from './hooks/useEncyclopediaBack.js';
 import { useHeroSheetRequests } from './hooks/useHeroSheetRequests.js';
 import { useOneBottomDrawer } from './hooks/useOneBottomDrawer.js';
 import { useWorldMapRequests } from './hooks/useWorldMapRequests.js';
+import { selectHero, clickHero, useSelectionClearing } from './hooks/useMatSelection.js';
 
 import Board from './components/board/Board.jsx';
 import BankDrawer from './components/drawer/BankDrawer.jsx';
@@ -33,6 +34,7 @@ import HallSky from './components/board/HallSky.jsx';
 import HallCamera from './components/board/HallCamera.jsx';
 import { HallUpgradeDrawer, HERO_BAR_CLEAR_PX } from './components/drawer/HallUpgradeDrawer.jsx';
 import { getUpgradeDef } from '../config/guildUpgrades.js';
+import { QA_TOOLS } from '../config/buildFlags.js';
 import { TokenInspectPopup } from './components/board/TokenInspectPopup.jsx';
 import { FightPanelPopup } from './components/combat/FightPanelPopup.jsx';
 import { FightTabStrip } from './components/combat/FightTab.jsx';
@@ -178,8 +180,20 @@ const ReactRoot = () => {
     useEncyclopediaBack(isEncyclopediaOpen, !!openView && openView !== 'encyclopedia', onInspectToken);
 
     const [inspectHeroId, setInspectHeroId] = React.useState(null);
-    const toggleInspectHero = React.useCallback((id) => setInspectHeroId(prev => (prev === id ? null : id)), []);
     const closeInspectHero = React.useCallback(() => setInspectHeroId(null), []);
+    // The hero bar: a click selects the hero, or clears them when they are the one selected (and
+    // closes another hero's drawer); a double-click selects them and opens theirs too.
+    const pickHeroOnBar = React.useCallback((id, single = false) => {
+        clickHero(id, single);
+        setInspectHeroId(prev => (prev && prev !== id ? null : prev));
+    }, []);
+    const inspectHeroOnBar = React.useCallback((id) => {
+        selectHero(id);
+        setInspectHeroId(id);
+    }, []);
+    // The mat's selection clears on leaving the mat (the World Map, the Guild Hall), and on its
+    // other triggers. The Encyclopedia, the Bank and the Shop lie over the mat and keep it.
+    useSelectionClearing(isAtlasOpen || isGuildView);
 
     useHeroSheetRequests(setInspectHeroId);
     useOneBottomDrawer({ shopOpen: ui.shop.isOpen, heroId: inspectHeroId, closeShop: ui.shop.close, closeHero: closeInspectHero });
@@ -318,8 +332,8 @@ const ReactRoot = () => {
                                 <PerfProfiler id="HeroDock">
                                     <BottomHeroDock
                                         selectedHeroId={inspectHeroId}
-                                        onSelectHero={toggleInspectHero}
-                                        onDoubleClickHero={toggleInspectHero}
+                                        onSelectHero={pickHeroOnBar}
+                                        onDoubleClickHero={inspectHeroOnBar}
                                     />
                                 </PerfProfiler>
                             </ErrorBoundary>
@@ -384,8 +398,8 @@ const ReactRoot = () => {
                 </div>
             </div>
 
-            {/* Debug Mode exists in dev and perf builds only; a shipped build has no QA tools. */}
-            {(import.meta.env.DEV || (import.meta.env.MODE === 'perf' && debugMode)) && (
+            {/* The QA panel: dev and test builds always, a perf build behind Debug Mode, a ship build never. */}
+            {(QA_TOOLS || (import.meta.env.MODE === 'perf' && debugMode)) && (
                 <>
                     <TestDashboard />
                     {/**

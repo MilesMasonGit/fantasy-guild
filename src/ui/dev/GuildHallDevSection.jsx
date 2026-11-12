@@ -1,5 +1,5 @@
 // The QA panel's Guild Hall section: the sky's star states, one click away.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useState } from 'react';
 import { GameState } from '../../state/GameState.js';

@@ -26,6 +26,17 @@ export function pointerToMat(pointer, rect, grab = { x: 0, y: 0 }) {
 }
 
 /**
+ * Whether an event's `target` is on the mat element `matEl` itself: inside it in the page, not a
+ * panel over it (the Bank, the Shop, a card) nor anything React draws from inside the mat into
+ * another part of the page, whose events still reach the mat's React handlers.
+ * @param {HTMLElement|null} matEl
+ * @param {EventTarget|null} target
+ */
+export function onMatItself(matEl, target) {
+    return !!matEl && typeof target?.nodeType === 'number' && matEl.contains(target);
+}
+
+/**
  * The mat's on-screen box cannot change mid-drag (a window resize cancels the drag, dnd-kit's
  * own rule), so `getBoundingClientRect()` on it only needs reading once per drag, not once per
  * frame per caller.
