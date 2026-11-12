@@ -17,25 +17,6 @@
     ],
     "autoSyncId": true
   },
-  "effect_restocks_neighbours": {
-    "id": "effect_restocks_neighbours",
-    "name": "Restocks Neighbours",
-    "statements": [
-      {
-        "id": "stm_096hmln8o",
-        "keyword": "restocks",
-        "payload": {
-          "tokenIds": [
-            "token_copper_ore_vein"
-          ]
-        },
-        "to": null,
-        "when": null,
-        "upkeep": null
-      }
-    ],
-    "autoSyncId": true
-  },
   "effect_crafting_station": {
     "id": "effect_crafting_station",
     "name": "Crafting Station",
