@@ -15,8 +15,8 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| 590 P2: Refresh | builder | `feat/effects-590` (`fx`) | building | Wed | |
-| 590 P1: Preservation | engineer | same branch | queued after P2 | | |
+| 590 P2: Refresh | builder | `feat/effects-590` (`fx`) 718dd4af | ready: 647 files green (agent), director reran its tests and read the engine diff; no draw without a rule; QA panel scene checked in game by the agent; bench at the end of 590 | Wed | Wed |
+| 590 P1: Preservation | engineer | same branch | building | Wed | |
 | 590 P3: Lucky and rare tables | engineer | same branch | queued after P1 | | |
 | 600 B1: badge look page | builder | `feat/badge-look` (`b1`) 2ef50210 | ready: three looks (A chips, B inline strip, C named list), screenshots sent to the owner; builder recommends A; open for B3: Lucky also in the main row or only on Rare finds | Wed | Wed |
 | 600 B2: the breakdown | engineer | `feat/effect-breakdown` (`b2`) | building | Wed | |
