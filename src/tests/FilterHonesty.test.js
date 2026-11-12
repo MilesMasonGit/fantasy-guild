@@ -342,7 +342,7 @@ describe('Converts aims at ONE destination (ER-14)', () => {
 describe('the grammar and the sentence agree', () => {
     it('Converts declares a filter now, and the four that cannot aim still do not', () => {
         expect(getKeyword(KEYWORD.CONVERTS).filter).toBe(true);
-        for (const id of [KEYWORD.ACTS_AS, KEYWORD.REQUIRES, KEYWORD.RESTOCKS, KEYWORD.STATION]) {
+        for (const id of [KEYWORD.ACTS_AS, KEYWORD.REQUIRES, KEYWORD.STATION]) {
             expect(getKeyword(id).filter).toBe(false);
         }
     });

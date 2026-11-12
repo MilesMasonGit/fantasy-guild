@@ -283,11 +283,11 @@ describe('the vocabulary is declared, and legality with it', () => {
         for (const id of [KEYWORD.PROVIDES, KEYWORD.GRANTS, KEYWORD.APPLIES]) {
             expect(getKeyword(id).reach).toBe(true);
         }
-        // `Requires`/`Works as` are about this Token; `Acts as`/`Restocks` have
+        // `Requires`/`Works as` are about this Token; `Acts as` has
         // no filter to go with a reach; `Converts` names one destination; and
         // `Cannot` is a placement rule with its own reader.
         for (const id of [KEYWORD.REQUIRES, KEYWORD.STATION, KEYWORD.ACTS_AS,
-            KEYWORD.RESTOCKS, KEYWORD.CONVERTS, KEYWORD.CANNOT]) {
+            KEYWORD.CONVERTS, KEYWORD.CANNOT]) {
             expect(getKeyword(id).reach).toBeFalsy();
         }
     });

@@ -105,7 +105,7 @@ function renameInTokenConfig(token, oldId, newId) {
  */
 /**
  * Rewrite references inside the named effect library.
- * ⚠️ A Token's rules live here, so a rename that only walked Tokens would leave every rule pointing at a dead id. Item ids are covered by `remapItemIdsDeep`; token ids (a filter aimed at one exact Token, `payload.tokenIds` in a Restocks list) are named explicitly, because neither field name says token.
+ * ⚠️ A Token's rules live here, so a rename that only walked Tokens would leave every rule pointing at a dead id. Item ids are covered by `remapItemIdsDeep`; token ids (a filter aimed at one exact Token, `payload.tokenIds` in a Requires rule) are named explicitly, because neither field name says token.
  */
 function renameInEffects(effects, oldId, newId, entityType) {
     let touched = false;

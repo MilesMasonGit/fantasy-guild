@@ -497,15 +497,6 @@ function payloadSlots(statement, ctx) {
                 }
             ];
 
-        /** `Restocks`: the Tokens a Manager keeps supplied. */
-        case KEYWORD.RESTOCKS:
-            return [{
-                id: 'tokenIds', kind: SLOT_KIND.LIST, label: 'which Tokens',
-                value: Array.isArray(payload.tokenIds) ? payload.tokenIds : [],
-                options: Object.values(ctx?.tokens || {}).map(t => option(t.id, t.name || t.id)),
-                patch: v => ({ payload: { ...payload, tokenIds: [...new Set((v || []).filter(Boolean))] } })
-            }];
-
         /**
          * `Works as`: which skill's recipes a station runs, and optionally which kind of station
          * (narrowing that skill to the recipes naming the kind). ⚠️ `stationSkillOf` is the sole

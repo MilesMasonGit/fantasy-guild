@@ -758,11 +758,6 @@ function bodySegments(statement, names) {
                 : segs(d('Requires', K), ' a nearby ', d('…', 'tag'));
         }
 
-        case KEYWORD.RESTOCKS:
-            return segs(d('Restocks', K), ' nearby ',
-                d(payload.tokenIds?.length ? payload.tokenIds.map(names.token).join(' and ') : '…', 'tokenIds'),
-                ' from the Guild Bank');
-
         case KEYWORD.CONVERTS: {
             const exchange = segs(d('Converts', K), ' ', d(itemList(payload.consumes, names), 'payload'),
                 ' into ', d(itemList(payload.produces, names), 'payload'));

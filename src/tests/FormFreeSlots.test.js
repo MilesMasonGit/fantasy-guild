@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import './fixtures/testTokens.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
-import { slotsOf, slotDisplay, SLOT_KIND } from '../../cms/src/engine/ledger/statementSlots.js';
+import { slotsOf, SLOT_KIND } from '../../cms/src/engine/ledger/statementSlots.js';
 import { renderSegments, renderStatement } from '../systems/effects/statementText.js';
 
 /**
@@ -26,7 +26,6 @@ describe('⭐ nothing the forms edited is left without a slot', () => {
         [KEYWORD.GRANTS]: ['quantity', 'itemId', 'chance'],
         [KEYWORD.STATION]: ['skill'],
         [KEYWORD.ACTS_AS]: ['tag', 'tier'],
-        [KEYWORD.RESTOCKS]: ['tokenIds'],
         [KEYWORD.CANNOT]: ['kind', 'max'],
         // V10b: `target` retired with the enemy flag — the "aims at" role slot replaces it.
         [KEYWORD.APPLIES]: ['chance'],
@@ -136,18 +135,6 @@ describe('Requires (Rules Line P6)', () => {
         expect(renderStatement(st)).toBe('Requires a nearby Tier 2 net.');
         expect(after(st, 'minTier', '3').payload).toEqual({ tag: 'net', minTier: 3 });
         expect(after(st, 'minTier', '0').payload.minTier).toBe(1);
-    });
-});
-
-describe('Restocks', () => {
-    it('picks several Tokens as one word, with no duplicates', () => {
-        const st = { ...makeStatement(KEYWORD.RESTOCKS), payload: { tokenIds: ['tok_a'] } };
-        const s = slot(st, 'tokenIds');
-        expect(s.kind).toBe(SLOT_KIND.LIST);
-        const both = after(st, 'tokenIds', ['tok_a', 'tok_b', 'tok_a', '']);
-        expect(both.payload.tokenIds).toEqual(['tok_a', 'tok_b']);
-        expect(slotDisplay(slot(both, 'tokenIds'))).toBe('Oak Tree and Quarry');
-        expect(wordFor(both, 'tokenIds')).toEqual(['Oak Tree and Quarry']);
     });
 });
 
