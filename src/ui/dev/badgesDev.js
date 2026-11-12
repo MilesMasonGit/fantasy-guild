@@ -1,5 +1,5 @@
 // the QA panel's Effect badges check: three groups of test Tokens whose cards show every kind of badge
-// ⚠️ DEV BUILDS ONLY: reached from `BadgesDevSection`, which TestDashboard renders behind `import.meta.env.DEV`.
+// ⚠️ QA BUILDS ONLY: reached from `BadgesDevSection`, which TestDashboard renders behind `QA_TOOLS`.
 
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';

@@ -1,5 +1,5 @@
 // The QA panel's Effect badges section: one click lays out test Tokens whose cards show every kind of badge.
-// ⚠️ DEV BUILDS ONLY: TestDashboard renders this behind `import.meta.env.DEV && …`.
+// ⚠️ QA BUILDS ONLY: TestDashboard renders this behind `QA_TOOLS && …`.
 
 import { useState } from 'react';
 import { setUpBadgeScene } from './badgesDev.js';
