@@ -78,11 +78,17 @@ say so and stop).
      the eye-check file. After the look, switch the folder back to `main`
      and check `git branch --show-current` before your next commit.
 - **Eye-checks** only for a significant change in how the game looks or
-  plays (a new screen or panel, a changed interaction, a look rule): a dated
-  file in `docs/active/eyecheck/` whose every check is reachable by clicking,
-  never a console snippet; archived with the verdicts after. Wording,
-  placeholders and look-preserving work merge on the gate with a line in
-  STATUS.
+  plays (a new screen or panel, a changed interaction, a look rule): a tab on
+  the **Guild Eye-checks** artifact (https://claude.ai/artifact/7BxeTfaxXYvH9fiX2jZZDJ),
+  written with `ArtifactData`: a `batches/<id>` doc (title, build, about,
+  setup, notes, state open|done, order) and one `checks/<id>-NN` doc per check
+  (batch, n, title, how, see). Every check is reachable by clicking (a QA
+  panel button, a fixture save, authored content), never a console snippet.
+  The owner's answers arrive in `verdicts/<checkId>` (verdict ok|change|
+  blocked, note): read them when the owner says they looked. After the look,
+  set the batch to done and copy checks and verdicts to
+  `docs/archive/eyecheck/YYYY-MM-DD_<batch>.md`. Wording, placeholders and
+  look-preserving work merge on the gate with a line in STATUS.
 - **Merging**: dry-run in the scratch worktree (`git merge --no-commit
   --no-ff`, then abort or commit); CHANGELOG, PERFORMANCE and bench/README
   conflicts are keep-both; run the gate on the merged result, then

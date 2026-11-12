@@ -130,13 +130,16 @@ trimmed. No fixed clock times (owner, 2026-10-15).
 plays** (owner, 2026-10-14): a new screen or panel, a changed interaction, a
 look rule. Wording and placeholder text, a one-frame timing change, a
 look-preserving optimisation: no eye-check; those merge on the gate and get
-one line in STATUS so the owner knows they landed. Eye-check files live in
-`docs/active/eyecheck/`, one per batch, named
-`YYYY-MM-DD_<batch>.md`: the exact branch-switch command, the save slot,
-numbered checks (where to click, what you should see) each with a
-`Verdict: ok / change: ___` line for the owner, and the owner's CMS steps at
-the end. After the look, fixes go on the branch, it merges, and the file moves
-to `docs/archive/eyecheck/` with the verdicts kept.
+one line in STATUS so the owner knows they landed. Eye-checks go on the
+**Guild Eye-checks** page (owner, 2026-11-12), an artifact where the owner
+clicks a verdict per check (Looks right / Change it / Can't check) with a
+note: https://claude.ai/artifact/7BxeTfaxXYvH9fiX2jZZDJ. One tab per batch: the build to open, the
+set-up, numbered checks (where to click, what you should see) and the
+owner's CMS steps; the director writes them into the page's data and reads
+the verdicts back from it. The owner checks a desktop test build, which
+carries the QA panel; only a ship build drops it. After the look, fixes go on
+the branch, it merges, the tab is marked looked at, and the checks with their
+verdicts are copied to `docs/archive/eyecheck/YYYY-MM-DD_<batch>.md`.
 
 **Handoffs.** A director session ends when the owner says so, when its
 context is getting full, or when its usage limit nears, whichever comes

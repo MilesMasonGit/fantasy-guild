@@ -33,17 +33,16 @@ Nothing merges to `main` until all of these hold:
 6. **Look**: a significant change to how the game looks or plays (a new
    screen or panel, a changed interaction, a look rule) waits for the owner's
    eye-check before merging; wording, placeholder text and look-preserving
-   work merge on the gate with a line in STATUS. The director writes one checklist file
-   per batch in `docs/active/eyecheck/` (`YYYY-MM-DD_<batch>.md`: the exact
-   branch-switch command, the save slot, numbered checks saying where to
-   click and what you should see (every check is reachable by clicking: a
-   dev-panel button, a QA fixture save or authored content; never a console
-   snippet), a `Verdict: ok / change: ___` line under
-   each, the owner's CMS steps at the end). Fixes from the look go on the
-   branch before it merges; the file then moves to `docs/archive/eyecheck/`
-   with the verdicts kept. Before the owner is told, the director detaches
-   the agent's worktree, switches the owner's folder to the branch, starts
-   the dev server from it and sees the slot screen load (a branch can trigger
+   work merge on the gate with a line in STATUS. The director writes the batch's
+   checks on the Guild Eye-checks artifact (https://claude.ai/artifact/7BxeTfaxXYvH9fiX2jZZDJ:
+   the build to open, the set-up, numbered checks saying where to click and
+   what you should see, every one reachable by clicking: a QA-panel button, a
+   QA fixture save or authored content, never a console snippet; the owner's
+   CMS steps last). The owner clicks a verdict and adds a note on each. Fixes
+   from the look go on the branch before it merges; the checks and verdicts
+   are then copied to `docs/archive/eyecheck/` and the tab is marked looked at.
+   Before the owner is told, the director detaches the agent's worktree,
+   switches the owner's folder to the branch, starts the dev server from it and sees the slot screen load (a branch can trigger
    a one-time redraw or rebuild on first start).
 
 **Tests are seeded.** `src/tests/setup/seededRandom.js` replaces `Math.random` with the
