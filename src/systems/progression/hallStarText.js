@@ -125,7 +125,11 @@ function ruleSubject(statement, names) {
     if (to.mode === 'tag' && to.value) return `${to.value} Token`;
     if (to.mode === 'id' && to.value) return names.token(to.value);
     const category = statement?.payload?.category;
-    const skill = category && getPaletteEntry(statement.payload.type)?.categories === 'skill' ? getSkill(category)?.name || category : null;
+    const vocabulary = category ? getPaletteEntry(statement.payload.type)?.categories : null;
+    // Preservation may name a skill or a carried thing: only a skill narrows the Tokens it reaches.
+    const skill = vocabulary === 'skill' ? getSkill(category)?.name || category
+        : vocabulary === 'skillOrCarried' ? getSkill(category)?.name || null
+            : null;
     return skill ? `${skill} Token` : 'Token';
 }
 

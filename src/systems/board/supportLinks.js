@@ -4,6 +4,7 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { recipesForToken } from '../../config/registries/recipePoolRegistry.js';
 import { catchItemIds, hasCatchPools } from '../../config/registries/catchPools.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
+import { isSkillId } from '../../config/registries/skillRegistry.js';
 import { reachOf, reachCovers, RELATION } from '../../config/registries/reachRegistry.js';
 import { KEYWORD, statementsOf, stationSkillOf } from '../effects/statements.js';
 import { EFFECT_TYPES, TARGET_CATEGORIES } from '../effects/constants.js';
@@ -66,7 +67,10 @@ export function narrowingFits(payload, def) {
     if (!category || category === TARGET_CATEGORIES.ALL) return true;
     const kind = getPaletteEntry(payload.type)?.categories;
     if (kind === 'item') return itemsOfType(def).has(category);
-    if (kind === 'skill') return String(skillOfType(def) || '').toLowerCase() === String(category).toLowerCase();
+    const sameSkill = () => String(skillOfType(def) || '').toLowerCase() === String(category).toLowerCase();
+    if (kind === 'skill') return sameSkill();
+    // Preservation names a skill (that work's materials) or something its heroes carry (any Token).
+    if (kind === 'skillOrCarried') return !isSkillId(category) || sameSkill();
     return true;
 }
 

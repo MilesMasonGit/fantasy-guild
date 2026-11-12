@@ -10,6 +10,9 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { roundHalfUp } from '../../config/FormulaRegistry.js';
 import { doseKindsOf, DOSE, DOSE_LENGTH, isWorkMoment, workSkillMatches } from '../core/consumableRule.js';
+import { CARRIED_KIND } from '../../config/registries/carriedKinds.js';
+import * as BoardState from '../board/BoardState.js';
+import * as CycleSavings from '../board/CycleSavings.js';
 
 /**
  * ConsumptionSystem — heroes feed themselves from their own loadout grid.
@@ -21,7 +24,9 @@ import { doseKindsOf, DOSE, DOSE_LENGTH, isWorkMoment, workSkillMatches } from '
  * Elixirs are drunk as a fight starts and last `ELIXIR_FIGHTS` fights (`startFightElixirs`).
  *
  * Consuming draws one unit from the Guild Bank; an equipped item with no stock
- * is skipped and the hero goes without. Eating has no cooldown or per-fight limit.
+ * is skipped and the hero goes without. Eating has no cooldown or per-fight limit. A Preservation
+ * rule reaching the hero's Token or fight may keep the unit in the Bank (`CycleSavings.keepsCarried`):
+ * the meal still heals and the dose still starts.
  */
 
 /** Fraction of max HP below which a hero reaches for food. */
@@ -50,11 +55,20 @@ function fightMealHealing(hero, amount) {
 }
 
 /**
+ * Whether the item a hero is about to use up as a `kind` is kept instead (Preservation), read at
+ * Token `instanceId`: one draw when a rule offers the chance, none otherwise.
+ */
+function kept(instanceId, itemId, kind) {
+    return CycleSavings.keepsCarried(instanceId, itemId, kind);
+}
+
+/**
  * Spend one unit of an equipped item from the bank and apply its restore.
  * Returns null when the item isn't equipped or the bank is out of stock — in
- * which case the hero simply goes without.
+ * which case the hero simply goes without. A Preservation hit at `instanceId` (the fight's enemy
+ * Token, else the Token the hero works) restores as usual and leaves the unit in the Bank.
  */
-function consumeEquipped(hero, categoryId, { inFight = false } = {}) {
+function consumeEquipped(hero, categoryId, { inFight = false, instanceId } = {}) {
     const entry = equippedOfCategory(hero, categoryId);
     if (!entry) return null;
 
@@ -63,12 +77,14 @@ function consumeEquipped(hero, categoryId, { inFight = false } = {}) {
     const item = getItem(entry.itemId);
     const restore = item?.restoreAmount || 0;
     const amount = inFight ? fightMealHealing(hero, restore) : restore;
-    InventoryManager.removeItem(entry.itemId, 1);
+    const at = instanceId !== undefined ? instanceId : BoardState.workTokenOf(hero.id);
+    const preserved = kept(at, entry.itemId, CARRIED_KIND.FOOD);
+    if (!preserved) InventoryManager.removeItem(entry.itemId, 1);
 
     if (amount > 0) HeroManager.modifyHeroHp(hero.id, amount);
 
     EventBus.publish(ENGINE_EVENTS.HERO_CONSUMED, {
-        heroId: hero.id, itemId: entry.itemId, category: categoryId, amount
+        heroId: hero.id, itemId: entry.itemId, category: categoryId, amount, ...(preserved ? { preserved } : {})
     });
     return { itemId: entry.itemId, amount };
 }
@@ -76,14 +92,15 @@ function consumeEquipped(hero, categoryId, { inFight = false } = {}) {
 /**
  * Eat if HP is low: one unit from the food slot. Drinks do not heal, in a fight or out: the drink
  * stays equipped and unspent, and its restore amount is ignored. The combat cost (the swing) is
- * charged by the caller; `inFight` applies Food Healing (Burn) to the meal.
- * @param {{inFight?: boolean}} [options]
+ * charged by the caller; `inFight` applies Food Healing (Burn) to the meal. `instanceId`: where a
+ * Preservation rule is read, the fight's enemy Token; left out, the Token the hero works.
+ * @param {{inFight?: boolean, instanceId?: string|null}} [options]
  * @returns {Array<{itemId: string, amount: number}>} what was eaten; empty if nothing.
  */
-export function tryEat(heroId, { inFight = false } = {}) {
+export function tryEat(heroId, { inFight = false, instanceId } = {}) {
     const hero = HeroManager.getHero(heroId);
     if (!hero || !isLow(hero.hp)) return [];
-    const meal = consumeEquipped(hero, 'food', { inFight });
+    const meal = consumeEquipped(hero, 'food', { inFight, instanceId });
     return meal ? [meal] : [];
 }
 
@@ -107,13 +124,14 @@ export function isFightElixir(itemId) {
  * A fight is starting: count it on every equipped elixir type and drink a fresh one of each type
  * whose last dose has run out. One elixir lasts `ELIXIR_FIGHTS` fights, so the count left is
  * stored on the hero (`hero.elixirFights`, saved with them). An elixir with no dose left and none
- * in the Bank sits out this fight.
+ * in the Bank sits out this fight. A Preservation hit at `instanceId` (the enemy Token) starts the
+ * fresh dose without taking one from the Bank.
  *
- * Draws no random number, so a catch-up counts exactly as live play does.
+ * Draws no random number unless a Preservation rule reaches a fresh dose (one draw for it).
  *
  * @returns {string[]} the elixir item ids working in this fight, in grid order
  */
-export function startFightElixirs(heroId) {
+export function startFightElixirs(heroId, instanceId = null) {
     const hero = HeroManager.getHero(heroId);
     if (!hero) return [];
 
@@ -127,10 +145,11 @@ export function startFightElixirs(heroId) {
         let left = Number(hero.elixirFights?.[entry.itemId]) || 0;
         if (left <= 0) {
             if (!InventoryManager.hasItem(entry.itemId, 1)) continue;
-            InventoryManager.removeItem(entry.itemId, 1);
+            const preserved = kept(instanceId, entry.itemId, CARRIED_KIND.ELIXIR);
+            if (!preserved) InventoryManager.removeItem(entry.itemId, 1);
             left = ELIXIR_FIGHTS;
             EventBus.publish(ENGINE_EVENTS.HERO_CONSUMED, {
-                heroId, itemId: entry.itemId, category: entry.category, amount: 0, elixir: true
+                heroId, itemId: entry.itemId, category: entry.category, amount: 0, elixir: true, ...(preserved ? { preserved } : {})
             });
             logger.debug('ConsumptionSystem', `${hero.name} drank ${entry.itemId}`);
         }
@@ -159,13 +178,15 @@ export function workDoseOf(itemId) {
  * rules fire on it, and drink a fresh one of each whose dose has run out. A drink lasts
  * `DRINK_CYCLES` cycles, its count left saved on the hero (`hero.drinkCycles`); a work potion lasts
  * the one cycle, so one is drunk every time. One with no dose left and none in the Bank sits this
- * cycle out. An item whose work rules all name another skill is kept for its own skill's work.
+ * cycle out. An item whose work rules all name another skill is kept for its own skill's work. A
+ * Preservation hit at `instanceId` (the Token whose cycle starts) starts the fresh dose without
+ * taking one from the Bank.
  *
- * Draws no random number, so a catch-up counts exactly as live play does.
+ * Draws no random number unless a Preservation rule reaches a fresh dose (one draw for it).
  *
  * @returns {string[]} the item ids working in this cycle, in grid order
  */
-export function startWorkDoses(heroId, skill) {
+export function startWorkDoses(heroId, skill, instanceId = null) {
     const hero = HeroManager.getHero(heroId);
     if (!hero) return [];
 
@@ -183,11 +204,12 @@ export function startWorkDoses(heroId, skill) {
         let left = length > 1 ? (Number(hero.drinkCycles?.[entry.itemId]) || 0) : 0;
         if (left <= 0) {
             if (!InventoryManager.hasItem(entry.itemId, 1)) continue;
-            InventoryManager.removeItem(entry.itemId, 1);
+            const preserved = kept(instanceId, entry.itemId, length > 1 ? CARRIED_KIND.DRINK : CARRIED_KIND.POTION);
+            if (!preserved) InventoryManager.removeItem(entry.itemId, 1);
             left = length;
             EventBus.publish(ENGINE_EVENTS.HERO_CONSUMED, {
                 heroId, itemId: entry.itemId, category: entry.category, amount: 0,
-                dose: length > 1 ? DOSE.DRINK : DOSE.POTION
+                dose: length > 1 ? DOSE.DRINK : DOSE.POTION, ...(preserved ? { preserved } : {})
             });
             logger.debug('ConsumptionSystem', `${hero.name} drank ${entry.itemId}`);
         }

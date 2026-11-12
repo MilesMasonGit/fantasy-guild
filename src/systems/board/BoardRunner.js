@@ -30,7 +30,10 @@ import * as MatPlacement from './MatPlacement.js';
 import * as StatusApplication from './StatusApplication.js';
 import * as EffectFeedback from './EffectFeedback.js';
 import * as RareDrops from './RareDrops.js';
+import * as RareTables from './RareTables.js';
 import * as OutputRules from './OutputRules.js';
+import * as CycleSavings from './CycleSavings.js';
+import * as InputCost from './InputCost.js';
 import * as Fishing from './Fishing.js';
 import * as Fields from './Fields.js';
 import * as LoadoutMoments from './LoadoutMoments.js';
@@ -70,9 +73,9 @@ export { ALERT };
  *
  * Hero effects on the board: only Access, the skill gate in rule 3. ⚠️ A skill level deliberately
  * adds no work speed: an invisible per-level bonus was removed as one more number to balance.
- * Efficiency is not implemented: input cost is resolved in `completeCycle` through
- * `TileModifiers.resolveAxis(INPUT_COST)`, which reads tile, neighbour and guild-wide effects.
- * ⚠️ Deferred to the hero rework: do not quietly fill it in because it looks missing.
+ * Nor does a skill level save inputs: a cycle's input cost moves only by Efficiency rules
+ * (`INPUT_COST`: tile, neighbour, guild-wide and carried), resolved in `completeCycle` through
+ * `InputCost`. ⚠️ A per-level saving was deferred to the hero rework: do not quietly add one.
  */
 
 /** Tick counter, so progress events don't fire at full rate. */
@@ -230,14 +233,11 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         return;
     }
 
-    // INPUT_COST, widened to read the Token's neighbours: a Tool Rack beside a Forge makes it
-    // cheaper to run, so the Token's own aggregator is not the only one consulted.
-    const inputs = (io.inputs || []).map(input => ({
-        ...input,
-        quantity: Math.max(1, Math.round(TileModifiers.resolveAxis(
-            id, EFFECT_TYPES.INPUT_COST, input.quantity || 1, config.skill
-        )))
-    }));
+    // INPUT_COST (Efficiency), widened to read the Token's neighbours: a Tool Rack beside a Forge
+    // makes it cheaper to run. Each input carries its exact cost and the most it can take (the cost
+    // rounded up); it is made whole by chance only as the cycle pays (`InputCost`), so this check
+    // asks for the most and the roll can never make the cycle unaffordable.
+    const costed = InputCost.costedInputs(id, io.inputs, config.skill);
 
     // The atomic requirement check, in the order that makes it atomic: plan every charge debit
     // first, then spend the items, then commit the charges. A cycle needs 100% of its inputs (bank
@@ -253,12 +253,27 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         return;
     }
 
-    if (!InputAllocator.consumeInputs(inputs)) {
+    // PRESERVATION: a chance a cycle that works uses none of its materials. Asked before anything is
+    // paid; with no chance offered (or nothing to pay) the cycle pays exactly as it always has.
+    // ⚠️ With a chance offered the inputs are paid AFTER the failure roll, since a failed cycle pays
+    // and never rolls: only checked here, then paid below unless the roll hits. Paying moves the Bank,
+    // and an On Bank Holds rule fires (and may draw) the moment it moves, so the order without a
+    // chance must stay pay-then-fail or the bench's work check would see a different stream.
+    // Either way an Efficiency cost is rounded just before it is paid, and never for a cycle that
+    // keeps its materials: check, [failure, Preservation,] round, pay.
+    const keepChance = costed.length ? CycleSavings.preservationChance(id, config.skill) : 0;
+    if (!InputAllocator.checkInputs(costed).ok) {
         // Raced by another Token between the availability check and here.
         // Keep the progress and wait — the cycle is not lost, only delayed.
         setAlert(instance,ALERT.INPUTS);
         return;
     }
+    let paidInputs = [];
+    const pay = () => {
+        paidInputs = InputCost.rolledInputs(costed);
+        InputAllocator.consumeInputs(paidInputs);
+    };
+    if (!(keepChance > 0)) pay();
 
     instance.cycleElapsedMs = 0;
 
@@ -271,6 +286,11 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         id, EFFECT_TYPES.FAIL_CHANCE, 0, config.skill
     );
     const failed = failChance > 0 && Math.random() * 100 < failChance;
+
+    // The cycle still runs, makes its outputs and spends its charges; a Field's owed seed is never
+    // paid for that crop, and a build that kept its materials remembers paying nothing.
+    const preserved = keepChance > 0 && !failed && CycleSavings.rollChance(keepChance);
+    if (keepChance > 0 && !preserved) pay();
 
     // Item output lands on the BOARD, not in the Bank: it is not banked until collected, and if the
     // Bank is full it simply waits there. A Token output stands on the mat beside the station.
@@ -295,6 +315,27 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         outputs = caught ? [{ itemId: caught.itemId, chance: 100, minQty: 1, maxQty: 1 }] : [];
     }
 
+    // One item line, once its chance has landed: the authored range rolled, then the cycle's rules.
+    // Every drop lands this way, the rare table's too. `note` hears the sprite (for the twinkle).
+    const landLine = (output, note) => {
+        // Roll the authored range FIRST, then widen it, so a 1-5 output buffs a lucky cycle more
+        // than an unlucky one.
+        const rolled = isGuildHall
+            ? OutputRules.roundUp(rollOutputQuantity(output))
+            : OutputRules.widenYield(id, config.skill, rollOutputQuantity(output));
+        const widened = doubled ? rolled * 2 : rolled;
+        // A chance that this one item comes out doubled, after everything else (not at the Hall).
+        const quantity = (isGuildHall || !output.itemId) ? widened : OutputRules.doubleItemDrop(id, output.itemId, widened);
+        if (quantity <= 0) return;
+
+        // An output names a Token or an item. One that names neither pays nothing: the cycle still
+        // runs and still takes its inputs.
+        if (output.itemId) {
+            note(SpriteLayer.addSprite('item', output.itemId, quantity, id));
+            produced.push(output.itemId);
+        }
+    };
+
     // A build makes its Token by becoming it (below), never as a sprite.
     for (const output of outputs) {
         const chance = output.chance ?? 100;
@@ -304,23 +345,17 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
             placeTokenOutput(instance, output);
             continue;
         }
+        landLine(output, (sprite) => RareDrops.noteDrop(sprite, chance));
+    }
 
-        // Roll the authored range FIRST, then widen it, so a 1-5 output buffs a lucky cycle more
-        // than an unlucky one.
-        const rolled = isGuildHall
-            ? OutputRules.roundUp(rollOutputQuantity(output))
-            : OutputRules.widenYield(id, config.skill, rollOutputQuantity(output));
-        const widened = doubled ? rolled * 2 : rolled;
-        // A chance that this one item comes out doubled, after everything else (not at the Hall).
-        const quantity = (isGuildHall || !output.itemId) ? widened : OutputRules.doubleItemDrop(id, output.itemId, widened);
-        if (quantity <= 0) continue;
-
-        // An output names a Token or an item. One that names neither pays nothing: the cycle still
-        // runs and still takes its inputs.
-        if (output.itemId) {
-            RareDrops.noteDrop(SpriteLayer.addSprite('item', output.itemId, quantity, id), chance);
-            produced.push(output.itemId);
-        }
+    // The Token's rare drop table, after its own lines: one roll at its chance widened by Lucky,
+    // and on a hit one find by weight, landed as any line is (Double Loot doubles it, Double Item
+    // works on it) and always marked a rare find for the mat's twinkle (`RareDrops.noteRareFind`;
+    // the twinkle itself is switched off in `lootEffects.js`). A failed cycle rolls nothing, a build drops nothing, and
+    // a Token with no table draws nothing.
+    if (!failed && !buildTypeId) {
+        const find = RareTables.rollRareTable(id, def, config.skill);
+        if (find) landLine(find.entry, (sprite) => RareDrops.noteRareFind(sprite, find.chance));
     }
 
     // BONUS_DROP, skipped entirely on a failed cycle: nothing happened, so nothing drops.
@@ -341,7 +376,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
             // could apply a status the hero cannot afford.
             if (!HeroEffects.canPayLoadoutCost(application)) continue;
             if (StatusApplication.applyAt(id, application)) {
-                HeroEffects.payLoadoutCost(application);
+                CycleSavings.payItemRule(id, application);
                 EffectFeedback.announce(id, application);
             }
         }
@@ -364,13 +399,19 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // ⚠️ Nothing near the Token pays for this cycle: help is free (owner, 2026-10-24). A support or
     // a context Token never wears out, and a gathering node that helps its neighbours spends its
     // charges only on its own gathering (`Charges.planContextCharges`, `wearRule.js`).
-    Charges.commitPlan(chargePlan, { heroId });
+    // Refresh: a cycle that succeeded and would spend something may spend nothing. A failed cycle
+    // still burns its charge and never rolls, and neither does one with nothing to spend.
+    const isField = Fields.isField(def);
+    const spends = chargePlan.debits.length > 0 || (isField && Fields.stageOf(instance, def) === Fields.STAGE.RIPE);
+    const refreshed = !failed && spends
+        && CycleSavings.rollRefresh(id, config.skill);
+    if (!refreshed) Charges.commitPlan(chargePlan, { heroId });
     // Used up just now: its rest began when this cycle ended, `overMs` before the tick's end.
     Respawn.restBeganEarlier(instance, overMs);
 
     // A Field spends one harvest of its load; the last sows its crop again, growing from the moment
     // this cycle ended (`overMs` into the tick), or stops it without a seed (`Fields.js`).
-    if (Fields.isField(def)) Fields.harvested(instance, def, { overMs });
+    if (isField) Fields.harvested(instance, def, { overMs, refreshed });
 
     // The board's universal unit of work. One kill counts as one cycle too, so combat feeds this
     // exactly as production does.
@@ -395,9 +436,9 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // failed cycle.
     if (buildTypeId && !failed) {
         const fromTypeId = instance.typeId;
-        // The paid `inputs` go with it: the built Token remembers its Foundation and build cost for
-        // the discard refund.
-        const built = Foundations.buildInPlace(instance, buildTypeId, inputs);
+        // What it paid goes with it (`paidInputs`, after Efficiency): the built Token remembers its
+        // Foundation and build cost for the discard refund.
+        const built = Foundations.buildInPlace(instance, buildTypeId, paidInputs);
         if (built) {
             noteTokenBuilt(buildTypeId);
             EventBus.publish(BOARD_EVENTS.TOKEN_BUILT, {

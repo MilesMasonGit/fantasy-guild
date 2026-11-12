@@ -187,6 +187,7 @@ export { DEFAULT_PERK_LEVELS, MIN_PERK_LEVEL, isPerkLevel, perkRowsOf, normalise
 export { perkFindings } from '../../../src/systems/core/perkRule.js';
 // A water Token's catch pools (tool kind × bait → a weighted catch): the game's own reader, so the Catch pools block and the game read the same pools.
 export { catchPoolsOf, hasCatchPools, catchItemIds, baitItemIds } from '../../../src/config/registries/catchPools.js';
+export { rareTableOf, rareTableChance, rareEntryChances } from '../../../src/config/registries/rareTables.js';
 // Bait is carried in a Consumable cell: the Catch pools block offers only items of a consumable category.
 export { isConsumableCategory } from '../../../src/config/registries/equipmentCategories.js';
 // How a carried food, drink or potion is used (an elixir's fights, a drink's work cycles, a work potion's one cycle), and that its always-on rules do nothing: the game's own rule and wording.

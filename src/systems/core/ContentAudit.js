@@ -162,6 +162,9 @@ function auditTokens(out) {
             }
             checkRef(out, where, 'item', output?.itemId, 'Something it produces');
         }
+        for (const entry of Array.isArray(def.rareTable?.entries) ? def.rareTable.entries : []) {
+            checkRef(out, where, 'item', entry?.itemId, 'A find on its rare drop table');
+        }
 
         auditRetiredEffectShape(out, where, def);
         auditEffectRefs(out, where, def);

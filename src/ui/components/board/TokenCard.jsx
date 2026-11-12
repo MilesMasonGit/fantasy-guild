@@ -275,7 +275,7 @@ const MakesSection = ({ makes }) => {
             <div data-card-makes className="flex flex-col gap-1">
                 {makes.map(m => (
                     <EntityRibbon
-                        key={m.itemId}
+                        key={m.rare ? `rare:${m.itemId}` : m.itemId}
                         kind="item"
                         id={m.itemId}
                         minQty={m.min}
@@ -410,7 +410,7 @@ const DropsSection = ({ drops }) => (
     <Section data-card-block="drops">
         <Heading>Drops</Heading>
         {drops.map(d => (
-            <EntityRibbon key={d.itemId} kind="item" id={d.itemId} minQty={d.min} maxQty={d.max} chance={`${d.chance}%`} size="sm" wrap onInspect={lookUpRibbon} />
+            <EntityRibbon key={d.rare ? `rare:${d.itemId}` : d.itemId} kind="item" id={d.itemId} minQty={d.min} maxQty={d.max} chance={`${d.chance}%`} size="sm" wrap onInspect={lookUpRibbon} />
         ))}
     </Section>
 );

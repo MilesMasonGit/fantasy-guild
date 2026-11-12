@@ -9,8 +9,10 @@ import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as SpriteLayer from '../board/SpriteLayer.js';
 import * as OutputRules from '../board/OutputRules.js';
 import * as RareDrops from '../board/RareDrops.js';
+import * as RareTables from '../board/RareTables.js';
 import * as BoardState from '../board/BoardState.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { rareTableOf } from '../../config/registries/rareTables.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
@@ -32,7 +34,11 @@ const LootSystem = {
     handleCombatVictory(data) {
         const { cardId, heroId, enemyId, enemyName, drops, instanceId } = data;
 
-        const sourceData = (Array.isArray(drops) && drops.length > 0) ? { drops } : null;
+        const onBoard = instanceId != null;
+        const typeDef = onBoard ? getTokenType(BoardState.getTokenById(instanceId)?.typeId) : null;
+        // The enemy Token's own rare drop table: its kind, else the enemy's (the Token's id).
+        const table = rareTableOf(typeDef || getTokenType(enemyId));
+        const sourceData = (Array.isArray(drops) && drops.length > 0) ? { drops } : (table ? { drops: [] } : null);
 
         if (!sourceData) {
             EventBus.publish(ENGINE_EVENTS.LOOT_GENERATED, { cardId, heroId, enemyId, enemyName, drops: [] });
@@ -41,9 +47,8 @@ const LootSystem = {
 
         // A kill is a cycle of the enemy Token, so on the board its loot follows the station output
         // rules in the same order: double loot rolled once, each line's quantity widened by YIELD,
-        // then the nearby bonus drops.
-        const onBoard = instanceId != null;
-        const skill = onBoard ? (getTokenType(BoardState.getTokenById(instanceId)?.typeId)?.config?.skill || '') : '';
+        // then its rare table, then the nearby bonus drops.
+        const skill = onBoard ? (typeDef?.config?.skill || '') : '';
         const doubled = onBoard && OutputRules.rollDoubleLoot(instanceId, skill);
 
         // Every drop line rolls on its own `chance`, as a station's outputs do in
@@ -56,6 +61,13 @@ const LootSystem = {
             : null;
         const generatedDrops = this.rollEachLine(sourceData.drops, widen);
 
+        // One roll on the enemy's rare table beside its loot (Lucky aimed at the enemy widens it), and
+        // on a hit one find by weight, rolled and widened as a line is. No table, no draw.
+        const find = table ? RareTables.rollRareTable(onBoard ? instanceId : null, typeDef || getTokenType(enemyId), skill) : null;
+        const rare = find ? this._rollEntryDetails(find.entry) : null;
+        if (rare && widen) rare.quantity = widen(rare.quantity, rare.itemId);
+        const rareDrop = rare && rare.quantity > 0 ? rare : null;
+
         if (onBoard) {
             // On the board, loot drops as floating sprites where the kill
             // happened and is not banked until collected; banking it directly
@@ -64,15 +76,17 @@ const LootSystem = {
                 const line = (sourceData.drops || []).find(e => e?.itemId === drop.itemId);
                 RareDrops.noteDrop(SpriteLayer.addSprite('item', drop.itemId, drop.quantity, instanceId), line?.chance ?? 100);
             }
+            if (rareDrop) RareDrops.noteRareFind(SpriteLayer.addSprite('item', rareDrop.itemId, rareDrop.quantity, instanceId), find.chance);
             OutputRules.dropBonusGrants(instanceId);
         } else {
             // No Token to anchor sprites to: bank directly.
-            for (const d of generatedDrops) {
+            for (const d of [...generatedDrops, ...(rareDrop ? [rareDrop] : [])]) {
                 InventoryManager.addItem(d.itemId, d.quantity || 1);
             }
         }
 
-        EventBus.publish(ENGINE_EVENTS.LOOT_GENERATED, { cardId, heroId, enemyId, enemyName, instanceId, drops: generatedDrops });
+        const all = rareDrop ? [...generatedDrops, { ...rareDrop, rare: true }] : generatedDrops;
+        EventBus.publish(ENGINE_EVENTS.LOOT_GENERATED, { cardId, heroId, enemyId, enemyName, instanceId, drops: all });
     },
 
     /**

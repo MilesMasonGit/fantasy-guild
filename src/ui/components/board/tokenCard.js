@@ -5,6 +5,7 @@ import { contextRequirementsOf, getRecipe } from '../../../config/registries/rec
 import { getItem, getAllItems } from '../../../config/registries/itemRegistry.js';
 import { neededToolOf, toolNeedPhrase, toolItemFor, toolKindLabel } from '../../../config/registries/toolKinds.js';
 import { hasCatchPools, catchPoolsOf } from '../../../config/registries/catchPools.js';
+import { rareTableOf, rareEntryChances } from '../../../config/registries/rareTables.js';
 import { enemyProfileOf } from '../../../config/registries/enemyProfile.js';
 import { turnTiming, fieldOf, cropTermsOf, campOf } from '../../../config/registries/tokenConstants.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
@@ -19,6 +20,7 @@ import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import * as Fields from '../../../systems/board/Fields.js';
 import * as Fishing from '../../../systems/board/Fishing.js';
 import * as Demolition from '../../../systems/board/Demolition.js';
+import * as RareTables from '../../../systems/board/RareTables.js';
 import { workTimeOf, resolveAxis } from '../../../systems/board/TileModifiers.js';
 import { EFFECT_TYPES } from '../../../systems/effects/constants.js';
 import { GameState } from '../../../state/GameState.js';
@@ -114,6 +116,7 @@ export function liveCardSources() {
         heroName: (id) => (GameState.state?.heroes || []).find(h => h?.id === id)?.name || null,
         fishingOf: Fishing.fishingOf,
         catchWeight: (instanceId, itemId, weight) => resolveAxis(instanceId, EFFECT_TYPES.CATCH_WEIGHT, weight, itemId),
+        rareChance: RareTables.rareChanceAt,
         effectiveIO,
         workTime: workTimeOf,
         available: availableOf,
@@ -216,6 +219,26 @@ function dropsOf(outputs) {
             const { min, max } = outputRange(o);
             return { itemId: o.itemId, min, max, chance: o.chance == null ? 100 : Number(o.chance) };
         });
+}
+
+/** A chance as a row writes it: one decimal from 1 %, two figures under it (0.17 %, 0.005 %). */
+function rareChanceText(chance) {
+    const c = Math.max(0, Number(chance) || 0);
+    if (c >= 1) return Math.round(c * 10) / 10;
+    return c > 0 ? Number(c.toPrecision(2)) : 0;
+}
+
+/**
+ * The rare drop table's entries as chance rows, after the Token's own lines: each at its own chance,
+ * the table's (Lucky counted, on a Token on the mat) times its share. `rare` marks them.
+ */
+function rareRowsOf(def, instance, src, skill) {
+    const table = rareTableOf(def);
+    if (!table) return [];
+    const chance = instance && src.rareChance ? src.rareChance(instance.id, def, skill) : table.chance;
+    return rareEntryChances(table, chance).map(({ entry, chance: c }) => ({
+        itemId: entry.itemId, min: entry.minQty, max: entry.maxQty, chance: rareChanceText(c), rare: true
+    }));
 }
 
 function needsOf(inputs, src) {
@@ -461,7 +484,7 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
         const hp = fight?.combat?.enemyHp;
         blocks.push({ id: CARD_BLOCK.HP, cur: hp ? hp.current : enemy.hp, max: hp ? hp.max : enemy.hp });
         blocks.push({ id: CARD_BLOCK.COMBAT, skillId: enemy.combatType, level: enemy.level, xp: enemy.xpAwarded });
-        const drops = dropsOf(def.config?.outputs);
+        const drops = [...dropsOf(def.config?.outputs), ...rareRowsOf(def, instance, src, def.config?.skill || '')];
         if (drops.length) blocks.push({ id: CARD_BLOCK.DROPS, drops });
         return { enemy: true, name, art, blocks };
     }
@@ -500,7 +523,8 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
         const outputs = isStation ? (recipe?.outputs || []) : water ? [] : (def.config?.outputs || []);
         const needs = needsOf(inputs, src);
         const tools = toolsOf(def, recipe, src);
-        const makes = makesOf(outputs);
+        // A build drops nothing, so a Foundation's rare table (if one were authored) never rolls.
+        const makes = [...makesOf(outputs), ...(def.foundation ? [] : rareRowsOf(def, instance, src, def.config?.skill))];
         const change = isStation && instance
             ? {
                 label: def.foundation ? 'Choose what to build' : isField ? 'Change crop' : 'Change recipe',

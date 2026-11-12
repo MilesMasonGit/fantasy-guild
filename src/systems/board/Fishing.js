@@ -7,7 +7,9 @@ import { neededToolOf } from '../../config/registries/toolKinds.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as HeroTools from '../equipment/HeroTools.js';
 import * as TileModifiers from './TileModifiers.js';
+import * as CycleSavings from './CycleSavings.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
+import { CARRIED_KIND } from '../../config/registries/carriedKinds.js';
 
 /**
  * Fishing (brief 230 S5, owner rulings 2026-10-24). A water Token (one with catch pools,
@@ -69,9 +71,11 @@ export function fishingOf(def, heroId) {
  * it (the hero's rod, a Token in reach), with the fish as the narrowing.
  *
  * Nothing bites (null) when the hero holds no tool the water takes, or when their tool has no
- * basic pool here and they carry none of its baits: no bait is spent then.
+ * basic pool here and they carry none of its baits: no bait is spent then. A Preservation hit at
+ * the water keeps the bait in the Bank (`baitKept`): one more draw, after the pick, only when a rule
+ * offers the chance.
  *
- * @returns {{itemId: string, tool: string, bait: string|null}|null}
+ * @returns {{itemId: string, tool: string, bait: string|null, baitKept: boolean}|null}
  */
 export function catchOf(instanceId, def, heroId, random = Math.random) {
     const plan = fishingOf(def, heroId);
@@ -80,6 +84,7 @@ export function catchOf(instanceId, def, heroId, random = Math.random) {
     const weights = catches.map(c => TileModifiers.resolveAxis(instanceId, EFFECT_TYPES.CATCH_WEIGHT, c.weight, c.itemId));
     const index = pickCatchIndex(weights, random);
     if (index == null) return null;
-    if (plan.bait) InventoryManager.removeItem(plan.bait, 1);
-    return { itemId: catches[index].itemId, tool: plan.tool.kind, bait: plan.bait };
+    const baitKept = !!plan.bait && CycleSavings.keepsCarried(instanceId, plan.bait, CARRIED_KIND.BAIT, random);
+    if (plan.bait && !baitKept) InventoryManager.removeItem(plan.bait, 1);
+    return { itemId: catches[index].itemId, tool: plan.tool.kind, bait: plan.bait, baitKept };
 }

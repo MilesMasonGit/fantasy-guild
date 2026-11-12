@@ -24,6 +24,16 @@ export const EFFECT_TYPES = {
     LOOT_MULT: 'LOOT_MULT',   // Chance for double loot
     // A chance to double ONE item a cycle or kill drops; the item is the rule's category (`OutputRules`).
     DOUBLE_DROP: 'DOUBLE_DROP',
+    // Refresh: a chance a completed cycle spends none of the Token's charges (a Field: none of its
+    // load); narrowed to the Token's skill — CycleSavings.rollRefresh.
+    REFRESH: 'REFRESH',
+    // Preservation: a chance a completed cycle uses none of its materials (narrowed to the Token's
+    // skill), and a chance a hero's ammo, Food, drink, potion or bait is not used up (narrowed to the
+    // item or its kind, `carriedKinds.js`) — CycleSavings.
+    PRESERVATION: 'PRESERVATION',
+    // Lucky: the chance on a Token's own rare drop table, widened from that chance as its base (a
+    // percentage in proportion, a flat in points) — RareTables.
+    LUCKY: 'LUCKY',
     // How often ONE fish bites from a water's catch pool, as a percentage on its weight; the item is
     // the rule's category (`Fishing.catchOf`).
     CATCH_WEIGHT: 'CATCH_WEIGHT',

@@ -304,13 +304,15 @@ export function canPayLoadoutCost(statement) {
     return (statement?.sourceItemIds || []).some(id => InventoryManager.hasItem(id, cost));
 }
 
-export function payLoadoutCost(statement) {
+export function payLoadoutCost(statement, keep = null) {
     const cost = -Number(statement?.chargeDelta || 0);
     if (!(cost > 0)) return true;
 
     for (const itemId of statement?.sourceItemIds || []) {
         if (InventoryManager.hasItem(itemId, cost)) {
-            InventoryManager.removeItem(itemId, cost);
+            // `keep` (Preservation, `CycleSavings.payItemRule`) is asked once, for the item that
+            // would pay: the rule has fired either way, and on a hit the item stays in the Bank.
+            if (!keep?.(itemId)) InventoryManager.removeItem(itemId, cost);
             return true;
         }
     }

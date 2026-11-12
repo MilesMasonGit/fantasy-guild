@@ -118,6 +118,9 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  * * `'equipCategory'` — `loadoutCaps.js` passes a loadout category's id
  *   (`equipmentCategories.js`), which is how `LOADOUT_SLOTS` names the kind of
  *   item it makes room for.
+ * * `'skillOrCarried'` — `CycleSavings` passes a cycle's skill, or a carried item's id together
+ *   with its kind (`carriedKinds.js`: ammo, Food…), which is how `PRESERVATION` names the work whose
+ *   materials it keeps, or the things a hero carries it keeps.
  *
  * ## `retired` — still read as a sentence, never offered
  *
@@ -347,6 +350,88 @@ export const MODIFIER_PALETTE = [
         shape: MODIFIER_SHAPES.PROC,
         group: 'Support',
         hint: 'Percent chance that one item, when a cycle or a kill drops it, comes out doubled. Pick the item; "any item" rolls for every item that drops, each on its own.'
+    },
+    {
+        /**
+         * Read by `CycleSavings.rollRefresh` once per completed cycle, before the Token pays its
+         * charges: on a hit it pays none, and a Field's harvest leaves its load as it was. A failed
+         * cycle never rolls. Aimed at Tokens by the rule's `to`; the skill narrows further.
+         */
+        type: EFFECT_TYPES.REFRESH,
+        reads: {
+            up: (n) => `have a ${n} chance a cycle spends none of their charges`,
+            down: (n) => `have ${n} less chance a cycle spends none of their charges`
+        },
+        heroReads: {
+            up: (n) => `a ${n} chance a cycle spends none of the Token's charges`,
+            down: (n) => `${n} less chance a cycle spends none of the Token's charges`
+        },
+        label: 'Refresh',
+        when: 'never',
+        scales: 'value',
+        // A chance is a plain number of percent; resolved from a base of 0, so any other bucket is 0.
+        buckets: ['flat'],
+        categories: 'skill',
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Support',
+        hint: 'A chance a cycle spends none of the Token\'s charges. In percent; a Field keeps its harvest. Aim it at Tokens; the skill narrows it further.'
+    },
+    {
+        /**
+         * Read by `CycleSavings`: once per completed cycle that would pay inputs, before it pays
+         * (`BoardRunner.completeCycle`; a failed cycle pays and never rolls), with the Token's skill;
+         * and each time a hero would use up ammo, Food, a drink's or potion's new dose, a fight
+         * elixir's or bait, with the item and its kind (`carriedKinds.js`), at the Token they work or
+         * the enemy they fight. The sentence is its own (`statementText`), since the narrowing
+         * changes what it covers.
+         */
+        type: EFFECT_TYPES.PRESERVATION,
+        reads: {
+            up: (n) => `have a ${n} chance nothing is used up: a cycle's materials, ammo, Food, drinks, potions or bait`,
+            down: (n) => `have ${n} less chance nothing is used up: a cycle's materials, ammo, Food, drinks, potions or bait`
+        },
+        heroReads: {
+            up: (n) => `a ${n} chance nothing is used up: a cycle's materials, ammo, Food, drinks, potions or bait`,
+            down: (n) => `${n} less chance nothing is used up: a cycle's materials, ammo, Food, drinks, potions or bait`
+        },
+        label: 'Preservation',
+        when: 'never',
+        scales: 'value',
+        // A chance is a plain number of percent; resolved from a base of 0, so any other bucket is 0.
+        buckets: ['flat'],
+        categories: 'skillOrCarried',
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Support',
+        hint: 'A chance a cycle uses none of its materials; it also keeps ammo, Food, drinks, potions and bait from being used up, and an item its own rule spends as it fires. In percent. Pick a skill to keep only that work\'s materials, or a kind of carried thing (Ammo, Food…) or one item to keep only those.'
+    },
+    {
+        /**
+         * Read by `RareTables.luckyChance` once per cycle or kill that rolls a rare table, with the
+         * table's own chance as the base: a percentage moves it in proportion (+10 % turns 1 % into
+         * 1.1 %), a flat adds points (+1 turns 1 % into 2 %). A Token with no table never reads it.
+         * Aimed at Tokens by the rule's `to`.
+         *
+         * ⚠️ Deterministic, not `proc`, though it ends in a roll: a proc is a chance resolved from 0,
+         * so the CMS stores its percentage as typed and starts it flat. Lucky's percentage is a share
+         * of the table's chance (typed 10, stored 0.1), and the CMS starts it there. The sentence is
+         * its own (`statementText`), since a flat reads in points.
+         */
+        type: EFFECT_TYPES.LUCKY,
+        reads: {
+            up: (n) => `have a ${n} higher chance on their rare drop table`,
+            down: (n) => `have a ${n} lower chance on their rare drop table`
+        },
+        heroReads: {
+            up: (n) => `a ${n} higher chance on the Token's rare drop table`,
+            down: (n) => `a ${n} lower chance on the Token's rare drop table`
+        },
+        label: 'Lucky',
+        when: 'never',
+        scales: 'value',
+        buckets: ['percentage', 'flat'],
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Support',
+        hint: 'A higher chance on the Token\'s rare drop table. A percentage raises it in proportion (+10% turns 1% into 1.1%); a flat amount adds points (+1 turns 1% into 2%). Aim it at Tokens; one without a table ignores it.'
     },
     {
         /**

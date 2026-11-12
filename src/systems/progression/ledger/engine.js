@@ -11,6 +11,7 @@ import {
     stationKindOffers, foundationTierMeets, growsTermsOf, respawnOf, cropTermsOf, fieldOf, PASSIVE_LAP_BASE_MS
 } from '../../../config/registries/tokenConstants.js';
 import { catchPoolsOf, hasCatchPools } from '../../../config/registries/catchPools.js';
+import { rareTableOf, rareEntryChances } from '../../../config/registries/rareTables.js';
 import { toolOf, neededToolOf, toolMeets, starterToolIds } from '../../../config/registries/toolKinds.js';
 import { STRICT_RINGS, SKILL_OF, EXTRA_KIND } from '../../../config/worldTablesShape.js';
 
@@ -202,6 +203,17 @@ function outputKey(entry) {
 
 const weightOf = (entry) => Math.max(0, finite(Number(entry?.weight), 1));
 
+/**
+ * A Token's rare drop table as gives, read as chance lines: each entry at its own chance (the
+ * table's, before Lucky, times its share of the table's weight). None without a table.
+ */
+function rareGivesOf(def) {
+    return rareEntryChances(rareTableOf(def)).map(({ entry, chance }) => {
+        const p = Math.max(0, Math.min(1, chance / 100));
+        return { key: itemKey(entry.itemId), chance: p, perCycle: p * (entry.minQty + entry.maxQty) / 2 };
+    });
+}
+
 /** Whether a Token wears out for good: it has Charges and nothing brings it back (a chest). */
 export function isOneOff(def) {
     return isObject(def) && def.uses !== undefined && def.uses !== null && !respawnOf(def) && !isObject(def.enemy);
@@ -371,15 +383,18 @@ export function buildWorld(content = {}) {
             });
         }
 
-        // An enemy's drops (items only), beaten in a fight.
+        // A rare drop table rolls on every cycle or kill of the Token, beside its own lines.
+        const rare = isFoundation ? [] : rareGivesOf(def);
+
+        // An enemy's drops (items only), beaten in a fight, and its rare table.
         if (isEnemy) {
             const drops = list(def.config?.outputs).filter(o => text(o.itemId));
-            if (drops.length) {
+            if (drops.length || rare.length) {
                 add({
                     id: `drop:${id}`, how: HOW.DROP, via: self, needs: [self], gates: gate(COMBAT, def.enemy.level),
                     // No fight time is authored, so a drop has no cycle a tree could price.
                     cycleMs: null,
-                    gives: drops.map(o => ({ key: itemKey(o.itemId), chance: chanceOf(o), perCycle: quantityOf(o) * chanceOf(o) }))
+                    gives: [...drops.map(o => ({ key: itemKey(o.itemId), chance: chanceOf(o), perCycle: quantityOf(o) * chanceOf(o) })), ...rare]
                 });
             }
             continue;
@@ -395,7 +410,7 @@ export function buildWorld(content = {}) {
                 add({
                     id: `catch:${id}:${i}`, how: HOW.CATCH, via: self, needs: [self, ...needKeys(bait)], inputs: bait,
                     tool: noteNeed({ kind: pool.tool, minTier: 1 }), gates, cycleMs,
-                    gives: pool.catches.map(c => ({ key: itemKey(c.itemId), chance: total > 0 ? c.weight / total : 0, perCycle: total > 0 ? c.weight / total : 0 }))
+                    gives: [...pool.catches.map(c => ({ key: itemKey(c.itemId), chance: total > 0 ? c.weight / total : 0, perCycle: total > 0 ? c.weight / total : 0 })), ...rare]
                 });
             });
             continue;
@@ -403,12 +418,12 @@ export function buildWorld(content = {}) {
 
         // Work: a Token's own cycle (a vein, a tree, a chest), with its tool and its inputs.
         const outputs = list(def.config?.outputs).filter(o => outputKey(o));
-        if (outputs.length && !stationSkillOf(def) && !isFoundation) {
+        if ((outputs.length || rare.length) && !stationSkillOf(def) && !isFoundation) {
             const inputs = inputsOf(def.config?.inputs);
             add({
                 id: `work:${id}`, how: HOW.WORK, via: self, needs: [self, ...needKeys(inputs)], inputs, tool: heroToolOf(def),
                 gates: gate(def.config?.skill, def.config?.skillRequired), cycleMs: finite(Number(def.config?.cycleTimeMs), null),
-                gives: outputs.map(o => ({ key: outputKey(o), chance: chanceOf(o), perCycle: quantityOf(o) * chanceOf(o) }))
+                gives: [...outputs.map(o => ({ key: outputKey(o), chance: chanceOf(o), perCycle: quantityOf(o) * chanceOf(o) })), ...rare]
             });
         }
     }
@@ -449,6 +464,14 @@ export function buildWorld(content = {}) {
                     id: `station:${recipe.id}:${s.id}`, how: HOW.STATION, via: tokenKey(s.id), needs: [tokenKey(s.id), ...needKeys(inputs)], inputs,
                     tool: heroToolOf(s.def), gates, gives: [{ key: self, chance: 1 }]
                 });
+                // A station's rare table rolls on each cycle of whatever recipe it works.
+                const rare = rareGivesOf(s.def);
+                if (rare.length) {
+                    add({
+                        id: `rare:${recipe.id}:${s.id}`, how: HOW.WORK, via: tokenKey(s.id), needs: [tokenKey(s.id), self],
+                        tool: heroToolOf(s.def), gates, cycleMs: finite(Number(recipe.durationMs), null), gives: rare
+                    });
+                }
                 // A Field that starts ripe with this crop (a wild wheat patch) needs no seed for its first harvests.
                 if (crop && fieldOf(s.def)?.startsWith === recipe.id) {
                     add({

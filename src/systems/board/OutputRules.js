@@ -3,7 +3,7 @@ import * as SpriteLayer from './SpriteLayer.js';
 import * as EffectFeedback from './EffectFeedback.js';
 import * as RareDrops from './RareDrops.js';
 import * as SupportLinks from './supportLinks.js';
-import * as HeroEffects from '../hero/HeroEffects.js';
+import * as CycleSavings from './CycleSavings.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 
 /**
@@ -47,6 +47,7 @@ export function doubleItemDrop(instanceId, itemId, quantity) {
 /**
  * A fractional quantity rounded probabilistically, so a x1.5 yield is 1 plus a 50% chance of a
  * 2nd, rather than silently truncating every small buff to nothing.
+ * ⚠️ Not `RNG.roundByChance`: this one draws once even on a whole number, and the bench pins it.
  */
 export function roundUp(scaled) {
     const whole = Math.floor(scaled);
@@ -74,7 +75,8 @@ export function dropBonusGrants(instanceId) {
         // An item-borne grant spends units of the item that granted it. Paid AFTER the roll, so a
         // miss costs nothing: the same charge-burns-on-service-not-on-luck rule Tokens follow. A
         // Token's grant carries no `sourceItemIds` and pays nothing here.
-        if (!HeroEffects.payLoadoutCost(grant)) continue;
+        // Preservation may keep the item and still land the grant (`CycleSavings.payItemRule`).
+        if (!CycleSavings.payItemRule(instanceId, grant)) continue;
         const quantity = Math.max(1, grant.quantity || 1);
         RareDrops.noteDrop(SpriteLayer.addSprite('item', grant.itemId, quantity, instanceId), chance);
         landed.push(grant.itemId);

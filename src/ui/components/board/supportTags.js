@@ -49,6 +49,11 @@ export function supportTag(payload, itemName = (id) => getItem(id)?.name || null
         case EFFECT_TYPES.XP_BONUS: return `${amount(payload)} XP`;
         case EFFECT_TYPES.INPUT_COST: return `${amount(payload)} input`;
         case EFFECT_TYPES.FAIL_CHANCE: return `${signOf(v)}${round1(Math.abs(v))} % fail`;
+        case EFFECT_TYPES.REFRESH: return `${signOf(v)}${round1(Math.abs(v))} % Refresh`;
+        case EFFECT_TYPES.PRESERVATION: return `${signOf(v)}${round1(Math.abs(v))} % Preservation`;
+        // A percentage raises the rare table's chance in proportion; a flat adds points to it.
+        case EFFECT_TYPES.LUCKY:
+            return payload.bucket === 'flat' ? `${signOf(v)}${round1(Math.abs(v))} point${Math.abs(v) === 1 ? '' : 's'} Lucky` : `${amount(payload)} Lucky`;
         case EFFECT_TYPES.CATCH_WEIGHT: return `${amount(payload)} ${itemNameOf(payload.category, itemName) || 'bites'}`;
         default: {
             const label = getPaletteEntry(payload?.type)?.label || String(payload?.type || '').toLowerCase();

@@ -171,6 +171,15 @@ Token.
 - **Work cycle**: `config` = skill, level required, cycle time, XP, inputs,
   outputs (each output a chance and a quantity range). Example: Oak Tree,
   forestry 1, 3 s, 1–2 Oak Wood + 20 % Oak Seed, 5 charges.
+- **Rare drop table** (`rareTable`, owner 2026-11-11, brief 590): any Token with
+  drops (a vein, a tree, a station, water, an enemy) may carry one: a chance a
+  cycle in percent, decimals allowed (0.5), and finds with a weight and a
+  quantity range. Each finished cycle (each kill, for an enemy) rolls it once,
+  after the Token's own outputs; on a hit one find, picked by weight, drops like
+  any output (Yield, Double Loot and Double Item work on it) and is marked for
+  the rare twinkle as it lands (the twinkle is switched off for now, `lootEffects.js`). A failed cycle and a build roll nothing. **Lucky** (§7) raises the
+  chance. The Token's card and the Encyclopedia list each find at its own chance
+  (the table's times its share). *(`rareTables.js`, `RareTables.js`)*
 - **Charges** (`uses`): one is spent per cycle by default; at 0 the Token is
   removed, unless its type **respawns** (below). `null` = unlimited (Workbench,
   Furnace, Cooking Pot).
@@ -1303,12 +1312,31 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   Deals, Heals and Removes (the editor offers it to no other verb), spends no
   charge and has no cooldown.
 - **Modifiers** that neighbours (or a hero's items) provide: yield, work
-  time, input cost, **grow time** (a growth or a refill's rest, from neighbours
+  time, input cost (**Efficiency**: a cost that comes out fractional is made whole by chance as
+  the cycle pays, so it averages the exact cost: 10 Coal at −12 % is 8.8, so 9 Coal four times in
+  five and 8 one time in five; increases round alike, and there is no minimum of 1, so 1 Coal at
+  −20 % is free one time in five. A cycle starts only with the cost rounded up in the Bank, and a
+  whole cost draws no chance; owner, 2026-11-11), **grow time** (a growth or a refill's rest, from neighbours
   and Region rules only), **crop load** (the harvests a Field's crop ripens with:
   a Composter, §3 Farming; read once as it ripens), XP bonus (a positive bonus always adds at least 1 XP),
   double loot, **double item chance** (a chance
   that one named item, when a cycle or a kill drops it, comes out doubled: the
-  Cleaver's Raw Beef), **catch weight** (a percentage on one fish's weight in a
+  Cleaver's Raw Beef), **Refresh** (a chance a cycle spends none of the Token's
+  charges, and a Field's harvest none of its load; a failed cycle still spends; rolled
+  once per finished cycle, from a building in reach or a Hall star, aimed by the rule's
+  Token and narrowed by skill), **Preservation** (a chance a cycle uses none of its
+  materials: it still runs, makes its outputs and spends its charges, and a Field's owed
+  seed is never paid for that crop (owner, 2026-11-11); a failed cycle still pays and never rolls.
+  It also keeps a hero's ammo, Food, a drink's or work potion's new dose, a fight elixir's
+  or bait from being used up, and an item its own rule spends as it fires (the rule still
+  fires; owner, 2026-11-11), read at the Token the hero works or the enemy they fight.
+  From a building in reach or a Hall star, aimed by the rule's Token; narrowed to a skill
+  (that work's materials), or to an item or a kind of carried thing: Ammo, Food, Drink,
+  Work potion, Fight elixir, Bait), **Lucky** (a higher chance on the Token's rare drop
+  table, §3, with the table's own chance as the base: a percentage moves it in proportion,
+  +10 % turns 1 % into 1.1 %, and the CMS offers it first; a flat amount adds points, +1
+  turns 1 % into 2 %. Aimed by the rule's Token; a Token with no table ignores it, and an
+  enemy's table is raised by Lucky aimed at the enemy), **catch weight** (a percentage on one fish's weight in a
   water's catch pool: a better rod's bonus, §3 Fishing), fail chance (Tokens; **camp reach** is
   retired: every camp works the standard reach, so a rule carrying it does nothing, the editors no
   longer offer it and the audits name it); **wound time** and **loadout slots** (guild-only: read from

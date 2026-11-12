@@ -19,7 +19,8 @@ import { pickMove } from '../../config/registries/enemyMoves.js';
  *
  * Each swing runs the fight moments in a fixed order, so a catch-up draws the same random numbers
  * as live play: the swinger's On Swing rules (before the roll, so they can shape it), a Ranged
- * hero's arrow spent (hit or miss), the miss and crit roll, the damage and its fraction sub-roll,
+ * hero's arrow spent (hit or miss; where a Preservation rule reaches, one draw says it is kept), the
+ * miss and crit roll, the damage and its fraction sub-roll,
  * then, on a hit that leaves the other side standing, the swinger's On Hit rules. Whatever was
  * carried "for the swing" comes off, and On Health Below is checked.
  *
@@ -77,7 +78,8 @@ export function handleHeroAttack(fight, hero, enemy, attackSpeed) {
     // running, so the enemy gets a free swing. That price keeps HP management
     // tense. Uncapped on purpose: a hero who can't out-heal the damage should lose. Only food
     // heals; an equipped drink is left alone.
-    const meals = ConsumptionSystem.tryEat(hero.id, { inFight: true });
+    // Read where the fight is: the enemy Token (`fight.instanceId`), as its kill's loot rules are.
+    const meals = ConsumptionSystem.tryEat(hero.id, { inFight: true, instanceId: fight.instanceId ?? null });
     if (meals.length) {
         for (const meal of meals) {
             EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATE, {
@@ -96,7 +98,7 @@ export function handleHeroAttack(fight, hero, enemy, attackSpeed) {
 
     // A rule on the swing may have ended the fight before the blow: either side may have fallen.
     if (!isDown(hero) && fight.combat.enemyHp.current > 0) {
-        const shot = spendArrow(hero);
+        const shot = spendArrow(hero, fight.instanceId ?? null);
         const arrowId = shot?.itemId ?? null;
         tallies.arrowId = arrowId;
         const swing = CombatFormulas.rollSwing(

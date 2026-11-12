@@ -12,6 +12,7 @@ import {
 } from '../../../../src/config/registries/tokenConstants.js';
 import { neededToolOf, toolOf, toolMeets, toolItemFor } from '../../../../src/config/registries/toolKinds.js';
 import { hasCatchPools, catchPoolsOf } from '../../../../src/config/registries/catchPools.js';
+import { rareTableOf, rareEntryChances } from '../../../../src/config/registries/rareTables.js';
 import { wishingWellWater, WISHING_WELL_ITEM, BUILT_IN_UPGRADE_IDS } from '../../../../src/config/guildUpgrades.js';
 import { normaliseHallSky, rankOf } from '../../../../src/config/hallStars.js';
 import { hallRulesOf } from '../../../../src/systems/progression/hallModifiers.js';
@@ -59,11 +60,11 @@ const AMBIENT = new Set([KEYWORD.PROVIDES, KEYWORD.GRANTS, KEYWORD.APPLIES]);
 const READ_AXES = new Set([
     EFFECT_TYPES.WORK_TIME, EFFECT_TYPES.YIELD, EFFECT_TYPES.XP_BONUS, EFFECT_TYPES.LOOT_MULT,
     EFFECT_TYPES.DOUBLE_DROP, EFFECT_TYPES.INPUT_COST, EFFECT_TYPES.FAIL_CHANCE, EFFECT_TYPES.GROW_TIME,
-    EFFECT_TYPES.BONUS_DROP, EFFECT_TYPES.CROP_LOAD, EFFECT_TYPES.CATCH_WEIGHT
+    EFFECT_TYPES.BONUS_DROP, EFFECT_TYPES.CROP_LOAD, EFFECT_TYPES.CATCH_WEIGHT, EFFECT_TYPES.LUCKY
 ]);
 
 /** Axes the board reads on some work this calculator does not model yet: reaching one is reported. */
-const UNREAD_WORK_AXES = new Set();
+const UNREAD_WORK_AXES = new Set([EFFECT_TYPES.REFRESH, EFFECT_TYPES.PRESERVATION]);
 
 /** The kinds of factor, as the switches name them. */
 export const FACTOR = Object.freeze({
@@ -1023,6 +1024,22 @@ function rateOf(book, target = {}, setup = {}) {
         const amount = (1 - pFail) * chance * y.value * (1 + pDouble) * (1 + pItem);
         perCycle[output.itemId] = (perCycle[output.itemId] || 0) + amount;
     }
+    // The Token's rare drop table, read as chance lines: rolled after its own lines at its chance
+    // widened by Lucky (`RareTables`), each entry by its share of the table's weight, then landed as
+    // a line is (Yield, Double Loot, Double Item). A build drops nothing.
+    const table = kind === WORK.BUILD ? null : rareTableOf(def);
+    if (table) {
+        const lucky = resolve(EFFECT_TYPES.LUCKY, table.chance, category);
+        note(EFFECT_TYPES.LUCKY, lucky.used);
+        for (const { entry, chance } of rareEntryChances(table, lucky.value)) {
+            const y = expectedYield(entry, resolve, category);
+            note(EFFECT_TYPES.YIELD, y.used);
+            const dd = resolve(EFFECT_TYPES.DOUBLE_DROP, 0, entry.itemId);
+            note(EFFECT_TYPES.DOUBLE_DROP, dd.used);
+            const pItem = dd.value > 0 ? clamp01(dd.value / 100) : 0;
+            perCycle[entry.itemId] = (perCycle[entry.itemId] || 0) + (1 - pFail) * (chance / 100) * y.value * (1 + pDouble) * (1 + pItem);
+        }
+    }
     for (const grant of [...tileGrants.map(g => ({ ...g, weight: 1 })), ...heroGrants(hero)]) {
         const chance = clamp01((grant.payload.chance ?? 100) / 100) * grant.weight;
         const quantity = Math.max(1, Number(grant.payload.quantity) || 1);
@@ -1044,7 +1061,9 @@ function rateOf(book, target = {}, setup = {}) {
         if (!text(input.itemId)) continue;
         const ic = resolve(EFFECT_TYPES.INPUT_COST, input.quantity || 1, category);
         note(EFFECT_TYPES.INPUT_COST, ic.used);
-        inputsPerCycle[input.itemId] = (inputsPerCycle[input.itemId] || 0) + Math.max(1, Math.round(ic.value));
+        // A fractional cost is made whole by chance as the cycle pays, with no minimum of 1
+        // (`InputCost`), so a cycle pays the exact cost on average.
+        inputsPerCycle[input.itemId] = (inputsPerCycle[input.itemId] || 0) + Math.max(0, ic.value);
     }
     for (const c of hero.costs) inputsPerCycle[c.itemId] = (inputsPerCycle[c.itemId] || 0) + c.perCycle;
     // A catch with bait spends one; a failed cycle keeps it (`BoardRunner.completeCycle`).

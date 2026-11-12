@@ -1,7 +1,7 @@
 import { ALERT } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { effectiveIO } from '../../../systems/board/RecipeResolver.js';
-import { checkInputs } from '../../../systems/board/InputAllocator.js';
+import { checkCost } from '../../../systems/board/InputCost.js';
 import { workConfigOf } from '../../../systems/board/StationRecipe.js';
 import * as Demolition from '../../../systems/board/Demolition.js';
 import { STAND_GAP } from '../../../systems/board/HeroMotion.js';
@@ -101,7 +101,7 @@ export function workPlateOf(id) {
     const alert = instance.alert || null;
     const problem = problemOf({ alert });
     const missing = alert === ALERT.INPUTS && io.inputs?.length
-        ? checkInputs(io.inputs).missing.map(m => ({ itemId: m.itemId, have: Math.max(0, Math.floor(m.available)), need: m.needed }))
+        ? checkCost(instance, io.inputs).missing.map(m => ({ itemId: m.itemId, have: Math.max(0, Math.floor(m.available)), need: m.needed }))
         : [];
     return {
         typeId: instance.typeId,

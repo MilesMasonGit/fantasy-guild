@@ -1,4 +1,4 @@
-import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, catchItemIds, baitItemIds, perkFindings, gearDefenceFindings, hallStarFindings } from '../utils/constants';
+import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, gearDefenceFindings, hallStarFindings } from '../utils/constants';
 
 /** Connectivity & Graph Auditor: audits the Token, Recipe and Item graph in three pillars: Data Integrity (missing references, invalid IDs, solver refusals), Economic Blockers (orphaned inputs, unreachable items, dead ends) and Pacing Gaps (level gaps in skills). */
 
@@ -44,6 +44,11 @@ export function auditConnectivity(entities, solverRefusals = []) {
     for (const iid of baitItemIds(token)) {
       if (!consumedBy[iid]) consumedBy[iid] = [];
       consumedBy[iid].push({ id: token.id, type: 'token' });
+    }
+    // Its rare drop table: every find it can drop is produced here.
+    for (const entry of rareTableOf(token)?.entries || []) {
+      if (!producedBy[entry.itemId]) producedBy[entry.itemId] = [];
+      producedBy[entry.itemId].push({ id: token.id, type: 'token' });
     }
   }
 

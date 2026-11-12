@@ -20,6 +20,7 @@ import {
     weaponDamageTypeOf, BAREHANDED_DAMAGE_TYPE, PLAIN_ENEMY_HIT_TYPE, resistanceFor
 } from '../../config/registries/damageTypes.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
+import { roundByChance, WHOLE_EPSILON } from '../../utils/RNG.js';
 
 /** A hero's level in one skill, as saved; 0 when they hold none of it (a villager). */
 function skillLevelOf(hero, skillId) {
@@ -346,22 +347,16 @@ export function enemyBlow(enemy, hero, { crit = false, type = null } = {}) {
         (type) => heroTypeResistance(hero, type));
 }
 
-/** How close to a whole number a blow must be to count as whole (float error, not a fraction). */
-const WHOLE_EPSILON = 1e-9;
-
 /**
- * The fraction sub-roll: a blow of 1.1 does 1 nine times in ten and 2 one time in ten.
+ * The fraction sub-roll: a blow of 1.1 does 1 nine times in ten and 2 one time in ten
+ * (`RNG.roundByChance`).
  *
  * ⚠️ Draws one `Math.random()` only when the blow has a fraction, right after the swing's miss
  * and crit draws; a whole blow draws nothing. Catch-up replays the same stream, so this must stay
  * the only draw here and stay in this place.
  */
 export function rollFraction(exact) {
-    if (!(exact > 0)) return 0;
-    const whole = Math.floor(exact + WHOLE_EPSILON);
-    const fraction = exact - whole;
-    if (fraction < WHOLE_EPSILON) return whole;
-    return whole + (Math.random() < fraction ? 1 : 0);
+    return roundByChance(exact);
 }
 
 /**

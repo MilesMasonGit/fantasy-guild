@@ -2,6 +2,7 @@
 
 import * as HeroManager from '../hero/HeroManager.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
+import * as CycleSavings from './CycleSavings.js';
 import * as StatusApplication from './StatusApplication.js';
 import * as DealDamage from './DealDamage.js';
 import * as EffectActions from './EffectActions.js';
@@ -84,8 +85,9 @@ export function fire(instanceId, heroId, eventId) {
     const skill = workStart ? cycleSkillOf(instanceId) : '';
     if (workStart) LiveEffects.endHeroOtherCycleEffects(heroId, instanceId);
 
-    const doses = fightStart ? ConsumptionSystem.startFightElixirs(heroId)
-        : workStart ? ConsumptionSystem.startWorkDoses(heroId, skill) : [];
+    // Preservation on a fresh dose is read here: the enemy Token, or the Token whose cycle starts.
+    const doses = fightStart ? ConsumptionSystem.startFightElixirs(heroId, instanceId)
+        : workStart ? ConsumptionSystem.startWorkDoses(heroId, skill, instanceId) : [];
     const isDoseItem = fightStart ? (id) => isConsumableCategory(categoryOfItem(id))
         : workStart ? ConsumptionSystem.isWorkDose : null;
     // ⚠️ A perk names no item, and `[].every` is true: without the length check a perk's own
@@ -134,7 +136,8 @@ export function fire(instanceId, heroId, eventId) {
         }
 
         if (!acted) continue;
-        if (!statement.dosed) HeroEffects.payLoadoutCost(statement);
+        // Preservation may keep the item (`CycleSavings.payItemRule`), read here at the Token or the enemy.
+        if (!statement.dosed) CycleSavings.payItemRule(instanceId, statement);
         // A dose says itself once, in the hero's "used" bubble as it is drunk, not on every firing.
         if (!statement.dosed) EffectFeedback.announce(instanceId, statement);
         fired += 1;
