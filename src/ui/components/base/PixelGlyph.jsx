@@ -198,15 +198,16 @@ export const GLYPHS = Object.freeze({
         '...#.###',
         '......#.'
     ],
-    // Giant Harvest: a "10", ten times the drops.
-    ten: [
-        '........',
-        '.#...##.',
-        '##..#..#',
-        '.#..#..#',
-        '.#..#..#',
-        '.#..#..#',
-        '###..##.',
+    // Giant Harvest: an eight-ray burst, as on the mat when one lands (digits beside the chip's
+    // number read as one figure).
+    burst: [
+        '#..#..#.',
+        '.#.#.#..',
+        '..###...',
+        '#######.',
+        '..###...',
+        '.#.#.#..',
+        '#..#..#.',
         '........'
     ],
     less: [

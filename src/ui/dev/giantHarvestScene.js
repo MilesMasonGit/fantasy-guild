@@ -28,9 +28,10 @@ const VEIN = 'qa_giant_vein';
 const STAR = 'qa_giant_star';
 const ORE = 'item_copper_ore';
 const CHANCE = 50;
+const GUILD_HALL = 'token_guild_hall';
 
 /**
- * Lays the scene out on the current mat: the QA Giant Vein near the mat's left middle, a QA Giant
+ * Lays the scene out on the current mat: the QA Giant Vein beside the Guild Hall, a QA Giant
  * Miner (Mining 10) working it, and the QA Giant Seams star held. A Giant Harvest, with its burst and
  * "Giant!" over the vein, shows within a few cycles. ⚠️ Changes the game, like Spawn Party.
  * @returns {{ok: boolean, error?: string, instanceId?: string, heroId?: string}}
@@ -66,7 +67,10 @@ export function setUpGiantHarvestScene() {
         }
     });
 
-    const at = MatPlacement.findSpot(VEIN, { x: 520, y: 520 }, { reach: 480 });
+    // Beside the Guild Hall, where the eye already is; the mat's left middle without one.
+    const hall = BoardState.tokens().find(t => t.typeId === GUILD_HALL);
+    const near = hall ? { x: hall.x - 260, y: hall.y + 40 } : { x: 520, y: 520 };
+    const at = MatPlacement.findSpot(VEIN, near, { reach: 480 });
     const vein = at ? BoardState.createTokenInstance(VEIN, tokenStartingUses(VEIN)) : null;
     if (!vein || !Placement.placeTokenAt(vein, at)?.success) return { ok: false, error: 'No room on the mat for the QA Giant Vein' };
 

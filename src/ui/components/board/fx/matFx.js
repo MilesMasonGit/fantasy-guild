@@ -139,13 +139,16 @@ export function spark(fromId, toId) {
     return playAt(pixel(SPARK_COLOUR), a.x, a.y - artRadiusOf(a.typeId) / 2, keyframes, duration);
 }
 
-/** A Giant Harvest's burst: eight gold sparks flying out from the Token, this many steps each. */
+/** A Giant Harvest's burst: eight gold stars flying out from the Token, this many steps each. */
 export const BURST_STEPS = 4;
-const BURST_COLOUR = SPARK_COLOUR;
+const BURST_GOLD = 'var(--color-ui-gold)';
+const BURST_EDGE = '#000';
 const BURST_DIRS = Object.freeze([[0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1]]);
+/** Each star's show: out a step a frame, then a twinkle where it stopped (V shown, H hidden). */
+const BURST_TWINKLE = 'HV';
 
 /**
- * How far out a burst spark stands at each step, in art pixels from the Token's middle, for a Token
+ * How far out a burst star stands at each step, in art pixels from the Token's middle, for a Token
  * of art radius `radiusArt`: from inside its art to a little past its edge.
  */
 export function burstReach(radiusArt) {
@@ -153,9 +156,36 @@ export function burstReach(radiusArt) {
     return Array.from({ length: BURST_STEPS }, (_, i) => Math.round(r * (0.5 + 0.3 * i)));
 }
 
+/** A `w` × `h` art-pixel bar of `colour`, centred on its star's point. */
+function starBar(w, h, colour) {
+    const el = document.createElement('span');
+    Object.assign(el.style, {
+        position: 'absolute',
+        left: `${-Math.floor(w / 2) * unit}px`,
+        top: `${-Math.floor(h / 2) * unit}px`,
+        width: `${w * unit}px`,
+        height: `${h * unit}px`,
+        background: colour
+    });
+    return el;
+}
+
 /**
- * A Giant Harvest's celebration over Token `instanceId`: eight two-pixel gold sparks burst out from
- * its middle in {@link BURST_STEPS} whole art-pixel steps (`burstReach`) and are gone, and a gold
+ * One burst star: the rare twinkle's plus, five art pixels across, in gold with a hard one-pixel
+ * black edge (a black plus one pixel wider all round under it), so it reads on any ground.
+ */
+function burstStar() {
+    const star = document.createElement('span');
+    star.setAttribute('aria-hidden', 'true');
+    star.setAttribute('data-fx-burst', 'giant');
+    Object.assign(star.style, { width: '0px', height: '0px', visibility: 'hidden', pointerEvents: 'none' });
+    star.append(starBar(7, 3, BURST_EDGE), starBar(3, 7, BURST_EDGE), starBar(5, 1, BURST_GOLD), starBar(1, 5, BURST_GOLD));
+    return star;
+}
+
+/**
+ * A Giant Harvest's celebration over Token `instanceId`: eight gold stars burst out from its middle
+ * in {@link BURST_STEPS} whole art-pixel steps (`burstReach`), twinkle once and are gone, and a gold
  * "Giant!" rises off its top. The Token's own ring echoes too (`TokenHitArt`, on the same event).
  * @returns {boolean} whether it played
  */
@@ -166,9 +196,14 @@ export function giantHarvestCelebration(instanceId) {
     for (const [dx, dy] of BURST_DIRS) {
         // A diagonal goes as far as a straight one, not √2 further.
         const k = dx && dy ? Math.SQRT1_2 : 1;
-        const poses = reach.map(d => ({ ms: FX_FRAME_MS, x: dx * d * k, y: dy * d * k, visibility: 'visible' }));
+        const at = (d) => ({ ms: FX_FRAME_MS, x: dx * d * k, y: dy * d * k });
+        const last = reach[reach.length - 1];
+        const poses = [
+            ...reach.map(d => ({ ...at(d), visibility: 'visible' })),
+            ...[...BURST_TWINKLE].map(c => ({ ...at(last), visibility: c === 'V' ? 'visible' : 'hidden' }))
+        ];
         const { keyframes, duration } = heldPoses(poses, { unit, rest: { visibility: 'hidden' } });
-        playAt(pixel(BURST_COLOUR, 2), t.x - unit, t.y - unit, keyframes, duration);
+        playAt(burstStar(), t.x, t.y, keyframes, duration);
     }
     floatNumber(instanceId, i18n('effectBadges.float.giantHarvest'), 'giant');
     return true;

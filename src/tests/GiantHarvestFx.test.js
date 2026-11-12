@@ -83,25 +83,32 @@ describe('the celebration on the mat', () => {
         document.body.innerHTML = '';
     });
 
-    it('a hit bursts eight gold sparks out from the Token and floats a gold "Giant!" off its top', () => {
+    it('a hit bursts eight gold stars out from the Token and floats a gold "Giant!" off its top', () => {
         const vein = placeAt('ghfx_vein', 500, 500);
         giantHarvest(vein.id);
-        const sparks = rec.calls.filter(c => c.el.tagName === 'SPAN');
+        const stars = rec.calls.filter(c => c.el.getAttribute?.('data-fx-burst') === 'giant');
         const float = rec.calls.find(c => c.el.getAttribute?.('data-fx-number'));
-        expect(sparks).toHaveLength(8);
+        expect(stars).toHaveLength(8);
         expect(float.el.textContent).toBe('Giant!');
         expect(float.el.getAttribute('data-fx-number')).toBe('giant');
         expect(float.el.className).toContain('gi-fx-number-giant');
         // Over the Token's top.
         expect(float.el.style.top).toBe(`${500 - artRadiusOf('ghfx_vein')}px`);
-        // Each spark: two art pixels, centred on the Token, out in whole art-pixel steps and gone.
-        const up = sparks[0];
-        expect(up.el.style.width).toBe('4px');
-        expect(up.el.style.left).toBe('498px');
-        expect(up.el.style.top).toBe('498px');
+        // Each star: the twinkle's five-pixel plus in gold over a black one a pixel wider, from the
+        // Token's middle, out in whole art-pixel steps, a twinkle where it stops, and gone.
+        const up = stars[0];
+        expect(up.el.style.left).toBe('500px');
+        expect(up.el.style.top).toBe('500px');
+        expect([...up.el.children].map(b => [b.style.width, b.style.height, b.style.background])).toEqual([
+            ['14px', '6px', 'rgb(0, 0, 0)'], ['6px', '14px', 'rgb(0, 0, 0)'],
+            ['10px', '2px', 'var(--color-ui-gold)'], ['2px', '10px', 'var(--color-ui-gold)']
+        ]);
         const steps = MatFx.burstReach(artRadiusOf('ghfx_vein') / 2);
         expect(up.keyframes.slice(0, MatFx.BURST_STEPS).map(k => k.transform)).toEqual(steps.map(d => `translate(0px, ${-d * 2}px)`));
-        expect(up.keyframes.at(-1).visibility).toBe('hidden');
+        expect(up.keyframes.slice(MatFx.BURST_STEPS).map(k => k.visibility)).toEqual(['hidden', 'visible', 'hidden']);
+        // A diagonal star stops as far out as a straight one.
+        const diagonal = stars[1].keyframes[MatFx.BURST_STEPS - 1].transform.match(/-?\d+/g).map(Number);
+        expect(Math.hypot(diagonal[0], diagonal[1]) / 2).toBeCloseTo(steps.at(-1), 0);
         // The reach runs from inside the art to past its edge.
         expect(steps[0]).toBeLessThan(artRadiusOf('ghfx_vein') / 2);
         expect(steps.at(-1)).toBeGreaterThan(artRadiusOf('ghfx_vein') / 2);
@@ -149,7 +156,7 @@ describe('the chip on the Token card', () => {
         const chip = container.querySelector('[data-effect-badges] > [data-effect-badge="giantHarvest"]');
         expect(chip).not.toBeNull();
         expect(chip.textContent).toBe('3%');
-        expect(chip.querySelector('svg[data-glyph="ten"]')).not.toBeNull();
+        expect(chip.querySelector('svg[data-glyph="burst"]')).not.toBeNull();
         fireEvent.pointerEnter(chip, { clientX: 10, clientY: 10, pointerType: 'mouse', buttons: 0 });
         const tip = document.querySelector('[data-badge-tip="giantHarvest"]');
         expect(tip.textContent).toContain('The guild');
