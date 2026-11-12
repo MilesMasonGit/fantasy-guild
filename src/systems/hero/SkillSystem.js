@@ -7,7 +7,7 @@ import { getSkill } from '../../config/registries/skillRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import { XpRateTracker } from './XpRateTracker.js';
 import { addXpToEverySkill } from './everySkillXp.js';
-import { ENGINE_EVENTS } from '../core/engineEvents.js';
+import { ENGINE_EVENTS, XP_FOR_EVERYONE_SOURCE } from '../core/engineEvents.js';
 
 /**
  * SkillSystem - skill XP, levels and requirements.
@@ -117,18 +117,7 @@ export function addXP(heroId, skillId, amount) {
         // registered, so they are registered again.
         EquipmentManager.recalculateEquipmentModifiers(hero);
 
-        for (let i = oldLevel + 1; i <= newLevel; i++) {
-            EventBus.publish(ENGINE_EVENTS.HERO_LEVELED, {
-                heroId,
-                heroName: hero.name,
-                skillId: targetSkillId,
-                newLevel: i,
-                oldLevel: i - 1,
-                startLevel: oldLevel,
-                skillName: getSkill(targetSkillId)?.name || targetSkillId
-            });
-            logger.debug('SkillSystem', `Hero ${hero.name} LEVELED UP to ${i} in ${targetSkillId}!`);
-        }
+        announceLevelUps(hero, targetSkillId, oldLevel, newLevel);
     }
 
     // ⚠️ Fires on every XP grant; logger.debug no-ops outside DEV, where a raw
@@ -148,11 +137,34 @@ export function addXP(heroId, skillId, amount) {
 }
 
 /**
- * Give a hero `amount` XP in every skill they hold at once: the Guild Hall's XP for Everyone.
+ * Say a skill's rise as the level events every level-up is said in: one `HERO_LEVELED` a level, each
+ * carrying the level the rise began at (`startLevel`), so the float rolls and the recipe banner is one.
+ * `extra` joins each payload.
+ */
+function announceLevelUps(hero, skillId, oldLevel, newLevel, extra = null) {
+    const skillName = getSkill(skillId)?.name || skillId;
+    for (let i = oldLevel + 1; i <= newLevel; i++) {
+        EventBus.publish(ENGINE_EVENTS.HERO_LEVELED, {
+            heroId: hero.id,
+            heroName: hero.name,
+            skillId,
+            newLevel: i,
+            oldLevel: i - 1,
+            startLevel: oldLevel,
+            skillName,
+            ...extra
+        });
+        logger.debug('SkillSystem', `Hero ${hero.name} LEVELED UP to ${i} in ${skillId}!`);
+    }
+}
+
+/**
+ * Give a hero `amount` XP in every skill they hold at once: the Guild Hall's XP for Everyone. Each
+ * skill that rises is said as any level-up is (`HERO_LEVELED`, marked `source: XP_FOR_EVERYONE_SOURCE`),
+ * once the hero's derived stats are in step. Not counted towards XP an hour: it was not earned working.
  *
- * ⚠️ Publishes no `HERO_LEVELED`: one a skill would be up to a score of level-ups for one hero.
- * The caller says the level-ups once (`XP_FOR_EVERYONE_GIVEN`); this only keeps the hero's derived
- * stats in step and says the sheet changed.
+ * ⚠️ Says this hero's level-ups before the caller gives the next hero theirs: the recipe banner
+ * reads the rest of the guild's best level as it hears each one.
  *
  * @param {string} heroId
  * @param {number} amount whole XP
@@ -166,8 +178,9 @@ export function giveXpInEverySkill(heroId, amount) {
     if (levelUps.length) {
         HeroManager.updateHeroFromSkills(hero);
         EquipmentManager.recalculateEquipmentModifiers(hero);
+        for (const l of levelUps) announceLevelUps(hero, l.skillId, l.oldLevel, l.newLevel, { source: XP_FOR_EVERYONE_SOURCE });
     }
-    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'xpForEveryone', heroId });
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: XP_FOR_EVERYONE_SOURCE, heroId });
     return levelUps;
 }
 

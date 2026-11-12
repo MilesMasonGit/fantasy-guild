@@ -7,8 +7,7 @@ import { t } from '../../../i18n/index.js';
  * The hero bar's level-up alerts. Unlike the number floating over the hero on the mat (gone in
  * about 30 s) these stay until the player clears them, so after a long AFK session the bar shows
  * every level gained. One alert per skill, worded with the level it reached ("50 Stealth!"): a
- * later level-up of the same skill rewrites it. A Guild Hall gift (XP for Everyone) is one alert
- * for the hero instead, the levels it gave in all ("+12 levels!"). A milestone perk reached gets an alert of its own
+ * later level-up of the same skill rewrites it. A milestone perk reached gets an alert of its own
  * after it ("Perk: Clean Felling"), which a later level-up leaves alone.
  * UI memory only: never saved, emptied when a game is started or loaded (a page reload, as
  * "Load as I left it" does, starts it empty).
@@ -98,33 +97,9 @@ export function useHeroBarBubbles(heroId) {
     return useSyncExternalStore(subscribe, () => bubblesOf(heroId), () => NONE);
 }
 
-/** A Guild Hall gift's alert's words: the levels it gave in all. */
-export const barGiftText = (levels) => t('heroBar.giftLevels', { count: levels });
-
-const GIFT_KEY = 'level:xp_for_everyone';
-
-/**
- * Add a Guild Hall gift's level-ups (XP for Everyone) as one alert, not one a skill: the levels it
- * gave in all, added to a gift alert not yet cleared.
- * @returns a new list; the input is untouched
- */
-export function addGiftLevels(list, levelUps) {
-    const earlier = list.find(b => b.key === GIFT_KEY);
-    const levels = (earlier?.levels || 0) + levelUps.reduce((n, l) => n + Math.max(0, l.newLevel - l.oldLevel), 0);
-    return [...list.filter(b => b.key !== GIFT_KEY), { key: GIFT_KEY, text: barGiftText(levels), levels }];
-}
-
 function addLevelUps(rows) {
     byHero = new Map(byHero);
-    for (const row of rows) {
-        const { heroId } = row;
-        if (row.levelUps) {
-            let list = addGiftLevels(byHero.get(heroId) || NONE, row.levelUps);
-            for (const l of row.levelUps) list = addPerks(list, l.skillId, perksReachedBy(l.skillId, l.oldLevel, l.newLevel));
-            byHero.set(heroId, list);
-            continue;
-        }
-        const { skillId, skillName, oldLevel, newLevel } = row;
+    for (const { heroId, skillId, skillName, oldLevel, newLevel } of rows) {
         const list = addLevelUp(byHero.get(heroId) || NONE, { skillName, newLevel });
         byHero.set(heroId, addPerks(list, skillId, perksReachedBy(skillId, oldLevel, newLevel)));
     }

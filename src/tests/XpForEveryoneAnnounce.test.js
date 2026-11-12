@@ -1,9 +1,12 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup, act } from '@testing-library/react';
+import './fixtures/testTokens.js';
+import './fixtures/fixtureItems.js';
 
-vi.mock('../config/registries/recipePoolRegistry.js', () => ({
+vi.mock('../config/registries/recipePoolRegistry.js', async (importOriginal) => ({
+    ...(await importOriginal()),
     listRecipes: () => [
         { id: 'r_bar', name: 'Copper Bar', skill: 'smithing', levelRequirement: 2, outputs: [{ itemId: 'item_copper_bar' }] },
         { id: 'r_pin', name: 'Copper Pin', skill: 'smithing', levelRequirement: 3, outputs: [{ itemId: 'item_pin' }] },
@@ -16,168 +19,238 @@ vi.mock('../systems/core/CatchUp.js', () => ({
     undoLast: vi.fn(() => false),
     forgetUndo: vi.fn()
 }));
+vi.mock('../systems/core/NotificationSystem.js', () => ({
+    notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
+    getQueue: vi.fn(() => [])
+}));
+vi.mock('../systems/progression/RegistryManager.js', () => ({
+    RegistryManager: { recordItemGain: vi.fn() }
+}));
 
 import { GameState } from '../state/GameState.js';
+import * as SpriteLayer from '../systems/board/SpriteLayer.js';
+import * as TileModifiers from '../systems/board/TileModifiers.js';
+import { InventoryManager } from '../systems/inventory/InventoryManager.js';
+import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
+import * as HallRules from '../systems/progression/HallRules.js';
+import { HeroManager } from '../systems/hero/HeroManager.js';
+import { generateHero } from '../systems/hero/HeroGenerator.js';
+import { addXP } from '../systems/hero/SkillSystem.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
+import { EFFECT_TYPES } from '../systems/effects/constants.js';
+import { KEYWORD } from '../systems/effects/statements.js';
+import { registerHallSky } from '../config/registries/hallStarRegistry.js';
+import { HALL_NODE } from '../config/guildUpgrades.js';
+import { HERO_SKILL_IDS } from '../config/registries/skillRegistry.js';
+import { levelFromXp } from '../utils/XPCurve.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import * as Banners from '../systems/notifications/banners.js';
 import { wireNotifications, unwireNotifications } from '../systems/notifications/routing.js';
-import { recipesUnlockedByGift } from '../systems/notifications/recipeUnlocks.js';
-import { listRecipes } from '../config/registries/recipePoolRegistry.js';
 import { AudioSystem } from '../systems/core/AudioSystem.js';
 import { HeroBubbleLayer } from '../ui/components/board/HeroBubbleLayer.jsx';
-import { floatsOf, clearAllFloats, FLOAT_MS } from '../ui/components/board/levelUpFloats.js';
+import { floatsOf, clearAllFloats } from '../ui/components/board/levelUpFloats.js';
 import { bubblesOf, clearAllHeroBubbles } from '../ui/components/dock/heroBarBubbles.js';
 import { withoutShippedPerks } from './fixtures/noPerks.js';
 
 withoutShippedPerks();
 
 /**
- * XP for Everyone's level-ups are said once a hero (brief 620 E2): one float over each hero who
- * rose (the Upgrade icon and the levels gained in all), one hero-bar alert, one level-up sound for
- * the purchase, and one recipe banner for what the whole gift unlocked. Never a float, an alert or a
- * sound a skill.
+ * XP for Everyone's level-ups show as ordinary level-ups do (owner, 2026-11-12: the existing
+ * level-up animations are enough): a purchase shows exactly what the same XP earned working shows,
+ * each skill that rose with its own float and hero-bar alert and the usual recipe banners, and no
+ * float or alert of its own. The level-up sound plays once for the purchase. A recruit arriving with
+ * the gift is not a level-up.
  */
 
 const h = React.createElement;
-const heroes = [
-    { heroId: 'h1', state: 'working', x: 300, y: 500, moving: false, tokenId: null, alert: null },
-    { heroId: 'h2', state: 'working', x: 700, y: 500, moving: false, tokenId: null, alert: null },
-    { heroId: 'h3', state: 'working', x: 900, y: 500, moving: false, tokenId: null, alert: null }
-];
-const later = (ms = 10) => act(() => { vi.advanceTimersByTime(ms); });
-const floatsIn = (c, heroId) => [...c.querySelectorAll(`[data-hero-bubble-stack="${heroId}"] [data-level-float]`)];
+const ORE = 'fixture_copper_ore';
+const OAK = 'item_oak_wood';
+/** 250 XP takes a fresh skill from level 1 to 3: two level events a skill. */
+const GIFT = 250;
+const REACHED = levelFromXp(GIFT);
 
-const up = (skillId, skillName, oldLevel, newLevel) => ({ skillId, skillName, oldLevel, newLevel });
-/** Aela rose in three skills (four levels in all), Bram in one, Cass in none. */
-const GIFT = {
-    upgradeId: 'xp_all',
-    amount: 250,
-    heroes: [
-        { heroId: 'h1', heroName: 'Aela', levelUps: [up('mining', 'Mining', 1, 3), up('smithing', 'Smithing', 1, 2), up('cooking', 'Cooking', 2, 3)] },
-        { heroId: 'h2', heroName: 'Bram', levelUps: [up('smithing', 'Smithing', 1, 3)] },
-        { heroId: 'h3', heroName: 'Cass', levelUps: [] }
-    ]
+const giftRule = { id: 'stm_xfe_announce', keyword: KEYWORD.PROVIDES,
+    payload: { type: EFFECT_TYPES.XP_FOR_EVERYONE, bucket: 'flat', value: GIFT },
+    chargeDelta: 0, to: { mode: 'all', value: '' }, reach: 'nearby', target: null, when: null, upkeep: null };
+const SKY = {
+    constellations: { hearth_x: { id: 'hearth_x', name: 'Hearth X', label: { x: 0, y: -1 } } },
+    stars: {
+        xp_all: { id: 'xp_all', constellation: 'hearth_x', name: 'Fresh Recruits', node: { x: 0, y: -0.7 }, links: [HALL_NODE],
+            ranks: [{ tier: 1, price: [{ itemId: ORE, quantity: 5 }], rules: [giftRule], lines: [] }] }
+    }
 };
-const give = (payload = GIFT) => act(() => { EventBus.publish(ENGINE_EVENTS.XP_FOR_EVERYONE_GIVEN, payload); });
 
-const sheetHero = (id, name, levels) => ({
-    id, name, spriteId: 'hn_recruit_por',
-    skills: Object.fromEntries(Object.entries(levels).map(([s, level]) => [s, { level, xp: 0 }]))
-});
-
-beforeEach(() => {
-    vi.useFakeTimers();
+/** A guild of `n` fresh heroes (every skill at level 1, no XP), nothing shown yet. */
+function fresh(n = 3) {
+    resetMatTuning();
+    GameState.initNew();
+    InventoryManager.init();
+    SpriteLayer.init();
+    TileModifiers.clearAll();
+    GameState.state.inventory.maxSlots = 200;
+    registerHallSky(SKY);
+    GameState.state.progress.guildUpgrades.roster_size = n;
+    GuildUpgradeManager.recompute();
+    for (let i = 0; i < n; i++) expect(HeroManager.addHero(generateHero({ name: `Hero ${i + 1}` }))).toBeTruthy();
+    InventoryManager.addItem(ORE, 1000);
+    InventoryManager.addItem(OAK, 1000);
     clearAllFloats();
     clearAllHeroBubbles();
-    GameState.initNew();
-    // The guild after the gift: the levels the payload says they reached.
-    GameState.state.heroes = [
-        sheetHero('h1', 'Aela', { mining: 3, smithing: 2, cooking: 3 }),
-        sheetHero('h2', 'Bram', { mining: 1, smithing: 3, cooking: 1 }),
-        sheetHero('h3', 'Cass', { mining: 1, smithing: 1, cooking: 2 })
-    ];
     Banners.reset();
+}
+
+const layerHeroes = () => GameState.heroes.map((hero, i) => ({
+    heroId: hero.id, state: 'working', x: 300 + 200 * i, y: 500, moving: false, tokenId: null, alert: null
+}));
+const floatsIn = (c, heroId) => [...c.querySelectorAll(`[data-hero-bubble-stack="${heroId}"] [data-level-float]`)];
+
+/** What the player is shown, hero by hero in roster order (ids differ between guilds). */
+function shown() {
+    return {
+        floats: GameState.heroes.map(hero => floatsOf(hero.id, Date.now()).map(f => [f.key, f.from, f.to])),
+        alerts: GameState.heroes.map(hero => bubblesOf(hero.id).map(b => b.text)),
+        // The purchase's own banner (the star bought) aside.
+        banners: Banners.getAll().filter(b => b.kind !== 'upgrade').map(b => ({
+            kind: b.kind, heroes: b.parts.heroes, recipes: b.parts.recipes,
+            subjects: (b.subjects || []).map(s => GameState.heroes.findIndex(hero => hero.id === s.id))
+        }))
+    };
+}
+
+/** The same XP earned working: every skill of every hero, hero by hero, through the ordinary award. */
+function earnTheSameWorking() {
+    for (const hero of GameState.heroes) {
+        for (const skillId of Object.keys(hero.skills)) expect(addXP(hero.id, skillId, GIFT).success).toBe(true);
+    }
+}
+
+let play;
+beforeAll(() => {
+    GuildUpgradeManager.init();
+    play = vi.spyOn(AudioSystem, 'playSfx').mockImplementation(() => {});
+    vi.spyOn(AudioSystem, 'playNextTrack').mockImplementation(() => {});
+    AudioSystem.init();
+});
+beforeEach(() => {
+    vi.useFakeTimers();
+    fresh();
     wireNotifications();
+    play.mockClear();
 });
 afterEach(() => {
     unwireNotifications();
     Banners.reset();
     cleanup();
     vi.useRealTimers();
+    registerHallSky(null);
+    HallRules.apply({});
+});
+afterAll(() => {
+    HallRules.teardown();
     vi.restoreAllMocks();
 });
 
-describe('one float a hero over the mat', () => {
-    it('the Upgrade icon and the levels gained in all, over each hero who rose, none for the rest', () => {
-        const { container } = render(h(HeroBubbleLayer, { heroes }));
-        later();
-        give();
-        const [a] = floatsIn(container, 'h1');
-        expect(floatsIn(container, 'h1')).toHaveLength(1);
-        expect(a.getAttribute('data-level-float')).toBe('xp_for_everyone');
-        expect(a.querySelector('img').getAttribute('src')).toBe('/assets/ui/u_upgrade.png');
-        expect(a.querySelector('img').style.width).toBe('32px');
-        expect(a.querySelector('[data-level-value]').textContent).toBe('+4');
-        expect(a.querySelector('[data-level-flash]')).toBeNull();
-        expect(floatsIn(container, 'h2').map(f => f.querySelector('[data-level-value]').textContent)).toEqual(['+2']);
-        expect(floatsIn(container, 'h3')).toEqual([]);
+const levelUpSounds = () => play.mock.calls.filter(([clip]) => clip === 'levelup').length;
+
+describe('a purchase shows what the same XP earned working shows', () => {
+    it('the same floats, hero-bar alerts and recipe banners, hero by hero', () => {
+        act(() => { expect(GuildUpgradeManager.purchase('xp_all').success).toBe(true); });
+        const byGift = shown();
+
+        fresh();
+        act(() => earnTheSameWorking());
+        const byWork = shown();
+
+        expect(byGift.banners.length).toBeGreaterThan(0);
+        expect(byGift).toEqual(byWork);
     });
 
-    it('a second gift while it is up adds to it, and it goes after its time like any float', () => {
-        const { container } = render(h(HeroBubbleLayer, { heroes }));
-        later();
-        give();
-        later(5000);
-        give({ ...GIFT, heroes: [GIFT.heroes[0]] });
-        expect(floatsOf('h1', Date.now()).map(f => f.levels)).toEqual([8]);
-        expect(floatsIn(container, 'h1')).toHaveLength(1);
-        expect(floatsIn(container, 'h1')[0].querySelector('[data-level-value]').textContent).toBe('+8');
-        later(FLOAT_MS + 100);
-        expect(floatsIn(container, 'h1')).toEqual([]);
+    it('a float a skill that rose over each hero, rolling from the old level to the new', () => {
+        const { container } = render(h(HeroBubbleLayer, { heroes: layerHeroes() }));
+        act(() => { vi.advanceTimersByTime(10); });
+        act(() => { expect(GuildUpgradeManager.purchase('xp_all').success).toBe(true); });
+        for (const hero of GameState.heroes) {
+            const floats = floatsIn(container, hero.id);
+            expect(floats.map(f => f.getAttribute('data-level-float')).sort()).toEqual([...HERO_SKILL_IDS].sort());
+            expect(floatsOf(hero.id, Date.now()).every(f => f.from === 1 && f.to === REACHED)).toBe(true);
+            expect(floats.every(f => f.querySelector('img').getAttribute('src') !== '/assets/ui/u_upgrade.png')).toBe(true);
+        }
     });
 
-    it('sits beside a skill float of an ordinary level-up', () => {
-        const { container } = render(h(HeroBubbleLayer, { heroes }));
-        later();
-        act(() => { EventBus.publish(ENGINE_EVENTS.HERO_LEVELED, { heroId: 'h1', skillId: 'mining', skillName: 'Mining', oldLevel: 3, newLevel: 4 }); });
-        give();
-        expect(floatsIn(container, 'h1').map(f => f.getAttribute('data-level-float'))).toEqual(['mining', 'xp_for_everyone']);
-    });
-});
-
-describe('one alert a hero on the hero bar', () => {
-    it('says the levels gained in all, once, beside no alert a skill', () => {
-        give();
-        expect(bubblesOf('h1').map(b => b.text)).toEqual(['+4 levels!']);
-        expect(bubblesOf('h2').map(b => b.text)).toEqual(['+2 levels!']);
-        expect(bubblesOf('h3')).toEqual([]);
-        give({ ...GIFT, heroes: [{ heroId: 'h2', heroName: 'Bram', levelUps: [up('mining', 'Mining', 1, 2)] }] });
-        expect(bubblesOf('h2').map(b => b.text)).toEqual(['+3 levels!']);
+    it('an alert a skill on the hero bar, worded as any level-up, never a levels-in-all alert', () => {
+        act(() => { expect(GuildUpgradeManager.purchase('xp_all').success).toBe(true); });
+        for (const hero of GameState.heroes) {
+            const texts = bubblesOf(hero.id).map(b => b.text);
+            expect(texts).toHaveLength(HERO_SKILL_IDS.length);
+            expect(texts).toContain(`${REACHED} Mining!`);
+            expect(texts.some(t => /levels?!/.test(t))).toBe(false);
+        }
     });
 
-    it('a single level reads as one', () => {
-        give({ ...GIFT, heroes: [{ heroId: 'h3', heroName: 'Cass', levelUps: [up('mining', 'Mining', 1, 2)] }] });
-        expect(bubblesOf('h3').map(b => b.text)).toEqual(['+1 level!']);
+    it('the usual recipe banner: the first hero to reach a recipe\'s level unlocks it for the guild', () => {
+        act(() => { expect(GuildUpgradeManager.purchase('xp_all').success).toBe(true); });
+        const recipes = Banners.getAll().filter(b => b.kind === 'recipe');
+        expect(recipes.flatMap(b => b.parts.recipes).sort()).toEqual(['Apple Pie', 'Copper Bar', 'Copper Pin']);
+        // Each hero's level-ups are said before the next hero is given theirs, so the first hero
+        // reaches level 3 first and the others find it already reached.
+        const first = GameState.heroes[0];
+        expect(recipes.flatMap(b => b.parts.heroes)).toEqual(recipes.map(() => first.name));
+        expect(recipes.flatMap(b => b.subjects.map(s => s.id))).toEqual(recipes.map(() => first.id));
     });
 });
 
-describe('one sound for the purchase', () => {
-    it('plays the level-up sound once, and none when nobody rose', () => {
-        const play = vi.spyOn(AudioSystem, 'playSfx').mockImplementation(() => {});
-        vi.spyOn(AudioSystem, 'playNextTrack').mockImplementation(() => {});
-        AudioSystem.init();
-        give();
-        expect(play.mock.calls.filter(([clip]) => clip === 'levelup')).toHaveLength(1);
-        give({ ...GIFT, heroes: [GIFT.heroes[2]] });
-        expect(play.mock.calls.filter(([clip]) => clip === 'levelup')).toHaveLength(1);
+describe('one level-up sound for the purchase', () => {
+    it('plays once for a purchase that raised anyone, where the same XP earned working plays once a level', () => {
+        act(() => { expect(GuildUpgradeManager.purchase('xp_all').success).toBe(true); });
+        expect(levelUpSounds()).toBe(1);
+
+        fresh();
+        play.mockClear();
+        act(() => earnTheSameWorking());
+        expect(levelUpSounds()).toBe(GameState.heroes.length * HERO_SKILL_IDS.length * (REACHED - 1));
+    });
+
+    it('plays none when nobody rose', () => {
+        fresh(0);
+        play.mockClear();
+        act(() => { expect(GuildUpgradeManager.purchase('xp_all').success).toBe(true); });
+        expect(levelUpSounds()).toBe(0);
     });
 });
 
-describe('one recipe banner for what the gift unlocked', () => {
-    it('lists every recipe the guild could not make before, with the heroes who reached them', () => {
-        give();
-        const all = Banners.getAll().filter(b => b.kind === 'recipe');
-        expect(all).toHaveLength(1);
-        expect(all[0].parts.heroes).toEqual(['Aela', 'Bram']);
-        // Smithing: the guild's best was 1 before, 3 now; Cooking: Cass already held 2, so Pie (3) is new.
-        expect([...all[0].parts.recipes].sort()).toEqual(['Apple Pie', 'Copper Bar', 'Copper Pin']);
-        expect(all[0].subjects.map(s => s.id)).toEqual(['h1', 'h2']);
+describe('a recruit arriving with the gift is not a level-up', () => {
+    it('no float, alert, recipe banner or level-up sound for them: only their own banner', () => {
+        fresh(1);
+        act(() => { expect(GuildUpgradeManager.purchase('xp_all').success).toBe(true); });
+        clearAllFloats();
+        clearAllHeroBubbles();
+        Banners.reset();
+        play.mockClear();
+
+        act(() => { expect(GuildUpgradeManager.purchase('roster_size').success).toBe(true); });
+        const recruit = GameState.heroes[GameState.heroes.length - 1];
+        expect(recruit.skills.mining.level).toBe(REACHED);
+        expect(floatsOf(recruit.id, Date.now())).toEqual([]);
+        expect(bubblesOf(recruit.id)).toEqual([]);
+        expect(Banners.getAll().map(b => b.kind)).toEqual(['hero']);
+        expect(levelUpSounds()).toBe(0);
+    });
+});
+
+describe('no float or alert of its own', () => {
+    it('the hero bar has no levels-in-all wording', async () => {
+        const en = (await import('../i18n/en.json')).default;
+        expect(en.heroBar.giftLevels).toBeUndefined();
     });
 
-    it('reads the guild\'s best before the gift, not after it (everyone rose at once)', () => {
-        const rows = recipesUnlockedByGift(listRecipes(), GameState.heroes, GIFT.heroes);
-        expect(rows.map(r => [r.heroId, r.recipes.map(x => x.id)])).toEqual([
-            ['h1', ['r_bar', 'r_pie']],
-            ['h2', ['r_bar', 'r_pin']]
-        ]);
-        // Nothing new when someone already stood at those levels.
-        GameState.state.heroes.push(sheetHero('h4', 'Dara', { smithing: 5, cooking: 5 }));
-        expect(recipesUnlockedByGift(listRecipes(), GameState.heroes, GIFT.heroes)).toEqual([]);
-    });
-
-    it('says nothing when the gift unlocked nothing', () => {
-        give({ ...GIFT, heroes: [GIFT.heroes[2]] });
-        expect(Banners.getAll()).toEqual([]);
+    it('no event of its own: a gift\'s level-ups are HERO_LEVELED, nothing else', () => {
+        expect(Object.values(ENGINE_EVENTS)).not.toContain('xp_for_everyone_given');
+        const heard = [];
+        const off = EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, (d) => heard.push(d));
+        try {
+            act(() => { expect(GuildUpgradeManager.purchase('xp_all').success).toBe(true); });
+        } finally { off(); }
+        expect(heard).toHaveLength(GameState.heroes.length * HERO_SKILL_IDS.length * (REACHED - 1));
     });
 });

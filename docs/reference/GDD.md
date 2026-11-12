@@ -1502,10 +1502,10 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   names it. Nothing is saved for it: the gift stays in the heroes' own XP, a recruit's is worked out
   from the stars and the saved ranks as they join, and a load, a travel or a re-read of the ranks
   gives nothing. The gift is not counted in a hero's XP an hour, and raises max HP as headroom, not
-  a heal. Its level-ups are said **once a hero**, not once a skill: one float over the hero (the
-  Upgrade icon and the levels gained in all, "+12"), one hero-bar alert ("+12 levels!"), one
-  level-up sound for the purchase, and one recipe banner for what the whole gift unlocked. A
-  recruit's arrival is not a level-up: their own banner says they came. Read off the held ranks,
+  a heal. Its level-ups show as **ordinary level-ups** do, as if the heroes had earned the XP
+  working: each skill that rose gets its float over the hero and its hero-bar alert, a recipe it
+  unlocks gets the usual banner and a milestone perk its alert; the level-up sound plays **once
+  for the purchase**, not once a level. A recruit's arrival is not a level-up: their own banner says they came. Read off the held ranks,
   never the guild-wide aggregator, so a Region's rule on it gives nothing. The ledger does not rate
   it (it adds no work rate).
   *(`progression/hallModifiers.js` `xpForEveryoneOf`, `GuildUpgradeManager.purchaseRanks`,

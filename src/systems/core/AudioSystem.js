@@ -1,7 +1,7 @@
 import { EventBus } from './EventBus.js';
 import { SettingsManager } from './SettingsManager.js';
 import { logger } from '../../utils/Logger.js';
-import { ENGINE_EVENTS } from './engineEvents.js';
+import { ENGINE_EVENTS, XP_FOR_EVERYONE_SOURCE } from './engineEvents.js';
 
 export const BGM_PLAYLIST = [
     { id: 'gentle_pause', title: 'Gentle Pause', file: 'Gentle Pause.m4a' },
@@ -82,10 +82,10 @@ class AudioSystemClass {
 
         EventBus.subscribe(ENGINE_EVENTS.AUDIO_PLAY, (data) => this.playSfx(data.clip, data.options));
         
-        EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, () => this.playSfx('levelup'));
-        // A Guild Hall gift's level-ups, every hero's, are one sound.
-        EventBus.subscribe(ENGINE_EVENTS.XP_FOR_EVERYONE_GIVEN, ({ heroes } = {}) => {
-            if ((heroes || []).some(h => h?.levelUps?.length)) this.playSfx('levelup');
+        // A Guild Hall gift's level-ups, every hero's in every skill, sound once for the purchase
+        // (`GuildUpgradeManager`), not once a level.
+        EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, ({ source } = {}) => {
+            if (source !== XP_FOR_EVERYONE_SOURCE) this.playSfx('levelup');
         });
         EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, () => this.playSfx('victory'));
         EventBus.subscribe(ENGINE_EVENTS.QUEST_CLAIMED, () => this.playSfx('quest_claim'));

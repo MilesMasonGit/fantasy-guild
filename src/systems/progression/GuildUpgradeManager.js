@@ -173,19 +173,22 @@ export const GuildUpgradeManager = {
     },
 
     /**
-     * XP for Everyone at a purchase: `amount` XP in every skill to every hero on the roster, their
-     * level-ups said once for the purchase (`XP_FOR_EVERYONE_GIVEN`), never once a skill.
+     * XP for Everyone at a purchase: `amount` XP in every skill to every hero on the roster, hero by
+     * hero, each skill that rose said as any level-up is (`giveXpInEverySkill`). The level-up sound
+     * plays once for the purchase: those level-ups are marked to make none of their own.
      */
     _giveXpForEveryone(upgradeId, amount) {
         if (!(amount >= 1)) return;
-        const heroes = [];
+        let given = 0;
+        let rose = false;
         for (const hero of [...GameState.heroes]) {
             const levelUps = giveXpInEverySkill(hero.id, amount);
-            if (levelUps) heroes.push({ heroId: hero.id, heroName: hero.name, levelUps });
+            if (!levelUps) continue;
+            given++;
+            if (levelUps.length) rose = true;
         }
-        if (!heroes.length) return;
-        EventBus.publish(ENGINE_EVENTS.XP_FOR_EVERYONE_GIVEN, { upgradeId, amount, heroes });
-        logger.info('GuildUpgradeManager', `${upgradeId} gave ${heroes.length} heroes ${amount} XP in every skill`);
+        if (rose) EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'levelup' });
+        if (given) logger.info('GuildUpgradeManager', `${upgradeId} gave ${given} heroes ${amount} XP in every skill`);
     },
 
     /** Write every rank-derived stat. Idempotent; safe on load and rank 0. */

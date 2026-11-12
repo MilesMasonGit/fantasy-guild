@@ -68,7 +68,6 @@ describe('the routing table', () => {
             [ENGINE_EVENTS.INVENTORY_UPDATED]: 'stub',
             [ENGINE_EVENTS.ITEM_DISCOVERED]: 'stub:new',
             [ENGINE_EVENTS.HERO_LEVELED]: 'banner:recipe',
-            [ENGINE_EVENTS.XP_FOR_EVERYONE_GIVEN]: 'banner:recipe',
             [ENGINE_EVENTS.HERO_RECRUITED]: 'banner:hero',
             [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED]: 'banner:upgrade',
             [BOARD_EVENTS.HERO_DEFEATED]: 'banner:knockout',

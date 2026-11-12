@@ -16,7 +16,7 @@ import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { loadSavedState } from '../systems/core/LoadedState.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import { EventBus } from '../systems/core/EventBus.js';
-import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
+import { ENGINE_EVENTS, XP_FOR_EVERYONE_SOURCE } from '../systems/core/engineEvents.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { KEYWORD, paletteForKeyword } from '../systems/effects/statements.js';
 import { getPaletteEntry } from '../config/registries/modifierPalette.js';
@@ -31,7 +31,8 @@ import { resetMatTuning } from '../config/matTuning.js';
  * roster XP in every skill, once, at the purchase; a hero who joins later arrives with the whole of
  * what the held ranks give. Like every star rank, rank r lists the star's whole gift so far, so a
  * purchase gives the difference and a recruit the held rank's figure; nothing is given on a load, a
- * re-read of the ranks or a travel. Its level-ups are said once a hero, never once a skill.
+ * re-read of the ranks or a travel. Its level-ups are said as ordinary level-ups (`HERO_LEVELED`),
+ * hero by hero, with one level-up sound for the purchase.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -91,17 +92,22 @@ const sheet = () => Object.fromEntries(GameState.heroes.map(h => [
     h.id, Object.fromEntries(Object.entries(h.skills).map(([id, s]) => [id, { xp: s.xp, level: s.level }]))
 ]));
 
-/** Heard while `fn` runs: the gift's announcements and every plain level-up. */
+/** Heard while `fn` runs: every level-up, and the level-up sounds asked for. */
 function heard(fn) {
-    const given = [];
     const leveled = [];
+    const sounds = [];
     const offs = [
-        EventBus.subscribe(ENGINE_EVENTS.XP_FOR_EVERYONE_GIVEN, (d) => given.push(d)),
-        EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, (d) => leveled.push(d))
+        EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, (d) => leveled.push(d)),
+        EventBus.subscribe(ENGINE_EVENTS.AUDIO_PLAY, ({ clip } = {}) => { if (clip === 'levelup') sounds.push(clip); })
     ];
     try { fn(); } finally { offs.forEach(off => off()); }
-    return { given, leveled };
+    return { leveled, sounds };
 }
+
+/** A gift's level events as `[roster index, skill, old level, new level]`, sorted. */
+const levelSteps = (leveled) => leveled
+    .map(d => [GameState.heroes.findIndex(h => h.id === d.heroId), d.skillId, d.oldLevel, d.newLevel])
+    .sort((a, b) => String(a).localeCompare(String(b)));
 
 beforeAll(() => GuildUpgradeManager.init());
 beforeEach(() => fresh());
@@ -133,7 +139,7 @@ describe('a rank bought gives every hero on the roster XP in every skill, once',
     it('gives nothing more on a re-read of the ranks, a load event, a travel or a new sky', () => {
         expect(GuildUpgradeManager.purchase('xp_all').success).toBe(true);
         const after = sheet();
-        const { given, leveled } = heard(() => {
+        const { leveled, sounds } = heard(() => {
             GuildUpgradeManager.recompute();
             HallRules.apply();
             GuildUpgradeManager.getRank('xp_all');
@@ -143,8 +149,8 @@ describe('a rank bought gives every hero on the roster XP in every skill, once',
             GuildUpgradeManager.recompute();
         });
         expect(sheet()).toEqual(after);
-        expect(given).toEqual([]);
         expect(leveled).toEqual([]);
+        expect(sounds).toEqual([]);
     });
 
     it('does not count the gift towards a hero\'s XP an hour (it was not earned working)', async () => {
@@ -181,14 +187,16 @@ describe('several ranks at once give what as many single buys give', () => {
             });
             const bySingles = sheet();
             const ids = GameState.heroes.map(h => h.id);
+            const singleSteps = levelSteps(singles.leveled);
 
             fresh();
             for (let i = 0; i < from; i++) expect(GuildUpgradeManager.purchase('xp_all').success).toBe(true);
             const multi = heard(() => expect(GuildUpgradeManager.purchaseRanks('xp_all', n).success).toBe(true));
             // The heroes are new objects with new ids: compare sheets in roster order.
             expect(Object.values(sheet())).toEqual(ids.map(id => bySingles[id]));
-            expect(singles.given.map(g => g.amount)).toEqual(PER_RANK.slice(from, from + n));
-            expect(multi.given.map(g => g.amount)).toEqual([TOTALS[from + n - 1] - (from ? TOTALS[from - 1] : 0)]);
+            // The same levels, said one level event a level either way; one sound a purchase.
+            expect(levelSteps(multi.leveled)).toEqual(singleSteps);
+            expect(multi.sounds).toHaveLength(multi.leveled.length ? 1 : 0);
         });
     }
 });
@@ -200,14 +208,14 @@ describe('a save and a load give nothing again', () => {
         const data = JSON.parse(GameState.serializeJson());
 
         GameState.initNew();
-        const { given, leveled } = heard(() => {
+        const { leveled, sounds } = heard(() => {
             loadSavedState(migrateState(data.state, data.version));
             EventBus.publish(ENGINE_EVENTS.GAME_LOADED, { slot: 0, savedAt: data.savedAt });
             EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'load' });
         });
         expect(sheet()).toEqual(saved);
-        expect(given).toEqual([]);
         expect(leveled).toEqual([]);
+        expect(sounds).toEqual([]);
 
         InventoryManager.addItem(ORE, 100);
         expect(GuildUpgradeManager.purchase('xp_all').success).toBe(true);
@@ -221,7 +229,7 @@ describe('a hero who joins later arrives with every rank bought', () => {
     it('a Bunk Beds recruit holds the held rank\'s whole gift in every skill, at full health', () => {
         expect(GuildUpgradeManager.purchaseRanks('xp_all', 2).success).toBe(true);
         const veteranGain = GameState.heroes[0].skills.mining.xp;
-        const { given, leveled } = heard(() => expect(GuildUpgradeManager.purchase('roster_size').success).toBe(true));
+        const { leveled, sounds } = heard(() => expect(GuildUpgradeManager.purchase('roster_size').success).toBe(true));
         const recruit = GameState.heroes[GameState.heroes.length - 1];
         expect(GameState.heroes).toHaveLength(4);
         for (const skillId of HERO_SKILL_IDS) {
@@ -234,8 +242,8 @@ describe('a hero who joins later arrives with every rank bought', () => {
         expect(recruit.hp.current).toBe(recruit.hp.max);
         expect(recruit.level).toBe(levelFromXp(TOTALS[1]));
         // Arriving is not levelling up: the recruit's own banner says they came.
-        expect(given).toEqual([]);
         expect(leveled).toEqual([]);
+        expect(sounds).toEqual([]);
     });
 
     it('any hero added to the roster arrives with it, and a recruit before any rank with nothing', () => {
@@ -268,40 +276,55 @@ describe('a hero who joins later arrives with every rank bought', () => {
     });
 });
 
-describe('its level-ups are said once a hero, never once a skill', () => {
-    it('one announcement for the purchase, one row a hero, no level-up a skill', () => {
+describe('its level-ups are said as ordinary level-ups, hero by hero', () => {
+    it('one HERO_LEVELED a level of every skill that rose, marked as the gift\'s, and one sound', () => {
         const before = sheet();
-        const { given, leveled } = heard(() => expect(GuildUpgradeManager.purchaseRanks('xp_all', 2).success).toBe(true));
-        expect(leveled).toEqual([]);
-        expect(given).toHaveLength(1);
-        const [g] = given;
-        expect(g.upgradeId).toBe('xp_all');
-        expect(g.amount).toBe(TOTALS[1]);
-        expect(g.heroes.map(r => r.heroId)).toEqual(GameState.heroes.map(h => h.id));
-        for (const row of g.heroes) {
-            expect(row.heroName).toBe(GameState.heroes.find(h => h.id === row.heroId).name);
-            // Every skill rose from level 1 to the level 250 XP reaches, each listed once.
-            expect(row.levelUps.map(l => l.skillId).sort()).toEqual([...HERO_SKILL_IDS].sort());
-            for (const l of row.levelUps) {
-                expect(l.oldLevel).toBe(before[row.heroId][l.skillId].level);
-                expect(l.newLevel).toBe(levelFromXp(TOTALS[1]));
-                expect(typeof l.skillName).toBe('string');
+        const { leveled, sounds } = heard(() => expect(GuildUpgradeManager.purchaseRanks('xp_all', 2).success).toBe(true));
+        const to = levelFromXp(TOTALS[1]);
+        expect(to).toBeGreaterThan(2);
+        expect(sounds).toEqual(['levelup']);
+        expect(leveled.every(d => d.source === XP_FOR_EVERYONE_SOURCE)).toBe(true);
+        const expected = [];
+        for (const hero of GameState.heroes) {
+            for (const skillId of Object.keys(hero.skills)) {
+                const from = before[hero.id][skillId].level;
+                for (let l = from + 1; l <= to; l++) expected.push([hero.id, skillId, l - 1, l, from]);
             }
         }
+        // Each skill's rise said a level at a time, from the level it began at, as `addXP` says one.
+        expect(leveled.map(d => [d.heroId, d.skillId, d.oldLevel, d.newLevel, d.startLevel])).toEqual(expected);
+        for (const d of leveled) {
+            expect(d.heroName).toBe(GameState.heroes.find(h => h.id === d.heroId).name);
+            expect(typeof d.skillName).toBe('string');
+        }
+        expect(new Set(leveled.map(d => d.skillId))).toEqual(new Set(HERO_SKILL_IDS));
     });
 
-    it('lists a hero the gift moved no level for with no level-ups', () => {
+    it('says a hero\'s level-ups before the next hero is given anything (the recipe banner reads the rest)', () => {
+        const [first, second] = GameState.heroes;
+        const secondXpWhileFirstRose = [];
+        const off = EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, (d) => {
+            if (d.heroId === first.id) secondXpWhileFirstRose.push(second.skills.mining.xp);
+        });
+        try { expect(GuildUpgradeManager.purchase('xp_all').success).toBe(true); } finally { off(); }
+        expect(secondXpWhileFirstRose.length).toBeGreaterThan(0);
+        expect(new Set(secondXpWhileFirstRose)).toEqual(new Set([0]));
+        expect(second.skills.mining.xp).toBe(TOTALS[0]);
+    });
+
+    it('says nothing, and makes no sound, when the gift moved no level', () => {
         fresh(2, sky({ ranks: [rank([gift(10)])] }));
-        const { given } = heard(() => expect(GuildUpgradeManager.purchase('xp_all').success).toBe(true));
-        expect(given).toHaveLength(1);
-        expect(given[0].heroes.map(r => r.levelUps)).toEqual([[], []]);
+        const { leveled, sounds } = heard(() => expect(GuildUpgradeManager.purchase('xp_all').success).toBe(true));
+        expect(leveled).toEqual([]);
+        expect(sounds).toEqual([]);
         expect(GameState.heroes[0].skills.mining.xp).toBe(10);
     });
 
     it('says nothing when the roster is empty, and the next recruit still arrives with it', () => {
         fresh(0);
-        const { given } = heard(() => expect(GuildUpgradeManager.purchase('xp_all').success).toBe(true));
-        expect(given).toEqual([]);
+        const { leveled, sounds } = heard(() => expect(GuildUpgradeManager.purchase('xp_all').success).toBe(true));
+        expect(leveled).toEqual([]);
+        expect(sounds).toEqual([]);
         GameState.state.progress.guildUpgrades.roster_size = 0;
         expect(GuildUpgradeManager.purchase('roster_size').success).toBe(true);
         expect(GameState.heroes[0].skills.mining.xp).toBe(TOTALS[0]);
@@ -311,10 +334,10 @@ describe('its level-ups are said once a hero, never once a skill', () => {
 describe('a star with no such rule changes nothing', () => {
     it('a Speed star gives no XP and says nothing', () => {
         const before = sheet();
-        const { given, leveled } = heard(() => expect(GuildUpgradeManager.purchase('quick').success).toBe(true));
+        const { leveled, sounds } = heard(() => expect(GuildUpgradeManager.purchase('quick').success).toBe(true));
         expect(sheet()).toEqual(before);
-        expect(given).toEqual([]);
         expect(leveled).toEqual([]);
+        expect(sounds).toEqual([]);
         expect(GuildUpgradeManager.purchase('roster_size').success).toBe(true);
         expect(GameState.heroes[3].skills.mining.xp).toBe(xpForLevel(1));
     });
@@ -324,9 +347,10 @@ describe('a star with no such rule changes nothing', () => {
         fresh(2, flat);
         expect(GuildUpgradeManager.purchase('xp_all').success).toBe(true);
         const after = sheet();
-        const { given } = heard(() => expect(GuildUpgradeManager.purchaseRanks('xp_all', 2).success).toBe(true));
+        const { leveled, sounds } = heard(() => expect(GuildUpgradeManager.purchaseRanks('xp_all', 2).success).toBe(true));
         expect(sheet()).toEqual(after);
-        expect(given).toEqual([]);
+        expect(leveled).toEqual([]);
+        expect(sounds).toEqual([]);
         const findings = hallStarFindings({ sky: flat, items: { [ORE]: {} } })
             .filter(f => f.entityId === 'xp_all').map(f => f.message);
         expect(findings).toEqual([

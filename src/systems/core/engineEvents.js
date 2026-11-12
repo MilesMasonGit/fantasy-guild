@@ -1,5 +1,8 @@
 // Global EventBus event names, declared once.
 
+/** The `source` of a `HERO_LEVELED` a Guild Hall gift (XP for Everyone) caused. */
+export const XP_FOR_EVERYONE_SOURCE = 'xpForEveryone';
+
 /**
  * ⭐ **Every global EventBus event, declared once.** The board's own events
  * (`board:*`, plus the bare `token_placed`) live in `board/boardEvents.js`;
@@ -77,16 +80,12 @@ export const ENGINE_EVENTS = Object.freeze({
     HEROES_UPDATED: 'heroes_updated',
     /** Payload: `{ heroId, name }`. */
     HERO_RECRUITED: 'hero_recruited',
-    /** A skill gained a level. Payload: `{ heroId, heroName, skillId, newLevel, oldLevel, … }`. */
-    HERO_LEVELED: 'hero_leveled',
     /**
-     * A Guild Hall rank of XP for Everyone gave every hero on the roster XP in every skill, said once
-     * for the purchase: `{ upgradeId, amount, heroes: [{ heroId, heroName, levelUps: [{ skillId,
-     * skillName, oldLevel, newLevel }] }] }`, `levelUps` empty for a hero it moved no level for.
-     * ⚠️ Its level-ups are NOT also published as `HERO_LEVELED` (that would be one a skill): a surface
-     * that shows level-ups, or re-reads on one, hears this too.
+     * A skill gained a level, one event a level. Payload: `{ heroId, heroName, skillId, newLevel,
+     * oldLevel, startLevel, skillName }`, plus `source: XP_FOR_EVERYONE_SOURCE` when a Guild Hall gift
+     * gave the XP (its purchase sounds once, not once a level).
      */
-    XP_FOR_EVERYONE_GIVEN: 'xp_for_everyone_given',
+    HERO_LEVELED: 'hero_leveled',
     /** A hero arrived at a Token to work it. Payload: `{ heroId, instanceId, typeId }` (`instanceId` null when none). */
     HERO_DEPLOYED: 'hero_deployed',
     /** A hero's HP reached zero. Payload: `{ heroId, cause }` ('effect' | 'status' | …). */
