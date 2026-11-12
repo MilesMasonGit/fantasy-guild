@@ -65,13 +65,13 @@ export const BOOST_TARGET_KINDS = Object.freeze([
  * late. The Hall's climb by plane is a placeholder; tools and gear have no target until set.
  * Rare-find boosts are measured on the finds alone (`pace.js`), by the owner's rule (2026-11-07): a
  * rare-find potion doubles finds, rising to x3 for late potions, and a Rare Finds building adds x1.5.
- * Which plane counts as late is a placeholder.
+ * Late is plan tier 6, adamantine, where BALANCE_RULES puts the x3.
  */
 const DEFAULT_BOOST_TARGETS = {
     support: [{ tier: 0, pct: 30 }],
     consumable: [{ tier: 0, pct: 20 }],
     hall: [{ tier: 1, pct: 10 }, { tier: 2, pct: 25 }, { tier: 3, pct: 50 }, { tier: 4, pct: 100 }],
-    rareConsumable: [{ tier: 0, pct: 100 }, { tier: 4, pct: 200 }],
+    rareConsumable: [{ tier: 0, pct: 100 }, { tier: 6, pct: 200 }],
     rareSupport: [{ tier: 0, pct: 50 }],
 };
 

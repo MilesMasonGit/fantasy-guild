@@ -177,7 +177,7 @@ describe('rare-find boosts have their own strength targets', () => {
 
     it('the targets are Ledger settings: x2 rising to x3 late for potions, x1.5 for buildings, filled in for older saved settings', () => {
         const saved = settingsOf({ boostTargets: { consumable: [{ tier: 0, pct: 20 }] } });
-        expect(saved.boostTargets.rareConsumable).toEqual([{ tier: 0, pct: 100 }, { tier: 4, pct: 200 }]);
+        expect(saved.boostTargets.rareConsumable).toEqual([{ tier: 0, pct: 100 }, { tier: 6, pct: 200 }]);
         expect(saved.boostTargets.rareSupport).toEqual([{ tier: 0, pct: 50 }]);
         expect(boostTargetAt(saved, 'rareConsumable', 1)).toBe(100);
         expect(boostTargetAt(saved, 'rareConsumable', 4)).toBe(200);
