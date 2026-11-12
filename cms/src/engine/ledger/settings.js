@@ -16,6 +16,7 @@ import { PLAN_TIERS, tierBudgetMs, tierOrNull } from '../../../../src/systems/pr
  *       campMembers: 3,                              // copies of a vein or Field a camp hands one hero
  *       paybackHours: 2,                             // a sensible investor's boost pays for itself within this
  *       hallPaybackHours: 24,                        // and a Guild Hall rank within this
+ *       steadyFindsPerDay: 1,                        // a rare find on repeatable work this often a day is a steady source
  *       rulesVersion: 'classless-one-job'            // which roster rules the pace follows
  *     }
  *
@@ -55,16 +56,23 @@ export const BOOST_TARGET_KINDS = Object.freeze([
     Object.freeze({ id: 'tool', label: 'Tools' }),
     Object.freeze({ id: 'gear', label: 'Gear' }),
     Object.freeze({ id: 'hall', label: 'Guild Hall' }),
+    Object.freeze({ id: 'rareConsumable', label: 'Rare-find potions' }),
+    Object.freeze({ id: 'rareSupport', label: 'Rare Finds buildings' }),
 ]);
 
 /**
  * The owner's examples (2026-10-29): buildings up to +30 %, consumables +20 %, the Hall up to +100 %
  * late. The Hall's climb by plane is a placeholder; tools and gear have no target until set.
+ * Rare-find boosts are measured on the finds alone (`pace.js`), by the owner's rule (2026-11-07): a
+ * rare-find potion doubles finds, rising to x3 for late potions, and a Rare Finds building adds x1.5.
+ * Which plane counts as late is a placeholder.
  */
 const DEFAULT_BOOST_TARGETS = {
     support: [{ tier: 0, pct: 30 }],
     consumable: [{ tier: 0, pct: 20 }],
     hall: [{ tier: 1, pct: 10 }, { tier: 2, pct: 25 }, { tier: 3, pct: 50 }, { tier: 4, pct: 100 }],
+    rareConsumable: [{ tier: 0, pct: 100 }, { tier: 4, pct: 200 }],
+    rareSupport: [{ tier: 0, pct: 50 }],
 };
 
 export const DEFAULT_LEDGER_SETTINGS = Object.freeze({
@@ -79,6 +87,8 @@ export const DEFAULT_LEDGER_SETTINGS = Object.freeze({
     paybackHours: 2,
     // The owner (2026-10-30): a Guild Hall rank may take about a day to pay for itself.
     hallPaybackHours: 24,
+    // The owner (2026-11-07): a low rate on repeatable work is still steady. ⚠️ Matches the engine's STEADY_FINDS_PER_DAY (pinned by a test).
+    steadyFindsPerDay: 1,
     rulesVersion: RULES_VERSIONS[0].id,
 });
 
@@ -140,15 +150,23 @@ export function settingsOf(raw) {
         campMembers: Math.max(1, Math.floor(positive(src.campMembers, d.campMembers))),
         paybackHours: positive(src.paybackHours, d.paybackHours),
         hallPaybackHours: positive(src.hallPaybackHours, d.hallPaybackHours),
+        steadyFindsPerDay: positive(src.steadyFindsPerDay, d.steadyFindsPerDay),
         rulesVersion: RULES_VERSIONS.some((r) => r.id === src.rulesVersion) ? src.rulesVersion : d.rulesVersion,
     };
 }
 
-/** Boost targets: per kind, points one per tier in tier order, each a whole tier and a percent from 0. */
+/**
+ * Boost targets: per kind, points one per tier in tier order, each a whole tier and a percent from 0.
+ * A kind the saved settings never mention (one added since they were saved) takes its default.
+ */
 function boostTargetsOf(raw) {
     if (!isObject(raw)) return clone(DEFAULT_BOOST_TARGETS);
     const out = {};
     for (const { id } of BOOST_TARGET_KINDS) {
+        if (!(id in raw)) {
+            if (DEFAULT_BOOST_TARGETS[id]) out[id] = clone(DEFAULT_BOOST_TARGETS[id]);
+            continue;
+        }
         const byTier = new Map();
         for (const p of Array.isArray(raw[id]) ? raw[id] : []) {
             const tier = tierOrNull(p?.tier);

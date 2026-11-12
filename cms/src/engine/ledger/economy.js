@@ -1,6 +1,6 @@
 // the progression ledger's checks E: the economy (one-source hubs, stocks with no sink, spawner upkeep, value per effort)
 
-import { HOW, LUCK_BELOW, parseKey, itemKey, tokenKey } from '../../../../src/systems/progression/ledger/engine.js';
+import { HOW, FIND, parseKey, itemKey, tokenKey } from '../../../../src/systems/progression/ledger/engine.js';
 import { ruleIndex, ruleTier } from './checks.js';
 import { buildRateBook, LIFECYCLE } from './rates.js';
 import { planOf, tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
@@ -19,7 +19,7 @@ import { planOf, tierLabel } from '../../../../src/systems/progression/ledger/pl
  *   the hero-minutes its tree takes is over {@link VALUE_EFFORT_FACTOR} times its stage's middle
  *   either way.
  *
- * Average luck only; a source that gives an item under the luck line is not a source here.
+ * Average luck only; a source that gives an item only rarely or by luck (`findClass`) is not a source here.
  * Pure: reads only what it is handed.
  */
 
@@ -67,7 +67,7 @@ export function economyFindings(ledger, content = {}, { book = null } = {}) {
     const isBuild = (recipeKey) => index.givers(recipeKey).some(r => r.how === HOW.BUILD);
     const sourceWords = (key) => (parseKey(key).kind === 'recipe' ? `the ${name(key)} recipe` : name(key));
     const producersOf = (key) => index.givers(key).filter(r => PRODUCING.has(r.how) && reached(r)
-        && r.gives.some(g => g.key === key && g.chance >= LUCK_BELOW));
+        && r.gives.some(g => g.key === key && ledger.findClass(r, g) === FIND.STEADY));
 
     // A hub with one source.
     for (const hub of ledger.hubs()) {

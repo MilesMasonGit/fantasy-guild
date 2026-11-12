@@ -1,7 +1,7 @@
 // the progression ledger's pace: supply, level times and path time at each profile, and checks D
 
 import { buildRateBook, LIFECYCLE, WORK } from './rates.js';
-import { buildProfiles, targetKey, PROFILE, PROFILES, PROFILE_TEXT, BOOST_KIND, BOOST_KIND_TEXT, boostKindOf, BEFORE_HALL } from './profiles.js';
+import { buildProfiles, targetKey, PROFILE, PROFILES, PROFILE_TEXT, BOOST_KIND, BOOST_KIND_TEXT, boostKindOf, BEFORE_HALL, pickKindOf, RARE_FIND_KINDS } from './profiles.js';
 import { starAddsRate } from './hall.js';
 import { settingsOf, minutesPerLevelAt, minutesToReach, formatMinutes, levelAtMinutes } from './settings.js';
 import { HOW, COMBAT, parseKey, itemKey, tokenKey, recipeKey, wedgeKey, starKey, LEDGER_ENGINE_TEXT } from '../../../../src/systems/progression/ledger/engine.js';
@@ -53,7 +53,10 @@ const OPEN = Object.freeze({ path: Object.freeze([]), cost: 0 });
 const isCombatStyle = (skill) => SKILLS[skill]?.layer === SKILL_LAYERS.COMBAT;
 
 /** The kinds of boost a profile chooses per piece of work (perks come with levels). */
-const BOOSTED = [BOOST_KIND.SUPPORT, BOOST_KIND.CAMP, BOOST_KIND.CONSUMABLE, BOOST_KIND.TOOL, BOOST_KIND.GEAR, BOOST_KIND.HALL];
+const BOOSTED = [
+    BOOST_KIND.SUPPORT, BOOST_KIND.CAMP, BOOST_KIND.CONSUMABLE, BOOST_KIND.TOOL, BOOST_KIND.GEAR, BOOST_KIND.HALL,
+    BOOST_KIND.RARE_CONSUMABLE, BOOST_KIND.RARE_SUPPORT
+];
 
 /** Author-facing words, kept together for translation. */
 export const PACE_TEXT = Object.freeze({
@@ -1153,9 +1156,9 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
 
     // ── boosts by kind ─────────────────────────────────────────────────────────────────────────
     const kindGain = (work, profile, cap, kind, level = null) => {
-        const { chosen, context } = profiles.profileOf(work.target, profile, cap, level);
+        const { chosen, context, rate } = profiles.profileOf(work.target, profile, cap, level);
         const bare = profiles.bareSetup(context, cap, level);
-        const picks = chosen.filter(c => c.kind === kind);
+        const picks = chosen.filter(c => pickKindOf(c, rate) === kind);
         if (!picks.length) return null;
         const offers = profiles.offers(context, cap);
         let s = bare;
@@ -1173,7 +1176,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const r1 = rates.rateOf(work.target, s);
         const shown = kind === BOOST_KIND.HALL ? hallPicks(picks) : picks;
         return {
-            gain: gainOf(r0, r1, (item) => unitHours(item, cap)), names: shown.map(pickName),
+            gain: RARE_FIND_KINDS.has(kind) ? findsGainOf(r0, r1) : gainOf(r0, r1, (item) => unitHours(item, cap)), names: shown.map(pickName),
             factors: [...new Set(shown.map(c => c.factor))], factorKeys: [...new Set(shown.map(factorKeyOf))]
         };
     };
@@ -1340,6 +1343,21 @@ export function gainOf(r0, r1, unitHours) {
     const x0 = xp(r0);
     const xpGain = x0 > 0 ? xp(r1) / x0 - 1 : 0;
     return Math.max(items, xpGain);
+}
+
+/**
+ * How much more of its finds a rate brings than another: the largest rise of any one item it made
+ * already, as a fraction (1 is twice as many). A rare-find boost's strength, read on the finds it
+ * raises rather than diluted by the work's whole worth.
+ */
+export function findsGainOf(r0, r1) {
+    if (!r0?.ok || !r1?.ok) return 0;
+    let top = 0;
+    for (const [item, n0] of Object.entries(r0.items || {})) {
+        const n1 = r1.items?.[item] ?? 0;
+        if (n0 > 0) top = Math.max(top, n1 / n0 - 1);
+    }
+    return top;
 }
 
 export { PROFILE, PROFILES, PROFILE_TEXT };

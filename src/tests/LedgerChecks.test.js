@@ -19,6 +19,12 @@ const DATA = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../d
 const checksOf = (ws) => runChecks(buildLedger(ws), ws);
 const on = (findings, key, check) => findings.filter((f) => f.key === key && (!check || f.check === check));
 const recipe = (ws, id) => Object.values(ws.recipePools).flat().find((r) => r.id === id);
+/** The fixture with the goblins' Honey at 0.01 %: about 0.72 a day on 12-second fights. */
+const withRareHoney = () => {
+    const ws = ledgerContent();
+    ws.tokens.token_goblin.config.outputs.find((o) => o.itemId === 'item_honey').chance = 0.01;
+    return ws;
+};
 
 describe('checks on the fixture world', () => {
     it('gives every finding a known check, its group, a severity and words, worst first', () => {
@@ -128,16 +134,29 @@ describe('checks on the fixture world', () => {
         expect(on(plain, itemKey('item_mythril_ore'), 'never-reachable')).toHaveLength(0);
     });
 
-    it('C: luck only, the Shop only', () => {
+    it('C: a low chance on repeatable work is steady, a rare one is noted; the Shop only', () => {
         const findings = checksOf(ledgerContent());
-        // Honey: 3 % from goblins in the camp; ring 2's hive is sure.
-        expect(on(findings, itemKey('item_honey'), 'luck-only')[0]).toMatchObject({ severity: 'info' });
-        expect(on(findings, itemKey('item_honey'), 'luck-only')[0].message).toMatch(/3% from Goblin.*sure way from Plane 2/);
+        // Honey: 3 % from goblins the camp keeps spawning, about 216 a day: no luck.
+        expect(on(findings, itemKey('item_honey'), 'luck-only')).toHaveLength(0);
+        expect(on(findings, itemKey('item_honey'), 'rare-steady')).toHaveLength(0);
+        // At 0.01 % it is under a find a day: rare but steady, a note; ring 2's hive is steady.
+        const honey = on(checksOf(withRareHoney()), itemKey('item_honey'), 'rare-steady')[0];
+        expect(honey).toMatchObject({ severity: 'info' });
+        expect(honey.message).toBe('Rare but steady at Starter Camp: 0.01%, about 0.7 a day from Goblin, for one hero working all day; a steady way from Plane 2.');
         expect(on(findings, tokenKey('token_wood_foundation'), 'shop-only')[0].message).toBe('Only from the Shop, for 15 Oak Wood.');
     });
 
-    it('C: luck only with no sure way at all is a Warn', () => {
-        const honey = on(checksOf(withoutOrigin(ledgerContent(), 'token_wild_hive')), itemKey('item_honey'), 'luck-only')[0];
+    it('C: luck from a source that wears out: a note with a sure way later, a Warn with none', () => {
+        const cached = (ws) => {
+            ws.tokens.token_goblin.config.outputs = ws.tokens.token_goblin.config.outputs.filter((o) => o.itemId !== 'item_honey');
+            ws.tokens.token_honey_cache = { id: 'token_honey_cache', name: 'Honey Cache', uses: 2, config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 1, inputs: [], outputs: [{ itemId: 'item_honey', chance: 3, minQty: 1, maxQty: 1 }] } };
+            ws.starterCamp.tokens.push({ typeId: 'token_honey_cache', x: 900, y: 100 });
+            return ws;
+        };
+        const later = on(checksOf(cached(ledgerContent())), itemKey('item_honey'), 'luck-only')[0];
+        expect(later).toMatchObject({ severity: 'info' });
+        expect(later.message).toMatch(/3% from Honey Cache.*sure way from Plane 2/);
+        const honey = on(checksOf(cached(withoutOrigin(ledgerContent(), 'token_wild_hive'))), itemKey('item_honey'), 'luck-only')[0];
         expect(honey).toMatchObject({ severity: 'warn' });
         expect(honey.message).toMatch(/no sure way/);
     });
@@ -168,10 +187,11 @@ describe('checks on the fixture world', () => {
     it('filters and groups findings for the problems list and the rows', () => {
         const findings = checksOf(ledgerContent());
         expect(filterFindings(findings, { group: 'C' }).every((f) => f.group === 'C')).toBe(true);
-        expect(filterFindings(findings, { severity: 'info', check: 'luck-only' }).map((f) => f.name)).toEqual(['Honey']);
-        expect(filterFindings(findings, { search: '3% FROM GOBLIN' })).toHaveLength(1);
-        const byKey = findingsByKey(findings);
-        expect(byKey.get(itemKey('item_honey')).map((f) => f.check)).toContain('luck-only');
+        const rare = checksOf(withRareHoney());
+        expect(filterFindings(rare, { severity: 'info', check: 'rare-steady' }).map((f) => f.name)).toEqual(['Honey']);
+        expect(filterFindings(rare, { search: '0.7 A DAY FROM GOBLIN' })).toHaveLength(1);
+        const byKey = findingsByKey(rare);
+        expect(byKey.get(itemKey('item_honey')).map((f) => f.check)).toContain('rare-steady');
     });
 });
 

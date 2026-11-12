@@ -67,12 +67,39 @@ export const BOOST_KIND = Object.freeze({
     TOOL: 'tool',
     GEAR: 'gear',
     PERK: 'perk',
-    HALL: 'hall'
+    HALL: 'hall',
+    RARE_CONSUMABLE: 'rareConsumable',
+    RARE_SUPPORT: 'rareSupport'
 });
 export const BOOST_KINDS = Object.freeze(Object.values(BOOST_KIND));
 export const BOOST_KIND_TEXT = Object.freeze({
-    support: 'Buildings', camp: 'Camps', consumable: 'Consumables', tool: 'Tools', gear: 'Gear', perk: 'Perks', hall: 'Guild Hall'
+    support: 'Buildings', camp: 'Camps', consumable: 'Consumables', tool: 'Tools', gear: 'Gear', perk: 'Perks', hall: 'Guild Hall',
+    rareConsumable: 'Rare-find potions', rareSupport: 'Rare Finds buildings'
 });
+
+/**
+ * A consumable or building that only raises rare finds is a boost kind of its own, with its own
+ * strength target (owner, 2026-11-07: a rare-find potion doubles finds, a Rare Finds building adds
+ * x1.5), measured on the finds alone rather than on the work's whole worth.
+ */
+const RARE_FIND_KIND = Object.freeze({ [BOOST_KIND.CONSUMABLE]: BOOST_KIND.RARE_CONSUMABLE, [BOOST_KIND.SUPPORT]: BOOST_KIND.RARE_SUPPORT });
+export const RARE_FIND_KINDS = Object.freeze(new Set(Object.values(RARE_FIND_KIND)));
+
+/** Whether a rate's factor (`rates.js`) moves rare finds and nothing else: Lucky alone. */
+export function isRareFindFactor(factor) {
+    const axes = list(factor?.axes);
+    return axes.length > 0 && axes.every(a => a === EFFECT_TYPES.LUCKY);
+}
+
+/**
+ * The boost kind a profile's pick is counted under: its own, or its rare-find kind when, on the
+ * profile's rate, its factor moves rare finds alone.
+ */
+export function pickKindOf(pick, rate) {
+    const rare = RARE_FIND_KIND[pick?.kind];
+    if (rare && isRareFindFactor(list(rate?.factors).find(f => f.id === pick.factor))) return rare;
+    return pick?.kind;
+}
 
 /** The default copies a camp hands one hero of a refilling Token (a vein, a Field). */
 export const DEFAULT_CAMP_MEMBERS = 3;

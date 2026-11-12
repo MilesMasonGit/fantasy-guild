@@ -2,6 +2,7 @@ import { buildLedger, parseKey, itemKey, tokenKey, recipeKey, HOW } from '../../
 import { runChecks, SEVERITY } from './ledger/checks.js';
 import { isPlanned } from '../../../src/systems/progression/ledger/plan.js';
 import { buildPace } from './ledger/pace.js';
+import { settingsOf } from './ledger/settings.js';
 import { calibrationFindings } from './calibrationStatus.js';
 import { workspaceOriginFindings, baseWorldTables } from './ledgerWorld.js';
 import { plannedTables } from './ledger/world.js';
@@ -41,7 +42,7 @@ export function workspaceLedger(state = {}, { sim = null } = {}) {
     const cycleTimeOf = cycleTimes
         ? (rule) => (TIMED.has(rule.how) && rule.via ? cycleTimes.get(parseKey(rule.via).id) ?? null : null)
         : null;
-    return buildLedger(contentOf(state), { cycleTimeOf });
+    return buildLedger(contentOf(state), { cycleTimeOf, steadyPerDay: settingsOf(state.planSettings).steadyFindsPerDay });
 }
 
 const ENTITY_KEY = { Token: tokenKey, Item: itemKey, Recipe: recipeKey };

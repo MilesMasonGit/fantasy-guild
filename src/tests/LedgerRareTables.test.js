@@ -7,7 +7,7 @@ import { EFFECT_TYPES } from '../systems/effects/constants.js';
  * The ledger reads a Token's rare drop table (brief 590 P3) as it reads chance lines: the reach
  * engine (the CMS ledger and the Encyclopedia) gives each find at its own chance, the table's times
  * its share; the rate calculator counts each find a cycle, Lucky widening the table. A find only a
- * rare table gives is "luck only" exactly as a chance line under 5 % is today (T-336, open).
+ * rare table gives is judged as a chance line is: by finds a day on repeatable work.
  */
 
 const provides = (id, type, bucket, value, to) => ({ id: `stm_${id}`, keyword: 'provides', to, reach: 'nearby', payload: { type, bucket, value } });
@@ -49,9 +49,11 @@ describe('the reach engine (the CMS ledger, the Encyclopedia)', () => {
         expect(drop.gives).toEqual([{ key: itemKey('lr_bone'), chance: 0.1, perCycle: 0.1 }]);
     });
 
-    it('a find only a rare table gives is luck only, as a chance line under 5 % is (T-336)', () => {
+    it('a find only a rare table gives is judged by finds a day, as a chance line is', () => {
         const reach = computeReach(buildWorld(content()));
-        expect(reach.get(itemKey('lr_gem'))).toMatchObject({ tier: 0, luckOnly: true, via: tokenKey('lr_vein') });
+        // 0.3 % on a 3.6 s cycle: 72 a day, a steady source.
+        expect(reach.get(itemKey('lr_gem'))).toMatchObject({ tier: 0, sureTier: 0, luckOnly: false, rareOnly: false, via: tokenKey('lr_vein') });
+        expect(reach.get(itemKey('lr_gem')).findsPerDay).toBeCloseTo(72, 6);
         expect(reach.get(itemKey('lr_gem')).chance).toBeCloseTo(0.003, 9);
         expect(reach.get(itemKey('lr_ore'))).toMatchObject({ tier: 0, luckOnly: false });
         // 10 % is above the luck line: a sure way, as a 10 % chance line would be.

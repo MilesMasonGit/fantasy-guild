@@ -162,6 +162,11 @@ export default function LedgerSettings() {
             <NumberInput value={settings.campMembers} min={1} whole onCommit={(v) => save({ campMembers: v })} label="Camp copies" width={60} />
             veins or Fields in turn (a forest's camp: every tree of its family).
           </div>
+          <div className="flex items-center gap-2">
+            A rare find on repeatable work is a steady source at
+            <NumberInput value={settings.steadyFindsPerDay} min={0.01} onCommit={(v) => save({ steadyFindsPerDay: v })} label="Steady finds a day" width={60} />
+            finds a day or more for one hero working all day; below that it is rare but steady. Only a source that wears out is luck.
+          </div>
         </div>
       </Card>
 

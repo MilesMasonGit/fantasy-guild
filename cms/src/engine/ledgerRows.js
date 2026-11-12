@@ -76,5 +76,5 @@ export function reachText(reach, label) {
     if (!reach) return '—';
     if (reach.planned) return 'Planned';
     if (reach.tier === null) return 'Never';
-    return label(reach.tier) + (reach.luckOnly ? ' (luck)' : '');
+    return label(reach.tier) + (reach.luckOnly ? ' (luck)' : reach.rareOnly ? ' (rare)' : '');
 }
