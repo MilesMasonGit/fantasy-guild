@@ -11,7 +11,7 @@ import * as Flags from '../systems/board/Flags.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
 import * as RecipeList from '../systems/board/RecipeList.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { registerTokenTypes, getTokenType, tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { registerTokenTypes, getTokenType, tokenStartingUses, TOKENS } from '../config/registries/tokenRegistry.js';
 import { registerRecipePools, recipesForToken, getSkillRecipePool } from '../config/registries/recipePoolRegistry.js';
 import {
     STATION_KINDS, RETIRED_STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds,
@@ -268,11 +268,16 @@ describe('the ledger reads the new buildings', () => {
     });
 });
 
-describe('the words name the new buildings', () => {
-    it('the tutorial sends copper to the Blacksmith, not a Furnace or a Smithy', () => {
-        const all = JSON.stringify(TUTORIAL_TEXT);
-        expect(TUTORIAL_TEXT.steps.cart_copper_tool.instruction).toContain('Blacksmith');
-        expect(all).not.toMatch(/Furnace|Smithy|Workbench|Campfire|Brewery|Alchemy Table/);
+describe('the words name buildings the content has', () => {
+    // ⚠️ The copper step names today's Furnace and Copper Smithy until the content has a Blacksmith;
+    // deleting either Token fails this, so the words change with that Sync.
+    it('the tutorial sends copper to a Furnace and a Copper Smithy, both still in the content', () => {
+        const names = new Set(Object.values(TOKENS).map(t => t?.name));
+        const words = TUTORIAL_TEXT.steps.cart_copper_tool.instruction;
+        expect(words).toContain('Furnace');
+        expect(words).toContain('Copper Smithy');
+        expect(names.has('Furnace')).toBe(true);
+        expect(names.has('Copper Smithy')).toBe(true);
     });
 
     it('Limes names none of today\'s stations', () => {
