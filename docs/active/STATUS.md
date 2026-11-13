@@ -14,7 +14,7 @@ build green) · bench-queued · eye-check · merged.*
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | 640 E1: the event engine (hourly clock, weighted landing by ground, expiry, offline, demolish, CMS table) | engineer | `feat/events` (`ev`) | building | Thu | |
-| 620 E3 follow-up: Long-lasting Brews rounds by chance (owner C) | builder | `feat/drink-stars` (`rt`) | building, due before 01:30 | Thu | |
+| 620 E3 follow-up: Long-lasting Brews rounds by chance (owner C) | builder | `feat/drink-stars` (`rt`) 0a11b5c6 | **ready**: display shows the two possible lengths (10–11) and never draws; dose start rolls; agent gate 668 files green; director read the diff; work check at 02:05 with E3 | Thu | Thu |
 | 640 E2: arrival and the banner | builder | | queued after E1 | | |
 | 640 C1: first events pack (6 to 8) | content agent | | queued after E1 (needs the CMS table) | | |
 
