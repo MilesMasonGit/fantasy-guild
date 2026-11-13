@@ -298,17 +298,90 @@ describe('⭐ Long-lasting Brews: a fresh dose lasts longer', () => {
         expect([DOSE.DRINK, DOSE.POTION, DOSE.ELIXIR].map(ConsumptionSystem.doseLength)).toEqual([13, 4, 13]);
     });
 
-    it('rounds halves up, and a dose always lasts at least one', () => {
-        expect(lastingDoseLength(10, 10.5)).toBe(11);
-        expect(lastingDoseLength(10, 10.4)).toBe(10);
-        expect(lastingDoseLength(1, 1.5)).toBe(2);
-        expect(lastingDoseLength(1, 1.4)).toBe(1);
-        expect(lastingDoseLength(10, 0)).toBe(1);
-        expect(lastingDoseLength(10, Number.NaN)).toBe(10);
+    it('a whole length draws no random number', () => {
+        const never = vi.fn(() => { throw new Error('drew a random number'); });
+        expect(lastingDoseLength(10, 10, never)).toBe(10);
+        expect(lastingDoseLength(10, 11, never)).toBe(11);
+        // Float error is not a fraction: +10 % on 10 is 11, however the sum comes out.
+        expect(lastingDoseLength(10, 10 * 1.1, never)).toBe(11);
+        expect(lastingDoseLength(10, 11 - 1e-12, never)).toBe(11);
+        expect(lastingDoseLength(10, Number.NaN, never)).toBe(10);
+        expect(never).not.toHaveBeenCalled();
+        holdStar([brews(0.1)]);
+        expect(ConsumptionSystem.rollDoseLength(DOSE.DRINK, never)).toBe(11);
+        expect(never).not.toHaveBeenCalled();
+    });
+
+    it('a fractional length rounds by chance, both ways: 3.6 is 4 under 0.6 and 3 above it', () => {
+        expect(lastingDoseLength(3, 3.6, () => 0)).toBe(4);
+        expect(lastingDoseLength(3, 3.6, () => 0.59)).toBe(4);
+        // 3.6 - 3 is a hair over 0.6 in floating point, so the first draw that rolls down is above it.
+        expect(lastingDoseLength(3, 3.6, () => 0.61)).toBe(3);
+        expect(lastingDoseLength(3, 3.6, () => 0.99)).toBe(3);
+        let draws = 0;
+        lastingDoseLength(3, 3.6, () => { draws++; return 0.5; });
+        expect(draws).toBe(1);
+
+        holdStar([brews(0.05, { category: CARRIED_KIND.DRINK })]);
+        expect(ConsumptionSystem.doseLength(DOSE.DRINK)).toBeCloseTo(10.5, 9);
+        expect(ConsumptionSystem.rollDoseLength(DOSE.DRINK, () => 0.49)).toBe(11);
+        expect(ConsumptionSystem.rollDoseLength(DOSE.DRINK, () => 0.5)).toBe(10);
+        // A kind the star does not reach stays whole and draws nothing.
+        expect(ConsumptionSystem.rollDoseLength(DOSE.POTION, () => { throw new Error('drew'); })).toBe(1);
+    });
+
+    it('a dose always lasts at least one', () => {
+        const never = () => { throw new Error('drew a random number'); };
+        expect(lastingDoseLength(10, 0, never)).toBe(1);
+        expect(lastingDoseLength(10, -4, never)).toBe(1);
+        // Below one is one before any roll: a 0.4 never comes out as 0.
+        expect(lastingDoseLength(1, 0.4, never)).toBe(1);
+        holdStar([brews(-0.6, { category: CARRIED_KIND.POTION })]);
+        expect(ConsumptionSystem.doseLength(DOSE.POTION)).toBe(1);
+        expect(ConsumptionSystem.rollDoseLength(DOSE.POTION, never)).toBe(1);
+    });
+
+    it('a hero starting a dose of fractional length rolls its count', () => {
         holdStar([brews(0.05)]);
-        expect(ConsumptionSystem.doseLength(DOSE.DRINK)).toBe(11);
-        holdStar([brews(0.04)]);
-        expect(ConsumptionSystem.doseLength(DOSE.DRINK)).toBe(10);
+        hero.equipment[0] = 'ds_beer';
+        InventoryManager.addItem('ds_beer', 3);
+        const spy = vi.spyOn(Math, 'random').mockReturnValue(0.4);
+        work();
+        untilCycles(1);
+        spy.mockRestore();
+        expect(hero.drinkCycles).toEqual({ ds_beer: 11 - 1 });
+    });
+
+    it('a hero starting a dose of fractional length may roll it down', () => {
+        holdStar([brews(0.05)]);
+        hero.equipment[0] = 'ds_valor';
+        InventoryManager.addItem('ds_valor', 3);
+        const spy = vi.spyOn(Math, 'random').mockReturnValue(0.6);
+        fight();
+        untilEngagements(1);
+        spy.mockRestore();
+        expect(hero.elixirFights).toEqual({ ds_valor: 10 - 1 });
+    });
+
+    it('what the game shows never draws: the exact length, read as 10–11', () => {
+        holdStar([brews(0.05)]);
+        hero.equipment[0] = 'ds_beer';
+        hero.equipment[1] = 'ds_valor';
+        InventoryManager.addItem('ds_beer', 1);
+        InventoryManager.addItem('ds_valor', 1);
+        const spy = vi.spyOn(Math, 'random');
+        expect(ConsumptionSystem.doseLength(DOSE.DRINK)).toBeCloseTo(10.5, 9);
+        expect(ConsumptionSystem.doseLengthText(DOSE.DRINK)).toBe('10–11');
+        // A star on every kind: a potion's one cycle at +5 % is 1.05.
+        expect(ConsumptionSystem.doseLengthText(DOSE.POTION)).toBe('1–2');
+        expect(ConsumptionSystem.workDoseOf('ds_beer')).toBeCloseTo(10.5, 9);
+        expect(tagExplanation('Drink')).toContain('one lasts 10–11 work cycles');
+        expect(tagExplanation('Elixir')).toContain('one lasts 10–11 fights');
+        const lines = gearEffects(hero).find(e => e.id === 'ds_fx_beer_drink').lines;
+        expect(lines).toContain('One lasts 10–11 work cycles, with Long-lasting Brews.');
+        const calls = spy.mock.calls.length;
+        spy.mockRestore();
+        expect(calls).toBe(0);
     });
 
     it('a star bought mid-dose lengthens the next dose, not the one under way', () => {

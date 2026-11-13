@@ -4,7 +4,7 @@
 
 import { t } from '../../../i18n/index.js';
 import { itemTypeLabel } from './ItemTip.jsx';
-import { doseLength } from '../../../systems/hero/ConsumptionSystem.js';
+import { doseLengthText } from '../../../systems/hero/ConsumptionSystem.js';
 import { DOSE } from '../../../systems/core/consumableRule.js';
 
 /** A tag's key in the strings file's `itemTags` section: its letters and digits, first one lower case. */
@@ -16,13 +16,13 @@ export function tagKey(tag) {
 /**
  * What a tag does in the game, in one line; null when nobody has written one yet. A line may say
  * how long a drink (`{cycles}`) or an elixir (`{fights}`) lasts: the guild's now, Long-lasting
- * Brews included.
+ * Brews included ("10–11" while a fresh one may last either). Draws nothing.
  */
 export function tagExplanation(tag) {
     const key = tagKey(tag);
     if (!key) return null;
     const path = `itemTags.${key}`;
-    const line = t(path, { cycles: doseLength(DOSE.DRINK), fights: doseLength(DOSE.ELIXIR) });
+    const line = t(path, { cycles: doseLengthText(DOSE.DRINK), fights: doseLengthText(DOSE.ELIXIR) });
     return line === path ? null : line;
 }
 

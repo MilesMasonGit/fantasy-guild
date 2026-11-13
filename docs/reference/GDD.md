@@ -1528,13 +1528,16 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   dose: **drinks**, **potions** (work potions) or **fight elixirs**, or none for all three).
   **Long-lasting Brews** makes a **fresh dose last longer**: a drink's 10 work cycles, a work
   potion's one cycle of its skill, an elixir's 10 fights, moved by a percentage (+10 % on 10 is
-  11) or a flat number of cycles or fights, **rounded halves up**, never below one. A dose under
+  11) or a flat number of cycles or fights, **rounded by chance** as a fresh dose starts (3.6
+  is 4 three times in five and 3 two times in five, as Efficiency rounds a cost), never below one. A dose under
   way keeps the count it started with; the next one drunk gets the new length. **Strong Drink**
   makes **every number a dose's effects provide** stronger by a percentage: Beer's +10 % XP at
   +50 % is +15 %, Valor's +1 Damage +1.5, a chance held at 100 %. It counts each time the dose's
   rules fire, so a star bought mid-dose works from the next cycle or fight. Only provided numbers
   move: a grant (Birdwatcher's nest), a heal, damage, an immunity and a status's stack limit stay
-  as they are. Neither draws a random number. The Drink and Elixir tags say how long one lasts
+  as they are. Strong Drink draws no random number; Long-lasting Brews draws one only as a dose
+  of fractional length starts, and what the game shows never draws (a fractional length reads
+  "10–11"). The Drink and Elixir tags say how long one lasts
   now, and the Hero drawer's Gear effects say "One lasts 11 work cycles, with Long-lasting Brews."
   and "Merry, 50% stronger with Strong Drink: Gives the hero 15% more XP." while a star moves
   them (nothing extra without one); the Token card's Hero Effects badge shows the stronger

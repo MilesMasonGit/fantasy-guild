@@ -2,6 +2,7 @@
 
 import { getCategoryDef, CATEGORY_KINDS } from '../../config/registries/equipmentCategories.js';
 import { ELIXIR_FIGHTS, DRINK_CYCLES } from '../../config/loopConstants.js';
+import { roundByChance, WHOLE_EPSILON } from '../../utils/RNG.js';
 
 /**
  * The one rule behind how a carried food, drink or potion works, shared by the engine
@@ -74,13 +75,34 @@ export const DOSE_LENGTH = Object.freeze({
 });
 
 /**
- * How many moments a fresh dose lasts once Long-lasting Brews has moved its length from `base` to
- * `resolved`: a whole number, halves rounded up, never below one. Not a number: `base` unmoved.
+ * How many moments a dose lasts on average once Long-lasting Brews has moved its length from `base`
+ * to `resolved`: unrounded, never below one. Not a number: `base` unmoved. Draws nothing; what the
+ * game shows.
  */
-export function lastingDoseLength(base, resolved) {
+export function exactDoseLength(base, resolved) {
     const n = Number(resolved);
     if (!Number.isFinite(n)) return base;
-    return Math.max(1, Math.floor(n + 0.5 + 1e-9));
+    return Math.max(1, n);
+}
+
+/**
+ * How many moments a fresh dose lasts: the exact length ({@link exactDoseLength}) made whole by
+ * chance as the dose starts (3.6 is 4 three times in five, 3 two times in five), never below one.
+ *
+ * ⚠️ Draws one `random()` only when the length has a fraction, so with no star moving it the
+ * random stream stays as it was.
+ */
+export function lastingDoseLength(base, resolved, random = Math.random) {
+    return Math.max(1, roundByChance(exactDoseLength(base, resolved), random));
+}
+
+/**
+ * The whole numbers a dose of exact length `exact` can last: `[low, high]`, the same twice when it
+ * is whole (float error aside). Draws nothing.
+ */
+export function doseLengthSpan(exact) {
+    const low = Math.max(1, Math.floor(exact + WHOLE_EPSILON));
+    return exact - low < WHOLE_EPSILON ? [low, low] : [low, low + 1];
 }
 
 /**

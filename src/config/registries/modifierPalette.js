@@ -319,10 +319,10 @@ export const MODIFIER_PALETTE = [
     },
     {
         /**
-         * Read by `ConsumptionSystem.doseLength` as a hero starts a fresh dose: how many work cycles a
-         * drink or a work potion lasts, how many fights a fight elixir does, resolved from the dose's
-         * own length (`consumableRule.DOSE_LENGTH`) and rounded halves up, never below one. A dose
-         * under way keeps the count it started with.
+         * Read by `ConsumptionSystem.rollDoseLength` as a hero starts a fresh dose: how many work
+         * cycles a drink or a work potion lasts, how many fights a fight elixir does, resolved from the
+         * dose's own length (`consumableRule.DOSE_LENGTH`) and made whole by chance (3.6 is 4 three
+         * times in five), never below one. A dose under way keeps the count it started with.
          */
         type: EFFECT_TYPES.LONG_LASTING_BREWS,
         reads: { up: (n) => `last ${n} longer`, down: (n) => `last ${n} shorter` },

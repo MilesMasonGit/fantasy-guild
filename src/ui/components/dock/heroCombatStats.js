@@ -3,7 +3,7 @@ import { loadoutRefs, itemStatements } from '../../../systems/hero/HeroEffects.j
 import { effectTitle, statementsFromEntry, strengthenStatement } from '../../../systems/effects/effectLibrary.js';
 import { renderStatement } from '../../../systems/effects/statementText.js';
 import { KEYWORD } from '../../../systems/effects/statements.js';
-import { doseLength, doseStrength, FIGHT_START } from '../../../systems/hero/ConsumptionSystem.js';
+import { doseLengthText, doseStrength, FIGHT_START } from '../../../systems/hero/ConsumptionSystem.js';
 import { doseKindsOf, isWorkMoment, DOSE, DOSE_LENGTH } from '../../../systems/core/consumableRule.js';
 import { t } from '../../../i18n/index.js';
 import { EFFECTS } from '../../../config/registries/effectRegistry.js';
@@ -116,7 +116,7 @@ function doseLines(itemIds, statements, names) {
     const lines = [];
     for (const kind of [DOSE.DRINK, DOSE.POTION, DOSE.ELIXIR]) {
         if (!kinds.has(kind)) continue;
-        const count = doseLength(kind);
+        const count = doseLengthText(kind);
         if (count === DOSE_LENGTH[kind]) continue;
         lines.push(t(kind === DOSE.ELIXIR ? 'heroPanel.combat.doseFights' : 'heroPanel.combat.doseCycles', { count }));
     }
