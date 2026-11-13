@@ -23,6 +23,7 @@ layout/paint cost are Tier B (the in-game Perf HUD). `npm run bench:draw` and
 | `npm run bench -- --repeats=5` | more timing runs per scenario (the median is reported); S4 never runs fewer than 11 | |
 | `npm run bench -- --no-profile` | skip the profile passes | faster |
 | `npm run bench -- --cpu-prof` | also write one V8 `.cpuprofile` per run to `bench/results/prof/`, named `<scenario>-<mode>-<run>-<time>.cpuprofile` (open in Chrome DevTools → Performance). Each run profiles into its own folder and only the main thread's file (the engine's) is kept; on Node 24 the module loader's thread writes a second, idle profile, which is dropped (`bench/lib/cpuprof.mjs`) | |
+| `npm run bench -- --events` | let events land in the scenarios' play (brief 640). **Off by default**: the engine leaves events off unless something turns them on, so the work the gate compares never moves with `data/events.json`; a run with `--events` prints `not checked` against a baseline taken without it | |
 | `npm run bench -- --inject-slow=0.5` | add a tick handler that busy-waits 0.5 ms — for proving `--compare` catches a slowdown | |
 | `npm run bench:micro` | micro-benchmarks at 40 / 150 / 300 Tokens (Vitest `bench`, node environment) | ~15 s |
 | `npm run bench:micro -- bench/micro/atlasWorld.bench.js` | what a player waits on at the world map: `Atlas.settle` for the first Region on an empty Atlas and for the sixth with five settled (medians over five fresh worlds, two dev recipes each), and `worldView()` on a fresh world and with the whole first ring settled (the lines print as `Atlas.settle, first Region …: median N ms`) | ~10 s |
@@ -94,7 +95,10 @@ What changes the work, and what does not:
 
 - `--seed` changes every scenario's work, and `--long` S6's. A run with other
   values than the baseline's prints `not checked` for those scenarios instead
-  of failing.
+  of failing. So does `--events` (events off is the default and what the
+  baseline holds; `bench/lib/harness.mjs` `boot(seed, { events })`). The browser
+  benches' stress boards play without events too, unless the address carries
+  `events=1` (`perfHarness.start`).
 - `--repeats`, `--inject-slow`, `--no-profile` and `--cpu-prof` change only the
   time (proved: `--inject-slow` exits 1, never 2).
 - A different **Node version** can change the work for reasons outside the

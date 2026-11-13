@@ -16,7 +16,7 @@ machinery that is gone (§8); `CLAUDE.md`'s rule holds: a comment is a hypothesi
 Tauri window (src-tauri/, Rust)    save files, save-on-close, "window minimised" signal
  └─ WebView2 page: index.html → src/main.jsx
      ├─ Engine (src/systems, src/state, src/config)
-     │    GameLoop: setInterval every 100 ms → 7 tick handlers, fixed order
+     │    GameLoop: setInterval every 100 ms → 8 tick handlers, fixed order
      │    → mutate GameState.state IN PLACE → EventBus.publish(...)
      ├─ React UI (src/ui)
      │    reads GameState through hooks/subscriptions; Tokens, heroes, flags are DOM elements
@@ -31,7 +31,7 @@ Tauri window (src-tauri/, Rust)    save files, save-on-close, "window minimised"
 | Layer | One sentence |
 |---|---|
 | **Tauri shell** | A thin Rust host: seven save-file commands, a save-before-close handshake and a minimise event for the page (`src-tauri/src/lib.rs:22-48`, `src-tauri/src/saves.rs`). |
-| **Engine tick** | `GameLoop` runs registered handlers on `setInterval(…, 100)` (`src/systems/core/GameLoop.js:34`, `src/config/loopConstants.js:7`); seven handlers are registered, all in `EngineBootstrap._registerTickHandlers` (`src/systems/core/EngineBootstrap.js:164-209`). |
+| **Engine tick** | `GameLoop` runs registered handlers on `setInterval(…, 100)` (`src/systems/core/GameLoop.js:34`, `src/config/loopConstants.js:7`); eight handlers are registered, all in `EngineBootstrap._registerTickHandlers` (`src/systems/core/EngineBootstrap.js`). |
 | **State** | One mutable object, `GameState.state`, owned by a singleton facade (`src/state/GameState.js:19-167`); its shape is `INITIAL_STATE` (`src/state/StateSchema.js:138`). |
 | **Content** | `data/*.json` is bundled at build time by `import.meta.glob` (`src/config/DatabaseManager.js:4-31`) and turned into registries in `src/config/registries/`. |
 | **Event bus** | One singleton pub/sub (`src/systems/core/EventBus.js:167`) with event names declared in two catalogues (`src/systems/core/engineEvents.js`, `src/systems/board/boardEvents.js`). |
@@ -72,6 +72,7 @@ top folders by import count from `npm run depcruise` (JSON output, 604 modules, 
 | `src/systems/world/` | 13 / 2,172 | The run's hex world map, generated once at a new game (`generate.js`), settling cells (`Settling.js`, `Arrival.js`). | `World.js` | config, atlas, board |
 | `src/systems/progression/` | 8 / 1,955 | Guild Hall upgrades (`GuildUpgradeManager.js`), discoveries and the collection log, and **`ledger/`** (`engine.js`, `plan.js`): the Encyclopedia's reach engine, which the CMS's economy simulator (`cms/src/engine/ledger/`) also uses (§2.1). | `GuildUpgradeManager.js`, `ledger/engine.js` | config, effects, core, world |
 | `src/systems/quests/` | 5 / 1,116 | Tutorial chain and bounty quests, which are Tokens on the mat (`QuestTokens.js`). | `QuestManager.js` | config, board |
+| `src/systems/events/` | 1 / ~300 | Events (brief 640): the guild clock that lands a rich node or a buff Token on the mat about once an hour of play, drawn from `data/events.json` (`config/eventTable.js`, `registries/eventRegistry.js`). An event Token's way out lives in `board/EventTokens.js` and two `TimedChanges` rows. Off until `main.jsx` turns it on (`EventClock.setEnabled`): the tests and the bench play without events. | `EventClock.js` | config, board, state |
 | `src/systems/notifications/` | 6 / 1,015 | Banners and item stubs as small module stores; `routing.js` decides where each engine event goes. | `routing.js` (wired by `core/NotificationSubscriptions.js`) | config, core, state |
 | `src/ui/ReactRoot.jsx` + root files | 3 / 528 | Root component; `drawingPause.js`. | `ReactRoot.jsx` | ui/components (32), hooks |
 | `src/ui/components/board/` | 133 / 23,102 | The mat as drawn: `MatBoard.jsx`, `MatToken.jsx`, `MatHero.jsx`, `TerrainCanvas.jsx`, `AmbientLife.jsx`, the frame clocks, flags, bubbles, fx; the ground-picture painters and their dev tuner (`terrain/`, §5.3); also the Guild Hall sky (`GuildHallBoard.jsx`, `HallSky.jsx`). | `Board.jsx`, `MatBoard.jsx` | systems/board, config |
@@ -138,12 +139,15 @@ Order is pinned by `src/tests/TickHandlerOrder.test.js`.
 | 30 | `regen_system` | Hero regeneration (`src/systems/hero/RegenSystem.js:23`). |
 | 40 | `board_runner` | `BoardRunner.tick` (`src/systems/board/BoardRunner.js:469`), below. |
 | 50 | `quest_manager` | Bounty clock and quest Tokens (`src/systems/quests/QuestManager.js:263-265`). Must run after the board (comment at `EngineBootstrap.js:187-198`). |
+| 55 | `event_clock` | `EventClock.tick`: the event clock (held at zero while an event Token stands on the mat), and a landing when due. Does nothing while events are off (`EventClock.setEnabled`; off in the tests and the bench). |
 | 60 | `sprite_layer` | Loot sprites on the floor (`src/systems/board/SpriteLayer.js:518`). |
 | 70 | `wounded_system` | Wounded heroes' recovery clock (`src/systems/combat/WoundedSystem.js:42`). |
 
 Inside `BoardRunner.tick` (`src/systems/board/BoardRunner.js:469-…`): untethered enemies join
 camps (`:478`) → `TimedChanges.tick` (growth, turning, **spawners** — a spawner's turn is a timed
-change, `src/systems/board/TimedChanges.js:298`) (`:484`) → `Flags.assign` (heroes keep, change
+change, `src/systems/board/TimedChanges.js:298`; an event Token's way out, a buff's time up or a
+rich node nobody can work leaving, is two more rows, `event_time_up` and `event_unworked`, the only
+rows that take a Token off the mat) (`:484`) → `Flags.assign` (heroes keep, change
 or find work) (`:494`) → `HeroMotion.tick` (`:499`) → `EnemyMotion.tick` (`:503`) → then one pass
 over every Token on the mat (`:511`): effect-block upkeep (`:522`), trigger cooldowns (`:529`),
 enemies run `BoardCombat.tickToken` (`:550`), demolition, otherwise the work cycle (start,
@@ -227,7 +231,8 @@ these numbers: **unverified**, re-run in a bench window.
 `INITIAL_STATE` (`src/state/StateSchema.js:138-320`) has these top-level sections: `meta`,
 `heroes` (hero shape owned by `HeroGenerator`/`HeroRehydration`), `inventory` (the Bank), `progress` (roster limit, Hall upgrade
 ranks), `time` (`gameTimeMs`), `collection` (discoveries and counters), `ui` (New! badges, pinned
-stubs), `board` (the active Region's mat, `createEmptyBoard`, `:52-88`), `quests`, `atlas`
+stubs), `board` (the active Region's mat, `createEmptyBoard`, `:52-88`), `quests`, `events` (the
+event clock, `{ clockMs }`; the events themselves are Tokens carrying `instance.event`), `atlas`
 (every Region; inactive ones hold a frozen board, `createRegionRecord`, `:94-132`), `world` (the
 hex world, null before a world exists, `:315`). A board stores Tokens **by instance id at a mat
 point** (`board.tokens`, `:56`), heroes' orders in `board.flags` (`:63`), floor loot in
@@ -464,9 +469,11 @@ src/config/DatabaseManager.js ──▶ src/config/registries/*.js ──▶ sys
 
 - **`data/`** holds `tokens.json`, `items.json`, `tokenRecipes.json`, `effects.json`,
   `starterCamp.json`, `skillPerks.json`, `hallStars.json`, `world.json`, `maps.json` and
-  `palettes/` (`ls data`). Never hand-edit it (`CLAUDE.md`).
-- **`DatabaseManager`** (`src/config/DatabaseManager.js:4-31`) globs eight of them eagerly at
-  build time; there is no runtime fetch. **`data/maps.json` (`{}`) and `data/palettes/` are read
+  `palettes/` (`ls data`), and `events.json` once the CMS first syncs an events table. Never
+  hand-edit it (`CLAUDE.md`).
+- **`DatabaseManager`** (`src/config/DatabaseManager.js`) globs nine of them eagerly at
+  build time (an absent one is an empty glob: no events, no perks, the built-in camp…); there is
+  no runtime fetch. **`data/maps.json` (`{}`) and `data/palettes/` are read
   by no game code** (`src/tests/MapBurstRetired.test.js:39` guards maps).
 - **Registries** turn the JSON into lookups and run content migrations once at import: e.g.
   `tokenRegistry.js:42-63` expands effect-library references and rewrites renamed skill and

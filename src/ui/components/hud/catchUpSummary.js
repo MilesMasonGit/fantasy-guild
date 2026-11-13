@@ -78,6 +78,11 @@ export function itemChanges(items = {}) {
     return out.sort((a, b) => rank(a) - rank(b) || Math.abs(b.net) - Math.abs(a.net) || a.name.localeCompare(b.name));
 }
 
+/** The return report's word for how an event left (`EventTokens.ENDED`), as its string key. */
+const EVENT_STATE_KEY = Object.freeze({
+    here: 'here', worked_out: 'workedOut', time_up: 'timeUp', unworked: 'unworked', demolished: 'demolished'
+});
+
 /**
  * The "While you were away" panel's content, from a catch-up's result (`CatchUp.run`), in two
  * columns. `items` is the left one (`itemChanges`). The right one is the news, in this order:
@@ -125,11 +130,16 @@ export function summaryView(result) {
         kills: rows(summary.fightsWon?.byEnemy, tokenName, 'enemyId'),
         /**
          * Events that landed or left while away, in the order they came: `{ key, typeId, name,
-         * landed, state }`, `state` how it left (`EventTokens.ENDED`) or `'here'` while it stands.
+         * landed, state, stateKey }`, `state` how it left (`EventTokens.ENDED`) or `'here'` while it
+         * stands, `stateKey` its string under `catchUp.news.eventState`.
          */
-        events: (summary.events || []).map(e => ({
-            key: e.instanceId, typeId: e.typeId, name: e.name || tokenName(e.typeId), landed: !!e.landed, state: e.ended || 'here'
-        }))
+        events: (summary.events || []).map(e => {
+            const state = e.ended || 'here';
+            return {
+                key: e.instanceId, typeId: e.typeId, name: e.name || tokenName(e.typeId), landed: !!e.landed,
+                state, stateKey: EVENT_STATE_KEY[state] || 'here'
+            };
+        })
     };
     view.hasNews = ['events', 'knockouts', 'broken', 'bankFull', 'recipes', 'finds', 'levelUps', 'depleted', 'kills'].some(k => view[k].length > 0);
     return view;

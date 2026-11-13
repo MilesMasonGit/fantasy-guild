@@ -77,8 +77,8 @@ input), never an error. `schemaCheck.js` runs them (ajv).
   Game, as before; they now act on the disk workspace.
 - **Sync to Game** overwrites `data/items.json`, `tokens.json`,
   `tokenRecipes.json` and `effects.json` (and `starterCamp.json`,
-  `skillPerks.json`, `hallStars.json`, `world.json` when the workspace holds
-  them) after a Recalculate, writes the plan to `cms/plan/plan.json`, then
+  `skillPerks.json`, `hallStars.json`, `world.json`, `events.json` when the
+  workspace holds them) after a Recalculate, writes the plan to `cms/plan/plan.json`, then
   commits **only the files it wrote** onto whatever branch is checked out (a
   Studio palette edit waiting in `data/palettes/` is never swept in).
   Anything written into those files by hand is lost on the next sync.

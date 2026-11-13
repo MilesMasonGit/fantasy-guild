@@ -256,12 +256,15 @@ function printTable(rows) {
 
 /**
  * The options a scenario's work depends on. The seed changes every scenario's
- * work; `--long` changes S6's. Nothing else does — `--repeats`, `--inject-slow`,
- * `--no-profile` and `--cpu-prof` change only how long things take.
+ * work; `--long` changes S6's; `--events` may change any (named only when on, so
+ * a baseline taken without it still matches a run without it). Nothing else
+ * does — `--repeats`, `--inject-slow`, `--no-profile` and `--cpu-prof` change
+ * only how long things take.
  */
 function identityOptions(scenarioId, args) {
     const scenario = SCENARIOS.find(s => s.id === scenarioId);
-    return scenario?.longChangesWork ? { seed: args.seed, long: args.long } : { seed: args.seed };
+    const options = scenario?.longChangesWork ? { seed: args.seed, long: args.long } : { seed: args.seed };
+    return args.events ? { ...options, events: true } : options;
 }
 
 /** The fields of two fingerprints that differ, as `[{ field, base, now }]`. */

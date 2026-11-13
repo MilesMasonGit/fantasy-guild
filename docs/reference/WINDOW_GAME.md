@@ -23,7 +23,7 @@ see [`TESTING.md`](TESTING.md), "Running the game for verification".)
   can't reach; prefer the dev panel or a QA fixture save for anything the
   owner will look at.
 
-## The entries (30)
+## The entries (31)
 
 | Entry | What it is | Reached for most |
 |---|---|---|
@@ -50,6 +50,7 @@ see [`TESTING.md`](TESTING.md), "Running the game for verification".)
 | `Demolition` | taking Tokens down | `canDemolish`, `mark`, `unmark`, `markedTokens()` |
 | `QuestManager` | quests | `getActiveQuests()`, `claimQuest(...)`, `getTutorialStep()` |
 | `QuestTokens` | quests and bounties as Tokens on the mat | `questTokens()`, `spawnQuest`, `spawnBounty` |
+| `EventClock` | events landing on the mat about once an hour (brief 640) | `clockMs()`, `nextEventInMs()`, `eventTokenOnMat()`, `landNext()`, `landNow(eventId)`, `isEnabled()` |
 | `EnemyMotion` | enemies' camps (tethers) and their step to open space before a crowded fight | `isWalking`, `bodyOf`, `tetherOf` |
 | `Atlas` | Regions and travel | `list()`, `activeRegion()`, `travel(id)`, `devCreateEmptyRegion()`, `devPreview(names)`, `devSettle(names, seed)` |
 | `World` | the run's hex world, generated at a new game, and settling its places | `currentWorld()`, `cellStatesNow()`, `priceOf(cell)`, `settleCell(id)`, `writePlace(cell)`, `arriveAt(region, mat)`, `activeCellId()`, `previewWorld(seed)`, `describeWorld(world)`, `findingsOf(world)` |

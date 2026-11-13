@@ -554,8 +554,8 @@
             "events": "Events",
             "eventState": {
                 "here": "Still here",
-                "worked_out": "Worked out",
-                "time_up": "Time ran out",
+                "workedOut": "Worked out",
+                "timeUp": "Time ran out",
                 "unworked": "Left unworked",
                 "demolished": "Demolished"
             },

@@ -517,8 +517,50 @@ A marked Token wears the Construction badge, its inspection reads "Marked for
 demolition" with the time left once a hero is on it, and "Demolished …" pops
 up where it stood. A **bounty** quest has **Dismiss bounty** on its
 inspection instead: it leaves with no reward and frees its place; tutorial
-steps stay until claimed. The discard bin (and its refunds) is gone.
+steps stay until claimed. The discard bin (and its refunds) is gone. An
+**event Token** (below) needs no hero: Demolish takes it away at once.
 *(`Demolition.js`, `QuestTokens.dismissBounty`, `TokenInspection.jsx`)*
+
+### Events — Built (brief 640 E1); no events authored yet
+About **once an hour of play** a special Token lands on the active Region's mat
+(the rules: [`concept_events.md`](../active/concept_events.md)). Two kinds:
+a **rich node** (a big pool of charges and a high yield, a Copper Ore Comet) and a
+**buff Token** (one effect on the Tokens in its reach for a set time, Rainfall).
+Events are treats: nothing bad happens and nothing is lost by being away.
+
+- **The table** is authored on the CMS's **Events** page (`data/events.json`):
+  each event names its Token type, its kind, a **weight** in the draw, where it
+  may land (**ground** words, the Token editor's "Stands on" words, and Region
+  **biomes**; none of either is anywhere) and, for a buff, its **minutes** on the
+  mat. The event's Token is an ordinary Token made on the Token editor. No table
+  (before the first Sync of one): no events.
+- **The clock** counts game time while no event stands on the mat and is held at
+  zero while one does, so the next event comes **an hour after the last one
+  ended**; **one at a time**. When due, one event is drawn by weight among those
+  that fit the place (the Region's biomes, ground both it and its Token may
+  stand on) and lands on a free spot, pushing nothing; none fits or none finds
+  room, and it tries again **5 minutes** later. Not tied to tier: a Mythril
+  Comet may land in the first hour. An event left in another Region stays there,
+  frozen with that mat, and does not hold this mat's clock.
+- **A rich node** stays put and is worked like any node (every boost, Lucky,
+  Giant Harvest, its rare table); it leaves at **0 charges**. One that **no hero
+  can work** leaves after **an hour**: "can work" is the work gate a hero's order
+  uses, the skill at the level the Token asks with the tool it needs in hand,
+  asked of every hero on the roster; while any hero can, that hour stands at zero.
+- **A buff Token** can be dragged anywhere and gives its rule in the standard
+  reach, adding to the boosts of buildings and stars of the same kind inside the
+  same limits (no speed stack cuts more than 80 %). It leaves when its time is
+  up, its boost with it; time up while it is being dragged, it leaves once put down.
+- Event Tokens never count toward the mat's Token cap. Offline, events land and
+  are worked and buffs tick down as in play; the return report's **Events**
+  section names each one that landed or left while away and how it left
+  (worked out, time ran out, left unworked, demolished, still here).
+- The QA panel's **Events** section lands an event now (any, by weight, or a
+  named one; it ignores the clock and the biomes, never the ground).
+- Not yet: the arrival on the mat, the banner and the time left on the hover
+  plate (brief 640 E2); the first events (C1).
+*(`events/EventClock.js`, `board/EventTokens.js`, `config/eventTable.js`,
+`TimedChanges.js` rows `event_time_up` and `event_unworked`)*
 
 ### Maps — Retired (brief 330 W2); the world map settles places instead
 The map and modifier item types are gone, with the CMS's Map editor, the

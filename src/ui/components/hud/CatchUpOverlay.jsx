@@ -285,7 +285,7 @@ function Summary({ result, asking, onClose, onAsk, onCancel, onUndo }) {
                                         kind="token"
                                         id={ev.typeId}
                                         name={ev.name}
-                                        countText={t(`catchUp.news.eventState.${ev.state}`)}
+                                        countText={t(`catchUp.news.eventState.${ev.stateKey}`)}
                                         size="sm"
                                         className={e.className}
                                         style={e.style}

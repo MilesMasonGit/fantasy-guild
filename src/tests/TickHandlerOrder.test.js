@@ -27,7 +27,10 @@ describe('tick handlers have explicit priorities that reproduce today\'s order (
     const NAMES = [
         'time_tracking', 'live_effects', 'regen_system', 'board_runner',
         // The old status engine's `status_effects` handler is gone: statuses tick on `live_effects`.
-        'quest_manager', 'sprite_layer', 'wounded_system'
+        'quest_manager',
+        // Events (brief 640): after the board, like the bounty clock; off in the tests and the bench.
+        'event_clock',
+        'sprite_layer', 'wounded_system'
     ];
 
     beforeAll(() => {
