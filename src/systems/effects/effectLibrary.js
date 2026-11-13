@@ -1,5 +1,6 @@
-import { statementsOf, getKeyword } from './statements.js';
+import { statementsOf, getKeyword, KEYWORD } from './statements.js';
 import { getPaletteEntry, clampModifierValue } from '../../config/registries/modifierPalette.js';
+import { EFFECT_TYPES } from './constants.js';
 
 /**
  * A named effect is a title wrapping one or more statements, stored once and referenced by
@@ -115,6 +116,30 @@ export function scaleStatement(statement, scale = 1) {
         : current * factor;
 
     return { ...statement, payload: { ...payload, [field]: scaled } };
+}
+
+/**
+ * Counts of whole things a reader floors (a status's stack limit): a share of one would round away
+ * or round a whole stack on, so Strong Drink leaves them as they are.
+ */
+const WHOLE_COUNTS = new Set([EFFECT_TYPES.STATUS_MAX_STACKS]);
+
+/**
+ * One statement made stronger by `factor` (Strong Drink on a drink's effect): a `Provides` rule's
+ * number, in whatever bucket, times the factor, a chance held inside 0-100. A grant, a conversion, a
+ * heal or damage comes back as it is, and so does a switch (immunity) or a count of whole stacks.
+ */
+export function strengthenStatement(statement, factor) {
+    const f = Number(factor);
+    if (!statement || !Number.isFinite(f) || f === 1 || statement.keyword !== KEYWORD.PROVIDES) return statement;
+    const payload = statement.payload || {};
+    const entry = getPaletteEntry(payload.type);
+    if (entry?.scales !== 'value' || WHOLE_COUNTS.has(payload.type)) return statement;
+    const value = Number(payload.value);
+    if (!Number.isFinite(value) || value === 0) return statement;
+    // Rounded past float noise, so +10 % at +50 % reads 15 %, never 15.000000000000002 %.
+    const stronger = Math.round(value * f * 1e9) / 1e9;
+    return { ...statement, payload: { ...payload, value: clampModifierValue(entry, stronger) } };
 }
 
 /**

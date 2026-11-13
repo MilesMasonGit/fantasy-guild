@@ -14,7 +14,7 @@ import { damageTypeLabel } from '../../config/registries/damageTypes.js';
 import { articleOf } from './toolNames.js';
 import { stationKindLabel } from '../../config/registries/tokenConstants.js';
 import { getCategoryInfo } from '../../config/registries/equipmentCategories.js';
-import { getCarriedKind } from '../../config/registries/carriedKinds.js';
+import { getCarriedKind, getDoseKind, doseKindsPhrase } from '../../config/registries/carriedKinds.js';
 
 /**
  * The rules text: generated, read-only, and the only text a Token has. The sentence IS the
@@ -216,6 +216,15 @@ function effectSegments(statement, names, onHero = false) {
     const value = Number(payload.value);
 
     if (!value) return segs('no change to ', d(label, 'type'));
+
+    // "last 2 more cycles": a flat Long-lasting Brews adds whole cycles or fights, by the kind it names.
+    if (payload.type === EFFECT_TYPES.LONG_LASTING_BREWS && payload.bucket && payload.bucket !== 'percentage') {
+        if (payload.bucket === 'multiplier') return segs(d('last ', 'type'), d(`×${Math.abs(value)}`, 'value'), d(' as long', 'type'));
+        const n = Math.abs(value);
+        const unit = getDoseKind(payload.category)?.unit;
+        const units = unit ? `${unit}${n === 1 ? '' : 's'}` : (n === 1 ? 'cycle or fight' : 'cycles or fights');
+        return segs(d('last ', 'type'), d(`${n} ${value < 0 ? 'fewer' : 'more'}`, 'value'), d(` ${units}`, 'type'));
+    }
 
     // "a 25% chance a Mining cycle uses none of its materials", "a 25% chance ammo is not used up":
     // Preservation's narrowing changes what it keeps, so the phrase says it. With none it keeps all.
@@ -650,6 +659,13 @@ function bodySegments(statement, names) {
                 // "in all": a rank lists the star's whole gift so far, not what that rank adds.
                 if (payload.type === EFFECT_TYPES.XP_FOR_EVERYONE) {
                     return segs(d('Gives', K), ' every hero ', effectSegments(statement, names), ' in all, recruits too');
+                }
+                // "Makes every hero's drinks last 10% longer": the kind of dose is the narrowing.
+                if (payload.type === EFFECT_TYPES.LONG_LASTING_BREWS) {
+                    return segs(d('Makes', K), ' every hero\'s ', d(doseKindsPhrase(payload.category), categorySlot(statement)), ' ', effectSegments(statement, names));
+                }
+                if (payload.type === EFFECT_TYPES.STRONG_DRINK) {
+                    return segs(d('Makes', K), ' the effects of every hero\'s ', d(doseKindsPhrase(payload.category), categorySlot(statement)), ' ', effectSegments(statement, names));
                 }
                 if (entry.reads) return segs(d('Makes', K), ' every hero ', effectSegments(statement, names));
                 return segs(d('Provides', K), ' ', effectSegments(statement, names), ' to every hero');

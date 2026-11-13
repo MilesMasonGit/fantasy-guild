@@ -3,13 +3,14 @@ import * as HeroManager from './HeroManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getEquippedEntries, isConsumableCategory } from '../../config/registries/equipmentConstants.js';
-import { CONSUME_THRESHOLD, ELIXIR_FIGHTS } from '../../config/loopConstants.js';
+import { CONSUME_THRESHOLD } from '../../config/loopConstants.js';
 import * as HeroEffects from './HeroEffects.js';
 import { logger } from '../../utils/Logger.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
+import { getGlobalAggregator } from '../effects/GuildModifiers.js';
 import { roundHalfUp } from '../../config/FormulaRegistry.js';
-import { doseKindsOf, DOSE, DOSE_LENGTH, isWorkMoment, workSkillMatches } from '../core/consumableRule.js';
+import { doseKindsOf, DOSE, DOSE_LENGTH, isWorkMoment, workSkillMatches, lastingDoseLength, exactDoseLength, doseLengthSpan } from '../core/consumableRule.js';
 import { CARRIED_KIND } from '../../config/registries/carriedKinds.js';
 import * as BoardState from '../board/BoardState.js';
 import * as CycleSavings from '../board/CycleSavings.js';
@@ -121,13 +122,63 @@ export function isFightElixir(itemId) {
 }
 
 /**
- * A fight is starting: count it on every equipped elixir type and drink a fresh one of each type
- * whose last dose has run out. One elixir lasts `ELIXIR_FIGHTS` fights, so the count left is
- * stored on the hero (`hero.elixirFights`, saved with them). An elixir with no dose left and none
- * in the Bank sits out this fight. A Preservation hit at `instanceId` (the enemy Token) starts the
- * fresh dose without taking one from the Bank.
+ * How many of its moments a dose of `dose` (`consumableRule.DOSE`) lasts now, on average: its own
+ * length (`DOSE_LENGTH`: a drink's work cycles, a work potion's one, an elixir's fights) made longer
+ * by the guild's Long-lasting Brews for that kind of dose (a Hall star), unrounded, never below one.
+ * Draws nothing: what the game shows ({@link doseLengthText}).
+ */
+export function doseLength(dose) {
+    const base = DOSE_LENGTH[dose];
+    if (!base) return 0;
+    return exactDoseLength(base, resolvedLength(dose, base));
+}
+
+/**
+ * How many of its moments a fresh dose of `dose` lasts, drawn as a hero starts it: {@link doseLength}
+ * made whole by chance (3.6 is 4 three times in five, 3 two times in five), never below one.
  *
- * Draws no random number unless a Preservation rule reaches a fresh dose (one draw for it).
+ * ⚠️ Draws one `random()` only when the length has a fraction: with no star moving it, nothing.
+ * Only a dose starting calls this; anything shown reads {@link doseLength} or {@link doseLengthText}.
+ */
+export function rollDoseLength(dose, random = Math.random) {
+    const base = DOSE_LENGTH[dose];
+    if (!base) return 0;
+    return lastingDoseLength(base, resolvedLength(dose, base), random);
+}
+
+/**
+ * How long a dose of `dose` lasts, for a player to read: the number when it is whole, else the two
+ * whole numbers a fresh one may last, as "3–4". Draws nothing.
+ */
+export function doseLengthText(dose) {
+    if (!DOSE_LENGTH[dose]) return 0;
+    const [low, high] = doseLengthSpan(doseLength(dose));
+    return low === high ? low : `${low}–${high}`;
+}
+
+function resolvedLength(dose, base) {
+    return getGlobalAggregator().resolveAxis(EFFECT_TYPES.LONG_LASTING_BREWS, base, dose);
+}
+
+/**
+ * How strong a dose of `dose`'s effects are now: 1, moved by the guild's Strong Drink for that kind
+ * of dose (+20 % is 1.2), never below 0. The rules a dose fires carry it to the effects they apply
+ * (`LoadoutMoments`). Draws nothing.
+ */
+export function doseStrength(dose) {
+    if (!DOSE_LENGTH[dose]) return 1;
+    return Math.max(0, getGlobalAggregator().resolveAxis(EFFECT_TYPES.STRONG_DRINK, 1, dose));
+}
+
+/**
+ * A fight is starting: count it on every equipped elixir type and drink a fresh one of each type
+ * whose last dose has run out. One elixir lasts `ELIXIR_FIGHTS` fights, more with Long-lasting
+ * Brews ({@link rollDoseLength}), so the count left is stored on the hero (`hero.elixirFights`, saved
+ * with them). An elixir with no dose left and none in the Bank sits out this fight. A Preservation
+ * hit at `instanceId` (the enemy Token) starts the fresh dose without taking one from the Bank.
+ *
+ * Draws no random number unless a Preservation rule reaches a fresh dose (one draw for it) or
+ * Long-lasting Brews gives a fresh dose a fractional length (one draw for it).
  *
  * @returns {string[]} the elixir item ids working in this fight, in grid order
  */
@@ -147,7 +198,7 @@ export function startFightElixirs(heroId, instanceId = null) {
             if (!InventoryManager.hasItem(entry.itemId, 1)) continue;
             const preserved = kept(instanceId, entry.itemId, CARRIED_KIND.ELIXIR);
             if (!preserved) InventoryManager.removeItem(entry.itemId, 1);
-            left = ELIXIR_FIGHTS;
+            left = rollDoseLength(DOSE.ELIXIR);
             EventBus.publish(ENGINE_EVENTS.HERO_CONSUMED, {
                 heroId, itemId: entry.itemId, category: entry.category, amount: 0, elixir: true, ...(preserved ? { preserved } : {})
             });
@@ -161,28 +212,40 @@ export function startFightElixirs(heroId, instanceId = null) {
 }
 
 /**
- * How many work cycles one of this item lasts when its hero starts work: `DRINK_CYCLES` for a drink,
- * 1 for a work potion, 0 for anything else (`consumableRule.doseKindsOf`).
+ * The dose an item starts as its hero starts work: `DOSE.DRINK`, `DOSE.POTION` (a work potion), or
+ * null for anything else (`consumableRule.doseKindsOf`).
+ */
+export function workDoseKindOf(itemId) {
+    const item = getItem(itemId);
+    if (!item) return null;
+    const kinds = doseKindsOf(item.equipSlot, HeroEffects.itemStatements(itemId));
+    if (kinds.includes(DOSE.DRINK)) return DOSE.DRINK;
+    if (kinds.includes(DOSE.POTION)) return DOSE.POTION;
+    return null;
+}
+
+/**
+ * How many work cycles one of this item lasts when its hero starts work now: a drink's
+ * `DRINK_CYCLES`, a work potion's 1, either made longer by Long-lasting Brews (on average, unrounded:
+ * {@link doseLength}); 0 for anything else. Draws nothing.
  */
 export function workDoseOf(itemId) {
-    const item = getItem(itemId);
-    if (!item) return 0;
-    const kinds = doseKindsOf(item.equipSlot, HeroEffects.itemStatements(itemId));
-    if (kinds.includes(DOSE.DRINK)) return DOSE_LENGTH[DOSE.DRINK];
-    if (kinds.includes(DOSE.POTION)) return DOSE_LENGTH[DOSE.POTION];
-    return 0;
+    const kind = workDoseKindOf(itemId);
+    return kind ? doseLength(kind) : 0;
 }
 
 /**
  * A work cycle of `skill` is starting: count it on every equipped drink and work potion whose work
  * rules fire on it, and drink a fresh one of each whose dose has run out. A drink lasts
- * `DRINK_CYCLES` cycles, its count left saved on the hero (`hero.drinkCycles`); a work potion lasts
- * the one cycle, so one is drunk every time. One with no dose left and none in the Bank sits this
- * cycle out. An item whose work rules all name another skill is kept for its own skill's work. A
+ * `DRINK_CYCLES` cycles and a work potion one, either longer with Long-lasting Brews
+ * ({@link rollDoseLength}); the count left is saved on the hero (`hero.drinkCycles`), for a potion only
+ * once one lasts more than its cycle. One with no dose left and none in the Bank sits this cycle
+ * out. An item whose work rules all name another skill is kept for its own skill's work. A
  * Preservation hit at `instanceId` (the Token whose cycle starts) starts the fresh dose without
  * taking one from the Bank.
  *
- * Draws no random number unless a Preservation rule reaches a fresh dose (one draw for it).
+ * Draws no random number unless a Preservation rule reaches a fresh dose (one draw for it) or
+ * Long-lasting Brews gives a fresh dose a fractional length (one draw for it).
  *
  * @returns {string[]} the item ids working in this cycle, in grid order
  */
@@ -195,25 +258,28 @@ export function startWorkDoses(heroId, skill, instanceId = null) {
     for (const entry of getEquippedEntries(hero)) {
         if (seen.has(entry.itemId)) continue;
         seen.add(entry.itemId);
-        const length = workDoseOf(entry.itemId);
-        if (!length) continue;
+        const kind = workDoseKindOf(entry.itemId);
+        if (!kind) continue;
         const fires = HeroEffects.itemStatements(entry.itemId)
             .some(s => isWorkMoment(s?.when?.event) && workSkillMatches(s.when, skill));
         if (!fires) continue;
 
-        let left = length > 1 ? (Number(hero.drinkCycles?.[entry.itemId]) || 0) : 0;
+        const counted = hero.drinkCycles?.[entry.itemId] != null;
+        let left = Number(hero.drinkCycles?.[entry.itemId]) || 0;
         if (left <= 0) {
             if (!InventoryManager.hasItem(entry.itemId, 1)) continue;
-            const preserved = kept(instanceId, entry.itemId, length > 1 ? CARRIED_KIND.DRINK : CARRIED_KIND.POTION);
+            const preserved = kept(instanceId, entry.itemId, kind === DOSE.DRINK ? CARRIED_KIND.DRINK : CARRIED_KIND.POTION);
             if (!preserved) InventoryManager.removeItem(entry.itemId, 1);
-            left = length;
+            left = rollDoseLength(kind);
             EventBus.publish(ENGINE_EVENTS.HERO_CONSUMED, {
                 heroId, itemId: entry.itemId, category: entry.category, amount: 0,
-                dose: length > 1 ? DOSE.DRINK : DOSE.POTION, ...(preserved ? { preserved } : {})
+                dose: kind, ...(preserved ? { preserved } : {})
             });
             logger.debug('ConsumptionSystem', `${hero.name} drank ${entry.itemId}`);
         }
-        if (length > 1) {
+        // ⚠️ A potion of one cycle keeps no count, as it never has: the save stays as it was
+        // until a potion lasts longer, and from then on its count runs down to 0 like a drink's.
+        if (kind === DOSE.DRINK || left > 1 || counted) {
             if (!hero.drinkCycles) hero.drinkCycles = {};
             hero.drinkCycles[entry.itemId] = left - 1;
         }
@@ -224,5 +290,5 @@ export function startWorkDoses(heroId, skill, instanceId = null) {
 
 /** Whether an item is drunk at a work cycle's start (a drink or a work potion). */
 export function isWorkDose(itemId) {
-    return workDoseOf(itemId) > 0;
+    return workDoseKindOf(itemId) !== null;
 }

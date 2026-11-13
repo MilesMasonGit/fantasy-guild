@@ -3,6 +3,7 @@
 import { renderStatement, effectParts } from '../effects/statementText.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { getCategoryInfo } from '../../config/registries/equipmentCategories.js';
+import { doseKindsPhrase } from '../../config/registries/carriedKinds.js';
 import { wishingWellWater, WISHING_WELL_ITEM, BANK_TAB_SLOTS } from '../../config/guildUpgrades.js';
 import { toolNamer } from '../effects/toolNames.js';
 import { REACH } from '../../config/registries/reachRegistry.js';
@@ -186,6 +187,21 @@ function ruleEffect(statement, names) {
             phrase: 'get XP in every skill',
             amount: `${xp} XP in every skill`,
             sentence: 'Every hero gets XP in every skill, once a rank; recruits arrive with it.'
+        };
+    }
+    if (payload.type === EFFECT_TYPES.LONG_LASTING_BREWS || payload.type === EFFECT_TYPES.STRONG_DRINK) {
+        const parts = effectParts(asGuildRule(statement), names);
+        if (!parts) return null;
+        const kinds = doseKindsPhrase(payload.category);
+        const down = Number(payload.value) < 0;
+        const longer = payload.type === EFFECT_TYPES.LONG_LASTING_BREWS;
+        // The kinds ride in the phrase, so a drinks rule and an elixirs rule of one size are two lines.
+        return {
+            phrase: longer ? `make ${kinds} last ${down ? 'less long' : 'longer'}` : `make ${kinds} ${down ? 'weaker' : 'stronger'}`,
+            amount: `${parts.size} ${parts.after}`.trim(),
+            sentence: longer
+                ? `Every hero's ${kinds} last ${down ? 'less long' : 'longer'}.`
+                : `The effects of every hero's ${kinds} are ${down ? 'weaker' : 'stronger'}.`
         };
     }
     if (payload.type === EFFECT_TYPES.LOADOUT_SLOTS) {

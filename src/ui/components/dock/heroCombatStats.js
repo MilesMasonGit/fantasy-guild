@@ -1,7 +1,11 @@
 import * as CombatFormulas from '../../../systems/combat/CombatFormulas.js';
-import { loadoutRefs } from '../../../systems/hero/HeroEffects.js';
-import { effectTitle, statementsFromEntry } from '../../../systems/effects/effectLibrary.js';
+import { loadoutRefs, itemStatements } from '../../../systems/hero/HeroEffects.js';
+import { effectTitle, statementsFromEntry, strengthenStatement } from '../../../systems/effects/effectLibrary.js';
 import { renderStatement } from '../../../systems/effects/statementText.js';
+import { KEYWORD } from '../../../systems/effects/statements.js';
+import { doseLengthText, doseStrength, FIGHT_START } from '../../../systems/hero/ConsumptionSystem.js';
+import { doseKindsOf, isWorkMoment, DOSE, DOSE_LENGTH } from '../../../systems/core/consumableRule.js';
+import { t } from '../../../i18n/index.js';
 import { EFFECTS } from '../../../config/registries/effectRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { COMBAT_SKILL_IDS } from '../../../config/registries/skillRegistry.js';
@@ -62,7 +66,8 @@ export function heroCombatStats(hero) {
 /**
  * What a hero's loadout lends, one entry per effect as the game merges them (two items naming one
  * effect add their scales): its title, its rules in the grammar's words, and the items it comes
- * from. Milestone perks are not here: the Skills view lists them.
+ * from. Milestone perks are not here: the Skills view lists them. A drink, potion or fight elixir
+ * the guild's Long-lasting Brews or Strong Drink moves says so under its rules ({@link doseLines}).
  * @returns {Array<{ id: string, title: string, lines: string[], items: string[] }>}
  */
 export function gearEffects(hero) {
@@ -71,12 +76,63 @@ export function gearEffects(hero) {
     for (const [effectId, ref] of loadoutRefs(hero)) {
         const entry = EFFECTS[effectId];
         if (!entry) continue;
+        const statements = statementsFromEntry(entry, { effectId, scale: ref.scale });
         out.push({
             id: effectId,
             title: effectTitle(entry.name || effectId, ref.scale),
-            lines: statementsFromEntry(entry, { effectId, scale: ref.scale }).map(s => renderStatement(s, names)),
+            lines: [...statements.map(s => renderStatement(s, names)), ...doseLines(ref.itemIds, statements, names)],
             items: ref.itemIds.map(id => getItem(id)?.name || id)
         });
     }
     return out;
+}
+
+/** The kinds of dose (`consumableRule.DOSE`) the items lending an effect are drunk as. */
+function doseKindsOfItems(itemIds) {
+    const kinds = new Set();
+    for (const id of itemIds) {
+        for (const kind of doseKindsOf(getItem(id)?.equipSlot, itemStatements(id))) kinds.add(kind);
+    }
+    return kinds;
+}
+
+/** The kind of dose a rule fires from: a fight-start rule an elixir's, a work rule a drink's or potion's. */
+function doseOfRule(statement, kinds) {
+    const event = statement?.when?.event;
+    if (event === FIGHT_START) return kinds.has(DOSE.ELIXIR) ? DOSE.ELIXIR : null;
+    if (!isWorkMoment(event)) return null;
+    if (kinds.has(DOSE.DRINK)) return DOSE.DRINK;
+    return kinds.has(DOSE.POTION) ? DOSE.POTION : null;
+}
+
+/**
+ * Lines a dose's effect adds while the guild's stars move it: how long one lasts now (Long-lasting
+ * Brews), and each number an effect it applies provides, at its strength (Strong Drink). None while
+ * nothing moves them, so the tooltip reads as it always has.
+ */
+function doseLines(itemIds, statements, names) {
+    const kinds = doseKindsOfItems(itemIds);
+    if (!kinds.size) return [];
+    const lines = [];
+    for (const kind of [DOSE.DRINK, DOSE.POTION, DOSE.ELIXIR]) {
+        if (!kinds.has(kind)) continue;
+        const count = doseLengthText(kind);
+        if (count === DOSE_LENGTH[kind]) continue;
+        lines.push(t(kind === DOSE.ELIXIR ? 'heroPanel.combat.doseFights' : 'heroPanel.combat.doseCycles', { count }));
+    }
+    for (const statement of statements) {
+        const applied = statement.keyword === KEYWORD.APPLIES ? EFFECTS[statement.payload?.effectId] : null;
+        const dose = applied ? doseOfRule(statement, kinds) : null;
+        const strength = dose ? doseStrength(dose) : 1;
+        if (strength === 1) continue;
+        const n = Math.round(Math.abs(strength - 1) * 1000) / 10;
+        for (const rule of statementsFromEntry(applied, { effectId: statement.payload.effectId, scale: statement.payload.scale })) {
+            const stronger = strengthenStatement(rule, strength);
+            if (stronger === rule) continue;
+            lines.push(t(strength > 1 ? 'heroPanel.combat.doseStronger' : 'heroPanel.combat.doseWeaker', {
+                effect: applied.name || statement.payload.effectId, n, rule: renderStatement(stronger, names)
+            }));
+        }
+    }
+    return [...new Set(lines)];
 }

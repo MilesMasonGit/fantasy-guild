@@ -170,7 +170,7 @@
         "wood": "Cut from trees; used for building and crafting.",
         "fuel": "Burned to keep a furnace or a fire going.",
         "food": "Heroes eat this to restore HP when their health runs low.",
-        "drink": "Carried in the drink slot; drunk as work starts, one lasts 10 work cycles. Drinks never heal.",
+        "drink": "Carried in the drink slot; drunk as work starts, one lasts {cycles} work cycles. Drinks never heal.",
         "seafood": "Comes from the water.",
         "fish": "Caught by Fishing.",
         "raw": "Uncooked: Cooking makes it into a meal.",
@@ -185,7 +185,7 @@
         "juice": "Pressed from fruit; a drink.",
         "alcohol": "A brewed drink.",
         "potion": "Brewed by Alchemy; carried as a consumable and drunk when its moment comes.",
-        "elixir": "Drunk as a fight starts; one lasts 10 fights, and different elixirs stack.",
+        "elixir": "Drunk as a fight starts; one lasts {fights} fights, and different elixirs stack.",
         "herb": "A plant used in Alchemy.",
         "ingredient": "Used in cooking or brewing.",
         "bee": "Comes from bees.",
@@ -652,6 +652,16 @@
             "cut": "{style}: −{n}%",
             "effects": "Gear effects",
             "effectsTip": "What the hero's loadout lends them",
+            "doseCycles": {
+                "one": "One lasts {count} work cycle, with Long-lasting Brews.",
+                "other": "One lasts {count} work cycles, with Long-lasting Brews."
+            },
+            "doseFights": {
+                "one": "One lasts {count} fight, with Long-lasting Brews.",
+                "other": "One lasts {count} fights, with Long-lasting Brews."
+            },
+            "doseStronger": "{effect}, {n}% stronger with Strong Drink: {rule}",
+            "doseWeaker": "{effect}, {n}% weaker with Strong Drink: {rule}",
             "none": "None"
         }
     },

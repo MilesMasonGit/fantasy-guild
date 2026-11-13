@@ -121,6 +121,13 @@ export function buildCorpus() {
             addS(`axis:${entry.type}:style:${style}`, S(KEYWORD.PROVIDES, { payload: { type: entry.type, bucket: 'percentage', value: 0.1, category: style } }));
         }
     }
+    // A dose kind narrowing (Long-lasting Brews, Strong Drink), one case a kind, as a percentage and a flat.
+    for (const entry of MODIFIER_PALETTE.filter(e => e.categories === 'doseKind')) {
+        for (const kind of ['drink', 'potion', 'elixir']) {
+            addS(`axis:${entry.type}:dose:${kind}`, S(KEYWORD.PROVIDES, { payload: { type: entry.type, bucket: 'percentage', value: 0.1, category: kind } }));
+            addS(`axis:${entry.type}:dose:${kind}:flat-one`, S(KEYWORD.PROVIDES, { payload: { type: entry.type, bucket: 'flat', value: 1, category: kind } }));
+        }
+    }
     addS('axis:unknown-type', S(KEYWORD.PROVIDES, { payload: { type: 'NOT_AN_AXIS', value: 3 } }));
     addS('axis:no-payload', S(KEYWORD.PROVIDES, { payload: undefined }));
     // A status is a library effect with a status block, named by its effect id.
