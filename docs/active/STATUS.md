@@ -14,13 +14,15 @@ build green) · bench-queued · eye-check · merged.*
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | QA panel in test builds (`QA_TOOLS`, `tauri:build:ship`) | builder | `fix/qa-in-builds` (`t1`) cc7588f0 | **merged** 109ab4e4, pushed | Thu | Thu |
-| QA panel slim: give items, heroes, place a Token or enemy, two owner tools | builder | `feat/qa-panel-slim` (`t2`) d570beff | **eye-check waiting** (page tab qa-slim, `_builds/2026-11-12-qa-panel`); work same | Thu | |
+| QA panel slim: give items, heroes, place a Token or enemy, two owner tools | builder | `feat/qa-panel-slim` (`t2`) b3627700 | **accepted** (page tab qa-slim, archived); rebased, trial merge with War Camp in `s3` 68a3a220: 654 files green, cycles, depcruise, build; **work check queued 02:05 Fri**, then ff main | Thu | |
 | T-336: the ledger judges rare finds by finds a day; rare-find boost targets (x3 at plan tier 6) | builder | `fix/rare-find-labels` (`b2`) 750d21b5 | **merged** e75f1fbf, pushed (664 files green, work same) | Thu | Thu |
-| 620 E1: Giant Harvest | engineer | `feat/giant-harvest` (`fx`) bed8bd4b | **eye-check waiting** (page tab giant, `_builds/2026-11-12-giant-harvest` = slim panel + E1 + a scene button, scratch 6abfecbe in `s3`); 8389 green (agent), work same; owner question on building bonus drops in the tab. After the look: wire the button on the branch over the slim panel, merge, then delete the scene | Thu | |
+| 620 E1: Giant Harvest | engineer | `feat/giant-harvest` (`fx`) bed8bd4b | **accepted with two changes** (archived): no Giant Harvest chip on a Token card; building bonus drops multiplied by both Double Loot and Giant Harvest (owner: C). Fix waits for a free helper slot; then rebase, delete the scene, gate, merge (no second look) | Thu | |
 | 620 E2: XP for Everyone | engineer | `feat/xp-for-everyone` (`rt`) 7391ec09 | **merged** 0f2f3499, pushed (665 files green, work same; no eye-check until a star uses it). Owner 2026-11-12: existing level-up animations are enough, so the new +N float and alert go (option C, follow-up queued when a builder is free) | Thu | Thu |
 | XP for Everyone shows the normal level-up animations (owner: existing are enough) | builder | `fix/xp-gift-levelups` (`t1`) b0887eda | **merged** b0887eda (ff), pushed: 667 files green, work same; one level-up sound per purchase | Thu | Thu |
 | 620 E4: combat stars per style | builder | `feat/combat-stars` (`rt`) 8140d948 | **merged** 9205189c, pushed: 667 files green, work same. No eye-check until a star uses it; content agent authors the four constellations (C1) | Thu | Thu |
-| 630 B2: the War Camp rule | engineer | `feat/war-camp` (`b2`) c9801991 | 89cad4c5 **eye-check waiting** (page tab war-camp, `_builds/2026-11-12-war-camp` = slim panel + Giant Harvest + War Camp + two scene buttons, scratch 1e757d47 in `s3`); 8427 green (agent), work same; idle blip after a kill fixed for every camp; marker: a camp whose skill is a combat style | Thu | |
+| 630 B2: the War Camp rule | engineer | `feat/war-camp` (`b2`) 35748d6a | **accepted** (bosses in reach fought: A); rebased, QA scene and its test deleted; in the `s3` trial merge above, **work check queued 02:05 Fri**, then ff main | Thu | |
+| 630 B1: one building per skill (T-307) | engineer | `feat/one-building` (`t1`) | **building**; expect WORK CHANGED (the bench camp builds today's stations) | Thu | |
+| 620 E3: Long-lasting Brews and Strong Drink | engineer | `feat/drink-stars` (`rt`) | **building**; before T-338 | Thu | |
 
 ## Director, briefs 590 and 600 (owner, 2026-11-11: both at once; effect renames T-403 after 590; retirements T-400 to T-402 checked now, owner deletes in the CMS)
 
@@ -362,6 +364,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
 
+**Fri 13 Nov, 02:05 (director timer, `s3` 68a3a220):** `npm run bench -- --compare` on the slim panel + War Camp trial merge; same work, then ff `main` and push.
+
 **Thu 12 Nov, 02:05–04:15 (director): done.** B2 work check same (and a main control); 590 trial merge suite 654 green, work check same (merged); 610 trial merge suite 649 green, work check same, drag bench misses (above), draw matches a main control. **Queued:** the B2 rebase's work check when ready; 610 drag bench again after the engineer's fix; **retake the engine and draw baselines on main** in the next quiet window (the October draw baseline reads every scene REGRESSED on main too).
 
 **Fri 6 Nov, 13:01 (director): done** on main 32c65b47 (everything merged today). Engine: S1, S4, S7 same work; S2, S3, S5, S6, S8, S8L, S8F, C240, C256 WORK CHANGED as predicted (bench fights, brief 500), accepted; identity same, fidelity ok. Draw: no drawing regression (the timer exited 3, read the log: `draw-2026-11-06T20-04-30`). **Next quiet window (01:00): retake both baselines on main, then `npm run bench:calibrate` (hallStars.js changed).**
@@ -383,6 +387,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 **Sat 31 Oct, 01:00–02:15 (director):** engine tickets WORK CHANGED exactly as predicted (S1/S4/S7 same; identity and fidelity hold), acceptance run queued, then merge after `main` is green. Hall H1 same work, calibration ok. World W1 same, W2 same. **Draw regression is real**: alternating runs, `a4a124be` S2 4× workP50 6.2–7.3 ms, `main` 11.5–12.4 ms (bank 6.3–6.7 vs 11.8–13.7): an engineer bisects in `p23b` until 06:45 (`diag/draw-regression`).
 
 ## Summaries
+
+*Thu 12 Nov, 18:30. Batch 3 started (owner: go; looks done). Looks: slim QA panel and War Camp accepted; Giant Harvest accepted with two changes (no chip on Token cards; building bonus drops multiplied by both Double Loot and Giant). Next: slim + War Camp to main after the 02:05 work check; Giant fix when a helper slot frees; 630 B1 and 620 E3 building. Owner: discard the stray empty Starter Camp in the CMS inbox. Blockers: none.*
 
 *Fri 6 Nov 22:10. Session closed at the owner's word. Everything is merged and pushed (main 2846de23, 627 files green); worktrees cleaned (only p23b and the four planning ones remain). Owner: hard refresh to see the map under the UI, the look list, the Swift Laps pack, two Foundation descriptions. Next: the owner's code review and optimisation pass with a fresh agent; retake the bench baselines in the first quiet window (the 01:00 timer died with this session). See HANDOFF.md.*
 
