@@ -8,7 +8,6 @@ import { enemyProfileOf } from '../../config/registries/enemyProfile.js';
 import { respawnOf, cropTermsOf } from '../../config/registries/tokenConstants.js';
 import { authoredStars } from '../../config/guildUpgrades.js';
 import { rareTableChance } from '../../config/registries/rareTables.js';
-import { isGatheringSkill } from '../../config/registries/skillRegistry.js';
 import { GameState } from '../../state/GameState.js';
 import { t } from '../../i18n/index.js';
 import { toRoman } from '../../utils/Formatters.js';
@@ -103,7 +102,6 @@ export const EFFECT_KEY = Object.freeze({
     PRESERVATION: 'preservation',
     REFRESH: 'refresh',
     LUCKY: 'lucky',
-    GIANT_HARVEST: 'giantHarvest',
     EFFICIENCY: 'efficiency',
     ABUNDANCE: 'abundance'
 });
@@ -167,9 +165,6 @@ const ROWS = [
     chanceRow(EFFECT_KEY.REFRESH, 'REFRESH', (ctx) => ctx.works
         && (ctx.instance.usesRemaining != null || Fields.isField(ctx.def))),
     { key: EFFECT_KEY.LUCKY, typeKey: 'LUCKY', unit: UNIT.PERCENT, sign: 1, measure: measureLucky },
-    // As `completeCycle` rolls it: gathering work, not the Hall's, with something to drop.
-    chanceRow(EFFECT_KEY.GIANT_HARVEST, 'GIANT_HARVEST', (ctx) => ctx.works && !ctx.isHall && isGatheringSkill(ctx.skill)
-        && (outputItemIds(ctx).length > 0 || rareTableChance(ctx.def) > 0)),
     { key: EFFECT_KEY.ABUNDANCE, typeKey: 'CROP_LOAD', unit: UNIT.COUNT, sign: 1, measure: measureAbundance }
 ];
 

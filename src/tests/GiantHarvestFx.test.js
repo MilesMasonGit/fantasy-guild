@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
-import { render, cleanup, fireEvent } from '@testing-library/react';
+import { render, cleanup } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
@@ -32,8 +32,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * Giant Harvest on screen (brief 620 E1): the small celebration on the mat over the Token (a gold
- * burst and a "Giant!" float, from the mat's effects layer), and its chip in the Token card's badge
- * row like the other effects.
+ * burst and a "Giant!" float, from the mat's effects layer). The Token card shows no chip for it
+ * (owner, 2026-11-12): the celebration says it.
  */
 
 const ORE = 'ghfx_ore';
@@ -129,7 +129,7 @@ describe('the celebration on the mat', () => {
     });
 });
 
-describe('the chip on the Token card', () => {
+describe('no chip on the Token card', () => {
     beforeAll(() => Flags.init());
     afterAll(() => Flags.teardown());
     beforeEach(() => {
@@ -147,19 +147,15 @@ describe('the chip on the Token card', () => {
         clearMat();
     });
 
-    it('a guild-wide Giant Harvest shows its chip with its chance, and its hover names the source', () => {
+    it('a guild-wide Giant Harvest shows no chip, beside a Double Loot chip that does show', () => {
         getGlobalAggregator().addModifier({ source: 'guild:ghfx', type: EFFECT_TYPES.GIANT_HARVEST, bucket: 'flat', value: 3 });
+        getGlobalAggregator().addModifier({ source: 'guild:ghfx_loot', type: EFFECT_TYPES.LOOT_MULT, bucket: 'flat', value: 4 });
         const vein = placeAt('ghfx_vein', 800, 500);
         TileModifiers.rebuildAround([vein]);
         const h = React.createElement;
         const { container } = render(h(DndContext, null, h(TokenCard, { typeId: 'ghfx_vein', instanceId: vein.id })));
-        const chip = container.querySelector('[data-effect-badges] > [data-effect-badge="giantHarvest"]');
-        expect(chip).not.toBeNull();
-        expect(chip.textContent).toBe('3%');
-        expect(chip.querySelector('svg[data-glyph="burst"]')).not.toBeNull();
-        fireEvent.pointerEnter(chip, { clientX: 10, clientY: 10, pointerType: 'mouse', buttons: 0 });
-        const tip = document.querySelector('[data-badge-tip="giantHarvest"]');
-        expect(tip.textContent).toContain('The guild');
-        expect(document.querySelector('[data-tooltip]').textContent).toContain('Giant Harvest');
+        expect(container.querySelector('[data-effect-badges] > [data-effect-badge="doubleLoot"]')).not.toBeNull();
+        expect(container.querySelector('[data-effect-badge="giantHarvest"]')).toBeNull();
+        expect(container.textContent).not.toContain('Giant Harvest');
     });
 });

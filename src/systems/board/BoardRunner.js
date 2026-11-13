@@ -363,11 +363,15 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         const find = RareTables.rollRareTable(id, def, config.skill);
         if (find) landLine(find.entry, (sprite) => RareDrops.noteRareFind(sprite, find.chance));
     }
+    // BONUS_DROP, skipped entirely on a failed cycle: nothing happened, so nothing drops. Double Loot
+    // and Giant Harvest multiply it as they do the Token's own drops.
+    if (!failed && !isGuildHall) {
+        const bonus = OutputRules.dropBonusGrants(id, times);
+        if (bonus.length) giantLanded = giant;
+        produced.push(...bonus);
+    }
     // Celebrated only once something did come in at ten times (a line whose chance missed did not).
     if (giantLanded) EffectFeedback.giantHarvest(id);
-
-    // BONUS_DROP, skipped entirely on a failed cycle: nothing happened, so nothing drops.
-    if (!failed && !isGuildHall) produced.push(...OutputRules.dropBonusGrants(id));
 
     // `Applies`: a neighbour putting a status on the hero who just worked here. The same moment and
     // the same rules as BONUS_DROP directly above: skipped on a failed cycle, and it needs a

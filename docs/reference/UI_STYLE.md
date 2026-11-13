@@ -91,7 +91,7 @@ the CMS, the Encyclopedia, Limes's lines and the docs. A source's own name
 | **Preservation** | A chance a cycle uses none of its materials (ammo, Food, drinks, bait, recipe inputs) | none yet | the Token |
 | **Refresh** | A chance a cycle spends none of the Token's charges | none yet | the Token |
 | **Lucky** | A higher chance on the Token's own rare drop table (a Vein's Gem) | none yet | the Token |
-| **Giant Harvest** | A chance a gathering cycle's drops come in at ten times (brief 620) | Giant Harvest | the Token |
+| **Giant Harvest** | A chance a gathering cycle's drops come in at ten times (brief 620) | Giant Harvest | none: a mat celebration says it (owner, 2026-11-12) |
 | **Efficiency** | A recipe needs fewer of an input | Input Cost | the recipe's input |
 | **Abundance** | A Token kind holds more charges before it rests | Crop Load | the Token |
 

@@ -47,7 +47,7 @@ const LootSystem = {
 
         // A kill is a cycle of the enemy Token, so on the board its loot follows the station output
         // rules in the same order: double loot rolled once, each line's quantity widened by YIELD,
-        // then its rare table, then the nearby bonus drops.
+        // then its rare table, then the nearby bonus drops (Double Loot doubles those too).
         const skill = onBoard ? (typeDef?.config?.skill || '') : '';
         const doubled = onBoard && OutputRules.rollDoubleLoot(instanceId, skill);
 
@@ -77,7 +77,7 @@ const LootSystem = {
                 RareDrops.noteDrop(SpriteLayer.addSprite('item', drop.itemId, drop.quantity, instanceId), line?.chance ?? 100);
             }
             if (rareDrop) RareDrops.noteRareFind(SpriteLayer.addSprite('item', rareDrop.itemId, rareDrop.quantity, instanceId), find.chance);
-            OutputRules.dropBonusGrants(instanceId);
+            OutputRules.dropBonusGrants(instanceId, doubled ? 2 : 1);
         } else {
             // No Token to anchor sprites to: bank directly.
             for (const d of [...generatedDrops, ...(rareDrop ? [rareDrop] : [])]) {

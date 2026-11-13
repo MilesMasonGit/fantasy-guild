@@ -1050,7 +1050,8 @@ function rateOf(book, target = {}, setup = {}) {
     for (const grant of [...tileGrants.map(g => ({ ...g, weight: 1 })), ...heroGrants(hero)]) {
         const chance = clamp01((grant.payload.chance ?? 100) / 100) * grant.weight;
         const quantity = Math.max(1, Number(grant.payload.quantity) || 1);
-        perCycle[grant.payload.itemId] = (perCycle[grant.payload.itemId] || 0) + (1 - pFail) * chance * quantity;
+        // Double Loot and Giant Harvest multiply a bonus drop as they do the Token's own (`OutputRules.dropBonusGrants`).
+        perCycle[grant.payload.itemId] = (perCycle[grant.payload.itemId] || 0) + (1 - pFail) * chance * quantity * lootTimes;
         note(EFFECT_TYPES.BONUS_DROP, [grant.factorId]);
     }
 

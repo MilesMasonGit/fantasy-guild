@@ -80,10 +80,12 @@ export function widenYield(instanceId, skill, rolled) {
 
 /**
  * BONUS_DROP: nearby grants of something the Token does not make itself, rolled per entry after
- * its own outputs. Each lands on the board like any other output.
+ * its own outputs. Each lands on the board like any other output, `times` as many as authored: the
+ * cycle's Double Loot (x2) and Giant Harvest (x10) multiply a bonus drop as they do the Token's own.
+ * @param {number} [times] the cycle's loot multiplier
  * @returns {string[]} the item ids that landed
  */
-export function dropBonusGrants(instanceId) {
+export function dropBonusGrants(instanceId, times = 1) {
     const landed = [];
     for (const grant of TileModifiers.collectItemGrants(instanceId, EFFECT_TYPES.BONUS_DROP)) {
         const chance = grant.chance ?? 100;
@@ -93,7 +95,7 @@ export function dropBonusGrants(instanceId) {
         // Token's grant carries no `sourceItemIds` and pays nothing here.
         // Preservation may keep the item and still land the grant (`CycleSavings.payItemRule`).
         if (!CycleSavings.payItemRule(instanceId, grant)) continue;
-        const quantity = Math.max(1, grant.quantity || 1);
+        const quantity = Math.max(1, grant.quantity || 1) * times;
         RareDrops.noteDrop(SpriteLayer.addSprite('item', grant.itemId, quantity, instanceId), chance);
         landed.push(grant.itemId);
         // Announced only once the roll has actually landed: a 5% grant that missed did nothing,

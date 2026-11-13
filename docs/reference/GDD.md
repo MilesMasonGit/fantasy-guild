@@ -1376,7 +1376,8 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   whole cost draws no chance; owner, 2026-11-11), **grow time** (a growth or a refill's rest, from neighbours
   and Region rules only), **crop load** (the harvests a Field's crop ripens with:
   a Composter, §3 Farming; read once as it ripens), XP bonus (a positive bonus always adds at least 1 XP),
-  double loot, **double item chance** (a chance
+  double loot (every drop of the cycle or kill, the bonus drops a building or a carried effect
+  grants it included: owner, 2026-11-12), **double item chance** (a chance
   that one named item, when a cycle or a kill drops it, comes out doubled: the
   Cleaver's Raw Beef), **Refresh** (a chance a cycle spends none of the Token's
   charges, and a Field's harvest none of its load; a failed cycle still spends; rolled
@@ -1394,11 +1395,12 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   +10 % turns 1 % into 1.1 %, and the CMS offers it first; a flat amount adds points, +1
   turns 1 % into 2 %. Aimed by the rule's Token; a Token with no table ignores it, and an
   enemy's table is raised by Lucky aimed at the enemy), **Giant Harvest** (a chance a gathering
-  cycle's drops come in at ten times: every line and the rare table's find, and with Double Loot
-  both apply, twenty times; rolled once per finished cycle after Double Loot, only on work whose
+  cycle's drops come in at ten times: every line, the rare table's find and the bonus drops a
+  building or a carried effect grants the cycle, and with Double Loot both apply, twenty times; rolled once per finished cycle after Double Loot, only on work whose
   skill is a gathering skill (Mining, Forestry, Fishing, Farming), never on a failed cycle, the
   Guild Hall's lap or a kill; a Token output made beside a station is not multiplied. A hit is
-  celebrated on the mat over the Token: a gold burst and a "Giant!" float. From a Hall star (its
+  celebrated on the mat over the Token: a gold burst and a "Giant!" float; the Token's card shows
+  no chip for it (owner, 2026-11-12). From a Hall star (its
   owner's place, brief 620) or a building in reach, narrowed by skill; owner 2026-11-12),
   **catch weight** (a percentage on one fish's weight in a
   water's catch pool: a better rod's bonus, §3 Fishing), fail chance (Tokens; **camp reach** is

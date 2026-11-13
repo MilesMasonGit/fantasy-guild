@@ -14,7 +14,7 @@ import * as OutputRules from '../systems/board/OutputRules.js';
 import * as Fields from '../systems/board/Fields.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
 import * as HallRules from '../systems/progression/HallRules.js';
-import { effectBreakdown, EFFECT_KEY, UNIT } from '../systems/board/EffectBreakdown.js';
+import { effectBreakdown, EFFECT_KEY } from '../systems/board/EffectBreakdown.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { hallRuleSentence, starSentence } from '../systems/progression/hallStarText.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
@@ -33,8 +33,6 @@ import { HALL_NODE, getUpgradeDef } from '../config/guildUpgrades.js';
 import { getPaletteEntry, bucketsFor, MODIFIER_SHAPES } from '../config/registries/modifierPalette.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { supportTag } from '../ui/components/board/supportTags.js';
-import { EFFECT_GLYPH } from '../ui/components/board/effectBadgeText.js';
-import { GLYPHS } from '../ui/components/base/PixelGlyph.jsx';
 import { slotsOf } from '../../cms/src/engine/ledger/statementSlots.js';
 import { buildRateBook } from '../../cms/src/engine/ledger/rates.js';
 import { withoutShippedPerks } from './fixtures/noPerks.js';
@@ -62,13 +60,14 @@ const LOG = 'fixture_gh_log';
 const BAR = 'fixture_gh_bar';
 const SEED = 'fixture_gh_seed';
 const WHEAT = 'fixture_gh_wheat';
+const NEST = 'fixture_gh_nest';
 const item = (id, name) => ({
     id, name, type: 'material', sprite: 'i_wheat', description: '', tags: [],
     stackable: true, restoreAmount: 0, restoreType: '', regen: 0, equipSlot: '', value: 1
 });
 registerItems({
     [ORE]: item(ORE, 'GH Ore'), [GEM]: item(GEM, 'GH Gem'), [LOG]: item(LOG, 'GH Log'), [BAR]: item(BAR, 'GH Bar'),
-    [SEED]: item(SEED, 'GH Seed'), [WHEAT]: item(WHEAT, 'GH Wheat')
+    [SEED]: item(SEED, 'GH Seed'), [WHEAT]: item(WHEAT, 'GH Wheat'), [NEST]: item(NEST, 'GH Nest')
 });
 const WHEAT_RECIPE = 'gh_recipe_wheat';
 registerRecipePools({
@@ -104,6 +103,11 @@ registerTokenTypes({
     gh_looter: building('gh_looter', [provides(ALL, EFFECT_TYPES.LOOT_MULT, 100)]),
     gh_jinx: building('gh_jinx', [provides(ALL, EFFECT_TYPES.FAIL_CHANCE, 100)]),
     gh_giant_well: building('gh_giant_well', [provides(ALL, EFFECT_TYPES.GIANT_HARVEST, 100)]),
+    gh_nester: building('gh_nester', [{
+        id: 'stm_gh_nest', keyword: 'grants', to: ALL, reach: 'nearby',
+        payload: { type: EFFECT_TYPES.BONUS_DROP, itemId: NEST, quantity: 1, chance: 100 }
+    }]),
+    gh_empty_vein: { ...work('gh_empty_vein', 'mining', ORE), config: { ...work('gh_empty_vein', 'mining', ORE).config, outputs: [] } },
     gh_field: {
         id: 'gh_field', name: 'GH Field', tokenType: 'station', rarity: 'common', theme: 'fixture', uses: null, sprite: 't_farmland',
         requiresHero: true, field: {},
@@ -398,31 +402,57 @@ describe('the celebration on the mat', () => {
     });
 });
 
-describe('the badge on the Token card', () => {
-    it('a Hall star\'s Giant Harvest shows on a gathering Token as a chance, with the star as its source', () => {
+describe('no badge on the Token card (owner, 2026-11-12)', () => {
+    it("a Hall star's Giant Harvest adds no row to the card's effect breakdown; the celebration says it", () => {
         holdStar(25);
         const vein = put('gh_vein', AT);
-        const badge = effectBreakdown(vein.id).effects.find(b => b.key === EFFECT_KEY.GIANT_HARVEST);
-        expect(badge).toMatchObject({ name: 'Giant Harvest', unit: UNIT.CHANCE, total: 25, counted: 25, held: false });
-        expect(badge.sources.map(s => [s.kind, s.name, s.amount])).toEqual([['star', 'Hall star Giant Seams I', 25]]);
+        expect(Object.values(EFFECT_KEY)).not.toContain('giantHarvest');
+        expect(effectBreakdown(vein.id).effects.map(b => b.name)).not.toContain('Giant Harvest');
+    });
+});
+
+describe("a building's bonus drop is multiplied as the Token's own drops are", () => {
+    it('neither: the bonus drop lands as authored', () => {
+        const { seen } = threeCycles('gh_vein', 'gh_nester');
+        expect(seen.cycles).toBe(3);
+        expect(made(NEST)).toBe(3);
+        expect(made(ORE)).toBe(3);
     });
 
-    it('follows UI_STYLE\'s order: after Lucky, before Abundance', () => {
-        const keys = Object.values(EFFECT_KEY);
-        expect(keys.indexOf(EFFECT_KEY.GIANT_HARVEST)).toBe(keys.indexOf(EFFECT_KEY.LUCKY) + 1);
+    it('Double Loot doubles it', () => {
+        threeCycles('gh_vein', 'gh_nester', 'gh_looter');
+        expect(made(NEST)).toBe(6);
+        expect(made(ORE)).toBe(6);
     });
 
-    it('no badge on work that is not gathering, nor at 0 %', () => {
-        holdStar(25);
-        const anvil = put('gh_anvil', AT);
-        expect(effectBreakdown(anvil.id).effects.find(b => b.key === EFFECT_KEY.GIANT_HARVEST)).toBeUndefined();
-        holdStar(0);
-        const vein = put('gh_vein', BELOW);
-        expect(effectBreakdown(vein.id).effects.find(b => b.key === EFFECT_KEY.GIANT_HARVEST)).toBeUndefined();
+    it('Giant Harvest brings it in at ten times', () => {
+        holdStar(100);
+        const { seen } = threeCycles('gh_vein', 'gh_nester');
+        expect(made(NEST)).toBe(30);
+        expect(made(ORE)).toBe(30);
+        expect(seen.giants).toHaveLength(3);
     });
 
-    it('has a placeholder icon', () => {
-        expect(GLYPHS[EFFECT_GLYPH[EFFECT_KEY.GIANT_HARVEST]]).toBeDefined();
+    it('both: twenty times', () => {
+        holdStar(100);
+        threeCycles('gh_vein', 'gh_nester', 'gh_looter');
+        expect(made(NEST)).toBe(60);
+        expect(made(ORE)).toBe(60);
+    });
+
+    it('a Giant Harvest whose only drop is the bonus is still celebrated', () => {
+        holdStar(100);
+        const { seen } = threeCycles('gh_empty_vein', 'gh_nester');
+        expect(made(NEST)).toBe(30);
+        expect(seen.giants).toHaveLength(3);
+    });
+
+    it('multiplying draws nothing more: the same draws with and without Double Loot at 100 %', () => {
+        const plain = threeCycles('gh_vein', 'gh_nester').draws;
+        fresh();
+        const looted = threeCycles('gh_vein', 'gh_nester', 'gh_looter').draws;
+        // Double Loot's own roll, once a cycle, and nothing for the bonus drop.
+        expect(looted).toBe(plain + 3);
     });
 });
 
@@ -463,9 +493,10 @@ describe('the CMS rate calculator', () => {
             lr_anvil: work('lr_anvil', 'smithing', BAR),
             lr_giant: building('lr_giant', [provides(ALL, EFFECT_TYPES.GIANT_HARVEST, 10)]),
             lr_looter: building('lr_looter', [provides(ALL, EFFECT_TYPES.LOOT_MULT, 50)]),
+            lr_nester: building('lr_nester', [{ id: 'stm_lr_nest', keyword: 'grants', to: ALL, reach: 'nearby', payload: { type: EFFECT_TYPES.BONUS_DROP, itemId: NEST, quantity: 1, chance: 100 } }]),
             ...extraTokens
         },
-        items: Object.fromEntries([ORE, GEM, BAR].map(id => [id, { id, name: id, type: 'material', stackable: true, equipSlot: '' }])),
+        items: Object.fromEntries([ORE, GEM, BAR, NEST].map(id => [id, { id, name: id, type: 'material', stackable: true, equipSlot: '' }])),
         recipes: [], effects: {}, starterCamp: { tokens: [] }
     });
 
@@ -487,5 +518,13 @@ describe('the CMS rate calculator', () => {
         const plain = book.rateOf({ token: 'lr_anvil' });
         const giant = book.rateOf({ token: 'lr_anvil' }, { supports: ['lr_giant'] });
         expect(giant.items[BAR]).toBeCloseTo(plain.items[BAR], 9);
+    });
+
+    it("counts a building's bonus drop at Double Loot's and Giant Harvest's times too", () => {
+        const book = buildRateBook(content());
+        const plain = book.rateOf({ token: 'lr_vein' }, { supports: ['lr_nester'] });
+        const both = book.rateOf({ token: 'lr_vein' }, { supports: ['lr_nester', 'lr_giant', 'lr_looter'] });
+        expect(plain.items[NEST]).toBeGreaterThan(0);
+        expect(both.items[NEST] / plain.items[NEST]).toBeCloseTo(1.5 * 1.9, 9);
     });
 });
