@@ -17,7 +17,7 @@ build green) · bench-queued · eye-check · merged.*
 |---|---|---|---|---|---|
 | 640 E1: the event engine (hourly clock, weighted landing by ground, expiry, offline, demolish, CMS table) | engineer | `feat/events` | **merged** b2892911, pushed (rebased; slim panel keeps the Events QA section; 661 files green, work same) | Thu | Fri |
 | 620 E3 follow-up: Long-lasting Brews rounds by chance (owner C) | builder | `feat/drink-stars` 0a11b5c6 | **merged** with E3 (43a92a7b) | Thu | Fri |
-| 640 E2: arrival and the banner | builder | `feat/events-arrival` (`ev`) | building | Fri | |
+| 640 E2: arrival and the banner | builder | `feat/events-arrival` (`ev`) 19fa1963 | **ready**: director gate 662 files green, cycles 0, depcruise, lint 4 warnings, build; screenshots read; comet falls and bursts, buffs drift in, banner points to the Token (also over the Hall and World Map), leave timer on plate and card, badge names the event; **work check and draw compare queued 14:05 Fri**; eye-check waits for the content agent's pack (C1) | Fri | Fri |
 | 640 C1: first events pack (6 to 8) | content agent | | **unblocked**: the CMS Events page is on main; owner opens a `/content` session | | |
 | Forest calibration: foresters about 24 % under the ledger since 560 R1 (one standard reach, bisected to 7953c84e) | engineer, diagnosis; director fix | `fix/forest-calibration` b84e7ae6 | **merged**, pushed: not an engine bug; one of five saplings stood 0.5 u outside the camp's new 240 u reach and was never cut or replaced; calibration camp moved to 120 u from its Forest, stamp retaken, all within tolerance. Owner question below (real camps one step away lose one or two trees) | Fri | Fri |
 
