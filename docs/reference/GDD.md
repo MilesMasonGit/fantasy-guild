@@ -945,18 +945,31 @@ less micromanagement than area flags).
   Torch), farming 2, construction 4. Each costs the station 1 charge. A new
   station is idle until the player picks a recipe. Example: Copper Ingot =
   4 Copper Ore + 1 Coal, 8 s.
-- **A station offers the recipes of its skill that its kind makes** (brief
-  230 S6a): its `Works as` rule may name a **station kind** (Furnace, Smithy,
-  Kitchen, Brewery, Workbench, Alchemy Table, Summoning Circle; one game-defined
-  list), and a recipe may name the kinds that make it (`stationKinds`, the CMS's
-  "Made at"). A Furnace smelts and a Smithy makes tools, though both work as
-  Smithing; better versions of a station (Campfire then Kitchen) share a kind.
-  Both sides are opt-in: a recipe naming no kind is offered by every station of
-  its skill, and a station with no kind offers its whole skill, so shipped
-  content is unchanged until it is tagged. A saved station set to a recipe its
-  kind no longer offers says "Choose a recipe". A recipe's context tags (the
-  Copper Anvil) still work beside the kind. *(`recipePoolRegistry.recipesForStation`,
-  `stationKindOf`, `STATION_KINDS`)*
+- **One building per skill** (brief 630 B1, T-307; owner 2026-11-04). A
+  skill's building (the Blacksmith for Smithing, the Kitchen for Cooking, the
+  Workshop for Crafting, the Apothecary for Alchemy; the buildings themselves
+  are content, brief 630 C1) works as its skill with **no station kind**
+  ("Any station" in the CMS), so it offers **every recipe of its skill**,
+  smelting and smithing alike; the recipe list is gated by level as for any
+  station (what the guild's best hero in the skill can run, then the next two
+  as "???"). A variant is another building of the same skill and offers the
+  same list. **The craft station kinds are retired** (Furnace, Smithy,
+  Kitchen, Brewery, Tannery, Workbench, Alchemy Table, Summoning Circle):
+  a station or a recipe still naming one reads as naming none, so today's
+  Furnace, Smithy, Campfire, Brewery, Workbench, Tannery and Alchemy Table keep
+  working, each offering its whole skill, until the owner deletes them; their
+  rules still read by name ("Works as a Smithing station: Furnace"). Both
+  audits warn of a retired kind left on a station or a recipe (a leftover to
+  clear, never an error); the CMS no longer offers them and shows a recipe's
+  leftover with a Clear button. **Only Farming still splits its recipes by
+  kind**: a station's `Works as` may name Field, Herb Garden or Windmill, and a
+  recipe the kinds that make it (`stationKinds`, the CMS's "Made at", offered
+  on Farming recipes only); a recipe naming no kind is offered by every station
+  of its skill, and a station with no kind offers its whole skill. A saved
+  station set to a recipe its kind no longer offers says "Choose a recipe". A
+  recipe's context tags (the Copper Anvil) still work beside the kind.
+  *(`recipePoolRegistry.recipesForStation`, `stationKindOf`, `STATION_KINDS`,
+  `RETIRED_STATION_KINDS`)*
 - **Upkeep**: spawners pay per spawn (table above). The top bar shows total
   upkeep per minute; the panel shows stock and "runs out in". Unpaid = the
   spawner waits; nothing goes into debt. **Rule upkeep** (a rule that costs

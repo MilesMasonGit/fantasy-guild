@@ -162,7 +162,7 @@
         "value": { "type": "number", "description": "The modifier's size; a percentage bucket holds a fraction (-0.05 is 5 % less)." },
         "category": { "type": "string", "description": "What the modifier is limited to: a skill id or an item id." },
         "skill": { "type": "string", "description": "A skill id (station, and skill-limited rules)." },
-        "stationKind": { "type": "string", "description": "A STATION_KINDS id narrowing a station's recipe pool." },
+        "stationKind": { "type": "string", "description": "A STATION_KINDS id narrowing a station's recipe pool; a RETIRED_STATION_KINDS id narrows nothing." },
         "tag": { "type": "string", "description": "acts_as and requires: the capability tag." },
         "tier": { "type": "number", "description": "The tag's tier (a whole number)." },
         "tokenIds": { "type": "array", "items": { "type": "string" }, "description": "Token ids (requires)." },
