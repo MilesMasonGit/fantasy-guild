@@ -13,8 +13,8 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 /**
  * ⭐ The mat's size and the bounty numbers are game values, not Mat Tuner numbers, and a shipped
  * build (`vite build --mode ship`) has no Debug Mode and no QA tools (GDD §16: owner ruling
- * 2026-10-06). The dev, perf and test builds (a plain `vite build`) keep the tuner, which there
- * starts at the game values.
+ * 2026-10-06). The dev and perf builds keep the tuning, which there starts at the game values; a
+ * test build (a plain `vite build`) uses the game values, as a ship build does.
  */
 
 const TUNING_KEY = 'fantasy_guild_mat_tuning';
@@ -88,12 +88,12 @@ describe('a shipped build uses the game values whatever the tuner once stored', 
         expect(geometry.matSteps()).toBe(6);
     });
 
-    it('and a test build (a plain vite build, the owner’s desktop builds), whose QA panel has the Mat Tuner', async () => {
+    it('a test build (a plain vite build, the owner’s desktop builds) uses the game values too', async () => {
         const { tuning, geometry, quests } = await loadAs('production');
-        expect(geometry.matSteps()).toBe(6);
-        expect(quests.questCap()).toBe(9);
-        expect(tuning.setMatTuning('matSteps', 8)).toBe(true);
-        expect(geometry.matSteps()).toBe(8);
+        expect(geometry.matSteps()).toBe(12);
+        expect(quests.questCap()).toBe(2);
+        expect(tuning.setMatTuning('matSteps', 8)).toBe(false);
+        expect(geometry.matSteps()).toBe(12);
     });
 });
 

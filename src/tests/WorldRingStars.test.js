@@ -14,7 +14,7 @@ import { ringLock, ringStarsOf, ringOfStar } from '../systems/world/ringStars.js
 import { normaliseStar, normaliseHallSky } from '../config/hallStars.js';
 import { getUpgradeDef, authoredStars } from '../config/guildUpgrades.js';
 import { registerHallSky, authoredHallSky } from '../config/registries/hallStarRegistry.js';
-import { installRingStars, meetFrontierPrices } from '../ui/dev/worldDev.js';
+import { installRingStars, meetFrontierPrices } from './fixtures/worldQa.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { starSentence, starAmount, RING_STAR_TEXT } from '../systems/progression/hallStarText.js';
 import { outlineSpriteName } from '../ui/components/board/hallStarOutline.js';

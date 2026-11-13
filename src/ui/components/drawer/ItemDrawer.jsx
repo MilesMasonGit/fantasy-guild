@@ -34,7 +34,7 @@ export const ItemDrawer = ({ open, menuRight = false }) => {
     );
 };
 
-/** The drawer's six parts for one Bank entry `{ id, count, template }` (the style sheet page shows it alone). */
+/** The drawer's six parts for one Bank entry `{ id, count, template }`. */
 export const ItemDrawerBody = ({ entry }) => {
     const { template, count } = entry;
     const facts = itemTipFacts(template);

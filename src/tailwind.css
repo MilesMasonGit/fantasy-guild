@@ -209,8 +209,7 @@
   --z-catch-up: 350;          /* the while-you-were-away summary */
   --z-screen-callouts: 9999;  /* callouts pinned to the screen */
   --z-dev-tools: 9999;        /* the QA panel, tuners, FPS counter */
-  --z-style-sheet: 10000;     /* the style sheet page */
-  --z-dev-modal: 99999;       /* dev windows: Animation Studio, Spawn Item */
+  --z-dev-modal: 99999;       /* dev windows: the Animation Studio */
   --z-tooltip: 100000;        /* the shared Tooltip: over everything */
 }
 

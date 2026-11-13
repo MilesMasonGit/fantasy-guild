@@ -35,7 +35,7 @@ import {
     HEX_R, TILE_W, TILE_H, ART_SCALE
 } from '../ui/components/atlas/worldMapLayout.js';
 import { paintWorld, paintRope, ringEdges, pictureFrame, tileStandIn, FOG_RGB } from '../ui/components/atlas/worldPicture.js';
-import { meetFrontierPrices } from '../ui/dev/worldDev.js';
+import { meetFrontierPrices } from './fixtures/worldQa.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as QuestTokens from '../systems/quests/QuestTokens.js';
 import { TUTORIAL_QUESTS } from '../systems/quests/tutorialQuests.js';

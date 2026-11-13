@@ -4,7 +4,8 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as StarterCamp from '../systems/atlas/StarterCamp.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { saveLiveMatToCms, devPlaceToken, DEFAULT_CMS_URL } from '../ui/dev/starterCampDev.js';
+import { saveLiveMatToCms, DEFAULT_CMS_URL } from '../ui/dev/starterCampDev.js';
+import { devPlaceToken } from '../ui/dev/qaTools.js';
 import { placeAt } from './fixtures/mat.js';
 import './fixtures/testTokens.js';
 

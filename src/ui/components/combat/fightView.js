@@ -26,7 +26,7 @@ import { t } from '../../../i18n/index.js';
  * What the combat screen shows, as plain values read from the engine: both fighters' numbers for
  * the fight panel's versus card, the enemy card, the hero's elixirs for the bubble row. No React:
  * the views here are handed to components (`FightPanel.jsx`, `EnemyCard.jsx`, `FightLayer.jsx`),
- * which a test or the style sheet page can also feed a fixture.
+ * which a test can also feed a fixture.
  * The numbers are the ones the fight uses (`CombatFormulas`), before the other side's resistances
  * and the matchup: the player does the sums (no forecast).
  */

@@ -1,102 +1,98 @@
-import React, { useState } from 'react';
-import { GameState } from '../../state/GameState.js';
-import { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManager.js';
-import * as HeroManager from '../../systems/hero/HeroManager.js';
-import * as SkillSystem from '../../systems/hero/SkillSystem.js';
-import * as SpriteLayer from '../../systems/board/SpriteLayer.js';
-import { matW, matH } from '../../config/matGeometry.js';
-import { generateHero } from '../../systems/hero/HeroGenerator.js';
-import { Bug, Plus } from 'lucide-react';
-import { DevSpawnItemModal } from './dev/DevSpawnItemModal.jsx';
-import { AnimationStudioModal } from './dev/AnimationStudioModal.jsx';
-import { TypographyScaleModal } from '../modals/TypographyScaleModal.jsx';
-import { xpForLevel } from '../../utils/XPCurve.js';
-import {
-    giveItem, listGivableItemIds, advanceTime, getSpawnerKindCounts,
-    DEV_ADVANCE_STEP_MS, DEV_ADVANCE_MAX_STEPS
-} from '../../systems/core/DevTools.js';
-import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
-import { PerfDevSection } from '../dev/perf/PerfDevSection.jsx';
-import { StarterCampDevSection } from '../dev/StarterCampDevSection.jsx';
-import { NotificationsDevSection } from '../dev/NotificationsDevSection.jsx';
-import { MatTunerDevSection } from '../dev/MatTunerDevSection.jsx';
-import { AtlasDevSection } from '../dev/AtlasDevSection.jsx';
-import { GuildHallDevSection } from '../dev/GuildHallDevSection.jsx';
-import { EncountersDevSection } from '../dev/EncountersDevSection.jsx';
-import { AnimationDevSection } from '../dev/AnimationDevSection.jsx';
-import { GearDevSection } from '../dev/GearDevSection.jsx';
-import { BankDevSection } from '../dev/BankDevSection.jsx';
-import { SuppliesDevSection } from '../dev/SuppliesDevSection.jsx';
-import { StatusesDevSection } from '../dev/StatusesDevSection.jsx';
-import { CombatScreenDevSection } from '../dev/CombatScreenDevSection.jsx';
-import { DamageTypesDevSection } from '../dev/DamageTypesDevSection.jsx';
-import { GearDefenceDevSection } from '../dev/GearDefenceDevSection.jsx';
-import { EnemyMovesDevSection } from '../dev/EnemyMovesDevSection.jsx';
-import { SkillLoopsDevSection } from '../dev/SkillLoopsDevSection.jsx';
-import { ForestryDevSection } from '../dev/ForestryDevSection.jsx';
-import { MiningDevSection } from '../dev/MiningDevSection.jsx';
-import { RefreshDevSection } from '../dev/RefreshDevSection.jsx';
-import { PreservationDevSection } from '../dev/PreservationDevSection.jsx';
-import { LuckyDevSection } from '../dev/LuckyDevSection.jsx';
-import { BadgesDevSection } from '../dev/BadgesDevSection.jsx';
-import { OrchardDevSection } from '../dev/OrchardDevSection.jsx';
-import { FishingDevSection } from '../dev/FishingDevSection.jsx';
-import { StationsDevSection } from '../dev/StationsDevSection.jsx';
-import { WorkConsumablesDevSection } from '../dev/WorkConsumablesDevSection.jsx';
-import { FarmingDevSection } from '../dev/FarmingDevSection.jsx';
-import { OrdersDevSection } from '../dev/OrdersDevSection.jsx';
-import { ClasslessDevSection } from '../dev/ClasslessDevSection.jsx';
-import { PerksDevSection } from '../dev/PerksDevSection.jsx';
-import { CampsDevSection } from '../dev/CampsDevSection.jsx';
-import { ToolsBreakDevSection } from '../dev/ToolsBreakDevSection.jsx';
-import { LimesDevSection } from '../dev/LimesDevSection.jsx';
-import { StyleSheetPage } from '../dev/StyleSheetPage.jsx';
-import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
-import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
+import React, { useMemo, useState } from 'react';
+import { Bug } from 'lucide-react';
+import { cn } from '../utils/cn.js';
+import { ItemIcon } from './base/ItemIcon.jsx';
+import { TokenSprite, TOKEN_SURFACE } from './base/TokenSprite.jsx';
 import { CloseX } from './base/CloseX.jsx';
-import { QA_TOOLS } from '../../config/buildFlags.js';
+import { AnimationStudioModal } from './dev/AnimationStudioModal.jsx';
+import { PerfDevSection } from '../dev/perf/PerfDevSection.jsx';
+import { saveLiveMatToCms, DEFAULT_CMS_URL } from '../dev/starterCampDev.js';
+import {
+    PICKER_ROWS, itemChoices, tokenChoices, filterByName, giveAndSay, devBankEveryKind, devFillBank,
+    hireHero, spawnParty, levelAllHeroes, healEveryone, knockOutAHero, devPlaceToken, clearBoard
+} from '../dev/qaTools.js';
+import * as Landmarks from '../../systems/board/Landmarks.js';
 
-const DEV_ADVANCE_MAX_MINUTES = (DEV_ADVANCE_STEP_MS * DEV_ADVANCE_MAX_STEPS) / 60_000;
-const devInputClass = 'min-w-0 px-2 py-1 rounded bg-gi-base border border-gi-border text-xs text-gi-text focus:outline-none focus:border-gi-primary/50';
-const devButtonClass = 'shrink-0 px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors';
 /**
  * The open QA panel never grows past the window: it is capped at the viewport height less its
  * 1rem margins top and bottom, and the part under the header scrolls inside it.
  */
 export const QA_PANEL_FIT_CLASS = 'max-h-[calc(100dvh-2rem)]';
 export const QA_PANEL_BODY_CLASS = 'flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1';
-const devLabelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-1';
+
+const labelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-0.5';
+const inputClass = 'min-w-0 px-2 py-1 rounded bg-gi-base border border-gi-border text-xs text-gi-text focus:outline-none focus:border-gi-primary/50';
+const buttonClass = 'px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors';
+const sectionClass = 'mb-2 pb-2 border-b border-gi-border space-y-1';
+
+/** Remembered on this device by the Starter Camp tool: where the CMS runs. */
+const CMS_URL_KEY = 'fantasy_guild_dev_cms_url';
+function storedCmsUrl() {
+    try { return localStorage.getItem(CMS_URL_KEY) || DEFAULT_CMS_URL; } catch { return DEFAULT_CMS_URL; }
+}
 
 /**
- * TestDashboard: A temporary developer QA tool for spawning test data
- * and verifying React data-binding reactivity against the Vanilla Engine.
+ * A search box over a list of `{id, name}`: typing narrows the list by name, a row is clicked.
+ * Shows the first `PICKER_ROWS` matches; the rest are reached by typing more.
  */
-export const TestDashboard = React.memo(() => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [showFontTest, setShowFontTest] = useState(false);
-    const [showSpawnItem, setShowSpawnItem] = useState(false);
-    const [showAnimationStudio, setShowAnimationStudio] = useState(false);
-    const [showStyleSheet, setShowStyleSheet] = useState(false);
-    const [giveId, setGiveId] = useState('');
-    const [giveAmount, setGiveAmount] = useState(1);
-    const [advanceMinutes, setAdvanceMinutes] = useState(10);
-    const [devStatus, setDevStatus] = useState('');
-    const itemIds = React.useMemo(() => (isOpen ? listGivableItemIds() : []), [isOpen]);
-    const kindCounts = isOpen ? getSpawnerKindCounts() : [];
+function Picker({ testId, choices, placeholder, selectedId, onPick, Icon }) {
+    const [query, setQuery] = useState('');
+    const matches = useMemo(() => filterByName(choices, query), [choices, query]);
+    return (
+        <div data-testid={testId}>
+            <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={placeholder}
+                aria-label={placeholder}
+                className={cn(inputClass, 'w-full mb-0.5')}
+            />
+            <ul className="h-24 overflow-y-auto custom-scrollbar rounded border border-gi-border bg-gi-base">
+                {matches.length === 0 && <li className="px-2 py-1 text-xs text-gi-muted">Nothing by that name</li>}
+                {matches.slice(0, PICKER_ROWS).map(c => (
+                    <li key={c.id}>
+                        <button
+                            type="button"
+                            data-qa-pick={c.id}
+                            onClick={() => onPick(c)}
+                            title={c.id}
+                            className={cn(
+                                'w-full flex items-center gap-2 px-1 text-left text-xs hover:bg-gi-primary/20',
+                                c.id === selectedId && 'bg-gi-primary/25 text-gi-primary font-bold'
+                            )}
+                        >
+                            <span className="shrink-0 w-8 h-8 flex items-center justify-center overflow-hidden">
+                                <Icon id={c.id} />
+                            </span>
+                            <span className="truncate">{c.name}</span>
+                            {c.enemy && <span className="ml-auto pr-1 ui-text-body text-gi-muted">enemy</span>}
+                        </button>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
 
-    // Spawner kinds refresh (): a spawn, a grow, a removal
-    // and a Token running out each change a family's count or cap, and each
-    // publishes one of these. Only while the panel is open.
-    const [, setKindTick] = useState(0);
-    React.useEffect(() => {
-        if (!isOpen) return;
-        const bump = () => setKindTick(n => n + 1);
-        const offs = [
-            EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, bump, UI_LISTENER),
-            EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, bump, UI_LISTENER)
-        ];
-        return () => offs.forEach(off => off?.());
-    }, [isOpen]);
+const ItemPickIcon = ({ id }) => <ItemIcon item={id} size={32} title={null} />;
+const TokenPickIcon = ({ id }) => <TokenSprite typeId={id} surface={TOKEN_SURFACE.CATALOGUE} size={32} alt="" />;
+
+/**
+ * The QA panel: give items, change the heroes, put Tokens and enemies on the mat, and the
+ * owner's two art and authoring tools. Off in a ship build (`QA_TOOLS`, where it is rendered).
+ */
+// ⚠️ Marked pure so a ship build, where nothing renders the panel, drops it and all it imports.
+export const TestDashboard = /* @__PURE__ */ React.memo(() => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [showAnimationStudio, setShowAnimationStudio] = useState(false);
+    const [item, setItem] = useState(null);
+    const [amount, setAmount] = useState(1);
+    const [status, setStatus] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [layoutEditing, setLayoutEditing] = useState(() => Landmarks.isLayoutEditing());
+    const items = useMemo(() => (isOpen ? itemChoices() : []), [isOpen]);
+    const tokens = useMemo(() => (isOpen ? tokenChoices() : []), [isOpen]);
 
     React.useEffect(() => {
         const handleKeyDown = (e) => {
@@ -105,183 +101,49 @@ export const TestDashboard = React.memo(() => {
             }
         };
         window.addEventListener('keydown', handleKeyDown);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
+        return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
-    // Raise every skill a hero HOLDS, not the whole registry. Raising a skill
-    // means raising its XP to exactly the level boundary `n` steps up, so each
-    // one moves by precisely `n` regardless of where it currently sits mid-level. Hero level is the average of the held
-    // skills (see calculateHeroLevel in HeroGenerator.js), so it moves by `n`
-    // too.
-    const levelAllHeroes = (n) => {
-        const heroes = HeroManager.getAllHeroes().filter(h => !h.isVillager);
-        heroes.forEach(hero => {
-            Object.keys(hero.skills || {}).forEach(skillId => {
-                const skill = hero.skills[skillId];
-                if (!skill) return;
-                const targetLevel = Math.min(99, skill.level + n);
-                const xpNeeded = xpForLevel(targetLevel) - skill.xp;
-                if (xpNeeded > 0) SkillSystem.addXP(hero.id, skillId, xpNeeded);
-            });
-        });
-        console.log(`[Dev] Leveled ${heroes.length} hero(es) by +${n}`);
+    const say = (msg) => {
+        setStatus(msg);
+        console.log(`[QA] ${msg}`);
     };
 
-    /**
-     * Raises the roster cap just enough for `count` more heroes. A dev convenience, not a
-     * purchase, so it writes the rank directly rather than paying items through
-     * `GuildUpgradeManager.purchase`.
-     */
-    const ensureRosterRoom = (count) => {
-        const ranks = GuildUpgradeManager.getRanks();
-        const neededRank = GameState.state.heroes.length + count;
-        if ((ranks.roster_size || 0) < neededRank) {
-            ranks.roster_size = neededRank;
-            GuildUpgradeManager.recompute();
-        }
+    const onGive = () => {
+        if (!item) { say('Pick an item first'); return; }
+        say(giveAndSay(item.id, amount));
     };
 
-    /**
-     * "Spawn Party": four heroes in the fighter, wizard, ranger and rogue art, each already at level 50 in every
-     * skill. Bumps the roster cap first if the incoming four would not fit.
-     */
-    const spawnParty = () => {
-        const sprites = ['fighter', 'wizard', 'ranger', 'rogue'];
-
-        ensureRosterRoom(sprites.length);
-
-        let added = 0;
-        sprites.forEach(spriteId => {
-            const hero = generateHero({ spriteId });
-            if (!HeroManager.addHero(hero)) return;
-            added++;
-            Object.keys(hero.skills || {}).forEach(skillId => {
-                const skill = hero.skills[skillId];
-                const xpNeeded = xpForLevel(50) - skill.xp;
-                if (xpNeeded > 0) SkillSystem.addXP(hero.id, skillId, xpNeeded);
-            });
-            // Leveling the combat skills raises max HP (it's derived from them);
-            // top current HP back up too, or a freshly "spawned" hero reads
-            // as already wounded.
-            if (hero.hp) hero.hp.current = hero.hp.max;
-        });
-        EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_spawn_party' });
-        console.log(`[Dev] Spawned a party of ${added} hero(es) at level 50`);
+    const onPlace = (choice) => {
+        const res = devPlaceToken(choice.id);
+        say(res?.success ? `Placed ${choice.name}` : (res?.reason || `Could not place ${choice.name}`));
     };
 
-    const onGiveItem = () => {
-        const r = giveItem(giveId, giveAmount);
-        if (!r.ok) { setDevStatus(r.error); return; }
-        const msg = r.overflow > 0
-            ? `Gave ${r.added}x ${giveId.trim()} to the Bank; ${r.overflow} overflowed onto the mat`
-            : `Gave ${r.added}x ${giveId.trim()} to the Bank`;
-        setDevStatus(msg);
-        console.log(`[Dev] ${msg}`);
+    const onKnockOut = () => {
+        const r = knockOutAHero();
+        say(r.ok ? `${r.name} is knocked out` : r.error);
     };
 
-    const onAdvanceTime = () => {
-        const started = performance.now();
-        const r = advanceTime(advanceMinutes);
-        if (!r.ok) { setDevStatus(r.error); return; }
-        const mins = +(r.advancedMs / 60_000).toFixed(2);
-        const took = Math.round(performance.now() - started);
-        const msg = `Advanced ${mins} min in ${r.steps} steps (${took} ms)` +
-            (r.capped ? ` - capped at ${DEV_ADVANCE_MAX_MINUTES} min` : '');
-        setDevStatus(msg);
-        console.log(`[Dev] ${msg}`);
+    const onSaveCamp = async () => {
+        setSaving(true);
+        say('Saving…');
+        const result = await saveLiveMatToCms({ cmsUrl: storedCmsUrl(), savedAt: new Date().toISOString() });
+        setSaving(false);
+        say(result.message);
     };
 
-    const testActions = [
-        {
-            label: "🔤 Test Typography Scales",
-            onClick: () => {
-                setShowFontTest(true);
-            }
-        },
-        {
-            label: "🎨 Style Sheet",
-            onClick: () => setShowStyleSheet(true)
-        },
-        {
-            label: "🧰 Spawn Items...",
-            onClick: () => setShowSpawnItem(true)
-        },
-        // No 'Add 1k Gold': gold is retired. Use Spawn Items for the items that are the only
-        // price now.
-        {
-            label: "Hire Random Hero",
-            onClick: () => {
-                ensureRosterRoom(1);
-                const hero = generateHero();
-                HeroManager.addHero(hero);
-            }
-        },
-        {
-            label: "🎉 Spawn Party",
-            onClick: spawnParty
-        },
-        {
-            label: "⬆️ Level All Skills +1",
-            onClick: () => levelAllHeroes(1)
-        },
-        {
-            label: "⬆️⬆️ Level All Skills +10",
-            onClick: () => levelAllHeroes(10)
-        },
-        {
-            label: "🎞️ Sprite Animation Studio",
-            onClick: () => setShowAnimationStudio(true)
-        },
-        {
-            label: "✨ Scatter Loot (burst)",
-            onClick: () => {
-                // 3-6 item stacks scattered from random points. Items only.
-                const items = ['item_oak_wood', 'item_blueberry', 'item_bones'];
-                const count = 3 + Math.floor(Math.random() * 4);
-                for (let i = 0; i < count; i++) {
-                    // A random point on the mat, as a fraction of it, so the scatter follows
-                    // the mat's live size. The fractions are the old fixed numbers over the
-                    // 11-step mat they were written for (1760 × 1126).
-                    const w = matW();
-                    const hh = matH();
-                    const from = {
-                        centre: {
-                            x: w * (480 / 1760) + Math.random() * w * (800 / 1760),
-                            y: hh * (163 / 1126) + Math.random() * hh * (800 / 1126)
-                        }
-                    };
-                    SpriteLayer.addSprite(
-                        'item', items[i % items.length], 1 + Math.floor(Math.random() * 5), from
-                    );
-                }
-                console.log(`[Dev] Scattered ${count} things onto the board`);
-            }
-        },
-        {
-            label: "🧹 Clear the Board",
-            onClick: () => {
-                const state = GameState.state;
-                state.board.tokens = {};
-                state.board.sprites = [];
-                EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'dev_clear' });
-                console.log('[Dev] Board cleared');
-            }
-        },
-        {
-            label: "🩸 Drain 9 HP (All)",
-            onClick: () => {
-                const heroes = GameState.state.heroes;
-                heroes.forEach(h => {
-                    if (h.hp) {
-                        h.hp.current = Math.max(0, h.hp.current - 9);
-                    }
-                });
-                EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED);
-                console.log('[Dev] Drained 9 HP from all heroes');
-            }
-        },
+    const onLayoutEditing = (on) => {
+        Landmarks.setLayoutEditing(on);
+        setLayoutEditing(on);
+    };
+
+    const heroActions = [
+        ['Hire a hero', () => say(hireHero() ? 'Hired a hero' : 'Could not hire a hero')],
+        ['Spawn a party', () => say(`Spawned a party of ${spawnParty()} at level 50`)],
+        ['Level all +1', () => say(`Raised ${levelAllHeroes(1)} heroes one level`)],
+        ['Level all +10', () => say(`Raised ${levelAllHeroes(10)} heroes ten levels`)],
+        ['Heal everyone', () => say(`Healed ${healEveryone()} heroes`)],
+        ['Knock out a hero', onKnockOut]
     ];
 
     return (
@@ -297,146 +159,120 @@ export const TestDashboard = React.memo(() => {
             ) : (
                 <div
                     data-testid="qa-panel"
-                    className={`fixed bottom-4 right-4 z-(--z-dev-tools) w-64 ${QA_PANEL_FIT_CLASS} bg-gi-surface/95 border border-gi-primary rounded-xl p-4 flex flex-col pointer-events-auto`}
+                    className={`fixed bottom-4 right-4 z-(--z-dev-tools) w-96 max-w-[calc(100vw-2rem)] ${QA_PANEL_FIT_CLASS} bg-gi-surface/95 border border-gi-primary rounded-xl p-3 flex flex-col pointer-events-auto`}
                 >
-                    <div className="shrink-0 flex items-center justify-between mb-4 border-b border-gi-border pb-2">
+                    <div className="shrink-0 flex items-center justify-between mb-3 border-b border-gi-border pb-2">
                         <div className="flex items-center gap-2 text-gi-primary font-bold">
                             <Bug className="w-4 h-4" /> QA TESTER
                         </div>
                         <CloseX onClick={() => setIsOpen(false)} />
                     </div>
 
-                    {/**
-                     * Everything under the header scrolls, so the panel never runs off a short
-                     * window.
-                     */}
                     <div data-testid="qa-panel-body" className={QA_PANEL_BODY_CLASS}>
-                        {/**
-                         * Perf HUD + stress scenarios. Compile-time dev or perf build only: a
-                         * normal production build with Debug Mode on still has no harness.
-                         */}
-                        {(import.meta.env.DEV || import.meta.env.MODE === 'perf') && <PerfDevSection />}
-                        {QA_TOOLS && <MatTunerDevSection />}
-                        {QA_TOOLS && <LimesDevSection />}
-                        {QA_TOOLS && <StarterCampDevSection />}
-                        {QA_TOOLS && <ClasslessDevSection />}
-                        {QA_TOOLS && <PerksDevSection />}
-                        {QA_TOOLS && <OrdersDevSection />}
-                        {QA_TOOLS && <CampsDevSection />}
-                        {QA_TOOLS && <AtlasDevSection />}
-                        {QA_TOOLS && <GuildHallDevSection />}
-                        {QA_TOOLS && <EncountersDevSection />}
-                        {QA_TOOLS && <GearDevSection />}
-                        {QA_TOOLS && <ToolsBreakDevSection />}
-                        {QA_TOOLS && <BankDevSection />}
-                        {QA_TOOLS && <SuppliesDevSection />}
-                        {QA_TOOLS && <StatusesDevSection />}
-                        {QA_TOOLS && <CombatScreenDevSection />}
-                        {QA_TOOLS && <DamageTypesDevSection />}
-                        {QA_TOOLS && <GearDefenceDevSection />}
-                        {QA_TOOLS && <EnemyMovesDevSection />}
-                        {QA_TOOLS && <SkillLoopsDevSection />}
-                        {QA_TOOLS && <ForestryDevSection />}
-                        {QA_TOOLS && <MiningDevSection />}
-                        {QA_TOOLS && <RefreshDevSection />}
-                        {QA_TOOLS && <PreservationDevSection />}
-                        {QA_TOOLS && <LuckyDevSection />}
-                        {QA_TOOLS && <BadgesDevSection />}
-                        {QA_TOOLS && <OrchardDevSection />}
-                        {QA_TOOLS && <AnimationDevSection />}
-                        {QA_TOOLS && <NotificationsDevSection />}
-                        {QA_TOOLS && <StationsDevSection />}
-                        {QA_TOOLS && <FishingDevSection />}
-                        {QA_TOOLS && <WorkConsumablesDevSection />}
-                        {QA_TOOLS && <FarmingDevSection />}
-                        <div className="mb-3 pb-3 border-b border-gi-border space-y-2">
-                            <div>
-                                <div className={devLabelClass}>Give item</div>
-                                <div className="flex gap-1">
-                                    <input
-                                        type="text"
-                                        list="dev-item-ids"
-                                        value={giveId}
-                                        onChange={(e) => setGiveId(e.target.value)}
-                                        onKeyDown={(e) => { if (e.key === 'Enter') onGiveItem(); }}
-                                        placeholder="item_..."
-                                        aria-label="Item id"
-                                        className={`${devInputClass} flex-1`}
-                                    />
-                                    <datalist id="dev-item-ids">
-                                        {itemIds.map(id => <option key={id} value={id} />)}
-                                    </datalist>
-                                    <input
-                                        type="number"
-                                        min={1}
-                                        value={giveAmount}
-                                        onChange={(e) => setGiveAmount(e.target.value)}
-                                        aria-label="Amount"
-                                        className={`${devInputClass} w-14`}
-                                    />
-                                    <button onClick={onGiveItem} className={devButtonClass}>Give</button>
-                                </div>
+                        <div className={sectionClass} data-testid="qa-give" data-qa-group>
+                            <div className={labelClass}>Give items</div>
+                            <Picker
+                                testId="qa-item-picker"
+                                choices={items}
+                                placeholder="Search items"
+                                selectedId={item?.id}
+                                onPick={setItem}
+                                Icon={ItemPickIcon}
+                            />
+                            <div className="flex gap-1 items-center">
+                                <span className="flex-1 min-w-0 truncate text-xs text-gi-text" data-qa-give-chosen>
+                                    {item ? item.name : <span className="text-gi-muted">No item picked</span>}
+                                </span>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    value={amount}
+                                    onChange={(e) => setAmount(e.target.value)}
+                                    aria-label="Amount"
+                                    className={cn(inputClass, 'w-16')}
+                                />
+                                <button onClick={onGive} className={cn(buttonClass, 'shrink-0')}>Give</button>
                             </div>
-
-                            <div>
-                                <div className={devLabelClass}>Advance timers (minutes)</div>
-                                <div className="flex gap-1">
-                                    <input
-                                        type="number"
-                                        min={0}
-                                        max={DEV_ADVANCE_MAX_MINUTES}
-                                        value={advanceMinutes}
-                                        onChange={(e) => setAdvanceMinutes(e.target.value)}
-                                        aria-label="Minutes to advance"
-                                        className={`${devInputClass} flex-1`}
-                                    />
-                                    <button onClick={onAdvanceTime} className={devButtonClass}>Advance</button>
-                                </div>
-                            </div>
-
-                            <div>
-                                <div className={devLabelClass}>Spawner kinds</div>
-                                {kindCounts.length === 0 ? (
-                                    <div className="text-xs text-gi-muted">No spawners yet</div>
-                                ) : (
-                                    <ul className="text-xs space-y-0.5">
-                                        {kindCounts.map(({ id, kind, count, cap }) => (
-                                            <li key={id ?? kind} className="flex justify-between">
-                                                <span>{kind}</span>
-                                                <span className="tabular-nums text-gi-primary">{count} / {cap}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </div>
-
-                            {devStatus && (
-                                <div className="ui-text-body text-gi-muted break-words" role="status">{devStatus}</div>
-                            )}
-                        </div>
-
-                        <div className="space-y-2">
-                            {testActions.map((action, i) => (
+                            <div className="grid grid-cols-2 gap-1">
                                 <button
-                                    key={i}
-                                    onClick={action.onClick}
-                                    className="w-full text-left px-3 py-2 rounded bg-gi-base hover:bg-gi-primary/20 border border-gi-border hover:border-gi-primary/50 text-sm font-bold transition-colors flex items-center gap-2 group"
+                                    className={buttonClass}
+                                    onClick={() => {
+                                        const { added, left } = devBankEveryKind();
+                                        say(`Put ${added} kinds in the Bank` + (left ? `; ${left} found no slot` : ''));
+                                    }}
                                 >
-                                    <Plus className="w-3 h-3 text-gi-primary group-hover:scale-125 transition-transform" />
-                                    {action.label}
+                                    One of every item
                                 </button>
-                            ))}
+                                <button
+                                    className={buttonClass}
+                                    onClick={() => {
+                                        const { filled, free } = devFillBank();
+                                        say(`Filled ${filled} Bank slots` + (free ? `; ${free} still free (too few kinds)` : ''));
+                                    }}
+                                >
+                                    Fill the Bank
+                                </button>
+                            </div>
                         </div>
-                        <div className="ui-text-body text-center text-gi-muted mt-3 uppercase tracking-widest font-bold">
-                            Playmat Dev Tools
+
+                        <div className={sectionClass} data-testid="qa-heroes" data-qa-group>
+                            <div className={labelClass}>Heroes</div>
+                            <div className="grid grid-cols-2 gap-1">
+                                {heroActions.map(([label, onClick]) => (
+                                    <button key={label} className={buttonClass} onClick={onClick}>{label}</button>
+                                ))}
+                            </div>
                         </div>
+
+                        <div className={sectionClass} data-testid="qa-place" data-qa-group>
+                            <div className={labelClass}>Place a Token or enemy</div>
+                            <Picker
+                                testId="qa-token-picker"
+                                choices={tokens}
+                                placeholder="Search Tokens and enemies"
+                                selectedId={null}
+                                onPick={onPlace}
+                                Icon={TokenPickIcon}
+                            />
+                            <button
+                                className={cn(buttonClass, 'w-full')}
+                                onClick={() => { clearBoard(); say('Cleared the board'); }}
+                            >
+                                Clear the board
+                            </button>
+                        </div>
+
+                        <div className="space-y-1" data-testid="qa-tools" data-qa-group>
+                            <div className={labelClass}>Tools</div>
+                            <div className="grid grid-cols-2 gap-1">
+                                <button className={buttonClass} onClick={() => setShowAnimationStudio(true)}>
+                                    Animation Studio
+                                </button>
+                                <button className={buttonClass} onClick={onSaveCamp} disabled={saving} title="Save this mat as the Starter Camp, to review on the CMS's Starter Camp page">
+                                    Save camp to CMS
+                                </button>
+                            </div>
+                            <label className="flex items-center gap-2 text-xs text-gi-text cursor-pointer select-none" title="Lets the landmarks and the Tokens the camp laid be dragged and removed">
+                                <input type="checkbox" checked={layoutEditing} onChange={(e) => onLayoutEditing(e.target.checked)} />
+                                Move landmarks
+                            </label>
+                        </div>
+
+                        {status && (
+                            <div className="mt-0.5 ui-text-body text-gi-muted break-words" role="status">{status}</div>
+                        )}
+
+                        {/** The perf HUD and stress boards: dev or perf builds only, never a test build. */}
+                        {(import.meta.env.DEV || import.meta.env.MODE === 'perf') && (
+                            <details className="mt-1 pt-1 border-t border-gi-border">
+                                <summary className={cn(labelClass, 'cursor-pointer')}>Perf HUD and stress boards</summary>
+                                <PerfDevSection />
+                            </details>
+                        )}
                     </div>
                 </div>
             )}
 
-            {showFontTest && <TypographyScaleModal isOpen={showFontTest} onClose={() => setShowFontTest(false)} />}
-            {showStyleSheet && <StyleSheetPage onClose={() => setShowStyleSheet(false)} />}
-            {showSpawnItem && <DevSpawnItemModal onClose={() => setShowSpawnItem(false)} />}
             {showAnimationStudio && (
                 <AnimationStudioModal
                     isOpen={showAnimationStudio}

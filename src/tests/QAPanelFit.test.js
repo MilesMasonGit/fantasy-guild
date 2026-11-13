@@ -37,9 +37,10 @@ describe('QA panel', () => {
         expect(body.className).toContain('overflow-y-auto');
         // min-h-0 is what lets a flex child shrink below its content and scroll.
         expect(body.className).toContain('min-h-0');
-        // The dev tools and the action buttons are both inside the scroll region.
-        expect(body.textContent).toContain('Give item');
-        expect(body.textContent).toContain('Spawn Party');
+        // Every group is inside the scroll region.
+        expect(body.textContent).toContain('Give items');
+        expect(body.textContent).toContain('Spawn a party');
+        expect(body.textContent).toContain('Place a Token or enemy');
         // The header stays outside it.
         expect(body.textContent).not.toContain('QA TESTER');
     });
@@ -47,6 +48,6 @@ describe('QA panel', () => {
     it('has no banner card width slider (FB-37)', () => {
         const view = openPanel();
         expect(view.queryByText(/banner card width/i)).toBeNull();
-        expect(view.container.ownerDocument.querySelector('input[type="range"]:not([data-testid="qa-mat-tuner"] input)')).toBeNull();
+        expect(view.container.ownerDocument.querySelector('input[type="range"]')).toBeNull();
     });
 });

@@ -17,7 +17,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { getUpgradeDef, GUILD_UPGRADES } from '../config/guildUpgrades.js';
 import { registerHallSky } from '../config/registries/hallStarRegistry.js';
-import { qaHallSky, installQaSky } from '../ui/dev/hallStarsDev.js';
+import { qaHallSky, installQaSky } from './fixtures/qaHallSky.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     success: vi.fn(), warning: vi.fn(), error: vi.fn(), info: vi.fn(), notify: vi.fn()

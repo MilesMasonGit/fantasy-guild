@@ -18,11 +18,7 @@ const SKIPPED_FILES = {
 
 // Dead references already ticketed in a file another session owns, by file then id. Each must still
 // be dead: once it is fixed the last test below fails until its entry is removed.
-const KNOWN_DEAD = {
-    'ui/dev/terrainDev.js': {
-        token_fishing_net: 'the dev Test Boat borrows the look of a Token the tools pack deleted; the terrain director repoints it (T-195)'
-    }
-};
+const KNOWN_DEAD = {};
 
 // Literals that look like content ids but are not. Keep this short; each needs a reason.
 const NOT_CONTENT_IDS = {

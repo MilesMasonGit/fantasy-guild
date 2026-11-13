@@ -51,7 +51,7 @@ const BannerSprite = ({ sprite }) => {
     );
 };
 
-/** One banner. Exported for the style sheet page. */
+/** One banner. */
 export const Banner = memo(function Banner({ banner }) {
     const [leaving, setLeaving] = useState(false);
     const timer = useRef(null);

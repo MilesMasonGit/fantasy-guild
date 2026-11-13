@@ -9,7 +9,6 @@ import { LOOKS, generatedOf, propsOf } from '../config/registries/terrainRegistr
 import { CLEAN_LOOKS } from '../ui/components/board/terrain/playmatTuning.js';
 import { defaultBannerFor } from '../config/areaBanners.js';
 import { DEV_MAPS } from '../systems/atlas/devMaps.js';
-import { TERRAIN_DEV_REGIONS } from '../ui/dev/terrainDev.js';
 
 /**
  * ⭐ The Bog (brief 240 K0.4): a plane-2 biome on grass, drawn darker than the forest from the
@@ -89,9 +88,8 @@ describe('⭐ the Bog\'s look', () => {
         expect(generatedOf('bog').earthShare).toBeGreaterThan(generatedOf('forest').earthShare);
     });
 
-    it('shows the swamp banner, has a dev map and a Terrain button', () => {
+    it('shows the swamp banner and has a dev map', () => {
         expect(defaultBannerFor('bog')).toBe('b_swamp');
         expect(DEV_MAPS.bog.biome).toBe('bog');
-        expect(TERRAIN_DEV_REGIONS.find(v => v.id === 'bog')?.maps).toEqual(['bog']);
     });
 });

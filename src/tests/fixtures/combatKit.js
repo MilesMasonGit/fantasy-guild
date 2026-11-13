@@ -1,10 +1,10 @@
-// The combat screen's style sheet entry, fed a fixture fight: Aela (Melee 20) with Valor and Ironskin,
+// A fixture fight for the combat screen's tests: Aela (Melee 20) with Valor and Ironskin,
 // poisoned ×2, against a Goblin Warlord (a Brute, Venomous) at 0:12, and the fight before it.
 // Nothing in the game reads this file.
 
-import { TONE, OUTCOME, MOMENT } from '../components/combat/fightWatch.js';
-import { healthText } from '../components/board/healthBar.js';
-import { kindView } from '../components/combat/fightView.js';
+import { TONE, OUTCOME, MOMENT } from '../../ui/components/combat/fightWatch.js';
+import { healthText } from '../../ui/components/board/healthBar.js';
+import { kindView } from '../../ui/components/combat/fightView.js';
 
 const line = (n, icon, tone, key, vars, amount = null) => ({ n, icon, tone, key, vars, amount });
 const AV = { hero: 'Aela', enemy: 'Goblin Warlord' };

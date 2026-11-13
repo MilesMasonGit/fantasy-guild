@@ -11,8 +11,7 @@ describe('one skill list per hero', () => {
         expect(existsSync(join(process.cwd(), 'src/ui/components/hero/HeroSkillSheet.jsx'))).toBe(false);
     });
 
-    it('the hero panel draws its HP with the shared VitalBar, the one the style sheet shows', () => {
+    it('the hero panel draws its HP with the shared VitalBar', () => {
         expect(read('ui/components/drawer/HeroInspectionSheet.jsx')).toMatch(/<VitalBar /);
-        expect(read('ui/dev/StyleSheetPage.jsx')).toMatch(/<VitalBar /);
     });
 });

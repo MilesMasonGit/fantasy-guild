@@ -25,13 +25,13 @@ function rosterOf(existing) {
     return { heroes: () => GameState.state.heroes, ranks: GuildUpgradeManager.getRanks() };
 }
 
-describe('QA panel: Hire Random Hero', () => {
+describe('QA panel: Hire a hero', () => {
     afterEach(() => cleanup());
 
     function hire() {
         const view = render(React.createElement(TestDashboard));
         fireEvent.click(view.getByTitle('Open QA Dashboard'));
-        fireEvent.click(view.getByText('Hire Random Hero'));
+        fireEvent.click(view.getByText('Hire a hero'));
     }
 
     it('adds a hero on a fresh game with a roster cap of 0', () => {

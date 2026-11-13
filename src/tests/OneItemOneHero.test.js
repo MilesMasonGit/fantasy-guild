@@ -22,7 +22,8 @@ import { starterToolIds } from '../config/registries/toolKinds.js';
 import { makeStatement, KEYWORD } from '../systems/effects/statements.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { equipOrAnnounce, unequipOrAnnounce } from '../ui/components/dock/dockEquip.js';
-import { devFillBank, shareOneToolOldStyle } from '../ui/dev/gearDev.js';
+import { devFillBank } from '../ui/dev/qaTools.js';
+import { getGrid } from '../config/registries/equipmentConstants.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -755,7 +756,28 @@ describe('saves', () => {
     });
 });
 
-describe('the QA panel\'s gear checks (dev only)', () => {
+/**
+ * A save written as one from before one item, one hero: every hero (villagers aside) carries
+ * `toolId` as a link to the Bank rather than a copy of their own, and the Bank holds one.
+ * @returns {number} the heroes carrying the shared tool
+ */
+function shareOneToolOldStyle(data, toolId) {
+    const heroes = (data?.state?.heroes || []).filter(h => h && !h.isVillager);
+    let sharing = 0;
+    for (const hero of heroes) {
+        const grid = getGrid(hero);
+        let slot = grid.indexOf(toolId);
+        if (slot === -1) slot = grid.findIndex(id => !id);
+        if (slot === -1) continue;
+        hero.equipment[slot] = toolId;
+        if (Array.isArray(hero.heldCopies)) hero.heldCopies[slot] = false;
+        sharing++;
+    }
+    data.state.inventory.items[toolId] = { quantity: 1, dur: null };
+    return sharing;
+}
+
+describe('the QA panel\'s Fill the Bank, and a save from before one item, one hero', () => {
     beforeEach(() => wireNotifications());
     afterEach(() => unwireNotifications());
 

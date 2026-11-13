@@ -130,7 +130,7 @@ function PlateCell({ cell, u, tip }) {
 /**
  * The plate as drawn: its frame (gold while the Token waits, red when it can't go on), its cells,
  * and the cycle's fill along its foot under the first cell. `u` is one plate pixel in the units it
- * is drawn in (mat units on the mat, screen pixels on the style sheet page). `fill` is the fill's
+ * is drawn in (mat units on the mat, screen pixels elsewhere). `fill` is the fill's
  * element (the live `WorkBarFill`, or a still one).
  */
 export function WorkPlateView({ cells, tone = null, u = 1, tip = null, fill = null, plateProps = null }) {

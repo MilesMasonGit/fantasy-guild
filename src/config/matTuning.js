@@ -1,20 +1,19 @@
 // Fantasy Guild — Live tuning for the free playmat's rules (developer tool).
 
 /**
- * The numbers that decide how the mat *plays*, adjustable while the game runs — the **Mat Tuner** panel builds itself from this table.
+ * The numbers that decide how the mat *plays*, adjustable while the game runs in a dev or perf
+ * build: the tests, the benches and the stress boards set them through {@link setMatTuning}.
  *
- * ## Not the Playmat Tuner
- * `playmatTuning.js` tunes how the terrain *looks*.
- * This one tunes how the mat *plays*: a value here changes
- * what a Token reaches. It is a separate panel.
+ * ## Not `playmatTuning.js`
+ * That one tunes how the terrain *looks*. This one tunes how the mat *plays*: a value here changes
+ * what a Token reaches.
  *
- * ## ⚠️ Developer tool, persisted per device — like the Playmat Tuner
- * Values live in `localStorage` (same behaviour as `playmatTuning.js`), never in
- * the save. Unlike that panel, **these change gameplay** on this device, so the
- * panel marks a changed value and offers a reset to the shipped default.
+ * ## ⚠️ Persisted per device
+ * Values live in `localStorage`, never in the save, and **change gameplay** on this device;
+ * {@link resetMatTuning} puts them back to the shipped defaults.
  *
  * ## ⚠️ Dev and perf builds only
- * A shipped build has no Mat Tuner: every number reads its default there, never what a device
+ * A test or ship build has no tuning: every number reads its default there, never what a device
  * once stored, and nothing can set one. The mat's size and the bounty numbers are game values
  * owned by the game (`MAT_STEPS` in `matGeometry.js`, `QUEST_CAP_BASE`, `QUEST_CAP_MAX` and
  * `QUEST_EVERY_SEC` in `QuestTokens.js`); their rows here start at those values
@@ -24,9 +23,7 @@
  * value into a module constant would freeze it at import.
  */
 
-import { QA_TOOLS } from './buildFlags.js';
-
-/** Tile step in mat units, repeated here so this config file imports nothing but the build flags. */
+/** Tile step in mat units, repeated here so this config file imports nothing. */
 const STEP_U = 160;
 
 /**
@@ -184,8 +181,12 @@ const RETIRED_DEFAULTS = Object.freeze({
     matSteps: [11]
 });
 
-/** Whether this build has a Mat Tuner: a dev, test (QA_TOOLS) or perf build, never a ship build. */
-const TUNABLE = !!(QA_TOOLS || import.meta.env?.MODE === 'perf');
+/**
+ * Whether this build takes tuned numbers: a dev or perf build. A test build (a plain `vite build`)
+ * and a ship build always use the game's values.
+ * ⚠️ Keep the `?.`: the benches import this file in plain Node, where there is no env.
+ */
+const TUNABLE = !!(import.meta.env?.DEV || import.meta.env?.MODE === 'perf');
 
 /** @type {Record<string, number>} */
 let values = { ...DEFAULTS };
@@ -224,12 +225,12 @@ export function matTuning(key) {
     return values[key] ?? DEFAULTS[key];
 }
 
-/** Whether this build has a Mat Tuner at all (dev and perf builds). */
+/** Whether this build takes tuned numbers at all (dev and perf builds). */
 export function isTunable() {
     return TUNABLE;
 }
 
-/** A game value, or in a build with a Mat Tuner the tuner's row `key` (which starts at it). */
+/** A game value, or in a tunable build the tuning's row `key` (which starts at it). */
 export function tunedOr(key, gameValue) {
     return TUNABLE ? matTuning(key) : gameValue;
 }

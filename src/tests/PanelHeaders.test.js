@@ -49,7 +49,7 @@ describe('no panel draws a close X of its own', { timeout: SCAN_TIMEOUT }, () =>
             if (EXEMPT.some(re => re.test(path))) continue;
             const rel = relative(SRC, path);
             const text = readSource(path);
-            if (!rel.endsWith('CloseX.jsx') && /u_cancel_red\.png/.test(text) && !/StyleSheetPage/.test(rel)) hits.push(`${rel}: its own red X`);
+            if (!rel.endsWith('CloseX.jsx') && /u_cancel_red\.png/.test(text)) hits.push(`${rel}: its own red X`);
             if (/<X\s+(?:size|className)/.test(text) && /onClose|setIsOpen\(false\)/.test(text)) {
                 // A vector X still drawn next to a close handler: allowed only as a field's clear button.
                 const closers = [...text.matchAll(/onClick=\{[^}]*(?:onClose|setIsOpen\(false\))[^}]*\}[^<]*<X\b/g)];

@@ -11,7 +11,7 @@ import * as FightRoom from '../systems/board/FightRoom.js';
 import { AudioSystem } from '../systems/core/AudioSystem.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
-import { setUpCombatCrowd, CROWD } from '../ui/dev/combatScreenDev.js';
+import { setUpCombatCrowd, CROWD } from './fixtures/combatCrowd.js';
 import * as fixtures from '../../bench/fixtures.mjs';
 
 /**

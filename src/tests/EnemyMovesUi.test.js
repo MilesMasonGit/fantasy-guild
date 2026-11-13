@@ -14,7 +14,7 @@ import { startFightWatch, resetFightWatch, fightsOf, subscribeMoments, MOMENT } 
 import { FightPanelView } from '../ui/components/combat/FightPanel.jsx';
 import { EnemyCardRows } from '../ui/components/combat/EnemyCard.jsx';
 import { enemyCardView, movesView, moveEffectText, enemyHitTypes } from '../ui/components/combat/fightView.js';
-import { kitPanelView, KIT_CURRENT } from '../ui/dev/combatKit.js';
+import { kitPanelView, KIT_CURRENT } from './fixtures/combatKit.js';
 import { t } from '../i18n/index.js';
 
 /**
