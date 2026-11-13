@@ -6,7 +6,12 @@
  * `merge` folds a waiting banner's parts into another of its kind (null: a kind that never merges).
  * `mergeShown`: a kind that is a lasting condition rather than a moment, merged into one already on
  * screen instead of stacking a copy (a full Bank refusing one item after another).
+ * `pointsTo`: a kind whose click takes the player to its Token on the mat and pulses its outline
+ * (from the World Map or the Guild Hall, back to the mat first), and which also shows on those two
+ * screens (`BannerStack`'s `away`).
  */
+
+import { t } from '../../i18n/index.js';
 
 export const TONE = Object.freeze({ MILESTONE: 'milestone', PROBLEM: 'problem' });
 
@@ -78,6 +83,16 @@ export const BANNER_KINDS = Object.freeze({
             line: `${nameList(items)} ${items.length > 1 ? 'wait' : 'waits'} on the mat until the Bank has room`
         }),
         merge: (a, b) => ({ items: union(a.items, b.items) })
+    },
+    // One event at a time is on the mat, so one banner each; it goes when its Token leaves.
+    event: {
+        tone: TONE.MILESTONE,
+        pointsTo: true,
+        text: ({ name = '', kind = 'node', minutes = 0 }) => ({
+            title: t('events.banner.title', { event: name }),
+            line: kind === 'buff' ? t('events.banner.buff', { time: `${minutes} min` }) : t('events.banner.node')
+        }),
+        merge: null
     },
     // Each save problem is its own banner; only a repeat of the same one (its `groupKey`) folds in.
     save: {

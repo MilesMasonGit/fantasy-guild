@@ -15,6 +15,7 @@ import { useEncyclopediaBack } from './hooks/useEncyclopediaBack.js';
 import { useHeroSheetRequests } from './hooks/useHeroSheetRequests.js';
 import { useOneBottomDrawer } from './hooks/useOneBottomDrawer.js';
 import { useWorldMapRequests } from './hooks/useWorldMapRequests.js';
+import { useShowOnMat } from './hooks/useShowOnMat.js';
 import { selectHero, clickHero, useSelectionClearing } from './hooks/useMatSelection.js';
 
 import Board from './components/board/Board.jsx';
@@ -200,6 +201,12 @@ const ReactRoot = () => {
     const openAtlas = ui.fullscreen.open;
     const openWorldMap = React.useCallback(() => openAtlas('atlas'), [openAtlas]);
     useWorldMapRequests(openWorldMap);
+    // A banner pointing to its Token, clicked over the World Map or the Hall: back to the mat first.
+    const backToMat = React.useCallback(() => {
+        if (isGuildView) handleCloseGuildHall();
+        else ui.fullscreen.close();
+    }, [isGuildView, handleCloseGuildHall, ui.fullscreen]);
+    useShowOnMat({ awayOpen: isGuildView || isAtlasOpen, backToMat });
 
     return (
         <DeckDndProvider>
@@ -321,6 +328,10 @@ const ReactRoot = () => {
                         </WorldCamera>
                         </div>
                         </HallCamera>
+                        {/* Over the World Map and the Hall: only the banners that point to a Token on the mat (an event's). */}
+                        {(isGuildView || isAtlasOpen) && (
+                            <ErrorBoundary label="AwayBanners"><BannerStack away /></ErrorBoundary>
+                        )}
                         <ErrorBoundary label="ArrivalCard"><ArrivalCard /></ErrorBoundary>
                         </div>
                         {/**

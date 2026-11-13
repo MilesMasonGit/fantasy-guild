@@ -30,6 +30,7 @@ import { effectiveIO } from './RecipeResolver.js';
 import { workConfigOf } from './StationRecipe.js';
 import { flooredWorkTime, floorSpeedUp, authoredWorkMs } from './workTime.js';
 import { nearby } from './nearby.js';
+import { eventOf } from './EventTokens.js';
 
 /**
  * The effect breakdown behind the Token card's badges (brief 600): for one Token on the mat, each
@@ -138,7 +139,9 @@ export const SOURCE_KIND = Object.freeze({
     GEAR: 'gear',
     PERK: 'perk',
     CARRIED: 'carried',
-    GUILD: 'guild'
+    GUILD: 'guild',
+    /** An event's buff Token in reach, named by its event. */
+    EVENT: 'event'
 });
 
 /** Its work runs at its own time and pays no output rules (`BoardRunner`). */
@@ -487,14 +490,18 @@ function describe(c, ctx) {
 }
 
 function tokenSource(tokenId, ctx) {
-    const typeId = BoardState.getTokenById(tokenId)?.typeId ?? null;
-    const token = typeId ? tokenName(typeId) : tokenId;
+    const instance = BoardState.getTokenById(tokenId);
+    const typeId = instance?.typeId ?? null;
+    // An event Token goes by its event's name ("Rainfall nearby").
+    const event = eventOf(instance);
+    const token = event?.name || (typeId ? tokenName(typeId) : tokenId);
     if (tokenId === ctx.id) {
         return { key: `token:${tokenId}`, kind: SOURCE_KIND.SELF, tokenId, typeId, name: t('effectBadges.source.self', { token }) };
     }
     if (!ctx.near) ctx.near = new Set(nearby(ctx.id));
     return {
-        key: `token:${tokenId}`, kind: SOURCE_KIND.BUILDING, tokenId, typeId,
+        key: `token:${tokenId}`, kind: event ? SOURCE_KIND.EVENT : SOURCE_KIND.BUILDING, tokenId, typeId,
+        ...(event ? { eventId: event.id } : {}),
         name: t(ctx.near.has(tokenId) ? 'effectBadges.source.nearby' : 'effectBadges.source.onMat', { token })
     };
 }

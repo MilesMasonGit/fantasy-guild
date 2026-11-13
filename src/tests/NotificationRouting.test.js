@@ -73,6 +73,8 @@ describe('the routing table', () => {
             [BOARD_EVENTS.HERO_DEFEATED]: 'banner:knockout',
             [ENGINE_EVENTS.BANK_FULL]: 'banner:bankFull',
             [ENGINE_EVENTS.ATLAS_CHANGED]: 'banner:settled',
+            [BOARD_EVENTS.EVENT_LANDED]: 'banner:event',
+            [BOARD_EVENTS.EVENT_ENDED]: 'banner:event',
             [ENGINE_EVENTS.CATCH_UP_FINISHED]: 'catchUp:news',
             [UI_EVENTS.CATCH_UP_SUMMARY_CLOSED]: 'catchUp:news'
         });

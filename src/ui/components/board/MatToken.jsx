@@ -19,6 +19,7 @@ import * as Fields from '../../../systems/board/Fields.js';
 import * as Hand from '../../../systems/board/Hand.js';
 import * as FixedTokens from '../../../systems/board/FixedTokens.js';
 import * as Landmarks from '../../../systems/board/Landmarks.js';
+import * as EventTokens from '../../../systems/board/EventTokens.js';
 import { MAP_MODE, isProtectedFromDemolition } from '../../hooks/useMapMode.js';
 import { useTokenEvent } from './tokenEvents.js';
 import { useTokenDetail } from './useTokenDetail.js';
@@ -43,6 +44,7 @@ import { takeSpawn, playSpawn } from './spawnMotion.js';
 import { TOKEN_FLIGHT_FX, TOKEN_FLIGHT_MS, playTokenFlight } from './tokenFlight.js';
 import { FX_FRAME_MS, playPoses } from './fx/pixelSteps.js';
 import { takeSettle, playSettle } from './fx/regionSettle.js';
+import { takeArrival, playEventArrival } from './fx/eventArrival.js';
 import { useSupportLit } from './supportLit.js';
 import { useOrderLit } from './orderLit.js';
 import { walkerGlide } from './walkerGlide.js';
@@ -233,6 +235,9 @@ export const MatToken = React.memo(function MatToken({
     // `turnTimingOf`).
     const readTimer = React.useCallback(() => {
         const instance = BoardState.getTokenById(id);
+        // An event Token counts down to leaving: a buff's time, an unworkable node's hour.
+        const leaves = EventTokens.leavesInMs(instance);
+        if (leaves != null) return { kind: 'leave', inMs: leaves, buff: EventTokens.isEventBuff(instance) };
         const rest = Respawn.nextRespawn(instance);
         if (rest) return rest.mode === 'refill' ? { kind: 'respawn', ...rest, everyMs: rest.totalMs } : null;
         const grow = TimedChanges.nextGrowth(instance);
@@ -401,7 +406,9 @@ export const MatToken = React.memo(function MatToken({
     };
     const hidden = dragging;
     // The idle plate under the rested Token nobody works, when it has something to say.
-    const timed = !!(detail?.turns || detail?.grows || detail?.ripens || resting);
+    // Read once per instance: an event Token never stops being one.
+    const isEvent = React.useMemo(() => EventTokens.isEventToken(BoardState.getTokenById(id)), [id]);
+    const timed = !!(detail?.turns || detail?.grows || detail?.ripens || resting || isEvent);
     const idlePlate = !!plateHost && !staffed && !hidden && !isEnemyDef(def) && (
         (usesRemaining != null && !isGuildHallToken) || !!spawnerPlate || !!questPlate
         || (!!alert && !isGearOnlyAlert(alert)) || (timed && !!readTimer())
@@ -465,6 +472,13 @@ export const MatToken = React.memo(function MatToken({
         const over = from.typeId ? tokenSizeFor(TOKEN_SURFACE.BOARD, from.typeId, artScale) / 2 : 0;
         playSpawn(artRef.current, dx, dy, { unit: artScale, over });
         playSpawn(overlayRef.current, dx, dy, { unit: artScale, over });
+    }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+
+    // An event just landed here: its arrival by kind (`fx/eventArrival.js`), read once, at mount.
+    React.useLayoutEffect(() => {
+        const kind = takeArrival(id);
+        if (!kind || !isDrawn('tokenFx')) return;
+        playEventArrival([artRef.current, overlayRef.current], kind, { unit: artScale, instanceId: id });
     }, []);   // eslint-disable-line react-hooks/exhaustive-deps
 
     const token = React.useMemo(

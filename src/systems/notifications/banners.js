@@ -140,6 +140,22 @@ export function dismiss(id) {
 }
 
 /**
+ * Take back the banner of `groupKey`, on screen or waiting, as if it had been clicked: an event's,
+ * once its Token has left the mat. Nothing when there is none.
+ */
+export function withdraw(groupKey) {
+    if (groupKey == null) return;
+    const onScreen = shown.find(b => b.groupKey === groupKey);
+    if (onScreen) {
+        dismiss(onScreen.id);
+        return;
+    }
+    const before = waiting.length;
+    waiting = waiting.filter(b => b.groupKey !== groupKey);
+    if (waiting.length !== before) emit();
+}
+
+/**
  * What the stack draws: the banners on screen (newest first), how many wait, and whether a
  * problem is among them.
  */

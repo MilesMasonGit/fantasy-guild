@@ -14,6 +14,8 @@ import { recipesUnlockedByLevelUp } from './recipeUnlocks.js';
 import { hasNews } from './catchUpNews.js';
 import * as Atlas from '../atlas/Atlas.js';
 import { defaultBannerFor } from '../../config/areaBanners.js';
+import * as BoardState from '../board/BoardState.js';
+import * as EventTokens from '../board/EventTokens.js';
 
 /**
  * Where every game event goes (the owner's audit): items to the stubs, what must not be missed to
@@ -152,10 +154,31 @@ export const ROUTES = [
         }
     },
     {
+        // An event landing on the mat: a banner naming it, pointing to its Token.
+        event: BOARD_EVENTS.EVENT_LANDED, to: 'banner:event',
+        handle: ({ instanceId, typeId, kind, name } = {}) => {
+            if (!instanceId) return;
+            const lastsMs = EventTokens.lastsMsOf(BoardState.getTokenById(instanceId));
+            Banners.push({
+                kind: 'event',
+                groupKey: eventBannerKey(instanceId),
+                parts: { name: name || typeId || 'An event', kind, minutes: Math.round(lastsMs / 60000) },
+                sprite: typeId ? { kind: 'token', id: typeId } : null,
+                subjects: [{ type: 'token', id: instanceId }]
+            });
+        }
+    },
+    {
+        // Its Token gone, the banner pointing to it goes too.
+        event: BOARD_EVENTS.EVENT_ENDED, to: 'banner:event',
+        handle: ({ instanceId } = {}) => instanceId && Banners.withdraw(eventBannerKey(instanceId))
+    },
+    {
         // A catch-up long enough for "While you were away" keeps its news until the summary closes;
         // a short one, with no summary, hands it over at once.
         event: ENGINE_EVENTS.CATCH_UP_FINISHED, to: 'catchUp:news',
         handle: ({ show, summary } = {}) => {
+            pruneEventBanners();
             const news = summary?.news;
             if (!hasNews(news)) return;
             if (show) heldNews.push(news);
@@ -182,6 +205,18 @@ export const ROUTES = [
         }
     }
 ];
+
+/** The `groupKey` of the banner about the event Token `instanceId`. */
+const eventBannerKey = (instanceId) => `event:${instanceId}`;
+
+/** Take back every event banner whose Token has left the mat meanwhile (a catch-up's quiet bus said nothing). */
+function pruneEventBanners() {
+    for (const b of Banners.getAll()) {
+        if (b.kind !== 'event') continue;
+        const id = b.subjects[0]?.id;
+        if (!id || !BoardState.getTokenById(id)) Banners.withdraw(b.groupKey);
+    }
+}
 
 /** Empty stubs and banners, then the pins of the game now running. */
 function startFresh() {

@@ -769,5 +769,21 @@
             "rareTip": "A roll on this Token's own rare table each time it pays out. Click to see what it can find",
             "drops": "Drops"
         }
+    },
+    "events": {
+        "banner": {
+            "title": "{event}!",
+            "node": "Landed on the mat: work it before it runs out",
+            "buff": "Landed on the mat for {time}: move it where its boost should go"
+        },
+        "plate": {
+            "buffLeaves": "Leaves in {time}",
+            "nodeLeaves": "Nobody can work it: leaves in {time}"
+        },
+        "card": {
+            "leavesIn": "Leaves in",
+            "buffTip": "An event: it leaves in {time}",
+            "nodeTip": "An event nobody can work yet: it leaves in {time} unless a hero can work it"
+        }
     }
 }

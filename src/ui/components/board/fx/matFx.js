@@ -192,7 +192,18 @@ function burstStar() {
 export function giantHarvestCelebration(instanceId) {
     const t = BoardState.getTokenById(instanceId);
     if (!t || !host || !Number.isFinite(t.x) || !Number.isFinite(t.y)) return false;
-    const reach = burstReach(artRadiusOf(t.typeId) / unit);
+    starBurst(t.x, t.y, artRadiusOf(t.typeId));
+    floatNumber(instanceId, i18n('effectBadges.float.giantHarvest'), 'giant');
+    return true;
+}
+
+/**
+ * The burst alone: eight gold stars out from (`x`, `y`) to a little past a Token of art radius
+ * `radius` (mat units), a twinkle, gone. A Giant Harvest's, and an event node's landing.
+ */
+export function starBurst(x, y, radius, { delay = 0 } = {}) {
+    if (!host) return;
+    const reach = burstReach(radius / unit);
     for (const [dx, dy] of BURST_DIRS) {
         // A diagonal goes as far as a straight one, not √2 further.
         const k = dx && dy ? Math.SQRT1_2 : 1;
@@ -203,10 +214,31 @@ export function giantHarvestCelebration(instanceId) {
             ...[...BURST_TWINKLE].map(c => ({ ...at(last), visibility: c === 'V' ? 'visible' : 'hidden' }))
         ];
         const { keyframes, duration } = heldPoses(poses, { unit, rest: { visibility: 'hidden' } });
-        playAt(burstStar(), t.x, t.y, keyframes, duration);
+        playAt(burstStar(), x, y, keyframes, duration, delay);
     }
-    floatNumber(instanceId, i18n('effectBadges.float.giantHarvest'), 'giant');
-    return true;
+}
+
+/** A falling streak's pixels: white at the head, gold behind it. */
+const STREAK_COLOURS = Object.freeze(['#ffffff', '#ffe27a']);
+/** How many effect frames each streak pixel stays where it was left. */
+export const STREAK_HOLD_FRAMES = 3;
+
+/**
+ * A streak along a fall: at each pose of `poses` (art pixels from (`x`, `y`), each held its `ms`),
+ * a two-pixel spark is left where the falling thing is then, and stays {@link STREAK_HOLD_FRAMES}
+ * effect frames, so a short tail follows it down. The last pose (the landing) leaves none.
+ */
+export function streak(x, y, poses) {
+    if (!host || !poses?.length) return;
+    let at = 0;
+    for (let i = 0; i < poses.length - 1; i++) {
+        const p = poses[i];
+        const colour = STREAK_COLOURS[i % STREAK_COLOURS.length];
+        const life = [{ ms: STREAK_HOLD_FRAMES * FX_FRAME_MS, x: 0, y: 0, visibility: 'visible' }];
+        const { keyframes, duration } = heldPoses(life, { unit, rest: { visibility: 'hidden' } });
+        playAt(pixel(colour, 2), x + Math.round(p.x) * unit, y + Math.round(p.y) * unit, keyframes, duration, at);
+        at += p.ms;
+    }
 }
 
 const PUFF_COLOUR = '#d6d3d1';

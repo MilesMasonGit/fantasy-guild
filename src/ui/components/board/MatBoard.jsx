@@ -53,6 +53,7 @@ import { usePerfRenderCount } from '../../dev/perf/PerfProfiler.jsx';
 import { useDrawn } from '../../dev/perf/drawSwitches.js';
 import { watchSpawns } from './spawnMotion.js';
 import { watchRegionSettle } from './fx/regionSettle.js';
+import { watchEventArrivals } from './fx/eventArrival.js';
 import { MatFxLayer } from './fx/MatFxLayer.jsx';
 import { MatLimes } from '../limes/MatLimes.jsx';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
@@ -366,6 +367,7 @@ export const MatBoard = React.memo(function MatBoard({
     // Remembers where each new Token came from, for its pop-out (`MatToken`).
     useEffect(() => watchSpawns(), []);
     useEffect(() => watchRegionSettle(), []);
+    useEffect(() => watchEventArrivals(), []);
 
     /**
      * The mat's selection (`useMatSelection.js`): a single click picks, or clears what is already

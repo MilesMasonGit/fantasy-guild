@@ -21,6 +21,8 @@ import * as Fields from '../../../systems/board/Fields.js';
 import * as Fishing from '../../../systems/board/Fishing.js';
 import * as Demolition from '../../../systems/board/Demolition.js';
 import * as RareTables from '../../../systems/board/RareTables.js';
+import * as EventTokens from '../../../systems/board/EventTokens.js';
+import { t } from '../../../i18n/index.js';
 import { effectBreakdown } from '../../../systems/board/EffectBreakdown.js';
 import { exactInputQuantity } from '../../../systems/board/InputCost.js';
 import { mostByChance } from '../../../utils/RNG.js';
@@ -138,6 +140,10 @@ export function liveCardSources() {
         recipeName: (id) => getRecipe(id)?.name || id,
         recipeOf: getRecipe,
         nextTurn: TimedChanges.nextTurnRoll,
+        eventLeave: (instance) => {
+            const inMs = EventTokens.leavesInMs(instance);
+            return inMs == null ? null : { inMs, buff: EventTokens.isEventBuff(instance) };
+        },
         passive: (instance) => ({ lines: PassiveProduction.linesOf(instance), nextInMs: PassiveProduction.nextInMs(instance), lapMs: PassiveProduction.lapMs() }),
         fightOf: BoardCombat.getFight,
         supports: (instanceId) => ({ boosts: SupportLinks.boosts(instanceId) }),
@@ -378,6 +384,15 @@ export function cardLifecycle(instance, def, src) {
             ? { icon: 'clock', label: 'Demolition', text: formatClock(left), tip: `Marked for demolition: gone in ${spoken(left)}`, tone: 'warning' }
             : { icon: 'clock', label: 'Demolition', text: '–', tip: 'Marked for demolition: waiting for a hero with Construction', tone: 'warning' });
         return out;
+    }
+
+    // An event Token: how long until it leaves (a buff's time, a node nobody can work's hour).
+    const leave = src.eventLeave?.(instance);
+    if (leave) {
+        out.push({
+            icon: 'clock', label: t('events.card.leavesIn'), text: formatClock(leave.inMs),
+            tip: t(leave.buff ? 'events.card.buffTip' : 'events.card.nodeTip', { time: spoken(leave.inMs) })
+        });
     }
 
     const turn = src.nextTurn?.(instance);

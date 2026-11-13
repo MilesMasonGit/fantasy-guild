@@ -4,6 +4,7 @@ import { formatDuration } from '../drawer/lifecycleLines.js';
 import { spawnerCountText, turnCountdownText } from './centreAlert.js';
 import { CELL } from './workPlate.js';
 import { ringCount } from './ringRow.js';
+import { t } from '../../../i18n/index.js';
 
 /**
  * The idle plate: a Token nobody works, once the pointer rests on it, gets the work plate's look
@@ -21,18 +22,21 @@ export const IDLE_TIPS = Object.freeze({
 });
 
 /** Each timer's glyph (`PixelGlyph`'s): a refill, a growth or ripening, a turn. */
-const TIMER_GLYPH = Object.freeze({ respawn: 'regrow', grow: 'grow', ripen: 'grow', turn: 'turn' });
+const TIMER_GLYPH = Object.freeze({ respawn: 'regrow', grow: 'grow', ripen: 'grow', turn: 'turn', leave: 'clock' });
 
 /**
  * The timer cell from one read of the Token's clock (`MatToken`'s `readTimer`: `{ kind: 'respawn'
- * | 'grow' | 'ripen' | 'turn', inMs, ... }`), or null with nothing counting.
+ * | 'grow' | 'ripen' | 'turn' | 'leave', inMs, ... }`), or null with nothing counting. `leave` is an
+ * event Token's time until it goes (`EventTokens.leavesInMs`).
  * @returns {{kind: 'timer', glyph: string, text: string, tip: string}|null}
  */
 export function timerCellOf(roll) {
     const text = roll ? turnCountdownText(roll.inMs) : null;
     if (!text) return null;
     let tip;
-    if (roll.kind === 'respawn') {
+    if (roll.kind === 'leave') {
+        tip = t(roll.buff ? 'events.plate.buffLeaves' : 'events.plate.nodeLeaves', { time: formatDuration(roll.inMs).replace(/ /g, ' ') });
+    } else if (roll.kind === 'respawn') {
         // Non-breaking, so the tip never wraps between the number and its unit.
         tip = roll.paused
             ? `Resting. Refills only with ${(roll.needsNearby || []).map(id => tokenName(id) || id).join(' or ')} nearby`

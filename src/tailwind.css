@@ -957,6 +957,21 @@ body.gi-dnd-active :is([data-item-stubs], [data-banners]) .pointer-events-auto {
 [data-banner-outline="red"] {
   filter: drop-shadow(2px 0 0 #dc2626) drop-shadow(-2px 0 0 #dc2626) drop-shadow(0 2px 0 #dc2626) drop-shadow(0 -2px 0 #dc2626);
 }
+/* A clicked banner that points to a Token (an event's) pulses it: the gold outline swaps with a
+   darker gold three times, held, never moving or resizing (bannerHighlight.js, `PULSE_MS`). Only
+   while the pulse lasts. */
+@keyframes gi-banner-pulse {
+  0%, 33%, 67% { filter: drop-shadow(2px 0 0 #facc15) drop-shadow(-2px 0 0 #facc15) drop-shadow(0 2px 0 #facc15) drop-shadow(0 -2px 0 #facc15); }
+  17%, 50%, 83% { filter: drop-shadow(2px 0 0 #ca8a04) drop-shadow(-2px 0 0 #ca8a04) drop-shadow(0 2px 0 #ca8a04) drop-shadow(0 -2px 0 #ca8a04); }
+  100% { filter: drop-shadow(2px 0 0 #facc15) drop-shadow(-2px 0 0 #facc15) drop-shadow(0 2px 0 #facc15) drop-shadow(0 -2px 0 #facc15); }
+}
+[data-banner-pulse="gold"] { animation: gi-banner-pulse 1200ms steps(1, end) both; }
+@media (prefers-reduced-motion: reduce) {
+  [data-banner-pulse="gold"] {
+    animation: none;
+    filter: drop-shadow(2px 0 0 #facc15) drop-shadow(-2px 0 0 #facc15) drop-shadow(0 2px 0 #facc15) drop-shadow(0 -2px 0 #facc15);
+  }
+}
 
 /* All Caps Toggle Rules */
 body[data-allcaps="true"] *:not(input):not(textarea):not(code) {

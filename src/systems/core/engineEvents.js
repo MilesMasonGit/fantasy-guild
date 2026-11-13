@@ -234,6 +234,13 @@ export const UI_EVENTS = Object.freeze({
      */
     UI_TOKEN_FX: 'ui:token_fx',
 
+    /**
+     * Show something on the mat: a banner that points to its Token was clicked (an event's). From
+     * the World Map or the Guild Hall the view goes back to the mat, then the subjects pulse gold.
+     * Payload: `{ subjects: [{ type: 'token'|'hero', id }] }`.
+     */
+    SHOW_ON_MAT: 'ui:show_on_mat',
+
     /** Open the Encyclopedia at one entry: a "look it up" link. Payload: `{ key }` (a ledger key, `item:<id>`). */
     OPEN_ENCYCLOPEDIA: 'ui:open_encyclopedia',
 
