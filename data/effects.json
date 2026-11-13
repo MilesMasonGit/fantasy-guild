@@ -2271,5 +2271,160 @@
       }
     ],
     "id": "effect_flutter"
+  },
+  "effect_rainfall": {
+    "name": "Rainfall",
+    "statements": [
+      {
+        "id": "stm_rainfall",
+        "keyword": "provides",
+        "payload": {
+          "type": "LOOT_MULT",
+          "bucket": "flat",
+          "value": 20,
+          "category": "farming"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_rainfall"
+  },
+  "effect_warm_sun": {
+    "name": "Warm Sun",
+    "statements": [
+      {
+        "id": "stm_warm_sun",
+        "keyword": "provides",
+        "payload": {
+          "type": "GROW_TIME",
+          "bucket": "percentage",
+          "value": -0.3,
+          "category": "farming"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_warm_sun"
+  },
+  "effect_deep_vein": {
+    "name": "Deep Vein",
+    "statements": [
+      {
+        "id": "stm_deep_vein",
+        "keyword": "provides",
+        "payload": {
+          "type": "GROW_TIME",
+          "bucket": "percentage",
+          "value": -0.3,
+          "category": "mining"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_deep_vein"
+  },
+  "effect_morning_mist": {
+    "name": "Morning Mist",
+    "statements": [
+      {
+        "id": "stm_morning_mist",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.2,
+          "category": "forestry"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_morning_mist"
+  },
+  "effect_fair_winds": {
+    "name": "Fair Winds",
+    "statements": [
+      {
+        "id": "stm_fair_winds",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.2,
+          "category": "fishing"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_fair_winds"
+  },
+  "effect_starry_night": {
+    "name": "Starry Night",
+    "statements": [
+      {
+        "id": "stm_starry_night",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.15
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_starry_night"
   }
 }

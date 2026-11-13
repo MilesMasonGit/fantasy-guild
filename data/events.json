@@ -1,0 +1,122 @@
+{
+  "event_copper_comet": {
+    "id": "event_copper_comet",
+    "name": "Copper Comet",
+    "typeId": "token_copper_comet",
+    "kind": "node",
+    "weight": 10,
+    "ground": [],
+    "biomes": []
+  },
+  "event_iron_comet": {
+    "id": "event_iron_comet",
+    "name": "Iron Comet",
+    "typeId": "token_iron_comet",
+    "kind": "node",
+    "weight": 10,
+    "ground": [],
+    "biomes": []
+  },
+  "event_mythril_comet": {
+    "id": "event_mythril_comet",
+    "name": "Mythril Comet",
+    "typeId": "token_mythril_comet",
+    "kind": "node",
+    "weight": 10,
+    "ground": [],
+    "biomes": []
+  },
+  "event_fallen_maple": {
+    "id": "event_fallen_maple",
+    "name": "Fallen Maple",
+    "typeId": "token_fallen_maple",
+    "kind": "node",
+    "weight": 10,
+    "ground": [
+      "grass"
+    ],
+    "biomes": []
+  },
+  "event_fish_shoal": {
+    "id": "event_fish_shoal",
+    "name": "Fish Shoal",
+    "typeId": "token_fish_shoal",
+    "kind": "node",
+    "weight": 10,
+    "ground": [
+      "water"
+    ],
+    "biomes": []
+  },
+  "event_berry_thicket": {
+    "id": "event_berry_thicket",
+    "name": "Berry Thicket",
+    "typeId": "token_berry_thicket",
+    "kind": "node",
+    "weight": 10,
+    "ground": [
+      "grass"
+    ],
+    "biomes": []
+  },
+  "event_rainfall": {
+    "id": "event_rainfall",
+    "name": "Rainfall",
+    "typeId": "token_rainfall",
+    "kind": "buff",
+    "weight": 10,
+    "ground": [],
+    "biomes": [],
+    "durationMinutes": 20
+  },
+  "event_warm_sun": {
+    "id": "event_warm_sun",
+    "name": "Warm Sun",
+    "typeId": "token_warm_sun",
+    "kind": "buff",
+    "weight": 10,
+    "ground": [],
+    "biomes": [],
+    "durationMinutes": 20
+  },
+  "event_deep_vein": {
+    "id": "event_deep_vein",
+    "name": "Deep Vein",
+    "typeId": "token_deep_vein",
+    "kind": "buff",
+    "weight": 10,
+    "ground": [],
+    "biomes": [],
+    "durationMinutes": 20
+  },
+  "event_morning_mist": {
+    "id": "event_morning_mist",
+    "name": "Morning Mist",
+    "typeId": "token_morning_mist",
+    "kind": "buff",
+    "weight": 10,
+    "ground": [],
+    "biomes": [],
+    "durationMinutes": 20
+  },
+  "event_fair_winds": {
+    "id": "event_fair_winds",
+    "name": "Fair Winds",
+    "typeId": "token_fair_winds",
+    "kind": "buff",
+    "weight": 10,
+    "ground": [],
+    "biomes": [],
+    "durationMinutes": 20
+  },
+  "event_starry_night": {
+    "id": "event_starry_night",
+    "name": "Starry Night",
+    "typeId": "token_starry_night",
+    "kind": "buff",
+    "weight": 10,
+    "ground": [],
+    "biomes": [],
+    "durationMinutes": 20
+  }
+}
