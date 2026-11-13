@@ -21,8 +21,8 @@ build green) · bench-queued · eye-check · merged.*
 | XP for Everyone shows the normal level-up animations (owner: existing are enough) | builder | `fix/xp-gift-levelups` (`t1`) b0887eda | **merged** b0887eda (ff), pushed: 667 files green, work same; one level-up sound per purchase | Thu | Thu |
 | 620 E4: combat stars per style | builder | `feat/combat-stars` (`rt`) 8140d948 | **merged** 9205189c, pushed: 667 files green, work same. No eye-check until a star uses it; content agent authors the four constellations (C1) | Thu | Thu |
 | 630 B2: the War Camp rule | engineer | `feat/war-camp` (`b2`) 35748d6a | **accepted** (bosses in reach fought: A); rebased, QA scene and its test deleted; in the `s3` trial merge above, **work check queued 02:05 Fri**, then ff main | Thu | |
-| 630 B1: one building per skill (T-307) | engineer | `feat/one-building` (`t1`) | **building**; expect WORK CHANGED (the bench camp builds today's stations) | Thu | |
-| 620 E3: Long-lasting Brews and Strong Drink | engineer | `feat/drink-stars` (`rt`) | **building**; before T-338 | Thu | |
+| 630 B1: one building per skill (T-307) | engineer | `feat/one-building` (`t1`) e137b0c6 | **ready**: 668 files green (agent), craft station kinds retired (old stations offer their whole skill), Farming keeps its kinds; tutorial keeps Furnace/Copper Smithy until C1; agent expects work same; `bench:calibrate` re-run due; work check queued 02:05 | Thu | |
+| 620 E3: Long-lasting Brews and Strong Drink | engineer | `feat/drink-stars` (`rt`) fbf05d49 | **ready**: 668 files green (agent), director gate running; work check queued 02:05; three option questions parked; notes for T-338 in the agent report (doseLength is the one place a dose length is decided) | Thu | |
 
 ## Director, briefs 590 and 600 (owner, 2026-11-11: both at once; effect renames T-403 after 590; retirements T-400 to T-402 checked now, owner deletes in the CMS)
 
@@ -315,7 +315,9 @@ None open.
 
 ## Questions for the owner
 
-- **War Camp, for the look:** bosses and guardians in a War Camp's reach, fought like every enemy (A, built) or skipped (B)?
+- ~~War Camp bosses~~ **Answered 2026-11-12: A, fought like every enemy.** ~~Giant Harvest building bonus drops~~ **Answered: C, Double Loot and Giant both multiply them; no Giant chip on Token cards.**
+- **Drink stars (620 E3), first option of each built, for the batch proposal:** Long-lasting Brews rounds each fresh dose halves up (A, built; ranks then sized as whole cycles or 5–10 % steps) or carries the fraction on the hero (B) or rounds by chance (C)? Strong Drink raises the rule numbers only (A, built), also a grant's chance (B), also a potion's own heal or damage (C)? A drink's drawbacks grow too (A, built) or only the helpful numbers (B)?
+- **Ticket candidate (planning):** the hero drawer's Gear effects tooltip names an applied effect by its id (applies effect_merry...); `heroPerks.carriedRuleNames()` lacks an effect name resolver; one line, also changes perk lines.
 - **For the planning agent:** the Guard Tower now that enemies never attack: keep it as the no-hero way to stop spawns (A), drop it (B), or make it a War Camp variant (C).
 
 - ~~The rare twinkle; the Work potion label~~ **Answered 2026-11-11: leave the twinkle off (A); rename to Potion (B, done on `feat/effects-590` 2e6e78c5).**
@@ -364,7 +366,7 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
 
-**Fri 13 Nov, 02:05 (director timer, `s3` 68a3a220):** `npm run bench -- --compare` on the slim panel + War Camp trial merge; same work, then ff `main` and push.
+**Fri 13 Nov, 02:05 (director timer):** `npm run bench -- --compare` in turn on `s3` 68a3a220 (slim panel + War Camp trial merge), `t1` e137b0c6 (630 B1), `rt` fbf05d49 (620 E3); same work, then merge each and push. Then `npm run bench:calibrate` on main after B1.
 
 **Thu 12 Nov, 02:05–04:15 (director): done.** B2 work check same (and a main control); 590 trial merge suite 654 green, work check same (merged); 610 trial merge suite 649 green, work check same, drag bench misses (above), draw matches a main control. **Queued:** the B2 rebase's work check when ready; 610 drag bench again after the engineer's fix; **retake the engine and draw baselines on main** in the next quiet window (the October draw baseline reads every scene REGRESSED on main too).
 
