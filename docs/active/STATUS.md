@@ -7,6 +7,17 @@ build green) · bench-queued · eye-check · merged.*
 
 **Owner, 2026-11-06 (behind the week's target): up to four code builders at once this week** (plus one read-only); the director still runs suites, builds and benches one at a time. **Owner, 2026-11-06 late morning, away at work:** the director may start new briefs and merge pieces on the gate without a full look; the owner answers questions remotely (screenshots to the phone). Look changes merged this way are listed for the owner's next look in `docs/active/eyecheck/2026-11-06_merged_while_away.md`.
 
+## Director, batch 4: brief 640 Events (owner, 2026-11-12: start E1 now)
+
+*Thu 12 Nov, 20:20, batch proposed and started. Where we are: batch 3 waits for tonight's work checks (02:05, then merges). Owner answered the drink questions: Long-lasting Brews rounds by chance (C, builder switching it on `feat/drink-stars` before the bench), Strong Drink raises effect numbers only (A), drawbacks grow too (A). E1, the event engine, building now from main 00bad4b5 (rebase after tonight's merges). Next: E2 (arrival and banner) beside the content agent's first events pack (C1, needs E1's CMS table). Owner: nothing until the events eye-check. Blockers: none.*
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| 640 E1: the event engine (hourly clock, weighted landing by ground, expiry, offline, demolish, CMS table) | engineer | `feat/events` (`ev`) d7506865 | **ready**: director gate 670 files green, cycles 0, depcruise, lint 4 warnings, build; read the clock and expiry rows; events off in tests and bench unless `--events`; agent checked comet, Rainfall, unworkable Mythril, demolish, catch-up in game; **work check queued after the four at 02:05**, then rebase onto the new main; no `data/events.json` yet = no events | Thu | Thu |
+| 620 E3 follow-up: Long-lasting Brews rounds by chance (owner C) | builder | `feat/drink-stars` (`rt`) 0a11b5c6 | **ready**: display shows the two possible lengths (10–11) and never draws; dose start rolls; agent gate 668 files green; director read the diff; work check at 02:05 with E3 | Thu | Thu |
+| 640 E2: arrival and the banner | builder | | queued: starts after tonight's merges and E1's rebase (the slim QA panel rewrites `TestDashboard.jsx`, where E1 mounts its QA events section) | | |
+| 640 C1: first events pack (6 to 8) | content agent | | queued after E1 (needs the CMS table) | | |
+
 ## Director, the QA panel, T-336, then briefs 620 and 630 (owner, 2026-11-12: stars' small effects first)
 
 *Thu 12 Nov, 14:45. Where we are: 610 (select and right-click, after the owner's fixes), 600 B3 and B4 (badges) and the QA panel in test builds are merged (109ab4e4, work same, drag 100 %, draw as main's control) and pushed; eye-checks now live on the Guild Eye-checks page (https://claude.ai/artifact/7BxeTfaxXYvH9fiX2jZZDJ). Next: the slim QA panel (owner look, desktop build `_builds/2026-11-12-qa-panel`), T-336 merges on the gate; batch 1 of 620 building (E1 Giant Harvest, E2 XP for Everyone). Then E4 + 630 B2, then 630 B1 + 620 E3. Owner: look at the slim QA panel. Blockers: none.*
@@ -14,13 +25,15 @@ build green) · bench-queued · eye-check · merged.*
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | QA panel in test builds (`QA_TOOLS`, `tauri:build:ship`) | builder | `fix/qa-in-builds` (`t1`) cc7588f0 | **merged** 109ab4e4, pushed | Thu | Thu |
-| QA panel slim: give items, heroes, place a Token or enemy, two owner tools | builder | `feat/qa-panel-slim` (`t2`) d570beff | **eye-check waiting** (page tab qa-slim, `_builds/2026-11-12-qa-panel`); work same | Thu | |
+| QA panel slim: give items, heroes, place a Token or enemy, two owner tools | builder | `feat/qa-panel-slim` (`t2`) b3627700 | **accepted** (page tab qa-slim, archived); rebased, trial merge with War Camp in `s3` 68a3a220: 654 files green, cycles, depcruise, build; **work check queued 02:05 Fri**, then ff main | Thu | |
 | T-336: the ledger judges rare finds by finds a day; rare-find boost targets (x3 at plan tier 6) | builder | `fix/rare-find-labels` (`b2`) 750d21b5 | **merged** e75f1fbf, pushed (664 files green, work same) | Thu | Thu |
-| 620 E1: Giant Harvest | engineer | `feat/giant-harvest` (`fx`) bed8bd4b | **eye-check waiting** (page tab giant, `_builds/2026-11-12-giant-harvest` = slim panel + E1 + a scene button, scratch 6abfecbe in `s3`); 8389 green (agent), work same; owner question on building bonus drops in the tab. After the look: wire the button on the branch over the slim panel, merge, then delete the scene | Thu | |
+| 620 E1: Giant Harvest | engineer, fixes builder | `feat/giant-harvest` (`fx`) e3304705 | **ready**: owner's two changes built (no chip; bonus drops x2/x10/x20 on cycles, x2 on kills, CMS rates too), scene deleted; director gate 669 files green; work check queued 02:05 (may change only if the bench has a Clean Felling forester with a Birdwatcher Potion) | Thu | |
 | 620 E2: XP for Everyone | engineer | `feat/xp-for-everyone` (`rt`) 7391ec09 | **merged** 0f2f3499, pushed (665 files green, work same; no eye-check until a star uses it). Owner 2026-11-12: existing level-up animations are enough, so the new +N float and alert go (option C, follow-up queued when a builder is free) | Thu | Thu |
 | XP for Everyone shows the normal level-up animations (owner: existing are enough) | builder | `fix/xp-gift-levelups` (`t1`) b0887eda | **merged** b0887eda (ff), pushed: 667 files green, work same; one level-up sound per purchase | Thu | Thu |
 | 620 E4: combat stars per style | builder | `feat/combat-stars` (`rt`) 8140d948 | **merged** 9205189c, pushed: 667 files green, work same. No eye-check until a star uses it; content agent authors the four constellations (C1) | Thu | Thu |
-| 630 B2: the War Camp rule | engineer | `feat/war-camp` (`b2`) c9801991 | 89cad4c5 **eye-check waiting** (page tab war-camp, `_builds/2026-11-12-war-camp` = slim panel + Giant Harvest + War Camp + two scene buttons, scratch 1e757d47 in `s3`); 8427 green (agent), work same; idle blip after a kill fixed for every camp; marker: a camp whose skill is a combat style | Thu | |
+| 630 B2: the War Camp rule | engineer | `feat/war-camp` (`b2`) 35748d6a | **accepted** (bosses in reach fought: A); rebased, QA scene and its test deleted; in the `s3` trial merge above, **work check queued 02:05 Fri**, then ff main | Thu | |
+| 630 B1: one building per skill (T-307) | engineer | `feat/one-building` (`t1`) e137b0c6 | **ready**: 668 files green (agent), craft station kinds retired (old stations offer their whole skill), Farming keeps its kinds; tutorial keeps Furnace/Copper Smithy until C1; agent expects work same; `bench:calibrate` re-run due; work check queued 02:05 | Thu | |
+| 620 E3: Long-lasting Brews and Strong Drink | engineer | `feat/drink-stars` (`rt`) fbf05d49 | **ready**: 668 files green (agent), director gate running; work check queued 02:05; three option questions parked; notes for T-338 in the agent report (doseLength is the one place a dose length is decided) | Thu | |
 
 ## Director, briefs 590 and 600 (owner, 2026-11-11: both at once; effect renames T-403 after 590; retirements T-400 to T-402 checked now, owner deletes in the CMS)
 
@@ -313,7 +326,11 @@ None open.
 
 ## Questions for the owner
 
-- **War Camp, for the look:** bosses and guardians in a War Camp's reach, fought like every enemy (A, built) or skipped (B)?
+- **Events (640 E1), first option of each built, for the next proposal:** an event left on another Region's mat when the guild travels stays frozen there while the new mat's clock runs (A, built), is removed (B), or holds the clock (C)? The interval exactly 60 min (A, built) or a random 45 to 75 (B)? Event Tokens outside the mat's Token cap (A, built) or counted (B)? The Starter Camp counts as meadow for an event's region list (A, built) or its own biome (B)? Also: the slim QA panel keeps a small Events section for landing one now (needed for the E2 eye-check)?
+
+- ~~War Camp bosses~~ **Answered 2026-11-12: A, fought like every enemy.** ~~Giant Harvest building bonus drops~~ **Answered: C, Double Loot and Giant both multiply them; no Giant chip on Token cards.**
+- ~~Drink stars~~ **Answered 2026-11-12: rounding C (by chance), Strong Drink A, drawbacks A.** Was: **Drink stars (620 E3), first option of each built, for the batch proposal:** Long-lasting Brews rounds each fresh dose halves up (A, built; ranks then sized as whole cycles or 5–10 % steps) or carries the fraction on the hero (B) or rounds by chance (C)? Strong Drink raises the rule numbers only (A, built), also a grant's chance (B), also a potion's own heal or damage (C)? A drink's drawbacks grow too (A, built) or only the helpful numbers (B)?
+- **Ticket candidates (planning):** GDD 7 What ships still says Windmill +5 double loot on Fields (stale). And: the hero drawer's Gear effects tooltip names an applied effect by its id (applies effect_merry...); `heroPerks.carriedRuleNames()` lacks an effect name resolver; one line, also changes perk lines.
 - **For the planning agent:** the Guard Tower now that enemies never attack: keep it as the no-hero way to stop spawns (A), drop it (B), or make it a War Camp variant (C).
 
 - ~~The rare twinkle; the Work potion label~~ **Answered 2026-11-11: leave the twinkle off (A); rename to Potion (B, done on `feat/effects-590` 2e6e78c5).**
@@ -362,6 +379,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
 
+**Fri 13 Nov, 02:05 (director timer):** `npm run bench -- --compare` in turn on `s3` 68a3a220 (slim panel + War Camp trial merge), `t1` e137b0c6 (630 B1), `rt` fbf05d49 (620 E3), `fx` e3304705 (620 E1); same work, then merge each and push. Then `npm run bench:calibrate` on main after B1.
+
 **Thu 12 Nov, 02:05–04:15 (director): done.** B2 work check same (and a main control); 590 trial merge suite 654 green, work check same (merged); 610 trial merge suite 649 green, work check same, drag bench misses (above), draw matches a main control. **Queued:** the B2 rebase's work check when ready; 610 drag bench again after the engineer's fix; **retake the engine and draw baselines on main** in the next quiet window (the October draw baseline reads every scene REGRESSED on main too).
 
 **Fri 6 Nov, 13:01 (director): done** on main 32c65b47 (everything merged today). Engine: S1, S4, S7 same work; S2, S3, S5, S6, S8, S8L, S8F, C240, C256 WORK CHANGED as predicted (bench fights, brief 500), accepted; identity same, fidelity ok. Draw: no drawing regression (the timer exited 3, read the log: `draw-2026-11-06T20-04-30`). **Next quiet window (01:00): retake both baselines on main, then `npm run bench:calibrate` (hallStars.js changed).**
@@ -383,6 +402,8 @@ T-186; the badges' soft shadows are settled inside T-013.)
 **Sat 31 Oct, 01:00–02:15 (director):** engine tickets WORK CHANGED exactly as predicted (S1/S4/S7 same; identity and fidelity hold), acceptance run queued, then merge after `main` is green. Hall H1 same work, calibration ok. World W1 same, W2 same. **Draw regression is real**: alternating runs, `a4a124be` S2 4× workP50 6.2–7.3 ms, `main` 11.5–12.4 ms (bank 6.3–6.7 vs 11.8–13.7): an engineer bisects in `p23b` until 06:45 (`diag/draw-regression`).
 
 ## Summaries
+
+*Thu 12 Nov, 18:30. Batch 3 started (owner: go; looks done). Looks: slim QA panel and War Camp accepted; Giant Harvest accepted with two changes (no chip on Token cards; building bonus drops multiplied by both Double Loot and Giant). Next: slim + War Camp to main after the 02:05 work check; Giant fix when a helper slot frees; 630 B1 and 620 E3 building. Owner: discard the stray empty Starter Camp in the CMS inbox. Blockers: none.*
 
 *Fri 6 Nov 22:10. Session closed at the owner's word. Everything is merged and pushed (main 2846de23, 627 files green); worktrees cleaned (only p23b and the four planning ones remain). Owner: hard refresh to see the map under the UI, the look list, the Swift Laps pack, two Foundation descriptions. Next: the owner's code review and optimisation pass with a fresh agent; retake the bench baselines in the first quiet window (the 01:00 timer died with this session). See HANDOFF.md.*
 

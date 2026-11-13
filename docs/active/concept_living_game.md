@@ -8,6 +8,8 @@ Status: approved 2026-10-09 (brief after the crunch)
 
 ## Events
 
+> **Landings and buffs are now [concept_events.md](concept_events.md)** (owner, 2026-11-12, brief 640): about once an hour, one at a time. Visitors below are a later session.
+
 - **A few per hour of play**: roughly every 15–30 minutes something small,
   with rarer big ones.
 - **Treats, with optional risk**: events offer something good; any danger is

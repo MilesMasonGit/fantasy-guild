@@ -249,6 +249,8 @@ mods via the CMS after release.
 
 ## Moved on
 
+- **Events: rich nodes and buff Tokens that land on the mat** (owner, 2026-11-12) → [concept_events.md](concept_events.md), brief 640. Trainers and other visitors later.
+
 - **Floating Foundations, standardized reach across all reach features, and in-range dot icons during drag** (owner, 2026-11-09) → [concept_foundation_reach.md](concept_foundation_reach.md), approved 2026-11-09.
 - **Limes the Slime playmat NPC conversation framework & UI mechanic hover blurbs** (owner, 2026-11-09) → [concept_tutorial_npc.md](concept_tutorial_npc.md), approved 2026-11-09.
 - **Default font updated to Silkscreen** (owner, 2026-11-09) → **T-396** in [TICKETS](../reference/TICKETS.md).
