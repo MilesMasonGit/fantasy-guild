@@ -19,7 +19,7 @@ build green) · bench-queued · eye-check · merged.*
 | 620 E3 follow-up: Long-lasting Brews rounds by chance (owner C) | builder | `feat/drink-stars` 0a11b5c6 | **merged** with E3 (43a92a7b) | Thu | Fri |
 | 640 E2: arrival and the banner | builder | `feat/events-arrival` (`ev`) | building | Fri | |
 | 640 C1: first events pack (6 to 8) | content agent | | **unblocked**: the CMS Events page is on main; owner opens a `/content` session | | |
-| Forest calibration: foresters about 24 % under the ledger since 560 R1 (one standard reach, bisected to 7953c84e; 378 to 304 oak cycles an hour) | engineer, diagnosis | (`s3`, read-only) | diagnosing; stamp not committed until then | Fri | |
+| Forest calibration: foresters about 24 % under the ledger since 560 R1 (one standard reach, bisected to 7953c84e) | engineer, diagnosis; director fix | `fix/forest-calibration` b84e7ae6 | **merged**, pushed: not an engine bug; one of five saplings stood 0.5 u outside the camp's new 240 u reach and was never cut or replaced; calibration camp moved to 120 u from its Forest, stamp retaken, all within tolerance. Owner question below (real camps one step away lose one or two trees) | Fri | Fri |
 
 ## Director, the QA panel, T-336, then briefs 620 and 630 (owner, 2026-11-12: stars' small effects first)
 
@@ -328,6 +328,8 @@ Owner 2026-11-01: Guild Hall H1 and the walker glide need no look (marked looked
 None open.
 
 ## Questions for the owner
+
+- **Logging Camps one step from their Forest (found by the calibration, 2026-11-13):** since the one standard reach (240 u), a camp built one step (160 u) from its Oak Forest misses the far trees of the Forest's ring: one or two of five (the Starter Camp: two of its four placed trees from one step east), quietly, and the Forest never replaces them; a camp within about 150 u loses nothing. A (recommended): accept it, a camp belongs right beside its Forest and the reach dots show what it works; optionally reword the Logging Camp's CMS description. B: a Forest plants only where a nearby camp reaches (builder; doesn't help trees already placed). C: a camp works every tree of a Forest in its reach, wherever the tree is (engineer; bends the one-reach rule and the dots).
 
 - **Events (640 E1), first option of each built, for the next proposal:** an event left on another Region's mat when the guild travels stays frozen there while the new mat's clock runs (A, built), is removed (B), or holds the clock (C)? The interval exactly 60 min (A, built) or a random 45 to 75 (B)? Event Tokens outside the mat's Token cap (A, built) or counted (B)? The Starter Camp counts as meadow for an event's region list (A, built) or its own biome (B)? Also: the slim QA panel keeps a small Events section for landing one now (needed for the E2 eye-check)?
 
