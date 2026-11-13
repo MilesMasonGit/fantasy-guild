@@ -20,7 +20,7 @@ import { PLACEMENTS, placementOf } from '../../../../src/config/registries/place
 import { getAllSkills, getSkill, COMBAT_SKILL_IDS } from '../../../../src/config/registries/skillRegistry.js';
 import { CARRIED_KINDS } from '../../../../src/config/registries/carriedKinds.js';
 import { DAMAGE_GROUPS, DAMAGE_TYPES, typesOfGroup, damageTypeLabel } from '../../../../src/config/registries/damageTypes.js';
-import { STATION_KINDS, stationKindLabel } from '../../../../src/config/registries/tokenConstants.js';
+import { stationKindLabel, stationKindsOfSkill, isRetiredStationKind } from '../../../../src/config/registries/tokenConstants.js';
 
 /**
  * A statement, described as the ordered slots an author fills in: the model behind the
@@ -517,11 +517,15 @@ function payloadSlots(statement, ctx) {
                 options: skillOptions(),
                 patch: v => ({ payload: { ...payload, skill: v } })
             }, {
-                // ⚠️ Optional: no kind means the whole skill, today's behaviour.
+                // ⚠️ Optional: no kind means the whole skill, a skill's building. Only a skill that splits
+                // its recipes (Farming) has kinds to offer; a retired kind still set is listed so it reads.
                 id: 'stationKind', kind: SLOT_KIND.VOCABULARY, label: 'which station', optional: true,
                 value: payload.stationKind || '',
                 options: [option('', 'Any station', 'Offers every recipe of the skill.'),
-                    ...STATION_KINDS.map(k => option(k, stationKindLabel(k), `Offers the recipes marked ${stationKindLabel(k)}, and those marked for no station.`))],
+                    ...stationKindsOfSkill(payload.skill).map(k => option(k, stationKindLabel(k), `Offers the recipes marked ${stationKindLabel(k)}, and those marked for no station.`)),
+                    ...(isRetiredStationKind(payload.stationKind)
+                        ? [option(payload.stationKind, `${stationKindLabel(payload.stationKind)} (retired)`, 'A retired kind: it narrows nothing, so this offers every recipe of the skill. Pick Any station to clear it.')]
+                        : [])],
                 patch: v => {
                     const next = { ...payload };
                     if (v) next.stationKind = v; else delete next.stationKind;

@@ -145,12 +145,13 @@ describe('The Processing chain in shipped data (7.5)', () => {
             }
         });
 
-        it('the Workbench offers exactly the Crafting recipes, and a new one starts on none (TL-15)', () => {
-            // The leather recipes are Made at the Tannery kind, so the Workbench no longer offers them.
-            expect(poolNames('token_workbench')).toEqual([
+        it('the Workbench offers every Crafting recipe, and a new one starts on none (TL-15)', () => {
+            // Its old kind narrows nothing now, nor does the Tannery's: each offers the whole skill.
+            expect(poolNames('token_workbench')).toEqual(expect.arrayContaining([
                 'Charcoal', 'Fine Fishing Rod', 'Fishing Rod', 'Search a Bird Nest', 'Shrimp Bait', 'Torch', 'Trap', 'Worm Bait',
-            ]);
-            expect(poolNames('token_tannery')).toEqual(expect.arrayContaining(['Leather', 'Leather Chest', 'Leather Hat']));
+                'Leather', 'Leather Chest', 'Leather Hat',
+            ]));
+            expect(poolNames('token_tannery')).toEqual(poolNames('token_workbench'));
             const bench = BoardState.createTokenInstance('token_workbench');
             expect(StationRecipe.validateSelection(bench, getTokenType('token_workbench'))).toBeNull();
             expect(bench.selectedRecipeId).toBeUndefined();
@@ -310,8 +311,11 @@ describe('The lifecycle audit on the Processing chain', () => {
         // The audit reads Tokens EXPANDED (its contract): the Anvil's `Acts as`
         // rule lives in the effect library, so the registry's copy is used.
         const expanded = Object.fromEntries(Object.keys(tokens).map((id) => [id, getTokenType(id) || tokens[id]]));
+        // A retired station kind still on a station or a recipe is a leftover for the content pack
+        // to clear: a warning, since it narrows nothing. Everything else must stay clean.
+        const leftover = (f) => f.severity === 'warning' && (f.field === 'stationKind' || f.field === 'stationKinds');
         const findings = auditLifecycleBlocks({ tokens: expanded, items, recipes, skills: SKILLS })
-            .filter((f) => f.severity === 'error' || ids.has(f.entityId));
+            .filter((f) => (f.severity === 'error' || ids.has(f.entityId)) && !leftover(f));
         expect(findings.map((f) => [f.severity, f.entityId, f.field])).toEqual([]);
     });
 });

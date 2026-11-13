@@ -2,7 +2,7 @@
 
 import {
     FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_MODES, respawnOf, foundationTierOf, foundationMinTierOf, foundationTierMeets,
-    STATION_KINDS, stationKindOffers
+    STATION_KINDS, stationKindOffers, isRetiredStationKind, retiredStationKindsOf, stationKindLabel
 } from '../../config/registries/tokenConstants.js';
 import { stationSkillOf, stationKindOf, getProvidedTagsWithTiers, statementsOf, KEYWORD } from '../effects/statements.js';
 import { neverWearsReason, NEVER_WEARS_WHY } from './wearRule.js';
@@ -525,9 +525,14 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
     }
 
     // ── Station kinds: on a station's Works as rule and on a recipe ──
+    // A retired kind narrows nothing, so it is a leftover to clear, not a fault.
     for (const [id, def] of Object.entries(tokens)) {
         const kind = stationKindOf(def);
-        if (kind && !STATION_KINDS.includes(kind)) {
+        if (!kind || STATION_KINDS.includes(kind)) continue;
+        if (isRetiredStationKind(kind)) {
+            const skill = stationSkillOf(def);
+            tokenWarning(id, 'stationKind', `works as a ${stationKindLabel(kind)}, a retired station kind that narrows nothing: it offers every ${skill} recipe, as the skill's building does. Clear the kind (Any station), or delete the Token if a building replaces it.`);
+        } else {
             tokenError(id, 'stationKind', `works as the station kind ${show(kind)}; it must be one of ${STATION_KINDS.join(', ')}.`);
         }
     }
@@ -537,8 +542,12 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
             recipeError(recipe, 'stationKinds', `station kinds are ${show(recipe.stationKinds)}; they must be a list.`);
             continue;
         }
+        const retired = retiredStationKindsOf(recipe);
+        if (retired.length) {
+            recipeWarning(recipe, 'stationKinds', `is still marked Made at ${retired.map(stationKindLabel).join(', ')}, retired station kinds that narrow nothing: every ${recipe.skill} station offers it. Untick them.`);
+        }
         for (const kind of recipe.stationKinds) {
-            if (!STATION_KINDS.includes(kind)) {
+            if (!STATION_KINDS.includes(kind) && !isRetiredStationKind(kind)) {
                 recipeError(recipe, 'stationKinds', `names the station kind ${show(kind)}; it must be one of ${STATION_KINDS.join(', ')}.`);
             }
         }

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Gauge } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
-import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, ATTACK_SPEED_MS, RETIRED_ENEMY_FIELDS, DAMAGE_TYPES, DAMAGE_GROUPS, RESISTANCE_STEPS, damageTypeLabel, isTypeOrGroupId, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY, neededToolOf, toolNeedPhrase, hasCatchPools } from '../../utils/constants';
+import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, stationKindsOfSkill, isRetiredStationKind, ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, ATTACK_SPEED_MS, RETIRED_ENEMY_FIELDS, DAMAGE_TYPES, DAMAGE_GROUPS, RESISTANCE_STEPS, damageTypeLabel, isTypeOrGroupId, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY, neededToolOf, toolNeedPhrase, hasCatchPools } from '../../utils/constants';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
@@ -621,7 +621,7 @@ export default function TokenEditor() {
 
           {isPooled ? (
             <div className="space-y-2">
-              {/* The kind narrows the pool to the recipes that name it (and those naming no station). It is written on the same Works as rule. */}
+              {/* The kind narrows the pool to the recipes that name it (and those naming no station). It is written on the same Works as rule. Only a skill that splits its recipes (Farming) offers kinds; a retired kind still set narrows nothing. */}
               <label className="flex items-center gap-2 text-xs text-gray-300" data-testid="station-kind">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Station kind</span>
                 <select
@@ -631,14 +631,20 @@ export default function TokenEditor() {
                   style={{ fontSize: 12 }}
                 >
                   <option value="">Any station (every {skillName(stationSkill)} recipe)</option>
-                  {stationKind && !STATION_KINDS.includes(stationKind) && <option value={stationKind}>{stationKind} (unknown)</option>}
-                  {STATION_KINDS.map((k) => <option key={k} value={k}>{stationKindLabel(k)}</option>)}
+                  {stationKind && !stationKindsOfSkill(stationSkill).includes(stationKind) && (
+                    <option value={stationKind}>
+                      {isRetiredStationKind(stationKind) ? `${stationKindLabel(stationKind)} (retired)` : STATION_KINDS.includes(stationKind) ? stationKindLabel(stationKind) : `${stationKind} (unknown)`}
+                    </option>
+                  )}
+                  {stationKindsOfSkill(stationSkill).map((k) => <option key={k} value={k}>{stationKindLabel(k)}</option>)}
                 </select>
               </label>
               <p className="text-[11px] text-gray-400 leading-relaxed">
-                {stationKind
-                  ? <>This station runs the {skillName(stationSkill)} recipes marked {stationKindLabel(stationKind)}, and those marked for no station.</>
-                  : <>This station can run anything in the {skillName(stationSkill)} pool.</>}{' '}
+                {stationKind && isRetiredStationKind(stationKind)
+                  ? <>{stationKindLabel(stationKind)} is a retired station kind, which narrows nothing: this station can run anything in the {skillName(stationSkill)} pool, as the skill&apos;s building does. Pick Any station to clear it.</>
+                  : stationKind
+                    ? <>This station runs the {skillName(stationSkill)} recipes marked {stationKindLabel(stationKind)}, and those marked for no station.</>
+                    : <>This station can run anything in the {skillName(stationSkill)} pool.</>}{' '}
                 The player picks which one; its neighbours decide whether the pick can run
                 right now. A station has no recipes of its own.
               </p>

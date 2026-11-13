@@ -901,11 +901,11 @@ describe('the view keeps the focus in sight', () => {
 describe('the shipped content', () => {
     const book = encyclopedia();
 
-    it('Iron Ingot: smelted at the Furnace or the Iron Furnace, a Smithing Station of just those two', () => {
+    it('Iron Ingot: smelted at any Smithing station, a Smithing Station of all four (their old kinds narrow nothing)', () => {
         const ways = waysIn(book, I('item_iron_ingot'));
         const type = entryOfKey(book, ways[0].from);
         expect(type).toMatchObject({ kind: STATIONS, name: 'Smithing Station' });
-        expect([...type.members].sort()).toEqual([T('token_furnace'), T('token_iron_furnace')]);
+        expect([...type.members].sort()).toEqual([T('token_copper_smithy'), T('token_furnace'), T('token_iron_furnace'), T('token_iron_smithy')]);
         expect(ways[0].inputs.map(i => i.key).sort()).toEqual([I('item_coal'), I('item_iron_ore')]);
         expect(ways.filter(w => w.how === HOW.CRAFT)).toHaveLength(1);
         expect(wayInRequirement(book, ways[0])).toMatchObject({ skill: 'smithing', level: 15 });

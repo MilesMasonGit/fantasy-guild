@@ -12,7 +12,7 @@ import { saveWorkspaceFile } from '../../cms/workspaceFile.js';
 import { TOOL_KINDS } from '../config/registries/toolKinds.js';
 import { DAMAGE_TYPES } from '../config/registries/damageTypes.js';
 import { ITEM_TYPES } from '../config/registries/itemRegistry.js';
-import { TOKEN_TYPES, TOKEN_RARITIES, FOUNDATION_KINDS, STATION_KINDS, RESPAWN_MODES, OUTPUT_CURRENCIES } from '../config/registries/tokenConstants.js';
+import { TOKEN_TYPES, TOKEN_RARITIES, FOUNDATION_KINDS, STATION_KINDS, RETIRED_STATION_KINDS, RESPAWN_MODES, OUTPUT_CURRENCIES } from '../config/registries/tokenConstants.js';
 import { KEYWORD } from '../systems/effects/statements.js';
 import { TRIGGER_EVENTS, TRIGGER_SCOPES } from '../config/registries/triggerRegistry.js';
 import { REACHES } from '../config/registries/reachRegistry.js';
@@ -156,7 +156,8 @@ describe('the schemas\' word lists are the game\'s', () => {
     });
 
     it('recipes', () => {
-        same(at('tokenRecipes', '$defs/recipe/properties/stationKinds/items/enum'), STATION_KINDS);
+        // The retired kinds stay valid words, so content still carrying one passes until it is cleared.
+        same(at('tokenRecipes', '$defs/recipe/properties/stationKinds/items/enum'), [...STATION_KINDS, ...RETIRED_STATION_KINDS]);
         same(at('tokenRecipes', '$defs/recipe/properties/foundationKinds/items/enum'), FOUNDATION_KINDS);
     });
 

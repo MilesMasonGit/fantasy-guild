@@ -174,7 +174,7 @@ describe('the chart', () => {
         const { container } = open();
         fireEvent.click(stationOf(container, 'in'));
         const stations = qa(container, '[data-codex-node^="s<0f<"]').map(n => n.getAttribute('data-codex-key'));
-        expect(stations.sort()).toEqual([tokenKey('token_furnace'), tokenKey('token_iron_furnace')]);
+        expect(stations.sort()).toEqual([tokenKey('token_copper_smithy'), tokenKey('token_furnace'), tokenKey('token_iron_furnace'), tokenKey('token_iron_smithy')]);
         // A station's line asks nothing: its recipes do.
         expect(q(container, '[data-codex-line-label^="s<0f<"]')).toBeNull();
     });
