@@ -29,6 +29,7 @@ beforeAll(() => {
         items: read('items.json'), tokens: read('tokens.json'), effects: read('effects.json', {}),
         tokenRecipes: read('tokenRecipes.json', []), starterCamp: read('starterCamp.json', null),
         skillPerks: read('skillPerks.json', null), hallStars: read('hallStars.json', null), world: read('world.json', null),
+        events: read('events.json', null),
         plan: JSON.parse(fs.readFileSync(path.join(root, 'cms', 'plan', 'plan.json'), 'utf8')),
     }));
 });
@@ -43,7 +44,7 @@ describe('recalculateWorkspace', () => {
         expect(Object.keys(next.items).length).toBe(Object.keys(workspace.items).length);
         expect(report.auditIssues.length).toBeGreaterThan(0);
         // The collections the line does not touch pass through as they were.
-        for (const key of ['starterCamp', 'skillPerks', 'hallStars', 'hallConstellations', 'world', 'planSettings']) {
+        for (const key of ['starterCamp', 'skillPerks', 'hallStars', 'hallConstellations', 'world', 'events', 'planSettings']) {
             expect(next[key], key).toBe(workspace[key]);
         }
     });

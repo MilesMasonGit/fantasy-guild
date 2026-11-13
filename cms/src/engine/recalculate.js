@@ -136,6 +136,8 @@ export function recalculateWorkspace(workspace, dials = {}, { previousChurn = nu
         hallSky: state.hallStars || state.hallConstellations
             ? { constellations: state.hallConstellations || {}, stars: state.hallStars || {} }
             : null,
+        // The events table, for its rows' checks; none when the workspace never held one.
+        events: state.events ?? null,
     }, sim.rows.map(describeRow));
 
     // The churn report diffs against the previous report's refusal keys, and `state.items` is the only record of every value before this run wrote over it, so both are read here.
@@ -188,6 +190,7 @@ export function balancedForSync(workspace, report) {
         hallConstellations: workspace.hallConstellations ?? null,
         hallStars: workspace.hallStars ?? null,
         world: workspace.world ?? null,
+        events: workspace.events ?? null,
         planned: report.planned,
         planSettings: workspace.planSettings ?? null,
     };

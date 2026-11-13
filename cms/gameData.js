@@ -48,6 +48,8 @@ export function loadGameData({ dataRoot, planRoot }) {
         ...(hallSky ? { hallConstellations: hallSky.constellations || {}, hallStars: hallSky.stars || {} } : {}),
         // The world tables, one record (`engine/worldTables.js`); absent until a Sync first writes them.
         world: readIf(path.join(dataRoot, 'world.json'), null),
+        // The events table (`engine/events.js`); absent until a Sync first writes one.
+        events: readIf(path.join(dataRoot, 'events.json'), null),
     }, readPlanFile(planRoot));
 }
 
@@ -131,6 +133,7 @@ export function syncCounts(files, plan) {
         perks: Object.values(files['skillPerks.json'] || {}).reduce((n, record) => n + size(record?.perks), 0),
         'Guild Hall stars': size(files['hallStars.json']?.stars),
         'world lines': size(files['world.json']?.lines),
+        events: size(files['events.json']),
         'Planned entries': plannedKeysOf(plan).size
     };
 }

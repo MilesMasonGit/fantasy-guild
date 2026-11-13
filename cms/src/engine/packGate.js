@@ -15,7 +15,7 @@ import { PACE_TEXT } from './ledger/pace.js';
 /** Bumped when the gate's rules change, so a gate stamped by an older tool reads as stale. */
 export const GATE_VERSION = 2;
 
-const COLLECTIONS = ['items', 'tokens', 'effects', 'recipePools', 'starterCamp', 'skillPerks', 'hallConstellations', 'hallStars', 'world', 'planSettings'];
+const COLLECTIONS = ['items', 'tokens', 'effects', 'recipePools', 'starterCamp', 'skillPerks', 'hallConstellations', 'hallStars', 'world', 'events', 'planSettings'];
 
 /** A fingerprint of the whole workspace a gate ran against: a pack's gate is stale once it differs. */
 export function workspaceFingerprint(workspace = {}) {

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fantasy-guild.local/cms/schemas/events.schema.json",
+  "title": "Events",
+  "description": "data/events.json, and the workspace's events: the special Tokens that land on the mat about once an hour of play, keyed by event id. Loaded by src/config/registries/eventRegistry.js (shape and checks: src/config/eventTable.js; the clock: src/systems/events/EventClock.js); authored on the CMS's Events page (cms/src/components/events/, cms/src/engine/events.js). Keys not listed here are reported as warnings.",
+  "type": "object",
+  "additionalProperties": { "$ref": "#/$defs/event" },
+  "$defs": {
+    "event": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The event id, the same as its key." },
+        "name": { "type": "string", "description": "What the player reads: the banner and the return report." },
+        "typeId": { "type": "string", "description": "The Token type that lands (data/tokens.json)." },
+        "kind": { "type": "string", "enum": ["node", "buff", ""], "description": "node: a rich node, gone at 0 charges (or after an hour when no hero can work it). buff: one effect in reach for a set time." },
+        "weight": { "type": "number", "minimum": 0, "description": "Its share of the draw among the events that fit the place; 0 never lands." },
+        "ground": { "type": "array", "items": { "type": "string", "enum": ["water", "shore", "grass", "rock", "sand", "stone"] }, "description": "Stands-on words it may land on; empty: wherever its Token may stand." },
+        "biomes": { "type": "array", "items": { "type": "string" }, "description": "Region biomes it may land in; empty: any Region." },
+        "durationMinutes": { "type": "number", "minimum": 0, "description": "A buff's time on the mat, in minutes." }
+      }
+    }
+  }
+}

@@ -17,7 +17,7 @@ The owner's unsynced work is in **`cms/workspace/workspace.json`**, the CMS work
 (the CMS writes it a second after every edit; `cms/workspace/README.md`). Read your "before"
 values from there, not from `data/`, so you see what the owner sees. Its collections sit under
 `workspace`: `{ items, tokens, effects, recipePools, starterCamp, skillPerks, hallConstellations,
-hallStars, world, planSettings }`; recipes sit in `recipePools[skill]`, each with an `id`. Run
+hallStars, world, events, planSettings }`; recipes sit in `recipePools[skill]`, each with an `id`. Run
 `npm run cms -- validate` on it, and `npm run cms -- validate --data` on `data/`, before writing a
 pack: both use the schemas in `cms/schemas/` (`cms/README.md`). In a checkout whose CMS has not
 started since the move to disk there is no such file yet; the helper then falls back to the newest
@@ -69,7 +69,8 @@ One JSON file per pack, named after its id: `cms/incoming/<id>.json`.
   - **`kind`**: `item`, `token`, `recipe` or `effect`.
     Or `starterCamp`: the Starter Camp, one record (see below). Or `skillPerks`: one skill's
     milestone perk table (see below). Or `hallStar` / `hallConstellation`: a Guild Hall star or
-    constellation (see below). Or `world`: the world tables, one record (see below).
+    constellation (see below). Or `world`: the world tables, one record (see below). Or `event`:
+    one row of the events table (see below).
   - **`id`**: the entity's id. For a recipe, its `id` field (recipes live in pools).
   - **`value`** (create, edit): the entity's **whole** new record, as it sits in the
     workspace. An edit replaces the record, so copy the current one and change it.
@@ -100,6 +101,19 @@ generated from (six lines with distinct ids). Copy the current record and change
 lists the origins and guaranteed camps (`camps`, per strict ring) in and out per line and ring, then
 each other part that changed; the Ledger's World page draws the world they make. Sync writes them to
 `data/world.json` as they are; while the workspace holds none the game generates from its placeholder.
+
+### An event
+
+One entry per event, `"kind": "event"`, its `id` the event's id (`event_copper_comet`), `create`,
+`edit` or `delete`. Its `value` is the row in the shape of `src/config/eventTable.js`:
+`{ id, name, typeId, kind: "node" | "buff", weight, ground: [], biomes: [], durationMinutes }`,
+`durationMinutes` for a buff only. `ground` holds Stands-on words (`water`, `shore`, `grass`, `rock`,
+`sand`, `stone`) and `biomes` Region biomes (`EVENT_BIOMES` there); empty means anywhere. The
+event's Token is an ordinary Token entry (`kind: "token"`, in the same pack if it is new): a rich
+node has a big `uses`, no `respawn` and `staysPut: true`; a buff is movable, with one `Provides`
+rule in the standard reach and no charges. The CMS refuses a row with no kind, no Token, a weight
+of 0 or a buff with no time. Sync writes the table to `data/events.json`; while the workspace holds
+none, no event lands.
 
 ### A skill's perks
 

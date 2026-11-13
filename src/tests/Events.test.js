@@ -295,6 +295,16 @@ describe('where an event lands', () => {
         }
     });
 
+    it('the QA panel\'s landing ignores the clock and the biomes, never the ground', () => {
+        setEventsForTests(table(SHOAL, { ...COMET, ground: ['rock'], biomes: ['coast'] }));
+        freshGame();
+        expect(EventClock.landNow(SHOAL.id)).toMatchObject({ success: false });
+        expect(EventClock.landNow(COMET.id)).toMatchObject({ success: false });
+        expect(eventTokens()).toEqual([]);
+        standOn((c, r, cols) => (c > (2 * cols) / 3 ? 'rock' : 'grass'));
+        expect(EventClock.landNow(COMET.id)).toMatchObject({ success: true });
+    });
+
     it('an event that lists biomes lands only in a Region of one of them', () => {
         setEventsForTests(table({ ...COMET, biomes: ['coast'] }));
         freshGame();

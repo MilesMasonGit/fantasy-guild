@@ -7,6 +7,7 @@ import { normaliseStarterCamp } from './starterCamp';
 import { normaliseWorkspacePerks } from './skillPerks';
 import { workspaceSkyFrom } from './hallSky';
 import { workspaceWorldFrom } from './worldTables';
+import { workspaceEventsFrom } from './events';
 
 /**
  * How a stored or imported workspace is brought up to today's shape, in one place: the CMS store
@@ -122,6 +123,7 @@ export function workspaceFromImport(data = {}) {
         skillPerks: normaliseWorkspacePerks(seeded.skillPerks),
         ...workspaceSkyFrom(data),
         world: workspaceWorldFrom(data.world),
+        events: workspaceEventsFrom(data.events),
         planSettings: data.planSettings && typeof data.planSettings === 'object' ? data.planSettings : null,
     };
 }

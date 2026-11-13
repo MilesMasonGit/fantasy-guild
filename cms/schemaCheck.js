@@ -25,11 +25,12 @@ export const FILE_SCHEMAS = Object.freeze({
     'skillPerks.json': 'skillPerks',
     'hallStars.json': 'hallStars',
     'world.json': 'world',
+    'events.json': 'events',
 });
 /** Files the game cannot start without. */
 const REQUIRED_FILES = ['items.json', 'tokens.json'];
 /** How many leading path segments of a file are record ids (folded together in the warnings). */
-const KEYED_AT = { items: 0, tokens: 0, effects: 0, skillPerks: 0, hallStars: 1 };
+const KEYED_AT = { items: 0, tokens: 0, effects: 0, skillPerks: 0, hallStars: 1, events: 0 };
 
 const schemaUrl = (name) => `https://fantasy-guild.local/cms/schemas/${name}.schema.json`;
 
@@ -152,6 +153,7 @@ export function validateWorkspace(workspace, dir = SCHEMA_DIR) {
         targets.push({ where: 'hallStars', schema: 'hallStars', value: { constellations: ws.hallConstellations ?? {}, stars: ws.hallStars ?? {} } });
     }
     if (ws.world != null) targets.push({ where: 'world', schema: 'world', value: ws.world });
+    if (ws.events != null) targets.push({ where: 'events', schema: 'events', value: ws.events });
     const result = checkTargets(targets, dir);
     return { ...result, checked: targets.map((t) => t.where) };
 }

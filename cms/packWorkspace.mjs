@@ -90,6 +90,7 @@ export function loadWorkspace(root, from) {
             skillPerks: opt('skillPerks.json', null),
             hallStars: opt('hallStars.json', null),
             world: opt('world.json', null),
+            events: opt('events.json', null),
             // The plan is kept out of data/, beside it.
             plan: fs.existsSync(planFile) ? readJson(planFile) : null,
         }),

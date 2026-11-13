@@ -143,18 +143,19 @@ export function fittingEvents() {
 }
 
 /**
- * The cells both the event's ground and its Token's "Stands on" allow, as cell indices, or null
- * when a dart may go anywhere (no list narrows it, or the mat is one meadow cell).
+ * The cells both the event's ground and its Token's "Stands on" allow, as cell indices (empty:
+ * none), or null when a dart may go anywhere: no list narrows it, or the mat is one meadow cell
+ * (a Region no map wrote) that both allow.
  */
 function allowedCells(rulesList) {
     const rules = rulesList.filter(Boolean);
     if (!rules.length) return null;
-    const { grid } = rules[0];
-    if (grid.cols * grid.rows <= 1) return null;
     const cells = [];
     for (let i = 0; i < rules[0].mask.length; i++) {
         if (rules.every(r => r.mask[i] === 1)) cells.push(i);
     }
+    const { grid } = rules[0];
+    if (grid.cols * grid.rows <= 1) return cells.length ? null : [];
     return cells;
 }
 
@@ -186,9 +187,10 @@ export function landingSpot(event, random = Math.random) {
     const cells = allowedCells([own, GroundRules.rulesFor(typeId)]);
     if (cells && cells.length === 0) return null;
     const ground = GroundRules.groundHere();
+    // ⚠️ A dart is thrown only at cells both lists allow (`allowedCells`), or anywhere when the mat
+    // is one meadow cell that both allow, so the event's ground needs no second look here.
     for (let i = 0; i < LANDING_DARTS; i++) {
         const dart = cells ? dartInCells(cells, ground, ground.cell, random) : dartAnywhere(typeId, random);
-        if (own && !GroundRules.allowsAt(own, dart.x, dart.y)) continue;
         if (MatPlacement.isLegal(typeId, dart)) return dart;
     }
     return null;

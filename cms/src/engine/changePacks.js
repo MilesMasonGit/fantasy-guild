@@ -14,12 +14,14 @@ import { isPerkLevel } from '../../../src/systems/hero/perkTable.js';
 import { MAX_SCALE } from '../../../src/systems/effects/effectLibrary.js';
 import { workspaceSkyFrom } from './hallSky.js';
 import { workspaceWorldFrom, usableTables } from './worldTables.js';
+import { workspaceEventsFrom } from './events.js';
+import { eventProblems } from '../../../src/config/eventTable.js';
 import { FIRST_STAR_RING, opensRingOf } from '../../../src/config/hallStars.js';
 
 export const PACK_FORMAT = 'fantasy-guild-change-pack';
 export const PACK_VERSION = 1;
 export const OPS = Object.freeze(['create', 'edit', 'delete']);
-export const KINDS = Object.freeze(['item', 'token', 'recipe', 'effect', 'starterCamp', 'skillPerks', 'hallStar', 'hallConstellation', 'world']);
+export const KINDS = Object.freeze(['item', 'token', 'recipe', 'effect', 'starterCamp', 'skillPerks', 'hallStar', 'hallConstellation', 'world', 'event']);
 
 /**
  * The Starter Camp is one record, not a collection: its entry's id is always this, its value the
@@ -74,6 +76,7 @@ export function collectionOf(kind) {
     if (kind === 'hallStar') return 'hallStars';
     if (kind === 'hallConstellation') return 'hallConstellations';
     if (kind === 'world') return 'world';
+    if (kind === 'event') return 'events';
     return null;
 }
 
@@ -210,6 +213,10 @@ export function validatePack(pack, { fileName } = {}) {
                 } else if (kind === 'hallStar' || kind === 'hallConstellation') {
                     if (kind === 'hallStar') errors.push(...hallStarErrors(value, label));
                     if (value.plan !== undefined) errors.push(`${label}: only items, Tokens and recipes carry a "plan".`);
+                } else if (kind === 'event') {
+                    // The game's own checks (src/config/eventTable.js), the Token's existence aside: a pack may bring it too.
+                    for (const p of eventProblems({ [id]: { ...value, id: value.id ?? id } })) errors.push(`${label}: ${p.message}`);
+                    if (value.plan !== undefined) errors.push(`${label}: only items, Tokens and recipes carry a "plan".`);
                 } else {
                     errors.push(...planErrors(value.plan, label, kind));
                 }
@@ -321,8 +328,8 @@ export function changedFields(before, after) {
 }
 
 /** Build the workspace a pack was made against from the game's `data/` files (as `/api/load-game-data` and the store's load do), the plan laid back on (`planFile.js`). */
-export function workspaceFromDataFiles({ items = {}, tokens = {}, effects = {}, tokenRecipes = [], starterCamp = null, skillPerks = null, hallStars = null, world = null, plan = null }) {
+export function workspaceFromDataFiles({ items = {}, tokens = {}, effects = {}, tokenRecipes = [], starterCamp = null, skillPerks = null, hallStars = null, world = null, events = null, plan = null }) {
     const recipePools = {};
     for (const recipe of tokenRecipes || []) (recipePools[recipe.skill || 'general'] ||= []).push(recipe);
-    return mergePlanFile({ items, tokens, effects, recipePools, starterCamp: normaliseStarterCamp(starterCamp), skillPerks, ...workspaceSkyFrom({ hallSky: hallStars }), world: workspaceWorldFrom(world) }, plan);
+    return mergePlanFile({ items, tokens, effects, recipePools, starterCamp: normaliseStarterCamp(starterCamp), skillPerks, ...workspaceSkyFrom({ hallSky: hallStars }), world: workspaceWorldFrom(world), events: workspaceEventsFrom(events) }, plan);
 }

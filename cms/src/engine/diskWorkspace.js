@@ -108,7 +108,7 @@ export function holdsContent(state) {
     if (!state || typeof state !== 'object') return false;
     const keyed = (v) => v && typeof v === 'object' && Object.values(v).some((x) => (Array.isArray(x) ? x.length > 0 : x != null));
     return keyed(state.items) || keyed(state.tokens) || keyed(state.effects) || keyed(state.recipePools)
-        || state.starterCamp != null || state.skillPerks != null || state.hallStars != null || state.world != null;
+        || state.starterCamp != null || state.skillPerks != null || state.hallStars != null || state.world != null || state.events != null;
 }
 
 /** The connection to the disk, once made. */

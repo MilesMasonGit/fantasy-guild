@@ -33,8 +33,7 @@ import { authoredHallSky } from '../../config/registries/hallStarRegistry.js';
 import { hallStarFindings } from './hallStarRule.js';
 import { gearDefenceFindings } from './gearDefenceRule.js';
 import { authoredEvents } from '../../config/registries/eventRegistry.js';
-import { eventProblems } from '../../config/eventTable.js';
-import { BIOME_GROUND } from '../atlas/Budget.js';
+import { eventProblems, EVENT_BIOMES } from '../../config/eventTable.js';
 
 /**
  * ContentAudit — one pass over every cross-reference in the content set,
@@ -761,7 +760,7 @@ function auditEvents(out) {
     const problems = eventProblems(authoredEvents(), {
         hasTokenType: (typeId) => !!getTokenType(typeId),
         groundWords: STANDS_ON_CHOICES.map(c => c.id),
-        biomes: Object.keys(BIOME_GROUND)
+        biomes: EVENT_BIOMES
     });
     for (const p of problems) out.push(finding(`Event "${p.id}"`, p.message));
 }

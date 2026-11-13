@@ -24,7 +24,7 @@ const OP_LOOK = {
   edit: { word: 'Changed', color: 'var(--color-info)' },
   delete: { word: 'Deleted', color: 'var(--color-error)' },
 };
-const KIND_WORD = { item: 'Item', token: 'Token', recipe: 'Recipe', effect: 'Effect', map: 'Map', starterCamp: 'Layout', skillPerks: 'Perks', hallStar: 'Hall star', hallConstellation: 'Constellation', world: 'World' };
+const KIND_WORD = { item: 'Item', token: 'Token', recipe: 'Recipe', effect: 'Effect', map: 'Map', starterCamp: 'Layout', skillPerks: 'Perks', hallStar: 'Hall star', hallConstellation: 'Constellation', world: 'World', event: 'Event' };
 
 const skillName = (id) => SKILLS.find((s) => s.id === id)?.name || id;
 
@@ -52,9 +52,10 @@ function useWorkspace() {
   const hallConstellations = useEntityStore((s) => s.hallConstellations);
   const hallStars = useEntityStore((s) => s.hallStars);
   const world = useEntityStore((s) => s.world);
+  const events = useEntityStore((s) => s.events);
   const planSettings = useEntityStore((s) => s.planSettings);
-  return useMemo(() => ({ items, tokens, effects, recipePools, starterCamp, skillPerks, hallConstellations, hallStars, world, planSettings }),
-    [items, tokens, effects, recipePools, starterCamp, skillPerks, hallConstellations, hallStars, world, planSettings]);
+  return useMemo(() => ({ items, tokens, effects, recipePools, starterCamp, skillPerks, hallConstellations, hallStars, world, events, planSettings }),
+    [items, tokens, effects, recipePools, starterCamp, skillPerks, hallConstellations, hallStars, world, events, planSettings]);
 }
 
 /** Write review results into the workspace; an open editor on an entity that just went away is closed. */
@@ -66,6 +67,7 @@ function writeWorkspace(ws) {
   if ('hallConstellations' in ws) patch.hallConstellations = ws.hallConstellations;
   if ('hallStars' in ws) patch.hallStars = ws.hallStars;
   if ('world' in ws) patch.world = ws.world;
+  if ('events' in ws) patch.events = ws.events;
   const type = s.activeEntityType;
   const key = type === 'token' ? 'tokens' : type === 'effect' ? 'effects' : 'items';
   if (s.activeEntityId && type && !patch[key]?.[s.activeEntityId]) Object.assign(patch, { activeEntityId: null, activeEntityType: null });
@@ -232,6 +234,8 @@ function PackReview({ file, pack, onFinished, setCurrentView }) {
     } else if (entry.kind === 'world') {
       // No editor of their own: the Ledger's World page draws them.
       setCurrentView('ledger');
+    } else if (entry.kind === 'event') {
+      setCurrentView('events');
     } else {
       useEntityStore.getState().setActiveEntity(entry.id, entry.kind);
       setCurrentView('editor');

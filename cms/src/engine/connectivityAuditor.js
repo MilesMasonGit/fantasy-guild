@@ -1,4 +1,6 @@
 import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, gearDefenceFindings, hallStarFindings } from '../utils/constants';
+import { eventProblems, EVENT_BIOMES } from '../../../src/config/eventTable.js';
+import { STANDS_ON_CHOICES } from '../../../src/systems/atlas/TerrainMap.js';
 
 /** Connectivity & Graph Auditor: audits the Token, Recipe and Item graph in three pillars: Data Integrity (missing references, invalid IDs, solver refusals), Economic Blockers (orphaned inputs, unreachable items, dead ends) and Pacing Gaps (level gaps in skills). */
 
@@ -10,7 +12,7 @@ const tokenSkill = (token) => token?.config?.skill ?? token?.skill ?? token?.ski
 const tokenLevel = (token) => token?.config?.skillRequired ?? token?.skillRequirement ?? 1;
 
 export function auditConnectivity(entities, solverRefusals = []) {
-  const { items = {}, tokens = {}, recipes = {}, enemies = {}, effects = {}, skillPerks = null, hallSky = null } = entities;
+  const { items = {}, tokens = {}, recipes = {}, enemies = {}, effects = {}, skillPerks = null, hallSky = null, events = null } = entities;
   const issues = [];
 
   const allItems = Object.values(items || {});
@@ -185,6 +187,18 @@ export function auditConnectivity(entities, solverRefusals = []) {
         details: f.message.charAt(0).toUpperCase() + f.message.slice(1),
       });
     }
+  }
+
+  // Events: a row that can never land or names what the game does not have. The game's own checks (`eventTable.js`), so this tab, the Events page and the boot audit say the same thing. Only when the workspace holds a table.
+  for (const p of eventProblems(events, { hasTokenType: (id) => !!tokens?.[id], groundWords: STANDS_ON_CHOICES.map((c) => c.id), biomes: EVENT_BIOMES })) {
+    issues.push({
+      entityId: p.id,
+      entityName: events?.[p.id]?.name || p.id,
+      entityType: 'Event',
+      issueType: 'Data Integrity',
+      severity: 'Warning',
+      details: p.message,
+    });
   }
 
   // Gathering tools: a tool no hero can hold, a need no tool answers, content still written as tool Tokens. The game's own rule (`toolRule.js`), so this tab and the boot audit say the same thing. Expanded Tokens, so a tool Token's Acts as is seen.

@@ -13,6 +13,7 @@ import StarterCampPage from './components/starterCamp/StarterCampPage';
 import ChangesPage from './components/changes/ChangesPage';
 import SkillPerksPage from './components/perks/SkillPerksPage';
 import HallStarsPage from './components/hallStars/HallStarsPage';
+import EventsPage from './components/events/EventsPage';
 import { useEntityStore } from './stores/useEntityStore';
 import { startLedgerWatchIfWorker } from './stores/useLedgerWatchStore';
 import { Package, Boxes } from 'lucide-react';
@@ -36,6 +37,7 @@ function App() {
         if (currentView === 'changes') return <ChangesPage setCurrentView={setCurrentView} />;
         if (currentView === 'perks') return <SkillPerksPage setCurrentView={setCurrentView} />;
         if (currentView === 'hallStars') return <HallStarsPage />;
+        if (currentView === 'events') return <EventsPage />;
         if (currentView === 'sprites') return <SpriteAuditDashboard />;
         if (currentView === 'audit') return <div className="p-4 h-full"><AuditPanel openGenerate={openGenerate} /></div>;
         return (

@@ -9,6 +9,7 @@ import { plannedKeysOf, PLAN_SYNC_KEY } from './planFile.js';
 import { keyedPerks, PERK_FILE } from './skillPerks.js';
 import { keyedHallSky, HALL_STARS_FILE } from './hallSky.js';
 import { keyedWorld, usableTables, WORLD_FILE } from './worldTables.js';
+import { keyedEvents, EVENTS_FILE } from './events.js';
 import { normaliseSkillPerks } from '../../../src/systems/hero/perkTable.js';
 import { normaliseHallSky } from '../../../src/config/hallStars.js';
 import { STRICT_RINGS } from '../../../src/config/worldTablesShape.js';
@@ -23,6 +24,7 @@ export const SYNC_COLLECTIONS = [
   { key: 'perks', label: 'perk', plural: 'perks' },
   { key: 'hallSky', label: 'Guild Hall star or constellation', plural: 'Guild Hall stars and constellations' },
   { key: 'world', label: 'world map placement', plural: 'world map placements' },
+  { key: 'events', label: 'event', plural: 'events' },
   { key: 'planned', label: 'Planned entry', plural: 'Planned entries' },
 ];
 
@@ -77,7 +79,7 @@ function stable(value) {
 /** The file each collection is read from. */
 const FILE_OF = {
   tokens: 'tokens.json', items: 'items.json', recipes: 'tokenRecipes.json', effects: 'effects.json',
-  starterCamp: 'starterCamp.json', perks: PERK_FILE, hallSky: HALL_STARS_FILE, world: WORLD_FILE, planned: PLAN_SYNC_KEY,
+  starterCamp: 'starterCamp.json', perks: PERK_FILE, hallSky: HALL_STARS_FILE, world: WORLD_FILE, events: EVENTS_FILE, planned: PLAN_SYNC_KEY,
 };
 
 /**
@@ -133,7 +135,7 @@ function contents(files) {
   }
   return {
     tokens: byId(files['tokens.json']), items: byId(files['items.json']), recipes, effects: byId(files['effects.json']),
-    starterCamp: camp, perks, hallSky, world, planned,
+    starterCamp: camp, perks, hallSky, world, events: byId(files[EVENTS_FILE]), planned,
   };
 }
 
@@ -147,6 +149,7 @@ function collections(files) {
     perks: keyedPerks(files[PERK_FILE]),
     hallSky: keyedHallSky(files[HALL_STARS_FILE]),
     world: keyedWorld(files[WORLD_FILE]),
+    events: keyedEvents(files[EVENTS_FILE]),
     planned: plannedKeysOf(files[PLAN_SYNC_KEY]),
   };
 }
@@ -177,6 +180,7 @@ export function compareSync(current = {}, incoming = {}) {
     if ((key === 'starterCamp' && !incoming?.['starterCamp.json']) || (key === 'perks' && !incoming?.[PERK_FILE])
       || (key === 'hallSky' && !incoming?.[HALL_STARS_FILE])
       || (key === 'world' && !incoming?.[WORLD_FILE])
+      || (key === 'events' && !incoming?.[EVENTS_FILE])
       || (key === 'planned' && !incoming?.[PLAN_SYNC_KEY])) {
       removed[key] = [];
       changed[key] = [];

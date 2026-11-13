@@ -22,7 +22,7 @@ export const WORKSPACE_FILE = 'workspace.json';
 /** The workspace's collections, in the order the file lists them. */
 export const WORKSPACE_KEYS = Object.freeze([
     'items', 'tokens', 'effects', 'recipePools', 'starterCamp', 'skillPerks',
-    'hallConstellations', 'hallStars', 'world', 'planSettings',
+    'hallConstellations', 'hallStars', 'world', 'events', 'planSettings',
 ]);
 const KEYED_COLLECTIONS = new Set(['items', 'tokens', 'effects', 'recipePools']);
 

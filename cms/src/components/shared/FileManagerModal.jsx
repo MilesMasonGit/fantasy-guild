@@ -51,6 +51,7 @@ export default function FileManagerModal({ isOpen, onClose }) {
         hallConstellations: state.hallConstellations,
         hallStars: state.hallStars,
         world: state.world ?? null,
+        events: state.events ?? null,
       };
 
       const res = await fetch('/api/backups', {

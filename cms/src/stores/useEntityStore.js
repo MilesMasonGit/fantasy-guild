@@ -611,6 +611,20 @@ export const useEntityStore = create(
             hallStars: null,
             /** The world tables (`engine/worldTables.js`), as authored. ⚠️ Null means this workspace never held any, and Sync then leaves `data/world.json` alone. */
             world: null,
+            /** The events table (`engine/events.js`), keyed by id. ⚠️ Null means this workspace never held one, and Sync then leaves `data/events.json` alone. */
+            events: null,
+            /** Add a new event row under `id` (starting the table when there is none). */
+            addEvent: (id, row) => set((s) => (s.events?.[id] ? {} : { events: { ...(s.events || {}), [id]: { ...row, id } } })),
+            /** Change one event row's fields. */
+            setEvent: (id, patch) => set((s) => (s.events?.[id]
+                ? { events: { ...s.events, [id]: { ...s.events[id], ...patch, id } } }
+                : {})),
+            removeEvent: (id) => set((s) => {
+                if (!s.events?.[id]) return {};
+                const rest = { ...s.events };
+                delete rest[id];
+                return { events: rest };
+            }),
             /** Change one star's top-level fields (name, description, constellation, place). */
             setHallStar: (id, patch) => set((s) => (s.hallStars?.[id]
                 ? { hallStars: { ...s.hallStars, [id]: { ...s.hallStars[id], ...patch, id } } }
@@ -901,6 +915,7 @@ export const useEntityStore = create(
                     hallConstellations: null,
                     hallStars: null,
                     world: null,
+                    events: null,
                     planSettings: null,
                     activeEntityId: null,
                     activeEntityType: null,
@@ -937,6 +952,7 @@ export const useEntityStore = create(
                 hallConstellations: state.hallConstellations,
                 hallStars: state.hallStars,
                 world: state.world,
+                events: state.events,
                 planSettings: state.planSettings,
                 activeEntityId: state.activeEntityId,
                 activeEntityType: state.activeEntityType,

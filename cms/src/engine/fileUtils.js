@@ -19,6 +19,7 @@ export function snapshot(state) {
     hallConstellations: state.hallConstellations,
     hallStars: state.hallStars,
     world: state.world ?? null,
+    events: state.events ?? null,
     planSettings: state.planSettings,
   };
 }

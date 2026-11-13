@@ -35,6 +35,15 @@ export const EVENT_KIND_CHOICES = Object.freeze([
     Object.freeze({ id: EVENT_KIND.BUFF, label: 'Buff' })
 ]);
 
+/**
+ * The Region biomes an event may name, as the CMS shows them: the first Base Maps' biomes
+ * (`Budget.BIOME_GROUND`'s keys; `EventTable.test.js` keeps the two the same). A Region no map wrote
+ * (the Starter Camp) counts as meadow.
+ */
+export const EVENT_BIOMES = Object.freeze([
+    'meadow', 'forest', 'mountain', 'coast', 'flower_meadow', 'cherry_grove', 'yellowstone', 'volcano', 'bog'
+]);
+
 /** ⭐ Game value: a buff with no usable time stays this long (the audit names it). */
 export const DEFAULT_BUFF_MINUTES = 20;
 
