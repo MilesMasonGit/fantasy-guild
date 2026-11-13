@@ -163,7 +163,7 @@ Not raised again unless the owner brings them back.
    row on the Token inspection for whole-Token effects, each hoverable for a
    breakdown of its sources; item effects (Double Item) as a badge on that
    item's line of the drop table.
-3. **Events**: what an Event is (a short-lived special Token), how often,
+3. ~~**Events**~~ (landings and buffs done 2026-11-12: [concept_events.md](concept_events.md), brief 640): what an Event is (a short-lived special Token), how often,
    what it gives, and how Stars tilt them. Weather, the merchant and the
    fallen star are the first examples.
 4. **Limes on the journey** (smaller): Limes following the guild and
