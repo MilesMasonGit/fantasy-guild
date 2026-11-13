@@ -89,8 +89,8 @@ export const SETUPS = [
         bank: { item_oak_seedling: 100 },
         build({ place, hero, order, prefillSpawners }) {
             place('token_oak_forest', 800, 560);
-            // One step from the Forest: its saplings land within Near (164 u) of it, so the camp's 360 u reach covers them all.
-            const camp = place('token_logging_camp', 800 + STEP, 560);
+            // 120 u from the Forest: its saplings land in a ring about 84 u around it, so the camp's standard 240 u reach covers them all (one step, 160 u, strands the far side).
+            const camp = place('token_logging_camp', 920, 560);
             prefillSpawners();
             const forester = hero('Forester', { forestry: 10 }, ['item_copper_woodaxe']);
             order(forester, camp);
@@ -131,7 +131,7 @@ export const SETUPS = [
         bank: { item_oak_seedling: 100, item_lemonade: 1000, item_birdwatcher: 10000 },
         build({ place, hero, order, prefillSpawners }) {
             place('token_oak_forest', 800, 560);
-            const camp = place('token_logging_camp', 800 + STEP, 560);
+            const camp = place('token_logging_camp', 920, 560);
             prefillSpawners();
             const forester = hero('Forester', { forestry: 10 }, ['item_copper_woodaxe', 'item_lemonade', 'item_birdwatcher']);
             order(forester, camp);
