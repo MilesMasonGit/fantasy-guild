@@ -9,6 +9,8 @@ build green) · bench-queued · eye-check · merged.*
 
 ## Director, batch 4: brief 640 Events (owner, 2026-11-12: start E1 now)
 
+*Fri 13 Nov, 15:20. Where we are: the owner synced the first 12 events; main is green again after a test fix (event nodes paced by the Token they copy). The events arrival branch passed its work check and is on the Guild Eye-checks page with a desktop build. Next: the owner's look, then merge E2; bench baseline retake at 02:00 (engine and draw, the draw baseline is stale). Owner: the Events arrive eye-check. Blockers: none.*
+
 *Fri 13 Nov, 03:30. Where we are: all of batch 3 and the events engine merged and pushed after work checks read same (slim panel + War Camp, one building per skill, drink stars, Giant Harvest, events E1). Calibration retake found foresters about 24 % under the ledger since the one standard reach (brief 560): engineer diagnosing. E2 (arrival and banner) building. Next: E2, then the events eye-check once the content agent's pack is in. Owner: open a `/content` session for the events pack when convenient. Blockers: none.*
 
 *Thu 12 Nov, 20:20, batch proposed and started. Where we are: batch 3 waits for tonight's work checks (02:05, then merges). Owner answered the drink questions: Long-lasting Brews rounds by chance (C, builder switching it on `feat/drink-stars` before the bench), Strong Drink raises effect numbers only (A), drawbacks grow too (A). E1, the event engine, building now from main 00bad4b5 (rebase after tonight's merges). Next: E2 (arrival and banner) beside the content agent's first events pack (C1, needs E1's CMS table). Owner: nothing until the events eye-check. Blockers: none.*
@@ -17,8 +19,8 @@ build green) · bench-queued · eye-check · merged.*
 |---|---|---|---|---|---|
 | 640 E1: the event engine (hourly clock, weighted landing by ground, expiry, offline, demolish, CMS table) | engineer | `feat/events` | **merged** b2892911, pushed (rebased; slim panel keeps the Events QA section; 661 files green, work same) | Thu | Fri |
 | 620 E3 follow-up: Long-lasting Brews rounds by chance (owner C) | builder | `feat/drink-stars` 0a11b5c6 | **merged** with E3 (43a92a7b) | Thu | Fri |
-| 640 E2: arrival and the banner | builder | `feat/events-arrival` (`ev`) 19fa1963 | **ready**: director gate 662 files green, cycles 0, depcruise, lint 4 warnings, build; screenshots read; comet falls and bursts, buffs drift in, banner points to the Token (also over the Hall and World Map), leave timer on plate and card, badge names the event; **work check and draw compare queued 14:05 Fri**; eye-check waits for the content agent's pack (C1) | Fri | Fri |
-| 640 C1: first events pack (6 to 8) | content agent | | **unblocked**: the CMS Events page is on main; owner opens a `/content` session | | |
+| 640 E2: arrival and the banner | builder | `feat/events-arrival` (`ev`) f7d0f39c (rebased on main 7c6a2104) | **eye-check waiting** (Guild Eye-checks tab Events arrive, desktop build `_builds/2026-11-13-events`); work check Fri 14:05 same on all 12; draw compare reads REGRESSED at 1x only, the same numbers a main-side branch showed Thu night against the October baseline (S2 p99 5.0 here, 5.65 then): stale baseline, retake queued; director checked the owner's 12 synced events in the game: away report lists events, comet lands with banner and gold outline on hover, plate shows charges and 60:00 countdown, Rainfall banner, badge Rainfall nearby 20 %, banner over the Hall returns to the mat; no console errors | Fri | |
+| 640 C1: first events pack (6 to 8) | content agent | main cf62ee96, Sync ab1d1200 | **done**: 12 events (6 rich nodes, 6 buffs) synced by the owner Fri 14:32, additions only (tokens, effects, events). Two content tests went red on main (event nodes faster than the flat 10 to 30 s band; 30 new rules-text cases): fixed 7c6a2104, pushed | Fri | Fri |
 | Forest calibration: foresters about 24 % under the ledger since 560 R1 (one standard reach, bisected to 7953c84e) | engineer, diagnosis; director fix | `fix/forest-calibration` b84e7ae6 | **merged**, pushed: not an engine bug; one of five saplings stood 0.5 u outside the camp's new 240 u reach and was never cut or replaced; calibration camp moved to 120 u from its Forest, stamp retaken, all within tolerance. Owner question below (real camps one step away lose one or two trees) | Fri | Fri |
 
 ## Director, the QA panel, T-336, then briefs 620 and 630 (owner, 2026-11-12: stars' small effects first)
@@ -383,6 +385,8 @@ None open. (Ruled 2026-10-19: Token outlines red for problems, gold for attentio
 T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
+
+**Sat 14 Nov, 02:05 (director timer):** retake the engine and draw baselines on main (`npm run bench -- --save-baseline`, `npm run bench:draw -- --save-baseline`), commit them with the date; the draw baseline (October) reads every 1x scene REGRESSED on every branch. **Fri 13 Nov, 14:05: done** on `ev` 19fa1963: work check same on all 12; draw REGRESSED at 1x only, as the stale baseline does everywhere.
 
 **Fri 13 Nov, 02:05 (director timer):** `npm run bench -- --compare` in turn on `s3` 68a3a220 (slim panel + War Camp trial merge), `t1` e137b0c6 (630 B1), `rt` fbf05d49 (620 E3), `fx` e3304705 (620 E1); same work, then merge each and push. Then `npm run bench:calibrate` on main after B1.
 
