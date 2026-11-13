@@ -7,6 +7,17 @@ build green) · bench-queued · eye-check · merged.*
 
 **Owner, 2026-11-06 (behind the week's target): up to four code builders at once this week** (plus one read-only); the director still runs suites, builds and benches one at a time. **Owner, 2026-11-06 late morning, away at work:** the director may start new briefs and merge pieces on the gate without a full look; the owner answers questions remotely (screenshots to the phone). Look changes merged this way are listed for the owner's next look in `docs/active/eyecheck/2026-11-06_merged_while_away.md`.
 
+## Director, batch 4: brief 640 Events (owner, 2026-11-12: start E1 now)
+
+*Thu 12 Nov, 20:20, batch proposed and started. Where we are: batch 3 waits for tonight's work checks (02:05, then merges). Owner answered the drink questions: Long-lasting Brews rounds by chance (C, builder switching it on `feat/drink-stars` before the bench), Strong Drink raises effect numbers only (A), drawbacks grow too (A). E1, the event engine, building now from main 00bad4b5 (rebase after tonight's merges). Next: E2 (arrival and banner) beside the content agent's first events pack (C1, needs E1's CMS table). Owner: nothing until the events eye-check. Blockers: none.*
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| 640 E1: the event engine (hourly clock, weighted landing by ground, expiry, offline, demolish, CMS table) | engineer | `feat/events` (`ev`) | building | Thu | |
+| 620 E3 follow-up: Long-lasting Brews rounds by chance (owner C) | builder | `feat/drink-stars` (`rt`) | building, due before 01:30 | Thu | |
+| 640 E2: arrival and the banner | builder | | queued after E1 | | |
+| 640 C1: first events pack (6 to 8) | content agent | | queued after E1 (needs the CMS table) | | |
+
 ## Director, the QA panel, T-336, then briefs 620 and 630 (owner, 2026-11-12: stars' small effects first)
 
 *Thu 12 Nov, 14:45. Where we are: 610 (select and right-click, after the owner's fixes), 600 B3 and B4 (badges) and the QA panel in test builds are merged (109ab4e4, work same, drag 100 %, draw as main's control) and pushed; eye-checks now live on the Guild Eye-checks page (https://claude.ai/artifact/7BxeTfaxXYvH9fiX2jZZDJ). Next: the slim QA panel (owner look, desktop build `_builds/2026-11-12-qa-panel`), T-336 merges on the gate; batch 1 of 620 building (E1 Giant Harvest, E2 XP for Everyone). Then E4 + 630 B2, then 630 B1 + 620 E3. Owner: look at the slim QA panel. Blockers: none.*
@@ -316,7 +327,7 @@ None open.
 ## Questions for the owner
 
 - ~~War Camp bosses~~ **Answered 2026-11-12: A, fought like every enemy.** ~~Giant Harvest building bonus drops~~ **Answered: C, Double Loot and Giant both multiply them; no Giant chip on Token cards.**
-- **Drink stars (620 E3), first option of each built, for the batch proposal:** Long-lasting Brews rounds each fresh dose halves up (A, built; ranks then sized as whole cycles or 5–10 % steps) or carries the fraction on the hero (B) or rounds by chance (C)? Strong Drink raises the rule numbers only (A, built), also a grant's chance (B), also a potion's own heal or damage (C)? A drink's drawbacks grow too (A, built) or only the helpful numbers (B)?
+- ~~Drink stars~~ **Answered 2026-11-12: rounding C (by chance), Strong Drink A, drawbacks A.** Was: **Drink stars (620 E3), first option of each built, for the batch proposal:** Long-lasting Brews rounds each fresh dose halves up (A, built; ranks then sized as whole cycles or 5–10 % steps) or carries the fraction on the hero (B) or rounds by chance (C)? Strong Drink raises the rule numbers only (A, built), also a grant's chance (B), also a potion's own heal or damage (C)? A drink's drawbacks grow too (A, built) or only the helpful numbers (B)?
 - **Ticket candidates (planning):** GDD 7 What ships still says Windmill +5 double loot on Fields (stale). And: the hero drawer's Gear effects tooltip names an applied effect by its id (applies effect_merry...); `heroPerks.carriedRuleNames()` lacks an effect name resolver; one line, also changes perk lines.
 - **For the planning agent:** the Guard Tower now that enemies never attack: keep it as the no-hero way to stop spawns (A), drop it (B), or make it a War Camp variant (C).
 
