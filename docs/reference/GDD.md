@@ -635,13 +635,15 @@ fires, spends nothing.
   naming a skill counts only that skill's cycles. A fresh one is drunk when the
   dose runs out, and the dose keeps working after the Bank runs dry. The count
   left is saved on the hero (`drinkCycles`); a drink with no work rule does
-  nothing. *(`ConsumptionSystem.startWorkDoses`, `LoadoutMoments.js`)*
+  nothing. The guild's **Long-lasting Brews** and **Strong Drink** stars (§8) make a fresh dose
+  last longer and its effects stronger. *(`ConsumptionSystem.startWorkDoses`, `LoadoutMoments.js`)*
 - **Work potions** (Alchemy, brief 230 S6b): a Consumable whose rules wait on
   On Work Start is **spent only when a cycle of its own skill starts**, one
   potion for that one cycle: the Birdwatcher ("On Forestry Work Start: applies
   Birdwatcher to the hero for the cycle", Birdwatcher granting a Bird Nest a
   quarter of the time as the cycle completes). The hero keeps it while doing
-  other work.
+  other work. With Long-lasting Brews (§8) one potion can last more than its
+  cycle: it then counts down its cycles of that skill like a drink.
 - **Nothing acts by sitting in the Bank**: a food, drink or potion's always-on
   rules do nothing (§7); it acts only through its moment and its dose.
 - **Food Healing** (a Rules row) moves what a meal heals in a fight: while
@@ -653,7 +655,8 @@ fires, spends nothing.
   type is drunk again from the Bank when its last dose runs out, and keeps
   working for the rest of its 10 fights after the Bank runs dry. The count
   left is saved on the hero (`elixirFights`). A consumable with no fight rule
-  is never drunk by a fight. *(`ConsumptionSystem.js`, `LoadoutMoments.js`)*
+  is never drunk by a fight. Long-lasting Brews and Strong Drink (§8) reach elixirs
+  too. *(`ConsumptionSystem.js`, `LoadoutMoments.js`)*
 - **The "used" bubble**: when a hero eats, or drinks an elixir, a drink or a
   work potion on the mat, a small bubble over their head shows the item's icon
   and what it did ("+5 ♥", or the item's name), tinted by the item's kind, for
@@ -1396,8 +1399,9 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   enemy's table is raised by Lucky aimed at the enemy), **catch weight** (a percentage on one fish's weight in a
   water's catch pool: a better rod's bonus, §3 Fishing), fail chance (Tokens; **camp reach** is
   retired: every camp works the standard reach, so a rule carrying it does nothing, the editors no
-  longer offer it and the audits name it); **wound time**, **loadout slots** and **XP for Everyone**
-  (guild-only: read from Guild Hall stars, §8, never offered on a Token or item); accuracy,
+  longer offer it and the audits name it); **wound time**, **loadout slots**, **XP for Everyone**,
+  **Long-lasting Brews** and **Strong Drink** (guild-only: read from Guild Hall stars, §8, never
+  offered on a Token or item); accuracy,
   damage, **dodge, crit chance**, **Type Damage %** (the bearer's hits of a
   type or group, or every type: "Poisoner's Cloak: Poison 15"), **Type
   Resistance %** (hits of that type the bearer takes; negative is a weakness;
@@ -1520,6 +1524,26 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   names a style rule narrowed to a work skill, and any other combat rule on a star (it reaches no
   one from the Hall). The ledger does not model fights, so it does not rate them.
   *(`combat/CombatFormulas.js`, `progression/hallStarText.js`)*
+- **Long-lasting Brews and Strong Drink** (brief 620 E3; guild-only, each may name one kind of
+  dose: **drinks**, **potions** (work potions) or **fight elixirs**, or none for all three).
+  **Long-lasting Brews** makes a **fresh dose last longer**: a drink's 10 work cycles, a work
+  potion's one cycle of its skill, an elixir's 10 fights, moved by a percentage (+10 % on 10 is
+  11) or a flat number of cycles or fights, **rounded halves up**, never below one. A dose under
+  way keeps the count it started with; the next one drunk gets the new length. **Strong Drink**
+  makes **every number a dose's effects provide** stronger by a percentage: Beer's +10 % XP at
+  +50 % is +15 %, Valor's +1 Damage +1.5, a chance held at 100 %. It counts each time the dose's
+  rules fire, so a star bought mid-dose works from the next cycle or fight. Only provided numbers
+  move: a grant (Birdwatcher's nest), a heal, damage, an immunity and a status's stack limit stay
+  as they are. Neither draws a random number. The Drink and Elixir tags say how long one lasts
+  now, and the Hero drawer's Gear effects say "One lasts 11 work cycles, with Long-lasting Brews."
+  and "Merry, 50% stronger with Strong Drink: Gives the hero 15% more XP." while a star moves
+  them (nothing extra without one); the Token card's Hero Effects badge shows the stronger
+  numbers. The rule reads "Makes every hero's drinks last 10% longer." and "Makes the effects of
+  every hero's fight elixirs 20% stronger.", a star "Every hero's drinks last longer.", its rank
+  "10% longer". The boot audit names a rule narrowed to something that is no kind of dose. The
+  ledger does not yet read them.
+  *(`hero/ConsumptionSystem.js` `doseLength`, `doseStrength`, `board/LoadoutMoments.js`,
+  `effects/LiveEffects.js`, `effects/effectLibrary.js` `strengthenStatement`)*
 - **Ring stars** (brief 380 M4): a star whose `opensRing` names a ring of the world map lets the
   guild settle that ring once its first rank is bought. Ring 1 is open from the start; a star per
   ring from ring 2, the wild rings too, each linked to the one before so they light in order. A
