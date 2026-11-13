@@ -107,8 +107,11 @@ export {
 // Token Lifecycle: the kinds of Foundation. Game-defined, so the dropdown, the engine and the content audit cannot disagree about what a kind is.
 export { FOUNDATION_KINDS, foundationTierOf, foundationMinTierOf } from '../../../src/config/registries/tokenConstants.js';
 
-// The kinds of station that narrow a skill's recipes (a Furnace smelts, a Smithy makes tools). Game-defined, like the Foundation kinds.
-export { STATION_KINDS, stationKindLabel, recipeStationKinds, stationKindOffers } from '../../../src/config/registries/tokenConstants.js';
+// The kinds of station that split one skill's recipes (only Farming's now: a Field's crops, the Windmill's flour), and the retired craft kinds, which narrow nothing. Game-defined, like the Foundation kinds.
+export {
+  STATION_KINDS, stationKindLabel, recipeStationKinds, stationKindOffers,
+  RETIRED_STATION_KINDS, isRetiredStationKind, retiredStationKindsOf, stationKindsOfSkill,
+} from '../../../src/config/registries/tokenConstants.js';
 
 // A turning Token rolls a chance once per cycle, both ways. The defaults a new Turns block starts with are the game's.
 export { TURN_DEFAULTS } from '../../../src/config/registries/tokenConstants.js';

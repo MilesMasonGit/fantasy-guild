@@ -12,9 +12,11 @@ import { STATION_KINDS, stationKindLabel, recipeStationKinds } from '../config/r
 import { KEYWORD, stationKindOf, stationSkillOf } from '../systems/effects/statements.js';
 
 /**
- * Per-station recipe pools (brief 230 S6a): a station kind on the `Works as` rule, station kinds
- * on a recipe. A recipe with no kinds is offered by every station of its skill; a station with no
- * kind offers its whole skill, as before.
+ * Per-station recipe pools: a station kind on the `Works as` rule, station kinds on a recipe. A
+ * recipe with no kinds is offered by every station of its skill; a station with no kind offers its
+ * whole skill. Only Farming still splits its recipes this way (a Field's crops, a Herb Garden's, a
+ * Windmill's flour); every other skill has one building offering all of it
+ * (`OneBuildingPerSkill.test.js`, where the retired craft kinds are checked).
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -24,23 +26,21 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 
 const out = (itemId) => [{ itemId, chance: 100, minQty: 1, maxQty: 1 }];
 
-// ⚠️ A fixture registration takes over its skill: shipped Smithing and Cooking are hidden here.
+// ⚠️ A fixture registration takes over its skill: shipped Farming and Smithing are hidden here.
 registerRecipePools({
+    farming: [
+        { id: 'sk_wheat', name: 'Wheat', levelRequirement: 1, stationKinds: ['field'], inputs: [], outputs: out('item_wheat'), durationMs: 5000, xp: 1 },
+        { id: 'sk_sage', name: 'Sage', levelRequirement: 1, stationKinds: ['herb_garden'], inputs: [], outputs: out('item_lavender'), durationMs: 5000, xp: 1 },
+        { id: 'sk_mint', name: 'Mint', levelRequirement: 1, stationKinds: ['field', 'herb_garden'], inputs: [], outputs: out('item_lavender'), durationMs: 5000, xp: 1 },
+        { id: 'sk_flour', name: 'Flour', levelRequirement: 1, stationKinds: ['windmill'], inputs: [], outputs: out('item_flour'), durationMs: 5000, xp: 1 },
+        { id: 'sk_compost', name: 'Compost', levelRequirement: 1, inputs: [], outputs: out('item_worm'), durationMs: 5000, xp: 1 }
+    ],
     smithing: [
-        { id: 's6_ingot', name: 'Ingot', levelRequirement: 1, stationKinds: ['furnace'], inputs: [], outputs: out('item_copper_ingot'), durationMs: 5000, xp: 1 },
-        { id: 's6_pickaxe', name: 'Pickaxe', levelRequirement: 1, stationKinds: ['smithy'], inputs: [], outputs: out('item_copper_pickaxe'), durationMs: 5000, xp: 1 },
-        { id: 's6_hinge', name: 'Hinge', levelRequirement: 1, inputs: [], outputs: out('item_copper_ingot'), durationMs: 5000, xp: 1 },
         {
-            id: 's6_sword', name: 'Sword', levelRequirement: 1, stationKinds: ['smithy'],
+            id: 'sk_sword', name: 'Sword', levelRequirement: 1,
             requiresContext: [{ tag: 'anvil', minTier: 1, chargeCost: 0 }],
             inputs: [], outputs: out('item_copper_ingot'), durationMs: 5000, xp: 1
         }
-    ],
-    cooking: [
-        { id: 's6_stew', name: 'Stew', levelRequirement: 1, stationKinds: ['kitchen'], inputs: [], outputs: out('item_apple'), durationMs: 5000, xp: 1 },
-        { id: 's6_beer', name: 'Beer', levelRequirement: 1, stationKinds: ['brewery'], inputs: [], outputs: out('item_beer'), durationMs: 5000, xp: 1 },
-        { id: 's6_tea', name: 'Tea', levelRequirement: 1, stationKinds: ['kitchen', 'brewery'], inputs: [], outputs: out('item_water'), durationMs: 5000, xp: 1 },
-        { id: 's6_leather', name: 'Leather', levelRequirement: 1, stationKinds: ['tannery'], inputs: [], outputs: out('item_water'), durationMs: 5000, xp: 1 }
     ]
 });
 
@@ -51,17 +51,15 @@ const station = (id, skill, stationKind) => ({
 });
 
 registerTokenTypes({
-    s6_furnace: station('s6_furnace', 'smithing', 'furnace'),
-    s6_smithy: station('s6_smithy', 'smithing', 'smithy'),
-    s6_forge: station('s6_forge', 'smithing'),
-    s6_campfire: station('s6_campfire', 'cooking', 'kitchen'),
-    s6_kitchen: station('s6_kitchen', 'cooking', 'kitchen'),
-    s6_brewery: station('s6_brewery', 'cooking', 'brewery'),
-    s6_tannery: station('s6_tannery', 'cooking', 'tannery'),
-    // An Anvil, the context-tag gate today's copper weapon recipes keep until S8 moves them.
-    s6_anvil: {
-        id: 's6_anvil', name: 's6_anvil', tokenType: 'context', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_flask',
-        statements: [{ id: 'stm_s6_anvil', keyword: KEYWORD.ACTS_AS, payload: { tag: 'anvil', tier: 1 } }]
+    sk_field: station('sk_field', 'farming', 'field'),
+    sk_wild_patch: station('sk_wild_patch', 'farming', 'field'),
+    sk_herb_garden: station('sk_herb_garden', 'farming', 'herb_garden'),
+    sk_windmill: station('sk_windmill', 'farming', 'windmill'),
+    sk_farmhouse: station('sk_farmhouse', 'farming'),
+    sk_blacksmith: station('sk_blacksmith', 'smithing'),
+    sk_anvil: {
+        id: 'sk_anvil', name: 'sk_anvil', tokenType: 'context', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_flask',
+        statements: [{ id: 'stm_sk_anvil', keyword: KEYWORD.ACTS_AS, payload: { tag: 'anvil', tier: 1 } }]
     }
 });
 
@@ -78,95 +76,87 @@ beforeEach(() => GameState.initNew());
 
 describe('the station kind on the Works as rule', () => {
     it('reads the kind beside the skill, and none when the rule names none', () => {
-        expect(stationSkillOf(def('s6_furnace'))).toBe('smithing');
-        expect(stationKindOf(def('s6_furnace'))).toBe('furnace');
-        expect(stationKindOf(def('s6_forge'))).toBeNull();
+        expect(stationSkillOf(def('sk_field'))).toBe('farming');
+        expect(stationKindOf(def('sk_field'))).toBe('field');
+        expect(stationKindOf(def('sk_farmhouse'))).toBeNull();
         expect(stationKindOf(null)).toBeNull();
     });
 
     it('a recipe lists its kinds; none is an empty list', () => {
-        expect(recipeStationKinds({ stationKinds: ['kitchen', 'brewery'] })).toEqual(['kitchen', 'brewery']);
+        expect(recipeStationKinds({ stationKinds: ['field', 'herb_garden'] })).toEqual(['field', 'herb_garden']);
         expect(recipeStationKinds({})).toEqual([]);
-        expect(recipeStationKinds({ stationKinds: 'furnace' })).toEqual([]);
+        expect(recipeStationKinds({ stationKinds: 'field' })).toEqual([]);
     });
 
-    it('the engine knows every station shape the content pack needs', () => {
-        for (const kind of ['furnace', 'smithy', 'kitchen', 'brewery', 'tannery', 'workbench', 'alchemy_table', 'summoning_circle']) {
-            expect(STATION_KINDS).toContain(kind);
-            expect(stationKindLabel(kind)).toMatch(/\S/);
-        }
+    it('the kinds left are Farming\'s, each with words', () => {
+        expect([...STATION_KINDS]).toEqual(['field', 'herb_garden', 'windmill']);
+        for (const kind of STATION_KINDS) expect(stationKindLabel(kind)).toMatch(/\S/);
+        expect(stationKindLabel('herb_garden')).toBe('Herb Garden');
     });
 });
 
 describe('a station offers only its kind (and recipes that name no kind)', () => {
-    it('the Furnace offers smelting, never the Smithy\'s tools', () => {
-        expect(ids(recipesForToken(def('s6_furnace')))).toEqual(['s6_hinge', 's6_ingot']);
+    it('a Field offers its crops, never the Herb Garden\'s', () => {
+        expect(ids(recipesForToken(def('sk_field')))).toEqual(['sk_compost', 'sk_mint', 'sk_wheat']);
     });
 
-    it('the Smithy offers tools and weapons, never smelting', () => {
-        expect(ids(recipesForToken(def('s6_smithy')))).toEqual(['s6_hinge', 's6_pickaxe', 's6_sword']);
+    it('a Herb Garden offers its own, and the crop both kinds name', () => {
+        expect(ids(recipesForToken(def('sk_herb_garden')))).toEqual(['sk_compost', 'sk_mint', 'sk_sage']);
     });
 
-    it('a station with no kind offers its whole skill, as before', () => {
-        expect(ids(recipesForToken(def('s6_forge')))).toEqual(ids(getSkillRecipePool('smithing')));
+    it('two stations of one kind share one list; the Windmill has its own', () => {
+        expect(ids(recipesForToken(def('sk_wild_patch')))).toEqual(ids(recipesForToken(def('sk_field'))));
+        expect(ids(recipesForToken(def('sk_windmill')))).toEqual(['sk_compost', 'sk_flour']);
     });
 
-    it('a Campfire and a Kitchen share one kind and one list; the Brewery has its own', () => {
-        expect(ids(recipesForToken(def('s6_campfire')))).toEqual(['s6_stew', 's6_tea']);
-        expect(ids(recipesForToken(def('s6_kitchen')))).toEqual(['s6_stew', 's6_tea']);
-        expect(ids(recipesForToken(def('s6_brewery')))).toEqual(['s6_beer', 's6_tea']);
-    });
-
-    it('a Tannery offers only Tannery recipes, and no other station offers them', () => {
-        expect(ids(recipesForToken(def('s6_tannery')))).toEqual(['s6_leather']);
-        expect(ids(recipesForToken(def('s6_kitchen')))).not.toContain('s6_leather');
-        expect(ids(recipesForToken(def('s6_brewery')))).not.toContain('s6_leather');
+    it('a station with no kind offers its whole skill', () => {
+        expect(ids(recipesForToken(def('sk_farmhouse')))).toEqual(ids(getSkillRecipePool('farming')));
     });
 
     it('the recipe picker lists the same pool', () => {
-        const hero = { id: 'h1', skills: { smithing: { level: 5 } } };
-        const listed = RecipeList.recipeListFor(def('s6_furnace'), { heroes: [hero] }).entries
+        const hero = { id: 'h1', skills: { farming: { level: 5 } } };
+        const listed = RecipeList.recipeListFor(def('sk_field'), { heroes: [hero] }).entries
             .filter(e => e.kind === RecipeList.ENTRY.RECIPE)
             .map(e => e.recipe);
-        expect(ids(listed)).toEqual(['s6_hinge', 's6_ingot']);
+        expect(ids(listed)).toEqual(['sk_compost', 'sk_mint', 'sk_wheat']);
     });
 });
 
 describe('choosing a recipe', () => {
-    it('a Furnace refuses a Smithy recipe and accepts its own', () => {
-        const furnace = place('s6_furnace', { x: 400, y: 300 });
-        expect(StationRecipe.setSelectedRecipe(furnace, 's6_pickaxe')).toBe(false);
-        expect(furnace.selectedRecipeId).toBeUndefined();
-        expect(StationRecipe.setSelectedRecipe(furnace, 's6_ingot')).toBe(true);
-        expect(StationRecipe.selectedRecipe(furnace)?.id).toBe('s6_ingot');
+    it('a Field refuses a Herb Garden crop and accepts its own', () => {
+        const field = place('sk_field', { x: 400, y: 300 });
+        expect(StationRecipe.setSelectedRecipe(field, 'sk_sage')).toBe(false);
+        expect(field.selectedRecipeId).toBeUndefined();
+        expect(StationRecipe.setSelectedRecipe(field, 'sk_wheat')).toBe(true);
+        expect(StationRecipe.selectedRecipe(field)?.id).toBe('sk_wheat');
     });
 
-    it('an old save: a Furnace set to a tool recipe falls back to Choose a recipe', () => {
-        const furnace = place('s6_furnace', { x: 400, y: 300 });
-        // Written before the Furnace had a kind, when it offered every Smithing recipe.
-        furnace.selectedRecipeId = 's6_pickaxe';
+    it('an old save: a Herb Garden set to a Field crop falls back to Choose a recipe', () => {
+        const garden = place('sk_herb_garden', { x: 400, y: 300 });
+        // Written when the crop was still offered there.
+        garden.selectedRecipeId = 'sk_wheat';
         const saved = JSON.parse(JSON.stringify(GameState.state));
         GameState.initNew();
         GameState.state.board = saved.board;
-        const loaded = BoardState.getTokenById(furnace.id);
-        expect(loaded.selectedRecipeId).toBe('s6_pickaxe');
+        const loaded = BoardState.getTokenById(garden.id);
+        expect(loaded.selectedRecipeId).toBe('sk_wheat');
 
         const res = RecipeResolver.resolveRecipe(loaded.id, loaded);
         expect(res.status).toBe(RECIPE.NONE);
         expect(res.reason).toBe('choose_recipe');
         expect(loaded.selectedRecipeId).toBeUndefined();
         // And the player can pick again.
-        expect(StationRecipe.setSelectedRecipe(loaded, 's6_ingot')).toBe(true);
+        expect(StationRecipe.setSelectedRecipe(loaded, 'sk_sage')).toBe(true);
         expect(RecipeResolver.resolveRecipe(loaded.id, loaded).status).toBe(RECIPE.OK);
     });
 });
 
 describe('the anvil context tag keeps working', () => {
-    it('a Smithy recipe that still needs an anvil waits for one, and runs beside it', () => {
-        const smithy = place('s6_smithy', { x: 400, y: 300 });
-        expect(StationRecipe.setSelectedRecipe(smithy, 's6_sword')).toBe(true);
-        expect(RecipeResolver.resolveRecipe(smithy.id, smithy).reason).toBe('missing_context');
-        place('s6_anvil', { x: 560, y: 300 });
-        expect(RecipeResolver.resolveRecipe(smithy.id, smithy).status).toBe(RECIPE.OK);
+    it('a recipe that still needs an anvil waits for one at the skill\'s building, and runs beside it', () => {
+        const smith = place('sk_blacksmith', { x: 400, y: 300 });
+        expect(StationRecipe.setSelectedRecipe(smith, 'sk_sword')).toBe(true);
+        expect(RecipeResolver.resolveRecipe(smith.id, smith).reason).toBe('missing_context');
+        place('sk_anvil', { x: 560, y: 300 });
+        expect(RecipeResolver.resolveRecipe(smith.id, smith).status).toBe(RECIPE.OK);
     });
 });

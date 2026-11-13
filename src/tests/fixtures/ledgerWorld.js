@@ -9,6 +9,10 @@ import { normaliseWorldTables } from '../../config/worldTablesShape.js';
 
 const out = (itemId, chance = 100, minQty = 1, maxQty = minQty, extra = {}) => ({ itemId, chance, minQty, maxQty, ...extra });
 const work = (skill, skillRequired, cycleTimeMs, outputs, inputs = []) => ({ skill, skillRequired, cycleTimeMs, xp: 1, inputs, outputs });
+// Fixture-only kinds keep the Furnace and the Smithy apart, as this world tests: the shipped craft
+// kinds are retired and narrow nothing.
+const FURNACE = 'fixture_furnace';
+const SMITHY = 'fixture_smithy';
 const station = (skill, stationKind) => ({ keyword: 'station', payload: stationKind ? { skill, stationKind } : { skill } });
 
 export const PLAN_ITEMS = {
@@ -59,9 +63,9 @@ export const PLAN_TOKENS = {
     },
     token_oak_stump: { id: 'token_oak_stump', name: 'Oak Stump', grows: { into: 'token_oak_sapling', afterMs: 1000, cost: [{ itemId: 'item_seed', quantity: 1 }] } },
     token_oak_sapling: { id: 'token_oak_sapling', name: 'Oak Sapling', grows: { into: 'token_oak_tree', afterMs: 1000 } },
-    token_furnace: { id: 'token_furnace', name: 'Furnace', statements: [station('smithing', 'furnace')], config: work('smithing', 1, 9000, []) },
-    token_smithy: { id: 'token_smithy', name: 'Smithy', statements: [station('smithing', 'smithy')], config: work('smithing', 1, 9000, []) },
-    token_idle_anvil: { id: 'token_idle_anvil', name: 'Idle Anvil', statements: [station('smithing', 'smithy')], config: null, shop: { price: [], section: 'general' } },
+    token_furnace: { id: 'token_furnace', name: 'Furnace', statements: [station('smithing', FURNACE)], config: work('smithing', 1, 9000, []) },
+    token_smithy: { id: 'token_smithy', name: 'Smithy', statements: [station('smithing', SMITHY)], config: work('smithing', 1, 9000, []) },
+    token_idle_anvil: { id: 'token_idle_anvil', name: 'Idle Anvil', statements: [station('smithing', SMITHY)], config: null, shop: { price: [], section: 'general' } },
     token_wood_foundation: { id: 'token_wood_foundation', name: 'Wood Foundation', foundation: { kind: 'wood', skill: 'construction' }, shop: { price: [{ itemId: 'item_oak_wood', quantity: 15 }], section: 'construction' } },
     token_goblin_camp: { id: 'token_goblin_camp', name: 'Goblin Camp', spawner: { spawns: [{ typeId: 'token_goblin', weight: 1 }], allowance: 3, intervalMs: 30000, upkeep: [] } },
     token_goblin: {
@@ -89,9 +93,9 @@ export const PLAN_TOKENS = {
 };
 
 export const PLAN_RECIPES = [
-    { id: 'recipe_copper_ingot', name: 'Copper Ingot', skill: 'smithing', levelRequirement: 1, durationMs: 9000, stationKinds: ['furnace'], inputs: [{ itemId: 'item_copper_ore', quantity: 2 }, { itemId: 'item_coal', quantity: 1 }], outputs: [out('item_copper_ingot')] },
-    { id: 'recipe_iron_ingot', name: 'Iron Ingot', skill: 'smithing', levelRequirement: 15, durationMs: 18000, stationKinds: ['furnace'], inputs: [{ itemId: 'item_iron_ore', quantity: 2 }, { itemId: 'item_coal', quantity: 2 }], outputs: [out('item_iron_ingot')] },
-    { id: 'recipe_iron_pickaxe', name: 'Iron Pickaxe', skill: 'smithing', levelRequirement: 16, durationMs: 30000, stationKinds: ['smithy'], inputs: [{ itemId: 'item_iron_ingot', quantity: 3 }, { itemId: 'item_oak_wood', quantity: 1 }], outputs: [out('item_iron_pickaxe')] },
+    { id: 'recipe_copper_ingot', name: 'Copper Ingot', skill: 'smithing', levelRequirement: 1, durationMs: 9000, stationKinds: [FURNACE], inputs: [{ itemId: 'item_copper_ore', quantity: 2 }, { itemId: 'item_coal', quantity: 1 }], outputs: [out('item_copper_ingot')] },
+    { id: 'recipe_iron_ingot', name: 'Iron Ingot', skill: 'smithing', levelRequirement: 15, durationMs: 18000, stationKinds: [FURNACE], inputs: [{ itemId: 'item_iron_ore', quantity: 2 }, { itemId: 'item_coal', quantity: 2 }], outputs: [out('item_iron_ingot')] },
+    { id: 'recipe_iron_pickaxe', name: 'Iron Pickaxe', skill: 'smithing', levelRequirement: 16, durationMs: 30000, stationKinds: [SMITHY], inputs: [{ itemId: 'item_iron_ingot', quantity: 3 }, { itemId: 'item_oak_wood', quantity: 1 }], outputs: [out('item_iron_pickaxe')] },
     { id: 'recipe_build_smithy', name: 'Build Smithy', skill: 'construction', levelRequirement: 3, durationMs: 20000, foundationKinds: ['wood'], inputs: [{ itemId: 'item_copper_ingot', quantity: 5 }], outputs: [{ tokenId: 'token_smithy', chance: 100, minQty: 1, maxQty: 1 }] },
     { id: 'recipe_wheat', name: 'Wheat', skill: 'farming', levelRequirement: 1, durationMs: 10000, stationKinds: ['field'], crop: { growMs: 60000, load: 10 }, inputs: [{ itemId: 'item_wheat_seed', quantity: 1 }], outputs: [out('item_wheat', 100, 1, 2), out('item_wheat_seed', 40)] },
     // A Planned recipe makes nothing, whatever it says.

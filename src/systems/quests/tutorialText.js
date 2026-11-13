@@ -57,7 +57,7 @@ export const TUTORIAL_TEXT = Object.freeze({
         cart_copper_tool: Object.freeze({
             title: 'Make a Copper Tool',
             says: 'Copper. The first metal, or the last one I remember. Melt it down and give it an edge.',
-            instruction: 'Mine copper ore and smelt it into ingots at a Furnace. Then make a Copper Pickaxe or a Copper Woodaxe at a Copper Smithy.'
+            instruction: 'Mine copper ore and smelt it into ingots at a Blacksmith. Then make a Copper Pickaxe or a Copper Woodaxe there.'
         }),
         // ⚠️ A draft: the owner rewrites it at the eye-check.
         cart_goblin: Object.freeze({

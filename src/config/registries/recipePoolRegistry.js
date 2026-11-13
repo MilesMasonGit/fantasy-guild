@@ -12,11 +12,12 @@
  * ## A recipe belongs to a skill
  * `skill` is a real skill id from `skillRegistry.js`. There are no subskills:
  * Smelting, Weaponsmithing, Toolsmithing and Jewelry are all `smithing`,
- * and Baking and Cooking are both `cooking`. A station draws the recipes of
- * its skill that its station kind offers (`STATION_KINDS`): a recipe's
- * `stationKinds` names the stations that make it (the Furnace smelts, the
- * Smithy makes tools). A recipe with no `stationKinds`, or a station with no
- * kind, is unnarrowed.
+ * and Baking and Cooking are both `cooking`. A skill's building names no
+ * station kind, so it draws every recipe of its skill, the picker gating them
+ * by level. Only Farming still splits its recipes by kind (`STATION_KINDS`: a
+ * recipe's `stationKinds` names the stations that make it, a Field's crops or
+ * the Windmill's flour). A recipe with no `stationKinds`, or a station with no
+ * kind or a retired one, is unnarrowed.
  *
  * ## A station's pool comes from its `Works as` statement
  * The skill named in the Token's Station statement is

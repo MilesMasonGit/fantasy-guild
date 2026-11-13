@@ -17,8 +17,9 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * The QA panel's station pools button (brief 230 S6a): the owner's way to see, by clicking, a
- * Furnace that lists only smelting and a Smithy that lists only smithing.
+ * The QA panel's station pools button: a QA Furnace and a QA Smithy, each still naming its old
+ * station kind. The craft kinds are retired (one building per skill), so each now lists every
+ * Smithing recipe.
  */
 
 beforeAll(() => BoardRunner.init());
@@ -32,26 +33,20 @@ beforeEach(() => {
 });
 
 describe('the stations scene', () => {
-    it('lays out a Furnace offering only ingots and a Smithy offering everything else', () => {
-        const shippedSmithing = listRecipes().filter(r => r.skill === 'smithing' && !r.id.startsWith('qa_'));
+    it('lays out a Furnace and a Smithy, each offering every Smithing recipe now', () => {
+        const shippedSmithing = listRecipes().filter(r => r.skill === 'smithing' && !r.id.startsWith('qa_') && !r.foundationKinds?.length);
         expect(setUpStationsScene()).toEqual({ ok: true });
 
         const furnace = BoardState.tokens().find(t => t.typeId === QA_TYPES.FURNACE);
         const smithy = BoardState.tokens().find(t => t.typeId === QA_TYPES.SMITHY);
         expect(furnace && smithy).toBeTruthy();
 
-        const offered = (inst) => StationRecipe.poolFor(getTokenType(inst.typeId));
-        const furnaceOutputs = offered(furnace).flatMap(r => r.outputs.map(o => o.itemId));
-        expect(furnaceOutputs.length).toBeGreaterThan(0);
-        expect(furnaceOutputs.every(id => /ingot/.test(id))).toBe(true);
-        expect(offered(smithy).every(r => r.outputs.every(o => !/ingot/.test(o.itemId)))).toBe(true);
-        // Between them, every shipped Smithing recipe, each in one place, with no anvil needed.
-        expect(offered(furnace).length + offered(smithy).length).toBe(shippedSmithing.length);
-        expect(offered(smithy).every(r => r.requiresContext.length === 0)).toBe(true);
+        const offered = (inst) => StationRecipe.poolFor(getTokenType(inst.typeId)).map(r => r.id).sort();
+        expect(offered(furnace)).toHaveLength(shippedSmithing.length);
+        expect(offered(smithy)).toEqual(offered(furnace));
 
         const lines = stationsReadout();
-        expect(lines[0]).toMatch(/^QA Furnace \(Furnace\): \d+ recipes: .*Copper Ingot/);
-        expect(lines[1]).toMatch(/^QA Smithy \(Smithy\): \d+ recipes: .*Copper Pickaxe/);
-        expect(lines[1]).not.toContain('Ingot');
+        expect(lines[0]).toMatch(/^QA Furnace \(Furnace\): \d+ recipes: .*Copper Ingot.*Copper Pickaxe|^QA Furnace \(Furnace\): \d+ recipes: .*Copper Pickaxe.*Copper Ingot/);
+        expect(lines[1]).toMatch(/^QA Smithy \(Smithy\): \d+ recipes: .*Ingot/);
     });
 });

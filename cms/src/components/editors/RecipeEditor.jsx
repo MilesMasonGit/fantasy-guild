@@ -6,7 +6,7 @@ import {
 import {
   SKILLS, skillsByLayer, KEYWORD, statementsOf, stationSkillOf, expandBearer,
   FOUNDATION_KINDS, foundationTierOf, foundationMinTierOf,
-  STATION_KINDS, stationKindLabel, recipeStationKinds, stationKindOffers, stationKindOf,
+  stationKindLabel, recipeStationKinds, stationKindOffers, stationKindOf, retiredStationKindsOf, stationKindsOfSkill,
   cropTermsOf, CROP_MIN_GROW_MS,
 } from '../../utils/constants';
 import { SpriteField } from './LifecycleBlocks';
@@ -459,36 +459,51 @@ function FoundationKindsRow({ recipe, tokens, skillName, onChange }) {
 }
 
 /**
- * Which kinds of station make this recipe. None ticked removes the field: every station of the skill offers it, as before kinds existed. A station with no kind offers it either way.
+ * Which kinds of station make this recipe, for a skill that splits its recipes between its stations (Farming: a Field's crops, the Windmill's flour). None ticked removes the field: every station of the skill offers it. Every other skill has one building offering all of it, so its recipes show only who offers them. A retired kind still on the recipe narrows nothing and can be cleared.
  */
 function StationKindsRow({ recipe, stations, skillName, onChange }) {
   const kinds = recipeStationKinds(recipe);
+  const retired = retiredStationKindsOf(recipe);
+  // The skill's own kinds, and any other one the recipe already names, so nothing ticked is hidden.
+  const choices = [...new Set([...stationKindsOfSkill(recipe.skill), ...kinds])];
   const offeredBy = stations.filter((s) => stationKindOffers(s.kind, recipe));
   const withoutStation = kinds.filter((k) => !stations.some((s) => s.kind === k));
+  const write = (next) => onChange({ stationKinds: next.length > 0 ? next : undefined });
   return (
     <div data-testid="station-kinds">
       <label className="text-[10px] font-bold uppercase tracking-wider block mb-1 text-gray-500">
         Made at
       </label>
-      <p className="text-[10px] text-gray-600 mb-1.5 leading-relaxed">
-        Tick the kinds of {skillName(recipe.skill)} station that make this (a Furnace smelts, a Smithy makes tools).
-        None ticked: every {skillName(recipe.skill)} station offers it.
-      </p>
-      <div className="flex flex-wrap gap-3">
-        {STATION_KINDS.map((kind) => (
-          <label key={kind} className="flex items-center gap-1.5 text-[11px] text-gray-300 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={kinds.includes(kind)}
-              onChange={(e) => {
-                const next = e.target.checked ? [...kinds, kind] : kinds.filter((k) => k !== kind);
-                onChange({ stationKinds: next.length > 0 ? next : undefined });
-              }}
-            />
-            {stationKindLabel(kind)}
-          </label>
-        ))}
-      </div>
+      {choices.length > 0 ? (
+        <>
+          <p className="text-[10px] text-gray-600 mb-1.5 leading-relaxed">
+            Tick the kinds of {skillName(recipe.skill)} station that make this (a Field grows its crops, the Windmill mills).
+            None ticked: every {skillName(recipe.skill)} station offers it.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            {choices.map((kind) => (
+              <label key={kind} className="flex items-center gap-1.5 text-[11px] text-gray-300 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={kinds.includes(kind)}
+                  onChange={(e) => write(e.target.checked ? [...kinds, kind] : kinds.filter((k) => k !== kind))}
+                />
+                {stationKindLabel(kind)}
+              </label>
+            ))}
+          </div>
+        </>
+      ) : (
+        <p className="text-[10px] text-gray-600 mb-1.5 leading-relaxed">
+          Every {skillName(recipe.skill)} building offers it: one building per skill, its list gated by level.
+        </p>
+      )}
+      {retired.length > 0 && (
+        <p className="text-[10px] mt-1.5 leading-relaxed" style={{ color: 'var(--color-warning)' }} data-testid="station-kinds-retired">
+          ⚠️ Still marked {retired.map(stationKindLabel).join(', ')}: {retired.length > 1 ? 'retired station kinds, which narrow' : 'a retired station kind, which narrows'} nothing.{' '}
+          <button type="button" className="underline" onClick={() => write(kinds)}>Clear</button>
+        </p>
+      )}
       <p className="text-[10px] mt-1.5 text-gray-500 leading-relaxed" data-testid="station-kinds-offered">
         {offeredBy.length > 0
           ? <>Offered by: {offeredBy.map((s) => s.token.name || s.token.id).join(', ')}</>

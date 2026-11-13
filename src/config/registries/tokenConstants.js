@@ -116,21 +116,40 @@ export function isTokenRarity(value) {
 export const FOUNDATION_KINDS = Object.freeze(['wood', 'stone', 'bench', 'farmland', 'excavation', 'battlefield']);
 
 /**
- * The kinds of station, which narrow a skill's recipes to the stations that make them: a
- * `stationKind` on the Token's `Works as` rule, `stationKinds` on a recipe. A Furnace and a Smithy
- * both work as Smithing; only the kind tells smelting from tools.
+ * The kinds of station, which split one skill's recipes between several stations of it: a
+ * `stationKind` on the Token's `Works as` rule, `stationKinds` on a recipe. A skill's building
+ * names no kind, so it offers every recipe of its skill, the list gated by level; only Farming
+ * still splits its own (a Field and a Herb Garden each grow their crops, `cropTermsOf`; a Windmill
+ * mills grain).
  *
- * ⚠️ Both sides are opt-in, so content without kinds keeps every recipe on every station of its
- * skill: a station with no kind offers its whole skill, and a recipe with no kinds is offered by
- * every station of its skill. Better versions of a station (Campfire then Kitchen, Copper then Iron
- * Smithy) share one kind, since they run the same recipes faster.
+ * ⚠️ Both sides are opt-in: a station with no kind offers its whole skill, and a recipe with no
+ * kinds is offered by every station of its skill.
  */
-export const STATION_KINDS = Object.freeze([
-    'furnace', 'smithy', 'kitchen', 'brewery', 'tannery', 'workbench', 'alchemy_table', 'summoning_circle',
-    // A Field and a Herb Garden are Farming stations whose recipes are crops (`cropTermsOf`), each
-    // kind its own crop list; a Windmill mills grain.
-    'field', 'herb_garden', 'windmill'
+export const STATION_KINDS = Object.freeze(['field', 'herb_garden', 'windmill']);
+
+/** The skill each kind splits; the CMS offers a kind only on its own skill. */
+const STATION_KIND_SKILLS = Object.freeze({ field: 'farming', herb_garden: 'farming', windmill: 'farming' });
+
+/**
+ * Kinds that used to split a craft skill between stations (a Furnace smelted, a Smithy made tools).
+ *
+ * ⚠️ They narrow nothing: a station or a recipe still naming one reads as naming none, so a station
+ * left with one offers its whole skill until it is deleted, and the audits ask for the leftover to
+ * be cleared. Their names still read, so an old rule still says what it named.
+ */
+export const RETIRED_STATION_KINDS = Object.freeze([
+    'furnace', 'smithy', 'kitchen', 'brewery', 'tannery', 'workbench', 'alchemy_table', 'summoning_circle'
 ]);
+
+/** Whether a kind is one of the retired ones (which narrow nothing). */
+export function isRetiredStationKind(kind) {
+    return RETIRED_STATION_KINDS.includes(kind);
+}
+
+/** The kinds that split one skill's recipes, in list order; none for a skill with one building. */
+export function stationKindsOfSkill(skill) {
+    return STATION_KINDS.filter(k => STATION_KIND_SKILLS[k] === skill);
+}
 
 const STATION_KIND_LABELS = Object.freeze({
     furnace: 'Furnace',
@@ -151,14 +170,24 @@ export function stationKindLabel(kind) {
     return STATION_KIND_LABELS[kind] || kind || '';
 }
 
-/** A recipe's station kinds; none (or a malformed field) is an empty list. */
-export function recipeStationKinds(recipe) {
+/** Every kind a recipe names, retired ones too; none (or a malformed field) is an empty list. */
+function namedStationKinds(recipe) {
     return Array.isArray(recipe?.stationKinds) ? recipe.stationKinds.filter(k => typeof k === 'string' && k) : [];
 }
 
-/** Whether a station of this kind (null: no kind) offers this recipe of its own skill. */
+/** The station kinds that narrow a recipe: the ones it names, less the retired. */
+export function recipeStationKinds(recipe) {
+    return namedStationKinds(recipe).filter(k => !isRetiredStationKind(k));
+}
+
+/** The retired kinds a recipe still names: leftovers to clear, which narrow nothing. */
+export function retiredStationKindsOf(recipe) {
+    return namedStationKinds(recipe).filter(isRetiredStationKind);
+}
+
+/** Whether a station of this kind (null, or a retired kind: no kind) offers this recipe of its own skill. */
 export function stationKindOffers(kind, recipe) {
-    if (!kind) return true;
+    if (!kind || isRetiredStationKind(kind)) return true;
     const kinds = recipeStationKinds(recipe);
     return kinds.length === 0 || kinds.includes(kind);
 }

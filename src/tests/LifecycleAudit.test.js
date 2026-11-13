@@ -11,6 +11,8 @@ import { ITEMS as ITEMS_LIVE } from '../config/registries/itemRegistry.js';
 import { listRecipes } from '../config/registries/recipePoolRegistry.js';
 import { SKILLS as GAME_SKILLS } from '../config/registries/skillRegistry.js';
 import { expandBearer } from '../systems/effects/effectLibrary.js';
+import { stationKindOf } from '../systems/effects/statements.js';
+import { isRetiredStationKind, retiredStationKindsOf } from '../config/registries/tokenConstants.js';
 
 /**
  * Token Lifecycle slice 4.2 — the content audit for the new Token blocks.
@@ -586,6 +588,17 @@ const withAmbushLeft = (tokens) => {
     return left ? [...SHIPPED_ALLOWED, ['warning', 'token_iron_ore_vein', 'statements']].sort() : SHIPPED_ALLOWED;
 };
 
+/**
+ * The craft skills' old station kinds (a Furnace, a Smithy): a station or a recipe still naming one
+ * narrows nothing and is a warning until the content pack clears it. Allowed only while the content
+ * still carries one.
+ */
+const retiredKindsLeft = (tokens, recipes) => [
+    ...Object.entries(tokens).filter(([, def]) => isRetiredStationKind(stationKindOf(def))).map(([id]) => ['warning', id, 'stationKind']),
+    ...recipes.filter((r) => retiredStationKindsOf(r).length).map((r) => ['warning', r.id, 'stationKinds'])
+];
+const shippedAllowed = (tokens, recipes) => [...withAmbushLeft(tokens), ...retiredKindsLeft(tokens, recipes)].sort();
+
 describe('Lifecycle audit — reaches both audits', () => {
     it('the CMS Economy Audit shows each finding as a row, errors Critical and warnings Warning', () => {
         const w = clean();
@@ -601,7 +614,7 @@ describe('Lifecycle audit — reaches both audits', () => {
 
     it('the game registries (what the boot audit reads) give the checker nothing to report but the free spawners (the Quarry and the camps)', () => {
         expect(summarise(auditLifecycleBlocks({ tokens: TOKENS, items: ITEMS_LIVE, recipes: listRecipes(), skills: GAME_SKILLS })))
-            .toEqual(withAmbushLeft(TOKENS));
+            .toEqual(shippedAllowed(TOKENS, listRecipes()));
     });
 
     it('the game boot audit reports a broken fixture Token, by Token', () => {
@@ -630,7 +643,7 @@ describe('Lifecycle audit — reaches both audits', () => {
         const tokens = Object.fromEntries(Object.entries(read('tokens.json')).map(([id, t]) => [id, expandBearer(t, effects)]));
         const items = read('items.json');
         const recipes = read('tokenRecipes.json');
-        expect(summarise(auditLifecycleBlocks({ tokens, items, recipes, skills: GAME_SKILLS }))).toEqual(withAmbushLeft(tokens));
+        expect(summarise(auditLifecycleBlocks({ tokens, items, recipes, skills: GAME_SKILLS }))).toEqual(shippedAllowed(tokens, recipes));
     });
 });
 

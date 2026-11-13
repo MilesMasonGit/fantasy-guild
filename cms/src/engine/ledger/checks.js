@@ -3,6 +3,7 @@
 import { planOf, PLAN_STATUS, tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
 import { HOW, LEDGER_ENGINE_TEXT, parseKey, itemKey, tokenKey, recipeKey, isOneOff, oneOffFindOf } from '../../../../src/systems/progression/ledger/engine.js';
 import { toolOf } from '../../../../src/config/registries/toolKinds.js';
+import { recipeStationKinds, stationKindLabel } from '../../../../src/config/registries/tokenConstants.js';
 
 export { isOneOff };
 
@@ -292,7 +293,7 @@ export function runChecks(ledger, content = {}, { extra = [] } = {}) {
         if (kind === 'recipe' && !world.rules.some((r) => (r.how === HOW.STATION || r.how === HOW.BUILD) && r.gives[0]?.key === key)) {
             const kinds = Array.isArray(def.foundationKinds) && def.foundationKinds.length
                 ? `a Foundation of kind ${def.foundationKinds.join(' or ')}`
-                : `a ${def.skill || 'skill-less'} station${Array.isArray(def.stationKinds) && def.stationKinds.length ? ` of kind ${def.stationKinds.join(' or ')}` : ''}`;
+                : `a ${def.skill || 'skill-less'} station${recipeStationKinds(def).length ? ` of kind ${recipeStationKinds(def).map(stationKindLabel).join(' or ')}` : ''}`;
             add('no-host', key, `Nothing can run it: no Token in the content is ${kinds}.`);
         }
         if (kind === 'item' && toolOf(def)?.starter) {
