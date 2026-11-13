@@ -211,4 +211,14 @@ describe('Kill loot follows the yield, double-loot and bonus-drop rules', () => 
         expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(1);
         expect(SpriteLayer.countOnBoard('item_blackberry')).toBe(1);
     });
+
+    it('LOOT_MULT doubles a bonus drop too, as it does the kill\'s own', () => {
+        const enemy = enemyBeside('fixture_bonus_drop');
+        const doubler = BoardState.createTokenInstance('fixture_buff_always_doubles', null);
+        Placement.placeTokenAt(doubler, { x: at.x - 70, y: at.y });
+        TileModifiers.rebuildAround([enemy, doubler]);
+        kill(enemy);
+        expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(2);
+        expect(SpriteLayer.countOnBoard('item_blackberry')).toBe(2);
+    });
 });

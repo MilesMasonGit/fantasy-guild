@@ -4,7 +4,8 @@ import * as EffectFeedback from './EffectFeedback.js';
 import * as RareDrops from './RareDrops.js';
 import * as SupportLinks from './supportLinks.js';
 import * as CycleSavings from './CycleSavings.js';
-import { EFFECT_TYPES } from '../effects/constants.js';
+import { EFFECT_TYPES, GIANT_HARVEST_TIMES } from '../effects/constants.js';
+import { isGatheringSkill } from '../../config/registries/skillRegistry.js';
 
 /**
  * The output rules a finished cycle pays through: a station's cycle (`BoardRunner`) and a kill
@@ -21,6 +22,21 @@ import { EFFECT_TYPES } from '../effects/constants.js';
 export function rollDoubleLoot(instanceId, skill) {
     const chance = TileModifiers.resolveAxis(instanceId, EFFECT_TYPES.LOOT_MULT, 0, skill);
     return chance > 0 && Math.random() * 100 < chance;
+}
+
+export { GIANT_HARVEST_TIMES };
+
+/**
+ * GIANT_HARVEST: whether this gathering cycle's drops all come in at {@link GIANT_HARVEST_TIMES}
+ * (every line and the rare table's find; with Double Loot as well, both apply). Rolled ONCE per
+ * cycle, like Double Loot. Work whose skill is not a gathering skill never rolls it, whatever rule
+ * reaches it.
+ *
+ * ⚠️ No draw unless a rule offers the chance to gathering work, so the stream is unchanged without one.
+ */
+export function rollGiantHarvest(instanceId, skill) {
+    if (!isGatheringSkill(skill)) return false;
+    return CycleSavings.procHits(instanceId, EFFECT_TYPES.GIANT_HARVEST, skill);
 }
 
 /**
@@ -64,10 +80,12 @@ export function widenYield(instanceId, skill, rolled) {
 
 /**
  * BONUS_DROP: nearby grants of something the Token does not make itself, rolled per entry after
- * its own outputs. Each lands on the board like any other output.
+ * its own outputs. Each lands on the board like any other output, `times` as many as authored: the
+ * cycle's Double Loot (x2) and Giant Harvest (x10) multiply a bonus drop as they do the Token's own.
+ * @param {number} [times] the cycle's loot multiplier
  * @returns {string[]} the item ids that landed
  */
-export function dropBonusGrants(instanceId) {
+export function dropBonusGrants(instanceId, times = 1) {
     const landed = [];
     for (const grant of TileModifiers.collectItemGrants(instanceId, EFFECT_TYPES.BONUS_DROP)) {
         const chance = grant.chance ?? 100;
@@ -77,7 +95,7 @@ export function dropBonusGrants(instanceId) {
         // Token's grant carries no `sourceItemIds` and pays nothing here.
         // Preservation may keep the item and still land the grant (`CycleSavings.payItemRule`).
         if (!CycleSavings.payItemRule(instanceId, grant)) continue;
-        const quantity = Math.max(1, grant.quantity || 1);
+        const quantity = Math.max(1, grant.quantity || 1) * times;
         RareDrops.noteDrop(SpriteLayer.addSprite('item', grant.itemId, quantity, instanceId), chance);
         landed.push(grant.itemId);
         // Announced only once the roll has actually landed: a 5% grant that missed did nothing,

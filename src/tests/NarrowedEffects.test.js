@@ -252,7 +252,9 @@ describe('the palette declares both, rather than inferring them', () => {
             EFFECT_TYPES.YIELD, EFFECT_TYPES.WORK_TIME, EFFECT_TYPES.INPUT_COST, EFFECT_TYPES.GROW_TIME, EFFECT_TYPES.CROP_LOAD,
             EFFECT_TYPES.XP_BONUS, EFFECT_TYPES.LOOT_MULT, EFFECT_TYPES.FAIL_CHANCE, EFFECT_TYPES.CAMP_REACH,
             // Refresh's (`CycleSavings.rollRefresh`) the Token's own work skill.
-            EFFECT_TYPES.REFRESH
+            EFFECT_TYPES.REFRESH,
+            // Giant Harvest's (`OutputRules.rollGiantHarvest`) too, a gathering skill only.
+            EFFECT_TYPES.GIANT_HARVEST
         ]));
     });
 

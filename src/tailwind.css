@@ -623,6 +623,8 @@
 }
 .gi-fx-number-damage { color: #ff5a5a; }
 .gi-fx-number-gain { color: #6ee7b7; }
+/* A Giant Harvest's "Giant!" (`matFx.giantHarvestCelebration`): gold, a step larger. */
+.gi-fx-number-giant { color: var(--color-ui-gold); font-size: var(--font-size-base); }
 
 /* A fight's floating numbers (`fx/fightFloats.js`): the kit's title size (a crit's number the
    display size under a body-size gold "Crit!", a miss the body size), with a hard edge of two

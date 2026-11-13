@@ -54,3 +54,14 @@ export function popBonus(instanceId, amount, sourceOf = null) {
     if (from != null) payload.fromTokenId = from;
     EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, payload);
 }
+
+/**
+ * A Giant Harvest just landed on Token `instanceId`: the mat celebrates over it (a burst and a
+ * "Giant!" float, `matFx`; the Token's ring echoes). Said once per hit, with no name callout and no
+ * number, since the drops themselves show what came in.
+ * ⚠️ Silent during a catch-up (a quiet bus), like `popBonus`.
+ */
+export function giantHarvest(instanceId) {
+    if (instanceId == null || EventBus.isQuiet()) return;
+    EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId, giant: true });
+}

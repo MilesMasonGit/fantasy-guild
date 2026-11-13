@@ -727,6 +727,9 @@
             "efficiency": "Efficiency",
             "abundance": "Abundance"
         },
+        "float": {
+            "giantHarvest": "Giant!"
+        },
         "source": {
             "star": "Hall star {star} {rank}",
             "nearby": "{token} nearby",

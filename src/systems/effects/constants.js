@@ -34,6 +34,9 @@ export const EFFECT_TYPES = {
     // Lucky: the chance on a Token's own rare drop table, widened from that chance as its base (a
     // percentage in proportion, a flat in points) — RareTables.
     LUCKY: 'LUCKY',
+    // Giant Harvest: a chance a gathering cycle's drops all come in at ten times, the rare table's
+    // too; narrowed to the Token's skill, and only a gathering skill rolls it — OutputRules.rollGiantHarvest.
+    GIANT_HARVEST: 'GIANT_HARVEST',
     // How often ONE fish bites from a water's catch pool, as a percentage on its weight; the item is
     // the rule's category (`Fishing.catchOf`).
     CATCH_WEIGHT: 'CATCH_WEIGHT',
@@ -100,6 +103,9 @@ export const EFFECT_TYPES = {
      */
     CONVERT: 'CONVERT'
 };
+
+/** How many times over a Giant Harvest's drops come in (`OutputRules.rollGiantHarvest`). */
+export const GIANT_HARVEST_TIMES = 10;
 
 export const TARGET_CATEGORIES = {
     ALL: 'ALL',

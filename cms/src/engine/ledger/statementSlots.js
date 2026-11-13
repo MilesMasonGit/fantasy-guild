@@ -90,8 +90,10 @@ function roleOptions(statement) {
         .map(r => option(r.id, r.label, r.hint));
 }
 
-/** Every skill, as options — from the game registry, so the CMS can never offer one it lacks. */
-const skillOptions = () => Object.values(getAllSkills() || {}).map(s => option(s.id, s.name || s.id));
+/** Every skill, or only one trade's (`SKILL_TRADES`: a palette row's `skillTrade`). */
+const skillOptions = (trade = null) => Object.values(getAllSkills() || {})
+    .filter(s => !trade || s.trade === trade)
+    .map(s => option(s.id, s.name || s.id));
 
 /** Damage, Swing Time and Accuracy name the style a hero fights in (the weapon's), never a work skill. */
 const styleOptions = () => [
@@ -357,6 +359,8 @@ function payloadSlots(statement, ctx) {
                             ? carriedOptions(ctx)
                         : entry.categories === 'combatStyle'
                             ? styleOptions()
+                        : entry.skillTrade
+                            ? [option('', `Any ${entry.skillTrade} skill`, `Every ${entry.skillTrade} skill; no other work rolls it.`), ...skillOptions(entry.skillTrade)]
                             : [option('', 'Any skill', 'No narrowing — the usual case.'), ...skillOptions()],
                     patch: v => {
                         const next = { ...payload };
