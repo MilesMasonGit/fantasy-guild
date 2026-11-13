@@ -521,7 +521,7 @@ steps stay until claimed. The discard bin (and its refunds) is gone. An
 **event Token** (below) needs no hero: Demolish takes it away at once.
 *(`Demolition.js`, `QuestTokens.dismissBounty`, `TokenInspection.jsx`)*
 
-### Events — Built (brief 640 E1); no events authored yet
+### Events — Built (brief 640 E1, E2); no events authored yet
 About **once an hour of play** a special Token lands on the active Region's mat
 (the rules: [`concept_events.md`](../active/concept_events.md)). Two kinds:
 a **rich node** (a big pool of charges and a high yield, a Copper Ore Comet) and a
@@ -557,10 +557,29 @@ Events are treats: nothing bad happens and nothing is lost by being away.
   (worked out, time ran out, left unworked, demolished, still here).
 - The QA panel's **Events** section lands an event now (any, by weight, or a
   named one; it ignores the clock and the biomes, never the ground).
-- Not yet: the arrival on the mat, the banner and the time left on the hover
-  plate (brief 640 E2); the first events (C1).
+- **The arrival** (E2), by kind and from the mat's existing pieces: a rich node
+  **streaks down** from up and to the right, leaving a short tail of white and
+  gold sparks, and lands with the Giant Harvest's **star burst** and a puff of
+  dust; a buff Token **drifts in** from the left and **fades up** in four steps.
+  Short (about half a second), in whole art pixels, the same every time (no
+  random numbers); none under reduced motion, none for events that landed while
+  away.
+- **The banner** (E2): a milestone banner names the event ("Copper Ore Comet!",
+  with the Token's art; a buff's line says its minutes). Hovering it outlines the
+  Token in gold; clicking it pulses the Token's gold outline (two golds, about a
+  second) and, from the **World Map or the Guild Hall**, goes back to the mat
+  first: over those two screens only banners that point to a Token show. The
+  banner goes by itself when its Token leaves.
+- **Time left** (E2) reads like a refreshing node's: the hover plate's timer
+  cell counts a buff down (and a node nobody can work down to leaving), and the
+  Token card's Events section says **"Leaves in m:ss"**; a rich node shows its
+  charges as any node does.
+- **The badges** (E2) name an event buff by its event as one more source
+  ("Rainfall nearby").
+- Not yet: the first events (C1).
 *(`events/EventClock.js`, `board/EventTokens.js`, `config/eventTable.js`,
-`TimedChanges.js` rows `event_time_up` and `event_unworked`)*
+`TimedChanges.js` rows `event_time_up` and `event_unworked`; the arrival
+`board/fx/eventArrival.js`, the banner `notifications/bannerKinds.js` `event`)*
 
 ### Maps — Retired (brief 330 W2); the world map settles places instead
 The map and modifier item types are gone, with the CMS's Map editor, the

@@ -202,6 +202,14 @@ describe('the banner on screen', () => {
         off();
     });
 
+    it('clicked over the World Map, the banner is gone even though its stack goes with the view at once', () => {
+        Banners.push({ kind: 'event', parts: { name: 'Rainfall', kind: 'buff', minutes: 20 }, groupKey: 'event:x' });
+        const away = render(createElement(BannerStack, { away: true }));
+        fireEvent.click(away.container.querySelector('[data-banner="event"]'));
+        away.unmount();
+        expect(eventBanners()).toEqual([]);
+    });
+
     it('hovering an event\'s banner outlines its Token in gold', () => {
         setEventsForTests(table(RAIN));
         freshGame();

@@ -74,9 +74,12 @@ export const Banner = memo(function Banner({ banner }) {
     const timer = useRef(null);
     const problem = banner.tone === TONE.PROBLEM;
     useEffect(() => () => {
+        // Clicked and taken away before its lift ended (the stack over the World Map goes as the
+        // view goes back to the mat): it is still dismissed.
+        if (timer.current !== null) Banners.dismiss(banner.id);
         clearTimeout(timer.current);
         outlineSubjects([]);
-    }, []);
+    }, []);   // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <button

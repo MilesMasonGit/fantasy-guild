@@ -26,7 +26,7 @@ import { streak, starBurst, puff } from './matFx.js';
 const STALE_MS = 2000;
 
 /** How far up and across a node starts its fall, in art pixels from where it lands. */
-export const NODE_FALL = Object.freeze({ x: 24, y: -72, steps: 8, ms: 40 });
+export const NODE_FALL = Object.freeze({ x: 40, y: -120, steps: 10, ms: 36 });
 
 /** How far left a buff starts its drift, art pixels, and its fade's opacity steps. */
 export const BUFF_DRIFT = Object.freeze({ x: -16, ms: 2 * FX_FRAME_MS, fade: Object.freeze([0, 0.25, 0.5, 0.75]) });

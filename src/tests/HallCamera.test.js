@@ -450,8 +450,12 @@ describe('the camera in the game\'s layout', () => {
         const { code, mat } = hallCameraSides();
         for (const tag of ['Board', 'MatTopBar', 'ItemStubColumn', 'BannerStack']) {
             expect(count(mat, tag), tag).toBe(1);
-            expect(count(code, tag), tag).toBe(1);
+            // The one other banner stack is the `away` one over the Hall and the World Map, only
+            // for the banners that point to a Token on the mat (an event's, brief 640 E2).
+            expect(count(code, tag), tag).toBe(tag === 'BannerStack' ? 2 : 1);
         }
+        expect(mat).not.toMatch(/<BannerStack away/);
+        expect(code).toMatch(/\{\(isGuildView \|\| isAtlasOpen\) && \(\s*<ErrorBoundary label="AwayBanners"><BannerStack away \/><\/ErrorBoundary>/);
         // Drawn as on the mat while the camera glides away and back: nothing on the table side
         // follows the open view, or the mat would change size and be drawn again mid-glide. The
         // one exception is the world map's own camera (`WorldCamera`), whose job is to follow the

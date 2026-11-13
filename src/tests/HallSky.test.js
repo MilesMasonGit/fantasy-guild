@@ -319,10 +319,13 @@ describe('the Hall sky: the drifting backdrop', () => {
 
     // On the table side of the camera, which is gone while the camera rests on the sky
     // (HallCamera.test.js); mid-glide they go down with the mat.
-    it('shows no item stubs or banners over it', () => {
+    // One exception: banners that point to a Token on the mat (an event's) show over the Hall and
+    // the World Map in a stack of their own, so the Token can be reached from there (brief 640 E2).
+    it('shows no item stubs or banners over it, but those that point to a Token on the mat', () => {
         const { code, mat } = hallCameraSides();
         expect([...code.matchAll(/<ItemStubColumn\b/g)]).toHaveLength(1);
-        expect([...code.matchAll(/<BannerStack\b/g)]).toHaveLength(1);
+        expect([...code.matchAll(/<BannerStack\b/g)]).toHaveLength(2);
+        expect([...code.matchAll(/<BannerStack away \/>/g)]).toHaveLength(1);
         expect(mat).toMatch(/<ErrorBoundary label="Notifications">\s*<ItemStubColumn \/>\s*<BannerStack \/>\s*<\/ErrorBoundary>/);
     });
 
