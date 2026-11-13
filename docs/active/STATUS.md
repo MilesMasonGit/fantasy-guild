@@ -9,14 +9,17 @@ build green) · bench-queued · eye-check · merged.*
 
 ## Director, batch 4: brief 640 Events (owner, 2026-11-12: start E1 now)
 
+*Fri 13 Nov, 03:30. Where we are: all of batch 3 and the events engine merged and pushed after work checks read same (slim panel + War Camp, one building per skill, drink stars, Giant Harvest, events E1). Calibration retake found foresters about 24 % under the ledger since the one standard reach (brief 560): engineer diagnosing. E2 (arrival and banner) building. Next: E2, then the events eye-check once the content agent's pack is in. Owner: open a `/content` session for the events pack when convenient. Blockers: none.*
+
 *Thu 12 Nov, 20:20, batch proposed and started. Where we are: batch 3 waits for tonight's work checks (02:05, then merges). Owner answered the drink questions: Long-lasting Brews rounds by chance (C, builder switching it on `feat/drink-stars` before the bench), Strong Drink raises effect numbers only (A), drawbacks grow too (A). E1, the event engine, building now from main 00bad4b5 (rebase after tonight's merges). Next: E2 (arrival and banner) beside the content agent's first events pack (C1, needs E1's CMS table). Owner: nothing until the events eye-check. Blockers: none.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| 640 E1: the event engine (hourly clock, weighted landing by ground, expiry, offline, demolish, CMS table) | engineer | `feat/events` (`ev`) d7506865 | **ready**: director gate 670 files green, cycles 0, depcruise, lint 4 warnings, build; read the clock and expiry rows; events off in tests and bench unless `--events`; agent checked comet, Rainfall, unworkable Mythril, demolish, catch-up in game; **work check queued after the four at 02:05**, then rebase onto the new main; no `data/events.json` yet = no events | Thu | Thu |
-| 620 E3 follow-up: Long-lasting Brews rounds by chance (owner C) | builder | `feat/drink-stars` (`rt`) 0a11b5c6 | **ready**: display shows the two possible lengths (10–11) and never draws; dose start rolls; agent gate 668 files green; director read the diff; work check at 02:05 with E3 | Thu | Thu |
-| 640 E2: arrival and the banner | builder | | queued: starts after tonight's merges and E1's rebase (the slim QA panel rewrites `TestDashboard.jsx`, where E1 mounts its QA events section) | | |
-| 640 C1: first events pack (6 to 8) | content agent | | queued after E1 (needs the CMS table) | | |
+| 640 E1: the event engine (hourly clock, weighted landing by ground, expiry, offline, demolish, CMS table) | engineer | `feat/events` | **merged** b2892911, pushed (rebased; slim panel keeps the Events QA section; 661 files green, work same) | Thu | Fri |
+| 620 E3 follow-up: Long-lasting Brews rounds by chance (owner C) | builder | `feat/drink-stars` 0a11b5c6 | **merged** with E3 (43a92a7b) | Thu | Fri |
+| 640 E2: arrival and the banner | builder | `feat/events-arrival` (`ev`) | building | Fri | |
+| 640 C1: first events pack (6 to 8) | content agent | | **unblocked**: the CMS Events page is on main; owner opens a `/content` session | | |
+| Forest calibration: foresters about 24 % under the ledger since 560 R1 (one standard reach, bisected to 7953c84e; 378 to 304 oak cycles an hour) | engineer, diagnosis | (`s3`, read-only) | diagnosing; stamp not committed until then | Fri | |
 
 ## Director, the QA panel, T-336, then briefs 620 and 630 (owner, 2026-11-12: stars' small effects first)
 
@@ -25,15 +28,15 @@ build green) · bench-queued · eye-check · merged.*
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | QA panel in test builds (`QA_TOOLS`, `tauri:build:ship`) | builder | `fix/qa-in-builds` (`t1`) cc7588f0 | **merged** 109ab4e4, pushed | Thu | Thu |
-| QA panel slim: give items, heroes, place a Token or enemy, two owner tools | builder | `feat/qa-panel-slim` (`t2`) b3627700 | **accepted** (page tab qa-slim, archived); rebased, trial merge with War Camp in `s3` 68a3a220: 654 files green, cycles, depcruise, build; **work check queued 02:05 Fri**, then ff main | Thu | |
+| QA panel slim: give items, heroes, place a Token or enemy, two owner tools | builder | `feat/qa-panel-slim` | **merged** with War Camp 1af88e25, pushed (work same) | Thu | Fri |
 | T-336: the ledger judges rare finds by finds a day; rare-find boost targets (x3 at plan tier 6) | builder | `fix/rare-find-labels` (`b2`) 750d21b5 | **merged** e75f1fbf, pushed (664 files green, work same) | Thu | Thu |
-| 620 E1: Giant Harvest | engineer, fixes builder | `feat/giant-harvest` (`fx`) e3304705 | **ready**: owner's two changes built (no chip; bonus drops x2/x10/x20 on cycles, x2 on kills, CMS rates too), scene deleted; director gate 669 files green; work check queued 02:05 (may change only if the bench has a Clean Felling forester with a Birdwatcher Potion) | Thu | |
+| 620 E1: Giant Harvest | engineer, fixes builder | `feat/giant-harvest` e3304705 | **merged** 00a08635, pushed (658 files green, work same) | Thu | Fri |
 | 620 E2: XP for Everyone | engineer | `feat/xp-for-everyone` (`rt`) 7391ec09 | **merged** 0f2f3499, pushed (665 files green, work same; no eye-check until a star uses it). Owner 2026-11-12: existing level-up animations are enough, so the new +N float and alert go (option C, follow-up queued when a builder is free) | Thu | Thu |
 | XP for Everyone shows the normal level-up animations (owner: existing are enough) | builder | `fix/xp-gift-levelups` (`t1`) b0887eda | **merged** b0887eda (ff), pushed: 667 files green, work same; one level-up sound per purchase | Thu | Thu |
 | 620 E4: combat stars per style | builder | `feat/combat-stars` (`rt`) 8140d948 | **merged** 9205189c, pushed: 667 files green, work same. No eye-check until a star uses it; content agent authors the four constellations (C1) | Thu | Thu |
-| 630 B2: the War Camp rule | engineer | `feat/war-camp` (`b2`) 35748d6a | **accepted** (bosses in reach fought: A); rebased, QA scene and its test deleted; in the `s3` trial merge above, **work check queued 02:05 Fri**, then ff main | Thu | |
-| 630 B1: one building per skill (T-307) | engineer | `feat/one-building` (`t1`) e137b0c6 | **ready**: 668 files green (agent), craft station kinds retired (old stations offer their whole skill), Farming keeps its kinds; tutorial keeps Furnace/Copper Smithy until C1; agent expects work same; `bench:calibrate` re-run due; work check queued 02:05 | Thu | |
-| 620 E3: Long-lasting Brews and Strong Drink | engineer | `feat/drink-stars` (`rt`) fbf05d49 | **ready**: 668 files green (agent), director gate running; work check queued 02:05; three option questions parked; notes for T-338 in the agent report (doseLength is the one place a dose length is decided) | Thu | |
+| 630 B2: the War Camp rule | engineer | `feat/war-camp` 35748d6a | **merged** 1af88e25, pushed (work same) | Thu | Fri |
+| 630 B1: one building per skill (T-307) | engineer | `feat/one-building` e137b0c6 | **merged** 18b0ab43, pushed (655 files green, work same); `bench:calibrate` retaken on 00a08635: fails only on the forest setups (row below) | Thu | Fri |
+| 620 E3: Long-lasting Brews and Strong Drink | engineer | `feat/drink-stars` 0a11b5c6 | **merged** 43a92a7b, pushed (656 files green, work same); owner: rounding C, Strong Drink A, drawbacks A | Thu | Fri |
 
 ## Director, briefs 590 and 600 (owner, 2026-11-11: both at once; effect renames T-403 after 590; retirements T-400 to T-402 checked now, owner deletes in the CMS)
 
