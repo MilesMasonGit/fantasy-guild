@@ -7,7 +7,7 @@ import { neededToolOf, toolNeedPhrase, toolItemFor, toolKindLabel } from '../../
 import { hasCatchPools, catchPoolsOf } from '../../../config/registries/catchPools.js';
 import { rareTableOf, rareEntryChances } from '../../../config/registries/rareTables.js';
 import { enemyProfileOf } from '../../../config/registries/enemyProfile.js';
-import { turnTiming, fieldOf, cropTermsOf, campOf } from '../../../config/registries/tokenConstants.js';
+import { turnTiming, fieldOf, cropTermsOf, campOf, isWarCamp } from '../../../config/registries/tokenConstants.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -405,9 +405,16 @@ export function cardLifecycle(instance, def, src) {
         }
     }
 
-    // A camp: what its heroes work and how far it reaches (the one standard reach).
+    // A camp: what its heroes work and how far it reaches (the one standard reach). A War Camp's
+    // style is only its mark: its heroes fight in their own.
     const camp = campOf(def);
-    if (camp) {
+    if (camp && isWarCamp(def)) {
+        const reach = Math.round(reachRadius());
+        out.push({
+            icon: 'reach', label: 'War Camp', text: `Enemies · ${reach} u`,
+            tip: `A War Camp: heroes sent here fight every enemy within ${reach} u, one at a time, each in their own style`
+        });
+    } else if (camp) {
         const skill = getSkill(camp.skill)?.name || camp.skill;
         const reach = Math.round(reachRadius());
         out.push({

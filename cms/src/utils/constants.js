@@ -120,7 +120,8 @@ export { RESPAWN_MODES, RESPAWN_DEFAULTS, RESPAWN_MIN_MS } from '../../../src/co
 export { fieldOf, cropTermsOf, CROP_DEFAULTS, CROP_MIN_GROW_MS } from '../../../src/config/registries/tokenConstants.js';
 
 // A camp's terms (`camp: { skill }`), read from the game. Every camp works the one standard reach, the game's too.
-export { campOf } from '../../../src/config/registries/tokenConstants.js';
+// A camp of a combat style is a War Camp: its heroes fight every enemy in its reach.
+export { campOf, isWarCampBlock } from '../../../src/config/registries/tokenConstants.js';
 export { STANDARD_REACH_U } from '../../../src/config/registries/reachRegistry.js';
 
 // An enemy is a Token: it carries `enemy: { level, style }`. `ENEMY_STYLES` fills the Style dropdown and `enemyProfileOf` powers the editor's read-only stat preview, imported from the game so the numbers shown are the numbers the fight uses.

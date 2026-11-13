@@ -41,7 +41,8 @@ import { KEYWORD, statementsWith } from '../effects/statements.js';
  * (from their idle spot while they potter, so a stroll never changes the choice), then the
  * earlier-placed. They keep it while it can run and while it stays in the camp's reach (a cycle is
  * always finished), wait silently while what is left rests or grows ({@link waitingOf}), and at an
- * enemy camp wait for its next spawn.
+ * enemy camp wait for its next spawn. At a War Camp the camp's Tokens are the enemies in its reach,
+ * and an enemy taken is kept until it falls, even once it stands outside the reach.
  *
  * Claiming (`assign`, once per tick, before any Token ticks): the ordered Token, or each of a
  * camp's, is checked in this order (cheap checks before `WorkCheck`):
@@ -67,8 +68,8 @@ import { KEYWORD, statementsWith } from '../effects/statements.js';
  * published only when a claim actually changes (and once per order, furl or lapsed pin). A stable
  * board publishes none (`Flags.test.js` runs 100 ticks).
  *
- * A hero fights only an enemy the player sent them at (or one their enemy camp hands them): no
- * enemy attacks first, and nothing pulls a hero off their job.
+ * A hero fights only an enemy the player sent them at (or one their enemy camp or War Camp hands
+ * them): no enemy attacks first, and nothing pulls a hero off their job.
  */
 
 /** How long a flag with nothing to do waits before looking again, in game ms. */
@@ -403,10 +404,14 @@ function anchorOf(heroId, flag) {
     return HeroMotion.idleSpot(flag);
 }
 
-/** Whether `instance` is what `heroId`'s camp order hands out right now (in its reach, of its kind). */
+/**
+ * Whether `instance`, which `heroId` holds, is still theirs by their camp order: what the camp
+ * hands out (in its reach, of its kind), or at a War Camp the enemy they took, until it falls
+ * (`Camps.keepsWork`).
+ */
 function campHolds(heroId, instance) {
     const camp = Camps.campOfHero(heroId);
-    return !!camp && Camps.isCampWork(camp, instance);
+    return !!camp && Camps.keepsWork(camp, instance);
 }
 
 /** Phase 2 for one hero with no claim. */
@@ -599,7 +604,7 @@ export function assignHero(heroId) {
  * (`ALERT.UNSKILLED`, `ALERT.ACCESS`, `ALERT.NO_TOOL`) or {@link ORDER_NOTHING} for a Token no hero works (a spawner of no
  * enemy, a support, a quest, unfinished content naming no skill). The Guild Hall is home, not a
  * job: the caller sends the hero there instead. A camp answers for what it hands out
- * ({@link campRefusal}, with `on`); an enemy camp takes anyone who can fight.
+ * ({@link campRefusal}, with `on`); a War Camp and an enemy camp take anyone who can fight.
  *
  * What the player can fix later (inputs, charges, a recipe, a resting or growing Token) and another
  * hero already on it never refuse: the hero waits by the Token.
@@ -609,10 +614,10 @@ export const ORDER_NOTHING = 'nothing';
 export function orderRefusal(heroId, instance) {
     if (!heroId || !instance?.typeId) return { reason: ORDER_NOTHING };
     if (Occupation.holds(instance)) return { reason: SKIP.OCCUPIED };
-    // A camp is an order on what it hands out; an enemy camp, on the enemies it spawns.
+    // A camp is an order on what it hands out; a War Camp and an enemy camp, on enemies.
     const camp = Camps.campOfInstance(instance);
-    if (camp) return campRefusal(heroId, instance, camp);
-    if (Camps.isEnemyCamp(instance)) return canFight(heroId) ? null : { reason: ALERT.UNSKILLED };
+    if (camp && !Camps.isWarCamp(instance)) return campRefusal(heroId, instance, camp);
+    if (camp || Camps.isEnemyCamp(instance)) return canFight(heroId) ? null : { reason: ALERT.UNSKILLED };
     const def = getTokenType(instance.typeId);
     // Heroes never work a spawner itself, except to demolish it.
     if (def?.spawner && !Demolition.isMarked(instance)) return { reason: ORDER_NOTHING };
@@ -902,8 +907,9 @@ function growingFor(heroId) {
     // A camp order waits for what grows back in the camp's reach into the camp's kind of work.
     const camp = Camps.campOfHero(heroId);
     if (!camp) return pinnedGrowing(heroId, BoardState.getTokenById(flag.pinnedTo));
+    // A War Camp's work is enemies, which never grow back.
     const block = Camps.campOfInstance(camp);
-    if (!block) return null;
+    if (!block || Camps.isWarCamp(camp)) return null;
     const inReach = (centre, toward) => Camps.worksType(block, toward) && Camps.reaches(camp, centre);
     const from = anchorOf(heroId, flag);
     const canWork = new Map();
@@ -947,7 +953,8 @@ export function waitingFor(heroId) {
 /**
  * What a hero is doing, for the roster and the marks: `docked` (no order: at the Guild Hall),
  * `returning` (no order, still walking home), `working`, `walking` (on the way: to a claimed Token,
- * `instanceId` set, or back to their order's spot, `instanceId` null) and `idle` (at their order's
+ * `instanceId` set, also for the tick after it left the mat, or back to their order's spot,
+ * `instanceId` null) and `idle` (at their order's
  * spot or beside its Token, nothing to do). `instanceId` is the Token they work or walk to (or
  * null), `point` where their job is. `order` is `'token'`, `'spot'` or null (home), `needsJob`
  * says the ordered Token is gone for good, and `campId` names the camp they work from (or null).
@@ -969,7 +976,10 @@ export function statusOf(heroId) {
         };
     }
     const claim = BoardState.claimOfHero(heroId);
-    if (claim && BoardState.getTokenById(claim.instanceId)) {
+    // ⚠️ A claim whose Token left the mat this tick (an enemy beaten, a Token used up) is let go
+    // on the next pass, which chooses again at once: the hero is between jobs, not idle. Read as
+    // idle, every kill at an enemy camp or War Camp raised a one-tick idle line and mark.
+    if (claim) {
         return {
             state: 'walking', instanceId: claim.instanceId,
             point: { x: claim.x, y: claim.y }, typeId: claim.typeId, flag, ...extra

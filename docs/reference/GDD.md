@@ -860,7 +860,9 @@ less micromanagement than area flags).
   longer has a reach of its own, and nothing widens it. A hero sent
   to a camp works the **nearest free Token of its skill they can work within
   its reach**, finishes each cycle and keeps the Token while it can run, then
-  moves to the next; with only resting or growing Tokens left they wait
+  moves to the next (never idle in between: the moment a Token is used up or
+  an enemy beaten counts as between jobs, with no idle line or mark); with
+  only resting or growing Tokens left they wait
   silently by the camp; with everything taken they say "Nothing to work near
   Logging Camp". **Any number of heroes** may work from one camp, one hero per
   Token. A drop on a camp whose Tokens the hero can work none of says why; an
@@ -869,6 +871,24 @@ less micromanagement than area flags).
   hovered or carried dots every Token in its reach (§Reach).
 - **Enemy camps** (a Goblin Camp, a boss's den) take the same order: the hero
   hunts what the camp spawns, one at a time, and waits beside it for the next.
+- **The War Camp** (brief 630 B2; the rule is built, the Token comes with the
+  content agent's building pack) is a camp whose skill is a combat style (CMS:
+  the Camp block, any style under Combat; the style is only the mark). A hero
+  sent to it **fights every enemy in its reach**, whoever spawned it or none,
+  **one at a time, in the style of the weapon in their hands**: the nearest
+  free enemy from where they stand; enemies stand still, so the hero walks to
+  each. **A fight once taken is finished**: the enemy stays theirs until it
+  falls (every life of an enemy with several), even if a crowded fight's step
+  or the player's move carries it outside the reach; only the next choice reads
+  the reach again. With none left they wait at the camp ("Nothing to fight
+  near War Camp"; they say "Nothing to fight here."), and take any enemy that
+  later comes into its reach, placed
+  or spawned. A knocked-out hero stops as anywhere. It takes anyone who can
+  fight; an enemy another hero fights (sent straight at it, or from an enemy
+  camp or another War Camp) is passed over, never shared. While a place is held
+  by its arrival a War Camp waits like every camp ("Beat the enemies here
+  first"). Carried over a War Camp, each hero shows the weapons in their hands,
+  as over an enemy. *(`Camps.js` `keepsWork`, `tokenConstants.isWarCamp`)*
 - **Walking costs time**: heroes walk at 120 u/s (≈15 s across the mat) in
   straight lines; the cycle starts on arrival. Idle heroes potter within 80 u.
   *(`HeroMotion.js`)*
@@ -1060,8 +1080,9 @@ Their resistances, weaknesses and moves come with the combat content pack
   animation is needed; the step slides in the idle pose.
 - **No ambushes: combat is always started by the player** (owner,
   2026-11-05). No enemy attacks first: a hero fights only an enemy they are
-  sent at (or one their enemy camp hands them), and nothing pulls a hero off
-  their job. A hero working right beside a goblin camp is never attacked. The
+  sent at (or one their enemy camp or War Camp hands them, §4 Camps), and
+  nothing pulls a hero off their job. A hero working right beside a goblin
+  camp is never attacked. The
   old Hostile mark is gone from the CMS; one left in `data/` is read by
   nothing.
 - **Boss** (`enemy.boss: true`, a CMS tick): fights only the heroes sent at

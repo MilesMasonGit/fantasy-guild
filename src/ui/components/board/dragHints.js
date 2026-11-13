@@ -9,6 +9,7 @@ import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { getAllItems } from '../../../config/registries/itemRegistry.js';
 import { handEntries } from '../../../config/registries/equipmentConstants.js';
 import { toolItemFor } from '../../../config/registries/toolKinds.js';
+import { isWarCamp } from '../../../config/registries/tokenConstants.js';
 
 /**
  * The drag hints: while a hero is carried over a Token, every hero shows whether they could work
@@ -37,7 +38,8 @@ import { toolItemFor } from '../../../config/registries/toolKinds.js';
 export function marksFor(heroId, instance) {
     const def = getTokenType(instance?.typeId);
     if (!def || !heroId) return null;
-    if (isEnemyToken(instance)) {
+    // A War Camp hands out only fights: its hint is the same as an enemy's.
+    if (isEnemyToken(instance) || isWarCamp(def)) {
         const hero = heroRecord(heroId);
         const items = hero ? handEntries(hero).map(e => e.itemId).filter(id => !HeroTools.isToolItem(id)) : [];
         return items.length ? { kind: 'hands', items } : null;

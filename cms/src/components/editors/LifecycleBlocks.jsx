@@ -4,7 +4,7 @@ import { useEntityStore, makeLifecycleBlock, makeWeightedTokenEntry, makeTrickle
 import {
   FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_MODES, RESPAWN_DEFAULTS, RESPAWN_MIN_MS, skillsByLayer,
   expandBearer, stationSkillOf, stationKindOf, stationKindOffers, stationKindLabel, cropTermsOf,
-  fieldOf, STANDARD_REACH_U, SKILLS,
+  fieldOf, STANDARD_REACH_U, SKILLS, isWarCampBlock,
 } from '../../utils/constants';
 import { Section, Field } from '../shared/EditorLayout';
 import { ItemPicker, ItemList } from './Statements';
@@ -568,7 +568,7 @@ function campWorkNames(skill, selfId, tokens, effects) {
 
 /**
  * A camp: the skill whose Tokens it hands out. It reaches the game's one standard reach, which no camp sets: a `reach`
- * an older block still carries is not read by the game.
+ * an older block still carries is not read by the game. A combat style makes it a War Camp, whose heroes fight enemies.
  */
 function CampBlock({ block, selfId, tokens, effects, onChange }) {
   const patch = (p) => onChange({ ...block, ...p });
@@ -576,7 +576,8 @@ function CampBlock({ block, selfId, tokens, effects, onChange }) {
   const names = campWorkNames(block.skill, selfId, tokens, effects);
   const skillName = SKILLS.find((s) => s.id === block.skill)?.name || block.skill;
   let note;
-  if (!block.skill) note = 'Pick the skill whose Tokens its heroes work.';
+  if (!block.skill) note = 'Pick the skill whose Tokens its heroes work, or a combat style for a War Camp.';
+  else if (isWarCampBlock(block)) note = `A War Camp: a hero sent to it fights every enemy within ${reach} u, one at a time, in the style of the weapon in their hands. Any combat style marks it; the style picked limits nothing.`;
   else if (!names.length) note = `No ${skillName} Token a camp could work exists yet (stations never count; Fields do).`;
   else note = `A hero sent to it works, one at a time, the nearest free ${skillName} Token within ${reach} u: ${names.slice(0, 8).join(', ')}${names.length > 8 ? `, and ${names.length - 8} more` : ''}. Stations never count; Fields do.`;
   return (

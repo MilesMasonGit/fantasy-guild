@@ -1,4 +1,4 @@
-import { statementsOf, stationSkillOf, renderStatement, derivedTokenType, toolNamer, neededToolOf, toolNeedPhrase, campOf, STANDARD_REACH_U, SKILLS } from '../utils/constants';
+import { statementsOf, stationSkillOf, renderStatement, derivedTokenType, toolNamer, neededToolOf, toolNeedPhrase, campOf, isWarCampBlock, STANDARD_REACH_U, SKILLS } from '../utils/constants';
 
 /** Description Dictionary Engine: composes mechanical descriptions for Tokens from their production, recipes, effects, triggers and lifecycle. */
 
@@ -164,6 +164,7 @@ export function getTraitClauses(token) {
 export function getCampClause(token) {
   const camp = campOf(token);
   if (!camp) return '';
+  if (isWarCampBlock(camp)) return `A War Camp: heroes sent here fight every enemy within ${STANDARD_REACH_U} u, one at a time, each in their own style.`;
   const skill = SKILLS.find((s) => s.id === camp.skill)?.name || camp.skill;
   return `A camp: heroes sent here work the ${skill} Tokens within ${STANDARD_REACH_U} u, one hero each.`;
 }

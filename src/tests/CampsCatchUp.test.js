@@ -80,6 +80,8 @@ const camp = (id, name, skill) => ({
 const chop = (ms) => ({ skill: 'forestry', skillRequired: 1, cycleTimeMs: ms, xp: 1, inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }] });
 registerTokenTypes({
     ccu_logging: camp('ccu_logging', 'CCU Logging Camp', 'forestry'),
+    /** A War Camp: its hero fights every enemy in its reach. */
+    ccu_war: camp('ccu_war', 'CCU War Camp', 'melee'),
     ccu_farmstead: camp('ccu_farmstead', 'CCU Farmstead', 'farming'),
     /** Used up in three cycles and gone. */
     ccu_tree: plain('ccu_tree', 'CCU Tree', { uses: 3, requiresHero: true, config: chop(2_300) }),
@@ -170,6 +172,26 @@ function huntAndRest() {
     expect(Orders.orderAt(heroes[0].id, LOGGING).success).toBe(true);
     expect(Orders.orderAt(heroes[1].id, LOGGING).success).toBe(true);
     expect(Orders.orderAt(heroes[2].id, DEN).success).toBe(true);
+    return heroes.map(h => h.id);
+}
+
+const WAR = { x: 600, y: 500 };
+const WAR_GOBLINS = [{ x: 720, y: 500 }, { x: 600, y: 690 }, { x: 430, y: 440 }, { x: 760, y: 640 }];
+
+/**
+ * A War Camp: one hero among four goblins put in its reach by hand, and a den in its reach whose
+ * goblins come one at a time; a second goblin outside the reach that is never fought.
+ */
+function warCamp() {
+    freshBoard();
+    const heroes = fixtures.makeHeroes(1, { melee: 25 });
+    fixtures.placeAt('ccu_war', WAR.x, WAR.y);
+    for (const p of WAR_GOBLINS) BoardState.setTether(fixtures.placeAt('ccu_goblin', p.x, p.y), null);
+    BoardState.setTether(fixtures.placeAt('ccu_goblin', WAR.x + 400, WAR.y), null);
+    const den = fixtures.placeAt('ccu_den', WAR.x - 80, WAR.y - 140);
+    SpawnerSystem.attemptSpawn(den, getTokenType('ccu_den'));
+    TileModifiers.rebuildAll();
+    expect(Orders.orderAt(heroes[0].id, WAR).success).toBe(true);
     return heroes.map(h => h.id);
 }
 
@@ -296,6 +318,19 @@ describe('⭐ a catch-up with heroes working from camps', () => {
         expect(farmer.slice(0, 6)).toEqual([...Array(3).fill(farmer[0]), ...Array(3).fill(farmer[3])]);
         expect(small.wheat).toBe(15);
         expect(small.seeds).toBe(0);
+    }, 120_000);
+
+    it('⭐ a War Camp: the catch-up ends where the plain loop’s 1000 ms steps end, the goblin outside its reach untouched', async () => {
+        const AWAY = 120_000;
+        const run = plainLoop(warCamp, 1000, AWAY);
+        const outside = () => BoardState.tokens().filter(t => t.typeId === 'ccu_goblin' && t.x === WAR.x + 400 && t.y === WAR.y);
+        expect(outside()).toHaveLength(1);
+        const caught = await caughtUp(warCamp, AWAY);
+        expect(caught.end).toEqual(run.end);
+        expect(outside()).toHaveLength(1);
+        // The four put by hand and the den's, one after another: more kills than goblins placed.
+        expect(run.end.kills).toBeGreaterThan(WAR_GOBLINS.length);
+        expect(run.end.ore).toBeGreaterThanOrEqual(run.end.kills - 1);
     }, 120_000);
 
     it('fights and refills: the catch-up ends where the plain loop’s 1000 ms steps end', async () => {

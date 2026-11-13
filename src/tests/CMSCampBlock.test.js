@@ -9,9 +9,9 @@ import { render, cleanup, fireEvent, within } from '@testing-library/react';
 import { useEntityStore, makeLifecycleBlock, TOKEN_LIFECYCLE_BLOCKS } from '../../cms/src/stores/useEntityStore';
 import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 import { syncFiles } from '../../cms/src/engine/recipeSync';
-import { STANDARD_REACH_U as CMS_STANDARD_REACH_U, campOf as cmsCampOf } from '../../cms/src/utils/constants';
+import { STANDARD_REACH_U as CMS_STANDARD_REACH_U, campOf as cmsCampOf, isWarCampBlock as cmsIsWarCampBlock } from '../../cms/src/utils/constants';
 import { composeTokenDescription } from '../../cms/src/engine/descriptionDictionary';
-import { campOf } from '../config/registries/tokenConstants.js';
+import { campOf, isWarCampBlock } from '../config/registries/tokenConstants.js';
 import { STANDARD_REACH_U } from '../config/registries/reachRegistry.js';
 import { auditLifecycleBlocks } from '../systems/core/lifecycleAudit.js';
 import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
@@ -69,6 +69,42 @@ describe('the vocabulary comes from the game', () => {
         expect(makeLifecycleBlock('camp')).toEqual({ skill: '' });
         expect(CMS_STANDARD_REACH_U).toBe(STANDARD_REACH_U);
         expect(cmsCampOf).toBe(campOf);
+        expect(cmsIsWarCampBlock).toBe(isWarCampBlock);
+    });
+});
+
+describe('⭐ a War Camp is a Camp block with a combat style', () => {
+    it('picked from the Combat styles, it says what its heroes fight, round-trips as `{ skill }` and files as a camp', () => {
+        const id = useEntityStore.getState().addToken({ name: 'Fixture War Camp' });
+        const { block } = openToken(id);
+        fireEvent.click(within(block()).getByText('Add'));
+        expect(within(block()).getByText(/or a combat style for a War Camp/)).toBeTruthy();
+        fireEvent.change(block().querySelector('[data-field="camp-skill"] select'), { target: { value: 'melee' } });
+        expect(useEntityStore.getState().tokens[id].camp).toEqual({ skill: 'melee' });
+        const note = block().querySelector('[data-field="camp-note"]').textContent;
+        expect(note).toMatch(new RegExp(`A War Camp: a hero sent to it fights every enemy within ${STANDARD_REACH_U} u`));
+        expect(note).toMatch(/the style picked limits nothing/);
+        expect(note).not.toMatch(/No Melee Token/);
+
+        const synced = syncPayload()['tokens.json'][id];
+        expect(synced.camp).toEqual({ skill: 'melee' });
+        expect(synced.tokenType).toBe('camp');
+        expect(synced.description).toMatch(/A War Camp: heroes sent here fight every enemy/);
+    });
+
+    it('its description, for any style, says it fights; a work camp’s is unchanged', () => {
+        for (const skill of ['melee', 'ranged', 'magic', 'stealth']) {
+            expect(composeTokenDescription({ name: 'X', requiresHero: false, config: null, camp: { skill } }), skill)
+                .toBe(`A War Camp: heroes sent here fight every enemy within ${STANDARD_REACH_U} u, one at a time, each in their own style.`);
+        }
+        expect(composeTokenDescription({ name: 'X', requiresHero: false, config: null, camp: { skill: 'forestry' } }))
+            .toBe(`A camp: heroes sent here work the Forestry Tokens within ${STANDARD_REACH_U} u, one hero each.`);
+    });
+
+    it('the content audit takes it as a good block', () => {
+        const found = auditLifecycleBlocks({ tokens: { t_war: { id: 't_war', name: 'War Camp', camp: { skill: 'melee' } } }, skills: ['melee'] })
+            .filter((f) => f.entityId === 't_war');
+        expect(found).toEqual([]);
     });
 });
 
