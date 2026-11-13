@@ -13,9 +13,9 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| 640 E1: the event engine (hourly clock, weighted landing by ground, expiry, offline, demolish, CMS table) | engineer | `feat/events` (`ev`) | building | Thu | |
+| 640 E1: the event engine (hourly clock, weighted landing by ground, expiry, offline, demolish, CMS table) | engineer | `feat/events` (`ev`) d7506865 | **ready**: director gate 670 files green, cycles 0, depcruise, lint 4 warnings, build; read the clock and expiry rows; events off in tests and bench unless `--events`; agent checked comet, Rainfall, unworkable Mythril, demolish, catch-up in game; **work check queued after the four at 02:05**, then rebase onto the new main; no `data/events.json` yet = no events | Thu | Thu |
 | 620 E3 follow-up: Long-lasting Brews rounds by chance (owner C) | builder | `feat/drink-stars` (`rt`) 0a11b5c6 | **ready**: display shows the two possible lengths (10–11) and never draws; dose start rolls; agent gate 668 files green; director read the diff; work check at 02:05 with E3 | Thu | Thu |
-| 640 E2: arrival and the banner | builder | | queued after E1 | | |
+| 640 E2: arrival and the banner | builder | | queued: starts after tonight's merges and E1's rebase (the slim QA panel rewrites `TestDashboard.jsx`, where E1 mounts its QA events section) | | |
 | 640 C1: first events pack (6 to 8) | content agent | | queued after E1 (needs the CMS table) | | |
 
 ## Director, the QA panel, T-336, then briefs 620 and 630 (owner, 2026-11-12: stars' small effects first)
@@ -325,6 +325,8 @@ Owner 2026-11-01: Guild Hall H1 and the walker glide need no look (marked looked
 None open.
 
 ## Questions for the owner
+
+- **Events (640 E1), first option of each built, for the next proposal:** an event left on another Region's mat when the guild travels stays frozen there while the new mat's clock runs (A, built), is removed (B), or holds the clock (C)? The interval exactly 60 min (A, built) or a random 45 to 75 (B)? Event Tokens outside the mat's Token cap (A, built) or counted (B)? The Starter Camp counts as meadow for an event's region list (A, built) or its own biome (B)? Also: the slim QA panel keeps a small Events section for landing one now (needed for the E2 eye-check)?
 
 - ~~War Camp bosses~~ **Answered 2026-11-12: A, fought like every enemy.** ~~Giant Harvest building bonus drops~~ **Answered: C, Double Loot and Giant both multiply them; no Giant chip on Token cards.**
 - ~~Drink stars~~ **Answered 2026-11-12: rounding C (by chance), Strong Drink A, drawbacks A.** Was: **Drink stars (620 E3), first option of each built, for the batch proposal:** Long-lasting Brews rounds each fresh dose halves up (A, built; ranks then sized as whole cycles or 5–10 % steps) or carries the fraction on the hero (B) or rounds by chance (C)? Strong Drink raises the rule numbers only (A, built), also a grant's chance (B), also a potion's own heal or damage (C)? A drink's drawbacks grow too (A, built) or only the helpful numbers (B)?
