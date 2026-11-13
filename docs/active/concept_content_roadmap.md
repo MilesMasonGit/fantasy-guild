@@ -154,6 +154,7 @@ measured.*
 - [Fishing](content_fishing.md): approved 2026-11-04; fish gated by tools, four special waters.
 - [Farming](content_farming.md): approved 2026-11-04; 38 unlocks, one per level.
 - [Alchemy](content_alchemy.md): approved 2026-11-04; 21 potions, eight herbs.
+- [Events](content_events.md): draft 2026-11-13; six rich nodes and six weather buffs, pack in the CMS inbox.
 
 ## Open links
 
