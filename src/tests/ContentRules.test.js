@@ -270,7 +270,11 @@ describe('Rule 4 — cycle times stay in their band', () => {
      * (finding B5) — so this must not be copied to recipes unchanged.
      */
     const tagged = RUNNING.filter((id) => isTempo(TOKENS[id]?.sim?.tempo));
-    const untagged = RUNNING.filter((id) => !isTempo(TOKENS[id]?.sim?.tempo));
+    // Event Tokens are left out: an event node copies the cycle of the Token it
+    // imitates (a Copper Comet works like a Copper Ore Vein), so it is paced by
+    // that Token's tempo, not by the flat band.
+    const untagged = RUNNING.filter((id) => !isTempo(TOKENS[id]?.sim?.tempo)
+        && !(TOKENS[id]?.tags || []).includes('Event'));
 
     /**
      * With eight heroes working this is roughly one completion every two or
