@@ -36,6 +36,30 @@ export const CARRIED_KINDS = Object.freeze([
 
 const BY_ID = new Map(CARRIED_KINDS.map(kind => [kind.id, kind]));
 
+/**
+ * The kinds of dose a hero drinks (`consumableRule.DOSE` uses the same ids): what a Long-lasting
+ * Brews or Strong Drink rule may name, in words for a sentence about every hero's.
+ */
+export const DOSE_KINDS = Object.freeze([
+    { id: CARRIED_KIND.DRINK, plural: 'drinks', unit: 'cycle' },
+    { id: CARRIED_KIND.POTION, plural: 'potions', unit: 'cycle' },
+    { id: CARRIED_KIND.ELIXIR, plural: 'fight elixirs', unit: 'fight' }
+]);
+
+/** The ids of {@link DOSE_KINDS}. */
+export const DOSE_KIND_IDS = Object.freeze(DOSE_KINDS.map(kind => kind.id));
+
+/** The dose kind with this id, or null. */
+export function getDoseKind(id) {
+    return DOSE_KINDS.find(kind => kind.id === id) || null;
+}
+
+/** "drinks", "fight elixirs"; with no kind named, all three; an id that is no kind, as written. */
+export function doseKindsPhrase(id) {
+    if (!id) return 'drinks, potions and fight elixirs';
+    return getDoseKind(id)?.plural || String(id);
+}
+
 /** The kind with this id, or null. */
 export function getCarriedKind(id) {
     return BY_ID.get(id) || null;

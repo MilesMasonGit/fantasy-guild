@@ -8,6 +8,7 @@
 
 import { EFFECT_TYPES, TARGET_CATEGORIES } from '../../systems/effects/constants.js';
 import { COMBAT_SKILL_IDS } from './skillRegistry.js';
+import { DOSE_KIND_IDS } from './carriedKinds.js';
 
 /**
  * Which effect axes content may be authored against, and in what shape.
@@ -127,6 +128,8 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  * * `'skillOrCarried'` — `CycleSavings` passes a cycle's skill, or a carried item's id together
  *   with its kind (`carriedKinds.js`: ammo, Food…), which is how `PRESERVATION` names the work whose
  *   materials it keeps, or the things a hero carries it keeps.
+ * * `'doseKind'` — `ConsumptionSystem` passes the kind of dose being drunk (`carriedKinds.DOSE_KINDS`:
+ *   drink, potion, elixir), which is how Long-lasting Brews and Strong Drink name what they help.
  *
  * ## `retired` — still read as a sentence, never offered
  *
@@ -313,6 +316,43 @@ export const MODIFIER_PALETTE = [
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Guild',
         hint: 'XP every hero gets in every skill, once, when the rank is bought; a hero who joins later arrives with it. A rank lists the star\'s whole gift so far: rank 3 of 100 a rank lists 300.'
+    },
+    {
+        /**
+         * Read by `ConsumptionSystem.doseLength` as a hero starts a fresh dose: how many work cycles a
+         * drink or a work potion lasts, how many fights a fight elixir does, resolved from the dose's
+         * own length (`consumableRule.DOSE_LENGTH`) and rounded halves up, never below one. A dose
+         * under way keeps the count it started with.
+         */
+        type: EFFECT_TYPES.LONG_LASTING_BREWS,
+        reads: { up: (n) => `last ${n} longer`, down: (n) => `last ${n} shorter` },
+        label: 'Long-lasting Brews',
+        when: 'never',
+        scales: 'value',
+        buckets: ['percentage', 'flat'],
+        categories: 'doseKind',
+        guildOnly: true,
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Guild',
+        hint: 'How long one drink, potion or fight elixir lasts: a percentage on its work cycles or fights (a drink\'s 10 at +10% is 11; halves round up), or a flat number more. Pick a kind to lengthen only drinks, potions or fight elixirs.'
+    },
+    {
+        /**
+         * Read by `ConsumptionSystem.doseStrength` each time a dose's rules fire: every number the
+         * effects it applies provide (`effectLibrary.strengthenStatement`), as a percentage on each.
+         * Its grants, heals and damage are left as they are.
+         */
+        type: EFFECT_TYPES.STRONG_DRINK,
+        reads: { up: (n) => `${n} stronger`, down: (n) => `${n} weaker` },
+        label: 'Strong Drink',
+        when: 'never',
+        scales: 'value',
+        buckets: ['percentage'],
+        categories: 'doseKind',
+        guildOnly: true,
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Guild',
+        hint: 'How strong the effects of drinks, potions and fight elixirs are: a percentage on every number they give (+10% turns +10% Yield into +11%). Pick a kind to strengthen only drinks, potions or fight elixirs.'
     },
 
     // --- Support ------------------------------------------------------------
@@ -795,6 +835,15 @@ export function isCombatStyleScope(category) {
     if (!category || category === TARGET_CATEGORIES.ALL) return true;
     const id = String(category).toLowerCase();
     return id === TARGET_CATEGORIES.COMBAT || COMBAT_SKILL_IDS.includes(id);
+}
+
+/**
+ * Whether a `'doseKind'` row's narrowing can match a dose: none, or a drink, potion or fight elixir.
+ * Anything else matches nothing.
+ */
+export function isDoseKindScope(category) {
+    if (!category || category === TARGET_CATEGORIES.ALL) return true;
+    return DOSE_KIND_IDS.includes(category);
 }
 
 /** Whether an effect type may be authored at all. */

@@ -3,7 +3,8 @@ import { arrowOf } from '../../config/registries/damageTypes.js';
 import { baitItemIds } from '../../config/registries/catchPools.js';
 import { getAllTokenTypes } from '../../config/registries/tokenRegistry.js';
 import { CARRIED_KIND } from '../../config/registries/carriedKinds.js';
-import { workDoseOf, isFightElixir } from './ConsumptionSystem.js';
+import { workDoseKindOf, isFightElixir } from './ConsumptionSystem.js';
+import { DOSE } from '../core/consumableRule.js';
 import { spentKindOf } from '../board/CycleSavings.js';
 
 /** Whether any water takes item `itemId` as bait. */
@@ -22,8 +23,9 @@ export function carriedKindOf(itemId) {
     if (arrowOf(item)) return CARRIED_KIND.AMMO;
     if (isBait(itemId)) return CARRIED_KIND.BAIT;
     if (isFightElixir(itemId)) return CARRIED_KIND.ELIXIR;
-    const dose = workDoseOf(itemId);
-    if (dose > 1) return CARRIED_KIND.DRINK;
-    if (dose === 1) return CARRIED_KIND.POTION;
+    // By the dose, never its length: Long-lasting Brews can make a potion last more than one cycle.
+    const dose = workDoseKindOf(itemId);
+    if (dose === DOSE.DRINK) return CARRIED_KIND.DRINK;
+    if (dose === DOSE.POTION) return CARRIED_KIND.POTION;
     return spentKindOf(itemId) === CARRIED_KIND.FOOD ? CARRIED_KIND.FOOD : null;
 }

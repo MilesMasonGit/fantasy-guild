@@ -1,6 +1,6 @@
 import { EventBus } from '../core/EventBus.js';
 import { EFFECTS } from '../../config/registries/effectRegistry.js';
-import { statementsFromEntry, normaliseScale, scaleStatement, statusBlockOf } from './effectLibrary.js';
+import { statementsFromEntry, normaliseScale, scaleStatement, statusBlockOf, strengthenStatement } from './effectLibrary.js';
 import { KEYWORD } from './statements.js';
 import { EFFECT_TYPES } from './constants.js';
 import { heroStatusStackCap } from '../combat/CombatFormulas.js';
@@ -123,6 +123,24 @@ function allBearers() {
 const UNTIL_FIGHT_ENDS = Number.MAX_SAFE_INTEGER;
 
 /**
+ * A landing's strength (Strong Drink): a factor of 0 or more, or null for none (1, absent, not a
+ * number). An instance stores one only when it is not null, so a save without Strong Drink is as it was.
+ */
+function boostOf(value) {
+    const n = Number(value);
+    return value == null || !Number.isFinite(n) || n === 1 ? null : Math.max(0, n);
+}
+
+/** Keep the stronger of an instance's boost and a new landing's (none counts as 1). */
+function keepStronger(instance, boost) {
+    const now = instance.boost ?? 1;
+    const next = Math.max(now, boost ?? 1);
+    if (next === now) return;
+    if (next === 1) delete instance.boost;
+    else instance.boost = next;
+}
+
+/**
  * Put a library effect on a bearer, for a while, for the fight (`spec.forFight`), for the swing
  * being made (`spec.forSwing`), until an attack on it is over (`spec.forAttack`) or for the work
  * cycle starting (`spec.forCycle`). A status ignores all of them: it has its own lifetime.
@@ -135,8 +153,11 @@ const UNTIL_FIGHT_ENDS = Number.MAX_SAFE_INTEGER;
  * `true` for whichever cycle its bearer finishes next. A bound one counts only while its hero works
  * that Token ({@link liveStatements}' `at`), so a cycle left part-way never lends it to another.
  *
+ * `boost` (a dose's Strong Drink, set by `LoadoutMoments`) multiplies every number the effect
+ * provides while it is carried ({@link boostOf}); a stronger landing wins, as a higher scale does.
+ *
  * @param {object} bearer  a descriptor from `heroBearer` or a registered source
- * @param {{effectId: string, scale?: number, durationMs?: number, forFight?: boolean, forSwing?: boolean, forAttack?: number, forCycle?: string|boolean}} spec
+ * @param {{effectId: string, scale?: number, durationMs?: number, forFight?: boolean, forSwing?: boolean, forAttack?: number, forCycle?: string|boolean, boost?: number}} spec
  * @param {string|null} sourceId  what applied it, for the readout
  * @returns {boolean} whether anything is now carried
  */
@@ -148,6 +169,7 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
     if (status) return applyStatus(bearer, spec, status, sourceId);
 
     const scale = normaliseScale(spec.scale);
+    const boost = boostOf(spec.boost);
     const forSwing = !!spec.forSwing;
     const forAttack = !forSwing && Number(spec.forAttack) > 0 ? Number(spec.forAttack) : null;
     if (forAttack != null) return applyForAttack(bearer, spec.effectId, scale, forAttack, sourceId);
@@ -158,7 +180,7 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
     if (!forFight && !forCycle && !Number(spec.durationMs)) {
         if (!fire) return false;
         for (const statement of statementsFromEntry(EFFECTS[spec.effectId], { effectId: spec.effectId, scale })) {
-            fire(statement, { ...bearer.roles });
+            fire(boost === null ? statement : strengthenStatement(statement, boost), { ...bearer.roles });
         }
         return true;
     }
@@ -172,6 +194,7 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
     if (existing) {
         // Refresh the clock, and let a stronger application win.
         existing.scale = Math.max(existing.scale, scale);
+        keepStronger(existing, boost);
         existing.sourceId = sourceId ?? existing.sourceId;
         // A landing for one swing never changes the lifetime of one already carried.
         if (!forSwing) {
@@ -184,6 +207,7 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
     } else {
         list.push({
             effectId: spec.effectId, scale, expiresAt, sourceId,
+            ...(boost !== null ? { boost } : {}),
             ...(forFight ? { forFight: true } : {}),
             ...(forSwing ? { forSwing: true } : {}),
             ...(forCycle ? { forCycle } : {})
@@ -250,10 +274,13 @@ function applyStatus(bearer, spec, block, sourceId) {
         const stacks = instance.stacks || 1;
         instance.stacks = Math.max(stacks, Math.min(stacks + 1, cap));
         instance.scale = Math.max(instance.scale, normaliseScale(spec.scale));
+        keepStronger(instance, boostOf(spec.boost));
         if (block.ticks) instance.ticksLeft = block.ticks;
     } else {
+        const boost = boostOf(spec.boost);
         instance = {
             effectId, scale: normaliseScale(spec.scale), stacks: 1,
+            ...(boost !== null ? { boost } : {}),
             ...(block.ticks ? { ticksLeft: block.ticks } : {}),
             expiresAt: UNTIL_FIGHT_ENDS, forFight: true, sourceId
         };
@@ -473,11 +500,15 @@ export function liveStatements(hero, at = undefined) {
     return out;
 }
 
-/** One instance's statements: scaled by its tier, and a status's once more by its stacks. */
+/**
+ * One instance's statements: scaled by its tier, a status's once more by its stacks, and made stronger
+ * by its `boost` (a dose's Strong Drink).
+ */
 function instanceStatements(instance, entry) {
     const statements = statementsFromEntry(entry, instance);
     const stacks = instance.stacks > 1 ? instance.stacks : 1;
-    return stacks > 1 ? statements.map(s => scaleStatement(s, stacks)) : statements;
+    const stacked = stacks > 1 ? statements.map(s => scaleStatement(s, stacks)) : statements;
+    return instance.boost != null ? stacked.map(s => strengthenStatement(s, instance.boost)) : stacked;
 }
 
 /**

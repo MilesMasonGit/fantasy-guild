@@ -6,7 +6,7 @@ import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { KEYWORD } from '../effects/statements.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { hallRulesOf, xpForEveryoneOf, RETIRED_AXIS } from '../progression/hallModifiers.js';
-import { isCombatStyleScope } from '../../config/registries/modifierPalette.js';
+import { isCombatStyleScope, isDoseKindScope } from '../../config/registries/modifierPalette.js';
 
 /** A Provides rule's palette row when its axis is retired (Camp Reach), else null. */
 function retiredEntryOf(statement) {
@@ -84,6 +84,9 @@ export function hallStarFindings({ sky, items = {}, tokens = {} } = {}) {
                 if (entry?.heroOnly && entry.categories !== 'combatStyle') push(star, 'ranks', `rank ${r} has a ${entry.label} rule, which only reaches a hero from what they carry, so it does nothing from the Hall.`);
                 if (entry?.categories === 'combatStyle' && !isCombatStyleScope(statement.payload?.category)) {
                     push(star, 'ranks', `rank ${r} has a ${entry.label} rule narrowed to "${statement.payload.category}", which is no combat style, so it helps no fighter. Pick Melee, Ranged, Magic or Stealth, or no style, in the CMS.`);
+                }
+                if (entry?.categories === 'doseKind' && !isDoseKindScope(statement.payload?.category)) {
+                    push(star, 'ranks', `rank ${r} has a ${entry.label} rule narrowed to "${statement.payload.category}", which is no kind of dose, so it reaches nothing. Pick Drink, Potion or Fight elixir, or no kind, in the CMS.`);
                 }
                 if (entry?.retired && !retiredOnly) push(star, 'ranks', `rank ${r} has a ${entry.label} rule, retired: ${retiredWhy(entry)}, so the rule does nothing. Delete the rule in the CMS.`);
             }

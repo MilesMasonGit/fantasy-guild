@@ -74,6 +74,16 @@ export const DOSE_LENGTH = Object.freeze({
 });
 
 /**
+ * How many moments a fresh dose lasts once Long-lasting Brews has moved its length from `base` to
+ * `resolved`: a whole number, halves rounded up, never below one. Not a number: `base` unmoved.
+ */
+export function lastingDoseLength(base, resolved) {
+    const n = Number(resolved);
+    if (!Number.isFinite(n)) return base;
+    return Math.max(1, Math.floor(n + 0.5 + 1e-9));
+}
+
+/**
  * How an item of `categoryId` carrying `statements` is used: an elixir, a drink, a work potion.
  * Several when a Consumable waits on both a fight and a work cycle; none for food, gear, or a
  * Consumable with no moment rule (bait).

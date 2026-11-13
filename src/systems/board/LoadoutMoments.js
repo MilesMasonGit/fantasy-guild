@@ -15,7 +15,7 @@ import * as LiveEffects from '../effects/LiveEffects.js';
 import { workConfigOf } from './StationRecipe.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { categoryOfItem, isConsumableCategory } from '../../config/registries/equipmentConstants.js';
-import { WORK_START, workSkillMatches } from '../core/consumableRule.js';
+import { WORK_START, workSkillMatches, DOSE } from '../core/consumableRule.js';
 import { KEYWORD } from '../effects/statements.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
@@ -54,6 +54,20 @@ function cycleSkillOf(instanceId) {
     const instance = BoardState.getTokenById(instanceId);
     if (!instance) return '';
     return workConfigOf(getTokenType(instance.typeId), instance)?.skill || '';
+}
+
+/**
+ * A dose's rules, marked as fired from it. Under Strong Drink (`ConsumptionSystem.doseStrength` for
+ * its kind of dose) an effect it applies carries the strength as its `boost`, which multiplies the
+ * numbers that effect provides (`LiveEffects`); with none, the rules are the item's own.
+ */
+function dosedStatements(itemId, dose) {
+    const strength = ConsumptionSystem.doseStrength(dose);
+    return HeroEffects.itemStatements(itemId).map(s => (
+        strength !== 1 && s.keyword === KEYWORD.APPLIES && s.payload?.effectId
+            ? { ...s, dosed: true, payload: { ...s.payload, boost: strength } }
+            : { ...s, dosed: true }
+    ));
 }
 
 /**
@@ -97,7 +111,7 @@ export function fire(instanceId, heroId, eventId) {
         && statement.sourceItemIds.every(isDoseItem);
     const statements = [
         ...HeroEffects.loadoutStatements(hero).filter(s => !fromDosesOnly(s)),
-        ...doses.flatMap(id => HeroEffects.itemStatements(id).map(s => ({ ...s, dosed: true })))
+        ...doses.flatMap(id => dosedStatements(id, fightStart ? DOSE.ELIXIR : ConsumptionSystem.workDoseKindOf(id)))
     ];
     const waitsHere = (statement) => {
         const event = statement?.when?.event;

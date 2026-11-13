@@ -76,6 +76,13 @@ export const EFFECT_TYPES = {
     // later arrives with the held ranks' whole gift. A Guild Hall star's only, read off its ranks,
     // never an aggregator — hallModifiers.xpForEveryoneOf.
     XP_FOR_EVERYONE: 'XP_FOR_EVERYONE',
+    // Long-lasting Brews: how many cycles or fights a fresh dose lasts (a drink's and a work
+    // potion's work cycles, a fight elixir's fights), resolved from the dose's own length and
+    // narrowed to the kind of dose. Guild-wide only — ConsumptionSystem.doseLength.
+    LONG_LASTING_BREWS: 'LONG_LASTING_BREWS',
+    // Strong Drink: a percentage on every modifier a dose's effects give, narrowed to the kind of
+    // dose. Guild-wide only — ConsumptionSystem.doseStrength, LiveEffects (an instance's `boost`).
+    STRONG_DRINK: 'STRONG_DRINK',
 
     /**
      * A chance to yield an extra, **different** item on top of a Token's normal output.
