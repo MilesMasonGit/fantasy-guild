@@ -250,6 +250,14 @@ export const INITIAL_STATE = {
         clockMs: 0
     },
 
+    // === Events (`events/EventClock.js`) ===
+    // The guild's event clock in game ms: advanced by the tick's `delta` while no event Token
+    // stands on the active mat, held at 0 while one does. The events themselves are Tokens
+    // (`instance.event`).
+    events: {
+        clockMs: 0
+    },
+
     // === The Atlas (Regions) ===
     // `board` above is always the active Region's board; every other Region is a record here
     // (`createRegionRecord`) holding its own frozen board. Owned by `Atlas.js`.

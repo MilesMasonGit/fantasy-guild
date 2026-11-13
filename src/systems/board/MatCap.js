@@ -24,10 +24,13 @@ export function isGuildHall(instance) {
     return instance?.typeId === 'token_guild_hall' || !!getTokenType(instance?.typeId)?.isGuildHall;
 }
 
-/** Whether a Token counts toward the cap: not a quest or the Guild Hall. One type lookup. */
+/**
+ * Whether a Token counts toward the cap: not a quest, an event Token (`instance.event`: a visitor
+ * that leaves on its own must never stop the player building) or the Guild Hall. One type lookup.
+ */
 export function countsTowardCap(instance) {
     const typeId = instance?.typeId;
-    if (!typeId || typeId === QUEST_TOKEN_TYPE) return false;
+    if (!typeId || typeId === QUEST_TOKEN_TYPE || instance.event) return false;
     return !isGuildHall(instance);
 }
 

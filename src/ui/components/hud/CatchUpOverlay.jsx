@@ -274,6 +274,26 @@ function Summary({ result, asking, onClose, onAsk, onCancel, onUndo }) {
                             <Empty>{t('catchUp.news.empty')}</Empty>
                         </Section>
                     )}
+                    {view.events.length > 0 && (
+                        <Section id="events" title={t('catchUp.news.events')} enter={enter}>
+                            {view.events.map(ev => {
+                                const e = enter();
+                                return (
+                                    <EntityRibbon
+                                        key={ev.key}
+                                        data-event-instance={ev.key}
+                                        kind="token"
+                                        id={ev.typeId}
+                                        name={ev.name}
+                                        countText={t(`catchUp.news.eventState.${ev.state}`)}
+                                        size="sm"
+                                        className={e.className}
+                                        style={e.style}
+                                    />
+                                );
+                            })}
+                        </Section>
+                    )}
                     {view.knockouts.length > 0 && (
                         <Section id="knockouts" title={t('catchUp.news.knockouts')} enter={enter}>
                             {view.knockouts.map(k => {

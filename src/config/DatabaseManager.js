@@ -27,4 +27,8 @@ export const DatabaseManager = {
     // The world map's generation tables. Absent until the CMS first syncs them: the world is then
     // generated from the placeholder (`worldTablesRegistry.js`).
     worldFilesSingle: import.meta.glob('/data/world.json', { eager: true }),
+
+    // The events that land on the mat. Absent until the CMS first syncs a table: no event lands
+    // (`eventRegistry.js`).
+    eventFilesSingle: import.meta.glob('/data/events.json', { eager: true }),
 };

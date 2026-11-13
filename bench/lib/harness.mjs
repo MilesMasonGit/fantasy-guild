@@ -13,6 +13,7 @@ import { SettingsManager } from '../../src/systems/core/SettingsManager.js';
 import { DiscoveryManager } from '../../src/systems/core/DiscoveryManager.js';
 import { AudioSystem } from '../../src/systems/core/AudioSystem.js';
 import { InventoryManager } from '../../src/systems/inventory/InventoryManager.js';
+import * as EventClock from '../../src/systems/events/EventClock.js';
 import * as TileModifiers from '../../src/systems/board/TileModifiers.js';
 import * as BoardState from '../../src/systems/board/BoardState.js';
 import * as NotificationSystem from '../../src/systems/core/NotificationSystem.js';
@@ -70,8 +71,12 @@ let engineReady = false;
 /**
  * Boot the engine once per process, then start a new game. Exported for the
  * micro-benchmarks, which boot the same way and start a new game per board.
+ *
+ * Events (brief 640) stay off, as the engine leaves them, unless `events` is
+ * true (`npm run bench -- --events`): content added to the events table must
+ * never change the work the gate compares.
  */
-export function boot(seed) {
+export function boot(seed, { events = false } = {}) {
     if (!engineReady) {
         quietConsole();
         productionLogger();
@@ -81,14 +86,15 @@ export function boot(seed) {
         // every Mat Tuner value is its shipped default.
         SettingsManager.init();
         EngineBootstrap.init();
-        if (GameLoop.tickHandlers.length !== 7) {
-            throw new Error(`expected the 7 engine tick handlers, found ${GameLoop.tickHandlers.length}: ${GameLoop.tickHandlers.map(h => h.name).join(', ')}`);
+        if (GameLoop.tickHandlers.length !== 8) {
+            throw new Error(`expected the 8 engine tick handlers, found ${GameLoop.tickHandlers.length}: ${GameLoop.tickHandlers.map(h => h.name).join(', ')}`);
         }
         engineReady = true;
     }
 
     // A new game, as `onSlotSelected(…, true)` makes one — but the board comes
     // from the scenario, not `createDefaultGameData` (whose Tokens are content).
+    EventClock.setEnabled(events);
     globalThis.__bench.reseed(seed);
     globalThis.__bench.clock.enable();
     GameState.initNew();
@@ -253,11 +259,12 @@ function structureSizes() {
  * @param {number} opts.seed
  * @param {boolean} opts.long      S6's full 8 game-hours
  * @param {number} opts.injectSlowMs
+ * @param {boolean} [opts.events] let events land (`--events`); off by default
  */
 export async function run(opts) {
-    const { scenario, mode = 'timing', seed = 1, injectSlowMs = 0, long = false } = opts;
+    const { scenario, mode = 'timing', seed = 1, injectSlowMs = 0, long = false, events = false } = opts;
     const t0 = now();
-    boot(seed);
+    boot(seed, { events });
 
     const ctx = { fixtures, setMatTuning, tickOnce, runTicks, now, heapMb };
     await scenario.build(ctx);

@@ -88,7 +88,7 @@ const EXIT = { OK: 0, SLOWER: 1, WORK_CHANGED: 2, BENCH_FAILED: 3 };
 // ---------------------------------------------------------------------------
 
 function parseArgs(argv) {
-    const args = { repeats: 3, profile: true, compare: false, saveBaseline: false, long: false, cpuProf: false, injectSlowMs: 0, only: null, seed: 1, acceptWorkChange: null };
+    const args = { repeats: 3, profile: true, compare: false, saveBaseline: false, long: false, cpuProf: false, injectSlowMs: 0, only: null, seed: 1, acceptWorkChange: null, events: false };
     for (const a of argv) {
         const [key, ...rest] = a.replace(/^--/, '').split('=');
         const value = rest.join('=');
@@ -102,6 +102,9 @@ function parseArgs(argv) {
             case 'cpu-prof': args.cpuProf = true; break;
             case 'inject-slow': args.injectSlowMs = Number(value) || 0; break;
             case 'seed': args.seed = Number(value) || 1; break;
+            // Let events land in the scenarios' play (brief 640). Off by default, so the
+            // work the gate compares never moves with the events table.
+            case 'events': args.events = true; break;
             case 'accept-work-change':
                 // The ticket that ruled the change, e.g. CR3-201. Required: a
                 // silent re-baseline of the work is exactly what the gate stops.
@@ -131,7 +134,7 @@ function runWorker(scenario, mode, args, index) {
         fs.mkdirSync(prof.tmp, { recursive: true });
         nodeFlags.push(...cpuProfFlags(prof.tmp));
     }
-    const opts = { file: scenario.file, mode, seed: args.seed, long: args.long, injectSlowMs: args.injectSlowMs };
+    const opts = { file: scenario.file, mode, seed: args.seed, long: args.long, injectSlowMs: args.injectSlowMs, events: args.events };
     const res = spawnSync(process.execPath, [...nodeFlags, path.join(here, 'worker.mjs'), JSON.stringify(opts), out], {
         cwd: root, stdio: ['ignore', 'inherit', 'inherit'], windowsHide: true
     });

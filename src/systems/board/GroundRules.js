@@ -109,7 +109,14 @@ export function groundVersion() {
  * counting them. Null when it may stand on every cell (no list, and no water here): the fast path.
  */
 export function rulesFor(typeId) {
-    const standsOn = standsOnOf(typeId);
+    return rulesForWords(standsOnOf(typeId));
+}
+
+/**
+ * {@link rulesFor} for a "Stands on" list itself rather than a Token type's (an event's ground,
+ * `EventClock`). The same answers, from the same per-map cache.
+ */
+export function rulesForWords(standsOn) {
     const ground = groundHere();
     if (standsOn.length === 0 && !ground.hasWater) return null;
     const key = standsOn.join('|');

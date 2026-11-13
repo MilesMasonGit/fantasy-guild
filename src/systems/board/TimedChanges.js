@@ -11,6 +11,7 @@ import * as Respawn from './Respawn.js';
 import * as Demolition from './Demolition.js';
 import * as Growth from './Growth.js';
 import * as Fields from './Fields.js';
+import * as EventTokens from './EventTokens.js';
 import { growTimeOf, nearbyGateMet } from './TileModifiers.js';
 import { pickWeighted } from './weightedPick.js';
 import { ALERT } from './boardEvents.js';
@@ -31,7 +32,9 @@ import { logger } from '../../utils/Logger.js';
  * Spawner intervals are one more row of the {@link HANDLERS} table; the attempt itself lives in
  * `SpawnerSystem.js`. So is a resting Token's way back (`respawn`, refill or regrow), whose rules
  * live in `Respawn.js`, and a Field's crop sowing and ripening (`Fields.js`). Passive Production pays several lines on its own clock, so {@link tick} runs
- * it beside the table (`PassiveProduction.advance`).
+ * it beside the table (`PassiveProduction.advance`). An event Token's way out (a buff's time up, a
+ * rich node nobody can work leaving) is two more rows, the only ones that take a Token off the mat
+ * (`EventTokens.js`).
  *
  * State (saved, on the instance): `instance.clocks = { growMs, turnMs, … }`, elapsed ms, created
  * only on a Token that has a timed block, absent reads as 0. `turnWon: 1` marks a `turns` roll that
@@ -203,8 +206,12 @@ function gatePaused(instance, needsNearby) {
  * ⭐ The handler table. Each entry is one kind of clock:
  *
  * * `clock` — the key in `instance.clocks` it counts on;
- * * `replaces` — true when firing puts a new instance in the Token's place, so
- *   it waits while the Token is in the player's hand ({@link Hand.setInHand});
+ * * `replaces` — true when firing puts a new instance in the Token's place or
+ *   takes it off the mat, so it waits while the Token is in the player's hand
+ *   ({@link Hand.setInHand});
+ * * `perInstance` — true for the rows whose `applies` reads the instance (an
+ *   event Token's `instance.event`); they come after the resting rows and are
+ *   asked live, only of a Token that landed as an event;
  * * `idleWhile(instance, def)` — optional: while true the clock is held at zero
  *   (a full enemy camp);
  * * `pausedWhile(instance, def)` — optional: while true the clock stands still
@@ -221,8 +228,9 @@ function gatePaused(instance, needsNearby) {
  *   `{ overMs, advance }`: how long ago it fell due, and {@link advance}, so a
  *   Token a handler creates can live the rest of the tick. Returns the instance that
  *   now stands there (a new one after a transform, or the same one for a
- *   handler that acts without replacing), or null when it could not happen
- *   (the clock is held full and retried next tick).
+ *   handler that acts without replacing), {@link REMOVED} when the Token left
+ *   the mat, or null when it could not happen (the clock is held full and
+ *   retried next tick).
  *
  * A turned instance runs only its turn back: it is a temporary state of the
  * Token it came from.
@@ -327,8 +335,36 @@ export const HANDLERS = [
             if (next) Respawn.regrown(instance, next);
             return next;
         }
+    },
+    {
+        // An event buff's time on the mat (`EventTokens.js`): it leaves when its time is up.
+        id: 'event_time_up',
+        clock: EventTokens.EVENT_CLOCK,
+        replaces: true,
+        perInstance: true,
+        applies: (instance) => EventTokens.isEventBuff(instance),
+        dueMs: (instance) => EventTokens.lastsMsOf(instance),
+        fire: (instance) => (EventTokens.leave(instance, EventTokens.ENDED.TIME_UP) ? REMOVED : null)
+    },
+    {
+        // An event's rich node nobody can work leaves after an hour; while some hero can, its clock
+        // stands at zero, so it stays until it is worked out.
+        id: 'event_unworked',
+        clock: EventTokens.EVENT_CLOCK,
+        replaces: true,
+        perInstance: true,
+        idleWhile: (instance) => EventTokens.someHeroCanWork(instance),
+        applies: (instance) => EventTokens.isEventNode(instance),
+        dueMs: () => EventTokens.UNWORKED_LEAVE_MS,
+        fire: (instance) => (EventTokens.leave(instance, EventTokens.ENDED.UNWORKED) ? REMOVED : null)
     }
 ];
+
+/** What a handler's `fire` returns when the Token left the mat: nothing stands there now. */
+export const REMOVED = Object.freeze({ removed: true });
+
+/** The rows asked of an event Token only, live ({@link HANDLERS}' `perInstance`). */
+const PER_INSTANCE = HANDLERS.filter(h => h.perInstance);
 
 /**
  * Per Token type, the handlers it may run, kept for the Token registry's version: `fixed`, whose
@@ -350,6 +386,7 @@ function planOf(instance, def) {
         const fixed = [];
         const resting = [];
         for (const h of HANDLERS) {
+            if (h.perInstance) continue;
             if (h.resting) {
                 if (def?.respawn) resting.push(h);
             } else if (h.applies(instance, def)) {
@@ -363,16 +400,18 @@ function planOf(instance, def) {
 }
 
 /**
- * The handlers a Token runs right now, in `HANDLERS` order (the resting rows are the table's last).
- * The returned array may be shared: read it, never change it.
+ * The handlers a Token runs right now, in `HANDLERS` order (the resting rows, then the per-instance
+ * rows, are the table's last). The returned array may be shared: read it, never change it.
  */
 function activeHandlers(instance) {
     const def = getTokenType(instance.typeId);
     if (instance.turnedFrom) return { def, active: HANDLERS.filter(h => h.applies(instance, def)) };
     const plan = planOf(instance, def);
-    if (!plan.resting.length) return { def, active: plan.fixed };
+    const isEvent = instance.event != null;
+    if (!plan.resting.length && !isEvent) return { def, active: plan.fixed };
     const active = plan.fixed.slice();
     for (const h of plan.resting) if (h.applies(instance, def)) active.push(h);
+    if (isEvent) for (const h of PER_INSTANCE) if (h.applies(instance, def)) active.push(h);
     return { def, active };
 }
 
@@ -436,6 +475,8 @@ export function advance(instance, delta, random = Math.random) {
             clocks[due.h.clock] = due.at;
             return;
         }
+        // Left the mat: nothing stands there to run the rest of the tick.
+        if (next === REMOVED) return;
 
         if (next === current) {
             // Acted without replacing the Token: this clock starts its next lap, or, for a

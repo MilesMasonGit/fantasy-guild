@@ -81,7 +81,7 @@ export function itemChanges(items = {}) {
 /**
  * The "While you were away" panel's content, from a catch-up's result (`CatchUp.run`), in two
  * columns. `items` is the left one (`itemChanges`). The right one is the news, in this order:
- * `knockouts`, `broken`, `bankFull`, `recipes`, `finds`, `levelUps`, `depleted`, `kills`. Every list is
+ * `events`, `knockouts`, `broken`, `bankFull`, `recipes`, `finds`, `levelUps`, `depleted`, `kills`. Every list is
  * empty when there is nothing to say, so the panel can leave that section out; `hasNews` says
  * whether the right column has anything at all. The news the banners and stubs also get once it
  * closes (`summary.news`) are the knock-outs, `bankFull`, `recipes` and `finds`.
@@ -122,9 +122,16 @@ export function summaryView(result) {
         levelUps: [...levelUps.values()],
         depleted: rows(summary.depleted?.byType, tokenName, 'typeId'),
         /** The fights: each enemy beaten, with how many times. */
-        kills: rows(summary.fightsWon?.byEnemy, tokenName, 'enemyId')
+        kills: rows(summary.fightsWon?.byEnemy, tokenName, 'enemyId'),
+        /**
+         * Events that landed or left while away, in the order they came: `{ key, typeId, name,
+         * landed, state }`, `state` how it left (`EventTokens.ENDED`) or `'here'` while it stands.
+         */
+        events: (summary.events || []).map(e => ({
+            key: e.instanceId, typeId: e.typeId, name: e.name || tokenName(e.typeId), landed: !!e.landed, state: e.ended || 'here'
+        }))
     };
-    view.hasNews = ['knockouts', 'broken', 'bankFull', 'recipes', 'finds', 'levelUps', 'depleted', 'kills'].some(k => view[k].length > 0);
+    view.hasNews = ['events', 'knockouts', 'broken', 'bankFull', 'recipes', 'finds', 'levelUps', 'depleted', 'kills'].some(k => view[k].length > 0);
     return view;
 }
 

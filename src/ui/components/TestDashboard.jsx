@@ -6,6 +6,7 @@ import { TokenSprite, TOKEN_SURFACE } from './base/TokenSprite.jsx';
 import { CloseX } from './base/CloseX.jsx';
 import { AnimationStudioModal } from './dev/AnimationStudioModal.jsx';
 import { PerfDevSection } from '../dev/perf/PerfDevSection.jsx';
+import { EventsDevSection } from '../dev/EventsDevSection.jsx';
 import { saveLiveMatToCms, DEFAULT_CMS_URL } from '../dev/starterCampDev.js';
 import {
     PICKER_ROWS, itemChoices, tokenChoices, filterByName, giveAndSay, devBankEveryKind, devFillBank,
@@ -241,6 +242,8 @@ export const TestDashboard = /* @__PURE__ */ React.memo(() => {
                                 Clear the board
                             </button>
                         </div>
+
+                        <EventsDevSection />
 
                         <div className="space-y-1" data-testid="qa-tools" data-qa-group>
                             <div className={labelClass}>Tools</div>

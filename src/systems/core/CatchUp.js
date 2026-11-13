@@ -41,6 +41,9 @@ import { logger } from '../../utils/Logger.js';
  * - `fightsWon`: `{ total, byEnemy: { enemyId: count } }`.
  * - `combat`: `{ food, elixirs, drops }`, each `{ itemId: count }`: meals eaten in fights, elixirs
  *   drunk as fights started, and what kills dropped (fights lost are `wounded`).
+ * - `events`: `[{ instanceId, eventId, typeId, name, kind, landed, ended }]`, one per event Token
+ *   that landed or left while away, in the order first heard: `landed` true when it came during the
+ *   catch-up, `ended` how it left (`EventTokens.ENDED`) or null while it still stands.
  * - `news`: what the quiet bus kept from the banners and stubs (`catchUpNews.js`): recipes
  *   unlocked, first finds, items a full Bank refused, heroes knocked out. The notifications hand
  *   it over once the summary closes (`routing.js`). Null when `news: false`.
@@ -181,6 +184,16 @@ function startSummary({ news: withNews = true } = {}) {
     const broken = new Map();
     const fightsWon = { total: 0, byEnemy: {} };
     const combat = { food: {}, elixirs: {}, drops: {} };
+    /** instanceId → row, in the order first heard. */
+    const events = new Map();
+    const eventRow = ({ instanceId, eventId, typeId, name, kind } = {}) => {
+        let row = events.get(instanceId);
+        if (!row) {
+            row = { instanceId, eventId, typeId, name: name || typeId, kind, landed: false, ended: null };
+            events.set(instanceId, row);
+        }
+        return row;
+    };
     const add = (map, key, n = 1) => { map[key] = (map[key] || 0) + n; };
 
     const offs = [
@@ -224,6 +237,12 @@ function startSummary({ news: withNews = true } = {}) {
                 const n = Number(d?.quantity) || 0;
                 if (d?.itemId && n > 0) add(combat.drops, d.itemId, n);
             }
+        }),
+        EventBus.subscribe(BOARD_EVENTS.EVENT_LANDED, (p = {}) => {
+            if (p.instanceId) eventRow(p).landed = true;
+        }),
+        EventBus.subscribe(BOARD_EVENTS.EVENT_ENDED, (p = {}) => {
+            if (p.instanceId) eventRow(p).ended = p.reason || 'gone';
         })
     ];
 
@@ -242,6 +261,7 @@ function startSummary({ news: withNews = true } = {}) {
                 broken: [...broken.values()],
                 fightsWon,
                 combat,
+                events: [...events.values()],
                 news: news ? news.stop({ gained, net }) : null
             };
         }

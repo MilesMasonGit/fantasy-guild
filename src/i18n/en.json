@@ -551,6 +551,14 @@
             "finds": "First finds",
             "levelUps": "Level-ups",
             "depleted": "Tokens used up",
+            "events": "Events",
+            "eventState": {
+                "here": "Still here",
+                "worked_out": "Worked out",
+                "time_up": "Time ran out",
+                "unworked": "Left unworked",
+                "demolished": "Demolished"
+            },
             "kills": "Fights",
             "killTip": {
                 "one": "{enemy}: beaten once",

@@ -40,6 +40,8 @@ import { QuestManager } from '../quests/QuestManager.js';
 // Quest Tokens on the mat, exposed for console probes (`Game.QuestTokens`).
 import * as QuestTokens from '../quests/QuestTokens.js';
 import * as LimesGuide from '../quests/LimesGuide.js';
+// Events landing on the mat (`Game.EventClock`).
+import * as EventClock from '../events/EventClock.js';
 // Enemies' tethers and their step to open space before a crowded fight (`Game.EnemyMotion`).
 import * as EnemyMotion from '../board/EnemyMotion.js';
 import * as SpawnerSystem from '../board/SpawnerSystem.js';
@@ -97,6 +99,7 @@ export const EngineBootstrap = {
             Demolition,
             QuestManager,
             QuestTokens,
+            EventClock,
             EnemyMotion,
             Atlas,
             World,
@@ -137,6 +140,8 @@ export const EngineBootstrap = {
         SpawnerSystem.init();
         // A growing Token's alerts (a Stump that needs its Forest or a seedling) belong to its board.
         TimedChanges.init();
+        // How an event Token ended (worked out, demolished), for the return report.
+        EventClock.init();
         // The active Region's own rules, put back in the guild-wide aggregator on every load,
         // travel and new game.
         RegionRules.init();
@@ -199,6 +204,11 @@ export const EngineBootstrap = {
         GameLoop.onTick('quest_manager', (delta) => {
             if (GameState.getIsInitialized()) QuestManager.tick(delta);
         }, 50);
+
+        // 55: the event clock (off unless turned on: `EventClock.setEnabled`).
+        GameLoop.onTick('event_clock', (delta) => {
+            if (GameState.getIsInitialized()) EventClock.tick(delta);
+        }, 55);
 
         // 60: loot sprites.
         GameLoop.onTick('sprite_layer', (delta) => {

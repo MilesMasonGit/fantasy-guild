@@ -20,6 +20,7 @@ import { HUD_STORAGE_KEY, profilingArmed, stressFromUrl, hudRemembered } from '.
 import { mountHud, unmountHud, renderHud, hudStatus, hudNodeCount, hudMounted } from './perfHud.js';
 import { buildStress, resolveStress, STRESS_SCENARIOS, STRESS_STARTED_EVENT } from './stressScenarios.js';
 import { EngineBootstrap } from '../../../systems/core/EngineBootstrap.js';
+import * as EventClock from '../../../systems/events/EventClock.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import * as Shop from '../../../systems/board/Shop.js';
 import * as MatCap from '../../../systems/board/MatCap.js';
@@ -327,6 +328,9 @@ export function stop() {
 export async function start(name) {
     if (name) {
         if (!resolveStress(name)) throw new Error(`Unknown stress scenario "${name}"`);
+        // A stress board plays without events, as the engine bench does, unless the address
+        // asks for them (`events=1`).
+        EventClock.setEnabled(new URLSearchParams(globalThis.location?.search || '').get('events') === '1');
         scenario = await buildStress(name);
     } else if (!scenario) {
         scenario = { id: 'live', name: 'live', label: 'Live game' };

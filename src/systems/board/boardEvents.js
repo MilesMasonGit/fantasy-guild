@@ -142,11 +142,24 @@ export const BOARD_EVENTS = {
     TOKEN_TRANSFORMED: 'board:token_transformed',
 
     /**
-     * A hero finished demolishing a marked Token and it left the board (`Demolition.js`). Payload:
-     * `{ instanceId, typeId, x, y, heroId }`. ⚠️ Never with `TOKEN_DEPLETED`: nothing ran out, and
-     * nothing is refunded or dropped.
+     * A hero finished demolishing a marked Token and it left the board, or an event Token was
+     * demolished at once (`Demolition.js`). Payload: `{ instanceId, typeId, x, y, heroId, event? }`,
+     * `event` the event Token's `instance.event`. ⚠️ Never with `TOKEN_DEPLETED`: nothing ran out,
+     * and nothing is refunded or dropped.
      */
     TOKEN_DEMOLISHED: 'board:token_demolished',
+
+    /**
+     * An event landed on the mat (`EventClock.land`): `{ instanceId, typeId, eventId, kind, name,
+     * x, y }`, `kind` being `'node'` or `'buff'`.
+     */
+    EVENT_LANDED: 'board:event_landed',
+
+    /**
+     * An event Token left the mat: `{ instanceId, typeId, eventId, kind, name, reason, x, y }`,
+     * `reason` one of `EventTokens.ENDED` (worked out, time up, left unworked, demolished).
+     */
+    EVENT_ENDED: 'board:event_ended',
 
     /** A neighbourhood changed, so modifiers need recomputing. Payload: `{ points }` — the mat points the change touched. */
     ADJACENCY_DIRTY: 'board:adjacency_dirty',

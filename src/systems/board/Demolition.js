@@ -21,7 +21,7 @@ import * as Landmarks from './Landmarks.js';
  * and the Starter Camp's Tokens: the layout is permanent), quests or enemies, and never a landmark
  * or a camp Token, dev tool or not. A marked Token
  * (`instance.demolish: true`, saved) is taken away by a hero holding Construction: no refund, no
- * loot, never a depletion.
+ * loot, never a depletion. An event Token (`EventTokens.js`) is never marked: it goes at once.
  *
  * While marked the Token is that work and nothing else: `StationRecipe.workConfigOf(def,
  * instance)` answers {@link DEMOLITION_CONFIG}, so flags send Construction heroes to it whatever
@@ -166,6 +166,11 @@ export function mark(target) {
     if (!check.success) return check;
     const { instance } = check;
     if (isMarked(instance)) return { success: true, unchanged: true };
+    // An event Token (`EventTokens.js`) needs no hero: it goes at once, so the next event can come.
+    if (instance.event) {
+        finish(instance);
+        return { success: true, removed: true };
+    }
     instance.demolish = true;
     restart(instance);
     announce(instance);
@@ -205,7 +210,10 @@ export function finish(instance, { heroId = null } = {}) {
     const at = { x: token.x, y: token.y };
     BoardState.removeToken(token.id);
 
-    EventBus.publish(BOARD_EVENTS.TOKEN_DEMOLISHED, { instanceId: token.id, typeId: token.typeId, ...at, heroId });
+    // `event`: the event an event Token landed as, so the event clock can say how it ended.
+    EventBus.publish(BOARD_EVENTS.TOKEN_DEMOLISHED, {
+        instanceId: token.id, typeId: token.typeId, ...at, heroId, ...(token.event ? { event: token.event } : {})
+    });
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: token.id, ...at, typeId: null });
     if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId, ...at });
     EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { points: [at] });

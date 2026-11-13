@@ -32,6 +32,9 @@ import { perkFindings } from './perkRule.js';
 import { authoredHallSky } from '../../config/registries/hallStarRegistry.js';
 import { hallStarFindings } from './hallStarRule.js';
 import { gearDefenceFindings } from './gearDefenceRule.js';
+import { authoredEvents } from '../../config/registries/eventRegistry.js';
+import { eventProblems } from '../../config/eventTable.js';
+import { BIOME_GROUND } from '../atlas/Budget.js';
 
 /**
  * ContentAudit — one pass over every cross-reference in the content set,
@@ -750,6 +753,20 @@ function auditGearDefence(out) {
 }
 
 /**
+ * The events table: a row that can never land (no kind, no Token, a weight of 0), names a Token
+ * that does not exist, a buff with no time, or ground and biomes the game does not know. The rule
+ * lives in `eventTable.js`, shared with the CMS's Events page.
+ */
+function auditEvents(out) {
+    const problems = eventProblems(authoredEvents(), {
+        hasTokenType: (typeId) => !!getTokenType(typeId),
+        groundWords: STANDS_ON_CHOICES.map(c => c.id),
+        biomes: Object.keys(BIOME_GROUND)
+    });
+    for (const p of problems) out.push(finding(`Event "${p.id}"`, p.message));
+}
+
+/**
  * Walk everything and return the findings.
  * Exported separately from the reporting so a test can assert on the list.
  */
@@ -757,7 +774,7 @@ export function auditContent({ starterCamp = null } = {}) {
     const out = [];
     const steps = [
         auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditTools, auditPerks, auditHallStars,
-        auditGearDefence,
+        auditGearDefence, auditEvents,
         auditHardcodedLists, (o) => auditStarterCamp(o, starterCamp)
     ];
     for (const step of steps) {

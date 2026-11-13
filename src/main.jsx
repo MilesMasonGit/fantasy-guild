@@ -12,6 +12,7 @@ import { installDrawingPause } from './ui/drawingPause.js';
 
 // === System Orchestration ===
 import { EngineBootstrap } from './systems/core/EngineBootstrap.js';
+import * as EventClock from './systems/events/EventClock.js';
 import { EventBus } from './systems/core/EventBus.js';
 import { SaveManager } from './systems/core/SaveManager.js';
 import { SettingsManager } from './systems/core/SettingsManager.js';
@@ -92,6 +93,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 6. Initialize Interaction & Registry Overlays
     EngineBootstrap.init();
+    // Events land in the game; the engine leaves them off for the tests and the bench.
+    EventClock.setEnabled(true);
     bootMark('engineInit');
 
     // A hidden or minimised window stops drawing the mat; the game keeps ticking.
