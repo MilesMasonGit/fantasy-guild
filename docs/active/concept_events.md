@@ -36,8 +36,8 @@ Trainers (a visitor who gives XP) the owner likes; they come after these.
 - **Not tied to tier**: any event can land anywhere it fits. A Mythril Comet
   can land in the first hour; nobody can mine it yet.
 - **Ending**: a rich node ends when its **charges** run out; a buff Token when
-  its **time** runs out. **A node nobody can work leaves after a while** (about
-  an hour) so it doesn't hold the slot.
+  its **time** runs out. **A node leaves after about an hour whether or not
+  anyone can work it** (owner, 2026-11-13; it used to wait while a hero could work it).
 - **Time left shows like a refreshing node's**: the existing timer and charge
   display, no new look.
 - **Moving**: by kind. **Buff Tokens move** (drag or right-click them where the
