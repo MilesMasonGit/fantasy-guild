@@ -388,7 +388,7 @@ T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
 
-**Sat 14 Nov, 02:05 (director timer):** retake the engine and draw baselines on main (`npm run bench -- --save-baseline`, `npm run bench:draw -- --save-baseline`), commit them with the date; then at 03:30 `npm run bench -- --compare` on `ev` 0768a1a1 (the node clock changed). The draw baseline (October) reads every 1x scene REGRESSED on every branch. **Fri 13 Nov, 14:05: done** on `ev` 19fa1963: work check same on all 12; draw REGRESSED at 1x only, as the stale baseline does everywhere.
+**Sat 14 Nov, 02:05: engine baseline done** (92ba5525, every scene same work), **draw baseline refused** (Chrome delivered 5.2 to 5.5x instead of 4x on 3 slowed runs: machine noise); draw retake re-queued Sat 03:50 on main after the `ev` check. Was: retake the engine and draw baselines on main (`npm run bench -- --save-baseline`, `npm run bench:draw -- --save-baseline`), commit them with the date; then at 03:30 `npm run bench -- --compare` on `ev` 0768a1a1 (the node clock changed). The draw baseline (October) reads every 1x scene REGRESSED on every branch. **Fri 13 Nov, 14:05: done** on `ev` 19fa1963: work check same on all 12; draw REGRESSED at 1x only, as the stale baseline does everywhere.
 
 **Fri 13 Nov, 02:05 (director timer):** `npm run bench -- --compare` in turn on `s3` 68a3a220 (slim panel + War Camp trial merge), `t1` e137b0c6 (630 B1), `rt` fbf05d49 (620 E3), `fx` e3304705 (620 E1); same work, then merge each and push. Then `npm run bench:calibrate` on main after B1.
 
