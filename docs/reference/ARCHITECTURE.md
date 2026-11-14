@@ -452,6 +452,9 @@ the Perf HUD is showing (`src/ui/components/base/FPSCounter.jsx:10-25`,
 - **Banners** (things that must not be missed) and **item stubs** (items gained and spent):
   module stores in `src/systems/notifications/` fed by `routing.js` (`:17-30` says where each
   event goes), drawn by `ui/components/notifications/BannerStack.jsx` and `ItemStubColumn.jsx`.
+  The item stubs sit on the mat's side of the cameras; the banners are one stack outside them
+  (`ReactRoot.jsx`, after `HallCamera`), so they hold still while the view glides, and over the
+  Hall and the World Map (`away`) show only kinds that point to a Token.
 - **Callouts**: refusals at a mat point (`ui/components/board/CalloutLayer.jsx`) and screen
   callouts (`ui/components/notifications/ScreenCalloutLayer.jsx`).
 - **`NotificationSystem`** messages are drawn only on the slot screen

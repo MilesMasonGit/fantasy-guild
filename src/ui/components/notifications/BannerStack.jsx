@@ -13,6 +13,8 @@ import { cn } from '../../utils/cn.js';
 import { outlineSubjects } from './bannerHighlight.js';
 import { MAT_TOP_BAR_PX } from '../board/MatTopBar.jsx';
 import { prefersReducedMotion } from '../board/fx/pixelSteps.js';
+import { SETTLE } from '../board/HallCamera.jsx';
+import { animateFx, whenOver } from '../board/fx/oneShot.js';
 
 /**
  * The banners: what the player must not miss, at the top centre of the mat, dropping from behind
@@ -82,19 +84,56 @@ function useSlides(boxRef) {
         const now = slotTops(box);
         const moves = box && !prefersReducedMotion() ? slidesBetween(tops.current, now) : [];
         tops.current = now;
+        const slides = [];
         for (const { id, dy } of moves) {
             const el = box.querySelector(`[data-banner-slot="${id}"]`);
-            if (typeof el?.animate !== 'function') continue;
             try {
-                el.animate(
+                const slide = animateFx(
+                    el,
                     [{ transform: `translateY(${dy}px)` }, { transform: 'translateY(0px)' }],
                     { duration: SLIDE_MS, easing: SLIDE_EASING, composite: 'add' }
                 );
+                if (!slide) continue;
+                slide.pause();
+                // Never left holding a banner off its place: a hidden window draws no frame.
+                whenOver(slide, SETTLE.maxMs + SLIDE_MS, () => {});
+                slides.push(slide);
             } catch {
                 // A browser without composite animations jumps, as before.
             }
         }
+        if (slides.length) whenFramesFlow(() => { for (const s of slides) s.play(); });
     });
+}
+
+/**
+ * Run `fn` once frames follow each other within `SETTLE.gapMs` again, at most `SETTLE.maxMs` from
+ * now. ⚠️ A view change mounts a whole screen (the World Map's first frame can take most of a
+ * second); a slide started before that stall would have run its course before it was ever drawn.
+ * Until then the banners hold where they were.
+ */
+function whenFramesFlow(fn) {
+    if (typeof requestAnimationFrame !== 'function') {
+        fn();
+        return;
+    }
+    let done = false;
+    const once = () => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        fn();
+    };
+    const timer = setTimeout(once, SETTLE.maxMs);
+    let last = null;
+    const step = (t) => {
+        if (done) return;
+        const steady = last != null && t - last <= SETTLE.gapMs;
+        last = t;
+        if (steady) once();
+        else requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
 }
 
 const BannerSprite = ({ sprite }) => {

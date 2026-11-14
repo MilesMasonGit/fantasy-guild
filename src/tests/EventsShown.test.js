@@ -30,6 +30,7 @@ import {
 import { pulseSubjects, BANNER_PULSE_ATTR, PULSE_MS } from '../ui/components/notifications/bannerHighlight.js';
 import { BannerStack, slidesBetween } from '../ui/components/notifications/BannerStack.jsx';
 import { MAT_TOP_BAR_PX } from '../ui/components/board/MatTopBar.jsx';
+import { SETTLE } from '../ui/components/board/HallCamera.jsx';
 import * as fixtures from '../../bench/fixtures.mjs';
 
 /**
@@ -220,6 +221,40 @@ describe('the banner on screen', () => {
         expect(slidesBetween(before, after)).toEqual([{ id: 'b1', dy: -90 }, { id: 'b2', dy: -90 }]);
         expect(slidesBetween(after, new Map([['b1', 0], ['b2', 90]]))).toEqual([{ id: 'b1', dy: 90 }, { id: 'b2', dy: 90 }]);
         expect(slidesBetween(before, before)).toEqual([]);
+    });
+
+    it('a new banner on top pushes the one below down by a slide that waits for frames to flow, and never holds it for good', () => {
+        vi.useFakeTimers();
+        const top = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetTop');
+        const slides = [];
+        Object.defineProperty(HTMLElement.prototype, 'offsetTop', {
+            configurable: true,
+            get() { return this.hasAttribute('data-banner-slot') ? [...this.parentElement.children].indexOf(this) * 90 : 0; }
+        });
+        HTMLElement.prototype.animate = function animate(keyframes, timing) {
+            const anim = { el: this, keyframes, timing, state: 'running', pause() { this.state = 'paused'; }, play() { this.state = 'running'; }, cancel() { this.state = 'cancelled'; } };
+            slides.push(anim);
+            return anim;
+        };
+        try {
+            Banners.push({ kind: 'event', parts: { name: 'Rainfall' }, groupKey: 'event:x' });
+            const view = render(createElement(BannerStack));
+            expect(slides).toEqual([]);
+            act(() => { Banners.push({ kind: 'hero', parts: { heroes: ['Aela'] } }); });
+            expect(slides).toHaveLength(1);
+            expect(slides[0].el.dataset.banner).toBe('event');
+            expect(slides[0].keyframes[0].transform).toBe('translateY(-90px)');
+            expect(slides[0].timing.composite).toBe('add');
+            // Held where it was until frames flow (here no frame comes: the timer starts it).
+            expect(slides[0].state).toBe('paused');
+            vi.advanceTimersByTime(SETTLE.maxMs);
+            expect(slides[0].state).toBe('running');
+            view.unmount();
+        } finally {
+            delete HTMLElement.prototype.animate;
+            if (top) Object.defineProperty(HTMLElement.prototype, 'offsetTop', top);
+            vi.useRealTimers();
+        }
     });
 
     it('a click on an event\'s banner asks for its Token on the mat; another banner\'s click does not', () => {
