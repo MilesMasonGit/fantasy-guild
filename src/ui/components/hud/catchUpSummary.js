@@ -1,6 +1,10 @@
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { CATCH_UP } from '../../../config/loopConstants.js';
+import * as BoardState from '../../../systems/board/BoardState.js';
+import * as EventTokens from '../../../systems/board/EventTokens.js';
+import { formatClock } from '../../../utils/Formatters.js';
+import { t } from '../../../i18n/index.js';
 
 const MINUTE = 60 * 1000;
 
@@ -84,6 +88,43 @@ const EVENT_STATE_KEY = Object.freeze({
 });
 
 /**
+ * The event Tokens on the mat now and how long until each leaves (`EventTokens.leavesInMs`, null for
+ * a node a hero can work, which stays until it is worked out). A seam for tests.
+ */
+export const LIVE_EVENTS = Object.freeze({
+    standing: () => BoardState.tokens().filter(EventTokens.isEventToken),
+    leavesInMs: (instanceId) => {
+        const instance = BoardState.getTokenById(instanceId);
+        return instance ? EventTokens.leavesInMs(instance) : null;
+    }
+});
+
+/**
+ * The return report's event rows: those that landed or left while away, in the order they came,
+ * after any that stood through the whole time away and are still here. One still here says how long
+ * it has left when its clock runs.
+ */
+function eventRows(summaryEvents, live) {
+    const seen = new Set(summaryEvents.map(e => e.instanceId));
+    const before = live.standing()
+        .filter(instance => !seen.has(instance.id))
+        .map(instance => ({
+            instanceId: instance.id, typeId: instance.typeId,
+            name: EventTokens.eventOf(instance)?.name, landed: false, ended: null
+        }));
+    return [...before, ...summaryEvents].map(e => {
+        const state = e.ended || 'here';
+        const leavesInMs = state === 'here' ? live.leavesInMs(e.instanceId) : null;
+        return {
+            key: e.instanceId, typeId: e.typeId, name: e.name || tokenName(e.typeId), landed: !!e.landed,
+            state, stateKey: EVENT_STATE_KEY[state] || 'here',
+            leavesInMs,
+            leavesText: leavesInMs == null ? null : t('catchUp.news.leavesIn', { time: formatClock(leavesInMs) })
+        };
+    });
+}
+
+/**
  * The "While you were away" panel's content, from a catch-up's result (`CatchUp.run`), in two
  * columns. `items` is the left one (`itemChanges`). The right one is the news, in this order:
  * `events`, `knockouts`, `broken`, `bankFull`, `recipes`, `finds`, `levelUps`, `depleted`, `kills`. Every list is
@@ -91,7 +132,7 @@ const EVENT_STATE_KEY = Object.freeze({
  * whether the right column has anything at all. The news the banners and stubs also get once it
  * closes (`summary.news`) are the knock-outs, `bankFull`, `recipes` and `finds`.
  */
-export function summaryView(result) {
+export function summaryView(result, live = LIVE_EVENTS) {
     const summary = result?.summary || {};
     const levelUps = new Map();
     for (const row of summary.levelUps || []) {
@@ -129,17 +170,12 @@ export function summaryView(result) {
         /** The fights: each enemy beaten, with how many times. */
         kills: rows(summary.fightsWon?.byEnemy, tokenName, 'enemyId'),
         /**
-         * Events that landed or left while away, in the order they came: `{ key, typeId, name,
-         * landed, state, stateKey }`, `state` how it left (`EventTokens.ENDED`) or `'here'` while it
-         * stands, `stateKey` its string under `catchUp.news.eventState`.
+         * Events that landed or left while away, and those still on the mat (`eventRows`): `{ key,
+         * typeId, name, landed, state, stateKey, leavesInMs, leavesText }`, `state` how it left
+         * (`EventTokens.ENDED`) or `'here'` while it stands, `stateKey` its string under
+         * `catchUp.news.eventState`, `leavesText` "Leaves in 42:10" for one still here whose clock runs.
          */
-        events: (summary.events || []).map(e => {
-            const state = e.ended || 'here';
-            return {
-                key: e.instanceId, typeId: e.typeId, name: e.name || tokenName(e.typeId), landed: !!e.landed,
-                state, stateKey: EVENT_STATE_KEY[state] || 'here'
-            };
-        })
+        events: eventRows(summary.events || [], live)
     };
     view.hasNews = ['events', 'knockouts', 'broken', 'bankFull', 'recipes', 'finds', 'levelUps', 'depleted', 'kills'].some(k => view[k].length > 0);
     return view;

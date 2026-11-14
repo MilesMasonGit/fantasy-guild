@@ -15,7 +15,6 @@ import { hasNews } from './catchUpNews.js';
 import * as Atlas from '../atlas/Atlas.js';
 import { defaultBannerFor } from '../../config/areaBanners.js';
 import * as BoardState from '../board/BoardState.js';
-import * as EventTokens from '../board/EventTokens.js';
 
 /**
  * Where every game event goes (the owner's audit): items to the stubs, what must not be missed to
@@ -156,13 +155,12 @@ export const ROUTES = [
     {
         // An event landing on the mat: a banner naming it, pointing to its Token.
         event: BOARD_EVENTS.EVENT_LANDED, to: 'banner:event',
-        handle: ({ instanceId, typeId, kind, name } = {}) => {
+        handle: ({ instanceId, typeId, name } = {}) => {
             if (!instanceId) return;
-            const lastsMs = EventTokens.lastsMsOf(BoardState.getTokenById(instanceId));
             Banners.push({
                 kind: 'event',
                 groupKey: eventBannerKey(instanceId),
-                parts: { name: name || typeId || 'An event', kind, minutes: Math.round(lastsMs / 60000) },
+                parts: { name: name || typeId || 'An event' },
                 sprite: typeId ? { kind: 'token', id: typeId } : null,
                 subjects: [{ type: 'token', id: instanceId }]
             });

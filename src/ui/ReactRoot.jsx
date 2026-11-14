@@ -311,15 +311,13 @@ const ReactRoot = () => {
                                 </ErrorBoundary>
                             )}
                             {/**
-                             * Over the mat, under the top bar: the item stubs at the right,
-                             * the banners at the centre. Neither takes any width from the mat.
-                             * On the mat's side of the camera, so never over the Hall screen:
-                             * both live in their own stores, so what arrives meanwhile is there
-                             * on the way back (loot flies to no stub).
+                             * Over the mat, under the top bar: the item stubs at the right, taking
+                             * no width from the mat. On the mat's side of the camera, so never over
+                             * the Hall screen: they live in their own store, so what arrives
+                             * meanwhile is there on the way back (loot flies to no stub).
                              */}
                             <ErrorBoundary label="Notifications">
                                 <ItemStubColumn />
-                                <BannerStack />
                             </ErrorBoundary>
                             {/* Minimized fight windows: a strip of tabs at the mat's foot, above the hero bar. */}
                             <ErrorBoundary label="FightTabs"><FightTabStrip /></ErrorBoundary>
@@ -328,10 +326,12 @@ const ReactRoot = () => {
                         </WorldCamera>
                         </div>
                         </HallCamera>
-                        {/* Over the World Map and the Hall: only the banners that point to a Token on the mat (an event's). */}
-                        {(isGuildView || isAtlasOpen) && (
-                            <ErrorBoundary label="AwayBanners"><BannerStack away /></ErrorBoundary>
-                        )}
+                        {/**
+                         * The banners, top centre under where the mat's top bar sits: outside the
+                         * cameras, so they hold still on screen as the view glides. Over the World
+                         * Map and the Hall only those that point to a Token on the mat (an event's).
+                         */}
+                        <ErrorBoundary label="Banners"><BannerStack away={isGuildView || isAtlasOpen} /></ErrorBoundary>
                         <ErrorBoundary label="ArrivalCard"><ArrivalCard /></ErrorBoundary>
                         </div>
                         {/**

@@ -317,16 +317,16 @@ describe('the Hall sky: the drifting backdrop', () => {
         expect(css).toMatch(/prefers-reduced-motion: reduce\)\s*\{\s*\.gi-sky-drift-stars,\s*\.gi-sky-drift-clouds\s*\{\s*animation: none;/);
     });
 
-    // On the table side of the camera, which is gone while the camera rests on the sky
-    // (HallCamera.test.js); mid-glide they go down with the mat.
-    // One exception: banners that point to a Token on the mat (an event's) show over the Hall and
-    // the World Map in a stack of their own, so the Token can be reached from there (brief 640 E2).
-    it('shows no item stubs or banners over it, but those that point to a Token on the mat', () => {
+    // The item stubs are on the table side of the camera, which is gone while the camera rests on
+    // the sky (HallCamera.test.js); mid-glide they go down with the mat. The banners are one stack
+    // outside the cameras: over the Hall and the World Map it shows only those that point to a
+    // Token on the mat (an event's), so the Token can be reached from there.
+    it('shows no item stubs over it, and of the banners only those that point to a Token on the mat', () => {
         const { code, mat } = hallCameraSides();
         expect([...code.matchAll(/<ItemStubColumn\b/g)]).toHaveLength(1);
-        expect([...code.matchAll(/<BannerStack\b/g)]).toHaveLength(2);
-        expect([...code.matchAll(/<BannerStack away \/>/g)]).toHaveLength(1);
-        expect(mat).toMatch(/<ErrorBoundary label="Notifications">\s*<ItemStubColumn \/>\s*<BannerStack \/>\s*<\/ErrorBoundary>/);
+        expect(mat).toMatch(/<ErrorBoundary label="Notifications">\s*<ItemStubColumn \/>\s*<\/ErrorBoundary>/);
+        expect([...code.matchAll(/<BannerStack\b/g)]).toHaveLength(1);
+        expect(code).toContain('<BannerStack away={isGuildView || isAtlasOpen} />');
     });
 
     // The camera lays the sky only while it is off the mat (HallCamera.test.js).

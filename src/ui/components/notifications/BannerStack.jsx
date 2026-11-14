@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { memo, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import * as Banners from '../../../systems/notifications/banners.js';
 import { TONE, BANNER_KINDS } from '../../../systems/notifications/bannerKinds.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
@@ -11,6 +11,8 @@ import { BannerArt } from '../base/BannerArt.jsx';
 import { useDrawn } from '../../dev/perf/drawSwitches.js';
 import { cn } from '../../utils/cn.js';
 import { outlineSubjects } from './bannerHighlight.js';
+import { MAT_TOP_BAR_PX } from '../board/MatTopBar.jsx';
+import { prefersReducedMotion } from '../board/fx/pixelSteps.js';
 
 /**
  * The banners: what the player must not miss, at the top centre of the mat, dropping from behind
@@ -24,8 +26,11 @@ import { outlineSubjects } from './bannerHighlight.js';
  * clicked, for that Token to be shown on the mat (`UI_EVENTS.SHOW_ON_MAT`): from the World Map or
  * the Guild Hall back to the mat, then a short gold pulse on it.
  *
- * Drawn on the mat's side of the cameras; over the World Map and the Guild Hall a second stack
- * (`away`) shows only the kinds that point to a Token, so an event can be reached from there.
+ * One stack for every view, drawn outside the cameras just under where the mat's top bar sits, so a
+ * banner keeps its place on screen while the view glides between the mat, the Guild Hall and the
+ * World Map. Over those two (`away`) it shows only the kinds that point to a Token, so an event can
+ * be reached from there; the others wait for the mat. When the banners above or below one come or
+ * go, it slides to its new place ({@link slidesBetween}) instead of jumping.
  */
 
 export const BANNER_WIDTH_PX = 480;
@@ -33,6 +38,64 @@ export const BANNER_WIDTH_PX = 480;
 const SPRITE_PX = 64;
 /** How long the lift takes before the banner is gone (`gi-banner-lift`). */
 const LIFT_MS = 200;
+/** How long a banner takes to slide to its new place in the stack. */
+export const SLIDE_MS = 300;
+const SLIDE_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
+/** The `data-banner-slot` of the "+N" tab, which slides with the banners. */
+const WAITING_SLOT = 'waiting';
+
+/**
+ * How far each banner that stayed in the stack must start from its new place to seem to slide
+ * there from its old one: `[{ id, dy }]`, `dy` the old top less the new, for every id in both maps
+ * whose top moved. A banner just come has no old place (it drops in by its own animation).
+ * @param {Map<string, number>} before  each slot's top as last drawn
+ * @param {Map<string, number>} after  each slot's top now
+ */
+export function slidesBetween(before, after) {
+    const out = [];
+    for (const [id, top] of after) {
+        const was = before.get(id);
+        if (was != null && was !== top) out.push({ id, dy: was - top });
+    }
+    return out;
+}
+
+/** Each slot's top inside the stack, by its `data-banner-slot`. */
+function slotTops(box) {
+    const tops = new Map();
+    if (!box) return tops;
+    for (const el of box.children) {
+        const id = el.getAttribute('data-banner-slot');
+        if (id) tops.set(id, el.offsetTop);
+    }
+    return tops;
+}
+
+/**
+ * Slide every banner that moved since the last draw from its old place to its new one. Added to the
+ * banner's own drop or lift (`composite: 'add'`), so a banner still dropping in keeps dropping.
+ */
+function useSlides(boxRef) {
+    const tops = useRef(new Map());
+    useLayoutEffect(() => {
+        const box = boxRef.current;
+        const now = slotTops(box);
+        const moves = box && !prefersReducedMotion() ? slidesBetween(tops.current, now) : [];
+        tops.current = now;
+        for (const { id, dy } of moves) {
+            const el = box.querySelector(`[data-banner-slot="${id}"]`);
+            if (typeof el?.animate !== 'function') continue;
+            try {
+                el.animate(
+                    [{ transform: `translateY(${dy}px)` }, { transform: 'translateY(0px)' }],
+                    { duration: SLIDE_MS, easing: SLIDE_EASING, composite: 'add' }
+                );
+            } catch {
+                // A browser without composite animations jumps, as before.
+            }
+        }
+    });
+}
 
 const BannerSprite = ({ sprite }) => {
     if (!sprite) return <div style={{ width: SPRITE_PX, height: SPRITE_PX }} />;
@@ -74,8 +137,8 @@ export const Banner = memo(function Banner({ banner }) {
     const timer = useRef(null);
     const problem = banner.tone === TONE.PROBLEM;
     useEffect(() => () => {
-        // Clicked and taken away before its lift ended (the stack over the World Map goes as the
-        // view goes back to the mat): it is still dismissed.
+        // Clicked and taken away before its lift ended (the banners switched off mid-lift, or the
+        // view filtered it out): it is still dismissed.
         if (timer.current !== null) Banners.dismiss(banner.id);
         clearTimeout(timer.current);
         outlineSubjects([]);
@@ -85,6 +148,7 @@ export const Banner = memo(function Banner({ banner }) {
         <button
             type="button"
             data-banner={banner.kind}
+            data-banner-slot={banner.id}
             data-banner-tone={banner.tone}
             data-banner-leaving={leaving ? 'true' : undefined}
             className="gi-banner pointer-events-auto block text-left cursor-pointer shrink-0"
@@ -118,17 +182,19 @@ export const Banner = memo(function Banner({ banner }) {
                     >
                         {banner.title}
                     </span>
-                    <span data-banner-line className="ui-text-body">{banner.line}</span>
+                    {banner.line && <span data-banner-line className="ui-text-body">{banner.line}</span>}
                 </div>
             </PixelFrame>
         </button>
     );
 });
 
-/** @param {{away?: boolean}} props `away`: the stack over the World Map and the Guild Hall, only kinds that point to a Token. */
+/** @param {{away?: boolean}} props `away`: the World Map or the Guild Hall is the view: only kinds that point to a Token. */
 export const BannerStack = memo(function BannerStack({ away = false }) {
     const drawn = useDrawn('notifications');
     useSyncExternalStore(Banners.subscribe, Banners.getVersion);
+    const boxRef = useRef(null);
+    useSlides(boxRef);
     if (!drawn) return null;
     const view = Banners.getView();
     const shown = away ? view.shown.filter(b => BANNER_KINDS[b.kind]?.pointsTo) : view.shown;
@@ -137,12 +203,13 @@ export const BannerStack = memo(function BannerStack({ away = false }) {
     if (!shown.length) return null;
     return (
         // Clipped at the top edge, so a banner seems to come from behind the top bar.
-        <div className="absolute inset-0 overflow-hidden pointer-events-none z-30">
-            <div data-banners={away ? 'away' : 'mat'} className="absolute top-1 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5">
+        <div className="absolute inset-x-0 bottom-0 overflow-hidden pointer-events-none z-30" style={{ top: MAT_TOP_BAR_PX }}>
+            <div ref={boxRef} data-banners={away ? 'away' : 'mat'} className="absolute top-1 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5">
                 {shown.map(b => <Banner key={b.id} banner={b} />)}
                 {waiting > 0 && (
                     <PixelFrame
                         kind={FRAME_KIND.CHAMFER}
+                        data-banner-slot={WAITING_SLOT}
                         data-banners-waiting={waiting}
                         title={`${waiting} more waiting: click a banner to see the next`}
                         className="pointer-events-auto"

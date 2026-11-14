@@ -28,7 +28,8 @@ import {
     watchEventArrivals, takeArrival, resetEventArrivals, nodeFallPoses, buffDriftPoses, NODE_FALL
 } from '../ui/components/board/fx/eventArrival.js';
 import { pulseSubjects, BANNER_PULSE_ATTR, PULSE_MS } from '../ui/components/notifications/bannerHighlight.js';
-import { BannerStack } from '../ui/components/notifications/BannerStack.jsx';
+import { BannerStack, slidesBetween } from '../ui/components/notifications/BannerStack.jsx';
+import { MAT_TOP_BAR_PX } from '../ui/components/board/MatTopBar.jsx';
 import * as fixtures from '../../bench/fixtures.mjs';
 
 /**
@@ -139,18 +140,22 @@ describe('the banner', () => {
         freshGame();
         const { instance } = EventClock.landNow(COMET.id);
         const [banner] = eventBanners();
-        expect(banner).toMatchObject({ title: 'Copper Comet!', tone: 'milestone', subjects: [{ type: 'token', id: instance.id }] });
-        expect(banner.line).toMatch(/Landed on the mat/);
+        expect(banner).toMatchObject({ title: 'Special Event! Copper Comet!', tone: 'milestone', subjects: [{ type: 'token', id: instance.id }] });
+        expect(banner.line).toBe('');
         expect(banner.sprite).toEqual({ kind: 'token', id: 'evs_comet' });
     });
 
-    it('a buff\'s banner says its time, and it goes when the buff leaves', () => {
+    it('a buff\'s banner reads the same way, with no second line, and goes when the buff leaves', () => {
         setEventsForTests(table(RAIN));
         freshGame();
         EventClock.landNow(RAIN.id);
         expect(eventBanners()).toHaveLength(1);
-        expect(eventBanners()[0].title).toBe('Rainfall!');
-        expect(eventBanners()[0].line).toMatch(/20 min/);
+        expect(eventBanners()[0].title).toBe('Special Event! Rainfall!');
+        expect(eventBanners()[0].line).toBe('');
+        const view = render(createElement(BannerStack));
+        expect(view.container.querySelector('[data-banner-title]').textContent).toBe('Special Event! Rainfall!');
+        expect(view.container.querySelector('[data-banner-line]')).toBeNull();
+        view.unmount();
         runFor(20 * MIN);
         expect(eventBanners()).toEqual([]);
     });
@@ -185,6 +190,36 @@ describe('the banner on screen', () => {
         const away = render(createElement(BannerStack, { away: true }));
         expect([...away.container.querySelectorAll('[data-banner]')].map(b => b.dataset.banner)).toEqual(['event']);
         expect(away.container.querySelector('[data-banners]').dataset.banners).toBe('away');
+    });
+
+    it('the view changing keeps the same event banner on screen (no drop again) and only hides the others', () => {
+        Banners.push({ kind: 'hero', parts: { heroes: ['Aela'] } });
+        Banners.push({ kind: 'event', parts: { name: 'Rainfall' }, groupKey: 'event:x' });
+        const view = render(createElement(BannerStack, { away: false }));
+        const before = view.container.querySelector('[data-banner="event"]');
+        view.rerender(createElement(BannerStack, { away: true }));
+        expect(view.container.querySelector('[data-banner="event"]')).toBe(before);
+        expect(view.container.querySelector('[data-banner="hero"]')).toBeNull();
+        view.rerender(createElement(BannerStack, { away: false }));
+        expect(view.container.querySelector('[data-banner="event"]')).toBe(before);
+        expect(view.container.querySelector('[data-banner="hero"]')).not.toBeNull();
+    });
+
+    it('sits just under where the mat\'s top bar is, whatever the view', () => {
+        Banners.push({ kind: 'event', parts: { name: 'Rainfall' }, groupKey: 'event:x' });
+        for (const away of [false, true]) {
+            const view = render(createElement(BannerStack, { away }));
+            expect(view.container.firstChild.style.top).toBe(`${MAT_TOP_BAR_PX}px`);
+            view.unmount();
+        }
+    });
+
+    it('a banner that stays slides from its old place to its new one; a new one has no old place', () => {
+        const before = new Map([['b1', 0], ['b2', 90]]);
+        const after = new Map([['b3', 0], ['b1', 90], ['b2', 180]]);
+        expect(slidesBetween(before, after)).toEqual([{ id: 'b1', dy: -90 }, { id: 'b2', dy: -90 }]);
+        expect(slidesBetween(after, new Map([['b1', 0], ['b2', 90]]))).toEqual([{ id: 'b1', dy: 90 }, { id: 'b2', dy: 90 }]);
+        expect(slidesBetween(before, before)).toEqual([]);
     });
 
     it('a click on an event\'s banner asks for its Token on the mat; another banner\'s click does not', () => {

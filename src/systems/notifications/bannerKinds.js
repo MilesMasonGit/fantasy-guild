@@ -88,10 +88,7 @@ export const BANNER_KINDS = Object.freeze({
     event: {
         tone: TONE.MILESTONE,
         pointsTo: true,
-        text: ({ name = '', kind = 'node', minutes = 0 }) => ({
-            title: t('events.banner.title', { event: name }),
-            line: kind === 'buff' ? t('events.banner.buff', { time: `${minutes} min` }) : t('events.banner.node')
-        }),
+        text: ({ name = '' }) => ({ title: t('events.banner.title', { event: name }), line: '' }),
         merge: null
     },
     // Each save problem is its own banner; only a repeat of the same one (its `groupKey`) folds in.

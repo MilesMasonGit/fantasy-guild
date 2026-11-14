@@ -477,6 +477,32 @@ describe('time away', () => {
         fixtures.makeHeroes(1, { mining: 10 });
         const result = await CatchUp.run({ savedAt: NOW - (HOUR + 10 * MIN), now: NOW, save: false, yieldFn: () => Promise.resolve() });
         expect(result.summary.events).toEqual([expect.objectContaining({ eventId: COMET.id, landed: true, ended: null })]);
-        expect(summaryView(result).events[0].state).toBe('here');
+        const [row] = summaryView(result).events;
+        expect(row.state).toBe('here');
+        // A miner can work it, so no clock runs: it stays until worked out, and says only that it is here.
+        expect(row.leavesInMs).toBeNull();
+        expect(row.leavesText).toBeNull();
     }, 60_000);
+
+    it('an event that stood through the whole time away is listed with its time left', async () => {
+        setEventsForTests(table(MYTHRIL, RAIN));
+        freshGame();
+        const mythril = EventClock.landNow(MYTHRIL.id).instance;
+        const result = await CatchUp.run({ savedAt: NOW - 10 * MIN, now: NOW, save: false, yieldFn: () => Promise.resolve() });
+        expect(result.summary.events).toEqual([]);
+        const view = summaryView(result);
+        expect(view.events).toEqual([expect.objectContaining({
+            key: mythril.id, name: 'Mythril Comet', landed: false, state: 'here', leavesInMs: 50 * MIN, leavesText: 'Leaves in 50:00'
+        })]);
+        expect(view.hasNews).toBe(true);
+    }, 60_000);
+
+    it('a buff that landed while away and is still here says how long it has left', () => {
+        const live = { standing: () => [], leavesInMs: (id) => (id === 'tok_rain' ? 7 * MIN + 30_000 : null) };
+        const view = summaryView({ summary: { events: [
+            { instanceId: 'tok_rain', typeId: 'ev_rain', name: 'Rainfall', landed: true, ended: null },
+            { instanceId: 'tok_gone', typeId: 'ev_rain', name: 'Rainfall', landed: true, ended: EventTokens.ENDED.TIME_UP }
+        ] } }, live);
+        expect(view.events.map(e => [e.key, e.leavesText])).toEqual([['tok_rain', 'Leaves in 7:30'], ['tok_gone', null]]);
+    });
 });

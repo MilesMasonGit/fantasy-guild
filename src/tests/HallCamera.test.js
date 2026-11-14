@@ -446,16 +446,18 @@ describe('the camera in the game\'s layout', () => {
         expect(code).toContain('sky={<HallSky />}');
     });
 
-    it('keeps the mat, its top bar and the notifications on the table (the hero bar is under both sides: DockVisibility.test.js)', () => {
+    it('keeps the mat, its top bar and the item stubs on the table, and the banners off it (the hero bar is under both sides: DockVisibility.test.js)', () => {
         const { code, mat } = hallCameraSides();
-        for (const tag of ['Board', 'MatTopBar', 'ItemStubColumn', 'BannerStack']) {
+        for (const tag of ['Board', 'MatTopBar', 'ItemStubColumn']) {
             expect(count(mat, tag), tag).toBe(1);
-            // The one other banner stack is the `away` one over the Hall and the World Map, only
-            // for the banners that point to a Token on the mat (an event's, brief 640 E2).
-            expect(count(code, tag), tag).toBe(tag === 'BannerStack' ? 2 : 1);
+            expect(count(code, tag), tag).toBe(1);
         }
-        expect(mat).not.toMatch(/<BannerStack away/);
-        expect(code).toMatch(/\{\(isGuildView \|\| isAtlasOpen\) && \(\s*<ErrorBoundary label="AwayBanners"><BannerStack away \/><\/ErrorBoundary>/);
+        // One banner stack, outside both cameras, so a banner holds still on screen while the view
+        // glides; it follows the view only to choose what it shows.
+        expect(count(mat, 'BannerStack')).toBe(0);
+        expect(count(code, 'BannerStack')).toBe(1);
+        const afterCamera = code.slice(code.indexOf('</HallCamera>'));
+        expect(afterCamera).toMatch(/<ErrorBoundary label="Banners"><BannerStack away=\{isGuildView \|\| isAtlasOpen\} \/><\/ErrorBoundary>/);
         // Drawn as on the mat while the camera glides away and back: nothing on the table side
         // follows the open view, or the mat would change size and be drawn again mid-glide. The
         // one exception is the world map's own camera (`WorldCamera`), whose job is to follow the

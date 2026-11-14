@@ -552,6 +552,7 @@
             "levelUps": "Level-ups",
             "depleted": "Tokens used up",
             "events": "Events",
+            "leavesIn": "Leaves in {time}",
             "eventState": {
                 "here": "Still here",
                 "workedOut": "Worked out",
@@ -772,9 +773,7 @@
     },
     "events": {
         "banner": {
-            "title": "{event}!",
-            "node": "Landed on the mat: work it before it runs out",
-            "buff": "Landed on the mat for {time}: move it where its boost should go"
+            "title": "Special Event! {event}!"
         },
         "plate": {
             "buffLeaves": "Leaves in {time}",
