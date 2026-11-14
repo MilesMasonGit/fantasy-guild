@@ -8,5 +8,5 @@ here is a decision; directors don't act on this page.*
 
 ## Open
 
-*(none)*
+- 2026-11-13 (events eye-check, relayed by the director): the Fallen Maple has extremely slow cycles, maybe a content or balance issue. Director's facts: it copies the Maple Tree's 26 s cycle and Forestry 45 (6 Maple Wood a cycle, 100 charges), per the events list's rule that a node keeps the cycle of the Token it copies; the Copper Comet is 3 s and the Berry Thicket 5 s for the same reason. For the content agent.
 
