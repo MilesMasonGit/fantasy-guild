@@ -1,9 +1,9 @@
 {
   "meta": {
-    "commit": "85cefe1f",
-    "branch": "HEAD",
+    "commit": "1837bbeb",
+    "branch": "main",
     "dirty": false,
-    "date": "2026-11-07T08:04:11.511Z",
+    "date": "2026-11-14T09:05:02.460Z",
     "node": "v24.11.1",
     "machine": "DESKTOP-IEM8MOS",
     "cpu": "Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz",
@@ -19,68 +19,15 @@
       "injectSlowMs": 0,
       "only": null,
       "seed": 1,
-      "acceptWorkChange": null
+      "acceptWorkChange": null,
+      "events": false
     },
-    "note": "Medians of the timing runs, and each scenario's work fingerprint. Re-take on a quiet machine: npm run bench -- --save-baseline",
-    "workChanges": [
-      {
-        "ticket": "T-373",
-        "commit": "c629c9d2",
-        "branch": "cleanup/folder-moves",
-        "dirty": false,
-        "date": "2026-11-08T06:55:31.992Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "S8": [
-            "bankItems",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S8L": [
-            "bankItems",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S8F": [
-            "bankItems",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ]
-        }
-      },
-      {
-        "ticket": "560-R1",
-        "commit": "675df81c",
-        "branch": "feat/one-reach",
-        "dirty": false,
-        "date": "2026-11-10T21:40:38.789Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "S3": [
-            "bankItems",
-            "bankHash"
-          ],
-          "C240": [
-            "bankItems",
-            "bankHash"
-          ]
-        }
-      }
-    ]
+    "note": "Medians of the timing runs, and each scenario's work fingerprint. Re-take on a quiet machine: npm run bench -- --save-baseline"
   },
   "scenarios": {
     "S1": {
-      "p50": 0.04870000000028085,
-      "p99": 0.14550000000008367,
+      "p50": 0.039399999999659485,
+      "p99": 0.12730000000010477,
       "fingerprint": {
         "tokens": 9,
         "uses": 22942,
@@ -100,8 +47,8 @@
       }
     },
     "S2": {
-      "p50": 0.30979999999999563,
-      "p99": 0.7458999999998923,
+      "p50": 0.27700000000004366,
+      "p99": 0.7575000000001637,
       "fingerprint": {
         "tokens": 103,
         "uses": 124897,
@@ -121,8 +68,8 @@
       }
     },
     "S3": {
-      "p50": 0.7677000000003318,
-      "p99": 1.9642000000003463,
+      "p50": 0.7146999999999935,
+      "p99": 1.8722999999999956,
       "fingerprint": {
         "tokens": 313,
         "uses": 706556,
@@ -142,10 +89,10 @@
       }
     },
     "S4": {
-      "arrivalsWorst": 8.69399999999996,
-      "landedP50": 0.27899999999999636,
-      "refusedWorst": 1.040400000000318,
-      "shrinkMs": 27.3741,
+      "arrivalsWorst": 8.302299999999832,
+      "landedP50": 0.34859999999980573,
+      "refusedWorst": 0.9720999999999549,
+      "shrinkMs": 28.34389999999985,
       "fingerprint": {
         "tokens": 135,
         "uses": 181760,
@@ -176,8 +123,8 @@
       }
     },
     "S5": {
-      "p50": 0.32940000000007785,
-      "p99": 0.8813000000000102,
+      "p50": 0.28450000000020736,
+      "p99": 0.8292000000001281,
       "fingerprint": {
         "tokens": 105,
         "uses": 125002,
@@ -197,8 +144,8 @@
       }
     },
     "S6": {
-      "p50": 0.3006999999997788,
-      "p99": 0.6879000000008091,
+      "p50": 0.27289999999993597,
+      "p99": 0.6770999999998821,
       "fingerprint": {
         "tokens": 103,
         "uses": 124122,
@@ -219,8 +166,8 @@
       }
     },
     "S7": {
-      "p50": 0.7564000000002125,
-      "p99": 1.3757000000000517,
+      "p50": 0.5095000000001164,
+      "p99": 1.0041000000001077,
       "fingerprint": {
         "tokens": 116,
         "uses": 101023,
@@ -240,7 +187,7 @@
       }
     },
     "S8": {
-      "runMs": 2000.0330000000004,
+      "runMs": 1874.5918000000001,
       "fingerprint": {
         "tokens": 103,
         "uses": 123192,
@@ -307,8 +254,8 @@
       }
     },
     "C240": {
-      "p50": 0.5659999999998035,
-      "p99": 7.379399999999805,
+      "p50": 0.5,
+      "p99": 7.813999999999396,
       "fingerprint": {
         "tokens": 238,
         "uses": 206511,
@@ -328,8 +275,8 @@
       }
     },
     "C256": {
-      "p50": 0.5549000000000888,
-      "p99": 15.874399999999696,
+      "p50": 0.4988000000003012,
+      "p99": 15.997000000000298,
       "fingerprint": {
         "tokens": 240,
         "uses": 197568,
