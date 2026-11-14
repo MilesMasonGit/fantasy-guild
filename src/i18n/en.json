@@ -777,12 +777,12 @@
         },
         "plate": {
             "buffLeaves": "Leaves in {time}",
-            "nodeLeaves": "Nobody can work it: leaves in {time}"
+            "nodeLeaves": "An event: leaves in {time}"
         },
         "card": {
             "leavesIn": "Leaves in",
             "buffTip": "An event: it leaves in {time}",
-            "nodeTip": "An event nobody can work yet: it leaves in {time} unless a hero can work it"
+            "nodeTip": "An event: it leaves in {time}, worked or not"
         }
     }
 }

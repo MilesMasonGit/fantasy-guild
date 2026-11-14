@@ -2,12 +2,9 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { GameState } from '../../state/GameState.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { EVENT_KIND } from '../../config/eventTable.js';
 import * as BoardState from './BoardState.js';
-import * as WorkCheck from './WorkCheck.js';
-import { workConfigOf } from './StationRecipe.js';
 
 /**
  * An **event Token** is an ordinary Token that landed as an event (`events/EventClock.js`). It
@@ -24,9 +21,7 @@ import { workConfigOf } from './StationRecipe.js';
  *
  * Two ways out are clocks, rows of `TimedChanges.HANDLERS` on `clocks[EVENT_CLOCK]`:
  * - a **buff** leaves when its time is up ({@link lastsMsOf});
- * - a **rich node no current hero can work** leaves after {@link UNWORKED_LEAVE_MS}. Its clock is
- *   held at zero while some hero can ({@link someHeroCanWork}), so a node the guild can work stays
- *   until it is worked out, and the hour starts again whenever nobody can.
+ * - a **rich node** leaves after {@link UNWORKED_LEAVE_MS} (about an hour), worked or not.
  *
  * Demolishing one removes it at once (`Demolition.mark`). It never counts toward the mat's Token
  * cap (`MatCap.countsTowardCap`): an event must not stop the player building.
@@ -37,7 +32,7 @@ import { workConfigOf } from './StationRecipe.js';
 /** The key in `instance.clocks` an event Token's way out counts on. */
 export const EVENT_CLOCK = 'eventMs';
 
-/** ⭐ Game value: how long a rich node nobody can work stays on the mat. */
+/** ⭐ Game value: how long a rich node stays on the mat. */
 export const UNWORKED_LEAVE_MS = 60 * 60 * 1000;
 
 /** Why an event Token left the mat (`BOARD_EVENTS.EVENT_ENDED`'s `reason`). */
@@ -77,29 +72,13 @@ export function lastsMsOf(instance) {
 }
 
 /**
- * **The "can work" test**: whether some hero of the guild could work this Token as things stand,
- * by the same gate a hero's order uses (`WorkCheck.heroReason`): holds the skill, at the level the
- * Token's work asks, with the tool it needs in hand. Every hero on the roster counts, wherever
- * they are and whatever they are doing; a hero carried home wounded still counts.
- */
-export function someHeroCanWork(instance) {
-    const config = workConfigOf(getTokenType(instance?.typeId), instance);
-    if (!config) return false;
-    for (const hero of GameState.state?.heroes || []) {
-        if (hero?.id && WorkCheck.heroReason(hero.id, config, instance) === null) return true;
-    }
-    return false;
-}
-
-/**
  * How long until an event Token leaves by its clock, in game ms, for the hover plate and the card:
- * a buff's time left; a rich node nobody can work, its hour left. Null when no clock is running
- * (a node someone can work, which leaves when worked out, and any other Token).
+ * a buff's time left; a rich node's hour left, worked or not. Null for any other Token.
  */
 export function leavesInMs(instance) {
     const elapsed = Number(instance?.clocks?.[EVENT_CLOCK]) || 0;
     if (isEventBuff(instance)) return Math.max(0, lastsMsOf(instance) - elapsed);
-    if (isEventNode(instance) && !someHeroCanWork(instance)) return Math.max(0, UNWORKED_LEAVE_MS - elapsed);
+    if (isEventNode(instance)) return Math.max(0, UNWORKED_LEAVE_MS - elapsed);
     return null;
 }
 

@@ -33,7 +33,7 @@ import { logger } from '../../utils/Logger.js';
  * `SpawnerSystem.js`. So is a resting Token's way back (`respawn`, refill or regrow), whose rules
  * live in `Respawn.js`, and a Field's crop sowing and ripening (`Fields.js`). Passive Production pays several lines on its own clock, so {@link tick} runs
  * it beside the table (`PassiveProduction.advance`). An event Token's way out (a buff's time up, a
- * rich node nobody can work leaving) is two more rows, the only ones that take a Token off the mat
+ * rich node's hour running out) is two more rows, the only ones that take a Token off the mat
  * (`EventTokens.js`).
  *
  * State (saved, on the instance): `instance.clocks = { growMs, turnMs, … }`, elapsed ms, created
@@ -347,16 +347,14 @@ export const HANDLERS = [
         fire: (instance) => (EventTokens.leave(instance, EventTokens.ENDED.TIME_UP) ? REMOVED : null)
     },
     {
-        // An event's rich node nobody can work leaves after an hour; while some hero can, its clock
-        // stands at zero, so it stays until it is worked out.
+        // An event's rich node leaves when its hour is up, worked or not.
         id: 'event_unworked',
         clock: EventTokens.EVENT_CLOCK,
         replaces: true,
         perInstance: true,
-        idleWhile: (instance) => EventTokens.someHeroCanWork(instance),
         applies: (instance) => EventTokens.isEventNode(instance),
         dueMs: () => EventTokens.UNWORKED_LEAVE_MS,
-        fire: (instance) => (EventTokens.leave(instance, EventTokens.ENDED.UNWORKED) ? REMOVED : null)
+        fire: (instance) => (EventTokens.leave(instance, EventTokens.ENDED.TIME_UP) ? REMOVED : null)
     }
 ];
 

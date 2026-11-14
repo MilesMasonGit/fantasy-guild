@@ -543,10 +543,7 @@ Events are treats: nothing bad happens and nothing is lost by being away.
   Comet may land in the first hour. An event left in another Region stays there,
   frozen with that mat, and does not hold this mat's clock.
 - **A rich node** stays put and is worked like any node (every boost, Lucky,
-  Giant Harvest, its rare table); it leaves at **0 charges**. One that **no hero
-  can work** leaves after **an hour**: "can work" is the work gate a hero's order
-  uses, the skill at the level the Token asks with the tool it needs in hand,
-  asked of every hero on the roster; while any hero can, that hour stands at zero.
+  Giant Harvest, its rare table); it leaves at **0 charges**, or after **an hour** on the mat, worked or not.
 - **A buff Token** can be dragged anywhere and gives its rule in the standard
   reach, adding to the boosts of buildings and stars of the same kind inside the
   same limits (no speed stack cuts more than 80 %). It leaves when its time is
@@ -554,7 +551,7 @@ Events are treats: nothing bad happens and nothing is lost by being away.
 - Event Tokens never count toward the mat's Token cap. Offline, events land and
   are worked and buffs tick down as in play; the return report's **Events**
   section names each one that landed or left while away and how it left
-  (worked out, time ran out, left unworked, demolished, still here).
+  (worked out, time ran out, demolished, still here; a save from before may say left unworked).
 - The QA panel's **Events** section lands an event now (any, by weight, or a
   named one; it ignores the clock and the biomes, never the ground).
 - **The arrival** (E2), by kind and from the mat's existing pieces: a rich node
@@ -571,7 +568,7 @@ Events are treats: nothing bad happens and nothing is lost by being away.
   first: over those two screens only banners that point to a Token show. The
   banner goes by itself when its Token leaves.
 - **Time left** (E2) reads like a refreshing node's: the hover plate's timer
-  cell counts a buff down (and a node nobody can work down to leaving), and the
+  cell counts a buff down (and a rich node down to leaving), and the
   Token card's Events section says **"Leaves in m:ss"**; a rich node shows its
   charges as any node does.
 - **The badges** (E2) name an event buff by its event as one more source

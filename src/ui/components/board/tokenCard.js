@@ -386,7 +386,7 @@ export function cardLifecycle(instance, def, src) {
         return out;
     }
 
-    // An event Token: how long until it leaves (a buff's time, a node nobody can work's hour).
+    // An event Token: how long until it leaves (a buff's time, a node's hour).
     const leave = src.eventLeave?.(instance);
     if (leave) {
         out.push({

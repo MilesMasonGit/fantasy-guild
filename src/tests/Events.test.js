@@ -352,14 +352,13 @@ describe('a rich node', () => {
         fixtures.makeHeroes(1, { mining: 10 });
         const ended = listenEnded();
         const { instance } = EventClock.landNow(MYTHRIL.id);
-        expect(EventTokens.someHeroCanWork(instance)).toBe(false);
 
         runFor(59 * MIN);
         expect(BoardState.getTokenById(instance.id)).not.toBeNull();
         expect(EventTokens.leavesInMs(instance)).toBe(MIN);
         runFor(MIN);
         expect(BoardState.getTokenById(instance.id)).toBeNull();
-        expect(ended.heard).toEqual([expect.objectContaining({ instanceId: instance.id, reason: EventTokens.ENDED.UNWORKED })]);
+        expect(ended.heard).toEqual([expect.objectContaining({ instanceId: instance.id, reason: EventTokens.ENDED.TIME_UP })]);
         ended.stop();
     });
 
@@ -368,21 +367,24 @@ describe('a rich node', () => {
         freshGame();
         fixtures.makeHeroes(1, { mining: 90 });
         const { instance } = EventClock.landNow(TOOLED.id);
-        expect(EventTokens.someHeroCanWork(instance)).toBe(false);
         runFor(HOUR);
         expect(BoardState.getTokenById(instance.id)).toBeNull();
     });
 
-    it('one a hero could work stays, its leaving clock held at zero, until it is worked out', () => {
+    it('one a hero could work still leaves after its hour, with reason time_up', () => {
         setEventsForTests(table(MYTHRIL));
         freshGame();
         fixtures.makeHeroes(1, { mining: 70 });
+        const ended = listenEnded();
         const { instance } = EventClock.landNow(MYTHRIL.id);
-        expect(EventTokens.someHeroCanWork(instance)).toBe(true);
-        runFor(2 * HOUR);
+        expect(EventTokens.leavesInMs(instance)).toBe(HOUR);
+        runFor(30 * MIN);
         expect(BoardState.getTokenById(instance.id)).toBe(instance);
-        expect(instance.clocks?.[EventTokens.EVENT_CLOCK] ?? 0).toBe(0);
-        expect(EventTokens.leavesInMs(instance)).toBeNull();
+        expect(EventTokens.leavesInMs(instance)).toBe(30 * MIN);
+        runFor(30 * MIN);
+        expect(BoardState.getTokenById(instance.id)).toBeNull();
+        expect(ended.heard).toEqual([expect.objectContaining({ instanceId: instance.id, reason: EventTokens.ENDED.TIME_UP })]);
+        ended.stop();
     });
 });
 
@@ -479,9 +481,9 @@ describe('time away', () => {
         expect(result.summary.events).toEqual([expect.objectContaining({ eventId: COMET.id, landed: true, ended: null })]);
         const [row] = summaryView(result).events;
         expect(row.state).toBe('here');
-        // A miner can work it, so no clock runs: it stays until worked out, and says only that it is here.
-        expect(row.leavesInMs).toBeNull();
-        expect(row.leavesText).toBeNull();
+        // Its hour runs even though a miner can work it.
+        expect(row.leavesInMs).toBeGreaterThan(0);
+        expect(row.leavesText).toMatch(/^Leaves in /);
     }, 60_000);
 
     it('an event that stood through the whole time away is listed with its time left', async () => {

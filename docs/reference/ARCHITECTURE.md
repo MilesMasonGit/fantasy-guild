@@ -146,7 +146,7 @@ Order is pinned by `src/tests/TickHandlerOrder.test.js`.
 Inside `BoardRunner.tick` (`src/systems/board/BoardRunner.js:469-…`): untethered enemies join
 camps (`:478`) → `TimedChanges.tick` (growth, turning, **spawners** — a spawner's turn is a timed
 change, `src/systems/board/TimedChanges.js:298`; an event Token's way out, a buff's time up or a
-rich node nobody can work leaving, is two more rows, `event_time_up` and `event_unworked`, the only
+rich node leaving after its hour, worked or not, is two more rows, `event_time_up` and `event_unworked`, the only
 rows that take a Token off the mat) (`:484`) → `Flags.assign` (heroes keep, change
 or find work) (`:494`) → `HeroMotion.tick` (`:499`) → `EnemyMotion.tick` (`:503`) → then one pass
 over every Token on the mat (`:511`): effect-block upkeep (`:522`), trigger cooldowns (`:529`),

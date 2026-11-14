@@ -322,7 +322,7 @@ describe('time left', () => {
     it('the hover plate counts a buff down like a refreshing node, with its own tip', () => {
         expect(timerCellOf({ kind: 'leave', inMs: 125_000, buff: true })).toMatchObject({ kind: 'timer', glyph: 'clock', text: '2:05' });
         expect(timerCellOf({ kind: 'leave', inMs: 125_000, buff: true }).tip).toMatch(/^Leaves in 2\u00a0min\u00a05\u00a0s$/);
-        expect(timerCellOf({ kind: 'leave', inMs: 60_000, buff: false }).tip).toMatch(/Nobody can work it/);
+        expect(timerCellOf({ kind: 'leave', inMs: 60_000, buff: false }).tip).toMatch(/^An event: leaves in/);
     });
 
     it('the card says "Leaves in m:ss" for a buff, ticking down', () => {
@@ -335,14 +335,14 @@ describe('time left', () => {
         expect(line().text).toBe('14:30');
     });
 
-    it('a node anyone can work shows its charges and no leaving time; one nobody can work shows both', () => {
+    it('a rich node shows its charges and its leaving time, worked or not', () => {
         setEventsForTests(table(COMET, MYTHRIL));
         freshGame();
         fixtures.makeHeroes(1, { mining: 10 });
         const comet = EventClock.landNow(COMET.id).instance;
         const cometCard = tokenCardModel('evs_comet', comet.id);
         expect(cometCard.blocks.find(b => b.id === CARD_BLOCK.CYCLE).uses).toBe(3);
-        expect(cometCard.blocks.find(b => b.id === CARD_BLOCK.LIFECYCLE)).toBeUndefined();
+        expect(cometCard.blocks.find(b => b.id === CARD_BLOCK.LIFECYCLE).lines[0]).toMatchObject({ label: 'Leaves in', text: '60:00' });
 
         const mythril = EventClock.landNow(MYTHRIL.id).instance;
         const card = tokenCardModel('evs_mythril', mythril.id);

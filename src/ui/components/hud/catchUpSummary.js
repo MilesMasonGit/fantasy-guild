@@ -88,8 +88,8 @@ const EVENT_STATE_KEY = Object.freeze({
 });
 
 /**
- * The event Tokens on the mat now and how long until each leaves (`EventTokens.leavesInMs`, null for
- * a node a hero can work, which stays until it is worked out). A seam for tests.
+ * The event Tokens on the mat now and how long until each leaves (`EventTokens.leavesInMs`, null
+ * only for a Token that is no event). A seam for tests.
  */
 export const LIVE_EVENTS = Object.freeze({
     standing: () => BoardState.tokens().filter(EventTokens.isEventToken),
