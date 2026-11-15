@@ -14,7 +14,7 @@ build green) · bench-queued · eye-check · merged.*
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | 630 E1: Neighbours, if it needs code | builder | `feat/neighbours` (`nb`) | **merged** 5c364ddf, pushed: no code needed (one Provides Speed rule per linked skill, only for that skill, reach nearby); a test authors it through the CMS slots and proves it; test only, no bench | Sat | Sat |
-| 480 L4: Limes's lessons, on today's starting content (L2 later) | engineer | `feat/limes-lessons` (`ls`) | building | Sat | |
+| 480 L4: Limes's lessons, on today's starting content (L2 later) | engineer | `feat/limes-lessons` (`ls`) 9ca816a3 (rebased on main 1ccba1ac, CHANGELOG keep-both) | **bench-queued** Sun 03:25 (expect WORK CHANGED on every Hall scenario: the old tutorial quest Token no longer spawns beside the Hall; S4 same). Director gate on the rebase: 664 files, 8594 green, cycles 0, depcruise, lint 4 warnings, build. 10 steps live, the heap and sword steps wait for L2 (`LESSON_TARGETS` in `lessonPlan.js`); old 11-step chain, its Token and T-258 gone; first settle is Limes's first big moment. Desktop build `_builds/2026-11-15-limes-lessons` for an optional look (owner skips eye-checks this batch) | Sat | |
 | Events every 45 to 75 min at random | builder | `feat/event-interval` (`nb`) 72024bc1 | **bench-queued** Sun 02:05: wait drawn when it starts and saved (`state.events.waitMs`), catch-up counts to it; director read the diff, events tests 51 green, builder gate 663 files green; bench keeps events off so work should read same | Sat | |
 | Draw bench: ask 3.2x, judge against 4x by default; retake the draw baseline | builder-lite, director | `bench/draw-ask` (`db`) | **merged** ce28ab32, pushed (director read the whole diff; BenchDraw 22 green, bench lint clean; builder suite 663 green); `settings.asked` recorded, a compare against a baseline asked differently is refused. Draw baseline retake queued Sun 02:15 on main. Drag and profile bench still ask the rate given (follow later if the draw default proves out) | Sat | Sat |
 
@@ -341,6 +341,9 @@ Owner 2026-11-01: Guild Hall H1 and the walker glide need no look (marked looked
 None open.
 
 ## Questions for the owner
+
+- **Limes's lessons (480 L4), first option of each built, for the next proposal:** a big moment while the guild is away from the camp speaks through the next Limes the player sees (Bank, Shop, Hall, world map, or the camp on return) (A, built), a Limes banner at the top (B), or a small Limes visiting the new mat (C)? Moments with lessons off: Limes keeps quiet (A, built) or speaks (B)? Until L2's slime exists, lesson 8's first fight is a bare-handed hero against a Goblin, winnable but close (3/11 HP left): accept as a stand-in (A) or point it at another enemy (B)?
+- **For the planning agent (480 L4):** T-014, where Limes's words live: keep them in `limesText.js` until translation T-119 (A, engineer's pick), a CMS Limes page (B), or B plus the lesson ids on the CMS Starter Camp page (C); the T-014 row still names `tutorialQuests.js` (deleted). Suggested Limes moments, none built: first tool breaks, first hero knocked out, first event lands, ring 2 opens, first constellation finished, first return from time away.
 
 - **Event nodes and their time limit**: answered 2026-11-13, B: every event leaves after its time, workable or not (builder-lite on `feat/events-arrival`).
 
