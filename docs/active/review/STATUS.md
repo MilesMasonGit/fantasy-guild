@@ -1,6 +1,6 @@
 # Review round 4: status
 
-*Kept by the reviewer. Next free finding number: **CR4-101**.*
+*Kept by the reviewer. Next free finding number: **CR4-126**.*
 
 ## Sessions
 
@@ -34,10 +34,23 @@ read-only reader, every lead re-read by the reviewer, every finding checked by a
 
 | Session | Area | State | Date | Commit | Summary |
 |---|---|---|---|---|---|
-| D1 | The mat: Tokens, work, orders, fights, timed changes, buffs (`src/systems/board/` and what it calls) | reading | 2026-11-15 | cccf7a24 | |
+| D1 | The mat: Tokens, work, orders, fights, timed changes, buffs (`src/systems/board/` and what it calls) | ready for triage | 2026-11-15 | cccf7a24 | `D1_the_mat.md`: 25 findings (22 bug, 3 owner-decision; 1 P1, 5 P2, 19 P3), 23 verified by a second reader (Opus) and 2 reasoned; 6 owner questions below. Ten readers read the area whole in eight pieces and two cross-cutting traces. The per-tick core came through clean; the bugs are where two rules meet. Top: a healing hero knocked out a second time after travel (CR4-101, P1); Thorns spending a second charge and a Thorn Elemental running out twice (CR4-103, CR4-104); a resting Forest deleted by a merge and a regrown tree or large building hopping across the mat (CR4-102, CR4-105). Thirteen latent rule shapes the CMS can author and the engine gets wrong are gathered in CR4-124. |
 | D2 | Heroes, combat, gear, XP | not started | | | |
 | D3 | Saves and time away | not started | | | |
 | D4 | Screens and drag-and-drop | not started | | | |
+
+### Questions for the owner from D1 (2026-11-15, open)
+
+For the planning agent's next triage batch; the reviewer's recommendation is first in each.
+
+1. **Thorns on the Redberry Bush** (CR4-104). Each harvest spends a second charge for the prick, so the bush gives 13 harvests per refill, not 25, and the card does not say so. (a) **Free on the bush** (recommended: a code note says that was the intent; one content change by pack, 25 harvests like its neighbours). (b) Keep the cost and say it: the rule's sentence reads "uses 1 charge" and the pace maths counts it. And the Thorn Elemental (50 kills, not 100): (a) **keep its cost and say it** (recommended: "a charge on a monster" was the intent), (b) free there too.
+2. **A low-level hero on a high-level recipe** (CR4-107). A level-1 smith can work a Furnace set to a level-90 recipe and earn its XP; the card and the recipe list say they cannot. (a) **A hero needs the recipe's level to work it** (recommended: what the card already says, what Foundations already do, and it closes a levelling shortcut). (b) By design: any hero may work what the guild's best hero unlocked, and the card and the list's divider stop saying otherwise.
+3. **Merging Tokens that refill, and enemies** (CR4-108). Dropping a Forest on a Forest pours one into the other and removes it, though each would refill for ever; a wounded Cow merges into another Cow. (a) **Only Tokens that are used up for good merge; the rest sit beside each other** (recommended: nothing permanent is lost to a slip of the hand). (b) Keep merging for all.
+4. **A tree or building with no room to grow** (CR4-105). Something placed tight against a Stump or a small Foundation leaves no room for the grown tree or the large building, which then appears up to 640 units away. (a) **It waits where it is until there is room, with the "no room" mark, and a drop beside one keeps room for what it will become** (recommended: nothing jumps, and the squeeze cannot be made by accident). (b) It may hop, but only to a spot right beside. (c) Leave it.
+5. **A healing hero's orders in other Regions** (CR4-101; the double knock-out is fixed either way). (a) **The orders stay planted and the hero takes them up when healed** (recommended: the player's set-up is kept). (b) A knock-out takes down the hero's orders in every Region.
+6. **A demolished camp's enemies** (CR4-111). Today they belong to no camp and a new camp spawns a second set. (a) **They stay, and the next camp of that kind beside them adopts them** (recommended). (b) They leave with the camp.
+
+One ruling to look at, not a defect (CR4-122): on a reload a fight starts over with the enemy at full health while the hero keeps their wounds, so a fight the hero was winning when the game was closed can become a knock-out during the time away.
 
 ## Round summary (reviewer, 2026-11-07)
 
