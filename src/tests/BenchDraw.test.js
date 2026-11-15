@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect } from 'vitest';
 import {
-    parseArgs, metricsOf, rejectReason, aggregate, costTable, judge, compareToBaseline, settingsMismatch,
+    parseArgs, metricsOf, rejectReason, aggregate, costTable, judge, compareToBaseline, settingsMismatch, cpuPlan, askedRates,
     toleranceFor, abOrder, DRAW_SWITCHES, TOLERANCE, baselineEntry, SCENE_IDS, EXTRA_SCENE_IDS
 } from '../../bench/browser/drawLib.mjs';
 import { capPlaced, spawnRoom, SHIPPED_MAT_CELLS } from '../../bench/scenarios/cap.mjs';
@@ -173,6 +173,29 @@ describe('the baseline compare', () => {
         const c = compareToBaseline({ 'perf@1x': { S2: { fps: 160 } } }, { conditions: {} });
         expect(c.regressed).toBe(false);
         expect(c.checks[0].verdict).toBe('no baseline');
+    });
+
+    it('asks Chrome for 0.8 of a slowed target and judges against the target', () => {
+        const args = parseArgs([]);
+        expect(args.cpus).toEqual([1, 4]);
+        expect(cpuPlan(1, args)).toEqual({ asked: 1, target: 1 });
+        expect(cpuPlan(4, args)).toEqual({ asked: 3.2, target: 4 });
+        expect(askedRates(args)).toEqual({ 1: 1, 4: 3.2 });
+        expect(cpuPlan(4, parseArgs(['--ask=4']))).toEqual({ asked: 4, target: 4 });
+        expect(cpuPlan(1, parseArgs(['--ask=4']))).toEqual({ asked: 1, target: 1 });
+        // --slowdown-target keeps its old meaning: --cpu is the rate asked.
+        expect(cpuPlan(3.2, parseArgs(['--cpu=3.2', '--slowdown-target=4']))).toEqual({ asked: 3.2, target: 4 });
+        expect(() => parseArgs(['--ask=3', '--slowdown-target=4'])).toThrow(/--ask/);
+    });
+
+    it('refuses to compare a baseline asked at a different rate', () => {
+        const args = { ...parseArgs([]), settleS: 20, windowS: 20 };
+        const base = (asked) => ({ settings: { settleS: 20, windowS: 20, asked } });
+        expect(settingsMismatch(args, base({ 1: 1, 4: 3.2 }))).toBeNull();
+        expect(settingsMismatch(args, base({ 1: 1, 4: 4 }))).toMatch(/asked Chrome for 4.* this run 3\.2.*--ask=4/);
+        // A baseline from before the rate asked was recorded asked the target exactly.
+        expect(settingsMismatch(args, { settings: { settleS: 20, windowS: 20 } })).toMatch(/asked Chrome for 4/);
+        expect(settingsMismatch({ ...args, ...parseArgs(['--ask=4']) , settleS: 20, windowS: 20 }, { settings: { settleS: 20, windowS: 20 } })).toBeNull();
     });
 
     it('refuses to compare runs with a different settle or window', () => {

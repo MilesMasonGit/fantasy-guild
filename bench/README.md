@@ -464,11 +464,12 @@ and dock subtrees), **Tokens** on the mat, **DOM** nodes and JS **heap**.
 
 | Command | What it does | Time |
 |---|---|---|
-| `npm run bench:draw` | perf build, CPU 1× and 4×, all 8 scenes | ~12 min |
+| `npm run bench:draw` | perf build, CPU 1× and 4× (asks Chrome for 3.2×, judged against 4×), all 8 scenes | ~12 min |
 | `npm run bench:draw -- --quick` | S2 only, 6 s settle, 8 s window (agent checks; not comparable with full runs) | ~1 min |
 | `npm run bench:draw -- --dev` | also the dev build (doubles the time) | |
 | `npm run bench:draw -- --only=S2,bank` | some scenes | |
-| `npm run bench:draw -- --cpu=1` | CPU slowdowns to run (default `1,4`) | |
+| `npm run bench:draw -- --cpu=1` | CPU slowdown **targets** to run (default `1,4`); a target above 1 asks Chrome for 0.8× of it (4× asks 3.2×) and judges the delivered slowdown against the target | |
+| `npm run bench:draw -- --ask=4` | ask Chrome for exactly this rate at every target above 1, instead of 0.8× the target (for a PC whose throttle delivers what it is asked); the baseline records the rate asked and `--compare` refuses a baseline asked differently | |
 | `npm run bench:draw -- --switches` | the **cost table** (below); perf, 1× unless `--cpu` is given | ~12 min |
 | `npm run bench:draw -- --switches --cpu=4 --only=cap128` | the cost table on another board | ~15 min |
 | `npm run bench:draw -- --only=heroes16 --switch-only=heroAnim,walkDraw` | the cost table with only some switches (implies `--switches`) | |
@@ -479,7 +480,7 @@ and dock subtrees), **Tokens** on the mat, **DOM** nodes and JS **heap**.
 | `npm run bench:draw -- --ab=http://localhost:5391` | interleaved A/B per scene: A (this checkout's build) and B (a server someone else started), in the order A, B, B, A | |
 | `npm run bench:draw -- --no-build` | reuse `dist-perf/` as it is | saves ~20 s |
 | `--settle=20 --window=20` | seconds | |
-| `npm run bench:draw -- --cpu=3.2 --slowdown-target=4` | ask Chrome for one slowdown, judge the delivered one against another: a window is kept when Chrome delivered within 25 % of the target. On the owner's PC on 2026-10-21, 4× asked delivered 4.1–5.2× and 3.2× asked 3.0–4.9×, so the Envelope asked 3.2× and kept windows delivered at 3–5× | |
+| `npm run bench:draw -- --cpu=3.2 --slowdown-target=4` | the old spelling of the default, still working (`--cpu` is then the rate asked, the condition is named by it; not with `--ask`): ask Chrome for one slowdown, judge the delivered one against another: a window is kept when Chrome delivered within 25 % of the target. On the owner's PC on 2026-10-21, 4× asked delivered 4.1–5.2× and 3.2× asked 3.0–4.9×, so the Envelope asked 3.2× and kept windows delivered at 3–5× | |
 
 **Boot marks.** `src/main.jsx` marks its steps with `performance.mark('fg:boot:<step>')`: `pageReady`
 (DOMContentLoaded), `settings`, `engineInit`, `artReady` (art, the sprite-fx manifest and the saves
@@ -515,6 +516,13 @@ window times a fixed piece of JavaScript at 1× and at the throttle, before and 
 and prints the slowdown Chrome delivered (`slowdown 4.24× → 4.61×`); a window more than 25 % off
 the slowdown asked is rejected and measured again, twice at most (then it counts as failed, exit
 3). The delivered slowdowns are kept in the results JSON (`slowdown`) for every window.
+
+On 2026-11-14 the owner's PC delivered 4.4× to 5.6× when asked for 4×, so the 25 % rule rejected
+most slowed windows and `--save-baseline` refused. Since then the slowed condition keeps its name
+(`perf@4x`, the target) but **asks Chrome for 3.2× (0.8 × the target) and judges the delivered
+slowdown against 4×**. `--ask=N` asks exactly N instead. The rate asked is recorded in the
+baseline (`settings.asked`) and the results; `--compare` refuses a baseline asked at another rate
+(a baseline from before this recorded nothing counts as asked 4×).
 
 **A/B** (`--ab=<url>`): for comparing two branches. The director starts the
 second branch's server (its own worktree, port and Vite `cacheDir`); this

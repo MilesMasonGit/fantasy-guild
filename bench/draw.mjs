@@ -5,7 +5,7 @@
 //   npm run bench:draw -- --dev           also the dev build
 //   npm run bench:draw -- --quick         short windows, S2 only (agent checks)
 //   npm run bench:draw -- --only=S2,bank  some scenes
-//   npm run bench:draw -- --cpu=4         CPU slowdowns to run (default 1,4)
+//   npm run bench:draw -- --cpu=4         CPU slowdown targets to run (default 1,4; a target above 1 asks Chrome for 0.8x of it, --ask=N overrides)
 //   npm run bench:draw -- --switches      the cost table: S2 all-on, then once per switch off
 //                                         (perf, 1× unless --cpu is given; --only=cap128 for
 //                                         another board)
@@ -29,7 +29,7 @@ import { launchChrome, sleep, runCleanups } from './browser/cdp.mjs';
 import { startDevServer, startPerfServer, buildPerf, perfBuildInfo } from './browser/servers.mjs';
 import { SCENES, sceneFor, sceneUrl, openBoard, deliveredSlowdown, envelopeNote } from './browser/scenes.mjs';
 import {
-    parseArgs, SCENE_IDS, DRAW_SWITCHES, metricsOf, rejectReason, aggregate, costTable, compareToBaseline,
+    parseArgs, cpuPlan, askedRates, SCENE_IDS, DRAW_SWITCHES, metricsOf, rejectReason, aggregate, costTable, compareToBaseline,
     baselineEntry, abOrder, conditionKey, sceneTable, costTableText, table, EXIT, TOLERANCE, settingsMismatch, bootNote
 } from './browser/drawLib.mjs';
 import { slowdownReject, slowdownNote } from './browser/slowdown.mjs';
@@ -55,21 +55,22 @@ function gitInfo() {
 
 /** One measured window of one scene. */
 async function measure(chrome, baseUrl, scene, cpu, args, off = []) {
+    const { asked, target } = cpuPlan(cpu, args);
     const url = sceneUrl(baseUrl, scene, off);
-    const page = await openBoard(chrome, url, { cpu, stress: scene.stress, stressId: scene.stressId });
+    const page = await openBoard(chrome, url, { cpu: asked, stress: scene.stress, stressId: scene.stressId });
     try {
         const how = scene.ui ? await scene.ui(page) : null;
         await sleep(args.settleS * 1000);
-        const slowdownBefore = await deliveredSlowdown(page, cpu);
+        const slowdownBefore = await deliveredSlowdown(page, asked);
         await page.evaluate('window.__envWindowStart = performance.now(), window.__perf.reset(), true');
         await sleep(args.windowS * 1000);
         const report = await page.evaluate('window.__perf.report()');
         const envelope = scene.probe ? await page.evaluate(scene.probe) : null;
-        const slowdownAfter = await deliveredSlowdown(page, cpu);
+        const slowdownAfter = await deliveredSlowdown(page, asked);
         const m = metricsOf(report);
         m.slowdown = [slowdownBefore, slowdownAfter];
         if (envelope) m.envelope = envelope;
-        m.reject = rejectReason(m) || slowdownReject(m.slowdown, args.slowdownTarget ?? cpu);
+        m.reject = rejectReason(m) || slowdownReject(m.slowdown, target);
         m.slowdownOff = !rejectReason(m) && !!m.reject;
         if (page.navigations > 1) m.reject = `the page reloaded during the run (${page.navigations} loads)`;
         m.how = how;
@@ -180,7 +181,7 @@ async function main() {
                             const lbl = sw ? `${sw} off` : 'all on';
                             process.stdout.write(`  ${switchScene.name} ${lbl}…`);
                             const m = await measureWithRetry(chrome, baseUrl, switchScene, cpu, args, sw ? [sw] : []);
-                            console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m.slowdown, args.slowdownTarget ?? cpu)}${envelopeNote(m)}${m.reject ? ` ✗ ${m.reject}` : ''}`);
+                            console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m.slowdown, cpuPlan(cpu, args).target)}${envelopeNote(m)}${m.reject ? ` ✗ ${m.reject}` : ''}`);
                             if (m.reject) failed = true;
                             if (sw) (offRuns[sw] ||= []).push(m); else allOn.push(m);
                         }
@@ -197,7 +198,7 @@ async function main() {
                             for (const side of abOrder(1)) {
                                 process.stdout.write(`  ${scene.name} ${side}…`);
                                 const m = await measureWithRetry(chrome, side === 'A' ? baseUrl : args.ab, scene, cpu, args);
-                                console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m.slowdown, args.slowdownTarget ?? cpu)}${envelopeNote(m)}${m.reject ? ` ✗ ${m.reject}` : ''}`);
+                                console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m.slowdown, cpuPlan(cpu, args).target)}${envelopeNote(m)}${m.reject ? ` ✗ ${m.reject}` : ''}`);
                                 if (m.reject) failed = true;
                                 pair[side].push(m);
                             }
@@ -209,7 +210,7 @@ async function main() {
                     for (let r = 0; r < args.repeats; r++) {
                         process.stdout.write(`  ${scene.name}${args.repeats > 1 ? ` ${r + 1}/${args.repeats}` : ''}…`);
                         const m = await measureWithRetry(chrome, baseUrl, scene, cpu, args);
-                        console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m.slowdown, args.slowdownTarget ?? cpu)}${envelopeNote(m)}${m.reject ? ` ✗ ${m.reject}` : ''}${bootNote(m)}${m.how ? ` · ${m.how}` : ''}`);
+                        console.log(` ${m.fps} fps, work p50 ${m.workP50} ms${slowdownNote(m.slowdown, cpuPlan(cpu, args).target)}${envelopeNote(m)}${m.reject ? ` ✗ ${m.reject}` : ''}${bootNote(m)}${m.how ? ` · ${m.how}` : ''}`);
                         if (m.reject) failed = true;
                         runs.push(m);
                     }
@@ -305,7 +306,7 @@ async function main() {
         } else {
             const out = {
                 meta: { ...meta, note: 'Medians per condition and scene. Machine-specific: re-take on the owner\'s PC, machine quiet: npm run bench:draw -- --save-baseline' },
-                settings: { settleS: args.settleS, windowS: args.windowS, repeats: args.repeats, viewport: '1600x1000@1' },
+                settings: { settleS: args.settleS, windowS: args.windowS, asked: askedRates(args), repeats: args.repeats, viewport: '1600x1000@1' },
                 conditions: Object.fromEntries(Object.entries(medians).map(([c, s]) => [c, Object.fromEntries(Object.entries(s).map(([id, agg]) => [id, baselineEntry(agg)]))]))
             };
             fs.writeFileSync(baselineFile, JSON.stringify(out, null, 2) + '\n');

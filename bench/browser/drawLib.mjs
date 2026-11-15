@@ -64,7 +64,7 @@ export function parseArgs(argv) {
     const args = {
         builds: ['perf'], cpus: [1, 4], quick: false, only: null, switches: false,
         repeats: 1, compare: false, saveBaseline: false, ab: null, build: true,
-        settleS: null, windowS: null, port: null, cpuGiven: false, repeatsGiven: false, slowdownTarget: null, switchOnly: null
+        settleS: null, windowS: null, port: null, cpuGiven: false, repeatsGiven: false, slowdownTarget: null, switchOnly: null, ask: null
     };
     for (const a of argv) {
         const [key, ...rest] = a.replace(/^--/, '').split('=');
@@ -85,11 +85,12 @@ export function parseArgs(argv) {
             case 'no-build': args.build = false; break;
             case 'cpu': {
                 const cpus = value.split(',').map(Number).filter(n => Number.isFinite(n) && n >= 1);
-                if (!cpus.length) throw new Error('--cpu takes slowdown rates, e.g. --cpu=1,4');
+                if (!cpus.length) throw new Error('--cpu takes slowdown targets, e.g. --cpu=1,4');
                 args.cpus = cpus;
                 args.cpuGiven = true;
                 break;
             }
+            case 'ask': args.ask = positive(value, '--ask'); break;
             case 'slowdown-target': args.slowdownTarget = positive(value, '--slowdown-target'); break;
             case 'switch-only': {
                 const names = value.split(',').map(x => x.trim()).filter(Boolean);
@@ -120,6 +121,7 @@ export function parseArgs(argv) {
     else if (!args.repeatsGiven && args.compare) args.repeats = 2;
     args.settleS ??= args.quick ? DEFAULTS.quickSettleS : DEFAULTS.settleS;
     args.windowS ??= args.quick ? DEFAULTS.quickWindowS : DEFAULTS.windowS;
+    if (args.ask && args.slowdownTarget) throw new Error('--ask and --slowdown-target both set the rate asked: use one (--cpu=3.2 --slowdown-target=4 asks 3.2 for a 4 target)');
     if (args.saveBaseline && (args.ab || args.switches)) throw new Error('--save-baseline cannot be combined with --ab or --switches');
     if (args.switches && args.only && args.only.length !== 1) throw new Error('--switches runs on one board: --only names at most one scene');
     return args;
@@ -132,6 +134,25 @@ function positive(value, name) {
 }
 
 export const conditionKey = (build, cpu) => `${build}@${cpu}x`;
+
+/** Share of a slowed target asked of Chrome by default: on this PC it delivers about 1.25× what it is asked. */
+export const ASK_SHARE = 0.8;
+
+/**
+ * The slowdown asked of Chrome and the one the delivered slowdown is judged against, for one
+ * `--cpu` entry. With `--slowdown-target` the entry is the rate asked (as before); otherwise it is
+ * the target and the rate asked is `--ask`, or target × 0.8. 1× is never throttled.
+ */
+export function cpuPlan(cpu, args) {
+    if (args.slowdownTarget) return { asked: cpu, target: args.slowdownTarget };
+    if (cpu <= 1) return { asked: 1, target: 1 };
+    return { asked: args.ask ?? Math.round(cpu * ASK_SHARE * 100) / 100, target: cpu };
+}
+
+/** The rate asked per `--cpu` entry, as the baseline records it: `{ '1': 1, '4': 3.2 }`. */
+export function askedRates(args) {
+    return Object.fromEntries((args.cpus ?? []).map(cpu => [cpu, cpuPlan(cpu, args).asked]));
+}
 
 /** The numbers worth keeping from one `__perf.report()`. */
 export function metricsOf(report) {
@@ -281,6 +302,12 @@ export function settingsMismatch(args, baseline) {
     if (!s) return 'the baseline records no settings';
     if (s.settleS !== args.settleS || s.windowS !== args.windowS) {
         return `the baseline used settle ${s.settleS} s / window ${s.windowS} s, this run ${args.settleS} s / ${args.windowS} s`;
+    }
+    // A baseline from before the rate asked was recorded asked each target exactly.
+    const now = askedRates(args);
+    for (const cpu of args.cpus ?? []) {
+        const was = s.asked?.[cpu] ?? cpu;
+        if (was !== now[cpu]) return `the baseline asked Chrome for ${was}× at the ${cpu}× condition, this run ${now[cpu]}× (re-run with --ask=${was})`;
     }
     return null;
 }
