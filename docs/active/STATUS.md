@@ -13,9 +13,9 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| 630 E1: Neighbours, if it needs code | builder | `feat/neighbours` (`nb`) | building | Sat | |
+| 630 E1: Neighbours, if it needs code | builder | `feat/neighbours` (`nb`) | **merged** 5c364ddf, pushed: no code needed (one Provides Speed rule per linked skill, only for that skill, reach nearby); a test authors it through the CMS slots and proves it; test only, no bench | Sat | Sat |
 | 480 L4: Limes's lessons, on today's starting content (L2 later) | engineer | `feat/limes-lessons` (`ls`) | building | Sat | |
-| Events every 45 to 75 min at random | builder-lite | | queued (after a slot frees) | Sat | |
+| Events every 45 to 75 min at random | builder | `feat/event-interval` (`nb`) | building | Sat | |
 | Draw bench: ask 3.2x, judge against 4x by default; retake the draw baseline | builder-lite, director | | queued | Sat | |
 
 ## Director, batch 4: brief 640 Events (owner, 2026-11-12: start E1 now)
