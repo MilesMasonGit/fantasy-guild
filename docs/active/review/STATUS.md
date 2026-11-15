@@ -23,6 +23,22 @@
 States: `not started`, `reading`, `verifying`, `ready for triage`, `triaged`,
 `closed`.
 
+## Deep read (owner, 2026-11-15)
+
+The owner found the twelve sessions above too shallow (one quick pass per area, 14 bugs in 100
+findings) and asked for a deeper round. Rulings, 2026-11-15: **hunt bugs a player can hit**
+(tidy-up and small speed notes are round 4's and are not re-filed); **one area per session,
+properly** (the area split into small pieces by what the player does, each read whole by its own
+read-only reader, every lead re-read by the reviewer, every finding checked by a second reader);
+**start with the mat**. Findings keep the `CR4-` numbers; files are `D<n>_<area>.md`.
+
+| Session | Area | State | Date | Commit | Summary |
+|---|---|---|---|---|---|
+| D1 | The mat: Tokens, work, orders, fights, timed changes, buffs (`src/systems/board/` and what it calls) | reading | 2026-11-15 | cccf7a24 | |
+| D2 | Heroes, combat, gear, XP | not started | | | |
+| D3 | Saves and time away | not started | | | |
+| D4 | Screens and drag-and-drop | not started | | | |
+
 ## Round summary (reviewer, 2026-11-07)
 
 All twelve areas are read and ready for triage: 100 findings, every one verified by a second reader
