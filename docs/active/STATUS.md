@@ -9,6 +9,8 @@ build green) · bench-queued · eye-check · merged.*
 
 ## Director, batch 5: the remaining briefs' code (owner, 2026-11-14: skip the events round 2 look, carry on with the outstanding briefs)
 
+*Sun 15 Nov, 03:40. Where we are: batch 5 is done and on main (Neighbours needed no code; events every 45 to 75 min; draw bench asks 3.2x; Limes's lessons, work change accepted). Draw baseline retaken and saved first time. Next: every code part of the open briefs is done; what remains is content for /content sessions (620 C1/C2 Hall star plan, 630 C1 to C3 base buildings, 480 L2 opening pack), then L2's two lesson steps. Owner: the parked lessons questions with the next proposal. Blockers: none.*
+
 *Sat 14 Nov, 05:20, batch proposed and started. Where we are: the events arrival (640 E2) merged without the round 2 look (owner) and pushed 34f8b455. Owner picks: Neighbours and the lessons now, the draw bench asks 3.2x judged against 4x, camps one step from a Forest accepted, events every 45 to 75 min at random. What is left of the briefs beyond this is content (620 C1 and C2, 630 C1 to C3, 480 L2), for `/content` sessions with the owner. Owner: nothing until the lessons are ready to look at. Blockers: none.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
@@ -19,8 +21,6 @@ build green) · bench-queued · eye-check · merged.*
 | Draw bench: ask 3.2x, judge against 4x by default; retake the draw baseline | builder-lite, director | `bench/draw-ask` (`db`) | **merged** ce28ab32, pushed (director read the whole diff; BenchDraw 22 green, bench lint clean; builder suite 663 green); `settings.asked` recorded, a compare against a baseline asked differently is refused. Draw baseline retaken Sun 02:15 on main, saved first time (no window refused), committed 94ae4eee. Drag and profile bench still ask the rate given (follow later if the draw default proves out) | Sat | Sat |
 
 ## Director, batch 4: brief 640 Events (owner, 2026-11-12: start E1 now)
-
-*Sun 15 Nov, 03:40. Where we are: batch 5 is done and on main (Neighbours needed no code; events every 45 to 75 min; draw bench asks 3.2x; Limes's lessons, work change accepted). Draw baseline retaken and saved first time. Next: every code part of the open briefs is done; what remains is content for /content sessions (620 C1/C2 Hall star plan, 630 C1 to C3 base buildings, 480 L2 opening pack), then L2's two lesson steps. Owner: the parked lessons questions with the next proposal. Blockers: none.*
 
 *Fri 13 Nov, 15:20. Where we are: the owner synced the first 12 events; main is green again after a test fix (event nodes paced by the Token they copy). The events arrival branch passed its work check and is on the Guild Eye-checks page with a desktop build. Next: the owner's look, then merge E2; bench baseline retake at 02:00 (engine and draw, the draw baseline is stale). Owner: the Events arrive eye-check. Blockers: none.*
 
