@@ -63,7 +63,7 @@ describe('a slot starts with no React (EngineBootstrap.startSlot)', () => {
         GameState.initNew();
         expect(await EngineBootstrap.startSlot(0, { catchUp: false })).toBe(true);
         expect(GameLoop.getIsRunning()).toBe(true);
-        // The tutorial's first quest may join them as the slot opens.
+        // Anything the slot's opening brings may join them.
         expect(Object.keys(GameState.state.board.tokens)).toEqual(expect.arrayContaining(saved));
         expect(typesOf(GameState.state.board)).toContain('token_guild_hall');
     });

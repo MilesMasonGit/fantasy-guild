@@ -12,7 +12,9 @@
 // or a screen's small Limes while that screen is open (`bank`, `shop`, `guildHall`, `hallStar`,
 // `worldMap`). Words for a screen make the step speak there; a step with none for the open
 // screen stays with the mat's Limes. Each entry is one bubble per line (Next between them).
-// The steps and what counts for each are `lessonPlan.js`.
+// The steps and what counts for each are `lessonPlan.js`. A name in braces is filled in from the
+// content as Limes says it, so the words follow the ids in `LESSON_TARGETS`: {foundation} the
+// Foundation, {building} Crafting's building, {craft} the craft suggested, {foe} the first foe.
 
 export const LIMES_TEXT = Object.freeze({
     /** Limes's name, as the bubble and the small sprites are labelled for screen readers. */
@@ -72,15 +74,15 @@ export const LIMES_TEXT = Object.freeze({
         // 6. Buy a Foundation...
         foundation: Object.freeze({
             mat: Object.freeze(['Time to build! Open the Shop, the green bubble.']),
-            shop: Object.freeze(['Drag the Wood Foundation onto the mat. It is a floor for a building!'])
+            shop: Object.freeze(['Drag the {foundation} onto the mat. It is a floor for a building!'])
         }),
-        // 6. ...and build a Workbench on it.
+        // 6. ...and build Crafting's building on it.
         build: Object.freeze({
-            mat: Object.freeze(['Click your Foundation and pick the Workbench. Then drag a hero onto it to build it.'])
+            mat: Object.freeze(['Click your Foundation and pick the {building}. Then drag a hero onto it to build it.'])
         }),
         // 7. Craft something.
         craft: Object.freeze({
-            mat: Object.freeze(['A Workbench! Click it, pick Charcoal, then send a hero to make some. Crafting!'])
+            mat: Object.freeze(['A {building}! Click it, pick {craft}, then send a hero to make some. Crafting!'])
         }),
         // 8. A safe first fight: the weapon (waits for a first sword in the content)...
         weapon: Object.freeze({
@@ -94,7 +96,7 @@ export const LIMES_TEXT = Object.freeze({
         }),
         // 8. ...and the fight.
         fight: Object.freeze({
-            mat: Object.freeze(['Now a little fight! Drag your hero onto a goblin by the Goblin Camp. You can do it!'])
+            mat: Object.freeze(['Now a little fight! Drag your hero onto a {foe}. You can do it!'])
         }),
         // Then the one big goal: settle a place on the world map.
         settle: Object.freeze({

@@ -3,7 +3,6 @@ import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { QuestManager, RANDOM_HUNTS, RANDOM_ITEMS } from '../systems/quests/QuestManager.js';
 import * as QuestTokens from '../systems/quests/QuestTokens.js';
-import { TUTORIAL_QUESTS } from '../systems/quests/tutorialQuests.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { InventoryStore } from '../systems/inventory/InventoryStore.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
@@ -14,20 +13,13 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { getItem } from '../config/registries/itemRegistry.js';
 import './fixtures/fixtureItems.js';
-import { registerItems } from '../config/registries/itemRegistry.js';
-
-/** A gathering tool, for the tutorial's first step (equip a tool). */
-const TOOL = 'fixture_quest_woodaxe';
-registerItems({
-    [TOOL]: { id: TOOL, name: 'Fixture Woodaxe', type: 'tool', equipSlot: 'hand', stackable: true, sprite: 'i_woodaxe_copper', tool: { kind: 'woodaxe', tier: 1 } }
-});
 
 /**
  * The quest machinery QuestManager keeps since B6.1: the event reports,
  * bounty content, rewards and counting one action once — now counted on quest
- * Tokens on the mat. The Tokens' own rules (cap, clock, tutorial chain, dismiss,
- * saves) are `QuestTokens.test.js`; the tutorial's steps are driven through
- * the real systems in `QuestTutorialChain.test.js`.
+ * Tokens on the mat. The Tokens' own rules (cap, clock, dismiss, saves) are
+ * `QuestTokens.test.js`; Limes's lessons, which count the same reports, are
+ * driven through the real systems in `LimesLessons.test.js`.
  */
 
 /**
@@ -41,17 +33,6 @@ const HALL = { x: 1500, y: 950 };
 /** Put a Token on spot `i`, and send a hero there. */
 const put = (i, instance) => Placement.placeTokenAt(instance, C(i));
 const sendTo = (heroId, i) => Orders.orderAt(heroId, C(i));
-
-const ids = TUTORIAL_QUESTS.map(t => t.id);
-const find = (id) => QuestManager.getActiveQuests().find(q => q.id === id);
-const completeAndClaim = (id) => {
-    const q = find(id);
-    if (q) {
-        q.currentCount = q.requiredCount;
-        q.done = true;
-    }
-    return QuestManager.claimQuest(id);
-};
 
 /** A bounty quest Token carrying `fields` (a hand-made quest, landed by the Hall). */
 const bounty = (fields) => QuestTokens.spawnQuest({
@@ -73,36 +54,15 @@ describe('Quest System (quest Tokens since B6.1)', () => {
         QuestManager.cleanup();
     });
 
-    it('starts with the first tutorial quest on the mat, rewarding items', () => {
-        const active = QuestManager.getActiveQuests();
-        expect(active.map(q => q.id)).toEqual([ids[0]]);
-        expect(active[0].tutorial).toBe(true);
-        expect(active[0].rewardMapId).toBeUndefined();
-        expect(active[0].rewardItems.length).toBeGreaterThan(0);
+    it('starts with no quest on the mat: the bounty clock brings the first', () => {
+        expect(QuestManager.getActiveQuests()).toEqual([]);
     });
 
-    it('the chain is short, ordered, and pays small items that exist', () => {
-        expect(TUTORIAL_QUESTS.length).toBeGreaterThanOrEqual(8);
-        expect(TUTORIAL_QUESTS.length).toBeLessThanOrEqual(13);
-        TUTORIAL_QUESTS.forEach((t, i) => {
-            expect(t.step, t.id).toBe(i);
-            for (const r of t.rewardItems) {
-                expect(getItem(r.itemId), `${t.id} ${r.itemId}`).toBeTruthy();
-                expect(r.quantity, t.id).toBeGreaterThan(0);
-                expect(r.quantity, t.id).toBeLessThanOrEqual(10);
-            }
-            // A step that names a Token names one that exists.
-            for (const key of ['typeId', 'fromTypeId', 'enemyId']) {
-                if (t.match?.[key]) expect(getTokenType(t.match[key]), `${t.id} ${t.match[key]}`).toBeTruthy();
-            }
-            if (t.match?.itemId) expect(getItem(t.match.itemId), t.id).toBeTruthy();
-        });
-    });
-
-    it('claiming a done tutorial quest drops its reward as loot and brings the next step', () => {
-        EventBus.publish('hero_equipment_changed', { action: 'equip', heroId: 'hero_1', itemId: TOOL });
-        expect(find('cart_tool').done).toBe(true);
-        const res = QuestManager.claimQuest('cart_tool');
+    it('claiming a done bounty drops its reward as loot', () => {
+        const hunt = bounty({ type: 'hunt', targetType: 'enemy_hunted', enemyId: 'token_goblin', requiredCount: 1, rewardItems: [{ itemId: 'item_oak_wood', quantity: 10 }] });
+        EventBus.publish('combat_victory', { enemyId: 'token_goblin' });
+        expect(hunt.done).toBe(true);
+        const res = QuestManager.claimQuest(hunt.id);
         expect(res.success).toBe(true);
         expect(res.rewardItems.map(r => [r.itemId, r.quantity])).toEqual([['item_oak_wood', 10]]);
         // B6 rewards: on the floor, not in the Bank, until collected.
@@ -113,18 +73,7 @@ describe('Quest System (quest Tokens since B6.1)', () => {
         expect(InventoryManager.getItemCount('item_oak_wood')).toBe(10);
         expect(GameState.state.board.maps).toBeUndefined();   // no Map box anywhere (9.1)
         expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
-
-        expect(QuestManager.getActiveQuests().map(q => q.id)).toEqual([ids[1]]);
-        expect(GameState.state.quests.tutorialStep).toBe(1);
-    });
-
-    it('after the last tutorial step, no tutorial quest comes back', () => {
-        for (const id of ids) expect(completeAndClaim(id).success, id).toBe(true);
-        expect(QuestTokens.tutorialTokens()).toHaveLength(0);
-        expect(QuestTokens.tutorialChainDone()).toBe(true);
-        expect(GameState.state.quests.tutorialStep).toBe(ids.length);
-        QuestTokens.ensure();
-        expect(QuestTokens.tutorialTokens()).toHaveLength(0);
+        expect(QuestManager.getActiveQuests()).toEqual([]);
     });
 
     it('a `match` narrows a step to one kind of Token', () => {
@@ -137,23 +86,12 @@ describe('Quest System (quest Tokens since B6.1)', () => {
         expect(log.currentCount).toBe(1);
     });
 
-    it('a tutorial quest Token’s saved copy is re-read from its template on load', () => {
-        const first = find('cart_tool');
-        first.targetType = 'token_exhausted';
-        first.title = 'stale';
-        first.requiredCount = 99;
-        EventBus.publish('game_loaded', { slot: 0 });
-        const fresh = find('cart_tool');
-        expect(fresh.targetType).toBe('hero_equipped');
-        expect(fresh.title).toBe('Equip a Tool');
-        expect(fresh.requiredCount).toBe(1);
-    });
-
     it('events nobody publishes any more report nothing and do not throw', () => {
+        const quest = bounty({ targetType: 'token_placed' });
         for (const t of ['map_burst', 'map_opened', 'map_purchased', 'vault_withdrawn', 'vault_deposited', 'loot_token_placed', 'board_recall', 'return_to_tray']) {
             expect(() => EventBus.publish(t, {})).not.toThrow();
         }
-        expect(QuestManager.getActiveQuests().every(q => (q.currentCount || 0) === 0)).toBe(true);
+        expect(quest.currentCount).toBe(0);
     });
 
     // ------------------------------------------------------------------

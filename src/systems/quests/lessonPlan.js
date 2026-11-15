@@ -27,6 +27,8 @@ export const LESSON_TARGETS = Object.freeze({
     foundation: 'token_wood_foundation',
     /** Lesson 6: Crafting's building, built on that Foundation; lesson 7 crafts at it. */
     craftBuilding: 'token_workbench',
+    /** Lesson 7: what Limes suggests crafting there (any craft counts). */
+    craftItem: 'item_charcoal',
     /** Lesson 8: the weapon outlined in the Bank (any weapon equipped counts). Null until the content has a first sword. */
     weapon: null,
     /** Lesson 8: the food outlined in the Bank, what lesson 1 gathers (any food equipped counts). */

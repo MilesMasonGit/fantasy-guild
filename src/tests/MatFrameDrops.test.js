@@ -198,7 +198,6 @@ describe('dropOnMat — one drop function for the playmat', () => {
         GameState.state.heroes = [
             { id: 'h1', name: 'h1', status: 'idle', level: 50, skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }
         ];
-        GameState.state.quests.completedTutorials = ['tutorial_5'];
         registerTokenTypes({
             fixture_map: { id: 'fixture_map', name: 'Fixture Map', tokenType: 'map', mapId: 'fixture_map_content' },
             fixture_big: {

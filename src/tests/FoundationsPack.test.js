@@ -150,7 +150,7 @@ describe('the Foundations pack, applied to a copy of the shipped content', () =>
         expect(StationRecipe.setSelectedRecipe(instance, 'recipe_muily2pb')).toBe(true);
     });
 
-    it('the tutorial\'s Foundation step still buys a Wood Foundation, which still builds the Workbench', () => {
+    it('the lessons\' Foundation step still buys a Wood Foundation, which still builds the Workbench', () => {
         const bought = [];
         const off = EventBus.subscribe(ENGINE_EVENTS.TOKEN_PURCHASED, (e) => bought.push(e.typeId));
         InventoryManager.addItem('item_oak_wood', 15);

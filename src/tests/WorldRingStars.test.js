@@ -127,7 +127,7 @@ describe('which ring a star opens, and whether a ring is open (pure)', () => {
 });
 
 describe('⭐ settling behind a ring star', () => {
-    it('⭐ ring 1 settles with no star, as the tutorial does', () => {
+    it('⭐ ring 1 settles with no star, as the lessons\' goal asks', () => {
         const first = world().cells.find(c => c.ring === 1);
         expect(World.ringLockOf(first)).toBeNull();
         meet(first);

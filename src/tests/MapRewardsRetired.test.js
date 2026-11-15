@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import { QuestManager } from '../systems/quests/QuestManager.js';
 import * as QuestTokens from '../systems/quests/QuestTokens.js';
-import { TUTORIAL_QUESTS } from '../systems/quests/tutorialQuests.js';
 import { createRandomQuest } from '../systems/quests/questBounties.js';
 import * as QuestBounties from '../systems/quests/questBounties.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -48,8 +47,6 @@ function newGame() {
     GameState.state.inventory.maxSlots = 50;
     BoardState.addToken(BoardState.createTokenInstance('token_guild_hall'), HALL.x, HALL.y);
     QuestManager.init();
-    GameState.state.quests.completedTutorials = TUTORIAL_QUESTS.map(t => t.id);
-    for (const t of QuestTokens.tutorialTokens()) BoardState.removeToken(t.id);
 }
 
 describe('the bounty roll is untouched', () => {

@@ -4,7 +4,6 @@ import { loadSavedState } from '../systems/core/LoadedState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { QuestManager } from '../systems/quests/QuestManager.js';
 import * as QuestTokens from '../systems/quests/QuestTokens.js';
-import { TUTORIAL_QUESTS } from '../systems/quests/tutorialQuests.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import * as BoardState from '../systems/board/BoardState.js';
@@ -16,13 +15,6 @@ import {
 import { QUEST_TOKEN_TYPE, ENGINE_TOKEN_TYPES } from '../config/registries/engineTokens.js';
 import { getUpgradeDef } from '../config/guildUpgrades.js';
 import { MAT_TUNABLES, setMatTuning, resetMatTuning } from '../config/matTuning.js';
-import { registerItems } from '../config/registries/itemRegistry.js';
-
-/** A gathering tool, for the tutorial's first step (equip a tool). */
-const TOOL = 'fixture_quest_woodaxe';
-registerItems({
-    [TOOL]: { id: TOOL, name: 'Fixture Woodaxe', type: 'tool', equipSlot: 'hand', stackable: true, sprite: 'i_woodaxe_copper', tool: { kind: 'woodaxe', tier: 1 } }
-});
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -30,11 +22,11 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * ⭐ B6.1 — quests are Tokens on the mat. The Guild Hall spawns them beside
- * itself: bounties up to a cap (2, +1 per Notice Board rank, to 5) on a
- * 3-minute game-time clock; tutorial steps one at a time under a hidden cap of
- * their own. Claiming drops the reward as loot and removes the Token; bounties
- * may be dismissed, tutorial steps may not.
+ * ⭐ B6.1 — quests are Tokens on the mat. The Guild Hall spawns bounties beside
+ * itself, up to a cap of 2 on a 3-minute game-time clock. Claiming drops the
+ * reward as loot and removes the Token; bounties may be dismissed. The
+ * cartographer's tutorial steps are gone (Limes's lessons teach instead): an
+ * older save's step is taken off the mat.
  */
 
 const HALL = { x: 880, y: 560 };
@@ -42,13 +34,13 @@ const MIN = 60_000;
 
 const hall = () => BoardState.tokens().find(t => t.typeId === 'token_guild_hall');
 const bounties = () => QuestTokens.bountyTokens();
-const tutorials = () => QuestTokens.tutorialTokens();
 
-/** Put the tutorial chain out of the way: every step claimed. */
-function finishTutorial() {
-    GameState.state.quests.completedTutorials = TUTORIAL_QUESTS.map(t => t.id);
-    for (const t of tutorials()) BoardState.removeToken(t.id);
-}
+/** A hunt bounty on the mat, beside the Hall: one Goblin, 10 Oak Wood. */
+const hunt = (id = 'quest_fixture_hunt') => QuestTokens.spawnQuest({
+    id, tutorial: false, title: 'Defeat 1 Goblin', type: 'hunt', targetType: 'enemy_hunted',
+    enemyId: 'token_goblin', requiredCount: 1, currentCount: 0,
+    rewardItems: [{ itemId: 'item_oak_wood', quantity: 10 }], done: false
+});
 
 function newGame({ withHall = true } = {}) {
     GameState.initNew();
@@ -88,7 +80,6 @@ describe('the quest Token type is engine-owned (B6.1)', () => {
 });
 
 describe('the Guild Hall spawns bounties up to the cap on a game-time clock (TL-18)', () => {
-    beforeEach(() => finishTutorial());
 
     it('one every 3 minutes of delta, up to 2, then the clock holds', () => {
         expect(QuestTokens.questCap()).toBe(2);
@@ -157,7 +148,6 @@ describe('the Guild Hall spawns bounties up to the cap on a game-time clock (TL-
 describe('the bounty cap is fixed at 2 (brief 320 retired the Notice Board)', () => {
     it('has no Notice Board star, and ranks from an old save raise nothing', () => {
         expect(getUpgradeDef('notice_board')).toBeNull();
-        finishTutorial();
         GameState.state.progress.guildUpgrades = { notice_board: 3 };
         expect(QuestTokens.questCap()).toBe(2);
         QuestManager.tick(60 * MIN);
@@ -165,53 +155,30 @@ describe('the bounty cap is fixed at 2 (brief 320 retired the Notice Board)', ()
     });
 });
 
-describe('the tutorial chain under its hidden cap (FB-42)', () => {
-    it('a new game starts with the first step on the mat, beside the Hall', () => {
-        expect(tutorials().map(t => t.quest.id)).toEqual([TUTORIAL_QUESTS[0].id]);
-        const [t] = tutorials();
-        expect(BoardState.originOf(t)).toBe(BoardState.ORIGIN.SPAWNED);
+describe('no tutorial steps: Limes teaches instead', () => {
+    it('a new game has no quest on the mat, and its first tick brings none', () => {
+        expect(QuestTokens.questTokens()).toEqual([]);
+        QuestManager.tick(16);
+        expect(QuestTokens.questTokens()).toEqual([]);
         expect(MatCap.tokenCount()).toBe(0);
     });
 
-    it('a new game whose Hall lands after init gets its step on the next tick', () => {
-        QuestManager.cleanup();
-        newGame({ withHall: false });
-        expect(tutorials()).toHaveLength(0);
-        BoardState.addToken(BoardState.createTokenInstance('token_guild_hall'), HALL.x, HALL.y);
+    it('an older save\'s tutorial step on the mat is taken off at the next tick, and bounties run as before', () => {
+        const old = QuestTokens.spawnQuest({
+            id: 'cart_tool', tutorial: true, title: 'Equip a Tool', targetType: 'hero_equipped', match: { tool: true },
+            requiredCount: 1, currentCount: 0, rewardItems: [{ itemId: 'item_oak_wood', quantity: 10 }], done: false
+        });
+        expect(old).toBeTruthy();
+        expect(bounties()).toHaveLength(0);
+        QuestTokens.requestCheck();
         QuestManager.tick(16);
-        expect(tutorials()).toHaveLength(1);
-    });
-
-    it('claiming a step brings the next; the last brings nothing', () => {
-        for (let i = 0; i < TUTORIAL_QUESTS.length; i++) {
-            const [t] = tutorials();
-            expect(tutorials()).toHaveLength(1);
-            expect(t.quest.id).toBe(TUTORIAL_QUESTS[i].id);
-            expect(t.quest.step).toBe(i);
-            t.quest.currentCount = t.quest.requiredCount;
-            t.quest.done = true;
-            expect(QuestTokens.claimQuest(t.id).success).toBe(true);
-        }
-        expect(tutorials()).toHaveLength(0);
-        expect(GameState.state.quests.completedTutorials).toEqual(TUTORIAL_QUESTS.map(t => t.id));
-    });
-
-    it('tutorial steps ignore the bounty cap and the timer; bounties run beside them', () => {
+        expect(BoardState.getTokenById(old.id)).toBeNull();
+        expect(SpriteLayer.getSprites()).toEqual([]);
         QuestManager.tick(6 * MIN);
-        expect(tutorials()).toHaveLength(1);
         expect(bounties()).toHaveLength(2);
-        QuestManager.tick(30 * MIN);
-        expect(tutorials()).toHaveLength(1);   // no timer brings more steps
     });
 
-    it('a tutorial quest cannot be dismissed; a bounty can, with no reward, and frees its place', () => {
-        const [tut] = tutorials();
-        const refused = QuestTokens.dismissBounty(tut.id);
-        expect(refused.success).toBe(false);
-        expect(refused.reason).toBe('Tutorial quests cannot be dismissed.');
-        expect(BoardState.getTokenById(tut.id)).toBeTruthy();
-        expect(QuestTokens.canDismiss(tut)).toBe(false);
-
+    it('a bounty can be dismissed, with no reward, and frees its place', () => {
         QuestManager.tick(6 * MIN);
         expect(bounties()).toHaveLength(2);
         const [b] = bounties();
@@ -233,15 +200,17 @@ describe('the tutorial chain under its hidden cap (FB-42)', () => {
 
 describe('progress and claiming (FB-41)', () => {
     it('progress comes from the same events as before, and marks the quest done', () => {
-        const [t] = tutorials();   // Equip a Tool
+        const t = hunt();
         expect(t.quest.done).toBe(false);
-        EventBus.publish('hero_equipment_changed', { action: 'equip', heroId: 'h1', itemId: TOOL });
+        EventBus.publish('combat_victory', { enemyId: 'token_cow' });
+        expect(t.quest.currentCount).toBe(0);
+        EventBus.publish('combat_victory', { enemyId: 'token_goblin' });
         expect(t.quest.currentCount).toBe(1);
         expect(t.quest.done).toBe(true);
     });
 
     it('a quest is claimed only when done', () => {
-        const [t] = tutorials();
+        const t = hunt();
         const res = QuestTokens.claimQuest(t.id);
         expect(res.success).toBe(false);
         expect(BoardState.getTokenById(t.id)).toBe(t);
@@ -250,9 +219,9 @@ describe('progress and claiming (FB-41)', () => {
     });
 
     it('claiming drops the reward as loot beside the Token and removes it — not a depletion', () => {
-        const [t] = tutorials();
+        const t = hunt();
         const at = { x: t.x, y: t.y };
-        EventBus.publish('hero_equipment_changed', { action: 'equip', heroId: 'h1', itemId: TOOL });
+        EventBus.publish('combat_victory', { enemyId: 'token_goblin' });
         const depleted = vi.fn();
         const off = EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, depleted);
         try {
@@ -271,7 +240,6 @@ describe('progress and claiming (FB-41)', () => {
 
 describe('saves (B6.1)', () => {
     it('quest Tokens and the clock survive a save and load', async () => {
-        finishTutorial();
         QuestManager.tick(3 * MIN + 20_000);
         const [b] = bounties();
         b.quest.currentCount = 1;
@@ -286,6 +254,6 @@ describe('saves (B6.1)', () => {
         expect(loaded.id).toBe(b.id);
         expect(loaded.quest).toEqual(b.quest);
         expect(QuestTokens.clockMs()).toBe(20_000);
-        expect(tutorials()).toHaveLength(0);
+        expect(QuestTokens.questTokens()).toHaveLength(1);
     });
 });

@@ -127,7 +127,7 @@ describe('the lessons, as the concept lists them', () => {
         for (const key of ['berryBush', 'tree', 'foundation', 'craftBuilding', 'foe']) {
             expect(getTokenType(LESSON_TARGETS[key]), key).toBeTruthy();
         }
-        for (const key of ['woodaxe', 'food']) expect(getItem(LESSON_TARGETS[key]), key).toBeTruthy();
+        for (const key of ['woodaxe', 'food', 'craftItem']) expect(getItem(LESSON_TARGETS[key]), key).toBeTruthy();
         expect(GuildUpgradeManager.getNextCost(LESSON_TARGETS.bunkBeds)).toBeTruthy();
     });
 

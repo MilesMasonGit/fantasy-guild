@@ -11,7 +11,7 @@ import * as Flags from '../systems/board/Flags.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
 import * as RecipeList from '../systems/board/RecipeList.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { registerTokenTypes, getTokenType, tokenStartingUses, TOKENS } from '../config/registries/tokenRegistry.js';
+import { registerTokenTypes, getTokenType, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerRecipePools, recipesForToken, getSkillRecipePool } from '../config/registries/recipePoolRegistry.js';
 import {
     STATION_KINDS, RETIRED_STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds,
@@ -22,7 +22,6 @@ import { KEYWORD } from '../systems/effects/statements.js';
 import { auditLifecycleBlocks } from '../systems/core/lifecycleAudit.js';
 import { buildWorld, HOW, tokenKey } from '../systems/progression/ledger/engine.js';
 import { ledgerContent } from './fixtures/ledgerWorld.js';
-import { TUTORIAL_TEXT } from '../systems/quests/tutorialText.js';
 import { LIMES_TEXT } from '../systems/quests/limesText.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -269,17 +268,6 @@ describe('the ledger reads the new buildings', () => {
 });
 
 describe('the words name buildings the content has', () => {
-    // ⚠️ The copper step names today's Furnace and Copper Smithy until the content has a Blacksmith;
-    // deleting either Token fails this, so the words change with that Sync.
-    it('the tutorial sends copper to a Furnace and a Copper Smithy, both still in the content', () => {
-        const names = new Set(Object.values(TOKENS).map(t => t?.name));
-        const words = TUTORIAL_TEXT.steps.cart_copper_tool.instruction;
-        expect(words).toContain('Furnace');
-        expect(words).toContain('Copper Smithy');
-        expect(names.has('Furnace')).toBe(true);
-        expect(names.has('Copper Smithy')).toBe(true);
-    });
-
     it('Limes names none of today\'s stations', () => {
         expect(JSON.stringify(LIMES_TEXT)).not.toMatch(/Furnace|Smithy|Workbench|Campfire|Brewery|Alchemy Table|Tannery/);
     });

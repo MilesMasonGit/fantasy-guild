@@ -16,7 +16,6 @@ import { getItem, getAllItems, registerItems } from '../config/registries/itemRe
 import { starterToolIds, neededToolOf, toolOf, toolMeets } from '../config/registries/toolKinds.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { catchPoolsOf } from '../config/registries/catchPools.js';
-import { TUTORIAL_QUESTS } from '../systems/quests/tutorialQuests.js';
 import { BOUNTY_REWARD_ITEMS, RANDOM_ITEMS, RANDOM_HUNTS } from '../systems/quests/questBounties.js';
 import { worldTables } from '../config/registries/worldTablesRegistry.js';
 import { getEffect } from '../config/registries/effectRegistry.js';
@@ -253,7 +252,6 @@ function effectYields(def) {
     return { items, tokens };
 }
 
-const TUTORIAL_STEP_ITEMS = [...new Set(TUTORIAL_QUESTS.flatMap(q => (q.rewardItems || []).map(r => r.itemId)))];
 const BOUNTY_ITEMS = BOUNTY_REWARD_ITEMS.map(r => r.itemId);
 
 /**
@@ -328,7 +326,6 @@ function reachable({ maxPlane = 2 } = {}) {
             // A consumable's effect works on whoever uses it, so its bonus drops come with it.
             for (const bonus of effectYields(getItem(id)).items) items.add(bonus);
         }
-        for (const id of TUTORIAL_STEP_ITEMS) items.add(id);
         const bountyAsks = RANDOM_ITEMS.some(r => items.has(r.id)) || RANDOM_HUNTS.some(h => tokens.has(h.id));
         if (bountyAsks) {
             for (const id of BOUNTY_ITEMS) items.add(id);
@@ -383,7 +380,6 @@ function planeWorld(maxPlane = 2) {
     const produced = new Set([
         ...StarterCamp.openingBank(camp).map(i => i.itemId),
         ...starterToolIds(allItems),
-        ...TUTORIAL_STEP_ITEMS,
         ...BOUNTY_ITEMS,
         WISHING_WELL_ITEM
     ]);

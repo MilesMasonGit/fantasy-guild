@@ -115,9 +115,9 @@ describe('the dev button saves the live mat in the shape the loader reads', () =
         // Spawned Tokens come from the camp's own spawners, so they are not saved.
         const sapling = BoardState.createTokenInstance('fixture_producer', null, null, BoardState.ORIGIN.SPAWNED);
         BoardState.addToken(sapling, 1100, 700);
-        // Quest Tokens are the tutorial's, never the camp's.
+        // Quest Tokens are the Guild Hall's bounties, never the camp's.
         const quest = BoardState.createTokenInstance('token_quest');
-        quest.quest = { id: 'q_fixture', tutorial: true };
+        quest.quest = { id: 'q_fixture', tutorial: false };
         BoardState.addToken(quest, 1000, 300);
         InventoryManager.addItem('fixture_oak_wood', 12);
         InventoryManager.addItem('fixture_charcoal', 1);

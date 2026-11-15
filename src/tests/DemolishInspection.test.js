@@ -28,7 +28,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 
 /**
  * Demolition as the mat and the card show it: the countdown line, the marked badge, the
- * callout, and a Dismiss for bounties (never for tutorial steps). Marking is Demolish mode's
+ * callout, and a Dismiss for bounties. Marking is Demolish mode's
  * (`MapModes.test.js`); the Dismiss control has no Demolish button.
  */
 
@@ -111,14 +111,14 @@ describe('the demolished callout', () => {
 });
 
 describe('Dismiss for bounties', () => {
-    function quest(tutorial) {
+    function quest() {
         const q = placeAt(QUEST_TOKEN_TYPE, 600, 300);
-        q.quest = { id: tutorial ? 'tut' : 'bounty', title: 'Q', tutorial, targetType: 'x', requiredCount: 3, currentCount: 0, rewardItems: [], done: false };
+        q.quest = { id: 'bounty', title: 'Q', tutorial: false, targetType: 'x', requiredCount: 3, currentCount: 0, rewardItems: [], done: false };
         return q;
     }
 
     it('a bounty has a Dismiss that takes it off the mat', async () => {
-        const b = quest(false);
+        const b = quest();
         const { container } = inspect(b);
         expect(control(container)).toBeNull();
         const btn = container.querySelector('[data-dismiss-bounty]');
@@ -126,12 +126,5 @@ describe('Dismiss for bounties', () => {
         await act(async () => { fireEvent.click(btn); });
         expect(BoardState.getTokenById(b.id)).toBeNull();
         expect(QuestTokens.bountyTokens()).toHaveLength(0);
-    });
-
-    it('a tutorial step has neither Dismiss nor Demolish', () => {
-        const t = quest(true);
-        const { container } = inspect(t);
-        expect(container.querySelector('[data-dismiss-bounty]')).toBeNull();
-        expect(control(container)).toBeNull();
     });
 });

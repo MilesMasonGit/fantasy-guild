@@ -8,7 +8,8 @@ import * as BoardState from '../systems/board/BoardState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { QuestManager } from '../systems/quests/QuestManager.js';
-import { TUTORIAL_QUESTS } from '../systems/quests/tutorialQuests.js';
+import * as QuestTokens from '../systems/quests/QuestTokens.js';
+import { BOUNTY_REWARD_ITEMS } from '../systems/quests/questBounties.js';
 import { SRC, listFiles, readSource, SCAN_TIMEOUT } from './fixtures/sourceScan.js';
 
 /**
@@ -26,38 +27,28 @@ beforeEach(() => {
 describe('No action earns or spends gold (SP-65)', () => {
     afterEach(() => QuestManager.cleanup());
 
-    it('a new game has no gold at all, and every tutorial quest pays items', () => {
+    it('a new game has no gold at all, and a bounty pays items', () => {
         expect(GameState.state.currency).toBeUndefined();
-        for (const t of TUTORIAL_QUESTS) {
-            expect(t.rewardMapId, t.id).toBeUndefined();
-            expect(t.rewardItems.length, t.id).toBeGreaterThan(0);
-            for (const r of t.rewardItems) expect(r.itemId.startsWith('item_'), t.id).toBe(true);
-        }
+        expect(BOUNTY_REWARD_ITEMS.length).toBeGreaterThan(0);
+        for (const r of BOUNTY_REWARD_ITEMS) expect(r.itemId.startsWith('item_'), r.itemId).toBe(true);
     });
 
-    it('claiming every tutorial quest leaves gold at 0 and puts no Map on the mat', () => {
-        // Quests are Tokens the Guild Hall spawns (B6.1); a claimed reward
+    it('claiming a bounty leaves gold at 0 and puts no Map on the mat', () => {
+        // Bounties are Tokens the Guild Hall spawns (B6.1); a claimed reward
         // drops as loot beside the quest, banked when collected.
         BoardState.addToken(BoardState.createTokenInstance('token_guild_hall'), 880, 560);
         QuestManager.init();
-        for (const t of TUTORIAL_QUESTS) {
-            const q = QuestManager.getActiveQuests().find(x => x.id === t.id);
-            expect(q, t.id).toBeDefined();
-            q.currentCount = q.requiredCount;
-            q.done = true;
-            expect(QuestManager.claimQuest(t.id).success, t.id).toBe(true);
-        }
+        const bounty = QuestTokens.spawnQuest({
+            id: 'q_gold', tutorial: false, title: 'Defeat 1 Goblin', type: 'hunt', targetType: 'enemy_hunted',
+            enemyId: 'token_goblin', requiredCount: 1, currentCount: 1, done: true,
+            rewardItems: BOUNTY_REWARD_ITEMS.map(r => ({ ...r }))
+        });
+        expect(bounty).toBeTruthy();
+        expect(QuestManager.claimQuest(bounty.id).success).toBe(true);
         for (const sprite of SpriteLayer.getSprites().filter(sp => sp.kind === 'item')) SpriteLayer.collectSprite(sprite.id);
         expect(GameState.state.currency).toBeUndefined();
         expect(BoardState.tokens().some(t => getTokenType(t.typeId)?.mapId)).toBe(false);
-        // Each step pays its own small reward (slice 9.5); every item arrives.
-        const owed = {};
-        for (const t of TUTORIAL_QUESTS) {
-            for (const r of t.rewardItems) owed[r.itemId] = (owed[r.itemId] || 0) + r.quantity;
-        }
-        for (const [itemId, quantity] of Object.entries(owed)) {
-            expect(InventoryManager.getItemCount(itemId), itemId).toBe(quantity);
-        }
+        for (const r of BOUNTY_REWARD_ITEMS) expect(InventoryManager.getItemCount(r.itemId), r.itemId).toBe(r.quantity);
     });
 
 });

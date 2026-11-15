@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import * as QuestTokens from '../systems/quests/QuestTokens.js';
-import { TUTORIAL_QUESTS } from '../systems/quests/tutorialQuests.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as MatPlacement from '../systems/board/MatPlacement.js';
@@ -16,11 +15,8 @@ import { placeAt, clearMat } from './fixtures/mat.js';
  * A bounty rides the bounty clock: one try when it comes round, and with nowhere to land that
  * bounty is missed and the next is tried a whole interval later (owner: a missed bus waits for the
  * next one), never searched for again on the ticks between. With no Hall at all the clock is held
- * full, as before: that is cheap to ask every tick.
- *
- * A tutorial step has no clock. One that is owed and finds no room is tried again only once
- * something on the mat has arrived, left or moved (or the mat changed size), so a still, full mat
- * is not searched every tick, and a step lands the tick after the player makes room.
+ * full, as before: that is cheap to ask every tick. Nothing else is owed (the tutorial's steps
+ * are gone), so a check never searches the mat.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -33,9 +29,8 @@ const EVERY = 3 * MIN;
 const HALL = { x: 420, y: 300 };
 
 const bounties = () => QuestTokens.bountyTokens();
-const tutorials = () => QuestTokens.tutorialTokens();
 
-function newGame({ tutorialDone = true } = {}) {
+function newGame() {
     resetMatTuning();
     setMatTuning('matSteps', 6);
     GameState.initNew();
@@ -43,12 +38,7 @@ function newGame({ tutorialDone = true } = {}) {
     SpriteLayer.init();
     clearMat();
     QuestTokens.resetRuntime();
-    GameState.state.quests = {
-        active: [],
-        completedTutorials: tutorialDone ? TUTORIAL_QUESTS.map(t => t.id) : [],
-        tutorialStep: 0,
-        clockMs: 0
-    };
+    GameState.state.quests = { clockMs: 0 };
     return placeAt('token_guild_hall', HALL.x, HALL.y);
 }
 
@@ -152,43 +142,15 @@ describe('⭐ a bounty with nowhere to land is missed, and the next is tried a w
     });
 });
 
-describe('⭐ an owed tutorial step with no room is tried again only once the mat has changed', () => {
-    beforeEach(() => newGame({ tutorialDone: false }));
+describe('⭐ nothing is owed: a check never searches the mat', () => {
+    beforeEach(() => newGame());
 
-    it('searches once, not on the ticks of a still mat, and lands the tick after room is made', () => {
-        const blockers = packMat();
-        expect(searchesDuring(() => QuestTokens.tick(100))).toBeGreaterThan(0);   // owed, tried, no room
-        expect(tutorials()).toHaveLength(0);
-        expect(searchesDuring(() => ticks(50))).toBe(0);                           // a still mat
-        makeRoom(blockers);
-        QuestTokens.tick(100);
-        expect(tutorials().map(t => t.quest.id)).toEqual([TUTORIAL_QUESTS[0].id]);
-    });
-
-    it('a Token moved is a change too: one more try, then quiet again', () => {
-        const [first] = packMat();
-        QuestTokens.tick(100);                                                     // tried, no room
-        BoardState.setTokenPoint(first.id, first.x, first.y);
-        expect(searchesDuring(() => QuestTokens.tick(100))).toBeGreaterThan(0);
-        expect(searchesDuring(() => ticks(20))).toBe(0);
-        expect(tutorials()).toHaveLength(0);
-    });
-
-    it('a growing mat is a change: room at the new edge is used on the next tick', () => {
+    it('a check asked for (a load, travel) on a packed, still mat searches nothing between bounty tries', () => {
         packMat();
-        QuestTokens.tick(100);                                                     // tried, no room
-        expect(searchesDuring(() => ticks(10))).toBe(0);
-        setMatTuning('matSteps', 8);
-        QuestTokens.tick(100);
-        expect(tutorials()).toHaveLength(1);
-    });
-
-    it('a check asked for (a load, travel) runs on the next tick even on a still mat', () => {
-        packMat();
-        QuestTokens.tick(100);
         QuestTokens.requestCheck();
-        expect(searchesDuring(() => QuestTokens.tick(100))).toBeGreaterThan(0);
-        expect(searchesDuring(() => ticks(10))).toBe(0);
+        expect(searchesDuring(() => ticks(50))).toBe(0);
+        QuestTokens.requestCheck();
+        expect(searchesDuring(() => QuestTokens.tick(100))).toBe(0);
     });
 });
 

@@ -1,5 +1,7 @@
 import { LESSON_TARGETS as T } from '../../../systems/quests/lessonPlan.js';
 import { LIMES_TEXT } from '../../../systems/quests/limesText.js';
+import { tokenName } from '../../../config/registries/tokenRegistry.js';
+import { getItem } from '../../../config/registries/itemRegistry.js';
 import { LIMES_TARGET } from './limesMark.js';
 import { LIMES_MAT } from './limesStore.js';
 
@@ -29,6 +31,19 @@ export const LESSON_OUTLINES = Object.freeze({
     fight: { mat: tokenType(T.foe) },
     settle: { mat: nav('atlas') }
 });
+
+/** The names a lesson line may carry in braces (`limesText.js`), read from the content as it is said. */
+const NAMES = Object.freeze({
+    foundation: () => tokenName(T.foundation),
+    building: () => tokenName(T.craftBuilding),
+    craft: () => getItem(T.craftItem)?.name || T.craftItem,
+    foe: () => tokenName(T.foe)
+});
+
+/** A line with its names filled in; a brace naming nothing known is left as written. */
+export function fillLessonWords(line) {
+    return String(line).replace(/\{(\w+)\}/g, (all, key) => (NAMES[key] ? NAMES[key]() || all : all));
+}
 
 /** A screen's words said through another small Limes than the screen's own: the Foundation card's in the Shop. */
 const SPOT_FOR = Object.freeze({
@@ -64,7 +79,7 @@ export function lessonSpeech({ stepId, moment }, screens = {}, atCamp = false) {
         if (lines?.length) {
             const open = SCREENS.find(s => s.key !== 'hallStar' && s.open(screens));
             const spot = open ? open.key : (atCamp ? LIMES_MAT : null);
-            if (spot) return { key: `moment:${moment}:${spot}`, spot, lines: [...lines], target: null, moment };
+            if (spot) return { key: `moment:${moment}:${spot}`, spot, lines: lines.map(fillLessonWords), target: null, moment };
         }
     }
     if (!stepId) return null;
@@ -75,5 +90,5 @@ export function lessonSpeech({ stepId, moment }, screens = {}, atCamp = false) {
     const where = screen ? screen.key : (atCamp && words.mat?.length ? 'mat' : null);
     if (!where) return null;
     const spot = where === 'mat' ? LIMES_MAT : (SPOT_FOR[stepId]?.[where] || where);
-    return { key: `lesson:${stepId}:${where}`, spot, lines: [...words[where]], target: outlines[where] || null, moment: null };
+    return { key: `lesson:${stepId}:${where}`, spot, lines: words[where].map(fillLessonWords), target: outlines[where] || null, moment: null };
 }

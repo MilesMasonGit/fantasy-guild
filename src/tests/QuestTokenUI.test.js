@@ -16,7 +16,6 @@ import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { MatToken } from '../ui/components/board/MatToken.jsx';
 import { idlePlateCells } from '../ui/components/board/idlePlate.js';
 import { questNeedLine, questRewardsShown } from '../ui/components/board/QuestTooltip.jsx';
-import { TUTORIAL_TEXT } from '../systems/quests/tutorialText.js';
 import { registerItems, getAllItems } from '../config/registries/itemRegistry.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -31,8 +30,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * ⭐ B6.2 — the quest Token UI ("noticeboard, click to claim"). A quest Token
  * stands a parchment `3/10` ring under itself, reads on hover
  * (`QuestTooltip`), glows when done and is claimed by a click — never in
- * a map mode. The notification column lost its Quests section, and the
- * tutorial aide finds its step from the tutorial quest Token.
+ * a map mode. The notification column lost its Quests section.
  */
 
 const HALL = { x: 880, y: 560 };
@@ -177,18 +175,12 @@ describe('hover to read (B6.2)', () => {
         expect(tooltip().querySelector('[data-quest-claim]').textContent).toBe('Click to claim');
     });
 
-    it('a tutorial step says "Tutorial" and shows its instruction', () => {
-        const tut = QuestTokens.tutorialTokens()[0];
-        expect(tut).toBeTruthy();
-        mount(tokenEl(tut, { isHovered: true, isRested: true }));
+    it('a bounty with an instruction shows it, with no Tutorial tag', () => {
+        const q = spawn(hunt({ instruction: 'Beat them by the Goblin Camp.' }));
+        mount(tokenEl(q, { isHovered: true, isRested: true }));
         const tip = tooltip();
-        expect(tip.querySelector('[data-quest-tutorial]').textContent).toBe('Tutorial');
-        expect(tip.querySelector('[data-quest-instruction]').textContent).toBe(tut.quest.instruction);
-        expect(tip.querySelector('[data-quest-need]').textContent).toBe('0/1');
-        // The cartographer speaks the step, with his name after the line.
-        const says = tip.querySelector('[data-quest-says]').textContent;
-        expect(says).toContain(tut.quest.says);
-        expect(says).toContain(TUTORIAL_TEXT.speaker);
+        expect(tip.querySelector('[data-quest-instruction]').textContent).toBe('Beat them by the Goblin Camp.');
+        expect(tip.querySelector('[data-quest-tutorial]')).toBeNull();
     });
 
     it('a bounty has no cartographer\'s line', () => {
@@ -197,8 +189,8 @@ describe('hover to read (B6.2)', () => {
         expect(tooltip().querySelector('[data-quest-says]')).toBeNull();
     });
 
-    it('a tutorial step shows only its items: the first maps are retired, whatever map items exist', () => {
-        const step = { tutorial: true, firstMaps: true, rewardItems: [{ itemId: 'item_oak_wood', quantity: 10 }] };
+    it('a quest shows only its items: the first maps are retired, whatever map items exist', () => {
+        const step = { firstMaps: true, rewardItems: [{ itemId: 'item_oak_wood', quantity: 10 }] };
         registerItems({ map_ui_test: { id: 'map_ui_test', name: 'Test Map', type: 'map', cartography: { biome: 'forest', points: 4, nodes: [] } } });
         try {
             expect(questRewardsShown(step)).toEqual([{ itemId: 'item_oak_wood', quantity: 10 }]);

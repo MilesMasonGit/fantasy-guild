@@ -12,8 +12,10 @@ import { nextSeed } from '../systems/atlas/seededRandom.js';
 import { cleanGuildName, guildNameOf, renameGuild, GUILD_NAME_MAX } from '../systems/core/GuildName.js';
 import { setWorldTablesForTests, resetWorldTablesForTests } from '../config/registries/worldTablesRegistry.js';
 import { FIXTURE_WORLD_RAW } from './fixtures/worldTables.js';
-import { TUTORIAL_QUESTS } from '../systems/quests/tutorialQuests.js';
 import * as QuestTokens from '../systems/quests/QuestTokens.js';
+import * as LimesLessons from '../systems/quests/LimesLessons.js';
+import * as LimesGuide from '../systems/quests/LimesGuide.js';
+import { LESSON_STEPS } from '../systems/quests/lessonPlan.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -81,13 +83,22 @@ describe('⭐ a new game from the new-game screen', () => {
         expect(SaveManager.getAllSlotInfos()[0].guildName).toBeNull();
     });
 
-    it('the tutorial starts at equipping a tool: the hero is already there', async () => {
+    it('the lessons start at the bush, with no quest on the mat: the hero is already there', async () => {
         await EngineBootstrap.startSlot(0, { setup: SETUP });
         GameLoop.stop();
         QuestTokens.ensure();
-        expect(TUTORIAL_QUESTS[0].id).toBe('cart_tool');
-        expect(QuestTokens.tutorialTokens().map(t => t.quest.id)).toEqual(['cart_tool']);
-        expect(TUTORIAL_QUESTS.map(t => t.targetType)).not.toContain('hero_recruited');
+        expect(LimesLessons.currentStep()?.id).toBe('bush');
+        expect(LimesGuide.lessonsOn()).toBe(true);
+        expect(QuestTokens.questTokens()).toEqual([]);
+        expect(LESSON_STEPS.map(t => t.targetType)).not.toContain('hero_recruited');
+    });
+
+    it('with the lessons off, the start is the same, and Limes keeps quiet about them', async () => {
+        await EngineBootstrap.startSlot(0, { setup: { ...SETUP, lessons: false } });
+        GameLoop.stop();
+        expect(LimesGuide.lessonsOn()).toBe(false);
+        expect(GameState.heroes).toHaveLength(1);
+        expect(LimesLessons.currentStep()?.id).toBe('bush');
     });
 });
 

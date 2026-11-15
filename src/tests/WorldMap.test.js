@@ -36,10 +36,8 @@ import {
 } from '../ui/components/atlas/worldMapLayout.js';
 import { paintWorld, paintRope, ringEdges, pictureFrame, tileStandIn, FOG_RGB } from '../ui/components/atlas/worldPicture.js';
 import { meetFrontierPrices } from './fixtures/worldQa.js';
-import * as BoardState from '../systems/board/BoardState.js';
-import * as QuestTokens from '../systems/quests/QuestTokens.js';
-import { TUTORIAL_QUESTS } from '../systems/quests/tutorialQuests.js';
-import { TUTORIAL_TEXT } from '../systems/quests/tutorialText.js';
+import * as LimesLessons from '../systems/quests/LimesLessons.js';
+import { lessonSteps } from '../systems/quests/lessonPlan.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -573,24 +571,14 @@ describe('the QA panel\'s frontier prices', () => {
     });
 });
 
-describe('the cartographer on the world map', () => {
-    it('while the tutorial\'s last step asks for a first place, its words head the panel; then they go', () => {
-        const { container: before } = screen();
-        expect(q(before, '[data-world-note]')).toBeNull();
-        cleanup();
-
-        const quests = GameState.state.quests;
-        for (const step of TUTORIAL_QUESTS.slice(0, -1)) quests.completedTutorials.push(step.id);
-        for (const token of QuestTokens.tutorialTokens()) BoardState.removeToken(token.id);
-        expect(QuestTokens.ensureTutorial()).toBe(true);
+describe('the world map has no cartographer\'s note: Limes speaks the goal', () => {
+    it('no note heads the panel, even while the lessons\' goal (settle a place) is the step', () => {
+        LimesLessons.startLessons();
+        for (const step of lessonSteps()) LimesLessons.report(step.targetType, 1, { ...(step.match || {}) });
+        expect(LimesLessons.currentStep()?.id).toBe('settle');
         const { container } = screen();
-        const note = q(container, '[data-world-panel] [data-world-note]');
-        expect(note.textContent).toContain(TUTORIAL_TEXT.steps.cart_first_place.title);
-        expect(note.textContent).toContain(TUTORIAL_TEXT.speaker);
-        cleanup();
-
-        QuestTokens.tutorialTokens()[0].quest.done = true;
-        expect(q(screen().container, '[data-world-note]')).toBeNull();
+        expect(q(container, '[data-world-note]')).toBeNull();
+        expect(q(container, '[data-limes-blurb="worldMap"]')).toBeTruthy();
     });
 });
 

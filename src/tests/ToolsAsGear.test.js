@@ -20,7 +20,8 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { QuestManager } from '../systems/quests/QuestManager.js';
-import { TUTORIAL_QUESTS } from '../systems/quests/tutorialQuests.js';
+import * as LimesLessons from '../systems/quests/LimesLessons.js';
+import { LESSON_STEPS } from '../systems/quests/lessonPlan.js';
 import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
 import { registerItems, getAllItems } from '../config/registries/itemRegistry.js';
 import { getPrimaryWeapon } from '../config/registries/equipmentConstants.js';
@@ -461,27 +462,23 @@ describe('a new game: the starter tools wait in the Bank', () => {
     });
 });
 
-describe('the tutorial has a hero equip a tool', () => {
+describe('the lessons have a hero equip a woodaxe', () => {
     afterEach(() => QuestManager.cleanup());
 
-    it('the step comes right after recruiting, and only a tool counts', () => {
-        const ids = TUTORIAL_QUESTS.map(t => t.id);
-        expect(ids.indexOf('cart_tool')).toBe(ids.indexOf('cart_recruit') + 1);
-        expect(TUTORIAL_QUESTS.find(t => t.id === 'cart_tool')).toMatchObject({ targetType: 'hero_equipped', match: { tool: true } });
+    it('the step comes in lesson 3, and only a woodaxe counts', () => {
+        expect(LESSON_STEPS.find(t => t.id === 'axe')).toMatchObject({ lesson: 3, targetType: 'hero_equipped', match: { toolKind: 'woodaxe' } });
 
         BoardState.addToken(BoardState.createTokenInstance('token_guild_hall'), 880, 600);
         QuestManager.init();
-        GameState.state.quests.completedTutorials.push('cart_recruit');
-        for (const t of BoardState.tokens().filter(t => t.quest?.tutorial)) BoardState.removeToken(t.id);
-        QuestManager.ensureQuests();
-        const step = () => QuestManager.getActiveQuests().find(q => q.id === 'cart_tool');
-        expect(step()).toBeTruthy();
+        LimesLessons.startLessons();
 
         const hero = addHero('melee');
         equip(hero.id, 'fx_sword');
-        expect(step().currentCount || 0).toBe(0);
+        expect(LimesLessons.isStepDone('axe')).toBe(false);
+        equip(hero.id, 'fx_pick');
+        expect(LimesLessons.isStepDone('axe')).toBe(false);
         equip(hero.id, 'fx_axe');
-        expect(step().currentCount).toBe(1);
+        expect(LimesLessons.isStepDone('axe')).toBe(true);
     });
 });
 

@@ -122,7 +122,7 @@ describe('⭐ a drop on a Token: they work only it', () => {
         expect(Flags.statusOf(h.id)).toMatchObject({ state: 'working', order: 'token', needsJob: false });
     });
 
-    it('announces hero_deployed once per real order (the tutorial step), not for the same drop again', () => {
+    it('announces hero_deployed once per real order (a lesson step counts it), not for the same drop again', () => {
         const [h] = newBoard();
         const t = fixtures.placeAt('fixture_producer', 400, 300);
         const seen = [];

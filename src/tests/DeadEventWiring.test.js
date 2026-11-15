@@ -156,7 +156,7 @@ describe('dead event wiring stays dead', () => {
     /**
      * `ui_modal:opened` works, but only by the coincidence of three string
      * literals matching across two files that know nothing about each other.
-     * Three tutorial quests advance solely because a React hook fires it. The
+     * A quest counting the Bank or the Shop opening advances solely because a React hook fires it. The
      * fix was to write the contract down at both ends; this asserts the
      * documentation is still there and that both ends still agree on the
      * strings.
