@@ -39,9 +39,24 @@ read-only reader, every lead re-read by the reviewer, every finding checked by a
 | D3 | Saves and time away | not started | | | |
 | D4 | Screens and drag-and-drop | not started | | | |
 
-### Questions for the owner from D1 (2026-11-15, open)
+### Questions for the owner from D1 (2026-11-15, answered the same day)
 
-For the planning agent's next triage batch; the reviewer's recommendation is first in each.
+**Answered by the owner, 2026-11-15** (interview in the reviewer's session; the planning agent records them in the tickets and briefs). Where an answer differs from the question's options, the answer wins.
+
+1. **Thorns costs no charge anywhere** (CR4-104, and CR4-103's double "ran out" goes with it).
+   - *Redberry Bush*: the player gets Redberries every cycle; separately, 10 % of cycles the hero is pricked. 25 harvests per refill.
+   - *Thorn Elemental*: Thorns is a passive effect with a 10 % chance each time the hero attacks the Elemental, not a cost at the kill. 100 kills.
+2. **A hero needs the recipe's level to work it** (CR4-107): option (a).
+3. **No Token merges, ever** (CR4-108; it also retires CR4-102 and CR4-117, and the wounded-enemy merge). Dropping a Token on its copy places it beside; the merge code and its "Restocked" notice go. Owner: *we don't have Tokens that refill this way anymore.*
+4. **One spot for the whole cycle** (CR4-105). Owner: *all our Tokens should take up the same amount of space on the mat; a tree holds the same spot throughout its entire cycle.*
+   - A Stump and a Sapling hold the grown Tree's spot (they may be drawn small). Today's content has them at `artSize: small`, half the Tree's width.
+   - **No double-size buildings any more**: the Fighter's Academy (size 2 from a size-1 Foundation) becomes ordinary size, by change pack.
+   - Reviewer's notes for triage, not ruled: the Cedar is a size-2 Tree today and by the owner's sentence would become ordinary size too (confirm with the owner in the pack); mats already saved with something tight against a Stump still need the growth to hold in place rather than hop (the finding's fix part 2).
+5. **A healing hero's orders in other Regions** (CR4-101), the owner's own rule: a knocked-out hero never takes a task up again without the player. Orders in another Region are kept if the hero has healed by the time the guild arrives there; if the guild arrives while the hero is still knocked out, that hero's orders there are cleared.
+6. **The next camp adopts a demolished camp's enemies** (CR4-111): option (a).
+7. **A reload remembers the enemy's health** (CR4-122): the fight resumes where it stood, so closing the game mid-fight cannot turn a winning fight into a knock-out. A save-format change. Not ruled: whether an enemy still recovers when a hero walks away and comes back in live play (today it does; the planning agent asks if the fix would touch it).
+
+The questions as asked; the reviewer's recommendation is first in each.
 
 1. **Thorns on the Redberry Bush** (CR4-104). Each harvest spends a second charge for the prick, so the bush gives 13 harvests per refill, not 25, and the card does not say so. (a) **Free on the bush** (recommended: a code note says that was the intent; one content change by pack, 25 harvests like its neighbours). (b) Keep the cost and say it: the rule's sentence reads "uses 1 charge" and the pace maths counts it. And the Thorn Elemental (50 kills, not 100): (a) **keep its cost and say it** (recommended: "a charge on a monster" was the intent), (b) free there too.
 2. **A low-level hero on a high-level recipe** (CR4-107). A level-1 smith can work a Furnace set to a level-90 recipe and earn its XP; the card and the recipe list say they cannot. (a) **A hero needs the recipe's level to work it** (recommended: what the card already says, what Foundations already do, and it closes a levelling shortcut). (b) By design: any hero may work what the guild's best hero unlocked, and the card and the list's divider stop saying otherwise.

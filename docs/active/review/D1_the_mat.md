@@ -71,6 +71,18 @@ is the one finding that wants a measurement: the same fight at 100 ms and at 1,0
 
 ---
 
+## Owner rulings (2026-11-15)
+
+The owner answered every D1 question the same day; the full text is in [STATUS.md](STATUS.md), "Questions for the owner from D1". They change the fix for these findings:
+
+- **CR4-103, CR4-104**: Thorns costs no charge anywhere. Bush: Redberries every cycle, a separate 10 % prick. Thorn Elemental: a 10 % passive chance on each hero attack.
+- **CR4-102, CR4-108, CR4-117**: no Token merges, ever; the merge code goes, and the three findings with it.
+- **CR4-105**: one spot for the whole cycle. Stump and Sapling hold the Tree's spot; no double-size buildings (the Fighter's Academy becomes ordinary size by pack). Saved squeezes still hold in place rather than hop.
+- **CR4-107**: a hero needs the recipe's level.
+- **CR4-101**: orders in another Region are kept if the hero has healed when the guild arrives, cleared if the hero is still knocked out.
+- **CR4-111**: the next camp adopts the enemies.
+- **CR4-122**: a reload remembers the enemy's health (a save-format change), which replaces the finding's fix sketch.
+
 ## Findings
 
 ### CR4-101  A hero who is still healing is knocked out a second time, or works while healing, after travelling to a Region where they still hold an order
