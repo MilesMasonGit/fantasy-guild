@@ -522,7 +522,8 @@ steps stay until claimed. The discard bin (and its refunds) is gone. An
 *(`Demolition.js`, `QuestTokens.dismissBounty`, `TokenInspection.jsx`)*
 
 ### Events — Built (brief 640 E1, E2); no events authored yet
-About **once an hour of play** a special Token lands on the active Region's mat
+Every **45 to 75 minutes of play** (a fresh random wait each time, counted from when the last
+one left) a special Token lands on the active Region's mat
 (the rules: [`concept_events.md`](../active/concept_events.md)). Two kinds:
 a **rich node** (a big pool of charges and a high yield, a Copper Ore Comet) and a
 **buff Token** (one effect on the Tokens in its reach for a set time, Rainfall).

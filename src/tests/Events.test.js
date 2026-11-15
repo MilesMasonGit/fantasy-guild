@@ -5,7 +5,9 @@ import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
 import { GameLoop } from '../systems/core/GameLoop.js';
 import { SaveManager } from '../systems/core/SaveManager.js';
 import { GameState } from '../state/GameState.js';
-import { createRegionRecord } from '../state/StateSchema.js';
+import { createRegionRecord, validateSaveData } from '../state/StateSchema.js';
+import { migrateState } from '../systems/core/SaveMigration.js';
+import { loadSavedState } from '../systems/core/LoadedState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as BoardState from '../systems/board/BoardState.js';
@@ -30,7 +32,7 @@ import { summaryView } from '../ui/components/hud/catchUpSummary.js';
 import * as fixtures from '../../bench/fixtures.mjs';
 
 /**
- * Events (brief 640 E1): the clock that lands one about once an hour of play, one at a time, drawn
+ * Events: the clock that lands one every 45 to 75 minutes of play, one at a time, drawn
  * among those that fit the place; a rich node that leaves at 0 charges or, when nobody can work
  * it, after an hour; a buff Token that leaves when its time is up, taking its boost with it; time
  * away; demolition.
@@ -101,6 +103,15 @@ function freshGame() {
 /** Play `ms` of game time through the real tick handlers, in `step` ms ticks. */
 function runFor(ms, step = 1000) {
     for (let t = 0; t < ms; t += step) GameLoop.runHandlers(step);
+}
+
+/** `ms` rounded up to whole 1 s ticks, as {@link runFor} plays them. */
+const ticksOf = (ms) => Math.ceil(ms / 1000) * 1000;
+
+/** Play until the event clock is due (the first tick draws a game's first wait). */
+function runToDue() {
+    if (EventClock.waitMs() == null) runFor(1000);
+    runFor(ticksOf(EventClock.nextEventInMs()));
 }
 
 /** Make a Region of `fill(col, row)` terrain (and `biome` weights) the one the guild is in. */
@@ -181,13 +192,18 @@ describe('the switch', () => {
 });
 
 describe('the clock', () => {
-    it('lands an event after an hour of play, not before', () => {
+    it('lands an event once its wait is up, not before', () => {
         setEventsForTests(table(COMET));
         freshGame();
-        runFor(HOUR - 1000);
+        expect(EventClock.waitMs()).toBeNull();
+        runFor(1000);
+        const wait = EventClock.waitMs();
+        expect(wait).toBeGreaterThanOrEqual(EventClock.EVENT_WAIT_MIN_MS);
+        expect(wait).toBeLessThanOrEqual(EventClock.EVENT_WAIT_MAX_MS);
+        runFor(ticksOf(wait) - 2000);
         expect(eventTokens()).toEqual([]);
-        expect(EventClock.clockMs()).toBe(HOUR - 1000);
-        expect(EventClock.nextEventInMs()).toBe(1000);
+        expect(EventClock.clockMs()).toBe(ticksOf(wait) - 1000);
+        expect(EventClock.nextEventInMs()).toBe(wait - (ticksOf(wait) - 1000));
 
         runFor(1000);
         const [landed] = eventTokens();
@@ -199,25 +215,29 @@ describe('the clock', () => {
         expect(EventClock.nextEventInMs()).toBeNull();
     });
 
-    it('one at a time: the clock waits while an event stands, and counts the hour from when it ended', () => {
+    it('one at a time: the clock waits while an event stands, and counts the next wait from when it ended', () => {
         setEventsForTests(table({ ...RAIN, durationMinutes: 90 }));
         freshGame();
         const ended = listenEnded();
-        runFor(HOUR);
+        runToDue();
         const [first] = eventTokens();
         expect(first?.typeId).toBe('ev_rain');
+        // The wait after it is drawn as it lands, and kept while it stands.
+        const next = EventClock.waitMs();
 
         runFor(89 * MIN);
         expect(eventTokens().map(t => t.id)).toEqual([first.id]);
         expect(EventClock.clockMs()).toBe(0);
+        expect(EventClock.waitMs()).toBe(next);
 
         runFor(MIN);
         expect(eventTokens()).toEqual([]);
         expect(ended.heard).toEqual([expect.objectContaining({ instanceId: first.id, eventId: RAIN.id, reason: EventTokens.ENDED.TIME_UP })]);
 
-        runFor(59 * MIN);
+        // The tick it left in may already count toward the wait.
+        runFor(ticksOf(next - EventClock.clockMs()) - 1000);
         expect(eventTokens()).toEqual([]);
-        runFor(MIN);
+        runFor(1000);
         const [second] = eventTokens();
         expect(second?.typeId).toBe('ev_rain');
         expect(second.id).not.toBe(first.id);
@@ -227,12 +247,72 @@ describe('the clock', () => {
     it('when nothing fits, it tries again a few minutes later', () => {
         setEventsForTests(table(SHOAL));
         freshGame();
-        runFor(HOUR);
+        runToDue();
+        const wait = EventClock.waitMs();
         expect(eventTokens()).toEqual([]);
         expect(EventClock.nextEventInMs()).toBe(EventClock.EVENT_RETRY_MS);
+        expect(EventClock.waitMs()).toBe(wait);
     });
 
-    it('a demolished event Token goes at once, with no hero, and the hour starts from then', () => {
+    it('each wait is drawn in 45 to 75 minutes, and they vary', () => {
+        setEventsForTests(table(RAIN));
+        freshGame();
+        const waits = [];
+        for (let i = 0; i < 40; i++) {
+            const { instance } = EventClock.landNow(RAIN.id);
+            waits.push(EventClock.waitMs());
+            BoardState.removeToken(instance.id);
+        }
+        for (const w of waits) {
+            expect(Number.isInteger(w)).toBe(true);
+            expect(w).toBeGreaterThanOrEqual(45 * MIN);
+            expect(w).toBeLessThanOrEqual(75 * MIN);
+        }
+        expect(new Set(waits).size).toBeGreaterThan(30);
+        expect(Math.min(...waits)).toBeLessThan(55 * MIN);
+        expect(Math.max(...waits)).toBeGreaterThan(65 * MIN);
+    });
+
+    it('the draw covers the whole span: 0 gives 45 minutes, just under 1 gives 75', () => {
+        expect(EventClock.drawWait(() => 0)).toBe(45 * MIN);
+        expect(EventClock.drawWait(() => 0.999_999_999)).toBe(75 * MIN);
+        expect(EventClock.drawWait(() => 0.5)).toBe(60 * MIN);
+    });
+
+    it('a wait part played survives a save and reload unchanged, and the event lands on time', () => {
+        setEventsForTests(table(COMET));
+        freshGame();
+        runFor(10 * MIN);
+        const wait = EventClock.waitMs();
+        const played = EventClock.clockMs();
+
+        const data = JSON.parse(GameState.serializeJson());
+        expect(data.state.events).toEqual({ clockMs: played, waitMs: wait });
+        const state = migrateState(data.state, data.version);
+        expect(validateSaveData({ version: data.version, state }).errors).toEqual([]);
+        GameState.initNew();
+        loadSavedState(state);
+        expect(EventClock.waitMs()).toBe(wait);
+        expect(EventClock.clockMs()).toBe(played);
+
+        runFor(ticksOf(wait) - played - 1000);
+        expect(eventTokens()).toEqual([]);
+        runFor(1000);
+        expect(eventTokens().map(t => t.typeId)).toEqual(['ev_comet']);
+    });
+
+    it('a save from before the wait was saved draws one on its first tick, keeping its clock', () => {
+        setEventsForTests(table(COMET));
+        freshGame();
+        GameState.state.events = { clockMs: 20 * MIN };
+        expect(EventClock.waitMs()).toBeNull();
+        expect(EventClock.nextEventInMs()).toBeNull();
+        runFor(1000);
+        expect(EventClock.waitMs()).toBeGreaterThanOrEqual(45 * MIN);
+        expect(EventClock.clockMs()).toBe(20 * MIN + 1000);
+    });
+
+    it('a demolished event Token goes at once, with no hero, and the wait starts from then', () => {
         setEventsForTests(table(COMET));
         freshGame();
         const ended = listenEnded();
@@ -460,7 +540,8 @@ describe('time away', () => {
         const before = EventClock.landNow(RAIN.id).instance;
 
         const result = await CatchUp.run({ savedAt: NOW - 2 * HOUR, now: NOW, save: false, yieldFn: () => Promise.resolve() });
-        // The one standing left after 20 minutes; the next came an hour later and left 20 minutes on.
+        // The one standing left after 20 minutes; the next came 45 to 75 minutes later and left 20
+        // minutes on; a third would need at least 45 more.
         expect(result.summary.events).toEqual([
             expect.objectContaining({ instanceId: before.id, eventId: RAIN.id, landed: false, ended: EventTokens.ENDED.TIME_UP }),
             expect.objectContaining({ eventId: RAIN.id, typeId: 'ev_rain', name: 'Rainfall', landed: true, ended: EventTokens.ENDED.TIME_UP })
@@ -477,7 +558,7 @@ describe('time away', () => {
         setEventsForTests(table(COMET));
         freshGame();
         fixtures.makeHeroes(1, { mining: 10 });
-        const result = await CatchUp.run({ savedAt: NOW - (HOUR + 10 * MIN), now: NOW, save: false, yieldFn: () => Promise.resolve() });
+        const result = await CatchUp.run({ savedAt: NOW - 85 * MIN, now: NOW, save: false, yieldFn: () => Promise.resolve() });
         expect(result.summary.events).toEqual([expect.objectContaining({ eventId: COMET.id, landed: true, ended: null })]);
         const [row] = summaryView(result).events;
         expect(row.state).toBe('here');
@@ -497,6 +578,47 @@ describe('time away', () => {
             key: mythril.id, name: 'Mythril Comet', landed: false, state: 'here', leavesInMs: 50 * MIN, leavesText: 'Leaves in 50:00'
         })]);
         expect(view.hasNews).toBe(true);
+    }, 60_000);
+
+    it('a catch-up counts to the saved wait, never a fresh one', async () => {
+        setEventsForTests(table(COMET));
+        freshGame();
+        GameState.state.events = { clockMs: 0, waitMs: 74 * MIN };
+        await CatchUp.run({ savedAt: NOW - 73 * MIN, now: NOW, save: false, stepMs: 1000, yieldFn: () => Promise.resolve() });
+        expect(eventTokens()).toEqual([]);
+        expect(EventClock.waitMs()).toBe(74 * MIN);
+        expect(EventClock.clockMs()).toBe(73 * MIN);
+        await CatchUp.run({ savedAt: NOW - MIN, now: NOW, save: false, stepMs: 1000, yieldFn: () => Promise.resolve() });
+        expect(eventTokens().map(t => t.typeId)).toEqual(['ev_comet']);
+    }, 60_000);
+
+    it('a long time away lands several events, each after the wait drawn as the one before landed', async () => {
+        setEventsForTests(table(RAIN));
+        freshGame();
+        GameState.state.events = { clockMs: 0, waitMs: 50 * MIN };
+        const now = () => GameState.state.time.gameTimeMs;
+        const log = [];
+        const offLanded = EventBus.subscribe(BOARD_EVENTS.EVENT_LANDED, () => log.push({ landedAt: now() }));
+        const offEnded = EventBus.subscribe(BOARD_EVENTS.EVENT_ENDED, () => {
+            Object.assign(log[log.length - 1], { endedAt: now(), waitAfter: EventClock.waitMs() });
+        });
+        const start = now();
+        await CatchUp.run({ savedAt: NOW - 5 * HOUR, now: NOW, save: false, stepMs: 1000, yieldFn: () => Promise.resolve() });
+        offLanded();
+        offEnded();
+
+        // 5 hours of 20 minute rains and 45 to 75 minute waits: three or four of them.
+        expect(log.length).toBeGreaterThanOrEqual(3);
+        expect(log[0].landedAt - start).toBe(50 * MIN);
+        for (let i = 1; i < log.length; i++) {
+            const gap = log[i].landedAt - log[i - 1].endedAt;
+            // Within a 1 s tick: the tick an event leaves in counts toward the wait after it.
+            expect(Math.abs(gap - log[i - 1].waitAfter)).toBeLessThan(1000);
+        }
+        for (const e of log.filter(row => row.waitAfter != null)) {
+            expect(e.waitAfter).toBeGreaterThanOrEqual(45 * MIN);
+            expect(e.waitAfter).toBeLessThanOrEqual(75 * MIN);
+        }
     }, 60_000);
 
     it('a buff that landed while away and is still here says how long it has left', () => {

@@ -27,8 +27,10 @@ Trainers (a visitor who gives XP) the owner likes; they come after these.
 
 ## The rules (owner, 2026-11-12)
 
-- **How often**: about **once an hour** of play. One event on the mat at a
-  time; the next waits until it ends.
+- **How often**: a random **45 to 75 minutes** of play between one event
+  ending and the next, drawn fresh for each wait (owner, 2026-11-14; it was
+  about once an hour). One event on the mat at a time; the next waits until
+  it ends.
 - **Picking**: **weighted random** per event (common, uncommon, rare, set in
   the CMS), among the events that fit the place.
 - **Where**: each event lists the **regions or terrain** it can land in (a

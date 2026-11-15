@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://fantasy-guild.local/cms/schemas/events.schema.json",
   "title": "Events",
-  "description": "data/events.json, and the workspace's events: the special Tokens that land on the mat about once an hour of play, keyed by event id. Loaded by src/config/registries/eventRegistry.js (shape and checks: src/config/eventTable.js; the clock: src/systems/events/EventClock.js); authored on the CMS's Events page (cms/src/components/events/, cms/src/engine/events.js). Keys not listed here are reported as warnings.",
+  "description": "data/events.json, and the workspace's events: the special Tokens that land on the mat every 45 to 75 minutes of play, keyed by event id. Loaded by src/config/registries/eventRegistry.js (shape and checks: src/config/eventTable.js; the clock: src/systems/events/EventClock.js); authored on the CMS's Events page (cms/src/components/events/, cms/src/engine/events.js). Keys not listed here are reported as warnings.",
   "type": "object",
   "additionalProperties": { "$ref": "#/$defs/event" },
   "$defs": {

@@ -252,10 +252,12 @@ export const INITIAL_STATE = {
 
     // === Events (`events/EventClock.js`) ===
     // The guild's event clock in game ms: advanced by the tick's `delta` while no event Token
-    // stands on the active mat, held at 0 while one does. The events themselves are Tokens
-    // (`instance.event`).
+    // stands on the active mat, held at 0 while one does. `waitMs` is the wait it counts to, drawn
+    // when it starts (45 to 75 min) and kept until the next landing; null until the first tick.
+    // The events themselves are Tokens (`instance.event`).
     events: {
-        clockMs: 0
+        clockMs: 0,
+        waitMs: null
     },
 
     // === The Atlas (Regions) ===

@@ -1,4 +1,4 @@
-// the event clock: about once an hour of play, an event lands on the mat
+// the event clock: every 45 to 75 minutes of play, an event lands on the mat
 
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
@@ -20,7 +20,7 @@ import { artRadiusOf, matW, matH } from '../../config/matGeometry.js';
  * ## The clock
  * `state.events.clockMs`, saved, advanced by {@link tick} with the loop's `delta` (so a catch-up
  * and the dev time skip run it too). It runs only while **no event Token stands on the mat**, and
- * is held at zero while one does: the next event comes {@link EVENT_EVERY_MS} after the last one
+ * is held at zero while one does: the next event comes `state.events.waitMs` after the last one
  * ended. When it is due, one event is drawn by weight among those that fit the place
  * ({@link fittingEvents}) and lands on a free spot of its ground ({@link landNext}); when none
  * fits or none finds room, the next try is {@link EVENT_RETRY_MS} later.
@@ -29,17 +29,28 @@ import { artRadiusOf, matW, matH } from '../../config/matGeometry.js';
  * event left on another Region's mat stays there, frozen with that board; it does not hold this
  * mat's clock.
  *
+ * ## The wait
+ * Each wait is drawn uniformly between {@link EVENT_WAIT_MIN_MS} and {@link EVENT_WAIT_MAX_MS}
+ * ({@link drawWait}) when it starts: when an event lands (the wait that follows it), or on a game's
+ * first tick when none is drawn yet. ⚠️ It is saved as `state.events.waitMs` and never redrawn
+ * until the next landing, so a reload, a catch-up or travel keeps the same due time; a catch-up
+ * runs the same tick, so every event it lands draws the wait after it the same way.
+ *
  * ## Off unless turned on
  * ⚠️ {@link setEnabled} starts false: the tests and the engine bench play without events unless
  * they ask (`bench/lib/harness.mjs`, `--events`), so content added to the table never changes
  * their work. The game turns it on at boot (`main.jsx`); a perf stress board turns it off again
  * unless its address says `events=1` (`perfHarness.js`).
  *
- * Live play draws `Math.random`: the draw, the darts for a spot, and the new Token's id.
+ * Live play draws `Math.random` (the engine's shared stream, seeded by the bench): the wait, the draw,
+ * the darts for a spot, and the new Token's id.
  */
 
-/** ⭐ Game value: the time between one event ending and the next landing, in game ms. */
-export const EVENT_EVERY_MS = 60 * 60 * 1000;
+/** ⭐ Game value: the shortest time between one event ending and the next landing, in game ms. */
+export const EVENT_WAIT_MIN_MS = 45 * 60 * 1000;
+
+/** ⭐ Game value: the longest time between one event ending and the next landing, in game ms. */
+export const EVENT_WAIT_MAX_MS = 75 * 60 * 1000;
 
 /** ⭐ Game value: when nothing could land, the time until the next try. */
 export const EVENT_RETRY_MS = 5 * 60 * 1000;
@@ -72,7 +83,18 @@ export function eventState() {
     if (!state) return null;
     if (!state.events || typeof state.events !== 'object') state.events = { clockMs: 0 };
     if (!Number.isFinite(state.events.clockMs)) state.events.clockMs = 0;
+    if (!Number.isFinite(state.events.waitMs)) state.events.waitMs = null;
     return state.events;
+}
+
+/** A fresh wait between events, uniform in [{@link EVENT_WAIT_MIN_MS}, {@link EVENT_WAIT_MAX_MS}], whole ms. */
+export function drawWait(random = Math.random) {
+    return EVENT_WAIT_MIN_MS + Math.floor(random() * (EVENT_WAIT_MAX_MS - EVENT_WAIT_MIN_MS + 1));
+}
+
+/** The current wait between events, in game ms, or null before a game's first tick drew one. */
+export function waitMs() {
+    return eventState()?.waitMs ?? null;
 }
 
 /** The event clock, in game ms (tests, the QA panel). */
@@ -80,10 +102,14 @@ export function clockMs() {
     return eventState()?.clockMs || 0;
 }
 
-/** Game ms until the next event is tried, or null while one stands on the mat or events are off. */
+/**
+ * Game ms until the next event is tried, or null while one stands on the mat, events are off, or
+ * no wait is drawn yet (before a game's first tick).
+ */
 export function nextEventInMs() {
     if (!enabled || eventTokenOnMat()) return null;
-    return Math.max(0, EVENT_EVERY_MS - clockMs());
+    const wait = waitMs();
+    return wait == null ? null : Math.max(0, wait - clockMs());
 }
 
 /** The event Token on the mat, remembered while nothing arrives or leaves. */
@@ -260,7 +286,10 @@ export function landNow(eventId, random = Math.random) {
     if (!spot) return { success: false, reason: `No room for ${event.name} on its ground here` };
     const instance = land(event, spot);
     const s = eventState();
-    if (s) s.clockMs = 0;
+    if (s) {
+        s.clockMs = 0;
+        s.waitMs = drawWait(random);
+    }
     return { success: true, instance };
 }
 
@@ -271,20 +300,26 @@ export function landNow(eventId, random = Math.random) {
 /**
  * **One tick** (`event_clock`, with the loop's `delta`). Nothing while events are off. While an
  * event Token stands on the mat the clock is held at zero; otherwise it advances, and once due an
- * event is tried ({@link landNext}): landed, the clock starts from zero (and holds while it stands);
- * not, the next try is {@link EVENT_RETRY_MS} later.
+ * event is tried ({@link landNext}): landed, the clock starts from zero (and holds while it stands)
+ * and the next wait is drawn; not, the next try is {@link EVENT_RETRY_MS} later, on the same wait.
  */
 export function tick(delta, random = Math.random) {
     if (!enabled || !(delta > 0)) return;
     const s = eventState();
     if (!s) return;
+    if (s.waitMs == null) s.waitMs = drawWait(random);
     if (eventTokenOnMat()) {
         s.clockMs = 0;
         return;
     }
     s.clockMs += delta;
-    if (s.clockMs < EVENT_EVERY_MS) return;
-    s.clockMs = landNext(random) ? 0 : EVENT_EVERY_MS - EVENT_RETRY_MS;
+    if (s.clockMs < s.waitMs) return;
+    if (landNext(random)) {
+        s.clockMs = 0;
+        s.waitMs = drawWait(random);
+    } else {
+        s.clockMs = s.waitMs - EVENT_RETRY_MS;
+    }
 }
 
 // ---------------------------------------------------------------------------

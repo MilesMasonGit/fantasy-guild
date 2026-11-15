@@ -12,7 +12,7 @@ import {
  * The Events page: the events table (`engine/events.js`), as Sync writes it to `data/events.json`.
  * Each row names the Token type that lands, its kind (a rich node, or a buff with its time on the
  * mat), its weight in the draw, and where it may land: ground words and Region biomes, none of
- * either meaning anywhere its Token may stand. The game lands one about once an hour of play
+ * either meaning anywhere its Token may stand. The game lands one every 45 to 75 minutes of play
  * (`src/systems/events/EventClock.js`). The checks below are the game's boot audit's
  * (`src/config/eventTable.js`).
  */
@@ -101,8 +101,8 @@ export default function EventsPage() {
   return (
     <div className="h-full overflow-y-auto p-4 space-y-4" data-testid="events-page">
       <p className="text-[11px]" style={muted}>
-        About once an hour of play one event lands on the mat, drawn by weight among those that fit the place; the next comes
-        an hour after it ends. A rich node stays put and leaves when worked out, or after an hour if no hero can work it. A buff
+        Every 45 to 75 minutes of play one event lands on the mat, drawn by weight among those that fit the place; the next comes
+        45 to 75 minutes after it ends (a fresh random wait each time). A rich node stays put and leaves when worked out, or after an hour if no hero can work it. A buff
         Token can be moved and leaves when its time is up. Its Token is an ordinary Token: make it on the Token editor.
       </p>
       <Section title={`Events (${rows.length})`} icon={<CloudLightning size={14} />}>
