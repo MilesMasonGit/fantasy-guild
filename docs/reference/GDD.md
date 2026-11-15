@@ -82,7 +82,8 @@ Today the pull is skill levels, their milestone perks and Guild Hall upgrades.
    upgrades. **Items are the only currency**; gold is retired.
 6. **Spawners keep the mat alive**: forests, mines and camps spawn new Tokens up
    to a family cap, some paying an item per spawn (e.g. a seed).
-7. **Quests** (Tokens beside the Hall) teach the game, then offer bounties.
+7. **Limes**, the guide, teaches the game in eight short lessons, then names the one big goal
+   (settle a place); **quests** (Tokens beside the Hall) offer bounties.
 
 ---
 
@@ -516,8 +517,7 @@ can't be, the inspection says why), **Cancel demolition** takes the mark off.
 A marked Token wears the Construction badge, its inspection reads "Marked for
 demolition" with the time left once a hero is on it, and "Demolished …" pops
 up where it stood. A **bounty** quest has **Dismiss bounty** on its
-inspection instead: it leaves with no reward and frees its place; tutorial
-steps stay until claimed. The discard bin (and its refunds) is gone. An
+inspection instead: it leaves with no reward and frees its place. The discard bin (and its refunds) is gone. An
 **event Token** (below) needs no hero: Demolish takes it away at once.
 *(`Demolition.js`, `QuestTokens.dismissBounty`, `TokenInspection.jsx`)*
 
@@ -1681,23 +1681,32 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
 | Bank Tabs | 15 | +1 Bank tab (64 slots) per rank |
 | Wishing Well | 10 | 10 × *rank* Water a lap as Passive Production, no hero needed (rank 1 free) |
 
+- **Limes's lessons** (brief 480 L4; the lessons switch on the new game screen, on by
+  default). Limes, the guide on the Starter Camp's mat, teaches in the concept's order: (1) drag
+  your hero to a Redberry Bush, (2) collect the loot, (3) equip the woodaxe from the Bank (the
+  scrap heap step waits for its content), (4) chop wood, (5) buy Bunk Beds in the Guild Hall (a
+  second hero), (6) buy a Wood Foundation and build the Workbench on it, (7) craft (Charcoal), (8)
+  a first fight: food, then win (a sword step waits for its content; the foe is a Goblin until
+  the opening's small slime exists). Then the **goal**: Limes opens the world map and names
+  settling a place, until one is settled; the first settle is Limes's first **big moment** line.
+  Each step opens Limes's bubble by itself and outlines what it names in hard gold; it speaks
+  through the Limes the player can see (the mat's at the Starter Camp, or the small Limes of the
+  Bank, the Shop's Foundation card, the Guild Hall, Bunk Beds' Upgrade drawer, the world map,
+  while that screen is open) and stays until the step is done. **Guides, never locks**: nothing is
+  disabled, every step counts from the start, so one done early is simply done when its turn
+  comes. **No rewards.** Progress counts from the engine's own events (the reports bounties
+  count), is kept in the save, and holds through a catch-up, a reload and travel. Lessons off:
+  the same start, Limes never speaks by itself (it still talks when clicked). A game made before
+  the lessons has none. Every word is in `limesText.js`; the steps and the ids they name in
+  `lessonPlan.js`. *(`src/systems/quests/LimesLessons.js`, `ui/components/limes/`)*
 - **Quests are Tokens** beside the Hall; click a finished one to claim its
   reward as loot. *(`src/systems/quests/`)*
-  - **Tutorial** (the cartographer's, `tutorialQuests.js`): 11 steps, one at
-    a time (the first hero exists from the start, so there is no recruit step):
-    equip a Woodaxe, **send your hero to a tree**, gather,
-    collect loot, buy a Foundation, build a station, craft, **build a first
-    camp** (a Logging Camp on a Wood Foundation; any camp counts); then the
-    Starter Camp's end, **make a first tool** (copper, the camp's metal) and
-    **beat a Goblin**; then the last step, **settle your first place**: it
-    arrives with the cartographer opening the world map, his words heading
-    its inspection panel, and is done when a place of the world map is
-    settled (brief 330 W3).
   - **Bounties**: random "collect N items" or "defeat N Goblins", each paying
     10 Oak Wood (*placeholder*). Cap 2 (the Notice Board star retired with brief 320); a
     new one every 3 min of game time. A bounty with no room to land beside the Hall is
-    missed, and the next comes 3 min later, as a spawner's missed spawn does. A tutorial
-    step with no room arrives as soon as something on the mat moves, leaves or arrives.
+    missed, and the next comes 3 min later, as a spawner's missed spawn does. The
+    cartographer's tutorial steps are gone (Limes teaches); an older save's step is taken
+    off the mat.
 - **No unlocks and no classes**: progression is skill levels (recipe, Token
   and gear level requirements), each skill's milestone perks (§4), Hall
   upgrades, and affording things. Every hero can grow into anything. The smithing ladder

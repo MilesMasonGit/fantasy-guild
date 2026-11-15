@@ -45,11 +45,6 @@ export function isStepDone(id) {
     return !!progress()?.done.includes(id);
 }
 
-/** How far step `id` has counted (0 once done or never started). */
-export function stepCount(id) {
-    return progress()?.counts[id] || 0;
-}
-
 /** The step Limes is on: the first not done, the goal last; null once all are done or with no lessons. */
 export function currentStep() {
     const p = progress();

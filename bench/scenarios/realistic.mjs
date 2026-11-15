@@ -10,7 +10,7 @@
 //     their goblins (S2's fights: a kill every 15 s or so, as each camp respawns one every 30 s);
 //   * one hero PINNED to a smelter that runs dry after two cycles: the
 //     "stalled station with a hero standing on it" case (CR3-005);
-//   * quest Tokens from the Hall (the tutorial step and bounties);
+//   * quest Tokens from the Hall (bounties);
 //   * loot dropping from every cycle, with auto-collect ON so the Bank moves.
 //
 // ⚠️ Auto-collect is off by default in the shipped settings (D-233) — the player

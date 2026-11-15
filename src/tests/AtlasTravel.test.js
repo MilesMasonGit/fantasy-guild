@@ -137,6 +137,8 @@ afterAll(() => {
 describe('travel stores the old board whole and installs the other', () => {
     it('the old board goes into its Region, minus the Hall; the new mat holds only the Hall', () => {
         const { hall } = buildRegionA();
+        // A bounty beside the Hall (no quest stands on a new mat), to travel with it.
+        expect(QuestTokens.spawnBounty()).toBeTruthy();
         step(100);
         SpriteLayer.collectAll();
         const before = copy(GameState.state.board);
@@ -346,6 +348,9 @@ describe('what travels with the guild', () => {
 
     it('quest Tokens travel beside the Hall, and the bounty clock is the guild\'s', () => {
         const { hall } = buildRegionA();
+        // Two bounties, below a cap of three, so the clock runs.
+        setMatTuning('questCap', 3);
+        expect(QuestTokens.spawnBounty()).toBeTruthy();
         expect(QuestTokens.spawnBounty()).toBeTruthy();
         QuestTokens.ensure();
         step(30);
