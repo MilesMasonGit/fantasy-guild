@@ -6,9 +6,6 @@ import { cellMat } from '../../../systems/world/cellMat.js';
 import { HALL_TYPE_ID } from '../../../systems/atlas/Layout.js';
 import { worldTables } from '../../../config/registries/worldTablesRegistry.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
-import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
-import { tutorialTemplate } from '../../../systems/quests/tutorialQuests.js';
-import { TUTORIAL_TEXT } from '../../../systems/quests/tutorialText.js';
 import { shownRings, cellLook } from './worldMapLayout.js';
 
 /**
@@ -42,15 +39,6 @@ export function standingTokens(world) {
     }
     tokenCache.set(world, out);
     return out;
-}
-
-/**
- * The cartographer's words while the tutorial's last step stands on the mat unfinished (the one
- * that opened this map), or null.
- */
-function cartographerNote() {
-    const step = QuestTokens.tutorialTokens().map(t => t.quest).find(q => tutorialTemplate(q.id)?.opensWorld && !q.done);
-    return step ? { speaker: TUTORIAL_TEXT.speaker, title: step.title, says: step.says, instruction: step.instruction } : null;
 }
 
 /**
@@ -94,5 +82,5 @@ export function worldView() {
         shaped.look = cellLook(shaped, { ringOpen: () => !shaped.lock });
         return shaped;
     });
-    return { seed: world.seed, world, rings, cells, here, note: cartographerNote() };
+    return { seed: world.seed, world, rings, cells, here };
 }

@@ -5,7 +5,7 @@
 import { useSyncExternalStore } from 'react';
 
 /**
- * What the drawer draws, or null while the map shows no world: `{ cell, note, version, message,
+ * What the drawer draws, or null while the map shows no world: `{ cell, version, message,
  * onMessage, onSettle, onTravel }`, the screen's chosen `worldView()` cell and its handlers.
  */
 let shown = null;

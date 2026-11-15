@@ -163,21 +163,10 @@ const PlacePlaytime = ({ regionId }) => {
     );
 };
 
-/** The cartographer's words at the top of the drawer, while the tutorial's last step asks for a place. */
-const CartographerNote = ({ note }) => (
-    <div data-world-note className="flex flex-col gap-0.5 pb-2 mb-1 border-b border-white/10">
-        <div className={headingCls}>{note.speaker}</div>
-        <div className="font-pixel ui-text-title font-bold text-white">{note.title}</div>
-        <div className="font-pixel ui-text-body text-white/85 italic">{note.says}</div>
-        <div className="font-pixel ui-text-small text-white/70">{note.instruction}</div>
-    </div>
-);
-
 /**
  * What the World Map drawer holds for the chosen place. Its header: the guild's flag when the guild
  * is there, the place's name (renamed behind the quill once settled), its land and line, the X that
- * closes the map. Then, while the tutorial's last step asks for a place, the cartographer's words;
- * once settled, its mat drawn small with its Token count over the cap in the corner; the three
+ * closes the map. Then, once settled, its mat drawn small with its Token count over the cap in the corner; the three
  * ground dials (Water, Grass, Stone), settled or not; once settled, the time spent there; what it
  * yields; its price while not settled. At the foot a large Settle on the frontier (greyed with what
  * is short, or the Guild Hall star its ring waits for) or Travel to a settled place elsewhere.
@@ -185,7 +174,7 @@ const CartographerNote = ({ note }) => (
  * @param {object} props
  * @param {object|null} props.cell a `worldView()` cell
  */
-export const WorldDrawerBody = ({ cell, note, version, message, onMessage, onSettle, onTravel, onClose }) => {
+export const WorldDrawerBody = ({ cell, version, message, onMessage, onSettle, onTravel, onClose }) => {
     const settled = cell?.state === CELL_STATE.SETTLED;
     const frontier = cell?.state === CELL_STATE.FRONTIER;
     const region = cell?.regionId ? Atlas.getRegion(cell.regionId) : null;
@@ -212,7 +201,6 @@ export const WorldDrawerBody = ({ cell, note, version, message, onMessage, onSet
             <div className="flex-1 min-h-0 flex flex-col">
                 <ArrowScrollList step={80} compact className="flex-1 min-h-0">
                     <div className="flex flex-col gap-3 px-3 py-2">
-                        {note && <CartographerNote note={note} />}
                         {!cell && <p className="font-pixel ui-text-body text-white/60">{t('worldMap.pickCell')}</p>}
                         {cell && (
                             <section data-world-detail={cell.id} className="flex flex-col gap-3">

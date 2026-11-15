@@ -37,5 +37,5 @@ export function previewView(world) {
         // Every place lit: the screen shows what the world holds, not what the guild can reach.
         look: CELL_LOOK.SETTLED
     }));
-    return { seed: world.seed, world, rings, cells, here: HALL_CELL, note: null };
+    return { seed: world.seed, world, rings, cells, here: HALL_CELL };
 }

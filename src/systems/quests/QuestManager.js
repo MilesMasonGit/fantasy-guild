@@ -1,31 +1,31 @@
 // Fantasy Guild - Quest Manager
-// Hears the game's events and reports quest progress; generates bounties and
-// works out rewards. The quests themselves are Tokens on the mat: see QuestTokens.js.
+// Hears the game's events and reports progress, to the bounties and to Limes's lessons; generates
+// bounties and works out rewards. The bounties themselves are Tokens on the mat: see QuestTokens.js.
 
-import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from '../board/boardEvents.js';
-import { tutorialTemplate } from './tutorialQuests.js';
 import { getTokenType, isLandmarkType } from '../../config/registries/tokenRegistry.js';
 import { campOf } from '../../config/registries/tokenConstants.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { toolOf } from '../../config/registries/toolKinds.js';
+import { categoryOfItem, isWeaponCategory } from '../../config/registries/equipmentConstants.js';
 import * as RecipeResolver from '../board/RecipeResolver.js';
 // One way only: QuestTokens does not import this module, so the bounty and
 // reward helpers live in the leaf `questBounties.js` and are re-exported below.
 import * as QuestTokens from './QuestTokens.js';
+import * as LimesLessons from './LimesLessons.js';
 import { createRandomQuest } from './questBounties.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../core/engineEvents.js';
 
 export { RANDOM_ITEMS, RANDOM_HUNTS } from './questBounties.js';
 
 /**
- * Quests are Tokens the Guild Hall spawns (`QuestTokens.js`), which own the cap,
- * the game-time clock, the tutorial chain, claiming and saves. This manager
- * keeps what does not care where a quest is:
+ * Bounties are Tokens the Guild Hall spawns (`QuestTokens.js`), which own the cap,
+ * the game-time clock, claiming and saves. This manager keeps what does not care
+ * where a quest is:
  *
  * * the event subscriptions, counted on the quest Tokens
- *   (`QuestTokens.reportProgress`);
+ *   (`QuestTokens.reportProgress`) and by Limes's lessons (`LimesLessons.report`);
  * * bounty generation ({@link QuestManager.createRandomQuest}; the pools and
  *   the generator live in `questBounties.js`);
  * * the reward rule (`questReward`, also in `questBounties.js`).
@@ -51,14 +51,9 @@ export const QuestManager = {
         QuestTokens.resetRuntime();
     },
 
+    /** The saved quest section made whole (the bounty clock). */
     ensureState() {
-        // A save from before the list existed kept only a step number, which maps onto nothing now;
-        // `questState` gives it the list and the bounty clock.
-        const q = QuestTokens.questState();
-        if (!q) return;
-        // Counts only steps the chain still has: an old save's `tutorial_N`
-        // ids stay in the list, harmless, and count for nothing.
-        q.tutorialStep = q.completedTutorials.filter(id => tutorialTemplate(id)).length;
+        QuestTokens.questState();
     },
 
     /**
@@ -70,24 +65,13 @@ export const QuestManager = {
         return QuestTokens.questTokens().map(t => t.quest);
     },
 
-    getTutorialStep() {
-        this.ensureState();
-        return GameState.state?.quests?.tutorialStep || 0;
-    },
-
-    /**
-     * Asks `QuestTokens` to bring the mat up to what is owed (a save's quests,
-     * the tutorial step).
-     */
+    /** Asks `QuestTokens` to bring the mat up to date (an older save's tutorial Token taken off). */
     ensureQuests() {
         this.ensureState();
         QuestTokens.ensure();
     },
 
-    /**
-     * A slot was opened (`EngineBootstrap.startSlot`): the mat is checked on the next tick too,
-     * because a new game's Guild Hall lands after this runs.
-     */
+    /** A slot was opened (`EngineBootstrap.startSlot`): the mat is checked on the next tick too. */
     onSlotOpened() {
         QuestTokens.requestCheck();
         this.ensureQuests();
@@ -99,7 +83,7 @@ export const QuestManager = {
                 QuestTokens.requestCheck();
                 this.ensureQuests();
             }),
-            // Travel: the quests came along beside the Hall; check the new mat holds what is owed.
+            // Travel: the quests came along beside the Hall; check the new mat too.
             EventBus.subscribe(ENGINE_EVENTS.BOARD_SWAPPED, () => {
                 QuestTokens.requestCheck();
                 this.ensureQuests();
@@ -134,7 +118,7 @@ export const QuestManager = {
                 this.reportProgress('token_built', 1, { typeId: data?.typeId, fromTypeId: data?.fromTypeId, camp: !!campOf(getTokenType(data?.typeId)) });
             }),
             // A new order. `skill`: the work skill of the Token the hero was sent to (null for bare
-            // ground, an enemy or a camp), so a step can ask for a tree.
+            // ground, an enemy or a camp), so a step can ask for a tree; `typeId` for one Token.
             EventBus.subscribe(ENGINE_EVENTS.HERO_DEPLOYED, (data) => {
                 this.reportProgress('hero_deployed', 1, { typeId: data?.typeId ?? null, skill: getTokenType(data?.typeId)?.config?.skill || null });
             }),
@@ -171,7 +155,7 @@ export const QuestManager = {
             EventBus.subscribe(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, (data) => {
                 // A buy of several ranks at once counts each rank, as that many single buys would.
                 const ranks = data?.count || 1;
-                this.reportProgress('guild_upgrade_purchased', ranks);
+                this.reportProgress('guild_upgrade_purchased', ranks, { upgradeId: data?.upgradeId ?? null });
                 if (data?.upgradeId === 'wishing_well') {
                     this.reportProgress('wishing_well_upgraded', ranks);
                 }
@@ -187,7 +171,7 @@ export const QuestManager = {
             }),
             // ⚠️ Also from the React layer: `TokenCard` publishes it when its sheet opens on a
             // Token on the mat. A new route that shows a board Token's sheet must publish it too, or
-            // the tutorial's "inspect an endgame site" step stalls.
+            // a quest counting it stalls.
             EventBus.subscribe(UI_EVENTS.TOKEN_INSPECTED, (data) => {
                 const typeId = data?.typeId ?? null;
                 this.reportProgress('token_inspected', 1, { typeId, landmark: isLandmarkType(typeId) });
@@ -208,10 +192,19 @@ export const QuestManager = {
             // ⚠️ `hero_equipped` is NOT an engine event. Equipping is announced as
             // `hero_equipment_changed` with `action: 'equip'`, which feeds the
             // `hero_equipped` quest target.
-            // `tool`: whether what was equipped is a gathering tool, for the tutorial's first tool.
+            // `tool` and `toolKind`: whether what was equipped is a gathering tool, and which kind;
+            // `category` its loadout category ('food'), `weapon` whether that holds a weapon.
             EventBus.subscribe(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, (data) => {
                 if (data?.action === 'equip') {
-                    this.reportProgress('hero_equipped', 1, { itemId: data.itemId, tool: !!toolOf(getItem(data.itemId)) });
+                    const tool = toolOf(getItem(data.itemId));
+                    const category = categoryOfItem(data.itemId);
+                    this.reportProgress('hero_equipped', 1, {
+                        itemId: data.itemId,
+                        tool: !!tool,
+                        toolKind: tool?.kind ?? null,
+                        category,
+                        weapon: !!category && isWeaponCategory(category)
+                    });
                 }
             }),
             // ⚠️ `token_exhausted` is a quest TARGET name and a tile-log entry type,
@@ -233,10 +226,11 @@ export const QuestManager = {
         QuestTokens.syncCollections();
     },
 
-    /** Count one report against every quest Token on the mat that wants it. */
+    /** Count one report against every quest Token on the mat that wants it, and for Limes's lessons. */
     reportProgress(targetType, amount = 1, metadata = {}) {
         this.ensureState();
         QuestTokens.reportProgress(targetType, amount, metadata);
+        LimesLessons.report(targetType, amount, metadata);
     },
 
     /**

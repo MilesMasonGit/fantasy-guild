@@ -10,7 +10,8 @@ import { LIMES_TEXT } from '../../../systems/quests/limesText.js';
  *   until `closeLimesStep`; the player can only collapse it to a small "…" bubble, and a click
  *   opens it again. A step names where it speaks: `'mat'` (the Starter Camp's Limes) or a screen's
  *   small Limes (a key of `LIMES_TEXT.blurbs`), which then glows and shows the step's words. It
- *   may name a target to wear the hard gold outline (`limesMark.js`).
+ *   may name a target to wear the hard gold outline (`limesMark.js`). A step with an `onClose`
+ *   (a big moment) is ended by its Close instead, which then calls it.
  * While a step speaks on the mat, it is what the mat's bubble shows.
  */
 
@@ -42,12 +43,14 @@ const linesOf = (lines) => (Array.isArray(lines) ? lines : [lines]).filter(l => 
 /**
  * Limes speaks by itself: its bubble opens (on the mat, or on a screen's small Limes) and stays
  * until {@link closeLimesStep}. A new step replaces the last one; any talk is closed.
- * @param {{ id: string, lines: string|string[], spot?: string, target?: object|null }} step
+ * `collapsed` opens it already shrunk to "…"; `onClose` makes its Close end it (and is called).
+ * @param {{ id: string, lines: string|string[], spot?: string, target?: object|null,
+ *   collapsed?: boolean, onClose?: (() => void)|null }} step
  */
-export function openLimesStep({ id, lines, spot = LIMES_MAT, target = null }) {
+export function openLimesStep({ id, lines, spot = LIMES_MAT, target = null, collapsed = false, onClose = null }) {
     const shown = linesOf(lines);
     if (!id || !shown.length) return;
-    set({ ...state, talk: null, step: { id, lines: shown, index: 0, collapsed: false, spot, target } });
+    set({ ...state, talk: null, step: { id, lines: shown, index: 0, collapsed: !!collapsed, spot, target, onClose } });
 }
 
 /** The step is done: its bubble, glow and outline go. With an id, only that step. */
@@ -89,10 +92,17 @@ export function limesNext(kind) {
     }
 }
 
-/** The bubble's Close: a talk closes, a step collapses to "…" (only `closeLimesStep` ends a step). */
+/**
+ * The bubble's Close: a talk closes, a step collapses to "…" (only `closeLimesStep` ends a step),
+ * a step with an `onClose` ends and calls it.
+ */
 export function limesClose(kind) {
-    if (kind === 'step') collapseLimesStep(true);
-    else if (state.talk) set({ ...state, talk: null });
+    if (kind === 'step') {
+        const onClose = state.step?.onClose;
+        if (typeof onClose !== 'function') { collapseLimesStep(true); return; }
+        set({ ...state, step: null });
+        onClose();
+    } else if (state.talk) set({ ...state, talk: null });
 }
 
 /** The step a screen's small Limes carries, or null. */

@@ -1,11 +1,18 @@
 // Fantasy Guild - every word Limes says, in one place
 //
 // The owner reads and edits these at the eye-check. Limes is cheerful and blobby: short, warm,
-// a little silly, clear words, easy to translate. Everything here is a placeholder until then.
+// a little silly, clear words, easy to translate. Everything here is a draft until then.
 //   talk     what Limes says when the player clicks it on the Starter Camp, one bubble per line
 //   blurbs   what each screen's small Limes says on hover: that screen's basic mechanic
+//   lessons  each lesson step's words, by where Limes says them (below)
+//   moments  what Limes says once at a big moment
 //   buttons  the words on the bubble's buttons
-// The lessons' own words are not here: they come with the lessons.
+//
+// A lesson step speaks through the Limes the player can see: on the Starter Camp's mat (`mat`),
+// or a screen's small Limes while that screen is open (`bank`, `shop`, `guildHall`, `hallStar`,
+// `worldMap`). Words for a screen make the step speak there; a step with none for the open
+// screen stays with the mat's Limes. Each entry is one bubble per line (Next between them).
+// The steps and what counts for each are `lessonPlan.js`.
 
 export const LIMES_TEXT = Object.freeze({
     /** Limes's name, as the bubble and the small sprites are labelled for screen readers. */
@@ -29,6 +36,82 @@ export const LIMES_TEXT = Object.freeze({
         fight: 'A fight! Your hero and the foe trade blows until one runs out of health. Hit what the foe is weak to, and bring elixirs for a tough one.',
         encyclopedia: 'The Encyclopedia! It remembers every item and Token you find. Search for anything to see where it comes from and what it is good for.',
         foundation: 'A Foundation! Place it on the mat, then send a hero to build it into a real building. Changed your mind? Drag it back here before it is built.'
+    }),
+
+    lessons: Object.freeze({
+        // 1. Drag your hero to a Redberry Bush.
+        bush: Object.freeze({
+            mat: Object.freeze([
+                'Blorp! Hello, guild master! I am Limes. Let me show you around the camp.',
+                'See that red bush? Drag your hero onto it. Berries!'
+            ])
+        }),
+        // 2. Collect (hover the loot).
+        collect: Object.freeze({
+            mat: Object.freeze(['Ooh, loot! What your heroes find drops on the mat. Hover over it to scoop it into the Bank.'])
+        }),
+        // 3. Search the scrap heap (waits for the scrap heap in the content).
+        heap: Object.freeze({
+            mat: Object.freeze(['See that pile of junk by the Hall? Send a hero to dig through it. Old tools hide in there!'])
+        }),
+        // 3. Equip the woodaxe.
+        axe: Object.freeze({
+            mat: Object.freeze(['Trees need a woodaxe! Open the Bank, the yellow bubble, and find one.']),
+            bank: Object.freeze(['There it is! Drag the Woodaxe onto your hero on the bar below.'])
+        }),
+        // 4. Chop wood.
+        chop: Object.freeze({
+            mat: Object.freeze(['Now drag your hero onto a tree. Chop chop! Wood builds almost everything.'])
+        }),
+        // 5. Buy Bunk Beds in the Guild Hall: a second hero.
+        bunk_beds: Object.freeze({
+            mat: Object.freeze(['One hero is lonely. Let us find a friend! Open the Guild Hall, the purple bubble.']),
+            guildHall: Object.freeze(['Welcome to your Guild Hall! Click Bunk Beds, the glowing star.']),
+            hallStar: Object.freeze(['Bunk Beds bring a new hero. Gather the wood it asks for, then press Upgrade. Blorp!'])
+        }),
+        // 6. Buy a Foundation...
+        foundation: Object.freeze({
+            mat: Object.freeze(['Time to build! Open the Shop, the green bubble.']),
+            shop: Object.freeze(['Drag the Wood Foundation onto the mat. It is a floor for a building!'])
+        }),
+        // 6. ...and build a Workbench on it.
+        build: Object.freeze({
+            mat: Object.freeze(['Click your Foundation and pick the Workbench. Then drag a hero onto it to build it.'])
+        }),
+        // 7. Craft something.
+        craft: Object.freeze({
+            mat: Object.freeze(['A Workbench! Click it, pick Charcoal, then send a hero to make some. Crafting!'])
+        }),
+        // 8. A safe first fight: the weapon (waits for a first sword in the content)...
+        weapon: Object.freeze({
+            mat: Object.freeze(['Fighting time! First, open the Bank and find a sword.']),
+            bank: Object.freeze(['Drag the sword onto your hero. Pointy end out!'])
+        }),
+        // 8. ...food...
+        food: Object.freeze({
+            mat: Object.freeze(['Fights make heroes hungry. Open the Bank and give your hero some food.']),
+            bank: Object.freeze(['Drag some berries onto your hero. They eat when they get hurt. Yum!'])
+        }),
+        // 8. ...and the fight.
+        fight: Object.freeze({
+            mat: Object.freeze(['Now a little fight! Drag your hero onto a goblin by the Goblin Camp. You can do it!'])
+        }),
+        // Then the one big goal: settle a place on the world map.
+        settle: Object.freeze({
+            mat: Object.freeze([
+                'You did it all! Blorp blorp! Now the big one: settle a new place.',
+                'Open the world map, the blue bubble, and pick a place next to the camp.'
+            ]),
+            worldMap: Object.freeze(['This is the world! Click a place next to the camp to see what it asks for. Gather it all, then press Settle!'])
+        })
+    }),
+
+    moments: Object.freeze({
+        // The first place settled.
+        first_settle: Object.freeze([
+            'Blorp! Your first new place! The guild is growing up so fast.',
+            'I will stay at the camp. Come and visit!'
+        ])
     }),
 
     buttons: Object.freeze({

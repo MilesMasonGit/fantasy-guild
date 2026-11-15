@@ -24,14 +24,12 @@ function questProjection(instance) {
         id: q.id,
         title: q.title,
         instruction: q.instruction || null,
-        says: q.says || null,
         type: q.type || null,
         itemId: q.itemId || null,
         enemyId: q.enemyId || null,
         currentCount: q.currentCount || 0,
         requiredCount: q.requiredCount || 1,
         rewardItems: (q.rewardItems || []).map(r => ({ itemId: r.itemId, quantity: r.quantity })),
-        tutorial: !!q.tutorial,
         done: !!q.done
     };
 }

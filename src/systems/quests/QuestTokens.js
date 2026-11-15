@@ -5,7 +5,6 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from '../board/boardEvents.js';
 import * as BoardState from '../board/BoardState.js';
 import * as EffectActions from '../board/EffectActions.js';
-import * as MatPlacement from '../board/MatPlacement.js';
 import * as SpriteLayer from '../board/SpriteLayer.js';
 import { isGuildHall } from '../board/MatCap.js';
 import { PLACEMENT } from '../../config/registries/placementRegistry.js';
@@ -14,16 +13,15 @@ import { tunedOr } from '../../config/matTuning.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { InventoryStore } from '../inventory/InventoryStore.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
-import { TUTORIAL_QUESTS, tutorialTemplate } from './tutorialQuests.js';
 // The bounty and reward helpers come from the leaf `questBounties.js`, not
 // QuestManager, so this module does not import QuestManager.
-import { createRandomQuest, questReward, copyReward } from './questBounties.js';
+import { createRandomQuest, questReward } from './questBounties.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 export { QUEST_TOKEN_TYPE };
 
 /**
- * Quests are Tokens. The Guild Hall spawns quest Tokens beside itself, and each
+ * Bounties are Tokens. The Guild Hall spawns quest Tokens beside itself, and each
  * carries its quest.
  *
  * ## The instance (saved with the board)
@@ -33,12 +31,11 @@ export { QUEST_TOKEN_TYPE };
  * ```js
  * instance.quest = {
  *   id, title, instruction?,          // what it says
- *   says?,                            // a tutorial step: the cartographer's line
- *   type?: 'hunt' | 'collection',     // bounties only
+ *   type: 'hunt' | 'collection',
  *   targetType, match?, enemyId?, itemId?,   // what it counts (QuestManager's matching)
  *   requiredCount, currentCount,
  *   rewardItems: [{ itemId, quantity }],
- *   tutorial: boolean, step?,         // a tutorial step
+ *   tutorial: false,
  *   done: boolean                     // currentCount >= requiredCount
  * }
  * ```
@@ -47,15 +44,15 @@ export { QUEST_TOKEN_TYPE };
  * (`MatCap.countsTowardCap`), and the player can drag it like any Token. No hero
  * works it.
  *
- * ## Two kinds, two rules
- * * **Tutorial quests**: one at a time, a hidden cap of its own. The first
- *   stands on the mat in a new game, and claiming one brings the next. They
- *   ignore the bounty cap and the timer, and cannot be dismissed.
- * * **Bounties**: QuestManager's random hunts and collections. At most
- *   {@link questCap} on the mat; below the cap a new one arrives every
- *   {@link questIntervalMs} of game time. Dismissing one
- *   ({@link dismissBounty}, no reward) frees its place, so the timer can bring
- *   another.
+ * ## Bounties
+ * QuestManager's random hunts and collections. At most {@link questCap} on the
+ * mat; below the cap a new one arrives every {@link questIntervalMs} of game
+ * time. Dismissing one ({@link dismissBounty}, no reward) frees its place, so the
+ * timer can bring another.
+ *
+ * The game teaches through Limes's lessons (`LimesLessons.js`), not quests. An
+ * older save may still hold the cartographer's tutorial step on the mat
+ * (`quest.tutorial`): {@link ensure} takes it off.
  *
  * ## ⚠️ The clock runs on the tick's `delta`
  * `state.quests.clockMs`, saved, advanced by {@link tick} from the game loop's
@@ -71,12 +68,6 @@ export { QUEST_TOKEN_TYPE };
  * Token is then **removed**, not depleted: no `TOKEN_DEPLETED`, so no restock
  * spot and no "when depleted" rule.
  */
-
-/**
- * Whether bounties arrive while the tutorial is still running. Set to false to
- * hold them back until every tutorial step is done.
- */
-export const BOUNTIES_DURING_TUTORIAL = true;
 
 const refuse = (reason) => ({ success: false, reason });
 
@@ -96,13 +87,13 @@ export function questOf(instanceId) {
     return isQuestToken(instance) ? instance.quest : null;
 }
 
-/** The bounty (non-tutorial) quest Tokens on the mat — what the cap counts. */
+/** The bounty quest Tokens on the mat — what the cap counts. */
 export function bountyTokens() {
     return questTokens().filter(t => !t.quest.tutorial);
 }
 
-/** The tutorial quest Tokens on the mat (normally one). */
-export function tutorialTokens() {
+/** An older save's tutorial step Tokens still on the mat, which {@link ensure} takes off. */
+function oldTutorialTokens() {
     return questTokens().filter(t => t.quest.tutorial);
 }
 
@@ -132,15 +123,12 @@ export function questIntervalMs() {
 // State
 // ---------------------------------------------------------------------------
 
-/** The saved quest state, made whole: the tutorial list and the bounty clock. Null before a game exists. */
+/** The saved quest state, made whole: the bounty clock. Null before a game exists. */
 export function questState() {
     const state = GameState.state;
     if (!state) return null;
-    if (!state.quests || typeof state.quests !== 'object') {
-        state.quests = { completedTutorials: [], tutorialStep: 0, clockMs: 0 };
-    }
+    if (!state.quests || typeof state.quests !== 'object') state.quests = { clockMs: 0 };
     const q = state.quests;
-    if (!Array.isArray(q.completedTutorials)) q.completedTutorials = [];
     if (!Number.isFinite(q.clockMs)) q.clockMs = 0;
     return q;
 }
@@ -156,12 +144,6 @@ export function nextBountyInMs() {
     return Math.max(0, questIntervalMs() - clockMs());
 }
 
-/** Whether every tutorial step has been claimed. */
-export function tutorialChainDone() {
-    const done = new Set(questState()?.completedTutorials || []);
-    return TUTORIAL_QUESTS.every(t => done.has(t.id));
-}
-
 function guildHall() {
     return BoardState.tokens().find(isGuildHall) || null;
 }
@@ -173,26 +155,6 @@ function publishChanged(instanceId = null) {
 // ---------------------------------------------------------------------------
 // Making a quest
 // ---------------------------------------------------------------------------
-
-/** A quest object for tutorial `template`, keeping `currentCount` from `from`. */
-function tutorialQuest(template, from = null) {
-    const quest = {
-        id: template.id,
-        tutorial: true,
-        step: template.step,
-        title: template.title,
-        says: template.says,
-        instruction: template.instruction,
-        targetType: template.targetType,
-        requiredCount: template.requiredCount,
-        currentCount: Math.min(Number(from?.currentCount) || 0, template.requiredCount),
-        rewardItems: copyReward(template.rewardItems),
-        done: false
-    };
-    if (template.match) quest.match = { ...template.match };
-    quest.done = quest.currentCount >= quest.requiredCount;
-    return quest;
-}
 
 /** A quest object from one of QuestManager's bounties. */
 function bountyQuest(source) {
@@ -241,9 +203,9 @@ export function spawnQuest(quest, random = Math.random) {
         spawnerId: hall.id,
         instanceId: instance.id,
         typeId: QUEST_TOKEN_TYPE,
-        name: quest.tutorial ? 'tutorial quest' : 'quest'
+        name: 'quest'
     });
-    EventBus.publish(ENGINE_EVENTS.QUEST_SPAWNED, { instanceId: instance.id, questId: quest.id, tutorial: !!quest.tutorial });
+    EventBus.publish(ENGINE_EVENTS.QUEST_SPAWNED, { instanceId: instance.id, questId: quest.id });
     publishChanged(instance.id);
     return instance;
 }
@@ -254,107 +216,42 @@ export function spawnBounty(random = Math.random) {
     return bounty ? spawnQuest(bountyQuest(bounty), random) : null;
 }
 
-/**
- * The tutorial step to show next: the first not yet claimed. Null once the
- * chain is done.
- */
-export function nextTutorialTemplate() {
-    const done = new Set(questState()?.completedTutorials || []);
-    return TUTORIAL_QUESTS.find(t => !done.has(t.id)) || null;
-}
-
-/**
- * **The tutorial chain's hidden cap**: while a step is left and no tutorial
- * quest stands on the mat, the next step arrives. So a new game starts with the
- * first, and claiming one brings the next.
- *
- * @returns {boolean} false when a step is owed but could not land (no Hall,
- *          no room) — the caller retries
- */
-export function ensureTutorial() {
-    if (tutorialTokens().length) return true;
-    const template = nextTutorialTemplate();
-    if (!template) return true;
-    return !!spawnQuest(tutorialQuest(template));
-}
-
 // ---------------------------------------------------------------------------
-// Saves: tutorial copies re-read from their templates
+// The check (load, new game, travel) and the tick
 // ---------------------------------------------------------------------------
 
-/**
- * Re-read every tutorial quest Token from its template (a save keeps a copy,
- * which would keep a step's old wording and target for ever). A tutorial Token
- * whose step the chain no longer has is taken off the mat.
- */
-export function refreshTutorialTokens() {
-    let changed = false;
-    const refreshed = [];
-    for (const instance of tutorialTokens()) {
-        const template = tutorialTemplate(instance.quest.id);
-        if (!template) {
-            removeQuestToken(instance);
-            changed = true;
-            continue;
-        }
-        instance.quest = tutorialQuest(template, instance.quest);
-        refreshed.push(instance.id);
-    }
-    // Each refreshed copy says so by id: a quest Token hears its own QUESTS_UPDATED.
-    for (const instanceId of refreshed) EventBus.publish(ENGINE_EVENTS.QUESTS_UPDATED, { instanceId });
-    if (changed) publishChanged();
-}
-
-// ---------------------------------------------------------------------------
-// The check (load, new game, claim) and the tick
-// ---------------------------------------------------------------------------
-
-/** Set when something may be owed (a tutorial step); cleared once met. */
+/** Set when the mat should be checked (a load, a new game, a travel); cleared once it is. */
 let pending = true;
 /** The state the last check ran against: a load or a new game swaps it. */
 let checkedState = null;
-/**
- * The board as it stood (`MatPlacement.roomVersion`) when the last check left something owed, or
- * null. A tutorial step has no clock to wait for, so it is tried again once the board has changed
- * (a Token arrived, left or moved, or the mat was resized): the tick after the player makes room,
- * and never on the ticks of a full, still mat, where every try would search and find nothing.
- */
-let owedOn = null;
 
-/** Ask for a check on the next tick (a load, a new game, a claim). */
+/** Ask for a check on the next tick (a load, a new game, a travel). */
 export function requestCheck() {
     pending = true;
-    owedOn = null;
-}
-
-/** Whether nothing a search for room reads has changed since `at`. */
-function boardUnchangedSince(at) {
-    if (!at) return false;
-    const now = MatPlacement.roomVersion();
-    return now.tokens === at.tokens && now.stamp === at.stamp;
 }
 
 /**
- * Bring the mat up to what is owed: refresh tutorial copies, and make sure the
- * tutorial chain has its quest out.
- * Idempotent. Returns true when nothing is left owing.
+ * Bring the mat up to date: an older save's tutorial step Token is taken off it.
+ * Idempotent. Returns false before a game exists.
  */
 export function ensure() {
     const q = questState();
     if (!q) return false;
     checkedState = GameState.state;
-    q.tutorialStep = q.completedTutorials.filter(id => tutorialTemplate(id)).length;
-    refreshTutorialTokens();
-    const tutorial = ensureTutorial();
-    pending = !tutorial;
-    return !pending;
+    let removed = false;
+    for (const instance of oldTutorialTokens()) {
+        removeQuestToken(instance);
+        removed = true;
+    }
+    if (removed) publishChanged();
+    pending = false;
+    return true;
 }
 
 /**
  * **One tick** (`quest_manager`, with the loop's `delta`).
  *
- * 1. Anything owed (see {@link ensure}) is retried while something is, once
- *    the board has changed since the last try ({@link owedOn}).
+ * 1. A check asked for (see {@link ensure}) runs.
  * 2. The bounty clock: below the cap it advances by `delta`, and each full
  *    interval brings one try at a bounty (closed form, so one big tick equals
  *    many small ones). A bounty with nowhere to land is missed and the clock
@@ -364,12 +261,8 @@ export function ensure() {
  */
 export function tick(delta, random = Math.random) {
     if (GameState.state !== checkedState) requestCheck();
-    if (pending && !boardUnchangedSince(owedOn)) {
-        ensure();
-        owedOn = pending ? MatPlacement.roomVersion() : null;
-    }
+    if (pending) ensure();
     if (!(delta > 0)) return;
-    if (!BOUNTIES_DURING_TUTORIAL && !tutorialChainDone()) return;
 
     const q = questState();
     if (!q) return;
@@ -399,7 +292,7 @@ export function tick(delta, random = Math.random) {
 
 /**
  * Whether a report's metadata satisfies a quest. A quest narrows its target
- * with `match` (tutorial steps), `enemyId` (hunts) or `itemId` (collections);
+ * with `match`, `enemyId` (hunts) or `itemId` (collections);
  * every value it names must be present and equal in the report.
  */
 export function reportMatches(quest, metadata) {
@@ -450,7 +343,7 @@ export function syncCollections() {
 // Claiming
 // ---------------------------------------------------------------------------
 
-/** Take a quest Token off the mat for good (claimed, or a dropped old step). */
+/** Take a quest Token off the mat for good (claimed, dismissed, or an older save's tutorial step). */
 function removeQuestToken(instance) {
     const at = Number.isFinite(instance.x) && Number.isFinite(instance.y) ? { x: instance.x, y: instance.y } : null;
     BoardState.removeToken(instance.id);
@@ -461,8 +354,7 @@ function removeQuestToken(instance) {
 /**
  * **Claim quest Token `instanceId`.** Only when done. A collection bounty hands
  * its items over from the Bank first. The reward drops as loot beside the
- * Token, then the Token vanishes. Claiming a tutorial step records it and
- * brings the next.
+ * Token, then the Token vanishes.
  *
  * @returns {{success: boolean, reason?: string, rewardItems?: object[]}}
  */
@@ -489,21 +381,14 @@ export function claimQuest(instanceId) {
 
     removeQuestToken(instance);
 
-    const q = questState();
-    if (quest.tutorial && q) {
-        if (!q.completedTutorials.includes(quest.id)) q.completedTutorials.push(quest.id);
-        q.tutorialStep = q.completedTutorials.filter(id => tutorialTemplate(id)).length;
-        if (!ensureTutorial()) pending = true;
-    }
-
-    EventBus.publish(ENGINE_EVENTS.QUEST_CLAIMED, { questId: quest.id, instanceId, tutorial: !!quest.tutorial, rewardItems });
+    EventBus.publish(ENGINE_EVENTS.QUEST_CLAIMED, { questId: quest.id, instanceId, rewardItems });
     publishChanged(instanceId);
     return { success: true, rewardItems };
 }
 
-/** Whether a quest Token may be dismissed: a bounty, never a tutorial step. */
+/** Whether a quest Token may be dismissed: every bounty may. */
 export function canDismiss(instance) {
-    return isQuestToken(instance) && !instance.quest.tutorial;
+    return isQuestToken(instance);
 }
 
 /**
@@ -515,7 +400,6 @@ export function canDismiss(instance) {
 export function dismissBounty(instanceId) {
     const instance = BoardState.getTokenById(instanceId);
     if (!isQuestToken(instance)) return refuse('No quest there');
-    if (!canDismiss(instance)) return refuse('Tutorial quests cannot be dismissed.');
     removeQuestToken(instance);
     publishChanged(instanceId);
     return { success: true };
@@ -525,5 +409,4 @@ export function dismissBounty(instanceId) {
 export function resetRuntime() {
     pending = true;
     checkedState = null;
-    owedOn = null;
 }

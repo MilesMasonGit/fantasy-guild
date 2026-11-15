@@ -88,7 +88,12 @@ describe('The declared schema matches the save (CR2-042, CR2-069)', () => {
         expect(Object.keys(INITIAL_STATE.progress)).toEqual(
             expect.arrayContaining(['guildUpgrades'])
         );
-        expect(INITIAL_STATE.quests).toHaveProperty('completedTutorials');
+        expect(INITIAL_STATE.quests).toHaveProperty('clockMs');
+        // Deleted on purpose with the cartographer's tutorial steps (Limes's lessons replaced
+        // them): their progress is the guide's now.
+        expect(INITIAL_STATE.quests).not.toHaveProperty('completedTutorials');
+        expect(INITIAL_STATE.quests).not.toHaveProperty('tutorialStep');
+        expect(INITIAL_STATE.guide).toHaveProperty('progress');
         // Deleted on purpose with the Map bursts (Token Lifecycle 9.1): the
         // Map discoveries, the Guild Hall drop index and the Cartographer's
         // purchase list.

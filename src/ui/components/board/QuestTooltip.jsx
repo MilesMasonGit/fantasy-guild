@@ -3,7 +3,6 @@ import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { FloatingTip } from '../base/Tooltip.jsx';
-import { TUTORIAL_TEXT } from '../../../systems/quests/tutorialText.js';
 
 /** The Token's art on the mat, which the tooltip hangs under. */
 function artOf(instanceId) {
@@ -32,10 +31,8 @@ export function questRewardsShown(quest) {
 }
 
 /**
- * A quest Token's hover tooltip: the title (with a *Tutorial* tag on a tutorial step), the
- * cartographer's line on a tutorial step, the instruction, what is still needed, the reward as
- * item icons with counts, and 'Click to claim' once done. Every tutorial word is in
- * `tutorialText.js`.
+ * A bounty Token's hover tooltip: the title, the instruction, what is still needed, the reward as
+ * item icons with counts, and 'Click to claim' once done.
  * The shared tooltip (`FloatingTip`): `pointer-events: none` (so clicking and dragging the Token
  * work through it), hidden while anything is dragged. The quest comes in as a prop (`MatToken`'s
  * own projection), so the tooltip holds no subscription.
@@ -52,18 +49,7 @@ export const QuestTooltip = ({ instanceId, quest, anchorOf = artOf }) => {
         <FloatingTip anchor={anchorOf(instanceId)} tipProps={{ 'data-quest-tooltip': instanceId }} content={<>
             <div className="flex items-center gap-1.5">
                 <span data-quest-title className="font-bold text-gi-gold">{quest.title}</span>
-                {quest.tutorial && (
-                    <span data-quest-tutorial className="px-1 rounded bg-sky-900/70 border border-sky-400/40 ui-text-body font-bold uppercase text-sky-200">
-                        {TUTORIAL_TEXT.tag}
-                    </span>
-                )}
             </div>
-            {quest.tutorial && quest.says && (
-                <p data-quest-says className="mt-1 italic text-amber-100/90 whitespace-normal">
-                    &ldquo;{quest.says}&rdquo;
-                    <span className="not-italic text-white/50"> &mdash; {TUTORIAL_TEXT.speaker}</span>
-                </p>
-            )}
             {quest.instruction && (
                 <p data-quest-instruction className="mt-0.5 text-white/80 whitespace-normal">{quest.instruction}</p>
             )}

@@ -139,17 +139,17 @@ describe('what the save keeps of Limes', () => {
         LimesGuide.setLimesSpot({ x: 400.4, y: 300.6 });
         LimesGuide.setLessons(false);
         const saved = GameState.serialize().state;
-        expect(saved.guide).toEqual({ limesSpot: { x: 400, y: 301 }, lessons: false });
+        expect(saved.guide).toEqual({ limesSpot: { x: 400, y: 301 }, lessons: false, progress: null });
         expect(BoardState.tokens().length).toBe(tokensBefore);
         LimesGuide.setLimesSpot(null);
         expect(LimesGuide.limesSpot()).toBeNull();
     });
 
-    it('a save from before Limes loads with its corner and the lessons on', () => {
+    it('a save from before Limes loads with its corner, the lessons switch on and no lessons to give', () => {
         const old = structuredClone(INITIAL_STATE);
         delete old.guide;
         const migrated = migrateState(old, GAME_VERSION);
-        expect(migrated.guide).toEqual({ limesSpot: null, lessons: true });
+        expect(migrated.guide).toEqual({ limesSpot: null, lessons: true, progress: null });
     });
 });
 

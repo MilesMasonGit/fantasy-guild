@@ -116,10 +116,17 @@ export const ENGINE_EVENTS = Object.freeze({
 
     /** A quest's progress changed. Payload: `{ instanceId }` (or none for a sweep). */
     QUESTS_UPDATED: 'quests_updated',
-    /** Payload: `{ instanceId, questId, tutorial }`. */
+    /** Payload: `{ instanceId, questId }`. */
     QUEST_SPAWNED: 'quest_spawned',
-    /** Payload: `{ questId, instanceId, tutorial, rewardItems }`. */
+    /** Payload: `{ questId, instanceId, rewardItems }`. */
     QUEST_CLAIMED: 'quest_claimed',
+    /**
+     * Limes's lessons moved on (`quests/LimesLessons.js`): a step was done, or a big moment came
+     * due or was heard. Payload: `{ stepId, arrived, moment }`: the step Limes is on now (null once
+     * every step and the goal are done), whether it just became the one, the moment waiting to be
+     * said (or null).
+     */
+    LIMES_LESSON: 'limes_lesson',
 
     /** Payload: `{ typeId, instanceId, price }`. */
     TOKEN_PURCHASED: 'token_purchased',
@@ -259,4 +266,5 @@ export const NO_LISTENER = Object.freeze({
     [ENGINE_EVENTS.TOKEN_RESTOCKED]: 'player action moment; the board events carry the redraw',
     [ENGINE_EVENTS.HERO_RECOVERED]: 'combat moment; HEROES_UPDATED carries the redraw',
     [ENGINE_EVENTS.BGM_TRACK_CHANGED]: 'console affordance for the music system',
+    [ENGINE_EVENTS.QUEST_SPAWNED]: 'the moment a bounty arrives; QUESTS_UPDATED and the board events carry the redraw',
 });

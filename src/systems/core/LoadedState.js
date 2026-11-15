@@ -24,12 +24,8 @@ export function loadSavedState(savedState) {
     assignFlagColours();
 
     if (!state.quests) {
-        state.quests = {
-            completedTutorials: [],
-            tutorialStep: 0,
-            // quests run on the game-time `clockMs`, not the wall clock.
-            clockMs: 0
-        };
+        // Bounties run on the game-time `clockMs`, not the wall clock.
+        state.quests = { clockMs: 0 };
     }
     logger.info('GameState', 'Save rehydration complete.');
 }

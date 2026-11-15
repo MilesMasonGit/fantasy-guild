@@ -237,13 +237,8 @@ export const INITIAL_STATE = {
     // is in the Dock; the Dock is still not a data structure.
     board: createEmptyBoard(),
 
-    // === Quests (Phase 8 Quests & Tutorial Chain) ===
+    // === Quests: the bounties (`quests/QuestTokens.js`) ===
     quests: {
-        // The tutorial quests already finished. `tutorialStep` is derived from
-        // its length by `QuestManager.ensureState()` on every load — this list
-        // is the record, the step number is the summary.
-        completedTutorials: [],
-        tutorialStep: 0,
         // The bounty clock in game ms: advanced by the tick's
         // `delta` while fewer bounty quest Tokens than the cap are on the mat.
         // The quests themselves are Tokens (`instance.quest`).
@@ -274,11 +269,15 @@ export const INITIAL_STATE = {
         seed: null
     },
 
-    // === Limes, the guide (`quests/LimesGuide.js`) ===
-    // Not a Token: nothing works it and the engine never reads it.
+    // === Limes, the guide (`quests/LimesGuide.js`, `quests/LimesLessons.js`) ===
+    // Not a Token: nothing works it and the board never reads it.
     guide: {
         limesSpot: null,   // { x, y } Limes's middle on the Starter Camp's mat, mat units; null = its corner
-        lessons: true      // the new-game screen's lessons switch
+        lessons: true,     // the new-game screen's lessons switch: whether Limes speaks of them
+        // The lessons' progress, counted from the engine's events: { done: [stepId], counts:
+        // { stepId: n }, moments: { momentId: 'due' | 'heard' } }. Null in a game with no lessons
+        // (made before them, or with no new game behind it); a new game sets it.
+        progress: null
     },
 
     // === The world (brief 330) ===
@@ -292,8 +291,8 @@ export const INITIAL_STATE = {
 /**
  * List of all required top-level state keys.
  *
- * `board` and `quests` are the two sections this game is actually made of — the
- * 7×7 playmat and the tutorial chain — and neither was listed until CR2-043.
+ * `board` and `quests` are two sections this game is made of — the playmat
+ * and the bounties — and neither was listed until CR2-043.
  * `migrateState` runs before this check and backfills any wholly-missing
  * top-level section from INITIAL_STATE, so requiring them cannot reject a save
  * that merely predates them.

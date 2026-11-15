@@ -202,12 +202,13 @@ export const RETIRED_SECTIONS = Object.freeze(['recruitment', 'cards']);
 /**
  * Retired fields a save of this version may still carry, by section: the inert Bank slot count and
  * stack caps, the Scouting Flags radius bonus, rarities and per-biome tasks, the sidebar quests and
- * their timer, which Token or enemy produced an item, and the item ids marked New!.
+ * their timer, the cartographer's tutorial steps (Limes's lessons replaced them), which Token or
+ * enemy produced an item, and the item ids marked New!.
  */
 export const RETIRED_FIELDS = Object.freeze({
     inventory: Object.freeze(['slots', 'maxStack', 'maxStackBonus']),
     progress: Object.freeze(['flagRadiusBonus', 'unlockedRarities', 'discoveredTasksByBiome']),
-    quests: Object.freeze(['active', 'nextQuestAt']),
+    quests: Object.freeze(['active', 'nextQuestAt', 'completedTutorials', 'tutorialStep']),
     collection: Object.freeze(['provenance']),
     ui: Object.freeze(['newDiscoveries'])
 });

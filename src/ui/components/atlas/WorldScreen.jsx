@@ -102,12 +102,11 @@ export const WorldScreen = ({ onClose, menuRight = false }) => {
 
     const selectedId = view && chosen && view.cells.some(c => c.id === chosen && c.shown) ? chosen : (view?.here || HALL_CELL);
     const cell = view?.cells.find(c => c.id === selectedId) || null;
-    const note = view?.note ?? null;
 
     // Before the frame is drawn, so the drawer never shows the last place for a frame.
     useLayoutEffect(() => {
-        setWorldInspection(view ? { cell, note, version, message, ...actions } : null);
-    }, [view, cell, note, version, message, actions]);
+        setWorldInspection(view ? { cell, version, message, ...actions } : null);
+    }, [view, cell, version, message, actions]);
     useLayoutEffect(() => () => setWorldInspection(null), []);
 
     if (!view) {

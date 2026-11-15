@@ -40,6 +40,7 @@ import { QuestManager } from '../quests/QuestManager.js';
 // Quest Tokens on the mat, exposed for console probes (`Game.QuestTokens`).
 import * as QuestTokens from '../quests/QuestTokens.js';
 import * as LimesGuide from '../quests/LimesGuide.js';
+import * as LimesLessons from '../quests/LimesLessons.js';
 // Events landing on the mat (`Game.EventClock`).
 import * as EventClock from '../events/EventClock.js';
 // Enemies' tethers and their step to open space before a crowded fight (`Game.EnemyMotion`).
@@ -266,6 +267,7 @@ export const EngineBootstrap = {
         }
         if (state.meta) state.meta.guildName = cleanGuildName(setup.guildName);
         LimesGuide.setLessons(setup.lessons !== false);
+        LimesLessons.startLessons();
 
         // The Starter Camp's Tokens stand on the mat, and it becomes the guild's first Region.
         Atlas.createStarterRegion(camp);

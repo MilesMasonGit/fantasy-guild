@@ -12,8 +12,7 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 const ACTION_CLS = 'w-full px-3 py-2 border-2 text-xs font-bold transition-colors cursor-pointer';
 
 /**
- * How a board Token leaves the mat at once. A bounty: Dismiss (no reward; a tutorial step never
- * leaves this way). While the dev layout tool is on, a placed Token (a landmark included) can be
+ * How a board Token leaves the mat at once. A bounty: Dismiss (no reward). While the dev layout tool is on, a placed Token (a landmark included) can be
  * removed. Demolishing is the top bar's map mode, not the card's.
  */
 export const LeaveMatControl = ({ instanceId }) => {

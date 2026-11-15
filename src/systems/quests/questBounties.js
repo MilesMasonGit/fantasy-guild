@@ -5,7 +5,6 @@
 // cycle. The order of its Math.random draws is part of the bench's
 // identical-work gate.
 
-import { TUTORIAL_REWARD_ITEMS } from './tutorialQuests.js';
 import { InventoryStore } from '../inventory/InventoryStore.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 
@@ -17,18 +16,18 @@ export const BOUNTY_REWARD_ITEMS = Object.freeze([
 ]);
 
 /** A fresh, mutable copy of a reward list, safe to store on a quest. */
-export function copyReward(list) {
+function copyReward(list) {
     return (list || []).map(r => ({ itemId: r.itemId, quantity: r.quantity }));
 }
 
 /**
- * What claiming a quest pays, as `[{ itemId, quantity, name }]`: its own list, or the default for
- * its kind when it has none.
+ * What claiming a quest pays, as `[{ itemId, quantity, name }]`: its own list, or the bounty
+ * default when it has none.
  */
 export function questReward(quest) {
     const list = Array.isArray(quest?.rewardItems) && quest.rewardItems.length
         ? quest.rewardItems
-        : (quest?.tutorial ? TUTORIAL_REWARD_ITEMS : BOUNTY_REWARD_ITEMS);
+        : BOUNTY_REWARD_ITEMS;
     return list
         .filter(r => r?.itemId && r.quantity > 0)
         .map(r => ({ itemId: r.itemId, quantity: r.quantity, name: getItem(r.itemId)?.name || r.itemId }));
