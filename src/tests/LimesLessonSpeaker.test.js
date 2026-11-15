@@ -15,7 +15,8 @@ import { LESSON_TARGETS, lessonSteps, GOAL_STEP } from '../systems/quests/lesson
 import { LIMES_TEXT } from '../systems/quests/limesText.js';
 import { LimesLessonSpeaker } from '../ui/components/limes/LimesLessonSpeaker.jsx';
 import { lessonSpeech, fillLessonWords, LESSON_OUTLINES } from '../ui/components/limes/lessonScreens.js';
-import { getLimes, resetLimes, limesClose, collapseLimesStep, LIMES_MAT } from '../ui/components/limes/limesStore.js';
+import { getLimes, resetLimes, limesClose, collapseLimesStep, openLimesStep, LIMES_MAT } from '../ui/components/limes/limesStore.js';
+import { LimesBlurb } from '../ui/components/limes/LimesBlurb.jsx';
 import { LIMES_TARGET } from '../ui/components/limes/limesMark.js';
 import { useWorldMapRequests } from '../ui/hooks/useWorldMapRequests.js';
 import { tokenName } from '../config/registries/tokenRegistry.js';
@@ -215,3 +216,35 @@ describe('Limes shows the world map when the goal arrives', () => {
         expect(open).toHaveBeenCalledTimes(1);
     });
 });
+
+describe('a step\'s bubble on a screen that glides in follows its Limes', () => {
+    it('placed where the Limes is at first (below the screen), it moves with it frame by frame, then stops', () => {
+        const frames = [];
+        vi.stubGlobal('requestAnimationFrame', (fn) => { frames.push(fn); return frames.length; });
+        vi.stubGlobal('cancelAnimationFrame', () => {});
+        let top = 900;
+        const rect = () => ({ left: 40, top, width: 32, height: 32, right: 72, bottom: top + 32, x: 40, y: top });
+        try {
+            render(h(LimesBlurb, { spot: 'worldMap' }));
+            const sprite = document.querySelector('[data-limes-blurb="worldMap"]');
+            sprite.getBoundingClientRect = rect;
+            act(() => openLimesStep({ id: 'goal', lines: ['Settle a place!'], spot: 'worldMap' }));
+            const box = () => document.querySelector('[data-limes-blurb-box="worldMap"]');
+            const at = () => Number(/translate3d\(-?\d+px, (-?\d+)px/.exec(box().style.transform)?.[1]);
+            const before = at();
+            // The world map glides up: the Limes ends near the top of the window.
+            let time = 0;
+            const run = (n) => { for (let i = 0; i < n && frames.length; i++) { const fn = frames.shift(); time += 16; act(() => fn(time)); } };
+            for (const y of [700, 400, 120, 40]) { top = y; run(1); }
+            const after = at();
+            expect(after).toBeLessThan(before);
+            expect(after).toBeGreaterThan(40);
+            // Still for a while: the following stops.
+            run(40);
+            expect(frames).toHaveLength(0);
+        } finally {
+            vi.unstubAllGlobals();
+        }
+    });
+});
+
