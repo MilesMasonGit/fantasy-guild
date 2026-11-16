@@ -72,6 +72,16 @@ fixes: see the owner question on CR4-160.
 
 ---
 
+## Owner rulings (2026-11-16)
+
+The owner ruled on every D3 question the same day; the full text is in [STATUS.md](STATUS.md), "Questions for the owner from D3". They set the fix for these findings:
+
+- **CR4-160** (and the rename family CR4-158, 159, 162, 163, with CR4-127): saves follow renames. The CMS records old id to new id, the Sync carries the table, and a load rewrites every place an id lives. Deletes still need CR4-158's and CR4-159's own guards.
+- **CR4-164**: an unanswered summary is offered again on the next start, with "Load as I left it" still available.
+- **CR4-147** (with CR4-146): banners come back after a reload; an event Token's banner is raised again, and unclicked knock-out and problem banners are saved.
+- **CR4-165**: old copies stay endless, by design; the finding closes as owner-no.
+- **CR4-145, CR4-157**: the browser build is for development only, so CR4-145 is P3 and CR4-157 a developer-only annoyance.
+
 ## Findings
 
 Order: bugs a player can hit today (CR4-144 to CR4-157, by priority), then the ones that need a
@@ -92,7 +102,7 @@ CR4-167).
 
 ### CR4-145  In the browser and dev builds, with Auto-save set to Off, closing the tab saves nothing (the desktop build's close is not affected)
 - **Tag**: bug
-- **Priority / Effort / Risk**: P2 / S / low
+- **Priority / Effort / Risk**: P3 (owner, 2026-11-16: the browser build is for development only; was P2) / S / low
 - **Confidence**: verified
 - **Where**: `src/systems/core/SaveManager.js:123-131`, `src/systems/core/SaveManager.js:159-175`, `src/systems/core/SaveManager.js:180-195`, `src/systems/core/SaveManager.js:200-219`, `src/systems/core/SaveManager.js:382`, `src/systems/core/SaveManager.js:537`, `src/systems/core/SettingsManager.js:19-21`, `src/systems/core/SaveFiles.js:39-43`, `src/ui/modals/SettingsModal.jsx:16`, `src/ui/modals/SettingsModal.jsx:128-132`, `src/ui/components/base/ErrorBoundary.jsx:35-39`
 - **What**: Browser or dev-server build only (the owner's dev server and `tauri dev` included). Set Auto-save to Off in Settings, reload the page (or come back another day), load a slot, play for an hour, close the tab. Nothing is saved: the next load opens the game as of the last save of any kind (a travel, a settle, a new game's opening save, a catch-up's end, a "Load as I left it" or a "Save Game Now" click), plus a catch-up of the idle time, and everything the player did by hand in that hour is gone. A player who picks Off reasonably expects "no periodic saves", not "no save when I leave". If the setting is switched to Off in the middle of a session, closing the tab still saves for that session, so the same setting behaves two ways depending on when it was chosen, which makes the fault easy to miss. The same player on the desktop build keeps everything, because the window's close always saves; the desktop build's page reloads are affected, though (the error panel's Reload button). It also makes re-rolling effortless in the browser: Save Game Now, try a fight, close the tab if it goes badly.
