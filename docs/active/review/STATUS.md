@@ -1,6 +1,6 @@
 # Review round 4: status
 
-*Kept by the reviewer. Next free finding number: **CR4-126**.*
+*Kept by the reviewer. Next free finding number: **CR4-144**.*
 
 ## Sessions
 
@@ -35,7 +35,7 @@ read-only reader, every lead re-read by the reviewer, every finding checked by a
 | Session | Area | State | Date | Commit | Summary |
 |---|---|---|---|---|---|
 | D1 | The mat: Tokens, work, orders, fights, timed changes, buffs (`src/systems/board/` and what it calls) | ready for triage | 2026-11-15 | cccf7a24 | `D1_the_mat.md`: 25 findings (22 bug, 3 owner-decision; 1 P1, 5 P2, 19 P3), 23 verified by a second reader (Opus) and 2 reasoned; 6 owner questions below. Ten readers read the area whole in eight pieces and two cross-cutting traces. The per-tick core came through clean; the bugs are where two rules meet. Top: a healing hero knocked out a second time after travel (CR4-101, P1); Thorns spending a second charge and a Thorn Elemental running out twice (CR4-103, CR4-104); a resting Forest deleted by a merge and a regrown tree or large building hopping across the mat (CR4-102, CR4-105). Thirteen latent rule shapes the CMS can author and the engine gets wrong are gathered in CR4-124. |
-| D2 | Heroes, combat, gear, XP | reading | 2026-11-15 | dcb3ff40 | |
+| D2 | Heroes, combat, gear, XP (`src/systems/hero/`, `combat/`, `equipment/`, `effects/`, `inventory/`, and the hero readouts in `src/ui/`) | ready for triage | 2026-11-15 | dcb3ff40 | `D2_heroes_combat_gear_xp.md`: 18 findings (14 bug, 4 owner-decision; 1 P1, 4 P2, 13 P3), all verified by a second reader (Opus), none refuted, 14 corrected. Ten are live, four gather 16 latent content shapes. The core rules (combat maths, fight clean-up, XP and perks, equip and swap, loot, hero state across load and travel) read sound. One ruling made, four questions below. |
 | D3 | Saves and time away | not started | | | |
 | D4 | Screens and drag-and-drop | not started | | | |
 
@@ -66,6 +66,19 @@ The questions as asked; the reviewer's recommendation is first in each.
 6. **A demolished camp's enemies** (CR4-111). Today they belong to no camp and a new camp spawns a second set. (a) **They stay, and the next camp of that kind beside them adopts them** (recommended). (b) They leave with the camp.
 
 One ruling to look at, not a defect (CR4-122): on a reload a fight starts over with the enemy at full health while the hero keeps their wounds, so a fight the hero was winning when the game was closed can become a knock-out during the time away.
+
+### Questions for the owner from D2 (2026-11-15)
+
+**Ruled by the owner, 2026-11-15** (in the reviewer session):
+
+- **Losing the only pickaxe** (CR4-137, P1). A renewable fallback, not an exemption: a Rusty Pickaxe and a Rusty Woodaxe drop from an early enemy or Token, work like the copper tools and have a 1 % chance to break, so the player can always restart. The defeat roll on tools stays. Reviewer notes for the content plan are in the finding (the source must need no tool and no fight a weak guild keeps losing; first shipped items with a break chance).
+
+**Open, for the planning agent to ask** (the reviewer recommendation is first in each):
+
+1. **Which of two Foods a hero eats first** (CR4-126, once the Larder star works). (a) **The one in the earlier slot, moving on when the Bank runs out of it** (recommended: simplest, and the player controls it by slot order). (b) The smaller heal first, to waste less.
+2. **Handing an item hero to hero onto a full loadout** (CR4-131). Dropped on the hero figure it is refused, as the GDD says and as eye-checked on 2026-11-05; the same item from the Bank would replace what the hero holds. (a) **Leave it as designed** (recommended: dropping on a slot already swaps). (b) Make the hand-over replace like the Bank does (the GDD line and a test change).
+3. **A +10 % XP bonus on small awards** (CR4-138). Any bonus adds at least 1 whole XP, on purpose, so +10 % doubles a 1-XP job (all Fishing waters, four Smithing recipes). (a) **Carry the fraction by chance, so 1.1 XP is 2 XP one time in ten and +10 % means +10 % at every size** (recommended; it shifts the bench fingerprint once). (b) Keep the floor and have the perk say at least +1.
+4. **Swapping a fighting hero weapon** (CR4-139). Today the whole kill pays XP to whatever is in hand at the kill, and a fast weapon swapped in gets a free swing. (a) **The fight remembers the style it began with: XP goes there, and a weapon change restarts the swing** (recommended: swapping stays allowed). (b) No changes to a hero hands while they fight. (c) Leave it.
 
 ## Round summary (reviewer, 2026-11-07)
 
