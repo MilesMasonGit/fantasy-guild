@@ -36,7 +36,7 @@ read-only reader, every lead re-read by the reviewer, every finding checked by a
 |---|---|---|---|---|---|
 | D1 | The mat: Tokens, work, orders, fights, timed changes, buffs (`src/systems/board/` and what it calls) | ready for triage | 2026-11-15 | cccf7a24 | `D1_the_mat.md`: 25 findings (22 bug, 3 owner-decision; 1 P1, 5 P2, 19 P3), 23 verified by a second reader (Opus) and 2 reasoned; 6 owner questions below. Ten readers read the area whole in eight pieces and two cross-cutting traces. The per-tick core came through clean; the bugs are where two rules meet. Top: a healing hero knocked out a second time after travel (CR4-101, P1); Thorns spending a second charge and a Thorn Elemental running out twice (CR4-103, CR4-104); a resting Forest deleted by a merge and a regrown tree or large building hopping across the mat (CR4-102, CR4-105). Thirteen latent rule shapes the CMS can author and the engine gets wrong are gathered in CR4-124. |
 | D2 | Heroes, combat, gear, XP (`src/systems/hero/`, `combat/`, `equipment/`, `effects/`, `inventory/`, and the hero readouts in `src/ui/`) | ready for triage | 2026-11-15 | dcb3ff40 | `D2_heroes_combat_gear_xp.md`: 18 findings (14 bug, 4 owner-decision; 1 P1, 4 P2, 13 P3), all verified by a second reader (Opus), none refuted, 14 corrected. Ten are live, four gather 16 latent content shapes. The core rules (combat maths, fight clean-up, XP and perks, equip and swap, loot, hero state across load and travel) read sound. One ruling made, four questions below. |
-| D3 | Saves and time away | not started | | | |
+| D3 | Saves and time away | reading | 2026-11-15 | d2ce3b6d | |
 | D4 | Screens and drag-and-drop | not started | | | |
 
 ### Questions for the owner from D1 (2026-11-15, answered the same day)

@@ -1,0 +1,661 @@
+# D3: Saves and time away, read deep
+
+*Reviewer session D3, 2026-11-15 and 16, read at commit **d2ce3b6d** in the worktree `.claude/worktrees/rw`.
+The third session of the deep read the owner asked for on 2026-11-15: hunt bugs a player can hit,
+one area properly. Method: the area was cut into seven pieces (writing a save; loading one; old
+saves meeting new content; the catch-up; the summary and its undo; slots and settings; what is kept
+per Region) and three cross-cutting traces (every piece of state outside the save; an hour away
+against an hour watched; the game closed at the worst moment). Ten read-only readers each read
+their files whole and tried to disprove each lead before reporting it. The ten reports were then
+assembled into this file: duplicates merged, the best evidence of each kept, and where two reports
+disagreed the disagreement is written into the finding. **Every finding below still waits for its
+second reader** (`Verified by: pending`); "verified" in a Confidence line means the first reader
+traced every step, not that a second reader has confirmed it. Nothing was run: no tests, no bench,
+no game. Focus: bugs a player can hit.*
+
+## Summary for the owner
+
+TODO
+
+---
+
+## Findings
+
+Order: bugs a player can hit today (CR4-144 to CR4-157, by priority), then the ones that need a
+rename, a delete or a removed rank in the CMS to occur (CR4-158 to CR4-163), then the owner's
+decisions (CR4-164, CR4-165), then faults waiting for a cause that does not exist yet (CR4-166,
+CR4-167).
+
+### CR4-144  Closing the game while the "Catching up" bar plays after the PC slept throws away what the player did since the last autosave
+- **Tag**: bug
+- **Priority / Effort / Risk**: P2 / M / medium
+- **Confidence**: reasoned (one step assumed: that the webview's `performance.now()` keeps counting while a Windows PC sleeps, which is what makes the in-session catch-up start at all; every step after the gap is seen is traced)
+- **Where**: `src/systems/core/CatchUp.js:20-22`, `src/systems/core/CatchUp.js:99-113`, `src/systems/core/CatchUp.js:272-285`, `src/systems/core/CatchUp.js:334-338`, `src/systems/core/CatchUp.js:394`, `src/systems/core/CatchUp.js:398`, `src/systems/core/SaveManager.js:163-173`, `src/systems/core/SaveManager.js:205-207`, `src/systems/core/SaveManager.js:211-215`, `src/systems/core/SaveManager.js:231-233`, `src/systems/core/SettingsManager.js:17-21`, `src/systems/core/GameLoop.js:66-71`, `src/systems/core/TimeManager.js:43-54`, `src/state/GameState.js:117`, `src-tauri/src/saves.rs:216-234`
+- **What**: There are two catch-ups. On a load, the slot already holds the save the catch-up starts from, so a closed window loses nothing and the next load replays the same time. After a sleep with the game open, the catch-up starts from the game in memory, and the slot holds only the last autosave, which is older. Saving is switched off for the whole catch-up in both cases, so a close during the second kind saves nothing. Desktop test build, default 10 minute autosave: load a slot, wait for an autosave, then spend a few minutes doing visible things (buy and place a Token from the Shop, send two heroes to new jobs, buy a Guild Hall star). Put the PC to sleep overnight. Wake it: the bar "Catching up on 8 h away" shows for roughly 8 seconds. Close the window with the X while the bar is up (or Windows restarts for an update, or the battery dies). Start the game again: the Token is not on the mat, the heroes are on their old jobs, the star is not bought and its price is back in the Bank. No time is lost (the night is replayed from the older autosave), but everything the player did between that autosave and closing the lid is gone: up to 10 minutes by default, up to 60 minutes on the 60 minute setting, and with autosave Off everything since the last save of any kind (the last travel, load or "Save Game Now"). A normal close at any other moment saves first, so the player has no reason to expect this one not to. Both builds: the desktop close and the browser tab's close take the same refused save.
+- **Evidence**: `GameLoop.tick` publishes `TIME_OVERFLOW` (`GameLoop.js:66-71`); `onOverflow` with a gap of `SHOW_GAP_MS` (2 minutes) or more stops the loop and calls `run({ savedAt })` with no `before` (`CatchUp.js:103-112`). `run` builds `keep = { slot, json: before ?? GameState.serializeJson() }` (`:336-338`): the game as it stood exists only as a string in memory, never written, and becomes `undo` only after the run ends (`:398`). `enterQuiet` calls `SaveManager.suspendSaving()` (`:277`) until the `finally`; `SaveManager.save` returns false while `savingSuspended` (`SaveManager.js:231-233`). The desktop close handler calls `this.save(false)` (refused), `SaveFiles.flush()` (nothing queued), then `closeWindow()` (`:163-173`); the browser's `beforeunload` (`:211-215`) and the autosave timer (`:205-207`) call the same `save`. The only save of the run is after the last step (`CatchUp.js:394`), which a closed window never reaches. What could have saved it and does not: nothing writes the slot when the catch-up starts; the close handler has no "catch-up running" branch; `Atlas.saveNow` is travel only and travel and settling refuse while a catch-up runs; the autosave timer cannot fire while the PC sleeps; the Rust side writes only what the page sends; no `visibilitychange` or `pagehide` save exists (only `drawingPause.js:47`, which draws); the rolling backup holds an even older save. The header comment (`CatchUp.js:20-22`: "a crash or a closed window loses nothing, and the next load starts the same catch-up again") is true for a load and false for this path, and the comment at `:334` ("on a sleeping PC the slot holds an older autosave, not this") shows the difference was seen for the undo and not for the close. R1 measured a 24 hour catch-up at 23.9 s, so an 8 hour one gives the player about 8 seconds to close in. **Found independently by four readers** (writing a save; the catch-up; state outside the save; the worst moment). What each assumed: the writing reader traced every code step and assumed only that the bar lasts long enough to be closed (the catch-up reader's 8 seconds answers that); the catch-up reader and the worst-moment reader named `performance.now()` counting through a sleep as the one assumed step, and the catch-up reader says it holds for Chromium on Windows (the shipped WebView2 build) without having read it from code; the state reader marked the finding "verified", having traced `onOverflow` to `run`, the suspension, both close handlers' refused save and the absence of any earlier write, but its own leads say the `performance.now()` step is "not checkable from the code", so its trace begins where the gap is already seen. Priorities given: P2 by three readers (one adding "by the letter P1, it loses the player's own actions"), P3 by the state reader ("P2 for a player who set autosave to 60 minutes or Off"); the higher is taken.
+- **Fix sketch**: When a catch-up starts from the live game (no `before` passed, a slot open, `save` true), write the game as it stands to the slot before saving is suspended, stamped with the catch-up's own `savedAt` (the moment the gap began), not the wake time: `serializeJson()` stamps `Date.now()` (`GameState.js:117`), and a save stamped at wake time would make the next load skip the whole sleep. Must not change: a catch-up on load leaves the slot's file byte for byte until its end; nothing is written during the steps; the short quiet path and the bench's runs (`save: false`) write nothing; the undo still goes back to the same game.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-145  In the browser and dev builds, with Auto-save set to Off, closing the tab saves nothing (the desktop build's close is not affected)
+- **Tag**: bug
+- **Priority / Effort / Risk**: P2 / S / low
+- **Confidence**: verified
+- **Where**: `src/systems/core/SaveManager.js:123-131`, `src/systems/core/SaveManager.js:159-175`, `src/systems/core/SaveManager.js:180-195`, `src/systems/core/SaveManager.js:200-219`, `src/systems/core/SaveManager.js:382`, `src/systems/core/SaveManager.js:537`, `src/systems/core/SettingsManager.js:19-21`, `src/systems/core/SaveFiles.js:39-43`, `src/ui/modals/SettingsModal.jsx:16`, `src/ui/modals/SettingsModal.jsx:128-132`, `src/ui/components/base/ErrorBoundary.jsx:35-39`
+- **What**: Browser or dev-server build only (the owner's dev server and `tauri dev` included). Set Auto-save to Off in Settings, reload the page (or come back another day), load a slot, play for an hour, close the tab. Nothing is saved: the next load opens the game as of the last travel, settle, catch-up's end or "Save Game Now" click, plus a catch-up of the idle time, and everything the player did by hand in that hour is gone. A player who picks Off reasonably expects "no periodic saves", not "no save when I leave". If the setting is switched to Off in the middle of a session, closing the tab still saves for that session, so the same setting behaves two ways depending on when it was chosen, which makes the fault easy to miss. The same player on the desktop build keeps everything, because the window's close always saves; the desktop build's page reloads are affected, though (the error panel's Reload button). It also makes re-rolling effortless in the browser: Save Game Now, try a fight, close the tab if it goes badly.
+- **Evidence**: `startAutoSave` (`SaveManager.js:200-219`) returns at `:203` on `if (this.currentSlot === null || AUTO_SAVE_INTERVAL <= 0) return;`, before the only place the `beforeunload` listener is registered (`:210-218`; grep for `beforeunload` finds no other, and there is no `pagehide` or `visibilitychange` save anywhere in `src`). `init` runs `syncSettings` first (`:127`), which sets the interval to 0 for the Off choice (`:184`), so a session that starts with Off has it at 0 before any slot is opened, and `loadSlot` (`:382`) and `newGame` (`:537`) reach the listener only through `startAutoSave`; `_beforeUnloadBound` stays false for the whole session. Off is a real choice in a ship build (`autoSaveChoices` returns `[10, 60, 0]`, `SettingsManager.js:19-21`). The desktop build's close save is installed separately in `init` whatever the interval (`installCloseSave`, `:131`, `:159-175`), only when the file backend is active, and `SaveFiles.detectBackend` returns null in any dev build and anywhere without Tauri (`SaveFiles.js:39-43`). **Found independently by four readers** (writing; loading; slots and settings; the worst moment), and noted as a lead by a fifth (Regions: travel and settling save themselves, so Regions are not at risk). All four give it as verified. Priorities given: P2 by three (the writing reader adds "P1 for a player on the browser build who chose Off; whether the browser build is given to players is the owner's to say"), P3 by the worst-moment reader; the higher is taken.
+- **Fix sketch**: Register the `beforeunload` save once, when a slot opens (or in `init`), outside the interval check. Must not change: Off still means no timer; the desktop close handshake; nothing is saved while `isResetting`, with no slot open, or while saving is suspended.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-146  An event that lands while the player is away gets no banner pointing to it; after an absence under two minutes nothing mentions it at all
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified (the background-tab example rests on one assumed step: that a hidden browser tab's timer wakes about once a minute, as `loopConstants.js:40-43` says)
+- **Where**: `src/systems/notifications/routing.js:155-173`, `src/systems/notifications/routing.js:174-185`, `src/systems/notifications/routing.js:210-217`, `src/systems/notifications/routing.js:242-271`, `src/systems/notifications/routing.js:292`, `src/systems/notifications/catchUpNews.js:28-68`, `src/systems/core/CatchUp.js:99-120`, `src/systems/core/CatchUp.js:241-246`, `src/systems/core/CatchUp.js:329`, `src/systems/core/EventBus.js:96-98`, `src/ui/components/hud/CatchUpOverlay.jsx:48`, `src/systems/events/EventClock.js:50-53`, `src/systems/events/EventClock.js:306-323`, `src/systems/board/EventTokens.js:36`, `src/systems/notifications/banners.js:3-5`, `src/config/loopConstants.js:40-43`, `src/main.jsx:97`, `data/events.json`
+- **What**: Watching the game, an event landing raises a gold banner that names it, points to its Token, stays until clicked and is taken back when the Token leaves. Events are on in the shipped game and land every 45 to 75 minutes; a rich node (a Copper Comet, say) leaves an hour after it lands, worked or not. Come back 50 minutes after closing the game with an event that landed 5 minutes ago: the "While you were away" summary lists it ("Leaves in ..."), and once the summary is closed there is no banner and nothing pointing at the Token for the 55 minutes it still stands. If the absence is under two minutes (a quick reload, a short PC sleep, a stalled tab, or a background browser tab whose every wake-up is a silent catch-up) there is no summary either, so an event that landed in that window is on the mat unannounced: no banner, no summary row, no sound. Every other "must not miss" banner (recipes unlocked, knock-outs, Bank full, first finds) is handed over after a catch-up; events were left out.
+- **Evidence**: The `EVENT_LANDED` route is the only thing that raises an event banner (`routing.js:155-168`) and, like every route, is subscribed as a `UI_LISTENER` (`:292`), which the quiet bus skips (`EventBus.js:96-98`). The catch-up's news collector hears four things only: `HERO_LEVELED`, `ITEM_DISCOVERED`, `BANK_FULL`, `HERO_DEFEATED` (`catchUpNews.js:36-68`); `deliverCatchUpNews` raises recipe, knock-out and Bank-full banners and find stubs, nothing for events (`routing.js:242-271`). On `CATCH_UP_FINISHED` the handler only withdraws event banners whose Token has gone (`pruneEventBanners`, `:179`, `:210-217`). The catch-up does collect the landing (`summary.events`, `CatchUp.js:241-246`), but only the summary panel reads it, and a summary exists for the player only when `show` is true, a gap of at least `SHOW_GAP_MS` = 2 minutes (`CatchUp.js:114-119`, `:329`, `loopConstants.js:43`, `CatchUpOverlay.jsx:48`). Events are on (`main.jsx:97`); `data/events.json` holds 12 events, three of them comets; a node stands an hour (`EventTokens.js:36`). **Found independently by three readers** (the summary; the hour-away trace; state outside the save, as part of its banner finding). The hour-away reader left one step assumed (that the summary opens only when `show` is true, not having read `CatchUpOverlay.jsx` whole); the summary reader read that file whole and cites `:48`, which settles it. **How it relates**: this is one mechanism (a listener the quiet bus skips, with no hand-over). CR4-147 is the other half of the same symptom (no banner is saved, so a plain reload drops it too); CR4-113 is the travel side (the banner follows the guild to another Region); CR4-129 is about what the knock-out banners say once they are handed over. One fix can serve all of the event cases if it runs on load, on catch-up end and on travel.
+- **Fix sketch**: In the `CATCH_UP_FINISHED` route, after pruning, push the event banner for every `summary.events` row with `landed` true and `ended` null whose Token is still on the mat (same `groupKey` as the live route, so the later `EVENT_ENDED` still withdraws it); for a shown catch-up hold it with the rest of the news until the summary closes. Must not change: no banner for an event that came and went while away; nothing drawn or random inside the quiet catch-up itself.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-147  Banners live only in memory: after a reload an event still on the mat has no banner, and an unread "Knocked Out! Lost: ..." is never shown again
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / M / low
+- **Confidence**: verified
+- **Where**: `src/systems/notifications/banners.js:18-23`, `src/systems/notifications/banners.js:172-177`, `src/systems/notifications/routing.js:194-204`, `src/systems/notifications/routing.js:210-226`, `src/systems/notifications/routing.js:230-231`, `src/systems/notifications/routing.js:292`, `src/state/StateSchema.js:139-289`, `src/systems/board/EventTokens.js:36`, `src/main.jsx:97`, `data/events.json`
+- **What**: Two things a player can meet. (1) Play until a Copper Comet lands: its banner drops in and points at the Token. Reload the page, or close and reopen within the comet's hour: the comet is on the mat, the banner is not, and nothing puts it back. (2) Any banner not yet clicked when the game closes is gone at the next start. "Knocked Out! Aela was carried home. Lost: Iron Sword" is the only place a knock-out's losses are said (CR4-129), so a player who closes with it unread, or with banners still waiting behind three others, never learns what was lost. The same goes for catch-up news still held behind an open summary (CR4-164).
+- **Evidence**: `shown` and `waiting` are module arrays (`banners.js:20-22`); the save has no banner section (`StateSchema.js:139-289`). `GAME_LOADED` runs `startFresh`, which calls `Banners.reset()` and puts back only the pins (`routing.js:194-198`, `:219-226`). The `EVENT_LANDED` route is the only thing that raises an event banner and nothing re-raises one for a Token already standing; `pruneEventBanners` only withdraws (`:210-217`). `heldNews` is a module array cleared on load (`:221`, `:231`). Found by the state reader; the hour-away reader raised the plain-reload case as a lead ("I did not confirm whether the owner wants a banner back after a reload"), and the summary reader noted the same fact in passing ("banners are not saved, so a save loaded with an event standing has no banner either"). **How it relates**: a different mechanism from CR4-146 (there the banner is never raised because the quiet bus skips the route; here it was raised and is forgotten because nothing about a banner is saved), with the same remedy for the event case. This is the reload side of CR4-113, which is travel. It makes CR4-129 worse: the banner that already drops the losses of a shared knock-out is also the only record of them, and it does not outlive the session.
+- **Fix sketch**: On `GAME_LOADED`, on `CATCH_UP_FINISHED` (CR4-146) and, with CR4-113, on `BOARD_SWAPPED`, raise the event banner for the event Token standing on the mat if none is up (`EventClock.eventTokenOnMat`). For the rest, either save the unclicked problem banners (`ui.banners`, as the pins are) or accept the loss and say a knock-out's losses somewhere that lasts; that choice is the owner's. Must not change: one event banner per Token; a load still forgets the previous game's banners.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-148  A pinned item tracker stands still while the game is closed, the PC sleeps or the tab is in the background
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified
+- **Where**: `src/systems/notifications/routing.js:38-42`, `src/systems/notifications/routing.js:68-79`, `src/systems/notifications/routing.js:196-198`, `src/systems/notifications/routing.js:219-226`, `src/systems/notifications/routing.js:242-271`, `src/systems/notifications/routing.js:292`, `src/systems/notifications/routing.js:306-320`, `src/systems/notifications/itemStubs.js:121-141`, `src/systems/notifications/itemStubs.js:300-326`, `src/systems/core/EventBus.js:96-98`, `src/systems/core/CatchUp.js:199-204`, `src/systems/core/CatchUp.js:274`, `src/systems/core/SaveManager.js:389`, `src/state/StateSchema.js:215`
+- **What**: A pinned stub is the game's own tracker: it never fades, counts gained minus spent since it was pinned, and its count is saved with the game (`ui.pinnedStubs`, "counting since pinned"). It counts nothing a catch-up plays. Pin Oak Wood at, say, +40 while a hero works an Oak Tree and a Workbench burns the wood for Charcoal; close the game for an hour and load. "While you were away" lists the Oak Wood; the Bank's count has moved by hundreds; the pinned stub still reads +40, and the save written at the end of the catch-up stores +40 again. From then on the tracker and the Bank disagree for good. The same after a PC sleep, and while a browser tab is in the background long enough to be woken once a minute (59 seconds of every 60 are then played by quiet catch-ups). With auto-collect off (the default) most gains are counted later, when the player collects the piles, so what is lost for certain is the spending, and the tracker reads too high; with auto-collect on, the gains are missed too.
+- **Evidence**: A pin's count changes only in the `INVENTORY_UPDATED` route, which calls `ItemStubs.recordFlow` (`routing.js:68-79`), and every route is a `UI_LISTENER` (`:292`). A catch-up sets the bus quiet (`CatchUp.js:274`) and a quiet bus delivers only to engine subscribers (`EventBus.js:96-98`). `savePins` is called only from that route and the pin clicks (`routing.js:38-42`, `:76`, `:306-320`), so `state.ui.pinnedStubs` is never touched by a catch-up. On a load `startFresh` puts the saved counts back before the catch-up plays (`:196-198`, `:219-226`; `GAME_LOADED` is published in `loadSlot`, `SaveManager.js:389`, before `catchUpOnLoad`). What could have saved it and does not: `deliverCatchUpNews` (`routing.js:242-271`) calls `recordFlow` only for at most six first finds, never for an item already known. The catch-up already holds exactly what is missing: `summary.items.gained` and `.spent`, summed from the same event (`CatchUp.js:199-204`). **Found independently by two readers** (state outside the save; the hour-away trace), both verified. **How it relates to CR4-134**: the same skipped listener; CR4-134 is the per-hour figure kept by the rate tracker, this is the saved count itself. Ordinary, unpinned stubs miss the same flows, which is by design: the summary speaks for them.
+- **Fix sketch**: In the `CATCH_UP_FINISHED` route, for every pinned item add the catch-up's `gained` and `spent` to its stub and call `savePins` (at once, whether or not a summary shows). Must not change: unpinned stubs stay quiet after time away; nothing here may run during the catch-up, draw a random number or change anything in the engine.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-149  A second click on Load while the first is still loading starts the slot twice: the save is loaded again under the running catch-up and the time already played is lost
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: reasoned (one step assumed: that a real double-click's second click arrives before the slot screen has gone; the engine side is traced)
+- **Where**: `src/ui/ReactRoot.jsx:84-85`, `src/ui/modals/SlotSelectionModal.jsx:93-95`, `src/ui/modals/SlotSelectionModal.jsx:132-134`, `src/systems/core/EngineBootstrap.js:230-241`, `src/systems/core/EngineBootstrap.js:309-327`, `src/systems/core/EngineBootstrap.js:363`, `src/systems/core/SaveManager.js:327-392`, `src/systems/core/LoadedState.js:15`, `src/systems/core/CatchUp.js:332`, `src/systems/core/CatchUp.js:336-338`, `src/systems/core/CatchUp.js:346-373`, `src/systems/core/SaveFiles.js:186-193`
+- **What**: The Load button stays live until the slot screen closes, which happens only after the save is read, parsed and installed; nothing guards `startSlot` against a second call. Take a slot left for several hours and double-click Load. The first call loads and starts the catch-up; the second loads the same save again into a fresh state object while that catch-up is between slices. The catch-up carries on from where it was, on the new state, so the new state misses whatever had already been played (about three minutes of game per 50 ms slice at the documented speed; more in the desktop build while the second call waits on its file reads), and the summary still lists it. The second call's own catch-up is refused because one is running, and it then starts the live loop while the catch-up is still playing. What is lost is minutes of time away, silently; no items.
+- **Evidence**: `startSlot` has no in-flight flag (`EngineBootstrap.js:309-327`) and one caller (`ReactRoot.jsx:84-85`). `loadSlot` replaces `GameState.state` (`LoadedState.js:15`) and publishes `GAME_LOADED` again. `CatchUp.run` returns at once when `running` (`CatchUp.js:332`), and its loop reads `GameState.state` afresh every step through the tick handlers while `played` and `target` are locals (`:346-373`), so it continues on the swapped state. Saving is suspended during the catch-up (`:277`), so the second read gets the same pre-catch-up text. `onSlotSelected` then calls `GameLoop.start()` (`EngineBootstrap.js:363`) with the catch-up still running. What keeps it from being worse: the undo copy is taken by the first call before anything plays (`CatchUp.js:336-338`), and the final save writes the state that is live. A double click on New Game's Begin was traced and is harmless (the second call reloads the finished opening save; `readSave` waits for pending writes, `SaveFiles.js:186-193`). **Filed by the loading reader; raised as a lead by three more** (the summary; slots and settings; state outside the save), none of whom could settle the timing. Where they differ: the loading reader holds it possible in both builds, with a wider window on the desktop (two file reads are awaited before anything loads); the slots reader believes the browser build is safe (the screen closes in the same click) and that only the desktop window is real; the state reader adds that the window's width depends on the save's size, which is unmeasured (CR4-069). The summary reader adds that a second click on a different slot would leave the undo copy holding the first slot's file. It needs a try in a desktop build.
+- **Fix sketch**: One guard in `startSlot` (return the promise already in flight), or disable the slot buttons from the first click. Must not change: a refused save leaves the slot screen usable.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-150  Two actions write a save half-way through: settling a place (settled, not paid for) and starting a new game (a slot with no Guild Hall)
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / M / medium
+- **Confidence**: reasoned (one step assumed: that the first of two queued file writes can reach the disk and the second not, which is what `SaveFiles.pump` does when the process dies between them)
+- **Where**: `src/systems/world/Settling.js:171`, `src/systems/world/Settling.js:218-222`, `src/systems/atlas/Atlas.js:340`, `src/systems/atlas/Atlas.js:534`, `src/systems/core/SaveManager.js:257-266`, `src/systems/core/SaveManager.js:523-537`, `src/systems/core/EngineBootstrap.js:344-350`, `src/systems/core/SaveFiles.js:191-240`, `src-tauri/src/saves.rs:89-104`
+- **What**: The window is one file write, tens of milliseconds, and needs a power cut or a killed process inside it. (1) Settling writes the new Region and saves before it takes the price and before it travels. If the desktop game dies between that write and the travel's write, the reload has the place settled, the price still in the Bank, the guild at home, and travelling there is the Atlas's free travel with no arrival enemies: a place for nothing, without its fight. (2) A new game saves an empty state to claim the slot, then lays the Starter Camp and saves again. Dying between the two writes leaves a slot that loads as an empty mat with no Hall, no hero and nothing to buy with; it can only be deleted. In a browser build the main save is never half-way (both writes are in the same task), but the backup is: after a new game the backup is the empty game, and after a settle it is "settled, unpaid", until the next save rolls it. So if the main save were damaged in a new guild's first autosave interval, "Save Restored" would open an empty table; with autosave Off that lasts until the first manual save or the close save.
+- **Evidence**: `settleCell` calls `Atlas.settle`, which saves (`Atlas.js:340`), before `removeItem` takes the price (`Settling.js:221`) and before the travel's save (`Atlas.js:534`); the written Region carries the cell id, so `frontier.settledIds` counts it. `newGame` saves to claim the slot (`SaveManager.js:536`) and the finished opening is saved at `EngineBootstrap.js:350`. Both pairs happen in one synchronous run, but on the desktop each `writeSave` is a separate file job: the first starts at once, the second waits as `q.next` (`SaveFiles.js:222-240`), and each job is a backup write plus a main write, both flushed (`saves.rs:89-104`). `EngineBootstrap.js:346-349` shows the empty-slot outcome was already met once and narrowed, not closed. The browser's backup key is written from the half-way state (`SaveManager.js:257-266`). **Filed by the worst-moment reader; the same seam was raised as a lead by the Regions reader and the state reader** (settling), and the slots reader raised the empty "claim" backup. The writing reader and the Regions reader both list "no reachable gap" between a new game's two saves as sound, meaning no gap in the page's own run; the gap here is between the two file jobs on disk. **How it relates to CR4-121**: CR4-121 covers the save after paying and before the arrival enemies land; this is the save before paying, a different consequence of the same sequence, and the same fix (one save, after `Arrival.occupy`) closes both.
+- **Fix sketch**: Take the save out of `Atlas.settle` when `settleCell` calls it and save once at the very end, after `Arrival.occupy`; let `newGame` claim the slot in memory and write only the finished opening. Must not change: a new game never overwrites a file copied into the slot (`EngineBootstrap.js:310-313`).
+- **Verified by**: pending
+- **State**: open
+
+### CR4-151  If "Load as I left it" fails to write once, it cannot be tried again, and on the desktop pressing Confirm a second time accepts the time away instead
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: reasoned (one step assumed: that the write fails, from a full browser storage or a locked or full disk; the handling of the failure is traced in code)
+- **Where**: `src/systems/core/CatchUp.js:80-85`, `src/ui/components/hud/CatchUpOverlay.jsx:56-61`, `src/ui/components/hud/CatchUpOverlay.jsx:83`, `src/systems/core/SaveManager.js:460-470`, `src/systems/core/SaveManager.js:472-476`, `src/systems/core/SaveManager.js:480-485`, `src/systems/core/SaveManager.js:490-500`
+- **What**: Browser build, storage nearly full (the game already has a "Browser storage is full" banner for this): press "Load as I left it", Confirm. The write throws, the summary closes at once, a "Load Failed: could not load the game as you left it" banner appears, and the catch-up is kept with no way to try again after freeing space. Desktop build: the write is asynchronous, so the summary stays up with the Confirm question still showing and the failure banner is pushed underneath the overlay; pressing Confirm again (the natural retry) closes the summary and keeps the catch-up.
+- **Evidence**: `undoLast` forgets the copy before it knows the outcome: `undo = null; return SaveManager.restoreAndReload(slot, json)` (`CatchUp.js:83-84`). Browser path: `localStorage.setItem` throwing lands in the `catch`, `restoreFailed`, `return false` (`SaveManager.js:480-485`), and the overlay does `if (!CatchUp.undoLast()) close()` (`CatchUpOverlay.jsx:83`), where `close` also calls `forgetUndo` (`:57`). Desktop path: `restoreAndReload` returns `true` at once (`SaveManager.js:469`) and reports failure later through `restoreFailed` (`:462-464`), which resumes saving and pushes a banner but cannot give `undo` back; the overlay still has `asking === 'undo'`, so the second Confirm calls `undoLast()` again, gets `false` (`CatchUp.js:81`) and runs `close()`. The browser path first copies the caught-up save into the backup key (`SaveManager.js:472-476`), which itself uses storage just before the write that then fails. Filed by the summary reader; the state reader raised the same as a lead.
+- **Fix sketch**: Clear `undo` only once the write has succeeded (hand it back from `restoreFailed`), and keep the summary open with the button live after a failure. Must not change: saving stays suspended between the write and the reload; the second click after a successful desktop write stays harmless.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-152  Two copies of the game open on the same slot silently overwrite each other
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / M / medium
+- **Confidence**: reasoned (one step assumed: that the desktop app can be started twice; `src-tauri/Cargo.toml` and `lib.rs` carry no single-instance guard, and Tauri allows a second instance unless one is added. The browser case, two tabs, needs no assumption)
+- **Where**: `src-tauri/src/lib.rs:10-52`, `src-tauri/src/saves.rs:22`, `src/systems/core/SaveFiles.js:49-51`, `src/systems/core/SaveManager.js:225-278`
+- **What**: Start the desktop game twice (a double launch, or forgetting it is minimised) and load the same slot in both, or open the browser build in two tabs. Each copy catches up and autosaves on its own timer into the same file. Whichever saves last wins, and its backup roll replaces the other's save as the backup. Play in window A for an hour, close A, then close the forgotten window B: B's close save replaces A's hour with B's idle game, and the only trace of A is the one-generation backup, which is never offered unless the main save is damaged.
+- **Evidence**: Nothing compares the slot's `savedAt` on disk with the one loaded before writing (`SaveManager.js:225-278`); the write lock is per process (`saves.rs:22`); queues and copies are per page (`SaveFiles.js:49-51`); no `storage` event listener, lock or instance guard exists (grep of `single-instance`, `BroadcastChannel`, `navigator.locks` and `storage` listeners in `src/systems/core`, `src/main.jsx` and `src-tauri`: none).
+- **Fix sketch**: Desktop: add the single-instance plugin (a second launch focuses the first window). Browser: remember the `savedAt` this page last wrote or loaded and, if the slot now holds a newer one from elsewhere, stop saving and tell the player. Must not change: a file copied into the saves folder at the title screen still loads.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-153  When the save on closing the desktop game fails, the window closes anyway and the player is never told
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / M / medium
+- **Confidence**: reasoned (one step assumed: that the write fails at that moment, from a full disk, a saves folder made read-only or another program holding the file; the handling of the failure is traced)
+- **Where**: `src/systems/core/SaveManager.js:163-173`, `src/systems/core/SaveManager.js:248-251`, `src/systems/core/SaveFiles.js:117-123`, `src/systems/core/SaveFiles.js:204-213`, `src-tauri/src/saves.rs:50-62`, `src-tauri/src/saves.rs:207-211`
+- **What**: Desktop build. On close the page saves, waits for the write queue to empty, and closes the window whatever the write's result was. A failed write pushes the "Save Failed" banner in the same instant the window is destroyed, so the player never sees it and everything since the last good autosave is lost with no sign. During play the same failure is handled well (banner, old file untouched, the next autosave tries again).
+- **Evidence**: `flush()` resolves when the queues are idle, not when they succeeded (`SaveFiles.js:117-123`); the handler's `finally` calls `closeWindow()` unconditionally (`SaveManager.js:169-170`); the write's `{ ok: false }` reaches only the `.then` at `:248-250`. The rename retry in `saves.rs:50-62` covers only `ErrorKind::PermissionDenied`; whether a virus scanner's or a cloud-sync client's hold on the file maps to that kind is an open lead (see Notes), and if it does not, this is how a scanner turns into a silent loss at close.
+- **Fix sketch**: In the close handler, take the write's result; on failure cancel the close once (reset the Rust `CLOSING` flag through a small command), show the banner, and let a second close request go through. Must not change: a hung page still closes after `CLOSE_GRACE`.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-154  "Save Game Now" gives no sign that it saved, or that it did not
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified
+- **Where**: `src/ui/modals/SettingsModal.jsx:134-140`, `src/systems/core/SaveManager.js:225-233`, `src/systems/core/SaveManager.js:270-273`
+- **What**: Click Settings, Game, "Save Game Now". Nothing happens on screen. The save's "notification" is a log line only, and the button ignores the return value, so the same silence covers the cases where the save was refused (during a catch-up, or before a slot is open). In the desktop build `save` returns true before the file is written, so even its return value does not mean "saved". A player who uses the button before pulling the plug has nothing to go on.
+- **Evidence**: `SaveManager.js:270-272` is `logger.info` only; `:231-233` returns false silently; the click handler (`SettingsModal.jsx:134-140`) discards the result.
+- **Fix sketch**: Have the button show "Saved" (and "Could not save" from the write's result in the desktop build, or "Not while catching up" when refused). Must not change: the silent autosave.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-155  The master volume a new player sets is thrown away once, on their second launch
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified
+- **Where**: `src/systems/core/SettingsManager.js:106-120`, `src/systems/core/SettingsManager.js:167-169`
+- **What**: A new player (clean install) opens Settings, Audio in their first session and raises Master volume from 0 to, say, 60. On the next launch the game is silent again and the slider reads 0. Raising it a second time sticks.
+- **Evidence**: The one-time "dev mute" step (`SettingsManager.js:117-120`) deletes the stored `audio.masterVolume` whenever the marker key `fantasy_guild_dev_mute_applied` is missing, and sets the marker. That block runs only inside `if (stored)` (`:109`): on a first launch nothing is stored, so the marker is never set. `save()` (`:167-169`) writes the settings but never the marker. So the second launch finds stored settings and no marker, deletes the volume the player chose, and the deep merge fills in the default 0. The step was meant for browsers that had settings from before the mute; it also hits every new player once.
+- **Fix sketch**: Set the marker whenever `load()` runs with nothing stored (or in `save()`), so only settings that pre-date the mute are touched. Must not change: the default stays 0.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-156  The Encyclopedia loses its tick for a chest (or any one-use Token) that came with a settled place once it is used up
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: reasoned (one step assumed: that the Encyclopedia lists the chest; the state side is traced)
+- **Where**: `src/systems/board/BoardState.js:149-159`, `src/systems/board/BoardState.js:345`, `src/systems/atlas/Cartography.js:116-125`, `src/systems/atlas/Atlas.js:521`, `src/systems/progression/collectionLog.js:61-67`
+- **What**: Settle a place that shows a Copper Chest (`token_copper_chest`, one use, no refill). While it stands, the Encyclopedia ticks it. Send a hero to open it: the chest leaves the mat and the tick is gone, though the guild plainly had it. A Token the player buys, builds or that spawns keeps its tick for ever.
+- **Evidence**: The "had it" record (`collection.tokensHad`) is written in one place only, `BoardState.addToken` (`BoardState.js:345`, the only importer of `noteTokenHad`). A settled Region's Tokens are never passed through `addToken`: `Cartography.regionBoard` builds them with `BoardState.detachedBoard` (`:149-159`, no note), and travel installs that board as a whole (`Atlas.js:521`). `collectedOf` (`collectionLog.js:63-67`) covers this only while a copy still stands on some board. The Starter Camp is fine (`StarterCamp.layOnLiveBoard` uses `addToken`), and so are arrival enemies (`placeTokenAt`).
+- **Fix sketch**: Note every Token type of a Region's board as had when the Region is written (or when the guild first arrives). Must not change: `detachedBoard` stays free of live-state writes other than this one note, or the note is made in `Atlas.settle`.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-157  In the browser build, the "storage is full" message tells the player to export their save, and there is no export
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified
+- **Where**: `src/systems/core/SaveManager.js:45-63`, `src/systems/core/SaveManager.js:285-288`
+- **What**: Browser build only. A deeper consequence of CR4-067 and CR4-069. When the browser's storage quota is reached the banner says "Browser storage is full. Free space or export your save." No button, menu or key exports a save, so the one instruction the player is given cannot be followed; from then on no save is written and each autosave repeats the failure.
+- **Evidence**: grep of `exportSave` in `src` outside tests finds the definition only (`SaveManager.js:285-288`; already noted in CR4-067). The failure itself is handled safely: `localStorage.setItem` leaves the old value on failure, and the game keeps trying on every later save.
+- **Fix sketch**: Reword the banner to what the player can do (delete another slot), or give `exportSave` its button. Decide with CR4-067.
+- **Verified by**: pending
+- **State**: open
+
+**The next six need a change in the CMS to occur: a rename, a delete, or a rank taken off a star.**
+They are live for this project, not rare: this owner renames and deletes ids often, and in the CMS
+an id follows the name. `cms/src/stores/useEntityStore.js:549-553` re-slugs the id whenever `name`
+is patched and `autoSyncId` is true, and in today's `data/` that flag is true on 157 of 158 Tokens
+and 151 of 151 items. So "renamed in the CMS" does not need a deliberate id change: correcting a
+display name is enough. Recipes are the exception (0 of 117 carry the flag; their ids are stable).
+CR4-127 (a hero's dead gear slot) belongs to the same family and is already filed.
+
+### CR4-158  A newly settled place whose arrival enemy was renamed or deleted stays "held" for good: no hero can work anything there
+- **Tag**: bug
+- **Priority / Effort / Risk**: P1 / S / medium
+- **Confidence**: verified for a Region saved while still held (the content reader traced every step). For a place settled after the rename, the content reader assumed one step (that the arrival enemy is placed although its type has no definition), which the Regions reader traced at `Placement.js:153-161`; the Regions reader assumed another (that the screen gives the player no way to take such a Token off the mat), which the content reader traced
+- **Where**: `src/systems/board/Occupation.js:31-41`, `src/systems/board/Occupation.js:52-56`, `src/systems/world/Arrival.js:179-211`, `src/systems/world/Arrival.js:220-229`, `src/systems/world/Arrival.js:234-241`, `src/systems/world/cellMat.js:290`, `src/systems/board/Placement.js:153-161`, `src/systems/board/BoardCombat.js:60-62`, `src/config/registries/enemyProfile.js:52-54`, `src/systems/board/Flags.js:192-201`, `src/systems/board/Flags.js:382`, `src/systems/board/Flags.js:461`, `src/systems/board/Flags.js:616`, `src/systems/board/Demolition.js:117-128`, `src/systems/world/generate.js:526-531`, `src/systems/world/generate.js:537-552`, `src/systems/world/World.js:28`, `src/systems/world/World.js:96-105`, `src/systems/core/EngineBootstrap.js:275`, `src/systems/board/BoardRunner.js:793-803`, `src/systems/board/SpawnerSystem.js:474`, `src/systems/core/ContentAudit.js:857-872`, `data/world.json`
+- **What**: Settle any place on the world map (ring 1 arrives with 3 to 4 of `token_goblin`, `token_wolf`, `token_crab`, `token_bee`, `token_thorn_elemental`, `token_cow`, from `data/world.json` `arrival`). Before the last one is beaten, save. In the CMS change the name of one of those enemies still standing (say Wolf), Sync, load. The mat stays dark. The renamed enemy cannot be attacked (a hero dropped on it is refused), every node, camp and station on the mat still refuses heroes as "held", and the place's own camps never wake. Nothing the player can do clears it: travelling away and back, reloading, demolishing. The Region can only be abandoned from the Atlas (the Regions reader notes `abandon` has no caller in the UI), and settling the same place again brings the same dead enemy, because the world's cells were written at the new game and still name the old id. There is a second way in: a place not yet settled carries the old id in its stored arrival, so settling it after the rename pays the price, moves the guild and puts the dead enemy on the mat. The "Saved game" check that is meant to say "your save still holds X" stays silent in both cases.
+- **Evidence**: A held mat is `board.arrival = { ids, cleared: false }` (`Arrival.js:207`). It clears only when `Occupation.standingEnemies().length` is 0 (`Arrival.js:222`), and `standingEnemies` finds the enemies by instance id with no look at their type (`Occupation.js:37-41`), so a Token of a type the data no longer has still counts as standing. That Token is no enemy to the engine: `BoardCombat.isEnemyToken` is `isEnemyDef(getTokenType(typeId))` (`BoardCombat.js:60-62`), false for a missing definition (`enemyProfile.js:52-54`), so `Flags.kindOf` returns null for it (`Flags.js:192-198`) and the tick never fights it. `Occupation.holds` is true for every Token that is not an enemy, the Hall or a quest (`Occupation.js:52-56`), which now includes the ghost itself, so `orderRefusal` (`Flags.js:616`), `evaluate` (`Flags.js:382`) and the camp hand-out (`Flags.js:461`) refuse all of them. What could have saved it and does not: demolition lets the ghost be marked (`Demolition.refusalOf`, cited at `:119-128` by one reader and `:117-126` by the other), but a marked Token is hero work, and hero work on a held mat is refused by the same `Occupation.holds`; `Placement.removePlacedToken` is dev-only and refuses spawned Tokens; `checkCleared` on `GAME_LOADED` and `BOARD_SWAPPED` (`Arrival.js:239-241`) runs the same count; `Restrictions.reconcile` and `Charges.clearNeverWearingCharges` (`BoardRunner.js:793-803`) do not touch it. The second route: `state.world` is generated once (`World.js:96-105`; `EngineBootstrap.js:275` is the only caller of `createWorld`) and "kept whole in the save" (`World.js:28`), each cell's `arrival` holding enemy type ids (`generate.js:526-531`, `arrivalOf` `:537-552`); `cellMat.js:290` copies `cell.arrival`; `Arrival.occupy` makes the instance from `row.typeId` with no check that the type exists (`Arrival.js:196`); `Placement.placeArrivalNear` goes to `placeTokenAt`, which for a missing definition only warns ("Placement still goes ahead", `Placement.js:158-161`) and places it. **The saved-game check never reads the places this lives in**: `ContentAudit.collectSaveRefs` (`ContentAudit.js:857-872`) lists `state.board.tokens`, `inventory.items` and `hero.equipment` only. It never looks at `state.world` (arrival, origins, camps, chests, prices) or at the boards of the Regions the guild is not in, so a dead id there is never named, even on the console. This is a different consequence from the ruling "unknown ids are kept on purpose, ContentAudit warns": here the id sits where the audit never reads, and one dead Token locks a whole mat rather than standing idle. **Found independently by two readers** (old saves meeting new content; Regions). Priorities given: P1 by the content reader, P2 by the Regions reader ("needs a content rename or delete after the save's world was made; then it blocks a whole Region or a whole direction of the map"); the higher is taken.
+- **Fix sketch**: Count as standing only arrival enemies whose type is still an enemy (`standingEnemies` filtering on `isEnemyDef(getTokenType(typeId))`), and have `occupy` skip a row whose type is not an enemy. Extend the save audit to every Region's board and to the world's cells (see CR4-160). Must not change: the ghost Token stays on the board (the keep-unknown-ids ruling, so restoring the id restores the fight); a held mat with real enemies standing stays held; a stored world is never regenerated.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-159  A place on the world map whose price names a renamed or deleted item can never be paid for
+- **Tag**: bug
+- **Priority / Effort / Risk**: P2 / M / medium
+- **Confidence**: verified
+- **Where**: `src/systems/world/generate.js:459-510`, `src/systems/world/frontier.js:53-64`, `src/systems/world/Settling.js:75-78`, `src/systems/world/Settling.js:91-93`, `src/systems/world/Settling.js:215-221`, `src/systems/inventory/InventoryManager.js:121-127`, `src/systems/inventory/InventoryManager.js:313-315`, `src/systems/world/World.js:27-29`, `src/systems/core/ContentAudit.js:857-872`
+- **What**: Start a game (the world is drawn then). Later rename in the CMS an item that places ask for, for example a ring-1 material such as Oak Wood or Copper Ore, and Sync. Every unsettled place whose price was drawn with the old id now shows a row with the raw id and a count that can never rise: the Bank cannot take an item with no definition, so nothing the guild makes from then on counts toward it. Settling is refused with "The guild cannot pay for it yet" for the rest of that save. Because prices are drawn from what the cell one ring in yields, one renamed common material locks many places at once, and with them everything reachable only through them. The Regions reader adds that the same holds for a price that names a skill id (`requires.skills[].skill`): the guild's level in an unknown skill reads 0. The "Saved game" check says nothing, as in CR4-158.
+- **Evidence**: `cell.requires = { items: [{ itemId, qty }], skills }` is written once at generation from the Token outputs of the day (`generate.js:459-510`; `:508` is the write) and the world is never regenerated (`World.js:27-29`). `priceRows` reads `itemCount(itemId)` for the stored id (`frontier.js:55-58`), which is `InventoryManager.getItemCount` (`Settling.js:76`). `addItem` returns 0 for an id with no template (`InventoryManager.js:123-127`), so `have` can only be what the Bank already held under the old id when the rename landed; that hidden stack is kept, and `removeItem` at `Settling.js:221` will spend it, so a guild that happened to hold enough can still pay once. `Settling.settleCell` refuses at `:216`. Nothing reconciles `state.world` against the item registry: `ContentAudit.collectSaveRefs` (`:857-872`) does not read `state.world`, and `World.findingsOf` checks the tables, not ids in a kept world. **Found independently by two readers** (old saves meeting new content, as its own finding and verified; Regions, inside its arrival finding and reasoned). The two differ on one detail: the Regions reader wrote that the row reads "have 0" for ever; the content reader's account (the old stack still counts) is the one kept, because `getItemCount` returns the stored entry's quantity whether or not the item still has a definition (`InventoryManager.js:313-315`, opened by the assembler to settle this one point).
+- **Fix sketch**: When a price row's item has no definition, either drop that row from what `priceRows` asks (and say so on the map) or re-draw that one cell's price from the tables in force. Add the world's cells to the save audit (CR4-160). Must not change: a world already being played keeps its shape, places and seeds; nothing is deleted from the save.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-160  Correcting an item's or a Token's name in the CMS orphans it in every existing save, and the save check's promise that it "will start working again" is not true
+- **Tag**: bug, owner-decision
+- **Priority / Effort / Risk**: P2 / L / high
+- **Confidence**: verified
+- **Where**: `cms/src/stores/useEntityStore.js:549-553`, `src/systems/core/ContentAudit.js:839-872`, `src/systems/core/ContentAudit.js:936-942`, `src/systems/inventory/InventoryFormatter.js:44-50`, `src/systems/core/SaveMigration.js:24-93`, `src/systems/effects/skillIdMigration.js:27`, `src/systems/effects/effectIdMigration.js:32-35`
+- **What**: This is not the keep-unknown-ids ruling itself but what it rests on. The ruling assumes a missing id is a rename in progress that will come back. With ids following names (157 of 158 Tokens, all 151 items), fixing a typo in "Copper Ingot" changes `item_copper_ingot` for good. Hold 500 Oak Wood, rename Oak Wood to Oak Logs in the CMS, Sync, load: the Bank shows no wood and trees now give "Oak Logs" from zero. In a save from before: the Bank's stack is no longer listed and no recipe can spend it; every Token of a renamed type stands on the mat doing nothing; a hero's gear slot goes dead (CR4-127). Nothing tells the player; the only notice is a console warning, and it names only part of what was orphaned. CR4-158, CR4-159 and CR4-162 are the sharpest consequences of the same root.
+- **Evidence**: The only rename tables that exist are for one skill and one effect, and they run over content, not saves (`skillIdMigration.js:27`, `effectIdMigration.js:32-35`, both by their own headers). `migrateState` (`SaveMigration.js:24-93`) rewrites no item, Token or recipe id anywhere. A Bank stack of a missing item is "held in the save but cannot be shown" (`InventoryFormatter.js:46-49`). The save check's text says "If this name is part of a rename you have not finished, it will start working again the moment the new name matches" (`ContentAudit.js:939-941`): the save holds the old id, so it starts working again only if the old id itself comes back, which auto-sync prevents unless the old name is typed again. That check reads only the live mat, the Bank and loadouts (`collectSaveRefs`, `:857-872`): not the other Regions' boards, loot on the floor, `state.world`, station picks or pinned stubs, so most orphans are never named even on the console (the Regions reader found the same gap independently, see CR4-158).
+- **Fix sketch**: Owner's call between (a) the CMS recording `{ oldId: newId }` at each rename into a synced table that `migrateState` applies to every place an id lives (Bank keys, tab orders and overrides, loadouts, Tokens and loot on the live board and every Region's, `state.world`, collection lists, pins), or (b) ids no longer following names once an entity has been Synced. Either way, widen `collectSaveRefs` to every Region's board and the world's cells and correct the message's wording. Must not change: nothing is deleted from a save.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-161  A Guild Hall star the save holds at a higher rank than the star now has gives nothing at all
+- **Tag**: bug
+- **Priority / Effort / Risk**: P2 / S / low
+- **Confidence**: verified
+- **Where**: `src/config/hallStars.js:164-168`, `src/systems/progression/hallModifiers.js:70-74`, `src/systems/progression/hallModifiers.js:114`, `src/systems/progression/hallModifiers.js:131`, `src/config/guildUpgrades.js:24-27`, `src/config/guildUpgrades.js:199`, `src/config/guildUpgrades.js:279-283`, `src/systems/progression/GuildUpgradeManager.js:116-125`, `src/systems/progression/GuildUpgradeManager.js:150`, `src/systems/progression/GuildUpgradeManager.js:195-215`, `src/ui/components/board/GuildHallBoard.jsx:130`, `src/ui/components/board/GuildHallBoard.jsx:502`, `data/hallStars.json`
+- **What**: Needs the owner to take a rank off a star in the CMS. Buy an authored star to its top rank (say a three-rank star at 3/3). In the CMS take the last rank off that star, Sync, load. The star reads "3/2" and maxed, cannot be bought further, and its boost is gone entirely: not the new top rank's, nothing. Its Passive Production lines stop too, and a hero recruited later arrives without its XP for Everyone.
+- **Evidence**: `rankOf(star, rank)` returns `star.ranks[rank - 1] || null`, "null at 0 or past its top" (`hallStars.js:164-168`). `hallRulesOf` skips a star with no record (`hallModifiers.js:72-73`), so does `xpForEveryoneOf` (`:114`) and `hallLinesOf` (`:131`). Each rank record carries the star's whole effect at that rank (in `data/hallStars.json`, `star_forestry_speed` rank 1 is -0.06 and rank 2 is -0.126, not a step of it), so past the top means the whole effect is lost. Nothing clamps: `GuildUpgradeManager.recompute` (`:195-215`) passes the saved ranks straight to `HallRules.apply`; `getRanksCost` returns null when `rank + n > def.maxRank` and `purchaseRanks` answers "Already at max rank" (`:121`, `:150`), so the player cannot repair it by buying. `rosterLimitForRank` does clamp (`guildUpgrades.js:24-27`), which shows the intent for the built-in track.
+- **Fix sketch**: Read a held rank as `Math.min(rank, star.ranks.length)` in `rankOf`'s callers (or once, in `recompute`, without rewriting the saved number). Must not change: the saved rank (so restoring the rank restores it), a rank of 0, and that a load gives no XP for Everyone.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-162  Items the data no longer has take Bank slots the player cannot see or free
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified
+- **Where**: `src/systems/inventory/InventoryManager.js:46-64`, `src/systems/inventory/InventoryManager.js:121-140`, `src/systems/inventory/bankTabs.js:21-48`, `src/systems/inventory/InventoryFormatter.js:44-50`
+- **What**: After items are renamed or deleted, each kind the Bank still holds under an old id keeps one of its tab's 64 slots. The Bank does not draw them, so a tab can look like it has room and still refuse a new kind ("Bank full", the loot stays on the floor). The player has no way to move, use or discard the hidden kinds. With 151 items in the data and 64 kinds a tab, a guild is often near a full first tab.
+- **Evidence**: `freeSlots` counts `Object.keys(InventoryStore.getItems()).length` as used (`InventoryManager.js:57`) and `bankTabCounts` counts every key of `inv.items` per tab (`bankTabs.js:41-48`); neither asks whether the item exists. `getDisplayInventory` skips an id with no template (`InventoryFormatter.js:46-50`), so the pane cannot show or move it. `addItem` then refuses a new kind through `lacksSlotFor` (`InventoryManager.js:137-140`).
+- **Fix sketch**: Leave kinds with no definition out of the slot counts (`freeSlots`, `bankTabCounts`), keeping their entries in `inv.items`. Must not change: nothing is removed from the Bank; a kind whose id returns takes a slot again.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-163  A station's recipe pick, and a Field's crop in the ground, are erased the moment their recipe is not in the pool, against the keep rule
+- **Tag**: bug, owner-decision
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified
+- **Where**: `src/systems/board/StationRecipe.js:91-97`, `src/systems/board/RecipeResolver.js:138`, `src/systems/board/RecipeResolver.js:143-148`, `src/systems/board/Fields.js:180-185`
+- **What**: Needs a real delete in the CMS, or a recipe moved to another skill or station kind (recipe ids do not follow names). A station set to a recipe that is missing at load has its pick deleted the first time anything looks at it: the next flag pass for a hero ordered there, the Token's card being opened, or a neighbour being placed. The catch-up on load runs those passes, then saves. If the recipe comes back in the next Sync the station's pick does not: it says "Choose a recipe" and its hero has stood idle since. A Field loses the crop growing or ripe in it the same way. Everywhere else an id the data lacks is kept so that restoring it restores the thing.
+- **Evidence**: `validateSelection` deletes `selectedRecipeId` when `selectedRecipe` finds no match in `poolFor(def)` (`StationRecipe.js:93-96`), called from `resolveRecipe` (`RecipeResolver.js:143-145`), which every work check and the card call. `Fields.settle` replaces `instance.field` with `{}` when its `cropId` is no crop of the Field (`Fields.js:182-184`). A pick on a Token whose own type is missing is spared, since `resolveRecipe` returns before validating when the pool is empty (`RecipeResolver.js:138`). No recipe carries `autoSyncId` (0 of 117).
+- **Fix sketch**: Treat a pick that is not in the pool as "nothing picked" when reading, without deleting it; overwrite it only when the player picks. Must not change: the station still shows "Choose a recipe" and no hero works it meanwhile.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-164  Closing the game while the "While you were away" summary is on screen accepts it for good: "Load as I left it" is gone on the next start, and the news behind the summary is never shown
+- **Tag**: bug, owner-decision
+- **Priority / Effort / Risk**: P3 / M / medium
+- **Confidence**: verified
+- **Where**: `src/systems/core/CatchUp.js:52-55`, `src/systems/core/CatchUp.js:80-85`, `src/systems/core/CatchUp.js:279`, `src/systems/core/CatchUp.js:394-398`, `src/systems/core/CatchUp.js:402`, `src/systems/core/SaveManager.js:163-173`, `src/systems/core/SaveManager.js:205-216`, `src/systems/core/SaveManager.js:244-266`, `src/systems/core/EngineBootstrap.js:352-363`, `src/systems/notifications/routing.js:230-231`, `src/ui/components/hud/CatchUpOverlay.jsx:56-61`, `src-tauri/src/saves.rs:92-101`
+- **What**: Load a save after a night away. The summary shows something the player does not like (a hero knocked out and their sword lost, or the only pickaxe gone, CR4-137) and offers "Load as I left it". They close the window (or press F5 in a browser, or the PC shuts down, or the game crashes) meaning to think about it, without pressing either button. On the next start the game opens on the caught-up state with at most a few seconds or minutes of new time away: no summary, no "Load as I left it". The time away was accepted by closing, and the banners for recipes unlocked, first finds and knock-outs that were waiting for the summary to close never appear. The summary reader gives this as the owner's decision (a bug if the owner means "a summary still open was never accepted", which is what the code's own comment at `CatchUp.js:397` says); the worst-moment reader gives it as a plain bug.
+- **Evidence**: The catch-up's result is written to the slot before the summary is ever shown: `if (save) SaveManager.save(false)` (`CatchUp.js:394`) runs before `CATCH_UP_FINISHED` is published (`:402`). The copy to go back to lives only in a module variable, `let undo = null` (`:55`), set at `:398`; nothing writes it to disk, localStorage or sessionStorage. The news held for the banners is another module variable (`heldNews`, `routing.js:231`). The game loop also starts under the open summary (`EngineBootstrap.js:363` after `await this.catchUpOnLoad()` at `:352`), and saving is resumed (`CatchUp.js:279`), so the window-close save (`SaveManager.js:167`), the browser's `beforeunload` save (`:211-214`) and the autosave all write the caught-up game, dated now. What could have saved it and does not: the slot's rolling backup does hold the as-left save right after the catch-up's own save (`SaveManager.js:244-266`, `saves.rs:92-101`), so it is still on disk after a crash, but nothing on the next load offers it, and the very next save (the one on a normal close) rolls the caught-up save over it. A crash or a closed window during the loading bar is fine on a load (saving is suspended, the slot is untouched, the same catch-up is offered again); only the summary screen has this hole. **Found independently by two readers** (the summary; the worst moment), both verified, both P3. Related: CR4-147 (banners are never saved), CR4-123 (two summaries in a row), CR4-151 (the undo's own write failing).
+- **Fix sketch**: Keep the pre-catch-up save (and a "summary unanswered" mark) somewhere that survives the page (its own storage key or a file beside the slot) until the player presses one of the two buttons, and on the next load show the summary and offer the choice again; or, smaller, do not write the caught-up save (and keep saving suspended) until "Return to the Guild" is confirmed. Must not change: a closed window during the loading bar still loses nothing; the undo still writes the as-left save dated now; answering "Return to the Guild" discards the copy.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-165  A Token that was on the mat before its type was given Charges never runs out
+- **Tag**: bug, owner-decision
+- **Priority / Effort / Risk**: P3 / S / medium
+- **Confidence**: verified
+- **Where**: `src/systems/board/Charges.js:38-41`, `src/systems/board/Charges.js:50-61`, `src/config/registries/tokenRegistry.js:204-208`, `src/systems/board/BoardRunner.js:792-796`
+- **What**: Needs the owner to give Charges to a Token type that had none. Charges are stamped on a Token when it is made. A node placed, spawned or written by a map while its type had no Charges carries "no count", which the engine reads as unlimited for ever. When the owner later gives that type Charges (and a respawn), every copy already standing in any Region of an older save stays endless: it never rests, so it out-produces new copies of the same Token, and "when it runs out" rules never fire on it. 22 Tokens with a work cycle have no Charges today. Whether an old endless node should become finite is the owner's call.
+- **Evidence**: `isUnlimited` returns true for `usesRemaining == null` (`Charges.js:39`). The only load-time repair runs the other way, clearing charges from types that never wear (`clearNeverWearingCharges`, `Charges.js:50-61`, called from `boardInstalled`, `BoardRunner.js:795`). `tokenStartingUses` is read only where an instance is created (`Cartography.js:119`, `StarterCamp.js:224`, `EffectActions.js:330`, `:397`, `Placement.js:364`, `Shop.js:162`, `EventClock.js:247`) and by a refill.
+- **Fix sketch**: In `boardInstalled`, give an instance with no charges its type's starting charges when the type now wears out. Must not change: stations and supports stay unlimited; a copy holding fewer charges than the new ceiling keeps what it has.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-166  In the desktop build, a slot whose save file is missing or empty but whose backup is good shows as "Empty", and a new game there destroys the backup
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / M / low
+- **Confidence**: reasoned (one step assumed: how the main file comes to be missing or zero bytes while the backup survives: a virus scanner's quarantine, a cloud-sync placeholder, a disk fault, the player moving `slot1.json` out of the folder. The game's own writes are temp file, flush, rename and do not leave this)
+- **Where**: `src/systems/core/SaveFiles.js:163-166`, `src/systems/core/SaveFiles.js:172-176`, `src/systems/core/SaveFiles.js:222-239`, `src/systems/core/SaveSlotHelper.js:47-48`, `src/systems/core/SaveManager.js:342-345`, `src/systems/core/SaveManager.js:523-537`, `src/systems/core/EngineBootstrap.js:313-315`, `src/systems/core/EngineBootstrap.js:350`, `src-tauri/src/saves.rs:89-104`
+- **What**: Latent: it needs an outside cause. With `slot1.backup.json` holding a good save and `slot1.json` gone or 0 bytes, the title shows "Slot 1 - Empty" with only a New Game button. Nothing in the game can load the backup. If the player starts a new game there, the backup is overwritten within the first second and the old guild is unrecoverable. A file that is damaged in any other way (cut-off JSON, garbage) is handled well: it shows "damaged", Load falls back to the backup, and the good backup is kept.
+- **Evidence**: `hasSave` is `entry.unreadable || !!entry.text` and `getSlotInfo` returns null for `!json`, so a missing file (null) and an empty one ("") both read as an empty slot; the backup is never looked at for the slot screen. `startSlot` then takes `isNewGame = !hasSlot` and calls `newGame`, which saves twice: the "claim" save (`SaveManager.js:536`) and the finished opening (`EngineBootstrap.js:350`). In `write_slot` the first write finds no valid main file, so it leaves the backup alone; the second finds the claim save (valid JSON) and rolls it over the backup (`saves.rs:93-98`). The two writes are not merged: the first is already running when the second is queued (`SaveFiles.js:222-239`, `pump` takes the job before its first await). `loadSlot` has the same blind spot: an empty read returns false with a console warning only (`SaveManager.js:342-345`), no backup retry, no message. Filed by the slots reader; the writing reader and the loading reader each raised the zero-length file as a lead and found the same sequence. How likely the cause is on players' machines is unknown.
+- **Fix sketch**: When a slot's main file is missing or empty, look for its backup; if there is one, show the slot as damaged (so Load restores from the backup) instead of Empty. Must not change: a truly empty slot still goes to the new-game screen; a copied-in file is still loaded, never overwritten.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-167  Two faults waiting for content that does not exist yet: a lesson that gains its content, and a rule with a cooldown
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: item 1 verified (the code path; the content does not exist yet); item 2 reasoned (the arithmetic is traced by hand through the code, not run; the step assumed is the order inside one tick, read at `BoardRunner.js:579` and `:769-777`)
+- **Where**: listed per item
+- **What**: Latent. Neither is reachable with shipped content; each is a defect the day the content arrives, and the content agent should know them before planning it.
+  1. **When a lesson that is waiting for content gets its content, every existing game's Limes goes back to that lesson, and can stay there.** Two lesson steps are left out today because their content is not in the game: `heap` (lesson 3, the scrap heap) and `weapon` (lesson 8, a first sword). A save keeps only the ids of steps done, and the step Limes is on is "the first step in the list that is not done". The day `LESSON_TARGETS.scrapHeap` is set, `heap` joins the list at third place, and every game already past it (lesson 7, or all twelve done and on the settle goal) has Limes back on "search the scrap heap". If the heap stands only on a new game's Starter Camp, an existing game has none to work, so the step can never be done and Limes never moves on. `weapon` is milder: a guild already holding swords must put one on again. `lessonSteps()` filters by `!s.needs || T[s.needs]`; `currentStep()` is `allSteps().find(s => !p.done.includes(s.id))`; `report` can only add an id when the matching event happens; nothing marks a newly included step done for a game whose later steps are done (`src/systems/quests/lessonPlan.js:15-38`, `:52-65`, `:79-86`, `src/systems/quests/LimesLessons.js:49-53`, `:78-93`, `src/ui/components/limes/LimesLessonSpeaker.jsx:16`). Fix: when a step is not done but a later step is, treat it as done (or mark it done on load); step ids in existing saves and steps counting before their turn must not change.
+  2. **A rule with a cooldown would fire less often while away than while watched.** The CMS lets a triggered rule carry a cooldown in tenths of a second. A cooldown counts down by the step's whole length and the moment that would fire it is rounded up to the end of its step, but the cooldown is not given the part of the step the moment came early by. Example the CMS can author today: a Token with a 2.5 s work cycle and "On Cycle ..., cooldown 2.4 s". Watched (100 ms ticks): the rule fires on every cycle, every 2.5 s. Away (1,000 ms steps): cycles end in steps 3, 5, 8, 10, 13; the rule fires in step 3, has 400 ms of cooldown left in step 5 and is refused, fires in step 8, is refused in step 10: every 5 s, half as often. Whole-second cooldowns go wrong too when the cycle is not whole seconds (cycle 2.7 s, cooldown 2.5 s: one firing in four is lost away). `tickCooldowns` subtracts `delta` and clamps at 0, `isReady` asks only "is it above 0", and a cycle's overshoot is carried to the next cycle but the cooldown starts from the step's end (`src/systems/board/TriggerSystem.js:148-159`, `src/systems/board/BoardRunner.js:579`, `:757-777`, `cms/src/engine/ledger/statementSlots.js:646-648`). The only `cooldownMs` values in `data/` are 0 (two rules in `data/effects.json`). Upkeep, the other "at most once per tick" clock, is safe: the CMS holds its cadence to at least 1,000 ms (`statementSlots.js:989`) and `BlockUpkeep.tickUpkeep` carries the remainder (`src/systems/board/BlockUpkeep.js:65-68`). Fix: when a rule fires from a cycle that ended `overMs` before the tick's end, start its cooldown at `cooldownMs - overMs`; a rule with no cooldown must draw and fire exactly as now (the bench's work check).
+- **Evidence**: As cited per item. Item 1 is from the state reader, item 2 from the hour-away reader; each checked the code and `data/` for the shape and found it unreachable today.
+- **Fix sketch**: Not one fix. Either the fix sketched per item when the first content needs it, or a content audit rule meanwhile (warn on a cooldown above 0; warn when a `needs` target is set while saves exist). Item 1 should be fixed before the scrap heap ships, since it can strand Limes in every existing game.
+- **Verified by**: pending
+- **State**: open
+
+---
+
+## Notes (leads without a finding)
+
+One line each, grouped by reader. A lead that became part of a finding says which.
+
+**Writing a save**
+
+- `src-tauri/src/saves.rs:50-62`: the rename retry covers only `ErrorKind::PermissionDenied`; whether Windows' "sharing violation" (a virus scanner or cloud-sync client holding the just-written `.tmp`) maps to that kind was not checked. If not, a scanner fails a save a 50 ms retry would have landed (in play one banner and a retry; at close the silent loss of CR4-153).
+- `src-tauri/src/saves.rs:216-234`: a Windows shutdown or log-off. Whether Tauri delivers `CloseRequested` then, and whether Windows waits for the page's save, is unknown; if not, a shutdown loses up to one autosave interval.
+- `src/ui/components/base/ErrorBoundary.jsx:35-39` in the desktop build: Reload fires `beforeunload`, whose save only queues an async file write; whether that message leaves the page before it unloads is unknown. If not, the crash panel's Reload loses up to one autosave interval.
+- `src/systems/core/SaveManager.js:342-345` with `src/systems/core/SaveFiles.js:163-166`: a zero-length slot file reads as "empty", not "damaged". Folded into CR4-166.
+- `src/state/GameState.js:115-131`: `JSON.stringify` turns `NaN` and `Infinity` into `null`. No such value was found assigned into saved state, but not every arithmetic writer was traced for `NaN`.
+- `src/state/GameState.js:117` with `src/systems/core/TimeManager.js:43-54`: `savedAt` is the wall clock at the save while the state is as of the last delivered tick; in a throttled background tab a close save is stamped up to a minute later than the state it holds, and that time is neither played nor caught up. Under a minute per close; not filed.
+- `src/systems/core/CatchUp.js:382-387` against `:394`: if a catch-up throws part-way, saving resumes, the end save and the undo are skipped, and the next autosave writes the part-caught-up game dated now, dropping the rest of the absence. No thrower found (the hour-away and worst-moment readers raised the same lead and found none either).
+
+**Loading a save**
+
+- `src/systems/board/BoardRunner.js:792-815` with `src/systems/board/Restrictions.js:233-257`: every load and travel moves a Token that breaks a `Cannot` to the nearest legal spot. Unknown: whether any way a Coast arrives (a spawn, a regrow, a Starter Camp laid from `data/starterCamp.json:79`) can leave a third Coast in reach, in which case a Coast changes place on the next reload with no word.
+- `src/systems/core/SaveManager.js:377-386`: `currentSlot` is set and the autosave started before `MatResize.fitToMat()` and the `GAME_LOADED` publish; if `fitToMat` threw, the half-prepared state would be autosaved over the slot, dated now. No input found that makes it throw. A deeper edge of CR4-070 (the slots reader and the state reader raised the same lead).
+- `src/systems/core/EngineBootstrap.js:352-354`: the catch-up plays before `grantStarterTools`, so a save from before tools were gear plays its first catch-up with no tools. Old saves only; one load.
+- `src/systems/core/SaveMigration.js:46-65`: the back-fill reaches `state.board` but not `atlas.regions[id].board`, nor a Region record's own fields; a frozen board from an older build keeps its old shape until the guild travels there. The travel side was not traced by this reader (the content reader found each consumer tolerates it, see sound).
+- `src/systems/core/SaveManager.js:342-345`: an empty save text returns false with a console warning and no message to the player. Folded into CR4-166.
+
+**Old saves meeting new content**
+
+- `src/systems/world/cellMat.js:236-243` with `src/systems/atlas/Layout.js`: a world cell's `origins` also hold Token type ids from the day the world was drawn; not traced whether the layout places a node with no definition as a permanent, undemolishable fixture or drops it.
+- `src/systems/board/TimedChanges.js:243`: a turned Token (a Shrimp Coast with `turnedFrom`) whose original type id is gone never rolls to turn back and stays turned for good, still paying the turned Token's output. Not checked against which `turns` Tokens ship.
+- `src/systems/board/Respawn.js:83-87`: a Token saved resting at 0 charges whose type has since lost its `respawn` block is no longer "resting"; not traced whether it then reads "Out of charges" for ever or is removed, nor whether a map fixture in that state can be cleared.
+- `src/systems/quests/QuestTokens.js:379-380` with `src/systems/board/SpriteLayer.js:281-284`, `:408-413`: claiming a bounty whose saved reward item id is gone drops a pile nobody can collect or remove. Today's rewards are the hardcoded `item_oak_wood` (`questBounties.js:14-16`), so it needs that item renamed.
+- `src/systems/world/Settling.js:102-104` with `src/systems/world/ringStars.js:47-51`: a ring star renamed in the CMS locks the ring again for a guild that bought it under the old id (the old rank is kept, unread). Same family as CR4-160; not filed separately.
+- `src/state/StateSchema.js:28-39`: `GAME_VERSION` has stood at `'0.8.1'` since 2026-10-09 while orders, held copies, the world and the events section were added by shape-detecting steps. A save from a newer build of the same version loads in an older build with its new fields unread; whether any is unsafe to ignore was not traced (a player would have to downgrade).
+
+**The catch-up**
+
+- `src/systems/core/TimeManager.js:44-50`: a sleeping PC is noticed only because `performance.now()` keeps counting through the sleep. The reader says that holds for Chromium on Windows; on macOS and Linux it has historically stopped during suspend, in which case no catch-up would run, the next save would be stamped "now" and the whole sleep would be lost silently. This is the open step of CR4-144; a cross-check against `Date.now()` in `TimeManager.update` would settle it either way. Raised by four readers.
+- `src-tauri/src/lib.rs:31`: not checked in the real desktop shell whether WebView2 throttles timers when the window is fully covered by another window. If it does, the game runs on the quiet one-step path of CR4-016 while covered: correct numbers, but the cost and the eating-rate difference of CR4-118 would then apply to ordinary "left it running behind the browser" play.
+- `src/systems/core/SaveManager.js:205-207` with `src/state/GameState.js:117`: after a sleep longer than the autosave interval, the tick timer and the autosave timer are both overdue. If the autosave ever ran first it would write the at-sleep game stamped with the wake time, turning CR4-144 from "actions lost" into "the whole sleep lost". The reader expects the tick to run first; nobody has measured the order in WebView2. (The hour-away reader lists the same order as sound, from reading the code.)
+- `src/systems/core/CatchUp.js:348`, `:369` with `src/systems/core/GameClock.js:22-34`: past the 24 hour cap the game clock snaps forward by the dropped amount at the end, so anything stamped on the game clock near the end ages by that amount at once. Harmless today (no shipped timed effect); the same family as CR4-140 and T-077.
+- `src/systems/core/CatchUp.js:383-386`: `summary.stop()` runs in the `finally` before `running = false`. A throw there would leave `running` true for the session (travel and settling refused, every later gap ignored). No thrower found.
+- `src/systems/core/EngineBootstrap.js:352-354`: `grantStarterTools()` runs after the catch-up on load and after its save, so granted tools reach the slot only at the next autosave. Old saves only (the loading reader's lead, seen again).
+- `src/ui/components/hud/CatchUpOverlay.jsx:65`: the overlay takes Esc only once the summary is up; while the bar plays, Esc reaches the layer beneath and closes an open view. Cosmetic.
+
+**The summary and its undo**
+
+- `src/ui/modals/SlotSelectionModal.jsx:93-95`, `src/systems/core/EngineBootstrap.js:309-327`: a second click on a slot button while the first load runs. Folded into CR4-149.
+- `src/systems/core/CatchUp.js:119`: every silent catch-up (a background tab's once-a-minute wake) publishes `GAME_RESET { reason: 'catch_up' }`, `HEROES_UPDATED` and a bulk `INVENTORY_UPDATED`. Two listeners were checked (`routing.js:200-203`, `levelUpFeed.js:28-29`); not every `GAME_RESET` listener in the UI was (an open card or a selection dropped once a minute would be the symptom).
+- `src/ui/components/hud/catchUpSummary.js:66-83` with `src/systems/board/SpriteLayer.js:485-499`: the hover's "Gained / Spent" split under-reports both by the same amount for an item made onto the mat and eaten from the mat in the same absence. The net figure the row shows is right. Same root as CR4-134; not filed.
+
+**Slots and settings**
+
+- `src/ui/ReactRoot.jsx:84-85`, `src/systems/core/EngineBootstrap.js:309-327`: a slot started twice by a double-click (desktop build). Folded into CR4-149.
+- `src/systems/core/SaveManager.js:377-382`, `:386-389`: a load that throws late leaves the slot "open" behind the title screen with the autosave timer live on the half-loaded state. Unknown whether `fitToMat` or a `GAME_LOADED` listener can throw on a real save (the loading reader found listener errors are caught per listener, `EventBus.js:101-105`). Next to CR4-070.
+- `src/systems/core/EngineBootstrap.js:313`: `startSlot` decides new-or-load from `hasSlot` at the click, not from which button was pressed; if the file (or the localStorage key, from another tab) went away after the slot screen drew, Load silently makes a new guild with no name, a random hero and a seed from the clock. On desktop the focus re-read (`SaveFolderButton.jsx:40-41`) almost always redraws the row first. Unknown whether it can be hit by hand.
+- `src/systems/core/SaveManager.js:536`, `src/systems/core/EngineBootstrap.js:350`: for the first autosave interval of a new guild the slot's backup is the empty "claim" save. Folded into CR4-150.
+- `src/systems/board/SpriteLayer.js:522`, `:543-545`: `gameplay.maxItemStacks` and `gameplay.autoCollectLoot` / `autoCollectDelayMs` are read by the engine every tick but `SettingsModal.jsx` offers no control for them; a device whose stored settings hold other values plays differently, catch-up included, and only "Reset to defaults" changes it. Unknown whether any build ever wrote non-default values. (The state reader raised the same: the same save catches up differently on another machine, by design as far as it could tell.)
+- `src/systems/core/SaveManager.js:588-593`: `SaveManager.reset()`, `exportSave()` and `importSave()` have no callers in `src`. If `reset()` is ever wired, it leaves the localStorage backup key behind (`deleteSlot` at `:554-555` removes both).
+
+**What is kept per Region**
+
+- `src/systems/world/Settling.js:171` (`allowUnplaced: true`) with `:144-151`: if none of the eight seeds lays every Token out, the place is written without the Tokens that found no room, silently, after the full price is paid. Whether any shipped cell (a wild "cramped" or "mostly water" one, `cellMat.js:74-79`) fails all eight seeds needs the layout run.
+- `src/systems/atlas/Atlas.js:340` then `src/systems/world/Settling.js:221-222`: settling saves once before the price is taken. Folded into CR4-150.
+- `src/systems/atlas/TerrainMap.js:216-220`: a Region's ground is stored twice, as cells (what the rules read) and as water and Stone shapes (what the drawing follows). A later change to how `WaterShapes` reads a stored shape would move the drawn water on old saves while the rules stay put. Not traced into the drawing.
+- `src/systems/world/cellMat.js:150-161`: reads today's tables when a place is settled, so an unsettled place's mat does follow later table changes, against the comment at `World.js:26-29`. No player-visible mismatch found; noted so nobody relies on the comment.
+- `src/systems/core/SaveManager.js:203-216`: the browser build's save-on-close and autosave Off. Folded into CR4-145.
+
+**State outside the save**
+
+- `src/ui/ReactRoot.jsx:84-85`, `src/systems/core/EngineBootstrap.js:309-326`, `src/systems/core/CatchUp.js:332`: a double click on Load. Folded into CR4-149.
+- `src/systems/core/TimeManager.js:43-54`, `src/systems/core/CatchUp.js:99-104`: `performance.now()` across a sleep; matters only if the game ships off Windows. The open step of CR4-144 (see the catch-up reader's first lead).
+- `src/systems/world/Settling.js:218-222`, `src/systems/atlas/Atlas.js:340`: the settle seam. Folded into CR4-150.
+- `src/systems/core/CatchUp.js:80-85`, `src/systems/core/SaveManager.js:461-468`, `:490-500`: `undoLast` forgets the undo save before the write is known to have worked. Folded into CR4-151.
+- `src/systems/core/SaveManager.js:377-386`: a load that throws after `currentSlot` is set. Same family as CR4-070 (the loading reader's lead, seen again).
+- `src/systems/world/Arrival.js:227`, `src/systems/core/NotificationSystem.js:4-11`, `src/ui/modals/SlotSelectionModal.jsx:33`: "The enemies are beaten: <place> is the guild's to work" is raised through `NotificationSystem`, whose only reader is the slot screen, so in the running game it appears to be seen by nobody. The mat does brighten. Not a save matter; for whoever owns the arrival.
+- `src/systems/board/SpriteLayer.js:522`, `:544-546`, `src/systems/core/SettingsManager.js:73`: the loot stack cap and auto-collect are device settings read by the tick (the slots reader's lead, seen again).
+- `src/systems/quests/QuestManager.js:144-152` with `LimesLessons`: lesson 2 ("collect") counts `SPRITE_COLLECTED`; not confirmed that it is silent for automatic sweeps (the stack cap, travel's `collectAll`). If they publish it, the lesson is done without the player collecting anything.
+
+**An hour away against an hour watched**
+
+- `src/systems/core/TimeManager.js:44-50`: `performance.now()` across a sleep, and `savedAt` then stamped "now" (`src/state/GameState.js:90`, `:117`). The open step of CR4-144.
+- `src/systems/notifications/routing.js:196-198`, `:220-226`: a plain reload also drops the banner of an event still standing. Folded into CR4-147; the reader did not confirm whether the owner wants a banner back after a reload.
+- `src/systems/board/SpriteLayer.js:536-541`: the stack cap (40 piles, a setting) banks the oldest piles whenever the list is over the cap, and a pile waiting to merge still counts for `MERGE_GRACE_MS` = 1,100 ms. Near the cap a catch-up may bank old piles that live play would have left on the mat. Harmless unless the owner counts on "loot waits on the mat" with auto-collect off. Not traced with numbers.
+- `src/systems/core/CatchUp.js:356-387` with `src/systems/core/EngineBootstrap.js:230-241`: a throw outside a tick handler part-way through a load's catch-up drops the rest of the absence (the writing reader's lead, seen again). Nothing found that throws.
+- D2's open lead stands as written: the enraged Queen Bee swings every 1.5 s (`data/effects.json` `effect_enrage`), the only shipped swing off the whole-second grid, so in a catch-up alternate swings land up to 500 ms late. Not re-filed (CR4-124 item 9, CR4-143 item 1).
+
+**The game closed at the worst moment**
+
+- `src/systems/core/TimeManager.js:45-53`: whether `performance.now()` in the shipped webview counts the time the PC was asleep. The open step of CR4-144; cannot be read from code.
+- `src/systems/core/GameLoop.js:89-95`: a tick handler that throws is caught and the game carries on, so a throw between a cycle's payment (`BoardRunner.js:272-276`) and its outputs (`:346-355`) would leave "paid, nothing made" in the live game and the next save. No thrower found.
+- `src/systems/core/EngineBootstrap.js:236-240`: a catch-up on load that throws part-way (the writing reader's lead, seen again). No thrower found.
+- `src-tauri/src/saves.rs:18`, `:229-233`: the window closes 5 seconds after a close request whatever the page is doing; a close-save whose write is still going then may not land (the old save stays whole). Would need a write or a frozen page longer than 5 seconds.
+- `src/systems/board/Charges.js:107-112`: a Token emptied while in the hand and saved in that moment stays at 0 charges. Already in D1's leads; not re-filed.
+- `src/systems/combat/DefeatPenalties.js:46`: a design observation, not filed. Killing the process always returns to the last snapshot and re-rolls whatever happened since (a knock-out's gear loss is `Math.random`). With "Save Game Now" this is ordinary save-scumming; only CR4-145 makes it effortless.
+
+## What the readers found sound (so nobody re-checks it)
+
+Grouped by reader. Where several readers checked the same thing it is listed once, under the first
+of them, with the others named.
+
+**Writing a save**
+
+- **Every place a save is written**: the autosave timer (`SaveManager.js:205-207`), `beforeunload` (`:211-215`), the desktop close handshake (`:163-173`, `saves.rs:216-234`), travel, settle and abandon (`Atlas.js:340`, `:433`, `:534`), the end of a catch-up (`CatchUp.js:394`), a new game twice (`SaveManager.js:536`, `EngineBootstrap.js:350`), "Save Game Now" (`SettingsModal.jsx:135`) and "Load as I left it" (`SaveManager.js:445-488`). There is no save on a purchase, a drop, minimise or loss of focus. (Also the worst-moment reader.)
+- **Close one second after a rare drop: saved** in both builds by a normal close, with the exceptions filed (CR4-144, CR4-145). On a crash or power cut the loss is whatever happened since the last autosave.
+- **The desktop write is atomic**: temp file, `write_all`, `sync_all`, then rename (`saves.rs:67-75`); one process-wide lock orders reads, writes, deletes and the window's destruction.
+- **The backup exists and is read**: rolled before each write in both builds, read once on a read error, non-JSON text or failed validation; a save loaded from the backup keeps that backup through the next save; a non-JSON main file never replaces a good backup (`saves.rs:94`). (Also the loading, slots and state readers.)
+- **A failed write in play does not poison the next one**: the old value or file stays, the banner shows, the next save tries again.
+- **Two saves cannot interleave**: `save` is synchronous to the stringify; desktop writes go through one queue per slot in order, a waiting write replaced by the newer (`SaveFiles.js:191-240`).
+- **No save mid-tick or mid-travel**: the tick, travel, settle, abandon and a new game's set-up are synchronous; the only awaits that touch game state are the catch-up's slices, which run with saving suspended.
+- **A drag does not leave a hole in a save**: the hand is UI state (`DndKit.jsx:448-462`); nothing removes an item or Token before the drop. (Also the worst-moment reader.)
+- **The stripping is exact**: `serializeJson`'s replacer rewrites only the top-level `heroes` and `meta`, never touches the live state, and strips the five fields `rehydrateHero` rebuilds.
+- **Closing during a catch-up on load loses nothing**: the file is untouched until the end save, and the next load plays the same absence again. (Also the loading, catch-up, summary, slots and worst-moment readers.)
+- **The close handshake cannot hang the window**: a page that never answers is closed after 5 s, after any write in progress.
+- **Travel's save is taken after the swap is whole** (`Atlas.js:516-534`).
+- **Browser against desktop**: same text, same backup rule, same refusal rules; the differences are the ones filed and CR4-069's quota.
+- **`SaveManager.reset()` has no caller**, so its browser path leaving the backup key behind cannot be reached.
+
+**Loading a save**
+
+- **A page session loads at most one game**: the slot screen has a `close` and no `open` (`useUIModals.js:192-195`), `startSlot` has one caller, and "Load as I left it" reloads the page, so nothing left over from "the game before" can leak into a second game. (Also the catch-up, summary, slots and state readers.)
+- **The order of a load**: read, parse, migrate, validate, install the state, rehydrate heroes, Bank, held copies, then `GAME_LOADED`, then the catch-up, then starter tools, then the loop; the subscriber table is below.
+- **No save can land between the load and the catch-up**: no macrotask boundary between `loadSlot`'s last line and the catch-up suspending saves. (Also the writing reader.)
+- **Damaged save**: one retry from the backup, "Save Restored" banner; the next save keeps the good backup; a slot that cannot be read still counts as holding a save, so New Game never overwrites it. Both copies bad: the message, slot untouched. (Late failures: CR4-070.)
+- **"Load as I left it"** re-dates the restored save to now and resumes with no catch-up, so the same absence cannot be played, seen and re-rolled; the resume slot is seen in the desktop build too (`main.jsx:103-104`). (Also the catch-up, summary, slots, state and worst-moment readers.)
+- **Listener exceptions are caught per listener** (`EventBus.js:101-105`), tick handlers likewise (`GameLoop.js:90-94`).
+- **Nothing is paid again on load**: starter tools are recorded per id, `reconcileHeldCopies` only repairs marks, `recompute` gives no XP and recruits nobody, `Arrival.checkCleared` is quiet, and quest, event, spawner, cooldown, upkeep, wound and loot clocks are all on the saved state. (Also the slots, state and worst-moment readers.)
+- **What a load does reset** is not worth reloading for: fights (ruled), heroes still walking, flag skip and retry timers, sub-second carry-over, alerts.
+- **A hero saved as `'combat'`** is freed on load (`BoardCombat.js:294-296`).
+- **Max HP on load** is the skill-derived number, so the clamp at `HeroRehydration.js:104` cannot shave a hero.
+- **Fields a save lacks** are filled from `INITIAL_STATE`; `quests`, `events`, `atlas` and the Bank repair themselves on first read.
+- **First tick after a load** is one interval, never the catch-up's duration.
+- **Sprite ids** carry `Date.now()`, so the counter restarting at 0 cannot collide with saved loot. (Also the state reader.)
+- **`EventClock`'s on/off switch** is set once at boot (`main.jsx:97`), not per load.
+- **A double message** when both the save and its backup are damaged: cosmetic, not filed.
+
+### Every `GAME_LOADED` subscriber, in the order it runs
+
+From the loading reader, copied as written. Subscription order is delivery order (`EventBus.js:100`,
+a `Set`). Engine listeners are subscribed in `EngineBootstrap.init` (`:117-162`), before React
+mounts (`main.jsx:95` then `:103`).
+
+| # | Subscriber | What it does on load |
+|---|---|---|
+| 0 | `notifications/routing.js:196` (UI listener, wired at import of `NotificationSubscriptions`) | `startFresh`: banners, item stubs and held catch-up news cleared; the save's pins re-read |
+| 1 | `GuildUpgradeManager.js:27` → `recompute` (`:195-215`) | Bank tabs and slots, roster limit from ranks; `spillOverfullTabs`; `HallRules.apply` (star rules into the guild aggregator; `TileModifiers.rebuildAll` if the aimed rules changed); publishes `INVENTORY_UPDATED`, `HEROES_UPDATED` (no payload) |
+| 2 | `SpriteLayer.js:577` | forgets which "Bank full" refusals were already said |
+| 3 | `BoardRunner.js:828` → `boardInstalled` (`:792-815`) | `Charges.clearNeverWearingCharges`; `TileModifiers.rebuildAll`; `Restrictions.reconcile` (moves a Token that breaks a `Cannot`), rebuild again if any moved |
+| 4 | `BoardCombat.js:569` | `clearAll` (no fights; every hero marked `'combat'` back to `'idle'`), fight effects ended on every hero |
+| 5 | `Flags.js:1066` | `reset` (claims, skips, retry times, bodies) then `restoreWork`: heroes the save says had reached a Token stand back at it and hold the claim; everyone else beside their flag |
+| 6 | `QuestManager.js:82` | asks for the mat check; an older save's tutorial Token taken off |
+| 7 | `Growth.js:230` (via `TimedChanges.init`) | growth alerts cleared, supply cache dropped |
+| 8 | `RegionRules.js:57` | the active Region's rules back into the guild aggregator |
+| 9 | `Arrival.js:239` | `checkCleared({quiet:true})`: a place whose arrival enemies are all gone is marked cleared, silently |
+| 10 | `EngineBootstrap.js:159` | `reportSaveContent`: console audit only |
+| 11+ | UI, only if mounted: `useAtlasRefresh.js:18`, `MatCapBadge.jsx:38`, `MatRegionName.jsx:11`, `ShopPanel.jsx:166`, `UpkeepSummaryPanel.jsx:27` | re-read for drawing |
+
+No listener reads something a later one builds in a way that matters: the tile caches built at step 3
+are built before any hero has a claim (step 5), but `restoreWork` announces each restored hero
+(`Flags.js:1034`, `HERO_MOVED`) and `TileModifiers`' own listener rebuilds for a changed worker
+(`TileModifiers.js:111-127`); Region rules arrive at step 8, after the caches, but the cached answers
+carry the guild aggregator's version and are re-read when it moves (`TileModifiers.js:949-953`).
+No listener pays, awards, spawns or notifies the player on a plain load.
+
+**Old saves meeting new content**
+
+- **Version check**: any version other than `'0.8.1'` is refused before anything is touched (`SaveMigration.js:30-32`).
+- **`migrateState` run twice** on an already-migrated save changes nothing; its steps are in a safe order.
+- **Every Region's frozen board** gets the orders and Disallow migrations (`SaveMigration.js:137-144`, `:169-178`); the back-fill does not reach them, and `BoardState`, `SpriteLayer` and `EnemyMotion.attachUntethered` each tolerate a board missing newer fields on arrival. (Also the Regions reader.)
+- **The Logging to Forestry skill rename** was made the day before the `0.8.1` bump, so no loadable save holds the old skill.
+- **The Poison to Venom effect rename** needs no save step: fights and statuses are dropped on every load.
+- **A Token of a missing type in the tick**: no crash; off a held mat the player can demolish it.
+- **Loot on the floor of a missing item** stays put, is never deleted, and is refused without the "Bank full" notice (`SpriteLayer.js:408-413`).
+- **Gear of a missing item** is kept with its mark, as CR4-127 says; **a gear item that became a consumable, or the reverse**, is settled on load without minting or losing a copy.
+- **Bounties**: goal ids are hardcoded lists, every bounty can be dismissed, and a collection bounty whose item is gone simply never completes.
+- **Event Tokens** carry their own id, kind, name and time, and leave on their clock whatever became of the event row or the Token type.
+- **A Region's rules** are copies of the statements, not ids, so a deleted map recipe does not change a settled Region.
+- **Pinned stubs of a missing item** draw the raw id and can be unpinned; the collection log and discovery lists are keyed sets nothing dereferences.
+- **Hall stars otherwise**: rules are recomputed from the current stars on every load; a load never pays XP for Everyone again; a deleted star's rank is kept unread; retired tracks are dropped without refund as documented.
+- **A Token whose type changed size** is pulled inside the mat on load and on travel; a `Cannot` rule added later moves offenders to a legal spot.
+- **A changed interval or grow time** on a saved clock fires at most 64 laps a tick and drains over the next ticks; nothing loops.
+- **Settings**: retired keys dropped, an auto-save choice the build does not offer falls back to the default, the old table-background sprite name is mapped.
+
+**The catch-up**
+
+- **How away time is measured**: on load, `Date.now()` minus the save's `savedAt`; in session, the overflow on `performance.now()` turned into a start stamp, so the game clock starts where live play stopped.
+- **Zero, a few hundred ms, a negative gap, a save stamped in the future, a missing or non-numeric stamp**: nothing plays, nothing is saved, no summary; a clock moved back costs the away credit once and never loops. (Also the summary and hour-away readers.)
+- **Exactly one step plays one step; under 2 minutes plays quietly and saves; exactly 2 minutes shows the bar and the summary.**
+- **The 24 hour cap**: the first 24 hours are played, the rest dropped and said on the summary; the title, the "away" line and the slot screen agree. (Also the summary and slots readers.)
+- **The step and the remainder**: whole 1,000 ms steps, then one partial step; the time the catch-up itself takes is played too; the sub-second remainder waits in `pendingMs`, never dropped, never played twice. (Also the state and hour-away readers.)
+- **No time counted twice**: the tick that finds a long gap does not run its own step, and `GameLoop.start()` re-arms the timer. A throttled timer delivers the same total as ten ticks a second.
+- **A minimised desktop window** keeps ticking and saving; only drawing pauses. Nothing but the catch-up stops the loop.
+- **The PC sleeping while a catch-up is already playing**: the target grows to the new real time, up to the cap.
+- **An exception in one step**: each tick handler and bus listener has its own `try/catch`, so one failing system loses its own second (the log flood is CR4-017); if `run` itself threw, `finally` restores the clock, the bus, the sounds, saving and the loop.
+- **A save during the catch-up** is refused on every route; travel and settling refuse outright; the one save at the end is taken after the clock and bus are back to live.
+- **What the player can do while it runs**: nothing in the game; the overlay covers the window and takes the pointer.
+- **Clocks and stamps after an uncapped catch-up** agree: game time, game clock, wall clock and every stamp the rules keep.
+- **Rule cadences are driven by `delta`, not by tick count**, so a 1,000 ms step does not slow any rule's rhythm.
+- **Real-time timers in engine code**: the loot absorb timer is skipped while catching up and done by the tick on the game clock; the others are notification and audio timers the quiet mode silences. (Also the hour-away reader.)
+- **The quiet bus**: only `routing.js` is tagged as a UI listener inside `src/systems`; what it would have said is collected by engine listeners and handed over after (events excepted, CR4-146; the per-hour figure is CR4-134). (Also the hour-away reader.)
+- **Import of an old exported save** gets a catch-up of up to 24 hours on load; a player could do the same by not playing, so not filed.
+
+**The summary and its undo**
+
+- **Items, net**: the row's number is Bank after minus before plus mat after minus before, so it cannot drift from what the catch-up did; worked through for production left on the mat, old loot swept in, mat loot eaten as an input, a full Bank's overflow and the stack-cap sweep.
+- **Items a full Bank refused** are in the mat's difference and carry the mat mark; "Bank full" names them once.
+- **The engine events the summary counts are heard under the quiet bus**; first finds come from a direct call, not a UI route.
+- **Gear moved between the Bank and a hero's hands** cannot be miscounted as spent or gained during a catch-up.
+- **Gear lost in a knock-out and tools that broke** are shown in their own rows; food destroyed by a knock-out shows as spent; no loss is shown twice or dropped (the shared-banner wording is CR4-129).
+- **Level-ups**: one event per level; the summary keeps the first `from` and the highest `to`; the floats over heroes are held until the summary closes.
+- **Kills** are counted once per kill.
+- **Other Regions**: the catch-up ticks only the active board; nothing is gained elsewhere that the summary could miss. (Also the Regions and state readers.)
+- **Quests, recruits, Hall upgrades and settling** need the player's click, so none can complete inside a catch-up and no banner is owed for them. (Also the hour-away reader.)
+- **News hand-over order on load**: `GAME_LOADED` clears banners and held news before the catch-up; the load's later `GAME_RESET` does not; a short catch-up's news goes out at once, a shown one's waits for the summary to close.
+- **The pre-catch-up copy** on load is the raw text the load read, before migration or repair, including a load that fell back to the backup; for a sleeping PC it is the game as it stood when the gap was found.
+- **An autosave cannot overwrite the copy**, and a second load in the same session cannot orphan it (two summaries in a row is CR4-123).
+- **After the undo the state is exactly the saved one**: the page reloads, so no module state survives.
+- **Nothing can save over the restored file on the way out**; closing the window in that moment still flushes the restore. (Also the slots, state and worst-moment readers.)
+- **Stamps after the undo**: only `savedAt` and `meta.lastSavedAt` are rewritten; everything timed counts down by tick deltas, so nothing jumps or finishes at once (timed effects are CR4-140 part 2, none shipped).
+- **The undone time is gone for good, by design.**
+- **Accept then undo, undo then accept, double clicks**: both clear the copy first; Esc only toggles the question.
+- **A very short absence** keeps no undo, which matches there being no button to press.
+
+**Slots and settings**
+
+- **Returning to the title mid catch-up, mid drag, mid travel; the autosave firing after leaving to the title**: no such path. At the title with no slot open, `save()` refuses and the desktop close handler skips the save.
+- **What a slot card shows against the file**: name, heroes, playtime, version and saved time are read from the save text each time; time away is floored at 0 and capped with "(max)" at the same 24 h the catch-up plays.
+- **Damaged slots** (not JSON, not an object, unreadable) show "damaged" with Load and Delete.
+- **A save from another build's schema** is shown with its version, refused on Load with a message, still deletable (the wording is CR4-070); validation runs before anything touches the game state.
+- **Deleting a slot**: two clicks bound to the row's own index; removes the save and its backup in both builds; a delete that fails says so; a delete then an immediate new game run in order.
+- **Starting a new game over an existing slot** is not offered, and `startSlot` re-reads the file first so one copied in meanwhile is loaded, not overwritten.
+- **A brand-new guild's first moments**: the opening is saved in the same synchronous run that makes it, so quitting right after Begin loses nothing (the disk-level gap is CR4-150); starter tools are given once; the Bunk Beds rank for the first hero is a floor, not an add.
+- **The world on the new-game screen is the world you get** (`World.js:82`, `NewGameScreen.jsx:79`).
+- **Settings**: one device-wide key, not per slot, by design; applied at boot before the save manager reads the interval; the only setting with a control that changes engine behaviour mid-game is the auto-save interval, which restarts the timer cleanly; a dev-only 1-minute interval becomes the default in a shipped build.
+- **Desktop close** waits for the queued write, with a 5 s limit that still takes the write lock.
+
+**What is kept per Region**
+
+- **Stored, not rebuilt**: `state.world` is made once and never regenerated; a settled Region stores its board, terrain cells, rules, seed and name. A generator change or a different draw order cannot alter an old save's world or any settled place. (Also the state reader.)
+- **No random stream is shared with play**: world and layout draw from their own seeded streams.
+- **The frozen board** is a JSON copy of the whole board; the Hall and quest Tokens are lifted first; Token clocks are delta-based, so nothing runs or jumps while away.
+- **Time away passes only where the guild is**, live and in a catch-up alike; playtime per place counts the same way.
+- **Travel cannot be cut in half**: one synchronous run ending in a save; it refuses during a catch-up; the screen ends a drag first.
+- **A fight left by travelling** hands back the heroes' "for the fight" effects.
+- **Settling order**: "paid but no Region" cannot happen, and the price cannot ask the same item twice (`generate.js:479-482`).
+- **Frontier and settled lists** are derived on every read; `abandon` and `archive` have no caller in the UI.
+- **Ids across Regions**: Region ids are never reused; fixture and arrival ids carry the Region id; the only ids that cross boards are the Hall and quest Tokens, on purpose.
+- **Migrations and load-time repairs reach every Region**, on a travel as on a load.
+- **The arrival with today's content always ends**: every arrival enemy has one use, none refills or regrows, and the cleared check also runs on load and travel.
+- **Save size**: nothing per Region grows without bound; growth with the number of Regions is CR4-069.
+
+**State outside the save**
+
+- **Bounty progress** is on the quest Token, saved with the board and counted by engine listeners; **collection bounties** are re-read from the Bank; **a claim** is one synchronous call. (Also the worst-moment reader.)
+- **The bounty clock and the event clock** are saved, advance by delta, and are not redrawn on load, travel or catch-up (CR4-112 aside).
+- **Limes's lessons**: progress and moments are saved and counted from engine events; no lesson pays anything (the latent fault is CR4-167 item 1).
+- **First finds**: `discoveredItems` is set in the same call that banks the item; lifetime counts, kill counts, `tokensHad`, `recipesMade`, `tokensBuilt` are plain saved writes.
+- **Enemy discovery** listens from before the catch-up on load.
+- **Recipe-unlock banners** are derived at the moment of the level-up, never stored, so nothing can fire twice after a load.
+- **Guild Hall stars**: every derived number is rebuilt on `GAME_LOADED` before the catch-up plays; `HallRules` and `RegionRules` each remove exactly what they installed.
+- **XP for Everyone and the recruit of a Bunk Beds rank** happen in the purchase call; a load gives neither again. (Also the worst-moment reader.)
+- **A Region's rules** are re-applied on load, travel and reset, and are the active Region's only.
+- **The Shop** has no stock, no cooldown and no memory.
+- **The Bank**: batches are balanced by a `finally`; the display cache is invalidated on every change and on load.
+- **Rate windows** are cleared on load and new game (CR4-134 covers the rest).
+- **The catch-up's own state** is restored in a `finally`; `last` and `undo` do not outlive a page.
+- **The arrival**: `board.arrival` is saved per board, cleared by an engine listener and re-checked quietly on load and travel.
+- **Timers**: the autosave interval is restarted per slot and cleared on delete and undo; stub timers are stopped by `startFresh`; a stub's leave timer checks identity before deleting.
+
+**An hour away against an hour watched**
+
+- **Wall clock**: every `Date.now` / `performance.now` under `src/systems` and `src/state` is an id, a save stamp, a measurement, the catch-up's own bookkeeping or presentation; rules read `GameClock`. A Token's `bornAt` is read by nothing.
+- **After a sleep, the tick (due first) starts the catch-up and suspends saving before the autosave timer can write** (`CatchUp.js:340-345`, `SaveManager.js:231`); the catch-up reader holds the same order unmeasured in WebView2 (see Notes).
+- **Loot merging** uses a timer live and the tick in a catch-up; totals cannot differ.
+- **Listeners**: the only `UI_LISTENER` subscriptions in engine code are the notification routes; every `UI_LISTENER` under `src/ui` that was opened only draws or sets React state, none writes saved state.
+- **Quest and bounty counting, the Encyclopedia, first finds, loot from kills, flags coming down, arrival clearing, spawner and growth alerts** are engine listeners or direct calls, so all run in a catch-up.
+- **Work cycles**: floored at 1,000 ms, one per step, leftover carried; a refill, a regrow, a Field's next crop, a spawn and a growth each receive the part of the step they came early by.
+- **Passive Production and the bounty clock** are closed-form; the Hall's lap is held to whole seconds.
+- **Hero regeneration** pays every 10 s whatever the step; the wound timer and demolition lose at most the last part of one step.
+- **Fights**: shipped swings are 2, 3 or 4 s and the rest between kills is 2 s; who swings first in a step is the same as live; in-fight eating is tested once per hero swing in both.
+- **Thorns on a gatherer** against food that heals 2 or more per meal: the hero cannot fall behind while away.
+- **Walking**: at most a second either way per walk, about even on average; no steady gain or loss worth a ticket.
+- **The enemy's step to open space** hands its leftover to the fight.
+- **No chance is rolled per tick anywhere in the engine**: every `Math.random` draw is per cycle, swing, spawn, landing or rule firing.
+- **Auto-collect** sweeps every 3 s in a catch-up against every 2.5 s live; stations also pay from the floor, so nothing downstream changes.
+- **The event clock** rides the step's `delta`; landing and leaving are at most one step late.
+- **Upkeep cadence** cannot be authored under 1,000 ms, so "at most once per tick" is exact.
+
+**The game closed at the worst moment**
+
+- **A save is one synchronous snapshot of the whole state**, so it can only fall between two synchronous engine calls, never inside one; a crash or power cut is a clean rollback to the last snapshot.
+- **Buying from the Shop, refunding a Foundation**: one call each; no moment holds both the Token and the refund, or neither.
+- **Building on a Foundation** spans ticks only as saved progress; inputs are paid and the Foundation becomes the building in one call.
+- **Demolishing**: the mark and progress are saved; removal is one call; nothing is paid or refunded.
+- **A recipe's inputs and outputs** are checked, paid, produced and charged in one call; outputs are saved loot piles.
+- **Equipping, unequipping, hand-overs**: no copy is ever in neither place or both.
+- **A Token held in the hand** stays in the board at the point it was lifted from; a change held back for the hand happens on the first tick after a reload.
+- **An item pile** is never held; a pile the Bank refuses stays in the save.
+- **A drop being placed**: placement is immediate; no state waits on an animation.
+- **A Guild Hall star or rank, and recruiting a hero**: pay, rank, recompute, XP for everyone, new hero and announcement in one call.
+- **Opening a chest**: no such transaction exists in `src/systems`.
+- **A hero's defeat** is one call; a save with the status but no healing timer gets the timer on the first tick after loading.
+- **A kill**: XP, loot piles, the enemy's charge and its removal are one tick; loot is saved.
+- **Travel, item side**: floor loot is banked, the board swapped and the save written in one call.
+- **Nothing in a drag, a modal or a ceremony holds paid-for goods**: every UI route to the engine is a single call at the click or drop.
+
+## Inventory: state kept outside the save
+
+From the state reader's trace, copied as written: every piece of engine state outside the save (not
+the mat, not the heroes). In the table, "finding 1" is CR4-144, "finding 2" is CR4-147 (its part
+about an event landing while away is CR4-146, and news lost behind an open summary is CR4-164),
+"finding 3" is CR4-148 and "finding 4" is CR4-167 item 1.
+
+"Other slot" is written once here: not reachable in the shipped UI (a second slot cannot be loaded in one page session); where a row says "n/a" that is why. "Undo" is "Load as I left it", which reloads the page: every row is fresh after it unless said.
+
+| State (where) | What it holds | Saved? | Rebuilt on load, from what | Right after a catch-up? | Right after undo? | Verdict |
+|---|---|---|---|---|---|---|
+| `Banners.shown`, `waiting`, `nextId`, `version` (`notifications/banners.js:18-23`) | The banners on screen and queued | no | emptied on `GAME_LOADED` and new game; nothing rebuilt | news handed over after (recipes, finds, Bank full, knock-outs); events not | empty | **finding 2**; travel is CR4-113 |
+| `routing.heldNews` (`routing.js:231`) | Catch-up news waiting for the summary to close | no | emptied on load | delivered when the summary closes | gone (as designed) | lost if the game closes with the summary open (finding 2) |
+| `routing.newsBatches`, `soundsPlayed` (`:273`, `:285`) | Counters for group keys and sound variants | no | never reset | n/a | fresh | harmless |
+| `routing.fadeTimer` (`:46`, interval) | Runs while a stub can fade | no | stopped by `startFresh` | not started by quiet flows | fresh | sound |
+| `ItemStubs.stubs`, `pendingNew`, `unseen`, slots, `nextUid` (`itemStubs.js:42-50`, `:91-93`) | Each item's net flow since its stub appeared | pins only (`ui.pinnedStubs`) | cleared, pins put back from the save | **flows of the catch-up are not counted** (first finds only) | pins as saved | **finding 3** for pins; unpinned stubs quiet by design |
+| `ItemStubs.emitTimer`, leave timers (`:51`, `:254`) | 250 ms batching; 320 ms slide-out | no | emit cleared by `reset`; leave timer identity-checked | n/a | fresh | sound |
+| `state.ui.pinnedStubs` | The pins' counts | yes | read by `startFresh` | not updated | as saved | finding 3 |
+| `NotificationSystem.queue`, timeouts, `quiet` (`core/NotificationSystem.js:13-17`) | Slot-screen messages | no | none | muted during; nothing delivered after | fresh | sound; lead on the arrival message |
+| `ItemRateTracker.history` (`inventory/ItemRateTracker.js:10`) | 5-minute window of gains and spending | no | cleared in `loadSlot` and `newGame` | gains yes, spending no | empty | CR4-134, filed |
+| `InventoryManager.batchDepth`, `batched` (`InventoryManager.js:13-15`) | An open batch's sums | no | balanced by `finally` | yes | fresh | sound |
+| `InventoryFormatter._displayCache`, `_itemReferenceMap` | The Bank list as drawn | no | invalidated on load and every change | yes | fresh | sound |
+| `inventory.maxTabs`, `maxSlots`, tab list | Bank size | yes, not trusted | recomputed from ranks on `GAME_LOADED` | yes | yes | sound |
+| `progress.rosterLimit` | Roster cap | yes, not trusted | recomputed on `GAME_LOADED` | yes | yes | sound |
+| `GuildModifiers.aggregator` (`effects/GuildModifiers.js:27`) | Guild-wide rules: Hall stars and the active Region's | no | `HallRules.apply` (load, purchase, reset) and `RegionRules.apply` (load, travel, reset), from ranks and `region.rules` | in place before it plays | fresh | sound |
+| `GuildModifiers.aimedByOwner`, `aimedFlat` (`:49-50`) | Hall rules that name Tokens | no | `HallRules.apply` | yes | fresh | sound |
+| `HallRules.installed`, `aimedKey` (`progression/HallRules.js:23-25`) | What it registered; whether the mat needs a rebuild | no | rewritten by every `apply` | yes | fresh | sound; `aimedKey` could be stale only across a second slot (n/a) |
+| `RegionRules.installed` (`atlas/RegionRules.js:25`) | What it registered | no | rewritten by every `apply` | yes | fresh | sound |
+| `QuestTokens.pending`, `checkedState` (`quests/QuestTokens.js:224-226`) | "Check the mat" flag | no | set on load, travel, slot open; also when the state object changes | yes | fresh | sound |
+| `QuestManager.unsubs`, `initialized` | Listener handles | no | once per page | engine listeners, heard | fresh | sound |
+| `state.quests.clockMs` | Bounty clock | yes | as saved | advances by delta | as saved | sound |
+| `instance.quest` on quest Tokens | A bounty and its count | yes (board) | as saved | counted | as saved | sound |
+| `state.guide` (`limesSpot`, `lessons`, `progress`) | Limes and the lessons | yes | as saved | counted | as saved | sound today; **finding 4** (latent) |
+| `EventClock.enabled` (`events/EventClock.js:64`) | Events on or off | no | set true at boot (`main.jsx:97`) | on | on | sound |
+| `EventClock.onMat` (`:116`) | The event Token on the mat, memoised | no | keyed on the Token list object and its version | yes | fresh | sound |
+| `state.events.clockMs`, `waitMs` | Event clock and the drawn wait | yes | as saved | advances by delta | as saved | sound; CR4-112 filed |
+| `instance.event`, `clocks.eventMs` on the Token | The event and its time left | yes (board) | as saved | runs | as saved | sound; its banner is finding 2 |
+| `Arrival.unsubscribers`; `board.arrival` | Listeners; the arrival's ids and cleared mark | the mark yes | re-checked quietly on load and travel | cleared by an engine listener | as saved | sound; CR4-121 filed |
+| `state.atlas` (regions, frozen boards, travellers, seed, playtime) | The Regions | yes | `ensureState` repairs | only the active Region plays | as saved | sound |
+| `state.world` | The run's world | yes | as saved | untouched | as saved | sound |
+| `placeGround.counted`, `regionGround.decoded` (WeakMaps) | Per-cell and per-terrain derived data | no | keyed on saved objects that never change | yes | fresh | sound |
+| `state.collection.*` | Finds, counts, Encyclopedia ticks | yes | as saved | written by the engine | as saved | sound |
+| `DiscoveryManager.initialized` | Listener guard | no | once per page | heard | fresh | sound |
+| `CatchUp.running`, `last`, `undo`, `pendingMs`, `initialized` (`core/CatchUp.js:52-58`) | Catch-up in progress; last result; the save to go back to; overflow under a step | no | none | restored in `finally` | consumed by it | sound; the in-session close is **finding 1**; CR4-123 filed |
+| `GameClock.catchUpNowMs` (`core/GameClock.js:14`) | The rules' clock during a catch-up | no | null in live play | ends at the wall clock (behind it past the 24 h cap) | wall clock | sound here; CR4-140 for timed effects |
+| `TimeManager.lastTickTime`, `overflowMs` | Tick measurement | no | `init` on every loop start | reset when the loop restarts | fresh | sound |
+| `GameLoop.intervalId`, `tickCount`, `tickHandlers` | The loop | no | handlers once at boot; interval per start | stopped and restarted round a shown catch-up | fresh | sound (CR4-016 for the restart's cost) |
+| `EventBus.quiet`, `quietExcept` | Quiet mode | no | off | restored in `finally` | fresh | sound |
+| `SaveManager.currentSlot`, `autoSaveTimer`, `savingSuspended`, `loadedSavedAt`, `loadedJson`, `keepBackupSlot` (`core/SaveManager.js:83-99`) | The slot in play and its save plumbing | no | set by `loadSlot` / `newGame` | saving resumed in `finally`, one save after | timer stopped, saving suspended until the reload | sound; finding 1 is what suspension costs in session |
+| `SaveFiles.copies`, `queues`, `listeners` | Slot texts as last read or written; write queues | no (it is the disk's mirror) | re-read from disk at boot and before a load | n/a | flushed before the reload | sound |
+| `sessionStorage` `fantasy_guild_resume_slot`, `resetting` | The slot the next page load opens; a reset in progress | no (per tab) | taken once and removed | n/a | this is the undo's handover | sound |
+| `localStorage` settings (`SettingsManager`) | Device settings, some read by the tick (loot cap, auto-collect, autosave interval) | not in the save | read at boot | used as they stand | same | per device by design (lead) |
+| `AudioSystem` state, `AssetPreloader.retained` | Music, pinned images | no | boot | silenced during | fresh | not gameplay |
+| `Shop` (`board/Shop.js`) | nothing: no stock, no cooldown | - | - | - | - | sound |
+| `SpriteLayer.autoCollectTimer`, `refusedSaid`, `idCounter` (`board/SpriteLayer.js:48`, `:103`, `:210`) | Sweep delay; "Bank full" said once per item; sprite id counter | no | never reset; ids cannot collide | runs | fresh | the mat's (D1); listed because the "already said" mark is here: after a reload a still-refused item says "Bank full" once more, which is right since the banner was forgotten |
