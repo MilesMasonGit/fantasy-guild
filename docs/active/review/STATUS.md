@@ -1,6 +1,6 @@
 # Review round 4: status
 
-*Kept by the reviewer. Next free finding number: **CR4-144**.*
+*Kept by the reviewer. Next free finding number: **CR4-168**.*
 
 ## Sessions
 
@@ -36,7 +36,7 @@ read-only reader, every lead re-read by the reviewer, every finding checked by a
 |---|---|---|---|---|---|
 | D1 | The mat: Tokens, work, orders, fights, timed changes, buffs (`src/systems/board/` and what it calls) | ready for triage | 2026-11-15 | cccf7a24 | `D1_the_mat.md`: 25 findings (22 bug, 3 owner-decision; 1 P1, 5 P2, 19 P3), 23 verified by a second reader (Opus) and 2 reasoned; 6 owner questions below. Ten readers read the area whole in eight pieces and two cross-cutting traces. The per-tick core came through clean; the bugs are where two rules meet. Top: a healing hero knocked out a second time after travel (CR4-101, P1); Thorns spending a second charge and a Thorn Elemental running out twice (CR4-103, CR4-104); a resting Forest deleted by a merge and a regrown tree or large building hopping across the mat (CR4-102, CR4-105). Thirteen latent rule shapes the CMS can author and the engine gets wrong are gathered in CR4-124. |
 | D2 | Heroes, combat, gear, XP (`src/systems/hero/`, `combat/`, `equipment/`, `effects/`, `inventory/`, and the hero readouts in `src/ui/`) | ready for triage | 2026-11-15 | dcb3ff40 | `D2_heroes_combat_gear_xp.md`: 18 findings (14 bug, 4 owner-decision; 1 P1, 4 P2, 13 P3), all verified by a second reader (Opus), none refuted, 14 corrected. Ten are live, four gather 16 latent content shapes. The core rules (combat maths, fight clean-up, XP and perks, equip and swap, loot, hero state across load and travel) read sound. One ruling made, four questions below. |
-| D3 | Saves and time away | reading | 2026-11-15 | d2ce3b6d | |
+| D3 | Saves and time away (`src/systems/core/` saves, load, catch-up; `src/state/`; `src-tauri/src/saves.rs`; `src/systems/world/` and `atlas/` for what is kept; the slot screen and settings) | ready for triage | 2026-11-16 | d2ce3b6d | `D3_saves_and_time_away.md`: 24 findings (20 bug, 4 owner-decision; 1 P1, 5 P2, 18 P3), all verified by a second reader (Opus), none refuted, 13 corrected. The save machinery is sound (atomic writes, backup fallback, one-tick transactions, Regions stored whole); the weak spot is CMS renames meeting old saves (CR4-158 to CR4-163). Two steps need one desktop try (CR4-144, CR4-149). Five owner questions below. |
 | D4 | Screens and drag-and-drop | not started | | | |
 
 ### Questions for the owner from D1 (2026-11-15, answered the same day)
@@ -79,6 +79,16 @@ One ruling to look at, not a defect (CR4-122): on a reload a fight starts over w
 2. **Handing an item hero to hero onto a full loadout** (CR4-131): it replaces like a drag from the Bank does (sword for sword, hat for hat; the replaced piece goes to the Bank). This reverses the written rule: `docs/reference/GDD.md:740-745` and the test that pins the refusal change with it.
 3. **A +10 % XP bonus on small awards** (CR4-138): a true 10 % by chance. The fraction is carried by chance (1.1 XP is 2 XP one time in ten); the at-least-1 floor goes. It shifts the bench fingerprint once.
 4. **A fighting hero loadout** (CR4-139), the owner own rule, wider than the options: **no loadout changes at all mid-fight**, food, arrows and elixirs included, not only the hands. Locked only while trading blows: from the moment an enemy steps up until it falls or the hero leaves; between enemies the loadout is open. This also settles CR4-130 (an elixir can no longer be put on mid-fight, so its count cannot read one too high). Reviewer notes for the brief: the refusal needs a reason the player can see; eating is unaffected (a hero eats from the Bank stack, which the player can still restock); it covers every route that changes a slot (drag onto a slot, right-click, drop on the hero figure, drag to the Bank, hero-to-hero hand-over).
+
+### Questions for the owner from D3 (2026-11-16, open)
+
+For the planning agent to ask; the reviewer's recommendation is first in each.
+
+1. **What a CMS rename does to existing saves** (CR4-160, and with it CR4-158, 159, 162, 163, 127). In the CMS an item or Token id follows its name, so correcting a name orphans the old one in every save. (a) **The CMS records each rename as old id to new id, the Sync carries that table, and loading a save rewrites the old ids everywhere they live** (recommended: names stay free to change and saves follow). (b) An id is frozen once the thing has been Synced; renaming changes only the display name. (c) Leave it, and only fix the worst consequences (the locked place, the unpayable price).
+2. **Closing the game with the "While you were away" summary still open** (CR4-164). Today that accepts the time away and "Load as I left it" is gone. (a) **An unanswered summary is offered again on the next start, with "Load as I left it" still available** (recommended: closing is not a choice). (b) Closing accepts, as today, and the summary says so.
+3. **Banners after a reload** (CR4-147). Unclicked banners are forgotten on reload, including the knock-out banner that is the only place a hero's losses are said. (a) **An event Token still on the mat gets its banner back, and unclicked knock-out and problem banners are saved and shown again** (recommended). (b) Only the event banner comes back; the losses go into a lasting log instead.
+4. **Old Tokens when a type is given Charges later** (CR4-165; today six Tokens could be affected, among them the Coast, River and Lake). (a) **Copies already standing in old saves get the new Charges on load** (recommended: every copy behaves alike). (b) Old copies stay endless.
+5. **Does the browser build reach players?** (CR4-145, CR4-157). If yes, the auto-save-Off tab close is P2; if it is only for development, P3. (a) **Desktop only; the browser build is for development** (recommended if so). (b) The browser build is or will be given to players.
 
 ## Round summary (reviewer, 2026-11-07)
 
