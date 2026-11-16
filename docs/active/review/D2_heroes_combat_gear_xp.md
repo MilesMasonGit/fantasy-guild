@@ -63,6 +63,16 @@ shipped items with a break chance, so that code needs a look in the running game
 
 ---
 
+## Owner rulings (2026-11-15)
+
+The owner ruled on every D2 question the same day; the full text is in [STATUS.md](STATUS.md), "Questions for the owner from D2". They set the fix for these findings:
+
+- **CR4-137**: Rusty Pickaxe and Rusty Woodaxe drop early, work like copper, break 1 % of the time. The defeat roll on tools stays.
+- **CR4-126**: the Food in the earlier slot is eaten first, then the next when the Bank runs out of it.
+- **CR4-131**: a hero-to-hero hand-over onto a full loadout replaces like a drag from the Bank; the GDD line and its test change.
+- **CR4-138**: a true 10 % by chance; the at-least-1 floor goes.
+- **CR4-139** (and with it **CR4-130**): no loadout changes at all while a hero is trading blows, food, arrows and elixirs included; open again between enemies. This replaces both findings' fix sketches.
+
 ## Findings
 
 ### CR4-126  With the Larder star, a hero never eats their second Food, even when the first has run out
