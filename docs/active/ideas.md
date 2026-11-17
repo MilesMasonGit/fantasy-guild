@@ -110,6 +110,12 @@ the first outside playtest, modding.
   attribution wording, so nothing used goes uncredited.
 - **"No work in range." bubble goes** (D1 pops rule): with the brief 30
   follow-up.
+- **Thorns in fights** (owner, 2026-11-17, from the review's design check): an
+  enemy that applies Thorns, and a special armour piece that applies Thorns to
+  its hero (the attacker is hurt when it strikes); an effect may carry a
+  strength, e.g. an Elixir of Brambles giving Thorns 3. The old fight-side
+  Thorns code was removed (T-375); today Thorns is only a mat rule. Interview:
+  how much it hurts, how often, which enemy and which armour.
 - **Leftover rough edges**: the slot screen's "SYSTEM BOOT" (already T-039),
   nine "coming soon" Settings controls, no gameplay hotkeys. *quick* · tickets.
 

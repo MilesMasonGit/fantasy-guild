@@ -248,6 +248,57 @@ cannot be clicked (CR4-196).
 
 ---
 
-## Answers
+## Answers (owner, 2026-11-17, interview in the planning session)
 
-*(Recorded here once the owner answers.)*
+Where an answer differs from the options offered, the answer wins.
+
+### Design questions
+
+- **B1 (CR4-116): both restart.** Changing a station's recipe starts the cycle from zero, and so
+  does coming back from travel: every half-done cycle in a Region the guild returns to restarts.
+  Follow-up: **a reload keeps the work** as it is today; only travel restarts. So travel no longer
+  equals a save and load for work progress: the pinning test (`AtlasTravel.test.js`, "there and
+  back equals save and load") is rewritten to expect cycles at zero after travel, everything else
+  equal. A restarted cycle fires its start moment (drink dose, On Work Start) as any new cycle does.
+- **B2 (CR4-118): one meal per second of rest.** Out-of-fight eating runs on game time, at most one
+  meal per second; watching and away agree. The bench fingerprint shifts once (a WORK CHANGED to
+  accept, with this reason).
+- **B3 (CR4-109): lifting a fought enemy ends the fight**, as the hero walking away does (statuses
+  off, enemy whole).
+- **B4 (CR4-122 follow-up): live play unchanged.** Walking away from a fight lets the enemy
+  recover; only a reload remembers its health.
+- **B5 (CR4-105 follow-up): the Cedar becomes ordinary size**, by change pack. **Owner to-do: redo
+  the Cedar's art** at ordinary size.
+- **B6 (CR4-193 follow-up): heroes only.** Item drags keep working under a full-screen view.
+- **B7 (CR4-110): follow, or close.** The card follows its Token when it becomes something else and
+  closes when it is gone. Eye-check.
+- **B8 (CR4-128): prefer a free enemy**, waiting beside a fight only when every enemy is taken.
+- **B9 (CR4-156): had once, ticked for good.**
+- **B10 (CR4-148): count time away** on pinned stubs.
+- **B11 (CR4-119): the ripe Field keeps its original number** and the card shows that number; a
+  neighbour placed after it ripened counts from the next crop.
+- **B12 (CR4-135): no repeated names, and a longer name list.** The builder adds names in the style
+  of today's 96 (`src/config/registries/nameRegistry.js`); no review step.
+- **B13 (CR4-127, delete case): show it as missing and let the player clear it.**
+- **B14 (CR4-152): one copy at a time**; a second launch brings the open window forward.
+- **B15 (CR4-124, 141, 142, 143, 167, 197): fix the engine now**, not a CMS warning.
+  - **Tiers** (CR4-141), the owner's own rule, wider than the options: **no tier ladders of the same
+    item** (no Elixir of Valor I to V; five tiers of one arrow is clutter). Tiered effects belong to
+    hero gear and enemies. But an item's effect may carry a strength: "an Elixir of Brambles gives
+    its hero Thorns 3", and there is no higher Elixir of Brambles. So the engine fix stands for
+    every item: a strength on an "Applies" effect makes the applied effect that strong. Not ruled:
+    whether a status's strength also means more stacks per hit; the brief keeps one stack a hit and
+    uses the strength as the effect's own number unless the owner says otherwise. The no-ladder rule
+    is for the content agent.
+  - **Thorns in fights**, new idea from the same answer: an enemy that applies Thorns and a special
+    armour piece that applies Thorns. Listed in [ideas.md](../ideas.md) for its own interview; not
+    part of this triage.
+
+### Desktop tries
+
+- **CR4-144**: the "Catching up" bar did appear after the PC slept. The finding stands as written
+  (the close during that bar was not tried); filed as reviewed.
+- **CR4-149**: after a double-click on Load the time away looked correct. No sign of the fault:
+  filed at P3.
+- **CR4-170, CR4-174, CR4-192**: not tried yet; the owner will try them tonight. Held, not filed,
+  until then.
