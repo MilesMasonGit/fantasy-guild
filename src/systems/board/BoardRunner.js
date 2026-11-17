@@ -581,7 +581,11 @@ export function tick(delta) {
         // A Token in the player's hand is paused: no cycle, no fight, no charge spent, so nothing
         // can take it off the mat mid-drag. Its hero keeps the claim and stands by, and the cycle
         // (any carried-over leftover included) resumes where it stopped once it is put down.
+        // ⚠️ A fought enemy is not paused but let go: a paused fight would leave the hero's statuses
+        // (Venom, Burn) ticking on their own clock with no swing to eat or win. Lifting it ends the
+        // fight as walking away does, so the drop starts a fresh one against a whole enemy.
         if (Hand.isInHand(id)) {
+            if (BoardCombat.getFight(id)) BoardCombat.endFight(id);
             if (carryIn.has(id)) carryOut.set(id, carryIn.get(id));
             continue;
         }

@@ -19,9 +19,9 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 
 /**
- * A Token in the player's hand is paused: its work cycle, its fight and its last charge all wait
- * for the drop, so it can never vanish from under the cursor. Dropping it resumes exactly where it
- * stopped.
+ * A Token in the player's hand is paused: its work cycle and its last charge wait for the drop, so
+ * it can never vanish from under the cursor, and dropping it resumes exactly where it stopped. A
+ * fought enemy is the exception: lifting it ends its fight, as the hero walking away does.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -184,32 +184,42 @@ describe('a carried Token holds its last charge until the drop', () => {
     });
 });
 
-describe('a fight with a carried enemy pauses', () => {
-    it('no damage either way while it is carried; the fight resumes on the drop', () => {
+describe('lifting a fought enemy ends the fight', () => {
+    it('as a hero walking away does: statuses off the hero, the enemy whole; the drop starts a fresh fight', () => {
         const bear = place(10, 'fixture_enemy', 'hero_1');
         const hero = GameState.state.heroes[0];
         expect(runUntil(() => {
             const hp = BoardCombat.getFight(bear.id)?.combat?.enemyHp;
             return !!hp && hp.current < hp.max;
         })).toBe(true);
+        expect(bear.fightHp).toBeTruthy();
 
         const fight = BoardCombat.getFight(bear.id);
-        const enemyHp = fight.combat.enemyHp.current;
-        const heroHp = hero.hp.current;
+        hero.effects = [...(hero.effects || []), { effectId: 'fixture_venom', stacks: 2, scale: 1, expiresAt: Number.MAX_SAFE_INTEGER, forFight: true }];
         const uses = bear.usesRemaining;
 
         pickUp(bear);
+        run(100);
+
+        expect(BoardCombat.getFight(bear.id)).toBeNull();
+        expect(BoardCombat.fightOfHero('hero_1')).toBeNull();
+        expect(hero.effects.some(e => e.forFight)).toBe(false);
+        expect(hero.status).not.toBe('combat');
+        expect(bear.fightHp).toBeUndefined();
+
         completed = [];
         run(20000);
-
-        expect(BoardCombat.getFight(bear.id)).toBe(fight);
-        expect(fight.combat.enemyHp.current).toBe(enemyHp);
-        expect(hero.hp.current).toBe(heroHp);
+        expect(BoardCombat.getFight(bear.id)).toBeNull();
         expect(bear.usesRemaining).toBe(uses);
         expect(completed).not.toContain(bear.id);
         expect(BoardState.getTokenById(bear.id)).toBe(bear);
 
         putDown(bear);
+        run(100);
+        const fresh = BoardCombat.getFight(bear.id);
+        expect(fresh).not.toBe(fight);
+        expect(fresh?.assignedHeroId).toBe('hero_1');
+        expect(fresh.combat.enemyHp.current).toBe(fresh.combat.enemyHp.max);
         expect(runUntil(() => completed.includes(bear.id), 30000)).toBe(true);
     });
 

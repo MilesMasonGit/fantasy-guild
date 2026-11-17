@@ -276,7 +276,8 @@ export const MatToken = React.memo(function MatToken({
     }, [dragging, onClearInspect]);
 
     // While it is in the player's hand, a Token is paused (see `Hand.js`): it does not work,
-    // fight, grow or run out, any of which could take it off the mat mid-drag and lose the move.
+    // grow or run out, any of which could take it off the mat mid-drag and lose the move; a fought
+    // enemy's fight ends instead.
     // Released after the drop has been handled, which runs before this clean-up, so whatever
     // waited happens where it was put down.
     React.useEffect(() => {

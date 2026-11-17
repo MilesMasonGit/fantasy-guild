@@ -25,7 +25,8 @@ import * as CycleSavings from '../board/CycleSavings.js';
  * Elixirs are drunk as a fight starts and last `ELIXIR_FIGHTS` fights (`startFightElixirs`).
  *
  * Consuming draws one unit from the Guild Bank; an equipped item with no stock
- * is skipped and the hero goes without. Eating has no cooldown or per-fight limit. A Preservation
+ * is skipped and the hero goes without. In a fight eating has no cooldown or limit (a meal costs a
+ * swing); out of one, `RegenSystem` lets a hero eat at most once per `REST_MEAL_GAP_MS`. A Preservation
  * rule reaching the hero's Token or fight may keep the unit in the Bank (`CycleSavings.keepsCarried`):
  * the meal still heals and the dose still starts.
  */
