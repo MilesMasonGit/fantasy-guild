@@ -5,8 +5,9 @@
  * not outlive the page. The drag marks a Token with {@link setInHand} as it starts and clears the
  * mark after the drop has been handled.
  *
- * A carried Token is paused: it does not work, fight, grow or turn, and a charge spent on it that
- * empties it does not remove it until it is put down. The drag is keyed by the Token's instance
+ * A carried Token is paused: it does not work, grow or turn, and a charge spent on it that empties
+ * it does not remove it until it is put down. A fought enemy's fight is not paused but ended
+ * (`BoardRunner`). The drag is keyed by the Token's instance
  * id, so a Token that vanished or became a new instance mid-drag would leave the drop with nothing
  * to land.
  *

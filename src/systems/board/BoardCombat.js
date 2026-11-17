@@ -31,11 +31,11 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * ephemeral combat object per fought enemy Token, in a runtime-only map keyed by the enemy's
  * instance id. At most a handful exist at once.
  *
- * A moved enemy keeps its fight: a fight is keyed by the enemy Token's instance id, and a move
- * keeps the id, so the fight, and the enemy's HP, stays with the Token wherever it is put. Of a
- * fight only the enemy's health is saved (`fightHp` on its Token, `keepHp`), so closing the game
- * cannot change a fight: a reload goes on from the health the enemy had. Everything else (swing
- * timers, statuses) starts again.
+ * An enemy that steps aside keeps its fight: a fight is keyed by the enemy Token's instance id, and a
+ * move keeps the id. One the player lifts does not: the board runner ends its fight, as the hero
+ * walking away would (`BoardRunner`, the in-hand branch). Of a fight only the enemy's health is
+ * saved (`fightHp` on its Token, `keepHp`), so closing the game cannot change a fight: a reload goes
+ * on from the health the enemy had. Everything else (swing timers, statuses) starts again.
  *
  * Production is the idle half; combat is the active half: there is no difficulty warning, no level
  * gate and no preview on an enemy Token. The player is expected to watch the first few fights of
