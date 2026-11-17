@@ -569,6 +569,8 @@ describe('⭐ there and back plays exactly like save and load (fresh engine per 
             results.branchL = fingerprintOf(l);
             const data = JSON.parse(l.GameState.serializeJson());
             data.state.board.workClaims = {};
+            // A reload remembers a hurt enemy's health; travel, like walking away, does not.
+            for (const token of Object.values(data.state.board.tokens)) delete token.fightHp;
             const state = l.SaveMigration.migrateState(data.state, data.version);
             l.LoadedState.loadSavedState(state);
             // As SaveManager.loadGame does, before anything hears of the board.

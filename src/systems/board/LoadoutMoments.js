@@ -76,9 +76,11 @@ function dosedStatements(itemId, dose) {
  * status resolves its target from whoever works this Token
  * @param {string} heroId the hero whose loadout is being read
  * @param {string} eventId a `TRIGGER_EVENTS` id, e.g. `CYCLE_START`
+ * @param {{resumed?: boolean}} [options] `resumed`: a fight saved mid-way going on after a load,
+ * whose elixirs were counted when it began
  * @returns {number} how many rules actually did something
  */
-export function fire(instanceId, heroId, eventId) {
+export function fire(instanceId, heroId, eventId, { resumed = false } = {}) {
     if (!heroId || instanceId == null) return 0;
 
     const hero = HeroManager.getHero(heroId);
@@ -100,7 +102,7 @@ export function fire(instanceId, heroId, eventId) {
     if (workStart) LiveEffects.endHeroOtherCycleEffects(heroId, instanceId);
 
     // Preservation on a fresh dose is read here: the enemy Token, or the Token whose cycle starts.
-    const doses = fightStart ? ConsumptionSystem.startFightElixirs(heroId, instanceId)
+    const doses = fightStart ? ConsumptionSystem.startFightElixirs(heroId, instanceId, { resumed })
         : workStart ? ConsumptionSystem.startWorkDoses(heroId, skill, instanceId) : [];
     const isDoseItem = fightStart ? (id) => isConsumableCategory(categoryOfItem(id))
         : workStart ? ConsumptionSystem.isWorkDose : null;
@@ -178,8 +180,8 @@ export function teardown() {
  */
 export function init() {
     teardown();
-    unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.COMBAT_ENGAGED, ({ instanceId, heroId }) => {
-        fire(instanceId, heroId, 'COMBAT_ENGAGED');
+    unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.COMBAT_ENGAGED, ({ instanceId, heroId, resumed }) => {
+        fire(instanceId, heroId, 'COMBAT_ENGAGED', { resumed: !!resumed });
     }));
     unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, ({ instanceId, heroId } = {}) => {
         if (heroId) LiveEffects.endHeroCycleEffects(heroId, instanceId);

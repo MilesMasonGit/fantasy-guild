@@ -180,11 +180,24 @@ export function doseStrength(dose) {
  * Draws no random number unless a Preservation rule reaches a fresh dose (one draw for it) or
  * Long-lasting Brews gives a fresh dose a fractional length (one draw for it).
  *
+ * Which elixirs work in the fight is noted on the hero (`hero.fightElixirs`, saved with them), so
+ * a fight saved mid-way and going on after a load (`resumed`) works with the same ones and counts
+ * nothing: an elixir is counted once per enemy. The count left cannot say it, since a dose that
+ * has just run out and one that sat out both read 0.
+ *
+ * @param {{resumed?: boolean}} [options]
  * @returns {string[]} the elixir item ids working in this fight, in grid order
  */
-export function startFightElixirs(heroId, instanceId = null) {
+export function startFightElixirs(heroId, instanceId = null, { resumed = false } = {}) {
     const hero = HeroManager.getHero(heroId);
     if (!hero) return [];
+
+    if (resumed) {
+        const noted = hero.fightElixirs;
+        if (noted?.at !== instanceId || !Array.isArray(noted.items)) return [];
+        const equipped = new Set(getEquippedEntries(hero).map(e => e.itemId));
+        return noted.items.filter(id => equipped.has(id) && isFightElixir(id));
+    }
 
     const active = [];
     const seen = new Set();
@@ -208,6 +221,8 @@ export function startFightElixirs(heroId, instanceId = null) {
         hero.elixirFights[entry.itemId] = left - 1;
         active.push(entry.itemId);
     }
+    if (active.length && instanceId) hero.fightElixirs = { at: instanceId, items: active };
+    else delete hero.fightElixirs;
     return active;
 }
 
