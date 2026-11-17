@@ -16,6 +16,7 @@
 - **Ideas live apart.** Speculative things go in a "possible" list, clearly not recipes. Ideas and names are cheap: offer plenty, and expect most to be cut.
 - **Base set, then specifics.** Settle a small base set first. Base items improve at each main tier ("Some base items will be available in every kind, such as chestplate and pickaxe"). Others are specific ("a Cleaver may only be Iron").
 - **Formula over novelty.** A skill's items share a simple, explainable recipe: an Arrow is wood, feathers and arrowheads; a potion is one or two herbs, a weird item, and water or juice.
+- **No tier ladders of one consumable** (owner, 2026-11-17). No Elixir of Valor I to V, no five tiers of one enchanted arrow: that is clutter. Tiered effects belong to hero gear and enemies. A consumable's effect may still carry a strength of its own ("an Elixir of Brambles gives its hero Thorns 3"), with no higher Elixir of Brambles.
 - **Few middle steps.** A preparation step must earn its place. The owner has cut shafts, sickles, hinges and hoops.
 
 ## Rules for levels

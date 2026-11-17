@@ -306,3 +306,12 @@ Where an answer differs from the options offered, the answer wins.
 ## Tickets filed (2026-11-17)
 
 T-409 to T-480 in [TICKETS.md](../../reference/TICKETS.md), section "Code review deep read", one ticket per fix (findings that share a fix share a ticket), and T-077 reopened for CR4-140 (latent, fixed now with the rest). CR4-132 goes with T-402; CR4-165 is owner-no; CR4-170, CR4-174 and CR4-192 wait for the owner's desktop try. T-338 item (4) is superseded by T-438. Every finding's State line in D1 to D4 names its ticket. Fix briefs are the next step.
+
+## Answers while writing the briefs (owner, 2026-11-17)
+
+- **Squeezes already in old saves (T-412)**: skip. Only new squeezes are prevented; an old save's squeezed tree may still hop once (old saves are not protected).
+- **Travel restart scope (T-420)**: hero work cycles only. Growth, ripening, refill and spawn clocks keep their progress.
+- **Brief order**: the P1s first (briefs 650 and 660), then the mat rules (670), saves (680), screens (690), and the future-content faults last (700).
+- **No tier ladders of one consumable** recorded in `CONTENT_PHILOSOPHY.md` (Rules for items) for the content agent.
+- **The Thorn Elemental (T-410)**: build a When Struck fight moment now (10 %, 1 damage to the hero who hits it, no charge), so armour can use it later; the Thorns-in-fights interview builds on it.
+- **Briefs written**: 650, 660, 670, 680, 690, 700, rows 64 to 69 in the order table.
