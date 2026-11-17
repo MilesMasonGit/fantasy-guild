@@ -98,6 +98,10 @@ One ruling to look at, not a defect (CR4-122): on a reload a fight starts over w
 2. **The recipe list shows the base time with the real time beside it** (CR4-194), the owner's own wording, wider than the options: both numbers on each row, the station's real time (the card's number) next to the recipe's base time.
 3. **No hero drag while a full-screen view is open** (CR4-193), the owner's own rule, wider than the options: with the Encyclopedia open, heroes cannot be dragged off the hero bar at all, and the same holds for the other full-screen views, such as the Guild Hall upgrades. Reviewer notes for the brief: list every full-screen view (the Encyclopedia, the Guild Hall, the world map, others found) and decide per view whether item drags are blocked too (the ruling names hero drags); the hero figure needs a visible sign that it cannot be dragged, so a press does not look broken.
 
+### Desktop tries (owner, 2026-11-17)
+
+The owner ran the five desktop tries the deep read asked for (the "Catching up" bar after a PC sleep, CR4-144; a double-click on Load, CR4-149; the summary with Settings open, CR4-170; ten minutes minimised, CR4-174; an Alt-Tab from the Guild Hall, CR4-192) and reported that **everything seems to be operating correctly**. Recorded as said, not as a per-finding verdict. Before filing those five, the planning agent asks the owner, as multiple choice per finding, what was seen: for CR4-144 whether the "Catching up" bar appeared on wake at all (if not, the finding does not occur and closes as moot); for the other four whether the fault showed. A finding the owner saw no sign of is filed P3 at most, or closed as moot.
+
 ## Round summary (reviewer, 2026-11-07)
 
 All twelve areas are read and ready for triage: 100 findings, every one verified by a second reader
