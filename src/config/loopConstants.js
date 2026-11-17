@@ -54,6 +54,13 @@ export const CATCH_UP = Object.freeze({
 export const CONSUME_THRESHOLD = 0.25;
 
 /**
+ * Out of a fight a hero eats at most one meal per this much game time. Counted in game time, not
+ * ticks, so a catch-up's 1,000 ms steps eat as often as live play's 100 ms ticks; a meal in a fight
+ * is paid for with a skipped swing instead.
+ */
+export const REST_MEAL_GAP_MS = 1000;
+
+/**
  * How many fights one elixir lasts. One number for every elixir, never per item: an elixir is
  * drunk as a fight starts and works for this many fights (each enemy engaged is one).
  */

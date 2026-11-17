@@ -3,6 +3,7 @@ import { EventBus } from '../core/EventBus.js';
 import { REGEN_CONFIG } from '../../config/FormulaRegistry.js';
 import * as ConsumptionSystem from './ConsumptionSystem.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
+import { REST_MEAL_GAP_MS } from '../../config/loopConstants.js';
 
 /**
  * RegenSystem - HP regeneration for heroes that are idle or working: never in a
@@ -14,6 +15,12 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
 let hpTimer = 0;
 
 let regenOccurred = false;
+
+/**
+ * `heroId → game time left before that hero may eat again` out of a fight. Runtime only: an entry
+ * lives at most `REST_MEAL_GAP_MS`, so a load forgets less than one meal's wait.
+ */
+const mealWait = new Map();
 
 /**
  * Process regeneration for all regenerating heroes
@@ -37,6 +44,11 @@ export function tick(delta) {
 
     regenOccurred = false;
 
+    for (const [heroId, left] of mealWait) {
+        if (left - delta > 0) mealWait.set(heroId, left - delta);
+        else mealWait.delete(heroId);
+    }
+
     for (const hero of heroes) {
         // Wounded heroes recover through WoundedSystem; a hero in a fight eats or goes without.
         if (hero.status !== 'idle' && hero.status !== 'working') continue;
@@ -53,7 +65,8 @@ export function tick(delta) {
         // Eat when hurt, out of fights too. Combat has its own eating path, but a hero on a
         // fight-free gathering loop must not be stranded below the threshold by
         // hazard chip damage with food in their grid.
-        if (ConsumptionSystem.tryEat(hero.id).length) {
+        if (!mealWait.has(hero.id) && ConsumptionSystem.tryEat(hero.id).length) {
+            mealWait.set(hero.id, REST_MEAL_GAP_MS);
             regenOccurred = true;
         }
     }
@@ -68,4 +81,5 @@ export function tick(delta) {
  */
 export function reset() {
     hpTimer = 0;
+    mealWait.clear();
 }

@@ -679,7 +679,8 @@ fires, spends nothing.
 - **Regen 1 HP / 10 s while idle or working; none in a fight**, where only
   food heals.
 - Below 25 % HP a hero eats equipped food from the Bank (in a fight eating
-  takes that swing). **Drinks never heal**, in a fight or out (owner
+  takes that swing; out of one, at most one meal per second of game time, so
+  a fight away eats as one watched does, owner 2026-11-17). **Drinks never heal**, in a fight or out (owner
   2026-10-24): an equipped drink is left alone, unspent, and a drink's restore
   amount is ignored (the item tooltip and the CMS no longer offer it). Out of a
   fight, healing is food and regen only. Drinks are work buffs (below). Heroes
@@ -1261,7 +1262,9 @@ Their resistances, weaknesses and moves come with the combat content pack
   swinging; drinks never heal. Elixirs are drunk as a fight starts
   (section 4).
 - **Fleeing**: dragging a hero to another job ends their fight, as it ends any
-  job (owner).
+  job (owner). Picking up the enemy being fought ends the fight the same way:
+  the hero's statuses come off and the enemy is whole when put down (owner
+  2026-11-17).
 - **Crowded fights step to open space** (brief 360 C4): when a hero reaches
   an enemy and the fight about to start would cover another fight or a hero
   standing there, the enemy walks to the nearest clear spot within 160 u (one
