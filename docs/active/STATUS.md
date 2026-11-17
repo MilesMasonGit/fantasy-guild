@@ -13,10 +13,10 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| 650 H1: a knocked-out hero takes no work, no second knock-out after travel | builder | `fix/wounded-no-work` (`h1`) | building | Tue | |
-| 660 R1: a CMS delete no longer strands a save (settled place, prices, Bank slots, picks) | builder | `fix/missing-ids` (`r1d`) | building | Tue | |
-| 650 H3: a reload keeps the enemy's health (after H1) | builder | | queued | | |
-| 660 R2: saves follow CMS renames (after R1) | engineer | | queued | | |
+| 650 H1: a knocked-out hero takes no work, no second knock-out after travel | builder | `fix/wounded-no-work` (`h1`) c1828871 | **bench-queued** (Wed 01:00): director gate 665 files, 8607 green, cycles 0, build; diff read (one guard in `canTake`, a healing hero starts no fight in `tickToken`, orders cleared on arrival while still knocked out); travel scenario checked in the game by the builder | Tue | |
+| 660 R1: a CMS delete no longer strands a save (settled place, prices, Bank slots, picks) | builder | `fix/missing-ids` (`r1d`) 87d75099 | **bench-queued** (Wed 01:00, after H1): director gate 666 files, 8611 green, cycles 0, build; diff read; fixture save checked in the game by the builder (place unheld, Bank slots, price, Furnace pick); the map's price note only in a test | Tue | |
+| 650 H3: a reload keeps the enemy's health (after H1) | builder | `fix/enemy-health-reload` (`h3`), from H1 | building | Tue | |
+| 660 R2: saves follow CMS renames (after R1) | engineer | `fix/follow-renames` (`r2r`), from R1 | building | Tue | |
 | Limes keeps quiet about moments away from the camp (owner answer) | builder-lite | | queued | | |
 | Lesson 8's small Slime (smol sheet in `public/assets/enemies/slime/`) | content agent, then builder-lite to point the lesson | | waits for a `/content` session and the owner's Sync | | |
 
