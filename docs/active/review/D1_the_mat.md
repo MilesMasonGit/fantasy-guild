@@ -94,7 +94,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: `tickToken` ends with `if (!hero || hero.status === 'wounded' || ...) { resolveDefeat(instance, heroId); return; }` (`BoardCombat.js:416-418`); `resolveDefeat` skips re-setting the status (`:517`) but calls `applyDefeatPenalties(heroId)` and publishes `HERO_DEFEATED` unconditionally (`:522`, `:532`). `canHeroFight` is `!!hero`. `arrive()` is `reset(); forget claims; restoreWork();` with no status test. `travel()` refuses only for no game, unknown or archived Region, already here, catch-up running. Found independently by three readers (orders, fights, load and travel). GDD says a healing hero takes no job (`docs/reference/GDD.md:725-727`). The natural route in: settle a new place (it arrives held by enemies), lose a fight there, go home.
 - **Fix sketch**: One rule in one place: a wounded hero takes no claim (`canTake` / `evaluate` in `Flags.js`), so every board, load and arrival obeys it; and `resolveDefeat` returns early (no penalties, no event) when the hero was already wounded before this fight began. Decide with the owner whether a healing hero's flags in other Regions stay planted (they resume when healed) or come down. Must not change: heroes picking their old orders up on return (`AtlasTravel.test.js:413`), the defeat penalties themselves, the bench's work fingerprint (no wounded travel in the bench).
 - **Verified by**: Opus verifier A (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed. Read `Flags.js` claim path, `HeroMotion`, `WorkCheck`, `CombatProcessor`, `DefeatPenalties` and every `'wounded'` in the engine: no status check between travel and the claim; `applyDefeatPenalties` has no guard. The reviewer re-read `BoardCombat.js:404-535`, `Flags.js:1015-1048`, `Atlas.js:504-512`.
-- **State**: open
+- **State**: ticket T-409 (triaged 2026-11-17)
 
 ### CR4-102  Dropping a used-up, resting Token onto a copy of itself deletes it, with a "Restocked" notice
 - **Tag**: bug
@@ -105,7 +105,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: `available = instance.usesRemaining != null ? instance.usesRemaining : maxCap` is 0; `transferred = Math.min(needed, 0)` is 0; `leftover = 0`; `if (leftover === 0) return { status: 'restocked', ..., absorbed: true }`; `restock()` then calls `BoardState.removeToken(moved.id)`. `restockTargetAt` asks only that the target is the same type and below `def.uses`. Which Tokens: in today's content the three built Forests, `token_birch_forest`, `token_maple_forest`, `token_mahogany_forest` (250 charges, refill after 10 minutes; made by a build recipe, so placed, not fixtures, and no `staysPut`). The raspberry and pineapple bushes and the watermelon patch also lack `staysPut` but exist only as Region nodes, which are fixtures (`src/systems/atlas/Cartography.js:121`) and cannot be dragged. The copy dropped onto may itself be fixed: `restockTargetAt` does not ask. The only drag gate in the UI is `FixedTokens.isFixed`. The tests pin only movers that hold charges (`MatPlacement.test.js:265-367`, `TokenRestock.test.js`).
 - **Fix sketch**: In `dropAt`, a mover with no charges to give is not a restock: fall through to the ordinary nudge beside the copy (`transferred <= 0` means no restock). Must not change: restocking beats nudging for a mover that holds charges (`MatPlacement.test.js:266`), the CR4-027 fix (an absorbed mover leaves).
 - **Verified by**: Opus verifier A (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed, with the list of affected Tokens corrected to the three built Forests (folded in). The reviewer re-read `MatPlacement.js:795-830`, `:905-928`, `Placement.js:232-320`.
-- **State**: open
+- **State**: ticket T-411 (triaged 2026-11-17)
 
 ### CR4-103  A Thorn Elemental "runs out" twice on its last kill: two notices, and the depletion counted twice
 - **Tag**: bug
@@ -116,7 +116,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: `token_thorn_elemental` has `uses: 100` and carries `effect_thorns` (`chargeDelta: -1`) with no per-reference `chargeCost`; 100 is even, so Thorns always takes the last charge, on the 50th kill. `resolveVictory` re-implements `destroyToken` rather than calling it; the second `removeToken` is a no-op but nothing guards the second round of publishes. `Thorns.test.js` uses `uses: null` only.
 - **Fix sketch**: `resolveVictory` checks the Token is still on the mat before announcing, or better hands the depletion to `Charges.destroyToken` so there is one implementation and one payload (with `instance` and `heroId`). Must not change: the kill's loot landing before the Token leaves, `endFight` at the kill, the bench's `depleted` figure except where a Thorn Elemental was double-counted (a WORK CHANGED to accept, and say why).
 - **Verified by**: Opus verifier A (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed. `statementChargeDelta` returns -1 for the elemental's reference; order on the last kill as written. The reviewer re-read `BoardCombat.js:440-497`, `Charges.js:117-185`.
-- **State**: open
+- **State**: ticket T-410 (triaged 2026-11-17)
 
 ### CR4-104  Thorns quietly spends a second charge: a Redberry Bush gives 13 harvests per refill, not 25, and a Thorn Elemental 50 kills, not 100
 - **Tag**: owner-decision
@@ -127,7 +127,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: `effect_thorns` statement has `chargeDelta: -1`; both Tokens reference it as `{ effectId, scale: 1 }` with no `chargeCost`. `statementCycleCost` / `ownCycleCost` count only `chargeWhen: per_cycle` rules, so the triggered cost is invisible to the ledger. `Thorns.test.js:271-288` pins only that a reference can override the cost.
 - **Fix sketch**: The owner's call (a question in `STATUS.md`): (a) free on the bush, set `chargeCost: 0` on the bush's reference by change pack, and decide the monster separately; (b) the cost is wanted, so the rule's sentence says "uses 1 charge" and the ledger counts it. Nothing in code changes for (a). Fixing CR4-103 first makes either safe.
 - **Verified by**: Opus verifier A (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed. Arithmetic re-derived: 13 harvests (the last without a thorn), 50 kills; a Refresh perk can skip the cycle's charge, never the thorn's.
-- **State**: open
+- **State**: ticket T-410 (triaged 2026-11-17)
 
 ### CR4-105  A tree that grows back, or a large building that finishes, can appear somewhere else on the mat
 - **Tag**: bug
@@ -138,7 +138,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: `forceSpot` tries the point, then `relax`, then `findSpot(..., reach: ARRIVAL_FALLBACK_REACH)` (640). `relax` returns null at once when the newcomer overlaps a fixed body, and `fixPlaced: true` makes every placed, planted or `staysPut` Token fixed. `Foundations.hasRoomToBuild` asks the same `forceSpot`, so the far fallback counts as "room". The search that keeps room for the grown form (`asGrown`) has one caller, a Forest's own plantings. `recipe_muily2pe` builds `token_fighter_s_academy` (size 2). Tests pin the fallback for `forceSpot` in general (`MatPlacement.test.js:458`, `SpawnTransform.test.js:177`), not a growth or build relocating. T-308 covers only a crowded Forest's own Saplings.
 - **Fix sketch**: Two parts, the second the owner's call. (1) A player's drop beside a Token that grows, or beside a Foundation, keeps room for the largest form it can become (the `asGrown` test in the drop's legality), so the squeeze cannot be made. (2) For squeezes already on mats: a growth or build that cannot stand at its own point holds (growth clock full, build on "no room") instead of hopping, or hops only a short way. Must not change: the Tree-Stump-Sapling ids and pins following (`Flags.followTransform`), saved layouts (nothing moves on load), the bench's work fingerprint for boards where every growth has room.
 - **Verified by**: Opus verifier A (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed, with the size wording corrected to `artSize` (folded in). The "Needs Oak Forest" consequence was not traced end to end.
-- **State**: open
+- **State**: ticket T-412 (triaged 2026-11-17)
 
 ### CR4-106  A Sapling planted on the outermost ring of its Forest's reach counts as outside it
 - **Tag**: bug
@@ -149,7 +149,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: The ring walk runs `d <= ctx.reach`; `nearby` tests `distanceSq <= radius * radius`. Computed twice (reader and verifier, `node`, the 252 candidates of ring 240): between a third and a half read as out of reach depending on the Forest's coordinates (84 to 121 of 252 over five Forest points); after the whole-unit snap in `forceSpot`'s `clampInside`, about half (125 to 130 of 252). `SpawnerWithinReach.test.js:87-155` tests only an open mat and a fully packed one. The same snap also makes any grown Token or finished build re-test legality up to 0.71 units from where it stood, which feeds CR4-105's hop for a Token standing just at a neighbour's gap. Frequency in real play is unmeasured (reasoned).
 - **Fix sketch**: Search to `reach - RING_STEP` (or shrink the search reach by one unit) so a planting never sits on the limit, and do not round a transform's own point (test legality where it stands). Must not change: saved layouts, the reach ring the player sees, the bench's work fingerprint on boards with open inner rings.
 - **Verified by**: Opus verifier A (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed, re-running the ring arithmetic on five Forest points; the share corrected to a range (folded in).
-- **State**: open
+- **State**: ticket T-413 (triaged 2026-11-17)
 
 ### CR4-107  A low-level hero can work a station set to a high-level recipe; the card and the recipe list say they cannot
 - **Tag**: owner-decision
@@ -160,7 +160,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: `workConfigOf` folds `recipeLevel(recipe)` into `skillRequired` only when `def.foundation`; a station returns `def.config` as authored, and every station with a config in `data/tokens.json` has `skillRequired: 1` (16 of 17; one has no config). `Flags` uses the same `workConfigOf` then `heroReason`, and `RecipeResolver` has no level check. `heroReason` checks `config.skillRequired` only. A ledger comment calls it intended ("the recipe's level gates only picking it") and `GDD.md:1033` gates the list by the guild's best hero; no test pins the station case.
 - **Fix sketch**: The owner's call (a question in `STATUS.md`): (a) a hero needs the recipe's level to work it (fold the level in for stations as for Foundations; the hero is skipped with the usual "skill too low"); (b) by design, so the card and the divider stop saying otherwise. (a) changes the bench's work fingerprint if a bench hero is under-levelled for a set recipe.
 - **Verified by**: Opus verifier A (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed, with the XP example and the station count corrected (folded in). No other gate found.
-- **State**: open
+- **State**: ticket T-414 (triaged 2026-11-17)
 
 ### CR4-108  Merging treats Tokens that refill, and enemies, as if they were consumables
 - **Tag**: owner-decision
@@ -171,7 +171,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: `restockTargetAt` tests type and `usesRemaining < def.uses` only; no test for `respawn` or enemy types. `Respawn.js:115-116` shows the mid-rest restock is known. "Restocking beats nudging" is pinned for plain consumables (`MatPlacement.test.js:266`).
 - **Fix sketch**: The owner's call (a question in `STATUS.md`): (a) only Tokens that do not refill and are not enemies merge; the rest nudge beside the copy; (b) keep it. CR4-102 is fixed either way.
 - **Verified by**: Opus verifier A (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed. Gap arithmetic re-derived (61.2 units between two standard Tokens against a 64-unit picture).
-- **State**: open
+- **State**: ticket T-411 (triaged 2026-11-17)
 
 ### CR4-109  Holding an enemy in the hand pauses its fight but not the poison
 - **Tag**: bug
@@ -182,7 +182,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: The in-hand `continue` at `:584` sits before `BoardCombat.tickToken` at `:600`, whose own comment says it must be called unconditionally. Enemies are selectable and draggable (`useMatSelection.js`, "an enemy included"). Found by three readers. Needs a held drag of many seconds with stacks on; how long the UI lets a drag last was not checked.
 - **Fix sketch**: Picking up an enemy that is being fought ends the fight as a let-go does (statuses off, enemy whole), or a fought enemy refuses the pick-up; the smaller change is to end the fight in the in-hand branch. Must not change: a held Token's work cycle pausing and resuming.
 - **Verified by**: Opus verifier B (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed, with the enemies that land a damaging status corrected (folded in). No drag time limit and no fight refusal in `DndKit.jsx` or `MatToken.jsx`.
-- **State**: open
+- **State**: ticket T-415 (triaged 2026-11-17)
 
 ### CR4-110  A Token's card stays open, on the old name and place, after the Token is built, felled, used up, killed or claimed
 - **Tag**: bug
@@ -193,7 +193,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: The popup re-measures only on `TILE_CHANGED` for its own id and falls back to the old rectangle when the element is gone; a transform publishes `TILE_CHANGED` under the new id. The card hangs on `ui.inspect.selection` (`useUIModals`), not on the mat's selection outline, which is dropped when its Token goes (`useMatSelection.js:181-182`) without reaching the card. The only clearers are picking another Token or a hero, a drag, an Encyclopedia link, the fight panel opening, Escape, the X and an outside click; travel does not close it either. `TokenCard.test.js:414` covers Escape, the X and a mat click only. Not seen in the running game.
 - **Fix sketch**: Close the card when its instance leaves the mat; on `TOKEN_TRANSFORMED` follow to the new id (the owner may prefer close). An eye-check only if it follows.
 - **Verified by**: Opus verifier B (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed, with the list of what closes the card completed (folded in).
-- **State**: open
+- **State**: ticket T-416 (triaged 2026-11-17)
 
 ### CR4-111  After a camp the player built is demolished, its enemies belong to no camp, and a new camp spawns a second set
 - **Tag**: bug
@@ -204,7 +204,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: `finish` calls `removeToken` and publishes; camp membership is `instance.tether === camp.id`. Built camps only (`recipe_build_goblin_camp`); map camps are fixtures and cannot be marked. `Camps.js` was read by search here, whole by the orders reader, who found a dead tether inert.
 - **Fix sketch**: On a camp leaving the mat, clear its children's tethers (set to none, so the once-per-board attach or a small re-attach on camp arrival adopts them), or remove them with the camp: the owner's call if the second is preferred. Must not change: arrival enemies' deliberate `tether: null`.
 - **Verified by**: Opus verifier B (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed. Read `Camps.js` whole, the three counting modes, every tether writer; a built Goblin Camp can be demolished.
-- **State**: open
+- **State**: ticket T-417 (triaged 2026-11-17)
 
 ### CR4-112  Going back to a Region where an old event still stands wipes the progress toward the next event
 - **Tag**: bug
@@ -215,7 +215,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: `if (eventTokenOnMat()) { s.clockMs = 0; return; }`. The header says an event on another mat "does not hold this mat's clock", true while away. `Events.test.js` has no travel case. Nothing sticks: the clock resumes when the Token leaves.
 - **Fix sketch**: Hold the clock (return without adding) instead of zeroing it while an event stands, zeroing only when an event lands. Must not change: one event at a time, the saved wait.
 - **Verified by**: Opus verifier B (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed. The event's own clock freezes with the board and comes back with time left.
-- **State**: open
+- **State**: ticket T-418 (triaged 2026-11-17)
 
 ### CR4-113  An event's banner follows the guild to another Region and points at nothing
 - **Tag**: bug
@@ -226,7 +226,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: As cited. What a click on the orphan banner does (`useShowOnMat`) was not traced.
 - **Fix sketch**: On `BOARD_SWAPPED`, withdraw banners whose subject Token is not on the new mat (the catch-up's pruning, reused); put them back on return if wanted.
 - **Verified by**: Opus verifier B (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed. Banners never fade; no `BOARD_SWAPPED` subscriber prunes them.
-- **State**: open
+- **State**: ticket T-445 (triaged 2026-11-17)
 
 ### CR4-114  An idle hero sent to a new waiting spot crosses the mat at half speed and reads as idle
 - **Tag**: bug
@@ -237,7 +237,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: `speed = walkSpeed() * (body.limp ? LIMP_FACTOR : body.potter ? STROLL_FACTOR : 1)`; `body.potter` is set at `:412` and cleared only on a claim (`:327`), on coming off work (`:339`) or for a home body (`ensureBody`). `setOrder` calls `release` (returns early with no claim) then `HeroMotion.enter`. Once a first stroll has started `potter` is never null again for an idle hero (`:412` always draws a new offset), so any hero who has stood two to six seconds is affected. `HeroMotion.test.js:429-438` ("strolls go with the flag when it is moved") checks only the end point, and arguably makes the stroll offset carrying over intended: the defect is the half speed and the idle status, not the aim.
 - **Fix sketch**: A new order walks at full speed and reads as walking until the hero reaches the new spot (clear or ignore the stroll for that walk in `enter` or `setOrder`).
 - **Verified by**: Opus verifier B (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed, noting the test that makes the carried stroll offset arguably intended (folded in).
-- **State**: open
+- **State**: ticket T-419 (triaged 2026-11-17)
 
 ### CR4-115  Stopping a hero near the left or bottom edge puts their flag off the mat
 - **Tag**: bug
@@ -248,7 +248,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: `stop` passes `(at) => ({ x: at.x - dx, y: at.y - dy })` to `lapseWhereStanding`, which calls `BoardState.setFlag` directly. Whether the mat clips the drawn flag was not checked.
 - **Fix sketch**: Clamp the point as `Orders.orderAt` does.
 - **Verified by**: Opus verifier B (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed. `setFlag` does not clamp; only `Orders.orderAt` and `fitToMat` do.
-- **State**: open
+- **State**: ticket T-419 (triaged 2026-11-17)
 
 ### CR4-116  A cycle can finish without its "cycle starts" moment: after a recipe change mid-cycle, and after travelling away and back
 - **Tag**: bug
@@ -259,7 +259,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: `setSelectedRecipe` writes `selectedRecipeId` and publishes `TILE_CHANGED`, nothing else. `BoardState.js:16` says progress is "reset by any interruption". Every other break (hero let go, wound, demolition mark and unmark, partial merge) resets it.
 - **Fix sketch**: A recipe change resets progress; a claim on a Token with progress but no worker either resets it or fires the start moment for the new worker. Must not change: travel keeping a Token's progress if the owner wants it kept (then fire the start moment instead), a plain move keeping progress.
 - **Verified by**: Opus verifier B (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed. Every `cycleElapsedMs = 0` site read; none on a recipe change or on a claim.
-- **State**: open
+- **State**: ticket T-420 (triaged 2026-11-17)
 
 ### CR4-117  A partial merge resets the moved Token's work progress; a plain move keeps it
 - **Tag**: bug
@@ -270,7 +270,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: `forfeitCycle(instance); putOnMat(instance, from, decision.x, decision.y);` in `restock`, with no `keepCycle` test. `MatPlacement.test.js:352-367` covers the path without asserting on progress.
 - **Fix sketch**: Honour `keepCycle` on the leftover path.
 - **Verified by**: Opus verifier B (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed, with the cross-reference corrected (folded in).
-- **State**: open
+- **State**: ticket T-411 (triaged 2026-11-17)
 
 ### CR4-118  Between kills a hero eats about twenty times live and about three in a catch-up, so the same fight can end differently while away
 - **Tag**: bug
@@ -282,7 +282,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Fix sketch**: Make out-of-fight eating time-based (one meal per fixed interval of game time), so live and catch-up agree. Changes the bench's work fingerprint for fighting scenarios; needs the owner's nod on the interval.
 - **Hypothesis to test**: a fixed-seed fight scenario run at 100 ms and at 1,000 ms steps should show different food use and, at low health, a different knock-out count.
 - **Verified by**: Opus verifier B (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed as a mechanism; count re-derived (21 against 3). Size in play unmeasured, so the finding stays reasoned.
-- **State**: open
+- **State**: ticket T-421 (triaged 2026-11-17)
 
 ### CR4-119  The Abundance badge on a ripe Field shows a load the Field does not hold
 - **Tag**: bug
@@ -293,7 +293,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: `final = Fields.loadAtRipening(...)` in the breakdown; `loadAtRipening` documented "Read once, as it ripens". `EffectBreakdown.test.js` was not read.
 - **Fix sketch**: The row shows the stored load for a ripe Field and the live one otherwise.
 - **Verified by**: Opus verifier C (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed. The only Abundance test uses an unripe Field.
-- **State**: open
+- **State**: ticket T-422 (triaged 2026-11-17)
 
 ### CR4-120  A "for the cycle" potion effect stays on a hero whose cycle never finishes
 - **Tag**: bug
@@ -304,7 +304,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: `release` does not end it; `syncAggregator` reads it without the `at` filter. Seven effects in `data/effects.json` use `forCycle` (the Birdwatcher potion and six drinks); none carries a combat number (loot, yield, XP and a bonus drop only), so the combat aggregator, which reads without the Token filter, picks nothing up from them today. A fight ending and a load do not end it either.
 - **Fix sketch**: End a hero's for-the-cycle effects in `Flags.release`.
 - **Verified by**: Opus verifier C (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed, with the count of effects (seven) and the combat claim corrected (folded in).
-- **State**: open
+- **State**: ticket T-423 (triaged 2026-11-17)
 
 ### CR4-121  A crash right after settling a place leaves it free of its arrival enemies for good
 - **Tag**: bug
@@ -315,7 +315,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: Order of calls as cited; `isOccupied()` reads `board.arrival`, absent in that save.
 - **Fix sketch**: Save once after `Arrival.occupy`, or occupy before the travel's save.
 - **Verified by**: Opus verifier C (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed. Every `SaveManager.save(` and `occupy(` call read; nothing saves after the enemies land and nothing re-occupies on load.
-- **State**: open
+- **State**: ticket T-424 (triaged 2026-11-17)
 
 ### CR4-122  Reloading while a hero is mid-fight counts their elixir for the same enemy twice
 - **Tag**: bug
@@ -326,7 +326,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: `FIGHT_START = 'COMBAT_ENGAGED'` (`ConsumptionSystem.js:112`); `hero.elixirFights[itemId] = left - 1` (`:208`), saved with the hero. A new fight starts `idle` and turns `active` on its first tick, which publishes the engagement. It is the same thing that happens when a hero walks away and comes back, a consequence of the reload rule at `BoardCombat.js:35-37` rather than a separate mechanism.
 - **Fix sketch**: Count the elixir at the kill, or save a "counted for this enemy" mark on the hero cleared at the kill. The second engagement must still fire the elixir's rules: it is what puts back the for-the-fight effects a load strips (`Elixirs.test.js:260-269`).
 - **Verified by**: Opus verifier C (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed, reframed as a consequence of the reload rule, and the fix sketch corrected (folded in).
-- **State**: open
+- **State**: ticket T-425 (triaged 2026-11-17)
 
 ### CR4-123  "Load as I left it" can go back further than the summary on screen says
 - **Tag**: bug
@@ -337,7 +337,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: As cited.
 - **Fix sketch**: The summary adds the two absences together (or says "since <time of the first save>") while the undo covers both.
 - **Verified by**: Opus verifier C (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed. No test covers two shown catch-ups.
-- **State**: open
+- **State**: ticket T-426 (triaged 2026-11-17)
 
 ### CR4-124  Rules the CMS can author today that the engine gets wrong (no shipped content reaches them yet)
 - **Tag**: bug
@@ -361,7 +361,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: Each reader checked `data/` for the shape and found none (`effects.json`, `tokens.json`, `items.json`, `hallStars.json`, `skillPerks.json`).
 - **Fix sketch**: Not one fix. Either a content audit rule per item (the cheap guard: `ContentAudit.js` refuses or warns on the shape until the engine supports it) or the engine fix when the first Token needs it. Items 1, 4 and 6 are the ones a planned Token is most likely to meet.
 - **Verified by**: Opus verifier C (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed, item by item: 8 confirmed as written, 5 with corrections (folded in); `data/` scanned for each shape and none found.
-- **State**: open
+- **State**: ticket T-427 (triaged 2026-11-17)
 
 ### CR4-125  Travel can put a quest bounty on top of another Token
 - **Tag**: bug
@@ -372,7 +372,7 @@ The owner answered every D1 question the same day; the full text is in [STATUS.m
 - **Evidence**: `putDown` uses the remembered spot with no check (`Atlas.js:473-476`); `findSpotAnywhere(...) || aim` (`:478`). `QuestTokens` does not re-seat bounties afterwards.
 - **Fix sketch**: Check the remembered spot with `isLegal` before using it, and fall back to the search.
 - **Verified by**: Opus verifier C (read-only, given the finding's text only), 2026-11-15: traced each scenario in the code and `data/` trying to refute it; confirmed for stacking; the "off the mat" half was REFUTED (`fitToMat` runs after) and removed. Reach in play not established, so reasoned.
-- **State**: open
+- **State**: ticket T-428 (triaged 2026-11-17)
 
 ---
 

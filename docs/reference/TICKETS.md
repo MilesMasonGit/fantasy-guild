@@ -25,7 +25,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-409**
+**Next free number: T-481**
 
 ---
 
@@ -54,7 +54,7 @@ here.
 | T-287 | P3 | open | **Enemy performance, next steps** (T-200 report; the tether census and the loot flight's forced layout merged 2026-11-03): the walk-end neighbourhood rebuild (~8 % of the enemies80 tick; limiting it to the walker needs a ruling on modifiers that are stale on purpose: `charges_below`, `worked`, `carrying`); MatBoard re-rendering every tick with walkers (structural, eye-check); a JS-stepped walk glide (~3,000 transition events a second; eye-check and `bench:crisp`) | T-200 engineer 2026-11-02 |
 | T-294 | P2 | open | **The ledger and world tables can't hold the ladder yet**: the ledger's plan tiers stop at 5 (`PLAN_TIERS`, the ladder needs 7) and a cell's settle level and price follow its ring, not its rung. Open tiers 6 and 7, let a cell's requirement follow the rung of its main material, then set stage budgets and the new pace curve in the plan ([the ladder](../active/concept_content_roadmap.md#the-ladder-owner-approved-2026-11-02)). **Ring stars (brief 380 M4) lean on the same mapping**: the ledger prices a ring's Guild Hall star so the ring opens when the stage before it ends, reading ring n as opening after tier n − 1 in one place (`ringBudgetTier` in `ledger/pace.js`); when rings hold several rungs, make it the ring before's last tier, re-run the stars' proposals (CMS Guild Hall page) and re-price the wild rings' stars, which wait on budgets for tiers 3 and on (today priced by the wild price growth, in tier 3's Watermelon) | content roadmap 2026-11-02 |
 | T-337 | P2 | open, rules approved 2026-11-07 | **A new XP table** ([BALANCE_RULES.md](BALANCE_RULES.md) section 1, owner 2026-11-07): `xpForLevel` in `src/utils/XPCurve.js` (the RuneScape formula) becomes the rules' table, XP to the next level = 1,660 x 2^((L - 1) / 20) x the pace curve's minutes / 60, with the curve now 3 min x 1.065^(L - 1); about 11.6 million to 99 (today about 13 million), so work pays 2x more an hour each tier. ⚠️ Levels in old saves shift; the ledger reads `xpForLevel` and follows on its own; the hero sheet's numbers need the shorthand. Lands with the balancing pack, not before, or today's XP rewards no longer fit the levels. **Rescale saved XP so every hero keeps their level and progress**: the game only ever raises a stored level (`SkillSystem.addXP`) and loading doesn't recompute it, so under the new table a level-60 hero's XP reads as 45 and their bar stalls. | content agent 2026-11-07 |
-| T-338 | P2 | open, needs a brief | **The game and ledger catch up with the balance rules' review** ([BALANCE_RULES.md](BALANCE_RULES.md), owner 2026-11-07): (1) **doses**: a work potion lasts 1 cycle and a drink 10 (`DOSE_LENGTH`, `src/systems/core/consumableRule.js`), too short for a batch to pay back 4x: make dose length per item or raise it; (2) **gatherers per crafter**: the ledger's supply feeds each input with one hero (`pace.js`), so late crafting reads as a wall when the rules expect a Bare guild to need several gatherers per crafter: count the gatherers a crafter needs at each profile instead; (3) **the speed budget**: a check that every speed boost a Maxed hero holds sums to at most a 65 % cut, and boost targets by kind for yield and rare finds (with T-336); (4) **an XP bonus is at least +1** (`src/systems/hero/xpBonus.js`), which makes +5 % worth +33 % on a 3-XP action: round normally. | content agent 2026-11-07, from a critical review |
+| T-338 | P2 | open, needs a brief | **The game and ledger catch up with the balance rules' review** ([BALANCE_RULES.md](BALANCE_RULES.md), owner 2026-11-07): (1) **doses**: a work potion lasts 1 cycle and a drink 10 (`DOSE_LENGTH`, `src/systems/core/consumableRule.js`), too short for a batch to pay back 4x: make dose length per item or raise it; (2) **gatherers per crafter**: the ledger's supply feeds each input with one hero (`pace.js`), so late crafting reads as a wall when the rules expect a Bare guild to need several gatherers per crafter: count the gatherers a crafter needs at each profile instead; (3) **the speed budget**: a check that every speed boost a Maxed hero holds sums to at most a 65 % cut, and boost targets by kind for yield and rare finds (with T-336); (4) **an XP bonus is at least +1** (`src/systems/hero/xpBonus.js`), which makes +5 % worth +33 % on a 3-XP action: round normally (superseded by T-438: by chance, owner 2026-11-15). | content agent 2026-11-07, from a critical review |
 | T-383 | P2 | open, needs a brief | **The ledger follows the smooth curve and the optimized player** ([concept_balancing.md](../active/concept_balancing.md), owner 2026-11-07): the pace curve becomes one rule, 3 min x 1.065^(L - 1) (settings today hold points, read geometrically in `settings.js`), and **the curve's target is a well-optimized player**, not Typical: a typical player lands about 1.5 to 2x slower, a bare one at most 3x (`profiles.js`, the bounds in settings). Add **the boost budget**: a table per tier and kind of boost (speed, yield, XP, rare finds) with typical and optimized totals, every boost counted against it, and a check for totals over budget. Amends T-294's curve points. | content agent 2026-11-07 |
 | T-384 | P2 | open, needs a brief | **Tools to test the balance** ([concept_balancing.md](../active/concept_balancing.md), owner 2026-11-07): (1) **a calibration board per tier** in `bench/calibrate.mjs` (five boards today), with that tier's boosts, so the ledger's rates are proved at every tier; (2) **a milestone sheet and a play log**: the game records when the owner reaches each milestone beside the ledger's forecast; (3) **start-at-a-tier saves**: a QA button builds a save at the start of any tier from the ledger's typical player (levels, tools, buildings, a stock of materials). | content agent 2026-11-07 |
 | T-403 | P3 | open | **Use the effect names** (owner 2026-11-11, [UI_STYLE.md](UI_STYLE.md#effect-names-owner-2026-11-11)): the CMS labels and the player-facing text (`modifierPalette.js` labels and reads, `statementText.js`, tooltips, the Encyclopedia) say Speed, Yield, Growth, XP, Double Loot, Double Item, Efficiency and Abundance instead of Work Time, Grow Time, XP Bonus, Double Loot Chance, Double Item Chance, Input Cost and Crop Load. Words only, no rule changes; text into the strings file where the screen already uses it. Builder-lite, no eye-check | effect names |
@@ -163,6 +163,103 @@ The findings' full write-ups are in `docs/active/review/R*_*.md` (search the CR4
 |---|---|---|---|---|
 
 
+### Code review deep read (triaged 2026-11-17)
+
+The findings' full write-ups are in `docs/active/review/D1_the_mat.md` to `D4_screens_and_drag.md` (search the CR4 id); the owner's rulings are in `review/STATUS.md` (D1 to D4 questions) and [`review/design_check_2026-11-17.md`](../active/review/design_check_2026-11-17.md) (the 15 design questions). Held until the owner's desktop try: CR4-170, CR4-174, CR4-192. Not filed: CR4-165 (owner-no, old Tokens stay endless), CR4-132 (T-402 retires it). CR4-140 reopens T-077. Every row is a player-visible bug unless it says latent; "WORK CHANGED" means the bench work check moves on purpose.
+
+**The mat (D1)**
+
+| ID | Pri | Status | Summary | Origin |
+|---|---|---|---|---|
+| T-409 | P1 | open | **A healing hero is knocked out twice, or works while healing, after travel**: a wounded hero takes no claim (`canTake`/`evaluate` in `Flags.js`) and `resolveDefeat` does nothing for a hero already wounded before the fight. Owner rule: orders in another Region are kept if the hero has healed when the guild arrives, cleared if still knocked out | CR4-101 |
+| T-410 | P2 | open | **Thorns costs no charge anywhere** (owner 2026-11-15): Redberry Bush gives Redberries every cycle with a separate 10 % prick (25 harvests a refill); the Thorn Elemental's Thorns becomes a 10 % passive chance on each hero attack (100 kills). One depletion route for a kill (`Charges.destroyToken`, with `instance` and `heroId`), so a last kill never "runs out" twice. Content by pack (content agent); WORK CHANGED for the `depleted` figure | CR4-104, CR4-103 |
+| T-411 | P2 | open | **No Token merges, ever** (owner 2026-11-15): a Token dropped on its copy is placed beside it; the merge and restock code and its "Restocked" notice go. Ends the resting-Token deletion and the moved Token losing its progress | CR4-108, CR4-102, CR4-117 |
+| T-412 | P2 | open | **One spot for a Token's whole cycle** (owner 2026-11-15, 2026-11-17): a Stump and a Sapling hold the grown Tree's spot (may be drawn small); a drop beside a growing Token or a Foundation keeps room for what it becomes; a squeeze already on a saved mat holds in place (growth clock full, build on "no room"), never hops. No double-size Tokens: the Fighter's Academy and the Cedar become ordinary size by pack. **Owner to-do: redo the Cedar's art** | CR4-105 |
+| T-413 | P3 | open | **A Sapling planted on the edge of its Forest's reach counts as outside it**: search to just inside the reach and test a transform's legality where it stands, without rounding. A second cause beside T-308 | CR4-106 |
+| T-414 | P2 | open | **A hero needs the recipe's level to work a station** (owner 2026-11-15): fold the recipe level into the station check as Foundations do; the usual "skill too low". WORK CHANGED if a bench hero is under-levelled | CR4-107 |
+| T-415 | P3 | open | **Lifting an enemy mid-fight ends the fight** (owner 2026-11-17), as the hero walking away does: statuses off, enemy whole. Today poison and burn keep hurting the hero while the fight is paused | CR4-109 |
+| T-416 | P3 | open | **A Token's open card follows it or closes** (owner 2026-11-17): on a transform (Foundation to Workbench, Tree to Stump) the card follows the new instance; when the Token leaves (killed, used up, claimed) it closes. Eye-check | CR4-110 |
+| T-417 | P3 | open | **The next camp adopts a demolished camp's enemies** (owner 2026-11-15): a camp leaving the mat clears its children's tethers so the next camp of that kind beside them takes them on; arrival enemies keep `tether: null` | CR4-111 |
+| T-418 | P3 | open | **Returning to a Region with an old event wipes the wait for the next one**: the event clock holds while an event stands instead of zeroing | CR4-112 |
+| T-419 | P3 | open | **Hero walks after a new order or a stop**: a new spot order walks at full speed and reads as walking (clear the stroll); right-click stop clamps the flag inside the mat as `Orders.orderAt` does | CR4-114, CR4-115 |
+| T-420 | P3 | open | **Recipe change and travel restart the cycle** (owner 2026-11-17): changing a station's recipe starts its cycle from zero; returning to a Region restarts every half-done cycle there; a reload keeps the work as today. A restarted cycle fires its start moment (drink dose, On Work Start). Rewrite `AtlasTravel.test.js` "there and back equals save and load" for cycles at zero after travel | CR4-116 |
+| T-421 | P3 | open | **Out-of-fight eating runs on game time** (owner 2026-11-17): at most one meal per second of rest, so watched and away fights agree. WORK CHANGED for fight scenarios | CR4-118 |
+| T-422 | P3 | open | **A ripe Field keeps its number** (owner 2026-11-17): the card shows the load stored at ripening; a neighbour placed after counts from the next crop | CR4-119 |
+| T-423 | P3 | open | **A "for the cycle" potion effect stays on a hero whose cycle never finished**: end the hero's for-the-cycle effects in `Flags.release` | CR4-120 |
+| T-424 | P3 | open | **Settling and a new game save half-way**: settle saves once at the very end, after `Arrival.occupy` (a crash can no longer leave a place without its arrival enemies, or settled but unpaid); a new game claims the slot in memory and writes only the finished opening | CR4-121, CR4-150 |
+| T-425 | P3 | open | **A reload remembers the enemy's health** (owner 2026-11-15; save-format change), so closing the game cannot change a fight, and an elixir is counted once per enemy across a reload. Live play unchanged: walking away still lets the enemy recover (owner 2026-11-17) | CR4-122 |
+| T-426 | P3 | open | **"Load as I left it" can undo more than the summary shows**: a second absence while the summary is open adds to it (or the summary says "since" the first save) | CR4-123 |
+| T-427 | P2 | open | **Latent: thirteen rule shapes the CMS can author that the mat engine gets wrong** (no shipped content reaches them): fix the engine now (owner 2026-11-17), items 1, 4 and 6 first; the list is in the finding | CR4-124 |
+| T-428 | P3 | open | **Travel can put a quest bounty on another Token**: check a remembered spot with `isLegal` before use, else search | CR4-125 |
+
+**Heroes, fights, gear (D2)**
+
+| ID | Pri | Status | Summary | Origin |
+|---|---|---|---|---|
+| T-429 | P2 | open | **With Larder, a hero never eats their second Food** (owner 2026-11-15): eat the earlier slot's Food, moving on when the Bank runs out of it | CR4-126 |
+| T-430 | P3 | open | **A gear slot holding a deleted item** (owner 2026-11-17): the slot shows the missing item by its id and the player can clear it (the copy is thrown away). Renames are T-455 | CR4-127 |
+| T-431 | P3 | open | **On a newly settled place, a hero goes to an enemy nobody else fights** (owner 2026-11-17), waiting beside a fight only when all are taken; the pick stays deterministic | CR4-128 |
+| T-432 | P3 | open | **A shared knock-out banner drops what each hero lost**: print each hero's losses in the many-hero line | CR4-129 |
+| T-433 | P3 | open | **A hand-over onto a full loadout replaces like a Bank drop** (owner 2026-11-15): change `GDD.md` 740-745 and the pinning test with it | CR4-131 |
+| T-434 | P3 | open | **Rate readouts read too high**: XP an hour and "Next level" count the first gain's interval and the open panel re-reads every second or two; an item stub's "/hr" counts floor spending and catch-up spending | CR4-133, CR4-134 |
+| T-435 | P3 | open | **No two heroes share a name, and a longer name list** (owner 2026-11-17): a recruit picks from names no hero on the roster holds; the builder adds names in the style of today's 96 (`nameRegistry.js`), no review step | CR4-135 |
+| T-436 | P3 | open | **The Accuracy and Dodge tips do not say the 5 to 40 % bounds** | CR4-136 |
+| T-437 | P1 | open | **Losing the only pickaxe locks an early guild** (owner 2026-11-15): Rusty Pickaxe and Rusty Woodaxe, from a tool-free early Token (or an early enemy), work like copper tools with a 1 % break chance; the defeat roll stays. Content agent plans the pack; the first shipped `breakChance` is exercised in the running game | CR4-137 |
+| T-438 | P3 | open | **An XP bonus is a true percentage by chance** (owner 2026-11-15): carry the fraction with `RNG.roundByChance`, the at-least-1 floor goes. Replaces T-338 item (4)'s "round normally". WORK CHANGED (`heroXp`) | CR4-138 |
+| T-439 | P2 | open | **No loadout changes mid-fight** (owner 2026-11-15): one guard in the three engine equip functions covers all seven routes (Bank drop, slot move, hand-over giver and taker, right-click, drag to the Bank, drop on the figure), from an enemy stepping up until it falls or the hero leaves, with a reason the player sees; engine losses stay outside the guard; eating unaffected | CR4-139, CR4-172, CR4-130 |
+| T-440 | P2 | open | **Latent: a strength on an "Applies" effect does nothing** (owner 2026-11-17): the bearer's strength sets the applied effect's strength (an Elixir of Brambles giving Thorns 3), for every item; a status still lands one stack a hit. Content rule for the content agent: no tier ladders of the same item (no Elixir of Valor I to V); tiered effects belong to gear and enemies | CR4-141 |
+| T-441 | P2 | open | **Latent: loot shapes that differ on a station and a kill**: fix the engine now (owner 2026-11-17), item 1 first; keep today's random draws | CR4-142 |
+| T-077 | P2 | open | **Latent: a timed effect on a hero loses its fight numbers after a reload, and "Load as I left it" can end it early** (reopened 2026-11-17: fix the engine now, owner): re-sync each hero's live effects on load; store remaining time, not a wall-clock end | CR3-252, CR4-140 |
+| T-442 | P3 | open | **Latent: shapes the hero, gear and fight code gets wrong**: fix the engine now (owner 2026-11-17), items 2 and 7 first | CR4-143 |
+
+**Saves and time away (D3)**
+
+| ID | Pri | Status | Summary | Origin |
+|---|---|---|---|---|
+| T-443 | P2 | open | **Closing during the "Catching up" bar after a PC sleep loses play since the last autosave**: save the live game, stamped with the gap's start, before a live catch-up suspends saving. The owner saw the bar appear on wake (2026-11-17) | CR4-144 |
+| T-444 | P3 | open | **Browser build, Auto-save Off: closing the tab saves nothing**: register the close save when a slot opens (dev builds only, owner 2026-11-16) | CR4-145 |
+| T-445 | P3 | open | **Banners come back** (owner 2026-11-16, 2026-11-17): an event Token on the mat gets its banner after a load, a catch-up and a return from travel; an event banner comes down when the guild leaves its Region; unclicked knock-out and problem banners are saved and shown again | CR4-146, CR4-147, CR4-113 |
+| T-446 | P3 | open | **Pinned item stubs count time away** (owner 2026-11-17): add the catch-up's gained and spent to every pinned stub and save the pins | CR4-148 |
+| T-447 | P3 | open | **A double-click on Load starts the slot twice**: guard `startSlot`. The owner saw no sign in a desktop try (2026-11-17) | CR4-149 |
+| T-448 | P3 | open | **A failed "Load as I left it" cannot be retried**: clear the undo only after the write succeeds; keep the summary open | CR4-151 |
+| T-449 | P3 | open | **One copy of the desktop game at a time** (owner 2026-11-17): the single-instance plugin, a second launch focuses the open window | CR4-152 |
+| T-450 | P3 | open | **A failed save on closing closes anyway, unseen**: cancel the close once and show the banner (the Rust `CLOSING` flag and grace thread need a command) | CR4-153 |
+| T-451 | P3 | open | **"Save Game Now" gives no sign it saved**: show "Saved" from the write's result | CR4-154 |
+| T-452 | P3 | open | **A new player's master volume is lost once on the next load** | CR4-155 |
+| T-453 | P3 | open | **An Encyclopedia tick stays once the guild has had a Token** (owner 2026-11-17): a settled place's chest keeps its tick after it is opened | CR4-156 |
+| T-454 | P3 | open | **Browser "storage is full" says to export, and there is no export**: reword (dev builds only, owner 2026-11-16) | CR4-157 |
+| T-455 | P2 | open | **Saves follow a CMS rename** (owner 2026-11-16): the CMS records each rename old id to new id, the Sync carries the table, and a load rewrites old ids everywhere they live (Bank keys and tab orders, loadouts, every Region's Tokens and loot, `state.world`, station picks, collections, pins); widen the save check to every place an id lives and correct its wording. Large; engineer | CR4-160, CR4-162, CR4-127 |
+| T-456 | P1 | open | **A CMS delete strands a save**: a held mat counts only arrival enemies whose type is still an enemy, and `occupy` skips a row that is not (CR4-158, P1); a place's price row naming a missing item is dropped or re-drawn (CR4-159); kinds with no definition take no Bank slot (CR4-162); a station's pick or a Field's crop not in the pool is read as nothing picked, never deleted (CR4-163) | CR4-158, CR4-159, CR4-162, CR4-163 |
+| T-457 | P2 | open | **A star held at a rank the CMS took away gives nothing**: read the rank as at most the star's top rank, without rewriting the save | CR4-161 |
+| T-458 | P3 | open | **An unanswered away summary is offered again on the next start** (owner 2026-11-16), with "Load as I left it" still available; closing is not a choice | CR4-164 |
+| T-459 | P3 | open | **A missing or empty save with a good backup shows "Empty"**: show it damaged so Load restores from the backup | CR4-166 |
+| T-460 | P3 | open | **Latent: a lesson that gains its content, and a rule with a cooldown**: fix the engine now (owner 2026-11-17); item 1 with the code change that sets the scrap heap's target | CR4-167 |
+
+**Screens and drag (D4)**
+
+| ID | Pri | Status | Summary | Origin |
+|---|---|---|---|---|
+| T-461 | P2 | open | **A fighting hero's health on the hero bar and in the drawer stands still**: give them the mat bar's HP events (hits, food, poison ticks) | CR4-168 |
+| T-462 | P2 | open | **A Token's "!" wrong after a PC sleep or a catch-up**: re-read the spawner and growth alerts on `GAME_RESET` | CR4-169 |
+| T-463 | P3 | open | **Hidden drop targets take a drop**: a Bank tile outside its list's visible box, or covered by the Hero drawer, is no target (one guard in `pointerWithinBoxes`) | CR4-171, CR4-181 |
+| T-464 | P3 | open | **Travel wipes the hero bar's level-up alerts**: keep them across travel | CR4-173 |
+| T-465 | P3 | open | **The last lesson opens the world map under an open Bank, Shop, Settings or Hall**: open it through the nav's close-everything path, and hold it during a drag | CR4-175 |
+| T-466 | P3 | open | **Escape in a place's rename box closes the world map**, and Escape cancelling a drag over the map closes it too | CR4-176 |
+| T-467 | P3 | open | **An event banner clicked with the Encyclopedia open shows nothing**: close the book, then pulse the Token | CR4-177 |
+| T-468 | P3 | open | **Hero readouts that say go or working when they are not**: a healing hero lights no Token green; a flag's hover uses the hero bar's line and colour when its Token is stuck | CR4-178, CR4-179 |
+| T-469 | P3 | open | **A hero let go off the mat is sent to its edge**: a drop outside the mat is a miss | CR4-180 |
+| T-470 | P3 | open | **The first click in Edit Hero closes the Hero drawer behind it** | CR4-182 |
+| T-471 | P3 | open | **Bank order and search**: a forward drop lands one place short; an item that runs out loses its place after a reorder or sort, and one filed into a never-arranged tab goes first; "chiefs" misses "Chief's" | CR4-183, CR4-184, CR4-185 |
+| T-472 | P3 | open | **Token card cells from no recipe**: a Token marked for demolition shows no XP; a station with no recipe shows no time or XP, and its level once a recipe is chosen | CR4-186, CR4-187 |
+| T-473 | P3 | open | **A second station's gear at the same height does not move the card**, and the recipe list keeps the first station's search | CR4-188 |
+| T-474 | P3 | open | **Text size: Reset then X keeps the reset and loses custom sizes**: make Reset a preview | CR4-189 |
+| T-475 | P3 | open | **Mat callouts**: a reason over a Token on the mat's edge is clipped (clamp inside the mat); the Guild Hall dropped on a bad spot no longer says it "cannot be removed" | CR4-190, CR4-191 |
+| T-476 | P3 | open | **No hero drag while a full-screen view is open** (owner 2026-11-17): Encyclopedia, Guild Hall, world map and any other full-screen view found; heroes only, item drags keep working; the hero figure shows it cannot be dragged | CR4-193 |
+| T-477 | P3 | open | **The recipe list shows the base time with the station's real time beside it** (owner 2026-11-17); the input half is T-406 | CR4-194 |
+| T-478 | P3 | open | **One click buys one rank** (owner 2026-11-17): a second Upgrade click within about half a second is ignored | CR4-195 |
+| T-479 | P3 | open | **Latent: after a crash in a drawer, the Shop, the hero bar or the banners, the Reload button cannot be clicked** and the panel takes over the screen | CR4-196 |
+| T-480 | P3 | open | **Latent: a Shop price of more than four items, and a second Lap Time rule**: fix the engine now (owner 2026-11-17) | CR4-197 |
+
 ### Brief 210 — the backlog intake (owner 2026-10-22, Backlog director)
 
 Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); the owner's words in `docs/active/research/backlog_intake_2026-10-22.md` (intake codes in brackets).
@@ -223,7 +320,6 @@ first, when content that uses it is authored.*
 | T-074 | latent | Item rules can be given moments that never fire. | CR3-202 |
 | T-075 | latent | Rule upkeep pays from the Bank only (spawner upkeep is fixed by TL-20). | CR3-204, FB §5.4 |
 | T-076 | latent | Each cure reaches only one of the two effect systems. | CR3-251 |
-| T-077 | latent | Timed effects lose combat numbers on reload; use game time, not the wall clock. | CR3-252 |
 | T-079 | latent | Loading rewrites the Guild Hall's definition. | CR3-257 |
 | T-081 | latent | Engine init isn't safe to run twice — only matters with a "back to title" feature. | CR3-108 |
 | T-082 | latent | Shop's unreachable refund path skips mat events. | CR3-206 |

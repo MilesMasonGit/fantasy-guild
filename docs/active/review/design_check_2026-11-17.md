@@ -302,3 +302,7 @@ Where an answer differs from the options offered, the answer wins.
   filed at P3.
 - **CR4-170, CR4-174, CR4-192**: not tried yet; the owner will try them tonight. Held, not filed,
   until then.
+
+## Tickets filed (2026-11-17)
+
+T-409 to T-480 in [TICKETS.md](../../reference/TICKETS.md), section "Code review deep read", one ticket per fix (findings that share a fix share a ticket), and T-077 reopened for CR4-140 (latent, fixed now with the rest). CR4-132 goes with T-402; CR4-165 is owner-no; CR4-170, CR4-174 and CR4-192 wait for the owner's desktop try. T-338 item (4) is superseded by T-438. Every finding's State line in D1 to D4 names its ticket. Fix briefs are the next step.
