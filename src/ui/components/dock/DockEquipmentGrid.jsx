@@ -16,6 +16,7 @@ import { itemTintStyle } from '../base/itemTint.js';
 import { EffectChip } from '../board/EffectBadges.jsx';
 import { onPoll } from '../board/frameClock.js';
 import { carriedPreservation } from '../../../systems/board/EffectBreakdown.js';
+import { t } from '../../../i18n/index.js';
 
 /** How often a slot's Preservation badge looks again: a building placed or a hero arriving changes it. */
 const BADGE_REFRESH_MS = 1000;
@@ -172,6 +173,9 @@ const EquipSlotCell = ({ heroId, slot, itemId, quantity, shineKey = null }) => {
 // and change of target; the slot is memoised on what it draws.
 const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quantity, shineKey, cue, held, nodeRef, handleProps, droppableProps }) {
     const item = itemId ? getItem(itemId) : null;
+    // ⚠️ An id with no item was deleted in the CMS after the save was written. The slot names it
+    // rather than looking empty, since it still takes a slot until the player clears it.
+    const missing = !!itemId && !item;
     const category = itemId ? categoryOfItem(itemId) : null;
     const info = getCategoryInfo(category);
     const showQuantity = item && info.kind && info.kind !== CATEGORY_KINDS.GEAR;
@@ -188,6 +192,7 @@ const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quanti
                     unequipOrAnnounce(EquipmentManager, heroId, slot);
                 }
             }}
+            title={missing ? t('equipment.missing', { item: itemId }) : undefined}
             style={item ? itemTintStyle(item) : undefined}
             className={cn(
                 'relative aspect-square flex items-center justify-center overflow-visible transition-colors select-none',
@@ -203,6 +208,10 @@ const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quanti
             {item ? (
                 <span style={{ imageRendering: 'pixelated' }} className="ui-loadout-item flex items-center justify-center pointer-events-none">
                     <ItemIcon item={item} size={64} />
+                </span>
+            ) : missing ? (
+                <span data-equip-missing className="px-1 text-center ui-text-small font-semibold leading-tight break-all text-gi-danger pointer-events-none">
+                    {itemId}
                 </span>
             ) : (
                 <span className="text-sm opacity-20 text-gi-muted pointer-events-none">+</span>

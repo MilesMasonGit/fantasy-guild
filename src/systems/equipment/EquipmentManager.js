@@ -127,10 +127,19 @@ function fightRefusal(...heroes) {
     return fighter ? { success: false, error: t('equipment.fighting', { hero: fighter.name }) } : null;
 }
 
+/**
+ * Whether slot `slot` holds a copy that goes back to the Bank when it leaves. A copy of an item deleted
+ * in the CMS does not: the Bank cannot hold what it cannot name, so it is thrown away. The load keeps
+ * such a slot (a half-finished rename must stay recoverable); only the player's gesture clears it.
+ */
+function returnsCopy(hero, slot) {
+    return holdsCopy(hero, slot) && !!getItem(getGrid(hero)[slot]);
+}
+
 /** Empty a slot, putting a held copy back in the Bank unless `returnCopy` is false (the caller checked the room). */
 function vacate(heroId, hero, slot, { returnCopy = true } = {}) {
     const itemId = hero.equipment[slot];
-    if (returnCopy && holdsCopy(hero, slot)) InventoryManager.putBack(itemId);
+    if (returnCopy && returnsCopy(hero, slot)) InventoryManager.putBack(itemId);
     hero.equipment[slot] = null;
     markHeld(hero, slot, false);
 
@@ -214,7 +223,7 @@ export function equipItem(heroId, itemId, preferredSlot = null, from = null) {
 
     const grid = getGrid(hero);
     const leaving = [...(grid[slot] ? [slot] : []), ...handsToFree(hero, itemId, slot)];
-    const returning = leaving.filter(s => holdsCopy(hero, s)).map(s => grid[s]);
+    const returning = leaving.filter(s => returnsCopy(hero, s)).map(s => grid[s]);
     // ⚠️ The new copy leaves the Bank before the displaced ones come back: taking out its last copy
     // frees the slot one of them may need.
     const freed = copy && !giver ? itemId : null;
@@ -268,7 +277,7 @@ export function moveItem(heroId, itemId, fromSlot, toSlot) {
 
 /**
  * Unequip an item from a hero's slot. A held copy goes back to the Bank; with no room there it
- * stays with the hero and the refusal says so.
+ * stays with the hero and the refusal says so. A copy of a deleted item is thrown away (`returnsCopy`).
  */
 export function unequipItem(heroId, slot) {
     const hero = HeroManager.getHero(heroId);
@@ -277,7 +286,7 @@ export function unequipItem(heroId, slot) {
     if (fighting) return fighting;
 
     const itemId = hero.equipment[slot];
-    if (holdsCopy(hero, slot) && !InventoryManager.hasRoomFor([itemId])) return bankFull(hero, itemId);
+    if (returnsCopy(hero, slot) && !InventoryManager.hasRoomFor([itemId])) return bankFull(hero, itemId);
 
     vacate(heroId, hero, slot);
     return { success: true };
