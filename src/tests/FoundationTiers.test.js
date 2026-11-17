@@ -107,12 +107,12 @@ describe('the engine: a Foundation’s pool', () => {
         expect(high.selectedRecipeId).toBe(HALL);
     });
 
-    it('an old save that chose a recipe above the tier is dropped back to Choose what to build', () => {
+    it('an old save that chose a recipe above the tier reads as Choose what to build, the pick kept', () => {
         const saved = { id: 't_saved', typeId: 'fixture_tier_1', selectedRecipeId: HALL };
         const result = resolveRecipe(saved.id, saved);
         expect(result.recipe).toBeNull();
         expect(result.reason).toBe('choose_build');
-        expect(saved.selectedRecipeId).toBeUndefined();
+        expect(saved.selectedRecipeId).toBe(HALL);
 
         const ok = { id: 't_ok', typeId: 'fixture_tier_2', selectedRecipeId: HALL };
         expect(resolveRecipe(ok.id, ok).recipe?.id).toBe(HALL);

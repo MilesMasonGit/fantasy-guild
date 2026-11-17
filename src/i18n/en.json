@@ -704,6 +704,7 @@
         "yields": "Yields",
         "price": "Price",
         "nothingAsked": "Nothing",
+        "dropped": "No longer asked, gone from the game: {what}",
         "more": "+{count}",
         "settle": "Settle",
         "travel": "Travel",

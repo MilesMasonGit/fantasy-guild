@@ -127,14 +127,20 @@ describe('The selection is the recipe\'s stable id', () => {
         expect(kitchen.selectedRecipeId).toBe('pooled_stew');
     });
 
-    it('a selection whose recipe no longer exists becomes no recipe (TL-15)', () => {
-        // A CMS deletion under a live save. It used to re-default; now the
-        // station waits for the player and says so ("Choose a recipe").
+    it('a selection whose recipe no longer exists reads as no recipe, and is kept', () => {
+        // A CMS deletion under a live save: the station waits for the player and says so
+        // ("Choose a recipe"), and the id stays so the recipe coming back restores the pick.
         const kitchen = place(A, 'fixture_kitchen');
         kitchen.selectedRecipeId = 'recipe_that_was_deleted';
         expect(StationRecipe.validateSelection(kitchen)).toBeNull();
-        expect('selectedRecipeId' in kitchen).toBe(false);
         expect(RecipeResolver.resolveRecipe(kitchen.id, kitchen).reason).toBe('choose_recipe');
+        expect(kitchen.selectedRecipeId).toBe('recipe_that_was_deleted');
+        // Placed again (a move), it still holds it.
+        Placement.placeTokenAt(kitchen, C(NEIGHBOUR + 6));
+        expect(kitchen.selectedRecipeId).toBe('recipe_that_was_deleted');
+        // Only the player's pick overwrites it.
+        expect(StationRecipe.setSelectedRecipe(kitchen, 'pooled_stew')).toBe(true);
+        expect(kitchen.selectedRecipeId).toBe('pooled_stew');
     });
 });
 

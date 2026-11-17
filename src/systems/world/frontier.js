@@ -43,24 +43,35 @@ export function cellStates(world, settled) {
 }
 
 /**
- * A cell's price against what the guild has: `{ items, skills, met }`, where each item is
- * `{ itemId, need, have, short }` and each skill `{ skill, need, have, short }`. A cell with no
- * price (the Hall's) is met.
+ * A cell's price against what the guild has: `{ items, skills, dropped, met }`, where each item is
+ * `{ itemId, need, have, short }`, each skill `{ skill, need, have, short }`, and `dropped` the
+ * item ids the price names that have no definition now. A cell with no price (the Hall's) is met.
+ *
+ * ⚠️ The world's prices are written once, at the new game, so an item deleted or renamed in the
+ * CMS since would make its place unpayable for good: such a row is not asked (and not paid), and
+ * the stored price keeps it, so restoring the id restores the row.
  *
  * @param {object} cell a world cell
- * @param {{ itemCount: (itemId: string) => number, skillLevel: (skill: string) => number }} guild
+ * @param {{ itemCount: (itemId: string) => number, skillLevel: (skill: string) => number,
+ *   itemKnown?: (itemId: string) => boolean }} guild
  */
-export function priceRows(cell, { itemCount, skillLevel }) {
+export function priceRows(cell, { itemCount, skillLevel, itemKnown = () => true }) {
     const req = cell?.requires || { items: [], skills: [] };
-    const items = (req.items || []).map(({ itemId, qty }) => {
+    const dropped = [];
+    const items = [];
+    for (const { itemId, qty } of req.items || []) {
+        if (!itemKnown(itemId)) {
+            dropped.push(itemId);
+            continue;
+        }
         const have = Math.max(0, Math.floor(Number(itemCount(itemId)) || 0));
-        return { itemId, need: qty, have, short: have < qty };
-    });
+        items.push({ itemId, need: qty, have, short: have < qty });
+    }
     const skills = (req.skills || []).map(({ skill, level }) => {
         const have = Math.max(0, Math.floor(Number(skillLevel(skill)) || 0));
         return { skill, need: level, have, short: have < level };
     });
-    return { items, skills, met: !items.some(r => r.short) && !skills.some(r => r.short) };
+    return { items, skills, dropped, met: !items.some(r => r.short) && !skills.some(r => r.short) };
 }
 
 /**

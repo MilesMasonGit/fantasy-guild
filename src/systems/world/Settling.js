@@ -8,6 +8,7 @@ import * as Atlas from '../atlas/Atlas.js';
 import { nextSeed } from '../atlas/seededRandom.js';
 import { TEXT as REGION_TEXT, flavourName } from '../atlas/regionNames.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { getItem } from '../../config/registries/itemRegistry.js';
 import { worldTables } from '../../config/registries/worldTablesRegistry.js';
 // Loads the authored stars into the sky (`data/hallStars.json`) before a ring is read.
 import '../../config/registries/hallStarRegistry.js';
@@ -74,6 +75,7 @@ export function guildSkillLevel(skill) {
 
 const guild = () => ({
     itemCount: (itemId) => InventoryManager.getItemCount(itemId),
+    itemKnown: (itemId) => getItem(itemId) != null,
     skillLevel: guildSkillLevel
 });
 

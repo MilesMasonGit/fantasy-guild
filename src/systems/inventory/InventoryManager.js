@@ -9,6 +9,16 @@ import { RegistryManager } from '../progression/RegistryManager.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 import { BANK_TAB_SLOTS, homeTabOf, bankTabCounts, bankTabLayout } from './bankTabs.js';
 
+/**
+ * The kinds the Bank holds that take a slot: those the game still has a definition for.
+ *
+ * ⚠️ A kind deleted or renamed in the CMS stays in the save (restoring the id restores the stack),
+ * but the Bank cannot show, move or spend it, so it must not hold a slot the player cannot free.
+ */
+function slottedKinds() {
+    return Object.keys(InventoryStore.getItems()).filter(id => getItem(id) != null);
+}
+
 /** Batching depth: while > 0, Bank changes are summed per item and announced when it ends. */
 let batchDepth = 0;
 /** @type {Map<string, {added: number, removed: number}>} what the open batch changed, per item */
@@ -54,18 +64,19 @@ export const InventoryManager = {
      */
     freeSlots() {
         const inv = GameState.inventory;
-        const used = Object.keys(InventoryStore.getItems()).length;
+        const kinds = slottedKinds();
+        const used = kinds.length;
         const total = Math.max(0, (inv.maxSlots ?? 20) - used);
         // Below one tab's worth no tab can be full.
         if (used < BANK_TAB_SLOTS || total === 0) return total;
         let free = 0;
-        for (const n of bankTabCounts(inv).values()) free += Math.max(0, BANK_TAB_SLOTS - n);
+        for (const n of bankTabCounts(inv, kinds).values()) free += Math.max(0, BANK_TAB_SLOTS - n);
         return Math.min(total, free);
     },
 
     /** Whether a tab has a free slot for one more item kind. */
     tabHasRoom(groupId) {
-        return (bankTabCounts(GameState.inventory).get(groupId) ?? BANK_TAB_SLOTS) < BANK_TAB_SLOTS;
+        return (bankTabCounts(GameState.inventory, slottedKinds()).get(groupId) ?? BANK_TAB_SLOTS) < BANK_TAB_SLOTS;
     },
 
     /**
@@ -74,7 +85,7 @@ export const InventoryManager = {
      */
     _fileNewKind(itemId) {
         const inv = GameState.inventory;
-        const counts = bankTabCounts(inv);
+        const counts = bankTabCounts(inv, slottedKinds());
         const home = homeTabOf(inv, itemId);
         if ((counts.get(home) ?? BANK_TAB_SLOTS) < BANK_TAB_SLOTS) return;
         const roomy = (inv.groupOrder || []).find(gid => counts.get(gid) < BANK_TAB_SLOTS);
@@ -94,9 +105,10 @@ export const InventoryManager = {
     spillOverfullTabs() {
         const inv = GameState.inventory;
         const order = inv.groupOrder || [];
-        if (order.length < 2 || Object.keys(InventoryStore.getItems()).length <= BANK_TAB_SLOTS) return 0;
-        const counts = bankTabCounts(inv);
-        const layout = bankTabLayout(inv);
+        const kinds = slottedKinds();
+        if (order.length < 2 || kinds.length <= BANK_TAB_SLOTS) return 0;
+        const counts = bankTabCounts(inv, kinds);
+        const layout = bankTabLayout(inv, kinds);
         let moved = 0;
         for (const gid of order) {
             for (const itemId of layout[gid].slice(BANK_TAB_SLOTS)) {
@@ -232,7 +244,7 @@ export const InventoryManager = {
         let free = this.freeSlots();
         if (freed && counts.has(freed)) {
             counts.set(freed, counts.get(freed) - 1);
-            if (counts.get(freed) <= 0) free++;
+            if (counts.get(freed) <= 0 && getItem(freed)) free++;
         }
         for (const itemId of itemIds) {
             const template = getItem(itemId);

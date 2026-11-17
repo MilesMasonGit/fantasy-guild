@@ -15,6 +15,8 @@ import { isGuildHall } from '../board/MatCap.js';
 import { mulberry32 } from '../atlas/seededRandom.js';
 import * as Atlas from '../atlas/Atlas.js';
 import { logger } from '../../utils/Logger.js';
+import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 
 /**
  * A newly settled place arrives occupied (owner): its mat darkened, with a small fixed
@@ -180,14 +182,17 @@ export function occupy(arrival, { seed = 0 } = {}) {
     const board = GameState.state?.board;
     const ids = [];
     const unplaced = [];
-    if (!board || !Array.isArray(arrival) || !arrival.length) return { ids, unplaced };
-    const total = arrival.reduce((n, row) => n + Math.max(0, row?.count || 0), 0);
+    // A row whose type is no longer an enemy (deleted or renamed in the CMS since the world was
+    // drawn) is left out: nothing could ever fight it, and the stored world keeps the row.
+    const rows = Array.isArray(arrival) ? arrival.filter(row => isEnemyDef(getTokenType(row?.typeId))) : [];
+    if (!board || !rows.length) return { ids, unplaced };
+    const total = rows.reduce((n, row) => n + Math.max(0, row?.count || 0), 0);
     const hall = BoardState.tokens().find(isGuildHall) || null;
     const roster = (GameState.state?.heroes || []).length;
     const spots = spreadOf(seed, total, { centre: hall });
     const regionId = Atlas.activeRegionId() || 'mat';
     let k = 0;
-    for (const row of arrival) {
+    for (const row of rows) {
         for (let n = 0; n < (row?.count || 0); n++) {
             const aim = spots[k];
             k++;

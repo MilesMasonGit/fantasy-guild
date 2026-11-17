@@ -33,11 +33,17 @@ export function isOccupied() {
     return !!a && a.cleared !== true;
 }
 
-/** The arrival's enemies still standing on the live mat, in their written order. */
+/**
+ * The arrival's enemies still standing on the live mat, in their written order.
+ *
+ * ⚠️ Only Tokens whose type is still an enemy: one whose type was deleted or renamed in the CMS
+ * stays on the mat (restoring the id restores the fight) but can never be fought, so counting it
+ * would hold the mat for good.
+ */
 export function standingEnemies() {
     const a = arrivalOf();
     if (!a) return [];
-    return a.ids.map(id => BoardState.getTokenById(id)).filter(Boolean);
+    return a.ids.map(id => BoardState.getTokenById(id)).filter(t => t && isEnemyDef(getTokenType(t.typeId)));
 }
 
 /** Whether instance id `id` is one of the live mat's arrival enemies (standing or beaten). */

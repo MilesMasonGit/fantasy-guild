@@ -446,7 +446,21 @@ describe('old saves and changed content', () => {
         expect(WorkCheck.fixableReason(old.id, old).reason).toBe(ALERT.CHOOSE_RECIPE);
     });
 
-    it('a crop gone from its recipes reads as empty ground, and is cleared on the next change', () => {
+    it('⭐ a crop and a pick gone from its recipes read as empty and nothing picked, and are kept', () => {
+        const field = arrive('fa_field');
+        field.selectedRecipeId = 'fa_recipe_gone';
+        field.field = { cropId: 'fa_recipe_gone', load: 2, full: 3 };
+        InventoryManager.addItem(SEED, 5);
+        expect(stage(field)).toBe(Fields.STAGE.EMPTY);
+        expect(WorkCheck.fixableReason(field.id, field).reason).toBe(ALERT.CHOOSE_RECIPE);
+        tick(5000);
+        effectiveIO(field.id, field);
+        expect(field.selectedRecipeId).toBe('fa_recipe_gone');
+        expect(field.field).toEqual({ cropId: 'fa_recipe_gone', load: 2, full: 3 });
+        expect(seeds()).toBe(5);
+    });
+
+    it('a crop gone from its recipes reads as empty ground, and is replaced by a sowing of the player pick', () => {
         const field = arrive('fa_field');
         field.field = { cropId: 'fa_recipe_gone', load: 2, full: 3 };
         expect(stage(field)).toBe(Fields.STAGE.EMPTY);

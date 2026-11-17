@@ -138,7 +138,7 @@ export function resolveRecipe(instanceId, instance) {
     if (!recipes.length) return { status: RECIPE.OK, recipe: null };
 
     // Nothing is ever picked for the player: until they choose, a station has nothing to run. A
-    // selection no longer in the pool is dropped here and reads the same way. A Field works the
+    // selection no longer in the pool reads the same way (and is kept). A Field works the
     // crop in its ground, which a change of pick does not dig up (`Fields.js`).
     const recipe = Fields.isField(def)
         ? (Fields.plantedCrop(instance, def) || StationRecipe.validateSelection(instance, def))
