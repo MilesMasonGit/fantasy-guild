@@ -74,7 +74,8 @@ function place(tile, typeId, heroId) {
 }
 
 /** The XP one kill worth `award` gives `hero`, won in a live fight on an enemy Token. */
-function killXp(hero, award = 10) {
+/** `roll` is every draw while the kill is paid: 0.99 keeps a fraction of XP back, 0 pays it. */
+function killXp(hero, award = 10, roll = 0.99) {
     const enemy = place(10, 'fixture_enemy', hero.id);
     BoardRunner.tick(100);
     const fight = BoardCombat.getFight(enemy.id);
@@ -83,8 +84,10 @@ function killXp(hero, award = 10) {
 
     const before = hero.skills.melee.xp;
     // A copy of the live fight: its enemy Token and its hero, without ending the real one.
+    const random = vi.spyOn(Math, 'random').mockReturnValue(roll);
     handleVictory({ ...fight, combat: { state: {} }, drops: [] }, hero,
         { id: 'fixture_enemy', name: 'Fixture Enemy', xpAwarded: award }, hero.id, [hero.id]);
+    random.mockRestore();
     return hero.skills.melee.xp - before;
 }
 
@@ -148,20 +151,29 @@ describe('a kill gets its style\'s XP bonuses', () => {
         expect(killXp(makeHero('h1', ['xpb_merry_charm']), 20)).toBe(Math.round(20 * (1 + value)));
     });
 
-    it('keeps the +1 floor: +10% on a 1 XP kill gives 2', () => {
+    it('has no floor: +10% on a 1 XP kill is 1 on most draws', () => {
         getGlobalAggregator().addModifier({
             source: 'test:star', type: EFFECT_TYPES.XP_BONUS, target: { category: 'melee' }, value: 0.1
         });
-        expect(killXp(makeHero('h1'), 1)).toBe(2);
+        expect(killXp(makeHero('h1'), 1, 0.99)).toBe(1);
+    });
+
+    it('carries the fraction by chance: +10% on a 1 XP kill is 2 on a lucky draw', () => {
+        getGlobalAggregator().addModifier({
+            source: 'test:star', type: EFFECT_TYPES.XP_BONUS, target: { category: 'melee' }, value: 0.1
+        });
+        expect(killXp(makeHero('h1'), 1, 0)).toBe(2);
     });
 });
 
 describe('work XP is unchanged', () => {
     /** The Forestry XP of one work cycle (4 XP authored) for `hero`. */
-    function cycleXp(hero) {
+    function cycleXp(hero, roll = 0.99) {
         place(11, 'fixture_producer', hero.id);
         const before = hero.skills.forestry.xp;
+        const random = vi.spyOn(Math, 'random').mockReturnValue(roll);
         for (let t = 0; t < 12000; t += 100) BoardRunner.tick(100);
+        random.mockRestore();
         return hero.skills.forestry.xp - before;
     }
 
@@ -173,8 +185,11 @@ describe('work XP is unchanged', () => {
         expect(cycleXp(makeHero('h1', ['xpb_melee_charm']))).toBe(4);
     });
 
-    it('Merry widens a work cycle through the same floor', () => {
-        // 4 × 1.1 = 4.4: a positive bonus adds at least 1.
-        expect(cycleXp(makeHero('h1', ['xpb_merry_charm']))).toBe(5);
+    it('Merry widens a work cycle by chance, as a kill: 4 × 1.1 = 4.4 is 4 on an unlucky draw', () => {
+        expect(cycleXp(makeHero('h1', ['xpb_merry_charm']), 0.99)).toBe(4);
+    });
+
+    it('...and 5 on a lucky one (four times in ten)', () => {
+        expect(cycleXp(makeHero('h1', ['xpb_merry_charm']), 0.3)).toBe(5);
     });
 });

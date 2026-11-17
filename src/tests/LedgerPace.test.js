@@ -127,13 +127,13 @@ describe('the profiles', () => {
 
         const typical = vein(PROFILE.TYPICAL);
         const ids = typical.chosen.map(c => c.id);
-        // Beer pays as it is drunk (XP doubled on a 1-XP cycle, the XP floor); the camp and the Mine pay back in minutes.
+        // Beer pays as it is drunk (+10 % XP); the camp and the Mine pay back in minutes.
         expect(ids).toEqual(expect.arrayContaining(['item_beer', 'token_mining_camp', 'token_mine']));
         // The Gold Statue's 1 % for 1000 wood never pays back within the two hours.
         expect(ids).not.toContain('token_statue');
         expect(typical.chosen.find(c => c.id === 'token_mine').payback).toBeLessThan(2);
         expect(typical.items.item_copper_ore).toBeCloseTo(720 * 1.5 * 1.25);
-        expect(typical.xp.mining).toBeCloseTo(1440);
+        expect(typical.xp.mining).toBeCloseTo(720 * 1.1);
 
         const maxed = vein(PROFILE.MAXED);
         expect(maxed.chosen.map(c => c.id)).toEqual(expect.arrayContaining([...ids, 'token_statue']));
@@ -214,11 +214,8 @@ describe('checks D', () => {
         expect(f.find(x => x.check === 'unlock-wall' && x.key === 'token:token_statue').message).toMatch(/gathering Oak Wood/);
     });
 
-    it('Beer over the consumable target, once, with every work it lifts', () => {
-        const beer = findings().filter(x => x.check === 'boost-target');
-        expect(beer).toHaveLength(1);
-        expect(beer[0].key).toBe('item:item_beer');
-        expect(beer[0].message).toMatch(/Copper Vein \+100 %/);
+    it('Beer at +10 % XP is a true 10 % on a 1-XP cycle, so it stays under the consumable target', () => {
+        expect(findings().filter(x => x.check === 'boost-target')).toEqual([]);
     });
 
     it('Guild Hall ranks that add no rate are named, not priced; Bunk Beds pay back in hours of wood', () => {

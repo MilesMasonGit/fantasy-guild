@@ -42,6 +42,7 @@ const ITEMS = {
     oo_pick: hand('oo_pick', 'Test Pickaxe', { tool: { kind: 'pickaxe', tier: 1 } }),
     oo_axe: hand('oo_axe', 'Test Woodaxe', { tool: { kind: 'woodaxe', tier: 1 } }),
     oo_great: hand('oo_great', 'Test Greatsword', { type: 'weapon', hands: 2 }),
+    oo_sword: hand('oo_sword', 'Test Sword', { type: 'weapon' }),
     oo_hat_a: { id: 'oo_hat_a', name: 'Test Cap', type: 'armor', equipSlot: 'hat', stackable: true },
     oo_hat_b: { id: 'oo_hat_b', name: 'Test Helm', type: 'armor', equipSlot: 'hat', stackable: true },
     oo_plate: { id: 'oo_plate', name: 'Test Plate', type: 'armor', equipSlot: 'chest', stackable: true, effects: [{ effectId: 'oo_effect_plating', scale: 1 }] },
@@ -397,7 +398,7 @@ describe('handing an item to another hero: what a drop on them does', () => {
         expect(grid(bram)).toContain('oo_bread');
     });
 
-    it('a full loadout refuses with the reason, and the item stays with the giver', () => {
+    it('a full loadout with nothing of the kind to trade refuses with the reason, and the item stays with the giver', () => {
         const aela = addHero('Aela');
         const bram = addHero('Bram');
         give('oo_pick', 1);
@@ -411,7 +412,7 @@ describe('handing an item to another hero: what a drop on them does', () => {
         expect(heldCount('oo_pick')).toBe(1);
     });
 
-    it('a full loadout refuses even when it holds one of the same kind to trade', () => {
+    it('a full loadout holding one of the same kind trades it, as a drop from the Bank does: the replaced piece goes to the Bank', () => {
         const aela = addHero('Aela');
         const bram = addHero('Bram');
         give('oo_hat_a', 1);
@@ -419,10 +420,28 @@ describe('handing an item to another hero: what a drop on them does', () => {
         equipOk(aela.id, 'oo_hat_a');
         equipOk(bram.id, 'oo_hat_b', 0);
         fillLoadout(bram, 1);
-        const res = EquipmentManager.equipItem(bram.id, 'oo_hat_a', null, { heroId: aela.id, slot: slotOf(aela, 'oo_hat_a') });
-        expect(res.success).toBe(false);
-        expect(grid(aela)).toContain('oo_hat_a');
-        expect(bram.equipment[0]).toBe('oo_hat_b');
+        expect(equipOrAnnounce(EquipmentManager, bram.id, 'oo_hat_a', null, lift(aela, 'oo_hat_a'))).toBe(true);
+        expect(bram.equipment[0]).toBe('oo_hat_a');
+        expect(holdsCopy(bram, 0)).toBe(true);
+        expect(grid(aela)).not.toContain('oo_hat_a');
+        expect(bank('oo_hat_b')).toBe(1);
+        expect(bank('oo_hat_a')).toBe(0);
+        expect(heldCount('oo_hat_a')).toBe(1);
+        expect(heldCount('oo_hat_b')).toBe(0);
+    });
+
+    it('a weapon handed to a full loadout takes the place of the weapon held', () => {
+        const aela = addFighter('Aela');
+        const bram = addFighter('Bram');
+        give('oo_great', 1);
+        give('oo_sword', 1);
+        equipOk(aela.id, 'oo_great');
+        equipOk(bram.id, 'oo_sword', 0);
+        fillLoadout(bram, 1);
+        expect(EquipmentManager.equipItem(bram.id, 'oo_great', null, { heroId: aela.id, slot: slotOf(aela, 'oo_great') }).success).toBe(true);
+        expect(bram.equipment[0]).toBe('oo_great');
+        expect(bank('oo_sword')).toBe(1);
+        expect(grid(aela)).not.toContain('oo_great');
     });
 
     it('a drop from the Bank onto a full hero still trades one of a kind, as it always did', () => {

@@ -15,8 +15,8 @@ import { paceHallSky } from './fixtures/paceHallSky.js';
  * The ledger knows the Guild Hall (brief 320 H2): the rate calculator reads every star a setup holds
  * as a switchable factor; Bare holds none, Typical buys a rank when it pays back at Typical, Maxed
  * holds them all; every rank's payback and a proposed price; the Hall's share in the per-skill
- * breakdown. On the pace world (`fixtures/paceWorld.js`, its vein at 10 XP a cycle so the XP floor
- * stays out of the way) with a small sky (`fixtures/paceHallSky.js`). The calculator against the
+ * breakdown. On the pace world (`fixtures/paceWorld.js`, its vein at 10 XP a cycle so its XP
+ * bonuses read as whole numbers) with a small sky (`fixtures/paceHallSky.js`). The calculator against the
  * board is `LedgerRates.test.js`; against the engine, `npm run bench:calibrate` (the `vein-hall` setup).
  */
 
@@ -333,7 +333,7 @@ describe('the payback check counts opening a star; a skill that gathers nothing 
 
     it('a star of a skill that gathers nothing is priced in that skill\'s main input, not the fastest gathered item', () => {
         const c = content();
-        // Ten XP a brew, so the XP floor stays out of the way.
+        // Ten XP a brew, so its XP bonus reads as a whole number.
         c.recipes.find(r => r.id === 'recipe_beer').xp = 10;
         c.hallSky.constellations.ph_cooking = { id: 'ph_cooking', name: 'Cooking', label: { x: 0, y: 0 }, skill: 'cooking' };
         addStar(c, 'ph_brew', 'ph_cooking', ['hall'], [{ itemId: 'item_oak_wood', quantity: 10 }], [rule('brew', 'XP_BONUS', 0.5, 'cooking')]);

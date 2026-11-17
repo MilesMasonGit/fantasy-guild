@@ -116,7 +116,7 @@ describe('the tab', { timeout: 20000 }, () => {
         openRow(view, 'tokens:token_big_hut', 'Big Hut');
         const path = within(view.getByLabelText('Path time'));
         expect([...view.container.querySelectorAll('[data-path-profile]')].map((r) => r.getAttribute('data-path-profile'))).toEqual(['bare', 'typical', 'maxed']);
-        expect(view.container.querySelector('[data-path-profile="typical"] [data-path-hours]').textContent).toMatch(/^6 h/);
+        expect(view.container.querySelector('[data-path-profile="typical"] [data-path-hours]').textContent).toMatch(/^7 h/);
         expect(path.getByText(/waits for Construction 15/)).toBeTruthy();
         // The Construction wall is filed under the skill; the page of what waits on it shows it too.
         expect(view.container.querySelector('[data-waits-on="wall"]').textContent).toMatch(/Construction 1 → 15/);
@@ -127,11 +127,11 @@ describe('the tab', { timeout: 20000 }, () => {
         fireEvent.click(view.getByRole('tab', { name: /Problems/ }));
         fireEvent.change(view.getByLabelText('Filter by group'), { target: { value: 'D' } });
         const checks = [...view.container.querySelectorAll('[data-finding]')].map((r) => r.getAttribute('data-finding'));
-        expect(checks).toEqual(expect.arrayContaining(['wall', 'stage-budget', 'profile-bounds', 'boost-target']));
+        expect(checks).toEqual(expect.arrayContaining(['wall', 'stage-budget', 'profile-bounds']));
         fireEvent.click(view.getAllByText('Construction')[0]);
         expect(view.getByRole('tab', { name: 'Pace' }).getAttribute('aria-selected')).toBe('true');
         expect(view.container.querySelector('[data-breakdown="construction|0"]')).toBeTruthy();
-        expect(view.container.querySelector('[data-stage="0"] [data-stage-hours]').textContent).toMatch(/^6 h/);
+        expect(view.container.querySelector('[data-stage="0"] [data-stage-hours]').textContent).toMatch(/^7 h/);
         expect(view.container.querySelector('[data-hall="roster_size|2"]')).toBeTruthy();
     });
 

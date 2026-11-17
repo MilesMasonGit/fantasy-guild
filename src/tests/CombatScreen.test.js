@@ -104,6 +104,8 @@ function buildFight(foeType = 'cs_venom') {
     stream.state = 41;
     resetMatTuning();
     GameState.initNew();
+    // A fight is the board's, not the save's: the last test's would still name this hero's id.
+    BoardCombat.clearAll();
     InventoryManager.init();
     LiveEffects.resetClock();
     const [hero] = fixtures.makeHeroes(1, {});

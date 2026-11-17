@@ -10,6 +10,7 @@ import * as LiveEffects from '../effects/LiveEffects.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import * as BoardCombat from './BoardCombat.js';
+import * as EquipmentManager from '../equipment/EquipmentManager.js';
 import * as StatusApplication from './StatusApplication.js';
 import * as DealDamage from './DealDamage.js';
 import * as EffectActions from './EffectActions.js';
@@ -185,9 +186,11 @@ export function run(fight, side, momentId, count = 0) {
 
 /**
  * Wire the combat engine's fight moments to this module, and tell the effect clock who is fighting
- * (a status lands only on a fighter). Idempotent; `TriggerSystem.init` calls it.
+ * (a status lands only on a fighter) and the loadout who is trading blows (no gear changes then).
+ * Idempotent; `TriggerSystem.init` calls it.
  */
 export function init() {
     setFightMomentRunner(run);
     LiveEffects.setFightCheck((heroId) => !!BoardCombat.fightOfHero(heroId));
+    EquipmentManager.setFightCheck(BoardCombat.tradingBlows);
 }

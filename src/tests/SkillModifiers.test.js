@@ -7,7 +7,7 @@ import { EFFECT_TYPES } from '../systems/effects/constants.js';
 
 /**
  * Skill levels and the hero's modifiers: a level gives no work speed, and `addXP` grants the award
- * its caller resolved, through the XP floor.
+ * its caller resolved, its fraction carried by chance.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -80,31 +80,62 @@ describe('addXP grants what the caller resolved', () => {
     });
 });
 
-describe('The XP floor: a positive XP bonus adds at least 1 XP', () => {
-    /** What a cycle or kill of `base` XP grants under a summed `bonus`, as the callers resolve it. */
-    function grant(base, bonus) {
+describe('An XP bonus is a true percentage: its fraction is carried by chance', () => {
+    /** What a cycle or kill of `base` XP grants under a summed `bonus`, with `roll` as the draw. */
+    function grant(base, bonus, roll = () => 0.5) {
         heroWithSkill('mining', 10);
-        return SkillSystem.addXP('hero_1', 'mining', SkillSystem.applyXpBonus(base, base * (1 + bonus))).granted;
+        return SkillSystem.addXP('hero_1', 'mining', SkillSystem.applyXpBonus(base, base * (1 + bonus), roll)).granted;
     }
 
-    it('+10% on a 1 XP cycle gives 2', () => expect(grant(1, 0.1)).toBe(2));
-    it('+10% on a 5 XP cycle gives 6', () => expect(grant(5, 0.1)).toBe(6));
-    it('+10% on a 20 XP cycle gives 22', () => expect(grant(20, 0.1)).toBe(22));
-    it('no bonus gives the base', () => expect(grant(1, 0)).toBe(1));
-    it('a negative bonus is plain rounding, never below 1 XP', () => {
-        expect(grant(10, -0.5)).toBe(5);
-        expect(grant(1, -0.1)).toBe(1);
+    it('+10% on a 1 XP cycle is 2 one time in ten, else 1', () => {
+        expect(grant(1, 0.1, () => 0.05)).toBe(2);
+        expect(grant(1, 0.1, () => 0.5)).toBe(1);
     });
 
-    it('a bonus that cancels out (+10% and -10%) gives the base', () => {
-        expect(grant(1, 0.1 - 0.1)).toBe(1);
-        expect(SkillSystem.applyXpBonus(5, 5.0000000001)).toBe(5);
+    it('+10% on a 5 XP cycle is 6 half the time, else 5', () => {
+        expect(grant(5, 0.1, () => 0.4)).toBe(6);
+        expect(grant(5, 0.1, () => 0.6)).toBe(5);
     });
 
-    it('applyXpBonus is the one rule for the tile axis too', () => {
-        expect(SkillSystem.applyXpBonus(1, 1.1)).toBe(2);
-        expect(SkillSystem.applyXpBonus(5, 5.5)).toBe(6);
-        expect(SkillSystem.applyXpBonus(4, 4)).toBe(4);
-        expect(SkillSystem.applyXpBonus(10, 5)).toBe(5);
+    it('a whole result draws nothing: +10% on 20 XP is 22', () => {
+        const roll = vi.fn(() => 0.99);
+        expect(grant(20, 0.1, roll)).toBe(22);
+        expect(roll).not.toHaveBeenCalled();
+    });
+
+    it('no bonus gives the base and draws nothing', () => {
+        const roll = vi.fn(() => 0);
+        expect(grant(1, 0, roll)).toBe(1);
+        expect(roll).not.toHaveBeenCalled();
+    });
+
+    it('a negative bonus is plain rounding, never below 1 XP, and draws nothing', () => {
+        const roll = vi.fn(() => 0);
+        expect(grant(10, -0.5, roll)).toBe(5);
+        expect(grant(1, -0.1, roll)).toBe(1);
+        expect(roll).not.toHaveBeenCalled();
+    });
+
+    it('a bonus that cancels out (+10% and -10%) gives the base and draws nothing', () => {
+        const roll = vi.fn(() => 0);
+        expect(grant(1, 0.1 - 0.1, roll)).toBe(1);
+        expect(SkillSystem.applyXpBonus(5, 5.0000000001, roll)).toBe(5);
+        expect(roll).not.toHaveBeenCalled();
+    });
+
+    it('many draws average the exact bonus', () => {
+        let seed = 1;
+        const roll = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+        let sum = 0;
+        for (let i = 0; i < 20000; i++) sum += SkillSystem.applyXpBonus(1, 1.1, roll);
+        expect(sum / 20000).toBeCloseTo(1.1, 1);
+    });
+
+    it('averageXpBonus is what a cycle pays on average, drawing nothing', () => {
+        expect(SkillSystem.averageXpBonus(1, 1.1)).toBeCloseTo(1.1);
+        expect(SkillSystem.averageXpBonus(5, 5.5)).toBeCloseTo(5.5);
+        expect(SkillSystem.averageXpBonus(4, 4)).toBe(4);
+        expect(SkillSystem.averageXpBonus(10, 5)).toBe(5);
+        expect(SkillSystem.averageXpBonus(1, 0.9)).toBe(1);
     });
 });

@@ -106,10 +106,40 @@ function bankFull(hero, itemId) {
     return { success: false, error: t('equipment.bankFull', { hero: hero.name, item: itemName(itemId) }) };
 }
 
+/**
+ * Who is trading blows, from the board (`BoardCombat.tradingBlows`). Handed in by
+ * `FightMoments.init` rather than imported: the board already reaches this module through
+ * `Breakage`, so an import back would close a cycle. Unwired, nobody counts as fighting.
+ */
+let tradingBlows = null;
+
+export function setFightCheck(fn) {
+    tradingBlows = typeof fn === 'function' ? fn : null;
+}
+
+/**
+ * The refusal when any of `heroes` is trading blows: no loadout changes from the moment an enemy
+ * steps up until it falls or the hero leaves, food and elixirs included. Only the player's three
+ * gestures ask; what a fight itself takes (`destroyEquipped`) and eating from the Bank do not.
+ */
+function fightRefusal(...heroes) {
+    const fighter = tradingBlows && heroes.find(h => h && tradingBlows(h.id));
+    return fighter ? { success: false, error: t('equipment.fighting', { hero: fighter.name }) } : null;
+}
+
+/**
+ * Whether slot `slot` holds a copy that goes back to the Bank when it leaves. A copy of an item deleted
+ * in the CMS does not: the Bank cannot hold what it cannot name, so it is thrown away. The load keeps
+ * such a slot (a half-finished rename must stay recoverable); only the player's gesture clears it.
+ */
+function returnsCopy(hero, slot) {
+    return holdsCopy(hero, slot) && !!getItem(getGrid(hero)[slot]);
+}
+
 /** Empty a slot, putting a held copy back in the Bank unless `returnCopy` is false (the caller checked the room). */
 function vacate(heroId, hero, slot, { returnCopy = true } = {}) {
     const itemId = hero.equipment[slot];
-    if (returnCopy && holdsCopy(hero, slot)) InventoryManager.putBack(itemId);
+    if (returnCopy && returnsCopy(hero, slot)) InventoryManager.putBack(itemId);
     hero.equipment[slot] = null;
     markHeld(hero, slot, false);
 
@@ -128,7 +158,8 @@ function vacate(heroId, hero, slot, { returnCopy = true } = {}) {
  * A copy item comes out of the Bank, or, when `from` names another hero's slot holding it, out of
  * that hero's hands (a hand-over; a shared item leaves that hero's loadout too). What it displaces
  * goes back to the Bank; if the Bank has no room for it, nothing happens and the refusal says so.
- * A hand-over dropped on the hero rather than on a slot needs an empty slot in their loadout.
+ * A hand-over finds its slot as a drop from the Bank does, so on a full loadout it replaces one of
+ * its kind, and the replaced piece goes to the Bank, not to the giver.
  *
  * @param {{heroId: string, slot: number}|null} [from] where a dragged item was picked up
  */
@@ -136,6 +167,10 @@ export function equipItem(heroId, itemId, preferredSlot = null, from = null) {
     const hero = HeroManager.getHero(heroId);
     const template = getItem(itemId);
     if (!hero || !template) return { success: false, error: 'Target not found' };
+
+    const giver = giverOf(heroId, itemId, from);
+    const fighting = fightRefusal(hero, giver?.hero);
+    if (fighting) return fighting;
 
     const { canEquip, reason } = EquipmentValidator.canHeroEquip(heroId, itemId);
     if (!canEquip) return { success: false, error: reason };
@@ -152,14 +187,9 @@ export function equipItem(heroId, itemId, preferredSlot = null, from = null) {
     }
 
     const copy = takesCopy(itemId);
-    const giver = giverOf(heroId, itemId, from);
     if (!giver && !InventoryManager.hasItem(itemId, 1)) {
         if (copy && heldCount(itemId) > 0) return { success: false, error: t('equipment.allInUse', { item: template.name }) };
         return { success: false, error: 'Out of stock' };
-    }
-
-    if (giver && preferredSlot === null && findFreeSlot(hero) === -1) {
-        return { success: false, error: 'No free slot in the loadout' };
     }
 
     let slot;
@@ -190,7 +220,7 @@ export function equipItem(heroId, itemId, preferredSlot = null, from = null) {
 
     const grid = getGrid(hero);
     const leaving = [...(grid[slot] ? [slot] : []), ...handsToFree(hero, itemId, slot)];
-    const returning = leaving.filter(s => holdsCopy(hero, s)).map(s => grid[s]);
+    const returning = leaving.filter(s => returnsCopy(hero, s)).map(s => grid[s]);
     // ⚠️ The new copy leaves the Bank before the displaced ones come back: taking out its last copy
     // frees the slot one of them may need.
     const freed = copy && !giver ? itemId : null;
@@ -224,6 +254,8 @@ export function moveItem(heroId, itemId, fromSlot, toSlot) {
     const hero = HeroManager.getHero(heroId);
     if (!Array.isArray(hero?.equipment) || hero.equipment[fromSlot] !== itemId) return { success: false, error: 'Slot is empty' };
     if (fromSlot === toSlot || !(toSlot >= 0 && toSlot < hero.equipment.length)) return { success: false, error: 'Could not move that' };
+    const fighting = fightRefusal(hero);
+    if (fighting) return fighting;
 
     const movingHeld = holdsCopy(hero, fromSlot);
     const otherHeld = holdsCopy(hero, toSlot);
@@ -242,14 +274,16 @@ export function moveItem(heroId, itemId, fromSlot, toSlot) {
 
 /**
  * Unequip an item from a hero's slot. A held copy goes back to the Bank; with no room there it
- * stays with the hero and the refusal says so.
+ * stays with the hero and the refusal says so. A copy of a deleted item is thrown away (`returnsCopy`).
  */
 export function unequipItem(heroId, slot) {
     const hero = HeroManager.getHero(heroId);
     if (!hero?.equipment?.[slot]) return { success: false, error: 'Slot is empty' };
+    const fighting = fightRefusal(hero);
+    if (fighting) return fighting;
 
     const itemId = hero.equipment[slot];
-    if (holdsCopy(hero, slot) && !InventoryManager.hasRoomFor([itemId])) return bankFull(hero, itemId);
+    if (returnsCopy(hero, slot) && !InventoryManager.hasRoomFor([itemId])) return bankFull(hero, itemId);
 
     vacate(heroId, hero, slot);
     return { success: true };

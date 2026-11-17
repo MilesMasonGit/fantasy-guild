@@ -160,10 +160,10 @@ describe('one hero on a vein: cycle, rest, items and XP an hour', () => {
         expect(bare.items.rt_ore).toBeCloseTo(360);
     });
 
-    it('passes a +10 % XP drink through the XP floor: a 1 XP cycle pays 2, and the drink is drunk once every 10 cycles', () => {
+    it('counts a +10 % XP drink at its average: a 1 XP cycle pays 1.1, and the drink is drunk once every 10 cycles', () => {
         const r = book().rateOf({ token: 'rt_vein' }, { consumables: ['rt_beer'] });
-        expect(r.xpPerCycle).toBe(2);
-        expect(r.xp.mining).toBeCloseTo(480);
+        expect(r.xpPerCycle).toBeCloseTo(1.1);
+        expect(r.xp.mining).toBeCloseTo(264);
         expect(r.inputs.rt_beer).toBeCloseTo(24);
         expect(r.factors.find(f => f.id === 'consumable:rt_beer')).toMatchObject({ axes: [EFFECT_TYPES.XP_BONUS] });
     });

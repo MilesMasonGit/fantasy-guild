@@ -2,7 +2,7 @@ import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from './HeroManager.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
 import { levelFromXp } from '../../utils/XPCurve.js';
-import { applyXpBonus } from './xpBonus.js';
+import { applyXpBonus, averageXpBonus } from './xpBonus.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import { XpRateTracker } from './XpRateTracker.js';
@@ -47,7 +47,7 @@ export function getSkillLevel(heroId, skillId) {
     return skill.level;
 }
 
-export { applyXpBonus };
+export { applyXpBonus, averageXpBonus };
 
 /**
  * Get a hero's effective skill level (base + modifiers)

@@ -18,7 +18,7 @@ import { normaliseHallSky, rankOf } from '../../../../src/config/hallStars.js';
 import { hallRulesOf } from '../../../../src/systems/progression/hallModifiers.js';
 import { flooredWorkTime, floorSpeedUp, passiveLapMs } from '../../../../src/systems/board/workTime.js';
 import { ownCycleCost } from '../../../../src/systems/board/cycleCharges.js';
-import { applyXpBonus } from '../../../../src/systems/hero/xpBonus.js';
+import { averageXpBonus } from '../../../../src/systems/hero/xpBonus.js';
 import { perkRowsOf, perksEarnedAt } from '../../../../src/systems/hero/perkTable.js';
 import { neverWearsOut } from '../../../../src/systems/core/wearRule.js';
 import { isGatheringSkill } from '../../../../src/config/registries/skillRegistry.js';
@@ -34,7 +34,7 @@ import { modifiersOf as regionModifiersOf } from '../../../../src/systems/atlas/
  *
  * Average luck only: every chance is taken at its expected value (a 25 % double is ×1.25), never
  * rolled. The formulas are the board's own, shared rather than copied: the three buckets
- * (`ModifierAggregator`), the speed-up and work-time floors (`workTime.js`), the XP floor
+ * (`ModifierAggregator`), the speed-up and work-time floors (`workTime.js`), the XP bonus
  * (`xpBonus.js`), the output range (`tokenConstants.outputRange`), a cycle's charge cost
  * (`cycleCharges.js`), the reach and filter rules (`reachRegistry`, `filterRegistry`), the dose rules
  * (`consumableRule.js`), a Region's rules (`regionModifiers.js`) and what a Hall star's rank holds
@@ -1055,13 +1055,13 @@ function rateOf(book, target = {}, setup = {}) {
         note(EFFECT_TYPES.BONUS_DROP, [grant.factorId]);
     }
 
-    // XP: the cycle's own, widened by XP Bonus through the floor (`BoardRunner`), then rounded and
-    // held at 1 or more as `SkillSystem.addXP` grants it (it applies no bonus of its own).
+    // XP: the cycle's own, widened by XP Bonus on average (`BoardRunner` carries the fraction by
+    // chance), held at 1 or more as `SkillSystem.addXP` grants it (it applies no bonus of its own).
     const baseXp = Number(io.xp) || 0;
     const xb = resolve(EFFECT_TYPES.XP_BONUS, baseXp, category);
     note(EFFECT_TYPES.XP_BONUS, xb.used);
-    const awarded = applyXpBonus(baseXp, xb.value);
-    const granted = awarded > 0 ? Math.max(1, applyXpBonus(awarded, awarded * 1)) : 0;
+    const awarded = averageXpBonus(baseXp, xb.value);
+    const granted = awarded > 0 ? Math.max(1, awarded) : 0;
     const xpPerCycle = skill ? (1 - pFail) * granted : 0;
 
     const inputsPerCycle = {};
