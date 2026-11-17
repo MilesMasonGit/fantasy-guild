@@ -5,6 +5,7 @@
  * changed entries are listed beside it, so the author sees what a stale copy would also overwrite.
  */
 
+import { RENAME_KINDS } from '../../../src/config/renameTable.js';
 import { plannedKeysOf, PLAN_SYNC_KEY } from './planFile.js';
 import { keyedPerks, PERK_FILE } from './skillPerks.js';
 import { keyedHallSky, HALL_STARS_FILE } from './hallSky.js';
@@ -157,10 +158,12 @@ function collections(files) {
 /**
  * @param {object} current the files in `data/` now, by file name (a missing file is absent or null)
  * @param {object} incoming the files the Sync would write, by file name
- * @returns {{ removed: object, changed: object, added: object, hasRemovals: boolean, hasChanges: boolean }}
+ * @param {object|null} renames the workspace's record of renames (`renames.js`): an id it maps to a new id the Sync writes is
+ *        a rename, listed apart in `renamed` (`{ id, name, to, toName }`) and not as removed (nor the new id as added)
+ * @returns {{ removed: object, changed: object, added: object, renamed: object, hasRemovals: boolean, hasChanges: boolean }}
  *          per collection key, `[{ id, name }]`
  */
-export function compareSync(current = {}, incoming = {}) {
+export function compareSync(current = {}, incoming = {}, renames = null) {
   const before = collections(current || {});
   const after = collections(incoming || {});
   const wasContent = contents(current || {});
@@ -168,6 +171,7 @@ export function compareSync(current = {}, incoming = {}) {
   const removed = {};
   const changed = {};
   const added = {};
+  const renamed = {};
   // Planned stubs that became content, and content sent back to the plan, by game collection key.
   const nowIn = (key, id) => after[key].has(id);
   const promoted = (plannedKey) => {
@@ -185,6 +189,7 @@ export function compareSync(current = {}, incoming = {}) {
       removed[key] = [];
       changed[key] = [];
       added[key] = [];
+      renamed[key] = [];
       continue;
     }
     const kept = (id) => {
@@ -194,6 +199,17 @@ export function compareSync(current = {}, incoming = {}) {
     };
     removed[key] = [...before[key]].filter(([id]) => !kept(id)).map(([id, name]) => ({ id, name }));
     added[key] = [...after[key]].filter(([id]) => !before[key].has(id)).map(([id, name]) => ({ id, name }));
+    // A rename the record holds, whose new id this Sync writes, is not a loss: saves follow it.
+    const moves = RENAME_KINDS.includes(key) && isObject(renames?.[key]) ? renames[key] : {};
+    renamed[key] = removed[key]
+      .filter(({ id }) => typeof moves[id] === 'string' && after[key].has(moves[id]) && moves[id] !== id)
+      .map(({ id, name }) => ({ id, name, to: moves[id], toName: after[key].get(moves[id]) }));
+    if (renamed[key].length) {
+      const from = new Set(renamed[key].map((r) => r.id));
+      const to = new Set(renamed[key].map((r) => r.to));
+      removed[key] = removed[key].filter(({ id }) => !from.has(id));
+      added[key] = added[key].filter(({ id }) => !to.has(id));
+    }
     changed[key] = [...after[key]]
       .filter(([id]) => before[key].has(id) && wasContent[key].has(id) && nowContent[key].has(id) && wasContent[key].get(id) !== nowContent[key].get(id))
       .map(([id, name]) => ({ id, name }));
@@ -206,7 +222,7 @@ export function compareSync(current = {}, incoming = {}) {
   }
   const hasRemovals = Object.values(removed).some((list) => list.length > 0);
   const hasChanges = Object.values(changed).some((list) => list.length > 0);
-  return { removed, changed, added, hasRemovals, hasChanges };
+  return { removed, changed, added, renamed, hasRemovals, hasChanges };
 }
 
 function countPhrase(lists) {
@@ -217,6 +233,12 @@ function countPhrase(lists) {
   return `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
 }
 
+/** `renamed Oak Wood to Oak Logs, renamed ...`, or '' when nothing was renamed. */
+export function renamedPhrase(diff) {
+  const pairs = Object.values(diff?.renamed || {}).flat();
+  return pairs.map((r) => `renamed ${r.name} to ${r.toName}`).join(', ');
+}
+
 /** The panel's plain-words summary of a comparison. */
 export function describeSyncDiff(diff) {
   const removed = countPhrase(diff.removed);
@@ -224,9 +246,11 @@ export function describeSyncDiff(diff) {
   const addedTotal = total(diff.added);
   const changedTotal = total(diff.changed);
   let text = `This Sync would remove ${removed} that the game has now`;
+  const renames = renamedPhrase(diff);
   if (changedTotal && addedTotal) text += `, overwrite ${changedTotal} it has with different content, and add ${addedTotal} the game doesn't have.`;
   else if (changedTotal) text += `, and overwrite ${changedTotal} it has with different content.`;
   else text += addedTotal ? `, and add ${addedTotal} the game doesn't have.` : '.';
+  if (renames) text += ` It also ${renames}: saves follow a rename, so that needs no confirm.`;
   text += " If you didn't delete these on purpose, your CMS copy is probably out of date: use Backups → Restore from Game first.";
   return text;
 }

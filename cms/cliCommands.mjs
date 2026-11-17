@@ -269,6 +269,8 @@ async function cmdSync(paths, options, load, out) {
             if (removed.length) lines.push(`Removed ${label}: ${removed.map((r) => `${r.name} (${r.id})`).join(', ')}`);
             const changed = body.diff.changed?.[key] || [];
             if (changed.length) lines.push(`Changed ${label}: ${changed.map((r) => `${r.name} (${r.id})`).join(', ')}`);
+            const renamed = body.diff.renamed?.[key] || [];
+            if (renamed.length) lines.push(`Renamed ${label}: ${renamed.map((r) => `${r.name} (${r.id}) to ${r.toName} (${r.to})`).join(', ')}`);
         }
         lines.push('Nothing was written to data/. If the removals are meant, run again with --confirm-removals.');
         throw new CliError(lines.join('\n'));

@@ -269,7 +269,7 @@ export async function writeSync({
                 current[PLAN_SYNC_KEY] = null;
             }
         }
-        const diff = compareSync(current, plan ? { ...files, [PLAN_SYNC_KEY]: plan } : files);
+        const diff = compareSync(current, plan ? { ...files, [PLAN_SYNC_KEY]: plan } : files, renames);
         if (diff.hasRemovals) return { status: 409, body: { error: 'This Sync would remove content the game has', needsConfirm: true, diff } };
     }
 
