@@ -13,11 +13,11 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| 650 H2: no gear changes mid-fight | builder | `fix/gear-lock-fight` (`h2`) | building | Tue | |
-| 650 H4: lifting an enemy ends its fight; meals on game time (WORK CHANGED expected) | builder | `fix/lift-ends-fight` (`h4`) | building | Tue | |
-| 660 R3: a gear slot holding a deleted item shows missing and clears | builder | | queued | | |
-| 650 H5: second Food, XP bonus by chance (WORK CHANGED), hand-over swaps (after H2) | builder | | queued | | |
-| The CMS Sync shows a rename as renamed, no removal confirm (owner A) | builder-lite | | queued | | |
+| 650 H2: no gear changes mid-fight | builder | `fix/gear-lock-fight` (`h2`) b8c18492 | **ready, waits for the eye-check** (with R3 on top): diff read; builder gate 672 files green (one set-up fix re-run alone), checked four routes in the game | Tue | |
+| 650 H4: lifting an enemy ends its fight; meals on game time (WORK CHANGED expected) | builder | `fix/lift-ends-fight` (`h4`) b84ebe33 | **merged** addcf6c5, pushed: work same on all 12 (no bench hero rests under a quarter health, nothing is lifted); 100 ms and 1,000 ms steps now give the same fight in four measured cases; combined gate 672 files, 8685 green | Tue | Tue |
+| 660 R3: a gear slot holding a deleted item shows missing and clears | builder | `fix/missing-gear-slot` (`r3g`) ef75a036, on H2 | **ready, merges with H2 after the look**: diff read; builder gate 673 files green; slot read and cleared in the game | Tue | |
+| 650 H5: second Food, XP bonus by chance (WORK CHANGED), hand-over swaps (after H2) | builder | `fix/three-small-rules` (`h5`), on R3 | building | Tue | |
+| The CMS Sync shows a rename as renamed, no removal confirm (owner A) | builder-lite | `fix/sync-shows-renames` (`sr`) 216c05f0 | **merged** addcf6c5, pushed: a rename alone syncs with no confirm; with a real delete only the delete is asked, the rename listed apart; CMS build | Tue | Tue |
 
 ## Director, batch 6: the deep-read fixes, 650 and 660 first (owner, 2026-11-17: four fixes, no look)
 
