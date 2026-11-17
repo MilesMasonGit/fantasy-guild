@@ -837,12 +837,13 @@ export function reportContentIntegrity(options) {
 // ---------------------------------------------------------------------------
 
 /**
- * A save can hold ids of Tokens that were later renamed or deleted, and
- * loading it is otherwise silent.
+ * A save can hold ids of content that was later deleted, and loading it is
+ * otherwise silent. (A rename the CMS recorded is followed before this runs,
+ * `followRenames.js`, so what is left here was deleted or renamed unrecorded.)
  *
  * It REPORTS only: it never repairs or deletes. Dropping unresolvable entries
  * would delete the player's property on the strength of the registry being
- * complete, and a Token that looks missing may be halfway through a rename.
+ * complete, and content deleted by mistake comes back with its id.
  * Nothing in this section writes to the save.
  *
  * Reporting goes through `warnMissingContent`, so each name is said once per
@@ -855,11 +856,15 @@ export function reportContentIntegrity(options) {
  * "your saved game still holds it …".
  */
 function collectSaveRefs(state, note) {
-    const board = state?.board || {};
+    noteBoard(state?.board, note, 'the playmat');
 
-    for (const token of Object.values(board.tokens || {})) {
-        note('Token', token?.typeId, 'on the playmat');
+    // The Region the guild is in keeps no board of its own (its board is the live one above).
+    for (const region of Object.values(state?.atlas?.regions || {})) {
+        if (!region?.board) continue;
+        noteBoard(region.board, note, `the mat of ${region.flavourName || region.practicalName || region.id || 'a Region'}`);
     }
+
+    noteWorld(state, note);
 
     for (const itemId of Object.keys(state?.inventory?.items || {})) {
         note('item', itemId, 'in the Bank');
@@ -868,6 +873,36 @@ function collectSaveRefs(state, note) {
         for (const itemId of hero?.equipment || []) {
             note('item', itemId, `equipped by ${hero?.name || 'a hero'}`);
         }
+    }
+}
+
+/** A mat's Tokens and the loot lying on it. */
+function noteBoard(board, note, mat) {
+    for (const token of Object.values(board?.tokens || {})) {
+        note('Token', token?.typeId, `on ${mat}`);
+    }
+    for (const sprite of Array.isArray(board?.sprites) ? board.sprites : []) {
+        if (sprite?.kind === 'item') note('item', sprite.refId, `lying on ${mat}`);
+    }
+}
+
+/**
+ * The world map's places not yet settled: what each would bring and what it asks for. A settled
+ * place's lists are history (its Tokens stand on a Region's mat now), and so are the Hall's.
+ */
+function noteWorld(state, note) {
+    const cells = state?.world?.cells;
+    if (!cells) return;
+    const settled = new Set(Object.values(state?.atlas?.regions || {}).map(r => r?.cellId).filter(Boolean));
+    for (const cell of Array.isArray(cells) ? cells : Object.values(cells)) {
+        if (!cell || cell.ring === 0 || settled.has(cell.id)) continue;
+        const waiting = 'waiting at a place on the world map';
+        for (const origin of cell.origins || []) note('Token', origin?.id, waiting);
+        for (const camp of cell.camps || []) note('Token', typeof camp === 'string' ? camp : camp?.id, waiting);
+        for (const extra of cell.extras || []) note('Token', extra?.id, waiting);
+        if (cell.extreme?.kind === 'composition') note('Token', cell.extreme.focus, waiting);
+        for (const row of cell.arrival || []) note('Token', row?.typeId, 'arriving at a place on the world map');
+        for (const row of cell.requires?.items || []) note('item', row?.itemId, 'asked as the price of a place on the world map');
     }
 }
 
@@ -936,9 +971,9 @@ export function reportSaveContent(state) {
     for (const ghost of ghosts) {
         warnMissingContent('Saved game', ghost.kind, ghost.id,
             `your saved game still holds it ${joinPlaces(ghost.places)}, and it can no longer be used`,
-            'Nothing has been removed from your saved game. If this name is part of a ' +
-            'rename you have not finished, it will start working again the moment the ' +
-            'new name matches.');
+            'Nothing has been removed from your saved game. Renames made in the CMS are ' +
+            'followed when a save loads, so this one was deleted, or renamed before the CMS ' +
+            'kept a record of renames. It works again if content with this exact id comes back.');
     }
 
     return ghosts;

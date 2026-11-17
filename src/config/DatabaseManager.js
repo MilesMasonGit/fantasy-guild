@@ -31,4 +31,8 @@ export const DatabaseManager = {
     // The events that land on the mat. Absent until the CMS first syncs a table: no event lands
     // (`eventRegistry.js`).
     eventFilesSingle: import.meta.glob('/data/events.json', { eager: true }),
+
+    // The CMS's renamed ids, old to new (`renameTable.js`). Absent until a Sync first records a
+    // rename: nothing is renamed, and a save loads with the ids it holds.
+    renameFilesSingle: import.meta.glob('/data/renames.json', { eager: true }),
 };
