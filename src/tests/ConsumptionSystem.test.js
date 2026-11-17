@@ -8,6 +8,7 @@ const { bank, ITEMS, hero } = vi.hoisted(() => ({
     bank: new Map(),
     ITEMS: {
         bread:  { id: 'bread',  equipSlot: 'food',       restoreAmount: 20 },
+        pie:    { id: 'pie',    equipSlot: 'food',       restoreAmount: 50 },
         ale:    { id: 'ale',    equipSlot: 'drink',      restoreAmount: 15 },
         elixir: { id: 'elixir', equipSlot: 'consumable', loopEffect: { type: 'SPEED', value: 0.3 } },
         scroll: { id: 'scroll', equipSlot: 'consumable', loopEffect: { type: 'YIELD', value: 0.25 } },
@@ -148,5 +149,41 @@ describe('drinks in a fight', () => {
         expect(ConsumptionSystem.tryEat('h1', { inFight: true })).toEqual([]);
         expect(hero.hp.current).toBe(10);
         expect(bank.get('ale')).toBe(5);
+    });
+});
+
+describe('two Foods (the Larder star): the earlier slot first, the next when the Bank runs out', () => {
+    beforeEach(() => {
+        hero.equipment = ['sword', 'bread', 'ale', 'pie', null, null, null, null, null];
+        hero.hp.current = 10;
+    });
+
+    it('eats the Food in the earlier slot while the Bank holds it, and leaves the second alone', () => {
+        bank.set('bread', 2);
+        bank.set('pie', 2);
+        expect(ConsumptionSystem.tryEat('h1')).toEqual([expect.objectContaining({ itemId: 'bread', amount: 20 })]);
+        expect(bank.get('bread')).toBe(1);
+        expect(bank.get('pie')).toBe(2);
+    });
+
+    it('moves on to the next Food once the Bank has none of the first', () => {
+        bank.set('pie', 2);
+        expect(ConsumptionSystem.tryEat('h1')).toEqual([expect.objectContaining({ itemId: 'pie', amount: 50 })]);
+        expect(hero.hp.current).toBe(60);
+        expect(bank.get('pie')).toBe(1);
+    });
+
+    it('grid order decides, not the bigger meal', () => {
+        hero.equipment = ['sword', 'pie', 'ale', 'bread', null, null, null, null, null];
+        bank.set('bread', 2);
+        bank.set('pie', 2);
+        expect(ConsumptionSystem.tryEat('h1').map(m => m.itemId)).toEqual(['pie']);
+    });
+
+    it('still one meal per call, and none when the Bank has neither', () => {
+        expect(ConsumptionSystem.tryEat('h1')).toEqual([]);
+        bank.set('bread', 5);
+        bank.set('pie', 5);
+        expect(ConsumptionSystem.tryEat('h1')).toHaveLength(1);
     });
 });

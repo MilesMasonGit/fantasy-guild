@@ -39,9 +39,14 @@ function isLow(vital) {
     return vital.current / vital.max < CONSUME_THRESHOLD;
 }
 
-/** The hero's equipped item of a given category, or null. */
-function equippedOfCategory(hero, categoryId) {
-    return getEquippedEntries(hero).find(e => e.category === categoryId) || null;
+/**
+ * The hero's equipped item of a given category the Bank still holds one of, the first in grid
+ * order, or null. With two Foods (the Larder star) the earlier slot's is eaten until the Bank runs
+ * out of it, then the next, as arrows and bait are spent.
+ */
+function stockedOfCategory(hero, categoryId) {
+    return getEquippedEntries(hero)
+        .find(e => e.category === categoryId && InventoryManager.hasItem(e.itemId, 1)) || null;
 }
 
 /**
@@ -64,16 +69,15 @@ function kept(instanceId, itemId, kind) {
 }
 
 /**
- * Spend one unit of an equipped item from the bank and apply its restore.
- * Returns null when the item isn't equipped or the bank is out of stock — in
- * which case the hero simply goes without. A Preservation hit at `instanceId` (the fight's enemy
- * Token, else the Token the hero works) restores as usual and leaves the unit in the Bank.
+ * Spend one unit of an equipped item from the bank and apply its restore: the first of the
+ * category in grid order the Bank still holds. Returns null when none is equipped or the Bank is
+ * out of every one, in which case the hero simply goes without. A Preservation hit at `instanceId`
+ * (the fight's enemy Token, else the Token the hero works) restores as usual and leaves the unit in
+ * the Bank.
  */
 function consumeEquipped(hero, categoryId, { inFight = false, instanceId } = {}) {
-    const entry = equippedOfCategory(hero, categoryId);
+    const entry = stockedOfCategory(hero, categoryId);
     if (!entry) return null;
-
-    if (!InventoryManager.hasItem(entry.itemId, 1)) return null;
 
     const item = getItem(entry.itemId);
     const restore = item?.restoreAmount || 0;
