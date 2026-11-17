@@ -25,7 +25,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-481**
+**Next free number: T-482**
 
 ---
 
@@ -259,6 +259,7 @@ The findings' full write-ups are in `docs/active/review/D1_the_mat.md` to `D4_sc
 | T-478 | P3 | open | **One click buys one rank** (owner 2026-11-17): a second Upgrade click within about half a second is ignored | CR4-195 |
 | T-479 | P3 | open | **Latent: after a crash in a drawer, the Shop, the hero bar or the banners, the Reload button cannot be clicked** and the panel takes over the screen | CR4-196 |
 | T-480 | P3 | open | **Latent: a Shop price of more than four items, and a second Lap Time rule**: fix the engine now (owner 2026-11-17) | CR4-197 |
+| T-481 | P3 | open | **A Field test passes only by luck**: `FarmingHarvest.test.js` (lost part-way through the first harvest and back before it ends) fails under the second seed, `FG_TEST_SEED=b` (expected 2 to be 1), on `main` 556a916b; pin its random numbers | director 2026-11-17 |
 
 ### Brief 210 — the backlog intake (owner 2026-10-22, Backlog director)
 
