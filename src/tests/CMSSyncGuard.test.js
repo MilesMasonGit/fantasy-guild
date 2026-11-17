@@ -225,6 +225,58 @@ describe('the sync route against the workspace revision', () => {
     });
 });
 
+describe('renames in the Sync guard', () => {
+    const renamed = () => files({ 'items.json': { item_x: { name: 'Ex', type: 'material' }, item_mire_2: { name: 'Mire Two', type: 'material' } } });
+    const record = { items: { item_m: 'item_mire_2' }, tokens: {}, effects: {} };
+
+    it('lists a rename as renamed, not removed or added, and it needs no confirm', () => {
+        const diff = compareSync(files(), renamed(), record);
+        expect(diff.hasRemovals).toBe(false);
+        expect(diff.removed.items).toEqual([]);
+        expect(diff.added.items).toEqual([]);
+        expect(diff.renamed.items).toEqual([{ id: 'item_m', name: 'Mire', to: 'item_mire_2', toName: 'Mire Two' }]);
+        expect(describeSyncDiff(diff)).toMatch(/renamed Mire to Mire Two/);
+    });
+
+    it('without the record the same change is still a removal', () => {
+        expect(compareSync(files(), renamed()).hasRemovals).toBe(true);
+    });
+
+    it('a rename plus a real delete still asks, listing only the delete as removed', () => {
+        const next = renamed();
+        next['tokens.json'] = { token_a: { name: 'Alpha' } };
+        const diff = compareSync(files(), next, record);
+        expect(diff.hasRemovals).toBe(true);
+        expect(diff.removed.tokens).toEqual([{ id: 'token_b', name: 'Beta' }]);
+        expect(diff.removed.items).toEqual([]);
+        expect(diff.renamed.items).toHaveLength(1);
+        expect(describeSyncDiff(diff)).toMatch(/renamed Mire to Mire Two/);
+    });
+
+    it('a rename whose new id is not written in this Sync is still a removal', () => {
+        const diff = compareSync(files(), files({ 'items.json': { item_x: { name: 'Ex', type: 'material' } } }), record);
+        expect(diff.removed.items).toEqual([{ id: 'item_m', name: 'Mire' }]);
+    });
+
+    it('the route writes a rename alone without asking, and still asks about a delete beside it', async () => {
+        const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fg-sync-ren-'));
+        try {
+            for (const [name, content] of Object.entries(files())) fs.writeFileSync(path.join(dataDir, name), JSON.stringify(content));
+            const sync = (over) => writeSync({ dataRoot: dataDir, planRoot: path.join(dataDir, 'plan'), ...over });
+            const withDelete = renamed();
+            withDelete['tokens.json'] = { token_a: { name: 'Alpha' } };
+            const asked = await sync({ files: withDelete, renames: record });
+            expect(asked.status).toBe(409);
+            expect(asked.body.diff.removed.tokens).toEqual([{ id: 'token_b', name: 'Beta' }]);
+            expect(asked.body.diff.renamed.items).toHaveLength(1);
+            const done = await sync({ files: renamed(), renames: record });
+            expect(done.status).toBe(200);
+        } finally {
+            fs.rmSync(dataDir, { recursive: true, force: true });
+        }
+    });
+});
+
 describe('the sync route', () => {
     let dataDir, handler;
 

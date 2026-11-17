@@ -12,10 +12,11 @@ function EntityList({ title, list }) {
         {title} ({list.length})
       </summary>
       <ul className="text-xs mt-1 ml-4" style={{ color: 'var(--color-text-muted)', listStyle: 'disc' }}>
-        {list.map(({ id, name }) => (
+        {list.map(({ id, name, to, toName }) => (
           <li key={id}>
             {name}
             {name !== id && <span style={{ opacity: 0.6 }}> ({id})</span>}
+            {to && <> to {toName}{toName !== to && <span style={{ opacity: 0.6 }}> ({to})</span>}</>}
           </li>
         ))}
       </ul>
@@ -55,6 +56,7 @@ export default function SyncGuardPanel({ diff, busy, onRestore, onSyncAnyway, on
         </p>
         <div className="overflow-y-auto mb-4 pr-1" style={{ minHeight: 0 }}>
           <Section heading="Would be removed" lists={diff.removed} verb="removed" />
+          <Section heading="Renamed (saves follow, no confirm needed)" lists={diff.renamed || {}} verb="renamed" />
           <Section heading="Would be overwritten with different content" lists={diff.changed || {}} verb="changed" />
           <Section heading="Would be added" lists={diff.added} verb="added" />
         </div>
