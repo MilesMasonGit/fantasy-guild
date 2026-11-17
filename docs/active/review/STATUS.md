@@ -1,6 +1,6 @@
 # Review round 4: status
 
-*Kept by the reviewer. Next free finding number: **CR4-168**.*
+*Kept by the reviewer. Next free finding number: **CR4-198**.*
 
 ## Sessions
 
@@ -37,7 +37,7 @@ read-only reader, every lead re-read by the reviewer, every finding checked by a
 | D1 | The mat: Tokens, work, orders, fights, timed changes, buffs (`src/systems/board/` and what it calls) | ready for triage | 2026-11-15 | cccf7a24 | `D1_the_mat.md`: 25 findings (22 bug, 3 owner-decision; 1 P1, 5 P2, 19 P3), 23 verified by a second reader (Opus) and 2 reasoned; 6 owner questions below. Ten readers read the area whole in eight pieces and two cross-cutting traces. The per-tick core came through clean; the bugs are where two rules meet. Top: a healing hero knocked out a second time after travel (CR4-101, P1); Thorns spending a second charge and a Thorn Elemental running out twice (CR4-103, CR4-104); a resting Forest deleted by a merge and a regrown tree or large building hopping across the mat (CR4-102, CR4-105). Thirteen latent rule shapes the CMS can author and the engine gets wrong are gathered in CR4-124. |
 | D2 | Heroes, combat, gear, XP (`src/systems/hero/`, `combat/`, `equipment/`, `effects/`, `inventory/`, and the hero readouts in `src/ui/`) | ready for triage | 2026-11-15 | dcb3ff40 | `D2_heroes_combat_gear_xp.md`: 18 findings (14 bug, 4 owner-decision; 1 P1, 4 P2, 13 P3), all verified by a second reader (Opus), none refuted, 14 corrected. Ten are live, four gather 16 latent content shapes. The core rules (combat maths, fight clean-up, XP and perks, equip and swap, loot, hero state across load and travel) read sound. One ruling made, four questions below. |
 | D3 | Saves and time away (`src/systems/core/` saves, load, catch-up; `src/state/`; `src-tauri/src/saves.rs`; `src/systems/world/` and `atlas/` for what is kept; the slot screen and settings) | ready for triage | 2026-11-16 | d2ce3b6d | `D3_saves_and_time_away.md`: 24 findings (20 bug, 4 owner-decision; 1 P1, 5 P2, 18 P3), all verified by a second reader (Opus), none refuted, 13 corrected. The save machinery is sound (atomic writes, backup fallback, one-tick transactions, Regions stored whole); the weak spot is CMS renames meeting old saves (CR4-158 to CR4-163). Two steps need one desktop try (CR4-144, CR4-149). Five owner questions below. |
-| D4 | Screens and drag-and-drop | reading | 2026-11-17 | 18d91bdc | |
+| D4 | Screens and drag-and-drop (`src/ui/`: the mat, Token cards, the hero dock, Bank and Shop, the Guild Hall, the world map, notices, Limes, the Encyclopedia, modals; `src/ui/dnd/`) | ready for triage | 2026-11-17 | 18d91bdc | `D4_screens_and_drag.md`: 30 findings (27 bug, 3 owner-decision; 4 P2, 26 P3), all verified by a second reader (Opus), none refuted, 12 corrected. No screen loses or duplicates an item, Token or payment; the faults are numbers that stand still, drops landing on something hidden, and windows covering each other. CR4-172 is the work list for the no-loadout-change-mid-fight ruling. Three steps need one desktop try (CR4-170, 174, 192). Three owner questions below. |
 
 ### Questions for the owner from D1 (2026-11-15, answered the same day)
 
@@ -89,6 +89,14 @@ One ruling to look at, not a defect (CR4-122): on a reload a fight starts over w
 3. **Banners come back after a reload** (CR4-147, with CR4-146): an event Token still on the mat gets its banner back, and unclicked knock-out and problem banners are saved and shown again.
 4. **Old copies stay endless** (CR4-165): a Token placed before its type was given Charges keeps producing for ever; only new copies run out. Not a defect; the finding closes as owner-no.
 5. **The browser build is for development; players get the desktop build** (CR4-145, CR4-157). The auto-save-Off tab close drops to P3; the storage-full banner (CR4-157) is a developer-only annoyance.
+
+### Questions for the owner from D4 (2026-11-17, open)
+
+For the planning agent to ask; the reviewer's recommendation is first in each.
+
+1. **A double-click on Upgrade in the Guild Hall** (CR4-195). Today the second click of a double-click buys the next rank as well. (a) **One click buys one rank; a second click within half a second is ignored** (recommended: nothing is bought by accident). (b) Leave it: a double-click is a quick way to buy two.
+2. **The recipe list's times** (CR4-194). The list shows each recipe's time before the station's own speed-ups, while the card above it shows the time after (a recipe reads 8 s in the list and 5.6 s on the card). (a) **The list shows the time the station really takes** (recommended: one number everywhere). (b) The list keeps the base time and says so.
+3. **A hero dropped on the Encyclopedia** (CR4-193). With the book open over the mat, a hero let go on the book is given an order on the hidden mat underneath. (a) **The book takes the drop and nothing happens** (recommended: no order the player cannot see). (b) Leave it: the book is a window over a live mat.
 
 ## Round summary (reviewer, 2026-11-07)
 
