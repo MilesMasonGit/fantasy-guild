@@ -7,6 +7,18 @@ build green) · bench-queued · eye-check · merged.*
 
 **Owner, 2026-11-06 (behind the week's target): up to four code builders at once this week** (plus one read-only); the director still runs suites, builds and benches one at a time. **Owner, 2026-11-06 late morning, away at work:** the director may start new briefs and merge pieces on the gate without a full look; the owner answers questions remotely (screenshots to the phone). Look changes merged this way are listed for the owner's next look in `docs/active/eyecheck/2026-11-06_merged_while_away.md`.
 
+## Director, batch 7: the rest of 650 and 660 R3 (owner, 2026-11-17: four fixes, one look; Sync shows renames)
+
+*Tue 17 Nov, 14:50, batch proposed and started. Where we are: batch 6 all on main (H1, R1, H3, R2, Limes moments), work same. Owner picked four fixes with one look at the gear lock, and a Sync that shows a rename as renamed with no removal confirm. Round 1 building: gear lock mid-fight (H2) and lifting an enemy ends its fight / meals on game time (H4). Next: R3 (a deleted item in a gear slot) and H5 (three small rules), then the Sync rename display. Owner: the gear-lock look at the batch's end; a `/content` session for the Slime and Rusty tools when convenient. Blockers: none.*
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| 650 H2: no gear changes mid-fight | builder | `fix/gear-lock-fight` (`h2`) | building | Tue | |
+| 650 H4: lifting an enemy ends its fight; meals on game time (WORK CHANGED expected) | builder | `fix/lift-ends-fight` (`h4`) | building | Tue | |
+| 660 R3: a gear slot holding a deleted item shows missing and clears | builder | | queued | | |
+| 650 H5: second Food, XP bonus by chance (WORK CHANGED), hand-over swaps (after H2) | builder | | queued | | |
+| The CMS Sync shows a rename as renamed, no removal confirm (owner A) | builder-lite | | queued | | |
+
 ## Director, batch 6: the deep-read fixes, 650 and 660 first (owner, 2026-11-17: four fixes, no look)
 
 *Tue 17 Nov, 14:40. Round 2 merged: a reload keeps the enemy's health (H3) and saves follow a CMS rename (R2), work same, pushed. The batch's four fixes plus the Limes moments fix are all on main. Next: propose batch 7 (the rest of 650 and 660 R3). Owner: the Sync and rename question below. Blockers: none.*
@@ -361,7 +373,7 @@ None open.
 
 ## Questions for the owner
 
-- **The CMS Sync and a rename (660 R2):** a Sync still lists a renamed item as "removed X" and asks you to confirm removals, though saves now follow the rename. Show it as "renamed X to Y" with no removal confirm (A, recommended), or leave the confirm as it is (B)?
+- ~~The CMS Sync and a rename~~ **Answered 2026-11-17: A, show it as renamed, no removal confirm** (queued in batch 7). Was: a Sync still lists a renamed item as "removed X" and asks you to confirm removals, though saves now follow the rename. Show it as "renamed X to Y" with no removal confirm (A, recommended), or leave the confirm as it is (B)?
 
 - ~~Limes's lessons~~ **Answered 2026-11-17: moments while the guild is away from the camp: nothing is said (Limes speaks only at the camp); lessons off: Limes keeps quiet (A, as built); lesson 8: make a small Slime enemy from the existing animation sheet (content pack, then point the lesson at it).**
 - **For the planning agent (480 L4):** T-014, where Limes's words live: keep them in `limesText.js` until translation T-119 (A, engineer's pick), a CMS Limes page (B), or B plus the lesson ids on the CMS Starter Camp page (C); the T-014 row still names `tutorialQuests.js` (deleted). Suggested Limes moments, none built: first tool breaks, first hero knocked out, first event lands, ring 2 opens, first constellation finished, first return from time away.
