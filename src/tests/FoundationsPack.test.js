@@ -139,13 +139,14 @@ describe('the Foundations pack, applied to a copy of the shipped content', () =>
         expect(StationRecipe.setSelectedRecipe(bought.instance, 'recipe_build_quarry')).toBe(true);
     });
 
-    it('a saved Wood Foundation already set to build a Quarry drops the pick and asks for a new one', () => {
+    it('a saved Wood Foundation already set to build a Quarry reads as no pick and asks for a new one', () => {
         InventoryManager.addItem('item_oak_wood', 15);
         const { instance } = Shop.buy('token_wood_foundation');
         // As a save made before the Sync holds it; the setter would refuse it now.
         instance.selectedRecipeId = 'recipe_build_quarry';
         expect(WorkCheck.fixableReason(instance.id, instance).reason).toBe(ALERT.CHOOSE_BUILD);
-        expect(instance.selectedRecipeId).toBeUndefined();
+        // Kept, so a recipe that comes back is picked again; the player's next pick overwrites it.
+        expect(instance.selectedRecipeId).toBe('recipe_build_quarry');
         // Its own list is still there to pick from: it is never stuck.
         expect(StationRecipe.setSelectedRecipe(instance, 'recipe_muily2pb')).toBe(true);
     });

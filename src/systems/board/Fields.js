@@ -174,15 +174,15 @@ export function loadAtRipening(instance, def, crop) {
 
 /**
  * The state the engine is about to change, made the instance's own: a never-changed copy takes
- * its starting state (and a wild Field its pick); a crop no longer among the Field's recipes leaves
- * the ground empty.
+ * its starting state (and a wild Field its pick).
+ *
+ * ⚠️ A crop no longer among the Field's recipes reads as empty ({@link stageOf}) but stays in the
+ * save, so a crop that comes back in the next Sync is in the ground again; only a sowing of the
+ * player's pick replaces it.
  */
 function settle(instance, def) {
     const saved = instance.field;
-    if (saved && typeof saved === 'object') {
-        if (saved.cropId && !cropById(def, saved.cropId)) instance.field = {};
-        return instance.field;
-    }
+    if (saved && typeof saved === 'object') return saved;
     const start = stateOf(instance, def);
     instance.field = { ...start };
     if (start.cropId && !instance.selectedRecipeId) instance.selectedRecipeId = start.cropId;

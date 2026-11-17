@@ -79,21 +79,19 @@ export function clearSelection(instance) {
 }
 
 /**
- * The recipe this instance is set to, having first dropped a selection that is no longer valid.
- * Returns null when nothing (valid) is selected.
+ * The recipe this instance is set to, or null when nothing (valid) is selected.
  *
  * It never picks for the player.
  *
- * An id no longer in the pool becomes no recipe: a recipe can be renamed or deleted in the CMS
- * under a save that references it. The station then waits for the player and says so (Choose a
- * recipe), so it is never idle for a reason nothing on screen explains.
+ * An id no longer in the pool reads as no recipe: a recipe can be deleted in the CMS, or moved to
+ * another skill or station kind, under a save that references it. The station then waits for the
+ * player and says so (Choose a recipe), so it is never idle for a reason nothing on screen explains.
+ * ⚠️ The id itself is kept, so a recipe that comes back in the next Sync is picked again; only
+ * the player's next pick overwrites it.
  */
 export function validateSelection(instance, def = null) {
     if (!instance) return null;
-    const current = selectedRecipe(instance, defOf(instance, def));
-    if (current) return current;
-    if (instance.selectedRecipeId) delete instance.selectedRecipeId;
-    return null;
+    return selectedRecipe(instance, defOf(instance, def));
 }
 
 /**

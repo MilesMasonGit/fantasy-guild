@@ -29,8 +29,13 @@ export function lockWords(lock) {
 /** A have/need count in the 9.9k shorthand. */
 const haveNeed = (have, need) => `${formatCompact(have)}/${formatCompact(need)}`;
 
-/** The price as pills (sprite and have/need, red when short): the hover tip's. */
-const PricePills = ({ price }) => {
+/** The items a price names that the game no longer has, said once under the price; null with none. */
+const DroppedNote = ({ price, className }) => {
+    if (!price.dropped?.length) return null;
+    return <div data-world-price-dropped className={cn('text-white/55', className)}>{t('worldMap.dropped', { what: price.dropped.join(', ') })}</div>;
+};
+
+const PricePillRow = ({ price }) => {
     if (!price.items.length && !price.skills.length) return <div className="text-white/60">{t('worldMap.nothingAsked')}</div>;
     return (
         <div className="flex flex-wrap gap-x-2 gap-y-0.5">
@@ -50,8 +55,15 @@ const PricePills = ({ price }) => {
     );
 };
 
-/** The price as rows (sprite, name, have/need), the drawer's. */
-export const PriceRows = ({ price }) => {
+/** The price as pills (sprite and have/need, red when short): the hover tip's. */
+const PricePills = ({ price }) => (
+    <>
+        <PricePillRow price={price} />
+        <DroppedNote price={price} className="ui-text-small" />
+    </>
+);
+
+const PriceRowList = ({ price }) => {
     if (!price.items.length && !price.skills.length) return <div className="font-pixel ui-text-body text-white/60">{t('worldMap.nothingAsked')}</div>;
     const row = (key, attrs, icon, name, count, short) => (
         <div key={key} {...attrs} className="flex items-center gap-1.5 font-pixel ui-text-body">
@@ -67,6 +79,14 @@ export const PriceRows = ({ price }) => {
         </div>
     );
 };
+
+/** The price as rows (sprite, name, have/need), the drawer's. */
+export const PriceRows = ({ price }) => (
+    <>
+        <PriceRowList price={price} />
+        <DroppedNote price={price} className="font-pixel ui-text-small" />
+    </>
+);
 
 /**
  * The hover over a cell (its title is the place's name, `Tooltip`'s): the kind of land under it,

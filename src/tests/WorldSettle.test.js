@@ -105,6 +105,7 @@ describe('which cells can be settled (pure)', () => {
         expect(rows).toEqual({
             items: [{ itemId: 'a', need: 20, have: 7, short: true }, { itemId: 'b', need: 5, have: 9, short: false }],
             skills: [{ skill: 'mining', need: 5, have: 5, short: false }],
+            dropped: [],
             met: false
         });
         have.a = 20;

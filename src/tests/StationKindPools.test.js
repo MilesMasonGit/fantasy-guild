@@ -144,7 +144,7 @@ describe('choosing a recipe', () => {
         const res = RecipeResolver.resolveRecipe(loaded.id, loaded);
         expect(res.status).toBe(RECIPE.NONE);
         expect(res.reason).toBe('choose_recipe');
-        expect(loaded.selectedRecipeId).toBeUndefined();
+        expect(loaded.selectedRecipeId).toBe('sk_wheat');
         // And the player can pick again.
         expect(StationRecipe.setSelectedRecipe(loaded, 'sk_sage')).toBe(true);
         expect(RecipeResolver.resolveRecipe(loaded.id, loaded).status).toBe(RECIPE.OK);
