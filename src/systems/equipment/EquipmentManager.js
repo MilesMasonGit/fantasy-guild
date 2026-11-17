@@ -158,7 +158,8 @@ function vacate(heroId, hero, slot, { returnCopy = true } = {}) {
  * A copy item comes out of the Bank, or, when `from` names another hero's slot holding it, out of
  * that hero's hands (a hand-over; a shared item leaves that hero's loadout too). What it displaces
  * goes back to the Bank; if the Bank has no room for it, nothing happens and the refusal says so.
- * A hand-over dropped on the hero rather than on a slot needs an empty slot in their loadout.
+ * A hand-over finds its slot as a drop from the Bank does, so on a full loadout it replaces one of
+ * its kind, and the replaced piece goes to the Bank, not to the giver.
  *
  * @param {{heroId: string, slot: number}|null} [from] where a dragged item was picked up
  */
@@ -189,10 +190,6 @@ export function equipItem(heroId, itemId, preferredSlot = null, from = null) {
     if (!giver && !InventoryManager.hasItem(itemId, 1)) {
         if (copy && heldCount(itemId) > 0) return { success: false, error: t('equipment.allInUse', { item: template.name }) };
         return { success: false, error: 'Out of stock' };
-    }
-
-    if (giver && preferredSlot === null && findFreeSlot(hero) === -1) {
-        return { success: false, error: 'No free slot in the loadout' };
     }
 
     let slot;

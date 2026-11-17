@@ -740,7 +740,10 @@ the Bank, one per catch or per shot (§3 Fishing, §6 The fight).
   The first weapon or tool in grid order is the one used, so a move can change
   which that is. Dropped on another hero in the bar or the Bank's column, it
   leaves the giver (food and potions too; their stack stays in the Bank) and
-  lands in the receiver's first empty slot. A full loadout, a level the receiver
+  finds its slot as a drop from the Bank does: the receiver's first empty slot,
+  or, on a full loadout, the place of one of its kind (a hat for a hat, a
+  weapon for a weapon), whose piece goes to the Bank, not to the giver (owner,
+  2026-11-15). A full loadout with nothing of its kind, a level the receiver
   lacks or an item they already carry refuses with the reason and the item
   stays. Past a category's cap or a full pair of hands, what the receiver puts
   down goes to the Bank, as with any equip. A hero handed away from their work
