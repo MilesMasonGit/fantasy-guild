@@ -1,0 +1,625 @@
+# D4: Screens and drag-and-drop, read deep
+
+*Reviewer session D4, 2026-11-17, read at commit **18d91bdc** in the worktree `.claude/worktrees/rw`.
+The fourth session of the deep read the owner asked for on 2026-11-15: hunt bugs a player can hit,
+one area properly. Method: the area was cut into eight pieces (the drag-and-drop layer; the mat
+screen; the Token card and recipes; the hero dock and drawers; the Bank and Shop; the Guild Hall;
+the world map; notices, Limes, the Encyclopedia and the modals) and two cross-cutting traces (does
+every screen show the game as it is now; every place a screen asks the engine to act). Ten read-only
+readers each read their files whole and tried to disprove each lead before reporting it. The ten
+reports were then assembled into this file: duplicates merged, the best evidence of each kept, and
+where two reports disagreed the disagreement is written into the finding. Every finding still waits
+for its second reader (`Verified by: pending`). Nothing was run: no tests, no bench, no game. Focus:
+what a player is told wrongly, cannot do, or loses.*
+
+## Summary for the owner
+
+TODO
+
+---
+
+## Findings
+
+Order: bugs a player can hit today, by priority (CR4-168 to CR4-171 at P2, then the work list for
+the owner's ruling on loadout changes in a fight, CR4-172, then CR4-173 to CR4-192 at P3), then the
+owner's decisions (CR4-193 to CR4-195), then faults waiting for a cause that does not exist yet
+(CR4-196, CR4-197).
+
+### CR4-168  A fighting hero's health on the hero bar and in the Hero drawer stands still until the kill or the knock-out
+- **Tag**: bug
+- **Priority / Effort / Risk**: P2 / S / low
+- **Confidence**: verified (both readers traced every publisher of the events the two bars listen to)
+- **Where**: `src/ui/components/dock/DockHeroFigure.jsx:128-146`, `src/ui/components/drawer/HeroInspectionSheet.jsx:59-74`, `src/ui/components/drawer/HeroInspectionSheet.jsx:119`, `src/ui/components/board/MatHero.jsx:38-48`, `src/ui/hooks/useGameState.js:138-142`, `src/systems/combat/CombatAttackProcessor.js:82-87`, `src/systems/combat/CombatAttackProcessor.js:161-166`, `src/systems/hero/logic/HeroState.js:52-59`, `src/systems/hero/RegenSystem.js:40-63`, `src/systems/combat/CombatProcessor.js:71`, `src/systems/combat/CombatResolutionProcessor.js:45`, `src/systems/combat/BoardCombat.js:540`, `src/systems/effects/LiveEffects.js:100`, `src/systems/effects/LiveEffects.js:307-327`, `src/systems/effects/LiveEffects.js:436-441`, `src/systems/board/DealDamage.js:85`, `src/systems/FormulaRegistry.js:186`, `src/ui/components/board/MatBoard.jsx:247`, `src/ui/components/board/MatBoard.jsx:256-263`
+- **What**: While a hero trades blows, the bar over the hero's head on the mat and the fight window drop with every hit, but the hero's bar on the hero bar at the foot of the screen, and the large HP bar in their Hero drawer, keep the value they had. They jump to the truth only when something else about any hero is announced: the kill (its XP) or the knock-out. To see it: new game, one hero, send the hero at the first enemy and watch both bars: the mat's falls hit by hit, the hero bar's stays full. Food eaten in the fight and poison ticks are missed the same way. With several heroes at work the bar moves in irregular jumps (whenever another hero finishes a work cycle or regenerates), a few seconds behind, which hides the fault without fixing it; with one hero, or every hero fighting, it is wrong for the whole fight. The hero bar is on every screen and is the only health the player can see on the World Map, in the Guild Hall and under the open Bank, so a hero can go from "full" straight to knocked out.
+- **Evidence**: An enemy's hit calls `HeroManager.modifyHeroHp` (`CombatAttackProcessor.js:161`), which writes `hp.current` in place and publishes nothing (`HeroState.js:52-59`); the swing then publishes `COMBAT_ENEMY_ATTACK` only (`:163-166`). Eating in a fight publishes `COMBAT_HERO_ATE` (`:85`), `HERO_CONSUMED` and the Bank's `INVENTORY_UPDATED`; a status tick publishes `STATUS_DOT_TICK` (`LiveEffects.js:438`); a rule's damage (`DealDamage.js:85`) publishes nothing unless it downs the hero. The mat knows this: `MatHero.jsx:38-48` says the engine changes `hp` in place "and says so only through these", and listens to `HEROES_UPDATED`, `COMBAT_ENEMY_ATTACK`, `COMBAT_HERO_ATE`, `STATUS_DOT_TICK`, `GAME_RESET`. The hero bar's figure listens to `HEROES_UPDATED`, `HERO_EQUIPMENT_CHANGED`, `GAME_RESET` only (`DockHeroFigure.jsx:142`); the drawer's sheet to `HEROES_UPDATED`, `HERO_LEVELED`, `GAME_RESET` only (`HeroInspectionSheet.jsx:71`); `useGameState` reads the store only when a named event fires (`useGameState.js:138-142`). What could have saved it and does not: every publisher of `HEROES_UPDATED` was listed; in a fight the only ones are a live effect landing or ending (`LiveEffects.js:100`, enemies or elixirs with effects only), the kill's XP (`SkillSystem.addXP`, once per kill, `CombatResolutionProcessor.js:45`) and the defeat (`BoardCombat.js:540`). Regeneration skips a hero whose status is `combat` (`RegenSystem.js:42`, set at `CombatProcessor.js:71`) and publishes only when some other hero regenerated or ate (every 10 s at most, `FormulaRegistry.js:186`). `endSwingEffects` and `endAttackEffects` do not notify (`LiveEffects.js:307-327`). A smaller cousin (the stale-screens reader): the mat's own "hurt" flag that keeps a working hero's bar up (`MatBoard.jsx:247`, events `:256-263`) misses a rule's damage to a working hero until the next regen step, up to 10 s. **Found independently by two readers** (the hero dock; the stale-screens trace), both verified, both P2.
+- **Fix sketch**: Give the hero bar's figure and the drawer's sheet the same HP event list the mat's bar has (`COMBAT_ENEMY_ATTACK`, `COMBAT_HERO_ATE`, `STATUS_DOT_TICK`), filtered to their hero and shared from one place; or have `modifyHeroHp`'s callers announce one hero-health event. Must not change: the projections stay flat (the bar redraws only when the number moves, the selector contract), the roster's separate status store, and no engine-visible work or random draw is added.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-169  After the PC sleeps, or any catch-up in mid-play, a Token's "!" for a stalled camp, Stump or Field can be missing, or stay up after the stall is over
+- **Tag**: bug
+- **Priority / Effort / Risk**: P2 / S / low
+- **Confidence**: verified
+- **Where**: `src/ui/components/board/TokenBubbles.jsx:171-189`, `src/ui/components/board/TokenBubbles.jsx:193`, `src/ui/components/board/tokenEvents.js:38-44`, `src/systems/board/SpawnerSystem.js:549-570`, `src/systems/board/Growth.js:133-144`, `src/systems/board/Growth.js:165-169`, `src/systems/board/Growth.js:229-230`, `src/systems/board/Fields.js:204-208`, `src/systems/core/CatchUp.js:272-285`, `src/systems/core/CatchUp.js:402-408`, `src/ui/components/board/MatBoard.jsx:605`, `src/ui/components/board/MatCapBadge.jsx:88-92`, `src/ui/components/board/flagText.js:180`
+- **What**: The problem mark on a Token nobody works (a camp waiting because the mat is at its Token cap or has no room, a Stump with no Forest in reach or no seedling, a Field with no seed) is kept by the Token's own drawing from the alert's change events. A catch-up plays with those events unheard, and the engine announces an alert only when it changes, so whatever changed during the catch-up is never shown. Leave the game running with a Wheat Field sown and few Wheat Seeds and let the PC sleep for an hour: on return the Field has stopped for want of seed and wears no "!", and resting the pointer on it shows no problem on its idle plate. The reverse too: a Field or camp stalled before the sleep and going again during it keeps its "!" though it is working. It stays wrong until that Token's alert next changes, or the Token is drawn afresh (travel away and back, a reload). Meanwhile the Token count popover, the Upkeep summary and the hero bar's hover line read the alerts live, so they disagree with the mat. A fresh load is not affected: the Tokens are first drawn after the load's catch-up.
+- **Evidence**: `stuck` and `growth` are React state, read from the engine only at mount and when `instanceId` changes (`TokenBubbles.jsx:172`, `:175`, `:182`, `:185`), then set from the payloads of `SPAWNER_ALERT_CHANGED` and `GROWTH_ALERT_CHANGED` (`:176-178`, `:186-188`), which reach it through `subscribeBy`, a `UI_LISTENER` (`tokenEvents.js:38-44`) the quiet bus skips (`CatchUp.js:272-285`). `SpawnerSystem.syncAlerts` and `Growth.setGrowthAlert` publish only on a change against their own kept map (`SpawnerSystem.js:559-563`, `Growth.js:134-143`), so after the catch-up there is nothing to re-announce, and the catch-up's end publishes only `GAME_RESET`, `HEROES_UPDATED` and `INVENTORY_UPDATED` (`CatchUp.js:402-408`). Nothing in `TokenBubbles` listens to `GAME_RESET`. Checked for a rescue: `MatToken` is keyed by the Token's id (`MatBoard.jsx:605`) and a surviving Token keeps its id through a catch-up, so it is not remounted; `useTokenDetail` does re-read on `GAME_RESET`, but its projection carries `instance.alert` (a worked Token's alert), not these two. **How it relates**: the mat-screen reader raised the same component as a lead for an in-session load (`TokenBubbles.jsx:172-189` with `Growth.js:165-169`, `:229-230`); the stale-screens reader found that no in-session load exists (the slot screen has no way back, and "Load as I left it" reloads the page, `useUIModals.js:192-195`), which settles that lead, and this catch-up path is the live form of it.
+- **Fix sketch**: Re-read `spawnerAlertOf` and `growthAlertOf` on `GAME_RESET`, or carry both in `tokenDetailOf`, which already wakes on it. Must not change: no polling, and the per-Token routing (one bus subscription per event type).
+- **Verified by**: pending
+- **State**: open
+
+### CR4-170  The "While you were away" summary cannot be clicked if Settings, Edit Hero or Text size was open when the PC went to sleep; clicks go through it to the window hidden underneath
+- **Tag**: bug
+- **Priority / Effort / Risk**: P2 / M / medium
+- **Confidence**: reasoned (one step assumed by both readers: that the webview treats the summary as click-through and unfocusable once its root is `inert`, as Chromium has done since v102, and paints it above the window, as the z-values say. One test in a desktop build settles it: open Settings, sleep the PC for three minutes, wake, try the summary's buttons)
+- **Where**: `src/ui/ReactRoot.jsx:443-453`, `src/ui/components/hud/CatchUpOverlay.jsx:65-73`, `src/ui/components/base/GIModal.jsx:37`, `node_modules/@headlessui/react/dist/components/dialog/dialog.js` (the `useInertOthers` call, `disallowed`), `node_modules/@headlessui/react/dist/hooks/use-inert-others.js`, `index.html:25`, `src/main.jsx:106`, `src/tailwind.css:207-209`, `src/ui/utils/escapeLayers.js:19-27`, `src/systems/core/GameLoop.js:66-68`, `src/systems/core/CatchUp.js:99-113`, `src/systems/core/CatchUp.js:329`, `src/config/loopConstants.js:43`, `src/ui/modals/SettingsModal.jsx:163`
+- **What**: Open Settings (or a hero's Edit window, or Text size), leave the game running, let the PC sleep for two minutes or more, wake it. The catch-up bar plays and the summary appears on top of the Settings window, but neither of its buttons reacts to the mouse. Each click lands instead on whatever Settings control lies under that point, unseen behind the summary: a toggle, "Save Game Now", or "Reset to defaults", which resets every option at once with no question asked. Esc only asks "Return to the Guild?" and a second Esc cancels the question; it never confirms, and Enter does nothing for the summary. The player sees a summary they cannot close. The ways out are blind: click the spot where Settings' Done or X sits under the summary, or press Enter while the keyboard focus happens to be on Settings' X, or close the game (the desktop close saves, and accepts the catch-up, CR4-164). The game keeps running underneath; nothing is lost.
+- **Evidence**: Settings, Edit Hero and Text size are all `GIModal`, a Headless UI 2.2.9 `Dialog` (`GIModal.jsx:37`). While a Dialog is open it runs `useInertOthers(open, { disallowed: () => [mainTreeNode.closest("body > *:not(#headlessui-portal-root)")] })`, and `use-inert-others.js` sets `aria-hidden="true"` and `inert = true` on that element, which here is the game's `#react-root` (`index.html:25`, `main.jsx:106`). The Dialog itself is drawn in `#headlessui-portal-root`. `CatchUpOverlay` is not portalled: it is the last child of `ReactRoot` (`ReactRoot.jsx:453`), inside the inert root, as a `fixed inset-0` box at `--z-catch-up` 350, above the modal's 300 (`CatchUpOverlay.jsx:70-72`, `tailwind.css:207-209`); nothing between `#react-root` and the overlay makes a stacking context, so it paints over Settings while being untargetable. Its `autoFocus` button cannot take focus inside an inert tree, and the Dialog's focus trap holds focus in the window. Esc reaches the summary because its escape layer was pushed after the window's (`escapeLayers.js:23`), and its handler is `setAsking(a => (a ? null : 'return'))` (`CatchUpOverlay.jsx:65`), which toggles the question and nothing else. The trigger is real: a modal does not pause the loop, the live loop's missed time goes to `CatchUp` (`GameLoop.js:66-68`, `CatchUp.js:99-113`), and a gap of `SHOW_GAP_MS` = 2 minutes shows the bar and the summary (`loopConstants.js:43`, `CatchUp.js:329`). "Reset to defaults" has no confirm step (`SettingsModal.jsx:163`). What could have saved it and does not: the overlay has no portal; nothing closes an open modal on `CATCH_UP_STARTED`. A catch-up on load is not affected: no `GIModal` is open then, and the slot screen is not a Dialog. **Found independently by two readers** (notices and modals; the actions trace), both reasoned on the same step, both P2.
+- **Fix sketch**: Close any open window (Settings, Edit Hero, Text size) when a shown catch-up starts, or draw `CatchUpOverlay` through a portal outside `#react-root` (then check its focus against the Dialog's tab lock). Must not change: a window still never closes on a click outside it; the summary's two confirm steps; Esc cancelling a question; the layer order for a catch-up on load.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-171  An item dragged from a long Bank list onto a hero on the hero bar can re-order the Bank instead of equipping, with the equip sound
+- **Tag**: bug
+- **Priority / Effort / Risk**: P2 / M / medium
+- **Confidence**: reasoned (the layout arithmetic was done by hand, not measured in a browser; and dnd-kit's auto-scroll, which runs as the pointer crosses the list's bottom edge, may scroll a short overflow away before the drop)
+- **Where**: `src/ui/dnd/DndKit.jsx:63-66`, `src/ui/dnd/DndKit.jsx:96-108`, `src/ui/dnd/DndKit.jsx:115-134`, `src/ui/dnd/DndKit.jsx:483-499`, `src/ui/components/drawer/BankTab.jsx:103-118`, `src/ui/components/drawer/BankTab.jsx:251-258`, `src/ui/components/drawer/BankTab.jsx:269`, `src/ui/components/drawer/BankTab.jsx:329-334`, `src/ui/components/drawer/BankDrawer.jsx:73`, `src/ui/components/dock/DockHeroFigure.jsx:71-88`, `src/ui/components/dock/dockHeroView.js:15`, `src/ui/components/dock/dockHeroView.js:25`, `src/ui/components/dock/DockEquipmentGrid.jsx:121-131`, `src/styles/main.css:287`, `node_modules/@dnd-kit/core/dist/core.esm.js:1994-2037`
+- **What**: With the Bank open and the open tab holding more rows than fit (the list scrolls), drag an item tile down onto a hero on the hero bar, the Bank's main "equip" gesture. Rows scrolled out of sight below the list still have their drop boxes, and those boxes lie exactly over the hero bar's 64 px strip. Whenever the hidden tile under the pointer is smaller in area than the hero's box, the hidden tile takes the drop: the item is not equipped, it is moved in the Bank to just before that hidden tile (so it vanishes from where it was), and the equip sound plays. From a hero's loadout slot dropped on another bar hero (a hand-over), the hidden tile instead unequips it to the Bank. While the search box is in use the hidden tile refuses, and the drop is a silent miss. Repro: a window about 1440 px wide (tile width works out at about 98 px), 50 or more item kinds in tab 1 (Bank tabs hold 64), do not scroll, drag the first item onto the middle hero on the bar. At the default maximised 1920 px the tile is about 105 px and the hero wins, and 64 kinds do not overflow there, so a full-screen 1080p player does not see it; smaller or windowed play (the window can be as small as 1024 x 700) does.
+- **Evidence**: `pointerWithinBoxes` collects every enabled target whose measured box holds the pointer; `smallestWithin` sorts by `rank` (the tile and `dock-hero-drop-*` are both `DND_SURFACE.DRAWER`, rank 0), then by `rect.width * rect.height` (`DndKit.jsx:96-108`, `:115-134`). A tile is square, between 96 px (6rem; html is 16 px, `main.css:287`) and about 108 px wide (`BankTab.jsx:269`), so 9,216 to about 11,700 px²; a bar hero's box is slot width (160, less when crowded) x `DOCK_STRIP_PX` 64 = 10,240 px² at most (`dockHeroView.js:15`, `:25`). So for tile widths under about 101 px (roughly half of all window widths, since the width cycles between 96 and 108 as columns are added) the tile sorts first and becomes dnd-kit's `over`. `handleDragEnd` asks only `over` (`DndKit.jsx:483-499`): the tile's `accepts` is true for a Bank item when not searching (`canReorder && p.itemId !== entry.id`) and for anything from a hero slot, and `handleTileDrop` (`BankTab.jsx:103-118`) then re-orders (`InventoryManager.setGroupOrder`) or unequips (`unequipOrAnnounce`). It returns `undefined`, which `handleDragEnd` counts as success (`!== false`), hence the `item_equip` clip. The code already knows this class of fault: `DockEquipmentGrid.jsx:121-131` (`pointerOutsideList`) says dnd-kit's boxes know nothing of clipping and that a small hidden target "wins the drop", and guards the loadout slots; Bank tiles have no such guard. Checked for a save: droppables are measured at drag start for all containers, scrolled-out ones included (`core.esm.js:1994-2037`); nothing filters by visibility; `dropBox` only shifts boxes by scrolling done during the drag. The list ends exactly where the hero bar's strip begins (`BankDrawer.jsx:73`). **How it relates**: CR4-181 is the same collision rule with the Hero drawer covering the Bank; the hero-dock reader's lead on a hero's head standing above the strip at a large fit (`dockHeroView.js:53-58`) is a third way into it.
+- **Fix sketch**: Give Bank tiles the guard the loadout slots have (a tile is not a collision at all when the pointer is outside its scroll list's visible box), ideally once in `pointerWithinBoxes` for every target inside a scrolling box, which would also serve CR4-181. Must not change: a visible tile still beats the list behind it, and tabs and slots keep beating tiles.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-172  The owner's ruling "no loadout changes while a hero trades blows" is not built: seven routes on screen change a fighting hero's gear, and none is guarded in the screens or the engine
+- **Tag**: bug
+- **Priority / Effort / Risk**: P2 / M / medium
+- **Confidence**: verified (the actions reader read the three engine functions and every route whole; the hero-dock and drag readers found the same: no route is blocked in a fight)
+- **Where**: `src/systems/equipment/EquipmentManager.js:135-256`, `src/ui/components/dock/DockHeroFigure.jsx:77-83`, `src/ui/components/dock/DockEquipmentGrid.jsx:148-151`, `src/ui/components/dock/DockEquipmentGrid.jsx:184-189`, `src/ui/components/dock/dockEquip.js:85-86`, `src/ui/components/dock/dockEquip.js:91-96`, `src/ui/components/dock/dockEquip.js:110-116`, `src/ui/components/drawer/BankTab.jsx:105-107`, `src/ui/components/drawer/BankTab.jsx:123-125`, `src/ui/components/drawer/BankTab.jsx:138-140`, `src/ui/components/drawer/HeroInspectionSheet.jsx:133`
+- **What**: Not a new defect: the work list for a ruling already made. On 2026-11-15 the owner ruled, on a D2 question, that a hero's loadout cannot be changed while they trade blows. Today every gesture below still works mid-fight: a Bank item dropped on a fighting hero equips; a slot moved within the loadout can change which weapon is swung; a hand-over takes an item out of a fighting giver's hands; a right-click or a drag to the Bank strips a fighting hero. The hero-dock reader names this as the ground of CR4-139.
+- **Evidence**: `EquipmentManager.equipItem`, `moveItem` and `unequipItem` check nothing about a fight, a wound or a catch-up (`EquipmentManager.js:135-256`), and no UI route checks either. The routes:
+
+  | # | Gesture | UI entry | Engine call | Heroes touched |
+  |---|---|---|---|---|
+  | 1 | Bank tile dropped on a hero on the hero bar | `DockHeroFigure.jsx:77-83` | `equipItem(hero, item, null, null)` | taker |
+  | 2 | Bank tile dropped on a loadout slot | `DockEquipmentGrid.jsx:148-151` | `equipItem(hero, item, slot, null)` | taker |
+  | 3 | Slot dragged to another slot of the same hero | `DockEquipmentGrid.jsx:148-151` via `dockEquip.js:85-86` | `moveItem` (can change which weapon is swung) | that hero |
+  | 4 | Slot dragged onto another hero's figure (hand-over) | `DockHeroFigure.jsx:77-83` | `equipItem(taker, item, null, from)` | taker **and giver** |
+  | 5 | Slot dragged onto another hero's slot (hand-over) | `DockEquipmentGrid.jsx:148-151` | `equipItem(taker, item, slot, from)` | taker **and giver** |
+  | 6 | Right-click on a filled slot | `DockEquipmentGrid.jsx:184-189` | `unequipItem` | that hero |
+  | 7 | Slot dragged onto a Bank tile, the Bank's empty space, or a Bank tab | `BankTab.jsx:105-107`, `:123-125`, `:138-140` | `unequipItem` | that hero |
+
+  The loadout grid lives only in `HeroInspectionSheet.jsx:133`, so there is no eighth route. Every route already shows the engine's refusal text: routes 1 to 5 as the hero's red speech bubble (`dockEquip.js:91-96`), 6 and 7 as a screen callout (`dockEquip.js:110-116`).
+- **Fix sketch**: One guard inside the three engine functions covers all seven routes and its words reach the player through the existing refusal paths. For routes 4 and 5 it must look at the giver as well as the taker. Must not change: engine-side changes that are not the player's (a lost fight breaking gear, `destroyEquipped`) stay outside the guard; equipping outside a fight.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-173  Travelling to another Region wipes every hero's level-up alerts on the hero bar
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified
+- **Where**: `src/ui/components/board/levelUpFeed.js:8`, `src/ui/components/board/levelUpFeed.js:28-30`, `src/ui/components/dock/heroBarBubbles.js:6-14`, `src/ui/components/dock/heroBarBubbles.js:83-88`, `src/ui/components/dock/heroBarBubbles.js:110`, `src/ui/components/board/levelUpFloats.js:143-147`, `src/systems/atlas/Atlas.js:499-500`, `src/systems/atlas/Atlas.js:506-537`
+- **What**: The gold alerts over a hero on the hero bar ("50 Mining!", "Perk: Clean Felling") are meant to stay until the player clicks them away, so nothing gained in a long session is missed. Travelling the guild to another Region (World Map, Travel or Settle) clears every one of them for every hero, though the heroes are the same guild's. Level a hero, leave the alert standing, travel: it is gone on arrival. The number floating over the hero on the mat goes too (that one lasts 30 s anyway).
+- **Evidence**: `Atlas.travel` publishes `GAME_RESET` with `reason: 'travel'` (`Atlas.js:531`). `subscribeLevelUps` calls `onReset` on every `GAME_RESET` whose reason is not `dev_time_skip` or `catch_up` (`levelUpFeed.js:29`); its own header defines `onReset` as "another save's heroes arriving" (`:8`) and says the same game moving on does not reset, but `travel` is not in the exemption. The bar's store wires `onReset` to `clearAllHeroBubbles` (`heroBarBubbles.js:110`). Travel moves "the whole guild" (`Atlas.js:499-500`) and does not touch `state.heroes` (`:506-537`). Nothing re-adds the alerts afterwards (`pending` is only set by a catch-up). **Found independently by two readers** (the hero dock; the stale-screens trace), both verified, both P3.
+- **Fix sketch**: Add `'travel'` to the reasons that do not reset in `levelUpFeed.js:29` (reset only for a new game, a load and the dev board reasons). Must not change: a new game or a load still starts with no alerts; a catch-up's pending level-ups are still handed on at its reset.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-174  After a short stall, and about once a minute while the game is minimised, the selected hero is let go and every open fight window loses its log
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / medium
+- **Confidence**: verified for what the listeners do; reasoned for how often a desktop player meets it (assumed step: that a minimised desktop window's timers are throttled as a background tab's are; an on-screen stall needs about two seconds in one frame)
+- **Where**: `src/systems/core/CatchUp.js:114-119`, `src/systems/core/CatchUp.js:403-408`, `src/ui/hooks/useMatSelection.js:175`, `src/ui/components/combat/fightWatch.js:433-438`, `src/ui/components/combat/fightWatch.js:472`, `src/ui/components/combat/FightPanelPopup.jsx:142-147`, `src/ui/components/combat/FightPanelPopup.jsx:150`, `src/ui/components/combat/fightPanelStore.js`, `src/ui/components/board/levelUpFeed.js:28`, `src/ui/components/board/rightClickOrders.js:38`, `src/ui/components/board/rightClickOrders.js:89-94`
+- **What**: Select a hero, minimise the game for a couple of minutes (or let the game stall for two seconds), come back: the hero is no longer selected, so a right-click on the mat stops whoever works that Token instead of ordering the selected hero. An open fight window has lost its log and its "Last fight", its clock starts again, and a minimised fight tab disappears until the next swing or the one-second check. The level-up feed exempts the catch-up for this very reason; the selection and the fight watch do not.
+- **Evidence**: Every quiet catch-up is `run({ ..., save: false })` with `reset` left at its default `true` (`CatchUp.js:119`), so it ends with `GAME_RESET { reason: 'catch_up' }` (`:403-408`). The direct UI subscribers to `GAME_RESET` are `clearSelection` (`useMatSelection.js:175`), `fightWatch.clearAll` (`fightWatch.js:472`, which empties `byHero` and `pending`, `:433-438`) and `levelUpFeed` (which exempts `catch_up`, `levelUpFeed.js:28`); all `useGameState` stores only re-read. With nothing selected, `rightClickAt` falls to `stopUnder` (`rightClickOrders.js:38`, `:89-94`), which stops a working hero. A minimised fight tab reappears only on the next swing or the 1 s check (`FightPanelPopup.jsx:142-147`). Linked: the fight windows in `fightPanelStore.js` are never closed on travel, so an open window whose record was wiped draws nothing but still takes the first Escape (`FightPanelPopup.jsx:150`). This settles the lead D3 left open at `CatchUp.js:119`. **Found by two readers**: the actions trace (finding) and the stale-screens trace (the fight-watch half, as a lead it left to the owner or the author to call intended or not).
+- **Fix sketch**: Give quiet catch-ups a reason the selection and the fight watch ignore, or pass `reset: false` and publish only the broad re-read events. Must not change: a shown catch-up and a load still clear both.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-175  The world map opens by itself underneath an open Bank (or the Shop, Settings, the Encyclopedia, the Guild Hall) when the last lesson is done there
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified (state logic and layering traced; the exact look on screen not seen)
+- **Where**: `src/ui/hooks/useWorldMapRequests.js:13-17`, `src/ui/ReactRoot.jsx:68`, `src/ui/ReactRoot.jsx:175`, `src/ui/ReactRoot.jsx:202-204`, `src/ui/ReactRoot.jsx:398-409`, `src/ui/hooks/useUIModals.js:112-138`, `src/ui/hooks/useUIModals.js:140`, `src/systems/quests/LimesLessons.js:83-101`, `src/systems/quests/lessonPlan.js:63-64`, `src/ui/components/drawer/BankDrawer.jsx:46-57`, `src/ui/components/drawer/BankDrawer.jsx:83`, `src/ui/components/base/SideDrawer.jsx:51`, `src/ui/components/atlas/WorldCamera.jsx:100`, `src/ui/components/atlas/WorldCamera.jsx:243`, `src/ui/dnd/DndKit.jsx:187-190`
+- **What**: New game with the lessons on. Do the lessons up to "equip food", but send a hero at the Goblin and win before equipping any food (steps count early, so "fight" is already done). Now open the Bank and drag a Redberry onto a hero. That completes the last lesson, the goal "settle a place" arrives, and the world map opens on its own: under the Bank, which stays open and covers it. The mat is taken away beneath the Bank, and the World Map drawer slides in on the far side on top of the Bank's Item drawer, so the item the player was looking at is hidden behind a panel about the Starter Camp. Two nav bubbles read as open. The same happens with the Shop open (last step "buy a Foundation"), Settings open, or in the Guild Hall (last step "Bunk Beds": the Hall is swapped for the map at once). The usual last step is the fight, which a hero wins on their own time, so it can also land while the player reads the Encyclopedia (the book is replaced) or holds a Token or hero in a drag. Not a trap: Escape closes the Bank first, then the map; the World Map drawer's X closes the map.
+- **Evidence**: `LimesLessons.report` counts every step "done or showing or not" (`:83-93`) and says `arrived: true` whenever the current step changes (`:100-101`), so the goal can arrive on whichever lesson is finished last, including `hero_equipped {category:'food'}`, which can only be done from the Bank (`lessonPlan.js:63-64`). `useWorldMapRequests` then calls `ui.fullscreen.open('atlas')` (`useWorldMapRequests.js:13-17`, `ReactRoot.jsx:202-204`), a bare `setFullscreenView(view)` (`useUIModals.js:140`) that, unlike `navToggle` (`:112-138`), closes nothing. So `isAtlasOpen` and `isBankOpen` are both true: `WorldCamera` glides and unmounts the mat (`WorldCamera.jsx:100`, `:243`), `BankDrawer` stays (it covers everything up to the far column, `BankDrawer.jsx:46-57`), and `WorldDrawer` (`ReactRoot.jsx:407-409`) comes after the Bank's `ItemDrawer` (`BankDrawer.jsx:83`) in the same parent with the same `z-(--z-drawer)` (`SideDrawer.jsx:51`), on the same edge, so it is drawn over it. Nothing closes the Bank on this path. Escape order: `NAV_VIEWS` (`ReactRoot.jsx:68`, `:175`). The drag case breaks the rule written at `DndKit.jsx:187-190` ("nothing can open, close or resize a drawer mid-drag"): the carried Token is put down by its clean-up when the mat unmounts, and a drop after that finds no mat target; a drop during the glide itself (the mat moving, boxes measured at drag start) was not traced by either reader. **Found by two readers**: the world map reader (finding, verified) and the notices reader (as a lead, adding the Encyclopedia, the Guild Hall and the drag cases).
+- **Fix sketch**: Open the map for Limes through the same close-everything-first path the nav bubble uses (`navToggle('atlas')` when not already active), and hold the request while a drag is live (or until no drawer, Shop, Settings or Hall is open). Must not change: no auto-open on a load or after a catch-up, and none with the lessons off.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-176  Escape in a place's rename box closes the whole world map, and Escape to cancel a drag over the map closes it too
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified for the rename box; reasoned for the drag case (the world map reader assumed that dnd-kit's own Escape handler on `document` does not stop the event; the drag reader, who read dnd-kit's source, states the same as a lead)
+- **Where**: `src/ui/components/atlas/WorldDrawer.jsx:64-77`, `src/ui/components/atlas/WorldDrawer.jsx:88-95`, `src/ui/utils/escapeLayers.js:19-27`, `src/ui/utils/escapeLayers.js:37-38`, `src/ui/ReactRoot.jsx:175-179`, `src/ui/components/atlas/WorldScreen.jsx:65-71`, `src/ui/components/dock/DockHeroFigure.jsx:67`
+- **What**: Open the world map, pick any settled place (the Starter Camp will do), click the quill, type, press Escape. The file's own comment says Escape drops the rename ("Enter or leaving the box keeps it, Escape does not"). What happens: the whole world map closes. Whether the half-typed name is then kept depends on whether the webview fires `blur` on the removed box (an open lead). Second case: with the map open, start dragging a hero from the hero bar and press Escape to cancel: the drag is cancelled and the map closes as well.
+- **Evidence**: While the map is open `ReactRoot` holds an Escape layer for the open nav view (`:175-179`: `openView === 'atlas'` calls `navToggle('atlas')`, which sets `setFullscreenView(null)`). `escapeLayers.onKeyDown` is a capturing listener on `window` (`:38`) that calls `e.stopPropagation()` (`:24`) and hands Escape to the top layer. The rename box handles Escape in a React `onKeyDown` with `e.stopPropagation()` (`WorldDrawer.jsx:90-94`): that runs at the React root, after the window's capture phase, so it never runs at all; the box registers no Escape layer of its own (grep: `useEscapeLayer` and `pushEscapeLayer` are not used anywhere in `components/atlas/`). Drag case: `escapeLayers.js:22` lets Escape through untouched while `gi-dnd-active` is set, so it reaches `WorldScreen`'s own `document` keydown listener (`WorldScreen.jsx:65-71`), which calls `onClose` for any Escape not marked `END_DRAG_MARK`. That listener is otherwise dead: with the nav layer registered the window listener always swallows Escape first, so the only time it fires is during a drag. The hero bar stays on the map screen and its figures are drag sources (`DockHeroFigure.jsx:67`). **Found by two readers**: the world map reader (finding, both cases) and the drag-and-drop reader (the drag case, as a lead: "this listener is not one of the Escape layers").
+- **Fix sketch**: Give the rename box an Escape layer while it is being edited (`useEscapeLayer(editing, dropTheDraft)`), and delete `WorldScreen`'s own `document` Escape listener (the nav layer already closes the map). Must not change: Escape with no rename open still closes the map; `travelFromScreen.endDrag`'s marked Escape still ends a drag without closing anything.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-177  Clicking an event's banner while the Encyclopedia is open uses the banner up and shows nothing
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified
+- **Where**: `src/ui/components/notifications/BannerStack.jsx:197-206`, `src/ui/components/notifications/BannerStack.jsx:239`, `src/ui/hooks/useShowOnMat.js:17-23`, `src/ui/ReactRoot.jsx:210`, `src/ui/ReactRoot.jsx:315-320`, `src/ui/ReactRoot.jsx:342`, `src/ui/components/encyclopedia/EncyclopediaScreen.jsx:318-320`
+- **What**: An event lands (a Copper Comet, Rainfall) while the player reads the Encyclopedia. Its gold banner drops in over the book. The player clicks it, expecting to be shown the Token as from the World Map or the Guild Hall. The banner lifts away, the book stays open, and the gold pulse plays on the Token hidden under the book. When the player closes the book there is no banner and no pulse. The Token is still on the mat, so nothing is lost but the pointer to it, and event banners never come back in play.
+- **Evidence**: The banners are drawn outside the cameras at z-30 and the book inside the mat's box at z-20 (`ReactRoot.jsx:315-320`, `:342`; `EncyclopediaScreen.jsx:319`), and `away` is only `isGuildView || isAtlasOpen`, so over the book every banner shows and takes clicks. The click publishes `SHOW_ON_MAT` and dismisses after 200 ms (`BannerStack.jsx:201-205`). `useShowOnMat` is given `awayOpen: isGuildView || isAtlasOpen` (`ReactRoot.jsx:210`): with the book open it does not go back to the mat and pulses at once (`delayMs: 0`), for 1.2 s. **Found by two readers**: the notices reader (finding, verified) and the mat-screen reader (as a lead at `useShowOnMat.js:17-23`, naming the Bank and the Encyclopedia). The Bank half is settled by the notices reader: the Bank's drawer (z 90) lies over the banners, so they cannot be clicked there; the Shop and the hero panel leave the mat in view.
+- **Fix sketch**: Count the Encyclopedia as a view to leave: close it in `backToMat` and pulse after it has gone. Must not change: a banner about a Token that is gone or in another Region is simply dismissed (CR4-113's fix decides the rest).
+- **Verified by**: pending
+- **State**: open
+
+### CR4-178  A knocked-out hero who is carried or selected lights every Token green as "ready", though every order is refused until they heal
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified for the lit Tokens and the refusal; reasoned for the dashed line to bare ground reading as valid (the reader read `orderAim.js`, not `OrderDragLine.jsx`'s drawing)
+- **Where**: `src/systems/board/Orders.js:78-94`, `src/systems/board/Orders.js:100-107`, `src/ui/components/board/OrderLighting.jsx` (`workableFor`, the `OrderLighting` effect), `src/ui/components/board/orderAim.js`, `src/ui/components/board/rightClickOrders.js:44-49`
+- **What**: Let a hero be knocked out. While they heal, click them on the hero bar (or pick up their flag). Every Token they could normally work gets the green "ready" outline, the same as for a fit hero. Right-click or drop on any of them, on the Guild Hall, or on bare ground: refused, "Ana is healing: 0:42". The screen says go, the engine says no. What softens it: carried over a Token, the aim does say the healing reason, and the refusal is always shown.
+- **Evidence**: `Orders.canOrderOnto` (`Orders.js:90-94`) asks only `Flags.orderRefusal`, which knows nothing of the wound. `Orders.aimAt` (`:80-81`) and `Orders.orderAt` (`:104-107`) both check `hero.status === 'wounded'` first. `workableFor` lights from `canOrderOnto` alone. Neither the roster figure's nor the mat figure's drag source is disabled for a wounded hero, and `selectHero` has no such check.
+- **Fix sketch**: Have `canOrderOnto` answer false for a healing hero (one line, the same test `aimAt` uses). Must not change: the Guild Hall still never lights; the refusal text stays the engine's.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-179  A flag's hover says "Working: Furnace" in green while the Furnace is stopped for want of Coal
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified
+- **Where**: `src/ui/components/board/flagText.js:67-73`, `src/ui/components/board/flagText.js:85-95`, `src/ui/components/board/flagText.js:113-119`, `src/ui/components/board/flagText.js:171-174`, `src/ui/components/board/FlagLayer.jsx:255-258`, `src/ui/components/board/FlagLayer.jsx:265-287`, `src/systems/board/Flags.js:373`, `src/systems/board/Flags.js:490-497`, `src/systems/board/Flags.js:962-977`, `src/systems/board/BoardState.js:680-687`
+- **What**: Send a hero to a Furnace set to Copper Ingot (`recipe_copper_ingot`: 4 Copper Ore, 1 Coal) and let the Coal run out. The hero stands idle beside it, the work plate shows the missing Coal in red and the hero bar's bubble says "Furnace: Needs Coal". Hover the hero's flag on the Furnace: the tooltip says "Working: Furnace" in the green "working" colour and gives no reason. The same for any Token stopped under its hero: too few charges, nothing chosen, no room for what it makes, a missing Token nearby.
+- **Evidence**: The tooltip's line is `flagStatusLine`, which calls `dockStatusLine`; for `state === 'working'` that returns "Working: {token}" without looking at the Token's alert (`flagText.js:116-119`), and `FlagTooltip` colours it by `tip.state` (`FlagLayer.jsx:255-258`, `:278`). The engine's `statusOf` says `working` whenever the hero has arrived at their claimed Token (`Flags.js:971-977`, `BoardState.workTokenOf` at `BoardState.js:680-687`), alert or no alert, and a hero stuck for a fixable reason keeps the claim while nothing else can run (`Flags.js:490-497`). The tooltip's list of skips is empty here: a Token order has one candidate, the held Token is excluded (`Flags.js:373`), and no skips are recorded when nothing else is picked (`:493-497`). The roster's line already handles it (`rosterBubbleLine`, `flagText.js:171-174`, reads `instance.alert` and says what is missing); the flag's tooltip is the only reader left on the bare status.
+- **Fix sketch**: Have the flag's tooltip use the hero bar's line (`rosterBubbleLine`) and take its colour from whether the Token is stuck. Must not change: the roster's words, and the `statusOf` states other code reads.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-180  A hero let go on the empty part of the hero bar, or on the table beside the mat, is sent to stand at the mat's edge and leaves their job
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: reasoned (one step assumed: the on-screen distances, that the mat's bottom edge is nearer the pointer than any hero's slot; not measured in the running game)
+- **Where**: `src/ui/dnd/DndKit.jsx:136-164`, `src/ui/components/dock/BottomHeroDock.jsx:78-92`, `src/ui/components/dock/DockHeroFigure.jsx:64-88`, `src/ui/components/board/Board.jsx:55-69`, `src/ui/components/board/Board.jsx:131-137`, `src/ui/components/board/dropOnMat.js:19-23`, `src/ui/components/board/dropOnMat.js:84-93`, `src/ui/components/board/dropOnMat.js:103-110`, `src/systems/board/Orders.js:100-122`, `src/ui/components/dock/HeroDrawer.jsx:111-117`
+- **What**: The hero bar's strip is meant to be no drop target ("a hero dropped here simply stays where they were", `BottomHeroDock.jsx:78`). But a drop that lands inside no target is handed to the nearest target within 240 px, and the mat is one. With one to three heroes the row is short and centred, so most of the strip is empty. Pick a working hero up off the bar, change your mind, and let go on the empty strip more than about a slot's width to the side of the row (Bank and Hero drawer closed): the mat takes the drop at a point below its bottom edge, the point is clamped onto the mat, and the hero is given a "stand here" order: they walk off their job to the mat's bottom edge and idle. The same happens letting go on the wood table between the mat and the bar, or beside the mat.
+- **Evidence**: `smallestWithin` (`DndKit.jsx:136-164`): with no target under the pointer it returns the nearest enabled target within 240 px. The strip is a plain `<aside>` with no drop hook (`BottomHeroDock.jsx:83-91`); the heroes' own targets are their slots only (`DockHeroFigure.jsx:71`, each `DOCK_SLOT_PX` 160 wide, the strip 64 tall). The mat's target is the mat's own box (`Board.jsx:55-58`, `:131-137`), which stops above the strip (the Board box has 32 px of padding). The mat accepts any flag with a hero (`dropOnMat.js:19-23`), and the dock's drag is a flag (`DockHeroFigure.jsx:64-69`). `Board.jsx:63-65` converts the pointer with no bounds check; `dropOnMat.js:88-92` calls `Orders.orderAt`; `Orders.js:118-121` clamps the point to the mat and calls `Flags.orderSpot`, which replaces the hero's order. What could have saved it: the Shop's branch in the same function knows the fallback "can hand the mat a drop just outside it" and treats it as a cancel (`dropOnMat.js:103-110`); the hero branch has no such check. When the nearest target is the dragged hero's own slot the drop is a miss (`DockHeroFigure.jsx:75-76`), so letting go on or right beside the hero is safe; while the Bank is open the mat refuses everything (`dropOnMat.js:20`); while the Hero drawer is open its whole box takes the drop (`HeroDrawer.jsx:111-117`). **How it relates**: the same 240 px fallback was raised as a lead by three other readers, with other outcomes (a hero re-ordered on the Hall and Map screens, an item unequipped to the Bank, a Bank item filed into a tab): see the Notes under the drag-and-drop, hero-dock and Bank readers.
+- **Fix sketch**: In `dropOnMat`'s hero branch (or in `Board.jsx`'s `onDrop`), treat a point outside the mat as a miss (`return false`), as the Shop branch does. Must not change: a hero dropped anywhere on the mat itself, edges included, still gets their order; the right-click order path, which shares `dropOnMat`.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-181  With the Bank and a hero's drawer both open, an item let go on the drawer's body can be taken by a Bank tile hidden underneath it
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / M / medium
+- **Confidence**: reasoned (the same collision rule as CR4-171, traced; whether a tile lies under the pointer depends on how many kinds the tab holds and the window height, worked out by hand)
+- **Where**: `src/ui/components/dock/HeroDrawer.jsx:111-117`, `src/ui/components/dock/HeroDrawer.jsx:124-146`, `src/tailwind.css:201-203`, `src/ui/components/drawer/BankTab.jsx:103-118`, `src/ui/components/drawer/BankTab.jsx:329-334`, `src/ui/dnd/DndKit.jsx:115-134`
+- **What**: Dressing a hero from the Bank has both open, and the Hero drawer covers the lower rows of the Bank list. Drag an item out of a loadout slot and let go anywhere on the drawer that is not a slot (the 4 px gap between slots, the stats, the big figure): if a covered Bank tile is under the pointer, the item is unequipped to the Bank instead of springing back. A Bank item let go there is quietly moved in the Bank's order to before the covered tile, with the equip sound. Where no covered tile is under the pointer the same drop is a plain miss, so the result depends on something the player cannot see. Repro: 1440 x 900 window, 30 or more kinds in the tab, Bank open, double-click a hero, drag their axe from its slot and release it on the drawer's skills block.
+- **Evidence**: The drawer (z 100) rises over the Bank drawer (z 90, `tailwind.css:201-203`); its own target `hero-panel-drop` is the whole drawer and accepts only a hero (`HeroDrawer.jsx:111-117`, `:124-146`). `item-tile-*`, `bank-list-*` and `hero-panel-drop` are all drawer-surface, so area decides: the tile (about 100 x 100) is far smaller than the drawer's box and sorts first (`DndKit.jsx:115-134`). The tile `accepts` any item with `fromHeroId != null`, and `handleTileDrop` calls `unequipOrAnnounce(payload.fromHeroId, payload.fromSlot)` (`BankTab.jsx:103-118`). Where only `bank-list` and `hero-panel-drop` hold the pointer, the smaller of the two wins: when it is `hero-panel-drop` the drop is refused; when the Bank list is the smaller (a narrow, short window) the item is unequipped everywhere on the drawer. Not saved by `pointerOutsideList`, which guards only the loadout slots.
+- **Fix sketch**: A drawer-surface target covered by another drawer panel should not collide: simplest is for `hero-panel-drop` to outrank Bank targets inside its own box (its loadout slots still outrank it); best fixed with CR4-171. Must not change: dropping a loadout item on the visible Bank still unequips.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-182  The first click inside a hero's Edit window closes the Hero drawer behind it
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: reasoned (one step assumed: that Headless UI's Dialog lets a `pointerdown` inside its panel reach `document`; nothing in `GIModal.jsx` stops it)
+- **Where**: `src/ui/components/dock/HeroDrawer.jsx:58-85`, `src/ui/components/dock/HeroDrawer.jsx:162-172`, `src/ui/modals/HeroEditModal.jsx:94-99`, `src/ui/modals/HeroEditModal.jsx:159-181`, `src/ui/components/base/GIModal.jsx:36-89`, `src/ui/ReactRoot.jsx:445-451`
+- **What**: Open a hero's drawer, click the quill, then click in the Name box (or a portrait, a flag colour, Save or Cancel). The drawer slides shut under the window. After Save the player is back on the mat with the drawer closed and must double-click the hero again to see the new name or carry on dressing them. The Edit window's own notes say a picked flag colour shows "at once" on "the panel" (`HeroEditModal.jsx:97-99`), which it cannot once the panel has closed.
+- **Evidence**: The drawer closes on any `pointerdown` on `document` whose target is not inside the drawer and not in its allow-list: the hero bar, drawer surfaces, `[data-item-id]`, the Bank tab and button, a tooltip (`HeroDrawer.jsx:61-80`). The Edit window is a Headless UI `Dialog` drawn outside the drawer (`GIModal.jsx:37`, mounted at `ReactRoot.jsx:445-451`); none of its elements carries an allow-listed attribute (the portraits' `ItemIcon` and the flag swatches were checked; `data-item-id` exists only in `CatchUpOverlay` and `UpkeepSummaryPanel`). So the first press in the window calls `onCloseHero`. The window itself stays, because it is keyed on `ui.dock.editHeroId`, not on the drawer.
+- **Fix sketch**: Skip the outside-press close while a window is open (ignore presses inside `[role="dialog"]`, or do not listen while `ui.dock.editHeroId` is set). Must not change: a press on the mat, the nav or a card still closes the drawer; Escape still closes the Edit window first, then the drawer.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-183  Dragging a Bank item onto the tile to its right does nothing, and any forward move lands one place short
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified
+- **Where**: `src/ui/components/drawer/BankTab.jsx:108-117`, `src/ui/components/drawer/BankTab.jsx:121-133`, `src/ui/components/drawer/BankTab.jsx:329-334`, `src/ui/dnd/DndKit.jsx:497`, `src/ui/components/dock/DockHeroFigure.jsx:96`
+- **What**: In the Bank (not searching), drag the first tile onto the second. The second tile shows the accept ring, the drop sound plays, and nothing moves. Drag the first tile onto the fourth: it lands third, not fourth. Moving backward works (drag the fourth onto the second: it takes the second place). An item can never be made last by dropping it on the last tile. Related: the gaps between tiles belong to the list's own drop target, so a drop that lands in the 12 px gap between two tiles sends the item to the end of the tab.
+- **Evidence**: `handleTileDrop` builds `next = ids.filter(id => id !== payload.itemId)` then `next.splice(next.indexOf(targetId), 0, payload.itemId)` (`BankTab.jsx:114-115`): always "insert before the target", measured after the source was removed. For source index 0 and target index 1, `next.indexOf(target)` is 0, so the item goes back where it was. The tile's `accepts` (`:332`) is true for any other tile, so the cue and the success sound still play (`DndKit.jsx:497`, `onDrop` returns undefined). The gap drop is `handleListDrop` (`BankTab.jsx:121-133`). The hero bar's reorder does this correctly: it works out `insertAfter = sourceIndex < targetIndex` (`DockHeroFigure.jsx:96`).
+- **Fix sketch**: When the source is before the target in `ids`, insert after the target (take its place), as the hero bar does. Must not change: backward moves and the wholesale `setGroupOrder`.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-184  The Bank forgets where an item belongs once it runs out, if anything is reordered or sorted meanwhile; and an item filed into a never-arranged tab jumps to the front
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / M / medium
+- **Confidence**: verified
+- **Where**: `src/systems/inventory/InventoryManager.js:195-196`, `src/systems/inventory/InventoryManager.js:218`, `src/systems/inventory/InventoryManager.js:337-343`, `src/systems/inventory/InventoryManager.js:360-385`, `src/systems/inventory/bankTabs.js:21-38`, `src/ui/components/drawer/BankTab.jsx:109-116`, `src/ui/components/drawer/BankTab.jsx:127-131`, `src/ui/components/drawer/BankTab.jsx:151-155`
+- **What**: (a) Arrange a tab by hand so the Copper Woodaxe (one copy) is first. Equip it on a hero (the Bank now holds none, the tile goes). Drag any other tile to a new place, or press Sort. Unequip the axe: it comes back at the END of the tab. Without the reorder in between it comes back first, where it was. The same happens to any material that touches zero (inputs do so constantly in an idle game), so a hand-arranged or sorted tab slowly scrambles. (b) With two tabs, drag an item from tab 2 onto tab 1's button, where tab 1 was never sorted or hand-arranged: the item appears FIRST in tab 1, ahead of everything, not at the end. Dropping an item on its own tab's button does the same.
+- **Evidence**: A tab's shown order is `orderedItems` first, then every other item in the order `inventory.items` lists them (`bankTabLayout`, `bankTabs.js:26-36`). Running out deletes the item's entry (`removeItem`, `InventoryManager.js:195-196`; `takeOut`, `:218`) but leaves its id in `orderedItems`, which is what keeps its place. Every reorder and every Sort then calls `setGroupOrder(tab, <ids of the tiles shown now>)` (`BankTab.jsx:116`, `:131`, `:154`), which replaces `orderedItems` wholesale (`def.orderedItems = [...orderedIds]`, `InventoryManager.js:340`), dropping every id not in stock at that moment (and every id CR4-162 hides). For (b): `_refile` pushes the id onto the target tab's `orderedItems` (`InventoryManager.js:377-383`); in a tab whose items are all in the unordered "rest", that list is empty, so the one ordered id is drawn before all of them. Nothing else writes `orderedItems` (grep: only `setGroupOrder` and `_refile`).
+- **Fix sketch**: In `setGroupOrder`, keep the ids the caller did not list (out of stock or hidden) at their old relative places instead of dropping them; in `_refile` with no index, first write the target tab's shown order into `orderedItems`, so "the end" means the end the player sees. Must not change: the one-slot-per-kind counting (`bankTabCounts`); saved tab orders still load.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-185  Bank search misses an item when a possessive is typed without its apostrophe ("chiefs tent" does not find Chief's Tent Map)
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified
+- **Where**: `src/ui/components/drawer/bankSort.js:21-38`, `data/items.json:2590`, `data/items.json:2618`, `data/items.json:2716`
+- **What**: With a Chief's Tent Map, Queen's Hive Map or Alpha's Den Map in the Bank, type `chiefs` or `chiefs tent` in the Bank's search: no tile. `chief`, `chief's` and `tent` all find it. The search covers every tab, so an empty result reads as "I do not have it".
+- **Evidence**: `wordsOf` splits on every non-letter, non-digit (`/[^\p{L}\p{N}]+/u`), so the name becomes `chief`, `s`, `tent`, `map`, and the typed `chiefs` is one word; `wordStartsMatch` needs each typed word to be the start of a name word, and no word starts with `chiefs` (`bankSort.js:21-38`).
+- **Fix sketch**: Drop apostrophes (straight and curly) before splitting, on both the name and the typed text. Must not change: word-start matching ("Ore" finds Iron Ore, not Forest Map).
+- **Verified by**: pending
+- **State**: open
+
+### CR4-186  A Token marked for demolition shows XP on its card that demolishing never pays
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified
+- **Where**: `src/ui/components/board/tokenCard.js:530-546`, `src/ui/components/board/tokenCard.js:548`, `src/ui/components/board/TokenCard.jsx:117-121`, `src/systems/board/BoardRunner.js:468-499`, `src/systems/board/Demolition.js:48-55`, `src/systems/board/RecipeResolver.js:168-186`, `src/systems/board/EffectBreakdown.js:314`
+- **What**: Mark a Token that has work of its own for demolition (the top bar's Demolish mode) and open its card. The stat block turns into Construction work (Level 1, Time 10s), but the XP cell still shows the Token's old award, now labelled as Construction: a built Birch Forest shows its gathering XP, a Furnace set to a level-90 ingot shows "+2,185", with the hover "2,185 Construction XP each time a round of work finishes". Demolition pays no XP at all. Reproduce: build a Furnace, pick Copper Ingot with its Coal and Ore context met, mark it, double-click it.
+- **Evidence**: `marked` swaps `work` to `Demolition.DEMOLITION_CONFIG` and `skillId` to its skill (`tokenCard.js:540-541`), but `io` is computed for every instance, marked or not (`:531`), and the XP line reads `io?.xp` first: `Number(io?.xp ?? recipe?.xp ?? work?.xp)` (`:544`). `effectiveIO` knows nothing of the mark and returns `recipe?.xp ?? def.config?.xp` (`RecipeResolver.js:184`). `DEMOLITION_CONFIG.xp` is 0 and `tickDemolition` never calls `SkillSystem.addXP` (its comment: "no XP, no output"; `BoardRunner.js:468-499`, `Demolition.js:48-55`). The time is handled correctly two lines down (`marked ? src.demolishMs : ...`, `:548`), so only XP was missed. The effect badges are not affected (`EffectBreakdown.contextOf` sets `config` to null for a marked Token, `EffectBreakdown.js:314`). A station with nothing chosen, or with its context missing, shows no XP (its `io` has none), so it needs a Token whose work resolves: a set station, a gathering Token, a Field.
+- **Fix sketch**: When `marked`, take XP from `work` only (0, so the cell is left out). Must not change: the Level, Time and Charges cells of a marked Token; the unmarked card.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-187  A station with nothing chosen shows a work time and a level that belong to no recipe
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified
+- **Where**: `src/ui/components/board/tokenCard.js:536-554`, `src/systems/board/RecipeResolver.js:146-148`, `src/systems/board/RecipeResolver.js:172`, `data/tokens.json` (every station's `config`)
+- **What**: A newly built Workbench, Furnace, Tannery or Brewery says "Level 1" ("a hero needs level 1 to work this") and "Time 12s" ("One round of work takes this long") until a recipe is picked. No recipe takes 12 s by rule, and the Tannery's three recipes need Crafting 15, 20 and 21. The numbers are the station type's own `config` (`skillRequired: 1`, `cycleTimeMs: 12000` on all 16 stations with a config), which the engine only ever uses as a fallback when a recipe has no time, and every shipped recipe has one. The same card is what the Encyclopedia shows for the type.
+- **Evidence**: With no selection `effectiveIO` returns `{ status: NONE, reason: 'choose_recipe', inputs: [], outputs: [] }` with no `cycleTimeMs` (`RecipeResolver.js:146-148`, `:172`); `recipe` is null, so `baseMs` falls through to `def.config?.cycleTimeMs` (`tokenCard.js:548`) and `level` to `Math.max(1, work.skillRequired, 0)` (`:543`). The cycle block is pushed whenever `cycleMs > 0` (`:554`). Once a recipe is set both read the recipe (and CR4-107 covers what the level then means).
+- **Fix sketch**: For a station (`isStation`) with no recipe, leave the Time cell out and show the level only once a recipe is chosen (or the lowest level in its pool). Must not change: gathering Tokens, whose own `config` is the real work.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-188  The recipe gear of a second station of the same type, standing level with the first, does not move the open card
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified (the code path); how often two stations stand at the same height in play is not measured
+- **Where**: `src/ui/hooks/useUIModals.js:149-161`, `src/ui/components/board/Board.jsx:76-82`, `src/ui/components/board/recipeFlip.js:13-24`, `src/ui/components/board/TokenCard.jsx:565-580`, `src/ui/components/board/TokenBadges.jsx:112`, `src/ui/components/board/MatBoard.jsx:385-388`, `src/ui/ReactRoot.jsx:434`, `src/systems/board/MatPlacement.js:119`
+- **What**: With Furnace A's card open, click the gear on Furnace B standing at exactly the same height on the mat (positions are whole mat units, so two stations lined up in a row qualify). Nothing happens: the card stays on A, beside A. The request "open B on its recipe list" is left waiting, so the next time B's card is opened by double-click it opens on the list instead of the card face. A second, smaller effect of the same card not being keyed by Token: when the gear does move the card from A's list to B's list (different height or type), the search text typed for A is still in the box and filters B's list, and the list does not scroll to B's selected recipe.
+- **Evidence**: `inspectSet` keeps the previous selection when `prev.type === type && prev.id === id && prev.source?.rect?.top === source?.rect?.top` (`useUIModals.js:149-161`): `id` is the type id, and the instance id (`source.instanceId`) is not compared. The gear path never clears first: `StationGearBadge` stops the click (`e.stopPropagation()`, `TokenBadges.jsx:112`), so neither `handlePickToken` (which clears the card for another Token, `MatBoard.jsx:385-388`) nor the popup's window listener runs; `handleOpenRecipes` calls `requestRecipeList(id)` (sets `pending = B`) then `onInspectToken` (`Board.jsx:76-82`). The open card's listener ignores it (`id === instanceId` is false, `recipeFlip.js:13-24`, `TokenCard.jsx:565-580`) and nothing takes `pending` until a card for B mounts. A double-click on B is safe (its first click clears). For the search text: `RecipeList` holds `query` in state, the popup and card are not keyed by instance (`ReactRoot.jsx:434`), and its scroll effect has `[]` deps.
+- **Fix sketch**: Compare `source.instanceId` in `inspectSet`'s "same selection" test, and key `RecipeList` (or the card) by instance id. Must not change: re-clicking the same Token keeps the same selection object (no redraw).
+- **Verified by**: pending
+- **State**: open
+
+### CR4-189  Text size: "Reset Defaults" then closing with the X keeps the reset but shows the old sizes, and the custom sizes are lost at the next change
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified
+- **Where**: `src/ui/modals/TypographyScaleModal.jsx:41`, `src/ui/modals/TypographyScaleModal.jsx:53-63`, `src/ui/modals/TypographyScaleModal.jsx:70-74`, `src/systems/core/SettingsManager.js:155-162`, `src/systems/core/SettingsManager.js:167-171`
+- **What**: With custom text sizes saved, open Settings, Display, Adjust; press Reset Defaults, then change your mind and close with the X or Esc (the window says these "put back the sizes it opened with"). The screen goes back to the custom sizes, but the stored setting is now the defaults. The next change to any setting (a toggle, a volume slider), or the next start, snaps all text to the default sizes, and the custom sizes are gone.
+- **Evidence**: `handleReset` writes at once: `SettingsManager.set('ui.fontSizes', reset)` (`TypographyScaleModal.jsx:62`), where the sliders only preview. `handleCancel` only repaints: `SettingsManager.applyFontSizes(openedWith.current)` (`:72`), which sets CSS properties and stores nothing (`SettingsManager.js:155-162`). Every later `save()` calls `applyFontSizes()` with the stored (default) sizes (`:170`).
+- **Fix sketch**: Make Reset a preview like the sliders (state and CSS only), saved by Save & Close. Must not change: X and Esc restoring what the window opened with.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-190  A reason said over a Token in the mat's top row is cut off by the mat's top edge (a refused order or drop, "Needs Pickaxe", the Guild Hall's "cannot be removed")
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / M / low
+- **Confidence**: reasoned (the one step not proven by running the game: that the browser clips at the box's edge as the CSS says; every size and position was traced in code)
+- **Where**: `src/ui/components/board/CalloutLayer.jsx:34-48`, `src/ui/components/board/CalloutLayer.jsx:196-206`, `src/ui/components/board/Board.jsx:123-129`, `src/ui/hooks/useBoardScale.js:56`, `src/ui/hooks/useBoardScale.js:69`, `src/config/matGeometry.js:70-77`, `src/systems/board/MatPlacement.js:118`, `src/styles/components.css:53-58`, `src/ui/components/board/OrderDragLine.jsx:16`, `src/ui/components/board/HeroBubbleLayer.jsx:213-216`, `src/ui/components/board/workPlate.js:219`, `src/ui/ReactRoot.jsx:293-307`, `data/starterCamp.json`
+- **What**: Every quick popup on the mat (a refused order's or drop's reason, "Needs Coal", "Needs Pickaxe", "! Spawned ...", a refused quest claim or demolition mark) is drawn with its foot 6 mat units above the top of the Token's circle, growing upward, with nothing keeping it inside the mat. On an ordinary wide window the mat is fitted by its height and reaches the very top of its box, and that box clips. So for a Token whose circle touches the mat's top edge the popup is entirely outside the box and never seen; for a Token up to roughly 110 units from the top (the top tenth of the mat) it is partly cut. To see it: drag the Guild Hall up against the mat's top edge, then drag it off the mat onto the top bar and let go: it flies back and its reason "Guild Hall cannot be removed from the playmat." is not visible. Or place a Furnace against the top edge and drag a hero who is healing onto it: the "... is healing: 0:42" reason is cut off, and so is the red reason bubble shown while the hero is carried over it (it uses the same position). On a tall, narrow window the mat is fitted by its width instead, and the same happens sideways: a long reason over a Token at the left or right edge loses its start or end. A new game does not show it: the Starter Camp's highest Tokens stand at y 190.
+- **Evidence**: `calloutTopOf` returns `y - artRadiusOf(typeId) - 6` (`CalloutLayer.jsx:35`) and only ever moves it further up (`:38-45`); the group is drawn at `translate(x, top) translate(-50%, -100%)` (`:206`), so `top` is the bubble's bottom edge, and the pop animation drifts it another 6 to 14 px up (`components.css:53-58`). A Token may stand with its circle touching the edge: placement clamps a centre to `artRadius` from each edge (`matGeometry.js:70-77`, `MatPlacement.js:118`), so `y - r` can be 0 and the bubble's bottom is at -6. The mat's fit is measured from `el.clientWidth/Height` of the box that carries `p-8` (`useBoardScale.js:69`, `Board.jsx:125`): `clientHeight` includes the padding, so in the fitted direction the mat fills the box edge to edge (floored to whole percent, `useBoardScale.js:56`, at most about 1 % of slack), and that same box is `overflow-clip` (`Board.jsx:125`), with the top bar stacked above it (`ReactRoot.jsx:293-307`). What could have saved it and does not: hero speech is kept inside the mat (`HeroBubbleLayer.jsx:213-216`, `layoutStacks(..., mat)`) and work plates flip above a Token near the foot (`workPlate.js:219`), but callouts have neither; a callout that rides on a hero's speech stack (`speechColumns.columnPlace`) sits above a stack itself clamped to the mat's top, so it is clipped too.
+- **Fix sketch**: Clamp a callout group inside the mat as `layoutStacks` does for speech (when there is no room above, say it below the Token; clamp x by half the bubble's width). The same clamp serves the carried hero's red reason bubble (`OrderDragLine`), and a hero's hover name under a hero standing at the mat's foot, clipped the same way. Must not change: where callouts sit for Tokens away from the edges, and that they stay above a fight's bars and a work plate.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-191  The Guild Hall dropped on a spot it cannot stand on says "Guild Hall cannot be removed from the playmat"
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: reasoned (assumed: `MatPlacement.dropAt` can answer `full` for the Hall, on ground it may not stand on or in a crowd; the reader did not read MatPlacement)
+- **Where**: `src/ui/dnd/DndKit.jsx:497-514`, `src/ui/components/board/Board.jsx:65-67`, `src/ui/components/board/dropOnMat.js:82`, `src/ui/components/board/dropOnMat.js:100`, `src/ui/components/board/MatToken.jsx:727-740`, `src/ui/components/board/MatToken.jsx:760`, `src/systems/board/Placement.js:119-134`, `src/systems/board/Placement.js:181`, `src/systems/board/FixedTokens.js:17-19`
+- **What**: Drag the Guild Hall (it is movable, `FixedTokens.js:17-19`) and let it go on the mat where placement finds no legal spot. The mat says the real reason at the spot, and a second red bubble over the Hall says it "cannot be removed from the playmat", though it never left the mat.
+- **Evidence**: `placeTokenAt` calls `refuseWithAlert`, which returns `{ full: true, alerted: true }` (`Placement.js:119-134`, `:181`); `flownBack` adds `flyBack` (`dropOnMat.js:82`, `:100`); the mat's `onDrop` returns `false` (`Board.jsx:65-67`); `handleDragEnd` then takes the miss branch and calls `payload.onMiss` (`DndKit.jsx:497-514`), which for a permanent Token is `guildHallMiss` (`MatToken.jsx:727-740`, `:760`), written for a drop off the mat, and publishes that sentence. `onMiss` cannot tell a miss off the mat from a refusal on it.
+- **Fix sketch**: Call `onMiss` only when no target took the drop (not when a target's `onDrop` returned `false`), or have the mat's refusal mark the payload as already answered. Must not change: the Hall let go over the bar or outside the mat still says it cannot leave.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-192  In the Guild Hall the sky can follow the pointer with no button held, after a press whose release the screen never saw
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: reasoned (assumed step: the WebView delivers neither `pointerup` nor `pointercancel` to the sky when a mouse button pressed on it, and not yet moved 4 px, is released over another element or another window)
+- **Where**: `src/ui/components/board/GuildHallBoard.jsx:272-290`, `src/ui/components/board/GuildHallBoard.jsx:326-329`
+- **What**: Only on a window small enough that the sky is dragged to see the rest. Press on the dark between the stars within a few pixels of the nav, the Upgrade drawer or the hero bar, slide onto that neighbour and let go there; or press on the dark and Alt-Tab away before moving, releasing in the other window. Back over the sky, it slides with the pointer although no button is down. The next click anywhere on the sky ends it. Nothing is lost.
+- **Evidence**: `onPanDown` stores the drag (`:274`). Pointer capture is taken only on the first move of 4 px or more that the sky itself hears (`:281-285`), so before that a release outside the sky's box goes to whatever is under the pointer and `onPanUp` (`:288-290`, bound on the sky's box only, `:326-329`) never runs. `onPanMove` (`:276-287`) checks the stored pointer id, which for a mouse is always the same, and never `e.buttons`, so the stale drag pans on plain hover. `clampPan` keeps it inside the limits; a sky that fits has a limit of 0 and shows nothing.
+- **Fix sketch**: In `onPanMove`, drop the drag when `e.buttons` has no primary button; or capture the pointer at press. Must not change: a press that moves less than 4 px stays a click on whatever is under it.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-193  With the Encyclopedia open, a hero dragged off the hero bar and let go on the book is given an order on the mat hidden under it
+- **Tag**: bug, owner-decision
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: verified (code path); not run
+- **Where**: `src/ui/ReactRoot.jsx:308-320`, `src/ui/components/encyclopedia/EncyclopediaScreen.jsx:319`, `src/ui/components/board/dropOnMat.js:19-24`, `src/ui/components/board/Board.jsx:55-69`, `src/systems/board/Orders.js:100-122`, `src/ui/components/dock/BottomHeroDock.jsx`, `src/ui/components/atlas/WorldCamera.jsx:100`, `src/ui/components/atlas/WorldCamera.jsx:243`, `src/ui/components/board/HallCamera.jsx:179`, `src/ui/components/board/HallCamera.jsx:220`
+- **What**: Open the Encyclopedia, drag any hero from the hero bar up onto the page and let go. The hero is ordered to whatever is under that point on the covered mat: onto a Token there (leaving their job), home if it is the Guild Hall, or to stand on bare ground. The marching line and the snap are drawn on the mat, under the book, so nothing shows; the assign sound plays. The same drop while the Bank is open is refused. The owner's call: the Bank already locks the mat while it covers it, and the GDD rules that a drop over the Shop or the Hero drawer lands underneath on purpose, but says nothing about the Encyclopedia.
+- **Evidence**: The Encyclopedia is laid over the Board in the same box and the Board stays mounted (`ReactRoot.jsx:308-320`); the book is `absolute inset-0 z-20` with no drop target and no `data-dnd-region` (`EncyclopediaScreen.jsx:319`). The only target holding the pointer is `mat`; `matAccepts` returns true for a flag with a hero unless `isMatBankLocked()` (`dropOnMat.js:19-24`); `onDrop` converts the pointer with the mat's own rect and calls `dropOnMat`, then `Orders.orderAt` (`Board.jsx:55-69`, `Orders.js:100-122`). A right-click there is guarded (`rightClickEvent` checks `onMatItself`); a drop is not. On the World Map and in the Guild Hall the mat is unmounted at rest (`WorldCamera.jsx:100`, `:243`; `HallCamera.jsx:179`, `:220`), so they are not affected.
+- **Fix sketch**: Either treat the Encyclopedia as the Bank is treated (the mat takes nothing while it is covered), or rule that it is intended, like the Shop. Must not change: drops over the Shop and the fight window still land underneath (GDD "Drops over a drawer").
+- **Verified by**: pending
+- **State**: open
+
+### CR4-194  The recipe list shows each recipe's time before the station's speed-ups; the card shows it after
+- **Tag**: bug, owner-decision
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: reasoned (assumed: a `scale: 2` reference to `effect_faster_station` doubles its -15 % Work Time; the mismatch exists at any scale)
+- **Where**: `src/ui/components/board/recipeRows.js:95-104`, `src/ui/components/board/RecipeList.jsx:155-160`, `src/ui/components/board/tokenCard.js:548-552`, `src/systems/board/TileModifiers.js:900-902`, `src/systems/board/BoardRunner.js:763-767`
+- **What**: Two clocks for the same recipe on the same station. In the list a row's clock is the recipe's authored time; on the card, after picking it, the Time cell is the real cycle with every Work Time rule and the working hero counted. On the Iron Furnace, Iron Smithy, Fir Workbench (`effect_faster_station` x2) and the Cooking Pot (x1), and on any station under a Work Time Hall star, the row says "8s" and the card says about "5.6s" for Copper Ingot. Neither is labelled as base or actual. The same is true of a row's have/need: it is the authored quantity and goes red against it, where the card's Requires row uses the Efficiency-adjusted most (`inputMost`); no `INPUT_COST` rule ships today, so that half is latent. The owner's call: rows show the time and need at this station, or stay authored and say so.
+- **Evidence**: `recipeRowOf` returns `durationMs: Number(recipe?.durationMs) || 0` and `need = Number(i.quantity ?? 1)`, never touching `TileModifiers` (`recipeRows.js:95-104`); it does receive `instanceId` (used only for context and site). The card: `src.workTime(instance.id, baseMs, skillId)` (`tokenCard.js:548-552`). The engine runs at the card's figure (`BoardRunner.js:763-767`).
+- **Fix sketch**: The owner's call: rows show the time (and need) at this station, through the same `workTimeOf` and `exactInputQuantity` the card uses, or stay authored and say so in the hover. Must not change: the list off the mat (no instance) keeps authored values.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-195  A double-click on Upgrade in the Guild Hall buys the next rank as well
+- **Tag**: bug, owner-decision
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: reasoned (one step assumed by the Guild Hall reader: React commits the re-render between the two clicks of a double-click; if it did not, the second click would call `purchaseRanks(id, count)` again with the first click's `count`, which is worse, not better. The actions reader states the same mechanism, "each against the fresh rank and price", and listed it as sound)
+- **Where**: `src/ui/components/drawer/GuildUpgradeInspection.jsx:81-82`, `src/ui/components/drawer/GuildUpgradeInspection.jsx:104-106`, `src/ui/components/drawer/GuildUpgradeInspection.jsx:119-126`, `src/ui/components/drawer/GuildUpgradeInspection.jsx:231-239`, `src/systems/progression/GuildUpgradeManager.js:133-173`, `src/ui/components/board/GuildHallBoard.jsx:210-221`
+- **What**: Open a star with two or more ranks left that the Bank can pay for (Wishing Well early on: rank 2 is 20 Oak Wood, rank 3 is 30). Double-click Upgrade. Two ranks are bought and both prices are taken. With a later rank chosen ("Upgrade (+3 Ranks)"), a double-click buys those three and then a fourth. Nothing can be undone, and on authored stars the next rank is usually priced in a different item (Keen Axes: rank 1 is 61 Oak Wood, rank 2 is 34 Fir Wood), so the second click can spend something the player was saving for another star. The owner's call, because a guard would slow down deliberate rapid buying.
+- **Evidence**: `handleUpgrade` (`:119-126`) calls `purchaseRanks` and nothing else: no lock, no cooldown. After a buy the chosen rank falls back to "the next one" because `choice.from !== rank` (`:82`), so `count` is 1, `canAfford` is `canAffordRanks(id, 1)` (`:106`), and the same button, in the same place, is enabled again (`disabled={!canAfford}`, `:237`). The engine treats the second call as a fresh purchase and passes it (`GuildUpgradeManager.js:139-159`); a stale count is refused with the reason shown (`:150-151`). What could have saved it and does not: the button is not disabled while the ceremony plays (the ceremony is drawing only, `GuildHallBoard.jsx:210-221`), and the drawer does not remount on a rank change. **The two readers disagree on whether this is a fault**: the Guild Hall reader filed it; the actions reader traced the same path and called it sound, since each buy is correct on its own. Both agree on what happens, so it is filed as the owner's decision.
+- **Fix sketch**: Ignore Upgrade clicks for a few hundred ms after a successful buy (or until the pointer has left and re-entered the button). Must not change: one click buys exactly the ranks the button names; the engine's own checks.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-196  After a crash in a drawer, the Shop, the hero bar or the banners, the "Reload" button cannot be clicked and the crash panel takes over the screen
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / M / low
+- **Confidence**: reasoned (the layout is worked out from the classes, not run; it needs a render crash first, and no crash was found in this area)
+- **Where**: `src/ui/components/base/ErrorBoundary.jsx:41-58`, `src/ui/ReactRoot.jsx:223`, `src/ui/ReactRoot.jsx:227-231`, `src/ui/ReactRoot.jsx:251`, `src/ui/ReactRoot.jsx:262`, `src/ui/ReactRoot.jsx:293`, `src/ui/ReactRoot.jsx:342-343`, `src/ui/ReactRoot.jsx:349-358`, `src/ui/ReactRoot.jsx:363-369`, `src/ui/ReactRoot.jsx:381-388`, `src/ui/ReactRoot.jsx:398-416`
+- **What**: Latent: it waits for a crash that has not been found. The crash catcher's comment promises that a crash replaces only that area with a small panel and a Reload button while the rest keeps working. For the catchers around the banners, the arrival card, the hero bar, the Hall's Upgrade drawer, the Hero drawer, the Bank drawer, the World Map drawer and the Shop, two things go wrong. (1) The Reload button does not take a click. (2) The panel takes the full width of the table (the drawers, the Shop) or the full height of the mat's column (the banners, the arrival card, the hero bar), so the mat and the hero bar disappear and the screen shows "Something went wrong here" with a dead button. The engine keeps ticking and autosaving; the player must close the window (the desktop close saves) and start again. Catchers inside the mat's own surface (the mat, the Encyclopedia, the notifications, the fight tabs) and the root one work.
+- **Evidence**: The whole UI sits in `react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col` (`ReactRoot.jsx:223`) and each surface opts back in on its own root; the only `pointer-events-auto` on the way down is on the Hall's inner box (`:262`) and the board surface (`:293`), neither an ancestor of the catchers listed (`:342-343`, `:349-358`, `:363-369`, `:381-388`, `:398-416`). The fallback's classes are `flex flex-col items-center justify-center gap-3 p-6 h-full w-full ...` with no pointer-events class (`ErrorBoundary.jsx:46`), and no stylesheet gives buttons their pointer events back (grep of `src/**/*.css`). The fallback is `h-full w-full` in normal flow where the crashed surface was absolutely placed: as a flex item of the table's row (`:227-231`) it leaves the mat's column (`flex-1 min-w-0`, basis 0) no width; as an item of the mat's column (`:251`) it leaves the mat's box (`flex-1 min-h-0`) no height. Also: a catcher never resets; once tripped it stays until a reload, even if the cause has gone. The Reload itself not saving on the desktop is already in CR4-145's text and D3's leads; not re-filed.
+- **Fix sketch**: Give the fallback `pointer-events-auto` and let each catcher say how its fallback is placed (absolute in the surface's own corner for the overlays), or pass a compact fallback for those. Must not change: one catcher per surface; the engine untouched.
+- **Verified by**: pending
+- **State**: open
+
+### CR4-197  Two faults waiting for content that does not exist yet: a Shop price of more than four items, and a second Lap Time rule
+- **Tag**: bug
+- **Priority / Effort / Risk**: P3 / S / low
+- **Confidence**: listed per item
+- **Where**: listed per item
+- **What**: Latent. Neither is reachable with shipped content; each is a defect the day the CMS authors its cause, and the content agent should know them before planning it.
+  1. **A Shop price of more than four items hides the lines past the fourth, so a card can be dimmed with every shown count white and no reason given** (the Bank and Shop reader; reasoned: assumed that the CMS lets a `shop.price` hold more than four lines, no limit found in `cms/src`, the Token editor's price field not read). No shipped Token is affected (the five sold Foundations cost one or two items). A Token priced in five or more items would show only the first four pills; if the Bank is short only of the fifth, the card's Token is dimmed and cannot be picked up, every pill reads white, and nothing says what is missing. The card draws `chosen.price.slice(0, MAX_PRICE_LINES)` while `canBuy` checks every line (`shortfallText`); the refusal's own text ("Need 3x ...") is shown only for `capFull`, never for a shortfall (`src/ui/components/drawer/ShopPanel.jsx:371`, `:465-471`, `src/systems/board/Shop.js:94-113`). Fix: when the price has more lines than fit, show the short ones first, or a fourth pill reading "+N more" in red when any hidden line is short; the card's fixed size must not change.
+  2. **A Lap Time star's rank says the lap it would give alone** (the Guild Hall reader; verified for the mechanism). `data/` holds one Lap Time star (`star_well_lap`) and no Region rule on that axis. If the owner authors a second star on Lap Time, or a Region rule on it, each lap star's rank row in the Upgrade drawer keeps saying "outputs every 8:00" (its own rule applied to the 10:00 base) while the real lap is shorter: two rules of 20 % shorter give 6:00. The Hall's Effects list is right (it reads the live lap), so the two disagree on one screen. `lapOfRule` builds a fresh aggregator holding only that one rule and resolves from `PASSIVE_LAP_BASE_MS`, and `ruleEffect` prints that as the rank's amount; the engine resolves the lap from the guild-wide aggregator, where every held Lap Time rule sums in the percentage bucket (`combinePercentages`: 1 + the sum). With today's single star the two agree: 20 %, 40 %, 50 % shorter give 8:00, 6:00, 5:00 (`src/systems/progression/hallStarText.js:73-78`, `:176-183`, `src/systems/board/PassiveProduction.js:45-47`, `src/systems/effects/ModifierAggregator.js:48-53`, `:69-73`, `src/ui/components/board/GuildHallEffectsPopover.jsx:53`, `:78`). Fix: word a lap star's rank as its share ("lap 20 % shorter"), or work the row out from the live lap with this star's rank swapped in; the Effects list's live lap line must not change.
+- **Evidence**: As cited per item; each reader checked `data/` for the shape and found it unreachable today.
+- **Fix sketch**: Not one fix: the fix sketched per item when the first content needs it, or a content audit rule meanwhile (warn on a Shop price above four lines; warn on a second Lap Time rule).
+- **Verified by**: pending
+- **State**: open
+
+---
+
+## Notes (leads without a finding)
+
+One line each, grouped by reader. A lead that became part of a finding, or that settles an earlier
+file's open point, says which.
+
+**The drag-and-drop layer**
+
+- `src/ui/dnd/DndKit.jsx:470-517`: `handleDragEnd` has no `try/finally`; a throw inside any drop handler, interceptor or `onMiss` would leave the drag "held" (no further drag can start, `:402`), `gi-dnd-active` on the body and the Token paused in the hand until a reload. No handler found that throws on reachable input: hardening, not a finding.
+- `src/ui/components/board/MatBoard.jsx:411`, `src/ui/components/board/rightClickOrders.js:33-39`, `:101-106`: a right-click while a drag is held is not a cancel; the mat still gives the selected hero an order, moves the selected Token or stops the hero under the pointer, and a loadout slot's right-click still unequips (`DockEquipmentGrid.jsx:184-190`). Unknown whether the desktop WebView fires `contextmenu` while the left button is held. The drop that follows overrides it in every case traced, and the worst case (unequipping the very slot being dragged) refuses cleanly. (Raised independently by the mat-screen reader and the actions reader too.)
+- `node_modules/@dnd-kit/core/dist/core.esm.js:1444-1448`: a drag is cancelled by Escape, a window resize and the page becoming hidden, not by the window losing focus; if alt-tabbing with the button held delivers no `pointerup`, the ghost follows the pointer until the next click. No state lost.
+- `src/ui/dnd/DndKit.jsx:296-319`, `:444`: the drop point is updated by a `pointermove` listener attached after the pickup renders; a press, flick and release inside that first frame would drop at the press point. At worst the Token stays put.
+- `src/ui/dnd/DndKit.jsx:136-164`: the 240 px nearest-target fallback on the Guild Hall and World Map screens (no mat): a hero let go in open space up to 240 px above the bar re-orders with whichever bar hero is nearest. Looks deliberate; nothing on screen says it will. (The same fallback is CR4-180 on the mat screen.)
+- `src/ui/components/atlas/WorldScreen.jsx:65-71`: Escape during a drag on the World Map also closes the map. Became part of CR4-176.
+- `src/ui/components/dock/HeroDrawer.jsx:111-116`: a hero let go on their own open drawer is a no-op that plays the assign sound and hides the ghost as a success (`onDrop` returns `null`, counted as taken by `DndKit.jsx:497`). Cosmetic. (Raised independently by the actions reader; the hero-dock reader describes the same drop as a miss, which is true of its effect, not of the sound.)
+- `src/ui/components/board/SpriteLayerView.jsx:156-180`: loot under the pointer when a drag ends is not collected until the pointer leaves and re-enters it (`isHovered` was set during the drag).
+
+**The mat screen**
+
+- `src/ui/components/board/TokenBubbles.jsx:172-189` with `src/systems/board/Growth.js:165-169`, `:229-230`: a growing Token's mark kept in component state might outlive an in-session load. Settled by the stale-screens reader: no in-session load exists; the catch-up form of the same fault is CR4-169.
+- `src/ui/components/board/rightClickOrders.js:33-39`: a right-click order during a live drag. Listed once, under the drag-and-drop layer.
+- `src/ui/components/board/pressRouting.js:22-30` with `src/ui/components/board/MatBoard.jsx:400-405`: a press on a hero's pixel that turned see-through since the last move is re-sent to what is under it; the click's press and release then land on different elements and the browser sends it to the mat, which clears the selection. Pixel-and-frame timing; not reproduced.
+- `src/ui/components/board/MatBoard.jsx:247`, `:256-263`: a hero's "hurt" flag (which keeps their health bar up) is read only on movement, Token, alert and `HEROES_UPDATED` events; if healing back to full raises none of those, the bar would stay up at full health until the hero next moves. Which event regeneration publishes was not traced. (The stale-screens reader's cousin, rule damage missed by the same flag, is folded into CR4-168.)
+- `src/ui/ReactRoot.jsx:327-331`: the item stub column (right edge) and the minimised fight tabs (foot) are drawn over the Board's box; on a window where the mat reaches that edge, Tokens under them may not be pressable.
+- `src/ui/hooks/useShowOnMat.js:17-23`: a banner clicked while the Bank or the Encyclopedia covers the mat pulses its Token under the cover. The Encyclopedia half became CR4-177; the Bank half is settled by the notices reader (the Bank's drawer lies over the banners, so they cannot be clicked there).
+- Settles CR4-113's open step (as the notices reader also found): a banner whose Token is not on this mat (another Region, or gone) is filtered against the live mat on click, publishes nothing and is dismissed; the view does not jump.
+
+**The Token card and recipes**
+
+- `src/ui/components/board/TokenInspectPopup.jsx:142-162` with `src/ui/ReactRoot.jsx:438`: `onClose` is a new arrow on every render, so the outside-click listener is removed and re-added 50 ms later on each render; a click that itself re-renders `ReactRoot` (a nav bubble, a hero on the bar) may not close the card. Depends on React 18's flush timing; one look in the running game settles it (open a card, click the Bank bubble).
+- `src/ui/components/board/RecipeList.jsx:138` with `src/ui/components/board/TokenCard.jsx:666-669`: one click on a row picks and flips the card to its face; a double-click lands its second click on whatever of the face is under the pointer (Change recipe, a Requires or Makes ribbon, the X). Position-dependent.
+- `src/ui/components/board/TokenCard.jsx:717-718`, `src/ui/components/board/RecipeList.jsx:141`: rows never wrap and the card is `overflow-hidden` with only a vertical scroller; in a narrow window a long row's right end (output name, XP, time) may be cut off. The smallest window the desktop build allows was not checked.
+- `src/ui/components/board/TokenCard.jsx:498-511`: `MoreBlock` calls `def.buff.modifiers.map` unguarded and prints `m.type` raw; no Token in `data/` has a `buff` block, and whether the CMS can still author one was not checked (latent).
+- `data/tokens.json` `token_grandma_s_kitchen`: a station with `config: null`, which the engine treats as inert (`BoardRunner.js:614-617`); nothing builds or places it today. Unfinished content, noted only so the first recipe that builds it gets a `config`.
+- `src/ui/components/board/RecipeList.jsx:282`: a never-touched wild Field has no `selectedRecipeId` (its pick is its `startsWith` crop, `Fields.pickOf`), so its list highlights nothing while the card names Wheat. Cosmetic.
+
+**The hero dock and drawers**
+
+- `src/ui/dnd/DndKit.jsx:136-164` with `src/ui/components/drawer/BankTab.jsx:103-107`, `:329-334`: the 240 px fallback for an item dragged out of a loadout slot and let go on a spot with no target, within 240 px of a Bank tile, would unequip it to the Bank rather than fly back. Not traced on screen; may be wanted. (Same fallback as CR4-180.)
+- `src/ui/components/dock/dockHeroView.js:53-58` with `src/ui/components/dock/DockHeroFigure.jsx:226-229`, `:272-284`: at a large mat fit the hero's head stands about 32 px above the 64 px strip, but the drop target is the strip only; with the Bank open the Bank's list underneath may take an item let go on the head (a silent re-order to the end of the tab, `BankTab.jsx:121-133`). Needs a look at a 3x fit. (A third way into CR4-171.)
+- `src/ui/modals/HeroEditModal.jsx:153-157`: Cancel puts the opening flag colour back only when the hero had a valid one; no hero found that reaches the Edit window without one (`FlagColours.js:101`).
+- `src/ui/components/dock/DockHeroFigure.jsx:447-458`: a level-up alert clicked away is cleared by key 250 ms later; the same skill levelling again inside that quarter second would lose the new alert. Too rare to file.
+- `src/ui/components/dock/HeroCombatView.jsx:31-36`: the selector calls `HeroManager.getHero`, which can rebuild a hero's aggregator from inside a selector (`HeroLookup.js:14-17`), which `flagText.js:141-142` warns against. No player effect found.
+- `src/ui/components/dock/equipBubbles.js:58-63`: `clearEquipBubbles` has no caller, so an equip bubble could outlive a load by up to 3 s. Harmless.
+
+**The Bank and Shop**
+
+- `src/ui/dnd/DndKit.jsx:136-164` inside the Bank: a Bank tile let go over a spot that is no drop target (the header beside the tabs, a locked tab slot, the Item drawer) goes to the nearest target within 240 px, which may be a tab button (files the item there, silently) or the list (sends it to the end of its tab). Depends on layout not measurable by reading. (Same fallback as CR4-180.)
+- `src/ui/components/drawer/ShopPanel.jsx:483-496`: a price pill is `have/need` on one unbreakable line in a cell about 82 px wide; a five-figure Bank count ("12.3k/15") may run under its neighbour. Needs a look; no number is wrong.
+- `src/ui/components/drawer/GuildUpgradeInspection.jsx:104-110`: with a later rank chosen, the price shown until the pointer is on the button is the last rank's own price, while the button's state and the "short by" line use the total, so pills can read white under a disabled button until hovered. Written as intended in the file's header.
+
+**The Guild Hall**
+
+- `src/ui/components/board/GuildHallBoard.jsx:129`, `:449`, `:502`, `src/ui/components/board/hallCeremony.js:21-28`: the sky reads the Wishing Well's rank under its new id only, while the engine and the drawer honour its old id (`guildmasters_banner`, `GuildUpgradeManager.js:39-45`, `guildUpgrades.js:299-302`); a save holding only the old id would show the Well unbought on the sky. Unknown whether any save that old still loads (`SaveMigration.js:73-78` only drops retired ids).
+- `src/ui/components/drawer/GuildUpgradeInspection.jsx:110`, `:203-220` with `src/config/hallStars.js:64-72`: a rank's price naming one item twice would show two rows each reading enough, while the engine merges and needs the sum. Unknown whether the CMS allows it; no shipped rank does.
+- `src/ui/components/drawer/GuildUpgradeInspection.jsx:119-126` under `src/ui/components/hud/CatchUpOverlay.jsx:70-73`: the catch-up bar covers the pointer but not the keyboard; if a button still holds focus when a sleep catch-up plays, Enter acts under the bar. The purchase itself is sound; how "Load as I left it" treats it was not traced. (Raised independently by the actions reader at `src/systems/core/CatchUp.js:359-373`: between slices of a shown catch-up only travel and settle refuse, every other action would run on the half-played game with the bus quiet; the state between slices is consistent and the end redraws, so no harm found; not traced for every action.)
+- `src/ui/components/board/GuildHallEffectsPopover.jsx:46-54`: the Effects list holds the Hall's outputs and its stars' rules, not hero beds, Bank tabs or the borders the Compass stars open. Reads as intended; noted in case the owner expects the whole Hall there.
+
+**The world map**
+
+- `src/systems/world/Settling.js:144-151`, `:171`: a place is written with `allowUnplaced: true` after 8 seeds; Tokens that found no room are silently left off, and the drawer's "Yields" would name a material the place does not have. Whether any shipped cell fails all 8 layouts needs the layouts run.
+- `src/systems/world/cellMat.js:268-273`: on a wild cell with a "one origin almost everywhere" extreme, `apportion` can give another origin 0 Tokens after the "every origin at least once" pass (`:226-231`); the map would still list its material. Wild rings only; latent.
+- `src/ui/components/atlas/WorldDrawer.jsx:64-77`: after Escape closes the map (CR4-176), the focused rename box is removed from the page; whether the webview fires `blur` then (committing the half-typed name, `onBlur={commit}`) is browser behaviour.
+- `src/ui/components/atlas/WorldDrawer.jsx:204-228`, `src/ui/components/atlas/WorldPrice.jsx:76-83`: nothing on a place's card says that settling it puts 3 to 6 enemies (sometimes a boss) on its mat and that no hero can work there until they are beaten (`Arrival.js`, `Occupation.js`). Travel back is free, so not a trap; the owner's call whether the card should warn.
+- `src/ui/dnd/DndKit.jsx:187-190`: the Limes auto-open can start the camera glide mid-drag; a drop during the glide was not traced. Became part of CR4-175.
+- `src/ui/components/atlas/WorldScreen.jsx:61`, `:80`, `:91`, `:120-123`: a refusal message stays under the button until another place is picked, even after its reason has gone. Only reachable when the engine refuses a button the screen showed enabled, not found outside a catch-up.
+
+**Notices, Limes, the Encyclopedia and the modals**
+
+- `src/ui/hooks/useWorldMapRequests.js:14-16` with `src/ui/hooks/useUIModals.js:140`: the world map opening by itself on the last lesson. Became part of CR4-175.
+- `src/systems/quests/lessonPlan.js:60` and `limesText.js` `build`: if the player builds something other than the Workbench on their Foundation (a Cooking Pot costs the same), Limes keeps saying "Click your Foundation and pick the Workbench" with no Foundation on the mat. A wording and design matter; not filed.
+- `src/ui/components/limes/LimesBlurb.jsx:101-135`: a step's bubble on a screen's small Limes is placed once and drawn at the tooltip layer, so it stays put when the Shop's cards scroll or the Shop lowers for a drag, and is drawn over the catch-up bar and summary. It can be closed; cosmetic.
+- `src/ui/components/encyclopedia/encyclopediaModel.js:30-39`, `:195-199`: the Encyclopedia's sources come from the ledger's rules; not checked rule by rule against `RecipeResolver` and the world generator, nor that `reachOf(...).tier` is a whole number for reachable entries (if not, every progress bar would read full). Needs the ledger run against `data/`.
+- `src/ui/components/encyclopedia/encyclopediaChart.js:545-555`: the "xN" under an ingredient divides by what a craft makes, but for a way that is not a recipe (bait, a seed) it shows what one cycle takes, not the average per item (a 30 % catch still reads x1 bait). Reads as "per go"; not clearly wrong.
+- Settles D3's lead on lesson 2: automatic sweeps (the stack cap, auto-collect, travel's `collectAll`) do publish `SPRITE_COLLECTED` (`src/systems/board/SpriteLayer.js:366-376`, `:420-421`), so they would complete "collect" for the player; not reachable at that point in ordinary play (auto-collect has no control in Settings and is off, one item type merges into few piles so the 40-pile cap is not met, and there is no second Region yet).
+- Settles CR4-113's open step: a click on an event banner whose Token is in another Region, or gone, filters the subject out (`src/ui/components/notifications/BannerStack.jsx:202`; `BoardState.getTokenById` reads the active mat only), so nothing is published and the banner is simply dismissed; it never travels and never points at a wrong Token. (The mat-screen reader found the same.)
+
+**Does every screen show the game as it is now (stale-screens trace)**
+
+- `src/ui/components/combat/fightWatch.js:433-438`, `:472`: the fight watch forgets every fight record on any `GAME_RESET`, a silent catch-up included. Became part of CR4-174.
+- `src/ui/components/board/WorkPlateLayer.jsx:197-201` with `src/ui/components/board/workPlate.js:103-105`: a waiting station's have/need on its work plate is re-read on Bank changes only, while the count may include loot on the floor (`InputAllocator.js:23-24`); if `InputCost.checkCost` counts the floor (not traced), the "have" lags while the Bank is full or auto-collect is off.
+- `src/ui/components/board/flagText.js:144-150` with `src/ui/components/dock/DockHeroFigure.jsx:170-178`: the hero bar's "player must act" mark reads `Flags.waitingOf`, which can change with no event; on a working mat any XP gain refreshes it within seconds. No long-lasting case found.
+- `src/ui/components/dock/HeroCombatView.jsx:17-20`: the Combat view reads the guild-wide modifier pool (`CombatFormulas.js:141-156`) but does not hear `GUILD_UPGRADES_UPDATED`; a Hall purchase is covered by `recompute` publishing `INVENTORY_UPDATED` and `HEROES_UPDATED` (`GuildUpgradeManager.js:213-214`); a placed Token or event registering a guild-wide combat modifier would not be. No shipped content does (latent at most).
+- `src/ui/components/encyclopedia/EncyclopediaScreen.jsx:275-279`: the Encyclopedia reads what the run has collected only when the page, the focus or the search changes; a chart left open over a running game stands still. Written as intended; noted in case the owner expects it live.
+- Settles the mat-screen reader's lead on `TokenBubbles.jsx:172-189`: a load of another save cannot happen inside a session (the slot screen has no way back, `src/ui/hooks/useUIModals.js:192-195`; "Load as I left it" reloads the page), so stale data can only come from travel or a catch-up (CR4-169).
+
+**Every place a screen asks the engine to act (actions trace)**
+
+- `src/ui/components/dock/HeroDrawer.jsx:111-116`: a hero flag dropped on the open Hero drawer counts as taken. Listed once, under the drag-and-drop layer.
+- `src/ui/components/board/MatToken.jsx:598-602`, `src/systems/board/Demolition.js:164-191`: in Demolish mode a double-click is two clicks, so it marks then unmarks, wiping the Token's cycle progress twice; on an event Token the first click removes it at once and the second says "no Token". Each click behaves as written; whether a double-click should count once is a design call.
+- `src/systems/core/CatchUp.js:359-373`: actions between slices of a shown catch-up. Listed once, under the Guild Hall.
+- `src/ui/components/drawer/BankTab.jsx:141-142`: a multi-select drag carries the ids selected when the tile was last drawn; an id whose stack has since emptied skips the tab-room check (`InventoryManager.js:350`) and gets a tab override written for an item not held. No visible effect found.
+- `src/ui/components/dock/dockEquip.js:76-87` with `src/systems/equipment/EquipmentManager.js:90-95`, `:156`: an item dragged from a slot that is destroyed mid-drag (a lost fight) and dropped on another hero silently takes a copy from the Bank instead, when the Bank has one. Needs a knock-out inside a one-second drag.
+- `contextmenu` during a left-button drag. Listed once, under the drag-and-drop layer.
+- Settles D3's lead at `src/systems/core/CatchUp.js:119` (a quiet catch-up's `reset` left at `true`): it ends with `GAME_RESET { reason: 'catch_up' }`, which drops the selection and wipes the fight watch. Became CR4-174.
+
+## What the readers found sound (so nobody re-checks it)
+
+Grouped by reader. Where several readers checked the same thing it is listed once, under the first
+of them, with the others named.
+
+**The drag-and-drop layer**
+
+- **A drag commits once**: `onDragEnd` runs once and the ending click is stopped at the document (`core.esm.js:1506`); `skipSlide` and `justDroppedRef` add a second line. (Also the mat-screen reader.)
+- **Held state is released on every end**: `finishDrag` on drop and cancel; the "in hand" mark clears on the `dragging` clean-up or unmount (`MatToken.jsx:282-286`); the Bank lock is derived each render (`ReactRoot.jsx:146`). (Also the actions reader.)
+- **A live drag cannot be repointed** by a second pointer or button (`pressEntity`, `startPayloadRef`). (Also the mat-screen, hero-dock and Bank readers.)
+- **A source or Token that vanishes mid-drag**: the copy is dropped and the engine re-checks (`EquipmentManager.js:90-95`, `:156`, `Shop.buyAt`, "No Token there", `dropOnMat.js:98`); a carried Token's work, fights, charges and timed changes are held (`BoardRunner.js:584`, `FightRoom.js:323`, `Charges.js:107`, `TimedChanges.js:465`). (Also the Bank reader.)
+- **A hero knocked out mid-drag** is refused with the healing time. (Also the hero-dock and mat-screen readers.)
+- **Travel or settling with a drag live** ends the drag first (`travelFromScreen.js`); a catch-up refuses travel.
+- **Escape during a drag cancels only the drag** (the Escape layers stand aside), except on the World Map (CR4-176). (Also the Bank reader.)
+- **Bank open**: nothing on the mat can be picked up or lands on it, right-click included.
+- **Fixed Tokens** cannot be picked up from art, bubbles or plate (`MatToken.jsx:428-431`, `WorkPlateLayer.jsx:212`), and `Placement.moveTokenTo` refuses them again.
+- **Shop drops**: over the Shop is a cancel; payment only after placement; a refund only after the lowered edge was armed; a refused refund does not fall through.
+- **Hit-testing at any zoom** uses the live rect (`pointerToMat`) and the engine's `Flags.tokenAtPoint`. (Also the actions reader.)
+- **The bare-`typeId` route in `dropOnMat`** is unreachable.
+- **Drops over the Shop** land underneath, as the GDD rules; a mat Token can never be dropped onto the Hero drawer.
+- **Bank drops**: a full tab is refused with a callout; a select-mode drag keeps the refused ones selected. (Also the Bank reader.)
+- **Already ruled, not re-filed**: restock merging, loadout changes mid-fight (now CR4-172), hand-over onto a full loadout, CR4-063, CR4-109, CR4-117.
+
+**The mat screen**
+
+- **Clicks and selection**: single click selects or clears; a fixed Token only clears; a double-click always ends selected with the card open, also through press re-routing.
+- **A click on blank mat** clears the selection; one on a hero, flag, loot, plate, gear, fight button, Limes or tooltip does not.
+- **A finished quest** is claimed once; refusals are said over it; never in Demolish mode. (Also the actions reader.)
+- **Loot piles**: only that pile is banked; nothing while carrying; a full Bank refuses and keeps the pile. (Also the actions reader, `SpriteLayer.js:390-430`.)
+- **Right-click orders** go through `dropOnMat`; never in Demolish mode, under the Bank, or from a panel over the mat (`onMatItself`); the stop rules are as documented.
+- **A Token moved by right-click** passes the drag's gates, and its hero follows.
+- **Selection never outlives its target** (`dropGoneSelection`; travel, load, Demolish, Map and Hall clear it). (Also the stale-screens and actions readers.)
+- **Demolish mode**: one click marks or unmarks; gear, "!" and badge count once; an event Token is removed at once by design. (Also the actions reader, `TokenBadges.jsx:112`, `refusalOf`.)
+- **Overlapping Tokens** all route to the Token the engine names at that point.
+- **Problem marks on a live mat**: re-read every tick (`BoardRunner.js:620-631`), cleared on a claim; every alert has words in `problemMark.js` (the catch-up gap is CR4-169).
+- **"No room"** is raised only when the hover's words say (`BoardRunner.js:221-233`); **the work plate's have/need** uses `InputCost.checkCost`, Efficiency included.
+- **A hero at a stopped Token** is not drawn as working; the Token's mark shows while the hero only walks to it; "needs a job" follows `needsJob`.
+- **Mat size and fit** are fixed in play and never larger than the box; plates flip near the foot; speech is kept inside the mat.
+- **A Token never changes type under the same id**; the Token cap badge reads the engine's counters.
+
+**The Token card and recipes**
+
+- **Time, needs and XP** read the engine's own functions: `workTimeOf` (as `BoardRunner.tick`), `inputMost` (as `InputCost.costedInputs`), `InputAllocator.availableOf`, `baseXp` with `explainAxis` and `applyXpBonus` (CR4-138 filed).
+- **Makes, Drops, rare finds, catches** are the authored lines and the engine's own readers (`LootSystem.rollEachLine`, `rareChanceAt`, `Fishing.fishingOf`).
+- **Enemy card**: live HP, `getCombatXpAward`'s XP, no NaN path. **Charges**: `usesRemaining`; no shipped station authors `uses`.
+- **Lifecycle lines** (refill, growth, turns, spawner, Field, event leave time, Passive Production, demolition) each read the engine's reader. **A camp's reach** agrees with `Camps.reaches`.
+- **The card re-reads every second** and on the Token's events, its recipe list with it. (Also the stale-screens reader.)
+- **Picking mid-cycle** takes and loses no inputs (CR4-116); Fields and Foundations behave as the runner says.
+- **The list never offers a recipe outside the pool**; red rows stay choosable by design (CR4-107 ruled). (Also the actions reader.)
+- **A card left on a gone Token** is inert (CR4-110). (Also the actions reader.) The same pick twice publishes nothing; "Dismiss bounty" twice is refused.
+- **Escape** goes back to the face first; no game hotkeys on the mat; back from the Encyclopedia only if the Token still stands; a marked Token has no recipe block; sparse cards show no NaN.
+
+**The hero dock and drawers**
+
+- **Every dock change goes through `EquipmentManager`** and shows its reason; `equipRefusalText` re-reads `unmetGearRequirement`. (Also the actions reader.)
+- **The right hero is always acted on**; everything is keyed by hero id; reordering matches `reorderHero`.
+- **A stale slot drag** is refused "Slot is empty" or takes a Bank copy; nothing duplicated or lost. (Also the actions reader.)
+- **Hand-over**: drawer stays on the giver, both speak (CR4-131 filed). **Slot counts** are live (CR4-127 filed).
+- **Rename** refused blank in window and engine, capped, trimmed (CR4-135). **Flag colour** put back by Cancel, X and Escape. (Also the notices and actions readers.)
+- **Level-up alerts** per hero and skill; a catch-up's survive its reset (travel is CR4-173). (Also the stale-screens reader.)
+- **Bar status and bubbles** read `Flags.statusOf` live; **the drawer** redraws everything but HP (CR4-168; CR4-133 filed). (Also the stale-screens reader.)
+- **One bottom panel at a time** (also the notices reader); the closing drawer unmounts after 300 ms; double-click and post-drop clicks behave.
+
+**The Bank and Shop**
+
+- **Buy**: cap and price checked, placed, then paid (`Shop.js:156-180`); one drag, one buy.
+- **Price shown is price charged** (`availableOf`, `totalPrice`). (Also the actions reader.) A frame-stale Buy is re-checked at the drop; the catalogue re-reads on every relevant event. (Also the stale-screens reader.)
+- **A card let go over the Shop, off the mat, or with the Bank open** is a cancel, a fly-back, or impossible.
+- **Refund**: only a placed Shop Foundation; removes, then pays; a full Bank floors the price; buy-refund loops earn nothing. (Also the actions reader.) Its drop seams are armed and read the live box.
+- **Tab fullness, new kinds and counts** agree with the engine (CR4-162 apart); every change publishes `INVENTORY_UPDATED`. (Also the stale-screens reader.)
+- **Unequip onto the Bank** refuses on a full Bank and keeps the copy. **Large counts** floor, so a short price never reads as enough. **No sell, split or discard** exists.
+
+**The Guild Hall**
+
+- **Price shown against price taken** (`getRanksCost`), all or nothing. (Also the Bank reader.) **Several ranks at once**: one price, one write, one event.
+- **A full roster** cannot meet a recruit; **the new hero shows** via the store's microtask (`useGameState.js:121-133`).
+- **Button state** matches the engine. (Also the actions reader.) **The ceremony** only draws; nothing replays; a click during the drawer's slide buys the star shown.
+- **Every shipped star's words** match the rule the engine applies; **XP for Everyone** gives the same sum however bought.
+- **Effects list and rules** are exactly what the engine carries and keeps; **HallCamera and the Effects popover** cannot stick.
+- **Already filed**: CR4-161, CR4-135, CR4-126, CR4-159's family.
+
+**The world map**
+
+- **Settle button, price and payment** read the same `priceRows` and refusals as the engine (`WorldDrawer.jsx:240`, `Settling.js:213-216`, `frontier.js:53-64`). (Also the actions reader.)
+- **Settle or Travel twice** is refused the second time; both refuse during a catch-up. (Also the actions reader.)
+- **The view is rebuilt** on every relevant event (`useAtlasRefresh.js`). (Also the stale-screens reader.) Places are derived each refresh.
+- **Back on the mat** everything is cleared and remounted; every place can be reached; the camera cannot stick; arrival cards come one at a time.
+- **Loot left behind** stays on the old place's board; **a drag when the map opens** is put down.
+- **No screen archives or abandons** (also the actions reader); **the map's Escape, X and bubble** each close it once (except during a drag, CR4-176).
+
+**Notices, Limes, the Encyclopedia and the modals**
+
+- **Banners and item stubs** behave in every edge traced. (Also the stale-screens reader, `itemStubs.js:66-69`.)
+- **Lessons against today's content**: every item, Token and level a step names is reachable; each report is published; early steps count.
+- **Limes** speaks as designed and is silent with lessons off. (Also the actions reader.)
+- **Modals**: Escape to the top layer only; nav switches close everything; Edit Hero closes if the hero is gone; auto-save changes restart the timer.
+- **The summary** delivers held news on close. **Tooltips** never stick.
+
+**Does every screen show the game as it is now (stale-screens trace)**
+
+- **`useGameState`** reads once per burst, after the engine's work, with a mount-time second read; **minimised hold** drops no last update.
+- **Guild Hall, World Map, top bar, mat lists, flags, sprites, plates, per-Token detail and roster state** all carry the events they need, `GAME_RESET` included; no component holds an old Region's board.
+- **Catch-up level-ups** reach the bar through the summary; **the fight window** is refreshed by every swing and a 1 s check.
+
+**Every place a screen asks the engine to act (actions trace)**
+
+- **Begin twice** is harmless (CR4-149); **hand-over, move and unequip** name their slot; **a stale right-click selection** returns null; **the resume slot** is taken once.
+
+## Inventory: every place a screen asks the engine to act
+
+From the actions reader's trace, copied as written. "Guarded during" lists what the engine itself
+refuses on; nothing means no guard. No route except travel and settle is refused during a catch-up.
+
+| Action | UI entry point | Engine function | What the engine checks | What the UI checks first | What the player is told on refusal |
+|---|---|---|---|---|---|
+| Equip from Bank (onto hero) | `DockHeroFigure.jsx:77-83` | `EquipmentManager.equipItem` | hero and item exist; level requirement; item has an equip category; not already carried; Bank has one (or "all in use"); free slot or cap displacement; Bank room for what is displaced. **Not**: fighting, knocked out, catch-up | drop target accepts any item not from this hero (the green cue shows even for an item that cannot be equipped) | hero's red speech bubble with the engine's reason and numbers |
+| Equip from Bank (onto slot) | `DockEquipmentGrid.jsx:148-151` | same | same | pointer inside the visible list; not the same slot | same |
+| Move within loadout | same, via `dockEquip.js:85-86` | `EquipmentManager.moveItem` | the from-slot still holds that item; target slot valid | not the same slot | red bubble "Can't equip X. Slot is empty." |
+| Hand-over to another hero | `DockHeroFigure.jsx`, `DockEquipmentGrid.jsx` | `equipItem(..., from)` | as equip, plus giver's slot still holds it, plus a free slot when dropped on the figure (CR4-131, ruled) | as equip | red bubble on the taker; both heroes speak on success |
+| Unequip (right-click) | `DockEquipmentGrid.jsx:184-189` | `EquipmentManager.unequipItem` | slot filled; Bank room for a held copy | slot filled | screen callout with the reason |
+| Unequip (drag to Bank) | `BankTab.jsx:105`, `:123`, `:138` | same | same | payload came from a hero | same; ghost flies back |
+| Order a hero (drag from mat, flag or hero bar) | `Board.jsx:59-68` → `dropOnMat.js:88-93` | `Orders.orderAt` → `Flags.orderToken` / `orderSpot` / `sendHome` | hero given; point finite; hero not healing; Token workable by this hero (skill, level, tool, held mat); same order is a no-op | mat not under the Bank; payload has a hero | red callout over the Token or spot. The drop still plays the success sound |
+| Order a hero (right-click, hero selected) | `MatBoard.jsx:411-412` → `rightClickOrders.js:44-49` | same, or `Orders.stop` on own job or own figure | same | no map mode; Bank closed; click on the mat itself | same callout |
+| Stop a hero (right-click, nothing selected) | `rightClickOrders.js:89-94` | `Orders.stop` → `Flags.stop` | hero has a Token order | as above | nothing to refuse; no-op is silent |
+| Move a Token (drag) | `dropOnMat.js:97-101` | `Placement.moveTokenTo` | exists; not a landmark; not fixed; one Mythic; placement rules and room | Bank closed; no map mode (sensor) | red callout over the Token, or the engine's own drop alert; fly-back when no room |
+| Move a Token (right-click, Token selected) | `rightClickOrders.js:76-86` | same | same | Token still exists; selectable | same |
+| Buy from Shop | `dropOnMat.js:107-111` | `Shop.buyAt` | on the mat; sold; Token cap; price payable (Bank plus floor); placement | card draggable only when affordable; not over the Shop panel | red callout at the drop point with what is short; fly-back |
+| Refund a Foundation | `ShopPanel.jsx:264-273` → `dropOnMat.js:126-135` | `Shop.refund` | unbuilt Foundation, placed by the player, sold, not a fixture | same `canRefund`, worked out at pickup; Shop edge armed | red callout over the Token |
+| Mark / unmark for demolition | `MatToken.jsx:602` → `MatBoard.jsx:428-442` → `useMapMode.js:57-65` | `Demolition.mark` / `unmark` | not the Hall, landmark, camp fixture, unclearable map node, quest or enemy; an event Token is removed at once | Demolish mode on; protected Tokens dimmed by the same rule | red callout over the Token |
+| Cancel all marks | `MatModeControls.jsx:105` | `Demolition.unmark` each | marked | count above zero | none needed |
+| Pick a recipe / crop / build | `TokenCard.jsx:666-669` | `StationRecipe.setSelectedRecipe` | Token given; id in its pool. **Not**: level, mark, mid-cycle (CR4-107, CR4-116) | rows above the guild's best level are not buttons | nothing: a refused pick leaves the list open, silently |
+| Claim a quest | `MatToken.jsx:606-615` | `QuestTokens.claimQuest` | is a quest; done; Bank still holds the items | shown done; not just after a drop; not in a map mode | red callout over the Token |
+| Dismiss a bounty | `LeaveMatControl.jsx:42` | `QuestTokens.dismissBounty` | is a quest | button shown only for a quest | result ignored (only "gone already" can refuse) |
+| Remove a Token (layout tool, dev) | `LeaveMatControl.jsx:54` | `Placement.removePlacedToken` | not permanent; placed | layout editing on | result ignored |
+| Collect loot (hover or click) | `SpriteLayerView.jsx:41`, `:156-178` | `SpriteLayer.collectSprite` | sprite exists; Bank room (partial fit allowed) | not while dragging (hover only) | the engine's own "Bank full" notice |
+| Buy Guild Hall ranks | `GuildUpgradeInspection.jsx:119-126` | `GuildUpgradeManager.purchaseRanks` | star exists; each rank accessible; ranks left; price payable | same accessibility and affordability; button disabled when short | screen callout with the engine's reason |
+| Settle a place | `WorldDrawer.jsx:236-246` → `WorldScreen.jsx:84-92` | `World.settleCell` | world exists; cell on the frontier; **no catch-up**; ring star held; price met; Region written | button disabled when locked or short; a drag is ended first | red line in the drawer's foot |
+| Travel | `WorldDrawer.jsx:249-257` → `WorldScreen.jsx:73-81` | `Atlas.travel` | Region exists; not here; not archived; **no catch-up** | button only for a settled place elsewhere; a drag is ended first | red line in the drawer's foot |
+| Rename a place | `WorldDrawer.jsx:71-77` | `Atlas.rename` | Region exists; name not empty | settled places only; length cap | red line in the drawer's foot |
+| Rename hero, change portrait | `HeroEditModal.jsx:148-151` | `HeroManager.updateHeroProfile` | hero exists; name not blank | name not blank and something changed; length cap | none (Save disabled) |
+| Change flag colour | `HeroEditModal.jsx:144-146`, `:153-157` | same | one of the eight colours | differs from current | none needed |
+| Reorder the hero bar | `DockHeroFigure.jsx:84-85` → `dockReorder.js` | `HeroManager.reorderHero` | hero exists | not onto itself | none needed |
+| Bank: file in a tab | `BankTab.jsx:136-148`, `:309-313` | `InventoryManager.moveItemToGroup` | tab has room | none | screen callout "tab full"; fly-back |
+| Bank: reorder, sort | `BankTab.jsx:114-116`, `:131`, `:151-156` | `InventoryManager.setGroupOrder` | tab exists | not while searching | result ignored |
+| Change a setting | `SettingsModal.jsx:45-48`, `TypographyScaleModal.jsx:62-66` | `SettingsManager.set` | none | none | none |
+| Reset settings | `SettingsModal.jsx:163` | `SettingsManager.resetOptions` | none | none; no confirm | none |
+| Save now | `SettingsModal.jsx:135` | `SaveManager.save(true)` | (D3) | none | nothing either way (CR4-154) |
+| Rename the guild | `SettingsModal.jsx:187-190` | `renameGuild` | game exists; name not empty | length cap | the box goes back to the old name |
+| Load a slot / new game | `SlotSelectionModal.jsx:93-95`, `:109` → `ReactRoot.jsx:84-85` | `EngineBootstrap.startSlot` | save readable and compatible | none; button stays live (CR4-149) | the slot screen's message line |
+| Delete a slot | `SlotSelectionModal.jsx:97-100` | `SaveManager.deleteSlot` | (D3) | a confirm step | message line |
+| Keep the time away | `CatchUpOverlay.jsx:56-61` | `CatchUp.forgetUndo` | none | a confirm step | none |
+| Load as I left it | `CatchUpOverlay.jsx:83` | `CatchUp.undoLast` | an undo copy exists | a confirm step | on failure the summary just closes (CR4-151) |
+| Pin, unpin, clear an item stub | `ItemStubColumn.jsx:55-66`, `:300` | `pins.toggle` / `pins.clear` / `ItemStubs.clearUnpinned` | none | Encyclopedia closed (else it looks the item up) | none needed |
+| Dismiss a banner | `BannerStack.jsx:197-206` | `Banners.dismiss` | none | not already leaving | none needed |
+| Move Limes | `MatLimes.jsx:77-90` | `LimesGuide.setLimesSpot` | point finite | clamped to the mat | none needed |
+| Close a lesson moment | `LimesLessonSpeaker.jsx:61` | `LimesLessons.hearMoment` | moment is due | none | none needed |
+| Token in the hand (pause) | `MatToken.jsx:282-286`, `dropOnMat.js:131` | `Hand.setInHand` | none | follows the drag | none needed |
