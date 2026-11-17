@@ -90,13 +90,13 @@ One ruling to look at, not a defect (CR4-122): on a reload a fight starts over w
 4. **Old copies stay endless** (CR4-165): a Token placed before its type was given Charges keeps producing for ever; only new copies run out. Not a defect; the finding closes as owner-no.
 5. **The browser build is for development; players get the desktop build** (CR4-145, CR4-157). The auto-save-Off tab close drops to P3; the storage-full banner (CR4-157) is a developer-only annoyance.
 
-### Questions for the owner from D4 (2026-11-17, open)
+### Questions for the owner from D4 (2026-11-17, answered the same day)
 
-For the planning agent to ask; the reviewer's recommendation is first in each.
+**Answered by the owner, 2026-11-17** (interview in the reviewer session; where an answer differs from the options offered, the answer wins):
 
-1. **A double-click on Upgrade in the Guild Hall** (CR4-195). Today the second click of a double-click buys the next rank as well. (a) **One click buys one rank; a second click within half a second is ignored** (recommended: nothing is bought by accident). (b) Leave it: a double-click is a quick way to buy two.
-2. **The recipe list's times** (CR4-194). The list shows each recipe's time before the station's own speed-ups, while the card above it shows the time after (a recipe reads 8 s in the list and 5.6 s on the card). (a) **The list shows the time the station really takes** (recommended: one number everywhere). (b) The list keeps the base time and says so.
-3. **A hero dropped on the Encyclopedia** (CR4-193). With the book open over the mat, a hero let go on the book is given an order on the hidden mat underneath. (a) **The book takes the drop and nothing happens** (recommended: no order the player cannot see). (b) Leave it: the book is a window over a live mat.
+1. **One click buys one rank** (CR4-195): a second click on Upgrade within about half a second is ignored.
+2. **The recipe list shows the base time with the real time beside it** (CR4-194), the owner's own wording, wider than the options: both numbers on each row, the station's real time (the card's number) next to the recipe's base time.
+3. **No hero drag while a full-screen view is open** (CR4-193), the owner's own rule, wider than the options: with the Encyclopedia open, heroes cannot be dragged off the hero bar at all, and the same holds for the other full-screen views, such as the Guild Hall upgrades. Reviewer notes for the brief: list every full-screen view (the Encyclopedia, the Guild Hall, the world map, others found) and decide per view whether item drags are blocked too (the ruling names hero drags); the hero figure needs a visible sign that it cannot be dragged, so a press does not look broken.
 
 ## Round summary (reviewer, 2026-11-07)
 

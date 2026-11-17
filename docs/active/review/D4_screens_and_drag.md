@@ -68,6 +68,14 @@ engine-side guard as well as the screen's, so a route added later cannot bypass 
 
 ---
 
+## Owner rulings (2026-11-17)
+
+The owner ruled on every D4 question the same day; the full text is in [STATUS.md](STATUS.md), "Questions for the owner from D4". They set the fix for these findings:
+
+- **CR4-195**: one click buys one rank; a second click within about half a second is ignored.
+- **CR4-194**: the recipe list shows the base time with the station's real time beside it.
+- **CR4-193**: no hero drag while the Encyclopedia or another full-screen view (such as the Guild Hall upgrades) is open. This replaces the finding's fix sketch.
+
 ## Findings
 
 Order: bugs a player can hit today, by priority (CR4-168 to CR4-170 at P2, and CR4-171, lowered to
