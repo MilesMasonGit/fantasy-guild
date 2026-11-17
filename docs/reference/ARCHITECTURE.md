@@ -269,7 +269,9 @@ point** (`board.tokens`, `:56`), heroes' orders in `board.flags` (`:63`), floor 
    `StateSchema.js:40`); reworks break saves on purpose (`StateSchema.js:8-39`). For a current
    save it back-fills missing keys two levels deep from `INITIAL_STATE` (`:35-63`), converts
    old flags to orders, and drops retired fields (`currency`, `cartographer`, Vault/Tray board
-   fields, retired upgrade ranks, old sprite names) (`:65-121`).
+   fields, retired upgrade ranks, old sprite names) (`:65-121`). Last, it follows the CMS's
+   renames (`data/renames.json`, `src/systems/core/followRenames.js`): an item, Token or effect id
+   the data no longer defines, renamed to one it does, is rewritten everywhere a save holds it.
 3. `validateSaveData` (`:359` → `StateSchema.js:345-399`).
 4. `loadSavedState` (`:366` → `src/systems/core/LoadedState.js`): `GameState.initFromSave` only
    stores the save; the helper then rehydrates each hero and their equipment modifiers, assigns
@@ -472,9 +474,10 @@ src/config/DatabaseManager.js ──▶ src/config/registries/*.js ──▶ sys
 
 - **`data/`** holds `tokens.json`, `items.json`, `tokenRecipes.json`, `effects.json`,
   `starterCamp.json`, `skillPerks.json`, `hallStars.json`, `world.json`, `maps.json` and
-  `palettes/` (`ls data`), and `events.json` once the CMS first syncs an events table. Never
+  `palettes/` (`ls data`), `events.json` once the CMS first syncs an events table, and
+  `renames.json` once it first syncs a rename (old id to new id; a loaded save follows it). Never
   hand-edit it (`CLAUDE.md`).
-- **`DatabaseManager`** (`src/config/DatabaseManager.js`) globs nine of them eagerly at
+- **`DatabaseManager`** (`src/config/DatabaseManager.js`) globs ten of them eagerly at
   build time (an absent one is an empty glob: no events, no perks, the built-in camp…); there is
   no runtime fetch. **`data/maps.json` (`{}`) and `data/palettes/` are read
   by no game code** (`src/tests/MapBurstRetired.test.js:39` guards maps).
