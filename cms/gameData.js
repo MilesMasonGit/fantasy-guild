@@ -146,7 +146,8 @@ export function syncCounts(files, plan) {
  * and every id this Sync writes taken off it. Unchanged when there is no table and nothing renamed.
  */
 function withRenameTable(given, renames, dataRoot) {
-    const { [RENAMES_FILE]: _asSent, ...files } = given;
+    const files = { ...given };
+    delete files[RENAMES_FILE];
     const tableFile = path.join(dataRoot, RENAMES_FILE);
     const onDisk = fs.existsSync(tableFile) ? readJson(tableFile) : null;
     if (!onDisk && renameCount(renames) === 0) return files;
