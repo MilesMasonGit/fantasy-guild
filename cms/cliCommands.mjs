@@ -8,6 +8,7 @@ import { validatePack, entryConflict } from './src/engine/changePacks.js';
 import { emptySession, accept, force, finish } from './src/engine/packReview.js';
 import { describeSyncDiff, SYNC_COLLECTIONS } from './src/engine/syncGuard.js';
 import { PLAN_SYNC_KEY } from './src/engine/planFile.js';
+import { RENAMES_SYNC_KEY, settleSyncedRenames } from './src/engine/renames.js';
 
 /**
  * The CMS's command line (`npm run cms -- <command>`, entry `cli.mjs`): what the owner's CMS page
@@ -253,10 +254,10 @@ async function cmdSync(paths, options, load, out) {
     out(`Recalculated ${shortPath(paths.root, paths.workspaceFile)}, now revision ${saved.revision}: ${counts(workspace)}.`);
     out(auditLines(report)[0]);
 
-    const { [PLAN_SYNC_KEY]: plan, ...files } = syncFiles(balancedForSync(workspace, report));
+    const { [PLAN_SYNC_KEY]: plan, [RENAMES_SYNC_KEY]: renames, ...files } = syncFiles(balancedForSync(workspace, report));
     const commit = paths.ownProject && options['no-commit'] !== true ? { projectRoot: paths.root } : null;
     const { status, body } = await writeSync({
-        files, plan: plan ?? null, confirmRemovals: options['confirm-removals'] === true,
+        files, plan: plan ?? null, renames: renames ?? null, confirmRemovals: options['confirm-removals'] === true,
         dataRoot: paths.dataRoot, planRoot: paths.planRoot, commit,
         // The command line reads the disk workspace itself, so it is never stale; off main it warns instead of refusing.
         branchRule: 'warn',
@@ -276,6 +277,11 @@ async function cmdSync(paths, options, load, out) {
     if (body.warning) out(`Warning: ${body.warning}`);
     out(`Wrote ${plural(body.filesWritten.length, 'file')} to ${shortPath(paths.root, paths.dataRoot)}: ${body.filesWritten.join(', ')}.`);
     out(body.commit.committed ? `Committed as ${body.commit.sha}.` : `Not committed: ${body.commit.reason}.`);
+    if (renames) {
+        // The renames are the data's now: the workspace's record starts again from the ids just written.
+        const settled = save(paths, saved, { ...workspace, renames: settleSyncedRenames(workspace.renames, renames) }, 'cli: sync');
+        out(`The workspace's record of renames now starts from this Sync (revision ${settled.revision}).`);
+    }
     return 0;
 }
 

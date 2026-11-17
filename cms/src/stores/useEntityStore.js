@@ -13,6 +13,7 @@ import { pendingSpriteRenames, applySpriteRenamesTo } from '../engine/spriteRena
 import { workspaceStorage } from '../engine/diskWorkspace';
 import { seedStoredWorkspace, workspaceFromImport } from '../engine/workspaceSeeds';
 import { recalculateWorkspace, balancedForSync } from '../engine/recalculate';
+import { emptyRenames, recordRename, forgetRenamesTo, settleSyncedRenames } from '../engine/renames';
 
 /** The CMS's authored content, in one store: the keyed collections `items` and `tokens`, the named effect library, and the per-skill recipe pools. Enemy is a filtered view of the Token list. */
 
@@ -274,7 +275,8 @@ function performRename(state, oldId, newId, entityType) {
         )
     );
 
-    const patch = { [collectionKey]: renamed };
+    // A save holding the old id follows it to the new one, once a Sync has carried the rename to the game.
+    const patch = { [collectionKey]: renamed, renames: recordRename(state.renames, collectionKey, oldId, newId) };
 
     if (entityType === 'item' || entityType === 'token') {
         // A Token's rules live in the library, so both kinds of rename have to reach into it.
@@ -574,6 +576,7 @@ function collectionActions(collectionKey, set, get) {
                 const clearing = s.activeEntityId === id;
                 return {
                     [collectionKey]: rest,
+                    renames: forgetRenamesTo(s.renames, collectionKey, id),
                     ...(clearing ? { activeEntityId: null, activeEntityType: null } : {}),
                 };
             }),
@@ -613,6 +616,10 @@ export const useEntityStore = create(
             world: null,
             /** The events table (`engine/events.js`), keyed by id. ⚠️ Null means this workspace never held one, and Sync then leaves `data/events.json` alone. */
             events: null,
+            /** What was renamed since the last Sync, per collection: the id at the last Sync → the id now (`engine/renames.js`). Written by every id change, not by hand. */
+            renames: emptyRenames(),
+            /** A Sync that sent `sent` has landed: the record starts again from the ids it wrote. */
+            settleSyncedRenames: (sent) => set((s) => ({ renames: settleSyncedRenames(s.renames, sent) })),
             /** Add a new event row under `id` (starting the table when there is none). */
             addEvent: (id, row) => set((s) => (s.events?.[id] ? {} : { events: { ...(s.events || {}), [id]: { ...row, id } } })),
             /** Change one event row's fields. */
@@ -916,6 +923,7 @@ export const useEntityStore = create(
                     hallStars: null,
                     world: null,
                     events: null,
+                    renames: emptyRenames(),
                     planSettings: null,
                     activeEntityId: null,
                     activeEntityType: null,
@@ -953,6 +961,7 @@ export const useEntityStore = create(
                 hallStars: state.hallStars,
                 world: state.world,
                 events: state.events,
+                renames: state.renames,
                 planSettings: state.planSettings,
                 activeEntityId: state.activeEntityId,
                 activeEntityType: state.activeEntityType,

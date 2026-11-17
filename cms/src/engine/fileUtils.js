@@ -3,6 +3,7 @@ import { useEntityStore } from '../stores/useEntityStore';
 import { useGlobalStore } from '../stores/useGlobalStore';
 import { syncFiles } from './recipeSync';
 import { PLAN_SYNC_KEY } from './planFile';
+import { RENAMES_SYNC_KEY } from './renames';
 import { diskRevision, saveWorkspaceNow } from './diskWorkspace';
 
 /** Workspace save, load, and one-way game data sync. */
@@ -20,6 +21,7 @@ export function snapshot(state) {
     hallStars: state.hallStars,
     world: state.world ?? null,
     events: state.events ?? null,
+    renames: state.renames ?? null,
     planSettings: state.planSettings,
   };
 }
@@ -65,13 +67,13 @@ export async function restoreFromGame() {
  * ⚠️ The plan rides apart (`plan`), never among `data/`'s files: Planned stubs never reach `data/`.
  */
 export async function sendSync(files, { confirmRemovals = false } = {}) {
-  const { [PLAN_SYNC_KEY]: plan, ...gameFiles } = files || {};
+  const { [PLAN_SYNC_KEY]: plan, [RENAMES_SYNC_KEY]: renames, ...gameFiles } = files || {};
   // The revision this tab's workspace came from: the server refuses a Sync from a copy the disk has moved past.
   const baseRevision = diskRevision();
   const response = await fetch('/api/sync-game-data', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ files: gameFiles, ...(plan ? { plan } : {}), confirmRemovals, ...(baseRevision !== null ? { baseRevision } : {}) }),
+    body: JSON.stringify({ files: gameFiles, ...(plan ? { plan } : {}), ...(renames ? { renames } : {}), confirmRemovals, ...(baseRevision !== null ? { baseRevision } : {}) }),
   });
 
   if (response.status === 409) {
@@ -86,7 +88,10 @@ export async function sendSync(files, { confirmRemovals = false } = {}) {
     throw new Error(err.error || 'Failed to sync game data');
   }
 
-  return response.json();
+  const result = await response.json();
+  // The renames are the data's now: the record starts again from the ids this Sync wrote.
+  if (renames) useEntityStore.getState().settleSyncedRenames(renames);
+  return result;
 }
 
 /**

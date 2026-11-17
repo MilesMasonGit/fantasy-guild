@@ -26,6 +26,7 @@ export const FILE_SCHEMAS = Object.freeze({
     'hallStars.json': 'hallStars',
     'world.json': 'world',
     'events.json': 'events',
+    'renames.json': 'renames',
 });
 /** Files the game cannot start without. */
 const REQUIRED_FILES = ['items.json', 'tokens.json'];

@@ -4,6 +4,7 @@ import { execFile } from 'child_process';
 import { compareSync } from './src/engine/syncGuard.js';
 import { mergePlanFile, plannedKeysOf, PLAN_FILE, PLAN_SYNC_KEY } from './src/engine/planFile.js';
 import { readWorkspaceFile, writeTemp, replaceWithTemp } from './workspaceFile.js';
+import { mergeRenameTables, idsByKind, renameCount, RENAMES_FILE } from './src/engine/renames.js';
 
 /**
  * The game's content files (`data/`) and the plan beside them (`cms/plan/plan.json`), read and
@@ -134,8 +135,33 @@ export function syncCounts(files, plan) {
         'Guild Hall stars': size(files['hallStars.json']?.stars),
         'world lines': size(files['world.json']?.lines),
         events: size(files['events.json']),
+        'renamed ids': renameCount(files[RENAMES_FILE]),
         'Planned entries': plannedKeysOf(plan).size
     };
+}
+
+/**
+ * `files` with `data/renames.json` brought up to date: the table already there, with the workspace's
+ * renames since the last Sync (`renames`) added (`engine/renames.js`, {@link mergeRenameTables}),
+ * and every id this Sync writes taken off it. Unchanged when there is no table and nothing renamed.
+ */
+function withRenameTable(given, renames, dataRoot) {
+    const { [RENAMES_FILE]: _asSent, ...files } = given;
+    const tableFile = path.join(dataRoot, RENAMES_FILE);
+    const onDisk = fs.existsSync(tableFile) ? readJson(tableFile) : null;
+    if (!onDisk && renameCount(renames) === 0) return files;
+    const read = (name) => {
+        try {
+            return readJson(path.join(dataRoot, name));
+        } catch {
+            return null;
+        }
+    };
+    const before = idsByKind({ 'items.json': read('items.json'), 'tokens.json': read('tokens.json'), 'effects.json': read('effects.json') });
+    const after = idsByKind(files, before);
+    const table = mergeRenameTables({ onDisk, sent: renames, before, after });
+    if (!onDisk && renameCount(table) === 0) return files;
+    return { ...files, [RENAMES_FILE]: table };
 }
 
 /**
@@ -149,19 +175,20 @@ export function syncCounts(files, plan) {
  * - it would remove content the game has: 409 with `needsConfirm` and the diff (removed, changed
  *   and added), unless `confirmRemovals`.
  * Every file goes to a temporary name first and all are renamed at the end, so a write that fails
- * leaves `data/` as it was.
- * @param {{ files: object, plan?: object|null, confirmRemovals?: boolean, dataRoot: string, planRoot: string,
+ * leaves `data/` as it was. `renames` is the workspace's record of renames since the last Sync: it is
+ * added to `data/renames.json`, never written as sent ({@link withRenameTable}).
+ * @param {{ files: object, plan?: object|null, renames?: object|null, confirmRemovals?: boolean, dataRoot: string, planRoot: string,
  *           baseRevision?: number|null, workspaceFile?: string|null, branchRule?: 'refuse'|'warn',
  *           commit?: { projectRoot: string } | null, log?: (line: string) => void }} options
  *        `commit` is null when the folders are not the project's own (a sandbox, a test): then nothing is committed.
  */
 export async function writeSync({
-    files: sent, plan: planSent = null, confirmRemovals = false, dataRoot, planRoot,
+    files: sent, plan: planSent = null, renames = null, confirmRemovals = false, dataRoot, planRoot,
     baseRevision = null, workspaceFile = null, branchRule = 'refuse', commit = null, log = () => {},
 }) {
     if (!sent || typeof sent !== 'object') return { status: 400, body: { error: 'Missing or invalid files payload' } };
     // ⚠️ The plan never goes into `data/`, even when a caller puts it among the files.
-    const { [PLAN_SYNC_KEY]: stray, ...files } = sent;
+    const { [PLAN_SYNC_KEY]: stray, ...given } = sent;
     let plan = planSent ?? stray ?? null;
     // ⚠️ A workspace that never set the Ledger settings sends none: the file's own are kept, never wiped.
     if (plan && typeof plan === 'object' && !plan.settings) {
@@ -173,7 +200,7 @@ export async function writeSync({
         }
     }
 
-    for (const relPath of Object.keys(files)) {
+    for (const relPath of Object.keys(given)) {
         // Prevent path traversal attacks
         if (relPath.includes('..') || path.isAbsolute(relPath)) return { status: 400, body: { error: 'Invalid relative path: ' + relPath } };
     }
@@ -212,6 +239,15 @@ export async function writeSync({
                 },
             };
         }
+    }
+
+    // ⚠️ The rename table only ever grows from what is in `data/`: never written as sent, so a workspace
+    // that does not know an earlier rename cannot drop it.
+    let files;
+    try {
+        files = withRenameTable(given, renames, dataRoot);
+    } catch (err) {
+        return { status: 500, body: { error: `data/${RENAMES_FILE} cannot be read, so the renames it holds would be lost. Nothing was written: ${err.message}` } };
     }
 
     // A stale browser workspace once synced over newer content and silently dropped it, so a Sync that would
