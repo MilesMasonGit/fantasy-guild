@@ -106,6 +106,27 @@ function bankFull(hero, itemId) {
     return { success: false, error: t('equipment.bankFull', { hero: hero.name, item: itemName(itemId) }) };
 }
 
+/**
+ * Who is trading blows, from the board (`BoardCombat.tradingBlows`). Handed in by
+ * `FightMoments.init` rather than imported: the board already reaches this module through
+ * `Breakage`, so an import back would close a cycle. Unwired, nobody counts as fighting.
+ */
+let tradingBlows = null;
+
+export function setFightCheck(fn) {
+    tradingBlows = typeof fn === 'function' ? fn : null;
+}
+
+/**
+ * The refusal when any of `heroes` is trading blows: no loadout changes from the moment an enemy
+ * steps up until it falls or the hero leaves, food and elixirs included. Only the player's three
+ * gestures ask; what a fight itself takes (`destroyEquipped`) and eating from the Bank do not.
+ */
+function fightRefusal(...heroes) {
+    const fighter = tradingBlows && heroes.find(h => h && tradingBlows(h.id));
+    return fighter ? { success: false, error: t('equipment.fighting', { hero: fighter.name }) } : null;
+}
+
 /** Empty a slot, putting a held copy back in the Bank unless `returnCopy` is false (the caller checked the room). */
 function vacate(heroId, hero, slot, { returnCopy = true } = {}) {
     const itemId = hero.equipment[slot];
@@ -137,6 +158,10 @@ export function equipItem(heroId, itemId, preferredSlot = null, from = null) {
     const template = getItem(itemId);
     if (!hero || !template) return { success: false, error: 'Target not found' };
 
+    const giver = giverOf(heroId, itemId, from);
+    const fighting = fightRefusal(hero, giver?.hero);
+    if (fighting) return fighting;
+
     const { canEquip, reason } = EquipmentValidator.canHeroEquip(heroId, itemId);
     if (!canEquip) return { success: false, error: reason };
 
@@ -152,7 +177,6 @@ export function equipItem(heroId, itemId, preferredSlot = null, from = null) {
     }
 
     const copy = takesCopy(itemId);
-    const giver = giverOf(heroId, itemId, from);
     if (!giver && !InventoryManager.hasItem(itemId, 1)) {
         if (copy && heldCount(itemId) > 0) return { success: false, error: t('equipment.allInUse', { item: template.name }) };
         return { success: false, error: 'Out of stock' };
@@ -224,6 +248,8 @@ export function moveItem(heroId, itemId, fromSlot, toSlot) {
     const hero = HeroManager.getHero(heroId);
     if (!Array.isArray(hero?.equipment) || hero.equipment[fromSlot] !== itemId) return { success: false, error: 'Slot is empty' };
     if (fromSlot === toSlot || !(toSlot >= 0 && toSlot < hero.equipment.length)) return { success: false, error: 'Could not move that' };
+    const fighting = fightRefusal(hero);
+    if (fighting) return fighting;
 
     const movingHeld = holdsCopy(hero, fromSlot);
     const otherHeld = holdsCopy(hero, toSlot);
@@ -247,6 +273,8 @@ export function moveItem(heroId, itemId, fromSlot, toSlot) {
 export function unequipItem(heroId, slot) {
     const hero = HeroManager.getHero(heroId);
     if (!hero?.equipment?.[slot]) return { success: false, error: 'Slot is empty' };
+    const fighting = fightRefusal(hero);
+    if (fighting) return fighting;
 
     const itemId = hero.equipment[slot];
     if (holdsCopy(hero, slot) && !InventoryManager.hasRoomFor([itemId])) return bankFull(hero, itemId);

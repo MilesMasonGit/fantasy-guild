@@ -126,8 +126,7 @@ export function hasFought(typeId) {
 
 /** Whether a hero is in a fight with an enemy that has stepped up (not resting between kills). */
 function engaged(hero) {
-    const fight = BoardCombat.fightOfHero(hero?.id);
-    return !!fight && !((fight.combat?.state?.intermissionTimer ?? 0) > 0);
+    return BoardCombat.tradingBlows(hero?.id);
 }
 
 /**

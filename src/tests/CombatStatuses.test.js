@@ -78,9 +78,13 @@ function makeHero(id = 'st_hero') {
     return h;
 }
 
-/** A hero planted on a 500 HP dummy, walked there and fighting. */
-function startFight() {
+/**
+ * A hero planted on a 500 HP dummy, walked there and fighting. `carry`: items equipped before the
+ * fight, since the loadout is locked once blows are traded.
+ */
+function startFight(carry = []) {
     const hero = makeHero();
+    for (const itemId of carry) expect(EquipmentManager.equipItem(hero.id, itemId).success).toBe(true);
     const enemy = BoardState.createTokenInstance('st_enemy', tokenStartingUses('st_enemy'));
     Placement.placeTokenAt(enemy, AT);
     TileModifiers.rebuildAround([enemy]);
@@ -198,9 +202,8 @@ describe('Burn: no stacks, 1 a tick for 3 ticks, food heals half', () => {
     });
 
     it('halves what a meal heals in a fight, rounded halves up (Shrimp 5 heals 3)', () => {
-        const { hero } = startFight();
         InventoryManager.addItem('item_shrimp', 5);
-        expect(EquipmentManager.equipItem(hero.id, 'item_shrimp').success).toBe(true);
+        const { hero } = startFight(['item_shrimp']);
 
         hero.hp.current = 10;
         expect(ConsumptionSystem.tryEat(hero.id, { inFight: true })).toEqual([{ itemId: 'item_shrimp', amount: 5 }]);

@@ -252,6 +252,12 @@ export function fightOfHero(heroId) {
     return null;
 }
 
+/** Whether a hero is in a fight with an enemy that has stepped up: not resting between kills. */
+export function tradingBlows(heroId) {
+    const fight = fightOfHero(heroId);
+    return !!fight && !((fight.combat?.state?.intermissionTimer ?? 0) > 0);
+}
+
 /**
  * The fight a statement aimed at `the enemy` reaches, or null: what every verb resolves `opponent`
  * through.
