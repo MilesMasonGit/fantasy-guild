@@ -15,7 +15,7 @@ import { hallSourceOf } from '../progression/hallModifiers.js';
 import { regionSourceOf } from '../atlas/regionModifiers.js';
 import { getRegion } from '../atlas/Atlas.js';
 import * as HeroManager from '../hero/HeroManager.js';
-import { applyXpBonus } from '../hero/xpBonus.js';
+import { averageXpBonus } from '../hero/xpBonus.js';
 import { getCombatXpAward, getHeroCombatStyle } from '../combat/CombatFormulas.js';
 import { carriedKindOf } from '../hero/carriedKind.js';
 import * as BoardState from './BoardState.js';
@@ -39,7 +39,7 @@ import { eventOf } from './EventTokens.js';
  * ⚠️ Read only, and never a second copy of the maths. Every number comes from the engine's own
  * walk (`TileModifiers.explainAxis` / `explainGrowTime`, the very function `resolveAxis` and
  * `growTimeOf` sum through) and the engine's own rules after the sum (`flooredWorkTime`,
- * `Respawn.restMsOf`, `Fields.loadAtRipening`, `applyXpBonus`), so a badge is what happens. No
+ * `Respawn.restMsOf`, `Fields.loadAtRipening`, `averageXpBonus`), so a badge is what happens. No
  * random draw, no game state written; the runtime caches the card already fills (a Token's
  * aggregator, its kept Grow Time, a hero's kept loadout) may be filled.
  *
@@ -244,7 +244,7 @@ function growth(instance, baseMs) {
 
 /**
  * XP on a cycle's award, or an enemy's kill award in the fighting hero's style (`killXp`). The
- * whole-XP rounding is no limit: a positive bonus always adds at least one.
+ * whole-XP rounding is no limit: a bonus's fraction is carried by chance, so on average it is paid.
  */
 function measureXp(ctx, type) {
     let base;
@@ -259,7 +259,7 @@ function measureXp(ctx, type) {
     }
     if (!(base > 0)) return null;
     const { resolved, contributions } = TileModifiers.explainAxis(ctx.id, type, base, category);
-    return { base, resolved, final: applyXpBonus(base, resolved), limit: null, contributions };
+    return { base, resolved, final: averageXpBonus(base, resolved), limit: null, contributions };
 }
 
 function measureDoubleLoot(ctx, type) {

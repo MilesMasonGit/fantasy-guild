@@ -635,7 +635,8 @@ has none yet) and melee have content today.
   skill widens that skill's XP wherever it is earned, a work cycle of it or, for Melee, Ranged, Magic
   and Stealth, a kill won in that style; a bonus aimed at no skill widens every skill's XP, kills too.
   Gear, perks, potions, a Token's neighbours and Guild Hall stars all count, summed into one bonus
-  (a positive bonus always adds at least 1 XP). *(`BoardRunner.js`, `CombatResolutionProcessor.js`)*
+  (a true percentage: a fraction of XP is paid by chance, so +10 % on a 1 XP award is 2 XP one time
+  in ten; owner, 2026-11-15). *(`BoardRunner.js`, `CombatResolutionProcessor.js`, `xpBonus.js`)*
 - A skill level gives no work speed: a cycle takes its authored time whoever works it (owner 2026-10-09, T-125).
 - **Hero level** = the average of all their skills (display only).
 - **Content that still says `logging`** (data/ and the CMS workspace, until the
@@ -1462,7 +1463,7 @@ Tokens carry **named effects** from a shared library (`data/effects.json`,
   −20 % is free one time in five. A cycle starts only with the cost rounded up in the Bank, and a
   whole cost draws no chance; owner, 2026-11-11), **grow time** (a growth or a refill's rest, from neighbours
   and Region rules only), **crop load** (the harvests a Field's crop ripens with:
-  a Composter, §3 Farming; read once as it ripens), XP bonus (a positive bonus always adds at least 1 XP),
+  a Composter, §3 Farming; read once as it ripens), XP bonus (its fraction of XP paid by chance),
   double loot (every drop of the cycle or kill, the bonus drops a building or a carried effect
   grants it included: owner, 2026-11-12), **double item chance** (a chance
   that one named item, when a cycle or a kill drops it, comes out doubled: the

@@ -16,7 +16,7 @@ import { getGlobalAggregator } from '../systems/effects/GuildModifiers.js';
 import { EFFECT_TYPES, TARGET_CATEGORIES } from '../systems/effects/constants.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { modifiersOf } from '../systems/atlas/regionModifiers.js';
-import { applyXpBonus } from '../systems/hero/xpBonus.js';
+import { averageXpBonus } from '../systems/hero/xpBonus.js';
 import { getCombatXpAward } from '../systems/combat/CombatFormulas.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -448,7 +448,7 @@ describe('an enemy wears badges too', () => {
         // The kill's XP, as `CombatResolutionProcessor` widens it.
         const xp = badge(out, EFFECT_KEY.XP);
         const award = getCombatXpAward(enemyProfileOf(getTokenType(ENEMY)));
-        expect(xp.final).toBe(applyXpBonus(award, TileModifiers.resolveAxis(enemy.id, EFFECT_TYPES.XP_BONUS, award, TARGET_CATEGORIES.ALL)));
+        expect(xp.final).toBe(averageXpBonus(award, TileModifiers.resolveAxis(enemy.id, EFFECT_TYPES.XP_BONUS, award, TARGET_CATEGORIES.ALL)));
         expect(out.outputs).toEqual([{ itemId: 'item_blackberry', effects: [expect.objectContaining({ key: EFFECT_KEY.DOUBLE_ITEM, total: 25 })] }]);
         // No work cycle: no Speed, whatever reaches it.
         expect(badge(out, EFFECT_KEY.SPEED)).toBeNull();
@@ -469,7 +469,7 @@ describe('the badges are what the engine does', () => {
         const out = effectBreakdown(vein.id);
         expect(badge(out, EFFECT_KEY.SPEED).final).toBe(TileModifiers.workTimeOf(vein.id, 10000, 'mining'));
         expect(badge(out, EFFECT_KEY.YIELD).resolved).toBe(TileModifiers.resolveAxis(vein.id, EFFECT_TYPES.YIELD, 1, 'mining'));
-        expect(badge(out, EFFECT_KEY.XP).final).toBe(applyXpBonus(10, TileModifiers.resolveAxis(vein.id, EFFECT_TYPES.XP_BONUS, 10, 'mining')));
+        expect(badge(out, EFFECT_KEY.XP).final).toBe(averageXpBonus(10, TileModifiers.resolveAxis(vein.id, EFFECT_TYPES.XP_BONUS, 10, 'mining')));
         expect(badge(out, EFFECT_KEY.DOUBLE_LOOT).resolved).toBe(TileModifiers.resolveAxis(vein.id, EFFECT_TYPES.LOOT_MULT, 0, 'mining'));
         expect(out.outputs[0].effects[0].resolved).toBe(TileModifiers.resolveAxis(vein.id, EFFECT_TYPES.DOUBLE_DROP, 0, ORE));
         expect(badge(out, EFFECT_KEY.GROWTH).final).toBe(Respawn.restMsOf(vein));
