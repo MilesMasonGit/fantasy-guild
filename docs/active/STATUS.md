@@ -7,6 +7,19 @@ build green) · bench-queued · eye-check · merged.*
 
 **Owner, 2026-11-06 (behind the week's target): up to four code builders at once this week** (plus one read-only); the director still runs suites, builds and benches one at a time. **Owner, 2026-11-06 late morning, away at work:** the director may start new briefs and merge pieces on the gate without a full look; the owner answers questions remotely (screenshots to the phone). Look changes merged this way are listed for the owner's next look in `docs/active/eyecheck/2026-11-06_merged_while_away.md`.
 
+## Director, batch 6: the deep-read fixes, 650 and 660 first (owner, 2026-11-17: four fixes, no look)
+
+*Tue 17 Nov, batch proposed and started. Where we are: briefs 650 to 700 queued (rows 64 to 69); owner picked four fixes with no eye-check: round 1 (a knocked-out hero never takes work, H1; a CMS delete no longer strands a save, R1) building in parallel now; round 2 (a reload keeps the enemy's health, H3; saves follow CMS renames, R2) after them. Owner answers: Limes says nothing for moments away from the camp (small follow-up phase); lessons off keeps Limes quiet (as built); lesson 8 gets a small Slime enemy from the existing sheet (content agent pack, owner Syncs). Next: round 2, then the queue's rest of 650 (gear lock with a look). Owner: open a `/content` session for the Slime and the Rusty tools packs when convenient. Blockers: none.*
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| 650 H1: a knocked-out hero takes no work, no second knock-out after travel | builder | `fix/wounded-no-work` (`h1`) | building | Tue | |
+| 660 R1: a CMS delete no longer strands a save (settled place, prices, Bank slots, picks) | builder | `fix/missing-ids` (`r1d`) | building | Tue | |
+| 650 H3: a reload keeps the enemy's health (after H1) | builder | | queued | | |
+| 660 R2: saves follow CMS renames (after R1) | engineer | | queued | | |
+| Limes keeps quiet about moments away from the camp (owner answer) | builder-lite | | queued | | |
+| Lesson 8's small Slime (smol sheet in `public/assets/enemies/slime/`) | content agent, then builder-lite to point the lesson | | waits for a `/content` session and the owner's Sync | | |
+
 ## Director, batch 5: the remaining briefs' code (owner, 2026-11-14: skip the events round 2 look, carry on with the outstanding briefs)
 
 *Sun 15 Nov, 03:40. Where we are: batch 5 is done and on main (Neighbours needed no code; events every 45 to 75 min; draw bench asks 3.2x; Limes's lessons, work change accepted). Draw baseline retaken and saved first time. Next: every code part of the open briefs is done; what remains is content for /content sessions (620 C1/C2 Hall star plan, 630 C1 to C3 base buildings, 480 L2 opening pack), then L2's two lesson steps. Owner: the parked lessons questions with the next proposal. Blockers: none.*
@@ -344,7 +357,7 @@ None open.
 
 ## Questions for the owner
 
-- **Limes's lessons (480 L4), first option of each built, for the next proposal:** a big moment while the guild is away from the camp speaks through the next Limes the player sees (Bank, Shop, Hall, world map, or the camp on return) (A, built), a Limes banner at the top (B), or a small Limes visiting the new mat (C)? Moments with lessons off: Limes keeps quiet (A, built) or speaks (B)? Until L2's slime exists, lesson 8's first fight is a bare-handed hero against a Goblin, winnable but close (3/11 HP left): accept as a stand-in (A) or point it at another enemy (B)?
+- ~~Limes's lessons~~ **Answered 2026-11-17: moments while the guild is away from the camp: nothing is said (Limes speaks only at the camp); lessons off: Limes keeps quiet (A, as built); lesson 8: make a small Slime enemy from the existing animation sheet (content pack, then point the lesson at it).**
 - **For the planning agent (480 L4):** T-014, where Limes's words live: keep them in `limesText.js` until translation T-119 (A, engineer's pick), a CMS Limes page (B), or B plus the lesson ids on the CMS Starter Camp page (C); the T-014 row still names `tutorialQuests.js` (deleted). Suggested Limes moments, none built: first tool breaks, first hero knocked out, first event lands, ring 2 opens, first constellation finished, first return from time away.
 
 - **Event nodes and their time limit**: answered 2026-11-13, B: every event leaves after its time, workable or not (builder-lite on `feat/events-arrival`).
