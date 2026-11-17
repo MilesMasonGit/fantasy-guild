@@ -25,7 +25,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-482**
+**Next free number: T-483**
 
 ---
 
@@ -171,7 +171,6 @@ The findings' full write-ups are in `docs/active/review/D1_the_mat.md` to `D4_sc
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-409 | P1 | open | **A healing hero is knocked out twice, or works while healing, after travel**: a wounded hero takes no claim (`canTake`/`evaluate` in `Flags.js`) and `resolveDefeat` does nothing for a hero already wounded before the fight. Owner rule: orders in another Region are kept if the hero has healed when the guild arrives, cleared if still knocked out | CR4-101 |
 | T-410 | P2 | open | **Thorns costs no charge anywhere** (owner 2026-11-15): Redberry Bush gives Redberries every cycle with a separate 10 % prick (25 harvests a refill); the Thorn Elemental's Thorns becomes a 10 % chance, when a hero's hit lands on it, of 1 damage to that hero (100 kills), through a new When Struck fight moment built now (owner 2026-11-17), reusable for armour later. One depletion route for a kill (`Charges.destroyToken`, with `instance` and `heroId`), so a last kill never "runs out" twice. Content by pack (content agent); WORK CHANGED for the `depleted` figure | CR4-104, CR4-103 |
 | T-411 | P2 | open | **No Token merges, ever** (owner 2026-11-15): a Token dropped on its copy is placed beside it; the merge and restock code and its "Restocked" notice go. Ends the resting-Token deletion and the moved Token losing its progress | CR4-108, CR4-102, CR4-117 |
 | T-412 | P2 | open | **One spot for a Token's whole cycle** (owner 2026-11-15, 2026-11-17): a Stump and a Sapling hold the grown Tree's spot (may be drawn small); a drop beside a growing Token or a Foundation keeps room for what it becomes; no work on squeezes already in old saves (owner 2026-11-17: old saves are not protected). No double-size Tokens: the Fighter's Academy and the Cedar become ordinary size by pack. **Owner to-do: redo the Cedar's art** | CR4-105 |
@@ -187,7 +186,6 @@ The findings' full write-ups are in `docs/active/review/D1_the_mat.md` to `D4_sc
 | T-422 | P3 | open | **A ripe Field keeps its number** (owner 2026-11-17): the card shows the load stored at ripening; a neighbour placed after counts from the next crop | CR4-119 |
 | T-423 | P3 | open | **A "for the cycle" potion effect stays on a hero whose cycle never finished**: end the hero's for-the-cycle effects in `Flags.release` | CR4-120 |
 | T-424 | P3 | open | **Settling and a new game save half-way**: settle saves once at the very end, after `Arrival.occupy` (a crash can no longer leave a place without its arrival enemies, or settled but unpaid); a new game claims the slot in memory and writes only the finished opening | CR4-121, CR4-150 |
-| T-425 | P3 | open | **A reload remembers the enemy's health** (owner 2026-11-15; save-format change), so closing the game cannot change a fight, and an elixir is counted once per enemy across a reload. Live play unchanged: walking away still lets the enemy recover (owner 2026-11-17) | CR4-122 |
 | T-426 | P3 | open | **"Load as I left it" can undo more than the summary shows**: a second absence while the summary is open adds to it (or the summary says "since" the first save) | CR4-123 |
 | T-427 | P2 | open | **Latent: thirteen rule shapes the CMS can author that the mat engine gets wrong** (no shipped content reaches them): fix the engine now (owner 2026-11-17), items 1, 4 and 6 first; the list is in the finding | CR4-124 |
 | T-428 | P3 | open | **Travel can put a quest bounty on another Token**: check a remembered spot with `isLegal` before use, else search | CR4-125 |
@@ -228,8 +226,6 @@ The findings' full write-ups are in `docs/active/review/D1_the_mat.md` to `D4_sc
 | T-452 | P3 | open | **A new player's master volume is lost once on the next load** | CR4-155 |
 | T-453 | P3 | open | **An Encyclopedia tick stays once the guild has had a Token** (owner 2026-11-17): a settled place's chest keeps its tick after it is opened | CR4-156 |
 | T-454 | P3 | open | **Browser "storage is full" says to export, and there is no export**: reword (dev builds only, owner 2026-11-16) | CR4-157 |
-| T-455 | P2 | open | **Saves follow a CMS rename** (owner 2026-11-16): the CMS records each rename old id to new id, the Sync carries the table, and a load rewrites old ids everywhere they live (Bank keys and tab orders, loadouts, every Region's Tokens and loot, `state.world`, station picks, collections, pins); widen the save check to every place an id lives and correct its wording. Large; engineer | CR4-160, CR4-162, CR4-127 |
-| T-456 | P1 | open | **A CMS delete strands a save**: a held mat counts only arrival enemies whose type is still an enemy, and `occupy` skips a row that is not (CR4-158, P1); a place's price row naming a missing item is dropped or re-drawn (CR4-159); kinds with no definition take no Bank slot (CR4-162); a station's pick or a Field's crop not in the pool is read as nothing picked, never deleted (CR4-163) | CR4-158, CR4-159, CR4-162, CR4-163 |
 | T-457 | P2 | open | **A star held at a rank the CMS took away gives nothing**: read the rank as at most the star's top rank, without rewriting the save | CR4-161 |
 | T-458 | P3 | open | **An unanswered away summary is offered again on the next start** (owner 2026-11-16), with "Load as I left it" still available; closing is not a choice | CR4-164 |
 | T-459 | P3 | open | **A missing or empty save with a good backup shows "Empty"**: show it damaged so Load restores from the backup | CR4-166 |
@@ -260,6 +256,7 @@ The findings' full write-ups are in `docs/active/review/D1_the_mat.md` to `D4_sc
 | T-479 | P3 | open | **Latent: after a crash in a drawer, the Shop, the hero bar or the banners, the Reload button cannot be clicked** and the panel takes over the screen | CR4-196 |
 | T-480 | P3 | open | **Latent: a Shop price of more than four items, and a second Lap Time rule**: fix the engine now (owner 2026-11-17) | CR4-197 |
 | T-481 | P3 | open | **A Field test passes only by luck**: `FarmingHarvest.test.js` (lost part-way through the first harvest and back before it ends) fails under the second seed, `FG_TEST_SEED=b` (expected 2 to be 1), on `main` 556a916b; pin its random numbers | director 2026-11-17 |
+| T-482 | P2 | open | **A CMS rename leaves other content naming the old id**: renaming Oak Wood to Oak Logs left the Starter Camp's opening Bank on `item_oak_wood` (a new game opens without it); by `performRename` the same holds for Hall star prices, world tables (Token ids), events (`typeId`) and the lesson plan's code ids. Saves follow the rename since 660 R2; content does not | 660 R2 builder, 2026-11-17 |
 
 ### Brief 210 — the backlog intake (owner 2026-10-22, Backlog director)
 

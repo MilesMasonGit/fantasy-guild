@@ -9,7 +9,9 @@ build green) · bench-queued · eye-check · merged.*
 
 ## Director, batch 6: the deep-read fixes, 650 and 660 first (owner, 2026-11-17: four fixes, no look)
 
-*Tue 17 Nov, 15:00. Where we are: H1 (a knocked-out hero takes no work), R1 (a delete no longer strands a save) and the Limes moments fix merged and pushed, work same. H3 ready, R2 building. Second-seed suite: one Field test passes only by luck, on main too (T-481). Next: H3's gate and work check in this window, then R2. Owner: nothing. Blockers: none.*
+*Tue 17 Nov, 14:40. Round 2 merged: a reload keeps the enemy's health (H3) and saves follow a CMS rename (R2), work same, pushed. The batch's four fixes plus the Limes moments fix are all on main. Next: propose batch 7 (the rest of 650 and 660 R3). Owner: the Sync and rename question below. Blockers: none.*
+
+*Tue 17 Nov, 14:00. Where we are: H1 (a knocked-out hero takes no work), R1 (a delete no longer strands a save) and the Limes moments fix merged and pushed, work same. H3 ready, R2 building. Second-seed suite: one Field test passes only by luck, on main too (T-481). Next: H3's gate and work check in this window, then R2. Owner: nothing. Blockers: none.*
 
 *Tue 17 Nov, 13:00, batch proposed and started. Where we are: briefs 650 to 700 queued (rows 64 to 69); owner picked four fixes with no eye-check: round 1 (a knocked-out hero never takes work, H1; a CMS delete no longer strands a save, R1) building in parallel now; round 2 (a reload keeps the enemy's health, H3; saves follow CMS renames, R2) after them. Owner answers: Limes says nothing for moments away from the camp (small follow-up phase); lessons off keeps Limes quiet (as built); lesson 8 gets a small Slime enemy from the existing sheet (content agent pack, owner Syncs). Next: round 2, then the queue's rest of 650 (gear lock with a look). Owner: open a `/content` session for the Slime and the Rusty tools packs when convenient. Blockers: none.*
 
@@ -17,8 +19,8 @@ build green) · bench-queued · eye-check · merged.*
 |---|---|---|---|---|---|
 | 650 H1: a knocked-out hero takes no work, no second knock-out after travel | builder | `fix/wounded-no-work` (`h1`) c1828871 | **merged** bfc25802, pushed: work check Tue 13:40 same on all; combined gate (H1 + R1 + Limes) 667 files, 8618 green, cycles 0, depcruise 0, lint src 0 errors, build; timing REGRESSED readings are the loaded machine (agents running), scattered across scenarios | Tue | |
 | 660 R1: a CMS delete no longer strands a save (settled place, prices, Bank slots, picks) | builder | `fix/missing-ids` (`r1d`) 87d75099 | **merged** bfc25802, pushed: work same; fixture save checked in the game by the builder; the map's price note only in a test | Tue | |
-| 650 H3: a reload keeps the enemy's health (after H1) | builder | `fix/enemy-health-reload` (`h3`) 13946bfb, from H1 | **ready**, director diff read; gate and work check next (expected WORK CHANGED on S8, S8L, S8F only: their save and load now resumes hurt goblins) | Tue | |
-| 660 R2: saves follow CMS renames (after R1) | engineer | `fix/follow-renames` (`r2r`), from R1 | building | Tue | |
+| 650 H3: a reload keeps the enemy's health (after H1) | builder | `fix/enemy-health-reload` (`h3`) 13946bfb | **merged** a4c7ca4a, pushed: work check same on all 12 (the builder expected S8 to change; the bench's save sits where no goblin is hurt); gate 668 files green | Tue | Tue |
+| 660 R2: saves follow CMS renames (after R1) | engineer | `fix/follow-renames` (`r2r`) 832f6d80 | **merged** a4c7ca4a, pushed: combined gate 671 files, 8678 green, cycles 0, depcruise 0, lint src 0 errors, game and CMS build; work same. Table `data/renames.json`, written by the CMS Sync (absent = no renames); real rename checked by the builder on `scratch/r2-rename-check` (never merge). T-482 filed (content naming the old id is not followed) | Tue | Tue |
 | Limes keeps quiet about moments away from the camp (owner answer) | builder-lite | `fix/limes-moments-camp` (`lm`) 0393a2f4 | **merged** bfc25802, pushed: a moment is said only while the guild is at the Starter Camp and waits until then; UI only | Tue | Tue |
 | Lesson 8's small Slime (smol sheet in `public/assets/enemies/slime/`) | content agent, then builder-lite to point the lesson | | waits for a `/content` session and the owner's Sync | | |
 
@@ -358,6 +360,8 @@ Owner 2026-11-01: Guild Hall H1 and the walker glide need no look (marked looked
 None open.
 
 ## Questions for the owner
+
+- **The CMS Sync and a rename (660 R2):** a Sync still lists a renamed item as "removed X" and asks you to confirm removals, though saves now follow the rename. Show it as "renamed X to Y" with no removal confirm (A, recommended), or leave the confirm as it is (B)?
 
 - ~~Limes's lessons~~ **Answered 2026-11-17: moments while the guild is away from the camp: nothing is said (Limes speaks only at the camp); lessons off: Limes keeps quiet (A, as built); lesson 8: make a small Slime enemy from the existing animation sheet (content pack, then point the lesson at it).**
 - **For the planning agent (480 L4):** T-014, where Limes's words live: keep them in `limesText.js` until translation T-119 (A, engineer's pick), a CMS Limes page (B), or B plus the lesson ids on the CMS Starter Camp page (C); the T-014 row still names `tutorialQuests.js` (deleted). Suggested Limes moments, none built: first tool breaks, first hero knocked out, first event lands, ring 2 opens, first constellation finished, first return from time away.

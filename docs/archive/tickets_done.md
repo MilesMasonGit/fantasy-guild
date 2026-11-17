@@ -279,3 +279,7 @@ T-392 — QA panel Spawner kinds rows key by the enemy camp instance id, so two 
 T-399 — A Field's seed is checked at sowing and taken by the crop's first harvest (through the harvest cycle's inputs, so it waits like any work cycle when the seed is gone); a crop saved under the old rule owes none (seedOwed flag) — fix/seed-at-harvest — 2026-11-11
 T-336 — Rare finds judged by finds a day: under 5 %, repeatable work is steady at 1 find a day or more for one hero (Ledger setting) and rare but steady below, never luck; luck only for a source that wears out; rare drop tables and enemy fights counted the same way; rare-find potions (x2, x3 from Plane 4) and Rare Finds buildings (x1.5) get their own boost targets, measured on the finds — fix/rare-find-labels — 2026-11-12
 T-258 — Not restored: the cartographer's quest steps are gone with Limes's lessons (brief 480 L4); a place for the endgame ruins can go in the lessons' goal later if wanted — feat/limes-lessons — 2026-11-14
+T-409 — A healing hero takes no work and is not knocked out again after travel (650 H1) — c1828871 — 2026-11-17
+T-456 — A CMS delete no longer strands a save: settled place, prices, Bank slots, picks (660 R1) — 87d75099 — 2026-11-17
+T-425 — A reload remembers the enemy's health; an elixir counted once per enemy (650 H3) — 13946bfb — 2026-11-17
+T-455 — Saves follow a CMS rename via data/renames.json (660 R2) — 832f6d80 — 2026-11-17
