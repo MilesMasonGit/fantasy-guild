@@ -223,11 +223,20 @@ export function tokenAtPoint(point) {
     return best ? best.instance : null;
 }
 
+/** Whether the hero is healing from a knock-out (read straight from state, never rehydrated). */
+function isHealing(heroId) {
+    return heroRecord(heroId)?.status === 'wounded';
+}
+
 /**
- * Whether the hero can take this kind of work at all: an enemy, if they can fight; a worked
- * Token, if they hold its skill.
+ * Whether the hero can take this kind of work at all: none while healing; an enemy, if they can
+ * fight; a worked Token, if they hold its skill.
+ *
+ * ⚠️ The one guard keeping a healing hero off work. A defeat furls the flag only on the mat it
+ * happened on: orders in other Regions, and an old save's, still reach the chooser.
  */
 function canTake(heroId, kind, def, instance) {
+    if (isHealing(heroId)) return false;
     if (kind === 'enemy') return canFight(heroId);
     if (kind === 'work') return holdsSkill(heroId, workConfigOf(def, instance)?.skill);
     return true;
@@ -355,7 +364,8 @@ export function hasFixableSkip(instance) {
  * @param {string|null} excludeInstanceId a Token not to consider (the one held)
  */
 function evaluate(heroId, flag, excludeInstanceId = null) {
-    if (isSpot(flag)) return { pick: null, skips: [] };
+    // A healing hero waits with no skip: the Token is not at fault, so it gets no red badge.
+    if (isSpot(flag) || isHealing(heroId)) return { pick: null, skips: [] };
     const candidates = [];
     const camp = Camps.campOfHero(heroId);
     if (camp) {
@@ -460,7 +470,7 @@ function keepOrRelease(r, heroId, dirty) {
         // nothing.
         const eligible = !isSpot(flag) && !Occupation.holds(instance)
             && (flag.pinnedTo === instance.id || campHolds(heroId, instance)) && (
-            (kind === 'enemy' && canFight(heroId))
+            (kind === 'enemy' && canTake(heroId, kind, def, instance))
             || (kind === 'work' && hasWorkSkill(def, instance) && canTake(heroId, kind, def, instance)
                 // A Token that ran out and rests until it respawns (or a Field with nothing ripe) is
                 // let go at once, with no badge: a camp hero works the next thing, an ordered hero
@@ -1008,7 +1018,7 @@ export function reset() {
  * After a load, heroes carry on where they were. Every hero the save says had reached a Token
  * stands back beside it, on the same side, and works on: the Token's cycle progress is saved with
  * the Token, so the bar continues from where it was. A note that no longer fits (no flag, the Token
- * gone, another hero on it) is dropped and that hero chooses afresh. Everyone else starts beside
+ * gone, another hero on it, the hero healing) is dropped and that hero chooses afresh. Everyone else starts beside
  * their flag. A fight in progress still restarts: the hero is back at the enemy, which is whole
  * again.
  *
@@ -1021,7 +1031,7 @@ export function restoreWork() {
     for (const [heroId, note] of BoardState.savedWorkClaims()) {
         const token = BoardState.getTokenById(note?.instanceId);
         const flag = BoardState.flagOf(heroId);
-        if (!flag || isSpot(flag) || !token || BoardState.heroOfInstance(token.id)) {
+        if (!flag || isSpot(flag) || !token || BoardState.heroOfInstance(token.id) || isHealing(heroId)) {
             BoardState.forgetWorkClaim(heroId);
             continue;
         }
@@ -1035,13 +1045,17 @@ export function restoreWork() {
 }
 
 /**
- * After travel: the guild arrives with no claim and no fight. Each hero with a flag in this Region
- * starts beside it and chooses work afresh; the notes that would put them back at their old work
- * (a load's `restoreWork`) are dropped.
+ * After travel: the guild arrives with no claim and no fight. A hero still healing loses their
+ * order here (they come home to heal); every other hero with a flag in this Region starts beside
+ * it and chooses work afresh. The notes that would put them back at their old work (a load's
+ * `restoreWork`) are dropped.
  */
 function arrive() {
     reset();
     for (const [heroId] of BoardState.savedWorkClaims()) BoardState.forgetWorkClaim(heroId);
+    for (const heroId of Object.keys(BoardState.getFlags())) {
+        if (isHealing(heroId)) BoardState.setFlag(heroId, null);
+    }
     restoreWork();
 }
 

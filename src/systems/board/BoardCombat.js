@@ -344,6 +344,10 @@ export function tickToken(instance, delta, heroId) {
     }
 
     if (!fight) {
+        // ⚠️ A hero already healing starts no fight. Their wounded status is what the defeat check
+        // below reads, so a fight begun with one would resolve a second knock-out at once: the
+        // banner, the food and drink share and the gear roll again, with nobody swinging.
+        if (HeroManager.getHero(heroId)?.status === 'wounded') return;
         // ⚠️ One fight per hero. A hero fighting somewhere else is no longer fighting there: end
         // that fight first, which also takes back the numbers its enemy lent the hero. Without this
         // two fights could name one hero and `fightOfHero` would have to guess.
