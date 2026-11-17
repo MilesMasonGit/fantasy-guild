@@ -89,9 +89,11 @@ describe('where a step speaks (pure)', () => {
     it('a big moment comes first, through the first Limes the player can see, with no outline', () => {
         const moment = (screens, atCamp) => lessonSpeech({ stepId: 'chop', moment: 'first_settle' }, screens, atCamp);
         expect(moment({}, true)).toMatchObject({ spot: LIMES_MAT, moment: 'first_settle', target: null, lines: [...LIMES_TEXT.moments.first_settle] });
-        expect(moment({ bank: true }, false)).toMatchObject({ spot: 'bank', moment: 'first_settle' });
-        expect(moment({ guildHall: true, star: 'roster_size' }, false)).toMatchObject({ spot: 'guildHall' });
-        // Away, with nothing open: the step can't speak either, so nothing.
+        expect(moment({ bank: true }, true)).toMatchObject({ spot: 'bank', moment: 'first_settle' });
+        expect(moment({ guildHall: true, star: 'roster_size' }, true)).toMatchObject({ spot: 'guildHall' });
+        // Away from the camp the moment is not said, even with a screen open; the step can't speak either.
+        expect(moment({ bank: true }, false)).toBeNull();
+        expect(moment({ guildHall: true, star: 'roster_size' }, false)).toBeNull();
         expect(moment({}, false)).toBeNull();
     });
 

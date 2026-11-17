@@ -64,8 +64,8 @@ const SCREENS = [
 ];
 
 /**
- * What Limes says now, and where: the big moment waiting (said through the first Limes the player
- * can see, ended by its Close), else the lesson step (through the open screen's small Limes when
+ * What Limes says now, and where: the big moment waiting (said only while the guild is at the Starter
+ * Camp, through the open screen's Limes or else the mat's, ended by its Close), else the lesson step (through the open screen's small Limes when
  * the step has words for it, else the Starter Camp's Limes). Null when no Limes the player can see
  * has anything to say.
  * @param {{ stepId: string|null, moment: string|null }} lesson
@@ -78,7 +78,7 @@ export function lessonSpeech({ stepId, moment }, screens = {}, atCamp = false) {
         const lines = LIMES_TEXT.moments[moment];
         if (lines?.length) {
             const open = SCREENS.find(s => s.key !== 'hallStar' && s.open(screens));
-            const spot = open ? open.key : (atCamp ? LIMES_MAT : null);
+            const spot = atCamp ? (open ? open.key : LIMES_MAT) : null;
             if (spot) return { key: `moment:${moment}:${spot}`, spot, lines: lines.map(fillLessonWords), target: null, moment };
         }
     }
