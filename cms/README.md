@@ -82,6 +82,13 @@ input), never an error. `schemaCheck.js` runs them (ajv).
   commits **only the files it wrote** onto whatever branch is checked out (a
   Studio palette edit waiting in `data/palettes/` is never swept in).
   Anything written into those files by hand is lost on the next sync.
+- **Renames.** An item's, Token's or effect's id follows its name, so the
+  workspace keeps a record of what was renamed since the last Sync (`renames`,
+  `src/engine/renames.js`), one entry per thing renamed, however many keys the
+  new name took. Sync **adds** it to `data/renames.json` (never overwritten as
+  sent: a workspace that missed an earlier rename cannot drop it), and a save
+  loading in the game follows the table. Once the Sync lands the record starts
+  again; Restore from Game starts it empty.
 - **Recalculate** runs the economic simulator, `src/engine/sim/`, through
   `src/engine/recalculate.js`.
 - **Backups** (File Manager) live in `cms/backups/`: named saves, the rolling

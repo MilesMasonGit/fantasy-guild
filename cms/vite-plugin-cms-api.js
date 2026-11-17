@@ -816,6 +816,7 @@ export default function cmsFileApi({ inboxDir, paletteInboxDir, palettesDir, dat
             writeSync({
               files: parsed?.files,
               plan: parsed?.plan ?? null,
+              renames: parsed?.renames ?? null,
               confirmRemovals: parsed?.confirmRemovals === true,
               // A Sync built from a tab whose workspace revision is older than the disk's is refused.
               baseRevision: Number.isInteger(parsed?.baseRevision) ? parsed.baseRevision : null,

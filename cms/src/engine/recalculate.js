@@ -191,6 +191,7 @@ export function balancedForSync(workspace, report) {
         hallStars: workspace.hallStars ?? null,
         world: workspace.world ?? null,
         events: workspace.events ?? null,
+        renames: workspace.renames ?? null,
         planned: report.planned,
         planSettings: workspace.planSettings ?? null,
     };

@@ -1,6 +1,7 @@
 import { INITIAL_STATE, GAME_VERSION } from '../../state/StateSchema.js';
 import { logger } from '../../utils/Logger.js';
 import { currentSpriteName } from '../../utils/AssetManager.js';
+import { followRenames } from './followRenames.js';
 
 /**
  * Thrown when a save was created under an incompatible schema version. Reworks
@@ -88,6 +89,9 @@ export function migrateState(state, savedVersion) {
             return renamed;
         });
     }
+
+    // Content renamed in the CMS since the save was written: the old ids it holds take the new ones.
+    migrated = followRenames(migrated);
 
     return migrated;
 }

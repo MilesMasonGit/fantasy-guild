@@ -37,7 +37,7 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
   };
 
   const handleSync = async () => {
-    if (!window.confirm('Sync workspace to game data files? This will overwrite data/items.json, data/tokens.json, data/tokenRecipes.json and data/effects.json, data/starterCamp.json when the Starter Camp page holds one, data/skillPerks.json when the workspace holds perk tables, data/hallStars.json when it holds Guild Hall stars, data/world.json when it holds world tables and data/events.json when it holds events, with the CMS dataset.')) {
+    if (!window.confirm('Sync workspace to game data files? This will overwrite data/items.json, data/tokens.json, data/tokenRecipes.json and data/effects.json, data/starterCamp.json when the Starter Camp page holds one, data/skillPerks.json when the workspace holds perk tables, data/hallStars.json when it holds Guild Hall stars, data/world.json when it holds world tables and data/events.json when it holds events, with the CMS dataset. Anything renamed since the last Sync is added to data/renames.json, so saves follow it.')) {
       return;
     }
     setSyncStatus('syncing');

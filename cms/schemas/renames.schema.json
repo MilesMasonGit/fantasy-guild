@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fantasy-guild.local/cms/schemas/renames.schema.json",
+  "title": "Renames",
+  "description": "data/renames.json: every id the CMS renamed (an item's, a Token's or a library effect's id follows its name), old id to the id it has now, per kind. Written by Sync to Game, which adds the workspace's renames since the last Sync to what the file holds (cms/src/engine/renames.js, cms/gameData.js); never hand-edited. Loaded by src/config/registries/renameRegistry.js (shape: src/config/renameTable.js); a loaded save follows it (src/systems/core/followRenames.js). Absent until the first rename is synced.",
+  "type": "object",
+  "properties": {
+    "items": { "$ref": "#/$defs/table", "description": "Item ids (data/items.json)." },
+    "tokens": { "$ref": "#/$defs/table", "description": "Token type ids (data/tokens.json)." },
+    "effects": { "$ref": "#/$defs/table", "description": "Library effect ids (data/effects.json)." }
+  },
+  "$defs": {
+    "table": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "minLength": 1, "description": "The id the old one goes by now." }
+    }
+  }
+}

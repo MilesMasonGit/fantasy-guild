@@ -8,6 +8,7 @@ import { normaliseWorkspacePerks } from './skillPerks';
 import { workspaceSkyFrom } from './hallSky';
 import { workspaceWorldFrom } from './worldTables';
 import { workspaceEventsFrom } from './events';
+import { workspaceRenamesFrom } from './renames';
 
 /**
  * How a stored or imported workspace is brought up to today's shape, in one place: the CMS store
@@ -94,12 +95,18 @@ export function dropRetiredCollections(state) {
     return rest;
 }
 
+/** A stored record of renames (`engine/renames.js`) in today's shape; a workspace stored before records were kept has none, and keeps none. */
+export function seedRenames(state) {
+    if (!state || typeof state !== 'object' || !('renames' in state)) return state;
+    return { ...state, renames: workspaceRenamesFrom(state.renames) };
+}
+
 /**
  * A stored workspace (the disk file, the browser's cache) brought up to today's shape: what the
  * store's persist `merge` and `migrate` run.
  */
 export function seedStoredWorkspace(state) {
-    return seedEffectIds(seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(state))))));
+    return seedRenames(seedEffectIds(seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(state)))))));
 }
 
 /**
@@ -124,6 +131,8 @@ export function workspaceFromImport(data = {}) {
         ...workspaceSkyFrom(data),
         world: workspaceWorldFrom(data.world),
         events: workspaceEventsFrom(data.events),
+        // A backup brings its record back; Restore from Game has none, since every id then stands where `data/` has it.
+        renames: workspaceRenamesFrom(data.renames),
         planSettings: data.planSettings && typeof data.planSettings === 'object' ? data.planSettings : null,
     };
 }

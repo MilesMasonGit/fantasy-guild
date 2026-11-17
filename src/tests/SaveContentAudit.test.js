@@ -193,3 +193,64 @@ describe('It reports. It never repairs.', () => {
         warnConsole.mockRestore();
     });
 });
+
+describe('every place a save holds content, not only the mat the guild is on', () => {
+    it('names a Token or loot on the mat of a Region the guild is not in', () => {
+        const ghosts = auditSaveContent(saveWith({}, {
+            atlas: {
+                regions: {
+                    region_1: { id: 'region_1', kind: 'starter', board: null },
+                    region_2: {
+                        id: 'region_2', flavourName: 'Mossy Hollow', cellId: '1,0',
+                        board: {
+                            tokens: { t: { id: 't', typeId: 'token_forest' } },
+                            sprites: [{ kind: 'item', refId: 'ghost_item', quantity: 2 }]
+                        }
+                    }
+                }
+            }
+        }));
+        expect(ghosts.find(g => g.id === 'token_forest')).toMatchObject({ kind: 'Token', places: ['on the mat of Mossy Hollow'] });
+        expect(ghosts.find(g => g.id === 'ghost_item')).toMatchObject({ kind: 'item', places: ['lying on the mat of Mossy Hollow'] });
+    });
+
+    it('names loot lying on the mat the guild is on', () => {
+        const ghosts = auditSaveContent(saveWith({ sprites: [{ kind: 'item', refId: 'ghost_item', quantity: 2 }, { kind: 'gold', refId: 'gold' }] }));
+        expect(ghosts).toEqual([{ kind: 'item', id: 'ghost_item', places: ['lying on the playmat'] }]);
+    });
+
+    it('names what a place on the world map not yet settled would bring, and what it asks for', () => {
+        const ghosts = auditSaveContent(saveWith({}, {
+            atlas: { regions: { region_2: { id: 'region_2', cellId: '1,0', board: { tokens: {} } } } },
+            world: {
+                cells: [
+                    { id: '0,0', ring: 0, origins: [{ id: 'token_ghost_hall_origin' }] },
+                    { id: '1,0', ring: 1, arrival: [{ typeId: 'token_ghost_settled', count: 2 }] },
+                    {
+                        id: '1,-1', ring: 1,
+                        origins: [{ id: 'token_ghost_origin' }], camps: ['token_ghost_camp'], extras: [{ id: 'token_ghost_chest' }],
+                        arrival: [{ typeId: 'token_ghost_wolf', count: 3 }],
+                        requires: { items: [{ itemId: 'ghost_ore', qty: 40 }] }
+                    }
+                ]
+            }
+        }));
+        const byId = Object.fromEntries(ghosts.map(g => [g.id, g]));
+        expect(byId.token_ghost_wolf).toMatchObject({ kind: 'Token', places: ['arriving at a place on the world map'] });
+        expect(byId.token_ghost_origin.places).toEqual(['waiting at a place on the world map']);
+        expect(byId.token_ghost_camp.places).toEqual(['waiting at a place on the world map']);
+        expect(byId.token_ghost_chest.places).toEqual(['waiting at a place on the world map']);
+        expect(byId.ghost_ore).toMatchObject({ kind: 'item', places: ['asked as the price of a place on the world map'] });
+        // A settled place, and the Hall's own, are history: what they held is on a Region's mat now.
+        expect(byId.token_ghost_settled).toBeUndefined();
+        expect(byId.token_ghost_hall_origin).toBeUndefined();
+    });
+
+    it('no longer promises that a renamed id starts working again by itself', () => {
+        reportSaveContent(saveWith(mat('token_forest')));
+        const text = ghostWarnings()[0][1];
+        expect(text).not.toContain('start working again');
+        expect(text).not.toContain('the moment the new name matches');
+        expect(text).toContain('Renames made in the CMS are followed when a save loads');
+    });
+});

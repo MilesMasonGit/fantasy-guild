@@ -3,6 +3,7 @@ import { PERK_FILE, perksFile } from './skillPerks';
 import { HALL_STARS_FILE, hallSkyFile, holdsSky } from './hallSky';
 import { WORLD_FILE, worldFile, holdsWorld } from './worldTables';
 import { EVENTS_FILE, eventsFile, holdsEvents } from './events';
+import { RENAMES_SYNC_KEY, renameCount, workspaceRenamesFrom } from './renames';
 
 /**
  * How the CMS's authored content becomes the files in `data/`. Recipes go through `recalculateEconomy` like everything else.
@@ -51,5 +52,7 @@ export function syncFiles(balanced = {}) {
         ...(holdsEvents(balanced) ? { [EVENTS_FILE]: eventsFile(balanced) } : {}),
         // ⚠️ Only when the workspace holds a plan, for the same reason.
         ...(plan ? { [PLAN_SYNC_KEY]: plan } : {}),
+        // What was renamed since the last Sync. Not a file: the server adds it to `data/renames.json` (`engine/renames.js`).
+        ...(renameCount(balanced.renames) ? { [RENAMES_SYNC_KEY]: workspaceRenamesFrom(balanced.renames) } : {}),
     };
 }
