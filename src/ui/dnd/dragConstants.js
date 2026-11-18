@@ -55,3 +55,9 @@ export const DRAG_SFX = {
         [DRAG_KIND.ITEM]: 'item_equip'
     }
 };
+
+/**
+ * What a drop target's `onDrop` returns for a drop it refused and has already said why (the mat,
+ * finding no spot): a miss, and the dragged thing's own miss handler (`onMiss`) is not asked.
+ */
+export const DROP_REFUSED = Object.freeze({ refused: true });

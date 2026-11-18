@@ -255,6 +255,8 @@ export const BankTab = () => {
                 onDrop={handleListDrop}
                 acceptClassName=""
                 rejectClassName=""
+                // A scrolling list: a tile scrolled out of it is no drop target (`DndKit`).
+                data-scroll-list
                 className="flex-1 overflow-y-auto custom-scrollbar gi-drawer-pad-x py-3"
             >
                 {searching && (

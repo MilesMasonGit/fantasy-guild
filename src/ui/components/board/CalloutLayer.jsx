@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { memo, useEffect, useLayoutEffect, useReducer, useRef, useState, useSyncExternalStore } from 'react';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
 import { UI_EVENTS, ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
@@ -14,7 +14,8 @@ import { toolNeedPhrase } from '../../../config/registries/toolKinds.js';
 import { columnPlace, heroColumnAt, heroColumnsVersion, subscribeHeroColumns } from './speechColumns.js';
 import { SPAWN_MS } from './spawnMotion.js';
 import { useMatFit } from './MatFitContext.jsx';
-import { SpeechFrame, speechTailDrop } from './SpeechFrame.jsx';
+import { SpeechFrame, speechTailDrop, tailInset } from './SpeechFrame.jsx';
+import { keepInMat, guessCalloutSize } from './calloutPlace.js';
 import { clearOfFight } from './healthBar.js';
 import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.jsx';
 import { SPEECH_TONE } from './speechTone.js';
@@ -47,6 +48,9 @@ export function calloutTopOf({ x, y, typeId, anchorId = null }, { fit, matH, u }
     return top;
 }
 
+/** Where a callout's top edge goes when it is said under the Token instead (`keepInMat`). */
+export const calloutBelowOf = ({ y, typeId }) => y + (typeId ? artRadiusOf(typeId) : 0) + GAP_PX;
+
 const NO_SUBSCRIPTION = () => () => {};
 
 
@@ -67,6 +71,9 @@ const NO_SUBSCRIPTION = () => () => {};
 export const CalloutLayer = memo(function CalloutLayer() {
     const [callouts, setCallouts] = useState([]);
     const timers = useRef(new Map());
+    const layerRef = useRef(null);
+    const sizesRef = useRef(new Map());     // group key → its measured {w, h}
+    const [, remeasured] = useReducer(n => n + 1, 0);
 
     useEffect(() => {
         const pending = timers.current;
@@ -178,7 +185,32 @@ export const CalloutLayer = memo(function CalloutLayer() {
     const u = plateUnit(fit);
     const mat = useMatSize();
 
+    // Each group measured once its lines change, so it can be kept inside the mat. Before paint, so
+    // a first guess is never seen.
+    const measureKey = callouts.map(c => `${c.key}:${c.id}`).join('|');
+    useLayoutEffect(() => {
+        const root = layerRef.current;
+        const sizes = sizesRef.current;
+        if (!root) { sizes.clear(); return; }
+        let changed = false;
+        const seen = new Set();
+        for (const el of root.querySelectorAll('[data-callout-group]')) {
+            const key = el.getAttribute('data-callout-group');
+            seen.add(key);
+            const size = { w: el.offsetWidth, h: el.offsetHeight };
+            if (!size.w || !size.h) continue;
+            const old = sizes.get(key);
+            if (!old || Math.abs(old.w - size.w) > 1 || Math.abs(old.h - size.h) > 1) {
+                sizes.set(key, size);
+                changed = true;
+            }
+        }
+        for (const key of [...sizes.keys()]) if (!seen.has(key)) sizes.delete(key);
+        if (changed) remeasured();
+    }, [measureKey]);
+
     if (!callouts.length) return null;
+    const inset = tailInset(u);
 
     const groups = new Map();
     for (const c of callouts) {
@@ -188,6 +220,7 @@ export const CalloutLayer = memo(function CalloutLayer() {
 
     return (
         <div
+            ref={layerRef}
             data-callouts
             className="absolute left-0 top-0 w-0 h-0 pointer-events-none"
             style={{ zIndex: MAT_Z.CALLOUT }}
@@ -195,18 +228,23 @@ export const CalloutLayer = memo(function CalloutLayer() {
             {[...groups.entries()].map(([key, list]) => {
                 const { x: ownX, anchorId } = list[0];
                 const ownTop = calloutTopOf(list[0], { fit, matH: mat.h, u });
-                const { x, top } = columnPlace(
+                const column = columnPlace(
                     { x: ownX, top: ownTop },
                     anchorId ? heroColumnAt(anchorId) : null
                 );
+                const size = sizesRef.current.get(key) || guessCalloutSize(list.map(c => c.text));
+                const { x, top, dx, below } = keepInMat({ ...column, ...size, belowTop: calloutBelowOf(list[0]) }, mat);
+                // Moved across, the tail still points at the Token; said below it, there is none.
+                const tailLeft = `clamp(${inset}px, calc(50% - ${dx}px), calc(100% - ${inset}px))`;
                 return (
                     <div
                         key={key}
+                        data-callout-group={key}
                         className="absolute flex flex-col-reverse items-center gap-1"
                         style={{ left: 0, top: 0, transform: `translate(${x}px, ${top}px) translate(-50%, -100%)` }}
                     >
                         {list.map(c => (
-                            <SpeechFrame key={c.id} data-callout={c.text} tone={c.tone} u={u} tail className="callout-bubble whitespace-nowrap ui-text-title font-bold">
+                            <SpeechFrame key={c.id} data-callout={c.text} tone={c.tone} u={u} tail={!below} tailLeft={tailLeft} className="callout-bubble whitespace-nowrap ui-text-title font-bold">
                                 {c.text}
                             </SpeechFrame>
                         ))}

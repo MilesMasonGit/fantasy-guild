@@ -9,7 +9,7 @@ import { ErrorBoundary } from '../base/ErrorBoundary.jsx';
 import { MatFitProvider, setLiveMatFit } from './MatFitContext.jsx';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
-import { DND_SURFACE } from '../../dnd/dragConstants.js';
+import { DND_SURFACE, DROP_REFUSED } from '../../dnd/dragConstants.js';
 import { requestRecipeList } from './recipeFlip.js';
 import { isShopPayload, pointerOverShopPanel } from '../drawer/ShopPanel.jsx';
 
@@ -63,8 +63,9 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null, 
             const el = matRef.current;
             const point = el ? pointerToMat(info?.pointer, el.getBoundingClientRect()) : null;
             const result = dropOnMat(p, point);
-            // A Token dropped well outside the landing area flies back.
-            return result?.flyBack ? false : undefined;
+            // A drop with nowhere to go flies back; one refused on the mat has said why there.
+            if (!result?.flyBack) return undefined;
+            return result.offMat ? false : DROP_REFUSED;
         }
     });
     const setMatRef = useCallback((node) => {

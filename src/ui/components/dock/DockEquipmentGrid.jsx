@@ -119,18 +119,6 @@ export const DockEquipmentGrid = ({ heroId }) => {
     );
 };
 
-/**
- * ⚠️ dnd-kit's boxes know nothing of clipping: a slot the sheet has scrolled out of sight still has
- * its box, over the sheet's header or arrows, and being small it wins the drop. A release outside
- * the list holding the slot is not on the slot.
- */
-export function pointerOutsideList(droppableId, pointer) {
-    const list = document.querySelector(`[data-dnd-droppable-id="${droppableId}"]`)?.closest('[data-scroll-list]');
-    if (!list || !pointer) return false;
-    const r = list.getBoundingClientRect();
-    return pointer.x < r.left || pointer.x > r.right || pointer.y < r.top || pointer.y > r.bottom;
-}
-
 /** One slot: right-click to unequip, drag to another slot, another hero or the Bank, drop to equip. */
 const EquipSlotCell = ({ heroId, slot, itemId, quantity, shineKey = null }) => {
     const drag = useEntityDrag({
@@ -146,8 +134,7 @@ const EquipSlotCell = ({ heroId, slot, itemId, quantity, shineKey = null }) => {
         id: dropId,
         surface: DND_SURFACE.DRAWER,
         accepts: p => p.kind === DRAG_KIND.ITEM && !(p.fromHeroId === heroId && p.fromSlot === slot),
-        onDrop: (p, at) => {
-            if (pointerOutsideList(dropId, at?.pointer)) return false;
+        onDrop: (p) => {
             if (p.itemId) return equipOrAnnounce(EquipmentManager, heroId, p.itemId, slot, p);
         }
     });

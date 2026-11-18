@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import { cn } from '../utils/cn.js';
 import { EventBus } from '../../systems/core/EventBus.js';
 import { DragGhost } from './DragGhost.jsx';
-import { DND_SURFACE, DRAG_SFX } from './dragConstants.js';
+import { DND_SURFACE, DRAG_SFX, DROP_REFUSED } from './dragConstants.js';
 import { createPickupFlight } from './pickupFlight.js';
 
 /**
@@ -59,10 +59,66 @@ export function followDropTargetScroll(on) {
     dragScrolled.clear();
 }
 
+/**
+ * Where each target can be seen, as measured with it: the boxes of the scrolling lists around it
+ * (`data-scroll-list`), the z-index of the layer it is drawn in (`data-dnd-layer` or
+ * `data-dnd-cover`), and the covers measured in the same pass.
+ * ⚠️ dnd-kit's boxes know nothing of clipping or of what is drawn over them: a tile scrolled out of
+ * its list, or under the Hero drawer, still has its box, and being small it wins the drop.
+ */
+const sightOf = new WeakMap();
+/** One measuring pass (dnd-kit measures every target at once): boxes read once, the covers once. */
+let pass = null;
+const LAYER_SELECTOR = '[data-dnd-layer],[data-dnd-cover]';
+const layerZ = (el) => Number.parseInt(getComputedStyle(el).zIndex, 10) || 0;
+
+function measuringPass() {
+    if (pass) return pass;
+    const covers = [];
+    for (const el of document.querySelectorAll('[data-dnd-cover]')) {
+        covers.push({ el, z: layerZ(el), rect: el.getBoundingClientRect() });
+    }
+    pass = { boxes: new Map(), zs: new Map(covers.map(c => [c.el, c.z])), covers };
+    queueMicrotask(() => { pass = null; });
+    return pass;
+}
+
+function sightAround(node) {
+    const p = measuringPass();
+    const lists = [];
+    for (let list = node.parentElement?.closest('[data-scroll-list]'); list; list = list.parentElement?.closest('[data-scroll-list]')) {
+        let rect = p.boxes.get(list);
+        if (!rect) { rect = list.getBoundingClientRect(); p.boxes.set(list, rect); }
+        lists.push({ el: list, rect });
+    }
+    const layer = node.closest(LAYER_SELECTOR);
+    let z = Number.NEGATIVE_INFINITY;
+    if (layer) {
+        if (!p.zs.has(layer)) p.zs.set(layer, layerZ(layer));
+        z = p.zs.get(layer);
+    }
+    return lists.length || p.covers.length ? { lists, z, covers: p.covers } : null;
+}
+
 /** dnd-kit's own measure for a drop target (its box, transforms ignored), noting the drag's scrolling so far. */
 export function measureDropTarget(node) {
     measuredAt.set(node, dragScrolled.size ? new Map([...dragScrolled].map(([el, at]) => [el, at.now])) : null);
+    sightOf.set(node, sightAround(node));
     return getClientRect(node, { ignoreTransform: true });
+}
+
+/** How far the boxes around `node` have scrolled it since it was measured (`at`). */
+function scrollShift(node, at) {
+    let dx = 0;
+    let dy = 0;
+    for (const [el, { start, now }] of dragScrolled) {
+        // A box that scrolls itself does not move; only the boxes around it move it.
+        if (el === node || !el.contains(node)) continue;
+        const from = at?.get(el) || start;
+        dx += from.x - now.x;
+        dy += from.y - now.y;
+    }
+    return { dx, dy };
 }
 
 /**
@@ -75,16 +131,10 @@ function dropBox(container, rect) {
     if (!raw) return null;
     const node = container?.node?.current;
     if (!dragScrolled.size || !node) return raw;
-    const at = measuredAt.get(node);
-    let dx = 0;
-    let dy = 0;
-    for (const [el, { start, now }] of dragScrolled) {
-        // A target that scrolls itself does not move; only the boxes around it move it.
-        if (el === node || !el.contains(node)) continue;
-        const from = at?.get(el) || start;
-        dx += from.x - now.x;
-        dy += from.y - now.y;
-    }
+    return shifted(raw, scrollShift(node, measuredAt.get(node)));
+}
+
+function shifted(raw, { dx, dy }) {
     if (!dx && !dy) return raw;
     return {
         left: raw.left + dx, right: raw.right + dx, top: raw.top + dy, bottom: raw.bottom + dy,
@@ -92,7 +142,43 @@ function dropBox(container, rect) {
     };
 }
 
-/** dnd-kit's `pointerWithin`, on `dropBox`es: the targets under the pointer, nearest corners first. */
+/**
+ * The part of a target's box `r` that can be seen through the scrolling lists around it, or null
+ * when none can.
+ */
+function visibleBox(container, r) {
+    const node = container?.node?.current;
+    const sight = node && sightOf.get(node);
+    if (!sight?.lists.length) return r;
+    const at = measuredAt.get(node);
+    let { left, top, right, bottom } = r;
+    for (const list of sight.lists) {
+        const c = dragScrolled.size ? shifted(list.rect, scrollShift(list.el, at)) : list.rect;
+        left = Math.max(left, c.left);
+        top = Math.max(top, c.top);
+        right = Math.min(right, c.right);
+        bottom = Math.min(bottom, c.bottom);
+    }
+    if (left > right || top > bottom) return null;
+    return { left, top, right, bottom, width: right - left, height: bottom - top };
+}
+
+/** Whether a cover drawn over the target (a higher z-index, not holding it) lies under the pointer. */
+function coveredAt(container, x, y) {
+    const node = container?.node?.current;
+    const sight = node && sightOf.get(node);
+    if (!sight) return false;
+    for (const { el, z, rect: c } of sight.covers) {
+        if (z > sight.z && c.left <= x && x <= c.right && c.top <= y && y <= c.bottom && !el.contains(node)) return true;
+    }
+    return false;
+}
+
+/**
+ * dnd-kit's `pointerWithin`, on `dropBox`es: the targets under the pointer, nearest corners first.
+ * A target is under the pointer only where it can be seen there: inside its lists' visible boxes
+ * and under no cover drawn over it.
+ */
 function pointerWithinBoxes({ droppableContainers, droppableRects, pointerCoordinates }) {
     if (!pointerCoordinates) return [];
     const { x, y } = pointerCoordinates;
@@ -100,6 +186,9 @@ function pointerWithinBoxes({ droppableContainers, droppableRects, pointerCoordi
     for (const container of droppableContainers) {
         const r = dropBox(container, droppableRects.get(container.id));
         if (!r || !(r.top <= y && y <= r.bottom && r.left <= x && x <= r.right)) continue;
+        const seen = visibleBox(container, r);
+        if (!seen || !(seen.top <= y && y <= seen.bottom && seen.left <= x && x <= seen.right)) continue;
+        if (coveredAt(container, x, y)) continue;
         const corners = [[r.left, r.top], [r.left + r.width, r.top], [r.left, r.top + r.height], [r.left + r.width, r.top + r.height]];
         const distances = corners.reduce((sum, [cx, cy]) => sum + Math.sqrt((x - cx) ** 2 + (y - cy) ** 2), 0);
         hits.push({ id: container.id, data: { droppableContainer: container, value: Number((distances / 4).toFixed(4)) } });
@@ -146,7 +235,9 @@ export function smallestWithin(args) {
     let minDistanceSq = Number.POSITIVE_INFINITY;
 
     for (const c of candidates) {
-        const r = dropBox(c, c.rect.current);
+        // Measured to the part in sight; one out of sight, or under a cover here, is no candidate.
+        const r = visibleBox(c, dropBox(c, c.rect.current));
+        if (!r || coveredAt(c, px, py)) continue;
         const dx = Math.max(r.left - px, 0, px - r.right);
         const dy = Math.max(r.top - py, 0, py - r.bottom);
         const distSq = dx * dx + dy * dy;
@@ -471,10 +562,14 @@ export const DeckDndProvider = ({ children }) => {
         const { active, over } = event;
         const payload = startPayloadRef.current || active?.data?.current;
         let success = false;
+        // A refusal whose reason was said where it happened (an interceptor's, or a target's
+        // `DROP_REFUSED`): the source's miss handler, for a drop let go where nothing took it, is not asked.
+        let said = false;
         let clip = null;
         const intercepted = interceptedDrop(payload, { pointer: pointerRef.current });
 
         if (intercepted) {
+            said = intercepted.success === false;
             success = intercepted.success !== false;
             clip = intercepted.sfx || null;
             // A taken drop: the ghost vanishes where it was let go (see `dropAnimation`); a refused
@@ -493,8 +588,11 @@ export const DeckDndProvider = ({ children }) => {
                 // cursor in viewport coordinates. Every other target ignores the second
                 // argument. A target that can only tell at drop time that it will not take it
                 // (the playmat, for a Token dropped well outside the landing area) returns
-                // `false`: the drop counts as a miss and the ghost flies back.
-                success = data.onDrop?.(payload, { pointer: pointerRef.current }) !== false;
+                // `false`: the drop counts as a miss and the ghost flies back; `DROP_REFUSED` when it
+                // has said why.
+                const answer = data.onDrop?.(payload, { pointer: pointerRef.current });
+                said = answer === DROP_REFUSED;
+                success = answer !== false && !said;
                 if (!success) glideTargetRef.current = null;
             }
         }
@@ -502,7 +600,7 @@ export const DeckDndProvider = ({ children }) => {
         if (success) {
             sfx(clip || DRAG_SFX.dropByKind[payload.kind] || DRAG_SFX.dropDefault);
         } else {
-            if (payload.onMiss) {
+            if (payload.onMiss && !said) {
                 const target = payload.onMiss(payload);
                 if (target) glideTargetRef.current = target;
                 else glideTargetRef.current = null;
