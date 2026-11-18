@@ -355,14 +355,14 @@ describe('what the card says', () => {
         expect(time.textContent).toBe('10s→9s');
     });
 
-    it('a recipe row with nothing changing its time shows the one time', () => {
+    it('a recipe row with nothing changing its time still shows both times', () => {
         GameState.state.heroes = [{ id: 'cook', name: 'Cook', skills: { cooking: { level: 30, xp: 0 } } }];
         const kitchen = pickRecipe(put('fixture_kitchen', 400, 300), 'pooled_stew');
         const { container } = mount(h(TokenCard, { typeId: 'fixture_kitchen', instanceId: kitchen.id }));
         fireEvent.click(container.querySelector('[data-card-change-recipe]'));
         const time = container.querySelector('[data-recipe-id="pooled_stew"] [data-recipe-time]');
-        expect(time.textContent).toBe('10s');
-        expect(time.querySelector('[data-recipe-time-here]')).toBeNull();
+        expect(time.textContent).toBe('10s→10s');
+        expect(time.querySelector('[data-recipe-time-here]').textContent).toBe('10s');
     });
 
     it('with nothing in reach, and in the Shop, the cycle is the authored time', () => {

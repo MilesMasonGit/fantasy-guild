@@ -126,15 +126,14 @@ const CropTerms = ({ crop }) => {
 };
 
 /**
- * The recipe's own time and, when this station's Work Time rules or its hero change it, the time
- * it really takes here beside it: the base muted, an arrow, the real time in white. ⚠️ Not struck
+ * The recipe's own time and, on the mat, the time it really takes here beside it, even when equal: the base muted, an arrow, the real time in white. ⚠️ Not struck
  * through: a line through the pixel font hides the base's digits.
  */
 const RecipeTime = ({ row }) => {
     const base = cycleText(row.durationMs);
     const here = cycleText(row.workMs || row.durationMs);
-    const changed = here !== base;
-    const lines = changed
+    const both = !!row.onMat;
+    const lines = both
         ? [`Recipe: ${base}`, `At this station: ${here}`]
         : ['One round of work takes this long'];
     return (
@@ -142,8 +141,8 @@ const RecipeTime = ({ row }) => {
             <span data-recipe-time className="inline-flex items-center gap-1 ui-text-small text-gi-muted tabular-nums">
                 <PixelGlyph name="clock" />
                 <span data-recipe-time-base>{base}</span>
-                {changed && <span aria-hidden="true">→</span>}
-                {changed && <span data-recipe-time-here className="text-white">{here}</span>}
+                {both && <span aria-hidden="true">→</span>}
+                {both && <span data-recipe-time-here className="text-white">{here}</span>}
             </span>
         </Tooltip>
     );

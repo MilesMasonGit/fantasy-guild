@@ -58,7 +58,7 @@ function outputOf(o, src) {
  *
  * @param {string|null} [skill] the station's work skill, which Work Time rules narrow to
  * @returns {{ id, level, inputs: object[], requirements: object[], main: object|null,
- *   byproducts: object[], xp: number, durationMs: number, workMs: number }}
+ *   byproducts: object[], xp: number, durationMs: number, workMs: number, onMat: boolean }}
  */
 export function recipeRowOf(recipe, level, instanceId = null, src = liveRowSources(), skill = null) {
     const inputs = (recipe?.inputs || [])
@@ -113,6 +113,7 @@ export function recipeRowOf(recipe, level, instanceId = null, src = liveRowSourc
         byproducts,
         xp: Number(recipe?.xp) || 0,
         durationMs,
-        workMs
+        workMs,
+        onMat: instanceId != null
     };
 }

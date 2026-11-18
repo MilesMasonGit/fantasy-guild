@@ -181,9 +181,9 @@ describe('a row', () => {
         const calls = [];
         const fast = { ...src(), workTime: (id, ms, skill) => { calls.push([id, ms, skill]); return ms * 0.7; } };
         const row = recipeRowOf(pool().r_broth, 2, 'inst', fast, 'cooking');
-        expect(row).toMatchObject({ durationMs: 6000, workMs: 4200 });
+        expect(row).toMatchObject({ durationMs: 6000, workMs: 4200, onMat: true });
         expect(calls).toEqual([['inst', 6000, 'cooking']]);
-        expect(recipeRowOf(pool().r_broth, 2, null, fast)).toMatchObject({ durationMs: 6000, workMs: 6000 });
+        expect(recipeRowOf(pool().r_broth, 2, null, fast)).toMatchObject({ durationMs: 6000, workMs: 6000, onMat: false });
     });
 
     it('a requirement is unmet only when the station’s neighbours lack it, and unjudged with no instance', () => {
