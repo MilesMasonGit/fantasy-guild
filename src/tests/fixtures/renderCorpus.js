@@ -279,6 +279,17 @@ export function buildCorpus() {
         addS(`fight:FIGHT_HP_BELOW:${belowPct}`, S(KEYWORD.HEALS, { payload: { amount: 10 },
             when: { event: 'FIGHT_HP_BELOW', scope: 'self', belowPct }, target: { role: 'self' } }));
     }
+    // When Struck has no count, so a stray one (or a cooldown) is not said.
+    addS('fight:FIGHT_STRUCK:count-not-said', S(KEYWORD.DEALS, { payload: { amount: 1 },
+        when: { event: 'FIGHT_STRUCK', scope: 'self', every: 3, cooldownMs: 5000 }, target: { role: 'actor' } }));
+    // A Deals chance says itself last; left out or at 100 it always fires and says nothing.
+    for (const chance of [10, 50, 100, undefined]) {
+        addS(`deals:chance:${chance}`, S(KEYWORD.DEALS, { payload: { amount: 1, chance }, target: { role: 'actor' } }));
+        addS(`fight:FIGHT_STRUCK:deals-chance:${chance}`, S(KEYWORD.DEALS, { payload: { amount: 1, chance },
+            when: { event: 'FIGHT_STRUCK', scope: 'self' }, target: { role: 'actor' } }));
+    }
+    addS('deals:chance:stat', S(KEYWORD.DEALS, { payload: { magnitude: 'stat', amount: 10, stat: 'actor_max_hp', chance: 25 },
+        target: { role: 'actor' } }));
     addS('fight:boss:heavy', S(KEYWORD.APPLIES, { payload: { effectId: FIX.effect, forSwing: true, chance: 100 },
         when: { event: 'FIGHT_SWING', scope: 'self', every: 4 }, target: { role: 'opponent' } }), statusNames);
     addS('fight:boss:enrage', S(KEYWORD.APPLIES, { payload: { effectId: FIX.effect, forFight: true, chance: 100 },

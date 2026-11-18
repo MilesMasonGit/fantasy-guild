@@ -117,7 +117,7 @@
           "properties": {
             "event": {
               "type": "string",
-              "enum": ["CYCLE_COMPLETE", "TOKEN_DEPLETED", "SELF_TOKEN_DEPLETED", "COMBAT_RESOLVED", "COMBAT_ENGAGED", "SELF_COMBAT_ENGAGED", "ITEM_PRODUCED", "SELF_CYCLE_COMPLETE", "CYCLE_START", "SELF_CYCLE_START", "WORK_START", "EFFECT_TICK", "FIGHT_SWING", "FIGHT_HIT", "FIGHT_HP_BELOW", "ITEM_THRESHOLD"],
+              "enum": ["CYCLE_COMPLETE", "TOKEN_DEPLETED", "SELF_TOKEN_DEPLETED", "COMBAT_RESOLVED", "COMBAT_ENGAGED", "SELF_COMBAT_ENGAGED", "ITEM_PRODUCED", "SELF_CYCLE_COMPLETE", "CYCLE_START", "SELF_CYCLE_START", "WORK_START", "EFFECT_TICK", "FIGHT_SWING", "FIGHT_HIT", "FIGHT_STRUCK", "FIGHT_HP_BELOW", "ITEM_THRESHOLD"],
               "description": "TRIGGER_EVENTS (triggerRegistry.js)."
             },
             "scope": { "type": "string", "enum": ["nearby", "global", "self"], "description": "TRIGGER_SCOPES. Absent means nearby." },

@@ -21,8 +21,9 @@ import { pickMove } from '../../config/registries/enemyMoves.js';
  * as live play: the swinger's On Swing rules (before the roll, so they can shape it), a Ranged
  * hero's arrow spent (hit or miss; where a Preservation rule reaches, one draw says it is kept), the
  * miss and crit roll, the damage and its fraction sub-roll,
- * then, on a hit that leaves the other side standing, the swinger's On Hit rules. Whatever was
- * carried "for the swing" comes off, and On Health Below is checked.
+ * then, on a hit that leaves the other side standing, the swinger's On Hit rules and, if both still
+ * stand, the struck side's When Struck rules. Whatever was carried "for the swing" comes off, and On
+ * Health Below is checked.
  *
  * A landed hit's event names its damage types (`types`) and whether they helped or hurt it
  * (`verdict`: `weak`, `resisted` or null), for the floats and the log.
@@ -118,6 +119,10 @@ export function handleHeroAttack(fight, hero, enemy, attackSpeed) {
             if (fight.combat.enemyHp.current > 0 && !isDown(hero)) {
                 tallies.hits.hero += 1;
                 fightMoment(fight, SIDE.HERO, FIGHT_MOMENT.HIT, tallies.hits.hero);
+                // The enemy's thorns: after the hit's own rules, which may have ended the fight.
+                if (fight.combat.enemyHp.current > 0 && !isDown(hero)) {
+                    fightMoment(fight, SIDE.ENEMY, FIGHT_MOMENT.STRUCK, tallies.hits.hero);
+                }
             }
         } else {
             EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, crit: false, arrowId, enemyHpRemaining: fight.combat.enemyHp.current });
@@ -171,6 +176,10 @@ function enemySwing(fight, enemy, hero) {
                     // Where a Venomous enemy's poison lands, a boss's status attack and a move's effect on the hero.
                     tallies.hits.enemy += 1;
                     fightMoment(fight, SIDE.ENEMY, FIGHT_MOMENT.HIT, tallies.hits.enemy);
+                    // The hero's armour striking back, once the hit's own rules have run.
+                    if (!isDown(hero) && fight.combat.enemyHp.current > 0) {
+                        fightMoment(fight, SIDE.HERO, FIGHT_MOMENT.STRUCK, tallies.hits.enemy);
+                    }
                 }
             } else {
                 EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, crit: false, ...named, heroHpRemaining: hero.hp.current });
