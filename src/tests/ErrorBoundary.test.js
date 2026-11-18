@@ -10,6 +10,7 @@ import React from 'react';
 import { render, cleanup, fireEvent } from '@testing-library/react';
 import { ErrorBoundary } from '../ui/components/base/ErrorBoundary.jsx';
 import { logger } from '../utils/Logger.js';
+import src from '../ui/ReactRoot.jsx?raw';
 
 const h = React.createElement;
 
@@ -65,5 +66,54 @@ describe('CR3-203: ErrorBoundary', () => {
         fireEvent.click(btn);
         expect(reload).toHaveBeenCalledTimes(1);
         Object.defineProperty(window, 'location', { value: original, configurable: true });
+    });
+});
+
+describe('T-479: the fallback takes clicks and sits in its surface corner', () => {
+    // every boundary in src/ui and the corner it names
+    const BOUNDARIES = [
+        ['EncyclopediaScreen', 'top-left', 'top-3 left-3'],
+        ['Notifications', 'top-right', 'top-3 right-3'],
+        ['FightTabs', 'bottom-left', 'bottom-3 left-3'],
+        ['Banners', 'top-center', 'top-3'],
+        ['ArrivalCard', 'bottom-center', 'bottom-3'],
+        ['HeroDock', 'bottom-left', 'bottom-3 left-3'],
+        ['HallUpgradeDrawer', 'top-right', 'top-3 right-3'],
+        ['HeroDrawer', 'top-left', 'top-3 left-3'],
+        ['BankDrawer', 'top-right', 'top-3 right-3'],
+        ['WorldDrawer', 'top-left', 'top-3 left-3'],
+        ['ShopPanel', 'bottom-right', 'bottom-3 right-3'],
+    ];
+
+    it.each(BOUNDARIES)('%s: a thrown child shows a clickable panel in %s', (label, corner, cls) => {
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.spyOn(logger, 'error').mockImplementation(() => {});
+        const view = render(
+            h('div', { className: 'relative' },
+                h(ErrorBoundary, { label, corner }, h(Boom)),
+                h('div', { 'data-testid': 'mat' }, 'mat'))
+        );
+        const fallback = view.container.querySelector(`[data-error-boundary="${label}"]`);
+        expect(fallback).not.toBeNull();
+        expect(fallback.className).toContain('pointer-events-auto');
+        expect(fallback.className).toContain('absolute');
+        expect(fallback.className).toContain(cls);
+        expect(fallback.className).not.toContain('h-full');
+        expect(view.container.querySelector('[data-testid="mat"]')).not.toBeNull();
+    });
+
+    it('a boundary with no corner stays in the flow but still takes clicks', () => {
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.spyOn(logger, 'error').mockImplementation(() => {});
+        const view = render(h(ErrorBoundary, { label: 'App' }, h(Boom)));
+        const fallback = view.container.querySelector('[data-error-boundary="App"]');
+        expect(fallback.className).toContain('pointer-events-auto');
+        expect(fallback.className).not.toContain('absolute');
+    });
+
+    it('ReactRoot names a corner on each of the eleven overlay boundaries', () => {
+        for (const [label] of BOUNDARIES) {
+            expect(src).toMatch(new RegExp(`<ErrorBoundary label="${label}" corner=`));
+        }
     });
 });

@@ -314,7 +314,7 @@ const ReactRoot = () => {
                             />
                             {/* The Encyclopedia lies over the mat but under the item stubs: a stub clicked while it is open turns to that item's chart. */}
                             {isEncyclopediaOpen && (
-                                <ErrorBoundary label="EncyclopediaScreen">
+                                <ErrorBoundary label="EncyclopediaScreen" corner="top-left">
                                     <EncyclopediaScreen onClose={ui.fullscreen.close} />
                                 </ErrorBoundary>
                             )}
@@ -324,11 +324,11 @@ const ReactRoot = () => {
                              * the Hall screen: they live in their own store, so what arrives
                              * meanwhile is there on the way back (loot flies to no stub).
                              */}
-                            <ErrorBoundary label="Notifications">
+                            <ErrorBoundary label="Notifications" corner="top-right">
                                 <ItemStubColumn />
                             </ErrorBoundary>
                             {/* Minimized fight windows: a strip of tabs at the mat's foot, above the hero bar. */}
-                            <ErrorBoundary label="FightTabs"><FightTabStrip /></ErrorBoundary>
+                            <ErrorBoundary label="FightTabs" corner="bottom-left"><FightTabStrip /></ErrorBoundary>
                             </div>
                         </div>
                         </WorldCamera>
@@ -339,15 +339,15 @@ const ReactRoot = () => {
                          * cameras, so they hold still on screen as the view glides. Over the World
                          * Map and the Hall only those that point to a Token on the mat (an event's).
                          */}
-                        <ErrorBoundary label="Banners"><BannerStack away={isGuildView || isAtlasOpen} /></ErrorBoundary>
-                        <ErrorBoundary label="ArrivalCard"><ArrivalCard /></ErrorBoundary>
+                        <ErrorBoundary label="Banners" corner="top-center"><BannerStack away={isGuildView || isAtlasOpen} /></ErrorBoundary>
+                        <ErrorBoundary label="ArrivalCard" corner="bottom-center"><ArrivalCard /></ErrorBoundary>
                         </div>
                         {/**
                          * The hero bar, under both sides of the camera: on every screen, the
                          * Guild Hall's included. A crash in it stays local to it.
                          */}
                         {dockDrawn && (
-                            <ErrorBoundary label="HeroDock">
+                            <ErrorBoundary label="HeroDock" corner="bottom-left">
                                 <PerfProfiler id="HeroDock">
                                     <BottomHeroDock
                                         selectedHeroId={inspectHeroId}
@@ -360,7 +360,7 @@ const ReactRoot = () => {
                     </div>
                     {menuRight && <BubbleMenu ui={ui} side="right" />}
                     {/* The Guild Hall's Upgrade drawer, opened by a click on a star. */}
-                    <ErrorBoundary label="HallUpgradeDrawer">
+                    <ErrorBoundary label="HallUpgradeDrawer" corner={menuRight ? 'top-left' : 'top-right'}>
                         <HallUpgradeDrawer
                             upgradeDef={isGuildView && hallStarId ? getUpgradeDef(hallStarId) : null}
                             menuRight={menuRight}
@@ -378,7 +378,7 @@ const ReactRoot = () => {
                      * The Hero drawer: a hero's panel rising from behind the hero bar, opened from
                      * the bar. A crash in it stays local.
                      */}
-                    <ErrorBoundary label="HeroDrawer">
+                    <ErrorBoundary label="HeroDrawer" corner={menuRight ? 'top-left' : 'top-right'}>
                         <HeroDrawer
                             menuRight={menuRight}
                             selectedHeroId={inspectHeroId}
@@ -395,7 +395,7 @@ const ReactRoot = () => {
                      * Perf HUD commit counting, dev only. A crash in the Bank drawer stays
                      * local to it.
                      */}
-                    {drawersDrawn && <ErrorBoundary label="BankDrawer">
+                    {drawersDrawn && <ErrorBoundary label="BankDrawer" corner={menuRight ? 'top-left' : 'top-right'}>
                         <PerfProfiler id="Drawer">
                             <BankDrawer drawer={ui.drawer} menuRight={menuRight} />
                         </PerfProfiler>
@@ -404,14 +404,14 @@ const ReactRoot = () => {
                      * The World Map drawer: the side drawer, beside the Bank's, while the world map is
                      * open. Its screen, under the camera, hands it the chosen place.
                      */}
-                    {drawersDrawn && <ErrorBoundary label="WorldDrawer">
+                    {drawersDrawn && <ErrorBoundary label="WorldDrawer" corner={menuRight ? 'top-left' : 'top-right'}>
                         <WorldDrawer open={isAtlasOpen} menuRight={menuRight} onClose={ui.fullscreen.close} />
                     </ErrorBoundary>}
                     {/**
                      * The Shop, rising from the bottom beside the nav. A crash here stays local
                      * to it too.
                      */}
-                    {drawersDrawn && <ErrorBoundary label="ShopPanel">
+                    {drawersDrawn && <ErrorBoundary label="ShopPanel" corner={menuRight ? 'bottom-left' : 'bottom-right'}>
                         <ShopPanel isOpen={ui.shop.isOpen} onClose={ui.shop.close} menuRight={menuRight} />
                     </ErrorBoundary>}
                 </div>
