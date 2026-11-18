@@ -378,8 +378,8 @@ function tryToSpawn(instance, def, random, ctx) {
     const typeId = pickWeighted(block.spawns, random);
     if (!typeId) return HELD;
 
-    // A Forest that plants within its reach lands its Sapling there or nowhere, with the room its
-    // tree will need when it can (`EffectActions.spotWithin`).
+    // A Forest that plants within its reach lands its Sapling there, with the room its tree will
+    // need, or nowhere (`EffectActions.spotWithin`).
     const landed = EffectActions.spawn(
         { payload: { typeId, placement: PLACEMENT.NEAREST_FREE } },
         { self: instance.id },

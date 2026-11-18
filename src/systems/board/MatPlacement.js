@@ -1,6 +1,7 @@
 // where a Token may stand on the free playmat
 
 import { getTokenType, registryVersion, isLandmarkType } from '../../config/registries/tokenRegistry.js';
+import { recipesForFoundation, listRecipes } from '../../config/registries/recipePoolRegistry.js';
 import { artRadiusOf, matW, matH, clampToMat, LARGEST_ART_RADIUS } from '../../config/matGeometry.js';
 import { matTuning, onMatTuningChanged } from '../../config/matTuning.js';
 import { KEYWORD, statementsWith } from '../effects/statements.js';
@@ -16,8 +17,8 @@ import * as SiteRules from './SiteRules.js';
  * nearest place it may?
  *
  * The four rules a spot has to pass, in the order they are asked:
- * 1. It fits on the mat: the art circle, not the hitbox, stays fully inside. A Token half off the
- * edge would be half unclickable, and the art is what the player sees.
+ * 1. It fits on the mat: the room's circle ({@link roomRadiusOf}), not the hitbox, stays fully
+ * inside. A Token half off the edge would be half unclickable, and the art is what the player sees.
  * 2. It is not crowding anything: centre to centre, against the invisible hitbox. See {@link
  * minGap}.
  * 3. The ground under its centre is one its "Stands on" allows; with no list, anywhere dry
@@ -53,8 +54,61 @@ const RING_STEP = 4;
 const RING_ARC = 6;
 
 /**
- * The invisible collision radius of a Token type: a percentage of its art radius, rounded to whole
- * mat units.
+ * Every type a Token of `typeId` can become in its own cycle, itself first: what it grows into, on to
+ * the end of the chain; what it regrows as once used up; and, for a Foundation, every Token its
+ * builds make. A loop in the data stops at the first type seen twice.
+ */
+function cycleFormsOf(typeId) {
+    const forms = new Set();
+    const queue = [typeId];
+    while (queue.length) {
+        const form = queue.pop();
+        if (forms.has(form)) continue;
+        const def = getTokenType(form);
+        // A type with no definition is spaced at a 1×1's size; only the Token's own type counts so.
+        if (!def && form !== typeId) continue;
+        forms.add(form);
+        if (!def) continue;
+        if (typeof def.grows?.into === 'string') queue.push(def.grows.into);
+        if (def.respawn?.mode === 'regrow' && typeof def.respawn.into === 'string') queue.push(def.respawn.into);
+        if (def.foundation) {
+            for (const recipe of recipesForFoundation(def)) {
+                const built = SiteRules.builtTypeOf(recipe);
+                if (built) queue.push(built);
+            }
+        }
+    }
+    return forms;
+}
+
+/** {@link roomRadiusOf} per type, kept while the Token registry and the recipe list are as they were. */
+let roomMemo = { tokens: -1, recipes: -1, radii: new Map() };
+
+/**
+ * The radius of the room a Token of `typeId` takes on the mat: the largest art radius of its whole
+ * cycle ({@link cycleFormsOf}). A Stump and a Sapling are drawn small but take their Tree's room, and
+ * a Foundation the room of the largest Token it can build, so nothing can be put down tight against
+ * the small form and what it becomes stands exactly where it stood. Spacing, the mat edge and every
+ * push read this; drawing, clicks and where a hero stands read the drawn body (`artRadiusOf`).
+ */
+export function roomRadiusOf(typeId) {
+    const tokens = registryVersion();
+    const recipes = listRecipes().length;
+    if (roomMemo.tokens !== tokens || roomMemo.recipes !== recipes) {
+        roomMemo = { tokens, recipes, radii: new Map() };
+    }
+    let radius = roomMemo.radii.get(typeId);
+    if (radius === undefined) {
+        radius = 0;
+        for (const form of cycleFormsOf(typeId)) radius = Math.max(radius, artRadiusOf(form));
+        roomMemo.radii.set(typeId, radius);
+    }
+    return radius;
+}
+
+/**
+ * The invisible collision radius of a Token type: a percentage of its room ({@link roomRadiusOf}),
+ * rounded to whole mat units.
  *
  * ⚠️ The rounding is deliberate and load-bearing. Gaps are stated as whole gaps (61 u between two
  * small Tokens), though centres need not be whole (a nudge lands wherever its ring puts it). Unrounded, `64 × 80% = 51.2` makes that gap `61.44`,
@@ -62,7 +116,7 @@ const RING_ARC = 6;
  * Rounded, the small hitbox is 51 u.
  */
 export function hitRadiusOf(typeId) {
-    return Math.round(artRadiusOf(typeId) * matTuning('hitboxPct') / 100);
+    return Math.round(roomRadiusOf(typeId) * matTuning('hitboxPct') / 100);
 }
 
 /**
@@ -74,40 +128,26 @@ export function minGap(typeA, typeB) {
     return (hitRadiusOf(typeA) + hitRadiusOf(typeB)) * (1 - matTuning('overlapPct') / 100);
 }
 
-/**
- * What a Token ends up as by its own growth: where its `grows.into` chain stops (a Stump and a
- * Sapling end as their Tree), or the type itself when it does not grow.
- */
-export function grownFormOf(typeId) {
-    const seen = new Set([typeId]);
-    let form = typeId;
-    for (;;) {
-        const next = getTokenType(form)?.grows?.into;
-        if (!next || seen.has(next) || !getTokenType(next)) return form;
-        seen.add(next);
-        form = next;
-    }
-}
-
 /** How far a refused drop may be nudged before it flies back instead. */
 export function nudgeReach() {
     return matTuning('nudgeReach');
 }
 
 /**
- * Whether a Token of `typeId` centred at `point` sits **fully on the mat** —
- * its art circle, so nothing is ever drawn half off the edge.
+ * Whether a Token of `typeId` centred at `point` sits **fully on the mat** — its room's circle
+ * ({@link roomRadiusOf}), so nothing is ever drawn half off the edge, and what it becomes would not
+ * be either.
  */
 export function insideMat(typeId, point) {
     if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return false;
-    const r = artRadiusOf(typeId);
+    const r = roomRadiusOf(typeId);
     // ⚠️ The mat's size is read LIVE: the mat can be resized while the game runs, and a spot that
     // fitted a moment ago may not now.
     return point.x >= r && point.y >= r && point.x <= matW() - r && point.y <= matH() - r;
 }
 
 /**
- * The nearest point to `point` at which a Token of `typeId` sits fully on the mat: its art circle
+ * The nearest point to `point` at which a Token of `typeId` sits fully on the mat: its room's circle
  * inside every edge. Says nothing about neighbours.
  *
  * This is the first half of what a shrinking mat does to a stranded Token (`MatResize`): pull it
@@ -115,7 +155,7 @@ export function insideMat(typeId, point) {
  * whole mat units.
  */
 export function clampInside(typeId, point) {
-    const at = clampToMat(point, artRadiusOf(typeId));
+    const at = clampToMat(point, roomRadiusOf(typeId));
     return { x: Math.round(at.x), y: Math.round(at.y) };
 }
 
@@ -164,8 +204,8 @@ function bucketNeighbours(neighbours, cell) {
  * is never built at all. The ground is read once too: `ground` is null when the Token may stand on
  * every cell here, so a meadow asks nothing per candidate.
  */
-function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudgeReach(), siteOf = null, asGrown = false } = {}) {
-    const hit = hitRadiusOf(asGrown ? grownFormOf(typeId) : typeId);
+function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudgeReach(), siteOf = null } = {}) {
+    const hit = hitRadiusOf(typeId);
     const largestHit = Math.round(LARGEST_ART_RADIUS * matTuning('hitboxPct') / 100);
     const largestGap = (hit + largestHit) * (1 - matTuning('overlapPct') / 100);
 
@@ -179,8 +219,8 @@ function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudg
     const cannotSpanSq = cannotSpan * cannotSpan;
 
     // The mat edge, read once per search rather than once per candidate: `insideBounds` below uses
-    // this instead of `insideMat` recomputing `artRadiusOf`/`matW`/`matH` every time.
-    const bounds = { r: artRadiusOf(asGrown ? grownFormOf(typeId) : typeId), w: matW(), h: matH() };
+    // this instead of `insideMat` recomputing `roomRadiusOf`/`matW`/`matH` every time.
+    const bounds = { r: roomRadiusOf(typeId), w: matW(), h: matH() };
 
     const neighbours = [];
     let cannotMatters = hasCannot(typeId);
@@ -190,7 +230,7 @@ function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudg
         if (!Number.isFinite(other.x) || !Number.isFinite(other.y)) continue;
         const d2 = distanceSq(point, other);
         if (d2 <= blockSpanSq) {
-            const gap = asGrown ? minGap(grownFormOf(typeId), grownFormOf(other.typeId)) : minGap(typeId, other.typeId);
+            const gap = minGap(typeId, other.typeId);
             neighbours.push({ id: other.id, x: other.x, y: other.y, gapSq: gap * gap });
         }
         if (!cannotMatters && d2 <= cannotSpanSq && hasCannot(other.typeId)) cannotMatters = true;
@@ -302,13 +342,14 @@ function legalIn(typeId, point, ctx) {
  * A spawner with nowhere to land, a Foundation with no room to build and a recipe whose Token has
  * nowhere to go all ask the same failing question every tick until room appears. A search reads
  * only the board (which Tokens, where: `BoardState`'s membership counter and move journal), the Mat
- * Tuner (any change bumps `tuningGeneration`), the Token registry (`registryVersion`) and the
- * ground (`GroundRules.groundVersion`). While all four are exactly as they were, the same question
- * has the same answer, so a remembered failure is returned without searching again.
+ * Tuner (any change bumps `tuningGeneration`), the Token registry (`registryVersion`), the recipe
+ * list (a Foundation's room is its largest build) and the ground (`GroundRules.groundVersion`).
+ * While all five are exactly as they were, the same question has the same answer, so a remembered
+ * failure is returned without searching again.
  *
  * Only failures are remembered (a success is acted on at once and changes the board), and never for
  * a search that consulted a `Cannot` rule or was given a `plan` (a projected board): those read
- * more than the three above. Any change at all forgets everything, so this is exact. A move
+ * more than the five above. Any change at all forgets everything, so this is exact. A move
  * anywhere forgets: a fallback search reaches far across the mat, so keying by region would rarely
  * keep anything.
  */
@@ -318,9 +359,10 @@ let failedSearches = { tokens: null, stamp: '', keys: new Set() };
 
 /**
  * Everything a search for room reads, as it is now: `{ tokens, stamp }`, the same while no Token has
- * arrived, left or moved and the Mat Tuner (the mat's size included), the Token registry and the
- * ground are as they were. A search that found no room finds none again until it changes: the
- * failure memo below, and a quest Token still owed in `QuestTokens`, which waits for it to change.
+ * arrived, left or moved and the Mat Tuner (the mat's size included), the Token registry, the
+ * recipe list and the ground are as they were. A search that found no room finds none again until
+ * it changes: the failure memo below, and a quest Token still owed in `QuestTokens`, which waits for
+ * it to change.
  */
 export function roomVersion() {
     if (!tuningWatched) {
@@ -328,7 +370,7 @@ export function roomVersion() {
         onMatTuningChanged(() => { tuningGeneration++; });
     }
     const { tokens, version } = BoardState.membershipVersion();
-    return { tokens, stamp: `${version}|${BoardState.moveCount()}|${tuningGeneration}|${registryVersion()}|${GroundRules.groundVersion()}` };
+    return { tokens, stamp: `${version}|${BoardState.moveCount()}|${tuningGeneration}|${registryVersion()}|${listRecipes().length}|${GroundRules.groundVersion()}` };
 }
 
 /** The failure memo for the board as it is now, emptied if anything changed. */
@@ -351,9 +393,6 @@ function failureMemo() {
  *
  * Also used by `MatResize`, which clamps the point onto the smaller mat and asks this where it can
  * actually go.
- * @param {object} [options]
- * @param {boolean} [options.asGrown] keep the room this Token and its neighbours will need once
- * grown ({@link grownFormOf}), so that growing in place moves nothing
  * @returns {{x: number, y: number, nudge: number}|null}
  */
 export function findSpot(typeId, point, options = {}) {
@@ -364,7 +403,7 @@ export function findSpot(typeId, point, options = {}) {
     // a Token that cannot be put down at all, a harder failure to recognise and not this file's
     // call to make.
     const memo = options.plan ? null : failureMemo();
-    const key = memo ? `${typeId}|${point.x}|${point.y}|${options.excludeId ?? ''}|${options.reach ?? ''}|${options.siteOf ?? ''}|${options.asGrown ? 'grown' : ''}` : null;
+    const key = memo ? `${typeId}|${point.x}|${point.y}|${options.excludeId ?? ''}|${options.reach ?? ''}|${options.siteOf ?? ''}` : null;
     if (memo?.has(key)) return null;
 
     const ctx = contextFor(typeId, point, options);
@@ -429,7 +468,7 @@ export function findSpotAnywhere(typeId, point, options = {}) {
     // cell at all to stand on, the whole-mat scan below (some 30,000 candidates) cannot succeed.
     if (GroundRules.rulesFor(options.siteOf || typeId)?.allowed === 0) return null;
 
-    const r = artRadiusOf(typeId);
+    const r = roomRadiusOf(typeId);
     const w = matW();
     const h = matH();
     if (w < 2 * r || h < 2 * r) return null;
@@ -705,7 +744,7 @@ function relax(typeId, at, excludeId, fixedIds) {
         for (const k of chain.touched) {
             const t = bodies[k];
             if (t.fixed || !t.pushed) continue;
-            const c = clampToMat(t, artRadiusOf(t.typeId));
+            const c = clampToMat(t, roomRadiusOf(t.typeId));
             t.x = c.x;
             t.y = c.y;
         }

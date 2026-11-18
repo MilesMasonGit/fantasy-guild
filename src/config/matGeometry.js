@@ -122,6 +122,11 @@ export function artRadius(size = 1) {
  * spaced as a normal 2×2 — the game ignores the field there, and the CMS
  * refuses it (the control is disabled on a 2×2 and a switch to 2×2 clears it).
  *
+ * ⚠️ **A small Token that becomes something bigger is spaced as that.** A
+ * Stump or a Sapling is drawn, clicked and stood beside at its small size, but
+ * its hitbox, spacing gaps and mat-edge clamp are its Tree's
+ * (`MatPlacement.roomRadiusOf`), so the Tree finds its own point free.
+ *
  * The one question every reader asks — "how much of the standard body does this
  * Token have?" — is {@link tokenBodyScale}; nothing else reads `artSize`.
  */

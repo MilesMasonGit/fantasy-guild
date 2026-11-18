@@ -98,6 +98,14 @@ Today the pull is skill levels, their milestone perks and Guild Hall upgrades.
   back. A legal spot: art circle inside the mat; not crowding a neighbour
   (hitbox 90 % of the art radius, up to 30 % overlap: two standard Tokens 81 u
   apart at the closest); breaks no `Cannot` rule. *(`MatPlacement.js`)*
+- **One spot for a Token's whole cycle** (owner, 2026-11-15 and 2026-11-17; brief 670 M3):
+  a Token takes the room of the largest thing it can become, though it is drawn at its own
+  size. A Stump and a Sapling take their Tree's room, a Foundation the room of the largest
+  building it can build, for every drop, arrival, planting and push and at the mat's edge,
+  so nothing can be put down tight against the small form and a tree that grows back or a
+  building that finishes stands exactly where it stood. Clicks, drawing and where a hero
+  stands still use the drawn size. A squeeze already in an old save is not repaired: its
+  tree moves aside when the Stump grows. *(`MatPlacement.roomRadiusOf`)*
 - **Who draws over whom**: Tokens and flags by where they stand, lower on the mat in
   front; a Token being worked in front of those at rest. **Heroes are always on top of
   every Token and flag**, working, idle or walking, lower on the mat in front of each
@@ -107,8 +115,8 @@ Today the pull is skill levels, their milestone perks and Guild Hall upgrades.
   drawn pixel, which is the hero's. *(`matLayers.js`, `pressRouting.js`)*
 - **A Forest or Orchard plants with room for the tree**: within its reach, a Token that grows lands
   at the gap its grown form will need, from what its neighbours will grow into too, so growing
-  moves nothing and no tree drifts out of reach. With no such spot in reach it takes the small gap
-  rather than not planting. *(`EffectActions.js`)*
+  moves nothing and no tree drifts out of reach. With no such spot in reach it plants nothing and
+  waits, saying no room, as with no free spot at all (brief 670 M3). *(`EffectActions.js`)*
 - **A player drop never pushes anything.** Arrivals (spawns, growth, builds)
   may push **spawned** Tokens aside; **placed Tokens are never pushed**.
 - **Fixed Tokens** can't be dragged or pushed: a map's node, a Starter Camp
