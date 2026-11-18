@@ -299,3 +299,16 @@ T-418 — Release ends a hero's for-the-cycle effects; the event clock holds whi
 T-417 — A camp gone, its enemies wait for the next camp of their kind (670 M7) — 09437782 — 2026-11-18
 T-419 — A new order walks at full speed; stop clamps to the mat (670 M7) — 09437782 — 2026-11-18
 T-428 — Travel checks a bounty's remembered spot (670 M7) — 09437782 — 2026-11-18
+T-308 — A crowded Forest waits instead of replanting without end (owner ruling, 670 M3) — 0e4e803c — 2026-11-18
+T-410 — One depletion per kill; When Struck; Thorns no charge (670 M2, pack 73aa82ff) — 09437782 — 2026-11-18
+T-411 — No Token merges; a copy lands beside (670 M1) — 0e4e803c — 2026-11-18
+T-412 — One spot for a Token's whole cycle (670 M3) — 0e4e803c — 2026-11-18
+T-413 — A Sapling on its Forest's reach edge counts as inside; transforms tested unrounded (670 M4) — 0e4e803c — 2026-11-18
+T-424 — Settle and new game save once (680 S2) — 948b6873 — 2026-11-18
+T-426 — A second absence: the summary says since (680 S1) — 948b6873 — 2026-11-18
+T-437 — Rusty tools from the Scrap Heap (650 H7, Scrap Heap fixed ea3b0fa0) — 09437782 — 2026-11-18
+T-443 — A live catch-up saves first, dated at the gap (680 S1) — 948b6873 — 2026-11-18
+T-447 — startSlot one at a time (680 S1) — 948b6873 — 2026-11-18
+T-448 — Load as I left it lets go only once written (680 S1) — 948b6873 — 2026-11-18
+T-449 — One desktop window (680 S5) — 948b6873 — 2026-11-18
+T-450 — A failed close save keeps the window open once (680 S5) — 948b6873 — 2026-11-18
