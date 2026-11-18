@@ -190,6 +190,7 @@ export const ROUTES = [
         // still stands is news too; one that came and went is not.
         event: ENGINE_EVENTS.CATCH_UP_FINISHED, to: 'catchUp:news',
         handle: ({ show, summary } = {}) => {
+            countTimeAwayOnPins(summary?.items);
             pruneEventBanners();
             const landed = (summary?.events || []).filter(e => e?.landed && !e.ended && e.instanceId);
             const news = summary?.news;
@@ -270,6 +271,26 @@ function pruneEventBanners() {
         const id = b.subjects[0]?.id;
         if (!id || !BoardState.getTokenById(id)) Banners.withdraw(b.groupKey);
     }
+}
+
+/**
+ * A pinned stub counts the guild's whole time, so a catch-up's gained and spent are added to it at
+ * once, whether or not a summary shows. Unpinned stubs stay quiet: the summary speaks for them.
+ * ⚠️ Only on `CATCH_UP_FINISHED`: a summary offered again after a reload played nothing new, and
+ * counting it there would count the same time twice.
+ */
+function countTimeAwayOnPins(items) {
+    if (!items) return;
+    let any = false;
+    for (const stub of ItemStubs.getStubs()) {
+        if (!stub.pinned) continue;
+        const added = Number(items.gained?.[stub.itemId]) || 0;
+        const removed = Number(items.spent?.[stub.itemId]) || 0;
+        if (!(added > 0) && !(removed > 0)) continue;
+        ItemStubs.recordFlow(stub.itemId, { added, removed });
+        any = true;
+    }
+    if (any) savePins();
 }
 
 /** Empty stubs and banners, then the pins and kept banners of the game now running. */
