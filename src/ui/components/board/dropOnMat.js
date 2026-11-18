@@ -8,6 +8,7 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
 import { isMatBankLocked } from '../../hooks/useMatBankLock.js';
+import { isFullscreenViewOpen } from '../../hooks/useFullscreenViewLock.js';
 import { matW, matH } from '../../../config/matGeometry.js';
 
 /**
@@ -16,11 +17,13 @@ import { matW, matH } from '../../../config/matGeometry.js';
  * While the Bank is open the mat takes nothing at all: the Bank covers it, and dnd-kit never
  * calls `onDrop` for a target whose `accepts` refuses the payload, so this one check is enough
  * to make every drop onto the mat a miss while the Bank is open.
+ * While a full-screen view is open the mat takes no hero: a hero let go over the view is a plain
+ * miss, never an order onto the mat hidden under it.
  */
 export function matAccepts(p) {
     if (isMatBankLocked()) return false;
     if (p?.kind === DRAG_KIND.TOKEN) return true;
-    if (p?.kind === DRAG_KIND.FLAG) return !!p.heroId;
+    if (p?.kind === DRAG_KIND.FLAG) return !!p.heroId && !isFullscreenViewOpen();
     return false;
 }
 
