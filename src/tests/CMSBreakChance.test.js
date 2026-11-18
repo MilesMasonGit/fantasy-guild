@@ -19,7 +19,7 @@ import ItemEditor from '../../cms/src/components/editors/ItemEditor.jsx';
  * ⭐ Brief 480 L1 in the CMS: a tool's or weapon's Break chance, written as `breakChance` only when
  * above 0, carried through Recalculate and Sync; the field is offered only where something can
  * break, and cleared when the item stops being one; the Economy Audit (and the boot audit, through
- * the same `toolFindings`) names a chance that never breaks anything. No shipped item has one.
+ * the same `toolFindings`) names a chance that never breaks anything.
  *
  * ⚠️ No real workspace: the store's persistence is a no-op here (TESTING, "The CMS").
  */
@@ -110,14 +110,19 @@ describe('⭐ the item editor\'s Break chance', () => {
 });
 
 describe('⭐ the chance survives Recalculate and Sync', () => {
-    it('written as typed on the tool and the weapon; no shipped item carries one', () => {
+    it('written as typed on the tool and the weapon; the shipped Rusty tools keep theirs', () => {
         const axe = store().addItem({ name: 'Rusty Fixture Axe', equipSlot: 'hand', type: 'tool', tool: { kind: 'woodaxe', tier: 1 }, breakChance: 1 });
         const sword = store().addItem({ name: 'Rusty Fixture Sword', equipSlot: 'hand', type: 'weapon', styles: ['melee'], breakChance: 1.5 });
         const files = syncPayload();
         expect(files['items.json'][axe].breakChance).toBe(1);
         expect(files['items.json'][sword].breakChance).toBe(1.5);
-        const shipped = JSON.parse(raw['items.json']);
-        expect(Object.values(shipped).filter(i => i.breakChance != null)).toEqual([]);
+        // Every shipped chance is a working one, on a tool or a weapon, and a Sync writes it back unchanged.
+        const shipped = Object.values(JSON.parse(raw['items.json'])).filter(i => i.breakChance != null);
+        expect(shipped.map(i => i.id)).toEqual(expect.arrayContaining(['item_rusty_pickaxe', 'item_rusty_woodaxe', 'item_rusty_sword']));
+        for (const item of shipped) {
+            expect(breakChanceOf(item), item.id).toBe(item.breakChance);
+            expect(files['items.json'][item.id].breakChance, item.id).toBe(item.breakChance);
+        }
     });
 });
 
