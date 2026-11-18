@@ -35,16 +35,24 @@ export const SettingsModal = ({ isOpen, onClose }) => {
     const [activeTab, setActiveTab] = useState('display');
     const [settings, setSettings] = useState({});
     const [isTypographyOpen, setIsTypographyOpen] = useState(false);
+    const [saveResult, setSaveResult] = useState(null);
 
     useEffect(() => {
         if (isOpen) {
             setSettings({ ...SettingsManager.settings });
+            setSaveResult(null);
         }
     }, [isOpen]);
 
     const handleSettingChange = (path, value) => {
         SettingsManager.set(path, value);
         setSettings(SettingsManager.getAll());
+    };
+
+    const saveNow = async () => {
+        const ok = await SaveManager.saveAndConfirm();
+        setSaveResult(ok);
+        setTimeout(() => setSaveResult(null), 2500);
     };
 
     if (!isOpen) return null;
@@ -132,11 +140,11 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                             />
                             <div className="pt-4 border-t border-white/10">
                                 <KitButton
-                                    onClick={() => SaveManager.save(true)}
+                                    onClick={saveNow}
                                     className="w-full"
                                     buttonClassName="gap-2 py-2 uppercase tracking-widest"
                                 >
-                                    <Save className="w-4 h-4" /> {t('settings.saveNow')}
+                                    <Save className="w-4 h-4" /> {saveResult === null ? t('settings.saveNow') : t(saveResult ? 'settings.saveNowDone' : 'settings.saveNowFailed')}
                                 </KitButton>
                                 <SaveFolderButton className="w-full mt-3" buttonClassName="py-2 text-sm tracking-widest" />
                             </div>

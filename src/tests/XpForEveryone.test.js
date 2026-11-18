@@ -271,8 +271,8 @@ describe('a hero who joins later arrives with every rank bought', () => {
         expect(xpForEveryoneOf(stars, {})).toBe(0);
         expect(xpForEveryoneOf(stars, { xp_all: 1 })).toBe(100);
         expect(xpForEveryoneOf(stars, { xp_all: 3, quick: 1 })).toBe(450);
-        // A rank past the top gives nothing, as a rank past the top holds nothing.
-        expect(xpForEveryoneOf(stars, { xp_all: 9 })).toBe(0);
+        // A rank past the top reads as the top rank.
+        expect(xpForEveryoneOf(stars, { xp_all: 9 })).toBe(xpForEveryoneOf(stars, { xp_all: 3 }));
     });
 });
 

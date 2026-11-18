@@ -57,7 +57,7 @@ function reportSaveFailed(err) {
         parts: {
             title: 'Save Failed!',
             message: isQuota
-                ? 'Browser storage is full. Free space or export your save.'
+                ? t('settings.storageFull')
                 : 'The game could not be saved.'
         }
     });
@@ -384,6 +384,17 @@ export const SaveManager = {
             this._lastWrite = Promise.resolve({ ok: false, error: err });
             return false;
         }
+    },
+
+    /**
+     * "Save Game Now": saves with the notification, then waits for a desktop write to finish.
+     * @returns {Promise<boolean>} whether the save reached the slot
+     */
+    async saveAndConfirm() {
+        this._lastWrite = null;
+        if (!this.save(true)) return false;
+        const write = this._lastWrite;
+        return write ? (await write).ok === true : true;
     },
 
     /**
