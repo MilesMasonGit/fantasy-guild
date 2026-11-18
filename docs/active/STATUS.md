@@ -14,7 +14,7 @@ build green) · bench-queued · eye-check · merged.*
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | 690 U2: drops land where they look (drag bench) | builder | `fix/drops-where-they-look` (`u2`) b581539b | **merged** 43527939, pushed: drag bench 100 % on all five kinds (247 drags), work same; gate 687 files green with U5 | Wed | Wed |
-| 690 U1: readouts stand still | builder | `fix/readouts-stand-still` (`u1`) | building | Wed | |
+| 690 U1: readouts stand still | builder | `fix/readouts-stand-still` (`u1`) dd99a19b | **built**: one shared HP event list for the mat, the hero bar and the drawer, filtered to the hero; Token alerts re-read on GAME_RESET; seen in the game (8 hits, three readouts in step). Follow-up T-485 (a rule's direct damage moves no bar) | Wed | |
 | 690 U3: no hero drag onto the mat under a full-screen view; reorder on the bar kept, no indicator (owner Wed) | builder | `fix/no-hero-drag-fullscreen` (`u3`) | building | Wed | |
 | 690 U4: the Token card | builder | `fix/token-card` (`u4`) 5a411f2b | **built**: card follows on TOKEN_TRANSFORMED, closes when its Token leaves; no XP on a marked Token; no time or XP on a station with nothing chosen; recipe rows read base → real time; owner Wed: both times on every row (follow-up building). Builder gate 684 green; all four seen in the game | Wed | |
 | 690 U5: Bank order and search | builder | `fix/bank-order-search` (`u5`) 5ac884f9 | **merged** 43527939 with U2, work same | Wed | Wed |
