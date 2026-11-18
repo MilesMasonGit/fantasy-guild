@@ -4,6 +4,7 @@ import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as Orders from '../systems/board/Orders.js';
+import * as Flags from '../systems/board/Flags.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
@@ -112,5 +113,32 @@ describe('the check is pure', () => {
         } finally { offs.forEach(o => o?.()); }
 
         expect(events).toEqual([]);
+    });
+});
+
+describe('a hero needs the selected recipe\'s level to work a station', () => {
+    const lowHero = () => { GameState.state.heroes = [hero('h1', { smithing: 5 })]; };
+
+    it('refuses a hero below the recipe level on a drop, and takes one at it', () => {
+        lowHero();
+        const instance = BoardState.createTokenInstance('fixture_station', tokenStartingUses('fixture_station'));
+        Placement.placeTokenAt(instance, C(TILE));
+        pickRecipe(instance, 'recipe_b');
+
+        expect(Orders.orderAt('h1', C(TILE)).success).toBe(false);
+
+        GameState.state.heroes = [hero('h1', { smithing: 10 })];
+        expect(Orders.orderAt('h1', C(TILE)).success).toBe(true);
+    });
+
+    it('re-reads the level when the recipe changes under a kept order', () => {
+        lowHero();
+        const instance = BoardState.createTokenInstance('fixture_station', tokenStartingUses('fixture_station'));
+        Placement.placeTokenAt(instance, C(TILE));
+        pickRecipe(instance, 'recipe_a');
+        expect(Orders.orderAt('h1', C(TILE)).success).toBe(true);
+
+        pickRecipe(instance, 'recipe_b');
+        expect(Flags.orderRefusal('h1', instance)?.reason).toBe(ALERT.ACCESS);
     });
 });
