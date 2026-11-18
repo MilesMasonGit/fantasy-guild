@@ -46,6 +46,8 @@ class SilentAudio {
 }
 
 let disk = null;
+/** `SaveFiles.useBackend`, which is no React hook, under a name the hooks rule does not take for one. */
+const swapBackend = SaveFiles.useBackend;
 
 /** Writes to slot 0's key throw, as a full browser storage does; the returned function stops it. */
 function fillStorage() {
@@ -59,7 +61,7 @@ function fillStorage() {
 
 const BUILDS = {
     'the browser storage': {
-        async open() { SaveFiles.useBackend(null); },
+        async open() { swapBackend(null); },
         main: () => localStorage.getItem(SaveManager.getSlotKey(0)),
         backup: () => localStorage.getItem(SlotHelper.getBackupKey(0)),
         plant: (text) => localStorage.setItem(SaveManager.getSlotKey(0), text),
@@ -71,7 +73,7 @@ const BUILDS = {
     'the desktop files': {
         async open() {
             disk = fakeSaveDisk();
-            SaveFiles.useBackend(disk);
+            swapBackend(disk);
             await SaveManager.loadSaveFiles();
             SaveManager.installCloseSave();
         },
