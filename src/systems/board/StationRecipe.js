@@ -95,8 +95,9 @@ export function validateSelection(instance, def = null) {
 }
 
 /**
- * The work config a hero is checked against on this Token: its own `config`, or, for a Foundation,
- * one built from its `foundation` block. A Foundation authors no `config`; the skill is
+ * The work config a hero is checked against on this Token: its own `config` with the selected
+ * recipe's level folded into `skillRequired`, or, for a Foundation, one built from its
+ * `foundation` block. A Foundation authors no `config`; the skill is
  * `foundation.skill` (Construction, or Farming for farmland) and the level is the selected recipe's
  * `levelRequirement`. With nothing selected the level is 0: the Foundation is stopped by Choose
  * what to build, not by a level.
@@ -109,7 +110,12 @@ export function validateSelection(instance, def = null) {
  */
 export function workConfigOf(def, instance = null) {
     if (Demolition.isMarked(instance)) return Demolition.DEMOLITION_CONFIG;
-    if (!def?.foundation) return def?.config || null;
+    if (!def?.foundation) {
+        if (!def?.config) return null;
+        const level = recipeLevel(instance ? selectedRecipe(instance, def) : null);
+        if (level <= (def.config.skillRequired || 0)) return def.config;
+        return { ...def.config, skillRequired: level };
+    }
     const recipe = instance ? selectedRecipe(instance, def) : null;
     return {
         ...(def.config || {}),
