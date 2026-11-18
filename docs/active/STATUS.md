@@ -13,11 +13,11 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| 680 S1: catch-up edges (save before the catch-up, startSlot guard, Load as I left it, a second absence) | engineer | `fix/catchup-edges` (`sv1`) | building | Wed | |
-| 680 S2: settle and new game save once | builder | `fix/settle-saves-once` (`sv2`) | building | Wed | |
-| 680 S3: an unanswered summary is offered again (after S1) | engineer | | queued | Wed | |
-| 680 S5: the desktop window (single instance, a failed close save) | builder | | queued | Wed | |
-| Look: no merges, one spot, Sapling edge (M1, M3, M4 stacked on `fix/sapling-edge`), Thorns (M2 with the pack), Rusty tools (H7) | director | scratch merge | waits for the owner's Sync of the pack | Wed | |
+| 680 S1: catch-up edges (save before the catch-up, startSlot guard, Load as I left it, a second absence) | engineer | `fix/catchup-edges` (`sv1`) 16713239 | **bench queued** (13:00 with S2): diff read (the live game written first, dated at the gap's start; startSlot one at a time; undo kept until written; a second absence shows since) | Wed | |
+| 680 S2: settle and new game save once | builder | `fix/settle-saves-once` (`sv2`) 81984b3f | **bench queued** (13:00 with S1): diff read (settle and arrival save once at the end; newGame claims in memory) | Wed | |
+| 680 S3: an unanswered summary is offered again (on S1) | engineer | `fix/summary-offered-again` (`sv3`) | building | Wed | |
+| 680 S5: the desktop window (single instance, a failed close save) | builder | `fix/desktop-window` (`sv5`) | building | Wed | |
+| Look: no merges, one spot, Sapling edge (M1, M3, M4 stacked on `fix/sapling-edge`), Thorns (M2 with the pack), Rusty tools (H7) | director | scratch merge `p23b` 19fd3ea2 | **eye-check**: tab mat-look, build `_builds/2026-11-18-mat-look/Fantasy Guild.exe`; owner Synced the pack 73aa82ff (ids: effect_thorns_struck added, nothing removed); render golden refreshed for the Thorns texts 71ab30ce; gate on the merge green but HiddenPageFx timing out under load (passes alone) | Wed | |
 
 ## Director, batch 8: 650 H6 and the first of 670 (owner, 2026-11-17: merge batch 7 and start the next)
 
