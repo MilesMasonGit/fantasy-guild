@@ -7,6 +7,7 @@ import { EventBus, UI_LISTENER } from '../systems/core/EventBus.js';
 
 import { DeckDndProvider } from './dnd/DndKit.jsx';
 import { setMatBankLocked } from './hooks/useMatBankLock.js';
+import { setFullscreenViewOpen } from './hooks/useFullscreenViewLock.js';
 
 import { useUIModals } from './hooks/useUIModals.js';
 import { useEscapeLayer } from './utils/escapeLayers.js';
@@ -144,6 +145,8 @@ const ReactRoot = () => {
     // place that reaches outside React (the drag sensor) to enforce it, so this is its only
     // writer, kept in step with the Bank's own open/closed state.
     React.useEffect(() => { setMatBankLocked(isBankOpen); }, [isBankOpen]);
+    const isFullscreenOpen = ui.fullscreen.view !== null;
+    React.useEffect(() => { setFullscreenViewOpen(isFullscreenOpen); }, [isFullscreenOpen]);
 
     const handleOpenGuildHall = React.useCallback(() => {
         ui.fullscreen.open('guild');
