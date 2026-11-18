@@ -244,6 +244,59 @@ describe('⭐ heroes sent at the arrival keep fighting', () => {
         expect(Flags.needsJob(hero.id)).toBe(false);
     });
 
+    it('⭐ with two heroes, the one whose enemy falls takes on the nearest enemy the other is not on', () => {
+        const { hero: a } = settleFirst();
+        const b = HeroManager.addHero(generateHero());
+        const [first, ...rest] = Occupation.standingEnemies();
+        const far = (e) => Math.hypot(e.x - first.x, e.y - first.y);
+        // Stable on a tie, so the sorted lists keep the written order there.
+        const byDistance = [...rest].sort((x, y) => far(x) - far(y));
+        expect(byDistance.length).toBeGreaterThanOrEqual(2);
+        expect(Flags.orderToken(a.id, first).success).toBe(true);
+        expect(Flags.orderToken(b.id, byDistance[0]).success).toBe(true);
+        Flags.assign(100);
+        beat(first);
+        Flags.assign(100);
+        expect(BoardState.flagOf(a.id).pinnedTo, 'the nearest enemy nobody fights').toBe(byDistance[1].id);
+        expect(BoardState.flagOf(b.id).pinnedTo).toBe(byDistance[0].id);
+    });
+
+    it('⭐ two heroes whose enemies fall on the same tick go to two different enemies', () => {
+        const { hero: a } = settleFirst();
+        const b = HeroManager.addHero(generateHero());
+        // A fourth arrival enemy beside the seed's three, so two stand once two have fallen.
+        const [e1, e2, e3] = Occupation.standingEnemies();
+        const e4 = BoardState.createTokenInstance(e3.typeId, 1, null, BoardState.ORIGIN.SPAWNED);
+        e4.tether = null;
+        BoardState.addToken(e4, e3.x + 40, e3.y + 40);
+        GameState.state.board.arrival.ids.push(e4.id);
+        expect(Occupation.standingEnemies().map(e => e.id)).toEqual([e1.id, e2.id, e3.id, e4.id]);
+        expect(Flags.orderToken(a.id, e1).success).toBe(true);
+        expect(Flags.orderToken(b.id, e2).success).toBe(true);
+        Flags.assign(100);
+        beat(e1);
+        beat(e2);
+        Flags.assign(100);
+        const pa = BoardState.flagOf(a.id).pinnedTo;
+        const pb = BoardState.flagOf(b.id).pinnedTo;
+        expect([pa, pb].sort()).toEqual([e3.id, e4.id].sort());
+    });
+
+    it('when every enemy left is taken, a hero still goes to the nearest and waits beside that fight', () => {
+        const { hero: a } = settleFirst();
+        const b = HeroManager.addHero(generateHero());
+        const standing = Occupation.standingEnemies();
+        for (const e of standing.slice(0, -2)) beat(e);
+        const [x, y] = standing.slice(-2);
+        expect(Flags.orderToken(a.id, x).success).toBe(true);
+        expect(Flags.orderToken(b.id, y).success).toBe(true);
+        Flags.assign(100);
+        beat(x);
+        Flags.assign(100);
+        expect(BoardState.flagOf(a.id).pinnedTo).toBe(y.id);
+        expect(Flags.needsJob(a.id)).toBe(false);
+    });
+
     it('once the last falls the hero waits where it stood, needing a job, as after any enemy', () => {
         const { hero } = settleFirst();
         const standing = Occupation.standingEnemies();

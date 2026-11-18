@@ -117,7 +117,7 @@ function raiseSkills(hero, n, { to = null } = {}) {
 /** One new hero, the roster cap raised for them if it is full. */
 export function hireHero() {
     ensureRosterRoom(1);
-    const hero = generateHero();
+    const hero = generateHero({ takenNames: HeroManager.getAllHeroes().map(h => h.name) });
     return HeroManager.addHero(hero) ? hero : null;
 }
 
@@ -129,7 +129,7 @@ export function spawnParty() {
     ensureRosterRoom(PARTY_SPRITES.length);
     let added = 0;
     for (const spriteId of PARTY_SPRITES) {
-        const hero = generateHero({ spriteId });
+        const hero = generateHero({ spriteId, takenNames: HeroManager.getAllHeroes().map(h => h.name) });
         if (!HeroManager.addHero(hero)) continue;
         added++;
         raiseSkills(hero, 0, { to: 50 });

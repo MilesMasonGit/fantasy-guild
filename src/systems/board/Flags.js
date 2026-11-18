@@ -545,9 +545,10 @@ function lapsePins(r, order) {
         const flag = BoardState.flagOf(heroId);
         if (!flag || !('pinnedTo' in flag)) continue;
         if (typeof flag.pinnedTo === 'string' && BoardState.getTokenById(flag.pinnedTo)) continue;
-        // An arrival enemy beaten while others stand: the hero takes on the nearest of them, so a
-        // hero sent at the encounter keeps fighting while the player is away.
-        const next = Occupation.nextEnemyAfter(flag.pinnedTo, flag);
+        // An arrival enemy beaten while others stand: the hero takes on the nearest free one, so
+        // heroes sent at the encounter keep fighting while the player is away. Heroes are re-pinned
+        // in planting order, so one re-pinned earlier this tick already counts as taken.
+        const next = Occupation.nextEnemyAfter(flag.pinnedTo, flag, heroId);
         if (next && canFight(heroId)) {
             BoardState.setFlag(heroId, { ...flag, x: next.x, y: next.y, pinnedTo: next.id });
             r.nextTryAt.delete(heroId);
