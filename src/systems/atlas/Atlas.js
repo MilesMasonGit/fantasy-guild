@@ -12,6 +12,7 @@ import * as MatPlacement from '../board/MatPlacement.js';
 import * as MatResize from '../board/MatResize.js';
 import { isGuildHall, countsTowardCap, tokenCount, matCap } from '../board/MatCap.js';
 import { isQuestToken } from '../quests/QuestTokens.js';
+import { noteTokenHad } from '../progression/collectionLog.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { matW, matH, artRadiusOf } from '../../config/matGeometry.js';
 import { logger } from '../../utils/Logger.js';
@@ -273,6 +274,9 @@ export function createRegion({
         seed, biome, ground, terrain, rules, cellId,
         board: isPlainObject(board) ? board : createEmptyBoard()
     });
+    // The board is built off the mat, never through `addToken`: a one-use Token it came with (a
+    // chest) would lose its Encyclopedia tick once used up.
+    for (const instance of Object.values(region.board.tokens || {})) noteTokenHad(instance?.typeId);
     announce('created', region.id, { cellId: region.cellId });
     return { success: true, region };
 }
