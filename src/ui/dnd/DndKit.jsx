@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import { cn } from '../utils/cn.js';
 import { EventBus } from '../../systems/core/EventBus.js';
 import { DragGhost } from './DragGhost.jsx';
-import { DND_SURFACE, DRAG_SFX } from './dragConstants.js';
+import { DND_SURFACE, DRAG_SFX, DROP_REFUSED } from './dragConstants.js';
 import { createPickupFlight } from './pickupFlight.js';
 
 /**
@@ -562,14 +562,14 @@ export const DeckDndProvider = ({ children }) => {
         const { active, over } = event;
         const payload = startPayloadRef.current || active?.data?.current;
         let success = false;
-        // Whether a target (or an interceptor) took the drop, refused or not: a refusal there has
-        // said its own reason, so the source's miss handler, for a drop let go where nothing is, is not asked.
-        let taken = false;
+        // A refusal whose reason was said where it happened (an interceptor's, or a target's
+        // `DROP_REFUSED`): the source's miss handler, for a drop let go where nothing took it, is not asked.
+        let said = false;
         let clip = null;
         const intercepted = interceptedDrop(payload, { pointer: pointerRef.current });
 
         if (intercepted) {
-            taken = true;
+            said = intercepted.success === false;
             success = intercepted.success !== false;
             clip = intercepted.sfx || null;
             // A taken drop: the ghost vanishes where it was let go (see `dropAnimation`); a refused
@@ -578,7 +578,6 @@ export const DeckDndProvider = ({ children }) => {
         } else if (payload && over) {
             const data = over.data?.current;
             if (data?.accepts?.(payload)) {
-                taken = true;
                 const node = document.querySelector(`[data-dnd-droppable-id="${over.id}"]`);
                 if (node) {
                     const r = node.getBoundingClientRect();
@@ -589,8 +588,11 @@ export const DeckDndProvider = ({ children }) => {
                 // cursor in viewport coordinates. Every other target ignores the second
                 // argument. A target that can only tell at drop time that it will not take it
                 // (the playmat, for a Token dropped well outside the landing area) returns
-                // `false`: the drop counts as a miss and the ghost flies back.
-                success = data.onDrop?.(payload, { pointer: pointerRef.current }) !== false;
+                // `false`: the drop counts as a miss and the ghost flies back; `DROP_REFUSED` when it
+                // has said why.
+                const answer = data.onDrop?.(payload, { pointer: pointerRef.current });
+                said = answer === DROP_REFUSED;
+                success = answer !== false && !said;
                 if (!success) glideTargetRef.current = null;
             }
         }
@@ -598,7 +600,7 @@ export const DeckDndProvider = ({ children }) => {
         if (success) {
             sfx(clip || DRAG_SFX.dropByKind[payload.kind] || DRAG_SFX.dropDefault);
         } else {
-            if (payload.onMiss && !taken) {
+            if (payload.onMiss && !said) {
                 const target = payload.onMiss(payload);
                 if (target) glideTargetRef.current = target;
                 else glideTargetRef.current = null;

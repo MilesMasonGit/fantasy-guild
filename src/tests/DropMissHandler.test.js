@@ -3,7 +3,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import React from 'react';
 import { render, cleanup, fireEvent, act } from '@testing-library/react';
 import { DeckDndProvider, DropTarget, useEntityDrag } from '../ui/dnd/DndKit.jsx';
-import { DRAG_KIND, DND_SURFACE } from '../ui/dnd/dragConstants.js';
+import { DRAG_KIND, DND_SURFACE, DROP_REFUSED } from '../ui/dnd/dragConstants.js';
 
 /**
  * ⭐ **The miss handler is for drops nothing took.** A source's `onMiss` (the Guild Hall's
@@ -53,14 +53,14 @@ describe('⭐ the miss handler is for drops nothing took', () => {
         const view = render(
             h(DeckDndProvider, null,
                 h(Source, { payload: { itemId: 'item_coal', onMiss: spies.onMiss } }),
-                target('mat', spies, { onDrop: () => false }),
+                target('mat', spies, { onDrop: () => DROP_REFUSED }),
                 target('fussy', spies, { accepts: () => false }))
         );
         pickUp(view, { mat: box(100, 100, 400, 400), fussy: box(700, 100, 100, 100) });
         return spies;
     }
 
-    it('taken and refused by the mat: no second reason', () => {
+    it('refused by the mat, which said why: no second reason', () => {
         const spies = missScene();
         release(300, 300);
         expect(spies.onMiss).not.toHaveBeenCalled();
@@ -75,6 +75,20 @@ describe('⭐ the miss handler is for drops nothing took', () => {
     it('over a target that does not take it: a miss too', () => {
         const spies = missScene();
         release(750, 150);
+        expect(spies.onMiss).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('⭐ a target that refuses without a word is a plain miss', () => {
+    it('its onDrop answers false: the miss handler says why', () => {
+        const spies = { onMiss: vi.fn(() => null) };
+        const view = render(
+            h(DeckDndProvider, null,
+                h(Source, { payload: { itemId: 'item_coal', onMiss: spies.onMiss } }),
+                target('beside', spies, { onDrop: () => false }))
+        );
+        pickUp(view, { beside: box(100, 100, 400, 400) });
+        release(300, 300);
         expect(spies.onMiss).toHaveBeenCalledTimes(1);
     });
 });
