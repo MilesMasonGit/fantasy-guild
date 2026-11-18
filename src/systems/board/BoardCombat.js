@@ -13,6 +13,7 @@ import * as HeroManager from '../hero/HeroManager.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import { statementsOf } from '../effects/statements.js';
 import * as BoardState from './BoardState.js';
+import * as Charges from './Charges.js';
 import * as FightRoom from './FightRoom.js';
 import { momentSupplies } from '../../config/registries/triggerRegistry.js';
 import { ROLE, opponentSeekerOf } from '../../config/registries/roleRegistry.js';
@@ -480,9 +481,6 @@ export function tickToken(instance, delta, heroId) {
     }
 }
 
-/** A Token's centre as a mat point, for payloads about a Token that has just left. */
-const pointOf = (instance) => ({ x: instance.x, y: instance.y });
-
 /**
  * A kill.
  *
@@ -533,23 +531,10 @@ function resolveVictory(instance, fight, enemy, heroId) {
     Breakage.afterKill(heroId, instance);
 
     if (instance.usesRemaining != null && instance.usesRemaining <= 0) {
-        const spot = pointOf(instance);
-        BoardState.removeToken(id);
         endFight(id);
-        const eName = getTokenType(instance.typeId)?.name || instance.typeId;
-        EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-            instanceId: id,
-            ...spot,
-            severity: 'red',
-            type: 'token_exhausted',
-            name: eName,
-            message: `Token Exhausted: ${eName}`
-        });
-        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: id, ...spot, typeId: instance.typeId, exhaustedBy: heroId || null });
-        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: id, ...spot, typeId: null });
-        // The hero's flag chooses again on its next pass.
-        if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId, ...spot });
-        EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { points: [spot] });
+        // ⚠️ A rule on the kill's cycle that spends a charge of its own may have taken the last one
+        // and the Token with it, already announced: saying it again would count the depletion twice.
+        if (BoardState.getTokenById(id) === instance) Charges.destroyToken(instance, { heroId: heroId || null });
         return;
     }
 
