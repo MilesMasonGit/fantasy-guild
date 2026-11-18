@@ -763,6 +763,19 @@
         "status": "live",
         "tier": 0,
         "note": "Tier as the Copper Helmet, made beside it at the copper smithy."
+      },
+      "item_rusty_pickaxe": {
+        "status": "live",
+        "tier": 0
+      },
+      "item_rusty_woodaxe": {
+        "status": "live",
+        "tier": 0
+      },
+      "item_rusty_sword": {
+        "status": "live",
+        "tier": 0,
+        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
       }
     },
     "tokens": {
@@ -1402,6 +1415,10 @@
       "token_battlefield": {
         "status": "live",
         "tier": 0
+      },
+      "token_small_slime": {
+        "status": "live",
+        "tier": 1
       }
     },
     "recipes": {

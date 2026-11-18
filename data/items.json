@@ -2797,5 +2797,76 @@
       "Shield"
     ],
     "id": "item_copper_shield"
+  },
+  "item_rusty_pickaxe": {
+    "name": "Rusty Pickaxe",
+    "description": "Works like a Copper Pickaxe. 1 % chance to break each cycle.",
+    "type": "tool",
+    "sprite": "i_pick_copper",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": null,
+    "autoSyncId": true,
+    "id": "item_rusty_pickaxe",
+    "tool": {
+      "kind": "pickaxe",
+      "tier": 1
+    },
+    "tags": [
+      "Tool",
+      "Mining",
+      "Rusty"
+    ],
+    "breakChance": 1,
+    "valueSource": null
+  },
+  "item_rusty_woodaxe": {
+    "name": "Rusty Woodaxe",
+    "description": "Works like a Copper Woodaxe. 1 % chance to break each cycle.",
+    "type": "tool",
+    "sprite": "i_woodaxe_copper",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": null,
+    "autoSyncId": true,
+    "id": "item_rusty_woodaxe",
+    "tool": {
+      "kind": "woodaxe",
+      "tier": 1
+    },
+    "tags": [
+      "Tool",
+      "Woodcutting",
+      "Rusty"
+    ],
+    "breakChance": 1,
+    "valueSource": null
+  },
+  "item_rusty_sword": {
+    "name": "Rusty Sword",
+    "description": "Hits like a Copper Sword. 1 % chance to break each cycle.",
+    "type": "weapon",
+    "sprite": "i_longsword_copper",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": null,
+    "autoSyncId": true,
+    "styles": [
+      "melee"
+    ],
+    "damage": 2,
+    "id": "item_rusty_sword",
+    "tier": 1,
+    "tags": [
+      "Weapon",
+      "Sword",
+      "Rusty"
+    ],
+    "damageType": "slash",
+    "breakChance": 1,
+    "valueSource": null
   }
 }

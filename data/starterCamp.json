@@ -84,6 +84,16 @@
       "typeId": "token_goblin_camp",
       "x": 400,
       "y": 890
+    },
+    {
+      "typeId": "token_scrap_heap",
+      "x": 660,
+      "y": 600
+    },
+    {
+      "typeId": "token_small_slime",
+      "x": 690,
+      "y": 800
     }
   ],
   "bank": {
