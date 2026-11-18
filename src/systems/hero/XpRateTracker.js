@@ -1,14 +1,16 @@
-import * as GameClock from '../core/GameClock.js';
+import { createRollingRate } from '../core/rollingRate.js';
 
 /**
  * XpRateTracker
- * Calculates rolling XP gain rates and estimated time to next level per hero & skill.
- * Stores a sliding 5-minute window of XP gains.
+ * Calculates rolling XP gain rates and estimated time to next level per hero & skill, over a
+ * sliding 5-minute window of XP gains (`rollingRate.js`).
  */
 
-const history = new Map(); // key: `${heroId}:${skillId}` -> [{ amount, timestamp }]
-const WINDOW_MS = 5 * 60 * 1000; // 5-minute rolling window
-const MIN_WINDOW_MS = 15 * 1000; // Minimum 15s to smooth initial bursts
+const rate = createRollingRate({
+    windowMs: 5 * 60 * 1000,
+    // A first gain with nothing before it is taken as earned over at least this long.
+    minMs: 15 * 1000
+});
 
 function makeKey(heroId, skillId) {
     return `${heroId}:${skillId}`;
@@ -23,29 +25,7 @@ export const XpRateTracker = {
      */
     recordGain(heroId, skillId, amount) {
         if (!heroId || !skillId || !amount || amount <= 0) return;
-        const key = makeKey(heroId, skillId);
-        if (!history.has(key)) {
-            history.set(key, []);
-        }
-        const entries = history.get(key);
-        entries.push({ amount, timestamp: GameClock.now() });
-        this.prune(key);
-    },
-
-    /**
-     * Prune expired entries older than WINDOW_MS
-     * @param {string} key
-     */
-    prune(key) {
-        const entries = history.get(key);
-        if (!entries) return;
-        const now = GameClock.now();
-        while (entries.length > 0 && (now - entries[0].timestamp) > WINDOW_MS) {
-            entries.shift();
-        }
-        if (entries.length === 0) {
-            history.delete(key);
-        }
+        rate.record(makeKey(heroId, skillId), amount);
     },
 
     /**
@@ -55,18 +35,7 @@ export const XpRateTracker = {
      * @returns {number}
      */
     getRate(heroId, skillId) {
-        const key = makeKey(heroId, skillId);
-        this.prune(key);
-        const entries = history.get(key);
-        if (!entries || entries.length === 0) return 0;
-
-        const totalAmount = entries.reduce((sum, e) => sum + e.amount, 0);
-        const first = entries[0].timestamp;
-        const now = GameClock.now();
-        const durationMs = Math.max(now - first, MIN_WINDOW_MS);
-        const durationHours = durationMs / (1000 * 60 * 60);
-
-        return totalAmount / durationHours;
+        return rate.perHour(makeKey(heroId, skillId));
     },
 
     /**
@@ -109,6 +78,6 @@ export const XpRateTracker = {
      * Clear all recorded history (e.g. for tests / session resets)
      */
     clearAll() {
-        history.clear();
+        rate.clear();
     }
 };

@@ -276,6 +276,17 @@ describe('H2: skills', () => {
         expect(r.container.querySelector('[data-skill-detail]')).toBeNull();
     });
 
+    it('an open skill panel reads the rate again by itself: it falls while nothing is earned', () => {
+        XpRateTracker.recordGain('h1', 'melee', 1000);
+        const r = render(panel({ selectedHeroId: 'h1' }));
+        fireEvent.click(r.container.querySelector('[data-skill-row="melee"]'));
+        const detail = () => r.container.querySelector('[data-hero-skill-panel="melee"] [data-skill-detail]').textContent;
+        expect(detail()).toContain('XP/h+240,000');
+        // 1,000 XP over its 15 s and 10 s since: 144,000 an hour, with no event to redraw it.
+        act(() => { vi.advanceTimersByTime(10_000); });
+        expect(detail()).toContain('XP/h+144,000');
+    });
+
     it('has an Edit control that opens the hero editor', () => {
         const onEditHero = vi.fn();
         const r = render(panel({ selectedHeroId: 'h1', onEditHero }));

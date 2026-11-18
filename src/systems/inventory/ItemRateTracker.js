@@ -1,15 +1,16 @@
-import * as GameClock from '../core/GameClock.js';
+import { createRollingRate } from '../core/rollingRate.js';
 
 /**
  * ItemRateTracker
- * Specialized logic for calculating harvest/production throughput.
- * Stores a sliding 5-minute window of inventory gains and spending (spending as negative gains).
+ * Specialized logic for calculating harvest/production throughput, over a sliding 5-minute window
+ * of item gains and spending (spending as negative gains; `rollingRate.js`).
  */
 
-// Private state: Map of itemId -> Array of { amount, timestamp }
-const history = new Map();
-const WINDOW_MS = 5 * 60 * 1000; // 5 minute rolling window
-const MIN_WINDOW_MS = 30 * 1000; // Minimum 30s for stable initial rate calculation
+const rate = createRollingRate({
+    windowMs: 5 * 60 * 1000,
+    // A first record with nothing before it is taken as made over at least this long.
+    minMs: 30 * 1000
+});
 
 export const ItemRateTracker = {
     /**
@@ -18,13 +19,7 @@ export const ItemRateTracker = {
      * @param {number} amount 
      */
     recordGain(itemId, amount) {
-        if (!history.has(itemId)) {
-            history.set(itemId, []);
-        }
-        const gains = history.get(itemId);
-        gains.push({ amount, timestamp: GameClock.now() });
-        
-        this.prune(itemId);
+        rate.record(itemId, amount);
     },
 
     /**
@@ -37,45 +32,12 @@ export const ItemRateTracker = {
     },
 
     /**
-     * Remove data points older than WINDOW_MS
-     * @param {string} itemId 
-     */
-    prune(itemId) {
-        const gains = history.get(itemId);
-        if (!gains) return;
-        
-        const now = GameClock.now();
-        while (gains.length > 0 && (now - gains[0].timestamp) > WINDOW_MS) {
-            gains.shift();
-        }
-        
-        // If empty, clean up the map entry entirely
-        if (gains.length === 0) {
-            history.delete(itemId);
-        }
-    },
-
-    /**
      * Calculate and return the estimated Items Per Hour (IPH)
      * @param {string} itemId 
      * @returns {number}
      */
     getRate(itemId) {
-        this.prune(itemId);
-        const gains = history.get(itemId);
-        
-        if (!gains || gains.length === 0) return 0;
-
-        const totalAmount = gains.reduce((sum, g) => sum + g.amount, 0);
-        
-        // Calculate duration: Either the actual elapsed time in the window 
-        // or a minimum safe window to prevent massive spikes on the first gain.
-        const first = gains[0].timestamp;
-        const now = GameClock.now();
-        const durationMs = Math.max(now - first, MIN_WINDOW_MS);
-        const durationHours = durationMs / (1000 * 60 * 60);
-        
-        return totalAmount / durationHours;
+        return rate.perHour(itemId);
     },
 
     /**
@@ -85,10 +47,9 @@ export const ItemRateTracker = {
      * @returns {{gained: number, spent: number, perHour: number}}
      */
     getFlow(itemId) {
-        this.prune(itemId);
         let gained = 0;
         let spent = 0;
-        for (const g of history.get(itemId) || []) {
+        for (const g of rate.entries(itemId)) {
             if (g.amount >= 0) gained += g.amount;
             else spent -= g.amount;
         }
@@ -99,6 +60,6 @@ export const ItemRateTracker = {
      * Wipe all history caches (useful for game reset/load)
      */
     clearAll() {
-        history.clear();
+        rate.clear();
     }
 };
