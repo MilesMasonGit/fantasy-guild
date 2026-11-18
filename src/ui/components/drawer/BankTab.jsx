@@ -14,7 +14,7 @@ import { Landmark, Check, BoxSelect, X, ArrowDownUp } from 'lucide-react';
 import { PixelGlyph } from '../base/PixelGlyph.jsx';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
-import { BANK_TAB_SLOTS, BANK_TAB_CAP, homeTabOf, bankTabLayout } from '../../../systems/inventory/bankTabs.js';
+import { BANK_TAB_SLOTS, BANK_TAB_CAP, homeTabOf, bankTabLayout, reorderTabIds } from '../../../systems/inventory/bankTabs.js';
 import { t } from '../../../i18n/index.js';
 import { ItemTipContent } from './ItemTip.jsx';
 import { itemTintName, itemTintStyle } from '../base/itemTint.js';
@@ -111,9 +111,7 @@ export const BankTab = () => {
         if (homeOf(payload.itemId) !== currentTabId) {
             return moveOrAnnounce(payload.itemId, currentTabId, targetIndex);
         } else {
-            const next = ids.filter(id => id !== payload.itemId);
-            next.splice(next.indexOf(targetId), 0, payload.itemId);
-            InventoryManager.setGroupOrder(currentTabId, next);
+            InventoryManager.setGroupOrder(currentTabId, reorderTabIds(ids, payload.itemId, targetId));
         }
     };
 
