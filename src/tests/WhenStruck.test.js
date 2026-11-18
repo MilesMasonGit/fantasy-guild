@@ -21,7 +21,7 @@ import { SIDE } from '../systems/combat/FightHooks.js';
 import { LootSystem } from '../systems/combat/LootSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
-import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { registerTokenTypes, tokenStartingUses, getTokenType } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
 import { ROLE } from '../config/registries/roleRegistry.js';
@@ -30,6 +30,7 @@ import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { slotsOf, costSlots } from '../../cms/src/engine/ledger/statementSlots.js';
 import { checkTargets } from '../../cms/schemaCheck.js';
+import { composeTokenDescription } from '../../cms/src/engine/descriptionDictionary.js';
 import { registerStatusFixtures, BURN } from './fixtures/statusEffects.js';
 
 /**
@@ -379,6 +380,8 @@ describe('the sentence and the CMS', () => {
         // And the game runs it as written: an enemy carrying it pricks on roughly one hit in ten.
         registerEffects({ effect_ws_cms: effects.effect_ws_cms });
         registerTokenTypes({ ws_cms_enemy: enemyType('ws_cms_enemy', ['effect_ws_cms']) });
+        // The description the Sync writes from the rules says so.
+        expect(composeTokenDescription(getTokenType('ws_cms_enemy'))).toContain('When Struck: deals 1 damage to the hero, 10% of the time.');
         startFight('ws_cms_enemy');
         const seen = play(240000);
         expect(named(seen, 'Thorns')).toBeGreaterThan(0);

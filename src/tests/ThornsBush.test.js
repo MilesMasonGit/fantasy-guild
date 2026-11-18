@@ -26,6 +26,7 @@ import { renderStatement } from '../systems/effects/statementText.js';
 import { ROLE } from '../config/registries/roleRegistry.js';
 import { slotsOf, costSlots } from '../../cms/src/engine/ledger/statementSlots.js';
 import { checkTargets } from '../../cms/schemaCheck.js';
+import { composeTokenDescription } from '../../cms/src/engine/descriptionDictionary.js';
 
 /**
  * The Redberry Bush's Thorns as the owner ruled it (2026-11-15): Redberries every cycle, and on a
@@ -190,7 +191,10 @@ describe('the rule\'s words and its CMS fields', () => {
         expect(checkTargets([{ where: 'effects.json', schema: 'effects', value: effects }]).errors).toEqual([]);
 
         registerEffects(effects);
-        const seen = harvestUntilResting(bushWith('tb_bush_cms', 'effect_tb_cms'));
+        const bush = bushWith('tb_bush_cms', 'effect_tb_cms');
+        // The description the Sync writes from the rules says so.
+        expect(composeTokenDescription(getTokenType(bush))).toContain('On Cycle: deals 1 damage to the hero, 10% of the time.');
+        const seen = harvestUntilResting(bush);
         expect(seen.harvests).toBe(25);
         expect(seen.hpLost).toBe(seen.pricks);
     });
