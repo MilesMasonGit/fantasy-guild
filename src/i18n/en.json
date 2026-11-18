@@ -32,6 +32,8 @@
         "autoSave60": "1 Hour",
         "autoSaveOff": "Off",
         "saveNow": "Save Game Now",
+        "saveNowDone": "Saved",
+        "saveNowFailed": "Could not save",
         "guildName": "Guild Name",
         "masterVolume": "Master Volume",
         "musicVolume": "Music Volume",

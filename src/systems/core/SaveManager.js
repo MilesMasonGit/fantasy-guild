@@ -247,9 +247,10 @@ export const SaveManager = {
 
             if (SaveFiles.isActive()) {
                 // The game is taken now; the file is written after, in order with the others.
-                SaveFiles.writeSave(slot, json, { rollBackup }).then(({ ok, error }) => {
+                this.lastWrite = SaveFiles.writeSave(slot, json, { rollBackup }).then(({ ok, error }) => {
                     if (!ok) reportSaveFailed(error);
                     else if (this.keepBackupSlot === slot) this.keepBackupSlot = null;
+                    return ok;
                 });
             } else {
                 const slotKey = this.getSlotKey(slot);
@@ -277,6 +278,16 @@ export const SaveManager = {
             reportSaveFailed(err);
             return false;
         }
+    },
+
+    /**
+     * "Save Game Now": saves with the notification, then waits for a desktop write to finish.
+     * @returns {Promise<boolean>} whether the save reached the slot
+     */
+    async saveAndConfirm() {
+        this.lastWrite = null;
+        if (!this.save(true)) return false;
+        return this.lastWrite ? this.lastWrite : true;
     },
 
     /**
