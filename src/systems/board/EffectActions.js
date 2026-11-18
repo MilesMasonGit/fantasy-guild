@@ -210,19 +210,21 @@ function spawnPoint(typeId, placement, from, random, bearerId) {
 }
 
 /**
+ * How far inside `within` a spot that must stay within it is looked for, in mat units. A spot on
+ * the limit itself is often a hair over it once measured back (`cos × d` is not exact), and the
+ * planter would then not count what it planted.
+ */
+const WITHIN_MARGIN = 1;
+
+/**
  * The free legal spot nearest `from` no further than `within` from it, or null: a planting that
  * stays inside its planter's reach. Nothing is pushed.
- * A Token that will grow is planted with the room its grown form will need, from its neighbours'
- * grown forms too: a Sapling at a small Token's gap would shift when it grew, and a Stump left out
- * of its Forest's reach by that never regrows. Where no such spot is within reach it takes the
- * small gap, so a crowded planter plants as much as ever and growing may still shift it.
+ * ⚠️ A Sapling takes its Tree's room (`MatPlacement.roomRadiusOf`), so where no spot within reach
+ * has room for the tree, nothing is planted: a squeezed Sapling would shift when it grew, and a
+ * Stump left out of its Forest's reach by that never regrows.
  */
 function spotWithin(typeId, from, within) {
-    const reach = Math.max(0, within);
-    const roomy = MatPlacement.grownFormOf(typeId) !== typeId
-        ? MatPlacement.findSpot(typeId, from, { reach, asGrown: true })
-        : null;
-    const spot = roomy ?? MatPlacement.findSpot(typeId, from, { reach });
+    const spot = MatPlacement.findSpot(typeId, from, { reach: Math.max(0, within - WITHIN_MARGIN) });
     return spot ? { x: spot.x, y: spot.y, pushed: [] } : null;
 }
 
@@ -386,7 +388,7 @@ export function transformInstance(old, typeId, options = {}) {
     // arrival, and a transform with nowhere legal to stand does not happen. A fixed Token is
     // never pushed either way.
     const fixedIds = options.fixPlaced ? FixedTokens.unpushableIds(old.id) : FixedTokens.fixedTokenIds(old.id);
-    const where = MatPlacement.forceSpot(typeId, from, { excludeId: old.id, fixedIds });
+    const where = MatPlacement.forceSpot(typeId, from, { excludeId: old.id, fixedIds, inPlace: true });
     if (!where) return null;
 
     const at = { x: where.x, y: where.y };

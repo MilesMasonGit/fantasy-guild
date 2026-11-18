@@ -805,6 +805,34 @@ describe('⭐ a right-click with a Token selected moves it, as a drop there does
         expect(selectedTokenId()).toBe(tree.id);
     });
 
+    it('⭐ onto a copy of itself it lands beside the copy, as a drop there does: both kept, with their charges and progress', () => {
+        const build = () => {
+            const [hero] = newBoard();
+            const token = BoardState.getTokenById(BoardState.workTokenOf(hero.id));
+            const copy = fixtures.placeAt('rc_tree', 900, 600);
+            copy.usesRemaining = 20;
+            return { token, hero, point: { x: copy.x + 10, y: copy.y } };
+        };
+        const { byDrop, byRightClick } = bothWays(build);
+        expect(byRightClick).toEqual(byDrop);
+
+        const [hero] = newBoard();
+        const tree = BoardState.getTokenById(BoardState.workTokenOf(hero.id));
+        const copy = fixtures.placeAt('rc_tree', 900, 600);
+        copy.usesRemaining = 20;
+        const charges = tree.usesRemaining;
+        const progress = tree.cycleElapsedMs;
+        expect(progress).toBeGreaterThan(0);
+
+        expect(rightClickToken(tree, { x: 910, y: 600 })).toMatchObject({ success: true, nudged: true });
+
+        expect(BoardState.getTokenById(copy.id)).toMatchObject({ x: 900, y: 600, usesRemaining: 20 });
+        const moved = BoardState.getTokenById(tree.id);
+        expect(moved).toMatchObject({ usesRemaining: charges, cycleElapsedMs: progress });
+        expect(Math.hypot(moved.x - 900, moved.y - 600)).toBeLessThan(200);
+        expect(BoardState.workTokenOf(hero.id)).toBe(tree.id);
+    });
+
     it('a move flies from where it stood, and the selection stays for the next', () => {
         newBoard();
         const goblin = fixtures.placeAt('bench_goblin', 600, 300);

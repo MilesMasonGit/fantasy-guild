@@ -283,29 +283,4 @@ describe('On-Board Tile Event Alerts', () => {
         expect(rejectAlert.rulesText).toBe('Cannot be nearby to more than 2 Coast Tokens.');
     });
 
-    it('emits Green alert when a token is restocked with text "Restocked from [Token Name]"', () => {
-        const events = [];
-        EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, e => events.push(e));
-
-        // Place a fixture_producer on tile 8 with 20 uses remaining (max cap is 5000)
-        const onBoardToken = BoardState.createTokenInstance('fixture_producer', 20);
-        put(8, onBoardToken);
-
-        // Drop another fixture_producer with 100 uses onto tile 8
-        const incomingToken = BoardState.createTokenInstance('fixture_producer', 100);
-        const result = put(8, incomingToken);
-        expect(result.restocked).toBe(true);
-
-        // Verify Green alert was emitted on the Token that took the charges
-        const restockAlert = events.find(e => e.type === 'token_restocked' && e.instanceId === onBoardToken.id);
-        expect(restockAlert).toBeDefined();
-        expect(restockAlert).toMatchObject({
-            instanceId: onBoardToken.id,
-            severity: 'green',
-            type: 'token_restocked',
-            name: 'Fixture Producer',
-            title: 'Restocked from Fixture Producer',
-            message: 'Restocked from Fixture Producer'
-        });
-    });
 });

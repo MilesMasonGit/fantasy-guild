@@ -31,8 +31,7 @@ export function cycleSecondsText(elapsedMs, cycleTimeMs) {
 
 /**
  * How full the charges ring is: charges left over the Token's starting
- * charges, clamped to 1 (a restocked Token can hold more than it started
- * with). No starting count to compare against reads as full.
+ * charges, clamped to 1. No starting count to compare against reads as full.
  */
 export function chargesFraction(usesRemaining, startingUses) {
     if (usesRemaining == null) return null;

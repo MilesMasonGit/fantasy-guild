@@ -147,10 +147,10 @@ describe('A `Cannot` refuses the placement, and says why', () => {
         expect(Restrictions.violations()).toEqual([]);
     });
 
-    it('does not count a Token this drop lands on top of and restocks', () => {
-        // 17 touches 10 and 16, so its two-Coast limit is exactly met. Dropping
-        // a matching Coast onto 16 tops the one already there up rather than
-        // adding a fourth, so the count is unchanged and the drop is legal.
+    it('a Coast dropped onto its copy is nudged to a spot the limit allows, and the copy stays', () => {
+        // 17 touches 10 and 16, so its two-Coast limit is exactly met. A third
+        // Coast dropped onto 16 is a fourth Coast, never merged into the copy,
+        // so it must land where 17 does not count it.
         place(10, 'fixture_plain_coast');
         place(16, 'fixture_plain_coast');
         place(17, 'fixture_coast');
@@ -158,7 +158,9 @@ describe('A `Cannot` refuses the placement, and says why', () => {
         const { result } = place(16, 'fixture_plain_coast');
 
         expect(result.success).toBe(true);
+        expect(result.nudged).toBe(true);
         expect(tokenAt(16)?.typeId).toBe('fixture_plain_coast');
+        expect(BoardState.tokens().filter(t => t.typeId === 'fixture_plain_coast')).toHaveLength(3);
         expect(Restrictions.violations()).toEqual([]);
     });
 
