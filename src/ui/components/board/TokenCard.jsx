@@ -104,16 +104,19 @@ const NameBlock = ({ name, onClose, onLookUp, className }) => (
     </header>
 );
 
+/** A station with nothing chosen has no level (null) and no XP: neither cell shows. */
 const WorkCells = ({ skillId, level, xp }) => (
     <>
-        <StatCell caption="Level">
-            <Stat
-                icon={<SkillIcon skillId={skillId} size={16} />}
-                text={level}
-                tip={`${skillName(skillId)}: a hero needs level ${level} to work this`}
-                data-card-skill={skillId}
-            />
-        </StatCell>
+        {level != null && (
+            <StatCell caption="Level">
+                <Stat
+                    icon={<SkillIcon skillId={skillId} size={16} />}
+                    text={level}
+                    tip={`${skillName(skillId)}: a hero needs level ${level} to work this`}
+                    data-card-skill={skillId}
+                />
+            </StatCell>
+        )}
         {xp > 0 && (
             <StatCell caption="XP">
                 <Stat text={`+${xp.toLocaleString('en-US')}`} tip={`${xp.toLocaleString('en-US')} ${skillName(skillId)} XP each time a round of work finishes`} />
@@ -190,7 +193,7 @@ const itemBadges = (lines, itemId) => {
  */
 const StatsSection = ({ blocks, effects }) => {
     const hp = blocks.find(b => b.id === CARD_BLOCK.HP);
-    const cells = blocks.filter(b => b.id !== CARD_BLOCK.HP);
+    const cells = blocks.filter(b => b.id !== CARD_BLOCK.HP && !(b.id === CARD_BLOCK.WORK && b.level == null && !(b.xp > 0)));
     return (
         <Section data-card-block="stats">
             {hp && <HpBar cur={hp.cur} max={hp.max} />}
@@ -690,7 +693,9 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
     const header = <NameBlock name={model.name} onClose={onClose} onLookUp={onClose ? () => lookUpToken(typeId) : null} />;
     const panel = listing ? (
         <div className="p-1.5">
+            {/* Keyed by Token: another station's list starts with an empty search, scrolled to its own recipe. */}
             <RecipeList
+                key={instanceId}
                 def={def}
                 instanceId={instanceId}
                 selectedRecipeId={instance.selectedRecipeId || null}

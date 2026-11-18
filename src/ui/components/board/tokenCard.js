@@ -539,19 +539,24 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
 
     const work = marked ? src.demolitionConfig : def.config;
     const skillId = marked ? work?.skill : (def.config?.skill || def.foundation?.skill || null);
+    // A station with nothing chosen has no work yet: its type's own config is only the engine's
+    // fallback, and no recipe runs at that time, level or XP.
+    const unchosen = isStation && !recipe;
     if (skillId) {
-        const level = Math.max(1, Number(work?.skillRequired) || 0, marked ? 0 : StationRecipe.recipeLevel(recipe));
-        const xp = Number(io?.xp ?? recipe?.xp ?? work?.xp) || 0;
+        const level = unchosen ? null : Math.max(1, Number(work?.skillRequired) || 0, marked ? 0 : StationRecipe.recipeLevel(recipe));
+        // Demolishing pays nothing, whatever the Token's own work would.
+        const xp = unchosen ? 0 : Number(marked ? work?.xp : (io?.xp ?? recipe?.xp ?? work?.xp)) || 0;
         blocks.push({ id: CARD_BLOCK.WORK, skillId, level, xp });
     }
 
-    const baseMs = Number(marked ? src.demolishMs : (io?.cycleTimeMs ?? recipe?.durationMs ?? def.config?.cycleTimeMs)) || 0;
+    const baseMs = unchosen ? 0 : Number(marked ? src.demolishMs : (io?.cycleTimeMs ?? recipe?.durationMs ?? def.config?.cycleTimeMs)) || 0;
     // The time the work really takes on the mat, sped up by what is in reach and the hero on it.
     const cycleMs = baseMs > 0 && instance && !marked && typeId !== GUILD_HALL && src.workTime
         ? Number(src.workTime(instance.id, baseMs, skillId)) || baseMs
         : baseMs;
     const uses = instance ? (instance.usesRemaining ?? null) : (def.uses ?? null);
-    if (cycleMs > 0 || uses != null) blocks.push({ id: CARD_BLOCK.CYCLE, cycleMs, baseMs, uses });
+    // A station with nothing chosen keeps its Charges cell: only the time goes.
+    if (cycleMs > 0 || uses != null || unchosen) blocks.push({ id: CARD_BLOCK.CYCLE, cycleMs, baseMs, uses });
 
     if (!marked) {
         // A crop's inputs are its seed, paid once per sowing (its lifecycle line says so), not per harvest.

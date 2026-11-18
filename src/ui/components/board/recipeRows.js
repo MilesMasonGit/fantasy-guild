@@ -5,6 +5,7 @@ import { foundationMinTierOf } from '../../../config/registries/tokenConstants.j
 import { toolNamer, foundationPhrase } from '../../../systems/effects/toolNames.js';
 import { unmetContext } from '../../../systems/board/RecipeResolver.js';
 import { availableOf } from '../../../systems/board/InputAllocator.js';
+import { workTimeOf } from '../../../systems/board/TileModifiers.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { builtTypeOf, buildRefusal, siteNeeds } from '../../../systems/board/SiteRules.js';
 import { toolTokenFor } from './tokenCard.js';
@@ -22,7 +23,8 @@ export function liveRowSources() {
         available: availableOf,
         unmetContext,
         siteNeeds,
-        buildRefusal: (instanceId, typeId) => buildRefusal(BoardState.getTokenById(instanceId), typeId)
+        buildRefusal: (instanceId, typeId) => buildRefusal(BoardState.getTokenById(instanceId), typeId),
+        workTime: workTimeOf
     };
 }
 
@@ -50,10 +52,15 @@ function outputOf(o, src) {
  * the bottom; `met` is null where it cannot be judged (no instance, or a Foundation rung, which
  * the pool already filtered by).
  *
+ * `durationMs` is the recipe's own time; `workMs` is how long it takes at this station, as the
+ * card's Time cell counts it (`workTimeOf`, every Work Time rule in reach and the hero on it). Off
+ * the mat (no instance) the two are the same.
+ *
+ * @param {string|null} [skill] the station's work skill, which Work Time rules narrow to
  * @returns {{ id, level, inputs: object[], requirements: object[], main: object|null,
- *   byproducts: object[], xp: number, durationMs: number }}
+ *   byproducts: object[], xp: number, durationMs: number, workMs: number }}
  */
-export function recipeRowOf(recipe, level, instanceId = null, src = liveRowSources()) {
+export function recipeRowOf(recipe, level, instanceId = null, src = liveRowSources(), skill = null) {
     const inputs = (recipe?.inputs || [])
         .filter(i => i?.itemId && Number(i.quantity ?? 1) > 0)
         .map(i => {
@@ -92,6 +99,11 @@ export function recipeRowOf(recipe, level, instanceId = null, src = liveRowSourc
     const main = outputs.length ? outputOf(outputs[mainIndex], src) : null;
     const byproducts = outputs.filter((_, i) => i !== mainIndex).map(o => outputOf(o, src));
 
+    const durationMs = Number(recipe?.durationMs) || 0;
+    const workMs = durationMs > 0 && instanceId != null && src.workTime
+        ? Number(src.workTime(instanceId, durationMs, skill)) || durationMs
+        : durationMs;
+
     return {
         id: recipe?.id,
         level,
@@ -100,6 +112,7 @@ export function recipeRowOf(recipe, level, instanceId = null, src = liveRowSourc
         main,
         byproducts,
         xp: Number(recipe?.xp) || 0,
-        durationMs: Number(recipe?.durationMs) || 0
+        durationMs,
+        workMs
     };
 }
