@@ -26,6 +26,12 @@ export function nameList(names) {
 
 const union = (a = [], b = []) => [...new Set([...a, ...b])];
 
+/** A knock-out banner's losses, one row per hero: `{ hero, lost }`. */
+function knockoutLosses({ heroes = [], lost = [], losses } = {}) {
+    if (Array.isArray(losses)) return losses;
+    return heroes.slice(0, 1).map(hero => ({ hero, lost: Array.isArray(lost) ? lost : [] }));
+}
+
 /** "Cider", "Cider, Apple Pie", "3 recipes: Cider, Apple Pie, ..." */
 function recipeList(recipes) {
     if (recipes.length <= 2) return recipes.join(', ');
@@ -65,15 +71,36 @@ export const BANNER_KINDS = Object.freeze({
         }),
         merge: (a, b) => ({ places: union(a.places, b.places) })
     },
+    // A banner pushed for one knock-out carries `{ heroes: [name], lost }`; a merged one carries
+    // each hero's own losses in `losses` (one row per hero, in the order they fell), since one merged
+    // list cannot say who lost what.
     knockout: {
         tone: TONE.PROBLEM,
-        text: ({ heroes = [], lost = [] }) => ({
-            title: 'Knocked Out!',
-            line: heroes.length === 1
-                ? `${heroes[0]} was carried home, injured. ${lost.length ? `Lost: ${lost.join(', ')}.` : 'Nothing was lost.'}`
-                : `${nameList(heroes)} knocked out and carried home`
-        }),
-        merge: (a, b) => ({ heroes: union(a.heroes, b.heroes), lost: union(a.lost, b.lost) })
+        text: (parts) => {
+            const { heroes = [] } = parts;
+            const rows = knockoutLosses(parts);
+            if (heroes.length === 1) {
+                const lost = rows[0]?.lost ?? [];
+                return {
+                    title: 'Knocked Out!',
+                    line: `${heroes[0]} was carried home, injured. ${lost.length ? `Lost: ${lost.join(', ')}.` : 'Nothing was lost.'}`
+                };
+            }
+            const said = rows.filter(r => r.lost.length).map(r => `${r.hero} lost: ${r.lost.join(', ')}.`);
+            return {
+                title: 'Knocked Out!',
+                line: `${nameList(heroes)} knocked out and carried home. ${said.length ? said.join(' ') : 'Nothing was lost.'}`
+            };
+        },
+        merge: (a, b) => {
+            const losses = knockoutLosses(a).map(r => ({ ...r, lost: [...r.lost] }));
+            for (const row of knockoutLosses(b)) {
+                const same = losses.find(r => r.hero === row.hero);
+                if (same) same.lost.push(...row.lost);
+                else losses.push({ hero: row.hero, lost: [...row.lost] });
+            }
+            return { heroes: union(a.heroes, b.heroes), losses };
+        }
     },
     bankFull: {
         tone: TONE.PROBLEM,

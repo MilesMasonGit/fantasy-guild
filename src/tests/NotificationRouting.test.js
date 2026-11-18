@@ -324,6 +324,21 @@ describe('after time away: the catch-up\'s news, handed over', () => {
         expect(sounds).toEqual([BANNER_SOUND.milestone, BANNER_SOUND.problem, BANNER_SOUND.problem]);
     });
 
+    it('⭐ two heroes knocked out in a short absence share one banner that says what each lost', () => {
+        finished(news({
+            recipes: [],
+            knockouts: [
+                { heroId: 'h0', heroName: 'Aela', times: 1, lost: ['Iron Sword'] },
+                { heroId: 'h1', heroName: 'Bram', times: 1, lost: ['3 Shrimp'] }
+            ],
+            bankFull: [],
+            finds: []
+        }), false);
+        const knockouts = Banners.getAll().filter(b => b.kind === 'knockout');
+        expect(knockouts).toHaveLength(1);
+        expect(knockouts[0].line).toBe('Aela and Bram knocked out and carried home. Aela lost: Iron Sword. Bram lost: 3 Shrimp.');
+    });
+
     it('a long absence stays merged: one banner per kind, and no wall of stubs', () => {
         const heroes = ['Aela', 'Bram', 'Cara', 'Dov', 'Eli'];
         const finds = Array.from({ length: 15 }, (_, i) => ({ itemId: `item_find_${i}`, count: i + 1 }));
@@ -337,7 +352,7 @@ describe('after time away: the catch-up\'s news, handed over', () => {
         expect(kinds().sort()).toEqual(['bankFull', 'knockout', 'recipe']);
         expect(Banners.getView().waiting).toBe(0);
         expect(Banners.getAll().find(b => b.kind === 'recipe').line).toBe('Aela, Bram and 3 more unlocked 5 recipes: Dish 0, Dish 1, ...');
-        expect(Banners.getAll().find(b => b.kind === 'knockout').line).toBe('Aela, Bram and 3 more knocked out and carried home');
+        expect(Banners.getAll().find(b => b.kind === 'knockout').line).toBe('Aela, Bram and 3 more knocked out and carried home. Nothing was lost.');
         ItemStubs.flush();
         expect(ItemStubs.getStubs()).toHaveLength(MAX_FIND_STUBS);
         expect(ItemStubs.getStubs().every(s => s.isNew)).toBe(true);

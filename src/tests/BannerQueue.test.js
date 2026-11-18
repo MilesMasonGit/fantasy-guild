@@ -51,7 +51,7 @@ describe('the stack', () => {
         Banners.push(knockout('Bram'));
         expect(Banners.getView().waiting).toBe(1);
         const waiting = Banners.getAll()[3];
-        expect(waiting.line).toBe('Aela and Bram knocked out and carried home');
+        expect(waiting.line).toBe('Aela and Bram knocked out and carried home. Nothing was lost.');
         expect(waiting.subjects.map(s => s.id)).toEqual(['Aela', 'Bram']);
     });
 
@@ -116,5 +116,15 @@ describe('the words', () => {
         expect(bannerText('recipe', { heroes: ['Aela'], recipes: ['Cider', 'Apple Pie'] }).line).toBe('Aela unlocked Cider, Apple Pie');
         expect(bannerText('knockout', { heroes: ['Aela'], lost: ['Iron Sword'] }).line).toBe('Aela was carried home, injured. Lost: Iron Sword.');
         expect(bannerText('knockout', { heroes: ['Aela'], lost: [] }).line).toBe('Aela was carried home, injured. Nothing was lost.');
+    });
+
+    it('⭐ a knock-out banner for several heroes says what each one lost', () => {
+        for (const n of ['A', 'B', 'C']) Banners.push(upgrade(n));
+        Banners.push({ ...knockout('Aela'), parts: { heroes: ['Aela'], lost: ['Iron Sword'] } });
+        Banners.push({ ...knockout('Bram'), parts: { heroes: ['Bram'], lost: ['3 Shrimp'] } });
+        Banners.push({ ...knockout('Cara'), parts: { heroes: ['Cara'], lost: [] } });
+        Banners.push({ ...knockout('Aela'), parts: { heroes: ['Aela'], lost: ['3 Shrimp'] } });
+        expect(Banners.getView().waiting).toBe(1);
+        expect(Banners.getAll()[3].line).toBe('Aela, Bram and Cara knocked out and carried home. Aela lost: Iron Sword, 3 Shrimp. Bram lost: 3 Shrimp.');
     });
 });
