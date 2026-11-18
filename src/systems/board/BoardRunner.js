@@ -523,9 +523,10 @@ export function tick(delta) {
     [heroCarryIn, heroCarryOut] = [heroCarryOut, heroCarryIn];
     heroCarryOut.clear();
 
-    // An older save's untethered enemies join their nearest camp before any camp counts what it
-    // spawned below; a no-op once per board.
+    // An older save's untethered enemies join their nearest camp, and a gone camp's enemies the
+    // next camp of their kind, before any camp counts what it spawned below.
     EnemyMotion.attachUntethered();
+    EnemyMotion.rehomeOrphans();
 
     // Timed changes: Saplings grow, Coasts turn and turn back, on clocks advanced by this tick's
     // `delta`, so a catch-up fast-forwards them with everything else. Before Flags, so a hero
