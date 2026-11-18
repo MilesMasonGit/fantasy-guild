@@ -515,7 +515,10 @@ export function placeAtFlag(heroId) {
  * measured from where they really are.
  */
 export function enter(heroId) {
-    return ensureBody(heroId);
+    const body = ensureBody(heroId);
+    // A new order is a walk, not a stroll: at full speed, and the roster says walking.
+    if (body) stopPottering(body);
+    return body;
 }
 
 /**

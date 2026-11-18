@@ -4,7 +4,7 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { neededToolOf } from '../../config/registries/toolKinds.js';
-import { artRadiusOf } from '../../config/matGeometry.js';
+import { artRadiusOf, clampToMat } from '../../config/matGeometry.js';
 import { GameState } from '../../state/GameState.js';
 import * as CombatFormulas from '../combat/CombatFormulas.js';
 import * as BoardState from './BoardState.js';
@@ -826,7 +826,7 @@ function stopAfterBrokenWeapon({ heroId, use } = {}) {
  */
 export function stop(heroId) {
     const { dx, dy } = HeroMotion.IDLE_SPOT;
-    return lapseWhereStanding(heroId, (at) => ({ x: at.x - dx, y: at.y - dy }));
+    return lapseWhereStanding(heroId, (at) => clampToMat({ x: at.x - dx, y: at.y - dy }));
 }
 
 /**
