@@ -5,6 +5,7 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
+import * as Camps from '../systems/board/Camps.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TriggerSystem from '../systems/board/TriggerSystem.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -202,5 +203,81 @@ describe('⭐ an older save: enemies without a tether', () => {
         expect(own(b)).toHaveLength(2);
         expect(own(a)).toHaveLength(0);
         expect(BoardState.tokens().filter(t => t.typeId === 'fixture_enemy')).toHaveLength(2);
+    });
+});
+
+describe('⭐ a camp that leaves the mat: its enemies wait for the next camp of their kind', () => {
+    const enemies = () => BoardState.tokens().filter(t => t.typeId === 'fixture_enemy');
+
+    /** A den filled to its allowance, seen by a tick, then taken off the mat. Returns its two enemies. */
+    function goneDen(x = 500, y = 500) {
+        const den = placeAt('fixture_ec_den', x, y);
+        run(100);
+        for (let i = 0; i < 2; i++) expect(SpawnerSystem.attemptSpawn(den, DEN())).toBe(den);
+        const kids = own(den);
+        expect(kids).toHaveLength(2);
+        BoardState.removeToken(den.id);
+        run(100);
+        return kids;
+    }
+
+    it('its enemies are cleared, belong to no camp, and stay on the mat', () => {
+        const kids = goneDen();
+        for (const t of kids) {
+            expect(t.tether).toBe(null);
+            expect(t.orphaned).toBe(true);
+        }
+        expect(enemies()).toHaveLength(2);
+    });
+
+    it('⭐ a new den built beside them adopts them, counts them and spawns no second set', () => {
+        const kids = goneDen();
+        const den = placeAt('fixture_ec_den', 500, 500);
+        run(100);
+        expect(own(den).map(t => t.id).sort()).toEqual(kids.map(t => t.id).sort());
+        for (const t of kids) expect(t.orphaned).toBeUndefined();
+        expect(SpawnerSystem.spawnerCounts(den.id)).toEqual({ count: 2, cap: 2 });
+        expect(Camps.campWork(den).map(t => t.id).sort()).toEqual(kids.map(t => t.id).sort());
+
+        run(INTERVAL * 3);
+        expect(enemies()).toHaveLength(2);
+    });
+
+    it('a den of the same kind already standing does not take them; the next one built does', () => {
+        const old = placeAt('fixture_ec_den', 1300, 500);
+        const kids = goneDen();
+        expect(own(old)).toHaveLength(0);
+        const next = placeAt('fixture_ec_den', 1300, 900);
+        run(100);
+        expect(own(next)).toHaveLength(2);
+        expect(kids.every(t => t.tether === next.id)).toBe(true);
+    });
+
+    it('a camp of another kind does not adopt them', () => {
+        goneDen();
+        placeAt('fixture_ec_pile', 500, 500);
+        run(100);
+        expect(enemies().every(t => t.tether === null && t.orphaned === true)).toBe(true);
+    });
+
+    it('arrival enemies (tether null) and enemies placed by hand are never adopted', () => {
+        run(100);                                           // the board's one-off attach has run
+        const arrival = placeAt('fixture_enemy', 400, 400);
+        BoardState.setTether(arrival, null);
+        const byHand = placeAt('fixture_enemy', 600, 600);
+        run(100);
+        const den = placeAt('fixture_ec_den', 500, 500);
+        run(100);
+        expect(own(den)).toHaveLength(0);
+        expect(arrival.tether).toBe(null);
+        expect('tether' in byHand).toBe(false);
+    });
+
+    it('enemies orphaned in an older save (their den gone) are cleared on the first tick', () => {
+        const den = placeAt('fixture_ec_den', 500, 500);
+        for (let i = 0; i < 2; i++) expect(SpawnerSystem.attemptSpawn(den, DEN())).toBe(den);
+        BoardState.removeToken(den.id);
+        run(100);
+        expect(enemies().every(t => t.tether === null && t.orphaned === true)).toBe(true);
     });
 });

@@ -116,6 +116,59 @@ export function attachUntethered() {
     return attached;
 }
 
+/** Per board: the membership seen last pass and the live spawners on the mat then. Never saved. */
+const campWatchByBoard = new WeakMap();
+
+/**
+ * A camp gone, its enemies wait for the next: run once per membership change. An enemy whose
+ * camp has left the mat (demolished, sold, turned into a Token with another id) is cleared
+ * (`tether: null`) and marked `orphaned`, saved; the next live spawner whose family holds its type
+ * to arrive on the mat adopts it, so that camp counts it and its hunters hunt it. Arrival enemies
+ * (`tether: null`, not orphaned) and enemies placed by hand (no tether) are never adopted.
+ *
+ * ⚠️ The first pass on a board (a load, a fresh board) only records the spawners standing there:
+ * none of them has just arrived.
+ *
+ * @returns {number} how many were adopted (tests)
+ */
+export function rehomeOrphans() {
+    const board = GameState.state?.board;
+    if (!board) return 0;
+    const { tokens: tokensObj, version } = BoardState.membershipVersion();
+    const watch = campWatchByBoard.get(board);
+    if (watch && watch.tokens === tokensObj && watch.version === version) return 0;
+
+    const live = new Set();
+    const arrived = [];
+    const orphans = [];
+    for (const t of BoardState.tokens()) {
+        if (isLiveSpawner(t)) {
+            live.add(t.id);
+            if (watch && !watch.spawners.has(t.id)) arrived.push(t);
+            continue;
+        }
+        if (!isEnemyTypeId(t.typeId)) continue;
+        if (typeof t.tether === 'string' && !BoardState.getTokenById(t.tether)) {
+            BoardState.setTether(t, null);
+            t.orphaned = true;
+        }
+        if (t.orphaned === true) orphans.push(t);
+    }
+    campWatchByBoard.set(board, { tokens: tokensObj, version, spawners: live });
+
+    let adopted = 0;
+    for (const camp of arrived) {
+        const family = SpawnerSystem.familyOf(camp.typeId);
+        for (const t of orphans) {
+            if (t.orphaned !== true || !family.includes(t.typeId)) continue;
+            delete t.orphaned;
+            BoardState.setTether(t, camp.id);
+            adopted++;
+        }
+    }
+    return adopted;
+}
+
 /**
  * What a stepping enemy's body is doing, for the screen and probes: `{ x, y, moving, facing }`, or
  * null when it has none (it is not stepping aside).
@@ -200,6 +253,7 @@ export function tick(delta = 0) {
     const map = bodies();
     if (!map) return;
     attachUntethered();
+    rehomeOrphans();
     FightRoom.pruneSteps();
 
     let changed = false;
