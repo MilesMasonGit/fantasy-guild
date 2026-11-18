@@ -33,7 +33,6 @@ const NOT_CONTENT_IDS = {
     token_built: 'quest progress event name',
     token_inspected: 'quest progress event name',
     token_exhausted: 'board event name',
-    token_restocked: 'board event name',
     token_refunded: 'engine event name',
     token_quest: 'engine Token type (engineTokens.js), defined in code not data/',
     token_cap: 'retired Guild Hall upgrade id (SaveMigration drops it from old saves)',

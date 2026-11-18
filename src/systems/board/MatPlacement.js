@@ -793,47 +793,16 @@ function* candidatesAround(point, reach) {
  * What should happen when `instance` is dropped at `point`: the one decision every drop on the mat
  * goes through. Nothing is moved here; `Placement.placeTokenAt` carries the answer out.
  *
- * Restock-on-copy comes first: dropping a Token onto a matching copy that has room for charges tops
- * it up rather than looking for a spot beside it, otherwise a crowded board would nudge the Token
- * away from the very copy the player aimed at. Whatever charges are left over stay on the mat,
- * nudged beside the copy.
+ * A drop onto a copy of itself is no different from any other crowded drop: it lands beside the
+ * copy by the ordinary nudge. Tokens never merge.
  *
- * @returns {{status: 'placed'|'nudged'|'restocked'|'full', x?: number, y?: number,
- *            nudge?: number, reason?: string, targetId?: string, transferred?: number,
- *            absorbed?: boolean}}
+ * @returns {{status: 'placed'|'nudged'|'full', x?: number, y?: number, nudge?: number, reason?: string}}
  */
 export function dropAt(instance, point, options = {}) {
     const typeId = instance?.typeId;
     if (!typeId) return { status: 'full', reason: 'Not a valid Token' };
     if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) {
         return { status: 'full', reason: 'Nowhere to drop that' };
-    }
-
-    // `noRestock`: a Token a recipe makes is always its own Token.
-    const restock = options.noRestock ? null : restockTargetAt(instance, point, options.excludeId);
-    if (restock) {
-        const maxCap = restock.cap;
-        const needed = maxCap - restock.target.usesRemaining;
-        const available = instance.usesRemaining != null ? instance.usesRemaining : maxCap;
-        const transferred = Math.min(needed, available);
-        const leftover = available - transferred;
-
-        if (leftover === 0) {
-            return { status: 'restocked', targetId: restock.target.id, transferred, absorbed: true };
-        }
-
-        // The leftover stays on the mat, beside the copy it just filled.
-        const spot = findSpot(typeId, { x: restock.target.x, y: restock.target.y }, {
-            ...options,
-            excludeId: instance.id
-        });
-        return {
-            status: 'restocked',
-            targetId: restock.target.id,
-            transferred,
-            absorbed: false,
-            ...(spot ? { x: spot.x, y: spot.y, nudge: spot.nudge } : {})
-        };
     }
 
     const spot = findSpot(typeId, point, options);
@@ -900,29 +869,4 @@ function whyRefused(typeId, point, options = {}) {
 export function groundRefusal(typeId) {
     const rules = GroundRules.rulesFor(typeId);
     return rules && rules.allowed === 0 ? rules.reason : null;
-}
-
-/**
- * The matching copy under `point` that this Token could top up, or null.
- *
- * Under the point is the Token's art circle: the same test the pointer uses to decide what it is
- * hovering (`Flags.pointOnToken`). Deliberately not imported from `Flags.js`: that module is the
- * flag/claim rules and importing it here would tie placement to the hero system for one circle
- * test.
- */
-function restockTargetAt(instance, point, excludeId = null) {
-    const def = getTokenType(instance.typeId);
-    if (def?.uses == null) return null;
-
-    let best = null;
-    for (const other of BoardState.tokens()) {
-        if (other.id === instance.id || other.id === excludeId) continue;
-        if (other.typeId !== instance.typeId) continue;
-        if (other.usesRemaining == null || other.usesRemaining >= def.uses) continue;
-        const r = artRadiusOf(other.typeId);
-        const d2 = distanceSq(point, other);
-        if (d2 > r * r) continue;
-        if (!best || d2 < best.d2) best = { target: other, d2, cap: def.uses };
-    }
-    return best;
 }

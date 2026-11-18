@@ -225,15 +225,15 @@ describe('dropOnMat — one drop function for the playmat', () => {
         expect(BoardState.tokensAtPoint(C(0).x, C(0).y)).toHaveLength(0);
     });
 
-    it('a drop ON a matching copy restocks it (FP-50)', () => {
+    it('a drop ON a matching copy lands beside it: both stay, each with its own charges', () => {
         const copy = instance('fixture_producer', 100);
         BoardState.addToken(copy, C(14).x, C(14).y);
-        // ⚠️ Within the copy's art circle (64 u) — restocking is aiming AT it,
-        // and since 1.6d a drop 78 u away is simply a drop beside it.
-        dropOnMat({ typeId: 'fixture_producer', usesRemaining: 400 }, near(14, 20, -20));
+        const res = dropOnMat({ typeId: 'fixture_producer', usesRemaining: 400 }, near(14, 20, -20));
 
-        expect(BoardState.tokens()).toHaveLength(1);
-        expect(BoardState.getTokenById(copy.id).usesRemaining).toBe(500);
+        expect(res).toMatchObject({ success: true, nudged: true });
+        expect(BoardState.tokens()).toHaveLength(2);
+        expect(BoardState.getTokenById(copy.id)).toMatchObject({ x: C(14).x, y: C(14).y, usesRemaining: 100 });
+        expect(BoardState.tokens().find(t => t.id !== copy.id).usesRemaining).toBe(400);
     });
 
     it('a 2×2 lands at the point too, with no anchor to snap to', () => {

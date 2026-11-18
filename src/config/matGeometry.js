@@ -154,7 +154,7 @@ export function tokenBodyScale(typeIdOrDef) {
  * The art radius of a Token type — its footprint's radius, halved for a small
  * Token (32 u rather than 64 u). ⭐ Every engine consumer of a Token's
  * body goes through this: `Flags.pointOnToken` / `tokenAtPoint` (hover, click,
- * flag pins), `MatPlacement` (hitbox, `minGap`, the mat edge, restock,
+ * flag pins), `MatPlacement` (hitbox, `minGap`, the mat edge,
  * `findSpot` and so every drop, nudge, spawn and `MatResize` clamp),
  * `HeroMotion.standingSpot`, `EnemyMotion`'s potter ring, `EffectActions`'
  * spawn-beside, the pinned flag's point, and `MatToken`'s box.

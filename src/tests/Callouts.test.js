@@ -102,7 +102,6 @@ describe('the refused-drop callout', () => {
         const { container } = render(h(CalloutLayer));
         act(() => {
             EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, { x: 1, y: 1, severity: 'red', type: 'token_exhausted', message: 'Token Exhausted: Oak' });
-            EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, { instanceId: 'a', severity: 'green', type: 'token_restocked', title: 'Restocked from X' });
         });
         expect(container.querySelector('[data-callout]')).toBeNull();
     });

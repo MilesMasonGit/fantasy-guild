@@ -112,7 +112,7 @@ export function restInstead(instance, { heroId = null, exhaustedBy = heroId } = 
     if (!respawn) return false;
     const token = BoardState.getTokenById(instance.id);
     if (!token) return false;
-    // Every rest starts its clock from nothing: a charge given back mid-rest (a restock) ends a
+    // Every rest starts its clock from nothing: a charge given back mid-rest ends a
     // rest without the clock finishing.
     if (token.clocks && CLOCK in token.clocks) delete token.clocks[CLOCK];
     EventBus.publish(BOARD_EVENTS.TOKEN_RESTING, {

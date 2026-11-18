@@ -50,7 +50,7 @@ export const BOARD_EVENTS = {
 
     /**
      * A Token was placed on the mat: the player action, as opposed to `TILE_CHANGED`, which is
-     * every redraw reason a Token has (cleared, depleted, pushed, restocked). Payload: `{
+     * every redraw reason a Token has (cleared, depleted, pushed). Payload: `{
      * instanceId, typeId }`
      *
      * ⚠️ This one deliberately keeps a global name rather than the `board:` prefix: the event
@@ -241,13 +241,13 @@ export const BOARD_EVENTS = {
      * On-board event notification alert (missing items, missing tokens, token
      * exhausted, a skill level-up). Payload: `{ instanceId?, x?, y?, severity,
      * type, name, message }`, plus, by publisher: a `title` (a missing Token, a
-     * restock, a refused drop), a `rulesText` (a refused drop, and the UI's
+     * refused drop), a `rulesText` (a refused drop, and the UI's
      * Guild Hall refusal in `MatToken`), or a level-up's `heroId, heroName,
      * skillId, skillName, startLevel, newLevel` (`NotificationSubscriptions`).
      */
     TILE_EVENT_ALERT: 'board:tile_event_alert',
 
-    /** A token's charges changed (consumed cycle, support wear, or restocked). Payload: `{ instanceId, delta, remaining, typeId }` */
+    /** A token's charges changed (consumed cycle, support wear). Payload: `{ instanceId, delta, remaining, typeId }` */
     TOKEN_CHARGES_CHANGED: 'board:token_charges_changed',
 
     /**
