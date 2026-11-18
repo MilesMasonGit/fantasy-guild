@@ -6,6 +6,7 @@ import { SaveManager } from '../systems/core/SaveManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import * as CatchUp from '../systems/core/CatchUp.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import { GameState } from '../state/GameState.js';
 import { loadSavedState } from '../systems/core/LoadedState.js';
@@ -77,6 +78,15 @@ const copy = (v) => JSON.parse(JSON.stringify(v));
 function boardWithoutNotes(board) {
     const out = copy(board);
     delete out.workClaims;
+    return out;
+}
+
+/** The same board with every work cycle back at zero, as travel leaves the board it arrives at. */
+function withFreshCycles(board) {
+    const out = copy(board);
+    for (const token of Object.values(out.tokens || {})) {
+        if (token.cycleElapsedMs > 0) token.cycleElapsedMs = 0;
+    }
     return out;
 }
 
@@ -198,7 +208,7 @@ describe('travel stores the old board whole and installs the other', () => {
 });
 
 describe('⭐ there and back equals save and load', () => {
-    it('Tokens, clocks, charges and flags come back exactly as a save would keep them', () => {
+    it('Tokens, clocks, charges and flags come back as a save would keep them, work cycles at zero', () => {
         const { producer, forest, sapling } = buildRegionA();
         step(250);
         SpriteLayer.collectAll();
@@ -218,13 +228,54 @@ describe('⭐ there and back equals save and load', () => {
         Atlas.travel(a);
 
         const back = copy(GameState.state.board);
-        expect(canon(boardWithoutNotes(back))).toBe(canon(boardWithoutNotes(saved)));
+        // Coming back starts every half-done work cycle again; growth, refill and spawn clocks keep
+        // their progress.
+        expect(BoardState.getTokenById(producer.id).cycleElapsedMs).toBe(0);
+        expect(BoardState.getTokenById(forest.id).clocks.spawnMs).toBe(saved.tokens[forest.id].clocks.spawnMs);
+        expect(BoardState.getTokenById(sapling.id).clocks.growMs).toBe(saved.tokens[sapling.id].clocks.growMs);
+        expect(canon(boardWithoutNotes(back))).toBe(canon(boardWithoutNotes(withFreshCycles(saved))));
         // Heroes arrive with no claim: the notes a load would use to put them back at work are gone.
         expect(back.workClaims).toEqual({});
         // The Hall is back where it stood, in the same place in the arrival order.
         expect(BoardState.tokens().map(t => t.id)).toEqual(
             Object.values(saved.tokens).sort((x, y) => x.placedAt - y.placedAt).map(t => t.id)
         );
+    });
+
+    it('the first cycle back starts fresh and announces its start', () => {
+        const { producer } = buildRegionA();
+        step(250);
+        expect(BoardState.getTokenById(producer.id).cycleElapsedMs).toBeGreaterThan(0);
+        const a = Atlas.activeRegionId();
+        Atlas.travel(Atlas.devCreateEmptyRegion().id);
+        Atlas.travel(a);
+        expect(BoardState.getTokenById(producer.id).cycleElapsedMs).toBe(0);
+
+        // Its first completion back is of a cycle that announced its start.
+        const seen = [];
+        const offs = [
+            EventBus.subscribe(BOARD_EVENTS.CYCLE_START, (p) => { if (p.instanceId === producer.id) seen.push('start'); }),
+            EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => { if (p.instanceId === producer.id) seen.push('complete'); })
+        ];
+        try {
+            expect(stepUntil(() => seen.includes('complete'), 600)).toBe(true);
+        } finally {
+            offs.forEach(off => off());
+        }
+        expect(seen.slice(0, 2)).toEqual(['start', 'complete']);
+    });
+
+    it('a reload keeps a half-done work cycle where it stood', () => {
+        const { producer } = buildRegionA();
+        step(250);
+        const elapsed = BoardState.getTokenById(producer.id).cycleElapsedMs;
+        expect(elapsed).toBeGreaterThan(0);
+
+        const data = JSON.parse(GameState.serializeJson());
+        loadSavedState(migrateState(data.state, data.version));
+        EventBus.publish(ENGINE_EVENTS.GAME_LOADED, { slot: 0, savedAt: data.savedAt });
+
+        expect(BoardState.getTokenById(producer.id).cycleElapsedMs).toBe(elapsed);
     });
 
     it('a reload keeps both Regions, the frozen one intact', async () => {
@@ -569,8 +620,12 @@ describe('⭐ there and back plays exactly like save and load (fresh engine per 
             results.branchL = fingerprintOf(l);
             const data = JSON.parse(l.GameState.serializeJson());
             data.state.board.workClaims = {};
-            // A reload remembers a hurt enemy's health; travel, like walking away, does not.
-            for (const token of Object.values(data.state.board.tokens)) delete token.fightHp;
+            // A reload remembers a hurt enemy's health and a half-done work cycle; travel, like
+            // walking away, does not.
+            for (const token of Object.values(data.state.board.tokens)) {
+                delete token.fightHp;
+                token.cycleElapsedMs = 0;
+            }
             const state = l.SaveMigration.migrateState(data.state, data.version);
             l.LoadedState.loadSavedState(state);
             // As SaveManager.loadGame does, before anything hears of the board.

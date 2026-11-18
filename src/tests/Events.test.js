@@ -301,6 +301,23 @@ describe('the clock', () => {
         expect(eventTokens().map(t => t.typeId)).toEqual(['ev_comet']);
     });
 
+    it('an event still standing holds the clock where it stood, without zeroing it', () => {
+        setEventsForTests(table({ ...RAIN, durationMinutes: 90 }));
+        freshGame();
+        runToDue();
+        const [standing] = eventTokens();
+        expect(standing?.typeId).toBe('ev_rain');
+        // As when the guild comes back to a Region whose event still stands, the clock having run
+        // forty minutes in another Region meanwhile.
+        GameState.state.events.clockMs = 40 * MIN;
+        const next = EventClock.waitMs();
+
+        runFor(30 * MIN);
+        expect(eventTokens().map(t => t.id)).toEqual([standing.id]);
+        expect(EventClock.clockMs()).toBe(40 * MIN);
+        expect(EventClock.waitMs()).toBe(next);
+    });
+
     it('a save from before the wait was saved draws one on its first tick, keeping its clock', () => {
         setEventsForTests(table(COMET));
         freshGame();

@@ -448,6 +448,18 @@ function frozenCopy(board) {
     return JSON.parse(JSON.stringify(board));
 }
 
+/**
+ * Every half-done work cycle on the board the guild arrives at starts again from zero: heroes
+ * arrive with no claim, so the cycle a hero takes up is a new one and fires its start (a drink's
+ * dose, On Work Start). Growth, ripening, refill and spawn run on their own clocks and keep them.
+ * ⚠️ Travel only: a reload keeps a cycle's progress.
+ */
+function startWorkCyclesFresh(board) {
+    for (const token of Object.values(board?.tokens || {})) {
+        if (token && token.cycleElapsedMs > 0) token.cycleElapsedMs = 0;
+    }
+}
+
 /** Bank the loot on the floor; what the Bank cannot take stays where it lies. */
 function bankFloorLoot() {
     const banked = SpriteLayer.getSprites().length ? SpriteLayer.collectAll() : 0;
@@ -523,6 +535,7 @@ export function travel(id) {
     atlas.activeRegionId = to.id;
     landTravellers(travellers, isPlainObject(to.travellers) ? to.travellers : {});
     to.travellers = {};
+    startWorkCyclesFresh(GameState.state.board);
     // A Region left on a bigger mat than this game's: what stands past the edge comes back inside.
     MatResize.fitToMat();
 

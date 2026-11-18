@@ -2,6 +2,7 @@
 
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { recipesForToken } from '../../config/registries/recipePoolRegistry.js';
+import { fieldOf } from '../../config/registries/tokenConstants.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import * as Demolition from './Demolition.js';
@@ -57,6 +58,8 @@ export function selectedRecipe(instance, def = null) {
  * Deliberately the only writer: assigning `selectedRecipeId` by hand can set a station to a recipe
  * it cannot run, which the engine would read as no recipe forever.
  *
+ * A new selection starts the work cycle from zero ({@link restartCycle}).
+ *
  * It announces its own change: a new selection publishes `TILE_CHANGED { instanceId, typeId }`,
  * which the Token's gear badge and inspection panel re-read on. The UI never publishes engine
  * events.
@@ -69,8 +72,21 @@ export function setSelectedRecipe(instance, recipeId, def = null) {
     if (!inPool) return false;
     if (instance.selectedRecipeId === recipeId) return true;
     instance.selectedRecipeId = recipeId;
+    restartCycle(instance, defOf(instance, def));
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
     return true;
+}
+
+/**
+ * A new recipe starts its work cycle from zero, so the cycle that finishes is one that began as this
+ * recipe and announced its start (a drink's dose, On Work Start).
+ * ⚠️ Not a Field, whose pick waits for the next sowing while its hero harvests the crop in the
+ * ground, nor a Token marked for demolition, whose progress is the demolishing.
+ */
+function restartCycle(instance, def) {
+    if (!(instance.cycleElapsedMs > 0) || fieldOf(def) != null || Demolition.isMarked(instance)) return;
+    instance.cycleElapsedMs = 0;
+    EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: instance.id, percent: 0 });
 }
 
 /** Forget a station's selection. It then waits for the player to pick again. */
