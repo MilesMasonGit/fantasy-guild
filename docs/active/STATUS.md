@@ -13,9 +13,11 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| 690 U2: drops land where they look (drag bench) | builder | `fix/drops-where-they-look` (`u2`) | building | Wed | |
-| 690 U4: the Token card | builder | `fix/token-card` (`u4`) 5a411f2b | **built**: card follows on TOKEN_TRANSFORMED, closes when its Token leaves; no XP on a marked Token; no time or XP on a station with nothing chosen; recipe rows read base → real time where they differ (screenshot sent to the owner). Builder gate 684 green; all four seen in the game | Wed | |
-| 690 U5: Bank order and search | builder | `fix/bank-order-search` (`u5`) | building | Wed | |
+| 690 U2: drops land where they look (drag bench) | builder | `fix/drops-where-they-look` (`u2`) b581539b | **merged** 43527939, pushed: drag bench 100 % on all five kinds (247 drags), work same; gate 687 files green with U5 | Wed | Wed |
+| 690 U1: readouts stand still | builder | `fix/readouts-stand-still` (`u1`) | building | Wed | |
+| 690 U3: no hero drag onto the mat under a full-screen view; reorder on the bar kept, no indicator (owner Wed) | builder | `fix/no-hero-drag-fullscreen` (`u3`) | building | Wed | |
+| 690 U4: the Token card | builder | `fix/token-card` (`u4`) 5a411f2b | **built**: card follows on TOKEN_TRANSFORMED, closes when its Token leaves; no XP on a marked Token; no time or XP on a station with nothing chosen; recipe rows read base → real time; owner Wed: both times on every row (follow-up building). Builder gate 684 green; all four seen in the game | Wed | |
+| 690 U5: Bank order and search | builder | `fix/bank-order-search` (`u5`) 5ac884f9 | **merged** 43527939 with U2, work same | Wed | Wed |
 
 ## Director, batch 9: brief 680 S1 and S2, then S3 and S5; the mat look (owner, 2026-11-18)
 
@@ -430,7 +432,7 @@ None open.
 
 ## Questions for the owner
 
-- **Recipe row times (690 U4)**: the row shows the recipe's own time and the station's real time only where they differ ("8s → 5.6s"), one time where they are the same (A, built), or both on every row ("8s → 8s") (B)?
+- ~~Recipe row times (690 U4)~~ **Answered Wed 18 Nov: both times on every row.** ~~U3 look~~ **Answered: no indicator at all, just no hero drop under a full-screen view; reordering on the bar stays.**
 
 - ~~The CMS Sync and a rename~~ **Answered 2026-11-17: A, show it as renamed, no removal confirm** (queued in batch 7). Was: a Sync still lists a renamed item as "removed X" and asks you to confirm removals, though saves now follow the rename. Show it as "renamed X to Y" with no removal confirm (A, recommended), or leave the confirm as it is (B)?
 
