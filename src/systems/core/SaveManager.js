@@ -517,8 +517,12 @@ export const SaveManager = {
     },
 
     /**
-     * Start a new game in a specific slot
-     * @param {number} slotIndex 
+     * Start a new game in a specific slot: the slot is claimed in memory only.
+     *
+     * ⚠️ Nothing is written here: the caller saves once the opening is laid
+     * (`EngineBootstrap.onSlotSelected`). A save of this empty state could be
+     * the one a crash leaves, and would roll into the backup.
+     * @param {number} slotIndex
      */
     newGame(slotIndex) {
         logger.info('SaveManager', `Starting new game in Slot ${slotIndex + 1}`);
@@ -532,8 +536,6 @@ export const SaveManager = {
         this.loadedJson = null;
         localStorage.setItem(LAST_SLOT_KEY, slotIndex);
 
-        // Save immediately to claim the slot
-        this.save(false);
         this.startAutoSave();
 
         NotificationSystem.notify(`New game started in Slot ${slotIndex + 1}`, 'success');

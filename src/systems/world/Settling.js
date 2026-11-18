@@ -4,6 +4,7 @@ import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { getSkillLevel } from '../hero/SkillSystem.js';
 import * as CatchUp from '../core/CatchUp.js';
+import { SaveManager } from '../core/SaveManager.js';
 import * as Atlas from '../atlas/Atlas.js';
 import { nextSeed } from '../atlas/seededRandom.js';
 import { TEXT as REGION_TEXT, flavourName } from '../atlas/regionNames.js';
@@ -152,6 +153,11 @@ function seedFor(cell, recipes) {
     return cell.seed >>> 0;
 }
 
+/** Save now, when a slot is being played. */
+function saveNow() {
+    if (SaveManager.getCurrentSlot() !== null) SaveManager.save(false);
+}
+
 /** A Token type's work skill, or null. */
 const skillOf = (typeId) => getTokenType(typeId)?.config?.skill || null;
 
@@ -160,37 +166,42 @@ const skillOf = (typeId) => getTokenType(typeId)?.config?.skill || null;
  * out by the Atlas. The guild stays where it is.
  *
  * @param {object} cell
- * @param {{cellId?: string|null}} [options] the world cell the Region is settled on (null: none)
+ * @param {{cellId?: string|null, save?: boolean}} [options] the world cell the Region is settled on
+ * (null: none); `save: false` leaves the save to the caller's end
  * @returns {{success: boolean, reason?: string, region?: object, mat?: object, written?: object}}
  */
-export function writePlace(cell, { cellId = null } = {}) {
+export function writePlace(cell, { cellId = null, save = true } = {}) {
     const tables = worldTables();
     const hall = currentWorld()?.cells.find(c => c.ring === 0);
     const { mat, recipes } = recipesOfCell(cell, {
         tables, skillOf, hallOrigins: (hall?.origins || []).map(o => o.id), name: cellName(cell, tables)
     });
     const describe = () => ({ word: recipes[0].name });
-    const written = Atlas.settle({ ingredients: recipes, seed: seedFor(cell, recipes), describe, cellId, allowUnplaced: true });
+    const written = Atlas.settle({ ingredients: recipes, seed: seedFor(cell, recipes), describe, cellId, allowUnplaced: true, save: false });
     if (!written.success) return refuse(SETTLE_TEXT.NOT_WRITTEN, { written });
     // ⚠️ The Atlas names a Region from its layout's seed, which moves on when a layout does not
     // fit: the place keeps the name the map showed.
     const name = placeName(cell);
     if (cellId && written.region.flavourName !== name) Atlas.rename(written.region.id, name);
+    if (save) saveNow();
     return { success: true, region: written.region, mat };
 }
 
 /**
  * Take the guild to a place just written, put its arrival on the mat, walk the heroes in and say
- * `'arrived'`.
+ * `'arrived'`; then save, unless `save` is false (the caller saves at its end).
  *
  * @returns {{travel: object, arrival: {ids: string[], unplaced: string[]}, walkIn: string[]}}
  */
-export function arriveAt(region, mat) {
-    const travel = Atlas.travel(region.id);
+export function arriveAt(region, mat, { save = true } = {}) {
+    // ⚠️ One save after the arrival is down: travel's own save would write a settled place
+    // with no enemies, which a crash before the next save would keep for good.
+    const travel = Atlas.travel(region.id, { save: false });
     if (!travel.success) return { travel, arrival: { ids: [], unplaced: [] }, walkIn: [] };
     const arrival = Arrival.occupy(mat?.arrival, { seed: region.seed });
     const walkIn = HeroMotion.walkIn();
     EventBus.publish(ENGINE_EVENTS.ATLAS_CHANGED, { reason: 'arrived', regionId: region.id, cellId: region.cellId ?? null });
+    if (save) saveNow();
     return { travel, arrival, walkIn };
 }
 
@@ -217,11 +228,14 @@ export function settleCell(id) {
     const price = priceOf(cell);
     if (!price.met) return refuse(SETTLE_TEXT.SHORT, { price });
 
-    const written = writePlace(cell, { cellId: id });
+    // ⚠️ One save, at the very end: a save part-way (written, not paid; paid, no enemies yet)
+    // is what a crash before the next save would keep.
+    const written = writePlace(cell, { cellId: id, save: false });
     if (!written.success) return written;
 
     for (const row of price.items) InventoryManager.removeItem(row.itemId, row.need);
-    const { travel, arrival, walkIn } = arriveAt(written.region, written.mat);
+    const { travel, arrival, walkIn } = arriveAt(written.region, written.mat, { save: false });
+    saveNow();
     logger.info('World', `Settled ${id} as ${written.region.id}${travel.success ? `, and the guild moved there to ${arrival.ids.length} enemies` : ''}`);
     return { success: true, price, region: written.region, mat: written.mat, travel, arrival, walkIn };
 }
