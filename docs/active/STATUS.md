@@ -9,14 +9,17 @@ build green) · bench-queued · eye-check · merged.*
 
 ## Director, batch 8: 650 H6 and the first of 670 (owner, 2026-11-17: merge batch 7 and start the next)
 
+*Tue 17 Nov, 21:15. Where we are: the owner synced the Rusty tools, Scrap Heap and small Slime (f3defd8d, ids added only); it turns 4 tests red on main (break chance, Scrap Heap cycle band, render golden, arrival), given to the H7 builder. H6, M5, M8 built and green, merging after the 01:00 work check; M1 built, waits for the look with M2 and M3. Building: H7 Rusty tools with lesson 8's Slime, M3 one spot per Token. Owner: the Thorns (M2) and size (M3) packs still to come from the content agent. Blockers: none.*
+
 *Tue 17 Nov, 19:45, batch started. Where we are: batch 7 merged (9486e74f, pushed): gear locked mid-fight, a deleted item's slot clears, two Foods, XP bonus by chance, hand-over swaps; the owner looked and said it works. Building now: encounters, banners and names (650 H6) and no Token merges (670 M1), side by side. Next: a hero needs the recipe's level (M5) and the ripe Field's card (M8), then M3 and M6. Owner: a `/content` session for the Rusty tools (H7), the small Slime (lesson 8), the Thorns pack (M2) and the size pack (M3) when convenient. Blockers: none.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | 650 H6: encounters on a settled place, many-hero banner losses, unique names | builder | `fix/encounters-names` (`h6`) 6a184569 | **bench queued** (01:00, after the timer): diff read; director gate 675 files green, cycles 0, depcruise 0, build; names and the banner seen in the game by the builder, the encounter pick by tests | Tue | |
-| 670 M1: no Token merges, a copy lands beside | builder | `fix/no-merges` (`m1`) 772abd08 | **built, waits for the look with M2 and M3** (M3, M4 stack on it): diff read; builder gate 674 files green; drag and right-click onto a copy seen in the game; director gate after M5's; same work expected (S4 never merged) | Tue | |
-| 670 M5: a hero needs the recipe's level | builder-lite | `fix/recipe-level` (`m5`) | building | Tue | |
-| 670 M8: a ripe Field's card shows the stored load | builder-lite | `fix/ripe-field-card` | queued | Tue | |
+| 670 M1: no Token merges, a copy lands beside | builder | `fix/no-merges` (`m1`) 772abd08 | **built, waits for the look with M2 and M3** (M3, M4 stack on it): diff read; director gate 674 files green, cycles 0, depcruise 0, lint 0 errors, build; drag and right-click onto a copy seen in the game; director gate after M5's; same work expected (S4 never merged) | Tue | |
+| 670 M5: a hero needs the recipe's level | builder-lite | `fix/recipe-level` (`m5`) 78896884 | **bench queued** with H6 and M8 (one scratch merge, gate and work check at 01:00): whole diff read (workConfigOf folds the recipe level, as Foundations) | Tue | |
+| 670 M8: a ripe Field's card shows the stored load | builder-lite | `fix/ripe-field-card` (`m8`) d0fe3601 | **bench queued** with H6 and M5: whole diff read (the card reads the Field's stored load when ripe); display only | Tue | |
+| 670 M3: one spot for a Token's whole cycle (WORK CHANGED expected), on M1 | engineer | `fix/one-spot` (`m3`) | building | Tue | |
 | 650 H7: Rusty tools (owner pack synced f3defd8d: Rusty Pickaxe, Woodaxe, Sword, Scrap Heap) and lesson 8 fights the small Slime | builder | `feat/rusty-tools` (`h7`) | building | Tue | |
 
 ## Director, batch 7: the rest of 650 and 660 R3 (owner, 2026-11-17: four fixes, one look; Sync shows renames)
