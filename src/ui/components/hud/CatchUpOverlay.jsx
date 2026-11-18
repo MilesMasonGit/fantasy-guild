@@ -14,14 +14,16 @@ import { Tooltip } from '../base/Tooltip.jsx';
 import { CombatGlyph } from '../combat/CombatGlyph.jsx';
 import { GLYPH_COLOUR } from '../combat/combatGlyphs.js';
 import { t } from '../../../i18n/index.js';
-import { summaryView, catchUpTitle } from './catchUpSummary.js';
+import { summaryView, catchUpTitle, formatAway } from './catchUpSummary.js';
 
 /**
  * While a catch-up plays (`CatchUp.run`, a closed game's time away or a sleeping PC), a loading
  * bar covers the game; when it ends, "While you were away" says what happened, in two columns: the
  * items on the left, the news on the right. Only catch-ups long enough to `show`; a silent one
  * shows nothing. Each of its two buttons asks first: "Return to the Guild" (or Esc) keeps the
- * catch-up, "Load as I left it" turns it down (`CatchUp.undoLast`).
+ * catch-up, "Load as I left it" turns it down (`CatchUp.undoLast`); if that write fails the
+ * summary stays, says so, and can try again. When the undo goes back past an earlier time away (a
+ * second absence while the summary was open), the summary says how far.
  *
  * ⚠️ The bar is moved by its fill's `transform` with a CSS transition, and a sheen runs across it
  * as a CSS animation: both stay on the compositor, so the bar keeps moving through a slice of
@@ -32,12 +34,17 @@ export function CatchUpOverlay() {
     const [result, setResult] = useState(null);
     /** Which button is being asked about: `'return'`, `'undo'` or null. */
     const [asking, setAsking] = useState(null);
+    /** "Load as I left it" is writing the save back: nothing else may be pressed meanwhile. */
+    const [restoring, setRestoring] = useState(false);
+    /** The last "Load as I left it" could not write the save back; it can be tried again. */
+    const [undoFailed, setUndoFailed] = useState(false);
 
     useEffect(() => {
         const offStart = EventBus.subscribe(ENGINE_EVENTS.CATCH_UP_STARTED, ({ awayMs, show } = {}) => {
             if (!show) return;
             setResult(null);
             setAsking(null);
+            setUndoFailed(false);
             setRun({ awayMs, fraction: 0 });
         }, UI_LISTENER);
         const offProgress = EventBus.subscribe(ENGINE_EVENTS.CATCH_UP_PROGRESS, ({ fraction, show } = {}) => {
@@ -48,6 +55,7 @@ export function CatchUpOverlay() {
             if (!finished?.show) return;
             setRun(null);
             setAsking(null);
+            setUndoFailed(false);
             setResult(finished);
         }, UI_LISTENER);
         return () => { offStart(); offProgress(); offFinish(); };
@@ -56,13 +64,31 @@ export function CatchUpOverlay() {
     const close = () => {
         CatchUp.forgetUndo();
         setAsking(null);
+        setUndoFailed(false);
         setResult(null);
         EventBus.publish(UI_EVENTS.CATCH_UP_SUMMARY_CLOSED);
     };
 
+    // A failed write keeps the summary and its undo, so the player can try again.
+    const undo = async () => {
+        setRestoring(true);
+        setUndoFailed(false);
+        const written = await CatchUp.undoLast();
+        if (written) return;                       // the page reloads into the game as it was left
+        setRestoring(false);
+        if (!CatchUp.canUndo()) {
+            close();
+            return;
+        }
+        setAsking(null);
+        setUndoFailed(true);
+    };
+
     // Esc is Return to the Guild's key, so it asks the same question; while a question is asked,
     // Esc only cancels it. Nothing underneath hears it.
-    useEscapeLayer(!!result && !run, () => setAsking(a => (a ? null : 'return')));
+    useEscapeLayer(!!result && !run, () => {
+        if (!restoring) setAsking(a => (a ? null : 'return'));
+    });
 
     if (!run && !result) return null;
 
@@ -77,10 +103,12 @@ export function CatchUpOverlay() {
                     <Summary
                         result={result}
                         asking={asking}
+                        restoring={restoring}
+                        undoFailed={undoFailed}
                         onClose={close}
                         onAsk={setAsking}
                         onCancel={() => setAsking(null)}
-                        onUndo={() => { if (!CatchUp.undoLast()) close(); }}
+                        onUndo={undo}
                     />
                 )}
         </div>
@@ -238,11 +266,28 @@ const Empty = ({ children }) => <div data-summary-empty className="px-1 ui-text-
 /** The summary's buttons: the kit's, one width, centred. */
 const BUTTON = { className: 'w-80 max-w-full', buttonClassName: 'py-1 ui-text-title' };
 
-function Summary({ result, asking, onClose, onAsk, onCancel, onUndo }) {
+/**
+ * How far back "Load as I left it" goes when that is before this summary's own time away began (a
+ * second absence came while the summary was open, and the undo covers both and the play between),
+ * or null when it goes back to exactly this time away.
+ */
+function undoReachMs(result) {
+    const since = CatchUp.undoSince();
+    const began = Number(result?.savedAt);
+    if (since == null || !Number.isFinite(began) || !(since < began)) return null;
+    return Math.max(0, Date.now() - since);
+}
+
+function Summary({ result, asking, restoring, undoFailed, onClose, onAsk, onCancel, onUndo }) {
     const view = summaryView(result);
     const enter = useRowEntrance();
     const undoable = CatchUp.canUndo();
     const undoing = asking === 'undo';
+    const reachMs = undoable ? undoReachMs(result) : null;
+    const reach = reachMs == null ? null : formatAway(reachMs);
+    const confirmText = undoing
+        ? (reach ? t('catchUp.confirmUndo.textSince', { time: reach }) : t('catchUp.confirmUndo.text'))
+        : t('catchUp.confirmReturn.text');
     return (
         <PixelFrame
             kind={FRAME_KIND.CHAMFER}
@@ -257,6 +302,7 @@ function Summary({ result, asking, onClose, onAsk, onCancel, onUndo }) {
                 <div role="heading" aria-level={2} className="ui-text-title font-bold text-gi-gold">{t('catchUp.title')}</div>
                 <div data-summary-away>{t('catchUp.away', { time: view.awayText })}</div>
                 {view.droppedText && <div data-summary-dropped className="text-white/60">{view.droppedText}</div>}
+                {reach && <div data-summary-undo-since className="text-white/60">{t('catchUp.undoSince', { time: reach })}</div>}
             </div>
 
             <div data-summary-body className="min-h-0 grid grid-cols-2 grid-rows-[minmax(0,1fr)] border-t border-white/10 pt-1.5">
@@ -430,9 +476,7 @@ function Summary({ result, asking, onClose, onAsk, onCancel, onUndo }) {
                         aria-label={t(undoing ? 'catchUp.confirmUndo.label' : 'catchUp.confirmReturn.label')}
                         className="flex flex-col items-center gap-1.5"
                     >
-                        <div className="text-center text-white/80">
-                            {t(undoing ? 'catchUp.confirmUndo.text' : 'catchUp.confirmReturn.text')}
-                        </div>
+                        <div className="text-center text-white/80">{confirmText}</div>
                         {/* Going back throws the time away, so Cancel holds the focus there and a
                             stray Enter cancels; going on loses nothing, so Return holds it. */}
                         <KitButton
@@ -440,16 +484,29 @@ function Summary({ result, asking, onClose, onAsk, onCancel, onUndo }) {
                             data-summary-confirm-yes
                             onClick={undoing ? onUndo : onClose}
                             autoFocus={!undoing}
+                            disabled={restoring}
                             {...BUTTON}
                         >
                             {t(undoing ? 'catchUp.buttons.confirm' : 'catchUp.buttons.return')}
                         </KitButton>
-                        <KitButton tone={KIT_BUTTON_TONE.PLAIN} data-summary-confirm-no onClick={onCancel} autoFocus={undoing} {...BUTTON}>
+                        <KitButton
+                            tone={KIT_BUTTON_TONE.PLAIN}
+                            data-summary-confirm-no
+                            onClick={onCancel}
+                            autoFocus={undoing}
+                            disabled={restoring}
+                            {...BUTTON}
+                        >
                             {t('catchUp.buttons.cancel')}
                         </KitButton>
                     </div>
                 ) : (
                     <div key="buttons" className="flex flex-col items-center gap-1.5">
+                        {undoFailed && (
+                            <div data-summary-undo-failed role="alert" className="text-center text-gi-danger">
+                                {t('catchUp.undoFailed')}
+                            </div>
+                        )}
                         <KitButton data-summary-close onClick={() => onAsk('return')} autoFocus {...BUTTON}>
                             {t('catchUp.buttons.return')}
                         </KitButton>

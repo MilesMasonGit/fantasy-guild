@@ -140,7 +140,7 @@ describe('catching up on load', () => {
         vi.mocked(Date.now).mockReturnValue(NOW + MIN);
         const reload = vi.spyOn(SaveManager, 'reloadPage').mockImplementation(() => {});
         try {
-            expect(CatchUp.undoLast()).toBe(true);
+            expect(await CatchUp.undoLast()).toBe(true);
             expect(reload).toHaveBeenCalledTimes(1);
         } finally {
             reload.mockRestore();
@@ -247,6 +247,53 @@ describe('a gap the live loop could not deliver', () => {
         expect(TimeManager.consumeOverflow()).toBe(0);
     });
 
+    it('a window closed while a sleeping PC catches up keeps what was done before the sleep, dated when the sleep began', async () => {
+        SaveManager.currentSlot = 0;
+        const autosave = localStorage.getItem(SaveManager.getSlotKey(0));
+        tickAfter(1000);                                     // one ordinary second, not saved yet
+        GameState.state.meta.guildName = 'Renamed before the sleep';
+        const backupKey = `${SaveManager.getSlotKey(0)}_backup`;
+        let atClose = null;
+        const off = EventBus.subscribe(ENGINE_EVENTS.CATCH_UP_STARTED, () => {
+            // The bar is up: the window closes now, and its save is refused.
+            window.dispatchEvent(new Event('beforeunload'));
+            atClose = { main: localStorage.getItem(SaveManager.getSlotKey(0)), backup: localStorage.getItem(backupKey) };
+        });
+        const done = new Promise(resolve => {
+            const offDone = EventBus.subscribe(ENGINE_EVENTS.CATCH_UP_FINISHED, (r) => { offDone(); resolve(r); });
+        });
+        try {
+            tickAfter(3 * HOUR + 1000);
+            await done;
+        } finally {
+            off();
+        }
+        const sleptAt = NOW - 3 * HOUR - 1000;
+        const kept = JSON.parse(atClose.main);
+        expect(kept.savedAt).toBe(sleptAt);
+        expect(kept.state.meta.lastSavedAt).toBe(sleptAt);
+        expect(kept.state.time.gameTimeMs).toBe(PLAYED_BEFORE + 1000);
+        expect(kept.state.meta.guildName).toBe('Renamed before the sleep');
+        expect(atClose.backup).toBe(autosave);
+        // Left to finish: the caught-up game, the game from before the sleep its backup.
+        expect(stored().state.time.gameTimeMs).toBe(PLAYED_BEFORE + 1000 + 3 * HOUR + 1000);
+        expect(localStorage.getItem(backupKey)).toBe(atClose.main);
+
+        // The next start, from what was on the disk when the window closed: the whole sleep again.
+        await vi.waitFor(() => expect(GameLoop.getIsRunning()).toBe(true));
+        GameLoop.stop();
+        CatchUp.forgetUndo();
+        localStorage.setItem(SaveManager.getSlotKey(0), atClose.main);
+        localStorage.setItem(backupKey, atClose.backup);
+        SaveManager.currentSlot = null;
+        expect(await SaveManager.loadSlot(0)).toBe(true);
+        expect(GameState.state.meta.guildName).toBe('Renamed before the sleep');
+        expect(SaveManager.loadedSavedAt).toBe(sleptAt);
+        const again = await EngineBootstrap.catchUpOnLoad();
+        expect(again.simulatedMs).toBe(3 * HOUR + 1000);
+        expect(GameState.state.time.gameTimeMs).toBe(PLAYED_BEFORE + 1000 + 3 * HOUR + 1000);
+    });
+
     it('after a sleeping PC, "Load as I left it" goes back to the game as it was when it slept', async () => {
         SaveManager.currentSlot = 0;
         tickAfter(1000);                                     // one ordinary second, unsaved
@@ -262,7 +309,7 @@ describe('a gap the live loop could not deliver', () => {
 
         const reload = vi.spyOn(SaveManager, 'reloadPage').mockImplementation(() => {});
         try {
-            expect(CatchUp.undoLast()).toBe(true);
+            expect(await CatchUp.undoLast()).toBe(true);
             expect(reload).toHaveBeenCalledTimes(1);
         } finally {
             reload.mockRestore();

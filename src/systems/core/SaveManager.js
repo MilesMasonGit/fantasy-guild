@@ -221,8 +221,10 @@ export const SaveManager = {
     /**
      * Save current game state to current slot
      * @param {boolean} showNotification - Whether to show notification
+     * @param {{ json?: string }} [options] `json`: the save text to write, already taken (the
+     *        catch-up's, dated when the time away began); the game as it stands when left out
      */
-    save(showNotification = true) {
+    save(showNotification = true, { json: given } = {}) {
         if (this.currentSlot === null) {
             console.warn('[SaveManager] No slot selected, cannot save');
             return false;
@@ -236,8 +238,8 @@ export const SaveManager = {
             // The same bytes as `JSON.stringify(GameState.serialize())`, without
             // deep-copying the state first.
             const stringifyStart = import.meta.env.DEV ? performance.now() : 0;
-            const json = GameState.serializeJson();
-            if (import.meta.env.DEV) {
+            const json = given ?? GameState.serializeJson();
+            if (import.meta.env.DEV && given == null) {
                 logger.info('SaveManager', `save size ${json.length} chars, serializeJson ${(performance.now() - stringifyStart).toFixed(1)} ms`);
             }
             const slot = this.currentSlot;
@@ -439,10 +441,12 @@ export const SaveManager = {
      * slot by itself without a catch-up (`takeResumeSlot`). Nothing is saved after this: the game
      * still running is the one being thrown away.
      * In the desktop build the file is written first and the page reloads once it is on the disk:
-     * reloading sooner would read the save the catch-up wrote.
-     * @returns {boolean} false if the save could not be read or written (the page is not reloaded)
+     * reloading sooner would read the save the catch-up wrote. In a browser it all happens before
+     * this returns.
+     * @returns {Promise<boolean>} whether the save was written (the page is reloading); false if it
+     *          could not be read or written (the page is not reloaded, and the game saves again)
      */
-    restoreAndReload(slotIndex, json) {
+    async restoreAndReload(slotIndex, json) {
         try {
             const data = JSON.parse(json);
             const now = Date.now();
@@ -458,26 +462,20 @@ export const SaveManager = {
                 this.autoSaveTimer = null;
             }
             if (SaveFiles.isActive()) {
-                SaveFiles.writeSave(slotIndex, JSON.stringify(data)).then(({ ok, error }) => {
-                    if (!ok) {
-                        this.restoreFailed(error);
-                        return;
+                const { ok, error } = await SaveFiles.writeSave(slotIndex, JSON.stringify(data));
+                if (!ok) throw error ?? new Error('the save file was not written');
+            } else {
+                const slotKey = this.getSlotKey(slotIndex);
+                const previous = localStorage.getItem(slotKey);
+                if (previous) {
+                    try {
+                        localStorage.setItem(SlotHelper.getBackupKey(slotIndex), previous);
+                    } catch {
+                        // Backup is best-effort, as in `save`.
                     }
-                    sessionStorage.setItem(RESUME_SLOT_KEY, String(slotIndex));
-                    this.reloadPage();
-                });
-                return true;
-            }
-            const slotKey = this.getSlotKey(slotIndex);
-            const previous = localStorage.getItem(slotKey);
-            if (previous) {
-                try {
-                    localStorage.setItem(SlotHelper.getBackupKey(slotIndex), previous);
-                } catch {
-                    // Backup is best-effort, as in `save`.
                 }
+                localStorage.setItem(slotKey, JSON.stringify(data));
             }
-            localStorage.setItem(slotKey, JSON.stringify(data));
             sessionStorage.setItem(RESUME_SLOT_KEY, String(slotIndex));
         } catch (err) {
             this.restoreFailed(err);
