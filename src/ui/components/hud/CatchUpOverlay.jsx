@@ -73,7 +73,12 @@ export function CatchUpOverlay() {
     const undo = async () => {
         setRestoring(true);
         setUndoFailed(false);
-        const written = await CatchUp.undoLast();
+        let written = false;
+        try {
+            written = await CatchUp.undoLast();
+        } catch (err) {
+            console.error('[CatchUpOverlay] Load as I left it failed', err);
+        }
         if (written) return;                       // the page reloads into the game as it was left
         setRestoring(false);
         if (!CatchUp.canUndo()) {

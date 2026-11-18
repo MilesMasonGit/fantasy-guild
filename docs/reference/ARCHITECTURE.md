@@ -300,12 +300,16 @@ points:
 - **On load**: `EngineBootstrap.catchUpOnLoad` (`EngineBootstrap.js:216-227`) plays from the
   loaded `savedAt` with `reset: false` (`:222`; `onSlotSelected` publishes `GAME_RESET` itself
   once the loop has started). The untouched save is kept so the player can choose "Load as I
-  left it" (`CatchUp.undoLast` → `SaveManager.restoreAndReload`, `CatchUp.js:77-82`,
-  `SaveManager.js:440`).
+  left it" (`CatchUp.undoLast` → `SaveManager.restoreAndReload`); the kept save is let go only
+  once its write-back succeeded, so a failed one can be tried again.
 - **Live gaps** (sleep, throttled background tab): the overflow from `TIME_OVERFLOW`
-  (`CatchUp.js:96-117`). A gap of 2 minutes or more stops the loop and plays with the progress
-  bar; a shorter one is played synchronously inside the tick that found it, in whole 1 s steps
-  and without saving (`:113-116`); under a second waits for more.
+  (`CatchUp.js` `onOverflow`). A gap of 2 minutes or more stops the loop and plays with the
+  progress bar, first writing the game as it stands to the slot, dated when the gap began (so a
+  window closed during the bar keeps it and the next load plays the gap again); a shorter one is
+  played synchronously inside the tick that found it, in whole 1 s steps and without saving;
+  under a second waits for more.
+- `EngineBootstrap.startSlot` runs one start at a time: a second call while one is under way
+  gets its promise (a double-click on Load).
 
 The summary (items, level-ups, depletions, wounds, breaks, fights, news) is counted from engine
 events while it plays (`CatchUp.js:29-46`).
