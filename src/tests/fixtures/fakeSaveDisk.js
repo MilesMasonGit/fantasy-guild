@@ -22,6 +22,7 @@ export function fakeSaveDisk() {
         mainName,
         backupName,
         closed: 0,
+        cancelled: 0,
         claimed: 0,
         opened: 0,
         folderPath: 'C:\\Users\\player\\AppData\\Roaming\\com.fantasyguild.game\\saves',
@@ -67,7 +68,8 @@ export function fakeSaveDisk() {
         async folder() { return disk.folderPath; },
         async openFolder() { disk.opened++; },
         async claimCloseSave() { disk.claimed++; },
-        async closeWindow() { disk.closed++; log.push(['close']); }
+        async closeWindow() { disk.closed++; log.push(['close']); },
+        async cancelClose() { disk.cancelled++; log.push(['cancel']); }
     };
     return disk;
 }

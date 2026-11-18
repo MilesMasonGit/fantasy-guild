@@ -5,7 +5,7 @@
 use std::fs::{self, File};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Mutex, MutexGuard};
 use std::time::Duration;
 
@@ -23,7 +23,43 @@ static LOCK: Mutex<()> = Mutex::new(());
 
 /// The page has said it saves the game itself when the window closes (`claim_close_save`).
 static PAGE_SAVES_ON_CLOSE: AtomicBool = AtomicBool::new(false);
-static CLOSING: AtomicBool = AtomicBool::new(false);
+static CLOSE: CloseGate = CloseGate::new();
+
+/// Whether a close is under way, and which one: each close request and each cancel takes a new
+/// number, so the grace timer of a cancelled close knows it no longer counts.
+struct CloseGate {
+  closing: AtomicBool,
+  request: AtomicU64,
+}
+
+impl CloseGate {
+  const fn new() -> Self {
+    Self {
+      closing: AtomicBool::new(false),
+      request: AtomicU64::new(0),
+    }
+  }
+
+  /// A close request: its number, or None while another close is under way.
+  fn begin(&self) -> Option<u64> {
+    if self.closing.swap(true, Ordering::SeqCst) {
+      return None;
+    }
+    Some(self.request.fetch_add(1, Ordering::SeqCst) + 1)
+  }
+
+  /// The page could not save: the close under way stops, and the next request is heard.
+  fn cancel(&self) {
+    // The number moves on before the gate opens, so a new request never shares the old number.
+    self.request.fetch_add(1, Ordering::SeqCst);
+    self.closing.store(false, Ordering::SeqCst);
+  }
+
+  /// Whether close request `request` still stands (it has not been cancelled).
+  fn stands(&self, request: u64) -> bool {
+    self.request.load(Ordering::SeqCst) == request
+  }
+}
 
 fn lock() -> MutexGuard<'static, ()> {
   LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
@@ -211,16 +247,17 @@ pub fn close_after_save<R: Runtime>(window: WebviewWindow<R>) -> Result<(), Stri
 }
 
 /// A close request: when the page saves on closing, the window stays open until it has
-/// (`close_after_save`), or until `CLOSE_GRACE` has passed. ⚠️ A file write may not finish once
+/// (`close_after_save`), until it says the save failed (`cancel_close`), or until `CLOSE_GRACE`
+/// has passed. ⚠️ A file write may not finish once
 /// the window is gone, so the window waits for the page rather than the page racing the window.
 pub fn on_close_requested<R: Runtime>(window: &Window<R>, api: &tauri::CloseRequestApi) {
   if !PAGE_SAVES_ON_CLOSE.load(Ordering::SeqCst) {
     return;
   }
   api.prevent_close();
-  if CLOSING.swap(true, Ordering::SeqCst) {
+  let Some(request) = CLOSE.begin() else {
     return;
-  }
+  };
   if let Some(webview) = window.get_webview_window(window.label()) {
     let _ = webview.eval("window.dispatchEvent(new CustomEvent('fg-close-requested'))");
   }
@@ -229,8 +266,17 @@ pub fn on_close_requested<R: Runtime>(window: &Window<R>, api: &tauri::CloseRequ
   std::thread::spawn(move || {
     std::thread::sleep(CLOSE_GRACE);
     let _guard = lock();
-    let _ = window.destroy();
+    if CLOSE.stands(request) {
+      let _ = window.destroy();
+    }
   });
+}
+
+/// The page's save on closing failed: the window stays open so the player sees why, and the
+/// next close request asks the page again (`on_close_requested`).
+#[tauri::command]
+pub fn cancel_close() {
+  CLOSE.cancel();
 }
 
 #[cfg(test)]
@@ -256,6 +302,26 @@ mod tests {
     read_slot(dir, slot, backup)
       .unwrap()
       .map(|b| String::from_utf8(b).unwrap())
+  }
+
+  #[test]
+  fn a_close_under_way_swallows_more_requests_and_its_grace_still_closes() {
+    let gate = CloseGate::new();
+    let first = gate.begin().unwrap();
+    assert_eq!(gate.begin(), None);
+    assert!(gate.stands(first));
+  }
+
+  #[test]
+  fn a_cancelled_close_lets_the_next_request_through_and_its_grace_no_longer_closes() {
+    let gate = CloseGate::new();
+    let first = gate.begin().unwrap();
+    gate.cancel();
+    assert!(!gate.stands(first));
+    let second = gate.begin().unwrap();
+    assert_ne!(second, first);
+    assert!(gate.stands(second));
+    assert!(!gate.stands(first));
   }
 
   #[test]

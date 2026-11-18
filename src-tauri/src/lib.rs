@@ -8,7 +8,19 @@ static MINIMISED: AtomicBool = AtomicBool::new(false);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-  tauri::Builder::default()
+  let builder = tauri::Builder::default();
+  // ⚠️ Registered first, as the plugin asks. A second copy of the game would autosave into the
+  // same save files as this one, each overwriting the other: a second launch only brings this
+  // window forward, and then exits.
+  #[cfg(desktop)]
+  let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+    if let Some(window) = app.get_webview_window("main") {
+      let _ = window.unminimize();
+      let _ = window.show();
+      let _ = window.set_focus();
+    }
+  }));
+  builder
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(
@@ -26,7 +38,8 @@ pub fn run() {
       saves::saves_folder,
       saves::open_saves_folder,
       saves::claim_close_save,
-      saves::close_after_save
+      saves::close_after_save,
+      saves::cancel_close
     ])
     // ⚠️ WebView2 is never told its window is minimised: the page stays visible and keeps
     // drawing at full rate. Minimise and restore both arrive as a resize, so the page is told

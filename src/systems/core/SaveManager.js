@@ -97,6 +97,10 @@ export const SaveManager = {
      */
     keepBackupSlot: null,
     _closeSaveBound: false,
+    /** The desktop build's last save asked for: resolves `{ ok, error }` once its file is written. */
+    _lastWrite: null,
+    /** The window was kept open once for a failed save on closing; the next close goes through. */
+    _closeKeptOpen: false,
 
     /** Refuse every save (autosave, closing the window, a button) until `resumeSaving`. */
     suspendSaving() {
@@ -155,6 +159,9 @@ export const SaveManager = {
      * game is saved and the file written, then the window closes. ⚠️ `beforeunload` cannot wait
      * for a file write, so the browser's way does not carry over. During a catch-up nothing is
      * saved, and the file keeps the save from before it.
+     *
+     * When that save fails, the window stays open once, with the "Save Failed" banner up; the
+     * next close goes through whatever its save does, so a full disk never traps the player.
      */
     installCloseSave() {
         if (!SaveFiles.isActive() || this._closeSaveBound) return;
@@ -163,11 +170,20 @@ export const SaveManager = {
         window.addEventListener(SaveFiles.CLOSE_REQUESTED_EVENT, async () => {
             if (closing) return;
             closing = true;
+            let failed = false;
             try {
+                this._lastWrite = null;
                 if (!this.isResetting && this.currentSlot !== null) this.save(false);
+                const write = this._lastWrite;
                 await SaveFiles.flush();
+                failed = write !== null && !(await write).ok;
             } finally {
-                await SaveFiles.closeWindow();
+                if (failed && !this._closeKeptOpen) {
+                    this._closeKeptOpen = true;
+                    await SaveFiles.cancelClose();
+                } else {
+                    await SaveFiles.closeWindow();
+                }
                 closing = false;
             }
         });
@@ -245,9 +261,15 @@ export const SaveManager = {
 
             if (SaveFiles.isActive()) {
                 // The game is taken now; the file is written after, in order with the others.
-                SaveFiles.writeSave(slot, json, { rollBackup }).then(({ ok, error }) => {
-                    if (!ok) reportSaveFailed(error);
-                    else if (this.keepBackupSlot === slot) this.keepBackupSlot = null;
+                this._lastWrite = SaveFiles.writeSave(slot, json, { rollBackup }).then((result) => {
+                    if (!result.ok) {
+                        reportSaveFailed(result.error);
+                    } else {
+                        if (this.keepBackupSlot === slot) this.keepBackupSlot = null;
+                        // Saving works again: a failed save on closing may keep the window open again.
+                        this._closeKeptOpen = false;
+                    }
+                    return result;
                 });
             } else {
                 const slotKey = this.getSlotKey(slot);
@@ -273,6 +295,7 @@ export const SaveManager = {
             return true;
         } catch (err) {
             reportSaveFailed(err);
+            this._lastWrite = Promise.resolve({ ok: false, error: err });
             return false;
         }
     },
