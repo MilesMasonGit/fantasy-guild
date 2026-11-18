@@ -6,6 +6,7 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
 import * as Respawn from '../systems/board/Respawn.js';
+import * as BoardState from '../systems/board/BoardState.js';
 import * as Fields from '../systems/board/Fields.js';
 import * as Orders from '../systems/board/Orders.js';
 import * as HallRules from '../systems/progression/HallRules.js';
@@ -432,6 +433,27 @@ describe('item badges sit on their item', () => {
         expect(badge(out, EFFECT_KEY.ABUNDANCE)).toMatchObject({
             unit: UNIT.COUNT, total: 2, base: cropTermsOf(crop).load, final: Fields.loadAtRipening(field, getTokenType(FIELD), crop)
         });
+    });
+
+    it('a ripe Field keeps the load it ripened with; a neighbour placed or removed since counts from the next crop', () => {
+        const field = arrive(FIELD);
+        const fieldDef = getTokenType(FIELD);
+        StationRecipe.setSelectedRecipe(field, WHEAT);
+        const composter = arrive('eb_composter', NEAR);
+        InventoryManager.addItem(SEED, 1);
+        Fields.clockFired(field, fieldDef);
+        Fields.clockFired(field, fieldDef);
+        const base = cropTermsOf(Fields.cropOf(field)).load;
+        expect(Fields.fieldState(field)).toMatchObject({ stage: 'ripe', full: base + 2 });
+        const stored = { total: 2, base, final: base + 2 };
+        expect(badge(effectBreakdown(field.id), EFFECT_KEY.ABUNDANCE)).toMatchObject(stored);
+        // A second Composter placed after ripening changes nothing on the card.
+        arrive('eb_composter', NEAR2);
+        expect(badge(effectBreakdown(field.id), EFFECT_KEY.ABUNDANCE)).toMatchObject(stored);
+        // Taking the first away does not strip what the crop ripened with.
+        BoardState.removeToken(composter.id);
+        TileModifiers.rebuildAround([NEAR]);
+        expect(badge(effectBreakdown(field.id), EFFECT_KEY.ABUNDANCE)).toMatchObject(stored);
     });
 });
 
