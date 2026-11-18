@@ -471,6 +471,12 @@ function liftTravellers() {
  */
 function putDown(instance, remembered, aim) {
     if (remembered && Number.isFinite(remembered.x) && Number.isFinite(remembered.y)) {
+        // A quest bounty's old spot may be taken by one put down a moment earlier: from there, the
+        // nearest clear spot.
+        if (!isGuildHall(instance) && !MatPlacement.isLegal(instance.typeId, remembered, { excludeId: instance.id })) {
+            putDown(instance, null, remembered);
+            return;
+        }
         if (Number.isInteger(remembered.placedAt)) instance.placedAt = remembered.placedAt;
         BoardState.addToken(instance, remembered.x, remembered.y);
         return;

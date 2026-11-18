@@ -17,6 +17,7 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as MatCap from '../systems/board/MatCap.js';
+import * as MatPlacement from '../systems/board/MatPlacement.js';
 import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
 import * as QuestTokens from '../systems/quests/QuestTokens.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
@@ -392,6 +393,46 @@ describe('what travels with the guild', () => {
 
         Atlas.travel(a);
         expect(SpriteLayer.getSprites().map(s => [s.refId, s.quantity])).toEqual([['item_bones', 4]]);
+    });
+});
+
+describe('⭐ a bounty never lands on another Token', () => {
+    it('coming back, a bounty whose old spot is taken lands at the nearest clear spot instead', () => {
+        buildRegionA();
+        setMatTuning('questCap', 3);
+        expect(QuestTokens.spawnBounty()).toBeTruthy();
+        QuestTokens.ensure();
+        step(5);
+        const [quest] = QuestTokens.questTokens();
+        const was = { x: quest.x, y: quest.y };
+
+        const a = Atlas.activeRegionId();
+        Atlas.travel(Atlas.devCreateEmptyRegion().id);
+        // While the guild is away, something comes to stand where the bounty stood.
+        const blocker = BoardState.createTokenInstance('fixture_producer', 1);
+        Object.assign(blocker, { id: 'atlas_blocker', x: was.x, y: was.y });
+        Atlas.getRegion(a).board.tokens[blocker.id] = blocker;
+
+        Atlas.travel(a);
+        const back = BoardState.getTokenById(quest.id);
+        expect(back).toBeTruthy();
+        expect(BoardState.getTokenById('atlas_blocker')).toMatchObject({ x: was.x, y: was.y });
+        expect({ x: back.x, y: back.y }).not.toEqual(was);
+        expect(MatPlacement.isLegal(back.typeId, back, { excludeId: back.id })).toBe(true);
+    });
+
+    it('coming back to a clear spot, the bounty stands exactly where it stood', () => {
+        buildRegionA();
+        setMatTuning('questCap', 3);
+        expect(QuestTokens.spawnBounty()).toBeTruthy();
+        QuestTokens.ensure();
+        step(5);
+        const [quest] = QuestTokens.questTokens();
+        const was = { x: quest.x, y: quest.y };
+        const a = Atlas.activeRegionId();
+        Atlas.travel(Atlas.devCreateEmptyRegion().id);
+        Atlas.travel(a);
+        expect(BoardState.getTokenById(quest.id)).toMatchObject(was);
     });
 });
 
