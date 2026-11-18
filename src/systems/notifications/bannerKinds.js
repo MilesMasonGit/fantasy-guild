@@ -9,6 +9,8 @@
  * `pointsTo`: a kind whose click takes the player to its Token on the mat and pulses its outline
  * (from the World Map or the Guild Hall, back to the mat first), and which also shows on those two
  * screens (`BannerStack`'s `away`).
+ * `kept`: a kind the save keeps while it is unclicked, shown again at the next start (`ui.banners`).
+ * A save problem is not kept: it speaks of the run that raised it.
  */
 
 import { t } from '../../i18n/index.js';
@@ -76,6 +78,7 @@ export const BANNER_KINDS = Object.freeze({
     // list cannot say who lost what.
     knockout: {
         tone: TONE.PROBLEM,
+        kept: true,
         text: (parts) => {
             const { heroes = [] } = parts;
             const rows = knockoutLosses(parts);
@@ -104,6 +107,7 @@ export const BANNER_KINDS = Object.freeze({
     },
     bankFull: {
         tone: TONE.PROBLEM,
+        kept: true,
         mergeShown: true,
         text: ({ items = [] }) => ({
             title: 'Bank Full!',

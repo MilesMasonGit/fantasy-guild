@@ -75,6 +75,7 @@ describe('the routing table', () => {
             [ENGINE_EVENTS.ATLAS_CHANGED]: 'banner:settled',
             [BOARD_EVENTS.EVENT_LANDED]: 'banner:event',
             [BOARD_EVENTS.EVENT_ENDED]: 'banner:event',
+            [ENGINE_EVENTS.BOARD_SWAPPED]: 'banner:event',
             [ENGINE_EVENTS.CATCH_UP_FINISHED]: 'catchUp:news',
             [ENGINE_EVENTS.CATCH_UP_OFFERED_AGAIN]: 'catchUp:news',
             [UI_EVENTS.CATCH_UP_SUMMARY_CLOSED]: 'catchUp:news'
@@ -380,6 +381,27 @@ describe('after time away: the catch-up\'s news, handed over', () => {
         EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'new_game' });
         closed();
         expect(Banners.getAll()).toEqual([]);
+    });
+
+    it('a pinned stub counts the time away: the catch-up\'s gained and spent, kept in the save at once', () => {
+        GameState.state.ui.pinnedStubs = [{ itemId: 'item_oak', added: 40, removed: 0 }];
+        EventBus.publish(ENGINE_EVENTS.GAME_LOADED, { slot: 0 });
+        EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED, { itemId: 'item_stone', added: 3 });
+        const items = { gained: { item_oak: 300, item_stone: 50 }, spent: { item_oak: 120 }, net: {}, floor: {} };
+        // With a summary on screen too: the count is not held back until it closes.
+        EventBus.publish(ENGINE_EVENTS.CATCH_UP_FINISHED, { show: true, summary: { items, news: null } });
+        expect(GameState.state.ui.pinnedStubs).toEqual([{ itemId: 'item_oak', added: 340, removed: 120 }]);
+        expect(ItemStubs.netOf(ItemStubs.getStub('item_oak'))).toBe(220);
+        // Unpinned stubs stay quiet after time away: the summary speaks for them.
+        expect(ItemStubs.netOf(ItemStubs.getStub('item_stone'))).toBe(3);
+        // Closing the summary counts nothing again.
+        closed();
+        expect(GameState.state.ui.pinnedStubs).toEqual([{ itemId: 'item_oak', added: 340, removed: 120 }]);
+
+        EventBus.publish(ENGINE_EVENTS.CATCH_UP_FINISHED, { show: false, summary: { items: { gained: { item_oak: 2 }, spent: {} }, news: null } });
+        expect(GameState.state.ui.pinnedStubs).toEqual([{ itemId: 'item_oak', added: 342, removed: 120 }]);
+        EventBus.publish(ENGINE_EVENTS.CATCH_UP_FINISHED, { show: false, summary: null });
+        expect(GameState.state.ui.pinnedStubs).toEqual([{ itemId: 'item_oak', added: 342, removed: 120 }]);
     });
 
     it('a catch-up with nothing to say raises nothing', () => {

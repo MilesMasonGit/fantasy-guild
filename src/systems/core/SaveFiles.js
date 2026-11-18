@@ -135,13 +135,37 @@ export async function refresh(slot) {
     return readCopy(slot);
 }
 
+/**
+ * The copy for a slot whose save read as `text`. A missing or empty save with a backup that still
+ * holds one is marked unreadable, so the slot shows as damaged and Load restores the backup.
+ * ⚠️ Shown as empty, a new game there would roll its first save over that backup.
+ */
+async function copyOf(slot, text) {
+    if (text) return { text, unreadable: false };
+    let backup;
+    try {
+        backup = await backend.read(slot, true);
+    } catch (err) {
+        console.error(`[SaveFiles] Slot ${slot}'s backup could not be read:`, err);
+        return { text: null, unreadable: true };
+    }
+    if (!backup) return { text: null, unreadable: false };
+    try {
+        JSON.parse(backup);
+    } catch {
+        return { text: null, unreadable: false };
+    }
+    console.warn(`[SaveFiles] Slot ${slot} has no save but a backup: shown as damaged`);
+    return { text: null, unreadable: true };
+}
+
 /** @returns {Promise<boolean>} whether the copy changed */
 async function readCopy(slot) {
     const q = queueFor(slot);
     const version = q.version;
     let entry;
     try {
-        entry = { text: await backend.read(slot, false), unreadable: false };
+        entry = await copyOf(slot, await backend.read(slot, false));
     } catch (err) {
         console.error(`[SaveFiles] Slot ${slot} could not be read:`, err);
         entry = { text: null, unreadable: true };
@@ -186,7 +210,10 @@ export async function readSave(slot, { backup = false } = {}) {
     const q = queueFor(slot);
     const version = q.version;
     const text = await backend.read(slot, backup);
-    if (!backup && q.version === version) copies.set(slot, { text, unreadable: false });
+    if (!backup) {
+        const entry = await copyOf(slot, text);
+        if (q.version === version) copies.set(slot, entry);
+    }
     return text;
 }
 

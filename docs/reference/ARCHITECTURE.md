@@ -231,7 +231,7 @@ these numbers: **unverified**, re-run in a bench window.
 `INITIAL_STATE` (`src/state/StateSchema.js:138-320`) has these top-level sections: `meta`,
 `heroes` (hero shape owned by `HeroGenerator`/`HeroRehydration`), `inventory` (the Bank), `progress` (roster limit, Hall upgrade
 ranks), `time` (`gameTimeMs`), `collection` (discoveries and counters), `ui` (New! badges, pinned
-stubs), `board` (the active Region's mat, `createEmptyBoard`, `:52-88`), `quests`, `events` (the
+stubs, unclicked knock-out and Bank Full banners), `board` (the active Region's mat, `createEmptyBoard`, `:52-88`), `quests`, `events` (the
 event clock, `{ clockMs }`; the events themselves are Tokens carrying `instance.event`), `atlas`
 (every Region; inactive ones hold a frozen board, `createRegionRecord`, `:94-132`), `world` (the
 hex world, null before a world exists, `:315`). A board stores Tokens **by instance id at a mat
@@ -477,6 +477,12 @@ the Perf HUD is showing (`src/ui/components/base/FPSCounter.jsx:10-25`,
   The item stubs sit on the mat's side of the cameras; the banners are one stack outside them
   (`ReactRoot.jsx`, after `HallCamera`), so they hold still while the view glides, and over the
   Hall and the World Map (`away`) show only kinds that point to a Token.
+  Banners live in memory except the kinds marked `kept` (knock-out, Bank Full), which `routing.js`
+  writes into `ui.banners` on every change and puts back silently on `GAME_LOADED`. Event banners
+  are not saved: `GAME_LOADED` and `BOARD_SWAPPED` raise one for each event Token standing on the
+  mat (`BOARD_SWAPPED` first withdraws those whose Token is not on the new mat), and
+  `CATCH_UP_FINISHED` raises one for each event that landed in the catch-up and still stands, held
+  with the rest of its news while the summary is open.
 - **Callouts**: refusals at a mat point (`ui/components/board/CalloutLayer.jsx`) and screen
   callouts (`ui/components/notifications/ScreenCalloutLayer.jsx`).
 - **`NotificationSystem`** messages are drawn only on the slot screen
