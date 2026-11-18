@@ -28,6 +28,7 @@ import {
     watchEventArrivals, takeArrival, resetEventArrivals, nodeFallPoses, buffDriftPoses, NODE_FALL
 } from '../ui/components/board/fx/eventArrival.js';
 import { pulseSubjects, BANNER_PULSE_ATTR, PULSE_MS } from '../ui/components/notifications/bannerHighlight.js';
+import { useShowOnMat } from '../ui/hooks/useShowOnMat.js';
 import { BannerStack, slidesBetween } from '../ui/components/notifications/BannerStack.jsx';
 import { MAT_TOP_BAR_PX } from '../ui/components/board/MatTopBar.jsx';
 import { SETTLE } from '../ui/components/board/HallCamera.jsx';
@@ -315,6 +316,34 @@ describe('the pulse', () => {
         } finally {
             vi.useRealTimers();
         }
+    });
+
+    it('asked with the Encyclopedia open, the book closes and the Token pulses at once', () => {
+        const art = document.createElement('div');
+        art.setAttribute('data-token-art', 'true');
+        art.setAttribute('data-token-id', 'tok_1');
+        document.body.appendChild(art);
+        const backToMat = vi.fn();
+        const Probe = () => { useShowOnMat({ awayOpen: false, bookOpen: true, backToMat }); return null; };
+        render(createElement(Probe));
+        EventBus.publish(UI_EVENTS.SHOW_ON_MAT, { subjects: [{ type: 'token', id: 'tok_1' }] });
+        expect(backToMat).toHaveBeenCalledTimes(1);
+        expect(art.getAttribute(BANNER_PULSE_ATTR)).toBe('gold');
+        art.remove();
+    });
+
+    it('asked on the mat, nothing closes and the Token pulses at once', () => {
+        const art = document.createElement('div');
+        art.setAttribute('data-token-art', 'true');
+        art.setAttribute('data-token-id', 'tok_1');
+        document.body.appendChild(art);
+        const backToMat = vi.fn();
+        const Probe = () => { useShowOnMat({ awayOpen: false, bookOpen: false, backToMat }); return null; };
+        render(createElement(Probe));
+        EventBus.publish(UI_EVENTS.SHOW_ON_MAT, { subjects: [{ type: 'token', id: 'tok_1' }] });
+        expect(backToMat).not.toHaveBeenCalled();
+        expect(art.getAttribute(BANNER_PULSE_ATTR)).toBe('gold');
+        art.remove();
     });
 });
 

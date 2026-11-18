@@ -18,7 +18,8 @@ import { lessonSpeech, fillLessonWords, LESSON_OUTLINES } from '../ui/components
 import { getLimes, resetLimes, limesClose, collapseLimesStep, openLimesStep, LIMES_MAT } from '../ui/components/limes/limesStore.js';
 import { LimesBlurb } from '../ui/components/limes/LimesBlurb.jsx';
 import { LIMES_TARGET } from '../ui/components/limes/limesMark.js';
-import { useWorldMapRequests } from '../ui/hooks/useWorldMapRequests.js';
+import { useWorldMapRequests, WorldMapRequests } from '../ui/hooks/useWorldMapRequests.js';
+import { DeckDndContext } from '../ui/dnd/DndKit.jsx';
 import { tokenName } from '../config/registries/tokenRegistry.js';
 
 const h = React.createElement;
@@ -215,6 +216,30 @@ describe('Limes shows the world map when the goal arrives', () => {
         expect(open).toHaveBeenCalledTimes(1);
         LimesGuide.setLessons(false);
         act(() => EventBus.publish(ENGINE_EVENTS.LIMES_LESSON, { stepId: GOAL_STEP.id, arrived: true, moment: null }));
+        expect(open).toHaveBeenCalledTimes(1);
+    });
+
+    it('done mid-drag, the map waits for the drag to end, then opens once', () => {
+        const open = vi.fn();
+        const at = (isDragging) => h(DeckDndContext.Provider, { value: { activePayload: isDragging ? {} : null, isDragging } },
+            h(WorldMapRequests, { openAtlas: open }));
+        const view = render(at(true));
+        for (const s of lessonSteps()) act(() => report(s.id));
+        expect(open).not.toHaveBeenCalled();
+        view.rerender(at(true));
+        expect(open).not.toHaveBeenCalled();
+        view.rerender(at(false));
+        expect(open).toHaveBeenCalledTimes(1);
+        view.rerender(at(true));
+        view.rerender(at(false));
+        expect(open).toHaveBeenCalledTimes(1);
+    });
+
+    it('done with no drag, it opens at once through the opener it is given', () => {
+        const open = vi.fn();
+        render(h(DeckDndContext.Provider, { value: { activePayload: null, isDragging: false } },
+            h(WorldMapRequests, { openAtlas: open })));
+        for (const s of lessonSteps()) act(() => report(s.id));
         expect(open).toHaveBeenCalledTimes(1);
     });
 });

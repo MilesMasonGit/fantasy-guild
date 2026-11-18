@@ -72,6 +72,8 @@ export const HeroDrawer = ({
                 e.target.closest('[data-bank-tab]') ||
                 // Opening the Bank keeps the drawer: a hero is dressed from the Bank.
                 e.target.closest('#bank-bubble-target') ||
+                // A window over the drawer (Edit Hero) is worked in with the drawer still open.
+                e.target.closest('[data-gi-modal]') ||
                 // A tooltip's own box (never under the pointer, but a test may press it).
                 e.target.closest('[data-tooltip]')
             ) {

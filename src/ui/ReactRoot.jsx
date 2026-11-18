@@ -15,7 +15,7 @@ import { useInspectTokenHandlers } from './hooks/useInspectTokenHandlers.js';
 import { useEncyclopediaBack } from './hooks/useEncyclopediaBack.js';
 import { useHeroSheetRequests } from './hooks/useHeroSheetRequests.js';
 import { useOneBottomDrawer } from './hooks/useOneBottomDrawer.js';
-import { useWorldMapRequests } from './hooks/useWorldMapRequests.js';
+import { WorldMapRequests } from './hooks/useWorldMapRequests.js';
 import { useShowOnMat } from './hooks/useShowOnMat.js';
 import { selectHero, clickHero, useSelectionClearing } from './hooks/useMatSelection.js';
 
@@ -202,15 +202,12 @@ const ReactRoot = () => {
 
     useHeroSheetRequests(setInspectHeroId);
     useOneBottomDrawer({ shopOpen: ui.shop.isOpen, heroId: inspectHeroId, closeShop: ui.shop.close, closeHero: closeInspectHero });
-    const openAtlas = ui.fullscreen.open;
-    const openWorldMap = React.useCallback(() => openAtlas('atlas'), [openAtlas]);
-    useWorldMapRequests(openWorldMap);
-    // A banner pointing to its Token, clicked over the World Map or the Hall: back to the mat first.
+    // A banner pointing to its Token, clicked over the World Map, the Hall or the book: back to the mat first.
     const backToMat = React.useCallback(() => {
         if (isGuildView) handleCloseGuildHall();
         else ui.fullscreen.close();
     }, [isGuildView, handleCloseGuildHall, ui.fullscreen]);
-    useShowOnMat({ awayOpen: isGuildView || isAtlasOpen, backToMat });
+    useShowOnMat({ awayOpen: isGuildView || isAtlasOpen, bookOpen: isEncyclopediaOpen, backToMat });
 
     // What is open, for the screen whose small Limes speaks a lesson step.
     const isShopOpen = ui.shop.isOpen;
@@ -223,6 +220,7 @@ const ReactRoot = () => {
             <ScreenCalloutLayer />
             <LimesTargetMark />
             <LimesLessonSpeaker screens={limesScreens} />
+            <WorldMapRequests openAtlas={openAtlasFromBar} />
             <div className="react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col">
                 {/* ⚠️ `overflow-clip`: the Hall's web runs past the column to the screen's edge, and a
                     hidden box would scroll to a focused star out there. `min-h-0`: a clipped box, unlike a
