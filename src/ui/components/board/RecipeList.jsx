@@ -127,7 +127,8 @@ const CropTerms = ({ crop }) => {
 
 /**
  * The recipe's own time and, when this station's Work Time rules or its hero change it, the time
- * it really takes here beside it: the base struck through, the real time in white.
+ * it really takes here beside it: the base muted, an arrow, the real time in white. ⚠️ Not struck
+ * through: a line through the pixel font hides the base's digits.
  */
 const RecipeTime = ({ row }) => {
     const base = cycleText(row.durationMs);
@@ -140,7 +141,8 @@ const RecipeTime = ({ row }) => {
         <Tooltip title="Work time" lines={lines}>
             <span data-recipe-time className="inline-flex items-center gap-1 ui-text-small text-gi-muted tabular-nums">
                 <PixelGlyph name="clock" />
-                <span data-recipe-time-base className={changed ? 'line-through' : undefined}>{base}</span>
+                <span data-recipe-time-base>{base}</span>
+                {changed && <span aria-hidden="true">→</span>}
                 {changed && <span data-recipe-time-here className="text-white">{here}</span>}
             </span>
         </Tooltip>

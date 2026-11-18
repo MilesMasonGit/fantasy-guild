@@ -351,8 +351,8 @@ describe('what the card says', () => {
         fireEvent.click(container.querySelector('[data-card-change-recipe]'));
         const time = container.querySelector('[data-recipe-id="pooled_stew"] [data-recipe-time]');
         expect(time.querySelector('[data-recipe-time-base]').textContent).toBe('10s');
-        expect(time.querySelector('[data-recipe-time-base]').className).toContain('line-through');
         expect(time.querySelector('[data-recipe-time-here]').textContent).toBe(cardTime);
+        expect(time.textContent).toBe('10s→9s');
     });
 
     it('a recipe row with nothing changing its time shows the one time', () => {
@@ -363,7 +363,6 @@ describe('what the card says', () => {
         const time = container.querySelector('[data-recipe-id="pooled_stew"] [data-recipe-time]');
         expect(time.textContent).toBe('10s');
         expect(time.querySelector('[data-recipe-time-here]')).toBeNull();
-        expect(time.querySelector('[data-recipe-time-base]').className).not.toContain('line-through');
     });
 
     it('with nothing in reach, and in the Shop, the cycle is the authored time', () => {
