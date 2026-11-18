@@ -1,11 +1,11 @@
-// a fighter's swing, landed hit and falling health running the rules that wait on them
+// a fighter's swing, landed hit, a hit landing on it and falling health running the rules that wait on them
 
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
-import { FIGHT_MOMENT, everyOf, healthBelowOf } from '../../config/registries/triggerRegistry.js';
+import { FIGHT_MOMENT, everyOf, healthBelowOf, getTriggerEvent } from '../../config/registries/triggerRegistry.js';
 import { ROLE } from '../../config/registries/roleRegistry.js';
 import { getEnemyKind } from '../../config/registries/enemyKinds.js';
 import { effectName } from '../../config/registries/effectRegistry.js';
-import { KEYWORD, statementsOf } from '../effects/statements.js';
+import { KEYWORD, statementsOf, rolledToFire } from '../effects/statements.js';
 import * as LiveEffects from '../effects/LiveEffects.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
@@ -18,13 +18,14 @@ import * as EffectFeedback from './EffectFeedback.js';
 import { SIDE, setFightMomentRunner, talliesOf } from '../combat/FightHooks.js';
 
 /**
- * The fight moments (`FIGHT_MOMENT`: On Swing, On Hit, On Health Below), run for one side of a
- * fight when the combat engine says so (`combat/FightHooks.js`).
+ * The fight moments (`FIGHT_MOMENT`: On Swing, On Hit, When Struck, On Health Below), run for one
+ * side of a fight when the combat engine says so (`combat/FightHooks.js`).
  *
  * A side's rules: an enemy's are its Token's own rules, any lingering effect on it, its kinds'
  * (Venomous: "On Hit: applies Venom to the hero") and the effect of the move its swing makes; a
  * hero's are their items', the arrow being shot and their lingering effects'. In that order, each in
- * authored order, so the random numbers a chance draws come out the same in a catch-up as live.
+ * authored order, so the random numbers a chance draws come out the same in a catch-up as live: an
+ * Applies chance as it lands, a Deals chance (`rolledToFire`) just before it acts.
  *
  * Not routed through `TriggerSystem`: a fight moment spends no Token charge and has no cooldown
  * (its own count is its rhythm), and its roles are the two fighters: `itself` is the side carrying
@@ -124,8 +125,9 @@ function healthShare(fight, side) {
 }
 
 /**
- * Whether a rule waiting on this moment fires now: every Nth swing or hit, or the first time this
- * fight that its side's health (`share`, read once for the whole moment) is below its share.
+ * Whether a rule waiting on this moment fires now: every Nth swing or hit (a moment with no count,
+ * When Struck, every time), or the first time this fight that its side's health (`share`, read once
+ * for the whole moment) is below its share.
  * ⚠️ A health rule is marked as fired the moment its share is crossed, whatever it then does: once
  * per fight is once.
  */
@@ -139,7 +141,8 @@ function fires(statement, fight, side, momentId, count, share) {
         fired[key] = true;
         return true;
     }
-    return count > 0 && count % everyOf(when) === 0;
+    const every = getTriggerEvent(momentId)?.countNoun ? everyOf(when) : 1;
+    return count > 0 && count % every === 0;
 }
 
 /** Run one rule. @returns {boolean} whether it did anything */
@@ -163,7 +166,8 @@ function act(statement, roles, fight) {
 
 /**
  * Run the rules waiting on `momentId` for `side` of `fight`.
- * @param {number} count the swing or hit's number in this fight (0 for health)
+ * @param {number} count the swing or hit's number in this fight (for When Struck, the striker's hit
+ * number; 0 for health)
  * @returns {number} how many rules did something
  */
 export function run(fight, side, momentId, count = 0) {
@@ -176,6 +180,7 @@ export function run(fight, side, momentId, count = 0) {
     for (const statement of rulesOf(fight, side)) {
         if (statement?.when?.event !== momentId) continue;
         if (!fires(statement, fight, side, momentId, count, share)) continue;
+        if (!rolledToFire(statement)) continue;
         if (!act(statement, roles, fight)) continue;
         // The creature's name for its move, or the item's, over the enemy Token.
         EffectFeedback.announce(fight.instanceId, statement);

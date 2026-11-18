@@ -167,6 +167,11 @@ export const KEYWORDS = Object.freeze([
         label: 'Deals',
         scales: 'amount',
         blurb: 'Deals damage to somebody involved in the moment — the hero who just harvested or fought this.',
+        /**
+         * Its chance is rolled before it fires, as a `Spawns` chance is: a prick on one cycle in ten
+         * is a risk of the moment, so a miss is no firing (no charge, no cooldown, nothing said).
+         */
+        firingChance: true,
         filter: false,
         targetsRole: true,
         roles: [ROLE.SELF, ROLE.ACTOR, ROLE.SOURCE, ROLE.OPPONENT],
@@ -317,6 +322,18 @@ export function firingChanceOf(statement) {
     if (!getKeyword(statement?.keyword)?.firingChance) return null;
     const chance = statement?.payload?.chance ?? 100;
     return chance >= 100 ? null : chance;
+}
+
+/**
+ * Whether a statement's firing chance (`firingChanceOf`) comes up, wherever the rule runs: on a
+ * Token, a fight moment, a carried item or a lingering effect.
+ *
+ * ⚠️ A statement that always fires draws nothing, so content without a chance consumes exactly the
+ * random numbers it did before chances existed (the bench seeds and counts `Math.random`).
+ */
+export function rolledToFire(statement, random = Math.random) {
+    const chance = firingChanceOf(statement);
+    return chance == null || random() * 100 < chance;
 }
 
 /**

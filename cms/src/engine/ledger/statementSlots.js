@@ -294,7 +294,13 @@ function payloadSlots(statement, ctx) {
                     value: filtersOf(statement?.counted),
                     options: FILTER_KINDS.map(f => option(f.id, f.label, f.hint)),
                     patch: v => ({ counted: { ...(statement.counted || { mode: 'all', value: '' }), filters: v } })
-                }] : [])
+                }] : []),
+                {
+                    id: 'chance', kind: SLOT_KIND.NUMBER, label: 'chance (%)', min: 1, max: 100, optional: true,
+                    value: payload.chance ?? 100,
+                    hint: 'Rolled each time the rule could fire: a thorn on one cycle in ten. A miss does nothing at all: no damage, no charge, no cooldown.',
+                    patch: v => ({ payload: { ...payload, chance: clampChance(v) } })
+                }
             ];
         }
 

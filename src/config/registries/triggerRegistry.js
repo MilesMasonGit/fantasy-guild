@@ -294,8 +294,9 @@ export const TRIGGER_EVENTS = [
         hint: 'Fires every 3 seconds on whoever is carrying this effect, until it wears off. This is how a poison or a regeneration works.'
     },
     /**
-     * ⭐ **The fight moments**: a fighter's own swing, landed hit and falling health. A boss's moves
-     * are rules on these; so are a weapon's on-hit status and an enemy kind's.
+     * ⭐ **The fight moments**: a fighter's own swing, landed hit, a hit landing on it and falling
+     * health. A boss's moves are rules on these; so are a weapon's on-hit status, an enemy kind's and
+     * an enemy's thorns.
      *
      * ⚠️ **No bus event** (`event: null`): the combat engine fires them itself, through
      * `FightMoments`, at the exact point of the swing they belong to. `TriggerSystem` skips them.
@@ -326,6 +327,23 @@ export const TRIGGER_EVENTS = [
         fightMoment: true,
         keywords: FIGHT_MOMENT_KEYWORDS,
         hint: 'Fires when this fighter lands a hit, after its damage, if the other side still stands. Misses do not count. Every 3rd fires on hits 3, 6, 9… of each fight. How a poison or burn lands on a hit.'
+    },
+    {
+        /**
+         * On Hit's mirror: the side the hit lands ON reacts, after the striker's On Hit rules, while
+         * both still stand. An enemy's thorns; a hero's armour striking back.
+         *
+         * ⚠️ No count (`countNoun`): its sentence has no place for one, so an `every` left over from
+         * another moment is not read.
+         */
+        id: 'FIGHT_STRUCK',
+        roles: [ROLE.SELF, ROLE.ACTOR, ROLE.OPPONENT],
+        event: null,
+        label: 'When Struck',
+        scopes: [TRIGGER_SCOPES.SELF],
+        fightMoment: true,
+        keywords: FIGHT_MOMENT_KEYWORDS,
+        hint: 'Fires when the other side\'s hit lands on this fighter, after its damage and its own On Hit rules, if both still stand. Misses do not count, nor the hit that ends the fight. An enemy\'s thorns pricking the hero who strikes it, or a hero\'s armour striking back.'
     },
     {
         id: 'FIGHT_HP_BELOW',
@@ -366,6 +384,7 @@ export function getTriggerEvent(id) {
 export const FIGHT_MOMENT = Object.freeze({
     SWING: 'FIGHT_SWING',
     HIT: 'FIGHT_HIT',
+    STRUCK: 'FIGHT_STRUCK',
     HP_BELOW: 'FIGHT_HP_BELOW'
 });
 

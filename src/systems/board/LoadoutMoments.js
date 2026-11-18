@@ -16,7 +16,7 @@ import { workConfigOf } from './StationRecipe.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { categoryOfItem, isConsumableCategory } from '../../config/registries/equipmentConstants.js';
 import { WORK_START, workSkillMatches, DOSE } from '../core/consumableRule.js';
-import { KEYWORD } from '../effects/statements.js';
+import { KEYWORD, rolledToFire } from '../effects/statements.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 
@@ -138,7 +138,7 @@ export function fire(instanceId, heroId, eventId, { resumed = false } = {}) {
                 ? StatusApplication.applyToRole(statement, roles) > 0
                 : StatusApplication.applyAt(instanceId, payload);
         } else if (statement.keyword === KEYWORD.DEALS) {
-            acted = DealDamage.deal(statement, roles) > 0;
+            acted = rolledToFire(statement) && DealDamage.deal(statement, roles) > 0;
         } else if (statement.keyword === KEYWORD.HEALS) {
             acted = EffectActions.heal(statement, roles) > 0;
         } else if (statement.keyword === KEYWORD.REMOVES) {

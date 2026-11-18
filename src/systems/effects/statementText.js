@@ -818,6 +818,8 @@ function bodySegments(statement, names) {
              *   stat   "deals damage equal to 10% of the hero's max HP to …"
              *   count  "deals 1 damage per nearby Coast Token to the hero"
              *
+             * and a chance last: "deals 1 damage to the hero, 10% of the time".
+             *
              * ⚠️ A count is NOT "equal to": the amount is per-match, so it keeps its place in front of
              * "damage".
              */
@@ -832,7 +834,9 @@ function bodySegments(statement, names) {
             } else {
                 amount = segs(d(String(flat), 'amount'), ' damage');
             }
-            return segs(d('Deals', K), ' ', amount, ' to ', roleSegments(statement));
+            const chance = firingChanceOf(statement);
+            const odds = chance == null ? [] : segs(', ', d(`${chance}%`, 'chance'), ' of the time');
+            return segs(d('Deals', K), ' ', amount, ' to ', roleSegments(statement), odds);
         }
 
         case KEYWORD.HEALS: {

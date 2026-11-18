@@ -4,7 +4,7 @@ import { EventBus } from '../core/EventBus.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { PLACEMENT, placementOf } from '../../config/registries/placementRegistry.js';
-import { statementsOf, firingChanceOf } from '../effects/statements.js';
+import { statementsOf, firingChanceOf, rolledToFire } from '../effects/statements.js';
 import { TRIGGER_EVENTS, TRIGGER_SCOPES, getTriggerEvent } from '../../config/registries/triggerRegistry.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
@@ -40,8 +40,8 @@ import { logger } from '../../utils/Logger.js';
  * something actually happened, and reacting to a stuck neighbour reads as a bug.
  * - The charge burns on service, not on luck: a Triggered Token that fires spends its charge
  * whether or not its proc rolled a hit, so a Token serving 100 events wears out in 100 events
- * regardless of luck. ⚠️ Except a `Spawns` chance (`firingChance`): it is rolled before the rule
- * fires, so a miss is no firing and costs nothing.
+ * regardless of luck. ⚠️ Except a `Spawns` or a `Deals` chance (`firingChance`): it is rolled
+ * before the rule fires, so a miss is no firing and costs nothing.
  * - How much it burns is per statement: each statement carries its own `chargeDelta` (negative
  * spends and gates the effect, zero is free, positive restores up to the Token's starting charges).
  * The arithmetic is `Charges.applyDelta`; an unauthored delta spends 1.
@@ -94,7 +94,7 @@ export function fireLiveStatement(statement, roles) {
     if (cascadeDepth >= MAX_CASCADE_DEPTH) return;
     cascadeDepth += 1;
     try {
-        if (statement.keyword === KEYWORD.DEALS) DealDamage.deal(statement, roles);
+        if (statement.keyword === KEYWORD.DEALS && rolledToFire(statement)) DealDamage.deal(statement, roles);
         if (statement.keyword === KEYWORD.HEALS) EffectActions.heal(statement, roles);
         if (statement.keyword === KEYWORD.RESTORES) EffectActions.restore(statement, roles);
         if (statement.keyword === KEYWORD.REMOVES) EffectActions.remove(statement, roles);
@@ -176,16 +176,6 @@ function spawnHasRoom(instance, statement) {
     if (isEnemyDef(getTokenType(statement.payload?.typeId))) return false;
     if (placementOf(statement.payload) === PLACEMENT.HERE && MatCap.countsTowardCap(instance)) return true;
     return MatCap.canPlaceMore(1);
-}
-
-/**
- * The chance a statement rolls before it fires (`firingChanceOf`), rolled with the game's shared
- * `Math.random`, which the bench seeds and counts. ⚠️ A statement that always fires draws nothing:
- * every existing rule must consume the same random numbers it did before chances existed.
- */
-function rolledToFire(statement) {
-    const chance = firingChanceOf(statement);
-    return chance == null || Math.random() * 100 < chance;
 }
 
 /**
