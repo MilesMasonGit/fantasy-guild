@@ -194,17 +194,12 @@ The findings' full write-ups are in `docs/active/review/D1_the_mat.md` to `D4_sc
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-429 | P2 | open | **With Larder, a hero never eats their second Food** (owner 2026-11-15): eat the earlier slot's Food, moving on when the Bank runs out of it | CR4-126 |
-| T-430 | P3 | open | **A gear slot holding a deleted item** (owner 2026-11-17): the slot shows the missing item by its id and the player can clear it (the copy is thrown away). Renames are T-455 | CR4-127 |
 | T-431 | P3 | open | **On a newly settled place, a hero goes to an enemy nobody else fights** (owner 2026-11-17), waiting beside a fight only when all are taken; the pick stays deterministic | CR4-128 |
 | T-432 | P3 | open | **A shared knock-out banner drops what each hero lost**: print each hero's losses in the many-hero line | CR4-129 |
-| T-433 | P3 | open | **A hand-over onto a full loadout replaces like a Bank drop** (owner 2026-11-15): change `GDD.md` 740-745 and the pinning test with it | CR4-131 |
 | T-434 | P3 | open | **Rate readouts read too high**: XP an hour and "Next level" count the first gain's interval and the open panel re-reads every second or two; an item stub's "/hr" counts floor spending and catch-up spending | CR4-133, CR4-134 |
 | T-435 | P3 | open | **No two heroes share a name, and a longer name list** (owner 2026-11-17): a recruit picks from names no hero on the roster holds; the builder adds names in the style of today's 96 (`nameRegistry.js`), no review step | CR4-135 |
 | T-436 | P3 | open | **The Accuracy and Dodge tips do not say the 5 to 40 % bounds** | CR4-136 |
 | T-437 | P1 | open | **Losing the only pickaxe locks an early guild** (owner 2026-11-15): Rusty Pickaxe and Rusty Woodaxe, from a tool-free early Token (or an early enemy), work like copper tools with a 1 % break chance; the defeat roll stays. Content agent plans the pack; the first shipped `breakChance` is exercised in the running game | CR4-137 |
-| T-438 | P3 | open | **An XP bonus is a true percentage by chance** (owner 2026-11-15): carry the fraction with `RNG.roundByChance`, the at-least-1 floor goes. Replaces T-338 item (4)'s "round normally". WORK CHANGED (`heroXp`) | CR4-138 |
-| T-439 | P2 | open | **No loadout changes mid-fight** (owner 2026-11-15): one guard in the three engine equip functions covers all seven routes (Bank drop, slot move, hand-over giver and taker, right-click, drag to the Bank, drop on the figure), from an enemy stepping up until it falls or the hero leaves, with a reason the player sees; engine losses stay outside the guard; eating unaffected | CR4-139, CR4-172, CR4-130 |
 | T-440 | P2 | open | **Latent: a strength on an "Applies" effect does nothing** (owner 2026-11-17): the bearer's strength sets the applied effect's strength (an Elixir of Brambles giving Thorns 3), for every item; a status still lands one stack a hit. Content rule for the content agent: no tier ladders of the same item (no Elixir of Valor I to V); tiered effects belong to gear and enemies | CR4-141 |
 | T-441 | P2 | open | **Latent: loot shapes that differ on a station and a kill**: fix the engine now (owner 2026-11-17), item 1 first; keep today's random draws | CR4-142 |
 | T-077 | P2 | open | **Latent: a timed effect on a hero loses its fight numbers after a reload, and "Load as I left it" can end it early** (reopened 2026-11-17: fix the engine now, owner): re-sync each hero's live effects on load; store remaining time, not a wall-clock end | CR3-252, CR4-140 |

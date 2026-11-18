@@ -7,6 +7,17 @@ build green) · bench-queued · eye-check · merged.*
 
 **Owner, 2026-11-06 (behind the week's target): up to four code builders at once this week** (plus one read-only); the director still runs suites, builds and benches one at a time. **Owner, 2026-11-06 late morning, away at work:** the director may start new briefs and merge pieces on the gate without a full look; the owner answers questions remotely (screenshots to the phone). Look changes merged this way are listed for the owner's next look in `docs/active/eyecheck/2026-11-06_merged_while_away.md`.
 
+## Director, batch 8: 650 H6 and the first of 670 (owner, 2026-11-17: merge batch 7 and start the next)
+
+*Tue 17 Nov, 19:45, batch started. Where we are: batch 7 merged (9486e74f, pushed): gear locked mid-fight, a deleted item's slot clears, two Foods, XP bonus by chance, hand-over swaps; the owner looked and said it works. Building now: encounters, banners and names (650 H6) and no Token merges (670 M1), side by side. Next: a hero needs the recipe's level (M5) and the ripe Field's card (M8), then M3 and M6. Owner: a `/content` session for the Rusty tools (H7), the small Slime (lesson 8), the Thorns pack (M2) and the size pack (M3) when convenient. Blockers: none.*
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| 650 H6: encounters on a settled place, many-hero banner losses, unique names | builder | `fix/encounters-names` (`h6`) | building | Tue | |
+| 670 M1: no Token merges, a copy lands beside | builder | `fix/no-merges` (`m1`) | building | Tue | |
+| 670 M5: a hero needs the recipe's level | builder-lite | `fix/recipe-level` | queued | Tue | |
+| 670 M8: a ripe Field's card shows the stored load | builder-lite | `fix/ripe-field-card` | queued | Tue | |
+
 ## Director, batch 7: the rest of 650 and 660 R3 (owner, 2026-11-17: four fixes, one look; Sync shows renames)
 
 *Tue 17 Nov, 16:45. Where we are: H4 (lift ends a fight, meals on game time) and the Sync rename display merged, work same. H2 gear lock, R3 missing gear slot and H5 three small rules built and stacked, gate green, work change traced to the XP bonus by chance (expected). Next: the owner's look, then merge and accept the work change; then the next batch (650 H6, H7 after the Rusty tools pack; 670 the mat's rules). Owner: the Gear locked mid-fight tab on the Guild Eye-checks page, build `_builds/2026-11-17-gear-lock/Fantasy Guild.exe`. Blockers: none.*
@@ -15,10 +26,10 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| 650 H2: no gear changes mid-fight | builder | `fix/gear-lock-fight` (`h2`) b8c18492 | **ready, waits for the eye-check** (with R3 on top): diff read; builder gate 672 files green (one set-up fix re-run alone), checked four routes in the game | Tue | |
+| 650 H2: no gear changes mid-fight | builder | `fix/gear-lock-fight` (`h2`) b8c18492 | **merged** 9486e74f with R3 and H5, pushed; owner looked, works | Tue | Tue |
 | 650 H4: lifting an enemy ends its fight; meals on game time (WORK CHANGED expected) | builder | `fix/lift-ends-fight` (`h4`) b84ebe33 | **merged** addcf6c5, pushed: work same on all 12 (no bench hero rests under a quarter health, nothing is lifted); 100 ms and 1,000 ms steps now give the same fight in four measured cases; combined gate 672 files, 8685 green | Tue | Tue |
-| 660 R3: a gear slot holding a deleted item shows missing and clears | builder | `fix/missing-gear-slot` (`r3g`) ef75a036, on H2 | **ready, merges with H2 after the look**: diff read; builder gate 673 files green; slot read and cleared in the game | Tue | |
-| 650 H5: second Food, XP bonus by chance (WORK CHANGED), hand-over swaps (after H2) | builder | `fix/three-small-rules` (`h5`) f2e62669, on R3 | **eye-check** with H2 and R3 (tab Gear locked mid-fight, build `_builds/2026-11-17-gear-lock`, from scratch merge 57a847eb): combined gate 674 files, 8712 green, cycles 0, depcruise 0, lint src 0 errors, game and CMS build. Work check WORK CHANGED on S2, S3, S5, S6, S8, S8L, S8F, C240, C256: bisected Tue 16:10 to rule 2 alone (the XP bonus now draws a random number, shifting later loot rolls; heroXp off by 1 or 2); H2, R3 and rule 1 read same on S6 and S8. Accept as brief-650-H5 in the baseline at merge; calibration stamp to retake (rates.js changed). Draw compare for this look queued for 01:00 | Tue | |
+| 660 R3: a gear slot holding a deleted item shows missing and clears | builder | `fix/missing-gear-slot` (`r3g`) ef75a036, on H2 | **merged** 9486e74f | Tue | Tue |
+| 650 H5: second Food, XP bonus by chance (WORK CHANGED), hand-over swaps (after H2) | builder | `fix/three-small-rules` (`h5`) f2e62669, on R3 | **merged** 9486e74f, pushed, Tue 19:35 after the owner's look (works); work change to accept in the 01:00 window. Was: eye-check with H2 and R3 (tab Gear locked mid-fight, build `_builds/2026-11-17-gear-lock`, from scratch merge 57a847eb): combined gate 674 files, 8712 green, cycles 0, depcruise 0, lint src 0 errors, game and CMS build. Work check WORK CHANGED on S2, S3, S5, S6, S8, S8L, S8F, C240, C256: bisected Tue 16:10 to rule 2 alone (the XP bonus now draws a random number, shifting later loot rolls; heroXp off by 1 or 2); H2, R3 and rule 1 read same on S6 and S8. Accept as brief-650-H5 in the baseline at merge; calibration stamp to retake (rates.js changed). Draw compare for this look queued for 01:00 | Tue | Tue |
 | The CMS Sync shows a rename as renamed, no removal confirm (owner A) | builder-lite | `fix/sync-shows-renames` (`sr`) 216c05f0 | **merged** addcf6c5, pushed: a rename alone syncs with no confirm; with a real delete only the delete is asked, the rename listed apart; CMS build | Tue | Tue |
 
 ## Director, batch 6: the deep-read fixes, 650 and 660 first (owner, 2026-11-17: four fixes, no look)
@@ -436,6 +447,8 @@ None open. (Ruled 2026-10-19: Token outlines red for problems, gold for attentio
 T-186; the badges' soft shadows are settled inside T-013.)
 
 ## Bench queue (one at a time, weekdays 13:00–17:00 and 01:00–07:00, or when the owner says the PC is quiet)
+
+**Wed 18 Nov, 01:00 (director timer, `p23b` on main 9486e74f or later):** `npm run bench -- --accept-work-change=brief-650-H5` (the XP bonus by chance, traced Tue 16:10), commit the baseline; `npm run bench:calibrate` (rates.js changed); `npm run bench:draw -- --compare --cpu=3.2 --slowdown-target=4` for the gear-lock look.
 
 **Sat 14 Nov, 02:05: engine baseline done** (92ba5525, every scene same work), **draw baseline refused** (Chrome delivered 5.2 to 5.5x instead of 4x on 3 slowed runs: machine noise); draw retake Sat 03:50 **refused again**: Chrome delivered 4.4 to 5.6x on most 4x windows (October: 4.1 to 5.2), so the 25 % rule now rejects runs on this PC. Fix to decide: retake and compare with `--cpu=3.2 --slowdown-target=4` (bench/README, as the Envelope did), which renames the slowed condition, or widen the rule. Until then the draw verdict at 1x is read against a main control. The 03:30 `ev` timer hung on its wait test (my bug), stopped; check run by hand 04:50: **`ev` 0768a1a1 same work on all 12**; timing flags S4 landed p50 and C240 p99 at x1.21 against the branch's old 7 Nov baseline are within tonight's main baseline (0.338 vs 0.349, 8.96 vs 7.81 x1.15). Was: retake the engine and draw baselines on main (`npm run bench -- --save-baseline`, `npm run bench:draw -- --save-baseline`), commit them with the date; then at 03:30 `npm run bench -- --compare` on `ev` 0768a1a1 (the node clock changed). The draw baseline (October) reads every 1x scene REGRESSED on every branch. **Fri 13 Nov, 14:05: done** on `ev` 19fa1963: work check same on all 12; draw REGRESSED at 1x only, as the stale baseline does everywhere.
 

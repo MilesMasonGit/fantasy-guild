@@ -283,3 +283,8 @@ T-409 — A healing hero takes no work and is not knocked out again after travel
 T-456 — A CMS delete no longer strands a save: settled place, prices, Bank slots, picks (660 R1) — 87d75099 — 2026-11-17
 T-425 — A reload remembers the enemy's health; an elixir counted once per enemy (650 H3) — 13946bfb — 2026-11-17
 T-455 — Saves follow a CMS rename via data/renames.json (660 R2) — 832f6d80 — 2026-11-17
+T-439 — No loadout changes mid-fight: one guard in the equip functions, with the reason shown (650 H2) — 9486e74f — 2026-11-17
+T-430 — A gear slot holding a deleted item shows in red and clears with a right-click (660 R3) — 9486e74f — 2026-11-17
+T-429 — With two Foods, the second is eaten when the Bank runs out of the first (650 H5) — 9486e74f — 2026-11-17
+T-438 — An XP bonus is a true percentage by chance; the at-least-1 floor goes (650 H5) — 9486e74f — 2026-11-17
+T-433 — A hand-over onto a full loadout replaces like a Bank drop (650 H5) — 9486e74f — 2026-11-17
