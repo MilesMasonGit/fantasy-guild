@@ -2846,7 +2846,7 @@
   },
   "item_rusty_sword": {
     "name": "Rusty Sword",
-    "description": "Hits like a Copper Sword. 1 % chance to break each cycle.",
+    "description": "Hits like a Copper Sword. 1 % chance to break each kill.",
     "type": "weapon",
     "sprite": "i_longsword_copper",
     "stackable": true,

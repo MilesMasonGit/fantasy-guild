@@ -321,9 +321,10 @@
         "keyword": "deals",
         "payload": {
           "amount": 1,
-          "ignoresArmor": false
+          "ignoresArmor": false,
+          "chance": 10
         },
-        "chargeDelta": -1,
+        "chargeDelta": 0,
         "to": null,
         "reach": null,
         "target": {
@@ -2426,5 +2427,31 @@
     ],
     "autoSyncId": true,
     "id": "effect_starry_night"
+  },
+  "effect_thorns_struck": {
+    "name": "Thorns",
+    "statements": [
+      {
+        "id": "stm_thorns_struck",
+        "keyword": "deals",
+        "payload": {
+          "amount": 1,
+          "chance": 10
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "FIGHT_STRUCK",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_thorns_struck"
   }
 }
