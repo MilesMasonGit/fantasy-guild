@@ -533,13 +533,17 @@ const PUSH_MARGIN = 0.5;
  * @param {string} [options.excludeId] a Token to ignore — the one being replaced
  * @param {string[]} [options.fixedIds] Tokens that must not be pushed. Landmarks never are, named
  * here or not.
+ * @param {boolean} [options.inPlace] the Token already stands at `point` (a transform, a build):
+ * `point` is taken as it is, not rounded to whole units.
  * @returns {{x: number, y: number, pushed: {id: string, x: number, y: number}[]}|null}
  */
 export function forceSpot(typeId, point, options = {}) {
     if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return null;
-    const { excludeId = null, fixedIds = [] } = options;
+    const { excludeId = null, fixedIds = [], inPlace = false } = options;
 
-    const at = clampInside(typeId, point);
+    // ⚠️ In place, not rounded: a Token growing or regrowing on a fractional point (a planting, a
+    // nudge) is tested where it stands, or one just clear of a neighbour would read as too close and hop.
+    const at = inPlace ? clampToMat(point, roomRadiusOf(typeId)) : clampInside(typeId, point);
     if (isLegal(typeId, at, { excludeId })) return { x: at.x, y: at.y, pushed: [] };
 
     const pushed = relax(typeId, at, excludeId, new Set(fixedIds));

@@ -45,7 +45,8 @@ export function hasRoomToBuild(instance, typeId) {
     if (!typeId || !from) return false;
     return !!MatPlacement.forceSpot(typeId, from, {
         excludeId: instance.id,
-        fixedIds: fixedIdsFor(instance)
+        fixedIds: fixedIdsFor(instance),
+        inPlace: true
     });
 }
 
