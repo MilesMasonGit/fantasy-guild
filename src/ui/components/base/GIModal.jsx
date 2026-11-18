@@ -34,7 +34,7 @@ export const GIModal = ({
     useEscapeLayer(!!isOpen, canClose ? onClose : null);
     return (
         <Transition appear show={isOpen} as={Fragment}>
-            <Dialog as="div" className={cn('relative', layer === 'inner' ? 'z-(--z-modal-inner)' : 'z-(--z-modal)')} onClose={NOOP}>
+            <Dialog as="div" data-gi-modal className={cn('relative', layer === 'inner' ? 'z-(--z-modal-inner)' : 'z-(--z-modal)')} onClose={NOOP}>
                 <Transition.Child
                     as={Fragment}
                     enter="ease-out duration-300"
