@@ -11,6 +11,8 @@ import * as SlotHelper from '../systems/core/SaveSlotHelper.js';
 import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as CatchUp from '../systems/core/CatchUp.js';
+import { EventBus } from '../systems/core/EventBus.js';
+import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import * as Banners from '../systems/notifications/banners.js';
 import * as ItemStubs from '../systems/notifications/itemStubs.js';
 import { getAllItems } from '../config/registries/itemRegistry.js';
@@ -389,13 +391,17 @@ describe('around the summary offered again', () => {
         expect(q('[data-catch-up-summary]')).toBeNull();
         const panel = render(React.createElement(TestDashboard));
         fireEvent.click(panel.getByTitle('Open QA Dashboard'));
+        // It plays in slices with a yield between them, as in the game; the page draws once it ends.
+        const finished = new Promise(resolve => {
+            const off = EventBus.subscribe(ENGINE_EVENTS.CATCH_UP_FINISHED, () => { off(); resolve(); });
+        });
         await act(async () => {
             fireEvent.click(panel.getByText('Away 3 hours'));
-            await vi.waitFor(() => {
-                if (CatchUp.isRunning() || !q('[data-catch-up-summary]')) throw new Error('still playing');
-            });
+            await finished;
+            await new Promise(resolve => setTimeout(resolve, 0));
         });
         GameLoop.stop();
+        expect(panel.getByText('Played 3 hours away')).toBeTruthy();
         expect(q('[data-summary-away]').textContent).toContain('3 h');
         expect(q('[data-summary-undo]')).not.toBeNull();
         expect(GameState.state.time.gameTimeMs).toBe(PLAYED_BEFORE + 3 * HOUR);

@@ -2,7 +2,8 @@
  * The desktop build's saves: one file per slot in the saves folder (`src-tauri/src/saves.rs`), so
  * a save can be copied, kept or edited outside the game. The app writes each save whole or not at
  * all (a temp file, flushed to the disk, renamed over the old one) and keeps the save it replaced
- * as the slot's backup. The browser and dev builds keep their saves in localStorage
+ * as the slot's backup, unless the write says to keep the backup as it is (`SaveManager.save`).
+ * The browser and dev builds keep their saves in localStorage
  * (`SaveManager`), and nothing here is active there.
  *
  * A slot is read fresh from the disk when it is opened. The slot screen reads a copy of each
