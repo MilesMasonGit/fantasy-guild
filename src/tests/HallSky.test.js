@@ -324,7 +324,7 @@ describe('the Hall sky: the drifting backdrop', () => {
     it('shows no item stubs over it, and of the banners only those that point to a Token on the mat', () => {
         const { code, mat } = hallCameraSides();
         expect([...code.matchAll(/<ItemStubColumn\b/g)]).toHaveLength(1);
-        expect(mat).toMatch(/<ErrorBoundary label="Notifications">\s*<ItemStubColumn \/>\s*<\/ErrorBoundary>/);
+        expect(mat).toMatch(/<ErrorBoundary label="Notifications" corner="top-right">\s*<ItemStubColumn \/>\s*<\/ErrorBoundary>/);
         expect([...code.matchAll(/<BannerStack\b/g)]).toHaveLength(1);
         expect(code).toContain('<BannerStack away={isGuildView || isAtlasOpen} />');
     });
