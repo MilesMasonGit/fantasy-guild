@@ -19,7 +19,8 @@ import { logger } from '../../utils/Logger.js';
  * - the bus quiet (every `UI_LISTENER` skipped), no toasts, no sounds;
  * - saving suspended (the autosave timer and the save on closing the window), so the slot keeps the
  *   pre-catch-up save byte for byte until the one save at the end: a crash or a closed window
- *   loses nothing, and the next load starts the same catch-up again;
+ *   loses nothing, and the next load starts the same catch-up again. On a load that is the save it
+ *   read; for a gap in live play (a sleeping PC) the game as it stood is written first;
  * - slices of about `CATCH_UP.SLICE_MS` of work with a yield between them, so the page can draw a
  *   progress bar.
  * Everything is restored in a `finally`.
@@ -51,8 +52,13 @@ import { logger } from '../../utils/Logger.js';
 
 let running = false;
 let last = null;
-/** The save to go back to if the player turns the last shown catch-up down: `{ slot, json }`. */
+/**
+ * The save to go back to if the player turns the last shown catch-up down: `{ slot, json, savedAt }`,
+ * `savedAt` when that game was left (epoch ms).
+ */
 let undo = null;
+/** "Load as I left it" writing the save back, until the write is known (`undoLast`). */
+let restoring = null;
 let initialized = false;
 /** Overflow the live loop handed over that is still less than one step. */
 let pendingMs = 0;
@@ -73,15 +79,32 @@ export function canUndo() {
 }
 
 /**
+ * When the game "Load as I left it" goes back to was left (epoch ms), or null. Earlier than the
+ * summary's own time away began when a second absence came while the summary was open: the undo
+ * still goes back past both.
+ */
+export function undoSince() {
+    return undo ? undo.savedAt : null;
+}
+
+/**
  * Turn the last shown catch-up down: write the save from before it back to its slot and reload
- * (`SaveManager.restoreAndReload`), so the game opens as the player left it. False when there is
- * nothing to go back to.
+ * (`SaveManager.restoreAndReload`), so the game opens as the player left it. Resolves true once it
+ * is written (the page is reloading), false when there is nothing to go back to or the write failed.
+ * The save is let go only once written, so a failed write can be tried again; a call while one is
+ * being written gets that one's answer.
+ * @returns {Promise<boolean>}
  */
 export function undoLast() {
+    if (!restoring) restoring = writeUndoBack().finally(() => { restoring = null; });
+    return restoring;
+}
+
+async function writeUndoBack() {
     if (!undo) return false;
-    const { slot, json } = undo;
-    undo = null;
-    return SaveManager.restoreAndReload(slot, json);
+    const written = await SaveManager.restoreAndReload(undo.slot, undo.json);
+    if (written) undo = null;
+    return written;
 }
 
 /** Let the save kept for an undo go (the player kept the catch-up). */
@@ -300,13 +323,14 @@ function enterQuiet(startMs) {
  * @param {boolean} [options.reset]  announce at the end what a load does (`GAME_RESET`, then the
  *        broad updates), once, for everything that was quiet
  * @param {string} [options.before]  the save "Load as I left it" goes back to (a load passes the one
- *        it read). Without it, the game as it stands before playing. Kept only for a catch-up that
- *        shows and saves, in a game with a slot.
+ *        it read). Without it, the game as it stands before playing, which is then written to the
+ *        slot first, dated `savedAt`. Kept, and written, only for a catch-up that shows and saves,
+ *        in a game with a slot.
  * @param {() => Promise<void>} [options.yieldFn]
  * @param {boolean} [options.news]  hear the news for the banners and stubs (`summary.news`); a test
  *        turns it off to show the game plays the same either way
  * @returns {Promise<{awayMs: number, simulatedMs: number, droppedMs: number, steps: number,
- *          wallMs: number, show: boolean, summary: object|null}>}
+ *          wallMs: number, show: boolean, savedAt: number, summary: object|null}>} `savedAt` as given
  */
 export async function run({
     savedAt,
@@ -326,16 +350,21 @@ export async function run({
     const startAway = readNow() - Number(savedAt);
     const result = {
         awayMs: Math.max(0, startAway || 0), simulatedMs: 0, droppedMs: 0, steps: 0, wallMs: 0,
-        show: startAway >= CATCH_UP.SHOW_GAP_MS, summary: null
+        show: startAway >= CATCH_UP.SHOW_GAP_MS, savedAt: Number(savedAt), summary: null
     };
     // Under one step, a savedAt in the future (the clock moved back), or already running: nothing.
     if (running || !GameState.getIsInitialized() || !Number.isFinite(startAway) || startAway < stepMs) return result;
 
     // Taken before anything plays: on a sleeping PC the slot holds an older autosave, not this.
     const slot = SaveManager.currentSlot;
-    const keep = save && result.show && slot !== null && slot !== undefined
-        ? { slot, json: before ?? GameState.serializeJson() }
-        : null;
+    let keep = null;
+    if (save && result.show && slot !== null && slot !== undefined) {
+        keep = { slot, json: before ?? GameState.serializeJson(result.savedAt), savedAt: result.savedAt };
+        // ⚠️ From the live game (a sleeping PC) the slot holds only the last autosave, and nothing
+        // is saved until the end: written now, a window closed while this plays keeps what was done
+        // since. Dated when the time away began; dated now, the next load would play none of it.
+        if (before == null) SaveManager.save(false, { json: keep.json });
+    }
 
     running = true;
     // The live loop is paused while the catch-up plays, and picks up from the real clock after.

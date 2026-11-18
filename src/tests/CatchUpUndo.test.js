@@ -7,6 +7,9 @@ import { SaveManager } from '../systems/core/SaveManager.js';
 import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as CatchUp from '../systems/core/CatchUp.js';
+import { EventBus } from '../systems/core/EventBus.js';
+import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
+import * as Banners from '../systems/notifications/banners.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import React from 'react';
 import { render, cleanup, fireEvent, act } from '@testing-library/react';
@@ -40,6 +43,18 @@ function emptyGame(gameTimeMs = 5000) {
 
 const run = (opts) => CatchUp.run({ yieldFn: () => Promise.resolve(), now: NOW, ...opts });
 const slotJson = (i = 0) => localStorage.getItem(SaveManager.getSlotKey(i));
+/** A save as it was serialized, dated `at` instead. */
+const datedAt = (save, at) => ({ ...save, savedAt: at, state: { ...save.state, meta: { ...save.state.meta, lastSavedAt: at } } });
+
+/** Writes to the slot's key throw, as a full browser storage does; the returned function stops it. */
+function fillStorage(slot = 0) {
+    const setItem = Storage.prototype.setItem;
+    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (key, value) {
+        if (key === SaveManager.getSlotKey(slot)) throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
+        return setItem.call(this, key, value);
+    });
+    return () => spy.mockRestore();
+}
 
 beforeAll(() => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -74,7 +89,7 @@ afterAll(() => {
 });
 
 describe('what the catch-up keeps to go back to', () => {
-    it('a catch-up that shows and saves keeps the game as it stood before it played', async () => {
+    it('a catch-up that shows and saves keeps the game as it stood before it played, dated when the time away began', async () => {
         emptyGame(5000);
         SaveManager.currentSlot = 0;
         const before = JSON.parse(GameState.serializeJson());
@@ -82,27 +97,37 @@ describe('what the catch-up keeps to go back to', () => {
         await run({ savedAt: NOW - 3 * HOUR });
         expect(GameState.state.time.gameTimeMs).toBe(5000 + 3 * HOUR);
         expect(CatchUp.canUndo()).toBe(true);
+        expect(CatchUp.undoSince()).toBe(NOW - 3 * HOUR);
 
         const restore = vi.spyOn(SaveManager, 'restoreAndReload').mockImplementation(() => true);
         try {
-            expect(CatchUp.undoLast()).toBe(true);
+            expect(await CatchUp.undoLast()).toBe(true);
             expect(restore).toHaveBeenCalledTimes(1);
             const [slot, json] = restore.mock.calls[0];
             expect(slot).toBe(0);
-            expect(JSON.parse(json)).toEqual(before);
+            expect(JSON.parse(json)).toEqual(datedAt(before, NOW - 3 * HOUR));
         } finally {
             restore.mockRestore();
         }
     });
 
-    it('a load hands over the save it read, byte for byte', async () => {
+    it('a load hands over the save it read, byte for byte, and writes nothing before it plays', async () => {
         emptyGame(5000);
         SaveManager.currentSlot = 0;
         const raw = '{"untouched":"the bytes the slot held"}';
-        await run({ savedAt: NOW - 3 * HOUR, before: raw });
+        localStorage.setItem(SaveManager.getSlotKey(0), raw);
+        let atStart = null;
+        const off = EventBus.subscribe(ENGINE_EVENTS.CATCH_UP_STARTED, () => { atStart = slotJson(0); });
+        try {
+            await run({ savedAt: NOW - 3 * HOUR, before: raw });
+        } finally {
+            off();
+        }
+        expect(atStart).toBe(raw);
+        expect(CatchUp.undoSince()).toBe(NOW - 3 * HOUR);
         const restore = vi.spyOn(SaveManager, 'restoreAndReload').mockImplementation(() => true);
         try {
-            CatchUp.undoLast();
+            await CatchUp.undoLast();
             expect(restore).toHaveBeenCalledWith(0, raw);
         } finally {
             restore.mockRestore();
@@ -114,12 +139,14 @@ describe('what the catch-up keeps to go back to', () => {
         SaveManager.currentSlot = 0;
         await run({ savedAt: NOW - 90 * 1000 });                    // under 2 min: silent
         expect(CatchUp.canUndo()).toBe(false);
+        const slotBefore = slotJson(0);
         await run({ savedAt: NOW - 3 * HOUR, save: false });
         expect(CatchUp.canUndo()).toBe(false);
+        expect(slotJson(0)).toBe(slotBefore);                       // the bench's: nothing written, before or after
         SaveManager.currentSlot = null;
         await run({ savedAt: NOW - 3 * HOUR });
         expect(CatchUp.canUndo()).toBe(false);
-        expect(CatchUp.undoLast()).toBe(false);
+        expect(await CatchUp.undoLast()).toBe(false);
     });
 
     it('a silent catch-up after the summary leaves the undo in place; forgetting it lets it go', async () => {
@@ -141,10 +168,91 @@ describe('what the catch-up keeps to go back to', () => {
         })).rejects.toThrow('the window closed');
         expect(CatchUp.canUndo()).toBe(false);
     });
+
+    it('a second time away while the summary is open: the undo still goes back before the first, and says since when', async () => {
+        emptyGame(5000);
+        SaveManager.currentSlot = 0;
+        const asLeft = JSON.parse(GameState.serializeJson());
+        const first = await run({ savedAt: NOW - 3 * HOUR });
+        expect(first.savedAt).toBe(NOW - 3 * HOUR);
+        // The summary is still open when the PC sleeps for two hours.
+        const second = await run({ savedAt: NOW, now: NOW + 2 * HOUR });
+        expect(second).toMatchObject({ show: true, savedAt: NOW });
+        expect(CatchUp.undoSince()).toBe(NOW - 3 * HOUR);
+
+        const restore = vi.spyOn(SaveManager, 'restoreAndReload').mockImplementation(() => true);
+        try {
+            expect(await CatchUp.undoLast()).toBe(true);
+            expect(JSON.parse(restore.mock.calls[0][1])).toEqual(datedAt(asLeft, NOW - 3 * HOUR));
+        } finally {
+            restore.mockRestore();
+        }
+    });
+});
+
+describe('a write back that fails can be tried again', () => {
+    afterEach(() => Banners.reset());
+
+    it('a full browser storage: the undo is kept, nothing reloads, the game saves again; the retry works', async () => {
+        emptyGame(5000);
+        SaveManager.currentSlot = 0;
+        await run({ savedAt: NOW - 3 * HOUR });
+        const caughtUp = slotJson(0);
+        const reload = vi.spyOn(SaveManager, 'reloadPage').mockImplementation(() => {});
+        try {
+            const stopFilling = fillStorage(0);
+            try {
+                expect(await CatchUp.undoLast()).toBe(false);
+            } finally {
+                stopFilling();
+            }
+            expect(reload).not.toHaveBeenCalled();
+            expect(CatchUp.canUndo()).toBe(true);
+            expect(SaveManager.savingSuspended).toBe(false);
+            expect(sessionStorage.getItem('fantasy_guild_resume_slot')).toBeNull();
+            expect(slotJson(0)).toBe(caughtUp);
+            expect(Banners.getAll().map(b => b.parts?.title)).toContain('Load Failed');
+
+            // Space freed: the same button again.
+            expect(await CatchUp.undoLast()).toBe(true);
+            expect(reload).toHaveBeenCalledTimes(1);
+            expect(JSON.parse(slotJson(0)).state.time.gameTimeMs).toBe(5000);
+            expect(CatchUp.canUndo()).toBe(false);
+            expect(SaveManager.takeResumeSlot()).toBe(0);
+        } finally {
+            reload.mockRestore();
+        }
+    });
+
+    it('a second press while the first is being written gets the first one\'s answer and writes nothing more', async () => {
+        emptyGame(5000);
+        SaveManager.currentSlot = 0;
+        await run({ savedAt: NOW - 3 * HOUR });
+        let finish;
+        const restore = vi.spyOn(SaveManager, 'restoreAndReload').mockImplementation(() => new Promise(r => { finish = r; }));
+        try {
+            const first = CatchUp.undoLast();
+            const second = CatchUp.undoLast();
+            expect(second).toBe(first);
+            expect(restore).toHaveBeenCalledTimes(1);
+            finish(false);
+            expect(await first).toBe(false);
+            expect(CatchUp.canUndo()).toBe(true);
+            // Once answered, a new press writes again.
+            const third = CatchUp.undoLast();
+            expect(third).not.toBe(first);
+            expect(restore).toHaveBeenCalledTimes(2);
+            finish(true);
+            expect(await third).toBe(true);
+            expect(CatchUp.canUndo()).toBe(false);
+        } finally {
+            restore.mockRestore();
+        }
+    });
 });
 
 describe('SaveManager: writing the old save back and reloading', () => {
-    it('writes the save back dated now, refuses every later save, and reloads once into that slot', () => {
+    it('writes the save back dated now, refuses every later save, and reloads once into that slot', async () => {
         emptyGame(5000);
         const old = JSON.parse(GameState.serializeJson());
         old.savedAt = NOW - 3 * HOUR;
@@ -160,8 +268,10 @@ describe('SaveManager: writing the old save back and reloading', () => {
 
         const reload = vi.spyOn(SaveManager, 'reloadPage').mockImplementation(() => {});
         try {
-            expect(SaveManager.restoreAndReload(1, oldJson)).toBe(true);
+            const written = SaveManager.restoreAndReload(1, oldJson);
+            // A browser writes and reloads at once; the answer follows.
             expect(reload).toHaveBeenCalledTimes(1);
+            expect(await written).toBe(true);
         } finally {
             reload.mockRestore();
         }
@@ -225,13 +335,44 @@ describe('the summary: only a confirmed Load as I left it writes the old save ba
             expect(GameState.state.time.gameTimeMs).toBe(5000 + 3 * HOUR);
 
             act(() => { fireEvent.click(q('[data-summary-undo]')); });
-            act(() => { fireEvent.click(q('[data-summary-confirm-yes]')); });
+            await act(async () => { fireEvent.click(q('[data-summary-confirm-yes]')); });
             expect(restore).toHaveBeenCalledTimes(1);
             const [slot, json] = restore.mock.calls[0];
             expect(slot).toBe(0);
-            expect(JSON.parse(json)).toEqual(before);
+            expect(JSON.parse(json)).toEqual(datedAt(before, NOW - 3 * HOUR));
         } finally {
             restore.mockRestore();
+        }
+    });
+
+    it('a write that fails leaves the summary open, says so, and Load as I left it works again', async () => {
+        emptyGame(5000);
+        SaveManager.currentSlot = 0;
+        render(React.createElement(CatchUpOverlay));
+        await act(async () => { await run({ savedAt: NOW - 3 * HOUR }); });
+        const q = (sel) => document.querySelector(sel);
+        const reload = vi.spyOn(SaveManager, 'reloadPage').mockImplementation(() => {});
+        try {
+            const stopFilling = fillStorage(0);
+            try {
+                act(() => { fireEvent.click(q('[data-summary-undo]')); });
+                await act(async () => { fireEvent.click(q('[data-summary-confirm-yes]')); });
+            } finally {
+                stopFilling();
+            }
+            expect(reload).not.toHaveBeenCalled();
+            expect(q('[data-catch-up-summary]')).not.toBeNull();
+            expect(q('[data-summary-undo-failed]')?.textContent).toBe('Could not load the game as you left it. You can try again.');
+            expect(q('[data-summary-undo]')).not.toBeNull();
+            expect(CatchUp.canUndo()).toBe(true);
+
+            act(() => { fireEvent.click(q('[data-summary-undo]')); });
+            await act(async () => { fireEvent.click(q('[data-summary-confirm-yes]')); });
+            expect(reload).toHaveBeenCalledTimes(1);
+            expect(JSON.parse(slotJson(0)).state.time.gameTimeMs).toBe(5000);
+        } finally {
+            reload.mockRestore();
+            Banners.reset();
         }
     });
 });

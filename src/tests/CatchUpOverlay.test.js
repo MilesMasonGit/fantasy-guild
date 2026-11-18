@@ -13,7 +13,8 @@ import * as CatchUp from '../systems/core/CatchUp.js';
 // The summary's undo button asks the catch-up driver; here it is a stand-in.
 vi.mock('../systems/core/CatchUp.js', () => ({
     canUndo: vi.fn(() => true),
-    undoLast: vi.fn(() => true),
+    undoSince: vi.fn(() => null),
+    undoLast: vi.fn(() => Promise.resolve(true)),
     forgetUndo: vi.fn()
 }));
 
@@ -117,7 +118,9 @@ afterEach(() => {
     EventBus.setQuiet(false);
     vi.useRealTimers();
     vi.mocked(CatchUp.canUndo).mockReturnValue(true);
+    vi.mocked(CatchUp.undoSince).mockReturnValue(null);
     vi.mocked(CatchUp.undoLast).mockClear();
+    vi.mocked(CatchUp.undoLast).mockImplementation(() => Promise.resolve(true));
     vi.mocked(CatchUp.forgetUndo).mockClear();
 });
 
@@ -555,6 +558,85 @@ describe('"Load as I left it" asks first, keeping today\'s warning', () => {
         act(() => { fireEvent.click(q('[data-summary-confirm-yes]')); });
         expect(CatchUp.undoLast).toHaveBeenCalledTimes(1);
         expect(CatchUp.forgetUndo).not.toHaveBeenCalled();
+    });
+
+    it('while the save is written back, nothing else can be pressed, Esc included', async () => {
+        let answer;
+        vi.mocked(CatchUp.undoLast).mockImplementation(() => new Promise(r => { answer = r; }));
+        askToUndo();
+        act(() => { fireEvent.click(q('[data-summary-confirm-yes]')); });
+        expect(q('[data-summary-confirm-yes]').disabled).toBe(true);
+        expect(q('[data-summary-confirm-no]').disabled).toBe(true);
+        act(() => { fireEvent.click(q('[data-summary-confirm-yes]')); });
+        act(() => { fireEvent.click(q('[data-summary-confirm-no]')); });
+        escape();
+        expect(q('[data-summary-confirm="undo"]')).not.toBeNull();
+        expect(CatchUp.undoLast).toHaveBeenCalledTimes(1);
+        // Written: the page reloads, and the summary stays as it is until it does.
+        await act(async () => { answer(true); });
+        expect(q('[data-summary-confirm="undo"]')).not.toBeNull();
+        expect(CatchUp.forgetUndo).not.toHaveBeenCalled();
+    });
+
+    it('a write that fails keeps the summary open with Load as I left it live, and says it failed', async () => {
+        vi.mocked(CatchUp.undoLast).mockImplementation(() => Promise.resolve(false));
+        askToUndo();
+        await act(async () => { fireEvent.click(q('[data-summary-confirm-yes]')); });
+        expect(q('[data-catch-up-summary]')).not.toBeNull();
+        expect(q('[data-summary-confirm]')).toBeNull();
+        expect(text('[data-summary-undo-failed]')).toBe('Could not load the game as you left it. You can try again.');
+        expect(q('[data-summary-undo]')).not.toBeNull();
+        expect(q('[data-summary-close]')).not.toBeNull();
+        expect(CatchUp.forgetUndo).not.toHaveBeenCalled();
+
+        // Tried again, and this time it is written.
+        vi.mocked(CatchUp.undoLast).mockImplementation(() => Promise.resolve(true));
+        act(() => { fireEvent.click(q('[data-summary-undo]')); });
+        await act(async () => { fireEvent.click(q('[data-summary-confirm-yes]')); });
+        expect(CatchUp.undoLast).toHaveBeenCalledTimes(2);
+        expect(q('[data-summary-undo-failed]')).toBeNull();
+    });
+
+    it('with nothing left to go back to, it closes as before', async () => {
+        vi.mocked(CatchUp.undoLast).mockImplementation(() => {
+            vi.mocked(CatchUp.canUndo).mockReturnValue(false);
+            return Promise.resolve(false);
+        });
+        askToUndo();
+        await act(async () => { fireEvent.click(q('[data-summary-confirm-yes]')); });
+        expect(q('[data-catch-up-summary]')).toBeNull();
+        expect(CatchUp.forgetUndo).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('a second time away while the summary is open', () => {
+    it('says how far back Load as I left it goes, and the question says everything since then is lost', () => {
+        const began = Date.now() - 2 * HOUR;
+        vi.mocked(CatchUp.undoSince).mockReturnValue(Date.now() - 5 * HOUR - 30_000);
+        start();
+        finish({ ...fullResult(), awayMs: 2 * HOUR, savedAt: began });
+        expect(text('[data-summary-away]')).toBe('You were away 2 h');
+        expect(text('[data-summary-undo-since]')).toBe('Load as I left it goes back 5 h, to before an earlier time away.');
+        act(() => { fireEvent.click(q('[data-summary-undo]')); });
+        expect(text('[data-summary-confirm="undo"]')).toContain('Load the game as you left it 5 h ago? Everything since then is lost.');
+    });
+
+    it('one time away: no such line, and the question as before', () => {
+        const began = Date.now() - 3 * HOUR;
+        vi.mocked(CatchUp.undoSince).mockReturnValue(began);
+        start();
+        finish({ ...fullResult(), savedAt: began });
+        expect(q('[data-summary-undo-since]')).toBeNull();
+        act(() => { fireEvent.click(q('[data-summary-undo]')); });
+        expect(text('[data-summary-confirm="undo"]')).toContain('Load the game as you left it? Everything from your time away is lost.');
+    });
+
+    it('nothing to go back to: no line', () => {
+        vi.mocked(CatchUp.canUndo).mockReturnValue(false);
+        vi.mocked(CatchUp.undoSince).mockReturnValue(Date.now() - 5 * HOUR);
+        start();
+        finish({ ...fullResult(), savedAt: Date.now() - HOUR });
+        expect(q('[data-summary-undo-since]')).toBeNull();
     });
 });
 

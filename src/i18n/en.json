@@ -581,8 +581,11 @@
         },
         "confirmUndo": {
             "label": "Load as I left it?",
-            "text": "Load the game as you left it? Everything from your time away is lost."
-        }
+            "text": "Load the game as you left it? Everything from your time away is lost.",
+            "textSince": "Load the game as you left it {time} ago? Everything since then is lost."
+        },
+        "undoSince": "Load as I left it goes back {time}, to before an earlier time away.",
+        "undoFailed": "Could not load the game as you left it. You can try again."
     },
     "orders": {
         "needs": "Needs {what}",

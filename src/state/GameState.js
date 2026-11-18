@@ -110,11 +110,12 @@ class GameStateClass {
      * Only the top-level `state.heroes` and `state.meta` are rewritten: the
      * replacer checks its holder is the state itself.
      *
+     * @param {number} [savedAt] when the save says it was written (epoch ms): the next load
+     *        catches up the time since
      * @returns {string}
      */
-    serializeJson() {
+    serializeJson(savedAt = Date.now()) {
         const state = this.state;
-        const savedAt = Date.now();
         const replacer = function (key, value) {
             if (this !== state) return value;
             if (key === 'heroes' && Array.isArray(value)) {

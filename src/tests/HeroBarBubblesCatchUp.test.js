@@ -133,7 +133,7 @@ describe('a load\'s catch-up on the hero bar', () => {
         vi.mocked(Date.now).mockReturnValue(NOW + MIN);
         const reload = vi.spyOn(SaveManager, 'reloadPage').mockImplementation(() => {});
         try {
-            expect(CatchUp.undoLast()).toBe(true);
+            expect(await CatchUp.undoLast()).toBe(true);
         } finally {
             reload.mockRestore();
         }
