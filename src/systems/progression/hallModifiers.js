@@ -52,6 +52,12 @@ function readsDefinitionOnly(to) {
     return filtersOf(to).every(f => getFilterKind(f.kind).needs === FILTER_NEEDS.DEF);
 }
 
+/** The record of the rank a star is held at, at most its top rank: a rank the CMS removed reads as the top. */
+function heldRecordOf(star, rank) {
+    const top = star?.ranks?.length || 0;
+    return rankOf(star, Math.min(Math.floor(Number(rank) || 0), top));
+}
+
 /**
  * @param {object[]} stars authored stars, normalised (`hallStars.normaliseStar`)
  * @param {Record<string, number>} ranks the guild's ranks (`progress.guildUpgrades`)
@@ -69,7 +75,7 @@ export function hallRulesOf(stars, ranks) {
     const held = [];
     for (const star of stars || []) {
         const rank = Math.floor(Number(ranks?.[star?.id]) || 0);
-        const record = rankOf(star, rank);
+        const record = heldRecordOf(star, rank);
         if (!record) continue;
         record.rules.forEach((statement, index) => {
             const skip = (reason) => ignored.push({ starId: star.id, rank, index, reason });
@@ -111,7 +117,7 @@ export function hallRulesOf(stars, ranks) {
 export function xpForEveryoneOf(stars, ranks) {
     let total = 0;
     for (const star of stars || []) {
-        for (const statement of rankOf(star, ranks?.[star?.id])?.rules || []) {
+        for (const statement of heldRecordOf(star, ranks?.[star?.id])?.rules || []) {
             if (statement?.keyword !== KEYWORD.PROVIDES || statement.when?.event) continue;
             if (statement.payload?.type !== EFFECT_TYPES.XP_FOR_EVERYONE) continue;
             const value = Number(statement.payload.value);
@@ -128,7 +134,7 @@ export function xpForEveryoneOf(stars, ranks) {
 export function hallLinesOf(stars, ranks) {
     const byItem = new Map();
     for (const star of stars || []) {
-        const record = rankOf(star, ranks?.[star?.id]);
+        const record = heldRecordOf(star, ranks?.[star?.id]);
         for (const line of record?.lines || []) {
             byItem.set(line.itemId, (byItem.get(line.itemId) || 0) + line.quantity);
         }

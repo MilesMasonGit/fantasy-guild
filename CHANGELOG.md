@@ -4,6 +4,7 @@ All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
+- **A Guild Hall star kept above its top rank still works** (brief 680 S7, T-457). When a rank is taken off a star in the CMS, a guild holding the star at the removed rank used to lose its whole effect (boost, Passive Production lines, XP for Everyone). It is now read as the star's top rank; the saved number is not changed, so putting the rank back restores it.
 - **A new player's master volume is kept** (brief 680 S7, T-452). Raising the Master volume in a first session was thrown away on the next page load, a launch or Load as I left it, and the slider read 0 again. It now sticks the first time; the default stays 0.
 - **The browser's storage-full message says what to do** (brief 680 S7, T-454). It told the player to export their save, and there is no export. It now reads: Browser storage is full. Delete a save slot to make room.
 - **Save Game Now says Saved** (brief 680 S7, T-451). The button gave no sign it had worked. It now reads Saved for a moment once the save has been written (on the desktop, once the file is on the disk), or Could not save when it was not; a failed write still raises the Save Failed banner. The silent autosave is unchanged.
