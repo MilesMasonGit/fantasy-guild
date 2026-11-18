@@ -199,23 +199,31 @@ export const SaveManager = {
      */
     startAutoSave() {
         if (this.autoSaveTimer) clearInterval(this.autoSaveTimer);
+        this.autoSaveTimer = null;
 
-        if (this.currentSlot === null || AUTO_SAVE_INTERVAL <= 0) return;
+        if (this.currentSlot === null) return;
+        // Every slot opens through here; Off means no timer, not no save on leaving the page.
+        this.installUnloadSave();
+        if (AUTO_SAVE_INTERVAL <= 0) return;
 
         this.autoSaveTimer = setInterval(() => {
             this.save(false); // Silent save
         }, AUTO_SAVE_INTERVAL);
+    },
 
-        // Only add beforeunload listener once
-        if (!this._beforeUnloadBound) {
-            window.addEventListener('beforeunload', () => {
-                if (!this.isResetting && this.currentSlot !== null) {
-                    this.save(false);
-                }
-            });
-            this._beforeUnloadBound = true;
-            logger.debug('SaveManager', 'beforeunload listener registered');
-        }
+    /**
+     * The browser and dev builds save as the page is left (a closed tab, a reload). Once per page.
+     * The desktop build's window close is `installCloseSave`'s.
+     */
+    installUnloadSave() {
+        if (this._beforeUnloadBound) return;
+        window.addEventListener('beforeunload', () => {
+            if (!this.isResetting && this.currentSlot !== null) {
+                this.save(false);
+            }
+        });
+        this._beforeUnloadBound = true;
+        logger.debug('SaveManager', 'beforeunload listener registered');
     },
 
     /**
