@@ -133,8 +133,7 @@ const SLIDE_EASE = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
  * - **A box at `(x - r, y - r)`, `2r` across**, where `r` is the art radius for its size
  * (`matGeometry`). A move the game makes (a push) is a CSS `left`/`top` slide; a move the
  * player makes is not: the Token is simply where it was let go.
- * - **A drag source and nothing else.** The whole mat is the one drop target (`dropOnMat`);
- * dropping a copy on a Token still restocks it, because the drop point lands on its spot.
+ * - **A drag source and nothing else.** The whole mat is the one drop target (`dropOnMat`).
  * - **Pressed by its own circle, not its art.** The box is drawn as big as the art, and the art
  * may spill past the Token's circle onto its neighbours; none of the drawing takes the pointer.
  * Only a round hit area exactly the Token's circle does (`data-token-hit`, the engine's

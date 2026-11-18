@@ -391,11 +391,14 @@ describe('buying at a point (B4)', () => {
         expect(InventoryManager.getItemCount(WOOD)).toBe(12);
     });
 
-    it('never restocks a copy it is dropped on: it is a new Token', () => {
+    it('bought onto a copy of itself, it is a new Token standing beside the copy', () => {
         InventoryManager.addItem(WOOD, 25);
         expect(Shop.buyAt('fixture_shop_forest', SPOT).success).toBe(true);
-        expect(Shop.buyAt('fixture_shop_forest', SPOT).success).toBe(true);
+        const [first] = onMat('fixture_shop_forest');
+        const second = Shop.buyAt('fixture_shop_forest', SPOT);
+        expect(second).toMatchObject({ success: true, nudged: true });
         expect(onMat('fixture_shop_forest')).toHaveLength(2);
+        expect(first).toMatchObject({ x: SPOT.x, y: SPOT.y });
         expect(InventoryManager.getItemCount(WOOD)).toBe(5);
     });
 });
@@ -410,6 +413,17 @@ describe('the mat drop route for a Shop row (B4)', () => {
         expect(InventoryManager.getItemCount(WOOD)).toBe(0);
         const [forest] = onMat('fixture_shop_forest');
         expect({ x: forest.x, y: forest.y }).toEqual({ x: 500, y: 350 });
+    });
+
+    it('dropped on a copy already on the mat, it is bought and stands beside it', () => {
+        InventoryManager.addItem(WOOD, 20);
+        expect(dropOnMat(payload('fixture_shop_forest'), { x: 500, y: 350 }).success).toBe(true);
+        const res = dropOnMat(payload('fixture_shop_forest'), { x: 505, y: 352 });
+        expect(res).toMatchObject({ success: true, nudged: true });
+        const both = onMat('fixture_shop_forest');
+        expect(both).toHaveLength(2);
+        expect(both.find(t => t.id !== res.instance.id)).toMatchObject({ x: 500, y: 350 });
+        expect(InventoryManager.getItemCount(WOOD)).toBe(0);
     });
 
     it('a refusal is said on the mat where it was dropped, flies back, and makes nothing', () => {

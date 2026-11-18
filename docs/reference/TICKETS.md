@@ -25,7 +25,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-483**
+**Next free number: T-485**
 
 ---
 
@@ -241,6 +241,8 @@ The findings' full write-ups are in `docs/active/review/D1_the_mat.md` to `D4_sc
 | T-480 | P3 | open | **Latent: a Shop price of more than four items, and a second Lap Time rule**: fix the engine now (owner 2026-11-17) | CR4-197 |
 | T-481 | P3 | open | **A Field test passes only by luck**: `FarmingHarvest.test.js` (lost part-way through the first harvest and back before it ends) fails under the second seed, `FG_TEST_SEED=b` (expected 2 to be 1), on `main` 556a916b; pin its random numbers | director 2026-11-17 |
 | T-482 | P2 | open | **A CMS rename leaves other content naming the old id**: renaming Oak Wood to Oak Logs left the Starter Camp's opening Bank on `item_oak_wood` (a new game opens without it); by `performRename` the same holds for Hall star prices, world tables (Token ids), events (`typeId`) and the lesson plan's code ids. Saves follow the rename since 660 R2; content does not | 660 R2 builder, 2026-11-17 |
+| T-483 | P3 | open | **Pinned stubs' time-away counts reach disk only at the next save**: the catch-up's end save comes before `CATCH_UP_FINISHED`, where the pins add the gains, so a crash before the next autosave or close save keeps the Bank's gain but loses the pin's. A save in the route would roll the backup and could lose the unanswered summary's copy (680 S3) | 680 S6 builder, 2026-11-18 |
+| T-484 | P3 | open | **Older saves: Token types on a Region settled before 680 S6 are not yet had for the Encyclopedia**: a chest still standing there loses its tick once opened. A backfill in `migrateState` would fix it (a save change) | 680 S6 builder, 2026-11-18 |
 
 ### Brief 210 — the backlog intake (owner 2026-10-22, Backlog director)
 

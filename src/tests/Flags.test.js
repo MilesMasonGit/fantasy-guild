@@ -202,21 +202,26 @@ describe('⭐ leaving resets progress; a moved Token keeps it (FP-68)', () => {
         expect(forest.cycleElapsedMs).toBeGreaterThanOrEqual(progress);
     });
 
-    it('a worked Token moved onto a half-used copy it fits into leaves no red mark behind', () => {
+    it('a worked Token moved onto a half-used copy lands beside it with its hero and progress, and leaves no red mark behind', () => {
         const half = tokenStartingUses('fixture_producer') / 2;
         const copy = put(17, 'fixture_producer', half);
         const forest = put(14, 'fixture_producer', half - 10);
         sendTo('h1', 14);
         run(5000);
+        const progress = forest.cycleElapsedMs;
+        const charges = forest.usesRemaining;
+        expect(progress).toBeGreaterThan(0);
 
         const res = Placement.moveTokenTo(forest.id, C(17));
-        run(1000);
+        run(100);
 
-        expect(res).toMatchObject({ success: true, absorbed: true });
-        expect(BoardState.getTokenById(forest.id)).toBeNull();
-        expect(copy.usesRemaining).toBeGreaterThan(2 * half - 20);
+        expect(res).toMatchObject({ success: true, nudged: true });
+        expect(BoardState.getTokenById(forest.id)).toBe(forest);
+        expect(BoardState.getTokenById(copy.id)).toMatchObject({ ...C(17), usesRemaining: half });
+        expect(forest.usesRemaining).toBe(charges);
+        expect(forest.cycleElapsedMs).toBeGreaterThanOrEqual(progress);
+        expect(BoardState.claimOfHero('h1')?.instanceId).toBe(forest.id);
         for (const t of BoardState.tokens()) expect(t.alert ?? null).not.toBe(ALERT.CHARGES);
-        expect(BoardState.claimOfHero('h1')?.instanceId).not.toBe(forest.id);
     });
 
     it('a new order zeroes the Token left behind', () => {

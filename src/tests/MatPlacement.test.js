@@ -259,64 +259,10 @@ describe('a Cannot rule is obeyed by the nudge, not just by the refusal (FP-88)'
 });
 
 // ---------------------------------------------------------------------------
-// restocking beats nudging
+// a drop on a copy lands beside it: Tokens never merge
 // ---------------------------------------------------------------------------
 
-describe('dropping on a matching copy restocks it (FP-50, FP-87)', () => {
-    it('⭐ restocks rather than nudging aside, even with room to nudge into', () => {
-        const copy = placeAt(instance('mp_small', 40), 800, 600);
-
-        const res = Placement.placeTokenAt(instance('mp_small', 50), { x: 810, y: 605 });
-
-        expect(res).toMatchObject({ success: true, restocked: true, absorbed: true, addedCharges: 50 });
-        expect(BoardState.getTokenById(copy.id).usesRemaining).toBe(90);
-        expect(BoardState.tokens()).toHaveLength(1);
-    });
-
-    it('⭐ the leftover charges stay on the mat, beside the copy they filled', () => {
-        const copy = placeAt(instance('mp_small', 80), 800, 600);
-        const incoming = instance('mp_small', 50);
-
-        const res = Placement.placeTokenAt(incoming, { x: 805, y: 600 });
-
-        expect(res).toMatchObject({ success: true, restocked: true, nudgedLeftover: true, addedCharges: 20 });
-        expect(BoardState.getTokenById(copy.id).usesRemaining).toBe(100);
-
-        // Nothing lost: the remaining 30 charges are standing right next to it.
-        const leftover = BoardState.getTokenById(incoming.id);
-        expect(leftover.usesRemaining).toBe(30);
-        expect(gap(leftover, copy)).toBeGreaterThanOrEqual(69.6 - 1e-6);
-        expect(gap(leftover, copy)).toBeLessThan(120);
-    });
-
-    it('a leftover with nowhere to stand is refused and flies back — never to the Tray (FP-46)', () => {
-        const copy = placeAt(instance('mp_small', 80), 800, 600);
-        setMatTuning('nudgeReach', 0);
-        const incoming = instance('mp_small', 50);
-
-        const res = Placement.placeTokenAt(incoming, { x: 800, y: 600 });
-
-        // The charges it gave stay given; the rest goes back to its source.
-        expect(res).toMatchObject({ success: false, restocked: true, full: true, addedCharges: 20 });
-        expect(BoardState.getTokenById(copy.id).usesRemaining).toBe(100);
-        expect(BoardState.getTokenById(incoming.id)).toBeNull();
-        expect(incoming.usesRemaining).toBe(30);
-    });
-
-    it('a copy already full is not a restock target — the newcomer nudges clear', () => {
-        const copy = placeAt(instance('mp_small', 100), 800, 600);
-        const incoming = instance('mp_small', 100);
-
-        const res = Placement.placeTokenAt(incoming, { x: 800, y: 600 });
-
-        expect(res.success).toBe(true);
-        expect(res.restocked).toBeUndefined();
-        // ⭐ The Token already down did NOT move: nothing displaces anything now.
-        expect({ x: BoardState.getTokenById(copy.id).x, y: BoardState.getTokenById(copy.id).y })
-            .toEqual({ x: 800, y: 600 });
-        expect(gap(BoardState.getTokenById(incoming.id), copy)).toBeGreaterThanOrEqual(69.6 - 1e-6);
-    });
-
+describe('a Token dropped on a copy of itself lands beside it: Tokens never merge', () => {
     /** Every payload `event` is published with while `fn` runs. */
     const heard = (event, fn) => {
         const got = [];
@@ -326,9 +272,31 @@ describe('dropping on a matching copy restocks it (FP-50, FP-87)', () => {
         return got;
     };
 
-    it('⭐ a Token moved on the mat onto a copy it fits into leaves the mat, with no zero-charge ghost', () => {
+    /** Every alert the mat would show while `fn` runs. */
+    const alerts = (fn) => heard(BOARD_EVENTS.TILE_EVENT_ALERT, fn);
+
+    it('⭐ from the hand: both Tokens stay, each with its own charges, and nothing is said', () => {
         const copy = placeAt(instance('mp_small', 40), 800, 600);
+        const incoming = instance('mp_small', 50);
+
+        let res;
+        const said = alerts(() => { res = Placement.placeTokenAt(incoming, { x: 810, y: 605 }); });
+
+        expect(res).toMatchObject({ success: true, nudged: true });
+        expect(BoardState.tokens()).toHaveLength(2);
+        expect(BoardState.getTokenById(copy.id)).toMatchObject({ x: 800, y: 600, usesRemaining: 40 });
+        const beside = BoardState.getTokenById(incoming.id);
+        expect(beside.usesRemaining).toBe(50);
+        expect(gap(beside, copy)).toBeGreaterThanOrEqual(MatPlacement.minGap('mp_small', 'mp_small') - 1e-6);
+        expect(gap(beside, copy)).toBeLessThan(120);
+        expect(said).toEqual([]);
+    });
+
+    it('⭐ moved on the mat: it stands beside the copy with its charges and its progress, and its old point is emptied once', () => {
+        const copy = placeAt(instance('mp_small', 40), 800, 600);
+        copy.cycleElapsedMs = 700;
         const mover = placeAt(instance('mp_small', 50), 400, 300);
+        mover.cycleElapsedMs = 1500;
 
         let res;
         const changed = heard(BOARD_EVENTS.TILE_CHANGED, () => {
@@ -337,33 +305,52 @@ describe('dropping on a matching copy restocks it (FP-50, FP-87)', () => {
             });
             const points = dirty.flatMap(p => p.points);
             expect(points).toContainEqual({ x: 400, y: 300 });
-            expect(points).toContainEqual({ x: 800, y: 600 });
         });
 
-        expect(res).toMatchObject({ success: true, restocked: true, absorbed: true, addedCharges: 50 });
-        expect(BoardState.getTokenById(copy.id).usesRemaining).toBe(90);
-        expect(BoardState.getTokenById(mover.id)).toBeNull();
-        expect(BoardState.tokens()).toHaveLength(1);
-        // Its old point is said to be empty exactly once.
-        const emptied = changed.filter(p => p.typeId === null && p.x === 400 && p.y === 300);
-        expect(emptied).toHaveLength(1);
+        expect(res).toMatchObject({ success: true, nudged: true });
+        expect(BoardState.tokens()).toHaveLength(2);
+        expect(BoardState.getTokenById(copy.id)).toMatchObject({ x: 800, y: 600, usesRemaining: 40, cycleElapsedMs: 700 });
+        const moved = BoardState.getTokenById(mover.id);
+        expect(moved).toMatchObject({ usesRemaining: 50, cycleElapsedMs: 1500 });
+        expect(gap(moved, copy)).toBeLessThan(120);
+        expect(changed.filter(p => p.typeId === null && p.x === 400 && p.y === 300)).toHaveLength(1);
     });
 
-    it('a Token moved onto a copy with leftover charges stands beside it, and its old point is emptied', () => {
+    it('⭐ a resting Token with no charges left, moved onto its copy, is kept: it would have refilled', () => {
+        const copy = placeAt(instance('mp_small', 40), 800, 600);
+        const resting = placeAt(instance('mp_small', 0), 400, 300);
+
+        const res = Placement.moveTokenTo(resting.id, { x: 800, y: 600 });
+
+        expect(res.success).toBe(true);
+        expect(BoardState.tokens()).toHaveLength(2);
+        expect(BoardState.getTokenById(resting.id).usesRemaining).toBe(0);
+        expect(BoardState.getTokenById(copy.id).usesRemaining).toBe(40);
+    });
+
+    it('a copy already full: the newcomer nudges clear and the Token already down does not move', () => {
+        const copy = placeAt(instance('mp_small', 100), 800, 600);
+        const incoming = instance('mp_small', 100);
+
+        const res = Placement.placeTokenAt(incoming, { x: 800, y: 600 });
+
+        expect(res.success).toBe(true);
+        expect({ x: BoardState.getTokenById(copy.id).x, y: BoardState.getTokenById(copy.id).y })
+            .toEqual({ x: 800, y: 600 });
+        expect(gap(BoardState.getTokenById(incoming.id), copy)).toBeGreaterThanOrEqual(69.6 - 1e-6);
+    });
+
+    it('with no room beside the copy the drop is refused and flies back whole, and the copy is untouched', () => {
         const copy = placeAt(instance('mp_small', 80), 800, 600);
-        const mover = placeAt(instance('mp_small', 50), 400, 300);
+        setMatTuning('nudgeReach', 0);
+        const incoming = instance('mp_small', 50);
 
-        let res;
-        const changed = heard(BOARD_EVENTS.TILE_CHANGED, () => {
-            res = Placement.moveTokenTo(mover.id, { x: 805, y: 600 });
-        });
+        const res = Placement.placeTokenAt(incoming, { x: 800, y: 600 });
 
-        expect(res).toMatchObject({ success: true, restocked: true, nudgedLeftover: true, addedCharges: 20 });
-        expect(BoardState.getTokenById(copy.id).usesRemaining).toBe(100);
-        const left = BoardState.getTokenById(mover.id);
-        expect(left.usesRemaining).toBe(30);
-        expect(gap(left, copy)).toBeLessThan(120);
-        expect(changed.filter(p => p.typeId === null && p.x === 400 && p.y === 300)).toHaveLength(1);
+        expect(res).toMatchObject({ success: false, full: true });
+        expect(BoardState.getTokenById(copy.id).usesRemaining).toBe(80);
+        expect(BoardState.getTokenById(incoming.id)).toBeNull();
+        expect(incoming.usesRemaining).toBe(50);
     });
 
     it('a Token put down where it already stood is not said to have left its point', () => {

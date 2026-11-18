@@ -8,6 +8,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
 import { reachRadius } from '../systems/board/nearby.js';
 import { resetMatTuning } from '../config/matTuning.js';
+import { artRadiusOf } from '../config/matGeometry.js';
 import { clearMat, placeAt } from './fixtures/mat.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -20,8 +21,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 /**
  * ⭐ A planter that plants within its reach gives a Token that will grow the room its grown form
- * will need, so growing moves nothing and no tree drifts out of the reach its Stump needs.
- * Content-free: its own types, the real rules.
+ * will need, or plants nothing, so growing moves nothing and no tree drifts out of the reach its
+ * Stump needs. Content-free: its own types, the real rules.
  */
 
 const base = (id, extra) => ({ id, name: id, tokenType: 'resource', rarity: 'common', theme: 't', uses: null, sprite: 's_nature', requiresHero: false, ...extra });
@@ -35,7 +36,7 @@ beforeAll(() => {
         [STUMP]: base(STUMP, { artSize: 'small', grows: { into: SAPLING, afterMs: 1000, needsNearby: [FOREST] } }),
         [SAPLING]: base(SAPLING, { artSize: 'small', grows: { into: TREE, afterMs: 1000 } }),
         [BUSH]: base(BUSH, { artSize: 'small' }),
-        [LOOP_A]: base(LOOP_A, { grows: { into: LOOP_B, afterMs: 1000 } }),
+        [LOOP_A]: base(LOOP_A, { artSize: 'small', grows: { into: LOOP_B, afterMs: 1000 } }),
         [LOOP_B]: base(LOOP_B, { grows: { into: LOOP_A, afterMs: 1000 } })
     });
 });
@@ -56,19 +57,20 @@ const gapTo = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const grow = (t) => EffectActions.transformInstance(t, getTokenType(t.typeId).grows.into, { fixPlaced: true, cause: 'grow' });
 
 describe('⭐ a Sapling is planted with room for its tree', () => {
-    it('what a Token grows into: the end of its chain; itself if it does not grow; a loop stops', () => {
-        expect(MatPlacement.grownFormOf(STUMP)).toBe(TREE);
-        expect(MatPlacement.grownFormOf(SAPLING)).toBe(TREE);
-        expect(MatPlacement.grownFormOf(TREE)).toBe(TREE);
-        expect(MatPlacement.grownFormOf(BUSH)).toBe(BUSH);
-        expect(MatPlacement.grownFormOf(LOOP_A)).toBe(LOOP_B);
+    it('the room a Token takes: its chain\'s largest body; its own if it does not grow; a loop stops', () => {
+        expect(MatPlacement.roomRadiusOf(STUMP)).toBe(artRadiusOf(TREE));
+        expect(MatPlacement.roomRadiusOf(SAPLING)).toBe(artRadiusOf(TREE));
+        expect(MatPlacement.roomRadiusOf(TREE)).toBe(artRadiusOf(TREE));
+        expect(MatPlacement.roomRadiusOf(BUSH)).toBe(artRadiusOf(BUSH));
+        expect(MatPlacement.roomRadiusOf(LOOP_A)).toBe(artRadiusOf(LOOP_B));
+        expect(artRadiusOf(LOOP_A)).toBeLessThan(artRadiusOf(LOOP_B));
     });
 
-    it('stands the tree\'s gap from its planter, not the Sapling\'s', () => {
+    it('stands the tree\'s gap from its planter: a Sapling\'s gap is its tree\'s', () => {
         const forest = placeAt(FOREST, 900, 500);
         const landed = plant(forest);
         expect(gapTo(landed, forest)).toBeGreaterThanOrEqual(MatPlacement.minGap(TREE, FOREST) - 1e-6);
-        expect(MatPlacement.minGap(SAPLING, FOREST)).toBeLessThan(MatPlacement.minGap(TREE, FOREST));
+        expect(MatPlacement.minGap(SAPLING, FOREST)).toBe(MatPlacement.minGap(TREE, FOREST));
     });
 
     it('⭐ stands the tree\'s gap from a neighbour small today, a Stump that will be a tree too', () => {
@@ -92,16 +94,15 @@ describe('⭐ a Sapling is planted with room for its tree', () => {
         expect(gapTo(grownBehind, forest)).toBeLessThanOrEqual(reachRadius());
     });
 
-    it('with no room for a tree in reach it still plants, at the Sapling\'s gap', () => {
+    it('with no room for a tree in reach it plants nothing: a Sapling is never squeezed in at its drawn size', () => {
         const forest = placeAt(FOREST, 900, 500);
         const within = 70;
         expect(within).toBeLessThan(MatPlacement.minGap(TREE, FOREST));
-        expect(within).toBeGreaterThan(MatPlacement.minGap(SAPLING, FOREST));
-        expect(MatPlacement.findSpot(SAPLING, forest, { reach: within, asGrown: true })).toBeNull();
+        expect(MatPlacement.findSpot(SAPLING, forest, { reach: within })).toBeNull();
 
         const landed = EffectActions.spawn({ payload: { typeId: SAPLING } }, { self: forest.id }, Math.random, { within });
-        expect(landed).not.toBeNull();
-        expect(gapTo(landed, forest)).toBeLessThanOrEqual(within);
+        expect(landed).toBeNull();
+        expect(BoardState.tokens().filter(t => t.typeId === SAPLING)).toHaveLength(0);
     });
 
     it('a Token that does not grow plants as it always did: nearest, at its own gap', () => {
@@ -119,9 +120,10 @@ describe('⭐ a Sapling is planted with room for its tree', () => {
         expect(gapTo(sapling, forest)).toBeGreaterThanOrEqual(MatPlacement.minGap(TREE, FOREST) - 1e-6);
     });
 
-    it('a Token nobody planted keeps its own gap on an ordinary drop', () => {
+    it('a Sapling nobody planted takes its Tree\'s room on an ordinary drop too', () => {
         placeAt(TREE, 900, 500);
-        const gap = MatPlacement.minGap(SAPLING, TREE);
+        const gap = MatPlacement.minGap(TREE, TREE);
         expect(MatPlacement.isLegal(SAPLING, { x: 900 + gap + 0.2, y: 500 })).toBe(true);
+        expect(MatPlacement.isLegal(SAPLING, { x: 900 + gap - 1, y: 500 })).toBe(false);
     });
 });

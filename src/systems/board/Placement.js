@@ -14,7 +14,6 @@ import * as Landmarks from './Landmarks.js';
 import * as Demolition from './Demolition.js';
 import { isFixed } from './FixedTokens.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
-import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
  * Putting things on the playmat: where the rules live, on top of `BoardState`'s storage and
@@ -25,8 +24,6 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * - placed: exactly on the point.
  * - nudged: the nearest legal point within nudge reach, because the point itself was crowded or
  * would have broken a `Cannot` rule.
- * - restocked: the point was on a matching copy with room for charges; any leftover charges stand
- * beside it.
  * - full: nowhere within reach, so the caller puts it back where it came from and says so. Nothing
  * is ever lost.
  *
@@ -138,11 +135,9 @@ function refuseWithAlert(point, typeId, decision) {
  *
  * @param {object} instance the Token being placed (not yet on the mat, or being moved)
  * @param {{x: number, y: number}} point where the player let go, in mat units
- * @param {{excludeId?: string, keepCycle?: boolean, noRestock?: boolean}} [options] `noRestock`
- * skips restock-on-copy: a Token a recipe makes always stands as a Token of its own, never tops up
- * a copy.
+ * @param {{excludeId?: string, keepCycle?: boolean}} [options]
  * @returns {{success: boolean, reason?: string, x?: number, y?: number, nudged?: boolean,
- * restocked?: boolean, full?: boolean}}
+ * full?: boolean}}
  */
 export function placeTokenAt(instance, point, options = {}) {
     if (!instance?.typeId) return refuse('Not a valid Token');
@@ -170,12 +165,10 @@ export function placeTokenAt(instance, point, options = {}) {
     const decision = MatPlacement.dropAt(instance, at, {
         excludeId,
         plan: { id: instance.id },
-        noRestock: !!options.noRestock,
         siteOf: SiteRules.siteTypeOf(instance)
     });
 
     if (decision.status === 'full') return refuseWithAlert(at, instance.typeId, decision);
-    if (decision.status === 'restocked') return restock(instance, decision);
 
     const from = pointOf(BoardState.getTokenById(instance.id));
     if (!options.keepCycle) forfeitCycle(instance);
@@ -203,7 +196,7 @@ export const MAT_FULL = 'The mat is full';
  * the mat (`MatPlacement.findSpotAnywhere`): the nudge-reach search first, then the whole mat.
  * Nothing is pushed, and no spot breaking a `Cannot` rule or on ground it may not stand on is ever
  * chosen. Refused only when the whole mat has no legal spot ({@link MAT_FULL}, or what it needs
- * when the ground here offers it no cell at all). It never restocks a copy.
+ * when the ground here offers it no cell at all).
  *
  * @returns {{success: boolean, reason?: string, x?: number, y?: number, nudged?: boolean, full?: boolean}}
  */
@@ -219,77 +212,8 @@ export function placeArrivalNear(instance, aim) {
         plan: { id: instance.id }
     });
     if (!spot) return refuse(MatPlacement.groundRefusal(instance.typeId) || MAT_FULL, { full: true });
-    const res = placeTokenAt(instance, { x: spot.x, y: spot.y }, { noRestock: true });
+    const res = placeTokenAt(instance, { x: spot.x, y: spot.y });
     return res?.success ? { ...res, nudged: spot.nudge > 0 } : res;
-}
-
-/**
- * Carry out a restock-on-copy: the charges move, and whatever is left over stands beside the copy
- * it just filled.
- *
- * When even that has nowhere to go, the leftover is refused and flies back to wherever it came
- * from: the charges it gave stay given, and nothing is lost.
- */
-function restock(instance, decision) {
-    const target = BoardState.getTokenById(decision.targetId);
-    if (!target) return refuse('No Token there');
-
-    target.usesRemaining += decision.transferred;
-    instance.usesRemaining = (instance.usesRemaining ?? decision.transferred) - decision.transferred;
-
-    const tName = tokenName(instance.typeId) || 'Token';
-    EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-        instanceId: target.id,
-        severity: 'green',
-        type: 'token_restocked',
-        name: tName,
-        title: `Restocked from ${tName}`,
-        message: `Restocked from ${tName}`
-    });
-    EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
-        instanceId: target.id,
-        delta: decision.transferred,
-        remaining: target.usesRemaining,
-        typeId: target.typeId
-    });
-    EventBus.publish(ENGINE_EVENTS.TOKEN_RESTOCKED, {
-        instanceId: target.id,
-        typeId: instance.typeId,
-        addedCharges: decision.transferred,
-        currentCharges: target.usesRemaining
-    });
-    EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'quest_claim' });
-
-    if (decision.absorbed) {
-        // ⚠️ A Token moved on the mat is still standing at its old point with nothing left: it goes,
-        // as a spent one does, or it stays as a zero-charge ghost the runner marks "Out of charges".
-        // Its hero's claim now names a Token that is gone, so their flag lets go on its next pass.
-        const moved = BoardState.getTokenById(instance.id);
-        const from = pointOf(moved);
-        if (moved) {
-            forfeitCycle(moved);
-            BoardState.removeToken(moved.id);
-            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: moved.id, ...(from || {}), typeId: null });
-            markAdjacencyDirty([from, pointOf(target)]);
-        }
-        return { success: true, restocked: true, absorbed: true, addedCharges: decision.transferred };
-    }
-
-    // The leftover stays on the mat, nudged beside the copy.
-    if (decision.x != null) {
-        const from = pointOf(BoardState.getTokenById(instance.id));
-        forfeitCycle(instance);
-        putOnMat(instance, from, decision.x, decision.y);
-        return {
-            success: true, restocked: true, nudgedLeftover: true,
-            x: decision.x, y: decision.y, addedCharges: decision.transferred
-        };
-    }
-
-    // Nowhere beside it either: the leftover flies back to its source.
-    return refuse('Restocked, but there is no room beside it — the leftover went back', {
-        full: true, restocked: true, addedCharges: decision.transferred
-    });
 }
 
 /**
@@ -313,7 +237,6 @@ export function moveTokenTo(id, point) {
     const result = placeTokenAt(moving, point, { excludeId: id, keepCycle: true });
     if (!result.success) return result;
 
-    // An absorbed Token has already said its point is empty (`restock`).
     const now = pointOf(BoardState.getTokenById(id));
     const left = from && now && (now.x !== from.x || now.y !== from.y);
     if (left) EventBus.publish(BOARD_EVENTS.TILE_CHANGED, vacated(from));
@@ -348,7 +271,7 @@ export function hasRoomForProduct(stationId, typeId, count = 1) {
  * Put one Token a recipe made on the mat beside the station that made it: a fresh `placed` instance
  * at its starting charges, through {@link placeArrivalNear} aimed at the station's own point, so it
  * lands on the nearest legal spot around it or, when that area is crowded, the nearest one anywhere
- * on the mat. It never restocks a copy.
+ * on the mat.
  *
  * @returns {{success: boolean, reason?: string, instance?: object}}
  */

@@ -133,8 +133,7 @@ export function buy(typeId) {
  * there, or nudged to the nearest legal spot) rather than beside the Hall.
  *
  * A point off the mat is refused with `offMat`: the drop is a plain cancel. A placement refusal
- * charges nothing and keeps its `full` flag, so the drag flies back. `noRestock`: a bought Token is
- * always a new Token, never charges poured into a copy it was dropped on.
+ * charges nothing and keeps its `full` flag, so the drag flies back.
  *
  * @param {string} typeId
  * @param {{x:number, y:number}} point mat units
@@ -145,7 +144,7 @@ export function buyAt(typeId, point) {
         || point.x < 0 || point.y < 0 || point.x > matW() || point.y > matH()) {
         return { ...refuse('Not on the mat'), offMat: true };
     }
-    return purchase(typeId, (instance) => Placement.placeTokenAt(instance, point, { noRestock: true }));
+    return purchase(typeId, (instance) => Placement.placeTokenAt(instance, point));
 }
 
 /**
