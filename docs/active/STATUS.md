@@ -7,6 +7,18 @@ build green) · bench-queued · eye-check · merged.*
 
 **Owner, 2026-11-06 (behind the week's target): up to four code builders at once this week** (plus one read-only); the director still runs suites, builds and benches one at a time. **Owner, 2026-11-06 late morning, away at work:** the director may start new briefs and merge pieces on the gate without a full look; the owner answers questions remotely (screenshots to the phone). Look changes merged this way are listed for the owner's next look in `docs/active/eyecheck/2026-11-06_merged_while_away.md`.
 
+## Director, batch 9: brief 680 S1 and S2, then S3 and S5; the mat look (owner, 2026-11-18)
+
+*Wed 18 Nov, 11:30, batch proposed and started. Where we are: batch 8 merged (09437782); the owner fixed the Scrap Heap (skill Mining, 15 s cycle, ea3b0fa0), so main is green; the size pack was already applied, so M1, M3, M4 are ready for the look. Owner picked: the director writes content change packs (owner prefers packs to manual CMS edits) and brief 680 S1 + S2, then S3 + S5. Pack staged: `cms/incoming/2026-11-18-thorns-and-rusty-sword.json` (Thorns no charge with a 10 % prick on the bush; When Struck Thorns on the Elemental; the Rusty Sword says each kill), stamped, checked, gate PASS. Building: S1 catch-up edges (engineer), S2 settle and new game save once (builder). Next: after the owner accepts and Syncs the pack, one look at the mat changes (no merges, one spot, Sapling edge, Thorns) and the Rusty tools, from a desktop test build. Owner: accept the pack under Changes to review, Sync on main. Blockers: none.*
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| 680 S1: catch-up edges (save before the catch-up, startSlot guard, Load as I left it, a second absence) | engineer | `fix/catchup-edges` (`sv1`) | building | Wed | |
+| 680 S2: settle and new game save once | builder | `fix/settle-saves-once` (`sv2`) | building | Wed | |
+| 680 S3: an unanswered summary is offered again (after S1) | engineer | | queued | Wed | |
+| 680 S5: the desktop window (single instance, a failed close save) | builder | | queued | Wed | |
+| Look: no merges, one spot, Sapling edge (M1, M3, M4 stacked on `fix/sapling-edge`), Thorns (M2 with the pack), Rusty tools (H7) | director | scratch merge | waits for the owner's Sync of the pack | Wed | |
+
 ## Director, batch 8: 650 H6 and the first of 670 (owner, 2026-11-17: merge batch 7 and start the next)
 
 *Wed 18 Nov, 01:30. Where we are: seven fixes merged (09437782, pushed), work same: encounters and names (H6), recipe level (M5), ripe Field card (M8), Rusty tools tests and lesson 8's Slime (H7), fresh work cycles (M6), camps, walks and bounties (M7), the engine side of Thorns (M2). The XP bonus work change accepted (4a515f2f), calibration stamp retaken, draw compare clean. M1, M3, M4 built, wait for the size pack and the look. Main red on one test, the Scrap Heap's cycle band (owner's CMS edit). Next: the owner's CMS edits (Scrap Heap skill and cycle, Rusty Sword text) and the content agent's Thorns and size packs, Synced on main; then the look at the mat changes and the Rusty tools. Blockers: none.*
