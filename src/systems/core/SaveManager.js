@@ -542,7 +542,7 @@ export const SaveManager = {
             } else if (data.meta) {
                 data.meta.lastSavedAt = now;
             }
-            // The game as left was never a summary unanswered.
+            // Written back, the summary is answered: the game as left carries no mark.
             delete data[MARK_KEY];
             // ⚠️ The backup is the copy being written back: rolled first, a write that then fails
             // would leave it nowhere but in memory, and the next start could not offer it.

@@ -18,7 +18,7 @@ vi.mock('../systems/core/CatchUp.js', () => ({
     canUndo: vi.fn(() => true),
     undoSince: vi.fn(() => null),
     undoLast: vi.fn(() => Promise.resolve(true)),
-    forgetUndo: vi.fn()
+    keepCatchUp: vi.fn()
 }));
 
 /**
