@@ -13,10 +13,11 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| 650 H6: encounters on a settled place, many-hero banner losses, unique names | builder | `fix/encounters-names` (`h6`) | building | Tue | |
-| 670 M1: no Token merges, a copy lands beside | builder | `fix/no-merges` (`m1`) | building | Tue | |
-| 670 M5: a hero needs the recipe's level | builder-lite | `fix/recipe-level` | queued | Tue | |
+| 650 H6: encounters on a settled place, many-hero banner losses, unique names | builder | `fix/encounters-names` (`h6`) 6a184569 | **bench queued** (01:00, after the timer): diff read; director gate 675 files green, cycles 0, depcruise 0, build; names and the banner seen in the game by the builder, the encounter pick by tests | Tue | |
+| 670 M1: no Token merges, a copy lands beside | builder | `fix/no-merges` (`m1`) 772abd08 | **built, waits for the look with M2 and M3** (M3, M4 stack on it): diff read; builder gate 674 files green; drag and right-click onto a copy seen in the game; director gate after M5's; same work expected (S4 never merged) | Tue | |
+| 670 M5: a hero needs the recipe's level | builder-lite | `fix/recipe-level` (`m5`) | building | Tue | |
 | 670 M8: a ripe Field's card shows the stored load | builder-lite | `fix/ripe-field-card` | queued | Tue | |
+| 650 H7: Rusty tools (owner pack synced f3defd8d: Rusty Pickaxe, Woodaxe, Sword, Scrap Heap) and lesson 8 fights the small Slime | builder | `feat/rusty-tools` (`h7`) | building | Tue | |
 
 ## Director, batch 7: the rest of 650 and 660 R3 (owner, 2026-11-17: four fixes, one look; Sync shows renames)
 
