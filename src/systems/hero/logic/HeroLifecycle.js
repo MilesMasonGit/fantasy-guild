@@ -51,7 +51,7 @@ export function createHero(options = {}, silent = false) {
         return null;
     }
 
-    const hero = generateHero(options);
+    const hero = generateHero({ takenNames: GameState.heroes.map(h => h.name), ...options });
     rehydrateHero(hero);
     arriveWithHallXp(hero);
     // A new recruit arrives rested: whatever max HP the Hall's XP gave them, they hold in full.

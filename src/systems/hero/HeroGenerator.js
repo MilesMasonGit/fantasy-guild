@@ -18,10 +18,11 @@ import { heroMaxHpFromSkills } from '../combat/CombatFormulas.js';
  * Generate a complete hero object
  * @param {Object} options - Generation options
  * @param {string} options.name - Specific name (optional, random if omitted)
+ * @param {Iterable<string>} options.takenNames - Names the roster holds: a random name avoids them
  * @returns {Object} Complete hero object
  */
 export function generateHero(options = {}) {
-    const name = options.name || getRandomName();
+    const name = options.name || getRandomName(options.takenNames);
 
     const skills = {};
     for (const skillId of HERO_SKILL_IDS) {
