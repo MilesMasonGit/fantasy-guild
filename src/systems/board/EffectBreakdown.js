@@ -286,6 +286,13 @@ function measureLucky(ctx, type) {
 function measureAbundance(ctx, type) {
     const { instance, def } = ctx;
     if (!Fields.isField(def)) return null;
+    const state = Fields.fieldState(instance);
+    // ⚠️ A ripe Field keeps the load it ripened with; a neighbour placed or removed since counts from the next crop.
+    if (state.stage === Fields.STAGE.RIPE) {
+        const planted = Fields.plantedCrop(instance, def);
+        const base = cropTermsOf(planted).load;
+        return { base, resolved: state.full, final: state.full, limit: null, contributions: [] };
+    }
     const crop = Fields.cropOf(instance, def);
     if (!crop) return null;
     const base = cropTermsOf(crop).load;
