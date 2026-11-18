@@ -32,7 +32,6 @@ import { QUEST_TOKEN_TYPE } from '../config/registries/engineTokens.js';
 import { tokenStartingUses, getTokenType } from '../config/registries/tokenRegistry.js';
 import { getItem } from '../config/registries/itemRegistry.js';
 import { getGrid } from '../config/registries/equipmentConstants.js';
-import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -219,9 +218,8 @@ describe('⭐ the lessons, step by step, through the real systems', () => {
         Flags.furl(heroId);
 
         // 8. Food was done early (step 3): straight on to the fight.
-        // ⚠️ Fixture: a new hero at combat level 1 is often knocked out by a Goblin; lent level 40.
+        // A new hero at combat level 1, berries in hand, beats the small slime: the safe first foe.
         expect(step()).toBe('fight');
-        GameState.heroes[0].skills[COMBAT_SKILL_IDS[0]] = { xp: 0, level: 40 };
         give('item_redberry', 20);
         place(LESSON_TARGETS.foe, SPOT.fight);
         expect(Orders.orderAt(heroId, SPOT.fight).success).toBe(true);
@@ -262,7 +260,7 @@ describe('guides, never locks: a step done early counts and moves on', () => {
     beforeEach(() => LimesLessons.startLessons());
 
     it('a fight won first is done when its turn comes; the steps before it still wait', () => {
-        EventBus.publish(ENGINE_EVENTS.COMBAT_VICTORY, { enemyId: 'token_goblin' });
+        EventBus.publish(ENGINE_EVENTS.COMBAT_VICTORY, { enemyId: 'token_small_slime' });
         expect(LimesLessons.isStepDone('fight')).toBe(true);
         expect(step()).toBe('bush');
         for (const s of lessonSteps().filter(s => s.id !== 'fight' && s.id !== 'food')) {

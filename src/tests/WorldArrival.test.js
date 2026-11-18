@@ -66,7 +66,12 @@ function heroFor(cell) {
 }
 
 function fitToFight(hero) {
-    GameState.heroes.find(h => h.id === hero.id).skills[COMBAT_SKILL_IDS[0]] = { xp: 0, level: 40 };
+    const record = GameState.heroes.find(h => h.id === hero.id);
+    record.skills[COMBAT_SKILL_IDS[0]] = { xp: 0, level: 40 };
+    // The health a level-40 fighter has, not a recruit's: without it a fight here is won or lost
+    // by a few hit points, and any change to the random stream before it flips the result.
+    HeroManager.updateHeroFromSkills(record);
+    record.hp.current = record.hp.max;
     InventoryManager.addItem('item_steak', 10);
     expect(EquipmentManager.equipItem(hero.id, 'item_steak').success).toBe(true);
 }
