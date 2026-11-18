@@ -282,9 +282,11 @@ point** (`board.tokens`, `:56`), heroes' orders in `board.flags` (`:63`), floor 
    catch-up on load (§4.4), starter tools granted if missing, `GameLoop.start()`, then
    `GAME_RESET`, `HEROES_UPDATED`, `INVENTORY_UPDATED` (`EngineBootstrap.js:319-354`).
 
-A new game: `SaveManager.newGame` (`SaveManager.js:518`) → `createDefaultGameData`
-(`EngineBootstrap.js:235-266`: opening Bank, starter tools, Starter Camp Region, world, first
-hero, modifier caches) → an immediate save (`:334`).
+A new game: `SaveManager.newGame` (claims the slot in memory, writes nothing) →
+`createDefaultGameData` (opening Bank, starter tools, Starter Camp Region, world, first hero,
+modifier caches) → its one save, the finished opening (`onSlotSelected`). Settling a place
+(`world/Settling.js` `settleCell`) likewise saves once, after the price is paid and the arrival
+enemies are down: `Atlas.settle` and `Atlas.travel` take `save: false` for it.
 
 ### 4.4 Catch-up after time away
 

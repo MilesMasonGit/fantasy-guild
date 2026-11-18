@@ -41,7 +41,9 @@ describe('rate trackers are cleared when a game is loaded or started', () => {
     });
 
     it('loading a save starts with no rates', async () => {
+        // `newGame` writes nothing; the opening's save is the caller's.
         SaveManager.newGame(0);
+        SaveManager.save(false);
         recordSomething();
         expect(await SaveManager.loadSlot(0)).toBe(true);
         expect(ItemRateTracker.getRate('item_oak_log')).toBe(0);

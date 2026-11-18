@@ -312,10 +312,11 @@ const copy = (v) => JSON.parse(JSON.stringify(v));
  *        reads in the practical name; by default its own `name`, else its item's
  * @param {string|null} [options.cellId] the world cell the Region is settled on
  * @param {boolean} [options.allowUnplaced] write a layout even when some Token found no room
+ * @param {boolean} [options.save] save the game once written; false when the caller saves at its end
  * @returns {{success: boolean, reason?: string, unplaced?: object[], region?: object, preview?: object}}
  *          `preview` is the plan the Region was written from
  */
-export function settle({ ingredients = [], seed, describe = null, cellId = null, allowUnplaced = false } = {}) {
+export function settle({ ingredients = [], seed, describe = null, cellId = null, allowUnplaced = false, save = true } = {}) {
     const atlas = ensureState();
     if (!atlas) return refuse(TEXT.REFUSE_NO_GAME);
     const slots = Array.isArray(ingredients) ? ingredients : [];
@@ -337,7 +338,7 @@ export function settle({ ingredients = [], seed, describe = null, cellId = null,
         board,
         cellId
     });
-    saveNow();
+    if (save) saveNow();
     return { success: true, region, preview: plan };
 }
 
@@ -515,13 +516,13 @@ function landTravellers(travellers, remembered) {
 }
 
 /**
- * Move the whole guild to Region `id`.
+ * Move the whole guild to Region `id`, and save (unless `save` is false: the caller saves at its end).
  *
  * @returns {{success: boolean, reason?: string, fromRegionId?: string, toRegionId?: string,
  *          banked?: number, leftOnFloor?: number}} `banked`: loot piles taken into the Bank on
  *          leaving; `leftOnFloor`: piles the Bank could not take, left on the old Region's floor
  */
-export function travel(id) {
+export function travel(id, { save = true } = {}) {
     const atlas = ensureState();
     if (!atlas) return refuse(TEXT.REFUSE_NO_GAME);
     const to = atlas.regions[id];
@@ -550,7 +551,7 @@ export function travel(id) {
     EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'travel' });
     EventBus.publish(ENGINE_EVENTS.STATE_CHANGED);
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED);
-    saveNow();
+    if (save) saveNow();
     logger.info('Atlas', `The guild travelled from ${from.id} to ${to.id}`);
     return { success: true, fromRegionId: from.id, toRegionId: to.id, ...floor };
 }
