@@ -56,7 +56,7 @@ function reportSaveFailed(err) {
         parts: {
             title: 'Save Failed!',
             message: isQuota
-                ? 'Browser storage is full. Free space or export your save.'
+                ? t('settings.storageFull')
                 : 'The game could not be saved.'
         }
     });

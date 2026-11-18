@@ -34,6 +34,7 @@
         "saveNow": "Save Game Now",
         "saveNowDone": "Saved",
         "saveNowFailed": "Could not save",
+        "storageFull": "Browser storage is full. Delete a save slot to make room.",
         "guildName": "Guild Name",
         "masterVolume": "Master Volume",
         "musicVolume": "Music Volume",
