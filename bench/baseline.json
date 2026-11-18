@@ -174,6 +174,25 @@
             "randomDraws"
           ]
         }
+      },
+      {
+        "ticket": "brief-670-M3",
+        "commit": "b5a01a62",
+        "branch": "HEAD",
+        "dirty": false,
+        "date": "2026-11-18T21:07:59.569Z",
+        "node": "v24.11.1",
+        "scenarios": {
+          "S7": [
+            "tokens",
+            "uses",
+            "bankItems",
+            "tokensHash",
+            "bankHash",
+            "spriteHash",
+            "randomDraws"
+          ]
+        }
       }
     ]
   },
@@ -322,18 +341,18 @@
       "p50": 0.5095000000001164,
       "p99": 1.0041000000001077,
       "fingerprint": {
-        "tokens": 116,
-        "uses": 101023,
-        "bankItems": 648,
+        "tokens": 112,
+        "uses": 97447,
+        "bankItems": 624,
         "heroXp": 101333,
         "sprites": 40,
         "gameTimeMs": 180000,
-        "tokensHash": "5fc4cf88",
-        "bankHash": "5ccb0b3d",
+        "tokensHash": "8b3dbb7c",
+        "bankHash": "1c2efd87",
         "heroHash": "1ed2f9b2",
-        "spriteHash": "e10f3e3a",
+        "spriteHash": "0ee7edd6",
         "binHash": "811c9dc5",
-        "randomDraws": 2840
+        "randomDraws": 2740
       },
       "fingerprintOptions": {
         "seed": 1
