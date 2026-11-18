@@ -562,10 +562,14 @@ export const DeckDndProvider = ({ children }) => {
         const { active, over } = event;
         const payload = startPayloadRef.current || active?.data?.current;
         let success = false;
+        // Whether a target (or an interceptor) took the drop, refused or not: a refusal there has
+        // said its own reason, so the source's miss handler, for a drop let go where nothing is, is not asked.
+        let taken = false;
         let clip = null;
         const intercepted = interceptedDrop(payload, { pointer: pointerRef.current });
 
         if (intercepted) {
+            taken = true;
             success = intercepted.success !== false;
             clip = intercepted.sfx || null;
             // A taken drop: the ghost vanishes where it was let go (see `dropAnimation`); a refused
@@ -574,6 +578,7 @@ export const DeckDndProvider = ({ children }) => {
         } else if (payload && over) {
             const data = over.data?.current;
             if (data?.accepts?.(payload)) {
+                taken = true;
                 const node = document.querySelector(`[data-dnd-droppable-id="${over.id}"]`);
                 if (node) {
                     const r = node.getBoundingClientRect();
@@ -593,7 +598,7 @@ export const DeckDndProvider = ({ children }) => {
         if (success) {
             sfx(clip || DRAG_SFX.dropByKind[payload.kind] || DRAG_SFX.dropDefault);
         } else {
-            if (payload.onMiss) {
+            if (payload.onMiss && !taken) {
                 const target = payload.onMiss(payload);
                 if (target) glideTargetRef.current = target;
                 else glideTargetRef.current = null;

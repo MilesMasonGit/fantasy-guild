@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useActiveDrag, snapshotDndRegions, surfaceWithinRegions } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
@@ -10,7 +10,8 @@ import { dashedLinePath, MARCH_PX_PER_S } from './orderLine.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import { matW } from '../../../config/matGeometry.js';
 import { createOrderAim } from './orderAim.js';
-import { SpeechFrame } from './SpeechFrame.jsx';
+import { SpeechFrame, tailInset } from './SpeechFrame.jsx';
+import { keepInMat, guessCalloutSize } from './calloutPlace.js';
 import { SPEECH_TONE } from './speechTone.js';
 import { plateUnit } from './workPlate.js';
 import { calloutTopOf } from './CalloutLayer.jsx';
@@ -246,7 +247,7 @@ function MarchingLine({ heroId, session, matRef }) {
                 <path ref={goldRef} d="" transform={`scale(${artScale})`} fill={LINE_GOLD} />
             </g>
         </svg>}
-        {target && <AimedLabel heroId={heroId} instance={target.instance} reason={target.reason} fit={fit} matH={mat.h} />}
+        {target && <AimedLabel heroId={heroId} instance={target.instance} reason={target.reason} fit={fit} mat={mat} />}
         </>
     );
 }
@@ -278,10 +279,11 @@ function drawnSpriteOf(instanceId) {
  * refusal over them. Where a callout would be lifted clear of a work plate or a fight's bars, the
  * column is too.
  */
-function AimedLabel({ heroId, instance, reason, fit, matH }) {
+function AimedLabel({ heroId, instance, reason, fit, mat }) {
     const f = fit || 1;
     const u = plateUnit(f);
     const markPx = markMatPx(f);
+    const matH = mat.h;
     const place = useMemo(() => {
         const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, instance.typeId, boardScaleAt(f));
         const sprite = spriteTopMiddle(instance, artPx, opaqueBoundsOf(drawnSpriteOf(instance.id)));
@@ -290,8 +292,19 @@ function AimedLabel({ heroId, instance, reason, fit, matH }) {
         const lifted = calloutTopOf({ ...at, anchorId: instance.id }, { fit: f, matH, u });
         const plain = calloutTopOf(at, { fit: f, matH, u });
         const top = sprite.top - markPx / 8;
-        return { x: sprite.x, top: lifted < plain ? Math.min(top, lifted) : top };
+        return { x: sprite.x, top: lifted < plain ? Math.min(top, lifted) : top, belowTop: instance.y + artPx / 2 + markPx / 8 };
     }, [instance, f, matH, u, markPx]);
+    // Measured as the reason changes, so the column is kept inside the mat as a callout is.
+    const columnRef = useRef(null);
+    const [size, setSize] = useState(null);
+    useLayoutEffect(() => {
+        const el = columnRef.current;
+        const next = el && el.offsetWidth && el.offsetHeight ? { w: el.offsetWidth, h: el.offsetHeight } : null;
+        setSize(old => (old && next && Math.abs(old.w - next.w) <= 1 && Math.abs(old.h - next.h) <= 1 ? old : next));
+    }, [instance.id, reason, markPx]);
+    const guess = guessCalloutSize(reason ? [reason] : []);
+    const { x, top, dx, below } = keepInMat({ ...place, ...(size || { w: reason ? guess.w : markPx, h: (reason ? guess.h : 0) + markPx }) }, mat);
+    const inset = tailInset(u);
     return (
         <div
             data-order-aim={instance.id}
@@ -299,12 +312,20 @@ function AimedLabel({ heroId, instance, reason, fit, matH }) {
             style={{ zIndex: MAT_Z.CALLOUT }}
         >
             <div
-                className="absolute flex flex-col items-center"
-                style={{ left: 0, top: 0, gap: markPx / 4, transform: `translate(${place.x}px, ${place.top}px) translate(-50%, -100%)` }}
+                ref={columnRef}
+                // Said below the Token, the marks stay next to it and the reason goes under them.
+                className={below ? 'absolute flex flex-col-reverse items-center' : 'absolute flex flex-col items-center'}
+                style={{ left: 0, top: 0, gap: markPx / 4, transform: `translate(${x}px, ${top}px) translate(-50%, -100%)` }}
             >
                 {reason && (
                     <div data-order-reason={instance.id}>
-                        <SpeechFrame tone={SPEECH_TONE.CANT} u={u} tail className="order-reason-bubble whitespace-nowrap ui-text-title font-bold">
+                        <SpeechFrame
+                            tone={SPEECH_TONE.CANT}
+                            u={u}
+                            tail={!below}
+                            tailLeft={`clamp(${inset}px, calc(50% - ${dx}px), calc(100% - ${inset}px))`}
+                            className="order-reason-bubble whitespace-nowrap ui-text-title font-bold"
+                        >
                             {reason}
                         </SpeechFrame>
                     </div>
