@@ -9,8 +9,8 @@
 
 /**
  * ⭐ The ids the lessons name, in one place. The opening's own content (brief 480 L2: the scrap
- * heap, the rusty tools, the small slime) is not in the game yet, so today's starting content
- * stands in: a null id is a step that waits for that content and is left out until it is set.
+ * heap, the rusty tools) is not all wired in yet, so today's starting content stands in: a null
+ * id is a step that waits for that content and is left out until it is set.
  */
 export const LESSON_TARGETS = Object.freeze({
     /** Lesson 1: the bush a hero gathers bare-handed. */
@@ -33,8 +33,8 @@ export const LESSON_TARGETS = Object.freeze({
     weapon: null,
     /** Lesson 8: the food outlined in the Bank, what lesson 1 gathers (any food equipped counts). */
     food: 'item_redberry',
-    /** Lesson 8: the safe first foe outlined (any win counts). Today the Goblin by the Goblin Camp. */
-    foe: 'token_goblin'
+    /** Lesson 8: the safe first foe outlined (any win counts): the small slime by the Hall. */
+    foe: 'token_small_slime'
 });
 
 const T = LESSON_TARGETS;
