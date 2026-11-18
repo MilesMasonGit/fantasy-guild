@@ -15,8 +15,8 @@ import { isGuildHall } from './MatCap.js';
  *
  * While a mat is held a hero may be sent at any enemy and at nothing else ({@link holds}): its
  * nodes, camps and stations wait. Everything still runs on its own (spawners, passive output); only
- * hero work waits. A hero whose arrival enemy falls takes on the nearest one still standing
- * ({@link nextEnemyAfter}), so heroes sent at the encounter keep fighting while the player is away.
+ * hero work waits. A hero whose arrival enemy falls takes on the nearest one still standing that no
+ * other hero has ({@link nextEnemyAfter}), so heroes sent at the encounter keep fighting while the player is away.
  *
  * A leaf: reads the board and the registries only.
  */
@@ -69,14 +69,26 @@ export function isHeldType(typeId) {
 }
 
 /**
- * The arrival enemy a hero takes on once `goneId` (an arrival enemy) has fallen: the nearest one
- * still standing to `from`, the earlier written on a tie; null when `goneId` was not one of them
- * or none stands.
+ * The arrival enemy `heroId` takes on once `goneId` (an arrival enemy) has fallen: the nearest one
+ * still standing to `from` that no other hero fights or is sent at, the earlier written on a tie;
+ * when every one is taken, the nearest of them all (the hero waits beside that fight). Null when
+ * `goneId` was not one of them or none stands.
  */
-export function nextEnemyAfter(goneId, from) {
+export function nextEnemyAfter(goneId, from, heroId = null) {
     if (!isOccupied() || !isArrivalId(goneId)) return null;
+    const flags = BoardState.getFlags();
+    const taken = (enemy) => {
+        const fighter = BoardState.heroOfInstance(enemy.id);
+        if (fighter && fighter !== heroId) return true;
+        for (const [otherId, flag] of Object.entries(flags)) {
+            if (otherId !== heroId && flag?.pinnedTo === enemy.id) return true;
+        }
+        return false;
+    };
     let best = null;
     let bestD = Infinity;
+    let free = null;
+    let freeD = Infinity;
     for (const enemy of standingEnemies()) {
         const dx = enemy.x - (from?.x ?? 0);
         const dy = enemy.y - (from?.y ?? 0);
@@ -85,6 +97,10 @@ export function nextEnemyAfter(goneId, from) {
             best = enemy;
             bestD = d;
         }
+        if (d < freeD && !taken(enemy)) {
+            free = enemy;
+            freeD = d;
+        }
     }
-    return best;
+    return free ?? best;
 }
