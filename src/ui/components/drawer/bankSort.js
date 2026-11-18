@@ -18,7 +18,8 @@ export function bankSearchWords(item) {
     ].filter(w => typeof w === 'string' && w);
 }
 
-const wordsOf = (text) => text.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+// Apostrophes go before the split, so "chiefs" finds "Chief's" as well as "chief's" does.
+const wordsOf = (text) => text.toLowerCase().replace(/['\u2018\u2019\u02BC]/g, '').split(/[^\p{L}\p{N}]+/u).filter(Boolean);
 
 /**
  * Whether `text` matches a search: the words typed are, in order, the starts of words in it ("Ore"

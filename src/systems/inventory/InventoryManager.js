@@ -7,7 +7,7 @@ import { GameState } from '../../state/GameState.js';
 import { DEFAULT_MAX_STACK } from '../../config/registries/itemRegistry.js';
 import { RegistryManager } from '../progression/RegistryManager.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
-import { BANK_TAB_SLOTS, homeTabOf, bankTabCounts, bankTabLayout } from './bankTabs.js';
+import { BANK_TAB_SLOTS, homeTabOf, bankTabCounts, bankTabLayout, mergeTabOrder } from './bankTabs.js';
 
 /**
  * The kinds the Bank holds that take a slot: those the game still has a definition for.
@@ -343,13 +343,13 @@ export const InventoryManager = {
     // `groupOrder`/`groupDefs`.
 
     /**
-     * Replace a group's manual item order wholesale (the Bank pane's reorderable
-     * list commits its visual order).
+     * Set a group's manual item order (the Bank pane commits the order it shows). Ids the
+     * order leaves out keep their places ({@link mergeTabOrder}).
      */
     setGroupOrder(groupId, orderedIds) {
         const def = GameState.inventory.groupDefs[groupId];
         if (!def || !Array.isArray(orderedIds)) return false;
-        def.orderedItems = [...orderedIds];
+        def.orderedItems = mergeTabOrder(def.orderedItems, orderedIds);
         EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED);
         return true;
     },
@@ -368,12 +368,18 @@ export const InventoryManager = {
         return true;
     },
 
-    /** File an item in a tab at an index (the end when -1), unannounced and unchecked. */
+    /**
+     * File an item in a tab at an index of the order the tab shows (the end when -1),
+     * unannounced and unchecked.
+     */
     _refile(itemId, groupId, targetIndex = -1) {
         const inv = GameState.inventory;
         const defs = inv.groupDefs;
         if (!inv.itemOverrides) inv.itemOverrides = {};
         const overrides = inv.itemOverrides;
+        // A tab shows its saved order, then the unarranged rest; writing that whole order first
+        // makes an index, and the end, mean what the player sees.
+        const shown = (bankTabLayout(inv, slottedKinds())[groupId] || []).filter(id => id !== itemId);
 
         // 1. Remove from any existing specific group order
         for (const gId in defs) {
@@ -386,13 +392,13 @@ export const InventoryManager = {
         overrides[itemId] = groupId;
 
         // 3. Insert into new group order
-        const targetList = defs[groupId]?.orderedItems;
-        if (targetList) {
-            if (targetIndex >= 0 && targetIndex <= targetList.length) {
-                targetList.splice(targetIndex, 0, itemId);
-            } else {
-                targetList.push(itemId);
-            }
+        const def = defs[groupId];
+        if (def) {
+            const targetList = mergeTabOrder(def.orderedItems, shown);
+            const before = targetIndex >= 0 && targetIndex < shown.length ? targetList.indexOf(shown[targetIndex]) : -1;
+            if (before >= 0) targetList.splice(before, 0, itemId);
+            else targetList.push(itemId);
+            def.orderedItems = targetList;
         }
     }
 };
