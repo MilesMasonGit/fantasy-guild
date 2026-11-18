@@ -75,6 +75,7 @@ describe('the routing table', () => {
             [ENGINE_EVENTS.ATLAS_CHANGED]: 'banner:settled',
             [BOARD_EVENTS.EVENT_LANDED]: 'banner:event',
             [BOARD_EVENTS.EVENT_ENDED]: 'banner:event',
+            [ENGINE_EVENTS.BOARD_SWAPPED]: 'banner:event',
             [ENGINE_EVENTS.CATCH_UP_FINISHED]: 'catchUp:news',
             [UI_EVENTS.CATCH_UP_SUMMARY_CLOSED]: 'catchUp:news'
         });
