@@ -295,13 +295,33 @@ describe('dropOnMat — one drop function for the playmat', () => {
         expect(BoardState.flagOf('h1')).toMatchObject(point);
     });
 
-    it('⭐ a dragged flag moves to the raw point, clamped to the mat (FP-94)', () => {
+    it('⭐ a dragged flag moves to the raw point, edges included (FP-94)', () => {
         dropOnMat(rosterFlagPayload('h1'), C(3));
         dropOnMat({ kind: DRAG_KIND.FLAG, heroId: 'h1', from: { flag: true } }, { x: 1234.5, y: 77 });
         expect(BoardState.flagOf('h1')).toMatchObject({ x: 1234.5, y: 77 });
 
-        dropOnMat({ kind: DRAG_KIND.FLAG, heroId: 'h1', from: { flag: true } }, { x: -30, y: 9999 });
+        expect(dropOnMat({ kind: DRAG_KIND.FLAG, heroId: 'h1', from: { flag: true } }, { x: 0, y: matH() }).success).toBe(true);
         expect(BoardState.flagOf('h1')).toMatchObject({ x: 0, y: matH() });
+    });
+
+    /**
+     * ⭐ The nearest-target fallback can hand the mat a drop let go beside it (the hero bar's empty
+     * strip, the table): a hero let go there stays where they were, and nothing is said.
+     */
+    it('⭐ a hero or flag let go off the mat is a miss: they keep their order', () => {
+        dropOnMat(rosterFlagPayload('h1'), C(3));
+        const flag = { ...BoardState.flagOf('h1') };
+        for (const point of [{ x: -30, y: 500 }, { x: 900, y: matH() + 40 }, { x: matW() + 1, y: 10 }, { x: 900, y: -1 }]) {
+            for (const payload of [{ kind: DRAG_KIND.FLAG, heroId: 'h1', from: { flag: true } }, { kind: DRAG_KIND.FLAG, heroId: 'h1', from: { hero: true } }]) {
+                const res = dropOnMat(payload, point);
+                expect(res).toMatchObject({ success: false, flyBack: true });
+                expect(BoardState.flagOf('h1')).toMatchObject(flag);
+            }
+        }
+        // A hero from the bar with no order yet gets none.
+        GameState.state.heroes.push({ ...GameState.state.heroes[0], id: 'h2', name: 'h2' });
+        expect(dropOnMat(rosterFlagPayload('h2'), { x: 900, y: matH() + 40 }).success).toBe(false);
+        expect(BoardState.flagOf('h2')).toBeNull();
     });
 
     it('a hero with no order dragged by their figure gets one (every hero is on the mat, brief 260 O1)', () => {
