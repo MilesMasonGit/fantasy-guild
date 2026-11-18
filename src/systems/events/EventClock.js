@@ -20,14 +20,14 @@ import { artRadiusOf, matW, matH } from '../../config/matGeometry.js';
  * ## The clock
  * `state.events.clockMs`, saved, advanced by {@link tick} with the loop's `delta` (so a catch-up
  * and the dev time skip run it too). It runs only while **no event Token stands on the mat**, and
- * is held at zero while one does: the next event comes `state.events.waitMs` after the last one
- * ended. When it is due, one event is drawn by weight among those that fit the place
+ * holds while one does (a landing zeroes it): the next event comes `state.events.waitMs` after the
+ * last one ended. When it is due, one event is drawn by weight among those that fit the place
  * ({@link fittingEvents}) and lands on a free spot of its ground ({@link landNext}); when none
  * fits or none finds room, the next try is {@link EVENT_RETRY_MS} later.
  *
  * One at a time is the clock's rule: it never lands an event while one stands on the mat. An
  * event left on another Region's mat stays there, frozen with that board; it does not hold this
- * mat's clock.
+ * mat's clock, and coming back to it holds the clock where it stood.
  *
  * ## The wait
  * Each wait is drawn uniformly between {@link EVENT_WAIT_MIN_MS} and {@link EVENT_WAIT_MAX_MS}
@@ -299,7 +299,7 @@ export function landNow(eventId, random = Math.random) {
 
 /**
  * **One tick** (`event_clock`, with the loop's `delta`). Nothing while events are off. While an
- * event Token stands on the mat the clock is held at zero; otherwise it advances, and once due an
+ * event Token stands on the mat the clock holds; otherwise it advances, and once due an
  * event is tried ({@link landNext}): landed, the clock starts from zero (and holds while it stands)
  * and the next wait is drawn; not, the next try is {@link EVENT_RETRY_MS} later, on the same wait.
  */
@@ -308,10 +308,9 @@ export function tick(delta, random = Math.random) {
     const s = eventState();
     if (!s) return;
     if (s.waitMs == null) s.waitMs = drawWait(random);
-    if (eventTokenOnMat()) {
-        s.clockMs = 0;
-        return;
-    }
+    // ⚠️ Held, not zeroed: an event left standing in another Region comes back with the guild, and
+    // the wait run up meanwhile is kept. A landing is what zeroes the clock.
+    if (eventTokenOnMat()) return;
     s.clockMs += delta;
     if (s.clockMs < s.waitMs) return;
     if (landNext(random)) {

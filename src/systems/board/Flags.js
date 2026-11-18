@@ -21,6 +21,7 @@ import * as Occupation from './Occupation.js';
 import { ensureFlagColour } from './FlagColours.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 import { KEYWORD, statementsWith } from '../effects/statements.js';
+import * as LiveEffects from '../effects/LiveEffects.js';
 
 /**
  * Orders: the player drags a hero onto a Token and they work only it ({@link orderToken}), onto
@@ -252,12 +253,13 @@ function resetProgress(instance) {
 /**
  * Let go of `heroId`'s claim, resetting the Token they leave, and ending their fight at once if it
  * was an enemy, so the enemy is whole the next time anyone engages it, including this hero
- * ordered back onto it.
+ * ordered back onto it. What the hero carried "for the cycle" ends with the cycle they leave.
  */
 function release(heroId) {
     const claim = BoardState.claimOfHero(heroId);
     if (!claim) return null;
     resetProgress(BoardState.getTokenById(claim.instanceId));
+    LiveEffects.endHeroCycleEffects(heroId);
     BoardState.setClaim(heroId, null);
     BoardCombat.endFightOfHero(heroId);
     HeroMotion.settle(heroId);
