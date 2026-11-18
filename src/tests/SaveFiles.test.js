@@ -338,6 +338,50 @@ describe('a damaged, edited or old file', () => {
         expect(GameState.state.time.gameTimeMs).toBe(100);
     });
 
+    it.each([
+        ['a missing', (d) => d.files.delete('slot1.json')],
+        ['an empty', (d) => d.files.set('slot1.json', '')]
+    ])('%s file with a good backup shows as damaged; Load restores the backup, and the backup survives the next save', async (_, breakMain) => {
+        await twoSaves();
+        breakMain(disk);
+        await SaveFiles.refreshAll();
+        expect(SlotHelper.hasSlot(0)).toBe(true);
+        expect(SlotHelper.getSlotInfo(0)).toMatchObject({ damaged: true });
+
+        expect(await SaveManager.loadSlot(0, { catchUp: false })).toBe(true);
+        expect(GameState.state.time.gameTimeMs).toBe(100);
+        expect(bannerTitles()).toContain('Save Restored');
+        GameState.state.time.gameTimeMs = 300;
+        SaveManager.save(false);
+        await SaveFiles.flush();
+        expect(played(disk.main(0))).toBe(300);
+        expect(played(disk.backup(0))).toBe(100);
+    });
+
+    it('a slot with no file and no good backup is still empty, for a new game', async () => {
+        disk.files.set('slot2.backup.json', '');
+        disk.files.set('slot3.backup.json', 'not a save at all');
+        await SaveFiles.refreshAll();
+        for (const slot of [0, 1, 2]) {
+            expect(SlotHelper.hasSlot(slot)).toBe(false);
+            expect(SlotHelper.getSlotInfo(slot)).toBeNull();
+        }
+    });
+
+    it('a file read empty at Load, though the slot screen saw a save, still restores the backup and stays damaged if that fails', async () => {
+        await twoSaves();
+        await SaveFiles.refreshAll();
+        disk.files.set('slot1.json', '');
+        expect(await SaveManager.loadSlot(0, { catchUp: false })).toBe(true);
+        expect(GameState.state.time.gameTimeMs).toBe(100);
+
+        SaveManager.currentSlot = null;
+        disk.files.delete('slot1.json');
+        disk.files.set('slot1.backup.json', '{"state": {"heroes": [');
+        expect(await SaveManager.loadSlot(0, { catchUp: false })).toBe(false);
+        expect(messages()).toContain(DAMAGED);
+    });
+
     it('a file from another version is refused with the existing message, and left as it is', async () => {
         const old = JSON.parse(gameText(50));
         old.version = '0.7.0';

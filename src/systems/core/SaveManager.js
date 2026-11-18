@@ -343,6 +343,8 @@ export const SaveManager = {
             }
             if (!json) {
                 console.warn(`[SaveManager] ${which} is empty`);
+                // A missing or empty file whose backup holds a save shows as damaged (`SaveFiles`).
+                if (SaveFiles.isActive() && !fromBackup) return this.loadDamaged(slotIndex, { fromBackup, catchUp });
                 return false;
             }
 
