@@ -19,6 +19,12 @@ import { t } from '../../../i18n/index.js';
 /** How far an arrow press scrolls the rank list: about two rows. */
 const RANK_SCROLL_STEP_PX = 72;
 
+/**
+ * After a buy the same button, in the same place, buys the next rank: an Upgrade click this soon
+ * after a successful buy is the second half of a double-click and is ignored (owner, 2026-11-17).
+ */
+export const UPGRADE_REPEAT_GUARD_MS = 500;
+
 /** `u_upgrade.png` is 16 art pixels; UI sprites draw at 2×. */
 const UPGRADE_ICON_PX = 32;
 
@@ -81,6 +87,7 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose = null }) => {
     const [choice, setChoice] = useState({ id: null, from: -1, target: 0 });
     const target = choice.id === id && choice.from === rank ? choice.target : rank + 1;
     const [totalShown, setTotalShown] = useState(false);
+    const boughtAt = useRef(-Infinity);
 
     // The list opens on the last bought rank, the next one under it.
     const listRef = useRef(null);
@@ -118,9 +125,12 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose = null }) => {
 
     const handleUpgrade = () => {
         if (!buyable || !canAfford) return;
+        if (Date.now() - boughtAt.current < UPGRADE_REPEAT_GUARD_MS) return;
         EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
         const result = GuildUpgradeManager.purchaseRanks(id, count);
-        if (!result?.success) {
+        if (result?.success) {
+            boughtAt.current = Date.now();
+        } else {
             EventBus.publish(UI_EVENTS.UI_SCREEN_CALLOUT, { text: result?.error || t('guildHall.couldNotBuy') });
         }
     };
