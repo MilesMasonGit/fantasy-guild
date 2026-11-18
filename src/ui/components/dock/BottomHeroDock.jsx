@@ -80,8 +80,10 @@ const DockStrip = ({ artPx, children }) => (
     // Overflow stays VISIBLE upward: the heroes' heads, names and HP bars may stand over the
     // bottom of the mat or of a panel. ⚠️ Its layer is the screen's (`--z-hero-bar`): mounted
     // outside the mat column's own layer, so it is drawn over the side drawers and under the nav.
+    // A drag layer: its heroes stay targets over the Hero drawer under it (`data-dnd-cover`).
     <aside
         data-dnd-region={DND_SURFACE.DRAWER}
+        data-dnd-layer
         data-bottom-hero-dock="true"
         data-dock-art-px={artPx}
         style={{ height: DOCK_STRIP_PX }}

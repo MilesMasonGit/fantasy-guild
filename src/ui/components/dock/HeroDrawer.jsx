@@ -124,6 +124,8 @@ export const HeroDrawer = ({
         <motion.aside
             ref={asideRef}
             data-hero-panel="true"
+            // Drawn over the Bank and the mat: a target under it is none where it lies (`DndKit`).
+            data-dnd-cover
             data-hero-drawer-state={isOpen ? 'open' : 'closed'}
             className={cn(
                 // Edge to edge, under the nav as the Shop: its blocks pad for the nav (`.gi-drawer-pad-x`).
