@@ -257,6 +257,12 @@ export const STATE_TONE = {
     idle: 'text-stone-300'
 };
 
+/** The hero bar's gold for a hero only the player can get going (`SPEECH_TONE.ATTENTION`). */
+export const STUCK_TONE = 'text-yellow-400';
+
+/** The colour of the tooltip's status line. */
+export const flagTipTone = (tip) => (tip.stuck ? STUCK_TONE : STATE_TONE[tip.state] || 'text-white/80');
+
 /**
  * The flag's hover text: the hero, what they are doing, and why their Token is passed over
  * (a tool they no longer hold). Refreshed twice a second while shown, because waiting changes
@@ -275,7 +281,7 @@ export const FlagTooltip = ({ anchor, heroId }) => {
             maxWidth={256}
             tipProps={{ 'data-flag-tooltip': heroId }}
             content={<>
-                <div className={STATE_TONE[tip.state] || 'text-white/80'}>{tip.status}</div>
+                <div className={flagTipTone(tip)}>{tip.status}</div>
                 {tip.skips.length > 0 && (
                     <ul className="mt-1 pt-1 border-t border-white/10 flex flex-col gap-0.5 text-white/75">
                         {tip.skips.map((line, i) => <li key={i}>{line}</li>)}
