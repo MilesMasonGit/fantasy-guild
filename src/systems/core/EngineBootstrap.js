@@ -295,10 +295,17 @@ export const EngineBootstrap = {
         return hero;
     },
 
+    /** The slot start under way (`startSlot`), until it settles. */
+    _slotStarting: null,
+
     /**
      * ⭐ Start a save slot: a new game in an empty slot, or the save in it loaded and caught up,
      * then the loop running. The one way a game starts: the slot screen calls it, and so can a
      * run with no React at all.
+     *
+     * ⚠️ One at a time: a call while a slot is still starting gets that start's promise. A second
+     * click on Load while the first is reading the file would load the save again under the
+     * catch-up already playing.
      *
      * @param {number} slotIndex
      * @param {{ catchUp?: boolean, onOpened?: () => void, setup?: object }} [options] `catchUp: false`
@@ -306,7 +313,15 @@ export const EngineBootstrap = {
      * plays; `setup` is the new-game screen's choices for an empty slot (`createDefaultGameData`)
      * @returns {Promise<boolean>} false when the save was refused (the reason is already said)
      */
-    async startSlot(slotIndex, { catchUp = true, onOpened, setup } = {}) {
+    startSlot(slotIndex, options) {
+        if (!this._slotStarting) {
+            this._slotStarting = this.openSlot(slotIndex, options).finally(() => { this._slotStarting = null; });
+        }
+        return this._slotStarting;
+    },
+
+    /** {@link startSlot}'s work, one call at a time. */
+    async openSlot(slotIndex, { catchUp = true, onOpened, setup } = {}) {
         // The desktop build looks at the slot's file again first: one copied in since the slot
         // screen read the folder is loaded, never overwritten by a new game.
         if (SaveFiles.isActive()) await SaveFiles.refresh(slotIndex);
@@ -343,10 +358,8 @@ export const EngineBootstrap = {
         // 2. Data Initialization
         if (isNewGame) {
             this.createDefaultGameData(setup);
-            // Save the finished opening now: the save that claimed the slot
-            // (`SaveManager.newGame`) was written before the Hall and the opening
-            // items existed, so a game that died before the next autosave loaded
-            // as an empty table with no Guild Hall.
+            // ⚠️ A new game's one save, the finished opening: `SaveManager.newGame`
+            // writes nothing, so no save of a table with no Guild Hall can be left.
             SaveManager.save(false);
         } else {
             await this.catchUpOnLoad();

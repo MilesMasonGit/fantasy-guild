@@ -151,7 +151,113 @@ describe('a catch-up and the slot file', () => {
     });
 });
 
+describe('a sleeping PC with the game open', () => {
+    it('closing the window while it catches up keeps the game as it stood when the PC slept, dated then', async () => {
+        const autosave = plantSave(0);
+        await SaveFiles.refreshAll();
+        expect(await EngineBootstrap.startSlot(0)).toBe(true);
+        await SaveFiles.flush();
+        GameLoop.stop();
+        expect(disk.writes()).toHaveLength(0);
+        // Played since the last autosave, then the lid closes for half an hour.
+        GameState.state.time.gameTimeMs += 60_000;
+        GameState.state.meta.guildName = 'Renamed before the sleep';
+        const sleptAt = NOW - 30 * 60_000;
+
+        let atClose = null;
+        const closeWindow = disk.closeWindow;
+        disk.closeWindow = async () => {
+            atClose = { main: disk.main(0), backup: disk.backup(0), writes: disk.writes().length };
+            return closeWindow();
+        };
+        let closed = false;
+        await expect(CatchUp.run({
+            savedAt: sleptAt, now: NOW, sliceMs: 0,
+            onProgress: (f) => {
+                if (f <= 0 || f >= 1) return;
+                if (!closed) {
+                    closed = true;
+                    close();                               // the X, while the bar is up
+                } else if (atClose) {
+                    throw new Error('the window is gone');
+                }
+            }
+        })).rejects.toThrow('the window is gone');
+        await SaveFiles.flush();
+
+        // The window waited for the save written before the catch-up, and nothing after it.
+        expect(atClose.writes).toBe(1);
+        expect(disk.writes()).toHaveLength(1);
+        expect(disk.main(0)).toBe(atClose.main);
+        const kept = JSON.parse(atClose.main);
+        expect(kept.savedAt).toBe(sleptAt);
+        expect(played(atClose.main)).toBe(PLAYED_BEFORE + 60_000);
+        expect(kept.state.meta.guildName).toBe('Renamed before the sleep');
+        expect(atClose.backup).toBe(autosave);
+
+        // The next start: what was done before the sleep, and the whole sleep to catch up.
+        SaveManager.currentSlot = null;
+        CatchUp.forgetUndo();
+        expect(await SaveManager.loadSlot(0)).toBe(true);
+        expect(GameState.state.meta.guildName).toBe('Renamed before the sleep');
+        expect(GameState.state.time.gameTimeMs).toBe(PLAYED_BEFORE + 60_000);
+        expect(SaveManager.loadedSavedAt).toBe(sleptAt);
+    });
+});
+
 describe('opening a slot', () => {
+    it('a second Load while the first is still reading the file is the same start: the save loads once', async () => {
+        plantSave(3);
+        await SaveFiles.refreshAll();
+        let loads = 0;
+        const off = EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => { loads++; });
+        // As on the desktop: the catch-up takes several slices (a clock that moves with every
+        // look), and the second click's own file reads come back while it plays.
+        let clock = 0;
+        const perf = vi.spyOn(performance, 'now').mockImplementation(() => (clock += 0.05));
+        let playing;
+        const catchUpPlaying = new Promise(resolve => { playing = resolve; });
+        const offPlaying = EventBus.subscribe(ENGINE_EVENTS.CATCH_UP_PROGRESS, ({ fraction }) => {
+            if (fraction > 0 && fraction < 1) playing();
+        });
+        // Unguarded, the second read out is the second click's: it comes back once the catch-up
+        // plays. Guarded, it is the first click's own, which waits a moment and goes on.
+        const read = disk.read;
+        let reads = 0;
+        disk.read = async (...args) => {
+            if (++reads === 2) await Promise.race([catchUpPlaying, new Promise(r => setTimeout(r, 50))]);
+            return read(...args);
+        };
+        try {
+            const first = EngineBootstrap.startSlot(0);
+            const second = EngineBootstrap.startSlot(0);  // the double-click
+            expect(second).toBe(first);
+            expect(await first).toBe(true);
+        } finally {
+            off();
+            offPlaying();
+            perf.mockRestore();
+            disk.read = read;
+        }
+        await SaveFiles.flush();
+        GameLoop.stop();
+        expect(loads).toBe(1);
+        expect(CatchUp.lastResult().simulatedMs).toBe(3 * HOUR);
+        expect(GameState.state.time.gameTimeMs).toBe(PLAYED_BEFORE + 3 * HOUR);
+        expect(disk.writes()).toHaveLength(1);
+    });
+
+    it('a refused load leaves Load working: the next click starts afresh', async () => {
+        await SaveFiles.refreshAll();
+        disk.files.set('slot1.json', 'not a save');
+        expect(await EngineBootstrap.startSlot(0)).toBe(false);
+        plantSave(0);
+        expect(await EngineBootstrap.startSlot(0)).toBe(true);
+        await SaveFiles.flush();
+        GameLoop.stop();
+        expect(GameState.state.time.gameTimeMs).toBe(PLAYED_BEFORE);
+    });
+
     it('a save copied into the folder after the slot screen read it is loaded, never overwritten by a new game', async () => {
         await SaveFiles.refreshAll();
         expect(SaveManager.hasSlot(0)).toBe(false);
@@ -182,16 +288,20 @@ describe('"Load as I left it" with files', () => {
         const reload = vi.spyOn(SaveManager, 'reloadPage').mockImplementation(() => {});
         try {
             const release = disk.holdWrites();
-            expect(CatchUp.undoLast()).toBe(true);
+            const undoing = CatchUp.undoLast();
             await new Promise(r => setTimeout(r, 0));
             // The file is still being written: no reload yet, and nothing else may save.
             expect(reload).not.toHaveBeenCalled();
             expect(sessionStorage.getItem('fantasy_guild_resume_slot')).toBeNull();
             expect(SaveManager.save(false)).toBe(false);
+            // A second Confirm meanwhile is the same write.
+            expect(CatchUp.undoLast()).toBe(undoing);
             release();
+            expect(await undoing).toBe(true);
             await SaveFiles.flush();
-            await new Promise(r => setTimeout(r, 0));
             expect(reload).toHaveBeenCalledTimes(1);
+            expect(disk.writes()).toHaveLength(2);           // the catch-up's end, and this one
+            expect(CatchUp.canUndo()).toBe(false);
         } finally {
             reload.mockRestore();
         }
@@ -211,22 +321,31 @@ describe('"Load as I left it" with files', () => {
         expect(SaveManager.loadedSavedAt).toBeNull();
     });
 
-    it('a write that fails reloads nothing: the problem banner, and the game saves again', async () => {
-        await loadAndCatchUp();
+    it('a write that fails reloads nothing: the problem banner, the game saves again, and it can be tried again', async () => {
+        const before = await loadAndCatchUp();
         const caughtUp = disk.main(0);
         const reload = vi.spyOn(SaveManager, 'reloadPage').mockImplementation(() => {});
         try {
             disk.failWrites();
-            expect(CatchUp.undoLast()).toBe(true);
+            expect(await CatchUp.undoLast()).toBe(false);
             await SaveFiles.flush();
-            await new Promise(r => setTimeout(r, 0));
             expect(reload).not.toHaveBeenCalled();
+            expect(Banners.getAll().map(b => b.parts?.title)).toContain('Load Failed');
+            expect(sessionStorage.getItem('fantasy_guild_resume_slot')).toBeNull();
+            expect(SaveManager.savingSuspended).toBe(false);
+            expect(disk.main(0)).toBe(caughtUp);
+            expect(CatchUp.canUndo()).toBe(true);
+
+            // The disk is back: the same choice again puts the save from before back.
+            disk.failWrites(null);
+            expect(await CatchUp.undoLast()).toBe(true);
+            await SaveFiles.flush();
+            expect(reload).toHaveBeenCalledTimes(1);
+            expect(played(disk.main(0))).toBe(played(before));
+            expect(JSON.parse(disk.main(0)).savedAt).toBe(NOW);
+            expect(sessionStorage.getItem('fantasy_guild_resume_slot')).toBe('0');
         } finally {
             reload.mockRestore();
         }
-        expect(Banners.getAll().map(b => b.parts?.title)).toContain('Load Failed');
-        expect(sessionStorage.getItem('fantasy_guild_resume_slot')).toBeNull();
-        expect(SaveManager.savingSuspended).toBe(false);
-        expect(disk.main(0)).toBe(caughtUp);
     });
 });

@@ -233,7 +233,7 @@ describe('the catch-up hears the news its quiet bus keeps from the banners', () 
         try {
             await run({ savedAt: NOW - 20 * MIN, now: NOW });
             expect(CatchUp.canUndo()).toBe(true);
-            expect(CatchUp.undoLast()).toBe(true);
+            expect(await CatchUp.undoLast()).toBe(true);
             expect(restore).toHaveBeenCalled();
             // The page reloads into the old save: the summary never closed, so nothing was raised.
             expect(Banners.getAll()).toEqual([]);

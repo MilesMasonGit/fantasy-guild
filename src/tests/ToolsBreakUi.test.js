@@ -16,7 +16,8 @@ import { CatchUpOverlay } from '../ui/components/hud/CatchUpOverlay.jsx';
 // The summary's undo button asks the catch-up driver; here it is a stand-in.
 vi.mock('../systems/core/CatchUp.js', () => ({
     canUndo: vi.fn(() => true),
-    undoLast: vi.fn(() => true),
+    undoSince: vi.fn(() => null),
+    undoLast: vi.fn(() => Promise.resolve(true)),
     forgetUndo: vi.fn()
 }));
 

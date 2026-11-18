@@ -97,6 +97,10 @@ export const SaveManager = {
      */
     keepBackupSlot: null,
     _closeSaveBound: false,
+    /** The desktop build's last save asked for: resolves `{ ok, error }` once its file is written. */
+    _lastWrite: null,
+    /** The window was kept open once for a failed save on closing; the next close goes through. */
+    _closeKeptOpen: false,
 
     /** Refuse every save (autosave, closing the window, a button) until `resumeSaving`. */
     suspendSaving() {
@@ -155,6 +159,9 @@ export const SaveManager = {
      * game is saved and the file written, then the window closes. ⚠️ `beforeunload` cannot wait
      * for a file write, so the browser's way does not carry over. During a catch-up nothing is
      * saved, and the file keeps the save from before it.
+     *
+     * When that save fails, the window stays open once, with the "Save Failed" banner up; the
+     * next close goes through whatever its save does, so a full disk never traps the player.
      */
     installCloseSave() {
         if (!SaveFiles.isActive() || this._closeSaveBound) return;
@@ -163,11 +170,20 @@ export const SaveManager = {
         window.addEventListener(SaveFiles.CLOSE_REQUESTED_EVENT, async () => {
             if (closing) return;
             closing = true;
+            let failed = false;
             try {
+                this._lastWrite = null;
                 if (!this.isResetting && this.currentSlot !== null) this.save(false);
+                const write = this._lastWrite;
                 await SaveFiles.flush();
+                failed = write !== null && !(await write).ok;
             } finally {
-                await SaveFiles.closeWindow();
+                if (failed && !this._closeKeptOpen) {
+                    this._closeKeptOpen = true;
+                    await SaveFiles.cancelClose();
+                } else {
+                    await SaveFiles.closeWindow();
+                }
                 closing = false;
             }
         });
@@ -221,8 +237,10 @@ export const SaveManager = {
     /**
      * Save current game state to current slot
      * @param {boolean} showNotification - Whether to show notification
+     * @param {{ json?: string }} [options] `json`: the save text to write, already taken (the
+     *        catch-up's, dated when the time away began); the game as it stands when left out
      */
-    save(showNotification = true) {
+    save(showNotification = true, { json: given } = {}) {
         if (this.currentSlot === null) {
             console.warn('[SaveManager] No slot selected, cannot save');
             return false;
@@ -236,8 +254,8 @@ export const SaveManager = {
             // The same bytes as `JSON.stringify(GameState.serialize())`, without
             // deep-copying the state first.
             const stringifyStart = import.meta.env.DEV ? performance.now() : 0;
-            const json = GameState.serializeJson();
-            if (import.meta.env.DEV) {
+            const json = given ?? GameState.serializeJson();
+            if (import.meta.env.DEV && given == null) {
                 logger.info('SaveManager', `save size ${json.length} chars, serializeJson ${(performance.now() - stringifyStart).toFixed(1)} ms`);
             }
             const slot = this.currentSlot;
@@ -245,9 +263,15 @@ export const SaveManager = {
 
             if (SaveFiles.isActive()) {
                 // The game is taken now; the file is written after, in order with the others.
-                SaveFiles.writeSave(slot, json, { rollBackup }).then(({ ok, error }) => {
-                    if (!ok) reportSaveFailed(error);
-                    else if (this.keepBackupSlot === slot) this.keepBackupSlot = null;
+                this._lastWrite = SaveFiles.writeSave(slot, json, { rollBackup }).then((result) => {
+                    if (!result.ok) {
+                        reportSaveFailed(result.error);
+                    } else {
+                        if (this.keepBackupSlot === slot) this.keepBackupSlot = null;
+                        // Saving works again: a failed save on closing may keep the window open again.
+                        this._closeKeptOpen = false;
+                    }
+                    return result;
                 });
             } else {
                 const slotKey = this.getSlotKey(slot);
@@ -273,6 +297,7 @@ export const SaveManager = {
             return true;
         } catch (err) {
             reportSaveFailed(err);
+            this._lastWrite = Promise.resolve({ ok: false, error: err });
             return false;
         }
     },
@@ -439,10 +464,12 @@ export const SaveManager = {
      * slot by itself without a catch-up (`takeResumeSlot`). Nothing is saved after this: the game
      * still running is the one being thrown away.
      * In the desktop build the file is written first and the page reloads once it is on the disk:
-     * reloading sooner would read the save the catch-up wrote.
-     * @returns {boolean} false if the save could not be read or written (the page is not reloaded)
+     * reloading sooner would read the save the catch-up wrote. In a browser it all happens before
+     * this returns.
+     * @returns {Promise<boolean>} whether the save was written (the page is reloading); false if it
+     *          could not be read or written (the page is not reloaded, and the game saves again)
      */
-    restoreAndReload(slotIndex, json) {
+    async restoreAndReload(slotIndex, json) {
         try {
             const data = JSON.parse(json);
             const now = Date.now();
@@ -458,26 +485,20 @@ export const SaveManager = {
                 this.autoSaveTimer = null;
             }
             if (SaveFiles.isActive()) {
-                SaveFiles.writeSave(slotIndex, JSON.stringify(data)).then(({ ok, error }) => {
-                    if (!ok) {
-                        this.restoreFailed(error);
-                        return;
+                const { ok, error } = await SaveFiles.writeSave(slotIndex, JSON.stringify(data));
+                if (!ok) throw error ?? new Error('the save file was not written');
+            } else {
+                const slotKey = this.getSlotKey(slotIndex);
+                const previous = localStorage.getItem(slotKey);
+                if (previous) {
+                    try {
+                        localStorage.setItem(SlotHelper.getBackupKey(slotIndex), previous);
+                    } catch {
+                        // Backup is best-effort, as in `save`.
                     }
-                    sessionStorage.setItem(RESUME_SLOT_KEY, String(slotIndex));
-                    this.reloadPage();
-                });
-                return true;
-            }
-            const slotKey = this.getSlotKey(slotIndex);
-            const previous = localStorage.getItem(slotKey);
-            if (previous) {
-                try {
-                    localStorage.setItem(SlotHelper.getBackupKey(slotIndex), previous);
-                } catch {
-                    // Backup is best-effort, as in `save`.
                 }
+                localStorage.setItem(slotKey, JSON.stringify(data));
             }
-            localStorage.setItem(slotKey, JSON.stringify(data));
             sessionStorage.setItem(RESUME_SLOT_KEY, String(slotIndex));
         } catch (err) {
             this.restoreFailed(err);
@@ -517,8 +538,12 @@ export const SaveManager = {
     },
 
     /**
-     * Start a new game in a specific slot
-     * @param {number} slotIndex 
+     * Start a new game in a specific slot: the slot is claimed in memory only.
+     *
+     * ⚠️ Nothing is written here: the caller saves once the opening is laid
+     * (`EngineBootstrap.onSlotSelected`). A save of this empty state could be
+     * the one a crash leaves, and would roll into the backup.
+     * @param {number} slotIndex
      */
     newGame(slotIndex) {
         logger.info('SaveManager', `Starting new game in Slot ${slotIndex + 1}`);
@@ -532,8 +557,6 @@ export const SaveManager = {
         this.loadedJson = null;
         localStorage.setItem(LAST_SLOT_KEY, slotIndex);
 
-        // Save immediately to claim the slot
-        this.save(false);
         this.startAutoSave();
 
         NotificationSystem.notify(`New game started in Slot ${slotIndex + 1}`, 'success');

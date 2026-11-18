@@ -30,7 +30,7 @@ Tauri window (src-tauri/, Rust)    save files, save-on-close, "window minimised"
 
 | Layer | One sentence |
 |---|---|
-| **Tauri shell** | A thin Rust host: seven save-file commands, a save-before-close handshake and a minimise event for the page (`src-tauri/src/lib.rs:22-48`, `src-tauri/src/saves.rs`). |
+| **Tauri shell** | A thin Rust host: one copy at a time (the single-instance plugin: a second launch brings the open window forward), eight save-file commands, a save-before-close handshake and a minimise event for the page (`src-tauri/src/lib.rs:10-62`, `src-tauri/src/saves.rs`). |
 | **Engine tick** | `GameLoop` runs registered handlers on `setInterval(…, 100)` (`src/systems/core/GameLoop.js:34`, `src/config/loopConstants.js:7`); eight handlers are registered, all in `EngineBootstrap._registerTickHandlers` (`src/systems/core/EngineBootstrap.js`). |
 | **State** | One mutable object, `GameState.state`, owned by a singleton facade (`src/state/GameState.js:19-167`); its shape is `INITIAL_STATE` (`src/state/StateSchema.js:138`). |
 | **Content** | `data/*.json` is bundled at build time by `import.meta.glob` (`src/config/DatabaseManager.js:4-31`) and turned into registries in `src/config/registries/`. |
@@ -252,7 +252,8 @@ point** (`board.tokens`, `:56`), heroes' orders in `board.flags` (`:63`), floor 
   `window.__TAURI__` (`SaveFiles.js:39-43`).
 - **When it saves**: autosave interval (`SaveManager.js:199-221`), `beforeunload` in the browser
   (`:210`), and in the desktop build a close handshake: the window asks the page to save, waits
-  for the file, then closes (`SaveManager.js:158-176`, `saves.rs:200-216`).
+  for the file, then closes; a failed save keeps the window open once, with its banner, and the
+  next close goes through (`SaveManager.js:160-191`, `saves.rs:235-280`).
 - **Serialisation**: `GameState.serializeJson()` writes `{ version, savedAt, state }` with a
   `JSON.stringify` replacer, stripping each hero's runtime fields, without deep-copying first
   (`src/state/GameState.js:14,148-164`).
@@ -282,9 +283,11 @@ point** (`board.tokens`, `:56`), heroes' orders in `board.flags` (`:63`), floor 
    catch-up on load (§4.4), starter tools granted if missing, `GameLoop.start()`, then
    `GAME_RESET`, `HEROES_UPDATED`, `INVENTORY_UPDATED` (`EngineBootstrap.js:319-354`).
 
-A new game: `SaveManager.newGame` (`SaveManager.js:518`) → `createDefaultGameData`
-(`EngineBootstrap.js:235-266`: opening Bank, starter tools, Starter Camp Region, world, first
-hero, modifier caches) → an immediate save (`:334`).
+A new game: `SaveManager.newGame` (claims the slot in memory, writes nothing) →
+`createDefaultGameData` (opening Bank, starter tools, Starter Camp Region, world, first hero,
+modifier caches) → its one save, the finished opening (`onSlotSelected`). Settling a place
+(`world/Settling.js` `settleCell`) likewise saves once, after the price is paid and the arrival
+enemies are down: `Atlas.settle` and `Atlas.travel` take `save: false` for it.
 
 ### 4.4 Catch-up after time away
 
@@ -300,12 +303,16 @@ points:
 - **On load**: `EngineBootstrap.catchUpOnLoad` (`EngineBootstrap.js:216-227`) plays from the
   loaded `savedAt` with `reset: false` (`:222`; `onSlotSelected` publishes `GAME_RESET` itself
   once the loop has started). The untouched save is kept so the player can choose "Load as I
-  left it" (`CatchUp.undoLast` → `SaveManager.restoreAndReload`, `CatchUp.js:77-82`,
-  `SaveManager.js:440`).
+  left it" (`CatchUp.undoLast` → `SaveManager.restoreAndReload`); the kept save is let go only
+  once its write-back succeeded, so a failed one can be tried again.
 - **Live gaps** (sleep, throttled background tab): the overflow from `TIME_OVERFLOW`
-  (`CatchUp.js:96-117`). A gap of 2 minutes or more stops the loop and plays with the progress
-  bar; a shorter one is played synchronously inside the tick that found it, in whole 1 s steps
-  and without saving (`:113-116`); under a second waits for more.
+  (`CatchUp.js` `onOverflow`). A gap of 2 minutes or more stops the loop and plays with the
+  progress bar, first writing the game as it stands to the slot, dated when the gap began (so a
+  window closed during the bar keeps it and the next load plays the gap again); a shorter one is
+  played synchronously inside the tick that found it, in whole 1 s steps and without saving;
+  under a second waits for more.
+- `EngineBootstrap.startSlot` runs one start at a time: a second call while one is under way
+  gets its promise (a double-click on Load).
 
 The summary (items, level-ups, depletions, wounds, breaks, fights, news) is counted from engine
 events while it plays (`CatchUp.js:29-46`).
