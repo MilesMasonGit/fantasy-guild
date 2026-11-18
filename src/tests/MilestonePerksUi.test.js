@@ -10,7 +10,7 @@ vi.mock('../systems/board/Flags.js', () => ({
 vi.mock('../systems/core/CatchUp.js', () => ({
     canUndo: vi.fn(() => false),
     undoLast: vi.fn(() => false),
-    forgetUndo: vi.fn()
+    keepCatchUp: vi.fn()
 }));
 
 import { GameState } from '../state/GameState.js';

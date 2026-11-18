@@ -13,7 +13,7 @@ import {
 vi.mock('../systems/core/CatchUp.js', () => ({
     canUndo: vi.fn(() => false),
     undoLast: vi.fn(() => false),
-    forgetUndo: vi.fn()
+    keepCatchUp: vi.fn()
 }));
 
 /**

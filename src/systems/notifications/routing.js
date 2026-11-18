@@ -184,6 +184,13 @@ export const ROUTES = [
         }
     },
     {
+        // A summary offered again after a reload keeps its news until it closes, as it did before.
+        event: ENGINE_EVENTS.CATCH_UP_OFFERED_AGAIN, to: 'catchUp:news',
+        handle: ({ news } = {}) => {
+            for (const n of news || []) if (hasNews(n)) heldNews.push(n);
+        }
+    },
+    {
         event: UI_EVENTS.CATCH_UP_SUMMARY_CLOSED, to: 'catchUp:news',
         handle: () => {
             const held = heldNews;

@@ -157,6 +157,20 @@ describe('the file layer', () => {
         expect(disk.writes().map(w => [w[3], w[2]]).slice(-2)).toEqual([['{"n":3}', true], ['{"n":5}', false]]);
     });
 
+    it('a write that was to roll the backup still rolls it when a newer one that keeps it replaces it', async () => {
+        await SaveFiles.writeSave(0, '{"n":1}');
+        const release = disk.holdWrites();
+        SaveFiles.writeSave(0, '{"n":2}');
+        SaveFiles.writeSave(0, '{"asLeft":true}');
+        SaveFiles.writeSave(0, '{"n":4}', { rollBackup: false });
+        release();
+        await SaveFiles.flush();
+        // The save that was waiting would have put the one on the disk into the backup: it still does.
+        expect(disk.writes().map(w => [w[3], w[2]]).slice(-2)).toEqual([['{"n":2}', true], ['{"n":4}', true]]);
+        expect(disk.backup(0)).toBe('{"n":2}');
+        expect(disk.main(0)).toBe('{"n":4}');
+    });
+
     it('re-reading the folder tells the slot screen only when a file changed', async () => {
         const heard = vi.fn();
         const off = SaveFiles.onChange(heard);
