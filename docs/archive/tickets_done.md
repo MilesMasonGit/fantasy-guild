@@ -288,3 +288,14 @@ T-430 — A gear slot holding a deleted item shows in red and clears with a righ
 T-429 — With two Foods, the second is eaten when the Bank runs out of the first (650 H5) — 9486e74f — 2026-11-17
 T-438 — An XP bonus is a true percentage by chance; the at-least-1 floor goes (650 H5) — 9486e74f — 2026-11-17
 T-433 — A hand-over onto a full loadout replaces like a Bank drop (650 H5) — 9486e74f — 2026-11-17
+T-431 — On a newly settled place a hero goes to a free arrival enemy (650 H6) — 09437782 — 2026-11-18
+T-432 — A knock-out banner for several heroes lists each hero's losses (650 H6) — 09437782 — 2026-11-18
+T-435 — No two heroes share a name; the list doubles to 192 (650 H6) — 09437782 — 2026-11-18
+T-414 — A hero needs the recipe's level to work it (670 M5) — 09437782 — 2026-11-18
+T-422 — A ripe Field's card shows the load it ripened with (670 M8) — 09437782 — 2026-11-18
+T-420 — A recipe change restarts the work cycle (670 M6) — 09437782 — 2026-11-18
+T-423 — Return to a Region restarts half-done work cycles; clocks kept (670 M6) — 09437782 — 2026-11-18
+T-418 — Release ends a hero's for-the-cycle effects; the event clock holds while an event stands (670 M6) — 09437782 — 2026-11-18
+T-417 — A camp gone, its enemies wait for the next camp of their kind (670 M7) — 09437782 — 2026-11-18
+T-419 — A new order walks at full speed; stop clamps to the mat (670 M7) — 09437782 — 2026-11-18
+T-428 — Travel checks a bounty's remembered spot (670 M7) — 09437782 — 2026-11-18
