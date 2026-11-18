@@ -30,7 +30,7 @@ Tauri window (src-tauri/, Rust)    save files, save-on-close, "window minimised"
 
 | Layer | One sentence |
 |---|---|
-| **Tauri shell** | A thin Rust host: seven save-file commands, a save-before-close handshake and a minimise event for the page (`src-tauri/src/lib.rs:22-48`, `src-tauri/src/saves.rs`). |
+| **Tauri shell** | A thin Rust host: one copy at a time (the single-instance plugin: a second launch brings the open window forward), eight save-file commands, a save-before-close handshake and a minimise event for the page (`src-tauri/src/lib.rs:10-62`, `src-tauri/src/saves.rs`). |
 | **Engine tick** | `GameLoop` runs registered handlers on `setInterval(…, 100)` (`src/systems/core/GameLoop.js:34`, `src/config/loopConstants.js:7`); eight handlers are registered, all in `EngineBootstrap._registerTickHandlers` (`src/systems/core/EngineBootstrap.js`). |
 | **State** | One mutable object, `GameState.state`, owned by a singleton facade (`src/state/GameState.js:19-167`); its shape is `INITIAL_STATE` (`src/state/StateSchema.js:138`). |
 | **Content** | `data/*.json` is bundled at build time by `import.meta.glob` (`src/config/DatabaseManager.js:4-31`) and turned into registries in `src/config/registries/`. |
@@ -252,7 +252,8 @@ point** (`board.tokens`, `:56`), heroes' orders in `board.flags` (`:63`), floor 
   `window.__TAURI__` (`SaveFiles.js:39-43`).
 - **When it saves**: autosave interval (`SaveManager.js:199-221`), `beforeunload` in the browser
   (`:210`), and in the desktop build a close handshake: the window asks the page to save, waits
-  for the file, then closes (`SaveManager.js:158-176`, `saves.rs:200-216`).
+  for the file, then closes; a failed save keeps the window open once, with its banner, and the
+  next close goes through (`SaveManager.js:160-191`, `saves.rs:235-280`).
 - **Serialisation**: `GameState.serializeJson()` writes `{ version, savedAt, state }` with a
   `JSON.stringify` replacer, stripping each hero's runtime fields, without deep-copying first
   (`src/state/GameState.js:14,148-164`).

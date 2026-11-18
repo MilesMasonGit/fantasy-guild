@@ -31,7 +31,8 @@ export function tauriBackend(invoke) {
         folder: () => invoke('saves_folder'),
         openFolder: () => invoke('open_saves_folder'),
         claimCloseSave: () => invoke('claim_close_save'),
-        closeWindow: () => invoke('close_after_save')
+        closeWindow: () => invoke('close_after_save'),
+        cancelClose: () => invoke('cancel_close')
     };
 }
 
@@ -275,4 +276,9 @@ export function claimCloseSave() {
 /** Close the window, once the page has saved. */
 export function closeWindow() {
     return backend?.closeWindow().catch(err => console.error('[SaveFiles] Could not close the window:', err));
+}
+
+/** Keep the window open after all, its save having failed; the next close request is heard. */
+export function cancelClose() {
+    return backend?.cancelClose().catch(err => console.error('[SaveFiles] Could not cancel the close:', err));
 }

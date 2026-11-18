@@ -419,6 +419,87 @@ describe('closing the window', () => {
         expect(disk.closed).toBe(1);
         expect(disk.writes()).toHaveLength(0);
     });
+
+    describe('when the save on closing fails', () => {
+        const settle = () => until(() => disk.closed + disk.cancelled > 0);
+
+        beforeEach(() => {
+            SaveManager._closeKeptOpen = false;
+            SaveManager.currentSlot = 0;
+            GameState.initNew();
+        });
+
+        it('the window stays open once, with the Save Failed banner up', async () => {
+            disk.failWrites();
+            close();
+            await settle();
+            expect(disk.cancelled).toBe(1);
+            expect(disk.closed).toBe(0);
+            expect(bannerTitles()).toContain('Save Failed!');
+        });
+
+        it('a second close goes through, though its save fails too', async () => {
+            disk.failWrites();
+            close();
+            await settle();
+            close();
+            await until(() => disk.closed > 0);
+            expect(disk.writes()).toHaveLength(2);
+            expect(disk.cancelled).toBe(1);
+            expect(disk.closed).toBe(1);
+        });
+
+        it('a second close whose save works saves the game, then closes', async () => {
+            disk.failWrites();
+            close();
+            await settle();
+            disk.failWrites(null);
+            GameState.state.time.gameTimeMs = 4242;
+            close();
+            await until(() => disk.closed > 0);
+            expect(disk.closed).toBe(1);
+            expect(played(disk.main(0))).toBe(4242);
+        });
+
+        it('once saving works again, a later failed close keeps the window open again', async () => {
+            disk.failWrites();
+            close();
+            await settle();
+            disk.failWrites(null);
+            SaveManager.save(false);
+            await SaveFiles.flush();
+            await SaveManager._lastWrite;
+            disk.failWrites();
+            close();
+            await until(() => disk.cancelled > 1);
+            expect(disk.cancelled).toBe(2);
+            expect(disk.closed).toBe(0);
+        });
+
+        it('a game that cannot even be written out keeps the window open once, too', async () => {
+            const spy = vi.spyOn(GameState, 'serializeJson').mockImplementation(() => { throw new Error('cyclic'); });
+            try {
+                close();
+                await settle();
+                expect(disk.cancelled).toBe(1);
+                expect(disk.closed).toBe(0);
+                expect(bannerTitles()).toContain('Save Failed!');
+            } finally {
+                spy.mockRestore();
+            }
+        });
+
+        it('an autosave that failed earlier does not count: a close whose save works closes', async () => {
+            disk.failWrites();
+            SaveManager.save(false);
+            await SaveFiles.flush();
+            disk.failWrites(null);
+            close();
+            await until(() => disk.closed > 0);
+            expect(disk.closed).toBe(1);
+            expect(disk.cancelled).toBe(0);
+        });
+    });
 });
 
 describe('the folder', () => {
