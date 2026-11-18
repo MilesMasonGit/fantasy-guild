@@ -228,9 +228,12 @@ function enqueue(slot, job) {
         job.waiters.push(...waiting.waiters);
         if (job.kind === 'write') {
             job.removeFirst = waiting.kind === 'remove' || waiting.removeFirst;
-            // ⚠️ A write that was to keep the backup still keeps it, so a damaged save is never
-            // rolled over the good backup it was loaded from.
-            if (waiting.kind === 'write' && !waiting.rollBackup) job.rollBackup = false;
+            // ⚠️ The file the waiting write would have rolled into the backup is the one still on
+            // the disk, so the backup gets what the waiting write gave it: a write that was to keep
+            // the backup still keeps it (a damaged save is never rolled over the good backup it
+            // was loaded from), and one that was to roll still rolls it (the game as left reaches
+            // the backup, which an unanswered summary then keeps).
+            if (waiting.kind === 'write') job.rollBackup = waiting.rollBackup;
         }
     }
     const result = new Promise(resolve => job.waiters.push(resolve));

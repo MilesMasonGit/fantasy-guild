@@ -310,7 +310,10 @@ describe('"Load as I left it" with files', () => {
         expect(restored.state.time.gameTimeMs).toBe(PLAYED_BEFORE);
         expect(restored.savedAt).toBe(NOW);
         expect(JSON.parse(before).savedAt).toBe(NOW - 3 * HOUR);
-        expect(disk.backup(0)).toBe(caughtUp);
+        // Written without rolling: the backup is the save being written back, which a roll first
+        // would have lost to a write that then failed.
+        expect(disk.backup(0)).toBe(before);
+        expect(caughtUp).not.toBe(before);
 
         // The reloaded page opens the slot by itself, as it was left, with no catch-up.
         SaveManager.currentSlot = null;

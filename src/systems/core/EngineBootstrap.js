@@ -231,6 +231,8 @@ export const EngineBootstrap = {
         const savedAt = SaveManager.loadedSavedAt;
         // The untouched save, for "Load as I left it"; taken either way so it is not held on to.
         const before = SaveManager.takeLoadedJson();
+        // A summary the game was closed on is offered again first, so this catch-up keeps its undo.
+        CatchUp.slotLoaded(SaveManager.takeLoadedUnanswered());
         if (!savedAt) return null;
         try {
             return await CatchUp.run({ savedAt, reset: false, before });

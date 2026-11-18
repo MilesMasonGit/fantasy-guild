@@ -4,6 +4,7 @@
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
+import * as CatchUp from '../../systems/core/CatchUp.js';
 import { giveItem, listGivableItemIds } from '../../systems/core/DevTools.js';
 import { InventoryManager } from '../../systems/inventory/InventoryManager.js';
 import { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManager.js';
@@ -182,6 +183,21 @@ export function devPlaceToken(typeId) {
     const instance = BoardState.createTokenInstance(id, tokenStartingUses(id));
     const res = Placement.placeArrivalNear(instance, Placement.centreOfBoard());
     return res?.success ? { ...res, instance } : res;
+}
+
+/** How long "Away 3 hours" pretends the game was away. */
+export const DEV_AWAY_HOURS = 3;
+
+/**
+ * Play `hours` away as a sleeping PC's time is played: the game as it stands written first, the
+ * loading bar, then "While you were away" with both choices, so it can be looked at without
+ * waiting. ⚠️ Built for one eye-check (the summary offered again after a reload): delete it, with
+ * its test, once that is accepted.
+ * @returns {Promise<object|null>} the catch-up's result; null while one is already playing
+ */
+export function devTimeAway(hours = DEV_AWAY_HOURS) {
+    if (CatchUp.isRunning()) return Promise.resolve(null);
+    return CatchUp.run({ savedAt: Date.now() - hours * 3_600_000 });
 }
 
 /** Every Token and loose item off the mat, the Guild Hall too. */

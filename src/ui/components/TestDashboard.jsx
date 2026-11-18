@@ -10,7 +10,8 @@ import { EventsDevSection } from '../dev/EventsDevSection.jsx';
 import { saveLiveMatToCms, DEFAULT_CMS_URL } from '../dev/starterCampDev.js';
 import {
     PICKER_ROWS, itemChoices, tokenChoices, filterByName, giveAndSay, devBankEveryKind, devFillBank,
-    hireHero, spawnParty, levelAllHeroes, healEveryone, knockOutAHero, devPlaceToken, clearBoard
+    hireHero, spawnParty, levelAllHeroes, healEveryone, knockOutAHero, devPlaceToken, clearBoard,
+    devTimeAway, DEV_AWAY_HOURS
 } from '../dev/qaTools.js';
 import * as Landmarks from '../../systems/board/Landmarks.js';
 
@@ -133,6 +134,16 @@ export const TestDashboard = /* @__PURE__ */ React.memo(() => {
         say(result.message);
     };
 
+    const onTimeAway = async () => {
+        say(`Playing ${DEV_AWAY_HOURS} hours away…`);
+        try {
+            const r = await devTimeAway();
+            say(r?.simulatedMs > 0 ? `Played ${DEV_AWAY_HOURS} hours away` : 'Could not play time away now');
+        } catch (err) {
+            say(`Time away failed: ${err?.message || err}`);
+        }
+    };
+
     const onLayoutEditing = (on) => {
         Landmarks.setLayoutEditing(on);
         setLayoutEditing(on);
@@ -253,6 +264,9 @@ export const TestDashboard = /* @__PURE__ */ React.memo(() => {
                                 </button>
                                 <button className={buttonClass} onClick={onSaveCamp} disabled={saving} title="Save this mat as the Starter Camp, to review on the CMS's Starter Camp page">
                                     Save camp to CMS
+                                </button>
+                                <button className={buttonClass} onClick={onTimeAway} title={`Play ${DEV_AWAY_HOURS} hours as if the PC had slept: the loading bar, then While you were away`}>
+                                    Away {DEV_AWAY_HOURS} hours
                                 </button>
                             </div>
                             <label className="flex items-center gap-2 text-xs text-gi-text cursor-pointer select-none" title="Lets the landmarks and the Tokens the camp laid be dragged and removed">

@@ -76,6 +76,7 @@ describe('the routing table', () => {
             [BOARD_EVENTS.EVENT_LANDED]: 'banner:event',
             [BOARD_EVENTS.EVENT_ENDED]: 'banner:event',
             [ENGINE_EVENTS.CATCH_UP_FINISHED]: 'catchUp:news',
+            [ENGINE_EVENTS.CATCH_UP_OFFERED_AGAIN]: 'catchUp:news',
             [UI_EVENTS.CATCH_UP_SUMMARY_CLOSED]: 'catchUp:news'
         });
     });

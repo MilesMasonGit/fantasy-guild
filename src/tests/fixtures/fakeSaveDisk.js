@@ -11,6 +11,7 @@ export function fakeSaveDisk() {
     const unreadable = new Set();
     let held = null;
     let failing = null;
+    let failAfterBackup = false;
 
     const mainName = (slot) => `slot${slot + 1}.json`;
     const backupName = (slot) => `slot${slot + 1}.backup.json`;
@@ -38,8 +39,14 @@ export function fakeSaveDisk() {
             held = new Promise(resolve => { release = resolve; });
             return () => { held = null; release(); };
         },
-        /** The next writes fail after the temp file is written (`null` to stop). */
-        failWrites(error = new Error('The device is not ready.')) { failing = error; },
+        /**
+         * The next writes fail after the temp file is written (`null` to stop). With `afterBackup`,
+         * as `write_slot` orders it: the backup is rolled first, then the save's own write fails.
+         */
+        failWrites(error = new Error('The device is not ready.'), { afterBackup = false } = {}) {
+            failing = error;
+            failAfterBackup = afterBackup;
+        },
         makeUnreadable(name) { unreadable.add(name); },
 
         async read(slot, backup) {
@@ -52,9 +59,13 @@ export function fakeSaveDisk() {
             log.push(['write', slot, rollBackup, text]);
             if (held) await held;
             const main = mainName(slot);
+            const roll = () => {
+                if (rollBackup && files.has(main) && isJson(files.get(main))) files.set(backupName(slot), files.get(main));
+            };
+            if (failing && failAfterBackup) roll();
             files.set(`${main}.tmp`, text);
             if (failing) throw failing;
-            if (rollBackup && files.has(main) && isJson(files.get(main))) files.set(backupName(slot), files.get(main));
+            roll();
             files.set(main, text);
             files.delete(`${main}.tmp`);
         },
