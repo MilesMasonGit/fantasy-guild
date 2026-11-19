@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
@@ -13,6 +14,21 @@ import { startNewsCollector } from '../systems/notifications/catchUpNews.js';
 import * as Banners from '../systems/notifications/banners.js';
 import { wireNotifications, unwireNotifications } from '../systems/notifications/routing.js';
 import { toolFindings } from '../systems/core/toolRule.js';
+import * as BoardState from '../systems/board/BoardState.js';
+import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
+import * as BoardRunner from '../systems/board/BoardRunner.js';
+import * as BoardCombat from '../systems/board/BoardCombat.js';
+import * as TileModifiers from '../systems/board/TileModifiers.js';
+import * as LoadoutMoments from '../systems/board/LoadoutMoments.js';
+import * as LiveEffects from '../systems/effects/LiveEffects.js';
+import * as EquipmentManager from '../systems/equipment/EquipmentManager.js';
+import { generateHero } from '../systems/hero/HeroGenerator.js';
+import { registerEffects } from '../config/registries/effectRegistry.js';
+import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
+import { EFFECT_TYPES } from '../systems/effects/constants.js';
+import { activeElixirsOf } from '../ui/components/combat/fightView.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -168,5 +184,80 @@ describe('a gathering tool with a level requirement', () => {
         const found = toolFindings({ items }).filter(f => /level/.test(f.message));
         expect(found.map(f => f.entityId).sort()).toEqual(['listed', 'own']);
         expect(found.find(f => f.entityId === 'own').message).toMatch(/Mining 15/);
+    });
+});
+
+/** A hero who can fight, standing on the roster. */
+function fighter(id) {
+    const hero = generateHero({ name: id });
+    hero.id = id;
+    hero.status = 'idle';
+    hero.hp = { current: 100, max: 100 };
+    Object.values(hero.skills).forEach(sk => { sk.level = 50; });
+    hero.aggregator = new ModifierAggregator(id);
+    hero.statuses = [];
+    hero.effects = [];
+    GameState.state.heroes = [hero];
+    return hero;
+}
+
+/** An enemy Token at a test spot with `heroId` sent to it, and the fight started. */
+function engage(heroId) {
+    const instance = BoardState.createTokenInstance('fixture_enemy', tokenStartingUses('fixture_enemy'));
+    Placement.placeTokenAt(instance, { x: 600, y: 400 });
+    TileModifiers.rebuildAround([instance]);
+    Orders.orderAt(heroId, { x: 600, y: 400 });
+    for (let t = 0; t < 300; t += 100) BoardRunner.tick(100);
+    const fight = BoardCombat.getFight(instance.id);
+    expect(fight, 'no fight started').toBeTruthy();
+    return fight;
+}
+
+registerEffects({
+    fx_hg_tested: {
+        id: 'fx_hg_tested', name: 'Tested',
+        statements: [{ ...makeStatement(KEYWORD.PROVIDES), id: 'stm_hg_tested', payload: { type: EFFECT_TYPES.ARMOR, bucket: 'flat', value: 1 } }]
+    },
+    // "Aims at: whoever its filter reaches", the first option, saves no role.
+    fx_hg_elixir_any: {
+        id: 'fx_hg_elixir_any', name: 'Elixir of Anyone',
+        statements: [{
+            ...makeStatement(KEYWORD.APPLIES), id: 'stm_hg_elixir_any',
+            when: { event: 'COMBAT_ENGAGED', scope: 'self' },
+            payload: { effectId: 'fx_hg_tested', scale: 1, durationMs: 0, forFight: true, chance: 100 }
+        }]
+    }
+});
+registerItems({
+    fixture_hg_elixir: { ...PLAIN, id: 'fixture_hg_elixir', name: 'Elixir of Anyone', type: 'potion', equipSlot: 'consumable', stackable: true, effects: [{ effectId: 'fx_hg_elixir_any' }] }
+});
+
+describe('an elixir whose rule names no role', () => {
+    beforeEach(() => {
+        TileModifiers.clearAll();
+        TileModifiers.init();
+        BoardCombat.clearAll();
+        LoadoutMoments.init();
+        LiveEffects.resetClock();
+        GameState.state.inventory.maxSlots = 50;
+    });
+    afterEach(() => {
+        LoadoutMoments.teardown?.();
+        TileModifiers.teardown();
+        BoardCombat.clearAll();
+    });
+
+    it('is still listed in its last fight, while its effect is on', () => {
+        const hero = fighter('hero_1');
+        InventoryManager.addItem('fixture_hg_elixir', 10);
+        expect(EquipmentManager.equipItem(hero.id, 'fixture_hg_elixir').success).toBe(true);
+
+        engage(hero.id);
+
+        const carried = hero.effects.find(e => e.effectId === 'fx_hg_tested');
+        expect(carried?.sourceId).toBe('fx_hg_elixir_any');
+        // Its last fight: no fights left to count, only the one under way.
+        hero.elixirFights.fixture_hg_elixir = 0;
+        expect(activeElixirsOf(hero).map(e => e.itemId)).toEqual(['fixture_hg_elixir']);
     });
 });

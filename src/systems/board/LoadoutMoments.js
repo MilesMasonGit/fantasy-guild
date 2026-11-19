@@ -136,7 +136,7 @@ export function fire(instanceId, heroId, eventId, { resumed = false } = {}) {
             // A role, when set, replaces the Token's occupant reading.
             acted = statement.target?.role
                 ? StatusApplication.applyToRole(statement, roles) > 0
-                : StatusApplication.applyAt(instanceId, payload);
+                : StatusApplication.applyAt(instanceId, payload, Math.random, statement.sourceEffectId || null);
         } else if (statement.keyword === KEYWORD.DEALS) {
             acted = rolledToFire(statement) && DealDamage.deal(statement, roles) > 0;
         } else if (statement.keyword === KEYWORD.HEALS) {
