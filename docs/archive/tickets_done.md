@@ -312,3 +312,42 @@ T-447 — startSlot one at a time (680 S1) — 948b6873 — 2026-11-18
 T-448 — Load as I left it lets go only once written (680 S1) — 948b6873 — 2026-11-18
 T-449 — One desktop window (680 S5) — 948b6873 — 2026-11-18
 T-450 — A failed close save keeps the window open once (680 S5) — 948b6873 — 2026-11-18
+T-458 — An unanswered away summary is offered again on the next start — 4acb2e05 — 2026-11-19
+T-445 — Banners come back — 4acb2e05 — 2026-11-19
+T-446 — Pinned item stubs count time away — 4acb2e05 — 2026-11-19
+T-453 — An Encyclopedia tick stays once the guild has had a Token — 4acb2e05 — 2026-11-19
+T-459 — A missing or empty save with a good backup shows "Empty" — 4acb2e05 — 2026-11-19
+T-444 — Browser build, Auto-save Off: closing the tab saves nothing — 4acb2e05 — 2026-11-19
+T-451 — "Save Game Now" gives no sign it saved — 4acb2e05 — 2026-11-19
+T-452 — A new player's master volume is lost once on the next load — 4acb2e05 — 2026-11-19
+T-454 — Browser "storage is full" says to export, and there is no export — 4acb2e05 — 2026-11-19
+T-457 — A star held at a rank the CMS took away gives nothing — 4acb2e05 — 2026-11-19
+T-427 — Latent: thirteen rule shapes the CMS can author that the mat engine gets wrong — f5e5c6f3 — 2026-11-19
+T-441 — Latent: loot shapes that differ on a station and a kill — f5e5c6f3 — 2026-11-19
+T-440 — Latent: a strength on an "Applies" effect does nothing — f5e5c6f3 — 2026-11-19
+T-442 — Latent: shapes the hero, gear and fight code gets wrong — f5e5c6f3 — 2026-11-19
+T-077 — Latent: a timed effect on a hero loses its fight numbers after a reload, and "Load as I left it" can end it early — f5e5c6f3 — 2026-11-19
+T-460 — Latent: a lesson that gains its content, and a rule with a cooldown — f5e5c6f3 — 2026-11-19
+T-480 — Latent: a Shop price of more than four items, and a second Lap Time rule — f5e5c6f3 — 2026-11-19
+T-461 — A fighting hero's health on the hero bar and in the drawer stands still — e634d924 — 2026-11-19
+T-462 — A Token's "!" wrong after a PC sleep or a catch-up — e634d924 — 2026-11-19
+T-476 — No hero drag while a full-screen view is open — e634d924 — 2026-11-19
+T-464 — Travel wipes the hero bar's level-up alerts — e634d924 — 2026-11-19
+T-465 — The last lesson opens the world map under an open Bank, Shop, Settings or Hall — e634d924 — 2026-11-19
+T-466 — Escape in a place's rename box closes the world map — e634d924 — 2026-11-19
+T-467 — An event banner clicked with the Encyclopedia open shows nothing — e634d924 — 2026-11-19
+T-470 — The first click in Edit Hero closes the Hero drawer behind it — e634d924 — 2026-11-19
+T-468 — Hero readouts that say go or working when they are not — e634d924 — 2026-11-19
+T-434 — Rate readouts read too high — e634d924 — 2026-11-19
+T-436 — The Accuracy and Dodge tips do not say the 5 to 40 % bounds — e634d924 — 2026-11-19
+T-474 — Text size: Reset then X keeps the reset and loses custom sizes — e634d924 — 2026-11-19
+T-478 — One click buys one rank — e634d924 — 2026-11-19
+T-479 — Latent: after a crash in a drawer, the Shop, the hero bar or the banners, the Reload button cannot be clicked — e634d924 — 2026-11-19
+T-463 — Hidden drop targets take a drop — e634d924 — 2026-11-19
+T-469 — A hero let go off the mat is sent to its edge — e634d924 — 2026-11-19
+T-475 — Mat callouts — e634d924 — 2026-11-19
+T-471 — Bank order and search — e634d924 — 2026-11-19
+T-416 — A Token's open card follows it or closes — 4e293a72 — 2026-11-19
+T-472 — Token card cells from no recipe — 4e293a72 — 2026-11-19
+T-473 — A second station's gear at the same height does not move the card — 4e293a72 — 2026-11-19
+T-477 — The recipe list shows the base time with the station's real time beside it — 4e293a72 — 2026-11-19

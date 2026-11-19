@@ -172,61 +172,22 @@ The findings' full write-ups are in `docs/active/review/D1_the_mat.md` to `D4_sc
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
 | T-415 | P3 | open | **Lifting an enemy mid-fight ends the fight** (owner 2026-11-17), as the hero walking away does: statuses off, enemy whole. Today poison and burn keep hurting the hero while the fight is paused | CR4-109 |
-| T-416 | P3 | open | **A Token's open card follows it or closes** (owner 2026-11-17): on a transform (Foundation to Workbench, Tree to Stump) the card follows the new instance; when the Token leaves (killed, used up, claimed) it closes. Eye-check | CR4-110 |
 | T-421 | P3 | open | **Out-of-fight eating runs on game time** (owner 2026-11-17): at most one meal per second of rest, so watched and away fights agree. WORK CHANGED for fight scenarios | CR4-118 |
-| T-427 | P2 | open | **Latent: thirteen rule shapes the CMS can author that the mat engine gets wrong** (no shipped content reaches them): fix the engine now (owner 2026-11-17), items 1, 4 and 6 first; the list is in the finding | CR4-124 |
 
 **Heroes, fights, gear (D2)**
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-434 | P3 | open | **Rate readouts read too high**: XP an hour and "Next level" count the first gain's interval and the open panel re-reads every second or two; an item stub's "/hr" counts floor spending and catch-up spending | CR4-133, CR4-134 |
-| T-436 | P3 | open | **The Accuracy and Dodge tips do not say the 5 to 40 % bounds** | CR4-136 |
-| T-440 | P2 | open | **Latent: a strength on an "Applies" effect does nothing** (owner 2026-11-17): the bearer's strength sets the applied effect's strength (an Elixir of Brambles giving Thorns 3), for every item; a status still lands one stack a hit. Content rule for the content agent: no tier ladders of the same item (no Elixir of Valor I to V); tiered effects belong to gear and enemies | CR4-141 |
-| T-441 | P2 | open | **Latent: loot shapes that differ on a station and a kill**: fix the engine now (owner 2026-11-17), item 1 first; keep today's random draws | CR4-142 |
-| T-077 | P2 | open | **Latent: a timed effect on a hero loses its fight numbers after a reload, and "Load as I left it" can end it early** (reopened 2026-11-17: fix the engine now, owner): re-sync each hero's live effects on load; store remaining time, not a wall-clock end | CR3-252, CR4-140 |
-| T-442 | P3 | open | **Latent: shapes the hero, gear and fight code gets wrong**: fix the engine now (owner 2026-11-17), items 2 and 7 first | CR4-143 |
 
 **Saves and time away (D3)**
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-444 | P3 | open | **Browser build, Auto-save Off: closing the tab saves nothing**: register the close save when a slot opens (dev builds only, owner 2026-11-16) | CR4-145 |
-| T-445 | P3 | open | **Banners come back** (owner 2026-11-16, 2026-11-17): an event Token on the mat gets its banner after a load, a catch-up and a return from travel; an event banner comes down when the guild leaves its Region; unclicked knock-out and problem banners are saved and shown again | CR4-146, CR4-147, CR4-113 |
-| T-446 | P3 | open | **Pinned item stubs count time away** (owner 2026-11-17): add the catch-up's gained and spent to every pinned stub and save the pins | CR4-148 |
-| T-451 | P3 | open | **"Save Game Now" gives no sign it saved**: show "Saved" from the write's result | CR4-154 |
-| T-452 | P3 | open | **A new player's master volume is lost once on the next load** | CR4-155 |
-| T-453 | P3 | open | **An Encyclopedia tick stays once the guild has had a Token** (owner 2026-11-17): a settled place's chest keeps its tick after it is opened | CR4-156 |
-| T-454 | P3 | open | **Browser "storage is full" says to export, and there is no export**: reword (dev builds only, owner 2026-11-16) | CR4-157 |
-| T-457 | P2 | open | **A star held at a rank the CMS took away gives nothing**: read the rank as at most the star's top rank, without rewriting the save | CR4-161 |
-| T-458 | P3 | open | **An unanswered away summary is offered again on the next start** (owner 2026-11-16), with "Load as I left it" still available; closing is not a choice | CR4-164 |
-| T-459 | P3 | open | **A missing or empty save with a good backup shows "Empty"**: show it damaged so Load restores from the backup | CR4-166 |
-| T-460 | P3 | open | **Latent: a lesson that gains its content, and a rule with a cooldown**: fix the engine now (owner 2026-11-17); item 1 with the code change that sets the scrap heap's target | CR4-167 |
 
 **Screens and drag (D4)**
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-461 | P2 | open | **A fighting hero's health on the hero bar and in the drawer stands still**: give them the mat bar's HP events (hits, food, poison ticks) | CR4-168 |
-| T-462 | P2 | open | **A Token's "!" wrong after a PC sleep or a catch-up**: re-read the spawner and growth alerts on `GAME_RESET` | CR4-169 |
-| T-463 | P3 | open | **Hidden drop targets take a drop**: a Bank tile outside its list's visible box, or covered by the Hero drawer, is no target (one guard in `pointerWithinBoxes`) | CR4-171, CR4-181 |
-| T-464 | P3 | open | **Travel wipes the hero bar's level-up alerts**: keep them across travel | CR4-173 |
-| T-465 | P3 | open | **The last lesson opens the world map under an open Bank, Shop, Settings or Hall**: open it through the nav's close-everything path, and hold it during a drag | CR4-175 |
-| T-466 | P3 | open | **Escape in a place's rename box closes the world map**, and Escape cancelling a drag over the map closes it too | CR4-176 |
-| T-467 | P3 | open | **An event banner clicked with the Encyclopedia open shows nothing**: close the book, then pulse the Token | CR4-177 |
-| T-468 | P3 | open | **Hero readouts that say go or working when they are not**: a healing hero lights no Token green; a flag's hover uses the hero bar's line and colour when its Token is stuck | CR4-178, CR4-179 |
-| T-469 | P3 | open | **A hero let go off the mat is sent to its edge**: a drop outside the mat is a miss | CR4-180 |
-| T-470 | P3 | open | **The first click in Edit Hero closes the Hero drawer behind it** | CR4-182 |
-| T-471 | P3 | open | **Bank order and search**: a forward drop lands one place short; an item that runs out loses its place after a reorder or sort, and one filed into a never-arranged tab goes first; "chiefs" misses "Chief's" | CR4-183, CR4-184, CR4-185 |
-| T-472 | P3 | open | **Token card cells from no recipe**: a Token marked for demolition shows no XP; a station with no recipe shows no time or XP, and its level once a recipe is chosen | CR4-186, CR4-187 |
-| T-473 | P3 | open | **A second station's gear at the same height does not move the card**, and the recipe list keeps the first station's search | CR4-188 |
-| T-474 | P3 | open | **Text size: Reset then X keeps the reset and loses custom sizes**: make Reset a preview | CR4-189 |
-| T-475 | P3 | open | **Mat callouts**: a reason over a Token on the mat's edge is clipped (clamp inside the mat); the Guild Hall dropped on a bad spot no longer says it "cannot be removed" | CR4-190, CR4-191 |
-| T-476 | P3 | open | **No hero drag while a full-screen view is open** (owner 2026-11-17): Encyclopedia, Guild Hall, world map and any other full-screen view found; heroes only, item drags keep working; the hero figure shows it cannot be dragged | CR4-193 |
-| T-477 | P3 | open | **The recipe list shows the base time with the station's real time beside it** (owner 2026-11-17); the input half is T-406 | CR4-194 |
-| T-478 | P3 | open | **One click buys one rank** (owner 2026-11-17): a second Upgrade click within about half a second is ignored | CR4-195 |
-| T-479 | P3 | open | **Latent: after a crash in a drawer, the Shop, the hero bar or the banners, the Reload button cannot be clicked** and the panel takes over the screen | CR4-196 |
-| T-480 | P3 | open | **Latent: a Shop price of more than four items, and a second Lap Time rule**: fix the engine now (owner 2026-11-17) | CR4-197 |
 | T-481 | P3 | open | **A Field test passes only by luck**: `FarmingHarvest.test.js` (lost part-way through the first harvest and back before it ends) fails under the second seed, `FG_TEST_SEED=b` (expected 2 to be 1), on `main` 556a916b; pin its random numbers | director 2026-11-17 |
 | T-482 | P2 | open | **A CMS rename leaves other content naming the old id**: renaming Oak Wood to Oak Logs left the Starter Camp's opening Bank on `item_oak_wood` (a new game opens without it); by `performRename` the same holds for Hall star prices, world tables (Token ids), events (`typeId`) and the lesson plan's code ids. Saves follow the rename since 660 R2; content does not | 660 R2 builder, 2026-11-17 |
 | T-483 | P3 | open | **Pinned stubs' time-away counts reach disk only at the next save**: the catch-up's end save comes before `CATCH_UP_FINISHED`, where the pins add the gains, so a crash before the next autosave or close save keeps the Bank's gain but loses the pin's. A save in the route would roll the backup and could lose the unanswered summary's copy (680 S3) | 680 S6 builder, 2026-11-18 |
