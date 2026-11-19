@@ -138,10 +138,11 @@ export const KEYWORDS = Object.freeze([
         label: 'Applies',
         reach: true,
         /**
-         * A scale multiplies the stacks applied. `Applies` has no palette row behind it, so it
-         * declares its own scaled field here.
+         * A bearer's scale multiplies the applied effect's own scale (an Elixir of Brambles at 3
+         * applies Brambles at 3). A status still lands one stack a hit, at that scale. `Applies` has
+         * no palette row behind it, so it declares its own scaled field here.
          */
-        scales: 'stacks',
+        scales: 'scale',
         blurb: 'Puts a lingering effect or a status on somebody — the heroes working nearby Tokens, the hero, or the enemy: Well Fed, Poison, and the rest.',
         /**
          * An OPTIONAL role target: set, the role replaces the filter and reach. The two fighters

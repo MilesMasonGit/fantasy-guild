@@ -346,9 +346,11 @@ describe('what a scale multiplies is DECLARED, never inferred (UE-7)', () => {
         expect(scaled.payload.produces[0].quantity).toBe(3);
     });
 
-    it('scales the stacks an Applies puts on someone', () => {
-        const applies = statementFor(KEYWORD.APPLIES, { statusId: 'poison', stacks: 2, chance: 100 });
-        expect(scaleStatement(applies, 4).payload.stacks).toBe(8);
+    it('scales the strength of the effect an Applies puts on someone, not its chance', () => {
+        const applies = statementFor(KEYWORD.APPLIES, { effectId: 'effect_venom', scale: 1, chance: 50 });
+        const scaled = scaleStatement(applies, 4).payload;
+        expect(scaled.scale).toBe(4);
+        expect(scaled.chance).toBe(50);
     });
 
     it('leaves a capability tier alone — a Tier 3 pickaxe is a different tool', () => {

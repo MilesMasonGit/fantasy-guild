@@ -107,6 +107,11 @@ export function scaleStatement(statement, scale = 1) {
         };
     }
 
+    // An applied effect's scale is a whole 1-5 like any reference's; a rule naming none means 1.
+    if (field === 'scale') {
+        return { ...statement, payload: { ...payload, scale: normaliseScale(normaliseScale(payload.scale) * factor) } };
+    }
+
     const current = Number(payload[field]);
     if (!Number.isFinite(current)) return statement;
 
