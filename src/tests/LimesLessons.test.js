@@ -336,7 +336,9 @@ describe('⭐ the lessons survive a save, a catch-up, a reload and travel', () =
         QuestManager.reportProgress('combat_victory');
         LimesGuide.setLessons(false);
         const saved = JSON.parse(JSON.stringify(GameState.serialize().state));
-        expect(saved.guide.progress).toEqual({ done: ['bush', 'fight'], counts: {}, moments: {} });
+        expect(saved.guide.progress).toEqual({
+            done: ['bush', 'fight'], counts: {}, moments: {}, seen: allSteps().map(s => s.id)
+        });
         GameState.initNew();
         expect(step()).toBeNull();
         GameState.initFromSave(migrateState(saved, GAME_VERSION));
