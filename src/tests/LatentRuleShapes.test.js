@@ -22,6 +22,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import * as LiveEffects from '../systems/effects/LiveEffects.js';
 import * as Charges from '../systems/board/Charges.js';
+import * as Hand from '../systems/board/Hand.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 
@@ -163,6 +164,31 @@ registerTokenTypes({
         }]
     },
     fixture_rs_endless: producer('fixture_rs_endless'),
+    fixture_rs_stumper: producer('fixture_rs_stumper', {
+        statements: [{
+            id: 'stm_rs_stumper', keyword: 'spawns', payload: { typeId: 'fixture_rs_one_use', placement: 'here', chance: 100 },
+            chargeDelta: 0, to: null, reach: null, target: null,
+            when: { event: 'SELF_CYCLE_COMPLETE', scope: 'self', cooldownMs: 0 }
+        }]
+    }),
+    fixture_rs_turns_on_cycle: {
+        id: 'fixture_rs_turns_on_cycle', name: 'Turns', tokenType: 'support', rarity: 'common',
+        sprite: 's_occult', requiresHero: false,
+        statements: [{
+            id: 'stm_rs_turns_on_cycle', keyword: 'transforms', payload: { typeId: 'fixture_rs_one_use' },
+            chargeDelta: 0, to: null, reach: null, target: { role: 'self' },
+            when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 }
+        }]
+    },
+    fixture_rs_stumps_on_cycle: {
+        id: 'fixture_rs_stumps_on_cycle', name: 'Stumps', tokenType: 'support', rarity: 'common',
+        sprite: 's_occult', requiresHero: false,
+        statements: [{
+            id: 'stm_rs_stumps_on_cycle', keyword: 'spawns', payload: { typeId: 'fixture_rs_one_use', placement: 'here', chance: 100 },
+            chargeDelta: 0, to: null, reach: null, target: null,
+            when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 }
+        }]
+    },
     fixture_rs_sigil: {
         id: 'fixture_rs_sigil', name: 'Ore Sigil', tokenType: 'support', rarity: 'common',
         sprite: 's_mining', requiresHero: false,
@@ -387,6 +413,42 @@ describe('a Transforms aimed at another Token', () => {
         expect(BoardState.getTokenById(node.id)).toBeNull();
         expect(BoardState.getTokenById(changer.id)).toBe(changer);
         expect(changer.usesRemaining).toBe(4);
+    });
+});
+
+describe('a rule that puts a Token in another’s place', () => {
+    it('a Spawns here says the Token it replaced has gone', () => {
+        const bearer = place(0, 'fixture_rs_stumper');
+        const changed = [];
+        const off = EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, (p) => changed.push(p));
+        run(1000);
+        off();
+        expect(BoardState.getTokenById(bearer.id)).toBeNull();
+        expect(changed.find(p => p.instanceId === bearer.id)).toMatchObject({ typeId: null, x: C(0).x, y: C(0).y });
+    });
+
+    it('a Transforms waits while its Token is in the player’s hand', () => {
+        const held = place(1, 'fixture_rs_turns_on_cycle');
+        place(0, 'fixture_rs_endless');
+        Hand.setInHand(held.id, true);
+        run(2000);
+        expect(BoardState.getTokenById(held.id)).toBe(held);
+
+        Hand.setInHand(held.id, false);
+        run(1000);
+        expect(BoardState.getTokenById(held.id)).toBeNull();
+    });
+
+    it('a Spawns here waits while its bearer is in the player’s hand', () => {
+        const held = place(1, 'fixture_rs_stumps_on_cycle');
+        place(0, 'fixture_rs_endless');
+        Hand.setInHand(held.id, true);
+        run(2000);
+        expect(BoardState.getTokenById(held.id)).toBe(held);
+
+        Hand.setInHand(held.id, false);
+        run(1000);
+        expect(BoardState.getTokenById(held.id)).toBeNull();
     });
 });
 

@@ -17,8 +17,9 @@ import * as FightMoments from './FightMoments.js';
 import * as DealDamage from './DealDamage.js';
 import * as EffectActions from './EffectActions.js';
 import * as LiveEffects from '../effects/LiveEffects.js';
-import { resolveRoles } from '../../config/registries/roleRegistry.js';
+import { ROLE, resolveRoles } from '../../config/registries/roleRegistry.js';
 import * as Charges from './Charges.js';
+import * as Hand from './Hand.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as EffectFeedback from './EffectFeedback.js';
@@ -205,6 +206,21 @@ function spawnHasRoom(instance, statement) {
 }
 
 /**
+ * Whether a rule that would replace a Token may happen now. A Token in the player's hand is never
+ * replaced under the pointer: a `Transforms` aimed at it, or a `Spawns here` its bearer would make,
+ * is held and waits for the next moment, as a timed change waits for it to be put down.
+ */
+function replacesNothingHeld(instance, statement, payload) {
+    if (statement.keyword === KEYWORD.SPAWNS) {
+        return placementOf(statement.payload) !== PLACEMENT.HERE || !Hand.isInHand(instance.id);
+    }
+    if (statement.keyword !== KEYWORD.TRANSFORMS) return true;
+    const roles = resolveRoles(payload, instance.id, centreOf(instance));
+    const target = EffectActions.tokenFor(statement.target?.role || ROLE.SELF, roles);
+    return target == null || !Hand.isInHand(target);
+}
+
+/**
  * Run one triggered statement's action. Returns true if the statement actually fired, which is what
  * spends the charge. A statement that was on cooldown, or whose condition was not met, has not
  * served and costs nothing.
@@ -239,6 +255,7 @@ function fireStatement(instance, statement, payload = null, { settled = false } 
 
     // Both before the cooldown is set and the charge spent: a held spawn and a missed roll are no
     // firing. The cap first, so a full mat draws no random number.
+    if (!replacesNothingHeld(instance, statement, payload)) return false;
     if (!spawnHasRoom(instance, statement)) return false;
     if (!rolledToFire(statement)) return false;
 
