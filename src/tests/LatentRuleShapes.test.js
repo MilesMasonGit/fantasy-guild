@@ -205,6 +205,14 @@ registerTokenTypes({
             inputs: [{ itemId: COAL, quantity: 10 }], outputs: [{ itemId: WOOD, quantity: 1, chance: 100 }]
         }
     }),
+    fixture_rs_lone_booster: {
+        ...booster('fixture_rs_lone_booster', []),
+        noStackDuplicates: true,
+        statements: [{
+            id: 'stm_rs_lone_booster', keyword: 'provides', to: { mode: 'all', value: '' },
+            payload: { type: 'YIELD', bucket: 'percentage', value: 1 }, upkeep: upkeep()
+        }]
+    },
     fixture_rs_sigil: {
         id: 'fixture_rs_sigil', name: 'Ore Sigil', tokenType: 'support', rarity: 'common',
         sprite: 's_mining', requiresHero: false,
@@ -533,6 +541,27 @@ describe('a hero who carries Efficiency', () => {
         const forge = place(0, 'fixture_rs_coal_forge');
         const config = workConfigOf(getTokenType(forge.typeId), forge);
         expect(WorkCheck.whyCannotRun(forge.id, forge, 'miner', config)).toBe('inputs');
+    });
+});
+
+describe('a Token that does not stack with its own kind', () => {
+    it('an unpaid copy does not stop a paid one reaching', () => {
+        const target = place(0, 'fixture_rs_endless');
+        const unpaid = place(1, 'fixture_rs_lone_booster');
+        tickUpkeep(unpaid, getTokenType(unpaid.typeId), 1000);
+        expect(isStatementPaid(unpaid, 'stm_rs_lone_booster')).toBe(false);
+
+        place(6, 'fixture_rs_lone_booster');
+        TileModifiers.rebuildToken(target.id);
+        expect(TileModifiers.resolveAxis(target.id, EFFECT_TYPES.YIELD, 10, 'forestry')).toBe(20);
+    });
+
+    it('two paid copies still count once', () => {
+        const target = place(0, 'fixture_rs_endless');
+        place(1, 'fixture_rs_lone_booster');
+        place(6, 'fixture_rs_lone_booster');
+        TileModifiers.rebuildToken(target.id);
+        expect(TileModifiers.resolveAxis(target.id, EFFECT_TYPES.YIELD, 10, 'forestry')).toBe(20);
     });
 });
 

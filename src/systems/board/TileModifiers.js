@@ -434,10 +434,10 @@ function* applicableStatements(selfId) {
         const statements = statementsOf(def);
         if (!statements.length) continue;
 
-        // ⚠️ The duplicate guard runs AFTER the reach test, not before. Claiming the `seenTypes`
-        // slot before checking reach would let a DISTANT copy of a `noStackDuplicates` Token take
-        // the slot and suppress a NEARBY one whose rule actually reached here, depending only on
-        // scan order.
+        // ⚠️ The duplicate guard claims the `seenTypes` slot only for a copy whose rule actually
+        // reaches here: past the reach test, the filter and the upkeep. Claiming it any earlier
+        // would let a DISTANT, unpaid or unmatched copy of a `noStackDuplicates` Token suppress
+        // one that reaches, depending only on scan order.
         const duplicate = def.noStackDuplicates && seenTypes.has(instance.typeId);
         let claimed = false;
 
@@ -448,10 +448,6 @@ function* applicableStatements(selfId) {
             // to `nearby`.
             if (!reachCovers(reachOf(statement), relation)) continue;
             if (duplicate) continue;
-            if (def.noStackDuplicates && !claimed) {
-                seenTypes.add(instance.typeId);
-                claimed = true;
-            }
             // Every ambient keyword must name the thing it does, or it reaches nothing: an effect
             // axis for the two that scale a number, a status for the one that puts something on a
             // person.
@@ -473,6 +469,10 @@ function* applicableStatements(selfId) {
             // An unpaid statement is simply off until stock returns.
             if (!isStatementPaid(instance, statement.id)) continue;
 
+            if (def.noStackDuplicates && !claimed) {
+                seenTypes.add(instance.typeId);
+                claimed = true;
+            }
             yield { statement, neighbour: instance.id, instance };
         }
     }
