@@ -170,6 +170,32 @@ describe("the drag bench's free spot on S2", () => {
         expect(covered).toEqual([]);
     });
 
+    /**
+     * With every flag hidden the flag kind had nothing to drag, so no drag of it planted another,
+     * and the rest of its pass was skipped (10 in a row in a plain pass on 2026-11-18).
+     */
+    it('sends a hero to an open spot when every flag is hidden, so the next flag pick has one', () => {
+        const heroId = 'hero_bench_5';
+        const flagEl = document.createElement('button');
+        flagEl.setAttribute('data-flag', heroId);
+        flagEl.getBoundingClientRect = () => ({ left: 300, top: 300, width: 24, height: 24, right: 324, bottom: 324, x: 300, y: 300 });
+        mat.appendChild(flagEl);
+        // Every point of the flag lies under something else drawn in front of it.
+        document.elementsFromPoint = () => [surface];
+        const before = { ...BoardState.flagOf(heroId) };
+        const random = vi.spyOn(Math, 'random').mockImplementation(seeded(614));
+        try {
+            expect(kit.pick.flag().skip).toMatch(/every flag is hidden/);
+        } finally {
+            random.mockRestore();
+            delete document.elementsFromPoint;
+            flagEl.remove();
+        }
+        const after = BoardState.flagOf(heroId);
+        expect(after?.spot).toBe(true);
+        expect(Math.hypot(after.x - before.x, after.y - before.y)).toBeGreaterThan(1);
+    });
+
     it('keeps a spot a hero stands on: what is on the mat is the press rules\' to judge', () => {
         const random = vi.spyOn(Math, 'random').mockImplementation(seeded(613));
         const open = kit.freeSpot();

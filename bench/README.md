@@ -934,6 +934,10 @@ page with the bench's own copy of them:
   neither lies wholly under Tokens, flags or heroes drawn in front of it: nobody
   can press it on the mat (the player moves it by its hero or from the hero bar),
   so the bench passes it over and names it in the attempt's `scene.hiddenFlags`.
+  With every flag hidden the attempt is skipped and, as set-up, one of their heroes
+  is sent to an open spot (`Orders.orderAt`), so the next attempt has a walking
+  flag: otherwise no drag of this kind plants another and the rest of the pass
+  is skipped (it once skipped 49 of 50).
   First choice is a **clear** point: 8 px or more from every hero figure's box and
   health bar (its own hero's too) and from every Token's body, and on no Token the
   game has there.

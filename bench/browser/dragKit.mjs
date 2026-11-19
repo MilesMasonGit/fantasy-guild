@@ -587,7 +587,15 @@ export function installDragKit() {
                 const p = flagPress(f);
                 (p.bare || p.cloth ? pressable : hidden).push({ el: f, at: p });
             }
-            if (!pressable.length) return { skip: `every flag is hidden under things drawn in front of it (${hidden.length})` };
+            if (!pressable.length) {
+                // ⚠️ This kind drags the one flag it can press (every other has faded once its hero
+                // arrived), so with none no drag of it makes another and the rest of the pass is
+                // skipped. A set-up order through the game sends a hero to an open spot: the next
+                // attempt has their walking flag to press.
+                const to = kit.freeSpot();
+                if (to && hidden.length) G.Orders.orderAt(pickRandom(hidden).el.getAttribute('data-flag'), to.mat);
+                return { skip: `every flag is hidden under things drawn in front of it (${hidden.length})` };
+            }
             const { el, at } = pickRandom(pressable);
             const heroId = el.getAttribute('data-flag');
             const to = kit.freeSpot();
