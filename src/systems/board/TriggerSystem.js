@@ -223,7 +223,7 @@ function isReady(instance, statementId, overMs = null) {
         return ended === undefined || overMs <= ended;
     }
     // Not yet advanced: `left` is what stood at the tick's start.
-    return !(left > tickMs - overMs);
+    return !(left > 0 && left > tickMs - overMs);
 }
 
 /**
