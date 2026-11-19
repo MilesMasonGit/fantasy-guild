@@ -22,6 +22,7 @@ import { recipesUnlockedByLevelUp } from './recipeUnlocks.js';
  *   recipes: {heroId: string, heroName: string, skillId: string, recipes: {id: string, name: string, itemId: string|null}[]}[],
  *   finds: {itemId: string, count: number}[],
  *   bankFull: string[],
+ *   stackFull: string[],
  *   knockouts: {heroId: string, heroName: string, times: number, lost: string[]}[]
  * } }}
  */
@@ -30,6 +31,7 @@ export function startNewsCollector() {
     const recipes = new Map();
     const finds = [];
     const bankFull = [];
+    const stackFull = [];
     /** heroId → row. */
     const knockouts = new Map();
 
@@ -52,8 +54,9 @@ export function startNewsCollector() {
         EventBus.subscribe(ENGINE_EVENTS.ITEM_DISCOVERED, ({ itemId } = {}) => {
             if (itemId && !finds.includes(itemId)) finds.push(itemId);
         }),
-        EventBus.subscribe(ENGINE_EVENTS.BANK_FULL, ({ itemId } = {}) => {
-            if (itemId && !bankFull.includes(itemId)) bankFull.push(itemId);
+        EventBus.subscribe(ENGINE_EVENTS.BANK_FULL, ({ itemId, reason } = {}) => {
+            const list = reason === 'stack' ? stackFull : bankFull;
+            if (itemId && !list.includes(itemId)) list.push(itemId);
         }),
         EventBus.subscribe(BOARD_EVENTS.HERO_DEFEATED, ({ heroId, heroName, lost } = {}) => {
             if (!heroId) return;
@@ -74,6 +77,7 @@ export function startNewsCollector() {
                 recipes: [...recipes.values()],
                 finds: finds.map(itemId => ({ itemId, count: Math.max(1, gained[itemId] || 0, net[itemId] || 0) })),
                 bankFull,
+                stackFull,
                 knockouts: [...knockouts.values()]
             };
         }
@@ -83,5 +87,5 @@ export function startNewsCollector() {
 /** Whether a catch-up's news has anything to say. */
 export function hasNews(news) {
     return !!news && (news.recipes?.length > 0 || news.finds?.length > 0
-        || news.bankFull?.length > 0 || news.knockouts?.length > 0);
+        || news.bankFull?.length > 0 || news.stackFull?.length > 0 || news.knockouts?.length > 0);
 }

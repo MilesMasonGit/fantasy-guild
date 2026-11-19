@@ -59,6 +59,20 @@ export const InventoryManager = {
     },
 
     /**
+     * Why the Bank would take none of `itemId` now: `'slots'` when it holds none and no tab has a
+     * free slot, `'stack'` when its stack is at the item's limit (`maxStack`, or the one copy of
+     * an item that is not stackable), else null. The tests {@link addItem} refuses by.
+     */
+    refusalOf(itemId) {
+        if (this.lacksSlotFor(itemId)) return 'slots';
+        const held = InventoryStore.getEntry(itemId)?.quantity || 0;
+        const template = held > 0 ? getItem(itemId) : null;
+        if (!template) return null;
+        if (template.stackable === false) return 'stack';
+        return held >= (template.maxStack || DEFAULT_MAX_STACK) ? 'stack' : null;
+    },
+
+    /**
      * New item kinds the Bank can take: the free slots of every tab, within the
      * Bank's total (`maxSlots`, 64 per tab, written by GuildUpgradeManager).
      */
@@ -147,7 +161,7 @@ export const InventoryManager = {
         // makes the guarantee one subscriber away from being silently untrue: if
         // items vanish, check `SpriteLayer.init()` is running.
         if (this.lacksSlotFor(itemId)) {
-            EventBus.publish(ENGINE_EVENTS.INVENTORY_OVERFLOW, { itemId, amount });
+            EventBus.publish(ENGINE_EVENTS.INVENTORY_OVERFLOW, { itemId, amount, reason: 'slots' });
             return 0;
         }
 
@@ -170,17 +184,21 @@ export const InventoryManager = {
             // A maxed stack hands the remainder to the board, not to nothing.
             // DEFAULT_MAX_STACK is 1e12, so this almost never fires.
             if (spaceRemaining <= 0) {
-                EventBus.publish(ENGINE_EVENTS.INVENTORY_OVERFLOW, { itemId, amount });
+                EventBus.publish(ENGINE_EVENTS.INVENTORY_OVERFLOW, { itemId, amount, reason: 'stack' });
                 return 0;
             }
 
             if (amount > spaceRemaining) {
                 addedCount = spaceRemaining;
-                EventBus.publish(ENGINE_EVENTS.INVENTORY_OVERFLOW, { itemId, amount: amount - spaceRemaining });
+                EventBus.publish(ENGINE_EVENTS.INVENTORY_OVERFLOW, { itemId, amount: amount - spaceRemaining, reason: 'stack' });
             }
         } else if (entry.quantity >= 1) {
-            EventBus.publish(ENGINE_EVENTS.INVENTORY_OVERFLOW, { itemId, amount });
+            EventBus.publish(ENGINE_EVENTS.INVENTORY_OVERFLOW, { itemId, amount, reason: 'stack' });
             return 0;
+        } else if (amount > 1) {
+            // A single-copy item takes one of a pile; the rest waits on the mat like any overflow.
+            addedCount = 1;
+            EventBus.publish(ENGINE_EVENTS.INVENTORY_OVERFLOW, { itemId, amount: amount - 1, reason: 'stack' });
         }
 
         entry.quantity += addedCount;

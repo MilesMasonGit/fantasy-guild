@@ -111,6 +111,17 @@ export const BANNER_KINDS = Object.freeze({
         }),
         merge: (a, b) => ({ items: union(a.items, b.items) })
     },
+    // An item at its stack's limit (its own `maxStack`, or one copy of a single-copy item): the
+    // Bank may have free slots, so "Bank full" would send the player to look for the wrong thing.
+    stackFull: {
+        tone: TONE.PROBLEM,
+        mergeShown: true,
+        text: ({ items = [] }) => ({
+            title: 'Stack Full!',
+            line: `${nameList(items)} ${items.length > 1 ? 'wait' : 'waits'} on the mat: the Bank holds no more of ${items.length > 1 ? 'them' : 'it'}`
+        }),
+        merge: (a, b) => ({ items: union(a.items, b.items) })
+    },
     // One event at a time is on the mat, so one banner each; it goes when its Token leaves.
     event: {
         tone: TONE.MILESTONE,

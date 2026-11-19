@@ -4,7 +4,7 @@ import * as HeroManager from '../hero/HeroManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
-import { getEquippedEntries, isGearCategory, isConsumableCategory } from '../../config/registries/equipmentConstants.js';
+import { getEquippedEntries, isGearCategory, isSustenanceCategory } from '../../config/registries/equipmentConstants.js';
 import { DEFEAT_PENALTY } from '../../config/loopConstants.js';
 
 /**
@@ -26,11 +26,12 @@ export function applyDefeatPenalties(heroId) {
     // 1. Consumable stack loss: a share of each CARRIED food/drink item's banked
     //    stack is destroyed. Walks the hero's grid, not any container.
     //
-    //    The Consumable class (elixirs) is exempt: defeat keeps the cost it had before elixirs
-    //    were drunk, and softening or widening it is the owner's call.
+    //    Food and drink only. The Consumable class (elixirs) is exempt: defeat keeps the cost it
+    //    had before elixirs were drunk, and softening or widening it is the owner's call.
+    //    ⚠️ A slot can still hold an item the CMS has since made not equippable (no category):
+    //    it must not cost a share of that item's whole Bank stack.
     for (const entry of equipped) {
-        if (isGearCategory(entry.category)) continue;        // gear is rolled below
-        if (isConsumableCategory(entry.category)) continue;  // exempt, see above
+        if (!isSustenanceCategory(entry.category)) continue;
         const banked = InventoryManager.getItemCount(entry.itemId);
         const loss = Math.ceil(banked * DEFEAT_PENALTY.CONSUMABLE_LOSS_RATIO);
         if (loss > 0) {

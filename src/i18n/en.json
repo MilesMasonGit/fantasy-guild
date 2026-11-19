@@ -81,6 +81,7 @@
         "bankFull": "The Bank is full: {hero} keeps the {item}",
         "fighting": "{hero} is fighting",
         "missing": "{item} is gone from the game. Right-click to clear the slot",
+        "unmet": "{item}: {needs}. It does nothing until then",
         "needsLevel": "Needs {skill} {level}",
         "sharedGearTitle": "One copy per hero",
         "sharedGearLine": "Each hero now needs their own copy of gear, weapons and tools, and the Bank was short: {losses}",
@@ -128,6 +129,7 @@
     "itemTip": {
         "count": "×{count}",
         "tool": "{kind}, tier {tier}",
+        "needs": "Needs {levels}",
         "restores": "Restores {amount} HP",
         "stat": {
             "damage": "DMG",
@@ -550,6 +552,7 @@
             "broken": "Broken",
             "brokeStopped": "{hero} stopped",
             "bankFull": "Bank full: waiting on the mat",
+            "stackFull": "Stack full: waiting on the mat",
             "recipes": "New recipes",
             "finds": "First finds",
             "levelUps": "Level-ups",

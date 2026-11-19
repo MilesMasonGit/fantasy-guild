@@ -67,15 +67,17 @@ function rollsChance(payload, random = Math.random) {
  *
  * Used by the ambient path: the statement was collected by
  * `TileModifiers.collectStatusApplications`, which already matched the filter against this Token.
+ * A carried rule on a moment with no role comes here too (`LoadoutMoments`), and hands in its
+ * statement's `sourceEffectId`: the stamp is on the statement, not its payload.
  *
  * @returns {boolean} whether anybody actually received it
  */
-export function applyAt(instanceId, payload, random = Math.random) {
+export function applyAt(instanceId, payload, random = Math.random, sourceId = payload?.sourceEffectId || null) {
     if (!payload?.effectId) return false;
     if (!rollsChance(payload, random)) return false;
     const bearer = liveBearerOf(instanceId);
     if (!bearer) return false;
-    return LiveEffects.applyTo(bearer, payload, payload.sourceEffectId || null, fireLive);
+    return LiveEffects.applyTo(bearer, payload, sourceId, fireLive);
 }
 
 /**

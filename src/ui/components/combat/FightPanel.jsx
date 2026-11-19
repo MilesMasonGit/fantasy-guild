@@ -238,6 +238,12 @@ const movesTip = (moves) => (moves?.length
     ? [t('fight.tip.enemyMoves'), ...moves.map(m => `${m.name}: ${[m.hits ? damageTypeName(m.type) : t('fight.moves.noHit'), m.effect].filter(Boolean).join(', ')}`)]
     : undefined);
 
+/** The enemy hit's tooltip lines: the Type Damage lent to it, then its moves. */
+const enemyHitTip = (enemy) => {
+    const lines = [...(enemy.hitLines || []), ...(movesTip(enemy.moves) || [])];
+    return lines.length ? lines : undefined;
+};
+
 /** A value in the stat block, bold, with its tooltip. */
 const Value = ({ tip, lines, children, ...rest }) => (
     <Tooltip title={tip} lines={lines}>
@@ -311,7 +317,7 @@ export const FightStats = ({ view }) => {
                     </Value>
                 )}
                 enemy={(
-                    <Value tip={t('fight.tip.enemyHit', { hit: damageText(enemy.hit) })} lines={movesTip(enemy.moves)}>
+                    <Value tip={t('fight.tip.enemyHit', { hit: damageText(enemy.hit) })} lines={enemyHitTip(enemy)}>
                         <EnemyHit enemy={enemy} />
                     </Value>
                 )}

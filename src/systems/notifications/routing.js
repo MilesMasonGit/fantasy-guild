@@ -131,8 +131,8 @@ export const ROUTES = [
     },
     {
         event: ENGINE_EVENTS.BANK_FULL, to: 'banner:bankFull',
-        handle: ({ itemId } = {}) => itemId && Banners.push({
-            kind: 'bankFull',
+        handle: ({ itemId, reason } = {}) => itemId && Banners.push({
+            kind: reason === 'stack' ? 'stackFull' : 'bankFull',
             parts: { items: [itemName(itemId)] },
             sprite: itemSprite(itemId)
         })
@@ -262,6 +262,9 @@ export function deliverCatchUpNews(news) {
     }
     for (const itemId of news.bankFull || []) {
         Banners.push({ kind: 'bankFull', parts: { items: [itemName(itemId)] }, sprite: itemSprite(itemId) });
+    }
+    for (const itemId of news.stackFull || []) {
+        Banners.push({ kind: 'stackFull', parts: { items: [itemName(itemId)] }, sprite: itemSprite(itemId) });
     }
     for (const { itemId, count } of (news.finds || []).slice(0, MAX_FIND_STUBS)) {
         ItemStubs.markNew(itemId);

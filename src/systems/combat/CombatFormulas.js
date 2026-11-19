@@ -381,6 +381,11 @@ export function heroBlow(hero, enemy, { crit = false, arrow = null } = {}) {
         (type) => enemyTypeResistance(enemy, type));
 }
 
+/** An enemy's hit before any multiplier: its own, plus the flat Damage a rule has lent it. */
+export function enemyBaseHit(enemy) {
+    return (enemy?.hit ?? 1) + axis(enemy, EFFECT_TYPES.DAMAGE);
+}
+
 /**
  * An enemy's landed blow on a hero, before the fraction sub-roll: its hit plus any flat Damage lent
  * to it, in one type (its move's, `type`; a plain swing is Physical), × the matchup and any Damage
@@ -389,7 +394,7 @@ export function heroBlow(hero, enemy, { crit = false, arrow = null } = {}) {
  */
 export function enemyBlow(enemy, hero, { crit = false, type = null } = {}) {
     const multiplier = damageMultiplierOf(enemy) * matchupMultiplier(enemy?.combatType, getHeroCombatStyle(hero));
-    const base = (enemy?.hit ?? 1) + axis(enemy, EFFECT_TYPES.DAMAGE);
+    const base = enemyBaseHit(enemy);
     return landedBlow([{ type: type || PLAIN_ENEMY_HIT_TYPE, base }], multiplier, crit,
         (type) => typeDamageBoost(enemy, type),
         (type) => heroTypeResistance(hero, type));
