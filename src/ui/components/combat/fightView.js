@@ -153,16 +153,26 @@ export function activeElixirsOf(hero) {
     return out;
 }
 
-/** A fighter's statuses as the panel lists them: name, stacks, its cap, ticks left, its glyph. */
+/**
+ * A fighter's statuses as the panel lists them: name, stacks, its cap, ticks left, its glyph. The
+ * cap is the one the engine stacks to: the status's own, within the engine's range, moved by what
+ * the fighter carries (a Status Stack Limit rule).
+ */
 export function statusesView(target) {
     return LiveEffects.statusesOf(target).map(s => ({
         id: s.effectId,
         name: EFFECTS[s.effectId]?.name || s.effectId,
         stacks: s.stacks,
-        maxStacks: EFFECTS[s.effectId]?.status?.stacks ?? null,
+        maxStacks: stackCapOf(target, s.effectId),
         ticksLeft: s.ticksLeft,
         icon: statusIcon(s.effectId)
     }));
+}
+
+/** The stack cap `LiveEffects` holds a status at on this fighter, or null for no status block. */
+function stackCapOf(target, effectId) {
+    const block = statusBlockOf(EFFECTS[effectId]);
+    return block ? CombatFormulas.heroStatusStackCap(target, effectId, block.stacks) : null;
 }
 
 const LASTS_KEY = Object.freeze({ attack: 'Attack', swing: 'Swing', fight: 'Fight' });
@@ -271,10 +281,15 @@ export function enemySide(typeId, fight = null) {
     const profile = fight?.enemy || getEnemyProfile(typeId);
     if (!profile) return null;
     const live = !!fight;
-    const flat = live ? CombatFormulas.damageMultiplierOf(profile) : 1;
-    const hit = Math.max(0, (profile.hit ?? 1) * flat);
+    // Live, the hit is the one the engine swings for (`enemyBlow`) before the matchup and the
+    // hero's resistances: with the flat Damage and the Damage percentage rules lend it.
+    const multiplier = live ? CombatFormulas.damageMultiplierOf(profile) : 1;
+    const hit = Math.max(0, (live ? CombatFormulas.enemyBaseHit(profile) : (profile.hit ?? 1)) * multiplier);
     const known = hasFought(typeId);
     const hitTypes = enemyHitTypes(profile.moves);
+    const boosts = live
+        ? hitTypes.map(type => ({ type, n: CombatFormulas.typeDamageBoost(profile, type) })).filter(b => b.n)
+        : [];
     return {
         typeId,
         name: profile.name || tokenName(typeId),
@@ -284,6 +299,8 @@ export function enemySide(typeId, fight = null) {
             ? { cur: Math.max(0, fight.combat?.enemyHp?.current ?? 0), max: fight.combat?.enemyHp?.max ?? profile.hp }
             : { cur: profile.hp, max: profile.hp },
         hit,
+        /** The Type Damage rules lend it, one line per type it hits with, as the hero's side lists them. */
+        hitLines: boosts.map(b => t('fight.tip.typeBoost', { type: damageTypeName(b.type), n: `${b.n > 0 ? '+' : ''}${b.n}%` })),
         hitType: hitTypes[0] ?? PLAIN_ENEMY_HIT_TYPE,
         hitTypes,
         moves: movesView(profile.moves),

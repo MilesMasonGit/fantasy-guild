@@ -16,6 +16,7 @@ import { reconcileHeldCopies } from '../equipment/EquipmentManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { t } from '../../i18n/index.js';
 import { loadSavedState } from './LoadedState.js';
+import { MARK_KEY, attachMark, fingerprint, readMark } from './unansweredSummary.js';
 
 const LAST_SLOT_KEY = 'fantasy_guild_last_slot';
 /** sessionStorage: the slot the next page load opens by itself, without a catch-up. */
@@ -56,7 +57,7 @@ function reportSaveFailed(err) {
         parts: {
             title: 'Save Failed!',
             message: isQuota
-                ? 'Browser storage is full. Free space or export your save.'
+                ? t('settings.storageFull')
                 : 'The game could not be saved.'
         }
     });
@@ -96,11 +97,74 @@ export const SaveManager = {
      * instead of rolling the damaged save over it.
      */
     keepBackupSlot: null,
+    /**
+     * The unanswered summary's mark (`unansweredSummary.js`), written into every save of its slot
+     * until the player answers it: `{ slot, check, text, backup }`. `backup` is `'roll'` until a
+     * save has rolled the game as left into the slot's backup, `'keep'` from then on (no save
+     * rolls the backup away), `'none'` when there is no copy to keep.
+     */
+    unanswered: null,
+    /** The mark the last load read, with the copy found for it, until the catch-up takes it. */
+    loadedUnanswered: null,
     _closeSaveBound: false,
     /** The desktop build's last save asked for: resolves `{ ok, error }` once its file is written. */
     _lastWrite: null,
     /** The window was kept open once for a failed save on closing; the next close goes through. */
     _closeKeptOpen: false,
+
+    /**
+     * From now on every save of `slot` carries `mark` and, once the game as left is in the backup,
+     * keeps it there. A mark for the same copy as the one held keeps where that copy stands.
+     */
+    holdUnanswered(slot, mark) {
+        const held = this.unanswered;
+        if (held?.slot === slot && held.check === mark.check) {
+            held.text = JSON.stringify(mark);
+            return;
+        }
+        let backup = 'roll';
+        if (mark.check == null) backup = 'none';
+        else if (this.keepBackupSlot === slot) backup = 'keep';
+        this.unanswered = { slot, check: mark.check, text: JSON.stringify(mark), backup };
+    },
+
+    /** The summary was answered (or another game opened): saves go back to rolling the backup. */
+    clearUnanswered() {
+        this.unanswered = null;
+    },
+
+    /** Whether the slot's saves carry an unanswered summary's mark. */
+    hasUnanswered(slot = this.currentSlot) {
+        return this.unanswered !== null && this.unanswered.slot === slot;
+    },
+
+    /** The mark the last load read and the copy found for it, once: `{ slot, mark, copy }` or null. */
+    takeLoadedUnanswered() {
+        const loaded = this.loadedUnanswered;
+        this.loadedUnanswered = null;
+        return loaded;
+    },
+
+    /**
+     * A loaded save's mark, and its copy: the slot's backup when it is the save the mark names,
+     * else null. A save loaded from the backup has none: its own backup is not kept.
+     */
+    async readUnanswered(slotIndex, data, { fromBackup }) {
+        const mark = fromBackup ? null : readMark(data);
+        if (!mark) return null;
+        let copy = null;
+        if (mark.check) {
+            try {
+                copy = SaveFiles.isActive()
+                    ? await SaveFiles.readSave(slotIndex, { backup: true })
+                    : localStorage.getItem(SlotHelper.getBackupKey(slotIndex));
+            } catch (err) {
+                console.error(`[SaveManager] Slot ${slotIndex}'s backup could not be read:`, err);
+            }
+            if (typeof copy !== 'string' || fingerprint(copy) !== mark.check) copy = null;
+        }
+        return { slot: slotIndex, mark: copy ? mark : { ...mark, check: null }, copy };
+    },
 
     /** Refuse every save (autosave, closing the window, a button) until `resumeSaving`. */
     suspendSaving() {
@@ -215,23 +279,31 @@ export const SaveManager = {
      */
     startAutoSave() {
         if (this.autoSaveTimer) clearInterval(this.autoSaveTimer);
+        this.autoSaveTimer = null;
 
-        if (this.currentSlot === null || AUTO_SAVE_INTERVAL <= 0) return;
+        if (this.currentSlot === null) return;
+        // Every slot opens through here; Off means no timer, not no save on leaving the page.
+        this.installUnloadSave();
+        if (AUTO_SAVE_INTERVAL <= 0) return;
 
         this.autoSaveTimer = setInterval(() => {
             this.save(false); // Silent save
         }, AUTO_SAVE_INTERVAL);
+    },
 
-        // Only add beforeunload listener once
-        if (!this._beforeUnloadBound) {
-            window.addEventListener('beforeunload', () => {
-                if (!this.isResetting && this.currentSlot !== null) {
-                    this.save(false);
-                }
-            });
-            this._beforeUnloadBound = true;
-            logger.debug('SaveManager', 'beforeunload listener registered');
-        }
+    /**
+     * The browser and dev builds save as the page is left (a closed tab, a reload). Once per page.
+     * The desktop build's window close is `installCloseSave`'s.
+     */
+    installUnloadSave() {
+        if (this._beforeUnloadBound) return;
+        window.addEventListener('beforeunload', () => {
+            if (!this.isResetting && this.currentSlot !== null) {
+                this.save(false);
+            }
+        });
+        this._beforeUnloadBound = true;
+        logger.debug('SaveManager', 'beforeunload listener registered');
     },
 
     /**
@@ -254,18 +326,25 @@ export const SaveManager = {
             // The same bytes as `JSON.stringify(GameState.serialize())`, without
             // deep-copying the state first.
             const stringifyStart = import.meta.env.DEV ? performance.now() : 0;
-            const json = given ?? GameState.serializeJson();
+            let json = given ?? GameState.serializeJson();
             if (import.meta.env.DEV && given == null) {
                 logger.info('SaveManager', `save size ${json.length} chars, serializeJson ${(performance.now() - stringifyStart).toFixed(1)} ms`);
             }
             const slot = this.currentSlot;
-            const rollBackup = this.keepBackupSlot !== slot;
+            const held = this.hasUnanswered(slot) ? this.unanswered : null;
+            if (held) json = attachMark(json, held.text);
+            const rollBackup = this.keepBackupSlot !== slot && held?.backup !== 'keep';
+            /** This save rolls the game as left into the backup, where the mark's copy then stays. */
+            const settles = held?.backup === 'roll' ? held : null;
 
             if (SaveFiles.isActive()) {
-                // The game is taken now; the file is written after, in order with the others.
+                // The game is taken now; the file is written after, in order with the others. A
+                // later write runs after this one, so the copy is kept from now on.
+                if (settles) settles.backup = 'keep';
                 this._lastWrite = SaveFiles.writeSave(slot, json, { rollBackup }).then((result) => {
                     if (!result.ok) {
                         reportSaveFailed(result.error);
+                        if (settles && this.unanswered === settles) settles.backup = 'roll';
                     } else {
                         if (this.keepBackupSlot === slot) this.keepBackupSlot = null;
                         // Saving works again: a failed save on closing may keep the window open again.
@@ -279,16 +358,21 @@ export const SaveManager = {
                 // Roll the previous save into the backup key first, so a
                 // failed/truncated write can't leave the player with nothing.
                 const previous = localStorage.getItem(slotKey);
+                let rolled = false;
                 if (previous && rollBackup) {
                     try {
                         localStorage.setItem(SlotHelper.getBackupKey(slot), previous);
+                        rolled = true;
                     } catch {
                         // Backup is best-effort; never block the real save for it.
                     }
                 }
+                if (settles && rolled) settles.backup = 'keep';
 
                 localStorage.setItem(slotKey, json);
                 this.keepBackupSlot = null;
+                // Written over the game as left without its copy reaching the backup: none is kept.
+                if (settles && !rolled) settles.backup = 'none';
             }
 
             if (showNotification) {
@@ -300,6 +384,17 @@ export const SaveManager = {
             this._lastWrite = Promise.resolve({ ok: false, error: err });
             return false;
         }
+    },
+
+    /**
+     * "Save Game Now": saves with the notification, then waits for a desktop write to finish.
+     * @returns {Promise<boolean>} whether the save reached the slot
+     */
+    async saveAndConfirm() {
+        this._lastWrite = null;
+        if (!this.save(true)) return false;
+        const write = this._lastWrite;
+        return write ? (await write).ok === true : true;
     },
 
     /**
@@ -366,6 +461,8 @@ export const SaveManager = {
             }
             if (!json) {
                 console.warn(`[SaveManager] ${which} is empty`);
+                // A missing or empty file whose backup holds a save shows as damaged (`SaveFiles`).
+                if (SaveFiles.isActive() && !fromBackup) return this.loadDamaged(slotIndex, { fromBackup, catchUp });
                 return false;
             }
 
@@ -391,6 +488,7 @@ export const SaveManager = {
                 console.error(`[SaveManager] ${which} failed validation:`, validation.errors);
                 return this.loadDamaged(slotIndex, { fromBackup, catchUp });
             }
+            const unanswered = await this.readUnanswered(slotIndex, data, { fromBackup });
 
             loadSavedState(state);
             // Before anything plays, the catch-up included: an older save's heroes sharing one copy
@@ -403,6 +501,14 @@ export const SaveManager = {
             this.keepBackupSlot = null;
             this.loadedSavedAt = catchUp ? (Number(data.savedAt) || null) : null;
             this.loadedJson = catchUp ? json : null;
+            // Held from the load on, so every save carries the mark until the player answers.
+            this.loadedUnanswered = unanswered;
+            this.unanswered = unanswered && {
+                slot: slotIndex,
+                check: unanswered.mark.check,
+                text: JSON.stringify(unanswered.mark),
+                backup: unanswered.copy ? 'keep' : 'none'
+            };
             localStorage.setItem(LAST_SLOT_KEY, slotIndex);
             this.startAutoSave();
 
@@ -479,18 +585,23 @@ export const SaveManager = {
             } else if (data.meta) {
                 data.meta.lastSavedAt = now;
             }
+            // Written back, the summary is answered: the game as left carries no mark.
+            delete data[MARK_KEY];
+            // ⚠️ The backup is the copy being written back: rolled first, a write that then fails
+            // would leave it nowhere but in memory, and the next start could not offer it.
+            const keepBackup = this.hasUnanswered(slotIndex) && this.unanswered.backup === 'keep';
             this.suspendSaving();
             if (this.autoSaveTimer) {
                 clearInterval(this.autoSaveTimer);
                 this.autoSaveTimer = null;
             }
             if (SaveFiles.isActive()) {
-                const { ok, error } = await SaveFiles.writeSave(slotIndex, JSON.stringify(data));
+                const { ok, error } = await SaveFiles.writeSave(slotIndex, JSON.stringify(data), { rollBackup: !keepBackup });
                 if (!ok) throw error ?? new Error('the save file was not written');
             } else {
                 const slotKey = this.getSlotKey(slotIndex);
                 const previous = localStorage.getItem(slotKey);
-                if (previous) {
+                if (previous && !keepBackup) {
                     try {
                         localStorage.setItem(SlotHelper.getBackupKey(slotIndex), previous);
                     } catch {
@@ -555,6 +666,8 @@ export const SaveManager = {
         this.keepBackupSlot = null;
         this.loadedSavedAt = null;
         this.loadedJson = null;
+        this.loadedUnanswered = null;
+        this.unanswered = null;
         localStorage.setItem(LAST_SLOT_KEY, slotIndex);
 
         this.startAutoSave();
@@ -579,6 +692,7 @@ export const SaveManager = {
             }
             logger.info('SaveManager', `Deleted Slot ${slotIndex + 1}`);
 
+            if (this.unanswered?.slot === slotIndex) this.unanswered = null;
             // If we deleted the current slot, clear it
             if (this.currentSlot === slotIndex) {
                 this.currentSlot = null;

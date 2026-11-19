@@ -683,3 +683,56 @@ describe('Shop card prices', () => {
         expect(met.querySelector('.text-gi-danger')).toBeNull();
     });
 });
+
+describe('a Shop price of more than four lines', () => {
+    const LINES = [WOOD, 'fixture_oak_wood', 'fixture_charcoal', 'fixture_copper_ore', 'fixture_control_item'];
+    const priced = (id, n) => registerTokenTypes({
+        [id]: {
+            id, name: id, size: 1,
+            shop: { price: LINES.slice(0, n).map(itemId => ({ itemId, quantity: 2 })), section: 'forestry' }
+        }
+    });
+    const pills = (r) => [...r.querySelectorAll('[data-shop-price] > *')];
+
+    it('shows the line the Bank is short of, on a card the same size', () => {
+        priced('fixture_sp_five', 5);
+        for (const itemId of LINES.slice(0, 4)) InventoryManager.addItem(itemId, 5);
+        const r = row(mountDrawer(), 'fixture_sp_five');
+        expect(r.getAttribute('data-shop-affordable')).toBe('false');
+        expect(r.style.height).toBe(`${SHOP_CARD_H}px`);
+        expect(pills(r).length).toBe(4);
+        const short = r.querySelector('[data-shop-pill="fixture_control_item"]');
+        expect(short).not.toBeNull();
+        expect(short.getAttribute('data-short')).toBe('true');
+        expect(r.querySelector('[data-shop-more]').textContent).toBe('+2');
+        expect(r.querySelector('[data-shop-more] .text-gi-danger')).toBeNull();
+    });
+
+    it('a fourth pill counts the lines not shown, red when one of them is short too', () => {
+        priced('fixture_sp_six', 5);
+        const r = row(mountDrawer(), 'fixture_sp_six');
+        expect(pills(r).length).toBe(4);
+        expect([...r.querySelectorAll('[data-shop-pill]')].length).toBe(3);
+        const more = r.querySelector('[data-shop-more]');
+        expect(more.textContent).toBe('+2');
+        expect(more.getAttribute('data-short')).toBe('true');
+        expect(more.querySelector('.text-gi-danger')).not.toBeNull();
+    });
+
+    it('names the lines not shown on hover', () => {
+        priced('fixture_sp_hover', 5);
+        for (const itemId of LINES.slice(0, 5)) InventoryManager.addItem(itemId, 5);
+        const r = row(mountDrawer(), 'fixture_sp_hover');
+        const more = r.querySelector('[data-shop-more]');
+        fireEvent.pointerEnter(more, { pointerType: 'mouse', clientX: 5, clientY: 5 });
+        expect(document.querySelector('[data-tooltip]').textContent).toMatch(/Fixture Copper Ore 5\/2.*Fixture Control Item 5\/2/);
+        fireEvent.pointerLeave(more);
+    });
+
+    it('four lines or fewer show as before, in their order', () => {
+        priced('fixture_sp_four', 4);
+        const r = row(mountDrawer(), 'fixture_sp_four');
+        expect([...r.querySelectorAll('[data-shop-pill]')].map(p => p.getAttribute('data-shop-pill'))).toEqual(LINES.slice(0, 4));
+        expect(r.querySelector('[data-shop-more]')).toBeNull();
+    });
+});

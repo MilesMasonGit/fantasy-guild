@@ -1,6 +1,7 @@
 import { memo, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
+import { HERO_HP_EVENTS, movesHeroHp } from '../../hooks/heroHpEvents.js';
 import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
 import { ART_PX } from '../../../config/matGeometry.js';
 import { DockEquipmentGrid } from '../dock/DockEquipmentGrid.jsx';
@@ -14,9 +15,8 @@ import { VitalBar } from '../base/VitalBar.jsx';
 import { useLiveMatFit } from '../board/MatFitContext.jsx';
 import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE, rosterFlagPayload } from '../../dnd/dragConstants.js';
-import { XpRateTracker } from '../../../systems/hero/XpRateTracker.js';
 import { heroSkillList, skillLevelText, skillXpView, skillTipView, SKILLS_PER_COLUMN } from '../dock/heroPanelSkills.js';
-import { HeroSkillPanel } from '../dock/HeroSkillPanel.jsx';
+import { HeroSkillPanel, useXpRate } from '../dock/HeroSkillPanel.jsx';
 import { HeroCombatView } from '../dock/HeroCombatView.jsx';
 import { CombatGlyph } from '../combat/CombatGlyph.jsx';
 import { GLYPH_COLOUR } from '../combat/combatGlyphs.js';
@@ -68,8 +68,8 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
                 skills: Object.fromEntries(Object.entries(h.skills || {}).map(([id, s]) => [id, { level: s?.level, xp: s?.xp }]))
             });
         },
-        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_LEVELED, ENGINE_EVENTS.GAME_RESET],
-        null,
+        [...HERO_HP_EVENTS, ENGINE_EVENTS.HERO_LEVELED],
+        (payload, event) => movesHeroHp(heroId, payload, event),
         { deps: [heroId] }
     );
     const hero = signature ? JSON.parse(signature) : null;
@@ -289,9 +289,9 @@ const SkillCell = ({ heroId, row, open = false, onToggle }) => {
     );
 };
 
-/** A skill's hover tip under its name and level: its XP, what is left to the next level and the rate, read as it shows. */
+/** A skill's hover tip under its name and level: its XP, what is left to the next level and the rate, read while it shows. */
 const SkillTip = ({ heroId, row }) => {
-    const v = skillTipView(row.xp, XpRateTracker.getRate(heroId, row.id));
+    const v = skillTipView(row.xp, useXpRate(heroId, row.id));
     const lines = [
         [t('heroPanel.xp'), v.xp],
         v.toNext && [t('heroPanel.toNext'), v.toNext],

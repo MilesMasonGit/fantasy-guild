@@ -877,7 +877,13 @@ real input, the browser's own hit-testing decides
 what the press lands on, which is where "something is blocking the drag" bugs
 live. Sources and targets are picked from the live DOM and state for every drag
 (things move); targets are the best-cleared of 40 random points on the mat,
-away from open drawers.
+away from open drawers, where the mat (or something on it) is what the browser
+hits all over the box a flag planted there is drawn in: none of the screen's own
+furniture over it, such as the hero bar's level-up bubbles that reach up over
+the mat's bottom edge and stay until clicked. Without that last rule the flag
+kind ran dry: it drags the one flag it can press (every other has faded once its
+hero arrived), and once that one was let go under the bubbles every later flag
+drag of the pass was skipped.
 
 | Kind | Source → target | Success (read from the game's state) |
 |---|---|---|
@@ -928,6 +934,10 @@ page with the bench's own copy of them:
   neither lies wholly under Tokens, flags or heroes drawn in front of it: nobody
   can press it on the mat (the player moves it by its hero or from the hero bar),
   so the bench passes it over and names it in the attempt's `scene.hiddenFlags`.
+  With every flag hidden the attempt is skipped and, as set-up, one of their heroes
+  is sent to an open spot (`Orders.orderAt`), so the next attempt has a walking
+  flag: otherwise no drag of this kind plants another and the rest of the pass
+  is skipped (it once skipped 49 of 50).
   First choice is a **clear** point: 8 px or more from every hero figure's box and
   health bar (its own hero's too) and from every Token's body, and on no Token the
   game has there.

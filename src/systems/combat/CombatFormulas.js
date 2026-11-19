@@ -23,6 +23,7 @@ import { EFFECT_TYPES } from '../effects/constants.js';
 import { getGlobalAggregator } from '../effects/GuildModifiers.js';
 import { combinePercentages } from '../effects/ModifierAggregator.js';
 import { roundByChance, WHOLE_EPSILON } from '../../utils/RNG.js';
+import { MAX_TICK_DELTA_MS } from '../../config/loopConstants.js';
 
 /** A hero's level in one skill, as saved; 0 when they hold none of it (a villager). */
 function skillLevelOf(hero, skillId) {
@@ -200,6 +201,15 @@ export function enemyAttackSpeedMs(enemy) {
     return Math.round((enemy?.attackSpeed || attackSpeedMs(enemy?.speed)) * swingTimeFactor(enemy));
 }
 
+/**
+ * Whether a swing of `speedMs` may land more than once in one engine step: only one faster than the
+ * largest step (a catch-up's), so it swings as often while the player is away as it does live. One
+ * of a second or more lands at most once a step, as it always has.
+ */
+export function swingRepeatsInStep(speedMs) {
+    return speedMs > 0 && speedMs < MAX_TICK_DELTA_MS;
+}
+
 // --- The swing -------------------------------------------------------------------------------
 
 /**
@@ -371,6 +381,11 @@ export function heroBlow(hero, enemy, { crit = false, arrow = null } = {}) {
         (type) => enemyTypeResistance(enemy, type));
 }
 
+/** An enemy's hit before any multiplier: its own, plus the flat Damage a rule has lent it. */
+export function enemyBaseHit(enemy) {
+    return (enemy?.hit ?? 1) + axis(enemy, EFFECT_TYPES.DAMAGE);
+}
+
 /**
  * An enemy's landed blow on a hero, before the fraction sub-roll: its hit plus any flat Damage lent
  * to it, in one type (its move's, `type`; a plain swing is Physical), × the matchup and any Damage
@@ -379,7 +394,7 @@ export function heroBlow(hero, enemy, { crit = false, arrow = null } = {}) {
  */
 export function enemyBlow(enemy, hero, { crit = false, type = null } = {}) {
     const multiplier = damageMultiplierOf(enemy) * matchupMultiplier(enemy?.combatType, getHeroCombatStyle(hero));
-    const base = (enemy?.hit ?? 1) + axis(enemy, EFFECT_TYPES.DAMAGE);
+    const base = enemyBaseHit(enemy);
     return landedBlow([{ type: type || PLAIN_ENEMY_HIT_TYPE, base }], multiplier, crit,
         (type) => typeDamageBoost(enemy, type),
         (type) => heroTypeResistance(hero, type));

@@ -2,7 +2,7 @@ import React from 'react';
 import { t } from '../../../i18n/index.js';
 import { categoryOfItem } from '../../../config/registries/equipmentConstants.js';
 import { toolOf, toolKindLabel, handsOf, HANDS } from '../../../config/registries/toolKinds.js';
-import { weaponStyleOf, isOffHand } from '../../../config/registries/weaponStyles.js';
+import { weaponStyleOf, isOffHand, gearRequirements } from '../../../config/registries/weaponStyles.js';
 import { weaponDamageTypeOf, arrowOf, DAMAGE_GROUPS, DAMAGE_TYPES } from '../../../config/registries/damageTypes.js';
 import { gearResistancesOf, gearDamageCutOf } from '../../../config/registries/gearDefence.js';
 import { COMBAT_SKILL_IDS } from '../../../config/registries/skillRegistry.js';
@@ -64,6 +64,13 @@ function breakLine(item, tool) {
     return t(tool ? 'itemTip.breaksWork' : 'itemTip.breaksFight', { n });
 }
 
+/** "Needs Melee 15": every level the item asks of its wearer, the engine's own list; null for none. */
+export function needsLine(item) {
+    const levels = gearRequirements(item);
+    if (!levels.length) return null;
+    return t('itemTip.needs', { levels: levels.map(r => `${getSkill(r.skill)?.name || r.skill} ${r.level}`).join(', ') });
+}
+
 /**
  * Everything the tooltip says about an item, as plain facts (the component below draws them).
  * Mounted only while a tooltip is open, so nothing here runs per frame.
@@ -77,6 +84,8 @@ export function itemTipFacts(item) {
     return {
         type: itemTypeLabel(item),
         tool: tool ? t('itemTip.tool', { kind: toolKindLabel(tool.kind), tier: tool.tier }) : null,
+        // Said before a drop is refused for it (`EquipmentValidator.canHeroEquip`).
+        needs: needsLine(item),
         // A tool breaks at the end of a work cycle, a weapon at a kill (`Breakage.js`).
         breaks: breakLine(item, tool),
         stats: weaponStats(item, style, hands),
@@ -126,10 +135,11 @@ export const ItemKindLines = ({ facts }) => (
     </>
 );
 
-/** Its tool and its chance to break (the Item drawer shows the tags as pills instead). */
+/** Its tool, the level it needs and its chance to break (the Item drawer shows the tags as pills instead). */
 export const ItemToolLines = ({ facts }) => (
     <>
         {facts.tool && <div data-item-tip-tool className="text-white">{facts.tool}</div>}
+        {facts.needs && <div data-item-tip-needs className="text-white">{facts.needs}</div>}
         {facts.breaks && <div data-item-tip-breaks className="text-white">{facts.breaks}</div>}
     </>
 );

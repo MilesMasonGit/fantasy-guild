@@ -158,6 +158,13 @@ describe('a kill gets its style\'s XP bonuses', () => {
         expect(killXp(makeHero('h1'), 1, 0.99)).toBe(1);
     });
 
+    it('a flat cut larger than the award takes no XP away', () => {
+        getGlobalAggregator().addModifier({
+            source: 'test:star', type: EFFECT_TYPES.XP_BONUS, bucket: 'flat', target: { category: 'melee' }, value: -5
+        });
+        expect(killXp(makeHero('h1'), 3)).toBe(0);
+    });
+
     it('carries the fraction by chance: +10% on a 1 XP kill is 2 on a lucky draw', () => {
         getGlobalAggregator().addModifier({
             source: 'test:star', type: EFFECT_TYPES.XP_BONUS, target: { category: 'melee' }, value: 0.1

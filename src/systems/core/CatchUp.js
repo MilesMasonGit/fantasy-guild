@@ -9,7 +9,8 @@ import { AudioSystem } from './AudioSystem.js';
 import { SaveManager } from './SaveManager.js';
 import { ENGINE_EVENTS, HEARD_WHILE_QUIET } from './engineEvents.js';
 import { BOARD_EVENTS } from '../board/boardEvents.js';
-import { startNewsCollector } from '../notifications/catchUpNews.js';
+import { startNewsCollector, hasNews } from '../notifications/catchUpNews.js';
+import { fingerprint } from './unansweredSummary.js';
 import { CATCH_UP } from '../../config/loopConstants.js';
 import { logger } from '../../utils/Logger.js';
 
@@ -48,15 +49,25 @@ import { logger } from '../../utils/Logger.js';
  * - `news`: what the quiet bus kept from the banners and stubs (`catchUpNews.js`): recipes
  *   unlocked, first finds, items a full Bank refused, heroes knocked out. The notifications hand
  *   it over once the summary closes (`routing.js`). Null when `news: false`.
+ *
+ * A summary that can be turned down stays unanswered until the player presses one of its buttons:
+ * closing the game is not an answer. Its mark goes into every save of the slot
+ * (`unansweredSummary.js`), the slot's backup keeps the game as left, and the next start offers
+ * the summary again (`slotLoaded`).
  */
 
 let running = false;
 let last = null;
 /**
- * The save to go back to if the player turns the last shown catch-up down: `{ slot, json, savedAt }`,
- * `savedAt` when that game was left (epoch ms).
+ * The save to go back to if the player turns the last shown catch-up down: `{ slot, json, savedAt,
+ * check }`, `savedAt` when that game was left (epoch ms), `check` its fingerprint once taken.
  */
 let undo = null;
+/**
+ * The summary on screen and not yet answered: `{ result, earlier }`, `earlier` the news of the
+ * summaries it replaced (`unansweredSummary.js`); null when there is none.
+ */
+let unanswered = null;
 /** "Load as I left it" writing the save back, until the write is known (`undoLast`). */
 let restoring = null;
 let initialized = false;
@@ -103,13 +114,62 @@ export function undoLast() {
 async function writeUndoBack() {
     if (!undo) return false;
     const written = await SaveManager.restoreAndReload(undo.slot, undo.json);
-    if (written) undo = null;
+    if (written) forgetUndo();
     return written;
 }
 
-/** Let the save kept for an undo go (the player kept the catch-up). */
+/**
+ * Let the save kept for an undo go, and the unanswered summary with it, in memory only: the slot's
+ * saves stop carrying its mark from the next one on.
+ */
 export function forgetUndo() {
     undo = null;
+    unanswered = null;
+    SaveManager.clearUnanswered();
+}
+
+/**
+ * The player kept the catch-up ("Return to the Guild"): the save kept for an undo is let go, and
+ * the slot is saved at once without the mark, rolling the copy out of the backup, so the next start
+ * does not offer the summary again.
+ */
+export function keepCatchUp() {
+    const marked = SaveManager.hasUnanswered();
+    forgetUndo();
+    if (marked) SaveManager.save(false);
+}
+
+/**
+ * A save was loaded: the undo and the unanswered summary are the ones it carried, if any
+ * (`SaveManager.takeLoadedUnanswered`). A summary left unanswered when the game closed is offered
+ * again (`CATCH_UP_OFFERED_AGAIN`), with "Load as I left it" when its copy was found. Called before
+ * the load's own catch-up, so a new time away keeps this undo, as one while the summary is open does.
+ * @param {{ slot: number, mark: object, copy: string|null }|null} loaded
+ */
+export function slotLoaded(loaded) {
+    undo = null;
+    unanswered = null;
+    if (!loaded?.mark) return;
+    const { slot, mark, copy } = loaded;
+    if (copy != null) undo = { slot, json: copy, savedAt: mark.since, check: mark.check };
+    unanswered = { result: mark.result, earlier: mark.earlier };
+    EventBus.publish(ENGINE_EVENTS.CATCH_UP_OFFERED_AGAIN, {
+        result: mark.result,
+        news: [...mark.earlier, mark.result.summary?.news].filter(hasNews)
+    });
+}
+
+/**
+ * The mark for the summary `result` shown now, going back to `undo`: every summary before it that
+ * was left open adds its news to `earlier`.
+ */
+function markFor(result) {
+    const earlier = unanswered
+        ? [...unanswered.earlier, unanswered.result?.summary?.news].filter(hasNews)
+        : [];
+    unanswered = { result, earlier };
+    if (undo.check === undefined) undo.check = fingerprint(undo.json);
+    return { since: undo.savedAt, check: undo.check, result, earlier };
 }
 
 /**
@@ -420,11 +480,14 @@ export async function run({
     result.droppedMs = Math.max(0, away - capMs);
     result.steps = steps;
     progress(1);
+    // A summary still open was never accepted: its save stays the one "as I left it" goes back to.
+    if (keep && !undo) undo = keep;
+    // Unanswered from the end save on: it carries the mark, and rolls the game as left into the
+    // backup unless an earlier summary's copy is already kept there.
+    if (keep) SaveManager.holdUnanswered(undo.slot, markFor(result));
     if (save) SaveManager.save(false);
     result.wallMs = performance.now() - wallStart;
     last = result;
-    // A summary still open was never accepted: its save stays the one "as I left it" goes back to.
-    if (keep && !undo) undo = keep;
     logger.info('CatchUp', `Played ${Math.round(played / 1000)} s of game in ${Math.round(result.wallMs)} ms`
         + `${result.droppedMs > 0 ? `, dropped ${Math.round(result.droppedMs / 1000)} s past the cap` : ''}`,
     result.summary);

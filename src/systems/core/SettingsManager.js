@@ -127,6 +127,10 @@ class SettingsManagerClass {
                 if (this.settings.ui) this.settings.ui.backgroundTile = currentSpriteName(this.settings.ui.backgroundTile);
                 this._tidyLoaded();
                 logger.debug('SettingsManager', 'Settings loaded from storage');
+            } else {
+                // ⚠️ Nothing stored means no pre-mute settings to fix; without the marker the
+                // next load would delete the volume a new player chose.
+                localStorage.setItem(DEV_MUTE_MIGRATION_KEY, '1');
             }
         } catch (e) {
             logger.error('SettingsManager', 'Failed to load settings', e);

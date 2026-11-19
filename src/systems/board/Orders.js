@@ -89,6 +89,7 @@ export function aimAt(heroId, instance) {
 /** Whether `heroId` could be ordered onto `instance` (the Tokens that light while they are carried). */
 export function canOrderOnto(heroId, instance) {
     if (!heroId || !instance) return false;
+    if (woundedHero(heroId)) return false;
     if (isGuildHall(instance)) return true;
     return !Flags.orderRefusal(heroId, instance);
 }

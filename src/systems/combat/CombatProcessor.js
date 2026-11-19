@@ -76,12 +76,14 @@ export function processCombat(fight, trait, deltaTime) {
         // The weapon sets the pace: fast 2 s, normal 3 s, slow 4 s (barehanded: normal).
         const attackSpeed = CombatFormulas.heroAttackSpeedMs(hero);
 
-        if (!fight.isFleeing && combat.heroTickProcesses[heroId] >= attackSpeed) {
+        const repeats = CombatFormulas.swingRepeatsInStep(attackSpeed);
+        while (!fight.isFleeing && combat.heroTickProcesses[heroId] >= attackSpeed) {
             handleHeroAttack(fight, hero, enemy, attackSpeed);
             if (combat.enemyHp.current <= 0) {
                 if (standing(hero)) handleVictory(fight, hero, enemy, heroId, assignedHeroIds);
                 return;
             }
+            if (!repeats || !standing(hero)) break;
         }
     }
 

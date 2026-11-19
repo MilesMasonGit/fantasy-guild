@@ -17,11 +17,13 @@ import * as FightMoments from './FightMoments.js';
 import * as DealDamage from './DealDamage.js';
 import * as EffectActions from './EffectActions.js';
 import * as LiveEffects from '../effects/LiveEffects.js';
-import { resolveRoles } from '../../config/registries/roleRegistry.js';
+import { ROLE, resolveRoles } from '../../config/registries/roleRegistry.js';
 import * as Charges from './Charges.js';
+import * as Hand from './Hand.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as EffectFeedback from './EffectFeedback.js';
+import { isStatementPaid } from './BlockUpkeep.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -141,6 +143,29 @@ function triggeredStatements(def, triggerId) {
 }
 
 /**
+ * ⚠️ A cooldown is what is left of it at the END of a board tick, but a cycle ends part-way through
+ * one (`overMs` before its end), and one long step stands for many short ones while away. So a rule
+ * fired from such a moment is asked and timed from the moment, not the tick's end, or a rule with a
+ * cooldown would fire less often away than watched. The board resets this record each tick
+ * (`beginTick`); a moment with no `overMs` keeps the plain end-of-tick reading.
+ */
+let tickMs = 0;
+/** Tokens whose cooldowns this tick has already advanced. */
+const advanced = new Set();
+/** `instanceId:statementId` → how long before this tick's end its cooldown ran out. */
+const endedEarly = new Map();
+/** Cooldowns started this tick, already counted to its end, on Tokens not yet advanced. */
+const startedLate = new Set();
+
+/** A new board tick of `delta` ms begins. Called by `BoardRunner.tick` before any Token ticks. */
+export function beginTick(delta) {
+    tickMs = delta;
+    if (advanced.size) advanced.clear();
+    if (endedEarly.size) endedEarly.clear();
+    if (startedLate.size) startedLate.clear();
+}
+
+/**
  * Advance every cooldown on one Token. Called from the board tick. Cooldowns count DOWN rather than
  * being compared against a timestamp, so they behave identically whether the game ran continuously
  * or was resumed.
@@ -148,14 +173,57 @@ function triggeredStatements(def, triggerId) {
 export function tickCooldowns(instance, delta) {
     const state = instance.blockCooldowns;
     if (!state) return;
+    advanced.add(instance.id);
+    let ended = null;
     for (const key of Object.keys(state)) {
-        if (state[key] > 0) state[key] = Math.max(0, state[key] - delta);
+        const left = state[key];
+        if (!(left > 0)) continue;
+        if (startedLate.size && startedLate.has(`${instance.id}:${key}`)) continue;
+        state[key] = Math.max(0, left - delta);
+        if (state[key] === 0) {
+            endedEarly.set(`${instance.id}:${key}`, delta - left);
+            if (!ended) ended = [];
+            ended.push(key);
+        }
+    }
+    if (ended) recheckBankHolds(instance, ended);
+}
+
+/**
+ * "On Bank Holds" means while the Bank holds, so a rule whose cooldown just ended asks the Bank
+ * again rather than waiting for the Bank to move. Only the rules whose cooldown ended: one that is
+ * ready and waiting is already heard on the Bank's next move. It fires from the moment the
+ * cooldown ran out.
+ */
+function recheckBankHolds(instance, statementIds) {
+    for (const statement of triggeredStatements(getTokenType(instance.typeId), 'ITEM_THRESHOLD')) {
+        if (!statementIds.includes(statement.id)) continue;
+        if (!bankHolds(statement.when)) continue;
+        fireStatement(instance, statement, null, { overMs: endedEarly.get(`${instance.id}:${statement.id}`) });
     }
 }
 
-/** Whether a statement is off cooldown and may fire. */
-function isReady(instance, statementId) {
-    return !(instance.blockCooldowns?.[statementId] > 0);
+/** Whether the Bank holds what an "On Bank Holds" moment watches for. */
+function bankHolds(when) {
+    const { watchItemId, threshold } = when || {};
+    return !!watchItemId && InventoryManager.getItemCount(watchItemId) >= (threshold || 1);
+}
+
+/**
+ * Whether a statement is off cooldown and may fire, at the tick's end or, given `overMs`, at the
+ * moment that long before it.
+ */
+function isReady(instance, statementId, overMs = null) {
+    const left = instance.blockCooldowns?.[statementId];
+    if (overMs == null || (!(left > 0) && endedEarly.size === 0)) return !(left > 0);
+    const key = `${instance.id}:${statementId}`;
+    if (advanced.has(instance.id) || startedLate.has(key)) {
+        if (left > 0) return false;
+        const ended = endedEarly.get(key);
+        return ended === undefined || overMs <= ended;
+    }
+    // Not yet advanced: `left` is what stood at the tick's start.
+    return !(left > 0 && left > tickMs - overMs);
 }
 
 /**
@@ -179,12 +247,29 @@ function spawnHasRoom(instance, statement) {
 }
 
 /**
+ * Whether a rule that would replace a Token may happen now. A Token in the player's hand is never
+ * replaced under the pointer: a `Transforms` aimed at it, or a `Spawns here` its bearer would make,
+ * is held and waits for the next moment, as a timed change waits for it to be put down.
+ */
+function replacesNothingHeld(instance, statement, payload) {
+    if (statement.keyword === KEYWORD.SPAWNS) {
+        return placementOf(statement.payload) !== PLACEMENT.HERE || !Hand.isInHand(instance.id);
+    }
+    if (statement.keyword !== KEYWORD.TRANSFORMS) return true;
+    const roles = resolveRoles(payload, instance.id, centreOf(instance));
+    const target = EffectActions.tokenFor(statement.target?.role || ROLE.SELF, roles);
+    return target == null || !Hand.isInHand(target);
+}
+
+/**
  * Run one triggered statement's action. Returns true if the statement actually fired, which is what
  * spends the charge. A statement that was on cooldown, or whose condition was not met, has not
  * served and costs nothing.
  */
-function fireStatement(instance, statement, payload = null, { settled = false } = {}) {
-    if (!instance || !isReady(instance, statement.id)) return false;
+function fireStatement(instance, statement, payload = null, { settled = false, overMs = null } = {}) {
+    if (!instance || !isReady(instance, statement.id, overMs)) return false;
+    // An unpaid upkeep turns the rule off until stock returns, as it does an aura.
+    if (!isStatementPaid(instance, statement.id)) return false;
 
     // A statement's own charge cost gates it. An effect that costs more charges than the Token has
     // left cannot fire at all: it does not fire and go into debt, and it does not fire for free.
@@ -211,6 +296,7 @@ function fireStatement(instance, statement, payload = null, { settled = false } 
 
     // Both before the cooldown is set and the charge spent: a held spawn and a missed roll are no
     // firing. The cap first, so a full mat draws no random number.
+    if (!replacesNothingHeld(instance, statement, payload)) return false;
     if (!spawnHasRoom(instance, statement)) return false;
     if (!rolledToFire(statement)) return false;
 
@@ -219,7 +305,9 @@ function fireStatement(instance, statement, payload = null, { settled = false } 
     // again — a Sigil converting Stone while watching for Stone is exactly the
     // shape that loops forever. The guard above covers the case where the
     // author left the cooldown at zero.
-    cooldowns(instance)[statement.id] = statement.when?.cooldownMs || 0;
+    const cooldownMs = Math.max(0, (statement.when?.cooldownMs || 0) - (overMs ?? 0));
+    cooldowns(instance)[statement.id] = cooldownMs;
+    if (overMs != null && cooldownMs > 0 && !advanced.has(instance.id)) startedLate.add(key);
 
     inFlight.add(key);
     cascadeDepth += 1;
@@ -279,7 +367,9 @@ function runStatementActions(instance, statement, payload = null, { settled = fa
         bearerReplaced = !!landed?.replacedBearer;
     }
     if (statement.keyword === KEYWORD.TRANSFORMS) {
-        bearerReplaced = EffectActions.transform(statement, roles());
+        // Aimed at another Token (the source, the hero's), the bearer still stands and still pays.
+        const changed = EffectActions.transform(statement, roles());
+        bearerReplaced = changed && BoardState.getTokenById(instance.id) !== instance;
     }
 
 
@@ -373,6 +463,8 @@ function runStatementActions(instance, statement, payload = null, { settled = fa
     // `uses: 1` Sapling hitting zero would announce a depletion for a Token that has already become
     // an Oak.
     if (bearerReplaced || settled) return true;
+    // A bearer that left the mat on the cycle that set this off has nothing left to pay or refill.
+    if (!BoardState.getTokenById(instance.id)) return false;
 
     Charges.applyDelta(instance, Charges.statementChargeDelta(statement));
     return false;
@@ -469,9 +561,14 @@ function handleNearby(triggerId, payload) {
             if ((statement.when.scope || TRIGGER_SCOPES.NEARBY) !== TRIGGER_SCOPES.NEARBY) continue;
             if (!sourceMatches(statement.when, payload.typeId)) continue;
             if (!producedMatches(definition, statement.when, payload)) continue;
-            fireStatement(instance, statement, payload);
+            fireStatement(instance, statement, payload, { overMs: momentOverMs(payload) });
         }
     }
+}
+
+/** How long before the tick's end the moment happened, when the event says (a cycle ending). */
+function momentOverMs(payload) {
+    return Number.isFinite(payload?.overMs) ? payload.overMs : null;
 }
 
 /**
@@ -496,7 +593,7 @@ function handleSelf(triggerId, payload, { settled = false } = {}) {
     const def = getTokenType(instance.typeId);
     for (const statement of triggeredStatements(def, triggerId)) {
         if (statement.when.scope !== TRIGGER_SCOPES.SELF) continue;
-        fireStatement(instance, statement, payload, { settled });
+        fireStatement(instance, statement, payload, { settled, overMs: momentOverMs(payload) });
     }
 }
 
@@ -508,9 +605,7 @@ function handleGlobalItemThreshold() {
     for (const instance of BoardState.tokens()) {
         const def = getTokenType(instance.typeId);
         for (const statement of triggeredStatements(def, 'ITEM_THRESHOLD')) {
-            const { watchItemId, threshold } = statement.when;
-            if (!watchItemId) continue;
-            if (InventoryManager.getItemCount(watchItemId) < (threshold || 1)) continue;
+            if (!bankHolds(statement.when)) continue;
             fireStatement(instance, statement);
         }
     }

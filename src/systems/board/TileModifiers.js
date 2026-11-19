@@ -78,6 +78,7 @@ export function clearAll() {
     aggregators.clear();
     growTimes.clear();
     gates.clear();
+    liveKeys.clear();
     lastWorkOf.clear();
     // Every Token's buffs are gone, so the next board-reach rebuild is whole.
     lastRebuild = null;
@@ -312,6 +313,44 @@ function ambientSourceIndex() {
     return sourceIndex;
 }
 
+/**
+ * Per Token, what a live-state filter read about it at its last rebuild ({@link liveKeyOf}): kept
+ * only while some rule on the mat, or a guild rule aimed at Tokens, has such a filter.
+ */
+const liveKeys = new Map();
+
+/** Whether any rule reaching Tokens has a filter that reads live state (`readsLiveState`). */
+function readsLiveStateAnywhere() {
+    if (ambientSourceIndex().stateFilters) return true;
+    const aimed = aimedModifiers();
+    return aimed.length > 0 && aimed.some(a => readsLiveState(a));
+}
+
+/** Everything a live-state filter can read about a Token: its charges, who works it, what they carry. */
+function liveKeyOf(instance) {
+    const worker = BoardState.workerOf(instance.id);
+    const carried = worker ? (HeroManager.getHero(worker)?.effects || []).map(e => e.effectId).join(',') : '';
+    return `${instance.usesRemaining}|${worker || ''}|${carried}`;
+}
+
+/**
+ * Rebuild every Token whose charges, worker or worker's carried effects changed since its buffs were
+ * last worked out, while a filter reads them: those change with no board event (a cycle spends a
+ * charge, an effect lands on or leaves a hero), so nothing else would rebuild around them. Called
+ * once a tick; does nothing while no such filter is on the mat.
+ */
+export function refreshLiveFilters() {
+    if (!readsLiveStateAnywhere()) {
+        if (liveKeys.size) liveKeys.clear();
+        return;
+    }
+    const stale = [];
+    for (const instance of BoardState.tokens()) {
+        if (liveKeys.get(instance.id) !== liveKeyOf(instance)) stale.push(instance.id);
+    }
+    if (stale.length) rebuildTokens(stale);
+}
+
 /** Forget the index, so the next read re-scans the mat. */
 function dropSourceIndex() {
     sourceIndex = EMPTY_INDEX;
@@ -395,10 +434,10 @@ function* applicableStatements(selfId) {
         const statements = statementsOf(def);
         if (!statements.length) continue;
 
-        // ⚠️ The duplicate guard runs AFTER the reach test, not before. Claiming the `seenTypes`
-        // slot before checking reach would let a DISTANT copy of a `noStackDuplicates` Token take
-        // the slot and suppress a NEARBY one whose rule actually reached here, depending only on
-        // scan order.
+        // ⚠️ The duplicate guard claims the `seenTypes` slot only for a copy whose rule actually
+        // reaches here: past the reach test, the filter and the upkeep. Claiming it any earlier
+        // would let a DISTANT, unpaid or unmatched copy of a `noStackDuplicates` Token suppress
+        // one that reaches, depending only on scan order.
         const duplicate = def.noStackDuplicates && seenTypes.has(instance.typeId);
         let claimed = false;
 
@@ -409,10 +448,6 @@ function* applicableStatements(selfId) {
             // to `nearby`.
             if (!reachCovers(reachOf(statement), relation)) continue;
             if (duplicate) continue;
-            if (def.noStackDuplicates && !claimed) {
-                seenTypes.add(instance.typeId);
-                claimed = true;
-            }
             // Every ambient keyword must name the thing it does, or it reaches nothing: an effect
             // axis for the two that scale a number, a status for the one that puts something on a
             // person.
@@ -434,6 +469,10 @@ function* applicableStatements(selfId) {
             // An unpaid statement is simply off until stock returns.
             if (!isStatementPaid(instance, statement.id)) continue;
 
+            if (def.noStackDuplicates && !claimed) {
+                seenTypes.add(instance.typeId);
+                claimed = true;
+            }
             yield { statement, neighbour: instance.id, instance };
         }
     }
@@ -445,10 +484,12 @@ export function rebuildToken(instanceId) {
         aggregators.delete(instanceId);
         growTimes.delete(instanceId);
         gates.delete(instanceId);
+        liveKeys.delete(instanceId);
         return;
     }
     const agg = getTokenAggregator(instanceId);
     agg.clearAll();
+    if (readsLiveStateAnywhere()) liveKeys.set(instanceId, liveKeyOf(BoardState.getTokenById(instanceId)));
 
     for (const { statement, neighbour, instance } of applicableStatements(instanceId)) {
         if (statement.keyword !== KEYWORD.PROVIDES) continue;
@@ -805,7 +846,7 @@ export const AXIS_SCOPE = Object.freeze({ TOKEN: 'token', GUILD: 'guild', HERO: 
  * breakdown (`explainAxis`), so a badge cannot sum differently from the engine. `trace`, when given,
  * receives each contribution with its scope, from the same loops that sum it; the engine passes none.
  */
-function collectAxis(instanceId, effectType, category, withHero, trace) {
+function collectAxis(instanceId, effectType, category, withHero, trace, heroId = undefined) {
     const tile = getTokenAggregator(instanceId);
     const guild = getGlobalAggregator();
     const tileTrace = trace ? [] : null;
@@ -814,7 +855,7 @@ function collectAxis(instanceId, effectType, category, withHero, trace) {
 
     let buckets;
     if (withHero) {
-        const hero = heroContributions(instanceId, effectType, category, heroTrace);
+        const hero = heroContributions(instanceId, effectType, category, heroTrace, heroId);
         buckets = {
             flat: [
                 tile.getFlat(effectType, category, tileTrace),
@@ -862,9 +903,11 @@ function collectAxis(instanceId, effectType, category, withHero, trace) {
  * @param {string} effectType EFFECT_TYPES key
  * @param {number} base the authored value
  * @param {string} [category] skill category, for targeted buffs
+ * @param {string} [heroId] the hero whose loadout counts, when asking about one who does not work
+ * the Token yet (a flag weighing it); otherwise whoever works it
  */
-export function resolveAxis(instanceId, effectType, base, category = TARGET_CATEGORIES.ALL) {
-    return applyThreeBucket(base, collectAxis(instanceId, effectType, category, true, null));
+export function resolveAxis(instanceId, effectType, base, category = TARGET_CATEGORIES.ALL, heroId = undefined) {
+    return applyThreeBucket(base, collectAxis(instanceId, effectType, category, true, null, heroId));
 }
 
 /**
@@ -1060,10 +1103,10 @@ export function nearbyGateMet(instance, typeIds) {
  * thing a number could be about: the work being done here. Any filter authored on it is ignored
  * rather than obeyed, because there is nothing for it to choose between.
  */
-function heroContributions(instanceId, effectType, category = TARGET_CATEGORIES.ALL, trace = null) {
+function heroContributions(instanceId, effectType, category = TARGET_CATEGORIES.ALL, trace = null, asHero = undefined) {
     const sums = { flat: 0, multipliers: [], percentages: [] };
 
-    const heroId = BoardState.workerOf(instanceId);
+    const heroId = asHero === undefined ? BoardState.workerOf(instanceId) : asHero;
     if (!heroId) return sums;
 
     const hero = HeroManager.getHero(heroId);

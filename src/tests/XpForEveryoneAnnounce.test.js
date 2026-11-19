@@ -17,7 +17,7 @@ vi.mock('../config/registries/recipePoolRegistry.js', async (importOriginal) => 
 vi.mock('../systems/core/CatchUp.js', () => ({
     canUndo: vi.fn(() => false),
     undoLast: vi.fn(() => false),
-    forgetUndo: vi.fn()
+    keepCatchUp: vi.fn()
 }));
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),

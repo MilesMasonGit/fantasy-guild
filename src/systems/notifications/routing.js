@@ -6,7 +6,6 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { listRecipes } from '../../config/registries/recipePoolRegistry.js';
 import { getUpgradeDef } from '../../config/guildUpgrades.js';
 import { resolveSpritePath } from '../../utils/AssetManager.js';
-import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
 import * as ItemStubs from './itemStubs.js';
 import * as Banners from './banners.js';
 import { TONE } from './bannerKinds.js';
@@ -15,6 +14,7 @@ import { hasNews } from './catchUpNews.js';
 import * as Atlas from '../atlas/Atlas.js';
 import { defaultBannerFor } from '../../config/areaBanners.js';
 import * as BoardState from '../board/BoardState.js';
+import * as EventTokens from '../board/EventTokens.js';
 
 /**
  * Where every game event goes (the owner's audit): items to the stubs, what must not be missed to
@@ -39,6 +39,19 @@ function heroSprite(heroId) {
 function savePins() {
     const ui = GameState.state?.ui;
     if (ui) ui.pinnedStubs = ItemStubs.serializePins();
+}
+
+/** The game whose banners the stack holds, set as a load or a new game starts it afresh. */
+let stackOf = null;
+
+/**
+ * Keep the save's copy of the unclicked kept banners in step with the stack.
+ * ⚠️ Only into the game the stack belongs to: written into a game just loaded, before its
+ * `GAME_LOADED`, the game before's banners would come back in it.
+ */
+function saveBanners() {
+    const ui = GameState.state?.ui;
+    if (ui && GameState.state === stackOf) ui.banners = Banners.serializeKept();
 }
 
 // --- The fade timer: runs only while some stub can still fade. ------------------------------
@@ -70,8 +83,6 @@ export const ROUTES = [
         handle: ({ itemId, added = 0, removed = 0 } = {}) => {
             // A bulk change (a load, a reset) names no item and is not a flow.
             if (!itemId || (!(added > 0) && !(removed > 0))) return;
-            // Gains are counted where they are made (`SpriteLayer.addSprite`), spending here.
-            if (removed > 0) ItemRateTracker.recordLoss(itemId, removed);
             ItemStubs.recordFlow(itemId, { added, removed });
             if (ItemStubs.getStub(itemId)?.pinned) savePins();
             ensureFadeTimer();
@@ -131,8 +142,8 @@ export const ROUTES = [
     },
     {
         event: ENGINE_EVENTS.BANK_FULL, to: 'banner:bankFull',
-        handle: ({ itemId } = {}) => itemId && Banners.push({
-            kind: 'bankFull',
+        handle: ({ itemId, reason } = {}) => itemId && Banners.push({
+            kind: reason === 'stack' ? 'stackFull' : 'bankFull',
             parts: { items: [itemName(itemId)] },
             sprite: itemSprite(itemId)
         })
@@ -155,16 +166,7 @@ export const ROUTES = [
     {
         // An event landing on the mat: a banner naming it, pointing to its Token.
         event: BOARD_EVENTS.EVENT_LANDED, to: 'banner:event',
-        handle: ({ instanceId, typeId, name } = {}) => {
-            if (!instanceId) return;
-            Banners.push({
-                kind: 'event',
-                groupKey: eventBannerKey(instanceId),
-                parts: { name: name || typeId || 'An event' },
-                sprite: typeId ? { kind: 'token', id: typeId } : null,
-                subjects: [{ type: 'token', id: instanceId }]
-            });
-        }
+        handle: ({ instanceId, typeId, name } = {}) => pushEventBanner({ instanceId, typeId, name })
     },
     {
         // Its Token gone, the banner pointing to it goes too.
@@ -172,29 +174,58 @@ export const ROUTES = [
         handle: ({ instanceId } = {}) => instanceId && Banners.withdraw(eventBannerKey(instanceId))
     },
     {
+        // Travel: the Region left takes its event's banner with it; one standing here gets its own.
+        event: ENGINE_EVENTS.BOARD_SWAPPED, to: 'banner:event',
+        handle: () => {
+            pruneEventBanners();
+            raiseStandingEventBanners();
+        }
+    },
+    {
         // A catch-up long enough for "While you were away" keeps its news until the summary closes;
-        // a short one, with no summary, hands it over at once.
+        // a short one, with no summary, hands it over at once. An event that landed while away and
+        // still stands is news too; one that came and went is not.
         event: ENGINE_EVENTS.CATCH_UP_FINISHED, to: 'catchUp:news',
         handle: ({ show, summary } = {}) => {
+            countTimeAwayOnPins(summary?.items);
             pruneEventBanners();
+            const landed = (summary?.events || []).filter(e => e?.landed && !e.ended && e.instanceId);
             const news = summary?.news;
-            if (!hasNews(news)) return;
-            if (show) heldNews.push(news);
-            else deliverCatchUpNews(news);
+            if (show) {
+                heldEvents.push(...landed);
+                if (hasNews(news)) heldNews.push(news);
+                return;
+            }
+            for (const e of landed) pushEventBanner(e, { onMat: true });
+            deliverCatchUpNews(news);
+        }
+    },
+    {
+        // A summary offered again after a reload keeps its news until it closes, as it did before.
+        event: ENGINE_EVENTS.CATCH_UP_OFFERED_AGAIN, to: 'catchUp:news',
+        handle: ({ news } = {}) => {
+            for (const n of news || []) if (hasNews(n)) heldNews.push(n);
         }
     },
     {
         event: UI_EVENTS.CATCH_UP_SUMMARY_CLOSED, to: 'catchUp:news',
         handle: () => {
+            const events = heldEvents;
             const held = heldNews;
+            heldEvents = [];
             heldNews = [];
+            for (const e of events) pushEventBanner(e, { onMat: true });
             for (const news of held) deliverCatchUpNews(news);
         }
     },
     {
-        // Another save, or a new game: nothing carries over but the pins that save kept.
+        // Another save, or a new game: nothing carries over but what that save kept (the pins, the
+        // unclicked kept banners), and the banner of an event standing on its mat.
         event: ENGINE_EVENTS.GAME_LOADED, to: 'reset',
-        handle: () => startFresh()
+        handle: () => {
+            startFresh();
+            raiseStandingEventBanners();
+        }
     },
     {
         event: ENGINE_EVENTS.GAME_RESET, to: 'reset',
@@ -204,8 +235,38 @@ export const ROUTES = [
     }
 ];
 
-/** The `groupKey` of the banner about the event Token `instanceId`. */
+/** The `groupKey` of the banner about the event Token `instanceId`: one banner per Token. */
 const eventBannerKey = (instanceId) => `event:${instanceId}`;
+
+/**
+ * The banner naming the event Token `instanceId` and pointing to it. `onMat`: only while that
+ * Token stands on the mat (an event handed over after a catch-up or a summary may have left).
+ */
+function pushEventBanner({ instanceId, typeId, name }, { onMat = false, silent = false } = {}) {
+    if (!instanceId) return;
+    if (onMat && !BoardState.getTokenById(instanceId)) return;
+    Banners.push({
+        kind: 'event',
+        groupKey: eventBannerKey(instanceId),
+        parts: { name: name || typeId || 'An event' },
+        sprite: typeId ? { kind: 'token', id: typeId } : null,
+        subjects: [{ type: 'token', id: instanceId }]
+    }, { silent });
+}
+
+/**
+ * Every event Token standing on the mat gets its banner, if it has none up (a load, a return by
+ * travel). Silent: it is a reminder, not news.
+ */
+function raiseStandingEventBanners() {
+    for (const token of BoardState.tokens()) {
+        const event = EventTokens.eventOf(token);
+        if (!event) continue;
+        const key = eventBannerKey(token.id);
+        if (Banners.getAll().some(b => b.groupKey === key)) continue;
+        pushEventBanner({ instanceId: token.id, typeId: token.typeId, name: event.name }, { silent: true });
+    }
+}
 
 /** Take back every event banner whose Token has left the mat meanwhile (a catch-up's quiet bus said nothing). */
 function pruneEventBanners() {
@@ -216,19 +277,46 @@ function pruneEventBanners() {
     }
 }
 
-/** Empty stubs and banners, then the pins of the game now running. */
+/**
+ * A pinned stub counts the guild's whole time, so a catch-up's gained and spent are added to it at
+ * once, whether or not a summary shows. Unpinned stubs stay quiet: the summary speaks for them.
+ * ⚠️ Only on `CATCH_UP_FINISHED`: a summary offered again after a reload played nothing new, and
+ * counting it there would count the same time twice.
+ */
+function countTimeAwayOnPins(items) {
+    if (!items) return;
+    let any = false;
+    for (const stub of ItemStubs.getStubs()) {
+        if (!stub.pinned) continue;
+        const added = Number(items.gained?.[stub.itemId]) || 0;
+        const removed = Number(items.spent?.[stub.itemId]) || 0;
+        if (!(added > 0) && !(removed > 0)) continue;
+        ItemStubs.recordFlow(stub.itemId, { added, removed });
+        any = true;
+    }
+    if (any) savePins();
+}
+
+/** Empty stubs and banners, then the pins and kept banners of the game now running. */
 function startFresh() {
+    stackOf = null;
+    const kept = GameState.state?.ui?.banners;
     heldNews = [];
+    heldEvents = [];
     stopFadeTimer();
     ItemStubs.reset();
     Banners.reset();
     ItemStubs.loadPins(GameState.state?.ui?.pinnedStubs);
+    stackOf = GameState.state;
+    Banners.restore(kept);
 }
 
 // --- After time away -------------------------------------------------------------------------
 
 /** News from catch-ups whose summary is still open. A load forgets it; "Load as I left it" reloads the page. */
 let heldNews = [];
+/** Events that landed in those catch-ups (`summary.events` rows), raised as the summary closes if still standing. */
+let heldEvents = [];
 
 /** The most first-find stubs one catch-up raises; the summary lists every find. */
 export const MAX_FIND_STUBS = 6;
@@ -263,6 +351,9 @@ export function deliverCatchUpNews(news) {
     for (const itemId of news.bankFull || []) {
         Banners.push({ kind: 'bankFull', parts: { items: [itemName(itemId)] }, sprite: itemSprite(itemId) });
     }
+    for (const itemId of news.stackFull || []) {
+        Banners.push({ kind: 'stackFull', parts: { items: [itemName(itemId)] }, sprite: itemSprite(itemId) });
+    }
     for (const { itemId, count } of (news.finds || []).slice(0, MAX_FIND_STUBS)) {
         ItemStubs.markNew(itemId);
         ItemStubs.recordFlow(itemId, { added: count });
@@ -290,6 +381,7 @@ let unsubs = [];
 export function wireNotifications() {
     unwireNotifications();
     unsubs = ROUTES.map(r => EventBus.subscribe(r.event, (p) => r.handle(p || {}), UI_LISTENER));
+    unsubs.push(Banners.subscribe(saveBanners));
     Banners.setOnShow((b) => EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, {
         clip: BANNER_SOUND[b.tone],
         options: { variant: soundsPlayed++ }

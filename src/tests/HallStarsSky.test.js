@@ -190,6 +190,26 @@ describe('the Upgrade drawer reads a star', () => {
         expect(c.querySelector('[data-rank-row="3"]').getAttribute('data-rank-state')).toBe('chosen');
         expect(text(c, '#guild-upgrade-button')).toMatch(/^Upgrade$/i);
     });
+
+    it('one click buys one rank: a second click within half a second of a buy is ignored, a later one buys', async () => {
+        for (const p of GuildUpgradeManager.getRanksCost('qa_mining_xp', 3)) InventoryManager.addItem(p.itemId, p.quantity);
+        let now = 10_000;
+        const clock = vi.spyOn(Date, 'now').mockImplementation(() => now);
+        try {
+            const c = sheet('qa_mining_xp');
+            const click = () => act(async () => { fireEvent.click(c.querySelector('#guild-upgrade-button')); });
+            await click();
+            expect(ranks().qa_mining_xp).toBe(1);
+            now += 120;
+            await click();
+            expect(ranks().qa_mining_xp).toBe(1);
+            now += 600;
+            await click();
+            expect(ranks().qa_mining_xp).toBe(2);
+        } finally {
+            clock.mockRestore();
+        }
+    });
 });
 
 describe('the Hall\'s Effects list what the stars give', () => {

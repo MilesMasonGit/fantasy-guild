@@ -10,11 +10,14 @@ import { STATUS_TICK_INTERVAL_MS } from '../../config/FormulaRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
-import * as GameClock from '../core/GameClock.js';
 
 /**
- * Any entity may carry live effect instances: `hero.effects = [{ effectId, scale, expiresAt, sourceId }]`,
+ * Any entity may carry live effect instances: `hero.effects = [{ effectId, scale, remainingMs, sourceId }]`,
  * references into the effect library with a clock on them. Nothing here knows what Poison is.
+ *
+ * ⚠️ A timed instance holds the game time it has left (`remainingMs`), spent by the effect clock
+ * ({@link tick}), never a wall-clock end: a reload, "Load as I left it" or a paused game must not
+ * spend it, and a catch-up spends it as it plays.
  *
  * ⚠️ Re-application REFRESHES; it never stacks. One effect per entity: reapplying resets its
  * clock and keeps its strength, except that a stronger scale replaces a weaker one (otherwise
@@ -187,9 +190,8 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
 
     const list = listOf(target);
     const existing = list.find(e => e.effectId === spec.effectId);
-    const expiresAt = (forFight || forCycle)
-        ? UNTIL_FIGHT_ENDS
-        : GameClock.now() + Math.max(0, Number(spec.durationMs) || 0);
+    const timed = !forFight && !forCycle;
+    const leftMs = timed ? timeLeftFor(spec.durationMs) : null;
 
     if (existing) {
         // Refresh the clock, and let a stronger application win.
@@ -198,7 +200,16 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
         existing.sourceId = sourceId ?? existing.sourceId;
         // A landing for one swing never changes the lifetime of one already carried.
         if (!forSwing) {
-            existing.expiresAt = Math.max(existing.expiresAt, expiresAt);
+            // Carried for the fight and for a while, both lives stand: the fight's holds it to the
+            // fight's end, and what is left of the while carries on after (`endFightEffects`).
+            if (timed && existing.forFight) keepWhile(existing, leftMs);
+            if (forFight && !existing.forFight && !existing.forCycle) keepWhile(existing, existing.remainingMs);
+            if (timed && existing.remainingMs != null) {
+                existing.remainingMs = Math.max(existing.remainingMs, leftMs);
+            } else if (!timed && existing.remainingMs != null) {
+                delete existing.remainingMs;
+                existing.expiresAt = UNTIL_FIGHT_ENDS;
+            }
             if (forFight) existing.forFight = true;
             if (forCycle) existing.forCycle = forCycle;
             delete existing.forSwing;
@@ -206,7 +217,9 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
         }
     } else {
         list.push({
-            effectId: spec.effectId, scale, expiresAt, sourceId,
+            effectId: spec.effectId, scale,
+            ...(timed ? { remainingMs: leftMs } : { expiresAt: UNTIL_FIGHT_ENDS }),
+            sourceId,
             ...(boost !== null ? { boost } : {}),
             ...(forFight ? { forFight: true } : {}),
             ...(forSwing ? { forSwing: true } : {}),
@@ -217,6 +230,21 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
     syncAggregator(target);
     bearer.notify?.('live_effect_applied');
     return true;
+}
+
+/**
+ * The game time a landing lasts `durationMs` for, as an instance holds it. What the effect clock has
+ * gathered towards its next tick is added, because that tick spends a whole interval: so it ends on
+ * the first tick at least `durationMs` after it landed.
+ */
+function timeLeftFor(durationMs) {
+    return Math.max(0, Number(durationMs) || 0) + clock;
+}
+
+/** Remember the while an instance also carries for the fight (`whileLeftMs`), the longer one. */
+function keepWhile(instance, leftMs) {
+    if (!(leftMs > 0)) return;
+    instance.whileLeftMs = Math.max(Number(instance.whileLeftMs) || 0, leftMs);
 }
 
 /**
@@ -334,13 +362,28 @@ export function endFightEffects(bearer) {
     const target = bearer?.target;
     if (!target?.effects?.length) return 0;
     const before = target.effects.length;
-    target.effects = target.effects.filter(e => !e.forFight);
+    target.effects = target.effects.filter(e => !e.forFight || outlivesFight(e));
     const ended = before - target.effects.length;
     if (ended) {
         syncAggregator(target);
         bearer.notify?.('live_effect_expired');
     }
     return ended;
+}
+
+/**
+ * Whether an instance carried for the fight also has a while left beyond it: then it stays, carried
+ * for the rest of that while from here on.
+ */
+function outlivesFight(instance) {
+    if (!(instance.whileLeftMs > 0)) return false;
+    instance.remainingMs = instance.whileLeftMs;
+    delete instance.whileLeftMs;
+    delete instance.expiresAt;
+    delete instance.forFight;
+    delete instance.forSwing;
+    delete instance.forAttack;
+    return true;
 }
 
 /** The same for a hero, by id. */
@@ -410,11 +453,11 @@ export function removeFrom(bearer, effectId = null) {
 }
 
 /**
- * Run one bearer's clock: fire what recurs, then drop what has expired.
+ * Run one bearer's clock: fire what recurs, spend `elapsedMs` of game time, then drop what has expired.
  *
  * @returns {number} how many instances expired
  */
-export function tickBearer(bearer, fire, now = GameClock.now()) {
+export function tickBearer(bearer, fire, elapsedMs = STATUS_TICK_INTERVAL_MS) {
     const target = bearer?.target;
     if (!target?.effects?.length) return 0;
     // A wounded hero is off the board and already cleansed.
@@ -446,10 +489,12 @@ export function tickBearer(bearer, fire, now = GameClock.now()) {
     // A status with a tick count spends one; the rest wait for their fight to end.
     for (const instance of target.effects) {
         if (instance.ticksLeft != null) instance.ticksLeft -= 1;
+        if (instance.remainingMs != null) instance.remainingMs -= elapsedMs;
+        if (instance.whileLeftMs != null) instance.whileLeftMs = Math.max(0, instance.whileLeftMs - elapsedMs);
     }
 
     const before = target.effects.length;
-    target.effects = target.effects.filter(e => e.expiresAt > now && !(e.ticksLeft != null && e.ticksLeft <= 0));
+    target.effects = target.effects.filter(e => !(e.remainingMs <= 0) && !(e.ticksLeft != null && e.ticksLeft <= 0));
     const expired = before - target.effects.length;
     if (expired) {
         logger.debug('LiveEffects', `${bearer.name} lost ${expired} effect(s)`);
@@ -580,8 +625,7 @@ export function tick(delta, fire) {
     if (clock < STATUS_TICK_INTERVAL_MS) return;
     clock -= STATUS_TICK_INTERVAL_MS;
 
-    const now = GameClock.now();
-    for (const bearer of allBearers()) tickBearer(bearer, fire, now);
+    for (const bearer of allBearers()) tickBearer(bearer, fire, STATUS_TICK_INTERVAL_MS);
 }
 
 /** Reset the clock. For tests, and for a fresh board. */

@@ -6,6 +6,7 @@ import * as SupportLinks from './supportLinks.js';
 import * as CycleSavings from './CycleSavings.js';
 import { EFFECT_TYPES, GIANT_HARVEST_TIMES } from '../effects/constants.js';
 import { isGatheringSkill } from '../../config/registries/skillRegistry.js';
+import { getHeroCombatStyle } from '../combat/CombatFormulas.js';
 
 /**
  * The output rules a finished cycle pays through: a station's cycle (`BoardRunner`) and a kill
@@ -14,6 +15,15 @@ import { isGatheringSkill } from '../../config/registries/skillRegistry.js';
  * ⚠️ Each helper draws from `Math.random` in a fixed order (and `roundUp` always draws once, even
  * on a whole number); the bench's work check pins that stream, so keep the draws as they are.
  */
+
+/**
+ * The skill a kill's loot rules (Double Loot, Yield, Lucky) narrow to: the style the hero won it in,
+ * as the kill's XP is (`CombatResolutionProcessor`), so "Double Loot on Melee" reaches a melee kill
+ * as "+10 % XP on Melee" does. With no hero, the enemy Token's own skill (every enemy leaves it blank).
+ */
+export function killLootSkill(hero, def) {
+    return hero ? getHeroCombatStyle(hero) : (def?.config?.skill || '');
+}
 
 /**
  * LOOT_MULT: the chance for double loot, resolved to a percentage and rolled ONCE per cycle, so a

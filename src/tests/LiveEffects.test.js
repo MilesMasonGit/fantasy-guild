@@ -101,7 +101,7 @@ describe('⭐ an effect can stay on somebody and keep acting', () => {
     it('is a reference into the same library, not a special kind of thing', () => {
         LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', durationMs: 60000 });
         expect(carried()[0]).toMatchObject({ effectId: 'fixture_poison', scale: 1 });
-        expect(carried()[0].expiresAt).toBeGreaterThan(Date.now());
+        expect(carried()[0].remainingMs).toBe(60000);
     });
 
     it('refuses an effect the library does not have', () => {
@@ -121,15 +121,14 @@ describe('⚠️ re-application REFRESHES, and never stacks (G-16)', () => {
     });
 
     it('pushes the clock out rather than adding a second timer', () => {
-        vi.useFakeTimers();
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', durationMs: 1000 });
-        const first = carried()[0].expiresAt;
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', durationMs: 6000 });
+        ticks(1);
+        const first = carried()[0].remainingMs;
 
-        vi.advanceTimersByTime(500);
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', durationMs: 1000 });
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', durationMs: 6000 });
 
         expect(carried()).toHaveLength(1);
-        expect(carried()[0].expiresAt).toBeGreaterThan(first);
+        expect(carried()[0].remainingMs).toBeGreaterThan(first);
     });
 
     it('⚠️ lets a STRONGER application win, so better gear is not discarded', () => {

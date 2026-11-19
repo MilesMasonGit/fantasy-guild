@@ -90,6 +90,15 @@ export function migrateState(state, savedVersion) {
         });
     }
 
+    // Timed effects used to end at a wall-clock moment: an older save's hold the game time that was
+    // left when it was written.
+    if (Array.isArray(migrated.heroes) && migrated.heroes.some(hasWallClockEnds)) {
+        const savedAt = Number(state.meta?.lastSavedAt) || 0;
+        migrated.heroes = migrated.heroes.map(h => (hasWallClockEnds(h)
+            ? { ...h, effects: h.effects.map(e => withTimeLeft(e, savedAt)) }
+            : h));
+    }
+
     // Content renamed in the CMS since the save was written: the old ids it holds take the new ones.
     migrated = followRenames(migrated);
 
@@ -179,6 +188,39 @@ export function withoutDisallowMarks(state) {
             if (b !== r?.board) { changed = true; next[id] = { ...r, board: b }; } else next[id] = r;
         }
         if (changed) out = { ...out, atlas: { ...state.atlas, regions: next } };
+    }
+    return out;
+}
+
+/** The never-by-time end a for-the-fight or for-the-cycle instance carries. */
+const UNTIL_FIGHT_ENDS = Number.MAX_SAFE_INTEGER;
+
+/** An instance that ends at a wall-clock moment: a finite `expiresAt`, or a `whileUntil`. */
+function endsByWallClock(instance) {
+    if (!isPlainObject(instance)) return false;
+    const end = instance.expiresAt;
+    return (typeof end === 'number' && Number.isFinite(end) && end < UNTIL_FIGHT_ENDS) || 'whileUntil' in instance;
+}
+
+function hasWallClockEnds(hero) {
+    return isPlainObject(hero) && Array.isArray(hero.effects) && hero.effects.some(endsByWallClock);
+}
+
+/**
+ * One instance with its wall-clock ends as the game time left at `savedAt`. ⚠️ A save with no stamp
+ * cannot say how much was left: such an effect ends on the first tick rather than never.
+ */
+function withTimeLeft(instance, savedAt) {
+    if (!endsByWallClock(instance)) return instance;
+    const left = (end) => (savedAt > 0 ? Math.max(0, Number(end) - savedAt) : 0) || 0;
+    const { whileUntil, ...out } = instance;
+    if (typeof out.expiresAt === 'number' && Number.isFinite(out.expiresAt) && out.expiresAt < UNTIL_FIGHT_ENDS) {
+        out.remainingMs = left(out.expiresAt);
+        delete out.expiresAt;
+    }
+    if (whileUntil !== undefined) {
+        const whileLeftMs = left(whileUntil);
+        if (whileLeftMs > 0) out.whileLeftMs = whileLeftMs;
     }
     return out;
 }

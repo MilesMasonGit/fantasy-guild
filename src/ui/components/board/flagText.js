@@ -79,16 +79,18 @@ export function skipLine(skip) {
 }
 
 /**
- * Everything the flag's tooltip shows, as `{ title, state, status, skips: string[], more }`. The
- * title is the hero's name.
+ * Everything the flag's tooltip shows, as `{ title, state, stuck, status, skips: string[], more }`.
+ * The title is the hero's name; the status is the hero bar's line ({@link rosterBubbleLine}), and
+ * `stuck` says the Token under a working hero has stopped (it says `working` all the same).
  */
 export function flagTooltip(heroId) {
-    const state = Flags.statusOf(heroId).state;
-    const all = Flags.skipsOfHero(heroId).map(s => skipLine(s));
+    const s = Flags.statusOf(heroId);
+    const all = Flags.skipsOfHero(heroId).map(sk => skipLine(sk));
     return {
         title: heroName(heroId),
-        state,
-        status: flagStatusLine(heroId),
+        state: s.state,
+        stuck: s.state === 'working' && !!BoardState.getTokenById(s.instanceId)?.alert,
+        status: rosterBubbleLine(heroId),
         skips: all.slice(0, MAX_SKIP_LINES),
         more: Math.max(0, all.length - MAX_SKIP_LINES)
     };

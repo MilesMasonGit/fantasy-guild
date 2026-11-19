@@ -3,6 +3,7 @@
 import { GameState } from '../../state/GameState.js';
 import { rehydrateHero } from '../hero/HeroManager.js';
 import { recalculateEquipmentModifiers } from '../equipment/EquipmentManager.js';
+import { syncAggregator } from '../effects/LiveEffects.js';
 import { assignFlagColours } from '../board/FlagColours.js';
 import { logger } from '../../utils/Logger.js';
 
@@ -19,6 +20,9 @@ export function loadSavedState(savedState) {
     (state.heroes || []).forEach(hero => {
         rehydrateHero(hero);
         recalculateEquipmentModifiers(hero);
+        // The fresh aggregator holds no carried effect: their fight numbers go back on now. The
+        // board's load handler later ends the fight-bound ones, and that re-syncs on its own.
+        syncAggregator(hero);
     });
     // A save from before heroes held a colour from the start: each gets one, in roster order.
     assignFlagColours();

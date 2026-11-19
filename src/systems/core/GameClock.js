@@ -3,7 +3,7 @@
 /**
  * `now()` is `Date.now()` in live play. During a catch-up it starts at the moment the save was
  * written and moves only as the catch-up's steps do: the wall clock moves ~22 s while 24 hours
- * play, so a rule that compares two moments (an effect's expiry, loot's age, a rate window) would
+ * play, so a rule that compares two moments (loot's age, a rate window) would
  * otherwise see no time pass at all.
  *
  * ⚠️ Only rules read this. Ids, save stamps, notifications and drawing keep `Date.now()`

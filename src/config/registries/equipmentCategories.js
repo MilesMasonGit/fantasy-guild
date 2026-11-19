@@ -115,6 +115,11 @@ export function isGearCategory(categoryId) {
     return getCategoryDef(categoryId)?.kind === CATEGORY_KINDS.GEAR;
 }
 
+/** True when items of this category are food or drink, eaten and drunk on need. */
+export function isSustenanceCategory(categoryId) {
+    return getCategoryDef(categoryId)?.kind === CATEGORY_KINDS.SUSTENANCE;
+}
+
 /** True when items of this category are potions/scrolls/runes. */
 export function isConsumableCategory(categoryId) {
     return getCategoryDef(categoryId)?.kind === CATEGORY_KINDS.CONSUMABLE;

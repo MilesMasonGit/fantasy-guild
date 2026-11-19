@@ -54,7 +54,7 @@ function oldSave() {
         heldCopies: [true, false, false, false, false, false, false, false, false],
         drinkCycles: { [OLD.item]: 4 },
         elixirFights: { [OLD.item]: 2 },
-        effects: [{ effectId: OLD.effect, scale: 1, expiresAt: 999, sourceId: 'tok_1' }]
+        effects: [{ effectId: OLD.effect, scale: 1, remainingMs: 999, sourceId: 'tok_1' }]
     }];
     state.board.tokens = {
         tok_1: { id: 'tok_1', typeId: OLD.token, x: 10, y: 10, placedAt: 0, usesRemaining: null, cycleElapsedMs: 0 },
@@ -147,7 +147,7 @@ describe('a renamed id is followed everywhere a save holds it', () => {
         expect(hero.heldCopies[0]).toBe(true);
         expect(hero.drinkCycles).toEqual({ [NEW.item]: 4 });
         expect(hero.elixirFights).toEqual({ [NEW.item]: 2 });
-        expect(hero.effects[0]).toMatchObject({ effectId: NEW.effect, expiresAt: 999 });
+        expect(hero.effects[0]).toMatchObject({ effectId: NEW.effect, remainingMs: 999 });
     });
 
     it('the live mat: a Token\'s type, what it turned from, what it was built from, a bounty', () => {

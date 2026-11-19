@@ -157,6 +157,20 @@ describe('the file layer', () => {
         expect(disk.writes().map(w => [w[3], w[2]]).slice(-2)).toEqual([['{"n":3}', true], ['{"n":5}', false]]);
     });
 
+    it('a write that was to roll the backup still rolls it when a newer one that keeps it replaces it', async () => {
+        await SaveFiles.writeSave(0, '{"n":1}');
+        const release = disk.holdWrites();
+        SaveFiles.writeSave(0, '{"n":2}');
+        SaveFiles.writeSave(0, '{"asLeft":true}');
+        SaveFiles.writeSave(0, '{"n":4}', { rollBackup: false });
+        release();
+        await SaveFiles.flush();
+        // The save that was waiting would have put the one on the disk into the backup: it still does.
+        expect(disk.writes().map(w => [w[3], w[2]]).slice(-2)).toEqual([['{"n":2}', true], ['{"n":4}', true]]);
+        expect(disk.backup(0)).toBe('{"n":2}');
+        expect(disk.main(0)).toBe('{"n":4}');
+    });
+
     it('re-reading the folder tells the slot screen only when a file changed', async () => {
         const heard = vi.fn();
         const off = SaveFiles.onChange(heard);
@@ -336,6 +350,50 @@ describe('a damaged, edited or old file', () => {
         expect(SlotHelper.getSlotInfo(0)).toMatchObject({ damaged: true });
         expect(await SaveManager.loadSlot(0, { catchUp: false })).toBe(true);
         expect(GameState.state.time.gameTimeMs).toBe(100);
+    });
+
+    it.each([
+        ['a missing', (d) => d.files.delete('slot1.json')],
+        ['an empty', (d) => d.files.set('slot1.json', '')]
+    ])('%s file with a good backup shows as damaged; Load restores the backup, and the backup survives the next save', async (_, breakMain) => {
+        await twoSaves();
+        breakMain(disk);
+        await SaveFiles.refreshAll();
+        expect(SlotHelper.hasSlot(0)).toBe(true);
+        expect(SlotHelper.getSlotInfo(0)).toMatchObject({ damaged: true });
+
+        expect(await SaveManager.loadSlot(0, { catchUp: false })).toBe(true);
+        expect(GameState.state.time.gameTimeMs).toBe(100);
+        expect(bannerTitles()).toContain('Save Restored');
+        GameState.state.time.gameTimeMs = 300;
+        SaveManager.save(false);
+        await SaveFiles.flush();
+        expect(played(disk.main(0))).toBe(300);
+        expect(played(disk.backup(0))).toBe(100);
+    });
+
+    it('a slot with no file and no good backup is still empty, for a new game', async () => {
+        disk.files.set('slot2.backup.json', '');
+        disk.files.set('slot3.backup.json', 'not a save at all');
+        await SaveFiles.refreshAll();
+        for (const slot of [0, 1, 2]) {
+            expect(SlotHelper.hasSlot(slot)).toBe(false);
+            expect(SlotHelper.getSlotInfo(slot)).toBeNull();
+        }
+    });
+
+    it('a file read empty at Load, though the slot screen saw a save, still restores the backup and stays damaged if that fails', async () => {
+        await twoSaves();
+        await SaveFiles.refreshAll();
+        disk.files.set('slot1.json', '');
+        expect(await SaveManager.loadSlot(0, { catchUp: false })).toBe(true);
+        expect(GameState.state.time.gameTimeMs).toBe(100);
+
+        SaveManager.currentSlot = null;
+        disk.files.delete('slot1.json');
+        disk.files.set('slot1.backup.json', '{"state": {"heroes": [');
+        expect(await SaveManager.loadSlot(0, { catchUp: false })).toBe(false);
+        expect(messages()).toContain(DAMAGED);
     });
 
     it('a file from another version is refused with the existing message, and left as it is', async () => {

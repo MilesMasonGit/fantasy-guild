@@ -105,8 +105,11 @@ export function toolNeedOf(instance) {
  * ⚠️ Before even that, a Token marked for demolition always can: demolishing needs no recipe,
  * inputs or charges, and a resting Token can still be cleared away. `io` is null; the runner
  * advances a demolition on its own path and never reads it.
+ *
+ * `heroId`, when given, is whose Efficiency the inputs are costed with (a flag weighing the Token
+ * for that hero); otherwise whoever works it.
  */
-export function fixableReason(instanceId, instance) {
+export function fixableReason(instanceId, instance, heroId = undefined) {
     if (Demolition.isMarked(instance)) return { reason: null, io: null };
     if (Respawn.isResting(instance)) return { reason: ALERT.RESTING, io: null };
     // A Field with nothing ripe: its crop grows (or is about to be sown), or it is stopped for
@@ -133,7 +136,7 @@ export function fixableReason(instanceId, instance) {
 
     // The most a cycle can take once Efficiency is counted, as the cycle itself checks it.
     if (io.inputs?.length) {
-        const inputCheck = InputCost.checkCost(instance, io.inputs);
+        const inputCheck = InputCost.checkCost(instance, io.inputs, heroId);
         if (!inputCheck.ok) return { reason: ALERT.INPUTS, io, inputCheck };
     }
 
@@ -149,5 +152,6 @@ export function fixableReason(instanceId, instance) {
 export function whyCannotRun(instanceId, instance, heroId, config) {
     const hero = heroReason(heroId, config, instance);
     if (hero) return hero;
-    return fixableReason(instanceId, instance).reason;
+    // Costed with this hero's own Efficiency: they are the one who would pay.
+    return fixableReason(instanceId, instance, heroId).reason;
 }

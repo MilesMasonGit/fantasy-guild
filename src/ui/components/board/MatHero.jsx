@@ -24,7 +24,7 @@ import { useDrawn } from '../../dev/perf/drawSwitches.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import { useGameState } from '../../hooks/useGameState.js';
-import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { HERO_HP_EVENTS, movesHeroHp } from '../../hooks/heroHpEvents.js';
 import { HealthBar } from './HealthBar.jsx';
 import { heroBarPlace, fightBarShift } from './healthBar.js';
 import { TokenNameBadge } from './TokenBadges.jsx';
@@ -34,18 +34,6 @@ import { Tooltip } from '../base/Tooltip.jsx';
 import { t } from '../../../i18n/index.js';
 import { HeroDragMarks, markMatPx } from './DragMarks.jsx';
 import { isSingleClick } from '../../hooks/useMatSelection.js';
-
-/**
- * The events that move a hero's health in a fight: the engine changes `hp` in place and says so
- * only through these (and `HEROES_UPDATED` for everything else).
- */
-const HERO_HP_EVENTS = Object.freeze([
-    ENGINE_EVENTS.HEROES_UPDATED,
-    ENGINE_EVENTS.COMBAT_ENEMY_ATTACK,
-    ENGINE_EVENTS.COMBAT_HERO_ATE,
-    ENGINE_EVENTS.STATUS_DOT_TICK,
-    ENGINE_EVENTS.GAME_RESET
-]);
 
 /**
  * A hero's health bar, just over their figure's head, the number above it. Reads the hero's HP
@@ -61,7 +49,7 @@ function HeroHealthBar({ heroId, artPx, u, outward, at = null, apart = null }) {
             return h ? { cur: h.hp?.current ?? 0, max: h.hp?.max ?? 100 } : null;
         },
         HERO_HP_EVENTS,
-        null,
+        (payload, event) => movesHeroHp(heroId, payload, event),
         { deps: [heroId] }
     );
     if (!hp || !(hp.max > 0)) return null;

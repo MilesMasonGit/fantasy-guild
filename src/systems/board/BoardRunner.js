@@ -430,8 +430,13 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, {
         instanceId: id,
         typeId: instance.typeId,
+        // ⚠️ The cycle that spends a Token's last charge has already taken it off the mat above
+        // (`commitPlan`), so a rule on this moment finds the Token, and where it stood, here.
+        instance,
         heroId: heroId || null,
         failed,
+        // How long before this tick's end the cycle ended: a rule's cooldown counts from then.
+        overMs,
         // Which items this completion put on the board. The coarse "a neighbour
         // completed a cycle" trigger has always been able to say *that* one
         // finished; this is what lets a listener care about *what* it made.
@@ -553,10 +558,15 @@ export function tick(delta) {
     // so a hero arriving this tick has already asked for it.
     EnemyMotion.tick(delta);
 
+    // Buffs whose filters read charges or a worker's effects follow them: after the heroes have
+    // settled where they work, before any Token works with its buffs.
+    TileModifiers.refreshLiveFilters();
+
     const onMat = BoardState.tokens();
     if (!onMat.length) return;
 
     tickCounter++;
+    TriggerSystem.beginTick(delta);
     const publishProgress = tickCounter % PROGRESS_EVERY === 0;
 
     for (const instance of onMat) {

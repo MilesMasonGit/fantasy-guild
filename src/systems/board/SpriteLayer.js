@@ -47,10 +47,14 @@ let collecting = false;
  */
 const refusedSaid = new Set();
 
-function sayBankFull(itemId) {
-    if (!itemId || refusedSaid.has(itemId)) return;
+/**
+ * Say the Bank refused an item, and why (`InventoryManager.refusalOf`): `'slots'`, no slot for a
+ * new kind, or `'stack'`, the item's stack is at its limit while slots may be free.
+ */
+function sayBankFull(itemId, reason) {
+    if (!itemId || !reason || refusedSaid.has(itemId)) return;
     refusedSaid.add(itemId);
-    EventBus.publish(ENGINE_EVENTS.BANK_FULL, { itemId });
+    EventBus.publish(ENGINE_EVENTS.BANK_FULL, { itemId, reason });
 }
 
 /**
@@ -408,12 +412,15 @@ export function collectSprite(id) {
             const added = InventoryManager.addItem(sprite.refId, sprite.quantity);
             if (added <= 0) {                           // Bank full — it stays put
                 // An item with no definition is refused too, but not for want of room.
-                if (getItem(sprite.refId)) sayBankFull(sprite.refId);
+                if (getItem(sprite.refId)) sayBankFull(sprite.refId, InventoryManager.refusalOf(sprite.refId));
                 return false;
             }
             refusedSaid.delete(sprite.refId);
             if (added < sprite.quantity) {
-                sprite.quantity -= added;               // partial fit, remainder waits
+                // A partial fit: the banked part flies and counts as collected; the rest waits.
+                sprite.quantity -= added;
+                announceCollected({ ...sprite, quantity: added }, 'bank');
+                sayBankFull(sprite.refId, InventoryManager.refusalOf(sprite.refId));
                 changed = true;
                 return false;
             }
@@ -431,27 +438,29 @@ export function collectSprite(id) {
 }
 
 /**
- * Whether a sweep can skip this pile: the Bank would certainly refuse it. An item pile whose item
- * the Bank has no slot for (`InventoryManager.lacksSlotFor`, the very test `addItem` refuses by) is
- * refused by {@link collectSprite} with nothing changed and nothing announced, so skipping it is
- * exact. Coins (always swept) and items with no definition (which `addItem` reports) are never
- * skipped. Read live per pile, so room made any way at all is seen at once.
+ * Why a sweep can skip this pile, or null: the Bank would certainly refuse it. An item pile whose
+ * item the Bank has no slot for, or whose stack is at its limit (`InventoryManager.refusalOf`, the
+ * very tests `addItem` refuses by), is refused by {@link collectSprite} with nothing changed and
+ * nothing announced, so skipping it is exact. Coins (always swept) and items with no definition
+ * (which `addItem` reports) are never skipped. Read live per pile, so room made any way at all is
+ * seen at once.
  *
  * Without it, a full Bank under a big loot flood re-tries every pile every tick, each through a
  * linear lookup.
  */
 const COIN_REFS = new Set(['item_coins', 'item_coin', 'coins', 'coin']);
 
-function bankRefuses(sprite) {
-    if (sprite.kind !== 'item' || COIN_REFS.has(sprite.refId)) return false;
-    if (!getItem(sprite.refId)) return false;
-    return InventoryManager.lacksSlotFor(sprite.refId);
+function bankRefusal(sprite) {
+    if (sprite.kind !== 'item' || COIN_REFS.has(sprite.refId)) return null;
+    if (!getItem(sprite.refId)) return null;
+    return InventoryManager.refusalOf(sprite.refId);
 }
 
 /** {@link collectSprite}, skipping a pile the Bank would refuse. For the sweeps. */
 function sweepOne(sprite) {
-    if (!bankRefuses(sprite)) return collectSprite(sprite.id);
-    sayBankFull(sprite.refId);
+    const refusal = bankRefusal(sprite);
+    if (!refusal) return collectSprite(sprite.id);
+    sayBankFull(sprite.refId, refusal);
     return false;
 }
 
@@ -494,7 +503,11 @@ export function consumeFromSprites(itemId, amount) {
         if (sprite.quantity <= 0) takeSprite(sprite.id);
     }
     const taken = amount - remaining;
-    if (taken > 0) EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
+    if (taken > 0) {
+        // Spent off the floor, never through the Bank: the item's per hour counts it here.
+        ItemRateTracker.recordLoss(itemId, taken);
+        EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
+    }
     return taken;
 }
 
@@ -565,12 +578,12 @@ export function init() {
     if (initialized) return;
     initialized = true;
 
-    EventBus.subscribe(ENGINE_EVENTS.INVENTORY_OVERFLOW, ({ itemId, amount }) => {
+    EventBus.subscribe(ENGINE_EVENTS.INVENTORY_OVERFLOW, ({ itemId, amount, reason = 'slots' }) => {
         // Ignore overflow raised by our own collect attempt: the sprite is
         // already on the board and re-adding it would duplicate it every sweep.
         if (collecting) return;
         addSprite('item', itemId, amount, null);
-        sayBankFull(itemId);
+        sayBankFull(itemId, reason);
         logger.debug('SpriteLayer', `Bank full — ${amount}× ${itemId} stays on the board (D-138)`);
     });
     // Another save: what it refuses has not been said yet.

@@ -47,7 +47,8 @@ import { areCommitsHeld, whenCommitsReleased } from './commitHold.js';
  * @param {Function} selector - Extracts a slice of state, per the contract above
  * @param {Array<string>} [events=['game_reset']] - EventBus events that trigger
  * re-evaluation
- * @param {Function|null} [eventFilter=null] - Optional payload filter; return false to skip
+ * @param {Function|null} [eventFilter=null] - Optional filter `(payload, event) => boolean`;
+ * return false to skip
  * @param {Object} [options] - { shallow, deepClone, bypassClone, deps }
  * @returns {any} The selected slice
  */
@@ -135,11 +136,12 @@ export const useGameState = (selector = (state) => state, events = [ENGINE_EVENT
             stopWaiting = null;
             read();
         };
-        const handleStateChange = (eventData) => {
-            if (eventFilterRef.current && !eventFilterRef.current(eventData)) return;
+        const handleStateChange = (eventData, event) => {
+            if (eventFilterRef.current && !eventFilterRef.current(eventData, event)) return;
             read();
         };
-        const cleanupFns = eventsRef.current.map(event => EventBus.subscribe(event, handleStateChange, UI_LISTENER));
+        const cleanupFns = eventsRef.current.map(event =>
+            EventBus.subscribe(event, (eventData) => handleStateChange(eventData, event), UI_LISTENER));
         return () => {
             cleanupFns.forEach(cleanup => cleanup());
             stopWaiting?.();
