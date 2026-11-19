@@ -110,23 +110,28 @@ Taken from the GDD's sections; the sweep may merge or split them.
   [content_fishing.md](content_fishing.md): the current design intent for the
   first two example systems.
 
-## Open questions (to settle before approval)
+## How the audit runs (owner, 2026-11-18)
 
-1. **Who runs it.** A new `/auditor` skill (read-only on code, its own branch,
-   its own files in `docs/active/audit/`), or the planning agent with an audit
-   checklist? *Recommendation: `/auditor`, so every session starts the same
-   way.* The owner said "maybe"; still open.
-2. **Who files tickets.** Today only the planning agent writes to TICKETS.md,
-   which keeps ticket numbers from clashing. If the auditor files them, it
-   needs the same clash check, or it hands its list to planning. *Recommendation:
-   the auditor files them, checking `main`'s TICKETS.md for the next free number
-   right before each commit.*
-3. **Which build.** *Recommendation: a desktop test build of `main` (with the QA
-   panel), tagged when the outstanding briefs are merged, so every card and
-   every piece of feedback refers to the same version.*
-4. **How fixes are paced.** Do audit tickets go to the director as they come,
-   or wait until a group of related systems is done so they can be briefed
-   together?
+1. **A new `/auditor` command** runs the sessions: a project skill in
+   `.claude/skills/auditor/`, like `/reviewer`. It is read-only on code, works
+   on its own long-lived `audit` branch and worktree, and writes its files in
+   `docs/active/audit/`.
+2. **The auditor files tickets itself, right away**, in
+   [TICKETS](../reference/TICKETS.md). Right before each commit it checks
+   `main`'s TICKETS.md for the next free number so it doesn't clash with
+   planning. The owner expects this pattern to be common: the owner names a
+   misalignment, a **read-only subagent checks whether everything lines up in
+   the backend** (the code, the CMS data, the GDD), and the auditor files
+   tickets from what it finds. The owner sees the tickets in the talk-through.
+   Concept docs for real redesigns still go to the planning agent to brief.
+3. **One tagged test build of `main`.** A desktop test build (QA panel
+   included) is made when the outstanding briefs are merged, and `main` is
+   tagged at that point. Every card and every piece of feedback refers to that
+   build; fixes don't change it mid-audit.
+4. **Fixes go to the director in groups.** Tickets wait until a group of
+   related systems is audited (the sweep defines the groups, for example all
+   the effect systems), then the planning agent briefs them together so
+   aligned changes land at once.
 
 ## Done
 

@@ -243,8 +243,9 @@ mods via the CMS after release.
   tickets; cross-system sweep first (effects alignment); fishing spots that
   appear on water and fade; combat made easy to understand. Starts once the
   outstanding briefs are built →
-  [concept_systems_audit.md](concept_systems_audit.md) (draft, four open
-  questions).
+  [concept_systems_audit.md](concept_systems_audit.md) (draft; how it runs
+  answered 2026-11-18: `/auditor`, files its own tickets, one tagged build,
+  fixes in groups).
 
 - **Star upgrades, effect families and Events** (owner, 2026-11-11): the
   owner's marks on 117 Star ideas and four takeaways (families with
