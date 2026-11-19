@@ -85,6 +85,10 @@ Later sessions will revise earlier ones; that is expected.
 - **Where it lives** (owner, 2026-11-02): readable chain pages first. An approved
   chain goes into the CMS as Planned entries through a pack, so the ledger can
   check it; Planned entries never reach the game.
+  **Amended by the owner, 2026-11-18**: the entries now live in one file,
+  [content_catalogue.json](content_catalogue.json), shown on the
+  [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za) with a lock and a drawn mark per entry; the chain
+  pages keep the rulings. Packs to the CMS still follow.
 - **One rung per metal** (owner, 2026-11-02): seven rungs, copper, iron, silver,
   mythril, gold, adamantine, darkmetal (order amended the same day, see The ladder).
 - **Tailor joins as a specialist skill** (owner, 2026-11-04), making 21 skills and eight specialists.
@@ -140,6 +144,8 @@ measured.*
   ritual go to darkmetal. Naming is **adamantine** throughout.
 
 ## Chain pages
+
+**The lists themselves are in [the catalogue](content_catalogue.json) (2026-11-18)**, 613 entries; the pages below hold each skill's rulings.
 
 **Where it stands (2026-11-04)**: the core chains are approved on paper. Next: the enemies session (Hide, scales, Silk, Milk, meats, weapon effects, late potions' drops), the five remaining specialists, then the roll-up. Nothing is in the CMS yet (T-305) and the drawings aren't on the art list as rows yet: each page has an Art column, and [the art list](owner_art_list.md) points here.
 

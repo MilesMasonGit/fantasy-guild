@@ -36,25 +36,7 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 
 **One clear building per skill that needs one, a structure and not a piece of furniture.** These come first; variants come after (below).
 
-| Skill | Building | Level | Replaces today | Art |
-|---|---|---|---|---|
-| Smithing | **Blacksmith** | 1 | Furnace, Copper and Iron Smithy, Iron Furnace | N |
-| Cooking | **Kitchen** | 1 | Campfire, Cooking Pot, Brewery | N (`kitchen_cozy` may adapt) |
-| Crafting | **Workshop** | 1 | Workbench, Fir Workbench, Tannery | N |
-| Tailor | **Tailor's Shop** | 1 | new | N |
-| Fletching | **Fletcher's Lodge** | 1 | new | N |
-| Alchemy | **Apothecary** | 1 | Alchemy Table | N |
-| Enchanting | **Enchanter's Tower** | 1 | new | N |
-| Forestry | Logging Camp | 1 | stays: a hero works every tree nearby | H |
-| Mining | Mining Camp | 1 | stays: a hero works every vein nearby | H |
-| Fishing | Fishing Hut | 1 | stays: a hero works every water nearby | H |
-| Farming | Farmstead | 1 | stays: a hero works every field and bush nearby | H |
-| Melee, Ranged, Magic, Stealth | **War Camp** | 1 | new: a hero there fights every enemy nearby, in their own style | N |
-| Faith | **Chapel** | its session | placeholder | N |
-| Summoning | **Summoning Circle** | its session | placeholder | N |
-| Science | **Laboratory** | its session | placeholder | N |
-| Crime | **Hideout** | its session | placeholder | N |
-| Taming | **Stable** | its session | placeholder | N |
+*This list (17 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Construction. The rulings and reasoning stay on this page.*
 
 **Construction has no building** (owner): a hero goes to each Foundation. The five specialist buildings are placeholders; their sessions may change what they do.
 
@@ -95,15 +77,7 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 
 ## Other buildings
 
-| Group | What | Level | Made with | Art |
-|---|---|---|---|---|
-| Excavation | Quarry; Mines for Copper, Iron, Silver, Mythril, Gold, Adamantine, Darkmetal; Coal Mine | at each metal's level | Planks, Stone, Gears from 40 | H: seven `mineshaft_*` |
-| Minecarts | One per metal, restocking veins | at each metal's level | Planks, Nails, Gears from 40 | H: seven `minecart_*` |
-| Farmland | Field, Herb Garden, Orchards, Grapevine, planted Forests | as today | Seeds, Seedlings | H |
-| Support | Well, Composter, Beehive, Dock, Windmill | 1 to 25 | Windmill: Oak Plank, Stone. Dock: Oak Plank | H, A |
-| **Guard Tower** | Temporary: stops enemy spawns nearby until it wears out | 15 | Planks, Stone, Torches | N |
-| **Town Square** | A large late building that boosts many nearby Tokens a little | 85 | Ebony Plank, Basalt, Drapes, Gold Ingot | N |
-| Battlefield | The 22 enemy spawners, from their map items | at each enemy's level | as today | H |
+*This list (7 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Construction. The rulings and reasoning stay on this page.*
 
 ## Planning agent's calls
 

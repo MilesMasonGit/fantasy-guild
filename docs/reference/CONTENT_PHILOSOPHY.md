@@ -55,6 +55,7 @@ Faith, Summoning, Science, Crime and Taming are still to design. Placeholder bui
 | Mining | Clay, Quartz | Alchemy |
 | Forestry | Wood | Smithing's handles, Fletching, Enchanting, Crafting's Planks |
 | Forestry | Feathers | Fletching, Alchemy |
+| Forestry | Bird Nests | Alchemy's Birdwatcher |
 | Forestry | Bamboo | Crafting's Fine Rod |
 | Forestry | Mushrooms | Alchemy, Cooking |
 | Farming | Crops, fruit | Cooking |
@@ -92,6 +93,12 @@ Faith, Summoning, Science, Crime and Taming are still to design. Placeholder bui
 ## Art
 
 The owner draws. Plans say exactly what to draw: H have, A adapt, N new. Using existing art is welcome and it's worth checking what's drawn before proposing something, but **art doesn't limit the design**.
+
+## Where content lives (owner, 2026-11-18)
+
+- **One catalogue, many views.** Every planned item, Token, building and event is one entry in [content_catalogue.json](../active/content_catalogue.json). The chain pages keep the rulings and the reasoning, and the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za) is built from the catalogue: "This will be helpful for my art list." Links between entries go by id, so a name spelled two ways is caught. This amends the roadmap's 2026-11-02 "readable chain pages first".
+- **Locks are per entry.** "I think I'll need to lock per entry, item or token. I'll probably start by building art that is either guaranteed to be used or could be used in a different spot if I need to." A locked entry's name, kind and look are settled; changing one needs the owner's say-so. Numbers stay the ledger's, locked or not.
+- **Balancing has its own view** (owner, 2026-11-18): "Generally I want the game to be balanced according to the rules and parameters we set. We need the system to adjust the details like recipe inputs and XPH to keep the game smoothly balanced." The owner sets rules and dials; the system works out XP, counts, times and small unlock moves, and flags only the empty stretches content must fill ([concept_balancing_view.md](../active/concept_balancing_view.md)).
 
 ## Working with the owner
 
