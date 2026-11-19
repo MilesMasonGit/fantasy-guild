@@ -153,16 +153,26 @@ export function activeElixirsOf(hero) {
     return out;
 }
 
-/** A fighter's statuses as the panel lists them: name, stacks, its cap, ticks left, its glyph. */
+/**
+ * A fighter's statuses as the panel lists them: name, stacks, its cap, ticks left, its glyph. The
+ * cap is the one the engine stacks to: the status's own, within the engine's range, moved by what
+ * the fighter carries (a Status Stack Limit rule).
+ */
 export function statusesView(target) {
     return LiveEffects.statusesOf(target).map(s => ({
         id: s.effectId,
         name: EFFECTS[s.effectId]?.name || s.effectId,
         stacks: s.stacks,
-        maxStacks: EFFECTS[s.effectId]?.status?.stacks ?? null,
+        maxStacks: stackCapOf(target, s.effectId),
         ticksLeft: s.ticksLeft,
         icon: statusIcon(s.effectId)
     }));
+}
+
+/** The stack cap `LiveEffects` holds a status at on this fighter, or null for no status block. */
+function stackCapOf(target, effectId) {
+    const block = statusBlockOf(EFFECTS[effectId]);
+    return block ? CombatFormulas.heroStatusStackCap(target, effectId, block.stacks) : null;
 }
 
 const LASTS_KEY = Object.freeze({ attack: 'Attack', swing: 'Swing', fight: 'Fight' });

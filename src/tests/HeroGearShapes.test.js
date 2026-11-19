@@ -28,7 +28,7 @@ import { registerEffects } from '../config/registries/effectRegistry.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
-import { activeElixirsOf } from '../ui/components/combat/fightView.js';
+import { activeElixirsOf, statusesView } from '../ui/components/combat/fightView.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -259,5 +259,25 @@ describe('an elixir whose rule names no role', () => {
         // Its last fight: no fights left to count, only the one under way.
         hero.elixirFights.fixture_hg_elixir = 0;
         expect(activeElixirsOf(hero).map(e => e.itemId)).toEqual(['fixture_hg_elixir']);
+    });
+});
+
+registerEffects({
+    fx_hg_venom: { id: 'fx_hg_venom', name: 'Venom', status: { stacks: 3, ticks: 0 }, statements: [] },
+    // Authored past the engine's limit of five stacks.
+    fx_hg_swarm: { id: 'fx_hg_swarm', name: 'Swarm', status: { stacks: 9, ticks: 0 }, statements: [] }
+});
+
+describe('a status the gear moves the stack limit of', () => {
+    it('shows the limit the hero holds it at, not the limit the status names', () => {
+        const hero = fighter('hero_1');
+        // "Venom stacks at most 1 lower"
+        hero.aggregator.addModifier({ type: EFFECT_TYPES.STATUS_MAX_STACKS, bucket: 'flat', value: -1, target: { category: 'fx_hg_venom' }, source: 'test' });
+        hero.effects.push(
+            { effectId: 'fx_hg_venom', scale: 1, stacks: 2, expiresAt: Infinity, forFight: true },
+            { effectId: 'fx_hg_swarm', scale: 1, stacks: 5, expiresAt: Infinity, forFight: true }
+        );
+        const caps = Object.fromEntries(statusesView(hero).map(v => [v.id, v.maxStacks]));
+        expect(caps).toEqual({ fx_hg_venom: 2, fx_hg_swarm: 5 });
     });
 });
