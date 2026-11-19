@@ -387,9 +387,9 @@ function Summary({ result, asking, restoring, undoFailed, onClose, onAsk, onCanc
                             })}
                         </Section>
                     )}
-                    {view.bankFull.length > 0 && (
-                        <Section id="bankFull" title={t('catchUp.news.bankFull')} enter={enter}>
-                            {view.bankFull.map(r => {
+                    {['bankFull', 'stackFull'].map(id => view[id]?.length > 0 && (
+                        <Section key={id} id={id} title={t(`catchUp.news.${id}`)} enter={enter}>
+                            {view[id].map(r => {
                                 const e = enter();
                                 return (
                                     <EntityRibbon
@@ -405,7 +405,7 @@ function Summary({ result, asking, restoring, undoFailed, onClose, onAsk, onCanc
                                 );
                             })}
                         </Section>
-                    )}
+                    ))}
                     {view.recipes.length > 0 && (
                         <Section id="recipes" title={t('catchUp.news.recipes')} enter={enter}>
                             {view.recipes.map(r => {

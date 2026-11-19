@@ -549,6 +549,7 @@
             "broken": "Broken",
             "brokeStopped": "{hero} stopped",
             "bankFull": "Bank full: waiting on the mat",
+            "stackFull": "Stack full: waiting on the mat",
             "recipes": "New recipes",
             "finds": "First finds",
             "levelUps": "Level-ups",

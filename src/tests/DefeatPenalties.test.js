@@ -31,6 +31,7 @@ vi.mock('../config/registries/equipmentConstants.js', () => ({
     getEquippedEntries: vi.fn(() => hero._equipped),
     // Only the weapon is gear; food and drink are sustenance on the same grid.
     isGearCategory: vi.fn((cat) => cat === 'hand'),
+    isSustenanceCategory: vi.fn((cat) => cat === 'food' || cat === 'drink'),
     // The Prep Phase class (potions/scrolls/runes) — mirrors the real registry,
     // where `consumable` is the only id of kind CONSUMABLE.
     isConsumableCategory: vi.fn((cat) => cat === 'consumable'),

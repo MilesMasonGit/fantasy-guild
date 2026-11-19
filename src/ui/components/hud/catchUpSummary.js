@@ -127,10 +127,10 @@ function eventRows(summaryEvents, live) {
 /**
  * The "While you were away" panel's content, from a catch-up's result (`CatchUp.run`), in two
  * columns. `items` is the left one (`itemChanges`). The right one is the news, in this order:
- * `events`, `knockouts`, `broken`, `bankFull`, `recipes`, `finds`, `levelUps`, `depleted`, `kills`. Every list is
+ * `events`, `knockouts`, `broken`, `bankFull`, `stackFull`, `recipes`, `finds`, `levelUps`, `depleted`, `kills`. Every list is
  * empty when there is nothing to say, so the panel can leave that section out; `hasNews` says
  * whether the right column has anything at all. The news the banners and stubs also get once it
- * closes (`summary.news`) are the knock-outs, `bankFull`, `recipes` and `finds`.
+ * closes (`summary.news`) are the knock-outs, `bankFull`, `stackFull`, `recipes` and `finds`.
  */
 export function summaryView(result, live = LIVE_EVENTS) {
     const summary = result?.summary || {};
@@ -159,6 +159,8 @@ export function summaryView(result, live = LIVE_EVENTS) {
         })),
         /** Items a full Bank refused: they wait on the mat. */
         bankFull: (news.bankFull || []).map(itemId => ({ itemId, name: itemName(itemId) })),
+        /** Items whose stack in the Bank is at its limit: they wait on the mat too. */
+        stackFull: (news.stackFull || []).map(itemId => ({ itemId, name: itemName(itemId) })),
         /** Recipes unlocked, one row each in the order unlocked: `{ key, heroId, heroName, recipeId, name, itemId }`. */
         recipes: (news.recipes || []).flatMap(row => (row.recipes || []).map(r => ({
             key: `${row.heroId}|${r.id}`, heroId: row.heroId, heroName: row.heroName, recipeId: r.id, name: r.name, itemId: r.itemId
@@ -177,7 +179,7 @@ export function summaryView(result, live = LIVE_EVENTS) {
          */
         events: eventRows(summary.events || [], live)
     };
-    view.hasNews = ['events', 'knockouts', 'broken', 'bankFull', 'recipes', 'finds', 'levelUps', 'depleted', 'kills'].some(k => view[k].length > 0);
+    view.hasNews = ['events', 'knockouts', 'broken', 'bankFull', 'stackFull', 'recipes', 'finds', 'levelUps', 'depleted', 'kills'].some(k => view[k].length > 0);
     return view;
 }
 

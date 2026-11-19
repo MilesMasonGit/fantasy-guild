@@ -75,7 +75,7 @@ describe('a Bank tab holds 64 kinds', () => {
         try {
             expect(InventoryManager.lacksSlotFor('item_new')).toBe(true);
             expect(InventoryManager.addItem('item_new', 2)).toBe(0);
-            expect(overflow).toHaveBeenCalledWith({ itemId: 'item_new', amount: 2 });
+            expect(overflow).toHaveBeenCalledWith({ itemId: 'item_new', amount: 2, reason: 'slots' });
             expect(InventoryManager.addItem(kind(5), 4)).toBe(4);
         } finally {
             off?.();
