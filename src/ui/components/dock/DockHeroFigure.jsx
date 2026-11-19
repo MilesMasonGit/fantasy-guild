@@ -2,6 +2,7 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { PixelTriangle } from '../base/ArrowScrollList.jsx';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
+import { HERO_HP_EVENTS, movesHeroHp } from '../../hooks/heroHpEvents.js';
 import * as EquipmentManager from '../../../systems/equipment/EquipmentManager.js';
 import { useEntityDrag, useEntityDrop, useActiveDrag, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE, rosterFlagPayload, isRosterFlag } from '../../dnd/dragConstants.js';
@@ -139,8 +140,8 @@ function useDockHero(heroId) {
                 hp: { current: h.hp?.current ?? 0, max: h.hp?.max ?? 100 }
             } : null;
         },
-        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, ENGINE_EVENTS.GAME_RESET],
-        null,
+        [...HERO_HP_EVENTS, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED],
+        (payload, event) => movesHeroHp(heroId, payload, event),
         { deps: [heroId] }
     );
 }

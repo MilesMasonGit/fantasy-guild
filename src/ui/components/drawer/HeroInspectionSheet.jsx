@@ -1,6 +1,7 @@
 import { memo, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
+import { HERO_HP_EVENTS, movesHeroHp } from '../../hooks/heroHpEvents.js';
 import { resolveSpritePath, resolveAnimationPath } from '../../../utils/AssetManager.js';
 import { ART_PX } from '../../../config/matGeometry.js';
 import { DockEquipmentGrid } from '../dock/DockEquipmentGrid.jsx';
@@ -67,8 +68,8 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
                 skills: Object.fromEntries(Object.entries(h.skills || {}).map(([id, s]) => [id, { level: s?.level, xp: s?.xp }]))
             });
         },
-        [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_LEVELED, ENGINE_EVENTS.GAME_RESET],
-        null,
+        [...HERO_HP_EVENTS, ENGINE_EVENTS.HERO_LEVELED],
+        (payload, event) => movesHeroHp(heroId, payload, event),
         { deps: [heroId] }
     );
     const hero = signature ? JSON.parse(signature) : null;

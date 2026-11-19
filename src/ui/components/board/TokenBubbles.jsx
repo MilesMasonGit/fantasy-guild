@@ -5,7 +5,8 @@ import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as Growth from '../../../systems/board/Growth.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { enemyProfileOf, isEnemyDef } from '../../../config/registries/enemyProfile.js';
-import { subscribeToken } from './tokenEvents.js';
+import { subscribeToken, subscribeEvery } from './tokenEvents.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { Bubble } from './Bubble.jsx';
 import { HealthBar } from './HealthBar.jsx';
 import { enemyBarPlace, fightBarShift } from './healthBar.js';
@@ -185,6 +186,16 @@ export const TokenBubbles = ({
         setGrowth(Growth.growthAlertOf(instanceId));
         return subscribeToken(BOARD_EVENTS.GROWTH_ALERT_CHANGED, instanceId, (p) => {
             setGrowth(p?.alert ? { alert: p.alert, needs: p.needs || [] } : null);
+        });
+    }, [instanceId]);
+
+    // ⚠️ A catch-up plays on a quiet bus, and the engine says an alert only when it changes: a
+    // change made then is never said again. Its end says `GAME_RESET`, so both are read back.
+    useEffect(() => {
+        if (!instanceId) return undefined;
+        return subscribeEvery(ENGINE_EVENTS.GAME_RESET, () => {
+            setStuck(SpawnerSystem.spawnerAlertOf(instanceId));
+            setGrowth(Growth.growthAlertOf(instanceId));
         });
     }, [instanceId]);
 
