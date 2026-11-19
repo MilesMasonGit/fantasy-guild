@@ -58,6 +58,13 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
     }, [instanceId, anchorRect]);
 
     useLayoutEffect(() => { measure(); }, [measure]);
+    // A card that followed its Token into what it became may be told before the new Token is
+    // drawn, and its first `TILE_CHANGED` came before this card listened: measure again once
+    // the mat has drawn it.
+    useEffect(() => {
+        const timer = setTimeout(measure, MOVE_SETTLE_MS);
+        return () => clearTimeout(timer);
+    }, [measure]);
 
     // The Token moved, was replaced, or ran dry: re-anchor to wherever it is.
     useTokenEvent(BOARD_EVENTS.TILE_CHANGED, instanceId, () => {

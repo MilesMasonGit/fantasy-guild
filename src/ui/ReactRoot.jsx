@@ -11,6 +11,7 @@ import { setMatBankLocked } from './hooks/useMatBankLock.js';
 import { useUIModals } from './hooks/useUIModals.js';
 import { useEscapeLayer } from './utils/escapeLayers.js';
 import { useInspectTokenHandlers } from './hooks/useInspectTokenHandlers.js';
+import { useInspectFollowsToken } from './hooks/useInspectFollowsToken.js';
 import { useEncyclopediaBack } from './hooks/useEncyclopediaBack.js';
 import { useHeroSheetRequests } from './hooks/useHeroSheetRequests.js';
 import { useOneBottomDrawer } from './hooks/useOneBottomDrawer.js';
@@ -78,6 +79,7 @@ const NAV_VIEWS = ['guild', 'bank', 'shop', 'atlas', 'encyclopedia'];
 const ReactRoot = () => {
     const ui = useUIModals();
     const { onInspectToken, onClearInspect } = useInspectTokenHandlers(ui.inspect);
+    useInspectFollowsToken(ui.inspect);
 
     // A refused save (incompatible or corrupted) leaves the slot screen up; the notification
     // says why. `setup` is the new-game screen's choices, for an empty slot.

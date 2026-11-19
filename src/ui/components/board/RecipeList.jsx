@@ -125,6 +125,29 @@ const CropTerms = ({ crop }) => {
     );
 };
 
+/**
+ * The recipe's own time and, on the mat, the time it really takes here beside it, even when equal: the base muted, an arrow, the real time in white. ⚠️ Not struck
+ * through: a line through the pixel font hides the base's digits.
+ */
+const RecipeTime = ({ row }) => {
+    const base = cycleText(row.durationMs);
+    const here = cycleText(row.workMs || row.durationMs);
+    const both = !!row.onMat;
+    const lines = both
+        ? [`Recipe: ${base}`, `At this station: ${here}`]
+        : ['One round of work takes this long'];
+    return (
+        <Tooltip title="Work time" lines={lines}>
+            <span data-recipe-time className="inline-flex items-center gap-1 ui-text-small text-gi-muted tabular-nums">
+                <PixelGlyph name="clock" />
+                <span data-recipe-time-base>{base}</span>
+                {both && <span aria-hidden="true">→</span>}
+                {both && <span data-recipe-time-here className="text-white">{here}</span>}
+            </span>
+        </Tooltip>
+    );
+};
+
 const RecipeRow = ({ row, crop = null, selected, onChoose, onLookUp }) => {
     const [hover, setHover] = useState(false);
     // The pointer on an ingredient link: the link is outlined, not the row.
@@ -153,11 +176,7 @@ const RecipeRow = ({ row, crop = null, selected, onChoose, onLookUp }) => {
             <span className="flex-1" />
             {crop && <CropTerms crop={crop} />}
             {row.xp > 0 && <span data-recipe-xp className="ui-text-small text-gi-muted tabular-nums">+{row.xp.toLocaleString('en-US')} XP</span>}
-            {row.durationMs > 0 && (
-                <span data-recipe-time className="inline-flex items-center gap-1 ui-text-small text-gi-muted tabular-nums">
-                    <PixelGlyph name="clock" />{cycleText(row.durationMs)}
-                </span>
-            )}
+            {row.durationMs > 0 && <RecipeTime row={row} />}
         </button>
     );
 };
@@ -224,6 +243,8 @@ export const RecipeList = ({ def, instanceId = null, selectedRecipeId = null, wo
     const { skill, entries } = recipeListFor(def, { workerId, heroes, query });
     const heroesById = new Map((heroes || []).map(h => [h?.id, h]));
     const isField = !!fieldOf(def);
+    // The skill the card's Time cell narrows Work Time rules to, so a row and the card agree.
+    const workSkill = def?.config?.skill || def?.foundation?.skill || null;
 
     // Opens scrolled to the current recipe, in whichever arrow-bar list holds the card.
     useLayoutEffect(() => {
@@ -278,7 +299,7 @@ export const RecipeList = ({ def, instanceId = null, selectedRecipeId = null, wo
                         return <HeroDivider key={`h${entry.level}`} entry={entry} heroesById={heroesById} skill={skill} />;
                     }
                     if (entry.kind === ENTRY.LOCKED) return <LockedRow key={`l${entry.key}`} entry={entry} />;
-                    const row = recipeRowOf(entry.recipe, entry.level, instanceId);
+                    const row = recipeRowOf(entry.recipe, entry.level, instanceId, undefined, workSkill);
                     return <RecipeRow key={row.id} row={row} crop={isField ? cropTermsOf(entry.recipe) : null} selected={row.id === selectedRecipeId} onChoose={onChoose} onLookUp={onLookUp} />;
                 })}
             </div>

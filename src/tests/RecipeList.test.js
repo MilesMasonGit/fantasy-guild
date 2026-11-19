@@ -177,6 +177,15 @@ describe('a row', () => {
         expect(row.durationMs).toBe(6000);
     });
 
+    it('the time: the recipe’s own, and how long it takes at this station (Work Time rules, the hero); off the mat the same', () => {
+        const calls = [];
+        const fast = { ...src(), workTime: (id, ms, skill) => { calls.push([id, ms, skill]); return ms * 0.7; } };
+        const row = recipeRowOf(pool().r_broth, 2, 'inst', fast, 'cooking');
+        expect(row).toMatchObject({ durationMs: 6000, workMs: 4200, onMat: true });
+        expect(calls).toEqual([['inst', 6000, 'cooking']]);
+        expect(recipeRowOf(pool().r_broth, 2, null, fast)).toMatchObject({ durationMs: 6000, workMs: 6000, onMat: false });
+    });
+
     it('a requirement is unmet only when the station’s neighbours lack it, and unjudged with no instance', () => {
         expect(recipeRowOf(pool().r_roast, 10, 'inst', src({}, [{ tag: 'ctx_pie_tin' }])).requirements[0].met).toBe(false);
         expect(recipeRowOf(pool().r_roast, 10, 'inst', src({}, [])).requirements[0].met).toBe(true);

@@ -155,7 +155,8 @@ export const useUIModals = () => {
         const nextSelection = { type, id, source, pane: effectivePane };
 
         setInspectSelection(prev => (
-            prev && prev.type === type && prev.id === id && prev.source?.rect?.top === source?.rect?.top && prev.pane === effectivePane
+            prev && prev.type === type && prev.id === id && prev.source?.instanceId === source?.instanceId
+                && prev.source?.rect?.top === source?.rect?.top && prev.pane === effectivePane
                 ? prev
                 : nextSelection
         ));

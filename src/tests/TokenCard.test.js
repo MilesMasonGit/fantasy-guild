@@ -282,6 +282,50 @@ describe('the blocks, top to bottom, per kind', () => {
     });
 });
 
+describe('cells with no work behind them', () => {
+    const caption = (container, text) => [...container.querySelectorAll('*')].some(el => el.children.length === 0 && el.textContent === text);
+
+    it('a Token marked for demolition shows no XP: demolishing pays none', () => {
+        // A Token whose own work resolves (no tool needed), so its XP comes through `effectiveIO`.
+        const tree = put('card_tree');
+        expect(tokenCardModel('card_tree', tree.id).blocks.find(b => b.id === CARD_BLOCK.WORK).xp).toBe(2);
+
+        tree.demolish = true;
+        const model = tokenCardModel('card_tree', tree.id);
+        const work = model.blocks.find(b => b.id === CARD_BLOCK.WORK);
+        expect(work).toMatchObject({ level: 1, xp: 0 });
+        expect(model.blocks.find(b => b.id === CARD_BLOCK.CYCLE).cycleMs).toBeGreaterThan(0);
+        const { container } = mount(h(TokenCard, { typeId: 'card_tree', instanceId: tree.id }));
+        expect(container.querySelector('[data-card-skill]')).not.toBeNull();
+        expect(caption(container, 'XP')).toBe(false);
+    });
+
+    it('a station with nothing chosen shows no time, XP or level; its charges stay; a chosen recipe brings them', () => {
+        const kitchen = put('fixture_kitchen');
+        const model = tokenCardModel('fixture_kitchen', kitchen.id);
+        expect(model.blocks.find(b => b.id === CARD_BLOCK.WORK)).toMatchObject({ skillId: 'cooking', level: null, xp: 0 });
+        expect(model.blocks.find(b => b.id === CARD_BLOCK.CYCLE)).toMatchObject({ cycleMs: 0, uses: null });
+        const view = mount(h(TokenCard, { typeId: 'fixture_kitchen', instanceId: kitchen.id }));
+        expect(view.container.querySelector('[data-card-cycle]')).toBeNull();
+        expect(view.container.querySelector('[data-card-skill]')).toBeNull();
+        expect(caption(view.container, 'XP')).toBe(false);
+        expect(view.container.querySelector('[data-card-charges]').textContent).toBe('∞');
+        view.unmount();
+
+        pickRecipe(kitchen, 'pooled_stew');
+        const chosen = tokenCardModel('fixture_kitchen', kitchen.id);
+        expect(chosen.blocks.find(b => b.id === CARD_BLOCK.WORK)).toMatchObject({ level: 5, xp: 5 });
+        expect(chosen.blocks.find(b => b.id === CARD_BLOCK.CYCLE).cycleMs).toBe(10000);
+    });
+
+    it('a gathering Token keeps its own work: its config is the real work', () => {
+        const tree = put('card_tree');
+        const model = tokenCardModel('card_tree', tree.id);
+        expect(model.blocks.find(b => b.id === CARD_BLOCK.WORK)).toMatchObject({ level: 1, xp: 2 });
+        expect(model.blocks.find(b => b.id === CARD_BLOCK.CYCLE).cycleMs).toBe(6000);
+    });
+});
+
 describe('what the card says', () => {
     it('the cycle shows the time the work really takes, sped up by what is in reach', () => {
         const vein = put('card_vein', 400, 300);
@@ -293,6 +337,32 @@ describe('what the card says', () => {
         expect(cycle.cycleMs).toBeCloseTo(3600);
         const { container } = mount(h(TokenCard, { typeId: 'card_vein', instanceId: vein.id }));
         expect(container.querySelector('[data-card-cycle]').textContent).toBe('3.6s');
+    });
+
+    it('a recipe row shows the recipe’s time with the time at this station beside it, the card’s number', () => {
+        GameState.state.heroes = [{ id: 'cook', name: 'Cook', skills: { cooking: { level: 30, xp: 0 } } }];
+        const kitchen = pickRecipe(put('fixture_kitchen', 400, 300), 'pooled_stew');
+        const speed = put('fixture_buff_speed', 450, 300);
+        TileModifiers.rebuildAround([kitchen, speed]);
+        const { container } = mount(h(TokenCard, { typeId: 'fixture_kitchen', instanceId: kitchen.id }));
+        const cardTime = container.querySelector('[data-card-cycle]').textContent;
+        expect(cardTime).toBe('9s');
+
+        fireEvent.click(container.querySelector('[data-card-change-recipe]'));
+        const time = container.querySelector('[data-recipe-id="pooled_stew"] [data-recipe-time]');
+        expect(time.querySelector('[data-recipe-time-base]').textContent).toBe('10s');
+        expect(time.querySelector('[data-recipe-time-here]').textContent).toBe(cardTime);
+        expect(time.textContent).toBe('10s→9s');
+    });
+
+    it('a recipe row with nothing changing its time still shows both times', () => {
+        GameState.state.heroes = [{ id: 'cook', name: 'Cook', skills: { cooking: { level: 30, xp: 0 } } }];
+        const kitchen = pickRecipe(put('fixture_kitchen', 400, 300), 'pooled_stew');
+        const { container } = mount(h(TokenCard, { typeId: 'fixture_kitchen', instanceId: kitchen.id }));
+        fireEvent.click(container.querySelector('[data-card-change-recipe]'));
+        const time = container.querySelector('[data-recipe-id="pooled_stew"] [data-recipe-time]');
+        expect(time.textContent).toBe('10s→10s');
+        expect(time.querySelector('[data-recipe-time-here]').textContent).toBe('10s');
     });
 
     it('with nothing in reach, and in the Shop, the cycle is the authored time', () => {
