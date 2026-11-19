@@ -48,6 +48,13 @@ built, so batches stay small and the owner looks often):
   Read-only on code, on branch `review`; it writes verified findings into
   `docs/active/review/`, the planning agent turns them into tickets and fix
   briefs, the director fixes them.
+- **Auditor** (owner, 2026-11-18): type `/auditor` in a fresh session for
+  the Systems Audit
+  ([`concept_systems_audit.md`](docs/active/concept_systems_audit.md)), a
+  design review system by system with the owner in the loop. Read-only on
+  code, on branch `audit`; it files its own tickets (origin `SA`) and draft
+  concept docs, and fixes reach the director in groups. It starts once the
+  outstanding briefs are built (`docs/active/audit/STATUS.md`).
 - **Content agent** (owner, 2026-11-04): type `/content` in a fresh session to plan
   or tweak items, recipes, Tokens and buildings. It works on branch
   `planning-content`, by the owner's rules in

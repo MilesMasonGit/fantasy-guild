@@ -133,6 +133,15 @@ Taken from the GDD's sections; the sweep may merge or split them.
    the effect systems), then the planning agent briefs them together so
    aligned changes land at once.
 
+## Where it lives
+
+- The command: `.claude/skills/auditor/SKILL.md` (type `/auditor` in a fresh
+  session).
+- The living status, start gate and groups:
+  [audit/STATUS.md](audit/STATUS.md).
+- Tickets carry the origin `SA-A<n>` (or `SA-S0`) and wait as
+  `blocked (audit group: <name>)` until their group is briefed.
+
 ## Done
 
 Every system in the sweep's order has a card, the owner's feedback, and a
