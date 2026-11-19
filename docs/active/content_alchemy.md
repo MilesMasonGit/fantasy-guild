@@ -14,6 +14,11 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 - **Water early, juice for strong potions.**
 - **Kept**: a hero carries potions and one is used automatically as work or a fight starts.
 
+## Amended 2026-11-19 (owner)
+
+- **Birdwatcher moves to level 1**, so a new hero can train Alchemy from the start (the balancing page found nothing to train before 5). Lavender stays on Farming 5, so the first potions wait on a Farming hero for about 15 minutes.
+- **Its weird item becomes a Bird Nest** (agent's call): Feathers arrive with the Hollow Tree at Forestry 10, too late for level 1, while Bird Nests come from the Oak Tree from Forestry 1 and had no user. A potion that brings more nests while chopping, made from a nest, also suits it.
+
 ## Types and effects
 
 | Type | When it's used | Effects |

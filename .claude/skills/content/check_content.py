@@ -49,10 +49,10 @@ def main():
     # Construction's costs are a rule by tier on its page, not per building.
     page = open(os.path.join('docs', 'active', 'content_construction.md'), encoding='utf-8').read()
     costs = page.split('## Costs by tier', 1)[-1].split('\n## ', 1)[0]
-    unused = sorted(f"{e['name']} ({e['skill']} {e.get('level')})" for e in entries
+    unused = sorted(f"{e['name']} ({e.get('skill', '')} {e.get('level')})" for e in entries
                     if e.get('type', '').lower() == 'material' and e['id'] not in uses and e['name'] not in costs
                     and not e['name'].endswith(MATERIAL_WAITS))
-    no_art = sorted(f"{e['name']} ({e['skill']})" for e in entries if not e.get('art') and e.get('section', '').find('conversion') < 0)
+    no_art = sorted(f"{e['name']} ({e.get('skill') or e.get('from', 'no source')})" for e in entries if not e.get('art'))
 
     print(f'{len(entries)} entries in {cat.PATH}.\n')
     for title, rows in (('Ids used twice', twice),

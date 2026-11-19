@@ -55,6 +55,7 @@ Faith, Summoning, Science, Crime and Taming are still to design. Placeholder bui
 | Mining | Clay, Quartz | Alchemy |
 | Forestry | Wood | Smithing's handles, Fletching, Enchanting, Crafting's Planks |
 | Forestry | Feathers | Fletching, Alchemy |
+| Forestry | Bird Nests | Alchemy's Birdwatcher |
 | Forestry | Bamboo | Crafting's Fine Rod |
 | Forestry | Mushrooms | Alchemy, Cooking |
 | Farming | Crops, fruit | Cooking |
