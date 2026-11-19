@@ -1,6 +1,7 @@
 // Fantasy Guild — an enemy, read off the Token that is one
 
 import { getTokenType } from './tokenRegistry.js';
+import { outputRange } from './tokenConstants.js';
 import { enemyLevelStats, attackSpeedMs, ATTACK_SPEED_MS, BASE_CRIT_CHANCE, roundHalfUp } from '../FormulaRegistry.js';
 import { COMBAT_SKILL_IDS } from './skillRegistry.js';
 import { enemyKindsOf } from './enemyKinds.js';
@@ -187,18 +188,19 @@ export function getEnemyProfile(typeId) {
  * What a kill drops: the Token's outputs.
  *
  * Shaped for `LootSystem`, which wants `{ itemId, chance, minQty, maxQty }`.
- * Output entries already carry all four — `chance` defaults to 100 for the
- * ordinary always-produces case, and `minQty`/`maxQty` fall back to `baseQty`
- * for entries the simulator has rewritten.
+ * `chance` defaults to 100 for the ordinary always-produces case. The range is
+ * the one a station reads off the same output (`outputRange`: an old `quantity`
+ * and an inverted pair included), so a kill and a cycle of one Token roll alike;
+ * a line naming no quantity at all falls back to `baseQty`, for entries the
+ * simulator has rewritten.
  */
 export function enemyDropsOf(def) {
     const outputs = def?.config?.outputs || [];
     return outputs
         .filter(o => o?.itemId)
-        .map(o => ({
-            itemId: o.itemId,
-            chance: o.chance ?? 100,
-            minQty: o.minQty ?? o.baseQty?.min ?? 1,
-            maxQty: o.maxQty ?? o.baseQty?.max ?? o.minQty ?? 1
-        }));
+        .map(o => {
+            const named = o.minQty != null || o.maxQty != null || o.quantity != null;
+            const { min, max } = outputRange(named ? o : { minQty: o.baseQty?.min, maxQty: o.baseQty?.max });
+            return { itemId: o.itemId, chance: o.chance ?? 100, minQty: min, maxQty: max };
+        });
 }
