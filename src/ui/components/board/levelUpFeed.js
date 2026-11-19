@@ -1,6 +1,8 @@
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
+const SAME_GAME_RESETS = new Set(['dev_time_skip', 'catch_up', 'travel']);
+
 /**
  * Every level-up the player should be shown, live or from time away, for the UI pieces that
  * show them (the hero bar's alerts, the number floating over the hero).
@@ -9,8 +11,8 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  * A catch-up plays with the bus quiet, so its level-ups never arrive as `HERO_LEVELED`: they are
  * read off its summary and handed on at the `GAME_RESET` that follows it. ⚠️ On that reset, not
  * on `CATCH_UP_FINISHED`: a load's catch-up finishes before the load's own reset, which would wipe
- * them. Taken once, so a later reset cannot add them again. A dev time-skip or a sleeping PC's
- * catch-up is the same game moved on, so it does not reset.
+ * them. Taken once, so a later reset cannot add them again. A dev time-skip, a sleeping PC's
+ * catch-up or the guild travelling to another Region is the same game moved on, so it does not reset.
  *
  * @returns unsubscribe
  */
@@ -26,7 +28,7 @@ export function subscribeLevelUps({ onLevelUps, onReset }) {
             pending = rows.length ? { rows, show: !!show } : null;
         }, UI_LISTENER),
         EventBus.subscribe(ENGINE_EVENTS.GAME_RESET, ({ reason } = {}) => {
-            if (reason !== 'dev_time_skip' && reason !== 'catch_up') onReset?.();
+            if (!SAME_GAME_RESETS.has(reason)) onReset?.();
             if (!pending) return;
             const { rows, show } = pending;
             pending = null;

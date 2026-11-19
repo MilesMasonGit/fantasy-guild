@@ -24,6 +24,7 @@ import { PriceRows, shortWords, lockWords } from './WorldPrice.jsx';
 import { SCREEN_TEXT } from './atlasScreenText.js';
 import { useWorldArrived } from './WorldCamera.jsx';
 import { useWorldInspection } from './worldInspection.js';
+import { useEscapeLayer } from '../../utils/escapeLayers.js';
 
 const HERE_FLAG_PX = 48;
 const PREVIEW_MARGIN_PX = 4;
@@ -68,6 +69,12 @@ const PlaceName = ({ cell, region, onMessage }) => {
     useEffect(() => { setDraft(null); }, [cell.id]);
     const editing = draft != null;
     useEffect(() => { if (editing) dropped.current = false; }, [editing]);
+    const drop = () => {
+        dropped.current = true;
+        setDraft(null);
+    };
+    // The box is its own Escape layer: Escape drops the draft and leaves the map open.
+    useEscapeLayer(editing, drop);
     const commit = () => {
         if (draft == null || dropped.current) return;
         dropped.current = true;
@@ -85,14 +92,7 @@ const PlaceName = ({ cell, region, onMessage }) => {
                 maxLength={FLAVOUR_NAME_MAX}
                 onChange={e => setDraft(e.target.value)}
                 onBlur={commit}
-                onKeyDown={e => {
-                    if (e.key === 'Enter') commit();
-                    if (e.key === 'Escape') {
-                        e.stopPropagation();
-                        dropped.current = true;
-                        setDraft(null);
-                    }
-                }}
+                onKeyDown={e => { if (e.key === 'Enter') commit(); }}
                 className="min-w-0 w-full px-1 bg-black/80 border border-gi-gold/50 text-white outline-none font-pixel ui-text-title"
             />
         );

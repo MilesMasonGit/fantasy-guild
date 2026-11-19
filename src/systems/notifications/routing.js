@@ -6,7 +6,6 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { listRecipes } from '../../config/registries/recipePoolRegistry.js';
 import { getUpgradeDef } from '../../config/guildUpgrades.js';
 import { resolveSpritePath } from '../../utils/AssetManager.js';
-import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
 import * as ItemStubs from './itemStubs.js';
 import * as Banners from './banners.js';
 import { TONE } from './bannerKinds.js';
@@ -84,8 +83,6 @@ export const ROUTES = [
         handle: ({ itemId, added = 0, removed = 0 } = {}) => {
             // A bulk change (a load, a reset) names no item and is not a flow.
             if (!itemId || (!(added > 0) && !(removed > 0))) return;
-            // Gains are counted where they are made (`SpriteLayer.addSprite`), spending here.
-            if (removed > 0) ItemRateTracker.recordLoss(itemId, removed);
             ItemStubs.recordFlow(itemId, { added, removed });
             if (ItemStubs.getStub(itemId)?.pinned) savePins();
             ensureFadeTimer();

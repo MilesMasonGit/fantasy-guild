@@ -18,20 +18,7 @@ engine is on `main` (E1). The owner's answers of 2026-11-13 below.*
 Every event lands once an hour or so, one at a time; buffs stay 20 minutes and can be dragged; nodes stay put
 until worked out (or leave after an hour if no hero can work them).
 
-| Event | Kind | Where it lands | What it gives | Copies | Art (stand-in) |
-|---|---|---|---|---|---|
-| Copper Comet | node | anywhere | 6 Copper Ore a cycle, 100 charges (600 ore); Mining 1, Pickaxe | Copper Ore Vein | N (copper vein) |
-| Iron Comet | node | anywhere | 6 Iron Ore a cycle, 100 charges; Mining 15, Pickaxe | Iron Ore Vein | N (iron vein) |
-| Mythril Comet | node | anywhere | 6 Mythril Ore a cycle, 100 charges; Mining 60, Iron Pickaxe | Mythril Ore Vein | N (mythril vein) |
-| Fallen Maple | node | grass | 6 Maple Wood a cycle, 100 charges; Forestry 45, Woodaxe | Maple Tree | A (fallen oak) |
-| Fish Shoal | node | water | 4 fish a cycle (Trout 70 %, Salmon 30 %), 100 charges; Fishing 1, Rod | River | N (fish spot) |
-| Berry Thicket | node | grass | 6 Redberries, plus Blackberries and Strawberries by chance, 100 charges; Farming 1 | Redberry Bush | A (redberry bush) |
-| Rainfall | buff | anywhere | +20 % Double Loot on Farming in reach | | N (forest shrine) |
-| Warm Sun | buff | anywhere | Farming in reach regrows 30 % faster | | N (forest shrine) |
-| Deep Vein | buff | anywhere | Mining in reach refills 30 % faster | | N (forge shrine) |
-| Morning Mist | buff | anywhere | Forestry work in reach 20 % faster | | N (forest shrine) |
-| Fair Winds | buff | anywhere | Fishing work in reach 20 % faster | | N (red banner) |
-| Starry Night | buff | anywhere | +15 % XP on every Token in reach, any skill (the special one) | | N (red banner) |
+*This list (12 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Events. The rulings and reasoning stay on this page.*
 
 ## Own calls (simplest choice, say so)
 

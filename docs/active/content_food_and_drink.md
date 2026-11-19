@@ -29,231 +29,71 @@ a Brewery; better stations are faster, not new lists.
 
 **New ingredients**
 
-| Ingredient | Comes from | Used by | Art |
-|---|---|---|---|
-| Redberry | bush | Redberry Tea | H |
-| Apple | orchard | Apple Juice, Apple Pie, Harvest Platter | H |
-| Blackberry | bush | Blackberry Pie, Builder's Brew | H |
-| Wheat | field | Beer, Stout, Builder's Brew and 1 more | H |
-| Flour | Windmill, from Wheat (Farming) | Dough | H |
-| Carrot | field | Carrot Soup, Plain Stew, Mirepoix and 2 more | H |
-| Potato | field | Baked Potato, Plain Stew, Buttered Potato and 4 more | H, seed A |
-| Water | Wishing Well | Dough, Carrot Soup, Redberry Tea and 21 more | H |
-| Raw Shrimp | coast | Shrimp | H |
-| Game Meat | enemy drop | Roast Meat | H |
-| Crab Meat | enemy drop | Cooked Crab | N |
-| Honey | Beehive | Honey Bread, Hot Milk, Stout and 5 more | H |
+*This list (12 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Cooking. The rulings and reasoning stay on this page.*
 
 **Recipes**
 
-| Level | Name | Kind | Made with | Art |
-|---|---|---|---|---|
-| 1 | Shrimp | food | Raw Shrimp | H |
-| 2 | Baked Potato | food | Potato | H |
-| 3 | Roast Meat | food | Game Meat | N |
-| 4 | Dough | prep | Water, Flour | H |
-| 5 | Cooked Trout | food | Trout | N |
-| 6 | Apple Juice | drink: Farming | Apple | H |
-| 7 | Bread | food | Dough | H |
-| 8 | Cooked Crab | food | Crab Meat | N |
-| 9 | Carrot Soup | food | Carrot, Water | A |
-| 10 | Redberry Tea | drink: Forestry | Redberry, Water | N |
-| 11 | Plain Stew | food | Carrot, Potato, Water | H |
-| 12 | Honey Bread | food | Dough, Honey | A |
-| 13 | Beer | drink: Mining | Water, Wheat | H |
-| 14 | Blackberry Pie | food | Dough, Blackberry | H |
-| 15 | Apple Pie | food | Dough, Apple | A |
-| 16 | Mirepoix | prep | Carrot, Onion, Celery | H |
-| 17 | Steak | food | Raw Beef | H |
-| 18 | Onion Soup | food | Onion, Water | A |
-| 19 | Grape Juice | drink: Fishing | Grapes | A |
+*This list (19 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Cooking. The rulings and reasoning stay on this page.*
 
 ## Iron (levels 20 to 29)
 
 **New ingredients**
 
-| Ingredient | Comes from | Used by | Art |
-|---|---|---|---|
-| Blueberry | bush | Blueberry Pie, Blueberry Tonic | H |
-| Strawberry | bush | Strawberry Milk, Strawberry Tart | H |
-| Cherry | orchard | Cherry Cordial, Cherry Pie | H |
-| Grapes | vine | Grape Juice, Wine, Harvest Platter | H |
-| Onion | field | Mirepoix, Onion Soup, Steak and Onions and 2 more | H, seed A |
-| Celery | field | Mirepoix | H, seed A |
-| Leek | field | Trout and Leek, Potato Leek Stew, Hearty Potato Stew | H, seed A |
-| Raw Beef | Cows, pasture | Steak, Beef and Carrot Stew, Steak and Onions and 6 more | H |
-| Milk | Cows, pasture | Butter, Hot Milk, Cheese and 3 more | N |
-| Trout | river, lake | Cooked Trout, Trout and Leek | H |
-| Oyster | Oyster Bed | Oyster Stew | N |
+*This list (11 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Cooking. The rulings and reasoning stay on this page.*
 
 **Recipes**
 
-| Level | Name | Kind | Made with | Art |
-|---|---|---|---|---|
-| 20 | Butter | prep | Milk | N |
-| 21 | Buttered Potato | food | Potato, Butter | A |
-| 22 | Blueberry Pie | food | Dough, Blueberry | H |
-| 23 | Hot Milk | drink: Cooking | Milk, Honey | N |
-| 24 | Cherry Cordial | drink: Melee | Cherry, Water | N |
-| 25 | Oyster Stew | food | Oyster, Water | A |
-| 26 | Cheese | prep | Milk | N |
-| 27 | Trout and Leek | food | Trout, Leek | A |
-| 28 | Cheese Bread | food | Bread, Cheese | A |
-| 29 | Cherry Pie | food | Dough, Cherry | H |
+*This list (10 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Cooking. The rulings and reasoning stay on this page.*
 
 ## Silver (levels 30 to 39)
 
 **New ingredients**
 
-| Ingredient | Comes from | Used by | Art |
-|---|---|---|---|
-| Peach | orchard | Peach Nectar, Peach Pie | H |
-| Raspberry | bush | Raspberry Cordial, Raspberry Tart | H |
-| Lemon | orchard | Lemonade, Lemon Fish, Pineapple Punch | H |
-| Cabbage | field | Garden Stew | H, seed A |
-| Turnip | field | Garden Stew | H, seed A |
-| Raw Chicken | Chickens, coop | Roast Chicken, Chicken Soup, Honey Chicken and 1 more | H |
-| Egg | Chickens, coop | Boiled Egg, Omelette | H |
-| Tropical Fish | coast | Cooked Tropical Fish, Lemon Fish | H |
+*This list (8 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Cooking. The rulings and reasoning stay on this page.*
 
 **Recipes**
 
-| Level | Name | Kind | Made with | Art |
-|---|---|---|---|---|
-| 30 | Cooked Tropical Fish | food | Tropical Fish | N |
-| 31 | Beef and Carrot Stew | food | Raw Beef, Carrot, Mirepoix | H |
-| 32 | Strawberry Milk | drink: Crafting | Strawberry, Milk | N |
-| 33 | Potato Leek Stew | food | Potato, Leek, Mirepoix | H |
-| 34 | Stout | drink: Smithing | Water, Wheat, Honey | A |
-| 35 | Strawberry Tart | food | Dough, Strawberry, Butter | N |
-| 36 | Blueberry Tonic | drink: Ranged | Blueberry, Water | N |
-| 37 | Steak and Onions | food | Raw Beef, Onion, Butter | A |
-| 38 | Builder's Brew | drink: Construction | Water, Wheat, Blackberry | A |
-| 39 | Roast Chicken | food | Raw Chicken | H |
+*This list (10 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Cooking. The rulings and reasoning stay on this page.*
 
 ## Mythril (levels 40 to 49)
 
 **New ingredients**
 
-| Ingredient | Comes from | Used by | Art |
-|---|---|---|---|
-| Lime | orchard | Limeade, Watermelon Cooler | H |
-| Orange | orchard | Orange Juice, Orange Chicken | H |
-| Tomato | field | Sofrito, Tomato Soup, Lobster Bisque | H, seed A |
-| Garlic | field | Sofrito, Garlic Steak | H, seed A |
-| Salmon | river, lake | Cooked Salmon, Lavender Salmon, Seafood Platter | H |
-| Lavender | Herb Garden | Lavender Salmon, Lavender Tea | H |
+*This list (6 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Cooking. The rulings and reasoning stay on this page.*
 
 **Recipes**
 
-| Level | Name | Kind | Made with | Art |
-|---|---|---|---|---|
-| 40 | Cooked Salmon | food | Salmon | N |
-| 41 | Boiled Egg | food | Egg | A |
-| 42 | Lemonade | drink: Alchemy | Lemon, Water | H |
-| 43 | Garden Stew | food | Cabbage, Turnip, Mirepoix | A |
-| 44 | Peach Nectar | drink: Magic | Peach, Water | N |
-| 45 | Omelette | food | Egg, Cheese, Onion | N |
-| 46 | Peach Pie | food | Dough, Peach | A |
-| 47 | Raspberry Cordial | drink: Stealth | Raspberry, Water | A |
-| 48 | Chicken Soup | food | Raw Chicken, Mirepoix | A |
-| 49 | Raspberry Tart | food | Dough, Raspberry, Butter | A |
+*This list (10 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Cooking. The rulings and reasoning stay on this page.*
 
 ## Gold (levels 50 to 59)
 
 **New ingredients**
 
-| Ingredient | Comes from | Used by | Art |
-|---|---|---|---|
-| Pineapple | bush | Pineapple Punch, Pineapple Cake, Sunset Punch | H |
-| Banana | orchard | Banana Smoothie, Banana Bread | H |
-| Corn | field | Corn Chowder, Golden Stew | H, seed A |
-| Lobster | coast | Cooked Lobster, Buttered Lobster, Lobster Bisque and 1 more | H |
+*This list (4 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Cooking. The rulings and reasoning stay on this page.*
 
 **Recipes**
 
-| Level | Name | Kind | Made with | Art |
-|---|---|---|---|---|
-| 50 | Cooked Lobster | food | Lobster | H |
-| 51 | Lemon Fish | food | Tropical Fish, Lemon | A |
-| 52 | Sofrito | prep | Garlic, Onion, Tomato | H |
-| 53 | Tomato Soup | food | Tomato, Water | A |
-| 54 | Limeade | drink: Fletching | Lime, Water | H |
-| 55 | Honey Chicken | food | Raw Chicken, Honey | H |
-| 56 | Orange Juice | drink: Science | Orange | H |
-| 57 | Lavender Salmon | food | Salmon, Lavender | A |
-| 58 | Garlic Steak | food | Raw Beef, Garlic, Butter | A |
-| 59 | Lavender Tea | drink: Faith | Lavender, Water, Honey | N |
+*This list (10 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Cooking. The rulings and reasoning stay on this page.*
 
 ## Adamantine (levels 60 to 79)
 
 **New ingredients**
 
-| Ingredient | Comes from | Used by | Art |
-|---|---|---|---|
-| Coconut | orchard | Coconut Milk, Coconut Swordfish, Coconut Pie and 1 more | H |
-| Watermelon | patch | Watermelon Cooler, Sunset Punch | H |
-| Emberroot | field, hot places | Emberroot Soup, Ember Steak, Ember Ale and 4 more | N, seed N |
-| Swordfish | coast | Swordfish Steak, Coconut Swordfish, Swordfish in Sofrito | H |
+*This list (4 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Cooking. The rulings and reasoning stay on this page.*
 
 **Recipes**
 
-| Level | Name | Kind | Made with | Art |
-|---|---|---|---|---|
-| 60 | Orange Chicken | food | Raw Chicken, Orange | A |
-| 61 | Hearty Beef Stew | food | Raw Beef, Carrot, Sofrito | A |
-| 62 | Hearty Potato Stew | food | Potato, Leek, Sofrito | A |
-| 63 | Swordfish Steak | food | Swordfish | H |
-| 64 | Wine | drink: Enchanting | Grapes | H |
-| 65 | Corn Chowder | food | Corn, Milk, Potato | A |
-| 66 | Pineapple Punch | drink: Crime | Pineapple, Lemon, Water | N |
-| 67 | Buttered Lobster | food | Lobster, Butter | A |
-| 68 | Golden Stew | food | Corn, Sofrito, Mirepoix | A |
-| 69 | Banana Smoothie | drink: Taming | Banana, Milk, Honey | N |
-| 70 | Banana Bread | food | Dough, Banana | A |
-| 71 | Royal Beef Stew | food | Raw Beef, Sofrito, Wine | A |
-| 72 | Pineapple Cake | food | Pineapple, Dough, Butter | N |
-| 73 | Royal Potato Stew | food | Potato, Cheese, Sofrito | A |
-| 74 | Lobster Bisque | food | Lobster, Tomato, Butter | A |
-| 75 | Coconut Milk | drink: Summoning | Coconut | N |
-| 76 | Emberroot Soup | food | Emberroot, Water | A |
-| 77 | Watermelon Cooler | drink: any work | Watermelon, Lime, Water | N |
-| 78 | Mead | drink: any work | Honey, Water | N |
-| 79 | Coconut Swordfish | food | Swordfish, Coconut | A |
+*This list (20 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Cooking. The rulings and reasoning stay on this page.*
 
 ## Darkmetal (levels 80 to 99)
 
 **New ingredients**
 
-| Ingredient | Comes from | Used by | Art |
-|---|---|---|---|
-| Voidcap | field, dark places | Voidcap Soup, Voidcap Tea, Voidcap Pie and 4 more | N, spore N |
-| Shark | coast | Cooked Shark, Ember Shark, Shark Soup and 2 more | H |
+*This list (2 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Cooking. The rulings and reasoning stay on this page.*
 
 **Recipes**
 
-| Level | Name | Kind | Made with | Art |
-|---|---|---|---|---|
-| 80 | Coconut Pie | food | Dough, Coconut, Butter | A |
-| 81 | Ember Steak | food | Raw Beef, Emberroot | A |
-| 82 | Ember Ale | drink: any work | Wheat, Emberroot, Water | A |
-| 83 | Cooked Shark | food | Shark | H |
-| 84 | Swordfish in Sofrito | food | Swordfish, Sofrito | A |
-| 85 | Spiced Wine | drink: any work | Wine, Emberroot | A |
-| 86 | Ember Stew | food | Raw Beef, Emberroot, Sofrito | A |
-| 87 | Voidcap Soup | food | Voidcap, Water | A |
-| 88 | Voidcap Tea | drink: any work | Voidcap, Water, Honey | A |
-| 89 | Ember Shark | food | Shark, Emberroot | A |
-| 90 | Voidcap Pie | food | Dough, Voidcap, Butter | A |
-| 91 | Dark Mead | drink: any work | Mead, Voidcap | A |
-| 92 | Shark Soup | food | Shark, Sofrito | A |
-| 93 | Harvest Platter | food | Bread, Cheese, Apple, Grapes | N |
-| 94 | Void Stew | food | Voidcap, Raw Beef, Sofrito | A |
-| 95 | Sunset Punch | drink: any work | Pineapple, Watermelon, Coconut | A |
-| 96 | Seafood Platter | food | Lobster, Salmon, Shark | N |
-| 97 | Elder Draught | drink: any work | Voidcap, Emberroot, Mead | N |
-| 98 | Royal Banquet | food | Royal Beef Stew, Roast Chicken, Wine | N |
-| 99 | Guildmaster's Feast | food | Shark, Royal Beef Stew, Voidcap, Wine | N |
+*This list (20 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Cooking. The rulings and reasoning stay on this page.*
 
 ## Art
 

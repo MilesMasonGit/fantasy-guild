@@ -8,6 +8,8 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
 import { isMatBankLocked } from '../../hooks/useMatBankLock.js';
+import { isFullscreenViewOpen } from '../../hooks/useFullscreenViewLock.js';
+import { matW, matH } from '../../../config/matGeometry.js';
 
 /**
  * What the playmat takes (its drop target's `accepts`, `Board.jsx`; the right-click's orders,
@@ -15,11 +17,13 @@ import { isMatBankLocked } from '../../hooks/useMatBankLock.js';
  * While the Bank is open the mat takes nothing at all: the Bank covers it, and dnd-kit never
  * calls `onDrop` for a target whose `accepts` refuses the payload, so this one check is enough
  * to make every drop onto the mat a miss while the Bank is open.
+ * While a full-screen view is open the mat takes no hero: a hero let go over the view is a plain
+ * miss, never an order onto the mat hidden under it.
  */
 export function matAccepts(p) {
     if (isMatBankLocked()) return false;
     if (p?.kind === DRAG_KIND.TOKEN) return true;
-    if (p?.kind === DRAG_KIND.FLAG) return !!p.heroId;
+    if (p?.kind === DRAG_KIND.FLAG) return !!p.heroId && !isFullscreenViewOpen();
     return false;
 }
 
@@ -71,6 +75,8 @@ const refuse = (reason, extra = {}) => ({ success: false, reason, ...extra });
 
 const isHeroDrop = (payload) => payload?.kind === DRAG_KIND.FLAG;
 
+const offMat = (point) => point.x < 0 || point.y < 0 || point.x > matW() || point.y > matH();
+
 /**
  * A drop with nowhere to go flies back.
  *
@@ -87,6 +93,9 @@ export function dropOnMat(payload, point) {
 
     if (isHeroDrop(payload)) {
         if (!payload.heroId) return null;
+        // The nearest-target fallback can hand the mat a drop let go beside it (the hero bar's
+        // empty strip, the table): the hero stays where they were, and nothing is said.
+        if (offMat(point)) return refuse('Not on the mat', { offMat: true, flyBack: true });
         const result = Orders.orderAt(payload.heroId, point);
         // A refusal is said over the Token it was aimed at, or at the spot.
         return announce(result, result?.instanceId ? { instanceId: result.instanceId, ...point } : point);

@@ -494,7 +494,11 @@ export function consumeFromSprites(itemId, amount) {
         if (sprite.quantity <= 0) takeSprite(sprite.id);
     }
     const taken = amount - remaining;
-    if (taken > 0) EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
+    if (taken > 0) {
+        // Spent off the floor, never through the Bank: the item's per hour counts it here.
+        ItemRateTracker.recordLoss(itemId, taken);
+        EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
+    }
     return taken;
 }
 

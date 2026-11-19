@@ -20,40 +20,17 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 
 Fish keep their order from [food and drink](content_food_and_drink.md), on the 20-level tiers.
 
-| Fishing level | Catch | Water | Needs tool | Used by | Art |
-|---|---|---|---|---|---|
-| 1 | Raw Shrimp | Coast | Trap | Cooking | H |
-| 5 | Trout | River, Lake | Fishing Rod | Cooking | H |
-| 15 | Seaweed | Coast | any | ⚠️ Farming, as fertiliser, or Alchemy | N |
-| 25 | Oyster | **Oyster Bed** | Trap | Cooking; rarely a Pearl | N |
-| 30 | Tropical Fish | **Coral Reef** | Fine Rod | Cooking | H |
-| 40 | Salmon | River, Lake | Master Rod | Cooking | H |
-| 50 | Lobster | Coast | Lobster Pot | Cooking | H |
-| 63 | Swordfish | Coast | Adamantine Harpoon | Cooking | H |
-| 83 | Shark | **Shark-Infested Waters** | Darkmetal Harpoon | Cooking | H |
+*This list (9 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Fishing. The rulings and reasoning stay on this page.*
 
 ## Tools
 
-| Tool | Made by | Level there | Made with | Art |
-|---|---|---|---|---|
-| Trap | Crafting | 4 | Oak Wood, Copper Nails | H |
-| Fishing Rod | Crafting | 3 | Oak Wood, Copper Nails, String | H |
-| Fine Rod | Crafting | 16 | Bamboo, Copper Nails, String | A |
-| **Master Rod** | Crafting | 42 | Maple Plank, Mythril Nails, String | A |
-| **Lobster Pot** | Crafting | 36 | Fir Plank, Iron Nails, String | A |
-| **Adamantine Harpoon** | Smithing | 63 | Adamantine Ingot, Mahogany Wood, String | N |
-| **Darkmetal Harpoon** | Smithing | 83 | Darkmetal Ingot, Ebony Wood, String | A |
+*The seven tools (Trap, Fishing Rod, Fine Fishing Rod, Master Rod, Lobster Pot, Adamantine and Darkmetal Harpoon) are entries under Crafting and Smithing in the [content catalogue](content_catalogue.json); see them on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za). Which tool each fish needs is on its entry.*
 
 These fill open levels on [Crafting](content_crafting.md) and [Smithing](content_smithing.md).
 
 ## Special waters
 
-| Level | Token | Gives | Its job | What's different | Art |
-|---|---|---|---|---|---|
-| 25 | **Oyster Bed** | Oysters, rarely a Pearl | Cooking's Oyster Stew; ⚠️ Pearls need a user | Worked with a Trap | N |
-| 30 | **Coral Reef** | Tropical Fish | The only home of Tropical Fish | A reef in warm seas; worked with a Fine Rod | N |
-| 45 | **Shipwreck** | Planks, Nails, a chance of gems and a chest | A treasure rush | Rod or Trap; a few uses, then gone | N |
-| 83 | **Shark-Infested Waters** | Sharks | The only home of Sharks | Harpoon only; a big rare spot | N |
+*This list (4 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Fishing. The rulings and reasoning stay on this page.*
 
 ## Planning agent's calls
 

@@ -457,7 +457,7 @@ describe('the camera in the game\'s layout', () => {
         expect(count(mat, 'BannerStack')).toBe(0);
         expect(count(code, 'BannerStack')).toBe(1);
         const afterCamera = code.slice(code.indexOf('</HallCamera>'));
-        expect(afterCamera).toMatch(/<ErrorBoundary label="Banners"><BannerStack away=\{isGuildView \|\| isAtlasOpen\} \/><\/ErrorBoundary>/);
+        expect(afterCamera).toMatch(/<ErrorBoundary label="Banners" corner="top-center"><BannerStack away=\{isGuildView \|\| isAtlasOpen\} \/><\/ErrorBoundary>/);
         // Drawn as on the mat while the camera glides away and back: nothing on the table side
         // follows the open view, or the mat would change size and be drawn again mid-glide. The
         // one exception is the world map's own camera (`WorldCamera`), whose job is to follow the

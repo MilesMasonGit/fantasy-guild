@@ -32,127 +32,23 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 
 ## Copper (levels 1 to 19)
 
-| Level | Name | Kind | Made with | Also used by | Art |
-|---|---|---|---|---|---|
-| 1 | Copper Ingot | material | Copper Ore, Coal | everything of this metal | H |
-| 2 | Copper Dagger | Stealth weapon | Copper Ingot, Oak Wood |  | N |
-| 3 | Copper Woodaxe | tool: fells Oak, Fir | Copper Ingot, Oak Wood |  | H |
-| 4 | Copper Pickaxe | tool | Copper Ingot, Oak Wood |  | H |
-| 5 | Copper Nails | material | Copper Ingot | Construction, Crafting | H |
-| 6 | Copper Sword | Melee weapon | Copper Ingot, Oak Wood |  | H |
-| 7 | Copper Helmet | hat | Copper Ingot |  | A |
-| 8 | Copper Arrowheads | material | Copper Ingot | Fletching: arrows | N |
-| 9 | Copper Plate Gloves | gloves (new slot) | Copper Ingot |  | A |
-| 10 | Copper Kunai | Stealth ammo: thrown and used up | Copper Ingot |  | N |
-| 11 | Copper Plate Boots | boots (new slot) | Copper Ingot |  | A |
-| 12 | Copper Shield | off hand | Copper Ingot, Oak Wood |  | N |
-| 13 | Copper Chestplate | chest | Copper Ingot |  | H |
-| 14 | *open* |  |  |  |  |
-| 15 | *open* |  |  |  |  |
-| 16 | *open* |  |  |  |  |
-| 17 | *open* |  |  |  |  |
-| 18 | *open* |  |  |  |  |
-| 19 | *open* |  |  |  |  |
+*This list (19 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Smithing. The rulings and reasoning stay on this page.*
 
 ## Iron, with silver from 30 (levels 20 to 39)
 
-| Level | Name | Kind | Made with | Also used by | Art |
-|---|---|---|---|---|---|
-| 20 | Iron Ingot | material | Iron Ore, Coal | everything of this metal | H |
-| 21 | Iron Nails | material | Iron Ingot | Construction, Crafting | A |
-| 22 | Iron Dagger | Stealth weapon | Iron Ingot, Fir Wood |  | A |
-| 23 | Iron Woodaxe | tool: fells Birch, Maple | Iron Ingot, Fir Wood |  | H |
-| 24 | Iron Pickaxe | tool | Iron Ingot, Fir Wood |  | H |
-| 25 | Iron Kunai | Stealth ammo: thrown and used up | Iron Ingot |  | A |
-| 26 | Iron Sword | Melee weapon | Iron Ingot, Fir Wood |  | H |
-| 27 | Iron Helmet | hat | Iron Ingot |  | H |
-| 28 | Iron Arrowheads | material | Iron Ingot | Fletching: arrows | A |
-| 29 | Iron Plate Gloves | gloves (new slot) | Iron Ingot |  | H |
-| 30 | Silver Ingot | material | Silver Ore, Coal | everything of this metal | H |
-| 31 | Iron Plate Boots | boots (new slot) | Iron Ingot |  | H |
-| 32 | Iron Shield | off hand | Iron Ingot, Fir Wood |  | A |
-| 33 | Iron Chestplate | chest | Iron Ingot |  | H |
-| 34 | Silver Arrowheads | material | Silver Ingot | Fletching: arrows | A |
-| 35 | Iron Cleaver | Melee weapon, iron only | Iron Ingot, Fir Wood |  | H |
-| 36 | Silver Dagger | Stealth weapon, silver | Silver Ingot, Birch Wood |  | A |
-| 37 | Iron Mace | Melee weapon, Crush | Iron Ingot, Fir Wood |  | N |
-| 38 | Silver Sword | Melee weapon, silver | Silver Ingot, Birch Wood |  | A |
-| 39 | Silver Ring Band | material | Silver Ingot | Crafting: rings, with gems | N |
+*This list (20 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Smithing. The rulings and reasoning stay on this page.*
 
 ## Mythril, with gold from 50 (levels 40 to 59)
 
-| Level | Name | Kind | Made with | Also used by | Art |
-|---|---|---|---|---|---|
-| 40 | Mythril Ingot | material | Mythril Ore, Coal | everything of this metal | H |
-| 41 | Mythril Nails | material | Mythril Ingot | Construction, Crafting | A |
-| 42 | Mythril Dagger | Stealth weapon | Mythril Ingot, Maple Wood |  | A |
-| 43 | Mythril Woodaxe | tool: fells Cedar | Mythril Ingot, Maple Wood |  | H |
-| 44 | Mythril Pickaxe | tool | Mythril Ingot, Maple Wood |  | H |
-| 45 | Iron Gears | material | Iron Ingot | Construction: buildings from level 40 | N |
-| 46 | Mythril Sword | Melee weapon | Mythril Ingot, Maple Wood |  | A |
-| 47 | Mythril Helmet | hat | Mythril Ingot |  | A |
-| 48 | Mythril Arrowheads | material | Mythril Ingot | Fletching: arrows | A |
-| 49 | Mythril Plate Gloves | gloves (new slot) | Mythril Ingot |  | A |
-| 50 | Gold Ingot | material | Gold Ore, Coal | everything of this metal | H |
-| 51 | Mythril Plate Boots | boots (new slot) | Mythril Ingot |  | A |
-| 52 | Mythril Shield | off hand | Mythril Ingot, Maple Wood |  | A |
-| 53 | Mythril Chestplate | chest | Mythril Ingot |  | H |
-| 54 | *open* |  |  |  |  |
-| 55 | *open* |  |  |  |  |
-| 56 | Silver Chain | material | Silver Ingot | Crafting: amulets, with gems | H |
-| 57 | *open* |  |  |  |  |
-| 58 | *open* |  |  |  |  |
-| 59 | Gold Ring Band | material | Gold Ingot | Crafting: rings, with gems | A |
+*This list (20 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Smithing. The rulings and reasoning stay on this page.*
 
 ## Adamantine (levels 60 to 79)
 
-| Level | Name | Kind | Made with | Also used by | Art |
-|---|---|---|---|---|---|
-| 60 | Adamantine Ingot | material | Adamantine Ore, Coal | everything of this metal | H |
-| 61 | Adamantine Woodaxe | tool: fells Mahogany | Adamantine Ingot, Cedar Wood |  | H |
-| 62 | Adamantine Dagger | Stealth weapon | Adamantine Ingot, Mahogany Wood |  | A |
-| 63 | Adamantine Harpoon | tool | Adamantine Ingot, Mahogany Wood, String | Fishing: Swordfish | N |
-| 64 | Adamantine Pickaxe | tool | Adamantine Ingot, Mahogany Wood |  | H |
-| 65 | Gold Chain | material | Gold Ingot | Crafting: amulets, with gems | H |
-| 66 | Adamantine Sword | Melee weapon | Adamantine Ingot, Mahogany Wood |  | A |
-| 67 | Adamantine Helmet | hat | Adamantine Ingot |  | A |
-| 68 | Adamantine Arrowheads | material | Adamantine Ingot | Fletching: arrows | A |
-| 69 | Adamantine Plate Gloves | gloves (new slot) | Adamantine Ingot |  | A |
-| 70 | *open* |  |  |  |  |
-| 71 | Adamantine Plate Boots | boots (new slot) | Adamantine Ingot |  | A |
-| 72 | Adamantine Shield | off hand | Adamantine Ingot, Mahogany Wood |  | A |
-| 73 | Adamantine Chestplate | chest | Adamantine Ingot |  | H |
-| 74 | *open* |  |  |  |  |
-| 75 | *open* |  |  |  |  |
-| 76 | *open* |  |  |  |  |
-| 77 | *open* |  |  |  |  |
-| 78 | *open* |  |  |  |  |
-| 79 | *open* |  |  |  |  |
+*This list (20 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Smithing. The rulings and reasoning stay on this page.*
 
 ## Darkmetal (levels 80 to 99)
 
-| Level | Name | Kind | Made with | Also used by | Art |
-|---|---|---|---|---|---|
-| 80 | Darkmetal Ingot | material | Darkmetal Ore, Coal | everything of this metal | H |
-| 81 | Darkmetal Woodaxe | tool: fells Ebony | Darkmetal Ingot, Mahogany Wood |  | H |
-| 82 | Darkmetal Dagger | Stealth weapon | Darkmetal Ingot, Ebony Wood |  | A |
-| 83 | Darkmetal Harpoon | tool | Darkmetal Ingot, Ebony Wood, String | Fishing: Shark | A |
-| 84 | Darkmetal Pickaxe | tool | Darkmetal Ingot, Ebony Wood |  | H |
-| 85 | *open* |  |  |  |  |
-| 86 | Darkmetal Sword | Melee weapon | Darkmetal Ingot, Ebony Wood |  | A |
-| 87 | Darkmetal Helmet | hat | Darkmetal Ingot |  | A |
-| 88 | Darkmetal Arrowheads | material | Darkmetal Ingot | Fletching: arrows | A |
-| 89 | Darkmetal Plate Gloves | gloves (new slot) | Darkmetal Ingot |  | A |
-| 90 | *open* |  |  |  |  |
-| 91 | Darkmetal Plate Boots | boots (new slot) | Darkmetal Ingot |  | A |
-| 92 | Darkmetal Shield | off hand | Darkmetal Ingot, Ebony Wood |  | A |
-| 93 | Darkmetal Chestplate | chest | Darkmetal Ingot |  | H |
-| 94 | *open* |  |  |  |  |
-| 95 | *open* |  |  |  |  |
-| 96 | *open* |  |  |  |  |
-| 97 | *open* |  |  |  |  |
-| 98 | Master Hammer | tool | Darkmetal Ingot, Ebony Wood | Smithing final challenge (later) | N |
-| 99 | Masterwork Blade | the best Melee weapon | Darkmetal Ingot, Adamantine Ingot, Ebony Wood | final challenge (later) | N |
+*This list (20 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Smithing. The rulings and reasoning stay on this page.*
 
 ## Possible, for Science
 

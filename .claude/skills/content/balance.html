@@ -1,0 +1,267 @@
+<title>Guild Balance Dials</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a dial panel beside three views (pace strips, item sheet, arrival timeline); the panel stacks on top at phone width. */
+:root {
+  --bg: #eef0f2; --surface: #ffffff; --sunk: #e3e7eb; --ink: #1b222c; --muted: #5b6573; --line: #d2d8df;
+  --accent: #1f6f6a; --accent-ink: #ffffff;
+  --ok: #cfe7d8; --mild: #f3e3b0; --warn: #f0b77c; --wall: #d9604a; --fast: #b9d4f0; --none: #c7ccd3;
+  --flag: #b2452f;
+  --display: "Pixelify Sans", "Inter", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #131820; --surface: #1c232d; --sunk: #252d39; --ink: #e7ebf0; --muted: #9aa5b3; --line: #313b48;
+  --accent: #4fc0b6; --accent-ink: #0b1716;
+  --ok: #2d5a44; --mild: #6b5a26; --warn: #8a5a2c; --wall: #b44a37; --fast: #2c4a6b; --none: #3a434f; --flag: #f08a70; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #131820; --surface: #1c232d; --sunk: #252d39; --ink: #e7ebf0; --muted: #9aa5b3; --line: #313b48;
+  --accent: #4fc0b6; --accent-ink: #0b1716;
+  --ok: #2d5a44; --mild: #6b5a26; --warn: #8a5a2c; --wall: #b44a37; --fast: #2c4a6b; --none: #3a434f; --flag: #f08a70; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 14px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 48px }
+.wrap { max-width: 1320px; margin: 0 auto }
+header { padding-block: 24px 8px }
+h1 { font-family: var(--display); font-size: 30px; margin: 0; text-wrap: balance }
+.sub { color: var(--muted); margin: 4px 0 0; max-width: 70ch }
+.layout { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 20px; align-items: start; margin-top: 12px }
+@media (max-width: 860px) { .layout { grid-template-columns: 1fr } }
+.dials { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px; position: sticky; top: calc(8px + env(safe-area-inset-top, 0px)); display: grid; gap: 12px }
+@media (max-width: 860px) { .dials { position: static } }
+.dials h2 { font-family: var(--display); font-weight: 500; font-size: 18px; margin: 0 }
+.dial label { display: flex; justify-content: space-between; gap: 8px; font-size: 13px }
+.dial output { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 600 }
+.dial input { width: 100%; accent-color: var(--accent) }
+.dial small { color: var(--muted); font-size: 11px; display: block }
+.dial.changed label span::after { content: " ·"; color: var(--accent); font-weight: 700 }
+.btns { display: flex; gap: 8px; flex-wrap: wrap }
+button { font: inherit; font-size: 13px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 6px; padding: 6px 10px; cursor: pointer }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent) }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+#copied { font-size: 12px; color: var(--muted) }
+textarea#settings { width: 100%; font-family: var(--mono); font-size: 11px; min-height: 70px; background: var(--sunk); color: var(--ink); border: 1px solid var(--line); border-radius: 6px }
+
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px }
+.stat b { font-family: var(--display); font-size: 24px; display: block; font-variant-numeric: tabular-nums; line-height: 1.1 }
+.stat span { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted) }
+.stat.flag b { color: var(--flag) }
+.tabs { display: flex; gap: 4px; margin: 16px 0 10px; border-bottom: 1px solid var(--line); flex-wrap: wrap }
+.tabs a { padding: 8px 12px; color: var(--muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; font-weight: 500 }
+.tabs a[aria-current="page"] { color: var(--ink); border-color: var(--accent) }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px }
+select, input[type="search"] { font: inherit; font-size: 13px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 6px; padding: 5px 8px }
+label.tog { font-size: 13px; color: var(--muted); display: inline-flex; gap: 6px; align-items: center }
+
+.skill { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin-bottom: 10px; min-width: 0 }
+.skill h3 { margin: 0; font-size: 15px; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline }
+.skill h3 .n { font-family: var(--display); font-size: 18px; font-weight: 500 }
+.skill h3 .d { font-family: var(--mono); font-size: 12px; color: var(--muted); font-weight: 400 }
+.strip-wrap { overflow-x: auto; margin-top: 8px }
+.strip { display: grid; grid-template-columns: repeat(98, minmax(5px, 1fr)); gap: 1px; min-width: 520px }
+.strip i { height: 18px; display: block; background: var(--ok) }
+.strip i.fast { background: var(--fast) } .strip i.mild { background: var(--mild) } .strip i.warn { background: var(--warn) } .strip i.wall { background: var(--wall) }
+.strip i.none { background: repeating-linear-gradient(45deg, var(--none) 0 2px, transparent 2px 4px) }
+.ticks { display: grid; grid-template-columns: repeat(98, minmax(5px, 1fr)); gap: 1px; min-width: 520px; height: 8px }
+.ticks b { display: block; width: 2px; height: 8px; background: var(--muted); justify-self: center }
+.ticks b.moved { background: var(--accent); height: 8px; width: 3px }
+.axis { display: flex; justify-content: space-between; min-width: 520px; font-family: var(--mono); font-size: 10px; color: var(--muted) }
+.stretch { font-size: 13px; color: var(--flag); margin: 6px 0 0; padding-left: 0; list-style: none }
+.stretch li::before { content: "▲ "; font-size: 10px }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--muted); margin-bottom: 10px }
+.legend i { display: inline-block; width: 14px; height: 10px; margin-right: 4px; vertical-align: -1px }
+
+.tbl { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px }
+table { border-collapse: collapse; width: 100%; font-size: 13px }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: top }
+th { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--surface); white-space: nowrap }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap }
+td.why { color: var(--muted); font-size: 12px }
+.mv { color: var(--accent); font-weight: 600 }
+.bar { height: 8px; background: var(--sunk); border-radius: 4px; position: relative; min-width: 120px }
+.bar span { position: absolute; top: 0; bottom: 0; border-radius: 4px }
+.bar .o { background: var(--accent) } .bar .t { background: color-mix(in srgb, var(--accent) 35%, transparent) }
+.note { font-size: 12px; color: var(--muted); margin-top: 14px; max-width: 90ch }
+.more { margin-top: 8px }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Guild Balance Dials</h1>
+    <p class="sub">The planned game worked out from the balance rules. Move a dial and every entry's XP, times and counts follow, with unlocks shifted a few levels where a stretch runs thin. The one flag is an empty stretch, which needs new content.</p>
+  </header>
+
+  <div class="layout">
+    <aside class="dials" aria-label="Dials">
+      <h2>Dials</h2>
+      <div id="dialList"></div>
+      <div class="btns"><button id="reset">Back to the rules</button><button class="primary" id="copy">Copy settings</button></div>
+      <span id="copied" aria-live="polite"></span>
+      <textarea id="settings" readonly aria-label="Settings to send the content agent" hidden></textarea>
+    </aside>
+
+    <main>
+      <div class="summary" id="summary"></div>
+      <nav class="tabs" id="tabs">
+        <a href="#pace">Pace by skill</a><a href="#items">Item numbers</a><a href="#arrivals">When things arrive</a>
+      </nav>
+      <section id="view"></section>
+      <p class="note">Built from the content catalogue and the rules in BALANCE_RULES.md. The optimized player holds the boost budget's boosts; typical holds half. Hero time is the crafter's own work; guild time adds the gathering behind it. Arrivals count one hero per skill, all climbing together, as the CMS ledger does. The ledger's engine-checked timing is the proof once the plan is in the CMS. Builds, events, arrows per craft and combat have no rule yet and show blank with the reason.</p>
+    </main>
+  </div>
+</div>
+
+<script src="solver.js"></script>
+<script>
+const DIALS = [
+  ["paceStartMinutes", "Level 1 takes", 1, 10, 0.5, v => v + " min", "Every level's length"],
+  ["paceGrowth", "Each level longer by", 1.03, 1.10, 0.005, v => ((v - 1) * 100).toFixed(1) + " %", "Quick early, slow late"],
+  ["oldTaskPerTier", "Old task a tier on", 1.25, 4, 0.25, v => v + "x slower", "How hard staying on old work gets"],
+  ["cycleGrowth", "Action time every 20 levels", 1, 1.4, 0.05, v => "x" + v.toFixed(2), "Late cycles' length"],
+  ["baseGather", "Gather base", 2, 15, 1, v => v + " s", "Veins, trees, crops, fish"],
+  ["basePrepare", "Prepare base", 2, 20, 1, v => v + " s", "Ingots, planks, cloth, flour"],
+  ["baseMake", "Make base", 4, 30, 1, v => v + " s", "Gear, food, potions"],
+  ["countDoublesEvery", "Raw counts double every", 20, 80, 5, v => v + " levels", "Late raw cost"],
+  ["typicalShare", "Typical player's boosts", 0, 1, 0.05, v => Math.round(v * 100) + " %", "Share of the optimized boosts"],
+  ["moveMax", "Unlocks may move", 0, 6, 1, v => "up to " + v, "Levels, within the tier"],
+  ["gapFlag", "Flag a stretch longer than", 3, 15, 1, v => v + " levels", "With nothing new to make"],
+];
+const S = window.BalanceSolver;
+const state = { dials: { ...S.DIALS }, cat: [], res: null, view: "pace", skill: "", rung: "", q: "", showAll: false, limit: 200 };
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const RUNGS = ["Copper", "Iron", "Silver", "Mythril", "Gold", "Adamantine", "Darkmetal"];
+const rungOf = L => L == null ? "Unplaced" : L >= 80 ? "Darkmetal" : L >= 60 ? "Adamantine" : L >= 50 ? "Gold" : L >= 40 ? "Mythril" : L >= 30 ? "Silver" : L >= 20 ? "Iron" : "Copper";
+function fmtMin(m) {
+  if (m == null || !isFinite(m)) return "—";
+  if (m < 1) return Math.round(m * 60) + " s";
+  if (m < 90) return Math.round(m) + " min";
+  if (m < 48 * 60) return (m / 60).toFixed(m < 600 ? 1 : 0) + " h";
+  return (m / 1440).toFixed(1) + " d";
+}
+
+try { const saved = JSON.parse(localStorage.getItem("balanceDials") || "null"); if (saved) Object.assign(state.dials, saved); } catch {}
+
+function renderDials() {
+  $("dialList").innerHTML = DIALS.map(([k, label, min, max, step, fmt, help]) => `
+    <div class="dial${state.dials[k] !== S.DIALS[k] ? " changed" : ""}" id="d-${k}">
+      <label for="in-${k}"><span>${esc(label)}</span><output id="out-${k}">${esc(fmt(state.dials[k]))}</output></label>
+      <input type="range" id="in-${k}" data-k="${k}" min="${min}" max="${max}" step="${step}" value="${state.dials[k]}">
+      <small>${esc(help)} · rules: ${esc(fmt(S.DIALS[k]))}</small>
+    </div>`).join("");
+}
+let pending = null;
+$("dialList").addEventListener("input", ev => {
+  const k = ev.target.dataset.k; if (!k) return;
+  const def = DIALS.find(x => x[0] === k);
+  state.dials[k] = parseFloat(ev.target.value);
+  $("out-" + k).textContent = def[5](state.dials[k]);
+  $("d-" + k).classList.toggle("changed", state.dials[k] !== S.DIALS[k]);
+  try { localStorage.setItem("balanceDials", JSON.stringify(state.dials)); } catch {}
+  cancelAnimationFrame(pending); pending = requestAnimationFrame(run);
+});
+$("reset").addEventListener("click", () => { state.dials = { ...S.DIALS }; try { localStorage.removeItem("balanceDials"); } catch {} renderDials(); run(); });
+$("copy").addEventListener("click", async () => {
+  const changed = Object.fromEntries(Object.entries(state.dials).filter(([k, v]) => S.DIALS[k] !== v));
+  const text = Object.keys(changed).length ? "Balance dials to keep: " + JSON.stringify(changed) : "Balance dials: the rules as they are.";
+  const ta = $("settings"); ta.value = text; ta.hidden = false;
+  try { await navigator.clipboard.writeText(text); $("copied").textContent = "Copied. Paste it to the content agent."; }
+  catch { ta.select(); $("copied").textContent = "Select the text below and copy it."; }
+});
+
+function run() { state.res = S.solve(state.cat, state.dials); renderSummary(); renderView(); }
+
+function renderSummary() {
+  const p = state.res.pace, ks = Object.keys(p);
+  const avg = f => ks.reduce((s, k) => s + p[k].days[f], 0) / ks.length;
+  const stretches = ks.reduce((s, k) => s + p[k].stretches.length, 0);
+  $("summary").innerHTML = `
+    <div class="stat"><b>${avg("curve").toFixed(1)} d</b><span>Curve: one skill to 99</span></div>
+    <div class="stat"><b>${avg("opt").toFixed(1)} d</b><span>Optimized, average skill</span></div>
+    <div class="stat"><b>${avg("typ").toFixed(1)} d</b><span>Typical, average skill</span></div>
+    <div class="stat"><b>${state.res.moved.length}</b><span>Unlocks moved</span></div>
+    <div class="stat flag"><b>${stretches}</b><span>Empty stretches</span></div>`;
+}
+
+function cls(r) { if (r.none) return "none"; const x = r.opt / r.curve; return x < 0.85 ? "fast" : x <= 1.15 ? "" : x <= 1.5 ? "mild" : x <= 2 ? "warn" : "wall"; }
+
+function viewPace() {
+  const res = state.res;
+  const moved = new Set(res.moved.map(t => t.id));
+  const rows = Object.entries(res.pace).sort((a, b) => a[0].localeCompare(b[0])).map(([skill, p]) => {
+    const tasks = res.rows.filter(r => r.skill === skill && r.work && r.level != null);
+    const ticks = Array.from({ length: 98 }, (_, i) => { const t = tasks.filter(x => x.level === i + 1); return t.length ? `<b class="${t.some(x => moved.has(x.id)) ? "moved" : ""}" title="${esc(t.map(x => x.name + (x.planned !== x.level ? ` (moved from ${x.planned})` : "")).join(", "))}"></b>` : "<span></span>"; }).join("");
+    const cells = p.levels.map(r => `<i class="${cls(r)}" title="Level ${r.L}: curve ${fmtMin(r.curve)} · optimized ${fmtMin(r.opt)} · typical ${fmtMin(r.typ)} · guild ${fmtMin(r.guild)}${r.best ? " · best work " + esc(r.best) : " · nothing to train yet"}"></i>`).join("");
+    const st = p.stretches.map(s => `<li>Levels ${s.from} to ${s.to}: ${s.start ? `nothing to train before ${esc(s.before)}` : `nothing new after ${esc(s.after)}${s.before ? `, until ${esc(s.before)}` : ""}`}${isFinite(s.worst) && s.worst ? ` · slowest level ${s.worst.toFixed(1)}x the curve` : ""}</li>`).join("");
+    return `<div class="skill"><h3><span class="n">${esc(skill)}</span>
+      <span class="d">to 99: optimized ${p.days.opt.toFixed(1)} d · typical ${p.days.typ.toFixed(1)} d · guild ${p.days.guild.toFixed(1)} d · curve ${p.days.curve.toFixed(1)} d</span></h3>
+      <div class="strip-wrap"><div class="strip">${cells}</div><div class="ticks">${ticks}</div><div class="axis"><span>1</span><span>20</span><span>40</span><span>60</span><span>80</span><span>98</span></div></div>
+      ${st ? `<ul class="stretch">${st}</ul>` : ""}</div>`;
+  }).join("");
+  const none = ["Construction", "Events"].map(s => `<div class="skill"><h3><span class="n">${s}</span><span class="d">no rule yet: builds and events aren't timed by the rules</span></h3></div>`).join("");
+  return `<div class="legend"><span><i style="background:var(--fast)"></i>faster than the curve</span><span><i style="background:var(--ok)"></i>on the curve</span><span><i style="background:var(--mild)"></i>up to 1.5x slower</span><span><i style="background:var(--warn)"></i>up to 2x</span><span><i style="background:var(--wall)"></i>a wall, over 2x</span><span><i style="background:repeating-linear-gradient(45deg,var(--none) 0 2px,transparent 2px 4px)"></i>nothing to train</span><span>Ticks: unlocks, <b style="color:var(--accent)">moved</b> in colour. Hover a level for its times.</span></div>${rows}${none}`;
+}
+
+function filters(extra) {
+  const skills = [...new Set(state.res.rows.map(r => r.skill).filter(Boolean))].sort();
+  return `<div class="filters"><select id="fSkill" aria-label="Skill"><option value="">All skills</option>${skills.map(s => `<option${s === state.skill ? " selected" : ""}>${esc(s)}</option>`).join("")}</select>
+    <select id="fRung" aria-label="Rung"><option value="">All rungs</option>${RUNGS.map(s => `<option${s === state.rung ? " selected" : ""}>${s}</option>`).join("")}</select>
+    <input type="search" id="fQ" placeholder="Search names" value="${esc(state.q)}" aria-label="Search names">${extra || ""}</div>`;
+}
+function pick(rows) {
+  const q = state.q.toLowerCase();
+  return rows.filter(r => (!state.skill || r.skill === state.skill) && (!state.rung || rungOf(r.level) === state.rung) && (!q || r.name.toLowerCase().includes(q)));
+}
+function more(n) { return n > state.limit ? `<div class="more"><button id="more">Show all ${n}</button></div>` : ""; }
+
+function viewItems() {
+  const rows = pick(state.res.rows.filter(r => state.showAll || (r.work && r.seconds != null))).sort((a, b) => a.skill.localeCompare(b.skill) || (a.level ?? 999) - (b.level ?? 999));
+  const body = rows.slice(0, state.limit).map(r => {
+    const lv = r.level == null ? "—" : r.planned !== r.level ? `<span class="mv" title="Moved by the solver">${r.planned} → ${r.level}</span>` : r.level;
+    if (!r.work || r.seconds == null) return `<tr><td>${esc(r.name)}</td><td>${esc(r.skill)}</td><td class="num">${lv}</td><td>${esc(r.type)}</td><td colspan="6" class="why">${esc(r.why)}</td></tr>`;
+    return `<tr><td>${esc(r.name)}</td><td>${esc(r.skill)}</td><td class="num">${lv}</td><td>${esc(r.work)}</td>
+      <td class="num">${r.seconds.toFixed(1)} s</td><td class="num">${r.xp}</td><td class="num">${Math.round(r.xpHourOpt).toLocaleString()}</td>
+      <td>${(r.inputs || []).map(i => `${i.count} ${esc(i.name)}`).join(", ") || "—"}</td>
+      <td class="num">${r.rawGathers || "—"}</td><td class="num">${fmtMin(r.guildSeconds / 60)}</td>${r.note ? `` : ""}</tr>${r.note ? `<tr><td></td><td colspan="9" class="why">${esc(r.note)}</td></tr>` : ""}`;
+  }).join("");
+  return filters(`<label class="tog"><input type="checkbox" id="fAll"${state.showAll ? " checked" : ""}> Show untimed entries</label>`) +
+    `<div class="tbl"><table><thead><tr><th>Name</th><th>Skill</th><th>Level</th><th>Work</th><th>Action</th><th>XP an action</th><th>XP an hour, optimized</th><th>Ingredients</th><th>Raw gathers</th><th>Guild time a piece</th></tr></thead><tbody>${body || `<tr><td colspan="10" class="why">Nothing matches these filters.</td></tr>`}</tbody></table></div>${more(rows.length)}`;
+}
+
+function viewArrivals() {
+  const rows = pick(state.res.rows.filter(r => r.work && r.level != null && isFinite(r.arriveTyp))).sort((a, b) => a.arriveOpt - b.arriveOpt || a.name.localeCompare(b.name));
+  const max = Math.log10(1 + Math.max(1, ...rows.map(r => r.arriveTyp)));
+  const pos = m => (Math.log10(1 + m) / max * 100).toFixed(1);
+  const body = rows.slice(0, state.limit).map(r => `<tr><td>${esc(r.name)}</td><td>${esc(r.skill)}</td><td class="num">${r.planned !== r.level ? `<span class="mv">${r.planned} → ${r.level}</span>` : r.level}</td>
+    <td class="num">${fmtMin(r.arriveOpt)}</td><td class="num">${fmtMin(r.arriveTyp)}</td>
+    <td><div class="bar" title="Optimized ${fmtMin(r.arriveOpt)}, typical ${fmtMin(r.arriveTyp)}"><span class="t" style="left:${pos(r.arriveOpt)}%;width:${Math.max(0.6, pos(r.arriveTyp) - pos(r.arriveOpt))}%"></span><span class="o" style="left:${pos(r.arriveOpt)}%;width:3px"></span></div></td></tr>`).join("");
+  return filters() + `<div class="tbl"><table><thead><tr><th>Name</th><th>Skill</th><th>Level</th><th>Optimized</th><th>Typical</th><th>From a new game (log scale: minutes to weeks)</th></tr></thead><tbody>${body || `<tr><td colspan="6" class="why">Nothing matches these filters.</td></tr>`}</tbody></table></div>${more(rows.length)}`;
+}
+
+function renderView() {
+  const v = state.view;
+  document.querySelectorAll("#tabs a").forEach(a => a.setAttribute("aria-current", a.getAttribute("href") === "#" + v ? "page" : "false"));
+  $("view").innerHTML = v === "items" ? viewItems() : v === "arrivals" ? viewArrivals() : viewPace();
+}
+$("view").addEventListener("change", ev => {
+  if (ev.target.id === "fSkill") state.skill = ev.target.value;
+  if (ev.target.id === "fRung") state.rung = ev.target.value;
+  if (ev.target.id === "fAll") state.showAll = ev.target.checked;
+  state.limit = 200; renderView();
+});
+$("view").addEventListener("input", ev => { if (ev.target.id === "fQ") { state.q = ev.target.value; renderView(); const q = $("fQ"); q.focus(); q.setSelectionRange(q.value.length, q.value.length); } });
+$("view").addEventListener("click", ev => { if (ev.target.id === "more") { state.limit = 1e9; renderView(); } });
+function route() { const h = location.hash.slice(1); state.view = ["pace", "items", "arrivals"].includes(h) ? h : "pace"; if (state.res) renderView(); }
+window.addEventListener("hashchange", route);
+
+(async function boot() {
+  renderDials(); route();
+  if (!S) { $("view").innerHTML = `<p class="note">The calculation didn't load. Reload the page.</p>`; return; }
+  try { state.cat = (await (await fetch("catalogue.json")).json()).entries; }
+  catch { $("view").innerHTML = `<p class="note">The catalogue didn't load. Reload the page.</p>`; return; }
+  run();
+})();
+</script>

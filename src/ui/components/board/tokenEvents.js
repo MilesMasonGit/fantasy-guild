@@ -67,6 +67,36 @@ export function subscribeBy(event, field, key, handler) {
     };
 }
 
+/** `event` → `{ unsub, handlers: Set<handler> }`: the listeners that hear an event whatever it names. */
+const broadcasts = new Map();
+
+/**
+ * Call `handler` whenever `event` happens, whatever its payload names (`GAME_RESET`): still one
+ * bus subscription per event, however many Tokens listen.
+ * @returns {() => void} unsubscribe
+ */
+export function subscribeEvery(event, handler) {
+    if (!event || typeof handler !== 'function') return () => {};
+    let route = broadcasts.get(event);
+    if (!route) {
+        const handlers = new Set();
+        const unsub = EventBus.subscribe(event, (payload) => {
+            for (const fn of [...handlers]) fn(payload);
+        }, UI_LISTENER);
+        route = { unsub, handlers };
+        broadcasts.set(event, route);
+    }
+    route.handlers.add(handler);
+    return () => {
+        if (broadcasts.get(event) !== route) return;
+        route.handlers.delete(handler);
+        if (route.handlers.size === 0) {
+            route.unsub?.();
+            broadcasts.delete(event);
+        }
+    };
+}
+
 /**
  * Call `handler` when `event` happens to Token `instanceId`.
  * @returns {() => void} unsubscribe

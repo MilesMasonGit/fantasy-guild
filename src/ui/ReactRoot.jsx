@@ -7,6 +7,7 @@ import { EventBus, UI_LISTENER } from '../systems/core/EventBus.js';
 
 import { DeckDndProvider } from './dnd/DndKit.jsx';
 import { setMatBankLocked } from './hooks/useMatBankLock.js';
+import { setFullscreenViewOpen } from './hooks/useFullscreenViewLock.js';
 
 import { useUIModals } from './hooks/useUIModals.js';
 import { useEscapeLayer } from './utils/escapeLayers.js';
@@ -14,7 +15,7 @@ import { useInspectTokenHandlers } from './hooks/useInspectTokenHandlers.js';
 import { useEncyclopediaBack } from './hooks/useEncyclopediaBack.js';
 import { useHeroSheetRequests } from './hooks/useHeroSheetRequests.js';
 import { useOneBottomDrawer } from './hooks/useOneBottomDrawer.js';
-import { useWorldMapRequests } from './hooks/useWorldMapRequests.js';
+import { WorldMapRequests } from './hooks/useWorldMapRequests.js';
 import { useShowOnMat } from './hooks/useShowOnMat.js';
 import { selectHero, clickHero, useSelectionClearing } from './hooks/useMatSelection.js';
 
@@ -144,6 +145,8 @@ const ReactRoot = () => {
     // place that reaches outside React (the drag sensor) to enforce it, so this is its only
     // writer, kept in step with the Bank's own open/closed state.
     React.useEffect(() => { setMatBankLocked(isBankOpen); }, [isBankOpen]);
+    const isFullscreenOpen = ui.fullscreen.view !== null;
+    React.useEffect(() => { setFullscreenViewOpen(isFullscreenOpen); }, [isFullscreenOpen]);
 
     const handleOpenGuildHall = React.useCallback(() => {
         ui.fullscreen.open('guild');
@@ -199,15 +202,12 @@ const ReactRoot = () => {
 
     useHeroSheetRequests(setInspectHeroId);
     useOneBottomDrawer({ shopOpen: ui.shop.isOpen, heroId: inspectHeroId, closeShop: ui.shop.close, closeHero: closeInspectHero });
-    const openAtlas = ui.fullscreen.open;
-    const openWorldMap = React.useCallback(() => openAtlas('atlas'), [openAtlas]);
-    useWorldMapRequests(openWorldMap);
-    // A banner pointing to its Token, clicked over the World Map or the Hall: back to the mat first.
+    // A banner pointing to its Token, clicked over the World Map, the Hall or the book: back to the mat first.
     const backToMat = React.useCallback(() => {
         if (isGuildView) handleCloseGuildHall();
         else ui.fullscreen.close();
     }, [isGuildView, handleCloseGuildHall, ui.fullscreen]);
-    useShowOnMat({ awayOpen: isGuildView || isAtlasOpen, backToMat });
+    useShowOnMat({ awayOpen: isGuildView || isAtlasOpen, bookOpen: isEncyclopediaOpen, backToMat });
 
     // What is open, for the screen whose small Limes speaks a lesson step.
     const isShopOpen = ui.shop.isOpen;
@@ -220,6 +220,7 @@ const ReactRoot = () => {
             <ScreenCalloutLayer />
             <LimesTargetMark />
             <LimesLessonSpeaker screens={limesScreens} />
+            <WorldMapRequests openAtlas={openAtlasFromBar} />
             <div className="react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col">
                 {/* ⚠️ `overflow-clip`: the Hall's web runs past the column to the screen's edge, and a
                     hidden box would scroll to a focused star out there. `min-h-0`: a clipped box, unlike a
@@ -314,7 +315,7 @@ const ReactRoot = () => {
                             />
                             {/* The Encyclopedia lies over the mat but under the item stubs: a stub clicked while it is open turns to that item's chart. */}
                             {isEncyclopediaOpen && (
-                                <ErrorBoundary label="EncyclopediaScreen">
+                                <ErrorBoundary label="EncyclopediaScreen" corner="top-left">
                                     <EncyclopediaScreen onClose={ui.fullscreen.close} />
                                 </ErrorBoundary>
                             )}
@@ -324,11 +325,11 @@ const ReactRoot = () => {
                              * the Hall screen: they live in their own store, so what arrives
                              * meanwhile is there on the way back (loot flies to no stub).
                              */}
-                            <ErrorBoundary label="Notifications">
+                            <ErrorBoundary label="Notifications" corner="top-right">
                                 <ItemStubColumn />
                             </ErrorBoundary>
                             {/* Minimized fight windows: a strip of tabs at the mat's foot, above the hero bar. */}
-                            <ErrorBoundary label="FightTabs"><FightTabStrip /></ErrorBoundary>
+                            <ErrorBoundary label="FightTabs" corner="bottom-left"><FightTabStrip /></ErrorBoundary>
                             </div>
                         </div>
                         </WorldCamera>
@@ -339,15 +340,15 @@ const ReactRoot = () => {
                          * cameras, so they hold still on screen as the view glides. Over the World
                          * Map and the Hall only those that point to a Token on the mat (an event's).
                          */}
-                        <ErrorBoundary label="Banners"><BannerStack away={isGuildView || isAtlasOpen} /></ErrorBoundary>
-                        <ErrorBoundary label="ArrivalCard"><ArrivalCard /></ErrorBoundary>
+                        <ErrorBoundary label="Banners" corner="top-center"><BannerStack away={isGuildView || isAtlasOpen} /></ErrorBoundary>
+                        <ErrorBoundary label="ArrivalCard" corner="bottom-center"><ArrivalCard /></ErrorBoundary>
                         </div>
                         {/**
                          * The hero bar, under both sides of the camera: on every screen, the
                          * Guild Hall's included. A crash in it stays local to it.
                          */}
                         {dockDrawn && (
-                            <ErrorBoundary label="HeroDock">
+                            <ErrorBoundary label="HeroDock" corner="bottom-left">
                                 <PerfProfiler id="HeroDock">
                                     <BottomHeroDock
                                         selectedHeroId={inspectHeroId}
@@ -360,7 +361,7 @@ const ReactRoot = () => {
                     </div>
                     {menuRight && <BubbleMenu ui={ui} side="right" />}
                     {/* The Guild Hall's Upgrade drawer, opened by a click on a star. */}
-                    <ErrorBoundary label="HallUpgradeDrawer">
+                    <ErrorBoundary label="HallUpgradeDrawer" corner={menuRight ? 'top-left' : 'top-right'}>
                         <HallUpgradeDrawer
                             upgradeDef={isGuildView && hallStarId ? getUpgradeDef(hallStarId) : null}
                             menuRight={menuRight}
@@ -378,7 +379,7 @@ const ReactRoot = () => {
                      * The Hero drawer: a hero's panel rising from behind the hero bar, opened from
                      * the bar. A crash in it stays local.
                      */}
-                    <ErrorBoundary label="HeroDrawer">
+                    <ErrorBoundary label="HeroDrawer" corner={menuRight ? 'top-left' : 'top-right'}>
                         <HeroDrawer
                             menuRight={menuRight}
                             selectedHeroId={inspectHeroId}
@@ -395,7 +396,7 @@ const ReactRoot = () => {
                      * Perf HUD commit counting, dev only. A crash in the Bank drawer stays
                      * local to it.
                      */}
-                    {drawersDrawn && <ErrorBoundary label="BankDrawer">
+                    {drawersDrawn && <ErrorBoundary label="BankDrawer" corner={menuRight ? 'top-left' : 'top-right'}>
                         <PerfProfiler id="Drawer">
                             <BankDrawer drawer={ui.drawer} menuRight={menuRight} />
                         </PerfProfiler>
@@ -404,14 +405,14 @@ const ReactRoot = () => {
                      * The World Map drawer: the side drawer, beside the Bank's, while the world map is
                      * open. Its screen, under the camera, hands it the chosen place.
                      */}
-                    {drawersDrawn && <ErrorBoundary label="WorldDrawer">
+                    {drawersDrawn && <ErrorBoundary label="WorldDrawer" corner={menuRight ? 'top-left' : 'top-right'}>
                         <WorldDrawer open={isAtlasOpen} menuRight={menuRight} onClose={ui.fullscreen.close} />
                     </ErrorBoundary>}
                     {/**
                      * The Shop, rising from the bottom beside the nav. A crash here stays local
                      * to it too.
                      */}
-                    {drawersDrawn && <ErrorBoundary label="ShopPanel">
+                    {drawersDrawn && <ErrorBoundary label="ShopPanel" corner={menuRight ? 'bottom-left' : 'bottom-right'}>
                         <ShopPanel isOpen={ui.shop.isOpen} onClose={ui.shop.close} menuRight={menuRight} />
                     </ErrorBoundary>}
                 </div>

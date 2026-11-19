@@ -37,6 +37,47 @@ export function bankTabLayout(inv, itemIds = Object.keys(inv?.items || {})) {
     return layout;
 }
 
+/**
+ * A tab's new manual order: `given`, with each id of `previous` it leaves out (out of stock or
+ * hidden, so not shown) put back after the id it followed, so an item that runs out keeps its place.
+ * @returns {string[]}
+ */
+export function mergeTabOrder(previous, given) {
+    const listed = new Set(given);
+    const seen = new Set();
+    const head = [];
+    const after = new Map();
+    let anchor = null;
+    for (const id of previous || []) {
+        if (listed.has(id)) { anchor = id; continue; }
+        if (seen.has(id)) continue;
+        seen.add(id);
+        if (anchor == null) head.push(id);
+        else if (after.has(anchor)) after.get(anchor).push(id);
+        else after.set(anchor, [id]);
+    }
+    const out = [...head];
+    for (const id of given) {
+        out.push(id);
+        const followers = after.get(id);
+        if (followers) { out.push(...followers); after.delete(id); }
+    }
+    return out;
+}
+
+/**
+ * `ids` with `sourceId` moved to `targetId`'s place, as the hero bar reorders heroes: a forward
+ * move lands where the target was, not one short of it.
+ * @returns {string[]}
+ */
+export function reorderTabIds(ids, sourceId, targetId) {
+    const to = ids.indexOf(targetId);
+    if (to === -1 || sourceId === targetId || !ids.includes(sourceId)) return [...ids];
+    const next = ids.filter(id => id !== sourceId);
+    next.splice(to, 0, sourceId);
+    return next;
+}
+
 /** How many item kinds each tab holds. @returns {Map<string, number>} */
 export function bankTabCounts(inv, itemIds = Object.keys(inv?.items || {})) {
     const counts = new Map((inv?.groupOrder || []).map(id => [id, 0]));

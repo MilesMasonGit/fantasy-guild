@@ -19,24 +19,7 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 
 Tiers follow the 20-level rule; woods and metals open at the ladder's amended levels.
 
-| Level | Name | Kind | Made with | Art |
-|---|---|---|---|---|
-| 1 | Oak Bow | Ranged weapon | Oak Wood, String | N |
-| 2 | Copper Arrow | ammo, Stab | Oak Wood, Feather, Copper Arrowheads | H |
-| 5 | Copper Crossbow | Ranged weapon | Copper Ingot, Oak Wood, String | N |
-| 20 | Fir Bow | Ranged weapon | Fir Wood, String | A |
-| 21 | Iron Arrow | ammo, Stab | Fir Wood, Feather, Iron Arrowheads | A |
-| 25 | Iron Crossbow | Ranged weapon | Iron Ingot, Fir Wood, String | A |
-| 31 | Silver Arrow | ammo, Stab | Fir Wood, Feather, Silver Arrowheads | A |
-| 40 | Maple Bow | Ranged weapon | Maple Wood, String | A |
-| 41 | Mythril Arrow | ammo, Stab | Maple Wood, Feather, Mythril Arrowheads | A |
-| 45 | Mythril Crossbow | Ranged weapon | Mythril Ingot, Maple Wood, String | A |
-| 60 | Mahogany Bow | Ranged weapon | Mahogany Wood, String, Silver Ingot | A |
-| 61 | Adamantine Arrow | ammo, Stab | Mahogany Wood, Feather, Adamantine Arrowheads | A |
-| 65 | Adamantine Crossbow | Ranged weapon | Adamantine Ingot, Mahogany Wood, String | A |
-| 80 | Ebony Bow | Ranged weapon | Ebony Wood, String, Gold Ingot | A |
-| 81 | Darkmetal Arrow | ammo, Stab | Ebony Wood, Feather, Darkmetal Arrowheads | A |
-| 85 | Darkmetal Crossbow | Ranged weapon | Darkmetal Ingot, Ebony Wood, String | A |
+*This list (16 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Fletching. The rulings and reasoning stay on this page.*
 
 **16 recipes; every other level stays open** for magical and poisoned arrows and whatever later skills add.
 

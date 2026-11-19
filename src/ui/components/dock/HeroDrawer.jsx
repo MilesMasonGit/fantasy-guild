@@ -72,6 +72,8 @@ export const HeroDrawer = ({
                 e.target.closest('[data-bank-tab]') ||
                 // Opening the Bank keeps the drawer: a hero is dressed from the Bank.
                 e.target.closest('#bank-bubble-target') ||
+                // A window over the drawer (Edit Hero) is worked in with the drawer still open.
+                e.target.closest('[data-gi-modal]') ||
                 // A tooltip's own box (never under the pointer, but a test may press it).
                 e.target.closest('[data-tooltip]')
             ) {
@@ -124,6 +126,8 @@ export const HeroDrawer = ({
         <motion.aside
             ref={asideRef}
             data-hero-panel="true"
+            // Drawn over the Bank and the mat: a target under it is none where it lies (`DndKit`).
+            data-dnd-cover
             data-hero-drawer-state={isOpen ? 'open' : 'closed'}
             className={cn(
                 // Edge to edge, under the nav as the Shop: its blocks pad for the nav (`.gi-drawer-pad-x`).

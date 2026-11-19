@@ -17,8 +17,10 @@ import { createOrderAim } from '../ui/components/board/orderAim.js';
 
 const TREE = { id: 't_tree', typeId: 'tree', x: 400, y: 300 };
 const VEIN = { id: 't_vein', typeId: 'vein', x: 800, y: 300 };
+/** A Token whose circle touches the mat's top edge. */
+const TOP_VEIN = { id: 't_top', typeId: 'vein', x: 1200, y: 20 };
 const RADIUS = 40;
-const tokens = [TREE, VEIN];
+const tokens = [TREE, VEIN, TOP_VEIN];
 const hitOf = (point) => tokens.find(t => Math.hypot(point.x - t.x, point.y - t.y) <= RADIUS) || null;
 const verdictOf = (heroId, instance) => (instance.id === TREE.id ? { snap: true, reason: null } : { snap: false, reason: 'Needs Pickaxe' });
 
@@ -161,6 +163,20 @@ describe('on the mat, while a hero is carried', () => {
         expect(bubble.querySelector('[data-speech-tone]').getAttribute('data-speech-tone')).toBe('cant');
         await moveTo(600, 320);
         expect(container.querySelector('[data-order-reason]')).toBeNull();
+    });
+
+    it('⭐ over a Token on the top edge of the mat, the red bubble is said below it, inside the mat', async () => {
+        const { container } = mountOnce();
+        await moveTo(800, 320);
+        const over = container.querySelector(`[data-order-reason="${VEIN.id}"]`).parentElement;
+        expect(translateOf(over).y).toBeLessThan(VEIN.y);
+        expect(over.querySelector('[data-speech-tail]')).not.toBeNull();
+        await moveTo(1200, 30);
+        const column = container.querySelector(`[data-order-reason="${TOP_VEIN.id}"]`).parentElement;
+        // Its bottom edge (the transform's point) lies below the Token; the marks stay next to it.
+        expect(translateOf(column).y).toBeGreaterThan(TOP_VEIN.y);
+        expect(column.className).toContain('flex-col-reverse');
+        expect(column.querySelector('[data-speech-tail]')).toBeNull();
     });
 
     it('the drag ending takes the bubble and the snap away, and nothing is left mounted', async () => {
