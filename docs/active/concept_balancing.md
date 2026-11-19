@@ -153,6 +153,10 @@ Three layers, each with one job:
 | 6 | Nudge, re-check, and prove a few milestones in real play before any number is final | director, owner |
 | 7 | Combat's power curve, its own segment | later |
 
+## The balancing view (owner, 2026-11-18)
+
+A page with the rules' dials, worked out over the planned catalogue: [concept_balancing_view.md](concept_balancing_view.md) (draft).
+
 ## Open questions
 
 - **Event nodes keep the cycle of the Token they copy** (owner feedback 2026-11-13): the Fallen Maple runs the Maple Tree's 26 s cycle and feels very slow beside the Copper Comet (3 s) and the Berry Thicket (5 s). Owner, 2026-11-18: leave it for the balancing pass, along with everything else.
