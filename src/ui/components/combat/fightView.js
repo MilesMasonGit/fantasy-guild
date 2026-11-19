@@ -281,10 +281,15 @@ export function enemySide(typeId, fight = null) {
     const profile = fight?.enemy || getEnemyProfile(typeId);
     if (!profile) return null;
     const live = !!fight;
-    const flat = live ? CombatFormulas.damageMultiplierOf(profile) : 1;
-    const hit = Math.max(0, (profile.hit ?? 1) * flat);
+    // Live, the hit is the one the engine swings for (`enemyBlow`) before the matchup and the
+    // hero's resistances: with the flat Damage and the Damage percentage rules lend it.
+    const multiplier = live ? CombatFormulas.damageMultiplierOf(profile) : 1;
+    const hit = Math.max(0, (live ? CombatFormulas.enemyBaseHit(profile) : (profile.hit ?? 1)) * multiplier);
     const known = hasFought(typeId);
     const hitTypes = enemyHitTypes(profile.moves);
+    const boosts = live
+        ? hitTypes.map(type => ({ type, n: CombatFormulas.typeDamageBoost(profile, type) })).filter(b => b.n)
+        : [];
     return {
         typeId,
         name: profile.name || tokenName(typeId),
@@ -294,6 +299,8 @@ export function enemySide(typeId, fight = null) {
             ? { cur: Math.max(0, fight.combat?.enemyHp?.current ?? 0), max: fight.combat?.enemyHp?.max ?? profile.hp }
             : { cur: profile.hp, max: profile.hp },
         hit,
+        /** The Type Damage rules lend it, one line per type it hits with, as the hero's side lists them. */
+        hitLines: boosts.map(b => t('fight.tip.typeBoost', { type: damageTypeName(b.type), n: `${b.n > 0 ? '+' : ''}${b.n}%` })),
         hitType: hitTypes[0] ?? PLAIN_ENEMY_HIT_TYPE,
         hitTypes,
         moves: movesView(profile.moves),

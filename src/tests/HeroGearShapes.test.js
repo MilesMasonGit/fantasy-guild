@@ -28,7 +28,7 @@ import { registerEffects } from '../config/registries/effectRegistry.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
-import { activeElixirsOf, statusesView } from '../ui/components/combat/fightView.js';
+import { activeElixirsOf, statusesView, enemySide } from '../ui/components/combat/fightView.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -279,5 +279,23 @@ describe('a status the gear moves the stack limit of', () => {
         );
         const caps = Object.fromEntries(statusesView(hero).map(v => [v.id, v.maxStacks]));
         expect(caps).toEqual({ fx_hg_venom: 2, fx_hg_swarm: 5 });
+    });
+});
+
+describe('an enemy a rule lends flat Damage and Type Damage', () => {
+    it('shows the hit the engine swings for, and the type boost under it', () => {
+        const aggregator = new ModifierAggregator('enemy');
+        aggregator.addModifier({ type: EFFECT_TYPES.DAMAGE, bucket: 'flat', value: 2, source: 'test' });
+        aggregator.addModifier({ type: EFFECT_TYPES.DAMAGE, bucket: 'percentage', value: 0.5, source: 'test' });
+        aggregator.addModifier({ type: EFFECT_TYPES.TYPE_DAMAGE, bucket: 'flat', value: 50, target: { category: 'physical' }, source: 'test' });
+        const fight = {
+            enemy: { id: 'fixture_enemy', name: 'Brute', hit: 4, hp: 10, level: 1, aggregator },
+            aggregator, effects: [], combat: { enemyHp: { current: 10, max: 10 } }
+        };
+
+        const side = enemySide('fixture_enemy', fight);
+
+        expect(side.hit).toBe(9);
+        expect(side.hitLines).toEqual(['Physical damage: +50%']);
     });
 });
