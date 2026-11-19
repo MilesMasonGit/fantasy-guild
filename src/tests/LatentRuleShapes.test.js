@@ -28,6 +28,8 @@ import { workConfigOf } from '../systems/board/StationRecipe.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import * as GameClock from '../systems/core/GameClock.js';
+import { processCombat } from '../systems/combat/CombatProcessor.js';
+import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -562,6 +564,36 @@ describe('a Token that does not stack with its own kind', () => {
         place(6, 'fixture_rs_lone_booster');
         TileModifiers.rebuildToken(target.id);
         expect(TileModifiers.resolveAxis(target.id, EFFECT_TYPES.YIELD, 10, 'forestry')).toBe(20);
+    });
+});
+
+describe('a swing faster than a second', () => {
+    /** Ten seconds of a fight in steps of `step` ms: how many swings each side made. */
+    function swingsIn(step) {
+        const hero = HeroManager.getHero('miner');
+        hero.hp = { current: 1000, max: 1000 };
+        // A quarter of a normal swing: 750 ms.
+        hero.aggregator.addModifier({ type: EFFECT_TYPES.SWING_TIME, bucket: 'percentage', value: -0.75, source: 'test' });
+        const enemy = { id: 'fixture_rs_gnat', name: 'Gnat', hp: 1e9, attackSpeed: 500, level: 1, hit: 0 };
+        const fight = {
+            id: 'fight_rs', instanceId: null, assignedHeroId: 'miner', enemy, drops: [], traits: [],
+            status: 'active', combat: { enemyHp: { current: 1e9, max: 1e9 }, enemyTickProgress: 0, heroTickProcesses: {} }
+        };
+        const seen = { hero: 0, enemy: 0 };
+        const offs = [
+            EventBus.subscribe(ENGINE_EVENTS.COMBAT_HERO_ATTACK, () => { seen.hero++; }),
+            EventBus.subscribe(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, () => { seen.enemy++; })
+        ];
+        for (let t = 0; t < 10000; t += step) processCombat(fight, { enemy }, step);
+        offs.forEach(off => off());
+        return seen;
+    }
+
+    it('swings as often in one-second steps as in the live tick', () => {
+        const live = swingsIn(100);
+        expect(live).toEqual({ hero: 13, enemy: 20 });
+        GameState.state.heroes = [makeHero('miner')];
+        expect(swingsIn(1000)).toEqual(live);
     });
 });
 

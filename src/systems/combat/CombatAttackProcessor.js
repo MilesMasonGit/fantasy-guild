@@ -197,7 +197,8 @@ export function processEnemyAttack(fight, enemy, assignedHeroIds, deltaTime) {
     fight.combat.enemyTickProgress += deltaTime;
     const enemyAttackSpeed = CombatFormulas.enemyAttackSpeedMs(enemy);
 
-    if (fight.combat.enemyTickProgress >= enemyAttackSpeed) {
+    const repeats = CombatFormulas.swingRepeatsInStep(enemyAttackSpeed);
+    while (fight.combat.enemyTickProgress >= enemyAttackSpeed) {
         const targetHeroId = assignedHeroIds[Math.floor(Math.random() * assignedHeroIds.length)];
         const targetHero = HeroManager.getHero(targetHeroId);
 
@@ -205,5 +206,6 @@ export function processEnemyAttack(fight, enemy, assignedHeroIds, deltaTime) {
 
         // Carry the overshoot instead of resetting.
         fight.combat.enemyTickProgress -= enemyAttackSpeed;
+        if (!repeats || isDown(targetHero) || fight.combat.enemyHp.current <= 0) break;
     }
 }
