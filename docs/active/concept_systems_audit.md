@@ -80,24 +80,16 @@ do the same kind of thing in more than one way?** Likely topics to check:
 The result is a short overlap map plus a proposed order for the single-system
 sessions, which the owner approves as multiple choice.
 
-## Candidate systems
+## The systems
 
-Taken from the GDD's sections; the sweep may merge or split them.
-
-- Tokens: spawners, transforms, Foundations, reach, demolition
-- Fishing
-- Farming
-- Events
-- Heroes: health, food, defeat
-- Skills and milestone perks
-- Equipment
-- Orders (how heroes get work)
-- Economy and items
-- Combat: enemies, encounters, the fight, status effects, boss moves, the combat
-  screen
-- Rules and effects (the statement grammar)
-- Guild Hall and progression
-- Time, saving and time away
+The list of what counts as one system lives in
+[audit/SYSTEMS.md](audit/SYSTEMS.md) (owner, 2026-11-18): 36 systems in seven
+groups plus the sweep's shared topics, each with its GDD section and the code
+to start from. The owner's rules for it: **one card per skill** that has
+content; **combat split into five systems**; quests and Limes, the world map
+and Regions, time away and saving, and screens and feedback are **in**; the
+placeholder specialist skills are out until their rework. The sweep may
+propose changes to the list; the owner approves them.
 
 ## Related work (read, don't redo)
 

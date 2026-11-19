@@ -21,6 +21,8 @@ explain it so the owner can judge it, and the owner makes every design call.
   (`git -C .claude/worktrees/au rebase main`); a merge commit can trip the
   data/code pre-commit hook.
 - Read, in this order: `docs/active/audit/STATUS.md`, the concept doc,
+  `docs/active/audit/SYSTEMS.md` (what counts as one system: its row says
+  what your session covers, its GDD section and the code to start from),
   `docs/reference/ARCHITECTURE.md` (the map of the code; the code wins where
   they disagree), the GDD section for your system, and the related
   `docs/active/review/` findings and open tickets so you don't re-file them.
@@ -40,11 +42,17 @@ explain it so the owner can judge it, and the owner makes every design call.
   game do the same kind of thing in more than one way? Start from the concept
   doc's likely topics (effects, buffs and statuses; things on a clock; things
   that appear and disappear; how systems tell the player what they do).
+  These are part 1 of `SYSTEMS.md`.
   Fan out read-only subagents, one per topic. Write `S0_sweep.md`: an overlap
   map in plain words, then proposed **groups** of systems (systems whose
-  fixes should land together) and an order. The owner approves the groups
-  and the order as multiple choice, and STATUS records them.
-- **A system session** (one system per session, in the approved order).
+  fixes should land together), an order, and any changes to `SYSTEMS.md`
+  (merge, split or add a row). The owner approves them as multiple choice;
+  STATUS records the groups and order, and `SYSTEMS.md` gets the dated
+  changes.
+- **A system session** (one row of `SYSTEMS.md` per session, in the approved
+  order; the card is named by the row's number, e.g. `A8_fishing.md`). Stay
+  inside the row; something you notice in another system becomes a line in
+  that system's row of STATUS for its own session.
 
 ## One system session
 

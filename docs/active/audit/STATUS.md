@@ -18,8 +18,8 @@ line to "Open (tag `audit-build`, <hash>, <date>)".
 |---|---|---|---|---|---|---|
 | S0 | Cross-system sweep | — | waiting on the gate | | | |
 
-The system sessions (A1 onward) and their groups are added once the owner
-approves S0's proposal.
+The system sessions (A1 to A36, listed in [SYSTEMS.md](SYSTEMS.md)) and their
+groups are added once the owner approves S0's proposal.
 
 ## Groups
 
