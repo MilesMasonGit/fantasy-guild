@@ -143,21 +143,16 @@ describe("the drag bench's free spot on S2", () => {
     /**
      * The flag kind drags the one flag it can press: every other has faded once its hero arrived.
      * Let go under the hero bar's level-up bubbles (the overlays pass keeps them up, over the mat's
-     * bottom edge) or under a hero, that flag could not be pressed either, and every later flag
-     * drag of the pass was skipped (48 of 50 on 2026-11-18, on main's build and on U1's alike).
+     * bottom edge), that flag could not be pressed either, and every later flag drag of the pass
+     * was skipped (48 of 50 on 2026-11-18, on main's build and on U1's alike).
      */
-    it('leaves a planted flag where it can be pressed: never under the hero bar bubbles or a hero', () => {
+    it('leaves a planted flag where it can be pressed: never under the hero bar bubbles', () => {
         const bubbles = document.createElement('div');
         bubbles.setAttribute('data-bar-bubbles', 'hero_bench_0');
         document.body.appendChild(bubbles);
-        const hero = document.createElement('button');
-        hero.setAttribute('data-board-hero', 'hero_bench_1');
-        mat.appendChild(hero);
-        // The bubbles stand over the mat's bottom fifth; a hero stands mid-mat, 120 px across.
+        // The bubbles stand over the mat's bottom fifth.
         const bandTop = rect.top + rect.height * 0.8;
-        const heroAt = kit.matToScreen({ x: matW() * 0.5, y: matH() * 0.5 });
-        const underHero = (x, y) => Math.abs(x - heroAt.x) <= 60 && Math.abs(y - heroAt.y) <= 60;
-        document.elementFromPoint = (x, y) => (y >= bandTop ? bubbles : underHero(x, y) ? hero : surface);
+        document.elementFromPoint = (x, y) => (y >= bandTop ? bubbles : surface);
         const random = vi.spyOn(Math, 'random').mockImplementation(seeded(612));
         const covered = [];
         try {
@@ -165,17 +160,32 @@ describe("the drag bench's free spot on S2", () => {
                 const spot = kit.freeSpot();
                 expect(spot).toBeTruthy();
                 // Where its flag is drawn: a 24 px box up and right of the spot.
-                const { x, y } = spot.screen;
-                for (const [dx, dy] of [[0, 0], [-20, -22], [20, -22], [-20, 6], [20, 6]]) {
-                    if (y + dy >= bandTop || underHero(x + dx, y + dy)) { covered.push(spot.screen); break; }
-                }
+                if (spot.screen.y + 6 >= bandTop) covered.push(spot.screen);
             }
         } finally {
             random.mockRestore();
             document.elementFromPoint = bareEverywhere;
             bubbles.remove();
-            hero.remove();
         }
         expect(covered).toEqual([]);
+    });
+
+    it('keeps a spot a hero stands on: what is on the mat is the press rules\' to judge', () => {
+        const random = vi.spyOn(Math, 'random').mockImplementation(seeded(613));
+        const open = kit.freeSpot();
+        random.mockRestore();
+        const hero = document.createElement('button');
+        hero.setAttribute('data-board-hero', 'hero_bench_1');
+        mat.appendChild(hero);
+        const underHero = (x, y) => Math.abs(x - open.screen.x) <= 60 && Math.abs(y - open.screen.y) <= 60;
+        document.elementFromPoint = (x, y) => (underHero(x, y) ? hero : surface);
+        const again = vi.spyOn(Math, 'random').mockImplementation(seeded(613));
+        try {
+            expect(kit.freeSpot().screen).toEqual(open.screen);
+        } finally {
+            again.mockRestore();
+            document.elementFromPoint = bareEverywhere;
+            hero.remove();
+        }
     });
 });
