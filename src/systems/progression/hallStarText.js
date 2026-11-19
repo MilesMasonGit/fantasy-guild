@@ -12,6 +12,8 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { PASSIVE_LAP_BASE_MS } from '../../config/registries/tokenConstants.js';
 import { ModifierAggregator } from '../effects/ModifierAggregator.js';
 import { passiveLapMs } from '../board/workTime.js';
+import { getGlobalAggregator } from '../effects/GuildModifiers.js';
+import { hallRulesOf, hallSourceOf } from './hallModifiers.js';
 import { rankOf } from '../../config/hallStars.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { getSkill, COMBAT_SKILL_IDS } from '../../config/registries/skillRegistry.js';
@@ -70,10 +72,26 @@ export function lapClock(ms) {
     return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
-/** The lap one Lap Time rule gives on its own, from the base lap: what a lap star's rank says. */
+/** The lap one Lap Time rule gives on its own, from the base lap. */
 export function lapOfRule(statement) {
     const agg = new ModifierAggregator('hall:lap');
     agg.addModifier({ ...statement.payload, value: Number(statement.payload?.value) || 0, source: 'lap' });
+    return passiveLapMs(agg.resolveAxis(EFFECT_TYPES.PASSIVE_LAP, PASSIVE_LAP_BASE_MS));
+}
+
+/**
+ * The lap with `star` at `rank`, every other Lap Time rule the guild holds (another star, a
+ * Region's) still in force: the rules sum, so a rank's lap depends on the rest.
+ */
+function lapWithRank(star, rank) {
+    const agg = new ModifierAggregator('hall:lap');
+    for (const [source, modifiers] of getGlobalAggregator().modifiers) {
+        if (hallSourceOf(source)?.starId === star.id) continue;
+        for (const m of modifiers) if (m.type === EFFECT_TYPES.PASSIVE_LAP) agg.addModifier(m);
+    }
+    for (const m of hallRulesOf([star], { [star.id]: rank }).modifiers) {
+        if (m.type === EFFECT_TYPES.PASSIVE_LAP) agg.addModifier(m);
+    }
     return passiveLapMs(agg.resolveAxis(EFFECT_TYPES.PASSIVE_LAP, PASSIVE_LAP_BASE_MS));
 }
 
@@ -171,13 +189,13 @@ function subjectsText(subjects) {
  * ("work faster"), `amount` the number with its words ("6% faster"). Null for a rule that cannot be
  * said that way.
  */
-function ruleEffect(statement, names) {
+function ruleEffect(statement, names, lapMs = null) {
     const payload = statement?.payload || {};
     if (payload.type === EFFECT_TYPES.PASSIVE_LAP) {
         // The Guild Hall is the subject, and the amount is the lap itself, not its percentage.
         return {
             phrase: 'lap',
-            amount: `outputs every ${lapClock(lapOfRule(statement))}`,
+            amount: `outputs every ${lapClock(lapMs ?? lapOfRule(statement))}`,
             sentence: 'The Guild Hall\'s outputs arrive more often: its lap is shorter.'
         };
     }
@@ -226,10 +244,10 @@ function ruleEffect(statement, names) {
 }
 
 /** A rank's rules grouped by what they do, each with the subjects it reaches, in the rules' order. */
-function effectGroups(record, names) {
+function effectGroups(record, names, lapMs = null) {
     const groups = [];
     for (const statement of record?.rules || []) {
-        const effect = ruleEffect(statement, names);
+        const effect = ruleEffect(statement, names, lapMs);
         if (!effect) continue;
         const subject = ruleSubject(statement, names);
         const group = groups.find(g => g.phrase === effect.phrase && g.amount === effect.amount);
@@ -272,7 +290,8 @@ export function starAmount(def, rank, names = hallNames()) {
     }
     const record = rankOf(def.star, r);
     if (!record) return null;
-    const amounts = [...new Set(effectGroups(record, names).map(g => g.amount))];
+    const lapMs = record.rules.some(s => s?.payload?.type === EFFECT_TYPES.PASSIVE_LAP) ? lapWithRank(def.star, r) : null;
+    const amounts = [...new Set(effectGroups(record, names, lapMs).map(g => g.amount))];
     for (const line of record.lines) amounts.push(`${line.quantity} ${names.item(line.itemId)}`);
     if (def.star.opensRing) amounts.push(RING_STAR_TEXT.amount);
     return amounts.join(', ') || null;

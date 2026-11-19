@@ -29,7 +29,8 @@ import { DOCK_STRIP_PX, dockArtPx, dockLabelOverhangPx } from '../dock/dockHeroV
  * close each other (`useOneBottomDrawer`). Opened and closed by the nav's Shop bubble
  * (`ui.nav.toggle('shop')`) or its own Close.
  * - **A row of cards**, each the same size: the name (a dropdown for a group), the Token large,
- * its skill icons, and the price as up to four pills under them. Arrow bars left and right, no
+ * its skill icons, and the price as up to four pills under them (a longer price: its short lines
+ * first, the last pill counting the rest). Arrow bars left and right, no
  * scroll bar. Across the whole screen, the cards from the nav's side.
  * - **Drag a card onto the mat to buy.** The card's payload is a `TOKEN` with `from.shop`;
  * `dropOnMat` hands it to `Shop.buyAt`, which pays on drop and places the Token at the drop
@@ -371,6 +372,17 @@ const SHOP_SCROLL_STEP_PX = (SHOP_CARD_W + 8) * 2;
 const MAX_PRICE_LINES = 4;
 
 /**
+ * The price as the card shows it in its four cells. A longer price shows its short lines first and
+ * gives the last cell to a count of the lines left out, so a card that cannot be bought always shows
+ * why; four lines or fewer show as authored.
+ */
+function shownPrice(price) {
+    if (price.length <= MAX_PRICE_LINES) return { lines: price, hidden: [] };
+    const ordered = [...price.filter(l => !l.enough), ...price.filter(l => l.enough)];
+    return { lines: ordered.slice(0, MAX_PRICE_LINES - 1), hidden: ordered.slice(MAX_PRICE_LINES - 1) };
+}
+
+/**
  * One Token for sale, a fixed-size card. The whole card is the drag handle. A card that cannot be
  * bought dims its Token, shows its short counts in red, and does not start a drag. A group card
  * buys the option picked in its dropdown.
@@ -465,9 +477,7 @@ const ShopCardBody = memo(function ShopCardBody({ item, chosen, ok, onPick, held
             {capFull ? (
                 <p data-shop-missing className="ui-text-small font-semibold text-gi-danger">{chosen.affordability.reason}</p>
             ) : chosen.price.length > 0 && (
-                <div data-shop-price className="grid grid-cols-2 gap-1 content-start min-h-0">
-                    {chosen.price.slice(0, MAX_PRICE_LINES).map(p => <PricePill key={p.itemId} line={p} />)}
-                </div>
+                <PriceGrid price={chosen.price} />
             )}
             {limes && (
                 // Beside the card's Token, outside its tooltip; a press on Limes does not pick up the card.
@@ -478,6 +488,38 @@ const ShopCardBody = memo(function ShopCardBody({ item, chosen, ok, onPick, held
         </div>
     );
 });
+
+const PriceGrid = ({ price }) => {
+    const { lines, hidden } = shownPrice(price);
+    return (
+        <div data-shop-price className="grid grid-cols-2 gap-1 content-start min-h-0">
+            {lines.map(p => <PricePill key={p.itemId} line={p} />)}
+            {hidden.length > 0 && <MorePill lines={hidden} />}
+        </div>
+    );
+};
+
+/** The lines a long price leaves out, as "+N", red when the Bank is short of any; each named on hover. */
+const MorePill = ({ lines }) => {
+    const short = lines.some(l => !l.enough);
+    return (
+        <Tooltip
+            title={t('shop.more', { count: lines.length })}
+            lines={lines.map(l => `${l.name} ${formatCompact(l.have, 1)}/${formatCompact(l.need, 1)}`)}
+        >
+            <span
+                data-shop-more
+                data-short={short ? 'true' : undefined}
+                className="min-w-0 inline-flex items-center tabular-nums"
+                style={{ height: ICON_PX }}
+            >
+                <span className={cn('ui-text-small font-bold whitespace-nowrap', short ? 'text-gi-danger' : 'text-gi-text')}>
+                    +{lines.length}
+                </span>
+            </span>
+        </Tooltip>
+    );
+};
 
 /** One price line as a pill (UI_STYLE "Item references"): the item and have / need in the shorthand counts, red when short; the name on hover. */
 const PricePill = ({ line }) => (
