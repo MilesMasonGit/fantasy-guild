@@ -135,7 +135,7 @@ Order is pinned by `src/tests/TickHandlerOrder.test.js`.
 | Pri | Handler | What it does |
 |---|---|---|
 | 10 | `time_tracking` | `gameTimeMs += delta`, `meta.totalPlaytime += delta`, and the active Region's `playtimeMs` (`Atlas.addPlaytime`), so the catch-up counts time away to the place the guild was on (`EngineBootstrap.js:166-174`). |
-| 20 | `live_effects` | `LiveEffects.tick`: accumulates delta and fires statuses for all bearers once every 3 s (`src/systems/effects/LiveEffects.js:549-555`, `STATUS_TICK_INTERVAL_MS` at `src/config/FormulaRegistry.js:174`). |
+| 20 | `live_effects` | `LiveEffects.tick`: accumulates delta and fires statuses for all bearers once every 3 s, spending 3 s of each timed effect's game time left (`remainingMs`; for-the-fight and for-the-cycle instances carry `expiresAt: MAX_SAFE_INTEGER` and end with their fight or cycle) (`src/systems/effects/LiveEffects.js:549-555`, `STATUS_TICK_INTERVAL_MS` at `src/config/FormulaRegistry.js:174`). |
 | 30 | `regen_system` | Hero regeneration (`src/systems/hero/RegenSystem.js:23`). |
 | 40 | `board_runner` | `BoardRunner.tick` (`src/systems/board/BoardRunner.js:469`), below. |
 | 50 | `quest_manager` | Bounty clock and quest Tokens (`src/systems/quests/QuestManager.js:263-265`). Must run after the board (comment at `EngineBootstrap.js:187-198`). |
@@ -275,7 +275,7 @@ point** (`board.tokens`, `:56`), heroes' orders in `board.flags` (`:63`), floor 
    the data no longer defines, renamed to one it does, is rewritten everywhere a save holds it.
 3. `validateSaveData` (`:359` → `StateSchema.js:345-399`).
 4. `loadSavedState` (`:366` → `src/systems/core/LoadedState.js`): `GameState.initFromSave` only
-   stores the save; the helper then rehydrates each hero and their equipment modifiers, assigns
+   stores the save; the helper then rehydrates each hero, their equipment modifiers and their carried effects' fight numbers (`LiveEffects.syncAggregator`), assigns
    flag colours and back-fills `quests`, by static imports.
 5. Bank normalised, shared gear copies reconciled, rate trackers cleared, autosave started, mat
    fitted to its current size (`SaveManager.js:369-382`), then `GAME_LOADED` (`:385`).
@@ -321,7 +321,7 @@ events while it plays (`CatchUp.js:29-46`).
 
 | Derived at load or at runtime, never trusted from the save | Where |
 |---|---|
-| Hero `aggregator`, `className`, `traitName`, `level`, `_rev` (stripped on save) | `GameState.js:14`, `HeroRehydration.js:46-49` |
+| Hero `aggregator`, `className`, `traitName`, `level`, `_rev` (stripped on save) | `GameState.js:14`, `HeroRehydration.js:46-49`; the aggregator's gear and carried effects in `LoadedState.js` |
 | Hero `hp.max`, from the best combat skill on every load | `updateHeroMaxHp`, `HeroRehydration.js` |
 | Roster limit, `inventory.maxSlots` and `inventory.maxTabs`, from upgrade ranks | `GuildUpgradeManager.recompute` on `GAME_LOADED` (`src/systems/progression/GuildUpgradeManager.js:25,138`) |
 | the lesson step Limes is on, from `guide.progress.done` | `LimesLessons.currentStep` |

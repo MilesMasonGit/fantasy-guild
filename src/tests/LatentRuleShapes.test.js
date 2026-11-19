@@ -485,19 +485,17 @@ describe('an effect carried both for the fight and for a while', () => {
     afterEach(() => GameClock.end());
 
     it('keeps the rest of its while when the fight ends', () => {
-        GameClock.begin(1_000_000);
+        LiveEffects.resetClock();
         LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_mark', durationMs: 60000 });
         LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_mark', forFight: true });
-        GameClock.advance(10000);
+        for (let i = 0; i < 3; i++) LiveEffects.tick(3000);     // 9 s of the fight
         LiveEffects.endFightEffects(hero());
         expect(carried()).toEqual(['fixture_rs_mark']);
 
         // It then runs out when its while does.
-        GameClock.advance(49000);
-        LiveEffects.tick(3000);
+        for (let i = 0; i < 16; i++) LiveEffects.tick(3000);    // 57 s
         expect(carried()).toEqual(['fixture_rs_mark']);
-        GameClock.advance(2000);
-        LiveEffects.tick(3000);
+        LiveEffects.tick(3000);                                 // 60 s
         expect(carried()).toEqual([]);
     });
 
@@ -511,9 +509,10 @@ describe('an effect carried both for the fight and for a while', () => {
 
     it('ends with the fight when its while is already over', () => {
         GameClock.begin(1_000_000);
+        LiveEffects.resetClock();
         LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_mark', durationMs: 5000 });
         LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_mark', forFight: true });
-        GameClock.advance(10000);
+        for (let i = 0; i < 3; i++) LiveEffects.tick(3000);     // 9 s of the fight
         LiveEffects.endFightEffects(hero());
         expect(carried()).toEqual([]);
     });

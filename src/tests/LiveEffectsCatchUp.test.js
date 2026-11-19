@@ -15,8 +15,8 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * A live effect's expiry is a moment on the game clock: an effect with a minute left when the game
- * closed lasts a minute into the catch-up, not zero seconds (the wall clock says a day has passed).
+ * A live effect's time left is game time: an effect with a minute left when the game closed lasts
+ * a minute into the catch-up, not zero seconds (the wall clock says a day has passed).
  */
 
 const DAY = 24 * 3_600_000;
@@ -50,7 +50,7 @@ beforeEach(() => {
     registerEffects({ fixture_timer: { id: 'fixture_timer', name: 'Timer', statements: [] } });
     // Carried when the game was saved, with 60 s left.
     HeroManager.getHero('hero_1').effects = [
-        { effectId: 'fixture_timer', scale: 1, expiresAt: SAVED_AT + 60_000, sourceId: null }
+        { effectId: 'fixture_timer', scale: 1, remainingMs: 60_000, sourceId: null }
     ];
 });
 
@@ -73,7 +73,7 @@ describe('a live effect during a catch-up', () => {
         HeroManager.getHero('hero_1').effects = [];
         GameClock.begin(SAVED_AT);
         LiveEffects.applyToHero('hero_1', { effectId: 'fixture_timer', durationMs: 30_000 });
-        expect(HeroManager.getHero('hero_1').effects[0].expiresAt).toBe(SAVED_AT + 30_000);
+        expect(HeroManager.getHero('hero_1').effects[0].remainingMs).toBe(30_000);
 
         for (let i = 0; i < 25; i++) step(1000);
         expect(carried()).toEqual(['fixture_timer']);
