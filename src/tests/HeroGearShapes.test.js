@@ -12,6 +12,7 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { startNewsCollector } from '../systems/notifications/catchUpNews.js';
 import * as Banners from '../systems/notifications/banners.js';
 import { wireNotifications, unwireNotifications } from '../systems/notifications/routing.js';
+import { toolFindings } from '../systems/core/toolRule.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -151,5 +152,21 @@ describe('an item with a stack limit, or marked not stackable', () => {
             expect(said.bankFull).toEqual(['fixture_hg_pie']);
             expect(said.stackFull).toEqual(['fixture_hg_capped']);
         });
+    });
+});
+
+describe('a gathering tool with a level requirement', () => {
+    // The tool gate never asks for a level, so the content audit says so instead.
+    const pick = { id: 'fx_req_pick', name: 'Steel Pickaxe', equipSlot: 'hand', tool: { kind: 'pickaxe', tier: 2 } };
+
+    it('is named by the content audit, whether the level is its own or in its requirements list', () => {
+        const items = {
+            own: { ...pick, id: 'own', skillRequired: 'mining', levelRequired: 15 },
+            listed: { ...pick, id: 'listed', requirements: [{ skill: 'mining', level: 10 }] },
+            plain: { ...pick, id: 'plain' }
+        };
+        const found = toolFindings({ items }).filter(f => /level/.test(f.message));
+        expect(found.map(f => f.entityId).sort()).toEqual(['listed', 'own']);
+        expect(found.find(f => f.entityId === 'own').message).toMatch(/Mining 15/);
     });
 });

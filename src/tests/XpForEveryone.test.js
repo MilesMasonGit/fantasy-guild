@@ -21,6 +21,8 @@ import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { KEYWORD, paletteForKeyword } from '../systems/effects/statements.js';
 import { getPaletteEntry } from '../config/registries/modifierPalette.js';
 import { registerHallSky } from '../config/registries/hallStarRegistry.js';
+import { registerEffects } from '../config/registries/effectRegistry.js';
+import { registerSkillPerks } from '../config/registries/perkRegistry.js';
 import { HALL_NODE, authoredStars, getUpgradeDef } from '../config/guildUpgrades.js';
 import { HERO_SKILL_IDS } from '../config/registries/skillRegistry.js';
 import { levelFromXp, xpForLevel } from '../utils/XPCurve.js';
@@ -244,6 +246,21 @@ describe('a hero who joins later arrives with every rank bought', () => {
         // Arriving is not levelling up: the recruit's own banner says they came.
         expect(leveled).toEqual([]);
         expect(sounds).toEqual([]);
+    });
+
+    it('a recruit the gift brings to the level of a fight perk has its combat numbers at once', () => {
+        registerEffects({
+            fx_xfe_arm: { id: 'fx_xfe_arm', name: 'Strong Arm', statements: [{ ...rule(EFFECT_TYPES.DAMAGE, 2), to: { mode: 'all', value: '' } }] }
+        });
+        registerSkillPerks({ melee: { perks: [{ level: levelFromXp(TOTALS[1]), effectId: 'fx_xfe_arm', scale: 1 }] } });
+        try {
+            expect(GuildUpgradeManager.purchaseRanks('xp_all', 2).success).toBe(true);
+            expect(GuildUpgradeManager.purchase('roster_size').success).toBe(true);
+            const recruit = GameState.heroes[GameState.heroes.length - 1];
+            expect(recruit.aggregator.query(EFFECT_TYPES.DAMAGE)).toBe(2);
+        } finally {
+            registerSkillPerks({ melee: { perks: [] } });
+        }
     });
 
     it('any hero added to the roster arrives with it, and a recruit before any rank with nothing', () => {

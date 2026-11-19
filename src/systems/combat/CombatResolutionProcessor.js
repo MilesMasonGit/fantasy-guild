@@ -42,7 +42,8 @@ export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
         const h = HeroManager.getHero(id);
         if (h) {
             const style = CombatFormulas.getHeroCombatStyle(h);
-            SkillSystem.addXP(id, style, killXp(fight, award, style));
+            // Floored at 0 as a work cycle's is: a flat cut larger than the award takes nothing away.
+            SkillSystem.addXP(id, style, Math.max(0, killXp(fight, award, style)));
         }
     });
 

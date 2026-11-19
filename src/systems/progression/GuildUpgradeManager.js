@@ -10,6 +10,7 @@ import {
 import '../../config/registries/hallStarRegistry.js';
 import { createHero } from '../hero/logic/HeroLifecycle.js';
 import { giveXpInEverySkill } from '../hero/SkillSystem.js';
+import { recalculateEquipmentModifiers } from '../equipment/EquipmentManager.js';
 import * as HallRules from './HallRules.js';
 import { xpForEveryoneOf } from './hallModifiers.js';
 import { logger } from '../../utils/Logger.js';
@@ -164,8 +165,14 @@ export const GuildUpgradeManager = {
         // recruit below, who arrives with the whole instead (`HeroLifecycle`).
         this._giveXpForEveryone(upgradeId, xpForEveryoneOf(authoredStars(), ranks) - xpBefore);
 
-        // Each Roster Size rank immediately recruits a new hero.
-        if (upgradeId === 'roster_size') for (let i = 0; i < n; i++) createHero();
+        // Each Roster Size rank immediately recruits a new hero. The Hall's XP can bring a recruit
+        // to a fight perk's level, and the combat numbers a perk lends are registered, not read live.
+        if (upgradeId === 'roster_size') {
+            for (let i = 0; i < n; i++) {
+                const hero = createHero();
+                if (hero) recalculateEquipmentModifiers(hero);
+            }
+        }
 
         EventBus.publish(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, { upgradeId, rank: newRank, fromRank: rank, count: n });
         logger.info('GuildUpgradeManager', `Purchased ${upgradeId} rank ${n > 1 ? `${rank + 1}-` : ''}${newRank} for ${price.map(p => `${p.quantity}x ${p.itemId}`).join(', ') || 'free'}`);

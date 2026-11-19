@@ -7,6 +7,8 @@ import { getProvidedTagsWithTiers } from '../effects/statements.js';
 import { isConsumableCategory } from '../../config/registries/equipmentCategories.js';
 import { catchPoolsOf } from '../../config/registries/catchPools.js';
 import { breakChanceProblem } from '../../config/registries/itemBreak.js';
+import { gearRequirements } from '../../config/registries/weaponStyles.js';
+import { getSkill } from '../../config/registries/skillRegistry.js';
 
 /**
  * Tools are items a hero holds in one hand; a gathering Token names the kind and tier it needs.
@@ -39,6 +41,12 @@ export function toolFindings({ items = {}, tokens = {}, recipes = [] } = {}) {
             push('Item', item.id || id, item, `is a ${toolKindLabel(tool.kind)} but its Equip Category is not Hand, so no hero can hold it as a tool`);
         } else if (item.hands === 2) {
             push('Item', item.id || id, item, 'is a tool, and a tool takes one hand: its Two hands setting is ignored');
+        }
+        // ⚠️ The tool gate (`HeroTools.js`) never asks for a level: a tool held below one still works.
+        const levels = gearRequirements(item);
+        if (levels.length) {
+            const named = levels.map(r => `${getSkill(r.skill)?.name || r.skill} ${r.level}`).join(', ');
+            push('Item', item.id || id, item, `is a tool that asks for ${named}, but tools ignore level requirements, so any hero can use it: remove the requirement`);
         }
     }
 
