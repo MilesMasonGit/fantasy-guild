@@ -46,7 +46,7 @@ export function toolFindings({ items = {}, tokens = {}, recipes = [] } = {}) {
         const levels = gearRequirements(item);
         if (levels.length) {
             const named = levels.map(r => `${getSkill(r.skill)?.name || r.skill} ${r.level}`).join(', ');
-            push('Item', item.id || id, item, `is a tool that asks for ${named}, but tools ignore level requirements, so any hero can use it: remove the requirement`);
+            push('Item', item.id || id, item, `is a tool that asks for ${named}, but a tool held below its level still works, unlike other gear, so the level only stops it being handed over: remove the requirement`);
         }
     }
 

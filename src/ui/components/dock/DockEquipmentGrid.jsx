@@ -16,7 +16,19 @@ import { itemTintStyle } from '../base/itemTint.js';
 import { EffectChip } from '../board/EffectBadges.jsx';
 import { onPoll } from '../board/frameClock.js';
 import { carriedPreservation } from '../../../systems/board/EffectBreakdown.js';
+import { meetsGearRequirements } from '../../../config/registries/weaponStyles.js';
+import { toolOf } from '../../../config/registries/toolKinds.js';
+import { needsLine } from '../drawer/ItemTip.jsx';
 import { t } from '../../../i18n/index.js';
+
+/**
+ * Whether a worn item lends nothing for want of a level it asks for (a requirement authored after it
+ * was put on). ⚠️ Not a tool: the tool gate never asks for a level, so a tool still works.
+ */
+function wornBelowLevel(itemId, hero) {
+    const item = itemId ? getItem(itemId) : null;
+    return !!item && !toolOf(item) && !meetsGearRequirements(item, hero);
+}
 
 /** How often a slot's Preservation badge looks again: a building placed or a hero arriving changes it. */
 const BADGE_REFRESH_MS = 1000;
@@ -91,7 +103,8 @@ export const DockEquipmentGrid = ({ heroId }) => {
             const grid = SLOT_ORDER.map(slot => hero.equipment?.[slot] || null);
             const ids = grid.map(id => id || '').join('|');
             const qty = grid.map(id => (id ? (state.inventory?.items?.[id]?.quantity ?? 0) : '')).join('|');
-            return `${ids}::${qty}`;
+            const unmet = grid.map(id => (wornBelowLevel(id, hero) ? '1' : '')).join('|');
+            return `${ids}::${qty}::${unmet}`;
         },
         [ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, ENGINE_EVENTS.INVENTORY_UPDATED, ENGINE_EVENTS.GAME_RESET],
         null,
@@ -99,9 +112,10 @@ export const DockEquipmentGrid = ({ heroId }) => {
     );
 
     if (gridState === null) return null;
-    const [idsPart, qtyPart] = gridState.split('::');
+    const [idsPart, qtyPart, unmetPart] = gridState.split('::');
     const itemIds = idsPart.split('|').map(id => (id === '' ? null : id));
     const quantities = qtyPart.split('|').map(q => (q === '' ? null : Number(q)));
+    const unmet = unmetPart.split('|').map(u => u === '1');
 
     return (
         <div className="grid grid-cols-[repeat(3,minmax(0,70px))] gap-1">
@@ -112,6 +126,7 @@ export const DockEquipmentGrid = ({ heroId }) => {
                     slot={slot}
                     itemId={itemIds[i]}
                     quantity={quantities[i]}
+                    unmet={unmet[i]}
                     shineKey={shine?.slot === slot ? shine.n : null}
                 />
             ))}
@@ -120,7 +135,7 @@ export const DockEquipmentGrid = ({ heroId }) => {
 };
 
 /** One slot: right-click to unequip, drag to another slot, another hero or the Bank, drop to equip. */
-const EquipSlotCell = ({ heroId, slot, itemId, quantity, shineKey = null }) => {
+const EquipSlotCell = ({ heroId, slot, itemId, quantity, unmet = false, shineKey = null }) => {
     const drag = useEntityDrag({
         id: `dock-equip-${heroId}-${slot}`,
         kind: DRAG_KIND.ITEM,
@@ -146,6 +161,7 @@ const EquipSlotCell = ({ heroId, slot, itemId, quantity, shineKey = null }) => {
             slot={slot}
             itemId={itemId}
             quantity={quantity}
+            unmet={unmet}
             shineKey={shineKey}
             cue={drop.valid}
             held={drag.isDragging}
@@ -158,7 +174,7 @@ const EquipSlotCell = ({ heroId, slot, itemId, quantity, shineKey = null }) => {
 
 // ⚠️ Apart from its drag hooks on purpose: dnd-kit redraws their holder at every drag start, end
 // and change of target; the slot is memoised on what it draws.
-const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quantity, shineKey, cue, held, nodeRef, handleProps, droppableProps }) {
+const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quantity, unmet, shineKey, cue, held, nodeRef, handleProps, droppableProps }) {
     const item = itemId ? getItem(itemId) : null;
     // ⚠️ An id with no item was deleted in the CMS after the save was written. The slot names it
     // rather than looking empty, since it still takes a slot until the player clears it.
@@ -179,7 +195,8 @@ const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quanti
                     unequipOrAnnounce(EquipmentManager, heroId, slot);
                 }
             }}
-            title={missing ? t('equipment.missing', { item: itemId }) : undefined}
+            title={missing ? t('equipment.missing', { item: itemId })
+                : unmet ? t('equipment.unmet', { item: item.name, needs: needsLine(item) }) : undefined}
             style={item ? itemTintStyle(item) : undefined}
             className={cn(
                 'relative aspect-square flex items-center justify-center overflow-visible transition-colors select-none',
@@ -193,7 +210,11 @@ const EquipSlotBody = memo(function EquipSlotBody({ heroId, slot, itemId, quanti
             {...droppableProps}
         >
             {item ? (
-                <span style={{ imageRendering: 'pixelated' }} className="ui-loadout-item flex items-center justify-center pointer-events-none">
+                <span
+                    style={{ imageRendering: 'pixelated' }}
+                    data-equip-unmet={unmet ? '' : undefined}
+                    className={cn('ui-loadout-item flex items-center justify-center pointer-events-none', unmet && 'opacity-50 grayscale')}
+                >
                     <ItemIcon item={item} size={64} />
                 </span>
             ) : missing ? (
