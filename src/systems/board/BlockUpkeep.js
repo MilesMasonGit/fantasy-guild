@@ -24,6 +24,16 @@ function costedStatements(def) {
 }
 
 /**
+ * An upkeep's lines summed by item, in first-named order, so one item named on two lines is
+ * checked against the Bank as their total rather than line by line.
+ */
+function costByItem(items) {
+    const total = new Map();
+    for (const it of items) total.set(it?.itemId, (total.get(it?.itemId) || 0) + (it?.quantity || 1));
+    return [...total].map(([itemId, quantity]) => ({ itemId, quantity }));
+}
+
+/**
  * Per-statement upkeep state on an instance, created on first use: `{ [statementId]: { elapsedMs,
  * paid } }`. `paid` starts true so a statement works from the moment it is placed.
  */
@@ -79,14 +89,11 @@ export function tickUpkeep(instance, def, delta) {
         // Check the whole cost before spending any of it — the same pay-first,
         // all-or-nothing discipline production uses, so a statement can never
         // half-consume its upkeep and still lapse.
-        const affordable = statement.upkeep.items.every(
-            it => InventoryManager.getItemCount(it.itemId) >= (it.quantity || 1)
-        );
+        const cost = costByItem(statement.upkeep.items);
+        const affordable = cost.every(it => InventoryManager.getItemCount(it.itemId) >= it.quantity);
 
         if (affordable) {
-            for (const it of statement.upkeep.items) {
-                InventoryManager.removeItem(it.itemId, it.quantity || 1);
-            }
+            for (const it of cost) InventoryManager.removeItem(it.itemId, it.quantity);
         }
 
         if (entry.paid !== affordable) {

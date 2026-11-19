@@ -78,6 +78,7 @@ export function clearAll() {
     aggregators.clear();
     growTimes.clear();
     gates.clear();
+    liveKeys.clear();
     lastWorkOf.clear();
     // Every Token's buffs are gone, so the next board-reach rebuild is whole.
     lastRebuild = null;
@@ -312,6 +313,44 @@ function ambientSourceIndex() {
     return sourceIndex;
 }
 
+/**
+ * Per Token, what a live-state filter read about it at its last rebuild ({@link liveKeyOf}): kept
+ * only while some rule on the mat, or a guild rule aimed at Tokens, has such a filter.
+ */
+const liveKeys = new Map();
+
+/** Whether any rule reaching Tokens has a filter that reads live state (`readsLiveState`). */
+function readsLiveStateAnywhere() {
+    if (ambientSourceIndex().stateFilters) return true;
+    const aimed = aimedModifiers();
+    return aimed.length > 0 && aimed.some(a => readsLiveState(a));
+}
+
+/** Everything a live-state filter can read about a Token: its charges, who works it, what they carry. */
+function liveKeyOf(instance) {
+    const worker = BoardState.workerOf(instance.id);
+    const carried = worker ? (HeroManager.getHero(worker)?.effects || []).map(e => e.effectId).join(',') : '';
+    return `${instance.usesRemaining}|${worker || ''}|${carried}`;
+}
+
+/**
+ * Rebuild every Token whose charges, worker or worker's carried effects changed since its buffs were
+ * last worked out, while a filter reads them: those change with no board event (a cycle spends a
+ * charge, an effect lands on or leaves a hero), so nothing else would rebuild around them. Called
+ * once a tick; does nothing while no such filter is on the mat.
+ */
+export function refreshLiveFilters() {
+    if (!readsLiveStateAnywhere()) {
+        if (liveKeys.size) liveKeys.clear();
+        return;
+    }
+    const stale = [];
+    for (const instance of BoardState.tokens()) {
+        if (liveKeys.get(instance.id) !== liveKeyOf(instance)) stale.push(instance.id);
+    }
+    if (stale.length) rebuildTokens(stale);
+}
+
 /** Forget the index, so the next read re-scans the mat. */
 function dropSourceIndex() {
     sourceIndex = EMPTY_INDEX;
@@ -445,10 +484,12 @@ export function rebuildToken(instanceId) {
         aggregators.delete(instanceId);
         growTimes.delete(instanceId);
         gates.delete(instanceId);
+        liveKeys.delete(instanceId);
         return;
     }
     const agg = getTokenAggregator(instanceId);
     agg.clearAll();
+    if (readsLiveStateAnywhere()) liveKeys.set(instanceId, liveKeyOf(BoardState.getTokenById(instanceId)));
 
     for (const { statement, neighbour, instance } of applicableStatements(instanceId)) {
         if (statement.keyword !== KEYWORD.PROVIDES) continue;

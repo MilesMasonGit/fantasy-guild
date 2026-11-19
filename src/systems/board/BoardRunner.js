@@ -556,6 +556,10 @@ export function tick(delta) {
     // so a hero arriving this tick has already asked for it.
     EnemyMotion.tick(delta);
 
+    // Buffs whose filters read charges or a worker's effects follow them: after the heroes have
+    // settled where they work, before any Token works with its buffs.
+    TileModifiers.refreshLiveFilters();
+
     const onMat = BoardState.tokens();
     if (!onMat.length) return;
 

@@ -11,7 +11,7 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as RecipeResolver from '../systems/board/RecipeResolver.js';
 import * as FightMoments from '../systems/board/FightMoments.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
-import { tickUpkeep } from '../systems/board/BlockUpkeep.js';
+import { tickUpkeep, isStatementPaid } from '../systems/board/BlockUpkeep.js';
 import { SIDE } from '../systems/combat/FightHooks.js';
 import { FIGHT_MOMENT } from '../config/registries/triggerRegistry.js';
 import { ModifierAggregator } from '../systems/effects/ModifierAggregator.js';
@@ -20,6 +20,10 @@ import { registerTokenTypes, tokenStartingUses, getTokenType } from '../config/r
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
+import * as LiveEffects from '../systems/effects/LiveEffects.js';
+import * as Charges from '../systems/board/Charges.js';
+import { registerEffects } from '../config/registries/effectRegistry.js';
+import { EFFECT_TYPES } from '../systems/effects/constants.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -84,6 +88,17 @@ const producer = (id, extra = {}) => ({
     ...extra
 });
 
+/** Doubles the yield of every nearby Token the filters name. */
+const booster = (id, filters) => ({
+    id, name: id, tokenType: 'buff', rarity: 'common', theme: 'fixture', sprite: 's_occult',
+    statements: [{
+        id: `stm_${id}`, keyword: 'provides', to: { mode: 'all', value: '', filters },
+        payload: { type: 'YIELD', bucket: 'percentage', value: 1 }
+    }]
+});
+
+registerEffects({ fixture_rs_mark: { id: 'fixture_rs_mark', name: 'Mark', statements: [] } });
+
 registerTokenTypes({
     fixture_rs_coal_pick: {
         id: 'fixture_rs_coal_pick', name: 'Coal-fed Pickaxe', tokenType: 'support', rarity: 'common',
@@ -123,6 +138,9 @@ registerTokenTypes({
             when: { event: 'FIGHT_STRUCK', scope: 'self' }, upkeep: upkeep()
         }]
     },
+    fixture_rs_wear_booster: booster('fixture_rs_wear_booster', [{ kind: 'charges_below', value: 3 }]),
+    fixture_rs_mark_booster: booster('fixture_rs_mark_booster', [{ kind: 'carrying', value: 'fixture_rs_mark' }]),
+    fixture_rs_worn_node: producer('fixture_rs_worn_node', { uses: 5, requiresHero: true }),
     fixture_rs_sigil: {
         id: 'fixture_rs_sigil', name: 'Ore Sigil', tokenType: 'support', rarity: 'common',
         sprite: 's_mining', requiresHero: false,
@@ -214,6 +232,73 @@ describe('an upkeep on a rule an enemy Token carries on a fight moment', () => {
     it('runs the rule while paid', () => {
         InventoryManager.addItem(COAL, 5);
         expect(struck(place(0, 'fixture_rs_upkept_thorns'))).toBe(99);
+    });
+});
+
+describe('an upkeep naming one item on two lines', () => {
+    const def = {
+        statements: [{
+            id: 'stm_rs_twice', keyword: 'provides', payload: { type: 'YIELD', bucket: 'percentage', value: 1 },
+            upkeep: { items: [{ itemId: COAL, quantity: 1 }, { itemId: COAL, quantity: 1 }], cadenceMs: 1000 }
+        }]
+    };
+
+    it('costs both lines, and is unpaid with stock for only one', () => {
+        InventoryManager.addItem(COAL, 1);
+        const instance = { id: 'x', typeId: 'x' };
+        tickUpkeep(instance, def, 1000);
+        expect(isStatementPaid(instance, 'stm_rs_twice')).toBe(false);
+        expect(InventoryManager.getItemCount(COAL)).toBe(1);
+    });
+
+    it('takes both lines when the Bank holds them', () => {
+        InventoryManager.addItem(COAL, 3);
+        const instance = { id: 'x', typeId: 'x' };
+        tickUpkeep(instance, def, 1000);
+        expect(isStatementPaid(instance, 'stm_rs_twice')).toBe(true);
+        expect(InventoryManager.getItemCount(COAL)).toBe(1);
+    });
+});
+
+describe('a buff whose filter reads live state follows it', () => {
+    const yieldAt = (instance) => TileModifiers.resolveAxis(instance.id, EFFECT_TYPES.YIELD, 10, 'forestry');
+
+    it('reaches a Token once its charges fall below the line', () => {
+        const node = place(0, 'fixture_rs_worn_node', 'miner');
+        place(1, 'fixture_rs_wear_booster');
+        run(100);
+        expect(yieldAt(node)).toBe(10);
+
+        // Three cycles spend three of its five charges.
+        run(3000);
+        expect(node.usesRemaining).toBe(2);
+        expect(yieldAt(node)).toBe(20);
+    });
+
+    it('lets go of a Token whose charges climb back over the line', () => {
+        const node = place(0, 'fixture_rs_worn_node', null, 2);
+        place(1, 'fixture_rs_wear_booster');
+        run(100);
+        expect(yieldAt(node)).toBe(20);
+        Charges.applyDelta(node, 3);
+        run(100);
+        expect(yieldAt(node)).toBe(10);
+    });
+
+    it('reaches a Token once its hero carries the effect, and lets go when it ends', () => {
+        const node = place(0, 'fixture_rs_worn_node', 'miner');
+        place(1, 'fixture_rs_mark_booster');
+        run(100);
+        expect(BoardState.workerOf(node.id)).toBe('miner');
+        expect(yieldAt(node)).toBe(10);
+
+        LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_mark', durationMs: 60000 });
+        run(100);
+        expect(yieldAt(node)).toBe(20);
+
+        LiveEffects.removeFromHero('miner', 'fixture_rs_mark');
+        run(100);
+        expect(yieldAt(node)).toBe(10);
     });
 });
 
