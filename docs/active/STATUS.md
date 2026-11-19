@@ -14,7 +14,7 @@ build green) · bench-queued · eye-check · merged.*
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
 | 700 L1: thirteen mat rule shapes (T-427) | engineer | `fix/rule-shapes` (`x1`) | building | Wed | |
-| 700 L3: loot shapes on a station and a kill (T-441) | engineer | `fix/loot-shapes` (`x3`) | building | Wed | |
+| 700 L3: loot shapes on a station and a kill (T-441) | engineer | `fix/loot-shapes` (`x3`) e91ae993 | **ready**, director gate after L1: items 1, 2, 4 fixed test-first (a style-narrowed Double Loot or Yield reaches a kill in that style; Bonus Drops beside a drop-less enemy; an inverted range); shipped enemies' drops and draw count identical over 5,700 seeded kills; item 3 parked for the owner | Wed | |
 | 700 L2: a strength on an Applies effect (T-440) | builder | | queued | | |
 | 700 L4: hero, gear and fight shapes (T-442), after L2 | engineer | | queued | | |
 | 700 L5: timed effects on a hero (T-077) | builder | | queued | | |
@@ -449,6 +449,8 @@ Owner 2026-11-01: Guild Hall H1 and the walker glide need no look (marked looked
 None open.
 
 ## Questions for the owner
+
+- **An enemy drop line that names a Token (700 L3 item 3, only a change pack can write one).** Today a kill ignores it silently. (a) **Recommended:** place the Token beside the enemy as a station does; the count rolled once, never doubled; skipped with a log line if there is no room. (b) The content audit refuses it at load; kills keep ignoring it. (c) Both: the audit now, placement when content wants it.
 
 - ~~Recipe row times (690 U4)~~ **Answered Wed 18 Nov: both times on every row.** ~~U3 look~~ **Answered: no indicator at all, just no hero drop under a full-screen view; reordering on the bar stays.**
 
