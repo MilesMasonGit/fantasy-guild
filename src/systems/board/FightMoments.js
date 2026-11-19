@@ -15,6 +15,8 @@ import * as StatusApplication from './StatusApplication.js';
 import * as DealDamage from './DealDamage.js';
 import * as EffectActions from './EffectActions.js';
 import * as EffectFeedback from './EffectFeedback.js';
+import * as BoardState from './BoardState.js';
+import { paidTestFor } from './BlockUpkeep.js';
 import { SIDE, setFightMomentRunner, talliesOf } from '../combat/FightHooks.js';
 
 /**
@@ -53,11 +55,21 @@ function kindStatements(fight) {
     return out;
 }
 
+/**
+ * The enemy Token's own rules that are on: one whose upkeep the Bank has not paid is off until stock
+ * returns, as it is on any Token.
+ */
+function enemyTokenRules(fight) {
+    const own = statementsOf(getTokenType(fight.enemyId));
+    const isPaid = paidTestFor(BoardState.getTokenById(fight.instanceId));
+    return isPaid ? own.filter(isPaid) : own;
+}
+
 /** Every rule one side of a fight carries, in the order they run. */
 function rulesOf(fight, side) {
     if (side === SIDE.ENEMY) {
         return [
-            ...statementsOf(getTokenType(fight.enemyId)),
+            ...enemyTokenRules(fight),
             ...LiveEffects.liveStatements(fight),
             ...kindStatements(fight),
             ...moveStatements(fight)

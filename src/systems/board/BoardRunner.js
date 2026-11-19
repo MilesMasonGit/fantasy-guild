@@ -430,6 +430,9 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, {
         instanceId: id,
         typeId: instance.typeId,
+        // ⚠️ The cycle that spends a Token's last charge has already taken it off the mat above
+        // (`commitPlan`), so a rule on this moment finds the Token, and where it stood, here.
+        instance,
         heroId: heroId || null,
         failed,
         // Which items this completion put on the board. The coarse "a neighbour
@@ -552,6 +555,10 @@ export function tick(delta) {
     // Enemies stand still but for a step to open space before a crowded fight: after the heroes,
     // so a hero arriving this tick has already asked for it.
     EnemyMotion.tick(delta);
+
+    // Buffs whose filters read charges or a worker's effects follow them: after the heroes have
+    // settled where they work, before any Token works with its buffs.
+    TileModifiers.refreshLiveFilters();
 
     const onMat = BoardState.tokens();
     if (!onMat.length) return;

@@ -302,7 +302,7 @@ function announceToolNeeded(instanceId, heroId) {
  * leave for other work); the callout spaces itself out (`CalloutLayer`).
  */
 function announceInputNeeded(instance, heroId) {
-    const itemId = WorkCheck.fixableReason(instance.id, instance).inputCheck?.missing?.[0]?.itemId;
+    const itemId = WorkCheck.fixableReason(instance.id, instance, heroId).inputCheck?.missing?.[0]?.itemId;
     if (itemId) EventBus.publish(BOARD_EVENTS.INPUT_NEEDED, { instanceId: instance.id, heroId, itemId });
 }
 

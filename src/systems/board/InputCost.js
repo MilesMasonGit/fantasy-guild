@@ -22,10 +22,11 @@ import { roundByChance, mostByChance } from '../../utils/RNG.js';
 
 /**
  * The exact cost of an input authored at `quantity` (missing: 1) at Token `instanceId`, for work of
- * `skill`: unrounded, never below 0. Draws nothing. What a cycle pays on average.
+ * `skill`: unrounded, never below 0. Draws nothing. What a cycle pays on average. `heroId` counts
+ * that hero's Efficiency in place of whoever works the Token now (a flag weighing a Token for them).
  */
-export function exactInputQuantity(instanceId, quantity, skill) {
-    return Math.max(0, TileModifiers.resolveAxis(instanceId, EFFECT_TYPES.INPUT_COST, quantity || 1, skill));
+export function exactInputQuantity(instanceId, quantity, skill, heroId = undefined) {
+    return Math.max(0, TileModifiers.resolveAxis(instanceId, EFFECT_TYPES.INPUT_COST, quantity || 1, skill, heroId));
 }
 
 /**
@@ -33,10 +34,10 @@ export function exactInputQuantity(instanceId, quantity, skill) {
  * cycle can take of it (`quantity`, the exact cost rounded up), less any that cost nothing. What a
  * check before paying asks for (`InputAllocator.checkInputs`). Draws nothing.
  */
-export function costedInputs(instanceId, inputs, skill) {
+export function costedInputs(instanceId, inputs, skill, heroId = undefined) {
     const out = [];
     for (const input of inputs || []) {
-        const exact = exactInputQuantity(instanceId, input?.quantity, skill);
+        const exact = exactInputQuantity(instanceId, input?.quantity, skill, heroId);
         const most = mostByChance(exact);
         if (most > 0) out.push({ ...input, exact, quantity: most });
     }
@@ -49,9 +50,9 @@ export function costedInputs(instanceId, inputs, skill) {
  * it. The skill is the Token's work skill (a Foundation's build skill). Draws nothing.
  * @returns {{ok: boolean, missing: Array<{itemId, needed, available}>}}
  */
-export function checkCost(instance, inputs) {
+export function checkCost(instance, inputs, heroId = undefined) {
     const skill = workConfigOf(getTokenType(instance?.typeId), instance)?.skill;
-    return InputAllocator.checkInputs(costedInputs(instance?.id, inputs, skill));
+    return InputAllocator.checkInputs(costedInputs(instance?.id, inputs, skill, heroId));
 }
 
 /**

@@ -320,8 +320,7 @@ export function spawn(statement, roles, random = Math.random, options = {}) {
         // replaced, unless one of those others holds its ground: then nothing is, and the spawn is skipped.
         const others = BoardState.tokensAtPoint(where.x, where.y).filter(t => t.id !== bearer?.id);
         if (others.some(FixedTokens.holdsItsGround)) return null;
-        if (bearer) BoardState.removeToken(bearer.id);
-        for (const other of others) BoardState.removeToken(other.id);
+        for (const gone of bearer ? [bearer, ...others] : others) removeReplaced(gone);
     }
 
     const touched = BoardState.applyPushes(where.pushed);
@@ -341,6 +340,18 @@ export function spawn(statement, roles, random = Math.random, options = {}) {
 
     logger.debug('EffectActions', `Spawned ${typeId} at (${where.x}, ${where.y})`);
     return { instanceId: instance.id, x: where.x, y: where.y, replacedBearer: replacesBearer };
+}
+
+/**
+ * Take a Token off the mat for a `Spawns here` and say so, as every other way off the mat does: the
+ * Token's own `TILE_CHANGED` with no type, and its hero's move.
+ */
+function removeReplaced(instance) {
+    const heroId = BoardState.workerOf(instance.id);
+    const at = { x: instance.x, y: instance.y };
+    BoardState.removeToken(instance.id);
+    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, ...at, typeId: null });
+    if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId, ...at });
 }
 
 /**

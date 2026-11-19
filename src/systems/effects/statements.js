@@ -547,10 +547,14 @@ export function stationKindOf(def) {
  * fallback for fixtures. Tier comes from the statement's own Tool Tier, falling back to the
  * Token's `tier`, then 1.
  *
+ * `isPaid`, when given, drops an `Acts as` whose upkeep a Token copy has not paid: the board passes
+ * it for a Token on the mat; a question about the type alone (a card, an audit) leaves it out.
+ *
  * @param {object} def
+ * @param {((statement: object) => boolean)|null} [isPaid]
  * @returns {Record<string, number>}
  */
-export function getProvidedTagsWithTiers(def) {
+export function getProvidedTagsWithTiers(def, isPaid = null) {
     if (!def) return {};
     const map = {};
     const defaultTier = def.tier || 1;
@@ -561,6 +565,7 @@ export function getProvidedTagsWithTiers(def) {
 
     // 1. The authored channel: `Acts as` statements.
     for (const statement of statementsWith(def, KEYWORD.ACTS_AS)) {
+        if (isPaid && !isPaid(statement)) continue;
         offer(statement?.payload?.tag, statement?.payload?.tier);
     }
 
