@@ -238,14 +238,6 @@ mods via the CMS after release.
 
 ## Being interviewed
 
-- **Systems Audit** (owner, 2026-11-18): a design review, system by system,
-  with the owner playing one main build and the agent turning feedback into
-  tickets; cross-system sweep first (effects alignment); fishing spots that
-  appear on water and fade; combat made easy to understand. Starts once the
-  outstanding briefs are built →
-  [concept_systems_audit.md](concept_systems_audit.md) (draft; how it runs
-  answered 2026-11-18: `/auditor`, files its own tickets, one tagged build,
-  fixes in groups).
 
 - **Star upgrades, effect families and Events** (owner, 2026-11-11): the
   owner's marks on 117 Star ideas and four takeaways (families with
@@ -263,6 +255,8 @@ mods via the CMS after release.
   [concept_content_roadmap.md](concept_content_roadmap.md).
 
 ## Moved on
+
+- **Systems Audit** (owner, 2026-11-18): a design review, system by system, owner in the loop on one tagged build; cross-system sweep first; fishing spots that appear on water and fade; effects aligned; combat easy to understand → [concept_systems_audit.md](concept_systems_audit.md), approved 2026-11-18. Starts once the outstanding briefs are built; the `/auditor` skill is still to write.
 
 - **Events: rich nodes and buff Tokens that land on the mat** (owner, 2026-11-12) → [concept_events.md](concept_events.md), brief 640. Trainers and other visitors later.
 

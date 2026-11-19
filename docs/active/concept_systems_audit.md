@@ -1,4 +1,4 @@
-Status: draft
+Status: approved 2026-11-18
 
 # Systems Audit
 
