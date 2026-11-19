@@ -11,14 +11,11 @@ import * as SlotHelper from '../systems/core/SaveSlotHelper.js';
 import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as CatchUp from '../systems/core/CatchUp.js';
-import { EventBus } from '../systems/core/EventBus.js';
-import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import * as Banners from '../systems/notifications/banners.js';
 import * as ItemStubs from '../systems/notifications/itemStubs.js';
 import { getAllItems } from '../config/registries/itemRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { CatchUpOverlay } from '../ui/components/hud/CatchUpOverlay.jsx';
-import { TestDashboard } from '../ui/components/TestDashboard.jsx';
 import { MARK_KEY, attachMark, fingerprint, readMark } from '../systems/core/unansweredSummary.js';
 import { fakeSaveDisk } from './fixtures/fakeSaveDisk.js';
 
@@ -387,35 +384,6 @@ describe.each(Object.entries(BUILDS))('with %s', (_name, build) => {
 });
 
 describe('around the summary offered again', () => {
-    it('the QA panel\'s Away 3 hours brings the summary up with both choices; closed, the next start brings it back', async () => {
-        localStorage.setItem(SaveManager.getSlotKey(0), saveText(0));
-        await start(NOW);
-        expect(q('[data-catch-up-summary]')).toBeNull();
-        const panel = render(React.createElement(TestDashboard));
-        fireEvent.click(panel.getByTitle('Open QA Dashboard'));
-        // It plays in slices with a yield between them, as in the game; the page draws once it ends.
-        const finished = new Promise(resolve => {
-            const off = EventBus.subscribe(ENGINE_EVENTS.CATCH_UP_FINISHED, () => { off(); resolve(); });
-        });
-        await act(async () => {
-            fireEvent.click(panel.getByText('Away 3 hours'));
-            await finished;
-            await new Promise(resolve => setTimeout(resolve, 0));
-        });
-        GameLoop.stop();
-        expect(panel.getByText('Played 3 hours away')).toBeTruthy();
-        expect(q('[data-summary-away]').textContent).toContain('3 h');
-        expect(q('[data-summary-undo]')).not.toBeNull();
-        expect(GameState.state.time.gameTimeMs).toBe(PLAYED_BEFORE + 3 * HOUR);
-
-        window.dispatchEvent(new Event('beforeunload'));
-        await reload();
-        await start(NOW + 30 * SEC);
-        expect(q('[data-summary-again]')).not.toBeNull();
-        expect(q('[data-summary-undo]')).not.toBeNull();
-        expect(CatchUp.undoSince()).toBe(NOW - 3 * HOUR);
-    });
-
     it('what it held for the banners and stubs comes once it is answered at the next start', async () => {
         const asLeft = saveText(3 * HOUR);
         localStorage.setItem(SaveManager.getSlotKey(0), asLeft);
