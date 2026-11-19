@@ -93,6 +93,12 @@ Faith, Summoning, Science, Crime and Taming are still to design. Placeholder bui
 
 The owner draws. Plans say exactly what to draw: H have, A adapt, N new. Using existing art is welcome and it's worth checking what's drawn before proposing something, but **art doesn't limit the design**.
 
+## Where content lives (owner, 2026-11-18)
+
+- **One catalogue, many views.** Every planned item, Token, building and event is one entry in [content_catalogue.json](../active/content_catalogue.json). The chain pages keep the rulings and the reasoning, and the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za) is built from the catalogue: "This will be helpful for my art list." Links between entries go by id, so a name spelled two ways is caught. This amends the roadmap's 2026-11-02 "readable chain pages first".
+- **Locks are per entry.** "I think I'll need to lock per entry, item or token. I'll probably start by building art that is either guaranteed to be used or could be used in a different spot if I need to." A locked entry's name, kind and look are settled; changing one needs the owner's say-so. Numbers stay the ledger's, locked or not.
+- **Balancing needs its own view** (owner, 2026-11-18: "something slightly different for gameplay balancing"). The art board is for drawing, not for numbers; a balancing view is still to design.
+
 ## Working with the owner
 
 - **Big questions, then a full list.** A few multiple-choice questions on the shape, then a complete list to edit. Later, more reviews: "adjusting all the recipes in a skill".

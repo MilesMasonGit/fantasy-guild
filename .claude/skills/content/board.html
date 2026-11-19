@@ -1,0 +1,309 @@
+<title>Guild Art Board</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a sticky filter rail over rung shelves; each shelf is a grid of sprite cards. A side drawer holds one entry's links. */
+:root {
+  --bg: #eceff3; --surface: #ffffff; --sunk: #e2e6ec; --ink: #1c2230; --muted: #5a6476; --line: #d3d9e2;
+  --accent: #c0531b; --accent-ink: #ffffff;
+  --new: #c0531b; --adapt: #a87a12; --have: #2f7d4f; --locked: #2c5fb8; --drawn: #2f7d4f;
+  --check-a: #e9ecf1; --check-b: #f6f7f9;
+  --display: "Pixelify Sans", "Inter", system-ui, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  --copper: #b86b3c; --iron: #7d8590; --silver: #aab4c0; --mythril: #3f9a96; --gold: #c99a22; --adamantine: #8b3d8f; --darkmetal: #3a3550; --unplaced: #9aa3b2;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #141820; --surface: #1d2330; --sunk: #252c3a; --ink: #e8ecf3; --muted: #9aa4b6; --line: #313a4b;
+  --accent: #e8733a; --accent-ink: #1a0f08;
+  --new: #ee8550; --adapt: #d9ab3c; --have: #5cc187; --locked: #79a6f2; --drawn: #5cc187;
+  --check-a: #222938; --check-b: #2a3243; --darkmetal: #8a83b0; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #141820; --surface: #1d2330; --sunk: #252c3a; --ink: #e8ecf3; --muted: #9aa4b6; --line: #313a4b;
+  --accent: #e8733a; --accent-ink: #1a0f08;
+  --new: #ee8550; --adapt: #d9ab3c; --have: #5cc187; --locked: #79a6f2; --drawn: #5cc187;
+  --check-a: #222938; --check-b: #2a3243; --darkmetal: #8a83b0; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 14px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 48px }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg) }
+.wrap { max-width: 1280px; margin: 0 auto }
+header.top { padding-block: 24px 12px; display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: end; justify-content: space-between }
+h1 { font-family: var(--display); font-weight: 700; font-size: 30px; margin: 0; letter-spacing: .5px; text-wrap: balance }
+.sub { color: var(--muted); margin: 4px 0 0; max-width: 62ch }
+.save { font-size: 12px; color: var(--muted); font-family: var(--mono) }
+.save.off { color: var(--new) }
+
+.tally { display: flex; flex-wrap: wrap; gap: 8px; padding-block: 8px 4px }
+.tally button { font: inherit; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 6px; padding: 8px 12px;
+  display: flex; flex-direction: column; align-items: flex-start; min-width: 112px; cursor: pointer; text-align: left }
+.tally button[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink) }
+.tally b { font-family: var(--display); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1 }
+.tally span { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted) }
+.tally .t-new b { color: var(--new) } .tally .t-adapt b { color: var(--adapt) } .tally .t-have b { color: var(--have) } .tally .t-locked b { color: var(--locked) }
+
+.rail { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 10px; border-bottom: 1px solid var(--line);
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
+.rungs { display: flex; flex-wrap: wrap; gap: 4px }
+.chip { font: inherit; font-size: 13px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 4px 10px 4px 8px;
+  cursor: pointer; display: inline-flex; gap: 6px; align-items: center }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink) }
+.sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; flex: none }
+select, input[type="search"] { font: inherit; font-size: 13px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 6px; padding: 5px 8px }
+input[type="search"] { min-width: 0; flex: 1 1 160px; max-width: 260px }
+label.tog { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); cursor: pointer }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+
+section.shelf { padding-top: 22px }
+.shelf h2 { font-family: var(--display); font-weight: 500; font-size: 20px; margin: 0 0 4px; display: flex; gap: 10px; align-items: center }
+.shelf h2 .sw { width: 14px; height: 14px }
+.shelf .meta { color: var(--muted); font-size: 12px; margin: 0 0 10px; font-family: var(--mono) }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); gap: 10px }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: grid; grid-template-columns: 56px 1fr; gap: 4px 10px;
+  position: relative; cursor: pointer; min-width: 0 }
+.card:hover { border-color: var(--muted) }
+.card.is-locked { border-color: var(--locked); box-shadow: inset 3px 0 0 var(--locked) }
+.thumb { width: 56px; height: 56px; border-radius: 4px; grid-row: span 3; display: grid; place-items: center; position: relative;
+  background: repeating-conic-gradient(var(--check-a) 0 25%, var(--check-b) 0 50%) 0 0 / 8px 8px; overflow: hidden }
+.thumb img { width: 48px; height: 48px; image-rendering: pixelated; object-fit: contain }
+.thumb.ghost img { opacity: .38; filter: grayscale(.6) }
+.thumb.blank { background: var(--sunk); border: 1.5px dashed var(--muted) }
+.thumb.blank::after { content: "draw"; font-family: var(--display); font-size: 12px; color: var(--muted) }
+.thumb .tag { position: absolute; bottom: 0; left: 0; right: 0; font-size: 9px; text-align: center; background: color-mix(in srgb, var(--surface) 80%, transparent); color: var(--ink); font-weight: 600; letter-spacing: .04em }
+.name { font-weight: 600; line-height: 1.25; min-width: 0; overflow-wrap: anywhere }
+.line2 { font-size: 12px; color: var(--muted); min-width: 0; overflow-wrap: anywhere }
+.lv { font-family: var(--mono); font-variant-numeric: tabular-nums }
+.marks { grid-column: 1 / -1; display: flex; gap: 6px; align-items: center; margin-top: 6px; flex-wrap: wrap }
+.pill { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; border: 1px solid currentColor }
+.pill.N { color: var(--new) } .pill.A { color: var(--adapt) } .pill.H { color: var(--have) } .pill.Q { color: var(--muted) }
+.mk { font: inherit; font-size: 12px; border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 4px; padding: 2px 8px; cursor: pointer; margin-left: auto }
+.mk + .mk { margin-left: 0 }
+.mk[aria-pressed="true"].lock { background: var(--locked); border-color: var(--locked); color: var(--surface) }
+.mk[aria-pressed="true"].drawn { background: var(--drawn); border-color: var(--drawn); color: var(--surface) }
+.mk:disabled { opacity: .5; cursor: default }
+.empty { color: var(--muted); padding: 40px 0; text-align: center }
+
+aside.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 100%); background: var(--surface); border-left: 1px solid var(--line); z-index: 20;
+  padding: calc(20px + env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) 20px; overflow-y: auto;
+  box-shadow: -12px 0 32px rgba(0,0,0,.18) }
+.drawer h3 { font-family: var(--display); font-size: 24px; font-weight: 700; margin: 0 0 4px; text-wrap: balance }
+.drawer .close { position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); font: inherit; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 6px; padding: 4px 10px; cursor: pointer }
+.big { display: flex; gap: 12px; align-items: center; margin: 14px 0 }
+.big .thumb { width: 112px; height: 112px } .big .thumb img { width: 96px; height: 96px }
+dl { display: grid; grid-template-columns: 96px 1fr; gap: 6px 12px; margin: 0 }
+dt { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; padding-top: 2px }
+dd { margin: 0; min-width: 0; overflow-wrap: anywhere }
+.links { display: flex; flex-wrap: wrap; gap: 4px }
+.links button { font: inherit; font-size: 12px; border: 1px solid var(--line); background: var(--sunk); color: var(--ink); border-radius: 4px; padding: 2px 7px; cursor: pointer }
+.links span.raw { font-size: 12px; padding: 2px 7px; border: 1px dashed var(--line); border-radius: 4px; color: var(--muted) }
+.note { font-size: 12px; color: var(--muted); margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px }
+.proto { font-size: 12px; color: var(--muted); border: 1px dashed var(--line); border-radius: 6px; padding: 8px 12px; margin-top: 8px; max-width: 80ch }
+@media (max-width: 520px) { .tally button { min-width: calc(50% - 4px) } .grid { grid-template-columns: 1fr } h1 { font-size: 24px } }
+@media (prefers-reduced-motion: no-preference) { .card { transition: border-color .12s } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Guild Art Board</h1>
+      <p class="sub">Every planned item, Token, building and event in the content catalogue, by rung. Lock an entry when its design is settled; mark it drawn when the sprite is done.</p>
+    </div>
+    <div class="save" id="save">Connecting…</div>
+  </header>
+
+  <div class="tally" id="tally"></div>
+
+  <div class="rail" role="toolbar" aria-label="Filters">
+    <div class="rungs" id="rungs"></div>
+    <select id="skill" aria-label="Skill"><option value="">All skills</option></select>
+    <input type="search" id="q" placeholder="Search names" aria-label="Search names">
+    <label class="tog"><input type="checkbox" id="hideDone"> Hide drawn</label>
+  </div>
+
+  <main id="shelves"></main>
+  <p class="proto">Built from <span class="lv">docs/active/content_catalogue.json</span> by the content agent; ask it to change an entry. Sprites tagged “guess” were matched by file name, and “adapt from” is a guess at the nearest drawn sprite. Cooking's levels still use the old bands.</p>
+</div>
+
+<aside class="drawer" id="drawer" hidden aria-label="Entry details"></aside>
+
+<script>
+const RUNGS = ["Copper","Iron","Silver","Mythril","Gold","Adamantine","Darkmetal","Unplaced"];
+const ART = { N: "New", A: "Adapt", H: "Have", "": "No art code" };
+const state = { rung: "", skill: "", q: "", art: "", hideDone: false, marks: {}, data: [], byName: {}, db: null, open: null };
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const norm = s => s.toLowerCase().replace(/s$/, "");
+
+function mark(id) { return state.marks[id] || {} }
+
+function thumb(e, big) {
+  if (e.sprite) return `<div class="thumb${big ? "" : ""}"><img loading="lazy" src="${esc(e.sprite)}" alt="">${e.spriteGuess ? '<span class="tag">guess</span>' : ""}</div>`;
+  if (e.adaptSprite) return `<div class="thumb ghost"><img loading="lazy" src="${esc(e.adaptSprite)}" alt=""><span class="tag">adapt</span></div>`;
+  return `<div class="thumb blank"></div>`;
+}
+
+function visible() {
+  const q = state.q.trim().toLowerCase();
+  return state.data.filter(e => {
+    if (state.rung && e.rung !== state.rung) return false;
+    if (state.skill && e.skill !== state.skill) return false;
+    if (q && !e.name.toLowerCase().includes(q)) return false;
+    const m = mark(e.id);
+    if (state.art === "locked" && !m.locked) return false;
+    if (state.art && state.art !== "locked" && e.art !== state.art) return false;
+    if (state.hideDone && m.drawn) return false;
+    return true;
+  });
+}
+
+function renderTally() {
+  const base = state.data.filter(e => (!state.rung || e.rung === state.rung) && (!state.skill || e.skill === state.skill));
+  const n = k => base.filter(e => e.art === k).length;
+  const toDraw = base.filter(e => e.art === "N" && !mark(e.id).drawn).length;
+  const toAdapt = base.filter(e => e.art === "A" && !mark(e.id).drawn).length;
+  const locked = base.filter(e => mark(e.id).locked).length;
+  const items = [
+    ["", "all", base.length, "Entries"],
+    ["N", "new", toDraw, `To draw · ${n("N")} new`],
+    ["A", "adapt", toAdapt, `To adapt · ${n("A")} in all`],
+    ["H", "have", n("H"), "Already drawn"],
+    ["locked", "locked", locked, "Locked"],
+  ];
+  $("tally").innerHTML = items.map(([k, c, v, l]) =>
+    `<button class="t-${c}" data-art="${k}" aria-pressed="${state.art === k}"><b>${v}</b><span>${l}</span></button>`).join("");
+}
+
+function card(e) {
+  const m = mark(e.id);
+  const ro = !state.db;
+  const line = [e.skill, e.level != null ? `<span class="lv">Lv ${e.level}</span>` : "", esc(e.kind)].filter(Boolean).join(" · ");
+  const drawable = e.art === "N" || e.art === "A";
+  return `<article class="card${m.locked ? " is-locked" : ""}" data-id="${esc(e.id)}" tabindex="0">
+    ${thumb(e)}
+    <div class="name">${esc(e.name)}</div>
+    <div class="line2">${line}</div>
+    <div class="line2">${e.usedBy.length ? "→ " + esc(e.usedBy.slice(0, 2).join(", ")) + (e.usedBy.length > 2 ? ` +${e.usedBy.length - 2}` : "") : e.gives.length ? "gives " + esc(e.gives.slice(0, 2).join(", ")) : ""}</div>
+    <div class="marks">
+      <span class="pill ${e.art || "Q"}">${ART[e.art] || "?"}</span>
+      <button class="mk lock" data-act="locked" aria-pressed="${!!m.locked}" ${ro ? "disabled" : ""} title="Design settled: safe to draw">${m.locked ? "Locked" : "Lock"}</button>
+      ${drawable ? `<button class="mk drawn" data-act="drawn" aria-pressed="${!!m.drawn}" ${ro ? "disabled" : ""}>${m.drawn ? "Drawn" : "Drawn?"}</button>` : ""}
+    </div>
+  </article>`;
+}
+
+function renderShelves() {
+  const list = visible();
+  if (!list.length) { $("shelves").innerHTML = `<p class="empty">Nothing matches these filters.</p>`; return; }
+  $("shelves").innerHTML = RUNGS.map(r => {
+    const rows = list.filter(e => e.rung === r).sort((a, b) => (a.level ?? 999) - (b.level ?? 999) || a.skill.localeCompare(b.skill));
+    if (!rows.length) return "";
+    const nNew = rows.filter(e => e.art === "N").length, nA = rows.filter(e => e.art === "A").length;
+    return `<section class="shelf"><h2><span class="sw" style="background:var(--${r.toLowerCase()})"></span>${r}</h2>
+      <p class="meta">${rows.length} shown · ${nNew} new · ${nA} adapt</p>
+      <div class="grid">${rows.map(card).join("")}</div></section>`;
+  }).join("");
+}
+
+function linkList(names) {
+  if (!names.length) return '<span class="raw">none listed</span>';
+  return `<div class="links">${names.map(n => {
+    const t = state.byName[norm(n)];
+    return t ? `<button data-go="${esc(t.id)}">${esc(n)}</button>` : `<span class="raw" title="Not a row on any chain page">${esc(n)}</span>`;
+  }).join("")}</div>`;
+}
+
+function renderDrawer() {
+  const d = $("drawer");
+  const e = state.data.find(x => x.id === state.open);
+  if (!e) { d.hidden = true; return; }
+  const m = mark(e.id);
+  d.innerHTML = `<button class="close" data-close>Close</button>
+    <h3>${esc(e.name)}</h3>
+    <div class="line2">${esc(e.skill)} · ${esc(e.kind)}${e.level != null ? ` · <span class="lv">Lv ${e.level}</span>` : ""} · ${esc(e.rung)}</div>
+    <div class="big">${thumb(e, true)}<div>
+      <span class="pill ${e.art || "Q"}">${ART[e.art] || "?"}</span>
+      ${e.adaptFrom ? `<div class="line2" style="margin-top:6px">Adapt from: ${esc(e.adaptFrom)}</div>` : ""}
+      ${e.artNote ? `<div class="line2" style="margin-top:6px">${esc(e.artNote)}</div>` : ""}
+      <div class="marks" style="margin-top:8px" data-id="${esc(e.id)}">
+        <button class="mk lock" data-act="locked" aria-pressed="${!!m.locked}" ${state.db ? "" : "disabled"} style="margin-left:0">${m.locked ? "Locked" : "Lock"}</button>
+        ${e.art === "N" || e.art === "A" ? `<button class="mk drawn" data-act="drawn" aria-pressed="${!!m.drawn}" ${state.db ? "" : "disabled"}>${m.drawn ? "Drawn" : "Drawn?"}</button>` : ""}
+      </div></div></div>
+    <dl>
+      ${e.madeWith.length ? `<dt>Made with</dt><dd>${linkList(e.madeWith)}</dd>` : ""}
+      ${e.gives.length ? `<dt>Gives</dt><dd>${linkList(e.gives)}</dd>` : ""}
+      ${e.givenBy.length ? `<dt>Given by</dt><dd>${linkList(e.givenBy)}</dd>` : ""}
+      ${e.from ? `<dt>Comes from</dt><dd>${esc(e.from)}</dd>` : ""}
+      ${!e.madeWith.length && !e.givenBy.length && !e.from && e.category === "item" ? `<dt>Comes from</dt><dd><span class="raw">not listed</span></dd>` : ""}
+      <dt>Used by</dt><dd>${linkList(e.usedBy)}</dd>
+      ${Object.entries(e.notes || {}).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}
+      <dt>In game</dt><dd>${e.inGame ? "Yes, live today" : "Not yet"}</dd>
+      <dt>Page</dt><dd><span class="lv">${esc(e.page)}</span>${e.section ? ` · ${esc(e.section)}` : ""}${e.alsoOn ? `<br><span class="line2">also on ${esc(e.alsoOn)}</span>` : ""}</dd>
+    </dl>
+    ${m.at ? `<p class="note">Last marked ${new Date(m.at).toLocaleString()}</p>` : ""}`;
+  d.hidden = false;
+}
+
+function render() { renderTally(); renderShelves(); renderDrawer() }
+
+async function toggle(id, field) {
+  if (!state.db) return;
+  const cur = mark(id);
+  const next = { locked: !!cur.locked, drawn: !!cur.drawn, [field]: !cur[field], at: Date.now() };
+  state.marks[id] = next; render();
+  try { await state.db.collection("marks").doc(id).set(next); }
+  catch (err) { state.marks[id] = cur; render(); $("save").textContent = "That mark wasn't saved: " + (err?.message || "try again"); $("save").className = "save off"; }
+}
+
+document.addEventListener("click", ev => {
+  const t = ev.target.closest("button, article.card");
+  if (!t) { return; }
+  if (t.dataset.art !== undefined && t.closest("#tally")) { state.art = state.art === t.dataset.art ? "" : t.dataset.art; render(); return; }
+  if (t.dataset.rung !== undefined) { state.rung = state.rung === t.dataset.rung ? "" : t.dataset.rung; renderRungs(); render(); return; }
+  if (t.dataset.act) { const host = t.closest("[data-id]"); toggle(host.dataset.id, t.dataset.act); ev.stopPropagation(); return; }
+  if (t.dataset.close !== undefined) { state.open = null; renderDrawer(); return; }
+  if (t.dataset.go) { state.open = t.dataset.go; renderDrawer(); return; }
+  if (t.matches("article.card")) { state.open = t.dataset.id; renderDrawer(); }
+});
+document.addEventListener("keydown", ev => {
+  if (ev.key === "Escape" && state.open) { state.open = null; renderDrawer(); }
+  if (ev.key === "Enter" && ev.target.matches("article.card")) { state.open = ev.target.dataset.id; renderDrawer(); }
+});
+$("skill").addEventListener("change", e => { state.skill = e.target.value; render(); });
+$("q").addEventListener("input", e => { state.q = e.target.value; renderShelves(); });
+$("hideDone").addEventListener("change", e => { state.hideDone = e.target.checked; renderShelves(); });
+
+function renderRungs() {
+  $("rungs").innerHTML = RUNGS.map(r => `<button class="chip" data-rung="${r}" aria-pressed="${state.rung === r}"><span class="sw" style="background:var(--${r.toLowerCase()})"></span>${r}</button>`).join("");
+}
+
+async function boot() {
+  renderRungs();
+  try {
+    const res = await fetch("board.json");
+    state.data = await res.json();
+  } catch { $("shelves").innerHTML = `<p class="empty">The catalogue didn't load. Reload the page.</p>`; return; }
+  for (const e of state.data) state.byName[norm(e.name)] = e;
+  const skills = [...new Set(state.data.map(e => e.skill))].sort();
+  $("skill").insertAdjacentHTML("beforeend", skills.map(s => `<option>${esc(s)}</option>`).join(""));
+  state.rung = "Copper"; renderRungs();
+  render();
+
+  const timer = setTimeout(() => { if (!state.db) { $("save").textContent = "Marks can't be saved here (read only)"; $("save").className = "save off"; } }, 10000);
+  const db = await (window.claude?.use ? window.claude.use("db") : null);
+  if (!db) { clearTimeout(timer); $("save").textContent = "Marks can't be saved here (read only)"; $("save").className = "save off"; return; }
+  db.collection("marks").onSnapshot(snap => {
+    clearTimeout(timer);
+    state.db = db;
+    const marks = {};
+    for (const d of snap.docs) marks[d.id] = d.data();
+    state.marks = marks;
+    $("save").textContent = `Marks saved for everyone · ${Object.values(marks).filter(m => m.locked).length} locked`;
+    $("save").className = "save";
+    render();
+  }, err => { clearTimeout(timer); $("save").textContent = "Marks couldn't load: " + (err?.message || "reload"); $("save").className = "save off"; });
+}
+boot();
+</script>

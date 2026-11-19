@@ -14,22 +14,7 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 
 ## Mining
 
-| Level | Token | Gives | Its job | What's different | Art |
-|---|---|---|---|---|---|
-| 1 | Copper Ore Vein, Coal Vein, Stone Outcrop | Copper Ore, Coal, Stone | Smithing, Construction | The everyday rhythm | H |
-| 8 | Clay Deposit | Clay | ⚠️ none yet | Quick, soft, refills fast | H |
-| 12 | Quartz Deposit | Quartz | ⚠️ none yet | Slow, gives a lot | H |
-| 15 | **Geode** | Any uncut gem, rarer ones less often | Crafting's gems, Enchanting's Staffs | One big burst, then a long rest | N |
-| 20 | Iron Ore Vein | Iron Ore | Smithing | | H |
-| 30 | Silver Ore Vein | Silver Ore | Smithing | | H |
-| 40 | Mythril Ore Vein | Mythril Ore | Smithing | | H |
-| 45 | Marble Vein | Marble | Construction from 40 | | H |
-| 50 | Gold Ore Vein | Gold Ore | Smithing | | H |
-| 60 | Adamantine Ore Vein | Adamantine Ore | Smithing | | H |
-| 70 | **Fallen Star** | Adamantine and Darkmetal Ore | A head start on the next metal | A rare find; one rich strike, then gone | N |
-| 80 | Darkmetal Ore Vein | Darkmetal Ore | Smithing | | H |
-| 85 | Basalt Vein | Basalt | Construction from 80 | Near volcanoes | H |
-| 90 | **Fossil Bed** | Bones, Red Scales | Crafting's Dragonscale, an alternative to fighting for it | Slow digging, big finds | N |
+*This list (14 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Mining and Forestry. The rulings and reasoning stay on this page.*
 
 **Stone**: three tiers, Stone, Marble and Basalt (owner, 2026-11-04; [Construction](content_construction.md)). Granite and Sandstone are cut or go to another skill.
 
@@ -37,19 +22,7 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 
 **Better trees need better axes** (owner, 2026-11-05), as better metals need better picks: Copper for Oak and Fir, Iron for Birch and Maple, Mythril for Cedar, Adamantine for Mahogany, Darkmetal for Ebony.
 
-| Level | Token | Gives | Its job | What's different | Art |
-|---|---|---|---|---|---|
-| 1 | Oak Tree | Oak Wood, Oak Seedling, Bird Nest (rare) | Everything | The everyday rhythm | H |
-| 5 | **Bamboo Grove** | Bamboo | Crafting's Fine Rod; good early XP | Very fast, tiny yields | N |
-| 10 | **Hollow Tree** | Feathers, Bird Nests | Fletching's Feathers | Never falls; pays in bursts as birds come and go | N |
-| 20 | Fir Tree | Fir Wood, Fir Seedling | Fletching, Smithing, Enchanting | | H |
-| 25 | **Driftwood Logjam** | Mixed wood | Wood at the water's edge | Stands on water; a few uses, drifts back later | N |
-| 30 | Birch Tree | Birch Wood, Birch Seedling | Enchanting | | H |
-| 35 | **Giant Mushroom** | Mushrooms | Alchemy, Cooking | Felled like a tree, in dark or damp places | N |
-| 40 | Maple Tree | Maple Wood, Maple Seedling | Fletching, Smithing, Enchanting | | H |
-| 50 | Cedar Tree | Cedar Wood, Cedar Seedling | Enchanting, Smithing's Adamantine Woodaxe | | H |
-| 60 | Mahogany Tree | Mahogany Wood, Mahogany Seedling | Fletching, Smithing, Enchanting | | H |
-| 80 | Ebony Tree | Ebony Wood, Ebony Seedling | Fletching, Smithing, Enchanting | | H |
+*This list (11 rows) now lives in the [content catalogue](content_catalogue.json); see it on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), filtered to Mining and Forestry. The rulings and reasoning stay on this page.*
 
 ## What this changes
 
