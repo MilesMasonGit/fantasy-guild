@@ -198,6 +198,11 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
         existing.sourceId = sourceId ?? existing.sourceId;
         // A landing for one swing never changes the lifetime of one already carried.
         if (!forSwing) {
+            // Carried for the fight and for a while, both lives stand: the fight's holds it to the
+            // fight's end, and what is left of the while carries on after (`endFightEffects`).
+            const timed = !forFight && !forCycle;
+            if (timed && existing.forFight) keepWhile(existing, expiresAt);
+            if (forFight && !existing.forFight && !existing.forCycle) keepWhile(existing, existing.expiresAt);
             existing.expiresAt = Math.max(existing.expiresAt, expiresAt);
             if (forFight) existing.forFight = true;
             if (forCycle) existing.forCycle = forCycle;
@@ -217,6 +222,12 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
     syncAggregator(target);
     bearer.notify?.('live_effect_applied');
     return true;
+}
+
+/** Remember the end of a while an instance also carries for the fight (`whileUntil`), the later one. */
+function keepWhile(instance, until) {
+    if (!(until < UNTIL_FIGHT_ENDS)) return;
+    instance.whileUntil = Math.max(Number(instance.whileUntil) || 0, until);
 }
 
 /**
@@ -334,13 +345,28 @@ export function endFightEffects(bearer) {
     const target = bearer?.target;
     if (!target?.effects?.length) return 0;
     const before = target.effects.length;
-    target.effects = target.effects.filter(e => !e.forFight);
+    const now = GameClock.now();
+    target.effects = target.effects.filter(e => !e.forFight || outlivesFight(e, now));
     const ended = before - target.effects.length;
     if (ended) {
         syncAggregator(target);
         bearer.notify?.('live_effect_expired');
     }
     return ended;
+}
+
+/**
+ * Whether an instance carried for the fight also has a while left beyond it: then it stays, carried
+ * for the rest of that while from here on.
+ */
+function outlivesFight(instance, now) {
+    if (!(instance.whileUntil > now)) return false;
+    instance.expiresAt = instance.whileUntil;
+    delete instance.whileUntil;
+    delete instance.forFight;
+    delete instance.forSwing;
+    delete instance.forAttack;
+    return true;
 }
 
 /** The same for a hero, by id. */

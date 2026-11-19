@@ -25,6 +25,7 @@ import * as Charges from '../systems/board/Charges.js';
 import * as Hand from '../systems/board/Hand.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
+import * as GameClock from '../systems/core/GameClock.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -449,6 +450,47 @@ describe('a rule that puts a Token in another’s place', () => {
         Hand.setInHand(held.id, false);
         run(1000);
         expect(BoardState.getTokenById(held.id)).toBeNull();
+    });
+});
+
+describe('an effect carried both for the fight and for a while', () => {
+    const carried = () => HeroManager.getHero('miner').effects.map(e => e.effectId);
+    const hero = () => LiveEffects.heroBearer(HeroManager.getHero('miner'));
+
+    afterEach(() => GameClock.end());
+
+    it('keeps the rest of its while when the fight ends', () => {
+        GameClock.begin(1_000_000);
+        LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_mark', durationMs: 60000 });
+        LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_mark', forFight: true });
+        GameClock.advance(10000);
+        LiveEffects.endFightEffects(hero());
+        expect(carried()).toEqual(['fixture_rs_mark']);
+
+        // It then runs out when its while does.
+        GameClock.advance(49000);
+        LiveEffects.tick(3000);
+        expect(carried()).toEqual(['fixture_rs_mark']);
+        GameClock.advance(2000);
+        LiveEffects.tick(3000);
+        expect(carried()).toEqual([]);
+    });
+
+    it('keeps a while that lands during the fight', () => {
+        GameClock.begin(1_000_000);
+        LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_mark', forFight: true });
+        LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_mark', durationMs: 60000 });
+        LiveEffects.endFightEffects(hero());
+        expect(carried()).toEqual(['fixture_rs_mark']);
+    });
+
+    it('ends with the fight when its while is already over', () => {
+        GameClock.begin(1_000_000);
+        LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_mark', durationMs: 5000 });
+        LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_mark', forFight: true });
+        GameClock.advance(10000);
+        LiveEffects.endFightEffects(hero());
+        expect(carried()).toEqual([]);
     });
 });
 
