@@ -238,6 +238,14 @@ mods via the CMS after release.
 
 ## Being interviewed
 
+- **Systems Audit** (owner, 2026-11-18): a design review, system by system,
+  with the owner playing one main build and the agent turning feedback into
+  tickets; cross-system sweep first (effects alignment); fishing spots that
+  appear on water and fade; combat made easy to understand. Starts once the
+  outstanding briefs are built →
+  [concept_systems_audit.md](concept_systems_audit.md) (draft, four open
+  questions).
+
 - **Star upgrades, effect families and Events** (owner, 2026-11-11): the
   owner's marks on 117 Star ideas and four takeaways (families with
   per-target versions; effect icons on the Token card; Stars tiny and global
