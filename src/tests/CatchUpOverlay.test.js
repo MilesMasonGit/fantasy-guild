@@ -15,7 +15,7 @@ vi.mock('../systems/core/CatchUp.js', () => ({
     canUndo: vi.fn(() => true),
     undoSince: vi.fn(() => null),
     undoLast: vi.fn(() => Promise.resolve(true)),
-    forgetUndo: vi.fn()
+    keepCatchUp: vi.fn()
 }));
 
 /**
@@ -121,7 +121,7 @@ afterEach(() => {
     vi.mocked(CatchUp.undoSince).mockReturnValue(null);
     vi.mocked(CatchUp.undoLast).mockClear();
     vi.mocked(CatchUp.undoLast).mockImplementation(() => Promise.resolve(true));
-    vi.mocked(CatchUp.forgetUndo).mockClear();
+    vi.mocked(CatchUp.keepCatchUp).mockClear();
 });
 
 describe('the catch-up loading bar', () => {
@@ -459,7 +459,7 @@ describe('"Return to the Guild" asks first, in plain words', () => {
     it('one click only asks: nothing closes, nothing is let go', () => {
         askToReturn();
         expect(q('[data-catch-up-summary]')).not.toBeNull();
-        expect(CatchUp.forgetUndo).not.toHaveBeenCalled();
+        expect(CatchUp.keepCatchUp).not.toHaveBeenCalled();
         const ask = q('[data-summary-confirm="return"]');
         expect(ask.getAttribute('role')).toBe('alertdialog');
         expect(ask.textContent).toContain('Everything from your time away is kept.');
@@ -476,7 +476,7 @@ describe('"Return to the Guild" asks first, in plain words', () => {
         expect(q('[data-summary-confirm]')).toBeNull();
         expect(q('[data-summary-close]')).not.toBeNull();
         expect(q('[data-summary-undo]')).not.toBeNull();
-        expect(CatchUp.forgetUndo).not.toHaveBeenCalled();
+        expect(CatchUp.keepCatchUp).not.toHaveBeenCalled();
     });
 
     it('confirming closes it, keeps the catch-up and only then lets the banners come', () => {
@@ -488,7 +488,7 @@ describe('"Return to the Guild" asks first, in plain words', () => {
             act(() => { fireEvent.click(q('[data-summary-confirm-yes]')); });
             expect(q('[data-catch-up-summary]')).toBeNull();
             expect(CatchUp.undoLast).not.toHaveBeenCalled();
-            expect(CatchUp.forgetUndo).toHaveBeenCalledTimes(1);
+            expect(CatchUp.keepCatchUp).toHaveBeenCalledTimes(1);
             expect(closed).toHaveBeenCalledTimes(1);
         } finally {
             off();
@@ -501,7 +501,7 @@ describe('"Return to the Guild" asks first, in plain words', () => {
         escape();
         expect(q('[data-catch-up-summary]')).not.toBeNull();
         expect(q('[data-summary-confirm="return"]')).not.toBeNull();
-        expect(CatchUp.forgetUndo).not.toHaveBeenCalled();
+        expect(CatchUp.keepCatchUp).not.toHaveBeenCalled();
         escape();
         expect(q('[data-summary-confirm]')).toBeNull();
         expect(q('[data-catch-up-summary]')).not.toBeNull();
@@ -523,7 +523,7 @@ describe('"Load as I left it" asks first, keeping today\'s warning', () => {
     it('one click only asks, with two choices; nothing is thrown away yet', () => {
         askToUndo();
         expect(CatchUp.undoLast).not.toHaveBeenCalled();
-        expect(CatchUp.forgetUndo).not.toHaveBeenCalled();
+        expect(CatchUp.keepCatchUp).not.toHaveBeenCalled();
         const ask = q('[data-summary-confirm="undo"]');
         expect(ask.getAttribute('role')).toBe('alertdialog');
         expect(ask.textContent).toContain('Load the game as you left it? Everything from your time away is lost.');
@@ -541,7 +541,7 @@ describe('"Load as I left it" asks first, keeping today\'s warning', () => {
         expect(q('[data-summary-undo]')).not.toBeNull();
         expect(q('[data-summary-close]')).not.toBeNull();
         expect(CatchUp.undoLast).not.toHaveBeenCalled();
-        expect(CatchUp.forgetUndo).not.toHaveBeenCalled();
+        expect(CatchUp.keepCatchUp).not.toHaveBeenCalled();
     });
 
     it('Esc cancels the question, and only the question', () => {
@@ -550,14 +550,14 @@ describe('"Load as I left it" asks first, keeping today\'s warning', () => {
         expect(q('[data-summary-confirm]')).toBeNull();
         expect(q('[data-catch-up-summary]')).not.toBeNull();
         expect(CatchUp.undoLast).not.toHaveBeenCalled();
-        expect(CatchUp.forgetUndo).not.toHaveBeenCalled();
+        expect(CatchUp.keepCatchUp).not.toHaveBeenCalled();
     });
 
     it('confirming turns the catch-up down', () => {
         askToUndo();
         act(() => { fireEvent.click(q('[data-summary-confirm-yes]')); });
         expect(CatchUp.undoLast).toHaveBeenCalledTimes(1);
-        expect(CatchUp.forgetUndo).not.toHaveBeenCalled();
+        expect(CatchUp.keepCatchUp).not.toHaveBeenCalled();
     });
 
     it('while the save is written back, nothing else can be pressed, Esc included', async () => {
@@ -575,7 +575,7 @@ describe('"Load as I left it" asks first, keeping today\'s warning', () => {
         // Written: the page reloads, and the summary stays as it is until it does.
         await act(async () => { answer(true); });
         expect(q('[data-summary-confirm="undo"]')).not.toBeNull();
-        expect(CatchUp.forgetUndo).not.toHaveBeenCalled();
+        expect(CatchUp.keepCatchUp).not.toHaveBeenCalled();
     });
 
     it('a write that fails keeps the summary open with Load as I left it live, and says it failed', async () => {
@@ -587,7 +587,7 @@ describe('"Load as I left it" asks first, keeping today\'s warning', () => {
         expect(text('[data-summary-undo-failed]')).toBe('Could not load the game as you left it. You can try again.');
         expect(q('[data-summary-undo]')).not.toBeNull();
         expect(q('[data-summary-close]')).not.toBeNull();
-        expect(CatchUp.forgetUndo).not.toHaveBeenCalled();
+        expect(CatchUp.keepCatchUp).not.toHaveBeenCalled();
 
         // Tried again, and this time it is written.
         vi.mocked(CatchUp.undoLast).mockImplementation(() => Promise.resolve(true));
@@ -605,7 +605,7 @@ describe('"Load as I left it" asks first, keeping today\'s warning', () => {
         askToUndo();
         await act(async () => { fireEvent.click(q('[data-summary-confirm-yes]')); });
         expect(q('[data-catch-up-summary]')).toBeNull();
-        expect(CatchUp.forgetUndo).toHaveBeenCalledTimes(1);
+        expect(CatchUp.keepCatchUp).toHaveBeenCalledTimes(1);
     });
 });
 
@@ -697,5 +697,52 @@ describe('the wording of time away', () => {
         expect(summaryView({ awayMs: 30 * HOUR, droppedMs: 6 * HOUR, summary: null }).droppedText)
             .toBe('6 h past the 24 h limit was skipped.');
         expect(summaryView({ awayMs: 3 * HOUR, droppedMs: 0, summary: null }).droppedText).toBeNull();
+    });
+});
+
+describe('a summary the game was closed on, offered again', () => {
+    const offerAgain = (result = fullResult()) => publish(ENGINE_EVENTS.CATCH_UP_OFFERED_AGAIN, { result, news: [] });
+
+    it('shows the same summary with both choices, and says why it is back', () => {
+        offerAgain();
+        expect(q('[data-catch-up-summary]')).not.toBeNull();
+        expect(text('[data-summary-away]')).toBe('You were away 3 h 12 min');
+        expect(text('[data-summary-again]')).toBe('You closed the game before choosing, so here it is again.');
+        expect(q('[data-summary-close]')).not.toBeNull();
+        expect(q('[data-summary-undo]')).not.toBeNull();
+        expect(q('[data-summary-undo-gone]')).toBeNull();
+    });
+
+    it('without the save from before, only Return to the Guild, and it says so', () => {
+        vi.mocked(CatchUp.canUndo).mockReturnValue(false);
+        offerAgain();
+        expect(q('[data-summary-undo]')).toBeNull();
+        expect(text('[data-summary-undo-gone]')).toBe('The save from before your time away is gone, so Load as I left it cannot be offered.');
+    });
+
+    it('a new time away long enough to show takes its place, as a new summary', () => {
+        offerAgain();
+        start(HOUR);
+        expect(q('[data-catch-up-summary]')).toBeNull();
+        expect(q('[data-catch-up-bar]')).not.toBeNull();
+        finish({ ...fullResult(), awayMs: HOUR });
+        expect(text('[data-summary-away]')).toBe('You were away 1 h');
+        expect(q('[data-summary-again]')).toBeNull();
+    });
+
+    it('a short one does not: the summary offered again stays', () => {
+        offerAgain();
+        start(30_000, false);
+        finish({ awayMs: 30_000, show: false, summary: null });
+        expect(q('[data-summary-again]')).not.toBeNull();
+    });
+
+    it('answered with Return to the Guild like any summary: asked first, then kept', () => {
+        offerAgain();
+        act(() => { fireEvent.click(q('[data-summary-close]')); });
+        expect(CatchUp.keepCatchUp).not.toHaveBeenCalled();
+        act(() => { fireEvent.click(q('[data-summary-confirm-yes]')); });
+        expect(CatchUp.keepCatchUp).toHaveBeenCalledTimes(1);
+        expect(q('[data-catch-up-summary]')).toBeNull();
     });
 });

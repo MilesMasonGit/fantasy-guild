@@ -32,6 +32,9 @@
         "autoSave60": "1 Hour",
         "autoSaveOff": "Off",
         "saveNow": "Save Game Now",
+        "saveNowDone": "Saved",
+        "saveNowFailed": "Could not save",
+        "storageFull": "Browser storage is full. Delete a save slot to make room.",
         "guildName": "Guild Name",
         "masterVolume": "Master Volume",
         "musicVolume": "Music Volume",
@@ -589,7 +592,9 @@
             "textSince": "Load the game as you left it {time} ago? Everything since then is lost."
         },
         "undoSince": "Load as I left it goes back {time}, to before an earlier time away.",
-        "undoFailed": "Could not load the game as you left it. You can try again."
+        "undoFailed": "Could not load the game as you left it. You can try again.",
+        "offeredAgain": "You closed the game before choosing, so here it is again.",
+        "undoGone": "The save from before your time away is gone, so Load as I left it cannot be offered."
     },
     "orders": {
         "needs": "Needs {what}",

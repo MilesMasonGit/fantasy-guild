@@ -231,7 +231,7 @@ these numbers: **unverified**, re-run in a bench window.
 `INITIAL_STATE` (`src/state/StateSchema.js:138-320`) has these top-level sections: `meta`,
 `heroes` (hero shape owned by `HeroGenerator`/`HeroRehydration`), `inventory` (the Bank), `progress` (roster limit, Hall upgrade
 ranks), `time` (`gameTimeMs`), `collection` (discoveries and counters), `ui` (New! badges, pinned
-stubs), `board` (the active Region's mat, `createEmptyBoard`, `:52-88`), `quests`, `events` (the
+stubs, unclicked knock-out and Bank Full banners), `board` (the active Region's mat, `createEmptyBoard`, `:52-88`), `quests`, `events` (the
 event clock, `{ clockMs }`; the events themselves are Tokens carrying `instance.event`), `atlas`
 (every Region; inactive ones hold a frozen board, `createRegionRecord`, `:94-132`), `world` (the
 hex world, null before a world exists, `:315`). A board stores Tokens **by instance id at a mat
@@ -244,7 +244,8 @@ point** (`board.tokens`, `:56`), heroes' orders in `board.flags` (`:63`), floor 
 - **3 slots** (`src/systems/core/SaveSlotHelper.js:8`).
 - **Browser and dev builds**: localStorage keys `fantasy_guild_slot_<n>` and
   `fantasy_guild_slot_<n>_backup` (`SaveSlotHelper.js:4,15-26`); each save rolls the previous
-  one into the backup first (`SaveManager.js:249-261`).
+  one into the backup first (`SaveManager.save`), except while a "While you were away" summary is
+  unanswered, when the backup holds the game as left (§4.4).
 - **Desktop (Tauri) build**: one file per slot, `slot<n>.json` and `slot<n>.backup.json` in the
   app data folder's `saves/` (`src-tauri/src/saves.rs:33-40,120-124`), written whole via temp
   file and rename (`saves.rs:67-105`). The page talks to it through `invoke`
@@ -313,6 +314,18 @@ points:
   under a second waits for more.
 - `EngineBootstrap.startSlot` runs one start at a time: a second call while one is under way
   gets its promise (a double-click on Load).
+- **An unanswered summary survives the page** (`src/systems/core/unansweredSummary.js`). From
+  the end save of a catch-up that can be turned down until the player presses Return or Load as
+  I left it, every save of the slot carries a mark in its envelope, beside `version`, `savedAt`
+  and `state`: `unanswered: { since, check, result, earlier }` (`SaveManager.holdUnanswered`).
+  The copy to go back to is the slot's backup (file or key), which after the end save is the game
+  as left byte for byte; while the mark is held no save rolls it, and "Load as I left it" writes
+  back without rolling. `check` is the copy's fingerprint: the next load reads the backup, and
+  offers the undo only when it matches (`SaveManager.readUnanswered`); a mark in a save loaded
+  from its backup is ignored. `CatchUp.slotLoaded` then re-arms the undo and publishes
+  `CATCH_UP_OFFERED_AGAIN`, before the load's own catch-up, so a new time away that shows replaces
+  the summary on screen and keeps the undo, as a second absence does live. Return saves at once
+  without the mark (`CatchUp.keepCatchUp`), which rolls the copy away.
 
 The summary (items, level-ups, depletions, wounds, breaks, fights, news) is counted from engine
 events while it plays (`CatchUp.js:29-46`).
@@ -470,6 +483,12 @@ the Perf HUD is showing (`src/ui/components/base/FPSCounter.jsx:10-25`,
   The item stubs sit on the mat's side of the cameras; the banners are one stack outside them
   (`ReactRoot.jsx`, after `HallCamera`), so they hold still while the view glides, and over the
   Hall and the World Map (`away`) show only kinds that point to a Token.
+  Banners live in memory except the kinds marked `kept` (knock-out, Bank Full), which `routing.js`
+  writes into `ui.banners` on every change and puts back silently on `GAME_LOADED`. Event banners
+  are not saved: `GAME_LOADED` and `BOARD_SWAPPED` raise one for each event Token standing on the
+  mat (`BOARD_SWAPPED` first withdraws those whose Token is not on the new mat), and
+  `CATCH_UP_FINISHED` raises one for each event that landed in the catch-up and still stands, held
+  with the rest of its news while the summary is open.
 - **Callouts**: refusals at a mat point (`ui/components/board/CalloutLayer.jsx`) and screen
   callouts (`ui/components/notifications/ScreenCalloutLayer.jsx`).
 - **`NotificationSystem`** messages are drawn only on the slot screen

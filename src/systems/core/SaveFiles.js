@@ -2,7 +2,8 @@
  * The desktop build's saves: one file per slot in the saves folder (`src-tauri/src/saves.rs`), so
  * a save can be copied, kept or edited outside the game. The app writes each save whole or not at
  * all (a temp file, flushed to the disk, renamed over the old one) and keeps the save it replaced
- * as the slot's backup. The browser and dev builds keep their saves in localStorage
+ * as the slot's backup, unless the write says to keep the backup as it is (`SaveManager.save`).
+ * The browser and dev builds keep their saves in localStorage
  * (`SaveManager`), and nothing here is active there.
  *
  * A slot is read fresh from the disk when it is opened. The slot screen reads a copy of each
@@ -134,13 +135,37 @@ export async function refresh(slot) {
     return readCopy(slot);
 }
 
+/**
+ * The copy for a slot whose save read as `text`. A missing or empty save with a backup that still
+ * holds one is marked unreadable, so the slot shows as damaged and Load restores the backup.
+ * ⚠️ Shown as empty, a new game there would roll its first save over that backup.
+ */
+async function copyOf(slot, text) {
+    if (text) return { text, unreadable: false };
+    let backup;
+    try {
+        backup = await backend.read(slot, true);
+    } catch (err) {
+        console.error(`[SaveFiles] Slot ${slot}'s backup could not be read:`, err);
+        return { text: null, unreadable: true };
+    }
+    if (!backup) return { text: null, unreadable: false };
+    try {
+        JSON.parse(backup);
+    } catch {
+        return { text: null, unreadable: false };
+    }
+    console.warn(`[SaveFiles] Slot ${slot} has no save but a backup: shown as damaged`);
+    return { text: null, unreadable: true };
+}
+
 /** @returns {Promise<boolean>} whether the copy changed */
 async function readCopy(slot) {
     const q = queueFor(slot);
     const version = q.version;
     let entry;
     try {
-        entry = { text: await backend.read(slot, false), unreadable: false };
+        entry = await copyOf(slot, await backend.read(slot, false));
     } catch (err) {
         console.error(`[SaveFiles] Slot ${slot} could not be read:`, err);
         entry = { text: null, unreadable: true };
@@ -185,7 +210,10 @@ export async function readSave(slot, { backup = false } = {}) {
     const q = queueFor(slot);
     const version = q.version;
     const text = await backend.read(slot, backup);
-    if (!backup && q.version === version) copies.set(slot, { text, unreadable: false });
+    if (!backup) {
+        const entry = await copyOf(slot, text);
+        if (q.version === version) copies.set(slot, entry);
+    }
     return text;
 }
 
@@ -229,9 +257,12 @@ function enqueue(slot, job) {
         job.waiters.push(...waiting.waiters);
         if (job.kind === 'write') {
             job.removeFirst = waiting.kind === 'remove' || waiting.removeFirst;
-            // ⚠️ A write that was to keep the backup still keeps it, so a damaged save is never
-            // rolled over the good backup it was loaded from.
-            if (waiting.kind === 'write' && !waiting.rollBackup) job.rollBackup = false;
+            // ⚠️ The file the waiting write would have rolled into the backup is the one still on
+            // the disk, so the backup gets what the waiting write gave it: a write that was to keep
+            // the backup still keeps it (a damaged save is never rolled over the good backup it
+            // was loaded from), and one that was to roll still rolls it (the game as left reaches
+            // the backup, which an unanswered summary then keeps).
+            if (waiting.kind === 'write') job.rollBackup = waiting.rollBackup;
         }
     }
     const result = new Promise(resolve => job.waiters.push(resolve));

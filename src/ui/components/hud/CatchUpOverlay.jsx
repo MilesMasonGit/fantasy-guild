@@ -23,7 +23,8 @@ import { summaryView, catchUpTitle, formatAway } from './catchUpSummary.js';
  * shows nothing. Each of its two buttons asks first: "Return to the Guild" (or Esc) keeps the
  * catch-up, "Load as I left it" turns it down (`CatchUp.undoLast`); if that write fails the
  * summary stays, says so, and can try again. When the undo goes back past an earlier time away (a
- * second absence while the summary was open), the summary says how far.
+ * second absence while the summary was open), the summary says how far. Closing the game is not an
+ * answer: the next start shows the same summary again (`CATCH_UP_OFFERED_AGAIN`), and says so.
  *
  * ⚠️ The bar is moved by its fill's `transform` with a CSS transition, and a sheen runs across it
  * as a CSS animation: both stay on the compositor, so the bar keeps moving through a slice of
@@ -58,11 +59,18 @@ export function CatchUpOverlay() {
             setUndoFailed(false);
             setResult(finished);
         }, UI_LISTENER);
-        return () => { offStart(); offProgress(); offFinish(); };
+        const offAgain = EventBus.subscribe(ENGINE_EVENTS.CATCH_UP_OFFERED_AGAIN, ({ result: again } = {}) => {
+            if (!again) return;
+            setRun(null);
+            setAsking(null);
+            setUndoFailed(false);
+            setResult({ ...again, again: true });
+        }, UI_LISTENER);
+        return () => { offStart(); offProgress(); offFinish(); offAgain(); };
     }, []);
 
     const close = () => {
-        CatchUp.forgetUndo();
+        CatchUp.keepCatchUp();
         setAsking(null);
         setUndoFailed(false);
         setResult(null);
@@ -307,7 +315,9 @@ function Summary({ result, asking, restoring, undoFailed, onClose, onAsk, onCanc
                 <div role="heading" aria-level={2} className="ui-text-title font-bold text-gi-gold">{t('catchUp.title')}</div>
                 <div data-summary-away>{t('catchUp.away', { time: view.awayText })}</div>
                 {view.droppedText && <div data-summary-dropped className="text-white/60">{view.droppedText}</div>}
+                {result.again && <div data-summary-again className="text-white/60">{t('catchUp.offeredAgain')}</div>}
                 {reach && <div data-summary-undo-since className="text-white/60">{t('catchUp.undoSince', { time: reach })}</div>}
+                {result.again && !undoable && <div data-summary-undo-gone className="text-white/60">{t('catchUp.undoGone')}</div>}
             </div>
 
             <div data-summary-body className="min-h-0 grid grid-cols-2 grid-rows-[minmax(0,1fr)] border-t border-white/10 pt-1.5">

@@ -212,7 +212,8 @@ export const INITIAL_STATE = {
 
     // === UI State (Transient Focus) ===
     ui: {
-        pinnedStubs: []                  // [{ itemId, added, removed }] - pinned item stubs, counting since pinned
+        pinnedStubs: [],                 // [{ itemId, added, removed }] - pinned item stubs, counting since pinned
+        banners: []                      // [{ kind, parts, sprite, subjects }] - unclicked kept banners (knock-outs, Bank full), oldest first (`banners.serializeKept`)
     },
 
     // === The Board (the playmat) ===

@@ -159,6 +159,12 @@ export const ENGINE_EVENTS = Object.freeze({
      * show, summary }` (`CatchUp.js` describes the summary).
      */
     CATCH_UP_FINISHED: 'catch_up_finished',
+    /**
+     * A loaded save had been closed on a "While you were away" summary not yet answered: it is
+     * shown again (`CatchUp.slotLoaded`). Payload: `{ result, news }`, `result` that catch-up's
+     * result as it was shown, `news` every `summary.news` still waiting for the banners.
+     */
+    CATCH_UP_OFFERED_AGAIN: 'catch_up_offered_again',
 
     /** A slot-screen message was raised. Payload: the message, `{ id, message, type, … }`. */
     NOTIFICATION_ADDED: 'notification_added',

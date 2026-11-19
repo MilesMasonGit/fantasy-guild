@@ -87,18 +87,20 @@ function replace(list, old, next) {
     return list.map(b => (b === old ? next : b));
 }
 
-function show(b) {
+function show(b, silent = false) {
     shown = [b, ...shown];
-    onShow?.(b);
+    if (!silent) onShow?.(b);
 }
 
 /**
  * Raise a banner, or fold it into one it belongs with.
  * @param {{kind: string, parts?: object, groupKey?: string, sprite?: object,
  *   subjects?: {type: 'hero'|'token', id: string}[]}} input
+ * @param {{silent?: boolean}} [options] `silent`: no sound if it comes on screen now (a banner
+ *   put back, not news)
  * @returns {number|null} the id of the banner that now says it
  */
-export function push(input) {
+export function push(input, { silent = false } = {}) {
     const def = BANNER_KINDS[input?.kind];
     if (!def) return null;
 
@@ -117,7 +119,7 @@ export function push(input) {
     }
 
     const b = build(input);
-    if (shown.length < MAX_SHOWN) show(b);
+    if (shown.length < MAX_SHOWN) show(b, silent);
     else {
         waiting = [...waiting, b];
         sortWaiting();
@@ -166,6 +168,47 @@ export function getView() {
 /** Every banner, on screen and waiting (tests and the dev page). */
 export function getAll() {
     return [...shown, ...waiting];
+}
+
+const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+
+/**
+ * The unclicked banners a save keeps (kinds marked `kept`), oldest first:
+ * `[{ kind, parts, sprite, subjects }]`, copies. A banner's `groupKey` is not kept: it joins
+ * banners of one moment, and a later run's keys start again.
+ */
+export function serializeKept() {
+    return [...[...shown].reverse(), ...waiting]
+        .filter(b => BANNER_KINDS[b.kind]?.kept)
+        .map(b => JSON.parse(JSON.stringify({ kind: b.kind, parts: b.parts, sprite: b.sprite, subjects: b.subjects })));
+}
+
+/**
+ * Put a save's kept banners back, silently, on screen and waiting as they stood. Malformed
+ * entries are skipped: a banner is never a reason for a load to fail.
+ */
+export function restore(list) {
+    if (!Array.isArray(list)) return;
+    for (const entry of list) {
+        if (!isPlainObject(entry) || !BANNER_KINDS[entry.kind]?.kept) continue;
+        let b;
+        try {
+            b = build({
+                kind: entry.kind,
+                parts: isPlainObject(entry.parts) ? entry.parts : {},
+                sprite: isPlainObject(entry.sprite) ? entry.sprite : null,
+                subjects: Array.isArray(entry.subjects) ? entry.subjects.filter(isPlainObject) : []
+            });
+        } catch {
+            continue;
+        }
+        if (shown.length < MAX_SHOWN) show(b, true);
+        else {
+            waiting = [...waiting, b];
+            sortWaiting();
+        }
+    }
+    emit();
 }
 
 /** Forget every banner (a new game or another save loaded). */

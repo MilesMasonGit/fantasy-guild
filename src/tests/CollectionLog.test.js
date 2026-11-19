@@ -3,7 +3,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, cleanup, fireEvent } from '@testing-library/react';
 import { GameState } from '../state/GameState.js';
-import { INITIAL_STATE, GAME_VERSION } from '../state/StateSchema.js';
+import { INITIAL_STATE, GAME_VERSION, createEmptyBoard } from '../state/StateSchema.js';
+import * as Atlas from '../systems/atlas/Atlas.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import { handleVictory } from '../systems/combat/CombatResolutionProcessor.js';
@@ -42,6 +43,16 @@ describe('what is recorded', () => {
     it('a Token standing on another Region counts too', () => {
         GameState.state.atlas.regions = { region_9: { board: { tokens: { a: { id: 'a', typeId: 'token_iron_ore_vein' } } } } };
         expect(collectedOf().tokens.has('token_iron_ore_vein')).toBe(true);
+    });
+
+    it('a Token that came with a settled place, from when the guild holds it, for good', () => {
+        const board = createEmptyBoard();
+        board.tokens = { chest_1: { id: 'chest_1', typeId: 'token_copper_chest' }, ore_1: { id: 'ore_1', typeId: 'token_iron_ore_vein' } };
+        const { region } = Atlas.createRegion({ ingredients: [], board });
+        expect(GameState.state.collection.tokensHad).toMatchObject({ token_copper_chest: true, token_iron_ore_vein: true });
+        // Opened and gone, with no copy standing anywhere: still ticked.
+        delete Atlas.getRegion(region.id).board.tokens.chest_1;
+        expect(collectedOf().tokens.has('token_copper_chest')).toBe(true);
     });
 
     it('an enemy once beaten (the kill count)', () => {
