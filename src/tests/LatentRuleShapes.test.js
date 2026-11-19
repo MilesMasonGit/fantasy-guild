@@ -141,6 +141,28 @@ registerTokenTypes({
     fixture_rs_wear_booster: booster('fixture_rs_wear_booster', [{ kind: 'charges_below', value: 3 }]),
     fixture_rs_mark_booster: booster('fixture_rs_mark_booster', [{ kind: 'carrying', value: 'fixture_rs_mark' }]),
     fixture_rs_worn_node: producer('fixture_rs_worn_node', { uses: 5, requiresHero: true }),
+    fixture_rs_becomes: producer('fixture_rs_becomes', {
+        uses: 2,
+        statements: [
+            {
+                id: 'stm_rs_becomes', keyword: 'transforms', payload: { typeId: 'fixture_rs_one_use' },
+                chargeDelta: 0, to: null, reach: null, target: { role: 'self' },
+                when: { event: 'SELF_CYCLE_COMPLETE', scope: 'self', cooldownMs: 0 }
+            },
+            grantOn('stm_rs_becomes_grant',
+                { event: 'SELF_CYCLE_COMPLETE', scope: 'self', cooldownMs: 0 }, { chargeDelta: -1 })
+        ]
+    }),
+    fixture_rs_changer: {
+        id: 'fixture_rs_changer', name: 'Changer', tokenType: 'support', rarity: 'common',
+        sprite: 's_occult', requiresHero: false, uses: 5,
+        statements: [{
+            id: 'stm_rs_changer', keyword: 'transforms', payload: { typeId: 'fixture_rs_one_use' },
+            chargeDelta: -1, to: null, reach: null, target: { role: 'source' },
+            when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 }
+        }]
+    },
+    fixture_rs_endless: producer('fixture_rs_endless'),
     fixture_rs_sigil: {
         id: 'fixture_rs_sigil', name: 'Ore Sigil', tokenType: 'support', rarity: 'common',
         sprite: 's_mining', requiresHero: false,
@@ -332,6 +354,39 @@ describe('the cycle that uses a Token up is still a cycle', () => {
         // Spent to nothing once, and never announced as refilled after it left.
         expect(changes).toEqual([0]);
         expect(last.usesRemaining).toBe(0);
+    });
+});
+
+describe('a second rule on the moment a Token was replaced', () => {
+    it('spends nothing from the Token that is gone and announces no depletion', () => {
+        const before = place(0, 'fixture_rs_becomes');
+        const depleted = [];
+        const charged = [];
+        const offs = [
+            EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, (p) => depleted.push(p.instanceId)),
+            EventBus.subscribe(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, (p) => {
+                if (p.instanceId === before.id) charged.push(p.remaining);
+            })
+        ];
+        run(1000);
+        offs.forEach(off => off());
+
+        expect(BoardState.getTokenById(before.id)).toBeNull();
+        expect(BoardState.tokens().map(t => t.typeId)).toEqual(['fixture_rs_one_use']);
+        // Its cycle spent one charge; nothing after it became something else.
+        expect(charged).toEqual([1]);
+        expect(depleted).toEqual([]);
+    });
+});
+
+describe('a Transforms aimed at another Token', () => {
+    it('costs its bearer the charge it names', () => {
+        const changer = place(1, 'fixture_rs_changer');
+        const node = place(0, 'fixture_rs_endless');
+        run(1000);
+        expect(BoardState.getTokenById(node.id)).toBeNull();
+        expect(BoardState.getTokenById(changer.id)).toBe(changer);
+        expect(changer.usesRemaining).toBe(4);
     });
 });
 

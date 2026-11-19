@@ -307,7 +307,9 @@ function runStatementActions(instance, statement, payload = null, { settled = fa
         bearerReplaced = !!landed?.replacedBearer;
     }
     if (statement.keyword === KEYWORD.TRANSFORMS) {
-        bearerReplaced = EffectActions.transform(statement, roles());
+        // Aimed at another Token (the source, the hero's), the bearer still stands and still pays.
+        const changed = EffectActions.transform(statement, roles());
+        bearerReplaced = changed && BoardState.getTokenById(instance.id) !== instance;
     }
 
 
