@@ -8,6 +8,7 @@ import * as InputCost from './InputCost.js';
 import * as StationRecipe from './StationRecipe.js';
 import * as Fields from './Fields.js';
 import * as BoardState from './BoardState.js';
+import { paidTestFor } from './BlockUpkeep.js';
 
 /**
  * The player chooses what a station makes; adjacency decides whether it can.
@@ -51,7 +52,8 @@ export function contextTiersAround(instanceId) {
 
         const def = getTokenType(instance.typeId);
         if (!def) continue;
-        const provided = getProvidedTagsWithTiers(def);
+        // An `Acts as` whose upkeep is unpaid is off until stock returns, as an aura is.
+        const provided = getProvidedTagsWithTiers(def, paidTestFor(instance));
         for (const [tag, tier] of Object.entries(provided)) {
             tiers[tag] = Math.max(tiers[tag] || 0, tier);
         }
@@ -193,7 +195,7 @@ export function effectiveIO(instanceId, instance) {
 export function servesFrom(contextId) {
     const instance = BoardState.getTokenById(contextId);
     const def = getTokenType(instance?.typeId);
-    const providedMap = getProvidedTagsWithTiers(def);
+    const providedMap = getProvidedTagsWithTiers(def, paidTestFor(instance));
     const providedTags = Object.keys(providedMap);
     const isBuff = hasAdjacencyEffect(def);
     if (!providedTags.length && !isBuff) return [];

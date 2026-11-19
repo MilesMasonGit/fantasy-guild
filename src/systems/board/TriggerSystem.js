@@ -22,6 +22,7 @@ import * as Charges from './Charges.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as EffectFeedback from './EffectFeedback.js';
+import { isStatementPaid } from './BlockUpkeep.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -148,9 +149,34 @@ function triggeredStatements(def, triggerId) {
 export function tickCooldowns(instance, delta) {
     const state = instance.blockCooldowns;
     if (!state) return;
+    let ended = null;
     for (const key of Object.keys(state)) {
-        if (state[key] > 0) state[key] = Math.max(0, state[key] - delta);
+        if (!(state[key] > 0)) continue;
+        state[key] = Math.max(0, state[key] - delta);
+        if (state[key] === 0) {
+            if (!ended) ended = [];
+            ended.push(key);
+        }
     }
+    if (ended) recheckBankHolds(instance, ended);
+}
+
+/**
+ * "On Bank Holds" means while the Bank holds, so a rule whose cooldown just ended asks the Bank
+ * again rather than waiting for the Bank to move. Only the rules whose cooldown ended: one that is
+ * ready and waiting is already heard on the Bank's next move.
+ */
+function recheckBankHolds(instance, statementIds) {
+    for (const statement of triggeredStatements(getTokenType(instance.typeId), 'ITEM_THRESHOLD')) {
+        if (!statementIds.includes(statement.id)) continue;
+        if (bankHolds(statement.when)) fireStatement(instance, statement);
+    }
+}
+
+/** Whether the Bank holds what an "On Bank Holds" moment watches for. */
+function bankHolds(when) {
+    const { watchItemId, threshold } = when || {};
+    return !!watchItemId && InventoryManager.getItemCount(watchItemId) >= (threshold || 1);
 }
 
 /** Whether a statement is off cooldown and may fire. */
@@ -185,6 +211,8 @@ function spawnHasRoom(instance, statement) {
  */
 function fireStatement(instance, statement, payload = null, { settled = false } = {}) {
     if (!instance || !isReady(instance, statement.id)) return false;
+    // An unpaid upkeep turns the rule off until stock returns, as it does an aura.
+    if (!isStatementPaid(instance, statement.id)) return false;
 
     // A statement's own charge cost gates it. An effect that costs more charges than the Token has
     // left cannot fire at all: it does not fire and go into debt, and it does not fire for free.
@@ -373,6 +401,8 @@ function runStatementActions(instance, statement, payload = null, { settled = fa
     // `uses: 1` Sapling hitting zero would announce a depletion for a Token that has already become
     // an Oak.
     if (bearerReplaced || settled) return true;
+    // A bearer that left the mat on the cycle that set this off has nothing left to pay or refill.
+    if (!BoardState.getTokenById(instance.id)) return false;
 
     Charges.applyDelta(instance, Charges.statementChargeDelta(statement));
     return false;
@@ -508,9 +538,7 @@ function handleGlobalItemThreshold() {
     for (const instance of BoardState.tokens()) {
         const def = getTokenType(instance.typeId);
         for (const statement of triggeredStatements(def, 'ITEM_THRESHOLD')) {
-            const { watchItemId, threshold } = statement.when;
-            if (!watchItemId) continue;
-            if (InventoryManager.getItemCount(watchItemId) < (threshold || 1)) continue;
+            if (!bankHolds(statement.when)) continue;
             fireStatement(instance, statement);
         }
     }

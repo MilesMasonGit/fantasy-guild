@@ -1,0 +1,277 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import './fixtures/testTokens.js';
+import { GameState } from '../state/GameState.js';
+import * as BoardState from '../systems/board/BoardState.js';
+import * as Placement from '../systems/board/Placement.js';
+import * as Orders from '../systems/board/Orders.js';
+import * as BoardRunner from '../systems/board/BoardRunner.js';
+import * as TileModifiers from '../systems/board/TileModifiers.js';
+import * as TriggerSystem from '../systems/board/TriggerSystem.js';
+import * as SpriteLayer from '../systems/board/SpriteLayer.js';
+import * as RecipeResolver from '../systems/board/RecipeResolver.js';
+import * as FightMoments from '../systems/board/FightMoments.js';
+import * as HeroManager from '../systems/hero/HeroManager.js';
+import { tickUpkeep } from '../systems/board/BlockUpkeep.js';
+import { SIDE } from '../systems/combat/FightHooks.js';
+import { FIGHT_MOMENT } from '../config/registries/triggerRegistry.js';
+import { ModifierAggregator } from '../systems/effects/ModifierAggregator.js';
+import { InventoryManager } from '../systems/inventory/InventoryManager.js';
+import { registerTokenTypes, tokenStartingUses, getTokenType } from '../config/registries/tokenRegistry.js';
+import { getAllSkillIds } from '../config/registries/skillRegistry.js';
+import { EventBus } from '../systems/core/EventBus.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
+
+vi.mock('../systems/core/NotificationSystem.js', () => ({
+    notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
+    getQueue: vi.fn(() => [])
+}));
+vi.mock('../systems/progression/RegistryManager.js', () => ({
+    RegistryManager: { recordItemGain: vi.fn() }
+}));
+
+/**
+ * Rule shapes the CMS can author and no shipped Token uses yet: each test authors the shape on a
+ * fixture and checks the engine does what the sentence says.
+ */
+
+/** Test layout only: spots 160 u apart, inside the shipped Near. */
+const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
+
+const COAL = 'fixture_charcoal';
+const ORE = 'fixture_copper_ore';
+const BONUS = 'fixture_control_item';
+const WOOD = 'fixture_oak_wood';
+
+function makeHero(id) {
+    const skills = {};
+    for (const s of getAllSkillIds()) skills[s] = { level: 50, xp: 0 };
+    return {
+        id, name: id, status: 'idle', level: 50, skills,
+        hp: { current: 100, max: 100 }, statuses: [], effects: [],
+        aggregator: new ModifierAggregator(id)
+    };
+}
+
+function place(spot, typeId, heroId = null, uses = undefined) {
+    const instance = BoardState.createTokenInstance(
+        typeId, uses === undefined ? tokenStartingUses(typeId) : uses
+    );
+    Placement.placeTokenAt(instance, C(spot));
+    TileModifiers.rebuildAround([instance]);
+    if (heroId) Orders.orderAt(heroId, C(spot));
+    return instance;
+}
+
+const run = (ms, step = 100) => { for (let t = 0; t < ms; t += step) BoardRunner.tick(step); };
+
+const upkeep = (quantity = 1, cadenceMs = 1000) => ({ items: [{ itemId: COAL, quantity }], cadenceMs });
+
+/** A grant of one bonus item onto the bearer, on a moment, free of charges. */
+const grantOn = (id, when, extra = {}) => ({
+    id, keyword: 'grants',
+    payload: { type: 'BONUS_DROP', itemId: BONUS, quantity: 1, chance: 100 },
+    chargeDelta: 0, to: null, reach: null, target: null, when, ...extra
+});
+
+/** A plain one-second producer that needs no hero. */
+const producer = (id, extra = {}) => ({
+    id, name: id, tokenType: 'resource', rarity: 'common', theme: 'fixture', sprite: 's_nature',
+    requiresHero: false,
+    config: {
+        skill: 'forestry', skillRequired: 1, cycleTimeMs: 1000, xp: 0,
+        inputs: [], outputs: [{ itemId: WOOD, quantity: 1, chance: 100 }]
+    },
+    ...extra
+});
+
+registerTokenTypes({
+    fixture_rs_coal_pick: {
+        id: 'fixture_rs_coal_pick', name: 'Coal-fed Pickaxe', tokenType: 'support', rarity: 'common',
+        sprite: 's_mining', requiresHero: false,
+        statements: [{
+            id: 'stm_rs_coal_pick', keyword: 'acts_as', payload: { tag: 'pickaxe', tier: 1 },
+            chargeDelta: 0, to: null, reach: null, target: null, when: null, upkeep: upkeep()
+        }]
+    },
+    fixture_rs_upkept_moment: producer('fixture_rs_upkept_moment', {
+        statements: [grantOn('stm_rs_upkept_moment',
+            { event: 'SELF_CYCLE_COMPLETE', scope: 'self', cooldownMs: 0 }, { upkeep: upkeep() })]
+    }),
+    fixture_rs_last_cycle: producer('fixture_rs_last_cycle', {
+        uses: 1,
+        statements: [grantOn('stm_rs_last_cycle',
+            { event: 'SELF_CYCLE_COMPLETE', scope: 'self', cooldownMs: 0 })]
+    }),
+    fixture_rs_last_cycle_refund: producer('fixture_rs_last_cycle_refund', {
+        uses: 1,
+        statements: [grantOn('stm_rs_last_cycle_refund',
+            { event: 'SELF_CYCLE_COMPLETE', scope: 'self', cooldownMs: 0 }, { chargeDelta: 1 })]
+    }),
+    fixture_rs_one_use: producer('fixture_rs_one_use', { uses: 1 }),
+    fixture_rs_cycle_listener: {
+        id: 'fixture_rs_cycle_listener', name: 'Cycle Listener', tokenType: 'support', rarity: 'common',
+        sprite: 's_nature', requiresHero: false,
+        statements: [grantOn('stm_rs_cycle_listener',
+            { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 })]
+    },
+    fixture_rs_upkept_thorns: {
+        id: 'fixture_rs_upkept_thorns', name: 'Coal Thorns', tokenType: 'support', rarity: 'common',
+        sprite: 's_nature', requiresHero: false,
+        statements: [{
+            id: 'stm_rs_upkept_thorns', keyword: 'deals', payload: { amount: 1 },
+            chargeDelta: 0, to: null, reach: null, target: { role: 'actor' },
+            when: { event: 'FIGHT_STRUCK', scope: 'self' }, upkeep: upkeep()
+        }]
+    },
+    fixture_rs_sigil: {
+        id: 'fixture_rs_sigil', name: 'Ore Sigil', tokenType: 'support', rarity: 'common',
+        sprite: 's_mining', requiresHero: false,
+        statements: [{
+            id: 'stm_rs_sigil', keyword: 'converts',
+            payload: { type: 'CONVERT', consumes: [{ itemId: ORE, quantity: 1 }], produces: [{ itemId: BONUS, quantity: 1 }], chance: 100 },
+            chargeDelta: 0, to: { mode: 'all', value: '' }, reach: null, target: null,
+            when: { event: 'ITEM_THRESHOLD', scope: 'global', watchItemId: ORE, threshold: 1, cooldownMs: 2000 },
+            upkeep: null
+        }]
+    }
+});
+
+beforeEach(() => {
+    GameState.initNew();
+    InventoryManager.init();
+    SpriteLayer.init();
+    TileModifiers.clearAll();
+    TileModifiers.init();
+    TriggerSystem.resetCascadeGuard();
+    TriggerSystem.init();
+    GameState.state.heroes = [makeHero('miner')];
+    GameState.state.inventory.maxSlots = 50;
+});
+
+afterEach(() => {
+    TriggerSystem.teardown();
+    TileModifiers.teardown();
+});
+
+describe('an upkeep is enforced on every rule that can carry one', () => {
+    it('an Acts as whose upkeep is unpaid hands its neighbours no capability', () => {
+        InventoryManager.addItem(COAL, 2);
+        const vein = place(12, 'fixture_copper_vein', 'miner');
+        place(13, 'fixture_rs_coal_pick');
+
+        // Two seconds paid, then the Bank runs dry; the vein's ten-second cycle never finishes.
+        run(15000);
+
+        expect(InventoryManager.getItemCount(COAL)).toBe(0);
+        expect(RecipeResolver.contextTiersAround(vein.id).pickaxe).toBeUndefined();
+        expect(SpriteLayer.countOnBoard(WOOD)).toBe(0);
+    });
+
+    it('an Acts as works again once the Bank can pay its upkeep', () => {
+        const vein = place(12, 'fixture_copper_vein', 'miner');
+        place(13, 'fixture_rs_coal_pick');
+        run(1000);
+        expect(RecipeResolver.contextTiersAround(vein.id).pickaxe).toBeUndefined();
+
+        InventoryManager.addItem(COAL, 50);
+        run(1000);
+        expect(RecipeResolver.contextTiersAround(vein.id).pickaxe).toBe(1);
+        run(10000);
+        expect(SpriteLayer.countOnBoard(WOOD)).toBe(2);
+    });
+
+    it('a rule with a moment does not fire while its upkeep is unpaid', () => {
+        place(0, 'fixture_rs_upkept_moment');
+        run(5000);
+        expect(SpriteLayer.countOnBoard(WOOD)).toBe(5);
+        expect(SpriteLayer.countOnBoard(BONUS)).toBe(0);
+    });
+
+    it('a rule with a moment fires while its upkeep is paid', () => {
+        InventoryManager.addItem(COAL, 50);
+        place(0, 'fixture_rs_upkept_moment');
+        run(5000);
+        expect(SpriteLayer.countOnBoard(BONUS)).toBe(5);
+    });
+});
+
+describe('an upkeep on a rule an enemy Token carries on a fight moment', () => {
+    /** A fight against the Token, as far as its moment rules read one. */
+    const fightAgainst = (instance) => ({
+        combat: { enemyHp: { current: 10, max: 10 } }, enemyId: instance.typeId,
+        instanceId: instance.id, assignedHeroId: 'miner', enemy: { kinds: [] }, effects: []
+    });
+    const struck = (instance) => {
+        tickUpkeep(instance, getTokenType(instance.typeId), 1000);
+        FightMoments.run(fightAgainst(instance), SIDE.ENEMY, FIGHT_MOMENT.STRUCK, 1);
+        return HeroManager.getHero('miner').hp.current;
+    };
+
+    it('keeps the rule off while unpaid', () => {
+        expect(struck(place(0, 'fixture_rs_upkept_thorns'))).toBe(100);
+    });
+
+    it('runs the rule while paid', () => {
+        InventoryManager.addItem(COAL, 5);
+        expect(struck(place(0, 'fixture_rs_upkept_thorns'))).toBe(99);
+    });
+});
+
+describe('the cycle that uses a Token up is still a cycle', () => {
+    it('a rule on its own cycle fires on the cycle that empties the Token', () => {
+        const last = place(0, 'fixture_rs_last_cycle');
+        run(2000);
+        expect(BoardState.getTokenById(last.id)).toBeNull();
+        expect(SpriteLayer.countOnBoard(WOOD)).toBe(1);
+        expect(SpriteLayer.countOnBoard(BONUS)).toBe(1);
+    });
+
+    it('a neighbour hears the cycle that empties a Token', () => {
+        const last = place(0, 'fixture_rs_one_use');
+        place(1, 'fixture_rs_cycle_listener');
+        run(2000);
+        expect(BoardState.getTokenById(last.id)).toBeNull();
+        expect(SpriteLayer.countOnBoard(BONUS)).toBe(1);
+    });
+
+    it('a rule that gives charges back does not refill a Token already gone', () => {
+        const last = place(0, 'fixture_rs_last_cycle_refund');
+        const changes = [];
+        const unsub = EventBus.subscribe(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, (p) => {
+            if (p.instanceId === last.id) changes.push(p.remaining);
+        });
+        run(2000);
+        unsub();
+        expect(BoardState.getTokenById(last.id)).toBeNull();
+        expect(SpriteLayer.countOnBoard(BONUS)).toBe(1);
+        // Spent to nothing once, and never announced as refilled after it left.
+        expect(changes).toEqual([0]);
+        expect(last.usesRemaining).toBe(0);
+    });
+});
+
+describe('On Bank Holds fires while the Bank holds', () => {
+    it('fires again when its cooldown ends, with no change in the Bank', () => {
+        place(0, 'fixture_rs_sigil');
+        InventoryManager.addItem(ORE, 5);
+        // The Bank moving fires it once at once.
+        expect(InventoryManager.getItemCount(ORE)).toBe(4);
+
+        // Every two seconds after, while ore remains.
+        run(10000);
+        expect(InventoryManager.getItemCount(ORE)).toBe(0);
+        expect(SpriteLayer.countOnBoard(BONUS)).toBe(5);
+    });
+
+    it('waits for the Bank once it no longer holds', () => {
+        place(0, 'fixture_rs_sigil');
+        InventoryManager.addItem(ORE, 1);
+        run(6000);
+        expect(InventoryManager.getItemCount(ORE)).toBe(0);
+        expect(SpriteLayer.countOnBoard(BONUS)).toBe(1);
+
+        InventoryManager.addItem(ORE, 1);
+        expect(InventoryManager.getItemCount(ORE)).toBe(0);
+        expect(SpriteLayer.countOnBoard(BONUS)).toBe(2);
+    });
+});

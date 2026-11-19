@@ -9,6 +9,7 @@ import { DEFAULT_STATION_CHARGE_COST, statementChargeDelta, statementCycleCost }
 import * as BoardState from './BoardState.js';
 import * as Hand from './Hand.js';
 import * as Respawn from './Respawn.js';
+import { paidTestFor } from './BlockUpkeep.js';
 
 /**
  * The one place a Token's charge pool is read, moved, or spent. Two axes spend against that pool:
@@ -200,7 +201,7 @@ export function contextProvidersAround(instanceId) {
 
         const def = getTokenType(instance.typeId);
         if (!def) continue;
-        const tiers = getProvidedTagsWithTiers(def);
+        const tiers = getProvidedTagsWithTiers(def, paidTestFor(instance));
         if (!Object.keys(tiers).length) continue;
 
         providers.push({ id, instance, tiers });

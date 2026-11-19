@@ -44,6 +44,15 @@ export function isStatementPaid(instance, statementId) {
 }
 
 /**
+ * The paid test for one Token copy's statements, as a predicate, or null when the copy has never
+ * been charged (everything is paid), so the common case builds nothing.
+ */
+export function paidTestFor(instance) {
+    if (!instance?.blockUpkeep) return null;
+    return (statement) => isStatementPaid(instance, statement?.id);
+}
+
+/**
  * Advance every costed statement's clock on one Token, charging when due.
  *
  * Returns true when any statement's paid/unpaid state CHANGED, so the caller can rebuild the tile's

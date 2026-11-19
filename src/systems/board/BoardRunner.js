@@ -430,6 +430,9 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, {
         instanceId: id,
         typeId: instance.typeId,
+        // ⚠️ The cycle that spends a Token's last charge has already taken it off the mat above
+        // (`commitPlan`), so a rule on this moment finds the Token, and where it stood, here.
+        instance,
         heroId: heroId || null,
         failed,
         // Which items this completion put on the board. The coarse "a neighbour
