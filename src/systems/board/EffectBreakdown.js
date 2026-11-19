@@ -25,6 +25,7 @@ import * as Fishing from './Fishing.js';
 import * as Respawn from './Respawn.js';
 import * as Demolition from './Demolition.js';
 import * as Foundations from './Foundations.js';
+import * as OutputRules from './OutputRules.js';
 import { exactInputQuantity, costedInputs } from './InputCost.js';
 import { effectiveIO } from './RecipeResolver.js';
 import { workConfigOf } from './StationRecipe.js';
@@ -320,13 +321,14 @@ function contextOf(instance) {
     // marked for demolition runs none of its own work, and an enemy runs a fight instead.
     const config = profile || marked ? null : workConfigOf(def, instance);
     const works = !!config;
+    const hero = heroId ? HeroManager.getHero(heroId) : null;
     return {
         instance, def, id: instance.id, profile, enemy: !!profile,
-        heroId, hero: heroId ? HeroManager.getHero(heroId) : null,
+        heroId, hero,
         config, works, io: works ? effectiveIO(instance.id, instance) : null,
         skill: config?.skill,
-        // A kill's loot reads its Token's skill or none (`LootSystem`); a cycle's, its work skill.
-        lootSkill: profile ? (def.config?.skill || '') : config?.skill,
+        // A kill's loot reads the fighter's style (`LootSystem`); a cycle's, its work skill.
+        lootSkill: profile ? OutputRules.killLootSkill(hero, def) : config?.skill,
         isHall: instance.typeId === GUILD_HALL,
         near: null
     };

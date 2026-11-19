@@ -4,14 +4,14 @@ import { EventBus } from '../core/EventBus.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
-import { randomInt } from '../../utils/RNG.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
+import * as HeroManager from '../hero/HeroManager.js';
 import * as SpriteLayer from '../board/SpriteLayer.js';
 import * as OutputRules from '../board/OutputRules.js';
 import * as RareDrops from '../board/RareDrops.js';
 import * as RareTables from '../board/RareTables.js';
 import * as BoardState from '../board/BoardState.js';
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, rollOutputQuantity } from '../../config/registries/tokenRegistry.js';
 import { rareTableOf } from '../../config/registries/rareTables.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
@@ -38,17 +38,19 @@ const LootSystem = {
         const typeDef = onBoard ? getTokenType(BoardState.getTokenById(instanceId)?.typeId) : null;
         // The enemy Token's own rare drop table: its kind, else the enemy's (the Token's id).
         const table = rareTableOf(typeDef || getTokenType(enemyId));
-        const sourceData = (Array.isArray(drops) && drops.length > 0) ? { drops } : (table ? { drops: [] } : null);
+        const lines = Array.isArray(drops) ? drops : [];
 
-        if (!sourceData) {
+        // Off the board nothing nearby grants a drop, so no lines and no table is nothing at all.
+        if (!onBoard && !lines.length && !table) {
             EventBus.publish(ENGINE_EVENTS.LOOT_GENERATED, { cardId, heroId, enemyId, enemyName, drops: [] });
             return;
         }
 
         // A kill is a cycle of the enemy Token, so on the board its loot follows the station output
         // rules in the same order: double loot rolled once, each line's quantity widened by YIELD,
-        // then its rare table, then the nearby bonus drops (Double Loot doubles those too).
-        const skill = onBoard ? (typeDef?.config?.skill || '') : '';
+        // then its rare table, then the nearby bonus drops (Double Loot doubles those too), which
+        // land even when the enemy drops nothing of its own, as beside a station with no outputs.
+        const skill = OutputRules.killLootSkill(heroId ? HeroManager.getHero(heroId) : null, typeDef);
         const doubled = onBoard && OutputRules.rollDoubleLoot(instanceId, skill);
 
         // Every drop line rolls on its own `chance`, as a station's outputs do in
@@ -59,7 +61,7 @@ const LootSystem = {
             ? (quantity, itemId) => OutputRules.doubleItemDrop(instanceId, itemId,
                 OutputRules.widenYield(instanceId, skill, quantity) * (doubled ? 2 : 1))
             : null;
-        const generatedDrops = this.rollEachLine(sourceData.drops, widen);
+        const generatedDrops = this.rollEachLine(lines, widen);
 
         // One roll on the enemy's rare table beside its loot (Lucky aimed at the enemy widens it), and
         // on a hit one find by weight, rolled and widened as a line is. No table, no draw.
@@ -73,7 +75,7 @@ const LootSystem = {
             // happened and is not banked until collected; banking it directly
             // would skip the sprite layer.
             for (const drop of generatedDrops) {
-                const line = (sourceData.drops || []).find(e => e?.itemId === drop.itemId);
+                const line = lines.find(e => e?.itemId === drop.itemId);
                 RareDrops.noteDrop(SpriteLayer.addSprite('item', drop.itemId, drop.quantity, instanceId), line?.chance ?? 100);
             }
             if (rareDrop) RareDrops.noteRareFind(SpriteLayer.addSprite('item', rareDrop.itemId, rareDrop.quantity, instanceId), find.chance);
@@ -125,11 +127,13 @@ const LootSystem = {
             return null;
         }
 
-        // `quantity` is accepted alongside min/max because card `config.outputs`
-        // and recipe authors use it. Ignoring it would silently drop exactly 1.
-        const min = entry.minQty ?? entry.min ?? entry.amount ?? entry.quantity ?? 1;
-        const max = entry.maxQty ?? entry.max ?? entry.amount ?? entry.quantity ?? 1;
-        let quantity = randomInt(min, max);
+        // Rolled as a station rolls its output (`rollOutputQuantity`), an inverted range included:
+        // one draw, the same number for an ordinary range.
+        const quantity = rollOutputQuantity({
+            minQty: entry.minQty ?? entry.min ?? entry.amount,
+            maxQty: entry.maxQty ?? entry.max ?? entry.amount,
+            quantity: entry.quantity
+        });
 
         return { itemId, quantity, itemName: item.name, itemIcon: item.icon };
     }
