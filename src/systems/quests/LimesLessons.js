@@ -16,7 +16,7 @@ const MOMENT_HEARD = 'heard';
 /**
  * The saved progress, or null for a game with no lessons: one made before them (it never gets
  * them) or a run with no new game behind it (a test, the bench).
- * `{ done: [stepId], counts: { stepId: n }, moments: { momentId: 'due' | 'heard' } }`
+ * `{ done: [stepId], counts: { stepId: n }, moments: { momentId: 'due' | 'heard' }, seen: [stepId] }`
  */
 function progress() {
     const p = GameState.state?.guide?.progress;
@@ -24,7 +24,34 @@ function progress() {
     if (!Array.isArray(p.done)) p.done = [];
     if (!p.counts || typeof p.counts !== 'object') p.counts = {};
     if (!p.moments || typeof p.moments !== 'object') p.moments = {};
+    // A save from before `seen` was kept has met only the steps that wait for no content.
+    if (!Array.isArray(p.seen)) p.seen = allSteps().filter(s => !s.needs).map(s => s.id);
+    admitJoinedSteps(p);
     return p;
+}
+
+/**
+ * ⚠️ A step waiting for content joins the list the day its target is set. Where the step showing is
+ * first "not done", a game already past the newcomer would be sent back to it, and could be stranded
+ * there (a scrap heap only a new game's camp has). So a step that joins behind where this game
+ * stands is counted done; one that joins ahead is met in its turn. `seen` holds the steps this game
+ * has met, so a step done early in a game that always had the newcomer still waits for it.
+ */
+function admitJoinedSteps(p) {
+    const steps = allSteps();
+    let joined = null;
+    for (const s of steps) {
+        if (!p.seen.includes(s.id)) (joined ||= []).push(s);
+    }
+    if (!joined) return;
+    const standing = steps.findIndex(s => p.seen.includes(s.id) && !p.done.includes(s.id));
+    for (const s of joined) {
+        if ((standing === -1 || steps.indexOf(s) < standing) && !p.done.includes(s.id)) {
+            p.done.push(s.id);
+            delete p.counts[s.id];
+        }
+        p.seen.push(s.id);
+    }
 }
 
 /** A new game starts the lessons (on or off: the switch only says whether Limes speaks of them). */
@@ -32,7 +59,7 @@ export function startLessons() {
     const state = GameState.state;
     if (!state) return;
     if (!state.guide || typeof state.guide !== 'object') state.guide = { limesSpot: null, lessons: true };
-    state.guide.progress = { done: [], counts: {}, moments: {} };
+    state.guide.progress = { done: [], counts: {}, moments: {}, seen: allSteps().map(s => s.id) };
 }
 
 /** Whether this game has lessons at all. */

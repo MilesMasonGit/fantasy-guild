@@ -13,7 +13,7 @@ import { passiveLapMs } from '../systems/board/workTime.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import * as HallRules from '../systems/progression/HallRules.js';
-import { describeStarRank, starSentence, starAmount, hallRuleSentence } from '../systems/progression/hallStarText.js';
+import { describeStarRank, starSentence, starAmount, hallRuleSentence, lapClock } from '../systems/progression/hallStarText.js';
 import { hallStarFindings } from '../systems/core/hallStarRule.js';
 import { getGlobalAggregator } from '../systems/effects/GuildModifiers.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
@@ -334,5 +334,48 @@ describe('⭐ the ledger rates the Hall at the lap its setup holds', () => {
         const row = pace.hallPaybacks().find(r => r.id === LAP_STAR_ID && r.rank === 1);
         expect(row.rate).toBe(true);
         expect(row.gain).toBeGreaterThan(0);
+    });
+});
+
+describe('a lap star\'s rank beside another Lap Time rule', () => {
+    const SECOND = 'fixture_second_lap';
+    const clock = () => `outputs every ${lapClock(PassiveProduction.lapMs())}`;
+
+    /** Each rank's words, read with no lap rank held, then the live lap holding that rank. */
+    function ranksAgainstLive() {
+        const def = getUpgradeDef(LAP_STAR_ID);
+        const said = [1, 2, 3].map(r => starAmount(def, r));
+        const live = [1, 2, 3].map(r => { holdLap(r); return clock(); });
+        holdLap(0);
+        return { said, live };
+    }
+
+    it('says the lap it gives with a Region\'s Lap Time rule in force', () => {
+        const agg = getGlobalAggregator();
+        agg.addModifier({ type: EFFECT_TYPES.PASSIVE_LAP, bucket: 'percentage', value: -0.1, source: 'test:region' });
+        try {
+            const { said, live } = ranksAgainstLive();
+            expect(live).toEqual(['outputs every 7:00', 'outputs every 5:00', 'outputs every 4:00']);
+            expect(said).toEqual(live);
+        } finally {
+            agg.removeModifiersBySource('test:region');
+        }
+    });
+
+    it('says the lap it gives with a second lap star held', () => {
+        const sky = lapSky();
+        sky.stars[SECOND] = { ...lapStar(), id: SECOND };
+        registerHallSky(sky);
+        GameState.state.progress.guildUpgrades[SECOND] = 1;
+        GuildUpgradeManager.recompute();
+        const { said, live } = ranksAgainstLive();
+        expect(said).toEqual(live);
+        // The second star's own rank row, read while it holds rank 1, is the lap now.
+        expect(starAmount(getUpgradeDef(SECOND), 1)).toBe(clock());
+    });
+
+    it('alone, each rank says the lap it gives, as before', () => {
+        const { said } = ranksAgainstLive();
+        expect(said).toEqual(['outputs every 8:00', 'outputs every 6:00', 'outputs every 5:00']);
     });
 });

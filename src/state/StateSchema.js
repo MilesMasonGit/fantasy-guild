@@ -276,7 +276,8 @@ export const INITIAL_STATE = {
         limesSpot: null,   // { x, y } Limes's middle on the Starter Camp's mat, mat units; null = its corner
         lessons: true,     // the new-game screen's lessons switch: whether Limes speaks of them
         // The lessons' progress, counted from the engine's events: { done: [stepId], counts:
-        // { stepId: n }, moments: { momentId: 'due' | 'heard' } }. Null in a game with no lessons
+        // { stepId: n }, moments: { momentId: 'due' | 'heard' }, seen: [stepId] (the steps this
+        // game has met, so a step that joins later is placed: `LimesLessons.js`) }. Null in a game with no lessons
         // (made before them, or with no new game behind it); a new game sets it.
         progress: null
     },

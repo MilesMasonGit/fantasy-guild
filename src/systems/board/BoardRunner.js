@@ -435,6 +435,8 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         instance,
         heroId: heroId || null,
         failed,
+        // How long before this tick's end the cycle ended: a rule's cooldown counts from then.
+        overMs,
         // Which items this completion put on the board. The coarse "a neighbour
         // completed a cycle" trigger has always been able to say *that* one
         // finished; this is what lets a listener care about *what* it made.
@@ -564,6 +566,7 @@ export function tick(delta) {
     if (!onMat.length) return;
 
     tickCounter++;
+    TriggerSystem.beginTick(delta);
     const publishProgress = tickCounter % PROGRESS_EVERY === 0;
 
     for (const instance of onMat) {
