@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-486**
+**Next free number: T-488**
 
 ---
 
@@ -165,7 +165,7 @@ The findings' full write-ups are in `docs/active/review/R*_*.md` (search the CR4
 
 ### Code review deep read (triaged 2026-11-17)
 
-The findings' full write-ups are in `docs/active/review/D1_the_mat.md` to `D4_screens_and_drag.md` (search the CR4 id); the owner's rulings are in `review/STATUS.md` (D1 to D4 questions) and [`review/design_check_2026-11-17.md`](../active/review/design_check_2026-11-17.md) (the 15 design questions). Held until the owner's desktop try: CR4-170, CR4-174, CR4-192. Not filed: CR4-165 (owner-no, old Tokens stay endless), CR4-132 (T-402 retires it). CR4-140 reopens T-077. Briefs: [650](../active/briefs/650_deep_read_heroes_fights.md) heroes and fights, [660](../active/briefs/660_deep_read_cms_renames.md) CMS renames and deletes, [670](../active/briefs/670_deep_read_mat_rules.md) mat rules, [680](../active/briefs/680_deep_read_saves.md) saves, [690](../active/briefs/690_deep_read_screens.md) screens, [700](../active/briefs/700_deep_read_latent_shapes.md) latent shapes. Every row is a player-visible bug unless it says latent; "WORK CHANGED" means the bench work check moves on purpose.
+The findings' full write-ups are in `docs/active/review/D1_the_mat.md` to `D4_screens_and_drag.md` (search the CR4 id); the owner's rulings are in `review/STATUS.md` (D1 to D4 questions) and [`review/design_check_2026-11-17.md`](../active/review/design_check_2026-11-17.md) (the 15 design questions). After the owner's desktop try (2026-11-18): CR4-170 moot, CR4-174 is T-486, CR4-192 is T-487. Not filed: CR4-165 (owner-no, old Tokens stay endless), CR4-132 (T-402 retires it). CR4-140 reopens T-077. Briefs: [650](../active/briefs/650_deep_read_heroes_fights.md) heroes and fights, [660](../active/briefs/660_deep_read_cms_renames.md) CMS renames and deletes, [670](../active/briefs/670_deep_read_mat_rules.md) mat rules, [680](../active/briefs/680_deep_read_saves.md) saves, [690](../active/briefs/690_deep_read_screens.md) screens, [700](../active/briefs/700_deep_read_latent_shapes.md) latent shapes. Every row is a player-visible bug unless it says latent; "WORK CHANGED" means the bench work check moves on purpose.
 
 **The mat (D1)**
 
@@ -232,6 +232,8 @@ The findings' full write-ups are in `docs/active/review/D1_the_mat.md` to `D4_sc
 | T-483 | P3 | open | **Pinned stubs' time-away counts reach disk only at the next save**: the catch-up's end save comes before `CATCH_UP_FINISHED`, where the pins add the gains, so a crash before the next autosave or close save keeps the Bank's gain but loses the pin's. A save in the route would roll the backup and could lose the unanswered summary's copy (680 S3) | 680 S6 builder, 2026-11-18 |
 | T-484 | P3 | open | **Older saves: Token types on a Region settled before 680 S6 are not yet had for the Encyclopedia**: a chest still standing there loses its tick once opened. A backfill in `migrateState` would fix it (a save change) | 680 S6 builder, 2026-11-18 |
 | T-485 | P3 | open | **A rule's direct damage moves no health bar**: a Deals rule (`DealDamage`, e.g. the new Thorns pricks) announces nothing unless it knocks the hero out, so the mat bar, the hero bar and the Hero drawer all stand still on it until the next hit or meal | 690 U1 builder, 2026-11-18 |
+| T-486 | P3 | open | **A short stall lets go of the selected hero and empties open fight windows' logs**: every quiet catch-up ends with `GAME_RESET`, which `clearSelection` and `fightWatch.clearAll` obey (the level-up feed already exempts `catch_up`); then a right-click stops whoever works that Token. Not seen after ten minutes minimised (owner's desktop try) | CR4-174 |
+| T-487 | P3 | open | **Guild Hall sky follows the pointer with no button held** after a press released over a neighbour (nav, Upgrade drawer, hero bar) on a small window: `onPanMove` never checks `e.buttons`. Not seen after an Alt-Tab (owner's desktop try) | CR4-192 |
 
 ### Brief 210 — the backlog intake (owner 2026-10-22, Backlog director)
 

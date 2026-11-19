@@ -155,5 +155,7 @@ Three layers, each with one job:
 
 ## Open questions
 
+- **Event nodes keep the cycle of the Token they copy** (owner feedback 2026-11-13): the Fallen Maple runs the Maple Tree's 26 s cycle and feels very slow beside the Copper Comet (3 s) and the Berry Thicket (5 s). Owner, 2026-11-18: leave it for the balancing pass, along with everything else.
+
 - **Boss drops**: settled with the enemies session.
 - **How the costs of a chain show the player its worth**: whether a crafted item's XP accounts for the materials spent, beyond the same-rate rule.
