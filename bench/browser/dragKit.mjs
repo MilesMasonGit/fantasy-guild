@@ -233,6 +233,20 @@ export function installDragKit() {
         .map(el => el.getBoundingClientRect())
         .filter(r => r.width > 0 && r.right > 0);
     const inRect = (p, r, pad = 0) => p.x >= r.left - pad && p.x <= r.right + pad && p.y >= r.top - pad && p.y <= r.bottom + pad;
+    /** Around a spot, where a flag planted there is drawn (its 24 px box stands up and right of it). */
+    const FLAG_REACH = [[0, 0], [-20, -22], [20, -22], [-20, 6], [20, 6]];
+    /**
+     * Whether the bare mat (`data-mat-surface`, under everything on it) is what the browser hits
+     * all over where a flag planted at `sp` stands: no hero, no Token and nothing outside the mat
+     * (the hero bar's level-up bubbles reach up over its bottom edge and stay until clicked).
+     */
+    const bareForAFlag = (sp) => {
+        const mat = matEl();
+        return FLAG_REACH.every(([dx, dy]) => {
+            const top = document.elementFromPoint(sp.x + dx, sp.y + dy);
+            return !!top && top.hasAttribute('data-mat-surface') && mat.contains(top);
+        });
+    };
 
     /**
      * An open spot on the mat (mat units), varied: the best-cleared of 40 random points, kept clear
@@ -241,6 +255,9 @@ export function installDragKit() {
      * lands on), not by clearance alone: clearance counts from Token centres, and S2's Guild Hall
      * is a 2×2 whose art circle lies inside the empty ring around it, so the best-cleared point was
      * often on the Hall, where a hero let go is sent home instead of given a spot.
+     * ⚠️ Bare mat where the flag will stand (`bareForAFlag`): the flag kind drags the one flag it
+     * can press (every other has faded once its hero arrived), so a flag let go under the hero
+     * bar's bubbles or a hero left it none, and every later flag drag of the pass was skipped.
      */
     kit.freeSpot = () => {
         const el = matEl();
@@ -255,6 +272,7 @@ export function installDragKit() {
             const sp = kit.matToScreen(p);
             if (drawers.some(r => inRect(sp, r, 24))) continue;
             if (G.Flags.tokenAtPoint(kit.screenToMat(sp))) continue;
+            if (!bareForAFlag(sp)) continue;
             let clear = Infinity;
             for (const o of others) clear = Math.min(clear, Math.hypot(o.x - p.x, o.y - p.y));
             if (!best || clear > best.clear) best = { p, clear };

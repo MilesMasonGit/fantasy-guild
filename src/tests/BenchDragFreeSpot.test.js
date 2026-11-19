@@ -54,6 +54,10 @@ const MAT_TOP = 78;
 
 let kit;
 let rect;
+let mat;
+let surface;
+/** jsdom hit-tests nothing: the bare mat everywhere, as on open ground. */
+const bareEverywhere = () => surface;
 
 beforeAll(() => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -73,12 +77,16 @@ beforeAll(() => {
     const w = matW() * SCALE;
     const h = matH() * SCALE;
     rect = { left: MAT_LEFT, top: MAT_TOP, width: w, height: h, right: MAT_LEFT + w, bottom: MAT_TOP + h, x: MAT_LEFT, y: MAT_TOP };
-    const mat = document.createElement('div');
+    mat = document.createElement('div');
     mat.setAttribute('data-board-origin', 'true');
     mat.setAttribute('data-natural-width', String(matW()));
     mat.setAttribute('data-board-scale', String(SCALE));
     mat.getBoundingClientRect = () => rect;
+    surface = document.createElement('div');
+    surface.setAttribute('data-mat-surface', '');
+    mat.appendChild(surface);
     document.body.appendChild(mat);
+    document.elementFromPoint = bareEverywhere;
 
     window.__perf = { game: EngineBootstrap.getEngine() };
     installDragKit();
@@ -86,6 +94,7 @@ beforeAll(() => {
 });
 
 afterAll(() => {
+    delete document.elementFromPoint;
     delete window.__perf;
     delete window.__dragKit;
     vi.unstubAllGlobals();
@@ -129,5 +138,44 @@ describe("the drag bench's free spot on S2", () => {
         } finally {
             random.mockRestore();
         }
+    });
+
+    /**
+     * The flag kind drags the one flag it can press: every other has faded once its hero arrived.
+     * Let go under the hero bar's level-up bubbles (the overlays pass keeps them up, over the mat's
+     * bottom edge) or under a hero, that flag could not be pressed either, and every later flag
+     * drag of the pass was skipped (48 of 50 on 2026-11-18, on main's build and on U1's alike).
+     */
+    it('leaves a planted flag where it can be pressed: never under the hero bar bubbles or a hero', () => {
+        const bubbles = document.createElement('div');
+        bubbles.setAttribute('data-bar-bubbles', 'hero_bench_0');
+        document.body.appendChild(bubbles);
+        const hero = document.createElement('button');
+        hero.setAttribute('data-board-hero', 'hero_bench_1');
+        mat.appendChild(hero);
+        // The bubbles stand over the mat's bottom fifth; a hero stands mid-mat, 120 px across.
+        const bandTop = rect.top + rect.height * 0.8;
+        const heroAt = kit.matToScreen({ x: matW() * 0.5, y: matH() * 0.5 });
+        const underHero = (x, y) => Math.abs(x - heroAt.x) <= 60 && Math.abs(y - heroAt.y) <= 60;
+        document.elementFromPoint = (x, y) => (y >= bandTop ? bubbles : underHero(x, y) ? hero : surface);
+        const random = vi.spyOn(Math, 'random').mockImplementation(seeded(612));
+        const covered = [];
+        try {
+            for (let i = 0; i < 200; i++) {
+                const spot = kit.freeSpot();
+                expect(spot).toBeTruthy();
+                // Where its flag is drawn: a 24 px box up and right of the spot.
+                const { x, y } = spot.screen;
+                for (const [dx, dy] of [[0, 0], [-20, -22], [20, -22], [-20, 6], [20, 6]]) {
+                    if (y + dy >= bandTop || underHero(x + dx, y + dy)) { covered.push(spot.screen); break; }
+                }
+            }
+        } finally {
+            random.mockRestore();
+            document.elementFromPoint = bareEverywhere;
+            bubbles.remove();
+            hero.remove();
+        }
+        expect(covered).toEqual([]);
     });
 });

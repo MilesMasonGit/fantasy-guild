@@ -877,7 +877,12 @@ real input, the browser's own hit-testing decides
 what the press lands on, which is where "something is blocking the drag" bugs
 live. Sources and targets are picked from the live DOM and state for every drag
 (things move); targets are the best-cleared of 40 random points on the mat,
-away from open drawers.
+away from open drawers, where the bare mat is what the browser hits all over
+the box a flag planted there is drawn in (no hero, no Token, none of the hero
+bar's level-up bubbles that reach up over the mat's bottom edge). Without that
+last rule the flag kind ran dry: it drags the one flag it can press (every other
+has faded once its hero arrived), and once that one was let go under the bubbles
+every later flag drag of the pass was skipped.
 
 | Kind | Source → target | Success (read from the game's state) |
 |---|---|---|
