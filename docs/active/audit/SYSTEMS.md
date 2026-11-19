@@ -12,9 +12,13 @@ the date.*
   identity. The work cycle the skills share is audited once, in the sweep.
 - **Combat is split into five systems**, each small enough to play and judge
   in one sitting.
-- **The specialist skills** (fletching, faith, summoning, enchanting, crime,
-  taming, science) are placeholders with no mechanics. They are left out until
-  the owner's specialist-skill rework; any with content by then get a row.
+- **The specialist skills are in** (owner, 2026-11-18): fletching, faith,
+  summoning, enchanting, crime, taming and science are placeholders with no
+  mechanics yet. Their sessions are identity sessions: the card says what
+  exists today (name, description, any content or rule that names the skill,
+  any concept or content doc about it), and the talk-through decides whether
+  the skill is cut, merged into another, or given a defined identity. A
+  defined identity becomes a draft concept doc.
 - **Alchemy** has no content yet. Its card covers the rules it will use, or it
   waits; the auditor asks the owner.
 - **The sweep's topics** (part 1) are audited across all systems in S0. The
@@ -57,46 +61,53 @@ the date.*
 | A16 | Ranged | Bows and arrows, two damage types per shot | as above | as above, `combat/Arrows.js` |
 | A17 | Magic | | as above | as above |
 | A18 | Stealth | | as above | as above |
+| A19 | Fletching | Placeholder. See also `content_fletching.md`: cut, merge, or define an identity | §4 Skills | `src/systems/hero/SkillSystem.js`, the skill registry, any content naming it |
+| A20 | Faith | Placeholder: cut, merge, or define an identity | §4 Skills | `src/systems/hero/SkillSystem.js`, the skill registry, any content naming it |
+| A21 | Summoning | Placeholder: cut, merge, or define an identity | §4 Skills | `src/systems/hero/SkillSystem.js`, the skill registry, any content naming it |
+| A22 | Enchanting | Placeholder. See also `content_enchanting.md`: cut, merge, or define an identity | §4 Skills | `src/systems/hero/SkillSystem.js`, the skill registry, any content naming it |
+| A23 | Crime | Placeholder: cut, merge, or define an identity | §4 Skills | `src/systems/hero/SkillSystem.js`, the skill registry, any content naming it |
+| A24 | Taming | Placeholder: cut, merge, or define an identity | §4 Skills | `src/systems/hero/SkillSystem.js`, the skill registry, any content naming it |
+| A25 | Science | Placeholder: cut, merge, or define an identity | §4 Skills | `src/systems/hero/SkillSystem.js`, the skill registry, any content naming it |
 
 ## 4. Heroes
 
 | # | System | What it covers | GDD | Code to start from |
 |---|---|---|---|---|
-| A19 | Roster and XP | Hiring, the XP curve, XP bonuses, hero level | §4 Roster, Skills | `src/systems/hero/` (HeroManager, HeroGenerator, SkillSystem, xpBonus) |
-| A20 | Milestone perks | Perks earned at skill levels | §4 Milestone perks | `hero/HeroPerks.js`, `hero/perkTable.js` |
-| A21 | Health, food and defeat | Health, eating, regen, being wounded | §4 Health, food, defeat | `hero/` (ConsumptionSystem, RegenSystem), `combat/WoundedSystem.js`, `combat/DefeatPenalties.js` |
-| A22 | Equipment and tools | Loadout, tools, wear and breakage, what gear unlocks | §4 Equipment | `src/systems/equipment/` |
-| A23 | Orders | How heroes get work and choose what to do | §4 Orders | `board/Orders.js`, `board/Occupation.js`, `board/walking.js` |
+| A26 | Roster and XP | Hiring, the XP curve, XP bonuses, hero level | §4 Roster, Skills | `src/systems/hero/` (HeroManager, HeroGenerator, SkillSystem, xpBonus) |
+| A27 | Milestone perks | Perks earned at skill levels | §4 Milestone perks | `hero/HeroPerks.js`, `hero/perkTable.js` |
+| A28 | Health, food and defeat | Health, eating, regen, being wounded | §4 Health, food, defeat | `hero/` (ConsumptionSystem, RegenSystem), `combat/WoundedSystem.js`, `combat/DefeatPenalties.js` |
+| A29 | Equipment and tools | Loadout, tools, wear and breakage, what gear unlocks | §4 Equipment | `src/systems/equipment/` |
+| A30 | Orders | How heroes get work and choose what to do | §4 Orders | `board/Orders.js`, `board/Occupation.js`, `board/walking.js` |
 
 ## 5. Combat (five systems)
 
 | # | System | What it covers | GDD | Code to start from |
 |---|---|---|---|---|
-| A24 | The hit | Swings, weapon speed, damage types, crits, resistances, the damage formula | §6 The fight | `combat/` (CombatAttackProcessor, CombatFormulas), `board/DealDamage.js` |
-| A25 | Enemies and encounters | Enemy kinds, camps, how fights start, enemy movement | §6 Enemies, Encounters | `board/` (Camps, EnemyMotion, BoardCombat, FightRoom) |
-| A26 | Status effects and boss moves | Statuses in fights, boss moves | §6 Status effects, Boss moves | `board/StatusApplication.js`, `board/FightMoments.js`, `combat/FightHooks.js` |
-| A27 | Winning, losing and loot | The end of a fight, defeat penalties, wounds, loot and rare drops | §6 The fight | `combat/` (CombatResolutionProcessor, LootSystem, DefeatPenalties), `board/` (RareDrops, RareTables) |
-| A28 | The combat screen | What the player sees during a fight | §6 The combat screen | `src/ui/` |
+| A31 | The hit | Swings, weapon speed, damage types, crits, resistances, the damage formula | §6 The fight | `combat/` (CombatAttackProcessor, CombatFormulas), `board/DealDamage.js` |
+| A32 | Enemies and encounters | Enemy kinds, camps, how fights start, enemy movement | §6 Enemies, Encounters | `board/` (Camps, EnemyMotion, BoardCombat, FightRoom) |
+| A33 | Status effects and boss moves | Statuses in fights, boss moves | §6 Status effects, Boss moves | `board/StatusApplication.js`, `board/FightMoments.js`, `combat/FightHooks.js` |
+| A34 | Winning, losing and loot | The end of a fight, defeat penalties, wounds, loot and rare drops | §6 The fight | `combat/` (CombatResolutionProcessor, LootSystem, DefeatPenalties), `board/` (RareDrops, RareTables) |
+| A35 | The combat screen | What the player sees during a fight | §6 The combat screen | `src/ui/` |
 
 ## 6. Progression and economy
 
 | # | System | What it covers | GDD | Code to start from |
 |---|---|---|---|---|
-| A29 | Items and the Bank | Items as currency, Bank tabs, search and sort, item sinks | §5 | `src/systems/inventory/` |
-| A30 | The Guild Hall and Stars | The Hall, the star web, upgrades | §8 | `src/systems/progression/` |
-| A31 | Quests and Limes | The tutorial NPC, lessons, quest bounties: how the game teaches itself | §8, §9 | `src/systems/quests/` |
+| A36 | Items and the Bank | Items as currency, Bank tabs, search and sort, item sinks | §5 | `src/systems/inventory/` |
+| A37 | The Guild Hall and Stars | The Hall, the star web, upgrades | §8 | `src/systems/progression/` |
+| A38 | Quests and Limes | The tutorial NPC, lessons, quest bounties: how the game teaches itself | §8, §9 | `src/systems/quests/` |
 
 ## 7. World and time
 
 | # | System | What it covers | GDD | Code to start from |
 |---|---|---|---|---|
-| A32 | The world map and settling | The world map, settling new places, travel | §3 Maps (retired), §10 | `src/systems/world/` |
-| A33 | Regions | Region rules, ground and terrain, region modifiers | §3 | `src/systems/atlas/`, `board/` (GroundRules, SiteRules) |
-| A34 | Time away and saving | Catch-up after being away, what a reload keeps, save files | §10 | `src/systems/core/` (CatchUp, SaveManager, SaveFiles, TimeManager) |
+| A39 | The world map and settling | The world map, settling new places, travel | §3 Maps (retired), §10 | `src/systems/world/` |
+| A40 | Regions | Region rules, ground and terrain, region modifiers | §3 | `src/systems/atlas/`, `board/` (GroundRules, SiteRules) |
+| A41 | Time away and saving | Catch-up after being away, what a reload keeps, save files | §10 | `src/systems/core/` (CatchUp, SaveManager, SaveFiles, TimeManager) |
 
 ## 8. Screens and feedback
 
 | # | System | What it covers | GDD | Code to start from |
 |---|---|---|---|---|
-| A35 | Notifications | Banners, catch-up news, recipe unlocks | §9 | `src/systems/notifications/` |
-| A36 | Cards, badges and bars | How a Token, hero or item tells the player what it is doing | §9 | `src/ui/`, `board/` (EffectFeedback, TokenGlows) |
+| A42 | Notifications | Banners, catch-up news, recipe unlocks | §9 | `src/systems/notifications/` |
+| A43 | Cards, badges and bars | How a Token, hero or item tells the player what it is doing | §9 | `src/ui/`, `board/` (EffectFeedback, TokenGlows) |

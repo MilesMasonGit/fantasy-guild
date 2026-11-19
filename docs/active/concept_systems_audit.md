@@ -83,13 +83,14 @@ sessions, which the owner approves as multiple choice.
 ## The systems
 
 The list of what counts as one system lives in
-[audit/SYSTEMS.md](audit/SYSTEMS.md) (owner, 2026-11-18): 36 systems in seven
+[audit/SYSTEMS.md](audit/SYSTEMS.md) (owner, 2026-11-18): 43 systems in seven
 groups plus the sweep's shared topics, each with its GDD section and the code
-to start from. The owner's rules for it: **one card per skill** that has
-content; **combat split into five systems**; quests and Limes, the world map
-and Regions, time away and saving, and screens and feedback are **in**; the
-placeholder specialist skills are out until their rework. The sweep may
-propose changes to the list; the owner approves them.
+to start from. The owner's rules for it: **one card per skill**;
+**combat split into five systems**; quests and Limes, the world map and
+Regions, time away and saving, and screens and feedback are **in**. The seven
+**placeholder specialist skills are in too**: as a design pass, the audit
+decides whether each is cut, merged, or given a defined identity. The sweep
+may propose changes to the list; the owner approves them.
 
 ## Related work (read, don't redo)
 
