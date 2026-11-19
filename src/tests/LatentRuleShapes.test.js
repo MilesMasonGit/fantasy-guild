@@ -23,6 +23,8 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import * as LiveEffects from '../systems/effects/LiveEffects.js';
 import * as Charges from '../systems/board/Charges.js';
 import * as Hand from '../systems/board/Hand.js';
+import * as WorkCheck from '../systems/board/WorkCheck.js';
+import { workConfigOf } from '../systems/board/StationRecipe.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import * as GameClock from '../systems/core/GameClock.js';
@@ -99,7 +101,13 @@ const booster = (id, filters) => ({
     }]
 });
 
-registerEffects({ fixture_rs_mark: { id: 'fixture_rs_mark', name: 'Mark', statements: [] } });
+registerEffects({
+    fixture_rs_mark: { id: 'fixture_rs_mark', name: 'Mark', statements: [] },
+    fixture_rs_thrift: {
+        id: 'fixture_rs_thrift', name: 'Thrift',
+        statements: [{ id: 'stm_rs_thrift', keyword: 'provides', payload: { type: 'INPUT_COST', bucket: 'percentage', value: -0.5 } }]
+    }
+});
 
 registerTokenTypes({
     fixture_rs_coal_pick: {
@@ -190,6 +198,13 @@ registerTokenTypes({
             when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 }
         }]
     },
+    fixture_rs_coal_forge: producer('fixture_rs_coal_forge', {
+        requiresHero: true,
+        config: {
+            skill: 'smithing', skillRequired: 1, cycleTimeMs: 1000, xp: 0,
+            inputs: [{ itemId: COAL, quantity: 10 }], outputs: [{ itemId: WOOD, quantity: 1, chance: 100 }]
+        }
+    }),
     fixture_rs_sigil: {
         id: 'fixture_rs_sigil', name: 'Ore Sigil', tokenType: 'support', rarity: 'common',
         sprite: 's_mining', requiresHero: false,
@@ -491,6 +506,33 @@ describe('an effect carried both for the fight and for a while', () => {
         GameClock.advance(10000);
         LiveEffects.endFightEffects(hero());
         expect(carried()).toEqual([]);
+    });
+});
+
+describe('a hero who carries Efficiency', () => {
+    it('is judged able to afford a station by their own cost cut', () => {
+        InventoryManager.addItem(COAL, 5);
+        const forge = place(0, 'fixture_rs_coal_forge');
+        LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_thrift', durationMs: 600000 });
+        const config = workConfigOf(getTokenType(forge.typeId), forge);
+        expect(WorkCheck.whyCannotRun(forge.id, forge, 'miner', config)).toBeNull();
+    });
+
+    it('takes the station and works it', () => {
+        InventoryManager.addItem(COAL, 5);
+        LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_thrift', durationMs: 600000 });
+        const forge = place(0, 'fixture_rs_coal_forge', 'miner');
+        run(1500);
+        expect(BoardState.workerOf(forge.id)).toBe('miner');
+        expect(SpriteLayer.countOnBoard(WOOD)).toBe(1);
+        expect(InventoryManager.getItemCount(COAL)).toBe(0);
+    });
+
+    it('a hero without it is still passed over', () => {
+        InventoryManager.addItem(COAL, 5);
+        const forge = place(0, 'fixture_rs_coal_forge');
+        const config = workConfigOf(getTokenType(forge.typeId), forge);
+        expect(WorkCheck.whyCannotRun(forge.id, forge, 'miner', config)).toBe('inputs');
     });
 });
 

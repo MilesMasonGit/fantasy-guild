@@ -846,7 +846,7 @@ export const AXIS_SCOPE = Object.freeze({ TOKEN: 'token', GUILD: 'guild', HERO: 
  * breakdown (`explainAxis`), so a badge cannot sum differently from the engine. `trace`, when given,
  * receives each contribution with its scope, from the same loops that sum it; the engine passes none.
  */
-function collectAxis(instanceId, effectType, category, withHero, trace) {
+function collectAxis(instanceId, effectType, category, withHero, trace, heroId = undefined) {
     const tile = getTokenAggregator(instanceId);
     const guild = getGlobalAggregator();
     const tileTrace = trace ? [] : null;
@@ -855,7 +855,7 @@ function collectAxis(instanceId, effectType, category, withHero, trace) {
 
     let buckets;
     if (withHero) {
-        const hero = heroContributions(instanceId, effectType, category, heroTrace);
+        const hero = heroContributions(instanceId, effectType, category, heroTrace, heroId);
         buckets = {
             flat: [
                 tile.getFlat(effectType, category, tileTrace),
@@ -903,9 +903,11 @@ function collectAxis(instanceId, effectType, category, withHero, trace) {
  * @param {string} effectType EFFECT_TYPES key
  * @param {number} base the authored value
  * @param {string} [category] skill category, for targeted buffs
+ * @param {string} [heroId] the hero whose loadout counts, when asking about one who does not work
+ * the Token yet (a flag weighing it); otherwise whoever works it
  */
-export function resolveAxis(instanceId, effectType, base, category = TARGET_CATEGORIES.ALL) {
-    return applyThreeBucket(base, collectAxis(instanceId, effectType, category, true, null));
+export function resolveAxis(instanceId, effectType, base, category = TARGET_CATEGORIES.ALL, heroId = undefined) {
+    return applyThreeBucket(base, collectAxis(instanceId, effectType, category, true, null, heroId));
 }
 
 /**
@@ -1101,10 +1103,10 @@ export function nearbyGateMet(instance, typeIds) {
  * thing a number could be about: the work being done here. Any filter authored on it is ignored
  * rather than obeyed, because there is nothing for it to choose between.
  */
-function heroContributions(instanceId, effectType, category = TARGET_CATEGORIES.ALL, trace = null) {
+function heroContributions(instanceId, effectType, category = TARGET_CATEGORIES.ALL, trace = null, asHero = undefined) {
     const sums = { flat: 0, multipliers: [], percentages: [] };
 
-    const heroId = BoardState.workerOf(instanceId);
+    const heroId = asHero === undefined ? BoardState.workerOf(instanceId) : asHero;
     if (!heroId) return sums;
 
     const hero = HeroManager.getHero(heroId);
