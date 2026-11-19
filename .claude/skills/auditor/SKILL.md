@@ -144,7 +144,11 @@ explain it so the owner can judge it, and the owner makes every design call.
   re-open a decision a roadmap or the GDD records as locked unless the owner
   raises it.
 - **Not defects:** half-authored content and placeholder art. A system with
-  no content yet is audited for its rules, not its items.
+  no content yet is audited for its rules, not its items. A **placeholder
+  skill** (no mechanics yet) gets an identity session: the card says what
+  exists today, and the talk-through decides whether it is cut, merged into
+  another skill, or given a defined identity (which becomes a draft concept
+  doc).
 - **Plain words.** Name things by what they do for the player; codes may
   follow in brackets.
 
