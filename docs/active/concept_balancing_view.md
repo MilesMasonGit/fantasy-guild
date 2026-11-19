@@ -1,4 +1,4 @@
-Status: draft
+Status: built 2026-11-19 (approved by the owner 2026-11-19): the [Guild Balance Dials](https://claude.ai/artifact/LFSTcCGMiCsQUSDArMH3z6) page
 
 # The balancing view: rules and dials set the game, the system fills in the details
 
@@ -56,6 +56,14 @@ Status: draft
 - **Guild time counts one gatherer per raw ingredient at its source's rate**, with the yield rule (one gather gives the same at every tier). It's a planning estimate; the ledger's rate calculator is the real count.
 - **The CMS ledger already has a balancing preview** for live content (`ledger/balance.js`: XP, gates, costs, boosts). The page is its planning-time cousin. When T-305 lands, the ledger's preview runs over the same plan, and a disagreement means the page's solver learns from the ledger, not the other way round.
 - **The content agent builds the page and the solver** (skill scripts and an artifact, no game code). Only the pack step after T-305 needs the director.
+
+## As built (2026-11-19)
+
+- **The page**: [Guild Balance Dials](https://claude.ai/artifact/LFSTcCGMiCsQUSDArMH3z6), built by `.claude/skills/content/build_balance.py` from the catalogue and the solver, `.claude/skills/content/balance_solver.cjs` (`node .claude/skills/content/balance_solver.cjs` prints the same summary).
+- **On the rules as they stand**, every skill the rules can time reaches 99 in 14.9 to 16.2 days optimized (the curve: 15.3) and about 27 to 29 days typical. 22 unlocks move by up to 3 levels. **32 empty stretches** are flagged, most in the gathering skills (Fishing, Mining, Forestry and Fletching, where tiers leave gaps by design) and the late ends of skills. One is worth a look first: **Alchemy has nothing to train before level 5.**
+- **The optimized boost factor** in XP per action is the boost budget's (section 5: 1.4x at copper to 3x at darkmetal), not 1 as section 1 allows until that table is filled. Without it, the optimized player would climb faster than the curve.
+- **Unlocks on a tier's opening level never move** (agent's call): Iron Ore Vein at 20 is the iron tier arriving.
+- ⚠️ **The rules' formulas are in two places** until the rules page's tables are regenerated from the solver: `balance_rules.py` and `balance_solver.cjs`. A dial the owner keeps changes both.
 
 ## What it needs
 

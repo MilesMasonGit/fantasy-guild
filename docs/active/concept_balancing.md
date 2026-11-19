@@ -155,7 +155,7 @@ Three layers, each with one job:
 
 ## The balancing view (owner, 2026-11-18)
 
-A page with the rules' dials, worked out over the planned catalogue: [concept_balancing_view.md](concept_balancing_view.md) (draft).
+A page with the rules' dials, worked out over the planned catalogue: [concept_balancing_view.md](concept_balancing_view.md), built as the [Guild Balance Dials](https://claude.ai/artifact/LFSTcCGMiCsQUSDArMH3z6) page (2026-11-19).
 
 ## Open questions
 
