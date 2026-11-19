@@ -7,6 +7,19 @@ build green) · bench-queued · eye-check · merged.*
 
 **Owner, 2026-11-06 (behind the week's target): up to four code builders at once this week** (plus one read-only); the director still runs suites, builds and benches one at a time. **Owner, 2026-11-06 late morning, away at work:** the director may start new briefs and merge pieces on the gate without a full look; the owner answers questions remotely (screenshots to the phone). Look changes merged this way are listed for the owner's next look in `docs/active/eyecheck/2026-11-06_merged_while_away.md`.
 
+## Director, batch 11: brief 700, faults waiting for content (owner, 2026-11-18 evening: merge 690 after the bench, start the next brief)
+
+*Wed 18 Nov, 18:45. Where we are: 690's last five fixes merge after tonight's 01:00 drag bench and work check (`mg` 514b26bb). Building: 700 L1 thirteen mat rule shapes, L3 loot shapes on a station and a kill (two engineers, told to stop heavy work by 00:45 for the bench). Next: L2 then L4 (effects code, one after the other), L5, L6. Owner: the saves look and the Token card look when convenient. Blockers: none.*
+
+| Phase | Tier | Branch (worktree) | State | Planned | Done |
+|---|---|---|---|---|---|
+| 700 L1: thirteen mat rule shapes (T-427) | engineer | `fix/rule-shapes` (`x1`) | building | Wed | |
+| 700 L3: loot shapes on a station and a kill (T-441) | engineer | `fix/loot-shapes` (`x3`) | building | Wed | |
+| 700 L2: a strength on an Applies effect (T-440) | builder | | queued | | |
+| 700 L4: hero, gear and fight shapes (T-442), after L2 | engineer | | queued | | |
+| 700 L5: timed effects on a hero (T-077) | builder | | queued | | |
+| 700 L6: four small shapes (T-460, T-480) | builder | | queued | | |
+
 ## Director, batch 10: brief 690, screens and drag-and-drop (owner, 2026-11-18: continue with the briefs)
 
 *Wed 18 Nov, 17:00. Where we are: brief 690 built. On main: U2 drops land where they look, U5 Bank order and search. In `mg` 514b26bb waiting for the 01:00 drag bench and work check: U1 readouts, U3 no hero drop under full-screen views (owner: no indicator, reorder kept), U6 Escape and layers, U7 small screen faults, U8 the crash panel, and the drag bench's free-spot fix. U4 the Token card (both times on every row, owner) waits for a look; the rest of 680 (S3, S4, S6, S7, `mh`) waits for the owner's saves look. Next: 700 (latent shapes) after the owner's looks. Blockers: none.*
