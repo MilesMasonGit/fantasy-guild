@@ -6,6 +6,7 @@ import { logger } from '../../utils/Logger.js';
 import { GameState } from '../../state/GameState.js';
 import { DEFAULT_MAX_STACK } from '../../config/registries/itemRegistry.js';
 import { RegistryManager } from '../progression/RegistryManager.js';
+import { ItemRateTracker } from './ItemRateTracker.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 import { BANK_TAB_SLOTS, homeTabOf, bankTabCounts, bankTabLayout, mergeTabOrder } from './bankTabs.js';
 
@@ -229,6 +230,8 @@ export const InventoryManager = {
         }
 
         InventoryFormatter.invalidate();
+        // Counted here, not by a listener: a catch-up's quiet bus skips the UI's, and its spending must count.
+        ItemRateTracker.recordLoss(itemId, amount);
         announce(itemId, entry.quantity, { removed: amount });
 
         logger.debug('InventoryManager', `Removed ${amount}x ${itemId} (Remaining: ${entry.quantity})`);

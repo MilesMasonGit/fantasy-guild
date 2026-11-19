@@ -15,8 +15,8 @@ export const DEFAULT_FONT_SIZES = [
 ];
 
 /**
- * The Typography Scale window: sliders that preview every text size live. Save & Close keeps
- * them; Escape and the X put back the sizes it opened with. Mount it only while open, so it
+ * The Typography Scale window: sliders and Reset Defaults preview every text size live. Save &
+ * Close keeps them; Escape and the X put back the sizes it opened with. Mount it only while open, so it
  * reads the sizes afresh each time.
  * ⚠️ A window of its own (a nested dialog), not an overlay drawn inside Settings: Settings'
  * panel is transformed, which would make it the box a `fixed` child is laid out in.
@@ -59,7 +59,6 @@ export const TypographyScaleModal = ({ isOpen, onClose }) => {
             }
         });
         setSizes(reset);
-        SettingsManager.set('ui.fontSizes', reset);
     };
 
     const handleSaveAndClose = () => {

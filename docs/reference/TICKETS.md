@@ -19,13 +19,14 @@ here.
 - **Priority**: **P1** a player can hit it, or a measured miss of a target ·
   **P2** real cost or risk · **P3** tidy-up.
 - **Origin**: the old ID, so the full write-up can be found in
-  `docs/archive/` (CR4 = code review round 4, `docs/active/review/`;
+  `docs/archive/` (SA = Systems Audit, `docs/active/audit/`;
+  CR4 = code review round 4, `docs/active/review/`;
   CR3 = code review round 3, `docs/archive/review_v3/`;
   FB = token lifecycle feedback; FMR = free playmat review, 2026-09-21).
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-486**
+**Next free number: T-488**
 
 ---
 
@@ -73,7 +74,7 @@ here.
 | T-302 | P3 | open, needs an interview | **The hero recolour system** (owner 2026-11-02 and 11-04): players recolour a hero's sprite in the edit window and on the new game screen (detail pass, section 11). Not designed yet: the planning agent interviews the owner first, with looks from real art. |
 | T-303 | P2 | open, needs a brief | **Gloves, boots and cape slots** (owner 2026-11-04, [content_smithing.md](../active/content_smithing.md), [content_tailor.md](../active/content_tailor.md)): heroes get three new gear slots. Touches `EquipmentManager`, the hero sheet (brief 340 lays it out), gear defence numbers and the CMS. Today gear is hand, hat, chest and two trinkets. |
 | T-304 | P2 | open, needs a brief | **Tailor, a 21st skill** (owner 2026-11-04, [concept_content_roadmap.md](../active/concept_content_roadmap.md)): the skill itself in the registry and CMS, a skill icon for the art list, a station, and every place that counts skills (the ritual's final challenges, hero sheet, ledger). Its content list comes from a roadmap session first. |
-| T-305 | P2 | open, needs a brief | **Put the approved content roadmap in the CMS as Planned entries** (owner 2026-11-02, [concept_content_roadmap.md](../active/concept_content_roadmap.md)): a pack per chain page, so the ledger can check the whole plan. Needs T-294 first (tiers, the 20-level ladder). Planned entries never reach the game. |
+| T-305 | P2 | open, needs a brief | **Put the approved content roadmap in the CMS as Planned entries** (owner 2026-11-02, [concept_content_roadmap.md](../active/concept_content_roadmap.md)): a pack per chain page, now from [the catalogue](../active/content_catalogue.json) (2026-11-18) rather than a pack per chain page, so the ledger can check the whole plan. Needs T-294 first (tiers, the 20-level ladder). Planned entries never reach the game. |
 | T-318 | P3 | open | **The Token name on hover is larger** (owner, 2026-11-05). Show the owner two or three sizes on one screenshot page, then build only the pick (briefs README: looks are picked from screenshots). Check it on small and large Tokens and at mat zoom. Eye-check: no, the screenshot pick is the look. |
 | T-332 | P3 | open | **A pack's Token description does not survive the Sync** (found 2026-11-06 after the Foundations pack: Excavation and Battlefield read "A token for the guild playmat."; the CMS writes descriptions from rules, `cms/src/engine/descriptionDictionary.js`). Either the CMS keeps an authored description, or packs stop writing one; the owner types the two in the CMS meanwhile | director 2026-11-06 |
 | T-331 | P3 | open | **The star panel's price shows a stale have count when the pinned panel switches stars** (found by the 390 G5 builder, 6 Nov): it showed 0/110000 with 110,000 in the Bank until any Bank change. `GuildUpgradeInspection.jsx`: the `haveSignature` `useGameState` recomputes only on events, not when `upgradeDef` changes | director 2026-11-06 |
@@ -164,7 +165,7 @@ The findings' full write-ups are in `docs/active/review/R*_*.md` (search the CR4
 
 ### Code review deep read (triaged 2026-11-17)
 
-The findings' full write-ups are in `docs/active/review/D1_the_mat.md` to `D4_screens_and_drag.md` (search the CR4 id); the owner's rulings are in `review/STATUS.md` (D1 to D4 questions) and [`review/design_check_2026-11-17.md`](../active/review/design_check_2026-11-17.md) (the 15 design questions). Held until the owner's desktop try: CR4-170, CR4-174, CR4-192. Not filed: CR4-165 (owner-no, old Tokens stay endless), CR4-132 (T-402 retires it). CR4-140 reopens T-077. Briefs: [650](../active/briefs/650_deep_read_heroes_fights.md) heroes and fights, [660](../active/briefs/660_deep_read_cms_renames.md) CMS renames and deletes, [670](../active/briefs/670_deep_read_mat_rules.md) mat rules, [680](../active/briefs/680_deep_read_saves.md) saves, [690](../active/briefs/690_deep_read_screens.md) screens, [700](../active/briefs/700_deep_read_latent_shapes.md) latent shapes. Every row is a player-visible bug unless it says latent; "WORK CHANGED" means the bench work check moves on purpose.
+The findings' full write-ups are in `docs/active/review/D1_the_mat.md` to `D4_screens_and_drag.md` (search the CR4 id); the owner's rulings are in `review/STATUS.md` (D1 to D4 questions) and [`review/design_check_2026-11-17.md`](../active/review/design_check_2026-11-17.md) (the 15 design questions). After the owner's desktop try (2026-11-18): CR4-170 moot, CR4-174 is T-486, CR4-192 is T-487. Not filed: CR4-165 (owner-no, old Tokens stay endless), CR4-132 (T-402 retires it). CR4-140 reopens T-077. Briefs: [650](../active/briefs/650_deep_read_heroes_fights.md) heroes and fights, [660](../active/briefs/660_deep_read_cms_renames.md) CMS renames and deletes, [670](../active/briefs/670_deep_read_mat_rules.md) mat rules, [680](../active/briefs/680_deep_read_saves.md) saves, [690](../active/briefs/690_deep_read_screens.md) screens, [700](../active/briefs/700_deep_read_latent_shapes.md) latent shapes. Every row is a player-visible bug unless it says latent; "WORK CHANGED" means the bench work check moves on purpose.
 
 **The mat (D1)**
 
@@ -231,6 +232,8 @@ The findings' full write-ups are in `docs/active/review/D1_the_mat.md` to `D4_sc
 | T-483 | P3 | open | **Pinned stubs' time-away counts reach disk only at the next save**: the catch-up's end save comes before `CATCH_UP_FINISHED`, where the pins add the gains, so a crash before the next autosave or close save keeps the Bank's gain but loses the pin's. A save in the route would roll the backup and could lose the unanswered summary's copy (680 S3) | 680 S6 builder, 2026-11-18 |
 | T-484 | P3 | open | **Older saves: Token types on a Region settled before 680 S6 are not yet had for the Encyclopedia**: a chest still standing there loses its tick once opened. A backfill in `migrateState` would fix it (a save change) | 680 S6 builder, 2026-11-18 |
 | T-485 | P3 | open | **A rule's direct damage moves no health bar**: a Deals rule (`DealDamage`, e.g. the new Thorns pricks) announces nothing unless it knocks the hero out, so the mat bar, the hero bar and the Hero drawer all stand still on it until the next hit or meal | 690 U1 builder, 2026-11-18 |
+| T-486 | P3 | open | **A short stall lets go of the selected hero and empties open fight windows' logs**: every quiet catch-up ends with `GAME_RESET`, which `clearSelection` and `fightWatch.clearAll` obey (the level-up feed already exempts `catch_up`); then a right-click stops whoever works that Token. Not seen after ten minutes minimised (owner's desktop try) | CR4-174 |
+| T-487 | P3 | open | **Guild Hall sky follows the pointer with no button held** after a press released over a neighbour (nav, Upgrade drawer, hero bar) on a small window: `onPanMove` never checks `e.buttons`. Not seen after an Alt-Tab (owner's desktop try) | CR4-192 |
 
 ### Brief 210 — the backlog intake (owner 2026-10-22, Backlog director)
 

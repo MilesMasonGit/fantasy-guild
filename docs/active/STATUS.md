@@ -9,16 +9,18 @@ build green) · bench-queued · eye-check · merged.*
 
 ## Director, batch 11: brief 700, faults waiting for content (owner, 2026-11-18 evening: merge 690 after the bench, start the next brief)
 
+*Wed 18 Nov, 21:20. Where we are: brief 700 all built, six phases in one trial merge `p23b` 481cd7a0, gate 695 green; waits for the work check after 01:00, behind 690's `mg`. Questions parked: seven, all on shapes no content uses yet. Next: merge 690 and 700 after the bench; then the owner's saves look and Token card look; then the next brief from the queue. Blockers: none.*
+
 *Wed 18 Nov, 18:45. Where we are: 690's last five fixes merge after tonight's 01:00 drag bench and work check (`mg` 514b26bb). Building: 700 L1 thirteen mat rule shapes, L3 loot shapes on a station and a kill (two engineers, told to stop heavy work by 00:45 for the bench). Next: L2 then L4 (effects code, one after the other), L5, L6. Owner: the saves look and the Token card look when convenient. Blockers: none.*
 
 | Phase | Tier | Branch (worktree) | State | Planned | Done |
 |---|---|---|---|---|---|
-| 700 L1: thirteen mat rule shapes (T-427) | engineer | `fix/rule-shapes` (`x1`) | building | Wed | |
-| 700 L3: loot shapes on a station and a kill (T-441) | engineer | `fix/loot-shapes` (`x3`) e91ae993 | **ready**, director gate after L1: items 1, 2, 4 fixed test-first (a style-narrowed Double Loot or Yield reaches a kill in that style; Bonus Drops beside a drop-less enemy; an inverted range); shipped enemies' drops and draw count identical over 5,700 seeded kills; item 3 parked for the owner | Wed | |
-| 700 L2: a strength on an Applies effect (T-440) | builder | | queued | | |
-| 700 L4: hero, gear and fight shapes (T-442), after L2 | engineer | | queued | | |
-| 700 L5: timed effects on a hero (T-077) | builder | | queued | | |
-| 700 L6: four small shapes (T-460, T-480) | builder | | queued | | |
+| 700 L1: thirteen mat rule shapes (T-427) | engineer | `fix/rule-shapes` (`x1`) 3f2ee28d | **bench queued 01:00** in `p23b` 481cd7a0 with L3, L2, L6 (gate 694 green with L4): ten items fixed test-first (unpaid upkeep turns an Acts as and a moment rule off, live-state filters follow, last-cycle rules, On Bank Holds after a cooldown, Transforms aimed elsewhere pays, Spawns here announces, nothing replaced in the hand, fast swings in catch-up, fight plus while, Efficiency for the weighed hero, no-stack copies); four parked for the owner. Adds saved `whileUntil` (L5 must convert it) | Wed | |
+| 700 L3: loot shapes on a station and a kill (T-441) | engineer | `fix/loot-shapes` (`x3`) e91ae993 | **bench queued 01:00** in `p23b` 481cd7a0 with L1: items 1, 2, 4 fixed test-first (a style-narrowed Double Loot or Yield reaches a kill in that style; Bonus Drops beside a drop-less enemy; an inverted range); shipped enemies' drops and draw count identical over 5,700 seeded kills; item 3 parked for the owner | Wed | |
+| 700 L2: a strength on an Applies effect (T-440) | builder | `fix/applied-strength` (`x2`) 381e5097 | **ready** (builder gate 690 green; director read the diff: `scaleStatement` multiplies the applied effect's scale, 1 to 5; shipped all at 1, same object back). **bench queued 01:00** in `p23b` 481cd7a0 | Wed | |
+| 700 L4: hero, gear and fight shapes (T-442), after L2 | engineer | `fix/hero-gear-shapes` (`x4`) b1ca65e8 | **bench queued 01:00** in `p23b` 481cd7a0: nine items test-first (defeat taxes food and drink only, an XP cut floors at 0, a recruit's fight perks at once, a stack-full pile waits with its own banner, gear level shown in the tip and a dimmed slot, the fight window's stack limit, an elixir listed in its last fight, the enemy's hit with flat and type damage, a tool level audit); item 1 was L1's. Director read the engine diff | Wed | |
+| 700 L5: timed effects on a hero (T-077) | builder | `fix/timed-effects` (`x5`) 481cd7a0 | **bench queued 01:00** in `p23b` 481cd7a0 (all six phases, gate 695 green): a timed effect keeps its game time left (`remainingMs`, L1's `whileUntil` now `whileLeftMs`), old saves converted on load, fight numbers re-synced on load; seen in the game (an effect kept ~588 s left across Load as I left it) | Wed | |
+| 700 L6: four small shapes (T-460, T-480) | builder | `fix/small-shapes` (`x6`) 1052d9a9 | **bench queued 01:00** in `p23b` 481cd7a0: a lesson step that gains content counts done in a game already past it (`seen` list in the save); a rule's cooldown counts from the moment, so away fires as often as watched (no-cooldown rules take the old path); a Shop price over four lines shows a +N pill (seen in the game, card size unchanged); a lap star's rank reads the live lap. No questions | Wed | |
 
 ## Director, batch 10: brief 690, screens and drag-and-drop (owner, 2026-11-18: continue with the briefs)
 
@@ -450,6 +452,9 @@ None open.
 
 ## Questions for the owner
 
+- **The dimmed gear slot for a level not yet reached (700 L4, nothing shipped shows it).** (a) **Recommended:** keep the greyed disabled-button look; (b) pick a look from a screenshot page when the first such gear is authored.
+- **Does a rule's sentence name the strength it lands at (700 L2)?** (a) **Recommended:** yes, "applies Brambles III to the hero for the fight" (12 expected sentences in the text test rewritten); (b) no, the item's title already says III.
+- **Four rule shapes no content uses yet (700 L1).** (1) A rule on an item or Hall star with an upkeep, today free: (a) **recommended** each bearer pays on the rule's clock from the Bank, a Hall star once for the guild, off while unpaid; (b) the guild pays once per rule however many carry it; (c) the CMS stops offering upkeep there. (2) When a rule replaces its own Token, do its other rules on that moment still happen: (a) **recommended** yes, free, as on a depletion (today's behaviour, minus the wrong charge); (b) no. (3) Does a Token changed by a rule keep an event's leave-after-an-hour, an arrival enemy's hold on the place, a built Token's refund: (a) **recommended** keep all three; (b) none, as now; (c) pick each. (4) A water whose pools all need bait, a hero with the tool and no bait (today fishes nothing and earns XP): (a) **recommended** the hero passes it over and the mat names the bait; (b) works it, no XP for an empty catch; (c) the CMS refuses such a water.
 - **An enemy drop line that names a Token (700 L3 item 3, only a change pack can write one).** Today a kill ignores it silently. (a) **Recommended:** place the Token beside the enemy as a station does; the count rolled once, never doubled; skipped with a log line if there is no room. (b) The content audit refuses it at load; kills keep ignoring it. (c) Both: the audit now, placement when content wants it.
 
 - ~~Recipe row times (690 U4)~~ **Answered Wed 18 Nov: both times on every row.** ~~U3 look~~ **Answered: no indicator at all, just no hero drop under a full-screen view; reordering on the bar stays.**

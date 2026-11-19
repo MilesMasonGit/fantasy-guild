@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
@@ -7,6 +7,7 @@ import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { CloseX } from '../base/CloseX.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
 import { XpRateTracker } from '../../../systems/hero/XpRateTracker.js';
+import { onPoll } from '../board/frameClock.js';
 import { skillDetail, skillLevelText, skillPurposeText } from './heroPanelSkills.js';
 import { skillPerkTable, perkLines } from './heroPerks.js';
 import { t } from '../../../i18n/index.js';
@@ -85,9 +86,22 @@ export const HeroSkillPanel = ({ heroId, row, onClose, onLookUp, style }) => {
     );
 };
 
-/** A skill's exact numbers, read as it draws (`skillDetail`): this level's XP, what is left, the total, the rate and the time to the next level. */
+/** How often an open skill readout reads the XP rate again: it falls between gains, and to nothing when work stops, with no event. */
+export const XP_RATE_REFRESH_MS = 1000;
+
+/**
+ * A hero's XP an hour in a skill (`XpRateTracker.getRate`), read as it draws and again every
+ * {@link XP_RATE_REFRESH_MS} while mounted; it redraws only when the whole-number rate changes.
+ */
+export function useXpRate(heroId, skillId) {
+    const [, setSeen] = useState(0);
+    useEffect(() => onPoll(() => setSeen(Math.round(XpRateTracker.getRate(heroId, skillId))), XP_RATE_REFRESH_MS), [heroId, skillId]);
+    return XpRateTracker.getRate(heroId, skillId);
+}
+
+/** A skill's exact numbers (`skillDetail`): this level's XP, what is left, the total, the rate and the time to the next level. */
 const SkillNumbers = ({ heroId, row }) => {
-    const d = skillDetail(row.xp, XpRateTracker.getRate(heroId, row.id));
+    const d = skillDetail(row.xp, useXpRate(heroId, row.id));
     const lines = [
         d.level && [t('heroPanel.xp'), d.level],
         d.toNext && [t('heroPanel.toNext'), d.toNext],

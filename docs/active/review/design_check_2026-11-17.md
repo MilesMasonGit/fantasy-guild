@@ -300,8 +300,10 @@ Where an answer differs from the options offered, the answer wins.
   (the close during that bar was not tried); filed as reviewed.
 - **CR4-149**: after a double-click on Load the time away looked correct. No sign of the fault:
   filed at P3.
-- **CR4-170, CR4-174, CR4-192**: not tried yet; the owner will try them tonight. Held, not filed,
-  until then.
+- **CR4-170, CR4-174, CR4-192**: tried by the owner the next day (2026-11-18), no sign of any
+  fault. CR4-170 closes as moot (the summary took clicks with Settings open); CR4-174 is T-486 and
+  CR4-192 is T-487, both P3, since their non-desktop paths (a two-second stall; a release over a
+  neighbour) are verified from the code.
 
 ## Tickets filed (2026-11-17)
 

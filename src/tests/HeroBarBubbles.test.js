@@ -242,6 +242,13 @@ describe('the hero bar level-up bubbles', () => {
         act(() => { EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'load' }); });
         expect(bubbles(view, 'h1')).toEqual([]);
     });
+
+    it('travelling to another Region keeps them: the heroes are the same guild', () => {
+        const view = mount();
+        level('h1', 'Mining', 24, 25);
+        act(() => { EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'travel' }); });
+        expect(bubbles(view, 'h1')).toEqual(['25 Mining!']);
+    });
 });
 
 describe('the bar is laid out for eight heroes', () => {

@@ -13,6 +13,7 @@ import { GameState } from '../state/GameState.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { HeroDrawer } from '../ui/components/dock/HeroDrawer.jsx';
+import { HeroEditModal } from '../ui/modals/HeroEditModal.jsx';
 import { DOCK_STRIP_PX } from '../ui/components/dock/dockHeroView.js';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 import {
@@ -108,6 +109,25 @@ describe('H2: one hero drawer, in one place', () => {
         expect(onCloseHero).toHaveBeenCalledTimes(1);
         act(() => fireEvent.keyDown(document, { key: 'Escape' }));
         expect(onCloseHero).toHaveBeenCalledTimes(2);
+    });
+
+    it('a press inside the Edit Hero window over it leaves the drawer open; Escape closes the window first', async () => {
+        const onCloseHero = vi.fn();
+        const onCloseEdit = vi.fn();
+        render(wrap(
+            h(HeroDrawer, { menuRight: false, selectedHeroId: 'h1', onCloseHero }),
+            h(HeroEditModal, { heroId: 'h1', isOpen: true, onClose: onCloseEdit }),
+            h('div', { 'data-testid': 'mat' }, 'mat')
+        ));
+        await act(async () => { await vi.runOnlyPendingTimersAsync(); });
+        const nameBox = document.querySelector('[data-gi-modal] input');
+        expect(nameBox).not.toBeNull();
+        fireEvent.pointerDown(nameBox);
+        for (const button of document.querySelectorAll('[data-gi-modal] button')) fireEvent.pointerDown(button);
+        expect(onCloseHero).not.toHaveBeenCalled();
+        act(() => fireEvent.keyDown(document, { key: 'Escape' }));
+        expect(onCloseEdit).toHaveBeenCalledTimes(1);
+        expect(onCloseHero).not.toHaveBeenCalled();
     });
 });
 
@@ -274,6 +294,17 @@ describe('H2: skills', () => {
         expect(r.container.querySelector('[data-hero-skill-panel="mining"]')).not.toBeNull();
         fireEvent.click(r.container.querySelector('[data-skill-row="mining"]'));
         expect(r.container.querySelector('[data-skill-detail]')).toBeNull();
+    });
+
+    it('an open skill panel reads the rate again by itself: it falls while nothing is earned', () => {
+        XpRateTracker.recordGain('h1', 'melee', 1000);
+        const r = render(panel({ selectedHeroId: 'h1' }));
+        fireEvent.click(r.container.querySelector('[data-skill-row="melee"]'));
+        const detail = () => r.container.querySelector('[data-hero-skill-panel="melee"] [data-skill-detail]').textContent;
+        expect(detail()).toContain('XP/h+240,000');
+        // 1,000 XP over its 15 s and 10 s since: 144,000 an hour, with no event to redraw it.
+        act(() => { vi.advanceTimersByTime(10_000); });
+        expect(detail()).toContain('XP/h+144,000');
     });
 
     it('has an Edit control that opens the hero editor', () => {

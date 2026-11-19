@@ -4,7 +4,7 @@ import { t } from '../../../i18n/index.js';
 import * as World from '../../../systems/world/World.js';
 import { HALL_CELL } from '../../../systems/world/frontier.js';
 import { useAtlasRefresh } from './useAtlasRefresh.js';
-import { travelFromScreen, END_DRAG_MARK } from './travelFromScreen.js';
+import { travelFromScreen } from './travelFromScreen.js';
 import { worldView } from './worldView.js';
 import { WorldMap } from './WorldMap.jsx';
 import { CloseX } from '../base/CloseX.jsx';
@@ -61,14 +61,6 @@ export const WorldScreen = ({ onClose, menuRight = false }) => {
     const [message, setMessage] = useState(null);
     const insets = useWorldInsets();
     const drawerPx = columnWidthAt(useViewportWidth(), NOTIFICATION_COLUMN);
-
-    useEffect(() => {
-        const onKey = (e) => {
-            if (e.key === 'Escape' && !e[END_DRAG_MARK]) onClose?.();
-        };
-        document.addEventListener('keydown', onKey);
-        return () => document.removeEventListener('keydown', onKey);
-    }, [onClose]);
 
     const travel = async (regionId) => {
         const result = await travelFromScreen(regionId, { isDragging });

@@ -196,6 +196,17 @@ describe('⭐ aimed while carried: the flag snaps onto a Token they can work, el
         expect(aimed.snap).toBe(false);
         expect(aimed.reason).toMatch(/is healing: \d+:\d\d/);
     });
+
+    it('a healing hero lights nothing: no Token, not the Guild Hall, as the drop refuses them all', () => {
+        const [h] = newBoard();
+        const tree = fixtures.placeAt('fixture_producer', 400, 300);
+        const hall = Flags.tokenAtPoint(HALL);
+        expect(Orders.canOrderOnto(h.id, tree)).toBe(true);
+        HeroManager.setHeroStatus(h.id, 'wounded');
+        expect(Orders.canOrderOnto(h.id, tree)).toBe(false);
+        expect(Orders.canOrderOnto(h.id, hall)).toBe(false);
+        expect(Orders.orderAt(h.id, { x: tree.x, y: tree.y }).success).toBe(false);
+    });
 });
 
 describe('⭐ a drop on bare ground: go there and idle', () => {

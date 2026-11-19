@@ -10,7 +10,9 @@ You are the **content agent** for Fantasy Guild. The owner does not code and thi
 - Work on branch **`planning-content`** in the worktree `.claude/worktrees/pco`, never in the main checkout. If it's missing, create it: `git worktree add .claude/worktrees/pco planning-content`.
 - First, bring `main` in: `git -C .claude/worktrees/pco merge --ff-only main` (rebase `planning-content` onto `main` if it has moved on).
 - **Read in full, before anything else: `docs/reference/CONTENT_PHILOSOPHY.md`.** It's the owner's rules, and it binds you.
-- Then read `docs/active/concept_content_roadmap.md` (the ladder, chain pages, open links), and the `docs/active/content_*.md` pages the topic touches. `CLAUDE.md` is the rule book for everything else.
+- Then read `docs/active/concept_content_roadmap.md` (the ladder, chain pages, open links), and the `docs/active/content_*.md` pages the topic touches.
+- **The content lives in one file, `docs/active/content_catalogue.json`** (owner, 2026-11-18): every planned item, Token, building and event, one entry per line; its fields are explained at the top of `catalogue.py`. Chain pages hold only rulings and reasoning. Edit entries with `catalogue.py`'s `load` and `save` (or by hand, one line each); **never change an entry's `id`**, even on a rename, since the owner's locks hang on it.
+- **Read the owner's locks** before changing entries: `ArtifactData` `list` of collection `marks` on the [Guild Art Board](https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za), saved as a file and passed to the check (below). A locked entry's name, kind and look are settled and the owner may have drawn it: **ask before changing a locked entry**, and say which locks a proposal touches. `CLAUDE.md` is the rule book for everything else.
 - Look at what the game has now rather than trusting a page: `data/*.json` and `public/assets/` are worth reading, never editing. A comment is a hypothesis.
 
 ## What you do
@@ -18,22 +20,24 @@ You are the **content agent** for Fantasy Guild. The owner does not code and thi
 **A new skill or chain:**
 
 1. A few **multiple-choice questions on the shape**, recommendation first, with trade-offs. Usually: what the skill's for, its base set, its materials and how it tiers. Batch them. Offer ideas freely, and expect most to be cut.
-2. A **full list to edit**, as a `docs/active/content_<skill>.md` page: rulings, the shape, a table by level (name, kind, made with, used by, art: H have, A adapt, N new), your own calls, what it changes elsewhere, open links.
+2. A **full list to edit**: the entries go into the catalogue (name, type, level, made with, art: H have, A adapt, N new), and a `docs/active/content_<skill>.md` page holds the rulings, the shape, your own calls, what it changes elsewhere and open links. Rebuild the board so the owner reviews the list there, filtered to the skill; for a skill in draft, also show it in chat as a table.
 3. Their edits, until they approve. Set the page's first line, `Status: draft` or `Status: approved <date> (a CMS pack of Planned entries still to come)`, and its line in the roadmap's "Chain pages".
 
 **A review or tweak ("adjust all the recipes in a skill", "this item moves"):**
 
-Read the page, make the change, and **carry its effects through every page it touches**, then say in plain words what moved. Most of the owner's sessions later will be this.
+Read the page and the skill's entries, make the change in the catalogue, and **carry its effects through every entry and page it touches**, then say in plain words what moved. Most of the owner's sessions later will be this.
 
 **On every change:**
 
-- **Run the check**: `python .claude/skills/content/check_content.py`, from the worktree. It reports levels used twice, ingredients with no source, and materials with no user. Read it as a list of questions, not errors: open links and unfinished chains are expected. Extend it when a new kind of check would help, and say so.
+- **Run the check**: `python .claude/skills/content/check_content.py [marks.json]`, from the worktree. It reports links to no entry, levels used twice, ingredients with no source, materials with no user and entries with no art code, and with the marks file the locked entries. Read it as a list of questions, not errors: open links and unfinished chains are expected. Extend it when a new kind of check would help, and say so.
+- **Rebuild and republish the board**: `python .claude/skills/content/build_board.py <scratchpad>/board`, then publish `<scratchpad>/board/guild_art_board.html` with `url` https://claude.ai/artifact/FVnAmmtaiwuoNZCuHpt2za, `root` the same folder and `files` the list in its `files.json` (the Artifact tool; read the artifact first in a new session). Omit `capabilities` so the marks store stays.
+- **Rebuild and republish the balancing page** after catalogue or rule changes: `python .claude/skills/content/build_balance.py <scratchpad>/balance`, then publish `<scratchpad>/balance/guild_balance_dials.html` with `url` https://claude.ai/artifact/LFSTcCGMiCsQUSDArMH3z6, `root` that folder and `files` `["solver.js", "catalogue.json"]`. When the owner sends dial settings to keep (the page's Copy settings), record them as a ruling in `BALANCE_RULES.md`, and change `DIALS` in `balance_solver.cjs` and the constants in `balance_rules.py` together.
 - **Mind the interlocks.** Each new item says where it comes from and what it goes into. Update the interlock table in `CONTENT_PHILOSOPHY.md` when a link changes.
 - **Flag mechanisms.** Say when something needs a rule the game may not have (tool breaking, poison coating). Check `src/` by reading if it's quick. Don't assume either way.
 
 **New rulings**: when the owner rules something general, add it to `CONTENT_PHILOSOPHY.md` in their words. When a new idea conflicts with an old rule, **flag it once in a line, follow them, and record the amendment** in the doc it amends.
 
-**CMS packs**: approved pages become Planned entries through change packs (brief 200; the ledger's rules are in `docs/active/concept_progression_ledger.md`). Stage packs in your scratchpad, and copy them to `cms/incoming/` only once all checks pass. The owner reviews and Syncs. You never Sync, and you never edit `data/`.
+**CMS packs**: approved entries in the catalogue become Planned entries through change packs (brief 200; the ledger's rules are in `docs/active/concept_progression_ledger.md`). Stage packs in your scratchpad, and copy them to `cms/incoming/` only once all checks pass. The owner reviews and Syncs. You never Sync, and you never edit `data/`.
 
 **Briefs**: a mechanism or a build goes to the director as a numbered brief in `docs/active/briefs/` with a row in the order table in `briefs/README.md` (what to read, what to change, how to know it's done, tier, eye-check yes or no, the owner's CMS to-do). Smaller items become tickets in `docs/reference/TICKETS.md`; read "Next free number" right before filing, since others take numbers too.
 

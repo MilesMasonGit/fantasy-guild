@@ -23,6 +23,7 @@ import { tileArt, ropeArt, symbolArt, expectedArt, DRAWN } from '../config/world
 import { formatCompact } from '../utils/Formatters.js';
 import { t } from '../i18n/index.js';
 import { DeckDndContext } from '../ui/dnd/DndKit.jsx';
+import { pushEscapeLayer } from '../ui/utils/escapeLayers.js';
 import { WorldScreen } from '../ui/components/atlas/WorldScreen.jsx';
 import { WorldCamera } from '../ui/components/atlas/WorldCamera.jsx';
 import { WorldDrawer } from '../ui/components/atlas/WorldDrawer.jsx';
@@ -467,13 +468,44 @@ describe('⭐ the world map screen', () => {
         expect(q(container, '[data-world-rename]')).toBeNull();
     });
 
-    it('Escape and the panel\'s close X close it', () => {
+    it('Escape in the rename box drops the draft and leaves the map open', () => {
+        payFor('0,1');
+        World.settleCell('0,1');
+        const closeMap = vi.fn();
+        const offNav = pushEscapeLayer(closeMap);
+        try {
+            const { container } = screen();
+            fireEvent.click(q(container, '[data-world-rename="0,1"]'));
+            fireEvent.change(q(container, '[data-world-rename-input="0,1"]'), { target: { value: 'Half Typed' } });
+            fireEvent.keyDown(q(container, '[data-world-rename-input="0,1"]'), { key: 'Escape' });
+            expect(closeMap).not.toHaveBeenCalled();
+            expect(q(container, '[data-world-rename-input="0,1"]')).toBeNull();
+            expect(Atlas.activeRegion().flavourName).not.toBe('Half Typed');
+            // With the box gone, the next Escape is the map's.
+            fireEvent.keyDown(document, { key: 'Escape' });
+            expect(closeMap).toHaveBeenCalledTimes(1);
+        } finally {
+            offNav();
+        }
+    });
+
+    it('Escape to cancel a drag over the map does not close it', () => {
+        const onClose = vi.fn();
+        screen({ onClose });
+        document.body.classList.add('gi-dnd-active');
+        try {
+            fireEvent.keyDown(document, { key: 'Escape' });
+        } finally {
+            document.body.classList.remove('gi-dnd-active');
+        }
+        expect(onClose).not.toHaveBeenCalled();
+    });
+
+    it('the panel\'s close X closes it', () => {
         const onClose = vi.fn();
         const { container } = screen({ onClose });
-        fireEvent.keyDown(document, { key: 'Escape' });
-        expect(onClose).toHaveBeenCalledTimes(1);
         fireEvent.click(q(container, '[data-world-close]'));
-        expect(onClose).toHaveBeenCalledTimes(2);
+        expect(onClose).toHaveBeenCalledTimes(1);
     });
 
     it('has no book and no tabs', () => {
