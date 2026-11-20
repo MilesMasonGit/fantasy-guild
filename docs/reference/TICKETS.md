@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-504**
+**Next free number: T-506**
 
 ---
 
@@ -235,6 +235,8 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 | T-501 | P3 | blocked (audit group: telling the player) | **Sentence case for every typed text**: banner titles are typed in Title Case (Knocked Out!, New Place Settled!, Guild Upgrade!, Special Event! …) against the text guide (`TEXT.md`: sentence case, the All caps setting does capitals); the same words read Knocked out elsewhere. Retype in sentence case (`bannerKinds.js`, `en.json`). See [the wording drift topic](../active/audit/topic_wording_drift.md) | SA-A42 |
 | T-502 | P3 | blocked (audit group: telling the player) | **Respawns is the one verb for coming back**: today Refills in, Respawns, Rests then refills, grows back, regrows. One verb, naming the result only when it differs: `Exhausted · respawns in 4m`, `Respawns as Oak Tree in 8m` (card, hover, drawer, Encyclopedia). Pairs with T-498. See [the wording drift topic](../active/audit/topic_wording_drift.md) | SA-A43 |
 | T-503 | P3 | blocked (audit group: telling the player) | **An event leaving says Expired**: today Leaves in, Worked out, Time ran out, Left unworked, and nothing live. Expired for every way an event goes by itself, Demolished for the player's act, the same on the leaving marker (T-497), the card and the away summary; the away summary lists events one line per kind: icon, name, how many came, how many expired, demolished or still here. See [the wording drift topic](../active/audit/topic_wording_drift.md) | SA-A42 |
+| T-504 | P3 | blocked (audit group: telling the player) | **One writer for a Token's timer sentences**: the idle hover (`idlePlate.js`) and the card (`tokenCard.js`) word the same rest, growth, crop, event and spawner timers differently (Resting. Refills in 4 min vs Copper Vein: resting, refills in 4 min). One writer, read by both: the hover's cell shows the number, its tooltip the card's sentence, in the group's words (T-488, T-498, T-502, T-503). `lifecycleLines` (tests only) becomes that writer or is retired. See [the hover vs card topic](../active/audit/topic_hover_vs_card.md) | SA-A43 |
+| T-505 | P3 | blocked (audit group: telling the player) | **The idle hover shows every timer and stuck reason the card shows**: today it leaves out demolition, Hall production, a spawner's state (full, no room, mat full, asleep, needs items) and growth stopped for lack of items. Depends on T-504. See [the hover vs card topic](../active/audit/topic_hover_vs_card.md) | SA-A43 |
 
 ### Cleanup — dead code, vestiges, lint *(safe, invisible; delete tests only with the code they test)*
 

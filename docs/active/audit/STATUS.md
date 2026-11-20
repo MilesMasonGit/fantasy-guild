@@ -30,7 +30,7 @@ from (details in [S0_sweep.md](S0_sweep.md)).
 | A16 | Ranged | Combat | | | | | **owner ruling 2026-11-20 (silent moments topic): no bow without arrows, work stops with a speech bubble; settle the details here**; arrows run out silently and come from the Bank only; the code leaves an empty quiver to the owner |
 | A17 | Magic | Combat | | | | | |
 | A18 | Stealth | Combat | | | | | |
-| A2 | Spawners and transforms | The living mat | | | | | **owner ruling 2026-11-20 (wording drift topic): cut Saplings; trees turn into Stumps and respawn as full trees; settle how oak, fir and the Apple Orchard make new trees here**; five ways to find a spot, four answers to no room; rule spawns announce nothing |
+| A2 | Spawners and transforms | The living mat | | | | | **owner ruling 2026-11-20 (hover vs card topic): no Tokens turning at random into others; changing into another Token only for a used-up Token that respawns (tree to Stump and back); no content uses turning, retire the mechanic here**; **owner ruling 2026-11-20 (wording drift topic): cut Saplings; trees turn into Stumps and respawn as full trees; settle how oak, fir and the Apple Orchard make new trees here**; five ways to find a spot, four answers to no room; rule spawns announce nothing |
 | A4 | Events | The living mat | | | | | removed at once when marked; leaves with no reason given; a buff held in the hand stays; unworked reported as time up; Fish Shoal fished by another model |
 | A1 | Placing, reach and removal (A3 merged in) | The living mat | | | | | arrival enemies skip the cap check but count; four removal gestures; a hero lets go when a Foundation is built |
 | A40 | Regions | The living mat | | | | | another Region's mat stops while hero clocks and bounties run |
@@ -57,8 +57,8 @@ from (details in [S0_sweep.md](S0_sweep.md)).
 | A23 | Crime | Specialist skills | | | | | |
 | A24 | Taming | Specialist skills | | | | | |
 | A25 | Science | Specialist skills | | | | | |
-| A42 | Notifications | Telling the player | | T-496, T-497, T-501, T-503 | | | interviewed 2026-11-20: silent moments ([topic_silent_moments.md](topic_silent_moments.md), T-496 to T-499), wording drift ([topic_wording_drift.md](topic_wording_drift.md), T-500 to T-503); still: banners built twice (live and after time away) |
-| A43 | Cards, badges and bars | Telling the player | | T-488 to T-495, T-498 to T-500, T-502 | | | interviewed 2026-11-19: time display ([topic_time_display.md](topic_time_display.md), T-488), chances ([topic_chances.md](topic_chances.md), T-489 to T-491), effect wording ([topic_effect_wording.md](topic_effect_wording.md), T-492 to T-495); still to interview: idle hover vs card; a lifecycle writer only tests call; card vs Encyclopedia sources |
+| A42 | Notifications | Telling the player | | T-496, T-497, T-501, T-503 | | | interviewed 2026-11-20: silent moments ([topic_silent_moments.md](topic_silent_moments.md), T-496 to T-499), wording drift ([topic_wording_drift.md](topic_wording_drift.md), T-500 to T-503), hover vs card ([topic_hover_vs_card.md](topic_hover_vs_card.md), T-504, T-505); still: banners built twice (live and after time away) |
+| A43 | Cards, badges and bars | Telling the player | | T-488 to T-495, T-498 to T-500, T-502, T-504, T-505 | | | interviewed 2026-11-19: time display ([topic_time_display.md](topic_time_display.md), T-488), chances ([topic_chances.md](topic_chances.md), T-489 to T-491), effect wording ([topic_effect_wording.md](topic_effect_wording.md), T-492 to T-495); 2026-11-20 hover vs card ([topic_hover_vs_card.md](topic_hover_vs_card.md), T-504, T-505); still to interview: card vs Encyclopedia sources (two readers for where an item comes from) |
 
 ## Groups
 
@@ -75,4 +75,4 @@ tickets together.
 | 5 | Making | A10, A11, A12, A13, A14 (rules only), A5 | waiting |
 | 6 | Heroes and the guild | A26, A30, A36, A38, A39 | waiting |
 | 7 | Specialist skills | A19 to A25 | waiting |
-| 8 | Telling the player | A42, A43 | interviewing by topic (time display, chances, effect wording, silent moments, wording drift done) |
+| 8 | Telling the player | A42, A43 | interviewing by topic (time display, chances, effect wording, silent moments, wording drift, hover vs card done; left: banners built twice, card vs Encyclopedia sources) |
