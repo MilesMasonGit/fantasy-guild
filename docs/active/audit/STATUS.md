@@ -25,7 +25,7 @@ from (details in [S0_sweep.md](S0_sweep.md)).
 | A33 | Status effects and boss moves | Combat | done 2026-11-20 | 5 (T-539 to T-543) | 0 | Passive and Active; fine as is: statuses end with the fight; | **from A31 (owner 2026-11-20): Venom deals Poison damage (T-534); decide the same for other damaging statuses (Burn as Fire?); the Toxic Frog lands Venom on every hit, even its Crush tongue**; three ways an enemy lands an effect (kind, rule, move); kind presets and effects move the same numbers; six "how long" clocks |
 | A32 | Enemies and encounters | Combat | done 2026-11-20 | 6 (T-544 to T-549) | 0 | fine as is: enemies stand still, never start a fight, one hero each; kinds discovered by fighting | **from A33 (owner 2026-11-20): enemy effects are Passive or Active (T-539); kinds become CMS effects (T-540); the boss flag is cut (T-542)**; a camp at its cap waits a whole interval after a kill |
 | A34 | Winning, losing and loot | Combat | done 2026-11-20 | 6 (T-550 to T-555) | 0 | combat cycles and work cycles; | ~~enemy health on return~~ settled in A32 (T-546: keeps damage, heals 5% a second); a kill skips Fail, Preservation, Refresh, neighbour Applies; enemies' written XP ignored |
-| A35 | The combat screen | Combat | | | | | fight clock rounds down, other clocks round up |
+| A35 | The combat screen | Combat | card written, owner to play (2026-11-20) | | | | fight clock rounds down, other clocks round up |
 | A15 | Melee | Combat | | | | | |
 | A16 | Ranged | Combat | | | | | **owner ruling 2026-11-20 (silent moments topic): no bow without arrows, work stops with a speech bubble; settle the details here**; arrows run out silently and come from the Bank only; the code leaves an empty quiver to the owner |
 | A17 | Magic | Combat | | | | | |
