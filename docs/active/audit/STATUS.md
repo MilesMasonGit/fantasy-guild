@@ -10,14 +10,14 @@
 
 ## Sessions
 
-In the order the owner approved on 2026-11-19 (S0's proposal). **Next: A37.** Group 8, Telling the player, was interviewed early by topic (owner, 2026-11-19/20) and is ready to brief.
+In the order the owner approved on 2026-11-19 (S0's proposal). **Next: A29.** Group 8, Telling the player, was interviewed early by topic (owner, 2026-11-19/20) and is ready to brief.
 "From S0" lists what the sweep saw in that system, for its session to start
 from (details in [S0_sweep.md](S0_sweep.md)).
 
 | Session | System | Group | State | Tickets | Concept docs | Notes | From S0 |
 |---|---|---|---|---|---|---|---|
 | S0 | Cross-system sweep | — | done 2026-11-19 | 0 | 0 | overlap map, 8 groups, order; A3 merged into A1 | |
-| A37 | The Guild Hall and Stars | Effects | reading (2026-11-20) | | | | Hall exempt by name from some effects, not others; the drop lap ignores its lines' times; Stars reach hero Damage, Accuracy, Swing Time but not Crit, Dodge, Resistance (D2 note); a rank replaces the one below |
+| A37 | The Guild Hall and Stars | Effects | done 2026-11-20 | 4 (T-511 to T-514) | 0 | fine as is: nav-only sky, loot payout, stars everywhere, whole-effect ranks, locked stars unworded | Hall exempt by name from some effects, not others; the drop lap ignores its lines' times; Stars reach hero Damage, Accuracy, Swing Time but not Crit, Dodge, Resistance (D2 note); a rank replaces the one below |
 | A29 | Equipment and tools | Effects | | | | | two trinkets cap at 5, a perk adds past it; tool Tokens (`acceptedTokens`) and `Requires` unused or unread; heal amounts on drinks and `regen`/`restoreType` unread |
 | A27 | Milestone perks | Effects | | | | | all 9 perks written with "nearby", which does nothing on a hero |
 | A28 | Health, food and defeat | Effects | | | | | only Food heals; three HP rounding rules; regen can't be sped up; Wound Time counts only from the next wound; a hero's recovery is silent |

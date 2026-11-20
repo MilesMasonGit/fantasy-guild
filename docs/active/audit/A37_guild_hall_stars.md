@@ -113,9 +113,39 @@ lines, but their times are ignored).
 8. **Watch the Hall for one lap** (10 minutes): seeds (and Water, once the
    Wishing Well is bought) drop beside the Hall as loot for a hero to carry.
 
-## Owner feedback (date)
+## Owner feedback (2026-11-20)
+
+Interviewed in three rounds without playing first.
+
+- **Opening the sky**: the nav only. Clicking the Hall Token stays a no-op;
+  the dropped hook is removed.
+- **The Hall's seed lines**: one lap for all lines; the stale per-line times go.
+- **Combat effects on stars**: "We need to either give it a real effect or
+  cut it. If it doesn't work with our combat system, then it should be cut."
+  Crit, Dodge, type damage and resistance are real combat stats, so from the
+  guild they reach heroes; Sunder (it strips one's own resistances) is cut
+  from stars and guild rules.
+- **Passive Production**: stays loot beside the Hall for heroes to carry.
+- **Locked stars**: leave as is (grey means locked; follow the lines).
+- **Bunk Beds, Bank Tabs, the Wishing Well**: move into the CMS as ordinary
+  authored stars.
+- **The Hall's exemptions by id**: one rule, a non-working Token gets no
+  work-cycle effect.
+- **Reach**: stars work in every Region, and every Region has its own Hall
+  (already true: each Region's layout puts the Hall at its centre,
+  `Layout.js:75-76`).
+- **Rank lines**: whole effect per rank, as now.
 
 ## What it became
+
+- **T-511**: the Hall pays every line once a lap; the per-line time is retired.
+- **T-512**: every guild-wide combat effect reaches heroes; Sunder refused on stars.
+- **T-513**: Bunk Beds, Bank Tabs and the Wishing Well become authored stars.
+- **T-514**: the Hall is a non-working Token by one rule; the dead click hook goes.
+- Fine as is: nav-only sky, loot payout, stars everywhere, whole-effect rank
+  lines, locked stars unworded.
+
+All four tickets blocked on the Effects group.
 
 ## Evidence
 

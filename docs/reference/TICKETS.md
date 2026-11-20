@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-511**
+**Next free number: T-515**
 
 ---
 
@@ -100,6 +100,10 @@ here.
 | T-253 | P3 | open | **A CMS page for engine tuning numbers** (brief 230 S1a, owner 2026-10-24: "a ticket later"): the speed-up floor (`MAX_SPEED_UP_CUT = 0.8`) and the elixir dose (`ELIXIR_FIGHTS = 10`) live as code constants in `loopConstants.js`; give the owner a synced tuning page (a `data/tuning.json`, a CMS page, a loader). Builder. | brief 230 S1a |
 | T-026 | P3 | ride-along | Small per-tick allocations in combat and statuses. | CR3-032 |
 | T-027 | P3 | ride-along | Motion ticks allocate small objects per walker. | CR3-153 |
+| T-511 | P3 | blocked (audit group: effects) | **The Guild Hall pays every line once a lap, and says so**: the Hall's seed lines carry `everyMs` (Oak Seedling and Wheat Seed 5 min, Apple Seed 10 min, `data/tokens.json:634-648`) but Passive Production pays every line once per lap (`PassiveProduction.js:72-75, 116-136`), so the written 5 min is never honoured. Owner 2026-11-20: one lap for all lines. Retire the per-line time: the CMS stops showing or saving it, a change pack strips it from the data (never hand-edit `data/`), and the boot audit warns if one comes back. Builder-lite. | SA-A37 |
+| T-512 | P3 | blocked (audit group: effects) | **Every guild-wide combat effect reaches heroes, Sunder excepted**: a star's (or a Region rule's) Damage, Accuracy and Swing Speed reach heroes through the guild, but Crit, Dodge, Type Damage and Type Resistance are read from the hero alone (`CombatFormulas.js:164-172, 273-300`), while the Hall's Effects still lists them as held (`GuildHallEffectsPopover.jsx:50`). Owner 2026-11-20: give it a real effect or cut it. Crit, Dodge, Type Damage and Type Resistance from the guild reach heroes, summed in the same bucket as their gear's (as `heroStyleAxis` does for Damage); enemies never read the guild's. Sunder cannot sit on a star or guild rule: the CMS refuses it and the boot audit names it. The Effects list shows only effects that work. No star carries these today. Builder. | SA-A37 |
+| T-513 | P3 | blocked (audit group: effects) | **Bunk Beds, Bank Tabs and the Wishing Well become authored stars**: they are defined in code with a placeholder price of 10 × rank Oak Wood (`guildUpgrades.js:76-105, 133-174`), so the owner cannot place, link or price them. Owner 2026-11-20: move them into the CMS as ordinary stars (`hallStars.json`, priced by the ledger like the other 37); the code keeps only what they do (more heroes, more Bank tabs, Water each lap). Saved ranks carry over by id; the first prices come to the owner as a change pack. Engineer (save migration). | SA-A37 |
+| T-514 | P3 | blocked (audit group: effects) | **The Guild Hall is a non-working Token by one rule**: it is spared some work-cycle effects by its id (Speed, Double Loot, Giant Harvest, Yield, Double Item, Bonus Drop, `BoardRunner.js:298-302, 328-333, 368, 778-782`) but not others (Failure, Preservation, Efficiency, Lucky, `:240, 264, 285, 362-364`); latent, as it never works. Owner 2026-11-20: one rule, no special case by name: a Token that never runs a work cycle gets no work-cycle effect. Also remove the dropped Hall-click hook (`onOpenGuildHall` passed at `ReactRoot.jsx:314`, not a prop of `Board.jsx:40`): the owner ruled the sky opens from the nav only. Builder-lite. | SA-A37 |
 
 ### Code review round 4 (triaged 2026-11-07)
 
