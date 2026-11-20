@@ -94,9 +94,40 @@ items authored elsewhere. The battle background and icons are art.
 7. Ask yourself: is the mat enough most of the time, and what must the window
    show that the mat can't?
 
-## Owner feedback (date)
+## Owner feedback (2026-11-20)
+
+Interviewed in three rounds without playing first.
+
+- **Health bars**: green, amber and red by health, on every bar. Asked again,
+  since it reverses the owner's own 10 November ruling (light red at any
+  health, T-317): the switch stands.
+- **The window and the mat**: same look, same timing.
+- **The fight clock**: compact, like every other time (T-488).
+- **An elixir drunk mid-fight**: logged at once.
+- **Winning and losing**: "Use the term Defeated instead", for both:
+  `Defeated Goblin in 42s`, `Defeated by Goblin`; it replaces knock-out
+  everywhere.
+- **The away summary**: defeats first.
+- **The plain blow**: Strike; tooltips say Damage and Attacks every.
+- **Fight buttons**: open for every open window.
+- **The window's job**: the details the mat can't show; it stays as it is.
+- Leftovers filed without asking.
 
 ## What it became
+
+- **T-556** (director; planning agent: UI_STYLE): health bars green, amber and red. Eye-check.
+- **T-557** (director): the window and the mat show a hit the same way. Eye-check.
+- **T-558** (director): an elixir drunk mid-fight is logged at once.
+- **T-559** (director; planning agent: Limes and docs): Defeated, for winning and losing.
+- **T-560** (director): the away summary leads with defeats (with T-506).
+- **T-561** (director): Strike, Damage, Attacks every (with T-536).
+- **T-562** (director): a fight button looks open while its window is open.
+- **T-563** (director): combat screen leftovers.
+- **T-564** (planning agent): GDD and UI_STYLE on the combat screen.
+- T-488 now names the fight clock; T-530 says Defeated.
+- Fine as is: the window's job (the details the mat can't show).
+
+All nine tickets blocked on the Combat group.
 
 ## Evidence
 
