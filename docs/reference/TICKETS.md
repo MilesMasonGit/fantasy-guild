@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-496**
+**Next free number: T-500**
 
 ---
 
@@ -227,6 +227,10 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 | T-493 | P3 | blocked (audit group: telling the player) | **Rule lines lead with the effect's name**: perks, Hall stars, gear, building rules and the CMS preview say `work 5% faster on Mining Tokens`; the owner's rule is `Speed +5% on Mining Tokens` (name and number, then where or when), the same words as the badge. Builds on T-403 (the names) and T-491 (Lucky ×1.2); `statementText.js` and the `reads` in `modifierPalette.js`. See [the effect wording topic](../active/audit/topic_effect_wording.md) | SA-A43 |
 | T-494 | P3 | blocked (audit group: telling the player) | **Time effects renamed so good reads plus; effects against the player read minus in red**: Wound Time, Lap Time and Swing Time become Recovery, Lap Speed and Swing Speed (`+10%` for shorter), and join the effect names table in `UI_STYLE.md`. A debuff keeps its name with a minus in red (`Speed −10%`); a bad chance reads plainly in red (`Failure 5%`). See [the effect wording topic](../active/audit/topic_effect_wording.md) | SA-A43 |
 | T-495 | P3 | blocked (audit group: telling the player) | **Every effect name explains itself on hover**: one clear plain description per effect (Speed: a cycle takes less time; Lucky: a higher chance on the Token's rare finds; and so on), written once and shown wherever the name appears: badges, a building's Boosts list, rule lines, the Encyclopedia. The owner asked for these to be clear. The names table's What it does column in `UI_STYLE.md` is the starting point. See [the effect wording topic](../active/audit/topic_effect_wording.md) | SA-A43 |
+| T-496 | P3 | blocked (audit group: telling the player) | **Two kinds of message**: every hero and Token message is timed today (5 s, 3 s). The owner's rule: a **popup** fades in a few seconds, for moments that sort themselves out (exhausted, used up, a transform, a status landing); a **speech bubble** stays until hovered or clicked, for anything stopped, gone or needing the player, and clears itself once the need is met (gear broke, out of something, recovery, an event leaving). Re-sort today's moments (used up becomes a popup, gear broke a speech bubble). See [the silent moments topic](../active/audit/topic_silent_moments.md) | SA-A42 |
+| T-497 | P3 | blocked (audit group: telling the player) | **The silent moments speak**: a hero's recovery (speech bubble: Recovered, ready to work!); a Token running dry (popup: Copper Vein exhausted); an event leaving (speech bubble with an alert icon where it stood, saying why: time's up, all gone; a marker, never blocking placing); a transform (the glow plus a popup of its new name); running out of what the work needs, Coal, Food, bait, arrows (speech bubble, clears when the Bank has it again). Depends on T-496. See [the silent moments topic](../active/audit/topic_silent_moments.md) | SA-A42 |
+| T-498 | P3 | blocked (audit group: telling the player) | **Exhausted is the word for a resting Token**: popup, card, hover and drawer (Exhausted · refills in 4m); today Resting, and rest and respawn are said four ways. See [the silent moments topic](../active/audit/topic_silent_moments.md) | SA-A43 |
+| T-499 | P3 | blocked (audit group: telling the player) | **An item's tooltip lists its effects**: today a ring's Lucky or a charm's Speed shows only once a hero wears it. List them in the rule-line form (T-493) with the effect-name hovers (T-495), the same in the Bank, Shop, drop lists and loadout (`ItemTip.jsx`). See [the silent moments topic](../active/audit/topic_silent_moments.md) | SA-A43 |
 
 ### Cleanup — dead code, vestiges, lint *(safe, invisible; delete tests only with the code they test)*
 
