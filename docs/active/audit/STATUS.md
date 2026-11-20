@@ -18,7 +18,7 @@ from (details in [S0_sweep.md](S0_sweep.md)).
 |---|---|---|---|---|---|---|---|
 | S0 | Cross-system sweep | — | done 2026-11-19 | 0 | 0 | overlap map, 8 groups, order; A3 merged into A1 | |
 | A37 | The Guild Hall and Stars | Effects | done 2026-11-20 | 4 (T-511 to T-514) | 0 | fine as is: nav-only sky, loot payout, stars everywhere, whole-effect ranks, locked stars unworded | Hall exempt by name from some effects, not others; the drop lap ignores its lines' times; Stars reach hero Damage, Accuracy, Swing Time but not Crit, Dodge, Resistance (D2 note); a rank replaces the one below |
-| A29 | Equipment and tools | Effects | | | | | two trinkets cap at 5, a perk adds past it; tool Tokens (`acceptedTokens`) and `Requires` unused or unread; heal amounts on drinks and `regen`/`restoreType` unread |
+| A29 | Equipment and tools | Effects | card written, owner to play (2026-11-20) | | | | two trinkets cap at 5, a perk adds past it; tool Tokens (`acceptedTokens`) and `Requires` unused or unread; heal amounts on drinks and `regen`/`restoreType` unread |
 | A27 | Milestone perks | Effects | | | | | all 9 perks written with "nearby", which does nothing on a hero |
 | A28 | Health, food and defeat | Effects | | | | | only Food heals; three HP rounding rules; regen can't be sped up; Wound Time counts only from the next wound; a hero's recovery is silent |
 | A31 | The hit | Combat | | | | | resistance sums differ hero vs enemy (the Crab); Poison type vs Venom status; `ignoresArmor` unread |
