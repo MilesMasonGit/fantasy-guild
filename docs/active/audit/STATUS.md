@@ -21,7 +21,7 @@ from (details in [S0_sweep.md](S0_sweep.md)).
 | A29 | Equipment and tools | Effects | done 2026-11-20 | 7 (T-515 to T-521) | 0 | fine as is: defeat gear loss stays, chosen cell replaces | two trinkets cap at 5, a perk adds past it; tool Tokens (`acceptedTokens`) and `Requires` unused or unread; heal amounts on drinks and `regen`/`restoreType` unread |
 | A27 | Milestone perks | Effects | done 2026-11-20 | 3 (T-522 to T-524) | 1 (concept_milestone_perks.md) | 1 design pass note (flashy level-up); fine as is: no choices, nothing stored, no banner | all 9 perks written with "nearby", which does nothing on a hero |
 | A28 | Health, food and defeat | Effects | done 2026-11-20 | 7 (T-525 to T-531; T-253 and T-521 widened) | 0 | enemy health back to full parked on A31; fine as is: drinks never heal (ruled 2026-10-24) | **from A29 (owner 2026-11-20): decide what drinks do: six drinks and a potion carry a heal amount the game ignores (Water 1 to Limeade 30, Shrimp Trawler Potion 5, its tooltip says restores 5); `regen`, `restoreType` unread on 3 items; the defeat losses (10% a gear piece, 25% of carried food and drink) stay but are never shown beforehand**; only Food heals; three HP rounding rules; regen can't be sped up; Wound Time counts only from the next wound; a hero's recovery is silent |
-| A31 | The hit | Combat | | | | | **from A28 (owner 2026-11-20, parked for Combat): an enemy is back to full health when its hero leaves the Region and returns (`BoardCombat.js:616-621`); enemies never regenerate**; resistance sums differ hero vs enemy (the Crab); Poison type vs Venom status; `ignoresArmor` unread |
+| A31 | The hit | Combat | card written, owner to play (2026-11-20) | | | | **from A28 (owner 2026-11-20, parked for Combat): an enemy is back to full health when its hero leaves the Region and returns (`BoardCombat.js:616-621`); enemies never regenerate**; resistance sums differ hero vs enemy (the Crab); Poison type vs Venom status; `ignoresArmor` unread |
 | A33 | Status effects and boss moves | Combat | | | | | three ways an enemy lands an effect (kind, rule, move); kind presets and effects move the same numbers; six "how long" clocks |
 | A32 | Enemies and encounters | Combat | | | | | a camp at its cap waits a whole interval after a kill |
 | A34 | Winning, losing and loot | Combat | | | | | a kill skips Fail, Preservation, Refresh, neighbour Applies; enemies' written XP ignored |
@@ -69,7 +69,7 @@ tickets together.
 | # | Group | Systems | State |
 |---|---|---|---|
 | 1 | Effects | A37, A29, A27, A28 | **ready to brief** (2026-11-20) |
-| 2 | Combat | A31, A33, A32, A34, A35, A15, A16, A17, A18 | waiting |
+| 2 | Combat | A31, A33, A32, A34, A35, A15, A16, A17, A18 | auditing |
 | 3 | The living mat | A2, A4, A1 (with A3), A40, A41 | waiting |
 | 4 | Gathering | A8, A7, A6, A9 | waiting |
 | 5 | Making | A10, A11, A12, A13, A14 (rules only), A5 | waiting |
