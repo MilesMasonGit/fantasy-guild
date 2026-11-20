@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-506**
+**Next free number: T-508**
 
 ---
 
@@ -237,6 +237,8 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 | T-503 | P3 | blocked (audit group: telling the player) | **An event leaving says Expired**: today Leaves in, Worked out, Time ran out, Left unworked, and nothing live. Expired for every way an event goes by itself, Demolished for the player's act, the same on the leaving marker (T-497), the card and the away summary; the away summary lists events one line per kind: icon, name, how many came, how many expired, demolished or still here. See [the wording drift topic](../active/audit/topic_wording_drift.md) | SA-A42 |
 | T-504 | P3 | blocked (audit group: telling the player) | **One writer for a Token's timer sentences**: the idle hover (`idlePlate.js`) and the card (`tokenCard.js`) word the same rest, growth, crop, event and spawner timers differently (Resting. Refills in 4 min vs Copper Vein: resting, refills in 4 min). One writer, read by both: the hover's cell shows the number, its tooltip the card's sentence, in the group's words (T-488, T-498, T-502, T-503). `lifecycleLines` (tests only) becomes that writer or is retired. See [the hover vs card topic](../active/audit/topic_hover_vs_card.md) | SA-A43 |
 | T-505 | P3 | blocked (audit group: telling the player) | **The idle hover shows every timer and stuck reason the card shows**: today it leaves out demolition, Hall production, a spawner's state (full, no room, mat full, asleep, needs items) and growth stopped for lack of items. Depends on T-504. See [the hover vs card topic](../active/audit/topic_hover_vs_card.md) | SA-A43 |
+| T-506 | P3 | blocked (audit group: telling the player) | **Away news is told once**: closing While you were away pushes all its news again as banners (every recipe, knock-out, Bank-full), in different words. After the summary, only what still needs the player stays as a banner (Bank or stack still full, an event still standing); every time away opens the summary, with no 2-minute line (`loopConstants.js` SHOW_GAP_MS; time away is a closed game or a sleeping PC, see A41); the summary and the banners take their words from one writer (`routing.js` deliverCatchUpNews, `catchUpNews.js`, `bannerKinds.js`). See [the news told twice topic](../active/audit/topic_banners_twice.md) | SA-A42 |
+| T-507 | P3 | blocked (audit group: telling the player) | **Problem banners clear themselves once fixed**: Bank full and stack full stay until clicked even after there is room. They go once fixed (or clicked); milestone banners stay until clicked, as now; the same rule as T-496's speech bubbles (`banners.js`). See [the news told twice topic](../active/audit/topic_banners_twice.md) | SA-A42 |
 
 ### Cleanup — dead code, vestiges, lint *(safe, invisible; delete tests only with the code they test)*
 
