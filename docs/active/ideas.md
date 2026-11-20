@@ -239,6 +239,12 @@ mods via the CMS after release.
 ## Being interviewed
 
 
+- **Milestone perks: signature perks and small steps** (owner, 2026-11-20,
+  audit A27): majors at 10/25/50/75/99, small repeatable steps every 5 levels,
+  combat skills too; the signature perk per skill still to design →
+  [concept_milestone_perks.md](concept_milestone_perks.md) (draft). For the
+  planning agent, then the content agent (T-522).
+
 - **Star upgrades, effect families and Events** (owner, 2026-11-11): the
   owner's marks on 117 Star ideas and four takeaways (families with
   per-target versions; effect icons on the Token card; Stars tiny and global

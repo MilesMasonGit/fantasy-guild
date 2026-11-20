@@ -94,9 +94,34 @@ Data today:
 6. Ask yourself: is a small bonus at 10 the reward you want, and what should
    the later levels (25, 50, 75, 99) and the combat skills give?
 
-## Owner feedback (date)
+## Owner feedback (2026-11-20)
+
+Interviewed in two rounds without playing first.
+
+- **What perks are**: small early, signature late. Majors stay at 10, 25,
+  50, 75, 99; later majors change how the skill plays.
+- **Small milestones every 5 levels** between the majors, in the same table,
+  not marked minor: "small, repeatable improvements".
+- **Combat skills** get perk tables like the work skills.
+- **Showing a milestone**: every one the same, float and bar alert, no banner.
+  "I want levelling up to be more of an event. It should show the new perk,
+  new recipes unlocked, and when we have more animations something flashy."
+- **Signature perks**: a draft concept doc now, worked out later skill by
+  skill. The owner asked that tickets be sorted by who takes them: the
+  director (code), the content agent (CMS content and change packs) or the
+  planning agent (concept docs, the GDD); every audit ticket now says which.
 
 ## What it became
+
+- **T-522** (content agent): perk tables for every skill that levels, small steps every 5 levels, combat skills too.
+- **T-523** (director): a new perk table starts with a row every 5 levels.
+- **T-524** (director): levelling up is an event: every milestone shown the same, with what the level unlocks.
+- **[concept_milestone_perks.md](../concept_milestone_perks.md)** (planning agent, draft): signature perks skill by skill, step sizes, the flashy level-up.
+- T-519 now covers perks' "nearby" too; T-521 fixes GDD §4 Milestone perks too; T-516 already drops the perks' cap of 5.
+- Design pass note: a flashy level-up once more animations exist.
+- Fine as is: no choices, nothing stored, no banner.
+
+All three tickets blocked on the Effects group.
 
 ## Evidence
 

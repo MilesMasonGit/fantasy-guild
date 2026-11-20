@@ -10,7 +10,7 @@
 
 ## Sessions
 
-In the order the owner approved on 2026-11-19 (S0's proposal). **Next: A27.** Group 8, Telling the player, was interviewed early by topic (owner, 2026-11-19/20) and is ready to brief.
+In the order the owner approved on 2026-11-19 (S0's proposal). **Next: A28** (closes the Effects group). **Every audit ticket says who takes it** (owner, 2026-11-20): *For: director* (code), *For: content agent* (CMS content, change packs), *For: planning agent* (concept docs, the GDD), or a mix naming each part. Group 8, Telling the player, was interviewed early by topic (owner, 2026-11-19/20) and is ready to brief.
 "From S0" lists what the sweep saw in that system, for its session to start
 from (details in [S0_sweep.md](S0_sweep.md)).
 
@@ -19,7 +19,7 @@ from (details in [S0_sweep.md](S0_sweep.md)).
 | S0 | Cross-system sweep | — | done 2026-11-19 | 0 | 0 | overlap map, 8 groups, order; A3 merged into A1 | |
 | A37 | The Guild Hall and Stars | Effects | done 2026-11-20 | 4 (T-511 to T-514) | 0 | fine as is: nav-only sky, loot payout, stars everywhere, whole-effect ranks, locked stars unworded | Hall exempt by name from some effects, not others; the drop lap ignores its lines' times; Stars reach hero Damage, Accuracy, Swing Time but not Crit, Dodge, Resistance (D2 note); a rank replaces the one below |
 | A29 | Equipment and tools | Effects | done 2026-11-20 | 7 (T-515 to T-521) | 0 | fine as is: defeat gear loss stays, chosen cell replaces | two trinkets cap at 5, a perk adds past it; tool Tokens (`acceptedTokens`) and `Requires` unused or unread; heal amounts on drinks and `regen`/`restoreType` unread |
-| A27 | Milestone perks | Effects | card written, owner to play (2026-11-20) | | | | all 9 perks written with "nearby", which does nothing on a hero |
+| A27 | Milestone perks | Effects | done 2026-11-20 | 3 (T-522 to T-524) | 1 (concept_milestone_perks.md) | 1 design pass note (flashy level-up); fine as is: no choices, nothing stored, no banner | all 9 perks written with "nearby", which does nothing on a hero |
 | A28 | Health, food and defeat | Effects | | | | | **from A29 (owner 2026-11-20): decide what drinks do: six drinks and a potion carry a heal amount the game ignores (Water 1 to Limeade 30, Shrimp Trawler Potion 5, its tooltip says restores 5); `regen`, `restoreType` unread on 3 items; the defeat losses (10% a gear piece, 25% of carried food and drink) stay but are never shown beforehand**; only Food heals; three HP rounding rules; regen can't be sped up; Wound Time counts only from the next wound; a hero's recovery is silent |
 | A31 | The hit | Combat | | | | | resistance sums differ hero vs enemy (the Crab); Poison type vs Venom status; `ignoresArmor` unread |
 | A33 | Status effects and boss moves | Combat | | | | | three ways an enemy lands an effect (kind, rule, move); kind presets and effects move the same numbers; six "how long" clocks |

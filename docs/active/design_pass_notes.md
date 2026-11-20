@@ -48,3 +48,10 @@ line each is enough.
   experiment with different bubble styles for a polished look that keeps the
   framerate stable (owner, 2026-10-09).
 
+## Levelling up as an event
+- **Owner, 2026-11-20 (audit A27)**: "I want levelling up to be more of an
+  event." Once there are more animations, something flashy when a hero levels
+  (beside the perk and unlocks the float already lists, T-524). Weigh it
+  against [concept_level_up.md](concept_level_up.md), which ruled "nothing
+  else: no hop, no sparkle" in 2026-10. See
+  [concept_milestone_perks.md](concept_milestone_perks.md).
