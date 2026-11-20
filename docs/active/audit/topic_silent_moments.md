@@ -22,12 +22,13 @@ interviewed with the owner 2026-11-19/20 in three rounds. From S0 part 5,
 | A Token changes (a building finishes, a Sapling grows, a Token turns) | Popup, with the glow | its new name: "Oak Tree", "Sawmill built". The 1 s glow stays. |
 | A status lands on a hero | Popup | "Venom!" (as today) |
 | A hero recovers from wounds | Speech bubble | "Recovered, ready to work!" (today nothing) |
-| An event leaves | Speech bubble **with an alert icon, left where the event stood** | why it went: "Fish Shoal left: time's up" (today its banner just vanishes). A marker, not a Token: it never blocks placing. Fades once looked at. |
+| An event leaves | Speech bubble **with an alert icon, left where the event stood** | "Fish Shoal expired" (words settled in the wording drift topic) (today its banner just vanishes). A marker, not a Token: it never blocks placing. Fades once looked at. |
 | A hero's gear breaks | Speech bubble | "My axe broke!" (today a 5 s bubble) |
 | A hero runs out of something the work needs (Coal, Food, bait, arrows) | Speech bubble | "Out of Coal!"; clears when the Bank has it again. |
 
 **The word for a resting Token is "Exhausted" everywhere**: the popup, the
-card, the hover and the drawer ("Exhausted · refills in 4m"; today "Resting").
+card, the hover and the drawer ("Exhausted · respawns in 4m", the verb from
+the wording drift topic; today "Resting").
 
 **An item's tooltip lists its effects**, in the rule-line form from the
 effect wording topic ("Lucky ×1.2 on Veins"), with the effect-name hovers;
