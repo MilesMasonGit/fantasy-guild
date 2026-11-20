@@ -103,9 +103,36 @@ lengths, a move's chance (always lands).
 7. Ask yourself: should one effect (Venom, Heavy Strike) always come by one
    route, and should boss moves be named by the move?
 
-## Owner feedback (date)
+## Owner feedback (2026-11-20)
+
+Interviewed in three rounds without playing first.
+
+- **Routes**: "Each route its own job, but I think it should just be Passive
+  and Active. A passive trait might be a rule that triggers under certain
+  conditions or something always on. The Active effects are tied to the
+  attacks and swings." Venom on every hit becomes part of the attacks.
+- **Move timing**: weight only; no every-Nth timing for enemies.
+- **A move's chance**: "Yes, still has a chance to hit. Needs to use the same
+  accuracy mechanics as any other attack." An effect on the enemy itself
+  always happens.
+- **Names**: the move's own name.
+- **Kinds**: become effects in the CMS.
+- **The game-time effect clock**: retire it.
+- **The boss flag**: cut it.
+- **Burn as Fire** (parked here from A31): not raised; T-534 covers Venom only.
 
 ## What it became
+
+- **T-539** (director; content agent re-authors the enemies): Passive and Active.
+- **T-540** (director; content agent authors the kinds): enemy kinds become CMS effects.
+- **T-541** (director): a move is announced by its own name.
+- **T-542** (director): status leftovers (the game-time clock, the boss flag, the old migration, stale comments).
+- **T-543** (planning agent): GDD §6 statuses and boss moves match the game.
+- T-253 now lists the 5-stack limit.
+- A32 Enemies: carries Passive and Active, kinds as effects, no boss flag.
+- Fine as is: statuses end with their fight; the shared 3 s tick.
+
+All five tickets blocked on the Combat group.
 
 ## Evidence
 
