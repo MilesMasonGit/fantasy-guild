@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-492**
+**Next free number: T-496**
 
 ---
 
@@ -223,6 +223,10 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 | T-489 | P3 | blocked (audit group: telling the player) | **One way to write a chance**: chances are rounded six ways (as typed, one decimal, two decimals, tiny ones to one or two figures, `12.5 %` with a space). One writer: one decimal, trailing .0 dropped, under 1 % two significant figures (`0.17%`, `0.005%`, today's rare-finds rule), no space before %; crit, accuracy and dodge included. 100 % shows only in odds lists (drops, catches, rare finds), never in recipes or Makes rows. Writers listed in [the chances topic](../active/audit/topic_chances.md) | SA-A43 |
 | T-490 | P3 | blocked (audit group: telling the player) | **A shown chance says whether bonuses count**: the card's rare finds count Lucky, the Encyclopedia shows the base unlabelled. Live places (a Token on the mat) keep counting bonuses and explain the number on hover (base, each bonus with its source, the result); reference places (Encyclopedia, recipe list) label their chance base. See [the chances topic](../active/audit/topic_chances.md) | SA-A43 |
 | T-491 | P3 | blocked (audit group: telling the player) | **Lucky reads as a multiplier**: a percentage Lucky (a share of the rare table's chance) reads `+20%` / a 20% higher chance, which looks like 20 points. Word it `rare find chance ×1.2` on badges, sentences and the hover; a flat Lucky keeps reading in points. See [the chances topic](../active/audit/topic_chances.md) | SA-A43 |
+| T-492 | P3 | blocked (audit group: telling the player) | **A building's Boosts list words effects as the badges do**: the Boosts block writes the raw number (`−25 % work`, `−10 % grow`, `×2 loot 10 %`, `+Bird Nest 5 %`) while the badge it causes reads `Speed +25%`. Write each tag as the badge: effect name, then the number, good always plus, chances plain, `×` for a multiplier; one source for both (`supportTags.js` onto the badge's text). See [the effect wording topic](../active/audit/topic_effect_wording.md) | SA-A43 |
+| T-493 | P3 | blocked (audit group: telling the player) | **Rule lines lead with the effect's name**: perks, Hall stars, gear, building rules and the CMS preview say `work 5% faster on Mining Tokens`; the owner's rule is `Speed +5% on Mining Tokens` (name and number, then where or when), the same words as the badge. Builds on T-403 (the names) and T-491 (Lucky ×1.2); `statementText.js` and the `reads` in `modifierPalette.js`. See [the effect wording topic](../active/audit/topic_effect_wording.md) | SA-A43 |
+| T-494 | P3 | blocked (audit group: telling the player) | **Time effects renamed so good reads plus; effects against the player read minus in red**: Wound Time, Lap Time and Swing Time become Recovery, Lap Speed and Swing Speed (`+10%` for shorter), and join the effect names table in `UI_STYLE.md`. A debuff keeps its name with a minus in red (`Speed −10%`); a bad chance reads plainly in red (`Failure 5%`). See [the effect wording topic](../active/audit/topic_effect_wording.md) | SA-A43 |
+| T-495 | P3 | blocked (audit group: telling the player) | **Every effect name explains itself on hover**: one clear plain description per effect (Speed: a cycle takes less time; Lucky: a higher chance on the Token's rare finds; and so on), written once and shown wherever the name appears: badges, a building's Boosts list, rule lines, the Encyclopedia. The owner asked for these to be clear. The names table's What it does column in `UI_STYLE.md` is the starting point. See [the effect wording topic](../active/audit/topic_effect_wording.md) | SA-A43 |
 
 ### Cleanup — dead code, vestiges, lint *(safe, invisible; delete tests only with the code they test)*
 
