@@ -38,9 +38,10 @@ map items.
 
 - **A neighbour's rules on Cycle and on Kill both fire on one kill**, so a
   Token with both reacts twice.
-- **An enemy's own On Cycle rule fires on its death** (the Thorn
-  Elemental's thorns hit once per kill, not per swing) and can knock out the
-  hero who just won: they keep the loot and still pay the knockout losses.
+- **An enemy's own On Cycle rule would fire on its death** and could knock
+  out the hero who just won. No enemy has one: the Thorn Elemental's thorns
+  are already When Struck (`effect_thorns_struck`); the Redberry Bush's
+  Thorns is the work-cycle version.
 - **No rare tables exist on any Token**: the rare finds are ordinary drop
   lines (every enemy's banner map at 0.5%, 2% on bosses; the Coal Prospecting
   Map at 3%, 25% on the Goblin Chief), so Lucky does nothing on them. The rare
@@ -92,14 +93,42 @@ not a fault).
 2. **Beat a few Goblins**: Bones every time, Copper Ore about a third of the
    time; watch the fight window's "Drops" line.
 3. **Watch the loot**: hover it in, or wait 2.5 s for auto-collect.
-4. **Fight a Thorn Elemental**: does its thorn hit you once per kill?
+4. **Fight a Thorn Elemental**: its thorns sometimes hit back when you strike it.
 5. **Drag the hero away mid-fight**: no loot, no XP.
 6. Ask yourself: should a kill feel like a finished cycle (all the same
    bonuses), or have its own rules?
 
-## Owner feedback (date)
+## Owner feedback (2026-11-20)
+
+Interviewed in two rounds without playing first.
+
+- **A kill and a work cycle**: "A kill is a cycle, but a different kind. We
+  have Combat Cycles and Work Cycles. Some buffs might affect one but not the
+  other. We should be specific about what a buff does. Something like Giant
+  Harvest should only affect Work Cycles, and probably just Farming tasks."
+  Combat cycles get Yield, Double Loot, bonus drops and Double Item; not
+  Refresh. Giant Harvest: Farming only.
+- **Kill loot counts** for the collection log and item-made quests and rules.
+- **Neighbours**: a kill fires On Kill only.
+- **Thorns**: "That Thorns effect is configured wrong. It should be a passive
+  effect that triggers when it is hit by the Hero." Checked: the Thorn
+  Elemental already uses a When Struck Thorns; the reader had mixed it up with
+  the Redberry Bush's work-cycle Thorns. The card is corrected.
+- **Rare tables**: "We need the content agent to build in rare drop tables,
+  such as Gems for Mining tasks and Treasure for Fishing tasks." Enemies' rare
+  finds move into rare tables too.
 
 ## What it became
+
+- **T-550** (director): combat cycles and work cycles; loot is loot; a kill counts once for quests.
+- **T-551** (director): Giant Harvest for Farming only.
+- **T-552** (director): a kill reaches neighbours as On Kill only.
+- **T-553** (content agent): rare drop tables for work and enemies.
+- **T-554** (director): loot leftovers (bonus drops shown, the 2 s rest, drop list read per kill, dead code).
+- **T-555** (planning agent): the GDD on kills and rare tables.
+- T-253 now lists the 2 s rest.
+
+All six tickets blocked on the Combat group.
 
 ## Evidence
 

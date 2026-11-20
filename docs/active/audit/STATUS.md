@@ -10,7 +10,7 @@
 
 ## Sessions
 
-In the order the owner approved on 2026-11-19 (S0's proposal). **Next: A34** (Combat group). The Effects group is ready to brief (2026-11-20). **Every audit ticket says who takes it** (owner, 2026-11-20): *For: director* (code), *For: content agent* (CMS content, change packs), *For: planning agent* (concept docs, the GDD), or a mix naming each part. Group 8, Telling the player, was interviewed early by topic (owner, 2026-11-19/20) and is ready to brief.
+In the order the owner approved on 2026-11-19 (S0's proposal). **Next: A35** (Combat group). The Effects group is ready to brief (2026-11-20). **Every audit ticket says who takes it** (owner, 2026-11-20): *For: director* (code), *For: content agent* (CMS content, change packs), *For: planning agent* (concept docs, the GDD), or a mix naming each part. Group 8, Telling the player, was interviewed early by topic (owner, 2026-11-19/20) and is ready to brief.
 "From S0" lists what the sweep saw in that system, for its session to start
 from (details in [S0_sweep.md](S0_sweep.md)).
 
@@ -24,7 +24,7 @@ from (details in [S0_sweep.md](S0_sweep.md)).
 | A31 | The hit | Combat | done 2026-11-20 | 7 (T-532 to T-538; T-253 and T-494 widened) | 0 | Dodge, Crit from the guild already T-512; | resistance sums differ hero vs enemy (the Crab); Poison type vs Venom status; `ignoresArmor` unread |
 | A33 | Status effects and boss moves | Combat | done 2026-11-20 | 5 (T-539 to T-543) | 0 | Passive and Active; fine as is: statuses end with the fight; | **from A31 (owner 2026-11-20): Venom deals Poison damage (T-534); decide the same for other damaging statuses (Burn as Fire?); the Toxic Frog lands Venom on every hit, even its Crush tongue**; three ways an enemy lands an effect (kind, rule, move); kind presets and effects move the same numbers; six "how long" clocks |
 | A32 | Enemies and encounters | Combat | done 2026-11-20 | 6 (T-544 to T-549) | 0 | fine as is: enemies stand still, never start a fight, one hero each; kinds discovered by fighting | **from A33 (owner 2026-11-20): enemy effects are Passive or Active (T-539); kinds become CMS effects (T-540); the boss flag is cut (T-542)**; a camp at its cap waits a whole interval after a kill |
-| A34 | Winning, losing and loot | Combat | card written, owner to play (2026-11-20) | | | | ~~enemy health on return~~ settled in A32 (T-546: keeps damage, heals 5% a second); a kill skips Fail, Preservation, Refresh, neighbour Applies; enemies' written XP ignored |
+| A34 | Winning, losing and loot | Combat | done 2026-11-20 | 6 (T-550 to T-555) | 0 | combat cycles and work cycles; | ~~enemy health on return~~ settled in A32 (T-546: keeps damage, heals 5% a second); a kill skips Fail, Preservation, Refresh, neighbour Applies; enemies' written XP ignored |
 | A35 | The combat screen | Combat | | | | | fight clock rounds down, other clocks round up |
 | A15 | Melee | Combat | | | | | |
 | A16 | Ranged | Combat | | | | | **owner ruling 2026-11-20 (silent moments topic): no bow without arrows, work stops with a speech bubble; settle the details here**; arrows run out silently and come from the Bank only; the code leaves an empty quiver to the owner |
