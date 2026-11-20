@@ -10,7 +10,7 @@
 
 ## Sessions
 
-In the order the owner approved on 2026-11-19 (S0's proposal). **Next: A37.**
+In the order the owner approved on 2026-11-19 (S0's proposal). **Next: A37.** Group 8, Telling the player, was interviewed early by topic (owner, 2026-11-19/20) and is ready to brief.
 "From S0" lists what the sweep saw in that system, for its session to start
 from (details in [S0_sweep.md](S0_sweep.md)).
 
@@ -57,8 +57,8 @@ from (details in [S0_sweep.md](S0_sweep.md)).
 | A23 | Crime | Specialist skills | | | | | |
 | A24 | Taming | Specialist skills | | | | | |
 | A25 | Science | Specialist skills | | | | | |
-| A42 | Notifications | Telling the player | | T-496, T-497, T-501, T-503, T-506, T-507 | | | interviewed 2026-11-20: silent moments ([topic_silent_moments.md](topic_silent_moments.md), T-496 to T-499), wording drift ([topic_wording_drift.md](topic_wording_drift.md), T-500 to T-503), hover vs card ([topic_hover_vs_card.md](topic_hover_vs_card.md), T-504, T-505), news told twice ([topic_banners_twice.md](topic_banners_twice.md), T-506, T-507) |
-| A43 | Cards, badges and bars | Telling the player | | T-488 to T-495, T-498 to T-500, T-502, T-504, T-505, T-508 to T-510 | | | interviewed 2026-11-19: time display ([topic_time_display.md](topic_time_display.md), T-488), chances ([topic_chances.md](topic_chances.md), T-489 to T-491), effect wording ([topic_effect_wording.md](topic_effect_wording.md), T-492 to T-495); 2026-11-20 hover vs card ([topic_hover_vs_card.md](topic_hover_vs_card.md), T-504, T-505), item sources ([topic_item_sources.md](topic_item_sources.md), T-508 to T-510) |
+| A42 | Notifications | Telling the player | done 2026-11-20 (6 tickets, 0 concept docs, by topic) | T-496, T-497, T-501, T-503, T-506, T-507 | | | interviewed 2026-11-20: silent moments ([topic_silent_moments.md](topic_silent_moments.md), T-496 to T-499), wording drift ([topic_wording_drift.md](topic_wording_drift.md), T-500 to T-503), hover vs card ([topic_hover_vs_card.md](topic_hover_vs_card.md), T-504, T-505), news told twice ([topic_banners_twice.md](topic_banners_twice.md), T-506, T-507) |
+| A43 | Cards, badges and bars | Telling the player | done 2026-11-20 (17 tickets, 0 concept docs, by topic) | T-488 to T-495, T-498 to T-500, T-502, T-504, T-505, T-508 to T-510 | | | interviewed 2026-11-19: time display ([topic_time_display.md](topic_time_display.md), T-488), chances ([topic_chances.md](topic_chances.md), T-489 to T-491), effect wording ([topic_effect_wording.md](topic_effect_wording.md), T-492 to T-495); 2026-11-20 hover vs card ([topic_hover_vs_card.md](topic_hover_vs_card.md), T-504, T-505), item sources ([topic_item_sources.md](topic_item_sources.md), T-508 to T-510) |
 
 ## Groups
 
@@ -75,4 +75,4 @@ tickets together.
 | 5 | Making | A10, A11, A12, A13, A14 (rules only), A5 | waiting |
 | 6 | Heroes and the guild | A26, A30, A36, A38, A39 | waiting |
 | 7 | Specialist skills | A19 to A25 | waiting |
-| 8 | Telling the player | A42, A43 | interviewing by topic (time display, chances, effect wording, silent moments, wording drift, hover vs card, news told twice, item sources done) |
+| 8 | Telling the player | A42, A43 | **ready to brief** (owner 2026-11-20): T-488 to T-510, 23 tickets, from eight topic files (`topic_*.md`); interviewed by topic out of the approved order at the owner's choice |
