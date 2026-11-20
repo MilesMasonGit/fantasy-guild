@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-508**
+**Next free number: T-511**
 
 ---
 
@@ -239,6 +239,9 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 | T-505 | P3 | blocked (audit group: telling the player) | **The idle hover shows every timer and stuck reason the card shows**: today it leaves out demolition, Hall production, a spawner's state (full, no room, mat full, asleep, needs items) and growth stopped for lack of items. Depends on T-504. See [the hover vs card topic](../active/audit/topic_hover_vs_card.md) | SA-A43 |
 | T-506 | P3 | blocked (audit group: telling the player) | **Away news is told once**: closing While you were away pushes all its news again as banners (every recipe, knock-out, Bank-full), in different words. After the summary, only what still needs the player stays as a banner (Bank or stack still full, an event still standing); every time away opens the summary, with no 2-minute line (`loopConstants.js` SHOW_GAP_MS; time away is a closed game or a sleeping PC, see A41); the summary and the banners take their words from one writer (`routing.js` deliverCatchUpNews, `catchUpNews.js`, `bannerKinds.js`). See [the news told twice topic](../active/audit/topic_banners_twice.md) | SA-A42 |
 | T-507 | P3 | blocked (audit group: telling the player) | **Problem banners clear themselves once fixed**: Bank full and stack full stay until clicked even after there is room. They go once fixed (or clicked); milestone banners stay until clicked, as now; the same rule as T-496's speech bubbles (`banners.js`). See [the news told twice topic](../active/audit/topic_banners_twice.md) | SA-A42 |
+| T-508 | P3 | blocked (audit group: telling the player) | **The Encyclopedia lists every real source**: it reads the ledger, which misses the Guild Hall's star production (Woodpile's Oak Wood, Copper Ore, Stone, Coal) and fixes the Well at rank 1, gives events no source, keeps one row per Token and item (a second catch pool or a rare-table copy is dropped, `encyclopediaModel.js:136-149`), and counts a weightless spawn the engine never picks. Owner's rule: everything the game really pays out, from the same rules it runs. See [the item sources topic](../active/audit/topic_item_sources.md) | SA-A43 |
+| T-509 | P3 | blocked (audit group: telling the player) | **Amounts in the Encyclopedia**: the card shows min–max (Copper Comet ×6), the Encyclopedia only odds; show the same amounts on each source line (the ledger already has `perCycle`). See [the item sources topic](../active/audit/topic_item_sources.md) | SA-A43 |
+| T-510 | P3 | blocked (audit group: telling the player) | **The card shows a working hero's bonus drops**: a bonus from a hero's potion or gear (Birdwatcher: Bird Nest 25%) shows in the Encyclopedia but nowhere on the card. List it under Makes, marked bonus with its source (Bird Nest 25% · bonus (Ana's Birdwatcher)) and its badge. See [the item sources topic](../active/audit/topic_item_sources.md) | SA-A43 |
 
 ### Cleanup — dead code, vestiges, lint *(safe, invisible; delete tests only with the code they test)*
 

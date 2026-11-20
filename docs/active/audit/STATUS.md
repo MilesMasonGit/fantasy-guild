@@ -35,7 +35,7 @@ from (details in [S0_sweep.md](S0_sweep.md)).
 | A1 | Placing, reach and removal (A3 merged in) | The living mat | | | | | arrival enemies skip the cap check but count; four removal gestures; a hero lets go when a Foundation is built |
 | A40 | Regions | The living mat | | | | | another Region's mat stops while hero clocks and bounties run |
 | A41 | Time away and saving | The living mat | | | | | **owner ruling 2026-11-20 (news told twice topic): time away is for a closed game or a sleeping PC; a minimised game keeps playing live; every time away opens the summary (T-506); settle how here**; a kill may count twice in the away summary (reasoned) |
-| A8 | Fishing | Gathering | | | | | **owner ruling 2026-11-20 (silent moments topic): no fishing without bait, work stops with a speech bubble; settle the details here**; two fishing models (catch pool vs Shoal and Shrimp Coast); bait runs out silently, Bank only |
+| A8 | Fishing | Gathering | | | | | **owner direction 2026-11-20 (item sources topic): fishing needs an overhaul: a specific bait per fish or fish by area, tiers of fish each with its own bait, the player choosing the catch by place and gear; the owner may take it to the planning agent ([topic_item_sources.md](topic_item_sources.md))**; **owner ruling 2026-11-20 (silent moments topic): no fishing without bait, work stops with a speech bubble; settle the details here**; two fishing models (catch pool vs Shoal and Shrimp Coast); bait runs out silently, Bank only |
 | A7 | Forestry | Gathering | | | | | **owner ruling 2026-11-20 (wording drift topic): cut Saplings; trees turn into Stumps and respawn as full trees; settle how oak, fir and the Apple Orchard make new trees here**; Forests split: oak and fir plant Saplings, birch, maple, mahogany rest; only oak and fir Stumps need their Forest |
 | A6 | Mining | Gathering | | | | | a vein starting to rest is silent |
 | A9 | Farming | Gathering | | | | | seed checked raw at sowing, paid at harvest; no seed sends the hero away with no badge; `wheat_sprout` beside the Field crop |
@@ -58,7 +58,7 @@ from (details in [S0_sweep.md](S0_sweep.md)).
 | A24 | Taming | Specialist skills | | | | | |
 | A25 | Science | Specialist skills | | | | | |
 | A42 | Notifications | Telling the player | | T-496, T-497, T-501, T-503, T-506, T-507 | | | interviewed 2026-11-20: silent moments ([topic_silent_moments.md](topic_silent_moments.md), T-496 to T-499), wording drift ([topic_wording_drift.md](topic_wording_drift.md), T-500 to T-503), hover vs card ([topic_hover_vs_card.md](topic_hover_vs_card.md), T-504, T-505), news told twice ([topic_banners_twice.md](topic_banners_twice.md), T-506, T-507) |
-| A43 | Cards, badges and bars | Telling the player | | T-488 to T-495, T-498 to T-500, T-502, T-504, T-505 | | | interviewed 2026-11-19: time display ([topic_time_display.md](topic_time_display.md), T-488), chances ([topic_chances.md](topic_chances.md), T-489 to T-491), effect wording ([topic_effect_wording.md](topic_effect_wording.md), T-492 to T-495); 2026-11-20 hover vs card ([topic_hover_vs_card.md](topic_hover_vs_card.md), T-504, T-505); still to interview: card vs Encyclopedia sources (two readers for where an item comes from) |
+| A43 | Cards, badges and bars | Telling the player | | T-488 to T-495, T-498 to T-500, T-502, T-504, T-505, T-508 to T-510 | | | interviewed 2026-11-19: time display ([topic_time_display.md](topic_time_display.md), T-488), chances ([topic_chances.md](topic_chances.md), T-489 to T-491), effect wording ([topic_effect_wording.md](topic_effect_wording.md), T-492 to T-495); 2026-11-20 hover vs card ([topic_hover_vs_card.md](topic_hover_vs_card.md), T-504, T-505), item sources ([topic_item_sources.md](topic_item_sources.md), T-508 to T-510) |
 
 ## Groups
 
@@ -75,4 +75,4 @@ tickets together.
 | 5 | Making | A10, A11, A12, A13, A14 (rules only), A5 | waiting |
 | 6 | Heroes and the guild | A26, A30, A36, A38, A39 | waiting |
 | 7 | Specialist skills | A19 to A25 | waiting |
-| 8 | Telling the player | A42, A43 | interviewing by topic (time display, chances, effect wording, silent moments, wording drift, hover vs card, news told twice done; left: card vs Encyclopedia sources) |
+| 8 | Telling the player | A42, A43 | interviewing by topic (time display, chances, effect wording, silent moments, wording drift, hover vs card, news told twice, item sources done) |
