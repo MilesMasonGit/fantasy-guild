@@ -24,6 +24,13 @@ the date.*
 - **The sweep's topics** (part 1) are audited across all systems in S0. The
   single-system cards then refer back to S0 rather than re-auditing them.
 
+## Changes
+
+- **2026-11-19 (owner, from S0):** A3 Demolition merged into A1, now
+  "Placing, reach and removal". A14 Alchemy is audited for its rules only,
+  inside the Making group. The groups and the order are in
+  [STATUS.md](STATUS.md).
+
 ## 1. Shared machinery (the S0 sweep)
 
 | Topic | What it covers | GDD | Code to start from |
@@ -38,9 +45,8 @@ the date.*
 
 | # | System | What it covers | GDD | Code to start from |
 |---|---|---|---|---|
-| A1 | Placing and reach | The mat, placing and moving Tokens, the cap, reach, Foundations | §3 The mat, What a Token is, Reach, Foundations | `board/` (MatPlacement, Placement, MatCap, Foundations, nearby, reachDisplay) |
+| A1 | Placing, reach and removal (A3 Demolition merged in, owner 2026-11-19) | The mat, placing and moving Tokens, the cap, reach, Foundations; taking Tokens off the mat and what comes back | §3 The mat, What a Token is, Reach, Foundations, Demolition | `board/` (MatPlacement, Placement, MatCap, Foundations, nearby, reachDisplay, Demolition) |
 | A2 | Spawners and transforms | How Tokens make new Tokens and change into others | §3 Spawners, Transforms | `board/` (SpawnerSystem, TimedChanges) |
-| A3 | Demolition | Taking Tokens off the mat and what comes back | §3 Demolition | `board/Demolition.js` |
 | A4 | Events | Event nodes and buff Tokens that land on the mat | §3 Events | `board/EventTokens.js`, `src/systems/events/` |
 | A5 | The Shop | Buying with items | §5 | `board/Shop.js` |
 
@@ -56,7 +62,7 @@ the date.*
 | A11 | Crafting | | as above | as above |
 | A12 | Cooking | | as above | as above |
 | A13 | Construction | | §4 Skills, §8 | as above, `board/Foundations.js` |
-| A14 | Alchemy | No content yet; ask the owner whether to audit now | §4 Skills | as above |
+| A14 | Alchemy | No content yet; audited for its rules only, inside Making (owner, 2026-11-19) | §4 Skills | as above |
 | A15 | Melee | Combat styles: each style's identity (weapons, damage types, what it is good at) | §4 Skills, §6 The fight | `src/systems/combat/`, `src/systems/equipment/` |
 | A16 | Ranged | Bows and arrows, two damage types per shot | as above | as above, `combat/Arrows.js` |
 | A17 | Magic | | as above | as above |
