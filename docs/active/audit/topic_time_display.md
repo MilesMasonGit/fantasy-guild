@@ -50,7 +50,7 @@ card's tooltip and `1 h` in the idle hover. All three become `1h` (fixed) or
 ## Still to interview in this group
 
 The other S0 part 5 topics, one at a time: effect wording (one speed effect
-in three wordings), the idle hover vs the card, chance rounding, silent
+in three wordings), the idle hover vs the card, silent
 moments, wording drift.
 
 ## Evidence

@@ -58,7 +58,7 @@ from (details in [S0_sweep.md](S0_sweep.md)).
 | A24 | Taming | Specialist skills | | | | | |
 | A25 | Science | Specialist skills | | | | | |
 | A42 | Notifications | Telling the player | | | | | banners built twice (live and after time away); silent moments (recovery, resting, event leaving, transforms) |
-| A43 | Cards, badges and bars | Telling the player | | T-488 | | | time display interviewed 2026-11-19, see [topic_time_display.md](topic_time_display.md) (T-488); still to interview: one effect in three wordings; idle hover vs card; chance rounding; a lifecycle writer only tests call; card vs Encyclopedia sources |
+| A43 | Cards, badges and bars | Telling the player | | T-488, T-489, T-490, T-491 | | | interviewed 2026-11-19: time display ([topic_time_display.md](topic_time_display.md), T-488), chances ([topic_chances.md](topic_chances.md), T-489 to T-491); still to interview: one effect in three wordings; idle hover vs card; a lifecycle writer only tests call; card vs Encyclopedia sources |
 
 ## Groups
 
@@ -75,4 +75,4 @@ tickets together.
 | 5 | Making | A10, A11, A12, A13, A14 (rules only), A5 | waiting |
 | 6 | Heroes and the guild | A26, A30, A36, A38, A39 | waiting |
 | 7 | Specialist skills | A19 to A25 | waiting |
-| 8 | Telling the player | A42, A43 | interviewing by topic (time display done) |
+| 8 | Telling the player | A42, A43 | interviewing by topic (time display, chances done) |

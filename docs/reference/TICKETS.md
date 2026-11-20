@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-489**
+**Next free number: T-492**
 
 ---
 
@@ -220,6 +220,9 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 | T-390 | P3 | open | **Duplicate groups the sweep left on purpose** (brief 540 C9, from T-379): the camera pair (`WorldCamera` / `HallCamera`) and the dock pair (`DockHeroFigure` / `HeroDockTab`) need a look-preserving slice with an eye on the screen; the distance-walk twins (`TerrainMap.shoreDistance` / `TerrainLattice`, `TerrainBlend.walkSides` / `TerrainLattice.walk`) and the ground-sheet decode (`mapPreview.decode` / `groundSheets.decode`) change drawing code, so each waits for the draw bench | brief 540 |
 | T-391 | P3 | open | **Two tuner stores copy each other** (brief 540 C9, from T-379): `matTuning` and `playmatTuning` hold near-identical code; merging them is a design call about what the Mat Tuner and the Ground tuner share, so it needs the owner | brief 540 |
 | T-488 | P3 | blocked (audit group: telling the player) | **One way to write a time**: the game writes times twelve ways (`4:57`, `75:00`, `1:04:05`, `60 min`, `1 h`, `2.5s`, `2.4 s`, an Encyclopedia `0:03` for 2.5 s). One shared writer by the owner's rule: compact `34s`, `4m 57s`, `1h 15m`, `1d 4h` everywhere, sentences too; countdowns round up and keep zero parts while ticking, fixed lengths drop them and show one decimal under a minute (`2.5s`, `10.8s`), counting-up times round down; the save slot's Last saved stays in words. Rule and every writer to move in [the time topic](../active/audit/topic_time_display.md); `XpRateTracker.formatDuration` (tests only) is nearly the rule already | SA-A43 |
+| T-489 | P3 | blocked (audit group: telling the player) | **One way to write a chance**: chances are rounded six ways (as typed, one decimal, two decimals, tiny ones to one or two figures, `12.5 %` with a space). One writer: one decimal, trailing .0 dropped, under 1 % two significant figures (`0.17%`, `0.005%`, today's rare-finds rule), no space before %; crit, accuracy and dodge included. 100 % shows only in odds lists (drops, catches, rare finds), never in recipes or Makes rows. Writers listed in [the chances topic](../active/audit/topic_chances.md) | SA-A43 |
+| T-490 | P3 | blocked (audit group: telling the player) | **A shown chance says whether bonuses count**: the card's rare finds count Lucky, the Encyclopedia shows the base unlabelled. Live places (a Token on the mat) keep counting bonuses and explain the number on hover (base, each bonus with its source, the result); reference places (Encyclopedia, recipe list) label their chance base. See [the chances topic](../active/audit/topic_chances.md) | SA-A43 |
+| T-491 | P3 | blocked (audit group: telling the player) | **Lucky reads as a multiplier**: a percentage Lucky (a share of the rare table's chance) reads `+20%` / a 20% higher chance, which looks like 20 points. Word it `rare find chance ×1.2` on badges, sentences and the hover; a flat Lucky keeps reading in points. See [the chances topic](../active/audit/topic_chances.md) | SA-A43 |
 
 ### Cleanup — dead code, vestiges, lint *(safe, invisible; delete tests only with the code they test)*
 
