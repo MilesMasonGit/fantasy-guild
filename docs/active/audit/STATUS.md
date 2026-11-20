@@ -6,11 +6,7 @@
 
 ## Start gate
 
-**Not open.** The audit starts once the outstanding briefs in the
-[briefs order table](../briefs/README.md) are built and merged. Then the
-director makes one desktop test build of `main` (QA panel included), tags
-that commit **`audit-build`**, gives the owner the build, and changes this
-line to "Open (tag `audit-build`, <hash>, <date>)".
+**Open (tag `audit-build`, 1c04f5f6, 2026-11-19).** Build: `_builds/2026-11-19-audit-build/Fantasy Guild.exe` (desktop test build of main, QA panel included).
 
 ## Sessions
 
