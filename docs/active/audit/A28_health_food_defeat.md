@@ -106,9 +106,34 @@ by nothing.
 7. **Watch a working hero's health** after a scratch: it climbs 1 every 10
    seconds while they work.
 
-## Owner feedback (date)
+## Owner feedback (2026-11-20)
+
+Interviewed in two rounds without playing first.
+
+- **Healing out of fights**: boostable, a Regen effect like Speed and Recovery.
+- **Infirmary bought mid-wound**: shortens the wound at once.
+- **Knockout losses**: "Knockout losses should be explained by Limes before
+  the first combat encounter."
+- **Health numbers**: on the CMS tuning page (T-253).
+- **Potions**: "Only food heals. Drinks are meant to be consumables that give
+  buffs. Shrimp Trawler Potion is meant to buff Raw Shrimp production."
+- **Burning and food**: Food Healing on every meal while the status lasts.
+- **Enemies back to full health**: parked for the Combat group (A31).
 
 ## What it became
+
+- **T-525** (director; content agent's change pack): only food heals, and only food says so.
+- **T-526** (content agent): the Shrimp Trawler Potion buffs Raw Shrimp.
+- **T-527** (director): a Regen effect.
+- **T-528** (director): Recovery shortens running wounds.
+- **T-529** (director): Food Healing on every meal while it lasts.
+- **T-530** (planning agent, then director): Limes explains knockout losses before the first fight.
+- **T-531** (director): health leftovers (knockouts tallied twice, dead villager and working paths).
+- T-253 now lists the health numbers; T-521 now fixes GDD §4 Health too.
+- A31 The hit: enemy health on return, in its STATUS row.
+- Fine as is: drinks never heal (ruled 2026-10-24).
+
+All seven tickets blocked on the Effects group, now ready to brief.
 
 ## Evidence
 
