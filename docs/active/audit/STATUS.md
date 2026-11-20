@@ -10,7 +10,7 @@
 
 ## Sessions
 
-In the order the owner approved on 2026-11-19 (S0's proposal). **Next: A29.** Group 8, Telling the player, was interviewed early by topic (owner, 2026-11-19/20) and is ready to brief.
+In the order the owner approved on 2026-11-19 (S0's proposal). **Next: A27.** Group 8, Telling the player, was interviewed early by topic (owner, 2026-11-19/20) and is ready to brief.
 "From S0" lists what the sweep saw in that system, for its session to start
 from (details in [S0_sweep.md](S0_sweep.md)).
 
@@ -18,9 +18,9 @@ from (details in [S0_sweep.md](S0_sweep.md)).
 |---|---|---|---|---|---|---|---|
 | S0 | Cross-system sweep | — | done 2026-11-19 | 0 | 0 | overlap map, 8 groups, order; A3 merged into A1 | |
 | A37 | The Guild Hall and Stars | Effects | done 2026-11-20 | 4 (T-511 to T-514) | 0 | fine as is: nav-only sky, loot payout, stars everywhere, whole-effect ranks, locked stars unworded | Hall exempt by name from some effects, not others; the drop lap ignores its lines' times; Stars reach hero Damage, Accuracy, Swing Time but not Crit, Dodge, Resistance (D2 note); a rank replaces the one below |
-| A29 | Equipment and tools | Effects | card written, owner to play (2026-11-20) | | | | two trinkets cap at 5, a perk adds past it; tool Tokens (`acceptedTokens`) and `Requires` unused or unread; heal amounts on drinks and `regen`/`restoreType` unread |
+| A29 | Equipment and tools | Effects | done 2026-11-20 | 7 (T-515 to T-521) | 0 | fine as is: defeat gear loss stays, chosen cell replaces | two trinkets cap at 5, a perk adds past it; tool Tokens (`acceptedTokens`) and `Requires` unused or unread; heal amounts on drinks and `regen`/`restoreType` unread |
 | A27 | Milestone perks | Effects | | | | | all 9 perks written with "nearby", which does nothing on a hero |
-| A28 | Health, food and defeat | Effects | | | | | only Food heals; three HP rounding rules; regen can't be sped up; Wound Time counts only from the next wound; a hero's recovery is silent |
+| A28 | Health, food and defeat | Effects | | | | | **from A29 (owner 2026-11-20): decide what drinks do: six drinks and a potion carry a heal amount the game ignores (Water 1 to Limeade 30, Shrimp Trawler Potion 5, its tooltip says restores 5); `regen`, `restoreType` unread on 3 items; the defeat losses (10% a gear piece, 25% of carried food and drink) stay but are never shown beforehand**; only Food heals; three HP rounding rules; regen can't be sped up; Wound Time counts only from the next wound; a hero's recovery is silent |
 | A31 | The hit | Combat | | | | | resistance sums differ hero vs enemy (the Crab); Poison type vs Venom status; `ignoresArmor` unread |
 | A33 | Status effects and boss moves | Combat | | | | | three ways an enemy lands an effect (kind, rule, move); kind presets and effects move the same numbers; six "how long" clocks |
 | A32 | Enemies and encounters | Combat | | | | | a camp at its cap waits a whole interval after a kill |
@@ -35,7 +35,7 @@ from (details in [S0_sweep.md](S0_sweep.md)).
 | A1 | Placing, reach and removal (A3 merged in) | The living mat | | | | | arrival enemies skip the cap check but count; four removal gestures; a hero lets go when a Foundation is built |
 | A40 | Regions | The living mat | | | | | another Region's mat stops while hero clocks and bounties run |
 | A41 | Time away and saving | The living mat | | | | | **owner ruling 2026-11-20 (news told twice topic): time away is for a closed game or a sleeping PC; a minimised game keeps playing live; every time away opens the summary (T-506); settle how here**; a kill may count twice in the away summary (reasoned) |
-| A8 | Fishing | Gathering | | | | | **owner direction 2026-11-20 (item sources topic): fishing needs an overhaul: a specific bait per fish or fish by area, tiers of fish each with its own bait, the player choosing the catch by place and gear; the owner may take it to the planning agent ([topic_item_sources.md](topic_item_sources.md))**; **owner ruling 2026-11-20 (silent moments topic): no fishing without bait, work stops with a speech bubble; settle the details here**; two fishing models (catch pool vs Shoal and Shrimp Coast); bait runs out silently, Bank only |
+| A8 | Fishing | Gathering | | | | | **from A29: a rod's tier never gates or speeds fishing; T-515 leaves fishing tiers to this overhaul**; **owner direction 2026-11-20 (item sources topic): fishing needs an overhaul: a specific bait per fish or fish by area, tiers of fish each with its own bait, the player choosing the catch by place and gear; the owner may take it to the planning agent ([topic_item_sources.md](topic_item_sources.md))**; **owner ruling 2026-11-20 (silent moments topic): no fishing without bait, work stops with a speech bubble; settle the details here**; two fishing models (catch pool vs Shoal and Shrimp Coast); bait runs out silently, Bank only |
 | A7 | Forestry | Gathering | | | | | **owner ruling 2026-11-20 (wording drift topic): cut Saplings; trees turn into Stumps and respawn as full trees; settle how oak, fir and the Apple Orchard make new trees here**; Forests split: oak and fir plant Saplings, birch, maple, mahogany rest; only oak and fir Stumps need their Forest |
 | A6 | Mining | Gathering | | | | | a vein starting to rest is silent |
 | A9 | Farming | Gathering | | | | | seed checked raw at sowing, paid at harvest; no seed sends the hero away with no badge; `wheat_sprout` beside the Field crop |

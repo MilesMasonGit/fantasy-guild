@@ -123,9 +123,37 @@ is expected.
 8. **Lose a fight on purpose** (a strong enemy, a weak hero): check the summary
    for lost gear and food.
 
-## Owner feedback (date)
+## Owner feedback (2026-11-20)
+
+Interviewed in three rounds without playing first.
+
+- **Tools**: a better tool also works faster, by a Speed rule on each tool
+  family with a scale per tier (as weapon families do), authored in the CMS.
+  The hero uses the best fitting tool, not the first in the grid.
+- **Losing gear**: both ways stay (the break chance on a few items, today the
+  Rusty tools; the defeat loss). The break chance is shown on the item.
+- **The same effect from several sources**: adds in full, no cap.
+- **Item tooltip**: what a tool unlocks, and its break chance.
+- **The old tool Token path**: retired.
+- **Item reach**: the CMS doesn't offer one on an item's effect.
+- **A drop on a chosen cell**: replaces what is there, to the Bank, as now;
+  the GDD is fixed.
+- **Drinks' ignored heal amounts**: decided in A28 Health, food and defeat.
 
 ## What it became
+
+- **T-515**: better tools work faster (a Speed rule per tool family), and the hero uses the best one.
+- **T-516**: the same effect from several sources adds in full, no cap.
+- **T-517**: an item's tooltip says what a tool unlocks and its break chance.
+- **T-518**: the neighbouring tool Token path and dead equipment code retired.
+- **T-519**: an item's effect has no reach.
+- **T-520**: equip refusals in one wording, translatable.
+- **T-521**: GDD §4 Equipment matches the game.
+- A28 Health, food and defeat: drinks' heal amounts and showing the defeat losses, in its STATUS row.
+- A8 Fishing: rod tiers wait on the overhaul, in its STATUS row.
+- Fine as is: defeat gear loss, a chosen cell replacing what is there.
+
+All seven tickets blocked on the Effects group.
 
 ## Evidence
 
