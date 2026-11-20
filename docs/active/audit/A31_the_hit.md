@@ -113,9 +113,37 @@ Wind Elemental); no effect uses Type Damage; Sunder 10 a stack, 3 stacks.
 6. **Hover an enemy's card**: how its speed is worded ("Swings every"), and
    compare the CMS's "Attacks every" if you open the CMS.
 
-## Owner feedback (date)
+## Owner feedback (2026-11-20)
+
+Interviewed in three rounds without playing first.
+
+- **Damage groups**: "I don't think we actually need groups. If we want
+  something to resist physical damage types, we can just give each type the
+  same resistance." Groups leave the rules; the CMS gets a fill-in button.
+  An enemy's plain swing hits as Crush.
+- **Boosts and immunity**: "Resistances are applied after boosts. So a +15%
+  Poison Damage would still get reduced to 0 by a 100% resistance Poison
+  Frog." Confirmed as ×(1 + boost) then ×(1 − resistance).
+- **Poison and Venom**: Venom deals Poison damage.
+- **Rounding**: all damage rolls its fraction.
+- **Swing speed's name**: Attack Speed, "Attacks every" (this replaces Swing
+  Speed in T-494).
+- **Combat numbers**: on the CMS tuning page (T-253).
+- Leftovers filed without asking, as offered.
 
 ## What it became
+
+- **T-532** (director; content agent's change pack): damage types without groups.
+- **T-533** (director): resistance applies after boosts.
+- **T-534** (director): Venom deals Poison damage.
+- **T-535** (director): all damage rolls its fraction.
+- **T-536** (director): Attack Speed, Attacks every.
+- **T-537** (director; content agent's change pack): combat leftovers.
+- **T-538** (planning agent): GDD §6 The fight matches the game.
+- T-253 now lists the combat numbers; T-494 says Attack Speed.
+- A33: other damaging statuses' types; A34: enemy health on return (parked from A28).
+
+All seven tickets blocked on the Combat group.
 
 ## Evidence
 

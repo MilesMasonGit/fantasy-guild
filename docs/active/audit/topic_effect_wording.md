@@ -13,7 +13,7 @@ this topic settles how they are written around a number.*
 | A rule line (perks, Hall stars, gear, a building's rules, the CMS preview) | `Speed +5% on Mining Tokens`, `Growth +10% on every Forest`, `Lucky ×1.2 on Veins` | **Name and number first, then where or when.** The same words as the badge it produces, so a player can match a perk to a badge. |
 | What an effect means | hover `Speed`: "a cycle takes 25% less time" | **Every effect name explains itself on hover**, wherever it appears (badge, Boosts list, rule line, Encyclopedia), in clear plain words (owner: "we'll need clear descriptions for the hover tooltips that explain what these keywords mean"). |
 | An effect working against the player | `Speed −10%` (red), `Failure 5%` (red) | **Same name, minus, red.** A bad chance keeps its own name and reads plainly. The colour carries good or bad, as the badges already do. |
-| Other time effects | `Recovery +10%`, `Lap Speed +10%`, `Swing Speed +10%` | **Renamed to a speed word**, like Speed and Growth, so good stays plus. Today Wound Time (3 uses in content), Lap Time (3), Swing Time (1). |
+| Other time effects | `Recovery +10%`, `Lap Speed +10%`, `Attack Speed +10%` | **Renamed to a speed word**, like Speed and Growth, so good stays plus. Today Wound Time (3 uses in content), Lap Time (3), Swing Time (1). |
 | What Speed means | `Speed +25%`: 10 s → 7.5 s | **Unchanged**: it cuts a cycle's time by that share; stacked Speed still meets its floor. Words only. |
 
 ## What the game does today
@@ -28,7 +28,7 @@ this topic settles how they are written around a number.*
 
 - **T-492**: a building's Boosts list writes each effect as its badge does (name, good-is-plus).
 - **T-493**: rule lines lead with the effect's name and number, then where or when; builds on T-403 (the names) and T-491 (Lucky ×1.2).
-- **T-494**: Wound Time, Lap Time and Swing Time renamed Recovery, Lap Speed and Swing Speed (good-is-plus), the style guide's names table updated; effects against the player read minus in red, bad chances plain in red.
+- **T-494**: Wound Time, Lap Time and Swing Time renamed Recovery, Lap Speed and Attack Speed (good-is-plus; Attack Speed by the owner in A31, 2026-11-20), the style guide's names table updated; effects against the player read minus in red, bad chances plain in red.
 - **T-495**: every effect name explains itself on hover, one plain description per effect, written once and used everywhere.
 
 All blocked on the Telling the player group.
