@@ -102,9 +102,31 @@ resistances and moves are "in review" (they're in).
 7. If you have a later save: **settle a ring 2 place** and look for a loose
    boss among its arrival.
 
-## Owner feedback (date)
+## Owner feedback (2026-11-20)
+
+Interviewed in two rounds without playing first.
+
+- **Enemy cards**: "No hover tooltip. It's too crowded." The Token card shows
+  everything; kinds stay discovered by fighting.
+- **Coming back**: camps only; every enemy one use.
+- **Enemy health**: "Regenerates health but very quickly … Forces the player
+  to stay in combat, but allows them to resume quickly after a misclick."
+  Then: "A share of its health, 5% a second, rounded up."
+- **Loose bosses in arrivals**: camps only.
+- Leftovers filed without asking, as offered.
 
 ## What it became
+
+- **T-544** (director): no enemy hover; the Token card shows everything.
+- **T-545** (director; content agent sets two camps): enemies come back by their camp only.
+- **T-546** (director): an enemy keeps its damage and heals 5% a second.
+- **T-547** (director; content agent clears the rings): bosses from camps only.
+- **T-548** (director; content agent's change pack): enemy leftovers.
+- **T-549** (planning agent): GDD §6 Enemies and Encounters match the game.
+- T-253 now lists the enemy level table and enemy regen; the A34 note on enemy health is settled by T-546.
+- Fine as is: enemies stand still, never start a fight, one hero each.
+
+All six tickets blocked on the Combat group.
 
 ## Evidence
 
