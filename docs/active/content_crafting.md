@@ -59,5 +59,5 @@ Rings boost work, amulets boost combat, each with an effect of its own; gold dou
 
 - **In the Crafting pack**: Hide from the Cow and the Wolf; Leather, Hard, Studded and Dragonscale hats, shields and chests (no Magic cut, T-580); five Planks; the Blacksmith's Nails, Ring Bands and Chains; the Geode for gems; the jewellery above; the Fossil Bed for Red Scales.
 - **Held**: Gloves and Boots (no slots yet, T-303); the Drake tier (Blue Scale has no source); rods, traps and bait (the Fishing pack); Parchment and the Blank Book (Enchanting).
-- ⚠️ **Search a Bird Nest** was to retire (brief 400) but now holds every crop's first seed (the Cooking pack); it stays until seeds have another first source.
+- ⚠️ **Search a Bird Nest** was to retire (brief 400) but now holds every crop's first seed (the Cooking pack); it stays until seeds have another first source. Planning 2026-11-21: the Bank's Use (brief 400 B4, not built yet) gives the same drops with no hero, so when B4 lands its Bird Nest pack moves every seed into the Use, and only then does the recipe retire.
 

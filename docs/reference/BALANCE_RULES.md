@@ -56,6 +56,7 @@ About 11.6 million XP to 99. Today's table needs about 13 million.
 
 - **An old task falls behind**: 2x slower a tier later, 4x two tiers on, and about 30x slower at 99. Reaching 99 on a level-1 task alone would take about 290 days of one hero's work.
 - **Crafting and gathering pay the same an hour** at the same level (owner). A craft pays more per action only because it takes longer.
+- **Construction earns from builds and from repeatable work** (owner, 2026-11-21). A build pays XP by its price: the hours its materials took to gather, at the build's level's XP an hour, so a big build pays big. Builds alone leave Construction about 4x behind the curve to 20 and 8x to 85 (the ledger), so Construction also gets repeatable work between builds, priced like any make step; what that work is, the content agent proposes and the owner picks (T-656).
 - **Each link of a chain pays its own XP**, to its own skill. A late item earns the guild several skills' XP, and the guild pays for that in materials.
 - **Aimed at a well-optimized hero.** The ledger checks that a typical player lands about 1.5 to 2x slower and a player with no boosts no more than 3x slower, and nudges XP if not.
 
