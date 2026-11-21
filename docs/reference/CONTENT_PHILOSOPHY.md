@@ -107,7 +107,7 @@ Faith, Summoning, Science, Crime and Taming are still to design. Placeholder bui
 
 **Nodes run out after about five uses** (owner, 2026-11-20, T-627): "One rule, generally going to be around 5." Veins rest and trees become Stumps after about five uses, the rich ones too; a Token that plays differently (a Hollow Tree that never falls, water that never runs out) is a choice made for it, not a drift.
 
-**Farming** has no tool: progress is crop levels, places, and buildings that boost production. Tools gate the other gathering skills: each tier of node or water asks that tier of tool (pick, axe, rod, harpoon; owner 2026-11-20, T-624; fishing 2026-11-21).
+**Farming** has no tool: progress is crop levels, places, and buildings that boost production. Tools gate the other gathering skills: each tier of node or water asks that tier of tool (pick, axe, rod, harpoon; owner 2026-11-20, T-624; fishing 2026-11-21). *Amended 2026-11-21 (content agent): a metal vein asks the pickaxe of the metal one tier below its own, since its own would be a loop (mythril to get mythril); the pack gate caught it. Trees, waters and other nodes have no such loop ([content_mining_forestry.md](../active/content_mining_forestry.md)).*
 
 ## Buildings
 
