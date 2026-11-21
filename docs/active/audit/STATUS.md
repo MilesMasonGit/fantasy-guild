@@ -26,7 +26,7 @@ from (details in [S0_sweep.md](S0_sweep.md)).
 | A32 | Enemies and encounters | Combat | done 2026-11-20 | 6 (T-544 to T-549) | 0 | fine as is: enemies stand still, never start a fight, one hero each; kinds discovered by fighting | **from A33 (owner 2026-11-20): enemy effects are Passive or Active (T-539); kinds become CMS effects (T-540); the boss flag is cut (T-542)**; a camp at its cap waits a whole interval after a kill |
 | A34 | Winning, losing and loot | Combat | done 2026-11-20 | 6 (T-550 to T-555) | 0 | combat cycles and work cycles; | ~~enemy health on return~~ settled in A32 (T-546: keeps damage, heals 5% a second); a kill skips Fail, Preservation, Refresh, neighbour Applies; enemies' written XP ignored |
 | A35 | The combat screen | Combat | done 2026-11-20 | 9 (T-556 to T-564; T-488 and T-530 widened) | 0 | fine as is: the window shows the details the mat can't; Defeated replaces knock-out | fight clock rounds down, other clocks round up |
-| A15 | Melee | Combat | | | | | |
+| A15 | Melee | Combat | card written, owner to play (2026-11-20) | | | | |
 | A16 | Ranged | Combat | | | | | **owner ruling 2026-11-20 (silent moments topic): no bow without arrows, work stops with a speech bubble; settle the details here**; arrows run out silently and come from the Bank only; the code leaves an empty quiver to the owner |
 | A17 | Magic | Combat | | | | | |
 | A18 | Stealth | Combat | | | | | |
