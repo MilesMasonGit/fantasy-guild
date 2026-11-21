@@ -246,12 +246,6 @@ mods via the CMS after release.
 - **Five skills: what each one is for** (owner, 2026-11-21, audit A19 to
   A25): Faith, Summoning, Crime, Taming, Science; no more specialist skills →
   [concept_skill_identities.md](concept_skill_identities.md) (draft).
-- **Milestone perks: signature perks and small steps** (owner, 2026-11-20,
-  audit A27): majors at 10/25/50/75/99, small repeatable steps every 5 levels,
-  combat skills too; the signature perk per skill still to design →
-  [concept_milestone_perks.md](concept_milestone_perks.md) (draft). For the
-  planning agent, then the content agent (T-522).
-
 - **Star upgrades, effect families and Events** (owner, 2026-11-11): the
   owner's marks on 117 Star ideas and four takeaways (families with
   per-target versions; effect icons on the Token card; Stars tiny and global
@@ -269,6 +263,7 @@ mods via the CMS after release.
 
 ## Moved on
 
+- **Milestone perks: signature perks and small steps** → approved 2026-11-21, [concept_milestone_perks.md](concept_milestone_perks.md); brief 800 for the new rules and the level-up flash, T-522 for the tables (content agent).
 - **Combat styles: what each one is for** → approved 2026-11-21, [concept_combat_styles.md](concept_combat_styles.md); style texts in brief 750 S5, weapon traits and perks with the content agent (T-565, T-522).
 - **Systems Audit** (owner, 2026-11-18): a design review, system by system, owner in the loop on one tagged build; cross-system sweep first; fishing spots that appear on water and fade; effects aligned; combat easy to understand → [concept_systems_audit.md](concept_systems_audit.md), approved 2026-11-18. Starts once the outstanding briefs are built; the `/auditor` skill is still to write.
 

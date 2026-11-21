@@ -133,7 +133,7 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 
 | Kind | Shared out |
 |---|---|
-| Speed | Faster Work building −30 %, Hall stars −15 %, drink −10 %, skill perk −5 % |
+| Speed | Faster Work building −30 %, skill perks −15 %, drink −10 %, Hall stars −5 % (perks took 10 % of the stars' share, owner 2026-11-21, [concept_milestone_perks.md](../active/concept_milestone_perks.md)) |
 | Yield | Double Output building (a sure double at most) +100 %, Hall stars +200 %, camp variants and perks +100 % |
 | XP | More XP building +10 %, Hall stars +5 %, drink +5 % |
 | Rare finds | A rare-find potion +100 %, rising to +200 % for late potions (owner); a Rare Finds building +50 % (owner), from mythril, when the first Rare Finds variants come |

@@ -1,4 +1,4 @@
-Status: draft
+Status: briefed (approved 2026-11-21; brief 800 for the new rules and the flash; T-522 for the tables, content agent)
 
 # Milestone perks: what each level gives
 
@@ -32,20 +32,54 @@ effects).*
 - **No choices, nothing stored**: every hero at the level holds the perk, as
   today. No banner; perks belong to one hero.
 
-## Still open (for the planning agent and the owner)
+## The framework (owner, 2026-11-21)
 
-1. **The signature perk for each skill at 50, 75 and 99**: what it does, skill
-   by skill. Some will need new mechanics (new keywords or engine rules); each
-   of those becomes its own ticket.
-2. **Strength of the small steps**: how much a 5-level step gives (Speed +2%?
-   XP +3%?), and how the steps add up against the balance rules
-   (`docs/reference/BALANCE_RULES.md`) and the 80% speed-up floor.
-3. **Which effects the repeatable steps use per skill**: one effect repeated
-   all the way, or two alternating (Speed at 5, 15; Yield at 20, 30)?
-4. **Specialist skills** (Fletching, Faith, Summoning, Enchanting, Crime,
-   Taming, Science) wait on their own identity sessions in the audit.
-5. **The flashy level-up**: what it looks like, under the animation rules
-   (`research/animation_menu.md`); recorded in `design_pass_notes.md`.
+- **Perks take a bigger share of the boost budget**: about 15 % speed by the
+  last tier (Hall stars drop from 15 % to 5 %, so the total stays as ruled)
+  and a share of yield; the content agent rebalances the stars and perks with
+  the ledger ([BALANCE_RULES.md](../reference/BALANCE_RULES.md) section 5).
+- **The small steps alternate two effects per skill** (e.g. Mining: Speed at
+  5, 15, 30 ...; Yield at 20, 35 ...), about 0.5 to 1 % a step; the content
+  agent picks the pair.
+- **Combat skills' steps repeat the style's signature**: Melee resistances and
+  Accuracy, Ranged arrow Preservation, Magic Type Damage, Stealth crit chance
+  (toward the 75 % ceiling) and Dodge ([concept_combat_styles.md](concept_combat_styles.md)).
+- **The majors at 10 and 25** are small bonuses like today's perks.
+- **The flash**: on a level-up the animated ring from brief 720 bursts out in
+  gold from the hero with a few pixel sparkles; a major milestone gets a
+  bigger burst. Picked from screenshots before it is built.
+
+## The signature perks (owner, 2026-11-21)
+
+NEW marks a perk that needs a new game rule (brief 800); the others use
+effects that exist. Names are working names; the content agent may polish.
+
+| Skill | 50 | 75 | 99 |
+|---|---|---|---|
+| Mining | Prospector: veins sometimes drop a gem (Lucky) | Deep Seam: a cycle sometimes uses no charge (Refresh) | Motherlode: a vein this hero works never rests (NEW) |
+| Forestry | Clean Cuts (Refresh) | Nest Finder: more Bird Nests and rare finds (Lucky) | Grove Feller: a falling tree also fells the trees beside it, all paid (NEW) |
+| Fishing | Bait Saver (Preservation of bait) | Big Catch: sometimes two fish (Double Loot) | Master Angler: a catch is sometimes the next tier's fish (NEW) |
+| Farming | Green Fingers (Growth) | Bumper Crop (Giant Harvest) | Evergreen: a harvested field replants itself, no seed spent (NEW) |
+| Smithing | Thrifty Smith (Preservation) | Masterwork (Double Item) | a bigger Double Item |
+| Crafting | Thrifty Hands (Preservation) | Batch Work (Double Item) | Many Hands: works two recipes at once at its station (NEW) |
+| Cooking | No Waste (Preservation) | Second Helping+ (Double Item) | a bigger Double Item |
+| Alchemy | Careful Measure (Preservation) | Double Brew (Double Item) | Potent Brews: its potions last more cycles (Long-lasting Brews) |
+| Construction | Quick Builder+ (Speed) | Salvage: demolishing returns more of the price (NEW) | Master Builder: Foundations and building upgrades cost less (NEW) |
+| Fletching | Thrifty Fletcher (Preservation) | Bundle (Double Item) | a bigger Double Item |
+| Enchanting | Steady Focus (Preservation) | Twin Motes (Double Item) | a bigger Double Item |
+| Tailor | Thrifty Needle (Preservation) | Two Bolts (Double Item) | a bigger Double Item |
+| Melee | Shield Wall: resistances up | Second Wind: heals a little on each kill (NEW) | Unbreakable: once a fight, survives a defeating blow at 1 health (NEW) |
+| Ranged | Quiver Saver (Preservation of arrows) | Piercing Shot: shots sometimes Sunder | Twin Shot: sometimes shoots twice, one arrow spent (NEW) |
+| Magic | Elementalist: Type Damage up | Mote Saver (Preservation of Motes) | Double Cast: sometimes casts twice, one Mote spent (NEW, as Twin Shot) |
+| Stealth | Keen Edge: crit chance up | Evasion: Dodge up | Shadowstep: after a dodge the next hit is a sure crit (NEW) |
+
+**No "Fine" crafted items** (owner, 2026-11-21): the 99s that made crafted
+things come out better (Heirloom, Deep Attunement, Fine Stitching, Fine
+Fletching, a hearty Feast) are dropped; those skills get a bigger Double Item
+instead. Every item of one kind stays identical and stacks.
+
+**Faith, Summoning, Crime, Taming and Science** get their tables once their
+identities are settled ([concept_skill_identities.md](concept_skill_identities.md)).
 
 ## Today (for reference)
 
