@@ -10,7 +10,7 @@
 
 ## Sessions
 
-In the order the owner approved on 2026-11-19 (S0's proposal). **Next: A10 Smithing** (Making group). The Effects, Combat, living mat and Gathering groups are ready to brief (2026-11-20). **Every audit ticket says who takes it** (owner, 2026-11-20): *For: director* (code), *For: content agent* (CMS content, change packs), *For: planning agent* (concept docs, the GDD), or a mix naming each part. Group 8, Telling the player, was interviewed early by topic (owner, 2026-11-19/20) and is ready to brief.
+In the order the owner approved on 2026-11-19 (S0's proposal). **Next: A26 Roster and XP** (Heroes and the guild group). The Effects, Combat, living mat, Gathering and Making groups are ready to brief (2026-11-20). **Every audit ticket says who takes it** (owner, 2026-11-20): *For: director* (code), *For: content agent* (CMS content, change packs), *For: planning agent* (concept docs, the GDD), or a mix naming each part. Group 8, Telling the player, was interviewed early by topic (owner, 2026-11-19/20) and is ready to brief.
 "From S0" lists what the sweep saw in that system, for its session to start
 from (details in [S0_sweep.md](S0_sweep.md)).
 
@@ -39,12 +39,12 @@ from (details in [S0_sweep.md](S0_sweep.md)).
 | A7 | Forestry | Gathering | done 2026-11-20 | T-626, T-630 | 0 | interviewed as a group | **owner ruling 2026-11-20 (wording drift topic): cut Saplings; trees turn into Stumps and respawn as full trees; settle how oak, fir and the Apple Orchard make new trees here**; Forests split: oak and fir plant Saplings, birch, maple, mahogany rest; only oak and fir Stumps need their Forest; **from A2 (owner 2026-11-20): Forests plant full Trees, Stumps grow straight into Trees (T-596); every wood gets a spawner Forest, the big refill Forest nodes retire, every Stump needs its Forest, a seedling per Tree (T-597)** |
 | A6 | Mining | Gathering | done 2026-11-20 | T-624, T-627, T-628 | 0 | interviewed as a group | a vein starting to rest is silent |
 | A9 | Farming | Gathering | done 2026-11-20 | T-625, T-629 | 0 | interviewed as a group | seed checked raw at sowing, paid at harvest; no seed sends the hero away with no badge; `wheat_sprout` beside the Field crop |
-| A10 | Smithing | Making | | | | | five stations carry both a cycle time and a Faster Station self-boost; inputs from Bank or floor; no room holds the ring at 100 % silently |
-| A11 | Crafting | Making | | | | | |
-| A12 | Cooking | Making | | | | | |
-| A13 | Construction | Making | | | | | demolition is its own cycle (no speed-ups, XP or tool) |
-| A14 | Alchemy | Making | | | | | rules only (owner, 2026-11-19): no content yet |
-| A5 | The Shop | Making | | | | | |
+| A10 | Smithing | Making | done 2026-11-20 | T-632, T-635 (group: T-632 to T-636) | 0 | interviewed as a group | five stations carry both a cycle time and a Faster Station self-boost; inputs from Bank or floor; no room holds the ring at 100 % silently |
+| A11 | Crafting | Making | done 2026-11-20 | in T-632, T-635 | 0 | interviewed as a group | |
+| A12 | Cooking | Making | done 2026-11-20 | T-633 | 0 | interviewed as a group | |
+| A13 | Construction | Making | done 2026-11-20 | T-634 | 0 | interviewed as a group | demolition is its own cycle (no speed-ups, XP or tool) |
+| A14 | Alchemy | Making | done 2026-11-20 | in T-632 | 0 | interviewed as a group | rules only (owner, 2026-11-19): no content yet |
+| A5 | The Shop | Making | done 2026-11-20 | T-636 | 0 | interviewed as a group | |
 | A26 | Roster and XP | Heroes and the guild | | | | | |
 | A30 | Orders | Heroes and the guild | | | | | |
 | A36 | Items and the Bank | Heroes and the guild | | | | | an item's effect shows only once worn |
@@ -72,7 +72,7 @@ tickets together.
 | 2 | Combat | A31, A33, A32, A34, A35, A15, A16, A17, A18 | **ready to brief** (2026-11-20): T-532 to T-588, with concept_combat_styles.md (draft) |
 | 3 | The living mat | A2, A4, A1 (with A3), A40, A41 | **ready to brief** (2026-11-20): T-596 to T-621 |
 | 4 | Gathering | A8, A7, A6, A9 | **ready to brief** (2026-11-20): T-622 to T-631 |
-| 5 | Making | A10, A11, A12, A13, A14 (rules only), A5 | waiting |
+| 5 | Making | A10, A11, A12, A13, A14 (rules only), A5 | **ready to brief** (2026-11-20): T-632 to T-636 |
 | 6 | Heroes and the guild | A26, A30, A36, A38, A39 | waiting |
 | 7 | Specialist skills | A19 to A25 | waiting |
 | 8 | Telling the player | A42, A43 | **ready to brief** (owner 2026-11-20): T-488 to T-510, 23 tickets, from eight topic files (`topic_*.md`); interviewed by topic out of the approved order at the owner's choice |
