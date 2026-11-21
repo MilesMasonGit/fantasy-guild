@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-657**
+**Next free number: T-658**
 
 ---
 
@@ -369,6 +369,7 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 | T-654 | P3 | open | *Brief 800 P5. For: director.* **Shadowstep**: after a dodge the next hit is a sure crit (Stealth 99, as a CMS effect) | owner 2026-11-21 |
 | T-655 | P3 | open | *Brief 800 F1, F2. For: director.* **The level-up flash**: brief 720's ring bursts out in gold from the hero with pixel sparkles, bigger at 10, 25, 50, 75, 99; picked from screenshots first | owner 2026-11-21 |
 | T-656 | P2 | open | *For: content agent; director: anything it needs in code.* **Construction keeps pace: builds pay by price, plus repeatable work** (owner, 2026-11-21): the ledger flags Construction about 4x behind the XP curve to level 20 and 8x to 85, because one-off builds are its only XP. Builds pay XP by their price (the gathering hours their materials took, at the build's level's XP an hour; BALANCE_RULES section 1), and Construction gets repeatable work between builds, priced like a make step. The content agent proposes what that work is (for example parts later builds use) as multiple choice for the owner, then stages the pack; the ledger shows Construction on pace. | content agent |
+| T-657 | P3 | open | *Brief 750 S6. For: director.* **Gear can carry attack speed**: the approved weapon traits ([concept_combat_styles.md](../active/concept_combat_styles.md)) give the Wand Attack Speed +10% (quick casts), but the effect palette counts Swing Time only on lingering effects (potions, buffs), not on held gear, so the content agent can't author it. Let a held weapon's Swing Time effect count in the fight's attack timing like a lingering one, shown in the palette for gear, and on the item's tooltip and the hero's stats. | content agent 2026-11-21 |
 
 ### Cleanup — dead code, vestiges, lint *(safe, invisible; delete tests only with the code they test)*
 

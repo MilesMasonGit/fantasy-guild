@@ -43,6 +43,8 @@ registry's second set (`skillRegistry.js:100-126`) is retired if nothing reads i
 same keys. Same work. Runs after brief 780 J5 if that has landed (both touch `skillRegistry.js`), never
 beside it. Wording only: one line in STATUS, the owner reads the texts at the next eye-check.
 
+**S6, T-657, builder (added 2026-11-21).** Gear can carry attack speed: the Wand's approved trait (Attack Speed +10%) needs a held weapon's Swing Time effect to count in the fight's attack timing, as lingering effects already do (`modifierPalette.js`, `CombatFormulas.js`). Offer it for gear in the CMS palette; show it on the item tooltip and the hero's stats. Test with a fixture weapon, never `data/`. Same work (no shipped gear holds it until the content agent's pack). After S1 (both touch `CombatFormulas.js`).
+
 **Order and parallel work.** S1 and S2 may run together (S1: `CombatFormulas.js` and the effect
 types; S2: `Arrows.js`, the carried-consumable code and the fight's start and stop). S3 after S2 (both
 touch carried consumables and the attack count). S4 last (it touches `Arrows.js`, `CatchUp.js` and
