@@ -15,6 +15,10 @@ Token and the Token card describe the same timers in different words", and
   demolition, Hall production, a spawner's state (full, no room, mat full,
   asleep, needs items), growth stopped for lack of items, as well as rest,
   growth, crops and events.
+- **Amended by the owner, 2026-11-20** (planning session, the badge bar note): the
+  idle hover is for timers and stuck reasons only. Charges, a spawner's count and
+  quest progress leave it (they stay on the card), and with no timer or stuck
+  reason the hover shows the name alone (T-591, brief 710).
 - **No Tokens turning at random into other Tokens** (owner: "too confusing
   for the player"). Changing into another Token stays only for a Token that
   is used up and respawns (a tree to a Stump and back). No content uses

@@ -116,6 +116,10 @@ the first outside playtest, modding.
   strength, e.g. an Elixir of Brambles giving Thorns 3. The old fight-side
   Thorns code was removed (T-375); today Thorns is only a mat rule. Interview:
   how much it hurts, how often, which enemy and which armour.
+- **The ring to draw attention** (owner, 2026-11-20): the animated ring built by
+  brief 720 may pulse elsewhere to point at something the player needs. No uses
+  chosen yet; pick them as they come up (the audit's Telling the player group is
+  a likely source).
 - **Leftover rough edges**: the slot screen's "SYSTEM BOOT" (already T-039),
   nine "coming soon" Settings controls, no gameplay hotkeys. *quick* · tickets.
 
