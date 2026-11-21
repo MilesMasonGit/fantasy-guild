@@ -5,7 +5,7 @@ Status: draft
 *From the Systems Audit, A15 Melee ([card](audit/A15_melee.md)), owner
 interview 2026-11-20. Melee is written here; Ranged, Magic and Stealth are
 filled in by their own audit sessions (A16 to A18), then the planning agent
-finishes it with the owner. Tickets already filed: T-565 to T-571 (Melee), T-572 to T-576 (Ranged).*
+finishes it with the owner. Tickets already filed: T-565 to T-571 (Melee), T-572 to T-576 (Ranged), T-577 to T-582 (Magic).*
 
 ## The idea
 
@@ -42,7 +42,21 @@ reliable beginner combat style."
 "Combat styles like Magic can be specialized through equipment, to be more
 efficient by taking advantages of weaknesses and elemental damage, but it
 requires a more diverse collection of items, and it takes effort to get all
-of those." To be worked out in A17.
+of those."
+
+*From A17 Magic ([card](audit/A17_magic.md)), owner 2026-11-20.*
+
+- **Pick the element for the enemy**: a mage brings the element the enemy is
+  weak to; a resisted element is wasted.
+- **A kit to collect**: the most items of any style, and the most room to
+  specialise: wands, staffs and tomes are its weapon kinds (like swords and
+  maces), each naming its element (T-577); Tailor's mage clothes (T-578).
+- **Spends Motes**: every cast spends one Mote, the kind its weapon names;
+  with none left the hero casts at half damage (T-579). Motes come from
+  Leylines and also go into crafting.
+- **Defends lightly**: metal cuts Magic damage; leather and cloth don't
+  (T-580).
+- Not a glass cannon: the owner moved that feel to Stealth.
 
 ## Ranged
 
@@ -62,7 +76,8 @@ of those." To be worked out in A17.
 
 ## Stealth
 
-"More wild and inconsistent" (owner's note above, to confirm). To be worked
+"More wild and inconsistent" (owner's note above, to confirm), and the
+**glass cannon** (owner, 2026-11-20, moved from Magic in A17). To be worked
 out in A18.
 
 ## Shared by all four

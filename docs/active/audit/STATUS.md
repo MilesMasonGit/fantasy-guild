@@ -10,7 +10,7 @@
 
 ## Sessions
 
-In the order the owner approved on 2026-11-19 (S0's proposal). **Next: A17 Magic** (Combat group). The Effects group is ready to brief (2026-11-20). **Every audit ticket says who takes it** (owner, 2026-11-20): *For: director* (code), *For: content agent* (CMS content, change packs), *For: planning agent* (concept docs, the GDD), or a mix naming each part. Group 8, Telling the player, was interviewed early by topic (owner, 2026-11-19/20) and is ready to brief.
+In the order the owner approved on 2026-11-19 (S0's proposal). **Next: A18 Stealth** (Combat group). The Effects group is ready to brief (2026-11-20). **Every audit ticket says who takes it** (owner, 2026-11-20): *For: director* (code), *For: content agent* (CMS content, change packs), *For: planning agent* (concept docs, the GDD), or a mix naming each part. Group 8, Telling the player, was interviewed early by topic (owner, 2026-11-19/20) and is ready to brief.
 "From S0" lists what the sweep saw in that system, for its session to start
 from (details in [S0_sweep.md](S0_sweep.md)).
 
@@ -28,8 +28,8 @@ from (details in [S0_sweep.md](S0_sweep.md)).
 | A35 | The combat screen | Combat | done 2026-11-20 | 9 (T-556 to T-564; T-488 and T-530 widened) | 0 | fine as is: the window shows the details the mat can't; Defeated replaces knock-out | fight clock rounds down, other clocks round up |
 | A15 | Melee | Combat | done 2026-11-20 | 7 (T-565 to T-571) | 1 (concept_combat_styles.md) | fine as is: fist is Crush, the Rusty Sword breaks, no built-in Melee rule | |
 | A16 | Ranged | Combat | done 2026-11-20 | 5 (T-572 to T-576) | 0 (concept_combat_styles.md filled) | fine as is: one roll a shot, arrow spent hit or miss; the silent-moments ruling settled (T-573) | **owner ruling 2026-11-20 (silent moments topic): no bow without arrows, work stops with a speech bubble; settle the details here**; arrows run out silently and come from the Bank only; the code leaves an empty quiver to the owner; **from A15 (owner 2026-11-20): fill this style's section of concept_combat_styles.md (what it needs, how steady, how gear specialises it); weapon traits and levels by tier apply (T-565, T-566)** |
-| A17 | Magic | Combat | card written, owner to play (2026-11-20) | | | | **from A15 (owner 2026-11-20): fill this style's section of concept_combat_styles.md (what it needs, how steady, how gear specialises it); weapon traits and levels by tier apply (T-565, T-566)** |
-| A18 | Stealth | Combat | | | | | **from A15 (owner 2026-11-20): fill this style's section of concept_combat_styles.md (what it needs, how steady, how gear specialises it); weapon traits and levels by tier apply (T-565, T-566)** |
+| A17 | Magic | Combat | done 2026-11-20 | 6 (T-577 to T-582; T-253 widened) | 0 (concept_combat_styles.md filled) | glass cannon moved to Stealth | **from A15 (owner 2026-11-20): fill this style's section of concept_combat_styles.md (what it needs, how steady, how gear specialises it); weapon traits and levels by tier apply (T-565, T-566)** |
+| A18 | Stealth | Combat | | | | | **from A15 (owner 2026-11-20): fill this style's section of concept_combat_styles.md (what it needs, how steady, how gear specialises it); weapon traits and levels by tier apply (T-565, T-566)**; **from A17 (owner 2026-11-20): the glass cannon feel belongs to Stealth** |
 | A2 | Spawners and transforms | The living mat | | | | | **owner ruling 2026-11-20 (hover vs card topic): no Tokens turning at random into others; changing into another Token only for a used-up Token that respawns (tree to Stump and back); no content uses turning, retire the mechanic here**; **owner ruling 2026-11-20 (wording drift topic): cut Saplings; trees turn into Stumps and respawn as full trees; settle how oak, fir and the Apple Orchard make new trees here**; five ways to find a spot, four answers to no room; rule spawns announce nothing |
 | A4 | Events | The living mat | | | | | removed at once when marked; leaves with no reason given; a buff held in the hand stays; unworked reported as time up; Fish Shoal fished by another model |
 | A1 | Placing, reach and removal (A3 merged in) | The living mat | | | | | arrival enemies skip the cap check but count; four removal gestures; a hero lets go when a Foundation is built |
@@ -53,7 +53,7 @@ from (details in [S0_sweep.md](S0_sweep.md)).
 | A19 | Fletching | Specialist skills | | | | | **from A16 (owner 2026-11-20): Fletching makes bows and arrows now, by the approved content_fletching.md (T-572); this session settles the rest of its identity** |
 | A20 | Faith | Specialist skills | | | | | |
 | A21 | Summoning | Specialist skills | | | | | |
-| A22 | Enchanting | Specialist skills | | | | | |
+| A22 | Enchanting | Specialist skills | | | | | **from A17 (owner 2026-11-20): build the Enchanting plan now, amended (wands, staffs, tomes as weapon kinds; Motes for crafting and casting, T-577, T-579); this session settles the rest of its identity** |
 | A23 | Crime | Specialist skills | | | | | |
 | A24 | Taming | Specialist skills | | | | | |
 | A25 | Science | Specialist skills | | | | | |

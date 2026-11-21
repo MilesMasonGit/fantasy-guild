@@ -99,9 +99,36 @@ fast speed (2 s), the matchup, Fire as the default Magic type.
 5. Ask yourself: with the Enchanting and Tailor plans in mind, what should
    Magic need, and what should a mage's kit look like?
 
-## Owner feedback (date)
+## Owner feedback (2026-11-20)
+
+Interviewed in three rounds without playing first.
+
+- **Identity**: pick the element for the enemy; a kit to collect. Glass
+  cannon at first, then: "On second thought, I want the glass cannon feel to
+  be more for the Stealth style."
+- **Motes**: "Motes are for crafting and casting." Every cast spends one; the
+  weapon names which.
+- **Weapon kinds**: "I think there's just going to be different types of
+  magic weapons. Tomes, Staffs, Wands, etc. These are the variants that are
+  the equivalent of Swords, Axes, Maces for warriors." So tomes are weapons,
+  not off-hand items changing a wand's element (the Enchanting plan is
+  amended).
+- **Out of Motes**: casts weakly, half damage in its element.
+- **Armour**: metal cuts Magic, leather and cloth don't.
+- **The plans**: build Enchanting and Tailor now.
 
 ## What it became
+
+- **T-577** (content agent; planning agent amends the plan): build Enchanting: wands, staffs and tomes, Leylines and Motes.
+- **T-578** (content agent): build Tailor: mage clothing.
+- **T-579** (director; content agent): every cast spends a Mote; half damage without.
+- **T-580** (content agent): leather stops cutting Magic.
+- **T-581** (director): Magic leftovers.
+- **T-582** (planning agent): GDD on Magic, and the Enchanting plan amended.
+- T-253 now lists the half-damage cast.
+- concept_combat_styles.md: Magic's section filled; glass cannon moved to Stealth.
+
+All six tickets blocked on the Combat group.
 
 ## Evidence
 
