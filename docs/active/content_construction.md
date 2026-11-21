@@ -95,3 +95,9 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 - **Foundation tiers** (Oak to Ebony, Stone to Basalt): the older ruling says a better building needs a better Foundation. Whether that still holds, with costs now tiered, is the balance's to say.
 - **Clay and Quartz** still have no user.
 - **Guard Tower's** rules: combat. **Town Square's** bonus: the ledger.
+
+## Building it (2026-11-21, content agent)
+
+- **The base buildings take over today's first station of each skill, in place**: Furnace becomes Blacksmith, Cooking Pot becomes Kitchen, Workbench becomes Workshop, Alchemy Table becomes Apothecary. Their ids are kept and pinned, so saves and the first lesson's Workbench step keep working. The Apothecary builds at Construction 1 from Oak Wood and Stone, so Alchemy starts at 1.
+- **The old split stations go with the variants**, not before: their Build recipes are also Construction's early XP, and the Kitchen's speed carries Cooking's pace; the pack gate showed each alone slows Plane 1 and 2 past tolerance. The variants pack retires them as the variants take their place (Iron Smithy and Iron Furnace to the Foundry, Brewery and Tannery to their namesakes, Fir Workbench to the Guild Workshop).
+
