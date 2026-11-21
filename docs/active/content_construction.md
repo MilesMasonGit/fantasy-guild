@@ -101,3 +101,22 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 - **The base buildings take over today's first station of each skill, in place**: Furnace becomes Blacksmith, Cooking Pot becomes Kitchen, Workbench becomes Workshop, Alchemy Table becomes Apothecary. Their ids are kept and pinned, so saves and the first lesson's Workbench step keep working. The Apothecary builds at Construction 1 from Oak Wood and Stone, so Alchemy starts at 1.
 - **The old split stations go with the variants**, not before: their Build recipes are also Construction's early XP, and the Kitchen's speed carries Cooking's pace; the pack gate showed each alone slows Plane 1 and 2 past tolerance. The variants pack retires them as the variants take their place (Iron Smithy and Iron Furnace to the Foundry, Brewery and Tannery to their namesakes, Fir Workbench to the Guild Workshop).
 
+## The variant table (approved by the owner 2026-11-21, brief 630 C2)
+
+Redrawn with the effect names. Each variant is a building of its own beside the base, built from Construction 20, 40 and 60 (80 left for later); one Neighbours variant per skill speeds nearby work in the skills it trades with.
+
+| Building | 20 | 40 | 60 | Neighbours (20): speeds nearby |
+|---|---|---|---|---|
+| Blacksmith | Foundry: Speed | Master Smithy: Preservation | Grand Forge: Double Loot | Smiths' Row: Mining, Forestry |
+| Kitchen | Bakehouse: Speed | Brewery: Double Loot | Banquet Hall: Efficiency | Market Kitchen: Farming, Fishing |
+| Workshop | Guild Workshop: Speed | Tannery: Preservation | Jeweller's Hall: Double Loot | Craftsmen's Yard: Forestry, Mining |
+| Apothecary | Herbalist's Hut: Preservation | Alchemist's Hall: Double Loot | Master's Study: XP | Physic Garden: Farming |
+| Logging Camp | Sawmill: Double Loot | Forester's Lodge: Refresh | Grovekeeper's Hut: Growth | Timber Yard: Crafting, Smithing |
+| Mining Camp | Mine Head: Growth | Prospector's Camp: Lucky (after T-336) | Deep Workings: Refresh | Ore Market: Smithing, Crafting |
+| Fishing Hut | Pier: Refresh | Bait Shop: Lucky (after T-336) | Fish Market: Double Loot | Fishmonger's: Cooking |
+| Farmstead | Barn: Double Loot | Greenhouse: Growth | Manor Farm: Abundance | Farmers' Market: Cooking, Alchemy |
+
+The Fletcher's Lodge, Enchanter's Tower, Tailor's Shop and War Camp get theirs with their buildings.
+
+**Built (pack `2026-11-21-construction-variants`)**: the table above but the Lucky ones; today's Iron Smithy, Fir Workbench, Brewery and Tannery become the Foundry, Guild Workshop, Brewery and Tannery in place (ids kept, so built ones keep working); the Copper Smithy and Iron Furnace retire; the Kitchen's speed moves to the Bakehouse. Costs by tier: Fir Plank, Stone and Iron Nails from 20; Maple Plank, Marble, Mythril Nails and Iron Gears from 40; Mahogany Plank, more Marble, Nails and Gears from 60 (Tailor's cloth joins when Tailor comes). Marble and Basalt Veins, Iron Gears; Forests build at their wood's level; the Town Square at 85 (every Token in reach 5% faster). Numbers are first values for the ledger.
+
