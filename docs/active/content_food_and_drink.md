@@ -115,3 +115,10 @@ Recipes: **24 have, 48 adapt, 27 new** (H, A, N above). Adapt means a recolour o
 - **Herbs and potions**: Lavender at mythril; more herbs may join meals.
 - **World lines**: the crops and waters lines' per-rung origins need updating (T-294).
 - **The ledger**: 99 recipes means an XP curve and a heal curve to fit; a heal grade for each rung.
+
+## Building it (2026-11-21, content agent)
+
+- **In the Cooking pack**: every recipe whose ingredients have a source, on the plan's levels; the Cow gives Milk (half the time), so Butter, Cheese and the milk drinks can come in; a drink for every skill, each giving +10 % XP in its skill while it lasts (any-work drinks give Merry), the ledger to tune; today's Cooked Swordfish becomes the Swordfish Steak at 63.
+- **Held**: dishes needing Raw Chicken or Eggs (no chicken enemy yet: Roast Chicken, Boiled Egg, Omelette, Chicken Soup, Honey Chicken, Orange Chicken, Royal Banquet) and those needing Oyster or Shark (the Fishing pack: Oyster Stew, Cooked Shark, Ember Shark, Shark Soup, Seafood Platter, Guildmaster's Feast).
+- **Pictures**: stews and soups use the iron bowl, pies the cherry pie, drinks the juice or beer picture, until drawn; each is marked for art in the review.
+- ⚠️ **Late walls the ledger flags, needing content not numbers**: Cooking 96 to 97, Farming 79 to 87 (the open levels).

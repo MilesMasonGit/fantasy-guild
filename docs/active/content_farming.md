@@ -41,4 +41,4 @@ From [Construction](content_construction.md): **Well** (shorter growth), **Compo
 ## Building it (2026-11-21, content agent)
 
 The Sickle goes first (pack `2026-11-21-farming-no-sickle`). **The levels come with the new crops**, not before: alone, Wheat at 4 and Lavender at 5 leave a new hero nothing to train on until Potato (2) and Flax (3) exist, and the pack gate blocks it. The new crops come with the recipes that use them (Cooking, Tailor), so no crop arrives without a job.
-
+- **The crops came with Cooking** (pack `2026-11-21-cooking-and-crops`): Potato to Voidcap, each a Field recipe from its seed, on the plan's levels with the bushes and trees. A Bird Nest can hold every new seed, Potato's always, so the first seed of each crop is a nest away; harvests keep seeds back after that. Flax waits for Tailor; the herb gardens for Alchemy.
