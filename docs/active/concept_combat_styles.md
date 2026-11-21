@@ -1,4 +1,4 @@
-Status: draft
+Status: briefed (approved 2026-11-21; brief 750 S5 for the style texts, weapon traits and perks with the content agent)
 
 # Combat styles: what each one is for
 
@@ -31,11 +31,13 @@ reliable beginner combat style."
   Magic and Stealth damage today).
 - **The beginner style**: barehanded is Melee, and a copper sword is enough
   to start.
-- **Weapon kinds**: every kind (sword, greatsword, cleaver, later more)
-  carries a small trait that fits it (T-565). Two hands out-damage one hand
-  of the same metal, paying for the lost shield (T-568).
+- **Weapon kinds**: every kind (sword, cleaver, later more) carries a small
+  trait that fits it (T-565). Two hands out-damage one hand of the same metal,
+  paying for the lost shield (T-568); the rule waits for the first two-handed
+  weapon (owner 2026-11-21).
 - **Levels by metal**: a weapon asks a level in its style by its metal tier,
-  copper 1, iron 15, silver 30 and up (T-566).
+  on the metals' ladder (copper 1, iron 20, and so on; owner 2026-11-21,
+  T-566).
 
 ## Magic: specialised through many items (owner's first note)
 
@@ -50,7 +52,8 @@ of those."
   weak to; a resisted element is wasted.
 - **A kit to collect**: the most items of any style, and the most room to
   specialise: wands, staffs and tomes are its weapon kinds (like swords and
-  maces), each naming its element (T-577); Tailor's mage clothes (T-578).
+  maces), each tier's Wand and Tome taking its Mote's element (T-577, owner
+  2026-11-21); Tailor's mage clothes (T-578).
 - **Spends Motes**: every cast spends one Mote, the kind its weapon names;
   with none left the hero casts at half damage (T-579). Motes come from
   Leylines and also go into crafting.
@@ -80,14 +83,16 @@ of those."
 
 - **The wild glass cannon**: plain hits weaker than a sword's, crits often
   and big; on average equal, with a wide spread (T-585).
-- **Big crits** come from a Crit Damage effect on gear, traits and perks; the
-  base stays double for everyone; crit chance has a ceiling (T-583, T-584).
-- **Fragile**: its clothes trade defence for crit, Crit Damage and Dodge
+- **Crits often, not bigger** (owner 2026-11-21): no Crit Damage effect; a
+  crit is double for everyone. Stealth's spread comes from a high crit chance
+  on gear, traits and perks, up to a ceiling of 75% (T-584; T-583 closed).
+- **Fragile**: its clothes trade defence for crit and Dodge
   (T-578); metal cuts Stealth damage.
 - **Sometimes spends**: daggers need nothing; Kunai are thrown and spend
   themselves, the last one kept for half damage (T-586).
 - **Poisons**: optional consumables, taken like an elixir with a Stealth
-  weapon, each its own buff for a set number of attacks (T-587).
+  weapon, each its own buff for a set number of attacks; leftover attacks carry into
+  later fights (T-587, owner 2026-11-21).
 - The opening strike stays dropped (owner, 2026-10-30).
 
 ## Shared by all four
@@ -100,8 +105,36 @@ of those."
   two-hand line) is the content agent's authoring guide in
   CONTENT_PHILOSOPHY, not code (T-568).
 
-## Open questions (for the planning agent)
+## Each style's signature (owner, 2026-11-21)
 
-- Each style's signature: what gear or perks make it itself (with the combat
-  perk tables, T-522, and the Hall's combat stars).
-- The trait for each weapon kind, across all four styles.
+What its late perks (T-522), the Hall's combat stars and its gear push it
+toward:
+
+| Style | Signature |
+|---|---|
+| Melee | Defence and steadiness: armour, Accuracy, resistances |
+| Ranged | Saving arrows (Preservation) and the arrow's damage types |
+| Magic | Hitting weaknesses: Type Damage by element |
+| Stealth | Crit chance (to the 75% ceiling) and Dodge |
+
+## Weapon traits (owner, 2026-11-21; the content agent sets the numbers, T-565)
+
+| Kind | Trait |
+|---|---|
+| Sword | +5 Accuracy (steady) |
+| Cleaver | more Damage, slower; keeps Double Raw Beef |
+| Bow | +5 Accuracy (as today) |
+| Dagger | +5 Crit chance (as today) |
+| Kunai | +5 Crit chance, thrown |
+| Wand | Attack Speed +10% (quick casts) |
+| Staff | Type Damage +10% of its element, slower |
+| Tome | resistance to its own element |
+
+## The style texts on the hero sheet (owner, 2026-11-21, T-569)
+
+One line each; the owner may edit them at the eye-check.
+
+- **Melee**: Steady damage and strong defence. Swords and cleavers from one metal, no ammo. The beginner's style.
+- **Ranged**: Hits hard from afar, paid for in arrows. Pick the arrow for the enemy.
+- **Magic**: Strikes an enemy's weakness with the right element. Wands, staffs and tomes, each burning Motes.
+- **Stealth**: Wild and fragile: weaker hits, frequent crits. Daggers, thrown Kunai and optional poisons.

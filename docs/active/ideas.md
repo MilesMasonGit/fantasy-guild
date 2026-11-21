@@ -246,10 +246,6 @@ mods via the CMS after release.
 - **Five skills: what each one is for** (owner, 2026-11-21, audit A19 to
   A25): Faith, Summoning, Crime, Taming, Science; no more specialist skills →
   [concept_skill_identities.md](concept_skill_identities.md) (draft).
-- **Combat styles: what each one is for** (owner, 2026-11-20, audit A15):
-  Melee the steady, self-sufficient beginner style; Magic specialised through
-  many items; Ranged and Stealth to fill in A16 and A18 →
-  [concept_combat_styles.md](concept_combat_styles.md) (draft).
 - **Milestone perks: signature perks and small steps** (owner, 2026-11-20,
   audit A27): majors at 10/25/50/75/99, small repeatable steps every 5 levels,
   combat skills too; the signature perk per skill still to design →
@@ -273,6 +269,7 @@ mods via the CMS after release.
 
 ## Moved on
 
+- **Combat styles: what each one is for** → approved 2026-11-21, [concept_combat_styles.md](concept_combat_styles.md); style texts in brief 750 S5, weapon traits and perks with the content agent (T-565, T-522).
 - **Systems Audit** (owner, 2026-11-18): a design review, system by system, owner in the loop on one tagged build; cross-system sweep first; fishing spots that appear on water and fade; effects aligned; combat easy to understand → [concept_systems_audit.md](concept_systems_audit.md), approved 2026-11-18. Starts once the outstanding briefs are built; the `/auditor` skill is still to write.
 
 - **Events: rich nodes and buff Tokens that land on the mat** (owner, 2026-11-12) → [concept_events.md](concept_events.md), brief 640. Trainers and other visitors later.

@@ -36,11 +36,12 @@ only as the content agent's change packs; hover words via T-495.
 | S3 | T-587 | **Poisons for Stealth weapons.** An optional consumable that works like an elixir: carried in a consumable cell, taken at the start of a fight when the hero holds a Stealth weapon (ignored with any other), its buff lasting a set number of attacks: a new **for N attacks** length in the CMS beside for the fight and for N fights (`consumableRule.js`, `LiveEffects.js`). Each poison item says what it does (Venom, crit, Sunder and so on) from its effect. Its attacks **carry into later fights**; a new poison is taken only at a fight's start, so one that runs out mid-fight leaves the rest of that fight unpoisoned (owner 2026-11-21). Every attack counts, hit or miss. The attacks left are saved on the hero. Logged in the fight window like an elixir (T-558 leaves that at once). No poison content yet: test fixtures prove it; the content agent's Alchemy pack brings the first. | builder |
 | S4 | T-575, T-581, T-570, T-568 (code) | **The styles' leftovers.** Ranged (T-575): the fight log names the arrow shot (the attack event's `arrowId`, `CombatAttackProcessor.js:117, 128`); time away counts arrows spent beside food, elixirs and drops (`CatchUp.js:44, 269-321`; Motes and Kunai the same, from S2); a carried arrow is checked like gear (`Arrows.js:28-37` against `HeroEffects.js:51`); the data parts are the content agent's pack. Magic (T-581): comments on focus orbs, scrolls and runes that don't exist (`weaponStyles.js:18`, `equipmentCategories.js:22`); the world's Arcane category naming Magic (`worldPlaceholder.js:57`): check it does nothing and drop it, or report what it does. Styles (T-570): the two fight-window texts for a hero with no style removed (`en.json:465-466`, `FightPanel.jsx:273`); the CMS weapon style list becomes the four combat skills, not the enemy list (`ItemEditor.jsx:73`); Stealth's skill picture wired when the owner's art lands (`skillRegistry.js:121-125`; until then the slot stays as is). The tier table (T-568): `WEAPON_TIERS` (`FormulaRegistry.js:150-166`) leaves the code, **only once the planning agent has moved the table into CONTENT_PHILOSOPHY**. | builder-lite |
 
-**Not in this brief (waits on concept_combat_styles approval).** **T-569** (each style's text says
-what it is about): its words are the four identities in the draft concept doc, written by the planning
-agent once the owner approves it; then a builder-lite swaps the hero sheet's texts (`en.json:692-695`)
-and retires the registry's (`skillRegistry.js:100-126`), with T-644's five skill lines if they are
-ready.
+**S5, T-569, builder-lite (added 2026-11-21, concept approved).** Each style's one text: the hero
+sheet's texts (`en.json:692-695`) become the four lines in
+[concept_combat_styles.md](../concept_combat_styles.md) ("The style texts on the hero sheet"); the
+registry's second set (`skillRegistry.js:100-126`) is retired if nothing reads it, or made to read the
+same keys. Same work. Runs after brief 780 J5 if that has landed (both touch `skillRegistry.js`), never
+beside it. Wording only: one line in STATUS, the owner reads the texts at the next eye-check.
 
 **Order and parallel work.** S1 and S2 may run together (S1: `CombatFormulas.js` and the effect
 types; S2: `Arrows.js`, the carried-consumable code and the fight's start and stop). S3 after S2 (both

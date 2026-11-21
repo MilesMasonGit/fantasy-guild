@@ -369,3 +369,4 @@ T-621 — GDD §10 Time and saving matches the game — docs written by the plan
 T-631 — GDD on gathering matches the game — docs written by the planning agent — 2026-11-21
 T-636 — GDD §5 Making and the Shop match the game — docs written by the planning agent — 2026-11-21
 T-642 — GDD on heroes and the guild matches the game — docs written by the planning agent — 2026-11-21
+T-571 — GDD on the combat styles matches the game — docs written by the planning agent — 2026-11-21

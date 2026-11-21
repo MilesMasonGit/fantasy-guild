@@ -705,10 +705,12 @@ Twenty today, Tailor making 21 (T-304):
   spent, the reliable beginner style; **Ranged** hits harder and pays in
   arrows, two damage types a shot; **Magic** picks the element for the enemy
   from a kit of weapons to collect, each cast spending a Mote; **Stealth** the
-  wild glass cannon, low steady damage, big crits, fragile gear (its crits
-  come often, not larger: crit chance, never Crit Damage, owner 2026-11-21). Each style's
+  wild glass cannon, low steady damage, frequent crits, fragile gear (its crits
+  come often, not larger: crit chance to a 75% ceiling, never Crit Damage).
+  Signatures: Melee defence and Accuracy, Ranged saving arrows and arrow
+  types, Magic Type Damage by element, Stealth crit chance and Dodge. Each style's
   text in the game says what it is about and names only weapons that exist
-  (T-569). (Details: see concept_combat_styles.md, draft.)
+  (T-569). Weapon traits and the texts: concept_combat_styles.md.
 - **Fletching, Enchanting, Tailor**: being built from their approved plans:
   Fletching makes bows and arrows (T-572), Enchanting makes wands, staffs and
   tomes and works Leylines for Motes (T-577), Tailor makes mage and Stealth
