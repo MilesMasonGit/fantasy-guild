@@ -109,9 +109,39 @@ damage step, the miss formula, an enemy's default style (Melee).
 7. Ask yourself: what should make Melee feel like Melee, beyond "the default"?
    Tough and armoured? Many weapon kinds? Something the other styles can't do?
 
-## Owner feedback (date)
+## Owner feedback (2026-11-20)
+
+Interviewed in three rounds without playing first.
+
+- **Identity**: "Melee's main appeal is that it is consistent damage and
+  defense without needing a lot of support. Other styles require ammo like
+  arrows, niche utility items for magic, or are more wild and inconsistent.
+  Melee can be performed with weapons and armor that don't break and can all
+  be crafted from the same base metal material, making it a reliable beginner
+  combat style." Magic, by contrast, is specialised through a wide collection
+  of items.
+- **Steadiness**: through gear and weapon traits only, no special Melee rule.
+- **Weapon traits**: every weapon kind carries one.
+- **Levels**: weapons ask a level by metal tier.
+- **Enemy mix**: spread the styles out.
+- **Greatswords**: two hands out-damage one hand of the same metal.
+- **Skill texts**: say what the style is about, promise nothing.
+- **The tier table**: an authoring rule in CONTENT_PHILOSOPHY.
+- Written as a draft concept doc for all four styles.
 
 ## What it became
+
+- **concept_combat_styles.md** (draft): each style's identity; Melee written, Ranged, Magic and Stealth to fill in A16 to A18.
+- **T-565** (content agent): every weapon kind carries a small trait.
+- **T-566** (content agent): weapons ask a level by metal tier.
+- **T-567** (content agent): enemy styles spread out.
+- **T-568** (planning agent, director, content agent): the tier table as an authoring rule, two hands paying more.
+- **T-569** (planning agent, then director): each style's text says what it is about.
+- **T-570** (director; content agent, owner art): combat style leftovers.
+- **T-571** (planning agent): GDD on the combat styles.
+- Fine as is: the fist hits as Crush; the Rusty Sword breaks (the starter, A29); no built-in Melee rule.
+
+All seven tickets blocked on the Combat group.
 
 ## Evidence
 

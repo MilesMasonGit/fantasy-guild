@@ -239,6 +239,10 @@ mods via the CMS after release.
 ## Being interviewed
 
 
+- **Combat styles: what each one is for** (owner, 2026-11-20, audit A15):
+  Melee the steady, self-sufficient beginner style; Magic specialised through
+  many items; Ranged and Stealth to fill in A16 and A18 →
+  [concept_combat_styles.md](concept_combat_styles.md) (draft).
 - **Milestone perks: signature perks and small steps** (owner, 2026-11-20,
   audit A27): majors at 10/25/50/75/99, small repeatable steps every 5 levels,
   combat skills too; the signature perk per skill still to design →

@@ -10,7 +10,7 @@
 
 ## Sessions
 
-In the order the owner approved on 2026-11-19 (S0's proposal). **Next: A15 Melee** (Combat group). The Effects group is ready to brief (2026-11-20). **Every audit ticket says who takes it** (owner, 2026-11-20): *For: director* (code), *For: content agent* (CMS content, change packs), *For: planning agent* (concept docs, the GDD), or a mix naming each part. Group 8, Telling the player, was interviewed early by topic (owner, 2026-11-19/20) and is ready to brief.
+In the order the owner approved on 2026-11-19 (S0's proposal). **Next: A16 Ranged** (Combat group). The Effects group is ready to brief (2026-11-20). **Every audit ticket says who takes it** (owner, 2026-11-20): *For: director* (code), *For: content agent* (CMS content, change packs), *For: planning agent* (concept docs, the GDD), or a mix naming each part. Group 8, Telling the player, was interviewed early by topic (owner, 2026-11-19/20) and is ready to brief.
 "From S0" lists what the sweep saw in that system, for its session to start
 from (details in [S0_sweep.md](S0_sweep.md)).
 
@@ -26,10 +26,10 @@ from (details in [S0_sweep.md](S0_sweep.md)).
 | A32 | Enemies and encounters | Combat | done 2026-11-20 | 6 (T-544 to T-549) | 0 | fine as is: enemies stand still, never start a fight, one hero each; kinds discovered by fighting | **from A33 (owner 2026-11-20): enemy effects are Passive or Active (T-539); kinds become CMS effects (T-540); the boss flag is cut (T-542)**; a camp at its cap waits a whole interval after a kill |
 | A34 | Winning, losing and loot | Combat | done 2026-11-20 | 6 (T-550 to T-555) | 0 | combat cycles and work cycles; | ~~enemy health on return~~ settled in A32 (T-546: keeps damage, heals 5% a second); a kill skips Fail, Preservation, Refresh, neighbour Applies; enemies' written XP ignored |
 | A35 | The combat screen | Combat | done 2026-11-20 | 9 (T-556 to T-564; T-488 and T-530 widened) | 0 | fine as is: the window shows the details the mat can't; Defeated replaces knock-out | fight clock rounds down, other clocks round up |
-| A15 | Melee | Combat | card written, owner to play (2026-11-20) | | | | |
-| A16 | Ranged | Combat | | | | | **owner ruling 2026-11-20 (silent moments topic): no bow without arrows, work stops with a speech bubble; settle the details here**; arrows run out silently and come from the Bank only; the code leaves an empty quiver to the owner |
-| A17 | Magic | Combat | | | | | |
-| A18 | Stealth | Combat | | | | | |
+| A15 | Melee | Combat | done 2026-11-20 | 7 (T-565 to T-571) | 1 (concept_combat_styles.md) | fine as is: fist is Crush, the Rusty Sword breaks, no built-in Melee rule | |
+| A16 | Ranged | Combat | | | | | **owner ruling 2026-11-20 (silent moments topic): no bow without arrows, work stops with a speech bubble; settle the details here**; arrows run out silently and come from the Bank only; the code leaves an empty quiver to the owner; **from A15 (owner 2026-11-20): fill this style's section of concept_combat_styles.md (what it needs, how steady, how gear specialises it); weapon traits and levels by tier apply (T-565, T-566)** |
+| A17 | Magic | Combat | | | | | **from A15 (owner 2026-11-20): fill this style's section of concept_combat_styles.md (what it needs, how steady, how gear specialises it); weapon traits and levels by tier apply (T-565, T-566)** |
+| A18 | Stealth | Combat | | | | | **from A15 (owner 2026-11-20): fill this style's section of concept_combat_styles.md (what it needs, how steady, how gear specialises it); weapon traits and levels by tier apply (T-565, T-566)** |
 | A2 | Spawners and transforms | The living mat | | | | | **owner ruling 2026-11-20 (hover vs card topic): no Tokens turning at random into others; changing into another Token only for a used-up Token that respawns (tree to Stump and back); no content uses turning, retire the mechanic here**; **owner ruling 2026-11-20 (wording drift topic): cut Saplings; trees turn into Stumps and respawn as full trees; settle how oak, fir and the Apple Orchard make new trees here**; five ways to find a spot, four answers to no room; rule spawns announce nothing |
 | A4 | Events | The living mat | | | | | removed at once when marked; leaves with no reason given; a buff held in the hand stays; unworked reported as time up; Fish Shoal fished by another model |
 | A1 | Placing, reach and removal (A3 merged in) | The living mat | | | | | arrival enemies skip the cap check but count; four removal gestures; a hero lets go when a Foundation is built |
