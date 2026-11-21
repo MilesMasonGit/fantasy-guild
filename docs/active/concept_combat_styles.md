@@ -5,7 +5,7 @@ Status: draft
 *From the Systems Audit, A15 Melee ([card](audit/A15_melee.md)), owner
 interview 2026-11-20. Melee is written here; Ranged, Magic and Stealth are
 filled in by their own audit sessions (A16 to A18), then the planning agent
-finishes it with the owner. Tickets already filed: T-565 to T-571 (Melee), T-572 to T-576 (Ranged), T-577 to T-582 (Magic).*
+finishes it with the owner. Tickets already filed: T-565 to T-571 (Melee), T-572 to T-576 (Ranged), T-577 to T-582 (Magic), T-583 to T-588 (Stealth). All four styles are now written.*
 
 ## The idea
 
@@ -76,9 +76,19 @@ of those."
 
 ## Stealth
 
-"More wild and inconsistent" (owner's note above, to confirm), and the
-**glass cannon** (owner, 2026-11-20, moved from Magic in A17). To be worked
-out in A18.
+*From A18 Stealth ([card](audit/A18_stealth.md)), owner 2026-11-20.*
+
+- **The wild glass cannon**: plain hits weaker than a sword's, crits often
+  and big; on average equal, with a wide spread (T-585).
+- **Big crits** come from a Crit Damage effect on gear, traits and perks; the
+  base stays double for everyone; crit chance has a ceiling (T-583, T-584).
+- **Fragile**: its clothes trade defence for crit, Crit Damage and Dodge
+  (T-578); metal cuts Stealth damage.
+- **Sometimes spends**: daggers need nothing; Kunai are thrown and spend
+  themselves, the last one kept for half damage (T-586).
+- **Poisons**: optional consumables, taken like an elixir with a Stealth
+  weapon, each its own buff for a set number of attacks (T-587).
+- The opening strike stays dropped (owner, 2026-10-30).
 
 ## Shared by all four
 

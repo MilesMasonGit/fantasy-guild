@@ -90,9 +90,34 @@ crit 5%, Stab as the default.
 4. Ask yourself: what would make Stealth feel wild and glass-cannon? Bigger
    crits? An opening strike? Fragile defence? Poison? Kunai?
 
-## Owner feedback (date)
+## Owner feedback (2026-11-20)
+
+Interviewed in three rounds without playing first.
+
+- **Identity**: big crits; low steady damage, high crit chance; fragile. The
+  opening strike stays dropped.
+- **Crit cap**: yes, on the tuning page.
+- **Kunai**: a thrown weapon kind that spends itself; "Keeps one, fights with
+  half damage, like Magic motes."
+- **Poison**: "Optional consumable that can be used with stealth weapons.
+  Works like a potion, providing a buff for a set of attacks if using a
+  stealth weapon." Taken like an elixir; each poison says what it does.
+- **Big crits**: a Crit Damage effect on gear.
+- **Fragile**: its gear trades defence away.
 
 ## What it became
+
+- **T-583** (director): a Crit Damage effect.
+- **T-584** (director): crit chance has a ceiling.
+- **T-585** (content agent): Stealth weapons, low steady and high crit.
+- **T-586** (director; content agent): Kunai, a thrown weapon that spends itself.
+- **T-587** (director; content agent): poisons for Stealth weapons.
+- **T-588** (planning agent): GDD on Stealth; the Alchemy and Smithing plans amended.
+- T-253 now lists the crit cap and the last Kunai's half; T-578 says Stealth clothes trade defence away.
+- concept_combat_styles.md: Stealth's section filled; all four styles written.
+- Fine as is: the opening strike stays dropped; placeholder dagger art.
+
+All six tickets blocked on the Combat group, which is now ready to brief.
 
 ## Evidence
 
