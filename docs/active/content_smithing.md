@@ -102,3 +102,11 @@ Iron, Silver and Gold Wire; Iron Chain.
 - **Woodaxes**: a copper axe takes every tree today. The game can already ask for a better one, so the trees just need setting when the Forestry pack is made.
 - **Open levels**: left for items later skills need; any still empty bring no new recipe. Copper has six in a row (14 to 19) before iron.
 - **The ledger**: an XP curve to fit, as for Cooking.
+
+## Building it (2026-11-21, content agent)
+
+- **In the first Smithing pack**: the ladder with handles, the weapons and armour of the base set on every main metal, the Iron Mace, the Silver Dagger and Sword, the Masterwork Blade; the Greatswords, Copper Cleaver and Sickles retire. Damage and resistances follow the copper and iron steps until the ledger settles them; the new metals' blades use the iron sword picture until drawn.
+- **XP per action from the ledger's balance preview** (owner 2026-11-18, the system adjusts XP): alone, the copper ladder made the Starter Camp twice as long; with the preview's numbers it is 65 minutes against 59 today. Its other proposal, the Copper Helmet, Shield and Chestplate down to Smithing 6, was left out: it breaks the base set's places in the tier. ⚠️ The Starter Camp plan lists those three; the camp is 65 minutes against its 30-minute budget, as it was before.
+- **Later, with what uses them**: Nails and Gears (Construction to 99), Arrowheads (Fletching), Ring Bands and Chains (Crafting), Harpoons (Fishing), Kunai (the ammo rule), Plate Gloves and Boots (their slots), the Master Hammer (no rule for what it does yet). Bows and Wands stay at the Blacksmith until Fletching and Enchanting take them.
+- **Silver blades** have iron's numbers; the "strong against undead" idea has no rule yet.
+
