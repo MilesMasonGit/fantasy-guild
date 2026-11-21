@@ -60,7 +60,7 @@ The levels follow the metals' amended ladder (copper 1, iron 20 and on, as in [S
 | Crafting | Ranged armour, jewellery, cut gems, Planks, Parchment, Books, Rods, Traps, Bait, Charcoal | Workshop |
 | Cooking | Food (heals in fights), drinks (work buffs only; never heal) | Kitchen |
 | Alchemy | Work potions, elixirs, poisons | Apothecary |
-| Construction | Every building and Token that's built, on a Foundation | none |
+| Construction | Every building and Token that's built, on a Foundation; building parts (owner 2026-11-21) | Builder's Yard |
 | Mining, Forestry, Fishing, Farming | Gather; see below | Mining Camp, Logging Camp, Fishing Hut, Farmstead |
 | Melee, Ranged, Magic, Stealth | Fight | War Camp |
 
@@ -73,7 +73,7 @@ Faith, Summoning, Science, Crime and Taming are still to design. Placeholder bui
 | Mining | Ores, Coal | Smithing |
 | Mining | Stone tiers | Construction |
 | Mining | Uncut gems | Crafting, then Enchanting |
-| Mining | Clay, Quartz | Alchemy |
+| Mining | Clay, Quartz | Alchemy; Clay also Construction's Roof Tiles |
 | Forestry | Wood | Smithing's handles, Fletching, Enchanting, Crafting's Planks |
 | Forestry | Feathers | Fletching, Alchemy |
 | Forestry | Bird Nests | Alchemy's Birdwatcher |
@@ -94,7 +94,7 @@ Faith, Summoning, Science, Crime and Taming are still to design. Placeholder bui
 | Tailor | Canvas, Sack, Sail, Drapes | Construction |
 | Crafting | Blank Book | Enchanting's Tomes |
 | Crafting | Jewellery | Enchanting |
-| Crafting | Planks | Construction |
+| Crafting | Planks | Construction's Frames |
 | Enchanting | Motes (Leylines) | Enchanting, Tailor's top tiers, Alchemy's elixirs |
 | Cooking | Juices | Alchemy's strong potions |
 | Alchemy | Poisons | Stealth, taken like an elixir (2026-11-21, T-587); Fletching's poison arrows, later |

@@ -120,3 +120,12 @@ The Fletcher's Lodge, Enchanter's Tower, Tailor's Shop and War Camp get theirs w
 
 **Built (pack `2026-11-21-construction-variants`)**: the table above but the Lucky ones; today's Iron Smithy, Fir Workbench, Brewery and Tannery become the Foundry, Guild Workshop, Brewery and Tannery in place (ids kept, so built ones keep working); the Copper Smithy and Iron Furnace retire; the Kitchen's speed moves to the Bakehouse. Costs by tier: Fir Plank, Stone and Iron Nails from 20; Maple Plank, Marble, Mythril Nails and Iron Gears from 40; Mahogany Plank, more Marble, Nails and Gears from 60 (Tailor's cloth joins when Tailor comes). Marble and Basalt Veins, Iron Gears; Forests build at their wood's level; the Town Square at 85 (every Token in reach 5% faster). Numbers are first values for the ledger.
 
+## Construction's own work (2026-11-21)
+
+*Owner, 2026-11-21 (T-656): Construction earns from builds and from repeatable work; the work is **building parts at a Builder's Yard**, used by later builds.*
+
+- **The Builder's Yard** is Construction's own building (Construction 1, Oak Wood and Stone, like the Apothecary). It works as a Construction station, and its list holds only parts: the Build recipes stay on Foundations.
+- **Parts**: Cut Stone (1, from Stone), Roof Tiles (10, from Clay), Fir Frame (20, Fir Planks and Iron Nails), Maple Frame (40, Maple Planks and Mythril Nails), Marble Block (45, Marble), Mahogany Frame (60, Mahogany Planks and Mythril Nails), Ebony Frame (80) and Basalt Block (85) for the Town Square. Entries in the catalogue.
+- **Costs by tier now ask parts** in place of raw Planks, Stone and Nails: at 20, 3 Fir Frames, 4 Cut Stone and 2 Roof Tiles; at 40, 3 Maple Frames, 4 Marble Blocks, 3 Roof Tiles and 2 Iron Gears; at 60, 3 Mahogany Frames, 6 Marble Blocks, 4 Roof Tiles and 4 Iron Gears; the Town Square 6 Ebony Frames, 8 Basalt Blocks and 10 Gold Ingots. Level 1 builds keep raw materials, so the Starter Camp is unchanged. Canvas, Sack, Sail and Drapes join with Tailor.
+- **Pace**: with the parts, the ledger shows Construction on pace to 20 and to 85 (it was 4x and 8x behind). Builds keep their XP for now: pricing each build by its materials' gathering hours (BALANCE_RULES section 1) wants the ledger to price it, so that is the ledger's to propose.
+
