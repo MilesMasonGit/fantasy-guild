@@ -10,7 +10,7 @@
 
 ## Sessions
 
-In the order the owner approved on 2026-11-19 (S0's proposal). **Next: A40 Regions** (The living mat group). The Effects and Combat groups are ready to brief (2026-11-20). **Every audit ticket says who takes it** (owner, 2026-11-20): *For: director* (code), *For: content agent* (CMS content, change packs), *For: planning agent* (concept docs, the GDD), or a mix naming each part. Group 8, Telling the player, was interviewed early by topic (owner, 2026-11-19/20) and is ready to brief.
+In the order the owner approved on 2026-11-19 (S0's proposal). **Next: A8 Fishing** (Gathering group). The Effects, Combat and living mat groups are ready to brief (2026-11-20). **Every audit ticket says who takes it** (owner, 2026-11-20): *For: director* (code), *For: content agent* (CMS content, change packs), *For: planning agent* (concept docs, the GDD), or a mix naming each part. Group 8, Telling the player, was interviewed early by topic (owner, 2026-11-19/20) and is ready to brief.
 "From S0" lists what the sweep saw in that system, for its session to start
 from (details in [S0_sweep.md](S0_sweep.md)).
 
@@ -33,8 +33,8 @@ from (details in [S0_sweep.md](S0_sweep.md)).
 | A2 | Spawners and transforms | The living mat | done 2026-11-20 | 6 (T-596 to T-601) | 0 | fine as is: camp clocks held at zero | **owner ruling 2026-11-20 (hover vs card topic): no Tokens turning at random into others; changing into another Token only for a used-up Token that respawns (tree to Stump and back); no content uses turning, retire the mechanic here**; **owner ruling 2026-11-20 (wording drift topic): cut Saplings; trees turn into Stumps and respawn as full trees; settle how oak, fir and the Apple Orchard make new trees here**; five ways to find a spot, four answers to no room; rule spawns announce nothing |
 | A4 | Events | The living mat | done 2026-11-20 | 5 (T-602 to T-606; T-253 widened) | 0 | fine as is: any event at any time | removed at once when marked; leaves with no reason given; a buff held in the hand stays; unworked reported as time up; Fish Shoal fished by another model |
 | A1 | Placing, reach and removal (A3 merged in) | The living mat | done 2026-11-20 | 6 (T-607 to T-612; T-253 widened) | 0 | fine as is: no refund for a built building | arrival enemies skip the cap check but count; four removal gestures; a hero lets go when a Foundation is built; **from A2 (owner 2026-11-20): one no-room rule: wait, pay nothing, say so (T-598)** |
-| A40 | Regions | The living mat | | | | | another Region's mat stops while hero clocks and bounties run |
-| A41 | Time away and saving | The living mat | | | | | **owner ruling 2026-11-20 (news told twice topic): time away is for a closed game or a sleeping PC; a minimised game keeps playing live; every time away opens the summary (T-506); settle how here**; a kill may count twice in the away summary (reasoned) |
+| A40 | Regions | The living mat | done 2026-11-20 | 5 (T-613 to T-617) | 0 | fine as is: a left Region stands still | another Region's mat stops while hero clocks and bounties run |
+| A41 | Time away and saving | The living mat | done 2026-11-20 | 4 (T-618 to T-621; T-253 widened) | 0 | the time-away ruling settled (T-618) | **owner ruling 2026-11-20 (news told twice topic): time away is for a closed game or a sleeping PC; a minimised game keeps playing live; every time away opens the summary (T-506); settle how here**; a kill may count twice in the away summary (reasoned) |
 | A8 | Fishing | Gathering | | | | | **from A29: a rod's tier never gates or speeds fishing; T-515 leaves fishing tiers to this overhaul**; **owner direction 2026-11-20 (item sources topic): fishing needs an overhaul: a specific bait per fish or fish by area, tiers of fish each with its own bait, the player choosing the catch by place and gear; the owner may take it to the planning agent ([topic_item_sources.md](topic_item_sources.md))**; **owner ruling 2026-11-20 (silent moments topic): no fishing without bait, work stops with a speech bubble; settle the details here**; two fishing models (catch pool vs Shoal and Shrimp Coast); bait runs out silently, Bank only; **from A16 (owner 2026-11-20): out of arrows the hero leaves the fight and says so (T-573); fishing without bait should stop the same way**; **from A4 (owner 2026-11-20): the Fish Shoal fishes like other water, rich (T-604)** |
 | A7 | Forestry | Gathering | | | | | **owner ruling 2026-11-20 (wording drift topic): cut Saplings; trees turn into Stumps and respawn as full trees; settle how oak, fir and the Apple Orchard make new trees here**; Forests split: oak and fir plant Saplings, birch, maple, mahogany rest; only oak and fir Stumps need their Forest; **from A2 (owner 2026-11-20): Forests plant full Trees, Stumps grow straight into Trees (T-596); every wood gets a spawner Forest, the big refill Forest nodes retire, every Stump needs its Forest, a seedling per Tree (T-597)** |
 | A6 | Mining | Gathering | | | | | a vein starting to rest is silent |
@@ -70,7 +70,7 @@ tickets together.
 |---|---|---|---|
 | 1 | Effects | A37, A29, A27, A28 | **ready to brief** (2026-11-20) |
 | 2 | Combat | A31, A33, A32, A34, A35, A15, A16, A17, A18 | **ready to brief** (2026-11-20): T-532 to T-588, with concept_combat_styles.md (draft) |
-| 3 | The living mat | A2, A4, A1 (with A3), A40, A41 | waiting |
+| 3 | The living mat | A2, A4, A1 (with A3), A40, A41 | **ready to brief** (2026-11-20): T-596 to T-621 |
 | 4 | Gathering | A8, A7, A6, A9 | waiting |
 | 5 | Making | A10, A11, A12, A13, A14 (rules only), A5 | waiting |
 | 6 | Heroes and the guild | A26, A30, A36, A38, A39 | waiting |
