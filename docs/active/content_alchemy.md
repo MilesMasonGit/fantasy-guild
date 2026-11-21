@@ -61,3 +61,10 @@ Each Herb's Alchemy use opens at its Farming level. Planted at a Herb Garden, or
 - ~~Coating a weapon is new~~ Settled 2026-11-21 (T-587): a poison is taken like an elixir with a Stealth weapon, lasting a set number of attacks; the "for N attacks" length is new machinery (director). **Poison Arrows** could also be a Fletching recipe, at its open levels.
 - **Enemy drops** for the late potions, from the enemy session.
 - **Effects** need checking against the rules that exist; some may be new.
+
+## Building it (2026-11-21, content agent)
+
+- **In the Alchemy pack**: Birdwatcher (Lavender, Bird Nest, Water), Ironskin at 8 (Clay), Valor at 18 (Mint, Bones), the Prospector's Draught at 12 (Mint, Quartz: a small chance of an uncut gem while mining), Scholar's Tonic, Bountiful Draught, Greater Ironskin, Greater Valor, the Elixir of Legends and the Master's Draught; five herbs in Herb Gardens, their seeds in Bird Nests; the Giant Mushroom; Clay to the world's first ring and Quartz to the second, so Ironskin and the Prospector's Draught can be made where they open. The Shrimp Trawler Potion retires.
+- **Numbers from the ledger's balance preview**: Birdwatcher's XP raised so Alchemy 1 to 8 trains; the work potions' boosts halved where they stacked past the target.
+- **Held**: the three poisons (the "for N attacks" length, T-587); Angler's Luck and Green Thumb (Seaweed), Swift Hands (Feathers), the three wards (Motes), Keen Eye and the Grand Scholar's Tonic (Pearls); Sage and Nightshade, whose potions are all among those.
+
