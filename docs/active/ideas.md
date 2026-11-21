@@ -243,6 +243,9 @@ mods via the CMS after release.
 ## Being interviewed
 
 
+- **Five skills: what each one is for** (owner, 2026-11-21, audit A19 to
+  A25): Faith, Summoning, Crime, Taming, Science; no more specialist skills →
+  [concept_skill_identities.md](concept_skill_identities.md) (draft).
 - **Combat styles: what each one is for** (owner, 2026-11-20, audit A15):
   Melee the steady, self-sufficient beginner style; Magic specialised through
   many items; Ranged and Stealth to fill in A16 and A18 →

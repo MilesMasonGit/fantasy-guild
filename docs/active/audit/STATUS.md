@@ -10,7 +10,7 @@
 
 ## Sessions
 
-In the order the owner approved on 2026-11-19 (S0's proposal). **Next: A26 Roster and XP** (Heroes and the guild group). The Effects, Combat, living mat, Gathering and Making groups are ready to brief (2026-11-20). **Every audit ticket says who takes it** (owner, 2026-11-20): *For: director* (code), *For: content agent* (CMS content, change packs), *For: planning agent* (concept docs, the GDD), or a mix naming each part. Group 8, Telling the player, was interviewed early by topic (owner, 2026-11-19/20) and is ready to brief.
+In the order the owner approved on 2026-11-19 (S0's proposal). **Every system is audited (2026-11-21).** All eight groups are ready to brief; the planning agent briefs them group by group. **Every audit ticket says who takes it** (owner, 2026-11-20): *For: director* (code), *For: content agent* (CMS content, change packs), *For: planning agent* (concept docs, the GDD), or a mix naming each part. Group 8, Telling the player, was interviewed early by topic (owner, 2026-11-19/20) and is ready to brief.
 "From S0" lists what the sweep saw in that system, for its session to start
 from (details in [S0_sweep.md](S0_sweep.md)).
 
@@ -45,18 +45,18 @@ from (details in [S0_sweep.md](S0_sweep.md)).
 | A13 | Construction | Making | done 2026-11-20 | T-634 | 0 | interviewed as a group | demolition is its own cycle (no speed-ups, XP or tool) |
 | A14 | Alchemy | Making | done 2026-11-20 | in T-632 | 0 | interviewed as a group | rules only (owner, 2026-11-19): no content yet |
 | A5 | The Shop | Making | done 2026-11-20 | T-636 | 0 | interviewed as a group | |
-| A26 | Roster and XP | Heroes and the guild | | | | | |
-| A30 | Orders | Heroes and the guild | | | | | |
-| A36 | Items and the Bank | Heroes and the guild | | | | | an item's effect shows only once worn |
-| A38 | Quests and Limes | Heroes and the guild | | | | | a moved Token counts as placed for quests (latent); bounty waits a lap when blocked |
-| A39 | The world map and settling | Heroes and the guild | | | | | arrival enemies with no room are lost, log only; settling can push the mat past the cap |
-| A19 | Fletching | Specialist skills | | | | | **from A16 (owner 2026-11-20): Fletching makes bows and arrows now, by the approved content_fletching.md (T-572); this session settles the rest of its identity** |
-| A20 | Faith | Specialist skills | | | | | |
-| A21 | Summoning | Specialist skills | | | | | |
-| A22 | Enchanting | Specialist skills | | | | | **from A17 (owner 2026-11-20): build the Enchanting plan now, amended (wands, staffs, tomes as weapon kinds; Motes for crafting and casting, T-577, T-579); this session settles the rest of its identity** |
-| A23 | Crime | Specialist skills | | | | | |
-| A24 | Taming | Specialist skills | | | | | |
-| A25 | Science | Specialist skills | | | | | |
+| A26 | Roster and XP | Heroes and the guild | done 2026-11-21 | T-641 (group: T-637 to T-642) | 0 | interviewed as a group | |
+| A30 | Orders | Heroes and the guild | done 2026-11-21 | T-642 | 0 | interviewed as a group | |
+| A36 | Items and the Bank | Heroes and the guild | done 2026-11-21 | T-638, T-639 | 0 | interviewed as a group | an item's effect shows only once worn |
+| A38 | Quests and Limes | Heroes and the guild | done 2026-11-21 | T-637 | 0 | interviewed as a group | a moved Token counts as placed for quests (latent); bounty waits a lap when blocked |
+| A39 | The world map and settling | Heroes and the guild | done 2026-11-21 | T-640 | 0 | interviewed as a group | arrival enemies with no room are lost, log only; settling can push the mat past the cap |
+| A19 | Fletching | Specialist skills | done 2026-11-21 | T-643 to T-645 (one card, A19_A25) | 1 (concept_skill_identities.md) | interviewed as a group | **from A16 (owner 2026-11-20): Fletching makes bows and arrows now, by the approved content_fletching.md (T-572); this session settles the rest of its identity** |
+| A20 | Faith | Specialist skills | done 2026-11-21 | T-643 to T-645 (one card, A19_A25) | 1 (concept_skill_identities.md) | interviewed as a group | |
+| A21 | Summoning | Specialist skills | done 2026-11-21 | T-643 to T-645 (one card, A19_A25) | 1 (concept_skill_identities.md) | interviewed as a group | |
+| A22 | Enchanting | Specialist skills | done 2026-11-21 | T-643 to T-645 (one card, A19_A25) | 1 (concept_skill_identities.md) | interviewed as a group | **from A17 (owner 2026-11-20): build the Enchanting plan now, amended (wands, staffs, tomes as weapon kinds; Motes for crafting and casting, T-577, T-579); this session settles the rest of its identity** |
+| A23 | Crime | Specialist skills | done 2026-11-21 | T-643 to T-645 (one card, A19_A25) | 1 (concept_skill_identities.md) | interviewed as a group | |
+| A24 | Taming | Specialist skills | done 2026-11-21 | T-643 to T-645 (one card, A19_A25) | 1 (concept_skill_identities.md) | interviewed as a group | |
+| A25 | Science | Specialist skills | done 2026-11-21 | T-643 to T-645 (one card, A19_A25) | 1 (concept_skill_identities.md) | interviewed as a group | |
 | A42 | Notifications | Telling the player | done 2026-11-20 (6 tickets, 0 concept docs, by topic) | T-496, T-497, T-501, T-503, T-506, T-507 | | | interviewed 2026-11-20: silent moments ([topic_silent_moments.md](topic_silent_moments.md), T-496 to T-499), wording drift ([topic_wording_drift.md](topic_wording_drift.md), T-500 to T-503), hover vs card ([topic_hover_vs_card.md](topic_hover_vs_card.md), T-504, T-505), news told twice ([topic_banners_twice.md](topic_banners_twice.md), T-506, T-507) |
 | A43 | Cards, badges and bars | Telling the player | done 2026-11-20 (17 tickets, 0 concept docs, by topic) | T-488 to T-495, T-498 to T-500, T-502, T-504, T-505, T-508 to T-510 | | | interviewed 2026-11-19: time display ([topic_time_display.md](topic_time_display.md), T-488), chances ([topic_chances.md](topic_chances.md), T-489 to T-491), effect wording ([topic_effect_wording.md](topic_effect_wording.md), T-492 to T-495); 2026-11-20 hover vs card ([topic_hover_vs_card.md](topic_hover_vs_card.md), T-504, T-505), item sources ([topic_item_sources.md](topic_item_sources.md), T-508 to T-510) |
 
@@ -73,6 +73,6 @@ tickets together.
 | 3 | The living mat | A2, A4, A1 (with A3), A40, A41 | **ready to brief** (2026-11-20): T-596 to T-621 |
 | 4 | Gathering | A8, A7, A6, A9 | **ready to brief** (2026-11-20): T-622 to T-631 |
 | 5 | Making | A10, A11, A12, A13, A14 (rules only), A5 | **ready to brief** (2026-11-20): T-632 to T-636 |
-| 6 | Heroes and the guild | A26, A30, A36, A38, A39 | waiting |
-| 7 | Specialist skills | A19 to A25 | waiting |
+| 6 | Heroes and the guild | A26, A30, A36, A38, A39 | **ready to brief** (2026-11-21): T-637 to T-642 |
+| 7 | Specialist skills | A19 to A25 | **ready to brief** (2026-11-21): T-643 to T-645, with concept_skill_identities.md (draft) |
 | 8 | Telling the player | A42, A43 | **ready to brief** (owner 2026-11-20): T-488 to T-510, 23 tickets, from eight topic files (`topic_*.md`); interviewed by topic out of the approved order at the owner's choice |
