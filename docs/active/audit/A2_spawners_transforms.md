@@ -125,9 +125,31 @@ clocks held at zero, the instant regrow.
 6. Ask yourself: with Saplings cut, what should a Forest put down: a Stump
    that grows, or a full Tree?
 
-## Owner feedback (date)
+## Owner feedback (2026-11-20)
+
+Interviewed in two rounds without playing first.
+
+- **What a Forest plants** (Saplings cut): a full Tree.
+- **Stumps**: every Stump needs its Forest; every wood gets a spawner Forest
+  and the big rest-and-refill Forest nodes retire.
+- **Seedlings**: every new or regrown Tree costs one.
+- **No room**: one rule: wait, pay nothing, say so.
+- **Limits**: in reach for all but camps.
+- **Camp clocks**: keep the difference.
+- Random turning retired (ruled 2026-11-20, hover vs card topic); leftovers
+  filed without asking.
 
 ## What it became
+
+- **T-596** (director; content agent): no Saplings: Forests plant full Trees, Stumps grow into Trees.
+- **T-597** (content agent): every wood has a Forest that plants it.
+- **T-598** (director): one rule for no room.
+- **T-599** (director): spawner limits count in reach, camps their own.
+- **T-600** (director; content agent): leftovers (random turning retired, the Wheat Sprout and ambush effect, stale comments).
+- **T-601** (planning agent): GDD §3 Spawners and Transforms.
+- Fine as is: camp clocks stand at zero while full; rule spawns of enemies refused.
+
+All six tickets blocked on the living mat group.
 
 ## Evidence
 
