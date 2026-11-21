@@ -12,6 +12,7 @@
 ## Rules for items
 
 - **No clutter.** "We have very limited space in our recipe list, so I don't want you to clutter it with items that have no practical purpose." Every item has a concrete job in play. An item with no user is flagged, and goes unless one is found. Something waiting on an unfinished system isn't clutter: "Kunai and Silver are not fully integrated yet, but I will want them to be" (2026-11-05).
+- **Every gathered item has a job** (owner, 2026-11-20, T-626). Nothing is gathered that nothing uses: a wood, a stone, a fruit or a catch with no recipe, shop or quest gets a job in a making skill's plan, or it is cut from the node.
 - **Gaps beat filler.** Leave a level open, for what later skills need. Don't invent something to fill it.
 - **Ideas live apart.** Speculative things go in a "possible" list, clearly not recipes. Ideas and names are cheap: offer plenty, and expect most to be cut.
 - **Base set, then specifics.** Settle a small base set first. Base items improve at each main tier ("Some base items will be available in every kind, such as chestplate and pickaxe"). Others are specific ("a Cleaver may only be Iron").
@@ -25,6 +26,26 @@
 - **An improved version arrives a tier later**: copper dagger at 2, iron dagger at 22.
 - **One unlock per level**, as far as real items allow. Levels should feel like a reward, but gaps are better than filler.
 - **Gather and use together, usually.** An ingredient's gathering level matches the first recipe that uses it ("If a salmon needs level 40 to be caught, it should be cooking level 40"). It doesn't apply everywhere: some items come from diverse sources.
+
+## Weapon tiers (owner, 2026-11-20, T-566, T-568)
+
+- **Every weapon asks a level in its own style by its tier**: a sword asks Melee, a bow Ranged, a staff Magic, a dagger Stealth. A metal weapon goes by its metal; a wooden bow or wand by the tier it sits in. This is the level to wield it, apart from the level to make it.
+- **Fast, normal and slow deal about the same a second**: a fast weapon about two thirds of a normal one's hit, a slow one about four thirds.
+- **Two hands pay more**: a two-handed weapon deals more a second than a one-handed weapon of the same metal, paying for the lost shield. How much more is the ledger's. *Waits (owner 2026-11-21): no two-handed weapon is on the lists now the Greatsword is cut, and none is added for it; the line applies to the first two-handed weapon a plan brings.*
+- **No Crit Damage** (owner 2026-11-21): a crit is always double. A weapon, trait, gear piece or perk may raise crit chance (Stealth's way to hit hard), never the crit's size; crit chance stops at 75%.
+- **The table is a starting point for authoring**, not code: the content agent checks every weapon against it; the ledger tunes the numbers.
+
+| Tier | Level | Fast | Normal | Slow |
+|---|---|---|---|---|
+| Copper | 1 | 1 | 2 | 3 |
+| Iron | 20 | 2 | 3 | 4 |
+| Silver | 30 | 3 | 4 | 5 |
+| Mythril | 40 | 3 | 5 | 7 |
+| Gold | 50 | 4 | 6 | 8 |
+| Adamantine | 60 | 5 | 7 | 9 |
+| Darkmetal | 80 | 5 | 8 | 11 |
+
+The levels follow the metals' amended ladder (copper 1, iron 20 and on, as in [Smithing](../active/content_smithing.md)), not T-566's "iron 15" (planning agent's call 2026-11-21, the owner may overturn). The ruling's own words, "copper 1, iron 15, silver 30", and the old proposal in code (gold 45, mythril 60, adamantine 75, darkmetal 90) are the old 15-level ladder; the damage columns keep the old proposal's order by position, so damage still rises with level.
 
 ## Who makes what
 
@@ -76,7 +97,7 @@ Faith, Summoning, Science, Crime and Taming are still to design. Placeholder bui
 | Crafting | Planks | Construction |
 | Enchanting | Motes (Leylines) | Enchanting, Tailor's top tiers, Alchemy's elixirs |
 | Cooking | Juices | Alchemy's strong potions |
-| Alchemy | Poisons | Stealth, Ranged; Fletching's poison arrows, later |
+| Alchemy | Poisons | Stealth, taken like an elixir (2026-11-21, T-587); Fletching's poison arrows, later |
 
 **Every new item should say where it comes from and what it goes into.** A change to one skill's list usually touches others; carry it through.
 
@@ -84,7 +105,9 @@ Faith, Summoning, Science, Crime and Taming are still to design. Placeholder bui
 
 **Gathering is Tokens, not chains.** Mining, Forestry and Fishing have no item ladder. Their interest comes from creative Tokens in the gaps between tiers, each playing differently and supplying something useful: a Geode's burst, a Hollow Tree's birds, a Coral Reef.
 
-**Farming** has no tool: progress is crop levels, places, and buildings that boost production. Tools gate some other things (picks, axes, rods, harpoons), and that's by skill, not a rule.
+**Nodes run out after about five uses** (owner, 2026-11-20, T-627): "One rule, generally going to be around 5." Veins rest and trees become Stumps after about five uses, the rich ones too; a Token that plays differently (a Hollow Tree that never falls, water that never runs out) is a choice made for it, not a drift.
+
+**Farming** has no tool: progress is crop levels, places, and buildings that boost production. Tools gate the other gathering skills: each tier of node or water asks that tier of tool (pick, axe, rod, harpoon; owner 2026-11-20, T-624; fishing 2026-11-21).
 
 ## Buildings
 

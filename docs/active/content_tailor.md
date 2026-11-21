@@ -15,7 +15,7 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 ## The shape
 
 - **Fabrics**: Linen from Flax (Farming), Wool Cloth from Wool, Silk Cloth from Silk. Tiers 4 and 5 are Silk with Motes, so Enchanting feeds the top of Tailor.
-- **String from Flax at level 1**, so the first bow is possible early.
+- **String from Flax at level 1**, so the first bow is possible early. *Confirmed 2026-11-21 (T-572): Fletching's Oak Bow at level 1 and every bow and crossbow after it need String, and Crafting's rods use it too, so String is one of the first recipes to build. Flax opens at Farming 3.*
 - **Nine pieces per armour tier, at the same place in each**, 20 levels apart, as in Smithing: Magic Hat, Stealth Hood, Gloves, Grips, Slippers, Soft Boots, Robe, Tunic, Cape.
 - **56 recipes, 43 levels open**, for what Construction and later skills turn out to need.
 

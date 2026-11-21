@@ -351,3 +351,21 @@ T-416 — A Token's open card follows it or closes — 4e293a72 — 2026-11-19
 T-472 — Token card cells from no recipe — 4e293a72 — 2026-11-19
 T-473 — A second station's gear at the same height does not move the card — 4e293a72 — 2026-11-19
 T-477 — The recipe list shows the base time with the station's real time beside it — 4e293a72 — 2026-11-19
+T-521 — GDD §4 Equipment, Milestone perks and Health match the game — docs written by the planning agent — 2026-11-21
+T-538 — GDD §6 The fight matches the game — docs written by the planning agent — 2026-11-21
+T-543 — GDD §6 Status effects and Boss moves match the game — docs written by the planning agent — 2026-11-21
+T-549 — GDD §6 Enemies and Encounters match the game — docs written by the planning agent — 2026-11-21
+T-555 — GDD on kills and rare tables matches the game — docs written by the planning agent — 2026-11-21
+T-564 — GDD and UI_STYLE on the combat screen match the game — docs written by the planning agent — 2026-11-21
+T-576 — GDD on Ranged matches the game — docs written by the planning agent — 2026-11-21
+T-582 — GDD on Magic matches the game, and the Enchanting plan is amended — docs written by the planning agent — 2026-11-21
+T-583 — A Crit Damage effect — closed by owner ruling: no Crit Damage effect, crit stays double — 2026-11-21
+T-588 — GDD on Stealth matches the game, and two plans are amended — docs written by the planning agent — 2026-11-21
+T-601 — GDD §3 Spawners and Transforms match the game — docs written by the planning agent — 2026-11-21
+T-606 — GDD §3 Events matches the game — docs written by the planning agent — 2026-11-21
+T-612 — GDD §3 The mat, Foundations and Demolition match the game — docs written by the planning agent — 2026-11-21
+T-617 — GDD on Regions matches the game — docs written by the planning agent — 2026-11-21
+T-621 — GDD §10 Time and saving matches the game — docs written by the planning agent — 2026-11-21
+T-631 — GDD on gathering matches the game — docs written by the planning agent — 2026-11-21
+T-636 — GDD §5 Making and the Shop match the game — docs written by the planning agent — 2026-11-21
+T-642 — GDD on heroes and the guild matches the game — docs written by the planning agent — 2026-11-21

@@ -17,11 +17,12 @@ clunky labels like "LVL 03" where "3/99" says it better.
 - **XP is a thin bar**; the exact number (`1,154 / 1,500 XP`) shows on hover.
 - **A hero's HP on the hero bar and sheet: the numbers over a stepped pixel bar**
   (`VitalBar`; owner, 2026-11-02): a smooth fill on a plain black edge, no ticks
-  (owner's pick, 2026-11-05). **Every HP bar is the mat's light red** (`HP_COLOUR`, `HP_TONE`;
-  owner, 2026-11-05 and 2026-11-10, T-317), whatever the health, a hero's and an enemy's alike: on
+  (owner's pick, 2026-11-05). **Every HP bar is green, amber or red by health** (owner,
+  2026-11-20, T-556; it replaces the one light red of 2026-11-10): green when healthy, amber when
+  hurt, red when low, the thresholds picked at the eye-check; a hero's and an enemy's alike, on
   the hero bar, the Hero drawer, the fight window and its tabs, and over the fighters on the mat.
 - **HP elsewhere is a bar**; the exact number shows on hover, except on the mat, where a fighter's bar is a small
-  edition of the hero bar's, the same light red on a stepped black edge, its numbers written on it, `17/30` (owner's pick F,
+  edition of the hero bar's, the same green, amber or red on a stepped black edge, its numbers written on it, `17/30` (owner's pick F,
   2026-11-05).
 - Times read `0:34` / `4:05`; thousands get separators (`1,154`).
 
@@ -207,8 +208,9 @@ normal text colour; a new meaning needs the owner's OK.
   Then three blocks left to right, centred in the room beside the nav: **the hero** at twice the
   mat's size with the job flag behind the shoulder; **Inventory**, one muted word over the loadout
   grid, always in view; **Skills / Combat**, two tabs (glyph and word, the open one over a gold
-  line). **Skills**: in columns of four, combat, gathering, crafting, then specialist, no headers,
-  no scrolling; each cell the skill's icon at 3x (48 px), its name in white, its level and the XP
+  line). **Skills**: in columns of four, one list by kind in one colour, no specialist column (owner
+  2026-11-21, T-643): combat, gathering, making (Fletching, Enchanting and Tailor among the making
+  skills), then Faith, Summoning, Crime, Taming and Science; no headers, no scrolling; each cell the skill's icon at 3x (48 px), its name in white, its level and the XP
   bar; hover gives a clean stat block under the name and level (XP, to the next level, XP/h); a
   click opens the **skill panel**, a chamfer panel on the drawer's teal backdrop standing over the
   drawer's top edge, its right on the blocks' right, with its own X (Escape closes it first;

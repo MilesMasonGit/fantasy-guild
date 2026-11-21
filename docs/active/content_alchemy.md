@@ -1,4 +1,4 @@
-Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
+Status: approved 2026-11-04, amended 2026-11-21 (a CMS pack of Planned entries still to come)
 
 # Content roadmap: Alchemy
 
@@ -19,13 +19,22 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 - **Birdwatcher moves to level 1**, so a new hero can train Alchemy from the start (the balancing page found nothing to train before 5). Lavender stays on Farming 5, so the first potions wait on a Farming hero for about 15 minutes.
 - **Its weird item becomes a Bird Nest** (agent's call): Feathers arrive with the Hollow Tree at Forestry 10, too late for level 1, while Bird Nests come from the Oak Tree from Forestry 1 and had no user. A potion that brings more nests while chopping, made from a nest, also suits it.
 
+## Amended 2026-11-21 (Systems Audit, T-587, T-588)
+
+The owner's ruling from the audit of Stealth ([A18](audit/A18_stealth.md)): "Optional consumable that can be used with stealth weapons. Works like a potion, providing a buff for a set of attacks if using a stealth weapon."
+
+- **A poison works like an elixir, not a coating.** It is carried in a consumable cell and taken as a fight starts, but only by a hero holding a Stealth weapon; with any other weapon it stays in the bag.
+- **Its buff lasts a set number of attacks** (a new "for N attacks" length in the CMS), not a number of fights. **Leftover attacks carry into later fights**; a new poison is taken only at a fight's start (owner 2026-11-21), so one that runs out mid-fight leaves the rest of that fight unpoisoned. Every attack counts, hit or miss.
+- **Each poison says what it does**: Venom, more crit, Sunder and so on. So the three poisons on the list become three different effects, not three strengths of one, as the rule against ladders of one consumable asks (content agent's call which three; simplest: Venom, a crit poison and Sunder, at the levels they have).
+- **Poisons are for Stealth only.** Ranged's poisoned arrows stay a possible Fletching recipe for later, a separate item.
+
 ## Types and effects
 
 | Type | When it's used | Effects |
 |---|---|---|
 | **Work potion** | As a work cycle starts | Rare finds, more yield, faster work, more XP |
 | **Elixir** | As a fight starts; lasts a few fights | Resist a damage type, more damage, more crit |
-| **Poison** | Coats a Dagger or arrows | Poison damage over time, for Stealth and Ranged |
+| **Poison** | As a fight starts, with a Stealth weapon only; lasts a set number of attacks, the rest carrying into later fights (amended 2026-11-21) | Each its own: Venom, more crit, Sunder |
 
 ## Herbs
 
@@ -49,6 +58,6 @@ Each Herb's Alchemy use opens at its Farming level. Planted at a Herb Garden, or
 
 ## What this needs
 
-- ⚠️ **Coating a weapon is new**: a Poison item used from the grid that adds Poison damage to the hero's hits. Check against arrows and elixirs when briefed. **Poison Arrows** could also be a Fletching recipe, at its open levels.
+- ~~Coating a weapon is new~~ Settled 2026-11-21 (T-587): a poison is taken like an elixir with a Stealth weapon, lasting a set number of attacks; the "for N attacks" length is new machinery (director). **Poison Arrows** could also be a Fletching recipe, at its open levels.
 - **Enemy drops** for the late potions, from the enemy session.
 - **Effects** need checking against the rules that exist; some may be new.

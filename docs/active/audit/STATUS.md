@@ -68,11 +68,11 @@ tickets together.
 
 | # | Group | Systems | State |
 |---|---|---|---|
-| 1 | Effects | A37, A29, A27, A28 | **ready to brief** (2026-11-20) |
-| 2 | Combat | A31, A33, A32, A34, A35, A15, A16, A17, A18 | **ready to brief** (2026-11-20): T-532 to T-588, with concept_combat_styles.md (draft) |
-| 3 | The living mat | A2, A4, A1 (with A3), A40, A41 | **ready to brief** (2026-11-20): T-596 to T-621 |
-| 4 | Gathering | A8, A7, A6, A9 | **ready to brief** (2026-11-20): T-622 to T-631 |
-| 5 | Making | A10, A11, A12, A13, A14 (rules only), A5 | **ready to brief** (2026-11-20): T-632 to T-636 |
-| 6 | Heroes and the guild | A26, A30, A36, A38, A39 | **ready to brief** (2026-11-21): T-637 to T-642 |
-| 7 | Specialist skills | A19 to A25 | **ready to brief** (2026-11-21): T-643 to T-645, with concept_skill_identities.md (draft) |
-| 8 | Telling the player | A42, A43 | **ready to brief** (owner 2026-11-20): T-488 to T-510, 23 tickets, from eight topic files (`topic_*.md`); interviewed by topic out of the approved order at the owner's choice |
+| 1 | Effects | A37, A29, A27, A28 | **briefed 2026-11-21** (briefs 730, 735)|
+| 2 | Combat | A31, A33, A32, A34, A35, A15, A16, A17, A18 | **briefed 2026-11-21** (briefs 740, 750)|
+| 3 | The living mat | A2, A4, A1 (with A3), A40, A41 | **briefed 2026-11-21** (briefs 760, 765)|
+| 4 | Gathering | A8, A7, A6, A9 | **briefed 2026-11-21** (briefs 770)|
+| 5 | Making | A10, A11, A12, A13, A14 (rules only), A5 | **briefed 2026-11-21** (briefs 770)|
+| 6 | Heroes and the guild | A26, A30, A36, A38, A39 | **briefed 2026-11-21** (briefs 780)|
+| 7 | Specialist skills | A19 to A25 | **briefed 2026-11-21** (briefs 780 (T-644 waits on concept_skill_identities))|
+| 8 | Telling the player | A42, A43 | **briefed 2026-11-21** (briefs 790, 795)|

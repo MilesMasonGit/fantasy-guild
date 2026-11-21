@@ -1,4 +1,4 @@
-Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
+Status: approved 2026-11-04, amended 2026-11-21 (a CMS pack of Planned entries still to come)
 
 # Content roadmap: Smithing
 
@@ -19,6 +19,15 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 - **Bows and arrows move to Fletching; Smithing makes arrowheads. Wands move to Enchanting.**
 - **Silver Arrowheads yes, gold no** (Fletching session).
 - **Bands from Smithing, gems set by Crafting. Gaps stay open for items later skills need.**
+
+## Amended 2026-11-21 (Systems Audit, T-586, T-588, T-566, T-568)
+
+The owner's rulings from the audits of Stealth ([A18](audit/A18_stealth.md)) and Melee ([A15](audit/A15_melee.md)).
+
+- **Kunai are a Stealth weapon kind that spends itself**: each throw uses one, carried and taken from the Bank like arrows. When only one is left the hero keeps it and fights at half damage, as Magic does with no Motes (the half on the tuning page, T-253). Copper and Iron Kunai stay on the list where they are. **Daggers need nothing.**
+- **The Iron Dagger is Smithing 22**, as ruled on 2026-11-04 (today's recipe says 16 and moves with the pack). It is the copper dagger's improved version, one tier later.
+- **Every weapon asks a level in its own style by its metal** (T-566), by the weapon tier table in [CONTENT_PHILOSOPHY](../reference/CONTENT_PHILOSOPHY.md): a dagger asks Stealth, a sword Melee. That is the level to wield it, apart from the Smithing level to make it. The wield levels follow the new metal ladder below (copper 1, iron 20, silver 30 …), not T-566's "iron 15" (planning agent's call 2026-11-21).
+- **Two-handed weapons out-damage one hand of the same metal** (T-568), but this plan cuts the Greatsword, Melee's only two-handed weapon: **the rule waits for the first two-handed weapon** a plan brings; no new item is added for it now (owner 2026-11-21).
 
 ## The shape
 
@@ -62,7 +71,7 @@ Iron, Silver and Gold Wire; Iron Chain.
 
 | Weapon | Made by | Style | The idea | On the list |
 |---|---|---|---|---|
-| Kunai | Smithing | Stealth | Thrown and used up like ammo | copper, iron |
+| Kunai | Smithing | Stealth | A thrown weapon kind that spends one a throw, half damage on the last (ruled 2026-11-21) | copper, iron |
 | Cleaver | Smithing | Melee | Heavy Slash, iron only | iron |
 | Mace | Smithing | Melee | Crush, now the Greatsword is gone | iron |
 | Silver Sword, Silver Dagger | Smithing | Melee, Stealth | Strong against undead or spirits | silver |
@@ -82,7 +91,7 @@ Iron, Silver and Gold Wire; Iron Chain.
 - **Retire**: Copper and Iron Sickles (⚠️ anything needing a sickle must stop), Greatswords, Copper Cleaver, and Bows and Wands from the Smithy. ⚠️ Combat lists the Greatsword as Crush; the Mace takes over, and Melee has no Stab now the Spear is cut. Today's content packs change.
 - **Ingots move**: Iron 15 becomes 20, Silver 30 stays, Gold 45 becomes 50, Mythril 60 becomes 40, Adamantine 75 becomes 60, Darkmetal 90 becomes 80.
 - **Mythril, Adamantine and Darkmetal gain their sets**; only their picks exist today.
-- ⚠️ **Kunai used as ammo is new for Stealth**: only arrows work that way today, and combat v2 set aside Throwing Daggers. Amends [concept_combat_v2.md](concept_combat_v2.md) if kept.
+- **Kunai are kept** (owner, 2026-11-21, T-586): a thrown Stealth weapon kind, one spent a throw, built with arrows and Motes as one ammo rule (director). Amends [concept_combat_v2.md](concept_combat_v2.md), which set aside Throwing Daggers.
 
 ## Open links
 

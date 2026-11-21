@@ -70,6 +70,11 @@ agent filled in.*
 6. Buy a Foundation and build a Workbench.
 7. Craft something.
 8. **A safe first fight**: a new small slime near the Hall, with the Rusty Sword and berries as food.
+   **Before it, Limes explains defeat** (owner 2026-11-20, T-530; the word is Defeated, T-559). Lines for the director's
+   builder, the owner edits them at the eye-check:
+   - "Blorp! Fights are fun, but heroes can be **Defeated**. Then they limp home to rest a while."
+   - "A Defeated hero drops a quarter of each food and drink stack they carry, and each gear piece has a small chance to be lost."
+   - "So bring food, and don't send a hero after something much stronger. This little slime is safe, promise!"
 
 Then Limes shows the world map, and **one big goal carries the rest of the Starter Camp: settle a place**. It names the items
 and the player works out how. Planning agent: the first places' prices must lead through copper and the Goblins' drops, so they
