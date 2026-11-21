@@ -101,6 +101,10 @@ Faith, Summoning, Science, Crime and Taming are still to design. Placeholder bui
 
 **Every new item should say where it comes from and what it goes into.** A change to one skill's list usually touches others; carry it through.
 
+## Jewellery (owner, 2026-11-21)
+
+"Could have a wide variety of effects. Generally using rings for work boosts and amulets for combat boosts is a good idea. Instead of just making sets of boosts for different skills, I would want it to have more unique effects." Each gem gives a ring one work effect and an amulet one combat effect of its own (twelve in all, [content_crafting.md](../active/content_crafting.md)); gold carries twice silver's.
+
 ## Gathering
 
 **Gathering is Tokens, not chains.** Mining, Forestry and Fishing have no item ladder. Their interest comes from creative Tokens in the gaps between tiers, each playing differently and supplying something useful: a Geode's burst, a Hollow Tree's birds, a Coral Reef.

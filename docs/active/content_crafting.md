@@ -41,3 +41,23 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 - **Planks** must be asked for by Construction's buildings (wood and buildings).
 - **Mining**: uncut gems. **Enemies**: Hide, Blue and Red Scales.
 - **A Leather Shield** for Ranged: Shields lend defence; how it differs from metal ones is the ledger's.
+
+## Jewellery effects (owner ruling 2026-11-21; effects the content agent's pick)
+
+Rings boost work, amulets boost combat, each with an effect of its own; gold doubles silver.
+
+| Gem | Ring (work) | Amulet (combat) |
+|---|---|---|
+| Ruby | Quick Hands: work 5% faster | Valour: +1 damage |
+| Sapphire | Scholar: +5% XP | Frostward: +10 Elemental resistance |
+| Emerald | Green Touch: what grows nearby grows 10% faster | Second Wind: heals 10 below half health |
+| Topaz | Prospector: 2% chance of an Uncut Topaz from any work | Keen Eye: +5 accuracy |
+| Amethyst | Thrift: 5% chance nothing is used up | Hearty: food heals 20% more |
+| Diamond | Fortune: 5% chance an item comes out doubled | Brilliance: +5 crit chance |
+
+## Building it (2026-11-21, content agent)
+
+- **In the Crafting pack**: Hide from the Cow and the Wolf; Leather, Hard, Studded and Dragonscale hats, shields and chests (no Magic cut, T-580); five Planks; the Blacksmith's Nails, Ring Bands and Chains; the Geode for gems; the jewellery above; the Fossil Bed for Red Scales.
+- **Held**: Gloves and Boots (no slots yet, T-303); the Drake tier (Blue Scale has no source); rods, traps and bait (the Fishing pack); Parchment and the Blank Book (Enchanting).
+- ⚠️ **Search a Bird Nest** was to retire (brief 400) but now holds every crop's first seed (the Cooking pack); it stays until seeds have another first source.
+
