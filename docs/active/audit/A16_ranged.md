@@ -95,9 +95,35 @@ without the level step, the default arrow type (Stab), the bow-alone shot.
 6. Ask yourself: what is Ranged for, beside Melee's steady self-sufficiency?
    Two types a shot? Hard hits paid for in arrows? Something else?
 
-## Owner feedback (date)
+## Owner feedback (2026-11-20)
+
+Interviewed in two rounds without playing first.
+
+- **Identity**: hits harder, paid in arrows; arrows change the shot; two
+  damage types a shot.
+- **Who makes arrows**: Fletching, now. An approved plan already exists
+  (content_fletching.md, 2026-11-04), so it is built rather than redesigned.
+- **Out of arrows**: the hero leaves the fight and says so; with a bow and no
+  arrows no fight starts.
+- **A miss**: "Spent hit or miss, but we will need upgrades and effects that
+  will give ammo preservation, allowing the stack to last longer."
+- **Saving arrows**: "Other gear or trinkets may have this, such as a piece of
+  ranger armor or a ring." Ranged perks and Hall stars too; no quiver.
+- **Bow type**: "Bows primarily add Stab damage, though a few special ones may
+  have elemental damage on the bow as well."
+- Leftovers filed without asking.
 
 ## What it became
+
+- **T-572** (content agent; planning agent: open links): build the Fletching plan, so arrows exist; bows mostly Stab.
+- **T-573** (director): no shot without arrows; the hero leaves the fight and says so.
+- **T-574** (content agent): ways to save arrows (gear, trinkets, perks, a Hall star).
+- **T-575** (director; content agent: data): Ranged leftovers.
+- **T-576** (planning agent): GDD on Ranged.
+- concept_combat_styles.md: Ranged's section filled.
+- Fine as is: one roll for the whole shot; the arrow part gets no level step; an arrow spent hit or miss; the Bodkin's Sunder from the next shot on.
+
+All five tickets blocked on the Combat group.
 
 ## Evidence
 

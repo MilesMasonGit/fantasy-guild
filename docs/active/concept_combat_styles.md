@@ -5,7 +5,7 @@ Status: draft
 *From the Systems Audit, A15 Melee ([card](audit/A15_melee.md)), owner
 interview 2026-11-20. Melee is written here; Ranged, Magic and Stealth are
 filled in by their own audit sessions (A16 to A18), then the planning agent
-finishes it with the owner. Tickets already filed: T-565 to T-571.*
+finishes it with the owner. Tickets already filed: T-565 to T-571 (Melee), T-572 to T-576 (Ranged).*
 
 ## The idea
 
@@ -46,8 +46,19 @@ of those." To be worked out in A17.
 
 ## Ranged
 
-Needs ammo (arrows from the Bank; no bow without arrows, owner 2026-11-20).
-To be worked out in A16.
+*From A16 Ranged ([card](audit/A16_ranged.md)), owner 2026-11-20.*
+
+- **Hits harder, paid in arrows**: a bow and arrow out-damage a sword of the
+  same metal; arrows are the running cost, spent hit or miss. When the last
+  one is shot the hero leaves the fight and says so (T-573).
+- **Arrows change the shot**: many arrow kinds, each a different part (types,
+  Sunder, later poison and magic); the player picks the arrow for the enemy.
+- **Two damage types a shot**, mostly through arrows and a few special bows:
+  plain bows add Stab, some special bows carry an element.
+- **Saving arrows** is its gear's specialisation: ranger armour or trinkets,
+  Ranged perks and a Hall star give Preservation (T-574).
+- **Fletching makes bows and arrows** (T-572, by
+  [content_fletching.md](content_fletching.md)).
 
 ## Stealth
 
