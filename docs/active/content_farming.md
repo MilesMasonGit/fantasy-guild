@@ -37,3 +37,8 @@ From [Construction](content_construction.md): **Well** (shorter growth), **Compo
 - ⚠️ **Wool has no source** while the owner considers it, and [Tailor](content_tailor.md)'s tier 2 needs it, with the Sail after.
 - **Milk as an enemy drop**: Butter and Cheese rely on it; the enemy session gives it a source.
 - **Seaweed**: the Composter could take it; otherwise it needs another user.
+
+## Building it (2026-11-21, content agent)
+
+The Sickle goes first (pack `2026-11-21-farming-no-sickle`). **The levels come with the new crops**, not before: alone, Wheat at 4 and Lavender at 5 leave a new hero nothing to train on until Potato (2) and Flax (3) exist, and the pack gate blocks it. The new crops come with the recipes that use them (Cooking, Tailor), so no crop arrives without a job.
+

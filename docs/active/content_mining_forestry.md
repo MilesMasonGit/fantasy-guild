@@ -32,3 +32,9 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 - **Late Forestry has no special Tokens** after level 35.
 - **Trees change**: every tree asks for a copper axe today, or none. The higher trees move up to the axes above, and the game can already ask for that.
 - **New behaviours** (a burst, a rich one-off, standing on water, a tiny fast yield) are Token rules. Which exist today hasn't been checked; each needs checking when it's briefed.
+
+## Amended 2026-11-21 (content agent, building T-624)
+
+- **A vein asks the pickaxe of the metal before its own**, not its own: a Mythril Vein that asked the Mythril Pickaxe would need mythril to get mythril, a loop the pack gate caught. Copper, Coal, Stone, Clay, Quartz and Iron: Copper Pickaxe; Silver and Mythril: Iron; Gold and Adamantine: Mythril; Darkmetal: Adamantine. The Darkmetal Pickaxe opens Basalt and the Fossil Bed when they come. Trees keep the owner's axe list (2026-11-05), which has no loop.
+- **Adamantine, not Adamantium**: the pickaxe and the vein take the ore's name (ids unchanged).
+
