@@ -1,6 +1,6 @@
 # HANDOFF — what a fresh director resumes from
 
-*Replaced whole each time. Written Sat 21 Nov 2026, late evening, mid batch 12. Read `CLAUDE.md`,
+*Replaced whole each time. Written Sat 21 Nov 2026, late evening, mid batch 12; branches list extended Sun 22 Nov, 13:00. Read `CLAUDE.md`,
 this file and `STATUS.md` (batch 12 section: rows, the Mon 01:00 merge order, content packs owed,
 questions for the owner), then verify with `git worktree list` and `git log --oneline -5`.*
 
@@ -29,6 +29,13 @@ has only docs on main so far (task ring screenshots, STATUS). Everything else is
   Merge after the owner's verdicts (drag bench for the ring and flags, one bench:draw --compare).
 - **Waiting on content packs:** C2 `cb2` (group-split pack Synced first), C4 step 1 `cb4` (merges
   after C2; step 2 after the six-enemy pack).
+
+## Built Sun 22 Nov (owner: use the extra bandwidth)
+
+Twenty-two more branches, each verified by the director (diff read, touched tests re-run) and listed in
+STATUS rows with their merge notes; the merge order's steps 7 to 13 place them. Worktrees: lv1 lv2 lv4
+lv5 lv6 lv7, rw1 rw2 rw3 rw4, hj1 hj2 hj3 hj4 hj5 hj6, mg3 mg4, tw5 tw8, cb3 cb6, ms1 ms2. Nothing is
+running. W4 (effect descriptions) was tried and abandoned: it conflicts with W5 until both are on main.
 
 ## Next phases (not started)
 
