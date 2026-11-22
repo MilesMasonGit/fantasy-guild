@@ -26,6 +26,8 @@
         "itemStubsHint": "Show items gained and spent at the top right of the mat",
         "limesBlurbs": "Limes's Tips",
         "limesBlurbsHint": "Show the little Limes on each screen, with a tip when you hover it",
+        "lessons": "Limes's lessons",
+        "lessonsHint": "Off hides the lessons. On brings them back at the first step you have not done",
         "autoSave": "Auto-Save Interval",
         "autoSave1": "1 Minute (Dev)",
         "autoSave10": "10 Minutes",
@@ -633,6 +635,7 @@
         "skillTooLow": "{skill} skill too low. ({have}/{need})"
     },
     "heroPanel": {
+        "level": "Level {level}",
         "perks": "Perks",
         "nextPerk": "Next perk: {perk}",
         "perkAt": "{level} {perk}",

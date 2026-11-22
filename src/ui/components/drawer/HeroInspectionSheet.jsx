@@ -25,6 +25,7 @@ import { HERO_DRAWER_PAD_TOP_PX } from '../dock/dockHeroView.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { openEncyclopedia } from '../encyclopedia/encyclopediaLink.js';
 import { t } from '../../../i18n/index.js';
+import { calculateHeroLevel } from '../../../systems/hero/HeroGenerator.js';
 
 /** The specialist rows' own background. */
 const TIER_BG = {
@@ -64,6 +65,7 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
                 name: h.name,
                 spriteId: h.spriteId || null, icon: h.icon || null,
                 flagColour: h.flagColour || null,
+                level: calculateHeroLevel(h.skills),
                 hp: Math.max(0, Math.round(h.hp?.current ?? 0)), hpMax: Math.max(1, h.hp?.max ?? 100),
                 skills: Object.fromEntries(Object.entries(h.skills || {}).map(([id, s]) => [id, { level: s?.level, xp: s?.xp }]))
             });
@@ -115,6 +117,9 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
                     style={{ width: summaryPx }}
                 >
                     {hero.name}
+                    <span data-hero-panel-level className="block ui-text-body font-normal text-gi-muted mt-1">
+                        {t('heroPanel.level', { level: hero.level.toFixed(1) })}
+                    </span>
                 </h3>
                 <VitalBar data-hero-panel-hp style={{ flex: '1 1 0%' }} value={hero.hp} max={hero.hpMax} height={22} textClass="ui-text-body" />
             </header>
