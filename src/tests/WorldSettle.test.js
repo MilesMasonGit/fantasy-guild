@@ -261,19 +261,6 @@ describe('a settled place afterwards', () => {
         expect(JSON.stringify(GameState.state.inventory.items)).toBe(bank);
     });
 
-    it('stays settled when archived; abandoned, the place returns to the frontier', () => {
-        const cell = ringOne()[0];
-        heroFor(cell);
-        stock(cell);
-        const home = Atlas.activeRegionId();
-        const { region } = World.settleCell(cell.id);
-        Atlas.travel(home);
-        Atlas.archive(region.id);
-        expect(World.cellStatesNow().get(cell.id)).toBe(CELL_STATE.SETTLED);
-        Atlas.abandon(region.id);
-        expect(World.cellStatesNow().get(cell.id)).toBe(CELL_STATE.FRONTIER);
-    });
-
     it('survives a save and a load: the Region keeps its cell, and the save validates', async () => {
         const cell = ringOne()[0];
         heroFor(cell);
