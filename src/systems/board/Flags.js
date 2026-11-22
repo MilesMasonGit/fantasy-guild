@@ -358,6 +358,17 @@ export function hasFixableSkip(instance) {
 }
 
 /**
+ * Whether a hero ordered onto this Token was passed over it for want of the tool it needs, so it
+ * keeps its "!" until the hero holds one again or leaves. ⚠️ Only the ordered hero counts: a camp
+ * hero passing three veins by for want of a pickaxe does not mark them. Never read by work
+ * selection, so it changes no pick.
+ */
+export function hasToolSkip(instance) {
+    const id = instance?.id;
+    return skipsOf(id).some(s => s.reason === ALERT.NO_TOOL && BoardState.flagOf(s.heroId)?.pinnedTo === id);
+}
+
+/**
  * Walk an order's candidates and return the first it can claim, with every skip recorded on the
  * way (see the file comment for the order). A Token order has one candidate, its Token; a camp
  * order, what the camp hands out, nearest first; a spot, none. A pinned hero still passes every

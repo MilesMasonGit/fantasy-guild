@@ -326,8 +326,27 @@ describe('a hero without the tool: refused, or passing the Token over, and the T
         expect(heard).toContainEqual({ instanceId: vein.id, heroId: hero.id, kind: 'pickaxe', minTier: 1 });
         expect(skipLine({ instanceId: vein.id, reason: ALERT.NO_TOOL, typeId: 'fx_vein' })).toBe('Fixture Vein — needs a Pickaxe in hand');
         expect(tokenSkipLines(vein.id)).toEqual([`${hero.name} skipped this: needs a Pickaxe in hand`]);
-        // The pass-over is not a badge on the vein: the problem is the hero's.
+        // The ordered hero's missing tool keeps the vein's "!" up, naming the tool.
         tick(5);
+        expect(vein.alert).toBe(ALERT.NO_TOOL);
+        expect(problemText({ kind: vein.alert }, vein.id)).toBe('Needs Pickaxe');
+    });
+
+    it('a pickaxe back in hand clears the vein mark; a hero sent elsewhere clears it too', () => {
+        const { hero, vein } = sentThenDisarmed();
+        tick(5);
+        expect(vein.alert).toBe(ALERT.NO_TOOL);
+        equip(hero.id, 'fx_pick');
+        tick(5);
+        expect(vein.alert ?? null).toBeNull();
+
+        EquipmentManager.unequipItem(hero.id, hero.equipment.indexOf('fx_pick'));
+        tick(5);
+        expect(vein.alert).toBe(ALERT.NO_TOOL);
+        const other = put('fx_plain', TREE);
+        expect(Orders.orderAt(hero.id, TREE).success).toBe(true);
+        tick(5);
+        expect(BoardState.claimOfHero(hero.id)?.instanceId).toBe(other.id);
         expect(vein.alert ?? null).toBeNull();
     });
 
@@ -341,6 +360,10 @@ describe('a hero without the tool: refused, or passing the Token over, and the T
         EquipmentManager.unequipItem(hero.id, hero.equipment.indexOf('fx_pick'));
         heard.length = 0;
         tick(3);
+        // A camp hero passing veins by for want of a tool does not mark them.
+        tick(5);
+        expect(near.alert ?? null).toBeNull();
+        expect(far.alert ?? null).toBeNull();
         expect(Flags.skipsOf(near.id)).toEqual([{ heroId: hero.id, reason: ALERT.NO_TOOL }]);
         expect(Flags.skipsOf(far.id)).toEqual([{ heroId: hero.id, reason: ALERT.NO_TOOL }]);
         expect(heard).toHaveLength(1);
@@ -369,7 +392,8 @@ describe('a hero without the tool: refused, or passing the Token over, and the T
         EquipmentManager.unequipItem(hero.id, slot);
         tick(3);
         expect(BoardState.claimOfHero(hero.id)).toBeNull();
-        expect(vein.alert ?? null).toBeNull();
+        tick(5);
+        expect(vein.alert).toBe(ALERT.NO_TOOL);
     });
 
     it('a hero dropped on the vein without a pickaxe is refused, and the reason names the tool', () => {
