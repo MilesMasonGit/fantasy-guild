@@ -14,7 +14,7 @@ import { panDrag } from '../../utils/panDrag.js';
 import { KIND } from './encyclopediaModel.js';
 import {
     layoutChart, grownBox, keepInSight, centreOn, clampPan, needText, entryOfKey, oneOffWays, farSideOf,
-    litLinks, ROOT, STATIONS
+    litLinks, yieldText, ranksText, ROOT, STATIONS
 } from './encyclopediaChart.js';
 import { EntrySprite, Tick, heroHas, isCollected, unscroll, SPRITE_PX } from './encyclopediaParts.jsx';
 
@@ -76,6 +76,14 @@ export function amountText(q) {
     const n = Number(q) || 0;
     const shown = Number.isInteger(n) ? n : Math.round(n * 10) / 10;
     return `×${shown.toLocaleString('en-US')}`;
+}
+
+/**
+ * How many the way along a box's line gives, as the card shows it ("×6", "×2–4"), or what a Guild
+ * Hall track pays at its ranks ("rank 1 ×2, rank 2 ×5, rank 3 ×8"). Nothing where the card shows none.
+ */
+export function yieldsText(node) {
+    return node.ranks ? ranksText(node.ranks, { short: true }) : yieldText(node.yields);
 }
 
 /**
@@ -215,7 +223,7 @@ const LineMark = memo(function LineMark({ label, book, heroes }) {
  */
 const LineWord = memo(function LineWord({ word, book }) {
     const name = (key) => entryOfKey(book, key)?.name ?? book.nameOf(key);
-    const sentence = t(`encyclopedia.lineTip.${word.tip}`, { from: name(word.from), to: name(word.to) });
+    const sentence = t(`encyclopedia.lineTip.${word.tip}`, { from: name(word.from), to: name(word.to), ...(word.args || {}) });
     return (
         <span
             className={cn('absolute flex items-center pointer-events-none', word.side === 'out' ? 'justify-end' : 'justify-start')}
@@ -238,13 +246,15 @@ const LineWord = memo(function LineWord({ word, book }) {
 
 /**
  * One entry on the chart: its sprite and name; under them how many one of the start needs (red
- * when you have fewer) and a drop's odds; the collected tick. Resting the pointer on it shows its card.
+ * when you have fewer), or how many its line gives ("×4 · 70% base", as the card: amount, then
+ * odds); the collected tick. Resting the pointer on it shows its card.
  */
 const ChartNode = memo(function ChartNode({ book, box, entry, focused, collected, have, startName, got, onPick, onHover }) {
     const node = box.node;
     const need = node.side === 'in' ? needText(node.need) : null;
     const short = need != null && have != null && have < need;
     const odds = oddsText(node);
+    const gives = yieldsText(node);
     const grows = node.side === 'in' ? 'encyclopedia.growIn' : 'encyclopedia.growOut';
     const hint = node.repeat ? t('encyclopedia.again') : (node.grown || node.farOpen) && node.side !== 'start' ? t('encyclopedia.fold') : node.canGrow ? t(grows) : null;
     return (
@@ -272,13 +282,14 @@ const ChartNode = memo(function ChartNode({ book, box, entry, focused, collected
                 </span>
                 <span className="flex-1 min-w-0 flex flex-col">
                     <span className="ui-text-body font-bold text-white break-words" style={BODY_LINE}>{entry.name}</span>
-                    {(need != null || odds || node.repeat) && (
+                    {(need != null || gives || odds || node.repeat) && (
                         <span className="ui-text-body tabular-nums flex flex-wrap gap-x-2" style={BODY_LINE}>
                             {need != null && (
                                 <span data-codex-need data-short={short ? 'true' : undefined} style={{ color: short ? 'var(--color-ui-red)' : 'rgba(255, 255, 255, 0.8)' }}>
                                     {amountText(need)}
                                 </span>
                             )}
+                            {gives && <span data-codex-gives className="text-white">{odds ? `${gives} ·` : gives}</span>}
                             {odds && <span data-codex-chance className="text-white">{odds}</span>}
                             {node.repeat && <span className="text-white/50">{t('encyclopedia.again')}</span>}
                         </span>

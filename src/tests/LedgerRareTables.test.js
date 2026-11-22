@@ -46,7 +46,8 @@ describe('the reach engine (the CMS ledger, the Encyclopedia)', () => {
         ]);
         // An enemy with no loot lines still drops its rare find.
         const drop = world.rules.find(r => r.id === 'drop:lr_rat');
-        expect(drop.gives).toEqual([{ key: itemKey('lr_bone'), chance: 0.1, perCycle: 0.1 }]);
+        // Each find carries its amount as the card shows it, marked a rare find.
+        expect(drop.gives).toEqual([{ key: itemKey('lr_bone'), chance: 0.1, perCycle: 0.1, min: 1, max: 1, rare: true }]);
     });
 
     it('a find only a rare table gives is judged by finds a day, as a chance line is', () => {

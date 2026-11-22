@@ -700,7 +700,7 @@ describe('a word on every line that is not used up (the owner\'s pick C, 6 Novem
                     expect(overlap({ x: x - 10, y: y - 7, w: 10, h: 14 }, w), `arrow of ${link.id} / ${w.id}`).toBe(false);
                 }
             }
-            const mine = w.side === 'in' ? `${w.id.slice(0, -1)}#` : null;
+            const mine = w.side === 'in' ? `${w.way ?? w.id.slice(0, -1)}#` : null;
             for (const band of lay.bands) {
                 if (band.id === mine) {
                     expect(w.x >= band.x && w.y >= band.y && w.x + w.w <= band.x + band.w && w.y + w.h <= band.y + band.h, `${w.id} inside ${band.id}`).toBe(true);
@@ -711,15 +711,20 @@ describe('a word on every line that is not used up (the owner\'s pick C, 6 Novem
         }
     }
 
-    /** Where a word belongs: a way in's above its box's line, by the box; a use's on its line, past its mark, before the arrow. */
+    /**
+     * Where a word belongs: a way in's above its box's line, by the box (a held tool's, last on its way,
+     * below it); a use's on its line, past its mark, before the arrow.
+     */
     function wordsWhereTheyBelong(lay) {
         for (const w of lay.words) {
             if (w.side === 'in') {
-                const link = lay.links.find(l => l.pairs.length === 1 && l.pairs[0][0] === w.pairs[0][0] && l.pairs[0][1] === w.pairs[0][1] && l.into === w.id.slice(0, -1));
+                const link = lay.links.find(l => l.pairs.length === 1 && l.pairs[0][0] === w.pairs[0][0] && l.pairs[0][1] === w.pairs[0][1] && l.into === (w.way ?? w.id.slice(0, -1)));
                 const [x, y] = link.points[0];
                 expect(w.onLine).toBe(false);
-                expect(w.x).toBe(x + m.wordPad);
-                if (!w.overMark) expect(w.y + w.h + m.wordLift).toBe(y);
+                const tab = lay.stems.find(st => st.id === `${w.pairs[0][0]}|out`);
+                expect(w.x).toBe(x + (w.below && tab ? tab.w : 0) + m.wordPad);
+                if (w.below) expect(w.y).toBe(y + m.wordLift);
+                else if (!w.overMark) expect(w.y + w.h + m.wordLift).toBe(y);
             } else {
                 const link = lay.links.find(l => l.id === `${w.id.slice(0, -1)}>`);
                 const [x, y] = link.points.at(-1);

@@ -249,6 +249,7 @@
         "combatTip": "An enemy of level {level}",
         "noHero": "No hero has {skill} {level} yet",
         "chance": "{chance} base",
+        "rankAmount": "rank {rank} {amount}",
         "again": "already above",
         "have": "Have {count}",
         "haveNeed": "Have {have}; one {name} needs {need}",
@@ -299,7 +300,9 @@
             "spawns": "spawns",
             "grows": "grows",
             "leaves": "leaves",
-            "turns": "turns"
+            "turns": "turns",
+            "finds": "finds",
+            "held": "held"
         },
         "lineTip": {
             "madeAt": "{to} is made at {from}",
@@ -317,7 +320,12 @@
             "spawns": "{from} spawns {to}",
             "grows": "{from} grows into {to}",
             "leaves": "Worked out, {from} leaves {to}",
-            "turns": "{from} turns into {to}"
+            "turns": "{from} turns into {to}",
+            "rareFind": "Working {from} sometimes finds {to}: a rare find",
+            "givesHall": "Once {star} is bought, {from} gives {to} by Passive Production every lap: {ranks}",
+            "catchWith": "{to} is caught at {from} with a {tool}",
+            "catchBait": "{to} is caught at {from} with a {tool} and {bait}",
+            "held": "A hero holds {from} to catch {to}; it is never used up"
         },
         "kind": {
             "items": "Items",
@@ -341,7 +349,10 @@
             "worldLine": "{line} ring {ring}\nsettled on the world map",
             "worldRing": "Ring {ring}\nsettled on the world map",
             "someWorldsLine": "{line} ring {ring}\nin some worlds",
-            "someWorldsRing": "Ring {ring}\nin some worlds"
+            "someWorldsRing": "Ring {ring}\nin some worlds",
+            "event": "Special event",
+            "eventNamed": "{name}\nspecial event",
+            "hallStar": "{star}"
         }
     },
     "guildHall": {
