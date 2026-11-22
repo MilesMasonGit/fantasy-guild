@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 
 import { useEntityStore } from '../../stores/useEntityStore';
@@ -35,10 +35,12 @@ function withoutOne(list, shape) {
 
 const percentOf = (share) => Math.round(share * 1000) / 10;
 
-/** A number typed in and kept on Enter or on leaving the box; anything not a number goes back. */
+/**
+ * A number typed in and kept on Enter or on leaving the box; anything not a number goes back.
+ * Keyed by its value where it is used, so a value changed elsewhere starts it afresh.
+ */
 function NumberBox({ value, min, max, step = 1, label, onCommit, disabled }) {
   const [text, setText] = useState(String(value));
-  useEffect(() => setText(String(value)), [value]);
   const commit = () => {
     const n = Number(text);
     if (text.trim() === '' || !Number.isFinite(n)) {
@@ -71,10 +73,10 @@ function RangeBoxes({ range, min, max, step, label, onChange, disabled, toShown 
   const [lo, hi] = range.map(toShown);
   return (
     <span className="flex items-center gap-1">
-      <NumberBox value={lo} min={min} max={max} step={step} label={`${label}, least`} disabled={disabled}
+      <NumberBox key={`lo${lo}`} value={lo} min={min} max={max} step={step} label={`${label}, least`} disabled={disabled}
         onCommit={(v) => onChange([fromShown(v), fromShown(Math.max(v, hi))])} />
       <span className="text-gray-500">–</span>
-      <NumberBox value={hi} min={min} max={max} step={step} label={`${label}, most`} disabled={disabled}
+      <NumberBox key={`hi${hi}`} value={hi} min={min} max={max} step={step} label={`${label}, most`} disabled={disabled}
         onCommit={(v) => onChange([fromShown(Math.min(v, lo)), fromShown(v)])} />
     </span>
   );
@@ -139,7 +141,7 @@ export default function BiomeTable() {
                       </span>
                     ))}
                     {editable && (
-                      <label className="flex items-center gap-1 text-gray-400">
+                      <span className="flex items-center gap-1 text-gray-400">
                         <Plus size={10} />
                         <select value="" aria-label={`Add a water shape to ${BIOME_NAME[biome]}`}
                           onChange={(e) => { if (e.target.value) write(biome, { water: [...row.water, e.target.value] }); }}
@@ -147,7 +149,7 @@ export default function BiomeTable() {
                           <option value="">add</option>
                           {WATER_SHAPES.map((shape) => <option key={shape} value={shape}>{SHAPE_NAME[shape] || shape}</option>)}
                         </select>
-                      </label>
+                      </span>
                     )}
                   </span>
                 </td>
