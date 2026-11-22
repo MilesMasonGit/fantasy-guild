@@ -170,7 +170,6 @@
         "quantity": { "type": "number" },
         "chance": { "type": "number", "description": "Percent 0 to 100." },
         "amount": { "type": "number" },
-        "ignoresArmor": { "type": "boolean" },
         "effectId": { "type": "string", "description": "applies: the library effect it lands." },
         "scale": { "type": "number" },
         "durationMs": { "type": "number", "minimum": 0 },

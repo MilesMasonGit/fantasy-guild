@@ -70,7 +70,7 @@ describe('the Combat view reads the fight\'s own numbers', () => {
         expect(s.armed).toBe(true);
         expect(s.hit).toBe(side.hit);
         expect(s.hitParts).toEqual(side.hitParts);
-        expect(s.swingMs).toBe(CombatFormulas.heroAttackSpeedMs(hero));
+        expect(s.attackEveryMs).toBe(CombatFormulas.heroAttackSpeedMs(hero));
         expect(s.accuracy).toBe(4);
         expect(s.dodge).toBe(3);
         expect(s.critChance).toBe(CombatFormulas.heroCritChance(hero));

@@ -481,14 +481,15 @@ describe('Cleaver: a chance to double one item a kill or a cycle drops', () => {
 });
 
 describe('the Rules editor offers the new modifiers', () => {
-    // Rewritten for damage types: Pierce is retired (still read as a sentence, never offered).
+    // Pierce went with damage types: it has no row at all.
     it('Dodge and Crit Chance are combat rows read as flat sums; Double Item Chance and Status Stack Limit are offered too', () => {
         const offered = paletteForKeyword(KEYWORD.PROVIDES).map(e => e.type);
         for (const type of ['DODGE', 'CRIT_CHANCE', 'DOUBLE_DROP', 'STATUS_MAX_STACKS']) {
             expect(offered, type).toContain(type);
         }
         expect(offered).not.toContain('PIERCE');
-        for (const type of ['DODGE', 'PIERCE', 'CRIT_CHANCE']) {
+        expect(getPaletteEntry('PIERCE')).toBeNull();
+        for (const type of ['DODGE', 'CRIT_CHANCE']) {
             expect(getPaletteEntry(type)).toMatchObject({ group: 'Combat', heroOnly: true, buckets: ['flat'] });
         }
         expect(getPaletteEntry('DOUBLE_DROP')).toMatchObject({ shape: 'proc', categories: 'item' });

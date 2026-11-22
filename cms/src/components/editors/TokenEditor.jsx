@@ -802,7 +802,7 @@ export default function TokenEditor() {
                 </div>
                 <p className="text-[10px] text-gray-600 mt-2.5 leading-relaxed">
                   A level {enemy?.level ?? 1} enemy with no kinds is an even fight for a level {enemy?.level ?? 1} hero
-                  holding their tier's weapon: a duel of ten or more swings. A kind makes it harder.
+                  holding their tier's weapon: a duel of ten or more attacks. A kind makes it harder.
                   What it <strong>drops</strong> is authored as its outputs, in the Drops column.
                 </p>
               </div>
@@ -827,7 +827,7 @@ export default function TokenEditor() {
 /**
  * The enemy kinds: none, one or two presets that twist what the level fills (`enemyKinds.js` says
  * how). Written in the order ticked; none ticked drops the key. A kind that would make a third, or
- * that sets a different swing speed from one already ticked, cannot be ticked.
+ * that sets a different attack speed from one already ticked, cannot be ticked.
  */
 function EnemyKinds({ enemy, onChange }) {
   const ticked = enemyKindsOf(enemy).map((k) => k.id);
@@ -847,7 +847,7 @@ function EnemyKinds({ enemy, onChange }) {
           const clash = !on && ticked.find((k) => kindsClash(k, kind.id));
           const full = !on && ticked.length >= MAX_ENEMY_KINDS;
           const why = clash
-            ? `Cannot go with ${ENEMY_KINDS.find((k) => k.id === clash)?.label}: both set the swing speed.`
+            ? `Cannot go with ${ENEMY_KINDS.find((k) => k.id === clash)?.label}: both set how often it attacks.`
             : full ? `An enemy has at most ${MAX_ENEMY_KINDS} kinds.` : kind.blurb;
           return (
             <label key={kind.id} title={why} className={`flex items-center gap-1.5 select-none ${clash || full ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
@@ -878,7 +878,7 @@ const ENEMY_NUMBER_FIELDS = [
   { field: 'hp', label: 'HP', min: 1 },
   { field: 'hit', label: 'Hit', min: 1 },
   { field: 'xp', label: 'XP', min: 0 },
-  { field: 'speed', label: 'Speed', wide: true },
+  { field: 'speed', label: 'Attacks every', wide: true },
   { field: 'dodge', label: 'Dodge', min: 0 },
   { field: 'accuracy', label: 'Accuracy', min: 0 },
   { field: 'critChance', label: 'Crit %', min: 0 },
@@ -887,7 +887,7 @@ const ENEMY_NUMBER_FIELDS = [
 /** `Peck Stab, Scratch Slash, Flutter`: an enemy's moves (the profile's) for the preview, or null without any. */
 function movesText(moves) {
   if (!Array.isArray(moves) || !moves.length) return null;
-  return moves.map((m) => `${m.name || 'Attack'}${m.hits ? ` ${damageTypeLabel(m.type)}` : ''}`).join(', ');
+  return moves.map((m) => `${m.name || 'Strike'}${m.hits ? ` ${damageTypeLabel(m.type)}` : ''}`).join(', ');
 }
 
 /** `Physical 50%, Crush weak 50%`, or `none`: a resistances map as the author wrote it. */
@@ -999,7 +999,7 @@ function EnemyResistances({ enemy, onChange }) {
   );
 }
 const SPEED_WORDS = { fast: 'Fast', normal: 'Normal', slow: 'Slow' };
-const speedWords = (id) => `${SPEED_WORDS[id] || id} (${(ATTACK_SPEED_MS[id] || 0) / 1000} s)`;
+const speedWords = (id) => `${(ATTACK_SPEED_MS[id] || 0) / 1000} s (${SPEED_WORDS[id] || id})`;
 
 /**
  * Every number the fight reads, shown filled from the level and kinds (greyed, "from level") until
@@ -1056,7 +1056,7 @@ function EnemyNumbers({ enemy, onChange }) {
               <div className="text-[10px] mt-1 leading-tight" data-field={`enemy-${field}-source`}>
                 {own ? (
                   <button type="button" className="text-amber-400 hover:underline" onClick={() => set(field, undefined)}>
-                    yours · back to {field === 'speed' ? SPEED_WORDS[filled.speed] : filled[field]}
+                    yours · back to {field === 'speed' ? speedWords(filled.speed) : filled[field]}
                   </button>
                 ) : (
                   <span className="text-gray-600">{hasKinds ? 'from level + kinds' : 'from level'}</span>

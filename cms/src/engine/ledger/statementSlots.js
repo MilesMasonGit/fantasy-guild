@@ -312,7 +312,9 @@ function payloadSlots(statement, ctx) {
                     value: payload.type,
                     options: [
                         ...paletteForKeyword(KEYWORD.PROVIDES).map(p => option(p.type, p.label, p.hint)),
-                        ...(entry?.retired ? [option(entry.type, `${entry.label} (retired)`, entry.hint)] : [])
+                        ...(entry?.retired ? [option(entry.type, `${entry.label} (retired)`, entry.hint)] : []),
+                        // A number the game no longer has (flat Armor, gone with damage types) still shows, so it can be seen and deleted.
+                        ...(!entry && payload.type ? [option(payload.type, `${payload.type} (does nothing)`, 'The game has no such number: delete the rule.')] : [])
                     ],
                     patch: v => ({ payload: payloadForAxis(v) })
                 },

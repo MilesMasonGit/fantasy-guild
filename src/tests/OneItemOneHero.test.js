@@ -98,7 +98,7 @@ beforeAll(() => {
     registerEffects({
         oo_effect_plating: {
             id: 'oo_effect_plating', name: 'Test Plating',
-            statements: [{ ...makeStatement(KEYWORD.PROVIDES), payload: { type: EFFECT_TYPES.ARMOR, bucket: 'flat', value: 3 } }]
+            statements: [{ ...makeStatement(KEYWORD.PROVIDES), payload: { type: EFFECT_TYPES.DODGE, bucket: 'flat', value: 3 } }]
         }
     });
     registerItems(ITEMS);
@@ -611,7 +611,7 @@ describe('a held copy works with none in the Bank', () => {
         give('oo_plate', 1);
         equipOk(aela.id, 'oo_plate');
         expect(bank('oo_plate')).toBe(0);
-        expect(HeroEffects.loadoutCombatContributions(aela)).toEqual([{ type: EFFECT_TYPES.ARMOR, value: 3 }]);
+        expect(HeroEffects.loadoutCombatContributions(aela)).toEqual([{ type: EFFECT_TYPES.DODGE, value: 3 }]);
     });
 
     it('a defeat that breaks a held piece destroys the hero\'s copy, not the Bank\'s spare', () => {

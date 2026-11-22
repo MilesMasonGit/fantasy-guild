@@ -18,7 +18,7 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * resolves to the hero either way and this module cannot tell the difference.
  *
  * A rule's damage is untyped and lands whole: flat armour is gone, and resistances are to a
- * hit's damage type (`CombatFormulas`). An older rule's `ignoresArmor` is read by nothing.
+ * hit's damage type (`CombatFormulas`).
  *
  * ⚠️ Killing a hero announces; it never resolves the death itself. Dying has exactly ONE
  * implementation, `BoardCombat.resolveDefeat`; a lethal blow here publishes `hero_downed` and

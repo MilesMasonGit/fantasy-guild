@@ -73,17 +73,17 @@ beforeEach(() => {
         fixture_effect_plating: {
             id: 'fixture_effect_plating',
             name: 'Plating',
-            statements: [provides(EFFECT_TYPES.ARMOR, 3)],
+            statements: [provides(EFFECT_TYPES.DODGE, 3)],
         },
         fixture_effect_corrosive: {
             id: 'fixture_effect_corrosive',
             name: 'Corrosive Aura',
-            statements: [provides(EFFECT_TYPES.ARMOR, -2)],
+            statements: [provides(EFFECT_TYPES.DODGE, -2)],
         },
         fixture_effect_pct_armor: {
             id: 'fixture_effect_pct_armor',
             name: 'Percent Armor',
-            statements: [provides(EFFECT_TYPES.ARMOR, 0.5, 'percentage')],
+            statements: [provides(EFFECT_TYPES.DODGE, 0.5, 'percentage')],
         },
     });
 
@@ -100,7 +100,7 @@ beforeEach(() => {
 
 describe('the palette only offers axes combat actually reads', () => {
     it('declares each combat axis in EFFECT_TYPES rather than as a bare string', () => {
-        for (const axis of ['ARMOR', 'ACCURACY', 'RESIST_FLAT', 'DAMAGE']) {
+        for (const axis of ['DODGE', 'ACCURACY', 'CRIT_CHANCE', 'DAMAGE']) {
             expect(EFFECT_TYPES[axis], axis).toBe(axis);
         }
     });
@@ -109,7 +109,7 @@ describe('the palette only offers axes combat actually reads', () => {
         // `ModifierAggregator.query` — what these readers call — sums flats and
         // silently skips percentage and multiplier entries, so offering another
         // bucket would offer something discarded.
-        for (const axis of ['ARMOR', 'ACCURACY', 'RESIST_FLAT']) {
+        for (const axis of ['DODGE', 'ACCURACY', 'CRIT_CHANCE']) {
             expect(bucketsFor(getPaletteEntry(axis)), axis).toEqual(['flat']);
         }
     });
@@ -131,7 +131,7 @@ describe('the palette only offers axes combat actually reads', () => {
         expect(bucketsFor(getPaletteEntry('YIELD'))).toHaveLength(3);
     });
 
-    it('does not offer DEFENSE — combat sums it into ARMOR and nothing writes it', () => {
+    it('does not offer DEFENSE — nothing reads or writes it', () => {
         expect(getPaletteEntry('DEFENSE')).toBeNull();
     });
 
@@ -141,13 +141,13 @@ describe('the palette only offers axes combat actually reads', () => {
 });
 
 describe('a hero’s gear feeds the numbers combat reads', () => {
-    it('registers a carried Armor rule onto the aggregator combat queries', () => {
+    it('registers a carried Dodge rule onto the aggregator combat queries', () => {
         const hero = makeHero('hero_1');
         hero.equipment[0] = 'fixture_plate';
 
         EquipmentManager.recalculateEquipmentModifiers(hero);
 
-        expect(hero.aggregator.query('ARMOR')).toBe(3);
+        expect(hero.aggregator.query('DODGE')).toBe(3);
     });
 
     it('carries the reference’s scale through', () => {
@@ -156,7 +156,7 @@ describe('a hero’s gear feeds the numbers combat reads', () => {
 
         EquipmentManager.recalculateEquipmentModifiers(hero);
 
-        expect(hero.aggregator.query('ARMOR')).toBe(6);
+        expect(hero.aggregator.query('DODGE')).toBe(6);
     });
 
     it('merges two items naming one effect rather than double-counting', () => {
@@ -167,18 +167,18 @@ describe('a hero’s gear feeds the numbers combat reads', () => {
         EquipmentManager.recalculateEquipmentModifiers(hero);
 
         // One merged effect at scale 3, not 3 + 6.
-        expect(hero.aggregator.query('ARMOR')).toBe(9);
+        expect(hero.aggregator.query('DODGE')).toBe(9);
     });
 
     it('drops the contribution when the gear comes off', () => {
         const hero = makeHero('hero_1');
         hero.equipment[0] = 'fixture_plate';
         EquipmentManager.recalculateEquipmentModifiers(hero);
-        expect(hero.aggregator.query('ARMOR')).toBe(3);
+        expect(hero.aggregator.query('DODGE')).toBe(3);
 
         hero.equipment[0] = null;
         EquipmentManager.recalculateEquipmentModifiers(hero);
-        expect(hero.aggregator.query('ARMOR')).toBe(0);
+        expect(hero.aggregator.query('DODGE')).toBe(0);
     });
 
     it('ignores a non-flat bucket rather than registering something unread', () => {
@@ -190,7 +190,7 @@ describe('a hero’s gear feeds the numbers combat reads', () => {
         EquipmentManager.recalculateEquipmentModifiers(hero);
 
         expect(HeroEffects.loadoutCombatContributions(hero)).toEqual([]);
-        expect(hero.aggregator.query('ARMOR')).toBe(0);
+        expect(hero.aggregator.query('DODGE')).toBe(0);
     });
 });
 
@@ -210,13 +210,13 @@ describe('⭐ an enemy lends its own numbers to the hero fighting it', () => {
         });
     });
 
-    it('applies the enemy’s Armor rule to the hero for the fight', () => {
+    it('applies the enemy’s Dodge rule to the hero for the fight', () => {
         const hero = makeHero('hero_1');
         hero.equipment[0] = 'fixture_plate';
         EquipmentManager.recalculateEquipmentModifiers(hero);
         GameState.state.heroes = [hero];
 
-        expect(hero.aggregator.query('ARMOR')).toBe(3);
+        expect(hero.aggregator.query('DODGE')).toBe(3);
 
         const instance = BoardState.createTokenInstance('fixture_corrosive_enemy', tokenStartingUses('fixture_corrosive_enemy'));
         Placement.placeTokenAt(instance, C(TILE));
@@ -225,7 +225,7 @@ describe('⭐ an enemy lends its own numbers to the hero fighting it', () => {
         BoardRunner.tick(100);
 
         // The enemy's -2 stacks with the hero's own +3.
-        expect(hero.aggregator.query('ARMOR')).toBe(1);
+        expect(hero.aggregator.query('DODGE')).toBe(1);
     });
 
     it('takes it back when the fight ends — a debuff cannot outlive its creature', () => {
@@ -239,10 +239,10 @@ describe('⭐ an enemy lends its own numbers to the hero fighting it', () => {
         TileModifiers.rebuildAround([C(TILE)]);
         Orders.orderAt('hero_1', C(TILE));
         BoardRunner.tick(100);
-        expect(hero.aggregator.query('ARMOR')).toBe(1);
+        expect(hero.aggregator.query('DODGE')).toBe(1);
 
         BoardCombat.endFight(tokenAt(TILE).id);
-        expect(hero.aggregator.query('ARMOR')).toBe(3);
+        expect(hero.aggregator.query('DODGE')).toBe(3);
     });
 
     it('clears every borrowed number on teardown', () => {
@@ -254,16 +254,16 @@ describe('⭐ an enemy lends its own numbers to the hero fighting it', () => {
         TileModifiers.rebuildAround([C(TILE)]);
         Orders.orderAt('hero_1', C(TILE));
         BoardRunner.tick(100);
-        expect(hero.aggregator.query('ARMOR')).toBe(-2);
+        expect(hero.aggregator.query('DODGE')).toBe(-2);
 
         BoardCombat.clearAll();
-        expect(hero.aggregator.query('ARMOR')).toBe(0);
+        expect(hero.aggregator.query('DODGE')).toBe(0);
     });
 });
 
 describe('a combat rule tells the truth about who it reaches', () => {
     it('never claims to reach nearby Tokens', () => {
-        const sentence = renderStatement(provides(EFFECT_TYPES.ARMOR, 3), {});
+        const sentence = renderStatement(provides(EFFECT_TYPES.DODGE, 3), {});
         expect(sentence).not.toContain('nearby');
         expect(sentence).toContain('in combat');
         expect(sentence).toContain('hero carrying this item');

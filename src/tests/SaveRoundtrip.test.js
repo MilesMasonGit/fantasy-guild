@@ -201,7 +201,7 @@ describe('a hero round-trips through a save (CR3-266)', () => {
         registerEffects({
             fixture_effect_rt_plating: {
                 id: 'fixture_effect_rt_plating', name: 'Round-trip Plating',
-                statements: [{ ...makeStatement(KEYWORD.PROVIDES), payload: { type: EFFECT_TYPES.ARMOR, bucket: 'flat', value: 3 } }]
+                statements: [{ ...makeStatement(KEYWORD.PROVIDES), payload: { type: EFFECT_TYPES.DODGE, bucket: 'flat', value: 3 } }]
             }
         });
         registerItems({
@@ -260,6 +260,6 @@ describe('a hero round-trips through a save (CR3-266)', () => {
 
         expect(la.equipment[2]).toBe('fixture_rt_plate');
         expect(la.aggregator).toBeDefined();
-        expect(la.aggregator.query('ARMOR')).toBe(3);
+        expect(la.aggregator.query('DODGE')).toBe(3);
     });
 });

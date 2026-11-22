@@ -69,9 +69,9 @@ export const HeroCombatView = ({ heroId }) => {
             >
                 {s.range.low === s.range.high ? damageText(s.range.low) : `${damageText(s.range.low)}–${damageText(s.range.high)}`}
             </Row>
-            <Row stat="swing" label={t('fight.window.swing')} tip={t('fight.tip.swing', { time: lengthText(s.swingMs) })}>
+            <Row stat="attackEvery" label={t('fight.window.attackEvery')} tip={t('fight.tip.attackEvery', { time: lengthText(s.attackEveryMs) })}>
                 <CombatGlyph name="clock" colour={GLYPH_COLOUR.text} />
-                {lengthText(s.swingMs)}
+                {lengthText(s.attackEveryMs)}
             </Row>
             <Row stat="crit" label={t('heroPanel.combat.critChance')} tip={t('heroPanel.combat.critChanceTip')}>
                 {chanceText(s.critChance)}

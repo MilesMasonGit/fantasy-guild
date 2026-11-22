@@ -22,7 +22,7 @@ import { carriedRuleNames } from './heroPerks.js';
  *   with the fight panel's own breakdown for the tooltip.
  * - `range`: what one landed hit deals against an enemy of each style (`CombatFormulas.heroBlow`,
  *   the matchup included), lowest and highest, and a critical hit's highest.
- * - `swingMs`, `accuracy`, `dodge`, `critChance`: the swing and the miss and crit chances' parts.
+ * - `attackEveryMs`, `accuracy`, `dodge`, `critChance`: how often the hero attacks and the miss and crit chances' parts.
  * - `resists`: what the hero resists, from gear and elixirs (the fight panel's lines).
  * - `cuts`: what worn gear cuts from the hero's damage in each style (`styleDamageCut`).
  * - `effects`: what the loadout lends, one per effect as the game merges them (`loadoutRefs`).
@@ -51,7 +51,7 @@ export function heroCombatStats(hero) {
         hitParts: side.hitParts,
         hitLines: side.hitLines,
         range: { low: Math.min(...hits), high: Math.max(...hits), crit: Math.max(...vs.map(v => v.crit)), vs },
-        swingMs: side.swingMs,
+        attackEveryMs: side.attackEveryMs,
         accuracy: CombatFormulas.heroAccuracy(hero),
         dodge: CombatFormulas.heroDodge(hero),
         critChance: CombatFormulas.heroCritChance(hero),

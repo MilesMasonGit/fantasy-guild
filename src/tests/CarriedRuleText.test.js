@@ -25,7 +25,7 @@ describe('a carried rule reads as the hero\'s and names its skill', () => {
         ['XP_BONUS', 'percentage', 0.1, 'melee', 'XP +10% in Melee fights.'],
         ['WORK_TIME', 'percentage', -0.05, 'mining', 'Speed +5% on Mining Tokens.'],
         ['YIELD', 'percentage', 0.25, 'fishing', 'Yield +25% on Fishing Tokens.'],
-        ['ARMOR', 'flat', 3, undefined, 'Armor +3 in combat.']
+        ['DODGE', 'flat', 3, undefined, 'Dodge +3% in combat.']
     ])('%s %s %s at %s', (type, bucket, value, skill, sentence) => {
         expect(renderStatement(provides(type, bucket, value, skill), carried)).toBe(sentence);
     });

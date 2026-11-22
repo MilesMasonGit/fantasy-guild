@@ -140,16 +140,16 @@ function WeaponFields({ item, onChange }) {
         </p>
       </Field>
 
-      <Field label="Speed" className="col-span-1">
+      <Field label="Attacks every" className="col-span-1">
         <select
-          aria-label="Speed"
+          aria-label="Attacks every"
           data-field="weapon-speed"
           value={speed}
           onChange={(e) => onChange({ type: 'weapon', speed: e.target.value === DEFAULT_ATTACK_SPEED ? undefined : e.target.value })}
           className="w-full"
         >
           {Object.entries(ATTACK_SPEED_MS).map(([id, ms]) => (
-            <option key={id} value={id}>{SPEED_WORDS[id] || id} ({ms / 1000} s)</option>
+            <option key={id} value={id}>{ms / 1000} s ({SPEED_WORDS[id] || id})</option>
           ))}
         </select>
         <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
@@ -460,11 +460,11 @@ export default function ItemEditor() {
                 onChange={(e) => setHeldAs(e.target.value)}
                 className="w-full"
               >
-                <option value="weapon">A weapon (swung)</option>
+                <option value="weapon">A weapon (attacks with it)</option>
                 <option value="offhand">An off-hand item (a shield, a quiver)</option>
               </select>
               <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
-                A hero swings one weapon; beside it, one off-hand item lends its resistances and rules like armour. A second weapon lends nothing.
+                A hero fights with one weapon; beside it, one off-hand item lends its resistances and rules like armour. A second weapon lends nothing.
               </p>
             </Field>
           )}

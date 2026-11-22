@@ -398,17 +398,17 @@ describe('the audits', () => {
         ]);
         expect(found).toEqual([
             'its move 1 is not a move — it is never made. Author it again in the CMS.',
-            'its move 2 has no name — the fight screen calls it "Attack". Name it in the CMS.',
+            'its move 2 has no name — the fight screen calls it "Strike". Name it in the CMS.',
             'its move "Stob" hits with "stob", which is not a damage type or group — it hits as Physical. Pick its type again in the CMS.',
-            'its move "Idle" neither hits nor lands an effect — the swing does nothing. Tick Hits or pick an effect in the CMS.',
+            'its move "Idle" neither hits nor lands an effect — the attack does nothing. Tick Hits or pick an effect in the CMS.',
             'its move "Ghost" lands the effect "em_missing", which is not in the effect library — it lands nothing. Pick the effect again in the CMS.',
             'its move "Tail" aims its effect at "tail", which is neither itself nor the hero — it lands on the hero. Pick its target again in the CMS.',
-            'its move "Ever" lasts "ever", which is not one attack, the swing or the fight — it lasts the fight. Pick how long again in the CMS.',
-            'its move "Blink" puts its effect on the hero for the swing, which is over before it can matter — it does nothing. Make it last one attack or the fight in the CMS.',
+            'its move "Ever" lasts "ever", which is not one attack, this attack or the fight — it lasts the fight. Pick how long again in the CMS.',
+            'its move "Blink" puts its effect on the hero for this attack, which is over before it can matter — it does nothing. Make it last one attack or the fight in the CMS.',
             'its move "Heavy" has the weight "0" — a weight is a number above 0, so it counts as 1. Type it again in the CMS.',
             'its move "Maybe" says it hits "no", which is neither yes nor no — it hits. Tick or untick Hits in the CMS.'
         ]);
-        expect(messages('peck')).toEqual(['its moves are not a list — it swings a plain Physical hit. Author its moves again in the CMS.']);
+        expect(messages('peck')).toEqual(['its moves are not a list — it makes a plain Physical Strike. Author its moves again in the CMS.']);
     });
 
     it('say nothing about good moves; a status on the hero "for the swing" keeps its own lifetime, so it passes', () => {

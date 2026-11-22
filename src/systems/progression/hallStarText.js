@@ -130,7 +130,7 @@ function andList(list) {
     return `${list.slice(0, -1).join(', ')} and ${list[list.length - 1]}`;
 }
 
-/** Whether a rule is on a combat axis a star gives fighters (Damage, Swing Time, Accuracy). */
+/** Whether a rule is on a combat axis a star gives fighters (Damage, Attack Speed, Accuracy). */
 function isStyleRule(statement) {
     return getPaletteEntry(statement?.payload?.type)?.categories === 'combatStyle';
 }
@@ -144,7 +144,7 @@ function styleSubject(statement) {
 /** What a combat star's fighters do, by axis, when it helps them and when it hinders them. */
 const STYLE_PHRASES = {
     [EFFECT_TYPES.DAMAGE]: ['hit harder', 'hit softer'],
-    [EFFECT_TYPES.SWING_TIME]: ['swing faster', 'swing slower'],
+    [EFFECT_TYPES.SWING_TIME]: ['attack faster', 'attack slower'],
     [EFFECT_TYPES.ACCURACY]: ['miss less', 'miss more']
 };
 

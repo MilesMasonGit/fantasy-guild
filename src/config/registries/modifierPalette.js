@@ -137,9 +137,9 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  *
  * ## `retired` — still read as a sentence, never offered
  *
- * A row the game no longer reads (flat Armor, Resistance and Pierce, gone with
- * damage types) stays here so content carrying one still renders and the audits
- * can name it; `paletteForKeyword` leaves it out of the editor's choices.
+ * A row the game no longer reads (Camp Reach) stays here so content carrying one
+ * still renders and the audits can name it; `paletteForKeyword` leaves it out of
+ * the editor's choices.
  *
  * ## `reads` — what the axis does, in a verb phrase
  *
@@ -539,37 +539,13 @@ export const MODIFIER_PALETTE = [
 
     // --- Combat ---------------------------------------------------------
     //
-    // ⚠️ Every row here but the retired ones has a live reader in `CombatFormulas`
-    // or `CombatAttackProcessor`, queried off `hero.aggregator`.
+    // ⚠️ Every row here has a live reader in `CombatFormulas` or
+    // `CombatAttackProcessor`, queried off `hero.aggregator`.
     //
     // `buckets: ['flat']` on all of them because `ModifierAggregator.query` —
     // which is what combat calls — sums flats and SKIPS percentage and
     // multiplier entries. Offering a percentage would be offering something
     // silently discarded.
-    {
-        type: EFFECT_TYPES.ARMOR,
-        label: 'Armor',
-        when: 'never',
-        scales: 'value',
-        buckets: ['flat'],
-        heroOnly: true,
-        retired: true,
-        shape: MODIFIER_SHAPES.DETERMINISTIC,
-        group: 'Combat',
-        hint: 'Retired with damage types: does nothing. Use Type Resistance % (Physical for metal armour).'
-    },
-    {
-        type: EFFECT_TYPES.RESIST_FLAT,
-        label: 'Resistance',
-        when: 'never',
-        scales: 'value',
-        buckets: ['flat'],
-        heroOnly: true,
-        retired: true,
-        shape: MODIFIER_SHAPES.DETERMINISTIC,
-        group: 'Combat',
-        hint: 'Retired with damage types: does nothing. Use Type Resistance %.'
-    },
     {
         type: EFFECT_TYPES.ACCURACY,
         label: 'Accuracy',
@@ -615,18 +591,6 @@ export const MODIFIER_PALETTE = [
         hint: 'Percentage points added to the miss chance of whatever attacks the hero (misses stay between 5% and 40%).'
     },
     {
-        type: EFFECT_TYPES.PIERCE,
-        label: 'Pierce',
-        when: 'never',
-        scales: 'value',
-        buckets: ['flat'],
-        heroOnly: true,
-        retired: true,
-        shape: MODIFIER_SHAPES.DETERMINISTIC,
-        group: 'Combat',
-        hint: 'Retired with damage types: does nothing. Use the Sunder status (a status effect that provides Sunder).'
-    },
-    {
         type: EFFECT_TYPES.CRIT_CHANCE,
         label: 'Crit Chance',
         when: 'never',
@@ -635,7 +599,7 @@ export const MODIFIER_PALETTE = [
         heroOnly: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'Percentage points added to the hero\'s 5% chance to crit (a crit doubles the hit).'
+        hint: 'Percentage points added to the bearer\'s chance to crit, a hero\'s or an enemy\'s: 5% unless an enemy sets its own (a crit doubles the hit).'
     },
     {
         /**
@@ -664,7 +628,7 @@ export const MODIFIER_PALETTE = [
         categories: 'damageType',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'Percent off hits of one damage type or group taken: 20 means 20% less, a negative number a weakness. Pick which type. An enemy\'s plain swing is Physical.'
+        hint: 'Percent off hits of one damage type or group taken: 20 means 20% less, a negative number a weakness. Pick which type. An enemy\'s plain Strike is Physical.'
     },
     {
         /**
@@ -684,8 +648,8 @@ export const MODIFIER_PALETTE = [
     },
     {
         /**
-         * Read as a percentage off whoever carries it (`CombatFormulas` swing speeds), so it lives
-         * on a lingering effect: an elixir's faster swings, a boss's enrage. Gear's flat-only
+         * Read as a percentage off whoever carries it (`CombatFormulas` attack speeds), so it lives
+         * on a lingering effect: an elixir's faster attacks, a boss's enrage. Gear's flat-only
          * contributions do not carry it.
          */
         type: EFFECT_TYPES.SWING_TIME,
@@ -698,7 +662,7 @@ export const MODIFIER_PALETTE = [
         inverted: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'How long each swing takes, shown as Attack Speed. A negative value is faster: -25% swings a quarter sooner (a 3s swing every 2.25s). On a lingering effect: an elixir on a hero, or a rule putting it on an enemy.'
+        hint: 'How long between attacks, shown as Attack Speed. A negative value is faster: -25% attacks a quarter sooner (attacks every 3s become every 2.25s). On a lingering effect: an elixir on a hero, or a rule putting it on an enemy.'
     },
     {
         // Read by `ConsumptionSystem` when a hero eats in a fight: Burn's half heal.
