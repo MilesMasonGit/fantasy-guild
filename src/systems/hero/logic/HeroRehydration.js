@@ -78,12 +78,13 @@ export function rehydrateHero(hero) {
     }
     hero.equipment = equipment;
     normaliseHeldCopies(hero);
-    // Heroes no longer have energy, a class, a trait or a recruitment stamp; older saves still
-    // carry the fields.
+    // Heroes no longer have energy, a class, a trait, a recruitment stamp or a wound deadline (a
+    // wound counts down `woundedRemainingMs`); older saves still carry the fields.
     delete hero.energy;
     delete hero.classId;
     delete hero.traitId;
     delete hero.createdAt;
+    delete hero.woundedUntil;
 
     // UI change counter.
     hero._rev = (hero._rev || 0) + 1;

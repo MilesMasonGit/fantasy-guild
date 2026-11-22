@@ -1,5 +1,6 @@
 import { GameState } from '../../state/GameState.js';
 import { logger } from '../../utils/Logger.js';
+import { BANK_STARTING_SLOTS } from '../../config/guildUpgrades.js';
 
 /**
  * InventoryStore - Raw State Management for the Inventory System.
@@ -18,7 +19,7 @@ export const InventoryStore = {
             if (GameState.state) {
                 GameState.state.inventory = {
                     items: {},      
-                    maxSlots: 20,
+                    maxSlots: BANK_STARTING_SLOTS,
                     groupOrder: ['default-loot'],
                     groupDefs: {
                         'default-loot': { title: 'Loot', id: 'default-loot', orderedItems: [] }
@@ -40,7 +41,7 @@ export const InventoryStore = {
         // the authoritative `maxTabs` and pads the group list to match on every
         // load/purchase.
         if (inv.maxTabs === undefined || inv.maxTabs < 1) inv.maxTabs = 1;
-        if (inv.maxSlots === undefined) inv.maxSlots = 64;
+        if (inv.maxSlots === undefined) inv.maxSlots = BANK_STARTING_SLOTS;
 
         const items = inv.items;
         if (items) {

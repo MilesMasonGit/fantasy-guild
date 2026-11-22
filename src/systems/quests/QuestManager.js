@@ -8,7 +8,8 @@ import { BOARD_EVENTS } from '../board/boardEvents.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { toolOf } from '../../config/registries/toolKinds.js';
-import { categoryOfItem, isWeaponCategory } from '../../config/registries/equipmentConstants.js';
+import { categoryOfItem } from '../../config/registries/equipmentConstants.js';
+import { isWeapon } from '../../config/registries/weaponStyles.js';
 import * as LimesLessons from './LimesLessons.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
@@ -74,17 +75,22 @@ export const QuestManager = {
             // ⚠️ `hero_equipped` is NOT an engine event. Equipping is announced as
             // `hero_equipment_changed` with `action: 'equip'`, which feeds the `hero_equipped` report.
             // `toolKind`: which kind of gathering tool was equipped, if any; `category` its loadout
-            // category ('food'), `weapon` whether that holds a weapon.
+            // category ('food'), `weapon` whether the item is a weapon.
+            // ⚠️ A weapon by `isWeapon`, not by its category: a woodaxe sits in the hand category
+            // too, and lesson 3's woodaxe would otherwise do lesson 8's weapon step.
             EventBus.subscribe(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, (data) => {
                 if (data?.action !== 'equip') return;
-                const category = categoryOfItem(data.itemId);
+                const item = getItem(data.itemId);
                 this.reportProgress('hero_equipped', 1, {
-                    toolKind: toolOf(getItem(data.itemId))?.kind ?? null,
-                    category,
-                    weapon: !!category && isWeaponCategory(category)
+                    toolKind: toolOf(item)?.kind ?? null,
+                    category: categoryOfItem(data.itemId),
+                    weapon: isWeapon(item)
                 });
             }),
-            EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, () => this.reportProgress('combat_victory'))
+            // `enemyId` is the beaten enemy's Token type, so a step can ask for one foe.
+            EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, (data) => {
+                this.reportProgress('combat_victory', 1, { enemyId: data?.enemyId ?? null });
+            })
         );
     },
 

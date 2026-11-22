@@ -48,8 +48,6 @@ export function generateHero(options = {}) {
 
         hp: { current: maxHp, max: maxHp },
         status: 'idle',
-        // Kept null: the saved hero shape is the bench fingerprint's.
-        woundedUntil: null,
 
         skills,
 

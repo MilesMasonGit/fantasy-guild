@@ -56,10 +56,8 @@ const WoundedSystem = {
      */
     processWoundedTick(hero, deltaMs) {
         if (typeof hero.woundedRemainingMs !== 'number') {
-            // A fresh wound gets the full timer. ⚠️ `woundedUntil` is always null now, and is kept
-            // on the hero record because the bench's work fingerprint reads it.
+            // A fresh wound gets the full timer.
             hero.woundedRemainingMs = Math.max(0, woundTimeMs());
-            hero.woundedUntil = null;
             logger.debug('WoundedSystem', `Set recovery timer for ${hero.name}: ${hero.woundedRemainingMs}ms`);
         }
 
@@ -85,7 +83,6 @@ const WoundedSystem = {
         const recoveryHp = Math.floor(hero.hp.max * 0.5);
         hero.hp.current = recoveryHp;
 
-        hero.woundedUntil = null;
         hero.woundedRemainingMs = null;
 
         logger.info('WoundedSystem', `${hero.name} has recovered with ${recoveryHp} HP`);

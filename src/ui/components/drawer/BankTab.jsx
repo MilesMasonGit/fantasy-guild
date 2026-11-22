@@ -14,7 +14,7 @@ import { Landmark, Check, BoxSelect, X, ArrowDownUp } from 'lucide-react';
 import { PixelGlyph } from '../base/PixelGlyph.jsx';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
-import { BANK_TAB_SLOTS, BANK_TAB_CAP, homeTabOf, bankTabLayout, reorderTabIds } from '../../../systems/inventory/bankTabs.js';
+import { BANK_TAB_SLOTS, BANK_TAB_CAP, BANK_STARTING_SLOTS, homeTabOf, bankTabLayout, reorderTabIds } from '../../../systems/inventory/bankTabs.js';
 import { t } from '../../../i18n/index.js';
 import { ItemTipContent } from './ItemTip.jsx';
 import { itemTintName, itemTintStyle } from '../base/itemTint.js';
@@ -56,7 +56,7 @@ export const BankTab = () => {
                 ),
                 itemOverrides: { ...(inv.itemOverrides || {}) },
                 maxTabs: inv.maxTabs ?? 1,
-                maxSlots: inv.maxSlots ?? BANK_TAB_SLOTS
+                maxSlots: inv.maxSlots ?? BANK_STARTING_SLOTS
             };
         },
         [ENGINE_EVENTS.INVENTORY_UPDATED]

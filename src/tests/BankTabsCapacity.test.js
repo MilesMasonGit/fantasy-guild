@@ -5,10 +5,10 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
-import { homeTabOf, bankTabCounts, bankTabLayout, BANK_TAB_SLOTS } from '../systems/inventory/bankTabs.js';
+import { homeTabOf, bankTabCounts, bankTabLayout, BANK_TAB_SLOTS, BANK_STARTING_SLOTS } from '../systems/inventory/bankTabs.js';
 import { getUpgradeDef } from '../config/guildUpgrades.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
-import { GAME_VERSION, validateSaveData } from '../state/StateSchema.js';
+import { GAME_VERSION, INITIAL_STATE, validateSaveData } from '../state/StateSchema.js';
 
 // Brief 310 B1: each Bank tab holds 64 item kinds; a Bank Tabs rank adds a tab and its slots.
 
@@ -45,6 +45,22 @@ describe('a Bank tab holds 64 kinds', () => {
         expect(inv().groupOrder).toHaveLength(1);
         expect(inv().maxSlots).toBe(BANK_TAB_SLOTS);
         expect(BANK_TAB_SLOTS).toBe(64);
+    });
+
+    it('one starting number, one tab of 64: a new game, a save that never wrote one, and a Bank with none at all', () => {
+        expect(BANK_STARTING_SLOTS).toBe(BANK_TAB_SLOTS);
+        expect(INITIAL_STATE.inventory.maxSlots).toBe(BANK_STARTING_SLOTS);
+
+        delete inv().maxSlots;
+        InventoryManager.init();
+        expect(inv().maxSlots).toBe(BANK_STARTING_SLOTS);
+
+        delete GameState.state.inventory;
+        InventoryManager.init();
+        expect(inv().maxSlots).toBe(BANK_STARTING_SLOTS);
+
+        delete inv().maxSlots;
+        expect(InventoryManager.freeSlots()).toBe(BANK_STARTING_SLOTS);
     });
 
     it('adds a tab and its 64 slots per Bank Tabs rank, up to 16 tabs of 1,024 slots', () => {

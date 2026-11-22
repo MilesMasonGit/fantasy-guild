@@ -4,7 +4,7 @@ import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { applyDefeatPenalties } from '../systems/combat/DefeatPenalties.js';
-import { registerItems } from '../config/registries/itemRegistry.js';
+import { registerItems, DEFAULT_MAX_STACK } from '../config/registries/itemRegistry.js';
 import { createEmptyEquipment } from '../config/registries/equipmentConstants.js';
 import { ModifierAggregator } from '../systems/effects/ModifierAggregator.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -88,7 +88,7 @@ describe('a loadout slot whose item is no longer equippable', () => {
     });
 });
 
-describe('an item with a stack limit, or marked not stackable', () => {
+describe('a stack\'s limit', () => {
     /** Everything published on `names` while `fn` runs, as `[name, payload]`. */
     function heard(names, fn) {
         const seen = [];
@@ -97,48 +97,33 @@ describe('an item with a stack limit, or marked not stackable', () => {
         return seen;
     }
 
-    it('a pile the stack has no room for says the stack is full, not the Bank, while slots are free', () => {
+    it('an item\'s own stack limit, or a mark that it is not stackable, is not read: the Bank takes the whole pile', () => {
         InventoryManager.addItem('fixture_hg_capped', 10);
         SpriteLayer.addSprite('item', 'fixture_hg_capped', 3, null);
-
         const said = heard([ENGINE_EVENTS.BANK_FULL], () => SpriteLayer.collectAll());
+        expect(said).toEqual([]);
+        expect(count('fixture_hg_capped')).toBe(13);
+        expect(SpriteLayer.countOnBoard('fixture_hg_capped')).toBe(0);
 
-        expect(InventoryManager.freeSlots()).toBeGreaterThan(0);
-        expect(said).toEqual([[ENGINE_EVENTS.BANK_FULL, { itemId: 'fixture_hg_capped', reason: 'stack' }]]);
-        expect(SpriteLayer.countOnBoard('fixture_hg_capped')).toBe(3);
+        expect(InventoryManager.addItem('fixture_hg_single', 3)).toBe(3);
+        expect(InventoryManager.addItem('fixture_hg_single', 1)).toBe(1);
+        expect(count('fixture_hg_single')).toBe(4);
+        expect(InventoryManager.hasRoomFor(['fixture_hg_single', 'fixture_hg_capped'])).toBe(true);
     });
 
-    it('a sweep skips such a pile instead of offering it to the Bank again', () => {
-        InventoryManager.addItem('fixture_hg_capped', 10);
-        SpriteLayer.addSprite('item', 'fixture_hg_capped', 3, null);
-        const add = vi.spyOn(InventoryManager, 'addItem');
-        try {
-            SpriteLayer.collectAll();
-            SpriteLayer.collectAll();
-            expect(add).not.toHaveBeenCalled();
-        } finally {
-            add.mockRestore();
-        }
-    });
-
-    it('the part of a pile that fits is announced as collected', () => {
-        InventoryManager.addItem('fixture_hg_capped', 8);
-        SpriteLayer.addSprite('item', 'fixture_hg_capped', 5, null);
+    it('at the one ceiling every stack shares, the part of a pile that fits is collected and the stack is said full', () => {
+        InventoryManager.addItem('fixture_hg_pelt', DEFAULT_MAX_STACK - 2);
+        SpriteLayer.addSprite('item', 'fixture_hg_pelt', 5, null);
 
         const said = heard([BOARD_EVENTS.SPRITE_COLLECTED, ENGINE_EVENTS.BANK_FULL], () => SpriteLayer.collectAll());
 
-        expect(count('fixture_hg_capped')).toBe(10);
-        expect(SpriteLayer.countOnBoard('fixture_hg_capped')).toBe(3);
+        expect(count('fixture_hg_pelt')).toBe(DEFAULT_MAX_STACK);
+        expect(SpriteLayer.countOnBoard('fixture_hg_pelt')).toBe(3);
+        expect(InventoryManager.freeSlots()).toBeGreaterThan(0);
         expect(said.map(([name, p]) => [name, p.refId ?? p.itemId, p.quantity ?? p.reason])).toEqual([
-            [BOARD_EVENTS.SPRITE_COLLECTED, 'fixture_hg_capped', 2],
-            [ENGINE_EVENTS.BANK_FULL, 'fixture_hg_capped', 'stack']
+            [BOARD_EVENTS.SPRITE_COLLECTED, 'fixture_hg_pelt', 2],
+            [ENGINE_EVENTS.BANK_FULL, 'fixture_hg_pelt', 'stack']
         ]);
-    });
-
-    it('a single-copy item the Bank does not hold yet takes one of a pile, and the rest waits', () => {
-        expect(InventoryManager.addItem('fixture_hg_single', 3)).toBe(1);
-        expect(count('fixture_hg_single')).toBe(1);
-        expect(SpriteLayer.countOnBoard('fixture_hg_single')).toBe(2);
     });
 
     it('a Bank with no slot still says the Bank is full', () => {

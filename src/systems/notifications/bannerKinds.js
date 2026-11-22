@@ -115,8 +115,8 @@ export const BANNER_KINDS = Object.freeze({
         }),
         merge: (a, b) => ({ items: union(a.items, b.items) })
     },
-    // An item at its stack's limit (its own `maxStack`, or one copy of a single-copy item): the
-    // Bank may have free slots, so "Bank full" would send the player to look for the wrong thing.
+    // An item at the ceiling every stack shares (`DEFAULT_MAX_STACK`): the Bank may have free slots,
+    // so "Bank full" would send the player to look for the wrong thing.
     stackFull: {
         tone: TONE.PROBLEM,
         mergeShown: true,

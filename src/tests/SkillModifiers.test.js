@@ -68,10 +68,10 @@ describe('addXP grants what the caller resolved', () => {
         expect(SkillSystem.addXP('hero_1', 'mining', 37).granted).toBe(37);
     });
 
-    it('never rounds a small award away to nothing', () => {
-        // Progress may be slowed; it may not be stopped.
+    it('does not raise an award to 1: an award under 1 is drawn where it is earned (applyXpBonus)', () => {
         heroWithSkill('mining', 10);
-        expect(SkillSystem.addXP('hero_1', 'mining', 0.4).granted).toBe(1);
+        expect(SkillSystem.addXP('hero_1', 'mining', 0).granted).toBe(0);
+        expect(SkillSystem.addXP('hero_1', 'mining', 1).granted).toBe(1);
     });
 
     it('rounds a fractional award', () => {
@@ -109,10 +109,10 @@ describe('An XP bonus is a true percentage: its fraction is carried by chance', 
         expect(roll).not.toHaveBeenCalled();
     });
 
-    it('a negative bonus is plain rounding, never below 1 XP, and draws nothing', () => {
+    it('a negative bonus on an award that stays at 1 XP or more is plain rounding, and draws nothing', () => {
         const roll = vi.fn(() => 0);
         expect(grant(10, -0.5, roll)).toBe(5);
-        expect(grant(1, -0.1, roll)).toBe(1);
+        expect(grant(10, -0.45, roll)).toBe(6);
         expect(roll).not.toHaveBeenCalled();
     });
 
@@ -136,6 +136,52 @@ describe('An XP bonus is a true percentage: its fraction is carried by chance', 
         expect(SkillSystem.averageXpBonus(5, 5.5)).toBeCloseTo(5.5);
         expect(SkillSystem.averageXpBonus(4, 4)).toBe(4);
         expect(SkillSystem.averageXpBonus(10, 5)).toBe(5);
-        expect(SkillSystem.averageXpBonus(1, 0.9)).toBe(1);
+        expect(SkillSystem.averageXpBonus(1, 0.9)).toBeCloseTo(0.9);
+        expect(SkillSystem.averageXpBonus(1, 0.4)).toBeCloseTo(0.4);
+    });
+});
+
+describe('An award under 1 XP pays 1 by chance', () => {
+    it('0.4 XP pays 1 four times in ten, else nothing; one draw each', () => {
+        const low = vi.fn(() => 0.39);
+        const high = vi.fn(() => 0.41);
+        expect(SkillSystem.applyXpBonus(1, 0.4, low)).toBe(1);
+        expect(SkillSystem.applyXpBonus(1, 0.4, high)).toBe(0);
+        expect(low).toHaveBeenCalledTimes(1);
+        expect(high).toHaveBeenCalledTimes(1);
+    });
+
+    it('so does an award under 1 with no bonus at all, and 0.9 is no longer always 1', () => {
+        expect(SkillSystem.applyXpBonus(0.4, 0.4, () => 0.2)).toBe(1);
+        expect(SkillSystem.applyXpBonus(0.4, 0.4, () => 0.6)).toBe(0);
+        expect(SkillSystem.applyXpBonus(1, 0.9, () => 0.95)).toBe(0);
+    });
+
+    it('many draws average the award', () => {
+        let seed = 7;
+        const roll = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+        let sum = 0;
+        for (let i = 0; i < 20000; i++) sum += SkillSystem.applyXpBonus(1, 0.4, roll);
+        expect(sum / 20000).toBeCloseTo(0.4, 1);
+    });
+
+    it('nothing earned draws nothing and pays nothing', () => {
+        const roll = vi.fn(() => 0);
+        expect(SkillSystem.applyXpBonus(0, 0, roll)).toBe(0);
+        expect(SkillSystem.applyXpBonus(1, 0, roll)).toBe(0);
+        expect(roll).not.toHaveBeenCalled();
+    });
+
+    it('a work cycle whose award is under 1 pays through the engine\'s own draw (Math.random), the same live or caught up', () => {
+        heroWithSkill('mining', 10);
+        const random = vi.spyOn(Math, 'random').mockReturnValue(0.3);
+        try {
+            const xp = SkillSystem.applyXpBonus(1, 0.4);
+            expect(xp).toBe(1);
+            expect(random).toHaveBeenCalledTimes(1);
+            expect(SkillSystem.addXP('hero_1', 'mining', xp).granted).toBe(1);
+        } finally {
+            random.mockRestore();
+        }
     });
 });
