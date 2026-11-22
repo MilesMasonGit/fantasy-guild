@@ -818,6 +818,12 @@
   font-size: var(--font-size-xl) !important;
 }
 
+/* A Token's or hero's name tag on the mat: one step above the title size's default, still read from
+   the Text size setting (UI_STYLE "Text sizes"). */
+.ui-text-name {
+  font-size: var(--font-size-sm) !important;
+}
+
 /* The Region name in the mat's top bar, and nothing else (UI_STYLE "Text sizes"). */
 .ui-text-bar-name {
   font-size: var(--font-size-xl) !important;

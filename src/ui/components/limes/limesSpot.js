@@ -5,11 +5,10 @@ export const LIMES_SRC = '/assets/enemies/slime/e_slurm.png';
 export const LIMES_ART_PX = 32;
 
 /**
- * Limes's pixels are twice a Token's (the owner's pick): about one Token wide on the mat. The same
- * whole-step scale the mat's sprites use (`boardScaleAt`), doubled, so it lands on whole screen
- * pixels at every fit.
+ * Limes's pixels are a Token's (the owner's pick), at the same whole-step scale the mat's sprites
+ * use (`boardScaleAt`), so it lands on whole screen pixels at every fit.
  */
-export const LIMES_SCALE = 2;
+export const LIMES_SCALE = 1;
 
 /** How far Limes's corner spot stands in from the mat's left and bottom edges, in mat units. */
 export const LIMES_CORNER_GAP = 40;

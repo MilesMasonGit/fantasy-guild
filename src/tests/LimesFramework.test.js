@@ -103,14 +103,14 @@ describe('what Limes says (the store)', () => {
 });
 
 describe('Limes on the mat: size and spot', () => {
-    it('is twice a Token\'s pixels, on whole screen pixels at every fit', () => {
+    it("is drawn in a Token's pixels, on whole screen pixels at every fit", () => {
         for (const fit of [0.31, 0.55, 0.62, 0.8, 1, 1.37]) {
             const px = limesSizeAt(fit) * fit;
             expect(px).toBeCloseTo(LIMES_ART_PX * LIMES_SCALE * boardArtSteps(fit), 6);
             expect(Math.abs(px - Math.round(px))).toBeLessThan(1e-6);
         }
-        // About one Token wide (a Token is 64 px art at the board's scale).
-        expect(limesSizeAt(1)).toBe(128);
+        // A 32 px sprite at the board's whole-step scale (2 at fit 1).
+        expect(limesSizeAt(1)).toBe(64);
     });
 
     it('starts in the bottom-left corner and is kept wholly on the mat', () => {
@@ -166,9 +166,9 @@ describe('Limes on the mat (drawn)', () => {
         const sprite = q('[data-limes-sprite]');
         expect(sprite).not.toBeNull();
         expect(sprite.getAttribute('data-alpha-test')).toBe('true');
-        // Its corner, at 128 mat units across.
-        expect(sprite.style.width).toBe('128px');
-        expect(parseFloat(sprite.style.top) + 128).toBeGreaterThan(matH() - 100);
+        // Its corner, at 64 mat units across.
+        expect(sprite.style.width).toBe('64px');
+        expect(parseFloat(sprite.style.top) + 64).toBeGreaterThan(matH() - 100);
         expect(parseFloat(sprite.style.left)).toBeLessThan(100);
     });
 
@@ -202,7 +202,7 @@ describe('Limes on the mat (drawn)', () => {
         placeGuild('starter');
         mount();
         const sprite = q('[data-limes-sprite]');
-        const from = { x: parseFloat(sprite.style.left) + 64, y: parseFloat(sprite.style.top) + 64 };
+        const from = { x: parseFloat(sprite.style.left) + 32, y: parseFloat(sprite.style.top) + 32 };
         act(() => {
             sprite.dispatchEvent(pointer('pointerdown', 100, 100));
             sprite.dispatchEvent(pointer('pointermove', 200, 50));
@@ -212,7 +212,7 @@ describe('Limes on the mat (drawn)', () => {
         expect(LimesGuide.limesSpot()).toEqual({ x: Math.round(from.x + 300), y: Math.round(from.y - 200) });
         expect(q('[data-limes-bubble]')).toBeNull();
         expect(BoardState.tokens().some(t => /slurm|limes/i.test(t.typeId))).toBe(false);
-        expect(parseFloat(q('[data-limes-sprite]').style.left)).toBeCloseTo(from.x + 300 - 64, 0);
+        expect(parseFloat(q('[data-limes-sprite]').style.left)).toBeCloseTo(from.x + 300 - 32, 0);
         expect(matW()).toBeGreaterThan(0);
     });
 });

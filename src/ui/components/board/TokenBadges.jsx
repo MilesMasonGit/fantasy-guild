@@ -39,7 +39,7 @@ export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, s
                 : below ? { top: `calc(100% + ${4 + offset}px)` } : { bottom: `calc(100% + ${4 + offset}px)` }}
         >
             <span
-                className="ui-text-small w-max max-w-[240px] shrink-0 font-bold text-white leading-tight tracking-tight px-1">
+                className="ui-text-name w-max max-w-[240px] shrink-0 font-bold text-white leading-tight tracking-tight px-1">
                 {name}
             </span>
         </div>
