@@ -56,7 +56,7 @@ describe('a row as the game reads it', () => {
         const { evt_comet: comet } = normaliseEventTable({ evt_comet: COMET });
         expect(comet).toEqual({
             id: 'evt_comet', name: 'Copper Ore Comet', typeId: 'token_comet', kind: EVENT_KIND.NODE,
-            weight: 10, ground: ['rock'], biomes: [], durationMinutes: DEFAULT_BUFF_MINUTES
+            weight: 10, ground: ['rock'], biomes: [], durationMinutes: DEFAULT_BUFF_MINUTES, goodbye: ''
         });
         expect(isRunnable(comet)).toBe(true);
     });

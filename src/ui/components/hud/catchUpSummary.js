@@ -82,11 +82,6 @@ export function itemChanges(items = {}) {
     return out.sort((a, b) => rank(a) - rank(b) || Math.abs(b.net) - Math.abs(a.net) || a.name.localeCompare(b.name));
 }
 
-/** The return report's word for how an event left (`EventTokens.ENDED`), as its string key. */
-const EVENT_STATE_KEY = Object.freeze({
-    here: 'here', worked_out: 'workedOut', time_up: 'timeUp', unworked: 'unworked', demolished: 'demolished'
-});
-
 /**
  * The event Tokens on the mat now and how long until each leaves (`EventTokens.leavesInMs`, null
  * only for a Token that is no event). A seam for tests.
@@ -117,7 +112,7 @@ function eventRows(summaryEvents, live) {
         const leavesInMs = state === 'here' ? live.leavesInMs(e.instanceId) : null;
         return {
             key: e.instanceId, typeId: e.typeId, name: e.name || tokenName(e.typeId), landed: !!e.landed,
-            state, stateKey: EVENT_STATE_KEY[state] || 'here',
+            state, stateText: state === 'here' ? t('catchUp.news.eventState.here') : EventTokens.endedWord(state),
             leavesInMs,
             leavesText: leavesInMs == null ? null : t('catchUp.news.leavesIn', { time: formatClock(leavesInMs) })
         };
@@ -173,9 +168,9 @@ export function summaryView(result, live = LIVE_EVENTS) {
         kills: rows(summary.fightsWon?.byEnemy, tokenName, 'enemyId'),
         /**
          * Events that landed or left while away, and those still on the mat (`eventRows`): `{ key,
-         * typeId, name, landed, state, stateKey, leavesInMs, leavesText }`, `state` how it left
-         * (`EventTokens.ENDED`) or `'here'` while it stands, `stateKey` its string under
-         * `catchUp.news.eventState`, `leavesText` "Leaves in 42:10" for one still here whose clock runs.
+         * typeId, name, landed, state, stateText, leavesInMs, leavesText }`, `state` how it left
+         * (`EventTokens.ENDED`) or `'here'` while it stands, `stateText` its word (Expired,
+         * Demolished, Still here), `leavesText` "Leaves in 42:10" for one still here whose clock runs.
          */
         events: eventRows(summary.events || [], live)
     };

@@ -10,6 +10,7 @@ import * as EventTokens from '../board/EventTokens.js';
 import { getTokenType, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { allEvents, getEvent } from '../../config/registries/eventRegistry.js';
 import { EVENT_KIND, isRunnable } from '../../config/eventTable.js';
+import { EVENT_WAIT_MIN_MS, EVENT_WAIT_MAX_MS, EVENT_RETRY_MS } from '../../config/eventTiming.js';
 import { artRadiusOf, matW, matH } from '../../config/matGeometry.js';
 
 /**
@@ -46,14 +47,7 @@ import { artRadiusOf, matW, matH } from '../../config/matGeometry.js';
  * the darts for a spot, and the new Token's id.
  */
 
-/** ⭐ Game value: the shortest time between one event ending and the next landing, in game ms. */
-export const EVENT_WAIT_MIN_MS = 45 * 60 * 1000;
-
-/** ⭐ Game value: the longest time between one event ending and the next landing, in game ms. */
-export const EVENT_WAIT_MAX_MS = 75 * 60 * 1000;
-
-/** ⭐ Game value: when nothing could land, the time until the next try. */
-export const EVENT_RETRY_MS = 5 * 60 * 1000;
+export { EVENT_WAIT_MIN_MS, EVENT_WAIT_MAX_MS, EVENT_RETRY_MS };
 
 /** Random spots tried on the event's ground before a landing is given up until the next try. */
 export const LANDING_DARTS = 48;
@@ -259,9 +253,10 @@ function land(event, spot) {
 /**
  * Land the next event: drawn by weight among those that fit the place; one that finds no room is
  * set aside and the draw made again among the rest. Returns the new instance, or null when none
- * could land.
+ * could land, or when an event already stands on the mat (one at a time).
  */
 export function landNext(random = Math.random) {
+    if (eventTokenOnMat()) return null;
     let pool = fittingEvents();
     while (pool.length) {
         const event = pickByWeight(pool, random);
@@ -273,14 +268,16 @@ export function landNext(random = Math.random) {
 }
 
 /**
- * **The QA panel's landing**: event `eventId` now, whatever the clock says and whatever stands on
- * the mat, in any Region (its ground still decides where). Never called by the game itself.
+ * **The QA panel's landing**: event `eventId` now, whatever the clock says, in any Region (its
+ * ground still decides where), refused while an event stands on the mat. Never called by the game
+ * itself.
  *
  * @returns {{success: boolean, reason?: string, instance?: object}}
  */
 export function landNow(eventId, random = Math.random) {
     const event = getEvent(eventId);
     if (!event) return { success: false, reason: `No event "${eventId}"` };
+    if (eventTokenOnMat()) return { success: false, reason: 'An event already stands on the mat' };
     if (!isRunnable(event) || !getTokenType(event.typeId)) return { success: false, reason: `${event.name} cannot land: check its kind, Token and weight` };
     const spot = landingSpot(event, random);
     if (!spot) return { success: false, reason: `No room for ${event.name} on its ground here` };

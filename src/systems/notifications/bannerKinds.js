@@ -130,7 +130,21 @@ export const BANNER_KINDS = Object.freeze({
     event: {
         tone: TONE.MILESTONE,
         pointsTo: true,
-        text: ({ name = '' }) => ({ title: t('events.banner.title', { event: name }), line: '' }),
+        text: ({ name = '', kind = null, lastsMs = 0, leavesMs = 0 }) => ({
+            title: t('events.banner.title', { event: name }),
+            line: kind === 'buff' && lastsMs > 0
+                ? t('events.banner.buffLine', { time: spanText(lastsMs) })
+                : kind === 'node' && leavesMs > 0 ? t('events.banner.nodeLine', { time: spanText(leavesMs) }) : ''
+        }),
+        merge: null
+    },
+    // Its Token is gone, so there is nothing to point to; the event's own goodbye, or a plain one.
+    eventGone: {
+        tone: TONE.MILESTONE,
+        text: ({ name = '', word = '', goodbye = '' }) => ({
+            title: t('events.gone.title', { word, event: name }),
+            line: goodbye || t('events.gone.fallback', { event: name })
+        }),
         merge: null
     },
     // Each save problem is its own banner; only a repeat of the same one (its `groupKey`) folds in.
@@ -140,6 +154,12 @@ export const BANNER_KINDS = Object.freeze({
         merge: null
     }
 });
+
+/** A span as the event banner's second line says it: whole hours as "1 h", otherwise minutes. */
+function spanText(ms) {
+    const minutes = Math.max(1, Math.round(ms / 60000));
+    return minutes % 60 === 0 ? t('events.banner.hours', { n: minutes / 60 }) : t('events.banner.minutes', { n: minutes });
+}
 
 /** The title and line a kind writes from its parts. */
 export function bannerText(kind, parts) {

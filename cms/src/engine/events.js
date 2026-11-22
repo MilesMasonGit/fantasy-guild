@@ -32,6 +32,7 @@ export function eventRowFile(row, id) {
     ground: words(row.ground),
     biomes: words(row.biomes),
   };
+  if (typeof row.goodbye === 'string' && row.goodbye.trim()) out.goodbye = row.goodbye.trim();
   if (out.kind === EVENT_KIND.BUFF) out.durationMinutes = Number(row.durationMinutes) > 0 ? Number(row.durationMinutes) : 0;
   return out;
 }

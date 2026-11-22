@@ -567,11 +567,7 @@
             "events": "Events",
             "leavesIn": "Leaves in {time}",
             "eventState": {
-                "here": "Still here",
-                "workedOut": "Worked out",
-                "timeUp": "Time ran out",
-                "unworked": "Left unworked",
-                "demolished": "Demolished"
+                "here": "Still here"
             },
             "kills": "Fights",
             "killTip": {
@@ -792,7 +788,19 @@
     },
     "events": {
         "banner": {
-            "title": "Special Event! {event}!"
+            "title": "Special Event! {event}!",
+            "buffLine": "for {time}",
+            "nodeLine": "leaves in {time} if unworked",
+            "minutes": "{n} min",
+            "hours": "{n} h"
+        },
+        "ended": {
+            "expired": "Expired",
+            "demolished": "Demolished"
+        },
+        "gone": {
+            "title": "{word}: {event}",
+            "fallback": "{event} has gone."
         },
         "plate": {
             "buffLeaves": "Leaves in {time}",

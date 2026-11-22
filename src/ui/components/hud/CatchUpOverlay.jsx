@@ -346,7 +346,7 @@ function Summary({ result, asking, restoring, undoFailed, onClose, onAsk, onCanc
                                         kind="token"
                                         id={ev.typeId}
                                         name={ev.name}
-                                        countText={ev.leavesText || t(`catchUp.news.eventState.${ev.stateKey}`)}
+                                        countText={ev.leavesText || ev.stateText}
                                         size="sm"
                                         className={e.className}
                                         style={e.style}

@@ -4,6 +4,8 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { EVENT_KIND } from '../../config/eventTable.js';
+import { UNWORKED_LEAVE_MS } from '../../config/eventTiming.js';
+import { t } from '../../i18n/index.js';
 import * as BoardState from './BoardState.js';
 
 /**
@@ -32,16 +34,22 @@ import * as BoardState from './BoardState.js';
 /** The key in `instance.clocks` an event Token's way out counts on. */
 export const EVENT_CLOCK = 'eventMs';
 
-/** ⭐ Game value: how long a rich node stays on the mat. */
-export const UNWORKED_LEAVE_MS = 60 * 60 * 1000;
+export { UNWORKED_LEAVE_MS };
 
 /** Why an event Token left the mat (`BOARD_EVENTS.EVENT_ENDED`'s `reason`). */
 export const ENDED = Object.freeze({
     WORKED_OUT: 'worked_out',
     TIME_UP: 'time_up',
-    UNWORKED: 'unworked',
     DEMOLISHED: 'demolished'
 });
+
+/**
+ * The word for how an event left, shared by the goodbye banner and the away summary: Expired for
+ * every way it goes by itself, Demolished for the player's act.
+ */
+export function endedWord(reason) {
+    return t(reason === ENDED.DEMOLISHED ? 'events.ended.demolished' : 'events.ended.expired');
+}
 
 /** The event an instance landed as, or null. */
 export function eventOf(instance) {

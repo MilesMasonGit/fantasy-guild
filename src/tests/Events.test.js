@@ -536,7 +536,8 @@ describe('a buff Token', () => {
         const rain = landBeside(RAIN);
         // −30 % and −20 % make −50 %.
         expect(TileModifiers.workTimeOf(vein.id, 10000, 'mining')).toBe(5000);
-        Demolition.mark(rain.id);
+        BoardState.removeToken(rain.id);
+        TileModifiers.rebuildAll();
 
         landBeside(STORM);
         // −30 % and −60 % would be −90 %: no stack cuts more than 80 %.

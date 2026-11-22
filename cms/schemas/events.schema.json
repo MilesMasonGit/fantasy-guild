@@ -16,6 +16,7 @@
         "weight": { "type": "number", "minimum": 0, "description": "Its share of the draw among the events that fit the place; 0 never lands." },
         "ground": { "type": "array", "items": { "type": "string", "enum": ["water", "shore", "grass", "rock", "sand", "stone"] }, "description": "Stands-on words it may land on; empty: wherever its Token may stand." },
         "biomes": { "type": "array", "items": { "type": "string" }, "description": "Region biomes it may land in; empty: any Region." },
+        "goodbye": { "type": "string", "description": "The line on the banner when the event leaves, by any way; empty: the game says the event has gone." },
         "durationMinutes": { "type": "number", "minimum": 0, "description": "A buff's time on the mat, in minutes." }
       }
     }
