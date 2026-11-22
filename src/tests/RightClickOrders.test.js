@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll, vi } from 'vitest';
 import React from 'react';
-import { render, cleanup, act, fireEvent } from '@testing-library/react';
+import { render, cleanup, act, fireEvent, waitFor } from '@testing-library/react';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
 import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
 import { GameLoop } from '../systems/core/GameLoop.js';
@@ -943,7 +943,8 @@ describe('⭐ a right-click with a Token selected moves it, as a drop there does
             await act(async () => { fireEvent.pointerMove(document, ptr(1200, 700)); await new Promise(r => setTimeout(r, 50)); });
             expect(document.body.classList.contains('gi-dnd-active')).toBe(true);
             expect(container.querySelector('[data-near-ring]')).toBeTruthy();
-            expect(container.querySelector(`[data-reach-dot="${tree.id}"]`)).toBeTruthy();
+            // The ring grows out first (`growRing.js`); the dot shows once it has reached the tree.
+            await waitFor(() => expect(container.querySelector(`[data-reach-dot="${tree.id}"]`)).toBeTruthy());
             // The drop, and the click the browser sends right after it on the Token let go: no
             // click again on the selected Token, so it stays selected.
             await act(async () => {

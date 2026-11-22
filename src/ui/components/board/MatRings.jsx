@@ -24,6 +24,8 @@ const NEAR_RING_ATTRS = Object.freeze({ 'data-near-ring': 'true' });
  * when there is not, so the ring is an honest preview of the drop rather than a copy of the
  * pointer. When there is no room within nudge reach the drop would fly back, and there is no ring.
  * Every Token inside the ring wears a dot (`reachDisplay.reachDotsAt`, the engine's own test).
+ * The ring grows out when it appears and shrinks back when it goes, the dots coming and going with
+ * it (`ReachRing`); a drag's ring grows once as the drag starts, then follows the landing.
  * The ring of a camp lit through its hero is `CampReachRing`'s.
  */
 
@@ -101,22 +103,26 @@ export const MatRings = React.memo(function MatRings({ hoveredCentre = null, boa
 
     let centre = null;
     let selfId = null;
+    // Which ring this is: the one in the hand grows once as the drag starts, then follows the landing.
+    let owner = '';
     if (isDragging) {
         if (landing && showsNearRing(landing.typeId)) {
             centre = landing;
             selfId = activePayload?.from?.instanceId || null;
+            owner = 'drag';
         }
     } else if (hoveredCentre) {
         centre = hoveredCentre;
         selfId = hoveredCentre.id || null;
+        owner = `hover|${selfId}`;
     }
 
     // ⚠️ Worked out when the ring moves to a new spot (or the board changes under it), never per
     // frame: a drag frame whose landing stays put reuses the last answer.
-    const key = centre ? `${centre.x}|${centre.y}|${selfId}|${radius}` : '';
-    const ring = React.useMemo(() => (centre ? { x: centre.x, y: centre.y, r: radius } : null), [key]); // eslint-disable-line react-hooks/exhaustive-deps
+    const key = centre ? `${centre.x}|${centre.y}|${selfId}|${radius}|${owner}` : '';
+    const ring = React.useMemo(() => (centre ? { x: centre.x, y: centre.y, r: radius, key: owner } : null), [key]); // eslint-disable-line react-hooks/exhaustive-deps
     const dots = React.useMemo(() => (centre ? reachDotsAt(centre, selfId, radius) : null), [key, boardTokens]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    if (!ring) return null;
+    // Drawn with no ring too: one that has just gone shrinks away first.
     return <ReachRing ring={ring} dots={dots} attrs={NEAR_RING_ATTRS} />;
 });
