@@ -1,7 +1,7 @@
 import React from 'react';
 import { t } from '../../../i18n/index.js';
-import { categoryOfItem } from '../../../config/registries/equipmentConstants.js';
-import { toolOf, toolKindLabel, handsOf, HANDS } from '../../../config/registries/toolKinds.js';
+import { toolOf, toolKindLabel, handsOf, HANDS, neededToolOf, toolMeets } from '../../../config/registries/toolKinds.js';
+import { getAllTokenTypes, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { weaponStyleOf, isOffHand, gearRequirements } from '../../../config/registries/weaponStyles.js';
 import { weaponDamageTypeOf, arrowOf, DAMAGE_GROUPS, DAMAGE_TYPES } from '../../../config/registries/damageTypes.js';
 import { gearResistancesOf, gearDamageCutOf } from '../../../config/registries/gearDefence.js';
@@ -56,6 +56,21 @@ function weaponStats(item, style, hands) {
     ];
 }
 
+const WORKS_SHOWN = 4;
+
+/** "Works Iron Vein, Copper Vein and 2 more": the Tokens a tool lets a hero work, by the work check's own rule. */
+function worksLine(tool) {
+    if (!tool) return null;
+    const names = Object.entries(getAllTokenTypes())
+        .filter(([, def]) => { const need = neededToolOf(def); return need && toolMeets(tool, need); })
+        .map(([id, def]) => def?.name || tokenName(id));
+    if (!names.length) return null;
+    const shown = names.slice(0, WORKS_SHOWN).join(', ');
+    return names.length > WORKS_SHOWN
+        ? t('itemTip.worksMore', { list: shown, n: names.length - WORKS_SHOWN })
+        : t('itemTip.works', { list: shown });
+}
+
 /** "1% chance to break each cycle" (a tool) or "… each kill" (a weapon); null when it never breaks. */
 function breakLine(item, tool) {
     const chance = breakChanceOf(item);
@@ -76,7 +91,6 @@ export function needsLine(item) {
  * Mounted only while a tooltip is open, so nothing here runs per frame.
  */
 export function itemTipFacts(item) {
-    const category = categoryOfItem(item?.id);
     const tool = toolOf(item);
     const hands = handsOf(item);
     const style = weaponStyleOf(item);
@@ -84,6 +98,7 @@ export function itemTipFacts(item) {
     return {
         type: itemTypeLabel(item),
         tool: tool ? t('itemTip.tool', { kind: toolKindLabel(tool.kind), tier: tool.tier }) : null,
+        works: worksLine(tool),
         // Said before a drop is refused for it (`EquipmentValidator.canHeroEquip`).
         needs: needsLine(item),
         // A tool breaks at the end of a work cycle, a weapon at a kill (`Breakage.js`).
@@ -95,8 +110,8 @@ export function itemTipFacts(item) {
         // What a worn piece resists, and what it costs: the styles it cuts, shown red.
         resists: resistLines(item),
         cuts: cutLines(item),
-        // A drink never heals, so its leftover restore amount is not offered as a promise.
-        restores: item?.restoreAmount > 0 && category !== 'drink' ? item.restoreAmount : null,
+        // Only food heals; a drink or potion is a buff, so a leftover amount is not offered as a promise.
+        restores: item?.restoreAmount > 0 && item.equipSlot === 'food' ? item.restoreAmount : null,
         tags: Array.isArray(item?.tags) ? item.tags.filter(Boolean) : [],
         description: typeof item?.description === 'string'
             ? item.description.replace(/^["']|["']$/g, '').trim()
@@ -139,6 +154,7 @@ export const ItemKindLines = ({ facts }) => (
 export const ItemToolLines = ({ facts }) => (
     <>
         {facts.tool && <div data-item-tip-tool className="text-white">{facts.tool}</div>}
+        {facts.works && <div data-item-tip-works className="text-white">{facts.works}</div>}
         {facts.needs && <div data-item-tip-needs className="text-white">{facts.needs}</div>}
         {facts.breaks && <div data-item-tip-breaks className="text-white">{facts.breaks}</div>}
     </>

@@ -142,6 +142,8 @@
     "itemTip": {
         "count": "×{count}",
         "tool": "{kind}, tier {tier}",
+        "works": "Works {list}",
+        "worksMore": "Works {list} and {n} more",
         "needs": "Needs {levels}",
         "restores": "Restores {amount} HP",
         "stat": {
