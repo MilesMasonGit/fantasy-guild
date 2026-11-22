@@ -165,12 +165,16 @@ describe('a hero holds a perk from its level on', () => {
         expect(earnedPerks(v)).toEqual([]);
     });
 
-    it('adds the scales of two perks naming one effect, capped at 5, into one reference', () => {
+    it('adds the scales of two perks naming one effect in full, past 5, into one reference', () => {
         registerSkillPerks({ mining: { perks: [
             { level: 10, effectId: 'k4_strong_arm', scale: 3 }, { level: 20, effectId: 'k4_strong_arm', scale: 4 }
         ] } });
         const refs = earnedPerkRefs(hero({ mining: 20, melee: 1 }));
-        expect(refs).toEqual([{ effectId: 'k4_strong_arm', scale: 5 }]);
+        expect(refs).toEqual([{ effectId: 'k4_strong_arm', scale: 7 }]);
+        const arm = perkStatementsOf(hero({ mining: 20, melee: 1 }));
+        expect(arm).toHaveLength(1);
+        expect(arm[0].payload.value).toBe(14);
+        expect(arm[0].effectTitle).toBe('Strong Arm VII');
     });
 });
 

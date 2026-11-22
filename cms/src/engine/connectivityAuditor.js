@@ -1,4 +1,4 @@
-import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, gearDefenceFindings, hallStarFindings } from '../utils/constants';
+import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, gearDefenceFindings, effectStackFindings, hallStarFindings } from '../utils/constants';
 import { eventProblems, EVENT_BIOMES } from '../../../src/config/eventTable.js';
 import { STANDS_ON_CHOICES } from '../../../src/systems/atlas/TerrainMap.js';
 
@@ -159,6 +159,18 @@ export function auditConnectivity(entities, solverRefusals = []) {
       entityType: f.entityType,
       issueType: 'Data Integrity',
       severity: 'Critical',
+      details: f.message.charAt(0).toUpperCase() + f.message.slice(1),
+    });
+  }
+
+  // An effect a hero's best stack of gear and perks pushes to its own limit (a chance at 100 %, the speed-up floor, a cost cut at 100 %): every source adds in full (owner), so the audit names where more stops helping. The game's own rule (`effectStackRule.js`), so this tab and the boot audit say the same thing.
+  for (const f of effectStackFindings({ items, effects, skillPerks })) {
+    issues.push({
+      entityId: f.entityId,
+      entityName: f.entityName,
+      entityType: f.entityType,
+      issueType: 'Data Integrity',
+      severity: 'Warning',
       details: f.message.charAt(0).toUpperCase() + f.message.slice(1),
     });
   }

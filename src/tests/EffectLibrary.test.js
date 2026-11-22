@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
     effectRefsOf, hasWorkingStatements, expandBearer, expandAll,
     duplicateRefsOf, usedBy, EFFECT_ID_PREFIX,
-    MAX_SCALE, normaliseScale, effectTitle, scaleStatement
+    MAX_SCALE, normaliseScale, effectTitle, scaleStatement, statementsFromEntry, statementsFromStack
 } from '../systems/effects/effectLibrary.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { statementCycleCost } from '../systems/board/Charges.js';
@@ -506,5 +506,37 @@ describe('the shipped content is unchanged by P2', () => {
             'token_iron_furnace:effect_faster_station:2',
             'token_iron_smithy:effect_faster_station:2',
         ]);
+    });
+});
+
+describe('a stack of several sources adds in full; one reference stays 1 to 5', () => {
+    const trawler = {
+        id: 'effect_trawler', name: 'Shrimp Trawler',
+        statements: [statementFor(KEYWORD.PROVIDES, { type: 'YIELD', bucket: 'percentage', value: 0.05 })],
+    };
+
+    it('expands a stack past 5 at its whole sum, titled with its numeral', () => {
+        const [statement] = statementsFromStack(trawler, { effectId: 'effect_trawler', scale: 7 });
+        expect(statement.payload.value).toBeCloseTo(0.35);
+        expect(statement.scale).toBe(7);
+        expect(statement.effectTitle).toBe('Shrimp Trawler VII');
+        expect(statementsFromStack(trawler, { effectId: 'effect_trawler', scale: 14 })[0].effectTitle).toBe('Shrimp Trawler XIV');
+    });
+
+    it('still holds one reference to 5, and a junk stack to a whole number of at least 1', () => {
+        expect(statementsFromEntry(trawler, { effectId: 'effect_trawler', scale: 7 })[0].scale).toBe(MAX_SCALE);
+        expect(statementsFromStack(trawler, { effectId: 'effect_trawler', scale: 0 })[0].scale).toBe(1);
+        expect(statementsFromStack(trawler, { effectId: 'effect_trawler', scale: 'x' })[0].scale).toBe(1);
+        expect(statementsFromStack(trawler, { effectId: 'effect_trawler', scale: 6.4 })[0].scale).toBe(6);
+    });
+
+    it('saturates a chance at 100 however high the stack', () => {
+        const lucky = { id: 'effect_lucky', name: 'Lucky', statements: [statementFor(KEYWORD.PROVIDES, { type: 'LOOT_MULT', bucket: 'flat', value: 15 })] };
+        expect(statementsFromStack(lucky, { effectId: 'effect_lucky', scale: 9 })[0].payload.value).toBe(100);
+    });
+
+    it('keeps the strength of an applied effect to its own 1 to 5', () => {
+        const venom = { id: 'effect_v', name: 'Venom', statements: [statementFor(KEYWORD.APPLIES, { effectId: 'effect_venom', scale: 1, chance: 50 })] };
+        expect(statementsFromStack(venom, { effectId: 'effect_v', scale: 8 })[0].payload.scale).toBe(MAX_SCALE);
     });
 });

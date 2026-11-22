@@ -32,6 +32,7 @@ import { perkFindings } from './perkRule.js';
 import { authoredHallSky } from '../../config/registries/hallStarRegistry.js';
 import { hallStarFindings } from './hallStarRule.js';
 import { gearDefenceFindings } from './gearDefenceRule.js';
+import { effectStackFindings } from './effectStackRule.js';
 import { authoredEvents } from '../../config/registries/eventRegistry.js';
 import { eventProblems, EVENT_BIOMES } from '../../config/eventTable.js';
 
@@ -112,9 +113,9 @@ function auditItemEffects(out) {
 
         for (const effectId of duplicateRefsOf(def)) {
             out.push(finding(where,
-                `names the effect "${effectId}" more than once. A hero's loadout merges duplicates ` +
-                `(their scales add, capped at 5), so the second reference adds nothing — remove it ` +
-                `and raise the scale instead.`));
+                `names the effect "${effectId}" more than once. A hero's loadout adds the two ` +
+                `(their scales add in full), so one reference at the summed scale says the same — ` +
+                `remove the second and raise the scale instead.`));
         }
 
         for (const { effectId } of effectRefsOf(def)) auditGuildOnlyAxes(out, where, getEffect(effectId));
@@ -752,6 +753,17 @@ function auditGearDefence(out) {
 }
 
 /**
+ * An effect a hero's best stack of gear and perks pushes to its own limit (a chance at 100 %, the
+ * speed-up floor, a cost cut at 100 %), where more stops helping. The rule lives in
+ * `effectStackRule.js`, shared with the CMS Economy Audit.
+ */
+function auditEffectStacks(out) {
+    for (const f of effectStackFindings({ items: ITEMS, effects: EFFECTS, skillPerks: authoredSkillPerks() })) {
+        out.push(finding(f.entityId ? `${f.entityType} "${f.entityId}"` : f.entityType, f.message));
+    }
+}
+
+/**
  * The events table: a row that can never land (no kind, no Token, a weight of 0), names a Token
  * that does not exist, a buff with no time, or ground and biomes the game does not know. The rule
  * lives in `eventTable.js`, shared with the CMS's Events page.
@@ -773,7 +785,7 @@ export function auditContent({ starterCamp = null } = {}) {
     const out = [];
     const steps = [
         auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditTools, auditPerks, auditHallStars,
-        auditGearDefence, auditEvents,
+        auditGearDefence, auditEffectStacks, auditEvents,
         auditHardcodedLists, (o) => auditStarterCamp(o, starterCamp)
     ];
     for (const step of steps) {

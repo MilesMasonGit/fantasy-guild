@@ -1,6 +1,6 @@
 import { perkRowsFor, skillsWithPerks } from '../../config/registries/perkRegistry.js';
 import { perksEarnedAt } from './perkTable.js';
-import { MAX_SCALE, normaliseScale } from '../effects/effectLibrary.js';
+import { normaliseScale } from '../effects/effectLibrary.js';
 
 /**
  * The milestone perks a hero holds, read off their levels every time they are asked for. Nothing is
@@ -37,8 +37,8 @@ export function earnedPerks(hero) {
 
 /**
  * The library references a hero's perks add up to, one per effect: two perks naming the same
- * effect (Forestry 25 and 50 both "Clean Felling") are one reference whose scales add, capped at
- * 5, as a loadout's are, so the effect's statements are never expanded twice on one hero.
+ * effect (Forestry 25 and 50 both "Clean Felling") are one reference whose scales add in full, as a
+ * loadout's do, so the effect's statements are never expanded twice on one hero.
  * @returns {Array<{ effectId: string, scale: number }>}
  */
 export function earnedPerkRefs(hero) {
@@ -47,7 +47,7 @@ export function earnedPerkRefs(hero) {
     const merged = new Map();
     for (const { effectId, scale } of perks) {
         const current = merged.get(effectId);
-        merged.set(effectId, current == null ? normaliseScale(scale) : Math.min(MAX_SCALE, current + scale));
+        merged.set(effectId, (current ?? 0) + normaliseScale(scale));
     }
     return [...merged].map(([effectId, scale]) => ({ effectId, scale }));
 }

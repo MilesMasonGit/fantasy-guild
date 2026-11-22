@@ -170,6 +170,7 @@ export { auditLifecycleBlocks } from '../../../src/systems/core/lifecycleAudit.j
 export { findUnknownRefs } from '../../../src/systems/core/unknownRefRule.js';
 // Gear's defence: field problems on a piece, and the best stack the content allows reaching 100 % in a type. The game's own rule and wording.
 export { gearDefenceFindings } from '../../../src/systems/core/gearDefenceRule.js';
+export { effectStackFindings } from '../../../src/systems/core/effectStackRule.js';
 // Guild Hall stars that cannot open, name what is gone, or carry a rule the guild cannot hold (a retired Camp Reach star). The game's own rule and wording.
 export { hallStarFindings } from '../../../src/systems/core/hallStarRule.js';
 

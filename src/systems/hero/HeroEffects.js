@@ -4,7 +4,7 @@ import { getGrid } from '../../config/registries/equipmentConstants.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { slotBacked } from '../equipment/heldCopies.js';
 import {
-    effectRefsOf, statementsFromEntry, normaliseScale, MAX_SCALE
+    effectRefsOf, statementsFromEntry, statementsFromStack
 } from '../effects/effectLibrary.js';
 import { KEYWORD } from '../effects/statements.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
@@ -22,7 +22,8 @@ import { skillsWithPerks, perkRowsFor } from '../../config/registries/perkRegist
  * library, but a rule reaches the hero and its cost is spent from the item stack.
  *
  * ⚠️ The loadout is ONE bearer, not nine. Two items referencing the same effect
- * apply it once: scales add, capped at MAX_SCALE. Expanding the same entry twice
+ * apply it once: scales add in full, with no cap (owner: numbers kept small instead, and the
+ * content audit names a stack that reaches an effect's own limit). Expanding the same entry twice
  * would produce two statements with the same statement id, and per-statement state
  * (an upkeep clock, a cooldown) is keyed by that id, so it would be shared between
  * two rules meant to be separate. A Token naming one entry twice is refused for this
@@ -81,12 +82,10 @@ export function loadoutRefs(hero) {
                 current = { scale: 0, itemIds: [], worn: { scale: 0, itemIds: [] } };
                 merged.set(effectId, current);
             }
-            // Scales add; the cap stops a build maxing one effect by carrying six of a thing.
-            current.scale = current.itemIds.length ? Math.min(MAX_SCALE, current.scale + scale) : normaliseScale(scale);
+            current.scale += scale;
             current.itemIds.push(itemId);
             if (worn) {
-                current.worn.scale = current.worn.itemIds.length
-                    ? Math.min(MAX_SCALE, current.worn.scale + scale) : normaliseScale(scale);
+                current.worn.scale += scale;
                 current.worn.itemIds.push(itemId);
             }
         }
@@ -221,8 +220,8 @@ function expandLoadout(hero, library) {
         const allWorn = worn.itemIds.length === itemIds.length;
         // Only when some, not all, of the items are worn: the always-on rules at the worn scale.
         const wornOnes = !allWorn && worn.itemIds.length
-            ? statementsFromEntry(entry, { effectId, scale: worn.scale }) : null;
-        statementsFromEntry(entry, { effectId, scale }).forEach((statement, i) => {
+            ? statementsFromStack(entry, { effectId, scale: worn.scale }) : null;
+        statementsFromStack(entry, { effectId, scale }).forEach((statement, i) => {
             if (!isAlwaysOn(statement) || allWorn) {
                 out.push({ ...statement, sourceItemIds: itemIds });
             } else if (wornOnes) {
@@ -251,7 +250,7 @@ function expandPerks(hero, library) {
         const entry = EFFECTS[ref.effectId];
         library?.set(ref.effectId, entry);
         if (!entry) continue;                       // ContentAudit reports it by name
-        for (const statement of statementsFromEntry(entry, ref)) {
+        for (const statement of statementsFromStack(entry, ref)) {
             out.push({ ...statement, chargeDelta: 0, sourceItemIds: [], perk: true });
         }
     }
