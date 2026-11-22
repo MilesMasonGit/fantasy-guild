@@ -27,6 +27,7 @@ build green) · bench-queued · eye-check · merged.*
 | 730 D2: guild-wide combat effects reach heroes; Sunder refused on stars (T-512), on D1 | builder | `fix/guild-combat-effects` (`hd2`) | building | Sun | |
 | 730 D7: a tool's tooltip names its Tokens and break chance; only food heals (T-517, T-525) | builder-lite | `fix/item-tooltip-tools-heal` (`gd7`) 40f03a8c | **built** (gate 709 green, UI and CMS only): whole diff read (Works list from neededToolOf and toolMeets, four names then and N more; Restores for food only; CMS heal amount on food only, no default 5). Look in the 730 batch. Content pack: clear the heal amount on six drinks and a potion | Sun | |
 | 730 D9: no reach field on an item or perk effect in the CMS (T-519) | builder-lite | `fix/no-reach-on-item-effects` (`gd9`) cf0c80fa | **built**, merges on the gate with the Mon 01:00 queue (CMS only): diff read; the reach-ignored line fixed by the director to show only beside the field. Content pack: clear nearby on 13 item and 9 perk effects (list in the builder report: daggers, bows, drinks, elixirs, the nine milestone perks) | Sun | |
+| 730 D8: retire the old tool Token path; equip refusals in one wording (T-518, T-520) | builder | `fix/retire-tool-tokens` (`gd8`) | building | Sun | |
 
 ## Director, batch 11: brief 700, faults waiting for content (owner, 2026-11-18 evening: merge 690 after the bench, start the next brief)
 
