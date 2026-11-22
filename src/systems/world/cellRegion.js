@@ -5,7 +5,7 @@ import { cellMat } from './cellMat.js';
 /**
  * Settling a cell writes its Region through the Atlas's generation (`Budget.js` → `Layout.js`):
  * one base recipe holding exactly the mat's natural work (`cellMat.js`), on its kit's ground, with
- * its camps, chests, Stone and any odd water. The arrival's enemies are not in the recipe: they
+ * its camps, chests, and the water and Stone its biome's row rolled. The arrival's enemies are not in the recipe: they
  * come onto the mat once the guild is there (`Arrival.js`).
  *
  * Pure: the caller hands it the tables, the Token skills and the name.
@@ -36,8 +36,9 @@ export function recipesOfMat(mat, { id, name = '' }) {
     };
     if (mat.camps.length) base.camps = mat.camps.map(c => ({ ...c }));
     if (mat.treasures.length) base.treasures = mat.treasures.map(t => ({ ...t }));
-    if (mat.water !== null) base.water = mat.water;
-    if (mat.inland) base.inland = mat.inland;
+    if (Number.isFinite(mat.water)) base.water = mat.water;
+    if (Array.isArray(mat.inland)) base.inland = [...mat.inland];
+    else if (mat.inland) base.inland = mat.inland;
     if (mat.stone.outcrops > 0 || mat.stone.ridge) base.stone = { ...mat.stone };
     return [base];
 }

@@ -17,7 +17,8 @@ import { WATER_KIND, SMALL_WATER } from './WaterShapes.js';
  *       nodes:     [{ typeId: 'token_oak_tree', weight: 6 }, { typeId: 'token_redberry_bush', weight: 1 }],
  *       camps:     [{ typeId: 'token_goblin_camp', count: 1 }],   // optional, the map's own
  *       treasures: [{ typeId: 'token_copper_chest', count: 1 }],  // optional, the map's own
- *       terrain: 'grass', water: 0 }                              // optional, see BIOME_GROUND
+ *       terrain: 'grass', water: 0,                               // optional, see BIOME_GROUND
+ *       inland: ['pond'] }                                        // optional, see BIOME_WATER
  *
  * It may also name `stone: { outcrops, ridge }`, the Stone terrain its mat holds (outcrops of rock,
  * and a ridge across the mat): blended like the sea, and written by the layout (`StoneShapes.js`). A
@@ -48,7 +49,9 @@ import { WATER_KIND, SMALL_WATER } from './WaterShapes.js';
 
 /**
  * The ground each of the first Base Maps writes, unless the map names its own `terrain` and
- * `water`. ⚠️ The Coast's water share is a placeholder until the owner tunes maps in the CMS.
+ * `water` (a world place names its water, rolled from its biome's row in the world tables).
+ * ⚠️ The sea's shares are the built-in biome table's (`config/biomeTerrain.js`; a test keeps the
+ * two the same).
  */
 export const BIOME_GROUND = Object.freeze({
     meadow: Object.freeze({ terrain: TERRAIN.GRASS, water: 0 }),
@@ -63,11 +66,13 @@ export const BIOME_GROUND = Object.freeze({
 });
 
 /**
- * The inland water each biome brings, by the settled world rounds (`world5.py` to `world7.py` in
- * `docs/active/research/ground_gen/`), beside the sea `BIOME_GROUND` gives the Coast: the layout picks one variety by its seed, a variety listed twice coming twice
- * as often. The meadows a lake, a river, or a lake with its river; the forest and the cherry grove
- * a pond; the mountain a tarn or a river; Yellowstone its sulphur springs; the Bog a marsh of many
+ * The inland water each biome brings when a map names none (the dev maps; a world place names its
+ * biome row's), by the settled world rounds (`world5.py` to `world7.py` in
+ * `docs/active/research/ground_gen/`), beside the sea `BIOME_GROUND` gives the Coast: the layout
+ * picks one variety by its seed, a variety listed twice coming twice as often. The meadows a lake,
+ * a river, or a lake with its river; the forest and the cherry grove a pond; the mountain a tarn or a river; Yellowstone its sulphur springs; the Bog a marsh of many
  * small ponds; the volcano and the Coast none inland. A biome not listed brings none.
+ * ⚠️ The built-in biome table's lists (`config/biomeTerrain.js`; a test keeps the two the same).
  */
 export const BIOME_WATER = Object.freeze({
     meadow: Object.freeze([WATER_KIND.LAKE_RIVER, WATER_KIND.LAKE_RIVER, WATER_KIND.LAKE, WATER_KIND.RIVER, WATER_KIND.SPLIT, WATER_KIND.SPRING]),
@@ -98,13 +103,16 @@ export const BIOME_SMALL_WATER = Object.freeze({
 
 /**
  * A Base Map recipe's ground, `{ terrain, water, inland }`: its own where it names them, else its
- * biome's. `inland` may name one variety (the dev panel's water views).
+ * biome's. `inland` may name one variety (the dev panel's water views, a wild island place) or a
+ * list to pick from (a world place's biome row; repeats kept, order kept).
  */
 export function groundOf(map) {
     const known = BIOME_GROUND[map.biome] || {};
     const water = Number.isFinite(map.water) ? map.water : (known.water || 0);
     const kinds = Object.values(WATER_KIND);
-    const inland = typeof map.inland === 'string' && kinds.includes(map.inland) ? [map.inland] : [...(BIOME_WATER[map.biome] || [])];
+    const inland = typeof map.inland === 'string'
+        ? (kinds.includes(map.inland) ? [map.inland] : [...(BIOME_WATER[map.biome] || [])])
+        : Array.isArray(map.inland) ? map.inland.filter(k => kinds.includes(k)) : [...(BIOME_WATER[map.biome] || [])];
     return { terrain: map.terrain || known.terrain || DEFAULT_TERRAIN, water: Math.min(1, Math.max(0, water)), inland };
 }
 

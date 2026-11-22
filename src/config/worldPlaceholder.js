@@ -71,27 +71,27 @@ export const PLACEHOLDER_WORLD_TABLES = Object.freeze({
     // Highland leans to stone, Riverside to water (owner). Creatures spread by biome.
     kits: [
         {
-            id: 'highland', name: 'Highland', biome: 'mountain', stone: 5,
+            id: 'highland', name: 'Highland', biome: 'mountain',
             work: { mining: 2, forestry: 1, farming: 0.5, fishing: 0.5, combat: 0.5 },
             camps: ['token_goblin_camp'], bossCamps: ['token_chief_tent']
         },
         {
-            id: 'woodland', name: 'Woodland', biome: 'forest', stone: 2,
+            id: 'woodland', name: 'Woodland', biome: 'forest',
             work: { forestry: 2, mining: 1, farming: 0.5, fishing: 0.5, combat: 0.5 },
             camps: ['token_wolf_den'], bossCamps: ['token_alpha_den']
         },
         {
-            id: 'plains', name: 'Plains', biome: 'meadow', stone: 1,
+            id: 'plains', name: 'Plains', biome: 'meadow',
             work: { farming: 2, forestry: 1, mining: 0.5, fishing: 0.5, combat: 0.5 },
             camps: ['token_wild_hive'], bossCamps: ['token_queens_hive']
         },
         {
-            id: 'wetland', name: 'Wetland', biome: 'bog', stone: 1,
+            id: 'wetland', name: 'Wetland', biome: 'bog',
             work: { alchemy: 1, fishing: 1, farming: 1, forestry: 0.5, combat: 0.5 },
             camps: ['token_thorn_thicket'], bossCamps: ['token_slime_pit']
         },
         {
-            id: 'riverside', name: 'Riverside', biome: 'coast', stone: 2,
+            id: 'riverside', name: 'Riverside', biome: 'coast',
             work: { fishing: 2, farming: 1, forestry: 0.5, mining: 0.5, combat: 0.5 },
             camps: ['token_crab_rocks'], bossCamps: ['token_tide_pool']
         }

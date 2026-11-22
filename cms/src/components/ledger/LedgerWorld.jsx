@@ -11,6 +11,7 @@ import { tokenKey, itemKey } from '../../../../src/systems/progression/ledger/en
 import { STRICT_RINGS, kitById, heroTokensOf } from '../../../../src/config/worldTablesShape.js';
 import { cellCentre, hexPoints, mapSize } from '../../../../src/ui/components/atlas/worldMapLayout.js';
 import { SeverityChip } from './LedgerProblems';
+import BiomeTable from './BiomeTable';
 
 const sectionHead = 'text-[10px] font-black uppercase tracking-wider text-gray-400';
 const card = 'rounded-xl border bg-[#1a1a1e] border-white/10 p-4';
@@ -150,6 +151,8 @@ export default function LedgerWorld({ onOpen, baseTables = undefined }) {
       </div>
 
       <WorldProblems plan={plan} focus={focus} onOpen={onOpen} onPick={(id) => { setPicked(id); if (plan.world.cells.find((c) => c.id === id)?.wild) setWild(true); }} />
+
+      <BiomeTable />
 
       <section className={`${card} space-y-3`} aria-label="Many worlds">
         <div className="flex flex-wrap items-center gap-2">
