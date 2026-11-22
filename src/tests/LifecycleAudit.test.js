@@ -597,7 +597,11 @@ const retiredKindsLeft = (tokens, recipes) => [
     ...Object.entries(tokens).filter(([, def]) => isRetiredStationKind(stationKindOf(def))).map(([id]) => ['warning', id, 'stationKind']),
     ...recipes.filter((r) => retiredStationKindsOf(r).length).map((r) => ['warning', r.id, 'stationKinds'])
 ];
-const shippedAllowed = (tokens, recipes) => [...withAmbushLeft(tokens), ...retiredKindsLeft(tokens, recipes)].sort();
+/** A camp still carrying the never-read `reach`: a warning until the owner's Sync clears it. */
+const campReachLeft = (tokens) => Object.entries(tokens)
+    .filter(([, def]) => def?.camp && typeof def.camp === 'object' && 'reach' in def.camp)
+    .map(([id]) => ['warning', id, 'camp.reach']);
+const shippedAllowed = (tokens, recipes) => [...withAmbushLeft(tokens), ...retiredKindsLeft(tokens, recipes), ...campReachLeft(tokens)].sort();
 
 describe('Lifecycle audit — reaches both audits', () => {
     it('the CMS Economy Audit shows each finding as a row, errors Critical and warnings Warning', () => {
