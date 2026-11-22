@@ -1,7 +1,6 @@
 // The task ring: a ring round every job in progress, the ground inside it dimmed and greyed.
 
 import { artRadiusOf } from '../../../config/matGeometry.js';
-import { HERO_HIT_PX, HERO_BOX_PX } from './boardConstants.js';
 import { ringTween, ringPxAt } from './growRing.js';
 import { pixelRingCells, pixelRingPath } from './pixelRing.js';
 
@@ -14,15 +13,15 @@ export const TASK_DIM_LIGHT = 0.6;
 /** How much of the ground's colour inside a ring is drained to grey: 0 none, 1 all. Tuned at the look. */
 export const TASK_DIM_GREY = 0.8;
 
-/** The room a ring leaves round its Token and heroes: this share of its radius, then whole art pixels. */
-export const TASK_RING_PAD = 0.1;
+/** The room a ring leaves round its Token and heroes, in whole art pixels. Tuned at the look. */
 export const TASK_RING_PAD_PX = 2;
 
 /**
  * One job's ring, in mat units: the circle round the box that holds the Token's body
- * (`artRadiusOf`) and each hero's box (`HERO_HIT_PX` × `HERO_BOX_PX` on their point), padded by
- * {@link TASK_RING_PAD} and {@link TASK_RING_PAD_PX}. Centred on the box, so a lone hero on one
- * side pulls the ring toward them and two heroes on both sides centre it on the Token.
+ * (`artRadiusOf`) and the point each hero working it stands on, plus {@link TASK_RING_PAD_PX}.
+ * Centred on the box, so a lone hero on one side pulls the ring toward them and two heroes on
+ * both sides centre it on the Token. The size of the owner's pick (look C): 48 art pixels round a
+ * one-cell Token and one hero at a 1920 × 1080 window, the hero's figure just touching the ring.
  * @param {{id: string, x: number, y: number, typeId: string}} token
  * @param {{x: number, y: number}[]} heroes where each hero working it stands
  * @param {number} artScale mat units per art pixel
@@ -35,12 +34,12 @@ export function taskRingOf(token, heroes, artScale) {
     let top = token.y - body;
     let bottom = token.y + body;
     for (const h of heroes) {
-        left = Math.min(left, h.x - HERO_HIT_PX / 2);
-        right = Math.max(right, h.x + HERO_HIT_PX / 2);
-        top = Math.min(top, h.y - HERO_BOX_PX / 2);
-        bottom = Math.max(bottom, h.y + HERO_BOX_PX / 2);
+        left = Math.min(left, h.x);
+        right = Math.max(right, h.x);
+        top = Math.min(top, h.y);
+        bottom = Math.max(bottom, h.y);
     }
-    const r = (Math.hypot(right - left, bottom - top) / 2) * (1 + TASK_RING_PAD) + TASK_RING_PAD_PX * artScale;
+    const r = Math.hypot(right - left, bottom - top) / 2 + TASK_RING_PAD_PX * artScale;
     return { id: token.id, x: (left + right) / 2, y: (top + bottom) / 2, r };
 }
 

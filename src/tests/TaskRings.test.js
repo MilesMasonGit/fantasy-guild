@@ -19,12 +19,11 @@ import { manualFrames } from './fixtures/manualFrames.js';
 import { RING_GROW_MS } from '../ui/components/board/growRing.js';
 import { setDrawingPaused } from '../ui/components/board/frameClock.js';
 import { pixelRingCells } from '../ui/components/board/pixelRing.js';
-import { HERO_HIT_PX, HERO_BOX_PX } from '../ui/components/board/boardConstants.js';
 import { MAT_Z } from '../ui/components/board/matLayers.js';
 import { TaskRings } from '../ui/components/board/TaskRings.jsx';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import {
-    TASK_DIM_LIGHT, TASK_DIM_GREY, TASK_RING_PAD, TASK_RING_PAD_PX,
+    TASK_DIM_LIGHT, TASK_DIM_GREY, TASK_RING_PAD_PX,
     taskRingOf, taskJobsOf, taskJobsKey, taskRingTarget, createTaskRingSet, diskRows, dimRuns, dimPath
 } from '../ui/components/board/taskRing.js';
 
@@ -53,21 +52,28 @@ describe('a job\'s ring: fitted round the Token and its heroes', () => {
     const token = { id: 't1', typeId: 'fixture_producer', x: 600, y: 400 };
     const body = artRadiusOf('fixture_producer');
 
-    it('one hero beside it: the circle round the box of both, padded, centred between them', () => {
+    it('one hero beside it: the circle round the box of the Token body and where the hero stands, centred between them', () => {
         const hero = { x: 600 + body + 32, y: 400 };
         const ring = taskRingOf(token, [hero], SCALE);
         const left = token.x - body;
-        const right = hero.x + HERO_HIT_PX / 2;
-        const top = Math.min(token.y - body, hero.y - HERO_BOX_PX / 2);
-        const bottom = Math.max(token.y + body, hero.y + HERO_BOX_PX / 2);
+        const right = hero.x;
+        const top = token.y - body;
+        const bottom = token.y + body;
         expect(ring.x).toBe((left + right) / 2);
-        expect(ring.y).toBe((top + bottom) / 2);
-        expect(ring.r).toBeCloseTo(Math.hypot(right - left, bottom - top) / 2 * (1 + TASK_RING_PAD) + TASK_RING_PAD_PX * SCALE);
-        // Every corner of the Token's body box and the hero's box is inside.
+        expect(ring.y).toBe(token.y);
+        expect(ring.r).toBeCloseTo(Math.hypot(right - left, bottom - top) / 2 + TASK_RING_PAD_PX * SCALE);
+        // Every corner of the box is inside, and so is the hero's point.
         for (const [x, y] of [[left, top], [right, top], [left, bottom], [right, bottom]]) {
             expect(Math.hypot(x - ring.x, y - ring.y)).toBeLessThan(ring.r);
         }
         expect(ring.x).toBeGreaterThan(token.x);
+    });
+
+    it('the pick C: 48 art pixels round a one-cell Token and one hero at a 1920 x 1080 window', () => {
+        // That window fits the mat at 0.9: two screen pixels an art pixel, 2.22 mat units an art pixel.
+        const artScale = 2 / 0.9;
+        const ring = taskRingOf(token, [{ x: 600 + body + 32, y: 400 }], artScale);
+        expect(taskRingTarget(ring, artScale).px).toBe(48);
     });
 
     it('two heroes on either side: centred on the Token, and bigger than for one', () => {
@@ -201,8 +207,10 @@ describe('⭐ one dim for every ring: overlapping rings dim the ground once', ()
     it('two overlapping rings: every cell of their union is covered once, never twice', () => {
         const a = { cx: 100, cy: 100, px: 40 };
         const b = { cx: 150, cy: 110, px: 36 };
-        const union = new Set([...cellsInside(a), ...cellsInside(b)]);
-        const shared = [...cellsInside(a)].filter(c => cellsInside(b).has(c));
+        const inA = cellsInside(a);
+        const inB = cellsInside(b);
+        const union = new Set([...inA, ...inB]);
+        const shared = [...inA].filter(c => inB.has(c));
         expect(shared.length).toBeGreaterThan(500);
         let covered = 0;
         for (const [y, runs] of dimRuns([a, b])) {

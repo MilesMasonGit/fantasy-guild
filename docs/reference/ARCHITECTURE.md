@@ -375,10 +375,18 @@ things shrink with the window, so reach and every rule are the same at any size.
 `MatBoard.jsx` (`src/ui/components/board/MatBoard.jsx:62-…`, memoised) draws every Token
 (`MatToken.jsx`), hero (`MatHero.jsx`) and flag (`FlagLayer.jsx`) as **positioned DOM elements**
 keyed by instance id, in the z-layers set out in `matLayers.js` (`MAT_Z`: surface, ground,
-ground fx, grid, Tokens, heroes, sky, rings, loot, work plate). One `pointermove` on the mat asks
+ground fx, task dim and task rings, grid, Tokens, heroes, sky, rings, loot, work plate). One `pointermove` on the mat asks
 the engine which Token is under the pointer (`MatBoard.jsx:62-75`). Other screens: the Guild
 Hall's star web (`GuildHallBoard.jsx`, `HallSky.jsx`) and the Atlas with the hex world map
 (`src/ui/components/atlas/`).
+
+**Task rings** (`TaskRings.jsx`, `taskRing.js`): a work-green ring round every job in progress
+(a Token with a hero standing beside it working it, not stuck), on the ground under every Token.
+The ground inside is dimmed and greyed by **one** layer for all the rings, cut to their union, so
+overlaps dim once: a grey drawn with `mix-blend-mode: saturation`, then a translucent black, both
+blending only with the ground and its ambient life below them. Drawn when a job starts or ends;
+nothing runs at rest. A worked Token and its hero have no outline of their own any more
+(`spriteOutline.js`).
 
 ### 5.2 What moves and how
 
@@ -391,7 +399,8 @@ Hall's star web (`GuildHallBoard.jsx`, `HallSky.jsx`) and the Atlas with the hex
 - **Frame clocks** (`src/ui/components/board/frameClock.js`): `onStep` (every 100 ms, all
   subscribers in one frame; the work bars, `workBar.js:57`), `onDue` (each subscriber at its own
   next time: hero and enemy sprite frames, ambient life at 8/s, loot bob, token fx, clock poses).
-  `onFrame` (every frame) exists but **has no subscriber in game code** (grep, 2026-11-06).
+  `onFrame` (every frame): only while a ring grows or shrinks (`growRing.js`'s reach ring,
+  `TaskRings`), unsubscribed once it stands still.
 - **One-shot animations** use the Web Animations API, each started through
   `fx/oneShot.js` `animateFx` (hit knocks, fx, loot arcs, spawns, settles; §5.4), or framer-motion
   (9 files).
@@ -660,5 +669,4 @@ For the doc audit; nothing below was edited.
 8. `package.json` `depcruise:graph` needs `dot` (not installed).
 11. Commits per tick (§3.4) were last measured 2026-10-13; `PERFORMANCE.md` itself was flagged
     out of date by the round-3 review (§2.E there), not re-checked here.
-12. `src/ui/components/board/frameClock.js`: `onFrame` has no game callers (tests only), though
-    the header presents it as one of the mat's three clocks.
+12. (Resolved by brief 720: `onFrame` drives the growing and shrinking rings.)
