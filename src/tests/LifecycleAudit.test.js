@@ -247,7 +247,7 @@ describe('Lifecycle audit — errors: shape rules', () => {
 
     it('a foundation kind that is not one of FOUNDATION_KINDS', () => {
         expectOne((w) => { w.tokens.token_stone_foundation.foundation.kind = 'marble'; },
-            { id: 'token_stone_foundation', field: 'foundation.kind', includes: ['marble', 'wood, stone, bench, farmland, excavation, battlefield'] });
+            { id: 'token_stone_foundation', field: 'foundation.kind', includes: ['marble', 'wood, stone, farmland, excavation, battlefield'] });
     });
 
     it('a shop skill icon that is not a real skill', () => {
