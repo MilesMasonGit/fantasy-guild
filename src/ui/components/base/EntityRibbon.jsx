@@ -17,8 +17,8 @@ import { PixelGlyph } from './PixelGlyph.jsx';
  * `amount` shows a count abbreviated (`+5.9k`, after `sign`) that crossfades to the exact number
  * (`+5,900`) on hover, coloured by `countClassName` when given; `countText` shows its text as
  * given. `icon` replaces the sprite (a skill's icon). `badge` stands just before the count (a
- * small mark). `wrap` lets a long name run onto a second line instead of being cut off (a narrow
- * card).
+ * small mark). `wrap` lets a long name and subtitle run onto a second line instead of being cut off (a
+ * narrow card).
  * Other props (data attributes, `style`) go on the bar.
  */
 export const EntityRibbon = ({
@@ -225,7 +225,7 @@ export const EntityRibbon = ({
                     {displayName}
                 </span>
                 {subLabel && (
-                    <span className={cn(sizeConfig.sub, 'text-gi-muted truncate leading-tight mt-0.5')}>
+                    <span className={cn(sizeConfig.sub, 'text-gi-muted leading-tight mt-0.5', wrap ? 'break-words' : 'truncate')}>
                         {subLabel}
                     </span>
                 )}

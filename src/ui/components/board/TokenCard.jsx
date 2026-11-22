@@ -295,8 +295,8 @@ const RequiresSection = ({ block, effects }) => {
     );
 };
 
-const MakesSection = ({ makes, effects }) => {
-    if (!makes.length) return null;
+const MakesSection = ({ makes, bonus = [], effects }) => {
+    if (!makes.length && !bonus.length) return null;
     return (
         <Section data-card-block="makes">
             <Heading>Makes</Heading>
@@ -310,6 +310,22 @@ const MakesSection = ({ makes, effects }) => {
                         maxQty={m.max}
                         chance={m.chance != null ? chanceText(m.chance) : undefined}
                         badge={itemBadges(effects?.outputs, m.itemId)}
+                        size="sm"
+                        wrap
+                        onInspect={lookUpRibbon}
+                    />
+                ))}
+                {bonus.map((b, i) => (
+                    <EntityRibbon
+                        key={`bonus:${b.heroId}:${b.itemId}:${i}`}
+                        kind="item"
+                        id={b.itemId}
+                        name={b.text}
+                        subtitle={b.note}
+                        countText=""
+                        title={`${b.text} · ${b.note}`}
+                        data-card-bonus={b.itemId}
+                        data-card-bonus-hero={b.heroId}
                         size="sm"
                         wrap
                         onInspect={lookUpRibbon}
@@ -681,7 +697,7 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
             case CARD_BLOCK.RECIPE: return [
                 <RecipeChoice key="recipe" block={block} instanceId={instanceId} onChangeRecipe={() => setView('recipes')} />,
                 <RequiresSection key="requires" block={block} effects={effects} />,
-                <MakesSection key="makes" makes={block.makes} effects={effects} />,
+                <MakesSection key="makes" makes={block.makes} bonus={block.bonus} effects={effects} />,
                 block.rare ? <DropsSection key="rare" rare={block.rare} effects={effects} /> : null,
                 block.catches ? <CatchSection key="catch" catches={block.catches} effects={effects} /> : null
             ];

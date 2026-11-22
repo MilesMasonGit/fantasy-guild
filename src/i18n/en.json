@@ -785,7 +785,8 @@
             "drops": "Drops",
             "chanceBase": "{chance} base",
             "chanceBonus": "{effect} {amount} ({source})",
-            "chanceResult": "= {chance}"
+            "chanceResult": "= {chance}",
+            "bonusDrop": "bonus ({source})"
         }
     },
     "events": {
