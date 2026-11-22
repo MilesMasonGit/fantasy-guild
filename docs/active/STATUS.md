@@ -22,7 +22,8 @@ build green) · bench-queued · eye-check · merged.*
 | 720 R4: the task ring as picked (T-595), after the owner's pick | engineer | | queued | | |
 | 730 D1: the Hall pays once a lap; no work-cycle effect without a work cycle (T-511, T-514) | builder-lite | `fix/hall-one-lap` (`hd1`) 8d8117dd | **built**, director suite pending (the builder got no full run under six agents): diff read, the Hall ids removed were dead (the Hall has no work config). Owner pack after merge: strip the times from the three Hall lines | Sun | |
 | 730 D5: the same effect adds in full, no cap of 5 (T-516) | builder | `fix/effects-add-in-full` (`gd5`) | building | Sun | |
-| 735 V2: Recovery shortens running wounds; Burning on every meal (T-528, T-529) | builder-lite | `fix/recovery-burning` (`hv2`) | building | Sun | |
+| 735 V2: Recovery shortens running wounds; Burning on every meal (T-528, T-529) | builder-lite | `fix/recovery-burning` (`hv2`) b953bf81 | **built**, bench queued (Mon 01:00, same work expected): whole diff read (wound rescaled by share left via woundedTotalMs; Food Healing on every meal; Wound Time label now Recovery, golden regenerated) | Sun | |
+| 735 V3: levelling up names the perk and what it unlocks; perk tables every 5 levels (T-524, T-523) | builder | `feat/level-up-unlocks` (`hv3`) | building | Sun | |
 
 ## Director, batch 11: brief 700, faults waiting for content (owner, 2026-11-18 evening: merge 690 after the bench, start the next brief)
 
