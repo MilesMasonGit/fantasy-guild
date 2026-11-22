@@ -9,7 +9,7 @@ build green) · bench-queued · eye-check · merged.*
 
 ## Director, batch 12: briefs 710 to 800, the audit fixes (owner, 2026-11-21: work autonomously, beyond the usual builder cap; eye-checks only where the look changes, batched)
 
-*Sun 22 Nov, 00:15. Where we are: thirteen briefs queued (710, 720, 730, 735, 790, 795, 740, 750, 760, 765, 770, 780, 800). Building wave 1: 710 P1 names and Limes, 710 P2 the idle hover, 720 R1 the animated ring, 720 R3 the task ring screenshot page. Next: 710 P3 after P2, 720 R2 after R1; then 730, 735, 790 W1. Owner: the task ring pick when R3's page is ready. Blockers: none.*
+*Sun 22 Nov, 00:15. Where we are: thirteen briefs queued (710, 720, 730, 735, 790, 795, 740, 750, 760, 765, 770, 780, 800). Building wave 1: 710 P1 names and Limes, 710 P2 the idle hover, 720 R1 the animated ring, 720 R3 the task ring screenshot page, 730 D1 the Hall once a lap, 730 D5 effects add in full (six agents, owner allowed beyond the cap). Benches: the next window is Mon 01:00 (weekdays only), so merges queue for it. Next: 710 P3 after P2, 720 R2 after R1; then 730, 735, 790 W1. Owner: the task ring pick when R3's page is ready. Blockers: none.*
 
 | Phase | Tier | Branch (worktree) | State | Day planned | Day done |
 |---|---|---|---|---|---|
@@ -20,6 +20,8 @@ build green) · bench-queued · eye-check · merged.*
 | 720 R2: flags in the middle, on hover (T-594), after R1 | builder | | queued | | |
 | 720 R3: task ring look pick, screenshot page (T-595) | builder | `feat/task-ring-pick` (`r3`) | building | Sun | |
 | 720 R4: the task ring as picked (T-595), after the owner's pick | engineer | | queued | | |
+| 730 D1: the Hall pays once a lap; no work-cycle effect without a work cycle (T-511, T-514) | builder-lite | `fix/hall-one-lap` (`hd1`) | building | Sun | |
+| 730 D5: the same effect adds in full, no cap of 5 (T-516) | builder | `fix/effects-add-in-full` (`gd5`) | building | Sun | |
 
 ## Director, batch 11: brief 700, faults waiting for content (owner, 2026-11-18 evening: merge 690 after the bench, start the next brief)
 
