@@ -375,7 +375,7 @@ const CatchSection = ({ catches: { heroName, setup, unable, groups }, effects })
 );
 
 /** What a lifecycle line's icon reads as in the Events section, unless the line names itself. */
-const EVENT_LABEL = { grow: 'Grows', regrow: 'Regrows', spawn: 'Spawns', turn: 'Turns', clock: 'Timer', reach: 'Reach' };
+const EVENT_LABEL = { grow: 'Grows', regrow: 'Regrows', spawn: 'Spawns', clock: 'Timer', reach: 'Reach' };
 
 const EventsSection = ({ lines }) => (
     <Section data-card-block="lifecycle" className="ui-text-body text-gi-text">

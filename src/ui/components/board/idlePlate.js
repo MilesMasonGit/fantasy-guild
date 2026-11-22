@@ -9,7 +9,7 @@ import { t } from '../../../i18n/index.js';
 /**
  * The idle plate: a Token nobody works, once the pointer rests on it, gets the work plate's look
  * under itself with whatever applies to it: what it waits for, its charges, a spawner's count, a
- * quest's progress and the time to its next change (refill, growth, ripening, turn). With nothing
+ * quest's progress and the time to its next change (refill, growth, ripening). With nothing
  * to say there is no plate. No React here: `IdlePlate` (WorkPlateLayer.jsx) draws it.
  * An enemy never gets one: hovered, it shows its name and HP only.
  */
@@ -21,12 +21,12 @@ export const IDLE_TIPS = Object.freeze({
     spawner: (text) => `Spawned: ${text}. It stops at the limit`
 });
 
-/** Each timer's glyph (`PixelGlyph`'s): a refill, a growth or ripening, a turn. */
-const TIMER_GLYPH = Object.freeze({ respawn: 'regrow', grow: 'grow', ripen: 'grow', turn: 'turn', leave: 'clock' });
+/** Each timer's glyph (`PixelGlyph`'s): a refill, a growth or ripening, an event's leaving. */
+const TIMER_GLYPH = Object.freeze({ respawn: 'regrow', grow: 'grow', ripen: 'grow', leave: 'clock' });
 
 /**
  * The timer cell from one read of the Token's clock (`MatToken`'s `readTimer`: `{ kind: 'respawn'
- * | 'grow' | 'ripen' | 'turn' | 'leave', inMs, ... }`), or null with nothing counting. `leave` is an
+ * | 'grow' | 'ripen' | 'leave', inMs, ... }`), or null with nothing counting. `leave` is an
  * event Token's time until it goes (`EventTokens.leavesInMs`).
  * @returns {{kind: 'timer', glyph: string, text: string, tip: string}|null}
  */
@@ -43,13 +43,8 @@ export function timerCellOf(roll) {
             : `Resting. Refills in ${formatDuration(roll.inMs).replace(/ /g, ' ')}`;
     } else if (roll.kind === 'grow') {
         tip = `Grows into ${tokenName(roll.into) || 'something new'} in ${text}`;
-    } else if (roll.kind === 'ripen') {
-        tip = `${getRecipe(roll.cropId)?.name || 'Its crop'} ripe in ${text}`;
     } else {
-        const chance = `${roll.chance}% chance`;
-        tip = roll.back
-            ? `Next roll to turn back in ${text} (${chance})`
-            : `Next roll to turn into something else in ${text} (${chance})`;
+        tip = `${getRecipe(roll.cropId)?.name || 'Its crop'} ripe in ${text}`;
     }
     return { kind: CELL.TIMER, glyph: TIMER_GLYPH[roll.kind] || 'clock', text, tip };
 }

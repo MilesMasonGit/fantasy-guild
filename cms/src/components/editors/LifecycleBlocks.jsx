@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Plus, X, Sprout } from 'lucide-react';
 import { useEntityStore, makeLifecycleBlock, makeWeightedTokenEntry, makeTrickleEntry, TOKEN_LIFECYCLE_BLOCKS } from '../../stores/useEntityStore';
 import {
-  FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_MODES, RESPAWN_DEFAULTS, RESPAWN_MIN_MS, skillsByLayer,
+  FOUNDATION_KINDS, RESPAWN_MODES, RESPAWN_DEFAULTS, RESPAWN_MIN_MS, skillsByLayer,
   expandBearer, stationSkillOf, stationKindOf, stationKindOffers, stationKindLabel, cropTermsOf,
   fieldOf, STANDARD_REACH_U, SKILLS, isWarCampBlock,
 } from '../../utils/constants';
@@ -12,14 +12,13 @@ import SpritePickerModal from './SpritePickerModal';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
 /**
- * The Token Lifecycle blocks: spawner, grows, turns, foundation, shop, trickle, respawn, field and camp, each added or removed as a whole.
+ * The Token Lifecycle blocks: spawner, grows, foundation, shop, trickle, respawn, field and camp, each added or removed as a whole.
  * ⚠️ Removing a block writes `undefined`, which JSON.stringify omits, so an absent block stays absent in the file.
  */
 
 const BLOCK_INFO = {
-  spawner: { title: 'Spawner', what: 'Adds new Tokens to the mat on a clock, up to its family’s cap.' },
+  spawner: { title: 'Spawner', what: 'Adds new Tokens to the mat on a clock, up to its allowance.' },
   grows: { title: 'Grows', what: 'Becomes another Token after a time (Sapling → Tree); it may need a Token in reach and cost an item (Stump → Sapling).' },
-  turns: { title: 'Turns', what: 'Rolls a chance every cycle to turn into one of a list, and the same to turn back (Coast ↔ Shrimp Coast).' },
   foundation: { title: 'Foundation', what: 'Bought at the Shop and built on with a recipe.' },
   shop: { title: 'Shop', what: 'Sold at the Shop, priced in items.' },
   trickle: { title: 'Passive Production', what: 'Drops these items beside the Token once a lap (10 minutes, shortened by Guild Hall stars), all on one timer, no hero needed (Guild Hall only, for now). The Wishing Well adds its Water to the Hall’s.' },
@@ -83,9 +82,6 @@ export default function LifecycleBlocks({ token, onChange }) {
                   {key === 'grows' && (
                     <GrowsBlock block={token.grows} selfId={token.id} tokenOptions={tokenOptions} items={items} onChange={(v) => set('grows', v)} />
                   )}
-                  {key === 'turns' && (
-                    <TurnsBlock block={token.turns} tokenOptions={tokenOptions} onChange={(v) => set('turns', v)} />
-                  )}
                   {key === 'foundation' && (
                     <FoundationBlock block={token.foundation} onChange={(v) => set('foundation', v)} />
                   )}
@@ -135,26 +131,8 @@ function SpawnerBlock({ block, tokenOptions, items, onChange }) {
         canCreate={false}
         onChange={(upkeep) => patch({ upkeep })}
       />
-      {/* `withinReach: true`, written ONLY when ticked: the game's `SpawnerSystem.plantsWithinReach` reads it. */}
-      <label className="flex items-center gap-2 cursor-pointer select-none" title="A Forest: it plants only within its reach, and its allowance counts the trees standing in its reach (a map's included), not every one on the mat.">
-        <input
-          type="checkbox"
-          aria-label="Plants within its reach"
-          data-field="within-reach"
-          checked={block.withinReach === true}
-          onChange={(e) => {
-            const rest = { ...block };
-            delete rest.withinReach;
-            onChange(e.target.checked ? { ...rest, withinReach: true } : rest);
-          }}
-          className="rounded border-white/10 text-emerald-500 cursor-pointer"
-        />
-        <span className="text-xs text-gray-300">Plants within its reach</span>
-      </label>
       <p className="text-[10px] text-gray-600">
-        {block.withinReach === true
-          ? 'Lands its Tokens only within its reach; its allowance counts its family standing there, map Tokens included.'
-          : 'Lands its Tokens at the nearest free spot; its allowance adds to every spawner of the same family across the mat.'}
+        Lands its Tokens within its reach, and its allowance counts its family standing there, map Tokens included. An enemy camp lands anywhere and counts only what it spawned.
       </p>
     </div>
   );
@@ -219,38 +197,6 @@ function GrowsBlock({ block, selfId, tokenOptions, items, onChange }) {
         {Array.isArray(block.cost) && block.cost.length
           ? ' When it grows it pays the cost; with none in the Bank it stops and says what it needs.'
           : ''}
-      </p>
-    </div>
-  );
-}
-
-/** Once per cycle the Token rolls its chance to turn; the turned Token rolls the same cycle and chance to turn back. A block without a cycle or chance runs on the game's defaults. */
-function TurnsBlock({ block, tokenOptions, onChange }) {
-  const rest = { ...block };
-  delete rest.lastsMs;
-  const patch = (p) => onChange({ ...rest, ...p });
-  return (
-    <div className="space-y-3">
-      <WeightedTokenList
-        label="Turns into"
-        entries={block.into || []}
-        tokenOptions={tokenOptions}
-        onChange={(into) => patch({ into })}
-      />
-      <div className="grid grid-cols-2 gap-3">
-        <IntField
-          label="Roll every (ms)" min={1000} step={1000}
-          value={block.everyMs ?? TURN_DEFAULTS.everyMs}
-          onChange={(everyMs) => patch({ everyMs })}
-        />
-        <IntField
-          label="Chance to turn (%)" min={1} max={100}
-          value={block.chance ?? TURN_DEFAULTS.chance}
-          onChange={(chance) => patch({ chance })}
-        />
-      </div>
-      <p className="text-[10px] text-gray-600">
-        The same cycle and chance turn it back.
       </p>
     </div>
   );

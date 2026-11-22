@@ -1,15 +1,15 @@
 // Content audit for the Token Lifecycle blocks.
 
 import {
-    FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_MODES, respawnOf, foundationTierOf, foundationMinTierOf, foundationTierMeets,
+    FOUNDATION_KINDS, RESPAWN_MODES, respawnOf, foundationTierOf, foundationMinTierOf, foundationTierMeets,
     STATION_KINDS, stationKindOffers, isRetiredStationKind, retiredStationKindsOf, stationKindLabel
 } from '../../config/registries/tokenConstants.js';
 import { stationSkillOf, stationKindOf, getProvidedTagsWithTiers, statementsOf, KEYWORD } from '../effects/statements.js';
 import { neverWearsReason, NEVER_WEARS_WHY } from './wearRule.js';
 
 /**
- * The one checker for the nine Token Lifecycle blocks (`spawner`, `grows`,
- * `turns`, `foundation`, `shop`, `trickle` (Passive Production), `respawn`, `field`, `camp`) and the recipe
+ * The one checker for the eight Token Lifecycle blocks (`spawner`, `grows`,
+ * `foundation`, `shop`, `trickle` (Passive Production), `respawn`, `field`, `camp`) and the recipe
  * fields `foundationKinds`, `foundationMinTier` and `crop`, shared by the game's boot audit (`ContentAudit`) and the
  * CMS's Economy Audit (`connectivityAuditor`), so the two can never disagree.
  *
@@ -37,7 +37,7 @@ import { neverWearsReason, NEVER_WEARS_WHY } from './wearRule.js';
 const GUILD_HALL_ID = 'token_guild_hall';
 const MIN_MS = 1000;
 
-const BLOCKS_THAT_DEFINE = ['spawner', 'turns', 'foundation'];
+const BLOCKS_THAT_DEFINE = ['spawner', 'foundation'];
 
 function asMap(collection) {
     if (!collection) return {};
@@ -191,11 +191,11 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
         const err = (field, text) => tokenError(id, field, text);
         const warn = (field, text) => tokenWarning(id, field, text);
 
-        // ── At most one of spawner / turns / foundation ──
+        // ── At most one of spawner / foundation ──
         const defining = BLOCKS_THAT_DEFINE.filter((b) => def[b]);
         if (defining.length > 1) {
             err(defining.join(', '),
-                `has ${defining.join(' and ')} blocks; a Token may have at most one of spawner, turns and foundation (they would fight over what the Token is).`);
+                `has ${defining.join(' and ')} blocks; a Token may have at most one of spawner and foundation (they would fight over what the Token is).`);
         }
 
         // ── charges on a station or a support: never spent (`wearRule.js`) ──
@@ -222,10 +222,6 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
             });
             if (upkeep.length === 0) {
                 warn('spawner.upkeep', 'spawner has no upkeep, so it spawns for free (allowed; SP-70 is decided per Token).');
-            }
-
-            if (s.withinReach !== undefined && typeof s.withinReach !== 'boolean') {
-                err('spawner.withinReach', `spawner "plants within its reach" is ${show(s.withinReach)}; it must be ticked or not.`);
             }
 
             if (spawnerFamily(s, tokens).has(id)) {
@@ -258,37 +254,6 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
                         checkPositive(err, `grows.cost[${i}].quantity`, `grow cost quantity of ${show(entry?.itemId ?? '?')}`, entry?.quantity);
                     });
                 }
-            }
-        }
-
-        // ── turns ──
-        if (def.turns) {
-            const t = def.turns;
-            const into = checkList(err, 'turns.into', 'turns list', t.into);
-            into.forEach((entry, i) => {
-                const target = entry?.typeId;
-                if (target === id) {
-                    err(`turns.into[${i}].typeId`, 'turns into itself.');
-                } else {
-                    checkTokenRef(err, `turns.into[${i}].typeId`, 'turns into', target);
-                    if (hasValue(target) && tokens[target]?.turns) {
-                        err(`turns.into[${i}].typeId`,
-                            `turns into ${tokenLabel(target)}, which has a turns block of its own; a turned Token cannot turn again.`);
-                    }
-                }
-                checkPositive(err, `turns.into[${i}].weight`, `turns weight for ${show(target ?? '?')}`, entry?.weight);
-            });
-            // A roll every `everyMs` with `chance` percent, both ways.
-            checkTime(err, 'turns.everyMs', 'turns every', t.everyMs);
-            if (hasValue(t.chance)) {
-                if (!(typeof t.chance === 'number' && Number.isFinite(t.chance) && t.chance > 0 && t.chance <= 100)) {
-                    err('turns.chance', `turns chance is ${show(t.chance)}; it must be a percent above 0 and at most 100.`);
-                }
-            } else {
-                warn('turns.chance', `turns has no chance, so it rolls the default ${TURN_DEFAULTS.chance}% (allowed; set it in the CMS).`);
-            }
-            if (t.lastsMs !== undefined) {
-                warn('turns.lastsMs', 'turns still carries lastsMs, which nothing reads since TL-12 (the turned Token rolls back on the same cycle and chance); re-save it in the CMS to drop it.');
             }
         }
 
@@ -344,17 +309,13 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
                 }
             }
 
-            // A Token that `turns` into a workable Token (the Coast → Shrimp
-            // Coast) is worked while it is turned, so it counts.
             const worksDirectly = (d) => !!d?.config || !!stationSkillOf(d);
-            const turnsWorkable = Array.isArray(def.turns?.into)
-                && def.turns.into.some((entry) => worksDirectly(tokens[entry?.typeId]));
             // A context provider (the Copper Anvil: an `Acts as`
             // rule or a legacy `provides` list) is used by sitting beside a
             // station, so it counts too. Read through the same
             // helper the engine gates recipes with.
             const providesContext = Object.keys(getProvidedTagsWithTiers(def)).length > 0;
-            const workable = worksDirectly(def) || !!def.foundation || !!def.spawner || turnsWorkable || providesContext;
+            const workable = worksDirectly(def) || !!def.foundation || !!def.spawner || providesContext;
             if (!workable) {
                 warn('shop', 'is sold at the Shop but has no way to be worked or to spawn anything.');
             }

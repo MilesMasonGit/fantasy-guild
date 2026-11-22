@@ -66,9 +66,9 @@ function isEnemyTypeId(typeId) {
     return BoardCombat.isEnemyToken({ typeId });
 }
 
-/** Whether `instance` is a working spawner on the mat (a turned one is not). */
+/** Whether `instance` is a working spawner on the mat */
 function isLiveSpawner(instance) {
-    return !!instance && !instance.turnedFrom && SpawnerSystem.isSpawner(getTokenType(instance.typeId));
+    return !!instance && SpawnerSystem.isSpawner(getTokenType(instance.typeId));
 }
 
 /** The spawner instance id recorded on enemy `instanceId`, or null. */

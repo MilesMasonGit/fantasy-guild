@@ -40,7 +40,7 @@ const NEARBY = 'growNearby';
 /** Ways in that a guild repeats (a station, a vein, a place's Tokens): the usual ones, before chance and finds. */
 const REPEATED = new Set([
     HOW.CRAFT, HOW.STATION, HOW.BUILD, HOW.WORK, HOW.CATCH, HOW.TRICKLE, HOW.UPGRADE,
-    HOW.SPAWN, HOW.GROW, HOW.TURN, HOW.REGROW, HOW.WORLD
+    HOW.SPAWN, HOW.GROW, HOW.REGROW, HOW.WORLD
 ]);
 const BY_CHANCE = new Set([HOW.DROP, HOW.BONUS]);
 
@@ -48,7 +48,7 @@ const BY_CHANCE = new Set([HOW.DROP, HOW.BONUS]);
 const ONE_OFF = new Set([HOW.STARTER_BANK, HOW.STARTER_TOOL, HOW.STARTER_CAMP, HOW.HALL]);
 
 /** Ways no hero takes: a spawner spawns, a stage grows, the Shop sells. */
-const NO_HERO = new Set([HOW.SPAWN, HOW.GROW, HOW.TURN, HOW.REGROW, HOW.TRICKLE, HOW.SHOP, HOW.UPGRADE, MEMBER]);
+const NO_HERO = new Set([HOW.SPAWN, HOW.GROW, HOW.REGROW, HOW.TRICKLE, HOW.SHOP, HOW.UPGRADE, MEMBER]);
 
 /** How deep growing stages fold (a stump grows a sapling grows a tree). */
 const FOLD_DEPTH = 4;
@@ -442,7 +442,6 @@ function givesWord(book, key, how) {
         case HOW.BONUS: return lineWord('bonus');
         case HOW.SPAWN: return lineWord('spawns');
         case HOW.GROW: return lineWord('grows');
-        case HOW.TURN: return lineWord('turns');
         case HOW.REGROW: return lineWord('leaves');
         default: return null;
     }

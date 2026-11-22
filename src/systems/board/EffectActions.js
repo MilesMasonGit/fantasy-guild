@@ -384,8 +384,8 @@ export function transform(statement, roles) {
  * @param {boolean} [options.fixPlaced] placed Tokens may not be pushed out of the way. Default
  * false: a `Transforms` statement pushes as it always has, except fixed Tokens
  * (`FixedTokens.holdsItsGround`), which nothing pushes.
- * @param {object} [options.extra] fields to set on the new instance (`turnedFrom`, `clocks`)
- * @param {string} [options.cause] why it happens, for `TOKEN_TRANSFORMED`: `grow`, `regrow`, `turn`,
+ * @param {object} [options.extra] fields to set on the new instance (`builtFrom`, `clocks`)
+ * @param {string} [options.cause] why it happens, for `TOKEN_TRANSFORMED`: `grow`, `regrow`,
  * `build`, or `rule` (the default: a `Transforms` statement)
  * @returns {object|null} the new instance, or null when it did not happen
  */

@@ -13,7 +13,7 @@ import { logger } from '../../utils/Logger.js';
  * a save loading later is rewritten here, everywhere such an id lives:
  * - the Bank: its stacks, each tab's order and the tab an item is filed in;
  * - each hero: the loadout, the drink and elixir counters, the live effects;
- * - the live mat and every other Region's mat: each Token's type (and what it turned from, the
+ * - the live mat and every other Region's mat: each Token's type (and the
  *   Foundation and price it was built from, a bounty's target and reward) and the loot on the floor;
  * - the world map's places: origins, camps, chests, arrivals, a wild place's focus, the price asked;
  * - the collection's discoveries and counts, and the pinned item stubs.
@@ -227,7 +227,6 @@ function tokenFollowing(instance, ids) {
     if (!isPlainObject(instance)) return instance;
     let out = instance;
     out = mapField(out, 'typeId', ids.token);
-    out = mapField(out, 'turnedFrom', ids.token);
     out = mapField(out, 'builtFrom', built => {
         const from = mapField(built, 'foundationTypeId', ids.token);
         return mapField(from, 'buildCost', list => mapList(list, e => mapField(e, 'itemId', ids.item)));

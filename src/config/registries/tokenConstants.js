@@ -221,27 +221,6 @@ export function foundationTierMeets(def, recipe) {
 }
 
 /**
- * ⭐ **A self-transforming Token rolls a chance.**
- * `turns: { into, everyMs, chance }` on the Token type:
- *
- * * `everyMs` — the roll cycle. Once per `everyMs` the Token rolls.
- * * `chance`  — the percent chance (0 < chance ≤ 100, like every other
- *   `chance` in the content files) that a roll succeeds.
- *
- * The same two numbers are used **both ways**: a Coast rolls to become a
- * Shrimp Coast, and the Shrimp Coast (which carries `turnedFrom`) rolls with
- * the Coast's numbers to turn back. Authored once, on the Coast.
- *
- * An absent field reads as its default here: 1 minute and 30%, so a Coast
- * flips roughly every three minutes each way.
- *
- * This is the one place the defaults live: the engine (`TimedChanges`), the
- * inspection lines, the content audit and the CMS's new-block factory all read
- * them from here (the CMS across the boundary, see the header note).
- */
-export const TURN_DEFAULTS = Object.freeze({ everyMs: 60000, chance: 30 });
-
-/**
  * ⭐ **A Token that comes back after it runs out.** `respawn: { mode, afterMs?, into? }` on the
  * Token type:
  *
@@ -471,20 +450,6 @@ const DEFAULT_CROP_TERMS = Object.freeze({ ...CROP_DEFAULTS, ripeSprite: null, s
  * `PassiveProduction.lapMs()`; this is only its starting length.
  */
 export const PASSIVE_LAP_BASE_MS = 10 * 60 * 1000;
-
-/**
- * The roll cycle and chance of a `turns` block, defaults filled in:
- * `{ everyMs, chance }`, `chance` a percent. A non-number or non-positive
- * `everyMs` reads as the default; `chance` is clamped to 0–100.
- */
-export function turnTiming(turns) {
-    const every = Number(turns?.everyMs);
-    const everyMs = Number.isFinite(every) && every > 0 ? every : TURN_DEFAULTS.everyMs;
-    const raw = turns?.chance;
-    const c = raw === undefined || raw === null || raw === '' ? TURN_DEFAULTS.chance : Number(raw);
-    const chance = Number.isFinite(c) ? Math.min(100, Math.max(0, c)) : TURN_DEFAULTS.chance;
-    return { everyMs, chance };
-}
 
 /**
  * An output entry's quantity range, as `{ min, max }`.

@@ -51,7 +51,7 @@ export function tokenDetailOf(id, def) {
     if (!instance) return null;
     // A Foundation picks its recipe like a station.
     const stationSkill = def ? (def.foundation?.skill || stationSkillOf(def)) : null;
-    const isSpawner = !instance.turnedFrom && SpawnerSystem.isSpawner(def);
+    const isSpawner = SpawnerSystem.isSpawner(def);
     // Marked for demolition: its own clocks stand still (`TimedChanges` skips it), so no countdown.
     const marked = Demolition.isMarked(instance);
     return {
@@ -73,8 +73,6 @@ export function tokenDetailOf(id, def) {
         isSpawner,
         // The family's live count against its cap, `{ count, cap }`: the idle plate's spawner count.
         spawnerCounts: isSpawner ? SpawnerSystem.spawnerCounts(id) : null,
-        // A Token that turns (or has turned) counts down to its next roll.
-        turns: !marked && !!TimedChanges.nextTurnRoll(instance),
         // A Token that grows (a Sapling) counts down to the change.
         grows: !marked && !!TimedChanges.nextGrowth(instance),
         // A Field's growing crop counts down to its ripening.

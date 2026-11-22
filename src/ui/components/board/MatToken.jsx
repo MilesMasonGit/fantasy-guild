@@ -229,9 +229,7 @@ export const MatToken = React.memo(function MatToken({
 
     // The idle plate's timer polls this; stable per Token so its poll is not reset. A resting Token
     // counts down to its refill (a regrow has none: it becomes its Sapling at once); a growing
-    // one counts down its growth (`everyMs` is the whole growth time); a turning one to its next
-    // roll, over the roll cycle (on a turned Token the ORIGINAL's, as the roll itself uses,
-    // `turnTimingOf`).
+    // one counts down its growth (`everyMs` is the whole growth time).
     const readTimer = React.useCallback(() => {
         const instance = BoardState.getTokenById(id);
         // An event Token counts down to leaving: a buff's time, an unworkable node's hour.
@@ -243,8 +241,7 @@ export const MatToken = React.memo(function MatToken({
         if (grow) return { kind: 'grow', ...grow, everyMs: grow.totalMs };
         const ripe = Fields.nextRipening(instance);
         if (ripe) return { kind: 'ripen', ...ripe, everyMs: ripe.totalMs };
-        const roll = TimedChanges.nextTurnRoll(instance);
-        return roll ? { kind: 'turn', ...roll, everyMs: TimedChanges.turnTimingOf(instance).everyMs } : null;
+        return null;
     }, [id]);
 
     const spawnerCounts = detail?.spawnerCounts ?? null;
@@ -408,7 +405,7 @@ export const MatToken = React.memo(function MatToken({
     // The idle plate under the rested Token nobody works, when it has something to say.
     // Read once per instance: an event Token never stops being one.
     const isEvent = React.useMemo(() => EventTokens.isEventToken(BoardState.getTokenById(id)), [id]);
-    const timed = !!(detail?.turns || detail?.grows || detail?.ripens || resting || isEvent);
+    const timed = !!(detail?.grows || detail?.ripens || resting || isEvent);
     const idlePlate = !!plateHost && !staffed && !hidden && !isEnemyDef(def) && (
         (usesRemaining != null && !isGuildHallToken) || !!spawnerPlate || !!questPlate
         || (!!alert && !isGearOnlyAlert(alert)) || (timed && !!readTimer())

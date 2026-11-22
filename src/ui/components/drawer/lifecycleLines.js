@@ -1,6 +1,6 @@
 
 import { formatClock } from '../../../utils/Formatters.js';
-import { turnTiming, PASSIVE_LAP_BASE_MS, fieldOf, cropTermsOf } from '../../../config/registries/tokenConstants.js';
+import { PASSIVE_LAP_BASE_MS, fieldOf, cropTermsOf } from '../../../config/registries/tokenConstants.js';
 
 /**
  * What a board Token's lifecycle blocks are doing right now, as plain rows for the inspection
@@ -45,16 +45,6 @@ function typeList(entries, tokenName) {
         .filter(e => e?.typeId)
         .map(e => tokenName(e.typeId))
         .join(' or ');
-}
-
-/** A percent as the panel shows it: `30%`, `12.5%`. */
-function formatPercent(chance) {
-    return `${Math.round(Number(chance) * 10) / 10}%`;
-}
-
-/** "in 34 s (30%)": time to a turn's next roll, and its chance. */
-function nextChance(ms, chance) {
-    return `in ${formatDuration(Math.max(0, ms))} (${formatPercent(chance)})`;
 }
 
 function clock(instance, key) {
@@ -311,32 +301,8 @@ export function lifecycleLines(instance, src) {
         return out;
     }
 
-    if (instance.turnedFrom) {
-        // A turned Token runs only its turn back (TimedChanges): it rolls on the
-        // ORIGINAL type's cycle and chance, authored once on it.
-        const { everyMs, chance } = turnTiming(src.typeOf(instance.turnedFrom)?.turns);
-        out.push({
-            label: `Next chance to turn back into ${src.tokenName(instance.turnedFrom)}`,
-            value: nextChance(everyMs - clock(instance, 'turnMs'), chance)
-        });
-    } else {
-        if (def.spawner) out.push(...spawnerLines(instance, def, src));
-        if (def.grows?.into) out.push(...growthLines(instance, def, src));
-        const turnsInto = typeList(def.turns?.into, src.tokenName);
-        if (turnsInto) {
-            // A chance once per cycle, not a fixed timer; the same numbers roll it back.
-            const { everyMs, chance } = turnTiming(def.turns);
-            out.push({
-                label: `Next chance to turn into ${turnsInto}`,
-                value: nextChance(everyMs - clock(instance, 'turnMs'), chance)
-            });
-            out.push({
-                label: 'Turns',
-                value: `${formatPercent(chance)} chance every ${formatDuration(everyMs)}, and the same to turn back`,
-                tone: TONE.MUTED
-            });
-        }
-    }
+    if (def.spawner) out.push(...spawnerLines(instance, def, src));
+    if (def.grows?.into) out.push(...growthLines(instance, def, src));
 
     const field = fieldOf(def) ? src.field?.(instance) : null;
     if (field) out.push(...fieldLines(field, src));
