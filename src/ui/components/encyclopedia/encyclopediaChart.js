@@ -154,8 +154,8 @@ const blankWay = () => ({
 
 /**
  * How many one cycle of a row gives, as the card shows it (`{ min, max }`), or null where the card
- * shows none: a catch (one a catch: its odds), a rare find of one (the card's Rare finds), a
- * spawn, a growth, a place.
+ * shows none: a catch (each lands one: its odds say it), a rare find of one (the card's Rare finds),
+ * a spawn, a growth, a place.
  */
 function yieldsOf(row) {
     if (!Number.isFinite(row?.min) || !Number.isFinite(row?.max)) return null;
@@ -192,12 +192,18 @@ function rankSteps(ranks) {
 
 /**
  * A Guild Hall track's ranks in words, reference-style ("rank 1 ×2, rank 2 ×5, rank 3 ×8"): each rank
- * whose amount moves. `short` keeps a long list to its first two and its last, around "…".
+ * whose amount moves. `short`, for a box's two lines, names "rank" once ("rank 1 ×2, 2 ×5, 3 ×8") and
+ * keeps a longer list to its first and last ("rank 1 ×10 … 10 ×100").
  */
 export function ranksText(ranks, { short = false } = {}) {
-    const steps = rankSteps(ranks).map(r => t('encyclopedia.rankAmount', { rank: r.rank, amount: `×${r.quantity.toLocaleString('en-US')}` }));
-    if (!short || steps.length <= 3) return steps.join(', ');
-    return `${steps.slice(0, 2).join(', ')} … ${steps[steps.length - 1]}`;
+    const steps = rankSteps(ranks);
+    const amount = (r) => `×${r.quantity.toLocaleString('en-US')}`;
+    const named = (r) => t('encyclopedia.rankAmount', { rank: r.rank, amount: amount(r) });
+    if (!short) return steps.map(named).join(', ');
+    if (!steps.length) return '';
+    const bare = (r) => t('encyclopedia.rankAmountShort', { rank: r.rank, amount: amount(r) });
+    if (steps.length <= 3) return [named(steps[0]), ...steps.slice(1).map(bare)].join(', ');
+    return `${named(steps[0])} … ${bare(steps[steps.length - 1])}`;
 }
 
 /**
@@ -557,11 +563,12 @@ export const farSideOf = (node) => (node.side === 'in' ? 'out' : node.side === '
 
 /**
  * The chart from `start`, grown where the player clicked: every node `{ id, key, side, amount,
- * need, recipe, chance, repeat, canGrow, canFar, grown, farOpen, ins, outs, hiddenIn,
- * hiddenOut, passBand }`. `side` is 'start', 'in' (left of its neighbour: grows further left) or
+ * need, yields, ranks, star, held, recipe, chance, repeat, canGrow, canFar, grown, farOpen, ins, outs,
+ * hiddenIn, hiddenOut, passBand }`. `side` is 'start', 'in' (left of its neighbour: grows further left) or
  * 'out' (right: grows further right). `amount` is how many one step takes (×2 Iron Ore to an
  * ingot); `need` how many one of the start takes, down that path (one of the box whose far side
- * opened, inside it). `recipe` is the recipe a use is made by; `chance` the odds of the line that
+ * opened, inside it); `yields` how many the line from it gives, as the card shows it, or for a Guild
+ * Hall track its `ranks` and `star`; `held` a tool held on its way, never spent. `recipe` is the recipe a use is made by; `chance` the odds of the line that
  * reaches it. A node `repeat`s an entry already on its path and never grows. `ins` are branches
  * `{ id, way, from, inputs, req, through, word }`, `outs` uses `{ id, way, node, req, through, word }`
  * (`word`: what the line from `from`, or to the use, means, when it is not used up); each
@@ -584,6 +591,7 @@ export function chartOf(book, start, { grown = new Set(), far = new Set(), opene
             need: link.need ?? null,
             yields: link.yields ?? null,
             ranks: link.ranks ?? null,
+            star: link.star ?? null,
             held: link.held === true,
             recipe: link.recipe ?? null,
             chance: link.chance ?? null,
@@ -628,7 +636,8 @@ export function chartOf(book, start, { grown = new Set(), far = new Set(), opene
                     need: way.fromAmount != null ? per * way.fromAmount : null,
                     chance: way.chance,
                     yields: way.yields,
-                    ranks: way.ranks
+                    ranks: way.ranks,
+                    star: way.star
                 })
                 : null;
             const inputs = way.inputs.map((input, j) => child(`${id}.${j}`, input.key, input.held
@@ -652,7 +661,7 @@ export function chartOf(book, start, { grown = new Set(), far = new Set(), opene
                 return { id, way, node: { id: `${id}n`, key: way.to, pass: true }, req, through: way.through, word };
             }
             const n = make(`${id}n`, way.to, 'out', here, {
-                recipe: way.recipe, chance: way.chance, neighbour: node.key, yields: way.yields, ranks: way.ranks
+                recipe: way.recipe, chance: way.chance, neighbour: node.key, yields: way.yields, ranks: way.ranks, star: way.star
             });
             visit(n, here);
             return { id, way, node: n, req, through: way.through, word };
@@ -846,8 +855,8 @@ export const litWords = (layout, id) => onPath(layout.words, id);
  * Where every box of a chart sits, in pixels around the start (its box centred on 0, 0):
  * `{ nodes: [{ id, node, x, y, w, h }], captions, links: [{ id, points: [[x, y], …], into, pairs }],
  * bands: [{ id, x, y, w, h }], stems: [{ id, node, side, count, x, y, w, h }], labels: [{ id, side,
- * x, y, w, h, req, through, regrow, pairs }], words: [{ id, side, word, tip, from, to, onLine,
- * overMark, x, y, w, h, pairs }], box }`. A line's, mark's or word's `pairs` are the boxes it joins, `[child,
+ * x, y, w, h, req, through, regrow, pairs }], words: [{ id, side, way, word, tip, args, from, to, onLine,
+ * overMark, below, x, y, w, h, pairs }], box }`. A line's, mark's or word's `pairs` are the boxes it joins, `[child,
  * parent]` ids: on the path from a box to the start when both are.
  *
  * Columns are `nodeW + gapX` apart. Each node stands in the middle of the row band its sides take;

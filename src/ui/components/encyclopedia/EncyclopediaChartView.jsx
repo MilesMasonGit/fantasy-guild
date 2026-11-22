@@ -123,6 +123,8 @@ const EntryCard = ({ book, entry, node, have, startName, got, hint }) => {
     if (entry.kind === KIND.RECIPE) lines.push(t(isCollected(got, entry) ? 'encyclopedia.made' : 'encyclopedia.notMade'));
     const starts = oneOffWays(book, entry.key);
     if (starts.length) lines.push(t('encyclopedia.alsoFrom', { ways: starts.map(w => t(`encyclopedia.via.${w}`)).join(', ') }));
+    // A Guild Hall track's every rank, which its box has room only to sum up.
+    if (node.ranks) lines.push(t('encyclopedia.hallRanks', { star: node.star ?? '', ranks: ranksText(node.ranks) }));
     return (
         <div data-codex-card={entry.key} className="flex flex-col gap-1">
             {entry.kind === KIND.ITEM && <ItemTipContent item={entry.def} />}
