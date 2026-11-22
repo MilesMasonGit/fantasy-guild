@@ -4,7 +4,6 @@ import { INITIAL_STATE, createEmptyBoard, createRegionRecord, validateSaveData, 
 import { migrateState } from '../systems/core/SaveMigration.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
-import { QuestManager } from '../systems/quests/QuestManager.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { rehydrateHero } from '../systems/hero/logic/HeroRehydration.js';
@@ -39,7 +38,6 @@ function playALittle() {
     InventoryManager.init();
     SpriteLayer.init();
     GuildUpgradeManager.recompute();
-    QuestManager.ensureState();
 
     // The Cartographer's three fields (a purchase, a discovery and the Guild
     // Hall drop index) were written here until the Map bursts and the Map
@@ -88,11 +86,9 @@ describe('The declared schema matches the save (CR2-042, CR2-069)', () => {
         expect(Object.keys(INITIAL_STATE.progress)).toEqual(
             expect.arrayContaining(['guildUpgrades'])
         );
-        expect(INITIAL_STATE.quests).toHaveProperty('clockMs');
-        // Deleted on purpose with the cartographer's tutorial steps (Limes's lessons replaced
-        // them): their progress is the guide's now.
-        expect(INITIAL_STATE.quests).not.toHaveProperty('completedTutorials');
-        expect(INITIAL_STATE.quests).not.toHaveProperty('tutorialStep');
+        // Deleted on purpose with the bounties: their clock and Tokens. The cartographer's
+        // tutorial steps went before them (Limes's lessons replaced them).
+        expect(INITIAL_STATE).not.toHaveProperty('quests');
         expect(INITIAL_STATE.guide).toHaveProperty('progress');
         // Deleted on purpose with the Map bursts (Token Lifecycle 9.1): the
         // Map discoveries, the Guild Hall drop index and the Cartographer's
@@ -258,17 +254,9 @@ describe('The validator guards the sections this game is made of (CR2-043)', () 
         expect(result.errors).toContain('Missing state.board');
     });
 
-    it('rejects a save with no quests', () => {
-        const state = GameState.serialize().state;
-        delete state.quests;
-        const result = validateSaveData({ version: GAME_VERSION, state });
-        expect(result.errors).toContain('Missing state.quests');
-    });
-
     it('accepts a save that migration has already repaired', () => {
         const state = GameState.serialize().state;
         delete state.board;
-        delete state.quests;
         const migrated = migrateState(state, GAME_VERSION);
         expect(validateSaveData({ version: GAME_VERSION, state: migrated }).valid).toBe(true);
     });

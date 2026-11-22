@@ -42,7 +42,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * ⭐ The mat layer (brief 120, C1; concept_token_bars): at rest a Token nobody works shows what is
  * wrong (one problem mark) and nothing else; on hover it gets the idle plate under it (its
- * problem, charges, spawner count, quest progress, timer) and no ring. A worked Token's cycle,
+ * problem, charges, spawner count, timer) and no ring. A worked Token's cycle,
  * charges and problem are on its work plate (`WorkPlate.test.js`): its own box draws none of them,
  * but it still keeps the bar's model, which the plate's fill draws (here: `WorkBarFill` beside it).
  * Where each piece sits, when it shows, the tooltips, and that pressing any of them grabs the
@@ -133,22 +133,19 @@ describe('the rules, pure', () => {
         expect([...GLIDING_RINGS]).toEqual(['charges']);
     });
 
-    it('⭐ the idle plate’s cells: the problem, the charges, a spawner, a quest, the timer, in that order', () => {
+    it('⭐ the idle plate’s cells: the problem, the charges, a spawner, the timer, in that order', () => {
         const timer = timerCellOf({ kind: 'grow', inMs: 30000, into: 'fixture_b13_sapling' });
         const cells = idlePlateCells({
             problem: { kind: ALERT.INPUTS, severity: SEVERITY.WAITING },
             charges: 4,
             spawner: { count: 3, cap: 5 },
-            quest: { currentCount: 12, requiredCount: 10, itemId: 'x' },
             timer
         });
-        expect(cells.map(c => c.kind)).toEqual([CELL.PROBLEM, CELL.CHARGES, CELL.SPAWNER, CELL.QUEST, CELL.TIMER]);
+        expect(cells.map(c => c.kind)).toEqual([CELL.PROBLEM, CELL.CHARGES, CELL.SPAWNER, CELL.TIMER]);
         expect(cells[1]).toMatchObject({ count: 4, tip: IDLE_TIPS.charges(4) });
         expect(cells[2]).toMatchObject({ text: '3/5', tip: IDLE_TIPS.spawner('3/5') });
-        // A quest past its count reads done, not over.
-        expect(cells[3]).toMatchObject({ text: '10/10', itemId: 'x', tip: IDLE_TIPS.quest('10/10') });
-        expect(cells[4]).toMatchObject({ text: '0:30', glyph: 'grow' });
-        expect(cells[4].tip).toMatch(/^Grows into .* in 0:30$/);
+        expect(cells[3]).toMatchObject({ text: '0:30', glyph: 'grow' });
+        expect(cells[3].tip).toMatch(/^Grows into .* in 0:30$/);
         expect(idlePlateCells({})).toEqual([]);
     });
 
@@ -165,7 +162,7 @@ describe('the rules, pure', () => {
 });
 
 describe('⭐ at rest: the bar and the marks, nothing else', () => {
-    const everything = { spawner: { count: 3, cap: 5 }, quest: { currentCount: 1, requiredCount: 4 } };
+    const everything = { spawner: { count: 3, cap: 5 } };
     const clock = () => ({ kind: 'grow', inMs: 3000, everyMs: 60000, into: 'fixture_b13_sapling' });
 
     it('⭐ not worked, nothing wrong: nothing at all, no plate (even in its timer’s last seconds)', () => {
@@ -179,13 +176,12 @@ describe('⭐ at rest: the bar and the marks, nothing else', () => {
         expect(drawn(container)).toEqual([]);
     });
 
-    it('⭐ a count change does not bring the plate up by itself: charges, spawner, quest', () => {
+    it('⭐ a count change does not bring the plate up by itself: charges, spawner', () => {
         vi.useFakeTimers();
         const { container, rerender } = mount(bub({ token: worked({ heroId: null, usesRemaining: 5 }), ...everything, plateHost }));
         rerender(tree(bub({
             token: worked({ heroId: null, usesRemaining: 4 }),
             spawner: { count: 4, cap: 5 },
-            quest: { currentCount: 2, requiredCount: 4 },
             plateHost
         })));
         expect(container.querySelector('[data-ring]')).toBeNull();
@@ -365,8 +361,7 @@ describe('⭐ hover: the idle plate under the Token, and the gear', () => {
     });
 
     for (const [kind, props, text] of [
-        [CELL.SPAWNER, { spawner: { count: 4, cap: 5 } }, '4/5'],
-        [CELL.QUEST, { quest: { currentCount: 3, requiredCount: 5 } }, '3/5']
+        [CELL.SPAWNER, { spawner: { count: 4, cap: 5 } }, '4/5']
     ]) {
         it(`⭐ ${kind}: hidden at rest, its count on the plate on hover`, () => {
             const { container, rerender } = mount(bub({ token: idle(), ...props, plateHost, x: 400, y: 300 }));
@@ -726,7 +721,6 @@ describe('tooltips and grabbing', () => {
     const everything = () => idleBub({
         token: worked({ heroId: null, usesRemaining: 4 }), marked: true,
         spawner: { count: 3, cap: 5 },
-        quest: { currentCount: 1, requiredCount: 4 },
         readTimer: () => ({ kind: 'grow', inMs: 30000, everyMs: 60000, into: 'fixture_b13_sapling' })
     });
 
@@ -740,7 +734,6 @@ describe('tooltips and grabbing', () => {
             return text;
         };
         expect(tipOf(idleCell(CELL.CHARGES))).toBe(IDLE_TIPS.charges(4));
-        expect(tipOf(idleCell(CELL.QUEST))).toBe(IDLE_TIPS.quest('1/4'));
         expect(tipOf(idleCell(CELL.SPAWNER))).toBe(IDLE_TIPS.spawner('3/5'));
         expect(tipOf(idleCell(CELL.TIMER))).toMatch(/^Grows into .* in 0:30$/);
         expect(tipOf(bubble(container, 'marked'))).toBe(BUBBLE_TIPS.marked);
@@ -751,10 +744,9 @@ describe('tooltips and grabbing', () => {
         const { container } = mount(idleBub({
             token: worked({ heroId: null, usesRemaining: 4, alert: ALERT.INPUTS }), marked: true,
             spawner: { count: 3, cap: 5 },
-            quest: { currentCount: 1, requiredCount: 4 },
             dragProps: { onPointerDown }
         }));
-        for (const kind of [CELL.CHARGES, CELL.QUEST, CELL.SPAWNER]) {
+        for (const kind of [CELL.CHARGES, CELL.SPAWNER]) {
             onPointerDown.mockClear();
             fireEvent.pointerDown(idleCell(kind));
             expect(onPointerDown, kind).toHaveBeenCalledTimes(1);

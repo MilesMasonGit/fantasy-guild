@@ -3,7 +3,6 @@
 import * as Atlas from '../../../systems/atlas/Atlas.js';
 import { GameState } from '../../../state/GameState.js';
 import { isGuildHall } from '../../../systems/board/MatCap.js';
-import { isQuestToken } from '../../../systems/quests/QuestTokens.js';
 
 /**
  * The board Region `region` keeps: the live board for the one the guild is in (its record holds
@@ -15,9 +14,9 @@ export function boardOf(region) {
     return region.board || null;
 }
 
-/** The Region's own Tokens: everything on its board but the Hall and the quests, which travel with the guild. */
+/** The Region's own Tokens: everything on its board but the Hall, which travels with the guild. */
 function ownTokens(board) {
-    return Object.values(board?.tokens || {}).filter(t => t?.typeId && !isGuildHall(t) && !isQuestToken(t));
+    return Object.values(board?.tokens || {}).filter(t => t?.typeId && !isGuildHall(t));
 }
 
 /**

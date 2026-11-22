@@ -15,7 +15,7 @@
  *
  * Points are mat units on the mat it was saved from (`mat`); the game moves the whole layout so its
  * centre lands on the centre of the mat it opens on. `tokens` never holds the Guild Hall (that is
- * `hall`) or a quest Token.
+ * `hall`).
  *
  * Pure and import-free: the CMS reads it too.
  */
@@ -23,7 +23,6 @@
 export const STARTER_CAMP_VERSION = 1;
 
 const GUILD_HALL = 'token_guild_hall';
-const QUEST_TOKEN = 'token_quest';
 
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 const finite = (v) => typeof v === 'number' && Number.isFinite(v);
@@ -48,7 +47,7 @@ export function normaliseStarterCamp(raw) {
     for (const entry of Array.isArray(raw.tokens) ? raw.tokens : []) {
         const typeId = isObject(entry) && typeof entry.typeId === 'string' ? entry.typeId.trim() : '';
         const at = pointOf(entry);
-        if (!typeId || !at || typeId === QUEST_TOKEN) continue;
+        if (!typeId || !at) continue;
         if (typeId === GUILD_HALL) {
             if (!hall) hall = at;
             continue;

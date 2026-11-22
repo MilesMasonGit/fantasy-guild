@@ -118,8 +118,7 @@ describe('A save an earlier build of this version wrote still loads', () => {
         s.inventory.groupDefs['default-loot'].isCustom = false;
         s.progress.unlockedRarities = ['common', 'uncommon'];
         s.progress.discoveredTasksByBiome = {};
-        s.quests.active = [];
-        s.quests.nextQuestAt = null;
+        s.quests = { active: [], nextQuestAt: null, clockMs: 0 };
         s.collection.provenance = { token_oak_forest: { item_oak_wood: true } };
         s.ui.newDiscoveries = { item_oak_wood: true };
         s.atlas.regions = { region_1: { id: 'region_1', kind: 'starter', settledAt: 0, ingredients: [], board: null } };
@@ -185,7 +184,7 @@ describe('A save an earlier build of this version wrote still loads', () => {
         loadSavedState(migrateState(data.state, data.version));
         expect(GameState.state.board.tokens.tok_a.typeId).toBe('token_oak_forest');
         expect(GameState.state).not.toHaveProperty('cards');
-        expect(GameState.state.quests).not.toHaveProperty('active');
+        expect(GameState.state).not.toHaveProperty('quests');
         expect(GameState.serialize().state.inventory).not.toHaveProperty('maxStackBonus');
     });
 });

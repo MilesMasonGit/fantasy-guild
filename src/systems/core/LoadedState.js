@@ -26,10 +26,5 @@ export function loadSavedState(savedState) {
     });
     // A save from before heroes held a colour from the start: each gets one, in roster order.
     assignFlagColours();
-
-    if (!state.quests) {
-        // Bounties run on the game-time `clockMs`, not the wall clock.
-        state.quests = { clockMs: 0 };
-    }
     logger.info('GameState', 'Save rehydration complete.');
 }

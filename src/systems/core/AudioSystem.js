@@ -88,7 +88,6 @@ class AudioSystemClass {
             if (source !== XP_FOR_EVERYONE_SOURCE) this.playSfx('levelup');
         });
         EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, () => this.playSfx('victory'));
-        EventBus.subscribe(ENGINE_EVENTS.QUEST_CLAIMED, () => this.playSfx('quest_claim'));
         EventBus.subscribe(ENGINE_EVENTS.HERO_DEPLOYED, () => this.playSfx('hero_assign'));
         
         EventBus.subscribe(ENGINE_EVENTS.COMBAT_HERO_ATTACK, () => this.playContextualSfx('hit'));

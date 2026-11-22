@@ -77,7 +77,7 @@ export const HALL_TYPE_ID = 'token_guild_hall';
 
 /**
  * How far from the Hall's centre no generated Token's art may reach, in mat units: the Hall's art
- * (64) plus the shipped nudge reach (160), within which the Hall lands the quest Tokens it spawns.
+ * (64) plus the shipped nudge reach (160).
  */
 export const HALL_CLEARING = 224;
 
@@ -186,7 +186,7 @@ const SHORE_PULL = 16;
 /** How much more room a camp's preferred spacing gets, so its enemies have somewhere to stand. */
 const CAMP_ROOM = 1.5;
 
-/** The Hall's clearing stays dry this far past the ring, so the quests and the first buildings have land. */
+/** The Hall's clearing stays dry this far past the ring, so the first buildings have land. */
 const DRY_MARGIN = 2 * TERRAIN_CELL;
 
 /**

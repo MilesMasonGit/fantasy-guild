@@ -59,8 +59,7 @@ export function spawnPeak(dx, dy, over = 0, unit = 1) {
 /**
  * The pop-out on one element: it hops up out of its spawner (`dx`, `dy` mat units away), over its
  * top, and lands on its own spot with the landing bounce, at its own size all the way, in whole art
- * pixels and stepped time (`fx/pixelSteps.js`). The Guild Hall's quests and a Forest's saplings
- * alike. Transform only, added on top of whatever transform the box already has (an enemy's box
+ * pixels and stepped time (`fx/pixelSteps.js`). A Forest's saplings, for one. Transform only, added on top of whatever transform the box already has (an enemy's box
  * is placed by one), so no layout moves.
  * ⚠️ No scale: a fraction of the art's size resamples it (UI_STYLE, "Sprites and icons").
  * ⚠️ On the main thread (`will-change: contents` while it plays): a new Token pops out among the

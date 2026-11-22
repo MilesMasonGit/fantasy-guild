@@ -1,15 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { statSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { GameState } from '../state/GameState.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import * as BoardState from '../systems/board/BoardState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { getTokenType } from '../config/registries/tokenRegistry.js';
-import { QuestManager } from '../systems/quests/QuestManager.js';
-import * as QuestTokens from '../systems/quests/QuestTokens.js';
-import { BOUNTY_REWARD_ITEMS } from '../systems/quests/questBounties.js';
 import { SRC, listFiles, readSource, SCAN_TIMEOUT } from './fixtures/sourceScan.js';
 
 /**
@@ -25,32 +20,9 @@ beforeEach(() => {
 });
 
 describe('No action earns or spends gold (SP-65)', () => {
-    afterEach(() => QuestManager.cleanup());
-
-    it('a new game has no gold at all, and a bounty pays items', () => {
+    it('a new game has no gold at all', () => {
         expect(GameState.state.currency).toBeUndefined();
-        expect(BOUNTY_REWARD_ITEMS.length).toBeGreaterThan(0);
-        for (const r of BOUNTY_REWARD_ITEMS) expect(r.itemId.startsWith('item_'), r.itemId).toBe(true);
     });
-
-    it('claiming a bounty leaves gold at 0 and puts no Map on the mat', () => {
-        // Bounties are Tokens the Guild Hall spawns (B6.1); a claimed reward
-        // drops as loot beside the quest, banked when collected.
-        BoardState.addToken(BoardState.createTokenInstance('token_guild_hall'), 880, 560);
-        QuestManager.init();
-        const bounty = QuestTokens.spawnQuest({
-            id: 'q_gold', tutorial: false, title: 'Defeat 1 Goblin', type: 'hunt', targetType: 'enemy_hunted',
-            enemyId: 'token_goblin', requiredCount: 1, currentCount: 1, done: true,
-            rewardItems: BOUNTY_REWARD_ITEMS.map(r => ({ ...r }))
-        });
-        expect(bounty).toBeTruthy();
-        expect(QuestManager.claimQuest(bounty.id).success).toBe(true);
-        for (const sprite of SpriteLayer.getSprites().filter(sp => sp.kind === 'item')) SpriteLayer.collectSprite(sprite.id);
-        expect(GameState.state.currency).toBeUndefined();
-        expect(BoardState.tokens().some(t => getTokenType(t.typeId)?.mapId)).toBe(false);
-        for (const r of BOUNTY_REWARD_ITEMS) expect(InventoryManager.getItemCount(r.itemId), r.itemId).toBe(r.quantity);
-    });
-
 });
 
 describe('Coins floor loot collection', () => {

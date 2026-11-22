@@ -21,8 +21,7 @@ const ALLOWED = {
     'systems/board/Shop.js': [1, 'a bought Token\'s birth stamp, read by nothing that decides anything'],
     'systems/board/TokenGlows.js': [1, 'glows are drawing, never saved'],
     'systems/effects/statements.js': [1, 'statement ids'],
-    'systems/notifications/itemStubs.js': [2, 'item stubs fade on screen in real time'],
-    'systems/quests/questBounties.js': [1, 'quest ids']
+    'systems/notifications/itemStubs.js': [2, 'item stubs fade on screen in real time']
 };
 
 function wallClockReads() {

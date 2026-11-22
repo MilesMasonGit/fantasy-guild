@@ -39,10 +39,7 @@ export async function saveLiveMatToCms({ cmsUrl = DEFAULT_CMS_URL, savedAt = nul
         const body = await res?.json?.().catch(() => null);
         return { ok: false, message: `The CMS refused it: ${body?.error || `error ${res?.status}`}` };
     }
-    const left = [
-        skipped.spawned ? `${plural(skipped.spawned, 'spawned Token')} (the camp's spawners make them)` : '',
-        skipped.quests ? plural(skipped.quests, 'quest') : ''
-    ].filter(Boolean).join(' and ');
+    const left = skipped.spawned ? `${plural(skipped.spawned, 'spawned Token')} (the camp's spawners make them)` : '';
     return {
         ok: true,
         message: `Saved ${plural(camp.tokens.length, 'Token')}, the Guild Hall and ${plural(Object.keys(camp.bank).length, 'Bank item')} to the CMS` +

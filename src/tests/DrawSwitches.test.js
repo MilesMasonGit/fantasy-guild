@@ -7,8 +7,6 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import * as QuestTokens from '../systems/quests/QuestTokens.js';
-import { QuestManager } from '../systems/quests/QuestManager.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
@@ -117,36 +115,30 @@ describe('side UI', () => {
 });
 
 describe('mat overlays', () => {
-    const hunt = {
-        id: 'q_hunt', tutorial: false, title: 'Defeat 3 Goblins', type: 'hunt',
-        targetType: 'enemy_hunted', enemyId: 'token_goblin',
-        requiredCount: 3, currentCount: 1,
-        rewardItems: [{ itemId: 'item_oak_wood', quantity: 5 }], done: false
-    };
-    function questToken() {
+    /** A rested Token on a fresh mat: one with charges (its idle plate) and the Guild Hall (its Passive Production tooltip). */
+    function restedTokens() {
         GameState.initNew();
         InventoryManager.init();
         SpriteLayer.init();
         GameState.state.heroes = [];
-        BoardState.addToken(BoardState.createTokenInstance('token_guild_hall'), 880, 560);
-        QuestManager.init();
-        const q = QuestTokens.spawnQuest(hunt);
-        return h(MatToken, { id: q.id, typeId: q.typeId, x: q.x, y: q.y, size: 1, z: 10, isHovered: true, isRested: true, plateHost: document.body });
+        const hall = placeAt('token_guild_hall', 880, 560);
+        const finite = placeAt('fixture_producer', 400, 300);
+        const rested = (t) => h(MatToken, { id: t.id, typeId: t.typeId, x: t.x, y: t.y, size: 1, z: 10, isHovered: true, isRested: true, plateHost: document.body });
+        return h(React.Fragment, null, rested(finite), rested(hall));
     }
 
     it('bubbles and tooltips', () => {
-        const el = questToken();
-        mount(el);
-        expect(document.body.querySelector('[data-idle-plate] [data-plate-cell="quest"]')).not.toBeNull();
-        expect(document.body.querySelector('[data-quest-tooltip]')).not.toBeNull();
+        const els = restedTokens();
+        mount(els);
+        expect(document.body.querySelector('[data-idle-plate] [data-plate-cell="charges"]')).not.toBeNull();
+        expect(document.body.querySelector('[data-passive-tooltip]')).not.toBeNull();
         cleanup();
 
         setDrawn('bubbles', false);
         setDrawn('tooltips', false);
-        mount(el);
+        mount(els);
         expect(document.body.querySelector('[data-idle-plate]')).toBeNull();
-        expect(document.body.querySelector('[data-quest-tooltip]')).toBeNull();
-        QuestManager.cleanup();
+        expect(document.body.querySelector('[data-passive-tooltip]')).toBeNull();
     });
 
     it('rings: the hover reach ring on the mat draws, and not when off', () => {

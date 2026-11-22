@@ -28,7 +28,6 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { registerTokenTypes, getTokenType, tokenStartingUses } from '../config/registries/tokenRegistry.js';
-import { QUEST_TOKEN_TYPE } from '../config/registries/engineTokens.js';
 import { DEMOLITION_SKILL_ID, getSkill, SKILL_LAYERS } from '../config/registries/skillRegistry.js';
 import { clearMat, placeAt } from './fixtures/mat.js';
 import { pickRecipe } from './fixtures/stations.js';
@@ -206,20 +205,17 @@ describe('what can be marked', () => {
         expect(Demolition.markedTokens().map(t => t.id)).toEqual([bought.id, spawned.id]);
     });
 
-    it('never the Guild Hall, a landmark, a map node, a quest or an enemy: each refused with a reason to show', () => {
+    it('never the Guild Hall, a landmark, a map node or an enemy: each refused with a reason to show', () => {
         const hall = placeAt('token_guild_hall', 880, 560);
         const landmark = placeAt('demo_landmark', 400, 200);
         const node = placeAt('demo_tree', 560, 200);
         node.fixture = true;
-        const quest = placeAt(BoardState.createTokenInstance(QUEST_TOKEN_TYPE), 720, 200);
-        quest.quest = { id: 'quest_demo' };
         const enemy = placeAt('fixture_enemy', 400, 360);
 
         const cases = [
             [hall, Demolition.REFUSAL.GUILD_HALL],
             [landmark, Demolition.REFUSAL.LANDMARK],
             [node, Demolition.REFUSAL.MAP_NODE],
-            [quest, Demolition.REFUSAL.QUEST],
             [enemy, Demolition.REFUSAL.ENEMY]
         ];
         const changed = [];

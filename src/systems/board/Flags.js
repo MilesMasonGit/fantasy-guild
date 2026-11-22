@@ -615,7 +615,7 @@ export function assignHero(heroId) {
 /**
  * Why `heroId` cannot be ordered onto `instance`, or null when they can: `{ reason }`, a skip reason
  * (`ALERT.UNSKILLED`, `ALERT.ACCESS`, `ALERT.NO_TOOL`) or {@link ORDER_NOTHING} for a Token no hero works (a spawner of no
- * enemy, a support, a quest, unfinished content naming no skill). The Guild Hall is home, not a
+ * enemy, a support, unfinished content naming no skill). The Guild Hall is home, not a
  * job: the caller sends the hero there instead. A camp answers for what it hands out
  * ({@link campRefusal}, with `on`); a War Camp and an enemy camp take anyone who can fight.
  *

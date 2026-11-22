@@ -100,14 +100,6 @@ function PlateCell({ cell, u, tip }) {
                 </>
             );
             break;
-        case CELL.QUEST:
-            body = (
-                <>
-                    {cell.itemId && <img src={spriteOf(cell.itemId)} alt="" draggable={false} style={icon} />}
-                    <span className="font-bold tabular-nums leading-none text-white" style={num}>{cell.text}</span>
-                </>
-            );
-            break;
         default:
             body = null;
     }

@@ -60,17 +60,12 @@ describe('dead event wiring stays dead', () => {
     });
 
     /**
-     * a bare `'token_exhausted'` subscription sat directly beneath the real
-     * `BOARD_EVENTS.TOKEN_DEPLETED` one and reported the same quest target. It
-     * read as a double-count and was in fact dead: `token_exhausted` is a quest
-     * target name and a tile-log entry type, never an EventBus event.
+     * a bare `'token_exhausted'` subscription once sat beneath the real
+     * `BOARD_EVENTS.TOKEN_DEPLETED` one: `token_exhausted` is a tile-log entry
+     * type, never an EventBus event.
      */
-    it('the quest counter reports token exhaustion exactly once (CR2-195)', () => {
-        const quests = CODE.find(f => f.path === 'systems/quests/QuestManager.js');
-        expect(quests).toBeDefined();
-        const reports = quests.text.match(/reportProgress\('token_exhausted'\)/g) || [];
-        expect(reports).toHaveLength(1);
-        expect(quests.text).not.toMatch(/subscribe\(\s*'token_exhausted'/);
+    it('nothing subscribes to the bare `token_exhausted` (CR2-195)', () => {
+        expect(sitesFor(/subscribe\(\s*'token_exhausted'/)).toEqual([]);
     });
 
     /**
@@ -154,30 +149,11 @@ describe('dead event wiring stays dead', () => {
     });
 
     /**
-     * `ui_modal:opened` works, but only by the coincidence of three string
-     * literals matching across two files that know nothing about each other.
-     * A quest counting the Bank or the Shop opening advances solely because a React hook fires it. The
-     * fix was to write the contract down at both ends; this asserts the
-     * documentation is still there and that both ends still agree on the
-     * strings.
+     * `ui_modal:opened` and `ui:token_inspected` were UI to engine notices only the bounties and the
+     * old tutorial counted. Nothing reads them now, so nothing publishes them either.
      */
-    it('the `ui_modal:opened` contract is documented at both ends (CR2-094)', () => {
-        const hook = FILES.find(f => f.path === 'ui/hooks/useUIModals.js');
-        const quests = FILES.find(f => f.path === 'systems/quests/QuestManager.js');
-        expect(hook.text).toMatch(/Contract: `ui_modal:opened`/);
-        expect(quests.text).toMatch(/`ui_modal:opened` comes from the React layer/);
-
-        // The hook is still the only publisher... (Named by
-        // `UI_EVENTS.UI_MODAL_OPENED`.)
-        expect(sitesFor(/publish\(\s*UI_EVENTS\.UI_MODAL_OPENED\b/)).toEqual(['ui/hooks/useUIModals.js']);
-        // ...and QuestManager the only subscriber.
-        expect(sitesFor(/subscribe\(\s*UI_EVENTS\.UI_MODAL_OPENED\b/)).toEqual(['systems/quests/QuestManager.js']);
-
-        // Both ends must still agree on the modal ids. `vault` went with the
-        // Token Vault (Token Lifecycle 9.3); its quest mapping went in 9.5.
-        for (const modalId of ['bank', 'shop']) {
-            expect(stripComments(quests.text)).toContain(`modalId === '${modalId}'`);
-        }
-        expect(stripComments(quests.text)).not.toContain(`modalId === 'vault'`);
+    it('the retired UI notices are neither published nor heard (CR2-094)', () => {
+        expect(sitesFor(/UI_EVENTS\.(UI_MODAL_OPENED|TOKEN_INSPECTED)\b/)).toEqual([]);
+        expect(sitesFor(/['"]ui_modal:opened['"]|['"]ui:token_inspected['"]/)).toEqual([]);
     });
 });

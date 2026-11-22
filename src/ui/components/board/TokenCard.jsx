@@ -14,8 +14,6 @@ import { CARD_BLOCK, tokenCardModel, cycleText, drivenBy } from './tokenCard.js'
 import { ArrowScrollList, PixelTriangle } from '../base/ArrowScrollList.jsx';
 import { withArticle } from '../../../systems/effects/toolNames.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
-import { EventBus } from '../../../systems/core/EventBus.js';
-import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import { GameState } from '../../../state/GameState.js';
@@ -651,13 +649,6 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
     // Charges, a picked recipe, a hero arriving: re-read on this Token's own events.
     useTokenDetail(instanceId, def);
     useCardClock(instanceId, !!def?.enemy);
-
-    // ⚠️ The engine cannot see a card open: this tells it, once per Token shown, and the
-    // tutorial's "inspect an endgame site" step counts it (`QuestManager`).
-    useEffect(() => {
-        if (instanceId == null || !typeId) return;
-        EventBus.publish(UI_EVENTS.TOKEN_INSPECTED, { instanceId, typeId });
-    }, [instanceId, typeId]);
 
     const model = tokenCardModel(typeId, instanceId);
     const instance = instanceId != null ? BoardState.getTokenById(instanceId) : null;

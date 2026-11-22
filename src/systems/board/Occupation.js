@@ -2,7 +2,6 @@
 
 import { GameState } from '../../state/GameState.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
-import { QUEST_TOKEN_TYPE } from '../../config/registries/engineTokens.js';
 import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import * as BoardState from './BoardState.js';
 import { isGuildHall } from './MatCap.js';
@@ -52,18 +51,18 @@ export function isArrivalId(id) {
 }
 
 /**
- * Whether the arrival holds `instance` from hero work: the mat is held, and it is not an enemy,
- * the Guild Hall or a quest.
+ * Whether the arrival holds `instance` from hero work: the mat is held, and it is not an enemy
+ * or the Guild Hall.
  */
 export function holds(instance) {
     if (!instance?.typeId || !isOccupied()) return false;
-    if (isGuildHall(instance) || instance.typeId === QUEST_TOKEN_TYPE) return false;
+    if (isGuildHall(instance)) return false;
     return !isEnemyDef(getTokenType(instance.typeId));
 }
 
-/** Whether a Token of `typeId` is drawn held (dimmed) while the mat is: anything but an enemy, the Hall or a quest. */
+/** Whether a Token of `typeId` is drawn held (dimmed) while the mat is: anything but an enemy or the Hall. */
 export function isHeldType(typeId) {
-    if (!typeId || typeId === QUEST_TOKEN_TYPE) return false;
+    if (!typeId) return false;
     const def = getTokenType(typeId);
     return !isGuildHall({ typeId }) && !isEnemyDef(def);
 }

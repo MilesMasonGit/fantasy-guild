@@ -16,7 +16,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 /**
  * ⭐ A save an earlier build of this version wrote, end to end through a slot: it carries the
  * sections and fields that build still wrote (cards, recruitment, the inert Bank caps, rarities,
- * the sidebar quest list, the retired hero and Region fields), it loads, plays on, and the next save
+ * the sidebar quest list and the bounty clock, the retired hero and Region fields), it loads, plays on, and the next save
  * carries none of them.
  */
 
@@ -36,8 +36,7 @@ function writeOlderBuildSave() {
     for (const def of Object.values(s.inventory.groupDefs)) def.isCustom = false;
     s.progress.unlockedRarities = ['common', 'uncommon'];
     s.progress.discoveredTasksByBiome = {};
-    s.quests.active = [];
-    s.quests.nextQuestAt = null;
+    s.quests = { active: [], nextQuestAt: null, clockMs: 0 };
     s.collection.provenance = { token_oak_forest: { item_oak_wood: true } };
     s.ui.newDiscoveries = { item_oak_wood: true };
     for (const region of Object.values(s.atlas.regions || {})) region.settledAt = 0;
@@ -82,7 +81,7 @@ describe('⭐ a save an earlier build of this version wrote loads end to end', (
         SaveManager.save(false);
 
         const written = writeOlderBuildSave();
-        expect(retiredKeysIn(written.state).length).toBeGreaterThanOrEqual(15);
+        expect(retiredKeysIn(written.state).length).toBeGreaterThanOrEqual(14);
 
         expect(await SaveManager.loadSlot(SLOT, { catchUp: false })).toBe(true);
         expect(GameState.state.time.gameTimeMs).toBe(4321);

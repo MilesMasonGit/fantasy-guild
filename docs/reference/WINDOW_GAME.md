@@ -23,7 +23,7 @@ see [`TESTING.md`](TESTING.md), "Running the game for verification".)
   can't reach; prefer the dev panel or a QA fixture save for anything the
   owner will look at.
 
-## The entries (31)
+## The entries (30)
 
 | Entry | What it is | Reached for most |
 |---|---|---|
@@ -48,8 +48,7 @@ see [`TESTING.md`](TESTING.md), "Running the game for verification".)
 | `Camps` | camps: what a camp hands the heroes sent to it | `campOf(def)`, `campWork(camp)`, `isEnemyCamp(instance)`, `reachRingOf(instance)`, `campOfHero(heroId)` |
 | `Flags` | heroes' orders, saved as flag records | `orderToken`, `orderSpot`, `sendHome`, `statusOf`, `waitingOf` |
 | `Demolition` | taking Tokens down | `canDemolish`, `mark`, `unmark`, `markedTokens()` |
-| `QuestManager` | quests | `getActiveQuests()`, `claimQuest(...)`, `getTutorialStep()` |
-| `QuestTokens` | quests and bounties as Tokens on the mat | `questTokens()`, `spawnQuest`, `spawnBounty` |
+| `QuestManager` | the reports Limes's lessons count, made from the engine's events | `reportProgress(type, amount, metadata)` |
 | `EventClock` | events landing on the mat every 45 to 75 minutes (brief 640) | `clockMs()`, `waitMs()`, `nextEventInMs()`, `eventTokenOnMat()`, `landNext()`, `landNow(eventId)`, `isEnabled()` |
 | `EnemyMotion` | enemies' camps (tethers) and their step to open space before a crowded fight | `isWalking`, `bodyOf`, `tetherOf` |
 | `Atlas` | Regions and travel | `list()`, `activeRegion()`, `travel(id)`, `devCreateEmptyRegion()`, `devPreview(names)`, `devSettle(names, seed)` |

@@ -26,7 +26,7 @@ import { ringCount } from './ringRow.js';
  * hero, the Token or the plate opens the full line: the skill, the problem, the charges and the
  * time to the next one, each part explaining itself on hover.
  * A Token nobody works gets the same plate under itself while the pointer rests on it
- * (`idlePlate.js`): its charges, its timer, a quest's progress, a spawner's count, its problem.
+ * (`idlePlate.js`): its charges, its timer, a spawner's count, its problem.
  * This file is the plate's rules, with no React: what it shows (`workPlateOf`, `plateCells`), its
  * tooltips (`plateTip`) and where it stands (`platePlace`).
  */
@@ -60,12 +60,12 @@ export const PLATE = Object.freeze({
 });
 
 /**
- * The cells a plate can show, in the order they stand. An idle Token's plate shows a quest's
- * progress and a spawner's count.
+ * The cells a plate can show, in the order they stand. An idle Token's plate shows a spawner's
+ * count.
  */
 export const CELL = Object.freeze({
     SKILL: 'skill', MISSING: 'missing', PROBLEM: 'problem', CHARGES: 'charges', TIMER: 'timer',
-    QUEST: 'quest', SPAWNER: 'spawner'
+    SPAWNER: 'spawner'
 });
 
 /**

@@ -85,16 +85,15 @@ function binHash(s, hash = fnv1a) {
 }
 
 /**
- * Ids carry the wall-clock time they were made at (`tok_<ms>_…`, `sprite_<ms in base 36>_<n>`,
- * `quest_<ms>_…`). A catch-up makes them while the wall clock stands nearly still, live play while
+ * Ids carry the wall-clock time they were made at (`tok_<ms>_…`, `sprite_<ms in base 36>_<n>`).
+ * A catch-up makes them while the wall clock stands nearly still, live play while
  * it moves, so comparing the two (S8 against S8L) leaves that time out. The rest of each id (its
  * random part, its counter) stays.
  */
 function withoutIdTimes(text) {
     return text
         .replace(/\btok_\d+_/g, 'tok_')
-        .replace(/\bsprite_[0-9a-z]+_(\d+)/g, 'sprite_$1')
-        .replace(/\bquest_\d+_/g, 'quest_');
+        .replace(/\bsprite_[0-9a-z]+_(\d+)/g, 'sprite_$1');
 }
 
 /**

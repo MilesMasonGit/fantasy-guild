@@ -52,7 +52,7 @@ const HOUR_MS = 3_600_000;
 
 /**
  * The Guild Hall stand-in (the bench's `bench_hall`): heroes start and go home there. The shipped Hall
- * pays Passive Production and hands out bounties, which would add to what a setup makes.
+ * pays Passive Production, which would add to what a setup makes.
  */
 registerTokenTypes({
     calibration_hall: {

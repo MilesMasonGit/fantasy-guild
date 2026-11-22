@@ -49,9 +49,8 @@ describe('Dynamic Registry Loading', () => {
     });
 
     // The quest-loading case is gone with the authored quest pipeline:
-    // `data/quests.json` and `questRegistry.js` are deleted: bounties are code
-    // (`systems/quests/questBounties.js`, covered by QuestSystem.test.js), and so
-    // are Limes's lessons (`lessonPlan.js`, LimesLessons.test.js).
+    // `data/quests.json` and `questRegistry.js` are deleted, and Limes's lessons
+    // are code (`lessonPlan.js`, LimesLessons.test.js).
     //
     // The area-loading case is gone too: `data/cards/` was retired by the
     // playmat rework (Phase 1 §H), its archived copy was deleted and areas

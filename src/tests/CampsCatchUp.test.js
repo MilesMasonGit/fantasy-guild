@@ -22,7 +22,7 @@ import { KEYWORD } from '../systems/effects/statements.js';
 import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
-import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import * as fixtures from '../../bench/fixtures.mjs';
 import { withoutShippedPerks } from './fixtures/noPerks.js';
 
@@ -137,7 +137,6 @@ function freshBoard() {
     stream.draws = 0;
     motion.state = 7;
     resetMatTuning();
-    setMatTuning('questCap', 0);
     GameState.initNew();
     InventoryManager.init();
     Growth.resetGrowthAlerts();

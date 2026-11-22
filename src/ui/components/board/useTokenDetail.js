@@ -9,30 +9,7 @@ import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import * as Respawn from '../../../systems/board/Respawn.js';
 import * as Fields from '../../../systems/board/Fields.js';
 import * as Demolition from '../../../systems/board/Demolition.js';
-import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
-
-/**
- * A quest Token's quest as a flat projection for `detail`: what the idle plate, the glow and the
- * tooltip draw. Rebuilt on every read, so the projection's deep compare sees progress. Null
- * for any other Token.
- */
-function questProjection(instance) {
-    if (!QuestTokens.isQuestToken(instance)) return null;
-    const q = instance.quest;
-    return {
-        id: q.id,
-        title: q.title,
-        instruction: q.instruction || null,
-        type: q.type || null,
-        itemId: q.itemId || null,
-        enemyId: q.enemyId || null,
-        currentCount: q.currentCount || 0,
-        requiredCount: q.requiredCount || 1,
-        rewardItems: (q.rewardItems || []).map(r => ({ itemId: r.itemId, quantity: r.quantity })),
-        done: !!q.done
-    };
-}
 
 /** The side the hero working `id` stands on (−1 / 1), or null. */
 function sideOfWorker(id) {
@@ -85,9 +62,7 @@ export function tokenDetailOf(id, def) {
         // or ripe picture, a resting vein's empty rock.
         stateSprite: marked ? null : (Fields.stateSpriteOf(instance, def) ?? Respawn.restingSpriteOf(instance, def)),
         // Marked for demolition: the marked badge.
-        marked,
-        // A quest Token's quest: plate, glow, tooltip, click to claim.
-        quest: questProjection(instance)
+        marked
     };
 }
 
@@ -97,8 +72,7 @@ const BY_ID = Object.freeze([
     BOARD_EVENTS.ALERT_CHANGED,             // alert
     BOARD_EVENTS.HERO_MOVED,                // a hero arrived here: heroId, heroSide
     BOARD_EVENTS.TOKEN_CHARGES_CHANGED,     // usesRemaining, and with it resting
-    BOARD_EVENTS.TOKEN_PLACED,
-    ENGINE_EVENTS.QUESTS_UPDATED            // a quest Token's progress
+    BOARD_EVENTS.TOKEN_PLACED
 ]);
 
 /** A spawner counts its family, so any Token arriving or leaving can change it. */
@@ -113,9 +87,7 @@ const SPAWNER_BROADCAST = Object.freeze([
  * * by the hero working it: `HERO_MOVED` names the Token a hero went TO, so the one they LEFT
  * hears it through their `heroId`;
  * * broadcast: `GAME_RESET` for every Token, and the family's comings and goings for a
- * spawner. (A quest Token needs none: every change to a quest publishes `QUESTS_UPDATED {
- * instanceId }`, and a quest Token subscribes exactly as often as a plain one; see
- * `QuestTokenUI.test.js`.)
+ * spawner.
  * Each route is pinned by `TokenDetailRoutes.test.js`.
  */
 export function useTokenDetail(id, def) {

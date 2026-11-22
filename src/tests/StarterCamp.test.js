@@ -62,8 +62,7 @@ describe('the Starter Camp file\'s shape', () => {
                 { typeId: 'token_a', x: 100.6, y: 200.2 },
                 { typeId: '', x: 1, y: 1 },
                 { typeId: 'token_b', x: 'left', y: 3 },
-                null,
-                { typeId: 'token_quest', x: 5, y: 5 }
+                null
             ],
             bank: { item_a: 3, item_b: 0, item_c: -2, item_d: 'many', item_e: 2.9 }
         });
@@ -115,10 +114,6 @@ describe('the dev button saves the live mat in the shape the loader reads', () =
         // Spawned Tokens come from the camp's own spawners, so they are not saved.
         const sapling = BoardState.createTokenInstance('fixture_producer', null, null, BoardState.ORIGIN.SPAWNED);
         BoardState.addToken(sapling, 1100, 700);
-        // Quest Tokens are the Guild Hall's bounties, never the camp's.
-        const quest = BoardState.createTokenInstance('token_quest');
-        quest.quest = { id: 'q_fixture', tutorial: false };
-        BoardState.addToken(quest, 1000, 300);
         InventoryManager.addItem('fixture_oak_wood', 12);
         InventoryManager.addItem('fixture_charcoal', 1);
     }
@@ -137,7 +132,7 @@ describe('the dev button saves the live mat in the shape the loader reads', () =
             ],
             bank: { fixture_oak_wood: 12, fixture_charcoal: 1 }
         });
-        expect(skipped).toEqual({ spawned: 1, quests: 1 });
+        expect(skipped).toEqual({ spawned: 1 });
     });
 
     it('a new game from that save, through a JSON file, stands exactly as it was saved', () => {

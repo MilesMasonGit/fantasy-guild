@@ -155,19 +155,14 @@ describe('the Bank drawer keeps the Bank only (B4)', () => {
     });
 
     it('the nav Shop bubble opens and closes the Shop panel, not a Bank pane', async () => {
-        const opened = vi.fn();
-        const unsub = EventBus.subscribe('ui_modal:opened', opened);
         const { result } = renderHook(() => useUIModals(null));
         act(() => result.current.nav.toggle('shop'));
         await waitFor(() => expect(result.current.shop.isOpen).toBe(true));
         expect(result.current.drawer.panes).toEqual([]);
         expect(result.current.nav.isActive('shop')).toBe(true);
-        // The quest wiring still hears the Shop open.
-        expect(opened).toHaveBeenCalledWith({ modalId: 'shop' });
 
         act(() => result.current.nav.toggle('shop'));
         expect(result.current.shop.isOpen).toBe(false);
-        unsub();
     });
 });
 

@@ -46,7 +46,7 @@ describe('A sprite sweep announces once, not once per sprite (CR2-056)', () => {
 
     it('still publishes board:sprite_collected once per sprite', () => {
         // Not batched, and must never be: it carries the position the particle
-        // flies from and `QuestManager` counts it.
+        // flies from and Limes's lessons count it.
         for (let i = 0; i < 40; i++) SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, null);
 
         const counts = countEvents(() => SpriteLayer.collectAll());

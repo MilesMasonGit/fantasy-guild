@@ -190,7 +190,7 @@ export function effectiveIO(instanceId, instance) {
 /**
  * Every nearby Token (by instance id, arrival order) that this context or buff Token serves: a
  * station whose active recipe or accepted tools it supplies, or anything that runs beside a buff.
- * Serving costs it nothing (help is free); the quest tracker asks who a Token serves.
+ * Serving costs it nothing (help is free).
  */
 export function servesFrom(contextId) {
     const instance = BoardState.getTokenById(contextId);

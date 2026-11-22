@@ -16,7 +16,6 @@ import { getItem, getAllItems, registerItems } from '../config/registries/itemRe
 import { starterToolIds, neededToolOf, toolOf, toolMeets } from '../config/registries/toolKinds.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { catchPoolsOf } from '../config/registries/catchPools.js';
-import { BOUNTY_REWARD_ITEMS, RANDOM_ITEMS, RANDOM_HUNTS } from '../systems/quests/questBounties.js';
 import { worldTables } from '../config/registries/worldTablesRegistry.js';
 import { getEffect } from '../config/registries/effectRegistry.js';
 import { stationSkillOf } from '../systems/effects/statements.js';
@@ -252,13 +251,11 @@ function effectYields(def) {
     return { items, tokens };
 }
 
-const BOUNTY_ITEMS = BOUNTY_REWARD_ITEMS.map(r => r.itemId);
-
 /**
  * Close over what the player can get: Tokens (in the Starter Camp, bought, spawned, grown, turned
  * into, built, ambushing) and items (the camp's Bank and the starter tools, trickle, worked from a
  * Token whose inputs are already reachable, caught from water's catch pools, a bonus drop of an
- * effect on a reachable Token or item, quest rewards, the Wishing Well's Water). A Token is bought
+ * effect on a reachable Token or item, the Wishing Well's Water). A Token is bought
  * once its whole price is reachable; a recipe runs once its inputs are; a Token whose work needs a
  * tool is worked once a tool that will do is. The world map's cells of rings up to `maxPlane` write
  * their Tokens ({@link worldTokens}): a cell is settled with materials of earlier rings, which this
@@ -268,8 +265,6 @@ const BOUNTY_ITEMS = BOUNTY_REWARD_ITEMS.map(r => r.itemId);
  * (its Outputs). Heroes fight bare-handed when nothing better is in
  * hand, and levels are earned by playing, so neither gear nor level gates a fight here, as no
  * skill level gates a recipe.
- *
- * A bounty pays its items once anything it asks for can be had.
  */
 function reachable({ maxPlane = 2 } = {}) {
     const camp = StarterCamp.starterCamp();
@@ -326,10 +321,6 @@ function reachable({ maxPlane = 2 } = {}) {
             // A consumable's effect works on whoever uses it, so its bonus drops come with it.
             for (const bonus of effectYields(getItem(id)).items) items.add(bonus);
         }
-        const bountyAsks = RANDOM_ITEMS.some(r => items.has(r.id)) || RANDOM_HUNTS.some(h => tokens.has(h.id));
-        if (bountyAsks) {
-            for (const id of BOUNTY_ITEMS) items.add(id);
-        }
         const well = getUpgradeDef('wishing_well');
         if (well && have(getUpgradePrice(well, 0))) items.add(WISHING_WELL_ITEM);
         grew = tokens.size + items.size > before;
@@ -380,7 +371,6 @@ function planeWorld(maxPlane = 2) {
     const produced = new Set([
         ...StarterCamp.openingBank(camp).map(i => i.itemId),
         ...starterToolIds(allItems),
-        ...BOUNTY_ITEMS,
         WISHING_WELL_ITEM
     ]);
     const asked = new Map();

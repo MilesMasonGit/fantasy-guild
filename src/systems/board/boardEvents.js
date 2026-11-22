@@ -192,7 +192,7 @@ export const BOARD_EVENTS = {
     GROWTH_ALERT_CHANGED: 'board:growth_alert_changed',
 
     /**
-     * A spawner (or the Guild Hall, for a quest) put a new Token on the mat. Payload: `{
+     * A spawner put a new Token on the mat. Payload: `{
      * spawnerId, instanceId, typeId, name }`: the callout "! Spawned {name}" is said from the
      * spawner.
      */

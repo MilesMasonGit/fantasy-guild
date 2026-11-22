@@ -240,7 +240,7 @@ describe('what cannot go back', () => {
     });
 });
 
-describe('a quest counting purchases', () => {
+describe('a lesson counting purchases', () => {
     beforeEach(() => QuestManager.init());
 
     it('keeps the purchase it counted: a refund reports no progress, up or down', () => {

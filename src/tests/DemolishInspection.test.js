@@ -1,17 +1,14 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeAll, afterAll, afterEach, beforeEach, vi } from 'vitest';
 import React from 'react';
-import { render, cleanup, fireEvent, act } from '@testing-library/react';
+import { render, cleanup, act } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
-import * as BoardState from '../systems/board/BoardState.js';
 import * as Demolition from '../systems/board/Demolition.js';
 import * as Flags from '../systems/board/Flags.js';
-import * as QuestTokens from '../systems/quests/QuestTokens.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
-import { QUEST_TOKEN_TYPE } from '../config/registries/engineTokens.js';
 import { LeaveMatControl } from '../ui/components/drawer/LeaveMatControl.jsx';
 import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
 import { calloutText } from '../ui/components/board/callouts.js';
@@ -28,8 +25,8 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 
 /**
  * Demolition as the mat and the card show it: the countdown line, the marked badge, the
- * callout, and a Dismiss for bounties. Marking is Demolish mode's
- * (`MapModes.test.js`); the Dismiss control has no Demolish button.
+ * callout. Marking is Demolish mode's (`MapModes.test.js`): the leave-the-mat control has no
+ * Demolish button.
  */
 
 const h = React.createElement;
@@ -110,21 +107,12 @@ describe('the demolished callout', () => {
     });
 });
 
-describe('Dismiss for bounties', () => {
-    function quest() {
-        const q = placeAt(QUEST_TOKEN_TYPE, 600, 300);
-        q.quest = { id: 'bounty', title: 'Q', tutorial: false, targetType: 'x', requiredCount: 3, currentCount: 0, rewardItems: [], done: false };
-        return q;
-    }
-
-    it('a bounty has a Dismiss that takes it off the mat', async () => {
-        const b = quest();
-        const { container } = inspect(b);
+describe('leaving the mat at once', () => {
+    it('a placed Token offers no control outside the dev layout tool, and never a Demolish button', () => {
+        const t = placeAt('fixture_producer', 600, 300);
+        const { container } = inspect(t);
         expect(control(container)).toBeNull();
-        const btn = container.querySelector('[data-dismiss-bounty]');
-        expect(btn.textContent).toBe('Dismiss bounty');
-        await act(async () => { fireEvent.click(btn); });
-        expect(BoardState.getTokenById(b.id)).toBeNull();
-        expect(QuestTokens.bountyTokens()).toHaveLength(0);
+        expect(container.querySelector('[data-dev-remove]')).toBeNull();
+        expect(container.querySelector('button')).toBeNull();
     });
 });

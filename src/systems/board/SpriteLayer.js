@@ -66,7 +66,7 @@ function sayBankFull(itemId, reason) {
  * `inventory_updated` per item, after the last pile.
  *
  * ⚠️ `board:sprite_collected` is NOT batched and must not be: it is per-sprite by design (it
- * carries the position the particle flies from, and `QuestManager` counts it). Only
+ * carries the position the particle flies from, and Limes's lessons count it). Only
  * `board:sprites_changed`, which just means re-read the floor, collapses here.
  */
 let sweepDepth = 0;
@@ -468,7 +468,7 @@ function sweepOne(sprite) {
  * Collect everything that will fit. Whatever does not fit stays put.
  *
  * One sweep, one announcement (see `asSweep`). Each sprite still publishes its own
- * `board:sprite_collected`, so particles and quest counters are untouched.
+ * `board:sprite_collected`, so particles and lesson counters are untouched.
  *
  * @returns {number} how many sprites were taken
  */

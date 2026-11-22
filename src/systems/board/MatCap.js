@@ -1,13 +1,11 @@
 // the mat-wide Token cap
 
 import { getTokenType, registryVersion } from '../../config/registries/tokenRegistry.js';
-import { QUEST_TOKEN_TYPE } from '../../config/registries/engineTokens.js';
 import { matTuning } from '../../config/matTuning.js';
 import * as BoardState from './BoardState.js';
 
 /**
- * How many Tokens the mat may hold. Every Token on the mat counts, placed or spawned. The Guild Hall and quest Tokens never count: the Hall is always there, and quests are bounded by
- * the quest cap. Landmarks (the endgame sites) count like any placed Token. The cap is the guild's,
+ * How many Tokens the mat may hold. Every Token on the mat counts, placed or spawned. The Guild Hall never counts: it is always there. Landmarks (the endgame sites) count like any placed Token. The cap is the guild's,
  * but it counts only the Region the guild is in: the others are frozen in the Atlas, off the mat.
  *
  * Who asks: the Shop and a station making a Token (`Placement.hasRoomForProduct`) ask {@link
@@ -25,12 +23,12 @@ export function isGuildHall(instance) {
 }
 
 /**
- * Whether a Token counts toward the cap: not a quest, an event Token (`instance.event`: a visitor
+ * Whether a Token counts toward the cap: not an event Token (`instance.event`: a visitor
  * that leaves on its own must never stop the player building) or the Guild Hall. One type lookup.
  */
 export function countsTowardCap(instance) {
     const typeId = instance?.typeId;
-    if (!typeId || typeId === QUEST_TOKEN_TYPE || instance.event) return false;
+    if (!typeId || instance.event) return false;
     return !isGuildHall(instance);
 }
 

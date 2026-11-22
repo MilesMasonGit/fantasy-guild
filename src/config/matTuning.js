@@ -14,10 +14,9 @@
  *
  * ## ⚠️ Dev and perf builds only
  * A test or ship build has no tuning: every number reads its default there, never what a device
- * once stored, and nothing can set one. The mat's size and the bounty numbers are game values
- * owned by the game (`MAT_STEPS` in `matGeometry.js`, `QUEST_CAP_BASE`, `QUEST_CAP_MAX` and
- * `QUEST_EVERY_SEC` in `QuestTokens.js`); their rows here start at those values
- * (`ShippedBuild.test.js` holds them in step) and are read through {@link tunedOr}.
+ * once stored, and nothing can set one. The mat's size is a game value owned by the game
+ * (`MAT_STEPS` in `matGeometry.js`); its row here starts at that value
+ * (`ShippedBuild.test.js` holds them in step) and is read through {@link tunedOr}.
  *
  * Read with `matTuning('key')` at the point of use, every time — capturing a
  * value into a module constant would freeze it at import.
@@ -133,33 +132,9 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'tokenCap',
         group: 'The mat',
         label: 'Token cap override',
-        hint: 'Dev override for the most Tokens the mat may hold (MatCap.BASE_TOKEN_CAP is the game value, 128). Every Token on the mat counts, placed or spawned; the Guild Hall and quests never do. 0 uses the game value.',
+        hint: 'Dev override for the most Tokens the mat may hold (MatCap.BASE_TOKEN_CAP is the game value, 128). Every Token on the mat counts, placed or spawned; the Guild Hall never does. 0 uses the game value.',
         min: 0, max: 2000, step: 1, def: 0,
         format: (v) => (Math.round(v) === 0 ? 'off: game value' : `${Math.round(v)} Tokens`)
-    },
-    {
-        key: 'questCap',
-        group: 'Quests',
-        label: 'Quest cap',
-        hint: 'How many bounty quests the Guild Hall keeps on the mat (the game value is 2; dev builds only). The max below caps it. Tutorial quests do not count.',
-        min: 0, max: 10, step: 1, def: 2,
-        format: (v) => `${Math.round(v)} quests`
-    },
-    {
-        key: 'questCapMax',
-        group: 'Quests',
-        label: 'Quest cap max',
-        hint: 'The most this device may set the quest cap to, whatever the row above says (the game value is 5; dev builds only).',
-        min: 1, max: 20, step: 1, def: 5,
-        format: (v) => `${Math.round(v)} quests`
-    },
-    {
-        key: 'questEverySec',
-        group: 'Quests',
-        label: 'Quest every',
-        hint: 'Game time between bounty quests while the mat has fewer than the cap (TL-18: 3 min, the game value; dev builds only). The clock only runs below the cap.',
-        min: 10, max: 1800, step: 10, def: 180,
-        format: (v) => `${Math.floor(v / 60)} min ${Math.round(v % 60)} s`
     }
 ]);
 

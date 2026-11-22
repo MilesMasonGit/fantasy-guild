@@ -15,7 +15,6 @@ import { matTuning, setMatTuning, resetMatTuning, MAT_TUNABLES } from '../config
 import { PLACEMENT } from '../config/registries/placementRegistry.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
-import { QUEST_TOKEN_TYPE } from '../config/registries/engineTokens.js';
 import { setStarterCampForTests, resetStarterCampForTests } from '../config/registries/starterCampRegistry.js';
 
 /**
@@ -148,7 +147,7 @@ describe('⭐ the mat cap counts every Token, placed or spawned (T-102)', () => 
         expect(MatCap.matCap()).toBe(128);
     });
 
-    it('counts placed and spawned Tokens; never the Guild Hall or a quest', () => {
+    it('counts placed and spawned Tokens; never the Guild Hall', () => {
         // The Hall, and the starter Oak Forest and Copper Mine (10.1), which
         // are placed and count.
         EngineBootstrap.createDefaultGameData();
@@ -157,9 +156,8 @@ describe('⭐ the mat cap counts every Token, placed or spawned (T-102)', () => 
         placeSpawned('fixture_passive', 600, 200);
         placeSpawned('fixture_passive', 800, 200);
         placeSpawned('fixture_passive', 1000, 200);
-        placeSpawned(QUEST_TOKEN_TYPE, 1200, 200);
 
-        expect(BoardState.tokens()).toHaveLength(9);
+        expect(BoardState.tokens()).toHaveLength(8);
         expect(MatCap.tokenCount()).toBe(7);
     });
 

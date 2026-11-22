@@ -28,7 +28,6 @@ import { expandBearer } from '../../systems/effects/effectLibrary.js';
 import { migrateAppliesTargets } from '../../systems/effects/effectMigration.js';
 import { migrateSkillIds } from '../../systems/effects/skillIdMigration.js';
 import { migrateEffectIds } from '../../systems/effects/effectIdMigration.js';
-import { engineTokenType } from './engineTokens.js';
 import { STANDS_ON_CHOICES } from '../../systems/atlas/TerrainMap.js';
 import { neverWearsOut } from '../../systems/core/wearRule.js';
 
@@ -116,26 +115,14 @@ export function registryVersion() {
     return tokenRegistryVersion;
 }
 
-/**
- * A Token definition by id, or null.
- *
- * Falls back to the engine-owned types (`engineTokens.js`: the quest
- * Token), so an instance of one resolves like any Token. They are NOT in
- * `TOKENS` or {@link getAllTokenTypes}: those stay the authored content set
- * the audits and the Shop walk.
- */
+/** A Token definition by id, or null. */
 export function getTokenType(typeId) {
-    return TOKENS[typeId] || engineTokenType(typeId);
+    return TOKENS[typeId] || null;
 }
 
 /** Every Token definition, keyed by id. */
 export function getAllTokenTypes() {
     return TOKENS;
-}
-
-/** Every Token id. */
-export function listTokenTypeIds() {
-    return Object.keys(TOKENS);
 }
 
 /**
