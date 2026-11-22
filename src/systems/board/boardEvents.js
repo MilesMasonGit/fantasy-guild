@@ -161,6 +161,14 @@ export const BOARD_EVENTS = {
      */
     EVENT_ENDED: 'board:event_ended',
 
+    /**
+     * Something new found no room on the mat and waits for it, said once per wait (`RoomWait.tell`):
+     * `{ key, source, instanceId, typeId, name }`. `source` is `'station'`, `'spawner'`,
+     * `'arrival'` or `'event'`; `instanceId` and `name` name the waiting station or spawner, null
+     * for an arrival or an event, which have no Token on the mat to mark yet.
+     */
+    NO_ROOM_WAIT: 'board:no_room_wait',
+
     /** A neighbourhood changed, so modifiers need recomputing. Payload: `{ points }` — the mat points the change touched. */
     ADJACENCY_DIRTY: 'board:adjacency_dirty',
 

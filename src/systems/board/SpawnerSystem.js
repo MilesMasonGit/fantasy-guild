@@ -16,6 +16,7 @@ import * as MatCap from './MatCap.js';
 import * as Occupation from './Occupation.js';
 import * as Respawn from './Respawn.js';
 import * as Demolition from './Demolition.js';
+import * as RoomWait from './RoomWait.js';
 import { neighbourIds, reachRadius } from './nearby.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
@@ -321,7 +322,10 @@ function tryToSpawn(instance, def, random, ctx) {
 
     const { count, cap } = countsOf(instance, def);
     if (count >= cap) return HELD;                               // at cap: waits
-    if (!MatCap.canPlaceMore(1)) return HELD;                    // the mat's Token cap is full: waits
+    if (!MatCap.canPlaceMore(1)) {                              // the mat's Token cap is full: waits
+        RoomWait.tell(instance.id, { source: RoomWait.SOURCE.SPAWNER, instanceId: instance.id, typeId: instance.typeId });
+        return HELD;
+    }
     if (missingUpkeep(def).length) return HELD;                  // needs an item: waits
 
     const typeId = pickWeighted(block.spawns, random);
@@ -338,9 +342,11 @@ function tryToSpawn(instance, def, random, ctx) {
     if (!landed) {
         // Nowhere to go. Nothing was paid.
         noRoom.add(instance.id);
+        RoomWait.tell(instance.id, { source: RoomWait.SOURCE.SPAWNER, instanceId: instance.id, typeId: instance.typeId });
         return MISSED;
     }
     noRoom.delete(instance.id);
+    RoomWait.landed(instance.id);
 
     // Paid only now that the Token is down; checked above, so this cannot fail part-way (the tick
     // is single-threaded). Bank first, then loot on the mat.

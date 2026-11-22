@@ -164,6 +164,21 @@ export const ROUTES = [
         }
     },
     {
+        // Something new found no room and waits: told once per wait (`RoomWait`), the station or
+        // spawner named and outlined, or the arrival or event said without a Token.
+        event: BOARD_EVENTS.NO_ROOM_WAIT, to: 'banner:noRoom',
+        handle: ({ source, instanceId, typeId, name } = {}) => Banners.push({
+            kind: 'noRoom',
+            parts: {
+                beside: instanceId && name ? [name] : [],
+                arrival: source === 'arrival',
+                event: source === 'event'
+            },
+            sprite: typeId ? { kind: 'token', id: typeId } : null,
+            subjects: instanceId ? [{ type: 'token', id: instanceId }] : []
+        })
+    },
+    {
         // An event landing on the mat: a banner naming it, pointing to its Token.
         event: BOARD_EVENTS.EVENT_LANDED, to: 'banner:event',
         handle: ({ instanceId, typeId, name } = {}) => pushEventBanner({ instanceId, typeId, name })

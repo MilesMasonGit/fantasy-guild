@@ -73,6 +73,7 @@ describe('the routing table', () => {
             [BOARD_EVENTS.HERO_DEFEATED]: 'banner:knockout',
             [ENGINE_EVENTS.BANK_FULL]: 'banner:bankFull',
             [ENGINE_EVENTS.ATLAS_CHANGED]: 'banner:settled',
+            [BOARD_EVENTS.NO_ROOM_WAIT]: 'banner:noRoom',
             [BOARD_EVENTS.EVENT_LANDED]: 'banner:event',
             [BOARD_EVENTS.EVENT_ENDED]: 'banner:event',
             [ENGINE_EVENTS.BOARD_SWAPPED]: 'banner:event',
@@ -435,5 +436,29 @@ describe('a place settled is a gold banner', () => {
             EventBus.publish(ENGINE_EVENTS.ATLAS_CHANGED, { reason, regionId: Atlas.activeRegion()?.id });
         }
         expect(Banners.getAll()).toEqual([]);
+    });
+});
+
+describe('⭐ no room is said in one banner, the waits named in it', () => {
+    it('names the waiting station, then folds a second wait and the arrival into the same banner', () => {
+        EventBus.publish(BOARD_EVENTS.NO_ROOM_WAIT, { key: 'tok_s', source: 'station', instanceId: 'tok_s', typeId: 'token_smithy', name: 'Smithy' });
+        let all = Banners.getAll();
+        expect(all).toHaveLength(1);
+        expect(all[0]).toMatchObject({ kind: 'noRoom', tone: 'problem', title: 'No Room!', line: 'No room beside the Smithy.' });
+        expect(all[0].subjects).toEqual([{ type: 'token', id: 'tok_s' }]);
+
+        EventBus.publish(BOARD_EVENTS.NO_ROOM_WAIT, { key: 'tok_q', source: 'spawner', instanceId: 'tok_q', typeId: 'token_quarry', name: 'Quarry' });
+        EventBus.publish(BOARD_EVENTS.NO_ROOM_WAIT, { key: 'arrival', source: 'arrival', instanceId: null, typeId: null, name: null });
+        all = Banners.getAll();
+        expect(all).toHaveLength(1);
+        expect(all[0].line).toBe('No room beside the Smithy and the Quarry. No room for the enemies arriving here: they wait to land.');
+        expect(toasts).toEqual([]);
+    });
+
+    it('says an event that found no room without naming a Token', () => {
+        EventBus.publish(BOARD_EVENTS.NO_ROOM_WAIT, { key: 'event', source: 'event', instanceId: null, typeId: null, name: null });
+        const [banner] = Banners.getAll();
+        expect(banner.line).toBe('No room for an event to land: it tries again later.');
+        expect(banner.subjects).toEqual([]);
     });
 });
