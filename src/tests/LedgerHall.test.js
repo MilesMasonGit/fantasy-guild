@@ -8,6 +8,7 @@ import { hallGraph, openingPath, hallTracksOf } from '../../cms/src/engine/ledge
 import { CHECKS } from '../../cms/src/engine/ledger/checks.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { tierOf } from '../config/hallStars.js';
+import { FALLBACK_STAR_IDS } from '../config/guildUpgrades.js';
 import { paceContent } from './fixtures/paceWorld.js';
 import { paceHallSky } from './fixtures/paceHallSky.js';
 
@@ -78,9 +79,11 @@ describe('the rate calculator reads a star the setup holds', () => {
         expect(camped.factors.find(f => f.id === 'hall:ph_rails')?.axes ?? []).toEqual([]);
     });
 
-    it('content with no sky rates as before, and a tier written as null is not set', () => {
+    it('content with no sky rates as before, on the stand-ins alone, and a tier written as null is not set', () => {
         const c = paceContent();
-        expect(buildRateBook(c).hall.stars).toEqual([]);
+        const stars = buildRateBook(c).hall.stars;
+        expect(stars.map(s => s.id)).toEqual(FALLBACK_STAR_IDS);
+        expect(stars.every(s => s.fallback === true)).toBe(true);
         expect(tierOf(null)).toBeNull();
         expect(tierOf(0)).toBe(0);
         expect(tierOf('2')).toBe(2);

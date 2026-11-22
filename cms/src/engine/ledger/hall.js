@@ -1,22 +1,19 @@
-// the progression ledger's view of the Guild Hall: every track (built-in and authored star), its ranks, and the neighbour gate
+// the progression ledger's view of the Guild Hall: every track (authored star or the game's stand-in), its ranks, and the neighbour gate
 
-import { GUILD_UPGRADES, BUILT_IN_UPGRADE_IDS, HALL_NODE, getUpgradePrice } from '../../../../src/config/guildUpgrades.js';
+import { HALL_NODE, ROSTER_STAR } from '../../../../src/config/guildUpgrades.js';
 import { rankOf } from '../../../../src/config/hallStars.js';
 import { KEYWORD } from '../../../../src/systems/effects/statements.js';
 import { EFFECT_TYPES } from '../../../../src/systems/effects/constants.js';
 
 /**
- * One list for the profiles and the pace to read the Hall from: the built-in tracks (Bunk Beds,
- * Bank Tabs, the Wishing Well: the game's own) and the authored stars the rate book was built with
- * (`book.hall`, from the content's `hallSky`), each as
+ * One list for the profiles and the pace to read the Hall from: the stars the rate book was built
+ * with (`book.hall`, from the content's `hallSky`, with the game's stand-ins for Bunk Beds, Bank Tabs
+ * and the Wishing Well where it lacks them), each as
  *
  *     { id, name, builtIn, maxRank, links, price(rank), tier(rank), star }
  *
- * `price(r)` and `tier(r)` are rank r's own (r from 1); a built-in rank has no tier.
- *
- * ⚠️ The built-ins come from the live `GUILD_UPGRADES`, filtered to their ids: the game puts its
- * authored stars into that list as well, and the ledger must read the content it is handed, never
- * the sky the game happens to hold.
+ * `price(r)` and `tier(r)` are rank r's own (r from 1). `builtIn` marks a stand-in: it has no tier and
+ * the ledger proposes no price for it. Once authored, the three are priced like any star.
  *
  * Pure.
  */
@@ -33,30 +30,24 @@ export function starMovesLap(star) {
     return starRulesOf(star).some(r => r.type === EFFECT_TYPES.PASSIVE_LAP);
 }
 
-/** Every Hall track, built-ins first. */
+/** Every Hall track, in the book's order (the stand-ins first). */
 export function hallTracksOf(book) {
-    const tracks = [];
-    for (const u of GUILD_UPGRADES) {
-        if (!BUILT_IN_UPGRADE_IDS.includes(u.id)) continue;
-        tracks.push({
-            id: u.id, name: u.name, builtIn: true, maxRank: u.maxRank, links: u.links || [],
-            price: (r) => getUpgradePrice(u, r - 1) || [], tier: () => null, star: null, description: u.description
-        });
-    }
-    for (const star of book.hall?.stars || []) {
-        tracks.push({
-            id: star.id, name: star.name, builtIn: false, maxRank: star.ranks.length, links: star.links,
-            price: (r) => rankOf(star, r)?.price || [], tier: (r) => rankOf(star, r)?.tier ?? null, star, description: star.description
-        });
-    }
-    return tracks;
+    return (book.hall?.stars || []).map(star => ({
+        id: star.id, name: star.name, builtIn: !!star.fallback, maxRank: star.ranks.length, links: star.links,
+        price: (r) => rankOf(star, r)?.price || [], tier: (r) => rankOf(star, r)?.tier ?? null, star, description: star.description
+    }));
 }
 
-/** The ranks of a built-in track a new guild has for free: the first ones whose price is nothing. An authored star has none. */
+/**
+ * The ranks a new guild holds without buying them: a stand-in's first ranks whose price is nothing,
+ * and Bunk Beds' first however it is priced (a new game holds it, for the hero made on the new-game
+ * screen). Any other authored star has none.
+ */
 export function freeRanks(track) {
-    if (!track?.builtIn) return 0;
+    if (!track) return 0;
     let rank = 0;
-    while (rank < track.maxRank && track.price(rank + 1).length === 0) rank++;
+    if (track.builtIn) while (rank < track.maxRank && track.price(rank + 1).length === 0) rank++;
+    if (track.id === ROSTER_STAR) rank = Math.max(rank, Math.min(1, track.maxRank));
     return rank;
 }
 

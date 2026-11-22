@@ -137,7 +137,7 @@ export function xpForEveryoneOf(stars, ranks) {
 
 /**
  * Every Passive Production line the held ranks pay, merged per item: `[{ itemId, quantity }]`,
- * each lap of the Guild Hall's timer, beside the Wishing Well's Water.
+ * each lap of the Guild Hall's timer (the Wishing Well's Water is one such line).
  */
 export function hallLinesOf(stars, ranks) {
     const byItem = new Map();

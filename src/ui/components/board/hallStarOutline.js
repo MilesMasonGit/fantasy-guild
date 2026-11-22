@@ -5,13 +5,6 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { EFFECT_TYPES } from '../../../systems/effects/constants.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 
-/** The built-in tracks' outlines, by id. */
-const BUILT_IN = {
-    roster_size: 't_bunk_bed',
-    bank_tabs: 'i_key_gold',
-    wishing_well: 'i_water'
-};
-
 /** A ring star's outline (`hallStars.opensRing`): a map. */
 const RING_STAR_OUTLINE = 't_map_base';
 
@@ -63,7 +56,6 @@ const SLOT_BY_KIND = {
 export function outlineSpriteName(def) {
     if (!def) return null;
     if (def.star?.outline) return def.star.outline;
-    if (BUILT_IN[def.id]) return BUILT_IN[def.id];
     if (def.star?.opensRing) return RING_STAR_OUTLINE;
     const first = rankEffectOf(def, 1);
     if (!first) return null;

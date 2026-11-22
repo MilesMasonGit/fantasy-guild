@@ -77,6 +77,7 @@ export function migrateState(state, savedVersion) {
         for (const id of RETIRED_UPGRADES) delete kept[id];
         migrated.progress = { ...migrated.progress, guildUpgrades: kept };
     }
+    migrated = withRenamedUpgrades(migrated);
 
     // Renamed art: a hero's portrait (`spriteId`) and dock icon (`icon`) are sprite names, and an
     // older save holds the names from before the rename.
@@ -241,6 +242,25 @@ function hasOldSpriteName(hero) {
 export const RETIRED_UPGRADES = Object.freeze([
     'flag_radius', 'bank_slots', 'token_cap', 'cartography_slots', 'notice_board'
 ]);
+
+/**
+ * Guild Hall stars an older save holds under an old id, by the id the sky knows them by: the Wishing
+ * Well was the Guildmaster's Banner. A rank under the new id, when the save holds both, wins.
+ */
+export const RENAMED_UPGRADES = Object.freeze({ guildmasters_banner: 'wishing_well' });
+
+/** A state whose Guild Hall ranks are under the ids the sky knows ({@link RENAMED_UPGRADES}). */
+export function withRenamedUpgrades(state) {
+    const ranks = state?.progress?.guildUpgrades;
+    if (!isPlainObject(ranks) || !Object.keys(RENAMED_UPGRADES).some(id => id in ranks)) return state;
+    const kept = { ...ranks };
+    for (const [old, id] of Object.entries(RENAMED_UPGRADES)) {
+        if (!(old in kept)) continue;
+        kept[id] = kept[id] ?? kept[old];
+        delete kept[old];
+    }
+    return { ...state, progress: { ...state.progress, guildUpgrades: kept } };
+}
 
 /** Retired top-level sections a save of this version may still carry: hero recruitment, cards. */
 export const RETIRED_SECTIONS = Object.freeze(['recruitment', 'cards']);

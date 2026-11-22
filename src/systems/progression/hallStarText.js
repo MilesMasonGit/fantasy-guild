@@ -4,7 +4,7 @@ import { renderStatement, effectParts } from '../effects/statementText.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { getCategoryInfo } from '../../config/registries/equipmentCategories.js';
 import { doseKindsPhrase } from '../../config/registries/carriedKinds.js';
-import { wishingWellWater, WISHING_WELL_ITEM, BANK_TAB_SLOTS } from '../../config/guildUpgrades.js';
+import { BANK_TAB_SLOTS, ROSTER_STAR, BANK_TABS_STAR, rankEffectLabel } from '../../config/guildUpgrades.js';
 import { toolNamer } from '../effects/toolNames.js';
 import { REACH } from '../../config/registries/reachRegistry.js';
 import { getAllTokenTypes, tokenName } from '../../config/registries/tokenRegistry.js';
@@ -107,11 +107,10 @@ export function describeStarRank(star, rank, names = hallNames()) {
     ].join(' ');
 }
 
-/** A built-in track's sentence: it has no rules to build one from. */
-const BUILT_IN_SENTENCE = {
-    bank_tabs: `Every rank opens another Bank tab, room for ${BANK_TAB_SLOTS} more kinds of items.`,
-    roster_size: 'Every rank makes room for one more hero.',
-    wishing_well: 'The Guild Hall draws Water every lap, no hero needed.'
+/** What Bunk Beds and Bank Tabs do by id, in a sentence: no rule says it. */
+const BY_ID_SENTENCE = {
+    [BANK_TABS_STAR]: `Every rank opens another Bank tab, room for ${BANK_TAB_SLOTS} more kinds of items.`,
+    [ROSTER_STAR]: 'Every rank makes room for one more hero.'
 };
 
 /** A ring star's words (`hallStars.opensRing`): no ring numbers for the player, only the next border. */
@@ -292,15 +291,17 @@ function effectGroups(record, names, lapMs = null) {
 }
 
 /**
- * What a star does in one plain sentence with no numbers, built from its first rank's rules and
- * lines ("Every Forestry Token works faster."), or a built-in track's own sentence.
+ * What a star does in one plain sentence with no numbers: what Bunk Beds or Bank Tabs does by id,
+ * then what its first rank's rules and lines do ("Every Forestry Token works faster.").
  */
 export function starSentence(def, names = hallNames()) {
     if (!def) return '';
-    if (!def.authored) return BUILT_IN_SENTENCE[def.id] || def.description || '';
+    const own = BY_ID_SENTENCE[def.id];
+    if (!def.star) return own || def.description || '';
     const first = rankOf(def.star, 1);
-    if (!first) return def.description || '';
+    if (!first) return own || def.description || '';
     const parts = effectGroups(first, names).map(g => g.sentence || `Every ${subjectsText(g.subjects)} ${singular(g.phrase)}.`);
+    if (own) parts.unshift(own);
     if (first.lines.length) {
         parts.push(`The Guild Hall draws ${andList(first.lines.map(l => names.item(l.itemId)))} every lap, no hero needed.`);
     }
@@ -309,20 +310,20 @@ export function starSentence(def, names = hallNames()) {
 }
 
 /**
- * What a star gives at a rank, as brief numbers ("6% faster", "2 Oak Wood"), or null at rank 0. A
- * figure several rules share (Green Thumb's Oak and Fir) is said once.
+ * What a star gives at a rank, as brief numbers ("6% faster", "2 Oak Wood", "3 heroes"), or null at
+ * rank 0 (Bank Tabs says its one tab). A figure several rules share (Green Thumb's Oak and Fir) is
+ * said once.
  */
 export function starAmount(def, rank, names = hallNames()) {
     const r = Math.floor(Number(rank) || 0);
-    if (!def || r <= 0) return def?.id === 'bank_tabs' ? def.statLabel(0) : null;
-    if (!def.authored) {
-        if (def.id === 'wishing_well') return `${wishingWellWater(r)} ${names.item(WISHING_WELL_ITEM)}`;
-        return def.statLabel(r);
-    }
+    if (!def) return null;
+    const own = rankEffectLabel(def.id, r);
+    if (r <= 0) return own;
+    if (!def.star) return def.statLabel(r);
     const record = rankOf(def.star, r);
-    if (!record) return null;
+    if (!record) return own;
     const lapMs = record.rules.some(s => s?.payload?.type === EFFECT_TYPES.PASSIVE_LAP) ? lapWithRank(def.star, r) : null;
-    const amounts = [...new Set(effectGroups(record, names, lapMs).map(g => g.amount))];
+    const amounts = [...(own ? [own] : []), ...new Set(effectGroups(record, names, lapMs).map(g => g.amount))];
     for (const line of record.lines) amounts.push(`${line.quantity} ${names.item(line.itemId)}`);
     if (def.star.opensRing) amounts.push(RING_STAR_TEXT.amount);
     return amounts.join(', ') || null;

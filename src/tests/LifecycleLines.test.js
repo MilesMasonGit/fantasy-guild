@@ -42,7 +42,7 @@ const ITEMS = { item_oak_seed: 'Oak Seed', item_water: 'Water' };
 const hallPassive = (well = 0) => (i) => (i.typeId !== 'hall' ? { lines: [], nextInMs: 300000, lapMs: 300000 } : {
     lines: [
         { itemId: 'item_oak_seed', quantity: 2, source: 'token' },
-        ...(well ? [{ itemId: 'item_water', quantity: 10 * well, source: 'wishing_well' }] : [])
+        ...(well ? [{ itemId: 'item_water', quantity: 10 * well, source: 'hall_star' }] : [])
     ],
     nextInMs: 300000 - (i.clocks?.passiveMs || 0),
     lapMs: 300000
@@ -229,7 +229,7 @@ describe('lifecycleLines', () => {
     it('Passive Production: what one lap pays, the shared timer, and when next (T-099)', () => {
         const lines = lifecycleLines({ id: 'h', typeId: 'hall', clocks: { passiveMs: 60000 } }, src({ passive: hallPassive(1) }));
         expect(lines).toEqual([{
-            label: 'Passive Production', value: '2 Oak Seed, 10 Water (Wishing Well) every 5 min (next in 4 min)', tone: TONE.GOOD
+            label: 'Passive Production', value: '2 Oak Seed, 10 Water every 5 min (next in 4 min)', tone: TONE.GOOD
         }]);
     });
 
@@ -274,9 +274,9 @@ describe('passiveHoverLines (FB-30, T-099)', () => {
             .toEqual(['Passive Production · next in 3:20', '2 Oak Seed']);
     });
 
-    it('starts a fresh clock at the full lap, and names the Wishing Well', () => {
+    it('starts a fresh clock at the full lap, and lists the Wishing Well Water as a line like any other', () => {
         expect(passiveHoverLines({ id: 'h', typeId: 'hall' }, src({ passive: hallPassive(2) })))
-            .toEqual(['Passive Production · next in 5:00', '2 Oak Seed', '20 Water (Wishing Well)']);
+            .toEqual(['Passive Production · next in 5:00', '2 Oak Seed', '20 Water']);
     });
 
     it('is empty for a Token that pays nothing, or no Token', () => {

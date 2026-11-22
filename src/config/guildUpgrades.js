@@ -6,11 +6,11 @@
 import { normaliseHallSky, rankOf } from './hallStars.js';
 
 /**
- * Heroes a guild starts with, before any Roster Size rank is bought.
+ * Heroes a guild starts with, before any Bunk Beds rank is bought.
  *
  * Lives here rather than only in `StateSchema`'s `rosterLimit` default because
- * the upgrade track's top rank must agree with it: ROSTER_BASE +
- * `roster_size`.maxRank must equal {@link ROSTER_MAX}.
+ * the Bunk Beds star's top rank must agree with it: ROSTER_BASE + its rank count must equal
+ * {@link ROSTER_MAX} (the boot audit checks, {@link RANKS_BY_ID}).
  */
 export const ROSTER_BASE = 0;
 
@@ -32,22 +32,53 @@ export const BANK_TAB_SLOTS = 64;
 /** The most Bank tabs: the first, plus one per Bank Tabs rank. */
 export const BANK_TAB_CAP = 16;
 
+/**
+ * The two stars whose effect the game knows by id, whatever else their ranks carry: every Bunk Beds
+ * rank makes room for a hero ({@link rosterLimitForRank}), every Bank Tabs rank opens a Bank tab.
+ * Everything else about them (place, links, prices, words) is authored like any star.
+ */
+export const ROSTER_STAR = 'roster_size';
+export const BANK_TABS_STAR = 'bank_tabs';
+
+/**
+ * The Wishing Well: an ordinary star whose ranks pay Water as Passive Production lines. Its id stays
+ * known for Limes's lesson and the progression ledger's reach (`ledger/engine.js`).
+ */
+export const WISHING_WELL_STAR = 'wishing_well';
+
+/** The rank count a Bunk Beds or Bank Tabs star needs to reach the roster or the tab cap. */
+export const RANKS_BY_ID = Object.freeze({
+    [ROSTER_STAR]: ROSTER_MAX - ROSTER_BASE,
+    [BANK_TABS_STAR]: BANK_TAB_CAP - 1
+});
+
 /** The Bank's tabs at a tab count, as the Bank Tabs star reads them. */
 function bankTabsLabel(tabs) {
     return `${tabs} ${tabs === 1 ? 'tab' : 'tabs'}`;
 }
 
 /**
- * The art each upgrade track draws on the Guild Hall screen.
+ * What a Bunk Beds or Bank Tabs rank gives by id, in words ("3 heroes", "2 tabs"), or null for any
+ * other star. Bank Tabs says its one tab at rank 0 too.
+ */
+export function rankEffectLabel(id, rank) {
+    const r = Math.max(0, Math.floor(Number(rank) || 0));
+    if (id === BANK_TABS_STAR) return bankTabsLabel(Math.min(BANK_TAB_CAP, 1 + r));
+    if (id === ROSTER_STAR && r >= 1) {
+        const heroes = rosterLimitForRank(r);
+        return heroes === 1 ? '1 hero' : `${heroes} heroes`;
+    }
+    return null;
+}
+
+/**
+ * Sprites the Guild Hall screen falls back on.
  *
  * ⚠️ Token art lives in per-family folders under `public/assets/tokens/`; `UpgradeSprites.test.js` checks each file exists.
  */
 export const UPGRADE_SPRITES = {
-    roster_size: '/assets/tokens/upgrade/t_bunk_bed.png',
-    bank_tabs: '/assets/tokens/chest/t_chest_addy.png',
     guild_hall: '/assets/tokens/upgrade/t_guildhall.png',
-    wishing_well: '/assets/tokens/upgrade/t_well_wishing.png',
-    // An authored star with no sprite of its own: the owner's gold star stands in.
+    // A star with no sprite of its own: the owner's gold star stands in.
     star: '/assets/playmat/screens/ui_star_gold.png'
 };
 
@@ -70,8 +101,8 @@ export const HALL_NODE = 'hall';
  *
  * Each upgrade carries `prices`: one entry per rank, where `prices[n - 1]` is
  * what rank n costs, as a list of `{ itemId, quantity }`. An empty list is
- * free. The built-in tracks use the same placeholder (rank n costs 10·n Oak Wood); an authored
- * star carries a price per rank (`hallStars.js`).
+ * free. A star carries a price per rank (`hallStars.js`); the fallback stand-ins use a
+ * placeholder (rank n costs 10·n Oak Wood).
  */
 export const PLACEHOLDER_PRICE_ITEM = 'item_oak_wood';
 export const PLACEHOLDER_PRICE_PER_RANK = 10;
@@ -94,99 +125,95 @@ export function placeholderPrices(maxRank, {
     });
 }
 
-/** What the Wishing Well adds to the Guild Hall's Passive Production: 10 Water per rank, per lap. */
-export const WISHING_WELL_ITEM = 'item_water';
-export const WISHING_WELL_WATER_PER_RANK = 10;
-
-/** Water the Wishing Well pays each Passive Production lap at a rank (0 below rank 1). */
-export function wishingWellWater(rank) {
-    const r = Math.floor(Number(rank) || 0);
-    return r > 0 ? WISHING_WELL_WATER_PER_RANK * r : 0;
-}
-
-/** The Wishing Well's rank in a ranks map, honouring its old id. */
-export function wishingWellRank(ranks) {
-    return rankIn(ranks, 'wishing_well');
+/** A stand-in star's ranks: placeholder prices, no rules, and `lines(rank)` paid each lap. */
+function fallbackRanks(maxRank, priceOptions = {}, lines = () => []) {
+    return placeholderPrices(maxRank, priceOptions).map((price, i) => ({ price, rules: [], lines: lines(i + 1) }));
 }
 
 /**
- * The sky's constellations: each upgrade names one in `constellation`. `label` is where the
- * name sits, in the same unit space as a node's `node`. A constellation is finished when every
- * star in it is lit (rank 1 or more).
- *
- * The three built in come first; the authored ones (a constellation per skill) follow, put in by
- * {@link setHallSky}. ⚠️ A live list: readers keep the array, so it is changed in place.
+ * ⚠️ Stand-ins for Bunk Beds, Bank Tabs and the Wishing Well with their constellations, in
+ * `data/hallStars.json`'s shape, kept only until the owner Syncs the three as authored stars. Each goes
+ * into the sky while the data lacks a star or constellation of its id ({@link skyWithFallback}), and
+ * the boot audit warns while one does (`hallStarRule.hallFallbackFindings`). They are the sky the game
+ * held before the three were authored, so a guild plays the same on them.
  */
-export const BUILT_IN_CONSTELLATIONS = Object.freeze([
-    Object.freeze({ id: 'hearth', name: 'The Hearth', label: Object.freeze({ x: 0, y: -0.8 }) }),
-    Object.freeze({ id: 'vault', name: 'The Vault', label: Object.freeze({ x: -0.72, y: 0.3 }) }),
-    Object.freeze({ id: 'well', name: 'The Well', label: Object.freeze({ x: 0, y: 0.8 }) })
-]);
-export const CONSTELLATIONS = [...BUILT_IN_CONSTELLATIONS];
-
-/**
- * Every upgrade track: the three built in, whose effects are the game's own (a hero recruited, a
- * Bank tab, the Wishing Well's Water), then the authored stars ({@link setHallSky}), whose ranks
- * carry rules and Passive Production lines (`hallStars.js`).
- * ⚠️ A live list, changed in place, like {@link CONSTELLATIONS}.
- */
-export const GUILD_UPGRADES = [
-    {
-        id: 'bank_tabs',
-        constellation: 'vault',
-        name: 'Bank Tabs',
-        description: `Unlock another Bank tab: ${BANK_TAB_SLOTS} more kinds of items in storage.`,
-        node: { x: -0.5, y: 0 },
-        links: [HALL_NODE],
-        maxRank: BANK_TAB_CAP - 1,
-        prices: placeholderPrices(BANK_TAB_CAP - 1),
-        statLabel: rank => bankTabsLabel(1 + rank),
-        nextStatLabel: rank => bankTabsLabel(2 + rank),
-        sprite: UPGRADE_SPRITES.bank_tabs
+export const FALLBACK_SKY = Object.freeze({
+    constellations: {
+        hearth: { id: 'hearth', name: 'The Hearth', label: { x: 0, y: -0.8 } },
+        vault: { id: 'vault', name: 'The Vault', label: { x: -0.72, y: 0.3 } },
+        well: { id: 'well', name: 'The Well', label: { x: 0, y: 0.8 } }
     },
-    {
-        id: 'roster_size',
-        constellation: 'hearth',
-        name: 'Bunk Beds',
-        description: 'Expand guild sleeping quarters to recruit new heroes and increase roster capacity.',
-        node: { x: 0, y: -0.5 },
-        links: [HALL_NODE],
-        // One hero per rank, 0 to ROSTER_MAX.
-        maxRank: ROSTER_MAX - ROSTER_BASE,
-        prices: placeholderPrices(ROSTER_MAX - ROSTER_BASE, { freeFirstRank: true }),
-        statLabel: rank => rank === 1 ? '1 hero' : `${rank} heroes`,
-        nextStatLabel: rank => `${rank + 1} heroes`,
-        sprite: UPGRADE_SPRITES.roster_size
-    },
-    {
-        id: 'wishing_well',
-        constellation: 'well',
-        name: 'Wishing Well',
-        description: 'The Guild Hall draws fresh Water as Passive Production every lap. No hero needed.',
-        node: { x: 0, y: 0.5 },
-        links: [HALL_NODE],
-        maxRank: 10,
-        prices: placeholderPrices(10, { freeFirstRank: true }),
-        statLabel: rank => rank === 0 ? 'No water generated' : `${wishingWellWater(rank)} Water a lap`,
-        nextStatLabel: rank => `${wishingWellWater(rank + 1)} Water a lap`,
-        sprite: UPGRADE_SPRITES.wishing_well
+    stars: {
+        [BANK_TABS_STAR]: {
+            id: BANK_TABS_STAR,
+            constellation: 'vault',
+            name: 'Bank Tabs',
+            description: `Unlock another Bank tab: ${BANK_TAB_SLOTS} more kinds of items in storage.`,
+            node: { x: -0.5, y: 0 },
+            links: [HALL_NODE],
+            outline: 'i_key_gold',
+            ranks: fallbackRanks(RANKS_BY_ID[BANK_TABS_STAR])
+        },
+        [ROSTER_STAR]: {
+            id: ROSTER_STAR,
+            constellation: 'hearth',
+            name: 'Bunk Beds',
+            description: 'Expand guild sleeping quarters to recruit new heroes and increase roster capacity.',
+            node: { x: 0, y: -0.5 },
+            links: [HALL_NODE],
+            outline: 't_bunk_bed',
+            ranks: fallbackRanks(RANKS_BY_ID[ROSTER_STAR], { freeFirstRank: true })
+        },
+        [WISHING_WELL_STAR]: {
+            id: WISHING_WELL_STAR,
+            constellation: 'well',
+            name: 'Wishing Well',
+            description: 'The Guild Hall draws fresh Water as Passive Production every lap. No hero needed.',
+            node: { x: 0, y: 0.5 },
+            links: [HALL_NODE],
+            outline: 'i_water',
+            ranks: fallbackRanks(10, { freeFirstRank: true }, rank => [{ itemId: 'item_water', quantity: 10 * rank }])
+        }
     }
-];
+});
 
-/** The built-in track ids: an authored star may not take one. */
-export const BUILT_IN_UPGRADE_IDS = Object.freeze(GUILD_UPGRADES.map(u => u.id));
+const FALLBACK = normaliseHallSky(FALLBACK_SKY);
+
+/** The stand-ins' star ids, in the fallback's order. */
+export const FALLBACK_STAR_IDS = Object.freeze(FALLBACK.stars.map(s => s.id));
+/** The stand-ins' constellation ids. */
+export const FALLBACK_CONSTELLATION_IDS = Object.freeze(FALLBACK.constellations.map(c => c.id));
 
 /**
- * An authored star as an upgrade track: what the sky, the details panel and the purchase read.
- * `authored: true` and `star` (its normalised record) set it apart from a built-in track; its
- * labels come from `describeRank(star, rank)`, which the game hands in (this module cannot name
- * items), or say the rank alone.
+ * A sky (`data/hallStars.json`'s shape, or a fixture), normalised, with the fallback's stars and
+ * constellations put in where it lacks one of their ids: the stand-ins first, in the fallback's order
+ * and marked `fallback: true`, then the sky's own, in its order. The game's sky and the progression
+ * ledger both read the sky this way.
+ */
+export function skyWithFallback(sky) {
+    const { constellations, stars } = normaliseHallSky(sky || {});
+    const haveC = new Set(constellations.map(c => c.id));
+    const haveS = new Set(stars.map(s => s.id));
+    return {
+        constellations: [...FALLBACK.constellations.filter(c => !haveC.has(c.id)).map(c => ({ ...c, fallback: true })), ...constellations],
+        stars: [...FALLBACK.stars.filter(s => !haveS.has(s.id)).map(s => ({ ...s, fallback: true })), ...stars]
+    };
+}
+
+/**
+ * A star as an upgrade track: what the sky, the details panel and the purchase read. `star` is its
+ * normalised record; `authored: true` marks one from the data, `fallback: true` a stand-in. Its labels
+ * say what a Bunk Beds or Bank Tabs rank gives by id ({@link rankEffectLabel}), then
+ * `describeRank(star, rank)`, which the game hands in (this module cannot name items), or the rank
+ * alone.
  */
 export function upgradeDefOfStar(star, describeRank = null) {
     const label = (rank) => {
         const r = Math.floor(Number(rank) || 0);
-        if (r <= 0) return 'Not yet bought';
-        return (describeRank && describeRank(star, r)) || `Rank ${r}`;
+        const own = rankEffectLabel(star.id, r);
+        if (r <= 0) return own || 'Not yet bought';
+        const words = [own, describeRank && describeRank(star, r)].filter(Boolean).join(', ');
+        return words || `Rank ${r}`;
     };
     return {
         id: star.id,
@@ -201,75 +228,97 @@ export function upgradeDefOfStar(star, describeRank = null) {
         statLabel: label,
         nextStatLabel: rank => label(rank + 1),
         sprite: star.sprite || UPGRADE_SPRITES.star,
-        authored: true,
+        ...(star.fallback ? { fallback: true } : { authored: true }),
         star
     };
 }
 
-/** The authored stars and constellations last put in by {@link setHallSky}, so a later call replaces exactly them. */
-let authoredStarDefs = [];
-let authoredConstellations = [];
-/** Their normalised records, kept as one list: Passive Production reads it every tick. */
-let authoredStarList = Object.freeze([]);
+/**
+ * The sky's constellations: each upgrade names one in `constellation`. `label` is where the name
+ * sits, in the same unit space as a node's `node`. A constellation is finished when every star in it
+ * is lit (rank 1 or more). Put in by {@link setHallSky}: the stand-ins the data lacks first, then the
+ * authored ones. ⚠️ A live list: readers keep the array, so it is changed in place.
+ */
+export const CONSTELLATIONS = [];
+
+/**
+ * Every upgrade track: the stars put in by {@link setHallSky} (stand-ins first), whose ranks carry
+ * rules and Passive Production lines (`hallStars.js`), Bunk Beds and Bank Tabs giving a hero or a tab
+ * a rank by id besides. ⚠️ A live list, changed in place, like {@link CONSTELLATIONS}: a test may put
+ * its own track in too.
+ */
+export const GUILD_UPGRADES = [];
+
+/** The tracks and constellations last put in by {@link setHallSky}, so a later call replaces exactly them. */
+let skyDefs = [];
+let skyConstellations = [];
+/** Their normalised star records, kept as one list: Passive Production reads it every tick. */
+let skyStarList = Object.freeze([]);
 /** Moves on every {@link setHallSky}, so a screen drawing the sky knows to draw it again. */
 let skyChanges = 0;
 
-/** How many times the authored sky has been put in. */
+/** How many times the sky has been put in. */
 export function skyVersion() {
     return skyChanges;
 }
 
 /**
- * Put the authored sky in: `sky` is `data/hallStars.json` (or a fixture) in the file's shape, or
- * already normalised. Replaces whatever the last call put in; anything else in the live lists (a
- * test's own track) stays. A star or constellation taking a built-in id is left out.
+ * Put the sky in: `sky` is `data/hallStars.json` (or a fixture) in the file's shape, or already
+ * normalised, with the fallback's stand-ins where it lacks their ids ({@link skyWithFallback}).
+ * Replaces whatever the last call put in; anything else in the live lists (a test's own track) stays,
+ * and a star or constellation taking its id is left out. Stand-ins go first, the authored after.
  *
  * @param {object|null} sky
  * @param {{ describeRank?: (star: object, rank: number) => string }} [options]
- * @returns {{ constellations: object[], stars: object[] }} what went in
+ * @returns {{ constellations: object[], stars: object[] }} what went in, stand-ins included
  */
 export function setHallSky(sky, { describeRank = null } = {}) {
-    for (const def of authoredStarDefs) {
+    for (const def of skyDefs) {
         const i = GUILD_UPGRADES.indexOf(def);
         if (i !== -1) GUILD_UPGRADES.splice(i, 1);
     }
-    for (const c of authoredConstellations) {
+    for (const c of skyConstellations) {
         const i = CONSTELLATIONS.indexOf(c);
         if (i !== -1) CONSTELLATIONS.splice(i, 1);
     }
-    const { constellations, stars } = normaliseHallSky(sky || {});
-    const builtInC = new Set(BUILT_IN_CONSTELLATIONS.map(c => c.id));
-    const builtInS = new Set(BUILT_IN_UPGRADE_IDS);
-    authoredConstellations = constellations.filter(c => !builtInC.has(c.id) && !CONSTELLATIONS.some(o => o.id === c.id));
-    authoredStarDefs = stars
-        .filter(s => !builtInS.has(s.id) && !GUILD_UPGRADES.some(o => o.id === s.id))
+    const { constellations, stars } = skyWithFallback(sky);
+    skyConstellations = constellations.filter(c => !CONSTELLATIONS.some(o => o.id === c.id));
+    skyDefs = stars
+        .filter(s => !GUILD_UPGRADES.some(o => o.id === s.id))
         .map(s => upgradeDefOfStar(s, describeRank));
-    CONSTELLATIONS.push(...authoredConstellations);
-    GUILD_UPGRADES.push(...authoredStarDefs);
-    authoredStarList = Object.freeze(authoredStarDefs.map(d => d.star));
+    const fallbackFirst = (list) => [list.filter(x => x.fallback), list.filter(x => !x.fallback)];
+    const [standInC, authoredC] = fallbackFirst(skyConstellations);
+    const [standInS, authoredS] = fallbackFirst(skyDefs);
+    CONSTELLATIONS.unshift(...standInC);
+    CONSTELLATIONS.push(...authoredC);
+    GUILD_UPGRADES.unshift(...standInS);
+    GUILD_UPGRADES.push(...authoredS);
+    skyStarList = Object.freeze(skyDefs.map(d => d.star));
     skyChanges += 1;
-    return { constellations: [...authoredConstellations], stars: [...authoredStarList] };
-}
-
-/** The authored stars in the sky now, as their normalised records (one frozen list until the sky changes). */
-export function authoredStars() {
-    return authoredStarList;
+    return { constellations: [...skyConstellations], stars: [...skyStarList] };
 }
 
 /**
- * What an authored star gives at a rank: its rank record's `rules` and `lines` (`hallStars.js`),
- * or null for a built-in track or a rank of 0.
+ * The stars in the sky now, as their normalised records (one frozen list until the sky changes): the
+ * authored ones and any stand-in the data still lacks.
  */
+export function authoredStars() {
+    return skyStarList;
+}
+
+/** What a star gives at a rank: its rank record's `rules` and `lines` (`hallStars.js`), or null for a test's own track or a rank of 0. */
 export function rankEffectOf(def, rank) {
-    if (!def?.authored) return null;
+    if (!def?.star) return null;
     return rankOf(def.star, rank);
 }
 
 /** Look up an upgrade definition by id. */
 export function getUpgradeDef(id) {
-    const key = id === 'guildmasters_banner' ? 'wishing_well' : id;
-    return GUILD_UPGRADES.find(u => u.id === key) || null;
+    return GUILD_UPGRADES.find(u => u.id === id) || null;
 }
+
+// The stand-ins hold the sky until `hallStarRegistry.js` puts the authored one in.
+setHallSky(null);
 
 /**
  * Item price of the NEXT rank (`rank` = ranks already owned), as a fresh list
@@ -293,12 +342,6 @@ export function totalPrice(price) {
         totals.set(p.itemId, (totals.get(p.itemId) || 0) + p.quantity);
     }
     return [...totals].map(([itemId, quantity]) => ({ itemId, quantity }));
-}
-
-/** A rank from a ranks map, honouring the Wishing Well's old id. */
-function rankIn(ranks, id) {
-    if (id === 'wishing_well') return ranks?.wishing_well ?? ranks?.guildmasters_banner ?? 0;
-    return ranks?.[id] || 0;
 }
 
 /**
@@ -367,7 +410,7 @@ export function getLockDetail(upgradeId, ranks = {}) {
 
     const links = getUpgradeLinks(def.id);
     if (links.includes(HALL_NODE)) return null;
-    if (links.some(id => rankIn(ranks, id) >= 1)) return null;
+    if (links.some(id => (ranks?.[id] || 0) >= 1)) return null;
 
     const names = links.map(id => getUpgradeDef(id)?.name).filter(Boolean);
     if (names.length > 0) {

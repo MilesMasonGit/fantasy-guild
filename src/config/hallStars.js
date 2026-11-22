@@ -5,8 +5,10 @@
 
 /**
  * The sky's authored part: constellations and their stars, written only by the CMS's Sync to Game.
- * The Hearth's Bunk Beds, the Vault's Bank Tabs and the Well's Wishing Well are built in
- * (`guildUpgrades.js`); everything else is a star here.
+ * Bunk Beds (`roster_size`), Bank Tabs (`bank_tabs`) and the Wishing Well (`wishing_well`) are stars
+ * here like the rest; the game gives a hero a Bunk Beds rank and a Bank tab a Bank Tabs rank by id,
+ * and holds stand-ins for the three and their constellations while the file lacks them
+ * (`guildUpgrades.FALLBACK_SKY`).
  *
  * ```
  * {
@@ -21,12 +23,12 @@
  * ```
  *
  * - `node` and `label` are in the sky's unit space, centred on the Hall (0, 0); +x right, +y down.
- * - `links` name the Hall (`'hall'`) or other stars, built-in ones included; a star opens once any
+ * - `links` name the Hall (`'hall'`) or other stars; a star opens once any
  *   linked star has a rank (or at once, when it is linked to the Hall).
  * - A star's **rank r is its r-th rank's whole effect**, not an increment: rank 3 of a +10 % a rank
  *   XP star lists +30 %. `rules` are statements in the Rules grammar (GDD §7), held guild-wide while
  *   the rank is held (`hallModifiers.js`); `lines` are Passive Production lines the Guild Hall pays
- *   every lap, beside the Wishing Well's Water.
+ *   every lap (the Wishing Well's Water is one).
  * - `outline` picks the item whose outline the sky draws over the star: an item id or a sprite name.
  *   Left out, the sky picks one by the star's kind (`hallStarOutline.js`).
  * - `opensRing` makes it a ring star: once its first rank is bought the guild may settle that ring of

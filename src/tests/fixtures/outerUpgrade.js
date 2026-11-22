@@ -18,7 +18,7 @@ export const OUTER_UPGRADE = {
     prices: placeholderPrices(3),
     statLabel: rank => `${rank} vaults`,
     nextStatLabel: rank => `${rank + 1} vaults`,
-    sprite: UPGRADE_SPRITES.bank_tabs
+    sprite: UPGRADE_SPRITES.guild_hall
 };
 
 /** Add {@link OUTER_UPGRADE} to the web for every test of the calling file. */

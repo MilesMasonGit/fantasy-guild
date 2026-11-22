@@ -1,7 +1,9 @@
 // Guild Hall stars that cannot open, name what is gone, or carry a rule the guild cannot hold.
 
 import { normaliseHallSky, normaliseStar, opensRingOf } from '../../config/hallStars.js';
-import { BUILT_IN_CONSTELLATIONS, BUILT_IN_UPGRADE_IDS, HALL_NODE } from '../../config/guildUpgrades.js';
+import {
+    FALLBACK_CONSTELLATION_IDS, FALLBACK_STAR_IDS, FALLBACK_SKY, HALL_NODE, RANKS_BY_ID, ROSTER_STAR, BANK_TABS_STAR
+} from '../../config/guildUpgrades.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { KEYWORD } from '../effects/statements.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
@@ -32,8 +34,10 @@ function retiredWhy(entry) {
 export function hallStarFindings({ sky, items = {}, tokens = {} } = {}) {
     const out = [];
     const { constellations, stars } = normaliseHallSky(sky || {});
-    const constellationIds = new Set([...BUILT_IN_CONSTELLATIONS.map(c => c.id), ...constellations.map(c => c.id)]);
-    const starIds = new Set([...BUILT_IN_UPGRADE_IDS, ...stars.map(s => s.id)]);
+    // The game stands in for Bunk Beds, Bank Tabs, the Wishing Well and their constellations when the
+    // sky lacks them, so a link or a constellation naming one is good either way.
+    const constellationIds = new Set([...FALLBACK_CONSTELLATION_IDS, ...constellations.map(c => c.id)]);
+    const starIds = new Set([...FALLBACK_STAR_IDS, ...stars.map(s => s.id)]);
     const push = (star, field, message) => out.push({ entityType: 'Hall star', entityId: star.id, entityName: star.name || star.id, field, message });
 
     for (const [key, raw] of Object.entries(sky?.stars || {})) {
@@ -43,9 +47,11 @@ export function hallStarFindings({ sky, items = {}, tokens = {} } = {}) {
     }
 
     for (const star of stars) {
-        if (BUILT_IN_UPGRADE_IDS.includes(star.id)) {
-            push(star, 'id', `takes the id of a built-in Guild Hall track ("${star.id}"), so it is left out of the sky. Give it its own id.`);
-            continue;
+        const byId = RANKS_BY_ID[star.id];
+        if (byId !== undefined && star.ranks.length !== byId) {
+            const n = star.ranks.length;
+            const past = n > byId ? `, so its ranks past ${byId} give nothing` : '';
+            push(star, 'ranks', `has ${n} ${n === 1 ? 'rank' : 'ranks'}, but every rank ${BY_ID[star.id].gives} and ${byId} ranks reach ${BY_ID[star.id].cap}${past}. Give it ${byId} ranks in the CMS.`);
         }
         if (!constellationIds.has(star.constellation)) {
             push(star, 'constellation', star.constellation
@@ -71,9 +77,10 @@ export function hallStarFindings({ sky, items = {}, tokens = {} } = {}) {
             for (const line of rank.lines) {
                 if (!items[line.itemId]) push(star, 'ranks', `rank ${r} pays the item "${line.itemId}", which does not exist.`);
             }
-            // A ring star's first rank opens its ring of the world map: that is what it gives.
+            // A ring star's first rank opens its ring of the world map, and a Bunk Beds or Bank Tabs
+            // rank gives a hero or a tab by id: that is what they give.
             const opensRing = r === 1 && opensRingOf(star.opensRing) !== null;
-            if (!rank.rules.length && !rank.lines.length && !opensRing) push(star, 'ranks', `rank ${r} gives nothing: no rule and no Passive Production line.`);
+            if (!rank.rules.length && !rank.lines.length && !opensRing && byId === undefined) push(star, 'ranks', `rank ${r} gives nothing: no rule and no Passive Production line.`);
             for (const statement of rank.rules) {
                 const to = statement?.to;
                 if (to?.mode === 'id' && to.value && !tokens[to.value]) {
@@ -96,6 +103,41 @@ export function hallStarFindings({ sky, items = {}, tokens = {} } = {}) {
             }
         });
         auditXpForEveryone(star, push);
+    }
+    return out;
+}
+
+/** What every rank of a star known by id gives, and the cap its ranks reach, in words. */
+const BY_ID = {
+    [ROSTER_STAR]: { gives: 'makes room for one more hero', cap: 'the most heroes a guild can have' },
+    [BANK_TABS_STAR]: { gives: 'opens one more Bank tab', cap: 'the most Bank tabs' }
+};
+
+/**
+ * ⚠️ While the fallback stands: a warning for each of Bunk Beds, Bank Tabs, the Wishing Well and
+ * their constellations the sky as authored lacks, which the game stands in for with its built-in
+ * placeholder (`guildUpgrades.FALLBACK_SKY`). `severity: 'warning'`: the game plays as it did before
+ * the three were authored. Output as {@link hallStarFindings}'s, `entityType` 'Hall constellation'
+ * for a constellation.
+ */
+export function hallFallbackFindings({ sky } = {}) {
+    const { constellations, stars } = normaliseHallSky(sky || {});
+    const haveS = new Set(stars.map(s => s.id));
+    const haveC = new Set(constellations.map(c => c.id));
+    const out = [];
+    for (const [id, star] of Object.entries(FALLBACK_SKY.stars)) {
+        if (haveS.has(id)) continue;
+        out.push({
+            entityType: 'Hall star', entityId: id, entityName: star.name, field: 'id', severity: 'warning',
+            message: 'is not an authored star yet, so the game uses its built-in stand-in (placeholder prices in Oak Wood). A change pack from the content agent brings it.'
+        });
+    }
+    for (const [id, constellation] of Object.entries(FALLBACK_SKY.constellations)) {
+        if (haveC.has(id)) continue;
+        out.push({
+            entityType: 'Hall constellation', entityId: id, entityName: constellation.name, field: 'id', severity: 'warning',
+            message: 'is not an authored constellation yet, so the game uses its built-in stand-in. A change pack from the content agent brings it.'
+        });
     }
     return out;
 }

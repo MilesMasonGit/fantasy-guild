@@ -164,11 +164,11 @@ function bossLines(def) {
 
 export { formatClock };
 
-/** One lap's pay as words: "1 Oak Seed", "10 Water (Wishing Well)". */
+/** One lap's pay as words: "1 Oak Seed", "10 Water". */
 function passivePays(passive, itemName) {
     return (passive?.lines || [])
         .filter(l => l?.itemId && Number(l.quantity) > 0)
-        .map(l => `${Math.floor(Number(l.quantity))} ${itemName(l.itemId)}${l.source === 'wishing_well' ? ' (Wishing Well)' : ''}`);
+        .map(l => `${Math.floor(Number(l.quantity))} ${itemName(l.itemId)}`);
 }
 
 function passiveRows(instance, src) {
@@ -184,7 +184,7 @@ function passiveRows(instance, src) {
 
 /**
  * **Passive Production as hover text**: a heading with the shared timer's countdown (`Passive Production · next in 4:57`), then one line
- * per item a lap pays, e.g. "1 Oak Seed", "10 Water (Wishing Well)". Empty for a Token that pays
+ * per item a lap pays, e.g. "1 Oak Seed", "10 Water". Empty for a Token that pays
  * nothing.
  *
  * @param {object|null} instance

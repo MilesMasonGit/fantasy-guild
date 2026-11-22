@@ -4,7 +4,7 @@ import { InventoryManager } from '../inventory/InventoryManager.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import {
     getUpgradeDef, getUpgradePrice, totalPrice, isUpgradeAccessible, getLockReason,
-    rosterLimitForRank, authoredStars, BANK_TAB_SLOTS, BANK_TAB_CAP
+    rosterLimitForRank, authoredStars, BANK_TAB_SLOTS, BANK_TAB_CAP, ROSTER_STAR, BANK_TABS_STAR
 } from '../../config/guildUpgrades.js';
 // Loads the authored stars into the sky (`data/hallStars.json`) before anything reads it.
 import '../../config/registries/hallStarRegistry.js';
@@ -38,11 +38,7 @@ export const GuildUpgradeManager = {
     },
 
     getRank(upgradeId) {
-        const ranks = this.getRanks();
-        if (upgradeId === 'wishing_well' || upgradeId === 'guildmasters_banner') {
-            return ranks.wishing_well ?? ranks.guildmasters_banner ?? 0;
-        }
-        return ranks[upgradeId] || 0;
+        return this.getRanks()[upgradeId] || 0;
     },
 
     /**
@@ -165,9 +161,9 @@ export const GuildUpgradeManager = {
         // recruit below, who arrives with the whole instead (`HeroLifecycle`).
         this._giveXpForEveryone(upgradeId, xpForEveryoneOf(authoredStars(), ranks) - xpBefore);
 
-        // Each Roster Size rank immediately recruits a new hero. The Hall's XP can bring a recruit
+        // Each Bunk Beds rank immediately recruits a new hero. The Hall's XP can bring a recruit
         // to a fight perk's level, and the combat numbers a perk lends are registered, not read live.
-        if (upgradeId === 'roster_size') {
+        if (upgradeId === ROSTER_STAR) {
             for (let i = 0; i < n; i++) {
                 const hero = createHero();
                 if (hero) recalculateEquipmentModifiers(hero);
@@ -205,7 +201,7 @@ export const GuildUpgradeManager = {
         const ranks = this.getRanks();
 
         if (state.inventory) {
-            state.inventory.maxTabs = Math.min(BANK_TAB_CAP, 1 + (ranks.bank_tabs || 0));
+            state.inventory.maxTabs = Math.min(BANK_TAB_CAP, 1 + (ranks[BANK_TABS_STAR] || 0));
             state.inventory.maxSlots = state.inventory.maxTabs * BANK_TAB_SLOTS;
             this._ensureBankTabs(state.inventory);
             InventoryManager.spillOverfullTabs();
@@ -213,7 +209,7 @@ export const GuildUpgradeManager = {
         if (state.progress) {
             // One definition, in `guildUpgrades.js`; `HeroLifecycle` falls back to
             // the same function when a save has no rosterLimit written yet.
-            state.progress.rosterLimit = rosterLimitForRank(ranks.roster_size);
+            state.progress.rosterLimit = rosterLimitForRank(ranks[ROSTER_STAR]);
         }
         HallRules.apply(ranks);
 
@@ -222,7 +218,7 @@ export const GuildUpgradeManager = {
     },
 
     /**
-     * The ONLY way a Bank tab comes into existence. Buying `bank_tabs` raises
+     * The ONLY way a Bank tab comes into existence. Buying a Bank Tabs rank raises
      * `maxTabs`; this tops `groupOrder` back up to it, so the new tab appears the
      * moment the upgrade is bought.
      */
