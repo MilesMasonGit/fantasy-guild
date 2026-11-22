@@ -123,7 +123,7 @@ toward:
 |---|---|
 | Sword | +5 Accuracy (steady) |
 | Cleaver | more Damage, slower; keeps Double Raw Beef |
-| Mace | hits Crush, +10% Crush damage, slower (content agent's call 2026-11-21, the owner may change it) |
+| Mace | hits Crush, +10% Crush damage, slower (content agent's call, kept by the owner 2026-11-21) |
 | Bow | +5 Accuracy (as today) |
 | Dagger | +5 Crit chance (as today) |
 | Kunai | +5 Crit chance, thrown |
