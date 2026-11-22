@@ -18,6 +18,7 @@ import { compareSync } from '../../cms/src/engine/syncGuard.js';
 import { snapshot } from '../../cms/src/engine/fileUtils.js';
 import { hallSkyFile, workspaceSkyFrom } from '../../cms/src/engine/hallSky.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
+import { authoredThree } from './fixtures/authoredThreeStars.js';
 
 /**
  * The Guild Hall's sky in the CMS (brief 320 H1): constellations and stars carried by change packs,
@@ -183,6 +184,32 @@ describe('the Guild Hall page', () => {
         expect(ranks).toContain('10% more XP');
         fireEvent.change(star.querySelector('[data-hall-star-name]'), { target: { value: 'Deep Lore' } });
         expect(store().hallStars[STAR.id].name).toBe('Deep Lore');
+    });
+
+    it('lists Bunk Beds, Bank Tabs and the Wishing Well once authored, each constellation once, and says what the game gives by id', () => {
+        const three = authoredThree();
+        store().hydrate(workspace({ hallConstellations: three.constellations, hallStars: three.stars }));
+        const { container } = render(React.createElement(HallStarsPage));
+        for (const id of ['hearth', 'vault', 'well']) expect(container.querySelectorAll(`[data-hall-constellation="${id}"]`), id).toHaveLength(1);
+        const beds = container.querySelector('[data-hall-star="roster_size"]');
+        expect(beds.closest('[data-hall-constellation]').getAttribute('data-hall-constellation')).toBe('hearth');
+        fireEvent.click([...beds.querySelectorAll('button')].find(b => b.textContent.includes('8 ranks')));
+        expect([...beds.querySelectorAll('[data-hall-rank-by-id]')].map(e => e.textContent)).toEqual(
+            [1, 2, 3, 4, 5, 6, 7, 8].map(n => `${n === 1 ? '1 hero' : `${n} heroes`} (given by the game, by the star id)`)
+        );
+        const well = container.querySelector('[data-hall-star="wishing_well"]');
+        fireEvent.click([...well.querySelectorAll('button')].find(b => b.textContent.includes('10 ranks')));
+        expect(well.querySelectorAll('[data-hall-rank-by-id]')).toHaveLength(0);
+        expect(well.querySelector('[data-hall-star-ranks]').textContent).toContain('12 item_water each Passive Production lap');
+    });
+
+    it('heads the page with the stand-in constellations while the workspace lacks them, holding its stars there', () => {
+        const infirmary = { ...STAR, id: 'star_infirmary', constellation: 'hearth', links: ['roster_size'] };
+        store().hydrate(workspace({ hallConstellations: {}, hallStars: { star_infirmary: infirmary } }));
+        const { container } = render(React.createElement(HallStarsPage));
+        expect(container.querySelector('[data-hall-star="star_infirmary"]').closest('[data-hall-constellation]').getAttribute('data-hall-constellation')).toBe('hearth');
+        expect(container.querySelector('[data-hall-constellation="vault"]')).toBeNull();
+        expect(container.querySelector('[data-hall-star="roster_size"]')).toBeNull();
     });
 
     it('marks a Sunder rule a workspace still holds as refused, and no other rule', () => {
