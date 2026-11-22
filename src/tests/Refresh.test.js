@@ -429,7 +429,7 @@ describe('Refresh as the CMS and the game say it', () => {
         expect(paletteForKeyword(KEYWORD.PROVIDES, false).map(e => e.type)).toContain(EFFECT_TYPES.REFRESH);
     });
 
-    it('tags a support "+25 % Refresh"', () => {
-        expect(supportTag({ type: EFFECT_TYPES.REFRESH, bucket: 'flat', value: 25 })).toBe('+25 % Refresh');
+    it('tags a support "+25% Refresh"', () => {
+        expect(supportTag({ type: EFFECT_TYPES.REFRESH, bucket: 'flat', value: 25 })).toBe('+25% Refresh');
     });
 });

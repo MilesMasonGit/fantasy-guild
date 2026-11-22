@@ -15,6 +15,7 @@ import { articleOf } from './toolNames.js';
 import { stationKindLabel } from '../../config/registries/tokenConstants.js';
 import { getCategoryInfo } from '../../config/registries/equipmentCategories.js';
 import { getCarriedKind, getDoseKind, doseKindsPhrase } from '../../config/registries/carriedKinds.js';
+import { chanceText, timesText } from '../../utils/Formatters.js';
 
 /**
  * The rules text: generated, read-only, and the only text a Token has. The sentence IS the
@@ -150,13 +151,17 @@ const verbSlot = (statement) => (getKeyword(statement?.keyword) ? 'keyword' : nu
 
 /** `0.05` → `5%`, `-0.05` → `5%` (the direction word carries the sign). */
 function asPercent(value) {
-    return `${Math.abs(Math.round(Number(value) * 1000) / 10)}%`;
+    return chanceText(Math.abs(Number(value) * 100));
 }
 
 /** A number effect's magnitude, in the words of the bucket it pushes into. */
 function magnitude(entry, payload) {
     const value = Number(payload?.value) || 0;
-    if (entry?.shape === MODIFIER_SHAPES.PROC) return `${Math.abs(value)}%`;
+    if (entry?.shape === MODIFIER_SHAPES.PROC) return chanceText(Math.abs(value));
+    // Lucky's percentage is a share of the rare table's chance: as `+20%` it would read as points.
+    if (entry?.type === EFFECT_TYPES.LUCKY && payload?.bucket !== 'flat') {
+        return timesText(payload?.bucket === 'multiplier' ? Math.abs(value) : Math.max(0, 1 + value));
+    }
     switch (payload?.bucket) {
         case 'flat': return `${Math.abs(value)}`;
         case 'multiplier': return `×${Math.abs(value)}`;
@@ -189,7 +194,7 @@ function effectSegments(statement, names, onHero = false) {
     if (payload.type === EFFECT_TYPES.BONUS_DROP) {
         const qty = Math.max(1, Number(payload.quantity) || 1);
         const item = payload.itemId ? names.item(payload.itemId) : '…';
-        return segs('a ', d(`${Math.abs(Number(payload.value) || 0)}%`, 'value'), ` chance to drop ${qty} ${item}`);
+        return segs('a ', d(chanceText(Math.abs(Number(payload.value) || 0)), 'value'), ` chance to drop ${qty} ${item}`);
     }
 
     // "a 10% chance of double Raw Beef": the item is the narrowing, so it reads inside the phrase.
@@ -242,15 +247,12 @@ function effectSegments(statement, names, onHero = false) {
     }
 
     // "have 1% added to their rare drop table's chance": a flat Lucky adds points to the table's
-    // chance, unlike its percentage (`reads`), which raises it in proportion.
-    if (payload.type === EFFECT_TYPES.LUCKY && payload.bucket && payload.bucket !== 'percentage') {
+    // chance, unlike its percentage and multiplier (`reads`), which raise it in proportion.
+    if (payload.type === EFFECT_TYPES.LUCKY && payload.bucket === 'flat') {
         const whose = onHero ? 'the Token\'s' : 'their';
         const have = onHero ? '' : 'have ';
-        if (payload.bucket === 'multiplier') {
-            return segs(d(have, 'type'), d(`×${Math.abs(value)}`, 'value'), d(` the chance on ${whose} rare drop table`, 'type'));
-        }
         const change = value < 0 ? ' taken off ' : ' added to ';
-        return segs(d(have, 'type'), d(`${Math.abs(value)}%`, 'value'), d(`${change}${whose} rare drop table's chance`, 'type'));
+        return segs(d(have, 'type'), d(chanceText(Math.abs(value)), 'value'), d(`${change}${whose} rare drop table's chance`, 'type'));
     }
 
     const reads = (onHero && entry.heroReads) || entry.reads;
@@ -745,7 +747,7 @@ function bodySegments(statement, names) {
             const quantity = Math.max(1, payload.quantity || 1);
             const item = payload.itemId ? names.item(payload.itemId) : '…';
             const chance = payload.chance ?? 100;
-            const odds = chance >= 100 ? [] : segs(', ', d(`${chance}%`, 'chance'), ' of the time');
+            const odds = chance >= 100 ? [] : segs(', ', d(chanceText(chance), 'chance'), ' of the time');
             if (names.carried) {
                 // A carried grant lands where its hero is working, at the moment, or as they finish work.
                 return segs(d('Grants', K), ' ', d(String(quantity), 'quantity'), ' ', d(item, 'itemId'),
@@ -835,7 +837,7 @@ function bodySegments(statement, names) {
                 amount = segs(d(String(flat), 'amount'), ' damage');
             }
             const chance = firingChanceOf(statement);
-            const odds = chance == null ? [] : segs(', ', d(`${chance}%`, 'chance'), ' of the time');
+            const odds = chance == null ? [] : segs(', ', d(chanceText(chance), 'chance'), ' of the time');
             return segs(d('Deals', K), ' ', amount, ' to ', roleSegments(statement), odds);
         }
 
@@ -875,7 +877,7 @@ function bodySegments(statement, names) {
                 ' ', d(where ? where.label : '…', 'placement'));
             // A rule that rolls before it fires says so first: "a 5% chance to spawn …".
             const chance = firingChanceOf(statement);
-            if (chance != null) return segs('A ', d(`${chance}%`, 'chance'), ' chance to ', d('spawn', K), ' ', what);
+            if (chance != null) return segs('A ', d(chanceText(chance), 'chance'), ' chance to ', d('spawn', K), ' ', what);
             return segs(d('Spawns', K), ' ', what);
         }
 
@@ -916,7 +918,7 @@ function bodySegments(statement, names) {
 
         case KEYWORD.APPLIES: {
             const chance = payload.chance ?? 100;
-            const odds = chance >= 100 ? [] : segs(', ', d(`${chance}%`, 'chance'), ' of the time');
+            const odds = chance >= 100 ? [] : segs(', ', d(chanceText(chance), 'chance'), ' of the time');
 
             /**
              * Aimed at a role instead of its filter: the role is the whole of who it reaches, so the

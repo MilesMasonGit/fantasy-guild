@@ -86,8 +86,8 @@ describe('a perk named for the screen', () => {
         expect(perkTitle({ effectId: 'k4ui_felling', scale: 1 })).toBe('Clean Felling');
         expect(perkTitle({ effectId: 'k4ui_seeds', scale: 2 })).toBe('Seed Finder II');
         expect(perkTitle({ effectId: 'gone', scale: 1 })).toBe('gone');
-        expect(perkLines({ effectId: 'k4ui_seeds', scale: 2 })).toEqual(['+20 % XP (Forestry)']);
-        expect(perkLines({ effectId: 'k4ui_felling', scale: 1 })).toEqual(['×2 loot 5 % (Forestry)']);
+        expect(perkLines({ effectId: 'k4ui_seeds', scale: 2 })).toEqual(['+20% XP (Forestry)']);
+        expect(perkLines({ effectId: 'k4ui_felling', scale: 1 })).toEqual(['×2 loot 5% (Forestry)']);
     });
 
     it('lists what a level holds and what comes next', () => {
@@ -182,7 +182,7 @@ describe('the Hero drawer\'s skill panel lists every perk, those held lit', () =
         const held = perks.querySelector('[data-skill-perk="k4ui_felling"]');
         // `10  Name: what it gives` on one line, the level alone in its own column, the words the
         // perk's own rule renders.
-        expect(held.textContent).toBe('10Clean Felling: ×2 loot 5 % (Forestry)');
+        expect(held.textContent).toBe('10Clean Felling: ×2 loot 5% (Forestry)');
         expect(held.querySelector('[data-skill-perk-level]').textContent).toBe('10');
         expect(held.className.split(' ')).toContain('whitespace-nowrap');
         expect(held.getAttribute('data-skill-perk-earned')).toBe('true');

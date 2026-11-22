@@ -20,7 +20,7 @@ import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
 import { TokenCard } from '../ui/components/board/TokenCard.jsx';
 import { tokenCardModel, CARD_BLOCK } from '../ui/components/board/tokenCard.js';
-import { effectAmountText, badgeText, limitNote, badgeTip, EFFECT_GLYPH } from '../ui/components/board/effectBadgeText.js';
+import { effectAmountText, badgeAmountText, badgeText, limitNote, badgeTip, EFFECT_GLYPH } from '../ui/components/board/effectBadgeText.js';
 import { GLYPHS } from '../ui/components/base/PixelGlyph.jsx';
 import { clearMat, placeAt } from './fixtures/mat.js';
 
@@ -259,6 +259,17 @@ describe('the badge row', () => {
 });
 
 describe('item badges, Rare finds and the Needs cost', () => {
+    it('Rare finds with no bonus: the bare chance and no extra hover line', () => {
+        const vein = arrive(VEIN);
+        const { container } = mount({ typeId: VEIN, instanceId: vein.id });
+        const group = container.querySelector('[data-card-rare]');
+        expect(group.querySelector('[data-card-rare-chance]').textContent).toBe('2%');
+        expect(group.querySelector('[data-effect-badge="lucky"]')).toBeNull();
+        hover(group.querySelector('[data-card-rare-toggle]'));
+        expect(tipText()).toContain('A roll on this Token');
+        expect(tipText()).not.toContain('base');
+    });
+
     it('Double Item on the Makes line, Efficiency on the Needs line, the Needs at the cost a cycle can take', () => {
         const vein = arrive(VEIN);
         arrive('bc_mine', NEAR);
@@ -287,7 +298,11 @@ describe('item badges, Rare finds and the Needs cost', () => {
         expect(group.getAttribute('data-card-rare')).toBe('shut');
         // 2 % at +25 %.
         expect(group.querySelector('[data-card-rare-chance]').textContent).toBe('2.5%');
-        expect(group.querySelector('[data-effect-badge="lucky"]').textContent).toBe('+25%');
+        // Lucky's percentage is a share of the table's chance, so it reads as a multiplier.
+        expect(group.querySelector('[data-effect-badge="lucky"]').textContent).toBe('×1.25');
+        // The live chance explains itself: base, each bonus and its source, the result.
+        hover(group.querySelector('[data-card-rare-toggle]'));
+        expect(tipText()).toContain('2% base · Lucky ×1.25 (Badge Mine nearby) · = 2.5%');
         expect(group.querySelector('[data-card-rare-list]')).toBeNull();
         fireEvent.click(group.querySelector('[data-card-rare-toggle]'));
         expect(group.getAttribute('data-card-rare')).toBe('open');
@@ -324,7 +339,7 @@ describe('the tip and the chip agree with the breakdown', () => {
         for (const badge of out.effects) {
             const chip = container.querySelector(`[data-effect-badges] > [data-effect-badge="${badge.key}"]`);
             expect(chip.textContent, badge.key).toBe(badgeText(badge));
-            expect(badgeTip(badge).total.amount, badge.key).toBe(effectAmountText(badge.unit, badge.total));
+            expect(badgeTip(badge).total.amount, badge.key).toBe(badgeAmountText(badge, badge.total));
         }
     });
 });

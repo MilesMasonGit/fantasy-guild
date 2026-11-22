@@ -187,6 +187,29 @@ export function lengthText(ms) {
     return `${Math.floor(h / 24)}d ${h % 24}h`;
 }
 
+/**
+ * A chance's number (in percent) by the game's one rule: one decimal with a trailing `.0`
+ * dropped (`40`, `12.5`), and under 1 two significant figures (`0.17`, `0.005`), so a rare find
+ * never reads 0. The sign is kept.
+ */
+export function chanceFigure(percent) {
+    const n = Number(percent) || 0;
+    const a = Math.abs(n);
+    if (a === 0) return 0;
+    const f = a < 1 ? Number(a.toPrecision(2)) : Math.round(a * 10) / 10;
+    return n < 0 ? -f : f;
+}
+
+/** A chance as the player reads it: `40%`, `12.5%`, `0.17%`, no space before the sign. */
+export function chanceText(percent) {
+    return `${chanceFigure(percent)}%`;
+}
+
+/** A factor as a multiplier: `×1.2`, `×1.15`, `×2`; two decimals at most, trailing zeros dropped. */
+export function timesText(factor) {
+    return `×${Math.round((Number(factor) || 0) * 100) / 100}`;
+}
+
 const ROMAN = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
 
 /** A rank in Roman numerals: 1 → "I", 4 → "IV", 14 → "XIV". */

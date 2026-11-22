@@ -11,7 +11,7 @@ import { recipeRowOf } from './recipeRows.js';
 import { skillLevelText } from '../dock/heroPanelSkills.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { fieldOf, cropTermsOf } from '../../../config/registries/tokenConstants.js';
-import { lengthText } from '../../../utils/Formatters.js';
+import { lengthText, chanceText } from '../../../utils/Formatters.js';
 import { t } from '../../../i18n/index.js';
 
 /**
@@ -102,11 +102,11 @@ const OutputHeadline = ({ out }) => (
 );
 
 const Byproduct = ({ out }) => (
-    <Tooltip title={out.name} lines={out.chance != null ? [`${out.chance}% chance each craft`] : undefined}>
+    <Tooltip title={out.name} lines={out.chance != null ? [`${chanceText(out.chance)} base chance each craft`] : undefined}>
         <span data-recipe-byproduct={out.itemId || out.tokenId} className="inline-flex items-center gap-0.5 ui-text-small text-gi-muted">
             <OutputIcon out={out} dim />
             <span>{out.name}</span>
-            {out.chance != null && <span className="tabular-nums">{out.chance}%</span>}
+            {out.chance != null && <span className="tabular-nums">{chanceText(out.chance)} base</span>}
         </span>
     </Tooltip>
 );

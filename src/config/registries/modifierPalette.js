@@ -9,6 +9,7 @@
 import { EFFECT_TYPES, TARGET_CATEGORIES } from '../../systems/effects/constants.js';
 import { COMBAT_SKILL_IDS } from './skillRegistry.js';
 import { DOSE_KIND_IDS } from './carriedKinds.js';
+import { timesText } from '../../utils/Formatters.js';
 
 /**
  * Which effect axes content may be authored against, and in what shape.
@@ -481,17 +482,18 @@ export const MODIFIER_PALETTE = [
          *
          * ⚠️ Deterministic, not `proc`, though it ends in a roll: a proc is a chance resolved from 0,
          * so the CMS stores its percentage as typed and starts it flat. Lucky's percentage is a share
-         * of the table's chance (typed 10, stored 0.1), and the CMS starts it there. The sentence is
-         * its own (`statementText`), since a flat reads in points.
+         * of the table's chance (typed 10, stored 0.1), and the CMS starts it there. Its `n` is a
+         * multiplier (`×1.2`), never `+20%`, which reads as points; a flat reads in points, in its
+         * own sentence (`statementText`).
          */
         type: EFFECT_TYPES.LUCKY,
         reads: {
-            up: (n) => `have a ${n} higher chance on their rare drop table`,
-            down: (n) => `have a ${n} lower chance on their rare drop table`
+            up: (n) => `have rare find chance ${n}`,
+            down: (n) => `have rare find chance ${n}`
         },
         heroReads: {
-            up: (n) => `a ${n} higher chance on the Token's rare drop table`,
-            down: (n) => `a ${n} lower chance on the Token's rare drop table`
+            up: (n) => `rare find chance ${n}`,
+            down: (n) => `rare find chance ${n}`
         },
         label: 'Lucky',
         when: 'never',
@@ -840,6 +842,9 @@ export function describeModifierDirection(entry, value, bucket = 'percentage') {
     if (!Number.isFinite(n) || n === 0) return null;
 
     const isBuff = entry.inverted ? n < 0 : n > 0;
+    if (entry.type === EFFECT_TYPES.LUCKY && bucket === 'percentage') {
+        return { isBuff, text: `${entry.heroReads.up(timesText(1 + n))} — ${isBuff ? 'a buff' : 'a penalty'}.` };
+    }
     const magnitude = bucket === 'percentage'
         ? `${Math.abs(Math.round(n * 1000) / 10)}%`
         : `${Math.abs(n)}`;

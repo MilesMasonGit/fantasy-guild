@@ -9,7 +9,7 @@ import { COMBAT_SKILL_IDS } from '../../../config/registries/skillRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { UNARMED_DAMAGE, ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, attackSpeedMs } from '../../../config/FormulaRegistry.js';
 import { breakChanceOf } from '../../../config/registries/itemBreak.js';
-import { lengthText } from '../../../utils/Formatters.js';
+import { lengthText, chanceFigure } from '../../../utils/Formatters.js';
 
 /** What kind of item it is, in the player's words. */
 export function itemTypeLabel(item) {
@@ -61,7 +61,7 @@ function weaponStats(item, style, hands) {
 function breakLine(item, tool) {
     const chance = breakChanceOf(item);
     if (!(chance > 0)) return null;
-    const n = Number(chance.toFixed(2)).toLocaleString('en-US');
+    const n = chanceFigure(chance).toLocaleString('en-US');
     return t(tool ? 'itemTip.breaksWork' : 'itemTip.breaksFight', { n });
 }
 

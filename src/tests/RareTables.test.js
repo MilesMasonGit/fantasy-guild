@@ -384,11 +384,13 @@ describe('Lucky', () => {
         expect(paletteForKeyword(KEYWORD.PROVIDES).some(p => p.type === EFFECT_TYPES.LUCKY)).toBe(true);
     });
 
-    it('reads in plain words: in proportion as a percentage, in points as a flat', () => {
+    it('reads in plain words: a percentage as a multiplier, a flat in points', () => {
         const rule = (bucket, value) => ({ id: 's', keyword: 'provides', to: { mode: 'tag', value: 'Ore' }, reach: 'nearby', payload: { type: EFFECT_TYPES.LUCKY, bucket, value } });
-        expect(renderStatement(rule('percentage', 0.1))).toMatch(/have a 10% higher chance on their rare drop table/);
+        expect(renderStatement(rule('percentage', 0.1))).toMatch(/have rare find chance ×1\.1\b/);
+        expect(renderStatement(rule('percentage', -0.2))).toMatch(/have rare find chance ×0\.8\b/);
+        expect(renderStatement(rule('multiplier', 2))).toMatch(/have rare find chance ×2\b/);
         expect(renderStatement(rule('flat', 1))).toMatch(/have 1% added to their rare drop table's chance/);
-        expect(supportTag({ type: EFFECT_TYPES.LUCKY, bucket: 'percentage', value: 0.1 })).toBe('+10 % Lucky');
+        expect(supportTag({ type: EFFECT_TYPES.LUCKY, bucket: 'percentage', value: 0.1 })).toBe('Lucky ×1.1');
         expect(supportTag({ type: EFFECT_TYPES.LUCKY, bucket: 'flat', value: 1 })).toBe('+1 point Lucky');
     });
 });

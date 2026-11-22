@@ -1003,8 +1003,8 @@ describe('Preservation as the CMS and the game say it', () => {
         expect(renderStatement(rule(CARRIED_KIND.BAIT), carried)).toBe('Gives the hero a 25% chance bait is not used up.');
     });
 
-    it('tags a support "+25 % Preservation"', () => {
-        expect(supportTag({ type: EFFECT_TYPES.PRESERVATION, bucket: 'flat', value: 25 })).toBe('+25 % Preservation');
+    it('tags a support "+25% Preservation"', () => {
+        expect(supportTag({ type: EFFECT_TYPES.PRESERVATION, bucket: 'flat', value: 25 })).toBe('+25% Preservation');
     });
 
     it('offers everything, every skill, every kind and every item in the CMS', () => {

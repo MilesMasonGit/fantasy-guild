@@ -121,14 +121,14 @@ afterEach(() => {
 
 describe('a support\'s effect in a few words', () => {
     it('says each kind the skill loops use, with the item a chance names', () => {
-        expect(supportTag({ type: EFFECT_TYPES.GROW_TIME, bucket: 'percentage', value: -0.25 })).toBe('−25 % grow');
-        expect(supportTag({ type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.2 })).toBe('−20 % work');
+        expect(supportTag({ type: EFFECT_TYPES.GROW_TIME, bucket: 'percentage', value: -0.25 })).toBe('−25% grow');
+        expect(supportTag({ type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.2 })).toBe('−20% work');
         expect(supportTag({ type: EFFECT_TYPES.CROP_LOAD, bucket: 'flat', value: 2 })).toBe('+2 harvests');
         expect(supportTag({ type: EFFECT_TYPES.CROP_LOAD, bucket: 'flat', value: 1 })).toBe('+1 harvest');
-        expect(supportTag({ type: EFFECT_TYPES.DOUBLE_DROP, bucket: 'flat', value: 25, category: ORE })).toBe('×2 Fixture Ore 25 %');
-        expect(supportTag({ type: EFFECT_TYPES.DOUBLE_DROP, bucket: 'flat', value: 25 })).toBe('×2 items 25 %');
-        expect(supportTag({ type: EFFECT_TYPES.BONUS_DROP, itemId: SEED, chance: 5 })).toBe('+Fixture Seed 5 %');
-        expect(supportTag({ type: EFFECT_TYPES.YIELD, bucket: 'percentage', value: 0.1 })).toBe('+10 % yield');
+        expect(supportTag({ type: EFFECT_TYPES.DOUBLE_DROP, bucket: 'flat', value: 25, category: ORE })).toBe('×2 Fixture Ore 25%');
+        expect(supportTag({ type: EFFECT_TYPES.DOUBLE_DROP, bucket: 'flat', value: 25 })).toBe('×2 items 25%');
+        expect(supportTag({ type: EFFECT_TYPES.BONUS_DROP, itemId: SEED, chance: 5 })).toBe('+Fixture Seed 5%');
+        expect(supportTag({ type: EFFECT_TYPES.YIELD, bucket: 'percentage', value: 0.1 })).toBe('+10% yield');
     });
 });
 

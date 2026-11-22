@@ -478,7 +478,7 @@ describe('in the CMS and the rules text', () => {
             .toBe('Makes every nearby Token have a 2% chance a gathering cycle\'s drops come in at ten times, but only for Mining work.');
         expect(renderStatement(rule(-1))).toBe('Makes every nearby Token have 1% less chance a gathering cycle\'s drops come in at ten times.');
         expect(renderStatement(rule(2), { carried: true })).toBe('Gives the hero a 2% chance a gathering cycle\'s drops come in at ten times.');
-        expect(supportTag({ type: EFFECT_TYPES.GIANT_HARVEST, bucket: 'flat', value: 2 })).toBe('+2 % Giant Harvest');
+        expect(supportTag({ type: EFFECT_TYPES.GIANT_HARVEST, bucket: 'flat', value: 2 })).toBe('+2% Giant Harvest');
         expect(hallRuleSentence(starRule(1, { category: 'mining' })))
             .toBe('Makes every Token on the board have a 1% chance a gathering cycle\'s drops come in at ten times, but only for Mining work.');
         holdStar(1, { category: 'mining' });

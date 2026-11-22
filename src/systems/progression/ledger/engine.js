@@ -1,6 +1,7 @@
 // the progression ledger's engines: when each entry is first reachable (reach) and what a made item costs to its origins (tree)
 
 import { isPlanned } from './plan.js';
+import { chanceText } from '../../../utils/Formatters.js';
 import { normaliseStarterCamp } from '../../../config/starterCampShape.js';
 import { getUpgradeDef, WISHING_WELL_ITEM, wishingWellWater, BUILT_IN_UPGRADE_IDS, HALL_NODE } from '../../../config/guildUpgrades.js';
 import { normaliseHallSky } from '../../../config/hallStars.js';
@@ -135,8 +136,8 @@ export const LEDGER_ENGINE_TEXT = Object.freeze({
     ring: (ring) => `Ring ${ring} opened`,
     someWorlds: 'in some worlds',
     level: (skill, level) => `${skill === COMBAT ? 'Combat' : skill.charAt(0).toUpperCase() + skill.slice(1)} ${level}`,
-    /** A chance as a percent to one place; a rare one under 0.1 % to two figures ("0.014%"), never "0%". */
-    chance: (p) => (p > 0 && p < 0.001 ? `${Number((p * 100).toPrecision(2))}%` : `${Math.round(p * 1000) / 10}%`),
+    /** A chance (0 to 1) by the game's chance rule: "40%", "12.5%", "0.25%", "0.014%", never "0%". */
+    chance: (p) => chanceText(p * 100),
     /** Finds a day in words: "about 8.6 a day", "about 0.7 a day", "about 1 in 12 days"; "finds a day unknown" when null. */
     perDay: (n) => (!Number.isFinite(n) ? 'finds a day unknown'
         : n >= 10 ? `about ${Math.round(n)} a day`

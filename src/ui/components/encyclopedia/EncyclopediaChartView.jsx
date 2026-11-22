@@ -9,7 +9,7 @@ import { PixelGlyph } from '../base/PixelGlyph.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { ItemTipContent } from '../drawer/ItemTip.jsx';
-import { lengthText } from '../../../utils/Formatters.js';
+import { lengthText, chanceText } from '../../../utils/Formatters.js';
 import { panDrag } from '../../utils/panDrag.js';
 import { KIND } from './encyclopediaModel.js';
 import {
@@ -78,10 +78,13 @@ export function amountText(q) {
     return `×${shown.toLocaleString('en-US')}`;
 }
 
-/** A line's odds on the box it reaches: "40%", nothing when sure. */
-export function chanceText(node) {
+/**
+ * A line's odds on the box it reaches, labelled base ("40% base"): a reference page has no one
+ * Token or hero to count bonuses from. Nothing when sure.
+ */
+export function oddsText(node) {
     if (!Number.isFinite(node.chance) || node.chance >= 1) return null;
-    return t('encyclopedia.chance', { chance: Math.round(node.chance * 1000) / 10 });
+    return t('encyclopedia.chance', { chance: chanceText(node.chance * 100) });
 }
 
 const haveOf = (entry) => (entry?.kind === KIND.ITEM ? Math.floor(availableOf(entry.id) || 0) : null);
@@ -241,7 +244,7 @@ const ChartNode = memo(function ChartNode({ book, box, entry, focused, collected
     const node = box.node;
     const need = node.side === 'in' ? needText(node.need) : null;
     const short = need != null && have != null && have < need;
-    const odds = chanceText(node);
+    const odds = oddsText(node);
     const grows = node.side === 'in' ? 'encyclopedia.growIn' : 'encyclopedia.growOut';
     const hint = node.repeat ? t('encyclopedia.again') : (node.grown || node.farOpen) && node.side !== 'start' ? t('encyclopedia.fold') : node.canGrow ? t(grows) : null;
     return (

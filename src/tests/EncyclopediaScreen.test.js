@@ -96,9 +96,9 @@ describe('the chart', () => {
         expect(q(container, '[data-codex-panel]')).toBeNull();
         expect(q(container, '[data-codex-chart-from]')).toBeNull();
         expect(qa(container, '[data-codex-link]').length).toBeGreaterThan(3);
-        // Dropped by the Fire Elemental Chief: its odds on its box, a fight and its level on its line.
+        // Dropped by the Fire Elemental Chief: its odds on its box, labelled base, a fight and its level on its line.
         const chief = nodeOf(container, tokenKey('token_fire_elemental_chief'), 'in');
-        expect(q(chief, '[data-codex-chance]').textContent).toMatch(/^\d+(\.\d)?%$/);
+        expect(q(chief, '[data-codex-chance]').textContent).toMatch(/^\d+(\.\d+)?% base$/);
         const branch = chief.getAttribute('data-codex-node').slice(0, -1);
         expect([markOf(container, `${branch}@`).getAttribute('data-codex-req'), markOf(container, `${branch}@`).textContent]).toEqual(['combat', '25']);
         // A use shows a count of its lines not on screen, an arrow tab pointing that way: the pickaxe's station.

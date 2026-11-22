@@ -1,5 +1,5 @@
 
-import { countdownText, elapsedText, lengthText } from '../../../utils/Formatters.js';
+import { countdownText, elapsedText, lengthText, chanceText } from '../../../utils/Formatters.js';
 import { turnTiming, PASSIVE_LAP_BASE_MS, fieldOf, cropTermsOf } from '../../../config/registries/tokenConstants.js';
 
 /**
@@ -32,14 +32,9 @@ function typeList(entries, tokenName) {
         .join(' or ');
 }
 
-/** A percent as the panel shows it: `30%`, `12.5%`. */
-function formatPercent(chance) {
-    return `${Math.round(Number(chance) * 10) / 10}%`;
-}
-
 /** "in 34s (30%)": time to a turn's next roll, and its chance. */
 function nextChance(ms, chance) {
-    return `in ${countdownText(ms)} (${formatPercent(chance)})`;
+    return `in ${countdownText(ms)} (${chanceText(chance)})`;
 }
 
 function clock(instance, key) {
@@ -315,7 +310,7 @@ export function lifecycleLines(instance, src) {
             });
             out.push({
                 label: 'Turns',
-                value: `${formatPercent(chance)} chance every ${lengthText(everyMs)}, and the same to turn back`,
+                value: `${chanceText(chance)} chance every ${lengthText(everyMs)}, and the same to turn back`,
                 tone: TONE.MUTED
             });
         }

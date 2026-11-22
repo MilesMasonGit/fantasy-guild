@@ -11,7 +11,7 @@ import { LeaveMatControl } from '../drawer/LeaveMatControl.jsx';
 import { useTokenDetail } from './useTokenDetail.js';
 import { subscribeToken } from './tokenEvents.js';
 import { CARD_BLOCK, tokenCardModel, drivenBy } from './tokenCard.js';
-import { lengthText } from '../../../utils/Formatters.js';
+import { lengthText, chanceText } from '../../../utils/Formatters.js';
 import { ArrowScrollList, PixelTriangle } from '../base/ArrowScrollList.jsx';
 import { withArticle } from '../../../systems/effects/toolNames.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
@@ -30,6 +30,7 @@ import { lookUpRibbon, lookUpToken, lookUpRecipe, lookUpItem } from '../encyclop
 import { t } from '../../../i18n/index.js';
 import { onPoll } from './frameClock.js';
 import { EffectBadgeGrid, EffectChip, ItemBadges } from './EffectBadges.jsx';
+import { chanceBreakdownText } from './effectBadgeText.js';
 import { EFFECT_KEY } from '../../../systems/board/EffectBreakdown.js';
 import { STAR_COLOUR } from './fx/rareTwinkle.js';
 
@@ -307,7 +308,7 @@ const MakesSection = ({ makes, effects }) => {
                         id={m.itemId}
                         minQty={m.min}
                         maxQty={m.max}
-                        chance={m.chance != null ? `${m.chance}%` : undefined}
+                        chance={m.chance != null ? chanceText(m.chance) : undefined}
                         badge={itemBadges(effects?.outputs, m.itemId)}
                         size="sm"
                         wrap
@@ -321,7 +322,7 @@ const MakesSection = ({ makes, effects }) => {
 
 // Each catch lands one, so the odds stand where a count would.
 const CatchRibbons = ({ catches, outputs }) => catches.map(c => (
-    <EntityRibbon key={c.itemId} kind="item" id={c.itemId} countText={`${c.chance}%`} badge={itemBadges(outputs, c.itemId)} size="sm" wrap onInspect={lookUpRibbon} />
+    <EntityRibbon key={c.itemId} kind="item" id={c.itemId} countText={chanceText(c.chance)} badge={itemBadges(outputs, c.itemId)} size="sm" wrap onInspect={lookUpRibbon} />
 ));
 
 /** A list that opens on a click, shut to begin with. */
@@ -428,12 +429,14 @@ const rareQty = (r) => (r.min === 1 && r.max === 1 ? undefined : r.min === r.max
 /**
  * The rare drop table as one group: its chance in the twinkle's colour and the Lucky badge on its
  * heading; a click opens the list of what it can find, each at its odds, and another shuts it.
+ * With Lucky counted, the hover says how the chance was reached.
  */
 const RareFinds = ({ rare, lucky }) => {
     const [open, setOpen] = useState(false);
+    const reached = chanceBreakdownText(lucky);
     return (
         <div data-card-rare={open ? 'open' : 'shut'} className="flex flex-col gap-1">
-            <Tooltip title={t('effectBadges.card.rareFinds')} lines={[t('effectBadges.card.rareTip')]}>
+            <Tooltip title={t('effectBadges.card.rareFinds')} lines={reached ? [reached, t('effectBadges.card.rareTip')] : [t('effectBadges.card.rareTip')]}>
                 <button
                     type="button"
                     data-card-rare-toggle
@@ -443,7 +446,7 @@ const RareFinds = ({ rare, lucky }) => {
                 >
                     <span className="inline-flex" style={open ? undefined : { transform: 'rotate(-90deg)' }}><PixelTriangle dir="down" /></span>
                     <span className="font-bold">{t('effectBadges.card.rareFinds')}</span>
-                    <span data-card-rare-chance className="font-bold tabular-nums" style={{ color: STAR_COLOUR }}>{`${rare.chance}%`}</span>
+                    <span data-card-rare-chance className="font-bold tabular-nums" style={{ color: STAR_COLOUR }}>{chanceText(rare.chance)}</span>
                     <span className="flex-1" />
                     {lucky && <EffectChip badge={lucky} small />}
                 </button>
@@ -456,7 +459,7 @@ const RareFinds = ({ rare, lucky }) => {
                             kind="item"
                             id={r.itemId}
                             subtitle={rareQty(r)}
-                            countText={`${r.chance}%`}
+                            countText={chanceText(r.chance)}
                             size="sm"
                             wrap
                             onInspect={lookUpRibbon}
@@ -481,7 +484,7 @@ const DropsSection = ({ drops = [], rare, effects }) => (
                 id={d.itemId}
                 minQty={d.min}
                 maxQty={d.max}
-                chance={`${d.chance}%`}
+                chance={chanceText(d.chance)}
                 badge={itemBadges(effects?.outputs, d.itemId)}
                 size="sm"
                 wrap

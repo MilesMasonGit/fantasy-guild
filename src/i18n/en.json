@@ -248,7 +248,7 @@
         "combatLevel": "Combat · Lv {level}",
         "combatTip": "An enemy of level {level}",
         "noHero": "No hero has {skill} {level} yet",
-        "chance": "{chance}%",
+        "chance": "{chance} base",
         "again": "already above",
         "have": "Have {count}",
         "haveNeed": "Have {have}; one {name} needs {need}",
@@ -782,7 +782,10 @@
             "luckyBase": "Rare finds {base} before Lucky, {final} with it",
             "rareFinds": "Rare finds",
             "rareTip": "A roll on this Token's own rare table each time it pays out. Click to see what it can find",
-            "drops": "Drops"
+            "drops": "Drops",
+            "chanceBase": "{chance} base",
+            "chanceBonus": "{effect} {amount} ({source})",
+            "chanceResult": "= {chance}"
         }
     },
     "events": {

@@ -3,6 +3,7 @@ import { getRecipe } from '../../../config/registries/recipePoolRegistry.js';
 import { turnCountdownText } from './centreAlert.js';
 import { CELL } from './workPlate.js';
 import { t } from '../../../i18n/index.js';
+import { chanceText } from '../../../utils/Formatters.js';
 
 /**
  * The idle plate: a Token nobody works, once the pointer rests on it, gets the work plate's look
@@ -38,7 +39,7 @@ export function timerCellOf(roll) {
     } else if (roll.kind === 'ripen') {
         tip = `${getRecipe(roll.cropId)?.name || 'Its crop'} ripe in ${text}`;
     } else {
-        const chance = `${roll.chance}% chance`;
+        const chance = `${chanceText(roll.chance)} chance`;
         tip = roll.back
             ? `Next roll to turn back in ${text} (${chance})`
             : `Next roll to turn into something else in ${text} (${chance})`;

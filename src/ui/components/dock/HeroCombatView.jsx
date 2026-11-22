@@ -5,7 +5,7 @@ import { CombatGlyph } from '../combat/CombatGlyph.jsx';
 import { GLYPH_COLOUR } from '../combat/combatGlyphs.js';
 import { HitParts, ResistChips, resistTip } from '../combat/CombatStatParts.jsx';
 import { damageText, styleName, levelText } from '../combat/fightView.js';
-import { lengthText } from '../../../utils/Formatters.js';
+import { lengthText, chanceText } from '../../../utils/Formatters.js';
 import * as HeroManager from '../../../systems/hero/HeroManager.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { heroCombatStats } from './heroCombatStats.js';
@@ -23,8 +23,6 @@ const COMBAT_VIEW_EVENTS = Object.freeze([
 
 /** A miss chance is held between these whatever Accuracy and Dodge add up to. */
 const MISS_BOUNDS = Object.freeze({ min: MISS.MIN, max: MISS.MAX });
-
-const pct = (n) => `${Math.round(n * 100) / 100}%`;
 
 /**
  * The hero drawer's Combat view: the hero's fighting numbers as a fight would use them
@@ -76,13 +74,13 @@ export const HeroCombatView = ({ heroId }) => {
                 {lengthText(s.swingMs)}
             </Row>
             <Row stat="crit" label={t('heroPanel.combat.critChance')} tip={t('heroPanel.combat.critChanceTip')}>
-                {pct(s.critChance)}
+                {chanceText(s.critChance)}
             </Row>
             <Row stat="accuracy" label={t('heroPanel.combat.accuracy')} tip={t('heroPanel.combat.accuracyTip', MISS_BOUNDS)}>
-                {pct(s.accuracy)}
+                {chanceText(s.accuracy)}
             </Row>
             <Row stat="dodge" label={t('heroPanel.combat.dodge')} tip={t('heroPanel.combat.dodgeTip', MISS_BOUNDS)}>
-                {pct(s.dodge)}
+                {chanceText(s.dodge)}
             </Row>
             <Row stat="resists" label={t('heroPanel.combat.resists')} tip={t('fight.tip.heroResists', { name: HeroManager.getHero(heroId)?.name || '' })} lines={resistTip(s.resists)}>
                 <ResistChips lines={s.resists} />

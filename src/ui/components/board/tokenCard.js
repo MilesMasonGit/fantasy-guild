@@ -32,7 +32,7 @@ import { GameState } from '../../../state/GameState.js';
 import { effectiveIO } from '../../../systems/board/RecipeResolver.js';
 import { availableOf } from '../../../systems/board/InputAllocator.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
-import { countdownText, lengthText } from '../../../utils/Formatters.js';
+import { countdownText, lengthText, chanceFigure, chanceText } from '../../../utils/Formatters.js';
 import { landmarkLines } from '../drawer/landmarkLines.js';
 import * as SupportLinks from '../../../systems/board/supportLinks.js';
 import { reachRadius } from '../../../systems/board/nearby.js';
@@ -217,7 +217,7 @@ function makesOf(outputs) {
         .map(o => {
             const { min, max } = outputRange(o);
             const chance = o.chance == null ? 100 : Number(o.chance);
-            return { itemId: o.itemId, min, max, chance: chance < 100 ? chance : null };
+            return { itemId: o.itemId, min, max, chance: chance < 100 ? chanceFigure(chance) : null };
         });
 }
 
@@ -227,15 +227,8 @@ function dropsOf(outputs) {
         .filter(o => o?.itemId && !o.currency)
         .map(o => {
             const { min, max } = outputRange(o);
-            return { itemId: o.itemId, min, max, chance: o.chance == null ? 100 : Number(o.chance) };
+            return { itemId: o.itemId, min, max, chance: o.chance == null ? 100 : chanceFigure(o.chance) };
         });
-}
-
-/** A chance as a row writes it: one decimal from 1 %, two figures under it (0.17 %, 0.005 %). */
-function rareChanceText(chance) {
-    const c = Math.max(0, Number(chance) || 0);
-    if (c >= 1) return Math.round(c * 10) / 10;
-    return c > 0 ? Number(c.toPrecision(2)) : 0;
 }
 
 /**
@@ -248,9 +241,9 @@ function rareBlockOf(def, instance, src, skill) {
     if (!table) return null;
     const chance = instance && src.rareChance ? src.rareChance(instance.id, def, skill) : table.chance;
     const rows = rareEntryChances(table, chance).map(({ entry, chance: c }) => ({
-        itemId: entry.itemId, min: entry.minQty, max: entry.maxQty, chance: rareChanceText(c)
+        itemId: entry.itemId, min: entry.minQty, max: entry.maxQty, chance: chanceFigure(Math.max(0, c))
     }));
-    return { chance: rareChanceText(chance), rows };
+    return { chance: chanceFigure(Math.max(0, chance)), rows };
 }
 
 /**
@@ -267,12 +260,12 @@ function needsOf(inputs, src, instance) {
         });
 }
 
-/** Weights as a pool's odds in percent, one decimal at most, in pool order. */
+/** Weights as a pool's odds in percent, written by the chance rule, in pool order. */
 function catchRows(catches, weightOf = (c) => c.weight) {
     const weights = catches.map(c => Math.max(0, Number(weightOf(c)) || 0));
     const total = weights.reduce((sum, w) => sum + w, 0);
     return catches
-        .map((c, i) => ({ itemId: c.itemId, chance: total > 0 ? Math.round((weights[i] / total) * 1000) / 10 : 0 }))
+        .map((c, i) => ({ itemId: c.itemId, chance: total > 0 ? chanceFigure((weights[i] / total) * 100) : 0 }))
         .filter(row => row.chance > 0);
 }
 
@@ -358,8 +351,6 @@ function fieldCardLines(field, src) {
     return out;
 }
 
-const percent = (chance) => `${Math.round(Number(chance) * 10) / 10}%`;
-
 /**
  * The lifecycle lines as icon + short text, each with the sentence its hover gives.
  * @returns {{ icon: string, text: string, tip: string, tone?: 'warning'|'danger' }[]}
@@ -390,7 +381,7 @@ export function cardLifecycle(instance, def, src) {
         if (turn) {
             out.push({
                 icon: 'turn', text: countdownText(turn.inMs),
-                tip: `A ${percent(turn.chance)} chance to turn back into ${src.tokenName(instance.turnedFrom)} in ${countdownText(turn.inMs)}`
+                tip: `A ${chanceText(turn.chance)} chance to turn back into ${src.tokenName(instance.turnedFrom)} in ${countdownText(turn.inMs)}`
             });
         }
     } else {
@@ -405,7 +396,7 @@ export function cardLifecycle(instance, def, src) {
             const { everyMs } = turnTiming(def.turns);
             out.push({
                 icon: 'turn', text: countdownText(turn.inMs),
-                tip: `A ${percent(turn.chance)} chance every ${lengthText(everyMs)} to turn into ${into}, and the same to turn back. Next roll in ${countdownText(turn.inMs)}`
+                tip: `A ${chanceText(turn.chance)} chance every ${lengthText(everyMs)} to turn into ${into}, and the same to turn back. Next roll in ${countdownText(turn.inMs)}`
             });
         }
     }
