@@ -254,18 +254,23 @@ describe('the blocks, top to bottom, per kind', () => {
         ]);
     });
 
-    it('a Stump: counts down naming its cost; with no Forest in reach it waits; short of its seedling it is stopped (brief 230 S2a)', () => {
+    it('a Stump respawns: counts down naming its cost; with no Forest in reach it waits; short of its seedling it is stopped (brief 230 S2a)', () => {
         const names = { tree: 'Oak Sapling', forest: 'Oak Forest', seed: 'Oak Seedling' };
+        // The Stump is what a used-up Oak leaves, so its growth is the Oak coming back.
+        const types = { oak: { respawn: { mode: 'regrow', into: 'stump' } }, stump: { grows: { into: 'tree' } } };
         const growth = (extra) => ({
             inMs: 65000, totalMs: 120000, into: 'tree', paused: false, stopped: false,
             needsNearby: ['forest'], cost: [{ itemId: 'seed', quantity: 1 }], short: [], ...extra
         });
-        const line = (g) => cardLifecycle({ id: 'st1', typeId: 'stump' }, { grows: { into: 'tree' } }, {
-            tokenName: (id) => names[id] || id, itemName: (id) => names[id] || id, nextGrowth: () => g
+        const line = (g, allTypes = () => types) => cardLifecycle({ id: 'st1', typeId: 'stump' }, { grows: { into: 'tree' } }, {
+            tokenName: (id) => names[id] || id, itemName: (id) => names[id] || id, nextGrowth: () => g, allTypes
         })[0];
-        expect(line(growth())).toEqual({ icon: 'grow', text: '1m 5s', tip: 'Grows into Oak Sapling in 1m 5s, for 1 Oak Seedling from the Bank' });
-        expect(line(growth({ paused: true }))).toEqual({ icon: 'grow', text: '–', tip: 'Grows into Oak Sapling only with Oak Forest nearby', tone: 'warning' });
-        expect(line(growth({ stopped: true, inMs: 0, short: ['seed'] }))).toEqual({ icon: 'grow', text: '–', tip: 'Stopped: needs 1 Oak Seedling to grow into Oak Sapling', tone: 'warning' });
+        const base = { kind: 'grow', icon: 'grow', label: 'Respawns' };
+        expect(line(growth())).toEqual({ ...base, text: '1m 5s', tip: 'Respawns as Oak Sapling in 1m\u00a05s, for 1 Oak Seedling from the Bank' });
+        expect(line(growth({ paused: true }))).toEqual({ ...base, text: '–', tip: 'Respawns as Oak Sapling only with an Oak Forest nearby', tone: 'warning', alert: true });
+        expect(line(growth({ stopped: true, inMs: 0, short: ['seed'] }))).toEqual({ ...base, text: '–', tip: 'Stopped: needs 1 Oak Seedling to respawn as Oak Sapling', tone: 'warning', alert: true });
+        // A growth nothing used up left behind (a Sapling a Forest planted) grows.
+        expect(line(growth(), () => ({}))).toEqual({ kind: 'grow', icon: 'grow', text: '1m 5s', tip: 'Grows into Oak Sapling in 1m\u00a05s, for 1 Oak Seedling from the Bank' });
     });
 
     it('a Shop card (no instance) shows the type: starting charges, no recipe picker', () => {
@@ -565,7 +570,7 @@ describe('the sections', () => {
         expect(stats.querySelector('[data-card-charges]')).not.toBeNull();
     });
 
-    it('Requires holds the tool and what is used up; Makes what comes out; Events the regrowing', () => {
+    it('Requires holds the tool and what is used up; Makes what comes out; Events how it respawns', () => {
         const vein = put('card_vein');
         const { container } = mount(h(TokenCard, { typeId: 'card_vein', instanceId: vein.id }));
         const requires = container.querySelector('[data-card-block="requires"]');
@@ -574,7 +579,7 @@ describe('the sections', () => {
         expect(container.querySelectorAll('[data-card-block="makes"] [data-item-bar]')).toHaveLength(2);
         const events = container.querySelector('[data-card-block="lifecycle"]');
         expect(events.textContent).toContain('Events');
-        expect(events.querySelector('[data-card-life="regrow"]').textContent).toContain('Regrows');
+        expect(events.querySelector('[data-card-life="regrow"]').textContent).toContain('Respawns');
     });
 
     it('a card with nothing for a section leaves it out', () => {

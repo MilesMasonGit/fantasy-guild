@@ -24,9 +24,8 @@ import { resetMatTuning } from '../config/matTuning.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { flagStatusLine } from '../ui/components/board/flagText.js';
 import { cardLifecycle, liveCardSources } from '../ui/components/board/tokenCard.js';
-import { lifecycleLines } from '../ui/components/drawer/lifecycleLines.js';
 import { problemText } from '../ui/components/board/problemMark.js';
-import { getTokenType, tokenName } from '../config/registries/tokenRegistry.js';
+import { getTokenType } from '../config/registries/tokenRegistry.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -300,22 +299,16 @@ describe('an Apple Tree from an old save, once the content pack makes it a fruit
 });
 
 describe('what a Bare tree says', () => {
-    const linesOf = (t) => lifecycleLines(t, { typeOf: getTokenType, tokenName, respawn: Respawn.respawnState });
     const cardLine = (t) => cardLifecycle(t, getTokenType(t.typeId), liveCardSources()).find(l => l.icon === 'regrow');
 
     it('with no Orchard in reach: no time, it waits for one, and its mark says it needs one to refill', () => {
         const tree = pickedBare({ orchard: false });
-        expect(cardLine(tree)).toMatchObject({ text: '–', tip: 'Test Apple Tree: resting, refills only with Test Apple Orchard nearby', tone: 'warning' });
-        expect(linesOf(tree)).toEqual(expect.arrayContaining([
-            { label: 'Resting', value: 'waiting for a Test Apple Orchard nearby', tone: 'warning' },
-            { label: 'Needs nearby to refill', value: 'a Test Apple Orchard', tone: 'muted' }
-        ]));
-        expect(problemText({ kind: ALERT.GROW_NEEDS_NEARBY, needs: ['or_orchard'] }, tree.id)).toBe('Needs a Test Apple Orchard nearby to refill');
+        expect(cardLine(tree)).toMatchObject({ label: 'Exhausted', text: '–', tip: 'Exhausted · respawns only with a Test Apple Orchard nearby', tone: 'warning' });
+        expect(problemText({ kind: ALERT.GROW_NEEDS_NEARBY, needs: ['or_orchard'] }, tree.id)).toBe('Needs a Test Apple Orchard nearby to respawn');
     });
 
-    it('with one: its countdown, named, as a resting vein says it', () => {
+    it('with one: its countdown, as a resting vein says it', () => {
         const tree = pickedBare();
-        expect(cardLine(tree)).toMatchObject({ text: '10s', tip: 'Test Apple Tree: resting, refills in 10s' });
-        expect(linesOf(tree).find(l => l.label === 'Resting')).toEqual({ label: 'Resting', value: 'Test Apple Tree: resting, refills in 10s' });
+        expect(cardLine(tree)).toMatchObject({ label: 'Exhausted', text: '10s', tip: 'Exhausted · respawns in 10s' });
     });
 });

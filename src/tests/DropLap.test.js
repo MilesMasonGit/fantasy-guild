@@ -27,7 +27,7 @@ import { PASSIVE_LAP_BASE_MS } from '../config/registries/tokenConstants.js';
 import { getUpgradeDef, HALL_NODE } from '../config/guildUpgrades.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { hallEffectsNow } from '../ui/components/board/GuildHallEffectsPopover.jsx';
-import { lifecycleLines } from '../ui/components/drawer/lifecycleLines.js';
+import { produceLine, liveTimerSources } from '../ui/components/board/tokenTimers.js';
 import { outlineSpriteName } from '../ui/components/board/hallStarOutline.js';
 import { buildLedger } from '../systems/progression/ledger/engine.js';
 import { buildRateBook, FACTOR } from '../../cms/src/engine/ledger/rates.js';
@@ -235,16 +235,13 @@ describe('⭐ every reader of the lap follows it', () => {
         expect(now.boosts).toEqual([]);
     });
 
-    it('the Token card says every 10m, then every 5m', () => {
+    it('the Token card counts down a 10m lap, then a 5m one', () => {
         const hall = placeAt('fixture_lap_hall', 800, 500);
-        const rowFor = () => lifecycleLines(hall, {
-            typeOf: () => ({ id: 'fixture_lap_hall', name: 'Hall' }), originOf: () => '',
-            spawnerStatus: () => null, selectedRecipe: () => null, itemName: (id) => id, tokenName: (id) => id,
-            passive: (inst) => ({ lines: PassiveProduction.linesOf(inst), nextInMs: PassiveProduction.nextInMs(inst), lapMs: PassiveProduction.lapMs() })
-        }).find(r => r.label === 'Passive Production')?.value;
-        expect(rowFor()).toMatch(/every 10m \(next in 10m 0s\)/);
+        const src = liveTimerSources();
+        const rowFor = () => produceLine(src.passive(hall), { itemName: (id) => id });
+        expect(rowFor()).toMatchObject({ text: '10m 0s', tip: expect.stringMatching(/next in 10m\s0s$/) });
         holdLap(3);
-        expect(rowFor()).toMatch(/every 5m \(next in 5m 0s\)/);
+        expect(rowFor()).toMatchObject({ text: '5m 0s', tip: expect.stringMatching(/next in 5m\s0s$/) });
     });
 
     it('the Upkeep Summary nets income at the lap now', () => {

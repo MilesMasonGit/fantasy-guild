@@ -1,6 +1,5 @@
 
 import { ALERT } from '../../../systems/board/boardEvents.js';
-import { countdownText } from '../../../utils/Formatters.js';
 
 /**
  * Engine alerts (`instance.alert`) that are a choice waiting, not a fault: a station or a
@@ -11,12 +10,6 @@ export const GEAR_ONLY_ALERTS = new Set([ALERT.CHOOSE_BUILD, ALERT.CHOOSE_RECIPE
 
 /** Whether an engine alert is a choice waiting rather than a fault. */
 export const isGearOnlyAlert = (alert) => GEAR_ONLY_ALERTS.has(alert);
-
-/** Time to a turning Token's next roll as drawn in its ring (`countdownText`); null when there is nothing to count. */
-export function turnCountdownText(ms) {
-    const n = Number(ms);
-    return Number.isFinite(n) ? countdownText(n) : null;
-}
 
 /**
  * Whether a Token gets the recipe gear: it has something to choose — a

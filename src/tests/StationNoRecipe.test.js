@@ -13,13 +13,12 @@ import * as StationRecipe from '../systems/board/StationRecipe.js';
 import * as WorkCheck from '../systems/board/WorkCheck.js';
 import { ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { registerTokenTypes, tokenStartingUses, getTokenType } from '../config/registries/tokenRegistry.js';
+import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { KEYWORD } from '../systems/effects/statements.js';
 import { SKIP_HINT } from '../ui/components/board/boardConstants.js';
 import { blockedText } from '../ui/components/board/heroBubbles.js';
-import { lifecycleLines } from '../ui/components/drawer/lifecycleLines.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -158,23 +157,5 @@ describe('the player can see it is waiting', () => {
     it('every surface still using the alert has words for choose_recipe', () => {
         expect(SKIP_HINT[ALERT.CHOOSE_RECIPE]).toBeTruthy();
         expect(blockedText(ALERT.CHOOSE_RECIPE, { token: 'Workbench' })).toBe('Choose a recipe for Workbench.');
-    });
-
-    it('the inspection drawer says "Choose a recipe" until one is picked', () => {
-        const bench = put('fixture_nr_bench');
-        const src = {
-            typeOf: getTokenType,
-            tokenName: (id) => id,
-            itemName: (id) => id,
-            spawnerStatus: () => null,
-            selectedRecipe: StationRecipe.selectedRecipe,
-            poolFor: StationRecipe.poolFor,
-            originOf: BoardState.originOf
-        };
-        expect(lifecycleLines(bench, src)).toContainEqual(
-            expect.objectContaining({ label: 'Recipe', value: 'Choose a recipe' }));
-
-        StationRecipe.setSelectedRecipe(bench, 'fixture_nr_make');
-        expect(lifecycleLines(bench, src).find(l => l.label === 'Recipe')).toBeUndefined();
     });
 });

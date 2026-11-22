@@ -15,7 +15,7 @@ import { QUEST_TOKEN_TYPE } from '../config/registries/engineTokens.js';
 import { LeaveMatControl } from '../ui/components/drawer/LeaveMatControl.jsx';
 import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
 import { calloutText } from '../ui/components/board/callouts.js';
-import { lifecycleLines } from '../ui/components/drawer/lifecycleLines.js';
+import { timerLines, liveTimerSources } from '../ui/components/board/tokenTimers.js';
 import { tokenDetailOf } from '../ui/components/board/useTokenDetail.js';
 import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import { getTokenType, tokenName } from '../config/registries/tokenRegistry.js';
@@ -48,22 +48,17 @@ beforeEach(() => {
 });
 
 describe('a marked Token reads as demolition work', () => {
-    it('the lifecycle lines say it is marked, and count down while a hero works it', () => {
+    it('the timer lines say it is marked and nothing else, and count down while a hero works it', () => {
         const t = placeAt('fixture_producer', 400, 300);
         Demolition.mark(t.id);
-        const src = {
-            typeOf: getTokenType, tokenName, itemName: (id) => id,
-            spawnerStatus: () => null, passive: () => null, respawn: () => null,
-            selectedRecipe: () => null, poolFor: () => [], originOf: () => 'placed',
-            workerOf: () => null, demolishMs: Demolition.DEMOLISH_MS, dev: false
-        };
-        expect(lifecycleLines(t, src)).toEqual([
-            { label: 'Marked for demolition', value: 'Waiting for a hero with Construction', tone: 'warning' }
-        ]);
+        const src = { ...liveTimerSources(), workerOf: () => null };
+        expect(timerLines(t, src)).toEqual([expect.objectContaining({
+            kind: 'demolition', text: '–', tip: 'Marked for demolition: waiting for a hero with Construction', tone: 'warning'
+        })]);
         t.cycleElapsedMs = Demolition.DEMOLISH_MS - 6000;
-        expect(lifecycleLines(t, { ...src, workerOf: () => 'h1' })).toEqual([
-            { label: 'Marked for demolition', value: '6s left', tone: 'warning' }
-        ]);
+        expect(timerLines(t, { ...src, workerOf: () => 'h1' })).toEqual([expect.objectContaining({
+            kind: 'demolition', text: '6s', tip: 'Marked for demolition: gone in 6s', tone: 'warning'
+        })]);
     });
 
     it('the Token detail carries the mark and no frozen countdowns', () => {

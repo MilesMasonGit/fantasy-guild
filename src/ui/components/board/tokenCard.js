@@ -1,28 +1,22 @@
 import {
-    getTokenType, getAllTokenTypes, tokenName, getProvidedTagsWithTiers, outputRange, productionRoutes
+    getTokenType, getAllTokenTypes, getProvidedTagsWithTiers, outputRange, productionRoutes
 } from '../../../config/registries/tokenRegistry.js';
 import { contextRequirementsOf, getRecipe } from '../../../config/registries/recipePoolRegistry.js';
-import { getItem, getAllItems } from '../../../config/registries/itemRegistry.js';
+import { getAllItems } from '../../../config/registries/itemRegistry.js';
 import { neededToolOf, toolNeedPhrase, toolItemFor, toolKindLabel } from '../../../config/registries/toolKinds.js';
 import { hasCatchPools, catchPoolsOf } from '../../../config/registries/catchPools.js';
 import { rareTableOf, rareEntryChances } from '../../../config/registries/rareTables.js';
 import { enemyProfileOf } from '../../../config/registries/enemyProfile.js';
-import { turnTiming, fieldOf, cropTermsOf, campOf, isWarCamp } from '../../../config/registries/tokenConstants.js';
+import { fieldOf, cropTermsOf, campOf, isWarCamp } from '../../../config/registries/tokenConstants.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as BoardCombat from '../../../systems/board/BoardCombat.js';
-import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
-import * as PassiveProduction from '../../../systems/board/PassiveProduction.js';
-import * as Respawn from '../../../systems/board/Respawn.js';
 import * as StationRecipe from '../../../systems/board/StationRecipe.js';
-import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import * as Fields from '../../../systems/board/Fields.js';
 import * as Fishing from '../../../systems/board/Fishing.js';
 import * as Demolition from '../../../systems/board/Demolition.js';
 import * as RareTables from '../../../systems/board/RareTables.js';
-import * as EventTokens from '../../../systems/board/EventTokens.js';
-import { t } from '../../../i18n/index.js';
 import { effectBreakdown } from '../../../systems/board/EffectBreakdown.js';
 import { exactInputQuantity } from '../../../systems/board/InputCost.js';
 import { mostByChance } from '../../../utils/RNG.js';
@@ -32,11 +26,14 @@ import { GameState } from '../../../state/GameState.js';
 import { effectiveIO } from '../../../systems/board/RecipeResolver.js';
 import { availableOf } from '../../../systems/board/InputAllocator.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
-import { countdownText, lengthText, chanceFigure, chanceText } from '../../../utils/Formatters.js';
+import { chanceFigure } from '../../../utils/Formatters.js';
 import { landmarkLines } from '../drawer/landmarkLines.js';
 import * as SupportLinks from '../../../systems/board/supportLinks.js';
 import { reachRadius } from '../../../systems/board/nearby.js';
 import { effectTagOf } from './effectBadgeText.js';
+import {
+    liveTimerSources, demolitionLine, leaveLine, turnLine, spawnLine, growthLine, fieldTimerLine, respawnLine, produceLine
+} from './tokenTimers.js';
 
 /**
  * The Token card's content as plain data: which blocks it shows, top to bottom, and what each
@@ -113,11 +110,8 @@ export function cardArtOf(def, { typeOf = getTokenType, resolve = resolveSpriteP
 /** The live readers the card takes. */
 export function liveCardSources() {
     return {
-        typeOf: getTokenType,
-        tokenName,
-        itemName: (id) => getItem(id)?.name || id,
+        ...liveTimerSources(),
         instanceOf: BoardState.getTokenById,
-        workerOf: BoardState.workerOf,
         heroName: (id) => (GameState.state?.heroes || []).find(h => h?.id === id)?.name || null,
         fishingOf: Fishing.fishingOf,
         catchWeight: (instanceId, itemId, weight) => resolveAxis(instanceId, EFFECT_TYPES.CATCH_WEIGHT, weight, itemId),
@@ -132,24 +126,11 @@ export function liveCardSources() {
         available: availableOf,
         selectedRecipe: StationRecipe.selectedRecipe,
         poolFor: StationRecipe.poolFor,
-        spawnerStatus: SpawnerSystem.spawnerStatus,
-        respawn: Respawn.respawnState,
-        nextGrowth: TimedChanges.nextGrowth,
-        field: Fields.fieldState,
         fieldCrop: Fields.cropOf,
-        recipeName: (id) => getRecipe(id)?.name || id,
         recipeOf: getRecipe,
-        nextTurn: TimedChanges.nextTurnRoll,
-        eventLeave: (instance) => {
-            const inMs = EventTokens.leavesInMs(instance);
-            return inMs == null ? null : { inMs, buff: EventTokens.isEventBuff(instance) };
-        },
-        passive: (instance) => ({ lines: PassiveProduction.linesOf(instance), nextInMs: PassiveProduction.nextInMs(instance), lapMs: PassiveProduction.lapMs() }),
         fightOf: BoardCombat.getFight,
         supports: (instanceId) => ({ boosts: SupportLinks.boosts(instanceId) }),
-        demolishMs: Demolition.DEMOLISH_MS,
         demolitionConfig: Demolition.DEMOLITION_CONFIG,
-        allTypes: getAllTokenTypes,
         allItems: getAllItems,
         art: (def) => cardArtOf(def)
     };
@@ -305,40 +286,17 @@ function itemsSpoken(lines, src) {
 }
 
 /**
- * A growing Token's card line: its countdown, or why it waits. A Stump with no Forest in reach
- * waits for one; one short of its seedling is stopped; either way the clock shows no time.
- */
-function growthLine(growth, src) {
-    const into = src.tokenName(growth.into);
-    const needs = (growth.needsNearby || []).map(src.tokenName).join(' or ');
-    const cost = growth.cost?.length ? itemsSpoken(growth.cost, src) : null;
-    if (growth.paused) {
-        return { icon: 'grow', text: '–', tip: `Grows into ${into} only with ${needs} nearby`, tone: 'warning' };
-    }
-    if (growth.stopped) {
-        const short = growth.cost.filter(c => (growth.short || []).includes(c.itemId));
-        return { icon: 'grow', text: '–', tip: `Stopped: needs ${itemsSpoken(short, src)} to grow into ${into}`, tone: 'warning' };
-    }
-    return {
-        icon: 'grow', text: countdownText(growth.inMs),
-        tip: `Grows into ${into} in ${countdownText(growth.inMs)}${cost ? `, for ${cost} from the Bank` : ''}`
-    };
-}
-
-/**
- * A Field's card lines: its crop growing (a countdown), ripe (harvests left), stopped for a seed,
- * or about to be sown; and, after a change of pick, what it sows next.
+ * A Field's card lines: its crop ripening or stopped for a seed (the timer writer's), ripe
+ * (harvests left), or about to be sown; and, after a change of pick, what it sows next.
  */
 function fieldCardLines(field, src) {
     const name = (id) => (id ? src.recipeName(id) : 'its crop');
     const out = [];
-    if (field.stage === 'growing') {
-        out.push({ icon: 'grow', text: countdownText(field.inMs), tip: `${name(field.cropId)} growing: ripe in ${countdownText(field.inMs)}` });
+    const timer = fieldTimerLine(field, src);
+    if (timer) {
+        out.push(timer);
     } else if (field.stage === 'ripe') {
         out.push({ icon: 'grow', text: `${field.load}/${field.full}`, tip: `${name(field.cropId)} ripe: ${field.load} of ${field.full} harvests left; the last sows it again` });
-    } else if (field.stopped) {
-        const seeds = field.short.map(id => src.itemName(id)).join(' and ');
-        out.push({ icon: 'grow', text: '–', tip: `Stopped: needs ${seeds} to sow ${name(field.pickId)}`, tone: 'warning' });
     } else if (field.pickId) {
         out.push({ icon: 'grow', text: '–', tip: `Sowing ${name(field.pickId)}` });
     }
@@ -352,53 +310,29 @@ function fieldCardLines(field, src) {
 }
 
 /**
- * The lifecycle lines as icon + short text, each with the sentence its hover gives.
+ * The lifecycle lines as icon + short text, each with the sentence its hover gives. Every timer
+ * and stuck reason is the timer writer's (`tokenTimers.js`), worded as the idle hover words it.
  * @returns {{ icon: string, text: string, tip: string, tone?: 'warning'|'danger' }[]}
  */
 export function cardLifecycle(instance, def, src) {
     if (!instance || !def) return [];
     const out = [];
-    if (instance.demolish === true) {
-        const worked = !!src.workerOf?.(instance.id);
-        const left = (Number(src.demolishMs) || 0) - (Number(instance.cycleElapsedMs) || 0);
-        out.push(worked
-            ? { icon: 'clock', label: 'Demolition', text: countdownText(left), tip: `Marked for demolition: gone in ${countdownText(left)}`, tone: 'warning' }
-            : { icon: 'clock', label: 'Demolition', text: '–', tip: 'Marked for demolition: waiting for a hero with Construction', tone: 'warning' });
-        return out;
-    }
+    if (instance.demolish === true) return [demolitionLine(instance, src)];
 
-    // An event Token: how long until it leaves (a buff's time, a node's hour).
     const leave = src.eventLeave?.(instance);
-    if (leave) {
-        out.push({
-            icon: 'clock', label: t('events.card.leavesIn'), text: countdownText(leave.inMs),
-            tip: t(leave.buff ? 'events.card.buffTip' : 'events.card.nodeTip', { time: countdownText(leave.inMs) })
-        });
-    }
+    if (leave) out.push(leaveLine(leave));
 
     const turn = src.nextTurn?.(instance);
     if (instance.turnedFrom) {
-        if (turn) {
-            out.push({
-                icon: 'turn', text: countdownText(turn.inMs),
-                tip: `A ${chanceText(turn.chance)} chance to turn back into ${src.tokenName(instance.turnedFrom)} in ${countdownText(turn.inMs)}`
-            });
-        }
+        if (turn) out.push(turnLine(instance, def, turn, src));
     } else {
         if (def.spawner) {
             const status = src.spawnerStatus?.(instance.id);
-            if (status) out.push(spawnLine(def, status, src));
+            if (status) out.push(spawnCardLine(def, status, src));
         }
         const growth = src.nextGrowth?.(instance);
-        if (growth) out.push(growthLine(growth, src));
-        if (turn) {
-            const into = turn.into.map(src.tokenName).join(' or ');
-            const { everyMs } = turnTiming(def.turns);
-            out.push({
-                icon: 'turn', text: countdownText(turn.inMs),
-                tip: `A ${chanceText(turn.chance)} chance every ${lengthText(everyMs)} to turn into ${into}, and the same to turn back. Next roll in ${countdownText(turn.inMs)}`
-            });
-        }
+        if (growth) out.push(growthLine(instance, growth, src));
+        if (turn) out.push(turnLine(instance, def, turn, src));
     }
 
     // A camp: what its heroes work and how far it reaches (the one standard reach). A War Camp's
@@ -423,57 +357,18 @@ export function cardLifecycle(instance, def, src) {
     if (field) out.push(...fieldCardLines(field, src));
 
     const r = src.respawn?.(instance);
-    if (r) {
-        if (r.mode === 'refill' && r.resting && r.paused) {
-            // A Bare tree with no Orchard in reach: no time, it waits for one.
-            const needs = (r.needsNearby || []).map(src.tokenName).join(' or ');
-            out.push({ icon: 'regrow', text: '–', tip: `${src.tokenName(instance.typeId)}: resting, refills only with ${needs} nearby`, tone: 'warning' });
-        } else if (r.mode === 'refill') {
-            // Drawn as the shared empty rock, a resting vein's line names its ore.
-            const restTip = r.restingSprite
-                ? `${src.tokenName(instance.typeId)}: resting, refills in ${countdownText(r.inMs)}`
-                : `Resting: refills in ${countdownText(r.inMs)}`;
-            out.push(r.resting
-                ? { icon: 'regrow', text: countdownText(r.inMs), tip: restTip }
-                : { icon: 'regrow', text: lengthText(r.afterMs), tip: `Respawns ${lengthText(r.afterMs)} after it's used up` });
-        } else {
-            const into = src.tokenName(r.into);
-            out.push({ icon: 'regrow', label: 'Becomes', text: into, tip: r.resting ? `Becomes ${into}, which grows back` : `Becomes ${into} when it's used up, which grows back` });
-        }
-    }
+    if (r) out.push(respawnLine(instance, r, src));
 
-    const passive = src.passive?.(instance);
-    const pays = (passive?.lines || []).filter(l => l?.itemId && Number(l.quantity) > 0);
-    if (pays.length) {
-        out.push({
-            icon: 'clock', label: 'Produces', text: countdownText(passive.nextInMs),
-            tip: `Passive Production: ${pays.map(l => `${Math.floor(Number(l.quantity))} ${src.itemName(l.itemId)}`).join(', ')}, next in ${countdownText(passive.nextInMs)}`
-        });
-    }
+    const produce = produceLine(src.passive?.(instance), src);
+    if (produce) out.push(produce);
     return out;
 }
 
-function spawnLine(def, status, src) {
-    const spawns = (def.spawner.spawns || []).filter(e => e?.typeId).map(e => src.tokenName(e.typeId)).join(' or ');
+/** A spawner's card line: the timer writer's, with its family's count in front. */
+function spawnCardLine(def, status, src) {
+    const line = spawnLine(def, status, src);
     const family = `${status.count}/${status.cap}`;
-    const head = `Spawns ${spawns || 'Tokens'}. Its family: ${status.count} of ${status.cap}.`;
-    switch (status.state) {
-        case 'at_cap':
-            return { icon: 'spawn', text: `${family} · full`, tip: `${head} Waits for room in the family.`, tone: 'warning' };
-        case 'needs_item':
-            return {
-                icon: 'spawn', text: `${family} · needs items`,
-                tip: `${head} Waiting for ${(status.needs || []).map(src.itemName).join(', ')}.`, tone: 'danger'
-            };
-        case 'no_room':
-            return { icon: 'spawn', text: `${family} · no room`, tip: `${head} No room to spawn nearby.`, tone: 'warning' };
-        case 'mat_full':
-            return { icon: 'spawn', text: `${family} · mat full`, tip: `${head} The mat is full.`, tone: 'warning' };
-        case 'sleeping':
-            return { icon: 'spawn', text: `${family} · asleep`, tip: `${head} Asleep while enemies hold this place.`, tone: 'warning' };
-        default:
-            return { icon: 'spawn', text: `${family} · next ${countdownText(status.nextInMs)}`, tip: `${head} Next in ${countdownText(status.nextInMs)}.` };
-    }
+    return { ...line, text: `${family} · ${status.state === 'spawning' ? `next ${line.text}` : line.text}` };
 }
 
 /**

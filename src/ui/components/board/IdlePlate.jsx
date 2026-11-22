@@ -4,13 +4,15 @@ import { MAT_Z } from './matLayers.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { WorkPlateView } from './WorkPlateLayer.jsx';
 import { platePlace } from './workPlate.js';
-import { timerCellOf } from './idlePlate.js';
+import { timerCellsOf } from './idlePlate.js';
 import { TURN_COUNTDOWN_REFRESH_MS } from './ringRow.js';
 import { artRadiusOf } from '../../../config/matGeometry.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { onPoll } from './frameClock.js';
 
-const sameTimer = (a, b) => a === b || (!!a && !!b && a.text === b.text && a.tip === b.tip && a.glyph === b.glyph);
+const sameTimer = (a, b) => a.text === b.text && a.tip === b.tip && a.glyph === b.glyph;
+const sameTimers = (a, b) => a.length === b.length && a.every((cell, i) => sameTimer(cell, b[i]));
+const NO_TIMERS = [];
 
 /**
  * The idle plate's host: one node over the loot, as the work plates are (`MAT_Z.WORK_PLATE`),
@@ -31,7 +33,7 @@ export const IdlePlateHost = memo(function IdlePlateHost({ hostRef }) {
 
 /**
  * One Token's idle plate (`idlePlate.js`), under the Token, drawn into `host`. `cells` are what
- * it shows besides its timer; `readTimer` (or null) is read every {@link TURN_COUNTDOWN_REFRESH_MS}
+ * it shows besides its timers; `readTimer` (or null: `idleTimerLines`) is read every {@link TURN_COUNTDOWN_REFRESH_MS}
  * while it shows, as the clock runs on game time. Mounted only while the pointer rests on the
  * Token, so a Token at rest polls nothing. Pressing it grabs the Token (`dragProps`).
  * ⚠️ A bridge spans the gap between the Token's circle and the plate's top, so the pointer going
@@ -40,19 +42,19 @@ export const IdlePlateHost = memo(function IdlePlateHost({ hostRef }) {
 export const IdlePlate = memo(function IdlePlate({ host, tokenId, typeId, x, y, cells, readTimer = null, tip, tone = null, dragProps = null }) {
     const fit = useMatFit() || 1;
     const mat = useMatSize();
-    const [timer, setTimer] = useState(() => (readTimer ? timerCellOf(readTimer() ?? null) : null));
+    const [timers, setTimers] = useState(() => (readTimer ? timerCellsOf(readTimer()) : NO_TIMERS));
     useEffect(() => {
-        if (!readTimer) { setTimer(null); return undefined; }
+        if (!readTimer) { setTimers(NO_TIMERS); return undefined; }
         const refresh = () => {
-            const next = timerCellOf(readTimer() ?? null);
-            setTimer(prev => (sameTimer(prev, next) ? prev : next));
+            const next = timerCellsOf(readTimer());
+            setTimers(prev => (sameTimers(prev, next) ? prev : next));
         };
         refresh();
         return onPoll(refresh, TURN_COUNTDOWN_REFRESH_MS);
     }, [readTimer]);
     const cellTip = useCallback((cell) => (cell.tip ?? tip?.(cell) ?? null), [tip]);
 
-    const all = timer ? [...cells, timer] : cells;
+    const all = timers.length ? [...cells, ...timers] : cells;
     if (!host || x == null || !all.length) return null;
     const place = platePlace({ x, y, typeId, side: 0, fit, matH: mat.h });
     const u = place.unit;

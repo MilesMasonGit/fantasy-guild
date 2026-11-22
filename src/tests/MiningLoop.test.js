@@ -14,10 +14,9 @@ import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
-import { registerTokenTypes, getTokenType, tokenName } from '../config/registries/tokenRegistry.js';
+import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { cardLifecycle, liveCardSources } from '../ui/components/board/tokenCard.js';
-import { lifecycleLines } from '../ui/components/drawer/lifecycleLines.js';
 import { clearMat, placeAt } from './fixtures/mat.js';
 import { withoutShippedPerks } from './fixtures/noPerks.js';
 
@@ -160,24 +159,21 @@ describe('a resting vein shows the shared empty rock', () => {
         expect(Respawn.restingSpriteOf({ typeId: 'x', usesRemaining: 0 }, { respawn: { mode: 'refill', restingSprite: ' t_vein_stone ' } })).toBe(EMPTY_ROCK);
     });
 
-    it('the inspection state carries it, and the card and the inspection name the ore while it rests', () => {
+    it('the inspection state carries it, and the card says it is exhausted and when it respawns', () => {
         const vein = placeAt('mine_vein', VEIN.x, VEIN.y);
         vein.usesRemaining = 0;
         vein.clocks = { [Respawn.CLOCK]: 18000 };
         expect(Respawn.respawnState(vein)).toMatchObject({ mode: 'refill', resting: true, inMs: 42000, restingSprite: EMPTY_ROCK });
 
         const line = cardLifecycle(vein, getTokenType('mine_vein'), liveCardSources()).find(l => l.icon === 'regrow');
-        expect(line).toMatchObject({ text: '42s', tip: 'Fixture Copper Vein: resting, refills in 42s' });
-
-        const lines = lifecycleLines(vein, { typeOf: getTokenType, tokenName, respawn: Respawn.respawnState });
-        expect(lines.find(l => l.label === 'Resting')).toEqual({ label: 'Resting', value: 'Fixture Copper Vein: resting, refills in 42s' });
+        expect(line).toMatchObject({ label: 'Exhausted', text: '42s', tip: 'Exhausted · respawns in 42s' });
     });
 
-    it('a resting Token without one keeps today\'s words', () => {
+    it('a resting Token without one reads the same', () => {
         const t = placeAt('mine_plain_refill', VEIN.x, VEIN.y);
         t.usesRemaining = 0;
         const line = cardLifecycle(t, getTokenType('mine_plain_refill'), liveCardSources()).find(l => l.icon === 'regrow');
-        expect(line.tip).toBe('Resting: refills in 12s');
+        expect(line.tip).toBe('Exhausted · respawns in 12s');
     });
 });
 
