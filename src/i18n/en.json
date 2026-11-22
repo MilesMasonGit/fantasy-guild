@@ -1,4 +1,8 @@
 {
+    "demolish": {
+        "mark": "Demolish",
+        "cancel": "Cancel demolition"
+    },
     "common": {
         "close": "Close",
         "cancel": "Cancel",

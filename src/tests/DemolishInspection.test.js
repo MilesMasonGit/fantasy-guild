@@ -28,8 +28,8 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 
 /**
  * Demolition as the mat and the card show it: the countdown line, the marked badge, the
- * callout, and a Dismiss for bounties. Marking is Demolish mode's
- * (`MapModes.test.js`); the Dismiss control has no Demolish button.
+ * callout, the card's Demolish and Cancel demolition, and a Dismiss for bounties. Demolish mode
+ * (`MapModes.test.js`) marks many at once.
  */
 
 const h = React.createElement;
@@ -107,6 +107,30 @@ describe('the demolished callout', () => {
         } finally {
             vi.useRealTimers();
         }
+    });
+});
+
+describe('Demolish on the card', () => {
+    it('the button marks the Token and turns into Cancel demolition, which unmarks it', async () => {
+        const t = placeAt('fixture_producer', 400, 300);
+        const { container } = inspect(t);
+        expect(container.querySelector('[data-demolish-refusal]')).toBeNull();
+        expect(control(container).textContent).toBe('Demolish');
+        await act(async () => { fireEvent.click(control(container)); });
+        expect(Demolition.isMarked(t)).toBe(true);
+        expect(control(container).textContent).toBe('Cancel demolition');
+        await act(async () => { fireEvent.click(control(container)); });
+        expect(Demolition.isMarked(t)).toBe(false);
+        expect(control(container).textContent).toBe('Demolish');
+    });
+
+    it('a Token the engine refuses shows the reason and no button', () => {
+        const hall = placeAt('token_guild_hall', 400, 300);
+        const { container } = inspect(hall);
+        expect(control(container)).toBeNull();
+        const reason = container.querySelector('[data-demolish-refusal]');
+        expect(reason.textContent).toBe(Demolition.canMark(hall.id).reason);
+        expect(reason.textContent).toBe('The Guild Hall cannot be demolished.');
     });
 });
 
