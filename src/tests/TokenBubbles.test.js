@@ -101,7 +101,7 @@ const step = () => advance(STEP_MS + 20);
 /** Every element the Token's bubbles drew (dnd-kit's own announcer left out). */
 const drawn = (c) => [...c.querySelector('[data-under-test]').querySelectorAll('*')];
 
-afterEach(() => { cleanup(); vi.useRealTimers(); });
+afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 describe('the rules, pure', () => {
     it('the cycle number is whole seconds left, rounded up, never 0s while running (the inspection’s)', () => {
@@ -183,9 +183,9 @@ describe('⭐ at rest: the bar and the marks, nothing else', () => {
         expect(vi.getTimerCount()).toBe(0);
     });
 
-    it('a worked Token with a problem draws no mark of its own: the plate says it', () => {
+    it('⭐ a worked Token with a problem: one mark above it, as nobody working it would (the plate has the words)', () => {
         const { container } = mount(bub({ token: worked({ alert: ALERT.INPUTS }), ...everything }));
-        expect(drawn(container)).toEqual([]);
+        expect(container.querySelectorAll('[data-bubble-row="above"] [data-problem-mark]')).toHaveLength(1);
     });
 
     it('⭐ a Token nobody works, with a problem: one mark, and no ring', () => {
@@ -256,6 +256,9 @@ describe('the work bar', () => {
 
     it('⭐ blocked: grey, held where it stood, ignoring progress until the alert clears', () => {
         vi.useFakeTimers();
+        // The '!' over a blocked Token bobs on its own clock (AlertAbove.test.js): held still here,
+        // so the timer count is the bar's alone.
+        vi.stubGlobal('matchMedia', (q) => ({ matches: q.includes('reduce') }));
         const { container, rerender } = render(tree(...withFill({ token: worked() })));
         progress({ percent: 50, elapsedMs: 1500, cycleTimeMs: 3000 });
         step();
@@ -441,8 +444,8 @@ describe('⭐ hover: the idle plate under the Token, and the gear', () => {
     });
 });
 
-describe('the middle row', () => {
-    it('⭐ the marks sit centred on the box: problem mark, then demolition mark', () => {
+describe('the marks’ rows', () => {
+    it('⭐ the problem mark stands above the art, the demolition mark centred on the box', () => {
         const { container } = mount(bub({
             token: worked({ heroId: null, alert: ALERT.INPUTS }), isHovered: true, marked: true,
             spawner: { count: 3, cap: 5 },
@@ -453,7 +456,12 @@ describe('the middle row', () => {
         expect(parseFloat(row.style.top)).toBe(64);
         expect(row.style.transform).toContain('translateY(-50%)');
         const kinds = [...row.children].map(c => c.getAttribute('data-bubble') || (c.hasAttribute('data-problem-mark') ? 'problem' : '?'));
-        expect(kinds).toEqual(['problem', 'marked']);
+        expect(kinds).toEqual(['marked']);
+        const above = container.querySelector('[data-bubble-row="above"]');
+        expect([...above.children].map(c => (c.hasAttribute('data-problem-mark') ? 'problem' : '?'))).toEqual(['problem']);
+        // The art fills the box (no `artPx`): the mark's bottom on the box's top.
+        expect(parseFloat(above.style.top)).toBe(0);
+        expect(above.style.transform).toContain('translateY(-100%)');
     });
 
     it('⭐ hovering never moves a mark: the gear comes up in a row of its own, above the marks', () => {
@@ -463,12 +471,12 @@ describe('the middle row', () => {
             plateHost, x: 400, y: 300
         };
         const { container, rerender } = mount(bub(props));
-        const row = container.querySelector('[data-bubble-row="middle"]');
+        const row = container.querySelector('[data-bubble-row="above"]');
         const markEl = mark(container);
         const at = () => ({ row: row.getAttribute('style'), children: [...row.children] });
         const before = at();
         rerender(tree(bub({ ...props, isHovered: true })));
-        expect(container.querySelector('[data-bubble-row="middle"]')).toBe(row);
+        expect(container.querySelector('[data-bubble-row="above"]')).toBe(row);
         expect(mark(container)).toBe(markEl);
         expect(at()).toEqual(before);
         const hoverRow = container.querySelector('[data-bubble-row="hover"]');
@@ -476,10 +484,11 @@ describe('the middle row', () => {
             .toEqual(['gear']);
         // The problem is on the plate under the Token, not beside the marks.
         expect(idleCellKinds()).toEqual([CELL.PROBLEM]);
-        // Above the marks: its bottom edge clear of the mark's top (16 art pixels at 2 units, centred at 64).
-        expect(hoverRow.style.transform).toContain('translateY(-100%)');
-        expect(parseFloat(hoverRow.style.top)).toBeLessThanOrEqual(64 - 16);
+        // The '!' is above the art, so the gear has the centre.
+        expect(parseFloat(hoverRow.style.top)).toBe(64);
+        expect(hoverRow.style.transform).toContain('translateY(-50%)');
     });
+
 
     it('with no marks, the hover row sits at the centre', () => {
         const { container } = mount(bub({ token: worked({ heroId: null }), isHovered: true, gear: { show: true, pulsing: false, recipe: { name: 'R' }, onClick: () => {} } }));
@@ -501,7 +510,7 @@ describe('the middle row', () => {
 
 describe('⭐ a choice waiting: the pointer on the Token, its mark becomes the gear in the same spot, at the mark size', () => {
     const unset = (extra = {}) => ({ show: true, pulsing: true, recipe: null, onClick: vi.fn(), ...extra });
-    const middle = (c) => c.querySelector('[data-bubble-row="middle"]');
+    const middle = (c) => c.querySelector('[data-bubble-row="above"]');
     const gearIn = (c) => c.querySelector('[data-gear-in-mark]');
 
     it('⭐ an unset station and a Foundation: the mark at rest, the gear in its place the moment the pointer is on it, the mark again after', () => {
@@ -564,7 +573,7 @@ describe('⭐ a choice waiting: the pointer on the Token, its mark becomes the g
         }
     });
 
-    it('no gear to show, marked for demolition, or worked: no swap', () => {
+    it('no gear to show, or marked for demolition: no swap; worked, it swaps as an idle Token does', () => {
         // An engine choose alert with no gear (nothing to pick from): the mark stays.
         let r = mount(bub({ token: worked({ heroId: null, alert: ALERT.CHOOSE_RECIPE }), isHovered: true }));
         expect(mark(r.container).getAttribute('data-problem-mark')).toBe(ALERT.CHOOSE_RECIPE);
@@ -574,8 +583,11 @@ describe('⭐ a choice waiting: the pointer on the Token, its mark becomes the g
         expect(gearIn(r.container)).toBeNull();
         expect(r.container.querySelector('[data-station-gear]')).toBeNull();
         cleanup();
+        r = mount(bub({ token: worked(), gear: unset() }));
+        expect(mark(r.container).getAttribute('data-problem-mark')).toBe(ALERT.CHOOSE_RECIPE);
+        cleanup();
         r = mount(bub({ token: worked(), gear: unset(), isHovered: true }));
-        expect(gearIn(r.container)).toBeNull();
+        expect(gearIn(r.container)).not.toBeNull();
         expect(mark(r.container)).toBeNull();
     });
 

@@ -204,6 +204,9 @@ describe('⭐ the work bar steps on one shared clock', () => {
     });
 
     it('⭐ a blocked bar holds: grey, nothing written or scheduled after, late ticks ignored', () => {
+        // The '!' over a blocked Token bobs on its own clock (AlertAbove.test.js): held still here,
+        // so what is written and scheduled is the bar's alone.
+        vi.stubGlobal('matchMedia', (q) => ({ matches: q.includes('reduce') }));
         const { container, rerender } = render(rows(['ra']));
         progress('ra', 1500, 3000);
         frames(50);                                      // 0.3 s

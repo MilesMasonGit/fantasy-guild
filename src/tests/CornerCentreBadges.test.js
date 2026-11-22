@@ -255,7 +255,7 @@ describe('on the mat', () => {
         expect(onOpenRecipes).toHaveBeenCalledTimes(2);
     });
 
-    it('a blocked Token draws one red mark and no words; worked, the mark is on its plate instead', () => {
+    it('a blocked Token draws one red mark and no words; worked, the same mark (its plate has the words)', () => {
         const bench = put('fixture_q2_bench');
         const token = (alert, heroId) => ({ typeId: bench.typeId, instanceId: bench.id, heroId, alert });
         const idle = mount(h(TokenBubbles, { instanceId: bench.id, token: token(ALERT.NO_ROOM, null) })).container;
@@ -266,7 +266,8 @@ describe('on the mat', () => {
         cleanup();
         const worked = mount(h(TokenBubbles, { instanceId: bench.id, token: token(ALERT.NO_ROOM, 'h1') })).container;
         expect(worked.textContent).not.toContain('No room');
-        expect(worked.querySelector('[data-problem-mark]')).toBeNull();
+        expect(worked.querySelectorAll('[data-problem-mark]')).toHaveLength(1);
+        expect(worked.querySelector('[data-problem-mark]').getAttribute('data-problem-severity')).toBe('cant');
         expect(worked.querySelector('[data-work-bar]')).toBeNull();
     });
 
@@ -387,7 +388,7 @@ describe('on the mat', () => {
         expect(o.querySelector('[data-spawner-count]')).toBeNull();
     });
 
-    it('a spawner that needs an item draws one yellow problem mark in its middle row, and nothing else', () => {
+    it('a spawner that needs an item draws one yellow problem mark above its art, and nothing else', () => {
         vi.useFakeTimers();
         const forest = put('fixture_q2_forest');
         SpawnerSystem.syncAlerts();
@@ -395,7 +396,7 @@ describe('on the mat', () => {
         expect(SpawnerSystem.spawnerAlertOf(forest.id)?.alert).toBe(ALERT.SPAWN_NEEDS_ITEM);
         expect(container.querySelector('[data-spawner-alert], [data-worked-alert], [data-alert-kind], [data-token-notice]')).toBeNull();
         const o = container.querySelector(`[data-token-overlay="${forest.id}"]`);
-        const mark = o.querySelector('[data-bubble-row="middle"] [data-problem-mark]');
+        const mark = o.querySelector('[data-bubble-row="above"] [data-problem-mark]');
         expect(mark.getAttribute('data-problem-mark')).toBe(ALERT.SPAWN_NEEDS_ITEM);
         expect(mark.getAttribute('src')).toContain('u_alert_yellow');
         expect(container.querySelectorAll('img[src*="u_alert"]').length).toBe(1);

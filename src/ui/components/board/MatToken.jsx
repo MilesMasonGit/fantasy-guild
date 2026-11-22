@@ -687,6 +687,7 @@ export const MatToken = React.memo(function MatToken({
                     pointerOn={isHovered}
                     isDragging={hidden}
                     boxPx={boxPx}
+                    artPx={artPx}
                     artUnit={artScale}
                     x={x}
                     y={y}
