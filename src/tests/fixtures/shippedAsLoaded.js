@@ -1,6 +1,7 @@
 import { migrateSkillIdsIn, migrateRecipeList } from '../../systems/effects/skillIdMigration.js';
 import { migrateEffectLibrary, migrateEffectIdsIn, EFFECT_ID_RENAMES } from '../../systems/effects/effectIdMigration.js';
 import { STANDARD_REACH_U } from '../../config/registries/reachRegistry.js';
+import { workspaceWorldFrom } from '../../../cms/src/engine/worldTables.js';
 
 /**
  * A `data/` file's text as the CMS holds it once loaded and synced: retired skill ids
@@ -13,6 +14,9 @@ import { STANDARD_REACH_U } from '../../config/registries/reachRegistry.js';
  *
  * And a camp's description naming the reach its block once carried, as the next Recalculate
  * rewrites it: every camp works the one standard reach (brief 560 R1).
+ *
+ * And the world tables with the biome table the CMS seeds a record without one with (today's values),
+ * its kits' retired Stone dropped.
  *
  * Byte-identical to the file whenever there is nothing to change, which is the case once
  * the owner's next Sync has written the new ids into `data/`.
@@ -51,7 +55,8 @@ const MIGRATIONS = {
     'tokens.json': (tokens) => describeStandardReach(describeRenamedEffects(migrateEffectIdsIn(migrateSkillIdsIn(tokens)))),
     'items.json': (items) => migrateEffectIdsIn(migrateSkillIdsIn(items)),
     'effects.json': (effects) => migrateEffectLibrary(migrateSkillIdsIn(effects)),
-    'tokenRecipes.json': migrateRecipeList
+    'tokenRecipes.json': migrateRecipeList,
+    'world.json': workspaceWorldFrom
 };
 
 export function asLoaded(file, text) {
