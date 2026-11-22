@@ -106,20 +106,12 @@ describe('A pre-rework workspace heals on its first Recalculate', () => {
         expect(recipe.levelRequirement).toBe(1);
     });
 
-    it('writes the stationChargeCost the runtime was already assuming', () => {
-        // `Charges.js` falls back to `DEFAULT_STATION_CHARGE_COST` (1) and
-        // `makeRecipe` seeds 1, so this changes no behaviour — it only stops
-        // the field being absent, which the recipe schema does not allow.
-        const recipe = recipeOf(useEntityStore.getState().recalculateEconomy());
-        expect(recipe.stationChargeCost).toBe(1);
-    });
-
-    it('does not overwrite an authored stationChargeCost', () => {
+    it('does not write a stationChargeCost, and strips one an old recipe carries', () => {
         const w = preReworkWorkspace();
         w.recipePools.smithing[0].stationChargeCost = 3;
         load(w);
         const recipe = recipeOf(useEntityStore.getState().recalculateEconomy());
-        expect(recipe.stationChargeCost).toBe(3);
+        expect('stationChargeCost' in recipe).toBe(false);
     });
 
     it('writes the derived results a synthetic id used to swallow', () => {

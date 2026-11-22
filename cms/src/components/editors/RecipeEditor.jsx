@@ -723,17 +723,6 @@ function RecipeCard({ recipe, tokens, stations = [], skillName, availableContext
             className="w-full"
           />
         </Field>
-        {/* Charges the station spends per cycle. Separate from any charge cost
-            a context requirement puts on an adjacent Token. */}
-        <Field label="Station Charge Cost">
-          <input
-            type="number"
-            min={0}
-            value={recipe.stationChargeCost ?? 1}
-            onChange={(e) => onChange({ stationChargeCost: Number(e.target.value) })}
-            className="w-full"
-          />
-        </Field>
       </div>
 
       {/* ⚠️ A recipe states its level as `levelRequirement`; a Token states it as `config.skillRequired`. The names are not interchangeable. */}

@@ -499,7 +499,6 @@ export function makeRecipe(data = {}) {
         inputs: [],
         outputs: [],
         durationMs: 12000,
-        stationChargeCost: 1,
         xp: 0,
         ...data,
     };

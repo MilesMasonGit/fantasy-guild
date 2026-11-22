@@ -66,7 +66,6 @@ describe('Recipe schema — P0', () => {
             expect(r.durationMs, `${r.id} durationMs`).toBeGreaterThan(0);
             expect(r.levelRequirement, `${r.id} levelRequirement`).toBeGreaterThanOrEqual(1);
             expect(r.xp, `${r.id} xp`).toBeGreaterThanOrEqual(0);
-            expect(r.stationChargeCost, `${r.id} stationChargeCost`).toBeGreaterThanOrEqual(0);
         }
     });
 

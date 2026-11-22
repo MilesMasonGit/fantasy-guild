@@ -9,12 +9,12 @@ import { hasCatchPools } from '../../../../src/config/registries/catchPools.js';
 export const RETIRED_ITEM_FIELDS = Object.freeze(['trueCost', 'sellPrice']);
 
 /**
- * The nine EV / auto-balance fields recipes carried for the retired engine.
- * Deleted on every run.
+ * The nine EV / auto-balance fields recipes carried for the retired engine, and the station charge
+ * cost nothing reads any more. Deleted on every run.
  */
 export const RETIRED_RECIPE_FIELDS = Object.freeze([
     'targetEV', 'calculatedEV', 'autoBalance', 'fieldLocks', 'profitSplit',
-    'liquidityEV', 'progressionEV', 'goldPerMinute', 'xpPerMinute',
+    'liquidityEV', 'progressionEV', 'goldPerMinute', 'xpPerMinute', 'stationChargeCost',
 ]);
 
 /** `isPrimarySource` is the old anchor flag. It is migrated to the `anchor` intent flag where true (see `migrateLegacyIntent`) and deleted either way. */
@@ -77,9 +77,8 @@ function migrateRecipeSchema(recipe, skillId, usedIds) {
     const needsDuration = !Number.isFinite(recipe.durationMs)
         && Number.isFinite(recipe.cycleTimeMs);
     const needsLevel = recipe.levelRequirement === undefined;
-    const needsChargeCost = recipe.stationChargeCost === undefined;
     const hasLegacyCycle = 'cycleTimeMs' in recipe;
-    if (!needsId && !needsDuration && !needsLevel && !needsChargeCost && !hasLegacyCycle) {
+    if (!needsId && !needsDuration && !needsLevel && !hasLegacyCycle) {
         return recipe;
     }
 
@@ -98,7 +97,6 @@ function migrateRecipeSchema(recipe, skillId, usedIds) {
     delete next.cycleTimeMs;
 
     if (needsLevel) next.levelRequirement = 1;
-    if (needsChargeCost) next.stationChargeCost = 1;
 
     return next;
 }

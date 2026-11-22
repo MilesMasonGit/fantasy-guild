@@ -37,7 +37,6 @@
  *     "xp": 12,
  *     "inputs":  [{ "itemId": "item_copper_ingot", "quantity": 2 }],
  *     "requiresContext": [{ "tag": "anvil", "minTier": 1, "chargeCost": 0 }],
- *     "stationChargeCost": 1,
  *     "outputs": [{ "itemId": "item_copper_sword", "chance": 100, "minQty": 1, "maxQty": 1 }]
  *   }
  * ]
@@ -54,8 +53,8 @@
  * `chargeCost`, so `checkAcceptedTokens` in `RecipeResolver.js` compares both
  * with the same code.
  *
- * `stationChargeCost` is the charges the station itself spends per cycle,
- * a separate axis from context charge costs; `Charges.js` reads it.
+ * A recipe carries no charge cost of its own for the Token that runs it: that spend is flat
+ * (`DEFAULT_STATION_CHARGE_COST`), and a retired `stationChargeCost` left in old data is ignored.
  *
  * Nine EV fields (`targetEV`, `calculatedEV`, `autoBalance`, `fieldLocks`,
  * `profitSplit`, `liquidityEV`, `progressionEV`, `goldPerMinute`,
