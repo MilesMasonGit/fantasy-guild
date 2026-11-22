@@ -418,7 +418,7 @@ describe('around the summary offered again', () => {
         localStorage.setItem(SlotHelper.getBackupKey(0), attachMark(saveText(30 * SEC), JSON.stringify(mark)));
         localStorage.setItem(SaveManager.getSlotKey(0), '{"state": cut off');
         await start(NOW);
-        expect(Banners.getAll().map(b => b.parts?.title)).toContain('Save Restored');
+        expect(Banners.getAll().map(b => b.parts?.title)).toContain('Save restored');
         expect(q('[data-catch-up-summary]')).toBeNull();
         expect(CatchUp.canUndo()).toBe(false);
         SaveManager.save(false);

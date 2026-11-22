@@ -142,7 +142,7 @@ describe('the banner', () => {
         freshGame();
         const { instance } = EventClock.landNow(COMET.id);
         const [banner] = eventBanners();
-        expect(banner).toMatchObject({ title: 'Special Event! Copper Comet!', tone: 'milestone', subjects: [{ type: 'token', id: instance.id }] });
+        expect(banner).toMatchObject({ title: 'Special event! Copper Comet!', tone: 'milestone', subjects: [{ type: 'token', id: instance.id }] });
         expect(banner.line).toBe('');
         expect(banner.sprite).toEqual({ kind: 'token', id: 'evs_comet' });
     });
@@ -152,10 +152,10 @@ describe('the banner', () => {
         freshGame();
         EventClock.landNow(RAIN.id);
         expect(eventBanners()).toHaveLength(1);
-        expect(eventBanners()[0].title).toBe('Special Event! Rainfall!');
+        expect(eventBanners()[0].title).toBe('Special event! Rainfall!');
         expect(eventBanners()[0].line).toBe('');
         const view = render(createElement(BannerStack));
-        expect(view.container.querySelector('[data-banner-title]').textContent).toBe('Special Event! Rainfall!');
+        expect(view.container.querySelector('[data-banner-title]').textContent).toBe('Special event! Rainfall!');
         expect(view.container.querySelector('[data-banner-line]')).toBeNull();
         view.unmount();
         runFor(20 * MIN);

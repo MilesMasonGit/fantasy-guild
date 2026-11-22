@@ -10,6 +10,7 @@ import { dashedLinePath, MARCH_PX_PER_S } from './orderLine.js';
 import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import { matW } from '../../../config/matGeometry.js';
 import { createOrderAim } from './orderAim.js';
+import { SkillIconText } from '../base/SkillIconText.jsx';
 import { SpeechFrame, tailInset } from './SpeechFrame.jsx';
 import { keepInMat, guessCalloutSize } from './calloutPlace.js';
 import { SPEECH_TONE } from './speechTone.js';
@@ -190,7 +191,7 @@ function MarchingLine({ heroId, session, matRef }) {
             if (aimNow !== aimed) {
                 aimed = aimNow;
                 quiet = false;
-                setTarget(aimed.instance ? { instance: aimed.instance, reason: aimed.reason } : null);
+                setTarget(aimed.instance ? { instance: aimed.instance, reason: aimed.reason, icons: aimed.icons } : null);
                 // Every hero's marks, worked out once per Token entered (`dragHints.js`).
                 setHintTarget(aimed.instance);
             }
@@ -247,7 +248,7 @@ function MarchingLine({ heroId, session, matRef }) {
                 <path ref={goldRef} d="" transform={`scale(${artScale})`} fill={LINE_GOLD} />
             </g>
         </svg>}
-        {target && <AimedLabel heroId={heroId} instance={target.instance} reason={target.reason} fit={fit} mat={mat} />}
+        {target && <AimedLabel heroId={heroId} instance={target.instance} reason={target.reason} icons={target.icons} fit={fit} mat={mat} />}
         </>
     );
 }
@@ -279,7 +280,7 @@ function drawnSpriteOf(instanceId) {
  * refusal over them. Where a callout would be lifted clear of a work plate or a fight's bars, the
  * column is too.
  */
-function AimedLabel({ heroId, instance, reason, fit, mat }) {
+function AimedLabel({ heroId, instance, reason, icons, fit, mat }) {
     const f = fit || 1;
     const u = plateUnit(f);
     const markPx = markMatPx(f);
@@ -326,7 +327,7 @@ function AimedLabel({ heroId, instance, reason, fit, mat }) {
                             tailLeft={`clamp(${inset}px, calc(50% - ${dx}px), calc(100% - ${inset}px))`}
                             className="order-reason-bubble whitespace-nowrap ui-text-title font-bold"
                         >
-                            {reason}
+                            <SkillIconText text={reason} icons={icons} />
                         </SpeechFrame>
                     </div>
                 )}

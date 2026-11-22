@@ -31,6 +31,7 @@ import { onPoll } from './frameClock.js';
 import { EffectBadgeGrid, EffectChip, ItemBadges } from './EffectBadges.jsx';
 import { EFFECT_KEY } from '../../../systems/board/EffectBreakdown.js';
 import { STAR_COLOUR } from './fx/rareTwinkle.js';
+import { levelNeed, skillLevel } from '../../../systems/core/levelNeed.js';
 
 /** The activity scenes are 256 px square; they only ever draw at whole multiples of it. */
 export const CARD_ART_PX = 256;
@@ -112,7 +113,7 @@ const WorkCells = ({ skillId, level, xp }) => (
                 <Stat
                     icon={<SkillIcon skillId={skillId} size={16} />}
                     text={level}
-                    tip={`${skillName(skillId)}: a hero needs level ${level} to work this`}
+                    tip={levelNeed(skillId, level).text}
                     data-card-skill={skillId}
                 />
             </StatCell>
@@ -157,7 +158,7 @@ const CombatCells = ({ skillId, level, xp }) => (
             <Stat
                 icon={<SkillIcon skillId={skillId} size={16} />}
                 text={level}
-                tip={`${skillName(skillId)}, level ${level}`}
+                tip={skillLevel(skillId, level).text}
                 data-card-skill={skillId}
             />
         </StatCell>

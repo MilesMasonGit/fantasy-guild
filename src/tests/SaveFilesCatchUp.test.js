@@ -333,7 +333,7 @@ describe('"Load as I left it" with files', () => {
             expect(await CatchUp.undoLast()).toBe(false);
             await SaveFiles.flush();
             expect(reload).not.toHaveBeenCalled();
-            expect(Banners.getAll().map(b => b.parts?.title)).toContain('Load Failed');
+            expect(Banners.getAll().map(b => b.parts?.title)).toContain('Load failed');
             expect(sessionStorage.getItem('fantasy_guild_resume_slot')).toBeNull();
             expect(SaveManager.savingSuspended).toBe(false);
             expect(disk.main(0)).toBe(caughtUp);

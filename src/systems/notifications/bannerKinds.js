@@ -44,7 +44,7 @@ export const BANNER_KINDS = Object.freeze({
     recipe: {
         tone: TONE.MILESTONE,
         text: ({ heroes = [], recipes = [] }) => ({
-            title: recipes.length > 1 ? 'New Recipes!' : 'New Recipe!',
+            title: t(recipes.length > 1 ? 'bannerTitle.recipes' : 'bannerTitle.recipe'),
             line: `${nameList(heroes)} unlocked ${recipeList(recipes)}`
         }),
         merge: (a, b) => ({ heroes: union(a.heroes, b.heroes), recipes: union(a.recipes, b.recipes) })
@@ -52,7 +52,7 @@ export const BANNER_KINDS = Object.freeze({
     hero: {
         tone: TONE.MILESTONE,
         text: ({ heroes = [] }) => ({
-            title: heroes.length > 1 ? 'New Heroes!' : 'New Hero!',
+            title: t(heroes.length > 1 ? 'bannerTitle.heroes' : 'bannerTitle.hero'),
             line: `${nameList(heroes)} joined the guild`
         }),
         merge: (a, b) => ({ heroes: union(a.heroes, b.heroes) })
@@ -60,7 +60,7 @@ export const BANNER_KINDS = Object.freeze({
     upgrade: {
         tone: TONE.MILESTONE,
         text: ({ upgrades = [], detail = null }) => ({
-            title: 'Guild Upgrade!',
+            title: t('bannerTitle.upgrade'),
             line: upgrades.length === 1 && detail ? `${upgrades[0]}: ${detail}` : `${nameList(upgrades)} upgraded`
         }),
         merge: (a, b) => ({ upgrades: union(a.upgrades, b.upgrades), detail: b.detail })
@@ -68,7 +68,7 @@ export const BANNER_KINDS = Object.freeze({
     settled: {
         tone: TONE.MILESTONE,
         text: ({ places = [] }) => ({
-            title: 'New Place Settled!',
+            title: t('bannerTitle.settled'),
             line: `The guild settled ${nameList(places)}`
         }),
         merge: (a, b) => ({ places: union(a.places, b.places) })
@@ -85,13 +85,13 @@ export const BANNER_KINDS = Object.freeze({
             if (heroes.length === 1) {
                 const lost = rows[0]?.lost ?? [];
                 return {
-                    title: 'Knocked Out!',
+                    title: t('bannerTitle.knockout'),
                     line: `${heroes[0]} was carried home, injured. ${lost.length ? `Lost: ${lost.join(', ')}.` : 'Nothing was lost.'}`
                 };
             }
             const said = rows.filter(r => r.lost.length).map(r => `${r.hero} lost: ${r.lost.join(', ')}.`);
             return {
-                title: 'Knocked Out!',
+                title: t('bannerTitle.knockout'),
                 line: `${nameList(heroes)} knocked out and carried home. ${said.length ? said.join(' ') : 'Nothing was lost.'}`
             };
         },
@@ -110,7 +110,7 @@ export const BANNER_KINDS = Object.freeze({
         kept: true,
         mergeShown: true,
         text: ({ items = [] }) => ({
-            title: 'Bank Full!',
+            title: t('bannerTitle.bankFull'),
             line: `${nameList(items)} ${items.length > 1 ? 'wait' : 'waits'} on the mat until the Bank has room`
         }),
         merge: (a, b) => ({ items: union(a.items, b.items) })
@@ -121,7 +121,7 @@ export const BANNER_KINDS = Object.freeze({
         tone: TONE.PROBLEM,
         mergeShown: true,
         text: ({ items = [] }) => ({
-            title: 'Stack Full!',
+            title: t('bannerTitle.stackFull'),
             line: `${nameList(items)} ${items.length > 1 ? 'wait' : 'waits'} on the mat: the Bank holds no more of ${items.length > 1 ? 'them' : 'it'}`
         }),
         merge: (a, b) => ({ items: union(a.items, b.items) })
@@ -136,7 +136,7 @@ export const BANNER_KINDS = Object.freeze({
     // Each save problem is its own banner; only a repeat of the same one (its `groupKey`) folds in.
     save: {
         tone: TONE.PROBLEM,
-        text: ({ title = 'Save Problem', message = '' }) => ({ title, line: message }),
+        text: ({ title = t('bannerTitle.saveProblem'), message = '' }) => ({ title, line: message }),
         merge: null
     }
 });

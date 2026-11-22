@@ -55,7 +55,7 @@ function reportSaveFailed(err) {
         kind: 'save',
         groupKey: 'save_failed',
         parts: {
-            title: 'Save Failed!',
+            title: t('bannerTitle.saveFailed'),
             message: isQuota
                 ? t('settings.storageFull')
                 : 'The game could not be saved.'
@@ -387,7 +387,7 @@ export const SaveManager = {
     },
 
     /**
-     * "Save Game Now": saves with the notification, then waits for a desktop write to finish.
+     * "Save game now": saves with the notification, then waits for a desktop write to finish.
      * @returns {Promise<boolean>} whether the save reached the slot
      */
     async saveAndConfirm() {
@@ -527,7 +527,7 @@ export const SaveManager = {
                 NotificationSystem.notify('This save is from a previous version and cannot be loaded. Please start a new game.', 'error');
             } else {
                 console.error(`[SaveManager] Failed to load slot ${slotIndex}: `, err);
-                NotificationSystem.notify('Load Failed - Save Corrupted', 'error');
+                NotificationSystem.notify('Load failed - save corrupted', 'error');
             }
             return false;
         }
@@ -548,7 +548,7 @@ export const SaveManager = {
                 Banners.push({
                     kind: 'save',
                     groupKey: 'save_restored',
-                    parts: { title: 'Save Restored', message: 'Your latest save was damaged, so the one before it was loaded.' }
+                    parts: { title: t('bannerTitle.saveRestored'), message: 'Your latest save was damaged, so the one before it was loaded.' }
                 });
                 return true;
             }
@@ -627,7 +627,7 @@ export const SaveManager = {
         Banners.push({
             kind: 'save',
             groupKey: 'restore_failed',
-            parts: { title: 'Load Failed', message: 'Could not load the game as you left it.' }
+            parts: { title: t('bannerTitle.loadFailed'), message: 'Could not load the game as you left it.' }
         });
     },
 

@@ -253,7 +253,7 @@ describe('a save written and loaded', () => {
         SaveManager.save(false);
         await SaveFiles.flush();
         await Promise.resolve();
-        expect(bannerTitles()).toContain('Save Failed!');
+        expect(bannerTitles()).toContain('Save failed!');
         expect(played(disk.main(0))).toBe(1);
         expect(await SaveManager.loadSlot(0, { catchUp: false })).toBe(true);
         expect(GameState.state.time.gameTimeMs).toBe(1);
@@ -296,7 +296,7 @@ describe('a damaged, edited or old file', () => {
 
         expect(await SaveManager.loadSlot(0, { catchUp: false })).toBe(true);
         expect(GameState.state.time.gameTimeMs).toBe(100);
-        expect(bannerTitles()).toContain('Save Restored');
+        expect(bannerTitles()).toContain('Save restored');
         // Loading wrote nothing.
         expect(disk.main(0).length).toBe(500);
 
@@ -319,7 +319,7 @@ describe('a damaged, edited or old file', () => {
         disk.files.set('slot1.json', JSON.stringify(edited));
         expect(await SaveManager.loadSlot(0, { catchUp: false })).toBe(true);
         expect(GameState.state.time.gameTimeMs).toBe(100);
-        expect(bannerTitles()).toContain('Save Restored');
+        expect(bannerTitles()).toContain('Save restored');
     });
 
     it('with no good backup: the damaged-save message, no crash, and every file untouched', async () => {
@@ -364,7 +364,7 @@ describe('a damaged, edited or old file', () => {
 
         expect(await SaveManager.loadSlot(0, { catchUp: false })).toBe(true);
         expect(GameState.state.time.gameTimeMs).toBe(100);
-        expect(bannerTitles()).toContain('Save Restored');
+        expect(bannerTitles()).toContain('Save restored');
         GameState.state.time.gameTimeMs = 300;
         SaveManager.save(false);
         await SaveFiles.flush();
@@ -493,7 +493,7 @@ describe('closing the window', () => {
             await settle();
             expect(disk.cancelled).toBe(1);
             expect(disk.closed).toBe(0);
-            expect(bannerTitles()).toContain('Save Failed!');
+            expect(bannerTitles()).toContain('Save failed!');
         });
 
         it('a second close goes through, though its save fails too', async () => {
@@ -541,7 +541,7 @@ describe('closing the window', () => {
                 await settle();
                 expect(disk.cancelled).toBe(1);
                 expect(disk.closed).toBe(0);
-                expect(bannerTitles()).toContain('Save Failed!');
+                expect(bannerTitles()).toContain('Save failed!');
             } finally {
                 spy.mockRestore();
             }

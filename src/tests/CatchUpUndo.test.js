@@ -211,7 +211,7 @@ describe('a write back that fails can be tried again', () => {
             expect(SaveManager.savingSuspended).toBe(false);
             expect(sessionStorage.getItem('fantasy_guild_resume_slot')).toBeNull();
             expect(slotJson(0)).toBe(caughtUp);
-            expect(Banners.getAll().map(b => b.parts?.title)).toContain('Load Failed');
+            expect(Banners.getAll().map(b => b.parts?.title)).toContain('Load failed');
 
             // Space freed: the same button again.
             expect(await CatchUp.undoLast()).toBe(true);

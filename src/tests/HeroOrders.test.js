@@ -142,7 +142,8 @@ describe('⭐ a drop on a Token: they work only it', () => {
         const noTool = Orders.orderAt(h.id, { x: vein.x, y: vein.y });
         expect(noTool).toMatchObject({ success: false, reason: 'Needs Pickaxe', instanceId: vein.id });
         const level = Orders.orderAt(h.id, { x: deep.x, y: deep.y });
-        expect(level).toMatchObject({ success: false, reason: 'Forestry level too low (needs 60)', instanceId: deep.id });
+        expect(level).toMatchObject({ success: false, instanceId: deep.id });
+        expect(level.reason).toMatch(/^Needs Forestry 60 \(.+: \d+\)$/);
         expect(Flags.pinnedIdOf(h.id)).toBe(tree.id);
         expect(Orders.canOrderOnto(h.id, vein)).toBe(false);
         expect(Orders.canOrderOnto(h.id, tree)).toBe(true);
@@ -164,7 +165,9 @@ describe('⭐ aimed while carried: the flag snaps onto a Token they can work, el
         const deep = fixtures.placeAt('ho_deep', 1000, 300);
         expect(Orders.aimAt(h.id, tree)).toEqual({ snap: true, reason: null });
         expect(Orders.aimAt(h.id, vein)).toEqual({ snap: false, reason: 'Needs Pickaxe' });
-        expect(Orders.aimAt(h.id, deep)).toEqual({ snap: false, reason: 'Forestry level too low (needs 60)' });
+        const aimed = Orders.aimAt(h.id, deep);
+        expect(aimed).toMatchObject({ snap: false, icons: [{ skill: 'forestry', at: 'Needs '.length }] });
+        expect(aimed.reason).toMatch(/^Needs Forestry 60 \(.+: \d+\)$/);
         // The drop says the same words, and still refuses.
         for (const t of [vein, deep]) {
             const drop = Orders.orderAt(h.id, { x: t.x, y: t.y });

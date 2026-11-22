@@ -12,6 +12,7 @@ import {
 import { recipeRowOf } from '../ui/components/board/recipeRows.js';
 import { RecipeList } from '../ui/components/board/RecipeList.jsx';
 import { StationGearBadge } from '../ui/components/board/TokenBadges.jsx';
+import { levelNeed } from '../systems/core/levelNeed.js';
 
 /**
  * The recipe list a station's card flips to: level-sorted rows, hero-face dividers for permitted
@@ -366,5 +367,20 @@ describe('StationGearBadge', () => {
             isHovered: true, isDragging: false, recipe: null, onClick: () => { }
         }));
         expect(hoverTip(container)).toContain('No recipe selected');
+    });
+});
+
+describe('a recipe row’s level', () => {
+    it('hovers with the level writer’s words and icon, on a row and on a silhouette', () => {
+        GameState.state.heroes = [hero('cook', 2)];
+        render(React.createElement(RecipeList, { def: STATION(), heroes: GameState.state.heroes, workerId: 'cook', onChoose: () => {} }));
+        fireEvent.pointerEnter(document.querySelector('[data-recipe-level]'), { clientX: 10, clientY: 10 });
+        expect(document.body.textContent).toContain(levelNeed('list_skill', 2).text);
+        expect(document.querySelector('[data-skill-icon-text="list_skill"]')).not.toBeNull();
+        fireEvent.pointerLeave(document.querySelector('[data-recipe-level]'));
+        const locked = document.querySelector('[data-recipe-locked]');
+        fireEvent.pointerEnter(locked.querySelector('span'), { clientX: 10, clientY: 10 });
+        expect(document.body.textContent).toContain(levelNeed('list_skill', Number(locked.dataset.recipeLocked)).text);
+        cleanup();
     });
 });

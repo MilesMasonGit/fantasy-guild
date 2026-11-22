@@ -11,6 +11,9 @@ import { neededToolOf, toolNeedPhrase } from '../../../config/registries/toolKin
 import { withArticle } from '../../../systems/effects/toolNames.js';
 import { GameState } from '../../../state/GameState.js';
 import { skipHint } from './boardConstants.js';
+import { ALERT } from '../../../systems/board/boardEvents.js';
+import { workConfigOf } from '../../../systems/board/StationRecipe.js';
+import { levelNeed, heroLevel } from '../../../systems/core/levelNeed.js';
 import { problemOf, problemText } from './problemMark.js';
 import { t } from '../../../i18n/index.js';
 import { formatClock } from '../../../utils/Formatters.js';
@@ -72,10 +75,25 @@ export function flagStatusLine(heroId) {
     return dockStatusLine({ ...s, waitingFor: s.state === 'idle' ? waitingTypeOf(heroId) : null });
 }
 
-/** One skipped Token as "Iron Forge — needs materials". */
-export function skipLine(skip) {
+/**
+ * Why `heroId` skipped a Token, as a line's tail: a level too low in the level writer's words,
+ * "Needs Mining 15 (Ana: 12)"; anything else as its short hint, "needs materials".
+ */
+function skipTail(reason, instanceId, typeId, heroId, extra) {
+    if (reason === ALERT.ACCESS) {
+        const config = workConfigOf(getTokenType(typeId), BoardState.getTokenById(instanceId));
+        if (config?.skill) {
+            const hero = (GameState.state?.heroes || []).find(h => h?.id === heroId);
+            return levelNeed(config.skill, Math.max(1, Number(config.skillRequired) || 1), heroLevel(hero, config.skill)).text;
+        }
+    }
+    return skipHint(hintKey(reason, typeId), extra);
+}
+
+/** One skipped Token as "Iron Forge — needs materials"; `heroId` is the hero who skipped it. */
+export function skipLine(skip, heroId = null) {
     const holder = skip.reason === Flags.SKIP.CLAIMED ? heroName(BoardState.heroOfInstance(skip.instanceId)) : null;
-    return `${tokenName(skip.typeId) || 'A Token'} — ${skipHint(hintKey(skip.reason, skip.typeId), { holder, tool: toolOfType(skip.typeId) })}`;
+    return `${tokenName(skip.typeId) || 'A Token'} — ${skipTail(skip.reason, skip.instanceId, skip.typeId, heroId, { holder, tool: toolOfType(skip.typeId) })}`;
 }
 
 /**
@@ -85,7 +103,7 @@ export function skipLine(skip) {
  */
 export function flagTooltip(heroId) {
     const s = Flags.statusOf(heroId);
-    const all = Flags.skipsOfHero(heroId).map(sk => skipLine(sk));
+    const all = Flags.skipsOfHero(heroId).map(sk => skipLine(sk, heroId));
     return {
         title: heroName(heroId),
         state: s.state,
@@ -103,7 +121,7 @@ export function tokenSkipLines(instanceId) {
         const holder = s.reason === Flags.SKIP.CLAIMED ? heroName(BoardState.heroOfInstance(instanceId)) : null;
         const typeId = BoardState.getTokenById(instanceId)?.typeId;
         const tool = toolOfType(typeId);
-        return `${heroName(s.heroId)} skipped this: ${skipHint(hintKey(s.reason, typeId), { holder, tool })}`;
+        return `${heroName(s.heroId)} skipped this: ${skipTail(s.reason, instanceId, typeId, s.heroId, { holder, tool })}`;
     });
 }
 

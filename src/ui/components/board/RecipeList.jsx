@@ -14,6 +14,8 @@ import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { fieldOf, cropTermsOf } from '../../../config/registries/tokenConstants.js';
 import { formatClock } from '../drawer/lifecycleLines.js';
 import { t } from '../../../i18n/index.js';
+import { levelNeed } from '../../../systems/core/levelNeed.js';
+import { SkillIconText } from '../base/SkillIconText.jsx';
 
 /**
  * The recipe list a station's or Foundation's card flips to: one row per recipe, level first,
@@ -148,7 +150,7 @@ const RecipeTime = ({ row }) => {
     );
 };
 
-const RecipeRow = ({ row, crop = null, selected, onChoose, onLookUp }) => {
+const RecipeRow = ({ row, skill, crop = null, selected, onChoose, onLookUp }) => {
     const [hover, setHover] = useState(false);
     // The pointer on an ingredient link: the link is outlined, not the row.
     const [onLink, setOnLink] = useState(false);
@@ -167,7 +169,9 @@ const RecipeRow = ({ row, crop = null, selected, onChoose, onLookUp }) => {
                 outlineOffset: -2
             }}
         >
-            <span data-recipe-level className="w-6 shrink-0 text-right tabular-nums font-bold" style={selected ? { color: GOLD } : undefined}>{row.level}</span>
+            <RecipeLevel level={row.level} skill={skill}>
+                <span data-recipe-level className="w-6 shrink-0 text-right tabular-nums font-bold" style={selected ? { color: GOLD } : undefined}>{row.level}</span>
+            </RecipeLevel>
             {row.inputs.map(i => <InputPill key={i.itemId} input={i} onLookUp={onLookUp} onHover={setOnLink} />)}
             {row.requirements.map(r => <RequirementBar key={r.key} req={r} />)}
             {(row.inputs.length > 0 || row.requirements.length > 0) && <span className="text-gi-muted">→</span>}
@@ -181,12 +185,24 @@ const RecipeRow = ({ row, crop = null, selected, onChoose, onLookUp }) => {
     );
 };
 
+/** A row's level column, its hover the level writer's words: "Needs [icon] Smithing 15". */
+const RecipeLevel = ({ level, skill, children }) => {
+    const words = skill ? levelNeed(skill, level) : null;
+    return (
+        <Tooltip content={words ? <SkillIconText text={words.text} icons={words.icons} /> : null}>
+            {children}
+        </Tooltip>
+    );
+};
+
 /** A recipe no one in the guild can run yet: its level and a "???" silhouette. Not choosable. */
-const LockedRow = ({ entry }) => {
+const LockedRow = ({ entry, skill }) => {
     const out = (entry.recipe?.outputs || []).find(o => o?.itemId || o?.tokenId);
     return (
         <div data-recipe-locked={entry.level} aria-disabled="true" className="flex items-center gap-2 px-1.5 py-0.5 whitespace-nowrap ui-text-body text-gi-muted">
-            <span className="w-6 shrink-0 text-right tabular-nums font-bold">{entry.level}</span>
+            <RecipeLevel level={entry.level} skill={skill}>
+                <span className="w-6 shrink-0 text-right tabular-nums font-bold">{entry.level}</span>
+            </RecipeLevel>
             {out && (
                 <span style={{ filter: 'brightness(0)', opacity: 0.7 }} className="inline-flex">
                     {out.tokenId
@@ -298,9 +314,9 @@ export const RecipeList = ({ def, instanceId = null, selectedRecipeId = null, wo
                     if (entry.kind === ENTRY.HEROES) {
                         return <HeroDivider key={`h${entry.level}`} entry={entry} heroesById={heroesById} skill={skill} />;
                     }
-                    if (entry.kind === ENTRY.LOCKED) return <LockedRow key={`l${entry.key}`} entry={entry} />;
+                    if (entry.kind === ENTRY.LOCKED) return <LockedRow key={`l${entry.key}`} entry={entry} skill={skill} />;
                     const row = recipeRowOf(entry.recipe, entry.level, instanceId, undefined, workSkill);
-                    return <RecipeRow key={row.id} row={row} crop={isField ? cropTermsOf(entry.recipe) : null} selected={row.id === selectedRecipeId} onChoose={onChoose} onLookUp={onLookUp} />;
+                    return <RecipeRow key={row.id} row={row} skill={skill} crop={isField ? cropTermsOf(entry.recipe) : null} selected={row.id === selectedRecipeId} onChoose={onChoose} onLookUp={onLookUp} />;
                 })}
             </div>
         </div>

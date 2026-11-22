@@ -51,7 +51,7 @@ describe('in the desktop build', () => {
 
     it('the slots show it, its tip gives the folder, and a click opens the folder', () => {
         render(h(SlotSelectionModal, { isOpen: true, onSelect: () => {} }));
-        expect(folderButton().textContent).toContain('Open Saves Folder');
+        expect(folderButton().textContent).toContain('Open saves folder');
         expect(folderButton().title).toContain(disk.folderPath);
         fireEvent.click(folderButton());
         expect(disk.opened).toBe(1);

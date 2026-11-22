@@ -1,10 +1,9 @@
 import { cn } from '../../utils/cn.js';
-import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { landmarkLines } from './landmarkLines.js';
+import { SkillIconText } from '../base/SkillIconText.jsx';
 
 const names = {
-    skillName: (id) => getSkill(id)?.name || id,
     itemName: (id) => getItem(id)?.name || id
 };
 
@@ -19,7 +18,7 @@ export const LandmarkBlock = ({ def }) => {
                 <div key={i} className="flex items-start justify-between gap-2">
                     <span className="text-gi-muted">{line.label}</span>
                     <span className={cn('text-right tabular-nums', line.placeholder ? 'italic text-gi-muted' : 'font-bold text-gi-text')}>
-                        {line.value}
+                        <SkillIconText text={line.value} icons={line.icons} />
                     </span>
                 </div>
             ))}

@@ -45,9 +45,9 @@ describe('the slots', () => {
         expect(row(1).getAttribute('data-slot-state')).toBe('filled');
         expect(row(2).getAttribute('data-slot-state')).toBe('empty');
         expect(row(3).getAttribute('data-slot-state')).toBe('damaged');
-        expect(row(1).textContent).toContain('Last Played');
-        expect(row(2).textContent).toContain('New Game');
-        expect(row(3).textContent).toContain('Damaged');
+        expect(row(1).textContent).toContain('Last played');
+        expect(row(2).textContent).toContain('New game');
+        expect(row(3).textContent).toContain('damaged');
     });
 
     it('a filled slot\'s stats are Lucide marks with their values, and no emoji shows anywhere', () => {
@@ -68,7 +68,7 @@ describe('the slots', () => {
         const onSelect = vi.fn();
         render(h(SlotSelectionModal, { isOpen: true, onSelect }));
         fireEvent.click([...row(1).querySelectorAll('button')].find(b => b.textContent.includes('Load')));
-        fireEvent.click([...row(2).querySelectorAll('button')].find(b => b.textContent.includes('New Game')));
+        fireEvent.click([...row(2).querySelectorAll('button')].find(b => b.textContent.includes('New game')));
         expect(onSelect.mock.calls.map(c => c[0])).toEqual([0]);
         expect(document.querySelector('[data-new-game-screen="2"]')).not.toBeNull();
         fireEvent.click(document.querySelector('button[data-new-game-begin]'));
@@ -92,9 +92,9 @@ describe('the slots', () => {
         plantSlots();
         render(h(SlotSelectionModal, { isOpen: true, onSelect: () => {} }));
         fireEvent.click(row(1).querySelector('[data-slot-delete]'));
-        expect(row(1).textContent).toContain('Delete Forever?');
+        expect(row(1).textContent).toContain('Delete forever?');
         fireEvent.click([...row(1).querySelectorAll('button')].find(b => b.textContent.includes('Cancel')));
-        expect(row(1).textContent).not.toContain('Delete Forever?');
+        expect(row(1).textContent).not.toContain('Delete forever?');
         expect(localStorage.getItem('fantasy_guild_slot_0')).not.toBeNull();
 
         fireEvent.click(row(1).querySelector('[data-slot-delete]'));

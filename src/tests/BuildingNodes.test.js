@@ -223,7 +223,7 @@ describe('a metal mine: its prospecting map, on Stone only', () => {
         off();
         expect(res.success).toBe(false);
         expect(res.reason).toBe('Needs stone.');
-        expect(flashed.map(p => [p.title, p.rulesText])).toEqual([['Drop Rejected: BN Wood Foundation', 'Needs stone.']]);
+        expect(flashed.map(p => [p.title, p.rulesText])).toEqual([['Drop rejected: BN Wood Foundation', 'Needs stone.']]);
         expect({ x: f.x, y: f.y }).toEqual(STONE);
 
         const back = Placement.placeTokenAt(f, { x: STONE.x, y: STONE.y + 96 }, { excludeId: f.id });

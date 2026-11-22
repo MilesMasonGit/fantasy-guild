@@ -16,6 +16,7 @@ import * as Flags from './Flags.js';
 import * as Camps from './Camps.js';
 import { isGuildHall } from './MatCap.js';
 import { workConfigOf } from './StationRecipe.js';
+import { levelNeed, heroLevel } from '../core/levelNeed.js';
 
 /**
  * A hero dropped on the mat (`dropOnMat`, from the figure, the flag or the roster tab) gets an
@@ -36,34 +37,42 @@ import { workConfigOf } from './StationRecipe.js';
  * said over), so `dropOnMat.announce` can say it where it was aimed.
  */
 
-/** A healing hero's record, or null. Read straight from state, never rehydrated. */
+/** A hero's record, or null. Read straight from state, never rehydrated. */
+const heroOf = (heroId) => (GameState.state?.heroes || []).find(h => h?.id === heroId) || null;
+
+/** A healing hero's record, or null. */
 function woundedHero(heroId) {
-    const hero = (GameState.state?.heroes || []).find(h => h?.id === heroId);
+    const hero = heroOf(heroId);
     return hero && hero.status === 'wounded' ? hero : null;
 }
 
 /**
- * The words for an order refusal on `instance` (`Flags.orderRefusal`'s reason). For a camp the need
- * is a Token's in its reach (`Flags.orderToken`'s `refusedOn`), or the camp's own skill.
+ * The words for an order refusal on `instance` (`Flags.orderRefusal`'s reason), as `{ text, icons }`:
+ * a level refusal carries its skill icon (`levelNeed`). For a camp the need is a Token's in its
+ * reach (`Flags.orderToken`'s `refusedOn`), or the camp's own skill.
  */
-export function refusalText(heroId, instance, reason) {
+export function refusalWords(heroId, instance, reason) {
     const def = getTokenType(instance?.typeId);
     const skillId = def ? (Camps.campOf(def)?.skill || workConfigOf(def, instance)?.skill) : null;
     const skill = skillId ? (getSkill(skillId)?.name || skillId) : null;
+    const plain = (text) => ({ text, icons: [] });
     switch (reason) {
-        case Flags.SKIP.OCCUPIED: return t('orders.occupied');
+        case Flags.SKIP.OCCUPIED: return plain(t('orders.occupied'));
         case ALERT.NO_TOOL: {
             const need = neededToolOf(def);
-            return need ? t('orders.needs', { what: toolNeedPhrase(need, getAllItems()) }) : t('orders.nothing');
+            return plain(need ? t('orders.needs', { what: toolNeedPhrase(need, getAllItems()) }) : t('orders.nothing'));
         }
         case ALERT.ACCESS: {
             const level = workConfigOf(def, instance)?.skillRequired || 1;
-            return skill ? t('orders.levelLow', { skill, level }) : t('orders.nothing');
+            return skillId ? levelNeed(skillId, level, heroLevel(heroOf(heroId), skillId)) : plain(t('orders.nothing'));
         }
-        case ALERT.UNSKILLED: return skill ? t('orders.needs', { what: skill }) : t('orders.nothing');
-        default: return t('orders.nothing');
+        case ALERT.UNSKILLED: return plain(skill ? t('orders.needs', { what: skill }) : t('orders.nothing'));
+        default: return plain(t('orders.nothing'));
     }
 }
+
+/** {@link refusalWords} as plain words, for a spot that holds only text (the drop's callout). */
+export const refusalText = (heroId, instance, reason) => refusalWords(heroId, instance, reason).text;
 
 /** "Ana is healing: 0:42", the refusal for a healing hero. */
 const healingText = (hero) => t('orders.healing', { hero: hero.name || 'This hero', time: formatClock(hero.woundedRemainingMs) });
@@ -72,8 +81,8 @@ const healingText = (hero) => t('orders.healing', { hero: hero.name || 'This her
  * What a drop of `heroId` on `instance` would do, asked while they are carried over it: `snap` when
  * the drop would give them the Token as their job (the flag snaps to its centre), else `reason`,
  * the words the drop would refuse with (null for the Guild Hall, which takes them home). The same
- * gates, in the same order, as {@link orderAt}.
- * @returns {{ snap: boolean, reason: string|null }}
+ * gates, in the same order, as {@link orderAt}. `icons` places a level refusal's skill icon in `reason`.
+ * @returns {{ snap: boolean, reason: string|null, icons?: { skill: string, at: number }[] }}
  */
 export function aimAt(heroId, instance) {
     if (!heroId || !instance) return { snap: false, reason: null };
@@ -83,7 +92,8 @@ export function aimAt(heroId, instance) {
     const refusal = Flags.orderRefusal(heroId, instance);
     if (!refusal) return { snap: true, reason: null };
     const on = (refusal.on?.id && BoardState.getTokenById(refusal.on.id)) || instance;
-    return { snap: false, reason: refusalText(heroId, on, refusal.reason) };
+    const words = refusalWords(heroId, on, refusal.reason);
+    return { snap: false, reason: words.text, ...(words.icons.length ? { icons: words.icons } : {}) };
 }
 
 /** Whether `heroId` could be ordered onto `instance` (the Tokens that light while they are carried). */

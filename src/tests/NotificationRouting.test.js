@@ -423,7 +423,7 @@ describe('a place settled is a gold banner', () => {
         const [banner] = Banners.getAll();
         expect(banner.kind).toBe('settled');
         expect(banner.tone).toBe('milestone');
-        expect(banner.title).toBe('New Place Settled!');
+        expect(banner.title).toBe('New place settled!');
         expect(banner.line).toBe(`The guild settled ${region.flavourName}`);
         expect(banner.sprite).toEqual({ kind: 'area', id: expect.any(String) });
         expect(Banners.getAll()).toHaveLength(1);
