@@ -41,7 +41,7 @@ const master = (id, name) => ({
     ...recruit(id, name),
     // Held out of layer order on purpose: the panel orders them, not the save. Leadership was cut:
     // a record still carrying it lists without it.
-    skills: { faith: lvl(3), ...startingSkills(), leadership: lvl(12), melee: lvl(25, 10), fletching: lvl(99) }
+    skills: { ...startingSkills(), faith: lvl(3), leadership: lvl(12), melee: lvl(25, 10), fletching: lvl(99) }
 });
 
 
@@ -179,10 +179,10 @@ describe('H2: skills', () => {
         const g = heroSkillList(master('x', 'X'));
         expect(g.rows.map(r => r.id)).toEqual(ALL);
         expect(ALL).toHaveLength(20);
-        expect(STARTING.length).toBe(9);
+        expect(STARTING.length).toBe(16);
         const level = (id) => g.rows.find(r => r.id === id).level;
         expect([level('melee'), level('ranged'), level('mining'), level('fletching'), level('faith'), level('science')])
-            .toEqual([25, 1, 5, 99, 3, 1]);
+            .toEqual([25, 1, 5, 99, 3, 5]);
         expect(Object.keys(g)).toEqual(['rows']);
     });
 
