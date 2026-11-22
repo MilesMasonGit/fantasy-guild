@@ -232,7 +232,7 @@ describe('The sentence is literally true', () => {
 
     it('names the heroes, not the Tokens, because that is where the effect lands', () => {
         expect(renderStatement(AMBIENT, names))
-            .toBe('Applies Cookout to heroes on nearby Coast Tokens for 30 seconds.');
+            .toBe('Applies Cookout to heroes on nearby Coast Tokens for 30s.');
     });
 
     it('a retired status id reads as an effect still to pick', () => {

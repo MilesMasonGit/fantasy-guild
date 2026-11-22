@@ -6,9 +6,6 @@ import { perksEarnedAt, perksReached, nextPerksAfter } from '../../../systems/he
 import { effectTitle, statementsFromEntry } from '../../../systems/effects/effectLibrary.js';
 import { renderStatement } from '../../../systems/effects/statementText.js';
 import { toolNamer } from '../../../systems/effects/toolNames.js';
-import { KEYWORD } from '../../../systems/effects/statements.js';
-import { getSkill } from '../../../config/registries/skillRegistry.js';
-import { supportTag } from '../board/supportTags.js';
 
 /**
  * Milestone perks as the hero sheet, the hero bar's alerts and the level-up float show them: each
@@ -33,21 +30,14 @@ export function perkTitle(row) {
 }
 
 /**
- * A perk's rules, one line each, at its scale. A standing Provides reads as the mat's support tag
- * with the skill it narrows to ("×2 loot 5 % (Forestry)"): the grammar's sentence for it speaks of
- * the Tokens around a bearer, and a perk's bearer is the hero. Anything else reads as the grammar's
- * sentence.
+ * A perk's rules, one line each, at its scale, as the hero's rule lines: a standing effect leads
+ * with its name and number, as the badge it causes ("Double Loot 5% on Forestry Tokens.").
  */
 export function perkLines(row) {
     const entry = EFFECTS[row?.effectId];
     if (!entry) return [];
     const names = carriedRuleNames();
-    return statementsFromEntry(entry, row).map(statement => {
-        if (statement.keyword !== KEYWORD.PROVIDES || statement.when?.event) return renderStatement(statement, names);
-        const skill = getSkill(statement.payload?.category)?.name;
-        const tag = supportTag(statement.payload);
-        return skill ? `${tag} (${skill})` : tag;
-    });
+    return statementsFromEntry(entry, row).map(statement => renderStatement(statement, names));
 }
 
 const shown = (row) => ({ level: row.level, effectId: row.effectId, title: perkTitle(row) });

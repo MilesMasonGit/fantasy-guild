@@ -91,6 +91,7 @@ registerTokenTypes({
     ]),
     bc_lamp: support('bc_lamp', 'Badge Lamp', [provides('bc_lamp', toId(VEIN), { type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.05 })]),
     bc_rush: support('bc_rush', 'Badge Rush', [provides('bc_rush', toId(VEIN), { type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.9 })]),
+    bc_drag: support('bc_drag', 'Badge Drag', [provides('bc_drag', toId(VEIN), { type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: 0.1 })]),
     bc_mine: support('bc_mine', 'Badge Mine', [
         provides('bc_mine_double', ALL, { type: EFFECT_TYPES.DOUBLE_DROP, bucket: 'flat', value: 8, category: ORE }),
         provides('bc_mine_lean', toId(VEIN), { type: EFFECT_TYPES.INPUT_COST, bucket: 'percentage', value: -0.12 }),
@@ -323,6 +324,30 @@ describe('item badges, Rare finds and the Needs cost', () => {
         cleanup();
         const b = mount({ typeId: 'bc_cart', instanceId: cart.id });
         expect(b.container.querySelector('[data-card-boosts]').textContent).toContain('Badge Vein');
+    });
+});
+
+describe("a building's Boosts list words each effect as the badge it causes", () => {
+    const tagsOf = (root) => [...root.querySelectorAll('[data-card-support="to"] span > span')].filter(el => el.style.color);
+
+    it("the cart's tags are the badges they put on the Vein: name and number, good always plus", () => {
+        const vein = arrive(VEIN);
+        const cart = arrive('bc_cart', NEAR);
+        const badges = effectBreakdown(vein.id).effects;
+        const said = (key) => { const b = badges.find(x => x.key === key); return `${b.name} ${badgeText(b)}`; };
+        const { container } = mount({ typeId: 'bc_cart', instanceId: cart.id });
+        expect(tagsOf(container).map(el => el.textContent)).toEqual([said(EFFECT_KEY.SPEED), said(EFFECT_KEY.XP)]);
+        expect(tagsOf(container).map(el => el.textContent)).toEqual(['Speed +15%', 'XP +10%']);
+        expect(tagsOf(container).every(el => el.style.color === 'var(--color-ui-green)')).toBe(true);
+    });
+
+    it('an effect against the Token keeps its name, with a minus, in red', () => {
+        arrive(VEIN);
+        const drag = arrive('bc_drag', NEAR);
+        const { container } = mount({ typeId: 'bc_drag', instanceId: drag.id });
+        const [tag] = tagsOf(container);
+        expect(tag.textContent).toBe('Speed −10%');
+        expect(tag.style.color).toBe('var(--color-ui-red)');
     });
 });
 

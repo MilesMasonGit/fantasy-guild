@@ -36,7 +36,7 @@ import { countdownText, lengthText, chanceFigure, chanceText } from '../../../ut
 import { landmarkLines } from '../drawer/landmarkLines.js';
 import * as SupportLinks from '../../../systems/board/supportLinks.js';
 import { reachRadius } from '../../../systems/board/nearby.js';
-import { supportTag } from './supportTags.js';
+import { effectTagOf } from './effectBadgeText.js';
 
 /**
  * The Token card's content as plain data: which blocks it shows, top to bottom, and what each
@@ -590,7 +590,7 @@ function effectsOf(instance, src) {
 function supportBlock(links, src) {
     if (!links) return null;
     const boosts = (links.boosts || []).map(r => ({
-        id: r.id, typeId: r.typeId, name: src.tokenName(r.typeId), tags: r.payloads.map(p => supportTag(p, src.itemName))
+        id: r.id, typeId: r.typeId, name: src.tokenName(r.typeId), tags: r.payloads.map(p => effectTagOf(p, src.itemName))
     }));
     if (!boosts.length) return null;
     return { id: CARD_BLOCK.SUPPORT, boosts };

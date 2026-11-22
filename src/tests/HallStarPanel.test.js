@@ -72,7 +72,7 @@ describe('a star\'s sentence, built from its rules', () => {
         };
         registerHallSky({ ...qaHallSky(), stars: { ...qaHallSky().stars, twin } });
         expect(starSentence(def('twin'))).toBe('Every Oak and Fir Token grows and refills faster.');
-        expect(starAmount(def('twin'), 1)).toBe('10% faster');
+        expect(starAmount(def('twin'), 1)).toBe('Growth +10%');
     });
 
     it('still reads a retired Camp Reach star, until the owner deletes it in the CMS', () => {
@@ -95,7 +95,7 @@ describe('a star\'s sentence, built from its rules', () => {
 describe('a star\'s brief numbers', () => {
     it('gives what a rank holds, nothing at rank 0, and no time on a Passive Production line', () => {
         expect(starAmount(def('qa_mining_xp'), 0)).toBeNull();
-        expect(starAmount(def('qa_mining_xp'), 1)).toBe('50% more XP');
+        expect(starAmount(def('qa_mining_xp'), 1)).toBe('XP +50%');
         expect(starAmount(def('qa_well_copper'), 2)).toBe('20 Copper Ore');
         expect(starAmount(def('qa_food_slot'), 1)).toBe('1 more Food slot');
         expect(starAmount(def('wishing_well'), 3)).toBe('30 Water');

@@ -206,7 +206,7 @@ describe('the pages', () => {
         const ten = view.container.querySelector('[data-perk-row="10"]');
         fireEvent.change(ten.querySelector('[data-perk-effect]'), { target: { value: FELLING.id } });
         expect(store().skillPerks.forestry.perks).toEqual([{ level: 10, effectId: FELLING.id, scale: 1 }]);
-        expect(view.container.querySelector('[data-perk-row="10"]').textContent).toMatch(/5% chance of double loot/);
+        expect(view.container.querySelector('[data-perk-row="10"]').textContent).toMatch(/Double Loot 5%/);
         expect(view.container.querySelector('[data-perk-skill="forestry"]').textContent).toMatch(/Forestry1$/);
     });
 

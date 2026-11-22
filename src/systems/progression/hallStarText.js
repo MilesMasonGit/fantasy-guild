@@ -1,6 +1,6 @@
 // the Guild Hall's stars in words: a rank's rules and Passive Production lines
 
-import { renderStatement, effectParts } from '../effects/statementText.js';
+import { renderStatement, effectParts, effectHead } from '../effects/statementText.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { getCategoryInfo } from '../../config/registries/equipmentCategories.js';
 import { doseKindsPhrase } from '../../config/registries/carriedKinds.js';
@@ -43,20 +43,14 @@ export function asGuildRule(statement) {
 }
 
 /**
- * One rule of a star, in words. A skill boost always says its skill: the renderer leaves the scope
- * out of an axis that words its own sentence ("award 10% more XP"), and on a star it is the point.
+ * One rule of a star, in words, led by its effect's name and number ("Speed +5% on every Mining
+ * Token on the board."). A combat star names the fighters it helps.
  */
 export function hallRuleSentence(statement, names = hallNames()) {
-    if (isStyleRule(statement)) {
-        const parts = effectParts(asGuildRule(statement), names);
-        if (parts) return `Gives every ${styleSubject(statement)} ${`${parts.size} ${parts.after}`.trim()} in combat.`;
+    if (isStyleRule(statement) && Number(statement?.payload?.value)) {
+        return `${effectHead(statement, names)} for every ${styleSubject(statement)} in combat.`;
     }
-    const text = renderStatement(asGuildRule(statement), names);
-    const category = statement?.payload?.category;
-    if (!category || getPaletteEntry(statement.payload.type)?.categories !== 'skill') return text;
-    const skill = getSkill(category)?.name || category;
-    if (text.includes(`${skill} work`)) return text;
-    return text.endsWith('.') ? `${text.slice(0, -1)}, but only for ${skill} work.` : `${text}, but only for ${skill} work`;
+    return renderStatement(asGuildRule(statement), names);
 }
 
 /**
@@ -181,8 +175,8 @@ function subjectsText(subjects) {
 
 /**
  * One rule's effect as a sentence part and an amount: `phrase` says what it does without its number
- * ("work faster"), `amount` the number with its words ("6% faster"). Null for a rule that cannot be
- * said that way.
+ * ("work faster"), `amount` its name and number ("Speed +6%"). Null for a rule that cannot be said
+ * that way.
  */
 function ruleEffect(statement, names, lapMs = null) {
     const payload = statement?.payload || {};
@@ -211,7 +205,7 @@ function ruleEffect(statement, names, lapMs = null) {
         // The kinds ride in the phrase, so a drinks rule and an elixirs rule of one size are two lines.
         return {
             phrase: longer ? `make ${kinds} last ${down ? 'less long' : 'longer'}` : `make ${kinds} ${down ? 'weaker' : 'stronger'}`,
-            amount: `${parts.size} ${parts.after}`.trim(),
+            amount: effectHead(statement, names),
             sentence: longer
                 ? `Every hero's ${kinds} last ${down ? 'less long' : 'longer'}.`
                 : `The effects of every hero's ${kinds} are ${down ? 'weaker' : 'stronger'}.`
@@ -230,12 +224,15 @@ function ruleEffect(statement, names, lapMs = null) {
     const style = STYLE_PHRASES[payload.type];
     if (style && isStyleRule(statement)) {
         const helps = (Number(payload.value) > 0) !== !!getPaletteEntry(payload.type)?.inverted;
-        return { phrase: helps ? style[0] : style[1], amount: `${parts.size} ${parts.after}`.trim() };
+        return { phrase: helps ? style[0] : style[1], amount: effectHead(statement, names) };
     }
-    if (parts.before) return { phrase: `${parts.before} ${parts.after}`.trim(), amount: `${parts.size} ${parts.after}`.trim() };
+    // The amount is the rule's lead, as its badge writes it ("Speed +6%"); the phrase says what it
+    // does with no number, for the star's sentence ("works faster").
+    const amount = effectHead(asGuildRule(statement), names);
+    if (parts.before) return { phrase: `${parts.before} ${parts.after}`.trim(), amount };
     // An axis with no verb of its own reads "7% more yield": the star "gives more yield".
     const direction = parts.size.split(' ').pop();
-    return { phrase: `give ${direction} ${parts.after}`.trim(), amount: `${parts.size} ${parts.after}`.trim() };
+    return { phrase: `give ${direction} ${parts.after}`.trim(), amount };
 }
 
 /** A rank's rules grouped by what they do, each with the subjects it reaches, in the rules' order. */

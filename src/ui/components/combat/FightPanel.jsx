@@ -409,12 +409,17 @@ const StatusRow = ({ s }) => (
     </Tooltip>
 );
 
-/** A lingering effect for the fight (an elixir's Valor, a boss's Enrage): a gold star and its name. */
-const BuffRow = ({ name }) => (
-    <span className="flex items-center gap-1.5 ui-text-small" style={{ minHeight: 20 }} data-fight-buff={name}>
-        <CombatGlyph name="star" colour={GLYPH_COLOUR.gold} />
-        <span className="font-bold text-white">{name}</span>
-    </span>
+/**
+ * A lingering effect for the fight (an elixir's Valor, a boss's Enrage): a gold star and its name,
+ * its rules on hover in the plain colour, whichever side carries it.
+ */
+const BuffRow = ({ buff }) => (
+    <Tooltip title={buff.name} lines={buff.lines}>
+        <span className="flex items-center gap-1.5 ui-text-small cursor-help" style={{ minHeight: 20 }} data-fight-buff={buff.name}>
+            <CombatGlyph name="star" colour={GLYPH_COLOUR.gold} />
+            <span className="font-bold text-white">{buff.name}</span>
+        </span>
+    </Tooltip>
 );
 
 const EffectColumn = ({ side, who }) => {
@@ -425,7 +430,7 @@ const EffectColumn = ({ side, who }) => {
             <div className="ui-text-small text-gi-muted pb-0.5">{t('fight.window.on', { name: side.name })}</div>
             {none && <span className="ui-text-small text-gi-muted">{t('fight.window.none')}</span>}
             {side.statuses.map(s => <StatusRow key={s.id} s={s} />)}
-            {buffs.map((b, i) => <BuffRow key={`${b}-${i}`} name={b} />)}
+            {buffs.map((b, i) => <BuffRow key={`${b.name}-${i}`} buff={b} />)}
         </div>
     );
 };

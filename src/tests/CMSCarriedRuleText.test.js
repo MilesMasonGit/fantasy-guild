@@ -68,7 +68,7 @@ afterAll(() => {
 describe('the item editor', () => {
     it('reads an item\'s standing rule as the hero\'s, naming its skill', () => {
         const text = open('item_cc_charm', 'item', ItemEditor);
-        expect(text).toContain('Gives the hero a 5% chance of double loot at Forestry.');
+        expect(text).toContain('Double Loot 5% on Forestry Tokens.');
         expect(text).not.toContain('every nearby Token have');
     });
 
@@ -79,23 +79,23 @@ describe('the item editor', () => {
     });
 
     it('reads an effect shared with a Token as the hero\'s, on the item', () => {
-        expect(open('item_cc_both', 'item', ItemEditor)).toContain('Gives the hero a 5% chance of double loot at Forestry.');
+        expect(open('item_cc_both', 'item', ItemEditor)).toContain('Double Loot 5% on Forestry Tokens.');
     });
 });
 
 describe('the effect editor', () => {
     it('reads an effect only items carry as the hero\'s', () => {
-        expect(open('effect_cc_charm', 'effect', EffectEditor)).toContain('Gives the hero a 5% chance of double loot at Forestry.');
+        expect(open('effect_cc_charm', 'effect', EffectEditor)).toContain('Double Loot 5% on Forestry Tokens.');
     });
 
     it('reads an effect only a perk uses as the hero\'s', () => {
-        expect(open('effect_cc_felling', 'effect', EffectEditor)).toContain('Gives the hero a 5% chance of double loot at Forestry.');
+        expect(open('effect_cc_felling', 'effect', EffectEditor)).toContain('Double Loot 5% on Forestry Tokens.');
     });
 
     it('⚠️ keeps the Token\'s words on an effect a Token uses too', () => {
         const text = open('effect_cc_shared', 'effect', EffectEditor);
-        expect(text).toContain('Makes every nearby Token have a 5% chance of double loot, but only for Forestry work.');
-        expect(text).not.toContain('Gives the hero');
+        expect(text).toContain('Double Loot 5% on every nearby Forestry Token.');
+        expect(text).not.toContain('Double Loot 5% on Forestry Tokens.');
     });
 });
 
@@ -103,6 +103,6 @@ describe('the Skill Perks page', () => {
     it('reads a perk\'s rule as the hero\'s', () => {
         store().focusPerks('forestry');
         const text = render(React.createElement(SkillPerksPage)).container.textContent;
-        expect(text).toContain('Gives the hero a 5% chance of double loot at Forestry.');
+        expect(text).toContain('Double Loot 5% on Forestry Tokens.');
     });
 });

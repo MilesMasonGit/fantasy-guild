@@ -114,8 +114,8 @@ describe('the Upgrade drawer reads a star', () => {
         expect(rows(c)[0].className).toMatch(/\bgroup\b/);
         expect(rows(c)[0].querySelector('[data-rank-roman]').className).toMatch(/group-hover:hidden/);
         expect(rows(c)[0].querySelector('[data-rank-arabic]').className).toMatch(/\bhidden group-hover:inline/);
-        expect(text(c, '[data-rank-row="1"] [data-rank-amount]')).toBe('50% more XP');
-        expect(text(c, '[data-rank-row="3"] [data-rank-amount]')).toBe('200% more XP');
+        expect(text(c, '[data-rank-row="1"] [data-rank-amount]')).toBe('XP +50%');
+        expect(text(c, '[data-rank-row="3"] [data-rank-amount]')).toBe('XP +200%');
     });
 
     it('reads a Well star\'s line and a Hearth star\'s rule, with no time on the line', () => {
@@ -125,7 +125,7 @@ describe('the Upgrade drawer reads a star', () => {
         expect(text(well, '[data-rank-row="2"] [data-rank-amount]')).toBe('20 Copper Ore');
         const infirmary = sheet('qa_infirmary');
         expect(text(infirmary, '[data-star-sentence]')).toBe('Every hero recovers from a wound faster.');
-        expect(text(infirmary, '[data-rank-row="1"] [data-rank-amount]')).toBe('20% faster');
+        expect(text(infirmary, '[data-rank-row="1"] [data-rank-amount]')).toBe('Recovery +20%');
         expect(infirmary.querySelector('[data-rank-row="1"]').getAttribute('data-rank-state')).toBe('bought');
     });
 
@@ -226,8 +226,8 @@ describe('the Hall\'s Effects list what the stars give', () => {
         expect(container.querySelector('[data-hall-effect-output="item_water"]')).toBeTruthy();
         const boosts = [...container.querySelectorAll('[data-hall-effect-statement]')].map(n => n.textContent);
         expect(boosts).toEqual([
-            'Makes every Token on the board award 50% more XP, but only for Mining work.',
-            'Makes every hero recover from a wound 20% faster.'
+            'XP +50% on every Mining Token on the board.',
+            'Recovery +20% for every hero.'
         ]);
         expect(hallEffectsNow(GameState.state).outputs).toContainEqual({ itemId: 'item_copper_ore', quantity: 20 });
         expect(ranks().qa_mining_xp).toBe(1);

@@ -172,7 +172,7 @@ describe('the Guild Hall page', () => {
         const ranks = star.querySelector('[data-hall-star-ranks]').textContent;
         expect(star.querySelector('[data-hall-rank-tier]').value).toBe('1');
         expect(ranks).toContain('10 Copper Ore');
-        expect(ranks).toContain('10% more XP');
+        expect(ranks).toContain('XP +10%');
         fireEvent.change(star.querySelector('[data-hall-star-name]'), { target: { value: 'Deep Lore' } });
         expect(store().hallStars[STAR.id].name).toBe('Deep Lore');
     });

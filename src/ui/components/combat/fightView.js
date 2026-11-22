@@ -16,6 +16,8 @@ import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { tokenName, getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { EFFECTS } from '../../../config/registries/effectRegistry.js';
 import { statusBlockOf } from '../../../systems/effects/effectLibrary.js';
+import { rulesLinesOf } from '../../../systems/effects/statementText.js';
+import { carriedRuleNames } from '../dock/heroPerks.js';
 import { GameState } from '../../../state/GameState.js';
 import { resolveAnimationPath, resolveSpritePath, resolveEnemyAnimationPath } from '../../../utils/AssetManager.js';
 import { healthText } from '../board/healthBar.js';
@@ -203,18 +205,28 @@ export function enemyHitTypes(moves) {
     return [...new Set(moves.filter(m => m.hits).map(m => m.type))];
 }
 
+/**
+ * A lingering effect as its row shows it: its name, and its rules as its bearer's own (`Attack
+ * Speed +50% in combat.`), so an enemy's Enrage reads with its plain sign, never as a loss.
+ */
+function buffOf(effectId) {
+    const entry = EFFECTS[effectId];
+    const names = { ...carriedRuleNames(), effect: (id) => EFFECTS[id]?.name || id };
+    return { name: entry?.name || effectId, lines: entry ? rulesLinesOf(entry, names) : [] };
+}
+
 /** What lingers on an enemy for the fight besides statuses (a boss's Stone Skin, its Enrage). */
 function enemyBuffs(fight) {
     return (fight?.effects || [])
         .filter(e => e?.stacks == null && !e.forSwing)
-        .map(e => EFFECTS[e.effectId]?.name || e.effectId);
+        .map(e => buffOf(e.effectId));
 }
 
 /** What lingers on a hero for the fight besides statuses (an elixir's Valor). */
 function heroBuffs(hero) {
     return (hero?.effects || [])
         .filter(e => e?.forFight && e.stacks == null && !e.forSwing)
-        .map(e => EFFECTS[e.effectId]?.name || e.effectId);
+        .map(e => buffOf(e.effectId));
 }
 
 /** The hero's side of the versus card, read live. */

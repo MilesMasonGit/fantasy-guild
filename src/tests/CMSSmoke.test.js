@@ -175,7 +175,7 @@ describe('CMS smoke — the screens mount without throwing', () => {
         // The seeded Work Time value is −0.05. Work Time is `inverted`, so the
         // editor must read that back as a buff rather than leaving the author
         // to remember which axis runs backwards.
-        expect(text).toContain('work 5% faster — a buff.');
+        expect(text).toContain('Speed +5% — a buff.');
 
         /**
          * Tag suggestions are still offered — the assertion that matters, and
@@ -203,13 +203,13 @@ describe('CMS smoke — the screens mount without throwing', () => {
         }));
         const text = container.textContent;
 
-        expect(text).toContain('Makes nearby Coast Tokens work 5% faster.');
+        expect(text).toContain('Speed +5% on nearby Coast Tokens.');
         expect(text).toContain('Acts as a Tier 1 net for nearby stations.');
 
         // ⚠️ Once, not three times. Before the Rules Line (P2) a rule's sentence
         // sat in the chip editor's quote AND the row's footer; the line is the
         // sentence now, and a second copy would be the duplication it removed.
-        expect(text.split('Makes nearby Coast Tokens work 5% faster.').length - 1).toBe(1);
+        expect(text.split('Speed +5% on nearby Coast Tokens.').length - 1).toBe(1);
         cleanup();
 
         // The Token's panel repeats the entry's sentences read-only, under the
@@ -218,7 +218,7 @@ describe('CMS smoke — the screens mount without throwing', () => {
         const token = useEntityStore.getState().tokens[tokenId];
         const { container: tokenRules } = render(React.createElement(Statements, { token }));
         expect(tokenRules.textContent).toContain('Shrimp Trawler');
-        expect(tokenRules.textContent).toContain('Makes nearby Coast Tokens work 5% faster.');
+        expect(tokenRules.textContent).toContain('Speed +5% on nearby Coast Tokens.');
         expect(tokenRules.textContent).toContain('Requires a nearby Tier 1 net.');
     });
 

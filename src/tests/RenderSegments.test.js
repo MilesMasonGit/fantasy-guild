@@ -123,15 +123,14 @@ describe('⭐ the two shapes P0 was judged on, pinned exactly', () => {
         ]);
     });
 
-    it('Makes nearby Coast Tokens work 5% faster.', () => {
+    it('Speed +5% on nearby Coast Tokens.', () => {
         const st = {
             ...makeStatement(KEYWORD.PROVIDES),
             payload: { type: 'WORK_TIME', bucket: 'percentage', value: -0.05 },
             to: { mode: 'tag', value: 'Coast' }
         };
         expect(shape(renderSegments(st))).toEqual([
-            'Makes|keyword', ' ', 'nearby|reach', ' ', 'Coast|filterValue', ' ', 'Tokens|filterMode',
-            ' ', 'work|type', ' ', '5%|value', ' ', 'faster|type', '.'
+            'Speed|type', ' ', '+5%|value', ' on ', 'nearby|reach', ' ', 'Coast|filterValue', ' ', 'Tokens|filterMode', '.'
         ]);
     });
 });

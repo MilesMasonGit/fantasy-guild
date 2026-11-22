@@ -1,6 +1,11 @@
 import { EFFECT_KEY, UNIT, LIMIT } from '../../../systems/board/EffectBreakdown.js';
 import { t } from '../../../i18n/index.js';
-import { chanceFigure, chanceText, timesText } from '../../../utils/Formatters.js';
+import { chanceText, timesText } from '../../../utils/Formatters.js';
+import { getPaletteEntry } from '../../../config/registries/modifierPalette.js';
+import { getItem } from '../../../config/registries/itemRegistry.js';
+import {
+    effectTag, percentAmountText, chanceAmountText, countAmountText
+} from '../../../config/registries/effectWords.js';
 
 /**
  * How the Token card writes an effect badge (brief 600): its icon, its number and its hover's
@@ -22,22 +27,29 @@ export const EFFECT_GLYPH = Object.freeze({
     [EFFECT_KEY.ABUNDANCE]: 'charges'
 });
 
-const MINUS = '−';
-
-/** A number as a badge writes it, by the chance rule, unsigned (never "-0"). */
-const figure = (n) => String(Math.abs(chanceFigure(n)));
-
 /**
  * A badge's number in its unit: a percent always signed (`+23%`, `−10%`), a chance as a plain
- * percent (`8%`, signed only below nothing), a count signed (`+2`).
+ * percent (`8%`, signed only below nothing), a count signed (`+2`). The same writer words a
+ * building's Boosts list and every rule line (`effectWords.js`).
  */
 export function effectAmountText(unit, value) {
     const n = Number(value) || 0;
-    const body = figure(n);
-    if (unit === UNIT.CHANCE) return `${n < 0 ? MINUS : ''}${body}%`;
-    const sign = n < 0 ? MINUS : '+';
-    return unit === UNIT.COUNT ? `${sign}${body}` : `${sign}${body}%`;
+    if (unit === UNIT.CHANCE) return chanceAmountText(n);
+    return unit === UNIT.COUNT ? countAmountText(n) : percentAmountText(n);
 }
+
+/**
+ * A rule's payload as the badge it causes (`Speed +25%`, `Double Loot 10%`, `Bird Nest 5%`), and
+ * whether it works against its bearer: a building's Boosts list, the mat's support labels, a buff
+ * Token's list.
+ * @returns {{text: string, against: boolean}}
+ */
+export function effectTagOf(payload, itemName = (id) => getItem(id)?.name || null) {
+    return effectTag(getPaletteEntry(payload?.type), payload, itemName);
+}
+
+/** {@link effectTagOf}'s words alone. */
+export const effectTagText = (payload, itemName) => effectTagOf(payload, itemName).text;
 
 const rulesOf = (badge) => (badge?.sources || []).flatMap(s => s.rules || []);
 
@@ -51,8 +63,7 @@ export function badgeAmountText(badge, value, rules = rulesOf(badge)) {
     const n = Number(value) || 0;
     if (badge?.key !== EFFECT_KEY.LUCKY) return effectAmountText(badge?.unit, n);
     if (rules.every(r => r.bucket !== 'flat')) return timesText(Math.max(0, 1 + n / 100));
-    const points = (n * (Number(badge.base) || 0)) / 100;
-    return `${points < 0 ? MINUS : '+'}${figure(points)}%`;
+    return percentAmountText((n * (Number(badge.base) || 0)) / 100);
 }
 
 /** The number on the badge: what counts, so a held badge shows the limit. */

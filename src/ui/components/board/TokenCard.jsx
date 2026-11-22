@@ -30,7 +30,7 @@ import { lookUpRibbon, lookUpToken, lookUpRecipe, lookUpItem } from '../encyclop
 import { t } from '../../../i18n/index.js';
 import { onPoll } from './frameClock.js';
 import { EffectBadgeGrid, EffectChip, ItemBadges } from './EffectBadges.jsx';
-import { chanceBreakdownText } from './effectBadgeText.js';
+import { chanceBreakdownText, effectTagOf, TONE_COLOUR as BADGE_COLOUR } from './effectBadgeText.js';
 import { EFFECT_KEY } from '../../../systems/board/EffectBreakdown.js';
 import { STAR_COLOUR } from './fx/rareTwinkle.js';
 
@@ -392,14 +392,15 @@ const EventsSection = ({ lines }) => (
 );
 
 /**
- * One Token in reach this one boosts: its art, its name and the effects in green. Its own row
- * rather than a ribbon, so a long name or tag wraps instead of being cut off.
+ * One Token in reach this one boosts: its art, its name and the effects as their badges write them,
+ * green, or red for one that works against it. Its own row rather than a ribbon, so a long name or
+ * tag wraps instead of being cut off.
  */
 const SupportRow = ({ row }) => (
-    <Tooltip title={`This gives ${row.name} ${row.tags.join(', ')}`}>
+    <Tooltip title={`This gives ${row.name} ${row.tags.map(tag => tag.text).join(', ')}`}>
         <div
             data-card-support="to"
-            data-card-support-tags={row.tags.join('|')}
+            data-card-support-tags={row.tags.map(tag => tag.text).join('|')}
             className="flex items-center gap-2 border border-white/40 p-1 cursor-help"
         >
             <span className="w-8 h-8 shrink-0 flex items-center justify-center bg-black border border-white/10">
@@ -408,7 +409,7 @@ const SupportRow = ({ row }) => (
             <span className="flex-1 min-w-0 flex flex-col leading-tight">
                 <span className="text-xs font-bold text-gi-text">{row.name}</span>
                 {row.tags.map(tag => (
-                    <span key={tag} className="text-(length:--font-size-xs)" style={{ color: 'var(--color-ui-green)' }}>{tag}</span>
+                    <span key={tag.text} className="text-(length:--font-size-xs)" style={{ color: BADGE_COLOUR[tag.against ? 'down' : 'up'] }}>{tag.text}</span>
                 ))}
             </span>
         </div>
@@ -505,16 +506,14 @@ const MoreBlock = ({ typeId }) => {
             {def.buff && (
                 <Section className="ui-text-body text-gi-text">
                     <Heading>Buffs {def.buff.target === 'hero' ? 'the hero on it' : 'nearby Tokens'}</Heading>
-                    {def.buff.modifiers.map((m, i) => (
-                        <span key={i}>
-                            {m.type.replace(/_/g, ' ').toLowerCase()}{' '}
-                            <span className="tabular-nums" style={{ color: 'var(--color-ui-green)' }}>
-                                {m.bucket === 'percentage'
-                                    ? `${m.value > 0 ? '+' : ''}${Math.round(m.value * 100)}%`
-                                    : `${m.value > 0 ? '+' : ''}${m.value}`}
+                    {def.buff.modifiers.map((m, i) => {
+                        const tag = effectTagOf(m);
+                        return (
+                            <span key={i} data-card-buff-tag className="tabular-nums" style={{ color: BADGE_COLOUR[tag.against ? 'down' : 'up'] }}>
+                                {tag.text}
                             </span>
-                        </span>
-                    ))}
+                        );
+                    })}
                 </Section>
             )}
             <DrivesLine def={def} />

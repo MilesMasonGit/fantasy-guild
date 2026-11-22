@@ -557,25 +557,25 @@ describe('the rules are guild-only, narrowed by the kind of dose', () => {
 describe('⭐ the words say the longer and stronger numbers', () => {
     it('a star rule reads as a sentence', () => {
         const names = { carried: false };
-        expect(renderStatement(brews(0.1), names)).toBe('Makes every hero\'s drinks, potions and fight elixirs last 10% longer.');
-        expect(renderStatement(brews(0.1, { category: 'drink' }), names)).toBe('Makes every hero\'s drinks last 10% longer.');
-        expect(renderStatement(brews(2, { bucket: 'flat', category: 'elixir' }), names)).toBe('Makes every hero\'s fight elixirs last 2 more fights.');
-        expect(renderStatement(brews(1, { bucket: 'flat', category: 'potion' }), names)).toBe('Makes every hero\'s potions last 1 more cycle.');
-        expect(renderStatement(brews(2, { bucket: 'flat' }), names)).toBe('Makes every hero\'s drinks, potions and fight elixirs last 2 more cycles or fights.');
-        expect(renderStatement(strong(0.2), names)).toBe('Makes the effects of every hero\'s drinks, potions and fight elixirs 20% stronger.');
-        expect(renderStatement(strong(0.2, { category: 'elixir' }), names)).toBe('Makes the effects of every hero\'s fight elixirs 20% stronger.');
+        expect(renderStatement(brews(0.1), names)).toBe('Long-lasting Brews +10% on every hero\'s drinks, potions and fight elixirs.');
+        expect(renderStatement(brews(0.1, { category: 'drink' }), names)).toBe('Long-lasting Brews +10% on every hero\'s drinks.');
+        expect(renderStatement(brews(2, { bucket: 'flat', category: 'elixir' }), names)).toBe('Long-lasting Brews +2 fights on every hero\'s fight elixirs.');
+        expect(renderStatement(brews(1, { bucket: 'flat', category: 'potion' }), names)).toBe('Long-lasting Brews +1 cycle on every hero\'s potions.');
+        expect(renderStatement(brews(2, { bucket: 'flat' }), names)).toBe('Long-lasting Brews +2 cycles or fights on every hero\'s drinks, potions and fight elixirs.');
+        expect(renderStatement(strong(0.2), names)).toBe('Strong Drink +20% on every hero\'s drinks, potions and fight elixirs.');
+        expect(renderStatement(strong(0.2, { category: 'elixir' }), names)).toBe('Strong Drink +20% on every hero\'s fight elixirs.');
     });
 
     it('a Hall star says what it does and its amount', () => {
-        expect(hallRuleSentence(brews(0.1, { category: 'drink' }))).toBe('Makes every hero\'s drinks last 10% longer.');
+        expect(hallRuleSentence(brews(0.1, { category: 'drink' }))).toBe('Long-lasting Brews +10% on every hero\'s drinks.');
         registerHallSky(sky([[brews(0.1)], [brews(0.2)]]));
         const def = getUpgradeDef('ds_star');
         expect(starSentence(def)).toBe('Every hero\'s drinks, potions and fight elixirs last longer.');
-        expect(starAmount(def, 1)).toBe('10% longer');
-        expect(starAmount(def, 2)).toBe('20% longer');
+        expect(starAmount(def, 1)).toBe('Long-lasting Brews +10%');
+        expect(starAmount(def, 2)).toBe('Long-lasting Brews +20%');
         registerHallSky(sky([[strong(0.05, { category: 'drink' })]]));
         expect(starSentence(getUpgradeDef('ds_star'))).toBe('The effects of every hero\'s drinks are stronger.');
-        expect(starAmount(getUpgradeDef('ds_star'), 1)).toBe('5% stronger');
+        expect(starAmount(getUpgradeDef('ds_star'), 1)).toBe('Strong Drink +5%');
     });
 
     it('the Drink and Elixir tags say how long one lasts now', () => {
@@ -602,12 +602,12 @@ describe('⭐ the words say the longer and stronger numbers', () => {
         expect(linesOf(boosted, 'ds_fx_beer_drink')).toEqual([
             ...linesOf(plain, 'ds_fx_beer_drink'),
             'One lasts 20 work cycles, with Long-lasting Brews.',
-            'Merry, 50% stronger with Strong Drink: Gives the hero 150% more XP.'
+            'Merry, 50% stronger with Strong Drink: XP +150% for the hero.'
         ]);
         expect(linesOf(boosted, 'ds_fx_elixir_valor')).toEqual([
             ...linesOf(plain, 'ds_fx_elixir_valor'),
             'One lasts 20 fights, with Long-lasting Brews.',
-            'Valor, 50% stronger with Strong Drink: Gives the hero 1.5 more damage in combat.'
+            'Valor, 50% stronger with Strong Drink: Damage +1.5 in combat.'
         ]);
     });
 });

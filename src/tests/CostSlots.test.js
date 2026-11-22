@@ -96,7 +96,7 @@ describe('the upkeep clock', () => {
     });
 });
 
-describe('⚠️ the cooldown word is in seconds, because the sentence says seconds', () => {
+describe('⚠️ the cooldown word is in seconds, as the sentence says it', () => {
     const cooled = () => ({ ...fires(), when: { event: 'SELF_CYCLE_COMPLETE', scope: 'self', cooldownMs: 5000 } });
     const cooldown = (st) => slotsOf(st).find(s => s.id === 'cooldown');
 
@@ -108,7 +108,7 @@ describe('⚠️ the cooldown word is in seconds, because the sentence says seco
     it('retyping 5 as 10 means ten seconds, not ten milliseconds', () => {
         const st = { ...cooled(), ...cooldown(cooled()).patch('10') };
         expect(st.when.cooldownMs).toBe(10000);
-        expect(renderStatement(st)).toContain('at most once every 10 seconds');
+        expect(renderStatement(st)).toContain('at most once every 10s');
     });
 
     it('lives in the strip, not the quiet row, while the sentence does not say it', () => {

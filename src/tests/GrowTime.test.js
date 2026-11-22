@@ -138,7 +138,7 @@ describe('the Grow Time axis, as authored', () => {
         const names = { token: (id) => id, item: (id) => id, skill: (id) => id };
         expect(renderStatement({ keyword: KEYWORD.PROVIDES, to: { mode: 'tag', value: 'Oak' },
             payload: { type: EFFECT_TYPES.GROW_TIME, bucket: 'percentage', value: -0.2 } }, names))
-            .toBe('Makes nearby Oak Tokens grow and refill 20% faster.');
+            .toBe('Growth +20% on nearby Oak Tokens.');
     });
 });
 

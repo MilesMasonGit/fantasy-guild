@@ -270,16 +270,16 @@ describe('⭐ the lap star in words, in the sky and in the rules', () => {
         const def = getUpgradeDef(LAP_STAR_ID);
         expect(starSentence(def)).toBe('The Guild Hall\'s outputs arrive more often: its lap is shorter.');
         expect([1, 2, 3].map(r => starAmount(def, r))).toEqual(['outputs every 8m', 'outputs every 6m', 'outputs every 5m']);
-        expect(describeStarRank(normaliseStar({ id: LAP_STAR_ID, ...lapStar() }), 1)).toBe('Makes the Guild Hall\'s lap 20% shorter.');
-        expect(hallRuleSentence(lapStar().ranks[2].rules[0])).toBe('Makes the Guild Hall\'s lap 50% shorter.');
+        expect(describeStarRank(normaliseStar({ id: LAP_STAR_ID, ...lapStar() }), 1)).toBe('Lap Speed +20% for the Guild Hall.');
+        expect(hallRuleSentence(lapStar().ranks[2].rules[0])).toBe('Lap Speed +50% for the Guild Hall.');
     });
 
     it('wears a candle in the sky', () => {
         expect(outlineSpriteName(getUpgradeDef(LAP_STAR_ID))).toBe('i_candle_white');
     });
 
-    it('Lap Time is a Guild Hall star\'s axis only, and the boot audit finds nothing wrong with the star', () => {
-        expect(getPaletteEntry(EFFECT_TYPES.PASSIVE_LAP)).toMatchObject({ guildOnly: true, label: 'Lap Time', buckets: ['percentage'] });
+    it('Lap Speed is a Guild Hall star\'s axis only, and the boot audit finds nothing wrong with the star', () => {
+        expect(getPaletteEntry(EFFECT_TYPES.PASSIVE_LAP)).toMatchObject({ guildOnly: true, label: 'Lap Speed', buckets: ['percentage'] });
         expect(paletteForKeyword(KEYWORD.PROVIDES).map(e => e.type)).not.toContain(EFFECT_TYPES.PASSIVE_LAP);
         const sky = lapSky();
         sky.stars[LAP_STAR_ID].ranks.forEach(r => { r.price = [{ itemId: 'item_water', quantity: 1 }]; });

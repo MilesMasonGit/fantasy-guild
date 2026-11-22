@@ -20,7 +20,7 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
-import { supportTag } from '../ui/components/board/supportTags.js';
+import { effectTagText } from '../ui/components/board/effectBadgeText.js';
 import { tokenCardModel, liveCardSources, CARD_BLOCK } from '../ui/components/board/tokenCard.js';
 import { tokenOutline } from '../ui/components/board/spriteOutline.js';
 import { setLit, isLit, subscribeLit } from '../ui/components/board/supportLit.js';
@@ -120,15 +120,15 @@ afterEach(() => {
 });
 
 describe('a support\'s effect in a few words', () => {
-    it('says each kind the skill loops use, with the item a chance names', () => {
-        expect(supportTag({ type: EFFECT_TYPES.GROW_TIME, bucket: 'percentage', value: -0.25 })).toBe('−25% grow');
-        expect(supportTag({ type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.2 })).toBe('−20% work');
-        expect(supportTag({ type: EFFECT_TYPES.CROP_LOAD, bucket: 'flat', value: 2 })).toBe('+2 harvests');
-        expect(supportTag({ type: EFFECT_TYPES.CROP_LOAD, bucket: 'flat', value: 1 })).toBe('+1 harvest');
-        expect(supportTag({ type: EFFECT_TYPES.DOUBLE_DROP, bucket: 'flat', value: 25, category: ORE })).toBe('×2 Fixture Ore 25%');
-        expect(supportTag({ type: EFFECT_TYPES.DOUBLE_DROP, bucket: 'flat', value: 25 })).toBe('×2 items 25%');
-        expect(supportTag({ type: EFFECT_TYPES.BONUS_DROP, itemId: SEED, chance: 5 })).toBe('+Fixture Seed 5%');
-        expect(supportTag({ type: EFFECT_TYPES.YIELD, bucket: 'percentage', value: 0.1 })).toBe('+10% yield');
+    it('says each kind the skill loops use as its badge does: name, number, good always plus', () => {
+        expect(effectTagText({ type: EFFECT_TYPES.GROW_TIME, bucket: 'percentage', value: -0.25 })).toBe('Growth +25%');
+        expect(effectTagText({ type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.2 })).toBe('Speed +20%');
+        expect(effectTagText({ type: EFFECT_TYPES.CROP_LOAD, bucket: 'flat', value: 2 })).toBe('Abundance +2');
+        expect(effectTagText({ type: EFFECT_TYPES.CROP_LOAD, bucket: 'flat', value: 1 })).toBe('Abundance +1');
+        expect(effectTagText({ type: EFFECT_TYPES.DOUBLE_DROP, bucket: 'flat', value: 25, category: ORE })).toBe('Double Item 25% on Fixture Ore');
+        expect(effectTagText({ type: EFFECT_TYPES.DOUBLE_DROP, bucket: 'flat', value: 25 })).toBe('Double Item 25%');
+        expect(effectTagText({ type: EFFECT_TYPES.BONUS_DROP, itemId: SEED, chance: 5 })).toBe('Fixture Seed 5%');
+        expect(effectTagText({ type: EFFECT_TYPES.YIELD, bucket: 'percentage', value: 0.1 })).toBe('Yield +10%');
     });
 });
 

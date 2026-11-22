@@ -95,7 +95,7 @@ describe('CMS Phase 9 Description Dictionary (CMS-66, CMS-67, CMS-81, CMS-87)', 
     // Positive Work Time is MORE milliseconds per cycle — slower. The old
     // generator called this "+20% Speed".
     expect(composeTokenDescription(token, items))
-      .toBe('Makes every nearby Token work 20% slower.');
+      .toBe('Speed −20% on every nearby Token.');
   });
 
   it('6. leads a triggered rule with its trigger', () => {

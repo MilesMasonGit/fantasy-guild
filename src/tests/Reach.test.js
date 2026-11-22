@@ -324,30 +324,30 @@ describe('the sentence says how far', () => {
 
     it('reads unchanged for nearby, so no shipped rules text moved', () => {
         expect(renderStatement(provides(REACH.NEARBY, all)))
-            .toBe('Provides 10% more yield to every nearby Token.');
+            .toBe('Yield +10% on every nearby Token.');
         expect(renderStatement(provides(undefined, all)))
-            .toBe('Provides 10% more yield to every nearby Token.');
+            .toBe('Yield +10% on every nearby Token.');
         expect(renderStatement(provides(REACH.NEARBY, coast)))
-            .toBe('Provides 10% more yield to nearby Coast Tokens.');
+            .toBe('Yield +10% on nearby Coast Tokens.');
     });
 
     it('names this Token, and drops the filter that would mean nothing', () => {
         expect(renderStatement(provides(REACH.SELF, all)))
-            .toBe('Provides 10% more yield to this Token.');
+            .toBe('Yield +10% on this Token.');
         // A filter cannot narrow a set of one, so the words do not pretend it can.
         expect(renderStatement(provides(REACH.SELF, coast)))
-            .toBe('Provides 10% more yield to this Token.');
+            .toBe('Yield +10% on this Token.');
     });
 
     it('fuses reach and filter into one clause rather than two', () => {
         expect(renderStatement(provides(REACH.BOARD, all)))
-            .toBe('Provides 10% more yield to every Token on the board.');
+            .toBe('Yield +10% on every Token on the board.');
         expect(renderStatement(provides(REACH.BOARD, coast)))
-            .toBe('Provides 10% more yield to every Coast Token on the board.');
+            .toBe('Yield +10% on every Coast Token on the board.');
         expect(renderStatement(provides(REACH.SELF_AND_NEARBY, all)))
-            .toBe('Provides 10% more yield to this Token and every nearby Token.');
+            .toBe('Yield +10% on this Token and every nearby Token.');
         expect(renderStatement(provides(REACH.SELF_AND_NEARBY, coast)))
-            .toBe('Provides 10% more yield to this Token and nearby Coast Tokens.');
+            .toBe('Yield +10% on this Token and nearby Coast Tokens.');
     });
 
     it('says who an applied effect lands on, in the person the reach implies', () => {

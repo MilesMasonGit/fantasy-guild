@@ -269,7 +269,7 @@ describe('5. ⭐ the misleading item sentence is fixed', () => {
         registerEffects({ fixture_v10b_venom_item: { id: 'fixture_v10b_venom_item', name: 'Venom Flask', statements: [raw] } });
         const loaded = getEffect('fixture_v10b_venom_item').statements[0];
         const text = renderStatement(loaded, names);
-        expect(text).toContain('applies Venom to the enemy for 30 seconds');
+        expect(text).toContain('applies Venom to the enemy for 30s');
         expect(text).not.toMatch(/hero/);
     });
 

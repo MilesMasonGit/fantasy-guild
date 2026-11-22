@@ -465,13 +465,13 @@ describe('the retired Compass: an old save drops its ranks and loads', () => {
 describe('a star in words, and the audit', () => {
     it('reads each rank as its rules and lines, at whole-guild reach', () => {
         const star = (id) => authoredStars().find(s => s.id === id);
-        expect(describeStarRank(star('m_xp'), 1)).toBe('Makes every Token on the board award 100% more XP, but only for Mining work.');
-        expect(describeStarRank(star('m_rest'), 1)).toBe('Makes every H1 Vein on the board grow and refill 50% faster.');
+        expect(describeStarRank(star('m_xp'), 1)).toBe('XP +100% on every Mining Token on the board.');
+        expect(describeStarRank(star('m_rest'), 1)).toBe('Growth +50% on every H1 Vein on the board.');
         expect(describeStarRank(star('w_ore'), 2)).toBe('25 Fixture Copper Ore a lap');
-        expect(describeStarRank(star('h_infirmary'), 1)).toBe('Makes every hero recover from a wound 40% faster.');
+        expect(describeStarRank(star('h_infirmary'), 1)).toBe('Recovery +40% for every hero.');
         expect(describeStarRank(star('h_food'), 1)).toBe('Provides every hero 1 more Food slot.');
         expect(getUpgradeDef('m_xp').statLabel(0)).toBe('Not yet bought');
-        expect(getUpgradeDef('m_xp').nextStatLabel(1)).toContain('200% more XP');
+        expect(getUpgradeDef('m_xp').nextStatLabel(1)).toContain('XP +200%');
     });
 
     it('finds nothing wrong with the QA fixture sky, and in the test sky only its retired Camp Reach star, to delete', () => {

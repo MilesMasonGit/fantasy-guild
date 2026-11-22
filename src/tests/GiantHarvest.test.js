@@ -32,7 +32,7 @@ import { isGatheringSkill, getAllSkillIds, getSkill, SKILL_TRADES } from '../con
 import { HALL_NODE, getUpgradeDef } from '../config/guildUpgrades.js';
 import { getPaletteEntry, bucketsFor, MODIFIER_SHAPES } from '../config/registries/modifierPalette.js';
 import { resetMatTuning } from '../config/matTuning.js';
-import { supportTag } from '../ui/components/board/supportTags.js';
+import { effectTagText } from '../ui/components/board/effectBadgeText.js';
 import { slotsOf } from '../../cms/src/engine/ledger/statementSlots.js';
 import { buildRateBook } from '../../cms/src/engine/ledger/rates.js';
 import { withoutShippedPerks } from './fixtures/noPerks.js';
@@ -475,12 +475,12 @@ describe('in the CMS and the rules text', () => {
     it('reads in plain words on a Token, on a hero, as a support\'s tag and on a Hall star', () => {
         const rule = (value, extra = {}) => ({ id: 's', keyword: 'provides', to: ALL, reach: 'nearby', payload: { type: EFFECT_TYPES.GIANT_HARVEST, bucket: 'flat', value, ...extra } });
         expect(renderStatement(rule(2, { category: 'mining' })))
-            .toBe('Makes every nearby Token have a 2% chance a gathering cycle\'s drops come in at ten times, but only for Mining work.');
-        expect(renderStatement(rule(-1))).toBe('Makes every nearby Token have 1% less chance a gathering cycle\'s drops come in at ten times.');
-        expect(renderStatement(rule(2), { carried: true })).toBe('Gives the hero a 2% chance a gathering cycle\'s drops come in at ten times.');
-        expect(supportTag({ type: EFFECT_TYPES.GIANT_HARVEST, bucket: 'flat', value: 2 })).toBe('+2% Giant Harvest');
+            .toBe('Giant Harvest 2% on every nearby Mining Token.');
+        expect(renderStatement(rule(-1))).toBe('Giant Harvest −1% on every nearby Token.');
+        expect(renderStatement(rule(2), { carried: true })).toBe('Giant Harvest 2% for the hero.');
+        expect(effectTagText({ type: EFFECT_TYPES.GIANT_HARVEST, bucket: 'flat', value: 2 })).toBe('Giant Harvest 2%');
         expect(hallRuleSentence(starRule(1, { category: 'mining' })))
-            .toBe('Makes every Token on the board have a 1% chance a gathering cycle\'s drops come in at ten times, but only for Mining work.');
+            .toBe('Giant Harvest 1% on every Mining Token on the board.');
         holdStar(1, { category: 'mining' });
         expect(starSentence(getUpgradeDef('gh_star'))).toBe('Every Mining Token has a chance a gathering cycle\'s drops come in at ten times.');
     });

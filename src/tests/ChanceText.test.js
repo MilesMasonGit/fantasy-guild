@@ -102,8 +102,8 @@ describe('a live chance explains itself on hover when a bonus counts', () => {
 });
 
 describe('the CMS says a percentage Lucky as a multiplier', () => {
-    it('rare find chance ×1.2', () => {
+    it('Lucky ×1.2', () => {
         const entry = getPaletteEntry(EFFECT_TYPES.LUCKY);
-        expect(describeModifierDirection(entry, 0.2, 'percentage').text).toBe('rare find chance ×1.2 — a buff.');
+        expect(describeModifierDirection(entry, 0.2, 'percentage').text).toBe('Lucky ×1.2 — a buff.');
     });
 });

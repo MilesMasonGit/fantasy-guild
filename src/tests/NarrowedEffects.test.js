@@ -307,7 +307,7 @@ describe('the sentence says what was narrowed', () => {
             }
         };
         expect(renderStatement(statement))
-            .toBe('Provides 10% more yield to every nearby Token, but only for Mining work.');
+            .toBe('Yield +10% on every nearby Mining Token.');
     });
 
     it('says nothing extra when a rule is not narrowed', () => {
@@ -316,6 +316,6 @@ describe('the sentence says what was narrowed', () => {
             payload: { type: EFFECT_TYPES.YIELD, bucket: 'percentage', value: 0.1 }
         };
         expect(renderStatement(statement))
-            .toBe('Provides 10% more yield to every nearby Token.');
+            .toBe('Yield +10% on every nearby Token.');
     });
 });
