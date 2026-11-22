@@ -9,6 +9,9 @@ import * as BoardState from './BoardState.js';
 import * as BoardCombat from './BoardCombat.js';
 import { countMatches } from './EffectActions.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
+import { heroTypeResistance, enemyTypeResistance, typeFactor } from '../combat/CombatFormulas.js';
+import { VENOM_EFFECT_ID } from '../../config/registries/enemyKinds.js';
+import { roundByChance } from '../../utils/RNG.js';
 
 /**
  * Deals damage to a person.
@@ -17,8 +20,12 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * `BoardCombat` (a hero wins a fight) publish the same event with the same payload, so `actor`
  * resolves to the hero either way and this module cannot tell the difference.
  *
- * A rule's damage is untyped and lands whole: flat armour is gone, and resistances are to a
- * hit's damage type (`CombatFormulas`). An older rule's `ignoresArmor` is read by nothing.
+ * A rule's damage is untyped and lands whole, except a status that hurts in a damage type
+ * ({@link STATUS_DAMAGE_TYPES}): the bearer's resistance to that type cuts it, as it cuts a hit
+ * (`CombatFormulas.typeFactor`). An older rule's `ignoresArmor` is read by nothing.
+ *
+ * ⚠️ The amount is made whole by chance, as a swing is (`RNG.roundByChance`): one `Math.random()`
+ * only when it has a fraction, drawn here in the tick's own order, so a catch-up replays it.
  *
  * ⚠️ Killing a hero announces; it never resolves the death itself. Dying has exactly ONE
  * implementation, `BoardCombat.resolveDefeat`; a lethal blow here publishes `hero_downed` and
@@ -27,6 +34,9 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * (for `isEnemyToken`/`getFight`); that is not a cycle as long as `BoardCombat` does not import
  * back.
  */
+
+/** The damage type a status's ticks hurt in, by library effect id. A status not listed is untyped. */
+const STATUS_DAMAGE_TYPES = Object.freeze({ [VENOM_EFFECT_ID]: 'poison' });
 
 /** The entity a role points at, as something damage can be applied to. */
 function targetOf(role, roles, statement) {
@@ -75,11 +85,12 @@ function targetOf(role, roles, statement) {
 function heroTarget(heroId) {
     return {
         kind: 'hero',
-        apply(amount) {
+        apply(amount, type) {
             const hero = HeroManager.getHero(heroId);
             if (!hero) return 0;
 
-            const dealt = Math.max(0, Math.round(amount));
+            const cut = type ? typeFactor(0, heroTypeResistance(hero, type)) : 1;
+            const dealt = roundByChance(amount * cut);
             if (dealt <= 0) return 0;
 
             HeroManager.modifyHeroHp(heroId, -dealt);
@@ -97,8 +108,9 @@ function heroTarget(heroId) {
 function enemyTarget(fight) {
     return {
         kind: 'enemy',
-        apply(amount) {
-            const dealt = Math.max(0, Math.round(amount));
+        apply(amount, type) {
+            const cut = type ? typeFactor(0, enemyTypeResistance(fight.enemy, type)) : 1;
+            const dealt = roundByChance(amount * cut);
             if (dealt <= 0) return 0;
             const hp = fight.combat.enemyHp;
             hp.current = Math.max(0, hp.current - dealt);
@@ -133,5 +145,5 @@ export function deal(statement, roles) {
     const target = targetOf(statement?.target?.role || ROLE.ACTOR, roles, statement);
     if (!target) return 0;
 
-    return target.apply(amount);
+    return target.apply(amount, STATUS_DAMAGE_TYPES[statement?.sourceEffectId] || null);
 }

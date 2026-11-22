@@ -271,9 +271,9 @@ describe('the hit order', () => {
         expect(agg.query(EFFECT_TYPES.TYPE_RESIST, 'fire')).toBe(0);
     });
 
-    it('the type factor is never below 0', () => {
+    it('the type factor is never below 0, and full resistance stops a boosted hit', () => {
         expect(CF.typeFactor(0, 150)).toBe(0);
-        expect(CF.typeFactor(25, 100)).toBe(0.25);
+        expect(CF.typeFactor(25, 100)).toBe(0);
     });
 });
 

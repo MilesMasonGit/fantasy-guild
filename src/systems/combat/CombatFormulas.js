@@ -332,9 +332,18 @@ export function styleCutFactor(hero, style = getHeroCombatStyle(hero)) {
     return cut > 0 ? 1 - cut / 100 : 1;
 }
 
-/** 1 + the attacker's boost − the target's resistance, never below 0. Both in percent. */
+/**
+ * The attacker's boost first, then the target's resistance cuts what is left: (1 + boost) ×
+ * (1 − resistance), each half never below 0. Both in percent. So 100 % resistance is always 0, and
+ * a weakness (negative) multiplies the boosted hit.
+ */
 export function typeFactor(boostPct, resistPct) {
-    return Math.max(0, 1 + ((boostPct || 0) - (resistPct || 0)) / 100);
+    return boostFactor(boostPct) * Math.max(0, 1 - (resistPct || 0) / 100);
+}
+
+/** The attacker's half of {@link typeFactor}: 1 + boost, never below 0. */
+function boostFactor(boostPct) {
+    return Math.max(0, 1 + (boostPct || 0) / 100);
 }
 
 // --- The blow ---------------------------------------------------------------------------------
@@ -367,17 +376,18 @@ export function heroHitParts(hero, arrow = null) {
  * whole number comes from {@link rollFraction}, so a resisted hit can do 0 and immunity means 0.
  *
  * `resist` is the target's signed resistance to the part's type, so the screen can say "Weak!" or
- * "Resisted"; `pre` is the part before the type factor.
- * @returns {{ exact: number, parts: Array<{type: string, pre: number, amount: number, resist: number, arrow?: boolean}> }}
+ * "Resisted"; `pre` is the part before the type factor; `boost` the attacker's Type Damage % on it, when any.
+ * @returns {{ exact: number, parts: Array<{type: string, pre: number, amount: number, resist: number, boost?: number, arrow?: boolean}> }}
  */
 function landedBlow(parts, multiplier, crit, boostOf, resistOf) {
     let exact = 0;
     const out = parts.map(part => {
         const pre = Math.max(0, part.base * multiplier * (crit ? CRIT_MULTIPLIER : 1));
         const resist = resistOf(part.type);
-        const amount = pre * typeFactor(boostOf(part.type), resist);
+        const boost = boostOf(part.type) || 0;
+        const amount = pre * typeFactor(boost, resist);
         exact += amount;
-        return { type: part.type, pre, amount, resist, ...(part.arrow ? { arrow: true } : {}) };
+        return { type: part.type, pre, amount, resist, ...(boost ? { boost } : {}), ...(part.arrow ? { arrow: true } : {}) };
     });
     return { exact, parts: out };
 }
@@ -436,13 +446,14 @@ export function heroHitDamage(hero, enemy, options = {}) {
 
 /**
  * Whether a blow's types helped or hurt it: `weak` when the target's weaknesses outweigh its
- * resistances across the parts, `resisted` the other way, null when neither moved it. The
- * attacker's own Type Damage boosts do not count: the words are about the target.
+ * resistances across the parts, `resisted` the other way, null when neither moved it. The words
+ * are about the target, so the attacker's boost alone never moves them; but the resistance cuts
+ * the boosted part, so each part counts what the target took off (or gave) after the boost.
  * @returns {'weak'|'resisted'|null}
  */
 export function blowVerdict(parts) {
     let shift = 0;
-    for (const p of parts || []) shift -= (p.pre || 0) * (p.resist || 0);
+    for (const p of parts || []) shift += (p.amount || 0) - (p.pre || 0) * boostFactor(p.boost);
     if (shift > WHOLE_EPSILON) return 'weak';
     if (shift < -WHOLE_EPSILON) return 'resisted';
     return null;
