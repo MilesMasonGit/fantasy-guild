@@ -86,7 +86,7 @@ export default function EffectEditor() {
                 ? 'One Token uses this effect.'
                 : `${users.length} Tokens use this effect — editing the rules below changes all of them.`}
             </p>
-            {(itemUsed || perkUsers.length > 0) && (
+            {users.length > 0 && (itemUsed || perkUsers.length > 0) && (
               <p data-reach-ignored className="text-[11px] text-gray-500 leading-relaxed mb-2">
                 Items and perks using this effect ignore its reach; only Tokens use it.
               </p>
