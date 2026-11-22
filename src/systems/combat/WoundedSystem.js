@@ -16,9 +16,9 @@ import { floorSpeedUp } from '../board/workTime.js';
 export const BASE_RECOVERY_TIME_MS = 5 * 60 * 1000;
 
 /**
- * How long a wound takes now: the base, moved by the guild's Wound Time (a Guild Hall star, the
- * Infirmary) and floored like every speed-up. Read as a wound starts, so a star bought mid-wound
- * shortens the next one.
+ * How long a wound takes now: the base, moved by the guild's Recovery (a Guild Hall star, the
+ * Infirmary) and floored like every speed-up. Read each tick: a change mid-wound rescales the
+ * running wounds (`processWoundedTick`).
  */
 export function woundTimeMs() {
     const resolved = getGlobalAggregator().resolveAxis(EFFECT_TYPES.WOUND_TIME, BASE_RECOVERY_TIME_MS);
@@ -55,13 +55,19 @@ const WoundedSystem = {
      * @param {number} deltaMs - Game time in milliseconds
      */
     processWoundedTick(hero, deltaMs) {
+        const total = woundTimeMs();
         if (typeof hero.woundedRemainingMs !== 'number') {
             // A fresh wound gets the full timer. ⚠️ `woundedUntil` is always null now, and is kept
             // on the hero record because the bench's work fingerprint reads it.
-            hero.woundedRemainingMs = Math.max(0, woundTimeMs());
+            hero.woundedRemainingMs = Math.max(0, total);
             hero.woundedUntil = null;
             logger.debug('WoundedSystem', `Set recovery timer for ${hero.name}: ${hero.woundedRemainingMs}ms`);
+        } else if (typeof hero.woundedTotalMs === 'number' && hero.woundedTotalMs > 0 && hero.woundedTotalMs !== total) {
+            // The share left stays the same when the wound's length changes mid-wait. A wound saved
+            // before the total was kept has no `woundedTotalMs` and simply adopts the current one.
+            hero.woundedRemainingMs = Math.round(hero.woundedRemainingMs * total / hero.woundedTotalMs);
         }
+        hero.woundedTotalMs = total;
 
         hero.woundedRemainingMs -= deltaMs;
         if (hero.woundedRemainingMs <= 0) {
@@ -87,6 +93,7 @@ const WoundedSystem = {
 
         hero.woundedUntil = null;
         hero.woundedRemainingMs = null;
+        hero.woundedTotalMs = null;
 
         logger.info('WoundedSystem', `${hero.name} has recovered with ${recoveryHp} HP`);
 

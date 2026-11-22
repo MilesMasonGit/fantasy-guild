@@ -126,6 +126,6 @@ describe('eating mid-combat (D-27)', () => {
         const { tryEat } = await import('../systems/hero/ConsumptionSystem.js');
         handleHeroAttack(makeCard(), hero, enemy, ATTACK_SPEED);
         // With the fight's enemy Token, where a Preservation rule is read: none on this bare card.
-        expect(tryEat).toHaveBeenCalledWith('h1', { inFight: true, instanceId: null });
+        expect(tryEat).toHaveBeenCalledWith('h1', { instanceId: null });
     });
 });

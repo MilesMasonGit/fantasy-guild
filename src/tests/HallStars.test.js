@@ -371,6 +371,20 @@ describe('the Hearth: the Infirmary and loadout slots', () => {
         expect(hero.woundedRemainingMs).toBe(BASE_RECOVERY_TIME_MS * 0.6 - 1000);
     });
 
+    it('rescales a wound already running when an Infirmary rank is bought, by the share left', () => {
+        buy('roster_size', 1);
+        const hero = GameState.state.heroes[0];
+        hero.status = 'wounded';
+        hero.woundedRemainingMs = null;
+        WoundedSystem.tick(BASE_RECOVERY_TIME_MS / 2);
+        expect(hero.woundedRemainingMs).toBe(BASE_RECOVERY_TIME_MS / 2);
+        buy('h_infirmary');
+        WoundedSystem.tick(0);
+        expect(hero.woundedRemainingMs).toBe(BASE_RECOVERY_TIME_MS * 0.6 / 2);
+        WoundedSystem.tick(1000);
+        expect(hero.woundedRemainingMs).toBe(BASE_RECOVERY_TIME_MS * 0.6 / 2 - 1000);
+    });
+
     it('lets every hero carry a second Food', () => {
         const hero = generateHero({ name: 'Eater' });
         hero.id = 'eater';

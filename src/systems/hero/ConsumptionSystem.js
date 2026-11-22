@@ -51,10 +51,10 @@ function stockedOfCategory(hero, categoryId) {
 }
 
 /**
- * What a meal heals in a fight: its restore moved by any Food Healing the hero carries (Burn's
- * -50 %), rounded halves up, never below 0.
+ * What a meal heals: its restore moved by any Food Healing the hero carries (Burn's -50 %), rounded
+ * halves up, never below 0. A status does what it says in a fight or out.
  */
-function fightMealHealing(hero, amount) {
+function mealHealing(hero, amount) {
     const factor = hero?.aggregator?.getPercentageBucket
         ? hero.aggregator.getPercentageBucket(EFFECT_TYPES.FOOD_HEALING)
         : 1;
@@ -76,13 +76,13 @@ function kept(instanceId, itemId, kind) {
  * (the fight's enemy Token, else the Token the hero works) restores as usual and leaves the unit in
  * the Bank.
  */
-function consumeEquipped(hero, categoryId, { inFight = false, instanceId } = {}) {
+function consumeEquipped(hero, categoryId, { instanceId } = {}) {
     const entry = stockedOfCategory(hero, categoryId);
     if (!entry) return null;
 
     const item = getItem(entry.itemId);
     const restore = item?.restoreAmount || 0;
-    const amount = inFight ? fightMealHealing(hero, restore) : restore;
+    const amount = mealHealing(hero, restore);
     const at = instanceId !== undefined ? instanceId : BoardState.workTokenOf(hero.id);
     const preserved = kept(at, entry.itemId, CARRIED_KIND.FOOD);
     if (!preserved) InventoryManager.removeItem(entry.itemId, 1);
@@ -98,15 +98,15 @@ function consumeEquipped(hero, categoryId, { inFight = false, instanceId } = {})
 /**
  * Eat if HP is low: one unit from the food slot. Drinks do not heal, in a fight or out: the drink
  * stays equipped and unspent, and its restore amount is ignored. The combat cost (the swing) is
- * charged by the caller; `inFight` applies Food Healing (Burn) to the meal. `instanceId`: where a
+ * charged by the caller. Food Healing (Burn) moves every meal. `instanceId`: where a
  * Preservation rule is read, the fight's enemy Token; left out, the Token the hero works.
- * @param {{inFight?: boolean, instanceId?: string|null}} [options]
+ * @param {{instanceId?: string|null}} [options]
  * @returns {Array<{itemId: string, amount: number}>} what was eaten; empty if nothing.
  */
-export function tryEat(heroId, { inFight = false, instanceId } = {}) {
+export function tryEat(heroId, { instanceId } = {}) {
     const hero = HeroManager.getHero(heroId);
     if (!hero || !isLow(hero.hp)) return [];
-    const meal = consumeEquipped(hero, 'food', { inFight, instanceId });
+    const meal = consumeEquipped(hero, 'food', { instanceId });
     return meal ? [meal] : [];
 }
 

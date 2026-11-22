@@ -256,10 +256,10 @@ export const MODIFIER_PALETTE = [
     // Region's rule) writes. On a Token or an item such a rule reaches nobody: the editors do not
     // offer these rows (`paletteForKeyword`) and the boot audit names one found there.
     {
-        /** Read by `WoundedSystem` as a wound starts: the recovery time, floored like any speed-up. */
+        /** Read by `WoundedSystem` every tick: the recovery time, floored like any speed-up; a change reaches wounds already running. */
         type: EFFECT_TYPES.WOUND_TIME,
         reads: { up: (n) => `recover from a wound ${n} slower`, down: (n) => `recover from a wound ${n} faster` },
-        label: 'Wound Time',
+        label: 'Recovery',
         when: 'never',
         scales: 'value',
         buckets: ['percentage'],
