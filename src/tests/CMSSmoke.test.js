@@ -83,10 +83,6 @@ function seedToken() {
 
     useEntityStore.getState().addEffectRef('tokens', tokenId, effectId);
 
-    useEntityStore.getState().updateToken(tokenId, {
-        acceptedTokens: [{ tag: 'net', minTier: 1 }]
-    });
-
     return { tokenId, itemId, effectId };
 }
 
@@ -150,11 +146,9 @@ describe('CMS smoke — the screens mount without throwing', () => {
     });
 
     it('renders a row for every keyword, with the effect shapes the palette declares', () => {
-        const { tokenId, effectId } = seedToken();
+        const { effectId } = seedToken();
 
-        // The statement rows belong to the library entry now; `Requires` is the
-        // one rule that is still a Token field (`acceptedTokens`, owner Q5), so
-        // it is asserted on the Token's own rules panel below.
+        // The statement rows belong to the library entry now.
         const { container } = render(React.createElement(StatementList, {
             statements: statementsOfEffect(effectId),
             onChange: () => {},
@@ -167,10 +161,6 @@ describe('CMS smoke — the screens mount without throwing', () => {
         expect(container.querySelectorAll('[data-rules-line]')).toHaveLength(5);
         expect(container.querySelector('[data-rules-line] [data-slot="type"]')).toBeTruthy();
         expect(text).toContain('Acts as');
-
-        const token = useEntityStore.getState().tokens[tokenId];
-        const tokenRules = render(React.createElement(Statements, { token }));
-        expect(tokenRules.container.textContent).toContain('Requires');
 
         // The seeded Work Time value is −0.05. Work Time is `inverted`, so the
         // editor must read that back as a buff rather than leaving the author
@@ -219,7 +209,6 @@ describe('CMS smoke — the screens mount without throwing', () => {
         const { container: tokenRules } = render(React.createElement(Statements, { token }));
         expect(tokenRules.textContent).toContain('Shrimp Trawler');
         expect(tokenRules.textContent).toContain('Makes nearby Coast Tokens work 5% faster.');
-        expect(tokenRules.textContent).toContain('Requires a nearby Tier 1 net.');
     });
 
     it('warns when a targeted tag matches no Token, and offers the right case', () => {

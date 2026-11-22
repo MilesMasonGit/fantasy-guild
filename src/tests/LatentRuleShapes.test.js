@@ -248,19 +248,18 @@ afterEach(() => {
 describe('an upkeep is enforced on every rule that can carry one', () => {
     it('an Acts as whose upkeep is unpaid hands its neighbours no capability', () => {
         InventoryManager.addItem(COAL, 2);
-        const vein = place(12, 'fixture_copper_vein', 'miner');
+        const vein = place(12, 'fixture_copper_vein');
         place(13, 'fixture_rs_coal_pick');
 
-        // Two seconds paid, then the Bank runs dry; the vein's ten-second cycle never finishes.
+        // Two seconds paid, then the Bank runs dry.
         run(15000);
 
         expect(InventoryManager.getItemCount(COAL)).toBe(0);
         expect(RecipeResolver.contextTiersAround(vein.id).pickaxe).toBeUndefined();
-        expect(SpriteLayer.countOnBoard(WOOD)).toBe(0);
     });
 
     it('an Acts as works again once the Bank can pay its upkeep', () => {
-        const vein = place(12, 'fixture_copper_vein', 'miner');
+        const vein = place(12, 'fixture_copper_vein');
         place(13, 'fixture_rs_coal_pick');
         run(1000);
         expect(RecipeResolver.contextTiersAround(vein.id).pickaxe).toBeUndefined();
@@ -268,8 +267,6 @@ describe('an upkeep is enforced on every rule that can carry one', () => {
         InventoryManager.addItem(COAL, 50);
         run(1000);
         expect(RecipeResolver.contextTiersAround(vein.id).pickaxe).toBe(1);
-        run(10000);
-        expect(SpriteLayer.countOnBoard(WOOD)).toBe(2);
     });
 
     it('a rule with a moment does not fire while its upkeep is unpaid', () => {

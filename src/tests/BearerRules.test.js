@@ -37,10 +37,7 @@ const tokenNamed = (name, extra = {}) => {
     return id;
 };
 const effectWith = (name, statements) => store().addEffect({ name, statements });
-/**
- * The Token is read from the store on every render, as `TokenEditor` does — a
- * Token passed once would never show its own `acceptedTokens` changing.
- */
+/** The Token is read from the store on every render, as `TokenEditor` does. */
 function LiveToken({ tokenId }) {
     const token = useEntityStore((s) => s.tokens[tokenId]);
     return React.createElement(Statements, { token });
@@ -126,7 +123,7 @@ describe('⚠️ a shared effect stays read-only', () => {
 
 describe('⭐ one panel at a time, across every rule on the Token (E-5)', () => {
     it('opens beside the rule being edited and follows the author to the next', () => {
-        const tokenId = tokenNamed('Shrimp Coast', { acceptedTokens: [{ tag: 'net', minTier: 1 }] });
+        const tokenId = tokenNamed('Shrimp Coast');
         const one = effectWith('Net', [{ id: 'stm_net', keyword: 'acts_as', payload: { tag: 'net', tier: 1 } }]);
         const two = effectWith('Hit', [{ id: 'stm_hit', keyword: 'deals', payload: { amount: 2 },
             when: { event: 'SELF_CYCLE_COMPLETE', scope: 'self', cooldownMs: 0 } }]);
@@ -144,57 +141,18 @@ describe('⭐ one panel at a time, across every rule on the Token (E-5)', () => 
         fireEvent.click(container.querySelector(`[data-editable-effect="${two}"] [data-slot="amount"]`));
         expect(panels()).toHaveLength(1);
         expect(panels()[0].closest(`[data-editable-effect="${two}"]`)).not.toBeNull();
-
-        fireEvent.click(container.querySelector('[data-rules-line] [data-slot="minTier"]'));
-        expect(panels()).toHaveLength(1);
-        expect(panels()[0].closest('[data-editable-effect]')).toBeNull();
     });
 });
 
-describe('⭐ Requires on the Rules Line', () => {
-    const seeded = () => {
-        const provider = tokenNamed('Net Shed');
-        const net = effectWith('Net', [{ id: 'stm_net', keyword: 'acts_as', payload: { tag: 'net', tier: 2 } }]);
-        store().addEffectRef('tokens', provider, net);
-        return tokenNamed('Shrimp Coast', { acceptedTokens: [{ tag: 'net', minTier: 1 }] });
-    };
-    const requiresLine = (container) => [...container.querySelectorAll('[data-rules-line]')]
-        .find((l) => l.textContent.startsWith('Requires'));
-
-    it('reads as its sentence, with who satisfies it', () => {
-        const tokenId = seeded();
+describe('Requires is retired: a hero carries the tool now', () => {
+    it('an old acceptedTokens list shows nothing, and Requires is never offered', () => {
+        const tokenId = tokenNamed('Shrimp Coast', { acceptedTokens: [{ tag: 'net', minTier: 1 }] });
         const { container } = mountToken(tokenId);
-        expect(requiresLine(container).textContent).toBe('Requires a nearby Tier 1 net.');
-        expect(container.querySelector('[data-satisfied-by]').textContent).toContain('Net Shed');
-    });
-
-    it('writes the tier and the capability back to acceptedTokens, in their plain shape', () => {
-        const tokenId = seeded();
-        const { container } = mountToken(tokenId);
-        retype(container, requiresLine(container).parentElement, 'minTier', '3');
-        expect(store().tokens[tokenId].acceptedTokens).toEqual([{ tag: 'net', minTier: 3 }]);
-        // Tier 3 is more than the Net Shed's Tier 2, so nothing satisfies it now.
-        expect(container.querySelector('[data-satisfied-by]').textContent).toContain('nothing yet');
-
-        retype(container, requiresLine(container).parentElement, 'tag', 'pickaxe');
-        expect(store().tokens[tokenId].acceptedTokens).toEqual([{ tag: 'pickaxe', minTier: 3 }]);
-    });
-
-    it('⚠️ cannot be retyped into a rule, and has no cost strip', () => {
-        const tokenId = seeded();
-        const { container } = mountToken(tokenId);
-        const line = requiresLine(container);
-        expect(line.querySelector('[data-slot="keyword"]')).toBeNull();
-        const row = line.closest('[data-rules-editor]');
-        expect(row.querySelector('[data-cost-strip]')).toBeNull();
-        expect(container.textContent).not.toContain('Min Tool Tier');
-    });
-
-    it('removes a requirement from the Token', () => {
-        const tokenId = seeded();
-        const { container } = mountToken(tokenId);
-        fireEvent.click(requiresLine(container).closest('[data-rules-editor]').querySelector('button[title="Remove rule"]'));
-        expect(store().tokens[tokenId].acceptedTokens).toEqual([]);
+        expect(container.textContent).not.toContain('Requires');
+        fireEvent.click([...container.querySelectorAll('button')].find((b) => b.textContent.includes('New rule')));
+        const offered = [...container.querySelectorAll('button')].map((b) => b.textContent);
+        expect(offered.some((l) => l.startsWith('Acts as'))).toBe(true);
+        expect(offered.some((l) => l.startsWith('Requires'))).toBe(false);
     });
 });
 

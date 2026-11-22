@@ -8,7 +8,7 @@ import { t } from '../../i18n/index.js';
 import {
     createEmptyEquipment, getGrid,
     findFreeSlot, slotsInCategory, isEquipCategory,
-    handEntries, handsOfItem, HANDS
+    handEntries, handsOfItem, HANDS, GRID_SLOT_COUNT
 } from '../../config/registries/equipmentConstants.js';
 import * as EquipmentValidator from './EquipmentValidator.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
@@ -166,30 +166,30 @@ function vacate(heroId, hero, slot, { returnCopy = true } = {}) {
 export function equipItem(heroId, itemId, preferredSlot = null, from = null) {
     const hero = HeroManager.getHero(heroId);
     const template = getItem(itemId);
-    if (!hero || !template) return { success: false, error: 'Target not found' };
+    if (!hero || !template) return { success: false, error: t('equipment.notFound') };
 
     const giver = giverOf(heroId, itemId, from);
     const fighting = fightRefusal(hero, giver?.hero);
     if (fighting) return fighting;
 
-    const { canEquip, reason } = EquipmentValidator.canHeroEquip(heroId, itemId);
-    if (!canEquip) return { success: false, error: reason };
+    const { canEquip, reason, need } = EquipmentValidator.canHeroEquip(heroId, itemId);
+    if (!canEquip) return { success: false, error: reason, ...(need ? { need } : {}) };
 
     // Food, drink and consumables share the grid with gear.
     const category = template.equipSlot;
     if (!category || !isEquipCategory(category)) {
-        return { success: false, error: 'Item cannot be equipped' };
+        return { success: false, error: t('equipment.cannotEquip') };
     }
 
     // Carrying the same item twice buffs nothing, so refuse rather than waste a slot.
     if (getGrid(hero).includes(itemId)) {
-        return { success: false, error: `${template.name} is already equipped` };
+        return { success: false, error: t('equipment.alreadyEquipped', { item: template.name }) };
     }
 
     const copy = takesCopy(itemId);
     if (!giver && !InventoryManager.hasItem(itemId, 1)) {
         if (copy && heldCount(itemId) > 0) return { success: false, error: t('equipment.allInUse', { item: template.name }) };
-        return { success: false, error: 'Out of stock' };
+        return { success: false, error: t('equipment.outOfStock') };
     }
 
     let slot;
@@ -198,7 +198,7 @@ export function equipItem(heroId, itemId, preferredSlot = null, from = null) {
     const rival = rivalHandSlot(hero, itemId);
     if (rival !== null) {
         slot = rival;
-    } else if (preferredSlot !== null && preferredSlot >= 0 && preferredSlot < 9) {
+    } else if (preferredSlot !== null && preferredSlot >= 0 && preferredSlot < GRID_SLOT_COUNT) {
         const held = slotsInCategory(hero, category).filter(s => s !== preferredSlot);
         const cap = loadoutCapOf(category);
         if (held.length >= cap) {
@@ -212,7 +212,7 @@ export function equipItem(heroId, itemId, preferredSlot = null, from = null) {
             const cap = loadoutCapOf(category);
             return {
                 success: false,
-                error: cap ? 'No free slot in the loadout' : 'Item cannot be equipped'
+                error: cap ? t('equipment.noFreeSlot') : t('equipment.cannotEquip')
             };
         }
         slot = target.slot;
@@ -248,12 +248,12 @@ export function equipItem(heroId, itemId, preferredSlot = null, from = null) {
  * carries the same things afterwards and no rule depends on which slot an item is in, so a level, a
  * cap or the hands cannot refuse it; gear held below its level moves like any other.
  * ⚠️ Grid order still means something: the first weapon or tool in the hands is the one used
- * (`getPrimaryWeaponSlot`, `catchToolOf`), so a move may change which that is.
+ * (`CombatFormulas.getHeroWeaponSlot`, `catchToolOf`), so a move may change which that is.
  */
 export function moveItem(heroId, itemId, fromSlot, toSlot) {
     const hero = HeroManager.getHero(heroId);
-    if (!Array.isArray(hero?.equipment) || hero.equipment[fromSlot] !== itemId) return { success: false, error: 'Slot is empty' };
-    if (fromSlot === toSlot || !(toSlot >= 0 && toSlot < hero.equipment.length)) return { success: false, error: 'Could not move that' };
+    if (!Array.isArray(hero?.equipment) || hero.equipment[fromSlot] !== itemId) return { success: false, error: t('equipment.slotEmpty') };
+    if (fromSlot === toSlot || !(toSlot >= 0 && toSlot < hero.equipment.length)) return { success: false, error: t('equipment.cantMove') };
     const fighting = fightRefusal(hero);
     if (fighting) return fighting;
 
@@ -278,7 +278,7 @@ export function moveItem(heroId, itemId, fromSlot, toSlot) {
  */
 export function unequipItem(heroId, slot) {
     const hero = HeroManager.getHero(heroId);
-    if (!hero?.equipment?.[slot]) return { success: false, error: 'Slot is empty' };
+    if (!hero?.equipment?.[slot]) return { success: false, error: t('equipment.slotEmpty') };
     const fighting = fightRefusal(hero);
     if (fighting) return fighting;
 
@@ -296,7 +296,7 @@ export function unequipItem(heroId, slot) {
 export function destroyEquipped(heroId, slot) {
     const hero = HeroManager.getHero(heroId);
     const itemId = hero?.equipment?.[slot];
-    if (!itemId) return { success: false, error: 'Slot is empty' };
+    if (!itemId) return { success: false, error: t('equipment.slotEmpty') };
 
     const held = holdsCopy(hero, slot);
     vacate(heroId, hero, slot, { returnCopy: false });

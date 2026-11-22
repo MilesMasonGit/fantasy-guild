@@ -96,12 +96,18 @@ export const KEYWORDS = Object.freeze([
         upkeep: true
     },
     {
+        /**
+         * ⚠️ Retired: a hero carries the tool a Token needs (its Needs tool). Kept so older content
+         * still reads and the audits can name it; nothing reads it, and the editor never offers it.
+         */
         id: KEYWORD.REQUIRES,
         label: 'Requires',
-        blurb: 'This Token does not work unless something beside it supplies a capability.',
+        blurb: 'Retired: a hero carries the tool now (Needs tool), so this does nothing. Delete the rule.',
         filter: false,
         when: WHEN.NEVER,
-        upkeep: false
+        upkeep: false,
+        tokensOnly: true,
+        retired: true
     },
     {
         /**

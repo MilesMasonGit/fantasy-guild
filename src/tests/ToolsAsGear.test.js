@@ -24,7 +24,7 @@ import * as LimesLessons from '../systems/quests/LimesLessons.js';
 import { LESSON_STEPS } from '../systems/quests/lessonPlan.js';
 import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
 import { registerItems, getAllItems } from '../config/registries/itemRegistry.js';
-import { getPrimaryWeapon } from '../config/registries/equipmentConstants.js';
+import { getHeroWeapon } from '../systems/combat/CombatFormulas.js';
 import { setStarterCampForTests, resetStarterCampForTests } from '../config/registries/starterCampRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import {
@@ -222,9 +222,9 @@ describe('hands: a tool takes one hand', () => {
     it('a pickaxe in hand is not a weapon: combat names the weapon beside it, or none', () => {
         const hero = addHero('stealth');
         equip(hero.id, 'fx_pick');
-        expect(getPrimaryWeapon(hero)).toBeNull();
+        expect(getHeroWeapon(hero)).toBeNull();
         equip(hero.id, 'fx_dagger');
-        expect(getPrimaryWeapon(hero)).toBe('fx_dagger');
+        expect(getHeroWeapon(hero)?.id).toBe('fx_dagger');
     });
 
     it('new heroes arrive empty-handed', () => {
@@ -496,7 +496,6 @@ describe('content: the rules the audit checks', () => {
             reed: { id: 'reed', name: 'Reed Bed', needsTool: { kind: 'sickle', minTier: 1 } },
             what: { id: 'what', name: 'Odd Node', needsTool: { kind: 'shovel', minTier: 1 } },
             oldTool: { id: 'oldTool', name: 'Old Pickaxe Token', provides: [{ tag: 'pickaxe', tier: 1 }] },
-            oldVein: { id: 'oldVein', name: 'Old Vein', acceptedTokens: [{ tag: 'pickaxe', minTier: 1 }] },
             anvil: { id: 'anvil', name: 'Anvil', provides: [{ tag: 'anvil', tier: 1 }] }
         };
         const recipes = [
@@ -505,7 +504,7 @@ describe('content: the rules the audit checks', () => {
         ];
         const found = toolFindings({ items, tokens, recipes });
         const ids = found.map(f => f.entityId).sort();
-        expect(ids).toEqual(['big', 'deep', 'odd', 'oldTool', 'oldVein', 'r_old', 'reed', 'what', 'worn'].sort());
+        expect(ids).toEqual(['big', 'deep', 'odd', 'oldTool', 'r_old', 'reed', 'what', 'worn'].sort());
         expect(found.find(f => f.entityId === 'deep').message).toMatch(/tier 3 .*best Pickaxe is tier 2/);
         expect(found.find(f => f.entityId === 'reed').message).toMatch(/no item is a Sickle/);
     });

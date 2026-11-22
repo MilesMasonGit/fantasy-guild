@@ -54,9 +54,9 @@ describe('Equipment Multivariable Skill Gating', () => {
 
         const result = EquipmentValidator.canHeroEquip(hero.id, 'test_gated_sword');
         expect(result.canEquip).toBe(false);
-        // Rewritten with classless heroes: the refusal reads "Needs <skill> <level>" ("Needs Melee
-        // 15"); a skill the game does not have keeps its raw id.
-        expect(result.reason).toBe('Needs combat 15');
+        // The refusal reads "Needs <skill> <level> (<hero>: <their level>)"; a skill the game does
+        // not have keeps its raw id.
+        expect(result.reason).toBe(`Needs combat 15 (${hero.name}: 14)`);
     });
 
     it('should reject equipping if hero meets first requirement but fails the second one', () => {
@@ -80,7 +80,7 @@ describe('Equipment Multivariable Skill Gating', () => {
 
         const result = EquipmentValidator.canHeroEquip(hero.id, 'test_gated_sword');
         expect(result.canEquip).toBe(false);
-        expect(result.reason).toBe('Needs nature 10');
+        expect(result.reason).toBe(`Needs nature 10 (${hero.name}: 9)`);
     });
 });
 

@@ -191,7 +191,10 @@ describe('the equip paths: any hero, at the level the weapon asks in its style',
         const wizard = addHero('Mira', 'magic', 40);
         give('t2_gated_sword');
         const res = EquipmentManager.equipItem(wizard.id, 't2_gated_sword');
-        expect(res).toEqual({ success: false, error: 'Needs Melee 15' });
+        const have = levelOfSkill(wizard, 'melee');
+        expect(res).toEqual({
+            success: false, error: `Needs Melee 15 (Mira: ${have})`, need: { skill: 'melee', level: 15, have }
+        });
         expect(wizard.equipment.every(s => s === null)).toBe(true);
         expect(InventoryManager.getItemCount('t2_gated_sword')).toBe(1);
 
@@ -221,9 +224,9 @@ describe('the equip paths: any hero, at the level the weapon asks in its style',
         expect(callouts).toEqual([]);
         const have = levelOfSkill(novice, 'melee');
         expect(have).toBeLessThan(15);
+        const text = `Can't equip Gated Iron Sword. Needs Melee 15 (Pip: ${have})`;
         expect(equipBubbleOf(novice.id)).toMatchObject({
-            text: `Can't equip Gated Iron Sword. Melee skill too low. (${have}/15)`,
-            tone: SPEECH_TONE.CANT
+            text, tone: SPEECH_TONE.CANT, icon: { skill: 'melee', at: text.indexOf('Melee') }
         });
         clearEquipBubbles();
     });

@@ -14,7 +14,7 @@
 // A "slot" is an INDEX (0-8), not a name.
 
 import { getItem } from './itemRegistry.js';
-import { toolOf, handsOf, HANDS } from './toolKinds.js';
+import { handsOf, HANDS } from './toolKinds.js';
 import {
     GRID_SLOT_COUNT,
     isEquipCategory,
@@ -85,19 +85,6 @@ export function slotsInCategory(hero, categoryId) {
 }
 
 /**
- * The slot holding the hero's primary weapon — the FIRST grid slot holding a
- * weapon-category item that is neither a gathering tool nor an off-hand item, or null when unarmed.
- *
- * Combat needs to name a single weapon to know which style an attack uses.
- * With two weapons the choice stays well-defined: the first in grid order.
- * A pickaxe shares the hands with weapons but is not one.
- */
-export function getPrimaryWeaponSlot(hero) {
-    const entry = getEquippedEntries(hero).find(e => isWeaponCategory(e.category) && !toolOf(getItem(e.itemId)) && getItem(e.itemId)?.offHand !== true);
-    return entry ? entry.index : null;
-}
-
-/**
  * The hand items a hero holds, as `{ index, itemId, hands }` in grid order, leaving out grid
  * slot `exceptSlot` (the one about to be replaced).
  */
@@ -111,10 +98,4 @@ export function handEntries(hero, exceptSlot = null) {
 /** How many hands an item takes (0 for anything not held in the hands). */
 export function handsOfItem(itemId) {
     return handsOf(getItem(itemId));
-}
-
-/** The item id of the hero's primary weapon, or null when unarmed. */
-export function getPrimaryWeapon(hero) {
-    const slot = getPrimaryWeaponSlot(hero);
-    return slot === null ? null : getGrid(hero)[slot];
 }

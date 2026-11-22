@@ -47,7 +47,7 @@ describe('every HP bar is the light red, whatever the health, a hero\'s or an en
 
 describe('an item handed from one hero to another keeps the panel where it is', () => {
     const Host = ({ open }) => { useHeroSheetRequests(open); return null; };
-    const world = { itemOf: () => ({ name: 'Iron Woodaxe' }), unmetOf: () => null, skillName: id => id, isStack: () => false, bankCount: () => 0 };
+    const world = { itemOf: () => ({ name: 'Iron Woodaxe' }), skillName: id => id, isStack: () => false, bankCount: () => 0 };
 
     it('a hand-over opens nobody\'s panel; a plain equip still opens the taker\'s', async () => {
         const open = vi.fn();

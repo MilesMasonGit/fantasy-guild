@@ -655,7 +655,6 @@ export const FIXTURE_TOKENS = {
     fixture_copper_vein: {
         id: 'fixture_copper_vein', name: 'Fixture Copper Vein', tokenType: 'resource',
         rarity: 'common', uses: 100, sprite: 's_mining',
-        acceptedTokens: [{ tag: 'pickaxe', minTier: 1 }],
         config: {
             skill: 'mining', skillRequired: 1, cycleTimeMs: 10000, xp: 5,
             inputs: [],
@@ -665,7 +664,6 @@ export const FIXTURE_TOKENS = {
     fixture_iron_vein: {
         id: 'fixture_iron_vein', name: 'Fixture Iron Vein', tokenType: 'resource',
         rarity: 'common', uses: 100, sprite: 's_mining',
-        acceptedTokens: [{ tag: 'pickaxe', minTier: 2 }],
         config: {
             skill: 'mining', skillRequired: 1, cycleTimeMs: 10000, xp: 10,
             inputs: [],

@@ -1000,21 +1000,12 @@ export function renderStatement(statement, names = {}) {
 
 /**
  * A Token's whole rules text, one sentence per line.
- *
- * `acceptedTokens` is rendered alongside the statements as Requires sentences: the field stays
- * where it is because it gates whether a station produces at all, so the author sees one
- * unified list and the engine sees no change.
  */
 export function rulesLinesOf(def, names = {}) {
     const lines = [];
     // A status effect says first how it lasts and stacks: its rules below count once per stack.
     const status = statusLineOf(def);
     if (status) lines.push(status);
-    for (const requirement of def?.acceptedTokens || []) {
-        lines.push(renderStatement(
-            { keyword: KEYWORD.REQUIRES, payload: requirement }, names
-        ));
-    }
     for (const statement of statementsOf(def)) {
         lines.push(renderStatement(statement, names));
         // Its own line, immediately under the rule it belongs to.

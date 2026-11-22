@@ -34,8 +34,6 @@ vi.mock('../systems/combat/CombatFormulas.js', () => ({
 
 vi.mock('../config/registries/itemRegistry.js', () => ({ getItem: vi.fn(() => null) }));
 vi.mock('../config/registries/equipmentConstants.js', () => ({
-    getPrimaryWeapon: vi.fn(() => null),
-    getPrimaryWeaponSlot: vi.fn(() => null),
     getEquippedEntries: vi.fn(() => []),
     isGearCategory: vi.fn(() => false)
 }));

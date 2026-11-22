@@ -91,27 +91,6 @@ export function getEffectBlockClauses(token, items = {}, tool = toolNamer(), tok
 }
 
 /**
- * Generates accepted tokens / tool requirements clause (e.g. "Requires a nearby Iron Pickaxe or better.").
- * ⚠️ This is player text, so it names the tool rather than its tier; the CMS's own editor keeps the number.
- * @param {object} token
- * @param {(tag: string, minTier: number) => string} tool  from `toolNamer` over every Token
- * @returns {string|null}
- */
-export function getAcceptedTokensClause(token, tool = toolNamer()) {
-  if (!token || !token.acceptedTokens || token.acceptedTokens.length === 0) return null;
-  const parts = token.acceptedTokens.map((req) => {
-    const tagName = (req.tag || 'tool').replace(/_/g, ' ');
-    const capitalTag = tagName.charAt(0).toUpperCase() + tagName.slice(1);
-    const minTier = req.minTier || 1;
-    return minTier > 1 ? tool(req.tag || 'tool', minTier) : capitalTag;
-  });
-  if (parts.length === 1) {
-    return `Requires a nearby ${parts[0]}.`;
-  }
-  return `Requires a nearby ${parts.join(' and ')}.`;
-}
-
-/**
  * The tool a hero must hold to work this Token ("Needs a Pickaxe in hand."), named like a
  * requirement: the kind at the bottom rung, the first tool item that reaches the tier above it.
  * @param {object} token
@@ -185,8 +164,6 @@ export function composeTokenDescription(token, items = {}, recipePools = {}, tok
   const clauses = [];
 
   const tool = toolNamer(tokens);
-  const acceptedClause = getAcceptedTokensClause(token, tool);
-  if (acceptedClause) clauses.push(acceptedClause);
 
   const toolClause = getNeedsToolClause(token, items);
   if (toolClause) clauses.push(toolClause);

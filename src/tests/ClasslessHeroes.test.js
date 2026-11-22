@@ -189,9 +189,11 @@ describe('gear asks a level in its style', () => {
         expect(gearLevelRequirement({ equipSlot: 'hand', styles: ['melee'] })).toBeNull();
     });
 
-    it('refuses an Iron Sword below Melee 15 with "Needs Melee 15", and takes it at 15', () => {
+    it('refuses an Iron Sword below Melee 15 with "Needs Melee 15 (Ana: 14)", and takes it at 15', () => {
         const low = hero({ melee: 14 });
-        expect(canHeroEquip(low.id, 'k1_iron_sword')).toEqual({ canEquip: false, reason: 'Needs Melee 15' });
+        expect(canHeroEquip(low.id, 'k1_iron_sword')).toEqual({
+            canEquip: false, reason: 'Needs Melee 15 (Ana: 14)', need: { skill: 'melee', level: 15, have: 14 }
+        });
         const able = hero({ melee: 15 });
         expect(canHeroEquip(able.id, 'k1_iron_sword')).toEqual({ canEquip: true });
     });
@@ -200,17 +202,17 @@ describe('gear asks a level in its style', () => {
         const h = hero();
         InventoryManager.addItem('k1_iron_sword', 1);
         const result = equipItem(h.id, 'k1_iron_sword');
-        expect(result).toMatchObject({ success: false, error: 'Needs Melee 15' });
+        expect(result).toMatchObject({ success: false, error: expect.stringMatching(/^Needs Melee 15 \(Ana: \d+\)$/), need: { skill: 'melee', level: 15 } });
         expect(h.equipment.filter(Boolean)).toEqual([]);
         expect(InventoryManager.getItemCount('k1_iron_sword')).toBe(1);
     });
 
     it('armour names its style: an Iron Helm needs Melee 15', () => {
-        expect(canHeroEquip(hero({ melee: 3, magic: 60 }).id, 'k1_iron_helm')).toEqual({ canEquip: false, reason: 'Needs Melee 15' });
+        expect(canHeroEquip(hero({ melee: 3, magic: 60 }).id, 'k1_iron_helm')).toMatchObject({ canEquip: false, reason: 'Needs Melee 15 (Ana: 3)' });
     });
 
     it('a requirement in a cut skill can never be met, and keeps its raw id', () => {
-        expect(canHeroEquip(hero().id, 'k1_merchant_ring')).toEqual({ canEquip: false, reason: 'Needs commerce 5' });
+        expect(canHeroEquip(hero().id, 'k1_merchant_ring')).toMatchObject({ canEquip: false, reason: 'Needs commerce 5 (Ana: 0)' });
         expect(unmetGearRequirement({ requirements: [{ skill: 'commerce', level: 5 }] }, { skills: {} })).toEqual({ skill: 'commerce', level: 5, have: 0 });
     });
 
@@ -314,7 +316,7 @@ describe('the audits name what K1 retired', () => {
 describe('the Promotes rule is retired', () => {
     it('stays readable as it was (so a Sync rewrites no description), and is marked retired', () => {
         expect(getKeyword(KEYWORD.PROMOTES)).toMatchObject({ retired: true });
-        expect(KEYWORDS.filter(k => k.retired).map(k => k.id)).toEqual([KEYWORD.PROMOTES]);
+        expect(KEYWORDS.filter(k => k.retired).map(k => k.id)).toEqual([KEYWORD.REQUIRES, KEYWORD.PROMOTES]);
         expect(renderStatement({ keyword: KEYWORD.PROMOTES, payload: { jobId: 'fighter' } })).toBe('Promotes the hero to Fighter.');
         expect(renderStatement({ keyword: KEYWORD.PROMOTES, payload: { jobId: 'not_a_job' } })).toBe('Promotes the hero to not_a_job.');
     });

@@ -1,6 +1,6 @@
 // Boot-time content-integrity audit: warns about content references that do not resolve.
 
-import { TOKENS, getTokenType, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
+import { TOKENS, getTokenType } from '../../config/registries/tokenRegistry.js';
 import { statementsOf, hasRetiredEffectData, stationSkillOf, KEYWORD, getKeyword, keywordAllowsRole } from '../effects/statements.js';
 import { getTriggerEvent, momentSupplies } from '../../config/registries/triggerRegistry.js';
 import { getRole } from '../../config/registries/roleRegistry.js';
@@ -181,7 +181,6 @@ function auditTokens(out) {
         }
     }
 
-    auditCapabilityTags(out);
 }
 
 /** A "Stands on" word as the CMS's chip shows it, or a terrain the chips do not name as it is. */
@@ -576,29 +575,6 @@ function auditDerivedType(out, where, def) {
     }
     if (warn) {
         out.push(finding(where, `reads as a ${type} because ${why}`));
-    }
-}
-
-/**
- * Capability tags with no provider. `acceptedTokens[].tag` is a free string
- * matched against provided tags; a Token asking for a `pikaxe` never runs and
- * nothing else says so.
- */
-function auditCapabilityTags(out) {
-    const provided = new Set();
-    for (const def of Object.values(TOKENS || {})) {
-        for (const tag of Object.keys(getProvidedTagsWithTiers(def))) provided.add(tag);
-    }
-
-    for (const [tokenId, def] of Object.entries(TOKENS || {})) {
-        for (const requirement of def?.acceptedTokens || []) {
-            const tag = requirement?.tag;
-            if (!tag) continue;
-            if (!provided.has(tag)) {
-                out.push(finding(`Token "${tokenId}"`,
-                    `needs a nearby "${tag}", and no Token provides that capability — so it can never work`));
-            }
-        }
     }
 }
 

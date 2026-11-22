@@ -33,14 +33,9 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /** The Token card: its blocks in order per kind, the enemy card, one card at a time, its art. */
 
 const CARD_TOKENS = {
-    card_pick: {
-        id: 'card_pick', name: 'Card Pick', tokenType: 'context', rarity: 'common', uses: 50,
-        sprite: 's_industry', isTool: true, provides: [{ tag: 'ctx_card_pick', minTier: 1, chargeCost: 0 }]
-    },
     card_vein: {
         id: 'card_vein', name: 'Card Vein', tokenType: 'resource', rarity: 'common', uses: 37,
         sprite: 's_nature',
-        acceptedTokens: [{ tag: 'ctx_card_pick', minTier: 1 }],
         respawn: { mode: 'refill', afterMs: 12000 },
         config: {
             skill: 'mining', skillRequired: 20, cycleTimeMs: 4000, xp: 35,
@@ -149,7 +144,7 @@ describe('the blocks, top to bottom, per kind', () => {
         expect(model.blocks[2]).toMatchObject({ cycleMs: 4000, uses: 37 });
         const recipe = model.blocks[3];
         expect(recipe.needs).toEqual([{ itemId: 'fixture_oak_wood', need: 3, have: 0 }]);
-        expect(recipe.tools.map(t => t.typeId)).toEqual(['card_pick']);
+        expect(recipe.tools).toEqual([]);
         expect(recipe.makes).toEqual([
             { itemId: 'item_copper_ore', min: 1, max: 2, chance: null },
             { itemId: 'item_coal', min: 1, max: 1, chance: 10 }
@@ -161,10 +156,6 @@ describe('the blocks, top to bottom, per kind', () => {
         expect(domOrder(container)).toEqual(['name', 'stats', 'requires', 'makes', 'lifecycle']);
         expect(container.querySelector('[data-card-cycle]').textContent).toBe('4s');
         expect(container.querySelector('[data-card-charges]').textContent).toBe('37');
-        // The tool is a hollow bar with no count.
-        const tool = container.querySelector('[data-card-tool="card_pick"]');
-        expect(tool.className).toContain('bg-transparent');
-        expect(tool.querySelector('[data-item-bar-count]').textContent).toBe('');
     });
 
     it('needs read have/need, red when short', () => {
@@ -188,6 +179,10 @@ describe('the blocks, top to bottom, per kind', () => {
 
         const { container } = mount(h(TokenCard, { typeId: 'fixture_station', instanceId: station.id }));
         expect(domOrder(container)).toEqual(['name', 'stats', 'recipe', 'requires', 'makes']);
+        // The tool is a hollow bar with no count.
+        const tool = container.querySelector('[data-card-tool="fixture_context_a"]');
+        expect(tool.className).toContain('bg-transparent');
+        expect(tool.querySelector('[data-item-bar-count]').textContent).toBe('');
     });
 
     it('Change recipe flips the card to its list on the same art; a click on a row chooses it and flips back', () => {
@@ -380,11 +375,11 @@ describe('what the card says', () => {
         expect(container.textContent).not.toMatch(/Drives/);
     });
 
-    it('a tool names what accepts it', () => {
-        expect(drivenBy(getTokenType('card_pick'))).toContain('card_vein');
-        const pick = put('card_pick');
-        const { container } = mount(h(TokenCard, { typeId: 'card_pick', instanceId: pick.id }));
-        expect(container.textContent).toContain('Card Vein');
+    it('a context Token names the station whose recipe needs it', () => {
+        expect(drivenBy(getTokenType('fixture_context_a'))).toContain('fixture_station');
+        const context = put('fixture_context_a');
+        const { container } = mount(h(TokenCard, { typeId: 'fixture_context_a', instanceId: context.id }));
+        expect(container.textContent).toContain('Fixture Station');
     });
 
     it('long names in a card ribbon wrap instead of being cut off', () => {
@@ -565,11 +560,10 @@ describe('the sections', () => {
         expect(stats.querySelector('[data-card-charges]')).not.toBeNull();
     });
 
-    it('Requires holds the tool and what is used up; Makes what comes out; Events the regrowing', () => {
+    it('Requires holds what is used up; Makes what comes out; Events the regrowing', () => {
         const vein = put('card_vein');
         const { container } = mount(h(TokenCard, { typeId: 'card_vein', instanceId: vein.id }));
         const requires = container.querySelector('[data-card-block="requires"]');
-        expect(requires.querySelector('[data-card-tool="card_pick"]')).not.toBeNull();
         expect(requires.querySelector('[data-card-needs] [data-item-bar]').textContent).toContain('0/3');
         expect(container.querySelectorAll('[data-card-block="makes"] [data-item-bar]')).toHaveLength(2);
         const events = container.querySelector('[data-card-block="lifecycle"]');

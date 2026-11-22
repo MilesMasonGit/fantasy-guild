@@ -2,8 +2,6 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
-import { unmetGearRequirement } from '../../../config/registries/weaponStyles.js';
-import { getHero } from '../../../systems/hero/HeroManager.js';
 import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
 import { takesCopy } from '../../../systems/equipment/heldCopies.js';
 import { formatCompact } from '../../../utils/Formatters.js';
@@ -14,12 +12,6 @@ import { SPEECH_TONE } from '../board/speechTone.js';
 /** What the words read from the game; a test passes its own. */
 const GAME = Object.freeze({
     itemOf: (itemId) => getItem(itemId),
-    // The engine's own requirement check, so the numbers are the ones it refused on.
-    unmetOf: (heroId, itemId) => {
-        const hero = getHero(heroId);
-        const item = getItem(itemId);
-        return hero && item ? unmetGearRequirement(item, hero) : null;
-    },
     skillName: (skillId) => getSkill(skillId)?.name || skillId,
     // Gear takes a copy of its own; food and drink stay linked to the Bank's whole stack.
     isStack: (itemId) => !takesCopy(itemId),
@@ -28,14 +20,23 @@ const GAME = Object.freeze({
 
 const withStop = (text) => (/[.!?)]$/.test(text) ? text : `${text}.`);
 
-/** "Can't equip Mythril Scimitar. Melee skill too low. (12/40)", or the engine's own reason. */
-export function equipRefusalText(heroId, itemId, error, game = GAME) {
+/** "Can't equip Mythril Scimitar. Needs Melee 40 (Ana: 12)": the engine's own reason, never reworded. */
+export function equipRefusalText(itemId, error, game = GAME) {
     const item = game.itemOf(itemId)?.name || 'that';
-    const unmet = game.unmetOf(heroId, itemId);
-    const reason = unmet
-        ? t('heroBar.skillTooLow', { skill: game.skillName(unmet.skill), have: unmet.have, need: unmet.level })
-        : withStop(error || 'Could not equip that');
-    return t('heroBar.cantEquip', { item, reason });
+    return t('heroBar.cantEquip', { item, reason: withStop(error || t('equipment.cantEquip')) });
+}
+
+/**
+ * Where the skill's icon goes in a level refusal: just before the skill's name inside the engine's
+ * reason, or null when the reason does not name it (another refusal, or a language that words it
+ * otherwise). Searched inside the reason so an item named after the skill is never matched.
+ * @returns {{ skill: string, at: number }|null}
+ */
+export function refusalIconOf(text, error, need, game = GAME) {
+    if (!need?.skill || !error) return null;
+    const reasonAt = text.lastIndexOf(error);
+    const nameAt = error.indexOf(game.skillName(need.skill));
+    return reasonAt >= 0 && nameAt >= 0 ? { skill: need.skill, at: reasonAt + nameAt } : null;
 }
 
 /** "Equipped Iron Woodaxe"; a stack linked to the Bank with its short count, "Equipped Shrimp x4.6k". */
@@ -89,10 +90,8 @@ export function equipOrAnnounce(equipment, heroId, itemId, preferredSlot = null,
         handingOver = false;
     }
     if (!result?.success) {
-        const text = isMove
-            ? t('heroBar.cantEquip', { item: game.itemOf(itemId)?.name || 'that', reason: withStop(result?.error || 'Could not move that') })
-            : equipRefusalText(heroId, itemId, result?.error, game);
-        announceEquip(heroId, text, SPEECH_TONE.CANT);
+        const text = equipRefusalText(itemId, result?.error || (isMove ? t('equipment.cantMove') : null), game);
+        announceEquip(heroId, text, SPEECH_TONE.CANT, refusalIconOf(text, result?.error, result?.need, game));
         return false;
     }
     if (!isMove) announceEquip(heroId, equipSuccessText(itemId, game), SPEECH_TONE.PLAIN);
@@ -110,7 +109,7 @@ export function equipOrAnnounce(equipment, heroId, itemId, preferredSlot = null,
 export function unequipOrAnnounce(equipment, heroId, slot) {
     const result = equipment.unequipItem(heroId, slot);
     if (!result?.success) {
-        EventBus.publish(UI_EVENTS.UI_SCREEN_CALLOUT, { text: result?.error || 'Could not take that off' });
+        EventBus.publish(UI_EVENTS.UI_SCREEN_CALLOUT, { text: result?.error || t('equipment.cantUnequip') });
         return false;
     }
     return true;

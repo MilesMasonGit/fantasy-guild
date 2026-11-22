@@ -1,7 +1,7 @@
 // context crafting
 
 import { neighbourIds } from './nearby.js';
-import { getTokenType, hasAdjacencyEffect, getProvidedTagsWithTiers, tokenName } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, hasAdjacencyEffect, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
 import { recipesForToken, contextTagsOf, contextRequirementsOf } from '../../config/registries/recipePoolRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as InputCost from './InputCost.js';
@@ -24,8 +24,8 @@ import { paidTestFor } from './BlockUpkeep.js';
  * Forges serves both, and it never wears for it: help is free (owner, 2026-10-24; `wearRule.js`).
  * Numerical buffs remain a light layer on top, deliberately small.
  *
- * Beside means Near. Every nearby question here (the context around a station, the tools it
- * accepts, and which stations a context Token serves) is
+ * Beside means Near. Every nearby question here (the context around a station and which stations
+ * a context Token serves) is
  * `nearby.neighbourIds()`: Tokens whose centres are within the standard reach, named by instance id.
  * Acts as and recipe context carry no reach field of their own; they are Near. The neighbour ids
  * are cached per instance in `nearby.js`; the tag maps built from them are not.
@@ -59,36 +59,6 @@ export function contextTiersAround(instanceId) {
         }
     }
     return tiers;
-}
-
-/** The type ids of every Token near a Token. */
-function typesNear(instanceId) {
-    const types = new Set();
-    for (const id of neighbourIds(instanceId)) {
-        const typeId = BoardState.getTokenById(id)?.typeId;
-        if (typeId) types.add(typeId);
-    }
-    return types;
-}
-
-/**
- * Checks whether a token's acceptedTokens requirements are met by Tokens near it.
- */
-export function checkAcceptedTokens(instanceId, def) {
-    if (!def?.acceptedTokens || def.acceptedTokens.length === 0) return true;
-    const tiers = contextTiersAround(instanceId);
-    const nearbyTokens = typesNear(instanceId);
-
-    for (const req of def.acceptedTokens) {
-        if (req.tag) {
-            const minTier = req.minTier || 1;
-            if ((tiers[req.tag] || 0) < minTier) return false;
-        } else if (req.tokenIds?.length) {
-            const hasAny = req.tokenIds.some(id => nearbyTokens.has(id));
-            if (!hasAny) return false;
-        }
-    }
-    return true;
 }
 
 /**
@@ -128,11 +98,6 @@ export function unmetContext(instanceId, recipe) {
  */
 export function resolveRecipe(instanceId, instance) {
     const def = getTokenType(instance?.typeId);
-
-    // First verify Accepted Tokens on the Token definition itself (e.g. Copper Ore needing Pickaxe)
-    if (!checkAcceptedTokens(instanceId, def)) {
-        return { status: RECIPE.NONE, recipe: null, reason: 'missing_tool' };
-    }
 
     const recipes = recipesForToken(def);
 
@@ -189,14 +154,13 @@ export function effectiveIO(instanceId, instance) {
 
 /**
  * Every nearby Token (by instance id, arrival order) that this context or buff Token serves: a
- * station whose active recipe or accepted tools it supplies, or anything that runs beside a buff.
+ * station whose active recipe it supplies, or anything that runs beside a buff.
  * Serving costs it nothing (help is free); the quest tracker asks who a Token serves.
  */
 export function servesFrom(contextId) {
     const instance = BoardState.getTokenById(contextId);
     const def = getTokenType(instance?.typeId);
-    const providedMap = getProvidedTagsWithTiers(def, paidTestFor(instance));
-    const providedTags = Object.keys(providedMap);
+    const providedTags = Object.keys(getProvidedTagsWithTiers(def, paidTestFor(instance)));
     const isBuff = hasAdjacencyEffect(def);
     if (!providedTags.length && !isBuff) return [];
 
@@ -215,20 +179,6 @@ export function servesFrom(contextId) {
         const runs = !!neighbourDef?.config || neighbourDef?.tokenType === 'enemy';
         if (!runs) continue;                      // inert things aren't served
 
-        // If neighbour requires acceptedTokens that we provide
-        const accepted = neighbourDef?.acceptedTokens || [];
-        const matchesAccepted = accepted.some(req => {
-            if (req.tag && providedMap[req.tag] != null) {
-                return (providedMap[req.tag] >= (req.minTier || 1));
-            }
-            if (req.tokenIds?.includes(instance.typeId)) return true;
-            return false;
-        });
-        if (matchesAccepted) {
-            served.push(id);
-            continue;
-        }
-
         // A buff Token serves anything that runs beside it. A context Token
         // serves only stations whose active recipe it actually contributes to.
         if (isBuff) { served.push(id); continue; }
@@ -243,7 +193,7 @@ export function servesFrom(contextId) {
 
 /**
  * Returns missing requirements for a Token with strict priority:
- * 1. Tokens/Tools priority: If accepted tokens/tools are missing, or context recipes missing/conflicting.
+ * 1. Tokens priority: the selected recipe's context Tokens are missing.
  * 2. Items priority: Only once all token requirements are satisfied and recipe is resolved.
  *
  * @returns {{ type: 'tokens'|'items'|null, items: string[] }}
@@ -253,35 +203,7 @@ export function getMissingRequirements(instanceId, instance) {
     const def = getTokenType(instance.typeId);
     if (!def) return { type: null, items: [] };
 
-    // 1. Check Accepted Tokens / Tools on the Token definition itself (e.g. tag 'anvil' or 'pickaxe')
-    if (def.acceptedTokens?.length) {
-        const tiers = contextTiersAround(instanceId);
-        const nearbyTokens = typesNear(instanceId);
-
-        const missingTools = [];
-        for (const req of def.acceptedTokens) {
-            if (req.tag) {
-                const minTier = req.minTier || 1;
-                if ((tiers[req.tag] || 0) < minTier) {
-                    const formatted = req.tag.toLowerCase() === 'axe'
-                        ? 'Woodaxe'
-                        : req.tag.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-                    missingTools.push(formatted);
-                }
-            } else if (req.tokenIds?.length) {
-                const hasAny = req.tokenIds.some(id => nearbyTokens.has(id));
-                if (!hasAny) {
-                    missingTools.push(tokenName(req.tokenIds[0]) || req.tokenIds[0]);
-                }
-            }
-        }
-
-        if (missingTools.length > 0) {
-            return { type: 'tokens', items: missingTools };
-        }
-    }
-
-    // 2. Check the context the SELECTED recipe asks for. Only that one recipe's requirements are
+    // 1. Check the context the SELECTED recipe asks for. Only that one recipe's requirements are
     // listed: the station has already chosen, and listing the rest would tell the player to fetch
     // Tokens for work they did not ask for.
     const { recipe } = resolveRecipe(instanceId, instance);
@@ -295,7 +217,7 @@ export function getMissingRequirements(instanceId, instance) {
         };
     }
 
-    // 3. Tokens are satisfied! Now check missing input Items
+    // 2. Tokens are satisfied! Now check missing input Items
     const io = effectiveIO(instanceId, instance);
     if (io.inputs?.length) {
         const check = InputCost.checkCost(instance, io.inputs);

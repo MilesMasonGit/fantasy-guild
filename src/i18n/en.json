@@ -85,7 +85,17 @@
         "fighting": "{hero} is fighting",
         "missing": "{item} is gone from the game. Right-click to clear the slot",
         "unmet": "{item}: {needs}. It does nothing until then",
-        "needsLevel": "Needs {skill} {level}",
+        "needsLevel": "Needs {skill} {level} ({hero}: {have})",
+        "notFound": "That hero or item is gone",
+        "villager": "Villagers cannot equip items",
+        "cannotEquip": "That cannot be equipped",
+        "alreadyEquipped": "{item} is already equipped",
+        "outOfStock": "Out of stock",
+        "noFreeSlot": "No free slot in the loadout",
+        "slotEmpty": "Slot is empty",
+        "cantMove": "Could not move that",
+        "cantEquip": "Could not equip that",
+        "cantUnequip": "Could not take that off",
         "sharedGearTitle": "One copy per hero",
         "sharedGearLine": "Each hero now needs their own copy of gear, weapons and tools, and the Bank was short: {losses}",
         "sharedGearLoss": "{hero} lost {item}"
@@ -629,8 +639,7 @@
         "equipped": "Equipped {item}",
         "equippedStack": "Equipped {item} x{count}",
         "unequipped": "Unequipped {item}",
-        "cantEquip": "Can't equip {item}. {reason}",
-        "skillTooLow": "{skill} skill too low. ({have}/{need})"
+        "cantEquip": "Can't equip {item}. {reason}"
     },
     "heroPanel": {
         "perks": "Perks",
