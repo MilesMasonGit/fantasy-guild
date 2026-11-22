@@ -27,8 +27,13 @@ export const calloutText = {
     effect: (title) => title,
     // Over a Token a hero would work but holds no tool for: "Needs Pickaxe".
     needsTool: (tool) => `Needs ${tool}`,
-    // Over a station its hero stands at, out of an input: "Needs Coal".
-    needsInput: (item) => `Needs ${item}`,
+    // Over a Token stopped for want of an item: "Needs Oak Seedling". A hero stopped so says it
+    // in a waiting bubble in the same words (`heroNeeds.js`).
+    needsInput: (item) => t('messages.needs', { item }),
+    // A Token run dry and resting, said over it: "Copper Vein exhausted".
+    exhausted: (name) => t('messages.exhausted', { token: name }),
+    // A Token that has just become another, said over it: its new name, or "Sawmill built".
+    became: (name, cause) => t(cause === 'build' ? 'messages.built' : 'messages.became', { token: name }),
     // A status landing on a fighter, over their bar: "Venom!".
     statusLands: (statusId) => t('fight.float.lands', { status: EFFECTS[statusId]?.name || statusId })
 };
@@ -45,7 +50,7 @@ export function namesStatus(title) {
  */
 export const TOOL_CALLOUT_GAP_MS = 8000;
 
-/** How long a station waits before saying "Needs Coal" again: the same reminder as the tool's. */
+/** How long a Stump waits before saying "Needs Oak Seedling" again: the same reminder as the tool's. */
 export const INPUT_CALLOUT_GAP_MS = TOOL_CALLOUT_GAP_MS;
 
 /** Whether a reminder last said at `lastAt` (or never: null) may be said again at `now`. */

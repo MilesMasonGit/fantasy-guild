@@ -598,7 +598,12 @@
     },
     "messages": {
         "usedUp": "{token} used up",
-        "gearBroke": "My {item} broke!"
+        "gearBroke": "My {item} broke!",
+        "exhausted": "{token} exhausted",
+        "built": "{token} built",
+        "became": "{token}",
+        "recovered": "Recovered, ready to work!",
+        "needs": "Needs {item}"
     },
     "orders": {
         "needs": "Needs {what}",

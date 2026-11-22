@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { MAT_Z } from './matLayers.js';
 import { addMoment, liveMoments, stackOf, momentText, speaksMoment, idleMomentOf, BEATEN_TTL_MS } from './heroSpeech.js';
-import { raiseBubble, dismissBubble, bubblesOf, hasBubble, registerRebuild, startSpeechBubbles, subscribeBubbles, bubblesVersion } from './speechBubbles.js';
-import { GEAR_BROKE_KEY, gearBrokeSpecOf, rebuildGearBroke } from './heroNeeds.js';
+import { raiseBubble, dismissBubble, bubblesOf, registerRebuild, startSpeechBubbles, subscribeBubbles, bubblesVersion } from './speechBubbles.js';
+import { gearBrokeSpecOf, rebuildGearBroke, recoveredSpec, raiseNeedsItem, rebuildNeedsItem, saysWhyStopped } from './heroNeeds.js';
 import { floatsOf, anyFloats, subscribeFloats } from './levelUpFloats.js';
 import { LevelUpFloats } from './LevelUpFloat.jsx';
 import { useMatFit } from './MatFitContext.jsx';
@@ -61,8 +61,8 @@ const guessSize = (stack, floats, unit) => {
  * stack (`levelUpFloats.js`, `LevelUpFloat.jsx`), drawn with the speech so it follows the hero
  * and is kept off the other stacks the same way.
  * Heroes speak of **moments** (going idle, a job gone for good, an enemy the hero beat), timed and
- * gone by themselves (`heroSpeech.js`), and of what waits for the player (gear that broke,
- * `heroNeeds.js`), until hovered, clicked or no longer needed. A Token's problem is never spoken: its problem
+ * gone by themselves (`heroSpeech.js`), and of what waits for the player (gear that broke, back
+ * from a wound, a station out of Coal: `heroNeeds.js`), until hovered, clicked or no longer needed. A Token's problem is never spoken: its problem
  * mark and the mark's hover say it. Routine moments are filtered out by `speaksMoment`,
  * and every line with its status is listed in `docs/reference/speech_bubble_lines.md`.
  * Stacks are kept off each other and inside the mat (`bubbleLayout.js`); a nudged stack's
@@ -103,12 +103,12 @@ export const HeroBubbleLayer = ({ heroes }) => {
     // The waiting bubbles: kept in step with the game while the mat is drawn, rebuilt on a load.
     useSyncExternalStore(subscribeBubbles, bubblesVersion);
     useEffect(() => {
-        const unregister = registerRebuild(rebuildGearBroke);
+        const unregister = [registerRebuild(rebuildGearBroke), registerRebuild(rebuildNeedsItem)];
         const stop = startSpeechBubbles();
-        return () => { stop(); unregister(); };
+        return () => { stop(); unregister.forEach(u => u()); };
     }, []);
 
-    // Beaten enemies, status landings and broken gear arrive as events.
+    // Beaten enemies, status landings, broken gear, recoveries and missing inputs arrive as events.
     useEffect(() => {
         const unsubs = [
             // The hero who beat an enemy says so. A Token used up is a popup over it (`CalloutLayer`).
@@ -128,6 +128,14 @@ export const HeroBubbleLayer = ({ heroes }) => {
             EventBus.subscribe(BOARD_EVENTS.GEAR_BROKE, (p) => {
                 const spec = gearBrokeSpecOf(p);
                 if (spec) raiseBubble(p.heroId, spec);
+            }, UI_LISTENER),
+            // Back from a wound: they say so until they start work again.
+            EventBus.subscribe(ENGINE_EVENTS.HERO_RECOVERED, (p) => {
+                if (p?.heroId) raiseBubble(p.heroId, recoveredSpec(p.heroId));
+            }, UI_LISTENER),
+            // Their station is out of an input: they say which until it is back in the Bank.
+            EventBus.subscribe(BOARD_EVENTS.INPUT_NEEDED, (p) => {
+                if (p?.heroId && p.itemId) raiseNeedsItem(p.heroId, p.itemId, { quantity: p.needed });
             }, UI_LISTENER)
         ];
         return () => unsubs.forEach(u => u());
@@ -144,8 +152,9 @@ export const HeroBubbleLayer = ({ heroes }) => {
             const idle = h.state === 'idle';
             next.set(h.heroId, idle);
             if (prev && prev.get(h.heroId) === false && idle) {
-                // A hero whose gear broke has said why they stop, and its "!" says it after.
-                if (hasBubble(h.heroId, GEAR_BROKE_KEY)) continue;
+                // A hero whose gear broke, or whose work lacks an item, has said why they stop, and
+                // the "!" says it after.
+                if (saysWhyStopped(h.heroId)) continue;
                 // Waiting for another hero's fight or Token says so; waiting for a resting node,
                 // or standing at a spot they were sent to, says nothing; a job gone asks for one.
                 const waiting = Flags.waitingOf(h.heroId);

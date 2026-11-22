@@ -90,10 +90,12 @@ function put(ownerId, { key, text, holds, checkOn = [], tone = null }, { keepExi
  * @param {string} ownerId
  * @param {{key: string, text: string, holds: () => boolean, checkOn?: string[], tone?: string}} spec
  *   `holds` is true while the need stands; `checkOn` the EventBus events on which it is asked again.
+ * @param {{keepExisting?: boolean}} [options] `keepExisting`: a bubble already up under `key`
+ *   (drawn or dismissed) is left as it is, for a need the engine says again and again while it stands.
  * @returns {boolean} whether a bubble was raised
  */
-export function raiseBubble(ownerId, spec) {
-    return put(ownerId, spec, { keepExisting: false });
+export function raiseBubble(ownerId, spec, { keepExisting = false } = {}) {
+    return put(ownerId, spec, { keepExisting });
 }
 
 /** Hovered or clicked: no longer drawn, still watched until its need is met. */
@@ -130,6 +132,11 @@ export function bubblesOf(ownerId) {
 /** Whether `ownerId` has a bubble under `key` whose need stands, drawn or dismissed. */
 export function hasBubble(ownerId, key) {
     return owners.get(ownerId)?.has(key) === true;
+}
+
+/** The keys of every bubble over `ownerId` whose need stands, drawn or dismissed. */
+export function bubbleKeysOf(ownerId) {
+    return [...(owners.get(ownerId)?.keys() || [])];
 }
 
 /**

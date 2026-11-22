@@ -297,13 +297,13 @@ function announceToolNeeded(instanceId, heroId) {
 }
 
 /**
- * A Token its hero stands at is out of an input: the mat says which, over the Token ("Needs
- * Coal"). Said each time the stuck hero's flag looks again (about once a second, and as they
- * leave for other work); the callout spaces itself out (`CalloutLayer`).
+ * A Token its hero is ordered onto is out of an input, run dry or never stocked: the hero says
+ * which ("Needs Coal", `heroNeeds.raiseNeedsItem`). Published each time the stopped hero's flag
+ * looks again (about once a second); a bubble already up is left as it is.
  */
 function announceInputNeeded(instance, heroId) {
-    const itemId = WorkCheck.fixableReason(instance.id, instance, heroId).inputCheck?.missing?.[0]?.itemId;
-    if (itemId) EventBus.publish(BOARD_EVENTS.INPUT_NEEDED, { instanceId: instance.id, heroId, itemId });
+    const missing = WorkCheck.fixableReason(instance.id, instance, heroId).inputCheck?.missing?.[0];
+    if (missing?.itemId) EventBus.publish(BOARD_EVENTS.INPUT_NEEDED, { instanceId: instance.id, heroId, itemId: missing.itemId, needed: missing.needed });
 }
 
 function recordSkips(r, heroId, skips) {
@@ -435,6 +435,9 @@ function choose(r, heroId) {
     recordSkips(r, heroId, skips);
 
     if (!pick) {
+        // Stopped before ever starting for want of an input: said as when it runs dry.
+        const short = BoardState.getTokenById(skips.find(s => s.reason === ALERT.INPUTS)?.instanceId);
+        if (short) announceInputNeeded(short, heroId);
         r.nextTryAt.set(heroId, r.clock + RETRY_MS);
         return false;
     }
@@ -501,9 +504,10 @@ function keepOrRelease(r, heroId, dirty) {
 
         // Stuck for a fixable reason: stay until something else can run.
         if (FIXABLE.has(alert) && (dirty || r.clock >= (r.nextTryAt.get(heroId) ?? 0))) {
-            if (alert === ALERT.INPUTS) announceInputNeeded(instance, heroId);
             const { pick, skips } = evaluate(heroId, flag, instance.id);
             if (!pick) {
+                // Said only while the hero stays: one leaving for other work has nothing to ask for.
+                if (alert === ALERT.INPUTS) announceInputNeeded(instance, heroId);
                 r.nextTryAt.set(heroId, r.clock + RETRY_MS);
                 return;
             }
