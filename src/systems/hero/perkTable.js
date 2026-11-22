@@ -17,8 +17,8 @@ import { MAX_SKILL_LEVEL } from '../../utils/XPCurve.js';
  * `scale` (1 to 5, default 1) is the reference's strength, as on a Token or item.
  */
 
-/** The levels a new perk table offers, before the owner moves them. */
-export const DEFAULT_PERK_LEVELS = Object.freeze([10, 25, 50, 75, 99]);
+/** The levels a new perk table offers, before the owner moves them: every 5 levels, and 99. */
+export const DEFAULT_PERK_LEVELS = Object.freeze([...Array.from({ length: 19 }, (_, i) => 5 * (i + 1)), MAX_SKILL_LEVEL]);
 
 /** The lowest level a perk may sit at: every hero holds level 1 from the start, so it is never reached. */
 export const MIN_PERK_LEVEL = 2;
