@@ -20,6 +20,7 @@ import { VitalBar } from '../base/VitalBar.jsx';
 import { useDragSettleHover } from './useDragSettleHover.js';
 import { equipOrAnnounce } from './dockEquip.js';
 import { useHeroBarBubbles, clearHeroBubbles, clearHeroBubble, BAR_BUBBLES_SHOWN, BAR_BUBBLE_FADE_MS } from './heroBarBubbles.js';
+import { unlockSummary, unlockGroups } from './levelUnlocks.js';
 import { useEquipBubble, EQUIP_BUBBLE_FADE_MS } from './equipBubbles.js';
 import { BubbleText } from '../board/BubbleText.jsx';
 import { SpeechFrame } from '../board/SpeechFrame.jsx';
@@ -431,8 +432,10 @@ const WHEEL_GAP_MS = 200;
  * A hero's level-up alerts, standing over the name: newest nearest the head, at most
  * `BAR_BUBBLES_SHOWN` at a time, with arrows (or the mouse wheel) paging back through older ones;
  * each page slides a few pixels in from the side it came from. Never wider than the hero's slot;
- * a line may wrap to two. A click on an alert fades out and clears that one alert without opening
- * the hero; they let the pointer through while something is being dragged.
+ * a line may wrap to two. An alert whose levels unlocked something says it short under its words;
+ * a click opens it to the whole list (each perk, recipe, Token and gear piece by name), and the
+ * next click clears it. A click on any other alert fades out and clears it. Neither opens the
+ * hero; they let the pointer through while something is being dragged.
  */
 const BarBubbles = ({ heroId, bubbles, tailLast = true }) => {
     const { isDragging: passive } = useActiveDrag();
@@ -440,6 +443,7 @@ const BarBubbles = ({ heroId, bubbles, tailLast = true }) => {
     const [slide, setSlide] = useState(null);
     const lastWheelRef = useRef(-Infinity);
     const [fading, setFading] = useState(() => new Set());
+    const [open, setOpen] = useState(() => new Set());
     const pages = Math.max(1, Math.ceil(bubbles.length / BAR_BUBBLES_SHOWN));
     const shownPage = Math.min(page, pages - 1);
     const end = bubbles.length - shownPage * BAR_BUBBLES_SHOWN;
@@ -449,6 +453,12 @@ const BarBubbles = ({ heroId, bubbles, tailLast = true }) => {
         setFading(prev => new Set(prev).add(key));
         setTimeout(() => {
             clearHeroBubble(heroId, key);
+            setOpen(prev => {
+                if (!prev.has(key)) return prev;
+                const next = new Set(prev);
+                next.delete(key);
+                return next;
+            });
             setFading(prev => {
                 if (!prev.has(key)) return prev;
                 const next = new Set(prev);
@@ -527,14 +537,19 @@ const BarBubbles = ({ heroId, bubbles, tailLast = true }) => {
             >
                 {shown.map((b, i) => {
                     const isFading = fading.has(b.key);
+                    const summary = unlockSummary(b.unlocks);
+                    const isOpen = !!summary && open.has(b.key);
                     return (
                         <SpeechFrame
                             key={b.key}
                             data-bar-bubble={b.key}
                             data-bar-bubble-fading={isFading ? 'true' : undefined}
+                            data-bar-bubble-open={isOpen ? 'true' : undefined}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                if (!isFading) fadeOut(b.key);
+                                if (isFading) return;
+                                if (summary && !isOpen) setOpen(prev => new Set(prev).add(b.key));
+                                else fadeOut(b.key);
                             }}
                             tone={SPEECH_TONE.ATTENTION}
                             tail={tailLast && i === shown.length - 1}
@@ -544,7 +559,25 @@ const BarBubbles = ({ heroId, bubbles, tailLast = true }) => {
                             )}
                             style={{ transitionDuration: `${BAR_BUBBLE_FADE_MS}ms` }}
                         >
-                            <BubbleText text={b.text} />
+                            <span data-bar-bubble-text><BubbleText text={b.text} /></span>
+                            {summary && !isOpen && (
+                                <span data-bar-bubble-summary className="block text-gi-gold">{summary}</span>
+                            )}
+                            {isOpen && (
+                                // A long list (hours away) scrolls inside the alert; the wheel there scrolls it rather than paging.
+                                <span
+                                    data-bar-bubble-unlocks
+                                    className="block max-h-48 overflow-y-auto text-left"
+                                    onWheel={e => e.stopPropagation()}
+                                >
+                                    {unlockGroups(b.unlocks).map(g => (
+                                        <span key={g.kind} data-bar-bubble-group={g.kind} className="block">
+                                            <span className="block text-gi-gold">{g.label}</span>
+                                            {g.names.map(name => <span key={name} data-bar-bubble-unlock className="block pl-1">{name}</span>)}
+                                        </span>
+                                    ))}
+                                </span>
+                            )}
                         </SpeechFrame>
                     );
                 })}

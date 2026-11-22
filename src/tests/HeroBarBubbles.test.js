@@ -42,7 +42,7 @@ function mount(props = {}) {
 
 const figure = (view, id) => view.container.querySelector(`[data-dock-hero="${id}"]`);
 const bubbles = (view, id) =>
-    [...view.container.querySelectorAll(`[data-bar-bubbles="${id}"] [data-bar-bubble]`)].map(n => n.textContent);
+    [...view.container.querySelectorAll(`[data-bar-bubbles="${id}"] [data-bar-bubble] [data-bar-bubble-text]`)].map(n => n.textContent);
 const level = (heroId, skillName, oldLevel, newLevel) =>
     act(() => { EventBus.publish(ENGINE_EVENTS.HERO_LEVELED, { heroId, heroName: heroId, skillId: skillName.toLowerCase(), skillName, oldLevel, newLevel }); });
 

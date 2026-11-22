@@ -24,7 +24,7 @@ import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { HeroDrawer } from '../ui/components/dock/HeroDrawer.jsx';
 import { HeroBubbleLayer } from '../ui/components/board/HeroBubbleLayer.jsx';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
-import { bubblesOf, clearAllHeroBubbles, addPerks } from '../ui/components/dock/heroBarBubbles.js';
+import { bubblesOf, clearAllHeroBubbles, addLevelUp } from '../ui/components/dock/heroBarBubbles.js';
 import { addFloat, clearAllFloats } from '../ui/components/board/levelUpFloats.js';
 import { skillPerkView, perksReachedBy, perkTitle, perkLines } from '../ui/components/dock/heroPerks.js';
 import { xpForLevel } from '../utils/XPCurve.js';
@@ -34,8 +34,8 @@ import { withoutShippedPerks } from './fixtures/noPerks.js';
 withoutShippedPerks();
 
 /**
- * The milestone perk on screen: the level-up float names it under the number, the hero bar gives it
- * an alert of its own, and the Hero drawer's skill panel lists every perk, those held lit.
+ * The milestone perk on screen: the level-up float names it under the number, the hero bar's level
+ * alert carries it, and the Hero drawer's skill panel lists every perk, those held lit.
  */
 
 const h = React.createElement;
@@ -64,7 +64,6 @@ const forester = (id, level) => ({
     id, name: id, spriteId: 'hn_recruit_por', hp: { current: 11, max: 11 }, status: 'idle', equipment: {},
     skills: { forestry: lvl(level), mining: lvl(12) }
 });
-const texts = (heroId) => bubblesOf(heroId).map(b => b.text);
 const level = (heroId, skillId, skillName, oldLevel, newLevel) =>
     act(() => { EventBus.publish(ENGINE_EVENTS.HERO_LEVELED, { heroId, heroName: heroId, skillId, skillName, oldLevel, newLevel }); });
 
@@ -101,13 +100,15 @@ describe('a perk named for the screen', () => {
 });
 
 describe('the hero bar names a perk the level-up reached', () => {
-    it('gives it an alert of its own after the level alert, kept when the skill levels again', () => {
+    const perksOf = (heroId) => bubblesOf(heroId).map(b => [b.text, b.unlocks?.perks || []]);
+
+    it('rides on the skill level alert, kept when the skill levels again', () => {
         level('h1', 'forestry', 'Forestry', 9, 10);
-        expect(texts('h1')).toEqual(['10 Forestry!', 'Perk: Clean Felling']);
+        expect(perksOf('h1')).toEqual([['10 Forestry!', ['Clean Felling']]]);
         level('h1', 'forestry', 'Forestry', 10, 11);
-        expect(texts('h1')).toEqual(['Perk: Clean Felling', '11 Forestry!']);
+        expect(perksOf('h1')).toEqual([['11 Forestry!', ['Clean Felling']]]);
         level('h1', 'mining', 'Mining', 12, 13);
-        expect(texts('h1')).toEqual(['Perk: Clean Felling', '11 Forestry!', '13 Mining!']);
+        expect(perksOf('h1')).toEqual([['11 Forestry!', ['Clean Felling']], ['13 Mining!', []]]);
     });
 
     it('names every perk a catch-up passed, read off its summary', () => {
@@ -117,13 +118,14 @@ describe('the hero bar names a perk the level-up reached', () => {
             });
             EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'catch_up' });
         });
-        expect(texts('h1')).toEqual(['30 Forestry!', 'Perk: Clean Felling', 'Perk: Seed Finder II']);
+        expect(perksOf('h1')).toEqual([['30 Forestry!', ['Clean Felling', 'Seed Finder II']]]);
     });
 
     it('adds the same perk once', () => {
-        const once = addPerks([], 'forestry', [{ level: 10, effectId: 'k4ui_felling', title: 'Clean Felling' }]);
-        const twice = addPerks(once, 'forestry', [{ level: 10, effectId: 'k4ui_felling', title: 'Clean Felling' }]);
-        expect(twice.map(b => b.text)).toEqual(['Perk: Clean Felling']);
+        const unlocks = { perks: ['Clean Felling'], recipes: [], tokens: [], gear: [] };
+        const once = addLevelUp([], { skillName: 'Forestry', newLevel: 10, unlocks });
+        const twice = addLevelUp(once, { skillName: 'Forestry', newLevel: 11, unlocks });
+        expect(twice.map(b => b.unlocks.perks)).toEqual([['Clean Felling']]);
     });
 });
 
