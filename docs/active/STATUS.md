@@ -17,13 +17,14 @@ build green) · bench-queued · eye-check · merged.*
 | 710 P2: the idle hover shows a timer or a problem only (T-591) | builder | `feat/idle-hover` (`n2`) | building | Sun | |
 | 710 P3: the "!" above, bobbing (T-592), after P2 | builder | | queued | | |
 | 720 R1: the animated ring and reach dots (T-593) | builder | `feat/animated-ring` (`ar`) 99f83762 | **built**, drag bench queued (Mon 01:00) and the look with 710: growRing.js read (frames only while moving, snaps when paused); builder gate green bar 3 CombatScreen load timeouts that pass alone | Sun | |
-| 720 R2: flags in the middle, on hover (T-594), after R1 | builder | `feat/flags-on-hover` (`fl`, on R1) | building | | |
+| 720 R2: flags in the middle, on hover (T-594), after R1 | builder | `feat/flags-on-hover` (`fl`, on R1) dc0afae1 | **built**, drag bench queued and the look (gate 709 green): flags only on hover, in the Token middle side by side, a hop each second; a middle flag never takes the pointer (tooltip from the cloth); the open hero panel no longer shows a flag | | |
 | 720 R3: task ring look pick, screenshot page (T-595) | builder | `feat/task-ring-pick` (`r3`) 71374e6a | **on main** 5d4b61a4 (docs only): four designs in docs/active/research/task_ring/, sent to the owner; recommended C (work green, fitted, light dim, no outline). **Waiting on the owner pick** | Sun | |
 | 720 R4: the task ring as picked (T-595), after the owner's pick | engineer | | queued | | |
 | 730 D1: the Hall pays once a lap; no work-cycle effect without a work cycle (T-511, T-514) | builder-lite | `fix/hall-one-lap` (`hd1`) 8d8117dd | **built**, director suite pending (the builder got no full run under six agents): diff read, the Hall ids removed were dead (the Hall has no work config). Owner pack after merge: strip the times from the three Hall lines | Sun | |
 | 730 D5: the same effect adds in full, no cap of 5 (T-516) | builder | `fix/effects-add-in-full` (`gd5`) | building | Sun | |
 | 735 V2: Recovery shortens running wounds; Burning on every meal (T-528, T-529) | builder-lite | `fix/recovery-burning` (`hv2`) b953bf81 | **built**, bench queued (Mon 01:00, same work expected): whole diff read (wound rescaled by share left via woundedTotalMs; Food Healing on every meal; Wound Time label now Recovery, golden regenerated) | Sun | |
-| 735 V3: levelling up names the perk and what it unlocks; perk tables every 5 levels (T-524, T-523) | builder | `feat/level-up-unlocks` (`hv3`) | building | Sun | |
+| 735 V3: levelling up names the perk and what it unlocks; perk tables every 5 levels (T-524, T-523) | builder | `feat/level-up-unlocks` (`hv3`) 7d0136f9 | **built**, waits for the look (gate 709 green, UI only, same work expected): float names the perk and counts the rest; one hero bar alert per skill, clicked lists Perk, Recipes, Tokens, Gear; new perk tables every 5 levels and 99 (the CMS editor shows empty slots at those levels on existing tables, nothing saved). Guild New Recipe banner kept | Sun | |
+| 730 D2: guild-wide combat effects reach heroes; Sunder refused on stars (T-512), on D1 | builder | `fix/guild-combat-effects` (`hd2`) | building | Sun | |
 
 ## Director, batch 11: brief 700, faults waiting for content (owner, 2026-11-18 evening: merge 690 after the bench, start the next brief)
 
