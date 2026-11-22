@@ -18,6 +18,9 @@
  * a skill must be an edit to this file and nothing else: derive from `SKILLS`, `SKILL_LAYERS` and
  * the helpers below rather than writing a literal.
  *
+ * ⚠️ The one exception is words: a new skill also needs its hero-sheet line under `skillPurpose`
+ * in `src/i18n/en.json` (a test fails until it has one).
+ *
  * ⚠️ Renaming an id strands every piece of content naming the old one. A rename also needs an
  * entry in `skillIdMigration.js`, which rewrites the old id in `data/` and in the CMS workspace as
  * they load. A dropped id is listed by the boot audit and the CMS Economy Audit
@@ -140,6 +143,11 @@ export const SKILLS = {
         id: 'enchanting', trade: SKILL_TRADES.CRAFTING, name: 'Enchanting', layer: SKILL_LAYERS.STARTING,
         description: 'Binding gems and dust into gear to make it more than it was.',
         icon: '🔮'
+    },
+    tailor: {
+        id: 'tailor', trade: SKILL_TRADES.CRAFTING, name: 'Tailor', layer: SKILL_LAYERS.STARTING,
+        description: 'Weaving cloth and stitching leather into robes, hoods, cloaks and string.',
+        icon: '🧵'
     },
     crime: {
         id: 'crime', name: 'Crime', layer: SKILL_LAYERS.STARTING,

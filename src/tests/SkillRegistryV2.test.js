@@ -8,7 +8,7 @@ import * as SkillRegistry from '../config/registries/skillRegistry.js';
 import { SKILLS as CMS_SKILLS, skillsByLayer } from '../../cms/src/utils/constants.js';
 
 /**
- * The skill registry of classless heroes (brief 270 K1): 20 skills in three layers, every one held
+ * The skill registry of classless heroes (brief 270 K1): 21 skills in two layers, every one held
  * by every hero. Rewritten from the class rework's 25 in two layers: five skills were cut and
  * every skill that is not a combat style became one list.
  *
@@ -16,12 +16,12 @@ import { SKILLS as CMS_SKILLS, skillsByLayer } from '../../cms/src/utils/constan
  * change, and it should be a deliberate edit here as well as in the registry.
  */
 
-describe('The 20 skills in two layers', () => {
-    it('has 20 skills: 16 non-combat, 4 combat, every one a hero holds', () => {
-        expect(SKILL_COUNT).toBe(20);
-        expect(getAllSkillIds()).toHaveLength(20);
+describe('The 21 skills in two layers', () => {
+    it('has 21 skills: 17 non-combat, 4 combat, every one a hero holds', () => {
+        expect(SKILL_COUNT).toBe(21);
+        expect(getAllSkillIds()).toHaveLength(21);
         expect(HERO_SKILL_IDS).toEqual(getAllSkillIds());
-        expect(STARTING_SKILL_IDS).toHaveLength(16);
+        expect(STARTING_SKILL_IDS).toHaveLength(17);
         expect(COMBAT_SKILL_IDS).toHaveLength(4);
     });
 
@@ -31,11 +31,11 @@ describe('The 20 skills in two layers', () => {
             .toEqual(['Skills', 'Combat']);
     });
 
-    it('the starting layer is the nine everyday skills, then the seven the owner kept', () => {
+    it('the starting layer is the nine everyday skills, then the seven the owner kept and Tailor', () => {
         expect(STARTING_SKILL_IDS).toEqual([
             'mining', 'forestry', 'fishing', 'smithing', 'crafting',
             'cooking', 'farming', 'alchemy', 'construction',
-            'fletching', 'faith', 'summoning', 'enchanting', 'crime', 'taming', 'science'
+            'fletching', 'faith', 'summoning', 'enchanting', 'tailor', 'crime', 'taming', 'science'
         ]);
     });
 

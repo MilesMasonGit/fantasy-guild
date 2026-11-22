@@ -74,13 +74,13 @@ beforeEach(() => {
     GameState.state.progress.rosterLimit = 8;
 });
 
-describe('the skills: 16 non-combat, 4 combat', () => {
-    it('has twenty skills in two layers', () => {
+describe('the skills: 17 non-combat, 4 combat', () => {
+    it('has twenty-one skills in two layers', () => {
         expect(Object.values(SKILL_LAYERS)).toEqual(['starting', 'combat']);
-        expect(STARTING_SKILL_IDS).toHaveLength(16);
+        expect(STARTING_SKILL_IDS).toHaveLength(17);
         expect(COMBAT_SKILL_IDS).toEqual(['melee', 'ranged', 'magic', 'stealth']);
-        expect(HERO_SKILL_IDS).toHaveLength(20);
-        expect(Object.keys(SKILLS)).toHaveLength(20);
+        expect(HERO_SKILL_IDS).toHaveLength(21);
+        expect(Object.keys(SKILLS)).toHaveLength(21);
         expect(getSkillIdsByLayer(SKILL_LAYERS.STARTING)).toEqual(STARTING_SKILL_IDS);
     });
 
@@ -91,7 +91,7 @@ describe('the skills: 16 non-combat, 4 combat', () => {
 });
 
 describe('a new hero holds every skill from level 1', () => {
-    it('all twenty at level 1, no job, and 11 HP', () => {
+    it('all twenty-one at level 1, no job, and 11 HP', () => {
         const h = generateHero({ name: 'Ana' });
         expect(Object.keys(h.skills).sort()).toEqual([...HERO_SKILL_IDS].sort());
         for (const id of HERO_SKILL_IDS) expect(h.skills[id], id).toEqual({ level: 1, xp: 0 });

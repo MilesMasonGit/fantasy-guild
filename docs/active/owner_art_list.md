@@ -246,6 +246,7 @@ swapping a picture in for one is a small code change.
 | Alchemy skill icon | 16 x 16 | NEW | stand-in until then: `s_flask` if it suits (T-297) |
 | Construction skill icon | 16 x 16 | NEW | stand-in until then: `s_industry` if it suits (T-297) |
 | Stealth skill icon | 16 x 16 | NEW | a combat skill with no sprite; the shared placeholder until then. On the hero sheet the icon alone identifies a skill (brief 340) |
+| Tailor skill icon | 16 x 16 | NEW | a making skill (cloth and leather work) added 2026-11-22; the shared placeholder until then. Drop it in as `assets/skills/s_tailor.png` and the director points the skill at it |
 | Specialist skill icons | 16 x 16 | NEW, later | with the specialist skill sessions; a shared plain placeholder until then |
 
 ## 10. Sounds (brief 380 M5)
