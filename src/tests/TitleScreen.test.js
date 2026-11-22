@@ -56,7 +56,7 @@ describe('the slots', () => {
         const stat = (name) => row(1).querySelector(`[data-slot-stat="${name}"]`);
         expect(stat('heroes').textContent.trim()).toBe('3');
         expect(stat('playtime').textContent.trim()).toBe('2h 5m');
-        expect(stat('away').textContent.trim()).toBe('3 h');
+        expect(stat('away').textContent.trim()).toBe('3h 0m');
         for (const name of ['heroes', 'playtime', 'away']) {
             expect(stat(name).querySelector('svg.lucide'), name).not.toBeNull();
         }
@@ -195,17 +195,17 @@ describe('each slot shows the time away it has built up', () => {
     const info = (ago) => ({ slotIndex: 0, lastSavedAt: now - ago });
 
     it('in the away summary wording', () => {
-        expect(slotAwayText(info(20 * 1000), now)).toBe('less than a minute');
-        expect(slotAwayText(info(45 * MIN), now)).toBe('45 min');
-        expect(slotAwayText(info(3 * HOUR + 12 * MIN), now)).toBe('3 h 12 min');
-        expect(slotAwayText(info(24 * HOUR), now)).toBe('24 h');
+        expect(slotAwayText(info(20 * 1000), now)).toBe('20s');
+        expect(slotAwayText(info(45 * MIN), now)).toBe('45m 0s');
+        expect(slotAwayText(info(3 * HOUR + 12 * MIN), now)).toBe('3h 12m');
+        expect(slotAwayText(info(24 * HOUR), now)).toBe('1d 0h');
     });
 
-    it('past the 24 hours a load plays, it reads 24 h (max)', () => {
+    it('past the 24 hours a load plays, it reads 1d 0h (max)', () => {
         expect(CATCH_UP.CAP_MS).toBe(24 * HOUR);
-        expect(slotAwayText(info(24 * HOUR + MIN), now)).toBe('24 h (max)');
-        expect(slotAwayText(info(30 * HOUR), now)).toBe('24 h (max)');
-        expect(slotAwayText(info(40 * 24 * HOUR), now)).toBe('24 h (max)');
+        expect(slotAwayText(info(24 * HOUR + MIN), now)).toBe('1d 0h (max)');
+        expect(slotAwayText(info(30 * HOUR), now)).toBe('1d 0h (max)');
+        expect(slotAwayText(info(40 * 24 * HOUR), now)).toBe('1d 0h (max)');
     });
 
     it('nothing for an empty or damaged slot, or one with no save time', () => {
@@ -214,8 +214,8 @@ describe('each slot shows the time away it has built up', () => {
         expect(slotAwayText({ slotIndex: 0, lastSavedAt: null }, now)).toBeNull();
     });
 
-    it('a save time a little ahead of the clock reads less than a minute', () => {
-        expect(slotAwayText(info(-5 * MIN), now)).toBe('less than a minute');
+    it('a save time a little ahead of the clock reads 0s', () => {
+        expect(slotAwayText(info(-5 * MIN), now)).toBe('0s');
     });
 
     it('on the screen: the away stat replaces last saved, whose time moves to its tip; none on empty or damaged slots', () => {
@@ -224,10 +224,10 @@ describe('each slot shows the time away it has built up', () => {
         localStorage.setItem('fantasy_guild_slot_1', slotSave(1, Date.now() - 30 * HOUR));
         render(h(SlotSelectionModal, { isOpen: true, onSelect: () => {} }));
         const away = row(1).querySelector('[data-slot-stat="away"]');
-        expect(away.textContent.trim()).toBe('3 h');
+        expect(away.textContent.trim()).toBe('3h 0m');
         expect(away.getAttribute('title')).toContain('last saved 3 hours ago');
         expect(row(1).querySelector('[data-slot-stat="saved"]')).toBeNull();
-        expect(row(2).querySelector('[data-slot-stat="away"]').textContent.trim()).toBe('24 h (max)');
+        expect(row(2).querySelector('[data-slot-stat="away"]').textContent.trim()).toBe('1d 0h (max)');
         localStorage.removeItem('fantasy_guild_slot_1');
         cleanup();
         render(h(SlotSelectionModal, { isOpen: true, onSelect: () => {} }));

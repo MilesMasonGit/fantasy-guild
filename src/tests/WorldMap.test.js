@@ -30,7 +30,7 @@ import { WorldDrawer } from '../ui/components/atlas/WorldDrawer.jsx';
 import { shortWords } from '../ui/components/atlas/WorldPrice.jsx';
 import { NOTIFICATION_COLUMN, columnWidthAt } from '../ui/components/board/boardConstants.js';
 import * as MatCap from '../systems/board/MatCap.js';
-import { formatPlaytime } from '../utils/Formatters.js';
+import { elapsedText } from '../utils/Formatters.js';
 import {
     shownRings, cellLook, CELL_LOOK, cellMiddle, cellCentre, mapSize, hexPoints, cellCentreArt, clampView, viewOn, mapBounds, PAN_KEEP_PX,
     HEX_R, TILE_W, TILE_H, ART_SCALE
@@ -571,7 +571,7 @@ describe('⭐ the World Map drawer (brief 570 D4)', () => {
         const { count, cap } = Atlas.capStatusOf(home);
         expect(count).toBeGreaterThan(0);
         expect(q(container, '[data-world-count]').textContent).toBe(`${count}/${cap}`);
-        expect(q(container, '[data-world-playtime]').textContent).toBe(formatPlaytime(5 * 60_000));
+        expect(q(container, '[data-world-playtime]').textContent).toBe(elapsedText(5 * 60_000));
         // The place the guild moved to counts as the cap does.
         pickCell(container, '0,1');
         expect(q(container, '[data-world-count]').textContent).toBe(`${MatCap.tokenCount()}/${MatCap.matCap()}`);

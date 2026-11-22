@@ -1,6 +1,7 @@
 import { getSkill, heroSheetSkillIds, SKILL_LAYERS } from '../../../config/registries/skillRegistry.js';
 import { getXpProgress, xpForLevel, MAX_SKILL_LEVEL } from '../../../utils/XPCurve.js';
 import { t } from '../../../i18n/index.js';
+import { countdownText } from '../../../utils/Formatters.js';
 
 /** Layers whose rows get their own background colour. */
 export const TIER_LAYERS = new Set([SKILL_LAYERS.SPECIALIST]);
@@ -50,21 +51,13 @@ export function skillXpView(xp) {
     };
 }
 
-/** A time to go, as the UI writes times: `0:34`, `4:05`, `1:04:05`. */
-export function formatEta(seconds) {
-    const total = Math.max(0, Math.ceil(Number(seconds) || 0));
-    const h = Math.floor(total / 3600);
-    const m = Math.floor((total % 3600) / 60);
-    const s = String(total % 60).padStart(2, '0');
-    return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`;
-}
 
 /**
  * A skill row's opened detail, as display strings:
  * * `level`: this level's XP, `1,154 / 1,500`; `toNext`: what is left, `346`;
  * * `total`: all XP earned in the skill;
  * * `rate`: XP an hour, `+1,234`, over the last stretch of work, or null when it is not being trained;
- * * `eta`: time to the next level at that rate (`4:05`), or null.
+ * * `eta`: time to the next level at that rate (`4m 5s`), or null.
  * At the top level only `total` is filled.
  * @param {number} xp the skill's total XP
  * @param {number} ratePerHour from `XpRateTracker.getRate`
@@ -84,7 +77,7 @@ export function skillDetail(xp, ratePerHour = 0) {
         nextLevel: skillLevelText(prog.level + 1),
         total: n(total),
         rate: rate > 0 ? `+${Math.round(rate).toLocaleString('en-US')}` : null,
-        eta: rate > 0 ? formatEta((left / rate) * 3600) : null
+        eta: rate > 0 ? countdownText((left / rate) * 3600 * 1000) : null
     };
 }
 

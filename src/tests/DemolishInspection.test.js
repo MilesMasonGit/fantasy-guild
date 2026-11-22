@@ -62,7 +62,7 @@ describe('a marked Token reads as demolition work', () => {
         ]);
         t.cycleElapsedMs = Demolition.DEMOLISH_MS - 6000;
         expect(lifecycleLines(t, { ...src, workerOf: () => 'h1' })).toEqual([
-            { label: 'Marked for demolition', value: '6 s left', tone: 'warning' }
+            { label: 'Marked for demolition', value: '6s left', tone: 'warning' }
         ]);
     });
 

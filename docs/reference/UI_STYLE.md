@@ -24,7 +24,7 @@ clunky labels like "LVL 03" where "3/99" says it better.
 - **HP elsewhere is a bar**; the exact number shows on hover, except on the mat, where a fighter's bar is a small
   edition of the hero bar's, the same green, amber or red on a stepped black edge, its numbers written on it, `17/30` (owner's pick F,
   2026-11-05).
-- Times read `0:34` / `4:05`; thousands get separators (`1,154`).
+- Times read `34s`, `4m 57s`, `1h 15m`, `1d 4h`, from the one writer in `src/utils/Formatters.js`: `countdownText` (a running timer: rounded up, zero parts kept, `5m 0s`), `lengthText` (a fixed length: a grow time, a rest, a lap, a cycle, a swing: `2.5s`, `8m`) and `elapsedText` (counting up: a fight's length, playtime, time away: rounded down). No clocks (`4:57`). The save slot's Last saved stays in words. Thousands get separators (`1,154`).
 
 ## Frames
 

@@ -9,7 +9,7 @@ import { PixelGlyph } from '../base/PixelGlyph.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { ItemTipContent } from '../drawer/ItemTip.jsx';
-import { formatClock } from '../drawer/lifecycleLines.js';
+import { lengthText } from '../../../utils/Formatters.js';
 import { panDrag } from '../../utils/panDrag.js';
 import { KIND } from './encyclopediaModel.js';
 import {
@@ -181,8 +181,8 @@ const LineMark = memo(function LineMark({ label, book, heroes }) {
         short ? t('encyclopedia.noHero', { skill, level: req.level }) : null,
         stations.length ? t('encyclopedia.madeAtNames', { names: stations.join(', ') }) : null,
         label.through && label.regrow
-            ? t('encyclopedia.regrows', { stage: an(book.nameOf(label.through[0])), near: near.length ? t('encyclopedia.beside', { name: an(near[0]) }) : '', time: formatClock(growMs) })
-            : label.through ? t('encyclopedia.grows', { stage: an(book.nameOf(label.through[label.through.length - 1])), time: formatClock(growMs) }) : null
+            ? t('encyclopedia.regrows', { stage: an(book.nameOf(label.through[0])), near: near.length ? t('encyclopedia.beside', { name: an(near[0]) }) : '', time: lengthText(growMs) })
+            : label.through ? t('encyclopedia.grows', { stage: an(book.nameOf(label.through[label.through.length - 1])), time: lengthText(growMs) }) : null
     ].filter(Boolean);
     return (
         <Tooltip lines={lines}>
@@ -198,7 +198,7 @@ const LineMark = memo(function LineMark({ label, book, heroes }) {
                 }}
             >
                 {label.through && <PixelGlyph name={label.regrow ? 'regrow' : 'grow'} scale={4} style={{ filter: GLYPH_OUTLINE }} />}
-                {label.through && growMs > 0 && <span>{formatClock(growMs)}</span>}
+                {label.through && growMs > 0 && <span>{lengthText(growMs)}</span>}
                 {req && <SkillIcon skillId={isCombat ? 'melee' : req.skill} size={32} />}
                 {req && <span>{req.level}</span>}
             </span>
@@ -342,7 +342,7 @@ const Links = memo(function Links({ layout, lit }) {
  *   `reserveRight` a strip on its right (under a panel) where the focus is never kept
  */
 export const ChartView = ({ book, chart, metrics, rect, focusAt, glide, got, heroes, startName, onNode, onStem }) => {
-    const growText = useCallback((label) => formatClock(growMsOf(book, label.through)), [book]);
+    const growText = useCallback((label) => lengthText(growMsOf(book, label.through)), [book]);
     const layout = useMemo(() => layoutChart(chart, metrics, growText), [chart, metrics, growText]);
     // The box under the pointer, and what of the chart lies on its path to the start: no new layout.
     const [hoverAt, setHoverAt] = useState(null);

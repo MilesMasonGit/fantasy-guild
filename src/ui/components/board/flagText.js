@@ -13,7 +13,7 @@ import { GameState } from '../../../state/GameState.js';
 import { skipHint } from './boardConstants.js';
 import { problemOf, problemText } from './problemMark.js';
 import { t } from '../../../i18n/index.js';
-import { formatClock } from '../../../utils/Formatters.js';
+import { countdownText } from '../../../utils/Formatters.js';
 
 /**
  * The words for orders, in one place: the flag's tooltip, a Token's own hover lines and the
@@ -62,13 +62,13 @@ function healingLeftMs(heroId) {
 
 /**
  * What a hero is doing, in a few words: "Working: Oak Tree" · "Walking to: Oak Tree" · "Waiting
- * for Oak Stump" · "Idle here" · "Needs a job" · "At the Guild Hall" · "Healing 3:12". Read live.
+ * for Oak Stump" · "Idle here" · "Needs a job" · "At the Guild Hall" · "Healing 3m 12s". Read live.
  */
 export function flagStatusLine(heroId) {
     const healing = healingLeftMs(heroId);
     const s = Flags.statusOf(heroId);
     if (s.state === 'returning') return s.limping ? t('orders.limpingHome') : t('orders.headingHome');
-    if (healing != null) return t('orders.healingShort', { time: formatClock(healing) });
+    if (healing != null) return t('orders.healingShort', { time: countdownText(healing) });
     return dockStatusLine({ ...s, waitingFor: s.state === 'idle' ? waitingTypeOf(heroId) : null });
 }
 

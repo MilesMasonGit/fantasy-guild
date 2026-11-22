@@ -148,8 +148,8 @@ describe('the fight panel', () => {
         expect(stat('hero', 'resists')).toBe('25%');
         expect(stat('enemy', 'resists')).toBe('50%−25%');
         expect([...panel.querySelectorAll('[data-fight-side="enemy"] [data-fight-resist]')].map(e => e.getAttribute('data-fight-resist'))).toEqual(['fire', 'slash']);
-        expect(stat('hero', 'swing')).toBe('3 s');
-        expect(stat('enemy', 'swing')).toBe('4 s');
+        expect(stat('hero', 'swing')).toBe('3s');
+        expect(stat('enemy', 'swing')).toBe('4s');
         expect(text(q(panel, '[data-fight-hp="hero"]'))).toBe('17/30');
         expect(text(q(panel, '[data-fight-hp="enemy"]'))).toBe('24/40');
         expect(text(q(panel, '[data-fight-title]'))).toBe('Aela vs Goblin Warlord');
@@ -195,7 +195,7 @@ describe('the fight panel', () => {
         const last = [...panel.querySelectorAll('[data-fight-log-line]')];
         expect(last).toHaveLength(KIT_LAST.log.length);
         expect(words(last[0])).toBe('Aela beats Goblin Warlord');
-        expect(text(q(panel, '[data-fight-log-heading]'))).toBe('Beat Goblin Warlord in 0:42');
+        expect(text(q(panel, '[data-fight-log-heading]'))).toBe('Beat Goblin Warlord in 42s');
 
         act(() => { fireEvent.click(q(panel, '[data-fight-log-toggle]')); });
         expect(q(panel, '[data-fight-log-line]')).toBeNull();
@@ -233,10 +233,10 @@ describe('the enemy card', () => {
         const known = enemyCardView('cs_ui_brute');
         root = render(React.createElement(EnemyCardRows, { card: known })).container;
         expect([...root.querySelectorAll('[data-enemy-card-kind]')].map(e => e.getAttribute('data-enemy-card-kind'))).toEqual(['brute', 'venomous']);
-        expect(text(q(root, '[data-enemy-card-kind="brute"]'))).toBe('Brute Big hits every 4 s');
+        expect(text(q(root, '[data-enemy-card-kind="brute"]'))).toBe('Brute Big hits every 4s');
     });
 
-    it('its numbers are the level table\'s and the kinds\' (level 20 Brute: 40 health, hits 3 every 4 s)', () => {
+    it('its numbers are the level table\'s and the kinds\' (level 20 Brute: 40 health, hits 3 every 4s)', () => {
         GameState.initNew();
         const card = enemyCardView('cs_ui_brute');
         expect(card).toMatchObject({ level: 20, style: 'melee', hp: 40, hit: 3, hitType: 'physical', resists: [], swingMs: 4000 });
@@ -244,7 +244,7 @@ describe('the enemy card', () => {
         expect(text(q(root, '[data-enemy-card-level]'))).toBe('20/99');
         expect(q(root, '[data-enemy-card-resists="none"]')).not.toBeNull();
         expect(q(root, '[data-enemy-card-armour]')).toBeNull();
-        expect(text(q(root, '[data-enemy-card-swing]'))).toBe('every 4 s');
+        expect(text(q(root, '[data-enemy-card-swing]'))).toBe('every 4s');
     });
 });
 

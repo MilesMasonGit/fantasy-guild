@@ -238,7 +238,7 @@ describe('RecipeList', () => {
         const farmer = { ...hero('farmer', 5), skills: { list_farm: { level: 5, xp: 0 } } };
         render(React.createElement(RecipeList, { def: field, heroes: [farmer], onChoose: () => {} }));
         const crop = document.querySelector('[data-recipe-id="r_list_wheat"] [data-recipe-crop]');
-        expect(crop.textContent).toBe('2:3012 harvests');
+        expect(crop.textContent).toBe('2m 30s12 harvests');
         expect(crop.querySelector('[data-recipe-harvests]').textContent).toBe('12 harvests');
         cleanup();
         open();

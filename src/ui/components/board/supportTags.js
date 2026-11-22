@@ -1,6 +1,7 @@
 import { EFFECT_TYPES } from '../../../systems/effects/constants.js';
 import { getPaletteEntry } from '../../../config/registries/modifierPalette.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
+import { lengthText } from '../../../utils/Formatters.js';
 
 /**
  * A support's effect as the few words a tag says: "−25 % grow", "×2 Copper Ore 25 %",
@@ -31,7 +32,7 @@ export function supportTag(payload, itemName = (id) => getItem(id)?.name || null
     switch (payload?.type) {
         case EFFECT_TYPES.GROW_TIME: return `${amount(payload)} grow`;
         case EFFECT_TYPES.WORK_TIME:
-            return payload.bucket === 'flat' ? `${signOf(v)}${round1(Math.abs(v) / 1000)} s work` : `${amount(payload)} work`;
+            return payload.bucket === 'flat' ? `${signOf(v)}${lengthText(Math.abs(v))} work` : `${amount(payload)} work`;
         case EFFECT_TYPES.CROP_LOAD:
             return payload.bucket === 'flat'
                 ? `${signOf(v)}${round1(Math.abs(v))} harvest${Math.abs(v) === 1 ? '' : 's'}`

@@ -170,7 +170,7 @@ describe('who wears an alert', () => {
         GameState.state.heroes[0].status = 'wounded';
         GameState.state.heroes[0].woundedRemainingMs = 65000;
         expect(rosterAlertOf('a')).toBe(ROSTER_ALERT.WOUNDED);
-        expect(rosterBubbleLine('a')).toBe('Healing 1:05');
+        expect(rosterBubbleLine('a')).toBe('Healing 1m 5s');
     });
 
     it('a felled tree growing back: a normal wait, nothing', () => {
@@ -296,10 +296,10 @@ describe('on the bar', () => {
         const view = mountBar();
         const fig = figure(view, 'a');
         fireEvent.mouseEnter(fig);
-        expect(fig.querySelector('[data-dock-status-bubble]').textContent).toBe('Healing 0:10');
+        expect(fig.querySelector('[data-dock-status-bubble]').textContent).toBe('Healing 10s');
         me.woundedRemainingMs = 5000;
         act(() => { vi.advanceTimersByTime(1000); });
-        expect(fig.querySelector('[data-dock-status-bubble]').textContent).toBe('Healing 0:05');
+        expect(fig.querySelector('[data-dock-status-bubble]').textContent).toBe('Healing 5s');
     });
 
     it('the HP shows its numbers over the bar', () => {

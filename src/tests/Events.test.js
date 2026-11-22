@@ -592,7 +592,7 @@ describe('time away', () => {
         expect(result.summary.events).toEqual([]);
         const view = summaryView(result);
         expect(view.events).toEqual([expect.objectContaining({
-            key: mythril.id, name: 'Mythril Comet', landed: false, state: 'here', leavesInMs: 50 * MIN, leavesText: 'Leaves in 50:00'
+            key: mythril.id, name: 'Mythril Comet', landed: false, state: 'here', leavesInMs: 50 * MIN, leavesText: 'Leaves in 50m 0s'
         })]);
         expect(view.hasNews).toBe(true);
     }, 60_000);
@@ -644,6 +644,6 @@ describe('time away', () => {
             { instanceId: 'tok_rain', typeId: 'ev_rain', name: 'Rainfall', landed: true, ended: null },
             { instanceId: 'tok_gone', typeId: 'ev_rain', name: 'Rainfall', landed: true, ended: EventTokens.ENDED.TIME_UP }
         ] } }, live);
-        expect(view.events.map(e => [e.key, e.leavesText])).toEqual([['tok_rain', 'Leaves in 7:30'], ['tok_gone', null]]);
+        expect(view.events.map(e => [e.key, e.leavesText])).toEqual([['tok_rain', 'Leaves in 7m 30s'], ['tok_gone', null]]);
     });
 });

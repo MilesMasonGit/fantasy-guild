@@ -194,7 +194,7 @@ describe('⭐ aimed while carried: the flag snaps onto a Token they can work, el
         HeroManager.setHeroStatus(h.id, 'wounded');
         const aimed = Orders.aimAt(h.id, tree);
         expect(aimed.snap).toBe(false);
-        expect(aimed.reason).toMatch(/is healing: \d+:\d\d/);
+        expect(aimed.reason).toMatch(/is healing: \d+s$|is healing: \d+m \d+s$/);
     });
 
     it('a healing hero lights nothing: no Token, not the Guild Hall, as the drop refuses them all', () => {
@@ -309,7 +309,7 @@ describe('⭐ defeat: heal, then wait at the Hall, the order cleared', () => {
         expect(BoardState.flagOf(h.id)).toBe(null);
         const refused = Orders.orderAt(h.id, { x: t.x, y: t.y });
         expect(refused.success).toBe(false);
-        expect(refused.reason).toMatch(/is healing: \d+:\d\d/);
+        expect(refused.reason).toMatch(/is healing: \d+s$|is healing: \d+m \d+s$/);
     });
 });
 

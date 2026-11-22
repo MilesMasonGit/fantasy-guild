@@ -10,7 +10,8 @@ import { LandmarkBlock } from '../drawer/LandmarkBlock.jsx';
 import { LeaveMatControl } from '../drawer/LeaveMatControl.jsx';
 import { useTokenDetail } from './useTokenDetail.js';
 import { subscribeToken } from './tokenEvents.js';
-import { CARD_BLOCK, tokenCardModel, cycleText, drivenBy } from './tokenCard.js';
+import { CARD_BLOCK, tokenCardModel, drivenBy } from './tokenCard.js';
+import { lengthText } from '../../../utils/Formatters.js';
 import { ArrowScrollList, PixelTriangle } from '../base/ArrowScrollList.jsx';
 import { withArticle } from '../../../systems/effects/toolNames.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
@@ -127,8 +128,8 @@ const WorkCells = ({ skillId, level, xp }) => (
 
 /** The cycle line's hover: the time and, when something nearby changes it, the time without it. */
 const cycleTip = (cycleMs, baseMs) => {
-    const shown = cycleText(cycleMs);
-    const base = cycleText(baseMs);
+    const shown = lengthText(cycleMs);
+    const base = lengthText(baseMs);
     if (!baseMs || shown === base) return 'One round of work takes this long';
     return `One round of work takes this long: ${base} ${cycleMs < baseMs ? 'before speed-ups' : 'before slow-downs'}`;
 };
@@ -137,7 +138,7 @@ const CycleCells = ({ cycleMs, baseMs, uses }) => (
     <>
         {cycleMs > 0 && (
             <StatCell caption="Time">
-                <Stat icon={<PixelGlyph name="clock" />} text={cycleText(cycleMs)} tip={cycleTip(cycleMs, baseMs)} data-card-cycle />
+                <Stat icon={<PixelGlyph name="clock" />} text={lengthText(cycleMs)} tip={cycleTip(cycleMs, baseMs)} data-card-cycle />
             </StatCell>
         )}
         <StatCell caption="Charges">

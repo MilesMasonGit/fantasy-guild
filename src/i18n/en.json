@@ -364,7 +364,6 @@
         "couldNotBuy": "Could not buy that upgrade"
     },
     "fight": {
-        "seconds": "{n} s",
         "log": {
             "heroHits": "{hero} hits {enemy}",
             "heroCrits": "{hero} crits {enemy}",
@@ -524,11 +523,11 @@
             },
             "swift": {
                 "name": "Swift",
-                "tip": "Small hits every 2 s"
+                "tip": "Small hits every 2s"
             },
             "brute": {
                 "name": "Brute",
-                "tip": "Big hits every 4 s"
+                "tip": "Big hits every 4s"
             },
             "venomous": {
                 "name": "Venomous",

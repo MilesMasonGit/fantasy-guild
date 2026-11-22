@@ -13,7 +13,8 @@ import { passiveLapMs } from '../systems/board/workTime.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import * as HallRules from '../systems/progression/HallRules.js';
-import { describeStarRank, starSentence, starAmount, hallRuleSentence, lapClock } from '../systems/progression/hallStarText.js';
+import { describeStarRank, starSentence, starAmount, hallRuleSentence } from '../systems/progression/hallStarText.js';
+import { lengthText } from '../utils/Formatters.js';
 import { hallStarFindings } from '../systems/core/hallStarRule.js';
 import { getGlobalAggregator } from '../systems/effects/GuildModifiers.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
@@ -234,16 +235,16 @@ describe('⭐ every reader of the lap follows it', () => {
         expect(now.boosts).toEqual([]);
     });
 
-    it('the Token card says every 10 min, then every 5 min', () => {
+    it('the Token card says every 10m, then every 5m', () => {
         const hall = placeAt('fixture_lap_hall', 800, 500);
         const rowFor = () => lifecycleLines(hall, {
             typeOf: () => ({ id: 'fixture_lap_hall', name: 'Hall' }), originOf: () => '',
             spawnerStatus: () => null, selectedRecipe: () => null, itemName: (id) => id, tokenName: (id) => id,
             passive: (inst) => ({ lines: PassiveProduction.linesOf(inst), nextInMs: PassiveProduction.nextInMs(inst), lapMs: PassiveProduction.lapMs() })
         }).find(r => r.label === 'Passive Production')?.value;
-        expect(rowFor()).toMatch(/every 10 min \(next in 10 min\)/);
+        expect(rowFor()).toMatch(/every 10m \(next in 10m 0s\)/);
         holdLap(3);
-        expect(rowFor()).toMatch(/every 5 min \(next in 5 min\)/);
+        expect(rowFor()).toMatch(/every 5m \(next in 5m 0s\)/);
     });
 
     it('the Upkeep Summary nets income at the lap now', () => {
@@ -268,7 +269,7 @@ describe('⭐ the lap star in words, in the sky and in the rules', () => {
     it('a sentence with no number, and each rank as its lap', () => {
         const def = getUpgradeDef(LAP_STAR_ID);
         expect(starSentence(def)).toBe('The Guild Hall\'s outputs arrive more often: its lap is shorter.');
-        expect([1, 2, 3].map(r => starAmount(def, r))).toEqual(['outputs every 8:00', 'outputs every 6:00', 'outputs every 5:00']);
+        expect([1, 2, 3].map(r => starAmount(def, r))).toEqual(['outputs every 8m', 'outputs every 6m', 'outputs every 5m']);
         expect(describeStarRank(normaliseStar({ id: LAP_STAR_ID, ...lapStar() }), 1)).toBe('Makes the Guild Hall\'s lap 20% shorter.');
         expect(hallRuleSentence(lapStar().ranks[2].rules[0])).toBe('Makes the Guild Hall\'s lap 50% shorter.');
     });
@@ -339,7 +340,7 @@ describe('⭐ the ledger rates the Hall at the lap its setup holds', () => {
 
 describe('a lap star\'s rank beside another Lap Time rule', () => {
     const SECOND = 'fixture_second_lap';
-    const clock = () => `outputs every ${lapClock(PassiveProduction.lapMs())}`;
+    const clock = () => `outputs every ${lengthText(PassiveProduction.lapMs())}`;
 
     /** Each rank's words, read with no lap rank held, then the live lap holding that rank. */
     function ranksAgainstLive() {
@@ -355,7 +356,7 @@ describe('a lap star\'s rank beside another Lap Time rule', () => {
         agg.addModifier({ type: EFFECT_TYPES.PASSIVE_LAP, bucket: 'percentage', value: -0.1, source: 'test:region' });
         try {
             const { said, live } = ranksAgainstLive();
-            expect(live).toEqual(['outputs every 7:00', 'outputs every 5:00', 'outputs every 4:00']);
+            expect(live).toEqual(['outputs every 7m', 'outputs every 5m', 'outputs every 4m']);
             expect(said).toEqual(live);
         } finally {
             agg.removeModifiersBySource('test:region');
@@ -376,6 +377,6 @@ describe('a lap star\'s rank beside another Lap Time rule', () => {
 
     it('alone, each rank says the lap it gives, as before', () => {
         const { said } = ranksAgainstLive();
-        expect(said).toEqual(['outputs every 8:00', 'outputs every 6:00', 'outputs every 5:00']);
+        expect(said).toEqual(['outputs every 8m', 'outputs every 6m', 'outputs every 5m']);
     });
 });

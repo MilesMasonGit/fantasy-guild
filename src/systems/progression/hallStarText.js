@@ -17,6 +17,7 @@ import { hallRulesOf, hallSourceOf } from './hallModifiers.js';
 import { rankOf } from '../../config/hallStars.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { getSkill, COMBAT_SKILL_IDS } from '../../config/registries/skillRegistry.js';
+import { lengthText } from '../../utils/Formatters.js';
 
 const ALL_TOKENS = Object.freeze({ mode: 'all', value: '' });
 
@@ -64,12 +65,6 @@ export function hallRuleSentence(statement, names = hallNames()) {
  */
 export function hallLineText(line, names = hallNames()) {
     return `${line.quantity} ${names.item(line.itemId)} a lap`;
-}
-
-/** "8:00", "10:00": a lap's length as the Hall's effects say it. */
-export function lapClock(ms) {
-    const total = Math.max(0, Math.round((Number(ms) || 0) / 1000));
-    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
 /** The lap one Lap Time rule gives on its own, from the base lap. */
@@ -195,7 +190,7 @@ function ruleEffect(statement, names, lapMs = null) {
         // The Guild Hall is the subject, and the amount is the lap itself, not its percentage.
         return {
             phrase: 'lap',
-            amount: `outputs every ${lapClock(lapMs ?? lapOfRule(statement))}`,
+            amount: `outputs every ${lengthText(lapMs ?? lapOfRule(statement))}`,
             sentence: 'The Guild Hall\'s outputs arrive more often: its lap is shorter.'
         };
     }

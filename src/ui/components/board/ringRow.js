@@ -3,6 +3,7 @@
  * cycle and XP. The mat's Tokens say theirs on the plate (`workPlate.js`,
  * `idlePlate.js`).
  */
+import { countdownText } from '../../../utils/Formatters.js';
 
 /**
  * A ring's diameter in mat units: a little under a third of a 1×1 Token's 128 u art, so three fit side by side along its bottom. Fixed in mat units
@@ -20,13 +21,12 @@ export const RING_STROKE_U = RING_D_U * 3 / 28;
 export const GLIDING_RINGS = Object.freeze(new Set(['charges']));
 
 /**
- * The cycle ring's number: whole seconds left, rounded up, never below 1s
- * while the cycle is still running (it reads `3s`, `2s`, `1s`).
+ * The cycle ring's number: the time left (`countdownText`), never below 1s while the cycle is
+ * still running (it reads `3s`, `2s`, `1s`).
  */
 export function cycleSecondsText(elapsedMs, cycleTimeMs) {
     if (!(cycleTimeMs > 0)) return '';
-    const left = Math.max(0, cycleTimeMs - (elapsedMs || 0));
-    return `${Math.max(1, Math.ceil(left / 1000))}s`;
+    return countdownText(Math.max(1000, cycleTimeMs - (elapsedMs || 0)));
 }
 
 /**

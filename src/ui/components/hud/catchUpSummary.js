@@ -3,20 +3,10 @@ import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { CATCH_UP } from '../../../config/loopConstants.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as EventTokens from '../../../systems/board/EventTokens.js';
-import { formatClock } from '../../../utils/Formatters.js';
+import { countdownText, elapsedText, lengthText } from '../../../utils/Formatters.js';
 import { t } from '../../../i18n/index.js';
 
 const MINUTE = 60 * 1000;
-
-/** A length of time away, in plain words: `45 min`, `3 h 12 min`, `30 h`. Rounded down to the minute. */
-export function formatAway(ms) {
-    const minutes = Math.floor(Math.max(0, Number(ms) || 0) / MINUTE);
-    if (minutes < 1) return 'less than a minute';
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    if (h === 0) return `${m} min`;
-    return m ? `${h} h ${m} min` : `${h} h`;
-}
 
 /** A readable name for an id nothing names (`enemy_wolf` → `Wolf`). */
 function fallbackName(id) {
@@ -119,7 +109,7 @@ function eventRows(summaryEvents, live) {
             key: e.instanceId, typeId: e.typeId, name: e.name || tokenName(e.typeId), landed: !!e.landed,
             state, stateKey: EVENT_STATE_KEY[state] || 'here',
             leavesInMs,
-            leavesText: leavesInMs == null ? null : t('catchUp.news.leavesIn', { time: formatClock(leavesInMs) })
+            leavesText: leavesInMs == null ? null : t('catchUp.news.leavesIn', { time: countdownText(leavesInMs) })
         };
     });
 }
@@ -146,9 +136,9 @@ export function summaryView(result, live = LIVE_EVENTS) {
         .filter(w => w.times > 0)
         .map(w => ({ heroId: w.heroId, heroName: w.heroName, times: w.times, lost: w.lost || [] }));
     const view = {
-        awayText: formatAway(result?.awayMs),
+        awayText: elapsedText(result?.awayMs),
         droppedText: result?.droppedMs >= MINUTE
-            ? `${formatAway(result.droppedMs)} past the ${formatAway(CATCH_UP.CAP_MS)} limit was skipped.`
+            ? `${elapsedText(result.droppedMs)} past the ${lengthText(CATCH_UP.CAP_MS)} limit was skipped.`
             : null,
         items: itemChanges(summary.items),
         /** Heroes knocked out: `{ heroId, heroName, times, lost }`, `lost` the gear it cost. */
@@ -175,7 +165,7 @@ export function summaryView(result, live = LIVE_EVENTS) {
          * Events that landed or left while away, and those still on the mat (`eventRows`): `{ key,
          * typeId, name, landed, state, stateKey, leavesInMs, leavesText }`, `state` how it left
          * (`EventTokens.ENDED`) or `'here'` while it stands, `stateKey` its string under
-         * `catchUp.news.eventState`, `leavesText` "Leaves in 42:10" for one still here whose clock runs.
+         * `catchUp.news.eventState`, `leavesText` "Leaves in 42m 10s" for one still here whose clock runs.
          */
         events: eventRows(summary.events || [], live)
     };
@@ -183,7 +173,7 @@ export function summaryView(result, live = LIVE_EVENTS) {
     return view;
 }
 
-/** The loading bar's title: `Catching up on 3 h 12 min away`. */
+/** The loading bar's title: `Catching up on 3h 12m away`. */
 export function catchUpTitle(awayMs) {
-    return `Catching up on ${formatAway(awayMs)} away`;
+    return `Catching up on ${elapsedText(awayMs)} away`;
 }

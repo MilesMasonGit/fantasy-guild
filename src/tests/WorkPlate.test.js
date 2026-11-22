@@ -24,7 +24,8 @@ import { matW, matH } from '../config/matGeometry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { WorkPlateLayer } from '../ui/components/board/WorkPlateLayer.jsx';
 import { MAT_Z } from '../ui/components/board/matLayers.js';
-import { PLATE, CELL, plateCells, plateUnit, platePlace, clockText, workPlateOf, leadOf } from '../ui/components/board/workPlate.js';
+import { PLATE, CELL, plateCells, plateUnit, platePlace, workPlateOf, leadOf } from '../ui/components/board/workPlate.js';
+import { countdownText } from '../utils/Formatters.js';
 import { setDrawn, resetDrawSwitches } from '../ui/dev/perf/drawSwitches.js';
 import { restHover } from './fixtures/hoverRest.js';
 
@@ -139,10 +140,10 @@ describe('the rules, pure', () => {
         expect(centred.top).toBe(500 + 64 - PLATE.TUCK);
     });
 
-    it('times read 0:34 and 4:05, rounded up', () => {
-        expect(clockText(13000)).toBe('0:13');
-        expect(clockText(12001)).toBe('0:13');
-        expect(clockText(245000)).toBe('4:05');
+    it('times read 34s and 4m 5s, rounded up', () => {
+        expect(countdownText(13000)).toBe('13s');
+        expect(countdownText(12001)).toBe('13s');
+        expect(countdownText(245000)).toBe('4m 5s');
     });
 
     it('a plate pixel is a whole screen pixel: half the art steps, never below one', () => {

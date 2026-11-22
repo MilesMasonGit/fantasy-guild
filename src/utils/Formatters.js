@@ -127,20 +127,64 @@ export function formatTimeAgo(timestamp) {
     return date.toLocaleDateString();
 }
 
-/** A countdown as the UI writes it: `4:57`, rounded up to the second. */
-export function formatClock(ms) {
-    const total = Math.max(0, Math.ceil((Number(ms) || 0) / 1000));
-    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+const MINUTE_S = 60;
+const HOUR_S = 3600;
+const DAY_S = 86400;
+
+const seconds = (ms) => Math.max(0, Number(ms) || 0) / 1000;
+
+/**
+ * A whole-second span in the game's one time spelling: `34s`, `4m 57s`, `1h 15m`, `1d 4h`.
+ * `round` rounds to the smallest unit shown, so a countdown can round up at every size.
+ * Zero parts are kept: a ticking time keeps its width (`5m 0s`).
+ */
+function spanText(totalSeconds, round) {
+    const s = round(totalSeconds);
+    if (s < MINUTE_S) return `${s}s`;
+    if (s < HOUR_S) return `${Math.floor(s / MINUTE_S)}m ${s % MINUTE_S}s`;
+    const m = round(totalSeconds / MINUTE_S);
+    if (m < DAY_S / MINUTE_S) return `${Math.floor(m / 60)}h ${m % 60}m`;
+    const h = round(totalSeconds / HOUR_S);
+    return `${Math.floor(h / 24)}d ${h % 24}h`;
 }
 
-/** Playtime, kept in milliseconds (the game clock's tick deltas), as `2h 5m`; under a minute `< 1 min`. */
-export function formatPlaytime(ms) {
-    const seconds = Math.floor((ms || 0) / 1000);
-    if (seconds < 60) return '< 1 min';
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    if (hours > 0) return `${hours}h ${mins}m`;
-    return `${mins}m`;
+/**
+ * Time left on a running timer: rounded up, so it never reads `0s` while time is left, and zero
+ * parts kept while it ticks (`5m 0s`, then `4m 59s`).
+ */
+export function countdownText(ms) {
+    return spanText(seconds(ms), Math.ceil);
+}
+
+/**
+ * Time gone by, like a stopwatch (a fight's length, playtime): rounded down, zero parts kept so a
+ * live one holds its width.
+ */
+export function elapsedText(ms) {
+    return spanText(seconds(ms), Math.floor);
+}
+
+/**
+ * A fixed length (a grow time, a rest, a lap, a cycle, a swing, a speed bonus): one decimal under
+ * a minute (`2.5s`, `4s`), whole seconds from a minute up, zero parts dropped (`8m`, `1h`) so it
+ * reads like the timer it starts (`8m` then `8m 0s`). Past a day it is days and hours (`1d 0h`).
+ */
+export function lengthText(ms) {
+    const total = seconds(ms);
+    const tenths = Math.round(total * 10) / 10;
+    if (tenths < MINUTE_S) return `${tenths}s`;
+    const s = Math.round(total);
+    if (s < HOUR_S) {
+        const sec = s % MINUTE_S;
+        return sec ? `${Math.floor(s / MINUTE_S)}m ${sec}s` : `${Math.floor(s / MINUTE_S)}m`;
+    }
+    const m = Math.round(total / MINUTE_S);
+    if (m < DAY_S / MINUTE_S) {
+        const min = m % 60;
+        return min ? `${Math.floor(m / 60)}h ${min}m` : `${Math.floor(m / 60)}h`;
+    }
+    const h = Math.round(total / HOUR_S);
+    return `${Math.floor(h / 24)}d ${h % 24}h`;
 }
 
 const ROMAN = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];

@@ -1,4 +1,5 @@
 import { t } from '../../../i18n/index.js';
+import { lengthText } from '../../../utils/Formatters.js';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { PixelGlyph } from '../base/PixelGlyph.jsx';
 import { ItemTipContent } from '../drawer/ItemTip.jsx';
@@ -6,16 +7,11 @@ import { KIND } from './encyclopediaModel.js';
 import { requirementOf } from './encyclopediaChart.js';
 import { EntrySprite, EntryRow, RequirementLine, Tick, isCollected } from './encyclopediaParts.jsx';
 
-/** `m:ss` (UI_STYLE "Numbers"). */
-export function clockText(ms) {
-    const total = Math.max(0, Math.round((Number(ms) || 0) / 1000));
-    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
-}
 
 const Clock = ({ ms }) => (
     <span className="inline-flex items-center gap-1 tabular-nums">
         <PixelGlyph name="clock" />
-        {clockText(ms)}
+        {lengthText(ms)}
     </span>
 );
 

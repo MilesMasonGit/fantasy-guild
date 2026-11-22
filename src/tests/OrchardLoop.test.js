@@ -315,7 +315,7 @@ describe('what a Bare tree says', () => {
 
     it('with one: its countdown, named, as a resting vein says it', () => {
         const tree = pickedBare();
-        expect(cardLine(tree)).toMatchObject({ text: '0:10', tip: 'Test Apple Tree: resting, refills in 0:10' });
-        expect(linesOf(tree).find(l => l.label === 'Resting')).toEqual({ label: 'Resting', value: 'Test Apple Tree: resting, refills in 10 s' });
+        expect(cardLine(tree)).toMatchObject({ text: '10s', tip: 'Test Apple Tree: resting, refills in 10s' });
+        expect(linesOf(tree).find(l => l.label === 'Resting')).toEqual({ label: 'Resting', value: 'Test Apple Tree: resting, refills in 10s' });
     });
 });

@@ -8,11 +8,10 @@ import { PixelGlyph } from '../base/PixelGlyph.jsx';
 import { recipeListFor, ENTRY } from '../../../systems/board/RecipeList.js';
 import { skillLabel } from './recipeText.js';
 import { recipeRowOf } from './recipeRows.js';
-import { cycleText } from './tokenCard.js';
 import { skillLevelText } from '../dock/heroPanelSkills.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { fieldOf, cropTermsOf } from '../../../config/registries/tokenConstants.js';
-import { formatClock } from '../drawer/lifecycleLines.js';
+import { lengthText } from '../../../utils/Formatters.js';
 import { t } from '../../../i18n/index.js';
 
 /**
@@ -116,9 +115,9 @@ const Byproduct = ({ out }) => (
 const CropTerms = ({ crop }) => {
     const harvests = `${crop.load.toLocaleString('en-US')} ${crop.load === 1 ? 'harvest' : 'harvests'}`;
     return (
-        <Tooltip title="Once sown" lines={[`Grows for ${formatClock(crop.growMs)}, then gives ${harvests}`]}>
+        <Tooltip title="Once sown" lines={[`Grows for ${lengthText(crop.growMs)}, then gives ${harvests}`]}>
             <span data-recipe-crop className="inline-flex items-center gap-1 ui-text-small text-gi-muted tabular-nums">
-                <PixelGlyph name="grow" />{formatClock(crop.growMs)}
+                <PixelGlyph name="grow" />{lengthText(crop.growMs)}
                 <span data-recipe-harvests>{harvests}</span>
             </span>
         </Tooltip>
@@ -130,8 +129,8 @@ const CropTerms = ({ crop }) => {
  * through: a line through the pixel font hides the base's digits.
  */
 const RecipeTime = ({ row }) => {
-    const base = cycleText(row.durationMs);
-    const here = cycleText(row.workMs || row.durationMs);
+    const base = lengthText(row.durationMs);
+    const here = lengthText(row.workMs || row.durationMs);
     const both = !!row.onMat;
     const lines = both
         ? [`Recipe: ${base}`, `At this station: ${here}`]

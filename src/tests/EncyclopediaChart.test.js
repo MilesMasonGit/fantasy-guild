@@ -6,7 +6,7 @@ import {
     pathIds, litLinks, litLabels, litWords, tabWidth, wayInWord, wayOutWord, wordWidth, markWidth,
     chartMetrics, SHOWN_AT_FIRST, ROOT, STATIONS
 } from '../ui/components/encyclopedia/encyclopediaChart.js';
-import { formatClock } from '../ui/components/drawer/lifecycleLines.js';
+import { lengthText } from '../utils/Formatters.js';
 import { HOW, COMBAT, itemKey, tokenKey, recipeKey } from '../systems/progression/ledger/engine.js';
 import { ledgerContent, withIronChest } from './fixtures/ledgerWorld.js';
 import en from '../i18n/en.json';
@@ -812,7 +812,8 @@ describe('a word on every line that is not used up (the owner\'s pick C, 6 Novem
         const ws = withForest();
         ws.tokens.token_oak_forest.spawner.upkeep = [];
         const forest = buildEncyclopedia(ws);
-        const lay = layoutChart(chartOf(forest, T('token_oak_tree')), m, () => '0:01');
+        // At the gap before times were spelled out, a long grow time leaves no room beside it.
+        const lay = layoutChart(chartOf(forest, T('token_oak_tree')), { ...m, gapX: 260 }, () => '59m 59s');
         const spawns = lay.words.find(w => w.word === 'spawns');
         expect(spawns.overMark).toBe(true);
         expect(lay.bands.length).toBeGreaterThan(1);
@@ -820,9 +821,17 @@ describe('a word on every line that is not used up (the owner\'s pick C, 6 Novem
         wordsWhereTheyBelong(lay);
     });
 
+    it('at the chart gap a grow time up to 59m 59s leaves room for "spawns" beside it', () => {
+        const ws = withForest();
+        ws.tokens.token_oak_forest.spawner.upkeep = [];
+        const lay = layoutChart(chartOf(buildEncyclopedia(ws), T('token_oak_tree')), m, () => '59m 59s');
+        expect(lay.words.find(w => w.word === 'spawns').overMark).toBe(false);
+        wordsSitClear(lay);
+    });
+
     describe('the shipped content, every entry with all its lines shown', () => {
         const shipped = encyclopedia();
-        const growText = (label) => formatClock((label.through || []).reduce((s, k) => s + (Number(shipped.entryOf(k)?.def?.grows?.afterMs) || 0), 0));
+        const growText = (label) => lengthText((label.through || []).reduce((s, k) => s + (Number(shipped.entryOf(k)?.def?.grows?.afterMs) || 0), 0));
         const charts = () => [...shipped.entries.keys()].map(key => [key, chartOf(shipped, key, { opened: new Set([`${ROOT}<`, `${ROOT}>`]) })]);
 
         it('every word fits beside its mark at the chart\'s gap, in the widest font: none rides above', () => {
@@ -868,6 +877,7 @@ describe('a word on every line that is not used up (the owner\'s pick C, 6 Novem
         expect(lay.words.every(w => w.onLine && !w.overMark)).toBe(true);
         expect(markWidth({ req: { level: 15 } }, big) + wordWidth('tool for', big)).toBeLessThan(big.gapX);
     });
+
 });
 
 describe('the view keeps the focus in sight', () => {

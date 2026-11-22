@@ -222,7 +222,7 @@ describe.each(Object.entries(BUILDS))('with %s', (_name, build) => {
         expect(await start(NOW + 40 * SEC)).toBe(true);
         expect(q('[data-catch-up-summary]')).not.toBeNull();
         expect(q('[data-summary-again]')?.textContent).toBe('You closed the game before choosing, so here it is again.');
-        expect(q('[data-summary-away]').textContent).toContain('3 h');
+        expect(q('[data-summary-away]').textContent).toContain('3h 0m');
         expect(q('[data-summary-close]')).not.toBeNull();
         expect(q('[data-summary-undo]')).not.toBeNull();
         expect(q('[data-summary-undo-since]')).toBeNull();
@@ -315,7 +315,7 @@ describe.each(Object.entries(BUILDS))('with %s', (_name, build) => {
         // The hour's own summary, as a second absence while it is open shows it.
         expect(q('[data-catch-up-summary]')).not.toBeNull();
         expect(q('[data-summary-again]')).toBeNull();
-        expect(q('[data-summary-away]').textContent).toContain('1 h');
+        expect(q('[data-summary-away]').textContent).toContain('1h 0m');
         expect(q('[data-summary-undo-since]')).not.toBeNull();
         expect(CatchUp.undoSince()).toBe(NOW - 3 * HOUR);
         expect(build.backup()).toBe(asLeft);
@@ -351,7 +351,7 @@ describe.each(Object.entries(BUILDS))('with %s', (_name, build) => {
         await reload();
         await start(NOW + 2 * HOUR + 30 * SEC);
         expect(q('[data-summary-again]')).not.toBeNull();
-        expect(q('[data-summary-away]').textContent).toContain('2 h');
+        expect(q('[data-summary-away]').textContent).toContain('2h 0m');
         expect(q('[data-summary-undo-since]')).not.toBeNull();
         expect(CatchUp.undoSince()).toBe(NOW - 3 * HOUR);
 

@@ -666,9 +666,10 @@ export const CHART_METRICS = Object.freeze({
      * Between two columns: an arrow tab each side, the join and trunk, and between them a mark and
      * a line's word side by side, never one over the other. The widest pair in the content needs
      * 242 (a grow mark and its time with "beside" or "spawns"; a two-figure skill mark with "tool
-     * for"), in the widest of the game's fonts; 260 holds a grow time up to 99:59.
+     * for"), in the widest of the game's fonts, with a grow time of four figures; 310 holds a grow
+     * time up to `59m 59s`.
      */
-    gapX: 260,
+    gapX: 310,
     /** From a box's side to the line that joins or splits there: room for its arrow tab ("›30"). */
     reach: 48,
     stemH: 20,
@@ -713,7 +714,7 @@ export function markWidth(mark, m = CHART_METRICS) {
     const u = m.markText;
     const icon = m.markIcon + 4;
     let w = 8;
-    if (mark.through) w += icon + wordsWidth(mark.growText ?? '0:00', u);
+    if (mark.through) w += icon + wordsWidth(mark.growText ?? '0s', u);
     if (mark.req) w += icon + wordsWidth(mark.req.level, u) + (mark.through ? 4 : 0);
     return Math.round(w);
 }

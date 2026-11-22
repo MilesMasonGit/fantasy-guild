@@ -29,15 +29,6 @@ describe('XpRateTracker — rolling XP gain rate & ETA calculation', () => {
         expect(timeSecs).toBeGreaterThan(0);
         expect(timeSecs).toBeCloseTo((500 / rate) * 3600, 1);
     });
-
-    it('formats duration strings accurately', () => {
-        expect(XpRateTracker.formatDuration(null)).toBe('--');
-        expect(XpRateTracker.formatDuration(0)).toBe('Ready');
-        expect(XpRateTracker.formatDuration(45)).toBe('45s');
-        expect(XpRateTracker.formatDuration(125)).toBe('2m 5s');
-        expect(XpRateTracker.formatDuration(3665)).toBe('1h 1m');
-        expect(XpRateTracker.formatDuration(90000)).toBe('1d 1h');
-    });
 });
 
 describe('a rate counts the first gain’s own interval', () => {

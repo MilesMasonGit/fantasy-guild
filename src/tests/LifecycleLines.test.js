@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { lifecycleLines, formatDuration, TONE, passiveHoverLines } from '../ui/components/drawer/lifecycleLines.js';
+import { lifecycleLines, TONE, passiveHoverLines } from '../ui/components/drawer/lifecycleLines.js';
 
 /**
  * Token Lifecycle slice 8.1 — the inspection panel's lifecycle lines. The
@@ -65,18 +65,6 @@ function src(overrides = {}) {
 
 const byLabel = (lines, label) => lines.find(l => l.label === label);
 
-describe('formatDuration', () => {
-    it('reads seconds, minutes and hours, rounding up to the second', () => {
-        expect(formatDuration(0)).toBe('0 s');
-        expect(formatDuration(1)).toBe('1 s');
-        expect(formatDuration(12000)).toBe('12 s');
-        expect(formatDuration(90000)).toBe('1 min 30 s');
-        expect(formatDuration(300000)).toBe('5 min');
-        expect(formatDuration(7500000)).toBe('2 h 5 min');
-        expect(formatDuration(3600000)).toBe('1 h');
-        expect(formatDuration(-5)).toBe('0 s');
-    });
-});
 
 describe('lifecycleLines', () => {
     it('shows nothing for a Token with no lifecycle block, or no instance', () => {
@@ -95,7 +83,7 @@ describe('lifecycleLines', () => {
             expect(byLabel(lines, 'Spawns').value).toBe('Oak Sapling');
             expect(byLabel(lines, 'Family').value).toBe('Oak Sapling family 4 / 5');
             expect(byLabel(lines, 'Family').tone).toBeUndefined();
-            expect(byLabel(lines, 'Next spawn').value).toBe('in 12 s');
+            expect(byLabel(lines, 'Next spawn').value).toBe('in 12s');
             expect(byLabel(lines, 'Upkeep per spawn')).toEqual({
                 label: 'Upkeep per spawn', value: '1 Oak Seed (paid from the Bank, then loot on the mat)', tone: TONE.GOOD
             });
@@ -145,9 +133,9 @@ describe('lifecycleLines', () => {
 
     it('a growing Token: time left and what it becomes', () => {
         const lines = lifecycleLines({ id: 's1', typeId: 'sapling', clocks: { growMs: 18000 } }, src());
-        expect(lines).toEqual([{ label: 'Grows into Oak Tree', value: 'in 12 s' }]);
+        expect(lines).toEqual([{ label: 'Grows into Oak Tree', value: 'in 12s' }]);
         // No clock yet reads as the full time.
-        expect(lifecycleLines({ id: 's2', typeId: 'sapling' }, src())[0].value).toBe('in 30 s');
+        expect(lifecycleLines({ id: 's2', typeId: 'sapling' }, src())[0].value).toBe('in 30s');
     });
 
     describe('a Stump that needs its Forest and a seedling (brief 230 S2a)', () => {
@@ -159,7 +147,7 @@ describe('lifecycleLines', () => {
 
         it('growing: time left, what it needs nearby and what it pays', () => {
             expect(lifecycleLines(stump, src({ growth: growth() }))).toEqual([
-                { label: 'Grows into Oak Tree', value: 'in 12 s' },
+                { label: 'Grows into Oak Tree', value: 'in 12s' },
                 { label: 'Needs nearby', value: 'an Oak Forest', tone: TONE.MUTED },
                 { label: 'Costs when it grows', value: '1 Oak Seed from the Bank', tone: TONE.MUTED }
             ]);
@@ -180,23 +168,23 @@ describe('lifecycleLines', () => {
 
     it('a turning Token: its next chance to turn, into what, and the odds (TL-12, FB-14)', () => {
         const lines = lifecycleLines({ id: 'c1', typeId: 'coast', clocks: { turnMs: 26000 } }, src());
-        expect(lines[0]).toEqual({ label: 'Next chance to turn into Shrimp Coast or Crab Coast', value: 'in 34 s (30%)' });
+        expect(lines[0]).toEqual({ label: 'Next chance to turn into Shrimp Coast or Crab Coast', value: 'in 34s (30%)' });
         expect(byLabel(lines, 'Turns')).toEqual({
-            label: 'Turns', value: '30% chance every 1 min, and the same to turn back', tone: TONE.MUTED
+            label: 'Turns', value: '30% chance every 1m, and the same to turn back', tone: TONE.MUTED
         });
         expect(byLabel(lines, 'Stays turned for')).toBeUndefined();
     });
 
     it('a turns block without a cycle or chance reads the defaults, 1 min and 30%', () => {
         const lines = lifecycleLines({ id: 'b1', typeId: 'bay' }, src());
-        expect(lines[0]).toEqual({ label: 'Next chance to turn into Shrimp Coast', value: 'in 1 min (30%)' });
+        expect(lines[0]).toEqual({ label: 'Next chance to turn into Shrimp Coast', value: 'in 1m 0s (30%)' });
         const back = lifecycleLines({ id: 'b2', typeId: 'shrimp', turnedFrom: 'bay', clocks: { turnMs: 45000 } }, src());
-        expect(back).toEqual([{ label: 'Next chance to turn back into Bay', value: 'in 15 s (30%)' }]);
+        expect(back).toEqual([{ label: 'Next chance to turn back into Bay', value: 'in 15s (30%)' }]);
     });
 
     it('a turned Token: its next chance to turn back, on the original type’s cycle and odds', () => {
         const lines = lifecycleLines({ id: 'c2', typeId: 'shrimp', turnedFrom: 'coast', clocks: { turnMs: 20000 } }, src());
-        expect(lines).toEqual([{ label: 'Next chance to turn back into Coast', value: 'in 40 s (30%)' }]);
+        expect(lines).toEqual([{ label: 'Next chance to turn back into Coast', value: 'in 40s (30%)' }]);
     });
 
     it('a turned Token shows only its turn back, not its own blocks', () => {
@@ -214,7 +202,7 @@ describe('lifecycleLines', () => {
         it('chosen but not started', () => {
             const lines = lifecycleLines({ id: 'fd', typeId: 'foundation' }, src({ selectedRecipe: () => FURNACE_RECIPE }));
             expect(byLabel(lines, 'Building').value).toBe('Furnace');
-            expect(byLabel(lines, 'Build progress')).toMatchObject({ value: 'Not started (30 s of work)', tone: TONE.MUTED });
+            expect(byLabel(lines, 'Build progress')).toMatchObject({ value: 'Not started (30s of work)', tone: TONE.MUTED });
         });
 
         it('part-built shows its progress against the recipe time', () => {
@@ -222,14 +210,14 @@ describe('lifecycleLines', () => {
                 { id: 'fd', typeId: 'foundation', cycleElapsedMs: 12000 },
                 src({ selectedRecipe: () => FURNACE_RECIPE })
             );
-            expect(byLabel(lines, 'Build progress').value).toBe('40% (12 s of 30 s)');
+            expect(byLabel(lines, 'Build progress').value).toBe('40% (12s of 30s)');
         });
     });
 
     it('Passive Production: what one lap pays, the shared timer, and when next (T-099)', () => {
         const lines = lifecycleLines({ id: 'h', typeId: 'hall', clocks: { passiveMs: 60000 } }, src({ passive: hallPassive(1) }));
         expect(lines).toEqual([{
-            label: 'Passive Production', value: '2 Oak Seed, 10 Water (Wishing Well) every 5 min (next in 4 min)', tone: TONE.GOOD
+            label: 'Passive Production', value: '2 Oak Seed, 10 Water (Wishing Well) every 5m (next in 4m 0s)', tone: TONE.GOOD
         }]);
     });
 
@@ -239,12 +227,12 @@ describe('lifecycleLines', () => {
 
         it('a refill, working: how long it will rest', () => {
             const lines = lifecycleLines(vein, src(state({ mode: 'refill', into: null, afterMs: 12000, resting: false, inMs: null })));
-            expect(byLabel(lines, 'Respawns')).toEqual({ label: 'Respawns', value: 'Rests 12 s when it runs out, then refills', tone: TONE.MUTED });
+            expect(byLabel(lines, 'Respawns')).toEqual({ label: 'Respawns', value: 'Rests 12s when it runs out, then refills', tone: TONE.MUTED });
         });
 
         it('a refill, resting: when it refills', () => {
             const lines = lifecycleLines(vein, src(state({ mode: 'refill', into: null, afterMs: 12000, resting: true, inMs: 11500 })));
-            expect(byLabel(lines, 'Resting')).toEqual({ label: 'Resting', value: 'Refills in 12 s' });
+            expect(byLabel(lines, 'Resting')).toEqual({ label: 'Resting', value: 'Refills in 12s' });
             expect(byLabel(lines, 'Respawns')).toBeUndefined();
         });
 
@@ -271,12 +259,12 @@ describe('lifecycleLines', () => {
 describe('passiveHoverLines (FB-30, T-099)', () => {
     it('says when the shared timer pays next, then what it pays', () => {
         expect(passiveHoverLines({ id: 'h', typeId: 'hall', clocks: { passiveMs: 100000 } }, src()))
-            .toEqual(['Passive Production · next in 3:20', '2 Oak Seed']);
+            .toEqual(['Passive Production · next in 3m 20s', '2 Oak Seed']);
     });
 
     it('starts a fresh clock at the full lap, and names the Wishing Well', () => {
         expect(passiveHoverLines({ id: 'h', typeId: 'hall' }, src({ passive: hallPassive(2) })))
-            .toEqual(['Passive Production · next in 5:00', '2 Oak Seed', '20 Water (Wishing Well)']);
+            .toEqual(['Passive Production · next in 5m 0s', '2 Oak Seed', '20 Water (Wishing Well)']);
     });
 
     it('is empty for a Token that pays nothing, or no Token', () => {

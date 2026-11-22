@@ -4,7 +4,8 @@ import { SkillIcon } from '../base/SkillIcon.jsx';
 import { CombatGlyph } from '../combat/CombatGlyph.jsx';
 import { GLYPH_COLOUR } from '../combat/combatGlyphs.js';
 import { HitParts, ResistChips, resistTip } from '../combat/CombatStatParts.jsx';
-import { damageText, secondsText, styleName, levelText } from '../combat/fightView.js';
+import { damageText, styleName, levelText } from '../combat/fightView.js';
+import { lengthText } from '../../../utils/Formatters.js';
 import * as HeroManager from '../../../systems/hero/HeroManager.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { heroCombatStats } from './heroCombatStats.js';
@@ -70,9 +71,9 @@ export const HeroCombatView = ({ heroId }) => {
             >
                 {s.range.low === s.range.high ? damageText(s.range.low) : `${damageText(s.range.low)}–${damageText(s.range.high)}`}
             </Row>
-            <Row stat="swing" label={t('fight.window.swing')} tip={t('fight.tip.swing', { time: secondsText(s.swingMs) })}>
+            <Row stat="swing" label={t('fight.window.swing')} tip={t('fight.tip.swing', { time: lengthText(s.swingMs) })}>
                 <CombatGlyph name="clock" colour={GLYPH_COLOUR.text} />
-                {secondsText(s.swingMs)}
+                {lengthText(s.swingMs)}
             </Row>
             <Row stat="crit" label={t('heroPanel.combat.critChance')} tip={t('heroPanel.combat.critChanceTip')}>
                 {pct(s.critChance)}

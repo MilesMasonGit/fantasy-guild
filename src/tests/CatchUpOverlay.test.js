@@ -7,7 +7,7 @@ import { ENGINE_EVENTS, UI_EVENTS, HEARD_WHILE_QUIET } from '../systems/core/eng
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { CatchUpOverlay } from '../ui/components/hud/CatchUpOverlay.jsx';
-import { formatAway, summaryView, catchUpTitle, itemChanges } from '../ui/components/hud/catchUpSummary.js';
+import { summaryView, catchUpTitle, itemChanges } from '../ui/components/hud/catchUpSummary.js';
 import * as CatchUp from '../systems/core/CatchUp.js';
 
 // The summary's undo button asks the catch-up driver; here it is a stand-in.
@@ -129,7 +129,7 @@ describe('the catch-up loading bar', () => {
         expect(q('[data-catch-up-bar]')).toBeNull();
         start();
         expect(q('[data-catch-up-bar]')).not.toBeNull();
-        expect(text('[data-catch-up-title]')).toBe('Catching up on 3 h 12 min away');
+        expect(text('[data-catch-up-title]')).toBe('Catching up on 3h 12m away');
     });
 
     it('shows nothing for a silent catch-up, start to end', () => {
@@ -202,7 +202,7 @@ describe('"While you were away"', () => {
         finish(fullResult());
         expect(q('[data-summary-header]').className).toMatch(/\btext-center\b/);
         expect(text('[data-catch-up-summary] [role="heading"]')).toBe('While you were away');
-        expect(text('[data-summary-away]')).toBe('You were away 3 h 12 min');
+        expect(text('[data-summary-away]')).toBe('You were away 3h 12m');
         expect(q('[data-summary-dropped]')).toBeNull();
     });
 
@@ -302,7 +302,7 @@ describe('"While you were away"', () => {
     it('a return with nothing to say: both columns say so in one muted line, and no zeros', () => {
         start(45 * MIN);
         finish(emptyResult());
-        expect(text('[data-summary-away]')).toBe('You were away 45 min');
+        expect(text('[data-summary-away]')).toBe('You were away 45m 0s');
         expect(sectionsIn('items')).toEqual(['items']);
         expect(sectionsIn('news')).toEqual(['news']);
         expect(text('[data-summary-column="items"] [data-summary-empty]')).toBe('No items gained or spent.');
@@ -322,8 +322,8 @@ describe('"While you were away"', () => {
     it('says how much past the 24 h cap was not played', () => {
         start(30 * HOUR);
         finish({ ...emptyResult(), awayMs: 30 * HOUR, simulatedMs: 24 * HOUR, droppedMs: 6 * HOUR });
-        expect(text('[data-summary-away]')).toBe('You were away 30 h');
-        expect(text('[data-summary-dropped]')).toBe('6 h past the 24 h limit was skipped.');
+        expect(text('[data-summary-away]')).toBe('You were away 1d 6h');
+        expect(text('[data-summary-dropped]')).toBe('6h 0m past the 1d 0h limit was skipped.');
     });
 
     it('nothing else closes it: a click on the backdrop or the panel leaves it', () => {
@@ -340,7 +340,7 @@ describe('"While you were away"', () => {
         finish(fullResult());
         start(90 * 1000, false);
         finish({ ...emptyResult(), awayMs: 90 * 1000, show: false });
-        expect(text('[data-summary-away]')).toBe('You were away 3 h 12 min');
+        expect(text('[data-summary-away]')).toBe('You were away 3h 12m');
     });
 });
 
@@ -615,10 +615,10 @@ describe('a second time away while the summary is open', () => {
         vi.mocked(CatchUp.undoSince).mockReturnValue(Date.now() - 5 * HOUR - 30_000);
         start();
         finish({ ...fullResult(), awayMs: 2 * HOUR, savedAt: began });
-        expect(text('[data-summary-away]')).toBe('You were away 2 h');
-        expect(text('[data-summary-undo-since]')).toBe('Load as I left it goes back 5 h, to before an earlier time away.');
+        expect(text('[data-summary-away]')).toBe('You were away 2h 0m');
+        expect(text('[data-summary-undo-since]')).toBe('Load as I left it goes back 5h 0m, to before an earlier time away.');
         act(() => { fireEvent.click(q('[data-summary-undo]')); });
-        expect(text('[data-summary-confirm="undo"]')).toContain('Load the game as you left it 5 h ago? Everything since then is lost.');
+        expect(text('[data-summary-confirm="undo"]')).toContain('Load the game as you left it 5h 0m ago? Everything since then is lost.');
     });
 
     it('one time away: no such line, and the question as before', () => {
@@ -684,18 +684,16 @@ describe('how an item\'s net is reckoned (itemChanges)', () => {
 });
 
 describe('the wording of time away', () => {
-    it('minutes, hours, hours and minutes', () => {
-        expect(formatAway(45 * MIN + 59 * 1000)).toBe('45 min');
-        expect(formatAway(3 * HOUR)).toBe('3 h');
-        expect(formatAway(3 * HOUR + 12 * MIN)).toBe('3 h 12 min');
-        expect(formatAway(30 * HOUR)).toBe('30 h');
-        expect(formatAway(20 * 1000)).toBe('less than a minute');
-        expect(catchUpTitle(2 * MIN)).toBe('Catching up on 2 min away');
+    it('counts up like a stopwatch, in the one time spelling', () => {
+        expect(catchUpTitle(45 * MIN + 59 * 1000)).toBe('Catching up on 45m 59s away');
+        expect(catchUpTitle(3 * HOUR + 12 * MIN + 59 * 1000)).toBe('Catching up on 3h 12m away');
+        expect(catchUpTitle(30 * HOUR)).toBe('Catching up on 1d 6h away');
+        expect(catchUpTitle(20 * 1000)).toBe('Catching up on 20s away');
     });
 
     it('the capped case', () => {
         expect(summaryView({ awayMs: 30 * HOUR, droppedMs: 6 * HOUR, summary: null }).droppedText)
-            .toBe('6 h past the 24 h limit was skipped.');
+            .toBe('6h 0m past the 1d 0h limit was skipped.');
         expect(summaryView({ awayMs: 3 * HOUR, droppedMs: 0, summary: null }).droppedText).toBeNull();
     });
 });
@@ -706,7 +704,7 @@ describe('a summary the game was closed on, offered again', () => {
     it('shows the same summary with both choices, and says why it is back', () => {
         offerAgain();
         expect(q('[data-catch-up-summary]')).not.toBeNull();
-        expect(text('[data-summary-away]')).toBe('You were away 3 h 12 min');
+        expect(text('[data-summary-away]')).toBe('You were away 3h 12m');
         expect(text('[data-summary-again]')).toBe('You closed the game before choosing, so here it is again.');
         expect(q('[data-summary-close]')).not.toBeNull();
         expect(q('[data-summary-undo]')).not.toBeNull();
@@ -726,7 +724,7 @@ describe('a summary the game was closed on, offered again', () => {
         expect(q('[data-catch-up-summary]')).toBeNull();
         expect(q('[data-catch-up-bar]')).not.toBeNull();
         finish({ ...fullResult(), awayMs: HOUR });
-        expect(text('[data-summary-away]')).toBe('You were away 1 h');
+        expect(text('[data-summary-away]')).toBe('You were away 1h 0m');
         expect(q('[data-summary-again]')).toBeNull();
     });
 

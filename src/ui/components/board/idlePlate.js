@@ -1,6 +1,5 @@
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { getRecipe } from '../../../config/registries/recipePoolRegistry.js';
-import { formatDuration } from '../drawer/lifecycleLines.js';
 import { turnCountdownText } from './centreAlert.js';
 import { CELL } from './workPlate.js';
 import { t } from '../../../i18n/index.js';
@@ -28,12 +27,12 @@ export function timerCellOf(roll) {
     if (!text) return null;
     let tip;
     if (roll.kind === 'leave') {
-        tip = t(roll.buff ? 'events.plate.buffLeaves' : 'events.plate.nodeLeaves', { time: formatDuration(roll.inMs).replace(/ /g, ' ') });
+        tip = t(roll.buff ? 'events.plate.buffLeaves' : 'events.plate.nodeLeaves', { time: text.replace(/ /g, ' ') });
     } else if (roll.kind === 'respawn') {
         // Non-breaking, so the tip never wraps between the number and its unit.
         tip = roll.paused
             ? `Resting. Refills only with ${(roll.needsNearby || []).map(id => tokenName(id) || id).join(' or ')} nearby`
-            : `Resting. Refills in ${formatDuration(roll.inMs).replace(/ /g, ' ')}`;
+            : `Resting. Refills in ${text.replace(/ /g, ' ')}`;
     } else if (roll.kind === 'grow') {
         tip = `Grows into ${tokenName(roll.into) || 'something new'} in ${text}`;
     } else if (roll.kind === 'ripen') {

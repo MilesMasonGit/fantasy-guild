@@ -53,7 +53,7 @@ export function flooredWorkTime(baseMs, resolvedMs) {
 /**
  * Passive Production's lap from the length every Lap Time rule resolved it to: floored like any
  * speed-up, then held to the whole second, so the catch-up's 1 s steps land on a payout exactly as
- * live ticks do and the lap reads "8:00", never "7:59". The game (`PassiveProduction.lapMs`) and the
+ * live ticks do and the lap reads "8m", never "7m 59s". The game (`PassiveProduction.lapMs`) and the
  * ledger's rate calculator both take the lap from here.
  */
 export function passiveLapMs(resolvedMs) {

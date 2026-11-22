@@ -167,17 +167,17 @@ describe('a resting vein shows the shared empty rock', () => {
         expect(Respawn.respawnState(vein)).toMatchObject({ mode: 'refill', resting: true, inMs: 42000, restingSprite: EMPTY_ROCK });
 
         const line = cardLifecycle(vein, getTokenType('mine_vein'), liveCardSources()).find(l => l.icon === 'regrow');
-        expect(line).toMatchObject({ text: '0:42', tip: 'Fixture Copper Vein: resting, refills in 0:42' });
+        expect(line).toMatchObject({ text: '42s', tip: 'Fixture Copper Vein: resting, refills in 42s' });
 
         const lines = lifecycleLines(vein, { typeOf: getTokenType, tokenName, respawn: Respawn.respawnState });
-        expect(lines.find(l => l.label === 'Resting')).toEqual({ label: 'Resting', value: 'Fixture Copper Vein: resting, refills in 42 s' });
+        expect(lines.find(l => l.label === 'Resting')).toEqual({ label: 'Resting', value: 'Fixture Copper Vein: resting, refills in 42s' });
     });
 
     it('a resting Token without one keeps today\'s words', () => {
         const t = placeAt('mine_plain_refill', VEIN.x, VEIN.y);
         t.usesRemaining = 0;
         const line = cardLifecycle(t, getTokenType('mine_plain_refill'), liveCardSources()).find(l => l.icon === 'regrow');
-        expect(line.tip).toBe('Resting: refills in 12 s');
+        expect(line.tip).toBe('Resting: refills in 12s');
     });
 });
 

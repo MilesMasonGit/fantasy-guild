@@ -4,21 +4,16 @@
 import { useState } from 'react';
 import * as EventClock from '../../systems/events/EventClock.js';
 import { allEvents } from '../../config/registries/eventRegistry.js';
+import { countdownText } from '../../utils/Formatters.js';
 
 const labelClass = 'ui-text-title font-bold uppercase tracking-wider text-gi-muted mb-1';
 const buttonClass = 'px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 border border-gi-primary/40 text-xs font-bold transition-colors';
-
-/** `m:ss` for a game-ms span. */
-function clockText(ms) {
-    const s = Math.ceil(Math.max(0, ms) / 1000);
-    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-}
 
 /** What the event clock says now, in a line. */
 function clockLine() {
     if (!EventClock.isEnabled()) return 'Events are off';
     if (EventClock.eventTokenOnMat()) return 'An event is on the mat: the clock waits until it leaves';
-    return `Next event in ${clockText(EventClock.nextEventInMs())}`;
+    return `Next event in ${countdownText(EventClock.nextEventInMs())}`;
 }
 
 export function EventsDevSection() {
