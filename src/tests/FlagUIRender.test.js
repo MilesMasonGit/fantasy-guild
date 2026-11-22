@@ -98,14 +98,16 @@ describe('the idle mark (FP-29)', () => {
         expect(container.querySelector('.gi-glow-idle')).toBeNull();
     });
 
-    it('keeps the working glow — as a green outline (Wave 5)', () => {
-        put(TOKEN,'fixture_producer');
+    // Brief 720 R4: working is a task ring round the hero and their Token, not an outline.
+    it('a working hero has no glow or outline: the task ring frames the job', () => {
+        const forest = put(TOKEN,'fixture_producer');
         Orders.orderAt('h1', TOKEN);
 
         const { container } = mount(h(MatBoard));
         const hero = container.querySelector('[data-board-hero="h1"]');
-        expect(hero.getAttribute('data-outline')).toBe('work');
+        expect(hero.getAttribute('data-outline')).toBeNull();
         expect(hero.className).not.toContain('gi-glow-active');
+        expect(container.querySelector(`[data-task-ring="${forest.id}"]`)).not.toBeNull();
     });
 
     it('an idle flag is the job flag, has no chip, and its hero stands beside it at 128 px with no glow', () => {
