@@ -507,8 +507,9 @@ export const MatToken = React.memo(function MatToken({
         }, UI_LISTENER);
     }, [isHall]);
 
-    // A sharp coloured outline: gold picked, white hovered or inspected, red in alert, green worked
-    // (`spriteOutline.js`). It is a generated picture under the art, not a filter.
+    // A sharp coloured outline: gold picked, white hovered or inspected, red in alert
+    // (`spriteOutline.js`); a worked Token has its task ring instead. It is a generated picture
+    // under the art, not a filter.
     // In a map mode the hovered Token takes the mode's colour, or muted grey where the mode cannot
     // act on it.
     const modeUnavailable = isHovered && mapMode ? demolishProtected : false;
@@ -517,7 +518,7 @@ export const MatToken = React.memo(function MatToken({
     const orderLit = useOrderLit(id);
     const outline = orderLit === 'workable' && !isHovered
         ? 'work'
-        : tokenOutline({ picked, hovered: isHovered, selected, lit: lit || orderLit === 'job', alert: !!alert, working: staffed, mode: mapMode, unavailable: modeUnavailable });
+        : tokenOutline({ picked, hovered: isHovered, selected, lit: lit || orderLit === 'job', alert: !!alert, mode: mapMode, unavailable: modeUnavailable });
     const gearState = gearStateOf(detail || {});
     const gear = React.useMemo(
         () => (gearState.show ? {

@@ -39,13 +39,20 @@ export const MAT_Z = Object.freeze({
     GROUND: 1,
     /** The ground's ambient life (`AmbientLife`: water shimmer, gusts, the lava's pulse): on the ground. */
     GROUND_FX: 2,
+    /**
+     * The ground dimmed inside the task rings (`TaskRings`): over the ground and its life, which it
+     * blends with, under every Token. ⚠️ Its blend reaches only what is drawn below it.
+     */
+    TASK_DIM: 3,
+    /** The task rings themselves, on the dimmed ground, under every Token and hero. */
+    TASK_RING: 4,
     /** The grid while placing (`TerrainGridOverlay`): over the ground, under every Token. */
-    GROUND_GRID: 3,
+    GROUND_GRID: 5,
     /**
      * The shade over a held mat's ground (a settled place before its arrival is beaten): the same
      * z as the grid, drawn before it, so the grid still reads while placing.
      */
-    HELD_SHADE: 3,
+    HELD_SHADE: 5,
     /** Tokens, flags and Token badges: `TOKEN_BASE + place * 2`. */
     TOKEN_BASE: 10,
     /** Heroes standing still, above every Token and flag: this plus how far down the mat they stand. */
