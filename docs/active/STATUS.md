@@ -16,8 +16,8 @@ build green) · bench-queued · eye-check · merged.*
 | 710 P1: names one step larger, Limes at Token pixel size (T-589, T-590) | builder-lite | `feat/names-limes` (`n1`) 210fbf56 | **built**, waits for the look with 710 and 720 R1, R2: whole diff read (one name class at --font-size-sm, LIMES_SCALE 1); builder gate green bar two load timeouts that pass alone; director suite before merge | Sun | |
 | 710 P2: the idle hover shows a timer or a problem only (T-591) | builder | `feat/idle-hover` (`n2`) | building | Sun | |
 | 710 P3: the "!" above, bobbing (T-592), after P2 | builder | | queued | | |
-| 720 R1: the animated ring and reach dots (T-593) | builder | `feat/animated-ring` (`ar`) | building | Sun | |
-| 720 R2: flags in the middle, on hover (T-594), after R1 | builder | | queued | | |
+| 720 R1: the animated ring and reach dots (T-593) | builder | `feat/animated-ring` (`ar`) 99f83762 | **built**, drag bench queued (Mon 01:00) and the look with 710: growRing.js read (frames only while moving, snaps when paused); builder gate green bar 3 CombatScreen load timeouts that pass alone | Sun | |
+| 720 R2: flags in the middle, on hover (T-594), after R1 | builder | `feat/flags-on-hover` (`fl`, on R1) | building | | |
 | 720 R3: task ring look pick, screenshot page (T-595) | builder | `feat/task-ring-pick` (`r3`) 71374e6a | **on main** 5d4b61a4 (docs only): four designs in docs/active/research/task_ring/, sent to the owner; recommended C (work green, fitted, light dim, no outline). **Waiting on the owner pick** | Sun | |
 | 720 R4: the task ring as picked (T-595), after the owner's pick | engineer | | queued | | |
 | 730 D1: the Hall pays once a lap; no work-cycle effect without a work cycle (T-511, T-514) | builder-lite | `fix/hall-one-lap` (`hd1`) 8d8117dd | **built**, director suite pending (the builder got no full run under six agents): diff read, the Hall ids removed were dead (the Hall has no work config). Owner pack after merge: strip the times from the three Hall lines | Sun | |
