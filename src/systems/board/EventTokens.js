@@ -23,7 +23,7 @@ import * as BoardState from './BoardState.js';
  * - a **buff** leaves when its time is up ({@link lastsMsOf});
  * - a **rich node** leaves after {@link UNWORKED_LEAVE_MS} (about an hour), worked or not.
  *
- * Demolishing one removes it at once (`Demolition.mark`). It never counts toward the mat's Token
+ * Demolishing one takes a Construction hero, like any Token (`Demolition.mark`). It never counts toward the mat's Token
  * cap (`MatCap.countsTowardCap`): an event must not stop the player building.
  *
  * ⚠️ A leaf below `TimedChanges`, `EventClock` and the UI: it imports nothing that imports them.

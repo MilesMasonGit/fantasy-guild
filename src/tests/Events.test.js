@@ -329,17 +329,25 @@ describe('the clock', () => {
         expect(EventClock.clockMs()).toBe(20 * MIN + 1000);
     });
 
-    it('a demolished event Token goes at once, with no hero, and the wait starts from then', () => {
+    it('a marked event Token stays until a hero clears it, holds the clock meanwhile, and the wait starts from its going', () => {
         setEventsForTests(table(COMET));
         freshGame();
         const ended = listenEnded();
         const res = EventClock.landNow(COMET.id);
         expect(res.success).toBe(true);
 
-        expect(Demolition.mark(res.instance.id)).toMatchObject({ success: true, removed: true });
-        expect(BoardState.getTokenById(res.instance.id)).toBeNull();
-        expect(ended.heard).toEqual([expect.objectContaining({ instanceId: res.instance.id, reason: EventTokens.ENDED.DEMOLISHED })]);
+        expect(Demolition.mark(res.instance.id)).toEqual({ success: true });
+        expect(Demolition.isMarked(res.instance)).toBe(true);
+        expect(BoardState.getTokenById(res.instance.id)).not.toBeNull();
+        expect(EventClock.eventTokenOnMat()?.id).toBe(res.instance.id);
+        expect(ended.heard).toEqual([]);
 
+        runFor(5000);
+        expect(EventClock.clockMs()).toBe(0);
+        expect(eventTokens().map(t => t.id)).toEqual([res.instance.id]);
+
+        expect(Demolition.finish(res.instance, { heroId: 'hero_1' })).toBe(true);
+        expect(ended.heard).toEqual([expect.objectContaining({ instanceId: res.instance.id, reason: EventTokens.ENDED.DEMOLISHED })]);
         runFor(1000);
         expect(EventClock.clockMs()).toBe(1000);
         ended.stop();

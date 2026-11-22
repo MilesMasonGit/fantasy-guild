@@ -21,7 +21,7 @@ import * as Landmarks from './Landmarks.js';
  * and the Starter Camp's Tokens: the layout is permanent), quests or enemies, and never a landmark
  * or a camp Token, dev tool or not. A marked Token
  * (`instance.demolish: true`, saved) is taken away by a hero holding Construction: no refund, no
- * loot, never a depletion. An event Token (`EventTokens.js`) is never marked: it goes at once.
+ * loot, never a depletion. An event Token (`EventTokens.js`) is marked and cleared like any other.
  *
  * While marked the Token is that work and nothing else: `StationRecipe.workConfigOf(def,
  * instance)` answers {@link DEMOLITION_CONFIG}, so flags send Construction heroes to it whatever
@@ -44,7 +44,10 @@ export const DEMOLISH_MS = 10000;
 /** The Construction level a hero needs to demolish. */
 export const DEMOLISH_LEVEL = 1;
 
-/** The work a marked Token is: no inputs, no output, no XP. */
+/** ⭐ Game value: the Construction XP a hero earns for each finished demolition (`BoardRunner`). */
+export const DEMOLISH_XP = 5;
+
+/** The work a marked Token is: no inputs, no output; its XP is paid once, on finishing. */
 export const DEMOLITION_CONFIG = Object.freeze({
     skill: DEMOLITION_SKILL_ID,
     skillRequired: DEMOLISH_LEVEL,
@@ -166,11 +169,6 @@ export function mark(target) {
     if (!check.success) return check;
     const { instance } = check;
     if (isMarked(instance)) return { success: true, unchanged: true };
-    // An event Token (`EventTokens.js`) needs no hero: it goes at once, so the next event can come.
-    if (instance.event) {
-        finish(instance);
-        return { success: true, removed: true };
-    }
     instance.demolish = true;
     restart(instance);
     announce(instance);

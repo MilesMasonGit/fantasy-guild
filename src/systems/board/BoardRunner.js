@@ -474,7 +474,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
  * A Token marked for demolition, for one tick: its hero's Construction work, a fixed time with no
  * recipe, inputs or charges, after which `Demolition.finish` takes it off the mat.
  *
- * ⚠️ No `CYCLE_START` or `CYCLE_COMPLETE`, no XP, no output: demolishing is not production, and a
+ * ⚠️ No `CYCLE_START` or `CYCLE_COMPLETE`, no output, and a flat {@link Demolition.DEMOLISH_XP} only when it finishes: demolishing is not production, and a
  * rule or quest counting cycles must not count it.
  */
 function tickDemolition(instance, def, delta, heroId, publishProgress) {
@@ -492,7 +492,9 @@ function tickDemolition(instance, def, delta, heroId, publishProgress) {
 
     instance.cycleElapsedMs = (instance.cycleElapsedMs > 0 ? instance.cycleElapsedMs : 0) + delta;
     if (instance.cycleElapsedMs >= config.cycleTimeMs) {
-        Demolition.finish(instance, { heroId });
+        if (Demolition.finish(instance, { heroId })) {
+            SkillSystem.addXP(heroId, config.skill, Demolition.DEMOLISH_XP);
+        }
     } else if (publishProgress) {
         EventBus.publish(BOARD_EVENTS.PROGRESS, {
             instanceId: instance.id,
