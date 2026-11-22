@@ -329,7 +329,6 @@ describe('a creature’s banner builds its camp, the same as the wild one', () =
         run(2500);
         const [camp] = onMat('token_goblin_camp');
         expect(camp).toBeTruthy();
-        expect(camp.builtFrom).toBeTruthy();
         expect(InventoryManager.getItemCount('bn_goblin_banner')).toBe(0);
         const def = getTokenType('token_goblin_camp');
         expect(SpawnerSystem.intervalOf(def, camp)).toBe(SpawnerSystem.intervalOf(def));
@@ -355,8 +354,11 @@ describe('a built node runs at the same speed as a wild one', () => {
         const f = foundationBuilding('bn_build_vein', STONE);
         run(2500);
         const [vein] = onMat('bn_vein');
-        expect(vein?.builtFrom).toBeTruthy();
+        expect(vein).toBeTruthy();
         expect(BoardState.getTokenById(f.id)).toBeNull();
+        // The builder stayed and began the vein's first cycle; start it over from a fresh order.
+        Flags.furl('h1');
+        vein.cycleElapsedMs = 0;
 
         const cycles = workUntilStarted(vein);
         run(1800);

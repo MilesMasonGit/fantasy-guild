@@ -111,8 +111,8 @@ export function roomRadiusOf(typeId) {
  * rounded to whole mat units.
  *
  * ⚠️ The rounding is deliberate and load-bearing. Gaps are stated as whole gaps (61 u between two
- * small Tokens), though centres need not be whole (a nudge lands wherever its ring puts it). Unrounded, `64 × 80% = 51.2` makes that gap `61.44`,
- * so two Tokens placed 61.4 u apart would be refused by four hundredths of a pixel nobody can see.
+ * small Tokens), though centres need not be whole (a nudge lands wherever its ring puts it).
+ * Unrounded, `64 × 80% = 51.2` makes that gap `61.44`, so two Tokens placed 61.4 u apart would be refused by four hundredths of a pixel nobody can see.
  * Rounded, the small hitbox is 51 u.
  */
 export function hitRadiusOf(typeId) {

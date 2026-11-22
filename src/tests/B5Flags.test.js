@@ -29,6 +29,11 @@ import { DRAG_KIND, rosterFlagPayload } from '../ui/dnd/dragConstants.js';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 
+/** A new Token put straight on the mat at a point (the route `dropOnMat` no longer has). */
+const freeDrop = (typeId, uses, point) =>
+    Placement.placeTokenAt(BoardState.createTokenInstance(typeId, uses), point);
+
+
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
     getQueue: vi.fn(() => [])
@@ -110,7 +115,7 @@ describe('FB-44 — a flag has no footprint', () => {
         Orders.orderAt('h1', P(900, 500));
         Orders.orderAt('h2', P(900, 500));
         const instance = BoardState.createTokenInstance('fixture_producer', 10);
-        const res = dropOnMat({ kind: DRAG_KIND.TOKEN, typeId: 'fixture_producer', usesRemaining: 10 }, P(900, 500));
+        const res = freeDrop('fixture_producer', 10, P(900, 500));
         expect(res.success).toBe(true);
         expect([res.x, res.y, res.nudged]).toEqual([900, 500, false]);
         expect(instance).toBeTruthy();

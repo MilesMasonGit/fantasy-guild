@@ -300,11 +300,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         setAlert(instance,ALERT.INPUTS);
         return;
     }
-    let paidInputs = [];
-    const pay = () => {
-        paidInputs = InputCost.rolledInputs(costed);
-        InputAllocator.consumeInputs(paidInputs);
-    };
+    const pay = () => InputAllocator.consumeInputs(InputCost.rolledInputs(costed));
     if (!(keepChance > 0)) pay();
 
     instance.cycleElapsedMs = 0;
@@ -480,14 +476,12 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     if (counts) counts[instance.typeId] = (counts[instance.typeId] || 0) + 1;
     if (!failed && io.recipe?.id) noteRecipeMade(io.recipe.id);
 
-    // Last, so every reader above saw the Foundation that did the work. Its hero lets go on the
-    // next pass and moves on. A failed build has spent its inputs and stays a Foundation, like any
+    // Last, so every reader above saw the Foundation that did the work. Its hero stays when the
+    // building is work they can do (`Flags.followTransform`). A failed build has spent its inputs and stays a Foundation, like any
     // failed cycle.
     if (buildTypeId && !failed) {
         const fromTypeId = instance.typeId;
-        // What it paid goes with it (`paidInputs`, after Efficiency): the built Token remembers its
-        // Foundation and build cost for the discard refund.
-        const built = Foundations.buildInPlace(instance, buildTypeId, paidInputs);
+        const built = Foundations.buildInPlace(instance, buildTypeId);
         if (built) {
             noteTokenBuilt(buildTypeId);
             EventBus.publish(BOARD_EVENTS.TOKEN_BUILT, {

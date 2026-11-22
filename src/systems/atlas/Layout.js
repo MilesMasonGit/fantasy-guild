@@ -1,6 +1,7 @@
 // a node budget and a seed → where each Token stands, and the ground under them
 
 import { mulberry32 } from './seededRandom.js';
+import { STANDARD_REACH_U } from '../../config/registries/reachRegistry.js';
 import {
     TERRAIN, DEFAULT_TERRAIN, TERRAIN_CELL, MAX_WATER_SHARE, terrainGrid, cellIndex, cellCentre,
     shoreDistance, islandsOf, followNodes, encodeTerrain
@@ -128,9 +129,6 @@ export const NEAR_WATER = 3;
 
 /** A hidden treasure stands at least this far out (as {@link campBand}). */
 export const HIDE_BAND = 0.6;
-
-/** How far round a treasure's spot the Tokens that hide it are counted, in mat units. */
-const HIDE_REACH = 240;
 
 /** Accepted draws when looking for the most hidden spot. */
 const HIDE_DRAWS = 40;
@@ -888,7 +886,7 @@ export function layout(summary, {
                 if (q.role !== ROLE_NODE) continue;
                 const dx = q.x - p.x;
                 const dy = q.y - p.y;
-                if (dx * dx + dy * dy >= HIDE_REACH * HIDE_REACH) continue;
+                if (dx * dx + dy * dy >= STANDARD_REACH_U * STANDARD_REACH_U) continue;
                 score += (q.x - hall.x) * (q.x - hall.x) + (q.y - hall.y) * (q.y - hall.y) < far ? 2 : 1;
             }
             if (score > bestScore || (score === bestScore && far > bestFar)) {

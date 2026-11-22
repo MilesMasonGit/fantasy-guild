@@ -111,18 +111,13 @@ export function dropOnMat(payload, point) {
 
     // A Shop row dragged onto the mat, paid on drop and placed at the drop point. A point off
     // the mat (the proximity fallback can hand the mat a drop just outside it) is a plain
-    // cancel: flown back, not announced. Must come before the bare-typeId route, which makes a
-    // Token for nothing.
+    // cancel: flown back, not announced.
     if (from.shop) {
         const res = Shop.buyAt(payload.typeId || from.shop, point);
         if (res?.offMat) return { ...res, flyBack: true };
         return announce(res?.success ? res : { ...res, flyBack: true }, point);
     }
 
-    if (payload.typeId) {
-        const instance = BoardState.createTokenInstance(payload.typeId, payload.usesRemaining);
-        return announce(flownBack(Placement.placeTokenAt(instance, point)), point);
-    }
     return null;
 }
 

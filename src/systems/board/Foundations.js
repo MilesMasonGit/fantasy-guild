@@ -51,35 +51,12 @@ export function hasRoomToBuild(instance, typeId) {
 }
 
 /**
- * What a built Token remembers of how it was built: `{ foundationTypeId, buildCost: [{ itemId,
- * quantity }] }`, the Foundation's type and the build cost the cycle actually paid, merged per
- * item. Nothing else keeps it once the Foundation has become the station. Only item inputs are kept; a zero or unnamed line is dropped.
- */
-export function builtFromRecord(foundationTypeId, paidInputs = []) {
-    const merged = new Map();
-    for (const input of paidInputs || []) {
-        const quantity = Math.floor(Number(input?.quantity) || 0);
-        if (!input?.itemId || quantity <= 0) continue;
-        merged.set(input.itemId, (merged.get(input.itemId) || 0) + quantity);
-    }
-    return {
-        foundationTypeId: foundationTypeId || null,
-        buildCost: [...merged].map(([itemId, quantity]) => ({ itemId, quantity }))
-    };
-}
-
-/**
  * The Foundation becomes `typeId` at its point, keeping its origin. Returns the new instance, or
  * null when there was no room after all.
- *
- * `paidInputs` is what the build cycle paid (after any `INPUT_COST` change); the new instance
- * remembers it with the Foundation's type as `builtFrom`, saved with the instance, for the discard
- * refund.
  */
-export function buildInPlace(instance, typeId, paidInputs = []) {
+export function buildInPlace(instance, typeId) {
     return EffectActions.transformInstance(instance, typeId, {
         fixPlaced: true,
-        cause: 'build',
-        extra: { builtFrom: builtFromRecord(instance?.typeId, paidInputs) }
+        cause: 'build'
     });
 }

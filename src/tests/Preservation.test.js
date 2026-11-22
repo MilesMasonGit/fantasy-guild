@@ -605,17 +605,15 @@ describe('a build', () => {
         return built;
     }
 
-    it('that kept its materials stands, takes nothing from the Bank and remembers paying nothing', () => {
+    it('that kept its materials stands and takes nothing from the Bank', () => {
         holdStar(100, { category: 'construction' });
-        const built = build();
+        build();
         expect(InventoryManager.getItemCount(ORE)).toBe(10);
-        expect(built.builtFrom).toEqual({ foundationTypeId: 'pv_foundation', buildCost: [] });
     });
 
-    it('without the rule pays its materials and remembers them', () => {
-        const built = build();
+    it('without the rule pays its materials', () => {
+        build();
         expect(InventoryManager.getItemCount(ORE)).toBe(7);
-        expect(built.builtFrom).toEqual({ foundationTypeId: 'pv_foundation', buildCost: [{ itemId: ORE, quantity: 3 }] });
     });
 });
 

@@ -210,13 +210,13 @@ describe('The Recipe editor’s building flow', () => {
     it('names the minimum when no Foundation of a ticked kind reaches it', () => {
         const store = useEntityStore.getState();
         const oak = store.addToken({ name: 'Fixture Tier Oak' });
-        useEntityStore.getState().updateToken(oak, { foundation: { kind: 'bench', skill: 'construction', tier: 1 } });
+        useEntityStore.getState().updateToken(oak, { foundation: { kind: 'stone', skill: 'construction', tier: 1 } });
         clearConstructionPool();
-        useEntityStore.getState().addRecipe('construction', { name: 'Too High', foundationKinds: ['bench'], foundationMinTier: 2 });
+        useEntityStore.getState().addRecipe('construction', { name: 'Too High', foundationKinds: ['stone'], foundationMinTier: 2 });
 
         render(React.createElement(RecipeEditor));
         fireEvent.click(screen.getByText('Construction'));
-        expect(screen.getByText(/No bench Foundation is tier 2 or higher yet/)).toBeTruthy();
+        expect(screen.getByText(/No stone Foundation is tier 2 or higher yet/)).toBeTruthy();
     });
 
     it('warns when a ticked kind’s Foundations are built with another skill', () => {

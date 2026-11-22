@@ -427,7 +427,7 @@ describe('purity guards', () => {
 
     it('Budget, Layout, TerrainMap and WaterShapes read no clock, no board and no Mat Tuner', () => {
         const imports = (file) => [...code(file).matchAll(/from\s*['"]([^'"]+)['"]/g)].map(m => m[1]);
-        expect(imports('Layout.js')).toEqual(['./seededRandom.js', './TerrainMap.js', './WaterShapes.js', './StoneShapes.js']);
+        expect(imports('Layout.js')).toEqual(['./seededRandom.js', '../../config/registries/reachRegistry.js', './TerrainMap.js', './WaterShapes.js', './StoneShapes.js']);
         expect(imports('Budget.js')).toEqual(['../../config/registries/tokenRegistry.js', './TerrainMap.js', './WaterShapes.js']);
         expect(imports('TerrainMap.js')).toEqual(['./WaterShapes.js']);
         expect(imports('WaterShapes.js')).toEqual([]);

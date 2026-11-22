@@ -227,10 +227,6 @@ function tokenFollowing(instance, ids) {
     if (!isPlainObject(instance)) return instance;
     let out = instance;
     out = mapField(out, 'typeId', ids.token);
-    out = mapField(out, 'builtFrom', built => {
-        const from = mapField(built, 'foundationTypeId', ids.token);
-        return mapField(from, 'buildCost', list => mapList(list, e => mapField(e, 'itemId', ids.item)));
-    });
     out = mapField(out, 'quest', quest => (isPlainObject(quest) ? questFollowing(quest, ids) : quest));
     return out;
 }

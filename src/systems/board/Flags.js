@@ -750,12 +750,12 @@ function stillTheJob(heroId, instance) {
 /**
  * A Token became another in place (`TOKEN_TRANSFORMED`): every order pinned to the old one moves to
  * the new one when that is still the hero's job ({@link stillTheJob}), so a hero felling a tree
- * waits by its Stump and Sapling and fells it again when it stands. A build (a Foundation becoming
- * a station) is the end of the builder's job. Anything not followed lapses on the next pass
- * (`lapsePins`): the hero needs a job.
+ * waits by its Stump and Sapling and fells it again when it stands. A finished build is the same:
+ * the builder stays when the building is work they can do. Anything not followed lapses on the next
+ * pass (`lapsePins`): the hero needs a job.
  */
-export function followTransform({ fromId, instanceId, cause } = {}) {
-    if (!fromId || !instanceId || cause === 'build') return;
+export function followTransform({ fromId, instanceId } = {}) {
+    if (!fromId || !instanceId) return;
     const next = BoardState.getTokenById(instanceId);
     if (!next) return;
     for (const [heroId, flag] of Object.entries(BoardState.getFlags())) {

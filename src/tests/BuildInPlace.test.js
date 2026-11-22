@@ -164,6 +164,26 @@ describe('building in place (DP-6)', () => {
         expect(onMat('fixture_bip_furnace')).toHaveLength(1);
     });
 
+    it('the builder stays on the finished building when it is work they can do', () => {
+        GameState.state.heroes = [hero('h1', { construction: 5, smithing: 5 })];
+        InventoryManager.addItem('item_coal', 10);
+        const f = put('fixture_bip_stone_foundation');
+        StationRecipe.setSelectedRecipe(f, 'fixture_bip_build_furnace');
+        Orders.orderAt('h1', AT);
+        run(3500);
+        expect(BoardState.getTokenById(f.id)).toBeNull();
+        const [furnace] = onMat('fixture_bip_furnace');
+        run(1000);
+        expect(BoardState.flagOf('h1')?.pinnedTo).toBe(furnace.id);
+    });
+
+    it('a flag pinned to a Foundation survives an old save carrying builtFrom', () => {
+        const f = put('fixture_bip_stone_foundation');
+        f.builtFrom = { foundationTypeId: 'gone_type', buildCost: [{ itemId: 'gone_item', quantity: 3 }] };
+        expect(() => run(1000)).not.toThrow();
+        expect(BoardState.getTokenById(f.id)).toBeTruthy();
+    });
+
     it('Farmland is the same with Farming (SP-47)', () => {
         const f = put('fixture_bip_farmland');
         StationRecipe.setSelectedRecipe(f, 'fixture_bip_plant_onion');
