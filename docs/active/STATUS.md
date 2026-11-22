@@ -45,6 +45,7 @@ build green) · bench-queued · eye-check · merged.*
 | 765 W1: Region leftovers retired (T-616) | builder-lite | `fix/region-leftovers` (`rw1`) | building | Sun 22 | |
 | 780 J1: bounties cut, Limes stays (T-637); WORK CHANGED expected | builder | `fix/bounties-cut` (`hj1`) | building | Sun 22 | |
 | 780 J5: just skills, one list by kind (T-643) | builder-lite | `fix/just-skills` (`hj5`) f02efe80 | **built**, merges with the Mon 01:00 queue (same work expected): whole diff read, specialist layer gone with no other readers (src, cms/src grepped), sheet rows one colour, Fletching and Enchanting among the making skills; touched tests re-run green (218) | Sun 22 | Sun 22 |
+| 780 J2: a Discard button for the Bank's stack (T-638) | builder-lite | `feat/discard-stack` (`hj2`) | building | Sun 22 | |
 
 **Mon 01:00 merge order (batch 12).** One scratch merge at a time on main: merge, keep-both CHANGELOG, gate, `npm run bench -- --compare`, ff main, push. Stacks (each branch contains the one before):
 1. `fix/no-reach-on-item-effects` (D9, CMS only).
