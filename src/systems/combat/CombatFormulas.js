@@ -236,6 +236,11 @@ export function rollSwing(missPct, critPct) {
     return { hit: true, crit: Math.random() * 100 < critPct };
 }
 
+/** Whether an attack that deals no damage lands, by the same miss chance as a swing: one draw, no crit. */
+export function rollLands(missPct) {
+    return !(Math.random() * 100 < missPct);
+}
+
 /** The hero's miss chance against this enemy. */
 export function heroMissChance(hero, enemy) {
     return missChance(getHeroCombatLevel(hero), enemy?.level || 1, enemyDodge(enemy), heroAccuracy(hero));

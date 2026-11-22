@@ -173,7 +173,8 @@ export default function EnemyMovesFields({ enemy, effects, onChange }) {
       <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
         No moves: it swings a plain Crush hit. Each swing makes one move, picked at random (a weight of 2 is twice as likely as 1).
         A move hits with the enemy&apos;s Hit in its type, and may land an effect: on itself as the move is made (Flutter, a heavy strike
-        for the swing), on the hero with the hit that lands. For one attack lasts until the next attack on whoever carries it, hit or miss.
+        for the swing), always; on the hero (Venom on a bite) only if the attack lands, by the same accuracy as any attack, so a miss
+        lands nothing (a move that does not hit still rolls to land it). For one attack lasts until the next attack on whoever carries it, hit or miss.
         Shown on the enemy&apos;s card and named in the fight.
         {moves.some((m) => isPlainObject(m) && m.damageType && !isDamageTypeId(m.damageType)) ? ' A type the game does not have (a group included) hits as Crush.' : ''}
       </p>

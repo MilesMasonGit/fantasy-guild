@@ -12,6 +12,13 @@
 /** Which side of a fight a moment belongs to. */
 export const SIDE = Object.freeze({ HERO: 'hero', ENEMY: 'enemy' });
 
+/**
+ * The moment an enemy's move that deals no damage lands on the hero (its accuracy roll hit). Not a
+ * `FIGHT_MOMENT`: no authored rule waits on it, only that move's own effect, and no blow landed, so
+ * no On Hit or When Struck rule runs.
+ */
+export const MOVE_LANDS = 'ENEMY_MOVE_LANDS';
+
 let runner = null;
 
 /** Wired once by the board (`FightMoments.init`). */

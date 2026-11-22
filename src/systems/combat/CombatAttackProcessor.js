@@ -6,7 +6,7 @@ import { handleHeroWounded } from './CombatResolutionProcessor.js';
 import * as ConsumptionSystem from '../hero/ConsumptionSystem.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 import { FIGHT_MOMENT } from '../../config/registries/triggerRegistry.js';
-import { SIDE, fightMoment, talliesOf } from './FightHooks.js';
+import { SIDE, MOVE_LANDS, fightMoment, talliesOf } from './FightHooks.js';
 import { spendArrow, nextArrowOf } from './Arrows.js';
 import { pickMove } from '../../config/registries/enemyMoves.js';
 
@@ -28,10 +28,12 @@ import { pickMove } from '../../config/registries/enemyMoves.js';
  * A landed hit's event names its damage types (`types`) and whether they helped or hurt it
  * (`verdict`: `weak`, `resisted` or null), for the floats and the log.
  *
- * An enemy with moves (`enemyMoves.js`) makes one each swing, picked before its On Swing rules (one
- * draw, only when it has a choice): a hit in the move's type, or no hit at all (`effectOnly`, nothing
- * rolled); the event names it (`move`). The move's effect lands through the fight moments. An enemy
- * without moves draws and says exactly what it did before moves.
+ * An enemy with moves (`enemyMoves.js`) makes one each swing, picked by weight before its On Swing
+ * rules (one draw, only when it has a choice): a hit in the move's type, or no hit at all. A move that
+ * does not hit rolls nothing when its effect is on itself (`effectOnly`), and only its accuracy when
+ * aimed at the hero (one draw: a miss reads as a miss, a landing as `effectOnly`); the event names it
+ * (`move`). The move's effect lands through the fight moments: on the hero only if the attack hits.
+ * An enemy without moves draws and says exactly what it did before moves.
  */
 
 /** Whether a hero is out of the fight: knocked out, or at 0 HP. */
@@ -150,9 +152,14 @@ function enemySwing(fight, enemy, hero) {
 
     if (!isDown(hero) && fight.combat.enemyHp.current > 0) {
         if (move && !move.hits) {
+            // ⚠️ One draw, and only for a move aiming its effect at the hero: a move on itself rolls nothing.
+            const atHero = !!move.effectId && move.target !== 'self';
+            const lands = !atHero || CombatFormulas.rollLands(CombatFormulas.enemyMissChance(enemy, hero));
+            if (atHero && lands) fightMoment(fight, SIDE.ENEMY, MOVE_LANDS, 1);
+            // A miss reads as any miss does; a move that lands, as the move alone.
             EventBus.publish(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, {
                 cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, crit: false,
-                ...named, effectOnly: true, heroHpRemaining: hero.hp.current
+                ...named, ...(lands ? { effectOnly: true } : {}), heroHpRemaining: hero.hp.current
             });
         } else {
             const swing = CombatFormulas.rollSwing(
@@ -173,7 +180,7 @@ function enemySwing(fight, enemy, hero) {
                 if (hero.hp.current <= 0) {
                     handleHeroWounded(fight, hero.id);
                 } else {
-                    // Where a Venomous enemy's poison lands, a boss's status attack and a move's effect on the hero.
+                    // Where a move's effect on the hero lands, and a Venomous enemy's poison.
                     tallies.hits.enemy += 1;
                     fightMoment(fight, SIDE.ENEMY, FIGHT_MOMENT.HIT, tallies.hits.enemy);
                     // The hero's armour striking back, once the hit's own rules have run.
