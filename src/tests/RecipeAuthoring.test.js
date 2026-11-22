@@ -150,7 +150,7 @@ describe('Recipe authoring — P6b', () => {
          */
         const labelText = (l) => (l.querySelector('span') || l).textContent.trim();
 
-        for (const label of ['Cycle Time (ms)', 'XP', 'Level Requirement', 'Station Charge Cost']) {
+        for (const label of ['Cycle Time (ms)', 'XP', 'Level Requirement']) {
             expect(
                 [...container.querySelectorAll('label')].some(l => labelText(l) === label),
                 `${label} is not authorable`
@@ -164,7 +164,7 @@ describe('Recipe authoring — P6b', () => {
          *
          * Before this, `Cycle Time (ms)` and `XP` (both written by the sim on
          * every Recalculate) sat in the same 2×2 grid as `Level Requirement`
-         * and `Station Charge Cost` (both authored), in identical styling, with
+         * and `Level Requirement` (authored), in identical styling, with
          * nothing to tell them apart. Typing into a derived one looked exactly
          * like typing into an authored one and was silently thrown away.
          *
@@ -187,7 +187,7 @@ describe('Recipe authoring — P6b', () => {
         for (const derived of ['Cycle Time (ms)', 'XP']) {
             expect(isMarked(derived), `${derived} is derived but unmarked`).toBe(true);
         }
-        for (const authored of ['Level Requirement', 'Station Charge Cost']) {
+        for (const authored of ['Level Requirement']) {
             expect(isMarked(authored), `${authored} is authored but marked derived`).toBe(false);
         }
     });

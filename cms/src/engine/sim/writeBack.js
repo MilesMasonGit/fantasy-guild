@@ -9,12 +9,12 @@ import { hasCatchPools } from '../../../../src/config/registries/catchPools.js';
 export const RETIRED_ITEM_FIELDS = Object.freeze(['trueCost', 'sellPrice']);
 
 /**
- * The nine EV / auto-balance fields recipes carried for the retired engine, and the station charge
- * cost nothing reads any more. Deleted on every run.
+ * The nine EV / auto-balance fields recipes carried for the retired engine.
+ * Deleted on every run.
  */
 export const RETIRED_RECIPE_FIELDS = Object.freeze([
     'targetEV', 'calculatedEV', 'autoBalance', 'fieldLocks', 'profitSplit',
-    'liquidityEV', 'progressionEV', 'goldPerMinute', 'xpPerMinute', 'stationChargeCost',
+    'liquidityEV', 'progressionEV', 'goldPerMinute', 'xpPerMinute',
 ]);
 
 /** `isPrimarySource` is the old anchor flag. It is migrated to the `anchor` intent flag where true (see `migrateLegacyIntent`) and deleted either way. */

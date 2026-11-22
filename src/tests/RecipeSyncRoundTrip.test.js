@@ -193,8 +193,6 @@ describe('Derived recipe fields match a fresh solve (the drift alarm)', () => {
 
     it('reproduces the shipped file from the shipped intent', () => {
         const written = recipesToFile(solve(poolsFromFile(shipped), shippedWorld()));
-        // A retired field the shipped file still carries is expected to go on this write.
-        const expected = shipped.map(({ stationChargeCost, ...rest }) => rest);
-        expect(JSON.stringify(written, null, 2)).toBe(JSON.stringify(expected, null, 2));
+        expect(JSON.stringify(written, null, 2)).toBe(raw);
     });
 });

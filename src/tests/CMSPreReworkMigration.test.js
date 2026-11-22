@@ -106,12 +106,13 @@ describe('A pre-rework workspace heals on its first Recalculate', () => {
         expect(recipe.levelRequirement).toBe(1);
     });
 
-    it('does not write a stationChargeCost, and strips one an old recipe carries', () => {
+    it('does not write a stationChargeCost, and leaves one an old recipe carries alone', () => {
+        const recipe = recipeOf(useEntityStore.getState().recalculateEconomy());
+        expect('stationChargeCost' in recipe).toBe(false);
         const w = preReworkWorkspace();
         w.recipePools.smithing[0].stationChargeCost = 3;
         load(w);
-        const recipe = recipeOf(useEntityStore.getState().recalculateEconomy());
-        expect('stationChargeCost' in recipe).toBe(false);
+        expect(recipeOf(useEntityStore.getState().recalculateEconomy()).stationChargeCost).toBe(3);
     });
 
     it('writes the derived results a synthetic id used to swallow', () => {
