@@ -50,7 +50,6 @@ export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
     // A kill's loot is the enemy Token's outputs, carried as `fight.drops` and
     // resolved by `LootSystem` off the `combat_victory` event below.
 
-    fight.combat.state.intermissionTimer = 2000;
     fight.status = 'victory';
     assignedHeroIds.forEach(id => HeroManager.setHeroStatus(id, 'idle'));
     // The kill counts the Encyclopedia ticks an enemy by.

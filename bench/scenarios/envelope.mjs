@@ -32,14 +32,14 @@ const BRUTES_PER_CAMP = 4;
 // Registered here, not in `fixtures.mjs`, so no other scenario's work changes.
 registerTokenTypes({
     /**
-     * A brute that never runs out (a kill costs one of 1000 uses; it is back at full HP after the
-     * 2 s pause), so a hero sent at it fights on. Tougher than a goblin, so a fight lasts several
-     * blows; it swings slowly, so its hero is still standing minutes later.
+     * A brute too tough to fall in a bench run (an enemy is one use, so a kill would leave its hero
+     * with nothing to fight until the camp's next), so a hero sent at it fights on. It swings
+     * slowly, so its hero is still standing minutes later.
      */
     env_brute: {
         id: 'env_brute', name: 'Envelope Brute', tokenType: 'enemy',
-        rarity: 'common', theme: 'fixture', uses: 1000, sprite: 's_crime', requiresHero: true,
-        enemy: { level: 1, style: 'melee', budgetScale: 0.4, speed: 'slow' },
+        rarity: 'common', theme: 'fixture', uses: 1, sprite: 's_crime', requiresHero: true,
+        enemy: { level: 1, style: 'melee', budgetScale: 0.4, speed: 'slow', hp: 1000000 },
         config: {
             skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0,
             inputs: [],

@@ -248,10 +248,22 @@ describe('A kill', () => {
         expect(InventoryManager.getItemCount('item_blackberry')).toBe(0);
     });
 
-    it('spends one charge — enemy Tokens deplete like anything else (D-104)', () => {
+    it('uses the enemy up: one kill clears it, whatever charges its copy holds', () => {
         const bear = place(10, 'fixture_enemy', 'hero_1', 20);
+        let kills = 0;
+        const off = EventBus.subscribe(BOARD_EVENTS.COMBAT_RESOLVED, (p) => { if (p?.instanceId === bear.id && p.outcome === 'victory') kills++; });
         run(60000);
-        expect(bear.usesRemaining).toBeLessThan(20);
+        off();
+        expect(kills).toBe(1);
+        expect(bear.usesRemaining).toBe(0);
+        expect(BoardState.getTokenById(bear.id)).toBeNull();
+    });
+
+    it('every enemy type starts at one use, whatever it authors (the 2 s stand-up is gone)', () => {
+        expect(tokenStartingUses('fixture_enemy_weak')).toBe(1);
+        expect(tokenStartingUses('fixture_enemy')).toBe(1);
+        // A non-enemy keeps what it authors.
+        expect(tokenStartingUses('fixture_aura_node')).not.toBe(1);
     });
 
     it('counts as ONE CYCLE for the rest of the board (D-129)', () => {
@@ -259,12 +271,12 @@ describe('A kill', () => {
         const seen = [];
         const unsub = EventBus.subscribe('board:cycle_complete', p => seen.push(p));
 
-        place(10, 'fixture_enemy', 'hero_1');
+        const bear = place(10, 'fixture_enemy', 'hero_1');
         run(60000);
         unsub();
 
-        expect(seen.length).toBeGreaterThan(0);
-        expect(seen[0].instanceId).toBe(idAt(10));
+        expect(seen.length).toBe(1);
+        expect(seen[0].instanceId).toBe(bear.id);
     });
 
     it('wears nothing beside it per kill, as a craft wears nothing (help is free, brief 230 S1a)', () => {
@@ -356,39 +368,29 @@ describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
         expect(BoardCombat.getFight(idAt(10))).toBeNull();
     });
 
-    it('⚠️ returns the enemy to FULL HP — retreat has a real cost', () => {
-        // This is what gives §8.1's "watch your first few fights" any weight.
-        // Without it a player could chip any enemy down across free attempts.
+    /** Fight the enemy on spot 10 with hero_1 until it is hurt; its health then. */
+    function hurtIt() {
         place(10, 'fixture_enemy', 'hero_1');
-
-        // ⚠️ Sample every tick and keep the LOWEST HP seen, rather than
-        // checking once after a fixed window. Two things make the naive version
-        // unreliable, and they pull in opposite directions: damage is rolled,
-        // so a short window sometimes lands no hit at all; but a kill triggers
-        // an intermission that restores the enemy to full, so a long window can
-        // miss the damage by arriving after the reset. Tracking the minimum
-        // catches the damaged state either way.
         run(100);                       // one tick, so the fight exists to read
-        const max = BoardCombat.getFight(idAt(10)).combat.enemyHp.max;
-        let lowest = BoardCombat.getFight(idAt(10)).combat.enemyHp.current;
-        for (let elapsed = 0; elapsed < 20000 && lowest === max; elapsed += 100) {
-            run(100);
-            lowest = Math.min(lowest, BoardCombat.getFight(idAt(10)).combat.enemyHp.current);
-        }
-        expect(lowest).toBeLessThan(max);
+        const hp = () => BoardCombat.getFight(idAt(10)).combat.enemyHp;
+        for (let elapsed = 0; elapsed < 20000 && hp().current === hp().max; elapsed += 100) run(100);
+        expect(hp().current).toBeLessThan(hp().max);
+        return { ...hp() };
+    }
 
+    it('⚠️ the enemy keeps its damage: a hero back on it at once meets it as hurt as it was', () => {
+        const hurt = hurtIt();
         Flags.furl('hero_1');
-        run(100);
         Orders.orderAt('hero_1', C(10));
         run(100);
 
-        const fresh = BoardCombat.getFight(idAt(10)).combat.enemyHp;
-        expect(fresh.current).toBe(fresh.max);
+        const again = BoardCombat.getFight(idAt(10)).combat.enemyHp;
+        expect(again.current).toBeLessThanOrEqual(hurt.current);
+        expect(again.current).toBeLessThan(again.max);
     });
 
-    it('a DIFFERENT hero arriving also starts a fresh fight', () => {
-        place(10, 'fixture_enemy', 'hero_1');
-        run(4000);
+    it('a DIFFERENT hero arriving starts a new fight against the same hurt enemy', () => {
+        const hurt = hurtIt();
 
         // One hero per Token: hero_2 only gets the enemy once hero_1's flag is
         // taken down (Free Playmat 1.4b).
@@ -398,7 +400,40 @@ describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
 
         const fight = BoardCombat.getFight(idAt(10));
         expect(fight.assignedHeroId).toBe('hero_2');
-        expect(fight.combat.enemyHp.current).toBe(fight.combat.enemyHp.max);
+        expect(fight.combat.enemyHp.current).toBeLessThanOrEqual(hurt.current);
+        expect(fight.combat.enemyHp.current).toBeLessThan(fight.combat.enemyHp.max);
+    });
+
+    it('out of a fight it heals 5% of its max health a second, rounded up, until whole', () => {
+        const hurt = hurtIt();
+        Flags.furl('hero_1');
+        run(100);
+        const bear = tokenAt(10);
+        expect(BoardCombat.getFight(bear.id)).toBeNull();
+        const start = bear.fightHp.current;
+        expect(start).toBe(hurt.current);
+        expect(BoardCombat.enemyHealthOf(bear)).toEqual({ current: start, max: hurt.max });
+
+        const step = Math.ceil(hurt.max * 0.05);
+        run(900);                       // a whole second since the fight ended
+        expect(BoardCombat.enemyHealthOf(bear).current).toBe(Math.min(hurt.max, start + step));
+        run(1000);
+        expect(BoardCombat.enemyHealthOf(bear).current).toBe(Math.min(hurt.max, start + 2 * step));
+
+        run(25000);
+        expect(bear.fightHp).toBeUndefined();
+        expect(BoardCombat.enemyHealthOf(bear)).toEqual({ current: hurt.max, max: hurt.max });
+    });
+
+    it('a knocked-out hero leaves the enemy as hurt as it was', () => {
+        const hurt = hurtIt();
+        const hero = GameState.state.heroes[0];
+        hero.hp.current = 0;
+        run(100);
+        expect(hero.status).toBe('wounded');
+        const bear = tokenAt(10);
+        expect(bear.fightHp.current).toBeLessThanOrEqual(hurt.current);
+        expect(bear.fightHp.heroId).toBeUndefined();
     });
 });
 

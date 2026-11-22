@@ -185,7 +185,7 @@ describe('a carried Token holds its last charge until the drop', () => {
 });
 
 describe('lifting a fought enemy ends the fight', () => {
-    it('as a hero walking away does: statuses off the hero, the enemy whole; the drop starts a fresh fight', () => {
+    it('as a hero walking away does: statuses off the hero, the enemy keeps its damage; the drop starts a fresh fight', () => {
         const bear = place(10, 'fixture_enemy', 'hero_1');
         const hero = GameState.state.heroes[0];
         expect(runUntil(() => {
@@ -205,7 +205,10 @@ describe('lifting a fought enemy ends the fight', () => {
         expect(BoardCombat.fightOfHero('hero_1')).toBeNull();
         expect(hero.effects.some(e => e.forFight)).toBe(false);
         expect(hero.status).not.toBe('combat');
-        expect(bear.fightHp).toBeUndefined();
+        // Its damage stays on it, and in the hand it does not heal.
+        expect(bear.fightHp?.heroId).toBeUndefined();
+        const kept = bear.fightHp.current;
+        expect(kept).toBeLessThan(fight.combat.enemyHp.max);
 
         completed = [];
         run(20000);
@@ -219,7 +222,7 @@ describe('lifting a fought enemy ends the fight', () => {
         const fresh = BoardCombat.getFight(bear.id);
         expect(fresh).not.toBe(fight);
         expect(fresh?.assignedHeroId).toBe('hero_1');
-        expect(fresh.combat.enemyHp.current).toBe(fresh.combat.enemyHp.max);
+        expect(fresh.combat.enemyHp.current).toBeLessThanOrEqual(kept);
         expect(runUntil(() => completed.includes(bear.id), 30000)).toBe(true);
     });
 

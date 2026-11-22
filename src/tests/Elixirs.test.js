@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
+import { enemyCampType } from './fixtures/enemyCamp.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
@@ -86,8 +87,10 @@ let engagements;
 let consumed;
 let offs = [];
 
+/** A camp of one `fixture_enemy` (every enemy is one use; the camp brings the next), the hero sent at it. */
 function placeEnemy(heroId = 'hero_1') {
-    const instance = BoardState.createTokenInstance('fixture_enemy', tokenStartingUses('fixture_enemy'));
+    const camp = enemyCampType('fixture_enemy');
+    const instance = BoardState.createTokenInstance(camp, tokenStartingUses(camp));
     Placement.placeTokenAt(instance, SPOT);
     TileModifiers.rebuildAround([instance]);
     if (heroId) Orders.orderAt(heroId, SPOT);

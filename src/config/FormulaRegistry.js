@@ -185,3 +185,9 @@ export const SWING_TIME_FACTOR_RANGE = Object.freeze({ min: 0.25, max: 4 });
 export const REGEN_CONFIG = {
     hp:     { amount: 1, interval: 10.0 },
 };
+
+/**
+ * An enemy out of a fight heals this share of its max health every `intervalMs`, rounded up
+ * (`BoardCombat.rest`): it keeps its damage when a fight ends without a kill, and heals back.
+ */
+export const ENEMY_REGEN = Object.freeze({ shareOfMax: 0.05, intervalMs: 1000 });

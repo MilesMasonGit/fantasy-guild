@@ -89,7 +89,7 @@ function makeFighter(id) {
 }
 
 /** ⭐ Thorns itself — one library entry, authored once. */
-function registerThorns(amount = 1, extra = {}) {
+function registerThorns(amount = 1, extra = {}, statementExtra = {}) {
     registerEffects({
         fixture_effect_thorns: {
             id: 'fixture_effect_thorns',
@@ -97,7 +97,8 @@ function registerThorns(amount = 1, extra = {}) {
             statements: [{
                 ...makeStatement(KEYWORD.DEALS),
                 id: 'stm_thorns',
-                payload: { amount, ignoresArmor: false, ...extra }
+                payload: { amount, ignoresArmor: false, ...extra },
+                ...statementExtra
             }]
         }
     });
@@ -161,7 +162,8 @@ describe('⭐ one entry, two bearers', () => {
          * the game, which makes it the one assertion that can only be true if a
          * thorn landed on a genuine kill.
          */
-        registerThorns(500, { ignoresArmor: true });
+        // Free of charge: an enemy is one use, and its kill has spent it before the cycle's rules run.
+        registerThorns(500, { ignoresArmor: true }, { chargeDelta: 0 });
         registerTokenTypes({
             fixture_thorn_beast: {
                 ...getTokenType('fixture_enemy'),

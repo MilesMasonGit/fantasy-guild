@@ -23,6 +23,7 @@ import * as EquipmentManager from '../systems/equipment/EquipmentManager.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { xpForLevel } from '../utils/XPCurve.js';
 import * as fixtures from '../../bench/fixtures.mjs';
+import { enemyCampType } from './fixtures/enemyCamp.js';
 import * as LiveEffects from '../systems/effects/LiveEffects.js';
 import { registerStatusFixtures, VENOM } from './fixtures/statusEffects.js';
 
@@ -103,7 +104,8 @@ function buildBoard() {
     expect(EquipmentManager.equipItem(fighter.id, 'gearcatchup_cleaver').success).toBe(true);
     HeroManager.updateHeroFromSkills(fighter);
     fighter.hp.current = fighter.hp.max;
-    const a = fixtures.placeAt('gearcatchup_enemy', 400, 400);
+    // Every enemy is one use: the hero is sent at a camp of one, which brings the next.
+    const a = fixtures.placeAt(enemyCampType('gearcatchup_enemy'), 400, 400);
     fixtures.orderAt(fighter.id, { x: a.x, y: a.y });
     TileModifiers.rebuildAll();
     return fighter.id;

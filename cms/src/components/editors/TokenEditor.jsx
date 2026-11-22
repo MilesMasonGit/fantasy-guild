@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Gauge } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
-import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, stationKindsOfSkill, isRetiredStationKind, ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, ATTACK_SPEED_MS, RETIRED_ENEMY_FIELDS, DAMAGE_TYPES, DAMAGE_GROUPS, RESISTANCE_STEPS, damageTypeLabel, isTypeOrGroupId, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY, neededToolOf, toolNeedPhrase, hasCatchPools } from '../../utils/constants';
+import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, stationKindsOfSkill, isRetiredStationKind, ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, ATTACK_SPEED_MS, RETIRED_ENEMY_FIELDS, DAMAGE_TYPES, DAMAGE_GROUPS, RESISTANCE_STEPS, damageTypeLabel, isTypeOrGroupId, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY, ENEMY_USES, neededToolOf, toolNeedPhrase, hasCatchPools } from '../../utils/constants';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
@@ -371,7 +371,23 @@ export default function TokenEditor() {
       <Section title="Lifecycle" icon={<Timer size={14} />}>
         <div className="grid grid-cols-2 gap-4">
           {/* ⚠️ The label is Charges and the field is `uses`, deliberately: Charges is the game's own word (the Token card badge, `Charges.js`). Not the retired top-level `charges` field, which is stripped on every Recalculate (`RETIRED_TOKEN_FIELDS`). */}
-          {neverWears ? (
+          {isEnemy ? (
+            <Field label="Charges">
+              <div data-field="enemy-one-use" className="text-[11px] text-gray-400 leading-relaxed">
+                One fight. Its kill uses it up, and only its camp brings another.
+              </div>
+              {token.uses !== ENEMY_USES && !isUnlimited && (
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
+                    Its {token.uses} Charges are ignored.
+                  </span>
+                  <button type="button" data-clear-charges onClick={() => update('uses', ENEMY_USES)} className="btn-ghost text-xs" style={{ padding: '2px 8px' }}>
+                    Set to 1
+                  </button>
+                </div>
+              )}
+            </Field>
+          ) : neverWears ? (
             <Field label="Charges">
               <div data-field="never-wears" className="text-[11px] text-gray-400 leading-relaxed">
                 Never wears out. {NEVER_WEARS_WHY[neverWears]}

@@ -124,6 +124,14 @@ function buildFight(foeType = 'cs_venom') {
     return { heroId: hero.id, enemyId: foe.id };
 }
 
+/** Another enemy where the last one stood, and the hero ordered onto it: an enemy is one use. */
+function nextFoe(heroId, foeType = 'cs_venom') {
+    const foe = fixtures.placeAt(foeType, 600, 400);
+    fixtures.orderAt(heroId, { x: foe.x, y: foe.y });
+    TileModifiers.rebuildAll();
+    return foe.id;
+}
+
 /** Run the loop a second at a time until `done()` or `maxS` seconds. */
 function runUntil(done, maxS = 180) {
     for (let i = 0; i < maxS && !done(); i++) GameLoop.runHandlers(1000);
@@ -182,7 +190,8 @@ describe('the fight watch: this fight and the last one', () => {
         expect(last.hp.enemy.cur).toBe(0);
         expect(last.endedAt - last.startedAt).toBeGreaterThanOrEqual(0);
 
-        // The next enemy steps up: a new fight is "this fight", the one just won stays "last".
+        // The next enemy: a new fight is "this fight", the one just won stays "last".
+        nextFoe(heroId);
         runUntil(() => !!fightsOf(heroId).current, 10);
         const next = fightsOf(heroId);
         expect(next.current.id).toBeGreaterThan(next.last.id);
@@ -190,14 +199,14 @@ describe('the fight watch: this fight and the last one', () => {
         stop();
     });
 
-    it('a fight already running when the watch starts is adopted as "seen from partway", but never a rest between kills', () => {
+    it('a fight already running when the watch starts is adopted as "seen from partway", but nothing once the enemy is beaten', () => {
         const { heroId, enemyId } = buildFight();
         runUntil(() => false, 5);
         const stop = startFightWatch();
         expect(fightsOf(heroId).current).toBeNull();
         expect(adopt(heroId)).toBe(true);
         expect(fightsOf(heroId).current).toMatchObject({ instanceId: enemyId, joinedLate: true });
-        // Resting after a kill: nothing to adopt until the next enemy steps up.
+        // The enemy beaten: nothing to adopt.
         runUntil(() => !!fightsOf(heroId).last, 180);
         expect(fightsOf(heroId).current).toBeNull();
         expect(adopt(heroId)).toBe(false);
@@ -479,23 +488,22 @@ describe('an elixir counts the fight it is working in (owner, 2026-10-25: 10 dow
         const { heroId } = buildFight();
         const hero = () => HeroManager.getHero(heroId);
         const shown = () => activeElixirsOf(hero()).map(e => e.count);
-        const engaged = () => {
-            const fight = BoardCombat.fightOfHero(heroId);
-            return !!fight && !((fight.combat?.state?.intermissionTimer ?? 0) > 0);
-        };
+        const engaged = () => !!BoardCombat.fightOfHero(heroId);
         runUntil(() => engaged() && activeElixirsOf(hero()).length > 0, 10);
         expect(shown()).toEqual([10]);
         expect(fightPanelView(heroId, { current: null, last: null }) ?? null).toBeNull();
-        // The first enemy falls: resting before the next, nine fights are left.
+        // The first enemy falls: nine fights are left.
         runUntil(() => !engaged(), 180);
         expect(shown()).toEqual([9]);
-        // The next one steps up: it is one of those nine.
+        // The next one: it is one of those nine.
+        nextFoe(heroId);
         runUntil(() => engaged(), 10);
         expect(shown()).toEqual([9]);
         // Its last fight: one dose left to count, this one.
         hero().elixirFights.cs_elixir = 1;
         InventoryManager.removeItem('cs_elixir', InventoryManager.getItemCount('cs_elixir'));
         runUntil(() => !engaged(), 180);
+        nextFoe(heroId);
         runUntil(() => engaged(), 10);
         expect(shown()).toEqual([1]);
         // That fight ends with none left in the Bank: the elixir is spent.

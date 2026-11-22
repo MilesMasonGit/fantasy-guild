@@ -21,7 +21,7 @@ import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 
 /**
  * A newly settled place arrives occupied (owner): its mat darkened, with a small fixed
- * encounter on it, 3 to 6 enemies sized to the ring, sometimes a boss (the cell's `arrival`,
+ * encounter on it, 3 to 6 enemies sized to the ring, never a boss (the cell's `arrival`,
  * `generate.js` step 10). They stand spread out across the mat ({@link spreadOf}), each alone, out
  * of the Guild Hall's clearing, belong to no camp and never come back: each has one use. They
  * stand still until a hero is sent at them (no ambushes, brief 500). Until every one is beaten the
@@ -195,7 +195,7 @@ function standArrival(instance, aim, hall, roster) {
  * (its aim), and lands as room appears ({@link landWaiting}); until every one has landed and been
  * beaten the arrival is not cleared. The player is told once (`RoomWait`).
  *
- * @param {{typeId: string, count: number, boss?: boolean}[]} arrival the cell's arrival
+ * @param {{typeId: string, count: number}[]} arrival the cell's arrival
  * @param {{seed?: number}} [options] the place's seed, for where they stand
  * @returns {{ids: string[], unplaced: string[]}} the enemies written, and the types of any that
  *          found no room and wait
@@ -205,8 +205,11 @@ export function occupy(arrival, { seed = 0 } = {}) {
     const ids = [];
     const unplaced = [];
     // A row whose type is no longer an enemy (deleted or renamed in the CMS since the world was
-    // drawn) is left out: nothing could ever fight it, and the stored world keeps the row.
-    const rows = Array.isArray(arrival) ? arrival.filter(row => isEnemyDef(getTokenType(row?.typeId))) : [];
+    // drawn) is left out: nothing could ever fight it, and the stored world keeps the row. So is a
+    // boss a world drawn before bosses came from camps only still lists.
+    const rows = Array.isArray(arrival)
+        ? arrival.filter(row => !row?.boss && isEnemyDef(getTokenType(row?.typeId)))
+        : [];
     if (!board || !rows.length) return { ids, unplaced };
     const total = rows.reduce((n, row) => n + Math.max(0, row?.count || 0), 0);
     const hall = BoardState.tokens().find(isGuildHall) || null;

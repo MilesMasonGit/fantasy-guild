@@ -37,9 +37,9 @@ import { STRICT_RINGS, PRICE_FROM, SKILL_OF, MAX_ARRIVAL, lineById, kitById as k
  *    Its skill levels follow the template. Wild rings grow the last strict ring's template.
  * 9. **Wild extremes.** Each wild cell is either one origin almost everywhere (`composition`) or
  *    an odd layout.
- * 10. **Arrivals.** The enemies a place arrives with (`arrival`): its ring's count and enemies,
- *    sometimes one of them a boss; wild rings ring 3's, one enemy more per ring out, at most
- *    `MAX_ARRIVAL`.
+ * 10. **Arrivals.** The enemies a place arrives with (`arrival`): its ring's count and enemies
+ *    (never a boss: bosses come from camps); wild rings ring 3's, one enemy more per ring out, at
+ *    most `MAX_ARRIVAL`.
  *
  * Every step draws from its own stream, seeded from the run seed, the step and the ring, never from
  * `Math.random`, so a world is the same on every machine and a ring added outward later would not
@@ -533,20 +533,16 @@ export function generateWorld({ seed, tables, materialsOf = () => [], hallOrigin
     return { version: WORLD_VERSION, seed: runSeed, strictRings: STRICT_RINGS, rings, wedges, cells, problems };
 }
 
-/** A place's arrival: `[{ typeId, count, boss? }]`, the boss first. */
+/** A place's arrival: `[{ typeId, count }]`. */
 function arrivalOf(table, more, random) {
     const [low, high] = table.count;
-    let count = Math.min(MAX_ARRIVAL, low + pickIndex(random, high - low + 1) + more);
+    const count = Math.min(MAX_ARRIVAL, low + pickIndex(random, high - low + 1) + more);
     const out = [];
-    const add = (typeId, boss = false) => {
+    const add = (typeId) => {
         const row = out.find(r => r.typeId === typeId);
         if (row) row.count++;
-        else out.push(boss ? { typeId, count: 1, boss: true } : { typeId, count: 1 });
+        else out.push({ typeId, count: 1 });
     };
-    if (count > 0 && table.bosses.length && random() < table.bossChance) {
-        add(pickWeighted(random, table.bosses, b => b.weight).id, true);
-        count--;
-    }
     for (let i = 0; i < count && table.enemies.length; i++) add(pickWeighted(random, table.enemies, e => e.weight).id);
     return out;
 }

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
+import { enemyCampType } from './fixtures/enemyCamp.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
@@ -93,8 +94,9 @@ describe('Every drop line rolls on its own (TL-10)', () => {
         const unsub = EventBus.subscribe('loot_generated', p => kills.push(p));
 
         const at = { x: 400, y: 300 };
-        const enemy = BoardState.createTokenInstance(
-            'fixture_enemy_two_lines', tokenStartingUses('fixture_enemy_two_lines'));
+        // Every enemy is one use: a camp of one brings the next.
+        const camp = enemyCampType('fixture_enemy_two_lines');
+        const enemy = BoardState.createTokenInstance(camp, tokenStartingUses(camp));
         Placement.placeTokenAt(enemy, at);
         TileModifiers.rebuildAround([enemy]);
         Orders.orderAt('hero_1', at);

@@ -165,7 +165,7 @@ describe('⭐ a hero sent to an enemy fights it (FP-32)', () => {
         expect(BoardCombat.getFight(idAt(15))).not.toBeNull();
     });
 
-    it('keeps its enemy through the rest after a kill, even when a nearer one appears (FP-57)', () => {
+    it('keeps its enemy until the kill, and after it (the enemy used up) takes no nearer one by itself (FP-57)', () => {
         put(16, 'fixture_enemy');
         fightAt('h1', 16);
         expect(workTileOf('h1')).toBe(16);
@@ -174,14 +174,17 @@ describe('⭐ a hero sent to an enemy fights it (FP-32)', () => {
         const kills = [];
         const off = EventBus.subscribe(BOARD_EVENTS.COMBAT_RESOLVED, p => { if (p.outcome === 'victory') kills.push(p); });
         try {
-            for (let i = 0; i < 600 && !kills.length; i++) run(100);
-            run(100);                             // inside the post-kill rest
+            for (let i = 0; i < 600 && !kills.length; i++) {
+                expect(workTileOf('h1')).toBe(16);
+                run(100);
+            }
+            run(100);
         } finally {
             off?.();
         }
 
-        expect(kills.length).toBeGreaterThan(0);
-        expect(workTileOf('h1')).toBe(16);
+        expect(kills.length).toBe(1);
+        expect(idAt(16)).toBeNull();
         expect(BoardState.heroOfInstance(nearer.id)).toBeNull();
     });
 
@@ -252,10 +255,11 @@ describe('⭐ recall mid-fight (FP-43, G-4)', () => {
         GameState.state.heroes = [fighter('h1', { level: 10 })];
     });
 
-    it('ends the fight in the same call, and the next engagement meets a whole enemy', () => {
+    it('ends the fight in the same call, and the next engagement is a new fight with the enemy still hurt', () => {
         put(14, 'fixture_enemy');
         fightAt('h1', 14);
         untilDamaged('h1');
+        const old = BoardCombat.getFight(idAt(14));
 
         Flags.furl('h1');
 
@@ -264,11 +268,12 @@ describe('⭐ recall mid-fight (FP-43, G-4)', () => {
 
         Orders.orderAt('h1', C(14));
         run(100);
-        const fresh = BoardCombat.getFight(idAt(14)).combat.enemyHp;
-        expect(fresh.current).toBe(fresh.max);
+        const fight = BoardCombat.getFight(idAt(14));
+        expect(fight).not.toBe(old);
+        expect(fight.combat.enemyHp.current).toBeLessThan(fight.combat.enemyHp.max);
     });
 
-    it('moving the flag off its enemy ends the fight; planting back on it starts afresh (FP-49)', () => {
+    it('moving the flag off its enemy ends the fight; planting back on it starts a new fight, the enemy still hurt (FP-49)', () => {
         put(14, 'fixture_enemy');
         fightAt('h1', 14);
         untilDamaged('h1');
@@ -281,8 +286,8 @@ describe('⭐ recall mid-fight (FP-43, G-4)', () => {
 
         fightAt('h1', 14);
         run(100);
-        const fresh = BoardCombat.getFight(idAt(14)).combat.enemyHp;
-        expect(fresh.current).toBe(fresh.max);
+        const again = BoardCombat.getFight(idAt(14)).combat.enemyHp;
+        expect(again.current).toBeLessThan(again.max);
     });
 });
 

@@ -142,7 +142,7 @@ function tokensFor(tables, skill, heroes) {
  *   biome: string, heroes: Record<string, number>,
  *   nodes: {typeId: string, count: number, skill: string|null}[],
  *   camps: {typeId: string, count: number}[], treasures: {typeId: string, count: number}[],
- *   arrival: {typeId: string, count: number, boss?: boolean}[],
+ *   arrival: {typeId: string, count: number}[],
  *   stone: {outcrops: number, ridge: boolean}, water: number|null, inland: string|null,
  *   rare: string|null, extreme: object|null
  * }}

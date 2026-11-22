@@ -106,12 +106,23 @@ describe('the engagement moment', () => {
         expect(engagements.length).toBe(first);
     });
 
-    it('fires AGAIN for the fresh enemy after a kill (UE-15)', () => {
+    it('fires once per enemy: its kill uses it up, and no second enemy stands up on its spot', () => {
         place(TILE, 'fixture_enemy', 'hero_1');
-        // Long enough for a kill, the 2s intermission, and the next enemy.
         run(30000);
 
-        expect(engagements.length).toBeGreaterThan(1);
+        expect(idAt(TILE)).toBeNull();
+        expect(engagements.length).toBe(1);
+    });
+
+    it('fires AGAIN when a hero comes back to an enemy they left', () => {
+        place(TILE, 'fixture_enemy', 'hero_1');
+        run(600);
+        expect(engagements.length).toBe(1);
+        Orders.sendHome('hero_1');
+        run(100);
+        Orders.orderAt('hero_1', C(TILE));
+        run(600);
+        expect(engagements.length).toBe(2);
     });
 
     it('never fires for an enemy nobody has engaged', () => {

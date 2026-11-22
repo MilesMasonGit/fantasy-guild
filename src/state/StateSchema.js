@@ -222,7 +222,8 @@ export const INITIAL_STATE = {
     //                 fixture? true and biome? string on a node a map wrote, fixture? 'camp' on a Token the Starter Camp laid (`BoardState.isFixture`),
     //                 demolish? true on a Token marked for demolition (`Demolition.js`; its progress is cycleElapsedMs),
     //                 field? { cropId?, load?, full?, seedOwed? } on a Field: the crop in its ground, the harvests left, the seed its first harvest still owes (`Fields.js`; its growth on clocks.fieldMs)
-    //                 fightHp? { current, heroId } on an enemy hurt in a fight: its health, so a reload goes on from it with the same hero (`BoardCombat.keepHp`); absent loads it whole
+    //                 fightHp? { current, heroId?, restMs?, leftAt? } on a hurt enemy: its health (`BoardCombat.keepHp`); heroId while its fight is live (a reload goes on with that hero),
+    //                 restMs the part second of healing out of a fight, leftAt (on a frozen Region's board) when the guild left, so the rest it missed is played on return; absent is whole
     //   nextTokenOrder number               the next Token's placedAt
     //   flags       { [heroId]: { x, y, plantedAt, pinnedTo?, spot?, needsJob? } }  each hero's order: pinnedTo = the Token instance id it
     //                 works; spot = a point to idle at (any record not pinned is one); needsJob = the ordered Token is gone for good

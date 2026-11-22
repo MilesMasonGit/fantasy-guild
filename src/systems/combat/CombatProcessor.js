@@ -3,7 +3,6 @@ import { ModifierAggregator } from '../effects/ModifierAggregator.js';
 import * as CombatFormulas from './CombatFormulas.js';
 import { handleVictory } from './CombatResolutionProcessor.js';
 import { handleHeroAttack, processEnemyAttack, checkHealth } from './CombatAttackProcessor.js';
-import { resetTallies } from './FightHooks.js';
 
 /** Whether the hero is still in the fight. */
 const standing = (hero) => !!hero && hero.status !== 'wounded';
@@ -11,8 +10,7 @@ const standing = (hero) => !!hero && hero.status !== 'wounded';
 /** Advance one fight by `deltaTime`: hero attacks, then the enemy's. */
 export function processCombat(fight, trait, deltaTime) {
     // The stat block is carried on the fight, not looked up by id: `trait.enemy`
-    // is the per-tick handoff, `fight.enemy` the stored copy the intermission
-    // respawn reads.
+    // is the per-tick handoff, `fight.enemy` the stored copy.
     const enemy = trait?.enemy || fight.enemy;
     if (!enemy) return;
 
@@ -20,36 +18,18 @@ export function processCombat(fight, trait, deltaTime) {
     fight.combat = combat;
 
     if (!combat.enemyHp) combat.enemyHp = { current: enemy.hp, max: enemy.hp };
-    if (!combat.state) combat.state = { intermissionTimer: 0 };
     if (!combat.heroTickProcesses) combat.heroTickProcesses = {};
 
     const heroId = fight.assignedHeroId;
     if (!heroId) {
         // Ephemeral fight objects aren't in any registry, so write directly.
         fight.status = 'idle';
-        if (combat.enemyHp) combat.enemyHp.current = combat.enemyHp.max;
         combat.enemyTickProgress = 0;
         if (Object.keys(combat.heroTickProcesses || {}).length > 0) combat.heroTickProcesses = {};
         return;
     }
 
     const assignedHeroIds = [heroId];
-
-    if (combat.state.intermissionTimer > 0) {
-        combat.state.intermissionTimer -= deltaTime;
-        if (combat.state.intermissionTimer <= 0) {
-            combat.state.intermissionTimer = 0;
-            combat.enemyHp = { current: enemy.hp, max: enemy.hp };
-            // A fresh enemy is a fresh fight: its swings and hits count from one again, and both
-            // swing timers start from zero, or the side whose timer was furthest along at the kill
-            // gets a free first hit.
-            resetTallies(fight);
-            combat.enemyTickProgress = 0;
-            combat.heroTickProcesses = {};
-            fight.status = 'active';
-        }
-        return;
-    }
 
     if (fight.status === 'idle') fight.status = 'active';
 

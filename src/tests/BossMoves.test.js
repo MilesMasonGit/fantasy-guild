@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
+import { enemyCampType } from './fixtures/enemyCamp.js';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
@@ -202,7 +203,8 @@ describe('On Health Below X%: a heal, a Physical resistance and an enrage, once 
     });
 
     it('a fresh enemy is a fresh fight: the next one heals again', () => {
-        startFight('bm_healer');
+        // Every enemy is one use: the hero is sent at a camp of one, which brings the next.
+        startFight(enemyCampType('bm_healer'));
         const heals = [];
         const seen = play(120000);
         // Each enemy's HP after the hit that crosses half: 15, then the heal shows as a jump up.

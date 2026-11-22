@@ -22,6 +22,7 @@ import * as HeroManager from '../systems/hero/HeroManager.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { xpForLevel } from '../utils/XPCurve.js';
 import * as fixtures from '../../bench/fixtures.mjs';
+import { enemyCampType } from './fixtures/enemyCamp.js';
 
 /**
  * Fights during time away end exactly where the same time played live ends: every swing's miss
@@ -113,8 +114,10 @@ function buildBoard() {
     InventoryManager.addItem('catchup_ale', 3);
     HeroManager.updateHeroFromSkills(fighter);
     fighter.hp.current = fighter.hp.max;
-    const a = fixtures.placeAt('catchup_duel_enemy', 400, 400);
-    const b = fixtures.placeAt('catchup_duel_enemy', 1300, 400);
+    // Every enemy is one use: each hero is sent at a camp of one, which brings the next.
+    const camp = enemyCampType('catchup_duel_enemy');
+    const a = fixtures.placeAt(camp, 400, 400);
+    const b = fixtures.placeAt(camp, 1300, 400);
     fixtures.orderAt(fighter.id, { x: a.x, y: a.y });
     fixtures.orderAt(recruit.id, { x: b.x, y: b.y });
     TileModifiers.rebuildAll();

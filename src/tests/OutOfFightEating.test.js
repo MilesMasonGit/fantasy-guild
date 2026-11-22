@@ -20,6 +20,7 @@ import * as RegenSystem from '../systems/hero/RegenSystem.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { xpForLevel } from '../utils/XPCurve.js';
 import * as fixtures from '../../bench/fixtures.mjs';
+import * as BoardState from '../systems/board/BoardState.js';
 
 /**
  * Between kills a hero eats on game time, at most one meal a second of rest, so the same fight
@@ -39,13 +40,16 @@ registerItems({
     ofe_bread: { id: 'ofe_bread', name: 'Crumb', equipSlot: 'food', stackable: true, restoreAmount: 1 }
 });
 
-/** A Thorn Elemental's sting: each kill hurts the hero, so a rest can start under a quarter health. */
+/**
+ * A Thorn Elemental's sting: each kill hurts the hero, so a rest can start under a quarter health.
+ * Free of charge: an enemy is one use, and its kill has spent it before the cycle's rules run.
+ */
 const THORNS = 4;
 registerEffects({
     ofe_thorns: {
         id: 'ofe_thorns', name: 'Rest Thorns',
         statements: [{
-            id: 'stm_ofe_thorns', keyword: 'deals', payload: { amount: THORNS, ignoresArmor: true },
+            id: 'stm_ofe_thorns', keyword: 'deals', payload: { amount: THORNS, ignoresArmor: true }, chargeDelta: 0,
             to: null, reach: null, target: { role: 'actor' },
             when: { event: 'SELF_CYCLE_COMPLETE', scope: 'self', cooldownMs: 0 }, upkeep: null
         }]
@@ -78,7 +82,7 @@ const realRandom = Math.random;
 /** Strong enough to win a long run, weak enough that the sting leaves a rest under a quarter health. */
 const LEVEL = 25;
 
-function buildBoard() {
+function buildBoard({ hpShare = 1 } = {}) {
     stream.state = 7;
     resetMatTuning();
     GameState.initNew();
@@ -89,26 +93,43 @@ function buildBoard() {
     hero.equipment[1] = 'ofe_bread';
     InventoryManager.addItem('ofe_bread', 500);
     HeroManager.updateHeroFromSkills(hero);
-    hero.hp.current = hero.hp.max;
+    hero.hp.current = Math.ceil(hero.hp.max * hpShare);
     const a = fixtures.placeAt('ofe_enemy', 400, 400);
     fixtures.orderAt(hero.id, { x: a.x, y: a.y });
     TileModifiers.rebuildAll();
     return hero.id;
 }
 
-/** Run the same fight for `ms` of game time in steps of `step`; what it ate and how it went. */
-function fight(step, ms) {
-    const heroId = buildBoard();
+/**
+ * Run the same fights for `ms` of game time in steps of `step`; what the hero ate and how it went.
+ * Every enemy is one use: two seconds (on the whole second) after each kill a fresh one is put where
+ * the last stood and the hero sent at it, so a rest falls between fights at either step.
+ */
+function fight(step, ms, options) {
+    const heroId = buildBoard(options);
     const hero = () => GameState.state.heroes.find(h => h.id === heroId);
+    const spot = (() => { const e = BoardState.tokens().find(t => t.typeId === 'ofe_enemy'); return { x: e.x, y: e.y }; })();
     const seen = { kills: 0, defeats: 0, fightMeals: 0, restMeals: 0 };
+    let t = 0;
+    let nextAt = null;
     const offs = [
         EventBus.subscribe(ENGINE_EVENTS.HERO_CONSUMED, () => {
             if (hero().status === 'combat') seen.fightMeals++; else seen.restMeals++;
         }),
-        EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, () => { seen.kills++; }),
+        EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, () => {
+            seen.kills++;
+            nextAt = Math.ceil((t + step) / 1000) * 1000 + 2000;
+        }),
         EventBus.subscribe(BOARD_EVENTS.HERO_DEFEATED, () => { seen.defeats++; })
     ];
-    for (let t = 0; t < ms; t += step) GameLoop.runHandlers(step);
+    for (; t < ms; t += step) {
+        if (nextAt != null && t >= nextAt) {
+            nextAt = null;
+            const e = fixtures.placeAt('ofe_enemy', spot.x, spot.y);
+            fixtures.orderAt(heroId, { x: e.x, y: e.y });
+        }
+        GameLoop.runHandlers(step);
+    }
     offs.forEach(off => off());
     return { ...seen, hp: hero().hp.current, maxHp: hero().hp.max, status: hero().status };
 }

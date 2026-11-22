@@ -24,7 +24,7 @@ import { hasCatchPools } from '../../config/registries/catchPools.js';
  *   (a vein, a tree, a bush). Its charges are what is gathered, not wear (the Blackberry Bush's
  *   bonus drops to its neighbours do not make its berries endless), and only its own gathering
  *   spends them: help is free (owner, 2026-10-24), so nothing beside it wears it.
- * * **An enemy**: its charges are the kills that clear it.
+ * * **An enemy**: one use whatever it authors ({@link ENEMY_USES}): its kill clears it.
  * * A Token whose rules reach only itself, or fire on a moment (a triggered rule's charge cost is
  *   an authored price, not wear), and everything else with no help rule.
  *
@@ -38,6 +38,9 @@ import { hasCatchPools } from '../../config/registries/catchPools.js';
  * ⚠️ Kept free of the Token registry (and of `enemyProfile`, which reads it): the registry's
  * `tokenStartingUses` reads this rule.
  */
+
+/** Every enemy has one use: its kill takes it off the mat, and only its camp's clock brings another. */
+export const ENEMY_USES = 1;
 
 /** Why a Token never wears out. */
 export const NEVER_WEARS = Object.freeze({ STATION: 'station', SUPPORT: 'support', WATER: 'water' });

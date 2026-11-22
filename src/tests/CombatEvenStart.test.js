@@ -20,9 +20,10 @@ import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { xpForLevel } from '../utils/XPCurve.js';
 import * as fixtures from '../../bench/fixtures.mjs';
+import { enemyCampType } from './fixtures/enemyCamp.js';
 
 /**
- * Every fight starts even: when the next enemy of a camp steps up after a kill, both swing timers
+ * Every fight starts even: when the camp's next enemy is fought after a kill, both swing timers
  * start from zero, so neither side's first swing comes sooner than its own swing time.
  */
 
@@ -85,7 +86,7 @@ describe('a camp fight after a kill', () => {
         hero.equipment[0] = 'even_sword';
         HeroManager.updateHeroFromSkills(hero);
         hero.hp.current = hero.hp.max;
-        const camp = fixtures.placeAt('even_camp_enemy', 400, 400);
+        const camp = fixtures.placeAt(enemyCampType('even_camp_enemy'), 400, 400);
         fixtures.orderAt(hero.id, { x: camp.x, y: camp.y });
         TileModifiers.rebuildAll();
 
@@ -107,12 +108,13 @@ describe('a camp fight after a kill', () => {
         }
         offs.forEach(off => off());
 
-        // The first engagement starts from a fresh fight; every later one follows a kill.
+        // Every enemy is one use, so each fight after the first is with the camp's next enemy. The
+        // engagement is said at the end of the fight's first tick, which already counts its 100 ms.
         const afterKill = fights.slice(1).filter(f => f.hero != null && f.enemy != null);
         expect(afterKill.length).toBeGreaterThanOrEqual(3);
         for (const f of afterKill) {
             expect({ hero: f.hero - f.engaged, enemy: f.enemy - f.engaged })
-                .toEqual({ hero: Math.ceil(heroSpeed / STEP) * STEP, enemy: Math.ceil(enemySpeed / STEP) * STEP });
+                .toEqual({ hero: Math.ceil(heroSpeed / STEP) * STEP - STEP, enemy: Math.ceil(enemySpeed / STEP) * STEP - STEP });
         }
     }, 60_000);
 });
