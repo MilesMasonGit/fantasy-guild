@@ -311,8 +311,10 @@ function payloadSlots(statement, ctx) {
                     id: 'type', kind: SLOT_KIND.VOCABULARY, label: 'effect',
                     value: payload.type,
                     options: [
-                        ...paletteForKeyword(KEYWORD.PROVIDES).map(p => option(p.type, p.label, p.hint)),
-                        ...(entry?.retired ? [option(entry.type, `${entry.label} (retired)`, entry.hint)] : [])
+                        ...paletteForKeyword(KEYWORD.PROVIDES, undefined, { onToken: !!ctx.onToken }).map(p => option(p.type, p.label, p.hint)),
+                        ...(entry?.retired ? [option(entry.type, `${entry.label} (retired)`, entry.hint)] : []),
+                        // Kept on a Token that already holds one, so the value still shows (the content check names it).
+                        ...(entry?.heroOrGuild && ctx.onToken ? [option(entry.type, entry.label, entry.hint)] : [])
                     ],
                     patch: v => ({ payload: payloadForAxis(v) })
                 },
@@ -555,7 +557,8 @@ function payloadSlots(statement, ctx) {
  *
  * @param {object} statement
  * @param {object} [ctx]  the vocabulary (`tokens`, `items`, `effects`, `capabilities`), and
- *   `carried: true` when a hero carries the rule (an item's, a perk's)
+ *   `carried: true` when a hero carries the rule (an item's, a perk's), `onToken: true` when a
+ *   Token does (its own rules, or a library effect a Token names)
  * @returns {Array<object>} slots, each with `id`, `kind`, `label`, `value` and
  *   a `patch(value)` returning the change to merge into the statement
  */

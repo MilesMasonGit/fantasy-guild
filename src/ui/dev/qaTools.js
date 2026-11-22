@@ -19,6 +19,8 @@ import { getAllItems, getItem } from '../../config/registries/itemRegistry.js';
 import { getAllTokenTypes, getTokenType, tokenName, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
+import { getGlobalAggregator } from '../../systems/effects/GuildModifiers.js';
+import { EFFECT_TYPES } from '../../systems/effects/constants.js';
 
 /** Rows a picker shows at once; the rest are reached by typing. */
 export const PICKER_ROWS = 40;
@@ -169,6 +171,30 @@ export function knockOutAHero() {
     HeroManager.getHero(hero.id).hp.current = 0;
     BoardCombat.resolveStatusDefeat(hero.id);
     return { ok: true, name: hero.name };
+}
+
+/** The QA Regen star's aggregator source. */
+const QA_REGEN_SOURCE = 'qa:regen_star';
+
+/**
+ * ⚠️ For the Regen eye-check only (brief 735 V1); delete it, its button and its test once that
+ * eye-check is accepted. Switches a +50% Regen for every hero on or off, as a Guild Hall star would
+ * give it, named "QA Regen star" on the health hover; switched on, every hero not wounded drops to
+ * half health so the healing shows. Runtime only: a reload drops it.
+ * @returns {boolean} whether it is on now
+ */
+export function toggleQaRegenStar() {
+    const guild = getGlobalAggregator();
+    if (guild.modifiers.has(QA_REGEN_SOURCE)) {
+        guild.removeModifiersBySource(QA_REGEN_SOURCE);
+    } else {
+        guild.addModifier({ type: EFFECT_TYPES.HP_REGEN, bucket: 'percentage', value: 0.5, source: QA_REGEN_SOURCE, label: 'QA Regen star' });
+        for (const h of GameState.state?.heroes || []) {
+            if (h.hp && h.status !== 'wounded') h.hp.current = Math.max(1, Math.floor(h.hp.max / 2));
+        }
+    }
+    EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_regen' });
+    return guild.modifiers.has(QA_REGEN_SOURCE);
 }
 
 /**

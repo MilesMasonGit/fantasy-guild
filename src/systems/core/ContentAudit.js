@@ -173,6 +173,7 @@ function auditTokens(out) {
         auditEffectRefs(out, where, def);
         auditCombatAxes(out, where, def);
         auditGuildOnlyAxes(out, where, def);
+        auditHeroOrGuildAxes(out, where, def);
         auditVenom(out, where, def);
         auditStatements(out, where, def);
         auditDerivedType(out, where, def);
@@ -295,6 +296,18 @@ function auditGuildOnlyAxes(out, where, def) {
         out.push(finding(where,
             `has a ${entry.label} rule, but only a Guild Hall star's reaches anyone — here it does nothing. ` +
             `Put it on a star in the Hall.`));
+    }
+}
+
+/** A hero-or-guild rule (Regen) on a Token: only a hero's gear, perks or a Guild Hall star reach anyone. */
+function auditHeroOrGuildAxes(out, where, def) {
+    for (const statement of statementsOf(def)) {
+        if (statement?.keyword !== KEYWORD.PROVIDES) continue;
+        const entry = getPaletteEntry(statement.payload?.type);
+        if (!entry?.heroOrGuild) continue;
+        out.push(finding(where,
+            `has a ${entry.label} rule, but a Token's ${entry.label} reaches nobody: only a hero's gear, ` +
+            `perks or a Guild Hall star give it. Put it on an item, a perk or a star.`));
     }
 }
 

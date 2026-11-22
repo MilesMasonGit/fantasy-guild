@@ -43,9 +43,10 @@ const KEYWORD_ICON = {
  * @param {(statement) => React.ReactNode} [rowNote]  a line under each row
  * @param {string|null} [emptyNote]  what an empty list says
  * @param {boolean} [carried]  a hero carries these rules (an item's, a perk's): the sentences and the moment picker read as the hero's
+ * @param {boolean} [onToken]  a Token carries these rules: an effect that reaches only heroes and the guild (Regen) is not offered
  */
 export function StatementList({
-  statements, onChange, content, carried = false,
+  statements, onChange, content, carried = false, onToken = false,
   cursor: heldCursor, onCursor, panel = 'always', canAdd = true, lockKeyword = false,
   rowNote = null,
   emptyNote = 'This effect has a name and nothing behind it. A named effect must carry at least one rule — add one below, or delete the effect.',
@@ -60,7 +61,7 @@ export function StatementList({
   /** ⚠️ Creating an item writes to the persisted store, so a list given its own vocabulary offers no Create anywhere (panel search, conversion table, upkeep list). */
   const canCreate = !content;
   const capabilities = useCapabilityVocabulary(tokens);
-  const ctx = useMemo(() => ({ tokens, items, capabilities, effects, carried }), [tokens, items, capabilities, effects, carried]);
+  const ctx = useMemo(() => ({ tokens, items, capabilities, effects, carried, onToken }), [tokens, items, capabilities, effects, carried, onToken]);
   const [menuOpen, setMenuOpen] = useState(false);
 
   /** One cursor for the whole list, because there is one panel: `{ statementId, slotId, occurrence, mode, query, active, moved }`. Updates are functional so a blur arriving after a Tab cannot clobber the word Tab moved to. */
@@ -443,6 +444,7 @@ export default function Statements({ token, item }) {
                   onChange={(next) => setEffectStatements(effectId, next)}
                   {...cursorFor(effectId)}
                   carried={!token}
+                  onToken={!!token}
                   panel="focused"
                   canAdd={false}
                   emptyNote="This effect has no rule left. Open it to add one, or remove it from here."

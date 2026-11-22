@@ -338,15 +338,18 @@ export function rolledToFire(statement, random = Math.random) {
 }
 
 /**
- * The palette entries a keyword offers (`hasTrigger` is currently unused).
+ * The palette entries a keyword offers (`hasTrigger` is currently unused). `onToken`: the rules
+ * are a Token's (or a library effect a Token names).
  */
-export function paletteForKeyword(keywordId, hasTrigger) {
+export function paletteForKeyword(keywordId, hasTrigger, { onToken = false } = {}) {
     if (keywordId === KEYWORD.PROVIDES) {
         // Provides changes a number; the item-carrying shapes have their own keywords (Grants,
         // Converts), so offering them here would be two ways to author one thing.
         // A retired row (flat Armor, Pierce) still reads, but is never offered; a guild-only row (Wound
-        // Time) is a Guild Hall star's, and on a Token or an item it reaches nobody.
-        return MODIFIER_PALETTE.filter(e => !e.retired && !e.guildOnly && (e.shape === 'deterministic' || e.shape === 'proc'));
+        // Time) is a Guild Hall star's, and on a Token or an item it reaches nobody; a hero-or-guild
+        // row (Regen) reaches nobody from a Token.
+        return MODIFIER_PALETTE.filter(e => !e.retired && !e.guildOnly && !(onToken && e.heroOrGuild)
+            && (e.shape === 'deterministic' || e.shape === 'proc'));
     }
     if (keywordId === KEYWORD.GRANTS) {
         return MODIFIER_PALETTE.filter(e => e.type === 'BONUS_DROP');

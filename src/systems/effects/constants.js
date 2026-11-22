@@ -44,9 +44,11 @@ export const EFFECT_TYPES = {
     STATUS_MAX_STACKS: 'STATUS_MAX_STACKS',
     // How long the bearer's swing takes, as a percentage: negative is faster — CombatFormulas.
     SWING_TIME: 'SWING_TIME',
-    // How much eating and drinking heal the bearer, as a percentage (Burn: -50%) — ConsumptionSystem.
+    // How much a meal heals the bearer, as a percentage (Burn: -50%); drinks never heal — ConsumptionSystem.
     FOOD_HEALING: 'FOOD_HEALING',
     FAIL_CHANCE: 'FAIL_CHANCE', // Chance for failure/debuff
+    // Regen: how fast a hero heals out of a fight, as a percentage on 1 HP every 10 s. From what the
+    // hero carries and the guild, never a Token — hero/regen.js.
     HP_REGEN: 'HP_REGEN',
 
     // Blocks NEW applications of the named status (its id is the aggregator category);

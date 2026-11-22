@@ -160,6 +160,7 @@ export default function EffectEditor() {
           statements={effect.statements || []}
           onChange={(next) => setEffectStatements(effect.id, next)}
           carried={carried}
+          onToken={users.length > 0}
         />
       </Section>
 

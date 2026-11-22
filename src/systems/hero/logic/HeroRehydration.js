@@ -92,12 +92,12 @@ export function rehydrateHero(hero) {
 }
 
 /**
- * Recompute max HP from the hero's best combat skill. Villagers keep their flat HP.
+ * Recompute max HP from the hero's best combat skill.
  * Raising max keeps current HP as-is (level-ups grant headroom, not a heal);
  * lowering max clamps current down to it.
  */
 export function updateHeroMaxHp(hero) {
-    if (!hero || hero.isVillager || !hero.skills) return;
+    if (!hero || !hero.skills) return;
     const maxHp = heroMaxHpFromSkills(hero.skills);
     if (!hero.hp) hero.hp = { current: maxHp, max: maxHp };
     hero.hp.max = maxHp;

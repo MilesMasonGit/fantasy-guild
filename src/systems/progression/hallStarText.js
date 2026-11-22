@@ -161,7 +161,8 @@ const STYLE_PHRASES = {
 
 /** Who a star's rule reaches, as a singular noun after "Every": "Forestry Token", "Logging Camp", "hero". */
 function ruleSubject(statement, names) {
-    if (getPaletteEntry(statement?.payload?.type)?.guildOnly) return 'hero';
+    const entry = getPaletteEntry(statement?.payload?.type);
+    if (entry?.guildOnly || entry?.heroOrGuild) return 'hero';
     if (isStyleRule(statement)) return styleSubject(statement);
     const to = statement?.to || {};
     if (to.mode === 'tag' && to.value) return `${to.value} Token`;

@@ -95,6 +95,7 @@ the CMS, the Encyclopedia, Limes's lines and the docs. A source's own name
 | **Giant Harvest** | A chance a gathering cycle's drops come in at ten times (brief 620) | Giant Harvest | none: a mat celebration says it (owner, 2026-11-12) |
 | **Efficiency** | A recipe needs fewer of an input | Input Cost | the recipe's input |
 | **Abundance** | A Token kind holds more charges before it rests | Crop Load | the Token |
+| **Regen** | A hero heals faster out of a fight (from gear, perks and Guild Hall stars; no building yet) | Regen | none: listed on the hero's health hover |
 
 Bonus Drop (a source adds an item the Token does not make, such as
 Birdwatcher's bird nests) keeps its name. The badges these names go on

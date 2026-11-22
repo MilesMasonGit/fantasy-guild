@@ -633,6 +633,12 @@
         "skillTooLow": "{skill} skill too low. ({have}/{need})"
     },
     "heroPanel": {
+        "health": {
+            "title": "Health",
+            "heals": "Out of a fight: heals {hp} every {seconds} s",
+            "regen": "Regen {amount}",
+            "source": "{source}: {amount}"
+        },
         "perks": "Perks",
         "nextPerk": "Next perk: {perk}",
         "perkAt": "{level} {perk}",
