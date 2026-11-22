@@ -708,8 +708,9 @@ export function slotsOf(statement, ctx = {}) {
         }
     }
 
-    // A role replaces the filter and the reach, so neither is offered beside it.
-    if (keyword.reach && !byRole) {
+    // A role replaces the filter and the reach, so neither is offered beside it. A hero's own carried
+    // rule has no reach to choose: the game ignores it there.
+    if (keyword.reach && !byRole && !ctx.carried) {
         slots.push({
             id: 'reach', kind: SLOT_KIND.VOCABULARY, label: 'how far',
             value: reachOf(statement),

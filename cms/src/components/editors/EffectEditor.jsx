@@ -29,9 +29,10 @@ export default function EffectEditor() {
 
   const perkUsers = perkUsersOf(effect.id, skillPerks, (id) => SKILLS.find((s) => s.id === id)?.name || id);
 
+  const itemUsed = Object.values(items).some((i) => effectRefsOf(i).some((r) => r.effectId === effect.id));
+
   /** ⚠️ A library entry can be shared by Tokens and items: it reads as the hero's only when no Token uses it, and something a hero carries does. */
-  const carried = users.length === 0
-    && (perkUsers.length > 0 || Object.values(items).some((i) => effectRefsOf(i).some((r) => r.effectId === effect.id)));
+  const carried = users.length === 0 && (perkUsers.length > 0 || itemUsed);
 
   const names = {
     carried,
@@ -85,6 +86,11 @@ export default function EffectEditor() {
                 ? 'One Token uses this effect.'
                 : `${users.length} Tokens use this effect — editing the rules below changes all of them.`}
             </p>
+            {(itemUsed || perkUsers.length > 0) && (
+              <p data-reach-ignored className="text-[11px] text-gray-500 leading-relaxed mb-2">
+                Items and perks using this effect ignore its reach; only Tokens use it.
+              </p>
+            )}
             <div className="flex flex-wrap gap-1.5">
               {users.map(({ token: t, ref }) => (
                 <button

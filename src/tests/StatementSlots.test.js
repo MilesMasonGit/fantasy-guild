@@ -122,6 +122,12 @@ describe('a slot writes itself back into the statement', () => {
         expect(applySlot(makeStatement(KEYWORD.DEALS), 'amount', -3).payload.amount).toBe(0);
     });
 
+    it('offers no reach on a carried rule, where the game ignores it', () => {
+        const st = makeStatement(KEYWORD.PROVIDES);
+        expect(slotsOf(st).map(x => x.id)).toContain('reach');
+        expect(slotsOf(st, { carried: true }).map(x => x.id)).not.toContain('reach');
+    });
+
     it('sets a reach', () => {
         const s = applySlot(makeStatement(KEYWORD.PROVIDES), 'reach', REACH.SELF);
         expect(s.reach).toBe(REACH.SELF);
