@@ -67,7 +67,7 @@ function scene() {
     }];
     const a = placeAt('fixture_producer', 600, 400);
     const b = placeAt('fixture_producer', 1000, 500);
-    // The hero's job flag, on a third Token: every flag's button yields while the pointer is on a Token.
+    // The hero's job, on a third Token.
     const job = placeAt('fixture_producer', 1500, 300);
     Orders.orderAt('h1', { x: job.x, y: job.y });
     const view = render(h(DeckDndProvider, null, h(Board, { onInspectToken: () => {}, onClearInspect: () => {} })));
@@ -76,7 +76,8 @@ function scene() {
     return { a, b, ...view };
 }
 const artOf = (container, id) => container.querySelector(`[data-token-art][data-token-id="${id}"]`);
-const flagYields = (container) => container.querySelector('button[data-flag="h1"]').className.includes('pointer-events-none');
+// The mat's give-way over Tokens, as the layers that share it read it (a Token order's flag is not drawn at rest).
+const flagYields = (container) => container.querySelector('[data-fight-bars]').style.getPropertyValue('--plate-pointer') === 'none';
 
 describe('⭐ picking up a hovered Token draws the mat once', () => {
     it('the pickup: the mat renders in one commit, with nothing hovered and no flag yielding', () => {

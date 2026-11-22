@@ -28,7 +28,7 @@ import { clearSelection } from '../ui/hooks/useMatSelection.js';
 import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { FlagGhost } from '../ui/dnd/DragGhost.jsx';
 import { HeroEditModal } from '../ui/modals/HeroEditModal.jsx';
-import { markerBox, fanStep, MARKER_ART_PX, MARKER_FOOT, MARKER_FAN_ART_PX } from '../ui/components/board/flagGeometry.js';
+import { markerBox, sideSlot, MARKER_ART_PX, MARKER_FOOT, MARKER_SIDE_ART_PX } from '../ui/components/board/flagGeometry.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -377,46 +377,48 @@ describe('FP-77 / FP-82 — flag sprites and lasting colours', () => {
     });
 });
 
-describe('several heroes on one Token: their flags fan out', () => {
-    it('fanStep: the first keeps the corner, then one towards the top, one towards the left, two towards the top', () => {
-        expect([0, 1, 2, 3, 4].map(fanStep)).toEqual([0, 1, -1, 2, -2]);
+describe('several heroes on one Token: their flags stand side by side in its middle', () => {
+    it('sideSlot: one flag in the middle, a row centred on it for more', () => {
+        expect(sideSlot(0, 1)).toBe(0);
+        expect([0, 1].map(r => sideSlot(r, 2))).toEqual([-0.5, 0.5]);
+        expect([0, 1, 2].map(r => sideSlot(r, 3))).toEqual([-1, 0, 1]);
     });
 
-    it('markerBox: a fanned flag keeps the corner’s distance from the Token’s centre, one step apart', () => {
+    it('markerBox: a flag on a Token is centred on it, a slot moves it one step across, on whole art pixels', () => {
         const c = { x: 500, y: 400 };
-        const box = (fan) => markerBox(c, 32, 2, 40, fan);
         const mid = (b) => ({ x: b.left + b.size / 2, y: b.top + b.size / 2 });
-        expect(box(0)).toEqual(markerBox(c, 32, 2, 40));
-        const r = 40 * Math.SQRT2;
-        for (const fan of [1, -1, 2]) {
-            const m = mid(box(fan));
-            expect(Math.hypot(m.x - c.x, m.y - c.y)).toBeCloseTo(r, 6);
+        expect(mid(markerBox(c, true, 2))).toEqual(c);
+        const a = mid(markerBox(c, true, 2, -0.5));
+        const b = mid(markerBox(c, true, 2, 0.5));
+        expect(a.y).toBe(c.y);
+        expect(b.y).toBe(c.y);
+        // The step is rounded onto the art-pixel grid, so it is within one art pixel of the rule.
+        expect(Math.abs(b.x - a.x - MARKER_SIDE_ART_PX * 2)).toBeLessThanOrEqual(2);
+        for (const box of [markerBox(c, true, 2, 0.5), markerBox({ x: 501.3, y: 399.1 }, true, 2)]) {
+            expect(box.left / 2).toBe(Math.round(box.left / 2));
+            expect(box.top / 2).toBe(Math.round(box.top / 2));
         }
-        // Towards the top is up and right of the corner; towards the left, down and left.
-        expect(mid(box(1)).x).toBeGreaterThan(mid(box(0)).x);
-        expect(mid(box(1)).y).toBeLessThan(mid(box(0)).y);
-        expect(mid(box(-1)).x).toBeLessThan(mid(box(0)).x);
-        expect(mid(box(-1)).y).toBeGreaterThan(mid(box(0)).y);
-        const a = mid(box(0)), b = mid(box(1));
-        expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeCloseTo(2 * r * Math.sin(MARKER_FAN_ART_PX * 2 / r / 2), 6);
     });
 
-    it('three heroes on one Token: three flags at three places, in roster order; one hero alone keeps the corner', () => {
+    it('three heroes on one Token: three flags in a row, in roster order; one hero alone stands in the middle', () => {
         const t = put(20, FOREST);
         Orders.orderAt('h1', { x: t.x, y: t.y });
-        const lone = mount(h(FlagLayer)).container;
+        const lone = mount(h(FlagLayer, { hoveredTokenId: t.id })).container;
         const alone = lone.querySelector('[data-flag="h1"]');
-        const corner = { left: alone.style.left, top: alone.style.top };
+        const size = parseFloat(alone.style.width);
+        expect(Math.abs(drawnPoint(alone).x + size / 2 - t.x)).toBeLessThanOrEqual(size / MARKER_ART_PX / 2);
         cleanup();
         Orders.orderAt('h2', { x: t.x, y: t.y });
         Orders.orderAt('h3', { x: t.x, y: t.y });
-        const { container } = mount(h(FlagLayer));
+        const { container } = mount(h(FlagLayer, { hoveredTokenId: t.id }));
         const flags = ['h1', 'h2', 'h3'].map(id => container.querySelector(`[data-flag="${id}"]`));
         expect(flags.map(f => f.getAttribute('data-flag-pinned'))).toEqual([t.id, t.id, t.id]);
-        // The first in roster order keeps the lone hero's corner.
-        expect({ left: flags[0].style.left, top: flags[0].style.top }).toEqual(corner);
-        const places = new Set(flags.map(f => `${f.style.left},${f.style.top}`));
-        expect(places.size).toBe(3);
+        // Left to right in roster order, on one line, the middle one on the Token's middle.
+        const xs = flags.map(f => drawnPoint(f).x);
+        expect(xs[0]).toBeLessThan(xs[1]);
+        expect(xs[1]).toBeLessThan(xs[2]);
+        expect(new Set(flags.map(f => f.style.top)).size).toBe(1);
+        expect(flags[1].style.left).toBe(alone.style.left);
         // Each in their own colour.
         expect(new Set(flags.map(f => f.querySelector('[data-flag-mark]').getAttribute('data-flag-colour'))).size).toBe(3);
     });

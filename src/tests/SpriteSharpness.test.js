@@ -97,7 +97,7 @@ describe('⭐ (a) a flag fades on the main thread, on every path that fades it, 
         expectFadesAsBefore(el);
     });
 
-    it('the hero hovered on the mat or on their roster tab (both come in as hoverHeroId), and the hero inspected', () => {
+    it('the hero hovered on the mat or on their roster tab (both come in as hoverHeroId); the hover ending fades it', () => {
         Orders.orderAt('h1', BARE);
         const view = mount();
         view.rerender(h(DndContext, null, h(FlagLayer, { hoverHeroId: 'h1' })));
@@ -105,16 +105,17 @@ describe('⭐ (a) a flag fades on the main thread, on every path that fades it, 
         expect(el.hasAttribute('data-flag-down')).toBe(false);
         expect(el.className).not.toMatch(/\bopacity-0\b/);
         expectFadesAsBefore(el);
+        // The hero's panel open is not a hover: the flag goes down.
         view.rerender(h(DndContext, null, h(FlagLayer, { inspectedHeroId: 'h1' })));
         el = flagOf(view.container);
-        expect(el.hasAttribute('data-flag-down')).toBe(false);
+        expect(el.getAttribute('data-flag-down')).toBe('true');
         expectFadesAsBefore(el);
     });
 
     it('a spot left: a Token order (the flag the drag fades to 30 %) on the same button', async () => {
         Orders.orderAt('h1', BARE);
-        const view = mount();
-        expect(flagOf(view.container).getAttribute('data-flag-down')).toBe('true');
+        const view = mount({ hoverHeroId: 'h1' });
+        expect(flagOf(view.container).hasAttribute('data-flag-down')).toBe(false);
         const t = put(TOKEN, 'fixture_producer');
         const before = flagOf(view.container);
         act(() => {

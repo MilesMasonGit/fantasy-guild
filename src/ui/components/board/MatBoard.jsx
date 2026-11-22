@@ -5,7 +5,7 @@ import { createStackWriter } from './stackWriter.js';
 import { pointerToMat } from './matPoint.js';
 import { matTuning } from '../../../config/matTuning.js';
 import { installPressRouting } from './pressRouting.js';
-import { flagClothOver } from './flagCloth.js';
+import { flagClothOver, tokenFlagClothAt } from './flagCloth.js';
 import { useHoverRest } from './hoverRest.js';
 import { MatToken, MatTokenGrab } from './MatToken.jsx';
 import { MatHero, heroBoxAt } from './MatHero.jsx';
@@ -104,6 +104,8 @@ export const MatBoard = React.memo(function MatBoard({
     const rest = useHoverRest(hoveredId, hoverHeroId);
     /** The pointer is on a Token's art circle, so every flag lets it through. */
     const [flagsYield, setFlagsYield] = useState(false);
+    /** The hero whose flag, shown in the hovered Token's middle, has the pointer on its cloth: its tooltip shows. */
+    const [flagTipHeroId, setFlagTipHeroId] = useState(null);
     /** The fight layer's node the fighters' health bars draw into (`FightBarHost`). */
     const [fightBarHost, setFightBarHost] = useState(null);
     /** The node the rested Token's idle plate draws into (`IdlePlateHost`). */
@@ -143,7 +145,7 @@ export const MatBoard = React.memo(function MatBoard({
     const [dragSeen, setDragSeen] = useState(false);
     if (dragSeen !== isDragging) {
         setDragSeen(isDragging);
-        if (isDragging) { setHoveredId(null); setFlagsYield(false); setHoverHeroId(null); }
+        if (isDragging) { setHoveredId(null); setFlagsYield(false); setHoverHeroId(null); setFlagTipHeroId(null); }
     }
 
     // A no-op while dragging, so a hero/flag crossing mid-drag does not reinstate a stray
@@ -266,17 +268,16 @@ export const MatBoard = React.memo(function MatBoard({
     const heroes = useMemo(() => heroesRaw || [], [heroesRaw]);
 
     /**
-     * Every order's flag point, in planting order; flags sort with the Tokens. A Token order's
-     * flag sorts just behind its Token, so it is drawn behind the Token's sprite.
+     * Every spot order's flag point, in planting order; they sort with the Tokens. A Token order's
+     * flag is drawn one above its own Token instead (`FlagLayer`).
      */
     const flagsRaw = useGameState(
         () => {
             const out = [];
             for (const [heroId] of BoardState.heroesOnBoard()) {
                 const flag = BoardState.flagOf(heroId);
-                if (!flag) continue;
-                const pinned = Flags.pinnedTokenOf(heroId);
-                out.push({ heroId, y: pinned ? pinned.y - FLAG_BEHIND : flag.y });
+                if (!flag || Flags.pinnedTokenOf(heroId)) continue;
+                out.push({ heroId, y: flag.y });
             }
             return out;
         },
@@ -313,6 +314,7 @@ export const MatBoard = React.memo(function MatBoard({
         if (e.target?.closest?.('[data-limes]')) {
             setFlagsYield(prev => (prev === false ? prev : false));
             setHoveredId(prev => (prev === null ? prev : null));
+            setFlagTipHeroId(prev => (prev === null ? prev : null));
             return;
         }
         /**
@@ -326,6 +328,7 @@ export const MatBoard = React.memo(function MatBoard({
         if (id && flagClothOver(el, e.clientX, e.clientY, id)) {
             setFlagsYield(prev => (prev === false ? prev : false));
             setHoveredId(prev => (prev === null ? prev : null));
+            setFlagTipHeroId(prev => (prev === null ? prev : null));
             return;
         }
         // On a hero's drawn pixel a press is the hero's, so no Token behind them lights as if it
@@ -334,6 +337,8 @@ export const MatBoard = React.memo(function MatBoard({
         if (heroId && id && Flags.statusOf(heroId).instanceId !== id) id = null;
         const onToken = !!id;
         setFlagsYield(prev => (prev === onToken ? prev : onToken));
+        const tip = id ? tokenFlagClothAt(el, e.clientX, e.clientY, id) : null;
+        setFlagTipHeroId(prev => (prev === tip ? prev : tip));
         if (!id) {
             // Not over a Token: a work plate is its own Token's (over a circle it lets the pointer
             // through, as flags do).
@@ -354,7 +359,7 @@ export const MatBoard = React.memo(function MatBoard({
         setHoveredId(prev => (prev === id ? prev : id));
     }, []);
 
-    const clearHover = useCallback(() => { setHoveredId(null); setFlagsYield(false); }, []);
+    const clearHover = useCallback(() => { setHoveredId(null); setFlagsYield(false); setFlagTipHeroId(null); }, []);
 
     // A press where two Tokens' circles overlap goes to the one hovering would pick, even when no
     // pointer move has lit it yet.
@@ -713,11 +718,14 @@ export const MatBoard = React.memo(function MatBoard({
             {/* `MAT_Z.FX`: effects standing on the mat (rising numbers, sparks, a knockout). */}
             <MatFxLayer />
 
-            {/* Flags, sorted in among the Tokens, and their rings (`MAT_Z.RINGS`). */}
+            {/* Flags: a spot order's sorted in among the Tokens, a Token order's one above its Token. */}
             <FlagLayer
                 flagZ={order.flagZ}
+                tokenZ={order.tokenZ}
                 inspectedHeroId={inspectedHeroId}
                 hoverHeroId={litHeroId}
+                hoveredTokenId={hoveredId}
+                tipHeroId={flagTipHeroId}
                 onHoverHero={handleHoverHero}
                 matRef={rootRef}
                 yieldToTokens={flagsYield}
@@ -760,9 +768,6 @@ const CLICK_SLOP_PX = 6;
 
 /** What takes a click of its own on the mat, so a click there is not one on blank mat. */
 const TAKES_ITS_OWN_CLICK = 'button, a, [data-token-id], [data-token-hit], [data-work-plate], [data-limes], [data-tooltip]';
-
-/** How far behind its Token a Token order's flag sorts, in mat units: behind it, in front of the line above. */
-const FLAG_BEHIND = 0.5;
 
 /** A map mode's edge: above the speech bubbles. */
 const MODE_EDGE_Z = MAT_Z.HERO_BUBBLE + 40;
