@@ -1,7 +1,6 @@
 // timed changes: the one clock system for Tokens
 
 import { getTokenType, registryVersion } from '../../config/registries/tokenRegistry.js';
-import { turnTiming } from '../../config/registries/tokenConstants.js';
 import * as BoardState from './BoardState.js';
 import * as EffectActions from './EffectActions.js';
 import * as SpawnerSystem from './SpawnerSystem.js';
@@ -13,7 +12,6 @@ import * as Growth from './Growth.js';
 import * as Fields from './Fields.js';
 import * as EventTokens from './EventTokens.js';
 import { growTimeOf, nearbyGateMet } from './TileModifiers.js';
-import { pickWeighted } from './weightedPick.js';
 import { ALERT } from './boardEvents.js';
 import { logger } from '../../utils/Logger.js';
 
@@ -23,12 +21,6 @@ import { logger } from '../../utils/Logger.js';
  * `grows: { into, afterMs, needsNearby?, cost? }`: after `afterMs` the Token becomes `into` (a
  * Sapling becomes a Tree). A growth may need a Token in reach to run (its clock stands still
  * without one) and pay a cost when it happens (stopped at its finish until it can): `Growth.js`.
- * `turns: { into: [{ typeId, weight }], everyMs, chance }`: a chance, not a timer. Once every
- * `everyMs` the Token rolls; with `chance` percent it becomes a weighted pick from `into`, which
- * carries `turnedFrom`. The turned Token rolls on the same cycle and chance, read from the
- * `turnedFrom` type, to turn back, so it is authored once, on the Coast. Defaults for absent fields
- * are `TURN_DEFAULTS` in `tokenConstants.js`.
- *
  * Spawner intervals are one more row of the {@link HANDLERS} table; the attempt itself lives in
  * `SpawnerSystem.js`. So is a resting Token's way back (`respawn`, refill or regrow), whose rules
  * live in `Respawn.js`, and a Field's crop sowing and ripening (`Fields.js`). Passive Production pays several lines on its own clock, so {@link tick} runs
@@ -36,9 +28,8 @@ import { logger } from '../../utils/Logger.js';
  * rich node's hour running out) is two more rows, the only ones that take a Token off the mat
  * (`EventTokens.js`).
  *
- * State (saved, on the instance): `instance.clocks = { growMs, turnMs, … }`, elapsed ms, created
- * only on a Token that has a timed block, absent reads as 0. `turnWon: 1` marks a `turns` roll that
- * succeeded but is still waiting to happen. A change is a transform
+ * State (saved, on the instance): `instance.clocks = { growMs, spawnMs, … }`, elapsed ms, created
+ * only on a Token that has a timed block, absent reads as 0. A change is a transform
  * (`EffectActions.transformInstance`): the new instance keeps `origin` and starts with fresh
  * clocks.
  *
@@ -51,16 +42,13 @@ import { logger } from '../../utils/Logger.js';
  * MAX_CHANGES_PER_TICK}). So ten minutes in one tick end in the same state as ten minutes in 100 ms
  * ticks.
  *
- * A roll is one lap of the clock. A roll that fails acts without replacing the Token, like a
- * spawner's attempt: the clock starts its next lap, keeping any time past due. So a ten-minute tick
- * rolls ten times, once per whole minute in it, and consumes `random` in the same order as ten
- * one-minute ticks would. A chance of 100 rolls nothing (it always succeeds), so it never moves the
- * random stream.
+ * A spawner's attempt that finds no room acts without replacing the Token: the clock starts its next
+ * lap, keeping any time past due, so a long tick consumes `random` in the same order as many small
+ * ticks would.
  *
  * A change with nowhere to stand does not happen (`transformInstance` returns null). The clock is
  * then held full and the change is retried on the next tick: once per tick, never looped within
- * one. A `turns` roll that succeeded but could not stand is remembered (`clocks.turnWon`), so the
- * retry does not roll again: a won roll is never lost to a blocked spot.
+ * one.
  *
  * A cycle in progress is lost: the work-cycle progress (`cycleElapsedMs`) belongs to the old
  * instance, which leaves the mat, and nothing completes it. The hero's claim was on that instance,
@@ -70,56 +58,6 @@ import { logger } from '../../utils/Logger.js';
 
 /** Most changes one Token may go through in one tick — a guard, not a design number. */
 export const MAX_CHANGES_PER_TICK = 64;
-
-/**
- * The roll cycle and chance a Token turns by: its own `turns` block, or, on a turned Token, the
- * ORIGINAL type's, so both directions share one authored pair. `{ everyMs, chance }` with the
- * defaults filled in.
- */
-export function turnTimingOf(instance) {
-    const source = instance?.turnedFrom ? getTokenType(instance.turnedFrom) : getTokenType(instance?.typeId);
-    return turnTiming(source?.turns);
-}
-
-/**
- * Roll a turn. Returns true when it succeeds. A chance of 100 always succeeds and 0 never does, and
- * neither consumes `random`. A roll that won but could not happen (nowhere to stand) is remembered
- * in `clocks.turnWon` and not rolled again on the retry.
- */
-function rollTurn(instance, random) {
-    const clocks = instance.clocks || (instance.clocks = {});
-    if (clocks.turnWon) return true;
-    const { chance } = turnTimingOf(instance);
-    let won;
-    if (chance >= 100) won = true;
-    else if (chance <= 0) won = false;
-    else won = random() * 100 < chance;
-    if (won) clocks.turnWon = 1;
-    return won;
-}
-
-/**
- * When a turning Token next rolls, for the mat's countdown badge and the inspection lines: `{ inMs,
- * chance, back, into }`. `back` is true on a turned Token (it rolls to turn back into
- * `turnedFrom`), `into` the type ids it may become. Null for a Token that does not turn.
- *
- * `inMs` is 0 while a roll is held (in the hand, or won with nowhere to stand).
- */
-export function nextTurnRoll(instance) {
-    if (!instance) return null;
-    const clockMs = Number(instance.clocks?.turnMs) || 0;
-    if (instance.turnedFrom) {
-        const original = getTokenType(instance.turnedFrom);
-        if (!original) return null;
-        const { everyMs, chance } = turnTiming(original.turns);
-        return { inMs: Math.max(0, everyMs - clockMs), chance, back: true, into: [instance.turnedFrom] };
-    }
-    const def = getTokenType(instance.typeId);
-    const entries = Array.isArray(def?.turns?.into) ? def.turns.into.filter(e => e?.typeId) : [];
-    if (!entries.length) return null;
-    const { everyMs, chance } = turnTiming(def.turns);
-    return { inMs: Math.max(0, everyMs - clockMs), chance, back: false, into: entries.map(e => e.typeId) };
-}
 
 /**
  * How long a Token's growth takes: its authored `grows.afterMs` with the Grow Time its neighbours
@@ -135,11 +73,10 @@ export function growMsOf(instance, def = getTokenType(instance?.typeId)) {
  * whole growth as sped up ({@link growMsOf}). `inMs` is 0 while the change is held (in the hand,
  * nowhere to stand, or stopped). `paused`: it needs one of `needsNearby` in reach and has none, so
  * its clock stands still (`inMs` stays where it is). `stopped`: it fell due and the Bank cannot pay
- * its `cost`; `short` names the items it lacks. Null for a Token that does not grow, and for a
- * turned one (it runs only its turn back).
+ * its `cost`; `short` names the items it lacks. Null for a Token that does not grow.
  */
 export function nextGrowth(instance) {
-    if (!instance || instance.turnedFrom) return null;
+    if (!instance) return null;
     const def = getTokenType(instance.typeId);
     if (!def?.grows?.into || !(Number(def.grows.afterMs) >= 0)) return null;
     const clockMs = Number(instance.clocks?.growMs) || 0;
@@ -220,7 +157,7 @@ function gatePaused(instance, needsNearby) {
  *   starting another lap;
  * * `resting` — true for the rows whose `applies` moves with the Token's
  *   charges (they come last in the table); every other row's `applies` reads
- *   only the type and whether the Token is turned, so it is asked once per type
+ *   only the type, so it is asked once per type
  *   ({@link activeHandlers});
  * * `applies(instance, def)` — whether this Token runs it;
  * * `dueMs(instance, def)` — when it fires;
@@ -232,48 +169,17 @@ function gatePaused(instance, needsNearby) {
  *   the mat, or null when it could not happen (the clock is held full and
  *   retried next tick).
  *
- * A turned instance runs only its turn back: it is a temporary state of the
- * Token it came from.
  */
 export const HANDLERS = [
-    {
-        id: 'turn_back',
-        clock: 'turnMs',
-        replaces: true,
-        applies: (instance) => !!instance.turnedFrom && !!getTokenType(instance.turnedFrom),
-        dueMs: (instance) => turnTimingOf(instance).everyMs,
-        // A failed roll returns the Token itself: the clock starts its next lap.
-        fire: (instance, def, random) => (rollTurn(instance, random)
-            ? EffectActions.transformInstance(instance, instance.turnedFrom, { fixPlaced: true, cause: 'turn' })
-            : instance)
-    },
     {
         // A growth (`Growth.js`): it may need a Token in reach to run and pay a cost to happen.
         id: 'grows',
         clock: 'growMs',
         replaces: true,
         pausedWhile: growthPaused,
-        applies: (instance, def) => !instance.turnedFrom && !!def?.grows?.into && Number(def.grows.afterMs) >= 0,
+        applies: (instance, def) => !!def?.grows?.into && Number(def.grows.afterMs) >= 0,
         dueMs: (instance, def) => growMsOf(instance, def),
         fire: growInto
-    },
-    {
-        id: 'turns',
-        clock: 'turnMs',
-        replaces: true,
-        applies: (instance, def) => !instance.turnedFrom && Array.isArray(def?.turns?.into) && def.turns.into.length > 0,
-        dueMs: (instance, def) => turnTiming(def.turns).everyMs,
-        fire: (instance, def, random) => {
-            // Roll the chance first; a failed roll is one lap, no change.
-            if (!rollTurn(instance, random)) return instance;
-            const into = pickWeighted(def.turns.into, random);
-            if (!into || into === instance.typeId) return null;
-            return EffectActions.transformInstance(instance, into, {
-                fixPlaced: true,
-                cause: 'turn',
-                extra: { turnedFrom: instance.typeId }
-            });
-        }
     },
     {
         // A spawner's interval. Acts without replacing the Token: a spawn, or a spawn missed for want
@@ -283,7 +189,7 @@ export const HANDLERS = [
         // A full enemy camp's clock stands at zero: a beaten member comes back an interval later.
         // So does a camp on a mat its arrival still holds: it spawns an interval after it is cleared.
         idleWhile: (instance, def) => SpawnerSystem.isSleepingCamp(instance) || SpawnerSystem.isFullEnemyCamp(instance, def),
-        applies: (instance, def) => !instance.turnedFrom && SpawnerSystem.isSpawner(def),
+        applies: (instance, def) => SpawnerSystem.isSpawner(def),
         dueMs: (instance, def) => SpawnerSystem.intervalOf(def),
         fire: (instance, def, random, ctx) => SpawnerSystem.spawnerTurn(instance, def, random, ctx)
     },
@@ -295,7 +201,7 @@ export const HANDLERS = [
         clock: Fields.CLOCK,
         once: true,
         idleWhile: (instance, def) => Fields.clockIdle(instance, def),
-        applies: (instance, def) => !instance.turnedFrom && Fields.isField(def),
+        applies: (instance, def) => Fields.isField(def),
         dueMs: (instance, def) => Fields.clockDueMs(instance, def),
         fire: (instance, def, random, ctx) => {
             const ripening = Fields.stageOf(instance, def) === Fields.STAGE.GROWING;
@@ -366,16 +272,15 @@ const PER_INSTANCE = HANDLERS.filter(h => h.perInstance);
 
 /**
  * Per Token type, the handlers it may run, kept for the Token registry's version: `fixed`, whose
- * `applies` reads only the type (a growth, a turn, a spawner), and `resting`, whose answer moves with
- * the Token's charges (a refill, a regrow) and is asked live. A turned Token, whose answer also
- * reads what it turned from, is always asked in full.
+ * `applies` reads only the type (a growth, a spawner), and `resting`, whose answer moves with
+ * the Token's charges (a refill, a regrow) and is asked live.
  *
  * ⚠️ Every timed Token asks this on every tick, and a day's catch-up is 86,400 ticks: filtering the
  * whole table each time (six `applies`, a new array) cost more than the work it chose.
  */
 let plans = { version: -1, byType: new Map() };
 
-/** This (unturned) Token's type's plan, made on first ask after a content change. */
+/** This Token's type's plan, made on first ask after a content change. */
 function planOf(instance, def) {
     const version = registryVersion();
     if (plans.version !== version) plans = { version, byType: new Map() };
@@ -403,7 +308,6 @@ function planOf(instance, def) {
  */
 function activeHandlers(instance) {
     const def = getTokenType(instance.typeId);
-    if (instance.turnedFrom) return { def, active: HANDLERS.filter(h => h.applies(instance, def)) };
     const plan = planOf(instance, def);
     const isEvent = instance.event != null;
     if (!plan.resting.length && !isEvent) return { def, active: plan.fixed };
@@ -521,7 +425,7 @@ export function tick(delta, random = Math.random) {
         // A Token taken off the mat earlier in this same pass is skipped.
         if (!BoardState.getTokenById(instance.id)) continue;
         // ⚠️ A Token marked for demolition stands still, its clocks held where they are: a growth
-        // or turn would put a new, unmarked instance in its place, and a spawner, refill or Passive
+        // would put a new, unmarked instance in its place, and a spawner, refill or Passive
         // Production would keep working a Token the player asked to be rid of. What it was waiting
         // for is no longer a problem, so its growth alert drops.
         if (Demolition.isMarked(instance)) {

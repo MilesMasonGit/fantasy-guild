@@ -62,16 +62,6 @@ registerTokenTypes({
         rarity: 'common', theme: 'fixture', uses: 10, sprite: 's_nature',
         config: { skill: 'forestry', skillRequired: 1, cycleTimeMs: 12000, xp: 1, inputs: [], outputs: [] }
     },
-    fixture_q4_coast: {
-        id: 'fixture_q4_coast', name: 'Fixture Q4 Coast', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nautical',
-        turns: { into: [{ typeId: 'fixture_q4_shrimp', weight: 1 }], everyMs: 1000, chance: 100 }
-    },
-    fixture_q4_shrimp: {
-        id: 'fixture_q4_shrimp', name: 'Fixture Q4 Shrimp Coast', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nautical',
-        config: { skill: 'fishing', skillRequired: 1, cycleTimeMs: 12000, xp: 1, inputs: [], outputs: [] }
-    },
     fixture_q4_foundation: {
         id: 'fixture_q4_foundation', name: 'Fixture Q4 Foundation',
         rarity: 'common', theme: 'fixture', uses: 1,
@@ -384,18 +374,6 @@ describe('transform glow (FB-11)', () => {
         const tree = BoardState.tokens().find(t => t.typeId === 'fixture_q4_tree');
         expect(tree).toBeTruthy();
         expect(TokenGlows.glowOf(tree.id)).not.toBeNull();
-    });
-
-    it('a Coast turning, and turning back, glows each time', () => {
-        placeAt('fixture_q4_coast', 500, 500);
-        TimedChanges.tick(1000);
-        const shrimp = BoardState.tokens().find(t => t.typeId === 'fixture_q4_shrimp');
-        expect(shrimp).toBeTruthy();
-        expect(TokenGlows.glowOf(shrimp.id)).not.toBeNull();
-        TimedChanges.tick(1000);   // the turn back rolls on the Coast's cycle
-        const coast = BoardState.tokens().find(t => t.typeId === 'fixture_q4_coast');
-        expect(coast).toBeTruthy();
-        expect(TokenGlows.glowOf(coast.id)).not.toBeNull();
     });
 
     it('a Foundation built into a station glows', () => {

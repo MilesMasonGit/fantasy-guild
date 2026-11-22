@@ -157,8 +157,6 @@ describe('the rules, pure', () => {
         expect(timerCellOf({ kind: 'respawn', inMs: 15000 }).tip).toMatch(/^Resting\. Refills in /);
         expect(timerCellOf({ kind: 'respawn', inMs: 15000, paused: true, needsNearby: ['fixture_b13_forest'] }).tip)
             .toBe('Resting. Refills only with Fixture B1.3 Forest nearby');
-        expect(timerCellOf({ kind: 'turn', inMs: 5000, chance: 30, back: true }))
-            .toMatchObject({ glyph: 'turn', text: '0:05', tip: 'Next roll to turn back in 0:05 (30% chance)' });
         expect(timerCellOf({ kind: 'ripen', inMs: 61000 })).toMatchObject({ glyph: 'grow', text: '1:01' });
         expect(timerCellOf(null)).toBeNull();
     });
@@ -807,9 +805,9 @@ describe('on the mat (MatToken)', () => {
     it('⭐ a spawner at 3 of 5: nothing at rest; hovered, its 3/5 on a plate under it, over the loot, the name just above the plate', () => {
         vi.useFakeTimers();
         const forest = put('fixture_b13_forest');
-        put('fixture_b13_sapling', { x: 1200, y: 520 });
-        put('fixture_b13_sapling', { x: 1400, y: 300 });
-        put('fixture_b13_sapling', { x: 1400, y: 800 });
+        put('fixture_b13_sapling', { x: 700, y: 520 });
+        put('fixture_b13_sapling', { x: 640, y: 380 });
+        put('fixture_b13_sapling', { x: 640, y: 660 });
         const { container } = mount(h(MatBoard));
         const o = container.querySelector(`[data-token-overlay="${forest.id}"]`);
         const host = container.querySelector('[data-idle-plates]');

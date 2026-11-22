@@ -133,6 +133,26 @@ export const BANNER_KINDS = Object.freeze({
         text: ({ name = '' }) => ({ title: t('events.banner.title', { event: name }), line: '' }),
         merge: null
     },
+    // Something new waits for room on the mat (`RoomWait`): each wait said once, folded into the
+    // one on screen. `beside` names the waiting stations and spawners; `arrival` and `event` are
+    // the waits with no Token to name.
+    noRoom: {
+        tone: TONE.PROBLEM,
+        mergeShown: true,
+        text: ({ beside = [], arrival = false, event = false }) => ({
+            title: t('noRoom.banner.title'),
+            line: [
+                beside.length ? t('noRoom.banner.beside', { names: nameList(beside.map(name => t('noRoom.banner.token', { name }))) }) : null,
+                arrival ? t('noRoom.banner.arrival') : null,
+                event ? t('noRoom.banner.event') : null
+            ].filter(Boolean).join(' ')
+        }),
+        merge: (a, b) => ({
+            beside: union(a.beside, b.beside),
+            arrival: !!(a.arrival || b.arrival),
+            event: !!(a.event || b.event)
+        })
+    },
     // Each save problem is its own banner; only a repeat of the same one (its `groupKey`) folds in.
     save: {
         tone: TONE.PROBLEM,

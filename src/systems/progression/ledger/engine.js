@@ -90,7 +90,6 @@ export const HOW = Object.freeze({
     SHOP: 'shop',
     SPAWN: 'spawn',
     GROW: 'grow',
-    TURN: 'turn',
     REGROW: 'regrow',
     WORK: 'work',
     CATCH: 'catch',
@@ -117,7 +116,6 @@ export const LEDGER_ENGINE_TEXT = Object.freeze({
         shop: 'bought at the Shop',
         spawn: 'spawned',
         grow: 'grows',
-        turn: 'turns',
         regrow: 'regrows',
         work: 'worked',
         catch: 'caught',
@@ -376,18 +374,6 @@ export function buildWorld(content = {}) {
                 id: `grow:${id}:${i}`, how: HOW.GROW, via: self, needs: [self, ...(near ? [tokenKey(near)] : []), ...needKeys(cost)],
                 inputs: cost, gives: [{ key: tokenKey(def.grows.into), chance: 1 }]
             }));
-        }
-
-        // Turning into another type, at a chance each roll, its targets weighted.
-        if (isObject(def.turns)) {
-            const into = list(def.turns.into).filter(t => text(t.typeId));
-            const total = into.reduce((sum, t) => sum + weightOf(t), 0);
-            if (into.length) {
-                add({
-                    id: `turn:${id}`, how: HOW.TURN, via: self, needs: [self],
-                    gives: into.map(t => ({ key: tokenKey(t.typeId), chance: total > 0 ? weightOf(t) / total : 1 }))
-                });
-            }
         }
 
         // A regrow: worked out, it becomes another type. The game refuses one on an enemy, a spawner or a Foundation.

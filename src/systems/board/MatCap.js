@@ -6,7 +6,8 @@ import { matTuning } from '../../config/matTuning.js';
 import * as BoardState from './BoardState.js';
 
 /**
- * How many Tokens the mat may hold. Every Token on the mat counts, placed or spawned. The Guild Hall and quest Tokens never count: the Hall is always there, and quests are bounded by
+ * How many Tokens the mat may hold. Every Token on the mat counts, placed or spawned, but those
+ * {@link countsTowardCap} leaves out. The Guild Hall and quest Tokens never count: the Hall is always there, and quests are bounded by
  * the quest cap. Landmarks (the endgame sites) count like any placed Token. The cap is the guild's,
  * but it counts only the Region the guild is in: the others are frozen in the Atlas, off the mat.
  *
@@ -25,12 +26,13 @@ export function isGuildHall(instance) {
 }
 
 /**
- * Whether a Token counts toward the cap: not a quest, an event Token (`instance.event`: a visitor
- * that leaves on its own must never stop the player building) or the Guild Hall. One type lookup.
+ * Whether a Token counts toward the cap: not a quest, an event Token (`instance.event`), an arrival
+ * enemy (`instance.arrival`) or the Guild Hall. Events and arrivals come to the mat on their own and
+ * must never stop the player building. One type lookup.
  */
 export function countsTowardCap(instance) {
     const typeId = instance?.typeId;
-    if (!typeId || typeId === QUEST_TOKEN_TYPE || instance.event) return false;
+    if (!typeId || typeId === QUEST_TOKEN_TYPE || instance.event || instance.arrival) return false;
     return !isGuildHall(instance);
 }
 

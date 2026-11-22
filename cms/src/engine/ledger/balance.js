@@ -805,7 +805,7 @@ function stepCause(state, key, own = false) {
     for (const step of steps) {
         const rule = ledger.reach.get(step.key)?.rule;
         const give = rule?.gives?.find(g => g.key === step.key);
-        if (!rule || !give || step.own <= 0 || ![HOW.DROP, HOW.WORK, HOW.CATCH, HOW.BONUS, HOW.SPAWN, HOW.TURN].includes(rule.how)) continue;
+        if (!rule || !give || step.own <= 0 || ![HOW.DROP, HOW.WORK, HOW.CATCH, HOW.BONUS, HOW.SPAWN].includes(rule.how)) continue;
         const find = ledger.findClass(rule, give);
         const chance = `a ${Math.round(give.chance * 1000) / 10} % chance from ${rule.via ? name(rule.via) : 'its source'}`;
         if (find === FIND.LUCK) {

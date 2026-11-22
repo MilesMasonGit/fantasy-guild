@@ -64,7 +64,7 @@ export const BENCH_TOKENS = {
         }
     },
 
-    /** Spawners (Token Lifecycle 3.3): a family cap of `allowance` each. */
+    /** Spawners (Token Lifecycle 3.3): `allowance` each, counted within its reach (a camp counts what it spawned). */
     bench_forest: {
         id: 'bench_forest', name: 'Bench Forest', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',

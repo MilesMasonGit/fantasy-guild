@@ -7,7 +7,7 @@ import { neededToolOf, toolNeedPhrase, toolItemFor, toolKindLabel } from '../../
 import { hasCatchPools, catchPoolsOf } from '../../../config/registries/catchPools.js';
 import { rareTableOf, rareEntryChances } from '../../../config/registries/rareTables.js';
 import { enemyProfileOf } from '../../../config/registries/enemyProfile.js';
-import { turnTiming, fieldOf, cropTermsOf, campOf, isWarCamp } from '../../../config/registries/tokenConstants.js';
+import { fieldOf, cropTermsOf, campOf, isWarCamp } from '../../../config/registries/tokenConstants.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -139,7 +139,6 @@ export function liveCardSources() {
         fieldCrop: Fields.cropOf,
         recipeName: (id) => getRecipe(id)?.name || id,
         recipeOf: getRecipe,
-        nextTurn: TimedChanges.nextTurnRoll,
         eventLeave: (instance) => {
             const inMs = EventTokens.leavesInMs(instance);
             return inMs == null ? null : { inMs, buff: EventTokens.isEventBuff(instance) };
@@ -368,8 +367,6 @@ function spoken(ms) {
     return s ? `${min} min ${s} s` : `${min} min`;
 }
 
-const percent = (chance) => `${Math.round(Number(chance) * 10) / 10}%`;
-
 /**
  * The lifecycle lines as icon + short text, each with the sentence its hover gives.
  * @returns {{ icon: string, text: string, tip: string, tone?: 'warning'|'danger' }[]}
@@ -395,30 +392,12 @@ export function cardLifecycle(instance, def, src) {
         });
     }
 
-    const turn = src.nextTurn?.(instance);
-    if (instance.turnedFrom) {
-        if (turn) {
-            out.push({
-                icon: 'turn', text: formatClock(turn.inMs),
-                tip: `A ${percent(turn.chance)} chance to turn back into ${src.tokenName(instance.turnedFrom)} in ${spoken(turn.inMs)}`
-            });
-        }
-    } else {
-        if (def.spawner) {
-            const status = src.spawnerStatus?.(instance.id);
-            if (status) out.push(spawnLine(def, status, src));
-        }
-        const growth = src.nextGrowth?.(instance);
-        if (growth) out.push(growthLine(growth, src));
-        if (turn) {
-            const into = turn.into.map(src.tokenName).join(' or ');
-            const { everyMs } = turnTiming(def.turns);
-            out.push({
-                icon: 'turn', text: formatClock(turn.inMs),
-                tip: `A ${percent(turn.chance)} chance every ${spoken(everyMs)} to turn into ${into}, and the same to turn back. Next roll in ${spoken(turn.inMs)}`
-            });
-        }
+    if (def.spawner) {
+        const status = src.spawnerStatus?.(instance.id);
+        if (status) out.push(spawnLine(def, status, src));
     }
+    const growth = src.nextGrowth?.(instance);
+    if (growth) out.push(growthLine(growth, src));
 
     // A camp: what its heroes work and how far it reaches (the one standard reach). A War Camp's
     // style is only its mark: its heroes fight in their own.

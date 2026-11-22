@@ -112,10 +112,6 @@ export function deriveTokenType(def) {
     if (hasCycle && def.requiresHero === false) return { type: 'passive', why: 'it works with no hero' };
     if (hasCycle && outputs.length) return { type: 'resource', why: `it produces ${outputs.length === 1 ? 'something' : 'things'} from nothing` };
 
-    // A Token that turns (Coast ↔ Shrimp Coast) is a feature of the land that
-    // is worth something while turned. With a work cycle of its own it already
-    // filed as a resource above; without one it still does something.
-    if (def.turns) return { type: 'resource', why: 'it turns into something else for a while' };
     if (def.grows) return { type: 'resource', why: 'it grows into something else after a while' };
 
     if (has(KEYWORD.PROVIDES) || has(KEYWORD.GRANTS)) {

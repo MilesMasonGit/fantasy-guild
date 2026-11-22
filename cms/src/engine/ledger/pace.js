@@ -9,7 +9,6 @@ import { ringOfStar } from '../../../../src/systems/world/ringStars.js';
 import { HALL_NODE } from '../../../../src/config/guildUpgrades.js';
 import { planOf, PLAN_STATUS, tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
 import { xpForLevel, MAX_SKILL_LEVEL } from '../../../../src/utils/XPCurve.js';
-import { turnTiming } from '../../../../src/config/registries/tokenConstants.js';
 import { SKILLS, SKILL_LAYERS } from '../../../../src/config/registries/skillRegistry.js';
 import { STRICT_RINGS } from '../../../../src/config/worldTablesShape.js';
 
@@ -222,7 +221,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const at = reach.get(key);
         if (!at?.rule) return Infinity;
         const rule = at.rule;
-        if ([HOW.STARTER_CAMP, HOW.WORLD, HOW.HALL, HOW.SPAWN, HOW.GROW, HOW.TURN, HOW.REGROW].includes(rule.how)) return 0;
+        if ([HOW.STARTER_CAMP, HOW.WORLD, HOW.HALL, HOW.SPAWN, HOW.GROW, HOW.REGROW].includes(rule.how)) return 0;
         if (rule.how === HOW.SHOP) return sum(rule.inputs.map(i => i.quantity * unitHours(parseKey(i.key).id, cap)));
         if (rule.how === HOW.CRAFT) {
             const recipe = rates.recipes[parseKey(rule.via).id];
@@ -459,11 +458,6 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const def = rates.token(parseKey(rule.via).id);
             const g = gatherHours(rule.inputs, profile, cap);
             return done((Number(def?.grows?.afterMs) || 0) / HOUR_MS + g.hours);
-        }
-        case HOW.TURN: {
-            const def = rates.token(parseKey(rule.via).id);
-            const { everyMs, chance } = turnTiming(def?.turns);
-            return chance > 0 && give.chance > 0 ? done(everyMs / (chance / 100) / give.chance / HOUR_MS) : done(Infinity, 'never turns');
         }
         case HOW.REGROW: {
             const f = ratedBy({ token: parseKey(rule.via).id });

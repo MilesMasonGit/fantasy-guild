@@ -16,6 +16,7 @@ import * as MatCap from './MatCap.js';
 import * as Occupation from './Occupation.js';
 import * as Respawn from './Respawn.js';
 import * as Demolition from './Demolition.js';
+import * as RoomWait from './RoomWait.js';
 import { neighbourIds, reachRadius } from './nearby.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
@@ -35,16 +36,15 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  * mat's Token cap and its upkeep hold the clock full, since those are cheap to ask every tick.
  *
  * One attempt, in order:
- * 1. Cap: the family's live count must be below its cap (for a spawner that plants within its
- * reach, the family standing in its reach against its own allowance: {@link plantsWithinReach}; for
- * an enemy camp, what it spawned against its own allowance: {@link isEnemyCampType}).
+ * 1. Cap: the family's live count must be below the spawner's own allowance: the family standing in
+ * its reach, or for an enemy camp what it spawned ({@link isEnemyCampType}).
  * 2. Mat cap: the mat must have room under the Token cap (`MatCap.canPlaceMore`); spawned Tokens
  * count toward it.
  * 3. Upkeep: the Bank and the item loot lying on the mat must hold all of it between them (checked,
  * not yet taken).
  * 4. Pick: a weighted pick from `spawns`.
  * 5. Land: `EffectActions.spawn` with `nearest_free` around the spawner; placed Tokens are fixed. A
- * spawner that plants within its reach lands only there, never pushing.
+ * spawner other than an enemy camp lands only within its reach, never pushing.
  * 6. Pay: only once the Token has landed, so a spawn with no room costs nothing and there is never
  * a refund to make. Bank first, then loot on the mat, through the same
  * `InputAllocator.consumeInputs` a Token's recipe inputs use.
@@ -101,16 +101,6 @@ function allowanceOf(def) {
 }
 
 /**
- * Whether a spawner plants within its own reach (`spawner.withinReach`, a box in the CMS): a
- * Forest that lands its Saplings only within Near of itself and whose allowance counts its family
- * standing in its reach (map trees included), not every one on the mat. Without it a spawner keeps
- * the mat-wide family cap, unless it is an enemy camp ({@link isEnemyCampType}).
- */
-export function plantsWithinReach(def) {
-    return def?.spawner?.withinReach === true;
-}
-
-/**
  * Whether a spawner type is an **enemy camp**: its family holds an enemy (the Goblin Camp; bosses
  * and guardians are camps of one). An enemy camp counts only what it spawned, the Tokens tethered to
  * it (`instance.tether`), against its own allowance, so goblins standing at one camp never keep
@@ -159,7 +149,7 @@ function familySetOf(spawnerTypeId) {
     return set.ids;
 }
 
-/** How many of its family stand within reach of a within-reach spawner (`nearby.neighbourIds`, cached). */
+/** How many of its family stand within reach of a spawner (`nearby.neighbourIds`, cached). */
 function countNear(instance) {
     const ids = familySetOf(instance.typeId);
     let n = 0;
@@ -172,14 +162,11 @@ function countNear(instance) {
 
 /**
  * A spawner's live family count and its cap, `{ count, cap }`: within its reach against its own
- * allowance for one that plants within reach, what it spawned against its own allowance for an enemy
- * camp, else the mat-wide count against the family cap.
+ * allowance, or for an enemy camp what it spawned against its own allowance.
  */
 function countsOf(instance, def) {
-    if (plantsWithinReach(def)) return { count: countNear(instance), cap: allowanceOf(def) };
-    if (isEnemyCampType(instance.typeId)) return { count: countOwn(instance), cap: allowanceOf(def) };
-    const family = familyOf(instance.typeId);
-    return { count: countOf(family), cap: capOf(family) };
+    const count = isEnemyCampType(instance.typeId) ? countOwn(instance) : countNear(instance);
+    return { count, cap: allowanceOf(def) };
 }
 
 /**
@@ -202,8 +189,7 @@ function syncFamilyCaches() {
 /**
  * A spawner type's family: every type in its `spawns` list plus everything they grow into,
  * following `grows.into` until it stops, and the Token a regrowing one becomes when it runs out
- * (`respawn.into`), so a felled tree growing back still counts. An Oak Forest's is `{Oak Sapling,
- * Oak Tree}`.
+ * (`respawn.into`), so a felled tree growing back still counts.
  *
  * @returns {string[]} in discovery order (the first spawned type first)
  */
@@ -216,7 +202,7 @@ export function familyOf(spawnerTypeId) {
     const family = [];
     if (block) {
         // `seen` also stops a loop: a grows loop (A → B → A), which the audit forbids, and the
-        // regrow loop (Tree → Sapling → Tree), which is the point.
+        // regrow loop (a felled Tree growing back), which is the point.
         const seen = new Set();
         const walk = (typeId) => {
             const def = typeId ? getTokenType(typeId) : null;
@@ -242,7 +228,7 @@ export function familyOf(spawnerTypeId) {
  *
  * `tethered` is every Token on the mat with a tether, by tether and type: `tetherId → (typeId → n)`.
  */
-let census = { tokens: null, version: -1, tetherVersion: -1, regVersion: -1, spawners: [], countByType: new Map(), tethered: new Map(), capsByKey: new Map() };
+let census = { tokens: null, version: -1, tetherVersion: -1, regVersion: -1, spawners: [], tethered: new Map() };
 
 function ensureCensus() {
     const { tokens, version } = BoardState.membershipVersion();
@@ -250,12 +236,10 @@ function ensureCensus() {
     const regVersion = registryVersion();
     if (census.tokens === tokens && census.version === version && census.tetherVersion === tetherVersion && census.regVersion === regVersion) return census;
 
-    const countByType = new Map();
     const tethered = new Map();
     const spawners = [];
     for (const t of BoardState.tokens()) {
-        countByType.set(t.typeId, (countByType.get(t.typeId) || 0) + 1);
-        if (!t.turnedFrom && isSpawner(getTokenType(t.typeId))) spawners.push(t);
+        if (isSpawner(getTokenType(t.typeId))) spawners.push(t);
         if (typeof t.tether === 'string') {
             let byType = tethered.get(t.tether);
             if (!byType) {
@@ -265,47 +249,13 @@ function ensureCensus() {
             byType.set(t.typeId, (byType.get(t.typeId) || 0) + 1);
         }
     }
-    census = { tokens, version, tetherVersion, regVersion, spawners, countByType, tethered, capsByKey: new Map() };
+    census = { tokens, version, tetherVersion, regVersion, spawners, tethered };
     return census;
 }
 
-/** Every working spawner on the mat (a turned Token is not one). */
+/** Every working spawner on the mat. */
 function liveSpawners() {
     return ensureCensus().spawners;
-}
-
-/** Tokens on the mat whose type is in `family`, whatever their origin. */
-function countOf(family) {
-    const { countByType } = ensureCensus();
-    let total = 0;
-    // `family` never carries a duplicate type id (`familyOf`'s `seen` set), so
-    // summing each type's count is exactly today's "set membership" filter.
-    for (const typeId of family) total += countByType.get(typeId) || 0;
-    return total;
-}
-
-/**
- * A family's cap: the sum of `allowance` over every live spawner whose family shares a type with
- * it. Two Forests double it; removing one halves it and removes nothing. A spawner that plants
- * within its own reach, and an enemy camp, keep their allowance to themselves and add nothing here. Memoised per family key
- * inside the census, so `spawnerStatus`'s own call and `syncAlerts`' rescan of the same spawner
- * share one answer.
- */
-function capOf(family, spawners = liveSpawners()) {
-    const { capsByKey } = ensureCensus();
-    const key = family.join('|');
-    const cached = capsByKey.get(key);
-    if (cached !== undefined) return cached;
-
-    const set = new Set(family);
-    let cap = 0;
-    for (const s of spawners) {
-        const def = getTokenType(s.typeId);
-        if (plantsWithinReach(def) || isEnemyCampType(s.typeId)) continue;
-        if (familyOf(s.typeId).some(typeId => set.has(typeId))) cap += allowanceOf(def);
-    }
-    capsByKey.set(key, cap);
-    return cap;
 }
 
 /** A family's readable name: the first spawned type's name. */
@@ -345,7 +295,7 @@ function missingUpkeep(def) {
  * @param {() => number} random for the weighted pick and the landing
  * @param {{overMs?: number, advance?: Function}} [ctx] from `TimedChanges.advance`:
  *        how long ago the attempt fell due, and the function that advances a
- *        Token's clocks — the new Token lives that leftover time, so a Sapling
+ *        Token's clocks — the new Token lives that leftover time, so a Token
  *        spawned part-way through a big tick grows as if the ticks had been small
  * @returns {object|null} the spawner itself after a spawn; null when blocked or there was no room
  */
@@ -372,26 +322,31 @@ function tryToSpawn(instance, def, random, ctx) {
 
     const { count, cap } = countsOf(instance, def);
     if (count >= cap) return HELD;                               // at cap: waits
-    if (!MatCap.canPlaceMore(1)) return HELD;                    // the mat's Token cap is full: waits
+    if (!MatCap.canPlaceMore(1)) {                              // the mat's Token cap is full: waits
+        RoomWait.tell(instance.id, { source: RoomWait.SOURCE.SPAWNER, instanceId: instance.id, typeId: instance.typeId });
+        return HELD;
+    }
     if (missingUpkeep(def).length) return HELD;                  // needs an item: waits
 
     const typeId = pickWeighted(block.spawns, random);
     if (!typeId) return HELD;
 
-    // A Forest that plants within its reach lands its Sapling there, with the room its tree will
-    // need, or nowhere (`EffectActions.spotWithin`).
+    // Anything but an enemy camp lands within its reach, with the room a grown Token will need, or
+    // nowhere (`EffectActions.spotWithin`).
     const landed = EffectActions.spawn(
         { payload: { typeId, placement: PLACEMENT.NEAREST_FREE } },
         { self: instance.id },
         random,
-        plantsWithinReach(def) ? { within: reachRadius() } : {}
+        isEnemyCampType(instance.typeId) ? {} : { within: reachRadius() }
     );
     if (!landed) {
         // Nowhere to go. Nothing was paid.
         noRoom.add(instance.id);
+        RoomWait.tell(instance.id, { source: RoomWait.SOURCE.SPAWNER, instanceId: instance.id, typeId: instance.typeId });
         return MISSED;
     }
     noRoom.delete(instance.id);
+    RoomWait.landed(instance.id);
 
     // Paid only now that the Token is down; checked above, so this cannot fail part-way (the tick
     // is single-threaded). Bank first, then loot on the mat.
@@ -437,7 +392,7 @@ function tryToSpawn(instance, def, random, ctx) {
 export function spawnerStatus(instanceId) {
     const instance = BoardState.getTokenById(instanceId);
     const def = instance ? getTokenType(instance.typeId) : null;
-    if (!instance || instance.turnedFrom || !isSpawner(def)) return null;
+    if (!instance || !isSpawner(def)) return null;
 
     const family = familyOf(instance.typeId);
     const base = { ...countsOf(instance, def), familyLabel: familyLabel(family) };
@@ -481,40 +436,24 @@ export function isSleepingCamp(instance) {
 export function spawnerCounts(instanceId) {
     const instance = BoardState.getTokenById(instanceId);
     const def = instance ? getTokenType(instance.typeId) : null;
-    if (!instance || instance.turnedFrom || !isSpawner(def)) return null;
+    if (!instance || !isSpawner(def)) return null;
     return countsOf(instance, def);
 }
 
 /**
- * Every family with a live spawner, once each: `[{ kind, typeIds, count, cap }]`, where `kind` is
- * the family's readable name; a spawner that plants within its reach, and an enemy camp, is a row
- * of its own, named for itself. Feeds the dev tools.
+ * Every working spawner with its live count against its allowance: `[{ id, kind, typeIds, count,
+ * cap }]`, one row each, `kind` its own name. Feeds the dev tools.
  */
 export function familyCounts() {
-    const spawners = liveSpawners();
-    const byKey = new Map();
-    for (const s of spawners) {
+    const rows = [];
+    for (const s of liveSpawners()) {
         const family = familyOf(s.typeId);
+        if (!family.length) continue;
         const def = getTokenType(s.typeId);
-        const ownRow = plantsWithinReach(def) ? 'its reach' : (isEnemyCampType(s.typeId) ? 'its own' : null);
-        if (ownRow) {
-            if (family.length) {
-                byKey.set(`own:${s.id}`, {
-                    id: s.id, kind: `${def?.name || s.typeId} (${ownRow})`, typeIds: family, ...countsOf(s, def)
-                });
-            }
-            continue;
-        }
-        const key = [...family].sort().join('|');
-        if (!family.length || byKey.has(key)) continue;
-        byKey.set(key, {
-            kind: familyLabel(family),
-            typeIds: family,
-            count: countOf(family),
-            cap: capOf(family, spawners)
-        });
+        const own = isEnemyCampType(s.typeId) ? 'its own' : 'its reach';
+        rows.push({ id: s.id, kind: `${def?.name || s.typeId} (${own})`, typeIds: family, ...countsOf(s, def) });
     }
-    return [...byKey.values()];
+    return rows;
 }
 
 /**
@@ -562,7 +501,7 @@ export function syncAlerts() {
         else alerts.delete(s.id);
         EventBus.publish(BOARD_EVENTS.SPAWNER_ALERT_CHANGED, { instanceId: s.id, alert, needs });
     }
-    // A spawner that left the mat, or turned into something else, drops its alert.
+    // A spawner that left the mat, or became something else, drops its alert.
     for (const id of [...alerts.keys()]) {
         if (live.has(id)) continue;
         alerts.delete(id);

@@ -46,6 +46,7 @@ import * as EventClock from '../events/EventClock.js';
 // Enemies' tethers and their step to open space before a crowded fight (`Game.EnemyMotion`).
 import * as EnemyMotion from '../board/EnemyMotion.js';
 import * as SpawnerSystem from '../board/SpawnerSystem.js';
+import * as RoomWait from '../board/RoomWait.js';
 import * as TimedChanges from '../board/TimedChanges.js';
 // The guild's Regions and travel (`Game.Atlas`).
 import * as Atlas from '../atlas/Atlas.js';
@@ -149,6 +150,8 @@ export const EngineBootstrap = {
         RegionRules.init();
         // A settled place's arrival: cleared when its last enemy falls.
         Arrival.init();
+        // No room: each wait is told once, on the board it was told on.
+        RoomWait.init();
 
         // 2. Register Game Loop Intervals
         this._registerTickHandlers();
@@ -199,7 +202,11 @@ export const EngineBootstrap = {
         // tick is seen one tick earlier and draws from the shared random stream
         // in a different order.
         GameLoop.onTick('board_runner', (delta) => {
-            if (GameState.getIsInitialized()) BoardRunner.tick(delta);
+            if (GameState.getIsInitialized()) {
+                BoardRunner.tick(delta);
+                // Arrival enemies that found no room land as room appears.
+                Arrival.landWaiting();
+            }
         }, 40);
 
         // 50: bounty quests. Must run AFTER `board_runner` (40) — see there.

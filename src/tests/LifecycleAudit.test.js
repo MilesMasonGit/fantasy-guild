@@ -68,10 +68,7 @@ function clean() {
                 id: 'token_copper_vein', name: 'Copper Ore Vein', uses: 5,
                 respawn: { mode: 'refill', afterMs: 12000 },
             },
-            token_coast: {
-                id: 'token_coast', name: 'Coast',
-                turns: { into: [{ typeId: 'token_shrimp_coast', weight: 1 }], everyMs: 60000, chance: 30 },
-            },
+            token_coast: { id: 'token_coast', name: 'Coast' },
             token_shrimp_coast: { id: 'token_shrimp_coast', name: 'Shrimp Coast' },
             token_stone_foundation: {
                 id: 'token_stone_foundation', name: 'Stone Foundation',
@@ -145,11 +142,6 @@ describe('Lifecycle audit — errors: references', () => {
             { id: 'token_oak_sapling', field: 'grows.into', includes: ['Oak Sapling (token_oak_sapling)', 'token_ghost', 'does not exist'] });
     });
 
-    it('turns into a Token that does not exist', () => {
-        expectOne((w) => { w.tokens.token_coast.turns.into[0].typeId = 'token_ghost'; },
-            { id: 'token_coast', field: 'turns.into[0].typeId', includes: ['Coast (token_coast)', 'token_ghost'] });
-    });
-
     it('a building recipe outputs a Token that does not exist', () => {
         expectOne((w) => { w.recipes.recipe_build_furnace.outputs[0].tokenId = 'token_ghost'; },
             { id: 'recipe_build_furnace', field: 'outputs[0].tokenId', includes: ['Build Furnace (recipe_build_furnace)', 'token_ghost'] });
@@ -213,9 +205,11 @@ describe('Lifecycle audit — errors: shape rules', () => {
                 { id: 'token_oak_sapling', field: 'grows.cost[0].quantity', includes: 'grow cost quantity' });
         });
 
-        it('a spawner "plants within its reach" that is not a tick', () => {
-            expectOne((w) => { w.tokens.token_oak_forest.spawner.withinReach = 'yes'; },
-                { id: 'token_oak_forest', field: 'spawner.withinReach', includes: 'plants within its reach' });
+        it('retired withinReach and turns fields on old content are ignored, not an error', () => {
+            const w = clean();
+            w.tokens.token_oak_forest.spawner.withinReach = true;
+            w.tokens.token_coast.turns = { into: [{ typeId: 'token_ghost', weight: 1 }], everyMs: 1, chance: 500 };
+            expect(auditLifecycleBlocks(w)).toEqual([]);
         });
     });
 
@@ -224,24 +218,8 @@ describe('Lifecycle audit — errors: shape rules', () => {
             { id: 'token_oak_sapling', field: 'grows.into', includes: 'loops' });
     });
 
-    it('turns into itself', () => {
-        expectOne((w) => { w.tokens.token_coast.turns.into[0].typeId = 'token_coast'; },
-            { id: 'token_coast', field: 'turns.into[0].typeId', includes: 'turns into itself' });
-    });
-
-    it('turns into a Token that has a turns block of its own', () => {
-        expectOne((w) => {
-            w.tokens.token_coast.turns.into.push({ typeId: 'token_tide', weight: 1 });
-            w.tokens.token_tide = {
-                id: 'token_tide', name: 'Tide',
-                turns: { into: [{ typeId: 'token_shrimp_coast', weight: 1 }], everyMs: 5000, chance: 30 },
-            };
-        }, { id: 'token_coast', field: 'turns.into[1].typeId', includes: ['Tide (token_tide)', 'turns block of its own'] });
-    });
-
     it.each([
         ['spawner weight', (w) => { w.tokens.token_oak_forest.spawner.spawns[0].weight = 0; }, 'token_oak_forest', 'spawner.spawns[0].weight'],
-        ['turns weight', (w) => { w.tokens.token_coast.turns.into[0].weight = 1.5; }, 'token_coast', 'turns.into[0].weight'],
         ['upkeep quantity', (w) => { w.tokens.token_oak_forest.spawner.upkeep[0].quantity = -1; }, 'token_oak_forest', 'spawner.upkeep[0].quantity'],
         ['shop quantity', (w) => { w.tokens.token_oak_tree.shop.price[0].quantity = '3'; }, 'token_oak_tree', 'shop.price[0].quantity'],
         ['trickle quantity', (w) => { w.tokens.token_guild_hall.trickle[0].quantity = 0; }, 'token_guild_hall', 'trickle[0].quantity'],
@@ -253,32 +231,8 @@ describe('Lifecycle audit — errors: shape rules', () => {
     it.each([
         ['spawner interval', (w) => { w.tokens.token_oak_forest.spawner.intervalMs = 999; }, 'token_oak_forest', 'spawner.intervalMs'],
         ['grow time', (w) => { w.tokens.token_oak_sapling.grows.afterMs = 0; }, 'token_oak_sapling', 'grows.afterMs'],
-        ['turns every', (w) => { delete w.tokens.token_coast.turns.everyMs; }, 'token_coast', 'turns.everyMs'],
     ])('%s must be at least 1000 ms', (_, mutate, id, field) => {
         expectOne(mutate, { id, field, includes: 'at least 1000 ms' });
-    });
-
-    it.each([0, -5, 101, '30', Number.NaN])('a turns chance of %s is not a percent above 0 and at most 100 (TL-12)', (chance) => {
-        expectOne((w) => { w.tokens.token_coast.turns.chance = chance; },
-            { id: 'token_coast', field: 'turns.chance', includes: 'percent above 0 and at most 100' });
-    });
-
-    it('a turns chance of 100 or a fraction is fine (TL-12)', () => {
-        const world = clean();
-        world.tokens.token_coast.turns.chance = 100;
-        expect(auditLifecycleBlocks(world)).toEqual([]);
-        world.tokens.token_coast.turns.chance = 12.5;
-        expect(auditLifecycleBlocks(world)).toEqual([]);
-    });
-
-    it('a turns block with no chance warns that it rolls the default 30% (TL-12)', () => {
-        expectOne((w) => { delete w.tokens.token_coast.turns.chance; },
-            { severity: 'warning', id: 'token_coast', field: 'turns.chance', includes: 'default 30%' });
-    });
-
-    it('a turns block still carrying the retired lastsMs warns (TL-12)', () => {
-        expectOne((w) => { w.tokens.token_coast.turns.lastsMs = 60000; },
-            { severity: 'warning', id: 'token_coast', field: 'turns.lastsMs', includes: 'nothing reads since TL-12' });
     });
 
     it('an empty spawn list', () => {
@@ -396,14 +350,14 @@ describe('Lifecycle audit — errors: shape rules', () => {
         expect(found).toHaveLength(2);
     });
 
-    it('a Token with more than one of spawner, turns and foundation', () => {
+    it('a Token with more than one of spawner and foundation', () => {
         expectOne((w) => {
             w.tokens.token_shrimp_coast.foundation = { kind: 'wood', skill: 'construction' };
             w.tokens.token_shrimp_coast.spawner = {
                 spawns: [{ typeId: 'token_oak_tree', weight: 1 }], allowance: 1, intervalMs: 5000,
                 upkeep: [{ itemId: 'item_oak_seed', quantity: 1 }],
             };
-        }, { id: 'token_shrimp_coast', field: 'spawner, foundation', includes: 'at most one of spawner, turns and foundation' });
+        }, { id: 'token_shrimp_coast', field: 'spawner, foundation', includes: 'at most one of spawner and foundation' });
     });
 });
 
@@ -528,14 +482,6 @@ describe('Lifecycle audit — warnings (allowed)', () => {
         expect(errors(w)).toEqual([]);
     });
 
-    it('a sold Token that turns into a workable Token is workable (slice 7.3, the Coast)', () => {
-        const w = clean();
-        w.tokens.token_coast.shop = { price: [{ itemId: 'item_oak_wood', quantity: 10 }], section: 'fishing' };
-        w.tokens.token_shrimp_coast.config = { skill: 'fishing', cycleTimeMs: 16000, inputs: [], outputs: [] };
-        expect(warnings(w)).toEqual([]);
-        expect(errors(w)).toEqual([]);
-    });
-
     it('a sold context provider (an Acts as rule) is useful (slice 7.5a, the Anvil)', () => {
         const w = clean();
         w.tokens.token_furnace.shop = { price: [{ itemId: 'item_oak_wood', quantity: 1 }], section: 'general' };
@@ -551,7 +497,7 @@ describe('Lifecycle audit — warnings (allowed)', () => {
         expect(warnings(w)).toEqual([]);
     });
 
-    it('a sold Token that only turns into something unworkable still warns', () => {
+    it('a sold Token with nothing to work or spawn still warns', () => {
         expectOne((w) => { w.tokens.token_coast.shop = { price: [{ itemId: 'item_oak_wood', quantity: 10 }], section: 'fishing' }; },
             { severity: 'warning', id: 'token_coast', field: 'shop', includes: 'no way to be worked or to spawn anything' });
     });
@@ -653,31 +599,25 @@ describe('The derived type knows the lifecycle blocks (slice 4.4)', () => {
             id: 'fx_la_only_spawner', name: 'Only Spawner',
             spawner: { spawns: [{ typeId: 'token_guild_hall', weight: 1 }], allowance: 1, intervalMs: 5000, upkeep: [{ itemId: 'item_oak_wood', quantity: 1 }] },
         },
-        fx_la_only_turns: {
-            id: 'fx_la_only_turns', name: 'Only Turns',
-            turns: { into: [{ typeId: 'token_guild_hall', weight: 1 }], everyMs: 5000, chance: 30 },
-        },
         fx_la_only_foundation: {
             id: 'fx_la_only_foundation', name: 'Only Foundation',
             foundation: { kind: 'stone', skill: 'construction' },
         },
     };
 
-    it('derives spawner, resource and station', () => {
+    it('derives spawner and station', () => {
         expect(deriveTokenType(fixtures.fx_la_only_spawner)).toMatchObject({ type: 'spawner' });
-        expect(deriveTokenType(fixtures.fx_la_only_turns)).toMatchObject({ type: 'resource' });
         expect(deriveTokenType(fixtures.fx_la_only_foundation)).toMatchObject({ type: 'station' });
         for (const def of Object.values(fixtures)) expect(deriveTokenType(def).warn).toBeFalsy();
         // A sapling: only a grows block, no work cycle of its own.
-        const sapling = { id: 'fx_la_only_grows', name: 'Only Grows', grows: { into: 'fx_la_only_turns', afterMs: 30000 } };
+        const sapling = { id: 'fx_la_only_grows', name: 'Only Grows', grows: { into: 'fx_la_only_foundation', afterMs: 30000 } };
         expect(deriveTokenType(sapling)).toMatchObject({ type: 'resource' });
         expect(deriveTokenType(sapling).warn).toBeFalsy();
     });
 
-    it('a Token that also has a work cycle keeps the spawner type; a turning Token with a cycle stays a resource', () => {
+    it('a Token that also has a work cycle keeps the spawner type', () => {
         const cycle = { outputs: [{ itemId: 'item_oak_wood', quantity: 1 }] };
         expect(deriveTokenType({ ...fixtures.fx_la_only_spawner, config: cycle }).type).toBe('spawner');
-        expect(deriveTokenType({ ...fixtures.fx_la_only_turns, config: cycle }).type).toBe('resource');
     });
 
     it('the boot audit has no does nothing finding for any of them', () => {

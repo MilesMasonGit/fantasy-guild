@@ -13,13 +13,13 @@ import {
 } from '../../cms/src/stores/useEntityStore';
 import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 import { syncFiles } from '../../cms/src/engine/recipeSync';
-import { FOUNDATION_KINDS, TURN_DEFAULTS } from '../../cms/src/utils/constants';
-import { FOUNDATION_KINDS as GAME_FOUNDATION_KINDS, TURN_DEFAULTS as GAME_TURN_DEFAULTS } from '../config/registries/tokenConstants.js';
+import { FOUNDATION_KINDS } from '../../cms/src/utils/constants';
+import { FOUNDATION_KINDS as GAME_FOUNDATION_KINDS } from '../config/registries/tokenConstants.js';
 import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
 
 /**
  * Token Lifecycle slice 4.1 — the CMS carries the six new Token blocks
- * (`spawner`, `grows`, `turns`, `foundation`, `shop`, `trickle`) and the new
+ * (`spawner`, `grows`, `foundation`, `shop`, `trickle`) and the new
  * recipe field `foundationKinds` through load → edit → Recalculate → Sync.
  *
  * ## ⚠️ Why this matters
@@ -80,11 +80,6 @@ function everyBlock() {
             upkeep: [{ itemId: i1, quantity: 1 }],
         },
         grows: { into: t3, afterMs: 30000 },
-        turns: {
-            into: [{ typeId: t2, weight: 1 }],
-            everyMs: 90000,
-            chance: 45,
-        },
         foundation: { kind: 'stone', skill: 'construction', tier: 2 },
         shop: {
             price: [{ itemId: i2, quantity: 10 }, { itemId: i3, quantity: 2 }],
@@ -201,21 +196,19 @@ describe('Renames reach the lifecycle blocks', () => {
         expect(token.trickle[0].itemId).toBe('item_fixture_acorn');
     });
 
-    it('renaming a Token repoints spawns, grows.into and turns.into', () => {
+    it('renaming a Token repoints spawns and grows.into', () => {
         const store = useEntityStore.getState();
         const target = store.addToken({ name: 'Fixture Sapling' });
         const id = store.addToken({ name: 'Fixture Forest' });
         useEntityStore.getState().updateToken(id, {
             spawner: { spawns: [{ typeId: target, weight: 1 }], allowance: 2, intervalMs: 20000, upkeep: [] },
             grows: { into: target, afterMs: 30000 },
-            turns: { into: [{ typeId: target, weight: 1 }], everyMs: 5000, chance: 30 },
         });
 
         useEntityStore.getState().renameEntityId(target, 'token_fixture_seedling', 'token');
         const token = useEntityStore.getState().tokens[id];
         expect(token.spawner.spawns[0].typeId).toBe('token_fixture_seedling');
         expect(token.grows.into).toBe('token_fixture_seedling');
-        expect(token.turns.into[0].typeId).toBe('token_fixture_seedling');
     });
 });
 
@@ -261,42 +254,6 @@ describe('The Token editor’s Lifecycle section', () => {
 
         fireEvent.click(within(container.querySelector('[data-block="grows"]')).getByText('Remove'));
         expect(useEntityStore.getState().tokens[id].grows).toBeUndefined();
-    });
-
-    it('a new Turns block starts at the game’s defaults, 1 min and 30%, with no lastsMs (TL-12)', () => {
-        expect(TURN_DEFAULTS).toBe(GAME_TURN_DEFAULTS);
-        expect(makeLifecycleBlock('turns')).toEqual({ into: [], everyMs: 60000, chance: 30 });
-
-        const id = useEntityStore.getState().addToken({ name: 'Turns Fixture' });
-        useEntityStore.getState().setActiveEntity(id, 'token');
-        const { container } = render(React.createElement(TokenEditor));
-        fireEvent.click(within(container.querySelector('[data-block="turns"]')).getByText('Add'));
-        expect(useEntityStore.getState().tokens[id].turns).toEqual({ into: [], everyMs: 60000, chance: 30 });
-    });
-
-    it('edits the chance (clamped to 1–100) and the cycle, and an edit drops a retired lastsMs (TL-12)', () => {
-        const [t1] = tokenIds;
-        const id = useEntityStore.getState().addToken({
-            name: 'Old Turns Fixture',
-            turns: { into: [{ typeId: t1, weight: 1 }], everyMs: 120000, lastsMs: 60000 },
-        });
-        useEntityStore.getState().setActiveEntity(id, 'token');
-        const { container } = render(React.createElement(TokenEditor));
-        const block = container.querySelector('[data-block="turns"]');
-        const chance = within(block).getByLabelText('Chance to turn (%)');
-        const every = within(block).getByLabelText('Roll every (ms)');
-        // An absent chance shows the default the engine will roll.
-        expect(chance.value).toBe('30');
-
-        fireEvent.change(chance, { target: { value: '45' } });
-        expect(useEntityStore.getState().tokens[id].turns).toEqual({ into: [{ typeId: t1, weight: 1 }], everyMs: 120000, chance: 45 });
-        fireEvent.change(chance, { target: { value: '250' } });
-        expect(useEntityStore.getState().tokens[id].turns.chance).toBe(100);
-        fireEvent.change(every, { target: { value: '60000' } });
-        expect(useEntityStore.getState().tokens[id].turns.everyMs).toBe(60000);
-
-        const written = syncPayload()['tokens.json'][id];
-        expect(written.turns).toEqual({ into: [{ typeId: t1, weight: 1 }], everyMs: 60000, chance: 100 });
     });
 
     it('the Shop block edits its group: typing sets it, clearing drops the key, and it reaches tokens.json', () => {
@@ -369,7 +326,6 @@ describe('The Token editor’s Lifecycle section', () => {
 describe('Recalculate files the lifecycle blocks under a sensible type (slice 4.4)', () => {
     const cases = [
         ['spawner', 'spawner'],
-        ['turns', 'resource'],
         ['foundation', 'station'],
         ['camp', 'camp'],
     ];

@@ -9,6 +9,7 @@ import * as BoardState from '../board/BoardState.js';
 import * as Placement from '../board/Placement.js';
 import * as Occupation from '../board/Occupation.js';
 import * as MatPlacement from '../board/MatPlacement.js';
+import * as RoomWait from '../board/RoomWait.js';
 import { HOME_GAP, HOME_DROP } from '../board/HeroMotion.js';
 import { matW, matH, artRadius, artRadiusOf, clampToMat } from '../../config/matGeometry.js';
 import { isGuildHall } from '../board/MatCap.js';
@@ -171,12 +172,33 @@ function standingFor(typeId, id, aim, hall, roster) {
     return first ? { x: first.x, y: first.y } : aim;
 }
 
+/** A fresh arrival enemy, `id` named after its Region, tied to no camp. Not yet on the mat. */
+function arrivalEnemy(typeId, id) {
+    const instance = BoardState.createTokenInstance(typeId, 1, null, BoardState.ORIGIN.SPAWNED, id);
+    // ⚠️ `tether: null`, not absent: an enemy with no tether key is tied to the nearest camp
+    // of its kind on load (`EnemyMotion.attachUntethered`), and these belong to none.
+    BoardState.setTether(instance, null);
+    instance.arrival = true;
+    return instance;
+}
+
+/** Put arrival enemy `instance` down near `aim`, clear of the heroes when it can be. */
+function standArrival(instance, aim, hall, roster) {
+    const at = hall ? standingFor(instance.typeId, instance.id, aim, hall, roster) : aim;
+    return Placement.placeArrivalNear(instance, at);
+}
+
 /**
  * Put a place's arrival on the live mat and mark the mat held. Call once the guild is there.
  *
+ * An enemy that finds no room waits, saved with the arrival as `waiting: [{ id, typeId, x, y }]`
+ * (its aim), and lands as room appears ({@link landWaiting}); until every one has landed and been
+ * beaten the arrival is not cleared. The player is told once (`RoomWait`).
+ *
  * @param {{typeId: string, count: number, boss?: boolean}[]} arrival the cell's arrival
  * @param {{seed?: number}} [options] the place's seed, for where they stand
- * @returns {{ids: string[], unplaced: string[]}} the enemies written, and any that found no room
+ * @returns {{ids: string[], unplaced: string[]}} the enemies written, and the types of any that
+ *          found no room and wait
  */
 export function occupy(arrival, { seed = 0 } = {}) {
     const board = GameState.state?.board;
@@ -191,6 +213,7 @@ export function occupy(arrival, { seed = 0 } = {}) {
     const roster = (GameState.state?.heroes || []).length;
     const spots = spreadOf(seed, total, { centre: hall });
     const regionId = Atlas.activeRegionId() || 'mat';
+    const waiting = [];
     let k = 0;
     for (const row of rows) {
         for (let n = 0; n < (row?.count || 0); n++) {
@@ -198,22 +221,71 @@ export function occupy(arrival, { seed = 0 } = {}) {
             k++;
             // Named after the Region, as its nodes are: no random id, so settling never moves
             // what the game rolls next.
-            const instance = BoardState.createTokenInstance(row.typeId, 1, null, BoardState.ORIGIN.SPAWNED, arrivalId(regionId, k - 1));
-            // ⚠️ `tether: null`, not absent: an enemy with no tether key is tied to the nearest camp
-            // of its kind on load (`EnemyMotion.attachUntethered`), and these belong to none.
-            BoardState.setTether(instance, null);
-            instance.arrival = true;
-            const res = Placement.placeArrivalNear(instance, hall ? standingFor(row.typeId, instance.id, aim, hall, roster) : aim);
+            const instance = arrivalEnemy(row.typeId, arrivalId(regionId, k - 1));
+            const res = standArrival(instance, aim, hall, roster);
             if (res?.success) ids.push(instance.id);
-            else unplaced.push(row.typeId);
+            else {
+                unplaced.push(row.typeId);
+                waiting.push({ id: instance.id, typeId: row.typeId, x: aim.x, y: aim.y });
+            }
         }
     }
-    if (ids.length) {
+    if (ids.length || waiting.length) {
         board.arrival = { ids, cleared: false };
+        if (waiting.length) board.arrival.waiting = waiting;
         EventBus.publish(ENGINE_EVENTS.ATLAS_CHANGED, { reason: 'occupied', regionId: Atlas.activeRegionId() });
     }
-    if (unplaced.length) logger.warn('World', `The arrival found no room for ${unplaced.join(', ')}`);
+    if (waiting.length) {
+        logger.info('World', `The arrival found no room for ${unplaced.join(', ')}: they wait for room`);
+        RoomWait.tell(RoomWait.ARRIVAL_KEY, { source: RoomWait.SOURCE.ARRIVAL });
+    }
     return { ids, unplaced };
+}
+
+/** The live mat's arrival enemies still waiting for room to land, or an empty list. */
+export function waitingEnemies() {
+    const a = Occupation.arrivalOf();
+    return Array.isArray(a?.waiting) ? a.waiting : [];
+}
+
+/** The layout last tried for the waiting enemies: no new search until the mat has changed. */
+let triedLayout = null;
+
+/**
+ * Land the arrival enemies still waiting for room, as far as room allows; once each has landed it
+ * stands and is fought like the rest. Called every tick after the board's (`EngineBootstrap`), but
+ * searches only when the layout has changed since the last try. Nothing is drawn from the random
+ * stream.
+ *
+ * @returns {string[]} the ids that landed just now
+ */
+export function landWaiting() {
+    const a = Occupation.arrivalOf();
+    if (!a || a.cleared === true || !Array.isArray(a.waiting) || !a.waiting.length) return [];
+    const layout = BoardState.layoutVersion();
+    if (triedLayout && triedLayout.tokens === layout.tokens && triedLayout.version === layout.version) return [];
+    const hall = BoardState.tokens().find(isGuildHall) || null;
+    const roster = (GameState.state?.heroes || []).length;
+    const landed = [];
+    const still = [];
+    for (const w of a.waiting) {
+        if (!w?.typeId || !isEnemyDef(getTokenType(w.typeId)) || BoardState.getTokenById(w.id)) continue;
+        const res = standArrival(arrivalEnemy(w.typeId, w.id), { x: w.x, y: w.y }, hall, roster);
+        if (res?.success) {
+            a.ids.push(w.id);
+            landed.push(w.id);
+        } else still.push(w);
+    }
+    if (still.length) a.waiting = still;
+    else {
+        delete a.waiting;
+        RoomWait.landed(RoomWait.ARRIVAL_KEY);
+        // None landed and none waits (their type left the CMS): nothing is left to beat.
+        if (!landed.length) checkCleared();
+    }
+    // The landings above changed the layout: remember the one after them.
+    triedLayout = { ...BoardState.layoutVersion() };
+    return landed;
 }
 
 /**
@@ -224,7 +296,7 @@ export function occupy(arrival, { seed = 0 } = {}) {
  */
 export function checkCleared({ quiet = false } = {}) {
     const a = Occupation.arrivalOf();
-    if (!a || a.cleared === true || Occupation.standingEnemies().length) return false;
+    if (!a || a.cleared === true || Occupation.standingEnemies().length || waitingEnemies().length) return false;
     a.cleared = true;
     const region = Atlas.activeRegion();
     EventBus.publish(ENGINE_EVENTS.ATLAS_CHANGED, { reason: 'cleared', regionId: region?.id ?? null });

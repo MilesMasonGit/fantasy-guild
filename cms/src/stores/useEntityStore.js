@@ -5,7 +5,7 @@ import { useSimulationStore } from './useSimulationStore';
 import {
     statementsOf, makeStatement, KEYWORD,
     effectRefsOf, provisionalName,
-    normaliseScale, FOUNDATION_KINDS, TURN_DEFAULTS, RESPAWN_DEFAULTS,
+    normaliseScale, FOUNDATION_KINDS, RESPAWN_DEFAULTS,
 } from '../utils/constants';
 import { normaliseStarterCamp, emptyStarterCamp, withBankCount, withoutToken } from '../engine/starterCamp';
 import { withPerkRow, withoutPerkRow } from '../engine/skillPerks';
@@ -175,10 +175,6 @@ function renameTokenInLifecycleBlocks(token, oldId, newId) {
     if (next.grows && typeof next.grows === 'object') {
         const needsNearby = remapIds(next.grows.needsNearby);
         if (needsNearby !== next.grows.needsNearby) next.grows = { ...next.grows, needsNearby };
-    }
-    if (next.turns && typeof next.turns === 'object') {
-        const into = remapWeighted(next.turns.into);
-        if (into !== next.turns.into) next.turns = { ...next.turns, into };
     }
     if (next.respawn && next.respawn.into === oldId) {
         next.respawn = { ...next.respawn, into: newId };
@@ -439,10 +435,10 @@ export function makeTokenOutputEntry(tokenId) {
     return { tokenId, chance: 100, minQty: 1, maxQty: 1 };
 }
 
-// Token Lifecycle blocks: `spawner`, `grows`, `turns`, `foundation`, `shop`, `trickle`, `respawn`, `field`, `camp`. These factories only give the editor a starting value when an author ADDS a block.
+// Token Lifecycle blocks: `spawner`, `grows`, `foundation`, `shop`, `trickle`, `respawn`, `field`, `camp`. These factories only give the editor a starting value when an author ADDS a block.
 // ⚠️ Absent means absent: `makeToken` creates none of them and nothing on the load or sync path fills them in, so a Token without a block round-trips without one, byte for byte.
 
-export const TOKEN_LIFECYCLE_BLOCKS = Object.freeze(['spawner', 'grows', 'turns', 'foundation', 'shop', 'trickle', 'respawn', 'field', 'camp']);
+export const TOKEN_LIFECYCLE_BLOCKS = Object.freeze(['spawner', 'grows', 'foundation', 'shop', 'trickle', 'respawn', 'field', 'camp']);
 
 export function makeWeightedTokenEntry(typeId = '') {
     return { typeId, weight: 1 };
@@ -460,9 +456,6 @@ export function makeLifecycleBlock(key) {
             return { spawns: [], allowance: 1, intervalMs: 20000, upkeep: [] };
         case 'grows':
             return { into: '', afterMs: 30000 };
-        case 'turns':
-            // A chance once per cycle, used both ways.
-            return { into: [], everyMs: TURN_DEFAULTS.everyMs, chance: TURN_DEFAULTS.chance };
         case 'foundation':
             return { kind: FOUNDATION_KINDS[0], skill: 'construction' };
         case 'shop':

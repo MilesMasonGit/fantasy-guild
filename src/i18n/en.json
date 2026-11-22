@@ -786,6 +786,15 @@
             "drops": "Drops"
         }
     },
+    "noRoom": {
+        "banner": {
+            "title": "No Room!",
+            "beside": "No room beside {names}.",
+            "token": "the {name}",
+            "arrival": "No room for the enemies arriving here: they wait to land.",
+            "event": "No room for an event to land: it tries again later."
+        }
+    },
     "events": {
         "banner": {
             "title": "Special Event! {event}!"

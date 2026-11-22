@@ -109,19 +109,10 @@ describe('⭐ the Grows block: the Forest it needs in reach, and its seedling', 
     });
 });
 
-describe('⭐ the Spawner block: plants within its reach', () => {
-    it('ticking writes withinReach: true; unticking drops the key', () => {
-        const spawner = { ...token('token_oak_forest').spawner };
-        delete spawner.withinReach;
-        useEntityStore.getState().updateToken('token_oak_forest', { spawner });
+describe('⭐ the Spawner block: no tick for reach', () => {
+    it('offers no plants-within-reach box: every spawner but an enemy camp lands in its reach', () => {
         const { container } = openEditor('token_oak_forest');
-        const box = () => container.querySelector('[data-field="within-reach"]');
-        expect(box().checked).toBe(false);
-        fireEvent.click(box());
-        expect(token('token_oak_forest').spawner.withinReach).toBe(true);
-        expect(box().checked).toBe(true);
-        fireEvent.click(box());
-        expect(token('token_oak_forest').spawner).not.toHaveProperty('withinReach');
+        expect(container.querySelector('[data-field="within-reach"]')).toBeNull();
     });
 });
 
@@ -150,14 +141,12 @@ describe('⭐ through Recalculate and Sync', () => {
                 needsNearby: ['token_oak_forest'], cost: [{ itemId: 'item_oak_seedling', quantity: 1 }]
             }
         });
-        store.updateToken('token_oak_forest', { spawner: { ...token('token_oak_forest').spawner, withinReach: true } });
 
         const first = asFile(syncPayload());
         expect(first['tokens.json'][stump]).toMatchObject({
             clearable: true,
             grows: { into: 'token_oak_sapling', afterMs: 120000, needsNearby: ['token_oak_forest'], cost: [{ itemId: 'item_oak_seedling', quantity: 1 }] }
         });
-        expect(first['tokens.json'].token_oak_forest.spawner.withinReach).toBe(true);
 
         useEntityStore.getState().hydrate(workspaceFromFiles(first));
         const second = asFile(syncPayload());

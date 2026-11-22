@@ -134,8 +134,8 @@ export const BOARD_EVENTS = {
 
     /**
      * A Token became another in place (`EffectActions.transformInstance`): a growth, a regrow, a
-     * turn, a rule's Transforms or a Foundation's build. Payload: `{ fromId, fromTypeId,
-     * instanceId, typeId, cause }`, `cause` one of `grow`, `regrow`, `turn`, `rule`, `build`. A
+     * rule's Transforms or a Foundation's build. Payload: `{ fromId, fromTypeId,
+     * instanceId, typeId, cause }`, `cause` one of `grow`, `regrow`, `rule`, `build`. A
      * hero's order follows the Token through it when the new one is still their job
      * (`Flags.followTransform`).
      */
@@ -160,6 +160,14 @@ export const BOARD_EVENTS = {
      * `reason` one of `EventTokens.ENDED` (worked out, time up, left unworked, demolished).
      */
     EVENT_ENDED: 'board:event_ended',
+
+    /**
+     * Something new found no room on the mat and waits for it, said once per wait (`RoomWait.tell`):
+     * `{ key, source, instanceId, typeId, name }`. `source` is `'station'`, `'spawner'`,
+     * `'arrival'` or `'event'`; `instanceId` and `name` name the waiting station or spawner, null
+     * for an arrival or an event, which have no Token on the mat to mark yet.
+     */
+    NO_ROOM_WAIT: 'board:no_room_wait',
 
     /** A neighbourhood changed, so modifiers need recomputing. Payload: `{ points }` — the mat points the change touched. */
     ADJACENCY_DIRTY: 'board:adjacency_dirty',
