@@ -172,7 +172,7 @@ const fightSource = (instanceId) => `fight:${instanceId}`;
  *
  * An enemy is a Token, and a Token's rules are named library effects. Its combat-axis `Provides`
  * are registered onto the hero's aggregator for as long as the fight lasts, so an enemy authored
- * with `Provides -25 Type Resistance % on Physical` makes its hero softer, using numbers
+ * with `Provides -25 Type Resistance % on Crush` makes its hero softer, using numbers
  * `CombatFormulas` already reads.
  * Registered per fight and removed with it, so the debuff cannot outlive the creature that imposed
  * it.

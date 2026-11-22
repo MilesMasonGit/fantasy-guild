@@ -29,7 +29,7 @@ import { findUnknownRefs } from '../systems/core/unknownRefRule.js';
 import * as CF from '../systems/combat/CombatFormulas.js';
 import { enemyProfileOf, ENEMY_OVERRIDE_FIELDS } from '../config/registries/enemyProfile.js';
 import {
-    DAMAGE_TYPES, DAMAGE_GROUPS, groupOf, typesOfGroup, weaponDamageTypeOf, arrowOf, normaliseResistances,
+    DAMAGE_TYPES, DAMAGE_GROUPS, groupOf, typesOfGroup, withGroupFilled, PLAIN_ENEMY_HIT_TYPE, weaponDamageTypeOf, arrowOf, normaliseResistances,
     resistanceFor, RESISTANCE_STEPS, DEFAULT_DAMAGE_TYPE_BY_STYLE, BAREHANDED_DAMAGE_TYPE
 } from '../config/registries/damageTypes.js';
 import { nextArrowOf } from '../systems/combat/Arrows.js';
@@ -37,8 +37,8 @@ import { heroSide, enemyCardView, heroResistLines } from '../ui/components/comba
 import { itemTipFacts } from '../ui/components/drawer/ItemTip.jsx';
 
 /**
- * Damage types: nine types in three groups; one per weapon, two per shot (the bow's and the
- * arrow's); enemy resistances and weaknesses in fixed steps, a type's line replacing its group's;
+ * Damage types: nine types, named in three groups that carry no numbers; one per weapon, two per
+ * shot (the bow's and the arrow's); enemy resistances and weaknesses in fixed steps, by type only;
  * the hit order (damage × matchup × buffs → crit → × type factor, never below 0 → the fraction
  * sub-roll); flat armour, the floor of 1, flat resistance and Pierce retired.
  */
@@ -58,7 +58,7 @@ const provides = (type, value, category) => ({
 
 registerEffects({
     dt_poisoner: { id: 'dt_poisoner', name: 'Poisoner', statements: [provides(EFFECT_TYPES.TYPE_DAMAGE, 20, 'poison')] },
-    dt_plate: { id: 'dt_plate', name: 'Plate', statements: [provides(EFFECT_TYPES.TYPE_RESIST, 20, 'physical')] },
+    dt_plate: { id: 'dt_plate', name: 'Plate', statements: [provides(EFFECT_TYPES.TYPE_RESIST, 20, 'crush')] },
     dt_old_armour: { id: 'dt_old_armour', name: 'Old Armour', statements: [provides(EFFECT_TYPES.ARMOR, 3)] }
 });
 
@@ -172,24 +172,35 @@ describe('the registry: nine types in three groups', () => {
         expect(arrowOf({ damage: 2 })).toBeNull();
     });
 
-    it('resistances keep the owner\'s steps only; a type\'s line replaces its group\'s', () => {
+    it('resistances keep the owner\'s steps on types only; a group\'s line is dropped', () => {
         expect(RESISTANCE_STEPS).toEqual([100, 50, 25, -25, -50]);
         expect(normaliseResistances({ physical: 50, crush: -50, fire: 30, earth: 50, ice: '-25' }))
-            .toEqual({ physical: 50, crush: -50, ice: -25 });
-        const skeleton = { physical: 50, crush: -50 };
+            .toEqual({ crush: -50, ice: -25 });
+        const skeleton = { slash: 50, crush: -50 };
         expect(resistanceFor(skeleton, 'slash')).toBe(50);
         expect(resistanceFor(skeleton, 'crush')).toBe(-50);
+        expect(resistanceFor(skeleton, 'stab')).toBe(0);
         expect(resistanceFor(skeleton, 'fire')).toBe(0);
-        // A hit typed only by its group (an enemy's plain swing) meets the group's line alone.
-        expect(resistanceFor({ crush: -50 }, 'physical')).toBe(0);
-        expect(resistanceFor(skeleton, 'physical')).toBe(50);
+        // A group carries no number, whichever way it is asked.
+        expect(resistanceFor({ physical: 50 }, 'slash')).toBe(0);
+        expect(resistanceFor({ physical: 50 }, 'physical')).toBe(0);
+    });
+
+    it('an enemy\'s plain swing hits as Crush, like a fist', () => {
+        expect(PLAIN_ENEMY_HIT_TYPE).toBe('crush');
+    });
+
+    it('Set all fills a group\'s three types and drops a line on the group', () => {
+        expect(withGroupFilled({ physical: 10, crush: 5, fire: -10 }, 'physical', 20))
+            .toEqual({ slash: 20, crush: 20, stab: 20, fire: -10 });
+        expect(withGroupFilled(undefined, 'special', 50)).toEqual({ poison: 50, light: 50, dark: 50 });
     });
 });
 
 describe('the enemy profile', () => {
-    it('Armoured is a Physical resistance step (50 %), and slow; flat armour and Pierce are gone', () => {
+    it('Armoured resists Slash, Crush and Stab 50 %, and is slow; flat armour and Pierce are gone', () => {
         const p = profile({ kinds: ['armoured'] });
-        expect(p.resistances).toEqual({ physical: 50 });
+        expect(p.resistances).toEqual({ slash: 50, crush: 50, stab: 50 });
         expect(p.speed).toBe('slow');
         expect(p).not.toHaveProperty('armor');
         expect(p).not.toHaveProperty('pierce');
@@ -199,11 +210,14 @@ describe('the enemy profile', () => {
         expect(profile({ armor: 5, pierce: 2 })).not.toHaveProperty('armor');
     });
 
-    it('the author\'s line replaces the kind\'s for that key; other lines add', () => {
-        expect(profile({ kinds: ['armoured'], resistances: { physical: 25, crush: -50 } }).resistances)
-            .toEqual({ physical: 25, crush: -50 });
+    it('the author\'s line replaces the kind\'s for that type; other lines add', () => {
+        expect(profile({ kinds: ['armoured'], resistances: { slash: 25, crush: -50 } }).resistances)
+            .toEqual({ slash: 25, crush: -50, stab: 50 });
         expect(profile({ kinds: ['armoured'], resistances: { fire: 100 } }).resistances)
-            .toEqual({ physical: 50, fire: 100 });
+            .toEqual({ slash: 50, crush: 50, stab: 50, fire: 100 });
+        // A line still written on a group is ignored: the kind's three lines stand.
+        expect(profile({ kinds: ['armoured'], resistances: { physical: 25 } }).resistances)
+            .toEqual({ slash: 50, crush: 50, stab: 50 });
     });
 
     it('no enemy level brings armour any more', () => {
@@ -248,7 +262,7 @@ describe('the hit order', () => {
         expect(CF.enemyBlow(profile({ hit: 1 }), h).exact).toBe(1);
     });
 
-    it('Type Damage % on the type or its group, Type Resistance % against the plain Physical swing', () => {
+    it('Type Damage % on the type, Type Resistance % against the plain Crush swing', () => {
         const h = hero();
         equip(h, 'dt_venom_dagger');
         equip(h, 'dt_poison_cloak');
@@ -256,19 +270,28 @@ describe('the hit order', () => {
         // Stealth and Ranged are even: 2 × (1 + 20 %).
         expect(CF.heroBlow(h, profile({ style: 'ranged' })).exact).toBeCloseTo(2.4);
         equip(h, 'dt_plate_chest');
-        expect(CF.heroTypeResistance(h, 'physical')).toBe(20);
-        expect(CF.heroTypeResistance(h, 'slash')).toBe(20);          // the group's row counts on its types
+        expect(CF.heroTypeResistance(h, 'crush')).toBe(20);
+        expect(CF.heroTypeResistance(h, 'slash')).toBe(0);
         expect(CF.enemyBlow(profile({ style: 'ranged', hit: 5 }), h).exact).toBe(4);  // 5 × (1 − 20 %)
     });
 
-    it('a type row on one type does not count against a hit typed only by its group', () => {
+    it('a fighter\'s rows on one type add; a row on a group counts on none of its types', () => {
         const agg = new ModifierAggregator('x');
         agg.addModifier({ type: EFFECT_TYPES.TYPE_RESIST, value: 30, bucket: 'flat', source: 's', target: { category: 'slash' } });
+        agg.addModifier({ type: EFFECT_TYPES.TYPE_RESIST, value: 5, bucket: 'flat', source: 't', target: { category: 'slash' } });
         agg.addModifier({ type: EFFECT_TYPES.TYPE_RESIST, value: 10, bucket: 'flat', source: 's', target: { category: 'physical' } });
-        expect(agg.query(EFFECT_TYPES.TYPE_RESIST, 'slash')).toBe(40);
-        expect(agg.query(EFFECT_TYPES.TYPE_RESIST, 'crush')).toBe(10);
-        expect(agg.query(EFFECT_TYPES.TYPE_RESIST, 'physical')).toBe(10);
+        expect(agg.query(EFFECT_TYPES.TYPE_RESIST, 'slash')).toBe(35);
+        expect(agg.query(EFFECT_TYPES.TYPE_RESIST, 'crush')).toBe(0);
         expect(agg.query(EFFECT_TYPES.TYPE_RESIST, 'fire')).toBe(0);
+    });
+
+    it('an enemy\'s own line and the rows an effect lends it add for the type', () => {
+        const enemy = profile({ resistances: { crush: 25 } });
+        enemy.aggregator = new ModifierAggregator('e');
+        enemy.aggregator.addModifier({ type: EFFECT_TYPES.TYPE_RESIST, value: 25, bucket: 'flat', source: 's', target: { category: 'crush' } });
+        enemy.aggregator.addModifier({ type: EFFECT_TYPES.TYPE_RESIST, value: 40, bucket: 'flat', source: 's', target: { category: 'physical' } });
+        expect(CF.enemyTypeResistance(enemy, 'crush')).toBe(50);
+        expect(CF.enemyTypeResistance(enemy, 'slash')).toBe(0);
     });
 
     it('the type factor is never below 0, and full resistance stops a boosted hit', () => {
@@ -362,8 +385,8 @@ describe('a fight end to end', () => {
         const a = play(9000);
         expect(a.hero.length).toBeGreaterThan(0);
         expect(a.hero.every(p => p.hit && p.damage === 0 && p.verdict === 'resisted' && p.types[0] === 'fire')).toBe(true);
-        // The enemy's plain swing is Physical.
-        expect(a.enemy.filter(p => p.hit).every(p => p.types[0] === 'physical' && p.verdict === null)).toBe(true);
+        // The enemy's plain swing is Crush.
+        expect(a.enemy.filter(p => p.hit).every(p => p.types[0] === 'crush' && p.verdict === null)).toBe(true);
     });
 
     it('an Ice wand on the same elemental', () => {
@@ -386,12 +409,13 @@ describe('the Rules rows', () => {
         }
     });
 
-    it('a type row picks a type or a group; its sentence names it', () => {
+    it('a type row picks every type or one type, never a group; its sentence names it', () => {
         const statement = provides(EFFECT_TYPES.TYPE_DAMAGE, 15, 'poison');
         const slot = slotsOf(statement, {}).find(s => s.id === 'category');
-        expect(slot.options.map(o => o.id)).toEqual(['', ...DAMAGE_GROUPS.map(g => g.id), ...DAMAGE_TYPES.map(t => t.id)]);
+        expect(slot.options.map(o => o.id)).toEqual(['', ...DAMAGE_TYPES.map(t => t.id)]);
+        expect(slot.options.map(o => o.id)).not.toEqual(expect.arrayContaining(DAMAGE_GROUPS.map(g => g.id)));
         expect(renderStatement(statement)).toMatch(/^Provides 15% more Poison damage in combat/);
-        expect(renderStatement(provides(EFFECT_TYPES.TYPE_RESIST, 20, 'physical'))).toMatch(/^Provides 20% Physical resistance in combat/);
+        expect(renderStatement(provides(EFFECT_TYPES.TYPE_RESIST, 20, 'crush'))).toMatch(/^Provides 20% Crush resistance in combat/);
         expect(renderStatement(provides(EFFECT_TYPES.TYPE_RESIST, -25, 'fire'))).toMatch(/^Provides a 25% Fire weakness in combat/);
     });
 
@@ -429,14 +453,26 @@ describe('the audits', () => {
         expect(findings.find(f => f.entityId === 'e_plate').entityType).toBe('Effect');
     });
 
+    it('name every line still written on a group: an enemy\'s, a rule\'s, a move\'s', () => {
+        const findings = findUnknownRefs({
+            tokens: { t_wind: { id: 't_wind', name: 'Wind', enemy: { level: 1, resistances: { physical: 25 }, moves: [{ name: 'Gust', damageType: 'elemental' }] } } },
+            items: {},
+            effects: { e_flutter: { id: 'e_flutter', name: 'Flutter', statements: [provides(EFFECT_TYPES.TYPE_RESIST, 50, 'physical')] } }
+        });
+        const text = findings.map(f => `${f.entityId}|${f.field}|${f.message}`);
+        expect(text.some(t => t.startsWith('t_wind|enemy.resistances') && t.includes('Physical group') && t.includes('Slash, Crush, Stab'))).toBe(true);
+        expect(text.some(t => t.startsWith('t_wind|') && t.includes('Elemental group'))).toBe(true);
+        expect(text.some(t => t.startsWith('e_flutter|statements') && t.includes('Physical group') && t.includes('one rule each'))).toBe(true);
+    });
+
     it('say nothing about good content', () => {
         expect(findUnknownRefs({
-            tokens: { t: { id: 't', enemy: { level: 1, kinds: ['armoured'], resistances: { physical: 50, crush: -50 } } } },
+            tokens: { t: { id: 't', enemy: { level: 1, kinds: ['armoured'], resistances: { slash: 50, crush: -50 } } } },
             items: {
                 w: { id: 'w', equipSlot: 'hand', styles: ['magic'], damageType: 'ice' },
                 a: { id: 'a', equipSlot: 'consumable', arrow: { damage: 1, damageType: 'stab' } }
             },
-            effects: { e: { id: 'e', statements: [provides(EFFECT_TYPES.TYPE_DAMAGE, 15, 'special')] } }
+            effects: { e: { id: 'e', statements: [provides(EFFECT_TYPES.TYPE_DAMAGE, 15, 'light')] } }
         })).toEqual([]);
     });
 });
@@ -452,8 +488,8 @@ describe('what the screen shows', () => {
         expect(side.hitParts).toEqual([{ type: 'electric', hit: 1, arrow: false }, { type: 'stab', hit: 1, arrow: true }]);
         expect(side.hit).toBe(2);
         expect(side.arrows).toMatchObject({ itemId: 'dt_arrow', count: 6 });
-        expect(side.resists).toEqual([{ id: 'physical', value: 20 }]);
-        expect(heroResistLines(archer)).toEqual([{ id: 'physical', value: 20 }]);
+        expect(side.resists).toEqual([{ id: 'crush', value: 20 }]);
+        expect(heroResistLines(archer)).toEqual([{ id: 'crush', value: 20 }]);
         expect(side).not.toHaveProperty('armour');
     });
 
@@ -468,10 +504,10 @@ describe('what the screen shows', () => {
         expect(itemTipFacts({ id: 'x', equipSlot: 'hat' })).toMatchObject({ stats: null, arrow: null });
     });
 
-    it('the enemy card: its hit\'s type and its lines as written, groups first', () => {
+    it('the enemy card: its hit\'s type and its lines by type, the Crab still weak to Crush', () => {
         const card = enemyCardView('dt_crab');
-        expect(card.hitType).toBe('physical');
-        expect(card.resists).toEqual([{ id: 'physical', value: 50 }, { id: 'crush', value: -50 }]);
+        expect(card.hitType).toBe('crush');
+        expect(card.resists).toEqual([{ id: 'slash', value: 50 }, { id: 'crush', value: -50 }, { id: 'stab', value: 50 }]);
         expect(card).not.toHaveProperty('armour');
     });
 });

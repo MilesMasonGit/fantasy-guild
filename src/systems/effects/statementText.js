@@ -703,7 +703,7 @@ function bodySegments(statement, names) {
                     d('stacks', 'type'), ' ', d(change, 'value'), carried ? ' on the hero' : COMBAT_REACH);
             }
 
-            // "Provides 15% more Poison damage", "Provides 20% Physical resistance": a type row names its type.
+            // "Provides 15% more Poison damage", "Provides 20% Crush resistance": a type row names its type.
             if (payload.type === EFFECT_TYPES.TYPE_DAMAGE || payload.type === EFFECT_TYPES.TYPE_RESIST) {
                 const n = Number(payload.value) || 0;
                 const size = `${Math.abs(n)}%`;

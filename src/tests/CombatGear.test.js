@@ -344,10 +344,10 @@ describe('a family\'s ability is a Rules effect on the item; the tier raises the
         equipOk(b, 'gear_iron_spear');
         expect(CF.typeDamageBoost(a, 'stab')).toBe(10);
         expect(CF.typeDamageBoost(b, 'stab')).toBe(20);
-        // Copper 2 × 1.1 = 2.2; iron 3 × 1.2 = 3.6; on a Physical resistance of 50 %: 2 × 1.1 × (1 − 50 %).
+        // Copper 2 × 1.1 = 2.2; iron 3 × 1.2 = 3.6; on a Stab resistance of 50 %: 2 × 1.1 × (1 − 50 %).
         expect(CF.heroBlow(a, enemy()).exact).toBeCloseTo(2.2, 9);
         expect(CF.heroBlow(b, enemy()).exact).toBeCloseTo(3.6, 9);
-        expect(CF.heroBlow(a, enemy({ resistances: { physical: 50 } })).exact).toBeCloseTo(1.1, 9);
+        expect(CF.heroBlow(a, enemy({ resistances: { stab: 50 } })).exact).toBeCloseTo(1.1, 9);
     });
 
     it('Bow: +5 Accuracy takes 5 points off the miss chance', () => {

@@ -577,7 +577,7 @@ export const MODIFIER_PALETTE = [
         retired: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'Retired with damage types: does nothing. Use Type Resistance % (Physical for metal armour).'
+        hint: 'Retired with damage types: does nothing. Use Type Resistance % (Slash, Crush and Stab for metal armour).'
     },
     {
         type: EFFECT_TYPES.RESIST_FLAT,
@@ -665,8 +665,7 @@ export const MODIFIER_PALETTE = [
     {
         /**
          * Percent points, in the flat bucket like Crit Chance: the loadout registers flats only.
-         * The type or group is the rule's category; a group's row counts on each of its types
-         * (`ModifierAggregator._isParentOf`).
+         * The type is the rule's category; a row on a group counts on nothing (the audits name it).
          */
         type: EFFECT_TYPES.TYPE_DAMAGE,
         label: 'Type Damage %',
@@ -678,7 +677,7 @@ export const MODIFIER_PALETTE = [
         categories: 'damageType',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'Percent more damage on hits of one damage type or group: 15 means +15% (a Poisoner\'s Cloak: Poison 15). Pick which type.'
+        hint: 'Percent more damage on hits of one damage type: 15 means +15% (a Poisoner\'s Cloak: Poison 15). Pick which type.'
     },
     {
         type: EFFECT_TYPES.TYPE_RESIST,
@@ -691,7 +690,7 @@ export const MODIFIER_PALETTE = [
         categories: 'damageType',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'Percent off hits of one damage type or group taken: 20 means 20% less, a negative number a weakness. Pick which type. An enemy\'s plain swing is Physical.'
+        hint: 'Percent off hits of one damage type taken: 20 means 20% less, a negative number a weakness. Pick which type. An enemy\'s plain swing is Crush.'
     },
     {
         /**

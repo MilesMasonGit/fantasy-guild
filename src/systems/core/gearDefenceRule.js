@@ -1,6 +1,6 @@
 // Gear's defence in the content: a piece's own lines that the game cannot read, and the best stack a hero could wear.
 
-import { DAMAGE_TYPES, DAMAGE_GROUPS, isTypeOrGroupId, groupOf, isDamageGroupId, damageTypeLabel } from '../../config/registries/damageTypes.js';
+import { DAMAGE_TYPES, isDamageTypeId, isDamageGroupId, damageTypeLabel, groupLineAdvice } from '../../config/registries/damageTypes.js';
 import { COMBAT_SKILL_IDS, getSkill } from '../../config/registries/skillRegistry.js';
 import { getCategoryCap } from '../../config/registries/equipmentCategories.js';
 import { isWornGear, gearResistancesOf, isGearResistLine, isDamageCut, GEAR_RESIST_STACK_LIMIT, GEAR_RESIST_LINE_MAX } from '../../config/registries/gearDefence.js';
@@ -16,8 +16,8 @@ import { EFFECT_TYPES, TARGET_CATEGORIES } from '../effects/constants.js';
  *
  * ⚠️ Kept free of the registries: the CMS imports it and hands in its own workspace.
  *
- * **The best stack** (owner: no resistance cap, small numbers instead): for each damage type and
- * group, the most a hero could resist wearing the best piece the content has in every place gear
+ * **The best stack** (owner: no resistance cap, small numbers instead): for each damage type, the
+ * most a hero could resist wearing the best piece the content has in every place gear
  * goes (a hat, a chest, two trinkets, one weapon and one off-hand item or tool, or a two-handed
  * weapon) plus every milestone perk (a hero at 99 holds them all). A piece counts its own lines and
  * its always-on Type Resistance rules at its scale. Elixirs and statuses last a fight and are left
@@ -44,8 +44,10 @@ function itemFieldFindings(def, push) {
             push('resistances', 'has resistances that are not a list of types, so they do nothing. Add them again in the CMS.');
         } else {
             for (const [id, value] of Object.entries(def.resistances)) {
-                if (!isTypeOrGroupId(id)) {
-                    push('resistances', `resists "${id}", which is not a damage type or group — that line is ignored. Pick it again in the CMS.`);
+                if (isDamageGroupId(id)) {
+                    push('resistances', `resists ${damageTypeLabel(id)} ${value} ${groupLineAdvice(id)}.`);
+                } else if (!isDamageTypeId(id)) {
+                    push('resistances', `resists "${id}", which is not a damage type — that line is ignored. Pick it again in the CMS.`);
                 } else if (!isGearResistLine(value)) {
                     push('resistances', `resists ${damageTypeLabel(id)} ${value}, not a whole number from −${GEAR_RESIST_LINE_MAX} to ${GEAR_RESIST_LINE_MAX} other than 0. Set it again in the CMS.`);
                 }
@@ -82,16 +84,9 @@ function itemFieldFindings(def, push) {
     }
 }
 
-/**
- * What one piece resists of `id` (a type, or a group for a hit typed only by its group): its own
- * lines (a group's counting on its types) and its always-on Type Resistance rules at its scale.
- */
+/** What one piece resists of type `id`: its own line and its always-on Type Resistance rules at its scale. */
 function pieceResistance(def, id, effects) {
-    let total = 0;
-    const lines = gearResistancesOf(def);
-    for (const [line, value] of Object.entries(lines)) {
-        if (line === id || (!isDamageGroupId(id) && line === groupOf(id))) total += value;
-    }
+    let total = gearResistancesOf(def)[id] || 0;
     for (const ref of effectRefsOf(def)) total += rowsResistance(effects?.[ref.effectId], ref, id);
     return total;
 }
@@ -108,9 +103,7 @@ function rowsResistance(entry, ref, id) {
         const value = Number(payload.value);
         if (!Number.isFinite(value)) continue;
         const category = payload.category || TARGET_CATEGORIES.ALL;
-        const counts = category === TARGET_CATEGORIES.ALL || category === id
-            || (!isDamageGroupId(id) && category === groupOf(id));
-        if (counts) total += value;
+        if (category === TARGET_CATEGORIES.ALL || category === id) total += value;
     }
     return total;
 }
@@ -141,7 +134,7 @@ function bestHands(candidates) {
 }
 
 /**
- * The best stack of worn gear and perks for each damage type and group.
+ * The best stack of worn gear and perks for each damage type.
  * @param {{ items?: object, effects?: object, skillPerks?: object }} content
  * @returns {Array<{ id: string, total: number, pieces: Array<{ itemId: string, name: string, value: number }>, perks: number }>}
  */
@@ -154,7 +147,7 @@ export function bestResistanceStacks({ items, effects, skillPerks } = {}) {
         }
     }
     const out = [];
-    for (const { id } of [...DAMAGE_GROUPS, ...DAMAGE_TYPES]) {
+    for (const { id } of DAMAGE_TYPES) {
         const byCategory = new Map();
         const hands = [];
         for (const def of gear) {
@@ -184,7 +177,7 @@ export function bestResistanceStacks({ items, effects, skillPerks } = {}) {
 }
 
 /**
- * Every finding about gear's defence: each piece's unreadable lines, then each type or group whose
+ * Every finding about gear's defence: each piece's unreadable lines, then each type whose
  * best stack reaches {@link GEAR_RESIST_STACK_LIMIT}.
  * @param {{ items?: object, effects?: object, skillPerks?: object }} content
  */

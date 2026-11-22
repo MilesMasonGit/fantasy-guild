@@ -6,8 +6,11 @@
 
 /**
  * Only weapons and ammo give a hit its type: a weapon has one (`damageType` on the item), a ranged
- * shot two (the bow's and the arrow's). Gear and effects only boost or resist a type or a whole
- * group (`concept_combat_v2.md`).
+ * shot two (the bow's and the arrow's). Gear and effects only boost or resist a type.
+ *
+ * Only the nine types carry numbers. A group only names a set of types: the CMS's Set all buttons
+ * fill a group's three types at once, and the audits name any line still written on a group, which
+ * the game ignores.
  */
 
 /** @type {ReadonlyArray<{id: string, label: string}>} */
@@ -35,8 +38,6 @@ const GROUP_BY_ID = new Map(DAMAGE_GROUPS.map(g => [g.id, g]));
 
 export const isDamageTypeId = (id) => TYPE_BY_ID.has(id);
 export const isDamageGroupId = (id) => GROUP_BY_ID.has(id);
-/** A type or a group: what a resistance, a weakness or a Type Damage / Resistance row may name. */
-export const isTypeOrGroupId = (id) => TYPE_BY_ID.has(id) || GROUP_BY_ID.has(id);
 
 /** The group a type belongs to; a group is its own. Null for anything else. */
 export function groupOf(id) {
@@ -47,6 +48,17 @@ export function groupOf(id) {
 /** The types in a group, in registry order. */
 export function typesOfGroup(groupId) {
     return DAMAGE_TYPES.filter(t => t.group === groupId).map(t => t.id);
+}
+
+/**
+ * The CMS's Set all: a copy of a resistances map with each of a group's three types set to `value`
+ * (any line already on one replaced) and any line on the group itself gone.
+ */
+export function withGroupFilled(map, groupId, value) {
+    const next = { ...(map && typeof map === 'object' && !Array.isArray(map) ? map : {}) };
+    delete next[groupId];
+    for (const id of typesOfGroup(groupId)) next[id] = value;
+    return next;
 }
 
 /** A type's or a group's English name (the CMS's; the game's own words are in `en.json`). */
@@ -72,11 +84,8 @@ export const BAREHANDED_DAMAGE_TYPE = 'crush';
 /** An arrow authored with no type. */
 export const DEFAULT_ARROW_DAMAGE_TYPE = 'stab';
 
-/**
- * What an enemy's plain swing hits with: the Physical group as a whole, so a hero's Physical
- * resistance takes from it and a resistance to one Physical type does not.
- */
-export const PLAIN_ENEMY_HIT_TYPE = 'physical';
+/** What an enemy's plain swing hits with: Crush, like a fist. */
+export const PLAIN_ENEMY_HIT_TYPE = 'crush';
 
 /**
  * The type a weapon hits with: the `damageType` it names, else its style's default
@@ -109,15 +118,15 @@ export function arrowOf(item) {
 
 /**
  * The steps an enemy's resistance may take (owner): resist 25, 50 or 100 %, weak 25 or 50 %. Stored
- * signed, a weakness negative: `resistances: { physical: 50, crush: -50 }`.
+ * signed, a weakness negative: `resistances: { slash: 50, crush: -50 }`.
  */
 export const RESISTANCE_STEPS = Object.freeze([100, 50, 25, -25, -50]);
 
 export const isResistanceStep = (n) => RESISTANCE_STEPS.includes(n);
 
 /**
- * An enemy's resistances as the engine reads them: known types and groups only, each at an
- * allowed step. Anything else is dropped (the content audits name it).
+ * An enemy's resistances as the engine reads them: known types only, each at an allowed step.
+ * Anything else, a group's line included, is dropped (the content audits name it).
  * @returns {Object<string, number>}
  */
 export function normaliseResistances(raw) {
@@ -125,35 +134,43 @@ export function normaliseResistances(raw) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
     for (const [id, value] of Object.entries(raw)) {
         const n = Number(value);
-        if (isTypeOrGroupId(id) && isResistanceStep(n)) out[id] = n;
+        if (isDamageTypeId(id) && isResistanceStep(n)) out[id] = n;
     }
     return out;
 }
 
-/**
- * How much an enemy resists a hit of type (or group) `id`, in signed percent: a line naming the type
- * replaces its group's (owner: "Physical resist 50 %, Crush weak 50 %" reads as written). A hit
- * typed only by its group (an enemy's plain swing) meets the group's line alone.
- */
+/** How much an enemy's own lines resist a hit of type `id`, in signed percent: that type's line alone. */
 export function resistanceFor(resistances, id) {
-    if (!resistances) return 0;
-    if (isDamageGroupId(id)) return resistances[id] ?? 0;
-    if (resistances[id] != null) return resistances[id];
-    const group = TYPE_BY_ID.get(id)?.group;
-    return (group && resistances[group]) ?? 0;
+    if (!resistances || !isDamageTypeId(id)) return 0;
+    return Number(resistances[id]) || 0;
 }
 
 /**
- * One problem with an authored resistances block, as a sentence for the audits, or none.
+ * What the audits say after naming a line written on a group (which the game ignores): "on the
+ * Physical group, which carries no number — …". A rule names one type, so it splits into three
+ * rules; a resistances block has a Set all button.
+ */
+export function groupLineAdvice(groupId, { rule = false } = {}) {
+    const label = damageTypeLabel(groupId);
+    const types = typesOfGroup(groupId).map(damageTypeLabel).join(', ');
+    const how = rule ? `one rule each for ${types}` : `${types} in the CMS (Set all ${label})`;
+    return `on the ${label} group, which carries no number — it is ignored. Split it into ${how}`;
+}
+
+/**
+ * Each problem with an authored resistances block, as a sentence for the audits (what is wrong and
+ * what to do), or none.
  * @returns {string[]}
  */
 export function resistanceProblems(raw) {
     if (raw == null) return [];
-    if (typeof raw !== 'object' || Array.isArray(raw)) return ['its resistances are not a list of types'];
+    const again = ' — that line is ignored. Pick it again in the CMS';
+    if (typeof raw !== 'object' || Array.isArray(raw)) return [`its resistances are not a list of types${again}`];
     const out = [];
     for (const [id, value] of Object.entries(raw)) {
-        if (!isTypeOrGroupId(id)) out.push(`a resistance names "${id}", which is not a damage type or group`);
-        else if (!isResistanceStep(Number(value))) out.push(`its ${damageTypeLabel(id)} resistance is ${value}, not one of the steps (resist 25, 50 or 100; weak 25 or 50)`);
+        if (isDamageGroupId(id)) out.push(`its ${damageTypeLabel(id)} ${value} resistance is ${groupLineAdvice(id)}`);
+        else if (!isDamageTypeId(id)) out.push(`a resistance names "${id}", which is not a damage type${again}`);
+        else if (!isResistanceStep(Number(value))) out.push(`its ${damageTypeLabel(id)} resistance is ${value}, not one of the steps (resist 25, 50 or 100; weak 25 or 50)${again}`);
     }
     return out;
 }

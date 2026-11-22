@@ -147,7 +147,7 @@ function isFighterRule(statement) {
     return !!getPaletteEntry(statement?.payload?.type)?.fromGuild;
 }
 
-/** A type row's damage type or group by name, or "every type" when it names none. */
+/** A type row's damage type by name, or "every type" when it names none. */
 const typeName = (payload) => (payload.category ? damageTypeLabel(payload.category) : 'every type');
 
 /**

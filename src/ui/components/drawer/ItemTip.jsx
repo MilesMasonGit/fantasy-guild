@@ -3,7 +3,7 @@ import { t } from '../../../i18n/index.js';
 import { categoryOfItem } from '../../../config/registries/equipmentConstants.js';
 import { toolOf, toolKindLabel, handsOf, HANDS } from '../../../config/registries/toolKinds.js';
 import { weaponStyleOf, isOffHand, gearRequirements } from '../../../config/registries/weaponStyles.js';
-import { weaponDamageTypeOf, arrowOf, DAMAGE_GROUPS, DAMAGE_TYPES } from '../../../config/registries/damageTypes.js';
+import { weaponDamageTypeOf, arrowOf, DAMAGE_TYPES } from '../../../config/registries/damageTypes.js';
 import { gearResistancesOf, gearDamageCutOf } from '../../../config/registries/gearDefence.js';
 import { COMBAT_SKILL_IDS } from '../../../config/registries/skillRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
@@ -17,10 +17,10 @@ export function itemTypeLabel(item) {
     return label && label !== key ? label : (item?.type || t('itemTip.type.item'));
 }
 
-/** A worn piece's resistance lines, groups before types: "Resists Physical 20%", "Weak to Fire 10%". */
+/** A worn piece's resistance lines, in type order: "Resists Crush 20%", "Weak to Fire 10%". */
 function resistLines(item) {
     const lines = gearResistancesOf(item);
-    return [...DAMAGE_GROUPS, ...DAMAGE_TYPES]
+    return DAMAGE_TYPES
         .filter(({ id }) => lines[id])
         .map(({ id }) => t(lines[id] > 0 ? 'itemTip.resists' : 'itemTip.weakTo', {
             type: t(`fight.types.${id}`), n: Math.abs(lines[id])

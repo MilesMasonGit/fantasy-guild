@@ -38,7 +38,7 @@ import { registerStatusFixtures, SUNDER, VENOM } from './fixtures/statusEffects.
 import { ROLE } from '../config/registries/roleRegistry.js';
 
 /**
- * Gear and defence (brief 280 V2): a worn piece lends resistances in percent by type or group and
+ * Gear and defence (brief 280 V2): a worn piece lends resistances in percent by type and
  * lists a damage cut to named styles; only the weapon swung lends, and the second hand is for an
  * off-hand item (a shield acts like a piece of body armour); Sunder, a stacking status, lowers a
  * fighter's resistances for the fight, never below 0; an arrow's rules count on its own shot; the
@@ -85,11 +85,11 @@ registerItems({
     gd_spear: weapon('gd_spear', 'Sundering Spear', { styles: ['melee'], damage: 2, damageType: 'stab', effects: [{ effectId: 'gd_sundering', scale: 1 }] }),
     gd_bow: weapon('gd_bow', 'Bow', { styles: ['ranged'], damage: 1, damageType: 'stab' }),
     gd_pick: { id: 'gd_pick', name: 'Pick', type: 'tool', equipSlot: 'hand', stackable: true, tool: { kind: 'pickaxe', tier: 1 } },
-    gd_shield: armour('gd_shield', 'Kite Shield', 'hand', { offHand: true, resistances: { physical: 15, fire: 10 }, effects: [{ effectId: 'gd_bulwark', scale: 1 }] }),
-    gd_buckler: armour('gd_buckler', 'Buckler', 'hand', { offHand: true, resistances: { physical: 5 } }),
-    gd_plate: armour('gd_plate', 'Iron Chestplate', 'chest', { resistances: { physical: 20 }, damageCut: { magic: 30, stealth: 15 } }),
-    gd_helm: armour('gd_helm', 'Iron Helmet', 'hat', { resistances: { physical: 10, slash: 10 }, damageCut: { magic: 15 } }),
-    gd_gated_helm: armour('gd_gated_helm', 'Gated Helmet', 'hat', { resistances: { physical: 40 }, skillRequired: 'melee', levelRequired: 30 }),
+    gd_shield: armour('gd_shield', 'Kite Shield', 'hand', { offHand: true, resistances: { slash: 15, crush: 15, stab: 15, fire: 10 }, effects: [{ effectId: 'gd_bulwark', scale: 1 }] }),
+    gd_buckler: armour('gd_buckler', 'Buckler', 'hand', { offHand: true, resistances: { slash: 5, crush: 5, stab: 5 } }),
+    gd_plate: armour('gd_plate', 'Iron Chestplate', 'chest', { resistances: { slash: 20, crush: 20, stab: 20 }, damageCut: { magic: 30, stealth: 15 } }),
+    gd_helm: armour('gd_helm', 'Iron Helmet', 'hat', { resistances: { crush: 10, slash: 20 }, damageCut: { magic: 15 } }),
+    gd_gated_helm: armour('gd_gated_helm', 'Gated Helmet', 'hat', { resistances: { crush: 40 }, skillRequired: 'melee', levelRequired: 30 }),
     gd_fur: armour('gd_fur', 'Fur Cloak', 'chest', { resistances: { ice: 25, fire: -10 } }),
     gd_bodkin: { id: 'gd_bodkin', name: 'Sundering Bodkin', type: 'material', equipSlot: 'consumable', stackable: true, arrow: { damage: 1, damageType: 'stab' }, effects: [{ effectId: 'gd_sundering', scale: 1 }] },
     gd_plain_arrow: { id: 'gd_plain_arrow', name: 'Plain Arrow', type: 'material', equipSlot: 'consumable', stackable: true, arrow: { damage: 1, damageType: 'stab' } },
@@ -169,8 +169,9 @@ afterEach(() => {
 });
 
 describe('a worn piece\'s fields: resistances and a damage cut', () => {
-    it('reads known types and groups at any number but 0, held within ±100; cuts by combat style, 1 to 100', () => {
-        expect(gearResistancesOf(getItem('gd_helm'))).toEqual({ physical: 10, slash: 10 });
+    it('reads known types at any number but 0, held within ±100, and no group; cuts by combat style, 1 to 100', () => {
+        expect(gearResistancesOf(getItem('gd_helm'))).toEqual({ crush: 10, slash: 20 });
+        expect(gearResistancesOf({ equipSlot: 'hat', resistances: { physical: 10, elemental: 5, crush: 5 } })).toEqual({ crush: 5 });
         expect(gearResistancesOf({ equipSlot: 'chest', resistances: { fire: -10, earth: 20, ice: 0, dark: 250 } }))
             .toEqual({ fire: -10, dark: 100 });
         expect(gearDamageCutOf(getItem('gd_plate'))).toEqual({ magic: 30, stealth: 15 });
@@ -193,24 +194,25 @@ describe('a worn piece\'s fields: resistances and a damage cut', () => {
 });
 
 describe('resistances from gear', () => {
-    it('a Physical line takes its share off an enemy\'s plain swing, and the swing says Resisted', () => {
+    it('a Crush line takes its share off an enemy\'s plain swing, and the swing says Resisted', () => {
         const hero = addHero('Dara', { melee: 1 });
         const enemy = profile({ hit: 10 });
         expect(CF.enemyBlow(enemy, hero).exact).toBe(10);
         equip(hero, 'gd_plate');
-        expect(CF.heroTypeResistance(hero, 'physical')).toBe(20);
+        expect(CF.heroTypeResistance(hero, 'crush')).toBe(20);
         const blow = CF.enemyBlow(enemy, hero);
         expect(blow.exact).toBe(8);
         expect(CF.blowVerdict(blow.parts)).toBe('resisted');
     });
 
-    it('lines add: a group\'s counts on each of its types beside a type\'s own, across pieces', () => {
+    it('lines add: every line for a type, across pieces', () => {
         const hero = addHero('Dara', { melee: 1 });
         equip(hero, 'gd_plate');
         equip(hero, 'gd_helm');
-        expect(CF.heroTypeResistance(hero, 'physical')).toBe(30);
         expect(CF.heroTypeResistance(hero, 'slash')).toBe(40);
         expect(CF.heroTypeResistance(hero, 'crush')).toBe(30);
+        expect(CF.heroTypeResistance(hero, 'stab')).toBe(20);
+        expect(CF.heroTypeResistance(hero, 'physical')).toBe(0);
         expect(CF.heroTypeResistance(hero, 'fire')).toBe(0);
     });
 
@@ -224,10 +226,10 @@ describe('resistances from gear', () => {
     it('a piece below its level lends nothing until the hero reaches it', () => {
         const hero = addHero('Dara', { melee: 30 });
         equip(hero, 'gd_gated_helm');
-        expect(CF.heroTypeResistance(hero, 'physical')).toBe(40);
+        expect(CF.heroTypeResistance(hero, 'crush')).toBe(40);
         hero.skills.melee = { level: 10, xp: 0 };
         EquipmentManager.recalculateEquipmentModifiers(hero);
-        expect(CF.heroTypeResistance(hero, 'physical')).toBe(0);
+        expect(CF.heroTypeResistance(hero, 'crush')).toBe(0);
     });
 
     it('in a fight: an armoured hero takes less from every swing, each said Resisted', () => {
@@ -240,9 +242,9 @@ describe('resistances from gear', () => {
         const seen = play(20000);
         const hits = seen.enemy.filter(p => p.hit);
         expect(hits.length).toBeGreaterThan(3);
-        // 10 Physical, 35 % resisted: 6.5 rolls 6 or 7 (every draw is 0.5 here, not under the
+        // 10 Crush, 35 % resisted: 6.5 rolls 6 or 7 (every draw is 0.5 here, not under the
         // fraction's 0.5: 6).
-        expect(hits.every(p => p.types[0] === 'physical' && p.verdict === 'resisted' && p.damage === 6)).toBe(true);
+        expect(hits.every(p => p.types[0] === 'crush' && p.verdict === 'resisted' && p.damage === 6)).toBe(true);
     });
 });
 
@@ -289,7 +291,7 @@ describe('a damage cut to named styles', () => {
         const side = heroSide(mage);
         expect(side.hit).toBeCloseTo(bare * 0.7, 10);
         expect(side.hitLines).toContain('Magic damage cut by gear: −30%');
-        expect(side.resists).toEqual([{ id: 'physical', value: 20 }]);
+        expect(side.resists).toEqual([{ id: 'slash', value: 20 }, { id: 'crush', value: 20 }, { id: 'stab', value: 20 }]);
     });
 });
 
@@ -300,7 +302,7 @@ describe('the hands: one weapon lends; an off-hand item beside it', () => {
         equip(hero, 'gd_shield');
         expect(held(hero)).toEqual(['gd_sword', 'gd_shield']);
         expect(CF.getHeroWeapon(hero).id).toBe('gd_sword');
-        expect(CF.heroTypeResistance(hero, 'physical')).toBe(15);
+        expect(CF.heroTypeResistance(hero, 'crush')).toBe(15);
         expect(CF.heroTypeResistance(hero, 'fire')).toBe(10);
         expect(CF.heroDodge(hero)).toBe(5);
     });
@@ -310,7 +312,7 @@ describe('the hands: one weapon lends; an off-hand item beside it', () => {
         equip(hero, 'gd_shield');
         expect(CF.getHeroWeapon(hero)).toBeNull();
         expect(CF.getHeroCombatStyle(hero)).toBe('melee');
-        expect(CF.heroTypeResistance(hero, 'physical')).toBe(15);
+        expect(CF.heroTypeResistance(hero, 'crush')).toBe(15);
     });
 
     it('⭐ a weapon in the second hand lends nothing, whatever its style: two keen daggers crit as one', () => {
@@ -404,7 +406,7 @@ describe('Sunder: a stacking status lowering every resistance for the fight', ()
             .toContain('Provides Sunder 10: every resistance 10 points lower, never below 0, in combat');
     });
 
-    it('⭐ a spear\'s hits sunder an Armoured crab: its Physical 50 falls 10 a stack to 20, its Crush weakness stays, and it ends with the fight', () => {
+    it('⭐ a spear\'s hits sunder an Armoured crab: its Stab 50 falls 10 a stack to 20, its Crush weakness stays, and it ends with the fight', () => {
         vi.spyOn(Math, 'random').mockReturnValue(0.5);
         const hero = addHero('Gus', { melee: 1 });
         equip(hero, 'gd_spear');
@@ -421,7 +423,7 @@ describe('Sunder: a stacking status lowering every resistance for the fight', ()
         expect(CF.enemyTypeResistance(fight.enemy, 'crush')).toBe(-50);
         expect(CF.enemyTypeResistance(fight.enemy, 'fire')).toBe(0);
         expect([...new Set(resists)]).toEqual([50, 40, 30, 20]);
-        expect(liveEnemyResistLines(fight.enemy)).toEqual([{ id: 'physical', value: 20 }, { id: 'crush', value: -50 }]);
+        expect(liveEnemyResistLines(fight.enemy)).toEqual([{ id: 'slash', value: 20 }, { id: 'crush', value: -50 }, { id: 'stab', value: 20 }]);
 
         Orders.orderAt(hero.id, { x: 50, y: 50 });
         play(500);
@@ -432,7 +434,7 @@ describe('Sunder: a stacking status lowering every resistance for the fight', ()
         const hero = addHero('Dara', { melee: 1 });
         equip(hero, 'gd_plate');
         hero.aggregator.addModifier({ type: EFFECT_TYPES.SUNDER, value: 15, bucket: 'flat', source: 'test' });
-        expect(CF.heroTypeResistance(hero, 'physical')).toBe(5);
+        expect(CF.heroTypeResistance(hero, 'crush')).toBe(5);
     });
 });
 
@@ -494,7 +496,7 @@ describe('the Venom status (once Poison)', () => {
         if (slime) expect(slime.statements[0].payload.effectId).toBe('effect_venom');
     });
 
-    it('a Venomous enemy lands Venom on the hero it hits; the hero\'s gear resists its Physical swing', () => {
+    it('a Venomous enemy lands Venom on the hero it hits; the hero\'s gear resists its Crush swing', () => {
         vi.spyOn(Math, 'random').mockReturnValue(0.5);
         const hero = addHero('Dara', { melee: 1 });
         equip(hero, 'gd_sword');
@@ -510,14 +512,14 @@ describe('the Venom status (once Poison)', () => {
 describe('the item tooltip', () => {
     it('lists what a piece resists, and in red the styles it cuts; an off-hand item says so', () => {
         const plate = itemTipFacts(getItem('gd_plate'));
-        expect(plate.resists).toEqual(['Resists Physical 20%']);
+        expect(plate.resists).toEqual(['Resists Slash 20%', 'Resists Crush 20%', 'Resists Stab 20%']);
         expect(plate.cuts).toEqual(['Magic damage −30%', 'Stealth damage −15%']);
         const fur = itemTipFacts(getItem('gd_fur'));
         expect(fur.resists).toEqual(['Weak to Fire 10%', 'Resists Ice 25%']);
         const shield = itemTipFacts(getItem('gd_shield'));
         expect(shield.offHand).toBe('Off hand: beside a weapon, never swung');
         expect(shield.stats).toBeNull();
-        expect(shield.resists).toEqual(['Resists Physical 15%', 'Resists Fire 10%']);
+        expect(shield.resists).toEqual(['Resists Slash 15%', 'Resists Crush 15%', 'Resists Stab 15%', 'Resists Fire 10%']);
     });
 });
 
@@ -549,11 +551,20 @@ describe('the audit: field problems and the best stack', () => {
         expect(say('f')).toContain('is a tool and marked off-hand');
     });
 
+    it('names a line still written on a group, which lends nothing, and how to split it', () => {
+        const findings = gearDefenceFindings({ items: { hat: item('hat', { equipSlot: 'hat', resistances: { physical: 5, elemental: 10, fire: 5 } }) }, effects: {} });
+        const messages = findings.filter(f => f.entityId === 'hat' && f.field === 'resistances').map(f => f.message);
+        expect(messages).toHaveLength(2);
+        expect(messages[0]).toContain('Physical 5 on the Physical group');
+        expect(messages[0]).toContain('Slash, Crush, Stab');
+        expect(messages[1]).toContain('Elemental 10 on the Elemental group');
+    });
+
     it('⭐ adds up the best piece in every place and names a type the stack takes to 100 %', () => {
         const items = {
             hat: item('hat', { equipSlot: 'hat', resistances: { fire: 30 } }),
             hat2: item('hat2', { equipSlot: 'hat', resistances: { fire: 20 } }),
-            chest: item('chest', { equipSlot: 'chest', resistances: { elemental: 25 } }),
+            chest: item('chest', { equipSlot: 'chest', resistances: { fire: 25 } }),
             ring: item('ring', { equipSlot: 'trinket', resistances: { fire: 10 } }),
             ring2: item('ring2', { equipSlot: 'trinket', effects: [{ effectId: 'warded', scale: 2 }] }),
             ring3: item('ring3', { equipSlot: 'trinket', resistances: { fire: 5 } }),
@@ -565,7 +576,7 @@ describe('the audit: field problems and the best stack', () => {
         };
         const effects = { warded: { id: 'warded', name: 'Warded', statements: [provides(EFFECT_TYPES.TYPE_RESIST, 10, 'fire')] } };
         const fire = bestResistanceStacks({ items, effects }).find(s => s.id === 'fire');
-        // Hat 30, chest 25 (its group's line), trinkets 20 (Warded at scale 2) and 10, shield 15 and
+        // Hat 30, chest 25, trinkets 20 (Warded at scale 2) and 10, shield 15 and
         // sword 5 (20 beats the two-hander's 18; two swords never stack).
         expect(fire.total).toBe(105);
         expect(fire.pieces.map(p => p.itemId).sort()).toEqual(['chest', 'hat', 'ring', 'ring2', 'shield', 'sword']);
@@ -574,10 +585,11 @@ describe('the audit: field problems and the best stack', () => {
         expect(findings[0].entityId).toBe('hat');
         expect(findings[0].message).toContain('resist Fire 105%');
 
-        // A group's best stack too (an enemy's plain swing is the Physical group).
-        const physical = bestResistanceStacks({ items: { a: item('a', { equipSlot: 'chest', resistances: { physical: 60, slash: -50 } }), b: item('b', { equipSlot: 'hat', resistances: { physical: 45 } }) }, effects: {} });
-        expect(physical.find(s => s.id === 'physical').total).toBe(105);
-        expect(physical.find(s => s.id === 'slash').total).toBe(55);
+        // Stacks are by type only: a group's line counts nowhere.
+        const crush = bestResistanceStacks({ items: { a: item('a', { equipSlot: 'chest', resistances: { crush: 60, physical: 60 } }), b: item('b', { equipSlot: 'hat', resistances: { crush: 45 } }) }, effects: {} });
+        expect(crush.find(s => s.id === 'crush').total).toBe(105);
+        expect(crush.find(s => s.id === 'slash').total).toBe(0);
+        expect(crush.some(s => s.id === 'physical')).toBe(false);
     });
 
     it('counts the milestone perks a hero at 99 holds', () => {

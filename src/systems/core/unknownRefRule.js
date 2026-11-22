@@ -4,7 +4,7 @@ import { isSkillId, COMBAT_SKILL_IDS, getSkill } from '../../config/registries/s
 import { getEnemyKind, kindsClash, MAX_ENEMY_KINDS } from '../../config/registries/enemyKinds.js';
 import { isWeapon, authoredWeaponStyles, weaponStyleOf } from '../../config/registries/weaponStyles.js';
 import { getPaletteEntry, isCombatStyleScope } from '../../config/registries/modifierPalette.js';
-import { isDamageTypeId, isTypeOrGroupId, resistanceProblems } from '../../config/registries/damageTypes.js';
+import { isDamageTypeId, isDamageGroupId, groupLineAdvice, resistanceProblems } from '../../config/registries/damageTypes.js';
 import { RETIRED_ENEMY_FIELDS } from '../../config/registries/enemyProfile.js';
 import { moveProblems } from '../../config/registries/enemyMoves.js';
 import { statusBlockOf } from '../effects/effectLibrary.js';
@@ -84,11 +84,15 @@ function effectRowFindings(entry, push) {
         if (row?.retired) {
             const instead = row.type === EFFECT_TYPES.PIERCE
                 ? 'Land a Sunder status instead (a status that provides Sunder)'
-                : 'Use Type Resistance % instead (Physical for metal armour; a piece of armour can carry its own resistances)';
+                : 'Use Type Resistance % instead (Slash, Crush and Stab for metal armour; a piece of armour can carry its own resistances)';
             push('statements', `provides ${row.label}, retired with damage types: it does nothing. ${instead}, or delete the rule in the CMS.`);
         }
-        if (row?.categories === 'damageType' && hasValue(payload.category) && !isTypeOrGroupId(payload.category)) {
-            push('statements', `has a rule aimed at the damage type "${payload.category}", which does not exist — the rule matches nothing. Pick the type again in the CMS.`);
+        if (row?.categories === 'damageType' && hasValue(payload.category) && !isDamageTypeId(payload.category)) {
+            if (isDamageGroupId(payload.category)) {
+                push('statements', `provides ${row.label} ${groupLineAdvice(payload.category, { rule: true })} in the CMS.`);
+            } else {
+                push('statements', `has a rule aimed at the damage type "${payload.category}", which does not exist — the rule matches nothing. Pick the type again in the CMS.`);
+            }
         }
     }
 }
@@ -97,13 +101,13 @@ function effectRowFindings(entry, push) {
 function enemyResistanceFindings(def, push) {
     if (!def?.enemy || typeof def.enemy !== 'object') return;
     for (const problem of resistanceProblems(def.enemy.resistances)) {
-        push('enemy.resistances', `${problem} — that line is ignored. Pick it again in the CMS.`);
+        push('enemy.resistances', `${problem}.`);
     }
     for (const field of RETIRED_ENEMY_FIELDS) {
         const value = def.enemy[field];
         if (value != null && value !== '') {
             const what = field === 'armor' ? 'Armour' : 'Pierce';
-            push(`enemy.${field}`, `has ${what} ${value}, retired with damage types: the fight ignores it. Give it a Physical resistance instead, or remove the number in the CMS.`);
+            push(`enemy.${field}`, `has ${what} ${value}, retired with damage types: the fight ignores it. Give it Slash, Crush and Stab resistances instead, or remove the number in the CMS.`);
         }
     }
 }

@@ -287,7 +287,7 @@ describe('an enemy a rule lends flat Damage and Type Damage', () => {
         const aggregator = new ModifierAggregator('enemy');
         aggregator.addModifier({ type: EFFECT_TYPES.DAMAGE, bucket: 'flat', value: 2, source: 'test' });
         aggregator.addModifier({ type: EFFECT_TYPES.DAMAGE, bucket: 'percentage', value: 0.5, source: 'test' });
-        aggregator.addModifier({ type: EFFECT_TYPES.TYPE_DAMAGE, bucket: 'flat', value: 50, target: { category: 'physical' }, source: 'test' });
+        aggregator.addModifier({ type: EFFECT_TYPES.TYPE_DAMAGE, bucket: 'flat', value: 50, target: { category: 'crush' }, source: 'test' });
         const fight = {
             enemy: { id: 'fixture_enemy', name: 'Brute', hit: 4, hp: 10, level: 1, aggregator },
             aggregator, effects: [], combat: { enemyHp: { current: 10, max: 10 } }
@@ -296,6 +296,6 @@ describe('an enemy a rule lends flat Damage and Type Damage', () => {
         const side = enemySide('fixture_enemy', fight);
 
         expect(side.hit).toBe(9);
-        expect(side.hitLines).toEqual(['Physical damage: +50%']);
+        expect(side.hitLines).toEqual(['Crush damage: +50%']);
     });
 });

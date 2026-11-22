@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Gauge } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
-import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, stationKindsOfSkill, isRetiredStationKind, ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, ATTACK_SPEED_MS, RETIRED_ENEMY_FIELDS, DAMAGE_TYPES, DAMAGE_GROUPS, RESISTANCE_STEPS, damageTypeLabel, isTypeOrGroupId, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY, neededToolOf, toolNeedPhrase, hasCatchPools } from '../../utils/constants';
+import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, stationKindsOfSkill, isRetiredStationKind, ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, ATTACK_SPEED_MS, RETIRED_ENEMY_FIELDS, DAMAGE_TYPES, DAMAGE_GROUPS, RESISTANCE_STEPS, damageTypeLabel, isDamageTypeId, isDamageGroupId, typesOfGroup, withGroupFilled, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY, neededToolOf, toolNeedPhrase, hasCatchPools } from '../../utils/constants';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
@@ -13,6 +13,7 @@ import LifecycleBlocks from './LifecycleBlocks';
 import CatchPoolsBlock from './CatchPoolsBlock';
 import RareTableBlock from './RareTableBlock';
 import EnemyMovesFields from './EnemyMovesFields';
+import SetAllTypes from './SetAllTypes';
 import PlanFields from '../shared/PlanFields';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
@@ -789,7 +790,7 @@ export default function TokenEditor() {
                 </div>
                 <div className="grid grid-cols-5 gap-3 text-[11px]">
                   <div><div className="text-gray-600 text-[10px]">HP</div><div className="text-gray-200 font-semibold">{enemyStats.hp}</div></div>
-                  <div><div className="text-gray-600 text-[10px]">Hit</div><div className="text-gray-200 font-semibold" data-field="enemy-preview-hit">{enemyStats.hit} {movesText(enemyStats.moves) ? `· ${movesText(enemyStats.moves)}` : 'Physical'}</div></div>
+                  <div><div className="text-gray-600 text-[10px]">Hit</div><div className="text-gray-200 font-semibold" data-field="enemy-preview-hit">{enemyStats.hit} {movesText(enemyStats.moves) ? `· ${movesText(enemyStats.moves)}` : 'Crush'}</div></div>
                   <div><div className="text-gray-600 text-[10px]">Resists</div><div className="text-gray-200 font-semibold" data-field="enemy-preview-resists">{resistancesText(enemyStats.resistances)}</div></div>
                   <div><div className="text-gray-600 text-[10px]">Attacks every</div><div className="text-gray-200 font-semibold">{(enemyStats.attackSpeed / 1000).toFixed(1)}s</div></div>
                   <div><div className="text-gray-600 text-[10px]">XP</div><div className="text-gray-200 font-semibold">{enemyStats.xpAwarded}</div></div>
@@ -890,9 +891,9 @@ function movesText(moves) {
   return moves.map((m) => `${m.name || 'Attack'}${m.hits ? ` ${damageTypeLabel(m.type)}` : ''}`).join(', ');
 }
 
-/** `Physical 50%, Crush weak 50%`, or `none`: a resistances map as the author wrote it. */
+/** `Slash 50%, Crush weak 50%`, or `none`: a resistances map, in type order. */
 function resistancesText(map) {
-  const ids = [...DAMAGE_GROUPS, ...DAMAGE_TYPES].map((x) => x.id).filter((id) => map?.[id]);
+  const ids = DAMAGE_TYPES.map((x) => x.id).filter((id) => map?.[id]);
   if (!ids.length) return 'none';
   return ids.map((id) => (map[id] < 0 ? `${damageTypeLabel(id)} weak ${-map[id]}%` : `${damageTypeLabel(id)} ${map[id]}%`)).join(', ');
 }
@@ -900,10 +901,10 @@ function resistancesText(map) {
 const STEP_WORDS = { 100: 'Resist 100% (immune)', 50: 'Resist 50%', 25: 'Resist 25%', '-25': 'Weak 25%', '-50': 'Weak 50%' };
 
 /**
- * What the enemy resists and is weak to, by damage type or group, in the owner's fixed steps:
- * resist 25, 50 or 100 %, weak 25 or 50 %. Written as `resistances: { physical: 50, crush: -50 }`;
- * a line on one type replaces its group's line for that type ("Physical 50, Crush weak 50" reads as
- * written). A kind's line (Armoured: Physical 50) shows greyed until the author writes that type.
+ * What the enemy resists and is weak to, by damage type, in the owner's fixed steps: resist 25, 50
+ * or 100 %, weak 25 or 50 %. Written as `resistances: { slash: 50, crush: -50 }`; Set all fills a
+ * group's three types, and a line still on a group (ignored by the game) shows with a Split button.
+ * A kind's line (Armoured: Slash, Crush and Stab 50) shows greyed until the author writes that type.
  * Removing the last line drops the key. Retired numbers (Armour, Pierce) still on older content
  * show here with a button to remove them.
  */
@@ -920,9 +921,11 @@ function EnemyResistances({ enemy, onChange }) {
     if (step === '') delete next[id]; else next[id] = Number(step);
     write(next);
   };
-  const ids = [...DAMAGE_GROUPS, ...DAMAGE_TYPES].map((x) => x.id);
+  const fillGroup = (groupId, step) => write(withGroupFilled(own, groupId, step));
+  const ids = DAMAGE_TYPES.map((x) => x.id);
   const rows = ids.filter((id) => own[id] != null || fromKinds[id] != null);
-  const unknown = Object.keys(own).filter((id) => !isTypeOrGroupId(id));
+  const groupLines = Object.keys(own).filter((id) => isDamageGroupId(id));
+  const unknown = Object.keys(own).filter((id) => !isDamageTypeId(id) && !isDamageGroupId(id));
   const free = ids.filter((id) => own[id] == null);
   const retired = RETIRED_ENEMY_FIELDS.filter((f) => enemy?.[f] != null && enemy?.[f] !== '');
 
@@ -950,9 +953,20 @@ function EnemyResistances({ enemy, onChange }) {
             </div>
           );
         })}
+        {groupLines.map((id) => (
+          <div key={id} className="text-[11px]" style={{ color: 'var(--color-warning)' }} data-field={`enemy-resist-${id}`}>
+            {`${damageTypeLabel(id)} ${own[id]}: a group carries no number, the game ignores it. `}
+            {RESISTANCE_STEPS.includes(Number(own[id])) && (
+              <button type="button" className="hover:underline mr-2" data-field={`enemy-resist-${id}-split`} onClick={() => fillGroup(id, Number(own[id]))}>
+                {`Split into ${typesOfGroup(id).map(damageTypeLabel).join(', ')}`}
+              </button>
+            )}
+            <button type="button" className="hover:underline" onClick={() => setLine(id, '')}>Remove it</button>
+          </div>
+        ))}
         {unknown.map((id) => (
           <div key={id} className="text-[11px]" style={{ color: 'var(--color-warning)' }} data-field="enemy-resist-unknown">
-            {`"${id}" is not a damage type or group. `}
+            {`"${id}" is not a damage type. `}
             <button type="button" className="hover:underline" onClick={() => setLine(id, '')}>Remove it</button>
           </div>
         ))}
@@ -967,7 +981,6 @@ function EnemyResistances({ enemy, onChange }) {
             <option value="">Add a resistance or weakness…</option>
             {DAMAGE_GROUPS.map((g) => (
               <optgroup key={g.id} label={g.label}>
-                {free.includes(g.id) && <option value={g.id}>{g.label} (the whole group)</option>}
                 {DAMAGE_TYPES.filter((t) => t.group === g.id && free.includes(t.id)).map((t) => (
                   <option key={t.id} value={t.id}>{t.label}</option>
                 ))}
@@ -975,13 +988,14 @@ function EnemyResistances({ enemy, onChange }) {
             ))}
           </select>
         )}
+        <SetAllTypes dataField="enemy-resist-fill" steps={RESISTANCE_STEPS} stepWords={STEP_WORDS} initial={50} onFill={fillGroup} />
       </div>
       <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
-        Shown on the enemy&apos;s card. A type&apos;s line replaces its group&apos;s for that type. Keep most enemies to 0 or 1 lines, bosses up to 3, and never shut out every type a style can reach.
+        Shown on the enemy&apos;s card. Only types carry numbers: Set all fills a group&apos;s three types, and a line you write replaces its kind&apos;s for that type. Keep most enemies to 0 or 1 lines, bosses up to 3, and never shut out every type a style can reach.
       </p>
       {retired.length > 0 && (
         <p className="text-[11px] mt-1 leading-relaxed" style={{ color: 'var(--color-warning)' }} data-field="enemy-retired-numbers">
-          {retired.map((f) => (f === 'armor' ? `Armour ${enemy.armor}` : `Pierce ${enemy.pierce}`)).join(', ')}: retired, the fight ignores it (use a Physical resistance).{' '}
+          {retired.map((f) => (f === 'armor' ? `Armour ${enemy.armor}` : `Pierce ${enemy.pierce}`)).join(', ')}: retired, the fight ignores it (use Slash, Crush and Stab resistances).{' '}
           <button
             type="button"
             className="hover:underline"

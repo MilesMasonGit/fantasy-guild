@@ -79,7 +79,7 @@ describe('floats: what each says and its colour', () => {
         const plain = float({ kind: MOMENT.HIT, on: 'enemy', amount: 2, types: ['slash'], verdict: 'weak' });
         expect(plain.querySelector('[data-fight-float-type], .gi-ff-weak-word, .gi-ff-resisted-word, img')).toBeNull();
         expect(plain.textContent).toBe('2');
-        const resisted = float({ kind: MOMENT.CRIT, on: 'hero', amount: 0, types: ['physical'], verdict: 'resisted', move: 'Peck' });
+        const resisted = float({ kind: MOMENT.CRIT, on: 'hero', amount: 0, types: ['crush'], verdict: 'resisted', move: 'Peck' });
         expect(q(resisted, '.gi-ff-crit-word').textContent).toBe(t('fight.float.crit'));
         expect(q(resisted, '.gi-ff-crit-number').textContent).toBe('0');
         expect(resisted.querySelector('.gi-ff-resisted-word, .gi-ff-move-word')).toBeNull();
@@ -144,7 +144,7 @@ describe('the fight panel', () => {
         expect(stat('enemy', 'style')).toBe('20/99');
         expect(stat('hero', 'hit')).toBe('4');
         expect(stat('enemy', 'hit')).toBe('3');
-        expect([...panel.querySelectorAll('[data-fight-stat="hit"] [data-fight-hit-type]')].map(e => e.getAttribute('data-fight-hit-type'))).toEqual(['slash', 'physical']);
+        expect([...panel.querySelectorAll('[data-fight-stat="hit"] [data-fight-hit-type]')].map(e => e.getAttribute('data-fight-hit-type'))).toEqual(['slash', 'crush']);
         expect(stat('hero', 'resists')).toBe('25%');
         expect(stat('enemy', 'resists')).toBe('50%−25%');
         expect([...panel.querySelectorAll('[data-fight-side="enemy"] [data-fight-resist]')].map(e => e.getAttribute('data-fight-resist'))).toEqual(['fire', 'slash']);
@@ -239,7 +239,7 @@ describe('the enemy card', () => {
     it('its numbers are the level table\'s and the kinds\' (level 20 Brute: 40 health, hits 3 every 4 s)', () => {
         GameState.initNew();
         const card = enemyCardView('cs_ui_brute');
-        expect(card).toMatchObject({ level: 20, style: 'melee', hp: 40, hit: 3, hitType: 'physical', resists: [], swingMs: 4000 });
+        expect(card).toMatchObject({ level: 20, style: 'melee', hp: 40, hit: 3, hitType: 'crush', resists: [], swingMs: 4000 });
         const root = render(React.createElement(EnemyCardRows, { card })).container;
         expect(text(q(root, '[data-enemy-card-level]'))).toBe('20/99');
         expect(q(root, '[data-enemy-card-resists="none"]')).not.toBeNull();

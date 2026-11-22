@@ -48,13 +48,13 @@ const provides = (id, type, value, category, bucket = 'flat') => ({
     ...makeStatement(KEYWORD.PROVIDES), id, to: null, payload: { type, bucket, value, ...(category ? { category } : {}) }
 });
 registerEffects({
-    emc_flutter: { id: 'emc_flutter', name: 'Flutter', statements: [provides('stm_emc_flutter', EFFECT_TYPES.TYPE_RESIST, 50, 'physical')] },
+    emc_flutter: { id: 'emc_flutter', name: 'Flutter', statements: ['slash', 'crush', 'stab'].map(t => provides(`stm_emc_flutter_${t}`, EFFECT_TYPES.TYPE_RESIST, 50, t)) },
     emc_heavy: { id: 'emc_heavy', name: 'Heavy Strike', statements: [provides('stm_emc_heavy', EFFECT_TYPES.DAMAGE, 1, null, 'percentage')] }
 });
 
 registerItems({
     emc_sword: { id: 'emc_sword', name: 'Sword', type: 'weapon', equipSlot: 'hand', styles: ['melee'], damage: 2 },
-    emc_plate: { id: 'emc_plate', name: 'Plate', type: 'armor', equipSlot: 'chest', resistances: { physical: 20 } }
+    emc_plate: { id: 'emc_plate', name: 'Plate', type: 'armor', equipSlot: 'chest', resistances: { slash: 20, crush: 20, stab: 20 } }
 });
 
 const enemy = (id, block) => ({

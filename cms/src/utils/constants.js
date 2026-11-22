@@ -130,7 +130,7 @@ export { STANDARD_REACH_U } from '../../../src/config/registries/reachRegistry.j
 // An enemy is a Token: it carries `enemy: { level, style }`. `ENEMY_STYLES` fills the Style dropdown and `enemyProfileOf` powers the editor's read-only stat preview, imported from the game so the numbers shown are the numbers the fight uses.
 export { ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_OVERRIDE_FIELDS, RETIRED_ENEMY_FIELDS } from '../../../src/config/registries/enemyProfile.js';
 
-// Damage types: the nine types in three groups, a weapon's and an arrow's type, an enemy's resistance steps and the type a weapon with none hits with. The game's own list.
+// Damage types: the nine types (the three groups only name sets of them, for the Set all buttons), a weapon's and an arrow's type, an enemy's resistance steps and the type a weapon with none hits with. The game's own list.
 export {
   DAMAGE_TYPES,
   DAMAGE_GROUPS,
@@ -141,7 +141,10 @@ export {
   weaponDamageTypeOf,
   arrowOf,
   normaliseResistances,
-  isTypeOrGroupId,
+  isDamageTypeId,
+  isDamageGroupId,
+  typesOfGroup,
+  withGroupFilled,
 } from '../../../src/config/registries/damageTypes.js';
 
 // Enemy moves: the few attacks an enemy picks from each swing (a type to hit with, an effect to land), their shapes and the audit's sentences. The game's own.
@@ -152,7 +155,7 @@ export { ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, VENOM_EFFECT_ID
 
 // Weapons: the one style a weapon fights in, and the level gear asks of its wearer, for the item editor's Weapon and Requirement blocks.
 export { isWeapon, isOffHand, weaponStyleOf, authoredWeaponStyles, gearLevelRequirement } from '../../../src/config/registries/weaponStyles.js';
-// Gear's defence: a worn piece's resistances (free percents by type or group) and its damage cut to named styles, for the item editor's Defence block.
+// Gear's defence: a worn piece's resistances (free percents by type) and its damage cut to named styles, for the item editor's Defence block.
 export { gearResistancesOf, gearDamageCutOf, isWornGear, isGearResistLine, isDamageCut, GEAR_RESIST_LINE_MAX } from '../../../src/config/registries/gearDefence.js';
 // The three swing speeds and the proposed weapon tiers' damage, so the Weapon block offers what the fight reads.
 export { ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, WEAPON_TIERS } from '../../../src/config/FormulaRegistry.js';

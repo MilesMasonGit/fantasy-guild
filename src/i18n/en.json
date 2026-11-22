@@ -516,7 +516,7 @@
         "kinds": {
             "armoured": {
                 "name": "Armoured",
-                "tip": "Resists Physical 50%, slow swings"
+                "tip": "Resists Slash, Crush and Stab 50%, slow swings"
             },
             "nimble": {
                 "name": "Nimble",
