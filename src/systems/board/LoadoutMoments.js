@@ -13,6 +13,7 @@ import * as BoardState from './BoardState.js';
 import * as ConsumptionSystem from '../hero/ConsumptionSystem.js';
 import * as LiveEffects from '../effects/LiveEffects.js';
 import { workConfigOf } from './StationRecipe.js';
+import { toolNeedOf } from './toolNeed.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { categoryOfItem, isConsumableCategory } from '../../config/registries/equipmentConstants.js';
 import { WORK_START, workSkillMatches, DOSE } from '../core/consumableRule.js';
@@ -113,6 +114,8 @@ export function fire(instanceId, heroId, eventId, { resumed = false } = {}) {
         && statement.sourceItemIds.every(isDoseItem);
     const statements = [
         ...HeroEffects.loadoutStatements(hero).filter(s => !fromDosesOnly(s)),
+        // The tool used here, and only here (`HeroEffects.workToolStatements`).
+        ...HeroEffects.workToolStatements(hero, toolNeedOf(BoardState.getTokenById(instanceId))),
         ...doses.flatMap(id => dosedStatements(id, fightStart ? DOSE.ELIXIR : ConsumptionSystem.workDoseKindOf(id)))
     ];
     const waitsHere = (statement) => {

@@ -61,8 +61,9 @@ export function holdsToolFor(heroId, need) {
 }
 
 /**
- * The item id of the first backed tool hero `heroId` holds, in grid order, that answers `need`, or
- * null (also for no need). At water that is the first tool of any kind it takes.
+ * The item id of the backed tool hero `heroId` works `need` with, or null (also for no need): the
+ * highest tier that answers it, the first in grid order among equals. At water it is the first tool
+ * of any kind the water takes, whatever its tier, as {@link catchToolOf} picks it.
  */
 export function fittingToolOf(heroId, need) {
     const slot = fittingToolSlotOf(heroId, need);
@@ -75,9 +76,19 @@ export function fittingToolSlotOf(heroId, need) {
     const hero = heroRecord(heroId);
     if (!hero) return null;
     const grid = getGrid(hero);
+    const firstWins = Array.isArray(need.kinds);
+    let best = null;
+    let bestTier = 0;
     for (let slot = 0; slot < grid.length; slot++) {
         const itemId = grid[slot];
-        if (itemId && toolMeets(heldTool(itemId), need) && slotBacked(hero, slot)) return slot;
+        if (!itemId) continue;
+        const tool = heldTool(itemId);
+        if (!toolMeets(tool, need) || !slotBacked(hero, slot)) continue;
+        if (firstWins) return slot;
+        if (tool.tier > bestTier) {
+            best = slot;
+            bestTier = tool.tier;
+        }
     }
-    return null;
+    return best;
 }

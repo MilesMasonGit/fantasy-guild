@@ -15,7 +15,7 @@ import { destroyEquipped } from './EquipmentManager.js';
  * A tool or weapon with a `breakChance` (`itemBreak.js`) may break, checked only as a cycle it was
  * used for completes, never part-way:
  * - a work cycle (`BoardRunner.completeCycle`, a failed one included): the tool the Token needs,
- *   the first fitting one in the hero's hands (`HeroTools.fittingToolSlotOf`), the one the cycle
+ *   the best fitting one in the hero's hands (`HeroTools.fittingToolSlotOf`), the one the cycle
  *   used. A Token that needs no tool uses none.
  * - a kill (`BoardCombat`, the fight's cycle): the weapon swung (`CombatFormulas.getHeroWeaponSlot`).
  * A broken item leaves the hero's hands for good (`EquipmentManager.destroyEquipped`); nothing

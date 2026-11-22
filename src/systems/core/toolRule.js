@@ -9,11 +9,13 @@ import { catchPoolsOf } from '../../config/registries/catchPools.js';
 import { breakChanceProblem } from '../../config/registries/itemBreak.js';
 import { gearRequirements } from '../../config/registries/weaponStyles.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
+import { effectRefsOf } from '../effects/effectLibrary.js';
 
 /**
  * Tools are items a hero holds in one hand; a gathering Token names the kind and tier it needs.
  * These findings say where content is written in a way that cannot work: a tool no hero can hold,
- * a need no tool answers, a Break chance that never breaks anything (`itemBreak.js`), and content
+ * a need no tool answers, a Break chance that never breaks anything (`itemBreak.js`), two tools of
+ * one family and tier whose effects differ in scale ({@link tierScaleFindings}), and content
  * still written the old way (a tool Token on the mat, or a Token or recipe asking for one nearby).
  *
  * Pure: the caller hands in the catalogues. Tokens must be expanded (their statements present), or
@@ -49,6 +51,8 @@ export function toolFindings({ items = {}, tokens = {}, recipes = [] } = {}) {
             push('Item', item.id || id, item, `is a tool that asks for ${named}, but a tool held below its level still works, unlike other gear, so the level only stops it being handed over: remove the requirement`);
         }
     }
+
+    tierScaleFindings(items, push);
 
     // A Break chance only a tool or a weapon, with a percent above 0 and up to 100, can use.
     for (const [id, item] of Object.entries(items || {})) {
@@ -94,6 +98,39 @@ export function toolFindings({ items = {}, tokens = {}, recipes = [] } = {}) {
     }
 
     return out;
+}
+
+/**
+ * Each tool family's tier carries its Speed at one scale (copper 1, iron 2, ...), written on every
+ * tool of that family and tier: a tool whose effects differ in scale from the first of its family
+ * and tier (an effect missing counts as a difference) is named, beside that first one.
+ */
+function tierScaleFindings(items, push) {
+    const firstOf = new Map();   // `kind|tier` → { id, item, scales }
+    for (const [id, item] of Object.entries(items || {})) {
+        const tool = toolOf(item);
+        if (!tool || item.equipSlot !== HAND_CATEGORY) continue;
+        const scales = new Map();
+        for (const ref of effectRefsOf(item)) scales.set(ref.effectId, (scales.get(ref.effectId) || 0) + ref.scale);
+        const key = `${tool.kind}|${tool.tier}`;
+        const first = firstOf.get(key);
+        if (!first) {
+            firstOf.set(key, { item, scales });
+            continue;
+        }
+        const firstName = first.item.name || first.item.id;
+        const differences = [];
+        for (const effectId of new Set([...first.scales.keys(), ...scales.keys()])) {
+            const mine = scales.get(effectId) || 0;
+            const theirs = first.scales.get(effectId) || 0;
+            if (mine === theirs) continue;
+            const has = theirs ? `has ${theirs}` : 'has none';
+            differences.push(mine ? `carries ${effectId} at scale ${mine} where ${firstName} ${has}` : `carries no ${effectId} where ${firstName} has ${theirs}`);
+        }
+        if (differences.length) {
+            push('Item', item.id || id, item, `is a ${toolKindLabel(tool.kind)} of tier ${tool.tier} like ${firstName}, but ${differences.join('; ')}: tools of one family and tier work alike, so give them the same scales`);
+        }
+    }
 }
 
 /**
