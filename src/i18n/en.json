@@ -759,7 +759,6 @@
             "nearby": "{token} nearby",
             "onMat": "{token} on the mat",
             "self": "{token} itself",
-            "region": "{region} rule",
             "gear": "{hero}'s {item}",
             "perk": "{hero}'s {perk}",
             "carried": "{hero}'s {effect}",

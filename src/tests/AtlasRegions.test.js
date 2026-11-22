@@ -162,66 +162,16 @@ describe('names: practical from the ingredients, flavour renamable', () => {
     });
 });
 
-describe('archive hides and restores', () => {
-    it('an archived Region leaves the list and comes back when restored', () => {
-        const id = Atlas.devCreateEmptyRegion().id;
-        expect(Atlas.archive(id).success).toBe(true);
-        expect(Atlas.list().map(r => r.id)).not.toContain(id);
-        expect(Atlas.list({ archived: true }).map(r => r.id)).toEqual([id]);
-        expect(Atlas.restore(id).success).toBe(true);
-        expect(Atlas.list().map(r => r.id)).toContain(id);
-        expect(Atlas.list({ archived: true })).toEqual([]);
-    });
-
-    it('the Region the guild is in cannot be archived, and an archived one cannot be travelled to', () => {
-        expect(Atlas.archive(Atlas.activeRegionId())).toMatchObject({ success: false, reason: Names.TEXT.REFUSE_ACTIVE });
-        const id = Atlas.devCreateEmptyRegion().id;
-        Atlas.archive(id);
-        expect(Atlas.travel(id)).toMatchObject({ success: false, reason: Names.TEXT.REFUSE_ARCHIVED });
-    });
-});
-
-describe('abandon deletes for good', () => {
-    it('removes the Region and everything on its board; its id is never handed out again', () => {
-        const first = Atlas.devCreateEmptyRegion().id;
-        expect(Atlas.abandon(first).success).toBe(true);
-        expect(Atlas.getRegion(first)).toBeNull();
-        expect(Atlas.list().map(r => r.id)).not.toContain(first);
-        const next = Atlas.devCreateEmptyRegion().id;
-        expect(next).not.toBe(first);
-    });
-
-    it('refuses the Region the guild is in, and the Starter Camp even when the guild is away', () => {
-        const starter = Atlas.activeRegionId();
-        expect(Atlas.abandon(starter)).toMatchObject({ success: false, reason: Names.TEXT.REFUSE_ACTIVE });
-        const away = Atlas.devCreateEmptyRegion().id;
-        Atlas.travel(away);
-        expect(Atlas.abandon(starter)).toMatchObject({ success: false, reason: Names.TEXT.REFUSE_STARTER });
-        expect(Atlas.abandon(away)).toMatchObject({ success: false, reason: Names.TEXT.REFUSE_ACTIVE });
-        expect(Atlas.getRegion(starter)).not.toBeNull();
-    });
-
-    it('an archived Region can be abandoned', () => {
-        const id = Atlas.devCreateEmptyRegion().id;
-        Atlas.archive(id);
-        expect(Atlas.abandon(id).success).toBe(true);
-        expect(Atlas.list({ archived: true })).toEqual([]);
-    });
-});
-
 describe('the Atlas announces its changes and never touches the random stream', () => {
     it('each change publishes ATLAS_CHANGED with what happened', () => {
         const seen = [];
         const off = EventBus.subscribe(ENGINE_EVENTS.ATLAS_CHANGED, (p) => seen.push(p.reason));
         const id = Atlas.devCreateEmptyRegion().id;
         Atlas.rename(id, 'Fernmere');
-        Atlas.archive(id);
-        Atlas.restore(id);
         Atlas.travel(id);
         Atlas.travel(Atlas.list().find(r => r.kind === REGION_KIND.STARTER).id);
-        Atlas.abandon(id);
         off();
-        expect(seen).toEqual(['created', 'renamed', 'archived', 'restored', 'travelled', 'travelled', 'abandoned']);
+        expect(seen).toEqual(['created', 'renamed', 'travelled', 'travelled']);
     });
 
     it('creating, naming and travelling draw no random number', () => {

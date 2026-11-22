@@ -25,9 +25,8 @@ import { WATER_KIND, SMALL_WATER } from './WaterShapes.js';
  *
  * Ids must be unique per distinct ingredient: two slots holding the same map carry the same id.
  *
- * A recipe may also carry a `name` (what the Region's practical name calls it: "Forest") and `rules`,
- * statements in force all over the Region while the guild is there (`RegionRules.js`; today a
- * `Provides`). Neither changes the budget.
+ * A recipe may also carry a `name` (what the Region's practical name calls it: "Forest"); it does
+ * not change the budget.
  *
  * ## The rules
  * 1. **Base Maps blend.** Each writes `points / (number of Base Maps)` nodes, split by its weights,

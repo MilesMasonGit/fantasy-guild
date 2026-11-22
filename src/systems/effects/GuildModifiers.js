@@ -2,9 +2,8 @@ import { ModifierAggregator } from './ModifierAggregator.js';
 
 /**
  * ONE runtime-only ModifierAggregator for the whole guild, for modifiers that reach
- * across every scope. `TileModifiers.resolveAxis` reads it; the active Region's own rules
- * register into it (`atlas/RegionRules.js`), and so do the Guild Hall's stars
- * (`progression/HallRules.js`).
+ * across every scope. `TileModifiers.resolveAxis` reads it; the Guild Hall's stars
+ * register into it (`progression/HallRules.js`).
  *
  * Beside it, the guild's **aimed** modifiers: guild-wide rules that name some Tokens (a Guild Hall
  * star's "−20% Grow Time to Copper Veins"). The aggregator cannot tell one Token from another, so

@@ -26,7 +26,6 @@ export const CALIBRATED_FILES = Object.freeze([
     'src/systems/board/cycleCharges.js',
     'src/systems/hero/xpBonus.js',
     'src/systems/hero/perkTable.js',
-    'src/systems/atlas/regionModifiers.js',
     'src/systems/core/consumableRule.js',
     'src/systems/core/wearRule.js',
     'src/config/registries/tokenConstants.js',

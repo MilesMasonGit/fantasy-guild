@@ -411,7 +411,7 @@ describe('the game\'s side of the layout (layoutInputs)', () => {
 describe('purity guards', () => {
     const FILES = [
         'Budget.js', 'Layout.js', 'TerrainMap.js', 'WaterShapes.js', 'StoneShapes.js', 'seededRandom.js', 'layoutInputs.js',
-        'Cartography.js', 'Atlas.js', 'RegionRules.js', 'devMaps.js'
+        'Cartography.js', 'Atlas.js', 'devMaps.js'
     ];
     const code = (file) => codeOf(fs.readFileSync(`${SRC}/systems/atlas/${file}`, 'utf8'));
 

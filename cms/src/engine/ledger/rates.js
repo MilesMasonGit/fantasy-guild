@@ -24,12 +24,11 @@ import { neverWearsOut } from '../../../../src/systems/core/wearRule.js';
 import { isGatheringSkill } from '../../../../src/config/registries/skillRegistry.js';
 import { isSpentCategory, isAlwaysOn, isWorkMoment, workSkillMatches, doseKindsOf, DOSE, DOSE_LENGTH } from '../../../../src/systems/core/consumableRule.js';
 import { keyed } from '../../../../src/systems/progression/ledger/engine.js';
-import { modifiersOf as regionModifiersOf } from '../../../../src/systems/atlas/regionModifiers.js';
 
 /**
  * What one hero earns working one Token (or one recipe at a station) at the content's own numbers,
  * worked out the way the board works it, with every factor named and switchable: the supports in
- * reach, the tool and gear in hand, drinks and work potions, milestone perks, a Region's rules,
+ * reach, the tool and gear in hand, drinks and work potions, milestone perks,
  * guild-wide rules and the Guild Hall's stars.
  *
  * Average luck only: every chance is taken at its expected value (a 25 % double is ×1.25), never
@@ -37,7 +36,7 @@ import { modifiersOf as regionModifiersOf } from '../../../../src/systems/atlas/
  * (`ModifierAggregator`), the speed-up and work-time floors (`workTime.js`), the XP bonus
  * (`xpBonus.js`), the output range (`tokenConstants.outputRange`), a cycle's charge cost
  * (`cycleCharges.js`), the reach and filter rules (`reachRegistry`, `filterRegistry`), the dose rules
- * (`consumableRule.js`), a Region's rules (`regionModifiers.js`) and what a Hall star's rank holds
+ * (`consumableRule.js`) and what a Hall star's rank holds
  * (`hallModifiers.js`, as `HallRules.apply` registers it).
  *
  * ⚠️ Which ambient rules reach the worked Token is decided on the board by
@@ -76,7 +75,6 @@ export const FACTOR = Object.freeze({
     GEAR: 'gear',
     CONSUMABLE: 'consumable',
     PERK: 'perk',
-    REGION: 'region',
     GUILD: 'guild',
     HALL: 'hall'
 });
@@ -493,15 +491,10 @@ function heroGrants(hero) {
     return out.filter(g => g.payload.type === EFFECT_TYPES.BONUS_DROP && text(g.payload.itemId));
 }
 
-/** The guild-wide scope: a Region's rules (`regionModifiers.modifiersOf`), guild-wide modifiers and the Hall's stars. */
-function guildScope(book, setup, notes) {
+/** The guild-wide scope: guild-wide modifiers and the Hall's stars. */
+function guildScope(book, setup) {
     const agg = new ModifierAggregator('calculator:guild');
     const factorsBySource = new Map();
-    if (!isOff(setup, FACTOR.REGION, FACTOR.REGION)) {
-        const { modifiers, ignored } = regionModifiersOf(list(setup.region), 'calculator');
-        for (const m of modifiers) { agg.addModifier(m); factorsBySource.set(m.source, FACTOR.REGION); }
-        for (const skip of ignored) notes.unmodelled.push({ source: FACTOR.REGION, what: `rule ${skip.index}`, why: skip.reason });
-    }
     if (!isOff(setup, FACTOR.GUILD, FACTOR.GUILD)) {
         list(setup.guild).forEach((modifier, i) => {
             if (!isObject(modifier) || !modifier.type) return;
@@ -819,7 +812,7 @@ function prepare(book, target, setup) {
     const hero = heroRules(book, gates.skill, setup, gates, notes);
     const reaching = tileRules(book, def, setup, hero, notes);
     const tile = tileScope(reaching.modifiers);
-    const guild = guildScope(book, setup, notes);
+    const guild = guildScope(book, setup);
     const resolve = makeResolver(tile, guild, hero);
     return { def, recipe, kind: kind.kind, pool, io, baseCycleMs, gates, hero, tileGrants: reaching.grants, guild, resolve, notes };
 }
@@ -886,7 +879,7 @@ function isPassive(def) {
  * Passive Production (`PassiveProduction.linesOf`): every line once a lap, no hero; the Guild Hall
  * adds the Wishing Well's Water at the setup's rank (`hallRanks.wishing_well`) and the lines of the
  * stars it holds (the Well's basic outputs). The lap is `PassiveProduction.lapMs`'s: the base, moved
- * by every guild-wide Lap Time rule the setup holds (a star, a Region's or a guild rule), through the
+ * by every guild-wide Lap Time rule the setup holds (a star or a guild rule), through the
  * same floor (`workTime.passiveLapMs`). The lap is one for every Token that pays.
  */
 function passiveRate(book, def, setup) {
@@ -896,8 +889,7 @@ function passiveRate(book, def, setup) {
         if (text(line?.itemId) && q > 0) perLap[line.itemId] = (perLap[line.itemId] || 0) + q;
     }
     const factors = [{ id: `${FACTOR.SELF}:${def.id}`, kind: FACTOR.SELF, name: def.name || def.id, on: true, axes: [] }];
-    const notes = { unmodelled: [], assumptions: [] };
-    const guild = guildScope(book, setup, notes);
+    const guild = guildScope(book, setup);
     const lapBy = new Set();
     matchedFactors(guild, EFFECT_TYPES.PASSIVE_LAP, TARGET_CATEGORIES.ALL, lapBy);
     const lapMs = passiveLapMs(guild.agg.resolveAxis(EFFECT_TYPES.PASSIVE_LAP, PASSIVE_LAP_BASE_MS));
@@ -917,7 +909,7 @@ function passiveRate(book, def, setup) {
         factors.push({ id: factorId, kind: FACTOR.HALL, name: `${star.name} rank ${held}`, on, axes: on ? [...(lines.length ? ['passive'] : []), ...(lap ? ['lap'] : [])] : [] });
     }
     for (const id of lapBy) {
-        if (id === FACTOR.REGION || id === FACTOR.GUILD) factors.push({ id, kind: id, name: id === FACTOR.REGION ? 'Region rules' : 'guild-wide rules', on: true, axes: ['lap'] });
+        if (id === FACTOR.GUILD) factors.push({ id, kind: id, name: 'guild-wide rules', on: true, axes: ['lap'] });
     }
     const laps = HOUR_MS / lapMs;
     return {
@@ -954,7 +946,7 @@ export function axisResolverOf(book, target, setup = {}) {
  *   - `tool`: the tool item in hand; the lowest tier that answers the need when absent, none when null
  *   - `gear`, `consumables`: item ids carried besides the tool (drinks and potions taken as in stock)
  *   - `supports`: Tokens standing within Near of the worked one, each an id or `{ id, count, distant }`
- *   - `region`: a Region's rules (statements); `guild`: guild-wide modifiers
+ *   - `guild`: guild-wide modifiers
  *   - `perks`: false to leave milestone perks out (default in)
  *   - `family`: `{ spawner, members }`, a spawner's family worked in turn; `members` defaults to the
  *     spawner's allowance (all of them in the hero's reach). For a fight, the camp that spawns it.
@@ -1136,7 +1128,6 @@ function factorList(book, def, setup, hero, usedBy) {
     }
     const campId = typeof setup.camp === 'string' ? setup.camp : isObject(setup.camp) ? text(setup.camp.id) : null;
     if (campId && !out.some(f => f.id === `${FACTOR.SUPPORT}:${campId}`)) push(`${FACTOR.SUPPORT}:${campId}`, FACTOR.SUPPORT, book.token(campId)?.name || campId);
-    if (list(setup.region).length) push(FACTOR.REGION, FACTOR.REGION, 'Region rules');
     if (list(setup.guild).length) push(FACTOR.GUILD, FACTOR.GUILD, 'guild-wide rules');
     for (const { star, rank, factorId } of hallRules(book, setup).held) push(factorId, FACTOR.HALL, `${star.name} rank ${rank}`);
     return out;

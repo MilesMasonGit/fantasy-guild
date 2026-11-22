@@ -136,7 +136,7 @@ const axis = (entity, type, category) => entity?.aggregator?.query(type, categor
 
 /**
  * A hero's flat total on a style axis (Damage, Accuracy: `categories: 'combatStyle'`): what they
- * carry plus what the guild gives (Hall stars, a Region's rules), each read for the style they fight
+ * carry plus what the guild gives (Hall stars), each read for the style they fight
  * in, so a rule narrowed to Melee helps only a Melee fighter. Enemies never read the guild's.
  */
 function heroStyleAxis(hero, type, style = getHeroCombatStyle(hero)) {

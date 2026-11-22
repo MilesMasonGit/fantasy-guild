@@ -260,8 +260,9 @@ export const RETIRED_FIELDS = Object.freeze({
 });
 
 /**
- * A saved state without the retired sections and fields, a Bank tab's `isCustom` or a Region's
- * `settledAt`. Returns the same object when nothing needed changing.
+ * A saved state without the retired sections and fields, a Bank tab's `isCustom`, a Region's
+ * `settledAt`, `rules` and `archived`, or a Token's `biome`. Returns the same object when nothing
+ * needed changing.
  */
 export function withoutRetiredFields(state) {
     let out = state;
@@ -283,12 +284,35 @@ export function withoutRetiredFields(state) {
         edit().inventory = { ...out.inventory, groupDefs: next };
     }
     const regions = out.atlas?.regions;
-    if (isPlainObject(regions) && Object.values(regions).some(r => isPlainObject(r) && 'settledAt' in r)) {
+    const staleRegion = (r) => isPlainObject(r) && (RETIRED_REGION_FIELDS.some(f => f in r) || hasTokenBiome(r.board));
+    if (isPlainObject(regions) && Object.values(regions).some(staleRegion)) {
         const next = {};
-        for (const [id, r] of Object.entries(regions)) next[id] = withoutKey(r, 'settledAt');
+        for (const [id, r] of Object.entries(regions)) {
+            if (!isPlainObject(r)) { next[id] = r; continue; }
+            let kept = r;
+            for (const f of RETIRED_REGION_FIELDS) kept = withoutKey(kept, f);
+            next[id] = isPlainObject(kept.board) ? { ...kept, board: boardWithoutTokenBiome(kept.board) } : kept;
+        }
         edit().atlas = { ...out.atlas, regions: next };
     }
+    if (hasTokenBiome(out.board)) edit().board = boardWithoutTokenBiome(out.board);
     return out;
+}
+
+/** A Region's own retired fields (its Token biome weights, `biome`, stay: the event clock reads them). */
+const RETIRED_REGION_FIELDS = Object.freeze(['settledAt', 'rules', 'archived']);
+
+function hasTokenBiome(board) {
+    const tokens = board?.tokens;
+    return isPlainObject(tokens) && Object.values(tokens).some(t => isPlainObject(t) && 'biome' in t);
+}
+
+/** A board whose Tokens carry no `biome`, or the same board when none does. */
+function boardWithoutTokenBiome(board) {
+    if (!hasTokenBiome(board)) return board;
+    const tokens = {};
+    for (const [id, t] of Object.entries(board.tokens)) tokens[id] = withoutKey(t, 'biome');
+    return { ...board, tokens };
 }
 
 /** `obj` without `key`, or the same object when it has none. */

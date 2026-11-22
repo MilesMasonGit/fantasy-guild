@@ -129,7 +129,7 @@ export function boostKindOf(factor) {
     if (kind === FACTOR.TOOL) return BOOST_KIND.TOOL;
     if (kind === FACTOR.GEAR) return BOOST_KIND.GEAR;
     if (kind === FACTOR.PERK) return BOOST_KIND.PERK;
-    if (kind === FACTOR.HALL || kind === FACTOR.GUILD || kind === FACTOR.REGION) return BOOST_KIND.HALL;
+    if (kind === FACTOR.HALL || kind === FACTOR.GUILD) return BOOST_KIND.HALL;
     return null;
 }
 

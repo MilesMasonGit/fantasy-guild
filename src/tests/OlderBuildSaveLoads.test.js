@@ -40,7 +40,8 @@ function writeOlderBuildSave() {
     s.quests.nextQuestAt = null;
     s.collection.provenance = { token_oak_forest: { item_oak_wood: true } };
     s.ui.newDiscoveries = { item_oak_wood: true };
-    for (const region of Object.values(s.atlas.regions || {})) region.settledAt = 0;
+    for (const region of Object.values(s.atlas.regions || {})) Object.assign(region, { settledAt: 0, rules: [], archived: false });
+    for (const token of Object.values(s.board.tokens || {})) token.biome = 'forest';
     for (const hero of s.heroes) Object.assign(hero, { classId: null, traitId: null, createdAt: 0, woundedUntil: null, statuses: [] });
     localStorage.setItem(slotKey(), JSON.stringify(data));
     return data;
@@ -54,7 +55,10 @@ function retiredKeysIn(state) {
         for (const f of fields) if (state[key] && f in state[key]) found.push(`${key}.${f}`);
     }
     for (const [id, def] of Object.entries(state.inventory?.groupDefs || {})) if ('isCustom' in def) found.push(`groupDefs.${id}.isCustom`);
-    for (const [id, r] of Object.entries(state.atlas?.regions || {})) if ('settledAt' in r) found.push(`regions.${id}.settledAt`);
+    for (const [id, r] of Object.entries(state.atlas?.regions || {})) {
+        for (const f of ['settledAt', 'rules', 'archived']) if (f in r) found.push(`regions.${id}.${f}`);
+    }
+    for (const [id, t] of Object.entries(state.board?.tokens || {})) if ('biome' in t) found.push(`board.tokens.${id}.biome`);
     for (const h of state.heroes || []) {
         for (const f of ['classId', 'traitId', 'createdAt']) if (f in h) found.push(`heroes.${h.id}.${f}`);
     }

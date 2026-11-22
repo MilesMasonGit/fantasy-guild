@@ -16,7 +16,6 @@ import { applyThreeBucket } from '../systems/effects/ModifierAggregator.js';
 import { getGlobalAggregator } from '../systems/effects/GuildModifiers.js';
 import { EFFECT_TYPES, TARGET_CATEGORIES } from '../systems/effects/constants.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
-import { modifiersOf } from '../systems/atlas/regionModifiers.js';
 import { averageXpBonus } from '../systems/hero/xpBonus.js';
 import { getCombatXpAward } from '../systems/combat/CombatFormulas.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -269,21 +268,21 @@ describe('each source kind gets its own line, named for the hover', () => {
         const spring = arrive(SELFIE);
         arrive('eb_banner', FAR);   // aimed at the vein only: not here
         const vein = arrive(VEIN, NEAR2);
-        GameState.state.atlas.regions.region_eb = { id: 'region_eb', flavourName: 'Copper Hills', practicalName: '', rules: [] };
-        const regionRule = rule('stm_eb_region', { type: EFFECT_TYPES.YIELD, bucket: 'percentage', value: 0.05, category: 'mining' });
-        for (const m of modifiersOf([regionRule], 'region_eb').modifiers) getGlobalAggregator().addModifier(m);
+        getGlobalAggregator().addModifier({
+            type: EFFECT_TYPES.YIELD, bucket: 'percentage', value: 0.05, target: { category: 'mining' }, source: 'guild_eb:stm_eb_guild'
+        });
 
         const own = badge(effectBreakdown(spring.id), EFFECT_KEY.YIELD);
         expect(own.sources.map(s => [s.kind, s.name])).toEqual([
             [SOURCE_KIND.SELF, 'Fixture Spring itself'],
-            [SOURCE_KIND.REGION, 'Copper Hills rule']
+            [SOURCE_KIND.GUILD, 'The guild']
         ]);
         expect(own.total).toBeCloseTo(30);
 
         const far = badge(effectBreakdown(vein.id), EFFECT_KEY.YIELD);
         expect(far.sources.map(s => [s.kind, s.name])).toEqual([
             [SOURCE_KIND.BUILDING, 'Fixture Banner on the mat'],
-            [SOURCE_KIND.REGION, 'Copper Hills rule']
+            [SOURCE_KIND.GUILD, 'The guild']
         ]);
     });
 

@@ -87,8 +87,7 @@ export function originOf(instance) {
 /**
  * A fixture: a Token laid down with its Region, which the guild never moves, pushes or demolishes
  * (`FixedTokens.isFixed`). Saved on the instance as `fixture`, naming who laid it:
- * - `MAP`: a node a map wrote when its Region was settled (`Atlas.settle`), saved beside the
- * `biome` it stands in.
+ * - `MAP`: a node a map wrote when its Region was settled (`Atlas.settle`).
  * - `CAMP`: a Token the Starter Camp laid down when the game began (`FixedTokens.fixCampTokens`).
  * Never the Guild Hall, which the player may still move.
  *

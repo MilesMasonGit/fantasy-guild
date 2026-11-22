@@ -275,7 +275,7 @@ describe('a hero who joins later arrives with every rank bought', () => {
         expect(early.skills.mining.xp).toBe(TOTALS[2]);
     });
 
-    it('reads the held ranks, never the guild-wide aggregator (a Region rule there gives nobody anything)', () => {
+    it('reads the held ranks, never the guild-wide aggregator (a rule there gives nobody anything)', () => {
         getGlobalAggregator().addModifier({ type: EFFECT_TYPES.XP_FOR_EVERYONE, value: 999, source: 'test:region' });
         expect(GuildUpgradeManager.purchase('xp_all').success).toBe(true);
         expect(GameState.heroes[0].skills.mining.xp).toBe(TOTALS[0]);

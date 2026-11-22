@@ -9,17 +9,11 @@ import { WATER_KIND } from './WaterShapes.js';
  * `Game.Atlas.devPreview(['forest', 'mountain'])`, `devSettle(...)`. They name today's Tokens;
  * every number is a placeholder, not content.
  *
- * `forest_rule` also carries a Region rule, +10 % Forestry yield, so a Region rule can be seen
- * applying and dropping as the guild travels. The `water_*` maps are a biome's map that names one
+ * The `water_*` maps are a biome's map that names one
  * variety of its water (`inland`), for the dev panel's water views; the `place_*` maps and the
  * `*_stocked` maps, each with an enemy camp and a Test Chest (a dev-only Token the dev panel
  * registers), are for its placement views.
  */
-
-export const DEV_RULE_FORESTRY_YIELD = Object.freeze({
-    id: 'stm_dev_region_forestry', keyword: 'provides',
-    payload: Object.freeze({ type: 'YIELD', bucket: 'percentage', value: 0.1, category: 'forestry' })
-});
 
 const BASE_MAPS = Object.freeze({
     forest: Object.freeze({
@@ -117,7 +111,6 @@ const withWater = (base, kind) => Object.freeze({ ...BASE_MAPS[base], id: `dev_m
 
 export const DEV_MAPS = Object.freeze({
     ...BASE_MAPS,
-    forest_rule: Object.freeze({ ...BASE_MAPS.forest, id: 'dev_map_forest_rule', rules: [DEV_RULE_FORESTRY_YIELD] }),
     mountain_camp: withCamp('mountain'),
     place_meadow_stocked: stocked('place_meadow'),
     place_lake_stocked: stocked('place_lake'),

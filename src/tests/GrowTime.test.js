@@ -20,7 +20,7 @@ import { clearMat, placeAt } from './fixtures/mat.js';
 /**
  * Grow Time (brief 230 S1a): a support in reach speeds how long a Token takes to grow (a Sapling
  * into a Tree) and to refill after a rest (a vein), stacking down to the standard floor. Read once
- * per Token and kept until its neighbourhood, the Region's rules or the content change, never per
+ * per Token and kept until its neighbourhood, the guild-wide rules or the content change, never per
  * tick: a day's catch-up asks it 86,400 times per growing Token.
  */
 
@@ -188,12 +188,12 @@ describe('a Sapling near a Forest', () => {
         expect(grewAfter('gt_sapling')).toBe(30000);
     });
 
-    it('a Region rule (the guild-wide scope) speeds it too, and its going is seen', () => {
+    it('a guild-wide rule speeds it too, and its going is seen', () => {
         const sapling = scene('gt_sapling');
         expect(TimedChanges.nextGrowth(sapling).totalMs).toBe(30000);
-        getGlobalAggregator().addModifier({ source: 'region:test', type: EFFECT_TYPES.GROW_TIME, bucket: 'percentage', value: -0.5 });
+        getGlobalAggregator().addModifier({ source: 'guild:test', type: EFFECT_TYPES.GROW_TIME, bucket: 'percentage', value: -0.5 });
         expect(TimedChanges.nextGrowth(sapling).totalMs).toBe(15000);
-        getGlobalAggregator().removeModifiersBySource('region:test');
+        getGlobalAggregator().removeModifiersBySource('guild:test');
         expect(TimedChanges.nextGrowth(sapling).totalMs).toBe(30000);
     });
 });
