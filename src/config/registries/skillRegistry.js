@@ -1,25 +1,22 @@
 // Fantasy Guild - Skill Registry
 
 /**
- * SkillRegistry: the world's skills, in three layers.
+ * SkillRegistry: the world's skills, in two layers.
  *
  * ## Every hero holds every skill
  * A hero holds every skill here from level 1: the gate on any work, Token or piece of gear is a
  * skill level, a tool or an item, never what the hero is. `hero.skills[id]` absent means only that
- * the id is not a skill (a cut one, or content's typo).
+ * the id is not a skill (a cut one, or content's typo). A skill no content uses yet is still listed
+ * and still held.
  *
- * | Layer | Count | What it is |
- * | :-- | :-- | :-- |
- * | `starting`   | 9 | The work every guild does from the first day |
- * | `combat`     | 4 | The four styles: a hero fights in the style of the weapon in their hands |
- * | `specialist` | 7 | Placeholders until the specialist-skill rework gives each its mechanics |
+ * | Layer | What it is |
+ * | :-- | :-- |
+ * | `starting` | Every skill that is not a combat style: gathering, making, and the ones whose identity is not placed yet (no `trade`) |
+ * | `combat`   | The four styles: a hero fights in the style of the weapon in their hands |
  *
- * ## ⚠️ The specialist skills are placeholders
- * They are names, descriptions and placeholder icons that work like any other skill (Tokens and
- * recipes that name them; XP; levels), with no mechanics of their own yet. **Nothing outside this
- * file may hardcode a skill id or a count.** Adding, renaming or re-layering a skill must be an
- * edit to this file and nothing else: derive from `SKILLS`, `SKILL_LAYERS` and the helpers below
- * rather than writing a literal.
+ * **Nothing outside this file may hardcode a skill id or a count.** Adding, renaming or re-layering
+ * a skill must be an edit to this file and nothing else: derive from `SKILLS`, `SKILL_LAYERS` and
+ * the helpers below rather than writing a literal.
  *
  * ⚠️ Renaming an id strands every piece of content naming the old one. A rename also needs an
  * entry in `skillIdMigration.js`, which rewrites the old id in `data/` and in the CMS workspace as
@@ -29,13 +26,12 @@
 
 export const SKILL_LAYERS = {
     STARTING: 'starting',
-    COMBAT: 'combat',
-    SPECIALIST: 'specialist'
+    COMBAT: 'combat'
 };
 
 /**
- * What a Starting skill does, for the hero sheet's order: gathering from the land, or making from
- * what was gathered.
+ * What a non-combat skill does, for the hero sheet's order: gathering from the land, or making from
+ * what was gathered. A skill with neither stands last.
  */
 export const SKILL_TRADES = {
     GATHERING: 'gathering',
@@ -124,40 +120,40 @@ export const SKILLS = {
         icon: '🗡️'
     },
 
-    // === Specialist (7): placeholders until the specialist-skill rework =====
+    // === Skills whose identity is not placed yet: no mechanics of their own, listed last ===
     fletching: {
-        id: 'fletching', name: 'Fletching', layer: SKILL_LAYERS.SPECIALIST,
+        id: 'fletching', trade: SKILL_TRADES.CRAFTING, name: 'Fletching', layer: SKILL_LAYERS.STARTING,
         description: 'Arrows, bows and hunting gear, made and tuned by hand.',
         icon: '🪶'
     },
     faith: {
-        id: 'faith', name: 'Faith', layer: SKILL_LAYERS.SPECIALIST,
+        id: 'faith', name: 'Faith', layer: SKILL_LAYERS.STARTING,
         description: 'Shrines, altars and wards that bless the heroes and Tokens around them.',
         icon: '✝️'
     },
     summoning: {
-        id: 'summoning', name: 'Summoning', layer: SKILL_LAYERS.SPECIALIST,
+        id: 'summoning', name: 'Summoning', layer: SKILL_LAYERS.STARTING,
         description: 'Raising thralls and spirits that fight in a hero’s place.',
         icon: '👻'
     },
     enchanting: {
-        id: 'enchanting', name: 'Enchanting', layer: SKILL_LAYERS.SPECIALIST,
+        id: 'enchanting', trade: SKILL_TRADES.CRAFTING, name: 'Enchanting', layer: SKILL_LAYERS.STARTING,
         description: 'Binding gems and dust into gear to make it more than it was.',
         icon: '🔮'
     },
     crime: {
-        id: 'crime', name: 'Crime', layer: SKILL_LAYERS.SPECIALIST,
+        id: 'crime', name: 'Crime', layer: SKILL_LAYERS.STARTING,
         description: 'Locks, contraband and the things other people would rather keep.',
         icon: '🗝️',
         sprite: 'assets/skills/s_crime.png'
     },
     taming: {
-        id: 'taming', name: 'Taming', layer: SKILL_LAYERS.SPECIALIST,
+        id: 'taming', name: 'Taming', layer: SKILL_LAYERS.STARTING,
         description: 'Beasts of burden that harvest, haul and graze unattended.',
         icon: '🐾'
     },
     science: {
-        id: 'science', name: 'Science', layer: SKILL_LAYERS.SPECIALIST,
+        id: 'science', name: 'Science', layer: SKILL_LAYERS.STARTING,
         description: 'Laboratories that convert goods in bulk into other materials.',
         icon: '⚗️'
     }
@@ -175,15 +171,14 @@ export function getSkillIdsByLayer(layer) {
 
 export const STARTING_SKILL_IDS = getSkillIdsByLayer(SKILL_LAYERS.STARTING);
 export const COMBAT_SKILL_IDS = getSkillIdsByLayer(SKILL_LAYERS.COMBAT);
-export const SPECIALIST_SKILL_IDS = getSkillIdsByLayer(SKILL_LAYERS.SPECIALIST);
 
 /** Every skill a hero holds: all of them, in registry order. */
 export const HERO_SKILL_IDS = getAllSkillIds();
 
 /**
  * Every skill in the hero sheet's order: combat, then the gathering skills, then the crafting ones,
- * then the specialist ones, each in registry order. Derived, so a new skill finds its place by its
- * layer and trade.
+ * then the ones with neither trade, each in registry order. Derived, so a new skill finds its place
+ * by its layer and trade.
  */
 export function heroSheetSkillIds() {
     const starting = (trade) => STARTING_SKILL_IDS.filter(id => SKILLS[id].trade === trade);
@@ -192,8 +187,7 @@ export function heroSheetSkillIds() {
         ...COMBAT_SKILL_IDS,
         ...starting(SKILL_TRADES.GATHERING),
         ...starting(SKILL_TRADES.CRAFTING),
-        ...rest,
-        ...SPECIALIST_SKILL_IDS
+        ...rest
     ];
 }
 
@@ -204,16 +198,12 @@ export function heroSheetSkillIds() {
  */
 export const SKILL_CATEGORIES = {
     [SKILL_LAYERS.STARTING]: {
-        id: SKILL_LAYERS.STARTING, name: 'Starting', hint: 'the everyday work',
+        id: SKILL_LAYERS.STARTING, name: 'Skills', hint: 'gathering and making',
         skills: STARTING_SKILL_IDS
     },
     [SKILL_LAYERS.COMBAT]: {
         id: SKILL_LAYERS.COMBAT, name: 'Combat', hint: 'the weapon decides the style',
         skills: COMBAT_SKILL_IDS
-    },
-    [SKILL_LAYERS.SPECIALIST]: {
-        id: SKILL_LAYERS.SPECIALIST, name: 'Specialist', hint: 'placeholders, no mechanics yet',
-        skills: SPECIALIST_SKILL_IDS
     }
 };
 

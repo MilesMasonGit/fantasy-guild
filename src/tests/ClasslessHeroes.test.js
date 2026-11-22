@@ -13,7 +13,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { getEnemyProfile } from '../config/registries/enemyProfile.js';
 import {
-    SKILLS, SKILL_LAYERS, STARTING_SKILL_IDS, COMBAT_SKILL_IDS, SPECIALIST_SKILL_IDS, HERO_SKILL_IDS,
+    SKILLS, SKILL_LAYERS, STARTING_SKILL_IDS, COMBAT_SKILL_IDS, HERO_SKILL_IDS,
     RETIRED_SKILL_IDS, getSkillIdsByLayer, isSkillId
 } from '../config/registries/skillRegistry.js';
 import { weaponStyleOf, authoredWeaponStyles, gearLevelRequirement, unmetGearRequirement } from '../config/registries/weaponStyles.js';
@@ -74,15 +74,14 @@ beforeEach(() => {
     GameState.state.progress.rosterLimit = 8;
 });
 
-describe('the skills: 9 Starting, 4 combat, 7 specialist', () => {
-    it('has twenty skills in three layers', () => {
-        expect(Object.values(SKILL_LAYERS)).toEqual(['starting', 'combat', 'specialist']);
-        expect(STARTING_SKILL_IDS).toHaveLength(9);
+describe('the skills: 16 non-combat, 4 combat', () => {
+    it('has twenty skills in two layers', () => {
+        expect(Object.values(SKILL_LAYERS)).toEqual(['starting', 'combat']);
+        expect(STARTING_SKILL_IDS).toHaveLength(16);
         expect(COMBAT_SKILL_IDS).toEqual(['melee', 'ranged', 'magic', 'stealth']);
-        expect(SPECIALIST_SKILL_IDS).toEqual(['fletching', 'faith', 'summoning', 'enchanting', 'crime', 'taming', 'science']);
         expect(HERO_SKILL_IDS).toHaveLength(20);
         expect(Object.keys(SKILLS)).toHaveLength(20);
-        expect(getSkillIdsByLayer(SKILL_LAYERS.SPECIALIST)).toEqual(SPECIALIST_SKILL_IDS);
+        expect(getSkillIdsByLayer(SKILL_LAYERS.STARTING)).toEqual(STARTING_SKILL_IDS);
     });
 
     it('the five cut skills are gone', () => {
@@ -165,7 +164,7 @@ describe('kills train the style fought in', () => {
         h.equipment[0] = null;
         win(h);
         expect(h.skills.melee.xp).toBe(2 * award);
-        for (const id of [...STARTING_SKILL_IDS, ...SPECIALIST_SKILL_IDS, 'magic', 'stealth']) expect(h.skills[id].xp, id).toBe(0);
+        for (const id of [...STARTING_SKILL_IDS, 'magic', 'stealth']) expect(h.skills[id].xp, id).toBe(0);
     });
 });
 
