@@ -652,14 +652,6 @@ describe('a word on every line that is not used up (the owner\'s pick C, 6 Novem
         expect(word(outWord(buildEncyclopedia(ws), T('token_oak_forest'), T('token_oak_tree')))).toBe('beside');
     });
 
-    it('a Token that turns into another says so, both ways', () => {
-        const ws = threeWaysToIronOre();
-        ws.tokens.token_egg = { id: 'token_egg', name: 'Egg', turns: { chance: 10, into: [{ typeId: 'token_goblin', weight: 1 }] } };
-        const book = buildEncyclopedia(ws);
-        expect(word(inWord(book, T('token_goblin'), T('token_egg')))).toBe('turns');
-        expect(word(outWord(book, T('token_egg'), T('token_goblin')))).toBe('turns');
-    });
-
     it('used up stays the plain line: an ingredient, a seed planted, bait, a price', () => {
         const book = buildEncyclopedia(withForest());
         expect(outWord(book, I('item_iron_ingot'), I('item_iron_pickaxe'))).toBeNull();

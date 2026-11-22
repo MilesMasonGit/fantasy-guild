@@ -111,7 +111,7 @@ registerTokenTypes({
     s5_sea: water('s5_sea', 'Sea', [{ tool: 'fishing_trap', bait: 's5_squid', catches: [{ itemId: 's5_crab', weight: 1 }] }], { uses: null }),
     s5_dock: buff('s5_dock', { type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.5 }, { mode: 'tag', value: 'water' }),
     s5_jinx: buff('s5_jinx', { type: EFFECT_TYPES.FAIL_CHANCE, bucket: 'flat', value: 100 }, { mode: 'tag', value: 'water' }),
-    // An old save's Coast after the content pack: water, no turns. And the Shrimp Coast it once turned into.
+    // An old save's Coast after the content pack: water. And the Shrimp Coast it once turned into.
     s5_coast: water('s5_coast', 'Coast', LAKE_POOLS, { uses: 5000 }),
     s5_shrimp_coast: {
         id: 's5_shrimp_coast', name: 'Shrimp Coast', tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: 1000,
@@ -426,31 +426,13 @@ describe('water never runs out and does not shift', () => {
         expect(lake.usesRemaining).toBeNull();
     });
 
-    it('an old save\'s Shrimp Coast turns back into the Coast (now water, no turns) and stays one', () => {
-        const coastDef = getTokenType('s5_coast');
-        expect(coastDef.turns).toBeUndefined();
+    it('an old saves Shrimp Coast keeps its retired turnedFrom field and stays a Shrimp Coast', () => {
         const shrimp = BoardState.createTokenInstance('s5_shrimp_coast', 1000);
         shrimp.turnedFrom = 's5_coast';
         Placement.placeTokenAt(shrimp, LAKE);
         const random = seeded(3);
-        let current = shrimp;
-        for (let s = 0; s < 3600 && current.typeId !== 's5_coast'; s++) {
-            TimedChanges.tick(1000, random);
-            current = BoardState.tokens()[0];
-        }
-        expect(current.typeId).toBe('s5_coast');
-        expect(current.turnedFrom).toBeUndefined();
-        for (let s = 0; s < 600; s++) TimedChanges.tick(1000, random);
-        expect(BoardState.tokens().map(t => t.typeId)).toEqual(['s5_coast']);
-    });
-
-    it('so does one whose own type the content pack deleted', () => {
-        const ghost = BoardState.createTokenInstance('s5_type_the_pack_deleted', 1000);
-        ghost.turnedFrom = 's5_coast';
-        BoardState.addToken(ghost, LAKE.x, LAKE.y);
-        const random = seeded(5);
-        for (let s = 0; s < 3600 && BoardState.tokens()[0].typeId !== 's5_coast'; s++) TimedChanges.tick(1000, random);
-        expect(BoardState.tokens()[0].typeId).toBe('s5_coast');
+        for (let s = 0; s < 3600; s++) TimedChanges.tick(1000, random);
+        expect(BoardState.tokens().map(t => t.typeId)).toEqual(['s5_shrimp_coast']);
     });
 });
 

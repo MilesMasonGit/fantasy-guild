@@ -30,20 +30,20 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ Token Lifecycle feedback, slice **Q8**: a Token that turns on its own
- * shows a countdown to its next roll, on the Coast and on the Shrimp Coast it
- * became: the timer on its idle plate, shown on hover only.
+ * ⭐ Token Lifecycle feedback, slice **Q8**: a Token that changes on its own clock
+ * (here a growing Sapling) shows a countdown to its next change: the timer on its
+ * idle plate, shown on hover only.
  */
 
 registerTokenTypes({
-    fixture_q8_coast: {
-        id: 'fixture_q8_coast', name: 'Fixture Q8 Coast', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nautical',
-        turns: { into: [{ typeId: 'fixture_q8_shrimp', weight: 1 }], everyMs: 60000, chance: 100 }
+    fixture_q8_sapling: {
+        id: 'fixture_q8_sapling', name: 'Fixture Q8 Sapling', tokenType: 'resource',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
+        grows: { into: 'fixture_q8_tree', afterMs: 60000 }
     },
-    fixture_q8_shrimp: {
-        id: 'fixture_q8_shrimp', name: 'Fixture Q8 Shrimp Coast', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nautical'
+    fixture_q8_tree: {
+        id: 'fixture_q8_tree', name: 'Fixture Q8 Tree', tokenType: 'resource',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature'
     }
 });
 
@@ -80,11 +80,9 @@ describe('countdown text (FB-14)', () => {
         expect(turnCountdownText(undefined)).toBeNull();
     });
 
-    it('the timer cell draws what it reads, names the odds, and is nothing with nothing to read', () => {
-        const turn = (extra) => ({ kind: 'turn', everyMs: 60000, chance: 30, ...extra });
-        expect(timerCellOf(turn({ inMs: 34000, back: false })))
-            .toMatchObject({ text: '0:34', glyph: 'turn', tip: 'Next roll to turn into something else in 0:34 (30% chance)' });
-        expect(timerCellOf(turn({ inMs: 5000, back: true })).tip).toBe('Next roll to turn back in 0:05 (30% chance)');
+    it('the timer cell draws what it reads, and is nothing with nothing to read', () => {
+        expect(timerCellOf({ kind: 'grow', inMs: 34000, totalMs: 60000, into: 'fixture_q8_tree' }))
+            .toMatchObject({ text: '0:34', glyph: 'grow', tip: 'Grows into Fixture Q8 Tree in 0:34' });
         expect(timerCellOf(null)).toBeNull();
     });
 
@@ -97,10 +95,10 @@ describe('countdown text (FB-14)', () => {
 });
 
 describe('on the mat (FB-14)', () => {
-    it('a Coast counts down to its roll, and the Shrimp Coast it turns into counts down to its roll back', async () => {
+    it('a Sapling counts down to its growth, and its Tree has no countdown', async () => {
         vi.useFakeTimers();
-        const coast = BoardState.createTokenInstance('fixture_q8_coast');
-        Placement.placeTokenAt(coast, AT);
+        const sapling = BoardState.createTokenInstance('fixture_q8_sapling');
+        Placement.placeTokenAt(sapling, AT);
         const { container } = mount(h(MatBoard));
         const root = container.querySelector('[data-mat-board]');
         root.getBoundingClientRect = () => ({
@@ -108,35 +106,32 @@ describe('on the mat (FB-14)', () => {
         });
         const hover = () => { fireEvent.pointerMove(root, { clientX: AT.x, clientY: AT.y }); };
         // At rest, with a minute to go: nothing. Hovered: its plate, a minute to go.
-        expect(countdownOf(container, coast.id)).toBeNull();
+        expect(countdownOf(container, sapling.id)).toBeNull();
         act(hover);
-        expect(countdownOf(container, coast.id)).toBeNull();
+        expect(countdownOf(container, sapling.id)).toBeNull();
         restHover();
-        expect(textOf(countdownOf(container, coast.id))).toBe('1:00');
+        expect(textOf(countdownOf(container, sapling.id))).toBe('1:00');
 
         // 26 s of game time: the plate re-reads the clock on its next refresh.
         act(() => { TimedChanges.tick(26000); vi.advanceTimersByTime(TURN_COUNTDOWN_REFRESH_MS); });
-        expect(textOf(countdownOf(container, coast.id))).toBe('0:34');
+        expect(textOf(countdownOf(container, sapling.id))).toBe('0:34');
         act(() => { TimedChanges.tick(19000); vi.advanceTimersByTime(TURN_COUNTDOWN_REFRESH_MS); });
-        expect(textOf(countdownOf(container, coast.id))).toBe('0:15');
+        expect(textOf(countdownOf(container, sapling.id))).toBe('0:15');
 
-        // The roll (100%): a Shrimp Coast, counting down afresh to its roll back.
+        // It grows: the Tree has nothing counting.
         // (The mat re-reads its Token list on a microtask, hence the async act.)
         await act(async () => { TimedChanges.tick(15000); });
         act(() => { vi.advanceTimersByTime(TURN_COUNTDOWN_REFRESH_MS); });
-        const shrimp = BoardState.tokens().find(t => t.typeId === 'fixture_q8_shrimp');
-        expect(shrimp?.turnedFrom).toBe('fixture_q8_coast');
+        const tree = BoardState.tokens().find(t => t.typeId === 'fixture_q8_tree');
+        expect(tree).toBeTruthy();
         act(() => { fireEvent.pointerMove(root, { clientX: AT.x + 1, clientY: AT.y }); });
         act(() => { vi.advanceTimersByTime(TURN_COUNTDOWN_REFRESH_MS); });
-        const cell = countdownOf(container, shrimp.id);
-        expect(textOf(cell)).toBe('1:00');
-        fireEvent.pointerEnter(cell);
-        expect(document.body.querySelector('[data-bubble-tip]').textContent).toContain('turn back');
+        expect(countdownOf(container, tree.id)).toBeNull();
     });
 
     it('⭐ not hovered, the countdown never comes up by itself, not even in its last seconds (brief 120)', () => {
         vi.useFakeTimers();
-        const coast = BoardState.createTokenInstance('fixture_q8_coast');
+        const coast = BoardState.createTokenInstance('fixture_q8_sapling');
         Placement.placeTokenAt(coast, AT);
         const { container } = mount(h(MatBoard));
         act(() => { TimedChanges.tick(49000); vi.advanceTimersByTime(TURN_COUNTDOWN_REFRESH_MS); });
@@ -145,7 +140,7 @@ describe('on the mat (FB-14)', () => {
         expect(countdownOf(container, coast.id)).toBeNull();            // 9 s to go
     });
 
-    it('a Token that does not turn has no countdown', () => {
+    it('a Token with no clock has no countdown', () => {
         const plain = BoardState.createTokenInstance('fixture_producer');
         Placement.placeTokenAt(plain, AT);
         const { container } = mount(h(MatBoard));

@@ -26,7 +26,7 @@ const pool = (tool, bait = undefined) => coast.catchPools.find((p) => p.tool ===
 const landed = (p) => p.catches.map((c) => c.itemId);
 
 describe('The Fishing chain in shipped data (7.3)', () => {
-    it('the Coast no longer turns into a Shrimp Coast: it is water, and never runs out', () => {
+    it('the Coast is water, and never runs out', () => {
         expect(coast.turns).toBeUndefined();
         expect(coast.uses).toBeNull();
         expect(coast.tags).toContain('Water');
