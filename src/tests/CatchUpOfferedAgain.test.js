@@ -227,8 +227,8 @@ describe.each(Object.entries(BUILDS))('with %s', (_name, build) => {
         expect(q('[data-summary-undo]')).not.toBeNull();
         expect(q('[data-summary-undo-since]')).toBeNull();
         expect(CatchUp.undoSince()).toBe(NOW - 3 * HOUR);
-        // The half minute played on, quietly, on top of the time away.
-        expect(GameState.state.time.gameTimeMs).toBe(PLAYED_BEFORE + 3 * HOUR + 30 * SEC);
+        // Back within a minute of the last save: none of that half minute is played.
+        expect(GameState.state.time.gameTimeMs).toBe(PLAYED_BEFORE + 3 * HOUR);
         expect(marked(build.main()).since).toBe(NOW - 3 * HOUR);
         expect(build.backup()).toBe(asLeft);
     });
@@ -245,7 +245,7 @@ describe.each(Object.entries(BUILDS))('with %s', (_name, build) => {
         expect(CatchUp.canUndo()).toBe(false);
         expect(marked(build.main())).toBeUndefined();
         expect(build.backup()).not.toBe(asLeft);
-        expect(played(build.main())).toBe(PLAYED_BEFORE + 3 * HOUR + 30 * SEC);
+        expect(played(build.main())).toBe(PLAYED_BEFORE + 3 * HOUR);
 
         await reload();
         await start(NOW + 60 * SEC);
@@ -374,7 +374,9 @@ describe.each(Object.entries(BUILDS))('with %s', (_name, build) => {
         expect(q('[data-summary-undo]')).toBeNull();
         expect(q('[data-summary-undo-gone]')?.textContent).toBe('The save from before your time away is gone, so Load as I left it cannot be offered.');
         expect(CatchUp.canUndo()).toBe(false);
-        // Still unanswered, and no longer looked for.
+        // Still unanswered, and from the next save on no longer looked for.
+        expect(SaveManager.save(false)).toBe(true);
+        await SaveFiles.flush();
         expect(marked(build.main())).toMatchObject({ since: NOW - 3 * HOUR, check: null });
 
         await answerReturn();
@@ -426,7 +428,7 @@ describe('around the summary offered again', () => {
     });
 
     it('a summary that cannot be turned down leaves no mark: a short time away, or one that does not save', async () => {
-        localStorage.setItem(SaveManager.getSlotKey(0), saveText(90 * SEC));
+        localStorage.setItem(SaveManager.getSlotKey(0), saveText(30 * SEC));
         await start(NOW);
         expect(q('[data-catch-up-summary]')).toBeNull();
         expect(marked(localStorage.getItem(SaveManager.getSlotKey(0)))).toBeUndefined();

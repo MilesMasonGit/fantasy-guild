@@ -137,7 +137,7 @@ describe('what the catch-up keeps to go back to', () => {
     it('nothing is kept for a silent catch-up, one that does not save (the bench), or a game with no slot', async () => {
         emptyGame();
         SaveManager.currentSlot = 0;
-        await run({ savedAt: NOW - 90 * 1000 });                    // under 2 min: silent
+        await run({ savedAt: NOW - 30 * 1000 });                    // under a minute: silent
         expect(CatchUp.canUndo()).toBe(false);
         const slotBefore = slotJson(0);
         await run({ savedAt: NOW - 3 * HOUR, save: false });
