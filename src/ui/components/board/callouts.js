@@ -20,6 +20,8 @@ export const MAX_TOTAL = 24;
 export const calloutText = {
     spawned: (name) => `! Spawned ${name}`,
     demolished: (name) => `Demolished ${name}`,
+    // A Token that ran out of charges and left the mat, said where it stood: "Oak Forest used up".
+    usedUp: (name) => t('messages.usedUp', { token: name }),
     // A Foundation handed back to the Shop: what came back, "Refunded 20 Oak Wood, 5 Stone".
     refunded: (lines) => (lines.length ? `Refunded ${lines.join(', ')}` : 'Refunded'),
     effect: (title) => title,

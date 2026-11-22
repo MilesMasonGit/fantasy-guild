@@ -7,6 +7,7 @@ import { startFightWatch, subscribeMoments } from '../combat/fightWatch.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { artRadiusOf } from '../../../config/matGeometry.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
+import { isEnemyDef } from '../../../config/registries/enemyProfile.js';
 import { MAT_Z } from './matLayers.js';
 import { CALLOUT_MS, INPUT_CALLOUT_GAP_MS, TOOL_CALLOUT_GAP_MS, addCallout, anchorKeyOf, calloutText, dueAgain, namesStatus } from './callouts.js';
 import { getAllItems, getItem } from '../../../config/registries/itemRegistry.js';
@@ -64,7 +65,8 @@ const NO_SUBSCRIPTION = () => () => {};
  * They appear, hold for a moment and fade (`callout-pop` in `components.css`); nothing to click,
  * and the pointer passes straight through. One layer and one subscription per event for the
  * whole mat, however many Tokens are drawn.
- * Depletion and level-ups are not here: a hero says those (`HeroBubbleLayer`).
+ * A Token used up is said here, where it stood ("Oak Forest used up"); an enemy beaten and
+ * level-ups are not: the hero says those (`HeroBubbleLayer`).
  * Over a Token whose hero is speaking, the callouts go on top of the hero's stack, one column
  * (`speechColumns.js`). Only while a callout is up does a change to that stack redraw this.
  */
@@ -152,6 +154,12 @@ export const CalloutLayer = memo(function CalloutLayer() {
             // The Token is gone by now: said where it stood, over where its art was.
             EventBus.subscribe(BOARD_EVENTS.TOKEN_DEMOLISHED, (p) => {
                 if (p?.typeId) say({ x: p.x, y: p.y, typeId: p.typeId, text: calloutText.demolished(tokenName(p.typeId)) });
+            }, UI_LISTENER),
+            // A Token used up is gone by now: said where it stood, whoever spent it. An enemy is
+            // beaten, not used up: the hero who beat it says so (`HeroBubbleLayer`).
+            EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, (p) => {
+                if (!p?.typeId || isEnemyDef(getTokenType(p.typeId))) return;
+                say({ x: p.x, y: p.y, typeId: p.typeId, text: calloutText.usedUp(tokenName(p.typeId)) });
             }, UI_LISTENER),
             // A Foundation handed back to the Shop is gone too: what came back, said where it stood.
             EventBus.subscribe(ENGINE_EVENTS.TOKEN_REFUNDED, (p) => {

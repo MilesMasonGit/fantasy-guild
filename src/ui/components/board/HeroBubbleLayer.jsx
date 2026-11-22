@@ -1,7 +1,8 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { MAT_Z } from './matLayers.js';
-import { addMoment, liveMoments, stackOf, momentText, speaksMoment, idleMomentOf, DEPLETED_TTL_MS, GEAR_BROKE_KEY } from './heroSpeech.js';
-import { getItem } from '../../../config/registries/itemRegistry.js';
+import { addMoment, liveMoments, stackOf, momentText, speaksMoment, idleMomentOf, BEATEN_TTL_MS } from './heroSpeech.js';
+import { raiseBubble, dismissBubble, bubblesOf, hasBubble, registerRebuild, startSpeechBubbles, subscribeBubbles, bubblesVersion } from './speechBubbles.js';
+import { GEAR_BROKE_KEY, gearBrokeSpecOf, rebuildGearBroke } from './heroNeeds.js';
 import { floatsOf, anyFloats, subscribeFloats } from './levelUpFloats.js';
 import { LevelUpFloats } from './LevelUpFloat.jsx';
 import { useMatFit } from './MatFitContext.jsx';
@@ -52,14 +53,16 @@ const guessSize = (stack, floats, unit) => {
  * Speech bubbles, above every hero's head.
  * One layer over the whole mat, so a bubble is never hidden by a Token, a flag or another
  * hero. Each stack is placed from the same point `MatHero` uses and glides with it for one
- * tick while the hero walks, a screen pixel a jump as the hero does, so it stays over the head. Bubbles are not clickable: the pointer
- * passes straight through to whatever is beneath, so dragging a hero or their flag is never
- * blocked.
+ * tick while the hero walks, a screen pixel a jump as the hero does, so it stays over the head. A
+ * moment is not clickable: the pointer passes straight through to whatever is beneath, so dragging
+ * a hero or their flag is never blocked. A waiting bubble (`speechBubbles.js`) takes the pointer
+ * only to go: hovering or clicking it dismisses it at once.
  * A hero who has just levelled a skill has its icon and number floating at the top of their
  * stack (`levelUpFloats.js`, `LevelUpFloat.jsx`), drawn with the speech so it follows the hero
  * and is kept off the other stacks the same way.
- * Heroes speak only of **moments** (going idle, a job gone for good, a Token the hero used up),
- * timed and gone by themselves (`heroSpeech.js`). A Token's problem is never spoken: its problem
+ * Heroes speak of **moments** (going idle, a job gone for good, an enemy the hero beat), timed and
+ * gone by themselves (`heroSpeech.js`), and of what waits for the player (gear that broke,
+ * `heroNeeds.js`), until hovered, clicked or no longer needed. A Token's problem is never spoken: its problem
  * mark and the mark's hover say it. Routine moments are filtered out by `speaksMoment`,
  * and every line with its status is listed in `docs/reference/speech_bubble_lines.md`.
  * Stacks are kept off each other and inside the mat (`bubbleLayout.js`); a nudged stack's
@@ -97,28 +100,34 @@ export const HeroBubbleLayer = ({ heroes }) => {
     const [, setFloatTick] = useState(0);
     useEffect(() => subscribeFloats(() => setFloatTick(n => n + 1)), []);
 
-    // Depletions and refused pins arrive as events.
+    // The waiting bubbles: kept in step with the game while the mat is drawn, rebuilt on a load.
+    useSyncExternalStore(subscribeBubbles, bubblesVersion);
+    useEffect(() => {
+        const unregister = registerRebuild(rebuildGearBroke);
+        const stop = startSpeechBubbles();
+        return () => { stop(); unregister(); };
+    }, []);
+
+    // Beaten enemies, status landings and broken gear arrive as events.
     useEffect(() => {
         const unsubs = [
-            // The hero whose work spent a Token's last charge says so.
-            // An enemy is beaten, not depleted.
+            // The hero who beat an enemy says so. A Token used up is a popup over it (`CalloutLayer`).
             EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, (p) => {
                 if (!p?.exhaustedBy || !p.typeId) return;
                 const def = getTokenType(p.typeId);
+                if (!isEnemyDef(def)) return;
                 const name = def?.name || tokenName(p.typeId) || p.typeId;
-                const kind = isEnemyDef(def) ? 'beaten' : 'depleted';
-                sayRef.current(p.exhaustedBy, kind, { key: `depleted:${p.typeId}`, text: momentText[kind](name) }, DEPLETED_TTL_MS);
+                sayRef.current(p.exhaustedBy, 'beaten', { key: `beaten:${p.typeId}`, text: momentText.beaten(name) }, BEATEN_TTL_MS);
             }, UI_LISTENER),
             // A status landing on a fighting hero ("Venom!"), over their bar, as briefly as a callout.
             EventBus.subscribe(ENGINE_EVENTS.STATUS_APPLIED, (p) => {
                 if (p?.targetType !== 'hero' || !p.targetId || !p.statusId) return;
                 sayRef.current(p.targetId, 'statusLands', { key: `status:${p.statusId}`, text: momentText.statusLands(p.statusId) }, CALLOUT_MS);
             }, UI_LISTENER),
-            // The tool or weapon in their hands broke: they say so, and stop.
+            // The tool or weapon in their hands broke: they say so until it is answered, and stop.
             EventBus.subscribe(BOARD_EVENTS.GEAR_BROKE, (p) => {
-                if (!p?.heroId || !p.itemId) return;
-                const name = getItem(p.itemId)?.name || p.itemId;
-                sayRef.current(p.heroId, 'gearBroke', { key: GEAR_BROKE_KEY, text: momentText.gearBroke(name) });
+                const spec = gearBrokeSpecOf(p);
+                if (spec) raiseBubble(p.heroId, spec);
             }, UI_LISTENER)
         ];
         return () => unsubs.forEach(u => u());
@@ -135,8 +144,8 @@ export const HeroBubbleLayer = ({ heroes }) => {
             const idle = h.state === 'idle';
             next.set(h.heroId, idle);
             if (prev && prev.get(h.heroId) === false && idle) {
-                // A hero whose tool just broke has said why they stop.
-                if (liveMoments(momentsRef.current.get(h.heroId) || [], Date.now()).some(m => m.key === GEAR_BROKE_KEY)) continue;
+                // A hero whose gear broke has said why they stop, and its "!" says it after.
+                if (hasBubble(h.heroId, GEAR_BROKE_KEY)) continue;
                 // Waiting for another hero's fight or Token says so; waiting for a resting node,
                 // or standing at a spot they were sent to, says nothing; a job gone asks for one.
                 const waiting = Flags.waitingOf(h.heroId);
@@ -165,7 +174,7 @@ export const HeroBubbleLayer = ({ heroes }) => {
     const speechAt = (list, t) => {
         const out = [];
         for (const h of list) {
-            const stack = stackOf(momentsRef.current.get(h.heroId) || [], t);
+            const stack = stackOf(momentsRef.current.get(h.heroId) || [], t, bubblesOf(h.heroId));
             const floats = floatsOf(h.heroId, t);
             if (!stack.length && !floats.length) continue;
             // The tail sits just above the head, read from the art's real size at this mat scale
@@ -315,11 +324,15 @@ export const HeroBubbleLayer = ({ heroes }) => {
                                 key={b.id}
                                 data-hero-bubble={b.id}
                                 data-hero-bubble-kind={b.kind}
-                                tone={momentTone(b.id)}
+                                tone={b.tone || momentTone(b.id)}
                                 u={u}
                                 tail={i === stack.length - 1}
                                 tailLeft={`clamp(${inset}px, calc(50% - ${dx}px), calc(100% - ${inset}px))`}
-                                className="whitespace-nowrap ui-text-title font-bold"
+                                className={`whitespace-nowrap ui-text-title font-bold${b.kind === 'waiting' ? ' pointer-events-auto cursor-pointer' : ''}`}
+                                {...(b.kind === 'waiting' ? {
+                                    onPointerEnter: () => dismissBubble(h.heroId, b.id),
+                                    onClick: () => dismissBubble(h.heroId, b.id)
+                                } : {})}
                             >
                                 {b.text}
                             </SpeechFrame>

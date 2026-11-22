@@ -577,9 +577,11 @@ describe('nothing covers a fighter\'s health number (owner, 2026-10-25: everythi
         const { HeroBubbleLayer } = await import('../ui/components/board/HeroBubbleLayer.jsx');
         const body = HeroMotion.bodyView(heroId);
         const heroes = [{ heroId, state: 'working', x: body.x, y: body.y, moving: false, tokenId: enemyId, combat: true, hurt: false }];
+        // The hero speaks: an enemy beaten is their line (a Token used up is a popup over it).
+        const enemyType = BoardState.getTokenById(enemyId).typeId;
         const { container } = render(React.createElement(HeroBubbleLayer, { heroes }));
         await new Promise(r => setTimeout(r, 2));
-        act(() => { EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'tok_gone', typeId: 'fixture_producer', exhaustedBy: heroId }); });
+        act(() => { EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'tok_gone', typeId: enemyType, exhaustedBy: heroId }); });
         const stack = container.querySelector(`[data-hero-bubble-stack="${heroId}"]`);
         // The stack's foot (its tail hangs below it) clears the hero's art top by the reach.
         expect(yOf(stack)).toBeLessThanOrEqual(body.y - 64 - reach());
@@ -589,7 +591,7 @@ describe('nothing covers a fighter\'s health number (owner, 2026-10-25: everythi
         const { container: c2 } = render(React.createElement(HeroBubbleLayer, { heroes: calm }));
         // A millisecond passes first, as in play: the layer redraws on the clock it is told.
         await new Promise(r => setTimeout(r, 2));
-        act(() => { EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'tok_gone2', typeId: 'fixture_producer', exhaustedBy: heroId }); });
+        act(() => { EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'tok_gone2', typeId: enemyType, exhaustedBy: heroId }); });
         expect(yOf(c2.querySelector(`[data-hero-bubble-stack="${heroId}"]`))).toBeGreaterThan(body.y - 64 - reach());
     });
 
