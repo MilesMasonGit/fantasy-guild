@@ -73,7 +73,22 @@ build green) · bench-queued · eye-check · merged.*
 4. `fix/recovery-burning` (V2), `fix/item-tooltip-tools-heal` (D7), `fix/retire-tool-tokens` (D8; merge after D9, one comment in statementSlots.js).
 5. Look stack, after the owner's mat-look verdicts (scratch `eye/mat-look` c7125d85 already gated): names-limes, idle-hover → alert-above-bob, animated-ring → flags-on-hover → task-ring, level-up-unlocks. Drag bench for ring and flags; one bench:draw --compare.
 6. Wording stack on idle-hover: `fix/one-time-writer` (W1) → `fix/one-chance-writer` (W2) → `fix/effects-as-badges` (W3) → `fix/token-timer-writer` (W6), `fix/encyclopedia-sources` (W7). W3 needs the description Sync (owner question); regenerate renderGolden after merging beside V1 or V2.
+7. Living mat: `fix/spawner-reach-count` (760 V1, WORK CHANGED) → `fix/no-room-waits` (V2) → `fix/builder-stays` (V6, maybe WORK CHANGED); `fix/enemies-one-use` (740 C6, on V2, WORK CHANGED; after C1).
+8. Regions and time: `fix/region-leftovers` (765 W1; `npm run bench:calibrate` after) → `feat/biome-terrain-table` (W2); `feat/time-away-minute` (W3) → `fix/saving-leftovers` (W4, has V2 merged in).
+9. Demolition and events: `feat/event-demolition-xp` (760 V4) → `feat/demolish-on-card` (V5; beside J1 drop its bounty lines in LeaveMatControl) → `feat/event-goodbye` (V7).
+10. Heroes: `fix/just-skills` (780 J5) → `feat/tailor-skill` (J6, heroHash moves); `feat/discard-stack` (J2); `fix/bounties-cut` (J1, WORK CHANGED; touches idlePlate/workPlate/TokenBubbles/MatToken like P2 and V1) → `feat/three-small-calls` (J3) → `fix/heroes-bank-leftovers` (J4).
+11. Gathering and making: `fix/making-leftovers` (770 G4; ledger rates.js beside D5, W1, V1); `fix/gathering-leftovers` (G3, on D8).
+12. More wording: `feat/card-bonus-drops` (790 W8, on W6); `fix/level-requirements` (W5, on D8 with D7; conflicts with W3 in Orders.js, ItemTip.jsx, two tests, renderGolden); `fix/attacks-every-strike` (740 C3, on W3, after C1; regenerate renderGolden).
+13. Messages, after the look stack: `feat/two-message-kinds` (795 M1) → `feat/silent-moments-speak` (M2; TokenBubbles shared with C6).
+**One window will not hold this.** A merge with its gate is 30 to 40 minutes on this PC, so Mon 01:00 to 07:00 takes about ten: steps 1 to 4 first (the agreed order), then 7, 8 and 10's engine branches, each with the work check. The rest carries to the next window (Mon 13:00), the look stack and the 795 messages after the owner's verdicts. Eye-checks to write once merged: 760 (no room, Demolish on the card, builder stays, goodbye banner), 765 W3, 780 (Discard, skills list, Tailor, hero level, Lessons switch), 795 (popups and waiting bubbles; needs a QA way to break a tool), 740 C3 (item tooltip stat block).
 **Content packs owed by batch 12's code (for the content agent; each Synced on main only after its code merges):**
+- 760 V1: strip `spawner.withinReach` (3 Tokens), the Wheat Sprout and the Fire Elemental ambush effect (T-600).
+- 770 G4: strip `stationChargeCost` from all 117 recipes; stations' `config.cycleTimeMs` 12000 and `xp` 0. Then the director adds the one-line Recalculate strip.
+- 770 G3: clear `respawn.restingSprite` (t_vein_stone) on every vein; remove `camp.reach` from four camps; delete `effect_fishing_net` (then the director removes the kind).
+- 740 C3: clear `payload.ignoresArmor` on 3 effects.
+- 740 C6: token_cow and token_thorn_elemental uses 1; clear `bossChance` and `bosses` from world rings 1 to 3.
+- 765 W2: none, the owner Syncs the seeded Biome terrain table on main after merge.
+- 760 V7: the owner writes a Goodbye line per event on the CMS Events page (any time after merge).
 - 730 D1: strip `everyMs` from the Guild Hall's three Passive Production lines.
 - 730 D3: the three stars as `hallStar` creates with ids `roster_size`, `bank_tabs`, `wishing_well`; constellations `hearth`, `vault`, `well` (`hallConstellation` creates: The Hearth label {0,-0.8}, The Vault {-0.72,0.3}, The Well {0,0.8}); links ["hall"]; outlines `t_bunk_bed`, `i_key_gold`, `i_water`; no sprite, no opensRing; ranks exactly 8 (Bunk Beds, rank 1 price []) and 15 (Bank Tabs), the Well any count with rank r lines `[{itemId: item_water, quantity: 10*r}]` (whole amount per rank); today's places and texts are in `FALLBACK_SKY` (src/config/guildUpgrades.js). D4 follows the Sync.
 - 730 D7: clear the heal amount on the six drinks (Water, Apple Juice, Lemonade, Limeade, Beer, Grape Juice) and the Shrimp Trawler Potion.
