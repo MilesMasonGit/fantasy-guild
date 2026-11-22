@@ -171,6 +171,58 @@ describe('catching up on load', () => {
         expect(SaveManager.loadedSavedAt).toBe(NOW + MIN);
     });
 
+    it('a load within a minute resumes as saved: no time passes and no summary opens', async () => {
+        writeSlot(NOW - 30_000);
+        const written = localStorage.getItem(SaveManager.getSlotKey(0));
+        const before = CatchUp.lastResult();
+        const started = [];
+        const off = EventBus.subscribe(ENGINE_EVENTS.CATCH_UP_STARTED, (p) => started.push(p));
+        try {
+            expect(await SaveManager.loadSlot(0)).toBe(true);
+            await EngineBootstrap.onSlotSelected(0, false);
+        } finally {
+            off();
+        }
+        expect(GameState.state.time.gameTimeMs).toBe(PLAYED_BEFORE);
+        expect(started).toEqual([]);
+        expect(CatchUp.lastResult()).toBe(before);
+        expect(CatchUp.canUndo()).toBe(false);
+        expect(localStorage.getItem(SaveManager.getSlotKey(0))).toBe(written);
+        expect(GameLoop.getIsRunning()).toBe(true);
+    });
+
+    it('a load after 90 s plays them and opens the summary; Return keeps the time', async () => {
+        writeSlot(NOW - 90_000);
+        await SaveManager.loadSlot(0);
+        await EngineBootstrap.onSlotSelected(0, false);
+        expect(GameState.state.time.gameTimeMs).toBe(PLAYED_BEFORE + 90_000);
+        expect(CatchUp.lastResult()).toMatchObject({ simulatedMs: 90_000, show: true });
+        expect(CatchUp.canUndo()).toBe(true);
+        expect(stored().unanswered).toBeTruthy();
+
+        CatchUp.keepCatchUp();
+        expect(CatchUp.canUndo()).toBe(false);
+        expect(stored().unanswered).toBeUndefined();
+        expect(stored().state.time.gameTimeMs).toBe(PLAYED_BEFORE + 90_000);
+    });
+
+    it('a load after 90 s can be turned down: Load as I left it puts the save back', async () => {
+        writeSlot(NOW - 90_000);
+        const original = JSON.parse(localStorage.getItem(SaveManager.getSlotKey(0)));
+        await SaveManager.loadSlot(0);
+        await EngineBootstrap.onSlotSelected(0, false);
+        expect(CatchUp.lastResult()).toMatchObject({ show: true });
+        const reload = vi.spyOn(SaveManager, 'reloadPage').mockImplementation(() => {});
+        try {
+            expect(await CatchUp.undoLast()).toBe(true);
+            expect(reload).toHaveBeenCalledTimes(1);
+        } finally {
+            reload.mockRestore();
+        }
+        expect(stored().state.time.gameTimeMs).toBe(original.state.time.gameTimeMs);
+        expect(CatchUp.canUndo()).toBe(false);
+    });
+
     it('a new game does not catch up', () => {
         const before = CatchUp.lastResult();
         SaveManager.newGame(0);
@@ -214,11 +266,11 @@ describe('a gap the live loop could not deliver', () => {
         GameLoop.tick();
     }
 
-    it('a gap under 2 minutes plays at once, quietly, before the tick\'s own step', () => {
-        tickAfter(61_000);                                   // 60 s overflow + this tick's 1 s
+    it('a gap under a minute plays at once, quietly, before the tick\'s own step', () => {
+        tickAfter(31_000);                                   // 30 s overflow + this tick's 1 s
         expect(finished).toHaveLength(1);
-        expect(finished[0]).toMatchObject({ simulatedMs: 60_000, show: false });
-        expect(GameState.state.time.gameTimeMs).toBe(PLAYED_BEFORE + 61_000);
+        expect(finished[0]).toMatchObject({ simulatedMs: 30_000, show: false });
+        expect(GameState.state.time.gameTimeMs).toBe(PLAYED_BEFORE + 31_000);
         expect(resets).toBe(1);
         expect(GameLoop.getIsRunning()).toBe(true);
     });
@@ -233,7 +285,19 @@ describe('a gap the live loop could not deliver', () => {
         expect(GameState.state.time.gameTimeMs).toBe(PLAYED_BEFORE + 3000);
     });
 
-    it('a gap of 2 minutes or more pauses the loop and catches up with the bar and the summary', async () => {
+    it('a gap of 90 s pauses the loop and catches up with the bar and the summary', async () => {
+        const done = new Promise(resolve => {
+            const off = EventBus.subscribe(ENGINE_EVENTS.CATCH_UP_FINISHED, (r) => { off(); resolve(r); });
+        });
+        tickAfter(91_000);
+        expect(GameLoop.getIsRunning()).toBe(false);
+        const result = await done;
+        expect(result).toMatchObject({ simulatedMs: 91_000, show: true });
+        expect(GameState.state.time.gameTimeMs).toBe(PLAYED_BEFORE + 91_000);
+        await vi.waitFor(() => expect(GameLoop.getIsRunning()).toBe(true));
+    });
+
+    it('a long gap pauses the loop and catches up with the bar and the summary', async () => {
         const done = new Promise(resolve => {
             const off = EventBus.subscribe(ENGINE_EVENTS.CATCH_UP_FINISHED, (r) => { off(); resolve(r); });
         });
