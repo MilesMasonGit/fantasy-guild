@@ -82,7 +82,7 @@ levels, their milestone perks and Guild Hall upgrades.
    Foundations that are built into stations, on recipes, and on Guild Hall
    upgrades. **Items are the only currency**; gold is retired.
 6. **Spawners keep the mat alive**: forests, mines and camps spawn new Tokens up
-   to a family cap, some paying an item per spawn (e.g. a seed).
+   to an allowance, some paying an item per spawn (e.g. a seed).
 7. **Limes**, the guide, teaches the game in eight short lessons, then names the one big goal
    (settle a place). Bounties are cut for now (owner 2026-11-21, T-637).
 
@@ -281,9 +281,8 @@ the mat** (§10), spawning an interval after it is cleared.
   until a new Token lands. With no room it waits and retries, and the player is
   told once ("No room beside the Smithy."). Spawners, events, crafted Tokens,
   arrivals and the Shop all follow it.
-- **Planting within its reach** (`spawner.withinReach`, a box in the CMS
-  Spawner block, for Forests and Orchards): the spawner lands each Token only
-  within its reach, at the free spot nearest it, never pushing.
+- **Landing within its reach**: every spawner but an enemy camp lands each Token
+  only within its reach, at the free spot nearest it, never pushing.
 - **An enemy camp counts its own** (owner, 2026-10-29; T-266): it counts only
   what it spawned (the Tokens tethered to it) against its own allowance, so
   goblins standing at one camp never keep another from spawning. An older
@@ -396,7 +395,7 @@ from its Forest.
   fruit; picked empty it rests **Bare** (its resting sprite, per fruit) and
   then fruits again all at once in place, a refill that **needs an Orchard of
   its fruit in reach** (above): a Bare tree with none stays Bare. An **Orchard**
-  is a spawner that plants full fruit trees within its reach (`withinReach`, up to
+  is a spawner that plants full fruit trees within its reach (up to
   its allowance, a seed each; a Bare tree still counts toward it) and a support
   that speeds its trees' fruiting (`Provides Grow Time −X % to [its tree]`,
   floored). Fruit trees stay where they stand. Fruiting and Bare art
