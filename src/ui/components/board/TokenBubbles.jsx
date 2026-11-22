@@ -53,7 +53,8 @@ const PLATE_POINTER = 'var(--plate-pointer, auto)';
  * the mat hands it `fightBar` (`{ host, left, top }`: the fight layer's node and this box's
  * corner in mat units) and the bar draws there, over the loot (`FightBarHost`).
  * - **Hovered only**: on a Token nobody works, the idle plate under it (`IdlePlate`, drawn into
- * `plateHost`, which `MatToken` hands over only while it rests there with something to say): its problem, charges, spawner count, quest progress and timer, as apply;
+ * `plateHost`, which `MatToken` hands over only while it rests there): its problem and its timer,
+ * as apply, and with neither no plate at all;
  * and the recipe gear, in a row of its own. Every gear on a Token is the '!' mark's size.
  * - **A choice waiting** (nothing chosen on a station or Foundation): its yellow '!' at rest, and
  * the gear in the mark's own spot the moment the pointer reaches the Token (`pointerOn`, the bare
@@ -78,8 +79,6 @@ export const TokenBubbles = ({
     artUnit = 2,
     x = null,
     y = null,
-    spawner = null,
-    quest = null,
     readTimer = null,
     plateHost = null,
     gear = null,
@@ -89,7 +88,6 @@ export const TokenBubbles = ({
 }) => {
     const typeId = token?.typeId ?? null;
     const hasHero = !!token?.heroId;
-    const usesRemaining = token?.usesRemaining ?? null;
     const alert = token?.alert ?? null;
     // Every engine alert on a worked Token means its cycle is not running.
     const blocked = hasHero && !!alert;
@@ -207,18 +205,13 @@ export const TokenBubbles = ({
 
     const barUnit = plateUnit(useMatFit() || 1);
 
-    // The idle plate: a Token nobody works (never an enemy), rested on, with something to say
-    // (`MatToken` hands it the host only then; the name stands on its top line). The timer counts if
-    // its clock runs as the pointer arrives.
-    const hasCharges = usesRemaining != null && !isEnemy;
+    // The idle plate: a Token nobody works (never an enemy), rested on, that is stuck or counting.
+    // The problem may be a spawner's or a growth's, which only this component hears, so `MatToken`
+    // hands it the host on every rest and the choice is made here. The timer counts if its clock
+    // runs as the pointer arrives.
     const idleOn = !!plateHost && isHovered && !hasHero && !isEnemy && !isDragging;
     const idleProblem = problem && !CHOOSE_KINDS.has(problem.kind) ? problem : null;
-    const idleCells = useMemo(() => (idleOn ? idlePlateCells({
-        problem: idleProblem,
-        charges: hasCharges ? usesRemaining : null,
-        spawner,
-        quest
-    }) : null), [idleOn, idleProblem, hasCharges, usesRemaining, spawner, quest]);
+    const idleCells = useMemo(() => (idleOn ? idlePlateCells({ problem: idleProblem }) : null), [idleOn, idleProblem]);
     const idleTimed = useMemo(() => idleOn && !!readTimer?.(), [idleOn, readTimer]);
     const idleShown = !!idleCells && (idleCells.length > 0 || idleTimed);
 

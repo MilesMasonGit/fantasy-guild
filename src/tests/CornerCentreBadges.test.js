@@ -27,7 +27,7 @@ import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import * as TokenBadges from '../ui/components/board/TokenBadges.jsx';
 import { StationGearBadge } from '../ui/components/board/TokenBadges.jsx';
 import {
-    spawnerCountText, gearStateOf, isGearOnlyAlert
+    gearStateOf, isGearOnlyAlert
 } from '../ui/components/board/centreAlert.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { restHover } from './fixtures/hoverRest.js';
@@ -157,13 +157,7 @@ describe('gear visibility (FB-7)', () => {
     });
 });
 
-describe('spawner count text (FB-5)', () => {
-    it('reads count/cap', () => {
-        expect(spawnerCountText({ count: 3, cap: 5 })).toBe('3/5');
-        expect(spawnerCountText({ count: 0, cap: 10 })).toBe('0/10');
-        expect(spawnerCountText(null)).toBeNull();
-    });
-
+describe('spawner count (FB-5)', () => {
     it('SpawnerSystem.spawnerCounts follows the mat', () => {
         const forest = put('fixture_q2_forest');
         expect(SpawnerSystem.spawnerCounts(forest.id)).toEqual({ count: 0, cap: 5 });
@@ -378,17 +372,17 @@ describe('on the mat', () => {
         expect(overlay(container, empty.id).querySelector('[data-problem-mark]')).toBeNull();
     });
 
-    it('FB-5 / B1.3: a spawner shows its count against its cap on its plate when hovered, never as a ring', () => {
+    it('a hovered spawner that is neither stuck nor counting shows its name alone: no count, no plate, no ring', () => {
         vi.useFakeTimers();
         const forest = put('fixture_q2_forest');
         put('fixture_q2_sapling', FAR);
         put('fixture_q2_sapling', { x: 1400, y: 300 });
         const { container } = mount(h(MatBoard));
         const o = overlay(container, forest.id);
-        const cell = () => container.querySelector(`[data-idle-plate="${forest.id}"] [data-plate-cell="spawner"]`);
-        expect(cell()).toBeNull();          // quiet at rest
         hoverAt(container, forest);
-        expect(cell().textContent).toBe('2/5');
+        expect(SpawnerSystem.spawnerAlertOf(forest.id)).toBeNull();
+        expect(container.querySelector('[data-idle-plate]')).toBeNull();
+        expect(container.querySelector('[data-plate-cell="spawner"]')).toBeNull();
         expect(container.querySelector('[data-ring]')).toBeNull();
         expect(o.querySelector('[data-spawner-count]')).toBeNull();
     });
@@ -405,5 +399,9 @@ describe('on the mat', () => {
         expect(mark.getAttribute('data-problem-mark')).toBe(ALERT.SPAWN_NEEDS_ITEM);
         expect(mark.getAttribute('src')).toContain('u_alert_yellow');
         expect(container.querySelectorAll('img[src*="u_alert"]').length).toBe(1);
+        // Stuck, it gets the hover plate, with the problem and nothing else.
+        hoverAt(container, forest);
+        const cells = [...container.querySelectorAll(`[data-idle-plate="${forest.id}"] [data-plate-cell]`)];
+        expect(cells.map(c => c.getAttribute('data-plate-cell'))).toEqual(['problem']);
     });
 });

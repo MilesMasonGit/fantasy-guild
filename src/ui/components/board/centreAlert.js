@@ -11,12 +11,6 @@ export const GEAR_ONLY_ALERTS = new Set([ALERT.CHOOSE_BUILD, ALERT.CHOOSE_RECIPE
 /** Whether an engine alert is a choice waiting rather than a fault. */
 export const isGearOnlyAlert = (alert) => GEAR_ONLY_ALERTS.has(alert);
 
-/** A spawner's live count against its cap, as drawn in its ring. */
-export function spawnerCountText(counts) {
-    if (!counts || !Number.isFinite(counts.count) || !Number.isFinite(counts.cap)) return null;
-    return `${counts.count}/${counts.cap}`;
-}
-
 /**
  * Time to a turning Token's next roll as drawn in its ring:
  * `m:ss`, rounded UP to the second so it never reads `0:00` while time is left.

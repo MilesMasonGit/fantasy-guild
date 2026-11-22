@@ -26,7 +26,7 @@ import { useTokenDetail } from './useTokenDetail.js';
 import { TokenBubbles } from './TokenBubbles.jsx';
 import { plateFootOf } from './workPlate.js';
 import { TokenNameBadge } from './TokenBadges.jsx';
-import { gearStateOf, isGearOnlyAlert } from './centreAlert.js';
+import { gearStateOf } from './centreAlert.js';
 import { isEnemyDef } from '../../../config/registries/enemyProfile.js';
 import { TokenHitArt } from './TokenHitArt.jsx';
 import { hitSkillOf, strikesLive } from './hitAnimations.js';
@@ -247,17 +247,7 @@ export const MatToken = React.memo(function MatToken({
         return roll ? { kind: 'turn', ...roll, everyMs: TimedChanges.turnTimingOf(instance).everyMs } : null;
     }, [id]);
 
-    const spawnerCounts = detail?.spawnerCounts ?? null;
     const quest = detail?.quest ?? null;
-    // Kept by value, so the idle plate's cells are worked out again only when a number changes.
-    const spawnerPlate = React.useMemo(
-        () => (spawnerCounts ? { count: spawnerCounts.count, cap: spawnerCounts.cap } : null),
-        [spawnerCounts?.count, spawnerCounts?.cap]   // eslint-disable-line react-hooks/exhaustive-deps
-    );
-    const questPlate = React.useMemo(
-        () => (quest ? { currentCount: quest.currentCount, requiredCount: quest.requiredCount, itemId: quest.itemId } : null),
-        [quest?.currentCount, quest?.requiredCount, quest?.itemId]   // eslint-disable-line react-hooks/exhaustive-deps
-    );
     const questDone = !!quest?.done;
 
     const usesRemaining = detail?.usesRemaining ?? null;
@@ -405,14 +395,12 @@ export const MatToken = React.memo(function MatToken({
                 : `left ${SLIDE_MS}ms ${SLIDE_EASE}, top ${SLIDE_MS}ms ${SLIDE_EASE}`
     };
     const hidden = dragging;
-    // The idle plate under the rested Token nobody works, when it has something to say.
+    // The idle plate under the rested Token nobody works. `TokenBubbles` decides whether it shows
+    // (a problem or a running timer): a spawner's and a growth's problems are heard only there.
     // Read once per instance: an event Token never stops being one.
     const isEvent = React.useMemo(() => EventTokens.isEventToken(BoardState.getTokenById(id)), [id]);
     const timed = !!(detail?.turns || detail?.grows || detail?.ripens || resting || isEvent);
-    const idlePlate = !!plateHost && !staffed && !hidden && !isEnemyDef(def) && (
-        (usesRemaining != null && !isGuildHallToken) || !!spawnerPlate || !!questPlate
-        || (!!alert && !isGearOnlyAlert(alert)) || (timed && !!readTimer())
-    );
+    const idlePlate = !!plateHost && !staffed && !hidden && !isEnemyDef(def);
     // In a fight the enemy's bar draws in the fight layer (`FightBarHost`), placed by this box's corner.
     const fightBar = React.useMemo(
         () => (fightBarHost && x != null && y != null ? { host: fightBarHost, left: x - boxHalf, top: y - boxHalf } : null),
@@ -702,8 +690,6 @@ export const MatToken = React.memo(function MatToken({
                     artUnit={artScale}
                     x={x}
                     y={y}
-                    spawner={spawnerPlate}
-                    quest={questPlate}
                     readTimer={timed ? readTimer : null}
                     plateHost={idlePlate ? plateHost : null}
                     gear={gear}

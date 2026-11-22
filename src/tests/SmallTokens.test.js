@@ -12,6 +12,7 @@ import * as Flags from '../systems/board/Flags.js';
 import * as HeroMotion from '../systems/board/HeroMotion.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
+import { ALERT } from '../systems/board/boardEvents.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import {
     artRadiusOf, isSmallToken, tokenBodyScale, matW, matH, SMALL_TOKEN_SCALE
@@ -248,6 +249,8 @@ describe('on the mat (MatBoard)', () => {
     it('⭐ a small Token, hovered, gets the full-size plate under it, centred, its name just above the plate, under the small art', () => {
         vi.useFakeTimers();
         const spawner = put('b8_small_spawner', { x: 600, y: 500 });
+        // Stuck, so its rest brings up a plate.
+        spawner.alert = ALERT.NO_ROOM;
         put('b8_standard', { x: 1200, y: 500 });
         const { container } = mount(1);
 
@@ -261,7 +264,7 @@ describe('on the mat (MatBoard)', () => {
         restHover();
         expect(o.querySelector('[data-ring]')).toBeNull();
         const plate = container.querySelector(`[data-idle-plate="${spawner.id}"]`);
-        expect(plate.querySelector('[data-plate-cell="spawner"]')).not.toBeNull();
+        expect(plate.querySelector('[data-plate-cell="problem"]')).not.toBeNull();
         // Its cells at the plate's own size, as under a full-size Token.
         expect(parseFloat(plate.style.height)).toBe(PLATE.H * plateUnit(1));
         const slot = container.querySelector(`[data-idle-plate-slot="${spawner.id}"]`);

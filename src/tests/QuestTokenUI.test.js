@@ -78,7 +78,7 @@ const plateHost = () => {
     }
     return el;
 };
-const questCell = () => document.body.querySelector('[data-test-plate-host] [data-plate-cell="quest"]');
+const idlePlate = () => document.body.querySelector('[data-test-plate-host] [data-idle-plate]');
 const art = (c, inst) => c.querySelector(`[data-token-art="true"][data-token-id="${inst.id}"]`);
 const tooltip = () => document.body.querySelector('[data-quest-tooltip]');
 
@@ -94,11 +94,9 @@ afterEach(() => {
     resetMatTuning();
 });
 
-describe('the quest on the idle plate, pure (B6.2)', () => {
-    it('reads current/required, never past done', () => {
-        expect(idlePlateCells({ quest: { currentCount: 3, requiredCount: 10 } })[0]).toMatchObject({ kind: 'quest', text: '3/10' });
-        expect(idlePlateCells({ quest: { currentCount: 12, requiredCount: 10 } })[0].text).toBe('10/10');
-        expect(idlePlateCells({ quest: null })).toEqual([]);
+describe('the quest progress, pure (B6.2)', () => {
+    it('is never on the idle plate: the plate is for timers and problems', () => {
+        expect(idlePlateCells({ quest: { currentCount: 3, requiredCount: 10 } })).toEqual([]);
     });
 
     it('the need line: an item collection, a hunt, a plain count', () => {
@@ -110,29 +108,29 @@ describe('the quest on the idle plate, pure (B6.2)', () => {
 });
 
 describe('a quest Token on the mat (B6.2)', () => {
-    it('⭐ its progress: none at rest, on the plate under it when hovered, and no ring', () => {
+    it('⭐ its progress: no plate at rest or hovered (its hover tooltip says it), and no ring', () => {
         const q = spawn(hunt());
         const { container, rerender } = mount(tokenEl(q, { plateHost: plateHost() }));
         const o = overlay(container, q);
         expect(o.getAttribute('data-quest-token')).toBe(q.id);
         expect(o.getAttribute('data-quest-done')).toBe('false');
-        expect(questCell()).toBeNull();
+        expect(idlePlate()).toBeNull();
 
         rerender(h(DndContext, null, tokenEl(q, { isHovered: true, isRested: true, plateHost: plateHost() })));
-        expect(questCell().textContent).toBe('1/3');
-        // Unlimited Token: no charges beside it.
-        expect(document.body.querySelectorAll('[data-test-plate-host] [data-plate-cell]').length).toBe(1);
+        expect(idlePlate()).toBeNull();
+        expect(tooltip().querySelector('[data-quest-need]').textContent).toMatch(/^1\/3 /);
         expect(container.querySelector('[data-ring]')).toBeNull();
     });
 
-    it('the plate follows progress (quests_updated, no subscription of its own); it shows on hover, not by itself', async () => {
+    it('the tooltip follows progress (quests_updated, no subscription of its own); it shows on hover, not by itself', async () => {
         const q = spawn(hunt());
         const { rerender } = mount(tokenEl(q, { plateHost: plateHost() }));
         await act(async () => { QuestTokens.reportProgress('enemy_hunted', 1, { enemyId: 'token_goblin' }); });
         await act(async () => { await new Promise(r => setTimeout(r, 120)); });
-        expect(questCell()).toBeNull();
+        expect(tooltip()).toBeNull();
         rerender(tree(tokenEl(q, { isHovered: true, isRested: true, plateHost: plateHost() })));
-        expect(questCell().textContent).toBe('2/3');
+        expect(tooltip().querySelector('[data-quest-need]').textContent).toMatch(/^2\/3 /);
+        expect(idlePlate()).toBeNull();
     });
 
     it('a plain Token has no quest progress and no quest hooks', () => {
@@ -141,7 +139,7 @@ describe('a quest Token on the mat (B6.2)', () => {
         const { container } = mount(tokenEl(inst));
         const o = overlay(container, inst);
         expect(o.getAttribute('data-quest-token')).toBeNull();
-        expect(questCell()).toBeNull();
+        expect(tooltip()).toBeNull();
     });
 
     it('a done quest is marked done and claimable, with no glow behind its art', () => {

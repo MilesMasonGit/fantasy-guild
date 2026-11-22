@@ -23,7 +23,7 @@ import {
 } from '../ui/components/board/ringRow.js';
 import { WorkBarFill } from '../ui/components/board/WorkPlateLayer.jsx';
 import { PLATE, CELL, plateFootOf, platePlace } from '../ui/components/board/workPlate.js';
-import { IDLE_TIPS, idlePlateCells, timerCellOf } from '../ui/components/board/idlePlate.js';
+import { idlePlateCells, timerCellOf } from '../ui/components/board/idlePlate.js';
 import { MAT_Z } from '../ui/components/board/matLayers.js';
 import { PROBLEM_SPRITE, SEVERITY } from '../ui/components/board/problemMark.js';
 import * as TimedChanges from '../systems/board/TimedChanges.js';
@@ -133,22 +133,14 @@ describe('the rules, pure', () => {
         expect([...GLIDING_RINGS]).toEqual(['charges']);
     });
 
-    it('⭐ the idle plate’s cells: the problem, the charges, a spawner, a quest, the timer, in that order', () => {
+    it('⭐ the idle plate’s cells: the problem, then the timer; never charges, a spawner’s count or a quest’s progress', () => {
         const timer = timerCellOf({ kind: 'grow', inMs: 30000, into: 'fixture_b13_sapling' });
-        const cells = idlePlateCells({
-            problem: { kind: ALERT.INPUTS, severity: SEVERITY.WAITING },
-            charges: 4,
-            spawner: { count: 3, cap: 5 },
-            quest: { currentCount: 12, requiredCount: 10, itemId: 'x' },
-            timer
-        });
-        expect(cells.map(c => c.kind)).toEqual([CELL.PROBLEM, CELL.CHARGES, CELL.SPAWNER, CELL.QUEST, CELL.TIMER]);
-        expect(cells[1]).toMatchObject({ count: 4, tip: IDLE_TIPS.charges(4) });
-        expect(cells[2]).toMatchObject({ text: '3/5', tip: IDLE_TIPS.spawner('3/5') });
-        // A quest past its count reads done, not over.
-        expect(cells[3]).toMatchObject({ text: '10/10', itemId: 'x', tip: IDLE_TIPS.quest('10/10') });
-        expect(cells[4]).toMatchObject({ text: '0:30', glyph: 'grow' });
-        expect(cells[4].tip).toMatch(/^Grows into .* in 0:30$/);
+        const counts = { charges: 4, spawner: { count: 3, cap: 5 }, quest: { currentCount: 1, requiredCount: 10, itemId: 'x' } };
+        const cells = idlePlateCells({ problem: { kind: ALERT.INPUTS, severity: SEVERITY.WAITING }, ...counts, timer });
+        expect(cells.map(c => c.kind)).toEqual([CELL.PROBLEM, CELL.TIMER]);
+        expect(cells[1]).toMatchObject({ text: '0:30', glyph: 'grow' });
+        expect(cells[1].tip).toMatch(/^Grows into .* in 0:30$/);
+        expect(idlePlateCells(counts)).toEqual([]);
         expect(idlePlateCells({})).toEqual([]);
     });
 
@@ -165,7 +157,7 @@ describe('the rules, pure', () => {
 });
 
 describe('⭐ at rest: the bar and the marks, nothing else', () => {
-    const everything = { spawner: { count: 3, cap: 5 }, quest: { currentCount: 1, requiredCount: 4 } };
+    const everything = {};
     const clock = () => ({ kind: 'grow', inMs: 3000, everyMs: 60000, into: 'fixture_b13_sapling' });
 
     it('⭐ not worked, nothing wrong: nothing at all, no plate (even in its timer’s last seconds)', () => {
@@ -179,15 +171,10 @@ describe('⭐ at rest: the bar and the marks, nothing else', () => {
         expect(drawn(container)).toEqual([]);
     });
 
-    it('⭐ a count change does not bring the plate up by itself: charges, spawner, quest', () => {
+    it('⭐ a charge change does not bring the plate up by itself', () => {
         vi.useFakeTimers();
-        const { container, rerender } = mount(bub({ token: worked({ heroId: null, usesRemaining: 5 }), ...everything, plateHost }));
-        rerender(tree(bub({
-            token: worked({ heroId: null, usesRemaining: 4 }),
-            spawner: { count: 4, cap: 5 },
-            quest: { currentCount: 2, requiredCount: 4 },
-            plateHost
-        })));
+        const { container, rerender } = mount(bub({ token: worked({ heroId: null, usesRemaining: 5 }), plateHost }));
+        rerender(tree(bub({ token: worked({ heroId: null, usesRemaining: 4 }), plateHost })));
         expect(container.querySelector('[data-ring]')).toBeNull();
         advance(100);
         expect(container.querySelector('[data-ring]')).toBeNull();
@@ -315,35 +302,43 @@ describe('the work bar', () => {
 describe('⭐ hover: the idle plate under the Token, and the gear', () => {
     const idle = (extra) => worked({ heroId: null, ...extra });
 
-    it('⭐ charges: a plate on hover only, under the Token; unlimited and nothing else to say, no plate; worked, the work plate has them', () => {
+    it('⭐ charges, a spawner’s count and a quest’s progress bring no plate: hovered with only those, the name alone', () => {
         const start = tokenStartingUses('fixture_producer');
-        const { container, rerender } = mount(bub({ token: idle({ usesRemaining: start }), plateHost, x: 400, y: 300 }));
+        const { container } = mount(idleBub({
+            token: idle({ usesRemaining: start }),
+            spawner: { count: 4, cap: 5 },
+            quest: { currentCount: 3, requiredCount: 5 }
+        }));
         expect(idlePlate()).toBeNull();
-        rerender(tree(idleBub({ token: idle({ usesRemaining: start }) })));
-        expect(idleCellKinds()).toEqual([CELL.CHARGES]);
-        expect(idleCell(CELL.CHARGES).textContent).toBe(ringCount(start));
-        // Its own Token's, for the mat's hover and press routing, and in the work plates' layer.
-        expect(idlePlate().getAttribute('data-work-plate')).toBe('tok_r');
-        rerender(tree(idleBub({ token: idle({ usesRemaining: start }), isHovered: false })));
-        expect(idlePlate()).toBeNull();
-        rerender(tree(idleBub({ token: idle({ usesRemaining: null }) })));
-        expect(idlePlate()).toBeNull();
-        rerender(tree(idleBub({ token: worked({ usesRemaining: start }) })));
-        expect(idlePlate()).toBeNull();
+        expect(plateHost.children).toHaveLength(0);
         // No ring anywhere, ever.
         expect(container.querySelector('[data-ring]')).toBeNull();
         expect(container.querySelector('[data-bubble="charges"]')).toBeNull();
     });
 
+    it('⭐ a stuck Token: a plate on hover only, its own; worked, the work plate says it', () => {
+        const token = idle({ alert: ALERT.INPUTS, usesRemaining: 4 });
+        const { rerender } = mount(bub({ token, plateHost, x: 400, y: 300 }));
+        expect(idlePlate()).toBeNull();
+        rerender(tree(idleBub({ token })));
+        expect(idleCellKinds()).toEqual([CELL.PROBLEM]);
+        // Its own Token's, for the mat's hover and press routing, and in the work plates' layer.
+        expect(idlePlate().getAttribute('data-work-plate')).toBe('tok_r');
+        rerender(tree(idleBub({ token, isHovered: false })));
+        expect(idlePlate()).toBeNull();
+        rerender(tree(idleBub({ token: worked({ alert: ALERT.INPUTS, usesRemaining: 4 }) })));
+        expect(idlePlate()).toBeNull();
+    });
+
     it('⭐ under the Token itself, centred, tucked under its art', () => {
-        mount(idleBub({ token: idle({ usesRemaining: 4 }), typeId: 'fixture_producer' }));
+        mount(idleBub({ token: idle({ alert: ALERT.INPUTS }), typeId: 'fixture_producer' }));
         const slot = plateHost.querySelector('[data-idle-plate-slot]');
         expect(parseFloat(slot.style.left) + parseFloat(slot.style.width) / 2).toBe(400);
         expect(parseFloat(slot.style.top)).toBe(300 + 64 - PLATE.TUCK);
     });
 
     it('⭐ no host (the plates switched off, or not the rested Token): no plate', () => {
-        mount(bub({ token: idle({ usesRemaining: 4 }), isHovered: true, x: 400, y: 300 }));
+        mount(bub({ token: idle({ alert: ALERT.INPUTS }), isHovered: true, x: 400, y: 300 }));
         expect(document.querySelector('[data-idle-plate]')).toBeNull();
     });
 
@@ -357,26 +352,12 @@ describe('⭐ hover: the idle plate under the Token, and the gear', () => {
     });
 
     it('a change while hovered redraws the same cell', () => {
-        const { rerender } = mount(idleBub({ token: idle({ usesRemaining: 4 }) }));
-        const cell = idleCell(CELL.CHARGES);
-        rerender(tree(idleBub({ token: idle({ usesRemaining: 3 }) })));
-        expect(idleCell(CELL.CHARGES)).toBe(cell);
-        expect(cell.textContent).toBe('3');
+        const { rerender } = mount(idleBub({ token: idle({ alert: ALERT.INPUTS }) }));
+        const cell = idleCell(CELL.PROBLEM);
+        rerender(tree(idleBub({ token: idle({ alert: ALERT.NO_ROOM }) })));
+        expect(idleCell(CELL.PROBLEM)).toBe(cell);
+        expect(cell.querySelector('img').getAttribute('src')).toBe(PROBLEM_SPRITE[SEVERITY.CANT]);
     });
-
-    for (const [kind, props, text] of [
-        [CELL.SPAWNER, { spawner: { count: 4, cap: 5 } }, '4/5'],
-        [CELL.QUEST, { quest: { currentCount: 3, requiredCount: 5 } }, '3/5']
-    ]) {
-        it(`⭐ ${kind}: hidden at rest, its count on the plate on hover`, () => {
-            const { container, rerender } = mount(bub({ token: idle(), ...props, plateHost, x: 400, y: 300 }));
-            expect(idlePlate()).toBeNull();
-            rerender(tree(idleBub({ token: idle(), ...props })));
-            expect(idleCellKinds()).toEqual([kind]);
-            expect(idleCell(kind).textContent).toBe(text);
-            expect(container.querySelector('[data-ring]')).toBeNull();
-        });
-    }
 
     it('⭐ the timer: only while hovered, on the plate, polling only while it shows', () => {
         vi.useFakeTimers();
@@ -415,7 +396,7 @@ describe('⭐ hover: the idle plate under the Token, and the gear', () => {
 
     it('⭐ a problem: in the plate, the frame its colour, and the mark stays on the Token (rule 2)', () => {
         const { container } = mount(idleBub({ token: idle({ alert: ALERT.NO_ROOM, usesRemaining: 4 }) }));
-        expect(idleCellKinds()).toEqual([CELL.PROBLEM, CELL.CHARGES]);
+        expect(idleCellKinds()).toEqual([CELL.PROBLEM]);
         expect(idlePlate().getAttribute('data-work-plate-tone')).toBe(SEVERITY.CANT);
         expect(mark(container).getAttribute('data-problem-mark')).toBe(ALERT.NO_ROOM);
         // Its hover says exactly what, as the mark's does.
@@ -425,10 +406,13 @@ describe('⭐ hover: the idle plate under the Token, and the gear', () => {
 
     it('a choice waiting is not repeated on the plate: hovered, its mark is the gear', () => {
         const gear = { show: true, pulsing: true, recipe: null, onClick: vi.fn() };
-        const { container } = mount(idleBub({ token: idle({ usesRemaining: 4 }), gear, artUnit: 2 }));
-        expect(idleCellKinds()).toEqual([CELL.CHARGES]);
-        expect(idlePlate().getAttribute('data-work-plate-tone')).toBeNull();
+        const { container, rerender } = mount(idleBub({ token: idle({ usesRemaining: 4 }), gear, artUnit: 2 }));
+        expect(idlePlate()).toBeNull();
         expect(container.querySelector('[data-gear-in-mark]')).not.toBeNull();
+        const read = () => ({ kind: 'grow', inMs: 30000, everyMs: 60000, into: 'fixture_b13_sapling' });
+        rerender(tree(idleBub({ token: idle({ usesRemaining: 4 }), gear, artUnit: 2, readTimer: read })));
+        expect(idleCellKinds()).toEqual([CELL.TIMER]);
+        expect(idlePlate().getAttribute('data-work-plate-tone')).toBeNull();
     });
 
     it('growth: nextGrowth reads the clock against afterMs; none for a Token that does not grow', () => {
@@ -476,7 +460,7 @@ describe('the middle row', () => {
         // A chosen recipe waiting on items: its '!' stays (only a choice waiting swaps for the gear).
         const props = {
             token: worked({ heroId: null, alert: ALERT.INPUTS }), gear: { show: true, pulsing: false, recipe: { name: 'R' }, onClick: () => {} },
-            spawner: { count: 3, cap: 5 }, plateHost, x: 400, y: 300
+            plateHost, x: 400, y: 300
         };
         const { container, rerender } = mount(bub(props));
         const row = container.querySelector('[data-bubble-row="middle"]');
@@ -490,8 +474,8 @@ describe('the middle row', () => {
         const hoverRow = container.querySelector('[data-bubble-row="hover"]');
         expect([...hoverRow.children].map(c => c.getAttribute('data-bubble') || (c.querySelector('[data-station-gear]') ? 'gear' : '?')))
             .toEqual(['gear']);
-        // The spawner's count is on the plate under the Token, not beside the marks.
-        expect(idleCellKinds()).toContain(CELL.SPAWNER);
+        // The problem is on the plate under the Token, not beside the marks.
+        expect(idleCellKinds()).toEqual([CELL.PROBLEM]);
         // Above the marks: its bottom edge clear of the mark's top (16 art pixels at 2 units, centred at 64).
         expect(hoverRow.style.transform).toContain('translateY(-100%)');
         expect(parseFloat(hoverRow.style.top)).toBeLessThanOrEqual(64 - 16);
@@ -725,8 +709,6 @@ describe('no charge number floats', () => {
 describe('tooltips and grabbing', () => {
     const everything = () => idleBub({
         token: worked({ heroId: null, usesRemaining: 4 }), marked: true,
-        spawner: { count: 3, cap: 5 },
-        quest: { currentCount: 1, requiredCount: 4 },
         readTimer: () => ({ kind: 'grow', inMs: 30000, everyMs: 60000, into: 'fixture_b13_sapling' })
     });
 
@@ -739,9 +721,6 @@ describe('tooltips and grabbing', () => {
             expect(document.body.querySelector('[data-bubble-tip]')).toBeNull();
             return text;
         };
-        expect(tipOf(idleCell(CELL.CHARGES))).toBe(IDLE_TIPS.charges(4));
-        expect(tipOf(idleCell(CELL.QUEST))).toBe(IDLE_TIPS.quest('1/4'));
-        expect(tipOf(idleCell(CELL.SPAWNER))).toBe(IDLE_TIPS.spawner('3/5'));
         expect(tipOf(idleCell(CELL.TIMER))).toMatch(/^Grows into .* in 0:30$/);
         expect(tipOf(bubble(container, 'marked'))).toBe(BUBBLE_TIPS.marked);
     });
@@ -750,11 +729,10 @@ describe('tooltips and grabbing', () => {
         const onPointerDown = vi.fn();
         const { container } = mount(idleBub({
             token: worked({ heroId: null, usesRemaining: 4, alert: ALERT.INPUTS }), marked: true,
-            spawner: { count: 3, cap: 5 },
-            quest: { currentCount: 1, requiredCount: 4 },
+            readTimer: () => ({ kind: 'grow', inMs: 30000, everyMs: 60000, into: 'fixture_b13_sapling' }),
             dragProps: { onPointerDown }
         }));
-        for (const kind of [CELL.CHARGES, CELL.QUEST, CELL.SPAWNER]) {
+        for (const kind of [CELL.PROBLEM, CELL.TIMER]) {
             onPointerDown.mockClear();
             fireEvent.pointerDown(idleCell(kind));
             expect(onPointerDown, kind).toHaveBeenCalledTimes(1);
@@ -804,7 +782,7 @@ describe('on the mat (MatToken)', () => {
         restHover();
     }
 
-    it('⭐ a spawner at 3 of 5: nothing at rest; hovered, its 3/5 on a plate under it, over the loot, the name just above the plate', () => {
+    it('⭐ a spawner at 3 of 5, neither stuck nor counting: nothing at rest; hovered, its name alone, no count and no plate', () => {
         vi.useFakeTimers();
         const forest = put('fixture_b13_forest');
         put('fixture_b13_sapling', { x: 1200, y: 520 });
@@ -819,31 +797,34 @@ describe('on the mat (MatToken)', () => {
         expect(host.querySelector('[data-idle-plate]')).toBeNull();
 
         hover(container, forest);
-        const plate = host.querySelector(`[data-idle-plate="${forest.id}"]`);
-        expect(plate.querySelector('[data-plate-cell="spawner"]').textContent).toBe('3/5');
+        expect(host.querySelector('[data-idle-plate]')).toBeNull();
+        expect(o.querySelector('[data-token-name]')).not.toBeNull();
         expect(o.querySelector('[data-ring]')).toBeNull();
-        const slot = host.querySelector('[data-idle-plate-slot]');
-        expect(parseFloat(slot.style.left) + parseFloat(slot.style.width) / 2).toBe(forest.x);
-        expect(parseFloat(slot.style.top)).toBeGreaterThan(forest.y);
-        // The name stands on the plate's top: over the Token's foot, not under the plate.
-        expect(nameFoot(container, forest)).toBe(parseFloat(slot.style.top));
     });
 
-    it('⭐ a Sapling-like grower shows its growth time on its plate only when hovered', () => {
+    it('⭐ a Sapling-like grower shows its growth time on a plate under it, over the loot, only when hovered, the name just above the plate', () => {
         vi.useFakeTimers();
         const g = put('fixture_bub_grower');
         const { container } = mount(h(MatBoard));
         const host = container.querySelector('[data-idle-plates]');
+        expect(Number(host.style.zIndex)).toBe(MAT_Z.WORK_PLATE);
         expect(host.querySelector('[data-idle-plate]')).toBeNull();
         hover(container, g);
-        const cell = host.querySelector(`[data-idle-plate="${g.id}"] [data-plate-cell="timer"]`);
-        expect(cell.textContent).toMatch(/^\d+:\d\d$/);
+        const cells = [...host.querySelectorAll(`[data-idle-plate="${g.id}"] [data-plate-cell]`)];
+        expect(cells.map(c => c.getAttribute('data-plate-cell'))).toEqual(['timer']);
+        expect(cells[0].textContent).toMatch(/^\d+:\d\d$/);
         expect(container.querySelector('[data-ring]')).toBeNull();
+        const slot = host.querySelector('[data-idle-plate-slot]');
+        expect(parseFloat(slot.style.left) + parseFloat(slot.style.width) / 2).toBe(g.x);
+        expect(parseFloat(slot.style.top)).toBeGreaterThan(g.y);
+        // The name stands on the plate's top: over the Token's foot, not under the plate.
+        expect(nameFoot(container, g)).toBe(parseFloat(slot.style.top));
     });
 
     it('⭐ the name sits over the Token bottom edge, just above the plate, and stays there with or without one', () => {
         vi.useFakeTimers();
-        const t = put('fixture_producer');
+        const t = put('fixture_consumer');
+        t.alert = ALERT.INPUTS;
         const bare = put('fixture_b13_sapling', { x: 1200, y: 520 });
         const { container } = mount(h(MatBoard));
         hover(container, t);
