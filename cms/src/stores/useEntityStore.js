@@ -547,6 +547,10 @@ function collectionActions(collectionKey, set, get) {
                 if (!current) return {};
 
                 const next = { ...current, ...patch };
+                // ⚠️ Only a Passive Production line: `turns.everyMs` is live and stays.
+                if (collectionKey === 'tokens' && Array.isArray(patch.trickle)) {
+                    next.trickle = patch.trickle.map(({ everyMs: _dropped, ...line }) => line);
+                }
 
                 // Renaming keeps the id in step unless the author has pinned it by editing the id directly (which clears autoSyncId).
                 if ('name' in patch && next.autoSyncId) {

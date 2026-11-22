@@ -466,7 +466,7 @@ export function cardLifecycle(instance, def, src) {
     if (pays.length) {
         out.push({
             icon: 'clock', label: 'Produces', text: formatClock(passive.nextInMs),
-            tip: `Passive Production: ${pays.map(l => `${Math.floor(Number(l.quantity))} ${src.itemName(l.itemId)}`).join(', ')}, next in ${spoken(passive.nextInMs)}`
+            tip: `Passive Production, once a lap: ${pays.map(l => `${Math.floor(Number(l.quantity))} ${src.itemName(l.itemId)}`).join(', ')}, next in ${spoken(passive.nextInMs)}`
         });
     }
     return out;

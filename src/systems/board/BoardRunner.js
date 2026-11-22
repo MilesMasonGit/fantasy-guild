@@ -295,11 +295,10 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // Item output lands on the BOARD, not in the Bank: it is not banked until collected, and if the
     // Bank is full it simply waits there. A Token output stands on the mat beside the station.
     // YIELD and LOOT_MULT are the output rules a kill's loot follows too (`OutputRules`).
-    const isGuildHall = instance.typeId === 'token_guild_hall';
-    const doubled = (failed || isGuildHall) ? false : OutputRules.rollDoubleLoot(id, config.skill);
+    const doubled = failed ? false : OutputRules.rollDoubleLoot(id, config.skill);
     // GIANT_HARVEST: a gathering cycle's drops all come in at ten times, Double Loot's on top. ⚠️ Rolled
     // after Double Loot and only for gathering work a rule reaches, so without one nothing is drawn.
-    const giant = (failed || isGuildHall) ? false : OutputRules.rollGiantHarvest(id, config.skill);
+    const giant = failed ? false : OutputRules.rollGiantHarvest(id, config.skill);
     const times = (doubled ? 2 : 1) * (giant ? OutputRules.GIANT_HARVEST_TIMES : 1);
     let giantLanded = false;
 
@@ -325,12 +324,10 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     const landLine = (output, note) => {
         // Roll the authored range FIRST, then widen it, so a 1-5 output buffs a lucky cycle more
         // than an unlucky one.
-        const rolled = isGuildHall
-            ? OutputRules.roundUp(rollOutputQuantity(output))
-            : OutputRules.widenYield(id, config.skill, rollOutputQuantity(output));
+        const rolled = OutputRules.widenYield(id, config.skill, rollOutputQuantity(output));
         const widened = rolled * times;
-        // A chance that this one item comes out doubled, after everything else (not at the Hall).
-        const quantity = (isGuildHall || !output.itemId) ? widened : OutputRules.doubleItemDrop(id, output.itemId, widened);
+        // A chance that this one item comes out doubled, after everything else.
+        const quantity = !output.itemId ? widened : OutputRules.doubleItemDrop(id, output.itemId, widened);
         if (quantity <= 0) return;
 
         // An output names a Token or an item. One that names neither pays nothing: the cycle still
@@ -365,7 +362,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     }
     // BONUS_DROP, skipped entirely on a failed cycle: nothing happened, so nothing drops. Double Loot
     // and Giant Harvest multiply it as they do the Token's own drops.
-    if (!failed && !isGuildHall) {
+    if (!failed) {
         const bonus = OutputRules.dropBonusGrants(id, times);
         if (bonus.length) giantLanded = giant;
         produced.push(...bonus);
@@ -628,7 +625,9 @@ export function tick(delta) {
         // one.
         const config = workConfigOf(def, instance);
 
-        // Inert by design — nothing to advance.
+        // Inert by design — nothing to advance. ⚠️ The one rule for every work-cycle effect (Speed,
+        // Failure, Preservation, Efficiency, Lucky, Double Loot...): `completeCycle` runs only past
+        // here, so a Token with no work gets none, by what it is and never by its id.
         if (!config) continue;
 
         const needsHero = def.requiresHero !== false;
@@ -775,11 +774,8 @@ export function tick(delta) {
         // WORK_TIME, widened to the neighbours, then floored twice (`TileModifiers.workTimeOf`).
         // `io.cycleTimeMs` is the active recipe's own timing when it has one, falling back to the
         // station's flat config.
-        const isGuildHall = instance.typeId === 'token_guild_hall';
         const baseCycle = io.cycleTimeMs || config.cycleTimeMs || 10000;
-        const cycleTime = isGuildHall
-            ? (config.cycleTimeMs || 10000)
-            : TileModifiers.workTimeOf(id, baseCycle, config.skill);
+        const cycleTime = TileModifiers.workTimeOf(id, baseCycle, config.skill);
 
         if (instance.cycleElapsedMs >= cycleTime) {
             // Only a cycle that crossed its end during this tick has a leftover; one that held at

@@ -145,9 +145,6 @@ export const SOURCE_KIND = Object.freeze({
     EVENT: 'event'
 });
 
-/** Its work runs at its own time and pays no output rules (`BoardRunner`). */
-const GUILD_HALL = 'token_guild_hall';
-
 const EPS = 1e-9;
 
 // --- The rows ------------------------------------------------------------------------------------
@@ -196,7 +193,7 @@ function chance(instanceId, type, category) {
 }
 
 function measureSpeed(ctx, type) {
-    if (!ctx.works || ctx.isHall) return null;
+    if (!ctx.works) return null;
     const base = authoredWorkMs(ctx.io, ctx.config);
     const { resolved, contributions } = TileModifiers.explainAxis(ctx.id, type, base, ctx.skill);
     const final = flooredWorkTime(base, resolved);
@@ -207,7 +204,7 @@ function measureSpeed(ctx, type) {
 
 /** Yield on one unit of output: a percentage rule reads the same on any roll. */
 function measureYield(ctx, type) {
-    if (ctx.isHall || !outputItemIds(ctx).length) return null;
+    if (!outputItemIds(ctx).length) return null;
     const { resolved, contributions } = TileModifiers.explainAxis(ctx.id, type, 1, ctx.lootSkill);
     const final = Math.max(0, resolved);
     return { base: 1, resolved, final, limit: final > resolved + EPS ? LIMIT.NOTHING_LEFT : null, contributions };
@@ -264,7 +261,7 @@ function measureXp(ctx, type) {
 }
 
 function measureDoubleLoot(ctx, type) {
-    if (ctx.isHall || !outputItemIds(ctx).length) return null;
+    if (!outputItemIds(ctx).length) return null;
     return chance(ctx.id, type, ctx.lootSkill);
 }
 
@@ -329,7 +326,6 @@ function contextOf(instance) {
         skill: config?.skill,
         // A kill's loot reads the fighter's style (`LootSystem`); a cycle's, its work skill.
         lootSkill: profile ? OutputRules.killLootSkill(hero, def) : config?.skill,
-        isHall: instance.typeId === GUILD_HALL,
         near: null
     };
 }
@@ -338,8 +334,7 @@ function contextOf(instance) {
 function outputItemIds(ctx) {
     if (ctx.outputs) return ctx.outputs;
     let lines = [];
-    if (ctx.isHall) lines = [];
-    else if (ctx.enemy) lines = ctx.def.config?.outputs || [];
+    if (ctx.enemy) lines = ctx.def.config?.outputs || [];
     else if (ctx.works && Fishing.isWater(ctx.def)) lines = ctx.heroId ? (Fishing.fishingOf(ctx.def, ctx.heroId)?.pool?.catches || []) : [];
     else if (ctx.works) lines = ctx.io?.outputs || [];
     ctx.outputs = [...new Set(lines.filter(l => l?.itemId && !l.currency).map(l => l.itemId))];
@@ -369,7 +364,7 @@ export function effectBreakdown(instanceId) {
 
     const outputs = [];
     const doubleItem = typeOf(DOUBLE_ITEM);
-    if (doubleItem && !ctx.isHall) {
+    if (doubleItem) {
         for (const itemId of outputItemIds(ctx)) {
             const badge = badgeOf(DOUBLE_ITEM, chance(ctx.id, doubleItem, itemId), ctx, itemId);
             if (badge) outputs.push({ itemId, effects: [badge] });

@@ -103,6 +103,7 @@ const QUICK = 'eb_quick_vein';
 const SMITHY = 'eb_smithy';
 const FIELD = 'eb_field';
 const SELFIE = 'eb_selfie';
+const IDLER = 'eb_idler';
 const ENEMY = 'fixture_enemy';
 
 const provides = (id, to, payload, extra = {}) => ({ id: `stm_${id}`, keyword: KEYWORD.PROVIDES, to, reach: 'nearby', payload, ...extra });
@@ -145,6 +146,10 @@ registerTokenTypes({
         sprite: 't_ore_vein_copper', requiresHero: true,
         config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 10000, xp: 1, inputs: [], outputs: [{ itemId: ORE, chance: 100, minQty: 1, maxQty: 1 }] },
         statements: [provides('eb_selfie', ALL, { type: EFFECT_TYPES.YIELD, bucket: 'percentage', value: 0.25 }, { reach: 'self' })]
+    },
+    [IDLER]: {
+        id: IDLER, name: 'Fixture Idler', tokenType: 'buff', rarity: 'common', theme: 'fixture', uses: null,
+        sprite: 't_well_wishing', requiresHero: true, config: null
     },
     eb_cart: support('eb_cart', 'Fixture Cart', [provides('eb_cart', toId(VEIN), { type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.15 })]),
     eb_rush: support('eb_rush', 'Fixture Rush', [provides('eb_rush', ALL, { type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.7 })]),
