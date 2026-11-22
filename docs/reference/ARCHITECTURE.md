@@ -122,9 +122,8 @@ top folders by import count from `npm run depcruise` (JSON output, 604 modules, 
   (`EngineBootstrap.js:166-172`). Rules that compare moments read `GameClock.now()`, which is
   `Date.now()` live and a stepped clock during a catch-up (`src/systems/core/GameClock.js:17-39`;
   `src/tests/RulesUseGameClock.test.js` lists who may use `Date.now()`).
-- **Fast-forward.** `GameLoop.runHandlers(delta)` is public so the catch-up (§4.4) and the dev
-  time-skip (`DevTools.advanceTime`, `src/systems/core/DevTools.js:83-101`) feed the same handlers
-  synthetic deltas (`GameLoop.js:76-85`).
+- **Fast-forward.** `GameLoop.runHandlers(delta)` is public so the catch-up (§4.4) feeds the same
+  handlers synthetic deltas (`GameLoop.js:76-85`).
 
 ### 3.2 What runs per tick, in order
 

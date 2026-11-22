@@ -172,6 +172,40 @@ describe('⭐ a spawner with no room waits, pays nothing, and says so once', () 
         expect(RoomWait.isTold(forest.id)).toBe(false);
     });
 
+    it('a full spawner saved and reloaded shows its mark at once, and is told again', () => {
+        InventoryManager.addItem(WOOD, 10);
+        const blockers = packedMat(null);
+        const forest = placeAt('fixture_nr_forest', FREE_AT.x, FREE_AT.y);
+        for (let i = 0; i < 2; i++) TimedChanges.tick(5000);
+        expect(SpawnerSystem.spawnerAlertOf(forest.id)?.alert).toBe(ALERT.SPAWN_NO_ROOM);
+
+        saveAndLoad();
+        SpawnerSystem.resetAlerts();   // a fresh page: nothing remembered
+        RoomWait.reset();
+        told.heard.length = 0;
+
+        expect(SpawnerSystem.spawnerStatus(forest.id).state).toBe('spawning');
+        TimedChanges.tick(100);   // the first tick's check, well before the next attempt
+        expect(SpawnerSystem.spawnerStatus(forest.id).state).toBe('no_room');
+        expect(SpawnerSystem.spawnerAlertOf(forest.id)).toEqual({ alert: ALERT.SPAWN_NO_ROOM, needs: [] });
+        expect(told.heard).toHaveLength(1);
+        expect(InventoryManager.getItemCount(WOOD)).toBe(10);
+
+        clearRound(blockers, FREE_AT);
+        TimedChanges.tick(5000);
+        expect(SpawnerSystem.spawnerAlertOf(forest.id)).toBeNull();
+    });
+
+    it('a spawner with room is not marked by the check after a load', () => {
+        InventoryManager.addItem(WOOD, 10);
+        const forest = placeAt('fixture_nr_forest', FREE_AT.x, FREE_AT.y);
+        SpawnerSystem.resetAlerts();
+        TimedChanges.tick(100);
+        expect(SpawnerSystem.spawnerStatus(forest.id).state).toBe('spawning');
+        expect(SpawnerSystem.spawnerAlertOf(forest.id)).toBeNull();
+        expect(told.heard).toHaveLength(0);
+    });
+
     it('a spawner held by a full Token cap is told once too', () => {
         InventoryManager.addItem(WOOD, 10);
         const forest = placeAt('fixture_nr_forest', FREE_AT.x, FREE_AT.y);

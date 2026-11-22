@@ -69,7 +69,7 @@ export const SPAWNER_STATE = Object.freeze({
 
 /**
  * Spawner instance ids whose last landing found no room, cleared by the next success.
- * Never saved: after a load a spawner that was waiting reads as spawning until its next try.
+ * Never saved: the first {@link syncAlerts} after a load works it out again.
  */
 const noRoom = new Set();
 
@@ -315,6 +315,11 @@ export function spawnerTurn(instance, def, random = Math.random, ctx = {}) {
     return tryToSpawn(instance, def, random, ctx) === HELD ? null : instance;
 }
 
+/** Where a spawner's spawns may land: an enemy camp anywhere near it, any other within its reach. */
+function landingOptions(instance) {
+    return isEnemyCampType(instance.typeId) ? {} : { within: reachRadius() };
+}
+
 /** One attempt: {@link SPAWNED}, {@link MISSED} (nowhere to land) or {@link HELD}. */
 function tryToSpawn(instance, def, random, ctx) {
     const block = spawnerBlock(def);
@@ -337,7 +342,7 @@ function tryToSpawn(instance, def, random, ctx) {
         { payload: { typeId, placement: PLACEMENT.NEAREST_FREE } },
         { self: instance.id },
         random,
-        isEnemyCampType(instance.typeId) ? {} : { within: reachRadius() }
+        landingOptions(instance)
     );
     if (!landed) {
         // Nowhere to go. Nothing was paid.
@@ -479,6 +484,28 @@ export function spawnerAlertOf(instanceId) {
 const sameList = (a = [], b = []) => a.length === b.length && a.every((v, i) => v === b[i]);
 
 /**
+ * Whether the "no room" notes are still to be worked out again: true until the first
+ * {@link syncAlerts} after a load or a travel, as a spawner's last miss is not saved.
+ */
+let needsRecheck = true;
+
+/**
+ * A spawner that would be spawning but whose every spawn has nowhere to land is no_room now, as its
+ * miss would have made it: the note and the one-time word (`RoomWait`) come back after a load.
+ */
+function markIfNoRoom(instance) {
+    const def = getTokenType(instance.typeId);
+    const block = spawnerBlock(def);
+    if (!block || Demolition.isMarked(instance)) return;
+    const { count, cap } = countsOf(instance, def);
+    if (count >= cap || isSleepingCamp(instance) || !MatCap.canPlaceMore(1) || missingUpkeep(def).length) return;
+    const options = landingOptions(instance);
+    if (block.spawns.some(({ typeId, weight }) => Number(weight) > 0 && EffectActions.hasRoomToSpawn(typeId, instance.id, options))) return;
+    noRoom.add(instance.id);
+    RoomWait.tell(instance.id, { source: RoomWait.SOURCE.SPAWNER, instanceId: instance.id, typeId: instance.typeId });
+}
+
+/**
  * Bring every spawner's alert in line with {@link spawnerStatus}, publishing
  * `SPAWNER_ALERT_CHANGED` for each one that changed, and only those. Called at the end of
  * `TimedChanges.tick`, after this tick's attempts, so an alert goes up the tick a spawner starts
@@ -487,11 +514,14 @@ const sameList = (a = [], b = []) => a.length === b.length && a.every((v, i) => 
  */
 export function syncAlerts() {
     const live = new Set();
+    const recheck = needsRecheck;
+    needsRecheck = false;
     for (const s of liveSpawners()) {
         // A spawner marked for demolition never attempts (`TimedChanges` holds it), so nothing it
         // waits for is a problem: its alert drops below like a departed spawner's.
         if (Demolition.isMarked(s)) continue;
         live.add(s.id);
+        if (recheck) markIfNoRoom(s);
         const status = spawnerStatus(s.id);
         const alert = (status && ALERT_FOR_STATE[status.state]) || null;
         const needs = alert === ALERT.SPAWN_NEEDS_ITEM ? (status.needs || []) : [];
@@ -514,6 +544,7 @@ export function syncAlerts() {
 export function resetAlerts() {
     alerts.clear();
     noRoom.clear();
+    needsRecheck = true;
 }
 
 let initialized = false;
@@ -523,4 +554,5 @@ export function init() {
     if (initialized) return;
     initialized = true;
     EventBus.subscribe(ENGINE_EVENTS.BOARD_SWAPPED, resetAlerts);
+    EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, resetAlerts);
 }

@@ -76,10 +76,8 @@ class GameLoopClass {
     /**
      * Run every registered tick handler once with an explicit `delta`, and
      * count it as a tick. This is the body of `tick()` minus the wall clock:
-     * `tick()` measures the delta, this delivers it. Exposed so a dev tool
-     * (`DevTools.advanceTime`) can fast-forward the whole game by feeding the
-     * same handlers synthetic deltas — anything that advances by `delta`
-     * moves with it.
+     * `tick()` measures the delta, this delivers it. Exposed so a catch-up
+     * can feed the same handlers synthetic deltas.
      * @param {number} delta - Milliseconds of game time this step represents
      */
     runHandlers(delta) {

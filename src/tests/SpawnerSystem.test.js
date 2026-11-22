@@ -627,8 +627,8 @@ describe('⭐ a waiting spawner raises an on-mat alert, and drops it when fixed 
         }
         const { seen, off } = watch(forest.id);
 
-        TimedChanges.tick(10000);
-        expect(SpawnerSystem.spawnerAlertOf(forest.id)).toBeNull();   // not due yet: no attempt, no alert
+        TimedChanges.tick(10000);   // not due yet; the first tick's check already finds no room
+        expect(SpawnerSystem.spawnerAlertOf(forest.id)).toEqual({ alert: ALERT.SPAWN_NO_ROOM, needs: [] });
         TimedChanges.tick(15000);
         expect(SpawnerSystem.spawnerAlertOf(forest.id)).toEqual({ alert: ALERT.SPAWN_NO_ROOM, needs: [] });
 

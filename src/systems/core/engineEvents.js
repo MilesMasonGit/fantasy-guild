@@ -49,7 +49,7 @@ export const ENGINE_EVENTS = Object.freeze({
      * ⭐ **The one "everything may have changed" event**:
      * a new game or a load has finished booting, a stress scenario was built,
      * or a dev tool rewrote the board. Payload: `{ reason }` — `'new_game'`,
-     * `'load'`, `'travel'`, `'dev_time_skip'`, `'dev_stress'` or `'dev_clear'`. Every
+     * `'load'`, `'travel'`, `'dev_stress'` or `'dev_clear'`. Every
      * surface listens to this beside the events that name what it draws. Also
      * `'catch_up'`: time the loop could not deliver was caught up with the UI's
      * listeners quiet.

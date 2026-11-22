@@ -13,7 +13,7 @@ use tauri::ipc::{InvokeBody, Request, Response};
 use tauri::{AppHandle, Manager, Runtime, WebviewWindow, Window};
 
 /// Slot numbers the page may name; the file name is built from the number, never from text.
-const MAX_SLOTS: u32 = 16;
+const MAX_SLOTS: u32 = 3;
 
 /// How long a closing window waits for the page to save before it closes anyway.
 const CLOSE_GRACE: Duration = Duration::from_secs(5);
@@ -387,6 +387,12 @@ mod tests {
     fs::create_dir_all(dir.join("slot1.json.tmp")).unwrap();
     assert!(write_slot(&dir, 0, br#"{"next":1}"#, true).is_err());
     assert_eq!(read(&dir, 0, false).as_deref(), Some(r#"{"good":true}"#));
+  }
+
+  #[test]
+  fn only_the_three_slots_the_page_shows_are_named() {
+    assert_eq!(check_slot(2), Ok(2));
+    assert!(check_slot(3).is_err());
   }
 
   #[test]
