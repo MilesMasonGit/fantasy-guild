@@ -5,7 +5,7 @@ import { BUILT_IN_CONSTELLATIONS, BUILT_IN_UPGRADE_IDS, HALL_NODE } from '../../
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { KEYWORD } from '../effects/statements.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
-import { hallRulesOf, xpForEveryoneOf, RETIRED_AXIS } from '../progression/hallModifiers.js';
+import { hallRulesOf, xpForEveryoneOf, RETIRED_AXIS, NEVER_ON_GUILD, CARRIED_ONLY_AXIS } from '../progression/hallModifiers.js';
 import { isCombatStyleScope, isDoseKindScope } from '../../config/registries/modifierPalette.js';
 
 /** A Provides rule's palette row when its axis is retired (Camp Reach), else null. */
@@ -80,8 +80,8 @@ export function hallStarFindings({ sky, items = {}, tokens = {} } = {}) {
                     push(star, 'ranks', `rank ${r} has a rule aimed at the Token "${to.value}", which does not exist, so it reaches nothing.`);
                 }
                 const entry = statement?.keyword === KEYWORD.PROVIDES ? getPaletteEntry(statement.payload?.type) : null;
-                // Damage, Swing Time and Accuracy are read from the guild too, for the style a hero fights in.
-                if (entry?.heroOnly && entry.categories !== 'combatStyle') push(star, 'ranks', `rank ${r} has a ${entry.label} rule, which only reaches a hero from what they carry, so it does nothing from the Hall.`);
+                if (entry?.neverOnGuild) push(star, 'ranks', `rank ${r} has a ${entry.label} rule, which a star cannot carry: it lands only on the fighter struck, so the rule is left out. Delete the rule in the CMS.`);
+                else if (entry?.heroOnly && !entry.fromGuild && !entry.retired) push(star, 'ranks', `rank ${r} has a ${entry.label} rule, which only reaches a hero from what they carry, so it does nothing from the Hall.`);
                 if (entry?.categories === 'combatStyle' && !isCombatStyleScope(statement.payload?.category)) {
                     push(star, 'ranks', `rank ${r} has a ${entry.label} rule narrowed to "${statement.payload.category}", which is no combat style, so it helps no fighter. Pick Melee, Ranged, Magic or Stealth, or no style, in the CMS.`);
                 }
@@ -91,7 +91,7 @@ export function hallStarFindings({ sky, items = {}, tokens = {} } = {}) {
                 if (entry?.retired && !retiredOnly) push(star, 'ranks', `rank ${r} has a ${entry.label} rule, retired: ${retiredWhy(entry)}, so the rule does nothing. Delete the rule in the CMS.`);
             }
             for (const skipped of hallRulesOf([star], { [star.id]: r }).ignored) {
-                if (skipped.reason === RETIRED_AXIS) continue;
+                if ([RETIRED_AXIS, NEVER_ON_GUILD, CARRIED_ONLY_AXIS].includes(skipped.reason)) continue;
                 push(star, 'ranks', `rank ${r}'s rule ${skipped.index + 1} is left out: ${skipped.reason}. A star holds standing Provides rules only.`);
             }
         });

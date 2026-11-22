@@ -73,7 +73,7 @@ export function liveEnemyResistLines(enemy) {
 }
 
 /**
- * A hero's resistances from what they carry: each group's rows, then each type's own rows beyond
+ * A hero's resistances from what they carry and the guild gives: each group's rows, then each type's own rows beyond
  * its group's (the aggregator counts a group's row on its types, so a type's own is the difference).
  */
 export function heroResistLines(hero) {
@@ -244,7 +244,7 @@ export function heroSide(hero) {
     const levelStep = levelDamageBonus(CombatFormulas.getHeroCombatLevel(hero));
     const more = Math.round((CombatFormulas.heroBaseDamage(hero) * CombatFormulas.heroDamageMultiplier(hero, style) - weaponDamage - levelStep) * 100) / 100;
     const boosts = [...new Set(hitParts.map(p => p.type))]
-        .map(type => ({ type, n: CombatFormulas.typeDamageBoost(hero, type) }))
+        .map(type => ({ type, n: CombatFormulas.heroTypeDamageBoost(hero, type) }))
         .filter(b => b.n);
     const swingMs = CombatFormulas.heroAttackSpeedMs(hero);
     return {

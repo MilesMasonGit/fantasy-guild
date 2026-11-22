@@ -115,8 +115,7 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  *
  * * `'combatStyle'` — `CombatFormulas` passes the style the hero fights in (the weapon's; Melee
  *   barehanded) when it reads Damage, Swing Time and Accuracy, which is how a Hall star names the
- *   fighters it helps. These three are also the only combat axes a hero reads from the guild-wide
- *   aggregator, so a star reaches them and no other combat axis.
+ *   fighters it helps.
  *
  * A row without `categories` offers no narrowing at all, which is right for the
  * other combat axes — their readers call `query('DODGE')` with no category, so
@@ -145,6 +144,17 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  * A carried rule (an item's, a perk's) reads "Gives the hero …" with this phrase where the Token
  * wording's verb does not fit a person: a hero is not "awarded" XP, they get it. An axis without it
  * reads "Makes the hero …" with `reads`.
+ *
+ * ## `fromGuild` — a hero reads it from the guild too
+ *
+ * A `heroOnly` axis a hero also reads off the guild-wide aggregator (a Hall star, a Region's rule),
+ * summed in the same bucket as what they carry (`CombatFormulas`). Enemies never read the guild's.
+ * Any other `heroOnly` axis on a star or a guild rule reaches nobody.
+ *
+ * ## `neverOnGuild` — a star or a guild rule cannot carry it
+ *
+ * Sunder lands on the fighter struck: a star carrying it is refused by the CMS's pack check and
+ * named by the boot audit, and the guild never registers it (`hallModifiers.hallRulesOf`).
  *
  * ## `heroOnly` — the axis reaches a person, never a tile
  *
@@ -589,6 +599,7 @@ export const MODIFIER_PALETTE = [
         buckets: ['flat'],
         categories: 'combatStyle',
         heroOnly: true,
+        fromGuild: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
         hint: 'Percentage points taken off the hero\'s miss chance.'
@@ -610,6 +621,7 @@ export const MODIFIER_PALETTE = [
         buckets: ['flat', 'percentage'],
         categories: 'combatStyle',
         heroOnly: true,
+        fromGuild: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
         hint: 'Damage added to every hit the hero lands, flat or as a percentage. An enemy given it by a rule hits harder too (+100% hits double).'
@@ -621,6 +633,7 @@ export const MODIFIER_PALETTE = [
         scales: 'value',
         buckets: ['flat'],
         heroOnly: true,
+        fromGuild: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
         hint: 'Percentage points added to the miss chance of whatever attacks the hero (misses stay between 5% and 40%).'
@@ -644,6 +657,7 @@ export const MODIFIER_PALETTE = [
         scales: 'value',
         buckets: ['flat'],
         heroOnly: true,
+        fromGuild: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
         hint: 'Percentage points added to the hero\'s 5% chance to crit (a crit doubles the hit).'
@@ -660,6 +674,7 @@ export const MODIFIER_PALETTE = [
         scales: 'value',
         buckets: ['flat'],
         heroOnly: true,
+        fromGuild: true,
         categories: 'damageType',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
@@ -672,6 +687,7 @@ export const MODIFIER_PALETTE = [
         scales: 'value',
         buckets: ['flat'],
         heroOnly: true,
+        fromGuild: true,
         categories: 'damageType',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
@@ -689,6 +705,7 @@ export const MODIFIER_PALETTE = [
         scales: 'value',
         buckets: ['flat'],
         heroOnly: true,
+        neverOnGuild: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
         hint: 'Points off every resistance the bearer has, never below 0 (a weakness stays as it is). Put it on a status: Sunder 10 stacking to 3 takes up to 30 off. Spears and some arrows land it.'
@@ -706,6 +723,7 @@ export const MODIFIER_PALETTE = [
         buckets: ['percentage'],
         categories: 'combatStyle',
         heroOnly: true,
+        fromGuild: true,
         inverted: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',

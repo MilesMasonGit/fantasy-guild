@@ -263,8 +263,8 @@ describe('the audit', () => {
     });
 
     it('still names a combat axis a star cannot give, and a style rule narrowed to a work skill', () => {
-        const messages = findings([rule(EFFECT_TYPES.DODGE, 5, 'flat'), rule(EFFECT_TYPES.DAMAGE, 0.1, 'percentage', 'mining')]);
-        expect(messages.some(m => m.includes('Dodge rule, which only reaches a hero from what they carry'))).toBe(true);
+        const messages = findings([rule(EFFECT_TYPES.FOOD_HEALING, -0.5, 'percentage'), rule(EFFECT_TYPES.DAMAGE, 0.1, 'percentage', 'mining')]);
+        expect(messages.some(m => m.includes('Food Healing rule, which only reaches a hero from what they carry'))).toBe(true);
         expect(messages.some(m => m.includes('narrowed to "mining", which is no combat style'))).toBe(true);
     });
 

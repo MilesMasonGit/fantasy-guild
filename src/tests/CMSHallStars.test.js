@@ -138,6 +138,14 @@ describe('a change pack carries stars and constellations', () => {
         expect(errors({ ...STAR, plan: { status: 'live' } })).toMatch(/carry a "plan"/);
     });
 
+    it('refuses a star whose rank carries Sunder, and takes the guild combat effects', () => {
+        const withRule = (payload) => ({ ...STAR, ranks: [{ ...STAR.ranks[0], rules: [{ ...XP_RULE, id: 'stm_x', payload }] }] });
+        const errors = (value) => validatePack(pack([constellationEntry, starEntry({ value })])).errors?.join(' ') || '';
+        expect(errors(withRule({ type: EFFECT_TYPES.SUNDER, bucket: 'flat', value: 10 }))).toMatch(/rank 1 carries a Sunder rule/);
+        expect(validatePack(pack([constellationEntry, starEntry({ value: withRule({ type: EFFECT_TYPES.CRIT_CHANCE, bucket: 'flat', value: 5 }) })]))).toEqual({ ok: true });
+        expect(validatePack(pack([constellationEntry, starEntry({ value: withRule({ type: EFFECT_TYPES.TYPE_RESIST, bucket: 'flat', value: 10, category: 'physical' }) })]))).toEqual({ ok: true });
+    });
+
     it('applies on finish into a workspace that held none, and undoes', () => {
         const ws = workspace();
         const p = pack([constellationEntry, starEntry()]);
@@ -175,6 +183,19 @@ describe('the Guild Hall page', () => {
         expect(ranks).toContain('10% more XP');
         fireEvent.change(star.querySelector('[data-hall-star-name]'), { target: { value: 'Deep Lore' } });
         expect(store().hallStars[STAR.id].name).toBe('Deep Lore');
+    });
+
+    it('marks a Sunder rule a workspace still holds as refused, and no other rule', () => {
+        const sunder = { ...XP_RULE, id: 'stm_sunder', payload: { type: EFFECT_TYPES.SUNDER, bucket: 'flat', value: 10 } };
+        const held = { ...STAR, ranks: [{ ...STAR.ranks[0], rules: [XP_RULE, sunder] }] };
+        store().hydrate(workspace({ hallConstellations: { mining: MINING }, hallStars: { [STAR.id]: held } }));
+        const { container } = render(React.createElement(HallStarsPage));
+        const star = container.querySelector(`[data-hall-star="${STAR.id}"]`);
+        fireEvent.click([...star.querySelectorAll('button')].find(b => b.textContent.includes('1 rank')));
+        const refused = star.querySelectorAll('[data-hall-rule-refused]');
+        expect(refused).toHaveLength(1);
+        expect(refused[0].textContent).toMatch(/Sunder/);
+        expect(refused[0].textContent).toMatch(/a star cannot carry/);
     });
 
     it('makes a star a ring star with its opens-ring box, and a pack may carry one (a whole ring from 2)', () => {

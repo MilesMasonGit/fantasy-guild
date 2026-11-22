@@ -5,6 +5,7 @@ import { Section } from '../shared/EditorLayout';
 import { rulesLinesOf } from '../../utils/constants';
 import { normaliseHallSky, TAG_SIDES, FIRST_STAR_RING, opensRingOf } from '../../../../src/config/hallStars.js';
 import { BUILT_IN_CONSTELLATIONS } from '../../../../src/config/guildUpgrades.js';
+import { getPaletteEntry } from '../../../../src/config/registries/modifierPalette.js';
 import { PLAN_TIERS, tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
 import { workspacePace } from '../../engine/ledgerReport';
 import { hallRows, hallRowsOf, hoursText } from '../../engine/ledgerPace';
@@ -199,6 +200,11 @@ export default function HallStarsPage() {
                             <RankPricing row={priced[i + 1]} />
                           </div>
                           {rulesLinesOf({ statements: rank.rules.map(asGuildRule) }, names).map((line, j) => <div key={`r${j}`}>{line}</div>)}
+                          {rank.rules.map((rule) => getPaletteEntry(rule?.payload?.type)).map((entry, j) => entry?.neverOnGuild && (
+                            <div key={`x${j}`} data-hall-rule-refused style={{ color: 'var(--color-error)', fontWeight: 700 }}>
+                              Refused: a star cannot carry {entry.label}, which lands only on the fighter struck. The game leaves this rule out.
+                            </div>
+                          ))}
                           {rank.lines.map((l, j) => <div key={`l${j}`}>{l.quantity} {names.item(l.itemId)} each Passive Production lap</div>)}
                         </li>
                       ))}

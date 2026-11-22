@@ -17,6 +17,7 @@ import { hallRulesOf, hallSourceOf } from './hallModifiers.js';
 import { rankOf } from '../../config/hallStars.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { getSkill, COMBAT_SKILL_IDS } from '../../config/registries/skillRegistry.js';
+import { damageTypeLabel } from '../../config/registries/damageTypes.js';
 
 const ALL_TOKENS = Object.freeze({ mode: 'all', value: '' });
 
@@ -46,9 +47,9 @@ export function asGuildRule(statement) {
  * out of an axis that words its own sentence ("award 10% more XP"), and on a star it is the point.
  */
 export function hallRuleSentence(statement, names = hallNames()) {
-    if (isStyleRule(statement)) {
-        const parts = effectParts(asGuildRule(statement), names);
-        if (parts) return `Gives every ${styleSubject(statement)} ${`${parts.size} ${parts.after}`.trim()} in combat.`;
+    if (isFighterRule(statement)) {
+        const amount = fighterAmount(statement, names);
+        if (amount) return `Gives every ${styleSubject(statement)} ${amount} in combat.`;
     }
     const text = renderStatement(asGuildRule(statement), names);
     const category = statement?.payload?.category;
@@ -141,9 +142,33 @@ function andList(list) {
     return `${list.slice(0, -1).join(', ')} and ${list[list.length - 1]}`;
 }
 
-/** Whether a rule is on a combat axis a star gives fighters (Damage, Swing Time, Accuracy). */
-function isStyleRule(statement) {
-    return getPaletteEntry(statement?.payload?.type)?.categories === 'combatStyle';
+/** Whether a rule is on a combat axis a hero reads from the guild (`fromGuild`): a star gives it fighters. */
+function isFighterRule(statement) {
+    return !!getPaletteEntry(statement?.payload?.type)?.fromGuild;
+}
+
+/** A type row's damage type or group by name, or "every type" when it names none. */
+const typeName = (payload) => (payload.category ? damageTypeLabel(payload.category) : 'every type');
+
+/**
+ * A fighter rule's number with its words: "10% more Fire damage", "a 5% Slash weakness", "5 more
+ * crit chance". Null when it cannot be said.
+ */
+function fighterAmount(statement, names) {
+    const payload = statement?.payload || {};
+    const n = Number(payload.value) || 0;
+    if (payload.type === EFFECT_TYPES.TYPE_DAMAGE) return `${Math.abs(n)}% ${n < 0 ? 'less' : 'more'} ${typeName(payload)} damage`;
+    if (payload.type === EFFECT_TYPES.TYPE_RESIST) return n < 0 ? `a ${-n}% ${typeName(payload)} weakness` : `${n}% ${typeName(payload)} resistance`;
+    const parts = effectParts(asGuildRule(statement), names);
+    return parts ? `${parts.size} ${parts.after}`.trim() : null;
+}
+
+/** What a type row's fighters do, when it helps them and when it hinders them. */
+function typePhrase(payload) {
+    const type = typeName(payload);
+    const helps = Number(payload.value) > 0;
+    if (payload.type === EFFECT_TYPES.TYPE_DAMAGE) return helps ? `hit harder with ${type}` : `hit softer with ${type}`;
+    return helps ? `take less from ${type}` : `take more from ${type}`;
 }
 
 /** Who a combat star's rule helps: "Melee fighter", or "hero" when it names no style. */
@@ -156,13 +181,15 @@ function styleSubject(statement) {
 const STYLE_PHRASES = {
     [EFFECT_TYPES.DAMAGE]: ['hit harder', 'hit softer'],
     [EFFECT_TYPES.SWING_TIME]: ['swing faster', 'swing slower'],
-    [EFFECT_TYPES.ACCURACY]: ['miss less', 'miss more']
+    [EFFECT_TYPES.ACCURACY]: ['miss less', 'miss more'],
+    [EFFECT_TYPES.DODGE]: ['dodge more', 'dodge less'],
+    [EFFECT_TYPES.CRIT_CHANCE]: ['crit more often', 'crit less often']
 };
 
 /** Who a star's rule reaches, as a singular noun after "Every": "Forestry Token", "Logging Camp", "hero". */
 function ruleSubject(statement, names) {
     if (getPaletteEntry(statement?.payload?.type)?.guildOnly) return 'hero';
-    if (isStyleRule(statement)) return styleSubject(statement);
+    if (isFighterRule(statement)) return styleSubject(statement);
     const to = statement?.to || {};
     if (to.mode === 'tag' && to.value) return `${to.value} Token`;
     if (to.mode === 'id' && to.value) return names.token(to.value);
@@ -230,10 +257,14 @@ function ruleEffect(statement, names, lapMs = null) {
             amount: `${Math.abs(n)} ${n < 0 ? 'fewer' : 'more'} ${kind} ${Math.abs(n) === 1 ? 'slot' : 'slots'}`
         };
     }
+    if (payload.type === EFFECT_TYPES.TYPE_DAMAGE || payload.type === EFFECT_TYPES.TYPE_RESIST) {
+        const amount = fighterAmount(statement, names);
+        return amount ? { phrase: typePhrase(payload), amount } : null;
+    }
     const parts = effectParts(asGuildRule(statement), names);
     if (!parts) return null;
     const style = STYLE_PHRASES[payload.type];
-    if (style && isStyleRule(statement)) {
+    if (style && isFighterRule(statement)) {
         const helps = (Number(payload.value) > 0) !== !!getPaletteEntry(payload.type)?.inverted;
         return { phrase: helps ? style[0] : style[1], amount: `${parts.size} ${parts.after}`.trim() };
     }

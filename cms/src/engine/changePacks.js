@@ -17,6 +17,7 @@ import { workspaceWorldFrom, usableTables } from './worldTables.js';
 import { workspaceEventsFrom } from './events.js';
 import { eventProblems } from '../../../src/config/eventTable.js';
 import { FIRST_STAR_RING, opensRingOf } from '../../../src/config/hallStars.js';
+import { getPaletteEntry } from '../../../src/config/registries/modifierPalette.js';
 
 export const PACK_FORMAT = 'fantasy-guild-change-pack';
 export const PACK_VERSION = 1;
@@ -82,7 +83,8 @@ export function collectionOf(kind) {
 
 /**
  * What is wrong with a Guild Hall star's record (`src/config/hallStars.js`), as sentences: a
- * constellation and links named, and every rank a list with a price list, rules and lines.
+ * constellation and links named, and every rank a list with a price list, rules and lines, none of
+ * them on an axis a star cannot carry (Sunder: `neverOnGuild` in the palette).
  */
 function hallStarErrors(value, label) {
     const out = [];
@@ -105,6 +107,10 @@ function hallStarErrors(value, label) {
             if (rank[key] !== undefined && !Array.isArray(rank[key])) out.push(`${at}: "${key}" must be a list.`);
         }
         if (rank.tier !== undefined && tierOrNull(rank.tier) !== rank.tier) out.push(`${at}: "tier" must be a whole number from 0.`);
+        for (const rule of Array.isArray(rank.rules) ? rank.rules : []) {
+            const entry = getPaletteEntry(rule?.payload?.type);
+            if (entry?.neverOnGuild) out.push(`${at} carries a ${entry.label} rule, which a star cannot carry: it lands only on the fighter struck. Leave it out.`);
+        }
     });
     return out;
 }
