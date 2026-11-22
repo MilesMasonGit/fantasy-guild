@@ -4,6 +4,10 @@ import React from 'react';
 import fs from 'node:fs';
 import { render, cleanup, fireEvent, act } from '@testing-library/react';
 import { GameState } from '../state/GameState.js';
+import { equipItem } from '../systems/equipment/EquipmentManager.js';
+import * as HeroManager from '../systems/hero/HeroManager.js';
+import { rehydrateHero } from '../systems/hero/logic/HeroRehydration.js';
+import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
@@ -264,5 +268,57 @@ describe('the tag lines file', () => {
 
     it('a tag listed twice shows once', () => {
         expect(itemTagPills({ tags: ['Food', 'food', 'Fish'] }).map(p => p.tag)).toEqual(['Food', 'Fish']);
+    });
+});
+
+describe('Discard throws the Bank stack away, after a confirm', () => {
+    const open = (id) => {
+        const view = mountBank();
+        fireEvent.click(tile(view, id));
+        return view;
+    };
+    const q = (view, sel) => drawerOf(view).querySelector(sel);
+
+    it('asks first; Cancel keeps the stack', () => {
+        InventoryManager.addItem('dr_ore', 7);
+        const view = open('dr_ore');
+        expect(q(view, '[data-item-drawer-discard-confirm]')).toBeNull();
+        fireEvent.click(q(view, '[data-item-drawer-discard]'));
+        expect(q(view, '[data-item-drawer-discard-confirm]').textContent).toMatch(/all 7 Drawer Ore.*Nothing comes back.*Worn gear stays worn/);
+        fireEvent.click(q(view, '[data-item-drawer-discard-no]'));
+        expect(q(view, '[data-item-drawer-discard-confirm]')).toBeNull();
+        expect(InventoryManager.getItemCount('dr_ore')).toBe(7);
+    });
+
+    it('Confirm removes the whole stack and nothing comes back', () => {
+        InventoryManager.addItem('dr_ore', 7);
+        const view = open('dr_ore');
+        fireEvent.click(q(view, '[data-item-drawer-discard]'));
+        fireEvent.click(q(view, '[data-item-drawer-discard-yes]'));
+        expect(InventoryManager.getItemCount('dr_ore')).toBe(0);
+        expect(GameState.state.inventory.items.dr_ore).toBeUndefined();
+    });
+
+    it('a worn copy stays worn', () => {
+        const hero = generateHero({ name: 'Ana' });
+        hero.id = 'dr_hero';
+        hero.equipment = Array(9).fill(null);
+        GameState.state.heroes.push(hero);
+        rehydrateHero(hero);
+        InventoryManager.addItem('dr_sword', 3);
+        expect(equipItem(hero.id, 'dr_sword').success).toBe(true);
+        const bankBefore = InventoryManager.getItemCount('dr_sword');
+        expect(bankBefore).toBeGreaterThan(0);
+        const view = open('dr_sword');
+        fireEvent.click(q(view, '[data-item-drawer-discard]'));
+        fireEvent.click(q(view, '[data-item-drawer-discard-yes]'));
+        expect(InventoryManager.getItemCount('dr_sword')).toBe(0);
+        expect(HeroManager.getHero(hero.id).equipment).toContain('dr_sword');
+    });
+
+    it('a carried consumable reads empty once its Bank stack is gone', () => {
+        InventoryManager.addItem('dr_ore', 1);
+        InventoryManager.removeItem('dr_ore', InventoryManager.getItemCount('dr_ore'));
+        expect(InventoryManager.hasItem('dr_ore', 1)).toBe(false);
     });
 });
