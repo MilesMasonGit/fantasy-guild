@@ -17,8 +17,12 @@ const root = path.resolve(here, '../../../..');
 const { launchChrome, sleep } = await import(pathToFileURL(path.join(root, 'bench/browser/cdp.mjs')).href);
 
 const url = process.argv[2] || 'http://localhost:5316';
-const W = 1920;
-const H = 1080;
+// `--built`: the game as built (the pick, look E): only E.png and E_full.png, no throwaway code
+// needed. `--size=WxH` another window (another fit), `--prefix=` before the file names.
+const flag = (name) => process.argv.find(a => a.startsWith(`--${name}`));
+const BUILT = !!flag('built');
+const [W, H] = (flag('size=')?.split('=')[1] ?? '1920x1080').split('x').map(Number);
+const PREFIX = flag('prefix=')?.split('=')[1] ?? '';
 
 const capture = async (page, clip, scale = 1) => Buffer.from((await page.send('Page.captureScreenshot', {
     format: 'png', clip: { ...clip, scale }
@@ -162,6 +166,22 @@ try {
     await page.mouse('mouseMoved', Math.round(W / 2), 5);
     await sleep(800);
 
+    if (BUILT) {
+        const { O, P, F } = scene;
+        const box = await screenBox(page, { x: F.x - 200, y: F.y - 150, w: O.x + 220 - (F.x - 200), h: P.y + 160 - (F.y - 150) });
+        writeFileSync(path.join(here, `${PREFIX}E_full.png`), await capture(page, { x: 0, y: 0, width: W, height: H }));
+        writeFileSync(path.join(here, `${PREFIX}E.png`), await zoom2(page, await capture(page, box)));
+        const drawn = await page.evaluate(`(async () => {
+            const { matW } = await import('/src/config/matGeometry.js');
+            const w = document.querySelector('[data-task-rings]');
+            const g = w.querySelector('[data-task-area-layer] g');
+            const artScale = Number(g.getAttribute('transform').split('(')[1].split(')')[0]);
+            const matPx = document.querySelector('[data-mat-surface]').getBoundingClientRect().width / matW();
+            return { jobs: w.getAttribute('data-task-jobs'), artScale, screenPxPerArtPx: artScale * matPx, bands: g.querySelectorAll('path').length };
+        })()`);
+        console.log(JSON.stringify({ size: [W, H], scene: scene.status, drawn }, null, 1));
+        process.exitCode = 0;
+    } else {
     // Today's game, ring line and all.
     await setLook(page, 'live');
     writeFileSync(path.join(here, 'today_ring_full.png'), await capture(page, { x: 0, y: 0, width: W, height: H }));
@@ -227,6 +247,7 @@ try {
         writeFileSync(path.join(here, `${look}.png`), await zoom2(page, await capture(page, box)));
     }
     console.log(JSON.stringify({ scene, live, artScale, jobs }, null, 1));
+    }
 } finally {
     await chrome.close();
 }
