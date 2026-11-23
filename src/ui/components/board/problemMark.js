@@ -157,8 +157,8 @@ export function problemText(problem, instanceId) {
         }
         case ALERT.GROW_NEEDS_NEARBY: {
             const names = (problem.needs || []).map(id => withArticle(getTokenType(id)?.name || id));
-            // The same wait on a resting refill (a Bare apple tree with no Orchard) is for its refill.
-            const what = Respawn.isResting(instance) ? 'refill' : 'grow';
+            // The same wait on an exhausted Token (a Bare apple tree with no Orchard) is for its respawn.
+            const what = Respawn.isResting(instance) ? 'respawn' : 'grow';
             return names.length ? `Needs ${joinOr(names)} nearby to ${what}` : `Needs a Token nearby to ${what}`;
         }
         case ALERT.GROW_NEEDS_ITEM: {

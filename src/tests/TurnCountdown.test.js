@@ -14,9 +14,9 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
-import { timerCellOf } from '../ui/components/board/idlePlate.js';
+import { timerCellsOf } from '../ui/components/board/idlePlate.js';
+import { turnLine } from '../ui/components/board/tokenTimers.js';
 import { TURN_COUNTDOWN_REFRESH_MS } from '../ui/components/board/ringRow.js';
-import { turnCountdownText } from '../ui/components/board/centreAlert.js';
 import { matW, matH } from '../config/matGeometry.js';
 import * as Flags from '../systems/board/Flags.js';
 import { restHover } from './fixtures/hoverRest.js';
@@ -69,31 +69,17 @@ afterEach(() => { cleanup(); vi.useRealTimers(); });
 beforeAll(() => Flags.init());
 afterAll(() => Flags.teardown());
 
-describe('countdown text (FB-14)', () => {
-    it('reads m:ss, rounded up to the second', () => {
-        expect(turnCountdownText(60000)).toBe('1m 0s');
-        expect(turnCountdownText(34000)).toBe('34s');
-        expect(turnCountdownText(33001)).toBe('34s');
-        expect(turnCountdownText(1)).toBe('1s');
-        expect(turnCountdownText(0)).toBe('0s');
-        expect(turnCountdownText(125000)).toBe('2m 5s');
-        expect(turnCountdownText(undefined)).toBeNull();
-    });
+describe('the turn timer (FB-14)', () => {
+    const coast = { name: 'Coast', turns: { into: [{ typeId: 'shrimp', weight: 1 }], everyMs: 60000, chance: 30 } };
+    const src = { tokenName: (id) => (id === 'shrimp' ? 'Shrimp Coast' : 'Coast') };
 
-    it('the timer cell draws what it reads, names the odds, and is nothing with nothing to read', () => {
-        const turn = (extra) => ({ kind: 'turn', everyMs: 60000, chance: 30, ...extra });
-        expect(timerCellOf(turn({ inMs: 34000, back: false })))
-            .toMatchObject({ text: '34s', glyph: 'turn', tip: 'Next roll to turn into something else in 34s (30% chance)' });
-        expect(timerCellOf(turn({ inMs: 5000, back: true })).tip).toBe('Next roll to turn back in 5s (30% chance)');
-        expect(timerCellOf(null)).toBeNull();
-    });
-
-    it('a resting Token’s timer says when it refills', () => {
-        const cell = timerCellOf({ kind: 'respawn', mode: 'refill', inMs: 24000, totalMs: 30000, everyMs: 30000 });
-        expect(cell.text).toBe('24s');
-        expect(cell.tip).toBe('Resting. Refills in 24s');
+    it('the timer cell draws what the card says: the odds, the cycle and the next roll', () => {
+        const [cell] = timerCellsOf([turnLine({ id: 'c', typeId: 'coast' }, coast, { inMs: 34000, chance: 30, into: ['shrimp'] }, src)]);
+        expect(cell).toMatchObject({ text: '34s', glyph: 'turn', tip: 'A 30% chance every 1m to turn into Shrimp Coast, and the same to turn back. Next roll in 34s' });
+        const back = turnLine({ id: 's', typeId: 'shrimp', turnedFrom: 'coast' }, coast, { inMs: 125000, chance: 30, back: true }, src);
         // Non-breaking between a time's parts, so the tip never splits them.
-        expect(timerCellOf({ kind: 'respawn', mode: 'refill', inMs: 125000 }).tip).toBe('Resting. Refills in 2m\u00a05s');
+        expect(back.tip).toBe('A 30% chance to turn back into Coast in 2m\u00a05s');
+        expect(timerCellsOf(null)).toEqual([]);
     });
 });
 

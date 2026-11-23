@@ -13,17 +13,14 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Placement from '../../../systems/board/Placement.js';
-import * as TimedChanges from '../../../systems/board/TimedChanges.js';
-import * as Respawn from '../../../systems/board/Respawn.js';
-import * as Fields from '../../../systems/board/Fields.js';
 import * as Hand from '../../../systems/board/Hand.js';
 import * as FixedTokens from '../../../systems/board/FixedTokens.js';
 import * as Landmarks from '../../../systems/board/Landmarks.js';
-import * as EventTokens from '../../../systems/board/EventTokens.js';
 import { MAP_MODE, isProtectedFromDemolition } from '../../hooks/useMapMode.js';
 import { useTokenEvent } from './tokenEvents.js';
 import { useTokenDetail } from './useTokenDetail.js';
 import { TokenBubbles } from './TokenBubbles.jsx';
+import { idleTimerLines } from './idlePlate.js';
 import { plateFootOf } from './workPlate.js';
 import { TokenNameBadge } from './TokenBadges.jsx';
 import { gearStateOf } from './centreAlert.js';
@@ -227,25 +224,9 @@ export const MatToken = React.memo(function MatToken({
     // (routed to this Token alone).
     const detail = useTokenDetail(id, def);
 
-    // The idle plate's timer polls this; stable per Token so its poll is not reset. A resting Token
-    // counts down to its refill (a regrow has none: it becomes its Sapling at once); a growing
-    // one counts down its growth (`everyMs` is the whole growth time); a turning one to its next
-    // roll, over the roll cycle (on a turned Token the ORIGINAL's, as the roll itself uses,
-    // `turnTimingOf`).
-    const readTimer = React.useCallback(() => {
-        const instance = BoardState.getTokenById(id);
-        // An event Token counts down to leaving: a buff's time, an unworkable node's hour.
-        const leaves = EventTokens.leavesInMs(instance);
-        if (leaves != null) return { kind: 'leave', inMs: leaves, buff: EventTokens.isEventBuff(instance) };
-        const rest = Respawn.nextRespawn(instance);
-        if (rest) return rest.mode === 'refill' ? { kind: 'respawn', ...rest, everyMs: rest.totalMs } : null;
-        const grow = TimedChanges.nextGrowth(instance);
-        if (grow) return { kind: 'grow', ...grow, everyMs: grow.totalMs };
-        const ripe = Fields.nextRipening(instance);
-        if (ripe) return { kind: 'ripen', ...ripe, everyMs: ripe.totalMs };
-        const roll = TimedChanges.nextTurnRoll(instance);
-        return roll ? { kind: 'turn', ...roll, everyMs: TimedChanges.turnTimingOf(instance).everyMs } : null;
-    }, [id]);
+    // The idle plate's timers poll this (the card's own timer lines, `idleTimerLines`); stable per
+    // Token so its poll is not reset. Read only while the pointer rests on the Token.
+    const readTimer = React.useCallback(() => idleTimerLines(BoardState.getTokenById(id)), [id]);
 
     const quest = detail?.quest ?? null;
     const questDone = !!quest?.done;
@@ -397,9 +378,6 @@ export const MatToken = React.memo(function MatToken({
     const hidden = dragging;
     // The idle plate under the rested Token nobody works. `TokenBubbles` decides whether it shows
     // (a problem or a running timer): a spawner's and a growth's problems are heard only there.
-    // Read once per instance: an event Token never stops being one.
-    const isEvent = React.useMemo(() => EventTokens.isEventToken(BoardState.getTokenById(id)), [id]);
-    const timed = !!(detail?.turns || detail?.grows || detail?.ripens || resting || isEvent);
     const idlePlate = !!plateHost && !staffed && !hidden && !isEnemyDef(def);
     // In a fight the enemy's bar draws in the fight layer (`FightBarHost`), placed by this box's corner.
     const fightBar = React.useMemo(
@@ -691,7 +669,7 @@ export const MatToken = React.memo(function MatToken({
                     artUnit={artScale}
                     x={x}
                     y={y}
-                    readTimer={timed ? readTimer : null}
+                    readTimer={readTimer}
                     plateHost={idlePlate ? plateHost : null}
                     gear={gear}
                     marked={!!detail?.marked}

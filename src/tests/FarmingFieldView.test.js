@@ -7,17 +7,15 @@ import * as Growth from '../systems/board/Growth.js';
 import * as Fields from '../systems/board/Fields.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import * as BoardState from '../systems/board/BoardState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { KEYWORD } from '../systems/effects/statements.js';
-import { registerTokenTypes, getTokenType, tokenName } from '../config/registries/tokenRegistry.js';
-import { registerItems, getItem } from '../config/registries/itemRegistry.js';
+import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
+import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import { tokenDetailOf } from '../ui/components/board/useTokenDetail.js';
 import { tokenCardModel, liveCardSources, CARD_BLOCK } from '../ui/components/board/tokenCard.js';
-import { lifecycleLines } from '../ui/components/drawer/lifecycleLines.js';
 import { problemOf, problemText } from '../ui/components/board/problemMark.js';
-import { getRecipe } from '../config/registries/recipePoolRegistry.js';
+import { idleTimerLines } from '../ui/components/board/idlePlate.js';
 import { clearMat, placeAt } from './fixtures/mat.js';
 
 /**
@@ -76,14 +74,6 @@ function arrive(typeId, x = 800, y = 500) {
 const detail = (t) => tokenDetailOf(t.id, getTokenType(t.typeId));
 const card = (t) => tokenCardModel(t.typeId, t.id);
 const block = (model, id) => model.blocks.find(b => b.id === id);
-const inspectSources = () => ({
-    typeOf: getTokenType, tokenName, itemName: (id) => getItem(id)?.name || id,
-    spawnerStatus: () => null, selectedRecipe: StationRecipe.selectedRecipe, poolFor: StationRecipe.poolFor,
-    originOf: BoardState.originOf, field: Fields.fieldState,
-    recipeName: (id) => getRecipe(id)?.name || id, recipeOf: getRecipe
-});
-const rows = (t) => lifecycleLines(t, inspectSources());
-
 beforeAll(() => TimedChanges.init());
 beforeEach(() => {
     GameState.initNew();
@@ -165,25 +155,19 @@ describe('the card', () => {
     });
 });
 
-describe('the inspection rows', () => {
-    it('nothing picked: Choose a crop, and not the station\'s Choose a recipe', () => {
-        const out = rows(arrive('fv_field'));
-        expect(out).toContainEqual({ label: 'Field', value: 'Choose a crop', tone: 'warning' });
-        expect(out.some(r => r.label === 'Recipe')).toBe(false);
-    });
-
-    it('growing, ripe, stopped', () => {
+describe('the idle hover', () => {
+    it('growing: the same countdown and sentence as the card; ripe, nothing; stopped, left to its problem mark', () => {
         InventoryManager.addItem(SEED, 1);
         const field = arrive('fv_field');
         StationRecipe.setSelectedRecipe(field, WHEAT);
         tick(100);
-        expect(rows(field)[0]).toEqual({ label: 'Growing Wheat', value: 'ripe in 1m 0s' });
-        expect(rows(field)).toContainEqual({ label: 'Each sowing', value: '1 View Wheat Seed from the Bank', tone: 'muted' });
+        const cardLine = block(card(field), CARD_BLOCK.LIFECYCLE).lines[0];
+        expect(idleTimerLines(field)).toEqual([expect.objectContaining({ kind: 'ripen', text: cardLine.text, tip: cardLine.tip })]);
         tick(60000);
-        expect(rows(field)[0]).toEqual({ label: 'Ripe Wheat', value: '3 of 3 harvests left', tone: 'good' });
-        // The first harvest pays the seed in the game (`BoardRunner`); harvested bare here, it is taken by hand.
+        expect(idleTimerLines(field)).toBeNull();
         InventoryManager.removeItem(SEED, 1);
         for (let i = 0; i < 3; i++) Fields.harvested(field, getTokenType(field.typeId));
-        expect(rows(field)[0]).toEqual({ label: 'Field', value: 'stopped: needs View Wheat Seed to sow Wheat', tone: 'warning' });
+        expect(block(card(field), CARD_BLOCK.LIFECYCLE).lines[0]).toMatchObject({ tip: 'Stopped: needs View Wheat Seed to sow Wheat' });
+        expect(idleTimerLines(field)).toBeNull();
     });
 });

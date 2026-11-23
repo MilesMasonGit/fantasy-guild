@@ -23,7 +23,8 @@ import {
 } from '../ui/components/board/ringRow.js';
 import { WorkBarFill } from '../ui/components/board/WorkPlateLayer.jsx';
 import { PLATE, CELL, plateFootOf, platePlace } from '../ui/components/board/workPlate.js';
-import { idlePlateCells, timerCellOf } from '../ui/components/board/idlePlate.js';
+import { idlePlateCells, timerCellsOf } from '../ui/components/board/idlePlate.js';
+import { growthLine, turnLine, respawnLine, liveTimerSources } from '../ui/components/board/tokenTimers.js';
 import { MAT_Z } from '../ui/components/board/matLayers.js';
 import { PROBLEM_SPRITE, SEVERITY } from '../ui/components/board/problemMark.js';
 import * as TimedChanges from '../systems/board/TimedChanges.js';
@@ -133,10 +134,10 @@ describe('the rules, pure', () => {
         expect([...GLIDING_RINGS]).toEqual(['charges']);
     });
 
-    it('⭐ the idle plate’s cells: the problem, then the timer; never charges, a spawner’s count or a quest’s progress', () => {
-        const timer = timerCellOf({ kind: 'grow', inMs: 30000, into: 'fixture_b13_sapling' });
+    it('⭐ the idle plate’s cells: the problem, then the timers; never charges, a spawner’s count or a quest’s progress', () => {
+        const timers = timerCellsOf(growing(30000)());
         const counts = { charges: 4, spawner: { count: 3, cap: 5 }, quest: { currentCount: 1, requiredCount: 10, itemId: 'x' } };
-        const cells = idlePlateCells({ problem: { kind: ALERT.INPUTS, severity: SEVERITY.WAITING }, ...counts, timer });
+        const cells = idlePlateCells({ problem: { kind: ALERT.INPUTS, severity: SEVERITY.WAITING }, ...counts, timers });
         expect(cells.map(c => c.kind)).toEqual([CELL.PROBLEM, CELL.TIMER]);
         expect(cells[1]).toMatchObject({ text: '30s', glyph: 'grow' });
         expect(cells[1].tip).toMatch(/^Grows into .* in 30s$/);
@@ -144,21 +145,24 @@ describe('the rules, pure', () => {
         expect(idlePlateCells({})).toEqual([]);
     });
 
-    it('the timer cell: one glyph per clock, its tip saying what comes; nothing counting, none', () => {
-        expect(timerCellOf({ kind: 'respawn', inMs: 15000 })).toMatchObject({ glyph: 'regrow', text: '15s' });
-        expect(timerCellOf({ kind: 'respawn', inMs: 15000 }).tip).toMatch(/^Resting\. Refills in /);
-        expect(timerCellOf({ kind: 'respawn', inMs: 15000, paused: true, needsNearby: ['fixture_b13_forest'] }).tip)
-            .toBe('Resting. Refills only with Fixture B1.3 Forest nearby');
-        expect(timerCellOf({ kind: 'turn', inMs: 5000, chance: 30, back: true }))
-            .toMatchObject({ glyph: 'turn', text: '5s', tip: 'Next roll to turn back in 5s (30% chance)' });
-        expect(timerCellOf({ kind: 'ripen', inMs: 61000 })).toMatchObject({ glyph: 'grow', text: '1m 1s' });
-        expect(timerCellOf(null)).toBeNull();
+    it('the timer cells: the card’s glyph, figure and sentence; nothing counting, none', () => {
+        const src = liveTimerSources();
+        const at = { id: 'v', typeId: 'fixture_bub_grower' };
+        const [rest] = timerCellsOf([respawnLine(at, { mode: 'refill', resting: true, inMs: 15000 }, src)]);
+        expect(rest).toMatchObject({ glyph: 'regrow', text: '15s', tip: 'Exhausted · respawns in 15s' });
+        const [turn] = timerCellsOf([turnLine({ id: 't', typeId: 'x', turnedFrom: 'fixture_b13_forest' }, {}, { inMs: 5000, chance: 30, back: true }, src)]);
+        expect(turn).toMatchObject({ glyph: 'turn', text: '5s' });
+        expect(turn.tip).toMatch(/^A 30% chance to turn back into .* in 5s$/);
+        expect(timerCellsOf(null)).toEqual([]);
     });
 });
 
+/** What `MatToken`'s readTimer hands the plate: the timer writer's lines (`idleTimerLines`). */
+const growing = (inMs) => () => [growthLine({ id: 'g', typeId: 'fixture_bub_grower' }, { inMs, into: 'fixture_b13_sapling', cost: [], needsNearby: [] }, liveTimerSources())];
+
 describe('⭐ at rest: the bar and the marks, nothing else', () => {
     const everything = {};
-    const clock = () => ({ kind: 'grow', inMs: 3000, everyMs: 60000, into: 'fixture_b13_sapling' });
+    const clock = growing(3000);
 
     it('⭐ not worked, nothing wrong: nothing at all, no plate (even in its timer’s last seconds)', () => {
         const { container } = mount(bub({ token: worked({ heroId: null, usesRemaining: 5 }), ...everything, readTimer: clock, plateHost }));
@@ -364,7 +368,7 @@ describe('⭐ hover: the idle plate under the Token, and the gear', () => {
 
     it('⭐ the timer: only while hovered, on the plate, polling only while it shows', () => {
         vi.useFakeTimers();
-        const read = () => ({ kind: 'grow', inMs: 30000, everyMs: 60000, into: 'fixture_b13_sapling' });
+        const read = growing(30000);
         const { container, rerender } = mount(bub({ token: idle(), readTimer: read, plateHost, x: 400, y: 300 }));
         expect(idlePlate()).toBeNull();
         expect(vi.getTimerCount()).toBe(0);
@@ -384,7 +388,7 @@ describe('⭐ hover: the idle plate under the Token, and the gear', () => {
     it('a hovered timer follows the clock', () => {
         vi.useFakeTimers();
         let inMs = 12000;
-        const read = () => ({ kind: 'turn', inMs, everyMs: 60000, chance: 30, back: false, into: [] });
+        const read = () => [turnLine({ id: 't', typeId: 'x', turnedFrom: 'fixture_b13_forest' }, {}, { inMs, chance: 30, back: true }, liveTimerSources())];
         mount(idleBub({ token: idle(), readTimer: read }));
         expect(idleCell(CELL.TIMER).textContent).toBe('12s');
         inMs = 9000;
@@ -412,7 +416,7 @@ describe('⭐ hover: the idle plate under the Token, and the gear', () => {
         const { container, rerender } = mount(idleBub({ token: idle({ usesRemaining: 4 }), gear, artUnit: 2 }));
         expect(idlePlate()).toBeNull();
         expect(container.querySelector('[data-gear-in-mark]')).not.toBeNull();
-        const read = () => ({ kind: 'grow', inMs: 30000, everyMs: 60000, into: 'fixture_b13_sapling' });
+        const read = growing(30000);
         rerender(tree(idleBub({ token: idle({ usesRemaining: 4 }), gear, artUnit: 2, readTimer: read })));
         expect(idleCellKinds()).toEqual([CELL.TIMER]);
         expect(idlePlate().getAttribute('data-work-plate-tone')).toBeNull();
@@ -721,7 +725,7 @@ describe('no charge number floats', () => {
 describe('tooltips and grabbing', () => {
     const everything = () => idleBub({
         token: worked({ heroId: null, usesRemaining: 4 }), marked: true,
-        readTimer: () => ({ kind: 'grow', inMs: 30000, everyMs: 60000, into: 'fixture_b13_sapling' })
+        readTimer: growing(30000)
     });
 
     it('⭐ hovering a plate cell or a player mark shows what it means; leaving hides it', () => {
@@ -741,7 +745,7 @@ describe('tooltips and grabbing', () => {
         const onPointerDown = vi.fn();
         const { container } = mount(idleBub({
             token: worked({ heroId: null, usesRemaining: 4, alert: ALERT.INPUTS }), marked: true,
-            readTimer: () => ({ kind: 'grow', inMs: 30000, everyMs: 60000, into: 'fixture_b13_sapling' }),
+            readTimer: growing(30000),
             dragProps: { onPointerDown }
         }));
         for (const kind of [CELL.PROBLEM, CELL.TIMER]) {

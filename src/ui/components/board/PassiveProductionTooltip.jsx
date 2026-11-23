@@ -4,7 +4,7 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 import * as PassiveProduction from '../../../systems/board/PassiveProduction.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
-import { passiveHoverLines } from '../drawer/lifecycleLines.js';
+import { passiveHoverLines } from './tokenTimers.js';
 import { FloatingTip } from '../base/Tooltip.jsx';
 import { onPoll } from './frameClock.js';
 
