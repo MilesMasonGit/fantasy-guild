@@ -22,7 +22,7 @@ import { roundByChance } from '../../utils/RNG.js';
  *
  * A rule's damage is untyped and lands whole (flat armour is gone), except a status that hurts in a
  * damage type ({@link STATUS_DAMAGE_TYPES}): the bearer's resistance to that type cuts it, as it cuts
- * a hit (`CombatFormulas.typeFactor`). An older rule's `ignoresArmor` is read by nothing.
+ * a hit (`CombatFormulas.typeFactor`).
  *
  * ⚠️ The amount is made whole by chance, as a swing is (`RNG.roundByChance`): one `Math.random()`
  * only when it has a fraction, drawn here in the tick's own order, so a catch-up replays it.
