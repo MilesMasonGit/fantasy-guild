@@ -25,7 +25,7 @@ import { RING_GROW_MS, ringTween, ringPxAt } from '../ui/components/board/growRi
 import { setDrawingPaused } from '../ui/components/board/frameClock.js';
 
 /**
- * ⭐ The reach ring and its in-reach dots (brief 560 R2, playmat declutter §2): a Foundation, a camp
+ * ⭐ The reach ring and its in-reach dots (brief 560 R2, concept_playmat_declutter.md §2): a Foundation, a camp
  * and a Token whose rules involve its neighbours show the one standard ring; a Token inside it wears
  * a dot only when the ringed Token acts on or depends on it, by the engine's own tests (a Logging
  * Camp dots trees, not ore veins), and within reach by the engine's own distance test, so a dot
@@ -185,7 +185,7 @@ describe('reachDotsAt: the engine\'s own distance test', () => {
     });
 });
 
-describe('⭐ dots only on what the Token acts on or depends on (playmat declutter §2)', () => {
+describe('⭐ dots only on what the Token acts on or depends on', () => {
     it('⭐ a Logging Camp dots trees, not an ore vein beside them, nor a Token marked for demolition', () => {
         const camp = placeAt('rdot_camp', 600, 500);
         const tree = placeAt('rdot_tree', 680, 500);

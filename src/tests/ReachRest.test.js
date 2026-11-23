@@ -32,7 +32,7 @@ vi.mock('../ui/utils/alphaHitTest.js', async (importOriginal) => {
 });
 
 /**
- * ⭐ **Reach rings wait for a longer rest** (playmat declutter §2): the name comes up after the
+ * ⭐ **Reach rings wait for a longer rest** (concept_playmat_declutter.md §2): the name comes up after the
  * pointer rests `HOVER_REST_MS` on a Token; its reach ring and dots only after `RING_REST_MS`, and
  * not at all if the pointer moves on first, so a slow sweep across the mat reads names and pops no
  * rings. A camp ring lit through a hero on the mat waits the same. A Token in the hand shows its

@@ -44,14 +44,11 @@ export function showsNearRing(typeId) {
  * or carried across it): its upkeep, its demolition mark and its chosen recipe or building count,
  * and it never marks itself. A Token from the Shop has none of those yet.
  *
- * ⚠️ Every test here is one the engine itself runs, never a second list: a camp's work
- * (`Camps.handsOut`), a rule's filter as the walk or the trigger reads it (`matchesTokenTarget`,
- * with a support's narrowing, `supportLinks.narrowingFits`), a moment's source
- * (`TriggerSystem.sourceMatches`), a count (`EffectActions.countMatches`' filter), a `Cannot`
- * (`Restrictions.countsAgainst`), the context a station's recipe takes
- * (`RecipeResolver.servesStation`, `providedBy`), and for a Foundation those of the building chosen
- * on it. Which parts of a rule are about its neighbours is `statements.neighbourPartsOf`, the test
- * that decides the ring shows at all.
+ * ⚠️ Every test here is one the engine runs itself (a camp's work, a rule's filter with a
+ * support's narrowing, a moment's source, a count, a `Cannot`, a recipe's context, a Foundation's
+ * chosen building), never a second list, so a dot cannot disagree with what the Token does. Which
+ * parts of a rule are about its neighbours is `statements.neighbourPartsOf`, the same test that
+ * decides the ring shows at all.
  * @param {string} typeId
  * @param {object|null} [self]
  * @returns {Array<{id: string, x: number, y: number}>}
