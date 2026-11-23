@@ -250,7 +250,7 @@ describe('an enemy\'s thorns', () => {
     it('spend no charge of the enemy Token', () => {
         const { enemy } = startFight('ws_thorny');
         play(30000);
-        expect(BoardState.getTokenById(enemy.id).usesRemaining).toBe(50);
+        expect(BoardState.getTokenById(enemy.id).usesRemaining).toBe(1);
     });
 });
 

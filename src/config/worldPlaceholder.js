@@ -99,17 +99,11 @@ export const PLACEHOLDER_WORLD_TABLES = Object.freeze({
     // The study's "one hero working without waiting": five veins, four trees, two waters, one camp.
     heroTokens: { mining: 5, forestry: 4, farming: 3, fishing: 2, alchemy: 3, combat: 1 },
     specialtyHeroes: 1,
-    // A handful of enemies sized to the ring, sometimes a boss (owner: 3 to 6, no respawn).
+    // A handful of enemies sized to the ring (owner: 3 to 6, no respawn); bosses come from camps only.
     arrival: {
-        1: { count: [3, 4], enemies: [w('token_goblin', 3), w('token_wolf'), w('token_crab')], bossChance: 0, bosses: [] },
-        2: {
-            count: [4, 5], enemies: [w('token_goblin', 2), w('token_wolf', 2), w('token_crab'), w('token_bee')],
-            bossChance: 0.3, bosses: [w('token_wolf_alpha'), w('token_greater_slime')]
-        },
-        3: {
-            count: [5, 6], enemies: [w('token_bee'), w('token_frog', 2), w('token_sulphur_lizard'), w('token_fire_elemental')],
-            bossChance: 0.5, bosses: [w('token_water_elemental'), w('token_wind_elemental'), w('token_queen_bee'), w('token_goblin_chief')]
-        }
+        1: { count: [3, 4], enemies: [w('token_goblin', 3), w('token_wolf'), w('token_crab')] },
+        2: { count: [4, 5], enemies: [w('token_goblin', 2), w('token_wolf', 2), w('token_crab'), w('token_bee')] },
+        3: { count: [5, 6], enemies: [w('token_bee'), w('token_frog', 2), w('token_sulphur_lizard'), w('token_fire_elemental')] }
     },
     specialties: ['mining', 'forestry', 'farming', 'fishing', 'alchemy', 'combat'],
     pityWindow: 4,

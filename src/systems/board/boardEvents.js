@@ -218,8 +218,9 @@ export const BOARD_EVENTS = {
     /**
      * High-frequency cycle progress, for ref-based UI updates only.
      * Payload: `{ instanceId, percent }`, plus `elapsedMs, cycleTimeMs` from the
-     * work runner, or `combat: true, enemyHp, enemyMaxHp` from a fight. A reset
-     * to zero (a flag moved) sends `percent: 0` alone.
+     * work runner, or `combat: true, enemyHp, enemyMaxHp` from a fight (with
+     * `resting: true` from a hurt enemy healing out of one). A reset to zero (a
+     * flag moved) sends `percent: 0` alone.
      */
     PROGRESS: 'board:progress',
 
@@ -271,15 +272,10 @@ export const BOARD_EVENTS = {
     EFFECT_FIRED: 'board:effect_fired',
 
     /**
-     * A hero engaged an enemy: `{ instanceId, typeId, heroId }`.
-     *
-     * ⚠️ Every engagement, including the ones after a kill. An enemy Token holds charges, each kill
-     * spends one, and the enemy returns to full HP for the next fight, so one engagement is one
-     * fight in the same sense that one cycle is one piece of work. Firing only on arrival would
-     * mean a hero parked on a Bear for twenty kills procs once, which reads as broken.
-     *
-     * Detected with two signals, `idle` to `active` and the intermission ending: a plain
-     * transition into `active` misses every engagement after a kill (`BoardCombat.js`).
+     * A hero engaged an enemy: `{ instanceId, typeId, heroId, resumed? }`, once per fight, as it
+     * turns from `idle` to `active` (`BoardCombat.js`). An enemy is one use, so one engagement is one
+     * enemy; a hero coming back to a hurt one engages it again. `resumed`: a fight saved mid-way
+     * going on after a load, already counted.
      */
     COMBAT_ENGAGED: 'board:combat_engaged',
 

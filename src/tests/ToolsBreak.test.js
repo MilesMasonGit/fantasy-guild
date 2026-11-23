@@ -28,6 +28,7 @@ import { summaryView } from '../ui/components/hud/catchUpSummary.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { xpForLevel } from '../utils/XPCurve.js';
 import * as fixtures from '../../bench/fixtures.mjs';
+import { enemyCampType } from './fixtures/enemyCamp.js';
 import { withoutShippedPerks } from './fixtures/noPerks.js';
 
 // A perk's own roll (double wood, say) would land on another number once a break draw is added.
@@ -116,15 +117,19 @@ function hold(hero, itemIds) {
     });
 }
 
+/** Where a Token's cycles are counted: every dummy (one use each, its camp brings the next) as 'dummy'. */
+const cycleKey = (id) => (BoardState.getTokenById(id)?.typeId === ENEMY ? 'dummy' : id);
+
 /** Everything the run heard: cycles per Token, kills, swings and each break (with the draw count at it). */
 function listen(ids) {
     const seen = { cycles: {}, kills: 0, swingsBeforeKill: 0, breaks: [] };
     const offs = [
-        EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => { seen.cycles[p.instanceId] = (seen.cycles[p.instanceId] || 0) + 1; }),
+        EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => { const k = cycleKey(p.instanceId); seen.cycles[k] = (seen.cycles[k] || 0) + 1; }),
         EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, () => { seen.kills++; }),
         EventBus.subscribe(ENGINE_EVENTS.COMBAT_HERO_ATTACK, () => { if (!seen.kills) seen.swingsBeforeKill++; }),
         EventBus.subscribe(BOARD_EVENTS.GEAR_BROKE, (p) => {
-            seen.breaks.push({ heroId: p.heroId, itemId: p.itemId, use: p.use, on: ids.names[p.instanceId] ?? p.instanceId, at: seen.cycles[p.instanceId] ?? 0, draws: engine.draws });
+            const key = cycleKey(p.instanceId);
+            seen.breaks.push({ heroId: p.heroId, itemId: p.itemId, use: p.use, on: ids.names[p.instanceId] ?? key, at: seen.cycles[key] ?? 0, draws: engine.draws });
         })
     ];
     return { seen, stop: () => { offs.forEach(off => off()); return seen; } };
@@ -164,10 +169,11 @@ function buildFight({ items = [SWORD], seed = 11 } = {}) {
     hold(fighter, items);
     HeroManager.updateHeroFromSkills(fighter);
     fighter.hp.current = fighter.hp.max;
-    const e = fixtures.placeAt(ENEMY, 600, 500);
+    // Every enemy is one use: the fighter is sent at a camp of one dummy, which brings the next.
+    const e = fixtures.placeAt(enemyCampType(ENEMY), 600, 500);
     fixtures.orderAt(fighter.id, { x: e.x, y: e.y });
     TileModifiers.rebuildAll();
-    return { heroId: fighter.id, heroIds: [fighter.id], enemyId: e.id, names: { [e.id]: 'dummy' } };
+    return { heroId: fighter.id, heroIds: [fighter.id], campId: e.id, names: { [e.id]: 'camp' } };
 }
 
 const play = (ms, step) => { for (let t = 0; t < ms; t += step) GameLoop.runHandlers(step); };
@@ -434,9 +440,10 @@ describe('⭐ a weapon breaks at a kill, never mid-fight, and the hero stops the
         expect(rosterAlertOf(ids.heroId)).toBe(ROSTER_ALERT.ACT);
         expect(BoardRunner.isHeroIdle(ids.heroId)).toBe(true);
         expect(rosterBubbleLine(ids.heroId)).toBe('Needs a job');
-        // The dummy stood up again and nobody fights it.
-        expect(BoardState.getTokenById(ids.enemyId)).toBeTruthy();
-        expect(BoardState.workerOf(ids.enemyId) ?? null).toBeNull();
+        // The camp brought another dummy and nobody fights it.
+        const dummies = BoardState.tokens().filter(t => t.typeId === ENEMY);
+        expect(dummies.length).toBeGreaterThan(0);
+        for (const d of dummies) expect(BoardState.workerOf(d.id) ?? null).toBeNull();
     });
 
     it('barehanded, nothing is drawn and nothing breaks: the hero fights on', () => {
@@ -447,7 +454,7 @@ describe('⭐ a weapon breaks at a kill, never mid-fight, and the hero stops the
         const seen = run.stop();
         expect(seen.kills).toBeGreaterThanOrEqual(2);
         expect(seen.breaks).toEqual([]);
-        expect(BoardState.flagOf(ids.heroId).pinnedTo).toBe(ids.enemyId);
+        expect(BoardState.flagOf(ids.heroId).pinnedTo).toBe(ids.campId);
     });
 });
 

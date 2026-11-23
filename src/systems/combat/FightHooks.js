@@ -32,7 +32,7 @@ export function fightMoment(fight, side, momentId, count = 0) {
 
 /**
  * A fight's per-engagement tallies: swings and hits by side, the health each side was last seen
- * at, and which "On Health Below" rules have fired. Started fresh with every enemy engaged.
+ * at, and which "On Health Below" rules have fired. Started fresh with every fight.
  */
 export function talliesOf(fight) {
     const combat = fight.combat;
@@ -45,9 +45,4 @@ export function talliesOf(fight) {
         };
     }
     return combat.moments;
-}
-
-/** Forget the tallies: the next enemy is a new fight. */
-export function resetTallies(fight) {
-    if (fight?.combat) fight.combat.moments = null;
 }

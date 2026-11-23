@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
+import { enemyCampType } from './fixtures/enemyCamp.js';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
@@ -415,15 +416,16 @@ describe('Hide Vest: poison stacks at most 1 lower', () => {
 });
 
 describe('Cleaver: a chance to double one item a kill or a cycle drops', () => {
-    const fight = (hero) => {
-        const at = { x: 400, y: 300 };
-        const cow = BoardState.createTokenInstance('gear_cow', tokenStartingUses('gear_cow'));
+    /** The hero sent at a cow, or (every enemy being one use) at a camp of one that brings the next. */
+    const fight = (hero, { camp = true, ms = 30000, at = { x: 400, y: 300 } } = {}) => {
+        const typeId = camp ? enemyCampType('gear_cow') : 'gear_cow';
+        const cow = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
         Placement.placeTokenAt(cow, at);
         TileModifiers.rebuildAround([cow]);
         Orders.orderAt(hero.id, at);
         const kills = [];
         const off = EventBus.subscribe(ENGINE_EVENTS.LOOT_GENERATED, (p) => kills.push(p.drops.map(d => [d.itemId, d.quantity])));
-        for (let t = 0; t < 30000; t += 100) BoardRunner.tick(100);
+        for (let t = 0; t < ms; t += 100) BoardRunner.tick(100);
         off();
         return kills;
     };
@@ -444,8 +446,10 @@ describe('Cleaver: a chance to double one item a kill or a cycle drops', () => {
         expect(kills.length).toBeGreaterThan(1);
         for (const drops of kills) expect(drops).toEqual([['item_bones', 1], ['item_raw_beef', 1]]);
 
+        // A cow of its own, the hero on it.
+        fight(hero, { camp: false, ms: 500, at: { x: 800, y: 300 } });
         const random = vi.spyOn(Math, 'random');
-        const cow = BoardState.tokens().find(t => t.typeId === 'gear_cow');
+        const cow = BoardState.tokens().find(t => t.typeId === 'gear_cow' && BoardState.workerOf(t.id) === hero.id);
         expect(OutputRules.doubleItemDrop(cow.id, 'item_raw_beef', 1)).toBe(1);
         expect(random).not.toHaveBeenCalled();
     });
@@ -454,7 +458,7 @@ describe('Cleaver: a chance to double one item a kill or a cycle drops', () => {
         const hero = addHero('Bram', 'melee', 50);
         hero.hp = { current: 60, max: 60 };
         equipOk(hero, 'gear_copper_cleaver');
-        fight(hero);
+        fight(hero, { camp: false, ms: 500 });
         const cow = BoardState.tokens().find(t => t.typeId === 'gear_cow');
         expect(BoardState.workerOf(cow.id)).toBe(hero.id);
         let doubled = 0;

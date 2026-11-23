@@ -377,7 +377,10 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
     if (enemy) {
         const fight = instance ? src.fightOf?.(instance.id) : null;
         const hp = fight?.combat?.enemyHp;
-        blocks.push({ id: CARD_BLOCK.HP, cur: hp ? hp.current : enemy.hp, max: hp ? hp.max : enemy.hp });
+        // Out of a fight, a hurt enemy's kept health (`fightHp`), healing back.
+        const kept = Number(instance?.fightHp?.current);
+        const cur = hp ? hp.current : (kept > 0 && kept < enemy.hp ? kept : enemy.hp);
+        blocks.push({ id: CARD_BLOCK.HP, cur, max: hp ? hp.max : enemy.hp });
         blocks.push({ id: CARD_BLOCK.COMBAT, skillId: enemy.combatType, level: enemy.level, xp: enemy.xpAwarded });
         const drops = dropsOf(def.config?.outputs);
         const rare = rareBlockOf(def, instance, src, def.config?.skill || '');

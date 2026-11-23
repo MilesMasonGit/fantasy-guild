@@ -411,7 +411,7 @@ function CellPanel({ plan, context, cell, onOpen, onPick }) {
       {cell.arrival.length > 0 && (
         <div className="space-y-1">
           <h4 className={sectionHead}>Arrives held by</h4>
-          <p className="text-gray-400">{cell.arrival.map((a) => `${a.count} × ${context.nameOf(tokenKey(a.typeId))}${a.boss ? ' (boss)' : ''}`).join(', ')}</p>
+          <p className="text-gray-400">{cell.arrival.map((a) => `${a.count} × ${context.nameOf(tokenKey(a.typeId))}`).join(', ')}</p>
         </div>
       )}
 

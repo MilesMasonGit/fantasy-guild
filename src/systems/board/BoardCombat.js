@@ -20,6 +20,9 @@ import { ROLE, opponentSeekerOf } from '../../config/registries/roleRegistry.js'
 import { logger } from '../../utils/Logger.js';
 import * as CombatFormulas from '../combat/CombatFormulas.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
+import { ENEMY_REGEN } from '../../config/FormulaRegistry.js';
+import { GameState } from '../../state/GameState.js';
+import * as GameClock from '../core/GameClock.js';
 
 /**
  * Combat on the board: an adapter, not an engine. The combat numbers, status effects, damage
@@ -34,17 +37,20 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  *
  * An enemy that steps aside keeps its fight: a fight is keyed by the enemy Token's instance id, and a
  * move keeps the id. One the player lifts does not: the board runner ends its fight, as the hero
- * walking away would (`BoardRunner`, the in-hand branch). Of a fight only the enemy's health is
- * saved (`fightHp` on its Token, `keepHp`), so closing the game cannot change a fight: a reload goes
- * on from the health the enemy had. Everything else (swing timers, statuses) starts again.
+ * walking away would (`BoardRunner`, the in-hand branch).
+ *
+ * Every enemy is one use: its kill takes it off the mat, and only its camp's clock brings another.
+ *
+ * An enemy's health lives on its Token (`fightHp`, {@link keepHp}), so it is saved, and a fight that
+ * ends without a kill (the hero recalled, swapped, knocked out, the guild leaving the Region) leaves
+ * the enemy as hurt as it was. Out of a fight it heals `ENEMY_REGEN` a second ({@link rest}), so a
+ * misclick costs little but a hero must stay to win. Everything else of a fight (swing timers,
+ * statuses) starts again.
  *
  * Production is the idle half; combat is the active half: there is no difficulty warning, no level
  * gate and no preview on an enemy Token. The player is expected to watch the first few fights of
  * any new enemy and judge whether their hero can sustain it. Leaving a hero in a fight they cannot
  * win means death, and death costs equipment.
- *
- * Retreat is not a mechanic: it is simply unassigning the hero. Pull them off and the fight ends
- * immediately, and the enemy returns to full HP, consistent with a forfeited cycle.
  */
 
 /** Ephemeral combat state, one per fought enemy, keyed by its instance id. Never saved. */
@@ -52,10 +58,9 @@ const fights = new Map();
 
 /**
  * Mirror a fight's enemy health onto its Token, `fightHp: { current, heroId }`, so a save holds
- * it. Only while the enemy is hurt and still standing: a whole enemy, or one in the rest after a
- * kill, saves nothing and loads whole.
- * ⚠️ The mark must go whenever its fight ends (`endFight`, a board swapped in), or a hero coming
- * back in live play would resume a hurt enemy: only a reload remembers its health.
+ * it. Only while the enemy is hurt and still standing: a whole enemy saves nothing.
+ * `heroId` stands only while the fight is live ({@link settleHp} takes it off when the fight ends):
+ * a mark loaded with it is that hero's fight going on, already counted when it began.
  */
 function keepHp(instance, hp, heroId) {
     if (hp.current > 0 && hp.current < hp.max) {
@@ -67,19 +72,81 @@ function keepHp(instance, hp, heroId) {
     }
 }
 
-/** Take a Token's saved enemy health off it. */
-function forgetHp(instance) {
-    if (instance?.fightHp) delete instance.fightHp;
+/** A fight on this Token is over: its enemy keeps its health and starts resting from now. */
+function settleHp(instance) {
+    const kept = instance?.fightHp;
+    if (!kept) return;
+    if ('heroId' in kept) {
+        delete kept.heroId;
+        kept.restMs = 0;
+    } else if (kept.restMs == null) {
+        kept.restMs = 0;
+    }
+}
+
+/** The health a new fight starts from: the Token's kept health, or null for a whole enemy. */
+function keptHp(kept, max) {
+    if (!kept) return null;
+    const current = Number(kept.current);
+    return Number.isFinite(current) && current > 0 && current < max ? current : null;
+}
+
+/** What one second of rest heals: a share of the enemy's max health, rounded up. */
+function regenStep(max) {
+    return Math.ceil(max * ENEMY_REGEN.shareOfMax);
 }
 
 /**
- * The health a loaded fight goes on from, or null: the saved mark is the fight's only while the
- * same hero comes back to it (another hero meets the enemy whole, as in live play).
+ * Out of a fight, a hurt enemy heals {@link regenStep} for every whole second of `ms` (carried
+ * over between ticks in `restMs`, saved with it), until it is whole and its mark goes. Played by
+ * the board's tick, so time away is caught up by the catch-up's own ticks; a Region's frozen board
+ * is caught up as it comes back ({@link catchUpRegion}).
  */
-function resumedHp(kept, heroId, max) {
-    if (!kept || kept.heroId !== heroId) return null;
-    const current = Number(kept.current);
-    return Number.isFinite(current) && current > 0 && current < max ? current : null;
+function rest(instance, ms) {
+    const kept = instance?.fightHp;
+    if (!kept) return;
+    if (kept.heroId != null) settleHp(instance);
+    const max = enemyFor(instance)?.hp;
+    const current = keptHp(kept, max);
+    if (!(max > 0) || current == null) {
+        delete instance.fightHp;
+        return;
+    }
+    const total = (Number(kept.restMs) || 0) + Math.max(0, ms);
+    const seconds = Math.floor(total / ENEMY_REGEN.intervalMs);
+    if (seconds <= 0) {
+        kept.restMs = total;
+        return;
+    }
+    const next = Math.min(max, current + seconds * regenStep(max));
+    if (next >= max) {
+        delete instance.fightHp;
+    } else {
+        kept.current = next;
+        kept.restMs = total - seconds * ENEMY_REGEN.intervalMs;
+    }
+    // `resting`: the fight window's heal line is for a fight, and this enemy is in none.
+    EventBus.publish(BOARD_EVENTS.PROGRESS, {
+        instanceId: instance.id,
+        percent: Math.max(0, Math.min(100, (1 - next / max) * 100)),
+        combat: true,
+        resting: true,
+        enemyHp: next,
+        enemyMaxHp: max
+    });
+}
+
+/**
+ * An enemy Token's health as the player should see it, `{ current, max }`, or null for a Token that
+ * is no enemy: its live fight's, else its kept health, else whole.
+ */
+export function enemyHealthOf(instance) {
+    const max = enemyFor(instance)?.hp;
+    if (!(max > 0)) return null;
+    const fight = instance?.id ? fights.get(instance.id) : null;
+    const hp = fight?.combat?.enemyHp;
+    if (hp) return { current: Math.max(0, hp.current), max: hp.max };
+    return { current: keptHp(instance.fightHp, max) ?? max, max };
 }
 
 /**
@@ -142,8 +209,8 @@ function createFight(instanceId, heroId, enemy, drops) {
          * a fresh profile every tick on purpose, so an enemy re-authored in the CMS takes effect
          * immediately, and anything stored there would be thrown away next tick. Living on the
          * fight also gives them the right lifetime: a fight is dropped when the hero leaves, when a
-         * different hero arrives, and on teardown, and the enemy returns whole, so a poison cannot
-         * survive a monster walking away from it.
+         * different hero arrives, and on teardown, so a poison cannot survive a monster walking away
+         * from it.
          */
         effects,
         aggregator,
@@ -153,8 +220,7 @@ function createFight(instanceId, heroId, enemy, drops) {
         combat: {
             enemyHp: { current: enemy.hp, max: enemy.hp },
             enemyTickProgress: 0,
-            heroTickProcesses: {},
-            state: { intermissionTimer: 0 }
+            heroTickProcesses: {}
         }
     };
 }
@@ -213,8 +279,6 @@ function enemyBearer(instanceId, fight) {
         target: fight,
         name: fight.enemy?.name || fight.enemyId,
         roles: { self: instanceId, selfFightId: instanceId, selfHeroId: null, actor: null, source: null },
-        // A fight in intermission is between enemies; its clock keeps running, the same as a hero's
-        // does between cycles.
         suspended: () => false,
         notify: () => {}
     };
@@ -253,10 +317,9 @@ export function fightOfHero(heroId) {
     return null;
 }
 
-/** Whether a hero is in a fight with an enemy that has stepped up: not resting between kills. */
+/** Whether a hero is in a fight. */
 export function tradingBlows(heroId) {
-    const fight = fightOfHero(heroId);
-    return !!fight && !((fight.combat?.state?.intermissionTimer ?? 0) > 0);
+    return !!fightOfHero(heroId);
 }
 
 /**
@@ -279,10 +342,10 @@ export function opponentBearerOf(statement, roles) {
     return fight ? enemyBearer(fight.instanceId, fight) : null;
 }
 
-/** Drop the fight against enemy Token `instanceId`, so the next engagement starts clean. */
+/** Drop the fight against enemy Token `instanceId`; its enemy keeps the health it had. */
 export function endFight(instanceId) {
     if (!instanceId) return;
-    forgetHp(BoardState.getTokenById(instanceId));
+    settleHp(BoardState.getTokenById(instanceId));
     clearEnemyCombatModifiers(instanceId);
     const heroId = fights.get(instanceId)?.assignedHeroId;
     LiveEffects.endHeroFightEffects(heroId);
@@ -306,8 +369,8 @@ function standDown(heroId) {
  *
  * Called by `Flags` whenever a hero lets go of an enemy (a recall, a defeat, a re-plant, moving
  * on). It has to be synchronous: waiting for the next tick would leave `fightOfHero` answering for
- * a hero already in the Dock, and a re-plant onto the same enemy would resume a damaged one instead
- * of meeting it whole.
+ * a hero already in the Dock, and a re-plant onto the same enemy would resume the old fight
+ * (its swing timers, statuses and for-the-fight effects) instead of starting a new one.
  *
  * @returns {boolean} whether there was a fight to end
  */
@@ -352,12 +415,12 @@ export function tickToken(instance, delta, heroId) {
     // a leftover never waits for a later fight.
     const owed = id ? FightRoom.takeLeftover(id) : 0;
 
-    // No hero: the fight is over before it began. Drop any in-flight state so the enemy is whole
-    // again next time. Asked before the stat block is built: most enemies stand unfought, and a
-    // block for each of them every tick was a measurable share of the tick (`enemyFor` is pure).
+    // No hero: any fight is over, and the enemy rests. Asked before the stat block is built: most
+    // enemies stand unfought and whole, and a block for each of them every tick was a measurable
+    // share of the tick (`enemyFor` is pure).
     if (!heroId) {
         if (id && fights.has(id) && enemyFor(instance)) endFight(id);
-        forgetHp(instance);
+        rest(instance, delta);
         return;
     }
 
@@ -368,6 +431,7 @@ export function tickToken(instance, delta, heroId) {
     // an absent hero.
     if (!canFight(heroId)) {
         if (fights.has(id)) endFight(id);
+        rest(instance, delta);
         return;
     }
 
@@ -389,7 +453,10 @@ export function tickToken(instance, delta, heroId) {
         // ⚠️ A hero already healing starts no fight. Their wounded status is what the defeat check
         // below reads, so a fight begun with one would resolve a second knock-out at once: the
         // banner, the food and drink share and the gear roll again, with nobody swinging.
-        if (HeroManager.getHero(heroId)?.status === 'wounded') return;
+        if (HeroManager.getHero(heroId)?.status === 'wounded') {
+            rest(instance, delta);
+            return;
+        }
         // ⚠️ One fight per hero. A hero fighting somewhere else is no longer fighting there: end
         // that fight first, which also takes back the numbers its enemy lent the hero. Without this
         // two fights could name one hero and `fightOfHero` would have to guess.
@@ -397,15 +464,13 @@ export function tickToken(instance, delta, heroId) {
             if (otherId !== id && other.assignedHeroId === heroId) endFight(otherId);
         }
         const kept = instance.fightHp;
-        forgetHp(instance);
         fight = createFight(id, heroId, enemy, enemyDropsOf(getTokenType(instance.typeId)));
-        // A Token carries saved health only from a load: its engagement below is the saved fight
-        // going on, already counted when it began (`LoadoutMoments`).
-        const resumed = resumedHp(kept, heroId, fight.combat.enemyHp.max);
-        if (resumed != null) {
-            fight.combat.enemyHp.current = resumed;
-            fight.resumed = true;
-        }
+        const current = keptHp(kept, fight.combat.enemyHp.max);
+        if (current != null) fight.combat.enemyHp.current = current;
+        // A mark still naming this hero comes only from a load: its engagement below is the saved
+        // fight going on, already counted when it began (`LoadoutMoments`).
+        if (current != null && kept.heroId === heroId) fight.resumed = true;
+        if (kept) delete kept.restMs;
         fights.set(id, fight);
         applyEnemyCombatModifiers(id, heroId);
         combatMs += owed;
@@ -419,19 +484,10 @@ export function tickToken(instance, delta, heroId) {
     enemy.aggregator = fight.aggregator;
     enemy.effects = fight.effects;
 
-    // An engagement is EVERY engagement, including each one after a kill, and detecting it takes
-    // two signals, not one.
-    // ⚠️ The obvious detector does not work: a transition into `active` catches only the first
-    // engagement, because `resolveVictory` below sets `fight.status = 'active'` the instant the
-    // kill resolves. What marks a fresh enemy is the intermission ending: that is where
-    // `CombatProcessor` restores the enemy to full HP. So `idle` to `active` is the first
-    // engagement (or a return after a retreat), and resting to not resting is the next enemy
-    // stepping up.
-    // Read before and compared after, rather than published from inside `CombatProcessor`, because
-    // that engine is a port and board events are this adapter's job.
-    const resting = () => (fight.combat?.state?.intermissionTimer ?? 0) > 0;
+    // A fight's first tick turns it from `idle` to `active`: that is its engagement. Read before and
+    // compared after, rather than published from inside `CombatProcessor`, because that engine is a
+    // port and board events are this adapter's job.
     const wasActive = fight.status === 'active';
-    const wasResting = resting();
 
     processCombat(fight, { enemy }, combatMs);
 
@@ -440,7 +496,7 @@ export function tickToken(instance, delta, heroId) {
     // the gear loss twice.
     if (fights.get(id) !== fight) return;
 
-    const engaged = (fight.status === 'active' && !wasActive) || (wasResting && !resting());
+    const engaged = fight.status === 'active' && !wasActive;
 
     if (engaged) {
         // `LoadoutMoments.init` subscribes to `COMBAT_ENGAGED` and fires carried rules itself; it
@@ -486,11 +542,7 @@ export function tickToken(instance, delta, heroId) {
  *
  * One kill counts as one cycle for every board system outside the combat engine. That single unit
  * is what connects combat to the rest of the board (quests, rules on a neighbour's cycle). Nothing
- * beside it wears for it, as nothing beside a craft does: help is free.
- *
- * The post-kill rest is handled inside the ported engine: `handleVictory` sets a short intermission
- * and `processCombat` restores the enemy to full HP when it expires. Hero power shortens the fight
- * but not the rest, so farming trivial content is capped while fighting hard content is not.
+ * beside it wears for it, as nothing beside a craft does: help is free. The enemy is used up by it.
  */
 function resolveVictory(instance, fight, enemy, heroId) {
     const id = instance.id;
@@ -499,14 +551,14 @@ function resolveVictory(instance, fight, enemy, heroId) {
     LiveEffects.endHeroFightEffects(heroId);
     LiveEffects.endFightEffects(enemyBearer(id, fight));
 
-    // Enemy Tokens deplete like any other: a Bear is not an infinite resource; spawners replace
-    // them.
-    if (instance.usesRemaining != null) {
-        instance.usesRemaining -= 1;
+    // Every enemy is one use, whatever its type or a saved copy says (`tokenStartingUses`): the
+    // kill spends it, and only its camp brings another.
+    if (instance.usesRemaining !== 0) {
+        instance.usesRemaining = 0;
         EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
             instanceId: id,
             delta: -1,
-            remaining: instance.usesRemaining,
+            remaining: 0,
             typeId: instance.typeId
         });
     }
@@ -530,17 +582,10 @@ function resolveVictory(instance, fight, enemy, heroId) {
     // ends the hero's order (`Flags`, on `GEAR_BROKE`), and with it this fight.
     Breakage.afterKill(heroId, instance);
 
-    if (instance.usesRemaining != null && instance.usesRemaining <= 0) {
-        endFight(id);
-        // ⚠️ A rule on the kill's cycle that spends a charge of its own may have taken the last one
-        // and the Token with it, already announced: saying it again would count the depletion twice.
-        if (BoardState.getTokenById(id) === instance) Charges.destroyToken(instance, { heroId: heroId || null });
-        return;
-    }
-
-    // Let the ported engine run its intermission and respawn the enemy: the board simply lets it
-    // happen. Unless the fight has just ended (a broken weapon took the hero off it).
-    if (fights.get(id) === fight) fight.status = 'active';
+    endFight(id);
+    // ⚠️ A rule on the kill's cycle that spends a charge of its own may have taken the Token
+    // already, announced: saying it again would count the depletion twice.
+    if (BoardState.getTokenById(id) === instance) Charges.destroyToken(instance, { heroId: heroId || null });
 }
 
 /**
@@ -603,6 +648,37 @@ export function resolveStatusDefeat(heroId) {
     resolveDefeat(BoardState.getTokenById(BoardState.workTokenOf(heroId)), heroId);
 }
 
+/**
+ * The guild has left Region `regionId`: its board, frozen, keeps each hurt enemy's health, its
+ * fight ended, and the moment it was left (`leftAt`), so the rest it missed is played on return.
+ */
+function leaveRegion(regionId) {
+    const tokens = regionId ? GameState.state?.atlas?.regions?.[regionId]?.board?.tokens : null;
+    if (!tokens) return;
+    const now = GameClock.now();
+    for (const t of Object.values(tokens)) {
+        if (!t?.fightHp) continue;
+        settleHp(t);
+        t.fightHp.leftAt = now;
+    }
+}
+
+/**
+ * A board has come in: each hurt enemy on it rests for the time since its Region was left. A frozen
+ * Region otherwise does not tick, so without this its enemies would come back as hurt as they were.
+ */
+function catchUpRegion() {
+    const now = GameClock.now();
+    for (const t of BoardState.tokens()) {
+        const kept = t.fightHp;
+        if (!kept) continue;
+        const away = Number.isFinite(kept.leftAt) ? Math.max(0, now - kept.leftAt) : 0;
+        delete kept.leftAt;
+        settleHp(t);
+        rest(t, away);
+    }
+}
+
 export function init() {
     // Ending a fight is handled by `tickToken` seeing no hero, and by `Flags` calling
     // `endFightOfHero` when a hero lets go, NOT by an event: `HERO_MOVED` on a recall names where
@@ -613,11 +689,10 @@ export function init() {
         clearAll();
         for (const hero of HeroManager.getAllHeroes() || []) LiveEffects.endFightEffects(LiveEffects.heroBearer(hero));
     });
-    // ⚠️ A Region's board is frozen as a copy with its fights' marks on it: travelling back is
-    // walking away, so the enemies come back whole.
-    EventBus.subscribe(ENGINE_EVENTS.BOARD_SWAPPED, () => {
+    EventBus.subscribe(ENGINE_EVENTS.BOARD_SWAPPED, ({ fromRegionId } = {}) => {
         clearAll();
-        for (const t of BoardState.tokens()) forgetHp(t);
+        leaveRegion(fromRegionId);
+        catchUpRegion();
     });
 
     // A rule's damage (a poison tick, a Deals) cannot call us directly: the verbs and the effect

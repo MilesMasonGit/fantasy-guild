@@ -54,8 +54,9 @@
  * naming the camp; wild rings add copies through the kits.
  *
  * A kit's `work` is read by skill id, `combat` meaning camps. An arrival's `count` is how many enemies
- * a place of that ring arrives with (at most {@link MAX_ARRIVAL}); with `bossChance` one of them is a
- * boss drawn from `bosses`. Wild rings take ring 3's encounter, one enemy more per ring out.
+ * a place of that ring arrives with (at most {@link MAX_ARRIVAL}). Wild rings take ring 3's encounter,
+ * one enemy more per ring out. A boss comes from a camp only: an old `bossChance` or `bosses` left
+ * in the data is ignored.
  *
  * Pure and import-free: the CMS reads it too.
  */
@@ -230,16 +231,14 @@ function kitOf(raw) {
     };
 }
 
-/** A ring's arrival: `{ count: [min, max], enemies, bossChance, bosses }`, none when it lists no enemy. */
+/** A ring's arrival: `{ count: [min, max], enemies }`, none when it lists no enemy. */
 function arrivalOf(raw) {
     const block = isObject(raw) ? raw : {};
     const enemies = weightedIds(block.enemies);
-    const bosses = weightedIds(block.bosses);
     const pair = listOf(block.count).filter(n => Number.isInteger(n) && n >= 0);
     const low = Math.min(MAX_ARRIVAL, pair[0] ?? 0);
     const high = Math.min(MAX_ARRIVAL, Math.max(low, pair[1] ?? low));
-    const chance = finite(block.bossChance) ? Math.min(1, Math.max(0, block.bossChance)) : 0;
-    return { count: enemies.length || bosses.length ? [low, high] : [0, 0], enemies, bossChance: bosses.length ? chance : 0, bosses };
+    return { count: enemies.length ? [low, high] : [0, 0], enemies };
 }
 
 /** A ring's guaranteed camps: `{ id, kits }`, the first of an id kept. */

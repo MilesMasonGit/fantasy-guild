@@ -326,7 +326,7 @@ describe('⭐ a right-click on the job they already have stops them', () => {
         expect(selectedHeroId()).toBe(hero.id);
     });
 
-    it('the enemy they fight: the fight ends at once, as a recall ends it, and the enemy is whole for the next to engage it', () => {
+    it('the enemy they fight: the fight ends at once, as a recall ends it, and the enemy keeps its damage for the next engagement', () => {
         const [hero] = newBoard({ prior: false });
         const goblin = fixtures.placeAt('bench_goblin', 600, 300);
         Orders.orderAt(hero.id, { x: goblin.x, y: goblin.y });
@@ -343,12 +343,14 @@ describe('⭐ a right-click on the job they already have stops them', () => {
         expect(HeroManager.getHero(hero.id).status).not.toBe('combat');
         expectStoppedWhereTheyStood(hero, null);
 
-        // Sent back at it: a new fight, the enemy whole.
+        // Sent back at it: a new fight, the enemy still hurt.
+        const left = fight.combat.enemyHp.current;
         rightClickAt({ x: goblin.x, y: goblin.y });
         run(100);
         const again = BoardCombat.fightOfHero(hero.id);
         expect(again).toBeTruthy();
-        expect(again.combat.enemyHp.current).toBe(again.combat.enemyHp.max);
+        expect(again).not.toBe(fight);
+        expect(again.combat.enemyHp.current).toBeLessThanOrEqual(left);
     });
 
     it('a camp they work from, and the Token they work in its reach, both stop them', () => {

@@ -20,6 +20,7 @@ import { shareCycle } from './cycleShare.js';
 import { plateUnit } from './workPlate.js';
 import { useMatFit } from './MatFitContext.jsx';
 import * as BoardState from '../../../systems/board/BoardState.js';
+import * as BoardCombat from '../../../systems/board/BoardCombat.js';
 
 /** What each player mark's tooltip says. */
 export const BUBBLE_TIPS = Object.freeze({
@@ -30,6 +31,12 @@ const CHOOSE_KINDS = new Set([ALERT.CHOOSE_RECIPE, ALERT.CHOOSE_BUILD]);
 
 /** The gap in a row, in mat units. */
 const ROW_GAP_U = 4;
+/** A hurt enemy's health off its Token, as the bar reads it, or null for a whole one. */
+function keptHealth(instanceId) {
+    const hp = instanceId ? BoardCombat.enemyHealthOf(BoardState.getTokenById(instanceId)) : null;
+    return hp && hp.current < hp.max ? { cur: hp.current, max: hp.max } : null;
+}
+
 /** A bar in the fight layer takes the pointer as the fight's plate does (`FightBarHost`). */
 const PLATE_POINTER = 'var(--plate-pointer, auto)';
 
@@ -96,7 +103,7 @@ export const TokenBubbles = ({
     // A fight shows HP, not a work bar. Guessed from the Token (an enemy) until the engine's
     // first progress says otherwise.
     const [combat, setCombat] = useState(() => !!getTokenType(typeId)?.enemy);
-    const [hp, setHp] = useState(null);
+    const [hp, setHp] = useState(() => keptHealth(instanceId));
     const combatRef = useRef(combat);
     const hpRef = useRef(hp);
     const enemyHp = useMemo(() => enemyProfileOf(getTokenType(typeId))?.hp ?? null, [typeId]);
@@ -162,7 +169,9 @@ export const TokenBubbles = ({
     useEffect(() => {
         if (!hasHero) {
             bar.reset();
-            if (hpRef.current) { hpRef.current = null; setHp(null); }
+            // An enemy keeps its damage when its fight ends, and heals back while resting.
+            const kept = keptHealth(instanceId);
+            if (hpRef.current?.cur !== kept?.cur || hpRef.current?.max !== kept?.max) { hpRef.current = kept; setHp(kept); }
             return;
         }
         if (blocked) bar.freeze();
@@ -195,6 +204,11 @@ export const TokenBubbles = ({
         return subscribeEvery(ENGINE_EVENTS.GAME_RESET, () => {
             setStuck(SpawnerSystem.spawnerAlertOf(instanceId));
             setGrowth(Growth.growthAlertOf(instanceId));
+            if (!liveRef.current.hasHero) {
+                const kept = keptHealth(instanceId);
+                hpRef.current = kept;
+                setHp(kept);
+            }
         });
     }, [instanceId]);
 

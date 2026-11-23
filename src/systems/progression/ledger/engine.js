@@ -748,7 +748,7 @@ function worldRules(tables, { add, names, placeable, ringNeeds = () => [] }) {
     }
     for (const ring of rings) {
         const arrival = tables.arrival?.[ring];
-        const ids = [...list(arrival?.enemies), ...(arrival?.bossChance > 0 ? list(arrival.bosses) : [])].map(e => e.id);
+        const ids = list(arrival?.enemies).map(e => e.id);
         if (!ids.length || !(arrival.count?.[1] > 0)) continue;
         for (const line of order(lines, ring)) place(`arrival:${line.id}:${ring}`, line.id, ring, ids, true);
     }

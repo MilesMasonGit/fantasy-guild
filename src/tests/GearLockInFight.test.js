@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
+import { enemyCampType } from './fixtures/enemyCamp.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
@@ -88,9 +89,13 @@ function give(heroId, itemId) {
     expect(EquipmentManager.equipItem(heroId, itemId).success).toBe(true);
 }
 
-/** Send the hero at a fresh enemy and tick until it steps up: blows are now being traded. */
+/**
+ * Send the hero at a camp of one enemy (every enemy is one use; the camp brings the next) and tick
+ * until its enemy steps up: blows are now being traded.
+ */
 function fight() {
-    const instance = BoardState.createTokenInstance('fixture_enemy', tokenStartingUses('fixture_enemy'));
+    const camp = enemyCampType('fixture_enemy');
+    const instance = BoardState.createTokenInstance(camp, tokenStartingUses(camp));
     Placement.placeTokenAt(instance, SPOT);
     TileModifiers.rebuildAround([instance]);
     Orders.orderAt(hero.id, SPOT);
@@ -105,12 +110,12 @@ function untilEngagements(n) {
     expect(engagements.length).toBe(target);
 }
 
-/** Tick until the enemy falls: the hero rests before the next one steps up. */
+/** Tick until the enemy falls: its fight is over until the camp's next one steps up. */
 function untilKill() {
     const target = victories.length + 1;
     for (let i = 0; i < 20000 && victories.length < target; i++) step();
     expect(victories.length).toBe(target);
-    expect(BoardCombat.fightOfHero(hero.id)).not.toBeNull();
+    expect(BoardCombat.fightOfHero(hero.id)).toBeNull();
     expect(BoardCombat.tradingBlows(hero.id)).toBe(false);
 }
 
@@ -221,7 +226,7 @@ describe('a hero trading blows keeps their loadout', () => {
 });
 
 describe('the loadout opens between enemies and when the hero leaves', () => {
-    it('opens while the hero rests after a kill, and locks again when the next enemy steps up', () => {
+    it('opens after a kill, and locks again when the next enemy of its camp steps up', () => {
         give(hero.id, 'lock_sword');
         fight();
         untilKill();

@@ -311,7 +311,7 @@ describe('⭐ a War Camp hero fights every enemy in its reach, one at a time', (
         expect(BoardCombat.getFight(outside.id)).toBe(null);
     });
 
-    it('an enemy with lives is fought until it leaves the mat, as a camp works a Token until it can no longer run', () => {
+    it('an enemy authored with lives still leaves the mat at its first kill: every enemy is one use', () => {
         const [h] = newBoard();
         fixtures.placeAt('wc_war', CAMP.x, CAMP.y);
         const ogre = placeEnemy('wc_ogre', CAMP.x + 120, CAMP.y);
@@ -320,8 +320,8 @@ describe('⭐ a War Camp hero fights every enemy in its reach, one at a time', (
         const w = watchFights();
         const seq = claimsOver(h.id, 300_000, () => !BoardState.getTokenById(ogre.id) && !BoardState.getTokenById(g.id));
         w.stop();
-        // The ogre's three lives back to back, then the goblin.
-        expect(w.kills.map(([, id]) => id)).toEqual([ogre.id, ogre.id, ogre.id, g.id]);
+        // The ogre once, then the goblin.
+        expect(w.kills.map(([, id]) => id)).toEqual([ogre.id, g.id]);
         expect(seq).toEqual([ogre.id, g.id]);
     });
 

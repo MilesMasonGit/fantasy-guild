@@ -92,6 +92,26 @@ describe('⭐ "Stays where it stands"', () => {
     });
 });
 
+describe('⭐ Charges on an enemy: one use, never offered', () => {
+    it('an enemy authored with more says it is one fight and its number is ignored; Set to 1 writes 1', () => {
+        useEntityStore.getState().updateToken('token_cow', { uses: 100 });
+        const container = openEditor('token_cow');
+        expect(container.querySelector('[data-field="enemy-one-use"]').textContent).toContain('One fight');
+        expect(container.textContent).toContain('Its 100 Charges are ignored.');
+        expect(container.textContent).not.toContain('Never depletes');
+        fireEvent.click(container.querySelector('[data-clear-charges]'));
+        expect(useEntityStore.getState().tokens.token_cow.uses).toBe(1);
+        expect(container.querySelector('[data-clear-charges]')).toBeNull();
+    });
+
+    it('an enemy at one use shows the note alone', () => {
+        const container = openEditor('token_goblin');
+        expect(container.querySelector('[data-field="enemy-one-use"]')).not.toBeNull();
+        expect(container.querySelector('[data-clear-charges]')).toBeNull();
+        expect(container.textContent).not.toContain('Never depletes');
+    });
+});
+
 describe('⭐ Charges on a station or a support', () => {
     // Fixture: the owner has cleared every shipped station's Charges, so the Kitchen is given back
     // the 5000 it once carried, to have an old number to show, clear and flag.

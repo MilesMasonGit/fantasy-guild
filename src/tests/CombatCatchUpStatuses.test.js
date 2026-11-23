@@ -26,6 +26,7 @@ import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { xpForLevel } from '../utils/XPCurve.js';
 import * as fixtures from '../../bench/fixtures.mjs';
+import { enemyCampType } from './fixtures/enemyCamp.js';
 import { registerStatusFixtures, providesPct, providesFlat, VENOM, BURN } from './fixtures/statusEffects.js';
 
 /**
@@ -125,7 +126,8 @@ function buildBoard() {
         expect(EquipmentManager.equipItem(hero.id, 'item_shrimp').success).toBe(true);
         HeroManager.updateHeroFromSkills(hero);
         hero.hp.current = hero.hp.max;
-        const at = fixtures.placeAt(types[i], spots[i][0], spots[i][1]);
+        // Every enemy is one use: each hero is sent at a camp of one, which brings the next.
+        const at = fixtures.placeAt(enemyCampType(types[i]), spots[i][0], spots[i][1]);
         fixtures.orderAt(hero.id, { x: at.x, y: at.y });
     });
     TileModifiers.rebuildAll();

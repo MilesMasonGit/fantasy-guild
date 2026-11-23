@@ -274,11 +274,11 @@ describe('The Goblin Camp on the mat', () => {
         expect(InventoryManager.getItemCount('item_oak_wood')).toBe(5);
     });
 
-    it('a spawned enemy lands with its charges and is marked spawned', () => {
+    it('a spawned enemy lands with its one use, whatever it authors, and is marked spawned', () => {
         const camp = placeMixed();
         SpawnerSystem.attemptSpawn(camp, getTokenType(MIXED), always(0.99));
         const brute = BoardState.tokens().find((t) => t.typeId === BRUTE);
-        expect(brute.usesRemaining).toBe(2);
+        expect(brute.usesRemaining).toBe(1);
         expect(BoardState.originOf(brute)).toBe('spawned');
     });
 });

@@ -661,10 +661,10 @@ describe('⭐ there and back plays exactly like save and load (fresh engine per 
             results.branchL = fingerprintOf(l);
             const data = JSON.parse(l.GameState.serializeJson());
             data.state.board.workClaims = {};
-            // A reload remembers a hurt enemy's health and a half-done work cycle; travel, like
-            // walking away, does not.
+            // A reload goes on with a hurt enemy's fight and a half-done work cycle; travel, like
+            // walking away, ends the fight (the enemy keeps its health) and starts the cycle again.
             for (const token of Object.values(data.state.board.tokens)) {
-                delete token.fightHp;
+                if (token.fightHp) delete token.fightHp.heroId;
                 token.cycleElapsedMs = 0;
             }
             const state = l.SaveMigration.migrateState(data.state, data.version);

@@ -204,11 +204,12 @@ describe('⭐ every fight is one-on-one', () => {
         let lowest = fight.combat.enemyHp.current;
         for (let i = 0; i < 100; i++) {
             run(100);
+            // Beaten: the enemy is used up.
+            if (!BoardState.getTokenById(brute.id)) break;
             const now = BoardCombat.getFight(brute.id);
             // The same fight, with the same hero, and the enemy never made whole by a newcomer.
             expect(now).toBe(fight);
             expect(now.assignedHeroId).toBe('h1');
-            if (now.combat.state.intermissionTimer > 0) break;
             expect(now.combat.enemyHp.current).toBeLessThanOrEqual(lowest);
             lowest = now.combat.enemyHp.current;
         }
@@ -219,7 +220,7 @@ describe('⭐ every fight is one-on-one', () => {
         expect(Flags.waitingFor('h1')).toBeNull();
     });
 
-    it('a flag pinned to a busy enemy waits beside it, then meets it whole once its hero leaves', () => {
+    it('a flag pinned to a busy enemy waits beside it, then takes it on, still hurt, once its hero leaves', () => {
         const brute = placeAt('enc_brute', A.x, A.y);
         Orders.orderAt('h1', A);
         run(100);
@@ -228,11 +229,15 @@ describe('⭐ every fight is one-on-one', () => {
         expect(until(() => BoardCombat.getFight(brute.id)?.combat.enemyHp.current < BoardCombat.getFight(brute.id)?.combat.enemyHp.max, 30000)).toBe(true);
         expect(Flags.waitingFor('h2')).toBe(brute.id);
 
+        const hurt = BoardCombat.getFight(brute.id).combat.enemyHp.current;
         Flags.furl('h1');
         run(1100);
         const fight = BoardCombat.fightOfHero('h2');
         expect(fight?.instanceId).toBe(brute.id);
-        expect(fight.combat.enemyHp.current).toBe(fight.combat.enemyHp.max);
+        // The enemy keeps its damage; at most a second's rest healed it before h2 stepped up.
+        const step = Math.ceil(fight.combat.enemyHp.max * 0.05);
+        expect(fight.combat.enemyHp.current).toBeLessThanOrEqual(hurt + 2 * step);
+        expect(fight.combat.enemyHp.current).toBeLessThan(fight.combat.enemyHp.max);
     });
 
     it('an old save with two heroes on one enemy loads into one fight: the second chooses again', () => {
@@ -322,7 +327,7 @@ describe('⭐ camps of one: bosses and guardians from ordinary spawners', () => 
     });
 });
 
-describe('⭐ bosses: never first to attack, whole for every hero, called by a Summoning Circle', () => {
+describe('⭐ bosses: never first to attack, hurt for the next hero, called by a Summoning Circle', () => {
     it('a boss, like every enemy, never attacks a hero working beside it', () => {
         expect(isBossEnemy({ enemy: { level: 1, boss: true } })).toBe(true);
         const boss = placeAt('enc_boss', A.x, A.y);
@@ -332,7 +337,7 @@ describe('⭐ bosses: never first to attack, whole for every hero, called by a S
         expect(BoardCombat.fightOfHero('h1')).toBeNull();
     });
 
-    it('meets each hero whole: a knocked-out hero leaves it at full HP for the next', () => {
+    it('keeps its damage when a hero is knocked out: the next hero meets it hurt', () => {
         const strongBoss = 'enc_boss_strong';
         registerTokenTypes({
             [strongBoss]: {
@@ -345,15 +350,19 @@ describe('⭐ bosses: never first to attack, whole for every hero, called by a S
         const defeated = [];
         const off = EventBus.subscribe(BOARD_EVENTS.HERO_DEFEATED, (p) => defeated.push(p.heroId));
         Orders.orderAt('weak', A);
+        expect(until(() => !!BoardCombat.getFight(boss.id), 10000)).toBe(true);
+        const max = BoardCombat.getFight(boss.id).combat.enemyHp.max;
+        BoardCombat.getFight(boss.id).combat.enemyHp.current = max - 20;
         expect(until(() => defeated.includes('weak'), 60000)).toBe(true);
         off();
         expect(BoardCombat.getFight(boss.id)).toBeNull();
+        expect(boss.fightHp.current).toBeLessThanOrEqual(max - 20);
 
         Orders.orderAt('h2', A);
         run(100);
         const fight = BoardCombat.fightOfHero('h2');
         expect(fight?.instanceId).toBe(boss.id);
-        expect(fight.combat.enemyHp.current).toBe(fight.combat.enemyHp.max);
+        expect(fight.combat.enemyHp.current).toBeLessThan(max);
     });
 
     it('a Summoning Circle: any hero works it, a Horn is used up, the boss stands beside it, and without a Horn it waits', () => {

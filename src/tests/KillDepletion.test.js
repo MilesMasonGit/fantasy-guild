@@ -145,11 +145,11 @@ describe('a kill that spends the last charge', () => {
         expect(BoardCombat.fightOfHero(hero.id)).toBeNull();
     });
 
-    it('an enemy with unlimited charges never depletes', () => {
+    it('an enemy authored with unlimited charges is still one use: its kill clears it', () => {
         const { enemy } = startFight('kd_endless');
         const seen = playUntilGone(enemy, 60000);
-        expect(seen.kills).toBeGreaterThan(1);
-        expect(seen.depleted).toEqual([]);
-        expect(BoardState.getTokenById(enemy.id)).not.toBeNull();
+        expect(seen.kills).toBe(1);
+        expect(seen.depleted).toHaveLength(1);
+        expect(BoardState.getTokenById(enemy.id)).toBeNull();
     });
 });

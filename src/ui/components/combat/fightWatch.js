@@ -372,7 +372,8 @@ function onResolved(p) {
  * caught up.
  */
 function onProgress(p) {
-    if (!p?.combat) return;
+    // A resting enemy's heal is no fight's.
+    if (!p?.combat || p.resting) return;
     const record = recordOfEnemy(p.instanceId);
     if (!record) return;
     let any = false;
@@ -423,8 +424,7 @@ export function reconcile(heroId) {
 export function adopt(heroId) {
     if (!heroId || byHero.get(heroId)?.current) return false;
     const fight = BoardCombat.fightOfHero(heroId);
-    // Resting after a kill, the next enemy has not stepped up: that fight starts at its engagement.
-    if (!fight || (fight.combat?.state?.intermissionTimer ?? 0) > 0) return false;
+    if (!fight) return false;
     if (!ensure(heroId, fight.instanceId)) return false;
     changed(heroId);
     return true;

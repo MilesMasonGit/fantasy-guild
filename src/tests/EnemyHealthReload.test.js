@@ -22,6 +22,7 @@ import { ELIXIR_FIGHTS } from '../config/loopConstants.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
+import * as CatchUp from '../systems/core/CatchUp.js';
 import * as fixtures from '../../bench/fixtures.mjs';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -30,9 +31,10 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * A reload remembers the enemy's health, so closing the game cannot change a fight, and an elixir
- * is counted once per enemy across the reload. In live play nothing changes: a hero who walks away
- * still finds the enemy whole.
+ * An enemy keeps its health on its Token: a reload goes on from it, so closing the game cannot
+ * change a fight, and an elixir is counted once per enemy across the reload. A fight that ends
+ * without a kill leaves the enemy hurt; out of a fight it heals 5% of its max health a second,
+ * rounded up, played on through a load, time away and a Region's absence.
  */
 
 const ENEMY = 'fixture_reload_enemy';
@@ -41,8 +43,7 @@ const HALL = 'fixture_reload_hall';
 function registerFixtures() {
     registerTokenTypes({
         [HALL]: { ...fixtures.BENCH_TOKENS.bench_hall, id: HALL, name: 'Reload Hall' },
-        // A sturdy enemy that never runs out, so a fight lasts long enough to be saved mid-way and
-        // a second enemy steps up after a kill.
+        // A sturdy enemy, so a fight lasts long enough to be saved mid-way.
         [ENEMY]: {
             ...fixtures.BENCH_TOKENS.bench_goblin, id: ENEMY, name: 'Reload Ogre', uses: null,
             enemy: { level: 5, style: 'melee', budgetScale: 1, hostile: true }
@@ -76,6 +77,10 @@ function stepUntil(done, max) {
 }
 
 const hpOf = (id) => BoardCombat.getFight(id)?.combat?.enemyHp ?? null;
+const tokenOf = (id) => GameState.state.board.tokens[id];
+const healthOf = (id) => BoardCombat.enemyHealthOf(tokenOf(id));
+/** One second of rest's healing for an enemy of `max` health. */
+const stepOf = (max) => Math.ceil(max * 0.05);
 const hurt = (id) => { const hp = hpOf(id); return !!hp && hp.current > 0 && hp.current < hp.max * 0.8; };
 
 /** The Hall, one enemy and a hero ordered onto it, optionally carrying an elixir. */
@@ -166,58 +171,104 @@ describe('a reload remembers the enemy health', () => {
         expect(hp.current).toBe(hp.max);
     });
 
-    it('a save between enemies, in the rest after a kill, loads the next enemy whole', () => {
-        const { enemy } = build();
-        let killed = false;
-        const offKill = EventBus.subscribe(BOARD_EVENTS.COMBAT_RESOLVED, ({ outcome }) => { if (outcome === 'victory') killed = true; });
-        expect(stepUntil(() => killed, 20000)).toBe(true);
-        offKill();
+    it('a hurt enemy its hero left is saved hurt, loads hurt, and heals on after the load', () => {
+        const { enemy, heroId } = build();
+        expect(stepUntil(() => hurt(enemy.id), 5000)).toBe(true);
+        Orders.sendHome(heroId);
+        step(1);
+        const { current, max } = healthOf(enemy.id);
+        expect(current).toBeLessThan(max);
+        const saved = reload().state.board.tokens[enemy.id].fightHp;
+        expect(saved.current).toBe(current);
+        expect(saved.heroId).toBeUndefined();
+
+        expect(healthOf(enemy.id)).toEqual({ current, max });
+        step(10);
+        expect(healthOf(enemy.id).current).toBe(Math.min(max, current + stepOf(max)));
+    });
+
+    it('time away is caught up on load: a hurt enemy heals for every second of it', async () => {
+        const { enemy, heroId } = build();
+        expect(stepUntil(() => hurt(enemy.id), 5000)).toBe(true);
+        Orders.sendHome(heroId);
+        step(1);
+        const { current, max } = healthOf(enemy.id);
         reload();
-        expect(stepUntil(() => BoardCombat.getFight(enemy.id), 50)).toBe(true);
-        const hp = hpOf(enemy.id);
-        expect(hp.current).toBe(hp.max);
+        const now = Date.now();
+        await CatchUp.run({ savedAt: now - 3000, now, save: false, reset: false, news: false, yieldFn: () => Promise.resolve() });
+        expect(healthOf(enemy.id).current).toBe(Math.min(max, current + 3 * stepOf(max)));
+
+        await CatchUp.run({ savedAt: now - 60000, now, save: false, reset: false, news: false, yieldFn: () => Promise.resolve() });
+        expect(healthOf(enemy.id)).toEqual({ current: max, max });
+        expect(tokenOf(enemy.id).fightHp).toBeUndefined();
     });
 });
 
-describe('live play is unchanged', () => {
-    it('a hero who walks away and comes back finds the enemy whole', () => {
+describe('a fight ended without a kill leaves the enemy hurt', () => {
+    it('a hero who walks away and comes back finds it as hurt as they left it, less its rest', () => {
         const { enemy, heroId } = build();
         expect(stepUntil(() => hurt(enemy.id), 5000)).toBe(true);
+        const left = hpOf(enemy.id).current;
         Orders.sendHome(heroId);
         step(5);
         expect(BoardCombat.getFight(enemy.id)).toBeNull();
+        // On the Token, no longer any hero's fight.
+        const kept = JSON.parse(GameState.serializeJson()).state.board.tokens[enemy.id].fightHp;
+        expect(kept.current).toBe(left);
+        expect(kept.heroId).toBeUndefined();
+
         expect(fixtures.orderAt(heroId, { x: enemy.x, y: enemy.y }).success).toBe(true);
         expect(stepUntil(() => BoardCombat.getFight(enemy.id), 5000)).toBe(true);
         const hp = hpOf(enemy.id);
-        expect(hp.current).toBe(hp.max);
-        // Walking away leaves nothing on the Token for a later save to resume.
-        expect(stepUntil(() => hurt(enemy.id), 5000)).toBe(true);
-        Orders.sendHome(heroId);
-        step(5);
-        expect(JSON.parse(GameState.serializeJson()).state.board.tokens[enemy.id].fightHp).toBeUndefined();
+        expect(hp.current).toBeLessThan(hp.max);
+        expect(hp.current).toBeLessThanOrEqual(left + stepOf(hp.max) * 5);
     });
 
-    it('a hero sent home and straight back onto the enemy, between ticks, meets it whole', () => {
+    it('a hero sent home and straight back onto the enemy, between ticks, meets it as hurt', () => {
         const { enemy, heroId } = build();
         expect(stepUntil(() => hurt(enemy.id), 5000)).toBe(true);
+        const left = hpOf(enemy.id).current;
         Orders.sendHome(heroId);
         expect(fixtures.orderAt(heroId, { x: enemy.x, y: enemy.y }).success).toBe(true);
         expect(stepUntil(() => BoardCombat.getFight(enemy.id), 5000)).toBe(true);
-        const hp = hpOf(enemy.id);
-        expect(hp.current).toBe(hp.max);
+        expect(hpOf(enemy.id).current).toBeLessThanOrEqual(left);
     });
 
-    it('travel away and back mid-fight finds the enemy whole', () => {
-        const { enemy, heroId } = build();
+    it('travel away and straight back mid-fight finds the enemy as hurt as it was', () => {
+        const { enemy } = build();
         expect(stepUntil(() => hurt(enemy.id), 5000)).toBe(true);
+        const left = hpOf(enemy.id).current;
         const home = Atlas.activeRegionId();
         Atlas.travel(Atlas.devCreateEmptyRegion().id);
+        expect(GameState.state.atlas.regions[home].board.tokens[enemy.id].fightHp.current).toBe(left);
         step(5);
         Atlas.travel(home);
-        expect(fixtures.orderAt(heroId, { x: enemy.x, y: enemy.y }).success).toBe(true);
-        expect(stepUntil(() => BoardCombat.getFight(enemy.id), 5000)).toBe(true);
-        const hp = hpOf(enemy.id);
-        expect(hp.current).toBe(hp.max);
+        expect(BoardCombat.getFight(enemy.id)).toBeNull();
+        expect(healthOf(enemy.id).current).toBe(left);
+        expect(tokenOf(enemy.id).fightHp.heroId).toBeUndefined();
+        expect(tokenOf(enemy.id).fightHp.leftAt).toBeUndefined();
+    });
+
+    it('a Region left for a while: back, its enemy has rested the time away', () => {
+        const { enemy } = build();
+        expect(stepUntil(() => hurt(enemy.id), 5000)).toBe(true);
+        const { current, max } = hpOf(enemy.id);
+        const home = Atlas.activeRegionId();
+        const t0 = Date.now();
+        const clock = vi.spyOn(Date, 'now').mockReturnValue(t0);
+        try {
+            Atlas.travel(Atlas.devCreateEmptyRegion().id);
+            clock.mockReturnValue(t0 + 2000);
+            Atlas.travel(home);
+            expect(healthOf(enemy.id).current).toBe(Math.min(max, current + 2 * stepOf(max)));
+
+            Atlas.travel(Atlas.devCreateEmptyRegion().id);
+            clock.mockReturnValue(t0 + 600000);
+            Atlas.travel(home);
+            expect(healthOf(enemy.id)).toEqual({ current: max, max });
+        } finally {
+            clock.mockRestore();
+        }
     });
 });
 
@@ -237,7 +288,10 @@ describe('an elixir is counted once per enemy across a reload', () => {
         // The for-the-fight effect a load strips is put back.
         expect(effectsOf(heroId)).toContain('fx_reload_valor');
 
-        // The next enemy after the kill is a new fight, and counts.
+        // The next enemy is a new fight, and counts.
+        expect(stepUntil(() => !GameState.state.board.tokens[enemy.id], 20000)).toBe(true);
+        const next = fixtures.placeAt(ENEMY, enemy.x, enemy.y);
+        expect(fixtures.orderAt(heroId, { x: next.x, y: next.y }).success).toBe(true);
         const target = engagements.length + 1;
         expect(stepUntil(() => engagements.length >= target, 20000)).toBe(true);
         expect(HeroManager.getHero(heroId).elixirFights).toEqual({ reload_elixir: ELIXIR_FIGHTS - 2 });
