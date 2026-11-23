@@ -232,10 +232,12 @@ export const WorldCamera = ({ open, away = false, world, table, tableAnchor, chi
     );
     return (
         <div ref={roomRef} data-world-camera-room className="flex-1 flex min-h-0 relative overflow-clip">
+            {/* ⚠️ `min-w-0`: else the mat's own width (and its padding) props this box open past the
+                screen's edge, and the mat, fitted to the box, grows to fill it. */}
             <div
                 ref={cameraRef}
                 data-world-camera={phase}
-                className="flex-1 flex min-h-0 relative"
+                className="flex-1 flex min-w-0 min-h-0 relative"
                 style={gliding
                     ? { ...table, backgroundPosition: woodAt, transform: back ? 'translateY(-100%)' : 'translateY(0px)', willChange: 'transform' }
                     : undefined}

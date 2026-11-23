@@ -49,14 +49,15 @@ import { BannerStack } from './components/notifications/BannerStack.jsx';
 import { ScreenCalloutLayer } from './components/notifications/ScreenCalloutLayer.jsx';
 import TestDashboard from './components/TestDashboard.jsx';
 import CatchUpOverlay from './components/hud/CatchUpOverlay.jsx';
-import MatTopBar from './components/board/MatTopBar.jsx';
+import MatTopBar, { MatLogo, SHOW_MAT_COUNTS } from './components/board/MatTopBar.jsx';
+import MatControls from './components/board/MatControls.jsx';
 import { LimesBlurb } from './components/limes/LimesBlurb.jsx';
 import { LimesTargetMark } from './components/limes/LimesTargetMark.jsx';
 import { LimesLessonSpeaker } from './components/limes/LimesLessonSpeaker.jsx';
 import MatRegionName from './components/board/MatRegionName.jsx';
 import MatCapBadge from './components/board/MatCapBadge.jsx';
 import MatUpkeepBadge from './components/board/MatUpkeepBadge.jsx';
-import { MapModeToggles, MapModeBanner } from './components/board/MatModeControls.jsx';
+import { MapModeBanner } from './components/board/MatModeControls.jsx';
 import { PerfProfiler, usePerfHudShowing } from './dev/perf/PerfProfiler.jsx';
 import { useDrawn } from './dev/perf/drawSwitches.js';
 
@@ -231,8 +232,11 @@ const ReactRoot = () => {
                      * nav (which is over this column) to the screen's edge.
                      * ⚠️ No layer of its own: the hero bar at its foot is drawn in the screen's
                      * layers, over the side drawers; everything else in it is in the `z-10` box.
+                     * It reaches under the bubbles' column's inner padding (`px-3` in `BubbleMenu`,
+                     * 12 px), so the mat, centred in it, leaves the same gap to the bubbles as to the
+                     * screen's other edge.
                      */}
-                    <div className={cn('flex-1 min-w-0 relative flex flex-col overflow-y-clip', isGuildView ? 'overflow-x-visible' : 'overflow-x-clip')}>
+                    <div className={cn('flex-1 min-w-0 relative flex flex-col overflow-y-clip', menuRight ? '-mr-3' : '-ml-3', isGuildView ? 'overflow-x-visible' : 'overflow-x-clip')}>
                         <div className="flex-1 min-h-0 relative flex flex-col z-10">
                         <HallCamera
                             open={isGuildView}
@@ -283,9 +287,9 @@ const ReactRoot = () => {
                              */}
                             <PerfProfiler id="TopBar">
                                 <MatTopBar
-                                    left={<MatRegionName onOpenAtlas={openAtlasFromBar} />}
-                                    middle={<MapModeBanner fallback={<><MatCapBadge /><MatUpkeepBadge /></>} />}
-                                    right={<MapModeToggles />}
+                                    left={<MatLogo />}
+                                    middle={<MapModeBanner fallback={SHOW_MAT_COUNTS ? <><MatCapBadge /><MatUpkeepBadge /></> : null} />}
+                                    right={<MatRegionName onOpenAtlas={openAtlasFromBar} />}
                                 />
                             </PerfProfiler>
                             <div className="flex-1 min-w-0 min-h-0 relative">
@@ -329,16 +333,27 @@ const ReactRoot = () => {
                          * The hero bar, under both sides of the camera: on every screen, the
                          * Guild Hall's included. A crash in it stays local to it.
                          */}
-                        {dockDrawn && (
-                            <ErrorBoundary label="HeroDock" corner="bottom-left">
-                                <PerfProfiler id="HeroDock">
-                                    <BottomHeroDock
-                                        selectedHeroId={inspectHeroId}
-                                        onOpenHero={setInspectHeroId}
-                                    />
-                                </PerfProfiler>
+                        {/**
+                         * The foot of the screen: the Controls strip (Demolish, Find) at the left,
+                         * the mat's only, then the hero bar.
+                         */}
+                        <div data-screen-foot className="shrink-0 flex items-end min-w-0">
+                            <ErrorBoundary label="MatControls" corner="bottom-left">
+                                <MatControls away={isGuildView || isAtlasOpen} />
                             </ErrorBoundary>
-                        )}
+                            <div className="flex-1 min-w-0">
+                                {dockDrawn && (
+                                    <ErrorBoundary label="HeroDock" corner="bottom-left">
+                                        <PerfProfiler id="HeroDock">
+                                            <BottomHeroDock
+                                                selectedHeroId={inspectHeroId}
+                                                onOpenHero={setInspectHeroId}
+                                            />
+                                        </PerfProfiler>
+                                    </ErrorBoundary>
+                                )}
+                            </div>
+                        </div>
                     </div>
                     {menuRight && <BubbleMenu ui={ui} side="right" />}
                     {/* The Guild Hall's Upgrade drawer, opened by a click on a star. */}

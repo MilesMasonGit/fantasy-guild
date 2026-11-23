@@ -20,8 +20,9 @@ import { MatToken } from '../ui/components/board/MatToken.jsx';
 import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
 import { MatTopBar } from '../ui/components/board/MatTopBar.jsx';
 import {
-    MapModeToggles, MapModeBanner, MODE_BANNER_TEXT
+    MapModeBanner, MODE_BANNER_TEXT, CONTROL_BUTTON_PX
 } from '../ui/components/board/MatModeControls.jsx';
+import { MatControls } from '../ui/components/board/MatControls.jsx';
 import { tokenOutline } from '../ui/components/board/spriteOutline.js';
 import { mapModeCursor, cursorPixels, mapModeIconSrc } from '../ui/components/board/mapModeCursor.js';
 import { OUTLINE_COLOURS } from '../config/spriteFx.js';
@@ -53,8 +54,8 @@ const OTHER = 'fixture_station';
 const mountMat = (props = {}) => render(
     h(DndContext, null, h(MatBoard, props), h(CalloutLayer))
 );
-/** The bar as the game draws it: banner in the middle, toggles on the right. */
-const mountBar = () => render(h(MatTopBar, { middle: h(MapModeBanner), right: h(MapModeToggles) }));
+/** As the game draws them: the banner in the top bar's middle, the toggle on the Controls strip. */
+const mountBar = () => render(h(React.Fragment, null, h(MatTopBar, { middle: h(MapModeBanner) }), h(MatControls)));
 
 const artOf = (container, id) => container.querySelector(`[data-token-id="${id}"][data-token-art]`);
 const toggle = (c, mode) => c.querySelector(`[data-map-mode-toggle="${mode}"]`);
@@ -109,16 +110,17 @@ describe('⭐ the toggle', () => {
         expect(toggle(container, MAP_MODE.DEMOLISH).getAttribute('aria-pressed')).toBe('false');
     });
 
-    it('Demolish is the only toggle on the right; Disallow is gone', () => {
+    it('Demolish is the only toggle, on the Controls strip and no longer on the top bar; Disallow is gone', () => {
         const { container } = mountBar();
-        const right = container.querySelector('[data-mat-top-bar-right]');
-        expect([...right.querySelectorAll('[data-map-mode-toggle]')].map(b => b.textContent))
+        const strip = container.querySelector('[data-mat-controls]');
+        expect([...strip.querySelectorAll('[data-map-mode-toggle]')].map(b => b.getAttribute('aria-label')))
             .toEqual(['Demolish']);
+        expect(container.querySelector('[data-mat-top-bar] [data-map-mode-toggle]')).toBeNull();
         expect(Object.values(MAP_MODE)).toEqual(['demolish']);
         expect(container.textContent).not.toMatch(/disallow/i);
     });
 
-    it('⭐ Demolish wears its cursor’s pixel X beside its word, not a text mark', () => {
+    it('⭐ Demolish is a square button wearing its cursor’s pixel X, its word in the tooltip, not a text mark', () => {
         const { container } = mountBar();
         const button = toggle(container, MAP_MODE.DEMOLISH);
         const icon = button.querySelector('img[data-map-mode-icon="demolish"]');
@@ -127,8 +129,10 @@ describe('⭐ the toggle', () => {
         expect(mapModeCursor(MAP_MODE.DEMOLISH)).toContain(mapModeIconSrc(MAP_MODE.DEMOLISH));
         expect(icon.getAttribute('width')).toBe('22');
         expect(icon.style.imageRendering).toBe('pixelated');
-        expect(button.textContent).toBe('Demolish');
-        expect(button.textContent).not.toContain('✕');
+        expect(button.textContent).toBe('');
+        expect(button.getAttribute('aria-label')).toBe('Demolish');
+        expect(button.style.width).toBe(`${CONTROL_BUTTON_PX}px`);
+        expect(button.style.height).toBe(`${CONTROL_BUTTON_PX}px`);
     });
 
     it('Esc ends the mode', () => {
@@ -140,11 +144,20 @@ describe('⭐ the toggle', () => {
         expect(banner(container)).toBeNull();
     });
 
-    it('leaving the playmat (the bar goes away) ends the mode', () => {
+    it('leaving the playmat (the strip goes away) ends the mode', () => {
         const { container, unmount } = mountBar();
         fireEvent.click(toggle(container, MAP_MODE.DEMOLISH));
         unmount();
         expect(getMapMode()).toBeNull();
+    });
+
+    it('⭐ the Guild Hall or the World Map opening (the strip away, kept in place) ends the mode', () => {
+        const { container, rerender } = render(h(MatControls));
+        fireEvent.click(toggle(container, MAP_MODE.DEMOLISH));
+        expect(getMapMode()).toBe(MAP_MODE.DEMOLISH);
+        rerender(h(MatControls, { away: true }));
+        expect(getMapMode()).toBeNull();
+        expect(container.querySelector('[data-mat-controls]').style.visibility).toBe('hidden');
     });
 });
 

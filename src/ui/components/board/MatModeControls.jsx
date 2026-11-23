@@ -9,10 +9,19 @@ import { cn } from '../../utils/cn.js';
 import { useEscapeLayer } from '../../utils/escapeLayers.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { mapModeIconSrc, mapModeIconPx } from './mapModeCursor.js';
+import { t } from '../../../i18n/index.js';
 
-/** The bar's buttons: square, a 1-art-pixel line, white on hover. */
+/** The banner's batch button: square, a 1-art-pixel line, white on hover. */
 const BUTTON_CLS = 'flex items-center gap-1.5 px-3 py-1.5 border-2 whitespace-nowrap cursor-pointer transition-colors';
 const OFF_CLS = 'bg-black/30 border-[#2a1d15] text-amber-100 hover:border-[var(--color-ui-white)] hover:text-white';
+
+/**
+ * The Controls strip's square icon buttons (`MatControls`): one size, a 1-art-pixel line, white on
+ * hover or while lit.
+ */
+export const CONTROL_BUTTON_PX = 40;
+export const CONTROL_BUTTON_CLS = 'shrink-0 flex items-center justify-center border-2 cursor-pointer transition-colors';
+export const CONTROL_OFF_CLS = 'bg-black/30 border-[#2a1d15] text-amber-100 hover:border-[var(--color-ui-white)] hover:text-white';
 /** A mode's toggle while it is on, in the mode's colour. */
 const ON_CLS = {
     [MAP_MODE.DEMOLISH]: 'bg-black/50 border-[var(--color-ui-red)] text-[var(--color-ui-red)]'
@@ -29,7 +38,7 @@ export const MODE_BANNER_TEXT = Object.freeze({
 });
 
 const TOGGLES = [
-    { mode: MAP_MODE.DEMOLISH, label: 'Demolish', pixelIcon: true, tip: 'Click Tokens to mark them for demolition.' }
+    { mode: MAP_MODE.DEMOLISH, labelKey: 'matControls.demolish', tipKey: 'matControls.demolishTip' }
 ];
 
 const click = () => EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
@@ -53,39 +62,40 @@ export const ModeIcon = ({ mode }) => {
 };
 
 /**
- * One mode's toggle: a second press, or Esc, ends it.
+ * One mode's toggle, a square icon button on the Controls strip: a second press, or Esc, ends it.
  */
-const ModeToggle = ({ mode, label, icon, pixelIcon, tip, on }) => (
-    <Tooltip title={label} lines={[on ? 'Press again or Esc to finish.' : tip]}>
+const ModeToggle = ({ mode, labelKey, tipKey, on }) => (
+    <Tooltip title={t(labelKey)} lines={[on ? t('matControls.demolishOnTip') : t(tipKey)]}>
         <button
             type="button"
             data-map-mode-toggle={mode}
             data-on={on ? 'true' : 'false'}
             aria-pressed={on}
+            aria-label={t(labelKey)}
             onClick={() => { click(); toggleMapMode(mode); }}
-            className={cn(BUTTON_CLS, on ? ON_CLS[mode] : OFF_CLS)}
+            className={cn(CONTROL_BUTTON_CLS, on ? ON_CLS[mode] : CONTROL_OFF_CLS)}
+            style={{ width: CONTROL_BUTTON_PX, height: CONTROL_BUTTON_PX }}
         >
-            {pixelIcon ? <ModeIcon mode={mode} /> : <span aria-hidden="true">{icon}</span>}
-            <span>{label}</span>
+            <ModeIcon mode={mode} />
         </button>
     </Tooltip>
 );
 
 /**
- * The bar's right end: the Demolish toggle. While a mode is on, Esc
- * ends it, and so does this going away with the bar (leaving the playmat for the Guild Hall).
+ * The mode toggles (Demolish), on the Controls strip. While a mode is on, Esc ends it, and so does
+ * this going away with the strip (leaving the playmat).
  */
 export const MapModeToggles = () => {
     const mode = useMapMode();
 
     useEscapeLayer(!!mode, () => setMapMode(null));
 
-    // Off the playmat, the mode is off: the bar is only drawn there.
+    // Off the playmat, the mode is off: the strip is only drawn there.
     useEffect(() => () => setMapMode(null), []);
 
     return (
         <>
-            {TOGGLES.map(t => <ModeToggle key={t.mode} {...t} on={mode === t.mode} />)}
+            {TOGGLES.map(toggle => <ModeToggle key={toggle.mode} {...toggle} on={mode === toggle.mode} />)}
         </>
     );
 };

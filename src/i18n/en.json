@@ -3,6 +3,26 @@
         "mark": "Demolish",
         "cancel": "Cancel demolition"
     },
+    "matTopBar": {
+        "logoText": "Tabletop Guild"
+    },
+    "matControls": {
+        "label": "Controls",
+        "demolish": "Demolish",
+        "demolishTip": "Click Tokens to mark them for demolition.",
+        "demolishOnTip": "Press again or Esc to finish.",
+        "findHeroes": "Find heroes",
+        "findHeroesTip": "Hover to light every hero on the mat.",
+        "findTokens": "Find Tokens",
+        "findTokensTip": "Hover to light every Token on the mat.",
+        "findEnemies": "Find enemies",
+        "findEnemiesTip": "Hover to light every enemy on the mat.",
+        "findItems": "Find items",
+        "findItemsTip": "Hover to light every item lying on the mat.",
+        "search": "Search the mat",
+        "searchTip": "Type a name: heroes, Tokens and enemies by that name light, and Tokens that make an item by that name. Esc or an empty box ends it.",
+        "searchPlaceholder": "Find..."
+    },
     "common": {
         "close": "Close",
         "cancel": "Cancel",

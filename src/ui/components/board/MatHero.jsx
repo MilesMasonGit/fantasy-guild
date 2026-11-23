@@ -248,6 +248,7 @@ const MatHeroBody = memo(function MatHeroBody({
     fightBarHost = null,
     fightApart = null,
     needsJob = false,
+    found = null,
     dragRef,
     dragProps
 }) {
@@ -308,6 +309,7 @@ const MatHeroBody = memo(function MatHeroBody({
             data-board-hero={heroId}
             data-hero-limp={limp ? 'true' : undefined}
             data-outline={outline || undefined}
+            data-find={found || undefined}
             aria-label={name || 'Hero'}
             // A right-click on a drawn pixel opens the hero's drawer; through a see-through one it
             // goes on to the mat, to whatever is under it.
