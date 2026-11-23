@@ -167,12 +167,12 @@ function scene(typeId, ...beside) {
     return v;
 }
 
-/** The loot event of one kill of `enemyInstance`, its drops as its fight carries them. */
+/** The loot event of one kill of `enemyInstance`, its drops read off the Token. */
 function kill(enemyInstance) {
     const seen = [];
     const off = EventBus.subscribe(ENGINE_EVENTS.LOOT_GENERATED, p => seen.push(p));
     const def = getTokenType(enemyInstance.typeId);
-    LootSystem.handleCombatVictory({ enemyId: def.id, instanceId: enemyInstance.id, drops: def.config.outputs });
+    LootSystem.handleCombatVictory({ enemyId: def.id, instanceId: enemyInstance.id });
     off();
     return seen[0];
 }
@@ -456,8 +456,12 @@ describe('a rare table on an enemy', () => {
         expect(draws('rt_enemy')).toBe(plain + 6);
     });
 
-    it('a kill banked off the mat banks its find too', () => {
-        LootSystem.handleCombatVictory({ enemyId: 'rt_enemy_bare', instanceId: null, drops: [] });
-        expect(InventoryManager.getItemCount(PEARL)).toBe(2);
+    it('a victory with no enemy Token behind it drops nothing, its table not rolled', () => {
+        const spy = vi.spyOn(Math, 'random');
+        LootSystem.handleCombatVictory({ enemyId: 'rt_enemy_bare', instanceId: null });
+        expect(spy).not.toHaveBeenCalled();
+        spy.mockRestore();
+        expect(InventoryManager.getItemCount(PEARL)).toBe(0);
+        expect(SpriteLayer.countOnBoard(PEARL)).toBe(0);
     });
 });

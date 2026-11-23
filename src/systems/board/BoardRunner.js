@@ -324,8 +324,8 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // Bank is full it simply waits there. A Token output stands on the mat beside the station.
     // YIELD and LOOT_MULT are the output rules a kill's loot follows too (`OutputRules`).
     const doubled = failed ? false : OutputRules.rollDoubleLoot(id, config.skill);
-    // GIANT_HARVEST: a gathering cycle's drops all come in at ten times, Double Loot's on top. ⚠️ Rolled
-    // after Double Loot and only for gathering work a rule reaches, so without one nothing is drawn.
+    // GIANT_HARVEST: a Farming cycle's drops all come in at ten times, Double Loot's on top. ⚠️ Rolled
+    // after Double Loot and only for Farming work a rule reaches, so without one nothing is drawn.
     const giant = failed ? false : OutputRules.rollGiantHarvest(id, config.skill);
     const times = (doubled ? 2 : 1) * (giant ? OutputRules.GIANT_HARVEST_TIMES : 1);
     let giantLanded = false;
@@ -393,7 +393,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     if (!failed) {
         const bonus = OutputRules.dropBonusGrants(id, times);
         if (bonus.length) giantLanded = giant;
-        produced.push(...bonus);
+        for (const drop of bonus) produced.push(drop.itemId);
     }
     // Celebrated only once something did come in at ten times (a line whose chance missed did not).
     if (giantLanded) EffectFeedback.giantHarvest(id);

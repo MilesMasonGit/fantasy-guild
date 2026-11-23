@@ -57,7 +57,7 @@ export function processCombat(fight, trait, deltaTime) {
         const attackSpeed = CombatFormulas.heroAttackSpeedMs(hero);
 
         const repeats = CombatFormulas.swingRepeatsInStep(attackSpeed);
-        while (!fight.isFleeing && combat.heroTickProcesses[heroId] >= attackSpeed) {
+        while (combat.heroTickProcesses[heroId] >= attackSpeed) {
             handleHeroAttack(fight, hero, enemy, attackSpeed);
             if (combat.enemyHp.current <= 0) {
                 if (standing(hero)) handleVictory(fight, hero, enemy, heroId, assignedHeroIds);

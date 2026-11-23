@@ -1,7 +1,7 @@
 // the progression ledger's rate calculator: cycle time, items and XP per hour for a Token or a recipe, factor by factor
 
 import { ModifierAggregator, applyThreeBucket } from '../../../../src/systems/effects/ModifierAggregator.js';
-import { EFFECT_TYPES, TARGET_CATEGORIES, GIANT_HARVEST_TIMES } from '../../../../src/systems/effects/constants.js';
+import { EFFECT_TYPES, TARGET_CATEGORIES, GIANT_HARVEST_TIMES, GIANT_HARVEST_SKILLS } from '../../../../src/systems/effects/constants.js';
 import { KEYWORD, statementsOf, stationSkillOf, stationKindOf } from '../../../../src/systems/effects/statements.js';
 import { expandBearer, effectRefsOf, statementsFromEntry, statementsFromStack, normaliseScale } from '../../../../src/systems/effects/effectLibrary.js';
 import { reachOf, reachCovers, RELATION } from '../../../../src/config/registries/reachRegistry.js';
@@ -21,7 +21,6 @@ import { ownCycleCost } from '../../../../src/systems/board/cycleCharges.js';
 import { averageXpBonus } from '../../../../src/systems/hero/xpBonus.js';
 import { perkRowsOf, perksEarnedAt } from '../../../../src/systems/hero/perkTable.js';
 import { neverWearsOut } from '../../../../src/systems/core/wearRule.js';
-import { isGatheringSkill } from '../../../../src/config/registries/skillRegistry.js';
 import { isSpentCategory, isAlwaysOn, isWorkMoment, workSkillMatches, doseKindsOf, DOSE, DOSE_LENGTH } from '../../../../src/systems/core/consumableRule.js';
 import { keyed } from '../../../../src/systems/progression/ledger/engine.js';
 
@@ -992,9 +991,9 @@ function rateOf(book, target = {}, setup = {}) {
     const loot = resolve(EFFECT_TYPES.LOOT_MULT, 0, category);
     note(EFFECT_TYPES.LOOT_MULT, loot.used);
     const pDouble = loot.value > 0 ? clamp01(loot.value / 100) : 0;
-    // Giant Harvest: on gathering work only, every drop at ten times on a hit (`OutputRules`), so a
+    // Giant Harvest: on Farming work only, every drop at ten times on a hit (`OutputRules`), so a
     // cycle's drops are (1 + 9p) times as many on average, beside Double Loot's (1 + p).
-    const giant = isGatheringSkill(skill) ? resolve(EFFECT_TYPES.GIANT_HARVEST, 0, category) : { value: 0, used: [] };
+    const giant = GIANT_HARVEST_SKILLS.includes(skill) ? resolve(EFFECT_TYPES.GIANT_HARVEST, 0, category) : { value: 0, used: [] };
     note(EFFECT_TYPES.GIANT_HARVEST, giant.used);
     const lootTimes = (1 + pDouble) * (giant.value > 0 ? 1 + (GIANT_HARVEST_TIMES - 1) * clamp01(giant.value / 100) : 1);
 

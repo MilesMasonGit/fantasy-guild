@@ -147,16 +147,14 @@ describe('Every drop line rolls on its own (TL-10)', () => {
         expect([...seen].sort()).toEqual([1, 2, 3]);
     });
 
-    it('a kill off the board banks every line that landed', () => {
-        LootSystem.handleCombatVictory({
-            enemyId: 'fixture_enemy_two_lines', instanceId: null,
-            drops: [
-                { itemId: 'item_blackberry', chance: 100, minQty: 1, maxQty: 1 },
-                { itemId: 'fixture_oak_wood', chance: 100, minQty: 2, maxQty: 2 }
-            ]
-        });
-        expect(InventoryManager.getItemCount('item_blackberry')).toBe(1);
-        expect(InventoryManager.getItemCount('fixture_oak_wood')).toBe(2);
+    it('a victory with no enemy Token behind it drops nothing: there is nowhere for loot to land', () => {
+        const seen = [];
+        const unsub = EventBus.subscribe('loot_generated', p => seen.push(p));
+        LootSystem.handleCombatVictory({ enemyId: 'fixture_enemy_two_lines', instanceId: null });
+        unsub();
+        expect(seen.map(p => p.drops)).toEqual([[]]);
+        expect(InventoryManager.getItemCount('item_blackberry')).toBe(0);
+        expect(SpriteLayer.getSprites()).toHaveLength(0);
     });
 });
 
@@ -180,13 +178,7 @@ describe('Kill loot follows the yield, double-loot and bonus-drop rules', () => 
     function kill(enemy) {
         const seen = [];
         const unsub = EventBus.subscribe('loot_generated', p => seen.push(p));
-        LootSystem.handleCombatVictory({
-            enemyId: 'fixture_enemy_two_lines', instanceId: enemy.id,
-            drops: [
-                { itemId: 'item_blackberry', chance: 100, minQty: 1, maxQty: 1 },
-                { itemId: 'fixture_oak_wood', chance: 100, minQty: 2, maxQty: 2 }
-            ]
-        });
+        LootSystem.handleCombatVictory({ enemyId: 'fixture_enemy_two_lines', instanceId: enemy.id });
         unsub();
         return seen[0];
     }

@@ -88,7 +88,10 @@ export const TRIGGER_EVENTS = [
         event: BOARD_EVENTS.CYCLE_COMPLETE,
         label: "On Neighbour's Cycle",
         scopes: [TRIGGER_SCOPES.NEARBY],
-        hint: 'Fires when a nearby Token finishes work — or wins a fight, since one kill is one cycle (D-129).'
+        // ⚠️ A kill publishes `CYCLE_COMPLETE` too (a combat cycle, for On Neighbour Produces); this
+        // moment is work's alone, and a neighbour hears a kill as On Neighbour's Kill.
+        workOnly: true,
+        hint: "Fires when a nearby Token finishes work. A kill is not work: On Neighbour's Kill hears that."
     },
     {
         id: 'TOKEN_DEPLETED',
@@ -187,7 +190,7 @@ export const TRIGGER_EVENTS = [
         label: 'On Neighbour Produces',
         scopes: [TRIGGER_SCOPES.NEARBY],
         needsItem: true,
-        hint: 'Fires only when the nearby Token really produced the named item that cycle. A chance-based output that missed does not count.'
+        hint: 'Fires only when the nearby Token really produced the named item that cycle, or dropped it at a kill. A chance-based output that missed does not count.'
     },
     {
         /**
@@ -208,7 +211,9 @@ export const TRIGGER_EVENTS = [
         event: BOARD_EVENTS.CYCLE_COMPLETE,
         label: 'On Cycle',
         scopes: [TRIGGER_SCOPES.SELF],
-        hint: 'Fires when this very Token finishes its own work — not a neighbour. Its rule then reaches out from here as usual.'
+        // An enemy's death is not its work: its rules act on the fight's own moments instead.
+        workOnly: true,
+        hint: 'Fires when this very Token finishes its own work — not a neighbour, and not an enemy at its death. Its rule then reaches out from here as usual.'
     },
     {
         /**

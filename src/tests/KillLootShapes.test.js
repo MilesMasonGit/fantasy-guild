@@ -106,13 +106,12 @@ function enemyBeside(enemyTypeId, buffs = []) {
     return target;
 }
 
-/** One kill of `target` won by `heroId`, its drops as the fight carries them; the loot event. */
+/** One kill of `target` won by `heroId`, its drops read off the Token; the loot event. */
 function kill(target, heroId = 'hero_1') {
     const seen = [];
     const unsub = EventBus.subscribe('loot_generated', p => seen.push(p));
     LootSystem.handleCombatVictory({
-        heroId, enemyId: target.typeId, instanceId: target.id,
-        drops: enemyDropsOf(getTokenType(target.typeId))
+        heroId, enemyId: target.typeId, instanceId: target.id
     });
     unsub();
     return seen[0];

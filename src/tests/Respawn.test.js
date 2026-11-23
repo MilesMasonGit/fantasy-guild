@@ -112,13 +112,23 @@ registerTokenTypes({
     },
     /**
      * A one-charge Token that rests and refills, spent by its own rule: "when a nearby Token
-     * completes a cycle, grants Bones", at a triggered rule's default cost of one charge. A kill
-     * is a cycle too. (Supports never wear out and help is free, brief 230 S1a; a rule's own cost
-     * still spends.)
+     * completes a cycle, grants Bones", at a triggered rule's default cost of one charge.
+     * (Supports never wear out and help is free, brief 230 S1a; a rule's own cost still spends.)
      */
     respawn_rack: {
         ...FIXTURE_TOKENS.fixture_trigger_any,
         id: 'respawn_rack', name: 'Respawn Rack', uses: 1,
+        respawn: { mode: 'refill', afterMs: 5000 }
+    },
+    /** The same, its rule on a neighbour's kill: a kill is not a work cycle. */
+    respawn_kill_rack: {
+        ...FIXTURE_TOKENS.fixture_trigger_any,
+        id: 'respawn_kill_rack', name: 'Respawn Kill Rack', uses: 1,
+        statements: [{
+            ...FIXTURE_TOKENS.fixture_trigger_any.statements[0],
+            id: 'stm_respawn_kill_rack',
+            when: { event: 'COMBAT_RESOLVED', scope: 'nearby', cooldownMs: 0 }
+        }],
         respawn: { mode: 'refill', afterMs: 5000 }
     },
     /** Blocks the engine never lets respawn, whatever is authored. */
@@ -533,7 +543,7 @@ describe('in the player\'s hand it rests and never leaves', () => {
     });
 });
 
-describe('a Token spent by its own rule on a neighbour\'s cycle rests too', () => {
+describe('a Token spent by its own rule on a neighbour\'s cycle or kill rests too', () => {
     it('spent to 0 as a neighbour\'s cycle fires its rule, it stays and refills', () => {
         place(10, 'fixture_producer', 'hero_1');
         const rack = place(11, 'respawn_rack');
@@ -545,7 +555,7 @@ describe('a Token spent by its own rule on a neighbour\'s cycle rests too', () =
 
     it('spent to 0 as a kill beside it fires its rule, it stays', () => {
         place(10, 'fixture_enemy', 'hero_1');
-        const rack = place(11, 'respawn_rack');
+        const rack = place(11, 'respawn_kill_rack');
         expect(runUntil(() => rack.usesRemaining === 0, 60000)).toBe(true);
         expect(BoardState.getTokenById(rack.id)).toBe(rack);
         expect(events.depleted.map(d => d.instanceId)).not.toContain(rack.id);

@@ -47,12 +47,12 @@ export const QuestManager = {
             EventBus.subscribe(ENGINE_EVENTS.HERO_DEPLOYED, (data) => {
                 this.reportProgress('hero_deployed', 1, { typeId: data?.typeId ?? null });
             }),
-            // A finished cycle: gathering, crafting, exploring, a kill. A failed cycle counts for
-            // nothing. The Token's type and skill, and whether it was gathering (a resource that is
-            // not an endgame site) or crafting (a station that is not a Foundation), let a step ask
-            // for one kind of work.
+            // A finished work cycle: gathering, crafting, exploring. A failed cycle counts for
+            // nothing, and a kill counts once, as `combat_victory` below. The Token's type and
+            // skill, and whether it was gathering (a resource that is not an endgame site) or
+            // crafting (a station that is not a Foundation), let a step ask for one kind of work.
             EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (data) => {
-                if (data?.failed) return;
+                if (data?.failed || data?.kill) return;
                 const def = getTokenType(data?.typeId);
                 this.reportProgress('cycle_completed', 1, {
                     typeId: data?.typeId,
