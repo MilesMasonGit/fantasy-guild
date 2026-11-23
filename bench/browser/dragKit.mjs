@@ -300,7 +300,7 @@ export function installDragKit() {
     };
     kit.equippables = () => {
         const heroes = (G.GameState.state.heroes || []).map(h => h.id);
-        return Object.values(G.getAllItems()).filter(i => i?.id && G.EquipmentValidator.canEquipToSlot(i.id) && heroes.some(h => G.EquipmentValidator.canHeroEquip(h, i.id).canEquip)).map(i => i.id);
+        return Object.values(G.getAllItems()).filter(i => i?.id && !!i.equipSlot && heroes.some(h => G.EquipmentValidator.canHeroEquip(h, i.id).canEquip)).map(i => i.id);
     };
     // Up to six items of each sort: gear (one copy per hero, taken out of the Bank by equipping and
     // put back by unequipping) and shared food, drink and potions (the Bank's stack stays). Which
