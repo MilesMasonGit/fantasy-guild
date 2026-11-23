@@ -512,7 +512,7 @@ function bearerSource(instance) {
 }
 
 /** Does this adjacency-scoped trigger care about the Token that fired it? */
-function sourceMatches(when, sourceTypeId) {
+export function sourceMatches(when, sourceTypeId) {
     if (!when.source?.mode) return true;
     return matchesTokenTarget(when.source, getTokenType(sourceTypeId));
 }

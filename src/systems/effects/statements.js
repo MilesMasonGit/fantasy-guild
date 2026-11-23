@@ -511,17 +511,29 @@ const NEIGHBOUR_KEYWORDS = new Set([KEYWORD.ACTS_AS, KEYWORD.REQUIRES, KEYWORD.C
  * own placement rule, not by reach.
  */
 export function caresAboutNeighbours(def) {
+    return statementsOf(def).some(statement => neighbourPartsOf(statement) !== null);
+}
+
+/**
+ * Which parts of one rule are about what is near its Token, by the test
+ * {@link caresAboutNeighbours} reads, or null when none is: `keyword` (`Acts as`, `Requires`,
+ * `Cannot`), `source` (a "when a nearby Token..." moment), `counted` (a "for each nearby..."
+ * count) and `to` (a `Provides`, `Grants` or `Applies` reaching past the Token itself).
+ * @returns {{keyword: boolean, source: boolean, counted: boolean, to: boolean}|null}
+ */
+export function neighbourPartsOf(statement) {
+    if (!statement) return null;
     const near = (reachId) => reachId !== REACH.SELF && reachId !== REACH.BOARD;
-    return statementsOf(def).some(statement => {
-        if (!statement) return false;
-        if (NEIGHBOUR_KEYWORDS.has(statement.keyword)) return true;
-        if (statement.when?.scope === 'nearby') return true;
-        if (statement.counted && near(reachOf(statement.counted))) return true;
-        const keyword = KEYWORDS.find(k => k.id === statement.keyword);
-        if (!keyword?.reach) return false;
-        if (statement.keyword === KEYWORD.APPLIES && statement.target?.role) return false;
-        return near(reachOf(statement));
-    });
+    const keyword = KEYWORDS.find(k => k.id === statement.keyword);
+    const parts = {
+        keyword: NEIGHBOUR_KEYWORDS.has(statement.keyword),
+        source: statement.when?.scope === 'nearby',
+        counted: !!statement.counted && near(reachOf(statement.counted)),
+        to: !!keyword?.reach
+            && !(statement.keyword === KEYWORD.APPLIES && statement.target?.role)
+            && near(reachOf(statement))
+    };
+    return parts.keyword || parts.source || parts.counted || parts.to ? parts : null;
 }
 
 /**

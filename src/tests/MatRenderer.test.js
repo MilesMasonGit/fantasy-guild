@@ -25,7 +25,7 @@ import { HERO_HIT_PX, HERO_BOX_PX } from '../ui/components/board/boardConstants.
 import * as HeroMotion from '../systems/board/HeroMotion.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
-import { restHover } from './fixtures/hoverRest.js';
+import { restRing } from './fixtures/hoverRest.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -371,12 +371,12 @@ describe('⭐ which Token the pointer is on (overlapping art)', () => {
         unscaled(root);
 
         fireEvent.pointerMove(root, { clientX: plain.x, clientY: plain.y });
-        restHover();
+        restRing();
         expect(container.querySelector('[data-near-ring]')).toBeNull();
 
         fireEvent.pointerMove(root, { clientX: tool.x, clientY: tool.y });
         expect(container.querySelector('[data-near-ring]')).toBeNull();
-        restHover();
+        restRing();
         const ring = container.querySelector('[data-near-ring]');
         expect(ring).not.toBeNull();
         expect(Number(ring.getAttribute('data-cx'))).toBe(tool.x);
