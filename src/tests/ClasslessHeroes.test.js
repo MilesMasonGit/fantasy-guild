@@ -191,7 +191,7 @@ describe('gear asks a level in its style', () => {
     it('refuses an Iron Sword below Melee 15 with "Needs Melee 15 (Ana: 14)", and takes it at 15', () => {
         const low = hero({ melee: 14 });
         expect(canHeroEquip(low.id, 'k1_iron_sword')).toEqual({
-            canEquip: false, reason: 'Needs Melee 15 (Ana: 14)', need: { skill: 'melee', level: 15, have: 14 }
+            canEquip: false, reason: 'Needs Melee 15 (Ana: 14)', need: { skill: 'melee', level: 15, have: 14, icons: [{ skill: 'melee', at: 6 }] }
         });
         const able = hero({ melee: 15 });
         expect(canHeroEquip(able.id, 'k1_iron_sword')).toEqual({ canEquip: true });

@@ -34,8 +34,8 @@ beforeAll(() => registerItems(ITEMS));
 
 describe('the item tip', () => {
     it('says the level the gear asks for', () => {
-        expect(itemTipFacts(ITEMS.gl_sword).needs).toBe('Needs Melee 15');
-        expect(itemTipFacts(ITEMS.gl_helm).needs).toBe('Needs Mining 10');
+        expect(itemTipFacts(ITEMS.gl_sword).needs).toMatchObject({ text: 'Needs Melee 15', icons: [{ skill: 'melee', at: 6 }] });
+        expect(itemTipFacts(ITEMS.gl_helm).needs).toMatchObject({ text: 'Needs Mining 10', icons: [{ skill: 'mining', at: 6 }] });
         expect(itemTipFacts(ITEMS.gl_cap).needs).toBeNull();
     });
 });

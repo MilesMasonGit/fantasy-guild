@@ -29,7 +29,7 @@ const press = (words) => fireEvent.click(screen.getByText(words).closest('button
 describe('Reset Defaults in the Text size window', () => {
     it('previews the defaults without storing them; the X puts back and keeps the custom sizes', () => {
         open();
-        press('Reset Defaults');
+        press('Reset defaults');
         expect(shown()).toEqual(DEFAULTS);
         expect(SettingsManager.get('ui.fontSizes')).toEqual(CUSTOM);
         fireEvent.click(document.querySelector('[data-close-x]'));
@@ -42,8 +42,8 @@ describe('Reset Defaults in the Text size window', () => {
 
     it('Save & Close keeps the defaults', () => {
         open();
-        press('Reset Defaults');
-        press('Save & Close');
+        press('Reset defaults');
+        press('Save & close');
         expect(SettingsManager.get('ui.fontSizes')).toEqual(DEFAULTS);
         expect(shown()).toEqual(DEFAULTS);
     });

@@ -132,7 +132,7 @@ describe('the Hall star shows the Effects as a popover', () => {
         fireEvent.mouseEnter(hallOf(container));
         expect(effects()).toBeTruthy();
         expect(effects().getAttribute('data-hall-effects-pinned')).toBe('false');
-        expect(effects().textContent).toContain('Guild Hall Effects');
+        expect(effects().textContent).toContain('Guild Hall effects');
         fireEvent.mouseLeave(hallOf(container));
         expect(effects()).toBeNull();
     });

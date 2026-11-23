@@ -99,15 +99,15 @@ describe('Settings has no Dev Tools tab in a shipped build', () => {
         vi.stubEnv('DEV', false);
         vi.stubEnv('MODE', mode);
         render(React.createElement(SettingsModal, { isOpen: true, onClose: () => {} }));
-        expect(tabLabels().some(t => t.includes('Dev Tools'))).toBe(false);
-        expect(document.body.textContent).not.toContain('Debug Mode');
+        expect(tabLabels().some(t => t.includes('Dev tools'))).toBe(false);
+        expect(document.body.textContent).not.toContain('Debug mode');
     });
 
     it('dev: the Dev Tools tab and its Debug Mode switch', () => {
         render(React.createElement(SettingsModal, { isOpen: true, onClose: () => {} }));
-        const dev = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('Dev Tools'));
+        const dev = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('Dev tools'));
         expect(dev).toBeTruthy();
         fireEvent.click(dev);
-        expect(document.body.textContent).toContain('Debug Mode');
+        expect(document.body.textContent).toContain('Debug mode');
     });
 });

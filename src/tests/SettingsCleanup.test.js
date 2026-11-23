@@ -42,7 +42,7 @@ describe('the settings window has three tabs, and Dev Tools in a dev build', () 
     it('Display, Game, Audio, then Dev Tools, in that order', () => {
         mount();
         const tabs = [...document.querySelectorAll('[data-settings-tab]')].map(b => b.textContent.trim());
-        expect(tabs).toEqual(['Display', 'Game', 'Audio', 'Dev Tools']);
+        expect(tabs).toEqual(['Display', 'Game', 'Audio', 'Dev tools']);
     });
 
     it('each tab holds the controls the brief lists', () => {
@@ -51,10 +51,10 @@ describe('the settings window has three tabs, and Dev Tools in a dev build', () 
             'ui.fontFamily', 'ui.allCaps', 'ui.bubbleMenuRight', 'ui.backgroundTile', 'ui.itemParticles', 'notifications.itemStubs',
             'ui.limesBlurbs'
         ]);
-        expect(document.body.textContent).toContain('Typography Scale');
+        expect(document.body.textContent).toContain('Typography scale');
         openTab('game');
         expect(settingKeys()).toEqual(['gameplay.autoSaveIntervalMinutes']);
-        expect(document.body.textContent).toContain('Save Game Now');
+        expect(document.body.textContent).toContain('Save game now');
         openTab('audio');
         expect(settingKeys()).toEqual(['audio.masterVolume', 'audio.musicVolume', 'audio.sfxVolume']);
         openTab('dev');

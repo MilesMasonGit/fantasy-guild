@@ -194,7 +194,8 @@ describe('the equip paths: any hero, at the level the weapon asks in its style',
         const res = EquipmentManager.equipItem(wizard.id, 't2_gated_sword');
         const have = levelOfSkill(wizard, 'melee');
         expect(res).toEqual({
-            success: false, error: `Needs Melee 15 (Mira: ${have})`, need: { skill: 'melee', level: 15, have }
+            success: false, error: `Needs Melee 15 (Mira: ${have})`,
+            need: { skill: 'melee', level: 15, have, icons: [{ skill: 'melee', at: 'Needs '.length }] }
         });
         expect(wizard.equipment.every(s => s === null)).toBe(true);
         expect(InventoryManager.getItemCount('t2_gated_sword')).toBe(1);

@@ -239,7 +239,7 @@ describe('the badge row', () => {
         fireEvent.pointerLeave(container.querySelector('[data-effect-badge="speed"]'));
         hover(container.querySelector('[data-effect-badge="hero"]'));
         const tip = document.querySelector('[data-badge-tip="hero"]');
-        expect(tipText()).toContain('Hero Effects');
+        expect(tipText()).toContain('Hero effects');
         expect(tip.textContent).toContain('What Mira has that works here');
         expect([...tip.querySelectorAll('[data-badge-tip-source]')].map(el => el.textContent)).toEqual(['Mira\'s GlovesSpeed +5%']);
     });

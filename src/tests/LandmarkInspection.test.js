@@ -32,7 +32,7 @@ describe('what a landmark\'s inspection says', () => {
         expect(landmarkLines(SITE, names)).toEqual({
             title: LANDMARK_TEXT.TITLE,
             lines: [
-                { label: LANDMARK_TEXT.NEEDS, value: 'Forestry 99' },
+                { label: LANDMARK_TEXT.NEEDS, value: 'Forestry 99', icons: [{ skill: 'forestry', at: 0 }] },
                 { label: '', value: '100 × World Seed' }
             ],
             note: LANDMARK_TEXT.FIXED

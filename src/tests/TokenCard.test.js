@@ -20,6 +20,7 @@ import { resolveSpritePath } from '../utils/AssetManager.js';
 import { TokenCard, coverScale, artPlacement, CARD_WIDTH_PX } from '../ui/components/board/TokenCard.jsx';
 import { requestRecipeList } from '../ui/components/board/recipeFlip.js';
 import { TokenInspectPopup } from '../ui/components/board/TokenInspectPopup.jsx';
+import { levelNeed } from '../systems/core/levelNeed.js';
 import { tokenCardModel, cardArtOf, activityOf, CARD_BLOCK, cardLifecycle, drivenBy } from '../ui/components/board/tokenCard.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -563,6 +564,14 @@ describe('the sections', () => {
         expect(stats.textContent).toContain('+35');
         expect(stats.querySelector('[data-card-cycle]')).not.toBeNull();
         expect(stats.querySelector('[data-card-charges]')).not.toBeNull();
+    });
+
+    it('the level cell’s hover is the level writer’s: Needs Mining 20', () => {
+        const vein = put('card_vein');
+        const { container } = mount(h(TokenCard, { typeId: 'card_vein', instanceId: vein.id, onClose: () => {} }));
+        fireEvent.pointerEnter(container.querySelector('[data-card-skill="mining"]'), { clientX: 10, clientY: 10 });
+        expect(document.body.textContent).toContain(levelNeed('mining', 20).text);
+        expect(levelNeed('mining', 20).text).toBe('Needs Mining 20');
     });
 
     it('Requires holds what is used up; Makes what comes out; Events how it respawns', () => {

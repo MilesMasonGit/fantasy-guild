@@ -1,18 +1,17 @@
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
-import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
 import { takesCopy } from '../../../systems/equipment/heldCopies.js';
 import { formatCompact } from '../../../utils/Formatters.js';
 import { t } from '../../../i18n/index.js';
+import { shiftIcons } from '../../../systems/core/levelNeed.js';
 import { announceEquip } from './equipBubbles.js';
 import { SPEECH_TONE } from '../board/speechTone.js';
 
 /** What the words read from the game; a test passes its own. */
 const GAME = Object.freeze({
     itemOf: (itemId) => getItem(itemId),
-    skillName: (skillId) => getSkill(skillId)?.name || skillId,
     // Gear takes a copy of its own; food and drink stay linked to the Bank's whole stack.
     isStack: (itemId) => !takesCopy(itemId),
     bankCount: (itemId) => InventoryManager.getItemCount(itemId)
@@ -27,16 +26,16 @@ export function equipRefusalText(itemId, error, game = GAME) {
 }
 
 /**
- * Where the skill's icon goes in a level refusal: just before the skill's name inside the engine's
- * reason, or null when the reason does not name it (another refusal, or a language that words it
- * otherwise). Searched inside the reason so an item named after the skill is never matched.
+ * Where the skill's icon goes in a level refusal: where the engine's reason (`levelNeed`) put it,
+ * moved along to where that reason sits in `text`; null for a refusal with no icon. Searched from
+ * the end so an item named like the reason is never matched.
  * @returns {{ skill: string, at: number }|null}
  */
-export function refusalIconOf(text, error, need, game = GAME) {
-    if (!need?.skill || !error) return null;
+export function refusalIconOf(text, error, need) {
+    const icon = need?.icons?.[0];
+    if (!icon || !error) return null;
     const reasonAt = text.lastIndexOf(error);
-    const nameAt = error.indexOf(game.skillName(need.skill));
-    return reasonAt >= 0 && nameAt >= 0 ? { skill: need.skill, at: reasonAt + nameAt } : null;
+    return reasonAt >= 0 ? shiftIcons([icon], reasonAt)[0] : null;
 }
 
 /** "Equipped Iron Woodaxe"; a stack linked to the Bank with its short count, "Equipped Shrimp x4.6k". */
@@ -91,7 +90,7 @@ export function equipOrAnnounce(equipment, heroId, itemId, preferredSlot = null,
     }
     if (!result?.success) {
         const text = equipRefusalText(itemId, result?.error || (isMove ? t('equipment.cantMove') : null), game);
-        announceEquip(heroId, text, SPEECH_TONE.CANT, refusalIconOf(text, result?.error, result?.need, game));
+        announceEquip(heroId, text, SPEECH_TONE.CANT, refusalIconOf(text, result?.error, result?.need));
         return false;
     }
     if (!isMove) announceEquip(heroId, equipSuccessText(itemId, game), SPEECH_TONE.PLAIN);

@@ -256,7 +256,7 @@ describe('On-Board Tile Event Alerts', () => {
             severity: 'disallow',
             type: 'drop_rejected',
             name: 'Fixture Coast',
-            title: 'Drop Rejected: Fixture Coast'
+            title: 'Drop rejected: Fixture Coast'
         });
         expect(rejectAlert.rulesText).toBe('Cannot be nearby to more than 2 Coast Tokens.');
     });

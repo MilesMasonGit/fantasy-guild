@@ -271,7 +271,8 @@ describe('⭐ a right-click with a hero selected gives the order a drop there gi
         // The refusal is said in the drop's red bubble over the Token, and the old job is kept.
         expect(noTool.said.find(p => p.type === 'drop_rejected')).toMatchObject({ severity: 'disallow', title: 'Needs Pickaxe' });
         expect(noTool.now.flag.pinnedTo).toBe(`rc_tree@${PRIOR.x},${PRIOR.y}`);
-        expect(level.result).toMatchObject({ success: false, reason: 'Forestry level too low (needs 60)' });
+        expect(level.result).toMatchObject({ success: false });
+        expect(level.result.reason).toMatch(/^Needs Forestry 60 \(.+: \d+\)$/);
         expect(nothing.result).toMatchObject({ success: false, reason: 'Nothing to work here' });
         expect(healing.result.success).toBe(false);
         expect(healing.result.reason).toMatch(/is healing/);

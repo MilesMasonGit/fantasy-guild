@@ -5,7 +5,8 @@ import * as Respawn from '../../../systems/board/Respawn.js';
 import { getMissingRequirements } from '../../../systems/board/RecipeResolver.js';
 import { siteTypeOf, buildRefusal } from '../../../systems/board/SiteRules.js';
 import { workConfigOf } from '../../../systems/board/StationRecipe.js';
-import { MAX_SKILL_LEVEL } from '../../../utils/XPCurve.js';
+import { levelNeed, heroLevel } from '../../../systems/core/levelNeed.js';
+import { GameState } from '../../../state/GameState.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { fieldOf } from '../../../config/registries/tokenConstants.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
@@ -94,14 +95,21 @@ export function problemOf({ alert = null, spawner = null, growth = null, choose 
 /** "an Oak Forest", "an Oak Forest or a Wild Oak Forest": any one of them will do. */
 const joinOr = (names) => (names.length < 2 ? names[0] || '' : `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`);
 
-/** The skill the Token's work needs, by name, and the level it asks for. */
+/** The skill the Token's work needs, by id and name, and the level it asks for. */
 function skillNeeded(instance) {
     const config = workConfigOf(getTokenType(instance.typeId), instance);
     const skillId = config?.skill || null;
     return {
+        id: skillId,
         name: skillId ? (getSkill(skillId)?.name || skillId) : null,
         level: Math.max(1, Number(config?.skillRequired) || 1)
     };
+}
+
+/** The record of the hero working `instance`, or null. */
+function workerHero(instance) {
+    const heroId = BoardState.workerOf(instance.id);
+    return heroId ? (GameState.state?.heroes || []).find(h => h?.id === heroId) || null : null;
 }
 
 /**
@@ -141,7 +149,7 @@ export function problemText(problem, instanceId) {
         }
         case ALERT.ACCESS: {
             const skill = instance ? skillNeeded(instance) : { name: null };
-            return skill.name ? `Needs ${skill.name} ${skill.level}/${MAX_SKILL_LEVEL}` : 'Hero’s level is too low';
+            return skill.id ? levelNeed(skill.id, skill.level, heroLevel(workerHero(instance), skill.id)).text : 'Hero’s level is too low';
         }
         case ALERT.UNSKILLED: {
             const skill = instance ? skillNeeded(instance) : { name: null };

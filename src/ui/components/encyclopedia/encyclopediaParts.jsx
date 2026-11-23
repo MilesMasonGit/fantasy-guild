@@ -6,7 +6,8 @@ import { GameState } from '../../../state/GameState.js';
 import { getSkill, COMBAT_SKILL_IDS } from '../../../config/registries/skillRegistry.js';
 import { COMBAT } from '../../../systems/progression/ledger/engine.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
-import { SkillIcon } from '../base/SkillIcon.jsx';
+import { SkillIconText } from '../base/SkillIconText.jsx';
+import { levelNeed } from '../../../systems/core/levelNeed.js';
 import { PixelGlyph } from '../base/PixelGlyph.jsx';
 import { TokenSprite } from '../base/TokenSprite.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
@@ -59,9 +60,9 @@ export function heroHas(gate, heroes = GameState.heroes) {
 }
 
 /**
- * What a box asks of a hero, written above it: "Smithing 15" with its skill icon, red when no
- * hero has it yet; hover names the stations that make a recipe. A fight reads "Combat · Lv 12",
- * never red: no hero level is checked to fight.
+ * What a box asks of a hero, written above it by the level writer: "Needs [icon] Smithing 15", red
+ * when no hero has it yet; hover names the stations that make a recipe. A fight reads "Combat 12",
+ * the enemy's level, never red: no hero level is checked to fight.
  */
 export const RequirementLine = ({ requirement, heroes, book, className, style }) => {
     if (!requirement?.skill) return null;
@@ -78,10 +79,10 @@ export const RequirementLine = ({ requirement, heroes, book, className, style })
     }
     const name = getSkill(requirement.skill)?.name || requirement.skill;
     const has = heroHas(requirement, heroes);
-    const words = t('encyclopedia.level', { skill: name, level: requirement.level });
+    const words = levelNeed(requirement.skill, requirement.level);
     const tip = [has ? null : t('encyclopedia.noHero', { skill: name, level: requirement.level }), madeAt].filter(Boolean);
     return (
-        <Tooltip lines={tip.length ? tip : [words]}>
+        <Tooltip lines={tip.length ? tip : [words.text]}>
             <span
                 data-codex-req={requirement.skill}
                 data-codex-req-short={has ? undefined : 'true'}
@@ -89,8 +90,7 @@ export const RequirementLine = ({ requirement, heroes, book, className, style })
                 className={cn('inline-flex items-center gap-1 tabular-nums', className)}
                 style={has ? style : { ...style, color: 'var(--color-ui-red)' }}
             >
-                <SkillIcon skillId={requirement.skill} size={16} />
-                {words}
+                <SkillIconText text={words.text} icons={words.icons} size={16} />
             </span>
         </Tooltip>
     );

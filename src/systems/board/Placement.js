@@ -113,9 +113,9 @@ function refuseWithAlert(point, typeId, decision) {
         severity: 'disallow',
         type: 'drop_rejected',
         name: vName,
-        title: `Drop Rejected: ${vName}`,
+        title: `Drop rejected: ${vName}`,
         rulesText: decision.rulesText || decision.reason,
-        message: `Drop Rejected: ${vName}`
+        message: `Drop rejected: ${vName}`
     });
     // `alerted`: the mat has said why already, so the drop does not say it twice.
     return refuse(decision.reason, { full: true, alerted: true });

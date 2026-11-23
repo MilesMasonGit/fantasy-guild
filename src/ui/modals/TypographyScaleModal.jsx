@@ -3,6 +3,7 @@ import { RotateCcw, Check } from 'lucide-react';
 import { SettingsManager } from '../../systems/core/SettingsManager.js';
 import { GIModal } from '../components/base/GIModal.jsx';
 import { KitButton, KIT_BUTTON_TONE } from '../components/base/KitButton.jsx';
+import { t } from '../../i18n/index.js';
 
 export const DEFAULT_FONT_SIZES = [
     { key: '--font-size-xxs', label: 'XXS (Extra Extra Small)', defaultVal: 14 },
@@ -73,7 +74,7 @@ export const TypographyScaleModal = ({ isOpen, onClose }) => {
     };
 
     return (
-        <GIModal isOpen={isOpen} onClose={handleCancel} title="Typography Scale" maxWidth="max-w-[540px]" layer="inner">
+        <GIModal isOpen={isOpen} onClose={handleCancel} title={t('settings.textSize')} maxWidth="max-w-[540px]" layer="inner">
             <div data-typography-window className="flex flex-col max-h-[70vh] text-gi-text">
                 <div className="flex-1 min-h-0 overflow-y-auto space-y-5 custom-scrollbar pr-1">
                     <p className="text-xs text-gi-muted normal-case tracking-normal">
@@ -119,14 +120,14 @@ export const TypographyScaleModal = ({ isOpen, onClose }) => {
                         onClick={handleReset}
                         buttonClassName="px-3 py-1 text-xs uppercase tracking-wider"
                     >
-                        <RotateCcw className="w-3.5 h-3.5" /> Reset Defaults
+                        <RotateCcw className="w-3.5 h-3.5" /> {t('settings.resetDefaults')}
                     </KitButton>
                     <KitButton
                         onClick={handleSaveAndClose}
                         className="mr-1 mb-1"
                         buttonClassName="px-5 py-1 text-xs uppercase tracking-widest"
                     >
-                        <Check className="w-4 h-4" /> Save & Close
+                        <Check className="w-4 h-4" /> Save & close
                     </KitButton>
                 </div>
             </div>

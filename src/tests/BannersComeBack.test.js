@@ -202,7 +202,7 @@ describe('unclicked knock-out and Bank-full banners are saved', () => {
     it('a merged knock-out saved before `losses` existed still reads', () => {
         GameState.state.ui.banners = [{ kind: 'knockout', parts: { heroes: ['Aela', 'Bram'], lost: ['Iron Sword'] }, subjects: [] }];
         saveAndLoad();
-        expect(Banners.getAll().map(b => b.title)).toEqual(['Knocked Out!']);
+        expect(Banners.getAll().map(b => b.title)).toEqual(['Knocked out!']);
     });
 
     it('a new game or another save does not carry them over', () => {

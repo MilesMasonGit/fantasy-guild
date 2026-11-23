@@ -147,7 +147,7 @@ describe('the Upgrade drawer reads a star', () => {
         fireEvent.click(c.querySelector('[data-rank-row="3"]'));
         expect(c.querySelector('[data-rank-row="2"]').getAttribute('data-rank-state')).toBe('in-range');
         expect(c.querySelector('[data-rank-row="3"]').getAttribute('data-rank-state')).toBe('chosen');
-        expect(text(c, '#guild-upgrade-button')).toBe('Upgrade (+3 Ranks)');
+        expect(text(c, '#guild-upgrade-button')).toBe('Upgrade (+3 ranks)');
         expect(c.querySelector('[data-card-block="price"]').getAttribute('data-price-shows')).toBe('rank');
         expect(c.querySelector('[data-card-block="price"]').textContent).toContain('Rank III price');
 

@@ -11,7 +11,7 @@ const rootSize = () => document.documentElement.style.getPropertyValue(KEY);
 
 function openTypography(onClose = () => {}) {
     render(h(SettingsModal, { isOpen: true, onClose }));
-    const adjust = [...document.querySelectorAll('button')].find(b => b.textContent.includes('Adjust Scale'));
+    const adjust = [...document.querySelectorAll('button')].find(b => b.textContent.includes('Adjust scale'));
     act(() => { fireEvent.click(adjust); });
     return document.querySelector('[data-typography-window]');
 }
@@ -61,7 +61,7 @@ describe('leaving the Typography window', () => {
     it('Save & Close keeps the new sizes', () => {
         const win = openTypography();
         slide(win, 22);
-        const save = [...win.querySelectorAll('button')].find(b => b.textContent.includes('Save & Close'));
+        const save = [...win.querySelectorAll('button')].find(b => b.textContent.includes('Save & close'));
         act(() => { fireEvent.click(save); });
         expect(rootSize()).toBe('22px');
         expect(SettingsManager.get('ui.fontSizes')[KEY]).toBe(22);

@@ -17,6 +17,7 @@ import {
     litLinks, yieldText, ranksText, ROOT, STATIONS
 } from './encyclopediaChart.js';
 import { EntrySprite, Tick, heroHas, isCollected, unscroll, SPRITE_PX } from './encyclopediaParts.jsx';
+import { levelNeed } from '../../../systems/core/levelNeed.js';
 
 /**
  * The ink the chart's lines are drawn in on the parchment: `--color-ui-ink`'s value, written out.
@@ -190,7 +191,7 @@ const LineMark = memo(function LineMark({ label, book, heroes }) {
     const an = (name) => (/^[aeiou]/i.test(name) ? `an ${name}` : `a ${name}`);
     const near = (label.through || []).flatMap(k => book.entryOf(k)?.def?.grows?.needsNearby || []).map(id => book.nameOf(`token:${id}`));
     const lines = [
-        req ? (isCombat ? t('encyclopedia.combatTip', { level: req.level }) : t('encyclopedia.level', { skill, level: req.level })) : null,
+        req ? (isCombat ? t('encyclopedia.combatTip', { level: req.level }) : levelNeed(req.skill, req.level).text) : null,
         short ? t('encyclopedia.noHero', { skill, level: req.level }) : null,
         stations.length ? t('encyclopedia.madeAtNames', { names: stations.join(', ') }) : null,
         label.through && label.regrow
