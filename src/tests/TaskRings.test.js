@@ -22,7 +22,7 @@ import { manualFrames } from './fixtures/manualFrames.js';
 import { RING_GROW_MS } from '../ui/components/board/growRing.js';
 import { setDrawingPaused } from '../ui/components/board/frameClock.js';
 import { pixelRingCells } from '../ui/components/board/pixelRing.js';
-import { MAT_Z, taskDimZ } from '../ui/components/board/matLayers.js';
+import { MAT_Z, taskRingZ } from '../ui/components/board/matLayers.js';
 import { TaskRings } from '../ui/components/board/TaskRings.jsx';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import {
@@ -379,7 +379,7 @@ describe('⭐ where rings cross, only the outer edge of the merged shape', () =>
 describe('TaskRings: drawn on the ground, grown and shrunk per job, still at rest', () => {
     const mount = (jobs) => {
         const out = render(h(TaskRings, { jobs }));
-        return { ...out, again: (next, dimZ) => out.rerender(h(TaskRings, { jobs: next, dimZ })) };
+        return { ...out, again: (next, z) => out.rerender(h(TaskRings, { jobs: next, z })) };
     };
     const A = [job('a', 400, 400)];
 
@@ -437,7 +437,7 @@ describe('TaskRings: drawn on the ground, grown and shrunk per job, still at res
         expect(ringsIn(container).map(r => r.id)).toEqual(['a', 'b']);
     });
 
-    it('⭐ the dim is everything inside the rings but their edge: the edge keeps its colour over the Tokens it runs under', () => {
+    it('⭐ the dim is everything inside the rings but their edge: the line keeps its colour over the Tokens it crosses', () => {
         const jobs = [job('a', 400, 400), job('b', 520, 410)];
         const targets = jobs.map(j => taskRingTarget(j, SCALE));
         const { container } = mount(jobs);
@@ -507,21 +507,19 @@ describe('TaskRings: drawn on the ground, grown and shrunk per job, still at res
         expect(frames.pending()).toBe(0);
     });
 
-    it('the rings on the ground under every Token, the dim at the z it is handed; the wrapper makes no stacking context', () => {
+    it('the dim and the line at the z they are handed, the line drawn last; the wrapper makes no stacking context', () => {
         const { container, again } = mount(A);
         const wrapper = container.querySelector('[data-task-rings]');
         expect(wrapper.style.zIndex).toBe('');
+        const layers = ['[data-task-dim="grey"]', '[data-task-dim="dark"]', '[data-task-ring-layer]'];
         const z = (sel) => Number(container.querySelector(sel).style.zIndex);
-        expect(z('[data-task-ring-layer]')).toBeGreaterThan(MAT_Z.GROUND_FX);
-        expect(z('[data-task-ring-layer]')).toBeLessThan(MAT_Z.GROUND_GRID);
         // With no z handed (no Token worked), over every Token, under the heroes.
-        expect(z('[data-task-dim="grey"]')).toBe(MAT_Z.STANDING_HERO);
+        for (const sel of layers) expect(z(sel)).toBe(MAT_Z.STANDING_HERO);
         again(A, 1234);
-        expect(z('[data-task-dim="grey"]')).toBe(1234);
-        expect(z('[data-task-dim="dark"]')).toBe(1234);
-        // The grey drains first, then the black darkens: the same z, in that order.
-        const svgs = [...wrapper.querySelectorAll('svg')].map(s => s.getAttribute('data-task-dim'));
-        expect(svgs.indexOf('grey')).toBeLessThan(svgs.indexOf('dark'));
+        for (const sel of layers) expect(z(sel)).toBe(1234);
+        // One z: the grey drains, the black darkens, then the line goes over both, keeping its colour.
+        const svgs = [...wrapper.querySelectorAll('svg')];
+        expect(layers.map(sel => svgs.indexOf(container.querySelector(sel)))).toEqual([0, 1, 2]);
         expect(wrapper.className).toContain('pointer-events-none');
     });
 
@@ -614,8 +612,9 @@ describe('on the mat: a ring for every hero at work, from the game itself', () =
         expect(pxIn(container, t.id)).toBe(full);
     });
 
-    // The owner's eye-check, 22 Nov: a Token at rest half inside a ring is dimmed on that half.
-    it('⭐ the dim lies over the Tokens at rest and under the worked one and every hero; a Token half inside is dimmed on that half only', async () => {
+    // The owner's eye-check, 22 Nov: a Token at rest half inside a ring is dimmed on that half, and
+    // the ring's line crosses its art; the worked Token and the heroes stand on the line.
+    it('⭐ the dim and the line lie over the Tokens at rest and under the worked one and every hero; a Token half inside is dimmed on that half only', async () => {
         const worked = placeAt('fixture_producer', 600, 400);
         const near = placeAt('fixture_producer_alt', 600, 530);
         const far = placeAt('fixture_producer_alt', 1400, 400);
@@ -625,17 +624,21 @@ describe('on the mat: a ring for every hero at work, from the game itself', () =
         expect(Flags.statusOf('h1').state).toBe('working');
 
         const dimEl = container.querySelector('[data-task-dim="grey"]');
-        const dimZ = Number(dimEl.style.zIndex);
-        expect(Number(container.querySelector('[data-task-dim="dark"]').style.zIndex)).toBe(dimZ);
+        const lineEl = container.querySelector('[data-task-ring-layer]');
+        const ringZ = Number(dimEl.style.zIndex);
+        expect(Number(container.querySelector('[data-task-dim="dark"]').style.zIndex)).toBe(ringZ);
+        expect(Number(lineEl.style.zIndex)).toBe(ringZ);
         const art = (t) => container.querySelector(`[data-token-art][data-token-id="${t.id}"]`);
         const zOf = (el) => Number(el.style.zIndex);
-        // The Tokens at rest, their art and what is written on them, under the dim.
-        for (const t of [near, far]) expect(zOf(art(t)) + 1).toBeLessThan(dimZ);
-        // The worked Token over it: its z is the dim's, and it comes after the dim, so it wins.
-        expect(zOf(art(worked))).toBeGreaterThanOrEqual(dimZ);
-        expect(dimEl.compareDocumentPosition(art(worked)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-        // Every hero over it.
-        expect(zOf(container.querySelector('[data-board-hero="h1"]'))).toBeGreaterThan(dimZ);
+        const after = (a, b) => !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+        // The Tokens at rest, their art and what is written on them, under the dim and the line.
+        for (const t of [near, far]) expect(zOf(art(t)) + 1).toBeLessThan(ringZ);
+        // The worked Token over both: its z is theirs, and it comes after them, so it wins.
+        expect(zOf(art(worked))).toBeGreaterThanOrEqual(ringZ);
+        expect(after(dimEl, lineEl)).toBe(true);
+        expect(after(lineEl, art(worked))).toBe(true);
+        // Every hero over them.
+        expect(zOf(container.querySelector('[data-board-hero="h1"]'))).toBeGreaterThan(ringZ);
 
         // The dim is cut to the ring, not to whole Tokens: the near one's top part is in, the rest out.
         const dim = pathCells(dimEl.querySelector('path').getAttribute('d'));
@@ -653,12 +656,12 @@ describe('on the mat: a ring for every hero at work, from the game itself', () =
         expect(footprint(far).filter(k => dim.has(k))).toEqual([]);
     });
 
-    it('the dim\'s z: the lowest worked Token\'s, over every Token at rest; with none worked, over every Token', () => {
+    it('the rings\' z: the lowest worked Token\'s, over every Token at rest; with none worked, over every Token', () => {
         const z = new Map([['a', 40], ['b', 60], ['c', 90]]);
-        expect(taskDimZ(z, ['c', 'b'])).toBe(60);
-        expect(taskDimZ(z, new Map([['c', 'h1']]).keys())).toBe(90);
-        expect(taskDimZ(z, [])).toBe(MAT_Z.STANDING_HERO);
-        expect(taskDimZ(z, ['gone'])).toBe(MAT_Z.STANDING_HERO);
+        expect(taskRingZ(z, ['c', 'b'])).toBe(60);
+        expect(taskRingZ(z, new Map([['c', 'h1']]).keys())).toBe(90);
+        expect(taskRingZ(z, [])).toBe(MAT_Z.STANDING_HERO);
+        expect(taskRingZ(z, ['gone'])).toBe(MAT_Z.STANDING_HERO);
     });
 
     it('the ring turns with the engine\'s own word for the "!": an alert said on the bus', async () => {

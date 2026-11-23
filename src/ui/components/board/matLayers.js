@@ -39,11 +39,6 @@ export const MAT_Z = Object.freeze({
     GROUND: 1,
     /** The ground's ambient life (`AmbientLife`: water shimmer, gusts, the lava's pulse): on the ground. */
     GROUND_FX: 2,
-    /**
-     * The task rings themselves (`TaskRings`), on the ground, under every Token and hero. The dim
-     * inside them has no fixed z: {@link taskDimZ}.
-     */
-    TASK_RING: 3,
     /** The grid while placing (`TerrainGridOverlay`): over the ground, under every Token. */
     GROUND_GRID: 5,
     /**
@@ -106,19 +101,20 @@ export function placeZ(place) {
 }
 
 /**
- * The z of the dim inside the task rings (`TaskRings`): over the ground and every Token and flag
- * at rest, under every worked Token and hero. So the part of a resting Token inside
- * a ring is dimmed with the ground, while the jobs themselves stay bright. Every worked Token
- * stands above every resting one in the stack ({@link stackSequence}), so the lowest worked z is
- * the line between them: the dim takes it, and is written before the Tokens, so the worked Token
- * wins the tie. With no Token worked (a last ring shrinking away), over every Token, under the
- * heroes, who also win the tie.
- * ⚠️ Its blend reaches only what is drawn below it in the mat's one stacking context, so its
+ * The z of the task rings (`TaskRings`), their dim and their line: over the ground and every
+ * Token and flag at rest, under every worked Token and hero. So the part of a resting Token inside
+ * a ring is dimmed with the ground and the ring's line crosses its art, while the jobs themselves,
+ * the action the ring frames, stay bright and stand on the line. Every worked Token stands above
+ * every resting one in the stack ({@link stackSequence}), so the lowest worked z is the line
+ * between them: the rings take it, and are written before the Tokens, so the worked Token wins the
+ * tie. With no Token worked (a last ring shrinking away), over every Token, under the heroes, who
+ * also win the tie.
+ * ⚠️ The dim's blend reaches only what is drawn below it in the mat's one stacking context, so the
  * layers stay direct stacking siblings of the Tokens (no wrapper with a z-index).
  * @param {Map<string, number>} tokenZ the stack's (`createMatStack`)
  * @param {Iterable<string>} workedIds every Token a hero works
  */
-export function taskDimZ(tokenZ, workedIds) {
+export function taskRingZ(tokenZ, workedIds) {
     let z = Infinity;
     for (const id of workedIds) {
         const at = tokenZ.get(id);

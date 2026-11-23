@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useMatSize } from '../../hooks/useMatSize.js';
-import { MAT_Z, createMatStack, heroZ, walkerSortY, taskDimZ } from './matLayers.js';
+import { MAT_Z, createMatStack, heroZ, walkerSortY, taskRingZ } from './matLayers.js';
 import { createStackWriter } from './stackWriter.js';
 import { pointerToMat } from './matPoint.js';
 import { matTuning } from '../../../config/matTuning.js';
@@ -558,8 +558,8 @@ export const MatBoard = React.memo(function MatBoard({
     // layout effect: written in the same commit, before anything is painted.
     const stack = useMemo(() => createStackWriter(), []);
     useLayoutEffect(() => { stack.apply(order.tokenZ, hoveredId); }, [stack, order, hoveredId]);
-    // The task rings' dim: over the Tokens at rest, under the worked ones.
-    const dimZ = useMemo(() => taskDimZ(order.tokenZ, workedBy.keys()), [order, workedBy]);
+    // The task rings, line and dim: over the Tokens at rest, under the worked ones.
+    const ringZ = useMemo(() => taskRingZ(order.tokenZ, workedBy.keys()), [order, workedBy]);
 
     return (
         <div
@@ -605,10 +605,11 @@ export const MatBoard = React.memo(function MatBoard({
             <AmbientLife pictures={ground ? groundPictures : null} tokens={tokens} workedBy={workedBy} carriedId={carriedId} />
 
             {/**
-              * `MAT_Z.TASK_RING`: a ring round every job in progress; inside it, at `taskDimZ`, the
-              * ground and the Tokens at rest dimmed. ⚠️ Before the Tokens and heroes: they win a tie of z.
+              * At `taskRingZ`: a ring round every job in progress, over the Tokens at rest, the
+              * ground and those Tokens dimmed inside it. ⚠️ Before the Tokens and heroes: they win a
+              * tie of z.
               */}
-            {ringsDrawn && <TaskRings jobs={taskJobs} dimZ={dimZ} />}
+            {ringsDrawn && <TaskRings jobs={taskJobs} z={ringZ} />}
 
             {/* `MAT_Z.HELD_SHADE`: a held mat's ground in shadow, lifting slowly once it is cleared. */}
             <div

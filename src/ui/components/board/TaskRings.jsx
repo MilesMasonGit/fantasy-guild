@@ -41,13 +41,14 @@ function shapesOf(rings) {
  * * **One dim for all the rings**, cut to the inside of their merged shape (`dimRuns`, less its
  * edge), so where rings overlap everything is dimmed once: a grey drawn as `mix-blend-mode:
  * saturation` drains {@link TASK_DIM_GREY} of the colour, then black takes the light down to
- * {@link TASK_DIM_LIGHT}. Both sit at `dimZ` (`matLayers.taskDimZ`): over the Tokens at rest,
- * under the worked ones, and blend with everything below them. A Token half inside a ring is dimmed
- * on that half only.
+ * {@link TASK_DIM_LIGHT}. Both blend with everything below them. A Token half inside a ring is
+ * dimmed on that half only.
  * * **Only the outer edge** of the merged shape is drawn (`edgeRuns`): where rings cross, no arc
  * runs through the shared dim. Each ring draws its own part of that edge in its own colour, all
- * on one black shadow, on the ground under every Token (z `MAT_Z.TASK_RING`), so a Token or hero
- * standing on the edge covers it. The dim leaves the edge alone, so the ring keeps its colour.
+ * on one black shadow, drawn after the dim, so the line keeps its colour and crosses the art of a
+ * Token at rest it runs over.
+ * * **Every layer at `z`** (`matLayers.taskRingZ`): over the ground and the Tokens at rest, under
+ * the worked Tokens and the heroes, who stand on the line, as the action the ring frames.
  * * **Drawn only when a job starts or ends** (or turns stuck or unstuck, a hero joins one, its
  * Token moves, the mat's fit changes): at rest there is no clock, no frame and no render. A ring
  * grows when its job starts and shrinks when it ends, on the frame clock only while some ring is
@@ -57,10 +58,10 @@ function shapesOf(rings) {
  * Clipped to the mat's rounded edge, like the reach ring; never in the pointer's way.
  * ⚠️ Every layer here is a direct stacking sibling of the ground and the Tokens (the wrapper has
  * no z-index): a stacking context between them would cut the blend off from what it dims.
- * @param {{jobs?: {id: string, x: number, y: number, r: number, stuck?: boolean}[], dimZ?: number}} props
- *   the jobs in mat units, the same array while they are the same; the dim's z
+ * @param {{jobs?: {id: string, x: number, y: number, r: number, stuck?: boolean}[], z?: number}} props
+ *   the jobs in mat units, the same array while they are the same; the rings' z
  */
-export const TaskRings = memo(function TaskRings({ jobs = NO_JOBS, dimZ = MAT_Z.STANDING_HERO }) {
+export const TaskRings = memo(function TaskRings({ jobs = NO_JOBS, z = MAT_Z.STANDING_HERO }) {
     const mat = useMatSize();
     const artScale = boardScaleAt(useMatFit());
     const [set] = useState(createTaskRingSet);
@@ -103,7 +104,14 @@ export const TaskRings = memo(function TaskRings({ jobs = NO_JOBS, dimZ = MAT_Z.
             className="absolute left-0 top-0 pointer-events-none overflow-hidden"
             style={{ width: mat.w, height: mat.h, borderRadius: MAT_EDGE.radius }}
         >
-            <svg data-task-ring-layer className="absolute left-0 top-0 overflow-visible" width={mat.w} height={mat.h} style={svgStyle(MAT_Z.TASK_RING)}>
+            {/* ⚠️ One z for all three: their order here is their order on screen. */}
+            <svg data-task-dim="grey" className="absolute left-0 top-0 overflow-visible" width={mat.w} height={mat.h} style={svgStyle(z, 'saturation')}>
+                <path d={shapes.dim} transform={scale} fill={DRAIN_GREY} fillOpacity={TASK_DIM_GREY} shapeRendering="crispEdges" />
+            </svg>
+            <svg data-task-dim="dark" className="absolute left-0 top-0 overflow-visible" width={mat.w} height={mat.h} style={svgStyle(z)}>
+                <path d={shapes.dim} transform={scale} fill="#000" fillOpacity={1 - TASK_DIM_LIGHT} shapeRendering="crispEdges" />
+            </svg>
+            <svg data-task-ring-layer className="absolute left-0 top-0 overflow-visible" width={mat.w} height={mat.h} style={svgStyle(z)}>
                 <g shapeRendering="crispEdges">
                     <path data-task-ring-shadow d={shapes.shadow} transform={`translate(${artScale} ${artScale}) ${scale}`} fill={RING_SHADOW} />
                     {byStuckLast(rings).map(r => (
@@ -118,12 +126,6 @@ export const TaskRings = memo(function TaskRings({ jobs = NO_JOBS, dimZ = MAT_Z.
                         />
                     ))}
                 </g>
-            </svg>
-            <svg data-task-dim="grey" className="absolute left-0 top-0 overflow-visible" width={mat.w} height={mat.h} style={svgStyle(dimZ, 'saturation')}>
-                <path d={shapes.dim} transform={scale} fill={DRAIN_GREY} fillOpacity={TASK_DIM_GREY} shapeRendering="crispEdges" />
-            </svg>
-            <svg data-task-dim="dark" className="absolute left-0 top-0 overflow-visible" width={mat.w} height={mat.h} style={svgStyle(dimZ)}>
-                <path d={shapes.dim} transform={scale} fill="#000" fillOpacity={1 - TASK_DIM_LIGHT} shapeRendering="crispEdges" />
             </svg>
         </div>
     );
