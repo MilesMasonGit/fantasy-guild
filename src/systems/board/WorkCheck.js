@@ -7,6 +7,7 @@ import * as InputCost from './InputCost.js';
 import * as Charges from './Charges.js';
 import * as Respawn from './Respawn.js';
 import * as Fields from './Fields.js';
+import * as Fishing from './Fishing.js';
 import * as Demolition from './Demolition.js';
 import * as SiteRules from './SiteRules.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
@@ -81,6 +82,16 @@ export function skillFailure(heroId, config) {
     });
 }
 
+/**
+ * `ALERT.NO_BAIT` when `heroId` holds a tool the water `instance` takes but no bait to fish it with
+ * (`Fishing.lacksBait`), else null. Not a {@link heroReason}: an order onto the water still stands,
+ * and the hero lets go of it and waits, as by a resting vein, until given bait.
+ */
+export function baitReason(heroId, instance, def = getTokenType(instance?.typeId)) {
+    if (!heroId || !def || Demolition.isMarked(instance)) return null;
+    return Fishing.lacksBait(def, heroId) ? ALERT.NO_BAIT : null;
+}
+
 /** {@link heroReason}'s tool gate (`toolNeed.js`). */
 export { toolNeedOf };
 
@@ -142,10 +153,10 @@ export function fixableReason(instanceId, instance, heroId = undefined) {
 
 /**
  * The first reason `heroId` cannot run Token `instanceId` — the hero's gate
- * first, then the Token's — or null if they can. What a flag records as a skip.
+ * first, then their bait, then the Token's — or null if they can. What a flag records as a skip.
  */
 export function whyCannotRun(instanceId, instance, heroId, config) {
-    const hero = heroReason(heroId, config, instance);
+    const hero = heroReason(heroId, config, instance) || baitReason(heroId, instance);
     if (hero) return hero;
     // Costed with this hero's own Efficiency: they are the one who would pay.
     return fixableReason(instanceId, instance, heroId).reason;

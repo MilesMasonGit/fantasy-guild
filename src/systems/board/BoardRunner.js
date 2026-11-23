@@ -688,6 +688,12 @@ export function tick(delta) {
                 setAlert(instance,skillAlert);
                 continue;
             }
+            // No bait at a water: no cycle and no mark, as a resting Token. Its hero lets go on the
+            // next flag pass.
+            if (WorkCheck.baitReason(heroId, instance, def)) {
+                setAlert(instance, null);
+                continue;
+            }
         }
 
         // What is this station making? Whatever the player set it to (see `StationRecipe.js`).

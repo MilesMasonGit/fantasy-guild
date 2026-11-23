@@ -73,9 +73,9 @@ describe('which problems are yellow and which red', () => {
         }
     });
 
-    it('every alert the engine can raise has a mark, except resting and a Field’s growing crop, which are not problems', () => {
+    it('every alert the engine can raise has a mark, except resting, a Field’s growing crop and no bait, which are not problems', () => {
         for (const kind of Object.values(ALERT)) {
-            if (kind === ALERT.RESTING || kind === ALERT.GROWING) expect(PROBLEM_SEVERITY[kind]).toBeUndefined();
+            if (kind === ALERT.RESTING || kind === ALERT.GROWING || kind === ALERT.NO_BAIT) expect(PROBLEM_SEVERITY[kind]).toBeUndefined();
             else expect(PROBLEM_SEVERITY[kind], kind).toBeDefined();
         }
     });

@@ -142,6 +142,18 @@ export function isStopped(instance) {
 }
 
 /**
+ * The seed a stopped Field cannot sow for, as `{ itemId, needed }` (the first it is short of, and
+ * what one sowing takes of it), or null when it is not stopped.
+ */
+export function seedNeededOf(instance, def = getTokenType(instance?.typeId)) {
+    if (!isStopped(instance)) return null;
+    const itemId = Growth.growthAlertOf(instance.id)?.needs?.[0];
+    if (!itemId) return null;
+    const seed = cropTermsOf(pickOf(instance, def)).seeds.find(s => s.itemId === itemId);
+    return { itemId, needed: seed?.quantity || 1 };
+}
+
+/**
  * Why nobody can harvest this Field now, or null when they can (ripe) or when it is not the
  * Field's own business (not a Field, or nothing picked: the station's "Choose a recipe"):
  * * `ALERT.GROWING` while its crop grows, and on an empty Field about to sow its pick: on its way,
