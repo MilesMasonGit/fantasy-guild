@@ -158,6 +158,24 @@ A new strip **under the playmat, left of the hero bar**, the same height:
 5. Icons: placeholders from the style kit until the owner draws them (add to
    `owner_art_list.md`).
 
+## 10. The big banners
+
+**Amends** [concept_notifications.md](concept_notifications.md) "Banners"
+(placement, stacking, hiding). The banners' look, sound, merging and the
+hover outline on the mat stand.
+
+1. **A show/hide icon at the top right, above the item notices** (owner).
+2. **The banners pop out of that icon**, at today's size (~480 px), over
+   the item notices and the playmat (owner). Top centre is no longer used.
+3. **Shown**: **every waiting banner** is listed, stacked down from the icon
+   (scrolling if long); no three-limit, no "+N" tab. **Each leaves when
+   clicked**, as today; a click on the icon hides them all at once (owner).
+4. **Hidden**: a new banner pops out for **about 5 seconds**, then tucks back
+   into the icon; clicking the icon shows everything waiting (owner).
+   Director's default, not ruled: the icon shows how many are waiting, red if
+   a problem is among them.
+5. Whether shown or hidden is remembered between sessions (director's default).
+
 ## Open
 
 The owner's list continues; more items follow.

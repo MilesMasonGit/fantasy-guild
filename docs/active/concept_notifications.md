@@ -102,6 +102,8 @@ level-up.
 
 ## Banners
 
+*Amended 2026-11-23 (owner): banners now pop out of a show/hide icon at the top right, all listed, a hidden banner shows for 5 s; see [concept_playmat_declutter.md](concept_playmat_declutter.md) section 10.*
+
 *Amended by brief 430 (owner, 2026-11-03): time away no longer loses these; a place settled gets a gold banner.*
 
 - **Shape**: a wide scroll or ribbon (~480 px), **dropping down at the top
