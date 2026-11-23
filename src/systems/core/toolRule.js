@@ -5,7 +5,7 @@ import {
 } from '../../config/registries/toolKinds.js';
 import { getProvidedTagsWithTiers } from '../effects/statements.js';
 import { isConsumableCategory } from '../../config/registries/equipmentCategories.js';
-import { catchPoolsOf } from '../../config/registries/catchPools.js';
+import { catchPoolsOf, poolBites, BAIT_FREE_TOOL } from '../../config/registries/catchPools.js';
 import { breakChanceProblem } from '../../config/registries/itemBreak.js';
 import { gearRequirements } from '../../config/registries/weaponStyles.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
@@ -131,7 +131,7 @@ function tierScaleFindings(items, push) {
 /**
  * A water Token's catch pools (`catchPools.js`), written in a way that cannot work: a tool kind the
  * game lacks or no item is, a bait or catch that is not an item, a bait no hero can carry, a pool
- * with nothing to catch or written twice, a tool that catches only with bait, and the fields the
+ * with nothing to catch or written twice, a pool with no bait for any tool but a Trap, and the fields the
  * pools make pointless (Outputs, Needs tool) or need (a work cycle).
  */
 function catchFindings(token, tokenId, items, best, say) {
@@ -168,11 +168,10 @@ function catchFindings(token, tokenId, items, best, say) {
     });
 
     const pools = catchPoolsOf(token);
-    for (const kind of new Set(pools.map(p => p.tool))) {
-        if (isToolKind(kind) && !pools.some(p => p.tool === kind && !p.bait)) {
-            say(`a hero with a ${toolKindLabel(kind)} catches nothing here without bait: give it a pool with no bait`);
-        }
-    }
+    pools.forEach((pool) => {
+        if (poolBites(pool) || !isToolKind(pool.tool)) return;
+        say(`its catch pool for a ${toolKindLabel(pool.tool)} takes no bait, so no hero fishes it: only a ${toolKindLabel(BAIT_FREE_TOOL)} catches without bait, so name a bait`);
+    });
     if (!pools.length) return;
     if (!token.config) say('has catch pools but no work cycle (skill and cycle time), so nobody fishes it');
     if ((token.config?.outputs || []).length) say('has catch pools, so its Outputs are never made: the catch replaces them');

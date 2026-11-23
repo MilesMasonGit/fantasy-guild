@@ -13,6 +13,8 @@ import { centreOf, distanceSq } from './nearby.js';
 import * as WorkCheck from './WorkCheck.js';
 import * as Respawn from './Respawn.js';
 import * as Growth from './Growth.js';
+import * as Fields from './Fields.js';
+import * as Fishing from './Fishing.js';
 import * as Demolition from './Demolition.js';
 import { workConfigOf } from './StationRecipe.js';
 import * as BoardCombat from './BoardCombat.js';
@@ -302,8 +304,35 @@ function announceToolNeeded(instanceId, heroId) {
  * looks again (about once a second); a bubble already up is left as it is.
  */
 function announceInputNeeded(instance, heroId) {
-    const missing = WorkCheck.fixableReason(instance.id, instance, heroId).inputCheck?.missing?.[0];
-    if (missing?.itemId) EventBus.publish(BOARD_EVENTS.INPUT_NEEDED, { instanceId: instance.id, heroId, itemId: missing.itemId, needed: missing.needed });
+    announceItemNeeded(instance, heroId, ALERT.INPUTS);
+}
+
+/** The skip reasons a hero says as "Needs {item}". */
+const NEEDS_ITEM = new Set([ALERT.INPUTS, ALERT.NO_BAIT, ALERT.GROW_NEEDS_ITEM]);
+
+/**
+ * What a hero passed over `instance` for `reason` (one of {@link NEEDS_ITEM}) needs, as
+ * `{ itemId, needed, carried? }`, or null: the input it is short of, the bait they must carry, or
+ * the seed the Field cannot sow.
+ */
+function itemNeeded(instance, heroId, reason) {
+    if (reason === ALERT.INPUTS) return WorkCheck.fixableReason(instance.id, instance, heroId).inputCheck?.missing?.[0] || null;
+    if (reason === ALERT.NO_BAIT) {
+        const itemId = Fishing.baitNeededOf(getTokenType(instance.typeId), heroId);
+        return itemId ? { itemId, needed: 1, carried: true } : null;
+    }
+    if (reason === ALERT.GROW_NEEDS_ITEM) return Fields.seedNeededOf(instance);
+    return null;
+}
+
+/** Publish `INPUT_NEEDED` for what {@link itemNeeded} names. */
+function announceItemNeeded(instance, heroId, reason) {
+    const missing = itemNeeded(instance, heroId, reason);
+    if (!missing?.itemId) return;
+    EventBus.publish(BOARD_EVENTS.INPUT_NEEDED, {
+        instanceId: instance.id, heroId, itemId: missing.itemId, needed: missing.needed,
+        ...(missing.carried ? { carried: true } : {})
+    });
 }
 
 function recordSkips(r, heroId, skips) {
@@ -446,9 +475,11 @@ function choose(r, heroId) {
     recordSkips(r, heroId, skips);
 
     if (!pick) {
-        // Stopped before ever starting for want of an input: said as when it runs dry.
-        const short = BoardState.getTokenById(skips.find(s => s.reason === ALERT.INPUTS)?.instanceId);
-        if (short) announceInputNeeded(short, heroId);
+        // Stopped for want of an item (an input, the water's bait, the Field's seed): said the same
+        // way whether it ran dry here or was never there, by the first Token passed over for one.
+        const short = skips.find(s => NEEDS_ITEM.has(s.reason));
+        const at = short ? BoardState.getTokenById(short.instanceId) : null;
+        if (at) announceItemNeeded(at, heroId, short.reason);
         r.nextTryAt.set(heroId, r.clock + RETRY_MS);
         return false;
     }
@@ -491,7 +522,9 @@ function keepOrRelease(r, heroId, dirty) {
                 // A Token that ran out and rests until it respawns (or a Field with nothing ripe) is
                 // let go at once, with no badge: a camp hero works the next thing, an ordered hero
                 // waits by it. Unless it is marked for demolition, which a resting Token can still be.
-                && (Demolition.isMarked(instance) || !WorkCheck.isAway(instance, def)))
+                && (Demolition.isMarked(instance) || !WorkCheck.isAway(instance, def))
+                // Likewise a water the hero has no bait for: they wait by it until given some.
+                && !WorkCheck.baitReason(heroId, instance, def))
         );
 
         if (!eligible) {

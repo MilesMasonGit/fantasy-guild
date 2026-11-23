@@ -135,7 +135,7 @@ export const HeroBubbleLayer = ({ heroes }) => {
             }, UI_LISTENER),
             // Their station is out of an input: they say which until it is back in the Bank.
             EventBus.subscribe(BOARD_EVENTS.INPUT_NEEDED, (p) => {
-                if (p?.heroId && p.itemId) raiseNeedsItem(p.heroId, p.itemId, { quantity: p.needed });
+                if (p?.heroId && p.itemId) raiseNeedsItem(p.heroId, p.itemId, { quantity: p.needed, carried: p.carried === true });
             }, UI_LISTENER)
         ];
         return () => unsubs.forEach(u => u());

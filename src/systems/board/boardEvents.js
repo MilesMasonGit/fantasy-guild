@@ -93,11 +93,13 @@ export const BOARD_EVENTS = {
 
     /**
      * A Token a hero is ordered onto cannot start a cycle for want of an input (`ALERT.INPUTS`),
-     * whether the hero stands at it (run dry) or never set off for it (never stocked). Payload:
-     * `{ instanceId, heroId, itemId, needed }`, the first item the Bank is short of and how many
-     * a cycle takes. Published by `Flags` each time the stopped hero's flag looks again (about once
-     * a second), never for a hero who goes to other work; the hero's "Needs Coal" bubble is raised
-     * once and waits (`heroNeeds.js`).
+     * whether the hero stands at it (run dry) or never set off for it (never stocked), and likewise
+     * a water the hero has no bait for (`ALERT.NO_BAIT`) and a Field stopped for want of its seed
+     * (`ALERT.GROW_NEEDS_ITEM`). Payload: `{ instanceId, heroId, itemId, needed, carried? }`, the
+     * first item short and how many the work takes; `carried` when the hero must also carry it (bait
+     * in a consumable cell). Published by `Flags` each time the stopped hero's flag looks again
+     * (about once a second), never for a hero who goes to other work; the hero's "Needs Coal"
+     * bubble is raised once and waits (`heroNeeds.js`).
      */
     INPUT_NEEDED: 'board:input_needed',
 
@@ -326,6 +328,13 @@ export const ALERT = {
      * that tier in their hands. A hero gate like the two above: equipping the tool fixes it.
      */
     NO_TOOL: 'no_tool',
+    /**
+     * The hero holds a tool a water takes but carries no bait it takes that the Bank still holds,
+     * and holds no Trap (`Fishing.lacksBait`). Like `RESTING`, never a Token's alert and never a
+     * badge: the hero lets go of the water and says which bait they need. Unlike the gates above
+     * it never refuses an order: the hero waits by the water until given bait.
+     */
+    NO_BAIT: 'no_bait',
     /**
      * The station cannot run the recipe it is set to, because the context Tokens that recipe names
      * are not beside it. (A station with nothing picked says `CHOOSE_RECIPE` instead.)

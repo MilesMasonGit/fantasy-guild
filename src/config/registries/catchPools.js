@@ -8,7 +8,8 @@
  * `catchPools: [{ tool, bait, catches: [{ itemId, weight }] }]` on the Token type.
  *
  * - `tool`: a tool kind (`fishing_rod`, `fishing_net`, …). The hero's tool picks the pools.
- * - `bait`: an item id, or null for the water's basic pool for that tool (no bait carried).
+ * - `bait`: an item id, or null for a pool worked with no bait. Only a {@link BAIT_FREE_TOOL} pool
+ *   with no bait catches anything: every other tool fishes with bait or not at all.
  * - `catches`: a weighted pool; each catch lands one of its item. Weights are relative (50, 40,
  *   10 reads as 50 %, 40 %, 10 %).
  *
@@ -19,6 +20,14 @@
  * board runner ask a Token's tool need on every tick. A content reload registers new objects, so
  * nothing stale is kept.
  */
+
+/** The one tool kind that catches with no bait (a Trap): every other tool needs bait at water. */
+export const BAIT_FREE_TOOL = 'fishing_trap';
+
+/** Whether a pool catches anything: it takes a bait, or it is worked with a {@link BAIT_FREE_TOOL}. */
+export function poolBites(pool) {
+    return !!pool && (!!pool.bait || pool.tool === BAIT_FREE_TOOL);
+}
 
 const EMPTY = Object.freeze([]);
 const cache = new WeakMap();
@@ -70,7 +79,10 @@ export function catchToolKinds(def) {
     return kinds;
 }
 
-/** The pool for a tool kind and a bait (null: the basic pool, no bait), or null. */
+/**
+ * The pool authored for a tool kind and a bait (null: its pool with no bait), or null. Authored
+ * only: whether it catches anything is {@link poolBites}.
+ */
 export function poolFor(def, tool, bait = null) {
     return catchPoolsOf(def).find(p => p.tool === tool && p.bait === (bait || null)) || null;
 }
@@ -78,6 +90,15 @@ export function poolFor(def, tool, bait = null) {
 /** The baits a Token type's pools for one tool kind take, in pool order. */
 export function baitsFor(def, tool) {
     return catchPoolsOf(def).filter(p => p.tool === tool && p.bait).map(p => p.bait);
+}
+
+/**
+ * The pool a water is priced from: its first pool that takes a bait, else its first that catches
+ * with no bait (a Trap's), else null.
+ */
+export function pricedPoolOf(def) {
+    const pools = catchPoolsOf(def);
+    return pools.find(p => p.bait) || pools.find(poolBites) || null;
 }
 
 /** Every item a Token type's pools can land, each once, in pool order. */

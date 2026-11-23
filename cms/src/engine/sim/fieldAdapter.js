@@ -1,6 +1,6 @@
 /** Economic simulator: the field adapter. Tokens and Recipes describe the same idea (a work cycle that consumes items and produces others) in two vocabularies: skill is `config.skill` / `skill`, required level `config.skillRequired` / `levelRequirement`, cycle length `config.cycleTimeMs` / `durationMs`, and I/O is `config.outputs` + `config.inputs` / `outputs` + `inputs`. Every pass reads adapted entities only; no pass in `sim/` may contain `entity.config?.skillRequired ?? entity.levelRequirement`, because a field name is chosen here, once. Every pass in this directory is a pure function over data a caller hands in. */
 
-import { catchPoolsOf, hasCatchPools } from '../../../../src/config/registries/catchPools.js';
+import { hasCatchPools, pricedPoolOf } from '../../../../src/config/registries/catchPools.js';
 import { cropTermsOf, fieldOf, stationKindOffers } from '../../../../src/config/registries/tokenConstants.js';
 import { stationSkillOf, stationKindOf } from '../../../../src/systems/effects/statements.js';
 
@@ -106,21 +106,20 @@ function adaptCommon({ id, name, kind, skill, level, cycleTimeMs, xp, inputs, ou
 }
 
 /**
- * A water Token's work as Outputs: one catch a cycle from its no-bait pools, each fish at its share.
- * Several no-bait pools (a rod's and a net's) share the cycles evenly, so a fish in both counts once
- * at its average share. A baited pool is left out: bait is a choice, the no-bait catch is the
- * water's own.
+ * A water Token's work as Outputs: one catch a cycle from the pool it is priced from
+ * (`catchPools.pricedPoolOf`: its first pool that takes a bait, else a Trap's pool with none), each
+ * fish at its share. No hero fishes without bait but with a Trap, so a pool with no bait for any
+ * other tool is never the price.
  * ⚠️ The catch replaces the Token's Outputs in the game, so its authored `config.outputs` are never
  * read here, and `writeBack.applyTokenResults` never writes them.
  */
 export function waterOutputs(def) {
-    const basic = catchPoolsOf(def).filter(p => !p.bait);
+    const pool = pricedPoolOf(def);
+    if (!pool) return [];
+    const total = pool.catches.reduce((s, c) => s + c.weight, 0);
     const shares = new Map();
-    for (const pool of basic) {
-        const total = pool.catches.reduce((s, c) => s + c.weight, 0);
-        for (const c of pool.catches) shares.set(c.itemId, (shares.get(c.itemId) || 0) + c.weight * 100 / total);
-    }
-    return [...shares].map(([itemId, percent]) => ({ itemId, chance: percent / basic.length, minQty: 1, maxQty: 1 }));
+    for (const c of pool.catches) shares.set(c.itemId, (shares.get(c.itemId) || 0) + c.weight * 100 / total);
+    return [...shares].map(([itemId, chance]) => ({ itemId, chance, minQty: 1, maxQty: 1 }));
 }
 
 export function adaptToken(def, id = def?.id) {

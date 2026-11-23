@@ -11,6 +11,7 @@ import * as Flags from '../../../systems/board/Flags.js';
 import { toolsOfHero } from '../../../systems/equipment/HeroTools.js';
 import { getHeroWeaponSlot } from '../../../systems/combat/CombatFormulas.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
+import { getGrid, categoryOfItem, isConsumableCategory } from '../../../config/registries/equipmentConstants.js';
 import { toolOf, toolKindLabel, neededToolOf } from '../../../config/registries/toolKinds.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import * as WorkCheck from '../../../systems/board/WorkCheck.js';
@@ -130,25 +131,36 @@ export const needsItemKey = (itemId) => `needs:${itemId}`;
  */
 const NEEDS_CHECK_ON = Object.freeze([
     ENGINE_EVENTS.INVENTORY_UPDATED,
+    ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED,
     BOARD_EVENTS.SPRITES_CHANGED,
     ENGINE_EVENTS.HEROES_UPDATED,
     ENGINE_EVENTS.HERO_DEPLOYED,
     BOARD_EVENTS.HERO_MOVED
 ]);
 
+/** Whether the hero carries `itemId` in a consumable cell, as bait is carried. */
+function carries(hero, itemId) {
+    return getGrid(hero).some(id => id === itemId && isConsumableCategory(categoryOfItem(id)));
+}
+
 /**
  * The bubble for a hero whose work stops for want of `itemId`: "Needs Coal", the same words
- * whether they ran dry or never had any. It stands until `quantity` of it is within reach again,
- * or the hero is given another job (or none), as broken gear's does.
+ * whether they ran dry or never had any. It stands until `quantity` of it is within reach again
+ * (and, when it must be `carried`, as bait is, until the hero carries it too), or the hero is given
+ * another job (or none), as broken gear's does.
  */
-export function needsItemSpec(heroId, itemId, { quantity = 1 } = {}) {
+export function needsItemSpec(heroId, itemId, { quantity = 1, carried = false } = {}) {
     const needed = Math.max(1, Number(quantity) || 1);
     const job = jobOf(heroId);
     return {
         key: needsItemKey(itemId),
         text: t('messages.needs', { item: getItem(itemId)?.name || itemId }),
         tone: SPEECH_TONE.CANT,
-        holds: () => !!heroRecord(heroId) && jobOf(heroId) === job && availableOf(itemId) < needed,
+        holds: () => {
+            const hero = heroRecord(heroId);
+            if (!hero || jobOf(heroId) !== job) return false;
+            return availableOf(itemId) < needed || (carried && !carries(hero, itemId));
+        },
         checkOn: NEEDS_CHECK_ON
     };
 }
@@ -166,12 +178,13 @@ export function saysWhyStopped(heroId) {
  *
  * @param {string} heroId
  * @param {string} itemId
- * @param {{quantity?: number}} [options] how many the work takes at once (default 1)
+ * @param {{quantity?: number, carried?: boolean}} [options] how many the work takes at once
+ *   (default 1); `carried` when the hero must carry it in a consumable cell as well (bait)
  * @returns {boolean} whether a bubble was raised
  */
-export function raiseNeedsItem(heroId, itemId, { quantity = 1 } = {}) {
+export function raiseNeedsItem(heroId, itemId, { quantity = 1, carried = false } = {}) {
     if (!heroId || !itemId) return false;
-    return raiseBubble(heroId, needsItemSpec(heroId, itemId, { quantity }), { keepExisting: true });
+    return raiseBubble(heroId, needsItemSpec(heroId, itemId, { quantity, carried }), { keepExisting: true });
 }
 
 /**
