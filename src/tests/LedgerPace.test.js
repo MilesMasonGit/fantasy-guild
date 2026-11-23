@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 import { buildLedger } from '../systems/progression/ledger/engine.js';
 import { buildRateBook, LIFECYCLE, LIMIT, WORK } from '../../cms/src/engine/ledger/rates.js';
 import { buildPace, gainOf } from '../../cms/src/engine/ledger/pace.js';
-import { PROFILE } from '../../cms/src/engine/ledger/profiles.js';
+import { PROFILE, PROFILES } from '../../cms/src/engine/ledger/profiles.js';
 import { runChecks, CHECKS } from '../../cms/src/engine/ledger/checks.js';
 import { settingsOf, levelAtMinutes, minutesToReach } from '../../cms/src/engine/ledger/settings.js';
 import { xpForLevel } from '../utils/XPCurve.js';
@@ -191,6 +191,86 @@ describe('supply, level tracks and path time', () => {
             for (const row of pace.trackOf(skill).levels) {
                 expect(row.hours.typical).toBeLessThanOrEqual(row.hours.bare + 1e-9);
                 expect(row.hours.maxed).toBeLessThanOrEqual(row.hours.typical + 1e-9);
+            }
+        }
+    });
+});
+
+describe('a loop through the drinks', () => {
+    // The Oak drinks Tea, brewed at the Still from Oak Wood: 1200 brews an hour want 1200 wood, which
+    // the Oak gives at Typical (1980 with its Sawmill and its Tea) but not at Bare (900). A cooking
+    // Elixir adds yield and is spent one a brew, but the Spring makes only 1000 an hour: it starves
+    // the brewing to 1000 / 1200 of its pace. A Stew asks Cooking 3, so Cooking has levels to time.
+    const TEA = { token: 'token_still', recipe: 'recipe_tea' };
+    const content = (elixirYield) => {
+        const c = paceContent();
+        const one = (itemId) => ({ itemId, chance: 100, minQty: 1, maxQty: 1 });
+        const carried = (id, effectId, skill) => ({ id: `stm_${id}`, keyword: 'applies', to: { mode: 'all', value: '' }, target: { role: 'actor' }, when: { event: 'WORK_START', scope: 'self', skill }, payload: { effectId, scale: 1, durationMs: 0, forCycle: true, chance: 100 } });
+        const yieldUp = (id, value) => ({ id: `stm_${id}`, keyword: 'provides', to: { mode: 'all', value: '' }, reach: 'nearby', payload: { type: 'YIELD', bucket: 'percentage', value } });
+        c.effects.lp_fx_steady = { id: 'lp_fx_steady', name: 'Steady', statements: [yieldUp('lp_steady', 0.1)] };
+        c.effects.lp_fx_tea = { id: 'lp_fx_tea', name: 'Tea drink', statements: [carried('lp_tea', 'lp_fx_steady', 'forestry')] };
+        c.effects.lp_fx_quick = { id: 'lp_fx_quick', name: 'Quick', statements: [yieldUp('lp_quick', elixirYield)] };
+        c.effects.lp_fx_elixir = { id: 'lp_fx_elixir', name: 'Elixir potion', statements: [carried('lp_elixir', 'lp_fx_quick', 'cooking')] };
+        c.items.item_tea = { id: 'item_tea', name: 'Tea', type: 'drink', equipSlot: 'drink', stackable: true, effects: [{ effectId: 'lp_fx_tea', scale: 1 }], plan: { tier: 0 } };
+        c.items.item_elixir = { id: 'item_elixir', name: 'Elixir', type: 'potion', equipSlot: 'consumable', stackable: true, effects: [{ effectId: 'lp_fx_elixir', scale: 1 }], plan: { tier: 0 } };
+        c.items.item_stew = { id: 'item_stew', name: 'Stew', type: 'food', plan: { tier: 0 } };
+        c.tokens.token_spring = { id: 'token_spring', name: 'Spring', uses: null, config: { skill: 'alchemy', skillRequired: 1, cycleTimeMs: 3600, xp: 1, inputs: [], outputs: [one('item_elixir')] } };
+        c.tokens.token_sawmill = {
+            id: 'token_sawmill', name: 'Sawmill', tokenType: 'buff', uses: null, requiresHero: false, config: null,
+            statements: [{ id: 'stm_lp_sawmill', keyword: 'provides', to: { mode: 'id', value: 'token_oak' }, reach: 'nearby', payload: { type: 'DOUBLE_DROP', bucket: 'flat', value: 100, category: 'item_oak_wood' } }]
+        };
+        c.recipes.push(
+            { id: 'recipe_tea', name: 'Tea', skill: 'cooking', levelRequirement: 1, stationKinds: ['still'], durationMs: 3000, xp: 1, inputs: [{ itemId: 'item_oak_wood', quantity: 1 }], outputs: [one('item_tea')] },
+            { id: 'recipe_stew', name: 'Stew', skill: 'cooking', levelRequirement: 3, stationKinds: ['still'], durationMs: 60000, xp: 1, inputs: [{ itemId: 'item_oak_wood', quantity: 1 }], outputs: [one('item_stew')] },
+            { id: 'recipe_build_sawmill', name: 'Build Sawmill', skill: 'construction', levelRequirement: 1, xp: 5, durationMs: 30000, foundationKinds: ['wood'], inputs: [{ itemId: 'item_oak_wood', quantity: 5 }], outputs: [{ tokenId: 'token_sawmill', chance: 100, minQty: 1, maxQty: 1 }] }
+        );
+        c.starterCamp.tokens.push({ typeId: 'token_spring', x: 3, y: 0 });
+        return c;
+    };
+    /** A fresh pace for the content, with `first` asked before anything else. */
+    const paceAsked = (c, first) => {
+        const pace = buildPace(c, buildLedger(c), null);
+        pace.rateAt(first, PROFILE.MAXED);
+        return pace;
+    };
+    const setupOf = (r) => ({ chosen: r.chosen.map(x => x.id).sort(), scale: r.scale, xp: r.xp.cooking });
+
+    it('a profile weighs what a boost spends against the guild one profile down, so the question asked first changes nothing', () => {
+        const c = content(0.2);
+        const teaFirst = paceAsked(c, TEA);
+        // The Oak's choices weigh its Tea, so asking the Oak first asks Tea's choices inside the Oak's: a
+        // loop. Read at its own profile's supply, the loop stood the Oak in at Bare, Tea was short of wood
+        // either way, and the Elixir's own shortage hid behind it.
+        const oakFirst = paceAsked(c, { token: 'token_oak' });
+        for (const profile of PROFILES) expect(setupOf(oakFirst.rateAt(TEA, profile))).toEqual(setupOf(teaFirst.rateAt(TEA, profile)));
+
+        const typical = oakFirst.rateAt(TEA, PROFILE.TYPICAL);
+        expect(oakFirst.supplyOf('item_oak_wood', PROFILE.TYPICAL).perHour).toBeCloseTo(1980);
+        expect(typical.scale).toBeCloseTo(1);
+        const maxed = oakFirst.rateAt(TEA, PROFILE.MAXED);
+        expect(maxed.chosen.map(x => x.id)).not.toContain('item_elixir');
+        expect(maxed.scale).toBeCloseTo(1);
+        expect(maxed.xp.cooking).toBeGreaterThanOrEqual(typical.xp.cooking);
+    });
+
+    it('a level never takes longer at Maxed than at Typical, though Maxed takes a potion for its yield that starves the levelling', () => {
+        const c = content(0.5);
+        for (const first of [TEA, { token: 'token_oak' }]) {
+            const pace = paceAsked(c, first);
+            // Half again as much Tea is worth the starving, so Maxed takes the Elixir: fewer brews, less XP.
+            const typical = pace.rateAt(TEA, PROFILE.TYPICAL);
+            const maxed = pace.rateAt(TEA, PROFILE.MAXED);
+            expect(maxed.chosen.map(x => x.id)).toContain('item_elixir');
+            expect(maxed.short).toBe('item_elixir');
+            expect(maxed.xp.cooking).toBeLessThan(typical.xp.cooking);
+            // A hero levelling at Maxed may leave it off: it levels as Typical does.
+            const track = pace.trackOf('cooking');
+            expect(track.levels.length).toBeGreaterThan(0);
+            for (const row of track.levels) {
+                expect(row.hours.maxed).toBeLessThanOrEqual(row.hours.typical + 1e-9);
+                expect(row.hours.typical).toBeLessThanOrEqual(row.hours.bare + 1e-9);
+                expect(row.source.maxed).toMatchObject({ work: { key: 'token_still|recipe_tea|' }, profile: PROFILE.TYPICAL });
+                expect(row.source.maxed.xp).toBeCloseTo(typical.xp.cooking);
             }
         }
     });

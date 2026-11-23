@@ -22,7 +22,8 @@ import { STRICT_RINGS } from '../../../../src/config/worldTablesShape.js';
  *   (seeds that make seeds) takes its own input as in stock.
  * - **Level tracks**: for each skill, the hours each level takes: the XP it needs over the best
  *   XP an hour any work of the skill gives at that level (with the milestone perks held by then),
- *   fed the same way, among the work reachable by the stage that first asks for that level.
+ *   fed the same way, among the work reachable by the stage that first asks for that level, with
+ *   the profile's boosts or a lower profile's, whichever levels faster.
  * - **Path time**: for each entry, when it is first had from a new game: along the path the reach
  *   engine shows, a step starts once everything it needs is had and its level gates are reached
  *   (skills level side by side, each by its own hero: one job per hero), then takes its own time
@@ -50,6 +51,12 @@ const OPEN = Object.freeze({ path: Object.freeze([]), cost: 0 });
 
 /** A fighting style (melee, magic…): levelled by fights, never by work. */
 const isCombatStyle = (skill) => SKILLS[skill]?.layer === SKILL_LAYERS.COMBAT;
+
+/** The profiles whose setups a hero levelling at a profile may work with, its own first: the ones with no more on offer. */
+const levelledAs = (profile) => {
+    const at = PROFILES.indexOf(profile);
+    return at < 0 ? [profile] : PROFILES.slice(0, at + 1).reverse();
+};
 
 /** The kinds of boost a profile chooses per piece of work (perks come with levels). */
 const BOOSTED = [
@@ -138,6 +145,11 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     // ── supply: Bare first (it prices every boost), then the profiles that buy them ─────────────
     const supplyMemo = new Map();
     const fedMemo = new Map();
+    // Per open supply or fed question, innermost last: whether it read an item in stock from a question outside it.
+    const open = [];
+    const enter = () => open.push(false) - 1;
+    /** Closes the innermost question: whether its answer stands on its own (it read no stand-in from outside it). */
+    const leave = () => !open.pop();
     const madeBy = new Map();
     let profiles = null;
     let indexed = false;
@@ -163,6 +175,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     function fed(work, profile, cap, stack, level = null) {
         const key = `${work.key}|${profile}|${cap}|${level ?? ''}`;
         if (fedMemo.has(key)) return fedMemo.get(key);
+        enter();
         const { rate } = profiles.profileOf(work.target, profile, cap, level);
         let out;
         if (!rate.ok) {
@@ -184,18 +197,22 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const times = (m) => Object.fromEntries(Object.entries(m || {}).map(([k, v]) => [k, v * scale]));
             out = { rate, scale, items: times(rate.items), xp: times(rate.xp), tokens: times(rate.tokens), inputs: times(rate.inputs), short };
         }
-        if (!stack.size) fedMemo.set(key, out);
+        if (leave()) fedMemo.set(key, out);
         return out;
     }
 
     /** How fast the guild gets an item at a stage: `{ perHour, work }`, the best source then. */
-    function supplyOf(itemId, profile, cap, stack = new Set()) {
+    function supplyOf(itemId, profile, cap, stack = new Map()) {
         const key = `${itemId}|${profile}|${cap}`;
         if (supplyMemo.has(key)) return supplyMemo.get(key);
-        // An item asked for inside its own making (seeds for the tree that drops them) is in stock.
-        if (stack.has(itemId)) return { perHour: Infinity, work: null, loop: true };
+        // An item asked for inside its own making (seeds for the tree that drops them) is in stock, for
+        // every question inside that making: their answers are not kept.
+        if (stack.has(itemId)) {
+            for (let i = stack.get(itemId) + 1; i < open.length; i++) open[i] = true;
+            return { perHour: Infinity, work: null, loop: true };
+        }
         indexMakers();
-        stack.add(itemId);
+        stack.set(itemId, enter());
         let best = { perHour: 0, work: null };
         for (const work of madeBy.get(itemId) || []) {
             if (work.tier === null || work.tier > cap) continue;
@@ -204,7 +221,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             if (n > best.perHour) best = { perHour: n, work };
         }
         stack.delete(itemId);
-        if (!stack.size) supplyMemo.set(key, best);
+        if (leave()) supplyMemo.set(key, best);
         return best;
     }
 
@@ -246,7 +263,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     });
 
     /** A work's profile rate at a stage, fed. */
-    const workAt = (work, profile, cap, level = null) => fed(work, profile, cap, new Set(), level);
+    const workAt = (work, profile, cap, level = null) => fed(work, profile, cap, new Map(), level);
 
     /**
      * The level a hero levelling `skill` at `level` works a piece of work at, as far as its rate goes:
@@ -321,7 +338,11 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     /**
      * The best XP an hour any work of a skill gives a hero at a level, at a profile and stage: each
      * work rated with the milestone perks the hero holds by then (`at`: the level it was rated at,
-     * null for its own gate), so the ranking is kept per level band.
+     * null for its own gate), so the ranking is kept per level band. A hero levelling at a profile
+     * works each piece of work with its profile's setup or a lower profile's (`profile` on the
+     * answer), whichever gives more XP: a profile chooses boosts for the work's worth, and one that
+     * adds worth can slow the levelling (a potion that starves the work for more loot). So a level
+     * never takes longer at Maxed than at Typical, nor at Typical than at Bare.
      */
     function bestXp(skill, level, profile, cap) {
         const band = bandOf(skill, level);
@@ -330,10 +351,12 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         if (!ranked) {
             ranked = (skillsOfWork.get(skill) || [])
                 .filter(w => w.tier !== null && w.tier <= cap)
-                .map(w => {
+                .flatMap(w => {
                     const at = bandLevel(w, skill, band);
-                    const f = workAt(w, profile, cap, at);
-                    return { work: w, at, gate: f.rate.gates?.needed ?? 1, xp: f.xp[skill] || 0, scale: f.scale, short: f.short };
+                    return levelledAs(profile).map(as => {
+                        const f = workAt(w, as, cap, at);
+                        return { work: w, at, profile: as, gate: f.rate.gates?.needed ?? 1, xp: f.xp[skill] || 0, scale: f.scale, short: f.short };
+                    });
                 })
                 .filter(x => x.xp > 0)
                 .sort((a, b) => a.gate - b.gate);
@@ -1229,12 +1252,13 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                     const best = bestXp(skill, level, profile, tier);
                     if (!best.work) { row.profiles[profile] = null; continue; }
                     const bareRate = workAt(best.work, PROFILE.BARE, tier, best.at);
+                    // What the hero levels with: its own profile's boosts, or a profile's with less where that levels faster.
                     const kinds = {};
                     for (const kind of BOOSTED) {
-                        const g = kindGain(best.work, profile, tier, kind, best.at);
+                        const g = kindGain(best.work, best.profile, tier, kind, best.at);
                         if (g) kinds[kind] = g;
                     }
-                    const perks = (best.work && workAt(best.work, profile, tier, best.at).rate.factors || []).filter(f => boostKindOf(f) === BOOST_KIND.PERK && f.axes.length);
+                    const perks = (best.work && workAt(best.work, best.profile, tier, best.at).rate.factors || []).filter(f => boostKindOf(f) === BOOST_KIND.PERK && f.axes.length);
                     if (perks.length) kinds[BOOST_KIND.PERK] = { gain: null, names: perks.map(f => f.name) };
                     row.profiles[profile] = {
                         work: best.work, name: workName(best.work), xp: best.xp, bareXp: bareRate.xp[skill] || 0,
