@@ -1,4 +1,4 @@
-Status: draft (interviewed 2026-11-21: Faith settled; 2026-11-22: Taming cut, Crime, Summoning and Science in a deep dive with the owner)
+Status: draft (interviewed 2026-11-21: Faith settled; 2026-11-22: Taming cut, Crime settled in a deep dive; Summoning and Science next)
 
 # Five skills: what each one is for
 
@@ -42,21 +42,33 @@ fights, and Summoning's level decides which a hero can use. A summoned boss is
 a convenience (the same boss and loot, where and when you want), and it can
 give access to a boss whose camp the player has not found yet.
 
-## Crime: locks, chests and contraband
+## Crime: stealing instead of fighting
 
-A gathering-like skill: pick locked chests and caches the world places (the
-world's extras by ring), with lockpicks. To design: what's locked, lockpick
-tiers, what Crime's loot is, how it relates to Stealth (A18).
+**Deep dive 2026-11-22 (owner).** The Mansion-to-rob direction is dropped: it
+was gathering under another name. Crime's one mechanic is **stealing from enemy
+camps instead of fighting them**, for a different set of goods.
 
+- **The Hideout.** A building with a reach. A Crime hero is ordered to the
+  Hideout and works there; each cycle they steal from a camp in its reach,
+  the one the player picks on the Hideout's card (like choosing a recipe).
+  This is what puts a hero to Crime.
+- **Camps only.** Regular enemy camps; bosses are fought, never robbed.
+- **Its own drops, per enemy.** Every camp has a fight table and a **steal
+  table**, written per enemy by the content agent: the alternate drops a
+  player may prefer. Owner's example: fight the Cows for Bones, Meat and
+  Leather, or steal from their pasture for Seeds, Wheat and Milk.
+- **A theft leaves the enemy in place**: thieves and fighters can share a
+  camp.
+- **Caught odds: Crime level against the camp.** Each camp has a Crime level;
+  below it a thief is caught often, above it rarely.
+- **Caught means a fight.** A catch spawns an enemy on top of the camp (it may
+  go past the camp's cap) that stays there. The thief fights it, or flees and
+  leaves it for another hero. **Until it is defeated the camp can't be robbed
+  again.**
+- **Stealing only.** Crime makes nothing else.
 
-**Interview 2026-11-21 (direction, not final; the owner will revisit):** Crime
-has its own Tokens, such as a **Mansion that is built and robbed**: built from
-a Foundation like other buildings (tiers like Cottage, Manor, Mansion,
-Palace), robbed by a Crime hero like a node with lockpicks as the tool (better
-Mansions need better picks), running out after a few robberies and restocking
-after a rest. A robbery sometimes calls the guard: a small fight the hero must
-win or lose the haul. The loot is other skills' rare goods (gems, rare woods,
-summon items, Motes, a chance of gear), scaled by tier.
+To design with the content agent: the Hideout's levels and variants, each
+camp's Crime level and steal table, Crime's level climb.
 
 ## Taming: cut
 
