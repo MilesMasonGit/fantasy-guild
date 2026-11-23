@@ -84,7 +84,7 @@ const ENEMY = { combatType: 'magic', level: 10, hit: 3, accuracy: 0, attackSpeed
 const numbers = (h) => ({
     hit: heroBlow(h, ENEMY).exact,
     base: heroBaseDamage(h),
-    swingMs: heroAttackSpeedMs(h),
+    attackEveryMs: heroAttackSpeedMs(h),
     accuracy: heroAccuracy(h),
     miss: heroMissChance(h, ENEMY)
 });
@@ -130,8 +130,8 @@ describe('a combat star helps only the style it names', () => {
     it('−25 % Swing Time for Ranged makes an archer swing a quarter sooner, and nobody else', () => {
         const before = [melee, archer, mage].map(numbers);
         holdStar([rule(EFFECT_TYPES.SWING_TIME, -0.25, 'percentage', 'ranged')]);
-        expect(heroAttackSpeedMs(archer)).toBe(Math.round(before[1].swingMs * 0.75));
-        expect(heroAttackSpeedMs(archer)).toBeLessThan(before[1].swingMs);
+        expect(heroAttackSpeedMs(archer)).toBe(Math.round(before[1].attackEveryMs * 0.75));
+        expect(heroAttackSpeedMs(archer)).toBeLessThan(before[1].attackEveryMs);
         expect(numbers(melee)).toEqual(before[0]);
         expect(numbers(mage)).toEqual(before[2]);
     });
@@ -190,7 +190,7 @@ describe('a combat star helps only the style it names', () => {
         ]);
         const after = heroSide(melee);
         expect(after.hit).toBeCloseTo(before.hit * 1.5, 9);
-        expect(after.swingMs).toBe(Math.round(before.swingMs * 0.75));
+        expect(after.attackEveryMs).toBe(Math.round(before.attackEveryMs * 0.75));
         expect(heroSide(archer)).toEqual(archerBefore);
     });
 
@@ -239,7 +239,7 @@ describe('the words: palette, rule text and the star', () => {
 
         const cases = [
             [rule(EFFECT_TYPES.DAMAGE, 0.1, 'percentage', 'melee'), 'Every Melee fighter hits harder.', 'Damage +10%'],
-            [rule(EFFECT_TYPES.SWING_TIME, -0.1, 'percentage', 'ranged'), 'Every Ranged fighter swings faster.', 'Attack Speed +10%'],
+            [rule(EFFECT_TYPES.SWING_TIME, -0.1, 'percentage', 'ranged'), 'Every Ranged fighter attacks faster.', 'Attack Speed +10%'],
             [rule(EFFECT_TYPES.ACCURACY, 5, 'flat', 'magic'), 'Every Magic fighter misses less.', 'Accuracy +5%'],
             [rule(EFFECT_TYPES.DAMAGE, -0.1, 'percentage', 'stealth'), 'Every Stealth fighter hits softer.', 'Damage −10%']
         ];

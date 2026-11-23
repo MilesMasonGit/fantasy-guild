@@ -15,8 +15,8 @@ export const EFFECT_TYPES = {
     // Percent off the bearer's hits in one combat style (the category); worn gear's `damageCut`
     // registers it, no Rules row offers it — CombatFormulas.styleDamageCut.
     STYLE_DAMAGE_CUT: 'STYLE_DAMAGE_CUT',
-    // ⚠️ Retired with damage types: nothing reads them, the palette no longer offers them, and the
-    // content audits name an effect that still provides one.
+    // ⚠️ Gone with damage types: no reader and no Rules row, so the content audits name an effect
+    // that still provides one as a number the game does not have. Only tests use these names.
     ARMOR: 'ARMOR',
     RESIST_FLAT: 'RESIST_FLAT',
     PIERCE: 'PIERCE',

@@ -75,13 +75,12 @@ ${Object.entries(globals.sellModifiers).map(([type, mod]) => `- ${type}: ${mod >
 7. Recipes consume 1+ items and produce higher-value items.
 8. Specify \`levelRequirement\` on Recipes and \`skillRequirement\` on Tasks.
 9. Gathering and production tasks can specify an \`acceptedToolType\` (e.g. 'Pickaxe', 'Axe', 'Sickle') and a \`minToolTier\`. Running the task consumes durability of that tool, which adds a tool depreciation tax to the task cost.
-10. Encounters MUST NOT have inputs, outputs. Instead, they MUST have an "assignedEnemies" array whose "spawnChance" values sum to exactly 1.0.
-11. Enemies hold the actual loot in their "drops" array, not the Encounter.
-12. Stations do not have inputs/outputs. They just define a "skill" and "skillCap" that determines what recipes can be crafted there.
-13. baseTickTime should be 5000-30000ms (5-30 seconds). Higher level = can be longer.
-14. Tasks and Recipes should form chains: Gather (Task) → Process (Task) → Craft (Recipe). Each tier adds value.
-15. You can optionally create "effects" (modifiers like THORNS_REFLECT, SPEED, DAMAGE) and assign their names to Items (assignedEffectName) or Enemies (assignedEffectNames).
-16. You can generate "areas" (biomes) and assign tasks, enemies, encounters and stations to them using "areaName".
+10. Stations do not have inputs/outputs. They just define a "skill" and "skillCap" that determines what recipes can be crafted there.
+11. baseTickTime should be 5000-30000ms (5-30 seconds). Higher level = can be longer.
+12. Tasks and Recipes should form chains: Gather (Task) → Process (Task) → Craft (Recipe). Each tier adds value.
+13. You can optionally create "effects" (modifiers like THORNS_REFLECT, SPEED, DAMAGE) and assign their names to Items (assignedEffectName).
+14. You can generate "areas" (biomes) and assign tasks and stations to them using "areaName".
+15. Do not generate enemies or encounters: enemies are Tokens, authored in the Token editor.
 
 ## EXISTING ITEMS (reference these as inputs when appropriate)
 ${itemList || '  (none yet)'}
@@ -128,20 +127,6 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no expla
       "description": "string"
     }
   ],
-  "enemies": [
-    {
-      "name": "string",
-      "areaName": "string_or_omit",
-      "tier": 1,
-      "combatType": "Melee|Ranged|Magic",
-      "combatStat": 1,
-      "hp": 10,
-      "attackSpeed": 2000,
-      "xpAwarded": 10,
-      "assignedEffectNames": ["string_or_omit"],
-      "drops": [{ "itemName": "string", "minQty": 1, "maxQty": 2, "chance": 1.0 }]
-    }
-  ],
   "recipes": [
     {
       "name": "string",
@@ -169,13 +154,6 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no expla
       "outputs": [{ "itemName": "string", "quantity": 1, "chance": 1.0, "isPrimarySource": true }]
     }
   ],
-  "encounters": [
-    {
-      "name": "string",
-      "areaName": "string_or_omit",
-      "assignedEnemies": [{ "enemyName": "string", "spawnChance": 0.5 }]
-    }
-  ],
   "stations": [
     {
       "name": "string",
@@ -186,7 +164,7 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no expla
   ]
 }
 
-IMPORTANT: In inputs/outputs/drops/assignedEnemies/assignedEffectName/targetIdName/mapFragmentTargetName/idName, use names NOT IDs. The system will resolve names to IDs after import.`;
+IMPORTANT: In inputs/outputs/assignedEffectName/targetIdName/mapFragmentTargetName/idName, use names NOT IDs. The system will resolve names to IDs after import.`;
 }
 
 export function buildUserPrompt(request, areas) {
@@ -212,19 +190,14 @@ export function buildUserPrompt(request, areas) {
     parts.push(`Skill level range: ${request.levelMin || 1} to ${request.levelMax || 15}`);
     parts.push(`Generate 3-5 gathering tasks, 2-3 processing chains, and all items needed.`);
     parts.push(`Chains should be 2-3 tiers deep (gather → process → craft).`);
-  } else if (request.type === 'generate_combat') {
-    parts.push(`Generate combat encounters for an area.`);
-    parts.push(`Enemy Tier: ${request.tier || 1}`);
-    parts.push(`Generate 3-5 distinct Enemies that fit the area theme, and 1-3 Combat Cards that act as encounter decks using these enemies.`);
-    parts.push(`Include any new items dropped by these enemies.`);
   } else if (request.type === 'generate_single') {
     parts.push(`Generate details for EXACTLY ONE entity of type "${request.entityType}".`);
     parts.push(`Entity Name: "${request.name}"`);
     if (request.skill) parts.push(`Associated Skill: ${request.skill}`);
     if (request.levelRequirement) parts.push(`Level/Skill Requirement: ${request.levelRequirement}`);
     if (request.prompt) parts.push(`User request / Theme / Details: ${request.prompt}`);
-    parts.push(`Please fill out all basic configurations: skill, level requirement, energy cost, inputs, and outputs (or drops/assignedEnemies).`);
-    parts.push(`IMPORTANT: Check the list of EXISTING ITEMS. Do NOT generate new items if you can reuse existing items for inputs/outputs/drops. Only generate new items if absolutely necessary for the theme of this single entity.`);
+    parts.push(`Please fill out all basic configurations: skill, level requirement, energy cost, inputs, and outputs.`);
+    parts.push(`IMPORTANT: Check the list of EXISTING ITEMS. Do NOT generate new items if you can reuse existing items for inputs/outputs. Only generate new items if absolutely necessary for the theme of this single entity.`);
   } else if (request.type === 'custom') {
     parts.push(request.prompt);
   }
@@ -285,9 +258,7 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
   const storeActions = entityStore.getState();
   const addItem = storeActions.addItem;
   const addTask = storeActions.addTask;
-  const addEnemy = storeActions.addEnemy;
   const addRecipe = storeActions.addRecipe;
-  const addEncounter = storeActions.addEncounter;
   const addStation = storeActions.addStation;
   const addEffect = storeActions.addEffect;
   const addArea = storeActions.addArea;
@@ -412,58 +383,8 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
     }
   }
 
-  const newEnemyIds = {};
-  const enemyNameToId = {};
-  for (const enemy of (generated.enemies || [])) {
-    const resolvedDrops = (enemy.drops || []).map((drop) => ({
-      itemId: nameToId[drop.itemName?.toLowerCase()] || '',
-      minQty: drop.minQty || 1,
-      maxQty: drop.maxQty || 1,
-      chance: drop.chance ?? 1,
-    })).filter((drop) => drop.itemId);
-    
-    const resolvedEffects = (enemy.assignedEffectNames || [])
-      .map(name => effectNameToId[name?.toLowerCase()])
-      .filter(id => id);
-
-    const resolvedAreaId = areaNameToId[enemy.areaName?.toLowerCase()] || areaNameToId[enemy.biomeName?.toLowerCase()] || areaId || '';
-
-    if (activeEntityType === 'enemy' && activeId) {
-      entityStore.getState().updateEnemy(activeId, {
-        name: enemy.name,
-        biomeId: resolvedAreaId,
-        tier: enemy.tier || 1,
-        combatType: enemy.combatType || 'Melee',
-        combatStat: enemy.combatStat || 1,
-        hp: enemy.hp || 10,
-        attackSpeed: enemy.attackSpeed || 2000,
-        xpAwarded: enemy.xpAwarded || 0,
-        drops: resolvedDrops,
-        assignedEffects: resolvedEffects,
-      });
-      newEnemyIds[enemy.name] = activeId;
-      enemyNameToId[enemy.name.toLowerCase()] = activeId;
-    } else {
-      const id = addEnemy({
-        name: enemy.name,
-        biomeId: resolvedAreaId,
-        tier: enemy.tier || 1,
-        combatType: enemy.combatType || 'Melee',
-        combatStat: enemy.combatStat || 1,
-        hp: enemy.hp || 10,
-        attackSpeed: enemy.attackSpeed || 2000,
-        xpAwarded: enemy.xpAwarded || 0,
-        drops: resolvedDrops,
-        assignedEffects: resolvedEffects,
-      });
-      newEnemyIds[enemy.name] = id;
-      enemyNameToId[enemy.name.toLowerCase()] = id;
-    }
-  }
-
   const newTaskIds = [];
   const newRecipeIds = [];
-  const newEncounterIds = [];
   const newStationIds = [];
   let tasksUpdatedCount = 0;
   let recipesUpdatedCount = 0;
@@ -558,22 +479,6 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
     }
   }
 
-  for (const enc of (generated.encounters || [])) {
-    const resolvedAssignedEnemies = (enc.assignedEnemies || []).map((e) => ({
-      enemyId: enemyNameToId[e.enemyName?.toLowerCase()] || '',
-      spawnChance: e.spawnChance || 1,
-    })).filter((e) => e.enemyId);
-
-    const resolvedAreaId = areaNameToId[enc.areaName?.toLowerCase()] || areaNameToId[enc.area?.toLowerCase()] || areaId || '';
-
-    const id = addEncounter({
-      name: enc.name,
-      areaId: resolvedAreaId,
-      assignedEnemies: resolvedAssignedEnemies,
-    });
-    newEncounterIds.push(id);
-  }
-
   for (const st of (generated.stations || generated.workstations || [])) {
     const resolvedAreaId = areaNameToId[st.areaName?.toLowerCase()] || areaNameToId[st.area?.toLowerCase()] || areaId || '';
 
@@ -599,18 +504,14 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
   return {
     areasCreated: Object.keys(newAreaIds).length,
     itemsCreated: Object.keys(newItemIds).length - ((activeEntityType === 'item' && activeId) ? 1 : 0),
-    enemiesCreated: Object.keys(newEnemyIds).length - ((activeEntityType === 'enemy' && activeId) ? 1 : 0),
     tasksCreated: newTaskIds.length - tasksUpdatedCount,
     recipesCreated: newRecipeIds.length - recipesUpdatedCount,
-    encountersCreated: newEncounterIds.length,
     stationsCreated: newStationIds.length,
     tasksUpdated: tasksUpdatedCount,
     recipesUpdated: recipesUpdatedCount,
     itemsUpdated: (activeEntityType === 'item' && activeId) ? 1 : 0,
-    enemiesUpdated: (activeEntityType === 'enemy' && activeId) ? 1 : 0,
     areaIds: newAreaIds,
     itemIds: newItemIds,
-    enemyIds: newEnemyIds,
     taskIds: newTaskIds,
   };
 }

@@ -11,7 +11,7 @@ import { statusBlockOf } from '../effects/effectLibrary.js';
 import { isConsumableCategory } from '../../config/registries/equipmentCategories.js';
 import { isCarriedKind } from '../../config/registries/carriedKinds.js';
 import { statementsOf, stationSkillOf, KEYWORD } from '../effects/statements.js';
-import { TARGET_CATEGORIES, EFFECT_TYPES } from '../effects/constants.js';
+import { TARGET_CATEGORIES } from '../effects/constants.js';
 
 /**
  * The one rule behind "this names a skill or job that does not exist", shared
@@ -73,19 +73,17 @@ function statementFindings(def, push, isItemId = null) {
 }
 
 /**
- * Findings for a library effect's rows: a row retired with damage types, or a Type row aimed at a
- * type that does not exist. Read off the library, not each bearer, so an effect carried by six
+ * Findings for a library effect's rows: a number the game has no row for (flat Armor, Resistance and
+ * Pierce, gone with damage types), or a Type row aimed at a type that does not exist. Read off the library, not each bearer, so an effect carried by six
  * pieces of armour is named once.
  */
 function effectRowFindings(entry, push) {
     for (const statement of statementsOf(entry)) {
         const payload = statement?.payload || {};
-        const row = statement?.keyword === KEYWORD.PROVIDES ? getPaletteEntry(payload.type) : null;
-        if (row?.retired) {
-            const instead = row.type === EFFECT_TYPES.PIERCE
-                ? 'Land a Sunder status instead (a status that provides Sunder)'
-                : 'Use Type Resistance % instead (Physical for metal armour; a piece of armour can carry its own resistances)';
-            push('statements', `provides ${row.label}, retired with damage types: it does nothing. ${instead}, or delete the rule in the CMS.`);
+        const provides = statement?.keyword === KEYWORD.PROVIDES;
+        const row = provides ? getPaletteEntry(payload.type) : null;
+        if (provides && hasValue(payload.type) && !row) {
+            push('statements', `provides "${payload.type}", which the game does not have: it does nothing. Delete the rule in the CMS.`);
         }
         if (row?.categories === 'damageType' && hasValue(payload.category) && !isTypeOrGroupId(payload.category)) {
             push('statements', `has a rule aimed at the damage type "${payload.category}", which does not exist — the rule matches nothing. Pick the type again in the CMS.`);
@@ -155,7 +153,7 @@ function enemyKindFindings(def, push) {
     }
     const used = known.slice(0, MAX_ENEMY_KINDS);
     if (used.length === 2 && kindsClash(used[0], used[1])) {
-        push('enemy.kinds', `is both ${used[0]} and ${used[1]}, which set different swing speeds — the second wins. Untick one in the CMS.`);
+        push('enemy.kinds', `is both ${used[0]} and ${used[1]}, which set different attack speeds — the second wins. Untick one in the CMS.`);
     }
 }
 

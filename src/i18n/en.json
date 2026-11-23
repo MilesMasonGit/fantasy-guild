@@ -174,17 +174,11 @@
         "worksMore": "Works {list} and {n} more",
         "restores": "Restores {amount} HP",
         "stat": {
-            "damage": "DMG",
+            "damage": "Damage",
             "type": "Type",
             "skill": "Skill",
-            "speed": "Speed",
-            "speedValue": "{speed} ({time})",
+            "attackEvery": "Attacks every",
             "hands": "Hands"
-        },
-        "speedName": {
-            "fast": "Fast",
-            "normal": "Normal",
-            "slow": "Slow"
         },
         "arrow": "Arrow: +{damage} {type} a shot, from a bow",
         "offHand": "Off hand: beside a weapon, never swung",
@@ -447,17 +441,17 @@
             "lands": "{status}!"
         },
         "moves": {
-            "unnamed": "Attack",
+            "unnamed": "Strike",
             "selfAttack": "{effect} on itself, for one attack",
-            "selfSwing": "{effect} on itself, for the swing",
+            "selfThisAttack": "{effect} on itself, for this attack",
             "selfFight": "{effect} on itself, for the fight",
             "selfStatus": "{effect} on itself",
             "heroAttack": "{effect} on the hero, for one attack",
-            "heroSwing": "{effect} on the hero, for the swing",
+            "heroThisAttack": "{effect} on the hero, for this attack",
             "heroFight": "{effect} on the hero, for the fight",
             "heroStatus": "{effect} on the hero",
             "noHit": "No hit",
-            "share": "{n}% of its swings",
+            "share": "{n}% of its attacks",
             "lastMove": "Its last move"
         },
         "types": {
@@ -507,7 +501,7 @@
             "won": "Won",
             "lost": "Lost",
             "hit": "Hit",
-            "swing": "Swing",
+            "attackEvery": "Attacks every",
             "resist": "Resist"
         },
         "tip": {
@@ -518,7 +512,7 @@
             "hp": "{name}: {cur} of {max} health",
             "heroHit": "Hits for {hit} before the matchup and the enemy's resistances",
             "enemyHit": "Hits for {hit} before the matchup and your resistances",
-            "enemyMoves": "Each swing makes one of its moves, picked at random",
+            "enemyMoves": "Each attack makes one of its moves, picked at random",
             "weapon": "{item}: {n}",
             "fist": "Fist: 1",
             "levelStep": "Combat level: +{n}",
@@ -534,7 +528,7 @@
             "heroResists": "What {name} resists, from gear and elixirs",
             "enemyResists": "What {name} resists and is weak to",
             "fraction": "A fraction rolls: 1.5 hits 1 or 2, half the time each",
-            "swing": "Swings every {time}",
+            "attackEvery": "Attacks every {time}",
             "elixir": {
                 "one": "{item}: {count} fight left",
                 "other": "{item}: {count} fights left"
@@ -557,7 +551,7 @@
             "resists": "Resists",
             "weakTo": "Weak to",
             "noResists": "Nothing",
-            "swing": "Swing",
+            "attacks": "Attacks",
             "kinds": "Kinds",
             "moves": "Moves",
             "every": "every {time}",
@@ -566,7 +560,7 @@
         "kinds": {
             "armoured": {
                 "name": "Armoured",
-                "tip": "Resists Physical 50%, slow swings"
+                "tip": "Resists Physical 50%, attacks every 4s"
             },
             "nimble": {
                 "name": "Nimble",
@@ -574,11 +568,11 @@
             },
             "swift": {
                 "name": "Swift",
-                "tip": "Small hits every 2s"
+                "tip": "Small hits, attacks every 2s"
             },
             "brute": {
                 "name": "Brute",
-                "tip": "Big hits every 4s"
+                "tip": "Big hits, attacks every 4s"
             },
             "venomous": {
                 "name": "Venomous",
@@ -725,7 +719,6 @@
             "rangeTip": "What one landed hit deals against an enemy of each style, before its resistances",
             "rangeVs": "Against {style}: {n}",
             "crit": "A critical hit deals {n}",
-            "swing": "Swing",
             "accuracy": "Accuracy",
             "accuracyTip": "Taken off the hero's chance to miss, never below {min}% or above {max}%",
             "dodge": "Dodge",

@@ -203,6 +203,6 @@ describe('the audit names a kind the game does not have, a third kind, or a clas
         expect(fields(['armoured', 'nimble'])).toEqual([]);
         expect(fields(['giant'])[0]).toContain('"giant"');
         expect(fields(['armoured', 'nimble', 'venomous'])[0]).toContain('at most 2');
-        expect(fields(['swift', 'armoured'])[0]).toContain('different swing speeds');
+        expect(fields(['swift', 'armoured'])[0]).toContain('different attack speeds');
     });
 });

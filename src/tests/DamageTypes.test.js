@@ -24,6 +24,7 @@ import { makeStatement, KEYWORD, paletteForKeyword } from '../systems/effects/st
 import { slotsOf } from '../../cms/src/engine/ledger/statementSlots.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
+import { getPaletteEntry } from '../config/registries/modifierPalette.js';
 import { ModifierAggregator } from '../systems/effects/ModifierAggregator.js';
 import { findUnknownRefs } from '../systems/core/unknownRefRule.js';
 import * as CF from '../systems/combat/CombatFormulas.js';
@@ -395,9 +396,10 @@ describe('the Rules rows', () => {
         expect(renderStatement(provides(EFFECT_TYPES.TYPE_RESIST, -25, 'fire'))).toMatch(/^Provides a 25% Fire weakness in combat/);
     });
 
-    it('a retired row on a rule keeps its name in the picker, marked retired', () => {
+    it('Armor, Resistance and Pierce have no row at all; a rule still naming one shows in the picker as doing nothing', () => {
+        for (const gone of [EFFECT_TYPES.ARMOR, EFFECT_TYPES.RESIST_FLAT, EFFECT_TYPES.PIERCE]) expect(getPaletteEntry(gone)).toBeNull();
         const slot = slotsOf(provides(EFFECT_TYPES.ARMOR, 1), {}).find(s => s.id === 'type');
-        expect(slot.options.find(o => o.id === EFFECT_TYPES.ARMOR)?.label).toBe('Armor (retired)');
+        expect(slot.options.find(o => o.id === EFFECT_TYPES.ARMOR)?.label).toBe('ARMOR (does nothing)');
     });
 });
 
@@ -424,7 +426,7 @@ describe('the audits', () => {
         expect(text.some(t => t.startsWith('t_bad|enemy.pierce'))).toBe(true);
         expect(text.some(t => t.startsWith('i_wand|damageType'))).toBe(true);
         expect(text.filter(t => t.startsWith('i_arrow|arrow'))).toHaveLength(3);
-        expect(text.some(t => t.startsWith('e_plate|statements') && t.includes('Armor'))).toBe(true);
+        expect(text.some(t => t.startsWith('e_plate|statements') && t.includes('"ARMOR", which the game does not have'))).toBe(true);
         expect(text.some(t => t.startsWith('e_cloak|statements') && t.includes('"earth"'))).toBe(true);
         expect(findings.find(f => f.entityId === 'e_plate').entityType).toBe('Effect');
     });

@@ -7,8 +7,8 @@ import { lengthText } from '../utils/Formatters.js';
 import { attackSpeedMs } from '../config/FormulaRegistry.js';
 
 /**
- * A weapon's tooltip is a stat block of short label and value rows, its speed in the seconds the
- * enemy card and the fight panel use.
+ * A weapon's tooltip is a stat block of short label and value rows: Damage, and how often it
+ * attacks in the seconds the enemy card and the fight panel use.
  */
 
 const weapon = (extra) => ({ id: 'sb_weapon', equipSlot: 'hand', styles: ['melee'], damage: 2, ...extra });
@@ -17,9 +17,9 @@ const rows = (item) => itemTipFacts(item).stats.map(({ label, value }) => [label
 afterEach(cleanup);
 
 describe('a weapon\'s stat block', () => {
-    it('lists damage, type, skill and speed, in that order', () => {
+    it('lists damage, type, skill and how often it attacks, in that order', () => {
         expect(rows(weapon({ damage: 3, speed: 'slow' }))).toEqual([
-            ['DMG', '3'], ['Type', 'Slash'], ['Skill', 'Melee'], ['Speed', 'Slow (4s)']
+            ['Damage', '3'], ['Type', 'Slash'], ['Skill', 'Melee'], ['Attacks every', '4s']
         ]);
     });
 
@@ -28,22 +28,22 @@ describe('a weapon\'s stat block', () => {
         expect(rows(weapon({ speed: 'slow' })).map(([label]) => label)).not.toContain('Hands');
     });
 
-    it.each([['fast', 'Fast (2s)'], ['normal', 'Normal (3s)'], ['slow', 'Slow (4s)']])('reads speed %s', (speed, value) => {
-        expect(Object.fromEntries(rows(weapon({ speed }))).Speed).toBe(value);
+    it.each([['fast', '2s'], ['normal', '3s'], ['slow', '4s']])('a %s weapon attacks every %s', (speed, value) => {
+        expect(Object.fromEntries(rows(weapon({ speed })))['Attacks every']).toBe(value);
     });
 
-    it('an unnamed or unknown speed reads as the normal swing the fight gives it', () => {
-        expect(Object.fromEntries(rows(weapon({}))).Speed).toBe('Normal (3s)');
-        expect(Object.fromEntries(rows(weapon({ speed: 'blazing' }))).Speed).toBe('Normal (3s)');
+    it('an unnamed or unknown speed attacks as often as the fight makes it: every 3s', () => {
+        expect(Object.fromEntries(rows(weapon({})))['Attacks every']).toBe('3s');
+        expect(Object.fromEntries(rows(weapon({ speed: 'blazing' })))['Attacks every']).toBe('3s');
     });
 
     it('agrees with the seconds the combat cards show', () => {
-        expect(Object.fromEntries(rows(weapon({ speed: 'slow' }))).Speed).toContain(lengthText(attackSpeedMs('slow')));
+        expect(Object.fromEntries(rows(weapon({ speed: 'slow' })))['Attacks every']).toBe(lengthText(attackSpeedMs('slow')));
     });
 
     it('names its own damage type and the style it fights in', () => {
         expect(rows(weapon({ styles: ['magic'], damage: 2, damageType: 'fire' })).slice(0, 3))
-            .toEqual([['DMG', '2'], ['Type', 'Fire'], ['Skill', 'Magic']]);
+            .toEqual([['Damage', '2'], ['Type', 'Fire'], ['Skill', 'Magic']]);
     });
 
     it('⚠️ is absent on what is not a weapon', () => {
@@ -55,12 +55,12 @@ describe('the tooltip draws it', () => {
     it('as two columns of dim labels and bright values, in place of the old sentences', () => {
         const { container } = render(React.createElement(ItemTipContent, { item: weapon({ damage: 3, speed: 'slow', hands: 2 }) }));
         const block = container.querySelector('[data-item-tip-stats]');
-        expect(block.className).toContain('grid-cols-[48px_1fr]');
+        expect(block.className).toContain('grid-cols-[auto_1fr]');
         const cells = [...block.children];
-        expect(cells.map(c => c.textContent)).toEqual(['DMG', '3', 'Type', 'Slash', 'Skill', 'Melee', 'Speed', 'Slow (4s)', 'Hands', '2']);
+        expect(cells.map(c => c.textContent)).toEqual(['Damage', '3', 'Type', 'Slash', 'Skill', 'Melee', 'Attacks every', '4s', 'Hands', '2']);
         cells.forEach((cell, i) => expect(cell.className).toContain(i % 2 ? 'text-white' : 'text-gi-muted'));
         const text = container.textContent;
-        for (const gone of ['Hits ', 'swing, every', 'Takes both hands']) expect(text).not.toContain(gone);
+        for (const gone of ['Hits ', 'swing', 'Swing', 'DMG', 'Speed', 'Takes both hands']) expect(text).not.toContain(gone);
     });
 
     it('⚠️ draws no block on an item with no stats', () => {

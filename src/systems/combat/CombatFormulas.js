@@ -262,7 +262,7 @@ export function damageMultiplierOf(entity) {
  * and the guild's stars, for the style they fight in.
  */
 export function heroDamageMultiplier(hero, style = getHeroCombatStyle(hero)) {
-    return 1 + (heroPercentBucket(hero, EFFECT_TYPES.DAMAGE, style) - 1);
+    return heroPercentBucket(hero, EFFECT_TYPES.DAMAGE, style);
 }
 
 // --- Damage types ------------------------------------------------------------------------------

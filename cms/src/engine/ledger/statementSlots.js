@@ -314,7 +314,9 @@ function payloadSlots(statement, ctx) {
                         ...paletteForKeyword(KEYWORD.PROVIDES, undefined, { onToken: !!ctx.onToken }).map(p => option(p.type, p.label, p.hint)),
                         ...(entry?.retired ? [option(entry.type, `${entry.label} (retired)`, entry.hint)] : []),
                         // Kept on a Token that already holds one, so the value still shows (the content check names it).
-                        ...(entry?.heroOrGuild && ctx.onToken ? [option(entry.type, entry.label, entry.hint)] : [])
+                        ...(entry?.heroOrGuild && ctx.onToken ? [option(entry.type, entry.label, entry.hint)] : []),
+                        // A number the game no longer has (flat Armor, gone with damage types) still shows, so it can be seen and deleted.
+                        ...(!entry && payload.type ? [option(payload.type, `${payload.type} (does nothing)`, 'The game has no such number: delete the rule.')] : [])
                     ],
                     patch: v => ({ payload: payloadForAxis(v) })
                 },

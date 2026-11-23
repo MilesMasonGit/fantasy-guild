@@ -70,7 +70,7 @@ describe('⭐ the Token editor\'s Moves block', () => {
         store().updateToken(COW, { enemy: plain });
     });
 
-    it('an enemy with none says it swings a plain Physical hit, and writes no key', () => {
+    it('an enemy with none says it makes a plain Physical Strike, and writes no key', () => {
         const { container } = tokenEditor(COW);
         expect(field(container, 'enemy-moves')).not.toBeNull();
         expect(field(container, 'enemy-move-0')).toBeNull();
@@ -108,7 +108,7 @@ describe('⭐ the Token editor\'s Moves block', () => {
         expect(container.querySelector('[data-field$="-problem"]')).toBeNull();
     });
 
-    it('a weight above 1 is written, 1 or blank drops it; "for the swing" is offered only on itself; removing the last move drops the key', () => {
+    it('a weight above 1 is written, 1 or blank drops it; "for this attack" is offered only on itself; removing the last move drops the key', () => {
         const flutter = flutterEffect();
         const { container } = tokenEditor(COW);
         fireEvent.click(field(container, 'enemy-move-add'));
@@ -121,9 +121,10 @@ describe('⭐ the Token editor\'s Moves block', () => {
         expect(lasts()).toEqual(['attack', 'fight']);
         fireEvent.change(field(container, 'enemy-move-0-target'), { target: { value: 'self' } });
         expect(lasts()).toEqual(['attack', 'swing', 'fight']);
+        expect([...field(container, 'enemy-move-0-lasts').options].map(o => o.textContent)).toEqual(['For one attack', 'For this attack', 'For the fight']);
         fireEvent.change(field(container, 'enemy-move-0-lasts'), { target: { value: 'swing' } });
         expect(store().tokens[COW].enemy.moves[0]).toMatchObject({ effectId: flutter, target: 'self', lasts: 'swing' });
-        // Back on the hero, "for the swing" goes.
+        // Back on the hero, "for this attack" goes.
         fireEvent.change(field(container, 'enemy-move-0-target'), { target: { value: 'hero' } });
         expect(store().tokens[COW].enemy.moves[0]).not.toHaveProperty('lasts');
         fireEvent.click(field(container, 'enemy-move-0-remove'));
@@ -134,7 +135,7 @@ describe('⭐ the Token editor\'s Moves block', () => {
         const { container } = tokenEditor(COW);
         fireEvent.click(field(container, 'enemy-move-add'));
         fireEvent.click(field(container, 'enemy-move-0-hits'));
-        expect(field(container, 'enemy-move-0-problem').textContent).toBe('This move neither hits nor lands an effect — the swing does nothing. Tick Hits or pick an effect in the CMS.');
+        expect(field(container, 'enemy-move-0-problem').textContent).toBe('This move neither hits nor lands an effect — the attack does nothing. Tick Hits or pick an effect in the CMS.');
     });
 });
 

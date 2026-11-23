@@ -138,7 +138,7 @@ describe('Skills and Combat', () => {
         // The skill panel belongs to the skills: it goes with them.
         expect(r.container.querySelector('[data-hero-skill-panel]')).toBeNull();
         const stats = [...r.container.querySelectorAll('[data-hero-combat-stat]')].map(el => el.getAttribute('data-hero-combat-stat'));
-        expect(stats).toEqual(['style', 'hit', 'range', 'swing', 'crit', 'accuracy', 'dodge', 'resists', 'cuts', 'effects']);
+        expect(stats).toEqual(['style', 'hit', 'range', 'attackEvery', 'crit', 'accuracy', 'dodge', 'resists', 'cuts', 'effects']);
         expect(r.container.querySelectorAll('[data-hero-drawer-block="equipment"] [data-equip-slot]').length).toBe(SLOT_ORDER.length);
         fireEvent.click(tab('skills'));
         expect(r.container.querySelector('[data-skill-group="held"]')).not.toBeNull();

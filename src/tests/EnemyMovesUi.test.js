@@ -160,7 +160,7 @@ describe('what the screen lists', () => {
         expect(movesView([])).toBeNull();
         expect(enemyHitTypes(moves)).toEqual(['stab', 'slash', 'poison']);
         expect(enemyHitTypes(undefined)).toEqual(['physical']);
-        expect(moveEffectText(enemyMovesOf({ moves: [{ name: 'X', effectId: 'emu_flutter', target: 'self', lasts: 'swing' }] })[0])).toBe('Flutter on itself, for the swing');
+        expect(moveEffectText(enemyMovesOf({ moves: [{ name: 'X', effectId: 'emu_flutter', target: 'self', lasts: 'swing' }] })[0])).toBe('Flutter on itself, for this attack');
         expect(moveEffectText(enemyMovesOf({ moves: [{ name: 'X', effectId: 'emu_flutter' }] })[0])).toBe('Flutter on the hero, for the fight');
     });
 
@@ -202,8 +202,8 @@ describe('what the screen lists', () => {
 
     it('every new line has its words in the strings file', () => {
         for (const key of ['fight.log.enemyMoveHits', 'fight.log.enemyMoveCrits', 'fight.log.enemyMoveMisses', 'fight.log.enemyUsesMove',
-            'fight.moves.unnamed', 'fight.moves.selfAttack', 'fight.moves.selfSwing', 'fight.moves.selfFight', 'fight.moves.selfStatus',
-            'fight.moves.heroAttack', 'fight.moves.heroSwing', 'fight.moves.heroFight', 'fight.moves.heroStatus', 'fight.moves.noHit',
+            'fight.moves.unnamed', 'fight.moves.selfAttack', 'fight.moves.selfThisAttack', 'fight.moves.selfFight', 'fight.moves.selfStatus',
+            'fight.moves.heroAttack', 'fight.moves.heroThisAttack', 'fight.moves.heroFight', 'fight.moves.heroStatus', 'fight.moves.noHit',
             'fight.moves.share', 'fight.moves.lastMove', 'fight.tip.enemyMoves', 'fight.card.moves']) {
             expect(t(key, { n: 1 }), key).not.toBe(key);
         }

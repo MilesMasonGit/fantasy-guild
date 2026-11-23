@@ -30,7 +30,7 @@ import { t } from '../../../i18n/index.js';
  * numbers over each and what just landed (the number, Crit!, Miss, Weak! or Resisted with the
  * hit's types; an enemy's move in a speech bubble over its bar); the stat block, one row a stat with
  * its icon in a shared middle column between the hero's value and the enemy's (style and level,
- * hit with its types, swing, resistances); the enemy's attacks, the last one
+ * hit with its types, how often it attacks, resistances); the enemy's attacks, the last one
  * marked; what is on each fighter in two columns; the hero's elixirs with the fights each has
  * left; and the log, closed until asked for. Held by `FightPanelPopup`, one per hero.
  */
@@ -298,7 +298,7 @@ const ResistValue = ({ side, who }) => (
 export const FightStats = ({ view }) => {
     const { hero, enemy } = view;
     const shown = hero.style || enemy.style || null;
-    const swing = (side) => (side.swingMs ? lengthText(side.swingMs) : '–');
+    const every = (side) => (side.attackEveryMs ? lengthText(side.attackEveryMs) : '–');
     return (
         <div data-fight-card className="flex flex-col gap-px">
             <StatRow
@@ -324,11 +324,11 @@ export const FightStats = ({ view }) => {
                 )}
             />
             <StatRow
-                stat="swing"
+                stat="attackEvery"
                 icon={<CombatGlyph name="clock" colour={GLYPH_COLOUR.text} />}
-                iconTip={t('fight.window.swing')}
-                hero={<Value tip={t('fight.tip.swing', { time: swing(hero) })}>{swing(hero)}</Value>}
-                enemy={<Value tip={t('fight.tip.swing', { time: swing(enemy) })}>{swing(enemy)}</Value>}
+                iconTip={t('fight.window.attackEvery')}
+                hero={<Value tip={t('fight.tip.attackEvery', { time: every(hero) })}>{every(hero)}</Value>}
+                enemy={<Value tip={t('fight.tip.attackEvery', { time: every(enemy) })}>{every(enemy)}</Value>}
             />
             <StatRow
                 stat="resists"
@@ -365,7 +365,7 @@ const Attack = ({ m, last }) => (
     </Tooltip>
 );
 
-/** The enemy's attacks, the one its last swing made marked; an enemy without moves has its one plain swing. */
+/** The enemy's attacks, the one it made last marked; an enemy without moves has its one plain Strike. */
 export const AttackList = ({ enemy }) => {
     const moves = enemy.moves?.length
         ? enemy.moves

@@ -8,7 +8,6 @@ import { SKILLS } from '../../utils/constants';
 const GENERATION_MODES = [
   { key: 'generate_single', label: 'AI Suggest / Auto-Fill', desc: 'Auto-fill inputs, outputs, requirements, and settings for the active editing entity' },
   { key: 'generate_area', label: 'Generate Area Content', desc: 'Create a full set of gathering + processing chains for a skill range' },
-  { key: 'generate_combat', label: 'Generate Combat Encounters', desc: 'Create enemies and combat encounter cards for a specific tier' },
   { key: 'fill_skill_gap', label: 'Fill Skill Gap', desc: 'Generate content for a specific skill + level range with no tasks' },
   { key: 'custom', label: 'Custom Prompt', desc: 'Describe exactly what you need in natural language' },
 ];
@@ -26,7 +25,6 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
   const [skill, setSkill] = useState(prefill?.skill || DEFAULT_GENERATOR_SKILL);
   const [levelMin, setLevelMin] = useState(prefill?.levelMin || 1);
   const [levelMax, setLevelMax] = useState(prefill?.levelMax || 15);
-  const [tier, setTier] = useState(prefill?.tier || 1);
   const [skills, setSkills] = useState(prefill?.skills || [DEFAULT_GENERATOR_SKILL]);
   const [customPrompt, setCustomPrompt] = useState('');
   const [additionalContext, setAdditionalContext] = useState('');
@@ -57,7 +55,6 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
         skills,
         levelMin,
         levelMax,
-        tier,
         prompt: customPrompt,
         additionalContext,
         areaId,
@@ -148,7 +145,7 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
                 </div>
               )}
 
-              {(mode === 'fill_skill_gap' || mode === 'generate_area' || mode === 'generate_combat') && (
+              {(mode === 'fill_skill_gap' || mode === 'generate_area') && (
                 <div className="grid grid-cols-2 gap-3">
                   {mode === 'fill_skill_gap' && (
                     <div>
@@ -163,14 +160,6 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
                       <label className="text-xs block mb-1" style={{ color: 'var(--color-text-secondary)' }}>Primary Skills (hold Ctrl to multi-select)</label>
                       <select multiple value={skills} onChange={(e) => setSkills(Array.from(e.target.selectedOptions, (o) => o.value))} className="w-full" style={{ height: 80 }}>
                         {SKILLS.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                      </select>
-                    </div>
-                  )}
-                  {mode === 'generate_combat' && (
-                    <div className="col-span-2">
-                      <label className="text-xs block mb-1" style={{ color: 'var(--color-text-secondary)' }}>Enemy Tier</label>
-                      <select value={tier} onChange={(e) => setTier(Number(e.target.value))} className="w-full">
-                        {[1, 2, 3, 4, 5].map((t) => <option key={t} value={t}>Tier {t}</option>)}
                       </select>
                     </div>
                   )}
@@ -199,7 +188,7 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
                     onChange={(e) => setCustomPrompt(e.target.value)}
                     className="w-full"
                     rows={mode === 'generate_single' ? 3 : 4}
-                    placeholder={mode === 'generate_single' ? 'e.g., should yield a fish and rarely an old boot' : 'e.g., I need 3 combat encounters for tier 2, dropping raw materials used in Cooking...'}
+                    placeholder={mode === 'generate_single' ? 'e.g., should yield a fish and rarely an old boot' : 'e.g., I need 3 gathering tasks for Fishing, levels 10 to 20...'}
                   />
                 </div>
               )}
@@ -262,23 +251,6 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
                 </div>
               </div>
 
-              {(preview.enemies || []).length > 0 && (
-                <div className="rounded-lg p-3 border" style={{ background: 'var(--color-bg-elevated)', borderColor: 'var(--color-border-subtle)' }}>
-                  <h4 className="text-xs font-semibold uppercase mb-2" style={{ color: 'var(--color-text-muted)' }}>Enemies ({(preview.enemies || []).length})</h4>
-                  <div className="space-y-1">
-                    {(preview.enemies || []).map((enemy, i) => (
-                      <div key={i} className="flex items-center gap-2 text-xs px-2 py-1 rounded" style={{ background: 'var(--color-bg-base)' }}>
-                        <span>💀</span>
-                        <span style={{ color: 'var(--color-text-primary)' }}>{enemy.name}</span>
-                        <span style={{ color: 'var(--color-text-muted)' }}>T{enemy.tier} {enemy.combatType}</span>
-                        <span style={{ color: 'var(--color-warning)' }}>{enemy.hp} HP</span>
-                        <span style={{ color: 'var(--color-text-muted)' }}>Drops: {enemy.drops?.length || 0}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               <div className="rounded-lg p-3 border" style={{ background: 'var(--color-bg-elevated)', borderColor: 'var(--color-border-subtle)' }}>
                 <h4 className="text-xs font-semibold uppercase mb-2" style={{ color: 'var(--color-text-muted)' }}>Tasks ({(preview.tasks || []).length})</h4>
                 <div className="space-y-1">
@@ -319,25 +291,6 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
                 </div>
               )}
 
-              {(preview.encounters || []).length > 0 && (
-                <div className="rounded-lg p-3 border" style={{ background: 'var(--color-bg-elevated)', borderColor: 'var(--color-border-subtle)' }}>
-                  <h4 className="text-xs font-semibold uppercase mb-2" style={{ color: 'var(--color-text-muted)' }}>Encounters ({(preview.encounters || []).length})</h4>
-                  <div className="space-y-1">
-                    {(preview.encounters || []).map((enc, i) => (
-                      <div key={i} className="text-xs px-2 py-1.5 rounded" style={{ background: 'var(--color-bg-base)' }}>
-                        <div className="flex items-center gap-2">
-                          <span style={{ color: 'var(--color-text-primary)' }}>{enc.name}</span>
-                          <span style={{ color: 'var(--color-enemy)' }}>Combat Encounter</span>
-                        </div>
-                        <div className="mt-1" style={{ color: 'var(--color-text-muted)' }}>
-                          <span>Enemies: {(enc.assignedEnemies || []).map(e => `${e.enemyName} (${Math.round(e.spawnChance * 100)}%)`).join(', ')}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {(preview.stations || []).length > 0 && (
                 <div className="rounded-lg p-3 border" style={{ background: 'var(--color-bg-elevated)', borderColor: 'var(--color-border-subtle)' }}>
                   <h4 className="text-xs font-semibold uppercase mb-2" style={{ color: 'var(--color-text-muted)' }}>Stations ({(preview.stations || []).length})</h4>
@@ -366,8 +319,7 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
                 {result.tasksUpdated > 0 && `Updated task "${prefill?.name}". `}
                 {result.recipesUpdated > 0 && `Updated recipe "${prefill?.name}". `}
                 {result.itemsUpdated > 0 && `Updated item "${prefill?.name}". `}
-                {result.enemiesUpdated > 0 && `Updated enemy "${prefill?.name}". `}
-                Created {result.areasCreated || 0} areas, {result.itemsCreated} items, {result.enemiesCreated || 0} enemies, {result.tasksCreated} tasks, {result.recipesCreated} recipes, {result.encountersCreated} encounters, and {result.stationsCreated} stations.
+                Created {result.areasCreated || 0} areas, {result.itemsCreated} items, {result.tasksCreated} tasks, {result.recipesCreated} recipes, and {result.stationsCreated} stations.
               </p>
               <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
                 Run the simulation to calculate values, then rename and theme your new content.
@@ -393,7 +345,7 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
             <>
               <button onClick={() => { setStatus('idle'); setPreview(null); }} className="btn-ghost">Regenerate</button>
               <button onClick={handleImport} className="btn-primary flex items-center gap-2">
-                <Check size={14} /> Import {(preview?.items || []).length + (preview?.tasks || []).length + (preview?.enemies || []).length + (preview?.recipes || []).length + (preview?.encounters || []).length + (preview?.stations || []).length} Entities
+                <Check size={14} /> Import {(preview?.items || []).length + (preview?.tasks || []).length + (preview?.recipes || []).length + (preview?.stations || []).length} Entities
               </button>
             </>
           )}

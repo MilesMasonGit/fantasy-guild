@@ -25,7 +25,7 @@ import { isTypeOrGroupId, PLAIN_ENEMY_HIT_TYPE } from './damageTypes.js';
  *   `target`      `self` (as the move is made) or `hero` (with the hit that lands, or as a move that
  *                 does not hit is made). The hero when absent.
  *   `lasts`       `attack` (until the next attack on its bearer is over, hit or miss), `swing` (this
- *                 swing; on itself only, a heavy strike), `fight`. The fight when absent. A status
+ *                 attack, read "for this attack"; on itself only, a heavy strike), `fight`. The fight when absent. A status
  *                 keeps its own lifetime.
  *   `weight`      how likely, against the others' (1 when absent).
  */
@@ -37,7 +37,7 @@ export const DEFAULT_MOVE_TARGET = 'hero';
 export const DEFAULT_MOVE_LASTS = 'fight';
 export const DEFAULT_MOVE_WEIGHT = 1;
 
-/** The lifetimes worth offering for an effect on `target`: one landed on the hero "for the swing" is over before it can matter. */
+/** The lifetimes worth offering for an effect on `target`: one landed on the hero "for this attack" is over before it can matter. */
 export function moveLastsFor(target) {
     return target === 'self' ? MOVE_LASTS : MOVE_LASTS.filter(l => l !== 'swing');
 }
@@ -113,7 +113,7 @@ export function isSpecialMove(move) {
  */
 export function moveProblems(raw, { hasEffect = null, isStatus = null } = {}) {
     if (raw == null) return [];
-    if (!Array.isArray(raw)) return ['its moves are not a list — it swings a plain Physical hit. Author its moves again in the CMS'];
+    if (!Array.isArray(raw)) return ['its moves are not a list — it makes a plain Physical Strike. Author its moves again in the CMS'];
     const out = [];
     raw.forEach((move, i) => {
         if (!isPlainObject(move)) {
@@ -121,7 +121,7 @@ export function moveProblems(raw, { hasEffect = null, isStatus = null } = {}) {
             return;
         }
         const label = hasText(move.name) ? `"${move.name.trim()}"` : `${i + 1}`;
-        if (!hasText(move.name)) out.push(`its move ${i + 1} has no name — the fight screen calls it "Attack". Name it in the CMS`);
+        if (!hasText(move.name)) out.push(`its move ${i + 1} has no name — the fight screen calls it "Strike". Name it in the CMS`);
         const hits = move.hits !== false;
         if (move.hits != null && typeof move.hits !== 'boolean') {
             out.push(`its move ${label} says it hits "${move.hits}", which is neither yes nor no — it hits. Tick or untick Hits in the CMS`);
@@ -130,7 +130,7 @@ export function moveProblems(raw, { hasEffect = null, isStatus = null } = {}) {
             out.push(`its move ${label} hits with "${move.damageType}", which is not a damage type or group — it hits as Physical. Pick its type again in the CMS`);
         }
         const effectId = hasText(move.effectId) ? move.effectId : null;
-        if (!hits && !effectId) out.push(`its move ${label} neither hits nor lands an effect — the swing does nothing. Tick Hits or pick an effect in the CMS`);
+        if (!hits && !effectId) out.push(`its move ${label} neither hits nor lands an effect — the attack does nothing. Tick Hits or pick an effect in the CMS`);
         if (effectId && hasEffect && !hasEffect(effectId)) {
             out.push(`its move ${label} lands the effect "${effectId}", which is not in the effect library — it lands nothing. Pick the effect again in the CMS`);
         }
@@ -138,11 +138,11 @@ export function moveProblems(raw, { hasEffect = null, isStatus = null } = {}) {
             out.push(`its move ${label} aims its effect at "${move.target}", which is neither itself nor the hero — it lands on the hero. Pick its target again in the CMS`);
         }
         if (move.lasts != null && !MOVE_LASTS.includes(move.lasts)) {
-            out.push(`its move ${label} lasts "${move.lasts}", which is not one attack, the swing or the fight — it lasts the fight. Pick how long again in the CMS`);
+            out.push(`its move ${label} lasts "${move.lasts}", which is not one attack, this attack or the fight — it lasts the fight. Pick how long again in the CMS`);
         }
         const target = MOVE_TARGETS.includes(move.target) ? move.target : DEFAULT_MOVE_TARGET;
         if (effectId && target === 'hero' && move.lasts === 'swing' && !(isStatus && isStatus(effectId))) {
-            out.push(`its move ${label} puts its effect on the hero for the swing, which is over before it can matter — it does nothing. Make it last one attack or the fight in the CMS`);
+            out.push(`its move ${label} puts its effect on the hero for this attack, which is over before it can matter — it does nothing. Make it last one attack or the fight in the CMS`);
         }
         if (move.weight != null && move.weight !== '' && !(Number.isFinite(Number(move.weight)) && Number(move.weight) > 0)) {
             out.push(`its move ${label} has the weight "${move.weight}" — a weight is a number above 0, so it counts as 1. Type it again in the CMS`);

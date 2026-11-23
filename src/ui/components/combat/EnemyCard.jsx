@@ -29,7 +29,7 @@ const MoveLine = ({ move }) => (
 /**
  * The enemy card's rows (owner, 2026-10-25, option B's table): level, style, health, hit with its
  * damage type (each of its moves' types), its moves when it has some (what each hits with or does),
- * what it resists and is weak to (rows only when it has some; "Nothing" when it has neither), swing,
+ * what it resists and is weak to (rows only when it has some; "Nothing" when it has neither), how often it attacks,
  * and its kinds once the guild has fought one (until then "? fight one to learn").
  * No forecast: the player does the sums. `card` is `fightView.enemyCardView`'s.
  */
@@ -78,8 +78,8 @@ export const EnemyCardRows = ({ card }) => {
                     <span className="flex flex-col" style={{ color: 'var(--color-ui-gold)' }} data-enemy-card-weak="some">{weak.map(l => <StepLine key={l.id} line={l} />)}</span>
                 </>
             )}
-            <span className="text-gi-muted">{t('fight.card.swing')}</span>
-            <span className="font-bold tabular-nums" data-enemy-card-swing>{t('fight.card.every', { time: lengthText(card.swingMs) })}</span>
+            <span className="text-gi-muted">{t('fight.card.attacks')}</span>
+            <span className="font-bold tabular-nums" data-enemy-card-attack-every>{t('fight.card.every', { time: lengthText(card.attackEveryMs) })}</span>
             <span className="text-gi-muted">{t('fight.card.kinds')}</span>
             {card.kinds == null ? (
                 <span className="text-gi-muted" data-enemy-card-kinds="unknown">{t('fight.panel.unknownKinds')}</span>

@@ -47,7 +47,7 @@ export const KIT_FIGHTS = Object.freeze({ current: KIT_CURRENT, last: KIT_LAST }
 export function kitPanelView() {
     const hero = {
         id: 'kit_aela', name: 'Aela', style: 'melee', level: 20, sprite: 'fighter',
-        hp: { cur: 17, max: 30 }, hit: 4, hitParts: [{ type: 'slash', hit: 4 }], arrows: null, swingMs: 3000,
+        hp: { cur: 17, max: 30 }, hit: 4, hitParts: [{ type: 'slash', hit: 4 }], arrows: null, attackEveryMs: 3000,
         resists: [{ id: 'physical', value: 25 }],
         hitLines: ['Copper Sword: 2 Slash', 'Combat level: +1', 'Elixirs and gear: +1'],
         elixirs: [
@@ -60,7 +60,7 @@ export function kitPanelView() {
     };
     const enemy = {
         typeId: 'token_goblin_chief', name: 'Goblin Warlord', style: 'melee', level: 20,
-        hp: { cur: 24, max: 40 }, hit: 3, hitType: 'physical', resists: [{ id: 'fire', value: 50 }, { id: 'slash', value: -25 }], swingMs: 4000,
+        hp: { cur: 24, max: 40 }, hit: 3, hitType: 'physical', resists: [{ id: 'fire', value: 50 }, { id: 'slash', value: -25 }], attackEveryMs: 4000,
         kinds: ['brute', 'venomous'].map(kindView), statuses: [], buffs: [], sheet: null
     };
     return {
@@ -91,6 +91,6 @@ export const KIT_FLOATS = Object.freeze([
 
 /** The enemy card's two states: fought (its kinds show) and never fought. */
 export const KIT_CARDS = Object.freeze([
-    { typeId: 'token_goblin_chief', name: 'Goblin Warlord', level: 20, style: 'melee', hp: 40, hit: 3, hitType: 'physical', resists: [{ id: 'physical', value: 50 }, { id: 'crush', value: -50 }], swingMs: 4000, kinds: ['brute', 'venomous'].map(kindView) },
-    { typeId: 'token_goblin', name: 'Goblin Scout', level: 5, style: 'melee', hp: 25, hit: 1, hitType: 'physical', resists: [], swingMs: 2000, kinds: null }
+    { typeId: 'token_goblin_chief', name: 'Goblin Warlord', level: 20, style: 'melee', hp: 40, hit: 3, hitType: 'physical', resists: [{ id: 'physical', value: 50 }, { id: 'crush', value: -50 }], attackEveryMs: 4000, kinds: ['brute', 'venomous'].map(kindView) },
+    { typeId: 'token_goblin', name: 'Goblin Scout', level: 5, style: 'melee', hp: 25, hit: 1, hitType: 'physical', resists: [], attackEveryMs: 2000, kinds: null }
 ]);

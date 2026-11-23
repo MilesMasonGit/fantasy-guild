@@ -32,7 +32,7 @@ export const VENOM_EFFECT_ID = 'effect_venom';
 export const ENEMY_KINDS = Object.freeze([
     Object.freeze({
         id: 'armoured', label: 'Armoured',
-        blurb: 'Resists Physical 50 %, and swings slowly (every 4 s) with its usual hit.',
+        blurb: 'Resists Physical 50 %, and attacks every 4 s with its usual hit.',
         resistances: Object.freeze({ physical: 50 }), speed: 'slow'
     }),
     Object.freeze({
@@ -42,12 +42,12 @@ export const ENEMY_KINDS = Object.freeze([
     }),
     Object.freeze({
         id: 'swift', label: 'Swift',
-        blurb: 'Small hits every 2 s: its hit × 2/3 (never below 1).',
+        blurb: 'Small hits, attacks every 2 s: its hit × 2/3 (never below 1).',
         speed: 'fast', hitScale: 2 / 3
     }),
     Object.freeze({
         id: 'brute', label: 'Brute',
-        blurb: 'Big hits every 4 s: its hit × 4/3, and at least 1 more than the level gives.',
+        blurb: 'Big hits, attacks every 4 s: its hit × 4/3, and at least 1 more than the level gives.',
         speed: 'slow', hitScale: 4 / 3, hitAtLeastMore: 1
     }),
     Object.freeze({

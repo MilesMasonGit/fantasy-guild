@@ -37,13 +37,10 @@ function cutLines(item) {
         .map(id => t('itemTip.styleCut', { style: getSkill(id)?.name || id, n: cuts[id] }));
 }
 
-/** A weapon's swing: "Slow (4s)". Anything but the three speeds fights at normal. */
-function speedValue(item) {
+/** How often a weapon attacks: "4s". Anything but the three speeds fights at normal. */
+function attackEveryValue(item) {
     const speed = ATTACK_SPEED_MS[item?.speed] ? item.speed : DEFAULT_ATTACK_SPEED;
-    return t('itemTip.stat.speedValue', {
-        speed: t(`itemTip.speedName.${speed}`),
-        time: lengthText(attackSpeedMs(speed))
-    });
+    return lengthText(attackSpeedMs(speed));
 }
 
 /** A weapon's stat block, as `{ id, label, value }` rows; null for anything that is not a weapon. */
@@ -54,7 +51,7 @@ function weaponStats(item, style, hands) {
         row('damage', Number(item.damage) > 0 ? Number(item.damage) : UNARMED_DAMAGE),
         row('type', t(`fight.types.${weaponDamageTypeOf(item, style)}`)),
         row('skill', getSkill(style)?.name || style),
-        row('speed', speedValue(item)),
+        row('attackEvery', attackEveryValue(item)),
         ...(hands >= HANDS ? [row('hands', hands)] : [])
     ];
 }
@@ -169,10 +166,10 @@ export const ItemToolLines = ({ facts }) => (
 export const ItemDetailLines = ({ facts }) => (
     <>
         {facts.stats && (
-            <div data-item-tip-stats className="grid grid-cols-[48px_1fr] gap-x-3 gap-y-0.5">
+            <div data-item-tip-stats className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
                 {facts.stats.map(({ id, label, value }) => (
                     <React.Fragment key={id}>
-                        <span className="text-gi-muted">{label}</span>
+                        <span className="text-gi-muted whitespace-nowrap">{label}</span>
                         <span className="text-white tabular-nums" data-item-tip-stat={id}>{value}</span>
                     </React.Fragment>
                 ))}

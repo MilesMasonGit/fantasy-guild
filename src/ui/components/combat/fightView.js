@@ -166,7 +166,8 @@ function stackCapOf(target, effectId) {
     return block ? CombatFormulas.heroStatusStackCap(target, effectId, block.stacks) : null;
 }
 
-const LASTS_KEY = Object.freeze({ attack: 'Attack', swing: 'Swing', fight: 'Fight' });
+// ⚠️ `swing` is the lifetime id stored in content; the player reads it as "for this attack".
+const LASTS_KEY = Object.freeze({ attack: 'Attack', swing: 'ThisAttack', fight: 'Fight' });
 
 /**
  * What a move's effect does, in the player's words: "Flutter on itself, for one attack", "Venom on
@@ -184,7 +185,7 @@ export function moveEffectText(move) {
 /**
  * An enemy's moves as the screen lists them (`enemyMoves.js`), or null for an enemy without: each
  * one's name, the type it hits with (null when it does not hit), what its effect does and its share
- * of the swings in whole percent.
+ * of the attacks in whole percent.
  * @returns {Array<{name: string, hits: boolean, type: string|null, effect: string|null, share: number}>|null}
  */
 export function movesView(moves) {
@@ -199,7 +200,7 @@ export function movesView(moves) {
     }));
 }
 
-/** The types an enemy's swings hit with: its moves' that hit, each once, or the plain Physical swing's. */
+/** The types an enemy's attacks hit with: its moves' that hit, each once, or the plain Physical Strike's. */
 export function enemyHitTypes(moves) {
     if (!Array.isArray(moves) || moves.length === 0) return [PLAIN_ENEMY_HIT_TYPE];
     return [...new Set(moves.filter(m => m.hits).map(m => m.type))];
@@ -247,7 +248,7 @@ export function heroSide(hero) {
     const boosts = [...new Set(hitParts.map(p => p.type))]
         .map(type => ({ type, n: CombatFormulas.heroTypeDamageBoost(hero, type) }))
         .filter(b => b.n);
-    const swingMs = CombatFormulas.heroAttackSpeedMs(hero);
+    const attackEveryMs = CombatFormulas.heroAttackSpeedMs(hero);
     return {
         id: hero.id,
         name: hero.name,
@@ -270,7 +271,7 @@ export function heroSide(hero) {
             hitParts.some(p => Math.abs(p.hit - Math.round(p.hit)) > 1e-9) ? t('fight.tip.fraction') : null
         ].filter(Boolean),
         resists: heroResistLines(hero),
-        swingMs,
+        attackEveryMs,
         elixirs: activeElixirsOf(hero),
         statuses: statusesView(hero),
         buffs: heroBuffs(hero)
@@ -306,7 +307,7 @@ export function enemySide(typeId, fight = null) {
         hitTypes,
         moves: movesView(profile.moves),
         resists: live ? liveEnemyResistLines(profile) : enemyResistLines(profile.resistances),
-        swingMs: live ? CombatFormulas.enemyAttackSpeedMs(profile) : (profile.attackSpeed || 3000),
+        attackEveryMs: live ? CombatFormulas.enemyAttackSpeedMs(profile) : (profile.attackSpeed || 3000),
         kinds: known ? (profile.kinds || []).map(kindView).filter(Boolean) : null,
         statuses: live ? statusesView(fight) : [],
         buffs: live ? enemyBuffs(fight) : []
@@ -334,7 +335,7 @@ export function enemyCardView(typeId) {
         hitTypes: side.hitTypes,
         moves: side.moves,
         resists: side.resists,
-        swingMs: side.swingMs,
+        attackEveryMs: side.attackEveryMs,
         kinds: side.kinds
     };
 }
@@ -365,11 +366,11 @@ export function fightPanelView(heroId, fights, now = Date.now()) {
     const liveFight = fight && fight.assignedHeroId === heroId ? fight : null;
     const heroView = heroSide(hero) || {
         id: heroId, name: record.heroName, style: null, level: null, sprite: null, hp: record.hp.hero,
-        hit: 0, hitParts: [], arrows: null, hitLines: [], resists: [], swingMs: 0, elixirs: [], statuses: [], buffs: []
+        hit: 0, hitParts: [], arrows: null, hitLines: [], resists: [], attackEveryMs: 0, elixirs: [], statuses: [], buffs: []
     };
     const enemyView = enemySide(record.typeId, liveFight) || {
         typeId: record.typeId, name: record.enemyName, style: 'melee', level: null, hp: record.hp.enemy,
-        hit: 0, hitType: PLAIN_ENEMY_HIT_TYPE, hitTypes: [PLAIN_ENEMY_HIT_TYPE], moves: null, resists: [], swingMs: 0, kinds: null, statuses: [], buffs: []
+        hit: 0, hitType: PLAIN_ENEMY_HIT_TYPE, hitTypes: [PLAIN_ENEMY_HIT_TYPE], moves: null, resists: [], attackEveryMs: 0, kinds: null, statuses: [], buffs: []
     };
     if (!live) {
         heroView.hp = { ...record.hp.hero };

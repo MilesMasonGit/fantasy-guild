@@ -232,7 +232,7 @@ describe('⭐ the Token editor: an enemy\'s numbers, filled from the level and k
         expect(field(container, 'enemy-dodge').value).toBe('0');
         expect(field(container, 'enemy-critChance').value).toBe('5');
         expect(field(container, 'enemy-speed').value).toBe('');
-        expect(field(container, 'enemy-speed').selectedOptions[0].textContent).toBe('Normal (3 s)');
+        expect(field(container, 'enemy-speed').selectedOptions[0].textContent).toBe('3 s (Normal)');
         expect(field(container, 'enemy-hp-source').textContent).toBe('from level');
         expect(JSON.stringify(store().tokens[cow].enemy)).toBe(before);
     });
@@ -287,7 +287,7 @@ describe('⭐ the kinds: none, one or two presets', () => {
         expect(store().tokens[cow].enemy.kinds).toEqual(['armoured']);
         expect(field(container, 'enemy-resist-physical-step').value).toBe('');
         expect(field(container, 'enemy-resist-physical-step').selectedOptions[0].textContent).toBe('Resist 50% (from kinds)');
-        expect(field(container, 'enemy-speed').selectedOptions[0].textContent).toBe('Slow (4 s)');
+        expect(field(container, 'enemy-speed').selectedOptions[0].textContent).toBe('4 s (Slow)');
         expect(field(container, 'enemy-speed-source').textContent).toBe('from level + kinds');
         expect(store().tokens[cow].enemy).not.toHaveProperty('resistances');
     });

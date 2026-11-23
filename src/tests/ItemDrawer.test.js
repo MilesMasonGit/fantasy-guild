@@ -188,7 +188,7 @@ describe('what it shows', () => {
         expect(parts[1].querySelector('.gi-icon-128')).not.toBeNull();
         expect(parts[2].textContent).toBe('×1,500');
         expect([...parts[3].querySelectorAll('[data-item-tag]')].map(p => p.textContent)).toEqual(['Weapon', 'Sword', 'Unwritten Tag']);
-        for (const part of ['DMG', '4', 'Sharp on both sides.']) expect(parts[4].textContent).toContain(part);
+        for (const part of ['Damage', '4', 'Sharp on both sides.']) expect(parts[4].textContent).toContain(part);
         expect(parts[6].textContent).toBe('Collected this run: 2,345');
         // The old top lines are gone: no type line, no "Equippable".
         expect(d.textContent).not.toMatch(/Equippable/);
