@@ -39,6 +39,7 @@ const STEP_MS = 16;          // one pointer move per frame, roughly
 const HOVER_MS = 80;         // the pointer rests on the source before the press, as a hand does
 const QUIET_MS = 50;         // still, between the bench's reads and the release, so the drop's frames are the game's
 const SETTLE_MS = 450;       // after the release: the drop handler, the state, the re-render
+const REVEAL_MS = 300;       // on a hero's figure before picking their flag: the flag shows (it fades out in 700 ms)
 // The Hero drawer (`HeroDrawer.jsx`): its box takes presses only while a hero is shown.
 const HERO_SHEET_OPEN = `[...document.querySelectorAll('[data-hero-panel] [data-dnd-region]')].some(e => getComputedStyle(e).pointerEvents !== 'none')`;
 
@@ -116,8 +117,17 @@ async function attempt(page, kind) {
     // clear of the mat, the drawers and the Bank's hero tabs.
     await page.mouse('mouseMoved', 1586, 12);
     await sleep(250);
-    const pick = await page.evaluate(`window.__dragKit.pick.${kind.id}()`);
-    if (pick.skip) return { skipped: pick.skip };
+    // How many Tokens stand on the mat: room for the drops shrinks as it fills.
+    const tokens = await page.evaluate('window.__perf.game.BoardState.tokens().length');
+    let pick = await page.evaluate(`window.__dragKit.pick.${kind.id}()`);
+    if (pick.reveal) {
+        // A flag shows only while its hero is hovered: the pointer rests on the hero's figure in
+        // the hero bar first, as a player's does, and the flag is picked while it shows.
+        await page.mouse('mouseMoved', pick.reveal.x, pick.reveal.y);
+        await sleep(REVEAL_MS);
+        pick = await page.evaluate(`window.__dragKit.pick.${kind.id}(${JSON.stringify(pick.reveal.heroId)})`);
+    }
+    if (pick.skip) return { skipped: pick.skip, tokens, ...(pick.why ? { why: pick.why } : {}) };
     if (pick.hoverFirst) {
         // A source inside a pop-out sidebar: open the sidebar with the pointer first.
         await page.mouse('mouseMoved', pick.hoverFirst.x, pick.hoverFirst.y);
@@ -135,7 +145,7 @@ async function attempt(page, kind) {
     }
     const check = await page.evaluate(`window.__dragKit.check(${JSON.stringify(pick.expect)})`);
     return {
-        source: pick.source, target: pick.target, under, inHand, wrongThing: !!inHand && inHand !== pick.source.hand,
+        source: pick.source, target: pick.target, tokens, under, inHand, wrongThing: !!inHand && inHand !== pick.source.hand,
         pickedUp: probe.pickedUp, pressToStartMs: probe.pressToStartMs, thresholdToStartMs: probe.thresholdToStartMs, frames: probe.frames,
         notes: probe.notes, stuck, dropSound: probe.dropSound, underTarget, msSinceOverlayBurst: probe.msSinceOverlayBurst,
         ok: !!check.ok && probe.pickedUp && inHand === pick.source.hand, detail: check.detail

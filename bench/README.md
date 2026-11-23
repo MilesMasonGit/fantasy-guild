@@ -880,10 +880,10 @@ live. Sources and targets are picked from the live DOM and state for every drag
 away from open drawers, where the mat (or something on it) is what the browser
 hits all over the box a flag planted there is drawn in: none of the screen's own
 furniture over it, such as the hero bar's level-up bubbles that reach up over
-the mat's bottom edge and stay until clicked. Without that last rule the flag
-kind ran dry: it drags the one flag it can press (every other has faded once its
-hero arrived), and once that one was let go under the bubbles every later flag
-drag of the pass was skipped.
+the mat's bottom edge and stay until clicked. Without that last rule a flag let
+go under the bubbles could not be pressed again, and the flag kind ran dry. A
+skip for want of a free spot records why the 40 points were turned down (`why`
+in the JSON: under a drawer, on a Token, or what of the screen covered it).
 
 | Kind | Source → target | Success (read from the game's state) |
 |---|---|---|
@@ -926,21 +926,30 @@ page with the bench's own copy of them:
   not picked: it can be killed while carried, and then nothing lands. Nor is a
   fixed Token (`FixedTokens.isFixed`: a fixture, a landmark, a planted Sapling and
   what it grows into), which refuses every drag by design.
-- **A flag** is pressed at its highest point clear of every Token's round body
-  (by design a flag over a Token lets the pointer through to the Token,
-  `FlagLayer.jsx`, `yieldToTokens`), where the flag, or its own hero, is what is
-  drawn on top; when it has no such point, on its cloth where the flag is drawn in
-  front (the cloth keeps a press over a Token, `flagCloth.js`). A flag with
-  neither lies wholly under Tokens, flags or heroes drawn in front of it: nobody
-  can press it on the mat (the player moves it by its hero or from the hero bar),
-  so the bench passes it over and names it in the attempt's `scene.hiddenFlags`.
-  With every flag hidden the attempt is skipped and, as set-up, one of their heroes
-  is sent to an open spot (`Orders.orderAt`), so the next attempt has a walking
-  flag: otherwise no drag of this kind plants another and the rest of the pass
-  is skipped (it once skipped 49 of 50).
+- **A flag** shows only while its hero is hovered, on the mat or in the hero bar
+  (`FlagLayer.jsx`); every other flag is invisible and takes no press. So the
+  bench does what a player does: it rests the pointer on the hero's figure in the
+  hero bar (300 ms), picks the press point while the flag shows, and goes
+  straight to it (on the way the flag fades for 700 ms, still taking the pointer,
+  and over it the flag shows again). Only a spot order's flag is dragged: a
+  Token order's flag never takes the pointer, the Token's middle staying the
+  Token's. With no spot order on the mat the attempt is skipped and, as set-up, a
+  hero is sent to an open spot (`Orders.orderAt`): otherwise no drag of this kind
+  makes one and the rest of the pass is skipped (since flags show only on hover,
+  picking among the flags as drawn skipped 49 of 50). The flag is pressed at its
+  highest point clear of every Token's round body (by design a flag over a Token
+  lets the pointer through to the Token, `yieldToTokens`), where the flag, or its
+  own hero, is what is drawn on top; when it has no such point, on its cloth
+  where the flag is drawn in front (the cloth keeps a press over a Token,
+  `flagCloth.js`). A flag with neither lies wholly under Tokens, flags or heroes
+  drawn in front of it: nobody can press it on the mat (the player moves the
+  hero), so the attempt is skipped, with what covers it in `why`, and as set-up
+  the hero is sent to an open spot.
   First choice is a **clear** point: 8 px or more from every hero figure's box and
-  health bar (its own hero's too) and from every Token's body, and on no Token the
-  game has there.
+  health bar (its own hero's too) and from every Token's body, on no Token the
+  game has there, and 8 px or more off the way a walking hero is going (its box slid
+  along to its flag's point or Token): every flag drag sends a hero walking, and
+  the next one presses another hero's flag while it walks.
   The scene moves on between the pick and the press (the bench's own reads, the
   rest before the press), and a hero walking in or a Token sliding or arriving
   there takes a press the pick saw free (T-132, T-187).
@@ -966,9 +975,12 @@ p50/p95, **frame stalls** per drag phase and the grouped **failure causes**:
   found at the press point after the hover: the nearest element with an
   identifying `data-` attribute, and in the dev build the React component names),
   *picked up the wrong thing* (what was in the hand, read from what each source
-  draws while carried), *dropped, refused by the game* (the warning it raised),
-  *dropped, no target took it* (the drop made the drag system's "invalid" sound;
-  with what was under the drop point), or *state not as intended*. A missed
+  draws while carried), *dropped, refused by the game* (the warning it raised, or
+  the reason it said on the mat: a refused drop is said as a callout there, never
+  as a notification, `dropOnMat.js`, and makes the same "invalid" sound as a drop
+  nothing took), *dropped, no target took it* (the drop made the drag system's
+  "invalid" sound and the game said nothing; with what was under the drop
+  point), or *state not as intended*. A missed
   flag press also says why, from what was at the press point and at the pick
   (`dragKit.pressScene`: every hero figure's box there with its art's alpha and
   z (a hero's health bar counts as solid: a press there is the hero's), the

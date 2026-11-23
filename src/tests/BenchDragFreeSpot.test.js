@@ -171,13 +171,60 @@ describe("the drag bench's free spot on S2", () => {
     });
 
     /**
-     * With every flag hidden the flag kind had nothing to drag, so no drag of it planted another,
-     * and the rest of its pass was skipped (10 in a row in a plain pass on 2026-11-18).
+     * A flag shows only while its hero is hovered, and takes no press while hidden. Picking among
+     * the flags as drawn found every one hidden, and the flag kind skipped 49 of 50 drags (plain
+     * pass, 2026-11-23): the pick first hands back a hero's figure in the hero bar to hover.
      */
-    it('sends a hero to an open spot when every flag is hidden, so the next flag pick has one', () => {
+    it('hands back a spot order\'s hero bar figure to hover before it picks the flag', () => {
         const heroId = 'hero_bench_5';
         const flagEl = document.createElement('button');
         flagEl.setAttribute('data-flag', heroId);
+        flagEl.setAttribute('data-flag-order', 'spot');
+        flagEl.setAttribute('data-flag-gone', 'true');
+        mat.appendChild(flagEl);
+        const figure = document.createElement('div');
+        figure.setAttribute('data-dock-hero', heroId);
+        figure.getBoundingClientRect = () => ({ left: 300, top: 700, width: 40, height: 40, right: 340, bottom: 740, x: 300, y: 700 });
+        document.body.appendChild(figure);
+        document.elementFromPoint = (x, y) => (x >= 300 && x <= 340 && y >= 700 && y <= 740 ? figure : surface);
+        try {
+            expect(kit.pick.flag()).toEqual({ reveal: { x: 320, y: 720, heroId } });
+            // Hovered and still hidden: the flag did not show, which the pick says rather than pressing.
+            expect(kit.pick.flag(heroId).skip).toMatch(/did not show/);
+        } finally {
+            document.elementFromPoint = bareEverywhere;
+            flagEl.remove();
+            figure.remove();
+        }
+    });
+
+    /**
+     * With no spot order on the mat (S2 starts with every hero on a Token, whose flag never takes the
+     * pointer) the flag kind had nothing to drag, so no drag of it planted another, and the rest of
+     * its pass was skipped.
+     */
+    it('sends a hero to an open spot when no hero has a spot order, so the next flag pick has one', () => {
+        const before = Object.fromEntries(Object.entries(BoardState.getFlags()).map(([id, f]) => [id, { x: f.x, y: f.y }]));
+        const random = vi.spyOn(Math, 'random').mockImplementation(seeded(615));
+        try {
+            expect(kit.pick.flag().skip).toMatch(/no hero has a spot order/);
+        } finally {
+            random.mockRestore();
+        }
+        const sent = Object.entries(BoardState.getFlags())
+            .filter(([id, f]) => f?.spot && Math.hypot(f.x - before[id].x, f.y - before[id].y) > 1);
+        expect(sent).toHaveLength(1);
+    });
+
+    /**
+     * A shown flag with no point a press could reach lies under things drawn in front of it: the
+     * hero is sent somewhere else as set-up, so a later pick finds the flag where it can be pressed.
+     */
+    it('sends the hero to an open spot when their shown flag is hidden under other things', () => {
+        const heroId = 'hero_bench_6';
+        const flagEl = document.createElement('button');
+        flagEl.setAttribute('data-flag', heroId);
+        flagEl.setAttribute('data-flag-order', 'spot');
         flagEl.getBoundingClientRect = () => ({ left: 300, top: 300, width: 24, height: 24, right: 324, bottom: 324, x: 300, y: 300 });
         mat.appendChild(flagEl);
         // Every point of the flag lies under something else drawn in front of it.
@@ -185,7 +232,7 @@ describe("the drag bench's free spot on S2", () => {
         const before = { ...BoardState.flagOf(heroId) };
         const random = vi.spyOn(Math, 'random').mockImplementation(seeded(614));
         try {
-            expect(kit.pick.flag().skip).toMatch(/every flag is hidden/);
+            expect(kit.pick.flag(heroId).skip).toMatch(/hidden under things drawn in front of it/);
         } finally {
             random.mockRestore();
             delete document.elementsFromPoint;
