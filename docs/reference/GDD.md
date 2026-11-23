@@ -1,4 +1,4 @@
-# Fantasy Guild — Game Design Document
+# Tabletop Guild — Game Design Document
 
 **Status:** reference, describes the game **as built** on `main` (v0.8.0).
 **Last checked against code:** 2026-10-06 (five code surveys, key numbers
@@ -17,6 +17,16 @@ How to use this document:
 ---
 
 ## 1. Vision
+
+**Title.** **Tabletop Guild** (owner, 2026-11-22), replacing the working title
+Fantasy Guild after the owner's planned title turned out to be taken. A quick
+web check found no game, app or store listing by that name and no trademark
+filing, but not a legal search; tabletopguild.com and .net are taken
+(tabletopguildgame.com and playtabletopguild.com looked free). The guild-idle
+field is crowded with "Guild…" names, so the tabletop half carries the
+identity. A trademark search in the US and Canada comes before any spend on
+launch. The in-game rename is T-664; the repository, save keys and code
+comments keep the old name.
 
 **Pitch.** An idle game where you run an adventurers' guild by shaping a
 living tabletop: you place resources, plant flags, and your heroes work, fight
