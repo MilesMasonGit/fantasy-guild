@@ -24,7 +24,7 @@ import {
 import { WorkBarFill } from '../ui/components/board/WorkPlateLayer.jsx';
 import { PLATE, CELL, plateFootOf, platePlace } from '../ui/components/board/workPlate.js';
 import { idlePlateCells, timerCellsOf } from '../ui/components/board/idlePlate.js';
-import { growthLine, turnLine, respawnLine, liveTimerSources } from '../ui/components/board/tokenTimers.js';
+import { growthLine, respawnLine, liveTimerSources } from '../ui/components/board/tokenTimers.js';
 import { MAT_Z } from '../ui/components/board/matLayers.js';
 import { PROBLEM_SPRITE, SEVERITY } from '../ui/components/board/problemMark.js';
 import * as TimedChanges from '../systems/board/TimedChanges.js';
@@ -385,7 +385,7 @@ describe('⭐ hover: the idle plate under the Token, and the gear', () => {
     it('a hovered timer follows the clock', () => {
         vi.useFakeTimers();
         let inMs = 12000;
-        const read = () => [turnLine({ id: 't', typeId: 'x', turnedFrom: 'fixture_b13_forest' }, {}, { inMs, chance: 30, back: true }, liveTimerSources())];
+        const read = () => [respawnLine({ id: 'v', typeId: 'fixture_bub_grower' }, { mode: 'refill', resting: true, inMs }, liveTimerSources())];
         mount(idleBub({ token: idle(), readTimer: read }));
         expect(idleCell(CELL.TIMER).textContent).toBe('12s');
         inMs = 9000;

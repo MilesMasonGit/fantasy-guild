@@ -101,8 +101,8 @@ describe('the idle hover says what the card says', () => {
 
     it('a full spawner: full, where a spawning one shows nothing', () => {
         const forest = put('iht_forest');
-        put('iht_sapling', { x: 1200, y: 520 });
-        put('iht_sapling', { x: 1400, y: 300 });
+        put('iht_sapling', { x: 700, y: 520 });
+        put('iht_sapling', { x: 640, y: 380 });
         const { container } = mount();
         hover(container, forest);
         const cells = timerCells(container, forest);

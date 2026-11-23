@@ -27,7 +27,7 @@ afterEach(() => {
     registerHallSky(null);
 });
 
-describe('a spawn or a turn with no weight is never picked, as the game picks (weightedPick)', () => {
+describe('a spawn with no weight is never picked, as the game picks (weightedPick); a retired turn gives nothing', () => {
     const content = (spawns, into) => {
         const ws = ledgerContent();
         ws.tokens.token_goblin_camp.spawner.spawns = spawns;
@@ -42,7 +42,7 @@ describe('a spawn or a turn with no weight is never picked, as the game picks (w
             [{ typeId: 'token_goblin', weight: 1 }, { typeId: 'token_goblin_chief' }]
         ));
         expect(givesOf(world, 'spawn:token_goblin_camp')).toEqual([[T('token_goblin'), 1]]);
-        expect(givesOf(world, 'turn:token_egg')).toEqual([[T('token_goblin'), 1]]);
+        expect(givesOf(world, 'turn:token_egg')).toBeNull();
     });
 
     it('a spawner whose spawns all lack a weight spawns nothing', () => {
