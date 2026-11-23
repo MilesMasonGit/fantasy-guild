@@ -350,7 +350,7 @@ describe('⭐ the hover outline takes the mode’s colour', () => {
         expect(tokenOutline({ hovered: true, mode: 'demolish' })).toBe('danger');
         expect(tokenOutline({ hovered: true, mode: 'demolish', unavailable: true })).toBe('muted');
         // Not hovered, a Token keeps its usual outline in a mode.
-        expect(tokenOutline({ working: true, mode: 'demolish' })).toBe('work');
+        expect(tokenOutline({ alert: true, mode: 'demolish' })).toBe('alert');
         expect(tokenOutline({ selected: true, mode: 'demolish' })).toBe('hover');
     });
 

@@ -1,35 +1,34 @@
-
 /**
  * Outlines: **gold = picked (the mat's selection, `useMatSelection.js`), white = hovered or
- * inspected, red = alert, green = working**, in that order when more than one is true. The picture itself is generated from the art (`scripts/spriteFx.mjs`)
+ * inspected, red = alert**, in that order when more than one is true. The picture itself is generated from the art (`scripts/spriteFx.mjs`)
  * and drawn by `PixelArt` / the sheet animators.
+ * - **Working** has no outline: a worked Token and its heroes stand in a task ring (`TaskRings`).
+ * The green outline (`'work'`) is kept for other uses: a Token a carried hero could be ordered
+ * onto (`MatToken`), a drag mark that passes (`DragMarks`).
  * - **A Token** is white too while a support in the hand would help it or be helped by it (`lit`,
- * `SupportLinkLayer`). It is green while a hero works it; an alert says so in red instead. While a map mode
+ * `SupportLinkLayer`). While a map mode
  * is on (`mode`, `useMapMode.js`) its hover outline takes the mode's colour ({@link MODE_OUTLINE}), or muted grey on a Token the
  * mode cannot act on (`unavailable`).
- * - **A hero** is green while working productively, not while their Token is stuck (that hero
- * stands unlit; the Token's red outline and badge say it). Hovered or inspected: white.
+ * - **A hero** hovered or inspected: white.
  * - **A flag** is white while it or its hero is hovered, or the hero is inspected; it has no
  * working or alert state of its own.
- * @returns {'select'|'hover'|'alert'|'work'|'muted'|'danger'|null}
+ * @returns {'select'|'hover'|'alert'|'muted'|'danger'|null}
  */
-export function tokenOutline({ picked = false, hovered = false, selected = false, lit = false, alert = false, working = false, mode = null, unavailable = false } = {}) {
+export function tokenOutline({ picked = false, hovered = false, selected = false, lit = false, alert = false, mode = null, unavailable = false } = {}) {
     if (hovered && mode) return unavailable ? 'muted' : (MODE_OUTLINE[mode] ?? 'hover');
     if (picked) return 'select';
     if (hovered || selected || lit) return 'hover';
     if (alert) return 'alert';
-    if (working) return 'work';
     return null;
 }
 
 /** A map mode's hover outline: red for Demolish (UI_STYLE colours). */
 export const MODE_OUTLINE = Object.freeze({ demolish: 'danger' });
 
-/** A hero on the mat: gold picked, white hovered or inspected, green working (not stuck). */
-export function heroOutline({ picked = false, hovered = false, selected = false, working = false, stuck = false } = {}) {
+/** A hero on the mat: gold picked, white hovered or inspected. */
+export function heroOutline({ picked = false, hovered = false, selected = false } = {}) {
     if (picked) return 'select';
     if (hovered || selected) return 'hover';
-    if (working && !stuck) return 'work';
     return null;
 }
 

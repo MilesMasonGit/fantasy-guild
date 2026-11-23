@@ -375,10 +375,25 @@ things shrink with the window, so reach and every rule are the same at any size.
 `MatBoard.jsx` (`src/ui/components/board/MatBoard.jsx:62-…`, memoised) draws every Token
 (`MatToken.jsx`), hero (`MatHero.jsx`) and flag (`FlagLayer.jsx`) as **positioned DOM elements**
 keyed by instance id, in the z-layers set out in `matLayers.js` (`MAT_Z`: surface, ground,
-ground fx, grid, Tokens, heroes, sky, rings, loot, work plate). One `pointermove` on the mat asks
+ground fx, grid, Tokens, task dim and task rings, worked Tokens, heroes, sky, rings, loot, work plate). One `pointermove` on the mat asks
 the engine which Token is under the pointer (`MatBoard.jsx:62-75`). Other screens: the Guild
 Hall's star web (`GuildHallBoard.jsx`, `HallSky.jsx`) and the Atlas with the hex world map
 (`src/ui/components/atlas/`).
+
+**Task rings** (`TaskRings.jsx`, `taskRing.js`): a ring round every job in progress (a Token
+with a hero standing beside it working it), fitted round the Token's body and each hero's figure
+and centred on them all; work green, or the warning amber (`--color-gi-warning`) while the Token
+shows its "!" (`problemMark.problemOf`, read into MatBoard's hero rows as `jobStuck`). The rings
+draw only the **outer edge** of their merged shape (`edgeRuns`: the cells of the union with a side
+on the ground outside, which round a lone ring is exactly its pixel ring). Inside, **one** dim for
+all the rings, cut to the union less its edge, so overlaps dim once: a grey drawn with
+`mix-blend-mode: saturation`, then a translucent black, then the line over both. All three share
+one z (`matLayers.taskRingZ`), the lowest worked Token's: worked Tokens stand above every resting
+one in the stack, so the dim and the line lie over the ground and every Token at rest (the part
+of one inside a ring dimmed, the line crossing its art) and under the worked Tokens and the
+heroes, who win the tie by coming after them. Drawn when a job starts, ends or turns stuck;
+nothing runs at rest. A worked Token and its
+hero have no outline of their own any more (`spriteOutline.js`).
 
 ### 5.2 What moves and how
 
@@ -391,7 +406,8 @@ Hall's star web (`GuildHallBoard.jsx`, `HallSky.jsx`) and the Atlas with the hex
 - **Frame clocks** (`src/ui/components/board/frameClock.js`): `onStep` (every 100 ms, all
   subscribers in one frame; the work bars, `workBar.js:57`), `onDue` (each subscriber at its own
   next time: hero and enemy sprite frames, ambient life at 8/s, loot bob, token fx, clock poses).
-  `onFrame` (every frame) exists but **has no subscriber in game code** (grep, 2026-11-06).
+  `onFrame` (every frame): only while a ring grows or shrinks (`growRing.js`'s reach ring,
+  `TaskRings`), unsubscribed once it stands still.
 - **One-shot animations** use the Web Animations API, each started through
   `fx/oneShot.js` `animateFx` (hit knocks, fx, loot arcs, spawns, settles; §5.4), or framer-motion
   (9 files).
@@ -660,5 +676,4 @@ For the doc audit; nothing below was edited.
 8. `package.json` `depcruise:graph` needs `dot` (not installed).
 11. Commits per tick (§3.4) were last measured 2026-10-13; `PERFORMANCE.md` itself was flagged
     out of date by the round-3 review (§2.E there), not re-checked here.
-12. `src/ui/components/board/frameClock.js`: `onFrame` has no game callers (tests only), though
-    the header presents it as one of the mat's three clocks.
+12. (Resolved by brief 720: `onFrame` drives the growing and shrinking rings.)

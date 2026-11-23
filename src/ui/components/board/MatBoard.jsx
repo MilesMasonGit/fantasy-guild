@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useMatSize } from '../../hooks/useMatSize.js';
-import { MAT_Z, createMatStack, heroZ, walkerSortY } from './matLayers.js';
+import { MAT_Z, createMatStack, heroZ, walkerSortY, taskRingZ } from './matLayers.js';
 import { createStackWriter } from './stackWriter.js';
 import { pointerToMat } from './matPoint.js';
 import { matTuning } from '../../../config/matTuning.js';
@@ -11,10 +11,14 @@ import { MatToken, MatTokenGrab } from './MatToken.jsx';
 import { MatHero, heroBoxAt } from './MatHero.jsx';
 import { MatRings } from './MatRings.jsx';
 import { CampReachRing } from './CampReachRing.jsx';
+import { TaskRings } from './TaskRings.jsx';
+import { taskJobsOf, taskJobsKey } from './taskRing.js';
+import { boardScaleAt } from '../base/TokenSprite.jsx';
 import { SupportLinkLayer } from './SupportLinkLayer.jsx';
 import { CalloutLayer } from './CalloutLayer.jsx';
 import { HeroBubbleLayer } from './HeroBubbleLayer.jsx';
 import { strikesLive, heroAnimationState, hitSkillOf, hitsOnAttack } from './hitAnimations.js';
+import { problemOf } from './problemMark.js';
 import { FlagLayer } from './FlagLayer.jsx';
 import { OrderDragLine } from './OrderDragLine.jsx';
 import { heroOutline } from './spriteOutline.js';
@@ -243,6 +247,9 @@ export const MatBoard = React.memo(function MatBoard({
                     // no glow (the Token's problem mark says it alone) and stands idle instead
                     // of swinging. The same test as the Token's own hit reaction (`strikesLive`).
                     stuck: !!worked && !strikesLive(heroId, worked.alert),
+                    // The Token they work shows its "!" (the problem mark's own test): the job's
+                    // task ring turns amber.
+                    jobStuck: !!worked && !!problemOf({ alert: worked.alert || null }),
                     // Fighting: idle, one attack per real attack.
                     combat: !!worked && hitsOnAttack(hitSkillOf(getTokenType(worked.typeId))),
                     // Below full health: the health bar shows.
@@ -503,6 +510,15 @@ export const MatBoard = React.memo(function MatBoard({
         return out;
     }, [heroes]);
 
+    /** Each job in progress, for its task ring. Keyed by value, so a walking step redraws no ring. */
+    const artScale = boardScaleAt(fit);
+    const taskJobsNow = useMemo(
+        () => (ringsDrawn ? taskJobsOf(heroes, tokens, { carriedId, artScale }) : NO_JOBS),
+        [ringsDrawn, heroes, tokens, carriedId, artScale]
+    );
+    const taskKey = taskJobsKey(taskJobsNow);
+    const taskJobs = useMemo(() => taskJobsNow, [taskKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
     /**
      * A camp's reach ring, lit through a hero: the camp of the hero the pointer rests on (or the
      * hero working the Token it rests on, who is outlined as hovered too), or of the lit hero
@@ -542,6 +558,8 @@ export const MatBoard = React.memo(function MatBoard({
     // layout effect: written in the same commit, before anything is painted.
     const stack = useMemo(() => createStackWriter(), []);
     useLayoutEffect(() => { stack.apply(order.tokenZ, hoveredId); }, [stack, order, hoveredId]);
+    // The task rings, line and dim: over the Tokens at rest, under the worked ones.
+    const ringZ = useMemo(() => taskRingZ(order.tokenZ, workedBy.keys()), [order, workedBy]);
 
     return (
         <div
@@ -585,6 +603,13 @@ export const MatBoard = React.memo(function MatBoard({
              * pulse on the ground; cloud shadows, drifting particles and small birds over the Tokens.
              */}
             <AmbientLife pictures={ground ? groundPictures : null} tokens={tokens} workedBy={workedBy} carriedId={carriedId} />
+
+            {/**
+              * At `taskRingZ`: a ring round every job in progress, over the Tokens at rest, the
+              * ground and those Tokens dimmed inside it. ⚠️ Before the Tokens and heroes: they win a
+              * tie of z.
+              */}
+            {ringsDrawn && <TaskRings jobs={taskJobs} z={ringZ} />}
 
             {/* `MAT_Z.HELD_SHADE`: a held mat's ground in shadow, lifting slowly once it is cleared. */}
             <div
@@ -654,9 +679,7 @@ export const MatBoard = React.memo(function MatBoard({
                         outline={heroOutline({
                             picked: pickedHeroId === h.heroId,
                             hovered: litHeroId === h.heroId || (h.tokenId != null && hoveredId === h.tokenId),
-                            selected: inspectedHeroId === h.heroId,
-                            working: h.state === 'working',
-                            stuck: h.stuck
+                            selected: inspectedHeroId === h.heroId
                         })}
                         onHover={handleHoverHero}
                         onPick={handlePickHero}
@@ -762,6 +785,8 @@ export const MatBoard = React.memo(function MatBoard({
         </div>
     );
 });
+
+const NO_JOBS = Object.freeze([]);
 
 /** How far a press may move and still be a click on blank mat, in screen pixels (a drag starts at 8). */
 const CLICK_SLOP_PX = 6;
