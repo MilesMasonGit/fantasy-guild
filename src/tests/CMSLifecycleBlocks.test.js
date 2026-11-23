@@ -168,14 +168,15 @@ describe('A Token with every block survives load → edit → sync → reload', 
         for (const key of TOKEN_LIFECYCLE_BLOCKS) expect(persisted.tokens[id][key]).toEqual(blocks[key]);
     });
 
-    it('editing a Passive Production line drops its stale time but keeps the Turns time', () => {
+    it('editing a Passive Production line drops its stale time but keeps the times of the other blocks', () => {
         const { id } = authorFixture();
         const store = useEntityStore.getState();
         const line = store.tokens[id].trickle[0];
         store.updateToken(id, { trickle: [{ ...line, quantity: 3, everyMs: 300000 }] });
         const after = useEntityStore.getState().tokens[id];
         expect(after.trickle).toEqual([{ itemId: line.itemId, quantity: 3 }]);
-        expect(after.turns.everyMs).toBe(90000);
+        expect(after.spawner.intervalMs).toBe(20000);
+        expect(after.grows.afterMs).toBe(30000);
     });
 
     it('removing a block leaves no key behind in the file', () => {

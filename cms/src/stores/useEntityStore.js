@@ -540,7 +540,7 @@ function collectionActions(collectionKey, set, get) {
                 if (!current) return {};
 
                 const next = { ...current, ...patch };
-                // ⚠️ Only a Passive Production line: `turns.everyMs` is live and stays.
+                // ⚠️ Only a Passive Production line loses its time: the other blocks' times are live.
                 if (collectionKey === 'tokens' && Array.isArray(patch.trickle)) {
                     next.trickle = patch.trickle.map(({ everyMs: _dropped, ...line }) => line);
                 }
