@@ -68,7 +68,8 @@ Token cap (`ALERT.SPAWN_MAT_FULL`) puts a red '!' on every spawner at once.
    mark's spot on hover, now in the centre.
 3. **Said once** (owner): when a Token shows its '!', the idle plate under it
    leaves the problem out (the plate shows only its timers, or nothing). The
-   '!' keeps its tooltip with the reason. Every problem, not only the cap.
+   reason is on the Token card (section 11: no tooltips on the mat). Every
+   problem, not only the cap.
 4. **Token cap full: yellow, and gone once hovered** (owner): a full cap is
    waiting for room, not broken, so a spawner shows the yellow '!'. Once the
    player hovers that spawner, its cap '!' goes away (seen); it comes back
@@ -175,6 +176,37 @@ hover outline on the mat stand.
    Director's default, not ruled: the icon shows how many are waiting, red if
    a problem is among them.
 5. Whether shown or hidden is remembered between sessions (director's default).
+
+## 11. No hover tooltips on the playmat
+
+**Nothing on the mat shows a hover tooltip** (owner): the enemy card tip
+(`EnemyCardTip`), the '!' reason, the work plate's cell tips, the flag cloth's
+tip, the Passive Production tooltip and any `title` text on a Token go. The
+reasons and details live on the Token card and the Hero drawer (right-click).
+Not tooltips, so they stay: the name label on hover, the hovered work plate's
+full line (without its tips), and the recipe bubble (section 12). Panels and
+bars off the mat (hero bar, Controls, top bar, drawers) keep theirs.
+
+## 12. Recipes: one place to choose, one way to see
+
+1. **The gear sits in the Token's centre**, always (owner: today it moves
+   between the centre row and the '!' spot). It shows on hover on a Token
+   that takes a recipe; with none chosen it pulses, as today.
+2. **Choosing a recipe happens in the Token card** (owner): the separate
+   recipe picker goes. Clicking the gear does what a right-click does.
+   - **No recipe chosen**: the card opens straight on its recipe list.
+   - **A recipe chosen**: the card opens on its usual face, the current
+     recipe shown, with a **Change** button to the recipe list.
+   The same for a Foundation's building choice (director: check it fits the
+   card the same way, and say if not).
+3. **Hovering a Token with a recipe chosen shows that recipe's output sprite
+   in a speech bubble over it** (owner), in the hero speech bubble's style.
+   Hover only, never at rest.
+
+## 13. The playmat reaches further left
+
+The mat extends left toward the Nav Bubbles, leaving **the same gap as on its
+right side** (owner), so it sits evenly in its space and gets more board.
 
 ## Open
 
