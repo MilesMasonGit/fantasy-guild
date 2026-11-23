@@ -219,6 +219,17 @@ describe('Burn: no stacks, 1 a tick for 3 ticks, food heals half', () => {
         hero.hp.current = 10;
         expect(ConsumptionSystem.tryEat(hero.id, { inFight: true })).toEqual([{ itemId: 'item_shrimp', amount: 5 }]);
     });
+
+    it('halves a meal eaten out of a fight too, while Burning lasts', () => {
+        InventoryManager.addItem('item_shrimp', 5);
+        const { hero } = startFight(['item_shrimp']);
+        land(hero.id, BURN);
+        hero.hp.current = 10;
+        expect(ConsumptionSystem.tryEat(hero.id)).toEqual([{ itemId: 'item_shrimp', amount: 3 }]);
+        tick(); tick(); tick();
+        hero.hp.current = 10;
+        expect(ConsumptionSystem.tryEat(hero.id)).toEqual([{ itemId: 'item_shrimp', amount: 5 }]);
+    });
 });
 
 describe('what a hero carries moves a status (a Hide Vest, an immunity)', () => {

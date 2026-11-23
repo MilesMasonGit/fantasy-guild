@@ -287,7 +287,7 @@ function auditCombatAxes(out, where, def) {
     }
 }
 
-/** A guild-only rule (Wound Time, Loadout Slots) on a Token or an item: only a Guild Hall star's reaches anyone. */
+/** A guild-only rule (Recovery, Loadout Slots) on a Token or an item: only a Guild Hall star's reaches anyone. */
 function auditGuildOnlyAxes(out, where, def) {
     for (const statement of statementsOf(def)) {
         if (statement?.keyword !== KEYWORD.PROVIDES) continue;

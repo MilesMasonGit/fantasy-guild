@@ -80,7 +80,7 @@ export function handleHeroAttack(fight, hero, enemy, attackSpeed) {
     // tense. Uncapped on purpose: a hero who can't out-heal the damage should lose. Only food
     // heals; an equipped drink is left alone.
     // Read where the fight is: the enemy Token (`fight.instanceId`), as its kill's loot rules are.
-    const meals = ConsumptionSystem.tryEat(hero.id, { inFight: true, instanceId: fight.instanceId ?? null });
+    const meals = ConsumptionSystem.tryEat(hero.id, { instanceId: fight.instanceId ?? null });
     if (meals.length) {
         for (const meal of meals) {
             EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATE, {
