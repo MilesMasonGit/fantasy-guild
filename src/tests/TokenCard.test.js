@@ -626,15 +626,17 @@ describe('a water’s catches', () => {
 
     it('with a hero: what they land stands open, naming their gear; the rest stay shut', () => {
         const water = put('card_water');
-        GameState.state.heroes = [fisher(['card_rod'])];
+        // A rod fishes only with bait: Card Worm carried and in the Bank.
+        GameState.state.heroes = [fisher(['card_rod', 'card_worm'])];
+        InventoryManager.addItem('card_worm', 3);
         const spy = vi.spyOn(BoardState, 'workerOf').mockReturnValue('angler');
         try {
             const { container } = mount(h(TokenCard, { typeId: 'card_water', instanceId: water.id }));
             const setup = container.querySelector('[data-card-catch-setup]');
             expect(setup.textContent).toContain('Angler catches');
-            expect(container.querySelector('[data-card-catch-gear]').textContent).toBe('Card Rod, no bait');
-            expect(setup.querySelectorAll('[data-item-bar]')).toHaveLength(2);
-            expect(setup.textContent).toContain('25%');
+            expect(container.querySelector('[data-card-catch-gear]').textContent).toBe('Card Rod with Card Worm');
+            expect(setup.querySelectorAll('[data-item-bar]')).toHaveLength(1);
+            expect(setup.textContent).toContain('100%');
             expect([...container.querySelectorAll('[data-card-catch-tool]')].map(el => el.dataset.cardCatchTool)).toEqual(['fishing_rod', 'fishing_net']);
             expect([...container.querySelectorAll('[data-card-collapse]')].every(el => el.dataset.cardCollapse === 'shut')).toBe(true);
         } finally {

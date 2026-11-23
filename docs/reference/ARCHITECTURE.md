@@ -504,7 +504,12 @@ the Perf HUD is showing (`src/ui/components/base/FPSCounter.jsx:10-25`,
   are not saved: `GAME_LOADED` and `BOARD_SWAPPED` raise one for each event Token standing on the
   mat (`BOARD_SWAPPED` first withdraws those whose Token is not on the new mat), and
   `CATCH_UP_FINISHED` raises one for each event that landed in the catch-up and still stands, held
-  with the rest of its news while the summary is open.
+  with the rest of its news while the summary is open. A catch-up with no summary hands its news
+  to the banners (`deliverCatchUpNews`); once a summary closes, no milestone is raised again,
+  only the problems that still stand, read from the mat and the Bank (`deliverAfterSummary`).
+  Bank-full and stack-full banners carry their item ids and go by themselves once the Bank would
+  take those items (`settleProblemBanners`, on every Bank change, a guild upgrade and a load);
+  every other kind stays until clicked.
 - **Callouts**: refusals at a mat point (`ui/components/board/CalloutLayer.jsx`) and screen
   callouts (`ui/components/notifications/ScreenCalloutLayer.jsx`).
 - **`NotificationSystem`** messages are drawn only on the slot screen

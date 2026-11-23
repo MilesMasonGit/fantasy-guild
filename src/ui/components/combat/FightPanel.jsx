@@ -414,7 +414,7 @@ const StatusRow = ({ s }) => (
  * its rules on hover in the plain colour, whichever side carries it.
  */
 const BuffRow = ({ buff }) => (
-    <Tooltip title={buff.name} lines={buff.lines}>
+    <Tooltip title={buff.name} lines={[...(buff.lines || []), ...(buff.explains || [])]}>
         <span className="flex items-center gap-1.5 ui-text-small cursor-help" style={{ minHeight: 20 }} data-fight-buff={buff.name}>
             <CombatGlyph name="star" colour={GLYPH_COLOUR.gold} />
             <span className="font-bold text-white">{buff.name}</span>

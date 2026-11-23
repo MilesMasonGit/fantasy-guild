@@ -146,6 +146,13 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  * what it does in words ("work 5% faster"), which a Hall star's numberless sentence uses ("Every
  * Forestry Token works faster", `hallStarText.starSentence`).
  *
+ * ## `explains` — what the effect means, for a player
+ *
+ * The one plain description of each effect, shown on hover wherever its name appears: a Token's
+ * badge, a building's Boosts list, a rule line, an item's tooltip, the Encyclopedia
+ * (`effectExplain.js` reads it for every screen). `hint` is the author's note in the CMS; this is
+ * the player's.
+ *
  * ## `harmful` — more of it is worse
  *
  * A chance that works against its bearer (Failure): its screens draw it red when it rises.
@@ -169,13 +176,14 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  * same property and is not combat, so the property is declared rather than
  * inferred from a label.
  *
- * @type {Array<{type: string, label: string, shape: string, group: string, hint: string, inverted?: boolean, when: string, scales?: string}>}
+ * @type {Array<{type: string, label: string, explains: string, shape: string, group: string, hint: string, inverted?: boolean, when: string, scales?: string}>}
  */
 export const MODIFIER_PALETTE = [
     // --- Production ---------------------------------------------------------
     {
         type: EFFECT_TYPES.YIELD,
         label: 'Yield',
+        explains: 'Each cycle gives a little more',
         when: 'never',
         scales: 'value',
         categories: 'skill',
@@ -187,6 +195,7 @@ export const MODIFIER_PALETTE = [
         type: EFFECT_TYPES.WORK_TIME,
         reads: { up: (n) => `work ${n} slower`, down: (n) => `work ${n} faster` },
         label: 'Speed',
+        explains: 'A cycle takes less time',
         when: 'never',
         scales: 'value',
         categories: 'skill',
@@ -199,6 +208,7 @@ export const MODIFIER_PALETTE = [
         type: EFFECT_TYPES.INPUT_COST,
         reads: { up: (n) => `use ${n} more of every input`, down: (n) => `use ${n} less of every input` },
         label: 'Efficiency',
+        explains: 'A recipe needs fewer of an input',
         when: 'never',
         scales: 'value',
         categories: 'skill',
@@ -217,6 +227,7 @@ export const MODIFIER_PALETTE = [
         type: EFFECT_TYPES.GROW_TIME,
         reads: { up: (n) => `grow and refill ${n} slower`, down: (n) => `grow and refill ${n} faster` },
         label: 'Growth',
+        explains: 'A resting Token refills sooner',
         when: 'never',
         scales: 'value',
         buckets: ['percentage'],
@@ -238,6 +249,7 @@ export const MODIFIER_PALETTE = [
             down: (n, size) => `hold ${n} fewer ${size === '1' ? 'harvest' : 'harvests'} when ripe`
         },
         label: 'Abundance',
+        explains: 'A Token kind holds more charges before it rests',
         when: 'never',
         scales: 'value',
         buckets: ['flat', 'percentage'],
@@ -256,6 +268,7 @@ export const MODIFIER_PALETTE = [
         retired: true,
         reads: { up: (n) => `hand out work ${n} further away`, down: (n) => `hand out work ${n} less far away` },
         label: 'Camp Reach',
+        explains: 'Does nothing any more',
         when: 'never',
         scales: 'value',
         buckets: ['percentage'],
@@ -275,6 +288,7 @@ export const MODIFIER_PALETTE = [
         type: EFFECT_TYPES.WOUND_TIME,
         reads: { up: (n) => `recover from a wound ${n} slower`, down: (n) => `recover from a wound ${n} faster` },
         label: 'Recovery',
+        explains: 'A defeated hero recovers sooner',
         when: 'never',
         scales: 'value',
         buckets: ['percentage'],
@@ -291,6 +305,7 @@ export const MODIFIER_PALETTE = [
          */
         type: EFFECT_TYPES.LOADOUT_SLOTS,
         label: 'Loadout Slots',
+        explains: 'Every hero may carry more items of one kind',
         when: 'never',
         scales: 'value',
         buckets: ['flat'],
@@ -308,6 +323,7 @@ export const MODIFIER_PALETTE = [
         type: EFFECT_TYPES.PASSIVE_LAP,
         reads: { up: (n) => `${n} longer`, down: (n) => `${n} shorter` },
         label: 'Lap Speed',
+        explains: 'The Guild Hall\'s lap comes round sooner',
         when: 'never',
         scales: 'value',
         buckets: ['percentage'],
@@ -327,6 +343,7 @@ export const MODIFIER_PALETTE = [
          */
         type: EFFECT_TYPES.XP_FOR_EVERYONE,
         label: 'XP for Everyone',
+        explains: 'XP for every hero in every skill, once',
         when: 'never',
         scales: 'value',
         buckets: ['flat'],
@@ -345,6 +362,7 @@ export const MODIFIER_PALETTE = [
         type: EFFECT_TYPES.LONG_LASTING_BREWS,
         reads: { up: (n) => `last ${n} longer`, down: (n) => `last ${n} shorter` },
         label: 'Long-lasting Brews',
+        explains: 'A drink, potion or fight elixir lasts longer',
         when: 'never',
         scales: 'value',
         buckets: ['percentage', 'flat'],
@@ -363,6 +381,7 @@ export const MODIFIER_PALETTE = [
         type: EFFECT_TYPES.STRONG_DRINK,
         reads: { up: (n) => `${n} stronger`, down: (n) => `${n} weaker` },
         label: 'Strong Drink',
+        explains: 'Drinks, potions and fight elixirs give more',
         when: 'never',
         scales: 'value',
         buckets: ['percentage'],
@@ -378,6 +397,7 @@ export const MODIFIER_PALETTE = [
         type: EFFECT_TYPES.XP_BONUS,
         reads: { up: (n) => `award ${n} more XP`, down: (n) => `award ${n} less XP` },
         label: 'XP',
+        explains: 'More XP from the work',
         when: 'never',
         scales: 'value',
         categories: 'skill',
@@ -392,6 +412,7 @@ export const MODIFIER_PALETTE = [
             down: (n) => `have ${n} less chance of double loot`
         },
         label: 'Double Loot',
+        explains: 'A chance the whole cycle\'s output comes out doubled',
         when: 'never',
         scales: 'value',
         categories: 'skill',
@@ -406,6 +427,7 @@ export const MODIFIER_PALETTE = [
             down: (n) => `have ${n} less chance to fail`
         },
         label: 'Failure',
+        explains: 'A chance a cycle makes nothing',
         // A chance against the bearer: more of it is worse, so the screens draw it red.
         harmful: true,
         when: 'never',
@@ -424,6 +446,7 @@ export const MODIFIER_PALETTE = [
          */
         type: EFFECT_TYPES.DOUBLE_DROP,
         label: 'Double Item',
+        explains: 'A chance one named item comes out doubled',
         when: 'never',
         scales: 'value',
         // A chance is a plain number of percent; resolved from a base of 0, so any other bucket is 0.
@@ -445,6 +468,7 @@ export const MODIFIER_PALETTE = [
             down: (n) => `have ${n} less chance a cycle spends none of their charges`
         },
         label: 'Refresh',
+        explains: 'A chance a cycle spends none of the Token\'s charges',
         when: 'never',
         scales: 'value',
         // A chance is a plain number of percent; resolved from a base of 0, so any other bucket is 0.
@@ -469,6 +493,7 @@ export const MODIFIER_PALETTE = [
             down: (n) => `have ${n} less chance nothing is used up: a cycle's materials, ammo, Food, drinks, potions or bait`
         },
         label: 'Preservation',
+        explains: 'A chance a cycle uses none of its materials',
         when: 'never',
         scales: 'value',
         // A chance is a plain number of percent; resolved from a base of 0, so any other bucket is 0.
@@ -497,6 +522,7 @@ export const MODIFIER_PALETTE = [
             down: (n) => `have rare find chance ${n}`
         },
         label: 'Lucky',
+        explains: 'A higher chance on the Token\'s own rare drop table',
         when: 'never',
         scales: 'value',
         buckets: ['percentage', 'flat'],
@@ -517,6 +543,7 @@ export const MODIFIER_PALETTE = [
             down: (n) => `have ${n} less chance a gathering cycle's drops come in at ten times`
         },
         label: 'Giant Harvest',
+        explains: 'A chance a gathering cycle\'s drops come in at ten times',
         when: 'never',
         scales: 'value',
         // A chance is a plain number of percent; resolved from a base of 0, so any other bucket is 0.
@@ -538,6 +565,7 @@ export const MODIFIER_PALETTE = [
          */
         type: EFFECT_TYPES.CATCH_WEIGHT,
         label: 'Catch Weight',
+        explains: 'One fish bites more often',
         when: 'never',
         scales: 'value',
         buckets: ['percentage'],
@@ -559,6 +587,7 @@ export const MODIFIER_PALETTE = [
     {
         type: EFFECT_TYPES.ACCURACY,
         label: 'Accuracy',
+        explains: 'The hero misses less often',
         when: 'never',
         scales: 'value',
         buckets: ['flat'],
@@ -572,6 +601,7 @@ export const MODIFIER_PALETTE = [
     {
         type: EFFECT_TYPES.DAMAGE,
         label: 'Damage',
+        explains: 'Every hit lands harder',
         when: 'never',
         scales: 'value',
         /**
@@ -594,6 +624,7 @@ export const MODIFIER_PALETTE = [
     {
         type: EFFECT_TYPES.DODGE,
         label: 'Dodge',
+        explains: 'Attacks on the hero miss more often',
         when: 'never',
         scales: 'value',
         buckets: ['flat'],
@@ -606,6 +637,7 @@ export const MODIFIER_PALETTE = [
     {
         type: EFFECT_TYPES.CRIT_CHANCE,
         label: 'Crit Chance',
+        explains: 'A higher chance a hit lands double',
         when: 'never',
         scales: 'value',
         buckets: ['flat'],
@@ -623,6 +655,7 @@ export const MODIFIER_PALETTE = [
          */
         type: EFFECT_TYPES.TYPE_DAMAGE,
         label: 'Type Damage %',
+        explains: 'Hits of one damage type land harder',
         when: 'never',
         scales: 'value',
         buckets: ['flat'],
@@ -636,6 +669,7 @@ export const MODIFIER_PALETTE = [
     {
         type: EFFECT_TYPES.TYPE_RESIST,
         label: 'Type Resistance %',
+        explains: 'Hits of one damage type hurt less',
         when: 'never',
         scales: 'value',
         buckets: ['flat'],
@@ -654,6 +688,7 @@ export const MODIFIER_PALETTE = [
          */
         type: EFFECT_TYPES.SUNDER,
         label: 'Sunder',
+        explains: 'Takes points off every resistance',
         when: 'never',
         scales: 'value',
         buckets: ['flat'],
@@ -671,6 +706,7 @@ export const MODIFIER_PALETTE = [
          */
         type: EFFECT_TYPES.SWING_TIME,
         label: 'Attack Speed',
+        explains: 'Each attack comes sooner',
         when: 'never',
         scales: 'value',
         buckets: ['percentage'],
@@ -686,6 +722,7 @@ export const MODIFIER_PALETTE = [
         // Read by `ConsumptionSystem` when a hero eats in a fight: Burn's half heal.
         type: EFFECT_TYPES.FOOD_HEALING,
         label: 'Food Healing',
+        explains: 'A meal heals more in a fight',
         when: 'never',
         scales: 'value',
         buckets: ['percentage'],
@@ -703,6 +740,7 @@ export const MODIFIER_PALETTE = [
         type: EFFECT_TYPES.HP_REGEN,
         reads: { up: (n) => `heal ${n} faster out of a fight`, down: (n) => `heal ${n} slower out of a fight` },
         label: 'Regen',
+        explains: 'A hero heals faster out of a fight',
         when: 'never',
         scales: 'value',
         buckets: ['percentage'],
@@ -717,6 +755,7 @@ export const MODIFIER_PALETTE = [
     {
         type: EFFECT_TYPES.STATUS_IMMUNITY,
         label: 'Status Immunity',
+        explains: 'One status cannot land',
         when: 'never',
         // ⚠️ No `scales`. Immunity is a switch, not a magnitude: the reader asks
         // `> 0`, so a scale of 3 would read exactly like a scale of 1 while
@@ -732,6 +771,7 @@ export const MODIFIER_PALETTE = [
         // Read by `LiveEffects` as a status lands, through `CombatFormulas.heroStatusStackCap`.
         type: EFFECT_TYPES.STATUS_MAX_STACKS,
         label: 'Status Stack Limit',
+        explains: 'One status builds up fewer stacks',
         when: 'never',
         scales: 'value',
         buckets: ['flat'],
@@ -746,6 +786,7 @@ export const MODIFIER_PALETTE = [
     {
         type: EFFECT_TYPES.BONUS_DROP,
         label: 'Bonus Drop',
+        explains: 'A chance a cycle also gives an extra item',
         when: 'optional',
         scales: 'quantity',
         shape: MODIFIER_SHAPES.ITEM,
@@ -755,6 +796,7 @@ export const MODIFIER_PALETTE = [
     {
         type: EFFECT_TYPES.CONVERT,
         label: 'Convert',
+        explains: 'Turns some items into others',
         scales: 'amounts',
         shape: MODIFIER_SHAPES.CONVERT,
         group: 'Grants',
@@ -835,6 +877,11 @@ export function describeModifierDirection(entry, value, bucket = 'percentage') {
 /** Palette entry for an effect type, or null if it is not authorable. */
 export function getPaletteEntry(type) {
     return MODIFIER_PALETTE.find(e => e.type === type) || null;
+}
+
+/** What an effect means in a player's words (its `explains`), or null for a type with no entry. */
+export function effectExplains(type) {
+    return getPaletteEntry(type)?.explains || null;
 }
 
 /**

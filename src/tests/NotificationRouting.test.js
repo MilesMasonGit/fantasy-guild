@@ -24,6 +24,7 @@ import { recipesUnlockedBy } from '../systems/notifications/recipeUnlocks.js';
 import { announce } from '../ui/components/board/dropOnMat.js';
 import { equipBubbleOf, clearEquipBubbles } from '../ui/components/dock/equipBubbles.js';
 import { equipOrAnnounce } from '../ui/components/dock/dockEquip.js';
+import { DEFAULT_MAX_STACK } from '../config/registries/itemRegistry.js';
 
 /**
  * Where every event goes (the owner's audit, concept_notifications.md): items to one stub each,
@@ -287,19 +288,25 @@ describe('after time away: the catch-up\'s news, handed over', () => {
     });
     const closed = () => EventBus.publish(UI_EVENTS.CATCH_UP_SUMMARY_CLOSED);
     const kinds = () => Banners.getAll().map(b => b.kind);
+    /** No slot for a kind the Bank does not hold yet. */
+    const bankFull = () => { GameState.inventory.maxSlots = 0; };
+    const onMat = (...itemIds) => {
+        GameState.state.board.sprites = itemIds.map((refId, i) => ({ id: `sp${i}`, kind: 'item', refId, quantity: 3, x: 10, y: 10 }));
+    };
 
-    it('a summary on screen holds it; closing the summary raises the banners and the gold stubs', () => {
-        finished(news(), true);
+    it('⭐ told once: closing the summary raises no recipe or knock-out again, only a problem still standing', () => {
+        bankFull();
+        // item_oak still waits on the mat; item_stone, refused while away, no longer lies there.
+        onMat('item_oak');
+        finished(news({ bankFull: ['item_oak', 'item_stone'] }), true);
         expect(Banners.getAll()).toEqual([]);
         expect(ItemStubs.getStub('item_copper')).toBeNull();
 
         closed();
-        // Milestones first, so the problems drop in on top (newest on top).
-        expect(Banners.getView().shown.map(b => b.kind)).toEqual(['bankFull', 'knockout', 'recipe']);
-        const recipe = Banners.getAll().find(b => b.kind === 'recipe');
-        expect(recipe.line).toBe('Aela unlocked 3 recipes: Cider, Apple Pie, ...');
-        expect(Banners.getAll().find(b => b.kind === 'knockout').line).toBe('Bram was carried home, injured. Lost: Copper Sword.');
-        expect(Banners.getAll().find(b => b.kind === 'bankFull').line).toMatch(/waits on the mat/);
+        expect(kinds()).toEqual(['bankFull']);
+        const [full] = Banners.getAll();
+        expect(full.line).toBe('item_oak waits on the mat until the Bank has room');
+        // A first find's stub marks the item, it is not a banner.
         const stub = ItemStubs.getStub('item_copper');
         expect(stub.isNew).toBe(true);
         expect(ItemStubs.netOf(stub)).toBe(4);
@@ -307,16 +314,36 @@ describe('after time away: the catch-up\'s news, handed over', () => {
 
         // Said once: closing again raises nothing more.
         closed();
-        expect(Banners.getAll()).toHaveLength(3);
+        expect(Banners.getAll()).toHaveLength(1);
+    });
+
+    it('judged on the game at close, not on the summary: a Bank with room by then raises nothing', () => {
+        onMat('item_oak');
+        finished(news(), true);
+        closed();
+        expect(Banners.getAll()).toEqual([]);
+    });
+
+    it('a pile the Bank refuses at close is said even when the summary had no row for it; a full stack too', () => {
+        bankFull();
+        GameState.inventory.items.item_flint = { quantity: DEFAULT_MAX_STACK };
+        onMat('item_oak', 'item_flint', 'item_oak');
+        finished(news({ bankFull: [], recipes: [], knockouts: [], finds: [] }), true);
+        closed();
+        expect(Banners.getAll().map(b => [b.kind, b.parts.itemIds])).toEqual([
+            ['stackFull', ['item_flint']], ['bankFull', ['item_oak']]
+        ]);
     });
 
     it('a short catch-up with no summary raises them at once', () => {
+        bankFull();
         finished(news(), false);
         expect(kinds().sort()).toEqual(['bankFull', 'knockout', 'recipe']);
         expect(ItemStubs.getStub('item_copper').isNew).toBe(true);
     });
 
     it('each comes on screen with its sound, as a live banner does', () => {
+        bankFull();
         const sounds = [];
         const off = EventBus.subscribe(ENGINE_EVENTS.AUDIO_PLAY, (p) => sounds.push(p.clip));
         try {
@@ -342,7 +369,8 @@ describe('after time away: the catch-up\'s news, handed over', () => {
         expect(knockouts[0].line).toBe('Aela and Bram knocked out and carried home. Aela lost: Iron Sword. Bram lost: 3 Shrimp.');
     });
 
-    it('a long absence stays merged: one banner per kind, and no wall of stubs', () => {
+    it('a long absence with no summary stays merged: one banner per kind, and no wall of stubs', () => {
+        bankFull();
         const heroes = ['Aela', 'Bram', 'Cara', 'Dov', 'Eli'];
         const finds = Array.from({ length: 15 }, (_, i) => ({ itemId: `item_find_${i}`, count: i + 1 }));
         finished(news({
@@ -350,8 +378,7 @@ describe('after time away: the catch-up\'s news, handed over', () => {
             knockouts: heroes.map((name, i) => ({ heroId: `h${i}`, heroName: name, times: 3, lost: [] })),
             bankFull: ['item_oak', 'item_stone', 'item_copper_ore'],
             finds
-        }), true);
-        closed();
+        }), false);
         expect(kinds().sort()).toEqual(['bankFull', 'knockout', 'recipe']);
         expect(Banners.getView().waiting).toBe(0);
         expect(Banners.getAll().find(b => b.kind === 'recipe').line).toBe('Aela, Bram and 3 more unlocked 5 recipes: Dish 0, Dish 1, ...');
@@ -361,14 +388,16 @@ describe('after time away: the catch-up\'s news, handed over', () => {
         expect(ItemStubs.getStubs().every(s => s.isNew)).toBe(true);
     });
 
-    it('two catch-ups before the summary closes: both handed over', () => {
-        finished(news({ bankFull: [], knockouts: [], finds: [] }), true);
+    it('two catch-ups before the summary closes: both finds handed over, no recipe replayed', () => {
+        finished(news({ bankFull: [], knockouts: [] }), true);
         finished(news({
             recipes: [{ heroId: 'h2', heroName: 'Bram', skillId: 'smithing', recipes: [{ id: 'r_bar', name: 'Copper Bar', itemId: 'item_copper_bar' }] }],
-            bankFull: [], knockouts: [], finds: []
+            bankFull: [], knockouts: [], finds: [{ itemId: 'item_tin', count: 2 }]
         }), true);
         closed();
-        expect(kinds()).toEqual(['recipe', 'recipe']);
+        expect(kinds()).toEqual([]);
+        expect(ItemStubs.getStub('item_copper').isNew).toBe(true);
+        expect(ItemStubs.getStub('item_tin').isNew).toBe(true);
     });
 
     it('a load before the summary closes forgets it (a new game too)', () => {
@@ -461,4 +490,75 @@ describe('⭐ no room is said in one banner, the waits named in it', () => {
         expect(banner.line).toBe('No room for an event to land: it tries again later.');
         expect(banner.subjects).toEqual([]);
     });
+});
+
+describe('⭐ a problem banner goes by itself once fixed; a milestone stays until clicked', () => {
+    const refused = (itemId, reason) => EventBus.publish(ENGINE_EVENTS.BANK_FULL, { itemId, reason });
+
+    it('Bank full goes once the Bank has a free slot', () => {
+        GameState.inventory.maxSlots = 0;
+        refused('item_oak', 'slots');
+        refused('item_stone', 'slots');
+        EventBus.publish(BOARD_EVENTS.HERO_DEFEATED, { heroId: 'h1', heroName: 'Aela', lost: [] });
+        // A Bank change that frees nothing leaves it.
+        EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED);
+        expect(kinds()).toEqual(['knockout', 'bankFull']);
+
+        GameState.inventory.maxSlots = 64;
+        EventBus.publish(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, { upgradeId: 'bank_tabs', rank: 1 });
+        expect(kinds()).not.toContain('bankFull');
+        // The knock-out stays until clicked.
+        expect(kinds()).toContain('knockout');
+    });
+
+    it('stack full names only the items still at the ceiling, and goes when none is', () => {
+        GameState.inventory.items.item_flint = { quantity: DEFAULT_MAX_STACK };
+        GameState.inventory.items.item_tin = { quantity: DEFAULT_MAX_STACK };
+        refused('item_flint', 'stack');
+        refused('item_tin', 'stack');
+        expect(Banners.getAll()).toHaveLength(1);
+
+        GameState.inventory.items.item_flint.quantity = DEFAULT_MAX_STACK - 5;
+        EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED, { itemId: 'item_flint', removed: 5 });
+        const [banner] = Banners.getAll();
+        expect(banner.parts.itemIds).toEqual(['item_tin']);
+        expect(banner.line).toBe('item_tin waits on the mat: the Bank holds no more of it');
+
+        GameState.inventory.items.item_tin.quantity = 1;
+        EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED, { itemId: 'item_tin', removed: 5 });
+        expect(Banners.getAll()).toEqual([]);
+    });
+
+    it('a cleared banner on screen lets the next waiting one come on', () => {
+        GameState.inventory.maxSlots = 0;
+        refused('item_oak', 'slots');
+        for (const [id, name] of [['h1', 'Aela'], ['h2', 'Bram'], ['h3', 'Cara']]) {
+            GameState.heroes.push(heroWith(id, name, 1));
+            EventBus.publish(ENGINE_EVENTS.HERO_RECRUITED, { heroId: id, name });
+        }
+        expect(Banners.getView()).toMatchObject({ waiting: 1 });
+        GameState.inventory.maxSlots = 64;
+        EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED);
+        expect(Banners.getView().waiting).toBe(0);
+        expect(Banners.getView().shown).toHaveLength(3);
+        expect(kinds()).not.toContain('bankFull');
+    });
+
+    it('a kept Bank-full banner a load brings back goes at once when the Bank has room now', () => {
+        GameState.state.ui.banners = [
+            { kind: 'bankFull', parts: { items: ['item_oak'], itemIds: ['item_oak'] }, sprite: null, subjects: [] },
+            { kind: 'knockout', parts: { heroes: ['Aela'], lost: [] }, sprite: null, subjects: [] }
+        ];
+        EventBus.publish(ENGINE_EVENTS.GAME_LOADED, { slot: 0 });
+        expect(kinds()).toEqual(['knockout']);
+    });
+
+    it('clicking it still sends it away before it is fixed', () => {
+        GameState.inventory.maxSlots = 0;
+        refused('item_oak', 'slots');
+        Banners.dismiss(Banners.getAll()[0].id);
+        expect(Banners.getAll()).toEqual([]);
+    });
+
+    const kinds = () => Banners.getAll().map(b => b.kind);
 });

@@ -41,11 +41,11 @@ export function effectAmountText(unit, value) {
 /**
  * A rule's payload as the badge it causes (`Speed +25%`, `Double Loot 10%`, `Bird Nest 5%`), and
  * whether it works against its bearer: a building's Boosts list, the mat's support labels, a buff
- * Token's list.
- * @returns {{text: string, against: boolean}}
+ * Token's list. `type` is the effect, for its explanation (`effectExplain.js`).
+ * @returns {{text: string, against: boolean, type: string}}
  */
 export function effectTagOf(payload, itemName = (id) => getItem(id)?.name || null) {
-    return effectTag(getPaletteEntry(payload?.type), payload, itemName);
+    return { ...effectTag(getPaletteEntry(payload?.type), payload, itemName), type: payload?.type };
 }
 
 /** {@link effectTagOf}'s words alone. */

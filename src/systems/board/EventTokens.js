@@ -51,6 +51,11 @@ export function endedWord(reason) {
     return t(reason === ENDED.DEMOLISHED ? 'events.ended.demolished' : 'events.ended.expired');
 }
 
+/** "2 expired", "1 demolished": how many of a kind of event left that way, for the away summary. */
+export function endedCountText(reason, n) {
+    return t(reason === ENDED.DEMOLISHED ? 'events.ended.demolishedCount' : 'events.ended.expiredCount', { n });
+}
+
 /** The event an instance landed as, or null. */
 export function eventOf(instance) {
     const event = instance?.event;

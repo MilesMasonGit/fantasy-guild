@@ -12,6 +12,8 @@ import { lengthText } from '../../../utils/Formatters.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
+import { Tooltip } from '../base/Tooltip.jsx';
+import { explainLinesOf } from '../base/effectExplain.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { t } from '../../../i18n/index.js';
@@ -47,10 +49,12 @@ export function hallEffectsNow(state) {
     const ranks = state?.progress?.guildUpgrades || {};
     const outputs = linesOf({ typeId: HALL_TYPE }, getTokenType(HALL_TYPE), ranks)
         .map(({ itemId, quantity }) => ({ itemId, quantity }));
-    const boosts = hallRulesOf(authoredStars(), ranks).held
-        .filter(({ statement }) => statement.payload?.type !== EFFECT_TYPES.PASSIVE_LAP)
-        .map(({ statement }) => hallRuleSentence(statement));
-    return { outputs, boosts, lapMs: lapMs() };
+    const held = hallRulesOf(authoredStars(), ranks).held
+        .filter(({ statement }) => statement.payload?.type !== EFFECT_TYPES.PASSIVE_LAP);
+    const boosts = held.map(({ statement }) => hallRuleSentence(statement));
+    // Beside each sentence, what its effect means, for its hover.
+    const explains = held.map(({ statement }) => explainLinesOf([statement.payload?.type]));
+    return { outputs, boosts, explains, lapMs: lapMs() };
 }
 
 /** The Hall's live outputs and boosts: an upgrade, a load or a new sky changes them. */
@@ -95,9 +99,11 @@ export const GuildHallEffectsList = () => {
                 <SectionLabel>{t('guildHall.boosts')}</SectionLabel>
                 <div data-hall-effect-lap className="ui-text-body leading-snug">{lap}</div>
                 {boosts.map((sentence, idx) => (
-                    <div key={`boost-${idx}`} data-hall-effect-statement className="ui-text-body leading-snug">
-                        {sentence}
-                    </div>
+                    <Tooltip key={`boost-${idx}`} lines={data?.explains?.[idx]}>
+                        <div data-hall-effect-statement className="ui-text-body leading-snug">
+                            {sentence}
+                        </div>
+                    </Tooltip>
                 ))}
             </div>
         </div>

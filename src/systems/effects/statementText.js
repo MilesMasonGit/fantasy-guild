@@ -62,6 +62,9 @@ const DEFAULT_NAMES = {
  */
 const d = (text, slot) => (slot ? { text, slot } : { text });
 
+/** A run that names an effect (`effect`), so a screen can hang the effect's explanation on it. */
+const fx = (seg, effect) => ({ ...seg, effect });
+
 /**
  * Flatten parts into segments. A part may be a string (sentence text), a
  * segment, a nested array of parts, or nothing at all.
@@ -90,19 +93,20 @@ function tidy(list) {
     const split = [];
     for (const seg of list) {
         if (!seg.text) continue;
-        if (!seg.slot) { split.push({ text: seg.text }); continue; }
+        const effect = seg.effect ? { effect: seg.effect } : null;
+        if (!seg.slot) { split.push({ text: seg.text, ...effect }); continue; }
         const lead = seg.text.match(/^\s*/)[0];
         const rest = seg.text.slice(lead.length);
         const trail = rest.match(/\s*$/)[0];
         const core = rest.slice(0, rest.length - trail.length);
         if (lead) split.push({ text: lead });
-        if (core) split.push({ text: core, slot: seg.slot });
+        if (core) split.push({ text: core, slot: seg.slot, ...effect });
         if (trail) split.push({ text: trail });
     }
     const merged = [];
     for (const seg of split) {
         const prev = merged[merged.length - 1];
-        if (prev && (prev.slot || null) === (seg.slot || null)) prev.text += seg.text;
+        if (prev && (prev.slot || null) === (seg.slot || null) && (prev.effect || null) === (seg.effect || null)) prev.text += seg.text;
         else merged.push({ ...seg });
     }
     return merged;
@@ -308,7 +312,7 @@ function headSegments(statement, names) {
     // "250 XP in every skill": a gift, not an effect with a badge.
     if (payload.type === EFFECT_TYPES.XP_FOR_EVERYONE) return actionSegments(statement, names);
 
-    const name = d(effectName(entry, payload.type), 'type');
+    const name = fx(d(effectName(entry, payload.type), 'type'), payload.type);
     if (!value) return segs(name, ' ', d('unchanged', 'value'));
     const amount = d(effectAmount(entry, payload).text, 'value');
 
@@ -747,7 +751,7 @@ function bodySegments(statement, names) {
                     const n = Number(payload.value) || 0;
                     const kind = getCategoryInfo(payload.category).label;
                     return segs(d('Provides', K), ' every hero ', d(`${Math.abs(n)} ${n < 0 ? 'fewer' : 'more'}`, 'value'), ' ',
-                        d(payload.category ? kind : '…', categorySlot(statement)), ' ', d(Math.abs(n) === 1 ? 'slot' : 'slots', 'type'));
+                        d(payload.category ? kind : '…', categorySlot(statement)), ' ', fx(d(Math.abs(n) === 1 ? 'slot' : 'slots', 'type'), payload.type));
                 }
                 if (payload.type === EFFECT_TYPES.PASSIVE_LAP) return segs(head(), ' for the Guild Hall');
                 // "in all": a rank lists the star's whole gift so far, not what that rank adds.
@@ -770,7 +774,7 @@ function bodySegments(statement, names) {
              * "3 more status immunity" would be meaningless. The words name the status instead.
              */
             if (payload.type === EFFECT_TYPES.STATUS_IMMUNITY) {
-                return segs(lead, d('immunity to', 'type'), ' ',
+                return segs(lead, fx(d('immunity to', 'type'), payload.type), ' ',
                     d(statusName(payload.category, names), categorySlot(statement)), reach);
             }
 
@@ -779,7 +783,7 @@ function bodySegments(statement, names) {
                 const shift = Number(payload.value) || 0;
                 const change = shift < 0 ? `at most ${-shift} lower` : shift > 0 ? `up to ${shift} higher` : 'no different';
                 return segs(d('Provides', K), ' ', d(statusName(payload.category, names), categorySlot(statement)), ' ',
-                    d('stacks', 'type'), ' ', d(change, 'value'), carried ? ' on the hero' : COMBAT_REACH);
+                    fx(d('stacks', 'type'), payload.type), ' ', d(change, 'value'), carried ? ' on the hero' : COMBAT_REACH);
             }
 
             // "Provides 15% more Poison damage", "Provides 20% Physical resistance": a type row names its type.
@@ -791,13 +795,13 @@ function bodySegments(statement, names) {
                 if (payload.type === EFFECT_TYPES.TYPE_DAMAGE) {
                     const more = n < 0 ? 'less' : 'more';
                     phrase = payload.category
-                        ? segs(d(`${size} ${more}`, 'value'), ' ', type, ' ', d('damage', 'type'))
-                        : segs(d(`${size} ${more}`, 'value'), ' ', d('damage', 'type'), ' of ', type);
+                        ? segs(d(`${size} ${more}`, 'value'), ' ', type, ' ', fx(d('damage', 'type'), payload.type))
+                        : segs(d(`${size} ${more}`, 'value'), ' ', fx(d('damage', 'type'), payload.type), ' of ', type);
                 } else {
                     const noun = n < 0 ? 'weakness' : 'resistance';
                     phrase = payload.category
-                        ? segs(n < 0 ? 'a ' : '', d(size, 'value'), ' ', type, ' ', d(noun, 'type'))
-                        : segs(n < 0 ? 'a ' : '', d(size, 'value'), ' ', d(noun, 'type'), ' to ', type);
+                        ? segs(n < 0 ? 'a ' : '', d(size, 'value'), ' ', type, ' ', fx(d(noun, 'type'), payload.type))
+                        : segs(n < 0 ? 'a ' : '', d(size, 'value'), ' ', fx(d(noun, 'type'), payload.type), ' to ', type);
                 }
                 return segs(lead, phrase, ' in combat', reach);
             }
@@ -809,7 +813,7 @@ function bodySegments(statement, names) {
                 const what = n > 0
                     ? segs(': every resistance ', d(`${n} ${n === 1 ? 'point' : 'points'} lower`, 'value'), ', never below 0,')
                     : segs(': ', d('no change', 'value'));
-                return segs(lead, d('Sunder', 'type'), ' ', d(String(n), 'value'), what, ' in combat', reach);
+                return segs(lead, fx(d('Sunder', 'type'), payload.type), ' ', d(String(n), 'value'), what, ' in combat', reach);
             }
 
             if (!entry) return segs(d('Provides', K), ' ', head(), carried ? '' : segs(' ', targetSegments(statement, names)));
@@ -824,16 +828,17 @@ function bodySegments(statement, names) {
 
         case KEYWORD.GRANTS: {
             const quantity = Math.max(1, payload.quantity || 1);
-            const item = payload.itemId ? names.item(payload.itemId) : '…';
+            // A bonus drop's item is what names it, so its explanation hangs there.
+            const item = fx(d(payload.itemId ? names.item(payload.itemId) : '…', 'itemId'), payload.type);
             const chance = payload.chance ?? 100;
             const odds = chance >= 100 ? [] : segs(', ', d(chanceText(chance), 'chance'), ' of the time');
             if (names.carried) {
                 // A carried grant lands where its hero is working, at the moment, or as they finish work.
-                return segs(d('Grants', K), ' ', d(String(quantity), 'quantity'), ' ', d(item, 'itemId'),
+                return segs(d('Grants', K), ' ', d(String(quantity), 'quantity'), ' ', item,
                     statement.when?.event ? ' to the hero' : ' to the hero when they finish work', odds);
             }
             const moment = statement.when ? '' : ' when they finish work';
-            return segs(d('Grants', K), ' ', d(String(quantity), 'quantity'), ' ', d(item, 'itemId'), ' ',
+            return segs(d('Grants', K), ' ', d(String(quantity), 'quantity'), ' ', item, ' ',
                 targetSegments(statement, names), moment, odds);
         }
 
@@ -1067,6 +1072,11 @@ export function renderSegments(statement, names = {}) {
         body[0] = { ...body[0], text: body[0].text.charAt(0).toLowerCase() + body[0].text.slice(1) };
     }
     return tidy(segs(when, when.length ? ': ' : '', body, cooldownSegments(statement), '.'));
+}
+
+/** The effects a statement's sentence names, in order, each once (the segments `effect` marks). */
+export function effectTypesIn(statement, names = {}) {
+    return [...new Set(renderSegments(statement, names).map(s => s.effect).filter(Boolean))];
 }
 
 /**

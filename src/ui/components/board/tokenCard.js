@@ -32,7 +32,6 @@ import { landmarkLines } from '../drawer/landmarkLines.js';
 import * as SupportLinks from '../../../systems/board/supportLinks.js';
 import { reachRadius } from '../../../systems/board/nearby.js';
 import { effectTagOf, effectTagText } from './effectBadgeText.js';
-import { t } from '../../../i18n/index.js';
 import {
     liveTimerSources, demolitionLine, leaveLine, spawnLine, growthLine, fieldTimerLine, respawnLine, produceLine
 } from './tokenTimers.js';
@@ -197,24 +196,57 @@ function makesOf(outputs) {
 
 /**
  * The bonus drops the working hero brings (their gear, a potion carried for the cycle), one row per
- * grant: worded as its badge (`Bird Nest 25%`) and marked bonus with its source (`bonus (Ana's
- * Birdwatcher)`). Empty with nobody at work.
+ * grant, each with its source: the gear piece's name, or the carried effect's (the item that applied
+ * it is not kept with it). The card groups them by source under the Loot. Empty with nobody at work.
  */
 function bonusOf(instance, src) {
     const heroId = instance && src.bonusGrants ? src.workerOf?.(instance.id) : null;
-    if (!heroId) return [];
-    const hero = src.heroName(heroId) || heroId;
-    return src.bonusGrants(instance.id).map(grant => {
+    if (!heroId) {
+        if (instance) carriedHeld.delete(instance);
+        return [];
+    }
+    const heroName = src.heroName(heroId) || heroId;
+    const rows = src.bonusGrants(instance.id).map(grant => {
         const items = (grant.sourceItemIds || []).map(id => src.itemName(id));
-        const source = items.length
-            ? t('effectBadges.source.gear', { hero, item: items.join(', ') })
-            : t('effectBadges.source.carried', { hero, effect: grant.effectTitle || '' });
+        const quantity = Math.max(1, Number(grant.quantity) || 1);
+        const chance = grant.chance == null ? 100 : Number(grant.chance);
         return {
-            itemId: grant.itemId, heroId,
-            text: effectTagText(grant, src.itemName),
-            note: t('effectBadges.card.bonusDrop', { source })
+            itemId: grant.itemId, heroId, heroName, carried: !items.length,
+            source: items.length ? items.join(', ') : (grant.effectTitle || ''),
+            min: quantity, max: quantity, chance: chance < 100 ? chanceFigure(chance) : null,
+            text: effectTagText(grant, src.itemName)
         };
     });
+    return withCarriedHeld(instance, heroId, rows);
+}
+
+/**
+ * The carried bonus rows each Token's card last showed, by the Token's instance:
+ * `{ heroId, rows: Map<key, row> }`. Weak, so a Token gone from the mat (or a game left) drops it.
+ */
+const carriedHeld = new WeakMap();
+
+/**
+ * ⚠️ A potion's effect comes off its hero as a cycle completes and goes back on as the next
+ * starts (`LoadoutMoments`), so between the two the grant is gone and its row would blink. A
+ * carried row once shown is held while the same hero works the Token and no cycle is under way
+ * (`cycleElapsedMs` is zero only between cycles). A cycle that starts without it (the potion ran
+ * out) or another hero ends the hold. Display only: the engine's grants are read as they are.
+ * Gear rows never blink and are not held, so gear running out goes at once.
+ */
+function withCarriedHeld(instance, heroId, rows) {
+    const keyOf = (r) => `${r.itemId}|${r.text}|${r.source}`;
+    const prev = carriedHeld.get(instance);
+    const between = !(Number(instance.cycleElapsedMs) > 0);
+    const out = rows.slice();
+    if (prev && prev.heroId === heroId && between) {
+        const live = new Set(rows.map(keyOf));
+        for (const [key, row] of prev.rows) if (!live.has(key)) out.push(row);
+    }
+    const carried = out.filter(r => r.carried);
+    if (carried.length) carriedHeld.set(instance, { heroId, rows: new Map(carried.map(r => [keyOf(r), r])) });
+    else carriedHeld.delete(instance);
+    return out;
 }
 
 /** Every drop with its chance, 100 % included: a drop table reads as odds. */

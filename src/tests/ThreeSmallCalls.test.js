@@ -18,6 +18,10 @@ import { SettingsModal } from '../ui/modals/SettingsModal.jsx';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { HeroDrawer } from '../ui/components/dock/HeroDrawer.jsx';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
+import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
+import { SaveManager } from '../systems/core/SaveManager.js';
+import { GameLoop } from '../systems/core/GameLoop.js';
+import { t } from '../i18n/index.js';
 
 const h = React.createElement;
 
@@ -115,11 +119,43 @@ describe('Settings holds a Lessons switch', () => {
         expect(stepAfter).not.toBe(stepBefore);
     });
 
-    it('is not offered in a game with no lessons', () => {
+    it('shows in a game started from a slot, on, and switches it', async () => {
+        localStorage.clear();
+        try {
+            expect(await EngineBootstrap.startSlot(0)).toBe(true);
+            GameLoop.stop();
+            render(h(SettingsModal, { isOpen: true, onClose: () => {} }));
+            openGame();
+            expect(lessonsToggle()).not.toBeNull();
+            expect(lessonsToggle().textContent).toContain(t('settings.lessons'));
+            expect(lessonsToggle().querySelector('button').getAttribute('aria-checked')).toBe('true');
+            fireEvent.click(lessonsToggle().querySelector('button'));
+            expect(LimesGuide.lessonsOn()).toBe(false);
+        } finally {
+            GameLoop.stop();
+            if (SaveManager.autoSaveTimer) clearInterval(SaveManager.autoSaveTimer);
+            SaveManager.autoSaveTimer = null;
+            SaveManager.currentSlot = null;
+            localStorage.clear();
+        }
+    });
+
+    it('shows in a game with no lessons (a save from before them), off; on starts them at the first step', () => {
         GameState.state.meta = { guildName: 'Test' };
         GameState.state.guide = { limesSpot: null, lessons: true };
+        expect(LimesLessons.hasLessons()).toBe(false);
         render(h(SettingsModal, { isOpen: true, onClose: () => {} }));
         openGame();
-        expect(lessonsToggle()).toBeNull();
+        expect(lessonsToggle()).not.toBeNull();
+        const button = lessonsToggle().querySelector('button');
+        expect(button.getAttribute('aria-checked')).toBe('false');
+
+        fireEvent.click(button);
+        expect(LimesLessons.hasLessons()).toBe(true);
+        expect(LimesGuide.lessonsOn()).toBe(true);
+        expect(LimesLessons.currentStep()?.id).toBe(allSteps()[0].id);
+
+        fireEvent.click(button);
+        expect(LimesGuide.lessonsOn()).toBe(false);
     });
 });

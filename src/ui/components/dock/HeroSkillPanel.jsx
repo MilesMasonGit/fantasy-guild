@@ -9,8 +9,25 @@ import { SkillIcon } from '../base/SkillIcon.jsx';
 import { XpRateTracker } from '../../../systems/hero/XpRateTracker.js';
 import { onPoll } from '../board/frameClock.js';
 import { skillDetail, skillLevelText, skillPurposeText } from './heroPanelSkills.js';
-import { skillPerkTable, perkLines } from './heroPerks.js';
+import { skillPerkTable, perkSegments } from './heroPerks.js';
+import { RuleLine } from '../base/EffectName.jsx';
 import { t } from '../../../i18n/index.js';
+
+const MARK = '\u0000';
+
+/** "Even Heat: XP +10% on Smithing Tokens.", by the strings file's perk row, the rules hoverable. */
+const PerkRowText = ({ title, lines }) => {
+    const [before, after = ''] = t('heroPanel.perkRow', { name: title, rules: MARK }).split(MARK);
+    return (
+        <>
+            {before}
+            {lines.map((segments, i) => (
+                <span key={i}>{i > 0 && ', '}<RuleLine segments={segments} /></span>
+            ))}
+            {after}
+        </>
+    );
+};
 
 /** The skill panel's left part (the skill and its numbers), in screen px. */
 export const SKILL_INFO_W = 300;
@@ -124,8 +141,8 @@ const SkillNumbers = ({ heroId, row }) => {
 /**
  * Every milestone perk, lowest first, a row each on one line: the level alone in a column of its
  * own, right-aligned, then `Even Heat: +10 % XP (Smithing)`, its words the perk's own rule as the
- * game renders it (`perkLines`). Held ones in gold, the rest dimmed. Taller than `maxPx`, it scrolls
- * with the arrow bars.
+ * game renders it (`perkSegments`), each effect's name explaining itself on hover. Held ones in
+ * gold, the rest dimmed. Taller than `maxPx`, it scrolls with the arrow bars.
  */
 const SkillPerkList = ({ perks, maxPx }) => {
     if (!perks.length) {
@@ -149,7 +166,7 @@ const SkillPerkList = ({ perks, maxPx }) => {
                         {p.level}
                     </span>
                     <span className={p.earned ? 'text-white' : 'text-gi-muted'}>
-                        {t('heroPanel.perkRow', { name: p.title, rules: perkLines(p).join(', ') })}
+                        <PerkRowText title={p.title} lines={perkSegments(p)} />
                     </span>
                 </div>
             ))}

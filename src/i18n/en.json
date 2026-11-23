@@ -607,7 +607,8 @@
             "events": "Events",
             "leavesIn": "Leaves in {time}",
             "eventState": {
-                "here": "Still here"
+                "here": "Still here",
+                "hereCount": "{n} still here"
             },
             "kills": "Fights",
             "killTip": {
@@ -802,6 +803,9 @@
         "playtimeTip": "How long the guild has spent here, time away included.",
         "tokensTip": "Tokens on this place's mat, of the Token cap"
     },
+    "effectExplain": {
+        "line": "{name}: {text}"
+    },
     "effectBadges": {
         "effect": {
             "speed": "Speed",
@@ -850,8 +854,7 @@
             "drops": "Drops",
             "chanceBase": "{chance} base",
             "chanceBonus": "{effect} {amount} ({source})",
-            "chanceResult": "= {chance}",
-            "bonusDrop": "bonus ({source})"
+            "chanceResult": "= {chance}"
         }
     },
     "noRoom": {
@@ -873,7 +876,9 @@
         },
         "ended": {
             "expired": "Expired",
-            "demolished": "Demolished"
+            "demolished": "Demolished",
+            "expiredCount": "{n} expired",
+            "demolishedCount": "{n} demolished"
         },
         "gone": {
             "title": "{word}: {event}",

@@ -13,7 +13,7 @@ import { t } from '../../i18n/index.js';
 import { GUILD_NAME_MAX, guildNameOf, renameGuild } from '../../systems/core/GuildName.js';
 import { GameState } from '../../state/GameState.js';
 import { lessonsOn, setLessons } from '../../systems/quests/LimesGuide.js';
-import { hasLessons } from '../../systems/quests/LimesLessons.js';
+import { hasLessons, startLessons } from '../../systems/quests/LimesLessons.js';
 
 const AUTO_SAVE_LABEL = { 1: 'settings.autoSave1', 10: 'settings.autoSave10', 60: 'settings.autoSave60', 0: 'settings.autoSaveOff' };
 
@@ -135,7 +135,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                     {activeTab === 'game' && (
                         <div className="flex flex-col gap-3 animate-in fade-in duration-300">
                             {GameState.state?.meta && <GuildNameSetting />}
-                            {GameState.state?.meta && hasLessons() && <LessonsSetting />}
+                            {GameState.state?.meta && <LessonsSetting />}
                             <SettingSelect
                                 label={t('settings.autoSave')}
                                 options={autoSaveChoices().map(min => ({ value: min, label: t(AUTO_SAVE_LABEL[min]) }))}
@@ -192,16 +192,24 @@ export const SettingsModal = ({ isOpen, onClose }) => {
     );
 };
 
-/** Limes's lessons on or off for this game; the progress keeps counting while they are off. */
+/**
+ * Limes's lessons on or off for this game; the progress keeps counting while they are off. A game
+ * with none (a save from before them) reads off, and turning it on starts them there.
+ */
 const LessonsSetting = () => {
-    const [on, setOn] = useState(() => lessonsOn());
+    const read = () => lessonsOn() && hasLessons();
+    const [on, setOn] = useState(read);
     return (
         <SettingToggle
             settingKey="lessons"
             label={t('settings.lessons')}
             description={t('settings.lessonsHint')}
             value={on}
-            onChange={(v) => { setLessons(v); setOn(lessonsOn()); }}
+            onChange={(v) => {
+                if (v && !hasLessons()) startLessons();
+                setLessons(v);
+                setOn(read());
+            }}
         />
     );
 };

@@ -155,13 +155,15 @@ export const SETUPS = [
     },
     {
         id: 'coast',
-        name: 'Water: one fisher on the Coast with a Fishing Rod and no bait',
+        // A rod fishes only with bait: Shrimp Bait carried, more than nine hours of it in the Bank.
+        name: 'Water: one fisher on the Coast with a Fishing Rod and Shrimp Bait',
         warmupMs: 10 * 60_000,
         compare: { items: ['item_tropical_fish', 'item_salmon', 'item_swordfish'], skills: ['fishing'] },
-        works: [{ target: { token: 'token_coast', pool: 'fishing_rod|' }, setup: { level: 10 } }],
+        works: [{ target: { token: 'token_coast', pool: 'fishing_rod|item_shrimp_bait' }, setup: { level: 10, bait: 'item_shrimp_bait' } }],
+        bank: { item_shrimp_bait: 20_000 },
         build({ place, hero, order }) {
             const coast = place('token_coast', 800, 560);
-            const fisher = hero('Fisher', { fishing: 10 }, ['item_fishing_rod']);
+            const fisher = hero('Fisher', { fishing: 10 }, ['item_fishing_rod', 'item_shrimp_bait']);
             order(fisher, coast);
         }
     },
