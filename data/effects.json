@@ -1456,7 +1456,7 @@
         "payload": {
           "type": "YIELD",
           "bucket": "percentage",
-          "value": 0.1,
+          "value": 0.05,
           "category": "mining"
         },
         "chargeDelta": 0,
@@ -2453,5 +2453,2941 @@
     ],
     "autoSyncId": true,
     "id": "effect_thorns_struck"
+  },
+  "effect_birch_forest_growth": {
+    "name": "Birch Forest Growth",
+    "statements": [
+      {
+        "id": "stm_birch_forest_growth",
+        "keyword": "provides",
+        "payload": {
+          "type": "GROW_TIME",
+          "bucket": "percentage",
+          "value": -0.25
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "tag",
+          "value": "Birch"
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_birch_forest_growth"
+  },
+  "effect_maple_forest_growth": {
+    "name": "Maple Forest Growth",
+    "statements": [
+      {
+        "id": "stm_maple_forest_growth",
+        "keyword": "provides",
+        "payload": {
+          "type": "GROW_TIME",
+          "bucket": "percentage",
+          "value": -0.25
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "tag",
+          "value": "Maple"
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_maple_forest_growth"
+  },
+  "effect_cedar_forest_growth": {
+    "name": "Cedar Forest Growth",
+    "statements": [
+      {
+        "id": "stm_cedar_forest_growth",
+        "keyword": "provides",
+        "payload": {
+          "type": "GROW_TIME",
+          "bucket": "percentage",
+          "value": -0.25
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "tag",
+          "value": "Cedar"
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_cedar_forest_growth"
+  },
+  "effect_mahogany_forest_growth": {
+    "name": "Mahogany Forest Growth",
+    "statements": [
+      {
+        "id": "stm_mahogany_forest_growth",
+        "keyword": "provides",
+        "payload": {
+          "type": "GROW_TIME",
+          "bucket": "percentage",
+          "value": -0.25
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "tag",
+          "value": "Mahogany"
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_mahogany_forest_growth"
+  },
+  "effect_ebony_forest_growth": {
+    "name": "Ebony Forest Growth",
+    "statements": [
+      {
+        "id": "stm_ebony_forest_growth",
+        "keyword": "provides",
+        "payload": {
+          "type": "GROW_TIME",
+          "bucket": "percentage",
+          "value": -0.25
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "tag",
+          "value": "Ebony"
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_ebony_forest_growth"
+  },
+  "effect_forestry_draught": {
+    "name": "Forestry Draught",
+    "statements": [
+      {
+        "id": "stm_forestry_draught",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "forestry"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_forestry_draught"
+  },
+  "effect_redberry_tea_drink": {
+    "name": "Redberry Tea Drink",
+    "statements": [
+      {
+        "id": "stm_redberry_tea_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_forestry_draught",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_redberry_tea_drink"
+  },
+  "effect_cooking_draught": {
+    "name": "Cooking Draught",
+    "statements": [
+      {
+        "id": "stm_cooking_draught",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "cooking"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_cooking_draught"
+  },
+  "effect_hot_milk_drink": {
+    "name": "Hot Milk Drink",
+    "statements": [
+      {
+        "id": "stm_hot_milk_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_cooking_draught",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_hot_milk_drink"
+  },
+  "effect_melee_draught": {
+    "name": "Melee Draught",
+    "statements": [
+      {
+        "id": "stm_melee_draught",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "melee"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_melee_draught"
+  },
+  "effect_cherry_cordial_drink": {
+    "name": "Cherry Cordial Drink",
+    "statements": [
+      {
+        "id": "stm_cherry_cordial_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_melee_draught",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_cherry_cordial_drink"
+  },
+  "effect_crafting_draught": {
+    "name": "Crafting Draught",
+    "statements": [
+      {
+        "id": "stm_crafting_draught",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "crafting"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_crafting_draught"
+  },
+  "effect_strawberry_milk_drink": {
+    "name": "Strawberry Milk Drink",
+    "statements": [
+      {
+        "id": "stm_strawberry_milk_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_crafting_draught",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_strawberry_milk_drink"
+  },
+  "effect_smithing_draught": {
+    "name": "Smithing Draught",
+    "statements": [
+      {
+        "id": "stm_smithing_draught",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "smithing"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_smithing_draught"
+  },
+  "effect_stout_drink": {
+    "name": "Stout Drink",
+    "statements": [
+      {
+        "id": "stm_stout_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_smithing_draught",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_stout_drink"
+  },
+  "effect_ranged_draught": {
+    "name": "Ranged Draught",
+    "statements": [
+      {
+        "id": "stm_ranged_draught",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "ranged"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_ranged_draught"
+  },
+  "effect_blueberry_tonic_drink": {
+    "name": "Blueberry Tonic Drink",
+    "statements": [
+      {
+        "id": "stm_blueberry_tonic_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_ranged_draught",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_blueberry_tonic_drink"
+  },
+  "effect_construction_draught": {
+    "name": "Construction Draught",
+    "statements": [
+      {
+        "id": "stm_construction_draught",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "construction"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_construction_draught"
+  },
+  "effect_builder_s_brew_drink": {
+    "name": "Builder's Brew Drink",
+    "statements": [
+      {
+        "id": "stm_builder_s_brew_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_construction_draught",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_builder_s_brew_drink"
+  },
+  "effect_magic_draught": {
+    "name": "Magic Draught",
+    "statements": [
+      {
+        "id": "stm_magic_draught",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "magic"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_magic_draught"
+  },
+  "effect_peach_nectar_drink": {
+    "name": "Peach Nectar Drink",
+    "statements": [
+      {
+        "id": "stm_peach_nectar_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_magic_draught",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_peach_nectar_drink"
+  },
+  "effect_stealth_draught": {
+    "name": "Stealth Draught",
+    "statements": [
+      {
+        "id": "stm_stealth_draught",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "stealth"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_stealth_draught"
+  },
+  "effect_raspberry_cordial_drink": {
+    "name": "Raspberry Cordial Drink",
+    "statements": [
+      {
+        "id": "stm_raspberry_cordial_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_stealth_draught",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_raspberry_cordial_drink"
+  },
+  "effect_science_draught": {
+    "name": "Science Draught",
+    "statements": [
+      {
+        "id": "stm_science_draught",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "science"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_science_draught"
+  },
+  "effect_orange_juice_drink": {
+    "name": "Orange Juice Drink",
+    "statements": [
+      {
+        "id": "stm_orange_juice_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_science_draught",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_orange_juice_drink"
+  },
+  "effect_faith_draught": {
+    "name": "Faith Draught",
+    "statements": [
+      {
+        "id": "stm_faith_draught",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "faith"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_faith_draught"
+  },
+  "effect_lavender_tea_drink": {
+    "name": "Lavender Tea Drink",
+    "statements": [
+      {
+        "id": "stm_lavender_tea_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_faith_draught",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_lavender_tea_drink"
+  },
+  "effect_enchanting_draught": {
+    "name": "Enchanting Draught",
+    "statements": [
+      {
+        "id": "stm_enchanting_draught",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "enchanting"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_enchanting_draught"
+  },
+  "effect_wine_drink": {
+    "name": "Wine Drink",
+    "statements": [
+      {
+        "id": "stm_wine_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_enchanting_draught",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_wine_drink"
+  },
+  "effect_crime_draught": {
+    "name": "Crime Draught",
+    "statements": [
+      {
+        "id": "stm_crime_draught",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "crime"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_crime_draught"
+  },
+  "effect_pineapple_punch_drink": {
+    "name": "Pineapple Punch Drink",
+    "statements": [
+      {
+        "id": "stm_pineapple_punch_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_crime_draught",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_pineapple_punch_drink"
+  },
+  "effect_taming_draught": {
+    "name": "Taming Draught",
+    "statements": [
+      {
+        "id": "stm_taming_draught",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "taming"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_taming_draught"
+  },
+  "effect_banana_smoothie_drink": {
+    "name": "Banana Smoothie Drink",
+    "statements": [
+      {
+        "id": "stm_banana_smoothie_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_taming_draught",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_banana_smoothie_drink"
+  },
+  "effect_summoning_draught": {
+    "name": "Summoning Draught",
+    "statements": [
+      {
+        "id": "stm_summoning_draught",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.1,
+          "category": "summoning"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_summoning_draught"
+  },
+  "effect_coconut_milk_drink": {
+    "name": "Coconut Milk Drink",
+    "statements": [
+      {
+        "id": "stm_coconut_milk_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_summoning_draught",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_coconut_milk_drink"
+  },
+  "effect_watermelon_cooler_drink": {
+    "name": "Watermelon Cooler Drink",
+    "statements": [
+      {
+        "id": "stm_watermelon_cooler_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_merry",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_watermelon_cooler_drink"
+  },
+  "effect_mead_drink": {
+    "name": "Mead Drink",
+    "statements": [
+      {
+        "id": "stm_mead_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_merry",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_mead_drink"
+  },
+  "effect_ember_ale_drink": {
+    "name": "Ember Ale Drink",
+    "statements": [
+      {
+        "id": "stm_ember_ale_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_merry",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_ember_ale_drink"
+  },
+  "effect_spiced_wine_drink": {
+    "name": "Spiced Wine Drink",
+    "statements": [
+      {
+        "id": "stm_spiced_wine_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_merry",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_spiced_wine_drink"
+  },
+  "effect_voidcap_tea_drink": {
+    "name": "Voidcap Tea Drink",
+    "statements": [
+      {
+        "id": "stm_voidcap_tea_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_merry",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_voidcap_tea_drink"
+  },
+  "effect_dark_mead_drink": {
+    "name": "Dark Mead Drink",
+    "statements": [
+      {
+        "id": "stm_dark_mead_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_merry",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_dark_mead_drink"
+  },
+  "effect_sunset_punch_drink": {
+    "name": "Sunset Punch Drink",
+    "statements": [
+      {
+        "id": "stm_sunset_punch_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_merry",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_sunset_punch_drink"
+  },
+  "effect_elder_draught_drink": {
+    "name": "Elder Draught Drink",
+    "statements": [
+      {
+        "id": "stm_elder_draught_drink",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_merry",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_elder_draught_drink"
+  },
+  "effect_quick_hands": {
+    "name": "Quick Hands",
+    "statements": [
+      {
+        "id": "stm_quick_hands",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.05
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_quick_hands"
+  },
+  "effect_scholar": {
+    "name": "Scholar",
+    "statements": [
+      {
+        "id": "stm_scholar",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.05
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_scholar"
+  },
+  "effect_green_touch": {
+    "name": "Green Touch",
+    "statements": [
+      {
+        "id": "stm_green_touch",
+        "keyword": "provides",
+        "payload": {
+          "type": "GROW_TIME",
+          "bucket": "percentage",
+          "value": -0.1
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_green_touch"
+  },
+  "effect_prospector": {
+    "name": "Prospector",
+    "statements": [
+      {
+        "id": "stm_prospector",
+        "keyword": "grants",
+        "payload": {
+          "type": "BONUS_DROP",
+          "itemId": "item_uncut_topaz",
+          "quantity": 1,
+          "chance": 2
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_prospector"
+  },
+  "effect_thrift": {
+    "name": "Thrift",
+    "statements": [
+      {
+        "id": "stm_thrift",
+        "keyword": "provides",
+        "payload": {
+          "type": "PRESERVATION",
+          "bucket": "flat",
+          "value": 5
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_thrift"
+  },
+  "effect_fortune": {
+    "name": "Fortune",
+    "statements": [
+      {
+        "id": "stm_fortune",
+        "keyword": "provides",
+        "payload": {
+          "type": "DOUBLE_DROP",
+          "bucket": "flat",
+          "value": 5
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_fortune"
+  },
+  "effect_valour_amulet": {
+    "name": "Valour",
+    "statements": [
+      {
+        "id": "stm_amulet_valour",
+        "keyword": "provides",
+        "payload": {
+          "type": "DAMAGE",
+          "bucket": "flat",
+          "value": 1
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_valour_amulet"
+  },
+  "effect_frostward": {
+    "name": "Frostward",
+    "statements": [
+      {
+        "id": "stm_frostward",
+        "keyword": "provides",
+        "payload": {
+          "type": "TYPE_RESIST",
+          "bucket": "flat",
+          "value": 10,
+          "category": "elemental"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_frostward"
+  },
+  "effect_second_wind": {
+    "name": "Second Wind",
+    "statements": [
+      {
+        "id": "stm_second_wind",
+        "keyword": "heals",
+        "payload": {
+          "amount": 10
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": {
+          "role": "self"
+        },
+        "when": {
+          "scope": "self",
+          "event": "FIGHT_HP_BELOW",
+          "belowPct": 50
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_second_wind"
+  },
+  "effect_keen_eye": {
+    "name": "Keen Eye",
+    "statements": [
+      {
+        "id": "stm_keen_eye",
+        "keyword": "provides",
+        "payload": {
+          "type": "ACCURACY",
+          "bucket": "flat",
+          "value": 5
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_keen_eye"
+  },
+  "effect_hearty": {
+    "name": "Hearty",
+    "statements": [
+      {
+        "id": "stm_hearty",
+        "keyword": "provides",
+        "payload": {
+          "type": "FOOD_HEALING",
+          "bucket": "percentage",
+          "value": 0.2
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_hearty"
+  },
+  "effect_brilliance": {
+    "name": "Brilliance",
+    "statements": [
+      {
+        "id": "stm_brilliance",
+        "keyword": "provides",
+        "payload": {
+          "type": "CRIT_CHANCE",
+          "bucket": "flat",
+          "value": 5
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_brilliance"
+  },
+  "effect_prospectors_draught": {
+    "name": "Prospector's Draught",
+    "statements": [
+      {
+        "id": "stm_pd_topaz",
+        "keyword": "grants",
+        "payload": {
+          "type": "BONUS_DROP",
+          "itemId": "item_uncut_topaz",
+          "quantity": 1,
+          "chance": 1
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "tag",
+          "value": "Ore"
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      },
+      {
+        "id": "stm_pd_ruby",
+        "keyword": "grants",
+        "payload": {
+          "type": "BONUS_DROP",
+          "itemId": "item_uncut_ruby",
+          "quantity": 1,
+          "chance": 0.5
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "tag",
+          "value": "Ore"
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      },
+      {
+        "id": "stm_pd_sapphire",
+        "keyword": "grants",
+        "payload": {
+          "type": "BONUS_DROP",
+          "itemId": "item_uncut_sapphire",
+          "quantity": 1,
+          "chance": 0.25
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "tag",
+          "value": "Ore"
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_prospectors_draught"
+  },
+  "effect_prospectors_draught_potion": {
+    "name": "Prospector's Draught Potion",
+    "statements": [
+      {
+        "id": "stm_prospectors_draught_potion",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_prospectors_draught",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self",
+          "skill": "mining"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_prospectors_draught_potion"
+  },
+  "effect_scholars_tonic": {
+    "name": "Scholar's Tonic",
+    "statements": [
+      {
+        "id": "stm_st_xp",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.08
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_scholars_tonic"
+  },
+  "effect_scholars_tonic_potion": {
+    "name": "Scholar's Tonic Potion",
+    "statements": [
+      {
+        "id": "stm_scholars_tonic_potion",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_scholars_tonic",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_scholars_tonic_potion"
+  },
+  "effect_bountiful_draught": {
+    "name": "Bountiful Draught",
+    "statements": [
+      {
+        "id": "stm_bd_yield",
+        "keyword": "provides",
+        "payload": {
+          "type": "YIELD",
+          "bucket": "percentage",
+          "value": 0.04
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_bountiful_draught"
+  },
+  "effect_bountiful_draught_potion": {
+    "name": "Bountiful Draught Potion",
+    "statements": [
+      {
+        "id": "stm_bountiful_draught_potion",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_bountiful_draught",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_bountiful_draught_potion"
+  },
+  "effect_greater_ironskin": {
+    "name": "Greater Ironskin",
+    "statements": [
+      {
+        "id": "stm_greater_ironskin_0",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_ironskin",
+          "scale": 2,
+          "durationMs": 0,
+          "forFight": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "COMBAT_ENGAGED",
+          "scope": "nearby"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_greater_ironskin"
+  },
+  "effect_greater_valor": {
+    "name": "Greater Valor",
+    "statements": [
+      {
+        "id": "stm_greater_valor_0",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_valor",
+          "scale": 2,
+          "durationMs": 0,
+          "forFight": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "COMBAT_ENGAGED",
+          "scope": "nearby"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_greater_valor"
+  },
+  "effect_elixir_of_legends": {
+    "name": "Elixir of Legends",
+    "statements": [
+      {
+        "id": "stm_elixir_of_legends_0",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_valor",
+          "scale": 3,
+          "durationMs": 0,
+          "forFight": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "COMBAT_ENGAGED",
+          "scope": "nearby"
+        },
+        "upkeep": null
+      },
+      {
+        "id": "stm_elixir_of_legends_1",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_ironskin",
+          "scale": 3,
+          "durationMs": 0,
+          "forFight": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "COMBAT_ENGAGED",
+          "scope": "nearby"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_elixir_of_legends"
+  },
+  "effect_masters_draught": {
+    "name": "Master's Draught",
+    "statements": [
+      {
+        "id": "stm_md_speed",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.04
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      },
+      {
+        "id": "stm_md_yield",
+        "keyword": "provides",
+        "payload": {
+          "type": "YIELD",
+          "bucket": "percentage",
+          "value": 0.04
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_masters_draught"
+  },
+  "effect_masters_draught_potion": {
+    "name": "Master's Draught Potion",
+    "statements": [
+      {
+        "id": "stm_masters_draught_potion",
+        "keyword": "applies",
+        "payload": {
+          "effectId": "effect_masters_draught",
+          "scale": 1,
+          "durationMs": 0,
+          "forCycle": true,
+          "chance": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": {
+          "role": "actor"
+        },
+        "when": {
+          "event": "WORK_START",
+          "scope": "self"
+        },
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_masters_draught_potion"
+  },
+  "effect_foundry": {
+    "name": "Foundry",
+    "statements": [
+      {
+        "id": "stm_foundry",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.15
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "self",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_foundry"
+  },
+  "effect_master_smithy": {
+    "name": "Master Smithy",
+    "statements": [
+      {
+        "id": "stm_master_smithy",
+        "keyword": "provides",
+        "payload": {
+          "type": "PRESERVATION",
+          "bucket": "flat",
+          "value": 10
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "self",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_master_smithy"
+  },
+  "effect_grand_forge": {
+    "name": "Grand Forge",
+    "statements": [
+      {
+        "id": "stm_grand_forge",
+        "keyword": "provides",
+        "payload": {
+          "type": "LOOT_MULT",
+          "bucket": "flat",
+          "value": 10
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "self",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_grand_forge"
+  },
+  "effect_smiths_row": {
+    "name": "Smiths' Row",
+    "statements": [
+      {
+        "id": "stm_smiths_row_mining",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.1,
+          "category": "mining"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      },
+      {
+        "id": "stm_smiths_row_forestry",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.1,
+          "category": "forestry"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_smiths_row"
+  },
+  "effect_bakehouse": {
+    "name": "Bakehouse",
+    "statements": [
+      {
+        "id": "stm_bakehouse",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.15
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "self",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_bakehouse"
+  },
+  "effect_brewery": {
+    "name": "Brewery",
+    "statements": [
+      {
+        "id": "stm_brewery",
+        "keyword": "provides",
+        "payload": {
+          "type": "LOOT_MULT",
+          "bucket": "flat",
+          "value": 10
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "self",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_brewery"
+  },
+  "effect_banquet_hall": {
+    "name": "Banquet Hall",
+    "statements": [
+      {
+        "id": "stm_banquet_hall",
+        "keyword": "provides",
+        "payload": {
+          "type": "INPUT_COST",
+          "bucket": "percentage",
+          "value": -0.25
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "self",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_banquet_hall"
+  },
+  "effect_market_kitchen": {
+    "name": "Market Kitchen",
+    "statements": [
+      {
+        "id": "stm_market_kitchen_farming",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.1,
+          "category": "farming"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      },
+      {
+        "id": "stm_market_kitchen_fishing",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.1,
+          "category": "fishing"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_market_kitchen"
+  },
+  "effect_guild_workshop": {
+    "name": "Guild Workshop",
+    "statements": [
+      {
+        "id": "stm_guild_workshop",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.15
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "self",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_guild_workshop"
+  },
+  "effect_tannery": {
+    "name": "Tannery",
+    "statements": [
+      {
+        "id": "stm_tannery",
+        "keyword": "provides",
+        "payload": {
+          "type": "PRESERVATION",
+          "bucket": "flat",
+          "value": 10
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "self",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_tannery"
+  },
+  "effect_jewellers_hall": {
+    "name": "Jeweller's Hall",
+    "statements": [
+      {
+        "id": "stm_jewellers_hall",
+        "keyword": "provides",
+        "payload": {
+          "type": "LOOT_MULT",
+          "bucket": "flat",
+          "value": 10
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "self",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_jewellers_hall"
+  },
+  "effect_craftsmens_yard": {
+    "name": "Craftsmen's Yard",
+    "statements": [
+      {
+        "id": "stm_craftsmens_yard_forestry",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.1,
+          "category": "forestry"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      },
+      {
+        "id": "stm_craftsmens_yard_mining",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.1,
+          "category": "mining"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_craftsmens_yard"
+  },
+  "effect_herbalists_hut": {
+    "name": "Herbalist's Hut",
+    "statements": [
+      {
+        "id": "stm_herbalists_hut",
+        "keyword": "provides",
+        "payload": {
+          "type": "PRESERVATION",
+          "bucket": "flat",
+          "value": 10
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "self",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_herbalists_hut"
+  },
+  "effect_alchemists_hall": {
+    "name": "Alchemist's Hall",
+    "statements": [
+      {
+        "id": "stm_alchemists_hall",
+        "keyword": "provides",
+        "payload": {
+          "type": "LOOT_MULT",
+          "bucket": "flat",
+          "value": 10
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "self",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_alchemists_hall"
+  },
+  "effect_masters_study": {
+    "name": "Master's Study",
+    "statements": [
+      {
+        "id": "stm_masters_study",
+        "keyword": "provides",
+        "payload": {
+          "type": "XP_BONUS",
+          "bucket": "percentage",
+          "value": 0.1
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "self",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_masters_study"
+  },
+  "effect_physic_garden": {
+    "name": "Physic Garden",
+    "statements": [
+      {
+        "id": "stm_physic_garden_farming",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.1,
+          "category": "farming"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_physic_garden"
+  },
+  "effect_sawmill": {
+    "name": "Sawmill",
+    "statements": [
+      {
+        "id": "stm_sawmill",
+        "keyword": "provides",
+        "payload": {
+          "type": "LOOT_MULT",
+          "bucket": "flat",
+          "value": 10,
+          "category": "forestry"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_sawmill"
+  },
+  "effect_foresters_lodge": {
+    "name": "Forester's Lodge",
+    "statements": [
+      {
+        "id": "stm_foresters_lodge",
+        "keyword": "provides",
+        "payload": {
+          "type": "REFRESH",
+          "bucket": "flat",
+          "value": 10,
+          "category": "forestry"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_foresters_lodge"
+  },
+  "effect_grovekeepers_hut": {
+    "name": "Grovekeeper's Hut",
+    "statements": [
+      {
+        "id": "stm_grovekeepers_hut",
+        "keyword": "provides",
+        "payload": {
+          "type": "GROW_TIME",
+          "bucket": "percentage",
+          "value": -0.2,
+          "category": "forestry"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_grovekeepers_hut"
+  },
+  "effect_timber_yard": {
+    "name": "Timber Yard",
+    "statements": [
+      {
+        "id": "stm_timber_yard_crafting",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.1,
+          "category": "crafting"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      },
+      {
+        "id": "stm_timber_yard_smithing",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.1,
+          "category": "smithing"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_timber_yard"
+  },
+  "effect_mine_head": {
+    "name": "Mine Head",
+    "statements": [
+      {
+        "id": "stm_mine_head",
+        "keyword": "provides",
+        "payload": {
+          "type": "GROW_TIME",
+          "bucket": "percentage",
+          "value": -0.2,
+          "category": "mining"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_mine_head"
+  },
+  "effect_deep_workings": {
+    "name": "Deep Workings",
+    "statements": [
+      {
+        "id": "stm_deep_workings",
+        "keyword": "provides",
+        "payload": {
+          "type": "REFRESH",
+          "bucket": "flat",
+          "value": 10,
+          "category": "mining"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_deep_workings"
+  },
+  "effect_ore_market": {
+    "name": "Ore Market",
+    "statements": [
+      {
+        "id": "stm_ore_market_smithing",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.1,
+          "category": "smithing"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      },
+      {
+        "id": "stm_ore_market_crafting",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.1,
+          "category": "crafting"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_ore_market"
+  },
+  "effect_pier": {
+    "name": "Pier",
+    "statements": [
+      {
+        "id": "stm_pier",
+        "keyword": "provides",
+        "payload": {
+          "type": "REFRESH",
+          "bucket": "flat",
+          "value": 10,
+          "category": "fishing"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_pier"
+  },
+  "effect_fish_market": {
+    "name": "Fish Market",
+    "statements": [
+      {
+        "id": "stm_fish_market",
+        "keyword": "provides",
+        "payload": {
+          "type": "LOOT_MULT",
+          "bucket": "flat",
+          "value": 10,
+          "category": "fishing"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_fish_market"
+  },
+  "effect_fishmongers": {
+    "name": "Fishmonger's",
+    "statements": [
+      {
+        "id": "stm_fishmongers_cooking",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.1,
+          "category": "cooking"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_fishmongers"
+  },
+  "effect_barn": {
+    "name": "Barn",
+    "statements": [
+      {
+        "id": "stm_barn",
+        "keyword": "provides",
+        "payload": {
+          "type": "LOOT_MULT",
+          "bucket": "flat",
+          "value": 10,
+          "category": "farming"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_barn"
+  },
+  "effect_greenhouse": {
+    "name": "Greenhouse",
+    "statements": [
+      {
+        "id": "stm_greenhouse",
+        "keyword": "provides",
+        "payload": {
+          "type": "GROW_TIME",
+          "bucket": "percentage",
+          "value": -0.2,
+          "category": "farming"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_greenhouse"
+  },
+  "effect_manor_farm": {
+    "name": "Manor Farm",
+    "statements": [
+      {
+        "id": "stm_manor_farm",
+        "keyword": "provides",
+        "payload": {
+          "type": "CROP_LOAD",
+          "bucket": "flat",
+          "value": 2,
+          "category": "farming"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_manor_farm"
+  },
+  "effect_farmers_market": {
+    "name": "Farmers' Market",
+    "statements": [
+      {
+        "id": "stm_farmers_market_cooking",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.1,
+          "category": "cooking"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      },
+      {
+        "id": "stm_farmers_market_alchemy",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.1,
+          "category": "alchemy"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_farmers_market"
+  },
+  "effect_town_square": {
+    "name": "Town Square",
+    "statements": [
+      {
+        "id": "stm_town_square",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.05
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_town_square"
+  },
+  "effect_sword": {
+    "name": "Sword",
+    "statements": [
+      {
+        "id": "stm_sword_accuracy",
+        "keyword": "provides",
+        "payload": {
+          "type": "ACCURACY",
+          "bucket": "flat",
+          "value": 5
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_sword"
+  },
+  "effect_mace": {
+    "name": "Mace",
+    "statements": [
+      {
+        "id": "stm_mace_crush",
+        "keyword": "provides",
+        "payload": {
+          "type": "TYPE_DAMAGE",
+          "bucket": "flat",
+          "value": 10,
+          "category": "crush"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_mace"
+  },
+  "effect_builders_yard_station": {
+    "id": "effect_builders_yard_station",
+    "name": "Builder's Yard Station",
+    "statements": [
+      {
+        "id": "stm_builders_yard_station",
+        "keyword": "station",
+        "payload": {
+          "skill": "construction"
+        },
+        "to": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true
   }
 }
