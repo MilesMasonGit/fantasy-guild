@@ -149,6 +149,8 @@ describe('travel: the banner stays with its Region', () => {
 
 describe('unclicked knock-out and Bank-full banners are saved', () => {
     it('come back after a reload, as they read, silently', () => {
+        // A Bank with no free slot, so the Bank-full banner still stands after the load.
+        GameState.inventory.maxSlots = 0;
         knockOut('h1', 'Aela', ['Iron Sword']);
         EventBus.publish(ENGINE_EVENTS.BANK_FULL, { itemId: 'item_oak' });
         Banners.push({ kind: 'recipe', parts: { heroes: ['Aela'], recipes: ['Cider'] } });

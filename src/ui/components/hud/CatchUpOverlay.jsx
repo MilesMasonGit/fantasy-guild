@@ -343,11 +343,12 @@ function Summary({ result, asking, restoring, undoFailed, onClose, onAsk, onCanc
                                 return (
                                     <EntityRibbon
                                         key={ev.key}
-                                        data-event-instance={ev.key}
+                                        data-event-kind={ev.key}
                                         kind="token"
                                         id={ev.typeId}
                                         name={ev.name}
-                                        countText={ev.leavesText || ev.stateText}
+                                        subtitle={ev.count > 1 ? ev.leavesText : null}
+                                        countText={ev.countText}
                                         size="sm"
                                         className={e.className}
                                         style={e.style}

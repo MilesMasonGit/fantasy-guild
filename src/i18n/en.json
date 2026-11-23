@@ -607,7 +607,8 @@
             "events": "Events",
             "leavesIn": "Leaves in {time}",
             "eventState": {
-                "here": "Still here"
+                "here": "Still here",
+                "hereCount": "{n} still here"
             },
             "kills": "Fights",
             "killTip": {
@@ -873,7 +874,9 @@
         },
         "ended": {
             "expired": "Expired",
-            "demolished": "Demolished"
+            "demolished": "Demolished",
+            "expiredCount": "{n} expired",
+            "demolishedCount": "{n} demolished"
         },
         "gone": {
             "title": "{word}: {event}",
