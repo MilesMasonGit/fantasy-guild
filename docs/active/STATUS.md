@@ -7,6 +7,17 @@ build green) · bench-queued · eye-check · merged.*
 
 **Owner, 2026-11-06 (behind the week's target): up to four code builders at once this week** (plus one read-only); the director still runs suites, builds and benches one at a time. **Owner, 2026-11-06 late morning, away at work:** the director may start new briefs and merge pieces on the gate without a full look; the owner answers questions remotely (screenshots to the phone). Look changes merged this way are listed for the owner's next look in `docs/active/eyecheck/2026-11-06_merged_while_away.md`.
 
+## Director, batch 13: eye-check fixes and the phases batch 12 unblocked (owner, 2026-11-23: eye-checks done, proceed)
+
+*Mon 23 Nov, 09:30. Where we are: batch 12's eye-check came back 10 ok, 1 correct-but-blocked, 1 change (the card's bonus line). Building: the eye-check fixes, 790 W4, 770 G1, 795 M3. Next: 740 C2/C4 when their packs land, then C5, C7 to C10, 750, 770 G2, 800, the planning agent's 810 and 820. Owner: nothing until the next look. For the planning agent: the owner is considering Gold Coins again (a better way to get rid of items than Discard, usable to buy upgrades); Taming still to cut (brief 810).*
+
+| Phase | Tier | Branch (worktree) | State | Day planned | Day done |
+|---|---|---|---|---|---|
+| Eye-check 12 fixes: the card's bonus line the size of the other drops, no blink between cycles; the Lessons switch shows in every running game | builder | `fix/eyecheck-12` (`e12`) | building | Mon 23 | |
+| 790 W4: every effect name explains itself; an item's tooltip lists its effects (T-495, T-499, T-639) | builder | `feat/effects-explain` (`tw4`) | building | Mon 23 | |
+| 770 G1: out of bait or seed, the hero leaves and says Needs <item> (T-623, T-629) | builder | `fix/out-of-bait-seed` (`mg1`) | building | Mon 23 | |
+| 795 M3: news told once; problem banners clear themselves; Expired (T-506, T-507, T-503) | builder | `fix/news-told-once` (`ms4`) | building | Mon 23 | |
+
 ## Director, batch 12: briefs 710 to 800, the audit fixes (owner, 2026-11-21: work autonomously, beyond the usual builder cap; eye-checks only where the look changes, batched)
 
 *Mon 23 Nov, 05:00. Where we are: **batch 12 is on main** (939f3d05, pushed): 32 joined steps benched one by one, the owner's three Syncs and the planning docs joined, the Description Sync redone (57 descriptions), saved Saplings load as Trees, the baseline carries the ruled work changes (T-599, T-637, T-304); 75 tickets closed (d879fea9). What is next: the owner's eye-check `batch-12` (build `_builds/2026-11-23-batch-12`), then the follow-ons that waited on merges (790 W4, 740 C5 and on, 750, 770 G1/G2, 795 M3, 800). What the owner must do: the eye-check; on main, check the CMS Biome terrain card and Sync; Goodbye lines on the Events page when liked. Blockers: none; known red on main: LedgerPace (Cooking 59-61, 78-81 under the owner's new recipes, red on main before the join too; a ledger ticket). Content findings for the content agent: Dragonscale and Darkmetal resist 110 to 135 %, art `i_plank_fir` missing, Brewery and Tannery out of reach, Cedar/Mahogany/Ebony woodaxes out of reach; packs owed listed below.*
