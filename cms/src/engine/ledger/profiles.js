@@ -28,6 +28,10 @@ import { hallTracksOf, hallGraph, freeRanks, openingPath, starRulesOf, starMoves
  *   once, the camp, the best tool, the best drink, every work potion that helps, the best gear for
  *   each slot, every Guild Hall rank. Only what the guild can make by then is on offer.
  *
+ * Whether the guild can feed a boost (make enough of what the boosted work spends) is weighed on
+ * the supply of the profile below ({@link FED_AS}): Typical on Bare's, Maxed on Typical's. A drink
+ * or a potion the guild cannot make fast enough starves its work and lifts nothing.
+ *
  * **The Guild Hall** (brief 320): a star's ranks are on offer to every work its rules reach (its
  * skill, its Token, a Passive Production line at the Hall), a rank only from the tier the owner gave
  * it and only once its price can be had. Bare holds none (only the ranks a new guild holds, `hall.freeRanks`).
@@ -57,6 +61,15 @@ export const PROFILE = Object.freeze({ BARE: 'bare', TYPICAL: 'typical', MAXED: 
 /** Typical's choices with the Guild Hall left out: the rates a Hall rank's price is gathered at. Never shown. */
 export const BEFORE_HALL = 'typical-before-hall';
 export const PROFILES = Object.freeze([PROFILE.BARE, PROFILE.TYPICAL, PROFILE.MAXED]);
+
+/**
+ * The profile whose supply a profile weighs a boost's feed against: the one below, as a Hall rank's
+ * price is gathered before the Hall. What a profile chooses never feeds its own choosing.
+ * ⚠️ At a profile's own supply the choices loop through the drinks (a drink brewed from what the
+ * work it boosts gathers): a choice made inside a loop reads a stand-in for the supply, is kept,
+ * and so depends on which question was asked first.
+ */
+const FED_AS = Object.freeze({ [PROFILE.TYPICAL]: PROFILE.BARE, [BEFORE_HALL]: PROFILE.BARE, [PROFILE.MAXED]: PROFILE.TYPICAL });
 export const PROFILE_TEXT = Object.freeze({ bare: 'Bare', typical: 'Typical', maxed: 'Maxed' });
 
 /** How a boost is grouped in the per-skill breakdown and the boost targets. */
@@ -314,8 +327,9 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
     }
 
     /**
-     * What a rate is worth an hour, in Bare hours: its items less what it spends (`gross`: not less),
-     * plus its XP against a base rate.
+     * What a rate is worth an hour to a profile choosing for it, in Bare hours: its items less what it
+     * spends (`gross`: not less), plus its XP against a base rate, as much of it as the guild can feed
+     * at the profile below ({@link FED_AS}).
      */
     function valueOf(rate, cap, baseXp, { gross = false, profile = PROFILE.BARE } = {}) {
         if (!rate?.ok) return 0;
@@ -332,7 +346,7 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
             if (!gross) worth -= n * h;
         }
         const xp = Object.values(rate.xp || {}).reduce((a, b) => a + b, 0);
-        return (worth + (baseXp > 0 ? xp / baseXp : 0)) * inputScale(rate, cap, profile);
+        return (worth + (baseXp > 0 ? xp / baseXp : 0)) * inputScale(rate, cap, FED_AS[profile] ?? PROFILE.BARE);
     }
 
     /** A boost's price in Bare hours: a support or camp as its Token is had, a tool or gear as one is made. */
@@ -428,14 +442,14 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
     /**
      * One profile's setup for a piece of work at a stage: `{ setup, rate, chosen }`, `chosen` each boost
      * taken with why (`payback` hours for a one-off, `gain` an hour for one drunk as it is used).
-     * Maxed starts from Typical's choices, so it is never the slower of the two by its own choice.
-     * ⚠️ Pricing a boost reads the supply of its inputs, which reads other work's profiles; a profile
-     * asked again while it is being chosen (a loop through the supply) answers Bare.
+     * Maxed starts from Typical's choices. Pricing a boost reads the supply of its inputs at the
+     * profile below ({@link FED_AS}), so no profile's choice reads its own profile's choices.
      */
     function profileOf(target, profile, cap, level = null) {
         const ctx = contextOf(target);
         const key = `${ctx.key}|${profile}|${cap}|${level ?? ''}`;
         if (memo.has(key)) return memo.get(key);
+        // ⚠️ Never met while each profile is fed by the one below: a guard against recursing forever, not a model.
         if (busy.has(key)) return profileOf(target, PROFILE.BARE, cap, level);
         busy.add(key);
         const bare = bareSetup(ctx, cap, level);
@@ -451,7 +465,7 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
                 rate = typical.rate;
                 chosen = [...typical.chosen];
                 // Then every boost that lifts the rate whatever it costs, the best of each one-slot kind (a drink, a tool, a hat),
-                // then every Hall rank in rank order (a rank waits for the one before it).
+                // then every Hall rank in rank order (a rank waits for the one before it), each fed as the guild feeds Typical.
                 const value = (r) => valueOf(r, cap, baseXp, { gross: true, profile });
                 const taken = new Set(chosen.map(c => c.id));
                 const ranked = pool.filter(o => !taken.has(o.id) && o.kind !== BOOST_KIND.HALL).map(o => {
