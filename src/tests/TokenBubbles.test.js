@@ -599,7 +599,7 @@ describe('on the mat (MatToken)', () => {
         expect(nameFoot(container, t)).toBeLessThan(barPlace({ x: t.x, y: t.y, typeId: t.typeId, fit: 1 }).top);
         const label = container.querySelector(`[data-token-overlay="${t.id}"] [data-token-name] span`);
         expect(label.className).toContain('gi-name-backing');
-        expect(label.className).not.toContain('gi-name-shimmer');
+        expect(label.className).toContain('gi-name-shimmer');
     });
 
     it('⭐ the mark is drawn in the centre at the Token’s own art-pixel size', () => {

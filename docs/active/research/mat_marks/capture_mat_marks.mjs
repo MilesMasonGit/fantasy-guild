@@ -28,7 +28,8 @@ const url = process.argv[2] || 'http://localhost:5320';
 // `--looks=F` (comma list) retakes only those looks. `--built`: the game as built (look A, the
 // green bar), no throwaway code needed: built_rest.png (the pointer off the mat), built_camp.png
 // (resting on the Logging Camp: its name, ring and dots) and built_station.png (resting on the
-// furnace: its gear in the centre and its recipe's bubble), each with a _full twin.
+// furnace: its gear in the centre and its recipe's bubble), each with a _full twin, then
+// F2_anim.png and F2_frames.png (the names' soft rainbow, built, moving).
 const BUILT = process.argv.includes('--built');
 const LOOKS = (process.argv.find(a => a.startsWith('--looks='))?.split('=')[1] ?? 'D,P,A,B,C,F').split(',');
 const W = 1920;
@@ -67,7 +68,7 @@ const setLook = async (page, look) => {
 
 /** Every chroma animation held at `t` seconds into its cycle, all in step. */
 const holdChroma = (page, t) => page.evaluate(`(() => {
-    const a = document.getAnimations().filter(a => (a.animationName === 'mm-chroma-text' || a.animationName === 'mm-sweep'));
+    const a = document.getAnimations().filter(a => (a.animationName === 'mm-chroma-text' || a.animationName === 'mm-sweep' || a.animationName === 'gi-name-sweep'));
     for (const x of a) { x.pause(); x.currentTime = ${t * 1000}; }
     return a.length;
 })()`);
@@ -183,6 +184,20 @@ try {
         await page.mouse('mouseMoved', Math.round(W / 2), 5);
         await sleep(1200);
         await shoot('built_rest');
+        // The built names' soft rainbow (look F, subtle): resting on the camp, one frame a 2px step
+        // of its 5.6 s loop, the close crop: F2_anim.png and F2_frames.png.
+        await restOn(camp);
+        const dir = path.join(here, '_frames_F2');
+        mkdirSync(dir, { recursive: true });
+        const STEPS = 42;
+        for (let i = 0; i < STEPS; i++) {
+            await holdChroma(page, (i * 5.6) / STEPS + 0.01);
+            await sleep(120);
+            writeFileSync(path.join(dir, `${String(i).padStart(2, '0')}.png`), await zoom2(page, await capture(page, close)));
+        }
+        execFileSync('python', [path.join(here, 'make_anim.py'), dir, path.join(here, 'F2_anim.png'), path.join(here, 'F2_frames.png'),
+            String((5.6 * 1000) / STEPS)], { stdio: 'inherit' });
+        rmSync(dir, { recursive: true, force: true });
         report.drawn = await page.evaluate(`({
             strips: [...document.querySelectorAll('[data-work-strip]')].map(s => [s.getAttribute('data-work-strip'), s.innerText]),
             blocked: document.querySelectorAll('[data-work-bar-blocked]').length,

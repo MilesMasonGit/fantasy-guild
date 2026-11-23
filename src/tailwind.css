@@ -738,9 +738,10 @@
   padding: 2px 6px 3px;
 }
 
-/* The rainbow across a name's letters (look F), drawn only while `NAME_SHIMMER` is on
-   (`TokenBadges.jsx`): a copy of the name over it (`data-text`), its fill seven hard bands, red
-   first, moving right 2px a step, 56px a loop in 2.8 s. The black outline stays underneath. */
+/* The rainbow across a name's letters (look F, made subtle: owner 2026-11-23), drawn while
+   `NAME_SHIMMER` is on (`TokenBadges.jsx`): a copy of the name over it (`data-text`), its fill
+   seven hard bands, red first, each hue mixed 35 % into white so the letters stay mostly white,
+   moving right 2px a step, 84px a loop in 5.6 s. The black outline stays underneath. */
 .gi-name-shimmer {
   position: relative;
 }
@@ -752,17 +753,17 @@
   padding: inherit;
   color: transparent;
   text-shadow: none !important;
-  background-image: repeating-linear-gradient(90deg, #ff4d4d 0 8px, #ffa53d 8px 16px, #ffe94d 16px 24px, #4dff7a 24px 32px, #4dd8ff 32px 40px, #7d6bff 40px 48px, #ff5cdc 48px 56px);
-  background-size: 56px 100%;
+  background-image: repeating-linear-gradient(90deg, #ffc1c1 0 12px, #ffe0bb 12px 24px, #fff7c1 24px 36px, #c1ffd0 36px 48px, #c1f1ff 48px 60px, #d2cbff 60px 72px, #ffc6f3 72px 84px);
+  background-size: 84px 100%;
   -webkit-background-clip: text;
   background-clip: text;
-  animation: gi-name-sweep 2.8s steps(28) infinite;
+  animation: gi-name-sweep 5.6s steps(42) infinite;
   pointer-events: none;
 }
 
 @keyframes gi-name-sweep {
   from { background-position: 0 0; }
-  to { background-position: 56px 0; }
+  to { background-position: 84px 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

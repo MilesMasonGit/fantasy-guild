@@ -94,20 +94,35 @@ describe('⭐ the reach dot’s dark backing', () => {
 });
 
 describe('⭐ the name label', () => {
-    it('sits on the see-through dark backing; the rainbow is off', () => {
+    it('sits on the see-through dark backing, with the soft rainbow on (the owner, 2026-11-23)', () => {
         const { container } = render(h(TokenNameBadge, { name: 'Oak Tree', shown: true }));
         const span = container.querySelector('[data-token-name] span');
         expect(span.className).toContain('gi-name-backing');
-        expect(NAME_SHIMMER).toBe(false);
-        expect(span.className).not.toContain('gi-name-shimmer');
-        expect(span.getAttribute('data-text')).toBeNull();
+        expect(NAME_SHIMMER).toBe(true);
+        expect(span.className).toContain('gi-name-shimmer');
+        // The sweep's copy reads the very same words.
+        expect(span.getAttribute('data-text')).toBe('Oak Tree');
+        expect(span.textContent).toBe('Oak Tree');
+    });
+
+    it('the rainbow is subtle: every band mostly white (35 % of its hue), all seven hues, red first, 5.6 s a loop', () => {
+        const css = fs.readFileSync(path.resolve(SRC, 'tailwind.css'), 'utf8');
+        const rule = /\.gi-name-shimmer::after \{([^}]*)\}/.exec(css)[1];
+        const bands = [...rule.matchAll(/#([0-9a-f]{6}) \d+(?:px)? \d+px/g)].map(m => m[1]);
+        const hues = ['ff4d4d', 'ffa53d', 'ffe94d', '4dff7a', '4dd8ff', '7d6bff', 'ff5cdc'];
+        const tint = (hex) => hex.match(/../g).map(c => Math.round(255 - 0.35 * (255 - parseInt(c, 16))).toString(16).padStart(2, '0')).join('');
+        expect(bands).toEqual(hues.map(tint));
+        // Mostly white: no channel of any band below 186 (of 255).
+        for (const b of bands) for (const c of b.match(/../g)) expect(parseInt(c, 16)).toBeGreaterThanOrEqual(186);
+        expect(rule).toMatch(/animation: gi-name-sweep 5\.6s steps\(42\) infinite;/);
+        expect(css).toMatch(/@keyframes gi-name-sweep \{\s*from \{ background-position: 0 0; \}\s*to \{ background-position: 84px 0; \}/);
     });
 
     it('the backing and the rainbow are written once, in the style sheet, the rainbow paused while minimised', () => {
         const css = fs.readFileSync(path.resolve(SRC, 'tailwind.css'), 'utf8');
         expect(css).toMatch(/--color-mat-backing: rgba\(10, 8, 6, 0\.58\);/);
         expect(css).toMatch(/\.gi-name-backing \{\s*background: var\(--color-mat-backing\);/);
-        expect(css).toMatch(/\.gi-name-shimmer::after \{[^}]*content: attr\(data-text\);[^}]*#ff4d4d[^}]*steps\(28\)/);
+        expect(css).toMatch(/\.gi-name-shimmer::after \{[^}]*content: attr\(data-text\);[^}]*#ffc1c1[^}]*steps\(42\)/);
         expect(css).toMatch(/body\[data-paused\] \.gi-name-shimmer::after \{\s*animation-play-state: paused;/);
     });
 });

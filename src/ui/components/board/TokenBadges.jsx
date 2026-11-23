@@ -21,11 +21,11 @@ import { getSkill, DEMOLITION_SKILL_ID } from '../../../config/registries/skillR
  * any of these change.
  */
 /**
- * ⚠️ The one switch for a rainbow sweeping across every name's letters (look F,
- * docs/active/research/mat_marks): off until the owner asks for it. On, each name gets
- * `.gi-name-shimmer` (tailwind.css) and its text again in `data-text` for the sweep's copy.
+ * ⚠️ The one switch for the soft rainbow sweeping across every name's letters (look F, made subtle,
+ * docs/active/research/mat_marks): on, each name gets `.gi-name-shimmer` (tailwind.css) and its
+ * text again in `data-text` for the sweep's copy. Off, names are plain white on their backing.
  */
-export const NAME_SHIMMER = false;
+export const NAME_SHIMMER = true;
 
 export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, shown = false, below = false, offset = 0, foot = null }) {
     if (!name || isDragging || !shown) return null;
