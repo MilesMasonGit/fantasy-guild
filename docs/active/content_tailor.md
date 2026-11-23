@@ -32,7 +32,7 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 ## What this needs
 
 - ⚠️ **A cape slot**: a third new slot, beside gloves and boots (T-303).
-- **Sources**: Flax (Farming, a new crop), Wool (a pasture animal, with Taming later), Silk (spiders, from the enemy session).
+- **Sources**: Flax (Farming, a new crop), Wool (no source yet: Taming is cut, 2026-11-22, T-658), Silk (spiders, from the enemy session).
 - **A station**: a Loom or Tailor's Bench (wood and buildings). T-304 covers the skill itself.
 - **Crafting keeps** Ranged's leather gear and Parchment; its old notes on cloth armour and String change.
 - **Enchanting** has open levels for these pieces.

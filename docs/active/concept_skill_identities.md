@@ -1,4 +1,4 @@
-Status: draft (interviewed 2026-11-21: Faith settled; Crime, Taming, Science and Summoning wait on the owner's own planning session, "will provide an update later on")
+Status: draft (interviewed 2026-11-21: Faith settled; 2026-11-22: Taming cut, Crime, Summoning and Science in a deep dive with the owner)
 
 # Five skills: what each one is for
 
@@ -58,18 +58,11 @@ after a rest. A robbery sometimes calls the guard: a small fight the hero must
 win or lose the haul. The loot is other skills' rare goods (gems, rare woods,
 summon items, Motes, a chance of gear), scaled by tier.
 
-## Taming: animals and pastures
+## Taming: cut
 
-Tame animals for pastures (wool, milk, eggs) and helpers that work
-unattended. Tailor's Wool comes from it. To design: which animals, how a
-pasture works, helpers, and enemies that are animals (the Cow).
-
-
-**Interview 2026-11-21 (direction, not final; the owner will revisit):** wild
-animal Tokens (Sheep, Hens, a Cow) appear on the mat like nodes; a Taming hero
-tames one with feed (Farming goods) into an item and places it in a Pasture;
-a Taming hero works the pasture for wool, milk and eggs, and the animals eat
-feed. Helpers that work Tokens without a hero: later, their own interview.
+**Cut 2026-11-22 (owner):** Taming leaves the game. Its pasture idea (wild animals
+tamed into a Pasture) and its helpers that work Tokens without a hero are dropped with it. Wool, which
+Tailor's tier 2 needs, still has no source: a content question (T-658).
 
 ## Science: bulk conversion, late game
 
@@ -89,7 +82,7 @@ makes things, Science transforms materials. Unlocked late.
 - Each skill's level climb, its station or nodes, and its place in the
   content chains (concept_content_roadmap.md).
 - Order of building: after the core chains (owner, 2026-11-02, again 2026-11-21).
-- The owner holds a planning session of their own on Crime, Taming, Science
-  and Summoning and will bring an update; then this doc is finished and
+- Crime, Summoning and Science: a deep dive with the owner, one at a time
+  (2026-11-22); then this doc is finished and
   approved, the hero sheet lines are rewritten (T-644 with T-569's form), and
   each skill gets a content plan with the content agent.

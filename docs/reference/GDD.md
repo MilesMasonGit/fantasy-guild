@@ -694,7 +694,7 @@ no specialist skills, just skills (owner 2026-11-21, T-643)
 *(`skillRegistry.js`, the source of truth; classless heroes, brief 270 K1)*.
 **Shown by kind, in one colour** (owner 2026-11-21): combat, gathering, making
 (Fletching, Enchanting and Tailor among the making skills), then Faith,
-Summoning, Crime, Taming and Science last until their identities place them.
+Summoning, Crime and Science last until their identities place them.
 Twenty today, Tailor making 21 (T-304):
 - **Gathering and making**: mining, forestry, fishing, farming, smithing,
   crafting, cooking, alchemy, construction.
@@ -715,11 +715,10 @@ Twenty today, Tailor making 21 (T-304):
   Fletching makes bows and arrows (T-572), Enchanting makes wands, staffs and
   tomes and works Leylines for Motes (T-577), Tailor makes mage and Stealth
   clothing and the String Fletching uses (T-578, T-304).
-- **Faith, Summoning, Crime, Taming, Science**: no content yet, shown at level
+- **Faith, Summoning, Crime, Science**: no content yet, shown at level
   1 like any skill (owner ruling D7). Their direction (owner 2026-11-21):
   Faith builds blessing buildings, Summoning works the Summoning Circle to call
-  bosses, Crime picks locks, chests and contraband, Taming keeps animals and
-  pastures, Science converts goods in bulk late in the game. (Identities: see
+  bosses, Crime picks locks, chests and contraband, Science converts goods in bulk late in the game. (Identities: see
   concept_skill_identities.md, draft.)
 
 Leadership, Commerce, Trapping, Armory and Shadowcraft were **cut** (K1): content
