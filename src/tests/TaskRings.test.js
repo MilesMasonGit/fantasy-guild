@@ -27,7 +27,7 @@ import { TaskRings } from '../ui/components/board/TaskRings.jsx';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import {
     TASK_DIM_LIGHT, TASK_DIM_GREY, TASK_RING_PAD_PX, TASK_RING_COLOUR, TASK_RING_STUCK_COLOUR,
-    taskRingOf, taskJobsOf, taskJobsKey, taskRingTarget, createTaskRingSet, diskRows, dimRuns, dimPath,
+    taskRingOf, taskJobsOf, taskJobsKey, taskRingTarget, createTaskRingSet, diskRows, dimRuns,
     edgeRuns, insideRuns, ringEdgePaths, runsPath
 } from '../ui/components/board/taskRing.js';
 
@@ -310,7 +310,7 @@ describe('⭐ one dim for every ring: overlapping rings dim the ground once', ()
     });
 
     it('the path is one rectangle per run, in art pixels from the mat corner', () => {
-        expect(dimPath([{ cx: 0, cy: 0, px: 1 }])).toBe('M-1 0h3v1h-3zM0 1h1v1h-1zM0 -1h1v1h-1z');
+        expect(runsPath(dimRuns([{ cx: 0, cy: 0, px: 1 }]))).toBe('M-1 0h3v1h-3zM0 1h1v1h-1zM0 -1h1v1h-1z');
     });
 });
 

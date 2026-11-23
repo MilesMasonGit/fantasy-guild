@@ -244,11 +244,6 @@ export function runsPath(rows) {
     return d;
 }
 
-/** {@link dimRuns} as one path ({@link runsPath}). */
-export function dimPath(rings) {
-    return runsPath(dimRuns(rings));
-}
-
 const NO_RUNS = Object.freeze([]);
 
 /** The cells two sorted, never-touching run lists share. */

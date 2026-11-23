@@ -375,18 +375,24 @@ things shrink with the window, so reach and every rule are the same at any size.
 `MatBoard.jsx` (`src/ui/components/board/MatBoard.jsx:62-…`, memoised) draws every Token
 (`MatToken.jsx`), hero (`MatHero.jsx`) and flag (`FlagLayer.jsx`) as **positioned DOM elements**
 keyed by instance id, in the z-layers set out in `matLayers.js` (`MAT_Z`: surface, ground,
-ground fx, task dim and task rings, grid, Tokens, heroes, sky, rings, loot, work plate). One `pointermove` on the mat asks
+ground fx, task rings, grid, Tokens, task dim, worked Tokens, heroes, sky, rings, loot, work plate). One `pointermove` on the mat asks
 the engine which Token is under the pointer (`MatBoard.jsx:62-75`). Other screens: the Guild
 Hall's star web (`GuildHallBoard.jsx`, `HallSky.jsx`) and the Atlas with the hex world map
 (`src/ui/components/atlas/`).
 
-**Task rings** (`TaskRings.jsx`, `taskRing.js`): a work-green ring round every job in progress
-(a Token with a hero standing beside it working it, not stuck), on the ground under every Token.
-The ground inside is dimmed and greyed by **one** layer for all the rings, cut to their union, so
-overlaps dim once: a grey drawn with `mix-blend-mode: saturation`, then a translucent black, both
-blending only with the ground and its ambient life below them. Drawn when a job starts or ends;
-nothing runs at rest. A worked Token and its hero have no outline of their own any more
-(`spriteOutline.js`).
+**Task rings** (`TaskRings.jsx`, `taskRing.js`): a ring round every job in progress (a Token
+with a hero standing beside it working it), fitted round the Token's body and each hero's figure
+and centred on them all; work green, or the warning amber (`--color-gi-warning`) while the Token
+shows its "!" (`problemMark.problemOf`, read into MatBoard's hero rows as `jobStuck`). The rings
+draw only the **outer edge** of their merged shape (`edgeRuns`: the cells of the union with a side
+on the ground outside, which round a lone ring is exactly its pixel ring), on the ground under
+every Token. Inside, **one** dim for all the rings, cut to the union less its edge, so overlaps
+dim once: a grey drawn with `mix-blend-mode: saturation`, then a translucent black. Its z
+(`matLayers.taskDimZ`) is the lowest worked Token's: worked Tokens stand above every resting
+one in the stack, so the dim lies over the ground and every Token at rest (dimming the part of
+one inside a ring) and under the worked Tokens and the heroes, who win the tie by coming after
+it. Drawn when a job starts, ends or turns stuck; nothing runs at rest. A worked Token and its
+hero have no outline of their own any more (`spriteOutline.js`).
 
 ### 5.2 What moves and how
 
