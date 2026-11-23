@@ -170,6 +170,9 @@ describe('an item\'s tooltip lists its effects', () => {
         });
         const { rows, explains } = itemEffects({ id: 'ex_beer_item', equipSlot: 'drink', effects: [{ effectId: 'ex_beer', scale: 1 }] });
         expect(rows.map(r => [r.id, !!r.applied])).toEqual([['ex_beer', false], ['ex_merry', true]]);
+        // The rule names the applied effect by its name, never its id.
+        expect(rows[0].lines[0].map(s => s.text).join('')).toContain('Merry');
+        expect(rows[0].lines[0].map(s => s.text).join('')).not.toContain('ex_merry');
         expect(explains).toEqual([explainLine(EFFECT_TYPES.XP_BONUS)]);
     });
 });

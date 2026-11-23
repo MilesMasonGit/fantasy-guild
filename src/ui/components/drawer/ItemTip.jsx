@@ -117,7 +117,7 @@ function effectRow(entry, ref, names, applied = false) {
 export function itemEffects(item) {
     const refs = effectRefsOf(item);
     if (!refs.length) return { rows: [], explains: [] };
-    const names = carriedRuleNames();
+    const names = { ...carriedRuleNames(), effect: (id) => EFFECTS[id]?.name || id };
     const rows = [];
     for (const ref of refs) {
         const entry = EFFECTS[ref.effectId];
