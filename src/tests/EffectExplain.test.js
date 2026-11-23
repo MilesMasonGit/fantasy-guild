@@ -4,6 +4,7 @@ import React from 'react';
 import { render, cleanup, fireEvent } from '@testing-library/react';
 import { MODIFIER_PALETTE, getPaletteEntry, effectExplains } from '../config/registries/modifierPalette.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
+import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { KEYWORD } from '../systems/effects/statements.js';
 import { renderSegments, renderStatement, effectTypesIn } from '../systems/effects/statementText.js';
@@ -12,6 +13,7 @@ import { explainOf, explainLine, explainLinesOf, effectTypesOfStatements } from 
 import { RuleLine } from '../ui/components/base/EffectName.jsx';
 import { EffectChip } from '../ui/components/board/EffectBadges.jsx';
 import { effectTagOf } from '../ui/components/board/effectBadgeText.js';
+import { SupportRow, MoreBlock } from '../ui/components/board/TokenCard.jsx';
 import { perkSegments } from '../ui/components/dock/heroPerks.js';
 import { ItemTipContent, ItemEffectLines, itemTipFacts, itemEffects } from '../ui/components/drawer/ItemTip.jsx';
 
@@ -38,6 +40,14 @@ registerEffects({
             payload: { type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.05, category: 'mining' },
             to: { mode: 'all', value: '' }, reach: 'nearby'
         }]
+    }
+});
+
+/** A Token that buffs nearby Tokens' Speed, for the card's buff tag. */
+registerTokenTypes({
+    ex_buff_post: {
+        id: 'ex_buff_post', name: 'Buff Post', tokenType: 'resource', rarity: 'common', uses: null, sprite: 's_nature',
+        buff: { target: 'nearby', modifiers: [{ type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.25 }] }
     }
 });
 
@@ -108,6 +118,22 @@ describe('each place reads the one description', () => {
         expect(tag).toMatchObject({ text: 'Speed +25%', type: EFFECT_TYPES.WORK_TIME });
         withExplains(EFFECT_TYPES.WORK_TIME, 'Test: cycles go quicker', () => {
             expect(explainLinesOf([tag.type])).toEqual(['Speed: Test: cycles go quicker']);
+        });
+    });
+
+    it('the Token card: a Boosts row\'s tooltip lists it, and a buff tag explains itself on hover', () => {
+        withExplains(EFFECT_TYPES.WORK_TIME, 'Test: cycles go quicker', () => {
+            const tag = effectTagOf({ type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.25 });
+            const row = render(h(SupportRow, { row: { id: 'r1', typeId: 'token_cooking_pot', name: 'Kitchen', tags: [tag] } }));
+            fireEvent.pointerEnter(row.container.querySelector('[data-card-support]'), { clientX: 5, clientY: 5 });
+            expect(tipText()).toContain('Speed: Test: cycles go quicker');
+            row.unmount();
+
+            const more = render(h(MoreBlock, { typeId: 'ex_buff_post' }));
+            const name = more.container.querySelector(`[data-card-buff-tag] [data-effect-name="${EFFECT_TYPES.WORK_TIME}"]`);
+            expect(name.textContent).toBe('Speed +25%');
+            fireEvent.pointerEnter(name, { clientX: 5, clientY: 5 });
+            expect(tipText()).toContain('Test: cycles go quicker');
         });
     });
 

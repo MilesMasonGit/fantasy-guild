@@ -5,6 +5,8 @@ import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
+import { EffectName } from '../base/EffectName.jsx';
+import { explainLinesOf } from '../base/effectExplain.js';
 import { PixelGlyph } from '../base/PixelGlyph.jsx';
 import { LandmarkBlock } from '../drawer/LandmarkBlock.jsx';
 import { LeaveMatControl } from '../drawer/LeaveMatControl.jsx';
@@ -435,8 +437,8 @@ const EventsSection = ({ lines }) => (
  * green, or red for one that works against it. Its own row rather than a ribbon, so a long name or
  * tag wraps instead of being cut off.
  */
-const SupportRow = ({ row }) => (
-    <Tooltip title={`This gives ${row.name} ${row.tags.map(tag => tag.text).join(', ')}`}>
+export const SupportRow = ({ row }) => (
+    <Tooltip title={`This gives ${row.name} ${row.tags.map(tag => tag.text).join(', ')}`} lines={explainLinesOf(row.tags.map(tag => tag.type))}>
         <div
             data-card-support="to"
             data-card-support-tags={row.tags.map(tag => tag.text).join('|')}
@@ -536,7 +538,7 @@ const DropsSection = ({ drops = [], rare, effects }) => (
 );
 
 /** What the card's layout has no section of its own for: a landmark's challenge, a buff, the stations a tool drives. */
-const MoreBlock = ({ typeId }) => {
+export const MoreBlock = ({ typeId }) => {
     const def = getTokenType(typeId);
     if (!def) return null;
     return (
@@ -549,7 +551,7 @@ const MoreBlock = ({ typeId }) => {
                         const tag = effectTagOf(m);
                         return (
                             <span key={i} data-card-buff-tag className="tabular-nums" style={{ color: BADGE_COLOUR[tag.against ? 'down' : 'up'] }}>
-                                {tag.text}
+                                <EffectName type={tag.type}>{tag.text}</EffectName>
                             </span>
                         );
                     })}
