@@ -122,25 +122,23 @@ describe('mat overlays', () => {
         SpriteLayer.init();
         GameState.state.heroes = [];
         const hall = placeAt('token_guild_hall', 880, 560);
-        // A stuck Token, for the idle plate: charges are never on one.
+        // A stuck Token, for its problem mark.
         const stuck = placeAt('fixture_consumer', 400, 560);
         stuck.alert = ALERT.INPUTS;
-        const rested = (t) => h(MatToken, { id: t.id, typeId: t.typeId, x: t.x, y: t.y, size: 1, z: 10, isHovered: true, isRested: true, plateHost: document.body });
+        const rested = (t) => h(MatToken, { id: t.id, typeId: t.typeId, x: t.x, y: t.y, size: 1, z: 10, isHovered: true, isRested: true });
         return h(React.Fragment, null, rested(stuck), rested(hall));
     }
 
-    it('bubbles and tooltips', () => {
+    it('bubbles (the mat has no tooltips to switch off: brief 830 D3)', () => {
         const els = restedTokens();
         mount(els);
-        expect(document.body.querySelector('[data-idle-plate] [data-plate-cell="problem"]')).not.toBeNull();
-        expect(document.body.querySelector('[data-passive-tooltip]')).not.toBeNull();
+        expect(document.body.querySelector('[data-problem-mark]')).not.toBeNull();
+        expect(document.body.querySelector('[data-passive-tooltip]')).toBeNull();
         cleanup();
 
         setDrawn('bubbles', false);
-        setDrawn('tooltips', false);
         mount(els);
-        expect(document.body.querySelector('[data-idle-plate]')).toBeNull();
-        expect(document.body.querySelector('[data-passive-tooltip]')).toBeNull();
+        expect(document.body.querySelector('[data-problem-mark]')).toBeNull();
     });
 
     it('rings: the hover reach ring on the mat draws, and not when off', () => {

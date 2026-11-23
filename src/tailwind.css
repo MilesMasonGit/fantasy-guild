@@ -1078,6 +1078,11 @@ body[data-paused] .catch-up-sheen {
   animation-play-state: paused;
 }
 
+/* Its own rule: in the list above, its pseudo-element voided the whole list in the tests' CSS parser. */
+body[data-paused] .gi-name-shimmer::after {
+  animation-play-state: paused;
+}
+
 /* A star's outline, one of its own art pixels (`--star-px`) wide and white, shows only under the
    pointer or keyboard focus: never at rest, whatever the star's look or whether it is pinned. */
 .gi-star-btn:hover .gi-star-img,

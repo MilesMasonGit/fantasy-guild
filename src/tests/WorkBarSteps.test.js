@@ -8,8 +8,8 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import { filledSteps } from '../ui/components/board/workBar.js';
-import { WorkBarFill } from '../ui/components/board/WorkPlateLayer.jsx';
-import { PLATE } from '../ui/components/board/workPlate.js';
+import { WorkBarTrack } from '../ui/components/board/WorkBarLayer.jsx';
+import { BAR } from '../ui/components/board/matMarks.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -19,8 +19,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
     RegistryManager: { recordItemGain: vi.fn() }
 }));
 
-/** The plate's fill: its steps (one art pixel each). */
-const FILL = PLATE.FILL_STEPS;
+/** The bar's steps (one art pixel each). */
+const FILL = BAR.W;
 
 /**
  * ⭐ **The work bar is cheap.** A worked Token's bar (drawn as its work plate's fill, the model fed
@@ -38,7 +38,7 @@ const token = (id, extra = {}) => ({ typeId: 'fixture_producer', instanceId: id,
 /** Each Token's bubbles and its plate's fill, held grey while it has an alert (as the plate does). */
 const rows = (ids, extra = {}) => tree(...ids.flatMap(id => [
     h(TokenBubbles, { key: id, instanceId: id, token: token(id, extra[id]) }),
-    h(WorkBarFill, { key: `${id}-fill`, instanceId: id, blocked: !!extra[id]?.alert })
+    h(WorkBarTrack, { key: `${id}-fill`, instanceId: id, blocked: !!extra[id]?.alert })
 ]));
 
 const progressPayload = (id, elapsedMs, cycleTimeMs) => ({

@@ -23,7 +23,7 @@ import {
 } from '../ui/components/base/TokenSprite.jsx';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MatFitProvider } from '../ui/components/board/MatFitContext.jsx';
-import { PLATE, plateUnit, plateFootOf } from '../ui/components/board/workPlate.js';
+import { nameFootOf } from '../ui/components/board/matMarks.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 import { restHover } from './fixtures/hoverRest.js';
@@ -246,10 +246,10 @@ describe('on the mat (MatBoard)', () => {
         expect(parseFloat(big.querySelector('img').style.width)).toBe(128);
     });
 
-    it('⭐ a small Token, hovered, gets the full-size plate under it, centred, its name just above the plate, under the small art', () => {
+    it('⭐ a small Token, hovered: its name on the foot line of a full-size Token, under the small art, and no plate', () => {
         vi.useFakeTimers();
         const spawner = put('b8_small_spawner', { x: 600, y: 500 });
-        // Stuck, so its rest brings up a plate.
+        // Stuck: its '!' in its centre, and no plate (brief 830 D3).
         spawner.alert = ALERT.NO_ROOM;
         put('b8_standard', { x: 1200, y: 500 });
         const { container } = mount(1);
@@ -263,17 +263,12 @@ describe('on the mat (MatBoard)', () => {
         fireEvent.pointerMove(root, { clientX: spawner.x, clientY: spawner.y });
         restHover();
         expect(o.querySelector('[data-ring]')).toBeNull();
-        const plate = container.querySelector(`[data-idle-plate="${spawner.id}"]`);
-        expect(plate.querySelector('[data-plate-cell="problem"]')).not.toBeNull();
-        // Its cells at the plate's own size, as under a full-size Token.
-        expect(parseFloat(plate.style.height)).toBe(PLATE.H * plateUnit(1));
-        const slot = container.querySelector(`[data-idle-plate-slot="${spawner.id}"]`);
-        expect(parseFloat(slot.style.left) + parseFloat(slot.style.width) / 2).toBe(600);
-        // The name's bottom on the plate's top, which for a small Token is below its art.
+        expect(container.querySelector('[data-idle-plate]')).toBeNull();
+        expect(o.querySelector('[data-bubble-row="centre"] [data-problem-mark]')).not.toBeNull();
+        // The name's bottom on the line under a full-size Token's art, which for a small Token is below its art.
         const name = o.querySelector('[data-token-name]');
         const foot = spawner.y - 32 + parseFloat(name.style.height);
-        expect(foot).toBe(parseFloat(slot.style.top));
-        expect(foot).toBe(spawner.y + plateFootOf(spawner.typeId, 1));
+        expect(foot).toBe(spawner.y + nameFootOf(spawner.typeId, 1));
         expect(foot).toBeGreaterThan(spawner.y + 32);
     });
 });

@@ -44,9 +44,9 @@ const later = (ms) => act(() => { vi.advanceTimersByTime(ms); });
 const overlay = (c, id) => c.querySelector(`[data-token-overlay="${id}"]`);
 const art = (c, id) => c.querySelector(`[data-token-art][data-token-id="${id}"]`);
 const nameOf = (c, id) => overlay(c, id).querySelector('[data-token-name]');
-/** The rested Token's idle plate under it: shown only while it is stuck or counting. */
+/** Anything of the retired idle plate (brief 830 D3): never drawn. */
 const plateOf = (c, id) => c.querySelector(`[data-idle-plate="${id}"]`);
-/** A Token waiting on items, so its rest brings up a plate. */
+/** A Token waiting on items. */
 const stuckAt = (x, y) => {
     const t = placeAt('fixture_producer', x, y);
     t.alert = ALERT.INPUTS;
@@ -80,7 +80,7 @@ afterEach(() => {
 });
 
 describe('⭐ resting on a Token', () => {
-    it('the outline at once; nothing else before the rest; the name and the plate after', () => {
+    it('the outline at once; nothing else before the rest; the name after, and never a plate', () => {
         const t = stuckAt(600, 500);
         const { container } = mount();
         const root = matRoot(container);
@@ -96,7 +96,7 @@ describe('⭐ resting on a Token', () => {
 
         later(10);
         expect(nameOf(container, t.id).textContent).toBe('Fixture Producer');
-        expect(plateOf(container, t.id)).not.toBeNull();
+        expect(plateOf(container, t.id)).toBeNull();
     });
 
     it('small moves on the same Token do not restart the wait', () => {
@@ -206,8 +206,7 @@ describe('⭐ resting on a Token', () => {
         expect(renders.of('MatToken'), JSON.stringify(renders.all())).toBe(1);
         expect(renders.of('MatHero')).toBe(0);
         expect(nameOf(container, b.id)).not.toBeNull();
-        // Its plate and its dropped name came in that one render.
-        expect(plateOf(container, b.id)).not.toBeNull();
+        expect(plateOf(container, b.id)).toBeNull();
         expect(renders.commits()).toHaveLength(1);
     });
 });

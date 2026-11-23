@@ -266,7 +266,7 @@ describe('on the mat', () => {
         expect(flagClothOver(root, tok.x, tok.y, tok.id)).toBeNull();
     });
 
-    it('the pointer on its cloth shows its tooltip, and the Token stays hovered', () => {
+    it('the pointer on its cloth shows no tooltip (brief 830 D3), and the Token stays hovered', () => {
         const { tok, root, container } = setup();
         fireEvent.pointerMove(root, { clientX: tok.x, clientY: tok.y });
         const flag = flagOf(container, 'h1');
@@ -275,9 +275,9 @@ describe('on the mat', () => {
         const tip = () => document.body.querySelector('[data-flag-tooltip="h1"]');
         expect(tip()).toBeNull();
         fireEvent.pointerMove(root, { clientX: tok.x, clientY: tok.y });
-        expect(tip()).not.toBeNull();
+        expect(tip()).toBeNull();
         expect(outlined(container, tok.id)).toBe('hover');
-        // Off the cloth, still on the Token: no tooltip.
+        // Off the cloth, still on the Token.
         fireEvent.pointerMove(root, { clientX: tok.x + 30, clientY: tok.y + 30 });
         expect(tip()).toBeNull();
         expect(flagOf(container, 'h1')).not.toBeNull();
