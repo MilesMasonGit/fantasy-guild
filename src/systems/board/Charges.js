@@ -246,7 +246,10 @@ export function planContextCharges(instanceId, requirements) {
  * @param {object} io the resolved recipe/IO from `RecipeResolver.effectiveIO`
  */
 export function planCycle(instanceId, instance, io) {
-    const stationCost = io?.recipe?.stationChargeCost ?? DEFAULT_STATION_CHARGE_COST;
+    // ⚠️ A Foundation is not spent by building on it: it is replaced by what it builds, so it pays
+    // no per-cycle charge, or a one-charge Foundation would be destroyed by the very cycle that
+    // builds on it.
+    const stationCost = getTokenType(instance?.typeId)?.foundation ? 0 : DEFAULT_STATION_CHARGE_COST;
     const context = planContextCharges(instanceId, io?.recipe?.requiresContext);
 
     const debits = [...context.debits];

@@ -1,4 +1,4 @@
-import { SKILLS } from '../utils/constants';
+import { SKILLS, stationSkillOf, expandBearer } from '../utils/constants';
 
 /**
  * The Progression screen's rows: one shape from two different records.
@@ -14,12 +14,14 @@ export function levelOf(row) {
  * Every Token and recipe that has a work cycle, as rows.
  * ⚠️ Has a work cycle means has a config, not has inputs or outputs: a pooled station carries no I/O of its own but still has the skill and level this screen edits.
  */
-export function progressionRows({ tokens = {}, recipePools = {} } = {}) {
+export function progressionRows({ tokens = {}, recipePools = {}, effects = {} } = {}) {
     const rows = [];
 
     for (const [key, token] of Object.entries(tokens)) {
         const config = token?.config;
         if (!config) continue;
+        // ⚠️ A station's cycle time and XP are its recipes', never its own: nothing reads the station's.
+        const isStation = !!stationSkillOf(expandBearer(token, effects));
         rows.push({
             rowKey: `token:${token.id ?? key}`,
             kind: 'token',
@@ -29,9 +31,9 @@ export function progressionRows({ tokens = {}, recipePools = {} } = {}) {
             level: config.skillRequired ?? 1,
             tempo: token.sim?.tempo,
             purpose: token.sim?.purpose,
-            cycleTimeMs: config.cycleTimeMs,
-            xp: config.xp,
-            xpPinned: token.sim?.xpPinned === true,
+            cycleTimeMs: isStation ? undefined : config.cycleTimeMs,
+            xp: isStation ? undefined : config.xp,
+            xpPinned: !isStation && token.sim?.xpPinned === true,
         });
     }
 

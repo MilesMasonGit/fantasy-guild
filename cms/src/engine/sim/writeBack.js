@@ -77,9 +77,8 @@ function migrateRecipeSchema(recipe, skillId, usedIds) {
     const needsDuration = !Number.isFinite(recipe.durationMs)
         && Number.isFinite(recipe.cycleTimeMs);
     const needsLevel = recipe.levelRequirement === undefined;
-    const needsChargeCost = recipe.stationChargeCost === undefined;
     const hasLegacyCycle = 'cycleTimeMs' in recipe;
-    if (!needsId && !needsDuration && !needsLevel && !needsChargeCost && !hasLegacyCycle) {
+    if (!needsId && !needsDuration && !needsLevel && !hasLegacyCycle) {
         return recipe;
     }
 
@@ -98,7 +97,6 @@ function migrateRecipeSchema(recipe, skillId, usedIds) {
     delete next.cycleTimeMs;
 
     if (needsLevel) next.levelRequirement = 1;
-    if (needsChargeCost) next.stationChargeCost = 1;
 
     return next;
 }

@@ -17,6 +17,7 @@ import { progressionRows, groupBySkill, filterRows, recordPatch, undoSnapshot, N
 export default function ProgressionPanel() {
     const tokens = useEntityStore((s) => s.tokens);
     const recipePools = useEntityStore((s) => s.recipePools);
+    const effects = useEntityStore((s) => s.effects);
     const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
     const updateToken = useEntityStore((s) => s.updateToken);
     const updateRecipe = useEntityStore((s) => s.updateRecipe);
@@ -29,8 +30,8 @@ export default function ProgressionPanel() {
     const [skill, setSkill] = useState('all');
 
     const rows = useMemo(
-        () => progressionRows({ tokens, recipePools }),
-        [tokens, recipePools]
+        () => progressionRows({ tokens, recipePools, effects }),
+        [tokens, recipePools, effects]
     );
 
     const groups = useMemo(() => {

@@ -655,7 +655,7 @@ function lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes, kind, skil
     if (kind === WORK.FIGHT) return fightLifecycle(book, def, setup);
     if (kind === WORK.BUILD || kind === WORK.WATER) return { kind: LIFECYCLE.UNLIMITED, supplyPerHour: Infinity, used: new Set() };
     const uses = neverWearsOut(def) ? null : (def.uses ?? null);
-    const cost = ownCycleCost(def, recipe);
+    const cost = ownCycleCost(def);
     if (uses == null || !(cost > 0)) return { kind: LIFECYCLE.UNLIMITED, supplyPerHour: Infinity, used: new Set() };
     const cycles = Math.floor(uses / cost);
     const respawn = respawnOf(def);

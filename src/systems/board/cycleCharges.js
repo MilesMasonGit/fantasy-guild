@@ -5,7 +5,7 @@ import { CHARGE_MOMENT, chargeDeltaOf } from '../../config/registries/chargeMome
 
 /** Pure: the charges engine (`Charges.js`) and the progression ledger's rate calculator share it. */
 
-/** What a station spends per cycle when its recipe does not say. */
+/** What a Token running a recipe spends per cycle. */
 export const DEFAULT_STATION_CHARGE_COST = 1;
 
 /**
@@ -49,10 +49,10 @@ export function statementCycleCost(def) {
 }
 
 /**
- * A Token's own charge spend per cycle: what its recipe costs to run (`stationChargeCost`, or
- * {@link DEFAULT_STATION_CHARGE_COST}) plus what its own rules charge it for being on. A Token whose
- * charges are unlimited pays none of it (`Charges.isUnlimited`).
+ * A Token's own charge spend per cycle: {@link DEFAULT_STATION_CHARGE_COST} plus what its own rules
+ * charge it for being on. A Token whose charges are unlimited pays none of it
+ * (`Charges.isUnlimited`).
  */
-export function ownCycleCost(def, recipe = null) {
-    return (recipe?.stationChargeCost ?? DEFAULT_STATION_CHARGE_COST) + statementCycleCost(def);
+export function ownCycleCost(def) {
+    return DEFAULT_STATION_CHARGE_COST + statementCycleCost(def);
 }

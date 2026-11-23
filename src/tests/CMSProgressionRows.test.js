@@ -318,3 +318,23 @@ describe('Undoing a bulk edit', () => {
         expect(Object.keys(undo).sort()).toEqual(['levelRequirement', 'sim']);
     });
 });
+
+describe('A station has no cycle time or XP of its own', () => {
+    const stations = () => ({
+        tokens: {
+            token_kiln: {
+                id: 'token_kiln', name: 'Kiln',
+                config: { skill: 'crafting', skillRequired: 1, cycleTimeMs: 12000, xp: 0, inputs: [], outputs: [] },
+                statements: [{ id: 's1', keyword: 'station', payload: { skill: 'crafting' } }],
+            },
+        },
+        recipePools: {},
+    });
+
+    it('shows no cycle time or XP for a Token that works as a station', () => {
+        const row = progressionRows(stations()).find((r) => r.id === 'token_kiln');
+        expect(row.cycleTimeMs).toBeUndefined();
+        expect(row.xp).toBeUndefined();
+        expect(row.skill).toBe('crafting');
+    });
+});
