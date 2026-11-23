@@ -1,0 +1,66 @@
+diff --git a/src/ui/components/board/CampReachRing.jsx b/src/ui/components/board/CampReachRing.jsx
+index 3a198787..cd252f5c 100644
+--- a/src/ui/components/board/CampReachRing.jsx
++++ b/src/ui/components/board/CampReachRing.jsx
+@@ -8,6 +8,7 @@ import { pixelRingPath } from './pixelRing.js';
+ import { REACH_DOT_PATHS, REACH_DOT_COLOUR, REACH_DOT_MIDDLE, REACH_DOT_PULSE, REACH_DOT_HALO, snapToArt } from './reachDot.js';
+ import { useGrowRing } from './growRing.js';
+ import { playPoses, prefersReducedMotion } from './fx/pixelSteps.js';
++import { MM_RING1, MM_RING2 } from './mmLook.jsx';
+ 
+ /** The ring: one art pixel of gold over a solid black copy one art pixel down-right (the old flag ring's look). */
+ const RING_GOLD = 'var(--color-gi-gold)';
+@@ -31,6 +32,11 @@ const ReachDot = ({ dot, artScale }) => {
+     // own: on an SVG element a CSS transform replaces the attribute.
+     return (
+         <g data-reach-dot={dot.id} ref={hop}>
++            <g transform={`translate(${ox} ${oy}) scale(${artScale})`}>
++                <path data-mm-ring="dark2" d={MM_RING2} />
++                <path data-mm-ring="dark1" d={MM_RING1} />
++                <path data-mm-ring="chroma" d={MM_RING1} />
++            </g>
+             <path d={REACH_DOT_PATHS.shape} transform={`translate(${ox + artScale} ${oy + artScale}) scale(${artScale})`} fill={REACH_DOT_COLOUR.shadow} />
+             <g transform={`translate(${ox} ${oy}) scale(${artScale})`}>
+                 <path ref={halo} d={REACH_DOT_PATHS.halo} fill={REACH_DOT_COLOUR.halo} visibility="hidden" />
+diff --git a/src/ui/components/board/TokenBadges.jsx b/src/ui/components/board/TokenBadges.jsx
+index b4fd9b2c..ba2b9f2c 100644
+--- a/src/ui/components/board/TokenBadges.jsx
++++ b/src/ui/components/board/TokenBadges.jsx
+@@ -4,6 +4,7 @@ import { inputSummary, outputSummary, contextSummary } from './recipeText.js';
+ import { SkillIcon } from '../base/SkillIcon.jsx';
+ import { getSkill, DEMOLITION_SKILL_ID } from '../../../config/registries/skillRegistry.js';
+ import { Tooltip } from '../base/Tooltip.jsx';
++import { useMm } from './mmLook.jsx';
+ 
+ /**
+  * The small things drawn on a Token besides its ring bubbles: its name above the box, and the
+@@ -22,6 +23,8 @@ import { Tooltip } from '../base/Tooltip.jsx';
+  * any of these change.
+  */
+ export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, shown = false, below = false, offset = 0, foot = null }) {
++    const mm = useMm();
++    if (mm.allNames && foot != null) shown = true;
+     if (!name || isDragging || !shown) return null;
+ 
+     // A full-width flex row centres the label without a `transform`: a transform on every
+diff --git a/src/ui/components/board/WorkPlateLayer.jsx b/src/ui/components/board/WorkPlateLayer.jsx
+index 5efe3a42..75ed8f34 100644
+--- a/src/ui/components/board/WorkPlateLayer.jsx
++++ b/src/ui/components/board/WorkPlateLayer.jsx
+@@ -20,6 +20,7 @@ import { resolveSpritePath } from '../../../utils/AssetManager.js';
+ import { skillArt } from '../base/SkillIcon.jsx';
+ import { useMatSize } from '../../hooks/useMatSize.js';
+ import { onPoll } from './frameClock.js';
++import { useMm, MmBar } from './mmLook.jsx';
+ 
+ const PIXELATED = Object.freeze({ imageRendering: 'pixelated' });
+ 
+@@ -206,6 +207,8 @@ const WorkPlate = memo(function WorkPlate({ tokenId, heroId, x, y, typeId, open,
+     }, [tokenId, onPress]);
+     const tip = useCallback((cell) => plateTip(cell, tokenId, readCycle(tokenId, performance.now())), [tokenId]);
+ 
++    const mm = useMm();
++    if (plate && x != null && mm.look !== 'D') return <MmBar tokenId={tokenId} x={x} y={y} typeId={plate.typeId || typeId} side={plate.side} fit={fit} matH={matH} blocked={!!plate.problem} />;
+     if (!plate || x == null) return null;
+     const place = platePlace({ x, y, typeId: plate.typeId || typeId, side: plate.side, fit, matH });
+     const u = place.unit;

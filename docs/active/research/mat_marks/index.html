@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mat Marks Looks</title>
+<style>
+  :root {
+    --bg: #f6f2ea; --panel: #fffdf8; --ink: #2a2620; --muted: #6b6358; --line: #ddd4c4; --accent: #8a5a1c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1c1a17; --panel: #26231f; --ink: #ece6da; --muted: #a59c8e; --line: #3a352e; --accent: #e0b070; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, sans-serif; }
+  main { max-width: 1400px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  h2 { font-size: 1.2rem; margin: 32px 0 12px; }
+  .lede { color: var(--muted); margin: 0 0 20px; max-width: 75ch; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(560px, 1fr)); gap: 20px; }
+  @media (max-width: 620px) { .grid { grid-template-columns: 1fr; } }
+  figure { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  figure img { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+  figcaption { padding: 12px 16px 14px; }
+  .letter { display: inline-block; min-width: 2em; padding: 0 8px; margin-right: 8px; border-radius: 6px;
+            background: var(--accent); color: var(--panel); font-weight: 700; text-align: center; }
+  .name { font-weight: 600; }
+  .desc { display: block; color: var(--muted); margin-top: 4px; }
+  .links { font-size: 0.9rem; margin-top: 6px; }
+  a { color: var(--accent); }
+  .wide { margin-bottom: 20px; }
+  section.notes { margin-top: 32px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px; }
+  section.notes h2 { margin-top: 0; }
+  section.notes li { margin: 4px 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Names, reach dots and the work bar: pick a look</h1>
+  <p class="lede">The same busy scene five times, from the running game: four heroes on four Tokens (the
+    furnace, named Blacksmith, is stuck for Coal), the pointer resting on the Logging Camp so its reach ring
+    and dots show, and every Token's name shown at once so the label can be judged on light, dark and busy
+    ground (in the game only the hovered Token's name shows). The work plate is replaced by the proposed
+    progress bar and the time one cycle takes, in A, B, C and P. Pick one letter for the name and dot look;
+    say if the bar itself should change.</p>
+
+  <div class="grid">
+    <figure>
+      <img src="A.png" alt="A: see-through dark backing">
+      <figcaption><span class="letter">A</span><span class="name">See-through dark backing</span>
+        <span class="desc">A soft, half-see-through dark strip behind each name and behind the bar and its time; a dark ring two art pixels wide round each dot.</span>
+        <span class="links"><a href="A_full.png">whole screen</a></span></figcaption>
+    </figure>
+    <figure>
+      <img src="B.png" alt="B: chroma shimmer">
+      <figcaption><span class="letter">B</span><span class="name">Chroma shimmer</span>
+        <span class="desc">The name keeps its black outline with a second outline outside it that slowly cycles through seven colours (4 s round); the same colour ring round each dot, the bar and its time. Still shown at the cycle's teal point; see it move below.</span>
+        <span class="links"><a href="B_full.png">whole screen</a> · <a href="B_anim.png">moving</a></span></figcaption>
+    </figure>
+    <figure>
+      <img src="C.png" alt="C: backing and chroma">
+      <figcaption><span class="letter">C</span><span class="name">Both: backing and chroma</span>
+        <span class="desc">A's dark strip behind the name and bar with B's cycling outline; each dot has the colour ring, then a dark ring outside it.</span>
+        <span class="links"><a href="C_full.png">whole screen</a> · <a href="C_anim.png">moving</a></span></figcaption>
+    </figure>
+    <figure>
+      <img src="D.png" alt="D: today's look">
+      <figcaption><span class="letter">D</span><span class="name">Today's look (the before)</span>
+        <span class="desc">The name and dots as they are now, and today's work plates (skill icon, charges, the small fill along the foot).</span>
+        <span class="links"><a href="D_full.png">whole screen</a></span></figcaption>
+    </figure>
+    <figure>
+      <img src="P.png" alt="P: today's name and dots with the proposed bar">
+      <figcaption><span class="letter">P</span><span class="name">The proposed bar alone</span>
+        <span class="desc">Today's name and dots, the plates swapped for the proposed bar with nothing added: to judge the bar by itself.</span>
+        <span class="links"><a href="P_full.png">whole screen</a></span></figcaption>
+    </figure>
+  </div>
+
+  <h2>The shimmer moving</h2>
+  <p class="lede">A closer crop round the Logging Camp and the lemon tree. Each strip shows four moments of the
+    4 s colour cycle side by side; the moving pictures loop the whole cycle in 16 steps.</p>
+  <figure class="wide">
+    <img src="B_frames.png" alt="B: four moments of the colour cycle">
+    <figcaption><span class="letter">B</span><span class="name">Chroma shimmer, four moments</span>
+      <span class="links"><a href="B_anim.png">moving picture</a></span></figcaption>
+  </figure>
+  <figure class="wide">
+    <img src="C_frames.png" alt="C: four moments of the colour cycle">
+    <figcaption><span class="letter">C</span><span class="name">Backing and chroma, four moments</span>
+      <span class="links"><a href="C_anim.png">moving picture</a></span></figcaption>
+  </figure>
+  <div class="grid">
+    <figure><img src="B_anim.png" alt="B moving"><figcaption><span class="letter">B</span><span class="name">Moving</span></figcaption></figure>
+    <figure><img src="C_anim.png" alt="C moving"><figcaption><span class="letter">C</span><span class="name">Moving</span></figcaption></figure>
+  </div>
+
+  <section class="notes">
+    <h2>The proposed bar</h2>
+    <ul>
+      <li>Where the plate stood, under the Token's name: a bar 24 art pixels long and 4 tall, in a one-art-pixel black outline with a hard black shadow one art pixel down-right (as the dots and the reach ring have).</li>
+      <li>It fills in whole art-pixel steps, gold with a light top row and a dark bottom row; grey while the job is blocked (the Blacksmith here).</li>
+      <li>Beside it, the time one cycle takes ("3.0s"), in the small pixel font with the usual black outline. It stays put while nothing changes, so a speed boost shows as a smaller number.</li>
+    </ul>
+    <h2>Worth knowing</h2>
+    <ul>
+      <li>The colour cycle passes through red, the game's colour for a problem; the stills are held at teal for that reason. If B or C is picked, the cycle could leave red out.</li>
+      <li>Floor loot lies over names (the lemons over "Lemon Tree"): that is today's layer order, not part of any look.</li>
+      <li>The dark job areas round each worked Token are today's; the new job areas are a separate pick.</li>
+      <li>The reach dots are today's (every Token in the ring); dots only on what the Token affects come later.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

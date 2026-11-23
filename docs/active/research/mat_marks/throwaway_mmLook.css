@@ -1,0 +1,57 @@
+/* THROWAWAY (brief 830 D3 screenshot page): never committed. */
+
+/* The chroma: seven hues round the wheel in 4 s, stepping smoothly between them. */
+@keyframes mm-chroma-text {
+  0%, 100% { --mm-c: #ff4d4d; }
+  14% { --mm-c: #ffa53d; }
+  28% { --mm-c: #ffe94d; }
+  42% { --mm-c: #4dff7a; }
+  57% { --mm-c: #4dd8ff; }
+  71% { --mm-c: #7d6bff; }
+  85% { --mm-c: #ff5cdc; }
+}
+@property --mm-c { syntax: '<color>'; inherits: true; initial-value: #ff4d4d; }
+
+/* ---------- the name label ---------- */
+html[data-mm=A] [data-token-name] > span,
+html[data-mm=C] [data-token-name] > span {
+  background: rgba(10, 8, 6, 0.58);
+  padding: 2px 6px 3px;
+}
+html[data-mm=B] [data-token-name] > span,
+html[data-mm=C] [data-token-name] > span {
+  animation: mm-chroma-text 4s linear infinite;
+  /* The black one-pixel outline kept; a coloured ring one pixel outside it. */
+  text-shadow:
+    -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000,
+    -1px 0 0 #000, 1px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000,
+    -2px 0 0 var(--mm-c), 2px 0 0 var(--mm-c), 0 -2px 0 var(--mm-c), 0 2px 0 var(--mm-c),
+    -2px -1px 0 var(--mm-c), 2px -1px 0 var(--mm-c), -2px 1px 0 var(--mm-c), 2px 1px 0 var(--mm-c),
+    -1px -2px 0 var(--mm-c), 1px -2px 0 var(--mm-c), -1px 2px 0 var(--mm-c), 1px 2px 0 var(--mm-c) !important;
+}
+
+/* ---------- the reach dot ---------- */
+[data-mm-ring] { display: none; }
+html[data-mm=A] [data-mm-ring=dark1], html[data-mm=A] [data-mm-ring=dark2] { display: inline; fill: rgba(10, 8, 6, 0.58); }
+html[data-mm=B] [data-mm-ring=chroma] { display: inline; fill: var(--mm-c); animation: mm-chroma-text 4s linear infinite; }
+html[data-mm=C] [data-mm-ring=chroma] { display: inline; fill: var(--mm-c); animation: mm-chroma-text 4s linear infinite; }
+html[data-mm=C] [data-mm-ring=dark2] { display: inline; fill: rgba(10, 8, 6, 0.58); }
+
+/* ---------- the proposed progress bar ---------- */
+.mm-bar-outline { background: #000; }
+.mm-bar-track { background: rgba(10, 8, 6, 0.72); }
+/* Gold, a light top row and a dark bottom row (four art pixels tall: one, two, one). */
+.mm-bar-fill { background: linear-gradient(to bottom, #fff1b8 0 25%, #fbbf24 25% 75%, #c98a12 75% 100%); }
+[data-mm-blocked] .mm-bar-fill { background: linear-gradient(to bottom, #c4c4c4 0 25%, #8a8a8a 25% 75%, #646464 75% 100%); }
+.mm-bar-time { text-shadow: var(--text-outline-dark) !important; }
+
+html[data-mm=A] .mm-bar-row, html[data-mm=C] .mm-bar-row { background: rgba(10, 8, 6, 0.58); }
+html[data-mm=B] .mm-bar-chroma, html[data-mm=C] .mm-bar-chroma { animation: mm-chroma-text 4s linear infinite; background: var(--mm-c); }
+html[data-mm=B] .mm-bar-time, html[data-mm=C] .mm-bar-time {
+  animation: mm-chroma-text 4s linear infinite;
+  text-shadow:
+    -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000,
+    -2px 0 0 var(--mm-c), 2px 0 0 var(--mm-c), 0 -2px 0 var(--mm-c), 0 2px 0 var(--mm-c),
+    -2px -1px 0 var(--mm-c), 2px -1px 0 var(--mm-c), -2px 1px 0 var(--mm-c), 2px 1px 0 var(--mm-c),
+    -1px -2px 0 var(--mm-c), 1px -2px 0 var(--mm-c), -1px 2px 0 var(--mm-c), 1px 2px 0 var(--mm-c) !important;
+}
