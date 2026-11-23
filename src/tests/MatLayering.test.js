@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, beforeAll, afterAll, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll, afterEach, vi, onTestFinished } from 'vitest';
 import React from 'react';
 import { render, cleanup, act, fireEvent } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
@@ -16,6 +16,7 @@ import { matW, matH } from '../config/matGeometry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { MAT_Z, STACK_PLACES, placeZ, matStackOrder, createMatStack, heroZ } from '../ui/components/board/matLayers.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
+import { setRosterHover } from '../ui/components/board/orderLit.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -266,9 +267,11 @@ describe('on the mat', () => {
      */
     it('FB-44: the pointer on a flag over a Token hovers the Token, and every flag lets it through', () => {
         const tok = placeAt('fixture_producer', 600, 600);
-        // A spot order just below the Token; the hero's panel is open, so the spot's flag stays shown.
+        // A spot order just below the Token; the hero is hovered on their hero bar tab, so the spot's flag shows.
         Orders.orderAt('h1', { x: 600, y: 770 });
-        const { container } = mount(h(MatBoard, { inspectedHeroId: 'h1' }));
+        setRosterHover('h1');
+        onTestFinished(() => setRosterHover(null));
+        const { container } = mount(h(MatBoard));
         const root = container.querySelector('[data-mat-board]');
         root.getBoundingClientRect = () => ({ left: 0, top: 0, width: matW(), height: matH(), right: matW(), bottom: matH(), x: 0, y: 0 });
 

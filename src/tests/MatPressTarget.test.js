@@ -23,6 +23,7 @@ import * as Demolition from '../systems/board/Demolition.js';
 import { MatFitProvider } from '../ui/components/board/MatFitContext.jsx';
 import { HERO_HIT_PX, HERO_BOX_PX } from '../ui/components/board/boardConstants.js';
 import { markerBox } from '../ui/components/board/flagGeometry.js';
+import { setRosterHover } from '../ui/components/board/orderLit.js';
 import { boardScaleAt } from '../ui/components/base/TokenSprite.jsx';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
@@ -369,8 +370,9 @@ describe('⭐ a flag\'s cloth drawn in front of a Token takes the pointer there'
     let realElementFromPoint;
 
     // A hero sent to bare ground, and a Token then placed under their flag (a Token lands exactly
-    // where it is dropped, flags or not). The hero's panel is open, so the spot's flag stays shown.
+    // where it is dropped, flags or not). The hero is hovered on their hero bar tab, so the spot's flag shows.
     function scene(flagPoint) {
+        setRosterHover('h1');
         // A hero who cannot work it, so the Token stays at rest (a worked Token is drawn in front of every flag).
         GameState.state.heroes = [{ id: 'h1', name: 'h1', spriteId: 'hm_fighter_por', status: 'idle', level: 50, skills: { mining: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }];
         expect(Orders.orderAt('h1', flagPoint)).toMatchObject({ success: true, order: 'spot' });
@@ -400,6 +402,7 @@ describe('⭐ a flag\'s cloth drawn in front of a Token takes the pointer there'
         await new Promise(r => setTimeout(r, 80));
         if (realElementFromPoint) document.elementFromPoint = realElementFromPoint; else delete document.elementFromPoint;
         document.body.classList.remove('gi-dnd-active');
+        setRosterHover(null);
     });
 
     it('hovering the cloth over the Token keeps the pointer on the flag, and the Token is not hovered', () => {

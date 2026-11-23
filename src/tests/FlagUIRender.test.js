@@ -138,7 +138,7 @@ describe('the idle mark (FP-29)', () => {
         Orders.orderAt('h1', TOKEN);
         expect(Flags.statusOf('h1').state).toBe('working');
 
-        const { container } = mount(h(FlagLayer));
+        const { container } = mount(h(FlagLayer, { hoverHeroId: 'h1' }));
         const flag = container.querySelector('[data-flag="h1"]');
         expect(flag.getAttribute('data-flag-state')).toBe('working');
         expect(flag.querySelector('[data-flag-idle-chip]')).toBeNull();

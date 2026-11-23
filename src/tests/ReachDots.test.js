@@ -16,6 +16,9 @@ import { DeckDndContext, DragPointerContext } from '../ui/dnd/DndKit.jsx';
 import { DRAG_KIND } from '../ui/dnd/dragConstants.js';
 import { REACH_DOT, REACH_DOT_PATHS } from '../ui/components/board/reachDot.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
+import { manualFrames } from './fixtures/manualFrames.js';
+import { RING_GROW_MS, ringTween, ringPxAt } from '../ui/components/board/growRing.js';
+import { setDrawingPaused } from '../ui/components/board/frameClock.js';
 
 /**
  * ⭐ The reach ring and its in-reach dots (brief 560 R2): a Foundation and a camp show the one
@@ -42,8 +45,12 @@ registerTokenTypes({
 const h = React.createElement;
 const R = STANDARD_REACH_U;
 
-beforeEach(() => { GameState.initNew(); clearMat(); });
-afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+let frames;
+beforeEach(() => { GameState.initNew(); clearMat(); frames = manualFrames(); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+
+/** Runs frames until a ring just shown has grown to its full radius. */
+const grow = () => frames.run(RING_GROW_MS + 32);
 
 function fakeMatEl() {
     return { getBoundingClientRect: () => ({ left: 0, top: 0, width: 1760, height: 1126, right: 1760, bottom: 1126, x: 0, y: 0 }) };
@@ -108,6 +115,7 @@ describe('MatRings: the ring and its dots', () => {
         const inside = placeAt('rdot_tree', 600 + R, 500);
         placeAt('rdot_tree', 600 - R - 1, 500);
         const { container } = rings({ hoveredCentre: { x: camp.x, y: camp.y, id: camp.id } });
+        grow();
         const ring = container.querySelector('[data-near-ring]');
         expect(Number(ring.getAttribute('data-cx'))).toBe(600);
         expect(Number(ring.getAttribute('data-r'))).toBe(R);
@@ -118,6 +126,7 @@ describe('MatRings: the ring and its dots', () => {
         const camp = placeAt('rdot_camp', 20, 20);
         placeAt('rdot_tree', 60, 30);
         const { container } = rings({ hoveredCentre: { x: camp.x, y: camp.y, id: camp.id } });
+        grow();
         const clip = container.querySelector('[data-reach-clip]');
         expect(clip).not.toBeNull();
         expect(clip.className).toContain('overflow-hidden');
@@ -141,6 +150,7 @@ describe('MatRings: the ring and its dots', () => {
         const payload = { kind: DRAG_KIND.TOKEN, typeId: 'rdot_foundation', from: null };
 
         const { container, again } = rings({ payload, pointer: { x: 400, y: 500 } });
+        grow();
         expect(container.querySelector('[data-near-ring]')).not.toBeNull();
         expect(dotIds(container)).toEqual([a.id]);
         expect(spy).toHaveBeenCalledTimes(1);
@@ -159,6 +169,7 @@ describe('MatRings: the ring and its dots', () => {
         const t = placeAt('rdot_tree', 560, 500);
         const payload = { kind: DRAG_KIND.TOKEN, typeId: 'rdot_camp', from: { instanceId: camp.id } };
         const { container } = rings({ payload, pointer: { x: 520, y: 500 } });
+        grow();
         expect(container.querySelector('[data-near-ring]')).not.toBeNull();
         expect(dotIds(container)).toEqual([t.id]);
     });
@@ -180,5 +191,187 @@ describe('the dot\'s look (owner\'s pick A)', () => {
         expect(REACH_DOT.join('').split('w').length - 1).toBe(1);
         // The shadow is one run per row: the dot has no holes.
         expect((REACH_DOT_PATHS.shape.match(/M/g) || []).length).toBe(7);
+    });
+});
+
+describe('the ring grows and shrinks (brief 720 R1)', () => {
+    const pxOf = (container, sel = '[data-near-ring]') => {
+        const el = container.querySelector(sel);
+        return el ? Number(el.getAttribute('data-px')) : null;
+    };
+
+    /** Every `animate` call on an element, with what it played. */
+    function recordAnimate() {
+        const calls = [];
+        const proto = window.Element.prototype;
+        const had = Object.prototype.hasOwnProperty.call(proto, 'animate');
+        const original = proto.animate;
+        proto.animate = function animate(keyframes, options) {
+            calls.push({ el: this, keyframes, options });
+            return { cancel() {}, finish() {}, onfinish: null, oncancel: null };
+        };
+        return { calls, restore() { if (had) proto.animate = original; else delete proto.animate; } };
+    }
+
+    it('the tween: whole art pixels, nothing to full in RING_GROW_MS, half a ring back in half the time', () => {
+        const t = ringTween(0, 40, 40, 0);
+        expect(t.ms).toBe(RING_GROW_MS);
+        for (let ms = 0; ms <= RING_GROW_MS; ms += 7) expect(Number.isInteger(ringPxAt(t, ms))).toBe(true);
+        expect(ringPxAt(t, 0)).toBe(0);
+        expect(ringPxAt(t, RING_GROW_MS / 2)).toBe(20);
+        expect(ringPxAt(t, RING_GROW_MS)).toBe(40);
+        const back = ringTween(20, 0, 40, 0);
+        expect(back.ms).toBe(RING_GROW_MS / 2);
+        expect(ringPxAt(back, RING_GROW_MS / 2)).toBe(0);
+    });
+
+    it('⭐ a hovered camp\'s ring grows out from nothing, stepping, then stands still asking for no frames', () => {
+        const camp = placeAt('rdot_camp', 600, 500);
+        const { container } = rings({ hoveredCentre: { x: camp.x, y: camp.y, id: camp.id } });
+        expect(pxOf(container)).toBe(0);
+        const seen = [];
+        for (let i = 0; i < 20; i++) {
+            frames.frame(16);
+            seen.push(pxOf(container));
+        }
+        const full = seen.at(-1);
+        expect(full).toBeGreaterThan(10);
+        // Growing all the way, never back, and full by RING_GROW_MS.
+        for (let i = 1; i < seen.length; i++) expect(seen[i]).toBeGreaterThanOrEqual(seen[i - 1]);
+        expect(seen[Math.ceil(RING_GROW_MS / 16) - 1]).toBe(full);
+        expect(seen.filter(px => px > 0 && px < full).length).toBeGreaterThan(5);
+        expect(frames.pending()).toBe(0);
+    });
+
+    it('⭐ the dots come in as the ring reaches them, each with one pulse, and go as it shrinks past', () => {
+        const rec = recordAnimate();
+        try {
+            const camp = placeAt('rdot_camp', 600, 500);
+            const near = placeAt('rdot_tree', 650, 500);
+            const far = placeAt('rdot_tree', 600 + R - 10, 500);
+            const hc = { x: camp.x, y: camp.y, id: camp.id };
+            const { container, again } = rings({ hoveredCentre: hc });
+            const order = [];
+            for (let i = 0; i < 20; i++) {
+                frames.frame(16);
+                for (const id of dotIds(container)) if (!order.includes(id)) order.push(id);
+            }
+            expect(order).toEqual([near.id, far.id]);
+            const pulses = (id) => rec.calls.filter(c => c.el.getAttribute?.('data-reach-dot') === id).length;
+            expect(pulses(near.id)).toBe(1);
+            expect(pulses(far.id)).toBe(1);
+
+            again(null, null);
+            const gone = [];
+            for (let i = 0; i < 20; i++) {
+                frames.frame(16);
+                gone.push(dotIds(container));
+            }
+            // The far dot goes first, the near one after; then the ring itself.
+            const firstWithout = (id) => gone.findIndex(ids => !ids.includes(id));
+            expect(firstWithout(far.id)).toBeLessThan(firstWithout(near.id));
+            expect(container.querySelector('[data-near-ring]')).toBeNull();
+            expect(frames.pending()).toBe(0);
+        } finally {
+            rec.restore();
+        }
+    });
+
+    it('a hover that ends mid-grow shrinks from where it got to', () => {
+        const camp = placeAt('rdot_camp', 600, 500);
+        const { container, again } = rings({ hoveredCentre: { x: camp.x, y: camp.y, id: camp.id } });
+        frames.run(RING_GROW_MS / 2);
+        const mid = pxOf(container);
+        expect(mid).toBeGreaterThan(0);
+        again(null, null);
+        expect(pxOf(container)).toBe(mid);
+        frames.frame(16);
+        expect(pxOf(container)).toBeLessThan(mid);
+        // Half grown, it is back to nothing in about half the time.
+        frames.run(RING_GROW_MS / 2);
+        expect(container.querySelector('[data-near-ring]')).toBeNull();
+    });
+
+    it('hovering another Token grows its ring again from nothing', () => {
+        const a = placeAt('rdot_camp', 400, 500);
+        const b = placeAt('rdot_camp', 1200, 500);
+        const { container, again } = rings({ hoveredCentre: { x: a.x, y: a.y, id: a.id } });
+        grow();
+        again(null, { x: b.x, y: b.y, id: b.id });
+        expect(pxOf(container)).toBe(0);
+        expect(Number(container.querySelector('[data-near-ring]').getAttribute('data-cx'))).toBe(1200);
+        grow();
+        expect(pxOf(container)).toBeGreaterThan(10);
+    });
+
+    it('⭐ a carried ring grows once, then follows the landing: no regrow, and only Tokens coming into reach pulse', () => {
+        const rec = recordAnimate();
+        try {
+            const a = placeAt('rdot_tree', 500, 500);
+            const b = placeAt('rdot_tree', 500 + R + 100, 500);
+            const payload = { kind: DRAG_KIND.TOKEN, typeId: 'rdot_foundation', from: null };
+            const { container, again } = rings({ payload, pointer: { x: 450, y: 500 } });
+            grow();
+            const full = pxOf(container);
+            expect(dotIds(container)).toEqual([a.id]);
+            const pulses = (id) => rec.calls.filter(c => c.el.getAttribute?.('data-reach-dot') === id).length;
+            expect(pulses(a.id)).toBe(1);
+
+            again({ x: 650, y: 500 });
+            expect(pxOf(container)).toBe(full);
+            expect(frames.pending()).toBe(0);
+            expect(dotIds(container)).toEqual([a.id, b.id].sort());
+            expect(pulses(a.id)).toBe(1);
+            expect(pulses(b.id)).toBe(1);
+        } finally {
+            rec.restore();
+        }
+    });
+
+    it('while drawing is paused the ring shows whole at once and asks for no frames', () => {
+        const camp = placeAt('rdot_camp', 600, 500);
+        const t = placeAt('rdot_tree', 650, 500);
+        setDrawingPaused(true);
+        try {
+            const { container, again } = rings({ hoveredCentre: { x: camp.x, y: camp.y, id: camp.id } });
+            expect(pxOf(container)).toBeGreaterThan(10);
+            expect(dotIds(container)).toEqual([t.id]);
+            expect(frames.pending()).toBe(0);
+            again(null, null);
+            expect(container.querySelector('[data-near-ring]')).toBeNull();
+        } finally {
+            setDrawingPaused(false);
+        }
+    });
+
+    it('a ring caught mid-grow by a pause stands still, and finishes on the first frame back', () => {
+        const camp = placeAt('rdot_camp', 600, 500);
+        const { container } = rings({ hoveredCentre: { x: camp.x, y: camp.y, id: camp.id } });
+        frames.run(64);
+        const mid = pxOf(container);
+        setDrawingPaused(true);
+        expect(frames.pending()).toBe(0);
+        frames.run(RING_GROW_MS);
+        expect(pxOf(container)).toBe(mid);
+        setDrawingPaused(false);
+        frames.frame(16);
+        expect(pxOf(container)).toBeGreaterThan(mid);
+        expect(frames.pending()).toBe(0);
+    });
+
+    it('the hero-lit camp ring grows the same way, and keeps its camp mark while it shrinks', () => {
+        const ring = { campId: 'c1', x: 600, y: 500, r: R };
+        const out = render(h(CampReachRing, { ring }));
+        expect(pxOf(out.container, '[data-camp-ring="c1"]')).toBe(0);
+        grow();
+        const full = pxOf(out.container, '[data-camp-ring="c1"]');
+        expect(full).toBeGreaterThan(10);
+        out.rerender(h(CampReachRing, { ring: null }));
+        frames.frame(16);
+        const shrinking = pxOf(out.container, '[data-camp-ring="c1"]');
+        expect(shrinking).toBeGreaterThan(0);
+        expect(shrinking).toBeLessThan(full);
+        grow();
+        expect(out.container.querySelector('[data-camp-ring]')).toBeNull();
     });
 });

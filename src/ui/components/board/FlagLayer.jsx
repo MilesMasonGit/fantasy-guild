@@ -3,44 +3,46 @@ import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEntityDrag, useActiveDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
-import { artRadiusOf } from '../../../config/matGeometry.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { MAT_Z } from './matLayers.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import { GameState } from '../../../state/GameState.js';
-import { boardScaleAt, tokenSizeFor, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
-import { tokenSpritePath } from '../../../config/registries/tokenRegistry.js';
-import { useCornerShare } from './markerCorner.js';
+import { boardScaleAt } from '../base/TokenSprite.jsx';
 import { FlagMark } from './FlagMark.jsx';
 import { flagOutline } from './spriteOutline.js';
 import { flagTooltip } from './flagText.js';
 import { FloatingTip } from '../base/Tooltip.jsx';
 import { useMatFit } from './MatFitContext.jsx';
-import { markerBox, markerCornerOffset, fanStep } from './flagGeometry.js';
+import { markerBox, sideSlot, MARKER_PULSE_EVERY_MS } from './flagGeometry.js';
+import { REACH_DOT_PULSE } from './reachDot.js';
+import { usePosePulse } from './fx/posePulse.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { onPoll } from './frameClock.js';
 
 /**
  * FlagLayer: the flag that marks each hero's order (`FlagMark`, in the hero's own colour), an
- * absolute overlay in mat units.
- * - **A Token order**: the flag peeks out from behind the top-left corner of the Token's art
- * (`markerBox`, `markerCorner.js`: where that Token's own art begins), and sorts just behind the
- * Token (`MatBoard`), so it is drawn **behind the Token's sprite**. It stays while the order stands.
- * Several heroes on one Token (a camp): the first by roster order keeps the corner, the others
- * step along the art's edge from it (`fanStep`), so every colour shows.
- * - **A spot order** ("go here"): the flag stands its pole foot on the spot while the hero walks
- * there and fades out once they arrive; hovering the hero (or their roster tab) shows it again.
+ * absolute overlay in mat units. **A flag shows only while its hero is hovered** (on the mat or
+ * their hero bar tab), or, for a Token order, while that Token is hovered; it pulses while shown
+ * (`usePosePulse`). Every other flag is hidden.
+ * - **A Token order**: the flag stands in the Token's middle (`markerBox`), one z above the Token
+ * (`tokenZ`), so the Token's art never hides it. Several heroes on one Token stand side by side in
+ * roster order (`sideSlot`), each in the same place whichever of them is shown. It never takes the
+ * pointer: the Token's middle stays the Token's, and the mat says when the pointer is on its cloth
+ * (`tipHeroId`) for its tooltip.
+ * - **A spot order** ("go here"): the flag stands its pole foot on the spot. It fades out when the
+ * hover ends, and the pointer can still reach it while it fades.
  * - **No order** (at home by the Guild Hall), or a job gone for good: no flag.
- * - Dragging the flag is dragging its hero (`DRAG_KIND.FLAG`): the drop gives a new order
- * (`Orders.orderAt`). Hover for the hero's name and what they are doing.
+ * - Dragging a spot's flag is dragging its hero (`DRAG_KIND.FLAG`): the drop gives a new order
+ * (`Orders.orderAt`). Hover for the hero's name and what they are doing. A hero in the hand keeps
+ * their flag drawn, faint.
  * - **No hitbox over Tokens, but the cloth**: wherever the pointer is on a Token's art circle,
- * every flag lets it through (`yieldToTokens`, set by `MatBoard`), except its cloth where it
+ * every spot's flag lets it through (`yieldToTokens`, set by `MatBoard`), except its cloth where it
  * is drawn in front of that Token (`flagCloth.js`).
  */
 
-/** How long a spot's flag takes to fade once its hero arrives, in ms. */
+/** How long a spot's flag takes to fade once its hover ends, in ms. */
 export const FLAG_FADE_MS = 700;
 
 /** A flat, comparable projection of every flag, in planting order. */
@@ -60,23 +62,19 @@ function projectFlags() {
             heroId,
             x: flag.x,
             y: flag.y,
-            // Where it is drawn: the pinned Token's centre, art radius and art.
+            // Where it is drawn: the pinned Token's centre.
             pinX: pinned ? pinned.x : null,
             pinY: pinned ? pinned.y : null,
-            pinR: pinned ? artRadiusOf(pinned.typeId) : null,
-            pinType: pinned ? pinned.typeId : null,
             pinnedTo: pinned ? pinned.id : null,
             order,
-            // A spot's flag is down once the hero stands there.
-            arrived: order === 'spot' && status.state === 'idle',
             state: status.state,
             name: hero?.name || 'Hero',
             colour: hero?.flagColour || null,
             roster: heroes.indexOf(hero),
-            fan: 0
+            slot: 0
         });
     }
-    // Several heroes on one Token: their flags fan out along its art's edge, in roster order.
+    // Several heroes on one Token: their flags stand side by side, in roster order.
     const byToken = new Map();
     for (const f of out) {
         if (!f.pinnedTo) continue;
@@ -85,7 +83,7 @@ function projectFlags() {
     }
     for (const group of byToken.values()) {
         if (group.length < 2) continue;
-        group.sort((a, b) => a.roster - b.roster).forEach((f, rank) => { f.fan = fanStep(rank); });
+        group.sort((a, b) => a.roster - b.roster).forEach((f, rank) => { f.slot = sideSlot(rank, group.length); });
     }
     return out;
 }
@@ -93,10 +91,16 @@ function projectFlags() {
 /**
  * @param {string|null} inspectedHeroId the hero whose panel is open
  * @param {string|null} hoverHeroId a hero hovered on the mat or on their roster tab
+ * @param {string|null} hoveredTokenId the Token hovered on the mat
+ * @param {string|null} tipHeroId the hero whose shown Token flag has the pointer on its cloth
  * @param {(heroId: string|null) => void} onHoverHero
- * @param {Map<string, number>|null} flagZ each flag's z in the mat's order (`matStackOrder`)
+ * @param {Map<string, number>|null} flagZ each spot flag's z in the mat's order (`matStackOrder`)
+ * @param {Map<string, number>|null} tokenZ each Token's z in the mat's order
  */
-export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverHero, flagZ = null, yieldToTokens = false }) => {
+export const FlagLayer = ({
+    inspectedHeroId = null, hoverHeroId = null, hoveredTokenId = null, tipHeroId = null, onHoverHero,
+    flagZ = null, tokenZ = null, yieldToTokens = false
+}) => {
     const flags = useGameState(
         projectFlags,
         [BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.HEROES_WALKED, BOARD_EVENTS.TILE_CHANGED, ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.GAME_RESET]
@@ -116,18 +120,23 @@ export const FlagLayer = ({ inspectedHeroId = null, hoverHeroId = null, onHoverH
             className="absolute left-0 top-0 pointer-events-none"
             style={flagZ ? { width: mat.w, height: mat.h } : { width: mat.w, height: mat.h, zIndex: MAT_Z.FLAGS }}
         >
-            {flags.map((f, i) => (
-                <Flag
-                    key={`flag-${f.heroId}`}
-                    flag={f}
-                    z={flagZ?.get(f.heroId) ?? i * 3}
-                    artScale={artScale}
-                    onHover={onHoverHero}
-                    boardHovered={hoverHeroId === f.heroId}
-                    inspected={inspectedHeroId === f.heroId}
-                    yieldToTokens={yieldToTokens}
-                />
-            ))}
+            {flags.map((f, i) => {
+                const onTokenZ = f.pinnedTo ? tokenZ?.get(f.pinnedTo) : undefined;
+                return (
+                    <Flag
+                        key={`flag-${f.heroId}`}
+                        flag={f}
+                        z={onTokenZ != null ? onTokenZ + 1 : (flagZ?.get(f.heroId) ?? i * 3)}
+                        artScale={artScale}
+                        onHover={onHoverHero}
+                        boardHovered={hoverHeroId === f.heroId}
+                        tokenHovered={f.pinnedTo != null && f.pinnedTo === hoveredTokenId}
+                        clothTip={tipHeroId === f.heroId}
+                        inspected={inspectedHeroId === f.heroId}
+                        yieldToTokens={yieldToTokens}
+                    />
+                );
+            })}
         </div>
     );
 };
@@ -173,32 +182,35 @@ const Flag = memo(function Flag(props) {
 });
 
 const FlagBody = memo(function FlagBody({
-    flag, z = 0, artScale, onHover, boardHovered = false, inspected = false, yieldToTokens = false,
-    hovered, onHoverChange, carried, tipShown, dragRef, dragProps
+    flag, z = 0, artScale, onHover, boardHovered = false, tokenHovered = false, clothTip = false,
+    inspected = false, yieldToTokens = false, hovered, onHoverChange, carried, tipShown, dragRef, dragProps
 }) {
     const ref = useRef(null);
+    const pulseRef = useRef(null);
     const setRefs = useCallback((node) => {
         ref.current = node;
         dragRef?.(node);
     }, [dragRef]);
 
-    const pinnedPoint = flag.pinX != null ? { x: flag.pinX, y: flag.pinY } : null;
-    // On a Token the flag sits where that Token's own art begins at its top-left corner.
-    const share = useCornerShare(pinnedPoint ? tokenSpritePath(flag.pinType) : null);
-    const cornerOffset = pinnedPoint
-        ? markerCornerOffset(tokenSizeFor(TOKEN_SURFACE.BOARD, flag.pinType, artScale), share, artScale)
-        : null;
-    const box = markerBox(pinnedPoint || flag, pinnedPoint ? flag.pinR : null, artScale, cornerOffset, flag.fan);
+    const onToken = flag.pinX != null;
+    const box = markerBox(onToken ? { x: flag.pinX, y: flag.pinY } : flag, onToken, artScale, flag.slot);
     const flagPx = box.size;
 
-    // A spot's flag fades once its hero is there, and comes back while the hero is hovered.
-    const down = flag.arrived && !hovered && !boardHovered && !inspected;
+    const shown = boardHovered || tokenHovered || (!onToken && hovered);
+    // A spot's flag fades when the hover ends; while it fades the pointer can still bring it back.
+    const down = !shown && !carried;
     const [gone, setGone] = useState(down);
     useEffect(() => {
         if (!down) { setGone(false); return undefined; }
+        if (onToken) { setGone(true); return undefined; }
         const timer = setTimeout(() => setGone(true), FLAG_FADE_MS);
         return () => clearTimeout(timer);
-    }, [down]);
+    }, [down, onToken]);
+
+    usePosePulse(pulseRef, shown && !carried, PULSE_FOR[artScale] ?? pulseFor(artScale));
+
+    // A Token's flag that is not shown is not drawn at all: nothing of it sits on the Token.
+    if (onToken && down) return null;
 
     return (
         <>
@@ -211,23 +223,25 @@ const FlagBody = memo(function FlagBody({
                 data-flag-order={flag.order}
                 data-flag-pinned={flag.pinnedTo || undefined}
                 data-flag-down={down ? 'true' : undefined}
+                data-flag-gone={gone ? 'true' : undefined}
                 aria-label={`${flag.name}’s flag`}
                 onMouseEnter={() => { onHoverChange(true); onHover?.(flag.heroId); }}
                 onMouseLeave={() => { onHoverChange(false); onHover?.(null); }}
                 onClick={(e) => e.stopPropagation()}
                 className={cn(
                     'absolute p-0 m-0 bg-transparent border-0 outline-none transition-opacity ease-out',
-                    // Over a Token the pointer goes to the Token; a flag that is down takes none.
-                    yieldToTokens || gone ? 'pointer-events-none' : 'pointer-events-auto',
+                    // A Token's flag never takes the pointer; over a Token a spot's flag gives it to
+                    // the Token; a flag that has faded takes none.
+                    onToken || yieldToTokens || gone ? 'pointer-events-none' : 'pointer-events-auto',
                     'cursor-grab active:cursor-grabbing',
                     carried && 'opacity-30',
                     down && 'opacity-0',
                     gone && 'invisible'
                 )}
-                // ⚠️ `will-change: contents`: the fade (a spot reached or left, the hero hovered, the
-                // 30 % in the hand) runs on the main thread. Flags sort in among the Tokens, and on
-                // the compositor it put every Token drawn after the flag on a layer of its own, soft
-                // and a pixel off until it ended (`tailwind.css`, at `.gi-token-land`).
+                // ⚠️ `will-change: contents`: the fade (the hover ending, the 30 % in the hand) runs
+                // on the main thread. Flags sort in among the Tokens, and on the compositor it put
+                // every Token drawn after the flag on a layer of its own, soft and a pixel off until
+                // it ended (`tailwind.css`, at `.gi-token-land`).
                 style={{
                     left: box.left,
                     top: box.top,
@@ -238,19 +252,28 @@ const FlagBody = memo(function FlagBody({
                     willChange: 'contents'
                 }}
             >
-                <FlagMark
-                    size={flagPx}
-                    colour={flag.colour}
-                    alt={`${flag.name}’s flag`}
-                    outline={flagOutline({ hovered: hovered || boardHovered, selected: inspected, carried })}
-                    className="absolute left-0 top-0"
-                />
+                <span ref={pulseRef} data-flag-pulse className="absolute left-0 top-0 block" style={{ width: flagPx, height: flagPx }}>
+                    <FlagMark
+                        size={flagPx}
+                        colour={flag.colour}
+                        alt={`${flag.name}’s flag`}
+                        outline={flagOutline({ hovered: hovered || boardHovered, selected: inspected, carried })}
+                        className="absolute left-0 top-0"
+                    />
+                </span>
             </button>
 
-            {tipShown && <FlagTooltip anchor={ref.current} heroId={flag.heroId} />}
+            {(tipShown || (clothTip && shown)) && <FlagTooltip anchor={ref.current} heroId={flag.heroId} />}
         </>
     );
 });
+
+/** The pulse's options at an art scale, kept per scale so the pulse is not restarted by a redraw. */
+const PULSE_FOR = {};
+function pulseFor(artScale) {
+    PULSE_FOR[artScale] = { poses: REACH_DOT_PULSE, everyMs: MARKER_PULSE_EVERY_MS, unit: artScale };
+    return PULSE_FOR[artScale];
+}
 
 export const STATE_TONE = {
     working: 'text-emerald-300',

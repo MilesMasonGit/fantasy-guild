@@ -346,19 +346,18 @@ describe('a pinned flag on the screen', () => {
         h(DndContext, null, el)
     );
 
-    it('is drawn at its Token’s top-left corner, marked data-flag-pinned, with no reach ring', () => {
+    it('is drawn in its Token’s middle while its hero is hovered, marked data-flag-pinned, with no reach ring', () => {
         const t = put(P(600, 600), 'fixture_producer');
         dropFlag('h1', P(600, 600));
-        const { container } = mount(h(FlagLayer, { inspectedHeroId: 'h1' }));
+        const { container } = mount(h(FlagLayer, { hoverHeroId: 'h1' }));
         const el = container.querySelector('[data-flag="h1"]');
         expect(el.getAttribute('data-flag-pinned')).toBe(t.id);
         const size = parseFloat(el.style.width);
         const mid = { x: drawnPoint(el).x + size / 2, y: drawnPoint(el).y + size / 2 };
-        const r = artRadiusOf(t.typeId);
-        // Up and left of the centre by the same amount, inside the art's square.
-        expect(t.x - mid.x).toBeCloseTo(t.y - mid.y);
-        expect(t.x - mid.x).toBeGreaterThan(0.4 * r);
-        expect(t.x - mid.x).toBeLessThan(r);
+        // On the Token's centre, to within half an art pixel (it stands on whole art pixels).
+        const artPx = size / 12;
+        expect(Math.abs(t.x - mid.x)).toBeLessThanOrEqual(artPx / 2);
+        expect(Math.abs(t.y - mid.y)).toBeLessThanOrEqual(artPx / 2);
         expect(container.querySelector('[data-flag-ring="h1"]')).toBeNull();
         expect(el.getAttribute('data-flag-order')).toBe('token');
     });
