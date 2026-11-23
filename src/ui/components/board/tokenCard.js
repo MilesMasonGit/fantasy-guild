@@ -32,7 +32,6 @@ import { landmarkLines } from '../drawer/landmarkLines.js';
 import * as SupportLinks from '../../../systems/board/supportLinks.js';
 import { reachRadius } from '../../../systems/board/nearby.js';
 import { effectTagOf, effectTagText } from './effectBadgeText.js';
-import { t } from '../../../i18n/index.js';
 import {
     liveTimerSources, demolitionLine, leaveLine, spawnLine, growthLine, fieldTimerLine, respawnLine, produceLine
 } from './tokenTimers.js';
@@ -197,8 +196,8 @@ function makesOf(outputs) {
 
 /**
  * The bonus drops the working hero brings (their gear, a potion carried for the cycle), one row per
- * grant: marked bonus with its source (`bonus (Ana's Birdwatcher)`), its count and chance as a
- * drop's, and worded whole as its badge (`Bird Nest 25%`) for the hover. Empty with nobody at work.
+ * grant, each with its source: the gear piece's name, or the carried effect's (the item that applied
+ * it is not kept with it). The card groups them by source under the Loot. Empty with nobody at work.
  */
 function bonusOf(instance, src) {
     const heroId = instance && src.bonusGrants ? src.workerOf?.(instance.id) : null;
@@ -206,19 +205,16 @@ function bonusOf(instance, src) {
         if (instance) carriedHeld.delete(instance);
         return [];
     }
-    const hero = src.heroName(heroId) || heroId;
+    const heroName = src.heroName(heroId) || heroId;
     const rows = src.bonusGrants(instance.id).map(grant => {
         const items = (grant.sourceItemIds || []).map(id => src.itemName(id));
-        const source = items.length
-            ? t('effectBadges.source.gear', { hero, item: items.join(', ') })
-            : t('effectBadges.source.carried', { hero, effect: grant.effectTitle || '' });
         const quantity = Math.max(1, Number(grant.quantity) || 1);
         const chance = grant.chance == null ? 100 : Number(grant.chance);
         return {
-            itemId: grant.itemId, heroId, carried: !items.length,
+            itemId: grant.itemId, heroId, heroName, carried: !items.length,
+            source: items.length ? items.join(', ') : (grant.effectTitle || ''),
             min: quantity, max: quantity, chance: chance < 100 ? chanceFigure(chance) : null,
-            text: effectTagText(grant, src.itemName),
-            note: t('effectBadges.card.bonusDrop', { source })
+            text: effectTagText(grant, src.itemName)
         };
     });
     return withCarriedHeld(instance, heroId, rows);
@@ -239,7 +235,7 @@ const carriedHeld = new WeakMap();
  * Gear rows never blink and are not held, so gear running out goes at once.
  */
 function withCarriedHeld(instance, heroId, rows) {
-    const keyOf = (r) => `${r.itemId}|${r.text}|${r.note}`;
+    const keyOf = (r) => `${r.itemId}|${r.text}|${r.source}`;
     const prev = carriedHeld.get(instance);
     const between = !(Number(instance.cycleElapsedMs) > 0);
     const out = rows.slice();

@@ -297,44 +297,67 @@ const RequiresSection = ({ block, effects }) => {
 const MakesSection = ({ makes, bonus = [], effects }) => {
     if (!makes.length && !bonus.length) return null;
     return (
-        <Section data-card-block="makes">
-            <Heading>Makes</Heading>
-            <div data-card-makes className="flex flex-col gap-1">
-                {makes.map(m => (
-                    <EntityRibbon
-                        key={m.itemId}
-                        kind="item"
-                        id={m.itemId}
-                        minQty={m.min}
-                        maxQty={m.max}
-                        chance={m.chance != null ? chanceText(m.chance) : undefined}
-                        badge={itemBadges(effects?.outputs, m.itemId)}
-                        size="sm"
-                        wrap
-                        onInspect={lookUpRibbon}
-                    />
-                ))}
-                {/* One line like the drops above it: a second line would make the row taller. */}
-                {bonus.map((b, i) => (
-                    <EntityRibbon
-                        key={`bonus:${b.heroId}:${b.itemId}:${i}`}
-                        kind="item"
-                        id={b.itemId}
-                        name={b.note}
-                        minQty={b.min}
-                        maxQty={b.max}
-                        chance={b.chance != null ? chanceText(b.chance) : undefined}
-                        title={`${b.text} · ${b.note}`}
-                        data-card-bonus={b.itemId}
-                        data-card-bonus-hero={b.heroId}
-                        size="sm"
-                        onInspect={lookUpRibbon}
-                    />
-                ))}
-            </div>
-        </Section>
+        <>
+            {makes.length > 0 && (
+                <Section data-card-block="makes">
+                    <Heading>Loot</Heading>
+                    <div data-card-makes className="flex flex-col gap-1">
+                        {makes.map(m => (
+                            <EntityRibbon
+                                key={m.itemId}
+                                kind="item"
+                                id={m.itemId}
+                                minQty={m.min}
+                                maxQty={m.max}
+                                chance={m.chance != null ? chanceText(m.chance) : undefined}
+                                badge={itemBadges(effects?.outputs, m.itemId)}
+                                size="sm"
+                                wrap
+                                onInspect={lookUpRibbon}
+                            />
+                        ))}
+                    </div>
+                </Section>
+            )}
+            {bonusSources(bonus).map(group => (
+                <Section key={group.key} data-card-block="bonus" data-card-bonus-source={group.source}>
+                    <div className="flex items-baseline justify-between gap-2">
+                        <Heading>{group.source}</Heading>
+                        <span data-card-bonus-hero-name className="ui-text-small text-gi-muted truncate">{group.heroName}</span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        {group.rows.map((b, i) => (
+                            <EntityRibbon
+                                key={`${b.itemId}:${i}`}
+                                kind="item"
+                                id={b.itemId}
+                                minQty={b.min}
+                                maxQty={b.max}
+                                chance={b.chance != null ? chanceText(b.chance) : undefined}
+                                data-card-bonus={b.itemId}
+                                data-card-bonus-hero={b.heroId}
+                                size="sm"
+                                wrap
+                                onInspect={lookUpRibbon}
+                            />
+                        ))}
+                    </div>
+                </Section>
+            ))}
+        </>
     );
 };
+
+/** The bonus rows grouped by what brings them (a potion, a gear piece), in the order first met. */
+function bonusSources(bonus) {
+    const groups = new Map();
+    for (const row of bonus) {
+        const key = `${row.heroId}|${row.source}`;
+        if (!groups.has(key)) groups.set(key, { key, source: row.source, heroName: row.heroName, rows: [] });
+        groups.get(key).rows.push(row);
+    }
+    return [...groups.values()];
+}
 
 // Each catch lands one, so the odds stand where a count would.
 const CatchRibbons = ({ catches, outputs }) => catches.map(c => (
@@ -661,7 +684,7 @@ const STAT_BLOCKS = new Set([CARD_BLOCK.HP, CARD_BLOCK.COMBAT, CARD_BLOCK.WORK, 
 /**
  * The Token card: the card a click on a Token opens. A header with the name, then one panel of
  * sections following `tokenCardModel`: the stat block with its effect badges, the recipe picked,
- * Requires, Makes, Rare finds or a water's catches, Events, Boosts, Drops. A section with nothing
+ * Requires, Loot and a section per bonus drop source, Rare finds or a water's catches, Events, Boosts, Drops. A section with nothing
  * to say is left out. Every icon and number explains itself on hover.
  */
 export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewChange = null }) => {
