@@ -970,72 +970,28 @@ Heroes do not choose their own work: **the player sends each hero to a job by
 dragging them** (hero orders, brief 260; owner 2026-10-28: one hero, one job,
 less micromanagement than area flags).
 - **Heroes live on the mat.** One with no job waits in a row in front of the
-  Guild Hall. The hero bar is the roster: a click selects a hero (a click again
-  on the selected one clears it), a double-click opens their Hero drawer; it says on hover what they are doing, wears a yellow
+  Guild Hall. The hero bar is the roster: a click or a right-click on a hero
+  opens their Hero drawer; it says on hover what they are doing, wears a yellow
   alert when only the player can get them going or a red one when wounded, and
   can be dragged from.
-- **Selecting** (brief 610 S1; owner, 2026-11-11). One thing is selected at a
-  time: a hero, or a Token the player could drag, an enemy included (owner,
-  2026-11-11), never a Token that stays where it stands. **A single click
-  selects**, on the mat or on the
-  hero bar (from any screen); **a double-click inspects** (a Token's card, a
-  hero's drawer) and selects too. **A single click again on what is selected
-  clears it** (owner, 2026-11-12), on the mat or the hero bar; a double-click
-  always ends with it selected, whichever way its first click went, and a drag
-  of the selected one keeps it. The selected one wears a **gold outline**, one
-  art pixel like the white hover outline, on the mat and on the hero's bar card,
-  and a selected hero's job lights as on hover. A single click on a fixed Token
-  only clears the selection; a double-click still inspects it. The
-  selection clears on a click on blank mat, Escape (once no panel is open over
-  it), a new pick, leaving the mat (the World Map, the Guild Hall, travel, a
-  load) or a map mode coming on (Demolish); opening the Bank, the Shop or the
-  Encyclopedia keeps it. An open Token card or Hero drawer closes on a single
-  click of something else; a click of its own Token or hero keeps it. Other
-  single clicks on a Token are unchanged: the recipe gear and the problem mark
-  open the recipes, a finished quest is claimed. Drag and drop work as before,
-  with or without a selection. The selection is not saved.
+- **Drag and drop only; right-click inspects** (playmat declutter §4; owner,
+  2026-11-23; replaces brief 610's select and right-click orders). Dragging is
+  the one way to give an order. A plain click on the mat does nothing, and
+  nothing is selected. **A right-click on a Token opens its card, on a hero
+  (on the mat or the hero bar) their Hero drawer**; a right-click is never an
+  order, and double-click opens nothing. Other clicks on a Token are unchanged:
+  the recipe gear and the problem mark open the recipes, a finished quest is
+  claimed, and in Demolish a click marks.
 - **Drag a hero onto a Token** they can work (their figure, their job flag, or
   their figure on the hero bar): they walk there and work **only that Token**,
   a tree, a vein, a station, a Field, an enemy or a boss (a retired Promotion
   Token is nothing to work: K1).
   Onto **bare ground**: they walk there and wait (the flag marks the spot until
   they arrive). Onto the **Guild Hall**: they go home.
-- **Right-click orders** (brief 610 S2; owner, 2026-11-11). With a hero
-  selected, **a right-click on the mat gives exactly the order dropping them
-  there gives** (it is the drop: work the Token, fight the enemy, hunt from an
-  enemy camp, work from a camp, home on the Guild Hall, wait on bare ground),
-  with the drop's refusals in the same red bubble ("Needs Pickaxe"). A
-  right-click on **the job they already have** (the Token their order names, a
-  camp too, or the Token or enemy they work or fight there), or on **their own
-  figure**, **stops them**: a job can't be given twice. They wait where they stand with the yellow "needs a
-  job" mark; the Token they leave loses its progress and a fight ends at once,
-  the enemy keeping its damage (healing 5 % a second, §6), as a recall leaves them.
-  With **nothing selected**, a right-click on a hero, or on the Token a hero
-  works, stops that hero; one with no job is left alone. **A right-click no
-  longer sends a hero home**: home is a right-click on the Guild Hall, or a
-  drag there. Orders land **on the mat only**: a right-click on the Bank, the
-  Shop or a card over it is no order, nor is one while the Bank is open or in
-  Demolish. The selection stays after the order, so a second right-click
-  corrects the first.
-- **Right-click moves** (brief 610 S3; owner, 2026-11-11). With a movable
-  Token selected (one you could drag, an enemy too), **a right-click on the mat
-  moves it there exactly as dropping it there would** (it is the drop: the same
-  placement checks, the nudge to the nearest legal spot, a hero working it
-  walking after it). A refused spot gives the drag's reason and the Token
-  stays. A moved Token flies to its new spot in flying loot's short arc (about
-  half a second) and lands with a one-pixel bounce; the flight is only drawn,
-  the Token is on its new spot at once. The selection stays after the move.
-  **While a Token is selected nothing follows the pointer** (owner,
-  2026-11-12): no ghost, no reach ring, no dots; only its gold outline shows.
-  A real drag still shows them.
-- **While a hero is selected**, the pointer on the mat shows the drag's hints
-  before the right-click: every Token they could be sent to glows (kept up to
-  date while they stay selected), and over a Token the drag hints and the
-  drop's reason show as below. **No dashed line** follows the pointer while
-  they are only selected (owner, 2026-11-12); a drag of them still draws it. Off the mat (a
-  panel, the hero bar) they go; a drag takes their place while it lasts. After
-  a right-click stops the selected hero the marks go out until the pointer is
-  on another Token, so their yellow "needs a job" mark shows at once.
+  A hero dropped on bare ground goes exactly where they were let go, among
+  Tokens too (heroes walk over Tokens): no room test, no nudge, no fly-back;
+  the spot must be on the mat. That is also how to stop a hero: drop them on
+  bare ground (they wait there) or on the Guild Hall (home).
 - **While a hero is carried**, every Token they could work glows, a dashed gold
   line runs from the hero to the pointer, and the flag snaps onto a Token they
   can work; over one they cannot, a red bubble says why. **A drop on a Token

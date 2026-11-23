@@ -109,11 +109,11 @@ describe('⭐ only a Token\'s own circle takes the pointer', () => {
         expect(drawnPoint(art).y + parseFloat(hit.style.top) + r).toBeCloseTo(500, 6);
     });
 
-    it('a press on the hit circle reaches the Token\'s own listeners (a double-click inspects it)', () => {
+    it('a press on the hit circle reaches the Token\'s own listeners (a right-click inspects it)', () => {
         const tok = placeAt('fixture_producer', 700, 500);
         const onInspectToken = vi.fn();
         const { container } = mountAt(OWNER_FIT, { onInspectToken });
-        fireEvent.doubleClick(hitOf(container, tok.id), { clientX: 700, clientY: 500 });
+        fireEvent.contextMenu(hitOf(container, tok.id), { clientX: 700, clientY: 500 });
         expect(onInspectToken).toHaveBeenCalledWith('fixture_producer', expect.anything(), tok.id);
     });
 
@@ -142,24 +142,24 @@ describe('⭐ where two circles overlap, the press goes where hovering would', (
         return { a, b, onInspectToken, ...view };
     }
 
-    it('a double-click that lands on A, nearer B\'s centre, inspects B', () => {
+    it('a right-click that lands on A, nearer B\'s centre, inspects B', () => {
         const { a, b, onInspectToken, container } = pair();
         expect(Flags.tokenAtPoint({ x: 640, y: 400 })?.id).toBe(b.id);
-        fireEvent.doubleClick(hitOf(container, a.id), { clientX: 640, clientY: 400 });
+        fireEvent.contextMenu(hitOf(container, a.id), { clientX: 640, clientY: 400 });
         expect(onInspectToken).toHaveBeenCalledTimes(1);
         expect(onInspectToken.mock.calls[0][2]).toBe(b.id);
     });
 
-    it('a double-click that lands on B, nearer A\'s centre, inspects A', () => {
+    it('a right-click that lands on B, nearer A\'s centre, inspects A', () => {
         const { a, b, onInspectToken, container } = pair();
-        fireEvent.doubleClick(hitOf(container, b.id), { clientX: 615, clientY: 400 });
+        fireEvent.contextMenu(hitOf(container, b.id), { clientX: 615, clientY: 400 });
         expect(onInspectToken).toHaveBeenCalledTimes(1);
         expect(onInspectToken.mock.calls[0][2]).toBe(a.id);
     });
 
-    it('a double-click where the Token it lands on IS the nearest stays put', () => {
+    it('a right-click where the Token it lands on IS the nearest stays put', () => {
         const { a, onInspectToken, container } = pair();
-        fireEvent.doubleClick(hitOf(container, a.id), { clientX: 590, clientY: 400 });
+        fireEvent.contextMenu(hitOf(container, a.id), { clientX: 590, clientY: 400 });
         expect(onInspectToken).toHaveBeenCalledTimes(1);
         expect(onInspectToken.mock.calls[0][2]).toBe(a.id);
     });
@@ -325,16 +325,16 @@ describe('⭐ a press through a hero\'s see-through pixel reaches what is beneat
         expect(started).toEqual(['hero-h1']);
     });
 
-    it('a double-click on a hero\'s health bar opens the hero, as one on its figure does', () => {
+    it('a right-click on a hero\'s health bar opens the hero, as one on its figure does', () => {
         heroAt('h1', { x: 500, y: 900 });
         GameState.state.heroes[0].hp = { current: 40, max: 100 };
         const { container } = mountWithDrag();
         const hero = figure(container, 'h1', false);
         const inspected = [];
         const off = EventBus.subscribe('inspect_hero', (p) => inspected.push(p.heroId));
-        fireEvent.doubleClick(hero, { clientX: P.x, clientY: P.y });
+        fireEvent.contextMenu(hero, { clientX: P.x, clientY: P.y });
         expect(inspected).toEqual([]);
-        fireEvent.doubleClick(hero.querySelector('[data-health-label]'), { clientX: P.x, clientY: P.y });
+        fireEvent.contextMenu(hero.querySelector('[data-health-label]'), { clientX: P.x, clientY: P.y });
         off();
         expect(inspected).toEqual(['h1']);
     });
@@ -465,13 +465,13 @@ describe('⭐ a flag\'s cloth drawn in front of a Token takes the pointer there'
         expect(started).toEqual([`token-${tok.id}`]);
     });
 
-    it('and a double-click there inspects the Token, the same as one after a pointer move would', () => {
+    it('and a right-click there inspects the Token, the same as one after a pointer move would', () => {
         const flagPoint = { x: 600, y: 600 };
         const tok = scene(flagPoint);
         const onInspectToken = vi.fn();
         const { container } = mountAt(OWNER_FIT, { onInspectToken, inspectedHeroId: 'h1' });
         const flag = boxFlag(container, flagPoint);
-        fireEvent.doubleClick(flag, { clientX: 600, clientY: 600 });
+        fireEvent.contextMenu(flag, { clientX: 600, clientY: 600 });
         expect(onInspectToken).toHaveBeenCalledTimes(1);
         expect(onInspectToken.mock.calls[0][2]).toBe(tok.id);
     });

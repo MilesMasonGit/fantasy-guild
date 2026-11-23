@@ -35,14 +35,12 @@ import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { useDrawn, isDrawn } from '../../dev/perf/drawSwitches.js';
 import { takeSpawn, playSpawn } from './spawnMotion.js';
-import { TOKEN_FLIGHT_FX, TOKEN_FLIGHT_MS, playTokenFlight } from './tokenFlight.js';
 import { FX_FRAME_MS, playPoses } from './fx/pixelSteps.js';
 import { takeSettle, playSettle } from './fx/regionSettle.js';
 import { takeArrival, playEventArrival } from './fx/eventArrival.js';
 import { useSupportLit } from './supportLit.js';
 import { useOrderLit } from './orderLit.js';
 import { walkerGlide } from './walkerGlide.js';
-import { isSingleClick } from '../../hooks/useMatSelection.js';
 
 /**
  * A walking enemy's boxes follow the engine without React. While `on`, each `ENEMIES_WALKED`
@@ -152,10 +150,8 @@ export const MatToken = React.memo(function MatToken({
     isHovered = false,
     isRested = false,
     selected = false,
-    picked = false,
     hasHero = false,
     onInspectToken,
-    onPick,
     onClearInspect,
     onOpenRecipes,
     mapMode = null,
@@ -264,15 +260,7 @@ export const MatToken = React.memo(function MatToken({
         return () => clearTimeout(timer);
     }, [dragging]);
 
-    // Moved by right-click (`tokenFlight.js`): the engine has it on its new spot already, and it
-    // flies there from `flight` (its old point) instead of sliding. Kept for the flight's length.
-    const [flight, setFlight] = React.useState(null);
-    React.useEffect(() => {
-        if (!flight) return undefined;
-        const timer = setTimeout(() => setFlight(null), TOKEN_FLIGHT_MS + 80);
-        return () => clearTimeout(timer);
-    }, [flight]);
-    const still = skipSlide || !!flight;
+    const still = skipSlide;
 
     const [landing, setLanding] = React.useState(false);
     const landingTimer = React.useRef(null);
@@ -381,7 +369,7 @@ export const MatToken = React.memo(function MatToken({
         stack?.attach(id, 'art', el);
     }, [stack, id]);
     // A press anywhere this Token takes one (its circle, a bubble) picks it up, unless it is
-    // fixed: then the press is only the start of a click, which still inspects it.
+    // fixed.
     const dragProps = React.useMemo(
         () => (fixed ? {} : { onPointerDown: (e) => onPress?.(e, { id, typeId, permanent: isPermanent }, artRef.current) }),
         [fixed, onPress, id, typeId, isPermanent]
@@ -399,23 +387,8 @@ export const MatToken = React.memo(function MatToken({
     };
     useTokenEvent(UI_EVENTS.UI_TOKEN_FX, id, (p) => {
         if (p?.fx === 'settle') settle();
-        else if (p?.fx === TOKEN_FLIGHT_FX) setFlight({ x: p.fromX, y: p.fromY });
     });
     React.useLayoutEffect(settle, []);   // eslint-disable-line react-hooks/exhaustive-deps
-
-    // The flight plays once the box stands on its new spot: that draw may come before or after the
-    // one that holds `flight`, so it waits for the point to differ from where it flew from.
-    const flownRef = React.useRef(null);
-    React.useLayoutEffect(() => {
-        if (!flight || flownRef.current === flight) return;
-        const dx = flight.x - px;
-        const dy = flight.y - py;
-        if (!Number.isFinite(dx) || !Number.isFinite(dy) || (dx === 0 && dy === 0)) return;
-        flownRef.current = flight;
-        if (!isDrawn('tokenFx')) return;
-        playTokenFlight(artRef.current, dx, dy, { unit: artScale });
-        playTokenFlight(overlayRef.current, dx, dy, { unit: artScale });
-    }, [flight, px, py]);   // eslint-disable-line react-hooks/exhaustive-deps
 
     // Just spawned: pops out of its spawner and slides to its spot, on both boxes alike. Read once,
     // at mount, so a Token already on the mat never replays it.
@@ -464,7 +437,7 @@ export const MatToken = React.memo(function MatToken({
         }, UI_LISTENER);
     }, [isHall]);
 
-    // A sharp coloured outline: gold picked, white hovered or inspected, red in alert
+    // A sharp coloured outline: white hovered or inspected, red in alert
     // (`spriteOutline.js`); a worked Token has its task ring instead. It is a generated picture
     // under the art, not a filter.
     // In a map mode the hovered Token takes the mode's colour, or muted grey where the mode cannot
@@ -475,7 +448,7 @@ export const MatToken = React.memo(function MatToken({
     const orderLit = useOrderLit(id);
     const outline = orderLit === 'workable' && !isHovered
         ? 'work'
-        : tokenOutline({ picked, hovered: isHovered, selected, lit: lit || orderLit === 'job', alert: !!alert, mode: mapMode, unavailable: modeUnavailable });
+        : tokenOutline({ hovered: isHovered, selected, lit: lit || orderLit === 'job', alert: !!alert, mode: mapMode, unavailable: modeUnavailable });
     const gearState = gearStateOf(detail || {});
     const gear = React.useMemo(
         () => (gearState.show ? {
@@ -552,17 +525,11 @@ export const MatToken = React.memo(function MatToken({
                 data-token-state-sprite={stateSprite || undefined}
                 data-token-fixed={fixed ? 'true' : undefined}
                 data-token-protected={demolishProtected ? 'true' : undefined}
-                onClick={(e) => {
-                    if (dragging) return;
-                    // In a map mode a click acts on the Token and does nothing else.
-                    if (mapMode) { onModeClick?.(id); return; }
-                    // A single click picks (selects a movable Token), or clears it when it is the one
-                    // selected; a double-click inspects.
-                    onPick?.(id, isSingleClick(e));
-                }}
-                onDoubleClick={(e) => {
+                // A plain click acts only in a map mode; orders are given by drag alone.
+                onClick={mapMode ? () => { if (!dragging) onModeClick?.(id); } : undefined}
+                onContextMenu={(e) => {
+                    e.preventDefault();
                     if (mapMode || dragging) return;
-                    onPick?.(id);
                     onInspectToken?.(typeId, e.currentTarget.getBoundingClientRect(), id);
                 }}
                 style={{

@@ -2,8 +2,11 @@ import { pointerToMat } from './matPoint.js';
 import { updateAlphaPointerEvents } from '../../utils/alphaHitTest.js';
 import { flagClothOver, onFlagCloth } from './flagCloth.js';
 
-/** Everything a press on a Token is made of, routed alike so a click lands where its press did. */
-export const PRESS_EVENTS = Object.freeze(['pointerdown', 'click', 'dblclick', 'contextmenu']);
+/**
+ * Everything a press on a Token is made of, routed alike so a click (a map mode's) or a right-click
+ * (the card) lands where its press did.
+ */
+export const PRESS_EVENTS = Object.freeze(['pointerdown', 'click', 'contextmenu']);
 
 /** Events this file sent itself, which are already where they belong. */
 const routed = new WeakSet();

@@ -11,7 +11,6 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { AnimatedHeroSprite } from '../board/AnimatedHeroSprite.jsx';
 import { PixelArt } from '../base/TokenSprite.jsx';
-import { isSingleClick } from '../../hooks/useMatSelection.js';
 import { FlagMark } from '../board/FlagMark.jsx';
 import { rosterStateOf, rosterAlertOf, rosterBubbleLine, ROSTER_ALERT } from '../board/flagText.js';
 import { setRosterHover } from '../board/orderLit.js';
@@ -45,10 +44,8 @@ import { onPoll } from '../board/frameClock.js';
  * The sprite writes its frames straight to the element (the shared sprite clock), so an idle
  * frame re-renders nothing: not this figure, and not the slot, whose reorder animation would
  * measure its layout again.
- * A click selects the hero (`useMatSelection.js`: a gold outline here and on the mat, their job
- * lit), or clears them when they are the one selected; a double-click selects them and opens their
- * Hero drawer too. Hovering outlines them and lights
- * their job; dragging carries their flag, as on the mat: dropped on the mat it gives an order,
+ * A click or a right-click opens their Hero drawer. Hovering outlines them and lights their job;
+ * dragging carries their flag, as on the mat: dropped on the mat it gives an order,
  * dropped on another roster hero it reorders. Drop an item to equip.
  * ⚠️ Two components on purpose. dnd-kit re-renders every component holding a drag hook at each
  * drag start, end and change of target. The hooks live in this thin shell, which works out the
@@ -105,9 +102,7 @@ export const DockHeroFigure = memo(function DockHeroFigure(props) {
             heroId={heroId}
             artPx={props.artPx}
             isSelected={props.isSelected}
-            picked={props.picked}
-            onSelect={props.onSelect}
-            onDoubleClick={props.onDoubleClick}
+            onOpen={props.onOpen}
             hero={hero}
             lifted={lifted}
             held={drag.isDragging}
@@ -153,9 +148,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
     hero,
     artPx = 128,
     isSelected = false,
-    picked = false,
-    onSelect,
-    onDoubleClick,
+    onOpen,
     lifted = false,
     held = false,
     itemCue = false,
@@ -212,17 +205,17 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
             data-dock-alert={roster.alert || undefined}
             data-dock-hover={lifted ? 'true' : 'false'}
             data-dock-selected={isSelected ? 'true' : undefined}
-            data-dock-picked={picked ? 'true' : undefined}
             data-dock-wounded={isWounded ? 'true' : undefined}
             data-dock-art-offset={offset}
-            onClick={(e) => {
+            onClick={() => {
                 if (justDroppedRef.current) return;
                 clearHeroBubbles(heroId);
-                onSelect?.(heroId, isSingleClick(e));
+                onOpen?.(heroId);
             }}
-            onDoubleClick={(e) => {
-                e.stopPropagation();
-                onDoubleClick?.(heroId);
+            onContextMenu={(e) => {
+                e.preventDefault();
+                clearHeroBubbles(heroId);
+                onOpen?.(heroId);
             }}
             onMouseEnter={() => { onHoverChange(true); setRosterHover(heroId); }}
             onMouseLeave={() => { onHoverChange(false); setRosterHover(null); }}
@@ -293,14 +286,12 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
                             alt={hero.name || 'Hero'}
                             size={artPx}
                             animationState="idle"
-                            outline={picked ? 'select' : null}
                         />
                     ) : staticArt ? (
                         <PixelArt
                             src={staticArt.startsWith('/') ? staticArt : `/${staticArt}`}
                             alt={hero.name || 'Hero'}
                             size={artPx}
-                            outline={picked ? 'select' : null}
                         />
                     ) : null}
                 </div>
@@ -500,7 +491,6 @@ const BarBubbles = ({ heroId, bubbles, tailLast = true }) => {
             // ⚠️ Stops the press reaching the hero's drag handle: a bubble is clicked, not dragged.
             onPointerDown={stop}
             onClick={stop}
-            onDoubleClick={stop}
             onWheel={onWheel}
         >
             {pages > 1 && (
