@@ -17,6 +17,7 @@ import * as BoardState from './BoardState.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import * as LiveEffects from '../effects/LiveEffects.js';
+import { toolNeedOf } from './toolNeed.js';
 
 /**
  * TileModifiers: one runtime `ModifierAggregator` per Token, and the resolver that reads them.
@@ -572,7 +573,7 @@ function loadoutPayloads(instanceId, keyword) {
     const hero = HeroManager.getHero(heroId);
     if (!hero) return [];
 
-    const carried = HeroEffects.loadoutStatementsWith(hero, keyword)
+    const carried = [...HeroEffects.loadoutStatementsWith(hero, keyword), ...usedToolStatements(hero, instanceId, keyword)]
         // A role-aimed rule reaches its role, never this tile's occupant.
         .filter(statement => !statement?.target?.role && !statement?.when?.event)
         .map(statement => ({
@@ -1118,8 +1119,20 @@ function heroContributions(instanceId, effectType, category = TARGET_CATEGORIES.
     // ordinary library effect.
     // A carried effect bound to another Token's cycle ("for the cycle") does not reach this one.
     addHeroProvides(sums, HeroEffects.loadoutStatements(hero), effectType, category, trace, heroId, false);
+    addHeroProvides(sums, usedToolStatements(hero, instanceId), effectType, category, trace, heroId, false);
     addHeroProvides(sums, LiveEffects.modifierStatements(hero, instanceId), effectType, category, trace, heroId, true);
     return sums;
+}
+
+/**
+ * The statements of the tool `hero` works this Token with (`HeroEffects.workToolStatements`), of
+ * one keyword when given: a tool lends only to the work that needs its kind, the best one in hand.
+ */
+function usedToolStatements(hero, instanceId, keyword = null) {
+    const need = toolNeedOf(BoardState.getTokenById(instanceId));
+    if (!need) return [];
+    const statements = HeroEffects.workToolStatements(hero, need);
+    return keyword ? statements.filter(statement => statement?.keyword === keyword) : statements;
 }
 
 /** The bucket one carried statement adds to on this axis and category, or null when it adds nothing. */

@@ -10,20 +10,22 @@ import { hasCatchPools, catchToolKinds } from './catchPools.js';
  * A gathering tool is an item a hero carries in one hand: `tool: { kind, tier, starter? }` on the
  * item. A gathering Token names the kind it needs and the lowest tier that will do:
  * `needsTool: { kind, minTier }`. Only a hero holding a tool of that kind, at that tier or above,
- * may work it. Tools gate only: they add no speed or yield.
+ * may work it. A tool's own effects (its family's Speed, at its tier's scale) reach only the work
+ * it is used for (`HeroEffects.workToolStatements`).
  *
  * ⚠️ Water is the exception (`catchPools.js`): it needs any kind its catch pools name, and a
- * fishing tool's tier never gates. Its need carries the list as `kinds`.
+ * fishing tool's tier never gates. Its need carries the list as `kinds`. A fishing kind is marked
+ * `catches`: its tools lend their effects wherever they are held, and the first in hand fishes.
  *
  * Adding a kind is one row here: the editors offer it and the audit accepts it.
  */
 export const TOOL_KINDS = Object.freeze([
     Object.freeze({ id: 'pickaxe', label: 'Pickaxe' }),
     Object.freeze({ id: 'woodaxe', label: 'Woodaxe' }),
-    Object.freeze({ id: 'fishing_rod', label: 'Fishing Rod' }),
+    Object.freeze({ id: 'fishing_rod', label: 'Fishing Rod', catches: true }),
     Object.freeze({ id: 'sickle', label: 'Sickle' }),
-    Object.freeze({ id: 'fishing_net', label: 'Fishing Net' }),
-    Object.freeze({ id: 'fishing_trap', label: 'Trap' })
+    Object.freeze({ id: 'fishing_net', label: 'Fishing Net', catches: true }),
+    Object.freeze({ id: 'fishing_trap', label: 'Trap', catches: true })
 ]);
 
 /** A hero has two hands. A tool takes one; a two-handed weapon takes both. */
@@ -48,6 +50,11 @@ export const RETIRED_TOOL_TAGS = Object.freeze({
 /** Whether `id` names a tool kind the game has. */
 export function isToolKind(id) {
     return TOOL_KINDS.some(k => k.id === id);
+}
+
+/** Whether `id` is a fishing kind (`catches`), whose tools keep lending from anywhere in hand. */
+export function isCatchKind(id) {
+    return TOOL_KINDS.some(k => k.id === id && k.catches === true);
 }
 
 /** A kind's name for the player ("Fishing Rod"), or the id itself for a kind the game lacks. */

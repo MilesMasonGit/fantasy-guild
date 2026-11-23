@@ -12,7 +12,7 @@ import * as SiteRules from './SiteRules.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import * as HeroTools from '../equipment/HeroTools.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
-import { neededToolOf } from '../../config/registries/toolKinds.js';
+import { toolNeedOf } from './toolNeed.js';
 
 /**
  * One answer to why a Token can't run, shared by the board runner (while a hero works a Token) and
@@ -80,14 +80,8 @@ export function skillFailure(heroId, config) {
     });
 }
 
-/**
- * {@link heroReason}'s tool gate: the tool `instance`'s work needs (`neededToolOf`), or null when
- * none is asked for: no instance, or a Token marked for demolition.
- */
-export function toolNeedOf(instance) {
-    if (!instance || Demolition.isMarked(instance)) return null;
-    return neededToolOf(getTokenType(instance.typeId));
-}
+/** {@link heroReason}'s tool gate (`toolNeed.js`). */
+export { toolNeedOf };
 
 /**
  * Why the Token itself cannot run a cycle right now — whoever works it — as

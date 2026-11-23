@@ -16,6 +16,8 @@ import { getHeroWeaponSlot } from '../combat/CombatFormulas.js';
 import { isSpentCategory, isAlwaysOn } from '../core/consumableRule.js';
 import { earnedPerkRefs } from './HeroPerks.js';
 import { skillsWithPerks, perkRowsFor } from '../../config/registries/perkRegistry.js';
+import { toolOf, isCatchKind, HAND_CATEGORY } from '../../config/registries/toolKinds.js';
+import { fittingToolSlotOf } from '../equipment/HeroTools.js';
 
 /**
  * A hero's equipped items are bearers, like a Token: the same grammar and effect
@@ -43,6 +45,8 @@ import { skillsWithPerks, perkRowsFor } from '../../config/registries/perkRegist
  * weapon in the second hand is not swung, and its ability, resistances and cuts stay off whatever
  * its style. The second hand is for an off-hand item, which lends like armour. An arrow lends
  * nothing by being carried: its rules count on the shot that spends it (`board/FightMoments.js`).
+ * A gathering tool lends nothing by being carried either: only the one used for a Token's work
+ * lends, and only there ({@link workToolStatements}).
  */
 function lendingEntries(hero) {
     const out = [];
@@ -56,9 +60,64 @@ function lendingEntries(hero) {
         if (!meetsGearRequirements(def, hero)) continue;
         if (isWeapon(def) && slot !== swung) continue;
         if (arrowOf(def)) continue;
+        if (lendsAtWorkOnly(def)) continue;
         out.push({ slot, itemId, def });
     }
     return out;
+}
+
+/**
+ * Whether an item lends only to the work it is used for: a gathering tool held in the hands. A
+ * fishing tool (`toolKinds.isCatchKind`) lends from anywhere in hand, as it always has.
+ */
+export function lendsAtWorkOnly(def) {
+    if (def?.equipSlot !== HAND_CATEGORY) return false;
+    const tool = toolOf(def);
+    return !!tool && !isCatchKind(tool.kind);
+}
+
+const NO_STATEMENTS = Object.freeze([]);
+
+/**
+ * The statements of the tool hero `hero` uses for work that needs `need` (`toolKinds.neededToolOf`):
+ * the best fitting tool in hand (`HeroTools.fittingToolSlotOf`), so carrying three pickaxes lends
+ * one pickaxe's Speed, the best one's. Empty for no need, no fitting tool, or a fishing tool (which
+ * lends through the loadout). Stamped like {@link loadoutStatements}'s, `sourceItemIds` the tool.
+ *
+ * ⚠️ Kept per item definition, checked against the library entries it read on every call, like
+ * the loadout: the work time asks this for every worked Token on every tick. Frozen: shared.
+ */
+export function workToolStatements(hero, need) {
+    if (!hero || !need) return NO_STATEMENTS;
+    const slot = fittingToolSlotOf(hero.id, need);
+    if (slot === null) return NO_STATEMENTS;
+    const itemId = getGrid(hero)[slot];
+    const def = getItem(itemId);
+    if (!lendsAtWorkOnly(def) || !meetsGearRequirements(def, hero)) return NO_STATEMENTS;
+    let entry = keptTools.get(def);
+    if (!entry || entry.itemId !== itemId || entry.effectIds.some((id, i) => EFFECTS[id] !== entry.entries[i])) {
+        entry = keepTool(itemId, def);
+        keptTools.set(def, entry);
+    }
+    return entry.statements;
+}
+
+const keptTools = new WeakMap();
+
+function keepTool(itemId, def) {
+    const scales = new Map();
+    for (const { effectId, scale } of effectRefsOf(def)) scales.set(effectId, (scales.get(effectId) || 0) + scale);
+    const effectIds = [...scales.keys()];
+    const entries = effectIds.map(id => EFFECTS[id]);
+    const sourceItemIds = Object.freeze([itemId]);
+    const statements = [];
+    effectIds.forEach((effectId, i) => {
+        if (!entries[i]) return;                    // ContentAudit reports it by name
+        for (const statement of statementsFromStack(entries[i], { effectId, scale: scales.get(effectId) })) {
+            statements.push(Object.freeze({ ...statement, sourceItemIds }));
+        }
+    });
+    return { itemId, effectIds, entries, statements: statements.length ? Object.freeze(statements) : NO_STATEMENTS };
 }
 
 /**
