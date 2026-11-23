@@ -1588,6 +1588,10 @@
         "status": "live",
         "tier": 2,
         "note": "Seed map: a rare drop that builds its camp."
+      },
+      "item_master_rod": {
+        "status": "live",
+        "tier": 3
       }
     },
     "tokens": {
@@ -3153,6 +3157,10 @@
         "status": "live",
         "tier": 3
       },
+      "recipe_master_rod": {
+        "status": "live",
+        "tier": 3
+      },
       "recipe_wheat": {
         "status": "live",
         "tier": 0
@@ -3701,6 +3709,72 @@
         },
         "autoSyncId": true,
         "id": "item_healing_potion"
+      },
+      "item_trout_bait": {
+        "name": "Trout Bait",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Bait for the Mythril-tier fish (Salmon 40, Lobster 50): Crafting 38, 1 Trout makes 2. Planned until brief 770 G2 lets a pool ask it."
+        },
+        "autoSyncId": true,
+        "id": "item_trout_bait"
+      },
+      "item_salmon_bait": {
+        "name": "Salmon Bait",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Bait for the Adamantine-tier fish (Swordfish 63): Crafting 39 (its Salmon comes at Fishing 40; Crafting 60 to 79 are full), 1 Salmon makes 2. Planned until G2."
+        },
+        "autoSyncId": true,
+        "id": "item_salmon_bait"
+      },
+      "item_swordfish_chum": {
+        "name": "Swordfish Chum",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Bait for the Darkmetal-tier fish (Shark 83): Crafting 79, 1 Swordfish makes 2. Planned until G2."
+        },
+        "autoSyncId": true,
+        "id": "item_swordfish_chum"
+      },
+      "item_seaweed": {
+        "name": "Seaweed",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Caught at the Coast from Fishing 15 with any tool; for Alchemy's Angler's Luck and Green Thumb. Planned until the waters pack after G2."
+        },
+        "autoSyncId": true,
+        "id": "item_seaweed"
+      },
+      "item_oyster": {
+        "name": "Oyster",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Caught at the Oyster Bed with a Trap from Fishing 25; for Cooking's Oyster Stew, and rarely a Pearl. Planned until the waters pack after G2."
+        },
+        "autoSyncId": true,
+        "id": "item_oyster"
+      },
+      "item_pearl": {
+        "name": "Pearl",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "A rare Oyster Bed catch from Fishing 25; for Alchemy's Elixir of Keen Eye and Grand Scholar's Tonic. Planned until the waters pack after G2."
+        },
+        "autoSyncId": true,
+        "id": "item_pearl"
       }
     },
     "tokens": {

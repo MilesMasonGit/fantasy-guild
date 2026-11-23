@@ -6814,5 +6814,26 @@
     "autoSyncId": true,
     "tags": [],
     "valueSource": null
+  },
+  "item_master_rod": {
+    "name": "Master Rod",
+    "description": "",
+    "type": "tool",
+    "sprite": "i_rod_wood",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 1214,
+    "valueSource": "recipe_master_rod",
+    "autoSyncId": true,
+    "tool": {
+      "kind": "fishing_rod",
+      "tier": 3
+    },
+    "id": "item_master_rod",
+    "tags": [
+      "Tool",
+      "Fishing"
+    ]
   }
 }
