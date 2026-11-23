@@ -181,7 +181,7 @@ afterAll(() => {
 });
 
 describe('the catch-up hears the news its quiet bus keeps from the banners', () => {
-    it('recipes unlocked, a first find and a knock-out: in the summary, and only after it closes on screen', async () => {
+    it('recipes unlocked, a first find and a knock-out: in the summary, and not replayed once it closes', async () => {
         buildBoard();
         const { unlock, find, victim } = newsHalfWay();
         const subscribe = vi.spyOn(EventBus, 'subscribe');
@@ -210,11 +210,11 @@ describe('the catch-up hears the news its quiet bus keeps from the banners', () 
         expect(Banners.getAll()).toEqual([]);
         expect(ItemStubs.getStub(find)).toBeNull();
 
+        // Told once: the summary was their record, so closing it raises no recipe or knock-out again.
         EventBus.publish(UI_EVENTS.CATCH_UP_SUMMARY_CLOSED);
         const kinds = Banners.getAll().map(b => b.kind);
-        expect(kinds).toContain('recipe');
-        expect(kinds).toContain('knockout');
-        expect(Banners.getAll().filter(b => b.kind === 'recipe')).toHaveLength(1);
+        expect(kinds).not.toContain('recipe');
+        expect(kinds).not.toContain('knockout');
         expect(ItemStubs.getStub(find)).toMatchObject({ isNew: true });
     }, 60_000);
 

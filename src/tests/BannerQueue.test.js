@@ -128,3 +128,55 @@ describe('the words', () => {
         expect(Banners.getAll()[3].line).toBe('Aela, Bram and Cara knocked out and carried home. Aela lost: Iron Sword, 3 Shrimp. Bram lost: 3 Shrimp.');
     });
 });
+
+describe('the clear rule: a banner rewritten from what still stands', () => {
+    const full = (...ids) => ({ kind: 'bankFull', parts: { items: ids, itemIds: ids } });
+    const keepOnly = (keep) => (parts) => {
+        const still = parts.itemIds.filter(id => keep.includes(id));
+        if (still.length === parts.itemIds.length) return parts;
+        return still.length ? { items: still, itemIds: still } : null;
+    };
+
+    it('drops what is fixed and rewrites its line; goes when nothing is left', () => {
+        Banners.push(full('Oak'));
+        Banners.push(full('Stone'));
+        expect(Banners.getAll()).toHaveLength(1);
+        Banners.revise('bankFull', keepOnly(['Stone']));
+        expect(Banners.getAll()[0].line).toBe('Stone waits on the mat until the Bank has room');
+        Banners.revise('bankFull', keepOnly([]));
+        expect(Banners.getAll()).toEqual([]);
+        expect(Banners.hasKind('bankFull')).toBe(false);
+    });
+
+    it('touches no other kind, and says nothing when nothing changed', () => {
+        Banners.push(hero('Bram'));
+        Banners.push(full('Oak'));
+        const before = Banners.getVersion();
+        Banners.revise('bankFull', (parts) => parts);
+        expect(Banners.getVersion()).toBe(before);
+        Banners.revise('bankFull', () => null);
+        expect(Banners.getAll().map(b => b.kind)).toEqual(['hero']);
+    });
+
+    it('a waiting one can go too', () => {
+        for (const n of ['A', 'B', 'C']) Banners.push(upgrade(n));
+        Banners.push(full('Oak'));
+        expect(Banners.getView().waiting).toBe(1);
+        Banners.revise('bankFull', () => null);
+        expect(Banners.getView().waiting).toBe(0);
+    });
+
+    it('a shown one going brings the next waiting one on screen, with its sound', () => {
+        const heard = [];
+        Banners.setOnShow((b) => heard.push(b.kind));
+        Banners.push(upgrade('A'));
+        Banners.push(full('Oak'));
+        Banners.push(upgrade('B'));
+        Banners.push(hero('Bram'));
+        expect(Banners.getView().waiting).toBe(1);
+        heard.length = 0;
+        Banners.revise('bankFull', () => null);
+        expect(Banners.getView().shown.map(b => b.kind)).toEqual(['hero', 'upgrade', 'upgrade']);
+        expect(heard).toEqual(['hero']);
+    });
+});

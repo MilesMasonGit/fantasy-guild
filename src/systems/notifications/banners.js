@@ -1,8 +1,9 @@
 import { BANNER_KINDS, bannerText } from './bannerKinds.js';
 
 /**
- * The banners: what the player must not miss, dropping in at the top centre of the mat. Each stays
- * until clicked.
+ * The banners: what the player must not miss, dropping in at the top centre of the mat. A
+ * milestone stays until clicked; a problem goes when clicked or once its owner finds it fixed
+ * ({@link revise}).
  *
  * Up to {@link MAX_SHOWN} are on screen, newest on top; the rest wait, counted ("+N"). Problems
  * wait ahead of milestones, and a waiting banner of the same kind as a newer one takes it in
@@ -155,6 +156,45 @@ export function withdraw(groupKey) {
     const before = waiting.length;
     waiting = waiting.filter(b => b.groupKey !== groupKey);
     if (waiting.length !== before) emit();
+}
+
+/** Whether any banner of `kind` is up, on screen or waiting. */
+export function hasKind(kind) {
+    return shown.some(b => b.kind === kind) || waiting.some(b => b.kind === kind);
+}
+
+/**
+ * Rewrite every banner of `kind`, on screen or waiting, from what still stands: `fn(parts)`
+ * returns the parts to keep (the same object when nothing changed), or null when nothing is left
+ * to say, and that banner goes as if clicked.
+ */
+export function revise(kind, fn) {
+    let changed = false;
+    const goes = [];
+    const rewrite = (b) => {
+        if (b.kind !== kind) return b;
+        const parts = fn(b.parts);
+        if (parts === b.parts) return b;
+        changed = true;
+        if (parts == null) {
+            goes.push(b);
+            return b;
+        }
+        return { ...b, parts, ...bannerText(kind, parts) };
+    };
+    shown = shown.map(rewrite);
+    waiting = waiting.map(rewrite).filter(b => !goes.includes(b));
+    if (!changed) return;
+    for (const b of goes) {
+        if (!shown.includes(b)) continue;
+        shown = shown.filter(x => x !== b);
+        if (waiting.length && shown.length < MAX_SHOWN) {
+            const [next, ...rest] = waiting;
+            waiting = rest;
+            show(next);
+        }
+    }
+    emit();
 }
 
 /**

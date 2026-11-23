@@ -574,9 +574,9 @@ describe('time away', () => {
         ]);
         const view = summaryView(result);
         expect(view.hasNews).toBe(true);
-        expect(view.events.map(e => [e.name, e.landed, e.state])).toEqual([
-            ['Rainfall', false, 'time_up'],
-            ['Rainfall', true, 'time_up']
+        // One line per kind of event: both Rainfalls on it, both expired.
+        expect(view.events.map(e => [e.name, e.count, e.expired, e.countText])).toEqual([
+            ['Rainfall', 2, 2, '×2 · 2 expired']
         ]);
     }, 60_000);
 
@@ -587,10 +587,11 @@ describe('time away', () => {
         const result = await CatchUp.run({ savedAt: NOW - 85 * MIN, now: NOW, save: false, yieldFn: () => Promise.resolve() });
         expect(result.summary.events).toEqual([expect.objectContaining({ eventId: COMET.id, landed: true, ended: null })]);
         const [row] = summaryView(result).events;
-        expect(row.state).toBe('here');
+        expect(row).toMatchObject({ count: 1, here: 1 });
         // Its hour runs even though a miner can work it.
         expect(row.leavesInMs).toBeGreaterThan(0);
         expect(row.leavesText).toMatch(/^Leaves in /);
+        expect(row.countText).toBe(row.leavesText);
     }, 60_000);
 
     it('an event that stood through the whole time away is listed with its time left', async () => {
@@ -601,7 +602,7 @@ describe('time away', () => {
         expect(result.summary.events).toEqual([]);
         const view = summaryView(result);
         expect(view.events).toEqual([expect.objectContaining({
-            key: mythril.id, name: 'Mythril Comet', landed: false, state: 'here', leavesInMs: 50 * MIN, leavesText: 'Leaves in 50m 0s'
+            key: mythril.typeId, name: 'Mythril Comet', count: 1, here: 1, leavesInMs: 50 * MIN, leavesText: 'Leaves in 50m 0s'
         })]);
         expect(view.hasNews).toBe(true);
     }, 60_000);
@@ -653,6 +654,34 @@ describe('time away', () => {
             { instanceId: 'tok_rain', typeId: 'ev_rain', name: 'Rainfall', landed: true, ended: null },
             { instanceId: 'tok_gone', typeId: 'ev_rain', name: 'Rainfall', landed: true, ended: EventTokens.ENDED.TIME_UP }
         ] } }, live);
-        expect(view.events.map(e => [e.key, e.leavesText])).toEqual([['tok_rain', 'Leaves in 7m 30s'], ['tok_gone', null]]);
+        expect(view.events).toEqual([expect.objectContaining({
+            key: 'ev_rain', count: 2, expired: 1, here: 1,
+            countText: '×2 · 1 expired · 1 still here', leavesText: 'Leaves in 7m 30s'
+        })]);
+    });
+
+    it('the summary lists events one line per kind: how many came, expired, demolished, still here', () => {
+        const live = { standing: () => [], leavesInMs: () => null };
+        const shoal = (id, ended) => ({ instanceId: id, typeId: 'ev_shoal', name: 'Fish Shoal', landed: true, ended });
+        const view = summaryView({ summary: { events: [
+            shoal('a', EventTokens.ENDED.TIME_UP),
+            { instanceId: 'r', typeId: 'ev_rain', name: 'Rainfall', landed: true, ended: EventTokens.ENDED.DEMOLISHED },
+            shoal('b', EventTokens.ENDED.WORKED_OUT),
+            shoal('c', null),
+            shoal('d', EventTokens.ENDED.DEMOLISHED)
+        ] } }, live);
+        expect(view.events.map(e => [e.name, e.countText])).toEqual([
+            ['Fish Shoal', '×4 · 2 expired · 1 demolished · 1 still here'],
+            ['Rainfall', 'Demolished']
+        ]);
+    });
+
+    it('every way an event goes by itself says Expired; a demolition says Demolished', () => {
+        const live = { standing: () => [], leavesInMs: () => null };
+        const one = (ended) => summaryView({ summary: { events: [{ instanceId: 'x', typeId: 'ev_x', name: 'X', landed: true, ended }] } }, live).events[0].countText;
+        expect(one(EventTokens.ENDED.TIME_UP)).toBe('Expired');
+        expect(one(EventTokens.ENDED.WORKED_OUT)).toBe('Expired');
+        expect(one(EventTokens.ENDED.DEMOLISHED)).toBe('Demolished');
+        expect(one(null)).toBe('Still here');
     });
 });

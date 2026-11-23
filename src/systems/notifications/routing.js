@@ -16,6 +16,8 @@ import { defaultBannerFor } from '../../config/areaBanners.js';
 import * as BoardState from '../board/BoardState.js';
 import { getEvent } from '../../config/registries/eventRegistry.js';
 import * as EventTokens from '../board/EventTokens.js';
+import * as SpriteLayer from '../board/SpriteLayer.js';
+import { InventoryManager } from '../inventory/InventoryManager.js';
 
 /**
  * Where every game event goes (the owner's audit): items to the stubs, what must not be missed to
@@ -23,8 +25,9 @@ import * as EventTokens from '../board/EventTokens.js';
  * the mat, and the rest says nothing; none of those is wired here.
  *
  * Every route is a `UI_LISTENER`: a catch-up's quiet bus skips them. The catch-up hears that news
- * itself (`summary.news`, `catchUpNews.js`) and it is handed over here once its summary closes
- * ({@link deliverCatchUpNews}).
+ * itself (`summary.news`, `catchUpNews.js`). With no summary it is handed over here at once
+ * ({@link deliverCatchUpNews}); after a summary, which told it, only what still needs the player
+ * is raised ({@link deliverAfterSummary}).
  */
 
 const itemName = (itemId) => getItem(itemId)?.name || itemId;
@@ -82,6 +85,7 @@ export const ROUTES = [
     {
         event: ENGINE_EVENTS.INVENTORY_UPDATED, to: 'stub',
         handle: ({ itemId, added = 0, removed = 0 } = {}) => {
+            settleProblemBanners();
             // A bulk change (a load, a reset) names no item and is not a flow.
             if (!itemId || (!(added > 0) && !(removed > 0))) return;
             ItemStubs.recordFlow(itemId, { added, removed });
@@ -121,6 +125,8 @@ export const ROUTES = [
     {
         event: ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, to: 'banner:upgrade',
         handle: ({ upgradeId, rank } = {}) => {
+            // A Bank upgrade may be the slot a full Bank was waiting for.
+            settleProblemBanners();
             // A Roster Size rank recruits a hero, and the new hero's banner says it.
             if (upgradeId === 'roster_size') return;
             const def = getUpgradeDef(upgradeId);
@@ -143,11 +149,7 @@ export const ROUTES = [
     },
     {
         event: ENGINE_EVENTS.BANK_FULL, to: 'banner:bankFull',
-        handle: ({ itemId, reason } = {}) => itemId && Banners.push({
-            kind: reason === 'stack' ? 'stackFull' : 'bankFull',
-            parts: { items: [itemName(itemId)] },
-            sprite: itemSprite(itemId)
-        })
+        handle: ({ itemId, reason } = {}) => itemId && pushRefused(itemId, reason === 'stack' ? 'stackFull' : 'bankFull')
     },
     {
         event: ENGINE_EVENTS.ATLAS_CHANGED, to: 'banner:settled',
@@ -214,6 +216,7 @@ export const ROUTES = [
         handle: ({ show, summary } = {}) => {
             countTimeAwayOnPins(summary?.items);
             pruneEventBanners();
+            settleProblemBanners();
             const landed = (summary?.events || []).filter(e => e?.landed && !e.ended && e.instanceId);
             const news = summary?.news;
             if (show) {
@@ -240,7 +243,7 @@ export const ROUTES = [
             heldEvents = [];
             heldNews = [];
             for (const e of events) pushEventBanner(e, { onMat: true });
-            for (const news of held) deliverCatchUpNews(news);
+            deliverAfterSummary(held);
         }
     },
     {
@@ -250,6 +253,7 @@ export const ROUTES = [
         handle: () => {
             startFresh();
             raiseStandingEventBanners();
+            settleProblemBanners();
         }
     },
     {
@@ -354,10 +358,10 @@ let heldEvents = [];
 export const MAX_FIND_STUBS = 6;
 
 /**
- * Hand a catch-up's news (`summary.news`) to the banners and stubs, merged as live play merges
- * them: one banner each for its recipes, its knock-outs and the Bank refusing items, however
- * long the absence, and a gold "New!" stub for each first find (at most {@link MAX_FIND_STUBS}).
- * Milestones go first, so the problems drop in on top.
+ * Hand the news of a catch-up that showed no summary (`summary.news`) to the banners and stubs,
+ * merged as live play merges them: one banner each for its recipes, its knock-outs and the Bank
+ * refusing items, and a gold "New!" stub for each first find (at most {@link MAX_FIND_STUBS}).
+ * Milestones go first, so the problems drop in on top; a refusal already fixed is not raised.
  */
 export function deliverCatchUpNews(news) {
     if (!hasNews(news)) return;
@@ -380,17 +384,69 @@ export function deliverCatchUpNews(news) {
             subjects: row.heroId ? [{ type: 'hero', id: row.heroId }] : []
         });
     }
-    for (const itemId of news.bankFull || []) {
-        Banners.push({ kind: 'bankFull', parts: { items: [itemName(itemId)] }, sprite: itemSprite(itemId) });
-    }
-    for (const itemId of news.stackFull || []) {
-        Banners.push({ kind: 'stackFull', parts: { items: [itemName(itemId)] }, sprite: itemSprite(itemId) });
-    }
-    for (const { itemId, count } of (news.finds || []).slice(0, MAX_FIND_STUBS)) {
+    for (const itemId of news.bankFull || []) pushRefused(itemId, 'bankFull');
+    for (const itemId of news.stackFull || []) pushRefused(itemId, 'stackFull');
+    settleProblemBanners();
+    markFinds(news.finds);
+}
+
+/** A gold "New!" stub for each first find, at most {@link MAX_FIND_STUBS}. */
+function markFinds(finds) {
+    for (const { itemId, count } of (finds || []).slice(0, MAX_FIND_STUBS)) {
         ItemStubs.markNew(itemId);
         ItemStubs.recordFlow(itemId, { added: count });
     }
-    if (news.finds?.length) ensureFadeTimer();
+    if (finds?.length) ensureFadeTimer();
+}
+
+/**
+ * What a closed "While you were away" leaves up: the summary told every recipe, knock-out and
+ * refusal, so no milestone is raised again; only the problems that still stand now are, read from
+ * the game rather than from the summary's rows (a pile on the mat the Bank refuses now), and the
+ * first finds' stubs, which mark items in the Bank rather than tell news.
+ */
+export function deliverAfterSummary(newsList = []) {
+    for (const news of newsList) if (hasNews(news)) markFinds(news.finds);
+    raiseOpenProblems();
+}
+
+/** A banner kind for each reason the Bank refuses an item (`InventoryManager.refusalOf`). */
+const REFUSED_KIND = Object.freeze({ slots: 'bankFull', stack: 'stackFull' });
+
+/** Banner `kind` saying the Bank refused `itemId`. */
+function pushRefused(itemId, kind) {
+    if (!itemId) return;
+    Banners.push({ kind, parts: { items: [itemName(itemId)], itemIds: [itemId] }, sprite: itemSprite(itemId) });
+}
+
+/** Every item lying on the mat that the Bank would refuse now, said as its kind of banner. */
+function raiseOpenProblems() {
+    const seen = new Set();
+    for (const sprite of SpriteLayer.getSprites()) {
+        const itemId = sprite?.kind === 'item' ? sprite.refId : null;
+        if (!itemId || seen.has(itemId)) continue;
+        seen.add(itemId);
+        const kind = REFUSED_KIND[InventoryManager.refusalOf(itemId)];
+        if (kind) pushRefused(itemId, kind);
+    }
+}
+
+/**
+ * Take each item the Bank would now take out of its Bank-full or stack-full banner, and the banner
+ * away once none is left: a problem banner goes by itself once fixed.
+ * ⚠️ A banner from a save older than `itemIds` names no ids and stays until clicked.
+ */
+function settleProblemBanners() {
+    for (const [reason, kind] of Object.entries(REFUSED_KIND)) {
+        if (!Banners.hasKind(kind)) continue;
+        Banners.revise(kind, (parts) => {
+            const ids = parts?.itemIds;
+            if (!Array.isArray(ids)) return parts;
+            const still = ids.filter(id => InventoryManager.refusalOf(id) === reason);
+            if (still.length === ids.length) return parts;
+            return still.length ? { ...parts, items: still.map(itemName), itemIds: still } : null;
+        });
+    }
 }
 
 let newsBatches = 0;

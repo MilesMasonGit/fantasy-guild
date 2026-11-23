@@ -85,9 +85,12 @@ export const LIVE_EVENTS = Object.freeze({
 });
 
 /**
- * The return report's event rows: those that landed or left while away, in the order they came,
- * after any that stood through the whole time away and are still here. One still here says how long
- * it has left when its clock runs.
+ * The return report's events, one row per kind of event (its Token type), in the order each kind
+ * first came, any that stood through the whole time away first: `{ key, typeId, name, count,
+ * expired, demolished, here, countText, leavesInMs, leavesText }`. `countText` is the row's line:
+ * for one event its word (Expired, Demolished, Still here) or, still here with its clock running,
+ * how long it has left; for several, `×3 · 2 expired · 1 still here`, with `leavesText` the
+ * soonest of those still here to leave.
  */
 function eventRows(summaryEvents, live) {
     const seen = new Set(summaryEvents.map(e => e.instanceId));
@@ -95,17 +98,43 @@ function eventRows(summaryEvents, live) {
         .filter(instance => !seen.has(instance.id))
         .map(instance => ({
             instanceId: instance.id, typeId: instance.typeId,
-            name: EventTokens.eventOf(instance)?.name, landed: false, ended: null
+            name: EventTokens.eventOf(instance)?.name, ended: null
         }));
-    return [...before, ...summaryEvents].map(e => {
-        const state = e.ended || 'here';
-        const leavesInMs = state === 'here' ? live.leavesInMs(e.instanceId) : null;
-        return {
-            key: e.instanceId, typeId: e.typeId, name: e.name || tokenName(e.typeId), landed: !!e.landed,
-            state, stateText: state === 'here' ? t('catchUp.news.eventState.here') : EventTokens.endedWord(state),
-            leavesInMs,
-            leavesText: leavesInMs == null ? null : t('catchUp.news.leavesIn', { time: countdownText(leavesInMs) })
-        };
+    const kinds = new Map();
+    for (const e of [...before, ...summaryEvents]) {
+        const key = e.typeId || e.name || e.instanceId;
+        if (!kinds.has(key)) {
+            kinds.set(key, {
+                key, typeId: e.typeId, name: e.name || tokenName(e.typeId),
+                count: 0, expired: 0, demolished: 0, here: 0, leavesInMs: null, word: null
+            });
+        }
+        const row = kinds.get(key);
+        row.count++;
+        if (!e.ended) {
+            row.here++;
+            const ms = live.leavesInMs(e.instanceId);
+            if (ms != null && (row.leavesInMs == null || ms < row.leavesInMs)) row.leavesInMs = ms;
+            row.word = t('catchUp.news.eventState.here');
+        } else if (e.ended === EventTokens.ENDED.DEMOLISHED) {
+            row.demolished++;
+            row.word = EventTokens.endedWord(e.ended);
+        } else {
+            row.expired++;
+            row.word = EventTokens.endedWord(e.ended);
+        }
+    }
+    return [...kinds.values()].map(({ word, ...row }) => {
+        const leavesText = row.leavesInMs == null ? null : t('catchUp.news.leavesIn', { time: countdownText(row.leavesInMs) });
+        const countText = row.count === 1
+            ? leavesText || word
+            : [
+                `×${row.count}`,
+                row.expired ? EventTokens.endedCountText(EventTokens.ENDED.TIME_UP, row.expired) : null,
+                row.demolished ? EventTokens.endedCountText(EventTokens.ENDED.DEMOLISHED, row.demolished) : null,
+                row.here ? t('catchUp.news.eventState.hereCount', { n: row.here }) : null
+            ].filter(Boolean).join(' · ');
+        return { ...row, countText, leavesText };
     });
 }
 
@@ -156,12 +185,7 @@ export function summaryView(result, live = LIVE_EVENTS) {
         depleted: rows(summary.depleted?.byType, tokenName, 'typeId'),
         /** The fights: each enemy beaten, with how many times. */
         kills: rows(summary.fightsWon?.byEnemy, tokenName, 'enemyId'),
-        /**
-         * Events that landed or left while away, and those still on the mat (`eventRows`): `{ key,
-         * typeId, name, landed, state, stateText, leavesInMs, leavesText }`, `state` how it left
-         * (`EventTokens.ENDED`) or `'here'` while it stands, `stateText` its word (Expired,
-         * Demolished, Still here), `leavesText` "Leaves in 42m 10s" for one still here whose clock runs.
-         */
+        /** Events that landed or left while away, and those still on the mat, one row per kind (`eventRows`). */
         events: eventRows(summary.events || [], live)
     };
     view.hasNews = ['events', 'knockouts', 'broken', 'bankFull', 'stackFull', 'recipes', 'finds', 'levelUps', 'depleted', 'kills'].some(k => view[k].length > 0);

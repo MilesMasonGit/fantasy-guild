@@ -11,6 +11,8 @@
  * screens (`BannerStack`'s `away`).
  * `kept`: a kind the save keeps while it is unclicked, shown again at the next start (`ui.banners`).
  * A save problem is not kept: it speaks of the run that raised it.
+ * A Bank-full or stack-full banner carries its items' ids (`itemIds`) beside their names, so it can
+ * go by itself once the Bank takes them (`routing.js`); the rest stay until clicked.
  */
 
 import { t } from '../../i18n/index.js';
@@ -113,7 +115,7 @@ export const BANNER_KINDS = Object.freeze({
             title: t('bannerTitle.bankFull'),
             line: `${nameList(items)} ${items.length > 1 ? 'wait' : 'waits'} on the mat until the Bank has room`
         }),
-        merge: (a, b) => ({ items: union(a.items, b.items) })
+        merge: (a, b) => ({ items: union(a.items, b.items), itemIds: union(a.itemIds, b.itemIds) })
     },
     // An item at the ceiling every stack shares (`DEFAULT_MAX_STACK`): the Bank may have free slots,
     // so "Bank full" would send the player to look for the wrong thing.
@@ -124,7 +126,7 @@ export const BANNER_KINDS = Object.freeze({
             title: t('bannerTitle.stackFull'),
             line: `${nameList(items)} ${items.length > 1 ? 'wait' : 'waits'} on the mat: the Bank holds no more of ${items.length > 1 ? 'them' : 'it'}`
         }),
-        merge: (a, b) => ({ items: union(a.items, b.items) })
+        merge: (a, b) => ({ items: union(a.items, b.items), itemIds: union(a.itemIds, b.itemIds) })
     },
     // One event at a time is on the mat, so one banner each; it goes when its Token leaves.
     event: {
