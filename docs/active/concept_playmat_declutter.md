@@ -248,6 +248,28 @@ Only the pick is built.
 of a count) is its own later topic, listed in [ideas.md](ideas.md); this
 section only stops showing them.
 
+## 16. Loot lands at the edge of the focus area
+
+*Added 2026-11-23, third round (owner).* Today loot lands 0.4 to 0.85 of a
+Token's width from its source in a random direction (`scatterFrom` in
+`SpriteLayer.js`), often on the hero or close in.
+
+> "Landing loot is still clearly associated with what's happening, but doesn't
+> hide the action." (owner)
+
+1. **Dropped loot pops out to the edge of its job's focus area** (section 1),
+   in a random direction round it, **on the edge** (owner). The arc and pop
+   stay; only the distance grows.
+2. **No focus area** (a Token nobody works: a spawner, Passive Production; a
+   kill): the same distance as a one-hero job's edge would be, round the
+   Token or the fight (owner).
+3. **Piles merge as today** (owner), across Tokens too: a drop near a pile of
+   the same item joins it (`MAX_STACK_MERGE_DISTANCE_PX`). The merge distance
+   may need to grow with the landing distance; the builder says if so.
+4. ⚠️ Director: check whether loot's position matters to the engine (a
+   collector's or camp's reach picking up floor loot, the mat edge clamp); if
+   the work check moves, report why before merging.
+
 ## Closed
 
 The owner closed this round on 2026-11-23 ("good for now"); a later declutter round opens a new section here or a new doc.

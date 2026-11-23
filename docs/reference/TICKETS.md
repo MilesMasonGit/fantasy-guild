@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-673**
+**Next free number: T-674**
 
 ---
 
@@ -310,6 +310,7 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 | T-670 | P2 | open | *Brief 830 D6. For: director.* **Board layout and Controls** (playmat declutter §6, §8, §9, §13): Token overlap 40 → 30 %; top bar without frame, Token count and Upkeep hidden, title right, Tabletop Guild text left for the logo; the mat reaches left; a Controls strip under the mat with Demolish and Find (category hover buttons, search box). | owner 2026-11-23 |
 | T-671 | P2 | open | *Brief 830 D7. For: director.* **The big banners** (playmat declutter §10): a show/hide icon top right above the item notices; banners pop out of it, all listed, each leaves when clicked; hidden, a new one shows about 5 s. | owner 2026-11-23 |
 | T-672 | P3 | open | *Brief 840 F1, F2. For: director.* **Loot flight trail and landing** ([concept_loot_flight_trail.md](../active/concept_loot_flight_trail.md); owner 2026-11-23): coloured shadows behind flying loot (look picked from an animated page), a sparkle shower coloured by stack size (grey, blue 10+, green 100+, gold 1,000+, red 10,000+), the item notice flashes and sparkles on landing. | owner 2026-11-23 |
+| T-673 | P3 | open | *Brief 830 D8. For: director.* **Loot lands at the edge of the focus area** (playmat declutter §16; owner 2026-11-23): dropped loot pops out to the edge of its job's area, or the same distance round a Token nobody works or a fight; piles merge as today. | owner 2026-11-23 |
 
 ### Cleanup — dead code, vestiges, lint *(safe, invisible; delete tests only with the code they test)*
 

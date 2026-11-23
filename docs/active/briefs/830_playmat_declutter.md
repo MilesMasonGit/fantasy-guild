@@ -1,7 +1,7 @@
 # Brief 830 — Playmat declutter: fewer marks, more board
 
 *Written 2026-11-23 by the planning agent from the owner's interview the same day (amended the same
-day by a second round: §14, §15)
+day by a second and third round: §14, §15, §16)
 ([concept_playmat_declutter.md](../concept_playmat_declutter.md), approved 2026-11-23). The concept
 is the source of truth for every ruling; this brief says the order, the files and the bar.*
 
@@ -30,9 +30,10 @@ wins. Every phase may **stop and report rather than guess**.
 | D5 | T-669 | **Reach rings** (§2). The ring and dots wait **0.4 s** of pointer rest (the name label keeps `HOVER_REST_MS` 150 ms; a dragged Token's landing ring stays at once) (`MatBoard.jsx` `hoveredCentre`, `MatRings.jsx`). **Dots only on Tokens the hovered one affects** (`reachDotsAt` in `reachDisplay.js` dots all of `tokensWithin` today): a camp's work targets, a neighbour rule's targets, a Foundation's future building's. ⚠️ "Affects" must come from the engine's own rule tests, not a second list in the UI; if the engine has no such test for a case, stop and report the cases. | engineer | — |
 | D6 | T-670 | **Board layout and Controls** (§6, §8, §9, §13). Mat Tuner `overlapPct` default 40 → 30 (`matTuning.js`; say how a load treats Tokens already closer). Top bar (`MatTopBar.jsx`, `MatBoard.jsx`): no frame; the Token cap and Upkeep badges hidden (code kept); region title and its banner on the right; **Tabletop Guild** text on the left in the title font, its width reserved for the logo; the map mode banner keeps the middle. The mat reaches left toward the Nav Bubbles, the same gap as its right. **A Controls strip under the mat, left of the hero bar**, its height: a framed row of square icon buttons with tooltips: Demolish (moved, as today), and Find: **Heroes, Tokens, Enemies, Items** (Items = floor loot) light every match while hovered; a **search box** lights names (heroes, Tokens, enemies) and Tokens that make the item named, while it has text (Escape or empty ends it). Matches get a white outline, everything else fades a little. Placeholder icons from the style kit. | builder | D1 |
 | D7 | T-671 | **The big banners** (§10; amends [concept_notifications.md](../concept_notifications.md)). A show/hide icon at the top right above the item notices (`BannerStack.jsx`); banners pop out of it at today's size over the item notices and the mat. Shown: every waiting banner listed (scrolls if long), no three-limit or "+N"; each leaves when clicked; the icon hides them all. Hidden: a new banner shows about 5 s, then tucks in. The icon shows how many wait, red if a problem is among them; shown or hidden is remembered (director's defaults). Look, sound, merging and the hover outline stand. | builder | — |
+| D8 | T-673 | **Loot lands at the edge** (§16). `scatterFrom` in `src/systems/board/SpriteLayer.js`: a drop's landing distance becomes the edge of its job's focus area (D4's centre and radius, `taskRingOf`), random direction; with no job, a one-hero job's edge round the Token or fight. Piles merge as today, across Tokens; widen the merge distance if needed and say so. Check whether floor loot's position reaches the engine (collectors, reach): if the work check moves, report why. | builder | D4 |
 
 **Order and parallel work.** D1 → D2 → D3 in that order (right-click and the gold outline first, the
-card next, then the marks that open it). D4, D5 and D7 touch other files and may run beside them, two
+card next, then the marks that open it). D4, D5 and D7 touch other files and may run beside them; D8 after D4, two
 code subagents at most. D6 after D1 (Demolish and the selection code move). D4's screenshot page goes
 to the owner before its build half.
 
@@ -50,7 +51,7 @@ to the owner before its build half.
   only covered select and right-click deleted with its code.
 
 **Eye-check: yes**, three looks: D1 + D2 + D3 (controls, card, marks, the bar; D3's pick on its screenshot page first); D4 + D5 (job areas, reach); D6 +
-D7 (layout, Controls, banners). D4's look pick happens on its screenshot page first.
+D7 + D8 (layout, Controls, banners, loot landing). D4's look pick happens on its screenshot page first.
 
 ## Owner to-do
 
