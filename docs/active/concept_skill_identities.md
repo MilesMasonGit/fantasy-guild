@@ -1,4 +1,4 @@
-Status: draft (interviewed 2026-11-21: Faith settled; 2026-11-22: Taming cut, Crime settled in a deep dive; Summoning and Science next)
+Status: draft (interviewed 2026-11-21: Faith settled; 2026-11-22: Taming cut, Crime and Summoning settled in a deep dive; Science next)
 
 # Five skills: what each one is for
 
@@ -27,20 +27,29 @@ passive and weaker. Offerings (candles from wax or tallow, incense from herbs,
 flower garlands from Farming) are made by Faith at an altar from other skills'
 goods: no new nodes.
 
-## Summoning: calling bosses to fight
+## Summoning: Summoned workers
 
-Summoning works the Summoning Circle (a station type that already exists in
-code): spend summon items to call a boss to fight, for better loot. Its
-current line ("thralls and spirits that fight in a hero's place") is
-rewritten. Bosses otherwise come from camps only (A32, T-547). To design:
-summon items, which bosses, levels, how it sits beside boss camps.
+**Deep dive 2026-11-22 (owner).** Calling bosses is dropped (bosses come from
+camps, T-547). Summoning makes **Summoned tokens**: temporary workers.
 
+- **A Summoned token** is a recolour of an enemy (an Earth Golem, a Sprite). It
+  is ordered to a task like a hero, but has **only its own skill or skills, at
+  fixed levels** (every Earth Golem has, say, Mining 60), **never gains XP**,
+  and has **one trait of its own** (a Golem never rests, a Sprite grows crops
+  faster), written by the content agent.
+- **Charges.** Working spends its charges; at none it disappears.
+- **The Summoning Circle.** A Summoning hero works the Circle with its chosen
+  summon (picked on the card like a recipe); each cycle adds charges to that
+  summon, spending **drops from the enemy it copies plus magic supplies such
+  as Motes**.
+- **One summon per Circle.** Changing a Circle's summon warns that the old one
+  will be dismissed.
+- **Work only, never fight.**
+- **Summoning level decides which summons a hero can call** (each kind unlocks
+  at a level, like a recipe) **and how many charges a Circle cycle adds**.
 
-**Interview 2026-11-21 (direction, not final; the owner is not fully satisfied
-and will revisit):** summon items are rare finds anywhere, from gathering and
-fights, and Summoning's level decides which a hero can use. A summoned boss is
-a convenience (the same boss and loot, where and when you want), and it can
-give access to a boss whose camp the player has not found yet.
+To design with the content agent: the summons (which enemy, skills and levels,
+trait, cost), the Circle's levels; in code, a Summoned token taking orders.
 
 ## Crime: stealing instead of fighting
 
