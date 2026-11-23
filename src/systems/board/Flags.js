@@ -4,7 +4,7 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { neededToolOf } from '../../config/registries/toolKinds.js';
-import { artRadiusOf, clampToMat } from '../../config/matGeometry.js';
+import { artRadiusOf } from '../../config/matGeometry.js';
 import { GameState } from '../../state/GameState.js';
 import * as CombatFormulas from '../combat/CombatFormulas.js';
 import * as BoardState from './BoardState.js';
@@ -868,20 +868,6 @@ export function furl(heroId, reason = 'recall') {
 function stopAfterBrokenWeapon({ heroId, use } = {}) {
     if (use !== 'fight') return;
     lapseWhereStanding(heroId, (at) => at);
-}
-
-/**
- * Stop `heroId` where they stand (the player's stop, a right-click on their own job): their Token
- * order lapses, marked `needsJob` as a job gone for good is (the yellow mark), its point placed so
- * the spot they idle at (`HeroMotion.idleSpot`) is where they stand now, and they wait there for a
- * new order. What they leave is let go as a recall lets it go: the Token's progress resets and a
- * fight ends at once, the enemy whole again for the next to engage it. A hero with no Token order
- * (waiting on bare ground, or home) has nothing to stop.
- * @returns {boolean} whether there was an order to stop
- */
-export function stop(heroId) {
-    const { dx, dy } = HeroMotion.IDLE_SPOT;
-    return lapseWhereStanding(heroId, (at) => clampToMat({ x: at.x - dx, y: at.y - dy }));
 }
 
 /**

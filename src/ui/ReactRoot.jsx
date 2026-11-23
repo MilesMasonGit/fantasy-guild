@@ -18,7 +18,6 @@ import { useHeroSheetRequests } from './hooks/useHeroSheetRequests.js';
 import { useOneBottomDrawer } from './hooks/useOneBottomDrawer.js';
 import { WorldMapRequests } from './hooks/useWorldMapRequests.js';
 import { useShowOnMat } from './hooks/useShowOnMat.js';
-import { selectHero, clickHero, useSelectionClearing } from './hooks/useMatSelection.js';
 
 import Board from './components/board/Board.jsx';
 import BankDrawer from './components/drawer/BankDrawer.jsx';
@@ -183,19 +182,6 @@ const ReactRoot = () => {
 
     const [inspectHeroId, setInspectHeroId] = React.useState(null);
     const closeInspectHero = React.useCallback(() => setInspectHeroId(null), []);
-    // The hero bar: a click selects the hero, or clears them when they are the one selected (and
-    // closes another hero's drawer); a double-click selects them and opens theirs too.
-    const pickHeroOnBar = React.useCallback((id, single = false) => {
-        clickHero(id, single);
-        setInspectHeroId(prev => (prev && prev !== id ? null : prev));
-    }, []);
-    const inspectHeroOnBar = React.useCallback((id) => {
-        selectHero(id);
-        setInspectHeroId(id);
-    }, []);
-    // The mat's selection clears on leaving the mat (the World Map, the Guild Hall), and on its
-    // other triggers. The Encyclopedia, the Bank and the Shop lie over the mat and keep it.
-    useSelectionClearing(isAtlasOpen || isGuildView);
 
     useHeroSheetRequests(setInspectHeroId);
     useOneBottomDrawer({ shopOpen: ui.shop.isOpen, heroId: inspectHeroId, closeShop: ui.shop.close, closeHero: closeInspectHero });
@@ -348,8 +334,7 @@ const ReactRoot = () => {
                                 <PerfProfiler id="HeroDock">
                                     <BottomHeroDock
                                         selectedHeroId={inspectHeroId}
-                                        onSelectHero={pickHeroOnBar}
-                                        onDoubleClickHero={inspectHeroOnBar}
+                                        onOpenHero={setInspectHeroId}
                                     />
                                 </PerfProfiler>
                             </ErrorBoundary>

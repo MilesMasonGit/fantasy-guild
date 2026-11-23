@@ -18,7 +18,7 @@ import { isShopPayload, pointerOverShopPanel } from '../drawer/ShopPanel.jsx';
  * This file owns only two things: **how big the mat is drawn** and **that the whole mat is a
  * single drop target**. Everything drawn on the mat is
  * `MatBoard`'s, and everything that happens on a drop is `dropOnMat`'s, what the mat takes
- * included (`matAccepts`, shared with the right-click's orders).
+ * included (`matAccepts`).
  */
 export { matAccepts };
 

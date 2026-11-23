@@ -34,7 +34,6 @@ import { useAlertBob } from './alertBob.js';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { t } from '../../../i18n/index.js';
 import { HeroDragMarks, markMatPx } from './DragMarks.jsx';
-import { isSingleClick } from '../../hooks/useMatSelection.js';
 
 /**
  * A hero's health bar, just over their figure's head, the number above it. Reads the hero's HP
@@ -238,8 +237,6 @@ const MatHeroBody = memo(function MatHeroBody({
     z,
     outline = null,
     onHover,
-    onPick,
-    onRightClick,
     animationState = 'idle',
     moving = false,
     facing = 1,
@@ -312,26 +309,13 @@ const MatHeroBody = memo(function MatHeroBody({
             data-hero-limp={limp ? 'true' : undefined}
             data-outline={outline || undefined}
             aria-label={name || 'Hero'}
-            // A single click selects the hero, or clears them when they are the one selected; a
-            // double-click selects them and opens their Hero drawer too.
-            onClick={(e) => {
-                if (!opaque(e)) return;
-                e.stopPropagation();
-                onPick?.(heroId, isSingleClick(e));
-            }}
-            onDoubleClick={(e) => {
-                if (!opaque(e)) return;
-                e.stopPropagation();
-                onPick?.(heroId);
-                EventBus.publish(UI_EVENTS.INSPECT_HERO, { heroId });
-            }}
-            // A right-click on a drawn pixel is the hero's (`rightClickOrders.js`); through a
-            // see-through one it goes on to the mat, to whatever is under it.
+            // A right-click on a drawn pixel opens the hero's drawer; through a see-through one it
+            // goes on to the mat, to whatever is under it.
             onContextMenu={(e) => {
                 if (!opaque(e)) return;
                 e.preventDefault();
                 e.stopPropagation();
-                onRightClick?.(heroId, e);
+                EventBus.publish(UI_EVENTS.INSPECT_HERO, { heroId });
             }}
             onMouseEnter={() => onHover?.(heroId)}
             onMouseLeave={() => onHover?.(null)}

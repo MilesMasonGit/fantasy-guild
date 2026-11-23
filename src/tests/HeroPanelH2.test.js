@@ -83,7 +83,7 @@ describe('H2: one hero drawer, in one place', () => {
         const Host = () => {
             const [sel, setSel] = React.useState(null);
             return wrap(
-                h(BottomHeroDock, { selectedHeroId: sel, onSelectHero: id => setSel(p => (p === id ? null : id)) }),
+                h(BottomHeroDock, { selectedHeroId: sel, onOpenHero: setSel }),
                 h(HeroDrawer, { menuRight: false, selectedHeroId: sel, onCloseHero: () => setSel(null) })
             );
         };

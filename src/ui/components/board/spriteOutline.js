@@ -1,6 +1,6 @@
 /**
- * Outlines: **gold = picked (the mat's selection, `useMatSelection.js`), white = hovered or
- * inspected, red = alert**, in that order when more than one is true. The picture itself is generated from the art (`scripts/spriteFx.mjs`)
+ * Outlines: **white = hovered or inspected, red = alert**, in that order when both are true. The
+ * picture itself is generated from the art (`scripts/spriteFx.mjs`)
  * and drawn by `PixelArt` / the sheet animators.
  * - **Working** has no outline: a worked Token and its heroes stand in a task ring (`TaskRings`).
  * The green outline (`'work'`) is kept for other uses: a Token a carried hero could be ordered
@@ -12,11 +12,10 @@
  * - **A hero** hovered or inspected: white.
  * - **A flag** is white while it or its hero is hovered, or the hero is inspected; it has no
  * working or alert state of its own.
- * @returns {'select'|'hover'|'alert'|'muted'|'danger'|null}
+ * @returns {'hover'|'alert'|'muted'|'danger'|null}
  */
-export function tokenOutline({ picked = false, hovered = false, selected = false, lit = false, alert = false, mode = null, unavailable = false } = {}) {
+export function tokenOutline({ hovered = false, selected = false, lit = false, alert = false, mode = null, unavailable = false } = {}) {
     if (hovered && mode) return unavailable ? 'muted' : (MODE_OUTLINE[mode] ?? 'hover');
-    if (picked) return 'select';
     if (hovered || selected || lit) return 'hover';
     if (alert) return 'alert';
     return null;
@@ -25,9 +24,8 @@ export function tokenOutline({ picked = false, hovered = false, selected = false
 /** A map mode's hover outline: red for Demolish (UI_STYLE colours). */
 export const MODE_OUTLINE = Object.freeze({ demolish: 'danger' });
 
-/** A hero on the mat: gold picked, white hovered or inspected. */
-export function heroOutline({ picked = false, hovered = false, selected = false } = {}) {
-    if (picked) return 'select';
+/** A hero on the mat: white hovered or inspected. */
+export function heroOutline({ hovered = false, selected = false } = {}) {
     if (hovered || selected) return 'hover';
     return null;
 }
