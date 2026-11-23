@@ -854,8 +854,7 @@
             "drops": "Drops",
             "chanceBase": "{chance} base",
             "chanceBonus": "{effect} {amount} ({source})",
-            "chanceResult": "= {chance}",
-            "bonusDrop": "bonus ({source})"
+            "chanceResult": "= {chance}"
         }
     },
     "noRoom": {
