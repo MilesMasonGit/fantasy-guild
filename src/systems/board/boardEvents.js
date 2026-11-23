@@ -157,7 +157,7 @@ export const BOARD_EVENTS = {
 
     /**
      * An event Token left the mat: `{ instanceId, typeId, eventId, kind, name, reason, x, y }`,
-     * `reason` one of `EventTokens.ENDED` (worked out, time up, left unworked, demolished).
+     * `reason` one of `EventTokens.ENDED` (worked out, time up, demolished).
      */
     EVENT_ENDED: 'board:event_ended',
 

@@ -14,6 +14,7 @@ import { hasNews } from './catchUpNews.js';
 import * as Atlas from '../atlas/Atlas.js';
 import { defaultBannerFor } from '../../config/areaBanners.js';
 import * as BoardState from '../board/BoardState.js';
+import { getEvent } from '../../config/registries/eventRegistry.js';
 import * as EventTokens from '../board/EventTokens.js';
 
 /**
@@ -184,9 +185,18 @@ export const ROUTES = [
         handle: ({ instanceId, typeId, name } = {}) => pushEventBanner({ instanceId, typeId, name })
     },
     {
-        // Its Token gone, the banner pointing to it goes too.
+        // Its Token gone, the banner pointing to it goes too, and one banner says goodbye.
         event: BOARD_EVENTS.EVENT_ENDED, to: 'banner:event',
-        handle: ({ instanceId } = {}) => instanceId && Banners.withdraw(eventBannerKey(instanceId))
+        handle: ({ instanceId, eventId, name, reason } = {}) => {
+            if (!instanceId) return;
+            Banners.withdraw(eventBannerKey(instanceId));
+            Banners.push({
+                kind: 'eventGone',
+                groupKey: `eventGone:${instanceId}`,
+                parts: { name: name || 'An event', word: EventTokens.endedWord(reason), goodbye: getEvent(eventId)?.goodbye || '' },
+                sprite: null
+            });
+        }
     },
     {
         // Travel: the Region left takes its event's banner with it; one standing here gets its own.
@@ -259,11 +269,18 @@ const eventBannerKey = (instanceId) => `event:${instanceId}`;
  */
 function pushEventBanner({ instanceId, typeId, name }, { onMat = false, silent = false } = {}) {
     if (!instanceId) return;
-    if (onMat && !BoardState.getTokenById(instanceId)) return;
+    const token = BoardState.getTokenById(instanceId);
+    if (onMat && !token) return;
+    const event = EventTokens.eventOf(token);
     Banners.push({
         kind: 'event',
         groupKey: eventBannerKey(instanceId),
-        parts: { name: name || typeId || 'An event' },
+        parts: {
+            name: name || typeId || 'An event',
+            kind: event?.kind ?? null,
+            lastsMs: EventTokens.lastsMsOf(token),
+            leavesMs: EventTokens.isEventNode(token) ? EventTokens.leavesInMs(token) : 0
+        },
         sprite: typeId ? { kind: 'token', id: typeId } : null,
         subjects: [{ type: 'token', id: instanceId }]
     }, { silent });

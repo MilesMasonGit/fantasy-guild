@@ -165,6 +165,16 @@ export default function EventsPage() {
                     </label>
                   )}
                 </div>
+                <label className={label} style={labelStyle} title="The banner line when this event leaves, by any way. Empty: the game says the event has gone.">
+                  Goodbye line
+                  <input
+                    value={row.goodbye || ''}
+                    placeholder="The clouds waft away in the breeze."
+                    onChange={(e) => setEvent(id, { goodbye: e.target.value })}
+                    className="text-[11px] flex-1 min-w-60"
+                    data-event-goodbye
+                  />
+                </label>
                 <div className="flex items-center gap-1 flex-wrap" title="The ground it may land on. None ticked: wherever its Token may stand (its own Stands on still applies).">
                   <span className="text-[11px] mr-1" style={labelStyle}>Lands on</span>
                   {STANDS_ON_CHOICES.map((c) => (

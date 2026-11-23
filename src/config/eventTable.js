@@ -13,7 +13,8 @@
  *   weight,            // its share of the draw among the events that fit the place (0: never)
  *   ground: [],        // "Stands on" words it may land on; empty: wherever its Token may stand
  *   biomes: [],        // Region biomes it may land in; empty: any Region
- *   durationMinutes    // a buff's time on the mat
+ *   durationMinutes,   // a buff's time on the mat
+ *   goodbye            // the banner line when it leaves; empty: "{name} has gone."
  * }
  * ```
  *
@@ -77,7 +78,8 @@ export function normaliseEvent(id, raw) {
         weight: Number.isFinite(weight) ? Math.max(0, weight) : DEFAULT_EVENT_WEIGHT,
         ground: words(raw.ground),
         biomes: words(raw.biomes),
-        durationMinutes: minutes > 0 ? minutes : DEFAULT_BUFF_MINUTES
+        durationMinutes: minutes > 0 ? minutes : DEFAULT_BUFF_MINUTES,
+        goodbye: typeof raw.goodbye === 'string' ? raw.goodbye.trim() : ''
     };
 }
 

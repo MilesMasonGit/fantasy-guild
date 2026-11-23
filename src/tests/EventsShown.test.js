@@ -144,20 +144,20 @@ describe('the banner', () => {
         const { instance } = EventClock.landNow(COMET.id);
         const [banner] = eventBanners();
         expect(banner).toMatchObject({ title: 'Special Event! Copper Comet!', tone: 'milestone', subjects: [{ type: 'token', id: instance.id }] });
-        expect(banner.line).toBe('');
+        expect(banner.line).toBe('leaves in 1 h if unworked');
         expect(banner.sprite).toEqual({ kind: 'token', id: 'evs_comet' });
     });
 
-    it('a buff\'s banner reads the same way, with no second line, and goes when the buff leaves', () => {
+    it('a buff\'s banner says its minutes in the second line, and goes when the buff leaves', () => {
         setEventsForTests(table(RAIN));
         freshGame();
         EventClock.landNow(RAIN.id);
         expect(eventBanners()).toHaveLength(1);
         expect(eventBanners()[0].title).toBe('Special Event! Rainfall!');
-        expect(eventBanners()[0].line).toBe('');
+        expect(eventBanners()[0].line).toBe('for 20 min');
         const view = render(createElement(BannerStack));
         expect(view.container.querySelector('[data-banner-title]').textContent).toBe('Special Event! Rainfall!');
-        expect(view.container.querySelector('[data-banner-line]')).toBeNull();
+        expect(view.container.querySelector('[data-banner-line]').textContent).toBe('for 20 min');
         view.unmount();
         runFor(20 * MIN);
         expect(eventBanners()).toEqual([]);
@@ -375,6 +375,7 @@ describe('time left', () => {
         expect(cometCard.blocks.find(b => b.id === CARD_BLOCK.CYCLE).uses).toBe(3);
         expect(cometCard.blocks.find(b => b.id === CARD_BLOCK.LIFECYCLE).lines[0]).toMatchObject({ label: 'Expires in', text: '1h 0m' });
 
+        BoardState.removeToken(comet.id);
         const mythril = EventClock.landNow(MYTHRIL.id).instance;
         const card = tokenCardModel('evs_mythril', mythril.id);
         expect(card.blocks.find(b => b.id === CARD_BLOCK.CYCLE).uses).toBe(100);
@@ -401,6 +402,7 @@ describe('the arrival', () => {
         freshGame();
         const off = watchEventArrivals();
         const comet = EventClock.landNow(COMET.id).instance;
+        BoardState.removeToken(comet.id);
         const rain = EventClock.landNow(RAIN.id).instance;
         off();
         expect(takeArrival(comet.id)).toBe('node');

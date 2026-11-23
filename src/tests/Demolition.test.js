@@ -8,6 +8,7 @@ import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as Charges from '../systems/board/Charges.js';
+import * as EventClock from '../systems/events/EventClock.js';
 import * as Demolition from '../systems/board/Demolition.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as Landmarks from '../systems/board/Landmarks.js';
@@ -270,7 +271,7 @@ describe('a marked Token is Construction work', () => {
         expect(MatCap.tokenCount()).toBe(before.count - 1);
         expect(bank()).toBe(before.bank);
         expect(spriteCount()).toBe(before.sprites);
-        expect(hero().skills.construction.xp).toBe(before.xp);
+        expect(hero().skills.construction.xp).toBe(before.xp + Demolition.DEMOLISH_XP);
         expect(events.demolished).toEqual([{ instanceId: tree.id, typeId: 'demo_tree', ...spot, heroId: 'hero_1' }]);
         expect(events.depleted).toEqual([]);
         expect(events.resting).toEqual([]);
@@ -396,6 +397,43 @@ describe('a marked Token is Construction work', () => {
         Orders.orderAt('hero_1', C(10));
         expect(claimOf('hero_1')).toBe(passive.id);
         expect(runUntil(() => !on(passive), Demolition.DEMOLISH_MS + 1000)).toBe(true);
+    });
+});
+
+describe('an event Token is cleared like any Token', () => {
+    const asEvent = (t) => { t.event = { id: 'evt_demo', kind: 'node', name: 'Demo Event' }; return t; };
+
+    it('needs a hero and the usual time, pays 5 Construction XP when it finishes, and holds the next event until then', () => {
+        const tree = asEvent(place(10, 'demo_tree'));
+        expect(Demolition.mark(tree.id)).toEqual({ success: true });
+        run(Demolition.DEMOLISH_MS * 2);
+        expect(on(tree)).toBe(tree);
+        expect(EventClock.eventTokenOnMat()?.id).toBe(tree.id);
+
+        const xp = hero().skills.construction.xp;
+        Orders.orderAt('hero_1', C(10));
+        run(Demolition.DEMOLISH_MS - 200);
+        expect(on(tree)).toBe(tree);
+        expect(hero().skills.construction.xp).toBe(xp);
+        run(300);
+        expect(on(tree)).toBeNull();
+        expect(EventClock.eventTokenOnMat()).toBeNull();
+        expect(Demolition.DEMOLISH_XP).toBe(5);
+        expect(hero().skills.construction.xp).toBe(xp + 5);
+        expect(bank()).toBe(JSON.stringify(GameState.state.inventory));
+    });
+
+    it('pays no XP when the mark is taken off before it finishes', () => {
+        const tree = place(10, 'demo_tree');
+        const xp = hero().skills.construction.xp;
+        Demolition.mark(tree.id);
+        Orders.orderAt('hero_1', C(10));
+        run(Demolition.DEMOLISH_MS - 500);
+        Demolition.unmark(tree.id);
+        run(1000);
+        expect(on(tree)).toBe(tree);
+        expect(events.demolished).toEqual([]);
+        expect(hero().skills.construction.xp).toBe(xp);
     });
 });
 
