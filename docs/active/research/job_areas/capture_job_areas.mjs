@@ -5,8 +5,8 @@
 // A new game at 1920 x 1080 in a headless Chrome of its own (closed at the end); four jobs side by
 // side east of the Guild Hall, the furnace stuck, an orange tree at rest half inside the cherry tree's
 // area. Each sprite's visual centre is measured from the screen: the box of the pixels that change
-// when that sprite alone is hidden. Writes A.png .. D.png (the scene, 2x nearest-neighbour),
-// A_full.png .. D_full.png (the whole screen), today_ring.png and today_ring_full.png (the game as it
+// when that sprite alone is hidden. Writes A.png .. E.png (the scene, 2x nearest-neighbour),
+// A_full.png .. E_full.png (the whole screen), today_ring.png and today_ring_full.png (the game as it
 // is, ring line and all) and centres.json (the measured centres, not kept) here.
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -221,7 +221,7 @@ try {
     const box = await screenBox(page, { x: x0, y: y0, w: O.x + 220 - x0, h: P.y + 160 - y0 });
     await setLook(page, 'live');
     writeFileSync(path.join(here, 'today_ring.png'), await zoom2(page, await capture(page, box)));
-    for (const look of ['A', 'B', 'C', 'D']) {
+    for (const look of ['E', 'A', 'B', 'C', 'D']) {
         await setLook(page, look, jobs);
         writeFileSync(path.join(here, `${look}_full.png`), await capture(page, { x: 0, y: 0, width: W, height: H }));
         writeFileSync(path.join(here, `${look}.png`), await zoom2(page, await capture(page, box)));
