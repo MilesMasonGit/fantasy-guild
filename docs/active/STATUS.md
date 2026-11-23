@@ -13,9 +13,9 @@ build green) · bench-queued · eye-check · merged.*
 
 | Phase | Tier | Branch (worktree) | State | Day planned | Day done |
 |---|---|---|---|---|---|
-| Eye-check 12 fixes: the card's bonus line the size of the other drops, no blink between cycles; the Lessons switch shows in every running game | builder | `fix/eyecheck-12` (`e12`) | building | Mon 23 | |
-| 790 W4: every effect name explains itself; an item's tooltip lists its effects (T-495, T-499, T-639) | builder | `feat/effects-explain` (`tw4`) | building | Mon 23 | |
-| 770 G1: out of bait or seed, the hero leaves and says Needs <item> (T-623, T-629) | builder | `fix/out-of-bait-seed` (`mg1`) | building | Mon 23 | |
+| Eye-check 12 fixes: the card's bonus drops, no blink between cycles; the Lessons switch shows in every running game | builder | `fix/eyecheck-12` (`e12`) d5d6caf4 | the no-blink hold and the switch built (the switch was hidden in saves older than the lessons; it now shows, off, and starts them). **Owner's layout (23 Nov):** Makes becomes **Loot**, and each bonus source gets its own section styled like Loot, titled with the item ("Birdwatcher Potion"), its drops as ordinary rows: in progress on the same branch | Mon 23 | |
+| 790 W4: every effect name explains itself; an item's tooltip lists its effects (T-495, T-499, T-639) | builder | `feat/effects-explain` (`tw4`) 1b73a4d7 | **built**, bench queued (same work): one `explains` field per palette entry, read only through `effectExplain.js`, in seven places (badge hover, perk lines, combat view, Hall popover, fight window, Encyclopedia, item tooltip and drawer); tests re-run green (24). Left: the Token card's Boosts list and buff tags hover (two edits in TokenCard.jsx after the eye-check fixes merge); 35 placeholder descriptions for the content agent (in `modifierPalette.js`, code not data); the combat view may read `applies effect_merry` (ticket) | Mon 23 | Mon 23 |
+| 770 G1: out of bait or seed, the hero leaves and says Needs <item> (T-623, T-629) | builder | `fix/out-of-bait-seed` (`mg1`) d4b81397 | **built**, bench queued (same work: no bench scenario places a water or Field; calibration coast given bait), seen in game (Needs Shrimp Bait at the Coast; bait equipped, fishing; Trap catches Raw Shrimp; Needs Wheat Seed): the rod's bait-free pool never bites, the Trap's Raw Shrimp stays; tests re-run green (40). Deferred to the Fishing pack: the CMS pricing a water from its first bait pool (it moves six item values and needs a Sync); world materials and the ledger still read the bait-free rod pool (ticket for G2) | Mon 23 | Mon 23 |
 | 795 M3: news told once; problem banners clear themselves; Expired (T-506, T-507, T-503) | builder | `fix/news-told-once` (`ms4`) d973aba4 | **built**, merges on the gate at 13:00 (same work: UI listeners only), seen in game (after Return only the standing Bank full banner; it cleared when a slot freed; Iron Comet ×2 · 1 expired · 1 still here): routing.js decides what still stands at close (`deliverAfterSummary`), bannerKinds writes the words, EventTokens.endedCountText; touched tests re-run green (109). Summary headings keep their own wording (no "!"). LedgerPace's second case (Cooking 59, Construction wall) is red on main too | Mon 23 | Mon 23 |
 
 ## Director, batch 12: briefs 710 to 800, the audit fixes (owner, 2026-11-21: work autonomously, beyond the usual builder cap; eye-checks only where the look changes, batched)
@@ -564,6 +564,7 @@ None open.
 
 ## Questions for the owner
 
+- **Does a fish's price count its bait as an input (770 G1)?** When the Fishing pack lands, the CMS prices a water from its first baited pool. (a) **Recommended:** yes, the bait is part of the cost, as a recipe's inputs are; (b) no, bait is a running cost of the tool, the catch priced alone.
 **Answered Sun 22 Nov (owner, in chat):**
 - Description Sync after 790 W3: **the director runs the CMS sync command on main right after W3 merges** (data-only commit, check only description lines moved), and tells the owner.
 - Task ring on a stuck job (720 R4): **keep the ring, in a dim greyed amber** while stuck (follow-up on `feat/task-ring`).
