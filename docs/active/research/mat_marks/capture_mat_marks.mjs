@@ -25,7 +25,11 @@ const root = path.resolve(here, '../../../..');
 const { launchChrome, sleep } = await import(pathToFileURL(path.join(root, 'bench/browser/cdp.mjs')).href);
 
 const url = process.argv[2] || 'http://localhost:5320';
-// `--looks=F` (comma list) retakes only those looks.
+// `--looks=F` (comma list) retakes only those looks. `--built`: the game as built (look A, the
+// green bar), no throwaway code needed: built_rest.png (the pointer off the mat), built_camp.png
+// (resting on the Logging Camp: its name, ring and dots) and built_station.png (resting on the
+// furnace: its gear in the centre and its recipe's bubble), each with a _full twin.
+const BUILT = process.argv.includes('--built');
 const LOOKS = (process.argv.find(a => a.startsWith('--looks='))?.split('=')[1] ?? 'D,P,A,B,C,F').split(',');
 const W = 1920;
 const H = 1080;
@@ -160,6 +164,34 @@ try {
     const close = await screenBox(page, { x: C.x - 170, y: scene.L.y - 110, w: scene.L.x + 190 - (C.x - 170), h: C.y + 90 - (scene.L.y - 110) });
 
     const report = { scene, held, camp, box, close, looks: {} };
+    if (BUILT) {
+        const shoot = async (name) => {
+            writeFileSync(path.join(here, `${name}_full.png`), await capture(page, { x: 0, y: 0, width: W, height: H }));
+            writeFileSync(path.join(here, `${name}.png`), await zoom2(page, await capture(page, box)));
+        };
+        const centreOf = (id) => page.evaluate(`(() => { const r = document.querySelector('[data-token-art="true"][data-token-id="${id}"]').getBoundingClientRect(); return { x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2) }; })()`);
+        const restOn = async (p) => {
+            await page.mouse('mouseMoved', p.x - 2, p.y);
+            await sleep(100);
+            await page.mouse('mouseMoved', p.x, p.y);
+            await sleep(1500);
+        };
+        await shoot('built_camp');
+        const furnace = await centreOf(scene.F.id);
+        await restOn(furnace);
+        await shoot('built_station');
+        await page.mouse('mouseMoved', Math.round(W / 2), 5);
+        await sleep(1200);
+        await shoot('built_rest');
+        report.drawn = await page.evaluate(`({
+            strips: [...document.querySelectorAll('[data-work-strip]')].map(s => [s.getAttribute('data-work-strip'), s.innerText]),
+            blocked: document.querySelectorAll('[data-work-bar-blocked]').length,
+            plates: document.querySelectorAll('[data-work-plate], [data-idle-plate]').length,
+            marks: [...document.querySelectorAll('[data-problem-mark]')].map(m => [m.getAttribute('data-problem-mark'), m.closest('[data-bubble-row]')?.getAttribute('data-bubble-row')])
+        })`);
+        // Nothing more to shoot: the looks need the throwaway code.
+        LOOKS.length = 0;
+    }
     for (const look of LOOKS) {
         await setLook(page, look);
         // The stills held half way round the cycle (teal): its start is red, the game's can't-do colour.
