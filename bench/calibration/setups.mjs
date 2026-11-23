@@ -175,7 +175,7 @@ export const SETUPS = [
         bank: { item_wheat_seed: 100 },
         build({ place, hero, order }) {
             const patch = place('token_wild_wheat_patch', 800, 560);
-            const farmer = hero('Farmer', { farming: 10 }, ['item_copper_sickle']);
+            const farmer = hero('Farmer', { farming: 10 }, []);
             order(farmer, patch);
         }
     }
