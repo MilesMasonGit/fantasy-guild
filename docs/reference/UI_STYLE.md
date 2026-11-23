@@ -512,7 +512,8 @@ Two kinds, nothing else:
   below**: one shared piece, not a copy per panel. **A list that fits has no
   bars**, and no space kept for them (owner, 2026-11-02).
   - The arrow is a small pixel triangle drawn in code at whole-pixel scale.
-  - At the end of a list that scrolls, that arrow **dims but keeps its space**,
+  - An arrow shows **only while there is more in its direction** (owner,
+    2026-11-23): at its end of the list it goes, but its bar keeps its space,
     so the list does not jump while it is scrolled.
   - **A click scrolls about two rows**, smoothly; **holding** keeps scrolling;
     the **mouse wheel** works as normal.

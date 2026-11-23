@@ -10,7 +10,6 @@ import { MatFitProvider, setLiveMatFit } from './MatFitContext.jsx';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
 import { DND_SURFACE, DROP_REFUSED } from '../../dnd/dragConstants.js';
-import { requestRecipeList } from './recipeFlip.js';
 import { isShopPayload, pointerOverShopPanel } from '../drawer/ShopPanel.jsx';
 
 /**
@@ -73,11 +72,11 @@ export const Board = ({ onInspectToken, onClearInspect, inspectedHeroId = null, 
         matDrop.setNodeRef(node);
     }, [matDrop.setNodeRef]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // The recipe gear opens the Token's card on its recipe list.
+    // The recipe gear does what a right-click does: it opens the Token's card, which opens on its
+    // recipe list while nothing is chosen.
     const handleOpenRecipes = useCallback((id) => {
         const instance = BoardState.getTokenById(id);
         if (!instance) return;
-        requestRecipeList(id);
         const rect = document.querySelector(`[data-token-id="${id}"]`)?.getBoundingClientRect() || null;
         onInspectToken?.(instance.typeId, rect, id);
     }, [onInspectToken]);

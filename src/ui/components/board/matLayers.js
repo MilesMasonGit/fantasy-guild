@@ -58,11 +58,16 @@ export const MAT_Z = Object.freeze({
     /** Heroes on the move: above the standing ones too. */
     WALKING_HERO: TOKEN_TOP + 15,
     /**
+     * The Token whose card is open, its art and then its badges: brought forward over the heroes
+     * and every other Token while the card is about it, so the card's tail points at all of it.
+     */
+    INSPECTED_TOKEN: TOKEN_TOP + 16,
+    /**
      * The badges of the Token the pointer is on (its name, its gear): over the heroes and over any
      * Token in front of it, so what a hover brings up can be read and clicked though the Token's
      * art stays where it is.
      */
-    HOVERED_BADGES: TOKEN_TOP + 16,
+    HOVERED_BADGES: TOKEN_TOP + 18,
     /**
      * The sky's ambient life (`AmbientLife`): cloud shadows over everything on the mat below, then
      * the drifting leaves, petals and embers and the small birds on the Tokens' tops.

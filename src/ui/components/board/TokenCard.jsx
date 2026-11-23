@@ -606,11 +606,13 @@ export function artPlacement(w, h, minScale = CARD_ART_MIN_SCALE) {
 }
 
 /**
- * Which face of the card shows: its blocks, or the recipe list Change recipe flips it to. A list
- * asked for before the card opened (the mat's recipe gear) opens it on the list.
+ * Which face of the card shows: its blocks, or the recipe list Change flips it to. A Token with
+ * nothing chosen yet opens on the list, and so does one whose list was asked for before the card
+ * opened (coming back from looking an item up).
  */
-function useCardView(instanceId, onViewChange) {
-    const [view, setViewState] = useState(() => (takeRecipeListRequest(instanceId) ? 'recipes' : 'card'));
+function useCardView(instanceId, onViewChange, unchosen) {
+    const opensOnList = () => takeRecipeListRequest(instanceId) || unchosen;
+    const [view, setViewState] = useState(() => (opensOnList() ? 'recipes' : 'card'));
     const setView = useCallback((next) => {
         setViewState(next);
         onViewChange?.(next);
@@ -618,7 +620,7 @@ function useCardView(instanceId, onViewChange) {
     const first = useRef(true);
     useEffect(() => {
         if (first.current) { first.current = false; return; }
-        setView(takeRecipeListRequest(instanceId) ? 'recipes' : 'card');
+        setView(opensOnList() ? 'recipes' : 'card');
     }, [instanceId]); // eslint-disable-line react-hooks/exhaustive-deps
     useEffect(() => onRecipeListRequest((id) => {
         if (id === instanceId && takeRecipeListRequest(id)) setView('recipes');
@@ -691,14 +693,15 @@ const STAT_BLOCKS = new Set([CARD_BLOCK.HP, CARD_BLOCK.COMBAT, CARD_BLOCK.WORK, 
  */
 export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewChange = null }) => {
     const def = getTokenType(typeId);
-    const [view, setView] = useCardView(instanceId, onViewChange);
+    const model = tokenCardModel(typeId, instanceId);
+    const instance = instanceId != null ? BoardState.getTokenById(instanceId) : null;
+    const choice = instance ? model?.blocks.find(b => b.id === CARD_BLOCK.RECIPE && b.change)?.change : null;
+    const canList = !!choice;
+    const [view, setView] = useCardView(instanceId, onViewChange, !!choice && !choice.chosen);
     // Charges, a picked recipe, a hero arriving: re-read on this Token's own events.
     useTokenDetail(instanceId, def);
     useCardClock(instanceId, !!def?.enemy);
 
-    const model = tokenCardModel(typeId, instanceId);
-    const instance = instanceId != null ? BoardState.getTokenById(instanceId) : null;
-    const canList = !!model && !!instance && model.blocks.some(b => b.id === CARD_BLOCK.RECIPE && b.change);
     const listing = view === 'recipes' && canList;
     if (!model) return null;
     const { art } = model;

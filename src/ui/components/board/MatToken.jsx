@@ -437,7 +437,7 @@ export const MatToken = React.memo(function MatToken({
         }, UI_LISTENER);
     }, [isHall]);
 
-    // A sharp coloured outline: white hovered or inspected, red in alert
+    // A sharp coloured outline: gold while its card is open, white hovered, red in alert
     // (`spriteOutline.js`); a worked Token has its task ring instead. It is a generated picture
     // under the art, not a filter.
     // In a map mode the hovered Token takes the mode's colour, or muted grey where the mode cannot

@@ -168,6 +168,9 @@ describe('heroZ — where each hero goes', () => {
     it('a hovered Token\'s badges are over every hero; everything else keeps its place: rings, loot, callouts, bubbles', () => {
         expect(MAT_Z.HOVERED_BADGES).toBeGreaterThan(MAT_Z.WALKING_HERO);
         expect(MAT_Z.HOVERED_BADGES).toBeLessThan(MAT_Z.RINGS);
+        // The inspected Token (its card open) is over every hero, under a hovered Token's badges.
+        expect(MAT_Z.INSPECTED_TOKEN).toBeGreaterThan(MAT_Z.WALKING_HERO);
+        expect(MAT_Z.INSPECTED_TOKEN + 1).toBeLessThan(MAT_Z.HOVERED_BADGES);
         expect(MAT_Z.WALKING_HERO).toBeLessThan(MAT_Z.RINGS);
         expect(MAT_Z.RINGS).toBeLessThan(MAT_Z.LOOT);
         expect(MAT_Z.LOOT).toBeLessThan(MAT_Z.CALLOUT);
