@@ -1,4 +1,4 @@
-Status: draft (interviewed 2026-11-21: Faith settled; 2026-11-22: Taming cut, Crime, Summoning and Science settled in a deep dive)
+Status: briefed (approved 2026-11-22; brief 810)
 
 # Five skills: what each one is for
 

@@ -243,9 +243,6 @@ mods via the CMS after release.
 ## Being interviewed
 
 
-- **Five skills: what each one is for** (owner, 2026-11-21, audit A19 to
-  A25): Faith, Summoning, Crime, Taming, Science; no more specialist skills →
-  [concept_skill_identities.md](concept_skill_identities.md) (draft; interviewed 2026-11-21, Faith settled; 2026-11-22: Taming cut, Crime, Summoning and Science in a deep dive).
 - **Star upgrades, effect families and Events** (owner, 2026-11-11): the
   owner's marks on 117 Star ideas and four takeaways (families with
   per-target versions; effect icons on the Token card; Stars tiny and global
@@ -263,6 +260,7 @@ mods via the CMS after release.
 
 ## Moved on
 
+- **Skill identities: Faith, Crime, Summoning, Science** → approved 2026-11-22 after a deep dive (Taming cut; Crime steals from camps, Summoning charges Summoned workers, Science builds node mastery), [concept_skill_identities.md](concept_skill_identities.md); [brief 810](briefs/810_skill_identities.md), content T-663.
 - **Milestone perks: signature perks and small steps** → approved 2026-11-21, [concept_milestone_perks.md](concept_milestone_perks.md); brief 800 for the new rules and the level-up flash, T-522 for the tables (content agent).
 - **Combat styles: what each one is for** → approved 2026-11-21, [concept_combat_styles.md](concept_combat_styles.md); style texts in brief 750 S5, weapon traits and perks with the content agent (T-565, T-522).
 - **Systems Audit** (owner, 2026-11-18): a design review, system by system, owner in the loop on one tagged build; cross-system sweep first; fishing spots that appear on water and fade; effects aligned; combat easy to understand → [concept_systems_audit.md](concept_systems_audit.md), approved 2026-11-18. Starts once the outstanding briefs are built; the `/auditor` skill is still to write.
