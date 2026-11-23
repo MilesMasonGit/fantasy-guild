@@ -226,7 +226,8 @@ describe('H2: skills', () => {
         expect(row.textContent).toBe('Melee25/99');
         expect(row.querySelector('[data-skill-name]').textContent).toBe('Melee');
         expect(row.querySelector('[data-skill-level]').textContent).toBe('25/99');
-        expect(r.container.textContent).not.toMatch(/Lv\.|LVL|Level/);
+        // The hero sheet header says the hero level; the skill rows never say Lv or Level.
+        expect(row.textContent).not.toMatch(/Lv\.|LVL|Level/);
         // Never the browser's own title tooltip.
         expect(r.container.querySelector('[data-skill-row][title], [data-skill-row] [title]')).toBeNull();
         expect(document.body.querySelector('[data-tooltip]')).toBeNull();

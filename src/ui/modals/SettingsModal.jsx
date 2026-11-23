@@ -12,6 +12,8 @@ import { KitButton, KIT_BUTTON_TONE, PixelToggle } from '../components/base/KitB
 import { t } from '../../i18n/index.js';
 import { GUILD_NAME_MAX, guildNameOf, renameGuild } from '../../systems/core/GuildName.js';
 import { GameState } from '../../state/GameState.js';
+import { lessonsOn, setLessons } from '../../systems/quests/LimesGuide.js';
+import { hasLessons } from '../../systems/quests/LimesLessons.js';
 
 const AUTO_SAVE_LABEL = { 1: 'settings.autoSave1', 10: 'settings.autoSave10', 60: 'settings.autoSave60', 0: 'settings.autoSaveOff' };
 
@@ -133,6 +135,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                     {activeTab === 'game' && (
                         <div className="flex flex-col gap-3 animate-in fade-in duration-300">
                             {GameState.state?.meta && <GuildNameSetting />}
+                            {GameState.state?.meta && hasLessons() && <LessonsSetting />}
                             <SettingSelect
                                 label={t('settings.autoSave')}
                                 options={autoSaveChoices().map(min => ({ value: min, label: t(AUTO_SAVE_LABEL[min]) }))}
@@ -186,6 +189,20 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                 />
             )}
         </GIModal>
+    );
+};
+
+/** Limes's lessons on or off for this game; the progress keeps counting while they are off. */
+const LessonsSetting = () => {
+    const [on, setOn] = useState(() => lessonsOn());
+    return (
+        <SettingToggle
+            settingKey="lessons"
+            label={t('settings.lessons')}
+            description={t('settings.lessonsHint')}
+            value={on}
+            onChange={(v) => { setLessons(v); setOn(lessonsOn()); }}
+        />
     );
 };
 

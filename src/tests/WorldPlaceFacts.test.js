@@ -134,7 +134,8 @@ describe('a settled place\'s Tokens over the cap', () => {
         const { region } = World.writePlace(cell, { cellId: cell.id });
         const ownCount = (board) => Object.values(board.tokens).filter(t => MatCap.countsTowardCap(t)).length;
         expect(Atlas.capStatusOf(region.id)).toEqual({ count: ownCount(region.board), cap: MatCap.matCap() });
-        expect(Atlas.capStatusOf(region.id).count).toBeGreaterThan(0);
+        // A place's own Tokens (fixtures) stand outside the cap: it counts only what the guild adds.
+        expect(Atlas.capStatusOf(region.id).count).toBe(0);
 
         const homeCount = MatCap.tokenCount();
         expect(Atlas.travel(region.id).success).toBe(true);

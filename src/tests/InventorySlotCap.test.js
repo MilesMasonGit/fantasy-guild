@@ -7,7 +7,8 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 // accepting additions to existing stacks.
 
 vi.mock('../config/registries/itemRegistry.js', () => ({
-    getItem: vi.fn((id) => ({ id, name: id, maxStack: 99 }))
+    getItem: vi.fn((id) => ({ id, name: id })),
+    DEFAULT_MAX_STACK: 1e12
 }));
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({

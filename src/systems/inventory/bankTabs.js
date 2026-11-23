@@ -4,7 +4,7 @@
  * a tab's slots by it and the Bank pane draws by it, so the two cannot disagree.
  */
 
-export { BANK_TAB_SLOTS, BANK_TAB_CAP } from '../../config/guildUpgrades.js';
+export { BANK_TAB_SLOTS, BANK_TAB_CAP, BANK_STARTING_SLOTS } from '../../config/guildUpgrades.js';
 
 /** The tab an item is filed in: its override when that tab exists, else the first tab. */
 export function homeTabOf(inv, itemId) {

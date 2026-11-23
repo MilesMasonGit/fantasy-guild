@@ -60,7 +60,8 @@ function heroHash(s, hash = fnv1a) {
     const lines = heroes.map(h => canon({
         id: h.id,
         status: h.status,
-        woundedUntil: h.woundedUntil,
+        // Heroes no longer carry `woundedUntil` (it was always null); kept so the baseline compares unchanged.
+        woundedUntil: null,
         hp: h.hp?.current,
         energy: h.energy?.current,
         skills: h.skills,

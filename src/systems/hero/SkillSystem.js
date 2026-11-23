@@ -50,20 +50,6 @@ export function getSkillLevel(heroId, skillId) {
 export { applyXpBonus, averageXpBonus };
 
 /**
- * Get a hero's effective skill level (base + modifiers)
- * @param {string} heroId 
- * @param {string} skillId 
- * @returns {number|null}
- */
-export function getEffectiveLevel(heroId, skillId) {
-    const baseLevel = getSkillLevel(heroId, skillId);
-    if (baseLevel === null) return null;
-
-    // Effective level is currently just the base level; no modifiers are applied.
-    return baseLevel;
-}
-
-/**
  * Add XP to a hero's skill.
  *
  * A hero only gains XP in a skill they **hold**; awarding XP for one they lack
@@ -71,7 +57,7 @@ export function getEffectiveLevel(heroId, skillId) {
  *
  * @param {string} heroId
  * @param {string} skillId
- * @param {number} amount - XP to add
+ * @param {number} amount - whole XP to add, as {@link applyXpBonus} resolves it
  * @returns {{ success: boolean, levelsGained?: number, newLevel?: number, error?: string }}
  */
 export function addXP(heroId, skillId, amount) {
@@ -95,8 +81,9 @@ export function addXP(heroId, skillId, amount) {
     // bonus belongs to the skill the XP was earned in and is resolved where it is earned (a work
     // cycle in `BoardRunner`, a kill in `CombatResolutionProcessor`), through the Token's, the
     // guild's and the hero's scopes at once. Applying one here as well would count it twice.
-    const rounded = Math.round(amount);
-    const granted = amount > 0 ? Math.max(1, rounded) : rounded;
+    // An award under 1 is drawn there too (`applyXpBonus`); raising it to 1 here would pay it twice
+    // over.
+    const granted = Math.round(amount);
 
     const oldLevel = skill.level;
     skill.xp += granted;
@@ -200,8 +187,8 @@ export function requirementFailure(heroId, requirement) {
 
     if (!heroHasSkill(heroId, requirement.skill)) return 'POSSESSION';
 
-    const effectiveLevel = getEffectiveLevel(heroId, requirement.skill);
-    if (effectiveLevel === null) return 'POSSESSION';
+    const level = getSkillLevel(heroId, requirement.skill);
+    if (level === null) return 'POSSESSION';
 
-    return effectiveLevel >= (requirement.level || 0) ? null : 'LEVEL';
+    return level >= (requirement.level || 0) ? null : 'LEVEL';
 }

@@ -70,8 +70,8 @@ describe('giveItem', () => {
         expect(SpriteLayer.countOnBoard('item_oak_log')).toBe(7);
     });
 
-    it('a maxed stack sends only the remainder to the mat', () => {
-        giveItem('item_coal', 95);
+    it('a stack at the shared ceiling sends only the remainder to the mat', () => {
+        giveItem('item_coal', 1e12 - 4);
         const r = giveItem('item_coal', 10);
         expect(r).toEqual({ ok: true, added: 4, overflow: 6 });
         expect(SpriteLayer.countOnBoard('item_coal')).toBe(6);

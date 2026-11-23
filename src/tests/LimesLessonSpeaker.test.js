@@ -125,13 +125,14 @@ describe('⭐ the speaker (drawn)', () => {
         await act(async () => report('bush'));
         expect(step()).toMatchObject({ id: 'lesson:collect:mat' });
         // A step done early does not show; the next one left does.
-        await act(async () => { report('axe'); report('collect'); });
+        await act(async () => { report('axe'); report('heap'); report('collect'); });
         expect(step()).toMatchObject({ id: 'lesson:chop:mat' });
     });
 
     it('follows the open screen, and a bubble shrunk to "…" stays shrunk when its step comes back', () => {
         report('bush');
         report('collect');
+        report('heap');
         const { rerender } = mount();
         expect(step()).toMatchObject({ id: 'lesson:axe:mat' });
         act(() => collapseLimesStep(true));
@@ -168,6 +169,7 @@ describe('⭐ the speaker (drawn)', () => {
     it('a reload speaks the step again: the speaker reads the save on a new game or a load', async () => {
         report('bush');
         report('collect');
+        report('heap');
         mount();
         expect(step()).toMatchObject({ id: 'lesson:axe:mat' });
         const saved = JSON.parse(JSON.stringify(GameState.serialize().state));

@@ -52,7 +52,7 @@ export const LIMES_TEXT = Object.freeze({
         collect: Object.freeze({
             mat: Object.freeze(['Ooh, loot! What your heroes find drops on the mat. Hover over it to scoop it into the Bank.'])
         }),
-        // 3. Search the scrap heap (waits for the scrap heap in the content).
+        // 3. Search the scrap heap.
         heap: Object.freeze({
             mat: Object.freeze(['See that pile of junk by the Hall? Send a hero to dig through it. Old tools hide in there!'])
         }),
@@ -84,7 +84,7 @@ export const LIMES_TEXT = Object.freeze({
         craft: Object.freeze({
             mat: Object.freeze(['A {building}! Click it, pick {craft}, then send a hero to make some. Crafting!'])
         }),
-        // 8. A safe first fight: the weapon (waits for a first sword in the content)...
+        // 8. A safe first fight: the weapon...
         weapon: Object.freeze({
             mat: Object.freeze(['Fighting time! First, open the Bank and find a sword.']),
             bank: Object.freeze(['Drag the sword onto your hero. Pointy end out!'])

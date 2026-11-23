@@ -8,7 +8,7 @@ import { DEFAULT_MAX_STACK } from '../../config/registries/itemRegistry.js';
 import { RegistryManager } from '../progression/RegistryManager.js';
 import { ItemRateTracker } from './ItemRateTracker.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
-import { BANK_TAB_SLOTS, homeTabOf, bankTabCounts, bankTabLayout, mergeTabOrder } from './bankTabs.js';
+import { BANK_TAB_SLOTS, BANK_STARTING_SLOTS, homeTabOf, bankTabCounts, bankTabLayout, mergeTabOrder } from './bankTabs.js';
 
 /**
  * The kinds the Bank holds that take a slot: those the game still has a definition for.
@@ -61,16 +61,16 @@ export const InventoryManager = {
 
     /**
      * Why the Bank would take none of `itemId` now: `'slots'` when it holds none and no tab has a
-     * free slot, `'stack'` when its stack is at the item's limit (`maxStack`, or the one copy of
-     * an item that is not stackable), else null. The tests {@link addItem} refuses by.
+     * free slot, `'stack'` when its stack is at the one ceiling every stack shares
+     * (`DEFAULT_MAX_STACK`), else null. The tests {@link addItem} refuses by.
+     *
+     * ⚠️ An item's own `maxStack` or `stackable: false` is not read: the CMS may still write them,
+     * and every stack is unlimited in practice.
      */
     refusalOf(itemId) {
         if (this.lacksSlotFor(itemId)) return 'slots';
         const held = InventoryStore.getEntry(itemId)?.quantity || 0;
-        const template = held > 0 ? getItem(itemId) : null;
-        if (!template) return null;
-        if (template.stackable === false) return 'stack';
-        return held >= (template.maxStack || DEFAULT_MAX_STACK) ? 'stack' : null;
+        return held >= DEFAULT_MAX_STACK ? 'stack' : null;
     },
 
     /**
@@ -81,7 +81,7 @@ export const InventoryManager = {
         const inv = GameState.inventory;
         const kinds = slottedKinds();
         const used = kinds.length;
-        const total = Math.max(0, (inv.maxSlots ?? 20) - used);
+        const total = Math.max(0, (inv.maxSlots ?? BANK_STARTING_SLOTS) - used);
         // Below one tab's worth no tab can be full.
         if (used < BANK_TAB_SLOTS || total === 0) return total;
         let free = 0;
@@ -175,31 +175,16 @@ export const InventoryManager = {
             entry = { itemId, quantity: 0, dur: null };
         }
 
-        if (template.stackable !== false) {
-            // Falls back to the shared constant, not to state: an existing
-            // save carries whatever ceiling was current when it was written,
-            // and a stale one silently starts dropping output.
-            const maxStack = template.maxStack || DEFAULT_MAX_STACK;
-            const spaceRemaining = maxStack - entry.quantity;
-
-            // A maxed stack hands the remainder to the board, not to nothing.
-            // DEFAULT_MAX_STACK is 1e12, so this almost never fires.
-            if (spaceRemaining <= 0) {
-                EventBus.publish(ENGINE_EVENTS.INVENTORY_OVERFLOW, { itemId, amount, reason: 'stack' });
-                return 0;
-            }
-
-            if (amount > spaceRemaining) {
-                addedCount = spaceRemaining;
-                EventBus.publish(ENGINE_EVENTS.INVENTORY_OVERFLOW, { itemId, amount: amount - spaceRemaining, reason: 'stack' });
-            }
-        } else if (entry.quantity >= 1) {
+        // The shared ceiling keeps every stack well inside exact integer arithmetic. A maxed stack
+        // hands the remainder to the board, not to nothing; at 1e12 this almost never fires.
+        const spaceRemaining = DEFAULT_MAX_STACK - entry.quantity;
+        if (spaceRemaining <= 0) {
             EventBus.publish(ENGINE_EVENTS.INVENTORY_OVERFLOW, { itemId, amount, reason: 'stack' });
             return 0;
-        } else if (amount > 1) {
-            // A single-copy item takes one of a pile; the rest waits on the mat like any overflow.
-            addedCount = 1;
-            EventBus.publish(ENGINE_EVENTS.INVENTORY_OVERFLOW, { itemId, amount: amount - 1, reason: 'stack' });
+        }
+        if (amount > spaceRemaining) {
+            addedCount = spaceRemaining;
+            EventBus.publish(ENGINE_EVENTS.INVENTORY_OVERFLOW, { itemId, amount: amount - spaceRemaining, reason: 'stack' });
         }
 
         entry.quantity += addedCount;
@@ -257,7 +242,7 @@ export const InventoryManager = {
 
     /**
      * Whether the Bank can take back one copy of each of `itemIds` without going over a limit (its
-     * slots, a stack's ceiling, a single-copy item). `freed`: an item one copy of which leaves the
+     * slots, the shared stack ceiling). `freed`: an item one copy of which leaves the
      * Bank first, freeing its slot when it is the last.
      */
     hasRoomFor(itemIds, { freed = null } = {}) {
@@ -275,9 +260,7 @@ export const InventoryManager = {
                 if (free <= 0) return false;
                 free--;
             }
-            if (template.stackable === false && n > 1) return false;
-            const maxStack = template.maxStack || DEFAULT_MAX_STACK;
-            if (n > maxStack) return false;
+            if (n > DEFAULT_MAX_STACK) return false;
             counts.set(itemId, n);
         }
         return true;

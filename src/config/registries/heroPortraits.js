@@ -19,7 +19,7 @@ export const HERO_PORTRAITS = [
     'hm_alchemy_por', 'hm_bard_por', 'hm_blacksmith_por', 'hm_cleric_por', 'hm_cook_por',
     'hm_crime_por', 'hm_druid_por', 'hm_fighter_por', 'hm_sail_por', 'hm_wizard_por',
     'hn_adventure_por', 'hn_bard_por', 'hn_cook_por', 'hn_crime_por',
-    'hn_range_por', 'hn_sneak_por'
+    'hn_range_por', 'hn_recruit_por', 'hn_sneak_por'
 ];
 
 /** Longest name a hero may be given, so the dock tab never has to truncate. */

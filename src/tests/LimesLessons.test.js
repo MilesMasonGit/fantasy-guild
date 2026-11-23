@@ -50,6 +50,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /** Spots on the mat, well apart and clear of the Hall. */
 const SPOT = {
     bush: { x: 300, y: 250 },
+    heap: { x: 600, y: 950 },
     tree: { x: 300, y: 600 },
     build: { x: 1400, y: 300 },
     fight: { x: 1400, y: 900 }
@@ -111,20 +112,27 @@ describe('the lessons, as the concept lists them', () => {
         for (const id of Object.keys(LIMES_MOMENTS)) expect(LIMES_TEXT.moments[id]?.length, id).toBeGreaterThan(0);
     });
 
-    it('the steps waiting for the opening\'s content (the scrap heap, a first sword) are left out until their id is set', () => {
-        expect(LESSON_TARGETS.scrapHeap).toBeNull();
-        expect(LESSON_TARGETS.weapon).toBeNull();
-        expect(lessonSteps().map(s => s.id)).toEqual([
-            'bush', 'collect', 'axe', 'chop', 'bunk_beds', 'foundation', 'build', 'craft', 'food', 'fight'
-        ]);
+    it('the steps that waited for the opening\'s content (the scrap heap, a first sword) are in, now the content holds them', () => {
         expect(LESSON_STEPS.filter(s => s.needs).map(s => [s.id, s.needs])).toEqual([['heap', 'scrapHeap'], ['weapon', 'weapon']]);
+        expect(lessonSteps().map(s => s.id)).toEqual([
+            'bush', 'collect', 'heap', 'axe', 'chop', 'bunk_beds', 'foundation', 'build', 'craft', 'weapon', 'food', 'fight'
+        ]);
+    });
+
+    it('the scrap heap is the searchable pile of rusty tools, and the rusty sword is a weapon it gives', () => {
+        const heap = getTokenType(LESSON_TARGETS.scrapHeap);
+        expect(heap.requiresHero).toBe(true);
+        const finds = heap.config.outputs.map(o => o.itemId);
+        expect(finds).toContain(LESSON_TARGETS.weapon);
+        expect(finds.some(id => /woodaxe/.test(id))).toBe(true);
+        expect(getItem(LESSON_TARGETS.weapon).type).toBe('weapon');
     });
 
     it('every id the lessons name is in today\'s content', () => {
-        for (const key of ['berryBush', 'tree', 'foundation', 'craftBuilding', 'foe']) {
+        for (const key of ['berryBush', 'scrapHeap', 'tree', 'foundation', 'craftBuilding', 'foe']) {
             expect(getTokenType(LESSON_TARGETS[key]), key).toBeTruthy();
         }
-        for (const key of ['woodaxe', 'food', 'craftItem']) expect(getItem(LESSON_TARGETS[key]), key).toBeTruthy();
+        for (const key of ['woodaxe', 'weapon', 'food', 'craftItem']) expect(getItem(LESSON_TARGETS[key]), key).toBeTruthy();
         expect(GuildUpgradeManager.getNextCost(LESSON_TARGETS.bunkBeds)).toBeTruthy();
     });
 
@@ -160,10 +168,16 @@ describe('⭐ the lessons, step by step, through the real systems', () => {
         expect(runUntil(() => SpriteLayer.getSprites().some(s => s.kind === 'item'), 60_000)).toBe(true);
         expect(step()).toBe('collect');
         collectAll();
-        expect(step()).toBe('axe');
+        expect(step()).toBe('heap');
         expect(InventoryManager.getItemCount('item_redberry')).toBeGreaterThan(0);
 
-        // 3. Equip the woodaxe (no scrap heap yet): food does not count, a pickaxe does not, a woodaxe does.
+        // 3. Search the scrap heap: one finished cycle there.
+        const heap = place(LESSON_TARGETS.scrapHeap, SPOT.heap);
+        expect(Orders.orderAt(heroId, { x: heap.x, y: heap.y })).toMatchObject({ success: true, order: 'token' });
+        expect(runUntil(() => step() !== 'heap', 2 * 60_000)).toBe(true);
+        expect(step()).toBe('axe');
+
+        // 3. Equip the woodaxe: food does not count, a pickaxe does not, a woodaxe does.
         // The berries equipped here do lesson 8's food step early.
         Flags.furl(heroId);
         expect(EquipmentManager.equipItem(heroId, 'item_redberry').success).toBe(true);
@@ -215,7 +229,10 @@ describe('⭐ the lessons, step by step, through the real systems', () => {
         expect(runUntil(() => step() !== 'craft', 2 * 60_000)).toBe(true);
         Flags.furl(heroId);
 
-        // 8. Food was done early (step 3): straight on to the fight.
+        // 8. The sword; food was done early (step 3), so straight on to the fight.
+        expect(step()).toBe('weapon');
+        give(LESSON_TARGETS.weapon, 1);
+        expect(EquipmentManager.equipItem(heroId, LESSON_TARGETS.weapon).success).toBe(true);
         // A new hero at combat level 1, berries in hand, beats the small slime: the safe first foe.
         expect(step()).toBe('fight');
         give('item_redberry', 20);
@@ -280,6 +297,8 @@ describe('guides, never locks: a step done early counts and moves on', () => {
         report('collect');
         expect(step()).toBe('bush');
         report('bush');
+        expect(step()).toBe('heap');
+        report('heap');
         expect(step()).toBe('axe');
         report('axe');
         report('chop');
@@ -294,6 +313,10 @@ describe('guides, never locks: a step done early counts and moves on', () => {
         expect(LimesLessons.isStepDone('axe')).toBe(false);
         EventBus.publish(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, { heroId: 'h', slot: 0, itemId: 'item_copper_woodaxe', action: 'equip' });
         expect(LimesLessons.isStepDone('axe')).toBe(true);
+        // A woodaxe sits in the hand but is no weapon: the sword step still waits for one.
+        expect(LimesLessons.isStepDone('weapon')).toBe(false);
+        EventBus.publish(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, { heroId: 'h', slot: 1, itemId: LESSON_TARGETS.weapon, action: 'equip' });
+        expect(LimesLessons.isStepDone('weapon')).toBe(true);
         // Another Guild Hall star is not Bunk Beds.
         EventBus.publish(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, { upgradeId: 'bank_tabs', rank: 1, count: 1 });
         expect(LimesLessons.isStepDone('bunk_beds')).toBe(false);
@@ -310,12 +333,22 @@ describe('guides, never locks: a step done early counts and moves on', () => {
         EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { typeId: 'token_oak_tree', produced: ['item_oak_wood'] });
         expect(LimesLessons.isStepDone('chop')).toBe(true);
         expect(LimesLessons.isStepDone('craft')).toBe(false);
+        // Another cycle is not the scrap heap's.
+        expect(LimesLessons.isStepDone('heap')).toBe(false);
+        EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { typeId: LESSON_TARGETS.scrapHeap });
+        expect(LimesLessons.isStepDone('heap')).toBe(true);
+        // A win over another foe is not the fight the lesson names; the small slime is.
+        EventBus.publish(ENGINE_EVENTS.COMBAT_VICTORY, { enemyId: 'token_goblin_camp' });
+        QuestManager.reportProgress('combat_victory');
+        expect(LimesLessons.isStepDone('fight')).toBe(false);
+        EventBus.publish(ENGINE_EVENTS.COMBAT_VICTORY, { enemyId: LESSON_TARGETS.foe });
+        expect(LimesLessons.isStepDone('fight')).toBe(true);
     });
 
     it('says when the step changes, and which step has just arrived', () => {
         const heard = [];
         const off = EventBus.subscribe(ENGINE_EVENTS.LIMES_LESSON, (d) => heard.push(d));
-        QuestManager.reportProgress('combat_victory');
+        QuestManager.reportProgress('combat_victory', 1, { enemyId: LESSON_TARGETS.foe });
         QuestManager.reportProgress('hero_deployed', 1, { typeId: LESSON_TARGETS.berryBush });
         QuestManager.reportProgress('hero_deployed', 1, { typeId: LESSON_TARGETS.berryBush });
         off();
@@ -331,7 +364,7 @@ describe('⭐ the lessons survive a save, a catch-up, a reload and travel', () =
 
     it('a save and load keeps the steps done and the step Limes is on', () => {
         QuestManager.reportProgress('hero_deployed', 1, { typeId: LESSON_TARGETS.berryBush });
-        QuestManager.reportProgress('combat_victory');
+        QuestManager.reportProgress('combat_victory', 1, { enemyId: LESSON_TARGETS.foe });
         LimesGuide.setLessons(false);
         const saved = JSON.parse(JSON.stringify(GameState.serialize().state));
         expect(saved.guide.progress).toEqual({
@@ -353,7 +386,7 @@ describe('⭐ the lessons survive a save, a catch-up, a reload and travel', () =
         } finally {
             EventBus.setQuiet(false);
         }
-        expect(step()).toBe('axe');
+        expect(step()).toBe('heap');
     });
 
     it('travel keeps the lessons: they are the guild\'s, not a mat\'s', () => {
@@ -365,7 +398,7 @@ describe('⭐ the lessons survive a save, a catch-up, a reload and travel', () =
         expect(step()).toBe('collect');
         // Work in the other place counts too.
         EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, { kind: 'item', refId: 'item_oak_wood', quantity: 1 });
-        expect(step()).toBe('axe');
+        expect(step()).toBe('heap');
     });
 
     it('a big moment waits until it is heard, through a save', () => {
@@ -388,6 +421,15 @@ describe('an older save', () => {
         const migrated = migrateState(old, GAME_VERSION);
         expect(migrated.quests).toBeUndefined();
         expect(migrated.guide.progress).toBeNull();
+    });
+
+    it('in its lessons before the heap and the sword joined: the heap behind it is done, the sword ahead met in its turn', () => {
+        LimesLessons.startLessons();
+        const before = allSteps().map(s => s.id).filter(id => id !== 'heap' && id !== 'weapon');
+        GameState.state.guide.progress = { done: ['bush', 'collect', 'axe', 'chop'], counts: {}, moments: {}, seen: before };
+        expect(step()).toBe('bunk_beds');
+        expect(LimesLessons.isStepDone('heap')).toBe(true);
+        expect(LimesLessons.isStepDone('weapon')).toBe(false);
     });
 });
 
@@ -433,6 +475,7 @@ describe('no lesson listens for an event nobody publishes', () => {
             hero_deployed: ['typeId'],
             cycle_completed: ['typeId', 'skill', 'gathered', 'crafted'],
             hero_equipped: ['toolKind', 'category', 'weapon'],
+            combat_victory: ['enemyId'],
             guild_upgrade_purchased: ['upgradeId'],
             token_purchased: ['typeId'],
             token_built: ['typeId']

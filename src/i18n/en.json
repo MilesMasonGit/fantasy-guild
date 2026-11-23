@@ -30,6 +30,8 @@
         "itemStubsHint": "Show items gained and spent at the top right of the mat",
         "limesBlurbs": "Limes's Tips",
         "limesBlurbsHint": "Show the little Limes on each screen, with a tip when you hover it",
+        "lessons": "Limes's lessons",
+        "lessonsHint": "Off hides the lessons. On brings them back at the first step you have not done",
         "autoSave": "Auto-Save Interval",
         "autoSave1": "1 Minute (Dev)",
         "autoSave10": "10 Minutes",
@@ -670,6 +672,7 @@
         "cantEquip": "Can't equip {item}. {reason}"
     },
     "heroPanel": {
+        "level": "Level {level}",
         "health": {
             "title": "Health",
             "heals": "Out of a fight: heals {hp} every {seconds} s",

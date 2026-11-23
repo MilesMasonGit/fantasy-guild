@@ -9,15 +9,14 @@
 // whether or not they are the one showing, so a step done early is simply done when its turn comes.
 
 /**
- * ⭐ The ids the lessons name, in one place. The opening's own content (brief 480 L2: the scrap
- * heap, the rusty tools) is not all wired in yet, so today's starting content stands in: a null
- * id is a step that waits for that content and is left out until it is set.
+ * ⭐ The ids the lessons name, in one place. A null id is a step that waits for its content and is
+ * left out until it is set.
  */
 export const LESSON_TARGETS = Object.freeze({
     /** Lesson 1: the bush a hero gathers bare-handed. */
     berryBush: 'token_redberry_bush',
-    /** Lesson 3: the scrap heap a hero searches for rusty tools. Null until the content has one. */
-    scrapHeap: null,
+    /** Lesson 3: the scrap heap a hero searches for rusty tools. */
+    scrapHeap: 'token_scrap_heap',
     /** Lesson 3: the woodaxe outlined in the Bank (any woodaxe equipped counts). Today the starter Copper Woodaxe. */
     woodaxe: 'item_copper_woodaxe',
     /** Lesson 4: the tree outlined. */
@@ -30,11 +29,11 @@ export const LESSON_TARGETS = Object.freeze({
     craftBuilding: 'token_workbench',
     /** Lesson 7: what Limes suggests crafting there (any craft counts). */
     craftItem: 'item_charcoal',
-    /** Lesson 8: the weapon outlined in the Bank (any weapon equipped counts). Null until the content has a first sword. */
-    weapon: null,
+    /** Lesson 8: the weapon outlined in the Bank (any weapon equipped counts): the heap's rusty sword. */
+    weapon: 'item_rusty_sword',
     /** Lesson 8: the food outlined in the Bank, what lesson 1 gathers (any food equipped counts). */
     food: 'item_redberry',
-    /** Lesson 8: the safe first foe outlined (any win counts): the small slime by the Hall. */
+    /** Lesson 8: the safe first foe outlined, and the only win that counts: the small slime by the Hall. */
     foe: 'token_small_slime'
 });
 
@@ -62,7 +61,7 @@ export const LESSON_STEPS = Object.freeze([
     step({ id: 'craft', lesson: 7, targetType: 'cycle_completed', match: { crafted: true } }),
     step({ id: 'weapon', lesson: 8, targetType: 'hero_equipped', match: { weapon: true }, needs: 'weapon' }),
     step({ id: 'food', lesson: 8, targetType: 'hero_equipped', match: { category: 'food' } }),
-    step({ id: 'fight', lesson: 8, targetType: 'combat_victory' })
+    step({ id: 'fight', lesson: 8, targetType: 'combat_victory', match: { enemyId: T.foe } })
 ]);
 
 /** After the lessons, one goal carries the rest of the Starter Camp: settle a place on the world map. */

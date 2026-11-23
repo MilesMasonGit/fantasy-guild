@@ -52,6 +52,9 @@ export const RANKS_BY_ID = Object.freeze({
     [BANK_TABS_STAR]: BANK_TAB_CAP - 1
 });
 
+/** The Bank a new guild starts with, and what a save that never wrote one gets: one tab. */
+export const BANK_STARTING_SLOTS = BANK_TAB_SLOTS;
+
 /** The Bank's tabs at a tab count, as the Bank Tabs star reads them. */
 function bankTabsLabel(tabs) {
     return `${tabs} ${tabs === 1 ? 'tab' : 'tabs'}`;

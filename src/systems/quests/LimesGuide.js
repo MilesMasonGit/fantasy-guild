@@ -4,6 +4,8 @@
 // mat's cap and the tick never reads it; it lives only in the save's `guide` section.
 
 import { GameState } from '../../state/GameState.js';
+import { EventBus } from '../core/EventBus.js';
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 function guide() {
     const state = GameState.state;
@@ -34,5 +36,8 @@ export function lessonsOn() {
 
 export function setLessons(on) {
     const g = guide();
-    if (g) g.lessons = on !== false;
+    if (!g) return;
+    g.lessons = on !== false;
+    // Wakes the speaker, which reads this switch and the step the lessons stand on.
+    EventBus.publish(ENGINE_EVENTS.LIMES_LESSON, { stepId: null, arrived: false, moment: null });
 }

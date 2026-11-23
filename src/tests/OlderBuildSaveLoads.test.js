@@ -59,7 +59,7 @@ function retiredKeysIn(state) {
     }
     for (const [id, t] of Object.entries(state.board?.tokens || {})) if ('biome' in t) found.push(`board.tokens.${id}.biome`);
     for (const h of state.heroes || []) {
-        for (const f of ['classId', 'traitId', 'createdAt']) if (f in h) found.push(`heroes.${h.id}.${f}`);
+        for (const f of ['classId', 'traitId', 'createdAt', 'woundedUntil']) if (f in h) found.push(`heroes.${h.id}.${f}`);
     }
     return found;
 }
@@ -92,7 +92,7 @@ describe('⭐ a save an earlier build of this version wrote loads end to end', (
         expect(GameState.state.board.tokens[forest.id].typeId).toBe('token_oak_forest');
         const loaded = GameState.state.heroes.find(h => h.id === hero.id);
         expect(loaded.name).toBe('Old Hand');
-        expect(loaded.woundedUntil).toBeNull();
+        expect('woundedUntil' in loaded).toBe(false);
         expect(loaded.statuses).toEqual([]);
         expect(retiredKeysIn(GameState.state)).toEqual([]);
 

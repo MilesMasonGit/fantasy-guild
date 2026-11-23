@@ -5,6 +5,8 @@
  * StateSchema - Defines initial state and validation for game data
  */
 
+import { BANK_STARTING_SLOTS } from '../config/guildUpgrades.js';
+
 /**
  * Save schema version, deliberately decoupled from the app version in
  * package.json. It names the app version at which the save *structure* last
@@ -162,7 +164,7 @@ export const INITIAL_STATE = {
         // rewrites them on every load (1 + bank_tabs, 64 per tab).
         // These are the starting values, i.e. rank 0.
         maxTabs: 1,
-        maxSlots: 64,
+        maxSlots: BANK_STARTING_SLOTS,
         items: {},        // { itemId: { quantity, durabilities? } }
         // Bank tabs. Extra entries are added ONLY by
         // GuildUpgradeManager._ensureBankTabs when the `bank_tabs` upgrade

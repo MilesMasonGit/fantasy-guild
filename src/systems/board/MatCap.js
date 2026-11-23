@@ -6,8 +6,9 @@ import * as BoardState from './BoardState.js';
 
 /**
  * How many Tokens the mat may hold. Every Token on the mat counts, placed or spawned, but those
- * {@link countsTowardCap} leaves out. The Guild Hall never counts: it is always there. Landmarks
- * (the endgame sites) count like any placed Token. The cap is the guild's,
+ * {@link countsTowardCap} leaves out. The Guild Hall never counts: it is always there; nor does a
+ * node a map wrote with its place (`BoardState.FIXTURE.MAP`). The Starter Camp's Tokens count.
+ * Landmarks (the endgame sites) count like any placed Token. The cap is the guild's,
  * but it counts only the Region the guild is in: the others are frozen in the Atlas, off the mat.
  *
  * Who asks: the Shop and a station making a Token (`Placement.hasRoomForProduct`) ask {@link
@@ -26,12 +27,13 @@ export function isGuildHall(instance) {
 
 /**
  * Whether a Token counts toward the cap: not an event Token (`instance.event`), an arrival
- * enemy (`instance.arrival`) or the Guild Hall. Events and arrivals come to the mat on their own and
- * must never stop the player building. One type lookup.
+ * enemy (`instance.arrival`), a map's node (a settled place's own Tokens stand outside the cap, so
+ * the count starts from what the player adds) or the Guild Hall. Events and arrivals come to the
+ * mat on their own and must never stop the player building. One type lookup.
  */
 export function countsTowardCap(instance) {
     const typeId = instance?.typeId;
-    if (!typeId || instance.event || instance.arrival) return false;
+    if (!typeId || instance.event || instance.arrival || instance.fixture === BoardState.FIXTURE.MAP) return false;
     return !isGuildHall(instance);
 }
 
