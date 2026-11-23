@@ -108,6 +108,8 @@
         "drawer": {
             "label": "Item",
             "collected": "Collected this run: {count}",
+            "discard": "Discard",
+            "discardConfirm": "Throw away all {count} {item} in the Bank? Nothing comes back. Worn gear stays worn; a carried food, drink or potion shows empty until the Bank holds more.",
             "empty": "The Bank is empty",
             "emptyHint": "Items the guild collects land here."
         },

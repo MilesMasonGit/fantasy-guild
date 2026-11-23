@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { t } from '../../../i18n/index.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { PixelGlyph } from '../base/PixelGlyph.jsx';
@@ -10,6 +11,8 @@ import { itemTagPills } from './itemTags.js';
 import { useShownBankEntry } from './bankInspection.js';
 import { lifetimeOf } from '../../../systems/progression/collectionLog.js';
 import { itemKey } from '../../../systems/progression/ledger/engine.js';
+import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
+import { KitButton, KIT_BUTTON_TONE } from '../base/KitButton.jsx';
 import { lookUpItem } from '../encyclopedia/encyclopediaLink.js';
 
 /** Item art is 32 px; the drawer shows it at 4×, a whole multiple, so it can be examined closely. */
@@ -29,7 +32,7 @@ export const ItemDrawer = ({ open, menuRight = false }) => {
     const entry = useShownBankEntry();
     return (
         <SideDrawer open={open} menuRight={menuRight} backdrop="bank" label={t('bank.drawer.label')} data-item-drawer={entry?.id || ''}>
-            {entry ? <ItemDrawerBody entry={entry} /> : <ItemDrawerEmpty />}
+            {entry ? <ItemDrawerBody key={entry.id} entry={entry} /> : <ItemDrawerEmpty />}
         </SideDrawer>
     );
 };
@@ -40,6 +43,13 @@ export const ItemDrawerBody = ({ entry }) => {
     const facts = itemTipFacts(template);
     const pills = itemTagPills(template);
     const collected = lifetimeOf(itemKey(entry.id)).collected || 0;
+    const [confirming, setConfirming] = useState(false);
+    // Only the Bank's stack goes: worn copies stay worn, and a carried consumable reads the Bank's count.
+    const discard = () => {
+        const held = InventoryManager.getItemCount(entry.id);
+        if (held > 0) InventoryManager.removeItem(entry.id, held);
+        setConfirming(false);
+    };
     return (
         <>
             {/* 1. The name, and the book in the top corner. */}
@@ -87,9 +97,27 @@ export const ItemDrawerBody = ({ entry }) => {
                     </div>
                 </ArrowScrollList>
             </div>
-            {/* 6. The actions (Use, and later Sell and Discard) and, at the very foot, collected this run. */}
+            {/* 6. The actions (Discard) and, at the very foot, collected this run. */}
             <footer className="shrink-0 flex flex-col gap-2 px-3 pt-2 pb-3 border-t border-gi-border/40">
-                <div data-item-drawer-actions className="flex flex-wrap gap-2 empty:hidden" />
+                <div data-item-drawer-actions className="flex flex-wrap items-center gap-2">
+                    {confirming ? (
+                        <>
+                            <p data-item-drawer-discard-confirm className="w-full ui-text-small text-red-400 leading-snug">
+                                {t('bank.drawer.discardConfirm', { count: count.toLocaleString('en-US'), item: template.name })}
+                            </p>
+                            <KitButton tone={KIT_BUTTON_TONE.DANGER} onClick={discard} buttonClassName="py-1 px-3 text-xs" data-item-drawer-discard-yes>
+                                {t('common.confirm')}
+                            </KitButton>
+                            <KitButton tone={KIT_BUTTON_TONE.PLAIN} onClick={() => setConfirming(false)} buttonClassName="py-1 px-3 text-xs" data-item-drawer-discard-no>
+                                {t('common.cancel')}
+                            </KitButton>
+                        </>
+                    ) : (
+                        <KitButton tone={KIT_BUTTON_TONE.DANGER} onClick={() => setConfirming(true)} buttonClassName="py-1 px-3 text-xs" data-item-drawer-discard>
+                            {t('bank.drawer.discard')}
+                        </KitButton>
+                    )}
+                </div>
                 <div data-item-drawer-collected className="ui-text-small text-gi-muted tabular-nums">
                     {t('bank.drawer.collected', { count: collected.toLocaleString('en-US') })}
                 </div>
