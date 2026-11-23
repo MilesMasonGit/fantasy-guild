@@ -23,7 +23,7 @@ index 3a198787..cd252f5c 100644
              <g transform={`translate(${ox} ${oy}) scale(${artScale})`}>
                  <path ref={halo} d={REACH_DOT_PATHS.halo} fill={REACH_DOT_COLOUR.halo} visibility="hidden" />
 diff --git a/src/ui/components/board/TokenBadges.jsx b/src/ui/components/board/TokenBadges.jsx
-index b4fd9b2c..ba2b9f2c 100644
+index b4fd9b2c..918fe3c1 100644
 --- a/src/ui/components/board/TokenBadges.jsx
 +++ b/src/ui/components/board/TokenBadges.jsx
 @@ -4,6 +4,7 @@ import { inputSummary, outputSummary, contextSummary } from './recipeText.js';
@@ -43,6 +43,15 @@ index b4fd9b2c..ba2b9f2c 100644
      if (!name || isDragging || !shown) return null;
  
      // A full-width flex row centres the label without a `transform`: a transform on every
+@@ -39,7 +42,7 @@ export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, s
+                 : below ? { top: `calc(100% + ${4 + offset}px)` } : { bottom: `calc(100% + ${4 + offset}px)` }}
+         >
+             <span
+-                className="ui-text-name w-max max-w-[240px] shrink-0 font-bold text-white leading-tight tracking-tight px-1">
++                data-text={name} className="ui-text-name w-max max-w-[240px] shrink-0 font-bold text-white leading-tight tracking-tight px-1">
+                 {name}
+             </span>
+         </div>
 diff --git a/src/ui/components/board/WorkPlateLayer.jsx b/src/ui/components/board/WorkPlateLayer.jsx
 index 5efe3a42..75ed8f34 100644
 --- a/src/ui/components/board/WorkPlateLayer.jsx

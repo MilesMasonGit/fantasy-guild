@@ -14,6 +14,7 @@
 
 /* ---------- the name label ---------- */
 html[data-mm=A] [data-token-name] > span,
+html[data-mm=F] [data-token-name] > span,
 html[data-mm=C] [data-token-name] > span {
   background: rgba(10, 8, 6, 0.58);
   padding: 2px 6px 3px;
@@ -32,7 +33,7 @@ html[data-mm=C] [data-token-name] > span {
 
 /* ---------- the reach dot ---------- */
 [data-mm-ring] { display: none; }
-html[data-mm=A] [data-mm-ring=dark1], html[data-mm=A] [data-mm-ring=dark2] { display: inline; fill: rgba(10, 8, 6, 0.58); }
+html[data-mm=A] [data-mm-ring=dark1], html[data-mm=A] [data-mm-ring=dark2], html[data-mm=F] [data-mm-ring=dark1], html[data-mm=F] [data-mm-ring=dark2] { display: inline; fill: rgba(10, 8, 6, 0.58); }
 html[data-mm=B] [data-mm-ring=chroma] { display: inline; fill: var(--mm-c); animation: mm-chroma-text 4s linear infinite; }
 html[data-mm=C] [data-mm-ring=chroma] { display: inline; fill: var(--mm-c); animation: mm-chroma-text 4s linear infinite; }
 html[data-mm=C] [data-mm-ring=dark2] { display: inline; fill: rgba(10, 8, 6, 0.58); }
@@ -41,11 +42,12 @@ html[data-mm=C] [data-mm-ring=dark2] { display: inline; fill: rgba(10, 8, 6, 0.5
 .mm-bar-outline { background: #000; }
 .mm-bar-track { background: rgba(10, 8, 6, 0.72); }
 /* Gold, a light top row and a dark bottom row (four art pixels tall: one, two, one). */
-.mm-bar-fill { background: linear-gradient(to bottom, #fff1b8 0 25%, #fbbf24 25% 75%, #c98a12 75% 100%); }
+.mm-bar-fill { background: linear-gradient(to bottom, var(--mm-g-hi) 0 25%, var(--color-gi-success) 25% 75%, var(--mm-g-lo) 75% 100%); }
+:root { --mm-g-hi: color-mix(in srgb, var(--color-gi-success) 45%, #fff); --mm-g-lo: color-mix(in srgb, var(--color-gi-success) 65%, #000); }
 [data-mm-blocked] .mm-bar-fill { background: linear-gradient(to bottom, #c4c4c4 0 25%, #8a8a8a 25% 75%, #646464 75% 100%); }
 .mm-bar-time { text-shadow: var(--text-outline-dark) !important; }
 
-html[data-mm=A] .mm-bar-row, html[data-mm=C] .mm-bar-row { background: rgba(10, 8, 6, 0.58); }
+html[data-mm=A] .mm-bar-row, html[data-mm=F] .mm-bar-row, html[data-mm=C] .mm-bar-row { background: rgba(10, 8, 6, 0.58); }
 html[data-mm=B] .mm-bar-chroma, html[data-mm=C] .mm-bar-chroma { animation: mm-chroma-text 4s linear infinite; background: var(--mm-c); }
 html[data-mm=B] .mm-bar-time, html[data-mm=C] .mm-bar-time {
   animation: mm-chroma-text 4s linear infinite;
@@ -55,3 +57,20 @@ html[data-mm=B] .mm-bar-time, html[data-mm=C] .mm-bar-time {
     -2px -1px 0 var(--mm-c), 2px -1px 0 var(--mm-c), -2px 1px 0 var(--mm-c), 2px 1px 0 var(--mm-c),
     -1px -2px 0 var(--mm-c), 1px -2px 0 var(--mm-c), -1px 2px 0 var(--mm-c), 1px 2px 0 var(--mm-c) !important;
 }
+
+/* F: A's backing, and a rainbow sweeping across the white letters: a copy of the name over it, its
+   fill seven hard bands (red first) moving right 2px a step, 56px a loop in 2.8 s. */
+[data-token-name] > span { position: relative; }
+html[data-mm=F] [data-token-name] > span::after {
+  content: attr(data-text);
+  position: absolute; inset: 0;
+  padding: inherit;
+  color: transparent;
+  text-shadow: none !important;
+  background-image: repeating-linear-gradient(90deg, #ff4d4d 0 8px, #ffa53d 8px 16px, #ffe94d 16px 24px, #4dff7a 24px 32px, #4dd8ff 32px 40px, #7d6bff 40px 48px, #ff5cdc 48px 56px);
+  background-size: 56px 100%;
+  -webkit-background-clip: text; background-clip: text;
+  animation: mm-sweep 2.8s steps(28) infinite;
+  pointer-events: none;
+}
+@keyframes mm-sweep { from { background-position: 0 0; } to { background-position: 56px 0; } }

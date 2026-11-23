@@ -1,6 +1,6 @@
 // The mat marks look pick (brief 830, D3 part 1, T-667): one busy scene, the hover name label, the
 // reach dots and the proposed progress bar in looks A (see-through dark backing), B (chroma shimmer),
-// C (both), D (today, the before) and P (today's label and dots with the proposed bar, plain).
+// C (both), D (today, the before), F (A's backing with a rainbow sweeping across the letters) and P (today's label and dots with the proposed bar, plain).
 // Needs the throwaway look code (`src/ui/components/board/mmLook.jsx` and `.css`, hooked into
 // `TokenBadges.jsx`, `CampReachRing.jsx`, `WorkPlateLayer.jsx`; window.__setMm, not committed) and
 // a dev server already running on it:
@@ -12,8 +12,8 @@
 // game loop is stopped and each bar held at a set fill, so every look shows the same frame.
 // The stills hold the colour cycle at its half way point (teal).
 // Writes <look>.png (the scene, 2x nearest-neighbour) and <look>_full.png (the whole screen) for
-// each look; for B and C also <look>_frames.png (four moments of the 4 s colour cycle side by side,
-// a close crop) and <look>_anim.png (an animated PNG of the cycle, 16 frames), the latter two
+// each look; for B, C and F also <look>_frames.png (four moments of the loop side by side,
+// a close crop) and <look>_anim.png (an animated PNG of the loop, one frame a step for F), the latter two
 // assembled by `make_anim.py` beside this script (Python with Pillow).
 import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -25,10 +25,14 @@ const root = path.resolve(here, '../../../..');
 const { launchChrome, sleep } = await import(pathToFileURL(path.join(root, 'bench/browser/cdp.mjs')).href);
 
 const url = process.argv[2] || 'http://localhost:5320';
+// `--looks=F` (comma list) retakes only those looks.
+const LOOKS = (process.argv.find(a => a.startsWith('--looks='))?.split('=')[1] ?? 'D,P,A,B,C,F').split(',');
 const W = 1920;
 const H = 1080;
+// Each moving look's loop and how many frames it is shot in: B and C's colour cycle, F's sweep
+// (28 steps of 2px, one frame a step).
+const MOVING = { B: { cycle: 4, frames: 16 }, C: { cycle: 4, frames: 16 }, F: { cycle: 2.8, frames: 28 } };
 const CYCLE_S = 4;
-const FRAMES = 16;
 
 const capture = async (page, clip, scale = 1) => Buffer.from((await page.send('Page.captureScreenshot', {
     format: 'png', clip: { ...clip, scale }
@@ -59,7 +63,7 @@ const setLook = async (page, look) => {
 
 /** Every chroma animation held at `t` seconds into its cycle, all in step. */
 const holdChroma = (page, t) => page.evaluate(`(() => {
-    const a = document.getAnimations().filter(a => a.animationName === 'mm-chroma-text');
+    const a = document.getAnimations().filter(a => (a.animationName === 'mm-chroma-text' || a.animationName === 'mm-sweep'));
     for (const x of a) { x.pause(); x.currentTime = ${t * 1000}; }
     return a.length;
 })()`);
@@ -156,7 +160,7 @@ try {
     const close = await screenBox(page, { x: C.x - 170, y: scene.L.y - 110, w: scene.L.x + 190 - (C.x - 170), h: C.y + 90 - (scene.L.y - 110) });
 
     const report = { scene, held, camp, box, close, looks: {} };
-    for (const look of ['D', 'P', 'A', 'B', 'C']) {
+    for (const look of LOOKS) {
         await setLook(page, look);
         // The stills held half way round the cycle (teal): its start is red, the game's can't-do colour.
         const n = await holdChroma(page, CYCLE_S / 2);
@@ -169,16 +173,17 @@ try {
         };
         writeFileSync(path.join(here, `${look}_full.png`), await capture(page, { x: 0, y: 0, width: W, height: H }));
         writeFileSync(path.join(here, `${look}.png`), await zoom2(page, await capture(page, box)));
-        if (look === 'B' || look === 'C') {
+        if (MOVING[look]) {
+            const { cycle, frames: FRAMES } = MOVING[look];
             const dir = path.join(here, `_frames_${look}`);
             mkdirSync(dir, { recursive: true });
             for (let i = 0; i < FRAMES; i++) {
-                await holdChroma(page, (i * CYCLE_S) / FRAMES);
+                await holdChroma(page, (i * cycle) / FRAMES);
                 await sleep(120);
                 writeFileSync(path.join(dir, `${String(i).padStart(2, '0')}.png`), await zoom2(page, await capture(page, close)));
             }
             execFileSync('python', [path.join(here, 'make_anim.py'), dir, path.join(here, `${look}_anim.png`), path.join(here, `${look}_frames.png`),
-                String((CYCLE_S * 1000) / FRAMES)], { stdio: 'inherit' });
+                String((cycle * 1000) / FRAMES)], { stdio: 'inherit' });
             rmSync(dir, { recursive: true, force: true });
         }
     }
