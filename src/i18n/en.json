@@ -91,6 +91,12 @@
         "levelHero": "{icon}{skill} {level} ({hero}: {have})",
         "join": ", "
     },
+    "banners": {
+        "corner": {
+            "show": "Show the banners",
+            "hide": "Hide the banners"
+        }
+    },
     "bannerTitle": {
         "recipe": "New recipe!",
         "recipes": "New recipes!",

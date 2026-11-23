@@ -318,11 +318,11 @@ const ReactRoot = () => {
                         </div>
                         </HallCamera>
                         {/**
-                         * The banners, top centre under where the mat's top bar sits: outside the
-                         * cameras, so they hold still on screen as the view glides. Over the World
-                         * Map and the Hall only those that point to a Token on the mat (an event's).
+                         * The banner corner, top right under where the mat's top bar sits: outside
+                         * the cameras, so it holds still on screen as the view glides. Over the World
+                         * Map and the Hall only banners that point to a Token on the mat (an event's).
                          */}
-                        <ErrorBoundary label="Banners" corner="top-center"><BannerStack away={isGuildView || isAtlasOpen} /></ErrorBoundary>
+                        <ErrorBoundary label="Banners" corner="top-right"><BannerStack away={isGuildView || isAtlasOpen} /></ErrorBoundary>
                         <ErrorBoundary label="ArrivalCard" corner="bottom-center"><ArrivalCard /></ErrorBoundary>
                         </div>
                         {/**

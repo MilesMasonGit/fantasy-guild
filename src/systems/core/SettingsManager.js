@@ -28,7 +28,9 @@ const defaultSettings = {
     notifications: {
         // The item stubs at the top right of the mat. Banners have no switch: they are what
         // must not be missed.
-        itemStubs: true
+        itemStubs: true,
+        // The banner corner shown (every banner listed) or hidden (a new one pops out a while).
+        bannersShown: true
     },
     ui: {
         tooltipsCardBadges: true,

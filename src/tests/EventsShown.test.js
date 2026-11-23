@@ -173,13 +173,12 @@ describe('the banner', () => {
         expect(eventBanners()).toEqual([]);
     });
 
-    it('withdraw takes back a waiting banner as well as one on screen', () => {
-        for (let i = 0; i < Banners.MAX_SHOWN; i++) Banners.push({ kind: 'hero', parts: { heroes: [`H${i}`] }, groupKey: `h${i}` });
+    it('withdraw takes back the event banner among others, and only it', () => {
+        for (let i = 0; i < 3; i++) Banners.push({ kind: 'hero', parts: { heroes: [`H${i}`] }, groupKey: `h${i}` });
         Banners.push({ kind: 'event', parts: { name: 'Rainfall', kind: 'buff', minutes: 20 }, groupKey: 'event:x' });
-        expect(Banners.getView().waiting).toBe(1);
         Banners.withdraw('event:x');
-        expect(Banners.getView().waiting).toBe(0);
         expect(eventBanners()).toEqual([]);
+        expect(Banners.getAll()).toHaveLength(3);
     });
 });
 

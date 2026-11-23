@@ -1,39 +1,50 @@
-import { memo, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import * as Banners from '../../../systems/notifications/banners.js';
 import { TONE, BANNER_KINDS } from '../../../systems/notifications/bannerKinds.js';
-import { EventBus } from '../../../systems/core/EventBus.js';
-import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
+import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
+import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
+import { SettingsManager } from '../../../systems/core/SettingsManager.js';
+import { t } from '../../../i18n/index.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
+import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { BannerArt } from '../base/BannerArt.jsx';
 import { useDrawn } from '../../dev/perf/drawSwitches.js';
 import { cn } from '../../utils/cn.js';
 import { outlineSubjects } from './bannerHighlight.js';
+import { bannersOut, cornerBanners, peeksAfter, samePeeks } from './bannerCorner.js';
+import { BANNER_CORNER_TOP_PX as CORNER_TOP_PX } from './stubGeometry.js';
 import { MAT_TOP_BAR_PX } from '../board/MatTopBar.jsx';
 import { prefersReducedMotion } from '../board/fx/pixelSteps.js';
 import { SETTLE } from '../board/HallCamera.jsx';
 import { animateFx, whenOver } from '../board/fx/oneShot.js';
 
 /**
- * The banners: what the player must not miss, at the top centre of the mat, dropping from behind
- * the top bar with one small overshoot. A big sprite on the left, a title and one line, in a
- * studded frame with a gold edge for a milestone and a red one for a problem (placeholder frames
- * until the owner's ribbon). A milestone gets one pass of the shine.
+ * The banners: what the player must not miss, in a corner at the top right of the mat, above the
+ * item stubs. A show/hide icon there says how many are up (red when a problem is among them);
+ * shown, every banner is listed down from it (scrolling if long), newest first; hidden, a new one
+ * pops out for a few seconds (`PEEK_MS`, `bannerCorner.js`) and tucks back in. A click on the icon shows or hides
+ * them all, and the choice is kept per device in the settings ({@link BANNERS_SHOWN_SETTING}).
  *
- * Each stays until clicked, and a click dismisses it. Up to three stack, newest on top; past
- * three a "+N" tab counts the rest. Hovering a banner about a hero or a Token outlines it on the
- * mat (gold; red for a problem). A kind that `pointsTo` its Token (an event's) also asks, as it is
- * clicked, for that Token to be shown on the mat (`UI_EVENTS.SHOW_ON_MAT`): from the World Map or
- * the Guild Hall back to the mat, then a short gold pulse on it.
+ * A banner: a big sprite on the left, a title and one line, in a studded frame with a gold edge for
+ * a milestone and a red one for a problem (placeholder frames until the owner's ribbon). It drops
+ * out from under the icon with one small overshoot, and a milestone gets one pass of the shine.
+ * Each stays until clicked, and a click dismisses it. Hovering a banner about a hero or a Token
+ * outlines it on the mat (gold; red for a problem). A kind that `pointsTo` its Token (an event's)
+ * also asks, as it is clicked, for that Token to be shown on the mat (`UI_EVENTS.SHOW_ON_MAT`):
+ * from the World Map or the Guild Hall back to the mat, then a short gold pulse on it.
  *
- * One stack for every view, drawn outside the cameras just under where the mat's top bar sits, so a
- * banner keeps its place on screen while the view glides between the mat, the Guild Hall and the
- * World Map. Over those two (`away`) it shows only the kinds that point to a Token, so an event can
- * be reached from there; the others wait for the mat. When the banners above or below one come or
- * go, it slides to its new place ({@link slidesBetween}) instead of jumping.
+ * One corner for every view, drawn outside the cameras just under where the mat's top bar sits,
+ * so a banner keeps its place on screen while the view glides between the mat, the Guild Hall and
+ * the World Map. Over those two (`away`) it holds only the kinds that point to a Token, so an event
+ * can be reached from there, and draws nothing without one. When the banners above or below one
+ * come or go, it slides to its new place ({@link slidesBetween}) instead of jumping.
  */
+
+/** The setting that keeps the corner shown (true, the default) or hidden. */
+export const BANNERS_SHOWN_SETTING = 'notifications.bannersShown';
 
 export const BANNER_WIDTH_PX = 480;
 /** The sprite box: item art (32 px) at 2x, hero faces and upgrade icons (64 px) at 1x. */
@@ -43,8 +54,6 @@ const LIFT_MS = 200;
 /** How long a banner takes to slide to its new place in the stack. */
 export const SLIDE_MS = 300;
 const SLIDE_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
-/** The `data-banner-slot` of the "+N" tab, which slides with the banners. */
-const WAITING_SLOT = 'waiting';
 
 /**
  * How far each banner that stayed in the stack must start from its new place to seem to slide
@@ -171,7 +180,7 @@ const BannerSprite = ({ sprite }) => {
 };
 
 /** One banner. */
-export const Banner = memo(function Banner({ banner }) {
+export const Banner = memo(function Banner({ banner, tucking = false }) {
     const [leaving, setLeaving] = useState(false);
     const timer = useRef(null);
     const problem = banner.tone === TONE.PROBLEM;
@@ -189,13 +198,13 @@ export const Banner = memo(function Banner({ banner }) {
             data-banner={banner.kind}
             data-banner-slot={banner.id}
             data-banner-tone={banner.tone}
-            data-banner-leaving={leaving ? 'true' : undefined}
+            data-banner-leaving={leaving || tucking ? 'true' : undefined}
             className="gi-banner pointer-events-auto block text-left cursor-pointer shrink-0"
             style={{ width: BANNER_WIDTH_PX }}
             onMouseEnter={() => banner.subjects.length && outlineSubjects(banner.subjects, problem ? 'red' : 'gold')}
             onMouseLeave={() => outlineSubjects([])}
             onClick={() => {
-                if (leaving) return;
+                if (leaving || tucking) return;
                 setLeaving(true);
                 outlineSubjects([]);
                 if (BANNER_KINDS[banner.kind]?.pointsTo) {
@@ -228,35 +237,136 @@ export const Banner = memo(function Banner({ banner }) {
     );
 });
 
+/** The icon's sprite at 1x: gold while only milestones wait, red with a problem among them. */
+const ICON_SRC = { calm: '/assets/ui/u_alert_yellow.png', problem: '/assets/ui/u_alert_red.png' };
+const ICON_SPRITE_PX = 32;
+
+/** Whether the corner is open, kept per device in the settings. */
+function useCornerOpen() {
+    const read = () => SettingsManager.get(BANNERS_SHOWN_SETTING) !== false;
+    const [open, setOpen] = useState(read);
+    useEffect(() => EventBus.subscribe(ENGINE_EVENTS.SETTINGS_UPDATED, () => setOpen(read()), UI_LISTENER), []);
+    return open;
+}
+
+/**
+ * The banners popped out of a hidden corner, each until its time is up ({@link peeksAfter}). The
+ * banners up when the corner first draws are old news: none of them pops.
+ */
+function usePeeks(list, open) {
+    const seen = useRef(null);
+    const [peeks, setPeeks] = useState(() => new Map());
+    const [clock, setClock] = useState(0);
+    useLayoutEffect(() => {
+        if (seen.current === null) {
+            seen.current = new Set(list.map(b => b.id));
+            return;
+        }
+        const next = peeksAfter({ banners: list, seen: seen.current, peeks, open, now: Date.now() });
+        seen.current = next.seen;
+        if (!samePeeks(next.peeks, peeks)) setPeeks(next.peeks);
+    }, [list, open, clock]);   // eslint-disable-line react-hooks/exhaustive-deps
+    useEffect(() => {
+        if (!peeks.size) return undefined;
+        const due = Math.min(...peeks.values()) - Date.now();
+        const timer = setTimeout(() => setClock(c => c + 1), Math.max(0, due));
+        return () => clearTimeout(timer);
+    }, [peeks]);
+    return peeks;
+}
+
+/**
+ * The banners that just went back into the icon (the corner closed, or a pop-out's time was up),
+ * still drawn for their lift. Banners that left the list altogether (clicked, cleared) are not
+ * among them: those lift on their own or simply go.
+ */
+function useTucking(out, list) {
+    const last = useRef(out);
+    const [tucking, setTucking] = useState([]);
+    useLayoutEffect(() => {
+        const outIds = new Set(out.map(b => b.id));
+        const upIds = new Set(list.map(b => b.id));
+        const gone = last.current.filter(b => !outIds.has(b.id) && upIds.has(b.id));
+        last.current = out;
+        if (!gone.length || prefersReducedMotion()) {
+            if (tucking.some(b => outIds.has(b.id) || !upIds.has(b.id))) setTucking(t => t.filter(b => !outIds.has(b.id) && upIds.has(b.id)));
+            return undefined;
+        }
+        setTucking(t => [...t.filter(b => !outIds.has(b.id) && upIds.has(b.id) && !gone.some(g => g.id === b.id)), ...gone]);
+        const ids = new Set(gone.map(b => b.id));
+        const timer = setTimeout(() => setTucking(t => t.filter(b => !ids.has(b.id))), LIFT_MS);
+        return () => clearTimeout(timer);
+    }, [out, list]);   // eslint-disable-line react-hooks/exhaustive-deps
+    return tucking;
+}
+
+/**
+ * The corner's icon: how many banners wait, red when a problem is among them. A click shows them
+ * all or hides them all, and the choice is kept.
+ */
+const CornerIcon = ({ open, count, problem }) => (
+    <PixelFrame
+        kind={FRAME_KIND.CHAMFER}
+        className="pointer-events-auto shrink-0"
+        frameClassName={cn('flex items-center', open && 'brightness-125')}
+    >
+        <button
+            type="button"
+            data-banner-corner={open ? 'open' : 'hidden'}
+            data-banner-count={count}
+            data-banner-problem={problem ? 'true' : undefined}
+            title={open ? t('banners.corner.hide') : t('banners.corner.show')}
+            aria-pressed={open}
+            onClick={() => SettingsManager.set(BANNERS_SHOWN_SETTING, !open)}
+            className="flex items-center gap-1 px-1 cursor-pointer font-pixel ui-text-body font-bold"
+            style={{ height: ICON_SPRITE_PX, color: problem ? 'var(--color-ui-red)' : 'var(--color-ui-gold)' }}
+        >
+            <img
+                src={problem ? ICON_SRC.problem : ICON_SRC.calm}
+                alt=""
+                draggable={false}
+                width={ICON_SPRITE_PX}
+                height={ICON_SPRITE_PX}
+                className={cn('select-none pointer-events-none', !count && 'opacity-40 grayscale')}
+                style={{ imageRendering: 'pixelated' }}
+            />
+            {count > 0 && <span data-banner-count-text>{count}</span>}
+        </button>
+    </PixelFrame>
+);
+
 /** @param {{away?: boolean}} props `away`: the World Map or the Guild Hall is the view: only kinds that point to a Token. */
 export const BannerStack = memo(function BannerStack({ away = false }) {
     const drawn = useDrawn('notifications');
     useSyncExternalStore(Banners.subscribe, Banners.getVersion);
+    const open = useCornerOpen();
     const boxRef = useRef(null);
+    const { shown } = Banners.getView();
+    const { list, count, problem } = useMemo(() => cornerBanners(shown, away), [shown, away]);
+    const peeks = usePeeks(list, open);
+    const out = useMemo(() => bannersOut(list, open, peeks), [list, open, peeks]);
+    const tucking = useTucking(out, list);
     useSlides(boxRef);
     if (!drawn) return null;
-    const view = Banners.getView();
-    const shown = away ? view.shown.filter(b => BANNER_KINDS[b.kind]?.pointsTo) : view.shown;
-    const waiting = away ? 0 : view.waiting;
-    const { problemWaiting } = view;
-    if (!shown.length) return null;
+    if (away && !count) return null;
+    const drawnOut = [...out, ...tucking.filter(b => !out.some(o => o.id === b.id))];
     return (
-        // Clipped at the top edge, so a banner seems to come from behind the top bar.
-        <div className="absolute inset-x-0 bottom-0 overflow-hidden pointer-events-none z-30" style={{ top: MAT_TOP_BAR_PX }}>
-            <div ref={boxRef} data-banners={away ? 'away' : 'mat'} className="absolute top-1 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5">
-                {shown.map(b => <Banner key={b.id} banner={b} />)}
-                {waiting > 0 && (
-                    <PixelFrame
-                        kind={FRAME_KIND.CHAMFER}
-                        data-banner-slot={WAITING_SLOT}
-                        data-banners-waiting={waiting}
-                        title={`${waiting} more waiting: click a banner to see the next`}
-                        className="pointer-events-auto"
-                        frameClassName="px-2 font-pixel ui-text-body font-bold"
-                        frameStyle={{ color: problemWaiting ? 'var(--color-ui-red)' : 'var(--color-ui-gold)' }}
-                    >
-                        +{waiting}
-                    </PixelFrame>
+        <div className="absolute inset-x-0 bottom-0 pointer-events-none z-30" style={{ top: MAT_TOP_BAR_PX }}>
+            <div
+                data-banners={away ? 'away' : 'mat'}
+                className="absolute right-0 flex flex-col items-end gap-1"
+                style={{ top: CORNER_TOP_PX, bottom: CORNER_TOP_PX }}
+            >
+                <CornerIcon open={open} count={count} problem={problem} />
+                {drawnOut.length > 0 && (
+                    // Clipped at the top edge, so a banner seems to come out from under the icon.
+                    <div className="min-h-0 flex flex-col pointer-events-auto pr-1 pb-1">
+                        <ArrowScrollList compact step={160} className="min-h-0 flex flex-col">
+                            <div ref={boxRef} data-banners-list className="flex flex-col items-end gap-1.5">
+                                {drawnOut.map(b => <Banner key={b.id} banner={b} tucking={!out.includes(b)} />)}
+                            </div>
+                        </ArrowScrollList>
+                    </div>
                 )}
             </div>
         </div>

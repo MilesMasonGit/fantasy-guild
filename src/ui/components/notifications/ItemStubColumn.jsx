@@ -15,7 +15,7 @@ import { cn } from '../../utils/cn.js';
 import { TONE_COLOUR, rateText, signedAmount, toneOf } from './stubText.js';
 import { useStubGlide, glideShift } from './stubGlide.js';
 import { getCopies, getCopiesVersion, subscribeCopies } from './stubLanding.js';
-import { GAP_PX, HEADER_PX, PAD_LEFT_PX, PAD_RIGHT_PX, PITCH_PX, ROW_GAP_PX, SPRITE_PX, STUB_PX } from './stubGeometry.js';
+import { GAP_PX, HEADER_PX, PAD_LEFT_PX, PAD_RIGHT_PX, PITCH_PX, ROW_GAP_PX, SPRITE_PX, STUB_COLUMN_TOP_PX, STUB_PX } from './stubGeometry.js';
 import { onPoll } from '../board/frameClock.js';
 
 /**
@@ -290,7 +290,8 @@ export const ItemStubColumn = memo(function ItemStubColumn() {
         <div
             ref={boxRef}
             data-item-stubs
-            className="absolute top-2 right-0 bottom-2 flex flex-col items-end pointer-events-none select-none z-30"
+            className="absolute right-0 bottom-2 flex flex-col items-end pointer-events-none select-none z-30"
+            style={{ top: STUB_COLUMN_TOP_PX }}
         >
             <div className="shrink-0 flex justify-end items-center" style={{ height: HEADER_PX }}>
                 {rest.some(s => !s.leaving) && (
