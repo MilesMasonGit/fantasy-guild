@@ -111,6 +111,53 @@ drop is the one way to give orders (owner, 2026-11-23).
    is drawn above heroes and other Tokens, with the gold outline (freed by
    point 4.1). The rest of the board is not dimmed.
 
+## 6. Token spacing
+
+**A little more air between Tokens** (owner): the Mat Tuner's `overlapPct`
+goes from **40 % to 30 %** (two small Tokens' centres about 61 → 71 units
+apart). One number; it can be nudged again at the look. Existing boards are
+not re-laid; the new gap applies to placements from then on (director: check
+how a load treats Tokens already closer than the new gap, and say so).
+
+## 7. Heroes walk anywhere
+
+**A dropped hero always goes where they were dropped** (owner): heroes walk
+over Tokens, so a hero dropped on ground needs no clear space; no nudge, no
+fly-back for lack of room. Dropping a hero **on** a Token is still an order to
+work or fight it, as today. The spot must still be on the mat.
+
+## 8. The top bar
+
+1. **Token count and Upkeep are switched off for now** (owner: not used
+   enough). Hidden, not deleted; the code stays for a later return.
+2. **No frame**: the studded frame round the bar goes.
+3. **The region title and its banner background move to the right.**
+4. **The left side is the logo's**: until the owner draws the logo, the words
+   **Tabletop Guild** in the title font (the rename itself is
+   [brief 820](briefs/820_tabletop_guild.md)).
+5. **Demolish leaves the top bar** for the Controls section (section 9). The
+   map mode's banner while Demolish is on keeps its place in the bar's middle
+   (director's call if it no longer fits).
+
+## 9. The Controls section
+
+A new strip **under the playmat, left of the hero bar**, the same height:
+**a framed row of square icon buttons, each with a tooltip** (owner).
+
+1. **Demolish**, moved from the top bar, works as today.
+2. **Find: category hover buttons**: **Heroes, Tokens, Enemies, Items**.
+   Hovering one lights every match on the board; moving off ends it. **Items
+   means loot on the floor** (owner).
+3. **Find: a search box**: a typed word lights **names** (heroes, Tokens,
+   enemies) **and Tokens that make the item named** (Copper lights the
+   Copper Vein and a Smelter making Copper Bars) (owner). Lit while the box
+   has text; Escape or emptying it ends it.
+4. **How matches show**: a **white outline** on each match and **everything
+   else faded a little**, only while a button is hovered or the box has text
+   (owner). No jump-to or ping.
+5. Icons: placeholders from the style kit until the owner draws them (add to
+   `owner_art_list.md`).
+
 ## Open
 
 The owner's list continues; more items follow.
