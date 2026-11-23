@@ -16,7 +16,7 @@ build green) · bench-queued · eye-check · merged.*
 | Eye-check 12 fixes: the card's bonus line the size of the other drops, no blink between cycles; the Lessons switch shows in every running game | builder | `fix/eyecheck-12` (`e12`) | building | Mon 23 | |
 | 790 W4: every effect name explains itself; an item's tooltip lists its effects (T-495, T-499, T-639) | builder | `feat/effects-explain` (`tw4`) | building | Mon 23 | |
 | 770 G1: out of bait or seed, the hero leaves and says Needs <item> (T-623, T-629) | builder | `fix/out-of-bait-seed` (`mg1`) | building | Mon 23 | |
-| 795 M3: news told once; problem banners clear themselves; Expired (T-506, T-507, T-503) | builder | `fix/news-told-once` (`ms4`) | building | Mon 23 | |
+| 795 M3: news told once; problem banners clear themselves; Expired (T-506, T-507, T-503) | builder | `fix/news-told-once` (`ms4`) d973aba4 | **built**, merges on the gate at 13:00 (same work: UI listeners only), seen in game (after Return only the standing Bank full banner; it cleared when a slot freed; Iron Comet ×2 · 1 expired · 1 still here): routing.js decides what still stands at close (`deliverAfterSummary`), bannerKinds writes the words, EventTokens.endedCountText; touched tests re-run green (109). Summary headings keep their own wording (no "!"). LedgerPace's second case (Cooking 59, Construction wall) is red on main too | Mon 23 | Mon 23 |
 
 ## Director, batch 12: briefs 710 to 800, the audit fixes (owner, 2026-11-21: work autonomously, beyond the usual builder cap; eye-checks only where the look changes, batched)
 
