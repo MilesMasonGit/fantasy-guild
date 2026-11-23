@@ -126,6 +126,7 @@ player for these is T-138 (built when the first strips exist).
 - **Quest board Token** (NEW 2026-10-20, [concept_quests_tutorial.md](concept_quests_tutorial.md)
   "The quest board"): one notice board standing at the bottom-left of every
   mat; placeholder until drawn.
+- **Controls strip icons** (NEW 2026-11-23, [brief 830](briefs/830_playmat_declutter.md)): Demolish, Find Heroes, Find Tokens, Find Enemies, Find Items (floor loot), a search icon, and the big banners' show/hide icon. Style-kit placeholders until drawn. The top bar's left end shows the **Tabletop Guild** logo (text until drawn; the same `u_title_logo.png` as the title screen unless you want a different one).
 - **Banner ribbon** (NEW 2026-10-19, [concept_notifications.md](concept_notifications.md)
   "Banners"): a wide scroll or ribbon (~480 px) with a gold-edged and a
   red-edged version, room for a big sprite on the left and two lines of text;

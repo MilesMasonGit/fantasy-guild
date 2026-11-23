@@ -1,4 +1,4 @@
-Status: draft
+Status: briefed 2026-11-23 (approved 2026-11-23; [brief 830](briefs/830_playmat_declutter.md))
 
 # Playmat declutter: fewer marks, more board
 
@@ -208,6 +208,6 @@ bars off the mat (hero bar, Controls, top bar, drawers) keep theirs.
 The mat extends left toward the Nav Bubbles, leaving **the same gap as on its
 right side** (owner), so it sits evenly in its space and gets more board.
 
-## Open
+## Closed
 
-The owner's list continues; more items follow.
+The owner closed this round on 2026-11-23 ("good for now"); a later declutter round opens a new section here or a new doc.

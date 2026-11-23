@@ -103,7 +103,9 @@ the first outside playtest, modding.
 - **Widen the playmat** and **tuner baselines** (Tokens overlap less; heroes
   get a larger base work radius; ⚠️ the radius part is superseded if hero orders are approved). *quick* · do with **T-097**, which turns the
   Mat Tuner's numbers into fixed game values; the owner picks the numbers in
-  the game. Today: up to 40 % overlap, 164 u flag radius.
+  the game. Today: up to 40 % overlap, 164 u flag radius. **Widen and overlap
+  moved on 2026-11-23** to [brief 830](briefs/830_playmat_declutter.md) D6
+  (mat reaches left, overlap 30 %).
 - **Translation** setup: ticket **T-119** (the game will be translated, owner
   2026-10-08). Pick how text is stored; new UI uses it.
 - **Credits register**: T-124. List every asset pack, its licence and the
