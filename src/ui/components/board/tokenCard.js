@@ -20,7 +20,8 @@ import * as RareTables from '../../../systems/board/RareTables.js';
 import { effectBreakdown } from '../../../systems/board/EffectBreakdown.js';
 import { exactInputQuantity } from '../../../systems/board/InputCost.js';
 import { mostByChance } from '../../../utils/RNG.js';
-import { workTimeOf, resolveAxis } from '../../../systems/board/TileModifiers.js';
+import { workTimeOf, resolveAxis, heroItemGrants } from '../../../systems/board/TileModifiers.js';
+import { canPayLoadoutCost } from '../../../systems/hero/HeroEffects.js';
 import { EFFECT_TYPES } from '../../../systems/effects/constants.js';
 import { GameState } from '../../../state/GameState.js';
 import { effectiveIO } from '../../../systems/board/RecipeResolver.js';
@@ -30,7 +31,8 @@ import { chanceFigure } from '../../../utils/Formatters.js';
 import { landmarkLines } from '../drawer/landmarkLines.js';
 import * as SupportLinks from '../../../systems/board/supportLinks.js';
 import { reachRadius } from '../../../systems/board/nearby.js';
-import { effectTagOf } from './effectBadgeText.js';
+import { effectTagOf, effectTagText } from './effectBadgeText.js';
+import { t } from '../../../i18n/index.js';
 import {
     liveTimerSources, demolitionLine, leaveLine, spawnLine, growthLine, fieldTimerLine, respawnLine, produceLine
 } from './tokenTimers.js';
@@ -130,6 +132,9 @@ export function liveCardSources() {
         recipeOf: getRecipe,
         fightOf: BoardCombat.getFight,
         supports: (instanceId) => ({ boosts: SupportLinks.boosts(instanceId) }),
+        // The engine's own list (`OutputRules.dropBonusGrants`), less a grant whose item has run out:
+        // that one would not land.
+        bonusGrants: (instanceId) => heroItemGrants(instanceId, EFFECT_TYPES.BONUS_DROP).filter(canPayLoadoutCost),
         demolitionConfig: Demolition.DEMOLITION_CONFIG,
         allItems: getAllItems,
         art: (def) => cardArtOf(def)
@@ -188,6 +193,28 @@ function makesOf(outputs) {
             const chance = o.chance == null ? 100 : Number(o.chance);
             return { itemId: o.itemId, min, max, chance: chance < 100 ? chanceFigure(chance) : null };
         });
+}
+
+/**
+ * The bonus drops the working hero brings (their gear, a potion carried for the cycle), one row per
+ * grant: worded as its badge (`Bird Nest 25%`) and marked bonus with its source (`bonus (Ana's
+ * Birdwatcher)`). Empty with nobody at work.
+ */
+function bonusOf(instance, src) {
+    const heroId = instance && src.bonusGrants ? src.workerOf?.(instance.id) : null;
+    if (!heroId) return [];
+    const hero = src.heroName(heroId) || heroId;
+    return src.bonusGrants(instance.id).map(grant => {
+        const items = (grant.sourceItemIds || []).map(id => src.itemName(id));
+        const source = items.length
+            ? t('effectBadges.source.gear', { hero, item: items.join(', ') })
+            : t('effectBadges.source.carried', { hero, effect: grant.effectTitle || '' });
+        return {
+            itemId: grant.itemId, heroId,
+            text: effectTagText(grant, src.itemName),
+            note: t('effectBadges.card.bonusDrop', { source })
+        };
+    });
 }
 
 /** Every drop with its chance, 100 % included: a drop table reads as odds. */
@@ -429,6 +456,8 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
         const tools = toolsOf(def, recipe, src);
         // A build drops nothing, so a Foundation's rare table (if one were authored) never rolls.
         const makes = makesOf(outputs);
+        // The Hall pays no output rules, so no bonus drop either (`BoardRunner`).
+        const bonus = typeId === GUILD_HALL ? [] : bonusOf(instance, src);
         const rare = def.foundation ? null : rareBlockOf(def, instance, src, def.config?.skill);
         const change = isStation && instance
             ? {
@@ -438,8 +467,8 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
             }
             : null;
         const catches = water ? catchBlockOf(def, instance, src) : null;
-        if (needs.length || tools.length || makes.length || rare || change || catches) {
-            blocks.push({ id: CARD_BLOCK.RECIPE, recipeName: recipe?.name || null, recipeId: recipe?.id || null, needs, tools, makes, rare, change, catches });
+        if (needs.length || tools.length || makes.length || bonus.length || rare || change || catches) {
+            blocks.push({ id: CARD_BLOCK.RECIPE, recipeName: recipe?.name || null, recipeId: recipe?.id || null, needs, tools, makes, bonus, rare, change, catches });
         }
     }
 

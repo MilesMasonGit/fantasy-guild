@@ -617,10 +617,17 @@ export function collectItemGrants(instanceId, effectType) {
         }
     }
     // The hero's own items grant at this tile too.
-    for (const payload of loadoutPayloads(instanceId, KEYWORD.GRANTS)) {
-        if (payload?.type === effectType && payload.itemId) grants.push(payload);
-    }
+    grants.push(...heroItemGrants(instanceId, effectType));
     return grants;
+}
+
+/**
+ * The item grants the hero working this tile brings with them (their gear, a potion carried for
+ * the cycle), as raw payloads: the part of {@link collectItemGrants} the card lists as bonus drops.
+ * A gear grant carries `sourceItemIds`; a carried one only its `effectTitle`.
+ */
+export function heroItemGrants(instanceId, effectType) {
+    return loadoutPayloads(instanceId, KEYWORD.GRANTS).filter(payload => payload?.type === effectType && payload.itemId);
 }
 
 /**
