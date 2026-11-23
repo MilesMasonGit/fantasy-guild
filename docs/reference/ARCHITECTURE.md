@@ -16,7 +16,7 @@ machinery that is gone (§8); `CLAUDE.md`'s rule holds: a comment is a hypothesi
 Tauri window (src-tauri/, Rust)    save files, save-on-close, "window minimised" signal
  └─ WebView2 page: index.html → src/main.jsx
      ├─ Engine (src/systems, src/state, src/config)
-     │    GameLoop: setInterval every 100 ms → 8 tick handlers, fixed order
+     │    GameLoop: setInterval every 100 ms → 7 tick handlers, fixed order
      │    → mutate GameState.state IN PLACE → EventBus.publish(...)
      ├─ React UI (src/ui)
      │    reads GameState through hooks/subscriptions; Tokens, heroes, flags are DOM elements
