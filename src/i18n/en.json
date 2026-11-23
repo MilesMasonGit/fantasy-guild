@@ -636,6 +636,15 @@
         "offeredAgain": "You closed the game before choosing, so here it is again.",
         "undoGone": "The save from before your time away is gone, so Load as I left it cannot be offered."
     },
+    "messages": {
+        "usedUp": "{token} used up",
+        "gearBroke": "My {item} broke!",
+        "exhausted": "{token} exhausted",
+        "built": "{token} built",
+        "became": "{token}",
+        "recovered": "Recovered, ready to work!",
+        "needs": "Needs {item}"
+    },
     "orders": {
         "needs": "Needs {what}",
         "nothing": "Nothing to work here",
@@ -660,8 +669,7 @@
         "needsJob": "Needs a job",
         "idle": "Idle",
         "hurt": "Hurt",
-        "busy": "Busy",
-        "gearBroke": "{item} broke!"
+        "busy": "Busy"
     },
     "levelUp": {
         "count": {

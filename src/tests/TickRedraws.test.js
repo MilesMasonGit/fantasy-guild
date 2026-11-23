@@ -26,7 +26,7 @@ import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import { chargesText } from '../ui/components/board/workPlate.js';
 import { HeroBubbleLayer } from '../ui/components/board/HeroBubbleLayer.jsx';
 import { ALERT, BOARD_EVENTS } from '../systems/board/boardEvents.js';
-import { DEPLETED_TTL_MS } from '../ui/components/board/heroSpeech.js';
+import { BEATEN_TTL_MS } from '../ui/components/board/heroSpeech.js';
 import { FLOAT_MS, clearAllFloats } from '../ui/components/board/levelUpFloats.js';
 import { useGameState } from '../ui/hooks/useGameState.js';
 import { useTokenState } from '../ui/components/board/tokenEvents.js';
@@ -340,10 +340,10 @@ describe('⭐ speech bubbles: the twice-a-second look draws only when what is sa
     it('a moment that lapses is taken down, at the next look', () => {
         const { container } = render(h(HeroBubbleLayer, { heroes: stuck(ALERT.CHARGES) }));
         wait(10);
-        act(() => { EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'o', x: 1, y: 1, typeId: 'fixture_producer', exhaustedBy: 'hs' }); });
-        expect(said(container)).toEqual(['Fixture Producer Depleted']);
+        act(() => { EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'o', x: 1, y: 1, typeId: 'fixture_enemy', exhaustedBy: 'hs' }); });
+        expect(said(container)).toEqual(['Fixture Enemy Beaten']);
         renders.start();
-        wait(DEPLETED_TTL_MS + 500);
+        wait(BEATEN_TTL_MS + 500);
         renders.stop();
         expect(said(container)).toEqual([]);
         // The look that found it lapsed, and the layout pass after measuring the shorter stack.

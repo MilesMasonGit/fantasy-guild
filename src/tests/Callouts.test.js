@@ -12,7 +12,7 @@ import { HeroBubbleLayer } from '../ui/components/board/HeroBubbleLayer.jsx';
 import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
 import { CALLOUT_MS, calloutText, addCallout, MAX_PER_ANCHOR, MAX_TOTAL } from '../ui/components/board/callouts.js';
 import { SPAWN_MS } from '../ui/components/board/spawnMotion.js';
-import { momentText, DEPLETED_TTL_MS } from '../ui/components/board/heroSpeech.js';
+import { BEATEN_TTL_MS } from '../ui/components/board/heroSpeech.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 /**
@@ -119,7 +119,7 @@ describe('callout stacking', () => {
     });
 });
 
-describe('depletion is said by the hero who used the Token up', () => {
+describe('a Token used up: a popup where it stood', () => {
     it('the engine names that hero on TOKEN_DEPLETED', () => {
         const oak = placeAt('fixture_producer', 600, 500);
         oak.usesRemaining = 1;
@@ -141,26 +141,42 @@ describe('depletion is said by the hero who used the Token up', () => {
         expect(seen[0].exhaustedBy).toBeNull();
     });
 
-    it('only that hero says "{name} Depleted", and it goes by itself', () => {
-        const { container } = render(h(HeroBubbleLayer, { heroes }));
+    it('a Token used up is a popup where it stood, "{name} used up", and no hero says it', () => {
+        const { container } = render(h('div', null, h(CalloutLayer), h(HeroBubbleLayer, { heroes })));
         later();
         act(() => {
-            EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'o', x: 1, y: 1, typeId: 'fixture_producer', exhaustedBy: 'h2' });
+            EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'o', x: 420, y: 300, typeId: 'fixture_producer', exhaustedBy: 'h2' });
         });
-        expect(stackOf(container, 'h2')).toEqual(['Fixture Producer Depleted']);
-        expect(stackOf(container, 'h1')).toEqual([]);
-        expect(momentText.depleted('Oak Tree')).toBe('Oak Tree Depleted');
-        act(() => { vi.advanceTimersByTime(DEPLETED_TTL_MS + 600); });
+        const bubble = container.querySelector('[data-callout]');
+        expect(bubble.textContent).toBe('Fixture Producer used up');
+        expect(bubble.parentElement.style.transform).toContain('translate(420px');
         expect(stackOf(container, 'h2')).toEqual([]);
+        expect(calloutText.usedUp('Oak Forest')).toBe('Oak Forest used up');
+        act(() => { vi.advanceTimersByTime(CALLOUT_MS + 50); });
+        expect(container.querySelector('[data-callout]')).toBeNull();
     });
 
-    it('nobody speaks when no hero used it up', () => {
-        const { container } = render(h(HeroBubbleLayer, { heroes }));
+    it('is said even when no hero used it up', () => {
+        const { container } = render(h('div', null, h(CalloutLayer), h(HeroBubbleLayer, { heroes })));
         later();
         act(() => {
-            EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'o', x: 1, y: 1, typeId: 'fixture_producer', exhaustedBy: null });
+            EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'o', x: 420, y: 300, typeId: 'fixture_producer', exhaustedBy: null });
         });
+        expect(container.querySelector('[data-callout]').textContent).toBe('Fixture Producer used up');
         expect(container.querySelector('[data-hero-bubble]')).toBeNull();
+    });
+
+    it('an enemy is not used up: the hero who beat it says "{name} Beaten", and it goes by itself', () => {
+        const { container } = render(h('div', null, h(CalloutLayer), h(HeroBubbleLayer, { heroes })));
+        later();
+        act(() => {
+            EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'e', x: 420, y: 300, typeId: 'fixture_enemy', exhaustedBy: 'h2' });
+        });
+        expect(container.querySelector('[data-callout]')).toBeNull();
+        expect(stackOf(container, 'h2')).toEqual(['Fixture Enemy Beaten']);
+        expect(stackOf(container, 'h1')).toEqual([]);
+        act(() => { vi.advanceTimersByTime(BEATEN_TTL_MS + 600); });
+        expect(stackOf(container, 'h2')).toEqual([]);
     });
 });
 

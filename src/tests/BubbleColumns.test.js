@@ -7,7 +7,7 @@ import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { HeroBubbleLayer } from '../ui/components/board/HeroBubbleLayer.jsx';
-import { DEPLETED_TTL_MS } from '../ui/components/board/heroSpeech.js';
+import { BEATEN_TTL_MS } from '../ui/components/board/heroSpeech.js';
 import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
 import { SPAWN_MS } from '../ui/components/board/spawnMotion.js';
 import { columnPlace, STACK_GAP_PX } from '../ui/components/board/speechColumns.js';
@@ -60,12 +60,12 @@ const spawnFrom = (token) => act(() => {
     vi.advanceTimersByTime(SPAWN_MS);
 });
 /**
- * The hero says something: they used a Token up (a moment, up for `DEPLETED_TTL_MS`). A
+ * The hero says something: they beat an enemy (a moment, up for `BEATEN_TTL_MS`). A
  * millisecond passes first, as in play: the layer redraws on the clock it is told.
  */
 const speak = (heroId) => act(() => {
     vi.advanceTimersByTime(1);
-    EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'tok_gone', typeId: 'fixture_producer', exhaustedBy: heroId });
+    EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'tok_gone', typeId: 'fixture_enemy', exhaustedBy: heroId });
 });
 
 describe('a hero and the Token they work, both speaking', () => {
@@ -100,7 +100,7 @@ describe('a hero and the Token they work, both speaking', () => {
         expect(pointOf(calloutGroup(container))).toEqual({ x: hero.x, y: hero.y - STACK_H - STACK_GAP_PX });
 
         // The moment lapses (the first callout with it); the next callout sits where it did alone.
-        act(() => { vi.advanceTimersByTime(DEPLETED_TTL_MS + 600); });
+        act(() => { vi.advanceTimersByTime(BEATEN_TTL_MS + 600); });
         expect(heroStack(container, 'h1')).toBeNull();
         spawnFrom(forest);
         expect(pointOf(calloutGroup(container))).toEqual(alone);

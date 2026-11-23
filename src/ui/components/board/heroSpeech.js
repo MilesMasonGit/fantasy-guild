@@ -1,14 +1,13 @@
-
 /**
  * What a hero has up above their head, as plain data: **moments**, events that happened (going
- * idle, a Token the hero used up), each living for `MOMENT_TTL_MS`, then gone by itself. A
- * Token's problem is not a line: its problem mark says it.
+ * idle, an enemy the hero beat), each living for `MOMENT_TTL_MS`, then gone by itself, and the
+ * **waiting bubbles** of `speechBubbles.js` (gear that broke), which stay until hovered, clicked
+ * or no longer needed. A Token's problem is not a line: its problem mark says it.
  * Everything here is pure, so the rules (cap, replace, expire, order) are tested without a
  * screen.
  */
 
 import { calloutText } from './callouts.js';
-import { t } from '../../../i18n/index.js';
 
 /** Bubbles above one head at once. */
 export const MAX_BUBBLES = 3;
@@ -16,8 +15,8 @@ export const MAX_BUBBLES = 3;
 /** How long a moment stays up. */
 export const MOMENT_TTL_MS = 5000;
 
-/** How long "{token} Depleted" stays up: a hero chopping tree after tree says it often. */
-export const DEPLETED_TTL_MS = 3000;
+/** How long "{enemy} Beaten" stays up: a hero at a camp says it after every kill. */
+export const BEATEN_TTL_MS = 3000;
 
 /**
  * Add a moment. One line per `key`: a repeat (the same Token used up again) replaces its
@@ -27,7 +26,7 @@ export const DEPLETED_TTL_MS = 3000;
  */
 export function addMoment(list, { key, text }, now, ttlMs = MOMENT_TTL_MS) {
     const kept = list.filter(m => m.key !== key && m.until > now);
-    return [...kept, { key, text, until: now + ttlMs }];
+    return [...kept, { key, text, at: now, until: now + ttlMs }];
 }
 
 /** The moments that have not yet expired. */
@@ -36,16 +35,22 @@ export function liveMoments(list, now) {
 }
 
 /**
- * The stack to draw, top to bottom: moments oldest first, the newest nearest the head. Never
- * more than `MAX_BUBBLES`: the oldest moment gives way.
+ * The stack to draw, top to bottom, oldest first, the newest nearest the head: the waiting bubbles
+ * (`speechBubbles.bubblesOf`) and the live moments. Never more than `MAX_BUBBLES`: a waiting bubble
+ * never gives way to a moment, so moments fill only the rows the waiting ones leave, newest first;
+ * past the cap the oldest give way within each kind.
  *
- * @param {{key: string, text: string, until: number}[]} moments
- * @returns {{id: string, text: string, kind: 'moment'}[]}
+ * @param {{key: string, text: string, at?: number, until: number}[]} moments
+ * @param {{key: string, text: string, at: number, tone?: string}[]} waiting
+ * @returns {{id: string, text: string, kind: 'moment'|'waiting', at: number, tone?: string}[]}
  */
-export function stackOf(moments, now) {
-    return liveMoments(moments, now)
-        .map(m => ({ id: m.key, text: m.text, kind: 'moment' }))
-        .slice(-MAX_BUBBLES);
+export function stackOf(moments, now, waiting = []) {
+    const kept = waiting.slice(-MAX_BUBBLES).map(b => ({ id: b.key, text: b.text, kind: 'waiting', at: b.at, tone: b.tone ?? null }));
+    const room = MAX_BUBBLES - kept.length;
+    const said = room > 0
+        ? liveMoments(moments, now).slice(-room).map(m => ({ id: m.key, text: m.text, kind: 'moment', at: m.at ?? (m.until - MOMENT_TTL_MS) }))
+        : [];
+    return [...kept, ...said].sort((a, b) => a.at - b.at);
 }
 
 /** The lines for each moment. Plain and factual. */
@@ -58,18 +63,11 @@ export const momentText = {
     waiting: (enemy) => `Waiting for ${enemy}.`,
     // The Token an order named is gone for good: a new order is wanted.
     needsJob: () => 'I need a job.',
-    // Said by the hero whose work spent the Token's last charge.
-    depleted: (token) => `${token} Depleted`,
-    // The same moment for an enemy: the hero who beat it says so.
+    // An enemy leaving: the hero who beat it says so. A Token used up is a popup over it instead.
     beaten: (enemy) => `${enemy} Beaten`,
     // A status landing on the hero in a fight, said as a callout over an enemy is: "Venom!".
-    statusLands: (statusId) => calloutText.statusLands(statusId),
-    // The tool or weapon in their hands broke as a cycle ended: they stop.
-    gearBroke: (item) => t('orders.gearBroke', { item })
+    statusLands: (statusId) => calloutText.statusLands(statusId)
 };
-
-/** The key a broken tool's line is said under: while it is up, going idle says nothing more. */
-export const GEAR_BROKE_KEY = 'gearBroke';
 
 /**
  * What a hero says on going idle, given what they wait for (`Flags.waitingOf`), its name and
@@ -104,21 +102,18 @@ export function idleMomentOf(waiting, name = null, { order = null, needsJob = fa
  * * `waiting`: kept: said instead of `idle` when the hero goes idle because the enemy they would
  * fight is another hero's fight (every fight is one-on-one); they take it the moment it is free.
  * A gatherer whose node is resting says nothing at all ({@link idleMomentOf}).
- * * `depleted`: kept: the hero who used a Token up says so.
- * * `beaten`: kept: `depleted` said of an enemy, by the hero who beat it.
+ * * `beaten`: kept: the hero who beat an enemy says so.
  * * `statusLands`: kept: a status landing on a fighting hero ("Venom!"), over their health bar.
- * * `gearBroke`: kept: the hero's tool or weapon broke and they stop ("Rusty Woodaxe broke!"); it
- * stands for the idle line that would follow.
+ * A Token used up is not a line: it is a popup over the Token (`CalloutLayer`). Gear that broke
+ * is a waiting bubble (`heroNeeds.js`), not a moment.
  */
 export const MOMENT_SPOKEN = Object.freeze({
     arrived: false,
     idle: true,
     waiting: true,
-    depleted: true,
     beaten: true,
     needsJob: true,
-    statusLands: true,
-    gearBroke: true
+    statusLands: true
 });
 
 /** Whether a moment of this kind (`momentText`'s key) is spoken at all. */

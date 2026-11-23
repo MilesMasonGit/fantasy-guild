@@ -171,7 +171,7 @@ describe('a gatherer whose only vein rests waits silently', () => {
 });
 
 describe('a station out of an input', () => {
-    it('with no other work in reach: the hero stays, the station says "Needs Coal" now and then', () => {
+    it('with no other work in reach: the hero stays, and the engine says "Needs Coal" now and then', () => {
         const furnace = put('sw_furnace', 800, 500);
         InventoryManager.addItem('item_coal', 1);
         const said = [];
@@ -187,7 +187,7 @@ describe('a station out of an input', () => {
         expect(BoardState.workerOf(furnace.id)).toBe('smith');
         expect(furnace.alert).toBe(ALERT.INPUTS);
         expect(said.length).toBeGreaterThan(0);
-        expect(said[0]).toEqual({ instanceId: furnace.id, heroId: 'smith', itemId: 'item_coal' });
+        expect(said[0]).toEqual({ instanceId: furnace.id, heroId: 'smith', itemId: 'item_coal', needed: 1 });
         // A reminder, not a flood: the flag looks again about once a second.
         expect(said.length).toBeLessThanOrEqual(8);
         expect(calloutText.needsInput('Coal')).toBe('Needs Coal');
@@ -218,26 +218,27 @@ describe('the mat says it', () => {
     beforeEach(() => vi.useFakeTimers());
     afterEach(() => { cleanup(); vi.useRealTimers(); });
 
-    it('"Needs Coal" over the station, in the "Needs Pickaxe" look, spaced like it', () => {
+    it('"Needs Coal" is a waiting bubble over the hero, in the "Needs Pickaxe" red; the station says nothing', () => {
         const furnace = put('sw_furnace', 800, 500);
-        const { container } = render(h(CalloutLayer));
+        const heroes = [{ heroId: 'smith', state: 'working', x: 800, y: 500, moving: false, tokenId: furnace.id, alert: null }];
+        const { container } = render(h('div', null, h(CalloutLayer), h(HeroBubbleLayer, { heroes })));
+        act(() => { vi.advanceTimersByTime(10); });
         const say = () => act(() => {
-            EventBus.publish(BOARD_EVENTS.INPUT_NEEDED, { instanceId: furnace.id, heroId: 'smith', itemId: 'item_coal' });
+            EventBus.publish(BOARD_EVENTS.INPUT_NEEDED, { instanceId: furnace.id, heroId: 'smith', itemId: 'item_coal', needed: 1 });
         });
         say();
-        const bubble = container.querySelector('[data-callout]');
+        const bubble = container.querySelector('[data-hero-bubble-stack="smith"] [data-hero-bubble]');
         expect(bubble.textContent).toBe('Needs Coal');
-        // The same red "can't" frame as "Needs Pickaxe".
         expect(bubble.getAttribute('data-speech-tone')).toBe('cant');
-        act(() => { vi.advanceTimersByTime(3000); });
-        say();
         expect(container.querySelector('[data-callout]')).toBeNull();
-        act(() => { vi.advanceTimersByTime(INPUT_CALLOUT_GAP_MS); });
+        // Said again and again by the engine, it stays one bubble.
+        act(() => { vi.advanceTimersByTime(INPUT_CALLOUT_GAP_MS * 2); });
         say();
-        expect(container.querySelector('[data-callout]').textContent).toBe('Needs Coal');
+        expect([...container.querySelectorAll('[data-hero-bubble-stack="smith"] [data-hero-bubble]')].map(n => n.textContent)).toEqual(['Needs Coal']);
+        expect(calloutText.needsInput('Coal')).toBe('Needs Coal');
     });
 
-    it('near the foot of the mat, where the work plate rides over the station, "Needs Coal" goes above the plate', () => {
+    it('near the foot of the mat, where the work plate rides over the station, a callout over it goes above the plate', () => {
         const y = matH() - 80;
         const furnace = put('sw_furnace', 800, y);
         InventoryManager.addItem('item_coal', 10);
@@ -248,7 +249,7 @@ describe('the mat says it', () => {
         expect(plateTop).toBeLessThan(y);
         const { container } = render(h(CalloutLayer));
         act(() => {
-            EventBus.publish(BOARD_EVENTS.INPUT_NEEDED, { instanceId: furnace.id, heroId: 'smith', itemId: 'item_coal' });
+            EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId: furnace.id, title: 'Boost' });
         });
         const column = container.querySelector('[data-callout]').parentElement;
         const top = Number(/translate\([^,]+,\s*([-\d.]+)px\)/.exec(column.style.transform)[1]);

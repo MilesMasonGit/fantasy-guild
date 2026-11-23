@@ -63,14 +63,14 @@ describe('the speech family wears the pixel frame', () => {
         const view = render(h(HeroBubbleLayer, { heroes }));
         act(() => { vi.advanceTimersByTime(10); });
         act(() => {
-            EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'o', x: 1, y: 1, typeId: 'fixture_producer', exhaustedBy: 'h1' });
+            EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'o', x: 1, y: 1, typeId: 'fixture_enemy', exhaustedBy: 'h1' });
         });
         // The layer re-reads on a changed clock; frozen fake time would never change it.
         act(() => { vi.advanceTimersByTime(10); });
         view.rerender(h(HeroBubbleLayer, { heroes: heroes.map(x => (x.heroId === 'h1' ? { ...x, state: 'idle' } : x)) }));
         const bubbles = [...view.container.querySelectorAll('[data-hero-bubble]')];
         expect(bubbles.map(b => [b.getAttribute('data-hero-bubble'), b.getAttribute('data-speech-tone')])).toEqual([
-            ['depleted:fixture_producer', SPEECH_TONE.PLAIN],
+            ['beaten:fixture_enemy', SPEECH_TONE.PLAIN],
             ['idle', SPEECH_TONE.ATTENTION]
         ]);
         for (const b of bubbles) expect(framed(b)).toMatchObject({ frame: true, shadow: true });

@@ -677,7 +677,8 @@ export function tick(delta) {
                 ? WorkCheck.fixableReason(id, instance).reason
                 : null;
             // A Token that has since started resting keeps no badge: resting is not fixable.
-            setAlert(instance, WorkCheck.FIXABLE.has(skipped) ? skipped : null);
+            // A hero ordered here without the tool leaves the Token's "!" up too.
+            setAlert(instance, WorkCheck.FIXABLE.has(skipped) ? skipped : (Flags.hasToolSkip(instance) ? ALERT.NO_TOOL : null));
             continue;
         }
 

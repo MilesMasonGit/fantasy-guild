@@ -250,6 +250,5 @@ export const UI_EVENTS = Object.freeze({
 export const NO_LISTENER = Object.freeze({
     [ENGINE_EVENTS.STATE_CHANGED]: 'retired: every surface listens to a specific event and GAME_RESET; one Atlas publish remains',
     [ENGINE_EVENTS.ENEMY_DISCOVERED]: 'first-seen moment, for a future bestiary notice',
-    [ENGINE_EVENTS.HERO_RECOVERED]: 'combat moment; HEROES_UPDATED carries the redraw',
     [ENGINE_EVENTS.BGM_TRACK_CHANGED]: 'console affordance for the music system',
 });

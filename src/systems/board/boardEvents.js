@@ -92,10 +92,12 @@ export const BOARD_EVENTS = {
     TOOL_NEEDED: 'board:tool_needed',
 
     /**
-     * A Token a hero stands at cannot start a cycle for want of an input (`ALERT.INPUTS`). Payload:
-     * `{ instanceId, heroId, itemId }`, the first item the Bank is short of. Published by `Flags`
-     * each time the stuck hero's flag looks again (about once a second); the mat's "Needs Coal"
-     * callout over the Token spaces itself out (`CalloutLayer`).
+     * A Token a hero is ordered onto cannot start a cycle for want of an input (`ALERT.INPUTS`),
+     * whether the hero stands at it (run dry) or never set off for it (never stocked). Payload:
+     * `{ instanceId, heroId, itemId, needed }`, the first item the Bank is short of and how many
+     * a cycle takes. Published by `Flags` each time the stopped hero's flag looks again (about once
+     * a second), never for a hero who goes to other work; the hero's "Needs Coal" bubble is raised
+     * once and waits (`heroNeeds.js`).
      */
     INPUT_NEEDED: 'board:input_needed',
 

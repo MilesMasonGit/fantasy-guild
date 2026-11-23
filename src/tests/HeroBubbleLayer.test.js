@@ -3,7 +3,7 @@ import { MAT_Z } from '../ui/components/board/matLayers.js';
 import { ALERT } from '../systems/board/boardEvents.js';
 import * as heroBubbles from '../ui/components/board/heroBubbles.js';
 import { blockedText, joinNames } from '../ui/components/board/heroBubbles.js';
-import { stackOf } from '../ui/components/board/heroSpeech.js';
+import { stackOf, MOMENT_TTL_MS } from '../ui/components/board/heroSpeech.js';
 
 describe('Hero speech bubbles', () => {
     it('draw above every other mat layer', () => {
@@ -44,9 +44,9 @@ describe('Hero speech bubbles', () => {
         for (const gone of ['blockedLineFor', 'speaksBlock', 'SILENT_BLOCKS', 'readyToSpeak', 'INPUTS_DELAY_MS']) {
             expect(heroBubbles[gone], gone).toBeUndefined();
         }
-        // A hero's stack holds moments only.
+        // A hero's stack holds moments and waiting bubbles, never a Token's problem.
         const moments = [{ key: 'idle', text: 'Nothing to work here.', until: 10 }];
-        expect(stackOf(moments, 0)).toEqual([{ id: 'idle', text: 'Nothing to work here.', kind: 'moment' }]);
+        expect(stackOf(moments, 0)).toEqual([{ id: 'idle', text: 'Nothing to work here.', kind: 'moment', at: 10 - MOMENT_TTL_MS }]);
     });
 
     it('the retired lines keep their wording as the record (and 7 and 8 serve the pin-refused moment)', () => {

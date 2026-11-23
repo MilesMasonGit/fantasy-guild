@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
-import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
+import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import * as MatFx from '../ui/components/board/fx/matFx.js';
@@ -233,7 +233,7 @@ describe('nothing is made while drawing is paused', () => {
         const { container } = render(React.createElement(CalloutLayer));
         try {
             const needs = () => act(() => {
-                EventBus.publish(BOARD_EVENTS.INPUT_NEEDED, { instanceId: station.id, heroId: 'h', itemId: 'item_coal' });
+                EventBus.publish(BOARD_EVENTS.GROWTH_ALERT_CHANGED, { instanceId: station.id, alert: ALERT.GROW_NEEDS_ITEM, needs: ['item_coal'] });
             });
             setDrawingPaused(true);
             needs();

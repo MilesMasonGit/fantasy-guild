@@ -36,7 +36,6 @@ describe('A hero’s stack of speech bubbles', () => {
     it('words the moments plainly', () => {
         expect(momentText.arrived('Campfire')).toBe('Working at Campfire.');
         expect(momentText.idle()).toBe('Nothing to work here.');
-        expect(momentText.depleted('Oak Tree')).toBe('Oak Tree Depleted');
         expect(momentText.beaten('Goblin')).toBe('Goblin Beaten');
         expect(momentText.waiting('Goblin')).toBe('Waiting for Goblin.');
     });
@@ -47,7 +46,8 @@ describe('A hero’s stack of speech bubbles', () => {
         // A level-up is not a spoken line any more: it floats as an icon and number.
         expect(speaksMoment('levelUp')).toBe(false);
         expect(momentText.levelUp).toBeUndefined();
-        expect(speaksMoment('depleted')).toBe(true);
+        expect(speaksMoment('depleted')).toBe(false);
+        expect(speaksMoment('gearBroke')).toBe(false);
         expect(speaksMoment('something_new')).toBe(false);
         expect(Object.keys(MOMENT_SPOKEN).sort()).toEqual(Object.keys(momentText).sort());
     });

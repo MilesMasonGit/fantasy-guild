@@ -27,7 +27,8 @@ import { toolNeedOf } from './toolNeed.js';
 /** Reasons a player can fix from the board: these keep a red badge. */
 export const FIXABLE = new Set([ALERT.INPUTS, ALERT.CHARGES, ALERT.NO_RECIPE, ALERT.CHOOSE_BUILD, ALERT.CHOOSE_RECIPE, ALERT.BUILD_SITE]);
 
-/** The hero's own gates: a hero stopped by one lets go of the Token at once. Never a badge. */
+/** The hero's own gates: a hero stopped by one lets go of the Token at once. Never a badge, except a hero ordered onto a
+ * Token without its tool (`Flags.hasToolSkip`). */
 export const HERO_GATES = new Set([ALERT.ACCESS, ALERT.UNSKILLED, ALERT.NO_TOOL]);
 
 /**

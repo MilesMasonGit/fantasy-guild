@@ -72,7 +72,7 @@ describe('the hero says it, and that is the line for stopping', () => {
     const stack = (container, id) => [...container.querySelectorAll(`[data-hero-bubble-stack="${id}"] [data-hero-bubble]`)]
         .map(n => ({ text: n.textContent, tone: n.getAttribute('data-speech-tone') }));
 
-    it('"Test Brittle Axe broke!" in gold over the hero; going idle after adds nothing, while a hero with no break says the idle line', () => {
+    it('"My Test Brittle Axe broke!" in gold over the hero; going idle after adds nothing, while a hero with no break says the idle line', () => {
         expect(momentTone('gearBroke')).toBe(SPEECH_TONE.ATTENTION);
         const busy = [
             { heroId: 'kira', state: 'working', x: 300, y: 500, moving: false, tokenId: null, alert: null },
@@ -81,11 +81,11 @@ describe('the hero says it, and that is the line for stopping', () => {
         const { container, rerender } = render(h(HeroBubbleLayer, { heroes: busy }));
         act(() => { vi.advanceTimersByTime(10); });
         act(() => { EventBus.publish(BOARD_EVENTS.GEAR_BROKE, { heroId: 'kira', itemId: AXE, use: 'work' }); });
-        expect(stack(container, 'kira')).toEqual([{ text: 'Test Brittle Axe broke!', tone: SPEECH_TONE.ATTENTION }]);
+        expect(stack(container, 'kira')).toEqual([{ text: 'My Test Brittle Axe broke!', tone: SPEECH_TONE.ATTENTION }]);
 
         act(() => { vi.advanceTimersByTime(300); });
         rerender(h(HeroBubbleLayer, { heroes: busy.map(x => ({ ...x, state: 'idle' })) }));
-        expect(stack(container, 'kira').map(b => b.text)).toEqual(['Test Brittle Axe broke!']);
+        expect(stack(container, 'kira').map(b => b.text)).toEqual(['My Test Brittle Axe broke!']);
         expect(stack(container, 'bram').map(b => b.text)).toEqual(['Nothing to work here.']);
     });
 });
