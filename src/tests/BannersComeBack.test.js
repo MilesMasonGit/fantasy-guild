@@ -172,21 +172,20 @@ describe('unclicked knock-out and Bank-full banners are saved', () => {
         expect(Banners.getAll().map(b => b.line)).toEqual(['Bram was carried home, injured. Nothing was lost.']);
     });
 
-    it('stand on screen and wait as they stood; a merged knock-out keeps who lost what', () => {
+    it('come back all, in the order they stood; a merged knock-out keeps who lost what', () => {
         knockOut('h1', 'Aela', ['Iron Sword']);
         knockOut('h2', 'Bram', []);
         knockOut('h3', 'Cara', ['Bow']);
-        knockOut('h4', 'Dorn', ['Axe']);
-        knockOut('h5', 'Eli', ['Shield']);
-        const view = () => {
-            const v = Banners.getView();
-            return { shown: v.shown.map(b => b.line), waiting: v.waiting, all: Banners.getAll().map(b => b.line) };
-        };
-        const before = view();
-        expect(before.waiting).toBe(1);
+        for (const [id, name, lost] of [['h4', 'Dorn', ['Axe']], ['h5', 'Eli', ['Shield']]]) {
+            Banners.push({ kind: 'knockout', groupKey: 'catch_up_knockouts:1', parts: { heroes: [name], lost }, subjects: [{ type: 'hero', id }] });
+        }
+        const lines = () => Banners.getView().shown.map(b => b.line);
+        const before = lines();
+        expect(before).toHaveLength(4);
         saveAndLoad();
-        expect(view()).toEqual(before);
-        expect(Banners.getAll().at(-1).line).toBe('Dorn and Eli knocked out and carried home. Dorn lost: Axe. Eli lost: Shield.');
+        expect(lines()).toEqual(before);
+        expect(Banners.getAll()[0].line).toBe('Dorn and Eli knocked out and carried home. Dorn lost: Axe. Eli lost: Shield.');
+        expect(Banners.getAll().every(b => b.quiet)).toBe(true);
     });
 
     it('the save keeps the knock-out, not the milestones nor save problems', () => {

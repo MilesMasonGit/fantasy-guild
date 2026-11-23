@@ -18,6 +18,10 @@ export const STUB_PX = SPRITE_PX + FRAME_BAND_PX * 2;
 export const GAP_PX = 4;
 /** One stub's height plus the gap below it. */
 export const PITCH_PX = STUB_PX + GAP_PX;
+/** From the mat's top bar to the banner corner's icon, and to the item stubs' column without it. */
+export const BANNER_CORNER_TOP_PX = 8;
+/** Where the item stubs' column starts: under the banner corner's icon, as tall as a stub. */
+export const STUB_COLUMN_TOP_PX = BANNER_CORNER_TOP_PX + STUB_PX + GAP_PX;
 /** The Clear all row's height. */
 export const HEADER_PX = 24;
 /** From a closed stub's right edge (the screen's edge, no frame side) to its sprite's centre. */

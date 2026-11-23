@@ -380,7 +380,6 @@ describe('after time away: the catch-up\'s news, handed over', () => {
             finds
         }), false);
         expect(kinds().sort()).toEqual(['bankFull', 'knockout', 'recipe']);
-        expect(Banners.getView().waiting).toBe(0);
         expect(Banners.getAll().find(b => b.kind === 'recipe').line).toBe('Aela, Bram and 3 more unlocked 5 recipes: Dish 0, Dish 1, ...');
         expect(Banners.getAll().find(b => b.kind === 'knockout').line).toBe('Aela, Bram and 3 more knocked out and carried home. Nothing was lost.');
         ItemStubs.flush();
@@ -529,17 +528,16 @@ describe('⭐ a problem banner goes by itself once fixed; a milestone stays unti
         expect(Banners.getAll()).toEqual([]);
     });
 
-    it('a cleared banner on screen lets the next waiting one come on', () => {
+    it('a cleared banner among others goes alone', () => {
         GameState.inventory.maxSlots = 0;
         refused('item_oak', 'slots');
         for (const [id, name] of [['h1', 'Aela'], ['h2', 'Bram'], ['h3', 'Cara']]) {
             GameState.heroes.push(heroWith(id, name, 1));
             EventBus.publish(ENGINE_EVENTS.HERO_RECRUITED, { heroId: id, name });
         }
-        expect(Banners.getView()).toMatchObject({ waiting: 1 });
+        expect(Banners.getView().shown).toHaveLength(4);
         GameState.inventory.maxSlots = 64;
         EventBus.publish(ENGINE_EVENTS.INVENTORY_UPDATED);
-        expect(Banners.getView().waiting).toBe(0);
         expect(Banners.getView().shown).toHaveLength(3);
         expect(kinds()).not.toContain('bankFull');
     });

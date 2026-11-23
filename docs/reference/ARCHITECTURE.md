@@ -496,9 +496,14 @@ the Perf HUD is showing (`src/ui/components/base/FPSCounter.jsx:10-25`,
 - **Banners** (things that must not be missed) and **item stubs** (items gained and spent):
   module stores in `src/systems/notifications/` fed by `routing.js` (`:17-30` says where each
   event goes), drawn by `ui/components/notifications/BannerStack.jsx` and `ItemStubColumn.jsx`.
-  The item stubs sit on the mat's side of the cameras; the banners are one stack outside them
+  The item stubs sit on the mat's side of the cameras; the banners are one corner outside them
   (`ReactRoot.jsx`, after `HallCamera`), so they hold still while the view glides, and over the
-  Hall and the World Map (`away`) show only kinds that point to a Token.
+  Hall and the World Map (`away`) show only kinds that point to a Token. The corner is a
+  show/hide icon at the top right above the item stubs (it counts the banners up, red with a
+  problem among them): shown, every banner is listed, with no limit; hidden, each new banner pops
+  out for `PEEK_MS` (5 s) and tucks back in (`notifications/bannerCorner.js`). Shown or hidden is
+  a per-device setting (`notifications.bannersShown`). The store (`banners.js`) is one list,
+  newest first; a banner put back silently (a load, a standing event) is `quiet` and never pops.
   Banners live in memory except the kinds marked `kept` (knock-out, Bank Full), which `routing.js`
   writes into `ui.banners` on every change and puts back silently on `GAME_LOADED`. Event banners
   are not saved: `GAME_LOADED` and `BOARD_SWAPPED` raise one for each event Token standing on the

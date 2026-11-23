@@ -3,9 +3,10 @@
  * are written from them here, so two banners of a kind can merge by merging their parts.
  *
  * `tone` is `'milestone'` (gold edge, a shine, a chime) or `'problem'` (red edge, a warning tone).
- * `merge` folds a waiting banner's parts into another of its kind (null: a kind that never merges).
- * `mergeShown`: a kind that is a lasting condition rather than a moment, merged into one already on
- * screen instead of stacking a copy (a full Bank refusing one item after another).
+ * `merge` folds one banner's parts into another of its kind: two of one moment (a `groupKey`) or of
+ * a `mergeShown` kind (null: a kind that never merges).
+ * `mergeShown`: a kind that is a lasting condition rather than a moment, merged into the one
+ * already up instead of stacking a copy (a full Bank refusing one item after another).
  * `pointsTo`: a kind whose click takes the player to its Token on the mat and pulses its outline
  * (from the World Map or the Guild Hall, back to the mat first), and which also shows on those two
  * screens (`BannerStack`'s `away`).
