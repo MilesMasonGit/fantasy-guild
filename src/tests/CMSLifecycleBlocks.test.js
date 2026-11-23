@@ -226,7 +226,7 @@ describe('Renames reach the lifecycle blocks', () => {
 describe('The recipe field foundationKinds', () => {
     it('is the game’s list, re-exported rather than copied', () => {
         expect(FOUNDATION_KINDS).toBe(GAME_FOUNDATION_KINDS);
-        expect([...FOUNDATION_KINDS]).toEqual(['wood', 'stone', 'bench', 'farmland', 'excavation', 'battlefield']);
+        expect([...FOUNDATION_KINDS]).toEqual(['wood', 'stone', 'farmland', 'excavation', 'battlefield']);
     });
 
     it('survives load → edit → Recalculate → Sync, and absent stays absent', () => {

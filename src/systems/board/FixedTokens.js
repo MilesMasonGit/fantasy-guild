@@ -10,7 +10,7 @@ import * as Landmarks from './Landmarks.js';
  *
  * Fixed: a fixture (`BoardState.isFixture`: a map's node, or a Token the Starter Camp laid), a
  * landmark (`Landmarks.isLandmark`), a planted Token ({@link isPlanted}) and a Token whose type stays
- * where it stands ({@link staysPut}). A fixed Token is never dragged, binned or pushed; it still
+ * where it stands ({@link staysPut}). A fixed Token is never dragged or pushed; it still
  * answers a click, and may still be demolished unless it is a map's node or the camp's. Everything
  * else is movable.
  *

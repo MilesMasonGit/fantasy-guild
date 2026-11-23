@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, beforeAll, afterAll, afterEach, vi } 
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
+import * as Placement from '../systems/board/Placement.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as NotificationSystem from '../systems/core/NotificationSystem.js';
@@ -13,6 +14,11 @@ import { pointerToMat, matRectForDrag } from '../ui/components/board/matPoint.js
 import { dropOnMat } from '../ui/components/board/dropOnMat.js';
 import { boardPointToScreen } from '../ui/components/base/ParticleOverlay.jsx';
 import { DRAG_KIND, rosterFlagPayload } from '../ui/dnd/dragConstants.js';
+
+/** A new Token put straight on the mat at a point (the route `dropOnMat` no longer has). */
+const freeDrop = (typeId, uses, point) =>
+    Placement.placeTokenAt(BoardState.createTokenInstance(typeId, uses), point);
+
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -228,7 +234,7 @@ describe('dropOnMat — one drop function for the playmat', () => {
     it('a drop ON a matching copy lands beside it: both stay, each with its own charges', () => {
         const copy = instance('fixture_producer', 100);
         BoardState.addToken(copy, C(14).x, C(14).y);
-        const res = dropOnMat({ typeId: 'fixture_producer', usesRemaining: 400 }, near(14, 20, -20));
+        const res = freeDrop('fixture_producer', 400, near(14, 20, -20));
 
         expect(res).toMatchObject({ success: true, nudged: true });
         expect(BoardState.tokens()).toHaveLength(2);
@@ -239,7 +245,7 @@ describe('dropOnMat — one drop function for the playmat', () => {
     it('a 2×2 lands at the point too, with no anchor to snap to', () => {
         const p = big(7);
         const point = { x: p.x + 40, y: p.y - 30 };
-        dropOnMat({ typeId: 'fixture_big', usesRemaining: 50 }, point);
+        freeDrop('fixture_big', 50, point);
 
         expect(only().typeId).toBe('fixture_big');
         expect({ x: only().x, y: only().y }).toEqual(point);
@@ -250,7 +256,7 @@ describe('dropOnMat — one drop function for the playmat', () => {
     // (Token Lifecycle 9.3): neither origin exists any more.
 
     it('a bare typeId is made on the spot', () => {
-        dropOnMat({ typeId: 'fixture_producer', usesRemaining: 42 }, near(10));
+        freeDrop('fixture_producer', 42, near(10));
         expect(only().usesRemaining).toBe(42);
     });
 
@@ -275,7 +281,7 @@ describe('dropOnMat — one drop function for the playmat', () => {
         expect(point.x).toBeCloseTo(target.x, 6);
         expect(point.y).toBeCloseTo(target.y, 6);
 
-        expect(dropOnMat({ typeId: 'fixture_producer', usesRemaining: 100 }, point).success).toBe(true);
+        expect(freeDrop('fixture_producer', 100, point).success).toBe(true);
         expect(only().x).toBeCloseTo(target.x, 6);
         expect(only().y).toBeCloseTo(target.y, 6);
     });
@@ -283,7 +289,7 @@ describe('dropOnMat — one drop function for the playmat', () => {
     // Maps used to lie loose on the mat in a box of their own until the Map
     // bursts retired (Token Lifecycle 9.1). A Map is an ordinary Token.
     it('a Map Token stands on the mat like any other Token (9.1)', () => {
-        expect(dropOnMat({ typeId: 'fixture_map', usesRemaining: 1 }, { x: 1500, y: 900 }).success).toBe(true);
+        expect(freeDrop('fixture_map', 1, { x: 1500, y: 900 }).success).toBe(true);
         expect(BoardState.tokens().map(t => t.typeId)).toEqual(['fixture_map']);
         expect(only()).toMatchObject({ x: 1500, y: 900 });
         expect(GameState.state.board.maps).toBeUndefined();
@@ -336,7 +342,7 @@ describe('dropOnMat — one drop function for the playmat', () => {
     it('⭐ a Token dropped far from the middle of the mat simply lands there now', () => {
         const point = { x: 100, y: 100 };
 
-        const result = dropOnMat({ typeId: 'fixture_producer', usesRemaining: 100 }, point);
+        const result = freeDrop('fixture_producer', 100, point);
 
         expect(result.success).toBe(true);
         expect(result.flyBack).toBeUndefined();
@@ -345,7 +351,7 @@ describe('dropOnMat — one drop function for the playmat', () => {
     });
 
     it('but a drop off the mat entirely is pulled back on, art and all', () => {
-        expect(dropOnMat({ typeId: 'fixture_producer', usesRemaining: 100 }, { x: -400, y: 5 }).success).toBe(true);
+        expect(freeDrop('fixture_producer', 100, { x: -400, y: 5 }).success).toBe(true);
         expect(only().x).toBeGreaterThanOrEqual(64);
         expect(only().y).toBeGreaterThanOrEqual(64);
     });

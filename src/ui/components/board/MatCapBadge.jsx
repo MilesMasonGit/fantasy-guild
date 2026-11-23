@@ -24,7 +24,7 @@ import { onPoll } from './frameClock.js';
 /**
  * What changes the badge's number. Every route a Token takes onto or off the mat publishes
  * `TILE_CHANGED`: a placement, a spawn (`EffectActions.spawn`), a Token that ran dry
- * (`Charges`), an enemy killed (`BoardCombat`), a lift back to the Bank (`Placement`). The
+ * (`Charges`), an enemy killed (`BoardCombat`). The
  * rest are belt and braces: `TOKEN_PLACED` and `TOKEN_DEPLETED` for the player's own actions,
  * `game_reset` and `game_loaded` for a load or a new game. The cap is the Token Cap upgrade's
  * (`GUILD_UPGRADES_UPDATED`), or a Mat Tuner override heard through `onMatTuningChanged`.

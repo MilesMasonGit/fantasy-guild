@@ -59,8 +59,7 @@ function oldSave() {
     state.board.tokens = {
         tok_1: { id: 'tok_1', typeId: OLD.token, x: 10, y: 10, placedAt: 0, usesRemaining: null, cycleElapsedMs: 0 },
         tok_2: {
-            id: 'tok_2', typeId: NEW.den, x: 50, y: 50, placedAt: 1, usesRemaining: null, cycleElapsedMs: 0,
-            builtFrom: { foundationTypeId: OLD.den, buildCost: [{ itemId: OLD.item, quantity: 20 }] }
+            id: 'tok_2', typeId: NEW.den, x: 50, y: 50, placedAt: 1, usesRemaining: null, cycleElapsedMs: 0
         },
         tok_3: {
             id: 'tok_3', typeId: 'token_quest', x: 90, y: 90, placedAt: 2,
@@ -149,10 +148,9 @@ describe('a renamed id is followed everywhere a save holds it', () => {
         expect(hero.effects[0]).toMatchObject({ effectId: NEW.effect, remainingMs: 999 });
     });
 
-    it('the live mat: a Token\'s type, what it was built from, a bounty', () => {
-        const { tok_1, tok_2, tok_3 } = s.board.tokens;
+    it('the live mat: a Token\'s type, a bounty', () => {
+        const { tok_1, tok_3 } = s.board.tokens;
         expect(tok_1.typeId).toBe(NEW.token);
-        expect(tok_2.builtFrom).toEqual({ foundationTypeId: NEW.den, buildCost: [{ itemId: NEW.item, quantity: 20 }] });
         expect(tok_3.typeId).toBe('token_quest');
         expect(tok_3.quest).toMatchObject({ enemyId: NEW.token, itemId: NEW.item, match: { typeId: NEW.token }, rewardItems: [{ itemId: NEW.item, quantity: 10 }] });
     });

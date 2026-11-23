@@ -195,7 +195,7 @@ export function canRefund(instanceId) {
     if (!instance) return no('No Token there');
     const name = tokenName(instance.typeId) || instance.typeId;
     if (!Foundations.isFoundation(getTokenType(instance.typeId))) {
-        return no(instance.builtFrom ? `${name} is built and cannot go back to the Shop` : 'Only an unbuilt Foundation can go back to the Shop');
+        return no('Only an unbuilt Foundation can go back to the Shop');
     }
     if (BoardState.originOf(instance) !== BoardState.ORIGIN.PLACED) return no(`${name} was not bought at the Shop`);
     if (BoardState.isFixture(instance) || Landmarks.isLandmark(instance)) return no(`${name} came with the land, not from the Shop`);

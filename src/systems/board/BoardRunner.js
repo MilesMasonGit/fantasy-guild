@@ -26,6 +26,7 @@ import * as Demolition from './Demolition.js';
 import { workConfigOf } from './StationRecipe.js';
 import * as Restrictions from './Restrictions.js';
 import * as Placement from './Placement.js';
+import * as RoomWait from './RoomWait.js';
 import * as MatPlacement from './MatPlacement.js';
 import * as StatusApplication from './StatusApplication.js';
 import * as EffectFeedback from './EffectFeedback.js';
@@ -175,16 +176,45 @@ function hasRoomForTokenOutputs(id, io) {
  * doubled by LOOT_MULT or multiplied by GIANT_HARVEST, because room was reserved for the recipe's
  * authored maximum before the cycle paid, and a Token must never be made with nowhere to stand. It
  * is not pushed to `produced`: that list is matched against item ids (`TriggerSystem.producedMatches`).
+ *
+ * ⚠️ The room check before paying looks at the first copy only (`Placement.hasRoomForProduct`), so
+ * on a crowded mat a later copy can still find nowhere. It is not lost: it waits in the station
+ * (`instance.waitingOutput`, saved) and lands when room appears ({@link landWaitingOutput}).
  */
 function placeTokenOutput(instance, output) {
     const copies = rollOutputQuantity(output);
     for (let i = 0; i < copies; i++) {
-        const placed = Placement.placeProduct(instance.id, output.tokenId);
-        if (!placed?.success) {
-            logger.warn('BoardRunner',
-                `${tokenName(output.tokenId) || output.tokenId} found no room beside ${tokenName(instance.typeId) || instance.typeId}: ${placed?.reason || 'no spot'}`);
-        }
+        const placed = (instance.waitingOutput?.length) ? null : Placement.placeProduct(instance.id, output.tokenId);
+        if (!placed?.success) waitForRoom(instance, output.tokenId);
     }
+}
+
+/** Keep a made Token in its station until there is room for it, and say so once. */
+function waitForRoom(instance, typeId) {
+    (instance.waitingOutput ||= []).push(typeId);
+    setAlert(instance, ALERT.NO_ROOM);
+    RoomWait.tell(instance.id, { source: RoomWait.SOURCE.STATION, instanceId: instance.id, typeId: instance.typeId });
+}
+
+/**
+ * Land what a station made and kept for want of room, in the order it was made, as far as room
+ * allows. Returns whether any still waits: the station starts no new cycle until all have landed.
+ */
+function landWaitingOutput(instance) {
+    const left = [];
+    for (const typeId of instance.waitingOutput) {
+        const placed = !left.length && Placement.hasRoomForProduct(instance.id, typeId)
+            ? Placement.placeProduct(instance.id, typeId)
+            : null;
+        if (!placed?.success) left.push(typeId);
+    }
+    if (left.length) {
+        instance.waitingOutput = left;
+        return true;
+    }
+    delete instance.waitingOutput;
+    RoomWait.landed(instance.id);
+    return false;
 }
 
 /** How far the load-time repair looks for a legal spot, in mat units. */
@@ -230,8 +260,10 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // tick.
     if (!buildTypeId && !hasRoomForTokenOutputs(id, io)) {
         setAlert(instance, ALERT.NO_ROOM);
+        RoomWait.tell(id, { source: RoomWait.SOURCE.STATION, instanceId: id, typeId: instance.typeId });
         return;
     }
+    RoomWait.landed(id);
 
     // INPUT_COST (Efficiency), widened to read the Token's neighbours: a Tool Rack beside a Forge
     // makes it cheaper to run. Each input carries its exact cost and the most it can take (the cost
@@ -268,11 +300,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         setAlert(instance,ALERT.INPUTS);
         return;
     }
-    let paidInputs = [];
-    const pay = () => {
-        paidInputs = InputCost.rolledInputs(costed);
-        InputAllocator.consumeInputs(paidInputs);
-    };
+    const pay = () => InputAllocator.consumeInputs(InputCost.rolledInputs(costed));
     if (!(keepChance > 0)) pay();
 
     instance.cycleElapsedMs = 0;
@@ -445,14 +473,12 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     if (counts) counts[instance.typeId] = (counts[instance.typeId] || 0) + 1;
     if (!failed && io.recipe?.id) noteRecipeMade(io.recipe.id);
 
-    // Last, so every reader above saw the Foundation that did the work. Its hero lets go on the
-    // next pass and moves on. A failed build has spent its inputs and stays a Foundation, like any
+    // Last, so every reader above saw the Foundation that did the work. Its hero stays when the
+    // building is work they can do (`Flags.followTransform`). A failed build has spent its inputs and stays a Foundation, like any
     // failed cycle.
     if (buildTypeId && !failed) {
         const fromTypeId = instance.typeId;
-        // What it paid goes with it (`paidInputs`, after Efficiency): the built Token remembers its
-        // Foundation and build cost for the discard refund.
-        const built = Foundations.buildInPlace(instance, buildTypeId, paidInputs);
+        const built = Foundations.buildInPlace(instance, buildTypeId);
         if (built) {
             noteTokenBuilt(buildTypeId);
             EventBus.publish(BOARD_EVENTS.TOKEN_BUILT, {
@@ -595,6 +621,14 @@ export function tick(delta) {
         if (Hand.isInHand(id)) {
             if (BoardCombat.getFight(id)) BoardCombat.endFight(id);
             if (carryIn.has(id)) carryOut.set(id, carryIn.get(id));
+            continue;
+        }
+
+        // A station holding a Token it made with nowhere to put it starts nothing new until that
+        // Token has landed, hero or no hero, and keeps its mark meanwhile. One marked for
+        // demolition goes on to be demolished: the player chose to take it off.
+        if (instance.waitingOutput?.length && landWaitingOutput(instance) && !Demolition.isMarked(instance)) {
+            setAlert(instance, ALERT.NO_ROOM);
             continue;
         }
 

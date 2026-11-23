@@ -113,7 +113,7 @@
           "description": "A building site: which building recipes it offers (recipePoolRegistry.js recipesForFoundation; StationRecipe.js, Foundations.js). Both kind and skill are needed.",
           "type": "object",
           "properties": {
-            "kind": { "type": "string", "enum": ["wood", "stone", "bench", "farmland", "excavation", "battlefield"], "description": "FOUNDATION_KINDS (tokenConstants.js)." },
+            "kind": { "type": "string", "enum": ["wood", "stone", "farmland", "excavation", "battlefield"], "description": "FOUNDATION_KINDS (tokenConstants.js)." },
             "skill": { "type": "string", "description": "A skill id (construction, ...)." },
             "tier": { "type": "number", "minimum": 1, "description": "Its tier, against a recipe's foundationMinTier (tokenConstants.js foundationTierOf)." }
           }

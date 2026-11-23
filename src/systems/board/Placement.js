@@ -78,15 +78,6 @@ const pointOf = (instance) =>
         ? { x: instance.x, y: instance.y }
         : null;
 
-/** Whether a Mythic of this type is already on the mat, ignoring `exceptId`. */
-function mythicAlreadyPlaced(typeId, exceptId = null) {
-    if (getTokenType(typeId)?.rarity !== 'mythic') return false;
-    for (const instance of BoardState.tokens()) {
-        if (instance.id !== exceptId && instance.typeId === typeId) return true;
-    }
-    return false;
-}
-
 export { isFixed };
 
 /** Why a fixed Token refuses to move (`FixedTokens.isFixed`). */
@@ -158,10 +149,6 @@ export function placeTokenAt(instance, point, options = {}) {
     const excludeId = options.excludeId || instance.id || null;
     const at = clampToMat(point);
 
-    if (mythicAlreadyPlaced(instance.typeId, excludeId)) {
-        return refuse(`Only one ${tokenName(instance.typeId)} can be on the board at a time`);
-    }
-
     const decision = MatPlacement.dropAt(instance, at, {
         excludeId,
         plan: { id: instance.id },
@@ -203,9 +190,6 @@ export const MAT_FULL = 'The mat is full';
 export function placeArrivalNear(instance, aim) {
     if (!instance?.typeId) return refuse('Not a valid Token');
     if (!aim || !Number.isFinite(aim.x) || !Number.isFinite(aim.y)) return refuse('Nowhere to put that');
-    if (mythicAlreadyPlaced(instance.typeId, instance.id)) {
-        return refuse(`Only one ${tokenName(instance.typeId)} can be on the board at a time`);
-    }
     const at = clampToMat(aim);
     const spot = MatPlacement.findSpotAnywhere(instance.typeId, at, {
         excludeId: instance.id,
@@ -249,8 +233,7 @@ export function moveTokenTo(id, point) {
  * right now. Pure: asked BEFORE the cycle pays, so a full mat holds the cycle rather than spending
  * its inputs on a Token with nowhere to go.
  *
- * Three things must hold: the mat's Token cap has room for every copy; a Mythic of that
- * type is not already on the mat; and there is a legal spot somewhere on the mat, nearest the
+ * Two things must hold: the mat's Token cap has room for every copy; and there is a legal spot somewhere on the mat, nearest the
  * station first, by the same search {@link placeArrivalNear} makes.
  *
  * ⚠️ The spot is checked for the first copy only. Every shipped recipe that makes a Token makes
@@ -263,7 +246,6 @@ export function hasRoomForProduct(stationId, typeId, count = 1) {
     const from = pointOf(station);
     if (!from) return false;
     if (!MatCap.canPlaceMore(count)) return false;
-    if (mythicAlreadyPlaced(typeId)) return false;
     return !!MatPlacement.findSpotAnywhere(typeId, from);
 }
 

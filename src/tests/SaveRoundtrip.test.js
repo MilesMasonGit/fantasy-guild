@@ -73,6 +73,24 @@ describe('Save serialize/migrate roundtrip (CR-053)', () => {
         expect(migrated.board.tokens.tok_b.usesRemaining).toBeNull();
     });
 
+    it('keeps what waits for room: the Token a station made and the enemies an arrival keeps waiting', () => {
+        GameState.state.board.tokens = {
+            tok_s: { id: 'tok_s', typeId: 'token_sawmill', x: 864, y: 864, placedAt: 0, usesRemaining: null, cycleElapsedMs: 0, waitingOutput: ['token_forest', 'token_forest'] },
+            tok_e: { id: 'tok_e', typeId: 'token_goblin', x: 300, y: 300, placedAt: 1, usesRemaining: 1, cycleElapsedMs: 0, tether: null, arrival: true }
+        };
+        GameState.state.board.arrival = { ids: ['tok_e'], cleared: false, waiting: [{ id: 'tok_r_arrival_1', typeId: 'token_goblin', x: 512, y: 640 }] };
+
+        const revived = JSON.parse(JSON.stringify(GameState.serialize()));
+        const migrated = migrateState(revived.state, revived.version);
+        expect(migrated.board.tokens.tok_s.waitingOutput).toEqual(['token_forest', 'token_forest']);
+        expect(migrated.board.tokens.tok_e.arrival).toBe(true);
+        expect(migrated.board.arrival).toEqual({ ids: ['tok_e'], cleared: false, waiting: [{ id: 'tok_r_arrival_1', typeId: 'token_goblin', x: 512, y: 640 }] });
+
+        loadSavedState(migrated);
+        expect(GameState.state.board.tokens.tok_s.waitingOutput).toEqual(['token_forest', 'token_forest']);
+        expect(GameState.state.board.arrival.waiting).toHaveLength(1);
+    });
+
     it('refuses saves from a different schema version (locked no-migration rule)', () => {
         const data = GameState.serialize();
         expect(() => migrateState(data.state, '1.0.0')).toThrow(IncompatibleSaveError);

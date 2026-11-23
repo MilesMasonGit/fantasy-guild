@@ -7,6 +7,7 @@ import * as BoardState from '../board/BoardState.js';
 import * as MatPlacement from '../board/MatPlacement.js';
 import * as GroundRules from '../board/GroundRules.js';
 import * as EventTokens from '../board/EventTokens.js';
+import * as RoomWait from '../board/RoomWait.js';
 import { getTokenType, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { allEvents, getEvent } from '../../config/registries/eventRegistry.js';
 import { EVENT_KIND, isRunnable } from '../../config/eventTable.js';
@@ -316,8 +317,11 @@ export function tick(delta, random = Math.random) {
     if (landNext(random)) {
         s.clockMs = 0;
         s.waitMs = drawWait(random);
+        RoomWait.landed(RoomWait.EVENT_KEY);
     } else {
         s.clockMs = s.waitMs - EVENT_RETRY_MS;
+        // Said once when some event fitted the place and none found room; none fitting is no news.
+        if (fittingEvents().length) RoomWait.tell(RoomWait.EVENT_KEY, { source: RoomWait.SOURCE.EVENT });
     }
 }
 
