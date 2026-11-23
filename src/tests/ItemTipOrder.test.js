@@ -46,10 +46,10 @@ const order = (root) => [...root.querySelectorAll('[data-item-tip] > *')].map(el
     [...el.attributes].map(a => a.name).find(n => n.startsWith('data-item-tip-')) || el.textContent);
 
 describe('the item tooltip order', () => {
-    it('count first, then tool, tags, with no type or Equippable line; details after them', () => {
+    it('count first, then tool, the Tokens it works, tags, with no type or Equippable line; details after them', () => {
         const { container } = render(h(ItemTipContent, { item: { id: 'tip_order_pick', name: 'Order Pick', type: 'tool', equipSlot: 'hand', tags: ['metal'], tool: { kind: 'pickaxe', tier: 1 }, description: 'Digs.' }, count: 4321 }));
         const seen = order(container);
-        expect(seen.slice(0, 3)).toEqual(['data-item-tip-count', 'data-item-tip-tool', 'data-item-tip-tags']);
+        expect(seen.slice(0, 4)).toEqual(['data-item-tip-count', 'data-item-tip-tool', 'data-item-tip-works', 'data-item-tip-tags']);
         expect(container.querySelector('[data-item-tip-type], [data-item-tip-equip]')).toBeNull();
         expect(container.textContent).not.toMatch(/Equippable|Tool/);
         expect(seen.indexOf('data-item-tip-description')).toBeGreaterThan(seen.indexOf('data-item-tip-tags'));

@@ -18,8 +18,8 @@ import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
 /** The Item editor: simplified field set. Value is derived by the balance engine and cannot be typed; inputs and recipes match on exact item IDs, so there are no tags. */
 
-// Drinks never heal (they are work buffs), so they offer no restore amount.
-const RESTORING_CATEGORIES = new Set(['food', 'consumable']);
+// Only food heals; drinks and potions are buffs.
+const RESTORING_CATEGORIES = new Set(['food']);
 
 /** A weapon's own fields, cleared when the item stops being one (out of the hands, or made a tool). */
 const WEAPON_CLEARED = { styles: undefined, damage: undefined, damageType: undefined, speed: undefined, tier: undefined, levelRequired: undefined };
@@ -304,7 +304,7 @@ export default function ItemEditor() {
     updateItem(activeId, {
       equipSlot: slot,
       type: slotToType(slot),
-      restoreAmount: RESTORING_CATEGORIES.has(slot) ? (item.restoreAmount || 5) : 0,
+      restoreAmount: RESTORING_CATEGORIES.has(slot) ? (item.restoreAmount || 0) : 0,
       // Tools, weapons and off-hand items are held in the hands; out of them, none of these means anything.
       ...(slot === HAND_CATEGORY ? {} : { tool: undefined, hands: undefined, offHand: undefined, breakChance: undefined, ...WEAPON_CLEARED }),
       // Only worn gear lends resistances or cuts a style's damage.
