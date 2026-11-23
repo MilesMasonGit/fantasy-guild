@@ -2,12 +2,9 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import { migrateState } from '../systems/core/SaveMigration.js';
-import { EventBus } from '../systems/core/EventBus.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as Placement from '../systems/board/Placement.js';
-import * as Orders from '../systems/board/Orders.js';
-import * as Flags from '../systems/board/Flags.js';
 import * as TimedChanges from '../systems/board/TimedChanges.js';
 import * as Hand from '../systems/board/Hand.js';
 import { pickWeighted } from '../systems/board/weightedPick.js';
@@ -15,7 +12,6 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TriggerSystem from '../systems/board/TriggerSystem.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as MatPlacement from '../systems/board/MatPlacement.js';
-import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { ModifierAggregator } from '../systems/effects/ModifierAggregator.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
@@ -24,11 +20,10 @@ import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import * as MatCap from '../systems/board/MatCap.js';
-import { TURN_DEFAULTS, turnTiming } from '../config/registries/tokenConstants.js';
 
 /**
  * Token Lifecycle slice 3.2 — **timed changes** (roadmap §3.1):
- * `grows` and `turns`, on clocks advanced by the tick's `delta`.
+ * `grows`, on clocks advanced by the tick's `delta`.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -70,20 +65,6 @@ registerTokenTypes({
         id: 'fixture_tl_big_tree', name: 'Fixture Big Tree', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: 50, sprite: 's_nature', size: 2
     },
-    /**
-     * The plain Coast: nothing to fish (the concept leaves that open). A 100%
-     * chance, so it turns on every roll, both ways — the timing tests below
-     * run through `BoardRunner`, which rolls with `Math.random`.
-     */
-    fixture_tl_coast: {
-        id: 'fixture_tl_coast', name: 'Fixture Coast', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nautical',
-        turns: {
-            into: [{ typeId: 'fixture_tl_shrimp_coast', weight: 1 }, { typeId: 'fixture_tl_crab_coast', weight: 3 }],
-            everyMs: 120000,
-            chance: 100
-        }
-    },
     fixture_tl_shrimp_coast: {
         id: 'fixture_tl_shrimp_coast', name: 'Fixture Shrimp Coast', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nautical',
@@ -93,30 +74,6 @@ registerTokenTypes({
         id: 'fixture_tl_crab_coast', name: 'Fixture Crab Coast', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nautical',
         config: fishing(45000)
-    },
-    /** A second Coast on its own timings, turning into one thing only. */
-    fixture_tl_cove: {
-        id: 'fixture_tl_cove', name: 'Fixture Cove', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nautical',
-        turns: { into: [{ typeId: 'fixture_tl_shrimp_coast', weight: 1 }], everyMs: 50000, chance: 100 }
-    },
-    /** shape: a 30% chance every minute, both ways. */
-    fixture_tl_lagoon: {
-        id: 'fixture_tl_lagoon', name: 'Fixture Lagoon', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nautical',
-        turns: { into: [{ typeId: 'fixture_tl_shrimp_coast', weight: 1 }], everyMs: 60000, chance: 30 }
-    },
-    /** A turns block with neither cycle nor chance: the defaults (1 min, 30%). */
-    fixture_tl_bay: {
-        id: 'fixture_tl_bay', name: 'Fixture Bay', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nautical',
-        turns: { into: [{ typeId: 'fixture_tl_shrimp_coast', weight: 1 }] }
-    },
-    /** Turns into something twice its size — for a won roll with nowhere to stand. */
-    fixture_tl_big_shore: {
-        id: 'fixture_tl_big_shore', name: 'Fixture Big Shore', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nautical',
-        turns: { into: [{ typeId: 'fixture_tl_big_tree', weight: 1 }], everyMs: 10000, chance: 50 }
     }
 });
 
@@ -315,58 +272,9 @@ describe('⭐ a spawned Token moves like any other, and keeps what makes it spaw
         expect(at(900, 700)?.typeId).toBe('fixture_tl_tree');
         expect(at(400, 400)).toBeNull();
     });
-
-    it('a Coast in the hand does not turn either', () => {
-        const coast = placeAt('fixture_tl_cove', 400, 400);
-        Hand.setInHand(coast.id, true);
-        run(60000);
-        expect(BoardState.getTokenById(coast.id)?.typeId).toBe('fixture_tl_cove');
-        Hand.setInHand(coast.id, false);
-        run(100);
-        expect(at(400, 400)?.typeId).toBe('fixture_tl_shrimp_coast');
-    });
 });
 
-// --- turns ------------------------------------------------------------------
-
-describe('⭐ turns — a Coast turns, then turns back on the same cycle', () => {
-    it('at a 100% chance it turns on its first roll into a pick from its list, and back on the next', () => {
-        const coast = placeAt('fixture_tl_coast', 400, 400);
-
-        run(119900);
-        expect(at(400, 400).id).toBe(coast.id);
-
-        run(100);
-        const turned = at(400, 400);
-        expect(['fixture_tl_shrimp_coast', 'fixture_tl_crab_coast']).toContain(turned.typeId);
-        expect(turned.turnedFrom).toBe('fixture_tl_coast');
-        expect(turned.origin).toBe('placed');
-
-        // The turn back rolls on the Coast's cycle, the type it turned FROM.
-        run(119900);
-        expect(at(400, 400).id).toBe(turned.id);
-        run(100);
-        const back = at(400, 400);
-        expect(back.typeId).toBe('fixture_tl_coast');
-        expect(back.turnedFrom).toBeUndefined();
-        expect(back.origin).toBe('placed');
-
-        // ...and the cycle starts again, from a fresh clock.
-        run(119900);
-        expect(at(400, 400).id).toBe(back.id);
-        run(100);
-        expect(at(400, 400).turnedFrom).toBe('fixture_tl_coast');
-    });
-
-    it('a spawned Coast stays spawned both ways', () => {
-        placeAt(BoardState.createTokenInstance('fixture_tl_coast', null, null, 'spawned'), 400, 400);
-        run(120000);
-        expect(at(400, 400).origin).toBe('spawned');
-        run(120000);
-        expect(at(400, 400).typeId).toBe('fixture_tl_coast');
-        expect(at(400, 400).origin).toBe('spawned');
-    });
-
+describe('⭐ weighted picks (a spawn list)', () => {
     it('picks by weight', () => {
         const entries = [{ typeId: 'fixture_tl_shrimp_coast', weight: 1 }, { typeId: 'fixture_tl_crab_coast', weight: 3 }];
         expect(pickWeighted(entries, () => 0.2)).toBe('fixture_tl_shrimp_coast');   // 0.8 of 4
@@ -381,67 +289,6 @@ describe('⭐ turns — a Coast turns, then turns back on the same cycle', () =>
         expect(counts.fixture_tl_crab_coast / 4000).toBeGreaterThan(0.7);
         expect(counts.fixture_tl_crab_coast / 4000).toBeLessThan(0.8);
     });
-
-    it('the turned state and its clock are saved', () => {
-        placeAt('fixture_tl_coast', 400, 400);
-        run(150000);   // turned 30 s ago
-
-        const revived = JSON.parse(JSON.stringify(GameState.serialize()));
-        GameState.state = migrateState(revived.state, revived.version);
-
-        const turned = at(400, 400);
-        expect(turned.turnedFrom).toBe('fixture_tl_coast');
-        expect(turned.clocks.turnMs).toBe(30000);
-        run(89900);
-        expect(at(400, 400).id).toBe(turned.id);
-        run(100);
-        expect(at(400, 400).typeId).toBe('fixture_tl_coast');
-    });
-});
-
-
-describe('⭐ a hero fishing when the Coast turns back loses the cycle (SP-51, SP-52)', () => {
-    it('no output for the cycle in progress; the plain Coast is no fishing spot, so the hero needs a job', () => {
-        // A Coast that has already turned: a Shrimp Coast with 0 ms behind it.
-        const shrimp = BoardState.createTokenInstance('fixture_tl_shrimp_coast');
-        shrimp.turnedFrom = 'fixture_tl_coast';
-        Placement.placeTokenAt(shrimp, { x: 400, y: 400 });
-        const other = BoardState.createTokenInstance('fixture_seafood_producer', 3000);
-        Placement.placeTokenAt(other, { x: 560, y: 400 });
-        TileModifiers.rebuildAround([{ x: 400, y: 400 }, { x: 560, y: 400 }]);
-        Orders.orderAt('hero_1', { x: 400, y: 400 });
-
-        const completions = [];
-        const off = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => completions.push(p));
-        try {
-            run(1000);
-            expect(BoardState.workTokenOf('hero_1')).toBe(shrimp.id);
-
-            // Two 45 s cycles complete; the third is ~30 s in at the 120 s mark.
-            run(118900);
-            expect(completions.filter(c => c.instanceId === shrimp.id)).toHaveLength(2);
-            expect(shrimp.cycleElapsedMs).toBeGreaterThan(25000);
-
-            run(100);   // 120 s: the Coast's roll (100%) turns it back
-            const coast = at(400, 400);
-            expect(coast.typeId).toBe('fixture_tl_coast');
-            expect(coast.cycleElapsedMs).toBe(0);
-            expect(BoardState.getTokenById(shrimp.id)).toBeNull();
-
-            // the hero has already let go; their order lapses (a Fishing Hut would keep them fishing).
-            run(100);
-            expect(BoardState.claimOfHero('hero_1')).toBeNull();
-            expect(Flags.needsJob('hero_1')).toBe(true);
-
-            // the cycle in progress was lost — still exactly one completion from
-            // the Shrimp Coast, however long we wait.
-            run(60000);
-            expect(completions.filter(c => c.typeId === 'fixture_tl_shrimp_coast')).toHaveLength(2);
-            expect(completions.some(c => c.instanceId === other.id)).toBe(false);
-        } finally {
-            off?.();
-        }
-    });
 });
 
 // --- delta ------------------------------------------------------------------
@@ -451,8 +298,7 @@ describe('⭐ clocks run on delta: one big tick equals many small ones', () => {
     function layout() {
         clearMat();
         placeAt('fixture_tl_sapling', 300, 300);
-        placeAt('fixture_tl_coast', 600, 300);
-        placeAt(BoardState.createTokenInstance('fixture_tl_cove', null, null, 'spawned'), 900, 300);
+        placeAt(BoardState.createTokenInstance('fixture_tl_sapling', null, null, 'spawned'), 900, 300);
     }
 
     /** Everything a timed change decides, per point on the mat. */
@@ -460,7 +306,7 @@ describe('⭐ clocks run on delta: one big tick equals many small ones', () => {
         return BoardState.tokens()
             .map(t => ({
                 x: t.x, y: t.y, typeId: t.typeId, origin: t.origin,
-                turnedFrom: t.turnedFrom ?? null, clocks: t.clocks ?? null
+                clocks: t.clocks ?? null
             }))
             .sort((a, b) => a.x - b.x);
     }
@@ -477,189 +323,14 @@ describe('⭐ clocks run on delta: one big tick equals many small ones', () => {
         const byBigTicks = snapshot();
 
         expect(byBigTicks).toEqual(bySmallTicks);
-        // And something did happen: the Sapling grew, and the Coast (100%, every
-        // 2 min) has turned and turned back twice and just turned a third time.
-        expect(bySmallTicks[0].typeId).toBe('fixture_tl_tree');
-        expect(bySmallTicks[1]).toMatchObject({ turnedFrom: 'fixture_tl_coast', clocks: { turnMs: 0 } });
+        // And something did happen: both Saplings grew.
+        expect(bySmallTicks.map(t => t.typeId)).toEqual(['fixture_tl_tree', 'fixture_tl_tree']);
     });
 
     it('a single ten-minute tick through BoardRunner does the same', () => {
         layout();
         BoardRunner.tick(600000);
         expect(at(300, 300).typeId).toBe('fixture_tl_tree');
-        expect(at(600, 300)).toMatchObject({ turnedFrom: 'fixture_tl_coast', clocks: { turnMs: 0 } });
     });
 });
 
-// --- a chance, not a timer ---------------------------------------------
-
-describe('⭐ TL-12 — a turning Token rolls a chance once per cycle, both ways', () => {
-    /** A random that returns these values in order, then fails loudly. */
-    function scripted(values) {
-        const queue = [...values];
-        const fn = () => {
-            if (!queue.length) throw new Error('scripted random ran out');
-            fn.calls++;
-            return queue.shift();
-        };
-        fn.calls = 0;
-        return fn;
-    }
-    const minute = (random) => { for (let t = 0; t < 60000; t += 1000) TimedChanges.tick(1000, random); };
-
-    it('the defaults are 1 minute and 30%, read for a block that leaves them out', () => {
-        expect(TURN_DEFAULTS).toEqual({ everyMs: 60000, chance: 30 });
-        expect(turnTiming(undefined)).toEqual({ everyMs: 60000, chance: 30 });
-        expect(turnTiming({ everyMs: 0, chance: 'x' })).toEqual({ everyMs: 60000, chance: 30 });
-        expect(turnTiming({ everyMs: 90000, chance: 150 })).toEqual({ everyMs: 90000, chance: 100 });
-
-        const bay = placeAt('fixture_tl_bay', 400, 400);
-        expect(TimedChanges.turnTimingOf(bay)).toEqual({ everyMs: 60000, chance: 30 });
-        expect(TimedChanges.nextTurnRoll(bay)).toMatchObject({ inMs: 60000, chance: 30, back: false });
-        // No roll before a minute; at the minute, one roll.
-        const random = scripted([0.1]);
-        TimedChanges.tick(59999, random);
-        expect(random.calls).toBe(0);
-        TimedChanges.tick(1, random);
-        expect(random.calls).toBe(1);
-        expect(at(400, 400)).toMatchObject({ typeId: 'fixture_tl_shrimp_coast', turnedFrom: 'fixture_tl_bay' });
-    });
-
-    it('a failed roll starts the next minute; a roll under the chance turns it, and the same both ways', () => {
-        const lagoon = placeAt('fixture_tl_lagoon', 400, 400);
-        // Rolls are drawn as random() * 100 < chance: 0.5 fails (50 >= 30), 0.29 wins.
-        const random = scripted([0.5, 0.29, 0.9, 0.31, 0.05]);
-
-        minute(random);                                   // roll 1: 50, stays
-        expect(at(400, 400).id).toBe(lagoon.id);
-        expect(lagoon.clocks.turnMs).toBe(0);             // a fresh lap
-        expect(TimedChanges.nextTurnRoll(lagoon).inMs).toBe(60000);
-
-        minute(random);                                   // roll 2: 29, turns
-        const shrimp = at(400, 400);
-        expect(shrimp).toMatchObject({ typeId: 'fixture_tl_shrimp_coast', turnedFrom: 'fixture_tl_lagoon' });
-        // The turned Token counts down to its roll back, on the Lagoon's numbers.
-        expect(TimedChanges.nextTurnRoll(shrimp)).toEqual({ inMs: 60000, chance: 30, back: true, into: ['fixture_tl_lagoon'] });
-        TimedChanges.tick(26000, random);
-        expect(TimedChanges.nextTurnRoll(shrimp).inMs).toBe(34000);
-        TimedChanges.tick(34000, random);                 // roll 3: 90, stays turned
-        expect(at(400, 400).id).toBe(shrimp.id);
-
-        minute(random);                                   // roll 4: 31, stays turned
-        expect(at(400, 400).id).toBe(shrimp.id);
-        minute(random);                                   // roll 5: 5, turns back
-        expect(at(400, 400)).toMatchObject({ typeId: 'fixture_tl_lagoon' });
-        expect(at(400, 400).turnedFrom).toBeUndefined();
-        expect(random.calls).toBe(5);
-    });
-
-    it('a 100% chance never draws from the random stream', () => {
-        placeAt('fixture_tl_cove', 400, 400);
-        const random = scripted([]);
-        TimedChanges.tick(50000, random);
-        TimedChanges.tick(50000, random);
-        expect(at(400, 400).typeId).toBe('fixture_tl_cove');
-        expect(random.calls).toBe(0);
-    });
-
-    it('one big tick rolls once per whole cycle in it and ends exactly where many small ticks do', () => {
-        const snap = () => BoardState.tokens().map(t => ({ typeId: t.typeId, turnedFrom: t.turnedFrom ?? null, clocks: t.clocks ?? null }));
-        const counted = (seed) => {
-            const rng = seeded(seed);
-            const fn = () => { fn.calls++; return rng(); };
-            fn.calls = 0;
-            return fn;
-        };
-
-        clearMat();
-        placeAt('fixture_tl_lagoon', 400, 400);
-        const small = counted(5);
-        for (let t = 0; t < 1830000; t += 100) TimedChanges.tick(100, small);
-        const bySmall = snap();
-
-        clearMat();
-        placeAt('fixture_tl_lagoon', 400, 400);
-        const big = counted(5);
-        TimedChanges.tick(1830000, big);
-        const byBig = snap();
-
-        clearMat();
-        placeAt('fixture_tl_lagoon', 400, 400);
-        const uneven = counted(5);
-        for (const delta of [37000, 290000, 123000, 600000, 150000, 630000]) TimedChanges.tick(delta, uneven);
-        const byUneven = snap();
-
-        expect(byBig).toEqual(bySmall);
-        expect(byUneven).toEqual(bySmall);
-        // 30.5 minutes: exactly 30 rolls, and 30 s carried into the next lap.
-        expect(small.calls).toBe(30);
-        expect(big.calls).toBe(30);
-        expect(uneven.calls).toBe(30);
-        expect(bySmall[0].clocks.turnMs).toBe(30000);
-    });
-
-    it('flips on about 30% of rolls, both ways (about every three minutes)', () => {
-        placeAt('fixture_tl_lagoon', 400, 400);
-        const random = seeded(21);
-        let flips = 0;
-        let turnedMinutes = 0;
-        let prev = at(400, 400).typeId;
-        for (let m = 0; m < 2000; m++) {
-            TimedChanges.tick(60000, random);
-            const now = at(400, 400).typeId;
-            if (now !== prev) flips++;
-            if (now === 'fixture_tl_shrimp_coast') turnedMinutes++;
-            prev = now;
-        }
-        expect(flips / 2000).toBeGreaterThan(0.26);
-        expect(flips / 2000).toBeLessThan(0.34);
-        // The same odds both ways: about half the time spent in each state.
-        expect(turnedMinutes / 2000).toBeGreaterThan(0.4);
-        expect(turnedMinutes / 2000).toBeLessThan(0.6);
-    });
-
-    it('in the hand it does not roll at all; put down, it rolls on the next tick', () => {
-        const lagoon = placeAt('fixture_tl_lagoon', 400, 400);
-        Hand.setInHand(lagoon.id, true);
-        const random = scripted([0.1]);
-        TimedChanges.tick(60000, random);
-        TimedChanges.tick(60000, random);
-        expect(random.calls).toBe(0);
-        expect(lagoon.clocks.turnMs).toBe(60000);         // held full
-        expect(TimedChanges.nextTurnRoll(lagoon).inMs).toBe(0);
-        Hand.setInHand(lagoon.id, false);
-        TimedChanges.tick(100, random);
-        expect(random.calls).toBe(1);
-        expect(at(400, 400).typeId).toBe('fixture_tl_shrimp_coast');
-    });
-
-    it('a won roll with nowhere to stand is kept: the retry does not roll again', () => {
-        setMatTuning('matSteps', 6);
-        const shore = placeAt('fixture_tl_big_shore', 200, 200);
-        const gap = Math.ceil(MatPlacement.minGap('fixture_kitchen', 'fixture_kitchen'));
-        const blockers = [];
-        for (let x = 64; x <= matW() - 64; x += gap) {
-            for (let y = 64; y <= matH() - 64; y += gap) {
-                if (Math.hypot(x - 200, y - 200) < gap) continue;
-                blockers.push(placeAt('fixture_kitchen', x, y));
-            }
-        }
-
-        const random = scripted([0.2]);                   // wins (20 < 50)
-        TimedChanges.tick(10000, random);
-        TimedChanges.tick(5000, random);
-        TimedChanges.tick(5000, random);
-        expect(random.calls).toBe(1);                     // no re-roll on the retries
-        expect(at(200, 200).id).toBe(shore.id);
-        expect(shore.clocks).toMatchObject({ turnMs: 10000, turnWon: 1 });
-
-        for (const b of blockers) {
-            if (Math.hypot(b.x - 200, b.y - 200) < 400) BoardState.removeToken(b.id);
-        }
-        TimedChanges.tick(100, random);
-        expect(BoardState.getTokenById(shore.id)).toBeNull();
-        const turned = BoardState.tokens().find(t => t.typeId === 'fixture_tl_big_tree');
-        expect(turned.turnedFrom).toBe('fixture_tl_big_shore');
-        expect(turned.clocks?.turnWon).toBeUndefined();   // the new Token starts fresh
-    });
-});

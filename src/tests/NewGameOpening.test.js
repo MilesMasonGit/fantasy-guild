@@ -258,8 +258,8 @@ function effectYields(def) {
 const BOUNTY_ITEMS = BOUNTY_REWARD_ITEMS.map(r => r.itemId);
 
 /**
- * Close over what the player can get: Tokens (in the Starter Camp, bought, spawned, grown, turned
- * into, built, ambushing) and items (the camp's Bank and the starter tools, trickle, worked from a
+ * Close over what the player can get: Tokens (in the Starter Camp, bought, spawned, grown,
+ * built, ambushing) and items (the camp's Bank and the starter tools, trickle, worked from a
  * Token whose inputs are already reachable, caught from water's catch pools, a bonus drop of an
  * effect on a reachable Token or item, quest rewards, the Wishing Well's Water). A Token is bought
  * once its whole price is reachable; a recipe runs once its inputs are; a Token whose work needs a
@@ -303,7 +303,6 @@ function reachable({ maxPlane = 2 } = {}) {
             for (const t of def.trickle || []) items.add(t.itemId);
             for (const s of def.spawner?.spawns || []) tokens.add(s.typeId);
             if (def.grows?.into && have(def.grows.cost)) tokens.add(def.grows.into);
-            for (const t of def.turns?.into || []) tokens.add(t.typeId);
             const works = !!def.config && have(def.config.inputs) && toolFor(def);
             if (works) {
                 gain(def.config.outputs);
@@ -411,7 +410,6 @@ function planeWorld(maxPlane = 2) {
             for (const t of def.trickle || []) produced.add(t.itemId);
             for (const s of def.spawner?.spawns || []) tokens.add(s.typeId);
             if (def.grows?.into) { tokens.add(def.grows.into); ask(def.grows.cost, typeId); }
-            for (const t of def.turns?.into || []) tokens.add(t.typeId);
             if (def.shop) ask(def.shop.price, `${typeId} (Shop)`);
             if (def.config) {
                 make(def.config.outputs);

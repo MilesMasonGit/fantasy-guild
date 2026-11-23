@@ -75,9 +75,9 @@ export function enemiesOf(typeId) {
     return list;
 }
 
-/** Whether a Token on the mat is an enemy camp: a working spawner of enemies, not turned, not marked for demolition. */
+/** Whether a Token on the mat is an enemy camp: a working spawner of enemies, not marked for demolition. */
 export function isEnemyCamp(instance) {
-    if (!instance?.typeId || instance.turnedFrom || Demolition.isMarked(instance)) return false;
+    if (!instance?.typeId || Demolition.isMarked(instance)) return false;
     if (!SpawnerSystem.isSpawner(getTokenType(instance.typeId))) return false;
     return enemiesOf(instance.typeId).length > 0;
 }

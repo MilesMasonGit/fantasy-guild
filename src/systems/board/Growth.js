@@ -175,7 +175,7 @@ export function resetGrowthAlerts() {
  * still counting down is, even with no seedling in the Bank yet: one may come before it is due.)
  */
 export function isGrowingBack(instance, def = getTokenType(instance?.typeId)) {
-    if (!instance || instance.turnedFrom || !def?.grows?.into || Demolition.isMarked(instance)) return false;
+    if (!instance || !def?.grows?.into || Demolition.isMarked(instance)) return false;
     if (!gateMet(instance, def)) return false;
     return alerts.get(instance.id)?.alert !== ALERT.GROW_NEEDS_ITEM;
 }

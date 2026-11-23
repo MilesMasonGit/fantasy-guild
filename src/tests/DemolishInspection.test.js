@@ -67,7 +67,7 @@ describe('a marked Token reads as demolition work', () => {
         Demolition.mark(t.id);
         const d = tokenDetailOf(t.id, getTokenType(t.typeId));
         expect(d.marked).toBe(true);
-        expect(d.turns || d.grows || d.resting).toBe(false);
+        expect(d.grows || d.resting).toBe(false);
     });
 });
 

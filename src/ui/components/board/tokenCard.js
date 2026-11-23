@@ -32,7 +32,7 @@ import * as SupportLinks from '../../../systems/board/supportLinks.js';
 import { reachRadius } from '../../../systems/board/nearby.js';
 import { effectTagOf } from './effectBadgeText.js';
 import {
-    liveTimerSources, demolitionLine, leaveLine, turnLine, spawnLine, growthLine, fieldTimerLine, respawnLine, produceLine
+    liveTimerSources, demolitionLine, leaveLine, spawnLine, growthLine, fieldTimerLine, respawnLine, produceLine
 } from './tokenTimers.js';
 
 /**
@@ -310,18 +310,12 @@ export function cardLifecycle(instance, def, src) {
     const leave = src.eventLeave?.(instance);
     if (leave) out.push(leaveLine(leave));
 
-    const turn = src.nextTurn?.(instance);
-    if (instance.turnedFrom) {
-        if (turn) out.push(turnLine(instance, def, turn, src));
-    } else {
-        if (def.spawner) {
-            const status = src.spawnerStatus?.(instance.id);
-            if (status) out.push(spawnCardLine(def, status, src));
-        }
-        const growth = src.nextGrowth?.(instance);
-        if (growth) out.push(growthLine(instance, growth, src));
-        if (turn) out.push(turnLine(instance, def, turn, src));
+    if (def.spawner) {
+        const status = src.spawnerStatus?.(instance.id);
+        if (status) out.push(spawnCardLine(def, status, src));
     }
+    const growth = src.nextGrowth?.(instance);
+    if (growth) out.push(growthLine(instance, growth, src));
 
     // A camp: what its heroes work and how far it reaches (the one standard reach). A War Camp's
     // style is only its mark: its heroes fight in their own.

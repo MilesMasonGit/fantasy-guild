@@ -18,10 +18,8 @@ import { reachRadius } from '../systems/board/nearby.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 /**
- * A Forest that plants within its own reach (brief 230 S2a, `spawner.withinReach`): it lands its
- * Saplings only within Near of itself, and its allowance counts the trees (Saplings, Trees,
- * Stumps) standing in its reach, map trees included, not every one on the mat. A spawner without
- * the mark (an enemy camp, today's Forests) keeps the mat-wide family cap.
+ * Every spawner but an enemy camp lands within its own reach and counts its family standing there
+ * against its own allowance, map trees included, not every one on the mat.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -41,13 +39,12 @@ registerItems({
 });
 
 const plain = (id, extra) => ({ id, name: id, tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature', ...extra });
-const spawner = (allowance, withinReach) => ({
+const spawner = (allowance) => ({
     spawns: [{ typeId: 'wr_sapling', weight: 1 }], allowance, intervalMs: 10000,
-    upkeep: [{ itemId: SEED, quantity: 1 }], ...(withinReach ? { withinReach: true } : {})
+    upkeep: [{ itemId: SEED, quantity: 1 }]
 });
 registerTokenTypes({
-    wr_forest: plain('wr_forest', { tokenType: 'spawner', spawner: spawner(3, true) }),
-    wr_wide_forest: plain('wr_wide_forest', { tokenType: 'spawner', spawner: spawner(3, false) }),
+    wr_forest: plain('wr_forest', { tokenType: 'spawner', spawner: spawner(3) }),
     wr_sapling: plain('wr_sapling', { artSize: 'small', grows: { into: 'wr_tree', afterMs: 600000 } }),
     wr_tree: plain('wr_tree', {
         uses: 2, respawn: { mode: 'regrow', into: 'wr_stump' },
@@ -83,7 +80,7 @@ afterEach(() => {
     resetMatTuning();
 });
 
-describe('⭐ a Forest that plants within its reach', () => {
+describe('⭐ a spawner counts and lands in its reach', () => {
     it('lands every Sapling within its reach, up to its own allowance, a seedling each', () => {
         InventoryManager.addItem(SEED, 10);
         const forest = placeAt('wr_forest', 800, 500);
@@ -162,16 +159,15 @@ describe('⭐ a Forest that plants within its reach', () => {
     });
 });
 
-describe('a spawner without the mark keeps the mat-wide cap', () => {
-    it('counts the family across the mat, and a within-reach Forest\'s allowance is not added to it', () => {
+describe('a spawner with no mark of any kind', () => {
+    it('does not see the family beyond its reach, and lands within it', () => {
         InventoryManager.addItem(SEED, 20);
-        const wide = placeAt('wr_wide_forest', 400, 500);
-        placeAt('wr_forest', 1400, 500);
+        const a = placeAt('wr_forest', 400, 500);
+        const b = placeAt('wr_forest', 1400, 500);
         run(10 * 60000);
-        const status = SpawnerSystem.spawnerStatus(wide.id);
-        expect(status.cap).toBe(3);
-        expect(status.state).toBe('at_cap');
-        // Each counts its own way: the wide one sees every tree on the mat.
-        expect(status.count).toBe(family().length);
+        // Each stopped at its own allowance although the mat holds six.
+        expect(family()).toHaveLength(6);
+        expect(SpawnerSystem.spawnerStatus(a.id)).toMatchObject({ state: 'at_cap', count: 3, cap: 3 });
+        expect(SpawnerSystem.spawnerStatus(b.id)).toMatchObject({ state: 'at_cap', count: 3, cap: 3 });
     });
 });

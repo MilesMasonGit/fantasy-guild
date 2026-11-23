@@ -19,6 +19,7 @@ import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegi
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
+import { reachRadius } from '../systems/board/nearby.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
@@ -162,24 +163,20 @@ describe('⭐ a Forest spawns its family up to its allowance', () => {
         run(10 * 60000);
         expect(family()).toHaveLength(10);
         expect(seeds()).toBe(90);
-        expect(getSpawnerKindCounts()).toEqual([{ kind: 'Fixture Sp Sapling', count: 10, cap: 10 }]);
+        expect(getSpawnerKindCounts().map(({ kind, count, cap }) => ({ kind, count, cap })))
+            .toEqual([5, 5].map(count => ({ kind: 'Fixture Sp Forest (its reach)', count, cap: 5 })));
     });
 
-    it('spawners whose families overlap share one count and add their allowances', () => {
+    it('spawners far apart count their own reach, even with overlapping families', () => {
         give(SEED, 100);
         const forest = placeAt('fixture_sp_forest', 500, 500);
         const grove = placeAt('fixture_sp_grove', 1100, 500);   // spawns Trees: overlaps the Forest's family
 
         run(10 * 60000);
-        // Both caps are 5 + 2. ⚠️ Each spawner counts ITS OWN family (§3.1):
-        // the Grove counts Trees only, so it can top Trees up to 7 while a
-        // Sapling is still growing — the combined family can end one or more
-        // over 7. Here: whatever the split, each spawner stopped at its cap.
-        const trees = BoardState.tokens().filter(t => t.typeId === 'fixture_sp_tree').length;
-        expect(SpawnerSystem.spawnerStatus(forest.id)).toMatchObject({ state: 'at_cap', cap: 7 });
-        expect(SpawnerSystem.spawnerStatus(grove.id)).toMatchObject({ state: 'at_cap', count: trees, cap: 7 });
-        expect(family().length).toBeGreaterThanOrEqual(7);
-        expect(trees).toBeGreaterThanOrEqual(7);
+        // Neither sees the other's Trees, so each stops at its own allowance.
+        expect(SpawnerSystem.spawnerStatus(forest.id)).toMatchObject({ state: 'at_cap', count: 5, cap: 5 });
+        expect(SpawnerSystem.spawnerStatus(grove.id)).toMatchObject({ state: 'at_cap', count: 2, cap: 2 });
+        expect(family()).toHaveLength(7);
     });
 
     it('the family is the spawns plus everything they grow into', () => {
@@ -232,14 +229,24 @@ describe('⭐ a Forest spawns its family up to its allowance', () => {
         expect(family()).toHaveLength(5);
     });
 
-    it('a Tree placed by hand counts toward the family too, whatever its origin', () => {
+    it('a Tree placed by hand counts toward the family too, whatever its origin, when it stands in reach', () => {
         give(SEED, 100);
-        placeAt('fixture_sp_tree', 200, 200);
-        placeAt('fixture_sp_tree', 200, 400);
+        placeAt('fixture_sp_tree', 700, 400);
+        placeAt('fixture_sp_tree', 900, 400);
         placeAt('fixture_sp_forest', 800, 500);
         run(10 * 60000);
         expect(family()).toHaveLength(5);
         expect(seeds()).toBe(97);
+    });
+
+    it('a Tree out of its reach does not count', () => {
+        give(SEED, 100);
+        placeAt('fixture_sp_tree', 100, 100);
+        placeAt('fixture_sp_tree', 100, 300);
+        placeAt('fixture_sp_forest', 800, 500);
+        run(10 * 60000);
+        expect(family()).toHaveLength(7);
+        expect(seeds()).toBe(95);
     });
 });
 
@@ -248,23 +255,23 @@ describe('⭐ the family census is exact within one tick (CR3-047)', () => {
     // That is only right if a spawn earlier in the same pass is counted by the
     // next spawner, and if the family follows a re-registered spawner type.
 
-    it('two Forests one short of their shared cap, both due in the same tick, spawn exactly once', () => {
+    it('two Forests sharing a reach, one short of their cap, both due in the same tick, spawn exactly once', () => {
         give(SEED, 100);
-        // 9 of the family by hand: the two Forests' combined cap is 10.
-        for (let i = 0; i < 9; i++) placeAt('fixture_sp_tree', 160 + i * 160, 160);
-        const a = placeAt('fixture_sp_forest', 500, 600);
-        const b = placeAt('fixture_sp_forest', 1100, 600);
+        // 4 of the family by hand, standing in reach of both Forests: each allows 5.
+        for (let i = 0; i < 4; i++) placeAt('fixture_sp_tree', 580 + i * 50, 440);
+        const a = placeAt('fixture_sp_forest', 600, 600);
+        const b = placeAt('fixture_sp_forest', 680, 600);
 
         run(19900);
-        expect(family()).toHaveLength(9);
+        expect(family()).toHaveLength(4);
         expect(a.clocks.spawnMs).toBe(b.clocks.spawnMs);   // both due on the same next tick
 
         run(100);
-        expect(family()).toHaveLength(10);
+        expect(family()).toHaveLength(5);
         expect(seeds()).toBe(99);
 
         run(5 * 60000);
-        expect(family()).toHaveLength(10);
+        expect(family()).toHaveLength(5);
         expect(seeds()).toBe(99);
     });
 
@@ -290,8 +297,8 @@ describe('⭐ the family census is exact within one tick (CR3-047)', () => {
 });
 
 
-describe('⭐ removing a spawner lowers the cap and removes nothing (SP-6)', () => {
-    it('the other Forest\'s Trees stay; the family is over its new cap and nothing spawns', () => {
+describe('⭐ removing a spawner removes nothing (SP-6)', () => {
+    it('the other Forest Trees stay, and the survivor counts only its own reach', () => {
         give(SEED, 100);
         const a = placeAt('fixture_sp_forest', 500, 500);
         const b = placeAt('fixture_sp_forest', 1100, 500);
@@ -303,8 +310,8 @@ describe('⭐ removing a spawner lowers the cap and removes nothing (SP-6)', () 
 
         expect(family()).toHaveLength(10);
         expect(seeds()).toBe(90);
-        expect(SpawnerSystem.spawnerStatus(a.id)).toMatchObject({ state: 'at_cap', count: 10, cap: 5 });
-        expect(getSpawnerKindCounts()).toEqual([{ kind: 'Fixture Sp Sapling', count: 10, cap: 5 }]);
+        expect(SpawnerSystem.spawnerStatus(a.id)).toMatchObject({ state: 'at_cap', count: 5, cap: 5 });
+        expect(getSpawnerKindCounts()).toEqual([{ id: a.id, kind: 'Fixture Sp Forest (its reach)', count: 5, cap: 5 }]);
     });
 
     it('with no spawner left there is no row at all', () => {
@@ -432,7 +439,7 @@ describe('⭐ spawns push spawned Tokens but never placed ones (SP-46, SP-68)', 
     }
     const spawned = (typeId, x, y) => placeAt(BoardState.createTokenInstance(typeId, 100, null, 'spawned'), x, y);
 
-    it('a crowded spawn pushes a ring of spawned Tokens and lands beside the spawner', () => {
+    it('a spawner other than an enemy camp lands within its reach and pushes nothing', () => {
         setMatTuning('nudgeReach', 0);
         const camp = placeAt('fixture_sp_camp', 800, 500);
         const ring = ringAround(camp, spawned);
@@ -442,9 +449,8 @@ describe('⭐ spawns push spawned Tokens but never placed ones (SP-46, SP-68)', 
 
         const [newcomer] = BoardState.tokens().filter(t => t.typeId === 'fixture_passive');
         expect(newcomer).toBeTruthy();
-        const d = Math.hypot(newcomer.x - 800, newcomer.y - 500);
-        expect(d).toBeLessThanOrEqual(MatPlacement.minGap('fixture_passive', 'fixture_sp_camp') + 2);
-        expect(ring.map(t => ({ x: t.x, y: t.y }))).not.toEqual(before);
+        expect(Math.hypot(newcomer.x - 800, newcomer.y - 500)).toBeLessThanOrEqual(reachRadius());
+        expect(ring.map(t => ({ x: t.x, y: t.y }))).toEqual(before);
         expect({ x: camp.x, y: camp.y }).toEqual({ x: 800, y: 500 });
     });
 

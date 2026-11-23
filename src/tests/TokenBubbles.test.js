@@ -150,9 +150,6 @@ describe('the rules, pure', () => {
         const at = { id: 'v', typeId: 'fixture_bub_grower' };
         const [rest] = timerCellsOf([respawnLine(at, { mode: 'refill', resting: true, inMs: 15000 }, src)]);
         expect(rest).toMatchObject({ glyph: 'regrow', text: '15s', tip: 'Exhausted · respawns in 15s' });
-        const [turn] = timerCellsOf([turnLine({ id: 't', typeId: 'x', turnedFrom: 'fixture_b13_forest' }, {}, { inMs: 5000, chance: 30, back: true }, src)]);
-        expect(turn).toMatchObject({ glyph: 'turn', text: '5s' });
-        expect(turn.tip).toMatch(/^A 30% chance to turn back into .* in 5s$/);
         expect(timerCellsOf(null)).toEqual([]);
     });
 });
@@ -801,9 +798,9 @@ describe('on the mat (MatToken)', () => {
     it('⭐ a spawner at 3 of 5, neither stuck nor counting: nothing at rest; hovered, its name alone, no count and no plate', () => {
         vi.useFakeTimers();
         const forest = put('fixture_b13_forest');
-        put('fixture_b13_sapling', { x: 1200, y: 520 });
-        put('fixture_b13_sapling', { x: 1400, y: 300 });
-        put('fixture_b13_sapling', { x: 1400, y: 800 });
+        put('fixture_b13_sapling', { x: 700, y: 520 });
+        put('fixture_b13_sapling', { x: 640, y: 380 });
+        put('fixture_b13_sapling', { x: 640, y: 660 });
         const { container } = mount(h(MatBoard));
         const o = container.querySelector(`[data-token-overlay="${forest.id}"]`);
         const host = container.querySelector('[data-idle-plates]');

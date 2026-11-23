@@ -100,6 +100,7 @@ registerRecipePools({
 
 const AT = { x: 560, y: 520 };
 const FAR = { x: 1200, y: 520 };
+const IN_REACH = { x: 700, y: 520 };
 const h = React.createElement;
 
 function put(typeId, point = AT) {
@@ -162,6 +163,8 @@ describe('spawner count (FB-5)', () => {
         const forest = put('fixture_q2_forest');
         expect(SpawnerSystem.spawnerCounts(forest.id)).toEqual({ count: 0, cap: 5 });
         put('fixture_q2_sapling', FAR);
+        expect(SpawnerSystem.spawnerCounts(forest.id)).toEqual({ count: 0, cap: 5 });   // out of reach
+        put('fixture_q2_sapling', IN_REACH);
         expect(SpawnerSystem.spawnerCounts(forest.id)).toEqual({ count: 1, cap: 5 });
         const bench = put('fixture_q2_bench', FAR);
         expect(SpawnerSystem.spawnerCounts(bench.id)).toBeNull();
@@ -376,8 +379,8 @@ describe('on the mat', () => {
     it('a hovered spawner that is neither stuck nor counting shows its name alone: no count, no plate, no ring', () => {
         vi.useFakeTimers();
         const forest = put('fixture_q2_forest');
-        put('fixture_q2_sapling', FAR);
-        put('fixture_q2_sapling', { x: 1400, y: 300 });
+        put('fixture_q2_sapling', IN_REACH);
+        put('fixture_q2_sapling', { x: 640, y: 380 });
         const { container } = mount(h(MatBoard));
         const o = overlay(container, forest.id);
         hoverAt(container, forest);

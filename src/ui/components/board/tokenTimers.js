@@ -1,7 +1,7 @@
 import { getTokenType, getAllTokenTypes, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { getRecipe } from '../../../config/registries/recipePoolRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
-import { turnTiming, respawnOf } from '../../../config/registries/tokenConstants.js';
+import { respawnOf } from '../../../config/registries/tokenConstants.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as PassiveProduction from '../../../systems/board/PassiveProduction.js';
@@ -11,7 +11,7 @@ import * as Fields from '../../../systems/board/Fields.js';
 import * as Demolition from '../../../systems/board/Demolition.js';
 import * as EventTokens from '../../../systems/board/EventTokens.js';
 import { t } from '../../../i18n/index.js';
-import { countdownText, lengthText, chanceText } from '../../../utils/Formatters.js';
+import { countdownText, lengthText } from '../../../utils/Formatters.js';
 
 /**
  * A Token's timer sentences, written once: the Token card's Events lines and the idle hover's
@@ -26,7 +26,6 @@ import { countdownText, lengthText, chanceText } from '../../../utils/Formatters
 export const TIMER_KIND = Object.freeze({
     DEMOLITION: 'demolition',
     LEAVE: 'leave',
-    TURN: 'turn',
     SPAWN: 'spawn',
     GROW: 'grow',
     RIPEN: 'ripen',
@@ -53,7 +52,6 @@ export function liveTimerSources() {
             const inMs = EventTokens.leavesInMs(instance);
             return inMs == null ? null : { inMs, buff: EventTokens.isEventBuff(instance) };
         },
-        nextTurn: TimedChanges.nextTurnRoll,
         spawnerStatus: SpawnerSystem.spawnerStatus,
         nextGrowth: TimedChanges.nextGrowth,
         field: Fields.fieldState,
@@ -110,22 +108,6 @@ export function leaveLine(leave) {
     return {
         kind: TIMER_KIND.LEAVE, icon: 'clock', label: t('events.card.expiresIn'), text: countdownText(leave.inMs),
         tip: t(leave.buff ? 'events.card.buffTip' : 'events.card.nodeTip', { time: timeIn(leave.inMs) })
-    };
-}
-
-/** A turning Token's next roll, or a turned one's roll to turn back. */
-export function turnLine(instance, def, turn, src) {
-    if (instance.turnedFrom) {
-        return {
-            kind: TIMER_KIND.TURN, icon: 'turn', text: countdownText(turn.inMs),
-            tip: `A ${chanceText(turn.chance)} chance to turn back into ${src.tokenName(instance.turnedFrom)} in ${timeIn(turn.inMs)}`
-        };
-    }
-    const into = (turn.into || []).map(src.tokenName).join(' or ');
-    const { everyMs } = turnTiming(def.turns);
-    return {
-        kind: TIMER_KIND.TURN, icon: 'turn', text: countdownText(turn.inMs),
-        tip: `A ${chanceText(turn.chance)} chance every ${lengthIn(everyMs)} to turn into ${into}, and the same to turn back. Next roll in ${timeIn(turn.inMs)}`
     };
 }
 
@@ -244,14 +226,10 @@ export function timerLines(instance, src = liveTimerSources()) {
     const out = [];
     const leave = src.eventLeave?.(instance);
     if (leave) out.push(leaveLine(leave));
-    const turn = src.nextTurn?.(instance);
-    if (!instance.turnedFrom) {
-        const status = def.spawner ? src.spawnerStatus?.(instance.id) : null;
-        if (status) out.push(spawnLine(def, status, src));
-        const growth = src.nextGrowth?.(instance);
-        if (growth) out.push(growthLine(instance, growth, src));
-    }
-    if (turn) out.push(turnLine(instance, def, turn, src));
+    const status = def.spawner ? src.spawnerStatus?.(instance.id) : null;
+    if (status) out.push(spawnLine(def, status, src));
+    const growth = src.nextGrowth?.(instance);
+    if (growth) out.push(growthLine(instance, growth, src));
     const field = src.field?.(instance);
     const fieldLine = field ? fieldTimerLine(field, src) : null;
     if (fieldLine) out.push(fieldLine);

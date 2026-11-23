@@ -96,8 +96,7 @@
             "spawns": { "type": "array", "items": { "$ref": "#/$defs/weightedId" }, "description": "A weighted pick; at least one usable entry or it is inert." },
             "allowance": { "type": "number", "minimum": 0, "description": "How many it keeps out at once (a whole number)." },
             "intervalMs": { "type": "number", "minimum": 0, "description": "Milliseconds between spawns (minimum 1000)." },
-            "upkeep": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/itemQuantity" }, "description": "Paid per spawn, summed per item." },
-            "withinReach": { "type": "boolean", "description": "true places spawns within its reach." }
+            "upkeep": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/itemQuantity" }, "description": "Paid per spawn, summed per item." }
           }
         },
         "grows": {
@@ -108,15 +107,6 @@
             "afterMs": { "type": "number", "minimum": 0, "description": "Milliseconds to grow (the editor's minimum is 1000)." },
             "needsNearby": { "$ref": "common.schema.json#/$defs/idList", "description": "Token types that must be nearby." },
             "cost": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/itemQuantity" }, "description": "Paid once per growth." }
-          }
-        },
-        "turns": {
-          "description": "A chance each cycle to turn into another Token, and back (tokenConstants.js turnTiming; TimedChanges.js).",
-          "type": "object",
-          "properties": {
-            "into": { "type": "array", "items": { "$ref": "#/$defs/weightedId" } },
-            "everyMs": { "type": "number", "minimum": 0, "description": "Milliseconds a cycle, default 60000." },
-            "chance": { "type": "number", "minimum": 0, "maximum": 100, "description": "Percent 0 to 100 per cycle, default 30." }
           }
         },
         "foundation": {

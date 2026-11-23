@@ -218,8 +218,7 @@ export const INITIAL_STATE = {
 
     // === The Board (the playmat) ===
     //   tokens      { [id]: { id, typeId, x, y, placedAt, usesRemaining, cycleElapsedMs, selectedRecipeId? } }  (Free Playmat 1.6a)
-    //               + origin 'placed'|'spawned' (absent reads as placed), clocks? { growMs, turnMs, turnWon?, ... },
-    //                 turnedFrom? typeId  (Token Lifecycle 3.1 / 3.2, roadmap §3.1),
+    //               + origin 'placed'|'spawned' (absent reads as placed), clocks? { growMs, spawnMs, ... },
     //                 fixture? true and biome? string on a node a map wrote, fixture? 'camp' on a Token the Starter Camp laid (`BoardState.isFixture`),
     //                 demolish? true on a Token marked for demolition (`Demolition.js`; its progress is cycleElapsedMs),
     //                 field? { cropId?, load?, full?, seedOwed? } on a Field: the crop in its ground, the harvests left, the seed its first harvest still owes (`Fields.js`; its growth on clocks.fieldMs)

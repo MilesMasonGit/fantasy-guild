@@ -179,7 +179,7 @@ describe('each MatToken detail field updates on its own event (CR3-304)', () => 
         const grove = put(P(600, 600), 'tdr_grove');
         const read = await probe(grove);
         expect(read(grove).spawnerCounts).toEqual({ count: 0, cap: 5 });
-        const sapling = await doing(() => put(P(1400, 600), 'tdr_sapling'));
+        const sapling = await doing(() => put(P(700, 600), 'tdr_sapling'));
         expect(read(grove).spawnerCounts).toEqual({ count: 1, cap: 5 });
         await doing(() => Placement.removePlacedToken(sapling.id));
         expect(read(grove).spawnerCounts).toEqual({ count: 0, cap: 5 });
@@ -211,11 +211,11 @@ describe('each MatToken detail field updates on its own event (CR3-304)', () => 
         expect(read(t).usesRemaining).toBe(before - 3);
     });
 
-    it('type-derived fields (stationSkill, hasPool, isFoundation, isSpawner, turns) are read at mount', async () => {
+    it('type-derived fields (stationSkill, hasPool, isFoundation, isSpawner) are read at mount', async () => {
         const station = put(P(600, 600), 'fixture_station');
         const grove = put(P(1400, 600), 'tdr_grove');
         const read = await probe(station, grove);
-        expect(read(station)).toMatchObject({ stationSkill: 'fixture_station_skill', hasPool: true, isFoundation: false, isSpawner: false, turns: false });
+        expect(read(station)).toMatchObject({ stationSkill: 'fixture_station_skill', hasPool: true, isFoundation: false, isSpawner: false });
         expect(read(grove)).toMatchObject({ stationSkill: null, isSpawner: true });
         // A Token never changes type in place: a transform is a new instance id,
         // so a new MatToken (EffectActions.transformInstance).
