@@ -6,7 +6,7 @@ import { Tooltip } from '../base/Tooltip.jsx';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { SideDrawer } from '../base/SideDrawer.jsx';
 import { itemTintName, itemTintStyle } from '../base/itemTint.js';
-import { itemTipFacts, ItemToolLines, ItemDetailLines } from './ItemTip.jsx';
+import { itemTipFacts, ItemToolLines, ItemEffectLines, ItemDetailLines } from './ItemTip.jsx';
 import { itemTagPills } from './itemTags.js';
 import { useShownBankEntry } from './bankInspection.js';
 import { lifetimeOf } from '../../../systems/progression/collectionLog.js';
@@ -92,6 +92,7 @@ export const ItemDrawerBody = ({ entry }) => {
                         {/* 5. What it does and its rules. */}
                         <div data-item-drawer-stats className="self-stretch flex flex-col gap-1 pt-2 border-t border-gi-border/40">
                             <ItemToolLines facts={facts} />
+                            <ItemEffectLines facts={facts} />
                             <ItemDetailLines facts={facts} />
                         </div>
                     </div>

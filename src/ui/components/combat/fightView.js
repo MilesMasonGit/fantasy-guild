@@ -18,6 +18,8 @@ import { EFFECTS } from '../../../config/registries/effectRegistry.js';
 import { statusBlockOf } from '../../../systems/effects/effectLibrary.js';
 import { rulesLinesOf } from '../../../systems/effects/statementText.js';
 import { carriedRuleNames } from '../dock/heroPerks.js';
+import { explainLinesOf, effectTypesOfStatements } from '../base/effectExplain.js';
+import { statementsOf } from '../../../systems/effects/statements.js';
 import { GameState } from '../../../state/GameState.js';
 import { resolveAnimationPath, resolveSpritePath, resolveEnemyAnimationPath } from '../../../utils/AssetManager.js';
 import { healthText } from '../board/healthBar.js';
@@ -208,12 +210,17 @@ export function enemyHitTypes(moves) {
 
 /**
  * A lingering effect as its row shows it: its name, and its rules as its bearer's own (`Attack
- * Speed +50% in combat.`), so an enemy's Enrage reads with its plain sign, never as a loss.
+ * Speed +50% in combat.`), so an enemy's Enrage reads with its plain sign, never as a loss; and
+ * what each effect its rules name means (`explains`).
  */
 function buffOf(effectId) {
     const entry = EFFECTS[effectId];
     const names = { ...carriedRuleNames(), effect: (id) => EFFECTS[id]?.name || id };
-    return { name: entry?.name || effectId, lines: entry ? rulesLinesOf(entry, names) : [] };
+    return {
+        name: entry?.name || effectId,
+        lines: entry ? rulesLinesOf(entry, names) : [],
+        explains: entry ? explainLinesOf(effectTypesOfStatements(statementsOf(entry), names)) : []
+    };
 }
 
 /** What lingers on an enemy for the fight besides statuses (a boss's Stone Skin, its Enrage). */

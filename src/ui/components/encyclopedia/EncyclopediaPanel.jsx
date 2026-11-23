@@ -3,6 +3,9 @@ import { lengthText } from '../../../utils/Formatters.js';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { PixelGlyph } from '../base/PixelGlyph.jsx';
 import { ItemTipContent } from '../drawer/ItemTip.jsx';
+import { Tooltip } from '../base/Tooltip.jsx';
+import { explainLinesOf, effectTypesOfStatements } from '../base/effectExplain.js';
+import { statementsOf } from '../../../systems/effects/statements.js';
 import { KIND } from './encyclopediaModel.js';
 import { requirementOf } from './encyclopediaChart.js';
 import { EntrySprite, EntryRow, RequirementLine, Tick, isCollected } from './encyclopediaParts.jsx';
@@ -15,15 +18,23 @@ const Clock = ({ ms }) => (
     </span>
 );
 
-/** A Token or an enemy: what it says of itself, the skill and level to work it, its cycle. */
+/**
+ * A Token or an enemy: what it says of itself, the skill and level to work it, its cycle. Its
+ * description's hover says what each effect its rules name means.
+ */
 const TokenFacts = ({ book, entry, heroes }) => {
     const def = entry.def;
     const config = def?.config || {};
     const gate = requirementOf(book, entry.key);
     const cycle = !def?.enemy && Number(config.cycleTimeMs) > 0 ? Number(config.cycleTimeMs) : null;
+    const explains = explainLinesOf(effectTypesOfStatements(statementsOf(def)));
     return (
         <div data-codex-facts="token" className="flex flex-col gap-1 ui-text-body">
-            {def?.description && <p className="text-white/85 leading-snug">{def.description}</p>}
+            {def?.description && (
+                <Tooltip lines={explains}>
+                    <p data-codex-description className={explains.length ? 'text-white/85 leading-snug cursor-help' : 'text-white/85 leading-snug'}>{def.description}</p>
+                </Tooltip>
+            )}
             {(gate || cycle) && (
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-white">
                     {gate && <RequirementLine requirement={gate} heroes={heroes} book={book} />}

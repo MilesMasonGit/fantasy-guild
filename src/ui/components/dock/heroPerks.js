@@ -4,7 +4,7 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { tokenName, getAllTokenTypes } from '../../../config/registries/tokenRegistry.js';
 import { perksEarnedAt, perksReached, nextPerksAfter } from '../../../systems/hero/perkTable.js';
 import { effectTitle, statementsFromEntry } from '../../../systems/effects/effectLibrary.js';
-import { renderStatement } from '../../../systems/effects/statementText.js';
+import { renderStatement, renderSegments } from '../../../systems/effects/statementText.js';
 import { toolNamer } from '../../../systems/effects/toolNames.js';
 
 /**
@@ -38,6 +38,14 @@ export function perkLines(row) {
     if (!entry) return [];
     const names = carriedRuleNames();
     return statementsFromEntry(entry, row).map(statement => renderStatement(statement, names));
+}
+
+/** {@link perkLines} as segments, each effect's name marked (`effect`) for its hover. */
+export function perkSegments(row) {
+    const entry = EFFECTS[row?.effectId];
+    if (!entry) return [];
+    const names = carriedRuleNames();
+    return statementsFromEntry(entry, row).map(statement => renderSegments(statement, names));
 }
 
 const shown = (row) => ({ level: row.level, effectId: row.effectId, title: perkTitle(row) });
