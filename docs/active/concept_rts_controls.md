@@ -1,5 +1,7 @@
 Status: briefed 2026-11-11 (approved 2026-11-11; [brief 610](briefs/610_rts_controls.md))
 
+> **Retired 2026-11-23 (owner):** select and right-click orders are removed; drag and drop is the only way to order, and right-click now inspects. See [concept_playmat_declutter.md](concept_playmat_declutter.md) section 4.
+
 # Select and right-click: RTS-style controls
 
 *Owner interview, 2026-11-11. A second way to give orders, beside drag and

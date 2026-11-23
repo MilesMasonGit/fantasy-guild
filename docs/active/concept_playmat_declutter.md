@@ -80,6 +80,37 @@ demolition badge; a marked Token shows its demolition badge over the '!'. The
 enemy HP bar no longer needs to hide the '!' once it is off the top edge; check
 it at the look.
 
+## 4. Controls: drag and drop only, right-click inspects
+
+**Amends** [concept_rts_controls.md](concept_rts_controls.md) (brief 610,
+built 2026-11-12): select and right-click orders are **removed**; drag and
+drop is the one way to give orders (owner, 2026-11-23).
+
+1. **Left button: drag only.** A plain click on the mat does nothing. No
+   selecting, no gold selection outline, on the mat or the hero bar.
+2. **Right-click inspects**: a Token opens its card, a hero their Hero
+   drawer. **Double-click is retired.** A right-click is never an order.
+3. **The hero bar**: a plain click on a hero's card opens their Hero drawer.
+4. **Stopping a hero** is by drag, as before: drop them on bare ground (they
+   wait there) or on the Guild Hall (home). Right-click-to-stop goes with
+   the rest; no new button.
+5. Clean-up for the director: the select and right-click code, its tests and
+   any tutorial or tooltip text that teaches it go too (grep for "right-click"
+   and "select" in hints and the tutorial).
+
+## 5. The Token card
+
+1. **Scroll arrows only when there is something to scroll** (owner): an arrow
+   shows only while there is more in its direction; none at all on a list
+   that fits. In the shared `ArrowScrollList`, so every list that uses it
+   (the card, the recipe list, drawers) follows.
+2. **A tail points at the Token** (owner): a small triangle on the card's
+   edge, aimed at the inspected Token, like a speech bubble's tail; it
+   follows the Token if the Token moves and flips with the card's side.
+3. **The inspected Token comes forward** (owner): while its card is open it
+   is drawn above heroes and other Tokens, with the gold outline (freed by
+   point 4.1). The rest of the board is not dimmed.
+
 ## Open
 
 The owner's list continues; more items follow.
