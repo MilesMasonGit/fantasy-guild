@@ -19,7 +19,6 @@ import InlineItemModal from '../shared/InlineItemModal';
 
 /**
  * The Rules editor: a Token's statements, one sentence per row, each ending in its own rules text from the same function the game's tooltip uses, so a wrong rule reads wrong.
- * ⚠️ Requires is a view of `acceptedTokens`, not a statement: that field gates whether a station produces anything, so it stays where it is and only its presentation lives here.
  */
 
 const KEYWORD_ICON = {
@@ -34,7 +33,7 @@ const KEYWORD_ICON = {
   [KEYWORD.PROMOTES]: GraduationCap,
 };
 
-/** The statement rows for one library entry, bearer-agnostic. `Requires` is absent from the add menu because it is a Token's own `acceptedTokens` field, not something a shared effect can carry. */
+/** The statement rows for one library entry, bearer-agnostic. */
 /**
  * @param {object} [cursor] / [onCursor]  a cursor held by the caller, so several lists on one screen share ONE panel; omitted, the list keeps its own. `onCursor` takes a value or a function of this list's cursor.
  * @param {'always'|'focused'} [panel]  `focused` shows the panel only while this list holds the cursor.
@@ -186,7 +185,7 @@ export function StatementList({
       {canAdd && <div className="pt-1">
         {menuOpen ? (
           <div className="rounded-lg border border-white/10 bg-black/30 p-2 space-y-1">
-            {KEYWORDS.filter((k) => k.id !== KEYWORD.REQUIRES && !k.retired).map((k) => {
+            {KEYWORDS.filter((k) => !k.retired).map((k) => {
               const Icon = KEYWORD_ICON[k.id] || Zap;
               return (
                 <button
@@ -226,15 +225,14 @@ export function StatementList({
   );
 }
 
-/** A Token's rules: its requirements, and the library entries it references. ⚠️ A shared effect is read-only here with its reference count and Edit, because an in-place edit would change every bearer while looking local. `Requires` is `acceptedTokens`, which gates whether the station produces anything. */
+/** A Token's rules: the library entries it references. ⚠️ A shared effect is read-only here with its reference count and Edit, because an in-place edit would change every bearer while looking local. */
 export default function Statements({ token, item }) {
-  // One component for either bearer: the rules half is identical for a Token and an item. `Requires` is a Token field (`acceptedTokens`) with no meaning on an item.
+  // One component for either bearer: the rules half is identical for a Token and an item.
   const record = token || item;
   const collectionKey = token ? 'tokens' : 'items';
   const effects = useEntityStore((s) => s.effects);
   const tokens = useEntityStore((s) => s.tokens);
   const items = useEntityStore((s) => s.items);
-  const updateToken = useEntityStore((s) => s.updateToken);
   const addEffectForBearer = useEntityStore((s) => s.addEffectForBearer);
   const addEffectRef = useEntityStore((s) => s.addEffectRef);
   const removeEffectRef = useEntityStore((s) => s.removeEffectRef);
@@ -259,9 +257,7 @@ export default function Statements({ token, item }) {
     }),
   });
 
-  const requirements = token ? (token.acceptedTokens || []) : [];
   const refs = effectRefsOf(record);
-  const setRequirements = (next) => updateToken(record.id, { acceptedTokens: next });
 
   /** An item's rules are carried by its hero, so they read as the hero's; a Token's read as the Token's. */
   const names = useMemo(() => ({
@@ -280,7 +276,7 @@ export default function Statements({ token, item }) {
     .filter((e) => !refs.some((r) => r.effectId === e.id))
     .filter((e) => !search || (e.name || '').toLowerCase().includes(search.toLowerCase()));
 
-  const isEmpty = refs.length === 0 && requirements.length === 0;
+  const isEmpty = refs.length === 0;
 
   if (!record) return null;
 
@@ -304,20 +300,6 @@ export default function Statements({ token, item }) {
           nothing. Rebuild its rules below — adding the first rule clears the old
           data for good.
         </div>
-      )}
-
-      {/* Requires is a view of `acceptedTokens`: each entry is shown as a Requires sentence and written back as the plain `{ tag, minTier }`. The verb is locked and there is no cost strip, since nothing spends. */}
-      {requirements.length > 0 && (
-        <StatementList
-          statements={requirements.map((req, i) => ({ id: `req_${i}`, keyword: KEYWORD.REQUIRES, payload: req }))}
-          onChange={(next) => setRequirements(next.map((st) => st.payload))}
-          {...cursorFor('requires')}
-          panel="focused"
-          canAdd={false}
-          lockKeyword
-          emptyNote={null}
-          rowNote={(st) => <RequiresNote requirement={st.payload} tokens={tokens} />}
-        />
       )}
 
       {refs.map(({ effectId, scale }) => {
@@ -511,19 +493,14 @@ export default function Statements({ token, item }) {
 
         {menuOpen ? (
           <div className="rounded-lg border border-white/10 bg-black/30 p-2 space-y-1">
-            {/* An item is offered neither Requires nor a keyword declared `tokensOnly`; nothing is offered a `retired` one. */}
-            {KEYWORDS.filter((k) => !k.retired && (token || (k.id !== KEYWORD.REQUIRES && !k.tokensOnly))).map((k) => {
+            {/* An item is not offered a keyword declared `tokensOnly`; nothing is offered a `retired` one. */}
+            {KEYWORDS.filter((k) => !k.retired && (token || !k.tokensOnly)).map((k) => {
               const Icon = KEYWORD_ICON[k.id] || Zap;
               return (
                 <button
                   key={k.id}
                   onClick={() => {
                     setMenuOpen(false);
-                    // Requires is a Token field, not a shared effect.
-                    if (k.id === KEYWORD.REQUIRES) {
-                      setRequirements([...requirements, { tag: '', minTier: 1 }]);
-                      return;
-                    }
                     addEffectForBearer(collectionKey, record.id, k.id);
                   }}
                   className="w-full text-left flex items-start gap-2 px-2 py-1.5 rounded hover:bg-white/5"
@@ -613,29 +590,6 @@ function RowShell({ keywordId, onMove, canMoveUp, canMoveDown, onRemove, childre
   );
 }
 
-/**
- * Which Tokens satisfy a requirement — the one thing the retired Requires form
- * showed that its sentence does not say.
- */
-function RequiresNote({ requirement, tokens }) {
-  const effects = useEntityStore((s) => s.effects);
-  // Expanded: an `Acts as` rule lives in the library, so an unexpanded Token
-  // provides nothing and this list would always read "nothing supplies this".
-  const providers = Object.values(tokens).filter((t) =>
-    providedTagsOf(expandBearer(t, effects || {}))
-      .some((p) => p.tag === requirement.tag && (p.tier || 1) >= (requirement.minTier || 1))
-  );
-  return (
-    <p className="text-[10px] text-gray-500" data-satisfied-by>
-      Satisfied by:{' '}
-      {providers.length === 0 ? (
-        <span className="text-amber-400">nothing yet — this Token can never work</span>
-      ) : (
-        providers.map((t) => t.name).join(', ')
-      )}
-    </p>
-  );
-}
 /** One real statement, edited as a sentence. `statementSlots.js` describes a statement's slots once and `RulesLine` renders them as clickable words. Beneath it survive a conversion's item table and the cost strip (charge cost and upkeep, which the sentence never says). */
 function StatementRow({ statement, items, names, ctx, cursor, actions, canCreate, lockKeyword, note, onChange, onRemove, onMove, canMoveUp, canMoveDown }) {
   const keyword = getKeyword(statement.keyword);
@@ -815,7 +769,6 @@ function useCapabilityVocabulary(tokens) {
     const tags = new Set();
     for (const t of Object.values(tokens)) {
       for (const p of providedTagsOf(expandBearer(t, effects || {}))) if (p.tag) tags.add(p.tag);
-      for (const r of t.acceptedTokens || []) if (r?.tag) tags.add(r.tag);
     }
     return [...tags].sort();
   }, [tokens, effects]);

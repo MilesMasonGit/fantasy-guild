@@ -50,9 +50,7 @@
  *
  * `requiresContext` entries are objects, not bare tag strings, so a recipe can
  * state a minimum tool tier and a per-cycle charge cost against the nearby
- * Token. The entry is deliberately shaped like an `acceptedTokens` entry plus
- * `chargeCost`, so `checkAcceptedTokens` in `RecipeResolver.js` compares both
- * with the same code.
+ * Token.
  *
  * `stationChargeCost` is the charges the station itself spends per cycle,
  * a separate axis from context charge costs; `Charges.js` reads it.

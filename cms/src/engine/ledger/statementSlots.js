@@ -960,8 +960,7 @@ function chargeHint(delta, moment, rolls = false) {
  */
 export function costSlots(statement) {
     const keyword = getKeyword(statement?.keyword);
-    // ⚠️ `Requires` is a view of a Token's `acceptedTokens`, not a rule: nothing spends on it,
-    // and a charge written here would land in the Token's requirement list.
+    // ⚠️ `Requires` is retired and does nothing, so it never offers a cost.
     if (!keyword || keyword.id === KEYWORD.REQUIRES) return [];
     // A fight moment never spends a charge or an item: a boss's move is not a use of it.
     if (isFightMoment(statement?.when?.event)) return [];

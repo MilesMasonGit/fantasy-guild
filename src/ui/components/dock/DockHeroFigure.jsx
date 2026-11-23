@@ -23,6 +23,7 @@ import { useHeroBarBubbles, clearHeroBubbles, clearHeroBubble, BAR_BUBBLES_SHOWN
 import { useEquipBubble, EQUIP_BUBBLE_FADE_MS } from './equipBubbles.js';
 import { BubbleText } from '../board/BubbleText.jsx';
 import { SpeechFrame } from '../board/SpeechFrame.jsx';
+import { SkillIcon } from '../base/SkillIcon.jsx';
 import { SPEECH_TONE } from '../board/speechTone.js';
 import {
     DOCK_STRIP_PX, DOCK_LABEL_GAP_PX, DOCK_LABEL_PX, DOCK_NAME_TEXT_CLASS, ROSTER_FLAG_PX, DOCK_HP_BAR_PX, DOCK_HP_BAR_HEIGHT_PX,
@@ -420,7 +421,13 @@ const EquipBubble = ({ heroId, said }) => (
         )}
         style={{ transitionDuration: `${EQUIP_BUBBLE_FADE_MS}ms` }}
     >
-        {said.text}
+        {said.icon ? (
+            <>
+                {said.text.slice(0, said.icon.at)}
+                <span data-equip-bubble-skill={said.icon.skill} aria-hidden="true"><SkillIcon skill={said.icon.skill} size={16} className="mr-0.5" /></span>
+                {said.text.slice(said.icon.at)}
+            </>
+        ) : said.text}
     </SpeechFrame>
 );
 

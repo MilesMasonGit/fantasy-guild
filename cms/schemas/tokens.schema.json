@@ -47,7 +47,7 @@
         "effects": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/effectRef" }, "description": "Its rules, as references into data/effects.json (tokenRegistry.js expandBearer)." },
         "acceptedTokens": {
           "type": "array",
-          "description": "What must be nearby for it to work (src/systems/board/RecipeResolver.js checkAcceptedTokens): { tag, minTier } (minTier default 1) or { tokenIds } (any one of them). The CMS shows them as Requires rows.",
+          "description": "Retired: nothing reads it (a hero carries the tool a Token needs, needsTool). Shipped Tokens carry an empty list.",
           "items": {
             "type": "object",
             "properties": {

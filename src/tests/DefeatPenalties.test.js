@@ -34,8 +34,7 @@ vi.mock('../config/registries/equipmentConstants.js', () => ({
     isSustenanceCategory: vi.fn((cat) => cat === 'food' || cat === 'drink'),
     // The Prep Phase class (potions/scrolls/runes) — mirrors the real registry,
     // where `consumable` is the only id of kind CONSUMABLE.
-    isConsumableCategory: vi.fn((cat) => cat === 'consumable'),
-    getPrimaryWeaponSlot: vi.fn(() => null)
+    isConsumableCategory: vi.fn((cat) => cat === 'consumable')
 }));
 
 vi.mock('../systems/hero/HeroManager.js', () => ({

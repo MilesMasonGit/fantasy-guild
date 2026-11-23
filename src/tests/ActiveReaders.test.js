@@ -191,16 +191,6 @@ describe('RecipeResolver: a tool near a station', () => {
         expect(RecipeResolver.servesFrom(idAt(SIDE))).toEqual([idAt(BIG)]);
     });
 
-    it('accepted tools (Requires) measure the same way', () => {
-        const vein = { acceptedTokens: [{ tag: 'pickaxe', minTier: 1 }] };
-        put(S14, 'fixture_copper_vein');
-        put(S16, 'fixture_pickaxe_t1');                 // 320 u
-        expect(RecipeResolver.checkAcceptedTokens(idAt(S14), vein)).toBe(false);
-
-        put(CORNER, 'fixture_pickaxe_t1');              // diagonal
-        expect(RecipeResolver.checkAcceptedTokens(idAt(S14), vein)).toBe(true);
-    });
-
     it('a larger radius widens it: at 400 u a tool two steps away serves', () => {
         put(S14, 'fixture_tool_gated');
         put(S16, 'fixture_tool');                      // 320 u

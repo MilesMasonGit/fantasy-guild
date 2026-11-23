@@ -8,25 +8,6 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { GameState } from '../state/GameState.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
-import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
-
-/**
- * A gatherer that still needs an axe nearby. The shipped Oak Tree used to be
- * this case, but tool requirements were dropped from content (Token Lifecycle
- * slice 7.0) while the engine path they exercise stays, so the test keeps its
- * own copy of the old requirement.
- */
-registerTokenTypes({
-    fixture_axe_tree: {
-        id: 'fixture_axe_tree', name: 'Fixture Axe Tree', tokenType: 'resource',
-        rarity: 'common', theme: 'fixture', uses: 25, sprite: 't_tree_oak',
-        acceptedTokens: [{ tag: 'axe', minTier: 1 }],
-        config: {
-            skill: 'forestry', skillRequired: 1, cycleTimeMs: 16000, xp: 2, inputs: [],
-            outputs: [{ itemId: 'item_oak_wood', chance: 100, minQty: 1, maxQty: 2 }]
-        }
-    }
-});
 
 /**
  * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles.
@@ -198,26 +179,23 @@ describe('On-Board Tile Event Alerts', () => {
         expect(tokenAlert.message).toMatch(/(Out of|Missing) token:/);
     });
 
-    it('emits Yellow alert for a tree missing its Woodaxe tool', () => {
+    it('emits Yellow alert for a station missing the context Token its recipe needs', () => {
         const events = [];
         EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, e => events.push(e));
 
-        // Place a tree that requires an axe, without a nearby axe
-        const tree = BoardState.createTokenInstance('fixture_axe_tree');
-        put(8, tree);
+        const gated = BoardState.createTokenInstance('fixture_tool_gated');
+        put(8, gated);
         staff(8, 'hero_1');
 
-        // Tick runner
         BoardRunner.tick(100);
 
-        const tokenAlert = events.find(e => e.type === 'out_of_token' && e.instanceId === tree.id);
-        expect(tokenAlert).toBeDefined();
+        const tokenAlert = events.find(e => e.type === 'out_of_token' && e.instanceId === gated.id);
         expect(tokenAlert).toMatchObject({
-            instanceId: tree.id,
+            instanceId: gated.id,
             severity: 'yellow',
             type: 'out_of_token',
-            name: 'Woodaxe',
-            message: 'Missing token: Woodaxe'
+            name: 'Ctx Fixture Tool',
+            message: 'Missing token: Ctx Fixture Tool'
         });
     });
 

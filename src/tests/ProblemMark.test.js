@@ -24,6 +24,7 @@ import {
     problemOf, problemText, PROBLEM_SEVERITY, PROBLEM_SPRITE, PROBLEM_COLOUR, SEVERITY
 } from '../ui/components/board/problemMark.js';
 import { ProblemMark } from '../ui/components/board/ProblemMark.jsx';
+import { pickRecipe } from './fixtures/stations.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -132,8 +133,8 @@ describe('⭐ the hover says exactly what, from the engine', () => {
     });
 
     it('a Token it needs beside it: names it with its article', () => {
-        const vein = put('fixture_copper_vein');
-        expect(text(ALERT.NO_RECIPE, vein.id)).toBe('Needs a Pickaxe nearby');
+        const gated = pickRecipe(put('fixture_tool_gated'));
+        expect(text(ALERT.NO_RECIPE, gated.id)).toBe('Needs a Ctx Fixture Tool nearby');
         // Nothing named missing (a station with nothing it can make): it says so.
         const producer = put('fixture_producer', { x: AT.x + 400, y: AT.y });
         expect(text(ALERT.NO_RECIPE, producer.id)).toBe('Nothing to make');

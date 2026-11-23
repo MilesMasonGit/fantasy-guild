@@ -13,11 +13,10 @@ import * as BoardState from './BoardState.js';
  * Foundation, a work camp, or a Token that acts on or depends on what is near it. A plain resource, a Map or the Guild Hall shows none, and nor does an enemy
  * camp (a spawner of enemies), whatever its rules: no enemy acts on what is near its camp.
  *
- * Four places say a Token cares, because content carries two generations of fields:
+ * Three places say a Token cares, because content carries two generations of fields:
  * 1. its rules (`caresAboutNeighbours`)
  * 2. a legacy `provides` tool list
- * 3. `acceptedTokens` (Requires a nearby Pickaxe on an ore vein)
- * 4. a station recipe that needs context Tokens beside it
+ * 3. a station recipe that needs context Tokens beside it
  */
 export function showsNearRing(typeId) {
     const def = getTokenType(typeId);
@@ -26,7 +25,6 @@ export function showsNearRing(typeId) {
     if (def.foundation || campOf(def)) return true;
     if (caresAboutNeighbours(def)) return true;
     if (Object.keys(getProvidedTagsWithTiers(def)).length > 0) return true;
-    if (def.acceptedTokens?.length) return true;
     return recipesForToken(def).some(recipe => contextTagsOf(recipe).length > 0);
 }
 

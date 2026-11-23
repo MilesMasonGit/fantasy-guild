@@ -348,9 +348,8 @@ export function buildCorpus() {
         add(`upkeep:${JSON.stringify(upkeep)}`, () => upkeepLine(S(KEYWORD.PROVIDES, { upkeep }), shippedNames));
     }
 
-    // ---- 10. A whole Token with requirements, statements and upkeep --------
+    // ---- 10. A whole Token with statements and upkeep --------
     add('rules:composite', () => JSON.stringify(rulesLinesOf({
-        acceptedTokens: [{ tag: 'net', minTier: 2 }, { tokenIds: [FIX.token] }],
         statements: [
             { ...S(KEYWORD.PROVIDES, { payload: { type: 'YIELD', bucket: 'percentage', value: 0.1 } }), upkeep: { items: [{ itemId: FIX.item, quantity: 1 }], cadenceMs: 30000 } },
             S(KEYWORD.DEALS, { payload: { amount: 2 }, when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 4000 } })

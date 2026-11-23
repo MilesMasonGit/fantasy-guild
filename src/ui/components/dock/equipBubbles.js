@@ -34,12 +34,15 @@ function stopTimers(heroId) {
     timers.delete(heroId);
 }
 
-/** Say `text` over `heroId` on the bar, replacing what they said before. */
-export function announceEquip(heroId, text, tone) {
+/**
+ * Say `text` over `heroId` on the bar, replacing what they said before. `icon`, `{ skill, at }`,
+ * draws that skill's icon at character `at` of the text.
+ */
+export function announceEquip(heroId, text, tone, icon = null) {
     if (!heroId || !text) return;
     stopTimers(heroId);
     const key = nextKey++;
-    set(heroId, { key, text, tone, fading: false });
+    set(heroId, { key, text, tone, fading: false, ...(icon ? { icon } : {}) });
     const fade = setTimeout(() => {
         const b = byHero.get(heroId);
         if (b?.key === key) set(heroId, { ...b, fading: true });

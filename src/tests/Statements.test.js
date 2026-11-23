@@ -113,9 +113,7 @@ describe('The rules text is the rule, rendered', () => {
         expect(renderStatement(half)).toBe('Acts as … for nearby stations.');
     });
 
-    it('renders acceptedTokens alongside the statements, as one list', () => {
-        // Owner decision Q5: the field stays exactly where it is, because it
-        // gates whether a station produces at all. Only its presentation moves.
+    it('an old acceptedTokens list is not shown: nothing reads it', () => {
         const def = {
             acceptedTokens: [{ tag: 'pickaxe', minTier: 1 }],
             statements: [{
@@ -124,7 +122,6 @@ describe('The rules text is the rule, rendered', () => {
             }]
         };
         expect(rulesLinesOf(def, names)).toEqual([
-            'Requires a nearby Tier 1 pickaxe.',
             'Provides 10% more yield to every nearby Token.'
         ]);
     });

@@ -81,11 +81,6 @@ export function toolFindings({ items = {}, tokens = {}, recipes = [] } = {}) {
             if (!kind) continue;
             push('Token', tokenId, token, `acts as a ${tag.replace(/_/g, ' ')} beside other Tokens, but tools are carried by heroes now: make it an item with a Tool (${toolKindLabel(kind)}), or delete it`);
         }
-        for (const requirement of token?.acceptedTokens || []) {
-            const kind = RETIRED_TOOL_TAGS[requirement?.tag];
-            if (!kind) continue;
-            push('Token', tokenId, token, `requires a nearby ${requirement.tag.replace(/_/g, ' ')}, but tools are carried by heroes now: set its Needs tool to ${toolKindLabel(kind)} instead`);
-        }
     }
 
     for (const recipe of Array.isArray(recipes) ? recipes : Object.values(recipes || {})) {

@@ -166,17 +166,13 @@ export function toolTokenFor(tag, minTier = 1, allTypes = getAllTokenTypes()) {
 
 /**
  * The Token types whose work a tool or support Token `def` serves: any with a recipe that needs a
- * tag it provides, or that accepts it as a tool at its tier. Empty for one nothing uses any more
- * (an old save's retired anvil).
+ * tag it provides. Empty for one nothing uses any more (an old save's retired anvil).
  */
 export function drivenBy(def, allTypes = getAllTokenTypes(), routesOf = productionRoutes) {
-    const tiers = getProvidedTagsWithTiers(def) || {};
-    const tags = new Set(Object.keys(tiers));
+    const tags = new Set(Object.keys(getProvidedTagsWithTiers(def) || {}));
     if (!tags.size) return [];
-    const accepts = (other) => (Array.isArray(other?.acceptedTokens) ? other.acceptedTokens : [])
-        .some(req => req?.tag && tags.has(req.tag) && Number(tiers[req.tag]) >= (Number(req.minTier) || 1));
     return Object.entries(allTypes || {})
-        .filter(([id, other]) => accepts(other) || routesOf(id).some(r => (r.requiresContext || []).some(t => tags.has(t))))
+        .filter(([id]) => routesOf(id).some(r => (r.requiresContext || []).some(t => tags.has(t))))
         .map(([id]) => id);
 }
 
@@ -194,14 +190,6 @@ function toolsOf(def, recipe, src) {
     if (need) {
         const items = src.allItems?.() || {};
         add({ itemId: toolItemFor(need, items), name: toolNeedPhrase(need, items), tag: need.kind, inHand: true });
-    }
-    for (const req of Array.isArray(def.acceptedTokens) ? def.acceptedTokens : []) {
-        if (req?.tag) {
-            const typeId = toolTokenFor(req.tag, req.minTier || 1, src.allTypes());
-            add({ typeId, name: typeId ? src.tokenName(typeId) : req.tag, tag: req.tag });
-        } else if (Array.isArray(req?.tokenIds) && req.tokenIds.length) {
-            add({ typeId: req.tokenIds[0], name: req.tokenIds.map(src.tokenName).join(' or '), tag: null });
-        }
     }
     for (const req of contextRequirementsOf(recipe)) {
         const typeId = toolTokenFor(req.tag, req.minTier, src.allTypes());

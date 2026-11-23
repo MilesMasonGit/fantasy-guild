@@ -50,8 +50,11 @@ describe('showsNearRing — which Tokens show their reach', () => {
     });
 
     it('a Token that NEEDS something nearby does (the broad reading the owner chose)', () => {
-        expect(showsNearRing('rd_requires')).toBe(true);
         expect(showsNearRing('rd_cannot')).toBe(true);
+    });
+
+    it('an old acceptedTokens list is read by nothing, so it shows no ring', () => {
+        expect(showsNearRing('rd_requires')).toBe(false);
     });
 
     it('a tool does, whether it is authored as Acts as or the legacy provides list', () => {

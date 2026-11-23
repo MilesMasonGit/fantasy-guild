@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../systems/core/engineEvents.js';
-import { equipOrAnnounce, equipRefusalText, equipSuccessText } from '../ui/components/dock/dockEquip.js';
+import { equipOrAnnounce, equipRefusalText, equipSuccessText, refusalIconOf } from '../ui/components/dock/dockEquip.js';
 import {
     equipBubbleOf, clearEquipBubbles, EQUIP_BUBBLE_MS, EQUIP_BUBBLE_FADE_MS
 } from '../ui/components/dock/equipBubbles.js';
@@ -38,23 +38,31 @@ const world = {
         food_shrimp: { name: 'Shrimp' },
         tool_iron_woodaxe: { name: 'Iron Woodaxe' }
     }[id] || null),
-    unmetOf: (heroId, itemId) => (itemId === 'k1_mythril_scimitar' ? { skill: 'melee', level: 40, have: 12 } : null),
     skillName: (id) => ({ melee: 'Melee' }[id] || id),
     isStack: (id) => id === 'food_shrimp',
     bankCount: (id) => (id === 'food_shrimp' ? 4600 : 0)
 };
 
 describe('equip bubbles: the words', () => {
-    it('a level refusal names the item, the skill and both numbers', () => {
-        expect(equipRefusalText('h1', 'k1_mythril_scimitar', 'Needs Melee 40', world))
-            .toBe("Can't equip Mythril Scimitar. Melee skill too low. (12/40)");
+    it('a level refusal is the engine\'s own words, never reworded', () => {
+        expect(equipRefusalText('k1_mythril_scimitar', 'Needs Melee 40 (Ana: 12)', world))
+            .toBe("Can't equip Mythril Scimitar. Needs Melee 40 (Ana: 12)");
     });
 
     it('any other refusal keeps the engine\'s reason, ending in a full stop', () => {
-        expect(equipRefusalText('h1', 'tool_iron_woodaxe', 'No free slot in the loadout', world))
+        expect(equipRefusalText('tool_iron_woodaxe', 'No free slot in the loadout', world))
             .toBe("Can't equip Iron Woodaxe. No free slot in the loadout.");
-        expect(equipRefusalText('h1', 'tool_iron_woodaxe', 'Villagers cannot equip items.', world))
+        expect(equipRefusalText('tool_iron_woodaxe', 'Villagers cannot equip items.', world))
             .toBe("Can't equip Iron Woodaxe. Villagers cannot equip items.");
+    });
+
+    it('the skill icon goes just before the skill in the reason, never in an item named after it', () => {
+        const error = 'Needs Melee 40 (Ana: 12)';
+        const named = { ...world, itemOf: () => ({ name: 'Melee Charm' }) };
+        const text = equipRefusalText('x', error, named);
+        expect(refusalIconOf(text, error, { skill: 'melee' }, named)).toEqual({ skill: 'melee', at: text.lastIndexOf('Melee') });
+        expect(refusalIconOf(text, error, null, named)).toBeNull();
+        expect(refusalIconOf("Can't equip x. Out of stock.", 'Out of stock', { skill: 'melee' }, named)).toBeNull();
     });
 
     it('a success names the item, and a stack linked to the Bank its short count', () => {
