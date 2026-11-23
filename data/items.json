@@ -6784,5 +6784,35 @@
     "tags": [
       "Material"
     ]
+  },
+  "item_wool": {
+    "name": "Wool",
+    "description": "",
+    "type": "material",
+    "sprite": "i_beef_raw",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_wool",
+    "tags": [
+      "Material"
+    ]
+  },
+  "item_sheep_banner": {
+    "id": "item_sheep_banner",
+    "name": "Sheep Pasture Map",
+    "description": "Shows where a Sheep Pasture can stand: the Build Sheep Pasture recipe spends one.",
+    "type": "material",
+    "sprite": "t_map_spooky",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "tags": [],
+    "valueSource": null
   }
 }

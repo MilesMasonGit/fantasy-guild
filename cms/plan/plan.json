@@ -1579,6 +1579,15 @@
       "item_basalt_block": {
         "status": "live",
         "tier": 3
+      },
+      "item_wool": {
+        "status": "live",
+        "tier": 1
+      },
+      "item_sheep_banner": {
+        "status": "live",
+        "tier": 2,
+        "note": "Seed map: a rare drop that builds its camp."
       }
     },
     "tokens": {
@@ -2293,6 +2302,14 @@
       "token_builders_yard": {
         "status": "live",
         "tier": 0
+      },
+      "token_sheep": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_sheep_pasture": {
+        "status": "live",
+        "tier": 1
       }
     },
     "recipes": {
@@ -3600,6 +3617,11 @@
       "recipe_basalt_block": {
         "status": "live",
         "tier": 3
+      },
+      "recipe_build_sheep_pasture": {
+        "status": "live",
+        "tier": 2,
+        "note": "Builds a creature camp from its banner (brief 330 W6)."
       },
       "recipe_birdwatcher": {
         "status": "live",

@@ -368,7 +368,8 @@
         "combat": 0.5
       },
       "camps": [
-        "token_goblin_camp"
+        "token_goblin_camp",
+        "token_sheep_pasture"
       ],
       "bossCamps": [
         "token_chief_tent",
@@ -459,6 +460,7 @@
       "token_crab_rocks",
       "token_wild_hive",
       "token_cow_pasture",
+      "token_sheep_pasture",
       "token_thorn_thicket",
       {
         "id": "token_alpha_den",
