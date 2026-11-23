@@ -52,6 +52,34 @@ Every Token inside the ring gets a dot (`reachDotsAt`, all of `tokensWithin`).
    come from the engine's own rules, not a second list in the UI (the ⚠️ on
    `reachDotsAt` still holds for the distance).
 
+## 3. The problem mark ('!')
+
+Today (`ProblemMark.jsx`, `alertBob.js`, `problemMark.js`): the yellow
+(waiting) or red (can't) '!' bobs above the art's top edge; on hover the idle
+plate under the Token (`idlePlate.js`) shows the same problem again. A full
+Token cap (`ALERT.SPAWN_MAT_FULL`) puts a red '!' on every spawner at once.
+
+1. **In the centre of the Token** (owner): over the art's middle, not above
+   it, so it is plain which Token it belongs to. A worked Token's problem
+   still shows in its work plate as today (amended in point 3 only for the
+   idle plate).
+2. **Still** (owner): no bob. A choice waiting on you (a station's recipe, a
+   Foundation's building) keeps its slow pulse, and the gear still takes the
+   mark's spot on hover, now in the centre.
+3. **Said once** (owner): when a Token shows its '!', the idle plate under it
+   leaves the problem out (the plate shows only its timers, or nothing). The
+   '!' keeps its tooltip with the reason. Every problem, not only the cap.
+4. **Token cap full: yellow, and gone once hovered** (owner): a full cap is
+   waiting for room, not broken, so a spawner shows the yellow '!'. Once the
+   player hovers that spawner, its cap '!' goes away (seen); it comes back
+   only if the cap frees and fills again. The top bar's count still turns red.
+   Red stays for real can't-do problems.
+
+Director's call when building: the centre row is shared with the gear and the
+demolition badge; a marked Token shows its demolition badge over the '!'. The
+enemy HP bar no longer needs to hide the '!' once it is off the top edge; check
+it at the look.
+
 ## Open
 
 The owner's list continues; more items follow.
