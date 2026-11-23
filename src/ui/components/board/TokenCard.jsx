@@ -314,19 +314,20 @@ const MakesSection = ({ makes, bonus = [], effects }) => {
                         onInspect={lookUpRibbon}
                     />
                 ))}
+                {/* One line like the drops above it: a second line would make the row taller. */}
                 {bonus.map((b, i) => (
                     <EntityRibbon
                         key={`bonus:${b.heroId}:${b.itemId}:${i}`}
                         kind="item"
                         id={b.itemId}
-                        name={b.text}
-                        subtitle={b.note}
-                        countText=""
+                        name={b.note}
+                        minQty={b.min}
+                        maxQty={b.max}
+                        chance={b.chance != null ? chanceText(b.chance) : undefined}
                         title={`${b.text} · ${b.note}`}
                         data-card-bonus={b.itemId}
                         data-card-bonus-hero={b.heroId}
                         size="sm"
-                        wrap
                         onInspect={lookUpRibbon}
                     />
                 ))}

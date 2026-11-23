@@ -11,6 +11,10 @@ import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as LiveEffects from '../systems/effects/LiveEffects.js';
+import * as LoadoutMoments from '../systems/board/LoadoutMoments.js';
+import * as BoardRunner from '../systems/board/BoardRunner.js';
+import { EventBus } from '../systems/core/EventBus.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import * as EquipmentManager from '../systems/equipment/EquipmentManager.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
@@ -52,7 +56,16 @@ registerEffects({
     cb_fx_nest: { id: 'cb_fx_nest', name: 'Nest Finder', statements: [grants('cb_nest', 25)] },
     cb_fx_feather: { id: 'cb_fx_feather', name: 'Feather Finder', statements: [grants('cb_feather', 10)] },
     cb_fx_pouch: { id: 'cb_fx_pouch', name: 'Nest Pouch', statements: [{ ...grants('cb_nest', 50), chargeDelta: -1 }] },
-    cb_fx_watch: { id: 'cb_fx_watch', name: 'Birdwatcher', statements: [grants('cb_nest', 25)] }
+    cb_fx_watch: { id: 'cb_fx_watch', name: 'Birdwatcher', statements: [grants('cb_nest', 25)] },
+    cb_fx_watch_potion: {
+        id: 'cb_fx_watch_potion', name: 'Birdwatcher Potion',
+        statements: [{
+            ...makeStatement(KEYWORD.APPLIES),
+            when: { event: 'WORK_START', scope: 'self' },
+            target: { role: 'actor' },
+            payload: { effectId: 'cb_fx_watch', scale: 1, durationMs: 0, forCycle: true, chance: 100 }
+        }]
+    }
 });
 
 registerItems({
@@ -61,6 +74,7 @@ registerItems({
     cb_log: { id: 'cb_log', name: 'Log', stackable: true },
     cb_nest_charm: { id: 'cb_nest_charm', name: 'Nest Charm', equipSlot: 'trinket', stackable: true, sprite: 'i_potion_shrimp_pink', effects: [{ effectId: 'cb_fx_nest' }] },
     cb_nest_pouch: { id: 'cb_nest_pouch', name: 'Nest Pouch', equipSlot: 'trinket', stackable: true, sprite: 'i_potion_shrimp_pink', effects: [{ effectId: 'cb_fx_pouch' }] },
+    cb_watch_potion: { id: 'cb_watch_potion', name: 'Birdwatcher Potion', equipSlot: 'consumable', stackable: true, sprite: 'i_potion_shrimp_pink', effects: [{ effectId: 'cb_fx_watch_potion' }] },
     cb_feather_hat: { id: 'cb_feather_hat', name: 'Feather Hat', equipSlot: 'hat', stackable: true, sprite: 'i_potion_shrimp_pink', effects: [{ effectId: 'cb_fx_feather' }] }
 });
 
@@ -133,8 +147,27 @@ describe('the card shows a working hero bonus drops', () => {
         const row = makes.querySelector('[data-card-bonus="cb_nest"]');
         expect(row).not.toBeNull();
         expect(row.getAttribute('data-card-bonus-hero')).toBe(ana.id);
-        expect(row.textContent).toContain('Bird Nest 25%');
         expect(row.textContent).toContain("bonus (Ana's Nest Charm)");
+        expect(row.textContent).toContain('25%');
+        expect(row.getAttribute('title')).toBe("Bird Nest 25% · bonus (Ana's Nest Charm)");
+    });
+
+    it('the line is one line, as the drop rows above it: no subtitle, cut off rather than wrapped', () => {
+        equip(ana, 'cb_nest_charm');
+        const tree = placeTree({ x: 400, y: 400 });
+        Orders.orderAt(ana.id, { x: 400, y: 400 });
+        const { container } = render(React.createElement(TokenCard, { typeId: 'cb_tree', instanceId: tree.id }));
+        const row = container.querySelector('[data-card-bonus="cb_nest"]');
+        const drop = container.querySelector('[data-card-makes] [data-item-bar]:not([data-card-bonus])');
+        const name = row.querySelector('[data-item-bar-name]');
+        expect(name.textContent).toBe("bonus (Ana's Nest Charm)");
+        expect(name.nextElementSibling).toBeNull();
+        expect(name.className).toContain('truncate');
+        // The same text size and padding as the Token's own drop row.
+        expect(name.className.split(' ').filter(c => c.startsWith('text-'))).toEqual(
+            drop.querySelector('[data-item-bar-name]').className.split(' ').filter(c => c.startsWith('text-'))
+        );
+        expect(row.className).toBe(drop.className);
     });
 
     it('a potion carried for the cycle names its effect', () => {
@@ -196,6 +229,77 @@ describe('the card shows a working hero bonus drops', () => {
         expect(bonusOf(tree).map(lineOf)).toEqual(["Bird Nest 50% · bonus (Ana's Nest Pouch)"]);
         InventoryManager.removeItem('cb_nest_pouch', InventoryManager.getItemCount('cb_nest_pouch'));
         expect(bonusOf(tree)).toEqual([]);
+    });
+
+    describe('a potion carried for the cycle holds its line between cycles', () => {
+        let offs = [];
+        beforeEach(() => {
+            LoadoutMoments.init();
+            ana.equipment[0] = 'cb_watch_potion';
+        });
+        afterEach(() => { offs.forEach(off => off()); offs = []; LoadoutMoments.teardown(); });
+
+        const step = (n = 1) => { for (let i = 0; i < n; i++) BoardRunner.tick(100); };
+        const stepUntil = (done, max = 400) => {
+            for (let i = 0; i < max && !done(); i++) step();
+            return done();
+        };
+        // What the card shows at each completion, read after the potion's effect has come off.
+        const atEachCompletion = (tree) => {
+            const out = [];
+            offs.push(EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, ({ instanceId }) => {
+                if (instanceId !== tree.id) return;
+                out.push({
+                    live: TileModifiers.heroItemGrants(tree.id, EFFECT_TYPES.BONUS_DROP).length,
+                    shown: bonusOf(tree).map(lineOf)
+                });
+            }));
+            return out;
+        };
+        const LINE = "Bird Nest 25% · bonus (Ana's Birdwatcher)";
+
+        it('across a cycle boundary the line stays', () => {
+            InventoryManager.addItem('cb_watch_potion', 5);
+            const tree = placeTree({ x: 400, y: 400 });
+            const seen = atEachCompletion(tree);
+            Orders.orderAt(ana.id, { x: 400, y: 400 });
+            expect(stepUntil(() => bonusOf(tree).length > 0)).toBe(true);
+            expect(stepUntil(() => seen.length >= 2)).toBe(true);
+            // The effect is off the hero at the boundary, yet the card keeps the line.
+            expect(seen[0].live).toBe(0);
+            expect(seen.map(s => s.shown)).toEqual([[LINE], [LINE]]);
+            const { container } = render(React.createElement(TokenCard, { typeId: 'cb_tree', instanceId: tree.id }));
+            expect(container.querySelector('[data-card-bonus="cb_nest"]')).not.toBeNull();
+        });
+
+        it('the hero leaves, the held line goes', () => {
+            InventoryManager.addItem('cb_watch_potion', 5);
+            const tree = placeTree({ x: 400, y: 400 });
+            const seen = atEachCompletion(tree);
+            Orders.orderAt(ana.id, { x: 400, y: 400 });
+            // The card is open: it has shown the line during the cycle.
+            expect(stepUntil(() => bonusOf(tree).length > 0)).toBe(true);
+            expect(stepUntil(() => seen.length >= 1)).toBe(true);
+            expect(bonusOf(tree).map(lineOf)).toEqual([LINE]);
+            Orders.stop(ana.id);
+            expect(bonusOf(tree)).toEqual([]);
+        });
+
+        it('the potion runs out, the line goes as the next cycle starts without it', () => {
+            InventoryManager.addItem('cb_watch_potion', 1);
+            const tree = placeTree({ x: 400, y: 400 });
+            const seen = atEachCompletion(tree);
+            Orders.orderAt(ana.id, { x: 400, y: 400 });
+            // The card is open: it has shown the line during the cycle.
+            expect(stepUntil(() => bonusOf(tree).length > 0)).toBe(true);
+            expect(stepUntil(() => seen.length >= 1)).toBe(true);
+            expect(seen[0].shown).toEqual([LINE]);
+            expect(InventoryManager.getItemCount('cb_watch_potion')).toBe(0);
+            // The next cycle begins with no potion to drink.
+            expect(stepUntil(() => tree.cycleElapsedMs > 0)).toBe(true);
+            expect(BoardState.workerOf(tree.id)).toBe(ana.id);
+            expect(bonusOf(tree)).toEqual([]);
+        });
     });
 
     it('a Token nobody works and an off-mat card show no bonus', () => {
