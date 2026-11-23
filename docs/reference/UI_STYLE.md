@@ -135,6 +135,8 @@ name each source; a building's own Boosts list stays.
   hints). No in-between sizes; the Text size setting scales all three.
 - Celebrations on the mat (a level-up number, a Region name reveal) may use
   one extra **display** size, and only there.
+- **Name tags on the mat** (a Token's or hero's name) use `ui-text-name`, one step above
+  the title size's default (18 px at the default Text size), read from the Text size setting.
 - **The Region name in the mat's top bar** uses the display size too
   (`ui-text-bar-name`, owner 2026-10-23), over its banner with a hard 2 px
   black outline; nothing else in the bar does. The banner is drawn at 3× and

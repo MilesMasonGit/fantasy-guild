@@ -12,11 +12,11 @@ describe('TokenNameBadge', () => {
         expect(container.firstChild).toBeNull();
     });
 
-    it('shown, it sits above the box in the kit small text', () => {
+    it('shown, it sits above the box in the name-tag text', () => {
         const { container } = render(
             React.createElement(TokenNameBadge, { name: 'Ancient Forge', isDragging: false, shown: true })
         );
-        expect(screen.getByText('Ancient Forge').className).toContain('ui-text-small');
+        expect(screen.getByText('Ancient Forge').className).toContain('ui-text-name');
         expect(container.firstChild.style.bottom).toBe('calc(100% + 4px)');
     });
 
