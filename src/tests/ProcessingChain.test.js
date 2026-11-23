@@ -307,7 +307,7 @@ describe('The lifecycle audit on the Processing chain', () => {
     it('has no errors and no warnings (slice 7.5a)', () => {
         const ids = new Set([
             'token_wood_foundation', 'token_stone_foundation', 'token_workbench', 'token_cooking_pot',
-            'token_furnace', 'token_fighter_s_academy', 'token_copper_anvil', 'token_copper_smithy',
+            'token_furnace', 'token_well', 'token_copper_anvil', 'token_iron_smithy',
             'token_brewery', 'token_alchemy_table',
             ...recipes.filter((r) => ['construction', 'crafting', 'smithing', 'cooking', 'alchemy'].includes(r.skill)).map((r) => r.id),
         ]);
