@@ -1,4 +1,4 @@
-Status: draft
+Status: briefed 2026-11-23 (approved 2026-11-23; [brief 840](briefs/840_loot_flight_trail.md))
 
 # Loot flight: a trail and a landing
 
@@ -48,5 +48,5 @@ ticks up (owner). Bigger stacks get a few more sparkles; the sparkles take the s
 - A collect sweep can send many items at once: trails, shower and landings must stay cheap. Measure a
   big sweep (draw bench) and say the cost; if it must be capped, a cap on shadows or sparkles drawn at
   once is fine, the flight itself never.
-- "Reduce motion" style settings, if the game has one, turn the trail and sparkles off.
+- The game has no reduce-motion setting today; the trail sits behind the `itemFlight` draw switch.
 - An eye-check: yes (how it plays). The comparison page comes first.
