@@ -1,4 +1,4 @@
-import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { memo, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { boardScaleAt } from '../base/TokenSprite.jsx';
@@ -10,8 +10,6 @@ import {
     TASK_RING_COLOUR, TASK_RING_STUCK_COLOUR, TASK_DIM_LIGHT, TASK_DIM_GREY, NO_RINGS,
     createTaskRingSet, taskRingTarget, dimRuns, edgeRuns, insideRuns, ringEdgePaths, runsPath
 } from './taskRing.js';
-import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
-import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 
 const NO_JOBS = Object.freeze([]);
 const RING_SHADOW = '#000';
@@ -53,23 +51,23 @@ function shapesOf(rings) {
  * Token moves, the mat's fit changes): at rest there is no clock, no frame and no render. A ring
  * grows when its job starts and shrinks when it ends, on the frame clock only while some ring is
  * moving, the dim and the edge following it. While drawing is paused, under reduced motion, on
- * mounting and after a `GAME_RESET` (a load, a catch-up, travel) every ring jumps to its end, so a
- * stall or a catch-up replays nothing.
+ * mounting and after a reset (a load, a catch-up, travel: `resets` counts them) every ring jumps to its
+ * end, so a stall or a catch-up replays nothing.
  * Clipped to the mat's rounded edge, like the reach ring; never in the pointer's way.
  * ⚠️ Every layer here is a direct stacking sibling of the ground and the Tokens (the wrapper has
  * no z-index): a stacking context between them would cut the blend off from what it dims.
- * @param {{jobs?: {id: string, x: number, y: number, r: number, stuck?: boolean}[], z?: number}} props
- *   the jobs in mat units, the same array while they are the same; the rings' z
+ * @param {{jobs?: {id: string, x: number, y: number, r: number, stuck?: boolean}[], z?: number, resets?: number}} props
+ *   the jobs in mat units, the same array while they are the same; the rings' z; how many resets
+ *   the mat has heard
  */
-export const TaskRings = memo(function TaskRings({ jobs = NO_JOBS, z = MAT_Z.STANDING_HERO }) {
+export const TaskRings = memo(function TaskRings({ jobs = NO_JOBS, z = MAT_Z.STANDING_HERO, resets = 0 }) {
     const mat = useMatSize();
     const artScale = boardScaleAt(useMatFit());
     const [set] = useState(createTaskRingSet);
     const [rings, setRings] = useState(NO_RINGS);
 
-    // A reset arrives with the new jobs in the same render: they jump instead of growing.
-    const [resets, setResets] = useState(0);
-    useEffect(() => EventBus.subscribe(ENGINE_EVENTS.GAME_RESET, () => setResets(n => n + 1), UI_LISTENER), []);
+    // A reset's jobs jump instead of growing. ⚠️ `resets` must come in the same render as those jobs
+    // (the mat reads both in one update): a reset seen in a render of its own is spent there.
     const seenResets = useRef(null);
 
     useLayoutEffect(() => {

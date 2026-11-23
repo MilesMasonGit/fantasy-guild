@@ -275,6 +275,16 @@ export const MatBoard = React.memo(function MatBoard({
     const heroes = useMemo(() => heroesRaw || [], [heroesRaw]);
 
     /**
+     * How many resets (a load, a catch-up, travel) the mat has heard, for the task rings. Read like the
+     * heroes and the Tokens, in the update after the event, so a reset reaches `TaskRings` in the same
+     * render as its jobs. ⚠️ A reset listener of the rings' own would hear it first, and another one
+     * that draws in between (the speech bubbles' store) would spend it on the old jobs.
+     */
+    const resetCount = useRef(0);
+    useEffect(() => EventBus.subscribe(ENGINE_EVENTS.GAME_RESET, () => { resetCount.current += 1; }, UI_LISTENER), []);
+    const resets = useGameState(() => resetCount.current, [ENGINE_EVENTS.GAME_RESET]);
+
+    /**
      * Every spot order's flag point, in planting order; they sort with the Tokens. A Token order's
      * flag is drawn one above its own Token instead (`FlagLayer`).
      */
@@ -609,7 +619,7 @@ export const MatBoard = React.memo(function MatBoard({
               * ground and those Tokens dimmed inside it. ⚠️ Before the Tokens and heroes: they win a
               * tie of z.
               */}
-            {ringsDrawn && <TaskRings jobs={taskJobs} z={ringZ} />}
+            {ringsDrawn && <TaskRings jobs={taskJobs} z={ringZ} resets={resets} />}
 
             {/* `MAT_Z.HELD_SHADE`: a held mat's ground in shadow, lifting slowly once it is cleared. */}
             <div

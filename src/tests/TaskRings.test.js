@@ -377,9 +377,15 @@ describe('⭐ where rings cross, only the outer edge of the merged shape', () =>
 });
 
 describe('TaskRings: drawn on the ground, grown and shrunk per job, still at rest', () => {
+    /** `again(jobs, z, resets)`: the mat's next render; `resets` stays as last given unless named. */
     const mount = (jobs) => {
         const out = render(h(TaskRings, { jobs }));
-        return { ...out, again: (next, z) => out.rerender(h(TaskRings, { jobs: next, z })) };
+        let resets = 0;
+        const again = (next, z, count = resets) => {
+            resets = count;
+            out.rerender(h(TaskRings, { jobs: next, z, resets }));
+        };
+        return { ...out, again };
     };
     const A = [job('a', 400, 400)];
 
@@ -540,10 +546,8 @@ describe('TaskRings: drawn on the ground, grown and shrunk per job, still at res
 
     it('⭐ jobs arriving with a reset (a load, a catch-up) jump whole; the next job after it still grows', () => {
         const { container, again } = mount([]);
-        act(() => {
-            EventBus.publish(ENGINE_EVENTS.GAME_RESET, {});
-            again([job('a', 400, 400), job('b', 900, 400)]);
-        });
+        // The mat hands the reset over in the same render as its jobs.
+        again([job('a', 400, 400), job('b', 900, 400)], undefined, 1);
         expect(ringsIn(container).map(r => r.px)).toEqual([48, 48]);
         expect(frames.pending()).toBe(0);
         again([job('a', 400, 400), job('b', 900, 400), job('c', 1400, 400)]);
@@ -555,7 +559,7 @@ describe('TaskRings: drawn on the ground, grown and shrunk per job, still at res
 
     it('a reset that changes no job leaves nothing behind: the next job still grows', () => {
         const { container, again } = mount(A);
-        act(() => { EventBus.publish(ENGINE_EVENTS.GAME_RESET, {}); });
+        again(A, undefined, 1);
         again([...A, job('b', 900, 400)]);
         frames.frame(16);
         expect(pxIn(container, 'b')).toBeLessThan(48);
