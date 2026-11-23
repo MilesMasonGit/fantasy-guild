@@ -59,6 +59,7 @@ import { ENGINE_EVENTS } from './engineEvents.js';
 import { grantStarterTools } from '../equipment/StarterTools.js';
 import { cleanGuildName } from './GuildName.js';
 import { HERO_NAME_MAX } from '../../config/registries/heroPortraits.js';
+import { CATCH_UP } from '../../config/loopConstants.js';
 
 /**
  * The Tokens a new game opens with, at their points on the mat as it is now: the Starter Camp's
@@ -228,6 +229,8 @@ export const EngineBootstrap = {
     /**
      * Play the time the game was closed (`CatchUp.run`, up to 24 h), then save once. A failure is
      * reported and the game goes on from where it is; the slot still holds the save it loaded.
+     * Closed for less than `CATCH_UP.SHOW_GAP_MS`, the game resumes exactly as saved: none of that
+     * time is played, and no summary opens.
      * @returns {Promise<object|null>} the catch-up's result, or null
      */
     async catchUpOnLoad() {
@@ -238,7 +241,7 @@ export const EngineBootstrap = {
         CatchUp.slotLoaded(SaveManager.takeLoadedUnanswered());
         if (!savedAt) return null;
         try {
-            return await CatchUp.run({ savedAt, reset: false, before });
+            return await CatchUp.run({ savedAt, reset: false, before, minAwayMs: CATCH_UP.SHOW_GAP_MS });
         } catch (err) {
             console.error('[Engine] Catching up the time away failed', err);
             return null;

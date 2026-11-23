@@ -3,10 +3,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import { SaveManager } from '../systems/core/SaveManager.js';
 import * as SlotHelper from '../systems/core/SaveSlotHelper.js';
-import { GAME_VERSION } from '../state/StateSchema.js';
 
 // Wave 5: save-path robustness — validator gating (CR-008), rolling backup
-// and export/import (CR-054).
+// (CR-054).
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(),
@@ -70,23 +69,5 @@ describe('Save durability (CR-008 / CR-054)', () => {
         expect(localStorage.getItem(SlotHelper.getBackupKey(SLOT))).not.toBeNull();
         SaveManager.deleteSlot(SLOT);
         expect(localStorage.getItem(SlotHelper.getBackupKey(SLOT))).toBeNull();
-    });
-
-    it('exports a save and imports it back into another slot', async () => {
-        GameState.state.time.gameTimeMs = 4242;
-        const exported = SaveManager.exportSave();
-        expect(typeof exported).toBe('string');
-
-        const result = await SaveManager.importSave(1, exported);
-        expect(result.success).toBe(true);
-
-        const stored = JSON.parse(localStorage.getItem(SlotHelper.getSlotKey(1)));
-        expect(stored.state.time.gameTimeMs).toBe(4242);
-        expect(stored.version).toBe(GAME_VERSION);
-    });
-
-    it('rejects an import that is not a save', async () => {
-        expect((await SaveManager.importSave(1, 'not json')).success).toBe(false);
-        expect((await SaveManager.importSave(1, '{"nope":true}')).success).toBe(false);
     });
 });

@@ -398,48 +398,6 @@ export const SaveManager = {
     },
 
     /**
-     * Export the current save as a JSON string for the player to keep, to back
-     * a save up or move it between machines.
-     * @returns {string|null}
-     */
-    exportSave() {
-        if (!GameState.getIsInitialized()) return null;
-        return GameState.serializeJson();
-    },
-
-    /**
-     * Load a save from an exported JSON string into a slot.
-     * Validated exactly like a stored save; refuses anything malformed.
-     * @returns {Promise<{ success: boolean, error?: string }>}
-     */
-    async importSave(slotIndex, json) {
-        try {
-            const data = JSON.parse(json);
-            const rawState = data.state || data;
-            const version = data.version || rawState.meta?.version;
-            const state = this.migrateState(rawState, version);
-
-            const validation = validateSaveData({ version, state });
-            if (!validation.valid) {
-                return { success: false, error: 'That file is not a valid save.' };
-            }
-
-            const text = JSON.stringify({ version, savedAt: data.savedAt || Date.now(), state });
-            if (SaveFiles.isActive()) {
-                const { ok } = await SaveFiles.writeSave(slotIndex, text);
-                return ok ? { success: true } : { success: false, error: 'The save could not be written.' };
-            }
-            localStorage.setItem(this.getSlotKey(slotIndex), text);
-            return { success: true };
-        } catch (err) {
-            if (err instanceof IncompatibleSaveError) {
-                return { success: false, error: 'That save is from an incompatible game version.' };
-            }
-            return { success: false, error: 'That file could not be read as a save.' };
-        }
-    },
-
-    /**
      * Load game state from a specific slot
      * @param {number} slotIndex 
      * @returns {boolean} Success

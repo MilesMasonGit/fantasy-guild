@@ -56,8 +56,7 @@ export { QUEST_TOKEN_TYPE };
  *
  * ## ⚠️ The clock runs on the tick's `delta`
  * `state.quests.clockMs`, saved, advanced by {@link tick} from the game loop's
- * `quest_manager` handler, so a catch-up and `DevTools.advanceTime` speed it
- * up. It **only runs below the cap**: at the cap it holds, and filling the cap
+ * `quest_manager` handler, so a catch-up speeds it up. It **only runs below the cap**: at the cap it holds, and filling the cap
  * drops any leftover, so a freed place gets its next quest one full interval
  * later. A bounty with nowhere to land is missed, like a spawner's spawn: the
  * next is tried one whole interval later.

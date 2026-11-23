@@ -12,6 +12,8 @@ import { BOARD_EVENTS } from '../board/boardEvents.js';
 import { startNewsCollector, hasNews } from '../notifications/catchUpNews.js';
 import { fingerprint } from './unansweredSummary.js';
 import { CATCH_UP } from '../../config/loopConstants.js';
+import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -36,7 +38,8 @@ import { logger } from '../../utils/Logger.js';
  *   loot lying on the mat before against after. ⚠️ With auto-collect off (the default) loot waits
  *   on the mat for the player, so a long catch-up's production is mostly in `floor`, not `gained`.
  * - `levelUps`: `[{ heroId, heroName, skillId, skillName, from, to }]`, one per hero and skill.
- * - `depleted`: `{ total, byType: { typeId: count } }`: Tokens that ran out of charges.
+ * - `depleted`: `{ total, byType: { typeId: count } }`: Tokens that ran out of charges. Never an
+ *   enemy: a kill uses its enemy up, and it is listed once, under `fightsWon`.
  * - `wounded`: `[{ heroId, heroName, times }]`: heroes defeated and carried home.
  * - `broken`: `[{ heroId, heroName, itemId, times }]`: tools and weapons that broke in a hero's
  *   hands (`Breakage.js`), in the order they broke; each such hero stopped there.
@@ -292,6 +295,7 @@ function startSummary({ news: withNews = true } = {}) {
             else levels.set(key, { heroId, heroName: name || heroId, skillId, skillName: skillName || skillId, from: oldLevel, to: newLevel });
         }),
         EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, ({ typeId } = {}) => {
+            if (isEnemyDef(getTokenType(typeId))) return;
             depleted.total++;
             add(depleted.byType, typeId || 'unknown');
         }),
@@ -392,6 +396,8 @@ function enterQuiet(startMs) {
  * @param {() => Promise<void>} [options.yieldFn]
  * @param {boolean} [options.news]  hear the news for the banners and stubs (`summary.news`); a test
  *        turns it off to show the game plays the same either way
+ * @param {number} [options.minAwayMs]  time away shorter than this plays nothing (a load passes
+ *        `CATCH_UP.SHOW_GAP_MS`: back within a minute, the game resumes exactly as saved)
  * @returns {Promise<{awayMs: number, simulatedMs: number, droppedMs: number, steps: number,
  *          wallMs: number, show: boolean, savedAt: number, summary: object|null}>} `savedAt` as given
  */
@@ -406,7 +412,8 @@ export async function run({
     reset = true,
     before = null,
     yieldFn = yieldToEventLoop,
-    news = true
+    news = true,
+    minAwayMs = 0
 } = {}) {
     const readNow = typeof now === 'function' ? now : () => now;
     const wallStart = performance.now();
@@ -415,8 +422,10 @@ export async function run({
         awayMs: Math.max(0, startAway || 0), simulatedMs: 0, droppedMs: 0, steps: 0, wallMs: 0,
         show: startAway >= CATCH_UP.SHOW_GAP_MS, savedAt: Number(savedAt), summary: null
     };
-    // Under one step, a savedAt in the future (the clock moved back), or already running: nothing.
-    if (running || !GameState.getIsInitialized() || !Number.isFinite(startAway) || startAway < stepMs) return result;
+    // Under one step or `minAwayMs`, a savedAt in the future (the clock moved back), or already
+    // running: nothing.
+    if (running || !GameState.getIsInitialized() || !Number.isFinite(startAway)
+        || startAway < Math.max(stepMs, minAwayMs)) return result;
 
     // Taken before anything plays: on a sleeping PC the slot holds an older autosave, not this.
     const slot = SaveManager.currentSlot;

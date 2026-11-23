@@ -221,8 +221,8 @@ describe('the catch-up hears the news its quiet bus keeps from the banners', () 
     it('a short gap with no summary hands it over at once', async () => {
         buildBoard();
         const { find } = newsHalfWay();
-        // Under the two minutes that bring up the summary, in short steps so the news falls inside it.
-        const r = await run({ savedAt: NOW - 100_000, now: NOW, save: false, stepMs: 100 });
+        // Under the minute that brings up the summary, in short steps so the news falls inside it.
+        const r = await run({ savedAt: NOW - 50_000, now: NOW, save: false, stepMs: 50 });
         expect(r.show).toBe(false);
         expect(Banners.getAll().map(b => b.kind)).toContain('recipe');
         expect(ItemStubs.getStub(find)).toMatchObject({ isNew: true });

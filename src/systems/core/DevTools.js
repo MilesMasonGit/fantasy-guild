@@ -1,13 +1,9 @@
 // Developer tools: engine-side helpers behind the QA panel (`ui/components/TestDashboard.jsx`),
 // kept out of the component so they can be unit-tested and called from the console.
 
-import { GameLoop } from './GameLoop.js';
-import { EventBus } from './EventBus.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { getAllItems, getItem } from '../../config/registries/itemRegistry.js';
-import { MAX_TICK_DELTA_MS } from '../../config/loopConstants.js';
 import * as SpawnerSystem from '../board/SpawnerSystem.js';
-import { ENGINE_EVENTS } from './engineEvents.js';
 
 /**
  * Every live item id, sorted. Only `item_*` ids: the registry also holds
@@ -43,69 +39,6 @@ export function giveItem(itemId, amount, { inventory = InventoryManager } = {}) 
 
     const added = inventory.addItem(id, n, 'dev_give_item');
     return { ok: true, added, overflow: n - added };
-}
-
-/**
- * Game time each fast-forward step delivers. Equal to the largest delta the
- * live loop itself ever delivers (`MAX_TICK_DELTA_MS`), so
- * no system sees a delta it could not also see in real play. `BoardRunner`
- * completes at most one work cycle per tick and floors cycles at 1000 ms, so a
- * larger step would silently lose cycles.
- */
-export const DEV_ADVANCE_STEP_MS = MAX_TICK_DELTA_MS;
-
-/**
- * Hard ceiling on steps per call, so one click can never freeze the page for
- * minutes. At the default 1000 ms step this is 2 hours of game time. A request
- * past it advances exactly the capped amount and reports `capped: true`.
- */
-export const DEV_ADVANCE_MAX_STEPS = 7200;
-
-/**
- * Fast-forward the live game by `minutes` of game time by driving the real
- * tick handlers (`GameLoop.runHandlers`) in fixed steps. Every system that
- * advances by the tick's `delta` moves together — including clocks added
- * later, with no change here.
- *
- * ⚠️ Rules timed by the game clock (`GameClock.now()`) do NOT move: live-effect
- * expiry, loot absorb and auto-collect age, and the item/XP rate windows. Outside
- * a catch-up the game clock is the wall clock, which a dev skip does not advance.
- *
- * Runs whether or not the game is paused — it is an explicit request.
- *
- * @param {number} minutes - game minutes to advance (may be fractional)
- * @param {object} [opts]
- * @param {{ runHandlers: (delta: number) => void }} [opts.loop] - test seam
- * @param {number} [opts.stepMs]   - defaults to DEV_ADVANCE_STEP_MS
- * @param {number} [opts.maxSteps] - defaults to DEV_ADVANCE_MAX_STEPS
- * @returns {{ ok: boolean, advancedMs: number, steps: number, capped: boolean, error?: string }}
- */
-export function advanceTime(minutes, {
-    loop = GameLoop,
-    stepMs = DEV_ADVANCE_STEP_MS,
-    maxSteps = DEV_ADVANCE_MAX_STEPS
-} = {}) {
-    const requestedMs = Number(minutes) * 60_000;
-    if (!Number.isFinite(requestedMs) || requestedMs <= 0) {
-        return { ok: false, advancedMs: 0, steps: 0, capped: false, error: 'Minutes must be a positive number.' };
-    }
-
-    const capMs = stepMs * maxSteps;
-    const capped = requestedMs > capMs;
-    let remaining = Math.min(requestedMs, capMs);
-
-    let steps = 0;
-    let advancedMs = 0;
-    while (remaining > 0) {
-        const delta = Math.min(stepMs, remaining);
-        loop.runHandlers(delta);
-        remaining -= delta;
-        advancedMs += delta;
-        steps++;
-    }
-
-    EventBus.publish(ENGINE_EVENTS.GAME_RESET, { reason: 'dev_time_skip' });
-    return { ok: true, advancedMs, steps, capped };
 }
 
 /**

@@ -274,6 +274,24 @@ function openness(point, ignoreId = null) {
     return nearest;
 }
 
+/** Where `spawn` would put a `typeId` Token, or null: the one place its two ways of landing are chosen. */
+function spawnSpot(typeId, placement, from, random, bearerId, within) {
+    return Number.isFinite(within)
+        ? spotWithin(typeId, from, within)
+        : spawnPoint(typeId, placement, from, random, bearerId);
+}
+
+/**
+ * Whether a `nearest_free` spawn of `typeId` from the Token `bearerId` would find a place, as
+ * {@link spawn} with the same `options.within`, changing nothing on the mat.
+ */
+export function hasRoomToSpawn(typeId, bearerId, options = {}) {
+    if (!typeId || !getTokenType(typeId)) return false;
+    const from = centreOf(BoardState.getTokenById(bearerId));
+    if (!from) return false;
+    return !!spawnSpot(typeId, PLACEMENT.NEAREST_FREE, from, Math.random, bearerId, Number(options?.within));
+}
+
 /**
  * `Spawns`: put a Token on the mat.
  *
@@ -310,9 +328,7 @@ export function spawn(statement, roles, random = Math.random, options = {}) {
     const within = Number(options?.within);
     const placement = Number.isFinite(within) ? PLACEMENT.NEAREST_FREE : placementOf(statement.payload);
     const replacesBearer = placement === PLACEMENT.HERE;
-    const where = Number.isFinite(within)
-        ? spotWithin(typeId, from, within)
-        : spawnPoint(typeId, placement, from, random, bearerId);
+    const where = spawnSpot(typeId, placement, from, random, bearerId, within);
     if (!where) return null; // the mat is full, so the spawn is skipped
 
     if (replacesBearer) {

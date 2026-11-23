@@ -1,16 +1,12 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GameState } from '../state/GameState.js';
-import { GameLoop } from '../systems/core/GameLoop.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import {
-    giveItem, listGivableItemIds, advanceTime, getSpawnerKindCounts,
-    DEV_ADVANCE_STEP_MS, DEV_ADVANCE_MAX_STEPS
+    giveItem, listGivableItemIds, getSpawnerKindCounts
 } from '../systems/core/DevTools.js';
-import { MAX_TICK_DELTA_MS } from '../config/loopConstants.js';
 
-// Token Lifecycle slice 0.2: the QA panel's give-item and
-// advance-timers helpers.
+// Token Lifecycle slice 0.2: the QA panel's give-item helpers.
 
 vi.mock('../config/registries/itemRegistry.js', () => {
     const ITEMS = {
@@ -89,85 +85,6 @@ describe('giveItem', () => {
         expect(giveItem('item_coal', 'abc').ok).toBe(false);
         expect(spy).not.toHaveBeenCalled();
         spy.mockRestore();
-    });
-});
-
-describe('advanceTime', () => {
-    const fakeLoop = () => {
-        const deltas = [];
-        return { deltas, runHandlers: (d) => deltas.push(d) };
-    };
-    const sum = (a) => a.reduce((s, x) => s + x, 0);
-
-    it('steps at the live loop clamp so no system sees an impossible delta', () => {
-        expect(DEV_ADVANCE_STEP_MS).toBe(MAX_TICK_DELTA_MS);
-    });
-
-    it('delivers exactly N minutes in fixed steps', () => {
-        const loop = fakeLoop();
-        const r = advanceTime(5, { loop });
-
-        expect(r).toEqual({ ok: true, advancedMs: 300_000, steps: 300, capped: false });
-        expect(loop.deltas).toHaveLength(300);
-        expect(sum(loop.deltas)).toBe(300_000);
-        expect(loop.deltas.every(d => d === DEV_ADVANCE_STEP_MS)).toBe(true);
-    });
-
-    it('a fractional request ends on one short final step', () => {
-        const loop = fakeLoop();
-        advanceTime(0.01, { loop, stepMs: 250 });   // 600 ms
-        expect(loop.deltas).toEqual([250, 250, 100]);
-    });
-
-    it('respects the step cap and reports it', () => {
-        const loop = fakeLoop();
-        const r = advanceTime(10, { loop, stepMs: 1000, maxSteps: 60 });
-
-        expect(r.capped).toBe(true);
-        expect(r.steps).toBe(60);
-        expect(loop.deltas).toHaveLength(60);
-        expect(sum(loop.deltas)).toBe(60_000);
-    });
-
-    it('the default cap bounds a huge request', () => {
-        const loop = fakeLoop();
-        const r = advanceTime(100_000, { loop });
-        expect(r.capped).toBe(true);
-        expect(loop.deltas).toHaveLength(DEV_ADVANCE_MAX_STEPS);
-    });
-
-    it('rejects zero, negative and non-numeric minutes without ticking', () => {
-        const loop = fakeLoop();
-        for (const bad of [0, -3, 'abc', NaN, Infinity]) {
-            expect(advanceTime(bad, { loop }).ok).toBe(false);
-        }
-        expect(loop.deltas).toHaveLength(0);
-    });
-
-    describe('through the real GameLoop', () => {
-        let received;
-        beforeEach(() => {
-            received = [];
-            GameLoop.onTick('test_dev_advance', (delta) => received.push(delta));
-        });
-        afterEach(() => GameLoop.offTick('test_dev_advance'));
-
-        it('drives every registered tick handler with the stepped delta', () => {
-            const before = GameLoop.getTickCount();
-            advanceTime(2);
-
-            expect(received).toHaveLength(120);
-            expect(sum(received)).toBe(120_000);
-            expect(GameLoop.getTickCount() - before).toBe(120);
-        });
-
-        it('runs even when the loop is stopped (it is an explicit request)', () => {
-            const wasRunning = GameLoop.isRunning;
-            GameLoop.isRunning = false;
-            advanceTime(1);
-            expect(received).toHaveLength(60);
-            GameLoop.isRunning = wasRunning;
-        });
     });
 });
 

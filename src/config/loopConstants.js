@@ -37,10 +37,11 @@ export const CATCH_UP = Object.freeze({
     /** Steps run in slices of about this much work, yielding between them so the page can draw. */
     SLICE_MS: 50,
     /**
-     * A gap the live loop missed of at least this much is caught up with the loading bar and the
-     * summary; a shorter one (a background tab woken once a minute) is played quietly.
+     * Time away of at least this much is caught up with the loading bar and the summary. Shorter:
+     * a load resumes as saved and plays none of it; a gap in live play (a background tab woken
+     * once a minute, a stalled frame) is played quietly, so a minimised window loses no time.
      */
-    SHOW_GAP_MS: 2 * 60 * 1000
+    SHOW_GAP_MS: 60 * 1000
 });
 
 /**

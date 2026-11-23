@@ -95,7 +95,7 @@ describe('⭐ a spawner with no room misses that spawn and waits a whole interva
         packedMat();
         const forest = placeAt('fixture_bus_forest', FOREST_AT.x, FOREST_AT.y);
 
-        expect(searchesDuring(() => TimedChanges.tick(INTERVAL - 100))).toBe(0);
+        expect(searchesDuring(() => TimedChanges.tick(INTERVAL - 100))).toBe(1);   // the first tick's check only
         expect(searchesDuring(() => TimedChanges.tick(100))).toBeGreaterThan(0);   // the try, missed
         expect(spawned()).toHaveLength(0);
         expect(forest.clocks.spawnMs).toBe(0);                                     // a fresh lap
