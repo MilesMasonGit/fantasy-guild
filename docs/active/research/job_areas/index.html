@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Job Area Looks</title>
+<style>
+  :root {
+    --bg: #f6f2ea; --panel: #fffdf8; --ink: #2a2620; --muted: #6b6358; --line: #ddd4c4; --accent: #8a5a1c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1c1a17; --panel: #26231f; --ink: #ece6da; --muted: #a59c8e; --line: #3a352e; --accent: #e0b070; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, sans-serif; }
+  main { max-width: 1400px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  .lede { color: var(--muted); margin: 0 0 20px; max-width: 70ch; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(560px, 1fr)); gap: 20px; }
+  @media (max-width: 620px) { .grid { grid-template-columns: 1fr; } }
+  figure { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  figure img { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+  figcaption { padding: 12px 16px 14px; }
+  .letter { display: inline-block; min-width: 2em; padding: 0 8px; margin-right: 8px; border-radius: 6px;
+            background: var(--accent); color: var(--panel); font-weight: 700; text-align: center; }
+  .name { font-weight: 600; }
+  .desc { display: block; color: var(--muted); margin-top: 4px; }
+  .links { font-size: 0.9rem; margin-top: 6px; }
+  a { color: var(--accent); }
+  section.notes { margin-top: 32px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px; }
+  section.notes h2 { font-size: 1.1rem; margin: 0 0 8px; }
+  section.notes li { margin: 4px 0; }
+  .ref { margin-top: 24px; max-width: 680px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Job areas: pick a look</h1>
+  <p class="lede">The same busy scene four times, from the running game: four heroes on four Tokens side by side,
+    the furnace stuck (it needs Coal), and an orange tree at rest whose lower half stands inside the cherry tree's area.
+    None has a ring line. In A, B and C each area is centred between the hero and the Token (the middle of their
+    sprites); D is today's look and today's centring, as the before. Pick one letter.</p>
+
+  <div class="grid">
+    <figure>
+      <img src="A.png" alt="A: parchment sepia areas">
+      <figcaption><span class="letter">A</span><span class="name">Parchment / sepia</span>
+        <span class="desc">The ground inside goes warm and faded, like old paper: colour drained, a tan tint, a little lighter and softer.</span>
+        <span class="links"><a href="A_full.png">whole screen</a></span></figcaption>
+    </figure>
+    <figure>
+      <img src="B.png" alt="B: lighter grey areas">
+      <figcaption><span class="letter">B</span><span class="name">Lighter grey</span>
+        <span class="desc">Today's grey, much less dark: the ground keeps more of its light, so a busy mat stays bright.</span>
+        <span class="links"><a href="B_full.png">whole screen</a></span></figcaption>
+    </figure>
+    <figure>
+      <img src="C.png" alt="C: soft-edged fade areas">
+      <figcaption><span class="letter">C</span><span class="name">Soft-edged fade</span>
+        <span class="desc">Today's grey and darkness, but the edge fades out over a few art pixels: no hard circle.</span>
+        <span class="links"><a href="C_full.png">whole screen</a></span></figcaption>
+    </figure>
+    <figure>
+      <img src="D.png" alt="D: today's grey areas, no ring line">
+      <figcaption><span class="letter">D</span><span class="name">Today's look (the before)</span>
+        <span class="desc">The dimmed grey as it is in the game now, centred as now, with the ring line taken off.</span>
+        <span class="links"><a href="D_full.png">whole screen</a></span></figcaption>
+    </figure>
+  </div>
+
+  <figure class="ref">
+    <img src="today_ring.png" alt="The game as it is today, ring lines and all">
+    <figcaption><span class="name">For reference: the game today</span>
+      <span class="desc">Ring lines, the stuck furnace in amber. Every look above drops the line.</span>
+      <span class="links"><a href="today_ring_full.png">whole screen</a></span></figcaption>
+  </figure>
+
+  <section class="notes">
+    <h2>How each look is made (for the build)</h2>
+    <ul>
+      <li>All four fill the whole area (the edge cells included), one shape for all jobs, so overlaps dim once. The worked Tokens and heroes stay above it, untouched; Tokens at rest inside it are dimmed with the ground.</li>
+      <li><b>A</b>: a grey layer at full strength in <code>saturation</code> blend (all colour drained), then <code>#b8925a</code> at 0.75 in <code>color</code> blend (the sepia), then <code>#f3e2bf</code> at 0.5 in <code>soft-light</code> blend (the paper), then black at 0.10 (light 0.9).</li>
+      <li><b>B</b>: grey at 0.8 in <code>saturation</code> blend (as today), then black at 0.18 (light 0.82; today is 0.6).</li>
+      <li><b>C</b>: today's two layers (grey 0.8 <code>saturation</code>, black 0.4), each through a mask made of the area's shape blurred by a Gaussian of 6 art pixels, so the edge fades from full to nothing across about 12 art pixels, centred on the area's edge.</li>
+      <li><b>D</b>: today's two layers (grey 0.8 <code>saturation</code>, black 0.4), today's centre.</li>
+      <li><b>Centring (A to C)</b>: each sprite's visual centre is the middle of the box of its drawn pixels; the area's centre is the middle of the hero's and the Token's. The radius follows today's rule from that centre: it reaches the farthest corner of the Token's body box and the hero's box, plus 2 art pixels. Off today's centre that rule comes out about 60 art pixels instead of 54, so A to C are a little bigger than D.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>
