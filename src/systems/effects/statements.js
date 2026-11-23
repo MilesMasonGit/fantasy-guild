@@ -166,7 +166,7 @@ export const KEYWORDS = Object.freeze([
          * The first keyword that acts on a person.
          *
          * ⚠️ A moment is REQUIRED: damage happens at an instant. The default is
-         * `SELF_CYCLE_COMPLETE` (the Thorns case; one kill is one cycle).
+         * `SELF_CYCLE_COMPLETE` (the Thorns case: a hero harvesting the bush).
          *
          * ⚠️ It targets a ROLE, not a tile, so it declares no `filter` and no `reach`.
          */
@@ -432,8 +432,8 @@ export function blankPayload(keywordId) {
 function defaultMoment(keywordId) {
     if ([KEYWORD.DEALS, KEYWORD.HEALS, KEYWORD.RESTORES, KEYWORD.REMOVES,
         KEYWORD.SPAWNS, KEYWORD.TRANSFORMS].includes(keywordId)) {
-        // The Thorns case: a cycle completed targeting this entity (a hero harvesting a bush
-        // and a hero killing a monster alike).
+        // The Thorns case: a work cycle completed on this Token (a hero harvesting a bush). An
+        // enemy's death is not its cycle: an enemy's rules act on the fight's moments.
         return { event: 'SELF_CYCLE_COMPLETE', scope: 'self', cooldownMs: 0 };
     }
     return { event: 'ITEM_THRESHOLD', scope: 'global', watchItemId: '', threshold: 1, cooldownMs: 5000 };

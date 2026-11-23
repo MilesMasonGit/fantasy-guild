@@ -41,8 +41,8 @@ registerItems({
 });
 
 /**
- * A Thorn Elemental's sting: each kill hurts the hero, so a rest can start under a quarter health.
- * Free of charge: an enemy is one use, and its kill has spent it before the cycle's rules run.
+ * A sting beside the enemy: each kill hurts the hero who won it, so a rest can start under a quarter
+ * health. On Neighbour's Kill, since an enemy's own On Cycle does not fire at its death.
  */
 const THORNS = 4;
 registerEffects({
@@ -51,7 +51,7 @@ registerEffects({
         statements: [{
             id: 'stm_ofe_thorns', keyword: 'deals', payload: { amount: THORNS, ignoresArmor: true }, chargeDelta: 0,
             to: null, reach: null, target: { role: 'actor' },
-            when: { event: 'SELF_CYCLE_COMPLETE', scope: 'self', cooldownMs: 0 }, upkeep: null
+            when: { event: 'COMBAT_RESOLVED', scope: 'nearby', cooldownMs: 0 }, upkeep: null
         }]
     }
 });
@@ -61,11 +61,15 @@ registerTokenTypes({
         id: 'ofe_enemy', name: 'Rest Enemy', tokenType: 'enemy', rarity: 'common',
         theme: 'fixture', uses: 30, sprite: 's_crime', requiresHero: true,
         enemy: { level: 5, style: 'melee' },
-        effects: [{ effectId: 'ofe_thorns', scale: 1 }],
         config: {
             skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [],
             outputs: [{ itemId: 'item_bones', chance: 100, minQty: 1, maxQty: 1 }]
         }
+    },
+    ofe_stinger: {
+        id: 'ofe_stinger', name: 'Rest Stinger', tokenType: 'buff', rarity: 'common',
+        theme: 'fixture', uses: null, sprite: 's_crime', requiresHero: false,
+        effects: [{ effectId: 'ofe_thorns', scale: 1 }]
     }
 });
 
@@ -95,6 +99,7 @@ function buildBoard({ hpShare = 1 } = {}) {
     HeroManager.updateHeroFromSkills(hero);
     hero.hp.current = Math.ceil(hero.hp.max * hpShare);
     const a = fixtures.placeAt('ofe_enemy', 400, 400);
+    fixtures.placeAt('ofe_stinger', 540, 400);
     fixtures.orderAt(hero.id, { x: a.x, y: a.y });
     TileModifiers.rebuildAll();
     return hero.id;

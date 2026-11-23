@@ -4,7 +4,6 @@ import { EventBus } from '../core/EventBus.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
-import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SpriteLayer from '../board/SpriteLayer.js';
 import * as OutputRules from '../board/OutputRules.js';
@@ -12,6 +11,7 @@ import * as RareDrops from '../board/RareDrops.js';
 import * as RareTables from '../board/RareTables.js';
 import * as BoardState from '../board/BoardState.js';
 import { getTokenType, rollOutputQuantity } from '../../config/registries/tokenRegistry.js';
+import { enemyDropsOf } from '../../config/registries/enemyProfile.js';
 import { rareTableOf } from '../../config/registries/rareTables.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
@@ -29,65 +29,58 @@ const LootSystem = {
     },
 
     /**
-     * Roll a victory's drops: floating sprites on the board, straight to the Bank otherwise.
+     * Roll a kill's drops as floating sprites where the enemy stood. With no enemy Token behind the
+     * victory there is nowhere for loot to land, so it drops nothing.
      */
     handleCombatVictory(data) {
-        const { cardId, heroId, enemyId, enemyName, drops, instanceId } = data;
+        const { cardId, heroId, enemyId, enemyName, instanceId } = data || {};
 
-        const onBoard = instanceId != null;
-        const typeDef = onBoard ? getTokenType(BoardState.getTokenById(instanceId)?.typeId) : null;
-        // The enemy Token's own rare drop table: its kind, else the enemy's (the Token's id).
-        const table = rareTableOf(typeDef || getTokenType(enemyId));
-        const lines = Array.isArray(drops) ? drops : [];
-
-        // Off the board nothing nearby grants a drop, so no lines and no table is nothing at all.
-        if (!onBoard && !lines.length && !table) {
+        const typeDef = instanceId != null ? getTokenType(BoardState.getTokenById(instanceId)?.typeId) : null;
+        if (!typeDef) {
             EventBus.publish(ENGINE_EVENTS.LOOT_GENERATED, { cardId, heroId, enemyId, enemyName, drops: [] });
             return;
         }
+        // Read off the Token at the kill, not when the fight began, so an edit mid-fight pays now.
+        const lines = enemyDropsOf(typeDef);
 
-        // A kill is a cycle of the enemy Token, so on the board its loot follows the station output
+        // A kill is a combat cycle of the enemy Token, so its loot follows the work cycle's output
         // rules in the same order: double loot rolled once, each line's quantity widened by YIELD,
         // then its rare table, then the nearby bonus drops (Double Loot doubles those too), which
         // land even when the enemy drops nothing of its own, as beside a station with no outputs.
+        // Giant Harvest is work's alone, and a kill never fails.
         const skill = OutputRules.killLootSkill(heroId ? HeroManager.getHero(heroId) : null, typeDef);
-        const doubled = onBoard && OutputRules.rollDoubleLoot(instanceId, skill);
+        const doubled = OutputRules.rollDoubleLoot(instanceId, skill);
 
         // Every drop line rolls on its own `chance`, as a station's outputs do in
         // `BoardRunner`: a Goblin with Bones 100% and Copper Ore 30% drops Bones
         // every kill AND Ore 30% of the time.
         // ...and last, a chance that this one item comes out doubled (a Cleaver and Raw Beef).
-        const widen = onBoard
-            ? (quantity, itemId) => OutputRules.doubleItemDrop(instanceId, itemId,
-                OutputRules.widenYield(instanceId, skill, quantity) * (doubled ? 2 : 1))
-            : null;
+        const widen = (quantity, itemId) => OutputRules.doubleItemDrop(instanceId, itemId,
+            OutputRules.widenYield(instanceId, skill, quantity) * (doubled ? 2 : 1));
         const generatedDrops = this.rollEachLine(lines, widen);
 
         // One roll on the enemy's rare table beside its loot (Lucky aimed at the enemy widens it), and
         // on a hit one find by weight, rolled and widened as a line is. No table, no draw.
-        const find = table ? RareTables.rollRareTable(onBoard ? instanceId : null, typeDef || getTokenType(enemyId), skill) : null;
+        const find = rareTableOf(typeDef) ? RareTables.rollRareTable(instanceId, typeDef, skill) : null;
         const rare = find ? this._rollEntryDetails(find.entry) : null;
-        if (rare && widen) rare.quantity = widen(rare.quantity, rare.itemId);
+        if (rare) rare.quantity = widen(rare.quantity, rare.itemId);
         const rareDrop = rare && rare.quantity > 0 ? rare : null;
 
-        if (onBoard) {
-            // On the board, loot drops as floating sprites where the kill
-            // happened and is not banked until collected; banking it directly
-            // would skip the sprite layer.
-            for (const drop of generatedDrops) {
-                const line = lines.find(e => e?.itemId === drop.itemId);
-                RareDrops.noteDrop(SpriteLayer.addSprite('item', drop.itemId, drop.quantity, instanceId), line?.chance ?? 100);
-            }
-            if (rareDrop) RareDrops.noteRareFind(SpriteLayer.addSprite('item', rareDrop.itemId, rareDrop.quantity, instanceId), find.chance);
-            OutputRules.dropBonusGrants(instanceId, doubled ? 2 : 1);
-        } else {
-            // No Token to anchor sprites to: bank directly.
-            for (const d of [...generatedDrops, ...(rareDrop ? [rareDrop] : [])]) {
-                InventoryManager.addItem(d.itemId, d.quantity || 1);
-            }
+        // Loot drops as floating sprites where the kill happened and is not banked until collected.
+        for (const drop of generatedDrops) {
+            const line = lines.find(e => e?.itemId === drop.itemId);
+            RareDrops.noteDrop(SpriteLayer.addSprite('item', drop.itemId, drop.quantity, instanceId), line?.chance ?? 100);
         }
+        if (rareDrop) RareDrops.noteRareFind(SpriteLayer.addSprite('item', rareDrop.itemId, rareDrop.quantity, instanceId), find.chance);
+        const bonus = OutputRules.dropBonusGrants(instanceId, doubled ? 2 : 1);
 
-        const all = rareDrop ? [...generatedDrops, { ...rareDrop, rare: true }] : generatedDrops;
+        // Everything that landed, the bonus drops too: the fight window's Drops line, the time-away
+        // tally and the kill's cycle (`BoardCombat`, for On Neighbour Produces) all read this.
+        const all = [
+            ...generatedDrops,
+            ...(rareDrop ? [{ ...rareDrop, rare: true }] : []),
+            ...bonus.map(b => ({ ...this._describe(b.itemId), quantity: b.quantity, bonus: true }))
+        ];
         EventBus.publish(ENGINE_EVENTS.LOOT_GENERATED, { cardId, heroId, enemyId, enemyName, instanceId, drops: all });
     },
 
@@ -136,6 +129,12 @@ const LootSystem = {
         });
 
         return { itemId, quantity, itemName: item.name, itemIcon: item.icon };
+    },
+
+    /** An item's id, name and icon, as a rolled drop carries them. */
+    _describe(itemId) {
+        const item = getItem(itemId);
+        return { itemId, itemName: item?.name, itemIcon: item?.icon };
     }
 };
 

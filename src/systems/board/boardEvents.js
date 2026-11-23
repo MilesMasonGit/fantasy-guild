@@ -19,15 +19,15 @@
  */
 export const BOARD_EVENTS = {
     /**
-     * A Token completed one work cycle. This is the board's universal unit of work: one kill counts
-     * as one cycle too, so combat feeds this exactly as production does.
+     * A Token completed one cycle: a work cycle (`BoardRunner`) or a kill, a combat cycle
+     * (`BoardCombat`, marked `kill: true`).
      *
      * Everything that happens per cycle hangs off this: context and buff Token wear, status decay,
-     * and cycle counting.
+     * and cycle counting. ⚠️ A reader that means work only must skip `kill` (On Neighbour's Cycle,
+     * On Cycle, Limes's cycle steps).
      *
-     * Payload: `{ instanceId, typeId, heroId, failed, produced }`. ⚠️ Only the work runner
-     * (`BoardRunner`) sends `produced`; combat's kill omits it, so
-     * a reader must default it.
+     * Payload: `{ instanceId, typeId, heroId, failed, produced, kill? }`; `produced` is the item ids
+     * that landed, a kill's loot included.
      */
     CYCLE_COMPLETE: 'board:cycle_complete',
 

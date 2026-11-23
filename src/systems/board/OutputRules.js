@@ -4,13 +4,13 @@ import * as EffectFeedback from './EffectFeedback.js';
 import * as RareDrops from './RareDrops.js';
 import * as SupportLinks from './supportLinks.js';
 import * as CycleSavings from './CycleSavings.js';
-import { EFFECT_TYPES, GIANT_HARVEST_TIMES } from '../effects/constants.js';
-import { isGatheringSkill } from '../../config/registries/skillRegistry.js';
+import { EFFECT_TYPES, GIANT_HARVEST_TIMES, GIANT_HARVEST_SKILLS } from '../effects/constants.js';
 import { getHeroCombatStyle } from '../combat/CombatFormulas.js';
 
 /**
- * The output rules a finished cycle pays through: a station's cycle (`BoardRunner`) and a kill
- * (`LootSystem`), so a nearby rule means the same thing beside either.
+ * The output rules a finished cycle pays through: a work cycle (`BoardRunner`) and a kill, a combat
+ * cycle (`LootSystem`), so a nearby rule means the same thing beside either. A kill takes Yield,
+ * Double Loot, Double Item and the bonus drops; Giant Harvest, Refresh and Fail are work's alone.
  *
  * ⚠️ Each helper draws from `Math.random` in a fixed order (and `roundUp` always draws once, even
  * on a whole number); the bench's work check pins that stream, so keep the draws as they are.
@@ -37,15 +37,15 @@ export function rollDoubleLoot(instanceId, skill) {
 export { GIANT_HARVEST_TIMES };
 
 /**
- * GIANT_HARVEST: whether this gathering cycle's drops all come in at {@link GIANT_HARVEST_TIMES}
+ * GIANT_HARVEST: whether this Farming work cycle's drops all come in at {@link GIANT_HARVEST_TIMES}
  * (every line and the rare table's find; with Double Loot as well, both apply). Rolled ONCE per
- * cycle, like Double Loot. Work whose skill is not a gathering skill never rolls it, whatever rule
- * reaches it.
+ * cycle, like Double Loot. Other work never rolls it, whatever rule reaches it, and a kill never
+ * asks.
  *
- * ⚠️ No draw unless a rule offers the chance to gathering work, so the stream is unchanged without one.
+ * ⚠️ No draw unless a rule offers the chance to Farming work, so the stream is unchanged without one.
  */
 export function rollGiantHarvest(instanceId, skill) {
-    if (!isGatheringSkill(skill)) return false;
+    if (!GIANT_HARVEST_SKILLS.includes(skill)) return false;
     return CycleSavings.procHits(instanceId, EFFECT_TYPES.GIANT_HARVEST, skill);
 }
 
@@ -93,7 +93,7 @@ export function widenYield(instanceId, skill, rolled) {
  * its own outputs. Each lands on the board like any other output, `times` as many as authored: the
  * cycle's Double Loot (x2) and Giant Harvest (x10) multiply a bonus drop as they do the Token's own.
  * @param {number} [times] the cycle's loot multiplier
- * @returns {string[]} the item ids that landed
+ * @returns {Array<{itemId: string, quantity: number}>} what landed
  */
 export function dropBonusGrants(instanceId, times = 1) {
     const landed = [];
@@ -107,7 +107,7 @@ export function dropBonusGrants(instanceId, times = 1) {
         if (!CycleSavings.payItemRule(instanceId, grant)) continue;
         const quantity = Math.max(1, grant.quantity || 1) * times;
         RareDrops.noteDrop(SpriteLayer.addSprite('item', grant.itemId, quantity, instanceId), chance);
-        landed.push(grant.itemId);
+        landed.push({ itemId: grant.itemId, quantity });
         // Announced only once the roll has actually landed: a 5% grant that missed did nothing,
         // and saying its name would teach the player the opposite of how often it works.
         EffectFeedback.announce(instanceId, grant, { amount: quantity });

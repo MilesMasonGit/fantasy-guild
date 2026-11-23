@@ -90,10 +90,13 @@ function roleOptions(statement) {
         .map(r => option(r.id, r.label, r.hint));
 }
 
-/** Every skill, or only one trade's (`SKILL_TRADES`: a palette row's `skillTrade`). */
-const skillOptions = (trade = null) => Object.values(getAllSkills() || {})
-    .filter(s => !trade || s.trade === trade)
+/** Every skill, or only those named (a palette row's `skillsOnly`). */
+const skillOptions = (only = null) => Object.values(getAllSkills() || {})
+    .filter(s => !only || only.includes(s.id))
     .map(s => option(s.id, s.name || s.id));
+
+/** The work a row's `skillsOnly` names, in words ("Farming"). */
+const onlyNames = (only) => only.map(id => getSkill(id)?.name || id).join(', ');
 
 /** Damage, Swing Time and Accuracy name the style a hero fights in (the weapon's), never a work skill. */
 const styleOptions = () => [
@@ -369,8 +372,8 @@ function payloadSlots(statement, ctx) {
                             ? carriedOptions(ctx)
                         : entry.categories === 'combatStyle'
                             ? styleOptions()
-                        : entry.skillTrade
-                            ? [option('', `Any ${entry.skillTrade} skill`, `Every ${entry.skillTrade} skill; no other work rolls it.`), ...skillOptions(entry.skillTrade)]
+                        : entry.skillsOnly
+                            ? [option('', `Any ${onlyNames(entry.skillsOnly)} work`, `Every ${onlyNames(entry.skillsOnly)} cycle; no other work rolls it.`), ...skillOptions(entry.skillsOnly)]
                             : [option('', 'Any skill', 'No narrowing — the usual case.'), ...skillOptions()],
                     patch: v => {
                         const next = { ...payload };
