@@ -6,7 +6,7 @@ import { starAddsRate } from './hall.js';
 import { settingsOf, minutesPerLevelAt, minutesToReach, formatMinutes, levelAtMinutes } from './settings.js';
 import { HOW, COMBAT, parseKey, itemKey, tokenKey, recipeKey, wedgeKey, starKey, LEDGER_ENGINE_TEXT } from '../../../../src/systems/progression/ledger/engine.js';
 import { ringOfStar } from '../../../../src/systems/world/ringStars.js';
-import { HALL_NODE } from '../../../../src/config/guildUpgrades.js';
+import { HALL_NODE, ROSTER_STAR } from '../../../../src/config/guildUpgrades.js';
 import { planOf, PLAN_STATUS, tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
 import { xpForLevel, MAX_SKILL_LEVEL } from '../../../../src/utils/XPCurve.js';
 import { turnTiming } from '../../../../src/config/registries/tokenConstants.js';
@@ -851,7 +851,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
      * source of what it pays (an enabler).
      */
     function hallRankGain(track, rank, cap, priceHours = 0) {
-        if (track.id === 'roster_size') return { gain: 1, work: null, opening: OPEN };
+        // A Bunk Beds rank is another hero: an hour of work an hour.
+        if (track.id === ROSTER_STAR) return { gain: 1, work: null, opening: OPEN };
         let best = { gain: 0, work: null, opening: OPEN };
         let bestPayback = Infinity;
         for (const work of hallWorksOf(track.id)) {
@@ -871,7 +872,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
 
     let hallMemo = null;
     /**
-     * Every Guild Hall rank, built-in and authored: its tier, price, the hours that price takes to
+     * Every Guild Hall rank, stand-in and authored: its tier, price, the hours that price takes to
      * gather at Typical (before the Hall), the hours it saves an hour and on which work, its payback
      * and whether that is within the payback time (`pays`), and the price the ledger proposes for an
      * authored rank (`proposed`). `rate: false` for a rank that adds no rate (Bank tabs, a wound's
@@ -898,7 +899,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                     rows.push({ ...base, rate: false, what: PACE_TEXT.opensRing(ring), ...ringRowOf(track, ring) });
                     continue;
                 }
-                const addsRate = track.builtIn ? track.id !== 'bank_tabs' : starAddsRate(track.star);
+                const addsRate = track.id === ROSTER_STAR || starAddsRate(track.star);
                 if (!addsRate) {
                     rows.push({ ...base, rate: false, what: track.description || 'not a rate' });
                     continue;

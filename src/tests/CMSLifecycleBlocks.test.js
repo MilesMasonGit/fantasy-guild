@@ -91,7 +91,7 @@ function everyBlock() {
             section: 'forestry',
             group: 'Fixture Group',
         },
-        trickle: [{ itemId: i1, quantity: 1, everyMs: 300000 }],
+        trickle: [{ itemId: i1, quantity: 1 }],
         respawn: { mode: 'refill', afterMs: 15000 },
         field: { emptySprite: 't_farmland', growingSprite: 't_garden' },
         camp: { skill: 'forestry', reach: 280 },
@@ -171,6 +171,16 @@ describe('A Token with every block survives load → edit → sync → reload', 
         // What `partialize` hands to storage, through JSON, then back through `merge`.
         const persisted = JSON.parse(JSON.stringify({ tokens: useEntityStore.getState().tokens }));
         for (const key of TOKEN_LIFECYCLE_BLOCKS) expect(persisted.tokens[id][key]).toEqual(blocks[key]);
+    });
+
+    it('editing a Passive Production line drops its stale time but keeps the Turns time', () => {
+        const { id } = authorFixture();
+        const store = useEntityStore.getState();
+        const line = store.tokens[id].trickle[0];
+        store.updateToken(id, { trickle: [{ ...line, quantity: 3, everyMs: 300000 }] });
+        const after = useEntityStore.getState().tokens[id];
+        expect(after.trickle).toEqual([{ itemId: line.itemId, quantity: 3 }]);
+        expect(after.turns.everyMs).toBe(90000);
     });
 
     it('removing a block leaves no key behind in the file', () => {

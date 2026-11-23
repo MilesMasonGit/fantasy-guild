@@ -366,6 +366,9 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
             lines.forEach((entry, i) => {
                 checkItemRef(err, `trickle[${i}].itemId`, 'Passive Production names', entry?.itemId);
                 checkPositive(err, `trickle[${i}].quantity`, `Passive Production quantity of ${show(entry?.itemId ?? '?')}`, entry?.quantity);
+                if (entry?.everyMs !== undefined) {
+                    warn(`trickle[${i}].everyMs`, `has a Passive Production line for ${show(entry?.itemId ?? '?')} with a time of its own; every line is paid once a lap and the time is ignored.`);
+                }
             });
             if (lines.length > 0 && id !== GUILD_HALL_ID) {
                 warn('trickle', 'has Passive Production; only the Guild Hall is meant to have it for now (allowed).');

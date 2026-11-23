@@ -36,7 +36,7 @@ function clean() {
         tokens: {
             token_guild_hall: {
                 id: 'token_guild_hall', name: 'Guild Hall',
-                trickle: [{ itemId: 'item_oak_seed', quantity: 1, everyMs: 300000 }],
+                trickle: [{ itemId: 'item_oak_seed', quantity: 1 }],
             },
             token_oak_forest: {
                 id: 'token_oak_forest', name: 'Oak Forest',
@@ -504,14 +504,19 @@ describe('Lifecycle audit — warnings (allowed)', () => {
             { severity: 'warning', id: 'token_oak_forest', field: 'spawner.upkeep', includes: 'no upkeep' });
     });
 
-    it('Passive Production lines need no interval: one shared timer pays them (T-099)', () => {
+    it('Passive Production lines need no interval: one shared timer pays them', () => {
         const w = clean();
-        w.tokens.token_guild_hall.trickle = [{ itemId: 'item_oak_seed', quantity: 1 }, { itemId: 'item_oak_wood', quantity: 2, everyMs: 10 }];
+        w.tokens.token_guild_hall.trickle = [{ itemId: 'item_oak_seed', quantity: 1 }, { itemId: 'item_oak_wood', quantity: 2 }];
         expect(auditLifecycleBlocks(w)).toEqual([]);
     });
 
+    it('a Passive Production line that carries a time of its own', () => {
+        expectOne((w) => { w.tokens.token_guild_hall.trickle[0].everyMs = 300000; },
+            { severity: 'warning', id: 'token_guild_hall', field: 'trickle[0].everyMs', includes: 'once a lap' });
+    });
+
     it('a trickle on a Token other than the Guild Hall', () => {
-        expectOne((w) => { w.tokens.token_oak_tree.trickle = [{ itemId: 'item_oak_seed', quantity: 1, everyMs: 5000 }]; },
+        expectOne((w) => { w.tokens.token_oak_tree.trickle = [{ itemId: 'item_oak_seed', quantity: 1 }]; },
             { severity: 'warning', id: 'token_oak_tree', field: 'trickle', includes: 'only the Guild Hall' });
     });
 
@@ -597,7 +602,10 @@ const retiredKindsLeft = (tokens, recipes) => [
     ...Object.entries(tokens).filter(([, def]) => isRetiredStationKind(stationKindOf(def))).map(([id]) => ['warning', id, 'stationKind']),
     ...recipes.filter((r) => retiredStationKindsOf(r).length).map((r) => ['warning', r.id, 'stationKinds'])
 ];
-const shippedAllowed = (tokens, recipes) => [...withAmbushLeft(tokens), ...retiredKindsLeft(tokens, recipes)].sort();
+// A Passive Production line still carrying a time warns until the change pack strips it.
+const lineTimesLeft = (tokens) => Object.values(tokens).flatMap((t) => (Array.isArray(t.trickle) ? t.trickle : [])
+    .flatMap((l, i) => (l?.everyMs !== undefined ? [['warning', t.id, `trickle[${i}].everyMs`]] : [])));
+const shippedAllowed = (tokens, recipes) => [...withAmbushLeft(tokens), ...retiredKindsLeft(tokens, recipes), ...lineTimesLeft(tokens)].sort();
 
 describe('Lifecycle audit — reaches both audits', () => {
     it('the CMS Economy Audit shows each finding as a row, errors Critical and warnings Warning', () => {

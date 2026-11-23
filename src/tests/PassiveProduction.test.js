@@ -214,15 +214,20 @@ describe('⭐ the Wishing Well joins the Guild Hall\'s timer (T-099)', () => {
         const bare = placeAt('fixture_pp_bare_hall', 800, 500);
         expect(PassiveProduction.hasPassiveProduction(bare)).toBe(false);
         setWell(2);
-        expect(PassiveProduction.linesOf(bare)).toEqual([{ itemId: 'item_water', quantity: 20, source: 'wishing_well' }]);
+        expect(PassiveProduction.linesOf(bare)).toEqual([{ itemId: 'item_water', quantity: 20, source: 'hall_star' }]);
         run(LAP);
         expect(water()).toBe(20);
     });
 
-    it('reads the Wishing Well\'s old id', () => {
+    it('reads the Wishing Well\'s old id: a save holding it loads with the rank under the star\'s id', () => {
         GameState.state.progress.guildUpgrades.guildmasters_banner = 2;
         const hall = placeAt('fixture_pp_hall', 800, 500);
-        expect(PassiveProduction.linesOf(hall).find(l => l.itemId === 'item_water').quantity).toBe(20);
+        const revived = JSON.parse(JSON.stringify(GameState.serialize()));
+        GameState.state = migrateState(revived.state, revived.version);
+        expect(GameState.state.progress.guildUpgrades).toMatchObject({ wishing_well: 2 });
+        expect(GameState.state.progress.guildUpgrades).not.toHaveProperty('guildmasters_banner');
+        const loaded = BoardState.getTokenById(hall.id);
+        expect(PassiveProduction.linesOf(loaded).find(l => l.itemId === 'item_water').quantity).toBe(20);
     });
 });
 

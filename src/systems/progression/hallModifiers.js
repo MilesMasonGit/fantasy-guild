@@ -20,12 +20,17 @@ import { rankOf } from '../../config/hallStars.js';
  *
  * A rule's reach means nothing here: a star reaches the whole guild. A rule the guild cannot carry
  * is skipped and reported, never widened: another keyword, a triggered rule, no number, a retired
- * axis (Camp Reach), or a filter that reads live state (charges, who works it), which nothing would
- * ever refresh.
+ * axis (Camp Reach), an axis a star cannot carry (Sunder) or a hero reads only from what they carry
+ * (Food Healing), or a filter that reads live state (charges, who works it), which nothing would ever
+ * refresh. So `held` holds only rules that work.
  */
 
 /** Why `hallRulesOf` leaves out a rule on an axis the game no longer reads (`modifierPalette` `retired`). */
 export const RETIRED_AXIS = 'an axis the game no longer reads';
+/** Why `hallRulesOf` leaves out a rule a star cannot carry (`modifierPalette` `neverOnGuild`: Sunder). */
+export const NEVER_ON_GUILD = 'an axis a star cannot carry';
+/** Why `hallRulesOf` leaves out a hero's axis read only from what they carry (`heroOnly`, not `fromGuild`). */
+export const CARRIED_ONLY_AXIS = 'an axis a hero reads only from what they carry';
 
 /** The owner part of a star rule's source id; `hallSourceOf` reads it back. */
 const ownerOf = (starId, index) => `hall:${starId}#${index}`;
@@ -66,7 +71,7 @@ function heldRecordOf(star, rank) {
  *   aimed: Array<{to: object, modifier: object}>,
  *   ignored: Array<{starId: string, rank: number, index: number, reason: string}>,
  *   held: Array<{starId: string, rank: number, statement: object}>
- * }} `held` is every rule of a held rank, carried or not (what the Effects list shows)
+ * }} `held` is every rule of a held rank the guild carries (what the Effects list shows)
  */
 export function hallRulesOf(stars, ranks) {
     const modifiers = [];
@@ -84,7 +89,10 @@ export function hallRulesOf(stars, ranks) {
             const payload = statement.payload;
             const value = Number(payload?.value);
             if (!payload?.type || !Number.isFinite(value)) return skip('no axis or value');
-            if (getPaletteEntry(payload.type)?.retired) return skip(RETIRED_AXIS);
+            const entry = getPaletteEntry(payload.type);
+            if (entry?.retired) return skip(RETIRED_AXIS);
+            if (entry?.neverOnGuild) return skip(NEVER_ON_GUILD);
+            if (entry?.heroOnly && !entry.fromGuild) return skip(CARRIED_ONLY_AXIS);
             const to = aimOf(statement);
             if (to && !readsDefinitionOnly(to)) return skip('a filter that reads live state');
             held.push({ starId: star.id, rank, statement });
@@ -129,7 +137,7 @@ export function xpForEveryoneOf(stars, ranks) {
 
 /**
  * Every Passive Production line the held ranks pay, merged per item: `[{ itemId, quantity }]`,
- * each lap of the Guild Hall's timer, beside the Wishing Well's Water.
+ * each lap of the Guild Hall's timer (the Wishing Well's Water is one such line).
  */
 export function hallLinesOf(stars, ranks) {
     const byItem = new Map();

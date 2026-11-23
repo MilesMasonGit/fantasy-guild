@@ -150,11 +150,6 @@ const ReactRoot = () => {
     const isFullscreenOpen = ui.fullscreen.view !== null;
     React.useEffect(() => { setFullscreenViewOpen(isFullscreenOpen); }, [isFullscreenOpen]);
 
-    const handleOpenGuildHall = React.useCallback(() => {
-        ui.fullscreen.open('guild');
-        setHallStarId(null);
-    }, [ui.fullscreen]);
-
     // The top bar's Region name opens the Atlas the way its bubble does; a click while it is
     // already open leaves it open.
     const { isActive: isNavActive, toggle: navToggle } = ui.nav;
@@ -311,7 +306,6 @@ const ReactRoot = () => {
                             <Board
                                 inspectedHeroId={inspectHeroId}
                                 inspectedTokenId={ui.inspect.selection?.type === 'token' ? (ui.inspect.selection.source?.instanceId ?? null) : null}
-                                onOpenGuildHall={handleOpenGuildHall}
                                 onInspectToken={onInspectToken}
                                 onClearInspect={onClearInspect}
                             />

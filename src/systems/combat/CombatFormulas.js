@@ -135,13 +135,21 @@ export function heroAttackSpeedMs(hero) {
 const axis = (entity, type, category) => entity?.aggregator?.query(type, category) || 0;
 
 /**
- * A hero's flat total on a style axis (Damage, Accuracy: `categories: 'combatStyle'`): what they
- * carry plus what the guild gives (Hall stars, a Region's rules), each read for the style they fight
- * in, so a rule narrowed to Melee helps only a Melee fighter. Enemies never read the guild's.
+ * A hero's flat total on an axis they also read from the guild (`fromGuild` in the palette): what
+ * they carry plus what the guild gives (Hall stars, a Region's rules), summed in one bucket and read
+ * for the same category. Enemies never read the guild's.
+ */
+function heroGuildAxis(hero, type, category) {
+    if (!hero) return 0;
+    return axis(hero, type, category) + getGlobalAggregator().query(type, category);
+}
+
+/**
+ * {@link heroGuildAxis} on a style axis (Damage, Accuracy: `categories: 'combatStyle'`), read for the
+ * style the hero fights in, so a rule narrowed to Melee helps only a Melee fighter.
  */
 function heroStyleAxis(hero, type, style = getHeroCombatStyle(hero)) {
-    if (!hero) return 0;
-    return axis(hero, type, style) + getGlobalAggregator().query(type, style);
+    return heroGuildAxis(hero, type, style);
 }
 
 /**
@@ -161,14 +169,14 @@ export function heroAccuracy(hero) {
     return heroStyleAxis(hero, EFFECT_TYPES.ACCURACY);
 }
 
-/** Percentage points added to the miss chance of whoever attacks the hero. */
+/** Percentage points added to the miss chance of whoever attacks the hero: theirs and the guild's. */
 export function heroDodge(hero) {
-    return axis(hero, EFFECT_TYPES.DODGE);
+    return heroGuildAxis(hero, EFFECT_TYPES.DODGE);
 }
 
-/** Crit chance in percent: 5 plus whatever gear adds. */
+/** Crit chance in percent: 5 plus what the hero carries and the guild gives. */
 export function heroCritChance(hero) {
-    return BASE_CRIT_CHANCE + axis(hero, EFFECT_TYPES.CRIT_CHANCE);
+    return BASE_CRIT_CHANCE + heroGuildAxis(hero, EFFECT_TYPES.CRIT_CHANCE);
 }
 
 /**
@@ -273,6 +281,11 @@ export function typeDamageBoost(entity, type) {
     return axis(entity, EFFECT_TYPES.TYPE_DAMAGE, type);
 }
 
+/** {@link typeDamageBoost} for a hero: their rows and the guild's, on the type and on its group. */
+export function heroTypeDamageBoost(hero, type) {
+    return heroGuildAxis(hero, EFFECT_TYPES.TYPE_DAMAGE, type);
+}
+
 /** The points of Sunder a fighter carries (the Sunder status, once per stack): off every resistance they have. */
 export function sunderOf(entity) {
     return Math.max(0, axis(entity, EFFECT_TYPES.SUNDER));
@@ -289,10 +302,11 @@ export function afterSunder(resistPct, sunderPct) {
 
 /**
  * How much a hero resists hits of `type` (a type, or a group for a hit typed only by its group), in
- * percent: what they carry (worn gear's resistances, Type Resistance rows), after any Sunder on them.
+ * percent: what they carry (worn gear's resistances, Type Resistance rows) and what the guild gives,
+ * after any Sunder on them.
  */
 export function heroTypeResistance(hero, type) {
-    return afterSunder(axis(hero, EFFECT_TYPES.TYPE_RESIST, type), sunderOf(hero));
+    return afterSunder(heroGuildAxis(hero, EFFECT_TYPES.TYPE_RESIST, type), sunderOf(hero));
 }
 
 /**
@@ -377,7 +391,7 @@ export function heroBlow(hero, enemy, { crit = false, arrow = null } = {}) {
     const style = getHeroCombatStyle(hero);
     const multiplier = heroDamageMultiplier(hero, style) * matchupMultiplier(style, enemy?.combatType) * styleCutFactor(hero, style);
     return landedBlow(heroHitParts(hero, arrow), multiplier, crit,
-        (type) => typeDamageBoost(hero, type),
+        (type) => heroTypeDamageBoost(hero, type),
         (type) => enemyTypeResistance(enemy, type));
 }
 

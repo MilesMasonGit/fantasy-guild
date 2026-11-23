@@ -2,8 +2,7 @@
 
 import { isPlanned } from './plan.js';
 import { normaliseStarterCamp } from '../../../config/starterCampShape.js';
-import { getUpgradeDef, WISHING_WELL_ITEM, wishingWellWater, BUILT_IN_UPGRADE_IDS, HALL_NODE } from '../../../config/guildUpgrades.js';
-import { normaliseHallSky } from '../../../config/hallStars.js';
+import { authoredStars, skyWithFallback, HALL_NODE, WISHING_WELL_STAR } from '../../../config/guildUpgrades.js';
 import { ringStarsOf, ringOfStar } from '../../world/ringStars.js';
 import { expandBearer } from '../../effects/effectLibrary.js';
 import { stationSkillOf, stationKindOf, KEYWORD } from '../../effects/statements.js';
@@ -52,7 +51,8 @@ import { STRICT_RINGS, SKILL_OF, EXTRA_KIND } from '../../../config/worldTablesS
  * price in materials (the seed picks them), which wedge a seed's key origins and camps fall in, room
  * under the Token cap, a placement rule refusing a spot, the guild's roster.
  *
- * Pure apart from one live read: `buildWorld` asks `getUpgradeDef('wishing_well')` for the Well's price.
+ * Pure apart from one live read: given no `hallSky`, `buildWorld` reads the Wishing Well from the
+ * game's sky (the encyclopedia passes none).
  */
 
 /**
@@ -330,13 +330,16 @@ export function buildWorld(content = {}) {
     const hall = tokenKey(GUILD_HALL);
     if (tokens[GUILD_HALL]) {
         add({ id: 'guild-hall', how: HOW.HALL, via: null, gives: [{ key: hall, chance: 1 }] });
-        // The Wishing Well adds Water to the Hall's Passive Production from its first rank.
-        const well = getUpgradeDef('wishing_well');
-        if (well && items[WISHING_WELL_ITEM]) {
-            const price = inputsOf(well.prices?.[0]);
+        // The Wishing Well adds its lines (Water) to the Hall's Passive Production from its first rank.
+        // ⚠️ The one star whose Passive Production reach follows: the others' lines are not modelled.
+        const well = wishingWellOf(content.hallSky);
+        const first = well?.ranks?.[0];
+        const lines = list(first?.lines).filter(l => items[l.itemId]);
+        if (lines.length) {
+            const price = inputsOf(first.price);
             add({
-                id: 'upgrade:wishing_well', how: HOW.UPGRADE, via: hall, needs: [hall, ...needKeys(price)], passive: true,
-                cycleMs: PASSIVE_LAP_BASE_MS, gives: [{ key: itemKey(WISHING_WELL_ITEM), chance: 1, perCycle: wishingWellWater(1) }]
+                id: `upgrade:${well.id}`, how: HOW.UPGRADE, via: hall, needs: [hall, ...needKeys(price)], passive: true,
+                cycleMs: PASSIVE_LAP_BASE_MS, gives: lines.map(l => ({ key: itemKey(l.itemId), chance: 1, perCycle: l.quantity }))
             });
         }
     }
@@ -602,6 +605,12 @@ export function buildWorld(content = {}) {
     return { items, tokens, recipes, rules, names, planned, worldTables: tables, ringStars };
 }
 
+/** The Wishing Well's star (`hallStars.js` record): `hallSky`'s, the stand-in when it lacks one, or the game's sky's when there is no `hallSky`. */
+function wishingWellOf(hallSky) {
+    const stars = isObject(hallSky) ? skyWithFallback(hallSky).stars : authoredStars();
+    return stars.find(s => s.id === WISHING_WELL_STAR) || null;
+}
+
 /**
  * The Guild Hall's ring stars as rules (`hallStars.opensRing`, `world/ringStars.js`): lighting a star
  * pays its first rank's price once it is open, and a ring star's light opens its ring, which every
@@ -614,18 +623,16 @@ export function buildWorld(content = {}) {
  * @returns {Map<number, string[]>} each ring a star opens, with the stars that open it
  */
 function hallStarRules(hallSky, { add, names, inputsOf }) {
-    const { stars } = normaliseHallSky(isObject(hallSky) ? hallSky : {});
+    // The game's stand-ins for Bunk Beds, Bank Tabs and the Wishing Well count where the sky lacks them.
+    const { stars } = skyWithFallback(isObject(hallSky) ? hallSky : {});
     const byRing = ringStarsOf(stars);
     const out = new Map([...byRing].map(([ring, list]) => [ring, list.map(s => s.id)]));
     if (!byRing.size) return out;
 
-    const authored = new Map(stars.map(s => [s.id, s]));
-    const builtIn = (id) => (BUILT_IN_UPGRADE_IDS.includes(id) ? getUpgradeDef(id) : null);
+    const byId = new Map(stars.map(s => [s.id, s]));
     const recordOf = (id) => {
-        const star = authored.get(id);
-        if (star) return { id, name: star.name, links: star.links, price: star.ranks[0]?.price || [], ring: ringOfStar(star) };
-        const def = builtIn(id);
-        return def ? { id, name: def.name, links: def.links || [], price: def.prices?.[0] || [], ring: null } : null;
+        const star = byId.get(id);
+        return star ? { id, name: star.name, links: star.links, price: star.ranks[0]?.price || [], ring: ringOfStar(star) } : null;
     };
     // A link counts from both ends: a star's neighbours are the ones it names and the ones naming it.
     const neighbours = (record) => [...record.links, ...stars.filter(s => s.links.includes(record.id)).map(s => s.id)];

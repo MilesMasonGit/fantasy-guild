@@ -38,7 +38,7 @@ import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { STANDARD_REACH_U } from '../config/registries/reachRegistry.js';
 import {
-    GUILD_UPGRADES, CONSTELLATIONS, BUILT_IN_UPGRADE_IDS, HALL_NODE, getUpgradeDef, isUpgradeAccessible,
+    GUILD_UPGRADES, CONSTELLATIONS, FALLBACK_STAR_IDS, HALL_NODE, getUpgradeDef, isUpgradeAccessible,
     authoredStars, skyVersion, setHallSky
 } from '../config/guildUpgrades.js';
 import { normaliseHallSky, hallStarsFile } from '../config/hallStars.js';
@@ -186,24 +186,27 @@ afterEach(() => {
     HallRules.apply({});
 });
 
-describe('the sky holds authored stars beside the built-in ones', () => {
-    it('adds the authored constellations and stars after the built-in ones, in the file\'s order', () => {
+describe('the sky holds authored stars beside the stand-ins', () => {
+    it('adds the authored constellations and stars after the stand-ins the file lacks, in the file\'s order', () => {
         expect(GUILD_UPGRADES.slice(0, 3).map(u => u.id)).toEqual(['bank_tabs', 'roster_size', 'wishing_well']);
-        expect(authoredStars().map(s => s.id)).toEqual(['m_xp', 'm_yield', 'm_speed', 'm_rest', 'm_camp', 'f_regrow', 'w_ore', 'h_infirmary', 'h_food']);
+        expect(authoredStars().map(s => s.id)).toEqual([
+            ...FALLBACK_STAR_IDS, 'm_xp', 'm_yield', 'm_speed', 'm_rest', 'm_camp', 'f_regrow', 'w_ore', 'h_infirmary', 'h_food'
+        ]);
         expect(CONSTELLATIONS.map(c => c.id)).toEqual(['hearth', 'vault', 'well', 'mining']);
         const def = getUpgradeDef('m_xp');
         expect(def).toMatchObject({ authored: true, maxRank: 2, constellation: 'mining', prices: [ore(5), ore(10)] });
     });
 
-    it('replaces exactly what it put in, leaves other tracks alone, and refuses a built-in id', () => {
+    it('replaces exactly what it put in, leaves other tracks alone, and an authored star takes its stand-in\'s place', () => {
         const before = skyVersion();
         const other = { id: 'test_track', constellation: 'vault', name: 'Test', node: { x: -1, y: 0 }, links: [HALL_NODE], maxRank: 1, prices: [[]] };
         GUILD_UPGRADES.push(other);
         try {
-            const put = registerHallSky({ stars: { bank_tabs: { id: 'bank_tabs', name: 'Imposter', links: [HALL_NODE], ranks: [{ price: [] }] }, solo: { id: 'solo', constellation: 'vault', links: [HALL_NODE], ranks: [{ price: [] }] } } });
-            expect(put.stars.map(s => s.id)).toEqual(['solo']);
+            const put = registerHallSky({ stars: { bank_tabs: { id: 'bank_tabs', name: 'Authored Tabs', links: [HALL_NODE], ranks: [{ price: [] }] }, solo: { id: 'solo', constellation: 'vault', links: [HALL_NODE], ranks: [{ price: [] }] } } });
+            expect(put.stars.map(s => s.id)).toEqual(['roster_size', 'wishing_well', 'bank_tabs', 'solo']);
             expect(GUILD_UPGRADES.filter(u => u.id === 'bank_tabs')).toHaveLength(1);
-            expect(getUpgradeDef('bank_tabs').name).toBe('Bank Tabs');
+            expect(getUpgradeDef('bank_tabs')).toMatchObject({ name: 'Authored Tabs', authored: true, maxRank: 1 });
+            expect(getUpgradeDef('roster_size')).toMatchObject({ name: 'Bunk Beds', fallback: true });
             expect(GUILD_UPGRADES).toContain(other);
             expect(getUpgradeDef('m_xp')).toBeNull();
             expect(skyVersion()).toBeGreaterThan(before);
@@ -457,7 +460,7 @@ describe('the retired Compass: an old save drops its ranks and loads', () => {
         const old = { progress: { guildUpgrades: { roster_size: 2, token_cap: 4, cartography_slots: 2, notice_board: 3, bank_tabs: 1 } } };
         const loaded = migrateState(old, GAME_VERSION);
         expect(loaded.progress.guildUpgrades).toEqual({ roster_size: 2, bank_tabs: 1 });
-        expect(BUILT_IN_UPGRADE_IDS).toEqual(['bank_tabs', 'roster_size', 'wishing_well']);
+        expect(FALLBACK_STAR_IDS).toEqual(['bank_tabs', 'roster_size', 'wishing_well']);
         expect(CONSTELLATIONS.map(c => c.id)).not.toContain('compass');
     });
 });
@@ -498,7 +501,7 @@ describe('a star in words, and the audit', () => {
         ]);
     });
 
-    it('names a star that cannot open, costs a missing item, or takes a built-in id', () => {
+    it('names a star that cannot open, costs a missing item, or holds the wrong count of Bank Tabs ranks', () => {
         const findings = hallStarFindings({
             sky: { stars: {
                 lonely: { id: 'lonely', constellation: 'nowhere', ranks: [{ price: [{ itemId: 'no_such_item', quantity: 1 }], rules: [provides(EFFECT_TYPES.XP_BONUS, 0.1)] }] },
@@ -510,17 +513,20 @@ describe('a star in words, and the audit', () => {
         expect(findings.some(f => f.startsWith('lonely: names the constellation "nowhere"'))).toBe(true);
         expect(findings.some(f => f.startsWith('lonely: is linked to nothing'))).toBe(true);
         expect(findings.some(f => f.includes('"no_such_item", which does not exist'))).toBe(true);
-        expect(findings.some(f => f.startsWith('bank_tabs: takes the id of a built-in'))).toBe(true);
+        expect(findings).toContain('bank_tabs: has 1 rank, but every rank opens one more Bank tab and 15 ranks reach the most Bank tabs. Give it 15 ranks in the CMS.');
+        // A Bank Tabs rank gives its tab by id: it is not a rank that gives nothing.
+        expect(findings.some(f => f.startsWith('bank_tabs: rank 1 gives nothing'))).toBe(false);
         expect(findings.some(f => f.startsWith('dangling: is linked to "ghost"'))).toBe(true);
         expect(findings.some(f => f.startsWith('dangling: rank 1 gives nothing'))).toBe(true);
     });
 });
 
 describe('with no authored sky', () => {
-    it('holds only the built-in tracks, and the data file is absent today', () => {
+    it('holds only the stand-ins for Bunk Beds, Bank Tabs and the Wishing Well', () => {
         setHallSky(null);
         expect(GUILD_UPGRADES.map(u => u.id)).toEqual(['bank_tabs', 'roster_size', 'wishing_well']);
+        expect(GUILD_UPGRADES.every(u => u.fallback === true && !u.authored)).toBe(true);
         expect(CONSTELLATIONS.map(c => c.id)).toEqual(['hearth', 'vault', 'well']);
-        expect(authoredStars()).toEqual([]);
+        expect(authoredStars().map(s => s.id)).toEqual(FALLBACK_STAR_IDS);
     });
 });

@@ -13,8 +13,8 @@ import {
 import { neededToolOf, toolOf, toolMeets, toolItemFor } from '../../../../src/config/registries/toolKinds.js';
 import { hasCatchPools, catchPoolsOf } from '../../../../src/config/registries/catchPools.js';
 import { rareTableOf, rareEntryChances } from '../../../../src/config/registries/rareTables.js';
-import { wishingWellWater, WISHING_WELL_ITEM, BUILT_IN_UPGRADE_IDS } from '../../../../src/config/guildUpgrades.js';
-import { normaliseHallSky, rankOf } from '../../../../src/config/hallStars.js';
+import { skyWithFallback } from '../../../../src/config/guildUpgrades.js';
+import { rankOf } from '../../../../src/config/hallStars.js';
 import { hallRulesOf } from '../../../../src/systems/progression/hallModifiers.js';
 import { flooredWorkTime, floorSpeedUp, passiveLapMs } from '../../../../src/systems/board/workTime.js';
 import { ownCycleCost } from '../../../../src/systems/board/cycleCharges.js';
@@ -153,9 +153,9 @@ export function buildRateBook(content = {}) {
         return expanded.get(id);
     };
 
-    const sky = normaliseHallSky(isObject(content.hallSky) ? content.hallSky : {});
-    const builtIn = new Set(BUILT_IN_UPGRADE_IDS);
-    const stars = sky.stars.filter(s => !builtIn.has(s.id));
+    // The game's stand-ins for Bunk Beds, Bank Tabs and the Wishing Well count where the sky lacks them.
+    const sky = skyWithFallback(isObject(content.hallSky) ? content.hallSky : {});
+    const stars = sky.stars;
     const starsById = new Map(stars.map(s => [s.id, s]));
     const hall = { stars, constellations: sky.constellations, star: (id) => starsById.get(id) || null, memo: new WeakMap() };
 
@@ -877,15 +877,15 @@ function workKindOf(def, recipe) {
     return { kind: WORK.GATHER };
 }
 
-/** Whether a Token pays Passive Production: its own `trickle` lines, or the Guild Hall (the Wishing Well's Water). */
+/** Whether a Token pays Passive Production: its own `trickle` lines, or the Guild Hall (its stars' lines). */
 function isPassive(def) {
     return list(def?.trickle).some(l => text(l.itemId)) || def?.id === 'token_guild_hall' || def?.isGuildHall === true;
 }
 
 /**
  * Passive Production (`PassiveProduction.linesOf`): every line once a lap, no hero; the Guild Hall
- * adds the Wishing Well's Water at the setup's rank (`hallRanks.wishing_well`) and the lines of the
- * stars it holds (the Well's basic outputs). The lap is `PassiveProduction.lapMs`'s: the base, moved
+ * adds the lines of the stars the setup holds (`hallRanks`: the Wishing Well's Water, the Well's basic
+ * outputs). The lap is `PassiveProduction.lapMs`'s: the base, moved
  * by every guild-wide Lap Time rule the setup holds (a star, a Region's or a guild rule), through the
  * same floor (`workTime.passiveLapMs`). The lap is one for every Token that pays.
  */
@@ -901,13 +901,6 @@ function passiveRate(book, def, setup) {
     const lapBy = new Set();
     matchedFactors(guild, EFFECT_TYPES.PASSIVE_LAP, TARGET_CATEGORIES.ALL, lapBy);
     const lapMs = passiveLapMs(guild.agg.resolveAxis(EFFECT_TYPES.PASSIVE_LAP, PASSIVE_LAP_BASE_MS));
-    if (def.id === 'token_guild_hall' || def.isGuildHall === true) {
-        const rank = Math.floor(Number(setup.hallRanks?.wishing_well) || 0);
-        const id = `${FACTOR.HALL}:wishing_well`;
-        const water = isOff(setup, id, FACTOR.HALL) ? 0 : wishingWellWater(rank);
-        if (water > 0) perLap[WISHING_WELL_ITEM] = (perLap[WISHING_WELL_ITEM] || 0) + water;
-        if (rank > 0) factors.push({ id, kind: FACTOR.HALL, name: `Wishing Well rank ${rank}`, on: water > 0, axes: water > 0 ? ['passive'] : [] });
-    }
     for (const { star, rank: held, factorId } of hallRules(book, setup).held) {
         const lines = def.id === 'token_guild_hall' || def.isGuildHall === true ? rankOf(star, held)?.lines || [] : [];
         const lap = lapBy.has(factorId);
@@ -960,8 +953,8 @@ export function axisResolverOf(book, target, setup = {}) {
  *     spawner's allowance (all of them in the hero's reach). For a fight, the camp that spawns it.
  *   - `camp`: a camp of the work's skill the hero works from (an id or `{ id, members }`): it works
  *     `members` copies in turn (else the family's allowance); named but unusable, one copy
- *   - `bait`: the bait carried at water; `hallRanks`: Guild Hall ranks by star id (the Wishing Well's
- *     and the authored stars': a held rank's rules reach the work, its lines pay at the Hall)
+ *   - `bait`: the bait carried at water; `hallRanks`: Guild Hall ranks by star id (a held rank's
+ *     rules reach the work, its lines pay at the Hall)
  *   - `heroes`: how many heroes work it (default 1; only a family can take more than one)
  *   - `off`: factor ids or kinds switched off (`support:token_copper_mine`, `consumable`, …)
  * @returns {object} the rate, its factors and what it could not read

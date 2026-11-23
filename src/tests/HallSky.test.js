@@ -15,7 +15,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import {
-    GUILD_UPGRADES, CONSTELLATIONS, BUILT_IN_CONSTELLATIONS, HALL_NODE, UPGRADE_SPRITES, getUpgradeDef, totalPrice
+    GUILD_UPGRADES, CONSTELLATIONS, FALLBACK_CONSTELLATION_IDS, HALL_NODE, UPGRADE_SPRITES, getUpgradeDef, totalPrice
 } from '../config/guildUpgrades.js';
 import { registerHallSky, authoredHallSky } from '../config/registries/hallStarRegistry.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
@@ -212,12 +212,14 @@ describe('the Hall sky: the shipped constellations', () => {
             'The Hearth', 'The Vault', 'The Well',
             ...Object.values(authoredHallSky().constellations).map(c => c.name)
         ]);
-        expect(CONSTELLATIONS.slice(0, 3)).toEqual(BUILT_IN_CONSTELLATIONS);
+        // The stand-ins hold the three until the data authors them.
+        expect(CONSTELLATIONS.slice(0, 3).map(c => c.id)).toEqual(FALLBACK_CONSTELLATION_IDS);
+        expect(CONSTELLATIONS.slice(0, 3).every(c => c.fallback === true)).toBe(true);
     });
 });
 
 describe('the Hall sky: constellations', () => {
-    // The built-in tracks alone: the shipped sky's stars join the Hearth and the Well.
+    // The stand-ins alone: the shipped sky's stars join the Hearth and the Well.
     beforeEach(() => registerHallSky({}));
     afterEach(() => registerHallSky(null));
 

@@ -82,7 +82,7 @@ describe('⭐ the Hall tooltip (FB-52, T-099)', () => {
         GameState.state.progress.guildUpgrades.wishing_well = 2;
         const hall = placeAt('fixture_tt_hall', 800, 500);
         expect(livePassiveLines(hall.id)).toEqual([
-            'Passive Production · next in 10:00', '1 Tooltip Seed', '20 Water (Wishing Well)'
+            'Passive Production · next in 10:00', '1 Tooltip Seed', '20 Water'
         ]);
     });
 

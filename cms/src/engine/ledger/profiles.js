@@ -30,7 +30,7 @@ import { hallTracksOf, hallGraph, freeRanks, openingPath, starRulesOf, starMoves
  *
  * **The Guild Hall** (brief 320): a star's ranks are on offer to every work its rules reach (its
  * skill, its Token, a Passive Production line at the Hall), a rank only from the tier the owner gave
- * it and only once its price can be had. Bare holds none (only the built-in ranks that are free).
+ * it and only once its price can be had. Bare holds none (only the ranks a new guild holds, `hall.freeRanks`).
  * Typical takes a rank when it pays for itself within the Hall's own payback time (a day by default,
  * where a building or a tool has two hours) **at Typical**: the hours to
  * gather its price at Typical rates against the hours it saves an hour of the work (its share of the
@@ -207,7 +207,6 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
     const tracks = hallTracksOf(book);
     const trackById = new Map(tracks.map(t => [t.id, t]));
     const graph = hallGraph(tracks);
-    const wishingWell = trackById.get('wishing_well');
 
     const contexts = new Map();
     /** What a piece of work needs to run and every boost that may reach it, before any stage is asked. */
@@ -219,8 +218,8 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
         const ctx = { key, target, kind, def, skill: null, required: [], family: null, camps: [], supports: [], consumables: [], gear: [], tools: [], hall: [] };
         contexts.set(key, ctx);
         if (kind === WORK.PASSIVE) {
-            // The Guild Hall's Passive Production grows with the Wishing Well's ranks, the Well's other lines and a shorter lap.
-            ctx.hall = [wishingWell, ...tracks.filter(t => t.star && (t.star.ranks.some(r => r.lines.length) || starMovesLap(t.star)))].filter(Boolean);
+            // The Guild Hall's Passive Production grows with its stars' lines (the Wishing Well's Water and the rest) and a shorter lap.
+            ctx.hall = tracks.filter(t => t.star.ranks.some(r => r.lines.length) || starMovesLap(t.star));
             return ctx;
         }
         if (!def || !kind) return ctx;
@@ -229,7 +228,7 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
         ctx.gate = probe.gates?.needed ?? 1;
         const chain = chainOf(book, def);
         const made = new Set([...Object.keys(probe.perCycle || {}), ...Object.keys(probe.items || {})]);
-        ctx.hall = tracks.filter(t => t.star && starReaches(t.star, ctx.skill, chain, made));
+        ctx.hall = tracks.filter(t => starReaches(t.star, ctx.skill, chain, made));
         if (kind === WORK.FIGHT) {
             ctx.family = familySpawnerOf(book, def, spawners);
             return ctx;
@@ -262,7 +261,7 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
         return ctx;
     }
 
-    /** The setup every profile starts from: what the work needs to run, one copy, the lowest tool, the built-in Hall ranks that are free. */
+    /** The setup every profile starts from: what the work needs to run, one copy, the lowest tool, the Hall ranks a new guild holds. */
     function bareSetup(ctx, cap, level) {
         const setup = { supports: ctx.required.filter(id => within(tokenTier(id), cap) || tokenTier(id) === null) };
         if (ctx.hall.length) setup.hallRanks = Object.fromEntries(ctx.hall.map(t => [t.id, freeRanks(t)]));

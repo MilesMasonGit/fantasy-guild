@@ -4,7 +4,8 @@ import { useEntityStore } from '../../stores/useEntityStore';
 import { Section } from '../shared/EditorLayout';
 import { rulesLinesOf } from '../../utils/constants';
 import { normaliseHallSky, TAG_SIDES, FIRST_STAR_RING, opensRingOf } from '../../../../src/config/hallStars.js';
-import { BUILT_IN_CONSTELLATIONS } from '../../../../src/config/guildUpgrades.js';
+import { skyWithFallback, rankEffectLabel } from '../../../../src/config/guildUpgrades.js';
+import { getPaletteEntry } from '../../../../src/config/registries/modifierPalette.js';
 import { PLAN_TIERS, tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
 import { workspacePace } from '../../engine/ledgerReport';
 import { hallRows, hallRowsOf, hoursText } from '../../engine/ledgerPace';
@@ -14,8 +15,9 @@ import { hallRows, hallRowsOf, hoursText } from '../../engine/ledgerPace';
  * `data/hallStars.json`. A star's name, description, constellation, place and tag sit here; its
  * ranks (price, rules, Passive Production lines) show as the game reads them and come in by change
  * pack. Each rank's **tier** is the owner's, set here; the ledger then says what the rank pays back
- * in at Typical and proposes a price for it (a preview: nothing is applied). The built-in Bunk
- * Beds, Bank Tabs and Wishing Well are the game's own and are not listed.
+ * in at Typical and proposes a price for it (a preview: nothing is applied). Bunk Beds, Bank Tabs
+ * and the Wishing Well are stars like the rest (the game gives a hero and a Bank tab a rank by id);
+ * until a pack brings them the game stands in for them, and the stand-ins are not listed.
  * ⚠️ The paybacks are the ledger's whole pace, worked out when the page opens and on Refresh, not on
  * every edit.
  */
@@ -63,7 +65,8 @@ export default function HallStarsPage() {
   }), [tokens, items]);
   const sky = useMemo(() => normaliseHallSky({ constellations: hallConstellations || {}, stars: hallStars || {} }), [hallConstellations, hallStars]);
   const groups = useMemo(() => {
-    const all = [...BUILT_IN_CONSTELLATIONS.map((c) => ({ ...c, builtIn: true })), ...sky.constellations];
+    // The game's stand-in constellations head the page while the workspace lacks them, so their authored stars have a home.
+    const all = skyWithFallback(sky).constellations.map((c) => ({ ...c, builtIn: !!c.fallback }));
     const known = new Set(all.map((c) => c.id));
     const orphans = sky.stars.filter((s) => !known.has(s.constellation));
     return [
@@ -80,7 +83,7 @@ export default function HallStarsPage() {
         <Section title="Guild Hall stars" icon={<Sparkles size={14} />}>
           <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
             This workspace holds no Guild Hall sky yet. A change pack brings the first stars in; until then the game shows
-            only its built-in Bunk Beds, Bank Tabs and Wishing Well, and Sync leaves data/hallStars.json alone.
+            only its stand-ins for Bunk Beds, Bank Tabs and the Wishing Well, and Sync leaves data/hallStars.json alone.
           </p>
         </Section>
       </div>
@@ -198,7 +201,13 @@ export default function HallStarsPage() {
                             <span>{rank.price.length ? rank.price.map((p) => `${p.quantity} ${names.item(p.itemId)}`).join(' + ') : 'free'}</span>
                             <RankPricing row={priced[i + 1]} />
                           </div>
+                          {rankEffectLabel(star.id, i + 1) && <div data-hall-rank-by-id>{rankEffectLabel(star.id, i + 1)} (given by the game, by the star id)</div>}
                           {rulesLinesOf({ statements: rank.rules.map(asGuildRule) }, names).map((line, j) => <div key={`r${j}`}>{line}</div>)}
+                          {rank.rules.map((rule) => getPaletteEntry(rule?.payload?.type)).map((entry, j) => entry?.neverOnGuild && (
+                            <div key={`x${j}`} data-hall-rule-refused style={{ color: 'var(--color-error)', fontWeight: 700 }}>
+                              Refused: a star cannot carry {entry.label}, which lands only on the fighter struck. The game leaves this rule out.
+                            </div>
+                          ))}
                           {rank.lines.map((l, j) => <div key={`l${j}`}>{l.quantity} {names.item(l.itemId)} each Passive Production lap</div>)}
                         </li>
                       ))}

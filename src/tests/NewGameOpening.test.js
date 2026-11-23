@@ -21,8 +21,11 @@ import { worldTables } from '../config/registries/worldTablesRegistry.js';
 import { getEffect } from '../config/registries/effectRegistry.js';
 import { stationSkillOf } from '../systems/effects/statements.js';
 import {
-    getUpgradeDef, getUpgradePrice, WISHING_WELL_ITEM
+    getUpgradeDef, getUpgradePrice, rankEffectOf, WISHING_WELL_STAR
 } from '../config/guildUpgrades.js';
+
+/** What the Wishing Well's first rank pays each lap (Water), item ids. */
+const wellItems = () => (rankEffectOf(getUpgradeDef(WISHING_WELL_STAR), 1)?.lines || []).map(l => l.itemId);
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -330,8 +333,8 @@ function reachable({ maxPlane = 2 } = {}) {
         if (bountyAsks) {
             for (const id of BOUNTY_ITEMS) items.add(id);
         }
-        const well = getUpgradeDef('wishing_well');
-        if (well && have(getUpgradePrice(well, 0))) items.add(WISHING_WELL_ITEM);
+        const well = getUpgradeDef(WISHING_WELL_STAR);
+        if (well && have(getUpgradePrice(well, 0))) for (const id of wellItems()) items.add(id);
         grew = tokens.size + items.size > before;
     }
     return { tokens, items };
@@ -381,7 +384,7 @@ function planeWorld(maxPlane = 2) {
         ...StarterCamp.openingBank(camp).map(i => i.itemId),
         ...starterToolIds(allItems),
         ...BOUNTY_ITEMS,
-        WISHING_WELL_ITEM
+        ...wellItems()
     ]);
     const asked = new Map();
     const ask = (list, by) => {

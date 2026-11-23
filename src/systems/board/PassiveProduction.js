@@ -2,7 +2,7 @@
 
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { PASSIVE_LAP_BASE_MS } from '../../config/registries/tokenConstants.js';
-import { WISHING_WELL_ITEM, wishingWellRank, wishingWellWater, authoredStars } from '../../config/guildUpgrades.js';
+import { authoredStars } from '../../config/guildUpgrades.js';
 import { hallLinesOf } from '../progression/hallModifiers.js';
 import { getGlobalAggregator } from '../effects/GuildModifiers.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
@@ -19,9 +19,9 @@ export { PASSIVE_LAP_BASE_MS };
  * at once, and every Token that pays shares the one lap length.
  *
  * The lines: the type's `trickle` block (`[{ itemId, quantity }]`, authored in the CMS; a line's old
- * `everyMs` is ignored), plus, on the Guild Hall, the Wishing Well's Water (`wishingWellWater` of
- * its rank) and the Well's other stars' lines (`hallModifiers.hallLinesOf`), all read live, so a
- * rank bought mid-lap pays at the new amount on the next payout.
+ * `everyMs` is ignored), plus, on the Guild Hall, the lines of the stars it holds (the Wishing Well's
+ * Water and the rest, `hallModifiers.hallLinesOf`), all read live, so a rank bought mid-lap pays at
+ * the new amount on the next payout.
  *
  * The pay drops as loot beside the Token, as a gathered output does (`SpriteLayer.addSprite` with
  * the Token's id): collected on hover or by auto-collect, it flies to the Hall. Nothing reaches the
@@ -54,9 +54,8 @@ function qty(n) {
 
 /**
  * A Token's Passive Production lines, merged per item: `[{ itemId, quantity, source }]`, where
- * `source` is `'token'` for authored lines, `'wishing_well'` for the Well's Water and `'hall_star'`
- * for a Guild Hall star's line (an item two sources pay keeps the first one's). Empty when it pays
- * nothing.
+ * `source` is `'token'` for the Token's own lines and `'hall_star'` for a Guild Hall star's line (an
+ * item two sources pay keeps the first one's). Empty when it pays nothing.
  *
  * @param {object} instance
  * @param {object} [def] its type (read from the registry when absent)
@@ -74,8 +73,6 @@ export function linesOf(instance, def = getTokenType(instance?.typeId), ranks = 
         if (line?.itemId && q) add(line.itemId, q, 'token');
     }
     if (instance && isGuildHall(instance)) {
-        const water = wishingWellWater(wishingWellRank(ranks || {}));
-        if (water > 0) add(WISHING_WELL_ITEM, water, 'wishing_well');
         for (const line of hallLinesOf(authoredStars(), ranks || {})) add(line.itemId, line.quantity, 'hall_star');
     }
     return [...byItem.values()];
