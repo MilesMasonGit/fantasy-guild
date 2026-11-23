@@ -564,7 +564,7 @@ None open.
 
 ## Questions for the owner
 
-- **Does a fish's price count its bait as an input (770 G1)?** When the Fishing pack lands, the CMS prices a water from its first baited pool. (a) **Recommended:** yes, the bait is part of the cost, as a recipe's inputs are; (b) no, bait is a running cost of the tool, the catch priced alone.
+- ~~Does a fish's price count its bait (770 G1)?~~ **Answered Mon 23 Nov: yes, a fish's price includes its bait, like any resource used in production.** Built with the CMS's water pricing when the Fishing pack lands.
 **Answered Sun 22 Nov (owner, in chat):**
 - Description Sync after 790 W3: **the director runs the CMS sync command on main right after W3 merges** (data-only commit, check only description lines moved), and tells the owner.
 - Task ring on a stuck job (720 R4): **keep the ring, in a dim greyed amber** while stuck (follow-up on `feat/task-ring`).
