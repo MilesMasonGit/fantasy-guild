@@ -312,16 +312,19 @@ const NEEDS_ITEM = new Set([ALERT.INPUTS, ALERT.NO_BAIT, ALERT.GROW_NEEDS_ITEM])
 
 /**
  * What a hero passed over `instance` for `reason` (one of {@link NEEDS_ITEM}) needs, as
- * `{ itemId, needed, carried? }`, or null: the input it is short of, the bait they must carry, or
- * the seed the Field cannot sow.
+ * `{ itemId, needed, carried?, left? }`, or null: the input it is short of, the bait they must
+ * carry, or the seed the Field cannot sow (`left`: the hero let go of the Token for it).
  */
 function itemNeeded(instance, heroId, reason) {
     if (reason === ALERT.INPUTS) return WorkCheck.fixableReason(instance.id, instance, heroId).inputCheck?.missing?.[0] || null;
     if (reason === ALERT.NO_BAIT) {
         const itemId = Fishing.baitNeededOf(getTokenType(instance.typeId), heroId);
-        return itemId ? { itemId, needed: 1, carried: true } : null;
+        return itemId ? { itemId, needed: 1, carried: true, left: true } : null;
     }
-    if (reason === ALERT.GROW_NEEDS_ITEM) return Fields.seedNeededOf(instance);
+    if (reason === ALERT.GROW_NEEDS_ITEM) {
+        const seed = Fields.seedNeededOf(instance);
+        return seed ? { ...seed, left: true } : null;
+    }
     return null;
 }
 
@@ -331,7 +334,8 @@ function announceItemNeeded(instance, heroId, reason) {
     if (!missing?.itemId) return;
     EventBus.publish(BOARD_EVENTS.INPUT_NEEDED, {
         instanceId: instance.id, heroId, itemId: missing.itemId, needed: missing.needed,
-        ...(missing.carried ? { carried: true } : {})
+        ...(missing.carried ? { carried: true } : {}),
+        ...(missing.left ? { left: true } : {})
     });
 }
 

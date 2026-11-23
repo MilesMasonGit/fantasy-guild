@@ -25,7 +25,7 @@ import * as fixtures from '../../bench/fixtures.mjs';
  * catch's pick draws from `Math.random` in a fixed place of the finished cycle, and each bait is
  * spent at its catch, so a catch-up that replays the same steps lands the same fish and runs out
  * of bait on the same catch. Two fishers: one with a rod and five worms that run out part-way
- * (the worm pool, then the lake's basic pool), one with a net.
+ * (the worm pool, then they stop fishing), one with a Trap, which needs no bait.
  */
 
 const NOW = 1_800_000_000_000;
@@ -45,7 +45,7 @@ registerItems({
     ...Object.fromEntries(FISH.map(id => [id, material(id)])),
     cu5_worm: { id: 'cu5_worm', name: 'Worm', type: 'material', stackable: true, equipSlot: 'consumable', sprite: 'i_fish_bait' },
     cu5_rod: { id: 'cu5_rod', name: 'Rod', type: 'tool', equipSlot: 'hand', stackable: true, tool: { kind: 'fishing_rod', tier: 1 } },
-    cu5_net: { id: 'cu5_net', name: 'Net', type: 'tool', equipSlot: 'hand', stackable: true, tool: { kind: 'fishing_net', tier: 1 } }
+    cu5_trap: { id: 'cu5_trap', name: 'Trap', type: 'tool', equipSlot: 'hand', stackable: true, tool: { kind: 'fishing_trap', tier: 1 } }
 });
 
 registerTokenTypes({
@@ -56,7 +56,7 @@ registerTokenTypes({
         catchPools: [
             { tool: 'fishing_rod', catches: [{ itemId: 'cu5_trout', weight: 50 }, { itemId: 'cu5_pike', weight: 40 }, { itemId: 'cu5_eel', weight: 10 }] },
             { tool: 'fishing_rod', bait: 'cu5_worm', catches: [{ itemId: 'cu5_salmon', weight: 70 }, { itemId: 'cu5_eel', weight: 30 }] },
-            { tool: 'fishing_net', catches: [{ itemId: 'cu5_shrimp', weight: 3 }, { itemId: 'cu5_trout', weight: 1 }] }
+            { tool: 'fishing_trap', catches: [{ itemId: 'cu5_shrimp', weight: 3 }, { itemId: 'cu5_trout', weight: 1 }] }
         ]
     }
 });
@@ -73,7 +73,7 @@ function seeded() {
 }
 const realRandom = Math.random;
 
-/** Two fishers on two lakes, far apart: a rod with five worms in the Bank, and a net. */
+/** Two fishers on two lakes, far apart: a rod with five worms in the Bank, and a Trap. */
 function buildBoard() {
     stream.state = 23;
     stream.draws = 0;
@@ -84,7 +84,7 @@ function buildBoard() {
     angler.equipment[0] = 'cu5_rod';
     markHeld(angler, 0, true);
     angler.equipment[1] = 'cu5_worm';
-    netter.equipment[0] = 'cu5_net';
+    netter.equipment[0] = 'cu5_trap';
     markHeld(netter, 0, true);
     InventoryManager.addItem('cu5_worm', 5);
     const a = fixtures.placeAt('cu5_lake', 400, 400);
@@ -162,15 +162,14 @@ describe('fishing during a catch-up', () => {
 
         expect(caughtUp).toEqual(plain);
 
-        // And the fishing really happened: the worms ran out part-way, the worm pool's Salmon came
-        // first and the basic pool's Trout and Pike after; the net landed its own pool.
+        // And the fishing really happened: the five worms landed the worm pool's catches, then the
+        // rod stopped (its pool with no bait never bites); the Trap kept landing its own pool.
         const rod = plain.seen.rod;
-        expect(rod.length).toBeGreaterThanOrEqual(30);
+        expect(rod).toHaveLength(5);
         expect(plain.worms).toBe(0);
-        expect(rod.slice(0, 5).every(f => f === 'cu5_salmon' || f === 'cu5_eel')).toBe(true);
-        expect(rod.slice(0, 5)).toContain('cu5_salmon');
-        expect(rod.slice(5)).not.toContain('cu5_salmon');
-        expect(rod.slice(5).some(f => f === 'cu5_trout' || f === 'cu5_pike')).toBe(true);
+        expect(rod.every(f => f === 'cu5_salmon' || f === 'cu5_eel')).toBe(true);
+        expect(rod).toContain('cu5_salmon');
+        expect(plain.seen.net.length).toBeGreaterThanOrEqual(30);
         expect(new Set(plain.seen.net)).toEqual(new Set(['cu5_shrimp', 'cu5_trout']));
         // Every catch is on the board or in the Bank: one fish a catch, nothing widened here.
         const total = Object.values(plain.caught).reduce((a, b) => a + b, 0);

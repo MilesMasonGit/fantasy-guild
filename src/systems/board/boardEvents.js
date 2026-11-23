@@ -95,9 +95,10 @@ export const BOARD_EVENTS = {
      * A Token a hero is ordered onto cannot start a cycle for want of an input (`ALERT.INPUTS`),
      * whether the hero stands at it (run dry) or never set off for it (never stocked), and likewise
      * a water the hero has no bait for (`ALERT.NO_BAIT`) and a Field stopped for want of its seed
-     * (`ALERT.GROW_NEEDS_ITEM`). Payload: `{ instanceId, heroId, itemId, needed, carried? }`, the
-     * first item short and how many the work takes; `carried` when the hero must also carry it (bait
-     * in a consumable cell). Published by `Flags` each time the stopped hero's flag looks again
+     * (`ALERT.GROW_NEEDS_ITEM`). Payload: `{ instanceId, heroId, itemId, needed, carried?, left? }`,
+     * the first item short and how many the work takes; `carried` when the hero must also carry it
+     * (bait in a consumable cell); `left` when the hero let go of the Token for it (bait, seed), so
+     * working it again means the need is met. Published by `Flags` each time the stopped hero's flag looks again
      * (about once a second), never for a hero who goes to other work; the hero's "Needs Coal"
      * bubble is raised once and waits (`heroNeeds.js`).
      */

@@ -186,7 +186,7 @@ describe('at a water, no bait, no fishing', () => {
         expect(Flags.skipsOfHero('fisher').map(s => s.reason)).toEqual([ALERT.NO_BAIT]);
         expect(said.length).toBeGreaterThan(0);
         expect(said.length).toBeLessThanOrEqual(12);
-        expect(said[0]).toEqual({ instanceId: river.id, heroId: 'fisher', itemId: 'ob_worm_bait', needed: 1, carried: true });
+        expect(said[0]).toEqual({ instanceId: river.id, heroId: 'fisher', itemId: 'ob_worm_bait', needed: 1, carried: true, left: true });
         expect(Fishing.baitNeededOf(getTokenType('ob_river'), 'fisher')).toBe('ob_worm_bait');
         expect(WorkCheck.whyCannotRun(river.id, river, 'fisher', getTokenType('ob_river').config)).toBe(ALERT.NO_BAIT);
         // Not a refusal: the hero can be ordered onto it with no bait.
@@ -255,6 +255,20 @@ describe('at a water, no bait, no fishing', () => {
         expect(bubbles(container, 'fisher')).toEqual([]);
     });
 
+    it('taking up a Trap in place of the rod, they fish again and the bubble goes', () => {
+        const coast = put('ob_coast');
+        GameState.state.heroes = [hero('fisher', ['ob_rod'])];
+        Orders.orderAt('fisher', AT);
+        const { container } = mount(['fisher']);
+        act(() => run(3_000));
+        expect(bubbles(container, 'fisher')).toEqual(['Needs Shrimp Bait']);
+        act(() => carry('fisher', 0, 'ob_trap'));
+        let landed;
+        act(() => { landed = catchesOf(coast, () => run(5_000)); });
+        expect(new Set(landed)).toEqual(new Set(['ob_raw_shrimp']));
+        expect(bubbles(container, 'fisher')).toEqual([]);
+    });
+
     it('names the bait their tool takes at that water: a rod at the Coast needs Shrimp Bait', () => {
         put('ob_coast');
         GameState.state.heroes = [hero('fisher', ['ob_rod'])];
@@ -306,7 +320,7 @@ describe('at a Field, no seed, no waiting', () => {
         expect(BoardState.workerOf(field.id)).toBeNull();
         expect(Flags.pinnedIdOf('farmer')).toBe(field.id);
         expect(said.length).toBeGreaterThan(0);
-        expect(said[0]).toEqual({ instanceId: field.id, heroId: 'farmer', itemId: 'ob_wheat_seed', needed: 1 });
+        expect(said[0]).toEqual({ instanceId: field.id, heroId: 'farmer', itemId: 'ob_wheat_seed', needed: 1, left: true });
     });
 
     it('the bubble says Needs Wheat Seed until the Bank holds the seed, and the Field sows', () => {

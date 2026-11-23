@@ -147,9 +147,10 @@ function carries(hero, itemId) {
  * The bubble for a hero whose work stops for want of `itemId`: "Needs Coal", the same words
  * whether they ran dry or never had any. It stands until `quantity` of it is within reach again
  * (and, when it must be `carried`, as bait is, until the hero carries it too), or the hero is given
- * another job (or none), as broken gear's does.
+ * another job (or none), as broken gear's does. A hero who let go of Token `leftFrom` for it is past
+ * the need once they work that Token again (a Trap taken up in place of a rod needs no bait).
  */
-export function needsItemSpec(heroId, itemId, { quantity = 1, carried = false } = {}) {
+export function needsItemSpec(heroId, itemId, { quantity = 1, carried = false, leftFrom = null } = {}) {
     const needed = Math.max(1, Number(quantity) || 1);
     const job = jobOf(heroId);
     return {
@@ -159,6 +160,7 @@ export function needsItemSpec(heroId, itemId, { quantity = 1, carried = false } 
         holds: () => {
             const hero = heroRecord(heroId);
             if (!hero || jobOf(heroId) !== job) return false;
+            if (leftFrom && BoardState.workTokenOf(heroId) === leftFrom) return false;
             return availableOf(itemId) < needed || (carried && !carries(hero, itemId));
         },
         checkOn: NEEDS_CHECK_ON
@@ -178,13 +180,14 @@ export function saysWhyStopped(heroId) {
  *
  * @param {string} heroId
  * @param {string} itemId
- * @param {{quantity?: number, carried?: boolean}} [options] how many the work takes at once
- *   (default 1); `carried` when the hero must carry it in a consumable cell as well (bait)
+ * @param {{quantity?: number, carried?: boolean, leftFrom?: string|null}} [options] how many the
+ *   work takes at once (default 1); `carried` when the hero must carry it in a consumable cell as
+ *   well (bait); `leftFrom`, the Token the hero let go of for it
  * @returns {boolean} whether a bubble was raised
  */
-export function raiseNeedsItem(heroId, itemId, { quantity = 1, carried = false } = {}) {
+export function raiseNeedsItem(heroId, itemId, { quantity = 1, carried = false, leftFrom = null } = {}) {
     if (!heroId || !itemId) return false;
-    return raiseBubble(heroId, needsItemSpec(heroId, itemId, { quantity, carried }), { keepExisting: true });
+    return raiseBubble(heroId, needsItemSpec(heroId, itemId, { quantity, carried, leftFrom }), { keepExisting: true });
 }
 
 /**

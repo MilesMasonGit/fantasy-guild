@@ -21,7 +21,8 @@ import { registerEffects } from '../config/registries/effectRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { MAX_SPEED_UP_CUT } from '../config/loopConstants.js';
 import {
-    catchPoolsOf, hasCatchPools, catchToolKinds, poolFor, baitsFor, catchItemIds, baitItemIds, pickCatchIndex
+    catchPoolsOf, hasCatchPools, catchToolKinds, poolFor, poolBites, baitsFor, catchItemIds, baitItemIds,
+    pickCatchIndex, BAIT_FREE_TOOL
 } from '../config/registries/catchPools.js';
 import { TOOL_KINDS, neededToolOf, toolMeets, toolNeedPhrase, toolItemFor } from '../config/registries/toolKinds.js';
 import { deriveTokenType } from '../config/registries/tokenTypeDerivation.js';
@@ -41,12 +42,12 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ Brief 230 S5, Fishing (owner rulings 2026-10-24): water never runs out and does not shift;
- * each water's catch pools, per tool kind and bait, are weighted and authored; no bait gives the
- * basic pool; the tool kind picks the pool and a tool's tier never gates, a better rod carrying its
- * own bonus (more weight on a rare fish); bait is carried in a consumable cell, one spent per catch,
- * and when it runs out the hero fishes plain; a Dock in reach speeds fishing to the standard floor;
- * a hero holding a rod and a net fishes with the first hand's tool.
+ * ⭐ Fishing: water never runs out and does not shift; each water's catch pools, per tool kind and
+ * bait, are weighted and authored; the tool kind picks the pool and a tool's tier never gates, a
+ * better rod carrying its own bonus (more weight on a rare fish); bait is carried in a consumable
+ * cell, one spent per catch, and with none the hero does not fish, except with a Trap, which
+ * catches with no bait (out of bait: `OutOfBaitSeed.test.js`); a Dock in reach speeds fishing to
+ * the standard floor; a hero holding a rod and a net fishes with the first hand's tool.
  */
 
 const material = (id, name) => ({ id, name, type: 'material', stackable: true, equipSlot: '', sprite: 'i_trout_raw' });
@@ -78,10 +79,13 @@ registerItems({
     s5_pick: tool('s5_pick', 'Pickaxe', 'pickaxe', 1)
 });
 
+// The rod's pool with no bait is retired content: it never bites.
 const LAKE_POOLS = [
-    { tool: 'fishing_rod', catches: [{ itemId: 's5_trout', weight: 50 }, { itemId: 's5_salmon', weight: 40 }, { itemId: 's5_dolphin', weight: 10 }] },
-    { tool: 'fishing_rod', bait: 's5_worm', catches: [{ itemId: 's5_salmon', weight: 1 }] },
-    { tool: 'fishing_net', catches: [{ itemId: 's5_shrimp', weight: 1 }] }
+    { tool: 'fishing_rod', bait: 's5_worm', catches: [{ itemId: 's5_trout', weight: 50 }, { itemId: 's5_salmon', weight: 40 }, { itemId: 's5_dolphin', weight: 10 }] },
+    { tool: 'fishing_rod', bait: 's5_squid', catches: [{ itemId: 's5_salmon', weight: 1 }] },
+    { tool: 'fishing_rod', catches: [{ itemId: 's5_trout', weight: 1 }] },
+    { tool: 'fishing_net', bait: 's5_worm', catches: [{ itemId: 's5_shrimp', weight: 1 }] },
+    { tool: 'fishing_trap', catches: [{ itemId: 's5_shrimp', weight: 1 }] }
 ];
 
 const water = (id, name, pools, extra = {}) => ({
@@ -106,7 +110,7 @@ registerTokenTypes({
     s5_slow_lake: water('s5_slow_lake', 'Slow Lake', LAKE_POOLS, {
         uses: null, config: { skill: 'fishing', skillRequired: 1, cycleTimeMs: 10000, xp: 1, inputs: [], outputs: [] }
     }),
-    s5_pond: water('s5_pond', 'Pond', [{ tool: 'fishing_net', catches: [{ itemId: 's5_shrimp', weight: 1 }] }], { uses: null }),
+    s5_pond: water('s5_pond', 'Pond', [{ tool: 'fishing_net', bait: 's5_worm', catches: [{ itemId: 's5_shrimp', weight: 1 }] }], { uses: null }),
     // A trap catches only with bait here: an authoring slip the audit names.
     s5_sea: water('s5_sea', 'Sea', [{ tool: 'fishing_trap', bait: 's5_squid', catches: [{ itemId: 's5_crab', weight: 1 }] }], { uses: null }),
     s5_dock: buff('s5_dock', { type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.5 }, { mode: 'tag', value: 'water' }),
@@ -199,7 +203,16 @@ describe('the catch pools, as content', () => {
         expect(poolFor(def, 'fishing_net')).toBeNull();
         expect(baitsFor(def, 'fishing_rod')).toEqual(['w']);
         expect(catchItemIds(getTokenType('s5_lake'))).toEqual(['s5_trout', 's5_salmon', 's5_dolphin', 's5_shrimp']);
-        expect(baitItemIds(getTokenType('s5_lake'))).toEqual(['s5_worm']);
+        expect(baitItemIds(getTokenType('s5_lake'))).toEqual(['s5_worm', 's5_squid']);
+    });
+
+    it('a pool bites with a bait, or with no bait only for a Trap', () => {
+        expect(BAIT_FREE_TOOL).toBe('fishing_trap');
+        const lake = getTokenType('s5_lake');
+        expect(poolBites(poolFor(lake, 'fishing_rod'))).toBe(false);
+        expect(poolBites(poolFor(lake, 'fishing_rod', 's5_worm'))).toBe(true);
+        expect(poolBites(poolFor(lake, 'fishing_trap'))).toBe(true);
+        expect(poolBites(null)).toBe(false);
     });
 
     it('a pick draws once from a pool of several and never from a pool of one; nothing bites at no weight', () => {
@@ -219,13 +232,13 @@ describe('the tool: any kind a pool names, at any tier', () => {
     it('six kinds; water needs any of its pools\' kinds, whatever its own Needs tool says', () => {
         expect(TOOL_KINDS.map(k => k.id)).toEqual(['pickaxe', 'woodaxe', 'fishing_rod', 'sickle', 'fishing_net', 'fishing_trap']);
         const need = neededToolOf(getTokenType('s5_lake'));
-        expect(need).toEqual({ kind: 'fishing_rod', kinds: ['fishing_rod', 'fishing_net'], minTier: 1 });
+        expect(need).toEqual({ kind: 'fishing_rod', kinds: ['fishing_rod', 'fishing_net', 'fishing_trap'], minTier: 1 });
         expect(toolMeets({ kind: 'fishing_rod', tier: 1 }, need)).toBe(true);
         expect(toolMeets({ kind: 'fishing_net', tier: 1 }, need)).toBe(true);
         expect(toolMeets({ kind: 'pickaxe', tier: 9 }, need)).toBe(false);
-        expect(toolNeedPhrase(need)).toBe('Fishing Rod or Fishing Net');
-        expect(toolNeedPhrase({ kind: 'fishing_rod', kinds: ['fishing_rod', 'fishing_net', 'fishing_trap'], minTier: 1 }))
-            .toBe('Fishing Rod, Fishing Net or Trap');
+        expect(toolNeedPhrase(need)).toBe('Fishing Rod, Fishing Net or Trap');
+        expect(toolNeedPhrase({ kind: 'fishing_rod', kinds: ['fishing_rod', 'fishing_net'], minTier: 1 }))
+            .toBe('Fishing Rod or Fishing Net');
         expect(toolNeedPhrase(neededToolOf(getTokenType('s5_pond')))).toBe('Fishing Net');
         const all = getAllItems();
         expect(toolItemFor(need, { s5_net: all.s5_net, s5_fine_rod: all.s5_fine_rod, s5_rod: all.s5_rod })).toBe('s5_rod');
@@ -241,13 +254,14 @@ describe('the tool: any kind a pool names, at any tier', () => {
         expect(WorkCheck.heroReason('pick', config, lake)).toBe(ALERT.NO_TOOL);
         expect(WorkCheck.heroReason('net', config, lake)).toBeNull();
         expect(WorkCheck.heroReason('fine', config, lake)).toBeNull();
-        expect(problemText({ kind: ALERT.NO_TOOL }, lake.id)).toBe('Needs Fishing Rod or Fishing Net');
+        expect(problemText({ kind: ALERT.NO_TOOL }, lake.id)).toBe('Needs Fishing Rod, Fishing Net or Trap');
     });
 
     it('a hero holding a rod and a net fishes with the first hand\'s tool, wherever the water has a pool for it', () => {
         put('s5_lake');
         const lake = getTokenType('s5_lake');
-        setHeroes(hero('rodFirst', ['s5_rod', 's5_net']), hero('netFirst', ['s5_net', 's5_rod']));
+        setHeroes(hero('rodFirst', ['s5_rod', 's5_net', 's5_worm']), hero('netFirst', ['s5_net', 's5_rod', 's5_worm']));
+        InventoryManager.addItem('s5_worm', 5);
         expect(Fishing.fishingOf(lake, 'rodFirst').tool.kind).toBe('fishing_rod');
         expect(Fishing.fishingOf(lake, 'netFirst').tool.kind).toBe('fishing_net');
         // The pond has only a net pool: the rod in the first hand stands aside.
@@ -256,9 +270,10 @@ describe('the tool: any kind a pool names, at any tier', () => {
 });
 
 describe('a cycle at the water lands one catch from the pool', () => {
-    it('the catch replaces the Token\'s own Outputs: a rod with no bait lands only the basic pool\'s fish', () => {
+    it('the catch replaces the Token\'s own Outputs: a rod with bait lands only its pool\'s fish', () => {
         const lake = put('s5_lake');
-        setHeroes(hero('fisher', ['s5_rod']));
+        setHeroes(hero('fisher', ['s5_rod', 's5_worm']));
+        InventoryManager.addItem('s5_worm', 100);
         Orders.orderAt('fisher', LAKE);
         const landed = catchesOf(lake, () => run(40_000));
         expect(landed.length).toBeGreaterThanOrEqual(30);
@@ -268,7 +283,8 @@ describe('a cycle at the water lands one catch from the pool', () => {
 
     it('a rare catch drops like any other item: no rare-drop signal, however small its share (owner, 2026-10-24)', () => {
         const lake = put('s5_lake');
-        setHeroes(hero('fisher', ['s5_rod']));
+        setHeroes(hero('fisher', ['s5_rod', 's5_worm']));
+        InventoryManager.addItem('s5_worm', 500);
         Orders.orderAt('fisher', LAKE);
         let rare = 0;
         const off = EventBus.subscribe(BOARD_EVENTS.RARE_DROP, () => { rare++; });
@@ -283,7 +299,8 @@ describe('a cycle at the water lands one catch from the pool', () => {
         const lake = getTokenType('s5_lake');
         const id = BoardState.tokens()[0].id;
         const shares = (heroId) => {
-            setHeroes(hero(heroId, [heroId === 'fine' ? 's5_fine_rod' : 's5_rod']));
+            setHeroes(hero(heroId, [heroId === 'fine' ? 's5_fine_rod' : 's5_rod', 's5_worm']));
+            InventoryManager.addItem('s5_worm', 4000);
             // Tests arrive the moment they claim (`setInstantArrival`): the hero works the lake now.
             BoardState.setClaim(heroId, { instanceId: id, typeId: 's5_lake', x: LAKE.x, y: LAKE.y });
             expect(BoardState.workerOf(id)).toBe(heroId);
@@ -303,43 +320,45 @@ describe('a cycle at the water lands one catch from the pool', () => {
         expect(fine.s5_trout).toBeCloseTo(50 / 190, 1);
     });
 
-    it('bait in a consumable cell: one spent per catch, the bait\'s pool while it lasts, then plain', () => {
+    it('bait in a consumable cell: one spent per catch, the first carried the Bank holds picks the pool, then no more', () => {
         const lake = put('s5_lake');
-        setHeroes(hero('fisher', ['s5_rod', 's5_worm']));
-        InventoryManager.addItem('s5_worm', 3);
+        setHeroes(hero('fisher', ['s5_rod', 's5_squid', 's5_worm']));
+        InventoryManager.addItem('s5_squid', 3);
+        InventoryManager.addItem('s5_worm', 2);
         Orders.orderAt('fisher', LAKE);
         const landed = catchesOf(lake, () => run(30_000));
         expect(landed.slice(0, 3)).toEqual(['s5_salmon', 's5_salmon', 's5_salmon']);
+        expect(InventoryManager.getItemCount('s5_squid')).toBe(0);
+        // Then the worm's pool, then nothing: the rod's pool with no bait never bites.
+        expect(landed.length).toBe(5);
         expect(InventoryManager.getItemCount('s5_worm')).toBe(0);
-        // Then the basic pool: Trout and Dolphin bite again.
-        expect(landed.slice(3).some(item => item !== 's5_salmon')).toBe(true);
-        expect(landed.length).toBeGreaterThanOrEqual(20);
     });
 
     it('bait the Bank does not hold, or carried in the food cell, is no bait', () => {
         put('s5_lake');
         const lake = getTokenType('s5_lake');
         setHeroes(hero('empty', ['s5_rod', 's5_worm']), hero('food', ['s5_rod', 's5_bread_bait']));
-        expect(Fishing.fishingOf(lake, 'empty').bait).toBeNull();
+        expect(Fishing.fishingOf(lake, 'empty')).toBeNull();
         InventoryManager.addItem('s5_bread_bait', 5);
         const odd = { ...LAKE_POOLS[1], bait: 's5_bread_bait' };
-        const def = { ...lake, catchPools: [LAKE_POOLS[0], odd] };
-        expect(Fishing.fishingOf(def, 'food').bait).toBeNull();
+        const def = { ...lake, catchPools: [LAKE_POOLS[2], odd] };
+        expect(Fishing.fishingOf(def, 'food')).toBeNull();
         InventoryManager.addItem('s5_worm', 1);
         expect(Fishing.fishingOf(lake, 'empty').bait).toBe('s5_worm');
     });
 
-    it('a net fishes the net pool; a trap with no bait where only a baited trap pool exists catches nothing and spends nothing', () => {
+    it('a net fishes the net pool; a trap with no bait where only a baited trap pool exists does not fish and spends nothing', () => {
         const lake = put('s5_lake');
         const sea = put('s5_sea', { x: 1400, y: 500 });
-        setHeroes(hero('netter', ['s5_net']), hero('trapper', ['s5_trap']));
+        setHeroes(hero('netter', ['s5_net', 's5_worm']), hero('trapper', ['s5_trap']));
+        InventoryManager.addItem('s5_worm', 50);
         Orders.orderAt('netter', LAKE);
         Orders.orderAt('trapper', { x: 1400, y: 500 });
         let seaLanded;
         const lakeLanded = catchesOf(lake, () => { seaLanded = catchesOf(sea, () => run(10_000)); });
         expect(new Set(lakeLanded)).toEqual(new Set(['s5_shrimp']));
-        expect(seaLanded.length).toBeGreaterThan(0);
-        expect(new Set(seaLanded)).toEqual(new Set(['-']));
+        expect(seaLanded).toEqual([]);
+        expect(BoardState.workerOf(sea.id)).toBeNull();
         InventoryManager.addItem('s5_squid', 2);
         GameState.state.heroes.find(h => h.id === 'trapper').equipment[1] = 's5_squid';
         const baited = catchesOf(sea, () => run(5_000));
@@ -368,6 +387,7 @@ describe('a cycle at the water lands one catch from the pool', () => {
             TileModifiers.clearAll();
             const water = put(typeId);
             setHeroes(hero('fisher', grid));
+            InventoryManager.addItem('s5_worm', 100);
             Orders.orderAt('fisher', LAKE);
             run(3000);
             const real = Math.random;
@@ -379,8 +399,8 @@ describe('a cycle at the water lands one catch from the pool', () => {
             expect(catches).toBe(1);
             return draws;
         };
-        const three = drawsPerCatch(['s5_rod'], 's5_lake');
-        const one = drawsPerCatch(['s5_net'], 's5_lake');
+        const three = drawsPerCatch(['s5_rod', 's5_worm'], 's5_lake');
+        const one = drawsPerCatch(['s5_trap'], 's5_lake');
         expect(three - one).toBe(1);
     });
 });
@@ -390,7 +410,7 @@ describe('a Dock in reach speeds fishing, stacking to the standard floor', () =>
         const lake = put('s5_slow_lake');
         for (let i = 0; i < docks; i++) put('s5_dock', { x: LAKE.x + (i % 2 ? -160 : 160), y: LAKE.y + (i > 1 ? 160 : 0) });
         TileModifiers.rebuildAll();
-        setHeroes(hero('fisher', ['s5_rod']));
+        setHeroes(hero('fisher', ['s5_trap']));
         Orders.orderAt('fisher', LAKE);
         const at = [];
         let now = 0;
@@ -419,7 +439,7 @@ describe('water never runs out and does not shift', () => {
         expect(Charges.isUnlimited(lake)).toBe(true);
         Charges.clearNeverWearingCharges();
         expect(lake.usesRemaining).toBeNull();
-        setHeroes(hero('fisher', ['s5_rod']));
+        setHeroes(hero('fisher', ['s5_trap']));
         Orders.orderAt('fisher', LAKE);
         run(10_000);
         expect(BoardState.getTokenById(lake.id)).not.toBeNull();
@@ -452,28 +472,30 @@ describe('how water reads', () => {
         const model = tokenCardModel('s5_lake', lake.id);
         const recipe = model.blocks.find(b => b.id === CARD_BLOCK.RECIPE);
         expect(recipe.makes).toEqual([]);
-        expect(recipe.tools.map(t => t.name)).toEqual(['Fishing Rod or Fishing Net']);
+        expect(recipe.tools.map(t => t.name)).toEqual(['Fishing Rod, Fishing Net or Trap']);
         expect(model.blocks.find(b => b.id === CARD_BLOCK.CYCLE).uses).toBeNull();
         expect(recipe.catches.setup).toBeNull();
         expect(recipe.catches.heroName).toBeNull();
-        expect(recipe.catches.groups.map(g => [g.tool, g.label])).toEqual([['fishing_rod', 'Fishing Rod'], ['fishing_net', 'Fishing Net']]);
+        expect(recipe.catches.groups.map(g => [g.tool, g.label]))
+            .toEqual([['fishing_rod', 'Fishing Rod'], ['fishing_net', 'Fishing Net'], ['fishing_trap', 'Trap']]);
         const [rod, net] = recipe.catches.groups;
-        expect(rod.pools.map(p => [p.bait, p.baitName])).toEqual([[null, null], ['s5_worm', 'Worm']]);
+        expect(rod.pools.map(p => [p.bait, p.baitName])).toEqual([['s5_worm', 'Worm'], ['s5_squid', 'Squid Bait'], [null, null]]);
         expect(odds(rod.pools[0].catches)).toEqual([['s5_trout', 50], ['s5_salmon', 40], ['s5_dolphin', 10]]);
         expect(odds(net.pools[0].catches)).toEqual([['s5_shrimp', 100]]);
     });
 
     it('with a hero on it, the card says what their tool lands, the rest stay by tool', () => {
         const lake = put('s5_lake');
-        setHeroes(hero('fisher', ['s5_rod']));
+        setHeroes(hero('fisher', ['s5_trap']));
         const { catches } = recipeOf(lake, withWorker('fisher'));
         expect(catches.heroName).toBe('fisher');
-        expect(catches.setup).toMatchObject({ toolId: 's5_rod', toolName: 'Wooden Rod', baitId: null, baitName: null });
-        expect(odds(catches.setup.catches)).toEqual([['s5_trout', 50], ['s5_salmon', 40], ['s5_dolphin', 10]]);
+        expect(catches.setup).toMatchObject({ toolId: 's5_trap', toolName: 'Crab Trap', baitId: null, baitName: null });
+        expect(odds(catches.setup.catches)).toEqual([['s5_shrimp', 100]]);
         // The pool they fish is not repeated below it.
+        expect(catches.groups.map(g => g.tool)).toEqual(['fishing_rod', 'fishing_net']);
         const [rod, net] = catches.groups;
-        expect(rod.pools.map(p => p.bait)).toEqual(['s5_worm']);
-        expect(net.pools.map(p => p.bait)).toEqual([null]);
+        expect(rod.pools.map(p => p.bait)).toEqual(['s5_worm', 's5_squid', null]);
+        expect(net.pools.map(p => p.bait)).toEqual(['s5_worm']);
     });
 
     it('bait the hero carries picks the pool the card shows, and when it runs out the card follows', () => {
@@ -482,18 +504,20 @@ describe('how water reads', () => {
         InventoryManager.addItem('s5_worm', 1);
         const baited = recipeOf(lake, withWorker('fisher')).catches;
         expect(baited.setup).toMatchObject({ baitId: 's5_worm', baitName: 'Worm' });
-        expect(odds(baited.setup.catches)).toEqual([['s5_salmon', 100]]);
-        expect(baited.groups[0].pools.map(p => p.bait)).toEqual([null]);
+        expect(odds(baited.setup.catches)).toEqual([['s5_trout', 50], ['s5_salmon', 40], ['s5_dolphin', 10]]);
+        expect(baited.groups[0].pools.map(p => p.bait)).toEqual(['s5_squid', null]);
 
+        // Run out, they fish nothing here: the card claims no pool for them.
         InventoryManager.removeItem('s5_worm', 1);
-        const plain = recipeOf(lake, withWorker('fisher')).catches;
-        expect(plain.setup.baitId).toBeNull();
-        expect(plain.setup.catches.map(c => c.itemId)).toEqual(['s5_trout', 's5_salmon', 's5_dolphin']);
+        const dry = recipeOf(lake, withWorker('fisher')).catches;
+        expect(dry.setup).toBeNull();
+        expect(dry.unable).toBe(true);
     });
 
     it('the odds on the card are the weights the engine rolls, a Catch Weight rule included', () => {
         const lake = put('s5_lake');
-        setHeroes(hero('fine', ['s5_fine_rod']));
+        setHeroes(hero('fine', ['s5_fine_rod', 's5_worm']));
+        InventoryManager.addItem('s5_worm', 100);
         Orders.orderAt('fine', LAKE);
         run(5000);
         expect(BoardState.workerOf(lake.id)).toBe('fine');
@@ -511,7 +535,7 @@ describe('how water reads', () => {
         setHeroes(hero('miner', ['s5_pick']));
         const { catches } = recipeOf(lake, withWorker('miner'));
         expect(catches).toMatchObject({ heroName: 'miner', setup: null, unable: true });
-        expect(catches.groups.map(g => g.tool)).toEqual(['fishing_rod', 'fishing_net']);
+        expect(catches.groups.map(g => g.tool)).toEqual(['fishing_rod', 'fishing_net', 'fishing_trap']);
     });
 
     it('reading the card draws no random number and spends no bait', () => {
@@ -541,7 +565,8 @@ describe('how water reads', () => {
                     { tool: 'fishing_rod', bait: 's5_bread_bait', catches: [{ itemId: 'nope', weight: 1 }] },
                     { tool: 'fishing_rod', bait: 's5_bread_bait', catches: [{ itemId: 's5_trout', weight: 0 }] }
                 ] },
-            dry: { id: 'dry', name: 'Dry Water', catchPools: [{ tool: 'fishing_rod', catches: [{ itemId: 's5_trout', weight: 1 }] }] }
+            dry: { id: 'dry', name: 'Dry Water', catchPools: [{ tool: 'fishing_rod', catches: [{ itemId: 's5_trout', weight: 1 }] }] },
+            trap: { id: 'trap', name: 'Trap Water', config: { skill: 'fishing' }, catchPools: [{ tool: 'fishing_trap', catches: [{ itemId: 's5_trout', weight: 1 }] }] }
         };
         const found = toolFindings({ items, tokens }).map(f => `${f.entityId}: ${f.message}`);
         expect(found).toEqual(expect.arrayContaining([
@@ -550,10 +575,12 @@ describe('how water reads', () => {
             expect.stringMatching(/^bad: its catch pool 2 lands "nope", which is not an item/),
             expect.stringMatching(/^bad: has two catch pools for a Fishing Rod with Bread Bait/),
             expect.stringMatching(/^bad: its catch pool 3 has no catch with a weight above 0/),
-            expect.stringMatching(/^bad: a hero with a Fishing Rod catches nothing here without bait/),
+            expect.stringMatching(/^dry: its catch pool for a Fishing Rod takes no bait, so no hero fishes it: only a Trap catches without bait/),
             expect.stringMatching(/^bad: has catch pools, so its Outputs are never made/),
             expect.stringMatching(/^bad: has catch pools, so its Needs tool is ignored/),
             expect.stringMatching(/^dry: has catch pools but no work cycle/)
         ]));
+        // A Trap's pool with no bait is the one that needs none; a pool with a bait needs nothing more.
+        expect(found.filter(f => /^(trap|bad): .*takes no bait/.test(f))).toEqual([]);
     });
 });

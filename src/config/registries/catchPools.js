@@ -92,15 +92,6 @@ export function baitsFor(def, tool) {
     return catchPoolsOf(def).filter(p => p.tool === tool && p.bait).map(p => p.bait);
 }
 
-/**
- * The pool a water is priced from: its first pool that takes a bait, else its first that catches
- * with no bait (a Trap's), else null.
- */
-export function pricedPoolOf(def) {
-    const pools = catchPoolsOf(def);
-    return pools.find(p => p.bait) || pools.find(poolBites) || null;
-}
-
 /** Every item a Token type's pools can land, each once, in pool order. */
 export function catchItemIds(def) {
     const ids = [];
