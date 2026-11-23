@@ -21,8 +21,7 @@ import { EFFECT_TYPES, TARGET_CATEGORIES } from '../effects/constants.js';
  * goes (a hat, a chest, two trinkets, one weapon and one off-hand item or tool, or a two-handed
  * weapon) plus every milestone perk (a hero at 99 holds them all). A piece counts its own lines and
  * its always-on Type Resistance rules at its scale. Elixirs and statuses last a fight and are left
- * out. Two pieces sharing one effect are counted twice (the loadout caps their scales together), so
- * the sum can only overstate.
+ * out. Two pieces sharing one effect each count in full, as the loadout adds them.
  *
  * Output: `[{ entityType, entityId, entityName, field, message }]`, as `unknownRefRule`'s.
  */
@@ -141,6 +140,32 @@ function bestHands(candidates) {
 }
 
 /**
+ * The best worn gear for one number, from `candidates` (`[{ def, value }]`, each worn gear whose
+ * `value` helps): the best pieces each place holds (a hat, a chest, two trinkets) and the best hands.
+ * `effectStackRule` picks its stacks here too, so both audits fill a hero the same way.
+ * @returns {Array<{def: object, value: number}>}
+ */
+export function bestPieces(candidates) {
+    const byCategory = new Map();
+    const hands = [];
+    for (const candidate of candidates) {
+        const slot = candidate.def.equipSlot;
+        if (slot === HAND_CATEGORY) hands.push(candidate);
+        else {
+            if (!byCategory.has(slot)) byCategory.set(slot, []);
+            byCategory.get(slot).push(candidate);
+        }
+    }
+    const pieces = [];
+    for (const [category, list] of byCategory) {
+        list.sort((a, b) => b.value - a.value);
+        pieces.push(...list.slice(0, getCategoryCap(category)));
+    }
+    pieces.push(...bestHands(hands));
+    return pieces;
+}
+
+/**
  * The best stack of worn gear and perks for each damage type and group.
  * @param {{ items?: object, effects?: object, skillPerks?: object }} content
  * @returns {Array<{ id: string, total: number, pieces: Array<{ itemId: string, name: string, value: number }>, perks: number }>}
@@ -155,23 +180,12 @@ export function bestResistanceStacks({ items, effects, skillPerks } = {}) {
     }
     const out = [];
     for (const { id } of [...DAMAGE_GROUPS, ...DAMAGE_TYPES]) {
-        const byCategory = new Map();
-        const hands = [];
+        const candidates = [];
         for (const def of gear) {
             const value = pieceResistance(def, id, effects);
-            if (!(value > 0)) continue;
-            if (def.equipSlot === HAND_CATEGORY) hands.push({ def, value });
-            else {
-                if (!byCategory.has(def.equipSlot)) byCategory.set(def.equipSlot, []);
-                byCategory.get(def.equipSlot).push({ def, value });
-            }
+            if (value > 0) candidates.push({ def, value });
         }
-        const pieces = [];
-        for (const [category, list] of byCategory) {
-            list.sort((a, b) => b.value - a.value);
-            pieces.push(...list.slice(0, getCategoryCap(category)));
-        }
-        pieces.push(...bestHands(hands));
+        const pieces = bestPieces(candidates);
         let perks = 0;
         for (const ref of perkRefs) perks += Math.max(0, rowsResistance(effects?.[ref.effectId], ref, id));
         const total = pieces.reduce((n, p) => n + p.value, 0) + perks;

@@ -1,6 +1,6 @@
 import * as CombatFormulas from '../../../systems/combat/CombatFormulas.js';
 import { loadoutRefs, itemStatements } from '../../../systems/hero/HeroEffects.js';
-import { effectTitle, statementsFromEntry, strengthenStatement } from '../../../systems/effects/effectLibrary.js';
+import { stackTitle, statementsFromEntry, statementsFromStack, strengthenStatement } from '../../../systems/effects/effectLibrary.js';
 import { renderStatement } from '../../../systems/effects/statementText.js';
 import { KEYWORD } from '../../../systems/effects/statements.js';
 import { doseLengthText, doseStrength, FIGHT_START } from '../../../systems/hero/ConsumptionSystem.js';
@@ -76,10 +76,10 @@ export function gearEffects(hero) {
     for (const [effectId, ref] of loadoutRefs(hero)) {
         const entry = EFFECTS[effectId];
         if (!entry) continue;
-        const statements = statementsFromEntry(entry, { effectId, scale: ref.scale });
+        const statements = statementsFromStack(entry, { effectId, scale: ref.scale });
         out.push({
             id: effectId,
-            title: effectTitle(entry.name || effectId, ref.scale),
+            title: stackTitle(entry.name || effectId, ref.scale),
             lines: [...statements.map(s => renderStatement(s, names)), ...doseLines(ref.itemIds, statements, names)],
             items: ref.itemIds.map(id => getItem(id)?.name || id)
         });

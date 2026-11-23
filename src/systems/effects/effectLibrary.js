@@ -19,20 +19,38 @@ import { EFFECT_TYPES } from './constants.js';
 /** The id prefix every library entry carries. */
 export const EFFECT_ID_PREFIX = 'effect';
 
-/** The strongest a reference may be. Also the stacking ceiling. */
+/**
+ * The strongest one reference may be. ⚠️ Not a ceiling across sources: several items or perks
+ * naming one effect add in full ({@link statementsFromStack}).
+ */
 export const MAX_SCALE = 5;
 
-/** Roman numerals for 1–5. A scale of 1 has no numeral — it is the plain effect. */
-const NUMERALS = ['', '', 'II', 'III', 'IV', 'V'];
+const ROMAN = [[10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
+
+/** A whole scale as a Roman numeral; a scale of 1 has none, it is the plain effect. */
+function numeralOf(scale) {
+    if (scale <= 1) return '';
+    let n = scale;
+    let out = '';
+    for (const [value, letters] of ROMAN) {
+        while (n >= value) { out += letters; n -= value; }
+    }
+    return out;
+}
 
 /**
  * A scale pulled into the shape the grammar allows: a whole number, 1 to 5 (the title is a
  * Roman numeral, and a strength outside the range should be its own library entry).
  */
 export function normaliseScale(value) {
+    return Math.min(MAX_SCALE, stackScale(value));
+}
+
+/** The sum of several references' scales, made whole and at least 1, with no ceiling. */
+export function stackScale(value) {
     const n = Math.round(Number(value));
     if (!Number.isFinite(n) || n < 1) return 1;
-    return Math.min(MAX_SCALE, n);
+    return n;
 }
 
 /** The most stacks a status may be authored to build. */
@@ -66,7 +84,16 @@ export function statusBlockOf(entry) {
  * drifts when the statement changes.
  */
 export function effectTitle(name, scale = 1) {
-    const numeral = NUMERALS[normaliseScale(scale)];
+    return titleAt(name, normaliseScale(scale));
+}
+
+/** The title of a stack of several sources ({@link statementsFromStack}): its numeral past V too. */
+export function stackTitle(name, scale = 1) {
+    return titleAt(name, stackScale(scale));
+}
+
+function titleAt(name, scale) {
+    const numeral = numeralOf(scale);
     return numeral ? `${name} ${numeral}` : `${name}`;
 }
 
@@ -88,7 +115,11 @@ function scaleAmounts(list, scale) {
  * nothing comes back untouched.
  */
 export function scaleStatement(statement, scale = 1) {
-    const factor = normaliseScale(scale);
+    return scaleBy(statement, normaliseScale(scale));
+}
+
+/** {@link scaleStatement} by a whole factor already checked, which a stack may take past 5. */
+function scaleBy(statement, factor) {
     if (factor === 1 || !statement) return statement;
 
     const payload = statement.payload || {};
@@ -107,7 +138,7 @@ export function scaleStatement(statement, scale = 1) {
         };
     }
 
-    // An applied effect's scale is a whole 1-5 like any reference's; a rule naming none means 1.
+    // An applied effect's scale is a whole 1-5 like any reference's, however big the stack applying it; a rule naming none means 1.
     if (field === 'scale') {
         return { ...statement, payload: { ...payload, scale: normaliseScale(normaliseScale(payload.scale) * factor) } };
     }
@@ -192,7 +223,19 @@ export function hasWorkingStatements(entry) {
  * separate state. One bearer naming the same entry twice would collide; see `duplicateRefsOf`.
  */
 export function statementsFromEntry(entry, ref) {
-    const scale = normaliseScale(ref?.scale);
+    return expandAt(entry, ref, normaliseScale(ref?.scale));
+}
+
+/**
+ * {@link statementsFromEntry} for one effect several sources name at once (a hero's items, a hero's
+ * perks): `ref.scale` is their scales added, in full, past 5. Expanded once, so the statements keep
+ * one id each (see `duplicateRefsOf`).
+ */
+export function statementsFromStack(entry, ref) {
+    return expandAt(entry, ref, stackScale(ref?.scale));
+}
+
+function expandAt(entry, ref, scale) {
     // A per-bearer cost is applied HERE, during expansion, for the same reason as
     // `scaleStatement`: consumers keep reading plain statements.
     let override = null;
@@ -203,11 +246,11 @@ export function statementsFromEntry(entry, ref) {
         override = { chargeDelta: cost === 0 ? 0 : -cost };
     }
     return statementsOf(entry).map(statement => ({
-        ...scaleStatement(statement, scale),
+        ...scaleBy(statement, scale),
         ...(override || {}),
         sourceEffectId: entry?.id || ref?.effectId || null,
         effectName: entry?.name || null,
-        effectTitle: effectTitle(entry?.name || ref?.effectId || '', scale),
+        effectTitle: titleAt(entry?.name || ref?.effectId || '', scale),
         scale
     }));
 }

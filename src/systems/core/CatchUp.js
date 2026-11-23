@@ -295,9 +295,10 @@ function startSummary({ news: withNews = true } = {}) {
             depleted.total++;
             add(depleted.byType, typeId || 'unknown');
         }),
-        EventBus.subscribe(BOARD_EVENTS.HERO_DEFEATED, ({ heroId } = {}) => {
+        // With the news on, its knock-outs are the one tally (read back in `stop`).
+        ...(news ? [] : [EventBus.subscribe(BOARD_EVENTS.HERO_DEFEATED, ({ heroId } = {}) => {
             if (heroId) wounded.set(heroId, (wounded.get(heroId) || 0) + 1);
-        }),
+        })]),
         EventBus.subscribe(BOARD_EVENTS.GEAR_BROKE, ({ heroId, heroName: name, itemId } = {}) => {
             if (!heroId || !itemId) return;
             const key = `${heroId}|${itemId}`;
@@ -333,6 +334,8 @@ function startSummary({ news: withNews = true } = {}) {
         stop() {
             for (const off of offs) off();
             const net = change(bankBefore, bankSnapshot());
+            const heard = news ? news.stop({ gained, net }) : null;
+            if (heard) for (const { heroId, times } of heard.knockouts) wounded.set(heroId, times);
             return {
                 items: {
                     gained, spent, net,
@@ -345,7 +348,7 @@ function startSummary({ news: withNews = true } = {}) {
                 fightsWon,
                 combat,
                 events: [...events.values()],
-                news: news ? news.stop({ gained, net }) : null
+                news: heard
             };
         }
     };

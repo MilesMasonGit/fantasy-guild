@@ -3,7 +3,7 @@
 import { ModifierAggregator, applyThreeBucket } from '../../../../src/systems/effects/ModifierAggregator.js';
 import { EFFECT_TYPES, TARGET_CATEGORIES, GIANT_HARVEST_TIMES } from '../../../../src/systems/effects/constants.js';
 import { KEYWORD, statementsOf, stationSkillOf, stationKindOf } from '../../../../src/systems/effects/statements.js';
-import { expandBearer, effectRefsOf, statementsFromEntry, normaliseScale, MAX_SCALE } from '../../../../src/systems/effects/effectLibrary.js';
+import { expandBearer, effectRefsOf, statementsFromEntry, statementsFromStack, normaliseScale } from '../../../../src/systems/effects/effectLibrary.js';
 import { reachOf, reachCovers, RELATION } from '../../../../src/config/registries/reachRegistry.js';
 import { FILTER_NEEDS, matchesFilters, filtersOf, getFilterKind, targetModeMatches } from '../../../../src/config/registries/filterRegistry.js';
 import {
@@ -349,7 +349,7 @@ function heroRules(book, skill, setup, gates, notes) {
     const costs = [];
     const factors = [];
 
-    // The loadout is one bearer: two items naming one effect apply it once, their scales added (capped).
+    // The loadout is one bearer: two items naming one effect apply it once, their scales added in full (`HeroEffects.loadoutRefs`).
     const worn = [];
     if (gates.toolItem && !isOff(setup, `${FACTOR.TOOL}:${gates.toolItem}`, FACTOR.TOOL)) worn.push({ itemId: gates.toolItem, kind: FACTOR.TOOL });
     for (const itemId of list(setup.gear)) {
@@ -370,11 +370,11 @@ function heroRules(book, skill, setup, gates, notes) {
                 current = { scale: 0, itemIds: [], worn: { scale: 0, itemIds: [] }, kinds: new Set() };
                 merged.set(effectId, current);
             }
-            current.scale = current.itemIds.length ? Math.min(MAX_SCALE, current.scale + scale) : normaliseScale(scale);
+            current.scale += scale;
             current.itemIds.push(itemId);
             current.kinds.add(kind);
             if (isWorn) {
-                current.worn.scale = current.worn.itemIds.length ? Math.min(MAX_SCALE, current.worn.scale + scale) : normaliseScale(scale);
+                current.worn.scale += scale;
                 current.worn.itemIds.push(itemId);
             }
         }
@@ -383,8 +383,8 @@ function heroRules(book, skill, setup, gates, notes) {
         const entry = library[effectId];
         if (!entry) continue;
         const allWorn = w.itemIds.length === itemIds.length;
-        const wornOnes = !allWorn && w.itemIds.length ? statementsFromEntry(entry, { effectId, scale: w.scale }) : null;
-        statementsFromEntry(entry, { effectId, scale }).forEach((statement, i) => {
+        const wornOnes = !allWorn && w.itemIds.length ? statementsFromStack(entry, { effectId, scale: w.scale }) : null;
+        statementsFromStack(entry, { effectId, scale }).forEach((statement, i) => {
             const factorId = factorOfItems(itemIds, items);
             if (!isAlwaysOn(statement) || allWorn) statements.push({ statement, factorId, itemIds });
             else if (wornOnes) statements.push({ statement: wornOnes[i], factorId: factorOfItems(w.itemIds, items), itemIds: w.itemIds });
@@ -402,13 +402,13 @@ function heroRules(book, skill, setup, gates, notes) {
                 const id = `${FACTOR.PERK}:${perkSkill}:${row.level}:${row.effectId}`;
                 if (isOff(setup, id, FACTOR.PERK)) continue;
                 const current = perkRefs.get(row.effectId);
-                perkRefs.set(row.effectId, { scale: current == null ? normaliseScale(row.scale) : Math.min(MAX_SCALE, current.scale + row.scale), factorId: current?.factorId ?? id });
+                perkRefs.set(row.effectId, { scale: (current?.scale ?? 0) + normaliseScale(row.scale), factorId: current?.factorId ?? id });
             }
         }
         for (const [effectId, { scale, factorId }] of perkRefs) {
             const entry = library[effectId];
             if (!entry) continue;
-            for (const statement of statementsFromEntry(entry, { effectId, scale })) {
+            for (const statement of statementsFromStack(entry, { effectId, scale })) {
                 statements.push({ statement: { ...statement, chargeDelta: 0 }, factorId, itemIds: [] });
             }
         }

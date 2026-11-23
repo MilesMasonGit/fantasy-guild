@@ -8,6 +8,7 @@ import * as EquipmentManager from '../systems/equipment/EquipmentManager.js';
 import { makeStatement, KEYWORD } from '../systems/effects/statements.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { MAX_SCALE } from '../systems/effects/effectLibrary.js';
+import { gearEffects } from '../ui/components/dock/heroCombatStats.js';
 import './fixtures/testTokens.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
@@ -104,12 +105,21 @@ describe('the loadout is one bearer, not nine', () => {
         expect(statements[0].payload.value).toBeCloseTo(0.25);
     });
 
-    it('caps the total at 5 however much the player piles on', () => {
+    it('adds every item in full, past 5: no cap across the loadout', () => {
         const statements = HeroEffects.loadoutStatements(
             heroCarrying('fixture_sword', 'fixture_charm', 'fixture_relic')
         );
         expect(statements).toHaveLength(1);
-        expect(statements[0].scale).toBe(MAX_SCALE);
+        expect(statements[0].scale).toBe(9);
+        expect(statements[0].scale).toBeGreaterThan(MAX_SCALE);
+        expect(statements[0].payload.value).toBeCloseTo(0.45);
+        expect(statements[0].effectTitle).toBe('Shrimp Trawler IX');
+    });
+
+    it('shows the hero bar the stack as the game runs it, past 5', () => {
+        const [lent] = gearEffects(heroCarrying('fixture_sword', 'fixture_charm', 'fixture_relic'));
+        expect(lent.title).toBe('Shrimp Trawler IX');
+        expect(lent.lines[0]).toContain('45%');
     });
 
     it('remembers every item that granted the merged effect', () => {

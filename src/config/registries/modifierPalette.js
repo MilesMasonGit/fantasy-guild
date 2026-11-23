@@ -741,6 +741,23 @@ export const MODIFIER_PALETTE = [
         group: 'Combat',
         hint: 'How much a meal heals in a fight. -50% heals half, rounded halves up (Burn). On a lingering effect.'
     },
+    {
+        /**
+         * Read by `hero/regen.js` as a hero heals out of a fight: from what the hero carries (gear,
+         * perks, a lingering effect) and from the guild (a Guild Hall star). `heroOrGuild`: never
+         * from a Token, so a building's Regen is not offered (`paletteForKeyword`) and reaches nobody.
+         */
+        type: EFFECT_TYPES.HP_REGEN,
+        reads: { up: (n) => `heal ${n} faster out of a fight`, down: (n) => `heal ${n} slower out of a fight` },
+        label: 'Regen',
+        when: 'never',
+        scales: 'value',
+        buckets: ['percentage'],
+        heroOrGuild: true,
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Combat',
+        hint: 'How fast a hero heals out of a fight (1 health every 10 s). +50% heals half again as much. On gear, a perk or a Guild Hall star, never a building.'
+    },
 
     // --- Protection ---------------------------------------------------------
     // `query('STATUS_IMMUNITY', statusId)` passes the status id as the aggregator's **category**.

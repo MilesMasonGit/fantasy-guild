@@ -10,7 +10,7 @@ import { EventsDevSection } from '../dev/EventsDevSection.jsx';
 import { saveLiveMatToCms, DEFAULT_CMS_URL } from '../dev/starterCampDev.js';
 import {
     PICKER_ROWS, itemChoices, tokenChoices, filterByName, giveAndSay, devBankEveryKind, devFillBank,
-    hireHero, spawnParty, levelAllHeroes, healEveryone, knockOutAHero, devPlaceToken, clearBoard
+    hireHero, spawnParty, levelAllHeroes, healEveryone, knockOutAHero, devPlaceToken, clearBoard, toggleQaRegenStar
 } from '../dev/qaTools.js';
 import * as Landmarks from '../../systems/board/Landmarks.js';
 
@@ -144,7 +144,8 @@ export const TestDashboard = /* @__PURE__ */ React.memo(() => {
         ['Level all +1', () => say(`Raised ${levelAllHeroes(1)} heroes one level`)],
         ['Level all +10', () => say(`Raised ${levelAllHeroes(10)} heroes ten levels`)],
         ['Heal everyone', () => say(`Healed ${healEveryone()} heroes`)],
-        ['Knock out a hero', onKnockOut]
+        ['Knock out a hero', onKnockOut],
+        ['Regen star +50%', () => say(toggleQaRegenStar() ? 'Regen +50% for every hero, at half health' : 'Regen star off')]
     ];
 
     return (

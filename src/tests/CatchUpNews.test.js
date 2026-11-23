@@ -18,6 +18,7 @@ import * as CatchUp from '../systems/core/CatchUp.js';
 import * as Banners from '../systems/notifications/banners.js';
 import * as ItemStubs from '../systems/notifications/itemStubs.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../systems/core/engineEvents.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { listRecipes } from '../config/registries/recipePoolRegistry.js';
 import { getAllItems } from '../config/registries/itemRegistry.js';
 import { othersBestLevel } from '../systems/notifications/recipeUnlocks.js';
@@ -183,9 +184,21 @@ describe('the catch-up hears the news its quiet bus keeps from the banners', () 
     it('recipes unlocked, a first find and a knock-out: in the summary, and only after it closes on screen', async () => {
         buildBoard();
         const { unlock, find, victim } = newsHalfWay();
-        const r = await run({ savedAt: NOW - 20 * MIN, now: NOW, save: false });
+        const subscribe = vi.spyOn(EventBus, 'subscribe');
+        let r;
+        let heard;
+        try {
+            r = await run({ savedAt: NOW - 20 * MIN, now: NOW, save: false });
+        } finally {
+            heard = subscribe.mock.calls.map(([event]) => event);
+            subscribe.mockRestore();
+        }
         expect(r.show).toBe(true);
         const { news } = r.summary;
+
+        // A knock-out is tallied once, by the news, and the summary's count is read from it.
+        expect(heard.filter(event => event === BOARD_EVENTS.HERO_DEFEATED)).toHaveLength(1);
+        expect(r.summary.wounded).toEqual([{ heroId: victim.id, heroName: victim.name, times: 1 }]);
 
         expect(news.recipes).toHaveLength(1);
         expect(news.recipes[0]).toMatchObject({ heroId: unlock.hero.id, heroName: unlock.hero.name, skillId: unlock.skillId });

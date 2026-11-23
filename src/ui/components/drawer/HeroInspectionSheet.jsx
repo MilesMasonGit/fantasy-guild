@@ -23,12 +23,32 @@ import { GLYPH_COLOUR } from '../combat/combatGlyphs.js';
 import { FRAME_BAND_PX } from '../base/PixelFrame.jsx';
 import { HERO_DRAWER_PAD_TOP_PX } from '../dock/dockHeroView.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
+import { healthTipView } from './healthTip.js';
 import { openEncyclopedia } from '../encyclopedia/encyclopediaLink.js';
 import { t } from '../../../i18n/index.js';
 
 /** The specialist rows' own background. */
 const TIER_BG = {
     specialist: 'bg-sky-900/30'
+};
+
+/** What can change the health hover: the hero's health and gear, a level (a perk), a star bought. */
+const HEALTH_TIP_EVENTS = Object.freeze([
+    ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, ENGINE_EVENTS.INVENTORY_UPDATED,
+    ENGINE_EVENTS.HERO_LEVELED, ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.GAME_RESET
+]);
+
+/** The HP bar's hover: how the hero heals out of a fight, their Regen and its sources. */
+const HealthHover = ({ heroId, children }) => {
+    const signature = useGameState(
+        // The hero as the save holds them, never a lookup that would settle a half-built record.
+        state => JSON.stringify(healthTipView((state.heroes || []).find(h => h.id === heroId) || null)),
+        HEALTH_TIP_EVENTS,
+        null,
+        { deps: [heroId] }
+    );
+    const view = signature ? JSON.parse(signature) : null;
+    return <Tooltip title={view?.title} lines={view?.lines}>{children}</Tooltip>;
 };
 
 /** The right-hand block's two views. */
@@ -116,7 +136,9 @@ export const HeroInspectionSheet = memo(function HeroInspectionSheet({ heroId, o
                 >
                     {hero.name}
                 </h3>
-                <VitalBar data-hero-panel-hp style={{ flex: '1 1 0%' }} value={hero.hp} max={hero.hpMax} height={22} textClass="ui-text-body" />
+                <HealthHover heroId={heroId}>
+                    <VitalBar data-hero-panel-hp style={{ flex: '1 1 0%' }} value={hero.hp} max={hero.hpMax} height={22} textClass="ui-text-body" />
+                </HealthHover>
             </header>
 
             <div className="flex items-start gap-6">

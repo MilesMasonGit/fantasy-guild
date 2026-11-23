@@ -127,6 +127,24 @@ const HALL_SKY = {
 };
 const HALL_RANKS = { rt_hall_lore: 1, rt_hall_rich: 1, rt_hall_quick: 1, rt_hall_deep: 1, rt_hall_lucky: 1 };
 
+describe('the same effect from several sources adds in full, as the game does', () => {
+    it('two charms at scale 3 each speed the cycle 60 %, past the old cap of 5', () => {
+        const items = {
+            ...ITEMS,
+            rt_quick_a: { id: 'rt_quick_a', name: 'RT Quick A', type: 'armor', equipSlot: 'trinket', effects: [{ effectId: 'rt_fx_quick', scale: 3 }] },
+            rt_quick_b: { id: 'rt_quick_b', name: 'RT Quick B', type: 'armor', equipSlot: 'trinket', effects: [{ effectId: 'rt_fx_quick', scale: 3 }] }
+        };
+        const r = buildRateBook({ ...content(), items }).rateOf({ token: 'rt_vein' }, { gear: ['rt_quick_a', 'rt_quick_b'] });
+        expect(r.cycleMs).toBeCloseTo(1200);
+    });
+
+    it('two perks at scale 3 each add to 6', () => {
+        const skillPerks = { mining: { id: 'mining', perks: [{ level: 10, effectId: 'rt_fx_rich', scale: 3 }, { level: 20, effectId: 'rt_fx_rich', scale: 3 }] } };
+        const r = buildRateBook({ ...content(), skillPerks }).rateOf({ token: 'rt_vein' }, { level: 20 });
+        expect(r.items.rt_ore).toBeCloseTo(240 * 1.5 * 4);
+    });
+});
+
 describe('one hero on a vein: cycle, rest, items and XP an hour', () => {
     it('works five cycles, rests a minute, and so offers 240 cycles an hour, 1.5 ore each', () => {
         const r = book().rateOf({ token: 'rt_vein' });
