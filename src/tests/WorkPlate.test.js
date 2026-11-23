@@ -182,7 +182,7 @@ describe('⭐ on the mat', () => {
         expect(plateOf(container, t.id)).toBeNull();
     });
 
-    it('it replaces the worked Token’s own work bar, "!" and charges ring', async () => {
+    it('it replaces the worked Token’s own work bar and charges ring; its "!" stands above the Token', async () => {
         vi.useFakeTimers();
         const t = put('fixture_producer', AT, 12);
         Orders.orderAt('h1', AT);
@@ -202,7 +202,7 @@ describe('⭐ on the mat', () => {
             EventBus.publish(BOARD_EVENTS.ALERT_CHANGED, { instanceId: t.id, alert: t.alert });
             await vi.advanceTimersByTimeAsync(0);
         });
-        expect(o.querySelector('[data-problem-mark]')).toBeNull();
+        expect(o.querySelector('[data-bubble-row="above"] [data-problem-mark]').getAttribute('data-problem-severity')).toBe('cant');
         expect(plateOf(container, t.id).getAttribute('data-work-plate-tone')).toBe('cant');
         // Open (the pointer rests on it): the problem in place of the time to the next one.
         expect(cellsOf(container, t.id)).toEqual([CELL.SKILL, CELL.PROBLEM, CELL.CHARGES]);
@@ -224,7 +224,7 @@ describe('⭐ on the mat', () => {
         expect(missing.textContent).toBe('0/2');
         expect(missing.style.color).toBe('var(--color-ui-red)');
         expect(plate.querySelector('[data-work-bar]').getAttribute('data-work-bar-blocked')).toBe('true');
-        expect(overlay(container, t.id).querySelector('[data-problem-mark]')).toBeNull();
+        expect(overlay(container, t.id).querySelector('[data-problem-mark]').getAttribute('data-problem-severity')).toBe('waiting');
 
         // Its hover says how many, read when the pointer arrives.
         fireEvent.pointerEnter(plate.querySelector('[data-plate-cell="missing"]'));

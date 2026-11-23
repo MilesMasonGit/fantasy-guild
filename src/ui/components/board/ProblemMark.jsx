@@ -1,6 +1,7 @@
-import { memo, useState } from 'react';
+import { memo, useRef, useState } from 'react';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { PROBLEM_COLOUR, PROBLEM_MARK_ART_PX, PROBLEM_SPRITE } from './problemMark.js';
+import { useAlertBob } from './alertBob.js';
 
 /**
  * ProblemMark: a Token's one problem mark, the "!" in yellow (waiting) or red (can't), drawn at
@@ -8,16 +9,22 @@ import { PROBLEM_COLOUR, PROBLEM_MARK_ART_PX, PROBLEM_SPRITE } from './problemMa
  * shows the kit's tooltip with exactly what is wrong; `tip` is read when the pointer arrives (a
  * string, or a function that reads the engine), never per render. Pressing it grabs the Token
  * (`dragProps`); `onClick` is for a problem a click fixes (choosing a recipe).
+ * It bobs (`alertBob.js`). It flows in its parent's row unless `style` places it, so a mark can
+ * stand anywhere on the mat (where an event stood, say). ⚠️ Place it by `left`/`top`: its
+ * `transform` is the bob's.
  * One element on the mat; the tooltip exists only while hovered.
  */
-export const ProblemMark = memo(function ProblemMark({ problem, tip, artUnit = 2, dragProps = null, onClick = null }) {
+export const ProblemMark = memo(function ProblemMark({ problem, tip, artUnit = 2, dragProps = null, onClick = null, style = null }) {
     const [text, setText] = useState(null);
+    const ref = useRef(null);
+    useAlertBob(ref, artUnit, !!problem);
     if (!problem) return null;
     const size = PROBLEM_MARK_ART_PX * artUnit;
     const read = () => setText(typeof tip === 'function' ? tip() : tip);
     return (
         <Tooltip content={text ? <span style={{ color: PROBLEM_COLOUR[problem.severity] }}>{text}</span> : null}>
             <img
+                ref={ref}
                 data-problem-mark={problem.kind}
                 data-problem-severity={problem.severity}
                 src={PROBLEM_SPRITE[problem.severity]}
@@ -31,7 +38,8 @@ export const ProblemMark = memo(function ProblemMark({ problem, tip, artUnit = 2
                     width: size,
                     height: size,
                     imageRendering: 'pixelated',
-                    filter: `drop-shadow(${artUnit}px ${artUnit}px 0 #000)`
+                    filter: `drop-shadow(${artUnit}px ${artUnit}px 0 #000)`,
+                    ...style
                 }}
             />
         </Tooltip>

@@ -30,6 +30,7 @@ import { heroBarPlace, fightBarShift } from './healthBar.js';
 import { TokenNameBadge } from './TokenBadges.jsx';
 import { plateNameDrop, plateUnit } from './workPlate.js';
 import { PROBLEM_SPRITE, PROBLEM_MARK_ART_PX, SEVERITY } from './problemMark.js';
+import { useAlertBob } from './alertBob.js';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { t } from '../../../i18n/index.js';
 import { HeroDragMarks, markMatPx } from './DragMarks.jsx';
@@ -116,14 +117,17 @@ function useLastAttackAt(heroId, listening) {
  */
 
 /**
- * The "needs a job" mark: the yellow "!" over the hero's head, at the hero's art-pixel size, its
- * hover saying so. Placeholder art (the Token problem mark's).
+ * The "needs a job" mark: the yellow "!" over the hero's head, at the hero's art-pixel size,
+ * bobbing as a Token's does (`alertBob.js`), its hover saying so. Placeholder art (the Token problem mark's).
  */
 const NeedsJobMark = ({ artPx, artScale }) => {
     const size = PROBLEM_MARK_ART_PX * artScale;
+    const ref = useRef(null);
+    useAlertBob(ref, artScale);
     return (
         <Tooltip content={t('orders.needsJob')}>
             <img
+                ref={ref}
                 data-needs-job-mark
                 src={PROBLEM_SPRITE[SEVERITY.WAITING]}
                 alt={t('orders.needsJob')}

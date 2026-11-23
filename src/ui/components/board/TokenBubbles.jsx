@@ -14,7 +14,7 @@ import { IdlePlate } from './IdlePlate.jsx';
 import { idlePlateCells } from './idlePlate.js';
 import { StationGearBadge, MarkedBadge } from './TokenBadges.jsx';
 import { ProblemMark } from './ProblemMark.jsx';
-import { problemOf, problemText, PROBLEM_MARK_ART_PX, tokenGearPx } from './problemMark.js';
+import { problemOf, problemText, tokenGearPx } from './problemMark.js';
 import { createWorkBar, shareWorkBar } from './workBar.js';
 import { shareCycle } from './cycleShare.js';
 import { plateUnit } from './workPlate.js';
@@ -28,8 +28,7 @@ export const BUBBLE_TIPS = Object.freeze({
 
 const CHOOSE_KINDS = new Set([ALERT.CHOOSE_RECIPE, ALERT.CHOOSE_BUILD]);
 
-/** The demolition badge's size (`w-7 h-7`), and the gap in a row, in mat units. */
-const BADGE_U = 28;
+/** The gap in a row, in mat units. */
 const ROW_GAP_U = 4;
 /** A bar in the fight layer takes the pointer as the fight's plate does (`FightBarHost`). */
 const PLATE_POINTER = 'var(--plate-pointer, auto)';
@@ -42,8 +41,9 @@ const PLATE_POINTER = 'var(--plate-pointer, auto)';
  * problem while a hero works it. Fills each cycle on the shared step clock; empty
  * again on `CYCLE_COMPLETE`. Any engine alert on the worked Token stops the cycle, so the bar holds
  * there, grey.
- * - **Problem mark** (`ProblemMark`, the middle row), on a Token nobody works (a worked Token's
- * problem is on its plate): one, yellow while it waits (items, a Token
+ * - **Problem mark** (`ProblemMark`, the row above the art), bobbing, on any Token with a problem
+ * (a worked Token's plate also says it in words; not while an enemy's bar is up there): one,
+ * yellow while it waits (items, a Token
  * beside it, charges, a choice) or red when it can't (no room, the cap, a hero who can't do the
  * work); its hover says exactly what (`problemMark.js`). From the engine's alert, a spawner's
  * stuck alert (`SPAWNER_ALERT_CHANGED`, read once on mount), a growing Token's (a Stump that needs
@@ -53,7 +53,8 @@ const PLATE_POINTER = 'var(--plate-pointer, auto)';
  * the mat hands it `fightBar` (`{ host, left, top }`: the fight layer's node and this box's
  * corner in mat units) and the bar draws there, over the loot (`FightBarHost`).
  * - **Hovered only**: on a Token nobody works, the idle plate under it (`IdlePlate`, drawn into
- * `plateHost`, which `MatToken` hands over only while it rests there with something to say): its problem, charges, spawner count, quest progress and timer, as apply;
+ * `plateHost`, which `MatToken` hands over only while it rests there): its problem and its timer,
+ * as apply, and with neither no plate at all;
  * and the recipe gear, in a row of its own. Every gear on a Token is the '!' mark's size.
  * - **A choice waiting** (nothing chosen on a station or Foundation): its yellow '!' at rest, and
  * the gear in the mark's own spot the moment the pointer reaches the Token (`pointerOn`, the bare
@@ -75,11 +76,10 @@ export const TokenBubbles = ({
     pointerOn = false,
     isDragging = false,
     boxPx = 128,
+    artPx = null,
     artUnit = 2,
     x = null,
     y = null,
-    spawner = null,
-    quest = null,
     readTimer = null,
     plateHost = null,
     gear = null,
@@ -89,7 +89,6 @@ export const TokenBubbles = ({
 }) => {
     const typeId = token?.typeId ?? null;
     const hasHero = !!token?.heroId;
-    const usesRemaining = token?.usesRemaining ?? null;
     const alert = token?.alert ?? null;
     // Every engine alert on a worked Token means its cycle is not running.
     const blocked = hasHero && !!alert;
@@ -207,44 +206,37 @@ export const TokenBubbles = ({
 
     const barUnit = plateUnit(useMatFit() || 1);
 
-    // The idle plate: a Token nobody works (never an enemy), rested on, with something to say
-    // (`MatToken` hands it the host only then; the name stands on its top line). The timer counts if
-    // its clock runs as the pointer arrives.
-    const hasCharges = usesRemaining != null && !isEnemy;
+    // The idle plate: a Token nobody works (never an enemy), rested on, that is stuck or counting.
+    // The problem may be a spawner's or a growth's, which only this component hears, so `MatToken`
+    // hands it the host on every rest and the choice is made here. The timer counts if its clock
+    // runs as the pointer arrives.
     const idleOn = !!plateHost && isHovered && !hasHero && !isEnemy && !isDragging;
     const idleProblem = problem && !CHOOSE_KINDS.has(problem.kind) ? problem : null;
-    const idleCells = useMemo(() => (idleOn ? idlePlateCells({
-        problem: idleProblem,
-        charges: hasCharges ? usesRemaining : null,
-        spawner,
-        quest
-    }) : null), [idleOn, idleProblem, hasCharges, usesRemaining, spawner, quest]);
+    const idleCells = useMemo(() => (idleOn ? idlePlateCells({ problem: idleProblem }) : null), [idleOn, idleProblem]);
     const idleTimed = useMemo(() => idleOn && !!readTimer?.(), [idleOn, readTimer]);
     const idleShown = !!idleCells && (idleCells.length > 0 || idleTimed);
 
     if (isDragging) return null;
 
     const fight = hasHero && combat;
-    // A hero at work and not fighting: the plate under them says the charges and any problem.
-    const plated = hasHero && !fight;
-    const showProblem = !!problem && !plated;
     // The bar's numbers: the fight's, else a full enemy (an enemy nobody fights is whole).
     const barHp = hp ?? (enemyHp ? { cur: enemyHp, max: enemyHp } : null);
     const showHp = (fight || (isHovered && !!enemyHp)) && !!barHp && barHp.max > 0;
+    // The '!' and an enemy's bar would share the space over the art: the bar wins.
+    const showProblem = !!problem && !fight && !showHp;
     // A choice waiting: the pointer on the Token, the gear stands where its '!' was, at once.
     // ⚠️ The hover is the Token's (its circle, `MatBoard`), not the mark's, so the swap cannot take
     // the hover away; and the gear is the mark's size, so nothing beside it moves.
     const gearInMark = showProblem && (pointerOn || isHovered) && !!gear?.show && !marked && CHOOSE_KINDS.has(problem.kind);
     const showGear = !!gear?.show && !marked && isHovered && !gearInMark;
-    const showRest = showProblem || marked;
-    // ⚠️ The hover row never shares the marks' row: inserted beside them it would slide the mark
-    // out from under the pointer the moment the pointer reached it. With marks showing it sits
-    // just above them; alone, at the centre.
+    // ⚠️ The hover row never shares the '!''s row: inserted beside it, it would slide the mark out
+    // from under the pointer the moment the pointer reached it. It has the centre: the '!' is over
+    // the art, and a Token marked for demolition shows no gear.
     const gearPx = tokenGearPx(artUnit);
-    const restHalf = Math.max(gearInMark ? gearPx : PROBLEM_MARK_ART_PX * artUnit, BADGE_U) / 2;
-    const hoverRowStyle = showRest
-        ? { left: 0, width: boxPx, top: boxPx / 2 - restHalf - ROW_GAP_U, transform: 'translateY(-100%)', gap: ROW_GAP_U }
-        : { left: 0, width: boxPx, top: boxPx / 2, transform: 'translateY(-50%)', gap: ROW_GAP_U };
+    const hoverRowStyle = { left: 0, width: boxPx, top: boxPx / 2, transform: 'translateY(-50%)', gap: ROW_GAP_U };
+    // The '!' stands on the art's top edge (the art is centred in the box); the art's own clear
+    // rows above its pixels are the gap.
+    const artTop = (boxPx - (artPx ?? boxPx)) / 2;
 
     return (
         <>
@@ -306,11 +298,11 @@ export const TokenBubbles = ({
                 </div>
             )}
 
-            {showRest && (
+            {showProblem && (
                 <div
-                    data-bubble-row="middle"
-                    className="absolute z-20 flex items-center justify-center pointer-events-none"
-                    style={{ left: 0, width: boxPx, top: boxPx / 2, transform: 'translateY(-50%)', gap: ROW_GAP_U }}
+                    data-bubble-row="above"
+                    className="absolute z-20 flex items-end justify-center pointer-events-none"
+                    style={{ left: 0, width: boxPx, top: artTop, transform: 'translateY(-100%)' }}
                 >
                     {gearInMark ? (
                         <div {...dragProps} data-gear-in-mark={problem.kind} className="relative shrink-0 pointer-events-auto">
@@ -323,14 +315,21 @@ export const TokenBubbles = ({
                                 px={gearPx}
                             />
                         </div>
-                    ) : showProblem && (
+                    ) : (
                         <ProblemMark problem={problem} tip={problemTip} artUnit={artUnit} dragProps={dragProps} onClick={problemClick} />
                     )}
-                    {marked && (
-                        <Bubble of={instanceId} kind="marked" inline tip={BUBBLE_TIPS.marked} dragProps={dragProps}>
-                            <MarkedBadge title={BUBBLE_TIPS.marked} />
-                        </Bubble>
-                    )}
+                </div>
+            )}
+
+            {marked && (
+                <div
+                    data-bubble-row="middle"
+                    className="absolute z-20 flex items-center justify-center pointer-events-none"
+                    style={{ left: 0, width: boxPx, top: boxPx / 2, transform: 'translateY(-50%)', gap: ROW_GAP_U }}
+                >
+                    <Bubble of={instanceId} kind="marked" inline tip={BUBBLE_TIPS.marked} dragProps={dragProps}>
+                        <MarkedBadge title={BUBBLE_TIPS.marked} />
+                    </Bubble>
                 </div>
             )}
         </>

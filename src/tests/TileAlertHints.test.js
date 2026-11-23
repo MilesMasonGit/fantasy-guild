@@ -33,7 +33,7 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
-describe('a Token with an alert: no words; one mark while nobody works it; worked, its plate says it', () => {
+describe('a Token with an alert: no words, one mark; worked, the same mark and its plate says it in words', () => {
     const row = (alert, extra = {}) => React.createElement(TokenBubbles, { instanceId: 'tok_1', token: worked(alert, extra) });
     /** A worked Token's bubbles and its plate's fill, held grey while it has an alert (as the plate does). */
     const withFill = (alert) => React.createElement(React.Fragment, null,
@@ -49,10 +49,12 @@ describe('a Token with an alert: no words; one mark while nobody works it; worke
         expect(marks[0].getAttribute('data-problem-severity')).toBe(PROBLEM_SEVERITY[alert]);
     });
 
-    it.each(TOKEN_ALERTS)('worked: no label and no %s mark of its own; the plate says it', (alert) => {
+    it.each(TOKEN_ALERTS)('worked: no label, one %s mark above it; the plate has the words', (alert) => {
         const { container } = render(tree(row(alert)));
         expect(container.querySelector('[data-tile-alert-hint]')).toBeNull();
-        expect(container.querySelector('[data-problem-mark]')).toBeNull();
+        const marks = container.querySelectorAll('[data-bubble-row="above"] [data-problem-mark]');
+        expect(marks).toHaveLength(1);
+        expect(marks[0].getAttribute('data-problem-severity')).toBe(PROBLEM_SEVERITY[alert]);
     });
 
     it('nothing chosen, nobody working it: a yellow mark, not a fault', () => {

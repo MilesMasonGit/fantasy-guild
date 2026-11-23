@@ -92,18 +92,9 @@ function PlateCell({ cell, u, tip }) {
             );
             break;
         case CELL.TIMER:
-        case CELL.SPAWNER:
             body = (
                 <>
-                    <img src={glyphUri(cell.kind === CELL.SPAWNER ? 'spawn' : cell.glyph || 'clock')} alt="" draggable={false} style={glyph} />
-                    <span className="font-bold tabular-nums leading-none text-white" style={num}>{cell.text}</span>
-                </>
-            );
-            break;
-        case CELL.QUEST:
-            body = (
-                <>
-                    {cell.itemId && <img src={spriteOf(cell.itemId)} alt="" draggable={false} style={icon} />}
+                    <img src={glyphUri(cell.glyph || 'clock')} alt="" draggable={false} style={glyph} />
                     <span className="font-bold tabular-nums leading-none text-white" style={num}>{cell.text}</span>
                 </>
             );

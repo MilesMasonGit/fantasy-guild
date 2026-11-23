@@ -14,7 +14,7 @@ import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
-import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
+import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
@@ -44,8 +44,14 @@ const later = (ms) => act(() => { vi.advanceTimersByTime(ms); });
 const overlay = (c, id) => c.querySelector(`[data-token-overlay="${id}"]`);
 const art = (c, id) => c.querySelector(`[data-token-art][data-token-id="${id}"]`);
 const nameOf = (c, id) => overlay(c, id).querySelector('[data-token-name]');
-/** The rested Token's charges, on its idle plate under it. */
-const chargesOf = (c, id) => c.querySelector(`[data-idle-plate="${id}"] [data-plate-cell="charges"]`);
+/** The rested Token's idle plate under it: shown only while it is stuck or counting. */
+const plateOf = (c, id) => c.querySelector(`[data-idle-plate="${id}"]`);
+/** A Token waiting on items, so its rest brings up a plate. */
+const stuckAt = (x, y) => {
+    const t = placeAt('fixture_producer', x, y);
+    t.alert = ALERT.INPUTS;
+    return t;
+};
 
 function matRoot(container) {
     const root = container.querySelector('[data-mat-board]');
@@ -74,23 +80,23 @@ afterEach(() => {
 });
 
 describe('⭐ resting on a Token', () => {
-    it('the outline at once; nothing else before the rest; the name and the plate with its charges after', () => {
-        const t = placeAt('fixture_producer', 600, 500);
+    it('the outline at once; nothing else before the rest; the name and the plate after', () => {
+        const t = stuckAt(600, 500);
         const { container } = mount();
         const root = matRoot(container);
 
         pointAt(root, t);
         expect(art(container, t.id).getAttribute('data-outline')).toBe('hover');
         expect(nameOf(container, t.id)).toBeNull();
-        expect(chargesOf(container, t.id)).toBeNull();
+        expect(plateOf(container, t.id)).toBeNull();
 
         later(HOVER_REST_MS - 10);
         expect(nameOf(container, t.id)).toBeNull();
-        expect(chargesOf(container, t.id)).toBeNull();
+        expect(plateOf(container, t.id)).toBeNull();
 
         later(10);
         expect(nameOf(container, t.id).textContent).toBe('Fixture Producer');
-        expect(chargesOf(container, t.id)).not.toBeNull();
+        expect(plateOf(container, t.id)).not.toBeNull();
     });
 
     it('small moves on the same Token do not restart the wait', () => {
@@ -115,7 +121,7 @@ describe('⭐ resting on a Token', () => {
         fireEvent.pointerMove(root, { clientX: 1500, clientY: 1000 });
         expect(art(container, t.id).getAttribute('data-outline')).toBeNull();
         expect(nameOf(container, t.id)).toBeNull();
-        expect(chargesOf(container, t.id)).toBeNull();
+        expect(plateOf(container, t.id)).toBeNull();
 
         pointAt(root, t);
         expect(nameOf(container, t.id)).toBeNull();
@@ -124,7 +130,7 @@ describe('⭐ resting on a Token', () => {
 
         fireEvent.pointerLeave(root);
         expect(nameOf(container, t.id)).toBeNull();
-        expect(chargesOf(container, t.id)).toBeNull();
+        expect(plateOf(container, t.id)).toBeNull();
     });
 
     it('rested on A, over to B and straight back to A: A waits again, even while the mat redraws', async () => {
@@ -180,7 +186,7 @@ describe('⭐ resting on a Token', () => {
 
     it('⭐ the rest redraws the rested Token alone; the hover itself only the two whose outline changed', () => {
         const a = placeAt('fixture_producer', 500, 500);
-        const b = placeAt('fixture_producer', 800, 500);
+        const b = stuckAt(800, 500);
         placeAt('fixture_producer', 1100, 500);
         const { container } = mount();
         const root = matRoot(container);
@@ -201,7 +207,7 @@ describe('⭐ resting on a Token', () => {
         expect(renders.of('MatHero')).toBe(0);
         expect(nameOf(container, b.id)).not.toBeNull();
         // Its plate and its dropped name came in that one render.
-        expect(chargesOf(container, b.id)).not.toBeNull();
+        expect(plateOf(container, b.id)).not.toBeNull();
         expect(renders.commits()).toHaveLength(1);
     });
 });

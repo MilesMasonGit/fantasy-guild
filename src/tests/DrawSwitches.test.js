@@ -11,7 +11,7 @@ import * as QuestTokens from '../systems/quests/QuestTokens.js';
 import { QuestManager } from '../systems/quests/QuestManager.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
-import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
+import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import {
     DRAW_SWITCHES, applyOffFromUrl, setDrawn, drawnSwitches, isDrawn, resetDrawSwitches
@@ -131,13 +131,19 @@ describe('mat overlays', () => {
         BoardState.addToken(BoardState.createTokenInstance('token_guild_hall'), 880, 560);
         QuestManager.init();
         const q = QuestTokens.spawnQuest(hunt);
-        return h(MatToken, { id: q.id, typeId: q.typeId, x: q.x, y: q.y, size: 1, z: 10, isHovered: true, isRested: true, plateHost: document.body });
+        const quest = h(MatToken, { id: q.id, typeId: q.typeId, x: q.x, y: q.y, size: 1, z: 10, isHovered: true, isRested: true, plateHost: document.body });
+        // A stuck Token beside it, for the idle plate: a quest's progress is never on one.
+        const stuck = BoardState.createTokenInstance('fixture_consumer');
+        BoardState.addToken(stuck, 400, 560);
+        stuck.alert = ALERT.INPUTS;
+        const plated = h(MatToken, { id: stuck.id, typeId: stuck.typeId, x: stuck.x, y: stuck.y, size: 1, z: 10, isHovered: true, isRested: true, plateHost: document.body });
+        return h(React.Fragment, null, quest, plated);
     }
 
     it('bubbles and tooltips', () => {
         const el = questToken();
         mount(el);
-        expect(document.body.querySelector('[data-idle-plate] [data-plate-cell="quest"]')).not.toBeNull();
+        expect(document.body.querySelector('[data-idle-plate] [data-plate-cell="problem"]')).not.toBeNull();
         expect(document.body.querySelector('[data-quest-tooltip]')).not.toBeNull();
         cleanup();
 
