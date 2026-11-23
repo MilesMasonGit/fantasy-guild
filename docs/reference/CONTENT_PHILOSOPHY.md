@@ -64,7 +64,7 @@ The levels follow the metals' amended ladder (copper 1, iron 20 and on, as in [S
 | Mining, Forestry, Fishing, Farming | Gather; see below | Mining Camp, Logging Camp, Fishing Hut, Farmstead |
 | Melee, Ranged, Magic, Stealth | Fight | War Camp |
 
-Faith, Summoning, Science, Crime and Taming are still to design. Placeholder buildings: Chapel, Summoning Circle, Laboratory, Hideout, Stable.
+Faith, Summoning, Science and Crime are designed in `concept_skill_identities.md` (brief 810); their content waits on the build. Taming is cut (owner, 2026-11-22): Wool drops from a Sheep enemy instead. Placeholder buildings: Chapel, Summoning Circle, Laboratory, Hideout.
 
 ## How the skills interlock
 

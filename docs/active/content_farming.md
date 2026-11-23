@@ -34,7 +34,7 @@ From [Construction](content_construction.md): **Well** (shorter growth), **Compo
 
 - ⚠️ **Sickles go**: Fields, Herb Gardens and Ripe Wheat ask for one today (`needsTool`), and those five Tokens drop that need. Redberry Bushes and Apple Trees already need no tool.
 - **Today's Cow Pasture** stays as a lure; **Chicken Coop** on [Construction's open links](content_construction.md) isn't needed for now, and [Cooking](content_food_and_drink.md)'s pasture notes change.
-- ⚠️ **Wool has no source** while the owner considers it, and [Tailor](content_tailor.md)'s tier 2 needs it, with the Sail after.
+- **Wool drops from a Sheep enemy** (owner, 2026-11-22, once Taming was cut): a level 1 Sheep from a Sheep Pasture camp in Highland lands, with a rare Pasture Map that builds one, as the Cow has. [Tailor](content_tailor.md)'s tier 2 and the Sail use it. Pack `2026-11-22-sheep-wool`.
 - **Milk as an enemy drop**: Butter and Cheese rely on it; the enemy session gives it a source.
 - **Seaweed**: the Composter could take it; otherwise it needs another user.
 
