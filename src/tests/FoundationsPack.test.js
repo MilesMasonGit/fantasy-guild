@@ -40,7 +40,7 @@ const BANNER_SPAWNERS = [
     'token_wild_hive', 'token_basking_stone', 'token_cow_pasture', 'token_crab_rocks', 'token_ember_vents',
     'token_smoking_crater', 'token_frog_pond', 'token_goblin_camp', 'token_chief_tent', 'token_slime_pit',
     'token_queens_hive', 'token_sulphur_rocks', 'token_thorn_thicket', 'token_toxic_pool', 'token_tide_pool',
-    'token_wind_stones', 'token_wolf_den', 'token_alpha_den'
+    'token_wind_stones', 'token_wolf_den', 'token_alpha_den', 'token_sheep_pasture'
 ];
 
 const shippedWorkspace = () => workspaceFromDataFiles({
@@ -78,12 +78,19 @@ describe('the shipped data, after the Sync', () => {
 
     // The CMS writes a Token's description from its rules on Sync, so the pack's hand-written
     // descriptions for the two new Foundations never ship; everything else must.
-    it('holds every entry of the pack as the pack sets it, the description aside', () => {
+    // Fields a later pack has moved since: the Coast's work and its sim tags (the fishing items pack).
+    const LATER = { token_coast: ['config', 'sim'] };
+
+    it('holds every entry of the pack as the pack sets it, the description and the fields later packs moved aside', () => {
         const shipped = shippedWorkspace();
-        const withoutDescription = (value) => canonicalJson({ ...value, description: undefined });
+        const asPacked = (id, value) => {
+            const out = { ...value, description: undefined };
+            for (const field of LATER[id] || []) out[field] = undefined;
+            return canonicalJson(out);
+        };
         for (const entry of PACK.entries) {
-            expect(withoutDescription(currentValue(shipped, entry.kind, entry.id)), `${entry.kind} ${entry.id}`)
-                .toBe(withoutDescription(proposedValue(entry)));
+            expect(asPacked(entry.id, currentValue(shipped, entry.kind, entry.id)), `${entry.kind} ${entry.id}`)
+                .toBe(asPacked(entry.id, proposedValue(entry)));
         }
     });
 });

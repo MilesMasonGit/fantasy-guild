@@ -65,18 +65,22 @@ describe('The Processing chain in shipped data (7.5)', () => {
             expect(def.config).toBeNull();
         });
 
-        it('a Wood Foundation offers the wooden buildings: the Workbench, the Cooking Pot, the Mining Camp and the rest', () => {
+        it('a Wood Foundation offers the wooden buildings: the Workshop, the Kitchen, the Mining Camp and the rest', () => {
             expect(poolNames('token_wood_foundation')).toEqual([
-                'Build Alchemy Table', 'Build Beehive', 'Build Brewery', 'Build Composter', 'Build Cooking Pot', 'Build Dock',
-                'Build Farmstead', 'Build Fir Workbench', 'Build Fishing Hut', 'Build Logging Camp', 'Build Minecart',
-                'Build Mining Camp', 'Build Tannery', 'Build Windmill', 'Build Workbench',
+                "Build Alchemist's Hall", 'Build Apothecary', 'Build Bakehouse', 'Build Banquet Hall', 'Build Barn', 'Build Beehive',
+                'Build Brewery', "Build Builder's Yard", 'Build Composter', "Build Craftsmen's Yard", 'Build Deep Workings', 'Build Dock',
+                "Build Farmers' Market", 'Build Farmstead', 'Build Fish Market', 'Build Fishing Hut', "Build Fishmonger's",
+                "Build Forester's Lodge", 'Build Greenhouse', "Build Grovekeeper's Hut", 'Build Guild Workshop', "Build Herbalist's Hut",
+                "Build Jeweller's Hall", 'Build Kitchen', 'Build Logging Camp', 'Build Manor Farm', 'Build Market Kitchen',
+                "Build Master's Study", 'Build Mine Head', 'Build Minecart', 'Build Mining Camp', 'Build Ore Market', 'Build Physic Garden',
+                'Build Pier', 'Build Sawmill', 'Build Tannery', 'Build Timber Yard', 'Build Windmill', 'Build Workshop',
             ]);
         });
 
-        it("a Stone Foundation offers the Furnace, the Copper Smithy, the Well, the Fighter's Academy and the iron stations (SP-62)", () => {
+        it('a Stone Foundation offers the Blacksmith, the Well and the better Smithing stations (SP-62)', () => {
             expect(poolNames('token_stone_foundation')).toEqual([
-                'Build Copper Smithy', "Build Fighter's Academy", 'Build Furnace', 'Build Iron Furnace',
-                'Build Iron Smithy', 'Build Well',
+                'Build Blacksmith', 'Build Foundry', 'Build Grand Forge', 'Build Master Smithy', "Build Smiths' Row",
+                'Build Town Square', 'Build Well',
             ]);
         });
 
@@ -87,18 +91,17 @@ describe('The Processing chain in shipped data (7.5)', () => {
         it('a Battlefield offers every creature camp from its banner', () => {
             expect(poolNames('token_battlefield')).toEqual([
                 "Build Alpha's Den", 'Build Basking Stone', "Build Chief's Tent", 'Build Cow Pasture', 'Build Crab Rocks',
-                'Build Ember Vents', 'Build Frog Pond', 'Build Goblin Camp', "Build Queen's Hive", 'Build Slime Pit',
+                'Build Ember Vents', 'Build Frog Pond', 'Build Goblin Camp', "Build Queen's Hive", 'Build Sheep Pasture', 'Build Slime Pit',
                 'Build Smoking Crater', 'Build Sulphur Rocks', 'Build Thorn Thicket', 'Build Tide Pool', 'Build Toxic Pool',
                 'Build Wild Hive', 'Build Wind Stones', 'Build Wolf Den',
             ]);
         });
 
         for (const [name, kind, seconds, inputs, builds] of [
-            ['Build Workbench', 'wood', 60, [{ itemId: 'item_oak_wood', quantity: 5 }], 'token_workbench'],
-            ['Build Cooking Pot', 'wood', 60, [{ itemId: 'item_oak_wood', quantity: 5 }], 'token_cooking_pot'],
-            ['Build Furnace', 'stone', 90, [{ itemId: 'item_stone', quantity: 5 }], 'token_furnace'],
-            ["Build Fighter's Academy", 'stone', 240,
-                [{ itemId: 'item_stone', quantity: 10 }, { itemId: 'item_oak_wood', quantity: 10 }], 'token_fighter_s_academy'],
+            ['Build Workshop', 'wood', 60, [{ itemId: 'item_oak_wood', quantity: 5 }], 'token_workbench'],
+            ['Build Kitchen', 'wood', 60, [{ itemId: 'item_oak_wood', quantity: 5 }], 'token_cooking_pot'],
+            ['Build Blacksmith', 'stone', 90, [{ itemId: 'item_stone', quantity: 5 }], 'token_furnace'],
+            ['Build Well', 'stone', 30, [{ itemId: 'item_stone', quantity: 8 }], 'token_well'],
         ]) {
             it(`${name}: Construction 1, ${seconds} s, on ${kind}, builds ${builds}`, () => {
                 const r = named(name);
@@ -112,11 +115,11 @@ describe('The Processing chain in shipped data (7.5)', () => {
             });
         }
 
-        it('no building recipe reaches an ordinary station', () => {
+        it('no building recipe reaches an ordinary station (a Construction station makes materials only)', () => {
             for (const def of Object.values(tokens)) {
                 if (def.foundation) continue;
                 const pool = recipesForToken(getTokenType(def.id)) || [];
-                expect(pool.filter((r) => r.skill === 'construction')).toEqual([]);
+                expect(pool.filter((r) => r.skill === 'construction' && r.outputs?.some((o) => o.tokenId))).toEqual([]);
             }
         });
     });
@@ -138,7 +141,7 @@ describe('The Processing chain in shipped data (7.5)', () => {
             }
         });
 
-        it('each has a work config naming its skill, so a hero will work it (as the Ceramics Kiln has)', () => {
+        it('each has a work config naming its skill, so a hero will work it', () => {
             for (const [id, skill] of [['token_workbench', 'crafting'], ['token_cooking_pot', 'cooking'], ['token_furnace', 'smithing']]) {
                 expect(tokens[id].config, id).toMatchObject({ skill, skillRequired: 1, inputs: [], outputs: [] });
                 expect(tokens[id].requiresHero, id).toBe(true);
@@ -165,7 +168,7 @@ describe('The Processing chain in shipped data (7.5)', () => {
     });
 
     describe('Recipes and fuel (SP-26)', () => {
-        it('Crafting burns no fuel: Charcoal is 2 Oak Wood, a Torch is 1 Oak Wood + 1 Charcoal', () => {
+        it('Crafting burns no fuel: Charcoal is 2 Oak Wood, a Torch (Crafting 13) is 1 Oak Wood + 1 Charcoal', () => {
             const charcoal = named('Charcoal');
             expect(charcoal.skill).toBe('crafting');
             expect(charcoal.levelRequirement).toBe(1);
@@ -174,7 +177,7 @@ describe('The Processing chain in shipped data (7.5)', () => {
 
             const torch = named('Torch');
             expect(torch.skill).toBe('crafting');
-            expect(torch.levelRequirement).toBe(1);
+            expect(torch.levelRequirement).toBe(13);
             expect(torch.inputs).toEqual([
                 { itemId: 'item_oak_wood', quantity: 1 }, { itemId: 'item_charcoal', quantity: 1 },
             ]);
@@ -190,7 +193,7 @@ describe('The Processing chain in shipped data (7.5)', () => {
             expect(ingot.levelRequirement).toBe(1);
         });
 
-        it('Cooking burns no fuel: Shrimp at a Kitchen and Apple Juice at a Brewery, both level 1', () => {
+        it('Cooking burns no fuel: Shrimp at a Kitchen at level 1, Apple Juice at any Cooking station at level 6', () => {
             const shrimp = recipes.find((r) => r.id === 'recipe_shrimp');
             expect(shrimp.inputs).toEqual([{ itemId: 'item_raw_shrimp', quantity: 1 }]);
             expect(shrimp.stationKinds).toEqual(['kitchen']);
@@ -199,8 +202,8 @@ describe('The Processing chain in shipped data (7.5)', () => {
             const juice = named('Apple Juice');
             expect(juice.skill).toBe('cooking');
             expect(juice.inputs).toEqual([{ itemId: 'item_apple', quantity: 4 }]);
-            expect(juice.stationKinds).toEqual(['brewery']);
-            expect(juice.levelRequirement).toBe(1);
+            expect(juice.stationKinds ?? []).toEqual([]);
+            expect(juice.levelRequirement).toBe(6);
         });
     });
 
@@ -221,16 +224,16 @@ describe('The Processing chain in shipped data (7.5)', () => {
             expect(others).toEqual([]);
         });
 
-        it('Copper Nails: 1 Copper Ingot + 1 Coal → 2 Nails at a Smithy, no anvil needed', () => {
+        it('Copper Nails: 1 Copper Ingot + 1 Coal → 2 Nails at any Smithing station from level 5, no anvil needed', () => {
             const nails = named('Copper Nails');
             expect(nails.skill).toBe('smithing');
-            expect(nails.levelRequirement).toBe(1);
+            expect(nails.levelRequirement).toBe(5);
             expect(nails.inputs).toEqual([
                 { itemId: 'item_copper_ingot', quantity: 1 }, { itemId: 'item_coal', quantity: 1 },
             ]);
             expect(nails.outputs.map((o) => [o.itemId, o.minQty, o.maxQty])).toEqual([['item_copper_nails', 2, 2]]);
             expect(nails.requiresContext).toEqual([]);
-            expect(nails.stationKinds).toEqual(['smithy']);
+            expect(nails.stationKinds ?? []).toEqual([]);
         });
     });
 

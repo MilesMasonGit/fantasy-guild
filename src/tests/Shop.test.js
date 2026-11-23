@@ -160,7 +160,7 @@ describe('the catalogue', () => {
 
     it('names what a Foundation builds, each once; a Token that is not one builds nothing', () => {
         const wood = Shop.buildsOf('token_wood_foundation');
-        expect(wood).toContain('Workbench');
+        expect(wood).toContain('Workshop');
         expect(new Set(wood).size).toBe(wood.length);
         expect(Shop.buildsOf('fixture_shop_forest')).toEqual([]);
         expect(Shop.buildsOf('not_a_token')).toEqual([]);

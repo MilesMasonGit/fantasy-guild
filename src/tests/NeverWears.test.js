@@ -86,8 +86,8 @@ describe('the rule, read off what a Token has', () => {
 
 describe('⭐ shipped content', () => {
     it.each([
-        ['token_grandma_s_kitchen', NEVER_WEARS.STATION],
-        ['token_ceramics_kiln', NEVER_WEARS.STATION],
+        ['token_cooking_pot', NEVER_WEARS.STATION],
+        ['token_furnace', NEVER_WEARS.STATION],
         ['token_windmill', NEVER_WEARS.STATION],
         ['token_coast', NEVER_WEARS.WATER],
         ['token_copper_anvil', NEVER_WEARS.SUPPORT]

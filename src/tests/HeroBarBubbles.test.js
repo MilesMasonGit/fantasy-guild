@@ -128,7 +128,8 @@ describe('the hero bar level-up bubbles', () => {
         const view = mount();
         for (let l = 2; l <= 50; l++) level('h1', 'Melee', l - 1, l);
         const b = view.container.querySelector('[data-bar-bubble="level:Melee"]');
-        expect(b.textContent).toBe('50 Melee!');
+        // Shipped gear opens at those levels, so the bubble may also say what it unlocks ("+5 gear").
+        expect(b.textContent).toMatch(/^50 Melee!/);
         expect([...b.querySelectorAll('[data-bubble-num]')].map(n => n.textContent)).toEqual(['50']);
     });
 

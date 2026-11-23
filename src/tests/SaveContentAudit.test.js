@@ -65,12 +65,12 @@ describe('Finding what a save is still holding', () => {
     });
 
     it('looks at every Token on the mat, the one place a save holds them now', () => {
-        const ghosts = auditSaveContent(saveWith(mat('token_sawmill', 'token_forest', 'token_oakwood_grove')));
+        const ghosts = auditSaveContent(saveWith(mat('token_grandma_s_kitchen', 'token_forest', 'token_oakwood_grove')));
 
         // `board.maps` (9.1), the Token tray and the Token Vault (9.3) were
         // the other places; `migrateState` drops all three now.
         expect(ghosts.map(g => g.id).sort()).toEqual([
-            'token_forest', 'token_oakwood_grove', 'token_sawmill'
+            'token_forest', 'token_grandma_s_kitchen', 'token_oakwood_grove'
         ]);
     });
 

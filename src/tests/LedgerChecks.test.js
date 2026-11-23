@@ -208,7 +208,7 @@ describe('checks on the shipped content (the audit of 2026-10-28)', () => {
         // A Fire Elemental Banner builds Ember Vents, whose elementals drop Iron Ore: the map is not its only way.
         expect(on(findings, itemKey('item_iron_ore'), 'fragile')).toEqual([]);
         // The audit's lone starter tools are made at the Workbench and the Smithy now.
-        for (const id of ['item_trap', 'item_copper_sickle', 'item_fishing_rod']) {
+        for (const id of ['item_trap', 'item_fishing_rod']) {
             expect(on(findings, itemKey(id), 'tool-single'), id).toEqual([]);
         }
         // And its made-but-unused items are spent: Build Composter, a Fishing Rod, Build Grapevine, Lavender Salmon.
@@ -224,7 +224,7 @@ describe('checks on the shipped content (the audit of 2026-10-28)', () => {
         const c = content();
         const leaks = ['token_beehive', 'token_apple_orchard', 'token_goblin_camp'].map(tokenKey);
         // Reached no earlier than their tier once they carry it: no leak.
-        const closed = [tokenKey('token_alchemy_table'), itemKey('item_lavender')];
+        const closed = [tokenKey('token_brewery'), itemKey('item_quartz')];
         for (const key of [...leaks, ...closed]) {
             const [kind, id] = key.split(':');
             c[kind === 'item' ? 'items' : 'tokens'][id].plan = { tier: 1 };

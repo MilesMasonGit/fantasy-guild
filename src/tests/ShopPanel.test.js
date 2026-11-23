@@ -572,7 +572,7 @@ describe('Shop layout', () => {
         fireEvent.pointerLeave(r.querySelector('[data-shop-face]'));
         const wood = row(view, 'token_wood_foundation');
         fireEvent.pointerEnter(wood.querySelector('[data-shop-face]'), { pointerType: 'mouse', clientX: 5, clientY: 5 });
-        expect(document.querySelector('[data-tooltip]').textContent).toMatch(/^Wood Foundation.*Builds: .*Workbench/);
+        expect(document.querySelector('[data-tooltip]').textContent).toMatch(/^Wood Foundation.*Builds: .*Workshop/);
         fireEvent.pointerLeave(wood.querySelector('[data-shop-face]'));
     });
 

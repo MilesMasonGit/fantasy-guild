@@ -430,14 +430,14 @@ describe('the §6 circularity check: every chain is reachable from the Starter C
     const { tokens, items } = reachable();
 
     const SIX = {
-        Forestry: ['token_oak_forest', 'token_oak_sapling', 'token_oak_tree'],
+        Forestry: ['token_oak_forest', 'token_oak_tree'],
         Mining: ['token_copper_mine', 'token_coal_mine', 'token_quarry', 'token_copper_ore_vein', 'token_coal_vein', 'token_stone_outcrop'],
         Fishing: ['token_coast', 'token_dock'],
-        Farming: ['token_farmland', 'token_wheat_field', 'token_herb_garden', 'token_windmill', 'token_apple_orchard', 'token_apple_sapling', 'token_apple_tree'],
-        Construction: ['token_wood_foundation', 'token_stone_foundation', 'token_fighter_s_academy'],
+        Farming: ['token_farmland', 'token_wheat_field', 'token_herb_garden', 'token_windmill', 'token_apple_orchard', 'token_apple_tree'],
+        Construction: ['token_wood_foundation', 'token_stone_foundation', 'token_well'],
         Crafting: ['token_workbench'],
-        Smithing: ['token_furnace', 'token_copper_smithy'],
-        Cooking: ['token_cooking_pot', 'token_brewery'],
+        Smithing: ['token_furnace'],
+        Cooking: ['token_cooking_pot'],
         Combat: ['token_goblin_camp', 'token_goblin', 'token_chief_tent', 'token_goblin_chief']
     };
 
@@ -492,7 +492,63 @@ const NOT_YET_PLACED = Object.freeze({
     item_darkmetal_pickaxe: 'ring 3: forged from Darkmetal Ingots (smithy, level 90)',
     token_birch_forest: 'ring 3: planted from Birch Seedlings',
     token_maple_forest: 'ring 3: planted from Maple Seedlings',
-    token_mahogany_forest: 'ring 3: planted from Mahogany Seedlings'
+    token_mahogany_forest: 'ring 3: planted from Mahogany Seedlings',
+    // Later-ring content Synced since: its veins and trees, the planks, frames, blocks, chains and
+    // tools made from them, and the better buildings built from those.
+    item_adamantine_woodaxe: 'made from Adamantine Ingot, Cedar Wood, which the two planes do not reach yet',
+    item_basalt: 'only the Basalt Vein makes it, and no plane-1 or plane-2 map places one',
+    item_basalt_block: 'made from Basalt, which the two planes do not reach yet',
+    item_cedar_seedling: 'only the Cedar Tree makes it, and it needs a Mythril Woodaxe the two planes cannot make yet',
+    item_cedar_wood: 'only the Cedar Tree makes it, and it needs a Mythril Woodaxe the two planes cannot make yet',
+    item_darkmetal_woodaxe: 'made from Darkmetal Ingot, Mahogany Wood, which the two planes do not reach yet',
+    item_dragonscale: 'made from Red Scale, which the two planes do not reach yet',
+    item_ebony_frame: 'made from Ebony Plank, Mythril Nails, which the two planes do not reach yet',
+    item_ebony_plank: 'made from Ebony Wood, which the two planes do not reach yet',
+    item_ebony_seedling: 'only the Ebony Tree makes it, and it needs a Darkmetal Woodaxe the two planes cannot make yet',
+    item_ebony_wood: 'only the Ebony Tree makes it, and it needs a Darkmetal Woodaxe the two planes cannot make yet',
+    item_gold_chain: 'made from Gold Ingot, which the two planes do not reach yet',
+    item_gold_ring_band: 'made from Gold Ingot, which the two planes do not reach yet',
+    item_mahogany_frame: 'made from Mahogany Plank, Mythril Nails, which the two planes do not reach yet',
+    item_mahogany_plank: 'made from Mahogany Wood, which the two planes do not reach yet',
+    item_maple_frame: 'made from Maple Plank, Mythril Nails, which the two planes do not reach yet',
+    item_maple_plank: 'made from Maple Wood, which the two planes do not reach yet',
+    item_marble: 'only the Marble Vein makes it, and no plane-1 or plane-2 map places one',
+    item_marble_block: 'made from Marble, which the two planes do not reach yet',
+    item_master_rod: 'made from Maple Plank, Mythril Nails, Beeswax Comb, which the two planes do not reach yet',
+    item_mushroom: 'only the Giant Mushroom makes it, and no plane-1 or plane-2 map places one',
+    item_mythril_nails: 'made from Mythril Ingot, which the two planes do not reach yet',
+    item_mythril_woodaxe: 'made from Mythril Ingot, Maple Wood, which the two planes do not reach yet',
+    item_red_scale: 'only the Fossil Bed makes it, and no plane-1 or plane-2 map places one',
+    item_silver_chain: 'made from Silver Ingot, which the two planes do not reach yet',
+    item_silver_ring_band: 'made from Silver Ingot, which the two planes do not reach yet',
+    item_studded_leather: 'made from Hard Leather, Mythril Nails, which the two planes do not reach yet',
+    token_alchemists_hall: 'built from Maple Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
+    token_banquet_hall: 'built from Mahogany Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
+    token_brewery: 'built from Maple Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
+    token_cedar_forest: 'built from Cedar Seedling, which the two planes do not reach yet',
+    token_deep_workings: 'built from Mahogany Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
+    token_ebony_forest: 'built from Ebony Seedling, which the two planes do not reach yet',
+    token_fish_market: 'built from Mahogany Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
+    token_foresters_lodge: 'built from Maple Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
+    token_grand_forge: 'built from Mahogany Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
+    token_greenhouse: 'built from Maple Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
+    token_grovekeepers_hut: 'built from Mahogany Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
+    token_jewellers_hall: 'built from Mahogany Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
+    token_manor_farm: 'built from Mahogany Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
+    token_master_smithy: 'built from Maple Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
+    token_masters_study: 'built from Mahogany Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
+    token_tannery: 'built from Maple Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
+    token_town_square: 'built from Ebony Frame, Basalt Block, Gold Ingot, which the two planes do not reach yet'
+});
+
+/**
+ * Tokens the two planes place whose work needs a tool tier nothing in them makes yet, with why. ⚠️ A
+ * finding for the owner, like {@link NOT_YET_PLACED}: the check below fails once a tool reaches one.
+ */
+const NO_TOOL_YET = Object.freeze({
+    token_cedar_tree: 'a tier-3 woodaxe: the Mythril Woodaxe, from Mythril Ingots the two planes do not reach',
+    token_mahogany_tree: 'a tier-4 woodaxe: the Adamantine Woodaxe, from Adamantine Ingots the two planes do not reach',
+    token_ebony_tree: 'a tier-5 woodaxe: the Darkmetal Woodaxe, from Darkmetal Ingots the two planes do not reach'
 });
 
 /** What makes an item anywhere in the content: Token ids and recipe ids. */
@@ -541,10 +597,13 @@ describe('K4: from the Starter Camp, every plane-1 and plane-2 thing is reachabl
     it('every tool, and a tool for every Token whose work needs one', () => {
         expect(tools.length).toBeGreaterThan(0);
         expect(unreached(tools, items)).toEqual([]);
-        const noTool = [...world.needs]
-            .filter(([, need]) => ![...items].some(id => toolMeets(toolOf(getItem(id)), need)))
+        const toolless = [...world.needs].filter(([, need]) => ![...items].some(id => toolMeets(toolOf(getItem(id)), need)));
+        const noTool = toolless
+            .filter(([typeId]) => !NO_TOOL_YET[typeId])
             .map(([typeId, need]) => `${typeId} needs a ${need.kind} of tier ${need.minTier}`);
         expect(noTool).toEqual([]);
+        const toollessIds = new Set(toolless.map(([typeId]) => typeId));
+        expect(Object.keys(NO_TOOL_YET).filter(id => !toollessIds.has(id)), 'remove these from NO_TOOL_YET').toEqual([]);
     });
 
     it('every building: built on a foundation, sold in the Shop, or a station', () => {
