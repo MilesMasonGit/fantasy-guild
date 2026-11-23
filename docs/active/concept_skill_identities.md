@@ -1,4 +1,4 @@
-Status: draft (interviewed 2026-11-21: Faith settled; 2026-11-22: Taming cut, Crime and Summoning settled in a deep dive; Science next)
+Status: draft (interviewed 2026-11-21: Faith settled; 2026-11-22: Taming cut, Crime, Summoning and Science settled in a deep dive)
 
 # Five skills: what each one is for
 
@@ -85,25 +85,39 @@ camp's Crime level and steal table, Crime's level climb.
 tamed into a Pasture) and its helpers that work Tokens without a hero are dropped with it. Wool, which
 Tailor's tier 2 needs, still has no source: a content question (T-658).
 
-## Science: bulk conversion, late game
+## Science: mastery of nodes
 
-Laboratories that turn many cheap goods into rarer materials at scale, a sink
-for surplus, unlocked late. To design: what converts into what, how it
-differs from Alchemy, its unlock.
+**Deep dive 2026-11-22 (owner).** Bulk transmuting is dropped. Science works
+gathering nodes another way, as Crime does camps: it **studies them for
+mastery**, permanent buffs that build up.
 
+- **The Laboratory.** A building with a reach. A Science hero works it and
+  studies a node in its reach (trees, veins, bushes, Fields, water), picked on
+  the card like the Hideout's camp. Laboratory variants reach higher-level
+  nodes; support buildings (a University) speed Science up.
+- **Studying spends the node's charges, as gathering does, and gives no goods:
+  only mastery.** Goods now, or buffs for good.
+- **Mastery belongs to the node kind, guild-wide.** Studying any Oak Tree
+  raises Oak mastery; every Oak Tree, now and later, gets its buffs.
+- **A set track per kind.** Each mastery rank gives the next buff on a fixed
+  track the content agent writes, varied per kind (more yield, faster work,
+  more charges, a rare find...), as milestone perks are.
+- **Science level decides which nodes can be studied.** Once a kind is
+  unlocked, it can reach full mastery.
+- **No risk.**
+- **Balance: mastery takes a share of the boost budget** (BALANCE_RULES
+  section 5): stars, buildings or perks give a little less so an optimised
+  guild stays on pace.
 
-**Interview 2026-11-21 (direction, not final; the owner will revisit):** a
-Laboratory takes big batches of common goods and slowly makes rare materials,
-a sink for surplus, and can turn materials into very different things (the
-owner's example: Oak Wood into Diamonds). Alchemy makes consumables, crafting
-makes things, Science transforms materials. Unlocked late.
+To design with the content agent: mastery ranks and tracks per node kind, the
+study cycle, the Laboratory's variants and support buildings, the budget share.
 
 ## Open questions (for the planning agent)
 
 - Each skill's level climb, its station or nodes, and its place in the
   content chains (concept_content_roadmap.md).
 - Order of building: after the core chains (owner, 2026-11-02, again 2026-11-21).
-- Crime, Summoning and Science: a deep dive with the owner, one at a time
-  (2026-11-22); then this doc is finished and
+- Crime, Summoning and Science: settled in a deep dive with the owner
+  (2026-11-22); on approval, then this doc is finished and
   approved, the hero sheet lines are rewritten (T-644 with T-569's form), and
   each skill gets a content plan with the content agent.

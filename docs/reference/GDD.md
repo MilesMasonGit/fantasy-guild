@@ -716,9 +716,11 @@ Twenty today, Tailor making 21 (T-304):
   tomes and works Leylines for Motes (T-577), Tailor makes mage and Stealth
   clothing and the String Fletching uses (T-578, T-304).
 - **Faith, Summoning, Crime, Science**: no content yet, shown at level
-  1 like any skill (owner ruling D7). Their direction (owner 2026-11-21):
-  Faith builds blessing buildings, Summoning works the Summoning Circle to call
-  bosses, Crime picks locks, chests and contraband, Science converts goods in bulk late in the game. (Identities: see
+  1 like any skill (owner ruling D7). Their direction (owner 2026-11-21, 22):
+  Faith builds blessing buildings kept lit by offerings; Summoning charges
+  Summoned workers at the Summoning Circle; Crime steals alternate drops from
+  camps through a Hideout; Science studies nodes from a Laboratory for
+  permanent mastery. Taming was cut (2026-11-22). (Identities: see
   concept_skill_identities.md, draft.)
 
 Leadership, Commerce, Trapping, Armory and Shadowcraft were **cut** (K1): content
