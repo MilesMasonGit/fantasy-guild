@@ -16,7 +16,7 @@ import { hallRulesOf } from './hallModifiers.js';
  *
  * ⚠️ The aggregator is not saved. `GuildUpgradeManager.recompute` calls {@link apply} on every load
  * and purchase, and this module listens for a new game, a travel and a catch-up (`GAME_RESET`). It
- * takes out only what it put in, so a Region's rules stay.
+ * takes out only what it put in, so other guild-wide modifiers stay.
  */
 
 /** The aggregator source ids this module registered, so it removes exactly those. */

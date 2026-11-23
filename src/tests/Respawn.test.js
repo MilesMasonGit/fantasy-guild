@@ -396,16 +396,16 @@ describe('a regrow Token becomes its `into`, which grows back into it', () => {
         expect(events.alerts.filter(a => a.severity === 'red')).toEqual([]);
     });
 
-    it('a map node keeps its fixture mark and biome through the regrow and back', () => {
+    it('a map node keeps its fixture mark through the regrow and back', () => {
         const tree = place(10, 'respawn_tree');
-        Object.assign(tree, { fixture: true, biome: 'forest' });
+        Object.assign(tree, { fixture: true });
         const spot = { x: tree.x, y: tree.y };
         Charges.applyDelta(tree, -2);
         BoardRunner.tick(100);
-        expect(at(spot)).toMatchObject({ typeId: 'respawn_sapling', fixture: true, biome: 'forest' });
+        expect(at(spot)).toMatchObject({ typeId: 'respawn_sapling', fixture: true });
         expect(BoardState.isFixture(at(spot))).toBe(true);
         expect(runUntil(() => at(spot)?.typeId === 'respawn_tree', 31000)).toBe(true);
-        expect(at(spot)).toMatchObject({ fixture: true, biome: 'forest', usesRemaining: 2 });
+        expect(at(spot)).toMatchObject({ fixture: true, usesRemaining: 2 });
     });
 
     it('a tree spawned by a Forest regrows in place and keeps counting toward its family cap', () => {

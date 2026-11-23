@@ -1,5 +1,7 @@
 // The world tables' shape: what the world's generation reads, one reader for the game, the CMS and the ledger
 
+import { normaliseBiomeTable } from './biomeTerrain.js';
+
 /**
  * The world map is generated from tables the CMS will hold (`data/world.json`, written by Sync;
  * until then the game runs on `worldPlaceholder.js`). One record:
@@ -21,7 +23,6 @@
  *   kits: [{ id: 'highland', name: 'Highland',
  *            biome: 'mountain',                              // the ground its mat stands on (an Atlas biome)
  *            work: { mining: 2, forestry: 1, combat: 0.5 },  // natural work on its mat, in heroes kept busy
- *            stone: 4,                                       // Stone terrain outcrops on its mat
  *            camps: ['token_goblin_camp'],                   // the creatures' camps its combat work is
  *            bossCamps: ['token_chief_tent'] }],             // a combat specialty's better camp
  *   camps: { 1: ['token_wolf_den', { id: 'token_ember_vents', kits: ['highland'] }], 2: ..., 3: ... },
@@ -40,7 +41,9 @@
  *                  skills: [{ skill: 'line', level: 5 }] }, 2: ..., 3: ... },
  *   wild: { rings: 3, priceGrowth: 1.5, levelStep: 10, valueGrowth: 1.5, extremeShare: 0.5,
  *           compositionShare: 0.75,  // how much of a one-resource wild mat its one resource takes
- *           layouts: [{ id: 'islands', weight: 1 }] }
+ *           layouts: [{ id: 'islands', weight: 1 }] },
+ *   biomes: { meadow: { water: ['lake', 'river'], sea: [0, 0], stone: [1, 2] }, ... }
+ *                                   // each biome's terrain ranges (`biomeTerrain.js`)
  * }
  * ```
  *
@@ -58,7 +61,9 @@
  * one enemy more per ring out. A boss comes from a camp only: an old `bossChance` or `bosses` left
  * in the data is ignored.
  *
- * Pure and import-free: the CMS reads it too.
+ * A kit's old `stone` count is read only while the record has no `biomes` table (`biomeTerrain.js`).
+ *
+ * Pure, importing only the pure biome table: the CMS reads it too.
  */
 
 export const WORLD_TABLES_VERSION = 1;
@@ -225,7 +230,6 @@ function kitOf(raw) {
         name: text(row.name) || id,
         biome: text(row.biome),
         work: workOf(row.work),
-        stone: wholeAtLeast(row.stone, 0, 0),
         camps: idList(row.camps),
         bossCamps: idList(row.bossCamps)
     };
@@ -331,6 +335,9 @@ export function normaliseWorldTables(raw) {
         issues.push(`${specialties.length} specialties do not all fit in ring 1's ${LINE_COUNT} cells: some ring 1 goes without`);
     }
 
+    const terrain = normaliseBiomeTable(raw.biomes, listOf(raw.kits));
+    issues.push(...biomeTableProblems({ kits, biomes: terrain.biomes, biomesMissing: terrain.missing }));
+
     const tolerance = finite(raw.valueTolerance) && raw.valueTolerance >= 0 && raw.valueTolerance < 1
         ? raw.valueTolerance : DEFAULTS.valueTolerance;
 
@@ -354,8 +361,23 @@ export function normaliseWorldTables(raw) {
         specialtyHeroes: finite(raw.specialtyHeroes) && raw.specialtyHeroes >= 0 ? raw.specialtyHeroes : DEFAULTS.specialtyHeroes,
         arrival: perRing(raw.arrival, arrivalOf),
         wild: wildOf(raw.wild),
+        biomes: terrain.biomes,
+        biomesMissing: terrain.missing,
         issues
     };
+}
+
+/**
+ * What is wrong with normalised tables' biome table, as plain sentences: a biome of the nine its
+ * table leaves out, and a kit standing on a biome with no row at all.
+ */
+export function biomeTableProblems(tables) {
+    const out = [];
+    for (const biome of tables?.biomesMissing || []) out.push(`The biome ${biome} has no terrain row: it uses the built-in one`);
+    for (const kit of tables?.kits || []) {
+        if (kit.biome && !tables?.biomes?.[kit.biome]) out.push(`The ${kit.name} kit stands on a biome "${kit.biome}" with no terrain row: its places get no water and no Stone`);
+    }
+    return out;
 }
 
 /** Tokens one hero keeps busy at `skill`. */

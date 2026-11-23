@@ -12,8 +12,6 @@ import { GameState } from '../../state/GameState.js';
 import { t } from '../../i18n/index.js';
 import { toRoman } from '../../utils/Formatters.js';
 import { hallSourceOf } from '../progression/hallModifiers.js';
-import { regionSourceOf } from '../atlas/regionModifiers.js';
-import { getRegion } from '../atlas/Atlas.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { averageXpBonus } from '../hero/xpBonus.js';
 import { getCombatXpAward, getHeroCombatStyle } from '../combat/CombatFormulas.js';
@@ -61,7 +59,6 @@ import { eventOf } from './EventTokens.js';
  * @property {string} [typeId]
  * @property {string} [starId]   and `rank`, the rank held (`star`)
  * @property {number} [rank]
- * @property {string} [regionId] (`region`)
  * @property {string} [heroId]   (`gear`, `perk`, `carried`)
  * @property {string[]} [itemIds] the items lending it (`gear`)
  * @property {string} [effectId] the library effect (`gear`, `perk`, `carried`)
@@ -136,7 +133,6 @@ export const SOURCE_KIND = Object.freeze({
     STAR: 'star',
     BUILDING: 'building',
     SELF: 'self',
-    REGION: 'region',
     GEAR: 'gear',
     PERK: 'perk',
     CARRIED: 'carried',
@@ -479,15 +475,6 @@ function describe(c, ctx) {
         return {
             key: `star:${star.starId}`, kind: SOURCE_KIND.STAR, starId: star.starId, rank,
             name: t('effectBadges.source.star', { star: name, rank: toRoman(rank) })
-        };
-    }
-    const region = regionSourceOf(modifier.source);
-    if (region) {
-        const record = getRegion(region.regionId);
-        const regionName = record?.flavourName || record?.practicalName || region.regionId;
-        return {
-            key: `region:${region.regionId}`, kind: SOURCE_KIND.REGION, regionId: region.regionId,
-            name: t('effectBadges.source.region', { region: regionName })
         };
     }
     return { key: `guild:${modifier.source}`, kind: SOURCE_KIND.GUILD, name: t('effectBadges.source.guild') };

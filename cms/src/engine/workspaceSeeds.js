@@ -102,11 +102,21 @@ export function seedRenames(state) {
 }
 
 /**
+ * The world tables get their biome table, seeded with the values the game used (`worldTables.js`),
+ * and kits drop their retired Stone. Idempotent.
+ */
+export function seedWorldBiomes(state) {
+    if (!state || typeof state !== 'object' || !state.world) return state;
+    const world = workspaceWorldFrom(state.world);
+    return world === state.world ? state : { ...state, world };
+}
+
+/**
  * A stored workspace (the disk file, the browser's cache) brought up to today's shape: what the
  * store's persist `merge` and `migrate` run.
  */
 export function seedStoredWorkspace(state) {
-    return seedRenames(seedEffectIds(seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(state)))))));
+    return seedWorldBiomes(seedRenames(seedEffectIds(seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(state))))))));
 }
 
 /**

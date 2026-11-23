@@ -47,7 +47,7 @@
           "name": { "type": "string" },
           "biome": { "type": "string", "description": "The ground its mat stands on (an Atlas biome)." },
           "work": { "type": "object", "description": "Natural work on its mat in heroes kept busy, by skill id; combat means camps.", "additionalProperties": { "type": "number" } },
-          "stone": { "type": "number", "description": "Stone outcrops on its mat." },
+          "stone": { "type": "number", "description": "Retired: Stone patches come from the kit's biome row (biomes). Read only while the record has no biomes table; the CMS drops it." },
           "camps": { "type": "array", "items": { "type": "string" }, "description": "The creatures' camps its combat work is." },
           "bossCamps": { "type": "array", "items": { "type": "string" }, "description": "A combat specialty's better camp." }
         }
@@ -148,6 +148,18 @@
         "extremeShare": { "type": "number" },
         "compositionShare": { "type": "number", "description": "How much of a one-resource wild mat its one resource takes." },
         "layouts": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "string" }, "weight": { "type": "number" } } } }
+      }
+    },
+    "biomes": {
+      "type": "object",
+      "description": "Each biome's terrain ranges, by biome id (src/config/biomeTerrain.js; edited in the CMS's Ledger World page's biome table). Without it the game uses the built-in rows. Grass is what is left.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "water": { "type": "array", "items": { "type": "string", "enum": ["lake", "lake_river", "river", "split", "spring", "mountain_river", "pond", "tarn", "sulphur", "marsh"] }, "description": "The inland water shapes it may roll, one picked by the place's seed; a shape listed twice comes twice as often. Order matters to which shape a seed picks." },
+          "sea": { "type": "array", "items": { "type": "number", "minimum": 0, "maximum": 1 }, "minItems": 2, "maxItems": 2, "description": "[least, most] share of the mat the edge sea takes, 0 to 1." },
+          "stone": { "type": "array", "items": { "type": "integer", "minimum": 0 }, "minItems": 2, "maxItems": 2, "description": "[least, most] Stone patches on its mat." }
+        }
       }
     }
   },

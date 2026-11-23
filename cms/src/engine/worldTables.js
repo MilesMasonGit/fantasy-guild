@@ -1,4 +1,5 @@
 import { normaliseWorldTables, STRICT_RINGS } from '../../../src/config/worldTablesShape.js';
+import { seedBiomeTable } from '../../../src/config/biomeTerrain.js';
 
 /**
  * The world tables in the workspace: one record (`world`), in the shape `src/config/worldTablesShape.js`
@@ -13,9 +14,35 @@ export const WORLD_FILE = 'world.json';
 
 const isPlainObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 
-/** The workspace's record from a backup or `data/world.json`'s contents, or null when there is none. */
+/**
+ * The workspace's record from a backup, a pack or `data/world.json`'s contents, or null when there is
+ * none. A record with no biome table gets one seeded with the values the game used for it
+ * (`biomeTerrain.js`: the built-in rows, each kit's old Stone as its biome's), so the first Sync
+ * writes today's numbers; a kit's retired `stone` is dropped. Idempotent: a record already in this
+ * shape comes back as it is.
+ */
 export function workspaceWorldFrom(raw) {
-  return isPlainObject(raw) ? raw : null;
+  if (!isPlainObject(raw)) return null;
+  const kits = Array.isArray(raw.kits) ? raw.kits : null;
+  const kitHasStone = !!kits?.some((k) => isPlainObject(k) && 'stone' in k);
+  if (isPlainObject(raw.biomes) && !kitHasStone) return raw;
+  const next = { ...raw };
+  if (!isPlainObject(raw.biomes)) next.biomes = seedBiomeTable(kits || []);
+  if (kitHasStone) {
+    next.kits = kits.map((k) => {
+      if (!isPlainObject(k) || !('stone' in k)) return k;
+      const rest = { ...k };
+      delete rest.stone;
+      return rest;
+    });
+  }
+  return next;
+}
+
+/** The record with one biome's row replaced, or the record as it is when it holds no tables. */
+export function withBiomeRow(world, biome, row) {
+  if (!isPlainObject(world) || !biome) return world;
+  return { ...world, biomes: { ...(isPlainObject(world.biomes) ? world.biomes : {}), [biome]: row } };
 }
 
 /** Whether the workspace holds tables to write. */
@@ -52,7 +79,7 @@ export function keyedWorld(raw) {
 }
 
 /** The parts of a record compared as wholes in a review: changed or not. */
-const WHOLE_PARTS = Object.freeze(['kits', 'arrival', 'prices', 'keys', 'extras', 'ringValue', 'specialties', 'heroTokens', 'neighbours', 'wild']);
+const WHOLE_PARTS = Object.freeze(['kits', 'arrival', 'prices', 'keys', 'extras', 'ringValue', 'specialties', 'heroTokens', 'neighbours', 'wild', 'biomes']);
 
 /**
  * What a world entry changes, for the review page: origins and guaranteed camps in and out per line

@@ -59,9 +59,9 @@ const refuse = (reason, extra = {}) => ({ success: false, reason, ...extra });
 
 const materialsOf = materialsFromTokens(getTokenType);
 
-/** Every Region, archived ones too: a place settled and archived stays settled. */
+/** Every Region the Atlas holds. */
 function allRegions() {
-    return [...Atlas.list(), ...Atlas.list({ archived: true })].map(r => Atlas.getRegion(r.id)).filter(Boolean);
+    return Atlas.list().map(r => Atlas.getRegion(r.id)).filter(Boolean);
 }
 
 /** The best level any hero has reached in `skill`, 0 with none. */

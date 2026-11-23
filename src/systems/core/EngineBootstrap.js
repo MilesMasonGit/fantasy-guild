@@ -50,7 +50,6 @@ import * as RoomWait from '../board/RoomWait.js';
 import * as TimedChanges from '../board/TimedChanges.js';
 // The guild's Regions and travel (`Game.Atlas`).
 import * as Atlas from '../atlas/Atlas.js';
-import * as RegionRules from '../atlas/RegionRules.js';
 import * as Arrival from '../world/Arrival.js';
 import * as StarterCamp from '../atlas/StarterCamp.js';
 // The run's world map, generated at a new game (`Game.World`).
@@ -144,9 +143,6 @@ export const EngineBootstrap = {
         TimedChanges.init();
         // How an event Token ended (worked out, demolished), for the return report.
         EventClock.init();
-        // The active Region's own rules, put back in the guild-wide aggregator on every load,
-        // travel and new game.
-        RegionRules.init();
         // A settled place's arrival: cleared when its last enemy falls.
         Arrival.init();
         // No room: each wait is told once, on the board it was told on.

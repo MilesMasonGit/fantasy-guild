@@ -88,7 +88,7 @@ export function itemsText(pace, ledger, items) {
 /** The words for a factor kind as the rate lists it (`support`, `consumable`, …). */
 export const FACTOR_KIND_TEXT = Object.freeze({
   self: 'The work itself', support: 'Building', tool: 'Tool', gear: 'Gear', consumable: 'Consumable',
-  perk: 'Perk', region: 'Region', guild: 'Guild-wide', hall: 'Guild Hall',
+  perk: 'Perk', guild: 'Guild-wide', hall: 'Guild Hall',
 });
 
 /**

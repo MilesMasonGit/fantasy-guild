@@ -140,7 +140,13 @@ describe('A save an earlier build of this version wrote still loads', () => {
         s.quests.nextQuestAt = null;
         s.collection.provenance = { token_oak_forest: { item_oak_wood: true } };
         s.ui.newDiscoveries = { item_oak_wood: true };
-        s.atlas.regions = { region_1: { id: 'region_1', kind: 'starter', settledAt: 0, ingredients: [], board: null } };
+        s.atlas.regions = {
+            region_1: { id: 'region_1', kind: 'starter', settledAt: 0, ingredients: [], board: null },
+            region_2: {
+                id: 'region_2', kind: 'settled', rules: [{ id: 'old_rule' }], archived: true, biome: { forest: 1 }, ingredients: [],
+                board: { tokens: { tok_a: { id: 'tok_a', typeId: 'token_oak_forest', biome: 'forest' } } }
+            }
+        };
         s.progress.guildUpgrades = { roster_size: 2, bank_slots: 1 };
         return data;
     }
@@ -163,6 +169,12 @@ describe('A save an earlier build of this version wrote still loads', () => {
         expect(migrated.inventory.groupDefs['default-loot']).not.toHaveProperty('isCustom');
         expect(migrated.atlas.regions.region_1).not.toHaveProperty('settledAt');
         expect(migrated.atlas.regions.region_1.ingredients).toEqual([]);
+        const settled = migrated.atlas.regions.region_2;
+        expect(settled).not.toHaveProperty('rules');
+        expect(settled).not.toHaveProperty('archived');
+        expect(settled.biome).toEqual({ forest: 1 });
+        expect(settled.board.tokens.tok_a).not.toHaveProperty('biome');
+        expect(settled.board.tokens.tok_a.typeId).toBe('token_oak_forest');
     });
 
     it('keeps the Tokens on the mat exactly as they were', () => {

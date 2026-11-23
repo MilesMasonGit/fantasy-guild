@@ -210,7 +210,7 @@ export const MODIFIER_PALETTE = [
     {
         /**
          * Read by `TileModifiers.growTimeOf` for a growing Token's time (a Sapling becoming a Tree)
-         * and a resting Token's refill, from its neighbours and the Region's rules, never from a hero
+         * and a resting Token's refill, from its neighbours and the guild-wide rules, never from a hero
          * (nobody works a Token while it grows or rests). The skill it narrows to is the growing
          * Token's own work skill, or else the skill of what it grows into.
          */
@@ -229,7 +229,7 @@ export const MODIFIER_PALETTE = [
     {
         /**
          * Read by `Fields.loadAtRipening` once, as a Field's crop ripens: the harvest cycles it
-         * then holds. From its neighbours and the Region's rules (a Composter in reach), narrowed
+         * then holds. From its neighbours and the guild-wide rules (a Composter in reach), narrowed
          * to the Field's own work skill.
          */
         type: EFFECT_TYPES.CROP_LOAD,

@@ -53,7 +53,6 @@ function spawnedAt(typeId, x, y) {
 function fixtureAt(typeId, x, y) {
     const instance = BoardState.createTokenInstance(typeId, 5, null, BoardState.ORIGIN.PLACED);
     instance.fixture = true;
-    instance.biome = 'forest';
     return BoardState.addToken(instance, x, y);
 }
 

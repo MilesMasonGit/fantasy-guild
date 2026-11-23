@@ -15,10 +15,7 @@ export const TEXT = Object.freeze({
     REFUSE_NO_GAME: 'No game is running',
     REFUSE_NO_REGION: 'There is no such Region',
     REFUSE_ALREADY_HERE: 'The guild is already there',
-    REFUSE_ARCHIVED: 'Restore that Region from the archive first',
     REFUSE_CATCHING_UP: 'Wait until the time away has played',
-    REFUSE_ACTIVE: 'The guild is in that Region',
-    REFUSE_STARTER: 'The Starter Camp cannot be abandoned',
     REFUSE_EMPTY_NAME: 'A Region needs a name',
     REFUSE_NO_MAPS: 'Nothing to write a Region from',
     REFUSE_NO_ROOM: 'Not everything fits on this layout: reroll'

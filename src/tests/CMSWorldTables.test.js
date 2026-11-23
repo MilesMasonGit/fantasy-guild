@@ -17,7 +17,7 @@ import { syncFiles } from '../../cms/src/engine/recipeSync.js';
 import { compareSync } from '../../cms/src/engine/syncGuard.js';
 import { snapshot } from '../../cms/src/engine/fileUtils.js';
 import { workspaceContent } from '../../cms/src/stores/useLedgerWatchStore.js';
-import { WORLD_FILE, worldDiff } from '../../cms/src/engine/worldTables.js';
+import { WORLD_FILE, worldDiff, workspaceWorldFrom } from '../../cms/src/engine/worldTables.js';
 import {
     baseWorldTables, worldTablesSource, wedgeChoices, originPlaces, workspaceOriginFindings,
 } from '../../cms/src/engine/ledgerWorld.js';
@@ -40,8 +40,11 @@ const dataStamp = () => fs.readdirSync(dataDir).filter((f) => f.endsWith('.json'
 let storedBefore;
 let dataBefore;
 
-/** The placeholder with the Trees line's ring 1 renamed, so it is told apart from the placeholder. */
-const RAW = JSON.parse(JSON.stringify(PLACEHOLDER_WORLD_TABLES));
+/**
+ * The placeholder with the Trees line's ring 1 renamed, so it is told apart from the placeholder;
+ * holding its biome table, as every record the CMS keeps does (a record without one is seeded).
+ */
+const RAW = JSON.parse(JSON.stringify(workspaceWorldFrom(PLACEHOLDER_WORLD_TABLES)));
 RAW.lines.find((l) => l.id === 'trees').origins[1] = [{ id: 'token_oak_tree', weight: 1 }, { id: 'token_apple_tree', weight: 1 }];
 RAW.lines.find((l) => l.id === 'herbs').name = 'Herbs and Simples';
 

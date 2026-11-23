@@ -840,7 +840,7 @@ export const AXIS_SCOPE = Object.freeze({ TOKEN: 'token', GUILD: 'guild', HERO: 
  * One axis's contributions at Token `instanceId`, as the three buckets `applyThreeBucket` takes,
  * from every scope in the order they are summed:
  * - the Token's own inbound modifiers (its neighbours' buffs, the stars aimed at it)
- * - the guild-wide aggregator (Guild Hall stars, the Region's rules)
+ * - the guild-wide aggregator (Guild Hall stars)
  * - the loadout of the hero working it, unless `withHero` is false
  *
  * ⚠️ The one walk every reader of an axis takes: `resolveAxis`, `growTimeOf` and the effect
@@ -933,7 +933,7 @@ export { floorSpeedUp, MIN_WORK_CYCLE_MS };
 
 /**
  * How long one round of work at Token `instanceId` takes, given its authored time: the Work Time
- * its neighbours, the Region's rules and the hero working it give it, floored by
+ * its neighbours and the hero working it give it, floored by
  * {@link floorSpeedUp} and never under {@link MIN_WORK_CYCLE_MS}. `BoardRunner.tick` runs work at
  * this length and the Token card shows it; with no hero on it, it is the Token's own time.
  *
@@ -962,7 +962,7 @@ function growSkillOf(typeId) {
 
 /**
  * How long a Token's `grows` change or its refill after a rest takes, given the authored time:
- * the Grow Time its neighbours and the Region's rules give it, floored by {@link floorSpeedUp}.
+ * the Grow Time its neighbours and the guild-wide rules give it, floored by {@link floorSpeedUp}.
  * `TimedChanges` (growth) and `Respawn.restMsOf` (a refill) are the two readers.
  *
  * No hero scope, unlike {@link resolveAxis}: nobody works a Token while it grows or rests, and a
@@ -973,7 +973,7 @@ function growSkillOf(typeId) {
  * (about 1-2 µs) on 60 such Tokens would add several seconds to a day's catch-up (GDD §14). The
  * buckets are read once and kept while the Token's aggregator, the guild-wide aggregator and the
  * Token registry all stand at the versions they were read at: a rebuild of the Token's
- * neighbourhood, a Region rule coming or going or a content reload moves one of them, and the next
+ * neighbourhood, a guild-wide rule coming or going or a content reload moves one of them, and the next
  * call reads afresh. So it is exactly as fresh as reading the aggregators live.
  *
  * A Token not on the mat has no neighbours and gets its authored time.

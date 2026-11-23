@@ -136,7 +136,7 @@ const axis = (entity, type, category) => entity?.aggregator?.query(type, categor
 
 /**
  * A hero's flat total on an axis they also read from the guild (`fromGuild` in the palette): what
- * they carry plus what the guild gives (Hall stars, a Region's rules), summed in one bucket and read
+ * they carry plus what the guild gives (Hall stars), summed in one bucket and read
  * for the same category. Enemies never read the guild's.
  */
 function heroGuildAxis(hero, type, category) {

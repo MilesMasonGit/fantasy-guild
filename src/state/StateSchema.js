@@ -94,7 +94,7 @@ export function createEmptyBoard() {
 export function createRegionRecord(id = null) {
     return {
         id,
-        // 'starter' (the board a new game opens on; never abandoned) or 'settled' (written since).
+        // 'starter' (the board a new game opens on) or 'settled' (written since).
         kind: 'settled',
         // Made from the ingredients when the Region is written; never changes.
         practicalName: '',
@@ -113,13 +113,9 @@ export function createRegionRecord(id = null) {
         // The terrain grid under it, as `TerrainMap.encodeTerrain` stores it (read with
         // `terrainAt`). Null for a Region no map wrote.
         terrain: null,
-        // Region-wide rules, in force only while the guild is here (`RegionRules.js`).
-        rules: [],
         // The world map's cell it was settled on (`"q,r"`). Null for the Starter Camp (the Hall's
         // cell, by its kind) and for a Region written off the map (the dev tools').
         cellId: null,
-        // Hidden from the Region list.
-        archived: false,
         // Milliseconds the guild has spent here, time away included (`Atlas.addPlaytime`, every tick).
         // A Region from an older save has none and reads 0.
         playtimeMs: 0,
@@ -219,7 +215,7 @@ export const INITIAL_STATE = {
     // === The Board (the playmat) ===
     //   tokens      { [id]: { id, typeId, x, y, placedAt, usesRemaining, cycleElapsedMs, selectedRecipeId? } }  (Free Playmat 1.6a)
     //               + origin 'placed'|'spawned' (absent reads as placed), clocks? { growMs, spawnMs, ... },
-    //                 fixture? true and biome? string on a node a map wrote, fixture? 'camp' on a Token the Starter Camp laid (`BoardState.isFixture`),
+    //                 fixture? true on a node a map wrote, fixture? 'camp' on a Token the Starter Camp laid (`BoardState.isFixture`),
     //                 demolish? true on a Token marked for demolition (`Demolition.js`; its progress is cycleElapsedMs),
     //                 field? { cropId?, load?, full?, seedOwed? } on a Field: the crop in its ground, the harvests left, the seed its first harvest still owes (`Fields.js`; its growth on clocks.fieldMs)
     //                 fightHp? { current, heroId?, restMs?, leftAt? } on a hurt enemy: its health (`BoardCombat.keepHp`); heroId while its fight is live (a reload goes on with that hero),
@@ -262,7 +258,7 @@ export const INITIAL_STATE = {
     // (`createRegionRecord`) holding its own frozen board. Owned by `Atlas.js`.
     atlas: {
         activeRegionId: null,
-        // Region ids are `region_<n>`, never reused, so an abandoned Region's id stays dead.
+        // Region ids are `region_<n>`, never reused.
         nextRegionNumber: 1,
         regions: {},
         // The guild's layout seed: a preview asked without a seed steps it and lays out with the

@@ -35,6 +35,8 @@ import { gearDefenceFindings } from './gearDefenceRule.js';
 import { effectStackFindings } from './effectStackRule.js';
 import { authoredEvents } from '../../config/registries/eventRegistry.js';
 import { eventProblems, EVENT_BIOMES } from '../../config/eventTable.js';
+import { worldTables } from '../../config/registries/worldTablesRegistry.js';
+import { biomeTableProblems } from '../../config/worldTablesShape.js';
 
 /**
  * ContentAudit — one pass over every cross-reference in the content set,
@@ -771,6 +773,11 @@ function auditEvents(out) {
     for (const p of problems) out.push(finding(`Event "${p.id}"`, p.message));
 }
 
+/** The world tables' biome table: a biome with no terrain row, a kit on a biome with none. */
+function auditWorldBiomes(out) {
+    for (const message of biomeTableProblems(worldTables())) out.push(finding('World tables', message));
+}
+
 /**
  * Walk everything and return the findings.
  * Exported separately from the reporting so a test can assert on the list.
@@ -779,7 +786,7 @@ export function auditContent({ starterCamp = null } = {}) {
     const out = [];
     const steps = [
         auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditTools, auditPerks, auditHallStars,
-        auditGearDefence, auditEffectStacks, auditEvents,
+        auditGearDefence, auditEffectStacks, auditEvents, auditWorldBiomes,
         auditHardcodedLists, (o) => auditStarterCamp(o, starterCamp)
     ];
     for (const step of steps) {

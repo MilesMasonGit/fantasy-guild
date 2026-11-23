@@ -58,11 +58,6 @@ registerTokenTypes({
     }
 });
 
-const FORESTRY_RULE = Object.freeze({
-    id: 'stm_test_region_forestry', keyword: 'provides',
-    payload: Object.freeze({ type: 'YIELD', bucket: 'percentage', value: 0.1, category: 'forestry' })
-});
-
 const WOOD = Object.freeze({
     id: 'test_map_wood', name: 'Wood Map', kind: 'base', biome: 'forest', points: 24,
     nodes: [{ typeId: OAK, weight: 3 }, { typeId: BERRY, weight: 1 }]
@@ -73,8 +68,7 @@ const HILLS = Object.freeze({
 });
 const THICKET = Object.freeze({
     id: 'test_map_thicket', name: 'Thicket', kind: 'base', biome: 'forest', points: 8,
-    nodes: [{ typeId: OAK, weight: 1 }],
-    rules: [FORESTRY_RULE]
+    nodes: [{ typeId: OAK, weight: 1 }]
 });
 const GIANT = Object.freeze({
     id: 'test_map_giant', name: 'Giant Map', kind: 'base', biome: 'forest', points: 1000,
@@ -262,7 +256,7 @@ describe('preview seeds', () => {
 });
 
 describe('settle writes the previewed layout as a Region', () => {
-    it('the Region records its ingredients, seed, biomes, ground, terrain and rules; the guild stays put', () => {
+    it('the Region records its ingredients, seed, biomes, ground and terrain; the guild stays put', () => {
         const plan = Atlas.preview([WOOD, THICKET], { seed: nextSeed(11) });
         const home = Atlas.activeRegionId();
         const live = canon(GameState.state.board);
@@ -278,9 +272,10 @@ describe('settle writes the previewed layout as a Region', () => {
             seed: plan.seed,
             biome: { forest: 2 },
             ground: plan.summary.ground,
-            terrain: plan.layout.terrain,
-            rules: [FORESTRY_RULE]
+            terrain: plan.layout.terrain
         });
+        expect(region).not.toHaveProperty('rules');
+        expect(region).not.toHaveProperty('archived');
         expect(region.flavourName).toBeTruthy();
         expect(Atlas.activeRegionId()).toBe(home);
         expect(canon(GameState.state.board)).toBe(live);
@@ -288,7 +283,7 @@ describe('settle writes the previewed layout as a Region', () => {
         expect(result.preview.layout).toEqual(plan.layout);
     });
 
-    it('its board holds every node where the layout put it: placed, marked a fixture, with its biome', () => {
+    it('its board holds every node where the layout put it: placed, marked a fixture', () => {
         const plan = Atlas.preview([WOOD, HILLS, THICKET], { seed: 5 });
         const { region } = Atlas.settle({ ingredients: [WOOD, HILLS, THICKET], seed: 5 });
         const tokens = tokensOf(region.board);
@@ -298,10 +293,9 @@ describe('settle writes the previewed layout as a Region', () => {
             expect(t).toEqual({
                 id: `tok_${region.id}_${i}`, typeId: node.typeId, x: node.x, y: node.y, placedAt: i,
                 usesRemaining: tokenStartingUses(node.typeId), cycleElapsedMs: 0,
-                origin: BoardState.ORIGIN.PLACED, fixture: true, biome: node.biome
+                origin: BoardState.ORIGIN.PLACED, fixture: true
             });
         });
-        expect(new Set(tokens.map(t => t.biome))).toEqual(new Set(['forest', 'mountain']));
         expect(region.board.nextTokenOrder).toBe(tokens.length);
         // The Hall belongs to the guild and lands on arrival.
         expect(tokens.some(t => MatCap.isGuildHall(t))).toBe(false);
@@ -403,8 +397,7 @@ describe('travelling to a settled Region', () => {
         expect(copy(Atlas.getRegion(region.id))).toEqual(record);
 
         Atlas.travel(region.id);
-        expect(BoardState.tokens().filter(t => BoardState.isFixture(t)).map(t => t.biome).sort())
-            .toEqual(tokensOf(record.board).map(t => t.biome).sort());
+        expect(BoardState.tokens().filter(t => BoardState.isFixture(t))).toHaveLength(tokensOf(record.board).length);
     });
 });
 
@@ -412,15 +405,13 @@ describe('a map node keeps its mark', () => {
     it('through a transform, as it keeps its origin', () => {
         const old = BoardState.createTokenInstance(OAK, 5, null, BoardState.ORIGIN.PLACED, 'tok_test_fixture');
         old.fixture = true;
-        old.biome = 'forest';
         BoardState.addToken(old, 300, 300);
         const next = EffectActions.transformInstance(old, ORE, { fixPlaced: true });
-        expect(next).toMatchObject({ typeId: ORE, fixture: true, biome: 'forest', origin: BoardState.ORIGIN.PLACED });
+        expect(next).toMatchObject({ typeId: ORE, fixture: true, origin: BoardState.ORIGIN.PLACED });
 
         const plain = placeAt(OAK, 600, 300);
         const after = EffectActions.transformInstance(plain, ORE, { fixPlaced: true });
         expect(after.fixture).toBeUndefined();
-        expect(after.biome).toBeUndefined();
     });
 });
 
@@ -461,8 +452,7 @@ describe('the dev console', () => {
         expect(() => Atlas.devPreview(['plains'])).toThrow(/forest, mountain/);
     });
 
-    it('the dev Forest with a rule carries a Region rule; the Forest and Mountain write today\'s Tokens', () => {
-        expect(DEV_MAPS.forest_rule.rules[0]).toMatchObject({ keyword: 'provides', payload: { type: 'YIELD', category: 'forestry' } });
+    it('the Forest and Mountain dev maps are recipes', () => {
         expect(Cartography.isRecipe(DEV_MAPS.forest)).toBe(true);
     });
 });

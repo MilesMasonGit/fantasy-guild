@@ -16,7 +16,6 @@ import * as Orders from '../systems/board/Orders.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { getGlobalAggregator } from '../systems/effects/GuildModifiers.js';
-import { modifiersOf } from '../systems/atlas/regionModifiers.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
@@ -32,7 +31,7 @@ import { xpForLevel } from '../utils/XPCurve.js';
  * The progression ledger's rate calculator (`rates.js`): one hero's cycle time, items and XP per hour
  * on a piece of work, factor by factor, worked out from the content alone. First on a fixture
  * workspace (the numbers by hand), then against the real board: the same supports, gear, drink, perk
- * and Region rule on a mat, every axis resolved by `TileModifiers` and by the calculator, equal.
+ * and guild-wide rule on a mat, every axis resolved by `TileModifiers` and by the calculator, equal.
  * The engine-level check (a whole setup played through the catch-up) is `bench/calibrate.mjs`.
  */
 
@@ -202,19 +201,6 @@ describe('one hero on a vein: cycle, rest, items and XP an hour', () => {
         expect(gated.rateOf({ token: 'rt_vein' }, { level: 10 })).toMatchObject({ ok: false, reason: 'level' });
         expect(gated.rateOf({ token: 'rt_vein' }).gates.level).toBe(15);
     });
-
-    it('reads a Region\'s rules as the board does, and names the ones it cannot carry', () => {
-        const region = [
-            provides('rt_region_fast', EFFECT_TYPES.WORK_TIME, 'percentage', -0.1, null),
-            provides('rt_region_narrow', EFFECT_TYPES.YIELD, 'percentage', 1, { mode: 'tag', value: 'Ore' })
-        ];
-        const r = book().rateOf({ token: 'rt_vein' }, { region });
-        expect(r.cycleMs).toBe(2700);
-        expect(r.cyclesPerHour).toBeCloseTo(5 * 3600000 / (5 * 2700 + 60000));
-        // The narrowed Yield rule is left out, so each cycle still lands 1.5 ore.
-        expect(r.items.rt_ore).toBeCloseTo(r.cyclesPerHour * 1.5);
-        expect(r.unmodelled).toContainEqual(expect.objectContaining({ source: 'region', why: 'aimed at some Tokens only' }));
-    });
 });
 
 describe('a station, a chain, a regrowing family', () => {
@@ -362,7 +348,7 @@ describe('⭐ against the board: every axis the calculator resolves is the one T
         resetMatTuning();
     });
 
-    it('supports near and far, a no-stack lamp twice, a self-only rule beside it, a board-wide beacon, worn gear, a drink, a perk and a Region rule', () => {
+    it('supports near and far, a no-stack lamp twice, a self-only rule beside it, a board-wide beacon, worn gear, a drink, a perk and a guild-wide rule', () => {
         freshBoard();
         const target = place('rt_vein', AT.x, AT.y);
         place('rt_cart', AT.x + STEP, AT.y);
@@ -372,8 +358,7 @@ describe('⭐ against the board: every axis the calculator resolves is the one T
         place('rt_selfish', AT.x + STEP, AT.y + STEP);
         place('rt_cart', AT.x + 5 * STEP, AT.y);
         place('rt_beacon', AT.x - 4 * STEP, AT.y + 2 * STEP);
-        const region = [provides('rt_region', EFFECT_TYPES.XP_BONUS, 'percentage', 0.5, null)];
-        for (const m of modifiersOf(region, 'parity').modifiers) getGlobalAggregator().addModifier(m);
+        getGlobalAggregator().addModifier({ type: EFFECT_TYPES.XP_BONUS, bucket: 'percentage', value: 0.5, source: 'guild:parity' });
         minerOn(target, ['rt_pick', 'rt_charm', 'rt_beer'], 10);
         TileModifiers.rebuildAll();
 
@@ -382,7 +367,7 @@ describe('⭐ against the board: every axis the calculator resolves is the one T
             gear: ['rt_charm'],
             consumables: ['rt_beer'],
             supports: ['rt_cart', 'rt_mine', { id: 'rt_lamp', count: 2 }, 'rt_selfish', { id: 'rt_cart', distant: true }, { id: 'rt_beacon', distant: true }],
-            region
+            guild: [{ type: EFFECT_TYPES.XP_BONUS, bucket: 'percentage', value: 0.5 }]
         });
         expect(resolve).not.toBeNull();
         for (const [type, base, category] of AXES) {

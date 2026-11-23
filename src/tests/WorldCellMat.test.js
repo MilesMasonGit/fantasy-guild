@@ -101,7 +101,7 @@ describe('⭐ a cell\'s mat (the placeholder tables)', () => {
         const mat = cellMat(cell, TABLES, LOOKUPS);
         const kit = TABLES.kits.find(k => k.id === cell.kit);
         expect(mat.biome).toBe(kit.biome);
-        expect(mat.stone).toEqual({ outcrops: kit.stone, ridge: false });
+        expect(mat.stone).toEqual({ outcrops: TABLES.biomes[kit.biome].stone[0], ridge: false });
         expect(mat.treasures.reduce((n, t) => n + t.count, 0)).toBe(cell.extras.filter(e => e.kind === 'treasure').length);
     });
 

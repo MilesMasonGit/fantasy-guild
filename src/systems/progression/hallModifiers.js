@@ -9,7 +9,7 @@ import { rankOf } from '../../config/hallStars.js';
 
 /**
  * Pure: `HallRules.apply` registers these, and the progression ledger's rate calculator can read
- * them the same way (as it reads a Region's, `regionModifiers.js`).
+ * them the same way.
  *
  * A star's held rank gives its rank record's rules (`hallStars.js`). Each `Provides` becomes a
  * modifier under its own source:

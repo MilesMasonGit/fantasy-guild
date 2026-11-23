@@ -1,6 +1,7 @@
 // what a world cell's mat holds: its kit's work, its specialty's better things, its chests and its wild oddness (pure)
 
 import { STRICT_RINGS, heroTokensOf, kitById, lineById } from '../../config/worldTablesShape.js';
+import { biomeRow, rollBiomeTerrain } from '../../config/biomeTerrain.js';
 import { mulberry32, seedFromText } from '../atlas/seededRandom.js';
 import { apportion } from '../atlas/Budget.js';
 import { ORIGIN_ROLE, EXTREME } from './generate.js';
@@ -27,9 +28,13 @@ import { ORIGIN_ROLE, EXTREME } from './generate.js';
  * 4. **Chests**: the cell's treasures, as generated (`generate.js`, step 7).
  * 5. **Wild extremes**: one origin almost everywhere (`wild.compositionShare` of the nodes), or an
  *    odd layout ({@link LAYOUT_GROUND}).
- * 6. **Stone**: the kit's Stone terrain outcrops; **arrival**: the enemies the place arrives with.
+ * 6. **Terrain**: its biome's row in the world tables (`biomeTerrain.js`): the inland water shapes
+ *    it may roll, its sea's share and its Stone patches, each range rolled once; **arrival**: the
+ *    enemies the place arrives with.
  *
- * The camps and the rare node are picked by the cell's own seed, so a cell always writes the same.
+ * The camps, the rare node and the terrain are picked by the cell's own seed, so a cell always
+ * writes the same. ⚠️ The terrain rolls on a stream of its own: drawing from the mat's stream would
+ * move every camp and rare node after it.
  *
  * Pure: reads only what it is handed. `skillOf(typeId)` is a Token's work skill.
  */
@@ -143,7 +148,7 @@ function tokensFor(tables, skill, heroes) {
  *   nodes: {typeId: string, count: number, skill: string|null}[],
  *   camps: {typeId: string, count: number}[], treasures: {typeId: string, count: number}[],
  *   arrival: {typeId: string, count: number}[],
- *   stone: {outcrops: number, ridge: boolean}, water: number|null, inland: string|null,
+ *   stone: {outcrops: number, ridge: boolean}, water: number, inland: string|string[],
  *   rare: string|null, extreme: object|null
  * }}
  */
@@ -279,18 +284,22 @@ export function cellMat(cell, tables, { skillOf = () => null, hallOrigins = [] }
         if (extra.kind === 'treasure') addTo(treasures, extra.id, 1);
     }
 
+    const biome = kitBiome(tables, cell?.kit);
+    const row = biomeRow(tables, biome);
+    const terrain = rollBiomeTerrain(row, mulberry32(seedFromText(`${cell?.seed >>> 0}|terrain`)));
+
     const list = (map) => [...map].map(([typeId, count]) => ({ typeId, count }));
     return {
-        biome: kitBiome(tables, cell?.kit),
+        biome,
         heroes,
         nodes: Object.entries(counts).filter(([, n]) => n > 0).sort(([a], [b]) => byText(a, b))
             .map(([typeId, count]) => ({ typeId, count, skill: skillOfNode.get(typeId) ?? null })),
         camps: list(camps),
         treasures: list(treasures),
         arrival: (cell?.arrival || []).map(r => ({ ...r })),
-        stone: { outcrops: (kit?.stone || 0) + (ground.stone || 0), ridge: !!ground.ridge },
-        water: Number.isFinite(ground.water) ? ground.water : null,
-        inland: ground.inland || null,
+        stone: { outcrops: terrain.stone + (ground.stone || 0), ridge: !!ground.ridge },
+        water: Number.isFinite(ground.water) ? ground.water : terrain.sea,
+        inland: ground.inland || [...row.water],
         rare,
         extreme
     };

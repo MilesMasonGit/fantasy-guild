@@ -18,7 +18,7 @@ import { matW, matH, artRadiusOf } from '../../config/matGeometry.js';
 import { logger } from '../../utils/Logger.js';
 import { TEXT, FLAVOUR_NAME_MAX, practicalName, flavourName } from './regionNames.js';
 import { describe as describeSummary } from './Budget.js';
-import { recipeOf, preview, regionBoard, rulesOf } from './Cartography.js';
+import { recipeOf, preview, regionBoard } from './Cartography.js';
 import { DEV_MAPS, asciiLayout } from './devMaps.js';
 import { layOnLiveBoard, starterCampTerrain } from './StarterCamp.js';
 
@@ -100,7 +100,7 @@ function nextRegionId(atlas) {
 
 /** A new record in `atlas.regions`, with the next id. */
 function addRecord(atlas, {
-    kind, practical, ingredients = [], seed, biome = null, ground = null, terrain = null, rules = [], board = null,
+    kind, practical, ingredients = [], seed, biome = null, ground = null, terrain = null, board = null,
     cellId = null
 }) {
     const id = nextRegionId(atlas);
@@ -114,7 +114,6 @@ function addRecord(atlas, {
     region.biome = biome;
     region.ground = ground;
     region.terrain = terrain;
-    region.rules = Array.isArray(rules) ? [...rules] : [];
     region.cellId = typeof cellId === 'string' && cellId ? cellId : null;
     region.board = board;
     atlas.regions[region.id] = region;
@@ -191,16 +190,14 @@ export function addPlaytime(delta) {
 }
 
 /**
- * The Regions, oldest first, as plain summaries: `{ id, kind, practicalName, flavourName, archived,
- * active, tokens }`. The archive is listed apart.
- *
- * @param {{archived?: boolean}} [options] true lists the archived Regions instead
+ * The Regions, oldest first, as plain summaries: `{ id, kind, practicalName, flavourName, active,
+ * tokens }`.
  */
-export function list({ archived = false } = {}) {
+export function list() {
     const atlas = atlasOf();
     if (!atlas) return [];
     return Object.values(atlas.regions)
-        .filter(r => !!r?.archived === !!archived)
+        .filter(Boolean)
         .sort((x, y) => regionNumber(x.id) - regionNumber(y.id))
         .map(r => {
             const active = r.id === atlas.activeRegionId;
@@ -209,7 +206,6 @@ export function list({ archived = false } = {}) {
                 kind: r.kind,
                 practicalName: r.practicalName,
                 flavourName: r.flavourName,
-                archived: !!r.archived,
                 active,
                 tokens: regionTokenCount(active ? GameState.state.board : r.board)
             };
@@ -255,14 +251,13 @@ export function describeIngredient(itemId) {
  * @param {object|null} [options.biome] biome weights
  * @param {object|null} [options.ground] the maps' ground (`Budget.budget().ground`)
  * @param {object|null} [options.terrain] the terrain grid, as `TerrainMap.encodeTerrain` stores it
- * @param {object[]} [options.rules] Region-wide rules
  * @param {object} [options.board] its board, built off the mat; empty by default
  * @param {string|null} [options.cellId] the world cell it is settled on
  * @returns {{success: boolean, reason?: string, region?: object}}
  */
 export function createRegion({
     ingredients = [], describe = describeIngredient, seed, biome = null, ground = null, terrain = null,
-    rules = [], board = null, cellId = null
+    board = null, cellId = null
 } = {}) {
     const atlas = ensureState();
     if (!atlas) return refuse(TEXT.REFUSE_NO_GAME);
@@ -271,7 +266,7 @@ export function createRegion({
         kind: REGION_KIND.SETTLED,
         practical: practicalName(items.map(describe)),
         ingredients: items,
-        seed, biome, ground, terrain, rules, cellId,
+        seed, biome, ground, terrain, cellId,
         board: isPlainObject(board) ? board : createEmptyBoard()
     });
     // The board is built off the mat, never through `addToken`: a one-use Token it came with (a
@@ -338,7 +333,6 @@ export function settle({ ingredients = [], seed, describe = null, cellId = null,
         biome: { ...plan.summary.biomes },
         ground: copy(plan.summary.ground),
         terrain: copy(plan.layout.terrain),
-        rules: rulesOf(recipes),
         board,
         cellId
     });
@@ -397,46 +391,6 @@ export function rename(id, name) {
     region.flavourName = clean;
     announce('renamed', id);
     return { success: true, name: clean };
-}
-
-/** Hide Region `id` from the list. Not the one the guild is in. */
-export function archive(id) {
-    const atlas = ensureState();
-    const region = atlas?.regions[id];
-    if (!region) return refuse(TEXT.REFUSE_NO_REGION);
-    if (id === atlas.activeRegionId) return refuse(TEXT.REFUSE_ACTIVE);
-    if (!region.archived) {
-        region.archived = true;
-        announce('archived', id);
-    }
-    return { success: true };
-}
-
-/** Bring Region `id` back from the archive. */
-export function restore(id) {
-    const region = getRegion(id);
-    if (!region) return refuse(TEXT.REFUSE_NO_REGION);
-    if (region.archived) {
-        region.archived = false;
-        announce('restored', id);
-    }
-    return { success: true };
-}
-
-/**
- * Delete Region `id` for good, with everything on its board. Not the one the guild is in, and never
- * the Starter Camp.
- */
-export function abandon(id) {
-    const atlas = ensureState();
-    const region = atlas?.regions[id];
-    if (!region) return refuse(TEXT.REFUSE_NO_REGION);
-    if (id === atlas.activeRegionId) return refuse(TEXT.REFUSE_ACTIVE);
-    if (region.kind === REGION_KIND.STARTER) return refuse(TEXT.REFUSE_STARTER);
-    delete atlas.regions[id];
-    announce('abandoned', id);
-    saveNow();
-    return { success: true };
 }
 
 // ---------------------------------------------------------------------------
@@ -532,7 +486,6 @@ export function travel(id, { save = true } = {}) {
     const to = atlas.regions[id];
     if (!to) return refuse(TEXT.REFUSE_NO_REGION);
     if (id === atlas.activeRegionId) return refuse(TEXT.REFUSE_ALREADY_HERE);
-    if (to.archived) return refuse(TEXT.REFUSE_ARCHIVED);
     if (CatchUp.isRunning()) return refuse(TEXT.REFUSE_CATCHING_UP);
     const from = atlas.regions[atlas.activeRegionId];
 

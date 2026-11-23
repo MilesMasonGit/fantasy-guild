@@ -13,7 +13,7 @@ import { nextSeed, seedFromText } from './seededRandom.js';
  * Writing a Region from recipes (`Budget.js`'s shape), up to the moment `Atlas.settle` makes it real:
  * - {@link recipeOf}: an ingredient checked to be a recipe;
  * - {@link preview}: the Node Summary and the layout a seed gives;
- * - {@link regionBoard} and {@link rulesOf}: what a settled Region is made of.
+ * - {@link regionBoard}: what a settled Region is made of.
  *
  * The world map's settling writes its Regions through here, and so do the dev tools. Nothing here
  * draws from `Math.random`: the seed comes from the caller or the guild's own ({@link previewSeed}).
@@ -110,7 +110,7 @@ export function fixtureId(regionId, index) {
 
 /**
  * A settled layout as its Region's board, built off the mat: each node a `placed` instance with
- * the map's mark (`fixture`), its biome and its starting charges, in layout order. The Hall is not
+ * the map's mark (`fixture`) and its starting charges, in layout order. The Hall is not
  * on it: it travels with the guild and lands in the clearing at the mat's centre.
  */
 export function regionBoard(result, regionId) {
@@ -119,18 +119,6 @@ export function regionBoard(result, regionId) {
             node.typeId, tokenStartingUses(node.typeId), null, BoardState.ORIGIN.PLACED, fixtureId(regionId, i)
         );
         instance.fixture = true;
-        if (node.biome) instance.biome = node.biome;
         return { instance, x: node.x, y: node.y };
     }));
-}
-
-/** Every Region-wide rule the recipes carry, copied, in slot order. */
-export function rulesOf(recipes) {
-    const rules = [];
-    for (const recipe of recipes || []) {
-        for (const rule of Array.isArray(recipe?.rules) ? recipe.rules : []) {
-            if (isPlainObject(rule)) rules.push(JSON.parse(JSON.stringify(rule)));
-        }
-    }
-    return rules;
 }

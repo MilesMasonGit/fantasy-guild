@@ -187,13 +187,12 @@ describe('a new game opens in the Starter Camp the owner laid out', () => {
         expect(MatCap.canPlaceMore(90)).toBe(true);
     });
 
-    it('it is the guild\'s first Region, the Starter Camp, and it can never be abandoned', () => {
+    it('it is the guild\'s first Region, the Starter Camp', () => {
         const [starter] = Atlas.list();
         expect(Atlas.list()).toHaveLength(1);
         expect(starter).toMatchObject({ kind: REGION_KIND.STARTER, practicalName: TEXT.STARTER_CAMP, active: true });
         const away = Atlas.devCreateEmptyRegion().id;
         expect(Atlas.travel(away).success).toBe(true);
-        expect(Atlas.abandon(starter.id)).toEqual({ success: false, reason: TEXT.REFUSE_STARTER });
         expect(Atlas.getRegion(starter.id)).toBeTruthy();
     });
 

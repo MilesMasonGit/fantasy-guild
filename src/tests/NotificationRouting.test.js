@@ -432,7 +432,7 @@ describe('a place settled is a gold banner', () => {
 
     it('travel, renames and the rest of the Atlas\'s news say nothing', () => {
         Atlas.createStarterRegion();
-        for (const reason of ['travelled', 'renamed', 'archived', 'restored', 'abandoned']) {
+        for (const reason of ['travelled', 'renamed']) {
             EventBus.publish(ENGINE_EVENTS.ATLAS_CHANGED, { reason, regionId: Atlas.activeRegion()?.id });
         }
         expect(Banners.getAll()).toEqual([]);
