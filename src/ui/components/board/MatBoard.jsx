@@ -522,7 +522,7 @@ export const MatBoard = React.memo(function MatBoard({
     // Each Token's z goes straight onto its boxes, so a change of place redraws no Token. A
     // layout effect: written in the same commit, before anything is painted.
     const stack = useMemo(() => createStackWriter(), []);
-    useLayoutEffect(() => { stack.apply(order.tokenZ, hoveredId); }, [stack, order, hoveredId]);
+    useLayoutEffect(() => { stack.apply(order.tokenZ, hoveredId, inspectedTokenId); }, [stack, order, hoveredId, inspectedTokenId]);
     // The task rings, line and dim: over the Tokens at rest, under the worked ones.
     const ringZ = useMemo(() => taskRingZ(order.tokenZ, workedBy.keys()), [order, workedBy]);
 
@@ -702,6 +702,7 @@ export const MatBoard = React.memo(function MatBoard({
             <FlagLayer
                 flagZ={order.flagZ}
                 tokenZ={order.tokenZ}
+                inspectedTokenId={inspectedTokenId}
                 inspectedHeroId={inspectedHeroId}
                 hoverHeroId={litHeroId}
                 hoveredTokenId={hoveredId}

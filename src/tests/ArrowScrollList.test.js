@@ -49,7 +49,7 @@ describe('ArrowScrollList', () => {
         expect(list.className).toContain('overflow-y-auto');
     });
 
-    it('dims the arrow at each end but keeps it in place', () => {
+    it('an arrow shows only while there is more that way, and its bar keeps its space', () => {
         const { list, up, down } = mount();
         expect(up.disabled).toBe(true);
         expect(down.disabled).toBe(false);
@@ -58,7 +58,14 @@ describe('ArrowScrollList', () => {
         expect(up.disabled).toBe(false);
         expect(down.disabled).toBe(true);
         expect(down.isConnected).toBe(true);
-        expect(down.className).toContain('disabled:opacity-30');
+        // Hidden at its end (visibility, so the list's box does not move), never just dimmed.
+        expect(down.className).toContain('disabled:invisible');
+        expect(down.className).not.toContain('opacity-30');
+        // Part way down, both ways have more: both arrows show.
+        list.scrollTop = STEP;
+        act(() => { list.dispatchEvent(new Event('scroll')); });
+        expect(up.disabled).toBe(false);
+        expect(down.disabled).toBe(false);
     });
 
     it('a click scrolls one step smoothly', () => {

@@ -1,6 +1,6 @@
 /**
- * Outlines: **white = hovered or inspected, red = alert**, in that order when both are true. The
- * picture itself is generated from the art (`scripts/spriteFx.mjs`)
+ * Outlines: **gold = the Token whose card is open, white = hovered, red = alert**, in that order
+ * when more than one is true. The picture itself is generated from the art (`scripts/spriteFx.mjs`)
  * and drawn by `PixelArt` / the sheet animators.
  * - **Working** has no outline: a worked Token and its heroes stand in a task ring (`TaskRings`).
  * The green outline (`'work'`) is kept for other uses: a Token a carried hero could be ordered
@@ -12,11 +12,12 @@
  * - **A hero** hovered or inspected: white.
  * - **A flag** is white while it or its hero is hovered, or the hero is inspected; it has no
  * working or alert state of its own.
- * @returns {'hover'|'alert'|'muted'|'danger'|null}
+ * @returns {'select'|'hover'|'alert'|'muted'|'danger'|null}
  */
 export function tokenOutline({ hovered = false, selected = false, lit = false, alert = false, mode = null, unavailable = false } = {}) {
     if (hovered && mode) return unavailable ? 'muted' : (MODE_OUTLINE[mode] ?? 'hover');
-    if (hovered || selected || lit) return 'hover';
+    if (selected) return 'select';
+    if (hovered || lit) return 'hover';
     if (alert) return 'alert';
     return null;
 }

@@ -14,6 +14,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
+import { MAT_Z } from '../ui/components/board/matLayers.js';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
 import { markerBox, MARKER_ART_PX, MARKER_PULSE_EVERY_MS } from '../ui/components/board/flagGeometry.js';
 import { flagClothOver } from '../ui/components/board/flagCloth.js';
@@ -236,6 +237,18 @@ describe('on the mat', () => {
         return { tok, root, ...view };
     };
     const outlined = (c, id) => c.querySelector(`[data-token-art][data-token-id="${id}"]`).getAttribute('data-outline');
+
+    it('the Token whose card is open comes forward, and its hero’s flag stays one above it', () => {
+        const tok = placeAt('fixture_producer', 600, 600);
+        Orders.orderAt('h1', { x: tok.x, y: tok.y });
+        const { container } = mount(h(MatBoard, { inspectedTokenId: tok.id }));
+        const root = container.querySelector('[data-mat-board]');
+        root.getBoundingClientRect = () => ({ left: 0, top: 0, width: matW(), height: matH(), right: matW(), bottom: matH(), x: 0, y: 0 });
+        fireEvent.pointerMove(root, { clientX: tok.x, clientY: tok.y });
+        const tokenZ = Number(container.querySelector(`[data-token-art][data-token-id="${tok.id}"]`).style.zIndex);
+        expect(tokenZ).toBe(MAT_Z.INSPECTED_TOKEN);
+        expect(Number(flagOf(container, 'h1').style.zIndex)).toBe(tokenZ + 1);
+    });
 
     it('hovering the Token shows its hero’s flag in its middle, one above it; the Token keeps the pointer', () => {
         const { tok, root, container } = setup();

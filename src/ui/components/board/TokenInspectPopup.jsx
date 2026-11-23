@@ -5,6 +5,7 @@ import { TokenCard, CARD_WIDTH_PX } from './TokenCard.jsx';
 import { PixelFrame, FRAME_KIND, FRAME_BAND_PX } from '../base/PixelFrame.jsx';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { useTokenEvent } from './tokenEvents.js';
+import { tailPlacement } from './cardTail.js';
 
 /**
  * The Token card, floating beside the Token it is about. One at a time: clicking another Token
@@ -15,6 +16,7 @@ import { useTokenEvent } from './tokenEvents.js';
  * (`[data-token-id]`), and re-measured whenever something happens to that Token: once straight
  * away, and once more after the CSS move has finished, because a Token slides to its new point
  * over 220ms and measuring mid-slide would anchor to where it was passing through.
+ * A tail on the card's edge facing the Token points at it (`cardTail.js`), and follows it the same way.
  */
 
 /** Long enough for `MatToken`'s left/top transition to have settled. */
@@ -24,7 +26,7 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
     const popupRef = useRef(null);
     // The card inside its chamfer frame.
     const minWidth = CARD_WIDTH_PX + 2 * FRAME_BAND_PX;
-    const [coords, setCoords] = useState({ top: 0, left: 0, dir: 'top' });
+    const [coords, setCoords] = useState({ top: 0, left: 0, w: 0, h: 0, dir: 'top' });
     const [isVisible, setIsVisible] = useState(false);
     const [targetRect, setTargetRect] = useState(anchorRect || null);
     // Bumped when the card changes size (it flips to its recipe list, a search narrows the
@@ -93,7 +95,10 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
         // Only the card's size changed (a search narrowing the recipe list): stay put while it
         // still fits, so the search box does not slide away under the pointer.
         if (placedFor.current === targetRect
-            && placedAt.current.left + popupW <= viewportW - margin && placedAt.current.top + popupH <= viewportH - margin) return;
+            && placedAt.current.left + popupW <= viewportW - margin && placedAt.current.top + popupH <= viewportH - margin) {
+            setCoords(c => (c.w === popupW && c.h === popupH ? c : { ...c, w: popupW, h: popupH }));
+            return;
+        }
         placedFor.current = targetRect;
 
         const spaceTop = targetRect.top - margin;
@@ -142,7 +147,7 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
 
         // Whole pixels: a fractional position blurs the pixel-art icons inside.
         placedAt.current = { top: Math.round(top), left: Math.round(left) };
-        setCoords({ top: Math.round(top), left: Math.round(left), dir });
+        setCoords({ top: Math.round(top), left: Math.round(left), w: popupW, h: popupH, dir });
         requestAnimationFrame(() => setIsVisible(true));
     }, [targetRect, typeId, layoutTick, minWidth]);
 
@@ -170,6 +175,8 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
 
     useEscapeLayer(true, onClose);
 
+    const tail = tailPlacement(coords.dir, coords, targetRect);
+
     return (
         <div
             ref={popupRef}
@@ -183,6 +190,22 @@ export const TokenInspectPopup = ({ typeId, instanceId = null, anchorRect, onClo
             <PixelFrame kind={FRAME_KIND.CHAMFER}>
                 <TokenCard typeId={typeId} instanceId={instanceId} onClose={onClose} onViewChange={onFlip} />
             </PixelFrame>
+            {tail && (
+                <span
+                    aria-hidden="true"
+                    data-card-tail={tail.point}
+                    className="absolute pointer-events-none"
+                    style={{
+                        left: tail.left,
+                        top: tail.top,
+                        width: tail.width,
+                        height: tail.height,
+                        backgroundImage: tail.uri,
+                        backgroundSize: '100% 100%',
+                        imageRendering: 'pixelated'
+                    }}
+                />
+            )}
         </div>
     );
 };

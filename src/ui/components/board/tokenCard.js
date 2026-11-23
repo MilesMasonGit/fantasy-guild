@@ -493,7 +493,7 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
         const rare = def.foundation ? null : rareBlockOf(def, instance, src, def.config?.skill);
         const change = isStation && instance
             ? {
-                label: def.foundation ? 'Choose what to build' : isField ? 'Change crop' : 'Change recipe',
+                label: def.foundation ? (recipe ? 'Change building' : 'Choose what to build') : isField ? 'Change crop' : 'Change recipe',
                 chosen: !!recipe,
                 empty: def.foundation ? 'Nothing chosen to build' : isField ? 'No crop chosen' : 'No recipe chosen'
             }

@@ -298,6 +298,39 @@ describe('⭐ the stack writer writes only the boxes whose z changed', () => {
         expect(writes()).toBe(before + 2);
     });
 
+    it('the Token whose card is open comes forward whole, over every hero and Token, and goes back when it closes', () => {
+        const writer = createStackWriter();
+        const els = { a: { art: box(), badges: box() }, b: { art: box(), badges: box() } };
+        for (const id of ['a', 'b']) {
+            writer.attach(id, 'art', els[id].art);
+            writer.attach(id, 'badges', els[id].badges);
+        }
+        // b stands in front of a.
+        const order = createMatStack().order({ tokens: [{ id: 'a', y: 1 }, { id: 'b', y: 2 }] });
+        writer.apply(order.tokenZ);
+        const artZ = Number(els.a.art.z);
+        expect(artZ).toBeLessThan(Number(els.b.art.z));
+
+        writer.apply(order.tokenZ, null, 'a');
+        expect(Number(els.a.art.z)).toBe(MAT_Z.INSPECTED_TOKEN);
+        expect(Number(els.a.badges.z)).toBe(MAT_Z.INSPECTED_TOKEN + 1);
+        expect(Number(els.a.art.z)).toBeGreaterThan(Number(els.b.badges.z));
+        expect(Number(els.a.art.z)).toBeGreaterThan(MAT_Z.WALKING_HERO);
+
+        // Another Token hovered still shows its badges over the inspected one.
+        writer.apply(order.tokenZ, 'b', 'a');
+        expect(Number(els.b.badges.z)).toBe(MAT_Z.HOVERED_BADGES);
+        expect(MAT_Z.HOVERED_BADGES).toBeGreaterThan(MAT_Z.INSPECTED_TOKEN + 1);
+        // The inspected one hovered: its badges at the hovered height, its art still forward.
+        writer.apply(order.tokenZ, 'a', 'a');
+        expect(Number(els.a.badges.z)).toBe(MAT_Z.HOVERED_BADGES);
+        expect(Number(els.a.art.z)).toBe(MAT_Z.INSPECTED_TOKEN);
+
+        writer.apply(order.tokenZ);
+        expect(Number(els.a.art.z)).toBe(artZ);
+        expect(Number(els.a.badges.z)).toBe(artZ + 1);
+    });
+
     it('one Token moved: its two boxes, nothing else', () => {
         const writer = createStackWriter();
         const els = {};

@@ -27,7 +27,7 @@ import { onPoll } from './frameClock.js';
  * their hero bar tab), or, for a Token order, while that Token is hovered; it pulses while shown
  * (`usePosePulse`). Every other flag is hidden.
  * - **A Token order**: the flag stands in the Token's middle (`markerBox`), one z above the Token
- * (`tokenZ`), so the Token's art never hides it. Several heroes on one Token stand side by side in
+ * (`tokenZ`, or over the Token brought forward while its card is open), so the Token's art never hides it. Several heroes on one Token stand side by side in
  * roster order (`sideSlot`), each in the same place whichever of them is shown. It never takes the
  * pointer: the Token's middle stays the Token's, and the mat says when the pointer is on its cloth
  * (`tipHeroId`) for its tooltip.
@@ -96,10 +96,11 @@ function projectFlags() {
  * @param {(heroId: string|null) => void} onHoverHero
  * @param {Map<string, number>|null} flagZ each spot flag's z in the mat's order (`matStackOrder`)
  * @param {Map<string, number>|null} tokenZ each Token's z in the mat's order
+ * @param {string|null} inspectedTokenId the Token whose card is open (`MAT_Z.INSPECTED_TOKEN`)
  */
 export const FlagLayer = ({
     inspectedHeroId = null, hoverHeroId = null, hoveredTokenId = null, tipHeroId = null, onHoverHero,
-    flagZ = null, tokenZ = null, yieldToTokens = false
+    flagZ = null, tokenZ = null, inspectedTokenId = null, yieldToTokens = false
 }) => {
     const flags = useGameState(
         projectFlags,
@@ -121,7 +122,8 @@ export const FlagLayer = ({
             style={flagZ ? { width: mat.w, height: mat.h } : { width: mat.w, height: mat.h, zIndex: MAT_Z.FLAGS }}
         >
             {flags.map((f, i) => {
-                const onTokenZ = f.pinnedTo ? tokenZ?.get(f.pinnedTo) : undefined;
+                const onTokenZ = !f.pinnedTo ? undefined
+                    : f.pinnedTo === inspectedTokenId ? MAT_Z.INSPECTED_TOKEN : tokenZ?.get(f.pinnedTo);
                 return (
                     <Flag
                         key={`flag-${f.heroId}`}

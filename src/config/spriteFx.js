@@ -28,8 +28,7 @@ export const SPRITE_FX_VERSION = 4;
  * The outline colours, as RGB. `work` is `--color-gi-success` (#09b554);
  * `alert` is Tailwind red-500, the alert badges' red. `muted` (`--color-gi-muted`, #737373) and
  * `danger` (`--color-gi-danger`, #ff2d55) are Demolish mode's hover outlines, a Token it cannot
- * mark and one it can. `select` (`--color-gi-gold`, #fbbf24) is the mat's selection, a hero or a
- * Token picked by a click.
+ * mark and one it can. `select` (`--color-gi-gold`, #fbbf24) marks the Token whose card is open.
  */
 export const OUTLINE_COLOURS = Object.freeze({
     work: [9, 181, 84],
