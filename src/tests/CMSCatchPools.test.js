@@ -62,7 +62,7 @@ afterEach(() => {
 /** The Coast authored as a sea: a rod's basic pool and a baited one. */
 const SEA_POOLS = [
     { tool: 'fishing_rod', catches: [{ itemId: 'item_raw_shrimp', weight: 50 }, { itemId: 'item_shrimp', weight: 40 }, { itemId: 'item_water', weight: 10 }] },
-    { tool: 'fishing_rod', bait: 'item_shrimp_trawler_potion', catches: [{ itemId: 'item_shrimp', weight: 1 }] }
+    { tool: 'fishing_rod', bait: 'item_shrimp_bait', catches: [{ itemId: 'item_shrimp', weight: 1 }] }
 ];
 
 describe('⭐ the Catch pools block', () => {
@@ -100,12 +100,12 @@ describe('⭐ the Catch pools block', () => {
         const container = openEditor('token_coast');
         const bait = q(container, '[data-catch-bait]');
         const offered = [...bait.querySelectorAll('option')].map((o) => o.value).filter(Boolean);
-        expect(offered).toContain('item_shrimp_trawler_potion');
+        expect(offered).toContain('item_shrimp_bait');
         expect(offered).not.toContain('item_raw_shrimp');
         expect(offered.every((id) => store().items[id].equipSlot === 'consumable')).toBe(true);
 
-        fireEvent.change(bait, { target: { value: 'item_shrimp_trawler_potion' } });
-        expect(store().tokens.token_coast.catchPools[0].bait).toBe('item_shrimp_trawler_potion');
+        fireEvent.change(bait, { target: { value: 'item_shrimp_bait' } });
+        expect(store().tokens.token_coast.catchPools[0].bait).toBe('item_shrimp_bait');
         fireEvent.change(q(container, '[data-catch-bait]'), { target: { value: '' } });
         expect(store().tokens.token_coast.catchPools[0]).not.toHaveProperty('bait');
     });
@@ -157,7 +157,7 @@ describe('⭐ catch pools through Recalculate, Sync and a reload', () => {
     it('renaming an item follows it into the pools, as a catch and as a bait', () => {
         store().updateToken('token_coast', { catchPools: SEA_POOLS });
         expect(store().renameEntityId('item_shrimp', 'item_cooked_shrimp', 'item')).toBe(true);
-        expect(store().renameEntityId('item_shrimp_trawler_potion', 'item_shrimp_lure', 'item')).toBe(true);
+        expect(store().renameEntityId('item_shrimp_bait', 'item_shrimp_lure', 'item')).toBe(true);
         const pools = store().tokens.token_coast.catchPools;
         expect(pools[0].catches.map((c) => c.itemId)).toEqual(['item_raw_shrimp', 'item_cooked_shrimp', 'item_water']);
         expect(pools[1]).toEqual({ tool: 'fishing_rod', bait: 'item_shrimp_lure', catches: [{ itemId: 'item_cooked_shrimp', weight: 1 }] });

@@ -86,8 +86,8 @@ describe('a recipe\'s station kinds', () => {
         const row = container.querySelector('[data-testid="station-kinds"]');
         expect(within(row).queryAllByRole('checkbox')).toEqual([]);
         expect(row.textContent).toContain('Every Alchemy building offers it');
-        // Today's Alchemy Table still offers it: its old kind narrows nothing.
-        expect(within(row).getByTestId('station-kinds-offered').textContent).toBe('Offered by: Alchemy Table');
+        // Every Alchemy building offers it, the Apothecary too: its old Alchemy Table kind narrows nothing.
+        expect(within(row).getByTestId('station-kinds-offered').textContent).toBe("Offered by: Apothecary, Herbalist's Hut, Alchemist's Hall, Master's Study, Physic Garden");
     });
 
     it('a recipe still marked for a retired kind says so, and Clear removes it', () => {

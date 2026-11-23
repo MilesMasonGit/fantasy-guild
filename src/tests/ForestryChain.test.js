@@ -27,7 +27,6 @@ const effects = read('effects.json');
 const expanded = Object.fromEntries(Object.entries(tokens).map(([id, t]) => [id, expandBearer(t, effects)]));
 
 const forest = tokens.token_oak_forest;
-const sapling = tokens.token_oak_sapling;
 const tree = tokens.token_oak_tree;
 const stump = tokens.token_oak_stump;
 const hall = tokens.token_guild_hall;
@@ -37,9 +36,9 @@ describe('The Forestry chain in shipped data (7.0, 7.1)', () => {
         expect(items.item_oak_seedling).toMatchObject({ id: 'item_oak_seedling', name: 'Oak Seedling' });
     });
 
-    it('the Oak Forest is a spawner of saplings within its reach that pays one Oak Seedling per spawn', () => {
+    it('the Oak Forest is a spawner of whole Oak Trees within its reach that pays one Oak Seedling per spawn', () => {
         expect(forest.spawner).toEqual({
-            spawns: [{ typeId: 'token_oak_sapling', weight: 1 }],
+            spawns: [{ typeId: 'token_oak_tree', weight: 1 }],
             allowance: 5,
             intervalMs: 20000,
             upkeep: [{ itemId: 'item_oak_seedling', quantity: 1 }],
@@ -60,22 +59,17 @@ describe('The Forestry chain in shipped data (7.0, 7.1)', () => {
         expect(build.inputs).toEqual([{ itemId: 'item_oak_seedling', quantity: 3 }]);
     });
 
-    it('an Oak Sapling grows into an Oak Tree in 150 s and has no work cycle', () => {
-        expect(sapling.grows).toEqual({ into: 'token_oak_tree', afterMs: 150000 });
-        expect(sapling.config).toBeNull();
-    });
-
-    it('a felled Oak Tree regrows into an Oak Stump, which grows a new sapling with a Forest in reach', () => {
+    it('a felled Oak Tree regrows into an Oak Stump, which grows back into its Tree in 300 s with a Forest in reach', () => {
         expect(tree.staysPut).toBe(true);
         expect(tree.respawn).toEqual({ mode: 'regrow', into: 'token_oak_stump' });
         expect(stump.grows).toEqual({
-            into: 'token_oak_sapling', afterMs: 150000, needsNearby: ['token_oak_forest'],
+            into: 'token_oak_tree', afterMs: 300000, needsNearby: ['token_oak_forest'],
             cost: [{ itemId: 'item_oak_seedling', quantity: 1 }],
         });
     });
 
-    it('the Forest family is sapling, tree, then stump', () => {
-        expect(familyOf('token_oak_forest')).toEqual(['token_oak_sapling', 'token_oak_tree', 'token_oak_stump']);
+    it('the Forest family is tree, then stump', () => {
+        expect(familyOf('token_oak_forest')).toEqual(['token_oak_tree', 'token_oak_stump']);
     });
 
     it('an Oak Tree is felled with Forestry for Oak Wood and a 20% Oak Seedling, and runs out', () => {
@@ -87,7 +81,7 @@ describe('The Forestry chain in shipped data (7.0, 7.1)', () => {
     });
 
     it('no Token in the chain needs a tool nearby (TL-2)', () => {
-        for (const def of [forest, sapling, tree, stump]) expect(def.acceptedTokens || []).toEqual([]);
+        for (const def of [forest, tree, stump]) expect(def.acceptedTokens || []).toEqual([]);
     });
 
     it('the Guild Hall trickles an Oak Seedling every 5 minutes (SP-66)', () => {
@@ -99,7 +93,7 @@ describe('The Forestry chain in shipped data (7.0, 7.1)', () => {
     it('the lifecycle audit has nothing to say about the chain', () => {
         // Scoped to this chain: other chains carry allowed warnings (7.2's
         // free mines). Errors anywhere still fail.
-        const ids = new Set(['token_oak_forest', 'token_oak_sapling', 'token_oak_tree', 'token_oak_stump', 'token_guild_hall']);
+        const ids = new Set(['token_oak_forest', 'token_oak_tree', 'token_oak_stump', 'token_guild_hall']);
         const findings = auditLifecycleBlocks({ tokens: expanded, items, recipes, skills: SKILLS })
             .filter((f) => f.severity === 'error' || ids.has(f.entityId))
             // The Hall's seed lines keep a time of their own until a CMS pack strips it; the warning says so.

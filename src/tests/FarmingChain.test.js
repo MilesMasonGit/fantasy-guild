@@ -28,7 +28,6 @@ const farmland = tokens.token_farmland;
 const field = tokens.token_wheat_field;
 const herbGarden = tokens.token_herb_garden;
 const orchard = tokens.token_apple_orchard;
-const sapling = tokens.token_apple_sapling;
 const appleTree = tokens.token_apple_tree;
 const hall = tokens.token_guild_hall;
 
@@ -60,11 +59,11 @@ describe('The Farming chain in shipped data (7.4)', () => {
             });
         });
 
-        it('offers exactly the nine building recipes', () => {
+        it('offers exactly the eleven building recipes', () => {
             const pool = recipesForToken(getTokenType('token_farmland'));
             expect(pool.map((r) => r.name).sort()).toEqual([
-                'Build Apple Orchard', 'Build Birch Forest', 'Build Field', 'Build Fir Forest', 'Build Grapevine', 'Build Herb Garden',
-                'Build Mahogany Forest', 'Build Maple Forest', 'Build Oak Forest',
+                'Build Apple Orchard', 'Build Birch Forest', 'Build Cedar Forest', 'Build Ebony Forest', 'Build Field', 'Build Fir Forest',
+                'Build Grapevine', 'Build Herb Garden', 'Build Mahogany Forest', 'Build Maple Forest', 'Build Oak Forest',
             ]);
         });
     });
@@ -72,7 +71,7 @@ describe('The Farming chain in shipped data (7.4)', () => {
     for (const [name, level, inputs, builds] of [
         ['Build Field', 1, [{ itemId: 'item_oak_wood', quantity: 3 }], 'token_wheat_field'],
         ['Build Apple Orchard', 1, [{ itemId: 'item_apple_seed', quantity: 3 }], 'token_apple_orchard'],
-        ['Build Herb Garden', 5, [{ itemId: 'item_fir_wood', quantity: 5 }, { itemId: 'item_stone', quantity: 2 }], 'token_herb_garden'],
+        ['Build Herb Garden', 5, [{ itemId: 'item_oak_wood', quantity: 5 }, { itemId: 'item_stone', quantity: 2 }], 'token_herb_garden'],
         ['Build Oak Forest', 1, [{ itemId: 'item_oak_seedling', quantity: 3 }], 'token_oak_forest'],
     ]) {
         it(`${name} is a level-${level} Construction recipe on Farmland: 30 s, builds one Token`, () => {
@@ -96,27 +95,28 @@ describe('The Farming chain in shipped data (7.4)', () => {
     }
 
     describe('Wheat', () => {
-        it('the Field is a Farming station of kind field, worked with a Sickle, and is not sold (it is built)', () => {
+        it('the Field is a Farming station of kind field, worked with no tool in hand, and is not sold (it is built)', () => {
             expect(field.name).toBe('Field');
             expect(stationSkillOf(expanded.token_wheat_field)).toBe('farming');
-            expect(field.needsTool).toEqual({ kind: 'sickle', minTier: 1 });
+            expect(field.needsTool).toBeUndefined();
             expect(field.requiresHero).toBe(true);
             expect(field.spawner).toBeUndefined();
             expect(field.shop).toBeUndefined();
         });
 
-        it('the Herb Garden is a Farming station too, worked with a Sickle', () => {
+        it('the Herb Garden is a Farming station too, worked with no tool in hand', () => {
             expect(stationSkillOf(expanded.token_herb_garden)).toBe('farming');
-            expect(herbGarden.needsTool).toEqual({ kind: 'sickle', minTier: 1 });
+            expect(herbGarden.needsTool).toBeUndefined();
         });
 
-        it('the Field offers the Wheat crop: 1 Wheat Seed, grows an hour, harvested ten times for Wheat and a 40% Wheat Seed', () => {
+        it('the Field offers the Wheat crop at Farming 4: 1 Wheat Seed, grows an hour, harvested ten times for Wheat and a 40% Wheat Seed', () => {
             const pool = recipesForToken(getTokenType('token_wheat_field'));
             expect(pool.map((r) => r.id)).toContain('recipe_wheat');
             const wheat = recipes.find((r) => r.id === 'recipe_wheat');
             expect(wheat.skill).toBe('farming');
-            expect(wheat.levelRequirement).toBe(1);
-            expect(wheat.stationKinds).toEqual(['field']);
+            expect(wheat.levelRequirement).toBe(4);
+            // It names no station kind: every Farming station offers it.
+            expect(wheat.stationKinds ?? []).toEqual([]);
             expect(wheat.inputs).toEqual([{ itemId: 'item_wheat_seed', quantity: 1 }]);
             expect(wheat.crop).toMatchObject({ growMs: 3600000, load: 10 });
             const out = Object.fromEntries(wheat.outputs.map((o) => [o.itemId, o]));
@@ -126,9 +126,9 @@ describe('The Farming chain in shipped data (7.4)', () => {
     });
 
     describe('Apples (SP-73)', () => {
-        it('the Apple Orchard is a spawner of saplings within its reach, allowance 2, every 45 s, paying 1 Apple Seed', () => {
+        it('the Apple Orchard is a spawner of Apple Trees within its reach, allowance 2, every 45 s, paying 1 Apple Seed', () => {
             expect(orchard.spawner).toEqual({
-                spawns: [{ typeId: 'token_apple_sapling', weight: 1 }],
+                spawns: [{ typeId: 'token_apple_tree', weight: 1 }],
                 allowance: 2,
                 intervalMs: 45000,
                 upkeep: [{ itemId: 'item_apple_seed', quantity: 1 }],
@@ -138,10 +138,8 @@ describe('The Farming chain in shipped data (7.4)', () => {
             expect(orchard.shop).toBeUndefined();
         });
 
-        it('an Apple Sapling grows into an Apple Tree in 45 s', () => {
-            expect(sapling.grows).toEqual({ into: 'token_apple_tree', afterMs: 45000 });
-            expect(sapling.config).toBeNull();
-            expect(familyOf('token_apple_orchard')).toEqual(['token_apple_sapling', 'token_apple_tree']);
+        it('the Orchard plants whole Apple Trees: its family is the Tree alone', () => {
+            expect(familyOf('token_apple_orchard')).toEqual(['token_apple_tree']);
         });
 
         it('an Apple Tree is Farming, has 3 charges and drops Apples and a 30% Apple Seed', () => {
@@ -159,7 +157,7 @@ describe('The Farming chain in shipped data (7.4)', () => {
     });
 
     it('no Token in the chain needs a tool nearby (TL-2)', () => {
-        for (const def of [farmland, field, herbGarden, orchard, sapling, appleTree]) {
+        for (const def of [farmland, field, herbGarden, orchard, appleTree]) {
             expect(def.acceptedTokens || []).toEqual([]);
         }
     });
@@ -175,7 +173,7 @@ describe('The Farming chain in shipped data (7.4)', () => {
     it('the lifecycle audit has nothing to say about the chain', () => {
         const ids = new Set([
             'token_farmland', 'token_wheat_field', 'token_herb_garden',
-            'token_apple_orchard', 'token_apple_sapling', 'token_apple_tree', 'token_guild_hall',
+            'token_apple_orchard', 'token_apple_tree', 'token_guild_hall',
             ...recipes.filter((r) => r.skill === 'farming').map((r) => r.id),
         ]);
         const findings = auditLifecycleBlocks({ tokens: expanded, items, recipes, skills: SKILLS })

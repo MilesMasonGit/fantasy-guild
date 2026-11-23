@@ -27,9 +27,10 @@ describe('the shipped encyclopedia reads the world tables', () => {
     });
 
     it('settling Arcane asks Magic itself, not Combat', () => {
-        const [arcane] = waysIn(book, tokenKey('token_quartz_deposit')).filter(worldOf);
-        expect(captionText(arcane)).toBe('Arcane ring 2\nsettled on the world map');
-        expect(wayInRequirement(book, arcane)).toEqual({ skill: 'magic', level: 15 });
+        // Quartz also stands at ring 2, where Ores and Arcane share it; its Arcane-only ring is the 3rd.
+        const arcane = waysIn(book, tokenKey('token_quartz_deposit')).filter(worldOf).find(w => w.place?.line === 'Arcane');
+        expect(captionText(arcane)).toBe('Arcane ring 3\nsettled on the world map');
+        expect(wayInRequirement(book, arcane)).toEqual({ skill: 'magic', level: 30 });
     });
 
     it('a guaranteed camp shows its ring', () => {

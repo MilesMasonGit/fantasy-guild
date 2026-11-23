@@ -18,9 +18,9 @@ describe('the encyclopedia over the shipped content', () => {
         expect(book.byKind[KIND.RECIPE].length).toBe(listRecipes().filter(r => r.id).length);
     });
 
-    it('finds Iron Ore, Iron Ingot and the Iron Smithy for "iron"', () => {
+    it('finds Iron Ore, Iron Ingot and the Iron Ore Vein for "iron"', () => {
         const ids = book.search('iron').map(e => e.id);
-        expect(ids).toEqual(expect.arrayContaining(['item_iron_ore', 'item_iron_ingot', 'token_iron_smithy']));
+        expect(ids).toEqual(expect.arrayContaining(['item_iron_ore', 'item_iron_ingot', 'token_iron_ore_vein']));
         expect(book.search('iron').every(e => /\biron/i.test(e.name))).toBe(true);
     });
 

@@ -840,7 +840,7 @@ describe('a word on every line that is not used up (the owner\'s pick C, 6 Novem
                 wordsSitClear(lay);
             }
             expect(count).toBeGreaterThan(500);
-        });
+        }, 30000); // ⚠️ Every chart of the shipped book, laid out: several seconds on this content.
 
         it('at the old gap (200 px) they did not: the words that would ride above their marks', () => {
             const old = { ...m, gapX: 200 };
@@ -908,26 +908,30 @@ describe('the view keeps the focus in sight', () => {
 describe('the shipped content', () => {
     const book = encyclopedia();
 
-    it('Iron Ingot: smelted at any Smithing station, a Smithing Station of all four (their old kinds narrow nothing)', () => {
+    it('Iron Ingot: smelted at any Smithing station, a Smithing Station of all five (their old kinds narrow nothing)', () => {
         const ways = waysIn(book, I('item_iron_ingot'));
         const type = entryOfKey(book, ways[0].from);
         expect(type).toMatchObject({ kind: STATIONS, name: 'Smithing Station' });
-        expect([...type.members].sort()).toEqual([T('token_copper_smithy'), T('token_furnace'), T('token_iron_furnace'), T('token_iron_smithy')]);
+        expect([...type.members].sort()).toEqual([
+            T('token_furnace'), T('token_grand_forge'), T('token_iron_smithy'), T('token_master_smithy'), T('token_smiths_row')
+        ]);
         expect(ways[0].inputs.map(i => i.key).sort()).toEqual([I('item_coal'), I('item_iron_ore')]);
         expect(ways.filter(w => w.how === HOW.CRAFT)).toHaveLength(1);
-        expect(wayInRequirement(book, ways[0])).toMatchObject({ skill: 'smithing', level: 15 });
+        expect(wayInRequirement(book, ways[0])).toMatchObject({ skill: 'smithing', level: 20 });
         expect(ways.map(w => w.from)).toEqual(expect.arrayContaining([T('token_fire_elemental_chief'), T('token_iron_chest')]));
     });
 
-    it('the Iron Furnace is built on a Stone Foundation; an Oak Forest on Farmland', () => {
-        expect(waysIn(book, T('token_iron_furnace')).find(w => w.recipe)?.from).toBe(T('token_stone_foundation'));
+    it('the Iron Smithy is built on a Stone Foundation; an Oak Forest on Farmland', () => {
+        expect(waysIn(book, T('token_iron_smithy')).find(w => w.recipe)?.from).toBe(T('token_stone_foundation'));
         expect(waysIn(book, T('token_oak_forest')).find(w => w.recipe)?.from).toBe(T('token_farmland'));
     });
 
-    it('an Oak Tree: from the Oak Forest through its sapling, or grown back from its stump; no sapling box', () => {
+    it('an Oak Tree: planted whole by the Oak Forest, or grown back from its stump; no stump box', () => {
         const ways = waysIn(book, T('token_oak_tree'));
         expect(ways.some(w => isGrowingStage(book, w.from ?? ''))).toBe(false);
-        expect(ways.find(w => w.from === T('token_oak_forest'))?.through).toEqual([T('token_oak_sapling')]);
+        const planted = ways.find(w => w.from === T('token_oak_forest'));
+        expect(planted).toBeTruthy();
+        expect(planted.through ?? []).toEqual([]);
         expect(ways.find(w => w.regrow)?.inputs.map(i => i.key)).toEqual([I('item_oak_seedling')]);
     });
 

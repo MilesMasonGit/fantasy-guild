@@ -104,10 +104,10 @@ describe('The Combat chain in shipped data (7.7)', () => {
         expect(SpawnerSystem.familyOf(CAMP)).toEqual([GOBLIN]);
     });
 
-    it('both enemies are melee enemy Tokens that are not sold and need no tool', () => {
+    it('both enemies are enemy Tokens (a ranged Goblin, a melee Chief) that are not sold and need no tool', () => {
+        expect([goblin.enemy.style, chief.enemy.style]).toEqual(['ranged', 'melee']);
         for (const def of [goblin, chief]) {
             expect(def.tokenType).toBe('enemy');
-            expect(def.enemy.style).toBe('melee');
             expect(def.requiresHero).toBe(true);
             expect(def.shop).toBeUndefined();
             expect(def.acceptedTokens || []).toEqual([]);
@@ -118,8 +118,8 @@ describe('The Combat chain in shipped data (7.7)', () => {
     // name the type each swing hits with.
     it('a Goblin is a plain level 5 enemy with one charge, so a kill clears it and the camp spawns again', () => {
         expect(goblin.enemy).toEqual({
-            level: 5, style: 'melee', hostile: true,
-            moves: [{ name: 'Shiv', damageType: 'stab' }, { name: 'Club', damageType: 'crush' }]
+            level: 5, style: 'ranged', hostile: true,
+            moves: [{ name: 'Sling Stone', damageType: 'crush' }, { name: 'Shiv', damageType: 'stab' }]
         });
         expect(goblin.uses).toBe(1);
     });

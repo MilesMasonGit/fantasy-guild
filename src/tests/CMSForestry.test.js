@@ -69,43 +69,48 @@ afterEach(() => {
 });
 
 describe('⭐ the Grows block: the Forest it needs in reach, and its seedling', () => {
+    // The Oak Stump, the one growing Token of the Forestry chain, taken without its Forest to start from.
+    const bareStump = () => useEntityStore.getState().updateToken('token_oak_stump', { grows: { into: 'token_oak_tree', afterMs: 300000 } });
+
     it('Add Token, pick the Forest: written as needsNearby; removed, the key goes', () => {
-        const before = token('token_oak_sapling').grows;
+        bareStump();
+        const before = token('token_oak_stump').grows;
         expect(before).not.toHaveProperty('needsNearby');
-        const { block } = openEditor('token_oak_sapling');
+        const { block } = openEditor('token_oak_stump');
         const grows = () => block('grows');
         expect(within(grows()).queryByLabelText('Needs in reach')).toBeNull();
         expect(grows().textContent).toContain('Grows wherever it stands.');
 
         fireEvent.click(within(grows().querySelector('[data-field="needs-nearby"]')).getByText('Add Token'));
         fireEvent.change(within(grows()).getByLabelText('Needs in reach'), { target: { value: 'token_oak_forest' } });
-        expect(token('token_oak_sapling').grows).toEqual({ ...before, needsNearby: ['token_oak_forest'] });
+        expect(token('token_oak_stump').grows).toEqual({ ...before, needsNearby: ['token_oak_forest'] });
         expect(grows().textContent).toContain('Its clock stands still while none of these stands within reach');
 
         fireEvent.click(grows().querySelector('[data-field="needs-nearby"] button.text-gray-600'));
-        expect(token('token_oak_sapling').grows).toEqual(before);
+        expect(token('token_oak_stump').grows).toEqual(before);
     });
 
     it('the Token it grows into is not offered as what it needs (it can never need itself)', () => {
-        const { block } = openEditor('token_oak_sapling');
+        bareStump();
+        const { block } = openEditor('token_oak_stump');
         fireEvent.click(within(block('grows').querySelector('[data-field="needs-nearby"]')).getByText('Add Token'));
         const options = [...within(block('grows')).getByLabelText('Needs in reach').querySelectorAll('option')].map(o => o.value);
         expect(options).toContain('token_oak_forest');
-        expect(options).not.toContain('token_oak_sapling');
+        expect(options).not.toContain('token_oak_stump');
     });
 
     it('a cost is listed by name; removing its last line drops the key', () => {
-        useEntityStore.getState().updateToken('token_oak_sapling', {
+        useEntityStore.getState().updateToken('token_oak_stump', {
             grows: { into: 'token_oak_tree', afterMs: 30000, cost: [{ itemId: 'item_oak_seedling', quantity: 1 }] }
         });
-        const { block } = openEditor('token_oak_sapling');
+        const { block } = openEditor('token_oak_stump');
         const cost = () => block('grows').querySelector('[data-field="grow-cost"]');
         expect(cost().textContent).toContain('Oak Seedling');
         expect(block('grows').textContent).toContain('with none in the Bank it stops and says what it needs');
         fireEvent.change(cost().querySelector('input[type="number"]'), { target: { value: '2' } });
-        expect(token('token_oak_sapling').grows.cost).toEqual([{ itemId: 'item_oak_seedling', quantity: 2 }]);
+        expect(token('token_oak_stump').grows.cost).toEqual([{ itemId: 'item_oak_seedling', quantity: 2 }]);
         fireEvent.click(cost().querySelector('button.text-gray-600'));
-        expect(token('token_oak_sapling').grows).toEqual({ into: 'token_oak_tree', afterMs: 30000 });
+        expect(token('token_oak_stump').grows).toEqual({ into: 'token_oak_tree', afterMs: 30000 });
     });
 });
 
@@ -137,7 +142,7 @@ describe('⭐ through Recalculate and Sync', () => {
         store.updateToken(stump, {
             clearable: true,
             grows: {
-                into: 'token_oak_sapling', afterMs: 120000,
+                into: 'token_oak_tree', afterMs: 120000,
                 needsNearby: ['token_oak_forest'], cost: [{ itemId: 'item_oak_seedling', quantity: 1 }]
             }
         });
@@ -145,7 +150,7 @@ describe('⭐ through Recalculate and Sync', () => {
         const first = asFile(syncPayload());
         expect(first['tokens.json'][stump]).toMatchObject({
             clearable: true,
-            grows: { into: 'token_oak_sapling', afterMs: 120000, needsNearby: ['token_oak_forest'], cost: [{ itemId: 'item_oak_seedling', quantity: 1 }] }
+            grows: { into: 'token_oak_tree', afterMs: 120000, needsNearby: ['token_oak_forest'], cost: [{ itemId: 'item_oak_seedling', quantity: 1 }] }
         });
 
         useEntityStore.getState().hydrate(workspaceFromFiles(first));

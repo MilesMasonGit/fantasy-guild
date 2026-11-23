@@ -113,9 +113,9 @@ describe('⭐ Charges on an enemy: one use, never offered', () => {
 });
 
 describe('⭐ Charges on a station or a support', () => {
-    // Fixture: the owner has cleared every shipped station's Charges, so the Kitchen is given back
-    // the 5000 it once carried, to have an old number to show, clear and flag.
-    const withOldCharges = () => useEntityStore.getState().updateToken('token_grandma_s_kitchen', { uses: 5000 });
+    // Fixture: the owner has cleared every shipped station's Charges, so the Kitchen is given an old
+    // 5000, to have a number to show, clear and flag.
+    const withOldCharges = () => useEntityStore.getState().updateToken('token_cooking_pot', { uses: 5000 });
 
     it('the editor reads the game’s own rule', () => {
         expect(CMS_NEVER_WEARS_REASON).toBe(neverWearsReason);
@@ -123,24 +123,25 @@ describe('⭐ Charges on a station or a support', () => {
 
     it('a station offers no Charges field: it says it never wears out, and that its old number is ignored', () => {
         withOldCharges();
-        const container = openEditor('token_grandma_s_kitchen');
+        const container = openEditor('token_cooking_pot');
         const note = container.querySelector('[data-field="never-wears"]');
         expect(note).not.toBeNull();
         expect(note.textContent).toContain('Never wears out');
         expect(note.textContent).toContain('works as a station');
         expect(container.textContent).toContain('Its 5000 Charges are ignored.');
-        // The Charges input has no max; the Kitchen's Faster Station scale (1 to 5) is another field.
-        expect(container.querySelector('input[placeholder="unlimited"], input[type="number"][min="1"]:not([max])')).toBeNull();
+        // The Charges input: a number from 1 with a placeholder and no max (the access level has no
+        // placeholder; an effect's scale field has a max).
+        expect(container.querySelector('input[placeholder="unlimited"], input[type="number"][min="1"][placeholder]:not([max])')).toBeNull();
         expect(container.textContent).not.toContain('Never depletes');
     });
 
     it('Clear empties the old number, and Sync writes it unlimited', () => {
         withOldCharges();
-        const container = openEditor('token_grandma_s_kitchen');
+        const container = openEditor('token_cooking_pot');
         fireEvent.click(container.querySelector('[data-clear-charges]'));
-        expect(useEntityStore.getState().tokens.token_grandma_s_kitchen.uses).toBeNull();
+        expect(useEntityStore.getState().tokens.token_cooking_pot.uses).toBeNull();
         expect(container.querySelector('[data-clear-charges]')).toBeNull();
-        expect(syncPayload()['tokens.json'].token_grandma_s_kitchen.uses).toBeNull();
+        expect(syncPayload()['tokens.json'].token_cooking_pot.uses).toBeNull();
     });
 
     it('a support says so too (the Copper Anvil)', () => {
@@ -158,7 +159,7 @@ describe('⭐ Charges on a station or a support', () => {
         withOldCharges();
         const s = useEntityStore.getState();
         const rows = auditConnectivity({ items: s.items, tokens: s.tokens, recipes: Object.values(s.recipePools).flat(), effects: s.effects })
-            .filter((r) => r.entityId === 'token_grandma_s_kitchen' && /Charges/.test(r.details));
+            .filter((r) => r.entityId === 'token_cooking_pot' && /Charges/.test(r.details));
         expect(rows).toHaveLength(1);
         expect(rows[0]).toMatchObject({ severity: 'Warning' });
         expect(rows[0].details).toContain('stations never wear out');

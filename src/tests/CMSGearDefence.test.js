@@ -156,13 +156,16 @@ describe('⭐ the Defence block: resistances and a damage cut on any worn piece'
 });
 
 describe('the Economy Audit names a stack reaching 100 %', () => {
-    it('two pieces at 50 % Fire are named once; a third shipped-content stack is not', () => {
+    // The two pieces alone: shipped gear may have stacks of its own over 100 % (the audit names them
+    // for the owner to lower), which would crowd this case.
+    it('two pieces at 50 % Fire are named once, as one stack', () => {
         const a = store().addItem({ name: 'Fire Hat Fixture', equipSlot: 'hat' });
         const b = store().addItem({ name: 'Fire Chest Fixture', equipSlot: 'chest' });
         store().updateItem(a, { resistances: { fire: 50 } });
         store().updateItem(b, { resistances: { elemental: 50 } });
         const s = store();
-        const issues = auditConnectivity({ items: s.items, tokens: s.tokens, recipes: {}, effects: s.effects, skillPerks: s.skillPerks });
+        const items = { [a]: s.items[a], [b]: s.items[b] };
+        const issues = auditConnectivity({ items, tokens: s.tokens, recipes: {}, effects: s.effects, skillPerks: s.skillPerks });
         const named = issues.filter(i => /best stack/.test(i.details));
         expect(named).toHaveLength(1);
         expect(named[0].details).toContain('Fire 100%');

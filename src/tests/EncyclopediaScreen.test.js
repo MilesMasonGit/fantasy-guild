@@ -58,11 +58,11 @@ describe('the opening page', () => {
         expect(qa(container, '[data-codex-page-art]').map(i => i.getAttribute('src'))).toEqual(['/assets/playmat/atlas_book_left.png', '/assets/playmat/atlas_book_right.png']);
     });
 
-    it('"iron" finds Iron Ore, Iron Ingot and the Iron Smithy', () => {
+    it('"iron" finds Iron Ore, Iron Ingot and the Iron Ore Vein', () => {
         const { container } = open();
         search(container, 'iron');
         expect(rowKeys(container, '[data-codex-list="search"]'))
-            .toEqual(expect.arrayContaining([itemKey('item_iron_ore'), itemKey('item_iron_ingot'), tokenKey('token_iron_smithy')]));
+            .toEqual(expect.arrayContaining([itemKey('item_iron_ore'), itemKey('item_iron_ingot'), tokenKey('token_iron_ore_vein')]));
         expect(q(container, '[data-codex-group="tokens"]')).not.toBeNull();
     });
 
@@ -86,11 +86,11 @@ describe('the chart', () => {
         expect(nodeOf(container, itemKey('item_iron_ore'), 'in')).toBeTruthy();
         expect(nodeOf(container, itemKey('item_coal'), 'in')).toBeTruthy();
         expect(qa(container, '[data-codex-side="out"]').length).toBeGreaterThan(0);
-        // Its smelt: the Smithing Station beside the ingredients, the Smithing mark and 15 on the line, no chips, no panel.
+        // Its smelt: the Smithing Station beside the ingredients, the Smithing mark and 20 on the line, no chips, no panel.
         expect(stationOf(container, 'in').textContent).toMatch(/Smithing Station/);
         const smelt = markOf(container, 's<0@');
-        expect([smelt.getAttribute('data-codex-req'), smelt.textContent]).toEqual(['smithing', '15']);
-        expect(smelt.getAttribute('data-codex-made-at')).toMatch(/^Made at .*Furnace/);
+        expect([smelt.getAttribute('data-codex-req'), smelt.textContent]).toEqual(['smithing', '20']);
+        expect(smelt.getAttribute('data-codex-made-at')).toMatch(/^Made at .*Blacksmith/);
         expect(q(container, '[data-codex-req-of]')).toBeNull();
         expect(q(container, '[data-codex-chip]')).toBeNull();
         expect(q(container, '[data-codex-panel]')).toBeNull();
@@ -174,7 +174,9 @@ describe('the chart', () => {
         const { container } = open();
         fireEvent.click(stationOf(container, 'in'));
         const stations = qa(container, '[data-codex-node^="s<0f<"]').map(n => n.getAttribute('data-codex-key'));
-        expect(stations.sort()).toEqual([tokenKey('token_copper_smithy'), tokenKey('token_furnace'), tokenKey('token_iron_furnace'), tokenKey('token_iron_smithy')]);
+        expect(stations.sort()).toEqual([
+            tokenKey('token_furnace'), tokenKey('token_grand_forge'), tokenKey('token_iron_smithy'), tokenKey('token_master_smithy'), tokenKey('token_smiths_row')
+        ]);
         // A station's line asks nothing: its recipes do.
         expect(q(container, '[data-codex-line-label^="s<0f<"]')).toBeNull();
     });
@@ -358,13 +360,11 @@ describe('after the owner\'s look of 1 November', () => {
         expect(uses.every(n => n.getAttribute('data-codex-side') === 'out' && x(n) > x(moved) && x(n) < x(q(container, '[data-codex-node="s"]')))).toBe(true);
     });
 
-    it('a growing stage is no box: an Oak Tree comes from the Oak Forest, its sapling a grow mark on the line', () => {
+    it('a growing stage is no box: an Oak Tree comes from the Oak Forest, and its stump is a regrow mark on the line', () => {
         lookUp(tokenKey('token_oak_tree'));
         const { container } = open();
-        expect(nodeOf(container, tokenKey('token_oak_sapling'))).toBeFalsy();
         expect(nodeOf(container, tokenKey('token_oak_stump'))).toBeFalsy();
         expect(nodeOf(container, tokenKey('token_oak_forest'), 'in')).toBeTruthy();
-        expect(q(container, '[data-codex-line-label] [data-glyph="grow"]')).not.toBeNull();
         expect(q(container, '[data-codex-line-label] [data-glyph="regrow"]')).not.toBeNull();
         // The Starter Camp is no way on the chart; the card names it.
         expect(q(container, '[data-codex-caption="starterCamp"]')).toBeNull();
