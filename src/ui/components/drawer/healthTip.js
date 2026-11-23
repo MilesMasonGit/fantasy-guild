@@ -4,8 +4,6 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { GameState } from '../../../state/GameState.js';
 import { regenContributions, regenShare, REGEN_FROM } from '../../../systems/hero/regen.js';
 import { hallSourceOf } from '../../../systems/progression/hallModifiers.js';
-import { regionSourceOf } from '../../../systems/atlas/regionModifiers.js';
-import { getRegion } from '../../../systems/atlas/Atlas.js';
 import { toRoman } from '../../../utils/Formatters.js';
 import { t } from '../../../i18n/index.js';
 
@@ -32,12 +30,6 @@ function sourceOf(c) {
             const rank = Math.floor(Number(GameState.state?.progress?.guildUpgrades?.[star.starId]) || 0);
             const name = authoredStars().find(s => s.id === star.starId)?.name || star.starId;
             return { key: `star:${star.starId}`, name: t('effectBadges.source.star', { star: name, rank: toRoman(rank) }) };
-        }
-        const region = regionSourceOf(c.modifier?.source);
-        if (region) {
-            const record = getRegion(region.regionId);
-            const name = record?.flavourName || record?.practicalName || region.regionId;
-            return { key: `region:${region.regionId}`, name: t('effectBadges.source.region', { region: name }) };
         }
         return { key: `guild:${c.modifier?.source}`, name: c.modifier?.label || t('effectBadges.source.guild') };
     }

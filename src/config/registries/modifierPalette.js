@@ -152,7 +152,7 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  *
  * ## `fromGuild` — a hero reads it from the guild too
  *
- * A `heroOnly` axis a hero also reads off the guild-wide aggregator (a Hall star, a Region's rule),
+ * A `heroOnly` axis a hero also reads off the guild-wide aggregator (a Hall star),
  * summed in the same bucket as what they carry (`CombatFormulas`). Enemies never read the guild's.
  * Any other `heroOnly` axis on a star or a guild rule reaches nobody.
  *
