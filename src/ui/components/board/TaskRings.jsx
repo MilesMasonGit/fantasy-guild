@@ -7,8 +7,8 @@ import { MAT_EDGE } from './groundScreen.js';
 import { onFrame, isDrawingPaused } from './frameClock.js';
 import { prefersReducedMotion } from './fx/pixelSteps.js';
 import {
-    TASK_RING_COLOUR, TASK_DIM_LIGHT, TASK_DIM_GREY, NO_RINGS,
-    createTaskRingSet, taskRingTarget, dimPath, ringPathOf
+    TASK_RING_COLOUR, TASK_RING_STUCK_COLOUR, TASK_DIM_LIGHT, TASK_DIM_GREY, NO_RINGS,
+    createTaskRingSet, taskRingTarget, dimRuns, edgeRuns, insideRuns, ringEdgePaths, runsPath
 } from './taskRing.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
@@ -20,25 +20,47 @@ const DRAIN_GREY = '#808080';
 
 const svgStyle = (z, blend) => (blend ? { zIndex: z, mixBlendMode: blend } : { zIndex: z });
 
+/** Working rings first, stuck ones last: where a stuck ring crosses a working one, the cells they share are amber. */
+const byStuckLast = (rings) => (rings.some(r => r.stuck) ? [...rings.filter(r => !r.stuck), ...rings.filter(r => r.stuck)] : rings);
+
 /**
- * The task rings: a work-green ring round every job in progress (`taskRing.taskJobsOf`), the
- * ground inside dimmed and drained toward grey, on the ground under every Token and hero.
- * * **One dim for all the rings**, cut to their union (`dimRuns`), so where rings overlap the
- * ground is dimmed once: a grey drawn as `mix-blend-mode: saturation` drains
- * {@link TASK_DIM_GREY} of the colour, then black takes the light down to {@link TASK_DIM_LIGHT}.
- * Both blend with whatever is below them (the ground and its ambient life), nothing above.
- * * **Drawn only when a job starts or ends** (or a hero joins one, its Token moves, the mat's fit
- * changes): at rest there is no clock, no frame and no render. A ring grows when its job starts
- * and shrinks when it ends, on the frame clock only while some ring is moving, the dim following
- * it. While drawing is paused, under reduced motion, on mounting and after a `GAME_RESET` (a load,
- * a catch-up, travel) every ring jumps to its end, so a stall or a catch-up replays nothing.
- * Clipped to the mat's rounded edge, like the reach ring; never in the pointer's way.
- * ⚠️ Every layer here is a direct stacking sibling of the ground (the wrapper has no z-index):
- * a stacking context between them would cut the blend off from the ground.
- * @param {{jobs?: {id: string, x: number, y: number, r: number}[]}} props the jobs in mat units,
- *   the same array while they are the same
+ * The shapes the rings draw, in art pixels from the mat's corner: the dim inside them all, the outer
+ * edge of their merged shape (the shadow) and each ring's own part of that edge. Worked out again
+ * only when the rings change: once per frame while one grows or shrinks, never at rest.
  */
-export const TaskRings = memo(function TaskRings({ jobs = NO_JOBS }) {
+function shapesOf(rings) {
+    const rows = dimRuns(rings);
+    const edge = edgeRuns(rows);
+    return { dim: runsPath(insideRuns(rows, edge)), shadow: runsPath(edge), edges: ringEdgePaths(rings, edge) };
+}
+
+/**
+ * The task rings: a ring round every job in progress (`taskRing.taskJobsOf`), work green, or the
+ * warning amber while the job is stuck (its Token shows its "!"), with everything inside dimmed
+ * and drained toward grey: the ground and every Token at rest, never the worked Tokens or a hero.
+ * * **One dim for all the rings**, cut to the inside of their merged shape (`dimRuns`, less its
+ * edge), so where rings overlap everything is dimmed once: a grey drawn as `mix-blend-mode:
+ * saturation` drains {@link TASK_DIM_GREY} of the colour, then black takes the light down to
+ * {@link TASK_DIM_LIGHT}. Both sit at `dimZ` (`matLayers.taskDimZ`): over the Tokens at rest,
+ * under the worked ones, and blend with everything below them. A Token half inside a ring is dimmed
+ * on that half only.
+ * * **Only the outer edge** of the merged shape is drawn (`edgeRuns`): where rings cross, no arc
+ * runs through the shared dim. Each ring draws its own part of that edge in its own colour, all
+ * on one black shadow, on the ground under every Token (z `MAT_Z.TASK_RING`), so a Token or hero
+ * standing on the edge covers it. The dim leaves the edge alone, so the ring keeps its colour.
+ * * **Drawn only when a job starts or ends** (or turns stuck or unstuck, a hero joins one, its
+ * Token moves, the mat's fit changes): at rest there is no clock, no frame and no render. A ring
+ * grows when its job starts and shrinks when it ends, on the frame clock only while some ring is
+ * moving, the dim and the edge following it. While drawing is paused, under reduced motion, on
+ * mounting and after a `GAME_RESET` (a load, a catch-up, travel) every ring jumps to its end, so a
+ * stall or a catch-up replays nothing.
+ * Clipped to the mat's rounded edge, like the reach ring; never in the pointer's way.
+ * ⚠️ Every layer here is a direct stacking sibling of the ground and the Tokens (the wrapper has
+ * no z-index): a stacking context between them would cut the blend off from what it dims.
+ * @param {{jobs?: {id: string, x: number, y: number, r: number, stuck?: boolean}[], dimZ?: number}} props
+ *   the jobs in mat units, the same array while they are the same; the dim's z
+ */
+export const TaskRings = memo(function TaskRings({ jobs = NO_JOBS, dimZ = MAT_Z.STANDING_HERO }) {
     const mat = useMatSize();
     const artScale = boardScaleAt(useMatFit());
     const [set] = useState(createTaskRingSet);
@@ -71,7 +93,7 @@ export const TaskRings = memo(function TaskRings({ jobs = NO_JOBS }) {
         };
     }, [jobs, resets, artScale, set]);
 
-    const dim = useMemo(() => dimPath(rings), [rings]);
+    const shapes = useMemo(() => shapesOf(rings), [rings]);
     if (!rings.length) return null;
     const scale = `scale(${artScale})`;
     return (
@@ -81,34 +103,27 @@ export const TaskRings = memo(function TaskRings({ jobs = NO_JOBS }) {
             className="absolute left-0 top-0 pointer-events-none overflow-hidden"
             style={{ width: mat.w, height: mat.h, borderRadius: MAT_EDGE.radius }}
         >
-            <svg data-task-dim="grey" className="absolute left-0 top-0 overflow-visible" width={mat.w} height={mat.h} style={svgStyle(MAT_Z.TASK_DIM, 'saturation')}>
-                <path d={dim} transform={scale} fill={DRAIN_GREY} fillOpacity={TASK_DIM_GREY} shapeRendering="crispEdges" />
-            </svg>
-            <svg data-task-dim="dark" className="absolute left-0 top-0 overflow-visible" width={mat.w} height={mat.h} style={svgStyle(MAT_Z.TASK_DIM)}>
-                <path d={dim} transform={scale} fill="#000" fillOpacity={1 - TASK_DIM_LIGHT} shapeRendering="crispEdges" />
-            </svg>
             <svg data-task-ring-layer className="absolute left-0 top-0 overflow-visible" width={mat.w} height={mat.h} style={svgStyle(MAT_Z.TASK_RING)}>
                 <g shapeRendering="crispEdges">
-                    {/* Every shadow first, so no ring's shadow falls over another ring. */}
-                    {rings.map(r => (
-                        <path
-                            key={`s${r.id}`}
-                            d={ringPathOf(r.px)}
-                            transform={`translate(${(r.cx + 1) * artScale} ${(r.cy + 1) * artScale}) ${scale}`}
-                            fill={RING_SHADOW}
-                        />
-                    ))}
-                    {rings.map(r => (
+                    <path data-task-ring-shadow d={shapes.shadow} transform={`translate(${artScale} ${artScale}) ${scale}`} fill={RING_SHADOW} />
+                    {byStuckLast(rings).map(r => (
                         <path
                             key={r.id}
                             data-task-ring={r.id}
                             data-px={r.px}
-                            d={ringPathOf(r.px)}
-                            transform={`translate(${r.cx * artScale} ${r.cy * artScale}) ${scale}`}
-                            fill={TASK_RING_COLOUR}
+                            data-stuck={r.stuck ? 'true' : undefined}
+                            d={shapes.edges.get(r.id)}
+                            transform={scale}
+                            fill={r.stuck ? TASK_RING_STUCK_COLOUR : TASK_RING_COLOUR}
                         />
                     ))}
                 </g>
+            </svg>
+            <svg data-task-dim="grey" className="absolute left-0 top-0 overflow-visible" width={mat.w} height={mat.h} style={svgStyle(dimZ, 'saturation')}>
+                <path d={shapes.dim} transform={scale} fill={DRAIN_GREY} fillOpacity={TASK_DIM_GREY} shapeRendering="crispEdges" />
+            </svg>
+            <svg data-task-dim="dark" className="absolute left-0 top-0 overflow-visible" width={mat.w} height={mat.h} style={svgStyle(dimZ)}>
+                <path d={shapes.dim} transform={scale} fill="#000" fillOpacity={1 - TASK_DIM_LIGHT} shapeRendering="crispEdges" />
             </svg>
         </div>
     );

@@ -40,12 +40,10 @@ export const MAT_Z = Object.freeze({
     /** The ground's ambient life (`AmbientLife`: water shimmer, gusts, the lava's pulse): on the ground. */
     GROUND_FX: 2,
     /**
-     * The ground dimmed inside the task rings (`TaskRings`): over the ground and its life, which it
-     * blends with, under every Token. ⚠️ Its blend reaches only what is drawn below it.
+     * The task rings themselves (`TaskRings`), on the ground, under every Token and hero. The dim
+     * inside them has no fixed z: {@link taskDimZ}.
      */
-    TASK_DIM: 3,
-    /** The task rings themselves, on the dimmed ground, under every Token and hero. */
-    TASK_RING: 4,
+    TASK_RING: 3,
     /** The grid while placing (`TerrainGridOverlay`): over the ground, under every Token. */
     GROUND_GRID: 5,
     /**
@@ -105,6 +103,28 @@ export const MAT_Z = Object.freeze({
 /** The z of a Token or flag at `place` in the stack. A Token's badges are +1. */
 export function placeZ(place) {
     return MAT_Z.TOKEN_BASE + place * 2;
+}
+
+/**
+ * The z of the dim inside the task rings (`TaskRings`): over the ground and every Token and flag
+ * at rest, under every worked Token and hero. So the part of a resting Token inside
+ * a ring is dimmed with the ground, while the jobs themselves stay bright. Every worked Token
+ * stands above every resting one in the stack ({@link stackSequence}), so the lowest worked z is
+ * the line between them: the dim takes it, and is written before the Tokens, so the worked Token
+ * wins the tie. With no Token worked (a last ring shrinking away), over every Token, under the
+ * heroes, who also win the tie.
+ * ⚠️ Its blend reaches only what is drawn below it in the mat's one stacking context, so its
+ * layers stay direct stacking siblings of the Tokens (no wrapper with a z-index).
+ * @param {Map<string, number>} tokenZ the stack's (`createMatStack`)
+ * @param {Iterable<string>} workedIds every Token a hero works
+ */
+export function taskDimZ(tokenZ, workedIds) {
+    let z = Infinity;
+    for (const id of workedIds) {
+        const at = tokenZ.get(id);
+        if (at != null && at < z) z = at;
+    }
+    return z === Infinity ? MAT_Z.STANDING_HERO : z;
 }
 
 /** Back to front: higher on the mat first; a Token before a flag on the same line; then placing order. */

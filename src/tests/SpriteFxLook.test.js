@@ -337,7 +337,7 @@ describe('on the mat: no shadow at rest; outlines from the game’s own state', 
         expect(filtersIn(art)).toEqual([]);
     });
 
-    it('worked: no outline on the Token or its hero, a task ring instead; in alert: red on the Token, no ring; selected: white', () => {
+    it('worked: no outline on the Token or its hero, a task ring instead; in alert: red on the Token, its ring amber; selected: white', () => {
         const t = put(TOKEN, 'fixture_producer');
         Orders.orderAt('h1', TOKEN);
         const first = mount(h(MatBoard));
@@ -352,7 +352,9 @@ describe('on the mat: no shadow at rest; outlines from the game’s own state', 
         const alerted = mount(h(MatBoard)).container;
         expect(alerted.querySelector(`[data-token-art][data-token-id="${t.id}"]`).getAttribute('data-outline')).toBe('alert');
         expect(alerted.querySelector('[data-board-hero="h1"]').getAttribute('data-outline')).toBeNull();
-        expect(alerted.querySelector('[data-task-ring]')).toBeNull();
+        // The owner, 22 Nov: a stuck job keeps its ring, in the warning amber.
+        expect(alerted.querySelector(`[data-task-ring="${t.id}"]`).getAttribute('data-stuck')).toBe('true');
+        expect(alerted.querySelector(`[data-task-ring="${t.id}"]`).getAttribute('fill')).toBe('var(--color-gi-warning)');
         cleanup();
 
         const picked = mount(h(MatBoard, { inspectedTokenId: t.id, inspectedHeroId: 'h1' })).container;
