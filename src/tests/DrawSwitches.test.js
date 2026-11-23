@@ -27,7 +27,7 @@ import { BannerStack } from '../ui/components/notifications/BannerStack.jsx';
 import * as ItemStubs from '../systems/notifications/itemStubs.js';
 import * as Banners from '../systems/notifications/banners.js';
 import { shadowLayer, outlineLayer, sheetOutlineLayer, setSpriteFxManifest } from '../ui/utils/spriteFx.js';
-import { restHover } from './fixtures/hoverRest.js';
+import { restRing } from './fixtures/hoverRest.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -156,7 +156,7 @@ describe('mat overlays', () => {
                 left: 0, top: 0, width: matW(), height: matH(), right: matW(), bottom: matH(), x: 0, y: 0
             });
             fireEvent.pointerMove(root, { clientX: tool.x, clientY: tool.y });
-            restHover();
+            restRing();
             return container.querySelector('[data-near-ring]');
         };
         expect(hover()).not.toBeNull();

@@ -8,7 +8,7 @@ import { onMatTuningChanged } from '../../../config/matTuning.js';
 import { useActiveDrag, useDragPointer } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
 import { pointerToMat, matRectForDrag } from './matPoint.js';
-import { showsNearRing, reachDotsAt } from '../../../systems/board/reachDisplay.js';
+import { showsNearRing, reachTargets, reachDotsAt } from '../../../systems/board/reachDisplay.js';
 import { ReachRing } from './CampReachRing.jsx';
 
 const NEAR_RING_ATTRS = Object.freeze({ 'data-near-ring': 'true' });
@@ -18,12 +18,14 @@ const NEAR_RING_ATTRS = Object.freeze({ 'data-near-ring': 'true' });
  * The one standard ring appears only for a Token that uses reach (`showsNearRing`: a Foundation,
  * a work camp, a Token whose rules involve its neighbours), and only while the player is doing
  * something with it:
- * * **hovering** one: the ring sits on that Token's centre;
- * * **dragging** one, from the Shop or across the mat: the ring sits where the Token would REALLY
- * land. With free placement that is the cursor itself when there is room, and the nudged spot
+ * * **resting** on one (`hoverRest.RING_REST_MS`, longer than the name's rest, so a sweep across
+ * the mat brings up no rings): the ring sits on that Token's centre;
+ * * **dragging** one, from the Shop or across the mat, at once: the ring sits where the Token would
+ * REALLY land. With free placement that is the cursor itself when there is room, and the nudged spot
  * when there is not, so the ring is an honest preview of the drop rather than a copy of the
  * pointer. When there is no room within nudge reach the drop would fly back, and there is no ring.
- * Every Token inside the ring wears a dot (`reachDisplay.reachDotsAt`, the engine's own test).
+ * A Token inside the ring wears a dot only when this one acts on or depends on it
+ * (`reachDisplay.reachTargets`, the engine's own tests).
  * The ring grows out when it appears and shrinks back when it goes, the dots coming and going with
  * it (`ReachRing`); a drag's ring grows once as the drag starts, then follows the landing.
  * The ring of a camp lit through its hero is `CampReachRing`'s.
@@ -103,25 +105,31 @@ export const MatRings = React.memo(function MatRings({ hoveredCentre = null, boa
 
     let centre = null;
     let selfId = null;
+    let typeId = null;
     // Which ring this is: the one in the hand grows once as the drag starts, then follows the landing.
     let owner = '';
     if (isDragging) {
         if (landing && showsNearRing(landing.typeId)) {
             centre = landing;
             selfId = activePayload?.from?.instanceId || null;
+            typeId = landing.typeId;
             owner = 'drag';
         }
     } else if (hoveredCentre) {
         centre = hoveredCentre;
         selfId = hoveredCentre.id || null;
+        typeId = selfId ? BoardState.getTokenById(selfId)?.typeId ?? null : null;
         owner = `hover|${selfId}`;
     }
 
-    // ⚠️ Worked out when the ring moves to a new spot (or the board changes under it), never per
+    // ⚠️ What the Token touches is worked out once for a hover or a drag (and again when the board
+    // changes under it); which of those are in reach, when the ring moves to a new spot. Never per
     // frame: a drag frame whose landing stays put reuses the last answer.
+    const subject = typeId ? `${typeId}|${selfId}` : '';
+    const targets = React.useMemo(() => (subject ? reachTargets(typeId, selfId ? BoardState.getTokenById(selfId) || null : null) : null), [subject, boardTokens]); // eslint-disable-line react-hooks/exhaustive-deps
     const key = centre ? `${centre.x}|${centre.y}|${selfId}|${radius}|${owner}` : '';
     const ring = React.useMemo(() => (centre ? { x: centre.x, y: centre.y, r: radius, key: owner } : null), [key]); // eslint-disable-line react-hooks/exhaustive-deps
-    const dots = React.useMemo(() => (centre ? reachDotsAt(centre, selfId, radius) : null), [key, boardTokens]); // eslint-disable-line react-hooks/exhaustive-deps
+    const dots = React.useMemo(() => (centre ? reachDotsAt(centre, targets, radius) : null), [key, targets]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Drawn with no ring too: one that has just gone shrinks away first.
     return <ReachRing ring={ring} dots={dots} attrs={NEAR_RING_ATTRS} />;

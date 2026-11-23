@@ -6,7 +6,7 @@ import { pointerToMat } from './matPoint.js';
 import { matTuning } from '../../../config/matTuning.js';
 import { installPressRouting } from './pressRouting.js';
 import { flagClothOver, tokenFlagClothAt } from './flagCloth.js';
-import { useHoverRest } from './hoverRest.js';
+import { useHoverRest, RING_REST_MS } from './hoverRest.js';
 import { MatToken, MatTokenGrab } from './MatToken.jsx';
 import { MatHero, heroBoxAt } from './MatHero.jsx';
 import { MatRings } from './MatRings.jsx';
@@ -104,6 +104,8 @@ export const MatBoard = React.memo(function MatBoard({
     // The outline follows the hover at once; the name, the idle plate and the HP bar wait for the
     // pointer to rest (`useHoverRest`), so a Token's own rest redraws that Token alone.
     const rest = useHoverRest(hoveredId, hoverHeroId);
+    // Reach rings: the longer rest, so a sweep across the mat pops none.
+    const ringRest = useHoverRest(hoveredId, hoverHeroId, RING_REST_MS);
     /** The pointer is on a Token's art circle, so every flag lets it through. */
     const [flagsYield, setFlagsYield] = useState(false);
     /** The hero whose flag, shown in the hovered Token's middle, has the pointer on its cloth: its tooltip shows. */
@@ -423,12 +425,12 @@ export const MatBoard = React.memo(function MatBoard({
     // Only a Token that uses reach shows a ring (`showsNearRing`): a Foundation, a camp, a Token
     // that acts on or depends on its neighbours.
     const hoveredCentre = useMemo(() => {
-        const t = rest.tokenId ? tokens.find(k => k.id === rest.tokenId) : null;
+        const t = ringRest.tokenId ? tokens.find(k => k.id === ringRest.tokenId) : null;
         if (!t || !showsNearRing(t.typeId)) return null;
         // A walker's own point is not in `tokens`: read it live.
         const at = t.x == null ? BoardState.getTokenById(t.id) : t;
         return at ? { x: at.x, y: at.y, id: t.id } : null;
-    }, [rest.tokenId, tokens]);
+    }, [ringRest.tokenId, tokens]);
 
     /** A work plate for each hero at work, not in a fight, its Token not in the hand. */
     const plates = useMemo(() => {
@@ -486,20 +488,21 @@ export const MatBoard = React.memo(function MatBoard({
 
     /**
      * A camp's reach ring, lit through a hero: the camp of the hero the pointer rests on (or the
-     * hero working the Token it rests on, who is outlined as hovered too), or of the lit hero
-     * (hovered on their roster tab, or their sheet open). None while a hovered Token shows its own
-     * ring (a camp hovered itself is one), nor for a camp in the hand: `MatRings` draws those.
+     * hero working the Token it rests on, who is outlined as hovered too), after the rings' rest,
+     * or at once of a hero hovered on their roster tab or with their sheet open. None while a
+     * hovered Token shows its own ring (a camp hovered itself is one), nor for a camp in the hand:
+     * `MatRings` draws those.
      */
     const campRing = useMemo(() => {
         if (hoveredCentre) return null;
-        const heroId = rest.heroId || (rest.tokenId ? workedBy.get(rest.tokenId) : null) || litHeroId || inspectedHeroId;
+        const heroId = ringRest.heroId || (ringRest.tokenId ? workedBy.get(ringRest.tokenId) : null) || rosterHover || inspectedHeroId;
         const jobId = heroId ? heroes.find(h => h.heroId === heroId)?.jobId : null;
         const job = jobId && jobId !== carriedId ? BoardState.getTokenById(jobId) : null;
         const camp = job && Camps.isCampLike(job) ? job : null;
         const ring = camp ? Camps.reachRingOf(camp) : null;
         return ring ? { campId: camp.id, ...ring } : null;
     // `tokens`: a camp moved by the player moves its ring (the ring reads the camp's live point).
-    }, [hoveredCentre, rest.tokenId, rest.heroId, carriedId, litHeroId, inspectedHeroId, heroes, tokens, workedBy]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [hoveredCentre, ringRest.tokenId, ringRest.heroId, carriedId, rosterHover, inspectedHeroId, heroes, tokens, workedBy]); // eslint-disable-line react-hooks/exhaustive-deps
     // Keyed by value, so a hero's walking step does not redraw the ring.
     const campRingKey = campRing ? `${campRing.campId}|${campRing.x}|${campRing.y}|${campRing.r}` : '';
     const campRingShown = useMemo(() => campRing, [campRingKey]); // eslint-disable-line react-hooks/exhaustive-deps
