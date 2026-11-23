@@ -18,7 +18,6 @@ import { SupportLinkLayer } from './SupportLinkLayer.jsx';
 import { CalloutLayer } from './CalloutLayer.jsx';
 import { HeroBubbleLayer } from './HeroBubbleLayer.jsx';
 import { strikesLive, heroAnimationState, hitSkillOf, hitsOnAttack } from './hitAnimations.js';
-import { problemOf } from './problemMark.js';
 import { FlagLayer } from './FlagLayer.jsx';
 import { OrderDragLine } from './OrderDragLine.jsx';
 import { heroOutline } from './spriteOutline.js';
@@ -247,9 +246,6 @@ export const MatBoard = React.memo(function MatBoard({
                     // no glow (the Token's problem mark says it alone) and stands idle instead
                     // of swinging. The same test as the Token's own hit reaction (`strikesLive`).
                     stuck: !!worked && !strikesLive(heroId, worked.alert),
-                    // The Token they work shows its "!" (the problem mark's own test): the job's
-                    // task ring turns amber.
-                    jobStuck: !!worked && !!problemOf({ alert: worked.alert || null }),
                     // Fighting: idle, one attack per real attack.
                     combat: !!worked && hitsOnAttack(hitSkillOf(getTokenType(worked.typeId))),
                     // Below full health: the health bar shows.
@@ -568,7 +564,7 @@ export const MatBoard = React.memo(function MatBoard({
     // layout effect: written in the same commit, before anything is painted.
     const stack = useMemo(() => createStackWriter(), []);
     useLayoutEffect(() => { stack.apply(order.tokenZ, hoveredId); }, [stack, order, hoveredId]);
-    // The task rings, line and dim: over the Tokens at rest, under the worked ones.
+    // The job areas: over the Tokens at rest, under the worked ones.
     const ringZ = useMemo(() => taskRingZ(order.tokenZ, workedBy.keys()), [order, workedBy]);
 
     return (
@@ -615,8 +611,8 @@ export const MatBoard = React.memo(function MatBoard({
             <AmbientLife pictures={ground ? groundPictures : null} tokens={tokens} workedBy={workedBy} carriedId={carriedId} />
 
             {/**
-              * At `taskRingZ`: a ring round every job in progress, over the Tokens at rest, the
-              * ground and those Tokens dimmed inside it. ⚠️ Before the Tokens and heroes: they win a
+              * At `taskRingZ`: an area round every job in progress, over the Tokens at rest, the
+              * ground and those Tokens toned inside it. ⚠️ Before the Tokens and heroes: they win a
               * tie of z.
               */}
             {ringsDrawn && <TaskRings jobs={taskJobs} z={ringZ} resets={resets} />}

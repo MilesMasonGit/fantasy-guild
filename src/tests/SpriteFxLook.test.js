@@ -161,7 +161,7 @@ describe('a dragged Token and floating loot cast the hard shadow', () => {
 });
 
 describe('state → outline colour', () => {
-    // Working has no outline of its own: the task ring (`TaskRings`) frames a worked Token and its heroes.
+    // Working has no outline of its own: the job area (`TaskRings`) frames a worked Token and its heroes.
     it('Tokens: white hovered or selected, then red alert; working is no outline', () => {
         expect(tokenOutline({})).toBeNull();
         expect(tokenOutline({ working: true })).toBeNull();
@@ -337,7 +337,7 @@ describe('on the mat: no shadow at rest; outlines from the game’s own state', 
         expect(filtersIn(art)).toEqual([]);
     });
 
-    it('worked: no outline on the Token or its hero, a task ring instead; in alert: red on the Token, its ring amber; selected: white', () => {
+    it('worked: no outline on the Token or its hero, a job area instead; in alert: red on the Token, the area unchanged; selected: white', () => {
         const t = put(TOKEN, 'fixture_producer');
         Orders.orderAt('h1', TOKEN);
         const first = mount(h(MatBoard));
@@ -345,16 +345,17 @@ describe('on the mat: no shadow at rest; outlines from the game’s own state', 
         expect(art().getAttribute('data-outline')).toBeNull();
         expect(art().querySelector('[data-sprite-ring]')).toBeNull();
         expect(first.container.querySelector('[data-board-hero="h1"]').getAttribute('data-outline')).toBeNull();
-        expect(first.container.querySelector(`[data-task-ring="${t.id}"]`)).not.toBeNull();
+        const area = first.container.querySelector(`[data-task-jobs*="${t.id}@"]`);
+        expect(area).not.toBeNull();
+        const areaHtml = area.outerHTML;
         cleanup();
 
         t.alert = ALERT.INPUTS;
         const alerted = mount(h(MatBoard)).container;
         expect(alerted.querySelector(`[data-token-art][data-token-id="${t.id}"]`).getAttribute('data-outline')).toBe('alert');
         expect(alerted.querySelector('[data-board-hero="h1"]').getAttribute('data-outline')).toBeNull();
-        // The owner, 22 Nov: a stuck job keeps its ring, in the warning amber.
-        expect(alerted.querySelector(`[data-task-ring="${t.id}"]`).getAttribute('data-stuck')).toBe('true');
-        expect(alerted.querySelector(`[data-task-ring="${t.id}"]`).getAttribute('fill')).toBe('var(--color-gi-warning)');
+        // The owner, 23 Nov: a stuck job keeps its area exactly as it was; its "!" tells it.
+        expect(alerted.querySelector(`[data-task-jobs*="${t.id}@"]`).outerHTML).toBe(areaHtml);
         cleanup();
 
         const picked = mount(h(MatBoard, { inspectedTokenId: t.id, inspectedHeroId: 'h1' })).container;
