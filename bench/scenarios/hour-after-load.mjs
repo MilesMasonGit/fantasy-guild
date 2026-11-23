@@ -53,6 +53,10 @@ export function build(ctx) {
  */
 export async function hourAfterLoad(ctx, play) {
     ctx.runTicks(WARMUP_TICKS);
+    // ⚠️ The warm-up has S2's two hunters fight their camps' prefilled goblins back to back, which
+    // leaves them at 5–9 HP of 35. A run of bad rolls then knocks one out, its order ends and half the
+    // hour's kills go with it, in whichever of S8, S8L and S8F the dice fall that way. They start whole.
+    for (const hero of GameState.state.heroes || []) if (hero.hp) hero.hp.current = hero.hp.max;
 
     // Saved and loaded as `SaveManager.save` / `loadSlot` and `onSlotSelected` do.
     const data = JSON.parse(GameState.serializeJson());
