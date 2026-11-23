@@ -11,7 +11,6 @@ import * as SpriteLayer from '../board/SpriteLayer.js';
 import * as MatPlacement from '../board/MatPlacement.js';
 import * as MatResize from '../board/MatResize.js';
 import { isGuildHall, countsTowardCap, tokenCount, matCap } from '../board/MatCap.js';
-import { isQuestToken } from '../quests/QuestTokens.js';
 import { noteTokenHad } from '../progression/collectionLog.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { matW, matH, artRadiusOf } from '../../config/matGeometry.js';
@@ -33,8 +32,8 @@ export { recipeOf, preview } from './Cartography.js';
  * tick's delta, so a Region resumes exactly where it stopped.
  *
  * Travel ({@link travel}) banks the floor loot (what the Bank cannot hold stays on that Region's
- * floor), lifts the Guild Hall and the quest Tokens off the mat (they belong to the guild), freezes
- * the board, installs the other one, puts the Hall and the quests down, then announces
+ * floor), lifts the Guild Hall off the mat (it belongs to the guild), freezes
+ * the board, installs the other one, puts the Hall down, then announces
  * `BOARD_SWAPPED`, which every system that rebuilds runtime state on a load hears as well. Flags
  * stay with their Region: going back, each hero starts at the flag they left there, with no claim
  * and no fight; a Region the guild has never been to starts with every hero in the Dock.
@@ -149,9 +148,9 @@ export function activeRegion() {
     return getRegion(activeRegionId());
 }
 
-/** Tokens that belong to the Region: everything on its board but the Hall and the quests. */
+/** Tokens that belong to the Region: everything on its board but the Hall. */
 function regionTokenCount(board) {
-    return Object.values(board?.tokens || {}).filter(t => t?.typeId && !isGuildHall(t) && !isQuestToken(t)).length;
+    return Object.values(board?.tokens || {}).filter(t => t?.typeId && !isGuildHall(t)).length;
 }
 
 /**
@@ -425,9 +424,9 @@ function bankFloorLoot() {
     return { banked, leftOnFloor: SpriteLayer.getSprites().length };
 }
 
-/** Take the Hall and the quest Tokens off the mat, noting where each stood. */
+/** Take the Hall off the mat, noting where it stood. */
 function liftTravellers() {
-    const travellers = BoardState.tokens().filter(t => isGuildHall(t) || isQuestToken(t));
+    const travellers = BoardState.tokens().filter(t => isGuildHall(t));
     const spots = {};
     for (const t of travellers) {
         spots[t.id] = { x: t.x, y: t.y, placedAt: t.placedAt };
@@ -437,17 +436,11 @@ function liftTravellers() {
 }
 
 /**
- * Put a travelling Token down. Back in a Region it stood in, exactly where it stood and in the same
+ * Put the travelling Hall down. Back in a Region it stood in, exactly where it stood and in the same
  * place in the arrival order; anywhere else, at the nearest clear spot to `aim`, arriving last.
  */
 function putDown(instance, remembered, aim) {
     if (remembered && Number.isFinite(remembered.x) && Number.isFinite(remembered.y)) {
-        // A quest bounty's old spot may be taken by one put down a moment earlier: from there, the
-        // nearest clear spot.
-        if (!isGuildHall(instance) && !MatPlacement.isLegal(instance.typeId, remembered, { excludeId: instance.id })) {
-            putDown(instance, null, remembered);
-            return;
-        }
         if (Number.isInteger(remembered.placedAt)) instance.placedAt = remembered.placedAt;
         BoardState.addToken(instance, remembered.x, remembered.y);
         return;
@@ -457,20 +450,9 @@ function putDown(instance, remembered, aim) {
     BoardState.addToken(instance, spot.x, spot.y);
 }
 
-/** The Hall first (its old spot here, else the middle), then each quest at its old offset from it. */
+/** The Hall at its old spot here, else the middle. */
 function landTravellers(travellers, remembered) {
-    const hall = travellers.find(t => isGuildHall(t)) || null;
-    const hallFrom = hall ? { x: hall.x, y: hall.y } : null;
-    for (const t of travellers) {
-        if (isGuildHall(t)) putDown(t, remembered[t.id], matCentre());
-    }
-    for (const t of travellers) {
-        if (isGuildHall(t)) continue;
-        const aim = hall && hallFrom
-            ? { x: hall.x + (t.x - hallFrom.x), y: hall.y + (t.y - hallFrom.y) }
-            : matCentre();
-        putDown(t, remembered[t.id], aim);
-    }
+    for (const t of travellers) putDown(t, remembered[t.id], matCentre());
 }
 
 /**

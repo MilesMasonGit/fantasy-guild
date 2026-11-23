@@ -18,7 +18,6 @@ import { STANDS_ON_CHOICES, isStandsOnWord } from '../atlas/TerrainMap.js';
 import { listPooledSkillIds } from '../../config/registries/recipePoolRegistry.js';
 import { SPRITE_MANIFEST } from '../../config/registries/sprite-manifest.js';
 import { currentSpriteName } from '../../utils/AssetManager.js';
-import { RANDOM_HUNTS } from '../quests/QuestManager.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
 import { isWorkedWithoutSkill, WORK_SKILL_WHY } from './workSkillRule.js';
 import { auditLifecycleBlocks } from './lifecycleAudit.js';
@@ -623,19 +622,6 @@ function auditItems(out) {
 // already checks their outputs, and a second pass would report each finding twice.
 
 /**
- * The lists written by hand in the game's own code rather than authored in the
- * CMS. They have named ids that do not exist at some point, and a CMS-side
- * check would have caught none of them — which is why the audit lives on the
- * game side.
- */
-function auditHardcodedLists(out) {
-    for (const hunt of RANDOM_HUNTS || []) {
-        checkRef(out, 'The randomly-generated hunt bounties', 'enemy', hunt?.id,
-            `The bounty "${hunt?.name || hunt?.id}"`);
-    }
-}
-
-/**
  * The Starter Camp a new game opens on (`StarterCamp.starterCamp()`): every Token and Bank item it
  * names exists, and every Token can stand where it says. Passed in rather than imported:
  * `EngineBootstrap` reads the camp and calls the audit, and importing it back would make the two
@@ -787,7 +773,7 @@ export function auditContent({ starterCamp = null } = {}) {
     const steps = [
         auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditTools, auditPerks, auditHallStars,
         auditGearDefence, auditEffectStacks, auditEvents, auditWorldBiomes,
-        auditHardcodedLists, (o) => auditStarterCamp(o, starterCamp)
+        (o) => auditStarterCamp(o, starterCamp)
     ];
     for (const step of steps) {
         try {

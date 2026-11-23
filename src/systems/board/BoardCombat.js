@@ -541,7 +541,7 @@ export function tickToken(instance, delta, heroId) {
  * A kill.
  *
  * One kill counts as one cycle for every board system outside the combat engine. That single unit
- * is what connects combat to the rest of the board (quests, rules on a neighbour's cycle). Nothing
+ * is what connects combat to the rest of the board (Limes's lessons, rules on a neighbour's cycle). Nothing
  * beside it wears for it, as nothing beside a craft does: help is free. The enemy is used up by it.
  */
 function resolveVictory(instance, fight, enemy, heroId) {

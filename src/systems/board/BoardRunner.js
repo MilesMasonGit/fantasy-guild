@@ -498,7 +498,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
  * recipe, inputs or charges, after which `Demolition.finish` takes it off the mat.
  *
  * ⚠️ No `CYCLE_START` or `CYCLE_COMPLETE`, no output, and a flat {@link Demolition.DEMOLISH_XP} only when it finishes: demolishing is not production, and a
- * rule or quest counting cycles must not count it.
+ * rule or lesson counting cycles must not count it.
  */
 function tickDemolition(instance, def, delta, heroId, publishProgress) {
     if (!heroId) {

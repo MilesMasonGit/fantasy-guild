@@ -2,7 +2,6 @@
 
 import { matW, matH, artRadiusOf } from '../../config/matGeometry.js';
 import { getTokenType, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
-import { QUEST_TOKEN_TYPE } from '../../config/registries/engineTokens.js';
 import { authoredStarterCamp } from '../../config/registries/starterCampRegistry.js';
 import { normaliseStarterCamp } from '../../config/starterCampShape.js';
 import * as BoardState from '../board/BoardState.js';
@@ -230,20 +229,18 @@ export function layOnLiveBoard(camp = starterCamp()) {
 /**
  * The live mat as a Starter Camp, for the dev button: the Guild Hall's point, every Token the
  * player placed (in arrival order, at its point) and the Bank. Spawned Tokens are left out (the
- * camp's own spawners make them again), and so are quest Tokens (the tutorial's).
+ * camp's own spawners make them again).
  *
  * @param {{savedAt?: string|null}} [options] when it was saved, as the caller reads the clock
- * @returns {{camp: object, skipped: {spawned: number, quests: number}}}
+ * @returns {{camp: object, skipped: {spawned: number}}}
  */
 export function campFromLiveMat({ savedAt = null } = {}) {
     let hall = null;
     const tokens = [];
-    const skipped = { spawned: 0, quests: 0 };
+    const skipped = { spawned: 0 };
     for (const t of BoardState.tokens()) {
         if (isGuildHall(t)) {
             if (!hall) hall = { x: t.x, y: t.y };
-        } else if (t.typeId === QUEST_TOKEN_TYPE) {
-            skipped.quests++;
         } else if (BoardState.originOf(t) === BoardState.ORIGIN.SPAWNED) {
             skipped.spawned++;
         } else {

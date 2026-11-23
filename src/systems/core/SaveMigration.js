@@ -70,6 +70,8 @@ export function migrateState(state, savedVersion) {
     // Retired Disallow: a Token an older save marked "heroes may not work this" loses the mark,
     // on the live board and every Region's, and heroes may work it again.
     migrated = withoutDisallowMarks(migrated);
+    // Retired bounties: their Tokens leave every board quietly, unpaid, progress and all.
+    migrated = withoutQuestTokens(migrated);
 
     const ranks = migrated.progress?.guildUpgrades;
     if (isPlainObject(ranks) && RETIRED_UPGRADES.some(id => id in ranks)) {
@@ -193,6 +195,39 @@ export function withoutDisallowMarks(state) {
     return out;
 }
 
+/** The retired bounty Token's type id. */
+export const RETIRED_QUEST_TOKEN = 'token_quest';
+
+/** A board with no bounty Token on it, or the same board when it holds none. */
+export function boardWithoutQuestTokens(board) {
+    const tokens = board?.tokens;
+    const isQuest = (t) => isPlainObject(t) && t.typeId === RETIRED_QUEST_TOKEN;
+    if (!isPlainObject(tokens) || !Object.values(tokens).some(isQuest)) return board;
+    const kept = {};
+    for (const [id, t] of Object.entries(tokens)) {
+        if (!isQuest(t)) kept[id] = t;
+    }
+    return { ...board, tokens: kept };
+}
+
+/** A saved state with no bounty Token on any board: the live board and every Region's. */
+export function withoutQuestTokens(state) {
+    let out = state;
+    const board = boardWithoutQuestTokens(state.board);
+    if (board !== state.board) out = { ...out, board };
+    const regions = state.atlas?.regions;
+    if (isPlainObject(regions)) {
+        let changed = false;
+        const next = {};
+        for (const [id, r] of Object.entries(regions)) {
+            const b = isPlainObject(r?.board) ? boardWithoutQuestTokens(r.board) : r?.board;
+            if (b !== r?.board) { changed = true; next[id] = { ...r, board: b }; } else next[id] = r;
+        }
+        if (changed) out = { ...out, atlas: { ...state.atlas, regions: next } };
+    }
+    return out;
+}
+
 /** The never-by-time end a for-the-fight or for-the-cycle instance carries. */
 const UNTIL_FIGHT_ENDS = Number.MAX_SAFE_INTEGER;
 
@@ -262,19 +297,20 @@ export function withRenamedUpgrades(state) {
     return { ...state, progress: { ...state.progress, guildUpgrades: kept } };
 }
 
-/** Retired top-level sections a save of this version may still carry: hero recruitment, cards. */
-export const RETIRED_SECTIONS = Object.freeze(['recruitment', 'cards']);
+/**
+ * Retired top-level sections a save of this version may still carry: hero recruitment, cards, and
+ * the bounties' clock.
+ */
+export const RETIRED_SECTIONS = Object.freeze(['recruitment', 'cards', 'quests']);
 
 /**
  * Retired fields a save of this version may still carry, by section: the inert Bank slot count and
- * stack caps, the Scouting Flags radius bonus, rarities and per-biome tasks, the sidebar quests and
- * their timer, the cartographer's tutorial steps (Limes's lessons replaced them), which Token or
- * enemy produced an item, and the item ids marked New!.
+ * stack caps, the Scouting Flags radius bonus, rarities and per-biome tasks, which Token or enemy
+ * produced an item, and the item ids marked New!.
  */
 export const RETIRED_FIELDS = Object.freeze({
     inventory: Object.freeze(['slots', 'maxStack', 'maxStackBonus']),
     progress: Object.freeze(['flagRadiusBonus', 'unlockedRarities', 'discoveredTasksByBiome']),
-    quests: Object.freeze(['active', 'nextQuestAt', 'completedTutorials', 'tutorialStep']),
     collection: Object.freeze(['provenance']),
     ui: Object.freeze(['newDiscoveries'])
 });

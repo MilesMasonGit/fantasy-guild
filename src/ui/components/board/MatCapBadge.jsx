@@ -192,7 +192,7 @@ export const TokenSummaryPanel = ({ anchor, summary, cap, panelRef, onMouseEnter
                 frameStyle={{ maxHeight: 'min(480px, 70vh)' }}
             >
                 <div className="font-bold text-gi-gold">Tokens {summary.total}/{cap}</div>
-                <div data-token-summary-note className="ui-text-small text-white/50">Placed and spawned Tokens count; the Guild Hall and quests don’t.</div>
+                <div data-token-summary-note className="ui-text-small text-white/50">Placed and spawned Tokens count; the Guild Hall doesn’t.</div>
                 {empty && <div className="mt-1 text-white/60">Nothing placed yet.</div>}
                 {summary.pinned.length > 0 && (
                     <div data-token-summary-pinned>

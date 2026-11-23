@@ -3,8 +3,9 @@
 // Every word Limes says is in `limesText.js`. Where a step speaks and what it outlines is the UI's
 // (`ui/components/limes/lessonScreens.js`). The progress is `LimesLessons.js`.
 //
-// A step counts a report `QuestManager` makes from an event the engine really publishes (the same
-// reports the bounties count), whose metadata carries every value its `match` names. Steps count
+// A step counts a report `QuestManager` makes from an event the engine really publishes, whose
+// metadata carries every value its `match` names. A step counting a report `QuestManager` does not
+// make yet needs its subscription added there. Steps count
 // whether or not they are the one showing, so a step done early is simply done when its turn comes.
 
 /**

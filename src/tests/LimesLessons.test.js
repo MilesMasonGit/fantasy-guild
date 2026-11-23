@@ -8,7 +8,6 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { QuestManager } from '../systems/quests/QuestManager.js';
-import * as QuestTokens from '../systems/quests/QuestTokens.js';
 import * as LimesLessons from '../systems/quests/LimesLessons.js';
 import * as LimesGuide from '../systems/quests/LimesGuide.js';
 import { LESSON_STEPS, LESSON_TARGETS, GOAL_STEP, LIMES_MOMENTS, lessonSteps, allSteps } from '../systems/quests/lessonPlan.js';
@@ -28,7 +27,6 @@ import * as Flags from '../systems/board/Flags.js';
 import * as Orders from '../systems/board/Orders.js';
 import * as Shop from '../systems/board/Shop.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
-import { QUEST_TOKEN_TYPE } from '../config/registries/engineTokens.js';
 import { tokenStartingUses, getTokenType } from '../config/registries/tokenRegistry.js';
 import { getItem } from '../config/registries/itemRegistry.js';
 import { getGrid } from '../config/registries/equipmentConstants.js';
@@ -382,34 +380,19 @@ describe('⭐ the lessons survive a save, a catch-up, a reload and travel', () =
     });
 });
 
-describe('the cartographer\'s quest steps are gone', () => {
-    it('a new game puts no quest on the mat, and its first tick brings none', () => {
-        LimesLessons.startLessons();
-        QuestTokens.requestCheck();
-        QuestTokens.tick(100);
-        expect(BoardState.tokens().filter(t => t.typeId === QUEST_TOKEN_TYPE)).toEqual([]);
-    });
-
-    it('an older save loads with no lessons to give, and its tutorial step Token is taken off the mat', () => {
+describe('an older save', () => {
+    it('loads with no lessons to give, and without the retired quest sections', () => {
         const old = structuredClone(INITIAL_STATE);
         delete old.guide;
         old.quests = { completedTutorials: ['cart_tool', 'cart_flag'], tutorialStep: 2, clockMs: 500 };
         const migrated = migrateState(old, GAME_VERSION);
-        expect(migrated.quests).toEqual({ clockMs: 500 });
+        expect(migrated.quests).toBeUndefined();
         expect(migrated.guide.progress).toBeNull();
-
-        const stale = BoardState.createTokenInstance(QUEST_TOKEN_TYPE);
-        BoardState.addToken(stale, 1100, 600);
-        stale.quest = { id: 'cart_gather', tutorial: true, title: 'Gather', targetType: 'cycle_completed', requiredCount: 3, currentCount: 0, rewardItems: [], done: false };
-        expect(QuestTokens.questTokens()).toHaveLength(1);
-        EventBus.publish(ENGINE_EVENTS.GAME_LOADED, {});
-        QuestTokens.tick(0);
-        expect(QuestTokens.questTokens()).toEqual([]);
     });
 });
 
 describe('the reports the goal counts', () => {
-    it('settling a place reports region_settled and place_settled, and arriving there region_travelled', () => {
+    it('settling a place reports place_settled', () => {
         const reported = [];
         const spy = vi.spyOn(QuestManager, 'reportProgress').mockImplementation((type) => { reported.push(type); });
         try {
@@ -419,11 +402,11 @@ describe('the reports the goal counts', () => {
         } finally {
             spy.mockRestore();
         }
-        expect(reported).toEqual(expect.arrayContaining(['region_settled', 'place_settled', 'region_travelled']));
+        expect(reported.filter(t => t === 'place_settled')).toHaveLength(1);
     });
 });
 
-describe('no quest or lesson listens for an event nobody publishes', () => {
+describe('no lesson listens for an event nobody publishes', () => {
     const SRC = path.resolve(__dirname, '..');
     const questSource = fs.readFileSync(path.join(SRC, 'systems/quests/QuestManager.js'), 'utf8')
         .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
@@ -447,12 +430,12 @@ describe('no quest or lesson listens for an event nobody publishes', () => {
 
     it('every value a step matches on is one its report carries', () => {
         const carried = {
-            hero_deployed: ['typeId', 'skill'],
+            hero_deployed: ['typeId'],
             cycle_completed: ['typeId', 'skill', 'gathered', 'crafted'],
-            hero_equipped: ['itemId', 'tool', 'toolKind', 'category', 'weapon'],
+            hero_equipped: ['toolKind', 'category', 'weapon'],
             guild_upgrade_purchased: ['upgradeId'],
             token_purchased: ['typeId'],
-            token_built: ['typeId', 'fromTypeId', 'camp']
+            token_built: ['typeId']
         };
         for (const s of LESSON_STEPS) {
             for (const key of Object.keys(s.match || {})) expect(carried[s.targetType], `${s.id}.${key}`).toContain(key);

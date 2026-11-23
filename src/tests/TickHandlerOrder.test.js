@@ -9,26 +9,13 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 }));
 
 /**
- * The nine tick handlers used to run in registration order only because every
- * one defaulted to `GameLoop.onTick`'s priority of 100 and
- * `Array.prototype.sort` happens to be stable — true, but accidental, and a
- * future ninth-and-a-half handler inserted in the wrong place could silently
- * change behaviour.
- *
- * A permutation spike (R1, same seed, 4,000 S2 ticks, a uses/Bank/XP
- * fingerprint) found every reordering of the nine gives an identical result
- * **except one**: `quest_manager` running before `board_runner` draws a
- * bounty Token's spawn one tick earlier, consuming the shared random stream
- * in a different order. `EngineBootstrap._registerTickHandlers` now gives
- * each handler an explicit priority reproducing today's order, with that one
- * relation called out in its own comment.
+ * Every tick handler carries an explicit priority, so the order never rests on registration order
+ * and a stable sort: a handler inserted in the wrong place would otherwise change behaviour silently.
  */
 describe('tick handlers have explicit priorities that reproduce today\'s order (CR3-031)', () => {
     const NAMES = [
         'time_tracking', 'live_effects', 'regen_system', 'board_runner',
-        // The old status engine's `status_effects` handler is gone: statuses tick on `live_effects`.
-        'quest_manager',
-        // Events (brief 640): after the board, like the bounty clock; off in the tests and the bench.
+        // Events: after the board; off in the tests and the bench.
         'event_clock',
         'sprite_layer', 'wounded_system'
     ];
@@ -56,10 +43,5 @@ describe('tick handlers have explicit priorities that reproduce today\'s order (
     it('reproduces today\'s registration order exactly', () => {
         const order = GameLoop.tickHandlers.map(h => h.name).filter(n => NAMES.includes(n));
         expect(order).toEqual(NAMES);
-    });
-
-    it('⚠️ board_runner always runs before quest_manager (the one relation that changes the result, R1)', () => {
-        const order = GameLoop.tickHandlers.map(h => h.name);
-        expect(order.indexOf('board_runner')).toBeLessThan(order.indexOf('quest_manager'));
     });
 });

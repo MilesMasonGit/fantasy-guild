@@ -57,7 +57,7 @@ function isListened(ref) {
 describe('global events are declared and named by constant (CR3-559)', () => {
     it('scans the source', () => {
         expect(FILES.length).toBeGreaterThan(200);
-        expect(DECLARED.length).toBeGreaterThan(50);
+        expect(DECLARED.length).toBeGreaterThan(40);
     });
 
     it('no event is published or subscribed by raw string', () => {

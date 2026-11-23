@@ -3,7 +3,6 @@
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
-import { QUEST_TOKEN_TYPE } from '../../config/registries/engineTokens.js';
 import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { DEMOLITION_SKILL_ID } from '../../config/registries/skillRegistry.js';
 import * as BoardState from './BoardState.js';
@@ -18,7 +17,7 @@ import * as Landmarks from './Landmarks.js';
  * tool is on (`Landmarks.setLayoutEditing`). `Placement.removePlacedToken` asks it.
  *
  * {@link canMark}: may the player mark it for demolition? Narrower: nor a fixture (a map's nodes
- * and the Starter Camp's Tokens: the layout is permanent), quests or enemies, and never a landmark
+ * and the Starter Camp's Tokens: the layout is permanent) or enemies, and never a landmark
  * or a camp Token, dev tool or not. A marked Token
  * (`instance.demolish: true`, saved) is taken away by a hero holding Construction: no refund, no
  * loot, never a depletion. An event Token (`EventTokens.js`) is marked and cleared like any other.
@@ -64,7 +63,6 @@ export const REFUSAL = Object.freeze({
     LANDMARK: 'landmark',
     MAP_NODE: 'map_node',
     CAMP: 'camp',
-    QUEST: 'quest',
     ENEMY: 'enemy'
 });
 
@@ -75,7 +73,6 @@ export const REFUSAL_TEXT = Object.freeze({
     [REFUSAL.LANDMARK]: 'Landmarks cannot be demolished.',
     [REFUSAL.MAP_NODE]: 'This was here when the Region was settled, so it cannot be demolished.',
     [REFUSAL.CAMP]: 'This came with the Starter Camp, so it cannot be demolished.',
-    [REFUSAL.QUEST]: 'Quests cannot be demolished.',
     [REFUSAL.ENEMY]: 'Enemies cannot be demolished.'
 });
 
@@ -123,7 +120,6 @@ export function refusalOf(instance) {
     if (Landmarks.isLandmark(instance)) return REFUSAL.LANDMARK;
     if (BoardState.isCampFixture(instance)) return REFUSAL.CAMP;
     if (BoardState.isFixture(instance) && !isClearable(instance)) return REFUSAL.MAP_NODE;
-    if (instance.typeId === QUEST_TOKEN_TYPE) return REFUSAL.QUEST;
     if (isEnemyDef(getTokenType(instance.typeId))) return REFUSAL.ENEMY;
     return null;
 }

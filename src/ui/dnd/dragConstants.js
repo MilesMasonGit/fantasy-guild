@@ -45,7 +45,7 @@ export const DRAG_SFX = {
     pickup: 'drag',
     invalid: 'unassign',
     dropDefault: 'drop',
-    // A Foundation handed back to the Shop: coins in the hand, as a quest's reward is claimed.
+    // A Foundation handed back to the Shop: coins in the hand.
     refund: 'quest_claim',
     dropByKind: {
         // Tokens are weighty physical objects resting on a surface, so

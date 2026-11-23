@@ -43,7 +43,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * ⭐ The mat layer (brief 120, C1; concept_token_bars): at rest a Token nobody works shows what is
  * wrong (one problem mark) and nothing else; on hover it gets the idle plate under it (its
- * problem, charges, spawner count, quest progress, timer) and no ring. A worked Token's cycle,
+ * problem, charges, spawner count, timer) and no ring. A worked Token's cycle,
  * charges and problem are on its work plate (`WorkPlate.test.js`): its own box draws none of them,
  * but it still keeps the bar's model, which the plate's fill draws (here: `WorkBarFill` beside it).
  * Where each piece sits, when it shows, the tooltips, and that pressing any of them grabs the
@@ -134,9 +134,9 @@ describe('the rules, pure', () => {
         expect([...GLIDING_RINGS]).toEqual(['charges']);
     });
 
-    it('⭐ the idle plate’s cells: the problem, then the timers; never charges, a spawner’s count or a quest’s progress', () => {
+    it('⭐ the idle plate’s cells: the problem, then the timers; never charges or a spawner’s count', () => {
         const timers = timerCellsOf(growing(30000)());
-        const counts = { charges: 4, spawner: { count: 3, cap: 5 }, quest: { currentCount: 1, requiredCount: 10, itemId: 'x' } };
+        const counts = { charges: 4, spawner: { count: 3, cap: 5 } };
         const cells = idlePlateCells({ problem: { kind: ALERT.INPUTS, severity: SEVERITY.WAITING }, ...counts, timers });
         expect(cells.map(c => c.kind)).toEqual([CELL.PROBLEM, CELL.TIMER]);
         expect(cells[1]).toMatchObject({ text: '30s', glyph: 'grow' });
@@ -306,12 +306,11 @@ describe('the work bar', () => {
 describe('⭐ hover: the idle plate under the Token, and the gear', () => {
     const idle = (extra) => worked({ heroId: null, ...extra });
 
-    it('⭐ charges, a spawner’s count and a quest’s progress bring no plate: hovered with only those, the name alone', () => {
+    it('⭐ charges and a spawner’s count bring no plate: hovered with only those, the name alone', () => {
         const start = tokenStartingUses('fixture_producer');
         const { container } = mount(idleBub({
             token: idle({ usesRemaining: start }),
-            spawner: { count: 4, cap: 5 },
-            quest: { currentCount: 3, requiredCount: 5 }
+            spawner: { count: 4, cap: 5 }
         }));
         expect(idlePlate()).toBeNull();
         expect(plateHost.children).toHaveLength(0);

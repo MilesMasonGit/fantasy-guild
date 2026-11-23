@@ -6,7 +6,6 @@ import { useDndMonitor } from '@dnd-kit/core';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import './fixtures/testTokens.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { QUEST_TOKEN_TYPE } from '../config/registries/engineTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Flags from '../systems/board/Flags.js';
@@ -161,9 +160,8 @@ describe('⭐ only movable Tokens show the grab cursor, and no Token carries a m
         const hall = placeAt('token_guild_hall', 900, 600);
         const sapling = spawnedAt('fxp_sapling', 1200, 300);
         const enemy = spawnedAt('fxp_enemy', 300, 800);
-        const quest = spawnedAt(QUEST_TOKEN_TYPE, 600, 800);
         const { container } = mount();
-        for (const t of [bought, node, hall, sapling, enemy, quest]) expect(hitOf(container, t.id)).toBeTruthy();
+        for (const t of [bought, node, hall, sapling, enemy]) expect(hitOf(container, t.id)).toBeTruthy();
         expect(container.querySelectorAll('[data-token-movable]')).toHaveLength(0);
     });
 

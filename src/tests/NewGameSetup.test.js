@@ -12,7 +12,7 @@ import { nextSeed } from '../systems/atlas/seededRandom.js';
 import { cleanGuildName, guildNameOf, renameGuild, GUILD_NAME_MAX } from '../systems/core/GuildName.js';
 import { setWorldTablesForTests, resetWorldTablesForTests } from '../config/registries/worldTablesRegistry.js';
 import { FIXTURE_WORLD_RAW } from './fixtures/worldTables.js';
-import * as QuestTokens from '../systems/quests/QuestTokens.js';
+import * as BoardState from '../systems/board/BoardState.js';
 import * as LimesLessons from '../systems/quests/LimesLessons.js';
 import * as LimesGuide from '../systems/quests/LimesGuide.js';
 import { LESSON_STEPS } from '../systems/quests/lessonPlan.js';
@@ -86,10 +86,9 @@ describe('⭐ a new game from the new-game screen', () => {
     it('the lessons start at the bush, with no quest on the mat: the hero is already there', async () => {
         await EngineBootstrap.startSlot(0, { setup: SETUP });
         GameLoop.stop();
-        QuestTokens.ensure();
         expect(LimesLessons.currentStep()?.id).toBe('bush');
         expect(LimesGuide.lessonsOn()).toBe(true);
-        expect(QuestTokens.questTokens()).toEqual([]);
+        expect(BoardState.tokens().filter(t => t.typeId === 'token_quest')).toEqual([]);
         expect(LESSON_STEPS.map(t => t.targetType)).not.toContain('hero_recruited');
     });
 

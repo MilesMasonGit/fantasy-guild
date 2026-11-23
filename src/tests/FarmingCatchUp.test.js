@@ -23,7 +23,7 @@ import { KEYWORD } from '../systems/effects/statements.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
-import { resetMatTuning, setMatTuning } from '../config/matTuning.js';
+import { resetMatTuning } from '../config/matTuning.js';
 import * as fixtures from '../../bench/fixtures.mjs';
 
 /**
@@ -117,9 +117,6 @@ function buildBoard() {
     stream.draws = 0;
     motion.state = 7;
     resetMatTuning();
-    // No bounty quests: with no Guild Hall to stand beside, each would be retried every tick, and
-    // its draws would differ by step size. Nothing here is about quests.
-    setMatTuning('questCap', 0);
     GameState.initNew();
     InventoryManager.init();
     const [farmer] = fixtures.makeHeroes(1, { farming: 10 });

@@ -4,7 +4,6 @@ import { GameState } from '../state/GameState.js';
 import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
 import { SaveManager } from '../systems/core/SaveManager.js';
 import { GameLoop } from '../systems/core/GameLoop.js';
-import { QuestManager } from '../systems/quests/QuestManager.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -66,18 +65,6 @@ describe('a slot starts with no React (EngineBootstrap.startSlot)', () => {
         // Anything the slot's opening brings may join them.
         expect(Object.keys(GameState.state.board.tokens)).toEqual(expect.arrayContaining(saved));
         expect(typesOf(GameState.state.board)).toContain('token_guild_hall');
-    });
-
-    it('the quests are checked as the slot opens, before the game boots', async () => {
-        const order = [];
-        vi.spyOn(QuestManager, 'onSlotOpened').mockImplementation(() => order.push('quests'));
-        const boot = EngineBootstrap.onSlotSelected.bind(EngineBootstrap);
-        vi.spyOn(EngineBootstrap, 'onSlotSelected').mockImplementation((...args) => {
-            order.push('boot');
-            return boot(...args);
-        });
-        await EngineBootstrap.startSlot(0);
-        expect(order).toEqual(['quests', 'boot']);
     });
 
     it('a save that will not load: refused, nothing opened, the loop still', async () => {

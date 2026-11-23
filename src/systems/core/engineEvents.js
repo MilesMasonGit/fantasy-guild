@@ -17,11 +17,8 @@ export const XP_FOR_EVERYONE_SOURCE = 'xpForEveryone';
  *   UI never publishes an engine event.** The only exceptions are the dev
  *   panels listed in `UiEventOwnership.test.js` (they fake engine changes
  *   on purpose).
- * * `UI_EVENTS` — published by the UI. Most are UI-to-UI (`ui:*`, `dev:*`,
- *   `inspect_hero`). Two are **declared UI → engine notices**, facts the
- *   engine cannot observe for itself: `ui_modal:opened` (a quest counts
- *   "open the Bank") and `ui:token_inspected` (the tutorial counts
- *   "inspect an endgame site"). A game starts by a call, not a notice:
+ * * `UI_EVENTS` — published by the UI. All are UI-to-UI (`ui:*`, `dev:*`,
+ *   `inspect_hero`). A game starts by a call, not a notice:
  *   `EngineBootstrap.startSlot`.
  *
  * `audio:play` is shared: the engine and the UI both ask for a sound.
@@ -114,12 +111,6 @@ export const ENGINE_EVENTS = Object.freeze({
     /** First time an enemy was seen. Payload: `{ enemyId, enemyName }`. */
     ENEMY_DISCOVERED: 'enemy_discovered',
 
-    /** A quest's progress changed. Payload: `{ instanceId }` (or none for a sweep). */
-    QUESTS_UPDATED: 'quests_updated',
-    /** Payload: `{ instanceId, questId }`. */
-    QUEST_SPAWNED: 'quest_spawned',
-    /** Payload: `{ questId, instanceId, rewardItems }`. */
-    QUEST_CLAIMED: 'quest_claimed',
     /**
      * Limes's lessons moved on (`quests/LimesLessons.js`): a step was done, or a big moment came
      * due or was heard. Payload: `{ stepId, arrived, moment }`: the step Limes is on now (null once
@@ -212,14 +203,6 @@ export const ENGINE_EVENTS = Object.freeze({
 export const HEARD_WHILE_QUIET = Object.freeze([ENGINE_EVENTS.CATCH_UP_STARTED, ENGINE_EVENTS.CATCH_UP_PROGRESS]);
 
 export const UI_EVENTS = Object.freeze({
-    /** ⭐ UI → engine notice: a window opened. Payload: `{ modalId }`. The tutorial counts it. */
-    UI_MODAL_OPENED: 'ui_modal:opened',
-    /**
-     * ⭐ UI → engine notice: a Token's sheet opened on a Token on the mat. Payload:
-     * `{ instanceId, typeId }`. The tutorial counts it (`token_inspected`).
-     */
-    TOKEN_INSPECTED: 'ui:token_inspected',
-
     /** Payload: `{ heroId }`. */
     INSPECT_HERO: 'inspect_hero',
     /** "While you were away" was closed: what it covered may now play on the mat. No payload. */
@@ -269,5 +252,4 @@ export const NO_LISTENER = Object.freeze({
     [ENGINE_EVENTS.ENEMY_DISCOVERED]: 'first-seen moment, for a future bestiary notice',
     [ENGINE_EVENTS.HERO_RECOVERED]: 'combat moment; HEROES_UPDATED carries the redraw',
     [ENGINE_EVENTS.BGM_TRACK_CHANGED]: 'console affordance for the music system',
-    [ENGINE_EVENTS.QUEST_SPAWNED]: 'the moment a bounty arrives; QUESTS_UPDATED and the board events carry the redraw',
 });

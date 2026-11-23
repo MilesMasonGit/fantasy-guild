@@ -254,17 +254,16 @@ describe('⭐ Tokens land beside a real point', () => {
     });
 });
 
-describe('⭐ quest events carry instanceId, and still count', () => {
+describe('⭐ lesson events carry instanceId, and still count', () => {
     beforeEach(() => QuestManager.init());
     afterEach(() => {
         QuestManager.cleanup();
         vi.restoreAllMocks();
     });
 
-    it('TOKEN_PLACED names the placed Token, and a context placement still counts', () => {
+    it('TOKEN_PLACED names the placed Token', () => {
         const seen = [];
         const off = EventBus.subscribe(BOARD_EVENTS.TOKEN_PLACED, (p) => seen.push(p));
-        const progress = vi.spyOn(QuestManager, 'reportProgress');
         const tool = BoardState.createTokenInstance('fixture_context_a', 40);
         try {
             expect(Placement.placeTokenAt(tool, C(14)).success).toBe(true);
@@ -273,9 +272,6 @@ describe('⭐ quest events carry instanceId, and still count', () => {
         }
 
         expect(seen.at(-1)).toEqual({ instanceId: tool.id, typeId: 'fixture_context_a' });
-        const targets = progress.mock.calls.map(c => c[0]);
-        expect(targets).toContain('token_placed');
-        expect(targets).toContain('context_token_placed');
     });
 
     it('hero_deployed names the Token the flag was planted on', () => {
@@ -293,9 +289,6 @@ describe('⭐ quest events carry instanceId, and still count', () => {
         expect(progress.mock.calls.map(c => c[0])).toContain('hero_deployed');
     });
 
-    // 'loot_token_placed names the Token that came off the floor' went with
-    // Token loot (Token Lifecycle 9.3): the event has no publisher now, and
-    // the tutorial quest that counts it is re-pointed in 9.5.
 });
 
 describe('⭐ the mat draws each Token by its instance id (slice 1.6c-2)', () => {

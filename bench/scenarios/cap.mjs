@@ -3,7 +3,7 @@
 // owner's cap, Atlas roadmap D-9: 128 to start, +16 a rank up to 256).
 //
 // S2 counts ~105 Tokens toward the cap (39 placed, 60 spawned trees and rocks, 6 goblins; the
-// Hall and quest Tokens never count). A cap board keeps S2's share of placed Tokens (39 of 105)
+// Hall never counts). A cap board keeps S2's share of placed Tokens (39 of 105)
 // and its order (S2's list again and again), and lets the spawners fill the rest of the mat until
 // the cap stops them, so the board ends at the cap and stays there: a used-up tree or a killed
 // goblin frees one place and a spawner takes it, as for a player at the cap. Same shipped
@@ -11,7 +11,7 @@
 //
 // * `cap128`: the base cap.
 // * `camp128`: the Starter Camp at the base cap. Its 25 full-size endgame sites stand on the mat
-//   without counting (Atlas D-1 B), so it draws 128 + 25 = 153 Tokens besides the Hall and quests.
+//   without counting (Atlas D-1 B), so it draws 128 + 25 = 153 Tokens besides the Hall.
 //   Drawn here as S2's mix at 153; what the sites are matters less to the drawing than that they
 //   are there.
 // * `cap256`: the top cap. The mat has 72 free 160 u cells for placed Tokens, fewer than S2's

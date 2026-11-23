@@ -5,13 +5,10 @@ import { render, cleanup, fireEvent, act } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
 import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
-import * as BoardState from '../systems/board/BoardState.js';
 import * as Demolition from '../systems/board/Demolition.js';
 import * as Flags from '../systems/board/Flags.js';
-import * as QuestTokens from '../systems/quests/QuestTokens.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
-import { QUEST_TOKEN_TYPE } from '../config/registries/engineTokens.js';
 import { LeaveMatControl } from '../ui/components/drawer/LeaveMatControl.jsx';
 import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
 import { calloutText } from '../ui/components/board/callouts.js';
@@ -28,8 +25,8 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 
 /**
  * Demolition as the mat and the card show it: the countdown line, the marked badge, the
- * callout, the card's Demolish and Cancel demolition, and a Dismiss for bounties. Demolish mode
- * (`MapModes.test.js`) marks many at once.
+ * callout, and the card's Demolish and Cancel demolition. Demolish mode (`MapModes.test.js`)
+ * marks many at once.
  */
 
 const h = React.createElement;
@@ -126,24 +123,5 @@ describe('Demolish on the card', () => {
         const reason = container.querySelector('[data-demolish-refusal]');
         expect(reason.textContent).toBe(Demolition.canMark(hall.id).reason);
         expect(reason.textContent).toBe('The Guild Hall cannot be demolished.');
-    });
-});
-
-describe('Dismiss for bounties', () => {
-    function quest() {
-        const q = placeAt(QUEST_TOKEN_TYPE, 600, 300);
-        q.quest = { id: 'bounty', title: 'Q', tutorial: false, targetType: 'x', requiredCount: 3, currentCount: 0, rewardItems: [], done: false };
-        return q;
-    }
-
-    it('a bounty has a Dismiss that takes it off the mat', async () => {
-        const b = quest();
-        const { container } = inspect(b);
-        expect(control(container)).toBeNull();
-        const btn = container.querySelector('[data-dismiss-bounty]');
-        expect(btn.textContent).toBe('Dismiss bounty');
-        await act(async () => { fireEvent.click(btn); });
-        expect(BoardState.getTokenById(b.id)).toBeNull();
-        expect(QuestTokens.bountyTokens()).toHaveLength(0);
     });
 });

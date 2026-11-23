@@ -815,7 +815,7 @@ function stepCause(state, key, own = false) {
             return { cause: CANT_FIX.RARE, words: `is a rare find: ${chance}, ${LEDGER_ENGINE_TEXT.perDay(findsPerDay(rule, give))} for one hero; more heroes on it, a rare-find boost or a higher chance is a design call` };
         }
     }
-    if (!path.complete) return { cause: CANT_FIX.UNTIMED, words: 'its path has steps the calculator cannot time (a fight\'s levels, a bounty, trading maps up), so its time is a floor' };
+    if (!path.complete) return { cause: CANT_FIX.UNTIMED, words: 'its path has steps the calculator cannot time (a fight\'s levels, trading maps up), so its time is a floor' };
     const chain = path.steps.filter(x => x.own > 0);
     if (chain.length > 1) {
         return { cause: CANT_FIX.CHAIN, words: `its time is a chain of first finds and crafts (${chain.slice(0, 4).map(x => `${name(x.key)} ${PACE_TEXT.hours(x.own)}`).join(', ')}), no level or price to move; it may belong to a later stage` };

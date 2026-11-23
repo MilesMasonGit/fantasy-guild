@@ -11,7 +11,6 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { QUEST_TOKEN_TYPE } from '../config/registries/engineTokens.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { PLACEMENT } from '../config/registries/placementRegistry.js';
@@ -31,7 +30,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * ⭐ **Fixed and movable Tokens** (Atlas D-6 B): map nodes, planted trees and the endgame sites
  * stay where they are. Nothing drags, bins or pushes them. Everything bought or built moves;
- * enemies and quests move as they always have.
+ * enemies move as they always have.
  * The Guild Hall is the exception to D-6 (T-148): the player drags it like a bought Token, but nothing else ever pushes it, and it never leaves the mat or is demolished.
  */
 
@@ -94,10 +93,9 @@ describe('⭐ what is fixed (D-6 B)', () => {
         expect(FixedTokens.isFixed(placeAt('fx_tree', 900, 300))).toBe(false);
     });
 
-    it('a spawned Token outside a growth chain is movable (an ore vein, a goblin, a quest)', () => {
+    it('a spawned Token outside a growth chain is movable (an ore vein, a goblin)', () => {
         expect(FixedTokens.isFixed(spawnedAt('fixture_producer', 300, 300))).toBe(false);
         expect(FixedTokens.isFixed(spawnedAt('fx_enemy', 600, 300))).toBe(false);
-        expect(FixedTokens.isFixed(spawnedAt(QUEST_TOKEN_TYPE, 900, 300))).toBe(false);
     });
 });
 

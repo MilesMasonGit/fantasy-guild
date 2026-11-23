@@ -1,35 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
-import { EventBus } from '../../systems/core/EventBus.js';
-import { UI_EVENTS } from '../../systems/core/engineEvents.js';
 
 /**
  * useUIModals
- * Modal state for the React layer. It subscribes to nothing and publishes one event (below).
- */
-
-/**
- * ## Contract: `ui_modal:opened` - a UI to engine notification
- * ⚠️ **This hook is the ONLY publisher of `ui_modal:opened`, and the engine depends on it.**
- * `QuestManager` subscribes to it and maps two `modalId` values onto quest targets
- * (`shop` is the Shop's pane):
- *
- *  | `modalId`      | quest target       |
- *  |----------------|--------------------|
- *  | `bank`         | `open_bank`        |
- *  | `shop`         | `open_shop`        |
- *
- * The tutorial's Item Bank step advances **only** because this React hook fires. The coupling
- * is two string literals in two files that know nothing about each other, so:
- *
- * - **Any new route that opens the Bank or the Shop must publish this event**, or the quest
- * silently never completes. There are two publish sites below: `openDrawerTab` (a direct
- * open) and `navToggle` (nav bubble click).
- * - **Never rename these `modalId` strings** without changing `QuestManager.subscribeToEvents`
- * in the same commit.
- * - Publishing for other targets (`guild`, `atlas`, `settings`) is harmless; `QuestManager`
- * ignores anything not in the table.
- *
- * `QuestManager` carries the matching note at its subscription.
+ * Modal state for the React layer. It subscribes to nothing and publishes nothing.
  */
 
 /**
@@ -41,8 +14,7 @@ const DRAWER_TARGETS = new Set(['bank']);
 
 /**
  * The Shop's nav target. The Shop is its own panel (`ShopPanel`) with its own open flag
- * (`ui.shop`), not a pane of the Bank's drawer. The quest wiring and the tutorial read
- * this string.
+ * (`ui.shop`), not a pane of the Bank's drawer.
  */
 const SHOP_TARGET = 'shop';
 
@@ -83,7 +55,6 @@ export const useUIModals = () => {
     const openDrawerTab = useCallback((tab) => {
         if (tab === SHOP_TARGET) {
             openShop();
-            EventBus.publish(UI_EVENTS.UI_MODAL_OPENED, { modalId: tab });
             return;
         }
         setIsShopOpen(false);
@@ -91,7 +62,6 @@ export const useUIModals = () => {
             ...s,
             panes: [tab]
         }));
-        EventBus.publish(UI_EVENTS.UI_MODAL_OPENED, { modalId: tab });
     }, [openShop]);
 
     // The nav bubbles share an only-one-open rule: clicking a bubble closes whatever any other
@@ -133,7 +103,6 @@ export const useUIModals = () => {
             );
             setIsSettingsOpen(target === 'settings');
             setIsShopOpen(target === SHOP_TARGET);
-            EventBus.publish(UI_EVENTS.UI_MODAL_OPENED, { modalId: target });
         });
     }, [isNavActive]);
 

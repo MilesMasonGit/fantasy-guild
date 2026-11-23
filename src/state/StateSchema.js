@@ -122,7 +122,7 @@ export function createRegionRecord(id = null) {
         // ⚠️ Null for the Region the guild is in: its board is the live `state.board`. Every other
         // Region keeps its whole board here, frozen, as a save would write it.
         board: null,
-        // Where the Hall and the quest Tokens stood when the guild left, by instance id
+        // Where the Hall stood when the guild left, by instance id
         // (`{ x, y, placedAt }`), so going back puts them where they were.
         travellers: {}
     };
@@ -235,14 +235,6 @@ export const INITIAL_STATE = {
     // is in the Dock; the Dock is still not a data structure.
     board: createEmptyBoard(),
 
-    // === Quests: the bounties (`quests/QuestTokens.js`) ===
-    quests: {
-        // The bounty clock in game ms: advanced by the tick's
-        // `delta` while fewer bounty quest Tokens than the cap are on the mat.
-        // The quests themselves are Tokens (`instance.quest`).
-        clockMs: 0
-    },
-
     // === Events (`events/EventClock.js`) ===
     // The guild's event clock in game ms: advanced by the tick's `delta` while no event Token
     // stands on the active mat, held at 0 while one does. `waitMs` is the wait it counts to, drawn
@@ -290,8 +282,6 @@ export const INITIAL_STATE = {
 /**
  * List of all required top-level state keys.
  *
- * `board` and `quests` are two sections this game is made of — the playmat
- * and the bounties — and neither was listed until CR2-043.
  * `migrateState` runs before this check and backfills any wholly-missing
  * top-level section from INITIAL_STATE, so requiring them cannot reject a save
  * that merely predates them.
@@ -299,7 +289,7 @@ export const INITIAL_STATE = {
 const REQUIRED_KEYS = [
     'meta', 'heroes',
     'inventory', 'progress', 'time',
-    'collection', 'board', 'quests', 'atlas'
+    'collection', 'board', 'atlas'
 ];
 
 /**

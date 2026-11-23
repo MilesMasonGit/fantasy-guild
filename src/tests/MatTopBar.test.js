@@ -197,7 +197,7 @@ describe('⭐ Token Summary (MatCapBadge)', () => {
         expect(document.body.querySelector('[data-top-bar-tip]')).toBeNull();
         expect(document.body.textContent).not.toMatch(/Click for/);
         // What counts toward the cap, once the tooltip that said it is gone; endgame sites count like any Token.
-        expect(panel().querySelector('[data-token-summary-note]').textContent).toContain('the Guild Hall and quests don’t');
+        expect(panel().querySelector('[data-token-summary-note]').textContent).toContain('the Guild Hall doesn’t');
         expect(panel().textContent).not.toMatch(/endgame/i);
     });
 

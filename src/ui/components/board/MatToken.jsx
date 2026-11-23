@@ -31,12 +31,9 @@ import { tokenOutline } from './spriteOutline.js';
 import * as TokenGlows from '../../../systems/board/TokenGlows.js';
 import { PassiveProductionTooltip } from './PassiveProductionTooltip.jsx';
 import * as PassiveProduction from '../../../systems/board/PassiveProduction.js';
-import { QuestTooltip } from './QuestTooltip.jsx';
-import * as QuestTokens from '../../../systems/quests/QuestTokens.js';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { useDrawn, isDrawn } from '../../dev/perf/drawSwitches.js';
-import { QuestPosterItem } from './QuestPoster.jsx';
 import { takeSpawn, playSpawn } from './spawnMotion.js';
 import { TOKEN_FLIGHT_FX, TOKEN_FLIGHT_MS, playTokenFlight } from './tokenFlight.js';
 import { FX_FRAME_MS, playPoses } from './fx/pixelSteps.js';
@@ -228,9 +225,6 @@ export const MatToken = React.memo(function MatToken({
     // Token so its poll is not reset. Read only while the pointer rests on the Token.
     const readTimer = React.useCallback(() => idleTimerLines(BoardState.getTokenById(id)), [id]);
 
-    const quest = detail?.quest ?? null;
-    const questDone = !!quest?.done;
-
     const usesRemaining = detail?.usesRemaining ?? null;
     const resting = !!detail?.resting;
     // Drawn by its state: a Field empty, growing or ripe; a resting vein as the shared empty rock,
@@ -310,9 +304,6 @@ export const MatToken = React.memo(function MatToken({
     // A Token with Passive Production (the Guild Hall) shows what it pays in a game-styled
     // tooltip with a live next-in, not the native title. Read only once the pointer rests.
     const showPassive = isRested && PassiveProduction.hasPassiveProduction(BoardState.getTokenById(id));
-
-    // Resting on a quest Token reads it (`QuestTooltip`).
-    const showQuestTip = isRested && !!quest;
 
     const hoverTitle = (isRested ? skipLines : []).filter(Boolean).join('\n') || undefined;
 
@@ -401,7 +392,7 @@ export const MatToken = React.memo(function MatToken({
     }, [stack, id]);
 
     // Arriving in a Region: out of sight until its turn, then it drops in (`fx/regionSettle.js`). A
-    // Token drawn before the arrival (the Hall, a quest) is told; one drawn after asks as it mounts.
+    // Token drawn before the arrival (the Hall) is told; one drawn after asks as it mounts.
     const settle = () => {
         const wait = takeSettle(id);
         if (wait != null && isDrawn('tokenFx')) playSettle([artRef.current, overlayRef.current], wait);
@@ -550,7 +541,6 @@ export const MatToken = React.memo(function MatToken({
                 data-token-type={typeId}
                 data-token-small={small ? 'true' : undefined}
                 data-guild-hall={isHall ? 'true' : undefined}
-                data-quest-claimable={questDone ? 'true' : undefined}
                 title={hoverTitle}
                 data-tile-alert={alert || undefined}
                 data-tile-staffed={staffed ? 'true' : undefined}
@@ -563,23 +553,8 @@ export const MatToken = React.memo(function MatToken({
                 data-token-protected={demolishProtected ? 'true' : undefined}
                 onClick={(e) => {
                     if (dragging) return;
-                    // In a map mode a click acts on the Token and does nothing else; it never
-                    // claims a quest.
+                    // In a map mode a click acts on the Token and does nothing else.
                     if (mapMode) { onModeClick?.(id); return; }
-                    // Click a done quest to claim it. The engine drops the reward as loot and
-                    // removes the Token. `skipSlide` is still on just after a drop, so the
-                    // drop's own click never claims. A quest not yet done inspects.
-                    if (questDone) {
-                        if (skipSlide) return;
-                        const result = QuestTokens.claimQuest(id);
-                        if (result && result.success === false && result.reason) {
-                            EventBus?.publish(UI_EVENTS.UI_TOKEN_ALERT, {
-                                instanceId: id, severity: 'disallow', type: 'claim_refused',
-                                title: result.reason, message: result.reason
-                            });
-                        }
-                        return;
-                    }
                     // A single click picks (selects a movable Token), or clears it when it is the one
                     // selected; a double-click inspects.
                     onPick?.(id, isSingleClick(e));
@@ -598,7 +573,7 @@ export const MatToken = React.memo(function MatToken({
                 }}
                 className={cn(
                     'absolute select-none',
-                    mapMode || questDone || fixed ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
+                    mapMode || fixed ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
                 )}
             >
                 <div
@@ -627,9 +602,6 @@ export const MatToken = React.memo(function MatToken({
                     style={staffed ? undefined : AT_REST_STYLE}
                 >
                     {art}
-                    {quest?.itemId && (
-                        <QuestPosterItem itemId={quest.itemId} boxPx={boxPx} artPx={artPx} fit={fit} />
-                    )}
                 </div>
             </div>
 
@@ -637,8 +609,6 @@ export const MatToken = React.memo(function MatToken({
                 ref={setOverlayRef}
                 data-token-id={id}
                 data-token-overlay={id}
-                data-quest-token={quest ? id : undefined}
-                data-quest-done={quest ? String(questDone) : undefined}
                 // In a map mode a click on any bubble over the Token (the demolition mark) is a
                 // click on the Token: the bubbles take the pointer for their tips.
                 onClick={mapMode ? () => { if (!dragging) onModeClick?.(id); } : undefined}
@@ -680,7 +650,6 @@ export const MatToken = React.memo(function MatToken({
             </div>
 
             {tooltipsDrawn && showPassive && !hidden && <PassiveProductionTooltip instanceId={id} />}
-            {tooltipsDrawn && showQuestTip && !hidden && <QuestTooltip instanceId={id} quest={quest} />}
         </>
     );
 });

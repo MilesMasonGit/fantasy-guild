@@ -37,8 +37,6 @@ import * as Camps from '../board/Camps.js';
 // Marking Tokens for demolition from the console (`Game.Demolition.mark(id)`).
 import * as Demolition from '../board/Demolition.js';
 import { QuestManager } from '../quests/QuestManager.js';
-// Quest Tokens on the mat, exposed for console probes (`Game.QuestTokens`).
-import * as QuestTokens from '../quests/QuestTokens.js';
 import * as LimesGuide from '../quests/LimesGuide.js';
 import * as LimesLessons from '../quests/LimesLessons.js';
 // Events landing on the mat (`Game.EventClock`).
@@ -100,7 +98,6 @@ export const EngineBootstrap = {
             Camps,
             Demolition,
             QuestManager,
-            QuestTokens,
             EventClock,
             EnemyMotion,
             Atlas,
@@ -163,9 +160,7 @@ export const EngineBootstrap = {
 
     /**
      * Register the tick handlers with GameLoop. Priorities are explicit and spaced
-     * by ten. Only one relation is load-bearing: `quest_manager` before `board_runner`
-     * draws a bounty Token's spawn a tick earlier and consumes the shared random stream
-     * in a different order (`TickHandlerOrder.test.js` pins the order).
+     * by ten (`TickHandlerOrder.test.js` pins the order).
      */
     _registerTickHandlers() {
         // 10: the game clock. Nothing else reads a tick-fresher gameTimeMs.
@@ -193,10 +188,7 @@ export const EngineBootstrap = {
             if (GameState.getIsInitialized()) RegenSystem.tick(delta);
         }, 30);
 
-        // 40: the board (spawners, growth, work, combat). ⚠️ Must run BEFORE
-        // `quest_manager` (50): a bounty spawned before the board advances this
-        // tick is seen one tick earlier and draws from the shared random stream
-        // in a different order.
+        // 40: the board (spawners, growth, work, combat).
         GameLoop.onTick('board_runner', (delta) => {
             if (GameState.getIsInitialized()) {
                 BoardRunner.tick(delta);
@@ -204,11 +196,6 @@ export const EngineBootstrap = {
                 Arrival.landWaiting();
             }
         }, 40);
-
-        // 50: bounty quests. Must run AFTER `board_runner` (40) — see there.
-        GameLoop.onTick('quest_manager', (delta) => {
-            if (GameState.getIsInitialized()) QuestManager.tick(delta);
-        }, 50);
 
         // 55: the event clock (off unless turned on: `EventClock.setEnabled`).
         GameLoop.onTick('event_clock', (delta) => {
@@ -340,7 +327,6 @@ export const EngineBootstrap = {
             return false;
         }
         onOpened?.();
-        QuestManager.onSlotOpened();
         try {
             await this.onSlotSelected(slotIndex, isNewGame, setup);
         } catch (err) {

@@ -59,7 +59,7 @@ const NO_SUBSCRIPTION = () => () => {};
  * over the Token it fired on, "Needs Pickaxe" over a Token a hero passed over for want of the tool, "Needs Coal" over a station its hero stands at
  * out of an input, "Needs Oak Seedling" over a Stump as it stops for want of one,
  * "Demolished Oak Tree" where a demolished Token stood, and the reason
- * for a refused action (a drop, a quest claim, a shrink that left a Token crowded) over the spot or
+ * for a refused action (a drop, a shrink that left a Token crowded) over the spot or
  * Token involved. Refusals are never notifications.
  * They appear, hold for a moment and fade (`callout-pop` in `components.css`); nothing to click,
  * and the pointer passes straight through. One layer and one subscription per event for the

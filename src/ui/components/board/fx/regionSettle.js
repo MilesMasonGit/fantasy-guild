@@ -11,7 +11,7 @@ import { animateFx } from './oneShot.js';
  * Planned once, on `BOARD_SWAPPED`: each Token's wait grows with its distance from the Hall, and
  * the whole ripple is capped ({@link SETTLE_SPREAD_MS}), so a full mat settles as fast as a small one.
  * A Token not yet drawn asks for its wait as it mounts ({@link takeSettle}); one already drawn (the
- * Hall and the quests travel with the guild) is told by `UI_EVENTS.UI_TOKEN_FX`. Either way once.
+ * Hall travels with the guild) is told by `UI_EVENTS.UI_TOKEN_FX`. Either way once.
  */
 
 /** The Hall drops after its own slide to its new spot is over. */

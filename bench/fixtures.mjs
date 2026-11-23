@@ -32,8 +32,8 @@ export { SettingsManager as settings, InventoryManager as inventory };
 /** Token types the test fixtures do not have. */
 export const BENCH_TOKENS = {
     /**
-     * The Guild Hall stand-in: a 2×2 with `isGuildHall`, inert. Quest Tokens
-     * spawn beside it, heroes walk home to it. (The shipped Hall carries
+     * The Guild Hall stand-in: a 2×2 with `isGuildHall`, inert. Heroes walk
+     * home to it. (The shipped Hall carries
      * authored content — a trickle, upgrades — that would make the bench move
      * whenever content is retuned.)
      */
@@ -221,13 +221,12 @@ export function freeSpot(typeId, points) {
 
 /** A tally of what is on the mat, for the report. */
 export function census() {
-    const out = { tokens: 0, placed: 0, spawned: 0, enemies: 0, quests: 0, alerts: 0, sprites: 0, heroesWorking: 0 };
+    const out = { tokens: 0, placed: 0, spawned: 0, enemies: 0, alerts: 0, sprites: 0, heroesWorking: 0 };
     for (const t of BoardState.tokens()) {
         out.tokens++;
         if (BoardState.originOf(t) === BoardState.ORIGIN.SPAWNED) out.spawned++;
         else out.placed++;
         if (t.typeId === 'bench_goblin') out.enemies++;
-        if (t.typeId === 'token_quest') out.quests++;
         if (t.alert) out.alerts++;
     }
     out.sprites = (GameState.state?.board?.sprites || []).length;

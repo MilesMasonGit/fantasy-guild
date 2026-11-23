@@ -1,35 +1,16 @@
 // Fantasy Guild - Quest Manager
-// Hears the game's events and reports progress, to the bounties and to Limes's lessons; generates
-// bounties and works out rewards. The bounties themselves are Tokens on the mat: see QuestTokens.js.
+// Hears the game's events and reports progress to Limes's lessons (`LimesLessons.report`). Only the
+// reports a lesson step or moment counts are made (`lessonPlan.js`): a step that counts a new kind
+// of report adds its subscription here.
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from '../board/boardEvents.js';
-import { getTokenType, isLandmarkType } from '../../config/registries/tokenRegistry.js';
-import { campOf } from '../../config/registries/tokenConstants.js';
+import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { toolOf } from '../../config/registries/toolKinds.js';
 import { categoryOfItem, isWeaponCategory } from '../../config/registries/equipmentConstants.js';
-import * as RecipeResolver from '../board/RecipeResolver.js';
-// One way only: QuestTokens does not import this module, so the bounty and
-// reward helpers live in the leaf `questBounties.js` and are re-exported below.
-import * as QuestTokens from './QuestTokens.js';
 import * as LimesLessons from './LimesLessons.js';
-import { createRandomQuest } from './questBounties.js';
-import { ENGINE_EVENTS, UI_EVENTS } from '../core/engineEvents.js';
-
-export { RANDOM_ITEMS, RANDOM_HUNTS } from './questBounties.js';
-
-/**
- * Bounties are Tokens the Guild Hall spawns (`QuestTokens.js`), which own the cap,
- * the game-time clock, claiming and saves. This manager keeps what does not care
- * where a quest is:
- *
- * * the event subscriptions, counted on the quest Tokens
- *   (`QuestTokens.reportProgress`) and by Limes's lessons (`LimesLessons.report`);
- * * bounty generation ({@link QuestManager.createRandomQuest}; the pools and
- *   the generator live in `questBounties.js`);
- * * the reward rule (`questReward`, also in `questBounties.js`).
- */
+import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 let unsubs = [];
 let initialized = false;
@@ -37,10 +18,7 @@ let initialized = false;
 export const QuestManager = {
     init() {
         if (initialized) return;
-        this.ensureState();
         this.setupListeners();
-        QuestTokens.requestCheck();
-        QuestTokens.ensure();
         initialized = true;
     },
 
@@ -48,223 +26,70 @@ export const QuestManager = {
         unsubs.forEach(unsub => unsub?.());
         unsubs = [];
         initialized = false;
-        QuestTokens.resetRuntime();
-    },
-
-    /** The saved quest section made whole (the bounty clock). */
-    ensureState() {
-        QuestTokens.questState();
-    },
-
-    /**
-     * The quests on the mat, as the live quest objects on their Tokens. Each
-     * Token's instance id is `QuestTokens.questTokens()[i].id`.
-     */
-    getActiveQuests() {
-        this.ensureState();
-        return QuestTokens.questTokens().map(t => t.quest);
-    },
-
-    /** Asks `QuestTokens` to bring the mat up to date (an older save's tutorial Token taken off). */
-    ensureQuests() {
-        this.ensureState();
-        QuestTokens.ensure();
-    },
-
-    /** A slot was opened (`EngineBootstrap.startSlot`): the mat is checked on the next tick too. */
-    onSlotOpened() {
-        QuestTokens.requestCheck();
-        this.ensureQuests();
     },
 
     setupListeners() {
         unsubs.push(
-            EventBus.subscribe(ENGINE_EVENTS.GAME_LOADED, () => {
-                QuestTokens.requestCheck();
-                this.ensureQuests();
-            }),
-            // Travel: the quests came along beside the Hall; check the new mat too.
-            EventBus.subscribe(ENGINE_EVENTS.BOARD_SWAPPED, () => {
-                QuestTokens.requestCheck();
-                this.ensureQuests();
-            }),
-            // ⚠️ One event per player action, and only one. A quest counter must hear
-            // about an action exactly once, and `Placement` publishes both a semantic
-            // event (`TOKEN_PLACED`, `hero_deployed`) and a board-lifecycle one
-            // (`TILE_CHANGED`, `HERO_MOVED`) for a single action. The lifecycle events
-            // exist to redraw the UI (`TILE_CHANGED` also fires for clearing,
-            // depletion, pushes, restocks, grows and turns), so the semantic event is
-            // the quest signal. Do not add a second source back.
-            EventBus.subscribe(BOARD_EVENTS.TOKEN_PLACED, (data) => {
-                this.reportProgress('token_placed', 1, { typeId: data?.typeId });
-                if (data?.instanceId != null && data?.typeId) {
-                    const def = getTokenType(data.typeId);
-                    // The event names the placed Token by instance id.
-                    const serves = RecipeResolver.servesFrom(data.instanceId);
-                    if (serves.length > 0 || def?.tokenType === 'context' || (def?.provides && def.provides.length > 0)) {
-                        this.reportProgress('context_token_placed');
-                    }
-                }
-            }),
-            // A Shop purchase. It also lands the Token through `placeTokenAt`, which
-            // raised `TOKEN_PLACED` above: two different targets, not one action
-            // counted twice.
+            // ⚠️ One event per player action, and only one. A lesson must hear about an action
+            // exactly once, and `Placement` publishes both a semantic event (`TOKEN_PURCHASED`,
+            // `hero_deployed`) and a board-lifecycle one (`TILE_CHANGED`, `HERO_MOVED`) for a single
+            // action. The lifecycle events exist to redraw the UI, so the semantic event is the
+            // signal. Do not add a second source back.
             EventBus.subscribe(ENGINE_EVENTS.TOKEN_PURCHASED, (data) => {
                 this.reportProgress('token_purchased', 1, { typeId: data?.typeId });
             }),
-            // A Foundation became what it built, or Farmland what was planted
-            // (published by `BoardRunner`). `camp`: whether what was built is a camp.
+            // A Foundation became what it built, or Farmland what was planted (published by `BoardRunner`).
             EventBus.subscribe(BOARD_EVENTS.TOKEN_BUILT, (data) => {
-                this.reportProgress('token_built', 1, { typeId: data?.typeId, fromTypeId: data?.fromTypeId, camp: !!campOf(getTokenType(data?.typeId)) });
+                this.reportProgress('token_built', 1, { typeId: data?.typeId });
             }),
-            // A new order. `skill`: the work skill of the Token the hero was sent to (null for bare
-            // ground, an enemy or a camp), so a step can ask for a tree; `typeId` for one Token.
+            // A new order, on the Token the hero was sent to.
             EventBus.subscribe(ENGINE_EVENTS.HERO_DEPLOYED, (data) => {
-                this.reportProgress('hero_deployed', 1, { typeId: data?.typeId ?? null, skill: getTokenType(data?.typeId)?.config?.skill || null });
+                this.reportProgress('hero_deployed', 1, { typeId: data?.typeId ?? null });
             }),
-            // A finished cycle: gathering, crafting, exploring, a kill. A failed
-            // cycle counts for nothing. The Token's type and skill, whether it was
-            // gathering (a resource that is not an endgame site) or crafting (a station
-            // that is not a Foundation), and each item it made (and whether it is a
-            // gathering tool), let a step ask for one kind of work.
+            // A finished cycle: gathering, crafting, exploring, a kill. A failed cycle counts for
+            // nothing. The Token's type and skill, and whether it was gathering (a resource that is
+            // not an endgame site) or crafting (a station that is not a Foundation), let a step ask
+            // for one kind of work.
             EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (data) => {
                 if (data?.failed) return;
                 const def = getTokenType(data?.typeId);
-                const skill = def?.config?.skill || null;
                 this.reportProgress('cycle_completed', 1, {
                     typeId: data?.typeId,
-                    skill,
+                    skill: def?.config?.skill || null,
                     gathered: def?.tokenType === 'resource' && !def.landmark,
                     crafted: def?.tokenType === 'station' && !def.foundation
                 });
-                for (const itemId of new Set(data?.produced || [])) {
-                    this.reportProgress('item_produced', 1, { itemId, tool: !!toolOf(getItem(itemId)) });
-                }
             }),
             EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, (data) => {
-                const qty = data?.quantity || 1;
-                if (data?.kind === 'item') {
-                    this.reportProgress('loot_collected', qty);
-                    if (data?.refId) {
-                        this.reportProgress('item_collected', qty, { itemId: data.refId });
-                    }
-                }
+                if (data?.kind === 'item') this.reportProgress('loot_collected', data?.quantity || 1);
             }),
-            EventBus.subscribe(ENGINE_EVENTS.INVENTORY_UPDATED, () => this.syncInventoryQuests()),
-            EventBus.subscribe(ENGINE_EVENTS.HERO_RECRUITED, () => this.reportProgress('hero_recruited')),
             EventBus.subscribe(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, (data) => {
                 // A buy of several ranks at once counts each rank, as that many single buys would.
-                const ranks = data?.count || 1;
-                this.reportProgress('guild_upgrade_purchased', ranks, { upgradeId: data?.upgradeId ?? null });
-                if (data?.upgradeId === 'wishing_well') {
-                    this.reportProgress('wishing_well_upgraded', ranks);
-                }
+                this.reportProgress('guild_upgrade_purchased', data?.count || 1, { upgradeId: data?.upgradeId ?? null });
             }),
-            // ⚠️ `ui_modal:opened` comes from the React layer, not the engine: its only
-            // publisher is `src/ui/hooks/useUIModals.js`, whose header carries the
-            // contract, including that any NEW route into the Bank or the Shop must
-            // publish it too or these quest targets silently stall. The Shop is the
-            // `shop` pane.
-            EventBus.subscribe(UI_EVENTS.UI_MODAL_OPENED, (data) => {
-                if (data?.modalId === 'bank') this.reportProgress('open_bank');
-                else if (data?.modalId === 'shop') this.reportProgress('open_shop');
-            }),
-            // ⚠️ Also from the React layer: `TokenCard` publishes it when its sheet opens on a
-            // Token on the mat. A new route that shows a board Token's sheet must publish it too, or
-            // a quest counting it stalls.
-            EventBus.subscribe(UI_EVENTS.TOKEN_INSPECTED, (data) => {
-                const typeId = data?.typeId ?? null;
-                this.reportProgress('token_inspected', 1, { typeId, landmark: isLandmarkType(typeId) });
-            }),
-            // The Atlas: a Region written (settled), a place of the world map among them, and the
-            // guild moving into another one.
+            // A place of the world map settled.
             EventBus.subscribe(ENGINE_EVENTS.ATLAS_CHANGED, (data) => {
-                if (data?.reason === 'created') {
-                    this.reportProgress('region_settled');
-                    if (data.cellId) this.reportProgress('place_settled', 1, { cellId: data.cellId });
-                } else if (data?.reason === 'travelled') this.reportProgress('region_travelled');
+                if (data?.reason === 'created' && data.cellId) this.reportProgress('place_settled');
             }),
-            // ⚠️ Retired events that must not come back (`QuestTutorialChain.test.js`
-            // fails if one does): `map_burst` / `map_opened` / `map_purchased`,
-            // `vault_withdrawn` / `vault_deposited` / `loot_token_placed` and the
-            // `vault` modal, and `board_recall` / `return_to_tray`.
-            //
             // ⚠️ `hero_equipped` is NOT an engine event. Equipping is announced as
-            // `hero_equipment_changed` with `action: 'equip'`, which feeds the
-            // `hero_equipped` quest target.
-            // `tool` and `toolKind`: whether what was equipped is a gathering tool, and which kind;
-            // `category` its loadout category ('food'), `weapon` whether that holds a weapon.
+            // `hero_equipment_changed` with `action: 'equip'`, which feeds the `hero_equipped` report.
+            // `toolKind`: which kind of gathering tool was equipped, if any; `category` its loadout
+            // category ('food'), `weapon` whether that holds a weapon.
             EventBus.subscribe(ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, (data) => {
-                if (data?.action === 'equip') {
-                    const tool = toolOf(getItem(data.itemId));
-                    const category = categoryOfItem(data.itemId);
-                    this.reportProgress('hero_equipped', 1, {
-                        itemId: data.itemId,
-                        tool: !!tool,
-                        toolKind: tool?.kind ?? null,
-                        category,
-                        weapon: !!category && isWeaponCategory(category)
-                    });
-                }
+                if (data?.action !== 'equip') return;
+                const category = categoryOfItem(data.itemId);
+                this.reportProgress('hero_equipped', 1, {
+                    toolKind: toolOf(getItem(data.itemId))?.kind ?? null,
+                    category,
+                    weapon: !!category && isWeaponCategory(category)
+                });
             }),
-            // ⚠️ `token_exhausted` is a quest TARGET name and a tile-log entry type,
-            // NOT an engine event; `BOARD_EVENTS.TOKEN_DEPLETED` is the one that
-            // should report here.
-            EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, () => this.reportProgress('token_exhausted')),
-            EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, (data) => {
-                this.reportProgress('combat_victory');
-                if (data?.enemyId) {
-                    this.reportProgress('enemy_hunted', 1, { enemyId: data.enemyId });
-                }
-            })
+            EventBus.subscribe(ENGINE_EVENTS.COMBAT_VICTORY, () => this.reportProgress('combat_victory'))
         );
     },
 
-    /** Collection bounties follow the Bank. */
-    syncInventoryQuests() {
-        this.ensureState();
-        QuestTokens.syncCollections();
-    },
-
-    /** Count one report against every quest Token on the mat that wants it, and for Limes's lessons. */
+    /** Count one report for Limes's lessons. */
     reportProgress(targetType, amount = 1, metadata = {}) {
-        this.ensureState();
-        QuestTokens.reportProgress(targetType, amount, metadata);
         LimesLessons.report(targetType, amount, metadata);
-    },
-
-    /**
-     * The game loop's `quest_manager` handler, with its `delta`:
-     * the quest Tokens' clock. Bank syncing follows `inventory_updated`, not the tick.
-     */
-    tick(deltaMs) {
-        this.ensureState();
-        QuestTokens.tick(deltaMs);
-    },
-
-    /**
-     * One random bounty's content (not yet on the mat). Hunts and collections
-     * are balanced against `existing` — the quests already out.
-     */
-    createRandomQuest(existing = QuestTokens.questTokens().map(t => t.quest)) {
-        return createRandomQuest(existing);
-    },
-
-    /**
-     * Claim a quest by its quest id or its Token's instance id; see
-     * `QuestTokens.claimQuest` (the reward drops as loot beside the Token, and
-     * the Token vanishes).
-     */
-    claimQuest(questId) {
-        this.ensureState();
-        const token = findQuestToken(questId);
-        if (!token) return { success: false, reason: 'Quest not found' };
-        return QuestTokens.claimQuest(token.id);
     }
 };
-
-/** The quest Token on the mat with instance id or quest id `id`, or null. */
-function findQuestToken(id) {
-    if (!id) return null;
-    return QuestTokens.questTokens().find(t => t.id === id || t.quest?.id === id) || null;
-}

@@ -16,8 +16,6 @@ import * as Flags from '../systems/board/Flags.js';
 import * as Demolition from '../systems/board/Demolition.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
 import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
-import * as QuestTokens from '../systems/quests/QuestTokens.js';
-import { QuestManager } from '../systems/quests/QuestManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
@@ -183,22 +181,6 @@ describe('each MatToken detail field updates on its own event (CR3-304)', () => 
         expect(read(grove).spawnerCounts).toEqual({ count: 1, cap: 5 });
         await doing(() => Placement.removePlacedToken(sapling.id));
         expect(read(grove).spawnerCounts).toEqual({ count: 0, cap: 5 });
-    });
-
-    it('quest — progress is reported (QUESTS_UPDATED)', async () => {
-        BoardState.addToken(BoardState.createTokenInstance('token_guild_hall'), 880, 560);
-        QuestManager.init();
-        try {
-            const q = QuestTokens.spawnQuest({
-                id: 'q_tdr', tutorial: false, title: 'Defeat 3 Goblins', type: 'hunt',
-                targetType: 'enemy_hunted', enemyId: 'token_goblin', requiredCount: 3, currentCount: 1,
-                rewardItems: [], done: false
-            });
-            const read = await probe(q);
-            expect(read(q).quest.currentCount).toBe(1);
-            await doing(() => QuestTokens.reportProgress('enemy_hunted', 1, { enemyId: 'token_goblin' }));
-            expect(read(q).quest.currentCount).toBe(2);
-        } finally { QuestManager.cleanup(); }
     });
 
     it('everything — a new game or a load (GAME_RESET)', async () => {

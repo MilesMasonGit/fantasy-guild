@@ -13,8 +13,7 @@ import { logger } from '../../utils/Logger.js';
  * a save loading later is rewritten here, everywhere such an id lives:
  * - the Bank: its stacks, each tab's order and the tab an item is filed in;
  * - each hero: the loadout, the drink and elixir counters, the live effects;
- * - the live mat and every other Region's mat: each Token's type (and the
- *   Foundation and price it was built from, a bounty's target and reward) and the loot on the floor;
+ * - the live mat and every other Region's mat: each Token's type and the loot on the floor;
  * - the world map's places: origins, camps, chests, arrivals, a wild place's focus, the price asked;
  * - the collection's discoveries and counts, and the pinned item stubs.
  *
@@ -210,24 +209,10 @@ function heroFollowing(hero, { item, effect }) {
     return out;
 }
 
-function questFollowing(quest, { item, token }) {
-    let out = quest;
-    out = mapField(out, 'enemyId', token);
-    out = mapField(out, 'itemId', item);
-    out = mapField(out, 'rewardItems', list => mapList(list, r => mapField(r, 'itemId', item)));
-    out = mapField(out, 'match', match => {
-        let m = mapField(match, 'typeId', token);
-        m = mapField(m, 'enemyId', token);
-        return mapField(m, 'itemId', item);
-    });
-    return out;
-}
-
 function tokenFollowing(instance, ids) {
     if (!isPlainObject(instance)) return instance;
     let out = instance;
     out = mapField(out, 'typeId', ids.token);
-    out = mapField(out, 'quest', quest => (isPlainObject(quest) ? questFollowing(quest, ids) : quest));
     return out;
 }
 

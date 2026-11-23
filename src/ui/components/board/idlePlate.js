@@ -4,8 +4,8 @@ import { timerLines, liveTimerSources, TIMER_KIND } from './tokenTimers.js';
 /**
  * The idle plate: a Token nobody works, once the pointer rests on it, gets the work plate's look
  * under itself only when it is stuck or counting: its problem and its timers, each the card's own
- * line (`tokenTimers.js`): the cell shows the figure, its tooltip the card's sentence. Charges, a
- * spawner's count and a quest's progress are not its business (they stay on the card). With
+ * line (`tokenTimers.js`): the cell shows the figure, its tooltip the card's sentence. Charges and
+ * a spawner's count are not its business (they stay on the card). With
  * neither a problem nor a timer there is no plate, and the hover is the name alone. No React here:
  * `IdlePlate` (IdlePlate.jsx) draws it. An enemy never gets one: hovered, it shows its name and HP
  * only.
