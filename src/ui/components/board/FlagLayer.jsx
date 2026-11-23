@@ -12,14 +12,11 @@ import { GameState } from '../../../state/GameState.js';
 import { boardScaleAt } from '../base/TokenSprite.jsx';
 import { FlagMark } from './FlagMark.jsx';
 import { flagOutline } from './spriteOutline.js';
-import { flagTooltip } from './flagText.js';
-import { FloatingTip } from '../base/Tooltip.jsx';
 import { useMatFit } from './MatFitContext.jsx';
 import { markerBox, sideSlot, MARKER_PULSE_EVERY_MS } from './flagGeometry.js';
 import { REACH_DOT_PULSE } from './reachDot.js';
 import { usePosePulse } from './fx/posePulse.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
-import { onPoll } from './frameClock.js';
 
 /**
  * FlagLayer: the flag that marks each hero's order (`FlagMark`, in the hero's own colour), an
@@ -29,13 +26,13 @@ import { onPoll } from './frameClock.js';
  * - **A Token order**: the flag stands in the Token's middle (`markerBox`), one z above the Token
  * (`tokenZ`, or over the Token brought forward while its card is open), so the Token's art never hides it. Several heroes on one Token stand side by side in
  * roster order (`sideSlot`), each in the same place whichever of them is shown. It never takes the
- * pointer: the Token's middle stays the Token's, and the mat says when the pointer is on its cloth
- * (`tipHeroId`) for its tooltip.
+ * pointer: the Token's middle stays the Token's. It has no tooltip: nothing on the mat has one
+ * (the Hero drawer says what the hero is doing).
  * - **A spot order** ("go here"): the flag stands its pole foot on the spot. It fades out when the
  * hover ends, and the pointer can still reach it while it fades.
  * - **No order** (at home by the Guild Hall), or a job gone for good: no flag.
  * - Dragging a spot's flag is dragging its hero (`DRAG_KIND.FLAG`): the drop gives a new order
- * (`Orders.orderAt`). Hover for the hero's name and what they are doing. A hero in the hand keeps
+ * (`Orders.orderAt`). A hero in the hand keeps
  * their flag drawn, faint.
  * - **No hitbox over Tokens, but the cloth**: wherever the pointer is on a Token's art circle,
  * every spot's flag lets it through (`yieldToTokens`, set by `MatBoard`), except its cloth where it
@@ -92,14 +89,13 @@ function projectFlags() {
  * @param {string|null} inspectedHeroId the hero whose panel is open
  * @param {string|null} hoverHeroId a hero hovered on the mat or on their roster tab
  * @param {string|null} hoveredTokenId the Token hovered on the mat
- * @param {string|null} tipHeroId the hero whose shown Token flag has the pointer on its cloth
  * @param {(heroId: string|null) => void} onHoverHero
  * @param {Map<string, number>|null} flagZ each spot flag's z in the mat's order (`matStackOrder`)
  * @param {Map<string, number>|null} tokenZ each Token's z in the mat's order
  * @param {string|null} inspectedTokenId the Token whose card is open (`MAT_Z.INSPECTED_TOKEN`)
  */
 export const FlagLayer = ({
-    inspectedHeroId = null, hoverHeroId = null, hoveredTokenId = null, tipHeroId = null, onHoverHero,
+    inspectedHeroId = null, hoverHeroId = null, hoveredTokenId = null, onHoverHero,
     flagZ = null, tokenZ = null, inspectedTokenId = null, yieldToTokens = false
 }) => {
     const flags = useGameState(
@@ -133,7 +129,6 @@ export const FlagLayer = ({
                         onHover={onHoverHero}
                         boardHovered={hoverHeroId === f.heroId}
                         tokenHovered={f.pinnedTo != null && f.pinnedTo === hoveredTokenId}
-                        clothTip={tipHeroId === f.heroId}
                         inspected={inspectedHeroId === f.heroId}
                         yieldToTokens={yieldToTokens}
                     />
@@ -176,7 +171,6 @@ const Flag = memo(function Flag(props) {
             hovered={hovered}
             onHoverChange={setHovered}
             carried={carried}
-            tipShown={hovered && !anyDrag}
             dragRef={drag.setNodeRef}
             dragProps={drag.handleProps}
         />
@@ -184,8 +178,8 @@ const Flag = memo(function Flag(props) {
 });
 
 const FlagBody = memo(function FlagBody({
-    flag, z = 0, artScale, onHover, boardHovered = false, tokenHovered = false, clothTip = false,
-    inspected = false, yieldToTokens = false, hovered, onHoverChange, carried, tipShown, dragRef, dragProps
+    flag, z = 0, artScale, onHover, boardHovered = false, tokenHovered = false,
+    inspected = false, yieldToTokens = false, hovered, onHoverChange, carried, dragRef, dragProps
 }) {
     const ref = useRef(null);
     const pulseRef = useRef(null);
@@ -264,8 +258,6 @@ const FlagBody = memo(function FlagBody({
                     />
                 </span>
             </button>
-
-            {(tipShown || (clothTip && shown)) && <FlagTooltip anchor={ref.current} heroId={flag.heroId} />}
         </>
     );
 });
@@ -276,44 +268,3 @@ function pulseFor(artScale) {
     PULSE_FOR[artScale] = { poses: REACH_DOT_PULSE, everyMs: MARKER_PULSE_EVERY_MS, unit: artScale };
     return PULSE_FOR[artScale];
 }
-
-export const STATE_TONE = {
-    working: 'text-emerald-300',
-    idle: 'text-stone-300'
-};
-
-/** The hero bar's gold for a hero only the player can get going (`SPEECH_TONE.ATTENTION`). */
-export const STUCK_TONE = 'text-yellow-400';
-
-/** The colour of the tooltip's status line. */
-export const flagTipTone = (tip) => (tip.stuck ? STUCK_TONE : STATE_TONE[tip.state] || 'text-white/80');
-
-/**
- * The flag's hover text: the hero, what they are doing, and why their Token is passed over
- * (a tool they no longer hold). Refreshed twice a second while shown, because waiting changes
- * without an event.
- */
-export const FlagTooltip = ({ anchor, heroId }) => {
-    const [, refresh] = useState(0);
-    useEffect(() => {
-        return onPoll(() => refresh(n => n + 1), 500);
-    }, []);
-    const tip = flagTooltip(heroId);
-    return (
-        <FloatingTip
-            anchor={anchor}
-            title={tip.title}
-            maxWidth={256}
-            tipProps={{ 'data-flag-tooltip': heroId }}
-            content={<>
-                <div className={flagTipTone(tip)}>{tip.status}</div>
-                {tip.skips.length > 0 && (
-                    <ul className="mt-1 pt-1 border-t border-white/10 flex flex-col gap-0.5 text-white/75">
-                        {tip.skips.map((line, i) => <li key={i}>{line}</li>)}
-                        {tip.more > 0 && <li className="text-white/50">+{tip.more} more</li>}
-                    </ul>
-                )}
-            </>}
-        />
-    );
-};

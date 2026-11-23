@@ -1,31 +1,26 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as Growth from '../../../systems/board/Growth.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
-import { enemyProfileOf, isEnemyDef } from '../../../config/registries/enemyProfile.js';
+import { enemyProfileOf } from '../../../config/registries/enemyProfile.js';
 import { subscribeToken, subscribeEvery } from './tokenEvents.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { Bubble } from './Bubble.jsx';
 import { HealthBar } from './HealthBar.jsx';
 import { enemyBarPlace, fightBarShift } from './healthBar.js';
-import { IdlePlate } from './IdlePlate.jsx';
-import { idlePlateCells } from './idlePlate.js';
+import { RecipeBubble } from './RecipeBubble.jsx';
+import { isCapSeen, seeCap, capAlertNow } from './capSeen.js';
 import { StationGearBadge, MarkedBadge } from './TokenBadges.jsx';
 import { ProblemMark } from './ProblemMark.jsx';
-import { problemOf, problemText, tokenGearPx } from './problemMark.js';
+import { problemOf, tokenGearPx } from './problemMark.js';
 import { createWorkBar, shareWorkBar } from './workBar.js';
 import { shareCycle } from './cycleShare.js';
-import { plateUnit } from './workPlate.js';
+import { plateUnit } from './matMarks.js';
 import { useMatFit } from './MatFitContext.jsx';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as BoardCombat from '../../../systems/board/BoardCombat.js';
-
-/** What each player mark's tooltip says. */
-export const BUBBLE_TIPS = Object.freeze({
-    marked: 'Marked for demolition: a hero with Construction will take it away'
-});
 
 const CHOOSE_KINDS = new Set([ALERT.CHOOSE_RECIPE, ALERT.CHOOSE_BUILD]);
 
@@ -42,33 +37,30 @@ const PLATE_POINTER = 'var(--plate-pointer, auto)';
 
 /**
  * TokenBubbles: what is drawn on a Token's box besides its art. The mat shows that something is
- * happening and what is wrong, and no numbers (docs/active/concept_info_layers.md):
- * - **The work bar's model** (`workBar.js`): fed here from the Token's engine events and drawn by the
- * work plate under the Token and its hero (`WorkPlateLayer`), which also says the charges and any
- * problem while a hero works it. Fills each cycle on the shared step clock; empty
- * again on `CYCLE_COMPLETE`. Any engine alert on the worked Token stops the cycle, so the bar holds
- * there, grey.
- * - **Problem mark** (`ProblemMark`, the row above the art), bobbing, on any Token with a problem
- * (a worked Token's plate also says it in words; not while an enemy's bar is up there): one,
- * yellow while it waits (items, a Token
- * beside it, charges, a choice) or red when it can't (no room, the cap, a hero who can't do the
- * work); its hover says exactly what (`problemMark.js`). From the engine's alert, a spawner's
- * stuck alert (`SPAWNER_ALERT_CHANGED`, read once on mount), a growing Token's (a Stump that needs
- * its Forest or a seedling: `GROWTH_ALERT_CHANGED`, likewise), or nothing chosen on a station.
- * - **Demolition mark** (the middle row): the whole time it applies.
+ * happening and what is wrong, and no numbers, and nothing on it has a tooltip: the reasons are
+ * on the Token's card (docs/active/concept_playmat_declutter.md §3, §11, §12, §15):
+ * - **The work bar's model** (`workBar.js`): fed here from the Token's engine events and drawn
+ * under the Token and its hero (`WorkBarLayer`) with the time one cycle takes. Fills each cycle on
+ * the shared step clock; empty again on `CYCLE_COMPLETE`. Any engine alert on the worked Token
+ * stops the cycle, so the bar holds there, grey.
+ * - **The centre** holds one thing at a time:
+ *   - a Token marked for demolition: its demolition badge, the whole time (over any '!');
+ *   - the pointer on a Token that takes a recipe: the gear, at once, pulsing while nothing is
+ *   chosen (`pointerOn`, the bare hover: the Token already redraws then for its outline). A
+ *   click does what a right-click does: it opens the card;
+ *   - otherwise its problem mark (`ProblemMark`), still: one, yellow while it waits (items, a
+ *   Token beside it, charges, a choice, a full Token cap) or red when it can't (no room, a hero
+ *   who can't do the work). From the engine's alert, a spawner's stuck alert
+ *   (`SPAWNER_ALERT_CHANGED`, read once on mount), a growing Token's (a Stump that needs its
+ *   Forest or a seedling: `GROWTH_ALERT_CHANGED`, likewise), or nothing chosen on a station. A
+ *   spawner's full-cap '!' goes once the pointer has rested on it (`capSeen.js`).
  * - **Enemy health bar** (above the box): in a fight, and while an enemy is hovered. In a fight
  * the mat hands it `fightBar` (`{ host, left, top }`: the fight layer's node and this box's
  * corner in mat units) and the bar draws there, over the loot (`FightBarHost`).
- * - **Hovered only**: on a Token nobody works, the idle plate under it (`IdlePlate`, drawn into
- * `plateHost`, which `MatToken` hands over only while it rests there): its problem and its timer,
- * as apply, and with neither no plate at all;
- * and the recipe gear, in a row of its own. Every gear on a Token is the '!' mark's size.
- * - **A choice waiting** (nothing chosen on a station or Foundation): its yellow '!' at rest, and
- * the gear in the mark's own spot the moment the pointer reaches the Token (`pointerOn`, the bare
- * hover), with no rest: the Token already redraws then for its outline, and the swap trades one
- * element for another.
+ * - **The recipe bubble** (`RecipeBubble`): resting on a Token with a recipe chosen, its output
+ * in a speech bubble over the art.
  * `isHovered` is the mat's rest (`useHoverRest`), not the bare hover: the pointer has stayed on
- * the Token for a moment, so a sweep across the mat mounts none of these.
+ * the Token for a moment, so a sweep across the mat mounts none of the rested things.
  * - While the Token is dragged: nothing.
  * Pressing anything here that takes the pointer grabs the Token (`dragProps`).
  * The subscriptions are keyed on the Token and nothing else: hovering, the alert, the hero and
@@ -86,9 +78,6 @@ export const TokenBubbles = ({
     artPx = null,
     artUnit = 2,
     x = null,
-    y = null,
-    readTimer = null,
-    plateHost = null,
     gear = null,
     marked = false,
     fightBar = null,
@@ -107,8 +96,6 @@ export const TokenBubbles = ({
     const combatRef = useRef(combat);
     const hpRef = useRef(hp);
     const enemyHp = useMemo(() => enemyProfileOf(getTokenType(typeId))?.hp ?? null, [typeId]);
-    // ⚠️ An enemy's use count is hidden: it never draws as charges.
-    const isEnemy = useMemo(() => isEnemyDef(getTokenType(typeId)), [typeId]);
 
     const liveRef = useRef({ hasHero, blocked });
     liveRef.current = { hasHero, blocked };
@@ -212,23 +199,26 @@ export const TokenBubbles = ({
         });
     }, [instanceId]);
 
+    // A full Token cap, once the pointer has rested on this spawner, is seen and not drawn until
+    // the cap frees and fills again (`capSeen.js`).
+    const [capSeen, setCapSeen] = useState(() => (instanceId ? isCapSeen(instanceId) : false));
+    useEffect(() => {
+        if (instanceId) setCapSeen(capAlertNow(instanceId, stuck?.alert ?? null));
+    }, [instanceId, stuck]);
+    const capFull = stuck?.alert === ALERT.SPAWN_MAT_FULL;
+    useEffect(() => {
+        if (!isHovered || !capFull || !instanceId) return;
+        seeCap(instanceId);
+        setCapSeen(true);
+    }, [isHovered, capFull, instanceId]);
+    const spawner = capFull && capSeen ? null : stuck;
+
     // A marked Token runs no recipe, so there is nothing to choose.
     const choose = gear?.pulsing && !marked ? (gear.isFoundation ? 'build' : 'recipe') : null;
-    const problem = useMemo(() => problemOf({ alert, spawner: stuck, growth, choose }), [alert, stuck, growth, choose]);
-    const problemTip = useCallback(() => problemText(problem, instanceId), [problem, instanceId]);
+    const problem = useMemo(() => problemOf({ alert, spawner, growth, choose }), [alert, spawner, growth, choose]);
     const problemClick = problem && CHOOSE_KINDS.has(problem.kind) ? gear?.onClick ?? null : null;
 
     const barUnit = plateUnit(useMatFit() || 1);
-
-    // The idle plate: a Token nobody works (never an enemy), rested on, that is stuck or counting.
-    // The problem may be a spawner's or a growth's, which only this component hears, so `MatToken`
-    // hands it the host on every rest and the choice is made here. The timer counts if its clock
-    // runs as the pointer arrives.
-    const idleOn = !!plateHost && isHovered && !hasHero && !isEnemy && !isDragging;
-    const idleProblem = problem && !CHOOSE_KINDS.has(problem.kind) ? problem : null;
-    const idleCells = useMemo(() => (idleOn ? idlePlateCells({ problem: idleProblem }) : null), [idleOn, idleProblem]);
-    const idleTimed = useMemo(() => idleOn && !!readTimer?.(), [idleOn, readTimer]);
-    const idleShown = !!idleCells && (idleCells.length > 0 || idleTimed);
 
     if (isDragging) return null;
 
@@ -236,38 +226,21 @@ export const TokenBubbles = ({
     // The bar's numbers: the fight's, else a full enemy (an enemy nobody fights is whole).
     const barHp = hp ?? (enemyHp ? { cur: enemyHp, max: enemyHp } : null);
     const showHp = (fight || (isHovered && !!enemyHp)) && !!barHp && barHp.max > 0;
-    // The '!' and an enemy's bar would share the space over the art: the bar wins.
-    const showProblem = !!problem && !fight && !showHp;
-    // A choice waiting: the pointer on the Token, the gear stands where its '!' was, at once.
-    // ⚠️ The hover is the Token's (its circle, `MatBoard`), not the mark's, so the swap cannot take
-    // the hover away; and the gear is the mark's size, so nothing beside it moves.
-    const gearInMark = showProblem && (pointerOn || isHovered) && !!gear?.show && !marked && CHOOSE_KINDS.has(problem.kind);
-    const showGear = !!gear?.show && !marked && isHovered && !gearInMark;
-    // ⚠️ The hover row never shares the '!''s row: inserted beside it, it would slide the mark out
-    // from under the pointer the moment the pointer reached it. It has the centre: the '!' is over
-    // the art, and a Token marked for demolition shows no gear.
+    // The centre holds one thing: the demolition badge, else the gear while the pointer is on the
+    // Token, else the '!'. ⚠️ The hover is the Token's (its circle, `MatBoard`), not the centre's,
+    // so the swap cannot take the hover away; and the gear is the mark's size, so nothing moves.
+    // The '!' no longer shares the space over the art with an enemy's health bar.
+    const showGear = !!gear?.show && !marked && (pointerOn || isHovered);
+    const showProblem = !!problem && !fight && !marked && !showGear;
     const gearPx = tokenGearPx(artUnit);
-    const hoverRowStyle = { left: 0, width: boxPx, top: boxPx / 2, transform: 'translateY(-50%)', gap: ROW_GAP_U };
-    // The '!' stands on the art's top edge (the art is centred in the box); the art's own clear
-    // rows above its pixels are the gap.
+    const centreStyle = { left: 0, width: boxPx, top: boxPx / 2, transform: 'translateY(-50%)', gap: ROW_GAP_U };
+    // The art's top edge in the box (the art is centred in it): the recipe bubble's tail stands on it.
     const artTop = (boxPx - (artPx ?? boxPx)) / 2;
+    // Resting on a station with a recipe chosen (not a Foundation's building, not while marked).
+    const showRecipe = isHovered && !!gear?.show && !!gear.recipe && !gear.isFoundation && !marked;
 
     return (
         <>
-            {idleShown && (
-                <IdlePlate
-                    host={plateHost}
-                    tokenId={instanceId}
-                    typeId={typeId}
-                    x={x}
-                    y={y}
-                    cells={idleCells}
-                    readTimer={readTimer}
-                    tip={problemTip}
-                    tone={idleProblem?.severity ?? null}
-                    dragProps={dragProps}
-                />
-            )}
             {showHp && (() => {
                 const bar = enemyBarPlace(boxPx, barUnit);
                 const body = fight ? BoardState.heroBodyOf(token.heroId) : null;
@@ -293,35 +266,21 @@ export const TokenBubbles = ({
                 return fightBar ? createPortal(el, fightBar.host) : el;
             })()}
 
-            {showGear && (
-                <div
-                    data-bubble-row="hover"
-                    className="absolute z-20 flex items-center justify-center pointer-events-none"
-                    style={hoverRowStyle}
-                >
-                    <div {...dragProps} className="relative shrink-0 pointer-events-auto">
-                        <StationGearBadge
-                            recipe={gear.recipe}
-                            pulsing={gear.pulsing}
-                            isFoundation={gear.isFoundation}
-                            isField={!!gear.isField}
-                            onClick={gear.onClick}
-                            px={gearPx}
-                        />
-                    </div>
-                </div>
-            )}
+            {showRecipe && <RecipeBubble recipe={gear.recipe} boxPx={boxPx} top={artTop} u={barUnit} />}
 
-            {showProblem && (
+            {(showGear || showProblem || marked) && (
                 <div
-                    data-bubble-row="above"
-                    className="absolute z-20 flex items-end justify-center pointer-events-none"
-                    style={{ left: 0, width: boxPx, top: artTop, transform: 'translateY(-100%)' }}
+                    data-bubble-row="centre"
+                    className="absolute z-20 flex items-center justify-center pointer-events-none"
+                    style={centreStyle}
                 >
-                    {gearInMark ? (
-                        <div {...dragProps} data-gear-in-mark={problem.kind} className="relative shrink-0 pointer-events-auto">
+                    {marked ? (
+                        <Bubble of={instanceId} kind="marked" inline dragProps={dragProps}>
+                            <MarkedBadge />
+                        </Bubble>
+                    ) : showGear ? (
+                        <div {...dragProps} data-gear-centre={problem?.kind || 'set'} className="relative shrink-0 pointer-events-auto">
                             <StationGearBadge
-                                recipe={gear.recipe}
                                 pulsing={gear.pulsing}
                                 isFoundation={gear.isFoundation}
                                 isField={!!gear.isField}
@@ -330,20 +289,8 @@ export const TokenBubbles = ({
                             />
                         </div>
                     ) : (
-                        <ProblemMark problem={problem} tip={problemTip} artUnit={artUnit} dragProps={dragProps} onClick={problemClick} />
+                        <ProblemMark problem={problem} artUnit={artUnit} dragProps={dragProps} onClick={problemClick} />
                     )}
-                </div>
-            )}
-
-            {marked && (
-                <div
-                    data-bubble-row="middle"
-                    className="absolute z-20 flex items-center justify-center pointer-events-none"
-                    style={{ left: 0, width: boxPx, top: boxPx / 2, transform: 'translateY(-50%)', gap: ROW_GAP_U }}
-                >
-                    <Bubble of={instanceId} kind="marked" inline tip={BUBBLE_TIPS.marked} dragProps={dragProps}>
-                        <MarkedBadge title={BUBBLE_TIPS.marked} />
-                    </Bubble>
                 </div>
             )}
         </>

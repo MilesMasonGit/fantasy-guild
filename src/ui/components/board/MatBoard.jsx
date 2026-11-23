@@ -5,7 +5,7 @@ import { createStackWriter } from './stackWriter.js';
 import { pointerToMat } from './matPoint.js';
 import { matTuning } from '../../../config/matTuning.js';
 import { installPressRouting } from './pressRouting.js';
-import { flagClothOver, tokenFlagClothAt } from './flagCloth.js';
+import { flagClothOver } from './flagCloth.js';
 import { useHoverRest } from './hoverRest.js';
 import { MatToken, MatTokenGrab } from './MatToken.jsx';
 import { MatHero, heroBoxAt } from './MatHero.jsx';
@@ -23,10 +23,8 @@ import { FlagLayer } from './FlagLayer.jsx';
 import { OrderDragLine } from './OrderDragLine.jsx';
 import { heroOutline } from './spriteOutline.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
-import { WorkPlateLayer } from './WorkPlateLayer.jsx';
-import { IdlePlateHost } from './IdlePlate.jsx';
+import { WorkBarLayer } from './WorkBarLayer.jsx';
 import { FightLayer, FightBarHost } from './FightLayer.jsx';
-import { EnemyCardTip } from '../combat/EnemyCard.jsx';
 import { TerrainCanvas } from './TerrainCanvas.jsx';
 import { AmbientLife, createGroundPictures } from './AmbientLife.jsx';
 import { TerrainGridOverlay } from './TerrainGridOverlay.jsx';
@@ -92,8 +90,7 @@ export const MatBoard = React.memo(function MatBoard({
     const alertsDrawn = useDrawn('alerts');
     const speechDrawn = useDrawn('speech');
     const terrainDrawn = useDrawn('terrain');
-    const platesDrawn = useDrawn('workPlate');
-    const tooltipsDrawn = useDrawn('tooltips');
+    const barsDrawn = useDrawn('workPlate');
     const rootRef = useRef(null);
 
     // Read through the hook so the whole board redraws when the Mat Tuner resizes it.
@@ -101,17 +98,13 @@ export const MatBoard = React.memo(function MatBoard({
 
     const [hoveredId, setHoveredId] = useState(null);
     const [hoverHeroId, setHoverHeroId] = useState(null);
-    // The outline follows the hover at once; the name, the idle plate and the HP bar wait for the
+    // The outline follows the hover at once; the name, the recipe bubble and the HP bar wait for the
     // pointer to rest (`useHoverRest`), so a Token's own rest redraws that Token alone.
     const rest = useHoverRest(hoveredId, hoverHeroId);
     /** The pointer is on a Token's art circle, so every flag lets it through. */
     const [flagsYield, setFlagsYield] = useState(false);
-    /** The hero whose flag, shown in the hovered Token's middle, has the pointer on its cloth: its tooltip shows. */
-    const [flagTipHeroId, setFlagTipHeroId] = useState(null);
     /** The fight layer's node the fighters' health bars draw into (`FightBarHost`). */
     const [fightBarHost, setFightBarHost] = useState(null);
-    /** The node the rested Token's idle plate draws into (`IdlePlateHost`). */
-    const [idlePlateHost, setIdlePlateHost] = useState(null);
     const { isDragging, activePayload } = useActiveDrag();
     // The mat Token in the hand, if one is: it stays where it is, hidden, while it is carried.
     const carriedId = isDragging && activePayload?.kind === DRAG_KIND.TOKEN ? (activePayload.from?.instanceId ?? null) : null;
@@ -147,7 +140,7 @@ export const MatBoard = React.memo(function MatBoard({
     const [dragSeen, setDragSeen] = useState(false);
     if (dragSeen !== isDragging) {
         setDragSeen(isDragging);
-        if (isDragging) { setHoveredId(null); setFlagsYield(false); setHoverHeroId(null); setFlagTipHeroId(null); }
+        if (isDragging) { setHoveredId(null); setFlagsYield(false); setHoverHeroId(null); }
     }
 
     // A no-op while dragging, so a hero/flag crossing mid-drag does not reinstate a stray
@@ -329,7 +322,6 @@ export const MatBoard = React.memo(function MatBoard({
         if (e.target?.closest?.('[data-limes]')) {
             setFlagsYield(prev => (prev === false ? prev : false));
             setHoveredId(prev => (prev === null ? prev : null));
-            setFlagTipHeroId(prev => (prev === null ? prev : null));
             return;
         }
         /**
@@ -343,7 +335,6 @@ export const MatBoard = React.memo(function MatBoard({
         if (id && flagClothOver(el, e.clientX, e.clientY, id)) {
             setFlagsYield(prev => (prev === false ? prev : false));
             setHoveredId(prev => (prev === null ? prev : null));
-            setFlagTipHeroId(prev => (prev === null ? prev : null));
             return;
         }
         // On a hero's drawn pixel a press is the hero's, so no Token behind them lights as if it
@@ -352,16 +343,7 @@ export const MatBoard = React.memo(function MatBoard({
         if (heroId && id && Flags.statusOf(heroId).instanceId !== id) id = null;
         const onToken = !!id;
         setFlagsYield(prev => (prev === onToken ? prev : onToken));
-        const tip = id ? tokenFlagClothAt(el, e.clientX, e.clientY, id) : null;
-        setFlagTipHeroId(prev => (prev === tip ? prev : tip));
         if (!id) {
-            // Not over a Token: a work plate is its own Token's (over a circle it lets the pointer
-            // through, as flags do).
-            const plateId = e.target?.closest?.('[data-work-plate]')?.getAttribute('data-work-plate') || null;
-            if (plateId) {
-                setHoveredId(prev => (prev === plateId ? prev : plateId));
-                return;
-            }
             // A flag in front keeps the pointer (it is grabbable).
             if (e.target?.closest?.('[data-flag]')) {
                 setHoveredId(prev => (prev === null ? prev : null));
@@ -374,7 +356,7 @@ export const MatBoard = React.memo(function MatBoard({
         setHoveredId(prev => (prev === id ? prev : id));
     }, []);
 
-    const clearHover = useCallback(() => { setHoveredId(null); setFlagsYield(false); setFlagTipHeroId(null); }, []);
+    const clearHover = useCallback(() => { setHoveredId(null); setFlagsYield(false); }, []);
 
     // A press where two Tokens' circles overlap goes to the one hovering would pick, even when no
     // pointer move has lit it yet.
@@ -430,8 +412,8 @@ export const MatBoard = React.memo(function MatBoard({
         return at ? { x: at.x, y: at.y, id: t.id } : null;
     }, [rest.tokenId, tokens]);
 
-    /** A work plate for each hero at work, not in a fight, its Token not in the hand. */
-    const plates = useMemo(() => {
+    /** A work bar for each hero at work, not in a fight, its Token not in the hand. */
+    const bars = useMemo(() => {
         const byId = new Map(tokens.map(t => [t.id, t]));
         const out = [];
         for (const h of heroes) {
@@ -461,12 +443,8 @@ export const MatBoard = React.memo(function MatBoard({
         /** heroId → how far they stand from their enemy, for the bars around the fight button. */
         apart: new Map(fights.filter(f => f.hx != null).map(f => [f.heroId, f.hx - f.x]))
     }), [fights]);
-    // The Token the pointer rests on, when it is an enemy: its card shows (not while one is carried).
-    const restType = rest.tokenId && !carriedId ? tokens.find(t => t.id === rest.tokenId)?.typeId : null;
-    const restEnemy = restType && getTokenType(restType)?.enemy ? restType : null;
-
     // Keyed by value, so a walking step redraws no Token or hero for it.
-    const platedKey = platesDrawn ? plates.map(p => p.tokenId).sort().join('|') : '';
+    const platedKey = barsDrawn ? bars.map(p => p.tokenId).sort().join('|') : '';
     const plated = useMemo(() => new Set(platedKey ? platedKey.split('|') : []), [platedKey]);
 
     const workedBy = useMemo(() => {
@@ -612,7 +590,6 @@ export const MatBoard = React.memo(function MatBoard({
                     onModeClick={handleModeClick}
                     dragging={carriedId === t.id}
                     fightBarHost={fighters.tokens.has(t.id) ? fightBarHost : null}
-                    plateHost={rest.tokenId === t.id && !workedBy.has(t.id) ? idlePlateHost : null}
                     held={held && Occupation.isHeldType(t.typeId)}
                     onPress={handleTokenPress}
                 />
@@ -673,27 +650,13 @@ export const MatBoard = React.memo(function MatBoard({
             {/* `MAT_Z.LOOT`: loot on the floor. */}
             <SpriteLayerView />
 
-            {/* `MAT_Z.WORK_PLATE`: the plate under each hero at work and their Token, over the loot. */}
-            {platesDrawn && (
-                <WorkPlateLayer
-                    plates={plates}
-                    restTokenId={rest.tokenId}
-                    restHeroId={rest.heroId}
-                    onPress={handleTokenPress}
-                    yieldToTokens={flagsYield}
-                />
-            )}
-
-            {/* `MAT_Z.WORK_PLATE`: the idle plate under the Token the pointer rests on, when nobody works it. */}
-            {platesDrawn && <IdlePlateHost hostRef={setIdlePlateHost} />}
+            {/* `MAT_Z.WORK_BAR`: the bar under each hero at work and their Token, over the loot. */}
+            {barsDrawn && <WorkBarLayer bars={bars} />}
 
             {/* `MAT_Z.FIGHT`: each fight's button between the fighters' bars, which opens the fight panel. */}
             {fights.length > 0 && <FightLayer fights={fights} yieldToTokens={flagsYield} />}
             {/* `MAT_Z.FIGHT`: the fighters' health bars while they fight, over the loot. */}
             <FightBarHost hostRef={setFightBarHost} yieldToTokens={flagsYield} />
-
-            {/* The enemy card, by the pointer, while it rests on an enemy. */}
-            {tooltipsDrawn && restEnemy && <EnemyCardTip typeId={restEnemy} instanceId={rest.tokenId} />}
 
             {/* `MAT_Z.FX`: effects standing on the mat (rising numbers, sparks, a knockout). */}
             <MatFxLayer />
@@ -706,7 +669,6 @@ export const MatBoard = React.memo(function MatBoard({
                 inspectedHeroId={inspectedHeroId}
                 hoverHeroId={litHeroId}
                 hoveredTokenId={hoveredId}
-                tipHeroId={flagTipHeroId}
                 onHoverHero={handleHoverHero}
                 matRef={rootRef}
                 yieldToTokens={flagsYield}

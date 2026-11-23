@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-    timerLines, passiveHoverLines, spawnLine, growthLine, respawnLine, leaveLine, demolitionLine,
+    timerLines, spawnLine, growthLine, respawnLine, leaveLine, demolitionLine,
     produceLine, leftByRegrow, TIMER_KIND
 } from '../ui/components/board/tokenTimers.js';
 import { idleTimerLines, timerCellsOf } from '../ui/components/board/idlePlate.js';
@@ -174,19 +174,3 @@ describe('timerLines and the idle hover', () => {
     });
 });
 
-describe('passiveHoverLines', () => {
-    it('says when the shared timer pays next, then what it pays', () => {
-        expect(passiveHoverLines({ id: 'h', typeId: 'hall', clocks: { passiveMs: 100000 } }, src()))
-            .toEqual(['Passive Production · next in 3m 20s', '2 Oak Seed']);
-    });
-
-    it('starts a fresh clock at the full lap, and lists the Wishing Well Water as a line like any other', () => {
-        expect(passiveHoverLines({ id: 'h', typeId: 'hall' }, src({ passive: hallPassive(2) })))
-            .toEqual(['Passive Production · next in 5m 0s', '2 Oak Seed', '20 Water']);
-    });
-
-    it('is empty for a Token that pays nothing, or no Token', () => {
-        expect(passiveHoverLines({ id: 't', typeId: 'tree' }, src())).toEqual([]);
-        expect(passiveHoverLines(null, src())).toEqual([]);
-    });
-});

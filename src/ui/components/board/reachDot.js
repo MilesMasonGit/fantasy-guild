@@ -3,7 +3,9 @@
 /**
  * The owner's pick (look A, 2026-11-10): a small cream dot, seven art pixels across, with a dark
  * one-pixel edge and a white highlight pixel, over a black copy one art pixel down-right (the
- * hard shadow the problem mark and the ring use). `X` edge, `o` fill, `w` highlight.
+ * hard shadow the problem mark and the ring use). `X` edge, `o` fill, `w` highlight. Round it, two
+ * art pixels of the see-through dark backing the names wear (look A, 2026-11-23), so it reads on
+ * busy ground.
  */
 export const REACH_DOT = Object.freeze([
     '..XXX..',
@@ -19,7 +21,7 @@ export const REACH_DOT = Object.freeze([
 export const REACH_DOT_ART_PX = REACH_DOT.length;
 export const REACH_DOT_MIDDLE = Math.floor(REACH_DOT_ART_PX / 2);
 
-export const REACH_DOT_COLOUR = Object.freeze({ X: '#1c1a24', o: '#fff6dc', w: '#ffffff', shadow: '#000', halo: '#ffffff' });
+export const REACH_DOT_COLOUR = Object.freeze({ X: '#1c1a24', o: '#fff6dc', w: '#ffffff', shadow: '#000', halo: '#ffffff', backing: 'var(--color-mat-backing)' });
 
 /**
  * The dot's pulse as it comes into a growing ring: held poses in whole art pixels
@@ -67,11 +69,23 @@ function haloPattern(pattern) {
     return rows;
 }
 
+/** How far the dark backing reaches past the dot's shape, in art pixels. */
+export const REACH_DOT_BACKING_PX = 2;
+
+/** The cells within `by` art pixels of the dot's shape (side by side steps) and not on it, as `b`. */
+function backingPattern(pattern, by) {
+    let grown = pattern;
+    for (let i = 0; i < by; i++) grown = haloPattern(grown).map((row, y) => [...row].map((ch, x) => (ch !== '.' || (grown[y - 1]?.[x - 1] ?? '.') !== '.' ? '#' : '.')).join(''));
+    return grown.map((row, y) => [...row].map((ch, x) => (ch !== '.' && (pattern[y - by]?.[x - by] ?? '.') === '.' ? 'b' : '.')).join(''));
+}
+
 /**
  * The dot as paths, in art pixels from its top-left cell: its whole shape (for the shadow), each
- * colour, and the halo one art pixel outside it (the flash of its pulse in).
+ * colour, the halo one art pixel outside it (the flash of its pulse in), and the dark backing
+ * round it.
  */
 export const REACH_DOT_PATHS = Object.freeze({
+    backing: cellsPath(backingPattern(REACH_DOT, REACH_DOT_BACKING_PX), ch => ch === 'b', -REACH_DOT_BACKING_PX),
     halo: cellsPath(haloPattern(REACH_DOT), ch => ch === 'h', -1),
     shape: cellsPath(REACH_DOT, ch => ch !== '.'),
     X: cellsPath(REACH_DOT, ch => ch === 'X'),

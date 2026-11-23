@@ -10,8 +10,8 @@ import { useSyncExternalStore } from 'react';
 // `terrain` is the ground under the Tokens (off, it is not mounted and the surface draws its own edge).
 // `ambient…` are the mat's ambient life, one effect each (`AmbientLife.jsx`). `tokenFx` is the
 // effects played on a Token's own art (flashes, blinks, echoes, chips: `fx/tokenFx.js`); `matFx` the
-// ones standing on the mat (numbers, sparks, puffs, a knockout: `fx/matFx.js`). `workPlate` is the plate
-// under each hero at work and their Token (`WorkPlateLayer.jsx`).
+// ones standing on the mat (numbers, sparks, puffs, a knockout: `fx/matFx.js`). `workPlate` is the work bar
+// under each hero at work and their Token (`WorkBarLayer.jsx`; the name is the bench's, kept).
 export const DRAW_SWITCHES = [
     'rings', 'bubbles', 'alerts', 'speech', 'tooltips',
     'heroAnim', 'enemyAnim', 'walkDraw', 'itemFlight',

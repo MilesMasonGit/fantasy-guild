@@ -1,16 +1,16 @@
 import { onStep } from './frameClock.js';
 
 /**
- * The work bar: a thin bar that fills once each work cycle, in whole art pixels. It is drawn in
- * the work plate under the Token and its hero (`WorkPlateLayer`); the model behind it is the
+ * The work bar: a bar that fills once each work cycle, in whole art pixels. It is drawn under the
+ * Token and its hero (`WorkBarLayer`), beside the time one cycle takes; the model behind it is the
  * Token's own: `TokenBubbles` keeps it and feeds it the engine's events, and shares it by id
- * ({@link shareWorkBar}) for the plate to draw.
+ * ({@link shareWorkBar}) for the layer to draw.
  * ⚠️ A running bar is written on the shared step clock (`frameClock.onStep`: ten steps a second,
  * every bar in the same frame) and only when its filled length changes by an art pixel; an engine
  * event only moves the model. Bars written on frames of their own (a CSS animation per bar runs
  * out of phase with every other) would put a repaint in nearly every frame of play, the cost the
- * cycle ring was moved onto this clock to stop. The fill is the bar's own `::after`
- * (`.gi-work-bar`, tailwind.css), scaled by `--work-bar-fill`: one element, no layout.
+ * cycle ring was moved onto this clock to stop. The model writes `--work-bar-fill` on the element
+ * it is given, and the track's `::after` fill is scaled by it (`.gi-work-bar`, tailwind.css).
  */
 
 /** How many steps a model fills in until an element is attached with its own length. */
@@ -36,6 +36,13 @@ export function createWorkBar(now = () => performance.now()) {
     let fraction = 0;
     let drawn = null;
     let offStep = null;
+    // Who hears the cycle's length change (the bar's time beside it).
+    const lengthWatchers = new Set();
+    const setLength = (ms) => {
+        if (ms === cycleMs) return;
+        cycleMs = ms;
+        lengthWatchers.forEach(fn => fn(cycleMs));
+    };
 
     const elapsedAt = (t) => (running && cycleMs ? Math.min(cycleMs, elapsed + Math.max(0, t - stamp)) : elapsed);
 
@@ -85,7 +92,7 @@ export function createWorkBar(now = () => performance.now()) {
          * hero works it, so it runs on between ticks.
          */
         progress(p, live) {
-            if (p?.cycleTimeMs) cycleMs = p.cycleTimeMs;
+            if (p?.cycleTimeMs) setLength(p.cycleTimeMs);
             elapsed = p?.elapsedMs != null ? p.elapsedMs : cycleMs ? ((p?.percent || 0) / 100) * cycleMs : 0;
             stamp = now();
             if (!cycleMs) {
@@ -118,6 +125,17 @@ export function createWorkBar(now = () => performance.now()) {
         dispose() {
             el = null;
             stop();
+            lengthWatchers.clear();
+        },
+        /**
+         * Hear the cycle's length (ms) now and whenever the engine says a new one (a speed boost):
+         * never on a tick that only moves the bar. `fn(null)` while no length is known yet.
+         * @returns {() => void} stop hearing
+         */
+        watchLength(fn) {
+            lengthWatchers.add(fn);
+            fn(cycleMs);
+            return () => lengthWatchers.delete(fn);
         },
         /** Where the cycle stands at time `t`, or null with no cycle length known. */
         read(t) {
@@ -150,7 +168,7 @@ export function shareWorkBar(instanceId, bar) {
 
 /**
  * Hear Token `instanceId`'s bar model now and whenever it comes or goes (`fn(bar | null)`): the
- * plate attaches its element to whichever model is there.
+ * bar attaches its element to whichever model is there.
  * @returns {() => void} stop hearing
  */
 export function watchWorkBar(instanceId, fn) {

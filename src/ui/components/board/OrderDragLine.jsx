@@ -14,7 +14,7 @@ import { SkillIconText } from '../base/SkillIconText.jsx';
 import { SpeechFrame, tailInset } from './SpeechFrame.jsx';
 import { keepInMat, guessCalloutSize } from './calloutPlace.js';
 import { SPEECH_TONE } from './speechTone.js';
-import { plateUnit } from './workPlate.js';
+import { plateUnit } from './matMarks.js';
 import { calloutTopOf } from './CalloutLayer.jsx';
 import { setHintTarget } from './dragHints.js';
 import { HeroDragMarks, markMatPx } from './DragMarks.jsx';
@@ -215,7 +215,7 @@ function drawnSpriteOf(instanceId) {
 /**
  * Over the Token under the pointer, worked out once as it is entered: the carried hero's drag hint
  * marks centred just above its sprite and, when the hero cannot be sent there, the drop's own
- * refusal over them. Where a callout would be lifted clear of a work plate or a fight's bars, the
+ * refusal over them. Where a callout would be lifted clear of a work bar or a fight's bars, the
  * column is too.
  */
 function AimedLabel({ heroId, instance, reason, icons, fit, mat }) {
@@ -227,7 +227,7 @@ function AimedLabel({ heroId, instance, reason, icons, fit, mat }) {
         const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, instance.typeId, boardScaleAt(f));
         const sprite = spriteTopMiddle(instance, artPx, opaqueBoundsOf(drawnSpriteOf(instance.id)));
         const at = { x: instance.x, y: instance.y, typeId: instance.typeId };
-        // A callout over this Token is lifted above a work plate or a fight's bars: so is the column.
+        // A callout over this Token is lifted above a work bar or a fight's bars: so is the column.
         const lifted = calloutTopOf({ ...at, anchorId: instance.id }, { fit: f, matH, u });
         const plain = calloutTopOf(at, { fit: f, matH, u });
         const top = sprite.top - markPx / 8;

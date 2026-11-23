@@ -14,8 +14,9 @@ const RING_GOLD = 'var(--color-gi-gold)';
 const RING_SHADOW = '#000';
 
 /**
- * One in-reach dot on a Token's centre, its centre cell on the Token's art-pixel cell. It pulses
- * once as it arrives (the growing ring reaching it, or a carried ring's reach coming over it).
+ * One in-reach dot on a Token's centre, its centre cell on the Token's art-pixel cell, on its
+ * see-through dark backing. It pulses once as it arrives (the growing ring reaching it, or a
+ * carried ring's reach coming over it).
  */
 const ReachDot = ({ dot, artScale }) => {
     const ox = snapToArt(dot.x, artScale) - REACH_DOT_MIDDLE * artScale;
@@ -31,6 +32,7 @@ const ReachDot = ({ dot, artScale }) => {
     // own: on an SVG element a CSS transform replaces the attribute.
     return (
         <g data-reach-dot={dot.id} ref={hop}>
+            <path data-reach-dot-backing d={REACH_DOT_PATHS.backing} transform={`translate(${ox} ${oy}) scale(${artScale})`} fill={REACH_DOT_COLOUR.backing} />
             <path d={REACH_DOT_PATHS.shape} transform={`translate(${ox + artScale} ${oy + artScale}) scale(${artScale})`} fill={REACH_DOT_COLOUR.shadow} />
             <g transform={`translate(${ox} ${oy}) scale(${artScale})`}>
                 <path ref={halo} d={REACH_DOT_PATHS.halo} fill={REACH_DOT_COLOUR.halo} visibility="hidden" />

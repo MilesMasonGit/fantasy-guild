@@ -2,8 +2,8 @@ import { useLayoutEffect } from 'react';
 import { onDue } from './frameClock.js';
 
 /**
- * The alert "!"'s bob: over a Token's art or a hero's head it rises two art pixels and sinks
- * again, in whole art-pixel stops, on a slow loop.
+ * The alert "!"'s bob over a hero's head: it rises two art pixels and sinks again, in whole
+ * art-pixel stops, on a slow loop. A Token's '!' is still (`ProblemMark`).
  * ⚠️ Written on the shared sprite clock (`onDue`), as floor loot's bob is (`lootBob.js`), never a
  * CSS animation: a keyframed transform gets a composited layer per mark, and everything drawn over
  * it another. Here a mark is plain paint, written only in the frames where its stop changes, and it

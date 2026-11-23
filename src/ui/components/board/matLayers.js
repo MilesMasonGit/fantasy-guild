@@ -77,8 +77,8 @@ export const MAT_Z = Object.freeze({
     RINGS: TOKEN_TOP + 80,
     /** Loot on the floor. */
     LOOT: TOKEN_TOP + 120,
-    /** The work plates under each hero at work and their Token (`WorkPlateLayer`): over the loot at their feet. */
-    WORK_PLATE: TOKEN_TOP + 130,
+    /** The work bars under each hero at work and their Token (`WorkBarLayer`): over the loot at their feet. */
+    WORK_BAR: TOKEN_TOP + 130,
     /**
      * Each fight's plate, its chip, which opens the fight panel, and both fighters' health bars
      * (`FightLayer`, `FightBarHost`): over the loot, so a kill's drops never cover a number; under

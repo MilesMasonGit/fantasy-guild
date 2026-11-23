@@ -2,7 +2,7 @@ import { memo, useEffect, useLayoutEffect, useRef } from 'react';
 import { MAT_Z } from '../matLayers.js';
 import { useMatFit } from '../MatFitContext.jsx';
 import { boardScaleAt } from '../../base/TokenSprite.jsx';
-import { plateUnit } from '../workPlate.js';
+import { plateUnit } from '../matMarks.js';
 import { attachFxHost, watchMatFx } from './matFx.js';
 import { watchFightFloats } from './fightFloats.js';
 
