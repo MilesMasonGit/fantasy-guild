@@ -370,3 +370,78 @@ T-631 — GDD on gathering matches the game — docs written by the planning age
 T-636 — GDD §5 Making and the Shop match the game — docs written by the planning agent — 2026-11-21
 T-642 — GDD on heroes and the guild matches the game — docs written by the planning agent — 2026-11-21
 T-571 — GDD on the combat styles matches the game — docs written by the planning agent — 2026-11-21
+T-403 — Use the effect names — 939f3d05 — 2026-11-23
+T-488 — One way to write a time — 939f3d05 — 2026-11-23
+T-489 — One way to write a chance — 939f3d05 — 2026-11-23
+T-490 — A shown chance says whether bonuses count — 939f3d05 — 2026-11-23
+T-491 — Lucky reads as a multiplier — 939f3d05 — 2026-11-23
+T-492 — A building's Boosts list words effects as the badges do — 939f3d05 — 2026-11-23
+T-493 — Rule lines lead with the effect's name — 939f3d05 — 2026-11-23
+T-494 — Time effects renamed so good reads plus; effects against the player read minus in… — 939f3d05 — 2026-11-23
+T-496 — Two kinds of message — 939f3d05 — 2026-11-23
+T-497 — The silent moments speak — 939f3d05 — 2026-11-23
+T-498 — Exhausted is the word for a resting Token — 939f3d05 — 2026-11-23
+T-500 — One form for a level requirement — 939f3d05 — 2026-11-23
+T-501 — Sentence case for every typed text — 939f3d05 — 2026-11-23
+T-502 — Respawns is the one verb for coming back — 939f3d05 — 2026-11-23
+T-504 — One writer for a Token's timer sentences — 939f3d05 — 2026-11-23
+T-505 — The idle hover shows every timer and stuck reason the card shows — 939f3d05 — 2026-11-23
+T-508 — The Encyclopedia lists every real source — 939f3d05 — 2026-11-23
+T-509 — Amounts in the Encyclopedia — 939f3d05 — 2026-11-23
+T-510 — The card shows a working hero's bonus drops — 939f3d05 — 2026-11-23
+T-511 — The Guild Hall pays every line once a lap, and says so — 939f3d05 — 2026-11-23
+T-512 — Every guild-wide combat effect reaches heroes, Sunder excepted — 939f3d05 — 2026-11-23
+T-513 — Bunk Beds, Bank Tabs and the Wishing Well become authored stars — 939f3d05 — 2026-11-23
+T-514 — The Guild Hall is a non-working Token by one rule — 939f3d05 — 2026-11-23
+T-515 — Better tools work faster, and a hero uses the best one — 939f3d05 — 2026-11-23
+T-516 — The same effect from several sources adds in full, no cap — 939f3d05 — 2026-11-23
+T-517 — An item's tooltip says what a tool unlocks and its break chance — 939f3d05 — 2026-11-23
+T-518 — Retire the neighbouring tool Token path and dead equipment code — 939f3d05 — 2026-11-23
+T-519 — An item's effect has no reach — 939f3d05 — 2026-11-23
+T-520 — Equip refusals in one wording, translatable — 939f3d05 — 2026-11-23
+T-523 — A new perk table starts with a row every 5 levels — 939f3d05 — 2026-11-23
+T-524 — Levelling up is an event — 939f3d05 — 2026-11-23
+T-525 — Only food heals, and only food says so — 939f3d05 — 2026-11-23
+T-527 — Healing out of fights can be boosted (a Regen effect) — 939f3d05 — 2026-11-23
+T-528 — Recovery speed-ups shorten wounds already running — 939f3d05 — 2026-11-23
+T-529 — Food Healing applies to every meal while the status lasts — 939f3d05 — 2026-11-23
+T-531 — Health leftovers — 939f3d05 — 2026-11-23
+T-533 — Resistance applies after boosts — 939f3d05 — 2026-11-23
+T-534 — Venom deals Poison damage — 939f3d05 — 2026-11-23
+T-535 — All damage rolls its fraction — 939f3d05 — 2026-11-23
+T-536 — Attack Speed, Attacks every — 939f3d05 — 2026-11-23
+T-537 — Combat leftovers — 939f3d05 — 2026-11-23
+T-545 — Enemies come back by their camp only — 939f3d05 — 2026-11-23
+T-546 — An enemy keeps its damage and heals 5% a second — 939f3d05 — 2026-11-23
+T-547 — Bosses come from camps only — 939f3d05 — 2026-11-23
+T-561 — Strike, Damage, Attacks every — 939f3d05 — 2026-11-23
+T-589 — Token and hero names one step larger — 939f3d05 — 2026-11-23
+T-590 — Limes at Token pixel size — 939f3d05 — 2026-11-23
+T-591 — The idle hover shows a timer or a problem only — 939f3d05 — 2026-11-23
+T-592 — The alert "!" sits above the Token or hero and bobs — 939f3d05 — 2026-11-23
+T-593 — The ring grows and shrinks; reach dots pulse in — 939f3d05 — 2026-11-23
+T-594 — A hero's flag in the Token's middle, only while the hero is hovered — 939f3d05 — 2026-11-23
+T-595 — A task ring on every worked Token — 939f3d05 — 2026-11-23
+T-596 — No Saplings: Forests plant full Trees, Stumps grow into Trees — 939f3d05 — 2026-11-23
+T-598 — One rule for no room: wait, pay nothing, say so — 939f3d05 — 2026-11-23
+T-599 — Spawner limits count in reach, camps their own — 939f3d05 — 2026-11-23
+T-600 — Spawner and transform leftovers — 939f3d05 — 2026-11-23
+T-602 — An event says goodbye — 939f3d05 — 2026-11-23
+T-603 — Demolishing an event needs a hero — 939f3d05 — 2026-11-23
+T-605 — Event leftovers — 939f3d05 — 2026-11-23
+T-607 — Demolish from the Token's card too — 939f3d05 — 2026-11-23
+T-608 — A builder stays to work the new building — 939f3d05 — 2026-11-23
+T-609 — Arrival enemies stand outside the cap — 939f3d05 — 2026-11-23
+T-610 — Demolishing gives a little Construction XP — 939f3d05 — 2026-11-23
+T-611 — Placing and removal leftovers — 939f3d05 — 2026-11-23
+T-613 — Each biome sets its terrain ranges, in the CMS — 939f3d05 — 2026-11-23
+T-616 — Region leftovers — 939f3d05 — 2026-11-23
+T-618 — Time away: under a minute resumes as left, from a minute the summary always… — 939f3d05 — 2026-11-23
+T-619 — A kill counts once in the away summary — 939f3d05 — 2026-11-23
+T-620 — Saving leftovers — 939f3d05 — 2026-11-23
+T-637 — Cut bounties for now; Limes stays — 939f3d05 — 2026-11-23
+T-638 — A Discard button — 939f3d05 — 2026-11-23
+T-640 — Three small calls — 939f3d05 — 2026-11-23
+T-641 — Heroes and Bank leftovers — 939f3d05 — 2026-11-23
+T-643 — No more specialist skills, just skills — 939f3d05 — 2026-11-23
+T-304 — Tailor, a 21st skill — 939f3d05 — 2026-11-23
