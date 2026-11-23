@@ -224,24 +224,24 @@ describe('the words: palette, rule text and the star', () => {
 
     it('a rule names its style, on a Token and on a hero', () => {
         expect(renderStatement(rule(EFFECT_TYPES.DAMAGE, 0.1, 'percentage', 'melee'), {}))
-            .toBe('Provides 10% more damage in combat, but only for Melee fighters — to the hero carrying this item, or on an enemy, to the hero fighting it.');
+            .toBe('Damage +10% in combat, but only for Melee fighters — to the hero carrying this item, or on an enemy, to the hero fighting it.');
         expect(renderStatement(rule(EFFECT_TYPES.ACCURACY, 5, 'flat', 'stealth'), { carried: true }))
-            .toBe('Gives the hero 5 more accuracy in combat, but only as a Stealth fighter.');
+            .toBe('Accuracy +5% in combat, but only as a Stealth fighter.');
         // A work skill there matches no fighter and is not said (the audit names it).
         expect(renderStatement(rule(EFFECT_TYPES.DAMAGE, 2, 'flat', 'mining'), {}))
-            .toBe('Provides 2 more damage in combat — to the hero carrying this item, or on an enemy, to the hero fighting it.');
+            .toBe('Damage +2 in combat — to the hero carrying this item, or on an enemy, to the hero fighting it.');
     });
 
     it('a combat star says who it helps and how, in the Hall\'s effects and its card', () => {
-        expect(hallRuleSentence(rule(EFFECT_TYPES.DAMAGE, 0.1, 'percentage', 'melee'))).toBe('Gives every Melee fighter 10% more damage in combat.');
-        expect(hallRuleSentence(rule(EFFECT_TYPES.SWING_TIME, -0.1, 'percentage', 'ranged'))).toBe('Gives every Ranged fighter 10% less swing time in combat.');
-        expect(hallRuleSentence(rule(EFFECT_TYPES.ACCURACY, 5, 'flat'))).toBe('Gives every hero 5 more accuracy in combat.');
+        expect(hallRuleSentence(rule(EFFECT_TYPES.DAMAGE, 0.1, 'percentage', 'melee'))).toBe('Damage +10% for every Melee fighter in combat.');
+        expect(hallRuleSentence(rule(EFFECT_TYPES.SWING_TIME, -0.1, 'percentage', 'ranged'))).toBe('Attack Speed +10% for every Ranged fighter in combat.');
+        expect(hallRuleSentence(rule(EFFECT_TYPES.ACCURACY, 5, 'flat'))).toBe('Accuracy +5% for every hero in combat.');
 
         const cases = [
-            [rule(EFFECT_TYPES.DAMAGE, 0.1, 'percentage', 'melee'), 'Every Melee fighter hits harder.', '10% more damage'],
-            [rule(EFFECT_TYPES.SWING_TIME, -0.1, 'percentage', 'ranged'), 'Every Ranged fighter swings faster.', '10% less swing time'],
-            [rule(EFFECT_TYPES.ACCURACY, 5, 'flat', 'magic'), 'Every Magic fighter misses less.', '5 more accuracy'],
-            [rule(EFFECT_TYPES.DAMAGE, -0.1, 'percentage', 'stealth'), 'Every Stealth fighter hits softer.', '10% less damage']
+            [rule(EFFECT_TYPES.DAMAGE, 0.1, 'percentage', 'melee'), 'Every Melee fighter hits harder.', 'Damage +10%'],
+            [rule(EFFECT_TYPES.SWING_TIME, -0.1, 'percentage', 'ranged'), 'Every Ranged fighter swings faster.', 'Attack Speed +10%'],
+            [rule(EFFECT_TYPES.ACCURACY, 5, 'flat', 'magic'), 'Every Magic fighter misses less.', 'Accuracy +5%'],
+            [rule(EFFECT_TYPES.DAMAGE, -0.1, 'percentage', 'stealth'), 'Every Stealth fighter hits softer.', 'Damage −10%']
         ];
         for (const [statement, sentence, amount] of cases) {
             registerHallSky(sky([statement]));

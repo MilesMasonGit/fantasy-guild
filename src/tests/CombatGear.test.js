@@ -513,7 +513,7 @@ describe('the Rules editor offers the new modifiers', () => {
         expect(slot.options.map(o => o.id)).toEqual(['', 'item_raw_beef']);
         const named = { ...statement, payload: { ...statement.payload, ...slot.patch('item_raw_beef').payload } };
         expect(renderStatement(named, { item: (id) => ctx.items[id]?.name || id }))
-            .toContain('a 10% chance of double Raw Beef');
+            .toContain('Double Item 10% on Raw Beef');
     });
 
     it('the Hide Vest reads as a sentence about poison, naming the status effect', () => {

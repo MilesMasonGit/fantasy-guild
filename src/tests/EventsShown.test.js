@@ -349,19 +349,19 @@ describe('the pulse', () => {
 
 describe('time left', () => {
     it('the hover plate counts a buff down like a refreshing node, with its own tip', () => {
-        expect(timerCellOf({ kind: 'leave', inMs: 125_000, buff: true })).toMatchObject({ kind: 'timer', glyph: 'clock', text: '2:05' });
-        expect(timerCellOf({ kind: 'leave', inMs: 125_000, buff: true }).tip).toMatch(/^Leaves in 2\u00a0min\u00a05\u00a0s$/);
+        expect(timerCellOf({ kind: 'leave', inMs: 125_000, buff: true })).toMatchObject({ kind: 'timer', glyph: 'clock', text: '2m 5s' });
+        expect(timerCellOf({ kind: 'leave', inMs: 125_000, buff: true }).tip).toMatch(/^Leaves in 2m\u00a05s$/);
         expect(timerCellOf({ kind: 'leave', inMs: 60_000, buff: false }).tip).toMatch(/^An event: leaves in/);
     });
 
-    it('the card says "Leaves in m:ss" for a buff, ticking down', () => {
+    it('the card says "Leaves in 20m 0s" for a buff, ticking down', () => {
         setEventsForTests(table(RAIN));
         freshGame();
         const { instance } = EventClock.landNow(RAIN.id);
         const line = () => tokenCardModel('evs_rain', instance.id).blocks.find(b => b.id === CARD_BLOCK.LIFECYCLE)?.lines?.[0];
-        expect(line()).toMatchObject({ icon: 'clock', label: 'Leaves in', text: '20:00' });
+        expect(line()).toMatchObject({ icon: 'clock', label: 'Leaves in', text: '20m 0s' });
         runFor(5 * MIN + 30_000);
-        expect(line().text).toBe('14:30');
+        expect(line().text).toBe('14m 30s');
     });
 
     it('a rich node shows its charges and its leaving time, worked or not', () => {
@@ -371,12 +371,12 @@ describe('time left', () => {
         const comet = EventClock.landNow(COMET.id).instance;
         const cometCard = tokenCardModel('evs_comet', comet.id);
         expect(cometCard.blocks.find(b => b.id === CARD_BLOCK.CYCLE).uses).toBe(3);
-        expect(cometCard.blocks.find(b => b.id === CARD_BLOCK.LIFECYCLE).lines[0]).toMatchObject({ label: 'Leaves in', text: '60:00' });
+        expect(cometCard.blocks.find(b => b.id === CARD_BLOCK.LIFECYCLE).lines[0]).toMatchObject({ label: 'Leaves in', text: '1h 0m' });
 
         const mythril = EventClock.landNow(MYTHRIL.id).instance;
         const card = tokenCardModel('evs_mythril', mythril.id);
         expect(card.blocks.find(b => b.id === CARD_BLOCK.CYCLE).uses).toBe(100);
-        expect(card.blocks.find(b => b.id === CARD_BLOCK.LIFECYCLE).lines[0]).toMatchObject({ label: 'Leaves in', text: '60:00' });
+        expect(card.blocks.find(b => b.id === CARD_BLOCK.LIFECYCLE).lines[0]).toMatchObject({ label: 'Leaves in', text: '1h 0m' });
         expect(EventTokens.leavesInMs(mythril)).toBe(HOUR);
     });
 });

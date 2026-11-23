@@ -6,7 +6,7 @@ import * as World from '../../../systems/world/World.js';
 import { FLAVOUR_NAME_MAX } from '../../../systems/atlas/regionNames.js';
 import { CELL_STATE } from '../../../systems/world/frontier.js';
 import { matW, matH } from '../../../config/matGeometry.js';
-import { formatPlaytime } from '../../../utils/Formatters.js';
+import { elapsedText } from '../../../utils/Formatters.js';
 import { SideDrawer } from '../base/SideDrawer.jsx';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
@@ -152,7 +152,7 @@ const PlacePreview = ({ region, version }) => {
 
 /** How long the guild has spent on a settled place, time away included, read live. */
 const PlacePlaytime = ({ regionId }) => {
-    const text = useLiveRead(() => formatPlaytime(Atlas.playtimeOf(regionId)), regionId);
+    const text = useLiveRead(() => elapsedText(Atlas.playtimeOf(regionId)), regionId);
     return (
         <Tooltip title={t('worldMap.playtime')} lines={[t('worldMap.playtimeTip')]} maxWidth={240}>
             <div data-world-playtime={regionId} className="flex items-center gap-1.5 font-pixel ui-text-body text-white cursor-help">

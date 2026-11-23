@@ -20,7 +20,7 @@ import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
 import { TokenCard } from '../ui/components/board/TokenCard.jsx';
 import { tokenCardModel, CARD_BLOCK } from '../ui/components/board/tokenCard.js';
-import { effectAmountText, badgeText, limitNote, badgeTip, EFFECT_GLYPH } from '../ui/components/board/effectBadgeText.js';
+import { effectAmountText, badgeAmountText, badgeText, limitNote, badgeTip, EFFECT_GLYPH } from '../ui/components/board/effectBadgeText.js';
 import { GLYPHS } from '../ui/components/base/PixelGlyph.jsx';
 import { clearMat, placeAt } from './fixtures/mat.js';
 
@@ -91,6 +91,7 @@ registerTokenTypes({
     ]),
     bc_lamp: support('bc_lamp', 'Badge Lamp', [provides('bc_lamp', toId(VEIN), { type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.05 })]),
     bc_rush: support('bc_rush', 'Badge Rush', [provides('bc_rush', toId(VEIN), { type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.9 })]),
+    bc_drag: support('bc_drag', 'Badge Drag', [provides('bc_drag', toId(VEIN), { type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: 0.1 })]),
     bc_mine: support('bc_mine', 'Badge Mine', [
         provides('bc_mine_double', ALL, { type: EFFECT_TYPES.DOUBLE_DROP, bucket: 'flat', value: 8, category: ORE }),
         provides('bc_mine_lean', toId(VEIN), { type: EFFECT_TYPES.INPUT_COST, bucket: 'percentage', value: -0.12 }),
@@ -259,6 +260,17 @@ describe('the badge row', () => {
 });
 
 describe('item badges, Rare finds and the Needs cost', () => {
+    it('Rare finds with no bonus: the bare chance and no extra hover line', () => {
+        const vein = arrive(VEIN);
+        const { container } = mount({ typeId: VEIN, instanceId: vein.id });
+        const group = container.querySelector('[data-card-rare]');
+        expect(group.querySelector('[data-card-rare-chance]').textContent).toBe('2%');
+        expect(group.querySelector('[data-effect-badge="lucky"]')).toBeNull();
+        hover(group.querySelector('[data-card-rare-toggle]'));
+        expect(tipText()).toContain('A roll on this Token');
+        expect(tipText()).not.toContain('base');
+    });
+
     it('Double Item on the Makes line, Efficiency on the Needs line, the Needs at the cost a cycle can take', () => {
         const vein = arrive(VEIN);
         arrive('bc_mine', NEAR);
@@ -287,7 +299,11 @@ describe('item badges, Rare finds and the Needs cost', () => {
         expect(group.getAttribute('data-card-rare')).toBe('shut');
         // 2 % at +25 %.
         expect(group.querySelector('[data-card-rare-chance]').textContent).toBe('2.5%');
-        expect(group.querySelector('[data-effect-badge="lucky"]').textContent).toBe('+25%');
+        // Lucky's percentage is a share of the table's chance, so it reads as a multiplier.
+        expect(group.querySelector('[data-effect-badge="lucky"]').textContent).toBe('×1.25');
+        // The live chance explains itself: base, each bonus and its source, the result.
+        hover(group.querySelector('[data-card-rare-toggle]'));
+        expect(tipText()).toContain('2% base · Lucky ×1.25 (Badge Mine nearby) · = 2.5%');
         expect(group.querySelector('[data-card-rare-list]')).toBeNull();
         fireEvent.click(group.querySelector('[data-card-rare-toggle]'));
         expect(group.getAttribute('data-card-rare')).toBe('open');
@@ -311,6 +327,30 @@ describe('item badges, Rare finds and the Needs cost', () => {
     });
 });
 
+describe("a building's Boosts list words each effect as the badge it causes", () => {
+    const tagsOf = (root) => [...root.querySelectorAll('[data-card-support="to"] span > span')].filter(el => el.style.color);
+
+    it("the cart's tags are the badges they put on the Vein: name and number, good always plus", () => {
+        const vein = arrive(VEIN);
+        const cart = arrive('bc_cart', NEAR);
+        const badges = effectBreakdown(vein.id).effects;
+        const said = (key) => { const b = badges.find(x => x.key === key); return `${b.name} ${badgeText(b)}`; };
+        const { container } = mount({ typeId: 'bc_cart', instanceId: cart.id });
+        expect(tagsOf(container).map(el => el.textContent)).toEqual([said(EFFECT_KEY.SPEED), said(EFFECT_KEY.XP)]);
+        expect(tagsOf(container).map(el => el.textContent)).toEqual(['Speed +15%', 'XP +10%']);
+        expect(tagsOf(container).every(el => el.style.color === 'var(--color-ui-green)')).toBe(true);
+    });
+
+    it('an effect against the Token keeps its name, with a minus, in red', () => {
+        arrive(VEIN);
+        const drag = arrive('bc_drag', NEAR);
+        const { container } = mount({ typeId: 'bc_drag', instanceId: drag.id });
+        const [tag] = tagsOf(container);
+        expect(tag.textContent).toBe('Speed −10%');
+        expect(tag.style.color).toBe('var(--color-ui-red)');
+    });
+});
+
 describe('the tip and the chip agree with the breakdown', () => {
     it('each chip\'s number and hover total are the breakdown\'s', () => {
         hire();
@@ -324,7 +364,7 @@ describe('the tip and the chip agree with the breakdown', () => {
         for (const badge of out.effects) {
             const chip = container.querySelector(`[data-effect-badges] > [data-effect-badge="${badge.key}"]`);
             expect(chip.textContent, badge.key).toBe(badgeText(badge));
-            expect(badgeTip(badge).total.amount, badge.key).toBe(effectAmountText(badge.unit, badge.total));
+            expect(badgeTip(badge).total.amount, badge.key).toBe(badgeAmountText(badge, badge.total));
         }
     });
 });

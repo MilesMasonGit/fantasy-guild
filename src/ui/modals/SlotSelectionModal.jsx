@@ -3,7 +3,7 @@ import { SaveManager } from '../../systems/core/SaveManager.js';
 import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
 import * as NotificationSystem from '../../systems/core/NotificationSystem.js';
-import { formatTimeAgo, formatPlaytime } from '../../utils/Formatters.js';
+import { formatTimeAgo, elapsedText } from '../../utils/Formatters.js';
 import { cn } from '../utils/cn.js';
 import { useEscapeLayer } from '../utils/escapeLayers.js';
 import { Play, Plus, Trash2, AlertTriangle, Users, Clock, Save, Hourglass } from 'lucide-react';
@@ -201,7 +201,7 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
                     </span>
                     <div className="flex items-center gap-4 text-xs text-gray-400">
                         <SlotStat stat="heroes" icon={Users} label={t('titleScreen.heroes')}>{heroCount || 0}</SlotStat>
-                        <SlotStat stat="playtime" icon={Clock} label={t('titleScreen.playtime')}>{formatPlaytime(playtime)}</SlotStat>
+                        <SlotStat stat="playtime" icon={Clock} label={t('titleScreen.playtime')}>{elapsedText(playtime)}</SlotStat>
                         {(!AWAY_REPLACES_LAST_SAVED || !away) && (
                             <SlotStat stat="saved" icon={Save} label={t('titleScreen.lastSaved')}>{timeAgo}</SlotStat>
                         )}

@@ -7,7 +7,7 @@ import { useTokenDragLanding } from './MatRings.jsx';
 import { MAT_Z } from './matLayers.js';
 import { SpeechFrame } from './SpeechFrame.jsx';
 import { SPEECH_TONE } from './speechTone.js';
-import { supportTag } from './supportTags.js';
+import { effectTagText } from './effectBadgeText.js';
 import { setLit } from './supportLit.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { plateUnit } from './workPlate.js';
@@ -51,7 +51,7 @@ export const SupportLinkLayer = memo(function SupportLinkLayer({ matRef = null }
             key: i,
             tone: l.role === LINK.HELPS ? SPEECH_TONE.ATTENTION : SPEECH_TONE.PLAIN,
             role: l.role,
-            text: l.role === LINK.HELPS ? supportTag(l.payload) : `gives ${supportTag(l.payload)}`
+            text: l.role === LINK.HELPS ? effectTagText(l.payload) : `gives ${effectTagText(l.payload)}`
         }))
     // eslint-disable-next-line react-hooks/exhaustive-deps
     })), [key, candidates]);

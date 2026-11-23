@@ -71,28 +71,29 @@ afterAll(() => Flags.teardown());
 
 describe('countdown text (FB-14)', () => {
     it('reads m:ss, rounded up to the second', () => {
-        expect(turnCountdownText(60000)).toBe('1:00');
-        expect(turnCountdownText(34000)).toBe('0:34');
-        expect(turnCountdownText(33001)).toBe('0:34');
-        expect(turnCountdownText(1)).toBe('0:01');
-        expect(turnCountdownText(0)).toBe('0:00');
-        expect(turnCountdownText(125000)).toBe('2:05');
+        expect(turnCountdownText(60000)).toBe('1m 0s');
+        expect(turnCountdownText(34000)).toBe('34s');
+        expect(turnCountdownText(33001)).toBe('34s');
+        expect(turnCountdownText(1)).toBe('1s');
+        expect(turnCountdownText(0)).toBe('0s');
+        expect(turnCountdownText(125000)).toBe('2m 5s');
         expect(turnCountdownText(undefined)).toBeNull();
     });
 
     it('the timer cell draws what it reads, names the odds, and is nothing with nothing to read', () => {
         const turn = (extra) => ({ kind: 'turn', everyMs: 60000, chance: 30, ...extra });
         expect(timerCellOf(turn({ inMs: 34000, back: false })))
-            .toMatchObject({ text: '0:34', glyph: 'turn', tip: 'Next roll to turn into something else in 0:34 (30% chance)' });
-        expect(timerCellOf(turn({ inMs: 5000, back: true })).tip).toBe('Next roll to turn back in 0:05 (30% chance)');
+            .toMatchObject({ text: '34s', glyph: 'turn', tip: 'Next roll to turn into something else in 34s (30% chance)' });
+        expect(timerCellOf(turn({ inMs: 5000, back: true })).tip).toBe('Next roll to turn back in 5s (30% chance)');
         expect(timerCellOf(null)).toBeNull();
     });
 
     it('a resting Token’s timer says when it refills', () => {
         const cell = timerCellOf({ kind: 'respawn', mode: 'refill', inMs: 24000, totalMs: 30000, everyMs: 30000 });
-        expect(cell.text).toBe('0:24');
-        // Non-breaking between the number and its unit, so the tip never splits them.
-        expect(cell.tip).toBe('Resting. Refills in 24\u00a0s');
+        expect(cell.text).toBe('24s');
+        expect(cell.tip).toBe('Resting. Refills in 24s');
+        // Non-breaking between a time's parts, so the tip never splits them.
+        expect(timerCellOf({ kind: 'respawn', mode: 'refill', inMs: 125000 }).tip).toBe('Resting. Refills in 2m\u00a05s');
     });
 });
 
@@ -112,13 +113,13 @@ describe('on the mat (FB-14)', () => {
         act(hover);
         expect(countdownOf(container, coast.id)).toBeNull();
         restHover();
-        expect(textOf(countdownOf(container, coast.id))).toBe('1:00');
+        expect(textOf(countdownOf(container, coast.id))).toBe('1m 0s');
 
         // 26 s of game time: the plate re-reads the clock on its next refresh.
         act(() => { TimedChanges.tick(26000); vi.advanceTimersByTime(TURN_COUNTDOWN_REFRESH_MS); });
-        expect(textOf(countdownOf(container, coast.id))).toBe('0:34');
+        expect(textOf(countdownOf(container, coast.id))).toBe('34s');
         act(() => { TimedChanges.tick(19000); vi.advanceTimersByTime(TURN_COUNTDOWN_REFRESH_MS); });
-        expect(textOf(countdownOf(container, coast.id))).toBe('0:15');
+        expect(textOf(countdownOf(container, coast.id))).toBe('15s');
 
         // The roll (100%): a Shrimp Coast, counting down afresh to its roll back.
         // (The mat re-reads its Token list on a microtask, hence the async act.)
@@ -129,7 +130,7 @@ describe('on the mat (FB-14)', () => {
         act(() => { fireEvent.pointerMove(root, { clientX: AT.x + 1, clientY: AT.y }); });
         act(() => { vi.advanceTimersByTime(TURN_COUNTDOWN_REFRESH_MS); });
         const cell = countdownOf(container, shrimp.id);
-        expect(textOf(cell)).toBe('1:00');
+        expect(textOf(cell)).toBe('1m 0s');
         fireEvent.pointerEnter(cell);
         expect(document.body.querySelector('[data-bubble-tip]').textContent).toContain('turn back');
     });

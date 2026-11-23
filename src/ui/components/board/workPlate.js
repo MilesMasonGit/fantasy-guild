@@ -17,6 +17,7 @@ import { GLYPHS } from '../base/PixelGlyph.jsx';
 import { t } from '../../../i18n/index.js';
 import { problemOf, problemText } from './problemMark.js';
 import { ringCount } from './ringRow.js';
+import { countdownText } from '../../../utils/Formatters.js';
 
 /**
  * The work plate: while a hero works a Token, one framed plate on the seam between them, just
@@ -144,16 +145,10 @@ export function leadOf(cells) {
     return cells.length > 1 && cells[0].kind === CELL.SKILL && cells[1].kind !== CELL.TIMER ? 1 : 0;
 }
 
-/** `0:34`, `4:05`: whole seconds, rounded up. */
-export function clockText(ms) {
-    const s = Math.max(0, Math.ceil((Number(ms) || 0) / 1000));
-    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-}
-
 /** The time to the next cycle's end from where the bar stands (`cycleShare.readCycle`). */
 export function timeLeftText(cycle) {
     if (!cycle?.cycleMs) return null;
-    return clockText(cycle.cycleMs - (cycle.elapsedMs || 0));
+    return countdownText(cycle.cycleMs - (cycle.elapsedMs || 0));
 }
 
 /** The plate's charges, as short as a ring's: `7`, `248`, `1.2k`. */

@@ -29,7 +29,7 @@ import { registerHallSky } from '../config/registries/hallStarRegistry.js';
 import { HALL_NODE } from '../config/guildUpgrades.js';
 import { getPaletteEntry } from '../config/registries/modifierPalette.js';
 import { resetMatTuning } from '../config/matTuning.js';
-import { supportTag } from '../ui/components/board/supportTags.js';
+import { effectTagText } from '../ui/components/board/effectBadgeText.js';
 import { withoutShippedPerks } from './fixtures/noPerks.js';
 
 withoutShippedPerks();
@@ -429,7 +429,7 @@ describe('Refresh as the CMS and the game say it', () => {
         expect(paletteForKeyword(KEYWORD.PROVIDES, false).map(e => e.type)).toContain(EFFECT_TYPES.REFRESH);
     });
 
-    it('tags a support "+25 % Refresh"', () => {
-        expect(supportTag({ type: EFFECT_TYPES.REFRESH, bucket: 'flat', value: 25 })).toBe('+25 % Refresh');
+    it('tags a support "+25% Refresh"', () => {
+        expect(effectTagText({ type: EFFECT_TYPES.REFRESH, bucket: 'flat', value: 25 })).toBe('Refresh 25%');
     });
 });

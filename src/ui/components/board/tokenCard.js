@@ -32,11 +32,11 @@ import { GameState } from '../../../state/GameState.js';
 import { effectiveIO } from '../../../systems/board/RecipeResolver.js';
 import { availableOf } from '../../../systems/board/InputAllocator.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
-import { formatClock } from '../drawer/lifecycleLines.js';
+import { countdownText, lengthText, chanceFigure, chanceText } from '../../../utils/Formatters.js';
 import { landmarkLines } from '../drawer/landmarkLines.js';
 import * as SupportLinks from '../../../systems/board/supportLinks.js';
 import { reachRadius } from '../../../systems/board/nearby.js';
-import { supportTag } from './supportTags.js';
+import { effectTagOf } from './effectBadgeText.js';
 
 /**
  * The Token card's content as plain data: which blocks it shows, top to bottom, and what each
@@ -205,7 +205,7 @@ function makesOf(outputs) {
         .map(o => {
             const { min, max } = outputRange(o);
             const chance = o.chance == null ? 100 : Number(o.chance);
-            return { itemId: o.itemId, min, max, chance: chance < 100 ? chance : null };
+            return { itemId: o.itemId, min, max, chance: chance < 100 ? chanceFigure(chance) : null };
         });
 }
 
@@ -215,15 +215,8 @@ function dropsOf(outputs) {
         .filter(o => o?.itemId && !o.currency)
         .map(o => {
             const { min, max } = outputRange(o);
-            return { itemId: o.itemId, min, max, chance: o.chance == null ? 100 : Number(o.chance) };
+            return { itemId: o.itemId, min, max, chance: o.chance == null ? 100 : chanceFigure(o.chance) };
         });
-}
-
-/** A chance as a row writes it: one decimal from 1 %, two figures under it (0.17 %, 0.005 %). */
-function rareChanceText(chance) {
-    const c = Math.max(0, Number(chance) || 0);
-    if (c >= 1) return Math.round(c * 10) / 10;
-    return c > 0 ? Number(c.toPrecision(2)) : 0;
 }
 
 /**
@@ -236,9 +229,9 @@ function rareBlockOf(def, instance, src, skill) {
     if (!table) return null;
     const chance = instance && src.rareChance ? src.rareChance(instance.id, def, skill) : table.chance;
     const rows = rareEntryChances(table, chance).map(({ entry, chance: c }) => ({
-        itemId: entry.itemId, min: entry.minQty, max: entry.maxQty, chance: rareChanceText(c)
+        itemId: entry.itemId, min: entry.minQty, max: entry.maxQty, chance: chanceFigure(Math.max(0, c))
     }));
-    return { chance: rareChanceText(chance), rows };
+    return { chance: chanceFigure(Math.max(0, chance)), rows };
 }
 
 /**
@@ -255,12 +248,12 @@ function needsOf(inputs, src, instance) {
         });
 }
 
-/** Weights as a pool's odds in percent, one decimal at most, in pool order. */
+/** Weights as a pool's odds in percent, written by the chance rule, in pool order. */
 function catchRows(catches, weightOf = (c) => c.weight) {
     const weights = catches.map(c => Math.max(0, Number(weightOf(c)) || 0));
     const total = weights.reduce((sum, w) => sum + w, 0);
     return catches
-        .map((c, i) => ({ itemId: c.itemId, chance: total > 0 ? Math.round((weights[i] / total) * 1000) / 10 : 0 }))
+        .map((c, i) => ({ itemId: c.itemId, chance: total > 0 ? chanceFigure((weights[i] / total) * 100) : 0 }))
         .filter(row => row.chance > 0);
 }
 
@@ -293,7 +286,6 @@ function catchBlockOf(def, instance, src) {
     return { heroName: heroId ? (src.heroName?.(heroId) || 'This hero') : null, setup: setup || null, unable: !!heroId && !plan, groups };
 }
 
-const seconds = (ms) => Math.max(0, Math.ceil((Number(ms) || 0) / 1000));
 
 /** "1 Oak Seedling", "1 Oak Seedling and 2 Resin". */
 function itemsSpoken(lines, src) {
@@ -316,8 +308,8 @@ function growthLine(growth, src) {
         return { icon: 'grow', text: '–', tip: `Stopped: needs ${itemsSpoken(short, src)} to grow into ${into}`, tone: 'warning' };
     }
     return {
-        icon: 'grow', text: formatClock(growth.inMs),
-        tip: `Grows into ${into} in ${spoken(growth.inMs)}${cost ? `, for ${cost} from the Bank` : ''}`
+        icon: 'grow', text: countdownText(growth.inMs),
+        tip: `Grows into ${into} in ${countdownText(growth.inMs)}${cost ? `, for ${cost} from the Bank` : ''}`
     };
 }
 
@@ -329,7 +321,7 @@ function fieldCardLines(field, src) {
     const name = (id) => (id ? src.recipeName(id) : 'its crop');
     const out = [];
     if (field.stage === 'growing') {
-        out.push({ icon: 'grow', text: formatClock(field.inMs), tip: `${name(field.cropId)} growing: ripe in ${spoken(field.inMs)}` });
+        out.push({ icon: 'grow', text: countdownText(field.inMs), tip: `${name(field.cropId)} growing: ripe in ${countdownText(field.inMs)}` });
     } else if (field.stage === 'ripe') {
         out.push({ icon: 'grow', text: `${field.load}/${field.full}`, tip: `${name(field.cropId)} ripe: ${field.load} of ${field.full} harvests left; the last sows it again` });
     } else if (field.stopped) {
@@ -347,17 +339,6 @@ function fieldCardLines(field, src) {
     return out;
 }
 
-/** A spoken duration for a tooltip: "12 s", "2 min", "1 min 5 s". */
-function spoken(ms) {
-    const total = seconds(ms);
-    if (total < 60) return `${total} s`;
-    const min = Math.floor(total / 60);
-    const s = total % 60;
-    return s ? `${min} min ${s} s` : `${min} min`;
-}
-
-const percent = (chance) => `${Math.round(Number(chance) * 10) / 10}%`;
-
 /**
  * The lifecycle lines as icon + short text, each with the sentence its hover gives.
  * @returns {{ icon: string, text: string, tip: string, tone?: 'warning'|'danger' }[]}
@@ -369,7 +350,7 @@ export function cardLifecycle(instance, def, src) {
         const worked = !!src.workerOf?.(instance.id);
         const left = (Number(src.demolishMs) || 0) - (Number(instance.cycleElapsedMs) || 0);
         out.push(worked
-            ? { icon: 'clock', label: 'Demolition', text: formatClock(left), tip: `Marked for demolition: gone in ${spoken(left)}`, tone: 'warning' }
+            ? { icon: 'clock', label: 'Demolition', text: countdownText(left), tip: `Marked for demolition: gone in ${countdownText(left)}`, tone: 'warning' }
             : { icon: 'clock', label: 'Demolition', text: '–', tip: 'Marked for demolition: waiting for a hero with Construction', tone: 'warning' });
         return out;
     }
@@ -378,8 +359,8 @@ export function cardLifecycle(instance, def, src) {
     const leave = src.eventLeave?.(instance);
     if (leave) {
         out.push({
-            icon: 'clock', label: t('events.card.leavesIn'), text: formatClock(leave.inMs),
-            tip: t(leave.buff ? 'events.card.buffTip' : 'events.card.nodeTip', { time: spoken(leave.inMs) })
+            icon: 'clock', label: t('events.card.leavesIn'), text: countdownText(leave.inMs),
+            tip: t(leave.buff ? 'events.card.buffTip' : 'events.card.nodeTip', { time: countdownText(leave.inMs) })
         });
     }
 
@@ -387,8 +368,8 @@ export function cardLifecycle(instance, def, src) {
     if (instance.turnedFrom) {
         if (turn) {
             out.push({
-                icon: 'turn', text: formatClock(turn.inMs),
-                tip: `A ${percent(turn.chance)} chance to turn back into ${src.tokenName(instance.turnedFrom)} in ${spoken(turn.inMs)}`
+                icon: 'turn', text: countdownText(turn.inMs),
+                tip: `A ${chanceText(turn.chance)} chance to turn back into ${src.tokenName(instance.turnedFrom)} in ${countdownText(turn.inMs)}`
             });
         }
     } else {
@@ -402,8 +383,8 @@ export function cardLifecycle(instance, def, src) {
             const into = turn.into.map(src.tokenName).join(' or ');
             const { everyMs } = turnTiming(def.turns);
             out.push({
-                icon: 'turn', text: formatClock(turn.inMs),
-                tip: `A ${percent(turn.chance)} chance every ${spoken(everyMs)} to turn into ${into}, and the same to turn back. Next roll in ${spoken(turn.inMs)}`
+                icon: 'turn', text: countdownText(turn.inMs),
+                tip: `A ${chanceText(turn.chance)} chance every ${lengthText(everyMs)} to turn into ${into}, and the same to turn back. Next roll in ${countdownText(turn.inMs)}`
             });
         }
     }
@@ -438,11 +419,11 @@ export function cardLifecycle(instance, def, src) {
         } else if (r.mode === 'refill') {
             // Drawn as the shared empty rock, a resting vein's line names its ore.
             const restTip = r.restingSprite
-                ? `${src.tokenName(instance.typeId)}: resting, refills in ${formatClock(r.inMs)}`
-                : `Resting: refills in ${spoken(r.inMs)}`;
+                ? `${src.tokenName(instance.typeId)}: resting, refills in ${countdownText(r.inMs)}`
+                : `Resting: refills in ${countdownText(r.inMs)}`;
             out.push(r.resting
-                ? { icon: 'regrow', text: formatClock(r.inMs), tip: restTip }
-                : { icon: 'regrow', text: formatClock(r.afterMs), tip: `Respawns ${spoken(r.afterMs)} after it's used up` });
+                ? { icon: 'regrow', text: countdownText(r.inMs), tip: restTip }
+                : { icon: 'regrow', text: lengthText(r.afterMs), tip: `Respawns ${lengthText(r.afterMs)} after it's used up` });
         } else {
             const into = src.tokenName(r.into);
             out.push({ icon: 'regrow', label: 'Becomes', text: into, tip: r.resting ? `Becomes ${into}, which grows back` : `Becomes ${into} when it's used up, which grows back` });
@@ -453,8 +434,8 @@ export function cardLifecycle(instance, def, src) {
     const pays = (passive?.lines || []).filter(l => l?.itemId && Number(l.quantity) > 0);
     if (pays.length) {
         out.push({
-            icon: 'clock', label: 'Produces', text: formatClock(passive.nextInMs),
-            tip: `Passive Production, once a lap: ${pays.map(l => `${Math.floor(Number(l.quantity))} ${src.itemName(l.itemId)}`).join(', ')}, next in ${spoken(passive.nextInMs)}`
+            icon: 'clock', label: 'Produces', text: countdownText(passive.nextInMs),
+            tip: `Passive Production, once a lap: ${pays.map(l => `${Math.floor(Number(l.quantity))} ${src.itemName(l.itemId)}`).join(', ')}, next in ${countdownText(passive.nextInMs)}`
         });
     }
     return out;
@@ -479,7 +460,7 @@ function spawnLine(def, status, src) {
         case 'sleeping':
             return { icon: 'spawn', text: `${family} · asleep`, tip: `${head} Asleep while enemies hold this place.`, tone: 'warning' };
         default:
-            return { icon: 'spawn', text: `${family} · next ${formatClock(status.nextInMs)}`, tip: `${head} Next in ${spoken(status.nextInMs)}.` };
+            return { icon: 'spawn', text: `${family} · next ${countdownText(status.nextInMs)}`, tip: `${head} Next in ${countdownText(status.nextInMs)}.` };
     }
 }
 
@@ -597,14 +578,9 @@ function effectsOf(instance, src) {
 function supportBlock(links, src) {
     if (!links) return null;
     const boosts = (links.boosts || []).map(r => ({
-        id: r.id, typeId: r.typeId, name: src.tokenName(r.typeId), tags: r.payloads.map(p => supportTag(p, src.itemName))
+        id: r.id, typeId: r.typeId, name: src.tokenName(r.typeId), tags: r.payloads.map(p => effectTagOf(p, src.itemName))
     }));
     if (!boosts.length) return null;
     return { id: CARD_BLOCK.SUPPORT, boosts };
 }
 
-/** Seconds as the cycle line writes them: `4s`, `2.5s`. */
-export function cycleText(ms) {
-    const s = (Number(ms) || 0) / 1000;
-    return `${Number.isInteger(s) ? s : Math.round(s * 10) / 10}s`;
-}

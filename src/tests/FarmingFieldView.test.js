@@ -127,7 +127,7 @@ describe('the card', () => {
         expect(recipe.needs).toEqual([]);
         expect(recipe.change).toEqual({ label: 'Change crop', chosen: true, empty: 'No crop chosen' });
         const lines = block(model, CARD_BLOCK.LIFECYCLE).lines;
-        expect(lines[0]).toMatchObject({ icon: 'grow', text: '0:40', tip: 'Wheat growing: ripe in 40 s' });
+        expect(lines[0]).toMatchObject({ icon: 'grow', text: '40s', tip: 'Wheat growing: ripe in 40s' });
         expect(lines.at(-1)).toEqual({ icon: 'grow', text: '1 View Wheat Seed per sowing', tip: 'Each sowing costs 1 View Wheat Seed from the Bank' });
     });
 
@@ -177,7 +177,7 @@ describe('the inspection rows', () => {
         const field = arrive('fv_field');
         StationRecipe.setSelectedRecipe(field, WHEAT);
         tick(100);
-        expect(rows(field)[0]).toEqual({ label: 'Growing Wheat', value: 'ripe in 1 min' });
+        expect(rows(field)[0]).toEqual({ label: 'Growing Wheat', value: 'ripe in 1m 0s' });
         expect(rows(field)).toContainEqual({ label: 'Each sowing', value: '1 View Wheat Seed from the Bank', tone: 'muted' });
         tick(60000);
         expect(rows(field)[0]).toEqual({ label: 'Ripe Wheat', value: '3 of 3 harvests left', tone: 'good' });

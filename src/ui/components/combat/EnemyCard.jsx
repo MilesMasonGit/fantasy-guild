@@ -1,7 +1,8 @@
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
 import { FloatingTip } from '../base/Tooltip.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
-import { enemyCardView, levelText, secondsText, styleName, damageText, damageTypeName } from './fightView.js';
+import { enemyCardView, levelText, styleName, damageText, damageTypeName } from './fightView.js';
+import { lengthText } from '../../../utils/Formatters.js';
 import { CombatGlyph } from './CombatGlyph.jsx';
 import { GLYPH_COLOUR, damageTypeGlyph } from './combatGlyphs.js';
 import { t } from '../../../i18n/index.js';
@@ -78,7 +79,7 @@ export const EnemyCardRows = ({ card }) => {
                 </>
             )}
             <span className="text-gi-muted">{t('fight.card.swing')}</span>
-            <span className="font-bold tabular-nums" data-enemy-card-swing>{t('fight.card.every', { time: secondsText(card.swingMs) })}</span>
+            <span className="font-bold tabular-nums" data-enemy-card-swing>{t('fight.card.every', { time: lengthText(card.swingMs) })}</span>
             <span className="text-gi-muted">{t('fight.card.kinds')}</span>
             {card.kinds == null ? (
                 <span className="text-gi-muted" data-enemy-card-kinds="unknown">{t('fight.panel.unknownKinds')}</span>

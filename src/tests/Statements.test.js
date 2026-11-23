@@ -49,7 +49,7 @@ describe('The rules text is the rule, rendered', () => {
             payload: { type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.05 }
         };
         expect(renderStatement(statement, names))
-            .toBe('Makes nearby Coast Tokens work 5% faster.');
+            .toBe('Speed +5% on nearby Coast Tokens.');
     });
 
     it('says the opposite when the sign is the wrong way round', () => {
@@ -62,7 +62,7 @@ describe('The rules text is the rule, rendered', () => {
             payload: { type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: 0.2 }
         };
         expect(renderStatement(statement, names))
-            .toBe('Makes any nearby Forge work 20% slower.');
+            .toBe('Speed −20% on any nearby Forge.');
     });
 
     it('renders every other keyword too', () => {
@@ -87,7 +87,7 @@ describe('The rules text is the rule, rendered', () => {
             payload: { consumes: [{ itemId: 'item_coal', quantity: 20 }], produces: [{ itemId: 'item_charcoal', quantity: 2 }] }
         };
         expect(renderStatement(sigil, names)).toBe(
-            'On Bank Holds 20 Coal: converts 20 Coal into 2 Charcoal, at most once every 5 seconds.'
+            'On Bank Holds 20 Coal: converts 20 Coal into 2 Charcoal, at most once every 5s.'
         );
 
         const costed = {
@@ -103,9 +103,9 @@ describe('The rules text is the rule, rendered', () => {
          * the tail of a yield buff.
          */
         expect(renderStatement(costed, names)).toBe(
-            'Provides 10% more yield to every nearby Token.'
+            'Yield +10% on every nearby Token.'
         );
-        expect(upkeepLine(costed, names)).toBe('Consumes 1 Coal every 30 seconds.');
+        expect(upkeepLine(costed, names)).toBe('Consumes 1 Coal every 30s.');
     });
 
     it('shows a blank as a blank rather than hiding it', () => {
@@ -122,7 +122,7 @@ describe('The rules text is the rule, rendered', () => {
             }]
         };
         expect(rulesLinesOf(def, names)).toEqual([
-            'Provides 10% more yield to every nearby Token.'
+            'Yield +10% on every nearby Token.'
         ]);
     });
 });
@@ -328,8 +328,8 @@ describe('a narrowed rule names its skill whatever the effect\'s own wording', (
         [EFFECT_TYPES.FAIL_CHANCE],
         [EFFECT_TYPES.XP_BONUS],
         [EFFECT_TYPES.REFRESH]
-    ])('%s ends with the Mining narrowing', (type) => {
-        expect(narrowed(type)).toMatch(/, but only for Mining work\.$/);
+    ])('%s names the Mining narrowing', (type) => {
+        expect(narrowed(type)).toMatch(/ on every nearby Mining Token\.$/);
     });
 
     it('a rule with no narrowing says nothing of a skill', () => {

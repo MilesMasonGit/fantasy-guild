@@ -4,7 +4,7 @@ import { HOW, COMBAT, itemKey, tokenKey, recipeKey, parseKey } from '../../../sy
 import { stationSkillOf } from '../../../systems/effects/statements.js';
 import { getSkill, isCombatSkill } from '../../../config/registries/skillRegistry.js';
 import { t } from '../../../i18n/index.js';
-import { KIND } from './encyclopediaModel.js';
+import { KIND, EVENT_WAY } from './encyclopediaModel.js';
 
 /**
  * The chart reads left to right around the entry it starts from: its **ways in** come from the
@@ -42,13 +42,16 @@ const REPEATED = new Set([
     HOW.CRAFT, HOW.STATION, HOW.BUILD, HOW.WORK, HOW.CATCH, HOW.TRICKLE, HOW.UPGRADE,
     HOW.SPAWN, HOW.GROW, HOW.TURN, HOW.REGROW, HOW.WORLD
 ]);
-const BY_CHANCE = new Set([HOW.DROP, HOW.BONUS]);
+const BY_CHANCE = new Set([HOW.DROP, HOW.BONUS, EVENT_WAY]);
 
 /** Ways the player cannot take again (the opening Bank, the Starter Camp): off the chart, named in the card. */
 const ONE_OFF = new Set([HOW.STARTER_BANK, HOW.STARTER_TOOL, HOW.STARTER_CAMP, HOW.HALL]);
 
-/** Ways no hero takes: a spawner spawns, a stage grows, the Shop sells. */
-const NO_HERO = new Set([HOW.SPAWN, HOW.GROW, HOW.TURN, HOW.REGROW, HOW.TRICKLE, HOW.SHOP, HOW.UPGRADE, MEMBER]);
+/** Ways no hero takes: a spawner spawns, a stage grows, the Shop sells, an event lands. */
+const NO_HERO = new Set([HOW.SPAWN, HOW.GROW, HOW.TURN, HOW.REGROW, HOW.TRICKLE, HOW.SHOP, HOW.UPGRADE, MEMBER, EVENT_WAY]);
+
+/** Ways whose box says how many a cycle gives, as the card's Makes and Drops do. A catch lands one: its odds say it. */
+const COUNTED = new Set([HOW.WORK, HOW.DROP, HOW.CRAFT, HOW.BONUS, HOW.TRICKLE]);
 
 /** How deep growing stages fold (a stump grows a sapling grows a tree). */
 const FOLD_DEPTH = 4;
@@ -139,15 +142,69 @@ const chanceOf = (row) => finite(row.chance, 1);
 function captionOf(how) {
     return {
         [HOW.STARTER_BANK]: 'starterBank', [HOW.STARTER_TOOL]: 'starterTool', [HOW.STARTER_CAMP]: 'starterCamp',
-        [HOW.HALL]: 'guildHall', [HOW.SHOP]: 'shop'
+        [HOW.HALL]: 'guildHall', [HOW.SHOP]: 'shop', [EVENT_WAY]: 'event'
     }[how] ?? null;
 }
 
 const blankWay = () => ({
     how: null, recipe: null, from: null, fromAmount: null, inputs: [], to: null,
     chance: null, takes: null, makes: null, caption: null, captionArgs: null, through: null, regrow: false,
-    place: null
+    place: null, yields: null, rare: false, slot: null, ranks: null, star: null, toolKind: null, bait: null
 });
+
+/**
+ * How many one cycle of a row gives, as the card shows it (`{ min, max }`), or null where the card
+ * shows none: a catch (each lands one: its odds say it), a rare find of one (the card's Rare finds),
+ * a spawn, a growth, a place.
+ */
+function yieldsOf(row) {
+    if (!Number.isFinite(row?.min) || !Number.isFinite(row?.max)) return null;
+    if (row.rare) return row.min === 1 && row.max === 1 ? null : { min: row.min, max: row.max };
+    return COUNTED.has(row.how) ? { min: row.min, max: row.max } : null;
+}
+
+/** What a row adds to its way beside the box: its amount, a rare find, a catch's tool and bait, a Hall track's ranks. */
+function rowFacts(book, row) {
+    const pool = row.how === HOW.CATCH && row.toolKind;
+    return {
+        yields: yieldsOf(row),
+        rare: row.rare === true,
+        slot: row.slot ?? null,
+        ranks: Array.isArray(row.ranks) ? row.ranks : null,
+        star: row.star?.name ?? null,
+        toolKind: pool ? row.toolKind : null,
+        bait: pool && row.bait ? book.nameOf(row.bait) : null
+    };
+}
+
+/** An amount as a box shows it: "×6", "×2–4", as the card's. */
+export function yieldText(yields) {
+    if (!yields) return null;
+    return yields.min === yields.max ? `×${yields.min}` : `×${yields.min}–${yields.max}`;
+}
+
+/** Ranks whose amount moves: the first, then each that pays a different amount from the one before. */
+function rankSteps(ranks) {
+    const out = [];
+    for (const r of ranks || []) if (!out.length || out[out.length - 1].quantity !== r.quantity) out.push(r);
+    return out;
+}
+
+/**
+ * A Guild Hall track's ranks in words, reference-style ("rank 1 ×2, rank 2 ×5, rank 3 ×8"): each rank
+ * whose amount moves. `short`, for a box's two lines, names "rank" once ("rank 1 ×2, 2 ×5, 3 ×8") and
+ * keeps a longer list to its first and last ("rank 1 ×10 … 10 ×100").
+ */
+export function ranksText(ranks, { short = false } = {}) {
+    const steps = rankSteps(ranks);
+    const amount = (r) => `×${r.quantity.toLocaleString('en-US')}`;
+    const named = (r) => t('encyclopedia.rankAmount', { rank: r.rank, amount: amount(r) });
+    if (!short) return steps.map(named).join(', ');
+    if (!steps.length) return '';
+    const bare = (r) => t('encyclopedia.rankAmountShort', { rank: r.rank, amount: amount(r) });
+    if (steps.length <= 3) return [named(steps[0]), ...steps.slice(1).map(bare)].join(', ');
+    return `${named(steps[0])} … ${bare(steps[steps.length - 1])}`;
+}
 
 /**
  * The world cells that place `key`, as ways in: one per ring every world holds it at (its wedge
@@ -194,7 +251,12 @@ function recipeInputs(book, key, row = null) {
 
 /** One way in from a `sourcesOf` row. */
 function wayIn(book, row) {
-    const way = { ...blankWay(), how: row.how, chance: row.chance, caption: captionOf(row.how) };
+    const way = { ...blankWay(), how: row.how, chance: row.chance, caption: captionOf(row.how), ...rowFacts(book, row) };
+    if (row.how === EVENT_WAY) {
+        if (row.event?.renamed) Object.assign(way, { caption: 'eventNamed', captionArgs: { name: row.event.name } });
+        return way;
+    }
+    if (row.star) Object.assign(way, { caption: 'hallStar', captionArgs: { star: row.star.name } });
     if (row.how === HOW.CRAFT) {
         way.recipe = row.via;
         way.from = stationOfRecipe(book, row.via)?.key ?? null;
@@ -209,7 +271,8 @@ function wayIn(book, row) {
         return way;
     }
     way.from = row.via && book.entryOf(row.via) ? row.via : null;
-    way.inputs = inputs;
+    // A catch's tool is held, never used up: it stands last on the way, after the bait.
+    way.inputs = row.tool && book.entryOf(row.tool) ? [...inputs, { key: row.tool, quantity: null, held: true }] : inputs;
     return way;
 }
 
@@ -323,7 +386,7 @@ export function waysOut(book, key) {
             out.push(way);
         }
         for (const g of book.givesOf(key)) {
-            const way = { ...blankWay(), how: g.how, chance: g.chance, gives: true };
+            const way = { ...blankWay(), how: g.how, chance: g.chance, gives: true, ...rowFacts(book, g) };
             if (g.how === HOW.STATION || g.how === HOW.BUILD) {
                 way.recipe = g.key;
                 way.to = madeBy(book, g.key);
@@ -341,10 +404,16 @@ export function waysOut(book, key) {
             }
             if (through.length) way.through = through;
         }
-        const seen = new Set();
+        // One box per thing; a thing it gives twice (its outputs and its rare table, two catch pools) twice.
+        const shownBy = new Map();
+        const givesShown = new Set();
         const kept = out.filter(w => {
-            if (!w.to || !book.entryOf(w.to) || w.to === key || seen.has(w.to)) return false;
-            seen.add(w.to);
+            if (!w.to || !book.entryOf(w.to) || w.to === key) return false;
+            const give = w.gives ? `${w.to}|${w.how}|${w.slot}` : null;
+            const first = !shownBy.has(w.to);
+            if (!first && !(give && shownBy.get(w.to) === 'give' && !givesShown.has(give))) return false;
+            if (first) shownBy.set(w.to, w.gives ? 'give' : 'use');
+            if (give) givesShown.add(give);
             return true;
         });
         const chance = (w) => finite(w.chance, 1);
@@ -426,13 +495,23 @@ export function wayOutRequirement(book, key, way) {
  * (`encyclopedia.line.*`), `tip` the sentence its hover says (`encyclopedia.lineTip.*`, naming
  * `from` and `to`). A line that is used up (an ingredient, a seed planted, bait, a price) has none.
  */
-const lineWord = (word, tip = word) => ({ word, tip });
+const lineWord = (word, tip = word, args = null) => ({ word, tip, args });
 
 /** Whether a recipe is built on a Foundation rather than made at a station. */
 const isBuilt = (book, recipe) => stationsOf(book, recipe).some(r => r.how === HOW.BUILD);
 
-/** The word for what comes out of a box (`key`) by `how`: a vein gives, a chest opens, an enemy drops. */
-function givesWord(book, key, how) {
+/**
+ * The word for what comes out of a box (`key`) along a way: a vein gives, a chest opens, an enemy
+ * drops, a rare find is found; a catch's hover names its tool and bait, a Hall track's its ranks.
+ */
+function givesWord(book, key, how, way = null) {
+    if (way?.rare && (how === HOW.WORK || how === HOW.CATCH)) return lineWord('finds', 'rareFind');
+    if (how === HOW.UPGRADE && way?.ranks) return lineWord('gives', 'givesHall', { star: way.star, ranks: ranksText(way.ranks) });
+    if (how === HOW.CATCH && way?.toolKind) {
+        return way.bait
+            ? lineWord('catch', 'catchBait', { tool: way.toolKind, bait: way.bait })
+            : lineWord('catch', 'catchWith', { tool: way.toolKind });
+    }
     switch (how) {
         case HOW.WORK: return book.isTreasure(key) ? lineWord('opens') : lineWord('gives');
         case HOW.TRICKLE:
@@ -453,8 +532,11 @@ export function wayInWord(book, way) {
     if (!way?.from) return null;
     if (way.how === HOW.CRAFT) return isBuilt(book, way.recipe) ? lineWord('builtOn') : lineWord('madeAt');
     if (way.how === MEMBER) return lineWord('oneOf');
-    return givesWord(book, way.from, way.how);
+    return givesWord(book, way.from, way.how, way);
 }
+
+/** The word on the line from a held tool on a way in (a catch's rod): held, never used up. */
+export const heldWord = () => lineWord('held');
 
 /** The word on the line from `key` to one of its uses: "tool for", "makes", "gives"; null when the use spends it. */
 export function wayOutWord(book, key, way) {
@@ -467,7 +549,7 @@ export function wayOutWord(book, key, way) {
     if (way.how === HOW.STATION) return lineWord('makes', 'madeAt');
     if (way.how === HOW.BUILD) return lineWord('builds', 'builtOn');
     if (way.how === HOW.CRAFT) return lineWord('makes', 'recipeMakes');
-    return givesWord(book, key, way.how);
+    return givesWord(book, key, way.how, way);
 }
 
 /** How many lines a way draws into the box it feeds: its things, or its words alone. */
@@ -481,11 +563,12 @@ export const farSideOf = (node) => (node.side === 'in' ? 'out' : node.side === '
 
 /**
  * The chart from `start`, grown where the player clicked: every node `{ id, key, side, amount,
- * need, recipe, chance, repeat, canGrow, canFar, grown, farOpen, ins, outs, hiddenIn,
- * hiddenOut, passBand }`. `side` is 'start', 'in' (left of its neighbour: grows further left) or
+ * need, yields, ranks, star, held, recipe, chance, repeat, canGrow, canFar, grown, farOpen, ins, outs,
+ * hiddenIn, hiddenOut, passBand }`. `side` is 'start', 'in' (left of its neighbour: grows further left) or
  * 'out' (right: grows further right). `amount` is how many one step takes (×2 Iron Ore to an
  * ingot); `need` how many one of the start takes, down that path (one of the box whose far side
- * opened, inside it). `recipe` is the recipe a use is made by; `chance` the odds of the line that
+ * opened, inside it); `yields` how many the line from it gives, as the card shows it, or for a Guild
+ * Hall track its `ranks` and `star`; `held` a tool held on its way, never spent. `recipe` is the recipe a use is made by; `chance` the odds of the line that
  * reaches it. A node `repeat`s an entry already on its path and never grows. `ins` are branches
  * `{ id, way, from, inputs, req, through, word }`, `outs` uses `{ id, way, node, req, through, word }`
  * (`word`: what the line from `from`, or to the use, means, when it is not used up); each
@@ -506,6 +589,10 @@ export function chartOf(book, start, { grown = new Set(), far = new Set(), opene
             id, key, side, repeat,
             amount: link.amount ?? null,
             need: link.need ?? null,
+            yields: link.yields ?? null,
+            ranks: link.ranks ?? null,
+            star: link.star ?? null,
+            held: link.held === true,
             recipe: link.recipe ?? null,
             chance: link.chance ?? null,
             neighbour: link.neighbour ?? null,
@@ -547,12 +634,15 @@ export function chartOf(book, start, { grown = new Set(), far = new Set(), opene
                 ? child(`${id}f`, way.from, {
                     amount: way.fromAmount,
                     need: way.fromAmount != null ? per * way.fromAmount : null,
-                    chance: way.chance
+                    chance: way.chance,
+                    yields: way.yields,
+                    ranks: way.ranks,
+                    star: way.star
                 })
                 : null;
-            const inputs = way.inputs.map((input, j) => child(`${id}.${j}`, input.key, {
-                amount: input.quantity, need: per * input.quantity / makes
-            }));
+            const inputs = way.inputs.map((input, j) => child(`${id}.${j}`, input.key, input.held
+                ? { held: true }
+                : { amount: input.quantity, need: per * input.quantity / makes }));
             return { id, way, from, inputs, req: wayInRequirement(book, way), through: way.through, word: wayInWord(book, way) };
         });
         if (passKey && !passed) node.passBand = { id: `${node.id}<p`, key: passKey, side: 'in' };
@@ -571,7 +661,7 @@ export function chartOf(book, start, { grown = new Set(), far = new Set(), opene
                 return { id, way, node: { id: `${id}n`, key: way.to, pass: true }, req, through: way.through, word };
             }
             const n = make(`${id}n`, way.to, 'out', here, {
-                recipe: way.recipe, chance: way.chance, neighbour: node.key
+                recipe: way.recipe, chance: way.chance, neighbour: node.key, yields: way.yields, ranks: way.ranks, star: way.star
             });
             visit(n, here);
             return { id, way, node: n, req, through: way.through, word };
@@ -666,9 +756,10 @@ export const CHART_METRICS = Object.freeze({
      * Between two columns: an arrow tab each side, the join and trunk, and between them a mark and
      * a line's word side by side, never one over the other. The widest pair in the content needs
      * 242 (a grow mark and its time with "beside" or "spawns"; a two-figure skill mark with "tool
-     * for"), in the widest of the game's fonts; 260 holds a grow time up to 99:59.
+     * for"), in the widest of the game's fonts, with a grow time of four figures; 310 holds a grow
+     * time up to `59m 59s`.
      */
-    gapX: 260,
+    gapX: 310,
     /** From a box's side to the line that joins or splits there: room for its arrow tab ("›30"). */
     reach: 48,
     stemH: 20,
@@ -713,7 +804,7 @@ export function markWidth(mark, m = CHART_METRICS) {
     const u = m.markText;
     const icon = m.markIcon + 4;
     let w = 8;
-    if (mark.through) w += icon + wordsWidth(mark.growText ?? '0:00', u);
+    if (mark.through) w += icon + wordsWidth(mark.growText ?? '0s', u);
     if (mark.req) w += icon + wordsWidth(mark.req.level, u) + (mark.through ? 4 : 0);
     return Math.round(w);
 }
@@ -764,8 +855,8 @@ export const litWords = (layout, id) => onPath(layout.words, id);
  * Where every box of a chart sits, in pixels around the start (its box centred on 0, 0):
  * `{ nodes: [{ id, node, x, y, w, h }], captions, links: [{ id, points: [[x, y], …], into, pairs }],
  * bands: [{ id, x, y, w, h }], stems: [{ id, node, side, count, x, y, w, h }], labels: [{ id, side,
- * x, y, w, h, req, through, regrow, pairs }], words: [{ id, side, word, tip, from, to, onLine,
- * overMark, x, y, w, h, pairs }], box }`. A line's, mark's or word's `pairs` are the boxes it joins, `[child,
+ * x, y, w, h, req, through, regrow, pairs }], words: [{ id, side, way, word, tip, args, from, to, onLine,
+ * overMark, below, x, y, w, h, pairs }], box }`. A line's, mark's or word's `pairs` are the boxes it joins, `[child,
  * parent]` ids: on the path from a box to the start when both are.
  *
  * Columns are `nodeW + gapX` apart. Each node stands in the middle of the row band its sides take;
@@ -852,10 +943,10 @@ export function layoutChart(chart, m = CHART_METRICS, growText = () => null, wor
         return placed;
     };
 
-    const word = (id, side, line, from, to, pairs, at) => {
+    const word = (id, side, line, from, to, pairs, at, way = null) => {
         const w = wordWidth(wordText(line.word), m);
-        const { onLine, overMark = false, x, y } = at(w);
-        words.push({ id, side, word: line.word, tip: line.tip, from, to, pairs, onLine, overMark, x: r(x), y: r(y), w, h: m.word });
+        const { onLine, overMark = false, below = false, x, y } = at(w);
+        words.push({ id, side, way, word: line.word, tip: line.tip, args: line.args ?? null, from, to, pairs, onLine, overMark, below, x: r(x), y: r(y), w, h: m.word });
     };
 
     const place = (node, col, cy) => {
@@ -901,6 +992,7 @@ export function layoutChart(chart, m = CHART_METRICS, growText = () => null, wor
             const pairOf = (it) => (isPass(it) ? passPair : [it.id, node.id]);
             let wayY;
             let fromEnd = null;
+            const heldEnds = [];
             let leftmost = col - 1;
             if (!items.length) {
                 wayY = r(bc);
@@ -921,6 +1013,7 @@ export function layoutChart(chart, m = CHART_METRICS, growText = () => null, wor
                         const at = col - 1 - colsR(it);
                         place(it, at, ic);
                         ends.push([itemsRight, exit.get(it.id) ?? r(ic)]);
+                        if (it.held) heldEnds.push([it, ends[ends.length - 1]]);
                         leftmost = Math.min(leftmost, at - colsL(it));
                     }
                     itemTop += ih + m.rowGap;
@@ -936,13 +1029,18 @@ export function layoutChart(chart, m = CHART_METRICS, growText = () => null, wor
             const pairs = items.map(pairOf);
             links.push({ id: `${b.id}>`, into: node.id, pairs, points: [[joinX, wayY], [trunkX, wayY], [trunkX, a], [intoX, a]] });
             const placed = mark(`${b.id}@`, 'in', (joinX + trunkX) / 2, wayY, b.req, b.through, b.way.regrow, pairs, 'centre', several);
-            if (b.word && fromEnd) {
-                const [x, y] = fromEnd;
-                word(`${b.id}^`, 'in', b.word, b.from.key, node.key, [pairOf(b.from)], (w) => {
-                    const at = { onLine: false, x: x + m.wordPad, y: y - m.wordLift - m.word };
-                    const clash = placed && at.x + w + m.wordPad > placed.x && at.y < placed.y + placed.h && at.y + m.word > placed.y;
-                    return clash ? { ...at, overMark: true, y: placed.y - m.wordLift - m.word } : at;
-                });
+            // A word rides just above the line from its box, or above the mark when the two would meet.
+            const wordAbove = ([x, y]) => (w) => {
+                const at = { onLine: false, x: x + m.wordPad, y: y - m.wordLift - m.word };
+                const clash = placed && at.x + w + m.wordPad > placed.x && at.y < placed.y + placed.h && at.y + m.word > placed.y;
+                return clash ? { ...at, overMark: true, y: placed.y - m.wordLift - m.word } : at;
+            };
+            if (b.word && fromEnd) word(`${b.id}^`, 'in', b.word, b.from.key, node.key, [pairOf(b.from)], wordAbove(fromEnd), b.id);
+            // A held tool stands last: its line climbs to the way's from its end, so its word rides below
+            // it, past the box's tab of uses not shown.
+            for (const [it, [x, y]] of heldEnds) {
+                const tab = it.hiddenOut ? tabWidth(it.hiddenOut, m) : 0;
+                word(`${it.id}^`, 'in', heldWord(), it.key, node.key, [pairOf(it)], () => ({ onLine: false, below: true, x: x + tab + m.wordPad, y: y + m.wordLift }), b.id);
             }
             if (several) {
                 // Each way on its own faint band: its boxes, their tabs, its line and mark; the trunk stays bare.

@@ -440,7 +440,7 @@ describe('⭐ what the forms held, edited in the line (P4)', () => {
         fireEvent.change(search, { target: { value: 'mining' } });
         fireEvent.keyDown(search, { key: 'Enter' });
         expect(latest().payload.category).toBe('mining');
-        expect(line().textContent).toContain('but only for Mining work');
+        expect(line().textContent).toContain('on every nearby Mining Token');
     });
 
     it('Applies: offers library effects only, never a status (owner ruling)', () => {
@@ -563,7 +563,7 @@ describe('⭐ cost and cadence, beside the sentence (E-6, P5)', () => {
         fireEvent.change(number(panel), { target: { value: '5' } });
 
         expect(latest().when.cooldownMs).toBe(5000);
-        expect(line().textContent).toContain('at most once every 5 seconds');
+        expect(line().textContent).toContain('at most once every 5s');
         // Now the sentence says it, so the sentence holds it — never both.
         expect(strip(container).querySelector('[data-slot="cooldown"]')).toBeNull();
         expect(line().querySelector('[data-slot="cooldown"]')).not.toBeNull();

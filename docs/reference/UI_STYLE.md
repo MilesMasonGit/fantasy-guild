@@ -24,7 +24,7 @@ clunky labels like "LVL 03" where "3/99" says it better.
 - **HP elsewhere is a bar**; the exact number shows on hover, except on the mat, where a fighter's bar is a small
   edition of the hero bar's, the same green, amber or red on a stepped black edge, its numbers written on it, `17/30` (owner's pick F,
   2026-11-05).
-- Times read `0:34` / `4:05`; thousands get separators (`1,154`).
+- Times read `34s`, `4m 57s`, `1h 15m`, `1d 4h`, from the one writer in `src/utils/Formatters.js`: `countdownText` (a running timer: rounded up, zero parts kept, `5m 0s`), `lengthText` (a fixed length: a grow time, a rest, a lap, a cycle, a swing: `2.5s`, `8m`) and `elapsedText` (counting up: a fight's length, playtime, time away: rounded down). No clocks (`4:57`). The save slot's Last saved stays in words. Thousands get separators (`1,154`).
 
 ## Frames
 
@@ -81,21 +81,35 @@ short name**, used the same way everywhere: Token and item badges, tooltips,
 the CMS, the Encyclopedia, Limes's lines and the docs. A source's own name
 (Keen Axes, Copper Mine) stays; the effect it gives is named here.
 
-| Name | What it does | Today's CMS label | Where its badge sits |
+| Name | What it does | Stored as (`data/`) | Where its badge sits |
 |---|---|---|---|
-| **Speed** | A cycle takes less time | Work Time | the Token |
-| **Yield** | Each cycle gives a little more | Yield | the Token |
-| **Growth** | A resting Token refills sooner | Grow Time | the Token |
-| **XP** | More XP from the work | XP Bonus | the Token |
-| **Double Loot** | A chance the whole cycle's output comes out doubled | Double Loot Chance | the Token |
-| **Double Item** | A chance one named item comes out doubled | Double Item Chance | that item's line on the drop table |
-| **Preservation** | A chance a cycle uses none of its materials (ammo, Food, drinks, bait, recipe inputs) | none yet | the Token |
-| **Refresh** | A chance a cycle spends none of the Token's charges | none yet | the Token |
-| **Lucky** | A higher chance on the Token's own rare drop table (a Vein's Gem) | none yet | the Token |
-| **Giant Harvest** | A chance a gathering cycle's drops come in at ten times (brief 620) | Giant Harvest | none: a mat celebration says it (owner, 2026-11-12) |
-| **Efficiency** | A recipe needs fewer of an input | Input Cost | the recipe's input |
-| **Abundance** | A Token kind holds more charges before it rests | Crop Load | the Token |
-| **Regen** | A hero heals faster out of a fight (from gear, perks and Guild Hall stars; no building yet) | Regen | none: listed on the hero's health hover |
+| **Speed** | A cycle takes less time | `WORK_TIME` (a time: negative is faster) | the Token |
+| **Yield** | Each cycle gives a little more | `YIELD` | the Token |
+| **Growth** | A resting Token refills sooner | `GROW_TIME` (a time: negative is faster) | the Token |
+| **XP** | More XP from the work | `XP_BONUS` | the Token |
+| **Double Loot** | A chance the whole cycle's output comes out doubled | `LOOT_MULT` | the Token |
+| **Double Item** | A chance one named item comes out doubled | `DOUBLE_DROP` | that item's line on the drop table |
+| **Preservation** | A chance a cycle uses none of its materials (ammo, Food, drinks, bait, recipe inputs) | `PRESERVATION` | the Token |
+| **Refresh** | A chance a cycle spends none of the Token's charges | `REFRESH` | the Token |
+| **Lucky** | A higher chance on the Token's own rare drop table (a Vein's Gem) | `LUCKY` | the Token |
+| **Giant Harvest** | A chance a gathering cycle's drops come in at ten times (brief 620) | `GIANT_HARVEST` | none: a mat celebration says it (owner, 2026-11-12) |
+| **Efficiency** | A recipe needs fewer of an input | `INPUT_COST` (a cost: negative is cheaper) | the recipe's input |
+| **Abundance** | A Token kind holds more charges before it rests | `CROP_LOAD` | the Token |
+| **Recovery** | A defeated hero recovers sooner (owner, 2026-11-20) | `WOUND_TIME` (a time: negative is faster) | none: a Guild Hall star's rule |
+| **Lap Speed** | The Guild Hall's lap comes round sooner (owner, 2026-11-20) | `PASSIVE_LAP` (a time: negative is faster) | none: a Guild Hall star's rule |
+| **Attack Speed** | Each attack comes sooner (owner, 2026-11-20, audit A31) | `SWING_TIME` (a time: negative is faster) | none: an elixir's or an enemy's lingering effect |
+| **Regen** | A hero heals faster out of a fight (from gear, perks and Guild Hall stars; no building yet) | `HP_REGEN` | none: listed on the hero's health hover |
+
+**How an effect is written around its number (owner, 2026-11-19).** The name, then the number,
+good always plus: `Speed +25%`, `Growth +10%`, `Abundance +1`; a chance plain (`Double Loot 10%`,
+`Bird Nest 5%`), a multiplier with `×` (`Lucky ×1.2`). A building's Boosts list reads exactly like
+the badge it causes, and a rule line (perks, Hall stars, gear, building rules, the CMS preview) leads
+with the same words, then where or when: `Speed +5% on Mining Tokens`, `Lucky ×1.2 on nearby Vein
+Tokens`. An inverted effect (a time or a cost) keeps its stored value and sign in `data/`; only the
+words flip. An effect against the player keeps its name with a minus, in red (`Speed −10%`); a bad
+chance reads plainly, in red (`Failure 5%`). An enemy's own buff reads with its plain sign in the
+normal colour (an enraged Goblin: `Attack Speed +25%`). One writer for all of it:
+`src/config/registries/effectWords.js`.
 
 Bonus Drop (a source adds an item the Token does not make, such as
 Birdwatcher's bird nests) keeps its name. The badges these names go on

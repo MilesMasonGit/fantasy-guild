@@ -14,7 +14,8 @@ import { Tooltip } from '../base/Tooltip.jsx';
 import { CombatGlyph } from '../combat/CombatGlyph.jsx';
 import { GLYPH_COLOUR } from '../combat/combatGlyphs.js';
 import { t } from '../../../i18n/index.js';
-import { summaryView, catchUpTitle, formatAway } from './catchUpSummary.js';
+import { summaryView, catchUpTitle } from './catchUpSummary.js';
+import { elapsedText } from '../../../utils/Formatters.js';
 
 /**
  * While a catch-up plays (`CatchUp.run`, a closed game's time away or a sleeping PC), a loading
@@ -297,7 +298,7 @@ function Summary({ result, asking, restoring, undoFailed, onClose, onAsk, onCanc
     const undoable = CatchUp.canUndo();
     const undoing = asking === 'undo';
     const reachMs = undoable ? undoReachMs(result) : null;
-    const reach = reachMs == null ? null : formatAway(reachMs);
+    const reach = reachMs == null ? null : elapsedText(reachMs);
     const confirmText = undoing
         ? (reach ? t('catchUp.confirmUndo.textSince', { time: reach }) : t('catchUp.confirmUndo.text'))
         : t('catchUp.confirmReturn.text');

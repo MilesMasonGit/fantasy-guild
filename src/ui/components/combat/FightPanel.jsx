@@ -19,7 +19,8 @@ import { CombatGlyph } from './CombatGlyph.jsx';
 import { GLYPH_COLOUR, damageTypeGlyph } from './combatGlyphs.js';
 import { fightsOf, subscribeFights, subscribeMoments, startFightWatch, TONE, OUTCOME, MOMENT } from './fightWatch.js';
 import { HitParts, ResistChips, resistTip } from './CombatStatParts.jsx';
-import { fightPanelView, levelText, secondsText, styleName, clockText, damageText, damageTypeName } from './fightView.js';
+import { fightPanelView, levelText, styleName, damageText, damageTypeName } from './fightView.js';
+import { lengthText, elapsedText } from '../../../utils/Formatters.js';
 import { t } from '../../../i18n/index.js';
 
 /**
@@ -297,7 +298,7 @@ const ResistValue = ({ side, who }) => (
 export const FightStats = ({ view }) => {
     const { hero, enemy } = view;
     const shown = hero.style || enemy.style || null;
-    const swing = (side) => (side.swingMs ? secondsText(side.swingMs) : '–');
+    const swing = (side) => (side.swingMs ? lengthText(side.swingMs) : '–');
     return (
         <div data-fight-card className="flex flex-col gap-px">
             <StatRow
@@ -408,12 +409,17 @@ const StatusRow = ({ s }) => (
     </Tooltip>
 );
 
-/** A lingering effect for the fight (an elixir's Valor, a boss's Enrage): a gold star and its name. */
-const BuffRow = ({ name }) => (
-    <span className="flex items-center gap-1.5 ui-text-small" style={{ minHeight: 20 }} data-fight-buff={name}>
-        <CombatGlyph name="star" colour={GLYPH_COLOUR.gold} />
-        <span className="font-bold text-white">{name}</span>
-    </span>
+/**
+ * A lingering effect for the fight (an elixir's Valor, a boss's Enrage): a gold star and its name,
+ * its rules on hover in the plain colour, whichever side carries it.
+ */
+const BuffRow = ({ buff }) => (
+    <Tooltip title={buff.name} lines={buff.lines}>
+        <span className="flex items-center gap-1.5 ui-text-small cursor-help" style={{ minHeight: 20 }} data-fight-buff={buff.name}>
+            <CombatGlyph name="star" colour={GLYPH_COLOUR.gold} />
+            <span className="font-bold text-white">{buff.name}</span>
+        </span>
+    </Tooltip>
 );
 
 const EffectColumn = ({ side, who }) => {
@@ -424,7 +430,7 @@ const EffectColumn = ({ side, who }) => {
             <div className="ui-text-small text-gi-muted pb-0.5">{t('fight.window.on', { name: side.name })}</div>
             {none && <span className="ui-text-small text-gi-muted">{t('fight.window.none')}</span>}
             {side.statuses.map(s => <StatusRow key={s.id} s={s} />)}
-            {buffs.map((b, i) => <BuffRow key={`${b}-${i}`} name={b} />)}
+            {buffs.map((b, i) => <BuffRow key={`${b.name}-${i}`} buff={b} />)}
         </div>
     );
 };
@@ -463,7 +469,7 @@ const Elixirs = ({ elixirs }) => (elixirs.length === 0
 /** What a finished fight's log heads with: how it ended and how long it took. */
 function endText(record) {
     if (!record?.endedAt) return null;
-    const time = clockText(record.endedAt - record.startedAt);
+    const time = elapsedText(record.endedAt - record.startedAt);
     if (record.outcome === OUTCOME.WON) return t('fight.panel.won', { enemy: record.enemyName, time });
     if (record.outcome === OUTCOME.LOST) return t('fight.panel.lost', { time });
     return t('fight.panel.left', { time });

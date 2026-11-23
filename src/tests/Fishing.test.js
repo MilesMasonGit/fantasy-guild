@@ -547,7 +547,7 @@ describe('how water reads', () => {
         const lure = { id: 'stm_lure', keyword: 'provides', to: null,
             payload: { type: EFFECT_TYPES.CATCH_WEIGHT, bucket: 'percentage', value: 9, category: 's5_dolphin' } };
         const lines = rulesLinesOf({ statements: [lure] }, { item: (id) => getAllItems()[id]?.name || id });
-        expect(lines.join(' ')).toContain('900% more bites of Dolphin');
+        expect(lines.join(' ')).toContain('Catch Weight +900% on Dolphin');
     });
 
     it('the audit names pools that cannot work', () => {

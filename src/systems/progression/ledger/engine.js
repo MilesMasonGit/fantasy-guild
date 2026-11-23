@@ -1,13 +1,14 @@
 // the progression ledger's engines: when each entry is first reachable (reach) and what a made item costs to its origins (tree)
 
 import { isPlanned } from './plan.js';
+import { chanceText } from '../../../utils/Formatters.js';
 import { normaliseStarterCamp } from '../../../config/starterCampShape.js';
 import { authoredStars, skyWithFallback, HALL_NODE, WISHING_WELL_STAR } from '../../../config/guildUpgrades.js';
 import { ringStarsOf, ringOfStar } from '../../world/ringStars.js';
 import { expandBearer } from '../../effects/effectLibrary.js';
 import { stationSkillOf, stationKindOf, KEYWORD } from '../../effects/statements.js';
 import {
-    stationKindOffers, foundationTierMeets, growsTermsOf, respawnOf, cropTermsOf, fieldOf, PASSIVE_LAP_BASE_MS
+    stationKindOffers, foundationTierMeets, growsTermsOf, respawnOf, cropTermsOf, fieldOf, outputRange, PASSIVE_LAP_BASE_MS
 } from '../../../config/registries/tokenConstants.js';
 import { catchPoolsOf, hasCatchPools } from '../../../config/registries/catchPools.js';
 import { rareTableOf, rareEntryChances } from '../../../config/registries/rareTables.js';
@@ -135,8 +136,8 @@ export const LEDGER_ENGINE_TEXT = Object.freeze({
     ring: (ring) => `Ring ${ring} opened`,
     someWorlds: 'in some worlds',
     level: (skill, level) => `${skill === COMBAT ? 'Combat' : skill.charAt(0).toUpperCase() + skill.slice(1)} ${level}`,
-    /** A chance as a percent to one place; a rare one under 0.1 % to two figures ("0.014%"), never "0%". */
-    chance: (p) => (p > 0 && p < 0.001 ? `${Number((p * 100).toPrecision(2))}%` : `${Math.round(p * 1000) / 10}%`),
+    /** A chance (0 to 1) by the game's chance rule: "40%", "12.5%", "0.25%", "0.014%", never "0%". */
+    chance: (p) => chanceText(p * 100),
     /** Finds a day in words: "about 8.6 a day", "about 0.7 a day", "about 1 in 12 days"; "finds a day unknown" when null. */
     perDay: (n) => (!Number.isFinite(n) ? 'finds a day unknown'
         : n >= 10 ? `about ${Math.round(n)} a day`
@@ -221,7 +222,11 @@ function outputKey(entry) {
     return null;
 }
 
-const weightOf = (entry) => Math.max(0, finite(Number(entry?.weight), 1));
+/** A spawn's or a turn's weight as the game's pick reads it (`weightedPick.js`): none, or none above 0, is never picked. */
+const weightOf = (entry) => (Number(entry?.weight) > 0 ? Number(entry.weight) : 0);
+
+/** An output's amount as the card reads it (`outputRange`): `{ min, max }`. */
+const amountOf = (entry) => outputRange(entry);
 
 /**
  * A Token's rare drop table as gives, read as chance lines: each entry at its own chance (the
@@ -230,7 +235,7 @@ const weightOf = (entry) => Math.max(0, finite(Number(entry?.weight), 1));
 function rareGivesOf(def) {
     return rareEntryChances(rareTableOf(def)).map(({ entry, chance }) => {
         const p = Math.max(0, Math.min(1, chance / 100));
-        return { key: itemKey(entry.itemId), chance: p, perCycle: p * (entry.minQty + entry.maxQty) / 2 };
+        return { key: itemKey(entry.itemId), chance: p, perCycle: p * (entry.minQty + entry.maxQty) / 2, min: entry.minQty, max: entry.maxQty, rare: true };
     });
 }
 
@@ -243,8 +248,10 @@ export function isOneOff(def) {
  * The content as the engines read it: every record by key, its name, and the rules that make
  * things. Planned records are kept by name only (`planned`) and make nothing.
  *
- * A rule: `{ id, how, via, needs: key[], tool: key|null, gives: [{ key, chance, perCycle, maybe }],
- * floor, gates: [{ skill, level }], cycleMs, rollMs, inputs: [{ key, quantity }], passive, oneOff, repeatable }`.
+ * A rule: `{ id, how, via, needs: key[], tool: key|null, gives: [{ key, chance, perCycle, maybe, min, max, rare }],
+ * floor, gates: [{ skill, level }], cycleMs, rollMs, inputs: [{ key, quantity }], passive, oneOff, repeatable }`,
+ * and a catch's `pool: { tool, bait }`. A give's `min` and `max` are its amount as the card shows it (where
+ * known), `rare` marks a rare drop table's entry; the engines read neither.
  * `oneOff` marks the work of a one-off find (a chest the world places); `repeatable` work that keeps
  * rolling (not a one-off find, nor the work of a Token that wears out for good); `rollMs` the time
  * between its rolls when it is not `cycleMs` (a fight, a spawner, a bonus on one Token's work), for
@@ -358,7 +365,7 @@ export function buildWorld(content = {}) {
 
         // A spawner's spawns, paid by its upkeep; no hero needed.
         if (isSpawner) {
-            const spawns = list(def.spawner.spawns).filter(s => text(s.typeId));
+            const spawns = list(def.spawner.spawns).filter(s => text(s.typeId) && weightOf(s) > 0);
             const total = spawns.reduce((sum, s) => sum + weightOf(s), 0);
             const upkeep = inputsOf(def.spawner.upkeep);
             if (spawns.length) {
@@ -383,7 +390,7 @@ export function buildWorld(content = {}) {
 
         // Turning into another type, at a chance each roll, its targets weighted.
         if (isObject(def.turns)) {
-            const into = list(def.turns.into).filter(t => text(t.typeId));
+            const into = list(def.turns.into).filter(t => text(t.typeId) && weightOf(t) > 0);
             const total = into.reduce((sum, t) => sum + weightOf(t), 0);
             if (into.length) {
                 add({
@@ -405,7 +412,10 @@ export function buildWorld(content = {}) {
         if (trickle.length) {
             add({
                 id: `trickle:${id}`, how: HOW.TRICKLE, via: self, needs: [self], passive: true, cycleMs: PASSIVE_LAP_BASE_MS,
-                gives: trickle.map(l => ({ key: itemKey(l.itemId), chance: 1, perCycle: Math.max(0, finite(Number(l.quantity), 1)) }))
+                gives: trickle.map(l => {
+                    const q = Math.max(0, finite(Number(l.quantity), 1));
+                    return { key: itemKey(l.itemId), chance: 1, perCycle: q, min: q, max: q };
+                })
             });
         }
 
@@ -420,7 +430,7 @@ export function buildWorld(content = {}) {
                     id: `drop:${id}`, how: HOW.DROP, via: self, needs: [self], gates: gate(COMBAT, def.enemy.level),
                     // A tree does not price a fight, but its fight time still says how many kills a day bring.
                     cycleMs: null, rollMs: finite(Number(def.config?.cycleTimeMs), null),
-                    gives: [...drops.map(o => ({ key: itemKey(o.itemId), chance: chanceOf(o), perCycle: quantityOf(o) * chanceOf(o) })), ...rare]
+                    gives: [...drops.map(o => ({ key: itemKey(o.itemId), chance: chanceOf(o), perCycle: quantityOf(o) * chanceOf(o), ...amountOf(o) })), ...rare]
                 });
             }
             continue;
@@ -435,8 +445,8 @@ export function buildWorld(content = {}) {
                 const bait = pool.bait ? [{ key: itemKey(pool.bait), quantity: 1 }] : [];
                 add({
                     id: `catch:${id}:${i}`, how: HOW.CATCH, via: self, needs: [self, ...needKeys(bait)], inputs: bait,
-                    tool: noteNeed({ kind: pool.tool, minTier: 1 }), gates, cycleMs,
-                    gives: [...pool.catches.map(c => ({ key: itemKey(c.itemId), chance: total > 0 ? c.weight / total : 0, perCycle: total > 0 ? c.weight / total : 0 })), ...rare]
+                    tool: noteNeed({ kind: pool.tool, minTier: 1 }), gates, cycleMs, pool: { tool: pool.tool, bait: pool.bait },
+                    gives: [...pool.catches.map(c => ({ key: itemKey(c.itemId), chance: total > 0 ? c.weight / total : 0, perCycle: total > 0 ? c.weight / total : 0, min: 1, max: 1 })), ...rare]
                 });
             });
             continue;
@@ -449,7 +459,7 @@ export function buildWorld(content = {}) {
             add({
                 id: `work:${id}`, how: HOW.WORK, via: self, needs: [self, ...needKeys(inputs)], inputs, tool: heroToolOf(def),
                 gates: gate(def.config?.skill, def.config?.skillRequired), cycleMs: finite(Number(def.config?.cycleTimeMs), null),
-                gives: [...outputs.map(o => ({ key: outputKey(o), chance: chanceOf(o), perCycle: quantityOf(o) * chanceOf(o) })), ...rare]
+                gives: [...outputs.map(o => ({ key: outputKey(o), chance: chanceOf(o), perCycle: quantityOf(o) * chanceOf(o), ...amountOf(o) })), ...rare]
             });
         }
     }
@@ -513,7 +523,7 @@ export function buildWorld(content = {}) {
             add({
                 id: `craft:${recipe.id}`, how: HOW.CRAFT, via: self, needs: [self], inputs,
                 cycleMs: finite(Number(recipe.durationMs), null),
-                gives: outputs.map(o => ({ key: outputKey(o), chance: chanceOf(o), perCycle: quantityOf(o) * chanceOf(o) }))
+                gives: outputs.map(o => ({ key: outputKey(o), chance: chanceOf(o), perCycle: quantityOf(o) * chanceOf(o), ...amountOf(o) }))
             });
         }
     }
@@ -548,12 +558,13 @@ export function buildWorld(content = {}) {
             const target = statement.to?.mode === 'id' && text(statement.to.value) ? [tokenKey(statement.to.value)] : [];
             grantsOf(statement).forEach((payload, j) => {
                 const chance = Math.max(0, Math.min(1, finite(Number(payload.chance), 100) / 100));
+                const quantity = Math.max(0, finite(Number(payload.quantity), 1));
                 // A bonus rolls on each cycle of the work it is granted to: known when the rule names one Token.
                 const onWork = target.length ? tokens[parseKey(target[0]).id] : null;
                 add({
                     id: `bonus:${self}:${i}:${j}`, how: HOW.BONUS, via: self, needs: [self, ...target],
                     rollMs: finite(Number(onWork?.config?.cycleTimeMs), null),
-                    gives: [{ key: itemKey(payload.itemId), chance, perCycle: chance * Math.max(0, finite(Number(payload.quantity), 1)) }]
+                    gives: [{ key: itemKey(payload.itemId), chance, perCycle: chance * quantity, min: quantity, max: quantity }]
                 });
             });
             const payload = isObject(statement.payload) ? statement.payload : {};

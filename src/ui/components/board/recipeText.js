@@ -4,6 +4,7 @@ import { tokenName, getAllTokenTypes } from '../../../config/registries/tokenReg
 import { contextRequirementsOf } from '../../../config/registries/recipePoolRegistry.js';
 import { foundationMinTierOf } from '../../../config/registries/tokenConstants.js';
 import { toolNamer, foundationPhrase, withArticle } from '../../../systems/effects/toolNames.js';
+import { chanceText } from '../../../utils/Formatters.js';
 
 // a recipe in one line of words, for the gear badge hover
 
@@ -40,7 +41,7 @@ export function outputSummary(recipe) {
         const min = o.minQty ?? 1;
         const max = o.maxQty ?? min;
         const qty = min === max ? `${min}` : `${min}–${max}`;
-        const chance = (o.chance == null || o.chance >= 100) ? '' : ` (${o.chance}%)`;
+        const chance = (o.chance == null || o.chance >= 100) ? '' : ` (${chanceText(o.chance)})`;
         // A building recipe outputs a Token.
         const label = o.tokenId ? (tokenName(o.tokenId) || o.tokenId) : itemLabel(o.itemId);
         return `${qty}× ${label}${chance}`;

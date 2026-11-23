@@ -9,6 +9,7 @@ import { COMBAT_SKILL_IDS } from '../../../config/registries/skillRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { UNARMED_DAMAGE, ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, attackSpeedMs } from '../../../config/FormulaRegistry.js';
 import { breakChanceOf } from '../../../config/registries/itemBreak.js';
+import { lengthText, chanceFigure } from '../../../utils/Formatters.js';
 
 /** What kind of item it is, in the player's words. */
 export function itemTypeLabel(item) {
@@ -34,12 +35,12 @@ function cutLines(item) {
         .map(id => t('itemTip.styleCut', { style: getSkill(id)?.name || id, n: cuts[id] }));
 }
 
-/** A weapon's swing: "Slow (4 s)". Anything but the three speeds fights at normal. */
+/** A weapon's swing: "Slow (4s)". Anything but the three speeds fights at normal. */
 function speedValue(item) {
     const speed = ATTACK_SPEED_MS[item?.speed] ? item.speed : DEFAULT_ATTACK_SPEED;
     return t('itemTip.stat.speedValue', {
         speed: t(`itemTip.speedName.${speed}`),
-        time: t('fight.seconds', { n: attackSpeedMs(speed) / 1000 })
+        time: lengthText(attackSpeedMs(speed))
     });
 }
 
@@ -75,7 +76,7 @@ function worksLine(tool) {
 function breakLine(item, tool) {
     const chance = breakChanceOf(item);
     if (!(chance > 0)) return null;
-    const n = Number(chance.toFixed(2)).toLocaleString('en-US');
+    const n = chanceFigure(chance).toLocaleString('en-US');
     return t(tool ? 'itemTip.breaksWork' : 'itemTip.breaksFight', { n });
 }
 

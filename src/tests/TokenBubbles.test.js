@@ -138,20 +138,20 @@ describe('the rules, pure', () => {
         const counts = { charges: 4, spawner: { count: 3, cap: 5 }, quest: { currentCount: 1, requiredCount: 10, itemId: 'x' } };
         const cells = idlePlateCells({ problem: { kind: ALERT.INPUTS, severity: SEVERITY.WAITING }, ...counts, timer });
         expect(cells.map(c => c.kind)).toEqual([CELL.PROBLEM, CELL.TIMER]);
-        expect(cells[1]).toMatchObject({ text: '0:30', glyph: 'grow' });
-        expect(cells[1].tip).toMatch(/^Grows into .* in 0:30$/);
+        expect(cells[1]).toMatchObject({ text: '30s', glyph: 'grow' });
+        expect(cells[1].tip).toMatch(/^Grows into .* in 30s$/);
         expect(idlePlateCells(counts)).toEqual([]);
         expect(idlePlateCells({})).toEqual([]);
     });
 
     it('the timer cell: one glyph per clock, its tip saying what comes; nothing counting, none', () => {
-        expect(timerCellOf({ kind: 'respawn', inMs: 15000 })).toMatchObject({ glyph: 'regrow', text: '0:15' });
+        expect(timerCellOf({ kind: 'respawn', inMs: 15000 })).toMatchObject({ glyph: 'regrow', text: '15s' });
         expect(timerCellOf({ kind: 'respawn', inMs: 15000 }).tip).toMatch(/^Resting\. Refills in /);
         expect(timerCellOf({ kind: 'respawn', inMs: 15000, paused: true, needsNearby: ['fixture_b13_forest'] }).tip)
             .toBe('Resting. Refills only with Fixture B1.3 Forest nearby');
         expect(timerCellOf({ kind: 'turn', inMs: 5000, chance: 30, back: true }))
-            .toMatchObject({ glyph: 'turn', text: '0:05', tip: 'Next roll to turn back in 0:05 (30% chance)' });
-        expect(timerCellOf({ kind: 'ripen', inMs: 61000 })).toMatchObject({ glyph: 'grow', text: '1:01' });
+            .toMatchObject({ glyph: 'turn', text: '5s', tip: 'Next roll to turn back in 5s (30% chance)' });
+        expect(timerCellOf({ kind: 'ripen', inMs: 61000 })).toMatchObject({ glyph: 'grow', text: '1m 1s' });
         expect(timerCellOf(null)).toBeNull();
     });
 });
@@ -371,7 +371,7 @@ describe('⭐ hover: the idle plate under the Token, and the gear', () => {
 
         rerender(tree(idleBub({ token: idle(), readTimer: read })));
         expect(idleCellKinds()).toEqual([CELL.TIMER]);
-        expect(idleCell(CELL.TIMER).textContent).toBe('0:30');
+        expect(idleCell(CELL.TIMER).textContent).toBe('30s');
         expect(idleCell(CELL.TIMER).querySelector('img').getAttribute('src')).toContain('svg');
         expect(container.querySelector('[data-ring]')).toBeNull();
         expect(vi.getTimerCount()).toBe(1);
@@ -386,10 +386,10 @@ describe('⭐ hover: the idle plate under the Token, and the gear', () => {
         let inMs = 12000;
         const read = () => ({ kind: 'turn', inMs, everyMs: 60000, chance: 30, back: false, into: [] });
         mount(idleBub({ token: idle(), readTimer: read }));
-        expect(idleCell(CELL.TIMER).textContent).toBe('0:12');
+        expect(idleCell(CELL.TIMER).textContent).toBe('12s');
         inMs = 9000;
         advance(TURN_COUNTDOWN_REFRESH_MS + 50);
-        expect(idleCell(CELL.TIMER).textContent).toBe('0:09');
+        expect(idleCell(CELL.TIMER).textContent).toBe('9s');
     });
 
     it('a Token with no clock running and nothing else to say: no plate (the name still shows)', () => {
@@ -733,7 +733,7 @@ describe('tooltips and grabbing', () => {
             expect(document.body.querySelector('[data-bubble-tip]')).toBeNull();
             return text;
         };
-        expect(tipOf(idleCell(CELL.TIMER))).toMatch(/^Grows into .* in 0:30$/);
+        expect(tipOf(idleCell(CELL.TIMER))).toMatch(/^Grows into .* in 30s$/);
         expect(tipOf(bubble(container, 'marked'))).toBe(BUBBLE_TIPS.marked);
     });
 
@@ -824,7 +824,7 @@ describe('on the mat (MatToken)', () => {
         hover(container, g);
         const cells = [...host.querySelectorAll(`[data-idle-plate="${g.id}"] [data-plate-cell]`)];
         expect(cells.map(c => c.getAttribute('data-plate-cell'))).toEqual(['timer']);
-        expect(cells[0].textContent).toMatch(/^\d+:\d\d$/);
+        expect(cells[0].textContent).toMatch(/^(\d+m )?\d+s$/);
         expect(container.querySelector('[data-ring]')).toBeNull();
         const slot = host.querySelector('[data-idle-plate-slot]');
         expect(parseFloat(slot.style.left) + parseFloat(slot.style.width) / 2).toBe(g.x);

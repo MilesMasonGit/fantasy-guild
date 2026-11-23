@@ -10,7 +10,8 @@ import { LandmarkBlock } from '../drawer/LandmarkBlock.jsx';
 import { LeaveMatControl } from '../drawer/LeaveMatControl.jsx';
 import { useTokenDetail } from './useTokenDetail.js';
 import { subscribeToken } from './tokenEvents.js';
-import { CARD_BLOCK, tokenCardModel, cycleText, drivenBy } from './tokenCard.js';
+import { CARD_BLOCK, tokenCardModel, drivenBy } from './tokenCard.js';
+import { lengthText, chanceText } from '../../../utils/Formatters.js';
 import { ArrowScrollList, PixelTriangle } from '../base/ArrowScrollList.jsx';
 import { withArticle } from '../../../systems/effects/toolNames.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
@@ -29,6 +30,7 @@ import { lookUpRibbon, lookUpToken, lookUpRecipe, lookUpItem } from '../encyclop
 import { t } from '../../../i18n/index.js';
 import { onPoll } from './frameClock.js';
 import { EffectBadgeGrid, EffectChip, ItemBadges } from './EffectBadges.jsx';
+import { chanceBreakdownText, effectTagOf, TONE_COLOUR as BADGE_COLOUR } from './effectBadgeText.js';
 import { EFFECT_KEY } from '../../../systems/board/EffectBreakdown.js';
 import { STAR_COLOUR } from './fx/rareTwinkle.js';
 
@@ -127,8 +129,8 @@ const WorkCells = ({ skillId, level, xp }) => (
 
 /** The cycle line's hover: the time and, when something nearby changes it, the time without it. */
 const cycleTip = (cycleMs, baseMs) => {
-    const shown = cycleText(cycleMs);
-    const base = cycleText(baseMs);
+    const shown = lengthText(cycleMs);
+    const base = lengthText(baseMs);
     if (!baseMs || shown === base) return 'One round of work takes this long';
     return `One round of work takes this long: ${base} ${cycleMs < baseMs ? 'before speed-ups' : 'before slow-downs'}`;
 };
@@ -137,7 +139,7 @@ const CycleCells = ({ cycleMs, baseMs, uses }) => (
     <>
         {cycleMs > 0 && (
             <StatCell caption="Time">
-                <Stat icon={<PixelGlyph name="clock" />} text={cycleText(cycleMs)} tip={cycleTip(cycleMs, baseMs)} data-card-cycle />
+                <Stat icon={<PixelGlyph name="clock" />} text={lengthText(cycleMs)} tip={cycleTip(cycleMs, baseMs)} data-card-cycle />
             </StatCell>
         )}
         <StatCell caption="Charges">
@@ -306,7 +308,7 @@ const MakesSection = ({ makes, effects }) => {
                         id={m.itemId}
                         minQty={m.min}
                         maxQty={m.max}
-                        chance={m.chance != null ? `${m.chance}%` : undefined}
+                        chance={m.chance != null ? chanceText(m.chance) : undefined}
                         badge={itemBadges(effects?.outputs, m.itemId)}
                         size="sm"
                         wrap
@@ -320,7 +322,7 @@ const MakesSection = ({ makes, effects }) => {
 
 // Each catch lands one, so the odds stand where a count would.
 const CatchRibbons = ({ catches, outputs }) => catches.map(c => (
-    <EntityRibbon key={c.itemId} kind="item" id={c.itemId} countText={`${c.chance}%`} badge={itemBadges(outputs, c.itemId)} size="sm" wrap onInspect={lookUpRibbon} />
+    <EntityRibbon key={c.itemId} kind="item" id={c.itemId} countText={chanceText(c.chance)} badge={itemBadges(outputs, c.itemId)} size="sm" wrap onInspect={lookUpRibbon} />
 ));
 
 /** A list that opens on a click, shut to begin with. */
@@ -390,14 +392,15 @@ const EventsSection = ({ lines }) => (
 );
 
 /**
- * One Token in reach this one boosts: its art, its name and the effects in green. Its own row
- * rather than a ribbon, so a long name or tag wraps instead of being cut off.
+ * One Token in reach this one boosts: its art, its name and the effects as their badges write them,
+ * green, or red for one that works against it. Its own row rather than a ribbon, so a long name or
+ * tag wraps instead of being cut off.
  */
 const SupportRow = ({ row }) => (
-    <Tooltip title={`This gives ${row.name} ${row.tags.join(', ')}`}>
+    <Tooltip title={`This gives ${row.name} ${row.tags.map(tag => tag.text).join(', ')}`}>
         <div
             data-card-support="to"
-            data-card-support-tags={row.tags.join('|')}
+            data-card-support-tags={row.tags.map(tag => tag.text).join('|')}
             className="flex items-center gap-2 border border-white/40 p-1 cursor-help"
         >
             <span className="w-8 h-8 shrink-0 flex items-center justify-center bg-black border border-white/10">
@@ -406,7 +409,7 @@ const SupportRow = ({ row }) => (
             <span className="flex-1 min-w-0 flex flex-col leading-tight">
                 <span className="text-xs font-bold text-gi-text">{row.name}</span>
                 {row.tags.map(tag => (
-                    <span key={tag} className="text-(length:--font-size-xs)" style={{ color: 'var(--color-ui-green)' }}>{tag}</span>
+                    <span key={tag.text} className="text-(length:--font-size-xs)" style={{ color: BADGE_COLOUR[tag.against ? 'down' : 'up'] }}>{tag.text}</span>
                 ))}
             </span>
         </div>
@@ -427,12 +430,14 @@ const rareQty = (r) => (r.min === 1 && r.max === 1 ? undefined : r.min === r.max
 /**
  * The rare drop table as one group: its chance in the twinkle's colour and the Lucky badge on its
  * heading; a click opens the list of what it can find, each at its odds, and another shuts it.
+ * With Lucky counted, the hover says how the chance was reached.
  */
 const RareFinds = ({ rare, lucky }) => {
     const [open, setOpen] = useState(false);
+    const reached = chanceBreakdownText(lucky);
     return (
         <div data-card-rare={open ? 'open' : 'shut'} className="flex flex-col gap-1">
-            <Tooltip title={t('effectBadges.card.rareFinds')} lines={[t('effectBadges.card.rareTip')]}>
+            <Tooltip title={t('effectBadges.card.rareFinds')} lines={reached ? [reached, t('effectBadges.card.rareTip')] : [t('effectBadges.card.rareTip')]}>
                 <button
                     type="button"
                     data-card-rare-toggle
@@ -442,7 +447,7 @@ const RareFinds = ({ rare, lucky }) => {
                 >
                     <span className="inline-flex" style={open ? undefined : { transform: 'rotate(-90deg)' }}><PixelTriangle dir="down" /></span>
                     <span className="font-bold">{t('effectBadges.card.rareFinds')}</span>
-                    <span data-card-rare-chance className="font-bold tabular-nums" style={{ color: STAR_COLOUR }}>{`${rare.chance}%`}</span>
+                    <span data-card-rare-chance className="font-bold tabular-nums" style={{ color: STAR_COLOUR }}>{chanceText(rare.chance)}</span>
                     <span className="flex-1" />
                     {lucky && <EffectChip badge={lucky} small />}
                 </button>
@@ -455,7 +460,7 @@ const RareFinds = ({ rare, lucky }) => {
                             kind="item"
                             id={r.itemId}
                             subtitle={rareQty(r)}
-                            countText={`${r.chance}%`}
+                            countText={chanceText(r.chance)}
                             size="sm"
                             wrap
                             onInspect={lookUpRibbon}
@@ -480,7 +485,7 @@ const DropsSection = ({ drops = [], rare, effects }) => (
                 id={d.itemId}
                 minQty={d.min}
                 maxQty={d.max}
-                chance={`${d.chance}%`}
+                chance={chanceText(d.chance)}
                 badge={itemBadges(effects?.outputs, d.itemId)}
                 size="sm"
                 wrap
@@ -501,16 +506,14 @@ const MoreBlock = ({ typeId }) => {
             {def.buff && (
                 <Section className="ui-text-body text-gi-text">
                     <Heading>Buffs {def.buff.target === 'hero' ? 'the hero on it' : 'nearby Tokens'}</Heading>
-                    {def.buff.modifiers.map((m, i) => (
-                        <span key={i}>
-                            {m.type.replace(/_/g, ' ').toLowerCase()}{' '}
-                            <span className="tabular-nums" style={{ color: 'var(--color-ui-green)' }}>
-                                {m.bucket === 'percentage'
-                                    ? `${m.value > 0 ? '+' : ''}${Math.round(m.value * 100)}%`
-                                    : `${m.value > 0 ? '+' : ''}${m.value}`}
+                    {def.buff.modifiers.map((m, i) => {
+                        const tag = effectTagOf(m);
+                        return (
+                            <span key={i} data-card-buff-tag className="tabular-nums" style={{ color: BADGE_COLOUR[tag.against ? 'down' : 'up'] }}>
+                                {tag.text}
                             </span>
-                        </span>
-                    ))}
+                        );
+                    })}
                 </Section>
             )}
             <DrivesLine def={def} />

@@ -260,7 +260,10 @@
         "combatLevel": "Combat · Lv {level}",
         "combatTip": "An enemy of level {level}",
         "noHero": "No hero has {skill} {level} yet",
-        "chance": "{chance}%",
+        "chance": "{chance} base",
+        "rankAmount": "rank {rank} {amount}",
+        "rankAmountShort": "{rank} {amount}",
+        "hallRanks": "{star}: {ranks}",
         "again": "already above",
         "have": "Have {count}",
         "haveNeed": "Have {have}; one {name} needs {need}",
@@ -311,7 +314,9 @@
             "spawns": "spawns",
             "grows": "grows",
             "leaves": "leaves",
-            "turns": "turns"
+            "turns": "turns",
+            "finds": "finds",
+            "held": "held"
         },
         "lineTip": {
             "madeAt": "{to} is made at {from}",
@@ -329,7 +334,12 @@
             "spawns": "{from} spawns {to}",
             "grows": "{from} grows into {to}",
             "leaves": "Worked out, {from} leaves {to}",
-            "turns": "{from} turns into {to}"
+            "turns": "{from} turns into {to}",
+            "rareFind": "Working {from} sometimes finds {to}: a rare find",
+            "givesHall": "Once {star} is bought, {from} gives {to} by Passive Production every lap: {ranks}",
+            "catchWith": "{to} is caught at {from} with a {tool}",
+            "catchBait": "{to} is caught at {from} with a {tool} and {bait}",
+            "held": "A hero holds {from} to catch {to}; it is never used up"
         },
         "kind": {
             "items": "Items",
@@ -353,7 +363,10 @@
             "worldLine": "{line} ring {ring}\nsettled on the world map",
             "worldRing": "Ring {ring}\nsettled on the world map",
             "someWorldsLine": "{line} ring {ring}\nin some worlds",
-            "someWorldsRing": "Ring {ring}\nin some worlds"
+            "someWorldsRing": "Ring {ring}\nin some worlds",
+            "event": "Special event",
+            "eventNamed": "{name}\nspecial event",
+            "hallStar": "{star}"
         }
     },
     "guildHall": {
@@ -376,7 +389,6 @@
         "couldNotBuy": "Could not buy that upgrade"
     },
     "fight": {
-        "seconds": "{n} s",
         "log": {
             "heroHits": "{hero} hits {enemy}",
             "heroCrits": "{hero} crits {enemy}",
@@ -536,11 +548,11 @@
             },
             "swift": {
                 "name": "Swift",
-                "tip": "Small hits every 2 s"
+                "tip": "Small hits every 2s"
             },
             "brute": {
                 "name": "Brute",
-                "tip": "Big hits every 4 s"
+                "tip": "Big hits every 4s"
             },
             "venomous": {
                 "name": "Venomous",
@@ -812,7 +824,10 @@
             "luckyBase": "Rare finds {base} before Lucky, {final} with it",
             "rareFinds": "Rare finds",
             "rareTip": "A roll on this Token's own rare table each time it pays out. Click to see what it can find",
-            "drops": "Drops"
+            "drops": "Drops",
+            "chanceBase": "{chance} base",
+            "chanceBonus": "{effect} {amount} ({source})",
+            "chanceResult": "= {chance}"
         }
     },
     "events": {

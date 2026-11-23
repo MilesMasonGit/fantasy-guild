@@ -8,7 +8,7 @@ import { linesOf, lapMs } from '../../../systems/board/PassiveProduction.js';
 import { EFFECT_TYPES } from '../../../systems/effects/constants.js';
 import { hallRulesOf } from '../../../systems/progression/hallModifiers.js';
 import { hallRuleSentence } from '../../../systems/progression/hallStarText.js';
-import { formatClock } from '../drawer/lifecycleLines.js';
+import { lengthText } from '../../../utils/Formatters.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { ArrowScrollList } from '../base/ArrowScrollList.jsx';
@@ -75,7 +75,7 @@ export const GuildHallEffectsList = () => {
     const data = useHallEffects();
     const outputs = data?.outputs || [];
     const boosts = data?.boosts || [];
-    const lap = t('guildHall.lapBoost', { time: formatClock(data?.lapMs ?? lapMs()) });
+    const lap = t('guildHall.lapBoost', { time: lengthText(data?.lapMs ?? lapMs()) });
     return (
         <div className="flex flex-col gap-3 text-gi-text">
             <div className="flex flex-col gap-1.5">

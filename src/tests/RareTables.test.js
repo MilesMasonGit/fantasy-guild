@@ -28,7 +28,7 @@ import { HALL_NODE } from '../config/guildUpgrades.js';
 import { getPaletteEntry, bucketsFor } from '../config/registries/modifierPalette.js';
 import { rareTableOf, rareTableChance, pickRareEntry, rareEntryChances } from '../config/registries/rareTables.js';
 import { resetMatTuning } from '../config/matTuning.js';
-import { supportTag } from '../ui/components/board/supportTags.js';
+import { effectTagText } from '../ui/components/board/effectBadgeText.js';
 import { withoutShippedPerks } from './fixtures/noPerks.js';
 
 withoutShippedPerks();
@@ -384,12 +384,14 @@ describe('Lucky', () => {
         expect(paletteForKeyword(KEYWORD.PROVIDES).some(p => p.type === EFFECT_TYPES.LUCKY)).toBe(true);
     });
 
-    it('reads in plain words: in proportion as a percentage, in points as a flat', () => {
+    it('reads in plain words: a percentage as a multiplier, a flat in points', () => {
         const rule = (bucket, value) => ({ id: 's', keyword: 'provides', to: { mode: 'tag', value: 'Ore' }, reach: 'nearby', payload: { type: EFFECT_TYPES.LUCKY, bucket, value } });
-        expect(renderStatement(rule('percentage', 0.1))).toMatch(/have a 10% higher chance on their rare drop table/);
-        expect(renderStatement(rule('flat', 1))).toMatch(/have 1% added to their rare drop table's chance/);
-        expect(supportTag({ type: EFFECT_TYPES.LUCKY, bucket: 'percentage', value: 0.1 })).toBe('+10 % Lucky');
-        expect(supportTag({ type: EFFECT_TYPES.LUCKY, bucket: 'flat', value: 1 })).toBe('+1 point Lucky');
+        expect(renderStatement(rule('percentage', 0.1))).toBe('Lucky ×1.1 on nearby Ore Tokens.');
+        expect(renderStatement(rule('percentage', -0.2))).toBe('Lucky ×0.8 on nearby Ore Tokens.');
+        expect(renderStatement(rule('multiplier', 2))).toBe('Lucky ×2 on nearby Ore Tokens.');
+        expect(renderStatement(rule('flat', 1))).toBe('Lucky +1% on nearby Ore Tokens.');
+        expect(effectTagText({ type: EFFECT_TYPES.LUCKY, bucket: 'percentage', value: 0.1 })).toBe('Lucky ×1.1');
+        expect(effectTagText({ type: EFFECT_TYPES.LUCKY, bucket: 'flat', value: 1 })).toBe('Lucky +1%');
     });
 });
 

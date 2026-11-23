@@ -18,13 +18,14 @@ const provides = (type, bucket, value, category) =>
 
 describe('a carried rule reads as the hero\'s and names its skill', () => {
     it.each([
-        ['LOOT_MULT', 'flat', 5, 'mining', 'Gives the hero a 5% chance of double loot at Mining.'],
-        ['LOOT_MULT', 'flat', 5, undefined, 'Gives the hero a 5% chance of double loot.'],
-        ['FAIL_CHANCE', 'flat', -10, 'cooking', 'Gives the hero 10% less chance to fail at Cooking.'],
-        ['XP_BONUS', 'percentage', 0.1, 'smithing', 'Gives the hero 10% more XP at Smithing.'],
-        ['WORK_TIME', 'percentage', -0.05, 'mining', 'Makes the hero work 5% faster at Mining.'],
-        ['YIELD', 'percentage', 0.25, 'fishing', 'Gives the hero 25% more yield at Fishing.'],
-        ['ARMOR', 'flat', 3, undefined, 'Gives the hero 3 more armor in combat.']
+        ['LOOT_MULT', 'flat', 5, 'mining', 'Double Loot 5% on Mining Tokens.'],
+        ['LOOT_MULT', 'flat', 5, undefined, 'Double Loot 5% for the hero.'],
+        ['FAIL_CHANCE', 'flat', -10, 'cooking', 'Failure −10% on Cooking Tokens.'],
+        ['XP_BONUS', 'percentage', 0.1, 'smithing', 'XP +10% on Smithing Tokens.'],
+        ['XP_BONUS', 'percentage', 0.1, 'melee', 'XP +10% in Melee fights.'],
+        ['WORK_TIME', 'percentage', -0.05, 'mining', 'Speed +5% on Mining Tokens.'],
+        ['YIELD', 'percentage', 0.25, 'fishing', 'Yield +25% on Fishing Tokens.'],
+        ['ARMOR', 'flat', 3, undefined, 'Armor +3 in combat.']
     ])('%s %s %s at %s', (type, bucket, value, skill, sentence) => {
         expect(renderStatement(provides(type, bucket, value, skill), carried)).toBe(sentence);
     });
@@ -66,7 +67,7 @@ describe('a carried rule reads as the hero\'s and names its skill', () => {
     });
 
     it('⚠️ the same rule on a Token keeps the Token\'s words', () => {
-        expect(renderStatement(provides('LOOT_MULT', 'flat', 5, 'mining'))).toBe('Makes every nearby Token have a 5% chance of double loot, but only for Mining work.');
+        expect(renderStatement(provides('LOOT_MULT', 'flat', 5, 'mining'))).toBe('Double Loot 5% on every nearby Mining Token.');
         const rule = S(KEYWORD.APPLIES, {
             when: { event: 'COMBAT_ENGAGED', scope: 'nearby' },
             payload: { effectId: 'fx_valor', forFight: true, chance: 100 }
@@ -76,7 +77,7 @@ describe('a carried rule reads as the hero\'s and names its skill', () => {
 
     it('a whole effect reads the same way through rulesLinesOf', () => {
         expect(rulesLinesOf({ statements: [provides('LOOT_MULT', 'flat', 5, 'mining')] }, carried))
-            .toEqual(['Gives the hero a 5% chance of double loot at Mining.']);
+            .toEqual(['Double Loot 5% on Mining Tokens.']);
     });
 });
 
@@ -109,20 +110,19 @@ describe('a perk with a moment on the hero sheet', () => {
     });
 });
 
-describe('a count of one reads in the singular', () => {
+describe('a count reads signed after its name', () => {
     it.each([
-        ['CROP_LOAD', 1, 'Makes every nearby Token hold 1 more harvest when ripe.'],
-        ['CROP_LOAD', -1, 'Makes every nearby Token hold 1 fewer harvest when ripe.'],
-        ['CROP_LOAD', 2, 'Makes every nearby Token hold 2 more harvests when ripe.'],
-        ['CATCH_WEIGHT', 1, 'Provides 1 more bite of any fish to every nearby Token.'],
-        ['CATCH_WEIGHT', -1, 'Provides 1 fewer bite of any fish to every nearby Token.'],
-        ['CATCH_WEIGHT', 2, 'Provides 2 more bites of any fish to every nearby Token.']
+        ['CROP_LOAD', 1, 'Abundance +1 on every nearby Token.'],
+        ['CROP_LOAD', -1, 'Abundance −1 on every nearby Token.'],
+        ['CROP_LOAD', 2, 'Abundance +2 on every nearby Token.'],
+        ['CATCH_WEIGHT', 1, 'Catch Weight +1 on any fish at every nearby Token.'],
+        ['CATCH_WEIGHT', -1, 'Catch Weight −1 on any fish at every nearby Token.']
     ])('%s at %s', (type, value, sentence) => {
         expect(renderStatement(provides(type, 'flat', value))).toBe(sentence);
     });
 
-    it('⚠️ a percentage of 100 stays plural', () => {
-        expect(renderStatement(provides('CROP_LOAD', 'percentage', 1))).toBe('Makes every nearby Token hold 100% more harvests when ripe.');
+    it('a percentage reads as one', () => {
+        expect(renderStatement(provides('CROP_LOAD', 'percentage', 1))).toBe('Abundance +100% on every nearby Token.');
     });
 
     it('Sunder says one point', () => {

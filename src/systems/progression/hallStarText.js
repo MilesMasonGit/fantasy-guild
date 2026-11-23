@@ -1,6 +1,6 @@
 // the Guild Hall's stars in words: a rank's rules and Passive Production lines
 
-import { renderStatement, effectParts } from '../effects/statementText.js';
+import { renderStatement, effectParts, effectHead } from '../effects/statementText.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { getCategoryInfo } from '../../config/registries/equipmentCategories.js';
 import { doseKindsPhrase } from '../../config/registries/carriedKinds.js';
@@ -18,6 +18,7 @@ import { rankOf } from '../../config/hallStars.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { getSkill, COMBAT_SKILL_IDS } from '../../config/registries/skillRegistry.js';
 import { damageTypeLabel } from '../../config/registries/damageTypes.js';
+import { lengthText } from '../../utils/Formatters.js';
 
 const ALL_TOKENS = Object.freeze({ mode: 'all', value: '' });
 
@@ -43,20 +44,19 @@ export function asGuildRule(statement) {
 }
 
 /**
- * One rule of a star, in words. A skill boost always says its skill: the renderer leaves the scope
- * out of an axis that words its own sentence ("award 10% more XP"), and on a star it is the point.
+ * One rule of a star, in words, led by its effect's name and number ("Speed +5% on every Mining
+ * Token on the board."). A combat star names the fighters it helps.
  */
 export function hallRuleSentence(statement, names = hallNames()) {
-    if (isFighterRule(statement)) {
-        const amount = fighterAmount(statement, names);
-        if (amount) return `Gives every ${styleSubject(statement)} ${amount} in combat.`;
+    if (isFighterRule(statement) && Number(statement?.payload?.value)) {
+        // A type row names its type in words, as its rule line does ("10% more Fire damage").
+        const type = statement.payload.type;
+        if (type === EFFECT_TYPES.TYPE_DAMAGE || type === EFFECT_TYPES.TYPE_RESIST) {
+            return `Gives every ${styleSubject(statement)} ${fighterAmount(statement, names)} in combat.`;
+        }
+        return `${effectHead(statement, names)} for every ${styleSubject(statement)} in combat.`;
     }
-    const text = renderStatement(asGuildRule(statement), names);
-    const category = statement?.payload?.category;
-    if (!category || getPaletteEntry(statement.payload.type)?.categories !== 'skill') return text;
-    const skill = getSkill(category)?.name || category;
-    if (text.includes(`${skill} work`)) return text;
-    return text.endsWith('.') ? `${text.slice(0, -1)}, but only for ${skill} work.` : `${text}, but only for ${skill} work`;
+    return renderStatement(asGuildRule(statement), names);
 }
 
 /**
@@ -65,12 +65,6 @@ export function hallRuleSentence(statement, names = hallNames()) {
  */
 export function hallLineText(line, names = hallNames()) {
     return `${line.quantity} ${names.item(line.itemId)} a lap`;
-}
-
-/** "8:00", "10:00": a lap's length as the Hall's effects say it. */
-export function lapClock(ms) {
-    const total = Math.max(0, Math.round((Number(ms) || 0) / 1000));
-    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
 /** The lap one Lap Time rule gives on its own, from the base lap. */
@@ -213,8 +207,8 @@ function subjectsText(subjects) {
 
 /**
  * One rule's effect as a sentence part and an amount: `phrase` says what it does without its number
- * ("work faster"), `amount` the number with its words ("6% faster"). Null for a rule that cannot be
- * said that way.
+ * ("work faster"), `amount` its name and number ("Speed +6%"). Null for a rule that cannot be said
+ * that way.
  */
 function ruleEffect(statement, names, lapMs = null) {
     const payload = statement?.payload || {};
@@ -222,7 +216,7 @@ function ruleEffect(statement, names, lapMs = null) {
         // The Guild Hall is the subject, and the amount is the lap itself, not its percentage.
         return {
             phrase: 'lap',
-            amount: `outputs every ${lapClock(lapMs ?? lapOfRule(statement))}`,
+            amount: `outputs every ${lengthText(lapMs ?? lapOfRule(statement))}`,
             sentence: 'The Guild Hall\'s outputs arrive more often: its lap is shorter.'
         };
     }
@@ -243,7 +237,7 @@ function ruleEffect(statement, names, lapMs = null) {
         // The kinds ride in the phrase, so a drinks rule and an elixirs rule of one size are two lines.
         return {
             phrase: longer ? `make ${kinds} last ${down ? 'less long' : 'longer'}` : `make ${kinds} ${down ? 'weaker' : 'stronger'}`,
-            amount: `${parts.size} ${parts.after}`.trim(),
+            amount: effectHead(statement, names),
             sentence: longer
                 ? `Every hero's ${kinds} last ${down ? 'less long' : 'longer'}.`
                 : `The effects of every hero's ${kinds} are ${down ? 'weaker' : 'stronger'}.`
@@ -266,12 +260,15 @@ function ruleEffect(statement, names, lapMs = null) {
     const style = STYLE_PHRASES[payload.type];
     if (style && isFighterRule(statement)) {
         const helps = (Number(payload.value) > 0) !== !!getPaletteEntry(payload.type)?.inverted;
-        return { phrase: helps ? style[0] : style[1], amount: `${parts.size} ${parts.after}`.trim() };
+        return { phrase: helps ? style[0] : style[1], amount: effectHead(statement, names) };
     }
-    if (parts.before) return { phrase: `${parts.before} ${parts.after}`.trim(), amount: `${parts.size} ${parts.after}`.trim() };
+    // The amount is the rule's lead, as its badge writes it ("Speed +6%"); the phrase says what it
+    // does with no number, for the star's sentence ("works faster").
+    const amount = effectHead(asGuildRule(statement), names);
+    if (parts.before) return { phrase: `${parts.before} ${parts.after}`.trim(), amount };
     // An axis with no verb of its own reads "7% more yield": the star "gives more yield".
     const direction = parts.size.split(' ').pop();
-    return { phrase: `give ${direction} ${parts.after}`.trim(), amount: `${parts.size} ${parts.after}`.trim() };
+    return { phrase: `give ${direction} ${parts.after}`.trim(), amount };
 }
 
 /** A rank's rules grouped by what they do, each with the subjects it reaches, in the rules' order. */

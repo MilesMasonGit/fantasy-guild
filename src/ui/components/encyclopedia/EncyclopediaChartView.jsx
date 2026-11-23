@@ -9,12 +9,12 @@ import { PixelGlyph } from '../base/PixelGlyph.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { ItemTipContent } from '../drawer/ItemTip.jsx';
-import { formatClock } from '../drawer/lifecycleLines.js';
+import { lengthText, chanceText } from '../../../utils/Formatters.js';
 import { panDrag } from '../../utils/panDrag.js';
 import { KIND } from './encyclopediaModel.js';
 import {
     layoutChart, grownBox, keepInSight, centreOn, clampPan, needText, entryOfKey, oneOffWays, farSideOf,
-    litLinks, ROOT, STATIONS
+    litLinks, yieldText, ranksText, ROOT, STATIONS
 } from './encyclopediaChart.js';
 import { EntrySprite, Tick, heroHas, isCollected, unscroll, SPRITE_PX } from './encyclopediaParts.jsx';
 
@@ -78,10 +78,21 @@ export function amountText(q) {
     return `×${shown.toLocaleString('en-US')}`;
 }
 
-/** A line's odds on the box it reaches: "40%", nothing when sure. */
-export function chanceText(node) {
+/**
+ * How many the way along a box's line gives, as the card shows it ("×6", "×2–4"), or what a Guild
+ * Hall track pays at its ranks ("rank 1 ×2, rank 2 ×5, rank 3 ×8"). Nothing where the card shows none.
+ */
+export function yieldsText(node) {
+    return node.ranks ? ranksText(node.ranks, { short: true }) : yieldText(node.yields);
+}
+
+/**
+ * A line's odds on the box it reaches, labelled base ("40% base"): a reference page has no one
+ * Token or hero to count bonuses from. Nothing when sure.
+ */
+export function oddsText(node) {
     if (!Number.isFinite(node.chance) || node.chance >= 1) return null;
-    return t('encyclopedia.chance', { chance: Math.round(node.chance * 1000) / 10 });
+    return t('encyclopedia.chance', { chance: chanceText(node.chance * 100) });
 }
 
 const haveOf = (entry) => (entry?.kind === KIND.ITEM ? Math.floor(availableOf(entry.id) || 0) : null);
@@ -112,6 +123,8 @@ const EntryCard = ({ book, entry, node, have, startName, got, hint }) => {
     if (entry.kind === KIND.RECIPE) lines.push(t(isCollected(got, entry) ? 'encyclopedia.made' : 'encyclopedia.notMade'));
     const starts = oneOffWays(book, entry.key);
     if (starts.length) lines.push(t('encyclopedia.alsoFrom', { ways: starts.map(w => t(`encyclopedia.via.${w}`)).join(', ') }));
+    // A Guild Hall track's every rank, which its box has room only to sum up.
+    if (node.ranks) lines.push(t('encyclopedia.hallRanks', { star: node.star ?? '', ranks: ranksText(node.ranks) }));
     return (
         <div data-codex-card={entry.key} className="flex flex-col gap-1">
             {entry.kind === KIND.ITEM && <ItemTipContent item={entry.def} />}
@@ -181,8 +194,8 @@ const LineMark = memo(function LineMark({ label, book, heroes }) {
         short ? t('encyclopedia.noHero', { skill, level: req.level }) : null,
         stations.length ? t('encyclopedia.madeAtNames', { names: stations.join(', ') }) : null,
         label.through && label.regrow
-            ? t('encyclopedia.regrows', { stage: an(book.nameOf(label.through[0])), near: near.length ? t('encyclopedia.beside', { name: an(near[0]) }) : '', time: formatClock(growMs) })
-            : label.through ? t('encyclopedia.grows', { stage: an(book.nameOf(label.through[label.through.length - 1])), time: formatClock(growMs) }) : null
+            ? t('encyclopedia.regrows', { stage: an(book.nameOf(label.through[0])), near: near.length ? t('encyclopedia.beside', { name: an(near[0]) }) : '', time: lengthText(growMs) })
+            : label.through ? t('encyclopedia.grows', { stage: an(book.nameOf(label.through[label.through.length - 1])), time: lengthText(growMs) }) : null
     ].filter(Boolean);
     return (
         <Tooltip lines={lines}>
@@ -198,7 +211,7 @@ const LineMark = memo(function LineMark({ label, book, heroes }) {
                 }}
             >
                 {label.through && <PixelGlyph name={label.regrow ? 'regrow' : 'grow'} scale={4} style={{ filter: GLYPH_OUTLINE }} />}
-                {label.through && growMs > 0 && <span>{formatClock(growMs)}</span>}
+                {label.through && growMs > 0 && <span>{lengthText(growMs)}</span>}
                 {req && <SkillIcon skillId={isCombat ? 'melee' : req.skill} size={32} />}
                 {req && <span>{req.level}</span>}
             </span>
@@ -212,7 +225,7 @@ const LineMark = memo(function LineMark({ label, book, heroes }) {
  */
 const LineWord = memo(function LineWord({ word, book }) {
     const name = (key) => entryOfKey(book, key)?.name ?? book.nameOf(key);
-    const sentence = t(`encyclopedia.lineTip.${word.tip}`, { from: name(word.from), to: name(word.to) });
+    const sentence = t(`encyclopedia.lineTip.${word.tip}`, { from: name(word.from), to: name(word.to), ...(word.args || {}) });
     return (
         <span
             className={cn('absolute flex items-center pointer-events-none', word.side === 'out' ? 'justify-end' : 'justify-start')}
@@ -235,13 +248,15 @@ const LineWord = memo(function LineWord({ word, book }) {
 
 /**
  * One entry on the chart: its sprite and name; under them how many one of the start needs (red
- * when you have fewer) and a drop's odds; the collected tick. Resting the pointer on it shows its card.
+ * when you have fewer), or how many its line gives ("×4 · 70% base", as the card: amount, then
+ * odds); the collected tick. Resting the pointer on it shows its card.
  */
 const ChartNode = memo(function ChartNode({ book, box, entry, focused, collected, have, startName, got, onPick, onHover }) {
     const node = box.node;
     const need = node.side === 'in' ? needText(node.need) : null;
     const short = need != null && have != null && have < need;
-    const odds = chanceText(node);
+    const odds = oddsText(node);
+    const gives = yieldsText(node);
     const grows = node.side === 'in' ? 'encyclopedia.growIn' : 'encyclopedia.growOut';
     const hint = node.repeat ? t('encyclopedia.again') : (node.grown || node.farOpen) && node.side !== 'start' ? t('encyclopedia.fold') : node.canGrow ? t(grows) : null;
     return (
@@ -269,13 +284,14 @@ const ChartNode = memo(function ChartNode({ book, box, entry, focused, collected
                 </span>
                 <span className="flex-1 min-w-0 flex flex-col">
                     <span className="ui-text-body font-bold text-white break-words" style={BODY_LINE}>{entry.name}</span>
-                    {(need != null || odds || node.repeat) && (
+                    {(need != null || gives || odds || node.repeat) && (
                         <span className="ui-text-body tabular-nums flex flex-wrap gap-x-2" style={BODY_LINE}>
                             {need != null && (
                                 <span data-codex-need data-short={short ? 'true' : undefined} style={{ color: short ? 'var(--color-ui-red)' : 'rgba(255, 255, 255, 0.8)' }}>
                                     {amountText(need)}
                                 </span>
                             )}
+                            {gives && <span data-codex-gives className="text-white">{odds ? `${gives} ·` : gives}</span>}
                             {odds && <span data-codex-chance className="text-white">{odds}</span>}
                             {node.repeat && <span className="text-white/50">{t('encyclopedia.again')}</span>}
                         </span>
@@ -342,7 +358,7 @@ const Links = memo(function Links({ layout, lit }) {
  *   `reserveRight` a strip on its right (under a panel) where the focus is never kept
  */
 export const ChartView = ({ book, chart, metrics, rect, focusAt, glide, got, heroes, startName, onNode, onStem }) => {
-    const growText = useCallback((label) => formatClock(growMsOf(book, label.through)), [book]);
+    const growText = useCallback((label) => lengthText(growMsOf(book, label.through)), [book]);
     const layout = useMemo(() => layoutChart(chart, metrics, growText), [chart, metrics, growText]);
     // The box under the pointer, and what of the chart lies on its path to the start: no new layout.
     const [hoverAt, setHoverAt] = useState(null);

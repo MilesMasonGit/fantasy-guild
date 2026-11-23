@@ -118,8 +118,8 @@ describe('a Neighbours variant, as the CMS authors it', () => {
             keyword: 'provides', reach: 'nearby', to: { mode: 'all' },
             payload: { type: 'WORK_TIME', bucket: 'percentage', value: -0.2, category: 'mining' }
         });
-        expect(renderStatement(MINING_RULE)).toMatch(/faster.*only for Mining work/);
-        expect(renderStatement(FISHING_RULE)).toMatch(/only for Fishing work/);
+        expect(renderStatement(MINING_RULE)).toMatch(/^Speed \+20% on every nearby Mining Token/);
+        expect(renderStatement(FISHING_RULE)).toMatch(/on every nearby Fishing Token/);
     });
 
     it('passes the content check', () => {

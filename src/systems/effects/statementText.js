@@ -15,6 +15,8 @@ import { articleOf } from './toolNames.js';
 import { stationKindLabel } from '../../config/registries/tokenConstants.js';
 import { getCategoryInfo } from '../../config/registries/equipmentCategories.js';
 import { getCarriedKind, getDoseKind, doseKindsPhrase } from '../../config/registries/carriedKinds.js';
+import { chanceText, timesText, lengthText } from '../../utils/Formatters.js';
+import { effectAmount, effectName } from '../../config/registries/effectWords.js';
 
 /**
  * The rules text: generated, read-only, and the only text a Token has. The sentence IS the
@@ -150,13 +152,17 @@ const verbSlot = (statement) => (getKeyword(statement?.keyword) ? 'keyword' : nu
 
 /** `0.05` → `5%`, `-0.05` → `5%` (the direction word carries the sign). */
 function asPercent(value) {
-    return `${Math.abs(Math.round(Number(value) * 1000) / 10)}%`;
+    return chanceText(Math.abs(Number(value) * 100));
 }
 
 /** A number effect's magnitude, in the words of the bucket it pushes into. */
 function magnitude(entry, payload) {
     const value = Number(payload?.value) || 0;
-    if (entry?.shape === MODIFIER_SHAPES.PROC) return `${Math.abs(value)}%`;
+    if (entry?.shape === MODIFIER_SHAPES.PROC) return chanceText(Math.abs(value));
+    // Lucky's percentage is a share of the rare table's chance: as `+20%` it would read as points.
+    if (entry?.type === EFFECT_TYPES.LUCKY && payload?.bucket !== 'flat') {
+        return timesText(payload?.bucket === 'multiplier' ? Math.abs(value) : Math.max(0, 1 + value));
+    }
     switch (payload?.bucket) {
         case 'flat': return `${Math.abs(value)}`;
         case 'multiplier': return `×${Math.abs(value)}`;
@@ -165,7 +171,9 @@ function magnitude(entry, payload) {
 }
 
 /**
- * "work 5% faster", "3 more armor", "a 25% chance of double loot".
+ * An effect's action phrase: "work 5% faster", "3 more armor", "a 25% chance of double loot". Rule
+ * lines lead with the effect's name instead (`headSegments`); this phrase is kept for what a Hall
+ * star does in words with no number (`effectParts`, `hallStarText.starSentence`).
  *
  * ⚠️ An axis owns how it reads, in both directions: it may declare `reads.up` and
  * `reads.down`, as every filter in `filterRegistry` owns its positive and negative wording.
@@ -175,7 +183,7 @@ function magnitude(entry, payload) {
  * axis would render -25 and +25 identically. An axis with `reads` picks the wording by sign
  * before the size is absolute-valued.
  */
-function effectSegments(statement, names, onHero = false) {
+function actionSegments(statement, names) {
     const entry = effectEntryOf(statement);
     const payload = statement?.payload || {};
     if (!entry) return segs(d('…', 'type'));
@@ -189,7 +197,7 @@ function effectSegments(statement, names, onHero = false) {
     if (payload.type === EFFECT_TYPES.BONUS_DROP) {
         const qty = Math.max(1, Number(payload.quantity) || 1);
         const item = payload.itemId ? names.item(payload.itemId) : '…';
-        return segs('a ', d(`${Math.abs(Number(payload.value) || 0)}%`, 'value'), ` chance to drop ${qty} ${item}`);
+        return segs('a ', d(chanceText(Math.abs(Number(payload.value) || 0)), 'value'), ` chance to drop ${qty} ${item}`);
     }
 
     // "a 10% chance of double Raw Beef": the item is the narrowing, so it reads inside the phrase.
@@ -231,8 +239,8 @@ function effectSegments(statement, names, onHero = false) {
     if (payload.type === EFFECT_TYPES.PRESERVATION && payload.category) {
         const C = categorySlot(statement);
         const lead = value < 0
-            ? segs(d(onHero ? '' : 'have ', 'type'), d(size, 'value'), d(' less chance ', 'type'))
-            : segs(d(onHero ? 'a ' : 'have a ', 'type'), d(size, 'value'), d(' chance ', 'type'));
+            ? segs(d('have ', 'type'), d(size, 'value'), d(' less chance ', 'type'))
+            : segs(d('have a ', 'type'), d(size, 'value'), d(' chance ', 'type'));
         const skill = getSkill(payload.category);
         if (skill) return segs(lead, d(`${articleOf(skill.name)} `, 'type'), d(skill.name, C), d(' cycle uses none of its materials', 'type'));
         const kind = getCarriedKind(payload.category);
@@ -242,18 +250,13 @@ function effectSegments(statement, names, onHero = false) {
     }
 
     // "have 1% added to their rare drop table's chance": a flat Lucky adds points to the table's
-    // chance, unlike its percentage (`reads`), which raises it in proportion.
-    if (payload.type === EFFECT_TYPES.LUCKY && payload.bucket && payload.bucket !== 'percentage') {
-        const whose = onHero ? 'the Token\'s' : 'their';
-        const have = onHero ? '' : 'have ';
-        if (payload.bucket === 'multiplier') {
-            return segs(d(have, 'type'), d(`×${Math.abs(value)}`, 'value'), d(` the chance on ${whose} rare drop table`, 'type'));
-        }
+    // chance, unlike its percentage and multiplier (`reads`), which raise it in proportion.
+    if (payload.type === EFFECT_TYPES.LUCKY && payload.bucket === 'flat') {
         const change = value < 0 ? ' taken off ' : ' added to ';
-        return segs(d(have, 'type'), d(`${Math.abs(value)}%`, 'value'), d(`${change}${whose} rare drop table's chance`, 'type'));
+        return segs(d('have ', 'type'), d(chanceText(Math.abs(value)), 'value'), d(`${change}their rare drop table's chance`, 'type'));
     }
 
-    const reads = (onHero && entry.heroReads) || entry.reads;
+    const reads = entry.reads;
     if (reads) {
         const read = value < 0 ? reads.down : reads.up;
         // The real size rides beside the marker, so a template can agree with it ("1 more harvest").
@@ -270,12 +273,12 @@ function effectSegments(statement, names, onHero = false) {
 }
 
 /**
- * An effect's phrase in three parts, "work", "6%", "faster": the words before its size, the size and
- * the words after, so a reader can say what the effect does without its number, or the number
- * alone. Null for an effect with no size (no change, or an axis worded another way).
+ * An effect's action phrase in three parts, "work", "6%", "faster": the words before its size, the
+ * size and the words after, so a reader can say what the effect does without its number. Null for
+ * an effect with no size (no change, or an axis worded another way).
  */
 export function effectParts(statement, names = {}) {
-    const list = tidy(effectSegments(statement, { ...DEFAULT_NAMES, ...names }));
+    const list = tidy(actionSegments(statement, { ...DEFAULT_NAMES, ...names }));
     const at = list.findIndex(s => s.slot === 'value');
     if (at < 0) return null;
     return {
@@ -283,6 +286,59 @@ export function effectParts(statement, names = {}) {
         size: list[at].text.trim(),
         after: textOf(list.slice(at + 1)).trim()
     };
+}
+
+/**
+ * A rule line's lead: the effect's name and number as its badge writes them (`effectWords`), then
+ * the item an item-narrowed effect names: "Speed +5%", "Lucky ×1.2", "Double Item 10% on Raw Beef",
+ * "Preservation 25% on ammo", "Bird Nest 5%".
+ */
+function headSegments(statement, names) {
+    const entry = effectEntryOf(statement);
+    const payload = statement?.payload || {};
+    if (!entry) return segs(d('…', 'type'));
+    const value = Number(payload.value) || 0;
+
+    // A bonus drop is named by its item, its value the chance; the item has no slot here.
+    if (payload.type === EFFECT_TYPES.BONUS_DROP) {
+        const qty = Math.max(1, Number(payload.quantity) || 1);
+        const item = payload.itemId ? names.item(payload.itemId) : '…';
+        return segs(`${qty > 1 ? `${qty} ` : ''}${item} `, d(chanceText(Math.abs(value)), 'value'));
+    }
+    // "250 XP in every skill": a gift, not an effect with a badge.
+    if (payload.type === EFFECT_TYPES.XP_FOR_EVERYONE) return actionSegments(statement, names);
+
+    const name = d(effectName(entry, payload.type), 'type');
+    if (!value) return segs(name, ' ', d('unchanged', 'value'));
+    const amount = d(effectAmount(entry, payload).text, 'value');
+
+    // "Long-lasting Brews +2 cycles": a flat one adds whole cycles or fights, by the kind it names.
+    if (payload.type === EFFECT_TYPES.LONG_LASTING_BREWS && payload.bucket === 'flat') {
+        const n = Math.abs(value);
+        const unit = getDoseKind(payload.category)?.unit;
+        const units = unit ? `${unit}${n === 1 ? '' : 's'}` : (n === 1 ? 'cycle or fight' : 'cycles or fights');
+        return segs(name, ' ', amount, ' ', d(units, 'type'));
+    }
+
+    const lead = segs(name, ' ', amount);
+    const C = categorySlot(statement);
+    if (payload.type === EFFECT_TYPES.DOUBLE_DROP) {
+        return segs(lead, ' on ', d(payload.category ? names.item(payload.category) : 'any item', C));
+    }
+    if (payload.type === EFFECT_TYPES.CATCH_WEIGHT) {
+        return segs(lead, ' on ', d(payload.category ? names.item(payload.category) : 'any fish', C));
+    }
+    // Preservation narrowed to a carried kind or one item keeps only those; a skill narrows as any rule's does.
+    if (payload.type === EFFECT_TYPES.PRESERVATION && payload.category && !getSkill(payload.category)) {
+        const kind = getCarriedKind(payload.category);
+        return segs(lead, ' on ', d(kind ? kind.phrase : names.item(payload.category), C));
+    }
+    return lead;
+}
+
+/** A rule line's lead as text ("Speed +6%"). */
+export function effectHead(statement, names = {}) {
+    return textOf(tidy(headSegments(statement, { ...DEFAULT_NAMES, ...names })));
 }
 
 /**
@@ -345,7 +401,7 @@ function filterSegments(spec, names, slot) {
  * ⚠️ The preposition is a parameter so the same frame can be a target or a SUBJECT; deriving
  * the subject by trimming "to " off the target would be string surgery on a sentence.
  */
-function reachFrameSegments(statement, names, prep = 'to') {
+function reachFrameSegments(statement, names, prep = 'to', skill = []) {
     const { R, M, V } = targetSlots(statement);
     const P = prep ? `${prep} ` : '';
     const reach = reachOf(statement);
@@ -363,7 +419,7 @@ function reachFrameSegments(statement, names, prep = 'to') {
     // the set it names is a plural one.
     if (reach === REACH.BOARD) {
         return segs(P, d('every', R), ' ',
-            untargeted ? d('Token', M) : singularSegments(statement, names), ' ', d('on the board', R));
+            untargeted ? segs(skill, d('Token', M)) : singularSegments(statement, names), ' ', d('on the board', R));
     }
 
     if (reach === REACH.SELF_AND_NEARBY) {
@@ -373,7 +429,7 @@ function reachFrameSegments(statement, names, prep = 'to') {
     }
 
     // `nearby`: the default wording, left byte-for-byte identical on purpose.
-    const everyNearby = segs(P, d('every', M), ' ', d('nearby', R), ' ', d('Token', M));
+    const everyNearby = segs(P, d('every', M), ' ', d('nearby', R), ' ', skill, d('Token', M));
     if (untargeted) return everyNearby;
     switch (to.mode) {
         case 'tag':
@@ -391,12 +447,29 @@ function reachFrameSegments(statement, names, prep = 'to') {
 }
 
 /** "to every nearby Token being worked" — the frame plus its stacked filters. */
-function targetSegments(statement, names, prep = 'to') {
+function targetSegments(statement, names, prep = 'to', skill = []) {
     const { F } = targetSlots(statement);
     // ⚠️ Appended to whatever frame the reach chose, so "to every Coast Token on
     // the board" becomes "… on the board being worked" — one clause, not two
     // sentences stitched together.
-    return segs(reachFrameSegments(statement, names, prep), filterSegments(statement?.to, names, F));
+    return segs(reachFrameSegments(statement, names, prep, skill), filterSegments(statement?.to, names, F));
+}
+
+/**
+ * The skill a rule narrows to as a word before "Token" ("every nearby Mining Token", "every Mining
+ * Token on the board"), when the rule names no Tokens of its own and reaches nearby or the board.
+ * Empty otherwise: the skill is then said after the Tokens (`skillScopeSegments`).
+ */
+function skillWordSegments(statement) {
+    const category = statement?.payload?.category;
+    const skill = category ? getSkill(category) : null;
+    const vocabulary = effectEntryOf(statement)?.categories;
+    if (!skill || (vocabulary !== 'skill' && vocabulary !== 'skillOrCarried')) return [];
+    const to = statement?.to;
+    if (to?.mode && to.mode !== 'all') return [];
+    const reach = reachOf(statement);
+    if (reach !== REACH.NEARBY && reach !== REACH.BOARD) return [];
+    return segs(d(skill.name, categorySlot(statement)), ' ');
 }
 
 /**
@@ -445,17 +518,25 @@ function occupantSegments(statement, names) {
 function skillScopeSegments(statement) {
     const category = statement?.payload?.category;
     if (!category) return [];
-    // An item narrowing is already named inside the effect phrase ("a 10% chance of double Raw Beef").
-    if (namesItsNarrowing(statement)) return [];
+    // An item narrowing is already named inside the effect phrase ("a 10% chance of double Raw Beef"),
+    // and a skill may already stand before "Token".
+    if (namesItsNarrowing(statement) || skillWordSegments(statement).length) return [];
     const skill = getSkill(category);
     return segs(', but only for ', d(skill?.name || category, categorySlot(statement)), ' work');
 }
 
-/** " at Mining" — a carried rule's skill narrowing: the hero's work at that skill, or nothing. */
-function heroSkillSegments(statement) {
+/**
+ * Where a carried rule works: " on Mining Tokens" (a work skill), " in Melee fights" (a combat
+ * style), nothing when its lead names the narrowing, else " for the hero".
+ */
+function carriedScopeSegments(statement) {
     const category = statement?.payload?.category;
-    if (!category || namesItsNarrowing(statement)) return [];
-    return segs(' at ', d(getSkill(category)?.name || category, categorySlot(statement)));
+    if (namesItsNarrowing(statement)) return [];
+    if (!category) return segs(' for the hero');
+    const C = categorySlot(statement);
+    const id = String(category).toLowerCase();
+    if (COMBAT_SKILL_IDS.includes(id)) return segs(' in ', d(getSkill(id)?.name || category, C), ' fights');
+    return segs(' on ', d(getSkill(category)?.name || category, C), ' Tokens');
 }
 
 /**
@@ -471,10 +552,14 @@ function styleScopeSegments(statement, carried) {
     return carried ? segs(', but only as a ', style, ' fighter') : segs(', but only for ', style, ' fighters');
 }
 
-/** Whether the effect phrase already names the rule's narrowing: an item's, or Preservation's own. */
+/**
+ * Whether the effect's lead already names the rule's narrowing: an item's, or Preservation's
+ * carried kind or item (a skill it narrows to reads as any rule's).
+ */
 function namesItsNarrowing(statement) {
     const categories = effectEntryOf(statement)?.categories;
-    return categories === 'item' || categories === 'skillOrCarried';
+    if (categories === 'skillOrCarried') return !!statement?.payload?.category && !getSkill(statement.payload.category);
+    return categories === 'item';
 }
 
 /**
@@ -597,7 +682,16 @@ function ordinal(n) {
     return `${n}${suffix}`;
 }
 
-/** ", at most once every 5 seconds" — the cooldown, when there is one. */
+/**
+ * A length as the time writer spells it (`lengthText`: "5s", "2.5s", "1m 30s"), its slot word the
+ * seconds under a minute, so the word an author clicks is the number the editor retypes.
+ */
+function lengthSegments(ms, slot) {
+    const seconds = Math.round(ms / 100) / 10;
+    return seconds < 60 ? segs(d(String(seconds), slot), 's') : segs(d(lengthText(ms), slot));
+}
+
+/** ", at most once every 5s" — the cooldown, when there is one. */
 function cooldownSegments(statement) {
     const ms = statement?.when?.cooldownMs;
     if (!ms) return [];
@@ -605,11 +699,11 @@ function cooldownSegments(statement) {
     // items have none), so a stray one is not said.
     if (isFightMoment(statement?.when?.event) || isCarriedMoment(statement?.when?.event)) return [];
     const known = getKeyword(statement?.keyword) && getTriggerEvent(statement?.when?.event);
-    return segs(', at most once every ', d(String(Math.round(ms / 100) / 10), known && 'cooldown'), ' seconds');
+    return segs(', at most once every ', lengthSegments(ms, known && 'cooldown'));
 }
 
 /**
- * "Consumes 1 Coal every 30 seconds." — upkeep, as its own sentence, so an ongoing drain on the
+ * "Consumes 1 Coal every 30s." — upkeep, as its own sentence, so an ongoing drain on the
  * Bank is not buried at the tail of a rule about something else.
  *
  * Returns an empty string when there is no upkeep, so callers concatenate without checking.
@@ -618,8 +712,7 @@ export function upkeepLine(statement, names = {}) {
     const resolve = { ...DEFAULT_NAMES, ...names };
     const upkeep = statement?.upkeep;
     if (!upkeep?.items?.length) return '';
-    const every = Math.round((upkeep.cadenceMs || 0) / 100) / 10;
-    return `Consumes ${itemList(upkeep.items, resolve)} every ${every} seconds.`;
+    return `Consumes ${itemList(upkeep.items, resolve)} every ${lengthText(upkeep.cadenceMs || 0)}.`;
 }
 
 /** A status a rule names by its effect id, in the author's words: its effect's name. */
@@ -643,10 +736,11 @@ function bodySegments(statement, names) {
             const entry = effectEntryOf(statement);
 
             /**
-             * ⚠️ An axis that owns its wording gets a target-FIRST sentence ("Works 20% faster"). "Makes ..."
-             * is chosen to dodge number agreement: after "makes", English takes the bare infinitive, so a
-             * singular or plural subject (depending on reach) never has to agree.
+             * A rule line leads with the effect's name and number, as its badge writes them ("Speed +5%"),
+             * then where or when ("on every nearby Mining Token"), so a player can match a rule to the
+             * badge it causes (UI_STYLE "Effect names").
              */
+            const head = () => headSegments(statement, names);
             // A guild-only axis reaches every hero, from the Guild Hall: no Tokens, no reach.
             if (entry?.guildOnly) {
                 if (payload.type === EFFECT_TYPES.LOADOUT_SLOTS) {
@@ -655,36 +749,21 @@ function bodySegments(statement, names) {
                     return segs(d('Provides', K), ' every hero ', d(`${Math.abs(n)} ${n < 0 ? 'fewer' : 'more'}`, 'value'), ' ',
                         d(payload.category ? kind : '…', categorySlot(statement)), ' ', d(Math.abs(n) === 1 ? 'slot' : 'slots', 'type'));
                 }
-                if (payload.type === EFFECT_TYPES.PASSIVE_LAP) return segs(d('Makes', K), ' the Guild Hall\'s lap ', effectSegments(statement, names));
+                if (payload.type === EFFECT_TYPES.PASSIVE_LAP) return segs(head(), ' for the Guild Hall');
                 // "in all": a rank lists the star's whole gift so far, not what that rank adds.
                 if (payload.type === EFFECT_TYPES.XP_FOR_EVERYONE) {
-                    return segs(d('Gives', K), ' every hero ', effectSegments(statement, names), ' in all, recruits too');
+                    return segs(d('Gives', K), ' every hero ', head(), ' in all, recruits too');
                 }
-                // "Makes every hero's drinks last 10% longer": the kind of dose is the narrowing.
-                if (payload.type === EFFECT_TYPES.LONG_LASTING_BREWS) {
-                    return segs(d('Makes', K), ' every hero\'s ', d(doseKindsPhrase(payload.category), categorySlot(statement)), ' ', effectSegments(statement, names));
+                // "Long-lasting Brews +10% on every hero's drinks": the kind of dose is the narrowing.
+                if (payload.type === EFFECT_TYPES.LONG_LASTING_BREWS || payload.type === EFFECT_TYPES.STRONG_DRINK) {
+                    return segs(head(), ' on every hero\'s ', d(doseKindsPhrase(payload.category), categorySlot(statement)));
                 }
-                if (payload.type === EFFECT_TYPES.STRONG_DRINK) {
-                    return segs(d('Makes', K), ' the effects of every hero\'s ', d(doseKindsPhrase(payload.category), categorySlot(statement)), ' ', effectSegments(statement, names));
-                }
-                if (entry.reads) return segs(d('Makes', K), ' every hero ', effectSegments(statement, names));
-                return segs(d('Provides', K), ' ', effectSegments(statement, names), ' to every hero');
+                return segs(head(), ' for every hero');
             }
             // A carried rule reaches its hero, so it names the hero and its skill, never Tokens or a reach.
             const carried = !!names.carried;
             const lead = carried ? segs(d('Gives', K), ' the hero ') : segs(d('Provides', K), ' ');
             const reach = carried ? '' : COMBAT_REACH;
-
-            if (entry?.reads) {
-                if (carried) {
-                    // "no change to work time" is a noun phrase, whatever the axis's verb would have been.
-                    const verb = entry.heroReads || !Number(payload.value) ? 'Gives' : 'Makes';
-                    return segs(d(verb, K), ' the hero ', effectSegments(statement, names, true), heroSkillSegments(statement));
-                }
-                // An axis with a skill narrowing and no wording of its own for it names it after the filter.
-                const scope = entry.categories === 'skill' ? skillScopeSegments(statement) : [];
-                return segs(d('Makes', K), ' ', targetSegments(statement, names, ''), ' ', effectSegments(statement, names), scope);
-            }
 
             /**
              * ⚠️ Immunity is a switch, and its sentence says so: `STATUS_IMMUNITY` is read as `> 0`, so
@@ -733,19 +812,21 @@ function bodySegments(statement, names) {
                 return segs(lead, d('Sunder', 'type'), ' ', d(String(n), 'value'), what, ' in combat', reach);
             }
 
-            if (entry?.heroOnly) {
-                return segs(lead, effectSegments(statement, names), ' in combat', styleScopeSegments(statement, carried), reach);
+            if (!entry) return segs(d('Provides', K), ' ', head(), carried ? '' : segs(' ', targetSegments(statement, names)));
+            if (entry.heroOnly) {
+                return segs(head(), ' in combat', styleScopeSegments(statement, carried), reach);
             }
-            if (carried) return segs(lead, effectSegments(statement, names, true), heroSkillSegments(statement));
-            return segs(d('Provides', K), ' ', effectSegments(statement, names), ' ',
-                targetSegments(statement, names), skillScopeSegments(statement));
+            if (carried) return segs(head(), carriedScopeSegments(statement));
+            // "Double Item 10% on Raw Beef at every nearby Token": the lead's own "on" names the item.
+            const prep = namesItsNarrowing(statement) ? 'at' : 'on';
+            return segs(head(), ' ', targetSegments(statement, names, prep, skillWordSegments(statement)), skillScopeSegments(statement));
         }
 
         case KEYWORD.GRANTS: {
             const quantity = Math.max(1, payload.quantity || 1);
             const item = payload.itemId ? names.item(payload.itemId) : '…';
             const chance = payload.chance ?? 100;
-            const odds = chance >= 100 ? [] : segs(', ', d(`${chance}%`, 'chance'), ' of the time');
+            const odds = chance >= 100 ? [] : segs(', ', d(chanceText(chance), 'chance'), ' of the time');
             if (names.carried) {
                 // A carried grant lands where its hero is working, at the moment, or as they finish work.
                 return segs(d('Grants', K), ' ', d(String(quantity), 'quantity'), ' ', d(item, 'itemId'),
@@ -835,7 +916,7 @@ function bodySegments(statement, names) {
                 amount = segs(d(String(flat), 'amount'), ' damage');
             }
             const chance = firingChanceOf(statement);
-            const odds = chance == null ? [] : segs(', ', d(`${chance}%`, 'chance'), ' of the time');
+            const odds = chance == null ? [] : segs(', ', d(chanceText(chance), 'chance'), ' of the time');
             return segs(d('Deals', K), ' ', amount, ' to ', roleSegments(statement), odds);
         }
 
@@ -875,7 +956,7 @@ function bodySegments(statement, names) {
                 ' ', d(where ? where.label : '…', 'placement'));
             // A rule that rolls before it fires says so first: "a 5% chance to spawn …".
             const chance = firingChanceOf(statement);
-            if (chance != null) return segs('A ', d(`${chance}%`, 'chance'), ' chance to ', d('spawn', K), ' ', what);
+            if (chance != null) return segs('A ', d(chanceText(chance), 'chance'), ' chance to ', d('spawn', K), ' ', what);
             return segs(d('Spawns', K), ' ', what);
         }
 
@@ -916,7 +997,7 @@ function bodySegments(statement, names) {
 
         case KEYWORD.APPLIES: {
             const chance = payload.chance ?? 100;
-            const odds = chance >= 100 ? [] : segs(', ', d(`${chance}%`, 'chance'), ' of the time');
+            const odds = chance >= 100 ? [] : segs(', ', d(chanceText(chance), 'chance'), ' of the time');
 
             /**
              * Aimed at a role instead of its filter: the role is the whole of who it reaches, so the
@@ -940,14 +1021,14 @@ function bodySegments(statement, names) {
              */
             if (payload.effectId) {
                 const title = names.effect ? names.effect(payload.effectId) : payload.effectId;
-                const secs = Math.round((payload.durationMs || 0) / 100) / 10;
+                const ms = Number(payload.durationMs) || 0;
                 const lasting = payload.forSwing
                     ? segs(' ', d('for the swing', 'forSwing'))
                     : payload.forFight
                         ? segs(' ', d('for the fight', 'forFight'))
                         : payload.forCycle
                             ? segs(' ', d('for the cycle', 'forCycle'))
-                            : secs > 0 ? segs(' for ', d(String(secs), 'durationMs'), ' seconds') : [];
+                            : ms > 0 ? segs(' for ', lengthSegments(ms, 'durationMs')) : [];
                 return segs(d('Applies', K), ' ', d(title || '…', 'effectId'), ' to ', who(), lasting, odds);
             }
 
@@ -979,9 +1060,10 @@ export function renderSegments(statement, names = {}) {
     /**
      * ⚠️ A colon, not a comma: "On Cycle, deals 1 damage" reads as a sentence missing its
      * subject; the colon says the tag is a label. The verb after it is lowered, one character,
-     * never the whole word, so no proper noun is touched.
+     * never the whole word, so no proper noun is touched; an effect's name leading the rule keeps
+     * its capital.
      */
-    if (when.length && body.length) {
+    if (when.length && body.length && body[0].slot !== 'type') {
         body[0] = { ...body[0], text: body[0].text.charAt(0).toLowerCase() + body[0].text.slice(1) };
     }
     return tidy(segs(when, when.length ? ': ' : '', body, cooldownSegments(statement), '.'));

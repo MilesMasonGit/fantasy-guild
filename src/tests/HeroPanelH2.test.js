@@ -17,10 +17,11 @@ import { HeroEditModal } from '../ui/modals/HeroEditModal.jsx';
 import { DOCK_STRIP_PX } from '../ui/components/dock/dockHeroView.js';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 import {
-    heroSkillList, skillLevelText, skillXpView, skillDetail, formatEta
+    heroSkillList, skillLevelText, skillXpView, skillDetail
 } from '../ui/components/dock/heroPanelSkills.js';
 import { getSkillIdsByLayer, SKILL_LAYERS } from '../config/registries/skillRegistry.js';
 import { xpForLevel } from '../utils/XPCurve.js';
+import { countdownText } from '../utils/Formatters.js';
 import { XpRateTracker } from '../systems/hero/XpRateTracker.js';
 import { ART_PX } from '../config/matGeometry.js';
 import { boardArtSteps } from '../ui/components/base/TokenSprite.jsx';
@@ -202,13 +203,6 @@ describe('H2: skills', () => {
         expect(skillXpView(xpForLevel(99)).title).toBe(`${xpForLevel(99).toLocaleString('en-US')} XP`);
     });
 
-    it('writes times as 0:34, 4:05 and 1:04:05', () => {
-        expect(formatEta(34)).toBe('0:34');
-        expect(formatEta(245)).toBe('4:05');
-        expect(formatEta(3845)).toBe('1:04:05');
-        expect(formatEta(0.2)).toBe('0:01');
-    });
-
     it('works out a row\'s detail: exact XP, what is left, the rate and the time to the next level', () => {
         const span = xpForLevel(41) - xpForLevel(40);
         const left = span - 1154;
@@ -218,7 +212,7 @@ describe('H2: skills', () => {
         expect(d.nextLevel).toBe('41/99');
         expect(d.total).toBe((xpForLevel(40) + 1154).toLocaleString('en-US'));
         expect(d.rate).toBe('+3,600');
-        expect(d.eta).toBe(formatEta(left));
+        expect(d.eta).toBe(countdownText(left * 1000));
         const idle = skillDetail(xpForLevel(40), 0);
         expect(idle.rate).toBeNull();
         expect(idle.eta).toBeNull();
@@ -287,7 +281,7 @@ describe('H2: skills', () => {
         expect(detail.textContent).toContain(d.total);
         expect(detail.textContent).toContain('XP/h+240,000');
         expect(detail.textContent).toContain(d.eta);
-        expect(detail.textContent).toMatch(/\d+:\d\d/);
+        expect(detail.textContent).not.toMatch(/\d:\d\d/);
         // Only one open at a time: another skill switches the panel.
         fireEvent.click(r.container.querySelector('[data-skill-row="mining"]'));
         expect(r.container.querySelector('[data-hero-skill-panel="melee"]')).toBeNull();

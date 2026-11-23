@@ -1,5 +1,5 @@
 
-import { formatClock } from '../../../utils/Formatters.js';
+import { countdownText, elapsedText, lengthText, chanceText } from '../../../utils/Formatters.js';
 import { turnTiming, PASSIVE_LAP_BASE_MS, fieldOf, cropTermsOf } from '../../../config/registries/tokenConstants.js';
 
 /**
@@ -15,21 +15,6 @@ import { turnTiming, PASSIVE_LAP_BASE_MS, fieldOf, cropTermsOf } from '../../../
 
 /** Tones the panel colours by. Absent means the plain text colour. */
 export const TONE = Object.freeze({ GOOD: 'good', WARNING: 'warning', DANGER: 'danger', MUTED: 'muted' });
-
-/**
- * A duration for the panel, rounded UP to the second so a clock never shows
- * "0 s" while it still has time to run: `12 s`, `1 min 30 s`, `5 min`,
- * `2 h 5 min`.
- */
-export function formatDuration(ms) {
-    const total = Math.max(0, Math.ceil((Number(ms) || 0) / 1000));
-    if (total < 60) return `${total} s`;
-    const h = Math.floor(total / 3600);
-    const min = Math.floor((total % 3600) / 60);
-    const s = total % 60;
-    if (h > 0) return min ? `${h} h ${min} min` : `${h} h`;
-    return s ? `${min} min ${s} s` : `${min} min`;
-}
 
 /** `[{ itemId, quantity }]` as "1 Oak Seed, 2 Resin"; empty → null. */
 function itemList(lines, itemName) {
@@ -47,14 +32,9 @@ function typeList(entries, tokenName) {
         .join(' or ');
 }
 
-/** A percent as the panel shows it: `30%`, `12.5%`. */
-function formatPercent(chance) {
-    return `${Math.round(Number(chance) * 10) / 10}%`;
-}
-
-/** "in 34 s (30%)": time to a turn's next roll, and its chance. */
+/** "in 34s (30%)": time to a turn's next roll, and its chance. */
 function nextChance(ms, chance) {
-    return `in ${formatDuration(Math.max(0, ms))} (${formatPercent(chance)})`;
+    return `in ${countdownText(ms)} (${chanceText(chance)})`;
 }
 
 function clock(instance, key) {
@@ -94,7 +74,7 @@ function spawnerLines(instance, def, src) {
             out.push({ label: 'Next spawn', value: 'Asleep: wakes once the enemies holding this place are beaten', tone: TONE.WARNING });
             break;
         default:
-            out.push({ label: 'Next spawn', value: `in ${formatDuration(status.nextInMs)}` });
+            out.push({ label: 'Next spawn', value: `in ${countdownText(status.nextInMs)}` });
     }
 
     const upkeep = itemList(def.spawner.upkeep, src.itemName);
@@ -123,8 +103,8 @@ function foundationLines(instance, def, src) {
         out.push({
             label: 'Build progress',
             value: elapsed > 0
-                ? `${pct}% (${formatDuration(Math.min(elapsed, duration))} of ${formatDuration(duration)})`
-                : `Not started (${formatDuration(duration)} of work)`,
+                ? `${pct}% (${elapsedText(Math.min(elapsed, duration))} of ${lengthText(duration)})`
+                : `Not started (${lengthText(duration)} of work)`,
             tone: elapsed > 0 ? undefined : TONE.MUTED
         });
     }
@@ -144,11 +124,11 @@ function respawnLines(instance, src) {
         }
         // Drawn as the shared empty rock, a resting vein's line names its ore.
         const rest = r.restingSprite
-            ? `${src.tokenName(instance.typeId)}: resting, refills in ${formatDuration(r.inMs)}`
-            : `Refills in ${formatDuration(r.inMs)}`;
+            ? `${src.tokenName(instance.typeId)}: resting, refills in ${countdownText(r.inMs)}`
+            : `Refills in ${countdownText(r.inMs)}`;
         return [r.resting
             ? { label: 'Resting', value: rest }
-            : { label: 'Respawns', value: `Rests ${formatDuration(r.afterMs)} when it runs out, then refills`, tone: TONE.MUTED },
+            : { label: 'Respawns', value: `Rests ${lengthText(r.afterMs)} when it runs out, then refills`, tone: TONE.MUTED },
         ...needsRow];
     }
     const into = src.tokenName(r.into);
@@ -161,8 +141,6 @@ function respawnLines(instance, src) {
 function bossLines(def) {
     return def?.enemy?.boss === true ? [{ label: 'Boss', value: 'Fights only the heroes you send', tone: TONE.MUTED }] : [];
 }
-
-export { formatClock };
 
 /** One lap's pay as words: "1 Oak Seed", "10 Water". */
 function passivePays(passive, itemName) {
@@ -177,13 +155,13 @@ function passiveRows(instance, src) {
     if (!pays.length) return [];
     return [{
         label: 'Passive Production',
-        value: `${pays.join(', ')} every ${formatDuration(passive.lapMs ?? PASSIVE_LAP_BASE_MS)} (next in ${formatDuration(passive.nextInMs)})`,
+        value: `${pays.join(', ')} every ${lengthText(passive.lapMs ?? PASSIVE_LAP_BASE_MS)} (next in ${countdownText(passive.nextInMs)})`,
         tone: TONE.GOOD
     }];
 }
 
 /**
- * **Passive Production as hover text**: a heading with the shared timer's countdown (`Passive Production · next in 4:57`), then one line
+ * **Passive Production as hover text**: a heading with the shared timer's countdown (`Passive Production · next in 4m 57s`), then one line
  * per item a lap pays, e.g. "1 Oak Seed", "10 Water". Empty for a Token that pays
  * nothing.
  *
@@ -198,7 +176,7 @@ export function passiveHoverLines(instance, src) {
     const pays = passivePays(passive, src.itemName);
     if (!pays.length) return [];
     return [
-        `Passive Production · next in ${formatClock(passive.nextInMs)}`,
+        `Passive Production · next in ${countdownText(passive.nextInMs)}`,
         ...pays
     ];
 }
@@ -230,7 +208,7 @@ function growthLines(instance, def, src) {
         const short = cost.filter(c => (growth.short || []).includes(c.itemId));
         out.push({ label: `Grows into ${into}`, value: `stopped: needs ${itemList(short, src.itemName) || 'items'}`, tone: TONE.WARNING });
     } else {
-        out.push({ label: `Grows into ${into}`, value: `in ${formatDuration(Math.max(0, inMs))}` });
+        out.push({ label: `Grows into ${into}`, value: `in ${countdownText(inMs)}` });
     }
     if (needsNearby.length) out.push({ label: 'Needs nearby', value: anyOf(needsNearby, src.tokenName), tone: TONE.MUTED });
     if (cost.length) out.push({ label: 'Costs when it grows', value: `${itemList(cost, src.itemName)} from the Bank`, tone: TONE.MUTED });
@@ -246,7 +224,7 @@ function fieldLines(field, src) {
     const name = (id) => (id ? (src.recipeName?.(id) || id) : 'its crop');
     const out = [];
     if (field.stage === 'growing') {
-        out.push({ label: `Growing ${name(field.cropId)}`, value: `ripe in ${formatDuration(field.inMs)}` });
+        out.push({ label: `Growing ${name(field.cropId)}`, value: `ripe in ${countdownText(field.inMs)}` });
     } else if (field.stage === 'ripe') {
         out.push({ label: `Ripe ${name(field.cropId)}`, value: `${field.load} of ${field.full} harvests left`, tone: TONE.GOOD });
     } else if (field.stopped) {
@@ -271,7 +249,7 @@ function demolitionLine(instance, src) {
     const left = (Number(src.demolishMs) || 0) - (Number(instance.cycleElapsedMs) || 0);
     return {
         label: 'Marked for demolition',
-        value: worked ? `${formatDuration(Math.max(0, left))} left` : 'Waiting for a hero with Construction',
+        value: worked ? `${countdownText(left)} left` : 'Waiting for a hero with Construction',
         tone: TONE.WARNING
     };
 }
@@ -332,7 +310,7 @@ export function lifecycleLines(instance, src) {
             });
             out.push({
                 label: 'Turns',
-                value: `${formatPercent(chance)} chance every ${formatDuration(everyMs)}, and the same to turn back`,
+                value: `${chanceText(chance)} chance every ${lengthText(everyMs)}, and the same to turn back`,
                 tone: TONE.MUTED
             });
         }

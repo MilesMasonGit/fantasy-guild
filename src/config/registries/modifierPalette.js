@@ -9,6 +9,7 @@
 import { EFFECT_TYPES, TARGET_CATEGORIES } from '../../systems/effects/constants.js';
 import { COMBAT_SKILL_IDS } from './skillRegistry.js';
 import { DOSE_KIND_IDS } from './carriedKinds.js';
+import { effectTag } from './effectWords.js';
 
 /**
  * Which effect axes content may be authored against, and in what shape.
@@ -139,11 +140,15 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  * damage types) stays here so content carrying one still renders and the audits
  * can name it; `paletteForKeyword` leaves it out of the editor's choices.
  *
- * ## `heroReads` — how the axis reads on a hero
+ * ## `reads` — what the axis does, in a verb phrase
  *
- * A carried rule (an item's, a perk's) reads "Gives the hero …" with this phrase where the Token
- * wording's verb does not fit a person: a hero is not "awarded" XP, they get it. An axis without it
- * reads "Makes the hero …" with `reads`.
+ * Rule lines lead with the effect's name and number (`effectWords.js`: "Speed +5%"); `reads` says
+ * what it does in words ("work 5% faster"), which a Hall star's numberless sentence uses ("Every
+ * Forestry Token works faster", `hallStarText.starSentence`).
+ *
+ * ## `harmful` — more of it is worse
+ *
+ * A chance that works against its bearer (Failure): its screens draw it red when it rises.
  *
  * ## `fromGuild` — a hero reads it from the guild too
  *
@@ -302,7 +307,7 @@ export const MODIFIER_PALETTE = [
          */
         type: EFFECT_TYPES.PASSIVE_LAP,
         reads: { up: (n) => `${n} longer`, down: (n) => `${n} shorter` },
-        label: 'Lap Time',
+        label: 'Lap Speed',
         when: 'never',
         scales: 'value',
         buckets: ['percentage'],
@@ -310,7 +315,7 @@ export const MODIFIER_PALETTE = [
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Guild',
         inverted: true,
-        hint: 'How long the Guild Hall\'s lap takes: its outputs (Passive Production) arrive once a lap. A negative value is a shorter lap. Speed-ups stack, but together cut at most 80% of the time.'
+        hint: 'How long the Guild Hall\'s lap takes, shown as Lap Speed: its outputs (Passive Production) arrive once a lap. A negative value is faster. Speed-ups stack, but together cut at most 80% of the time.'
     },
     {
         /**
@@ -372,7 +377,6 @@ export const MODIFIER_PALETTE = [
     {
         type: EFFECT_TYPES.XP_BONUS,
         reads: { up: (n) => `award ${n} more XP`, down: (n) => `award ${n} less XP` },
-        heroReads: { up: (n) => `${n} more XP`, down: (n) => `${n} less XP` },
         label: 'XP',
         when: 'never',
         scales: 'value',
@@ -387,7 +391,6 @@ export const MODIFIER_PALETTE = [
             up: (n) => `have a ${n} chance of double loot`,
             down: (n) => `have ${n} less chance of double loot`
         },
-        heroReads: { up: (n) => `a ${n} chance of double loot`, down: (n) => `${n} less chance of double loot` },
         label: 'Double Loot',
         when: 'never',
         scales: 'value',
@@ -402,8 +405,9 @@ export const MODIFIER_PALETTE = [
             up: (n) => `have a ${n} chance to fail`,
             down: (n) => `have ${n} less chance to fail`
         },
-        heroReads: { up: (n) => `a ${n} chance to fail`, down: (n) => `${n} less chance to fail` },
-        label: 'Failure Chance',
+        label: 'Failure',
+        // A chance against the bearer: more of it is worse, so the screens draw it red.
+        harmful: true,
         when: 'never',
         scales: 'value',
         categories: 'skill',
@@ -440,10 +444,6 @@ export const MODIFIER_PALETTE = [
             up: (n) => `have a ${n} chance a cycle spends none of their charges`,
             down: (n) => `have ${n} less chance a cycle spends none of their charges`
         },
-        heroReads: {
-            up: (n) => `a ${n} chance a cycle spends none of the Token's charges`,
-            down: (n) => `${n} less chance a cycle spends none of the Token's charges`
-        },
         label: 'Refresh',
         when: 'never',
         scales: 'value',
@@ -468,10 +468,6 @@ export const MODIFIER_PALETTE = [
             up: (n) => `have a ${n} chance nothing is used up: a cycle's materials, ammo, Food, drinks, potions or bait`,
             down: (n) => `have ${n} less chance nothing is used up: a cycle's materials, ammo, Food, drinks, potions or bait`
         },
-        heroReads: {
-            up: (n) => `a ${n} chance nothing is used up: a cycle's materials, ammo, Food, drinks, potions or bait`,
-            down: (n) => `${n} less chance nothing is used up: a cycle's materials, ammo, Food, drinks, potions or bait`
-        },
         label: 'Preservation',
         when: 'never',
         scales: 'value',
@@ -491,17 +487,14 @@ export const MODIFIER_PALETTE = [
          *
          * ⚠️ Deterministic, not `proc`, though it ends in a roll: a proc is a chance resolved from 0,
          * so the CMS stores its percentage as typed and starts it flat. Lucky's percentage is a share
-         * of the table's chance (typed 10, stored 0.1), and the CMS starts it there. The sentence is
-         * its own (`statementText`), since a flat reads in points.
+         * of the table's chance (typed 10, stored 0.1), and the CMS starts it there. Its `n` is a
+         * multiplier (`×1.2`), never `+20%`, which reads as points; a flat reads in points, in its
+         * own sentence (`statementText`).
          */
         type: EFFECT_TYPES.LUCKY,
         reads: {
-            up: (n) => `have a ${n} higher chance on their rare drop table`,
-            down: (n) => `have a ${n} lower chance on their rare drop table`
-        },
-        heroReads: {
-            up: (n) => `a ${n} higher chance on the Token's rare drop table`,
-            down: (n) => `a ${n} lower chance on the Token's rare drop table`
+            up: (n) => `have rare find chance ${n}`,
+            down: (n) => `have rare find chance ${n}`
         },
         label: 'Lucky',
         when: 'never',
@@ -522,10 +515,6 @@ export const MODIFIER_PALETTE = [
         reads: {
             up: (n) => `have a ${n} chance a gathering cycle's drops come in at ten times`,
             down: (n) => `have ${n} less chance a gathering cycle's drops come in at ten times`
-        },
-        heroReads: {
-            up: (n) => `a ${n} chance a gathering cycle's drops come in at ten times`,
-            down: (n) => `${n} less chance a gathering cycle's drops come in at ten times`
         },
         label: 'Giant Harvest',
         when: 'never',
@@ -717,7 +706,7 @@ export const MODIFIER_PALETTE = [
          * contributions do not carry it.
          */
         type: EFFECT_TYPES.SWING_TIME,
-        label: 'Swing Time',
+        label: 'Attack Speed',
         when: 'never',
         scales: 'value',
         buckets: ['percentage'],
@@ -727,7 +716,7 @@ export const MODIFIER_PALETTE = [
         inverted: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'How long each swing takes. -25% swings a quarter sooner (a 3 s swing every 2.25 s). On a lingering effect: an elixir on a hero, or a rule putting it on an enemy.'
+        hint: 'How long each swing takes, shown as Attack Speed. A negative value is faster: -25% swings a quarter sooner (a 3s swing every 2.25s). On a lingering effect: an elixir on a hero, or a rule putting it on an enemy.'
     },
     {
         // Read by `ConsumptionSystem` when a hero eats in a fight: Burn's half heal.
@@ -874,18 +863,9 @@ export function describeModifierDirection(entry, value, bucket = 'percentage') {
     const n = Number(value);
     if (!Number.isFinite(n) || n === 0) return null;
 
-    const isBuff = entry.inverted ? n < 0 : n > 0;
-    const magnitude = bucket === 'percentage'
-        ? `${Math.abs(Math.round(n * 1000) / 10)}%`
-        : `${Math.abs(n)}`;
-    const direction = n < 0 ? 'less' : 'more';
-
-    // An inverted axis stores a time or a cost, so its short name (Speed, Efficiency) would read
-    // backwards beside the sign: it says what happens in its own words, as its rules text does.
-    const said = entry.inverted && entry.reads
-        ? (n < 0 ? entry.reads.down : entry.reads.up)(magnitude, magnitude)
-        : `${magnitude} ${direction} ${entry.label.toLowerCase()}`;
-    return { isBuff, text: `${said} — ${isBuff ? 'a buff' : 'a penalty'}.` };
+    // As the badge and the rules text write it: good is always plus, so Speed reads "+5%" for -5%.
+    const { text, against } = effectTag(entry, { type: entry.type, bucket, value: n });
+    return { isBuff: !against, text: `${text} — ${against ? 'a penalty' : 'a buff'}.` };
 }
 
 /** Palette entry for an effect type, or null if it is not authorable. */

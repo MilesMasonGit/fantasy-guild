@@ -41,7 +41,7 @@ import { getPaletteEntry } from '../config/registries/modifierPalette.js';
 import { CARRIED_KIND, CARRIED_KINDS } from '../config/registries/carriedKinds.js';
 import { DRINK_CYCLES, ELIXIR_FIGHTS } from '../config/loopConstants.js';
 import { resetMatTuning } from '../config/matTuning.js';
-import { supportTag } from '../ui/components/board/supportTags.js';
+import { effectTagText } from '../ui/components/board/effectBadgeText.js';
 import { findUnknownRefs } from '../systems/core/unknownRefRule.js';
 import { slotsOf } from '../../cms/src/engine/ledger/statementSlots.js';
 import { withoutShippedPerks } from './fixtures/noPerks.js';
@@ -982,29 +982,24 @@ describe('Preservation as the CMS and the game say it', () => {
     });
 
     it('reads what it keeps: everything, a skill\'s materials, a kind or one item', () => {
-        expect(renderStatement(rule(null), names)).toBe(
-            'Makes every nearby Token have a 25% chance nothing is used up: a cycle\'s materials, ammo, Food, drinks, potions or bait.');
-        expect(renderStatement(rule('smithing'), names)).toBe(
-            'Makes every nearby Token have a 25% chance a Smithing cycle uses none of its materials.');
-        expect(renderStatement(rule('alchemy'), names)).toMatch(/chance an Alchemy cycle uses none of its materials/);
-        expect(renderStatement(rule(CARRIED_KIND.AMMO), names)).toBe(
-            'Makes every nearby Token have a 25% chance ammo is not used up.');
-        expect(renderStatement(rule(CARRIED_KIND.DRINK), names)).toMatch(/a 25% chance a drink is not used up/);
-        expect(renderStatement(rule(ARROW), names)).toBe(
-            'Makes every nearby Token have a 25% chance an Iron Arrow is not used up.');
-        expect(renderStatement(rule(CARRIED_KIND.FOOD, -5), names)).toMatch(/have 5% less chance Food is not used up/);
+        expect(renderStatement(rule(null), names)).toBe('Preservation 25% on every nearby Token.');
+        expect(renderStatement(rule('smithing'), names)).toBe('Preservation 25% on every nearby Smithing Token.');
+        expect(renderStatement(rule('alchemy'), names)).toMatch(/on every nearby Alchemy Token/);
+        expect(renderStatement(rule(CARRIED_KIND.AMMO), names)).toBe('Preservation 25% on ammo at every nearby Token.');
+        expect(renderStatement(rule(CARRIED_KIND.DRINK), names)).toMatch(/Preservation 25% on a drink at/);
+        expect(renderStatement(rule(ARROW), names)).toBe('Preservation 25% on Iron Arrow at every nearby Token.');
+        expect(renderStatement(rule(CARRIED_KIND.FOOD, -5), names)).toMatch(/Preservation −5% on Food at/);
     });
 
-    it('reads on a hero as the hero\'s, with no second "at Mining"', () => {
+    it('reads on a hero as the hero\'s, its skill named once', () => {
         const carried = { ...names, carried: true };
-        expect(renderStatement(rule(null), carried)).toBe(
-            'Gives the hero a 25% chance nothing is used up: a cycle\'s materials, ammo, Food, drinks, potions or bait.');
-        expect(renderStatement(rule('mining'), carried)).toBe('Gives the hero a 25% chance a Mining cycle uses none of its materials.');
-        expect(renderStatement(rule(CARRIED_KIND.BAIT), carried)).toBe('Gives the hero a 25% chance bait is not used up.');
+        expect(renderStatement(rule(null), carried)).toBe('Preservation 25% for the hero.');
+        expect(renderStatement(rule('mining'), carried)).toBe('Preservation 25% on Mining Tokens.');
+        expect(renderStatement(rule(CARRIED_KIND.BAIT), carried)).toBe('Preservation 25% on bait.');
     });
 
-    it('tags a support "+25 % Preservation"', () => {
-        expect(supportTag({ type: EFFECT_TYPES.PRESERVATION, bucket: 'flat', value: 25 })).toBe('+25 % Preservation');
+    it('tags a support "Preservation 25%"', () => {
+        expect(effectTagText({ type: EFFECT_TYPES.PRESERVATION, bucket: 'flat', value: 25 })).toBe('Preservation 25%');
     });
 
     it('offers everything, every skill, every kind and every item in the CMS', () => {

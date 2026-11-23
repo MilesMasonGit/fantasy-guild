@@ -3,7 +3,7 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { ItemIcon } from './ItemIcon.jsx';
 import { TokenSprite, TOKEN_SURFACE } from './TokenSprite.jsx';
-import { formatCompact } from '../../../utils/Formatters.js';
+import { formatCompact, chanceText } from '../../../utils/Formatters.js';
 import { Sparkles } from 'lucide-react';
 import { PixelGlyph } from './PixelGlyph.jsx';
 
@@ -273,7 +273,7 @@ export const EntityRibbon = ({
                                 'absolute inset-0 flex items-center justify-end font-bold tracking-wider text-gi-primary transition-all duration-200 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0'
                             )}
                         >
-                            {typeof chance === 'number' ? `${chance}%` : chance}
+                            {typeof chance === 'number' ? chanceText(chance) : chance}
                         </span>
                     </div>
                 ) : (
@@ -296,7 +296,7 @@ export const EntityRibbon = ({
                                     'font-bold uppercase tracking-wider text-gi-primary'
                                 )}
                             >
-                                {typeof chance === 'number' ? `${chance}%` : chance}
+                                {typeof chance === 'number' ? chanceText(chance) : chance}
                             </span>
                         )}
                     </>

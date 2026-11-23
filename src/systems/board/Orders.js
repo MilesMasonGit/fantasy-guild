@@ -4,7 +4,7 @@ import { EventBus } from '../core/EventBus.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 import { GameState } from '../../state/GameState.js';
 import { t } from '../../i18n/index.js';
-import { formatClock } from '../../utils/Formatters.js';
+import { countdownText } from '../../utils/Formatters.js';
 import { clampToMat } from '../../config/matGeometry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
@@ -65,8 +65,8 @@ export function refusalText(heroId, instance, reason) {
     }
 }
 
-/** "Ana is healing: 0:42", the refusal for a healing hero. */
-const healingText = (hero) => t('orders.healing', { hero: hero.name || 'This hero', time: formatClock(hero.woundedRemainingMs) });
+/** "Ana is healing: 42s", the refusal for a healing hero. */
+const healingText = (hero) => t('orders.healing', { hero: hero.name || 'This hero', time: countdownText(hero.woundedRemainingMs) });
 
 /**
  * What a drop of `heroId` on `instance` would do, asked while they are carried over it: `snap` when

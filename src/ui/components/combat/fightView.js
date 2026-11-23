@@ -16,11 +16,14 @@ import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { tokenName, getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { EFFECTS } from '../../../config/registries/effectRegistry.js';
 import { statusBlockOf } from '../../../systems/effects/effectLibrary.js';
+import { rulesLinesOf } from '../../../systems/effects/statementText.js';
+import { carriedRuleNames } from '../dock/heroPerks.js';
 import { GameState } from '../../../state/GameState.js';
 import { resolveAnimationPath, resolveSpritePath, resolveEnemyAnimationPath } from '../../../utils/AssetManager.js';
 import { healthText } from '../board/healthBar.js';
 import { statusIcon } from './fightWatch.js';
 import { t } from '../../../i18n/index.js';
+import { elapsedText } from '../../../utils/Formatters.js';
 
 /**
  * What the combat screen shows, as plain values read from the engine: both fighters' numbers for
@@ -99,18 +102,6 @@ export function arrowsView(hero) {
         return { itemId: carried[0] || null, name: carried[0] ? getItem(carried[0])?.name || carried[0] : null, count: 0, arrow: null };
     }
     return { itemId, name: getItem(itemId)?.name || itemId, count: InventoryManager.getItemCount(itemId), arrow: arrowOf(getItem(itemId)) };
-}
-
-/** `3 s`, `1.5 s`: a swing time. */
-export function secondsText(ms) {
-    const s = Math.round((Number(ms) || 0) / 100) / 10;
-    return t('fight.seconds', { n: s.toLocaleString() });
-}
-
-/** `0:12`, `4:05`: whole seconds. */
-export function clockText(ms) {
-    const s = Math.max(0, Math.floor((Number(ms) || 0) / 1000));
-    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
 /** `20/99`. */
@@ -214,18 +205,28 @@ export function enemyHitTypes(moves) {
     return [...new Set(moves.filter(m => m.hits).map(m => m.type))];
 }
 
+/**
+ * A lingering effect as its row shows it: its name, and its rules as its bearer's own (`Attack
+ * Speed +50% in combat.`), so an enemy's Enrage reads with its plain sign, never as a loss.
+ */
+function buffOf(effectId) {
+    const entry = EFFECTS[effectId];
+    const names = { ...carriedRuleNames(), effect: (id) => EFFECTS[id]?.name || id };
+    return { name: entry?.name || effectId, lines: entry ? rulesLinesOf(entry, names) : [] };
+}
+
 /** What lingers on an enemy for the fight besides statuses (a boss's Stone Skin, its Enrage). */
 function enemyBuffs(fight) {
     return (fight?.effects || [])
         .filter(e => e?.stacks == null && !e.forSwing)
-        .map(e => EFFECTS[e.effectId]?.name || e.effectId);
+        .map(e => buffOf(e.effectId));
 }
 
 /** What lingers on a hero for the fight besides statuses (an elixir's Valor). */
 function heroBuffs(hero) {
     return (hero?.effects || [])
         .filter(e => e?.forFight && e.stacks == null && !e.forSwing)
-        .map(e => EFFECTS[e.effectId]?.name || e.effectId);
+        .map(e => buffOf(e.effectId));
 }
 
 /** The hero's side of the versus card, read live. */
@@ -382,7 +383,7 @@ export function fightPanelView(heroId, fights, now = Date.now()) {
         heroId,
         live,
         title: t('fight.panel.title', { hero: heroView.name, enemy: enemyView.name }),
-        clock: clockText((record.endedAt ?? now) - record.startedAt),
+        clock: elapsedText((record.endedAt ?? now) - record.startedAt),
         ended: live ? null : { outcome: record.outcome },
         hero: { ...heroView, hpText: healthText(heroView.hp.cur, heroView.hp.max), art: heroArt(heroView.sprite) },
         enemy: { ...enemyView, hpText: healthText(enemyView.hp.cur, enemyView.hp.max), sheet: enemySheet(record.typeId), lastMove: record.lastMove ?? null },

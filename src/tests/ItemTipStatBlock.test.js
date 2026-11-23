@@ -3,7 +3,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import React from 'react';
 import { render, cleanup } from '@testing-library/react';
 import { itemTipFacts, ItemTipContent } from '../ui/components/drawer/ItemTip.jsx';
-import { secondsText } from '../ui/components/combat/fightView.js';
+import { lengthText } from '../utils/Formatters.js';
 import { attackSpeedMs } from '../config/FormulaRegistry.js';
 
 /**
@@ -19,7 +19,7 @@ afterEach(cleanup);
 describe('a weapon\'s stat block', () => {
     it('lists damage, type, skill and speed, in that order', () => {
         expect(rows(weapon({ damage: 3, speed: 'slow' }))).toEqual([
-            ['DMG', '3'], ['Type', 'Slash'], ['Skill', 'Melee'], ['Speed', 'Slow (4 s)']
+            ['DMG', '3'], ['Type', 'Slash'], ['Skill', 'Melee'], ['Speed', 'Slow (4s)']
         ]);
     });
 
@@ -28,17 +28,17 @@ describe('a weapon\'s stat block', () => {
         expect(rows(weapon({ speed: 'slow' })).map(([label]) => label)).not.toContain('Hands');
     });
 
-    it.each([['fast', 'Fast (2 s)'], ['normal', 'Normal (3 s)'], ['slow', 'Slow (4 s)']])('reads speed %s', (speed, value) => {
+    it.each([['fast', 'Fast (2s)'], ['normal', 'Normal (3s)'], ['slow', 'Slow (4s)']])('reads speed %s', (speed, value) => {
         expect(Object.fromEntries(rows(weapon({ speed }))).Speed).toBe(value);
     });
 
     it('an unnamed or unknown speed reads as the normal swing the fight gives it', () => {
-        expect(Object.fromEntries(rows(weapon({}))).Speed).toBe('Normal (3 s)');
-        expect(Object.fromEntries(rows(weapon({ speed: 'blazing' }))).Speed).toBe('Normal (3 s)');
+        expect(Object.fromEntries(rows(weapon({}))).Speed).toBe('Normal (3s)');
+        expect(Object.fromEntries(rows(weapon({ speed: 'blazing' }))).Speed).toBe('Normal (3s)');
     });
 
     it('agrees with the seconds the combat cards show', () => {
-        expect(Object.fromEntries(rows(weapon({ speed: 'slow' }))).Speed).toContain(secondsText(attackSpeedMs('slow')));
+        expect(Object.fromEntries(rows(weapon({ speed: 'slow' }))).Speed).toContain(lengthText(attackSpeedMs('slow')));
     });
 
     it('names its own damage type and the style it fights in', () => {
@@ -57,7 +57,7 @@ describe('the tooltip draws it', () => {
         const block = container.querySelector('[data-item-tip-stats]');
         expect(block.className).toContain('grid-cols-[48px_1fr]');
         const cells = [...block.children];
-        expect(cells.map(c => c.textContent)).toEqual(['DMG', '3', 'Type', 'Slash', 'Skill', 'Melee', 'Speed', 'Slow (4 s)', 'Hands', '2']);
+        expect(cells.map(c => c.textContent)).toEqual(['DMG', '3', 'Type', 'Slash', 'Skill', 'Melee', 'Speed', 'Slow (4s)', 'Hands', '2']);
         cells.forEach((cell, i) => expect(cell.className).toContain(i % 2 ? 'text-white' : 'text-gi-muted'));
         const text = container.textContent;
         for (const gone of ['Hits ', 'swing, every', 'Takes both hands']) expect(text).not.toContain(gone);

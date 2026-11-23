@@ -1,5 +1,11 @@
 import { EFFECT_KEY, UNIT, LIMIT } from '../../../systems/board/EffectBreakdown.js';
 import { t } from '../../../i18n/index.js';
+import { chanceText, timesText } from '../../../utils/Formatters.js';
+import { getPaletteEntry } from '../../../config/registries/modifierPalette.js';
+import { getItem } from '../../../config/registries/itemRegistry.js';
+import {
+    effectTag, percentAmountText, chanceAmountText, countAmountText
+} from '../../../config/registries/effectWords.js';
 
 /**
  * How the Token card writes an effect badge (brief 600): its icon, its number and its hover's
@@ -21,29 +27,47 @@ export const EFFECT_GLYPH = Object.freeze({
     [EFFECT_KEY.ABUNDANCE]: 'charges'
 });
 
-const MINUS = '−';
-
-/** A number as a badge writes it: one decimal at most, a small one to one figure, never "-0". */
-function figure(n) {
-    const a = Math.abs(n);
-    if (a > 0 && a < 0.1) return String(Number(a.toPrecision(1)));
-    return String(Math.round(a * 10) / 10);
-}
-
 /**
  * A badge's number in its unit: a percent always signed (`+23%`, `−10%`), a chance as a plain
- * percent (`8%`, signed only below nothing), a count signed (`+2`).
+ * percent (`8%`, signed only below nothing), a count signed (`+2`). The same writer words a
+ * building's Boosts list and every rule line (`effectWords.js`).
  */
 export function effectAmountText(unit, value) {
     const n = Number(value) || 0;
-    const body = figure(n);
-    if (unit === UNIT.CHANCE) return `${n < 0 ? MINUS : ''}${body}%`;
-    const sign = n < 0 ? MINUS : '+';
-    return unit === UNIT.COUNT ? `${sign}${body}` : `${sign}${body}%`;
+    if (unit === UNIT.CHANCE) return chanceAmountText(n);
+    return unit === UNIT.COUNT ? countAmountText(n) : percentAmountText(n);
+}
+
+/**
+ * A rule's payload as the badge it causes (`Speed +25%`, `Double Loot 10%`, `Bird Nest 5%`), and
+ * whether it works against its bearer: a building's Boosts list, the mat's support labels, a buff
+ * Token's list.
+ * @returns {{text: string, against: boolean}}
+ */
+export function effectTagOf(payload, itemName = (id) => getItem(id)?.name || null) {
+    return effectTag(getPaletteEntry(payload?.type), payload, itemName);
+}
+
+/** {@link effectTagOf}'s words alone. */
+export const effectTagText = (payload, itemName) => effectTagOf(payload, itemName).text;
+
+const rulesOf = (badge) => (badge?.sources || []).flatMap(s => s.rules || []);
+
+/**
+ * An amount on `badge` (its total, what counts, or one source's share, given that source's
+ * `rules`). Lucky's percentage is a share of the rare table's chance, so it reads as a multiplier
+ * (`×1.2`), never `+20%`, which reads as points; a flat Lucky adds points and reads in them (`+1%`).
+ * Every other badge reads in its unit.
+ */
+export function badgeAmountText(badge, value, rules = rulesOf(badge)) {
+    const n = Number(value) || 0;
+    if (badge?.key !== EFFECT_KEY.LUCKY) return effectAmountText(badge?.unit, n);
+    if (rules.every(r => r.bucket !== 'flat')) return timesText(Math.max(0, 1 + n / 100));
+    return percentAmountText((n * (Number(badge.base) || 0)) / 100);
 }
 
 /** The number on the badge: what counts, so a held badge shows the limit. */
-export const badgeText = (badge) => effectAmountText(badge.unit, badge.counted);
+export const badgeText = (badge) => badgeAmountText(badge, badge.counted);
 
 /** A badge's colour: gold when a limit holds it, red when it works against, else green. */
 export function badgeTone(badge) {
@@ -67,8 +91,8 @@ export function limitNote(badge) {
     if (!badge.held || !badge.limit) return null;
     const key = Object.values(LIMIT).includes(badge.limit) ? badge.limit : LIMIT.SPEED_FLOOR;
     return t(`effectBadges.limit.${key}`, {
-        counted: effectAmountText(badge.unit, badge.counted),
-        total: effectAmountText(badge.unit, badge.total)
+        counted: badgeAmountText(badge, badge.counted),
+        total: badgeAmountText(badge, badge.total)
     });
 }
 
@@ -83,9 +107,9 @@ export function badgeTip(badge) {
         title: badge.name,
         glyph: EFFECT_GLYPH[badge.key] || 'unknown',
         lines: (badge.sources || []).map(s => ({
-            key: s.key, name: s.name, amount: effectAmountText(badge.unit, s.amount), value: s.amount
+            key: s.key, name: s.name, amount: badgeAmountText(badge, s.amount, s.rules), value: s.amount
         })),
-        total: { amount: effectAmountText(badge.unit, badge.total), value: badge.total },
+        total: { amount: badgeAmountText(badge, badge.total), value: badge.total },
         note: limitNote(badge)
     };
 }
@@ -99,16 +123,32 @@ export function badgeTip(badge) {
  */
 export function heroTipLines(hero, badgeOf, itemName = (id) => id) {
     return (hero?.sources || []).map(s => {
-        const badge = badgeOf(s.effect, s.itemId);
-        const unit = badge?.unit || UNIT.PERCENT;
+        const badge = badgeOf(s.effect, s.itemId) || { key: s.effect, unit: UNIT.PERCENT };
         return {
             key: `${s.effect}:${s.itemId || ''}:${s.key}`,
             name: s.name,
             effect: s.itemId
                 ? t('effectBadges.card.onItem', { effect: t(`effectBadges.effect.${s.effect}`), item: itemName(s.itemId) })
                 : t(`effectBadges.effect.${s.effect}`),
-            amount: effectAmountText(unit, s.amount),
+            amount: badgeAmountText(badge, s.amount, s.rules),
             value: s.amount
         };
     });
+}
+
+/**
+ * A live chance's hover when a bonus counts in it: the base, each bonus with its source, then the
+ * result (`1% base · Lucky ×1.2 (Ana's Ring) · = 1.2%`), from the badge that moves it, so the
+ * hover and the number on the card are the breakdown's own sums. Null with no badge: a chance
+ * nothing changes has no extra hover.
+ */
+export function chanceBreakdownText(badge) {
+    if (!badge?.sources?.length) return null;
+    return [
+        t('effectBadges.card.chanceBase', { chance: chanceText(badge.base) }),
+        ...badge.sources.map(s => t('effectBadges.card.chanceBonus', {
+            effect: badge.name, amount: badgeAmountText(badge, s.amount, s.rules), source: s.name
+        })),
+        t('effectBadges.card.chanceResult', { chance: chanceText(badge.final) })
+    ].join(' · ');
 }

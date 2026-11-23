@@ -245,7 +245,7 @@ describe('the blocks, top to bottom, per kind', () => {
         const model = tokenCardModel('card_sapling', sapling.id);
         expect(ids(model)).toEqual([CARD_BLOCK.NAME, CARD_BLOCK.LIFECYCLE]);
         expect(model.blocks[1].lines).toEqual([
-            expect.objectContaining({ icon: 'grow', text: '2:05', tip: expect.stringContaining('Grows into Card Vein') })
+            expect.objectContaining({ icon: 'grow', text: '2m 5s', tip: expect.stringContaining('Grows into Card Vein') })
         ]);
     });
 
@@ -258,7 +258,7 @@ describe('the blocks, top to bottom, per kind', () => {
         const line = (g) => cardLifecycle({ id: 'st1', typeId: 'stump' }, { grows: { into: 'tree' } }, {
             tokenName: (id) => names[id] || id, itemName: (id) => names[id] || id, nextGrowth: () => g
         })[0];
-        expect(line(growth())).toEqual({ icon: 'grow', text: '1:05', tip: 'Grows into Oak Sapling in 1 min 5 s, for 1 Oak Seedling from the Bank' });
+        expect(line(growth())).toEqual({ icon: 'grow', text: '1m 5s', tip: 'Grows into Oak Sapling in 1m 5s, for 1 Oak Seedling from the Bank' });
         expect(line(growth({ paused: true }))).toEqual({ icon: 'grow', text: '–', tip: 'Grows into Oak Sapling only with Oak Forest nearby', tone: 'warning' });
         expect(line(growth({ stopped: true, inMs: 0, short: ['seed'] }))).toEqual({ icon: 'grow', text: '–', tip: 'Stopped: needs 1 Oak Seedling to grow into Oak Sapling', tone: 'warning' });
     });

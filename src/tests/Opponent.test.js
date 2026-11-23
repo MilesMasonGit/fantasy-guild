@@ -359,7 +359,7 @@ describe('6. Heals, Removes and Applies-with-role reach the fight', () => {
 
         expect(LiveEffects.carries(fight, 'fixture_v10a_venom')).toBe(true);
         expect(LiveEffects.carries(hero1(), 'fixture_v10a_venom')).toBe(false);
-        expect(renderStatement(rule, { effect: () => 'Venom' })).toContain('applies Venom to the enemy for 30 seconds');
+        expect(renderStatement(rule, { effect: () => 'Venom' })).toContain('applies Venom to the enemy for 30s');
     });
 });
 
