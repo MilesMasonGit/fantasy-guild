@@ -2,6 +2,8 @@ Status: briefed 2026-10-27 (approved 2026-10-27; brief 250)
 
 # Token bars: one plate, fewer things on the mat
 
+> **Amended 2026-11-23 (owner):** the plates go; a worked Token shows a progress bar and its cycle length, an idle Token nothing on hover. See [concept_playmat_declutter.md](concept_playmat_declutter.md) section 15.
+
 *Owner interview 2026-10-27 (planning agent), from the owner's play-testing
 notes of the same day (kept whole at
 [research/issue_doc_2026-10-27.md](research/issue_doc_2026-10-27.md); its

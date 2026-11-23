@@ -244,6 +244,8 @@ mods via the CMS after release.
 
 ## Being interviewed
 
+- **Charges as a chance** (owner, 2026-11-23: "Instead of giving a tree 10 charges, I might want to give it a 10% chance to turn into a stump"): for most Tokens, replace a charge count with a chance per cycle to change (deplete, become a stump). Per Token, not a category rule. Touches the skill loops ([concept_skill_loops.md](concept_skill_loops.md): veins rest and refill, forests regrow) and the balance ledger (an average yield instead of a fixed one). Not designed; an interview with the content agent. Charges are already hidden on the mat ([brief 830](briefs/830_playmat_declutter.md) D3).
+
 
 - **Star upgrades, effect families and Events** (owner, 2026-11-11): the
   owner's marks on 117 Star ideas and four takeaways (families with

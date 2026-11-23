@@ -61,14 +61,12 @@ Token cap (`ALERT.SPAWN_MAT_FULL`) puts a red '!' on every spawner at once.
 
 1. **In the centre of the Token** (owner): over the art's middle, not above
    it, so it is plain which Token it belongs to. A worked Token's problem
-   still shows in its work plate as today (amended in point 3 only for the
-   idle plate).
+   no longer has a plate (section 15): its problem is the same centred '!'.
 2. **Still** (owner): no bob. A choice waiting on you (a station's recipe, a
    Foundation's building) keeps its slow pulse, and the gear still takes the
    mark's spot on hover, now in the centre.
-3. **Said once** (owner): when a Token shows its '!', the idle plate under it
-   leaves the problem out (the plate shows only its timers, or nothing). The
-   reason is on the Token card (section 11: no tooltips on the mat). Every
+3. **Said once** (owner): the '!' is the only mark of a problem; the idle
+   plate that repeated it is gone entirely (section 15). The reason is on the Token card (section 11: no tooltips on the mat). Every
    problem, not only the cap.
 4. **Token cap full: yellow, and gone once hovered** (owner): a full cap is
    waiting for room, not broken, so a spawner shows the yellow '!'. Once the
@@ -183,8 +181,8 @@ hover outline on the mat stand.
 (`EnemyCardTip`), the '!' reason, the work plate's cell tips, the flag cloth's
 tip, the Passive Production tooltip and any `title` text on a Token go. The
 reasons and details live on the Token card and the Hero drawer (right-click).
-Not tooltips, so they stay: the name label on hover, the hovered work plate's
-full line (without its tips), and the recipe bubble (section 12). Panels and
+Not tooltips, so they stay: the name label on hover and the recipe bubble
+(section 12). (The work plate's hovered full line goes with the plate, section 15.) Panels and
 bars off the mat (hero bar, Controls, top bar, drawers) keep theirs.
 
 ## 12. Recipes: one place to choose, one way to see
@@ -207,6 +205,48 @@ bars off the mat (hero bar, Controls, top bar, drawers) keep theirs.
 
 The mat extends left toward the Nav Bubbles, leaving **the same gap as on its
 right side** (owner), so it sits evenly in its space and gets more board.
+
+## 14. Names and reach dots stand out
+
+*Added 2026-11-23, second round (owner).* The hover name label and the reach
+dots get lost on busy ground. **The look is picked from a screenshot page**
+(owner), the same busy scene, a letter each:
+
+- **a see-through dark backing**: a soft, half-transparent dark strip behind
+  the name, a dark halo round each dot;
+- **a chroma shimmer**: the name's outline and each dot slowly cycle through
+  colours (a colour shift, not a blur, so it stays cheap);
+- **backing + chroma** together.
+
+Only the pick is built.
+
+## 15. No plates on the mat: a progress bar and the cycle time
+
+*Added 2026-11-23, second round. **Amends** [concept_token_bars.md](concept_token_bars.md)
+(the one plate) and [concept_info_layers.md](concept_info_layers.md) §1–2.*
+
+> "I think all we would need is a really nice progress bar and showing the
+> cycle time." (owner)
+
+1. **The work plate goes** (`WorkPlateLayer.jsx`, `workPlate.js`): no frame,
+   no cells, no charges, no skill icon, no missing items, no hovered full line.
+2. **A worked Token shows a progress bar and the cycle length**, in the
+   plate's spot: a well-made bar filling with each cycle, and beside it **the
+   time one cycle takes** ("4.2s"), fixed while nothing changes, so a speed
+   boost shows as a smaller number (owner). The bar turns grey while the job
+   is blocked, as the plate's fill does today. The bar's look is the
+   builder's to propose on the section 14 screenshot page.
+3. **The idle plate goes** (`IdlePlate.jsx`, `idlePlate.js`): no refresh,
+   regrow or spawn timers on hover (owner: "the player will see the Token
+   change and know they can farm it again").
+4. **Where the plate's information goes**: a problem or missing inputs → the
+   Token's centred '!' (section 3); charges, the skill, timers and every
+   detail → the Token card (right-click).
+5. Unchanged: the fight plate and button, health bars.
+
+**Charges as a mechanic** (a tree with a chance to turn into a stump instead
+of a count) is its own later topic, listed in [ideas.md](ideas.md); this
+section only stops showing them.
 
 ## Closed
 
