@@ -2,6 +2,7 @@ import { memo, useState } from 'react';
 import { skillArt } from '../base/SkillIcon.jsx';
 import { useSpriteFxVersion, shadowLayer, layerStyle } from '../../utils/spriteFx.js';
 import { FLOAT_MS, FLASH_MS, FADE_MS, rollValues, rollMs } from './levelUpFloats.js';
+import { unlockSummary } from '../dock/levelUnlocks.js';
 
 /** Skill icons are 16 art pixels; on the mat they draw at the heroes' art scale (2× at 1:1). */
 const ICON_ART_PX = 16;
@@ -12,7 +13,9 @@ const ROLL_FRAMES_PER_VALUE = 8;
 /**
  * One levelled skill over a hero's head: its icon and its level, free of any frame. The old
  * level flashes a gold outline, then rolls up like an odometer to the new one; at the end of
- * its time it fades. A milestone perk it reached is named underneath, in gold. Every step is a
+ * its time it fades. What the level unlocked is said short underneath, in gold: each perk by
+ * name on its own line, then the recipes, Tokens and gear counted ("+2 recipes"), stacked so
+ * several skills' floats side by side stay narrow. Every step is a
  * CSS animation that starts when the float is first drawn, so nothing here re-renders while it
  * plays.
  * `unit` is one art pixel in mat units (`boardScaleAt`), `fit` the mat's fit, for the icon's
@@ -30,6 +33,8 @@ const LevelUpFloat = memo(function LevelUpFloat({ f, unit, fit }) {
     const iconPx = ICON_ART_PX * unit;
     const src = spritePath.startsWith('assets/') ? `/${spritePath}` : spritePath;
     const shadow = shadowLayer(src, iconPx, fit);
+    const summary = unlockSummary(f.unlocks);
+    const rest = unlockSummary({ ...f.unlocks, perks: [] });
 
     return (
         <div
@@ -80,15 +85,14 @@ const LevelUpFloat = memo(function LevelUpFloat({ f, unit, fit }) {
                 )}
             </span>
             </div>
-            {(f.perks || []).map(title => (
-                <span
-                    key={title}
-                    data-level-perk={title}
-                    className="gi-lvl-perk ui-text-title font-bold whitespace-nowrap"
-                >
-                    {title}
+            {summary && (
+                <span data-level-unlocks aria-label={summary} className="flex flex-col items-center">
+                    {(f.unlocks?.perks || []).map(title => (
+                        <span key={title} data-level-perk={title} className="gi-lvl-perk ui-text-title font-bold whitespace-nowrap">{title}</span>
+                    ))}
+                    {rest && <span data-level-counts className="gi-lvl-perk ui-text-title font-bold whitespace-nowrap">{rest}</span>}
                 </span>
-            ))}
+            )}
         </div>
     );
 });

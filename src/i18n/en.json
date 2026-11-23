@@ -636,8 +636,20 @@
         "busy": "Busy",
         "gearBroke": "{item} broke!"
     },
+    "levelUp": {
+        "count": {
+            "recipes": { "one": "+{count} recipe", "other": "+{count} recipes" },
+            "tokens": { "one": "+{count} Token", "other": "+{count} Tokens" },
+            "gear": { "one": "+{count} gear", "other": "+{count} gear" }
+        },
+        "group": {
+            "perks": { "one": "Perk", "other": "Perks" },
+            "recipes": { "one": "Recipe", "other": "Recipes" },
+            "tokens": { "one": "Token", "other": "Tokens" },
+            "gear": { "one": "Gear", "other": "Gear" }
+        }
+    },
     "heroBar": {
-        "perk": "Perk: {perk}",
         "equipped": "Equipped {item}",
         "equippedStack": "Equipped {item} x{count}",
         "unequipped": "Unequipped {item}",

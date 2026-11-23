@@ -1,14 +1,13 @@
 import { useSyncExternalStore } from 'react';
 import { subscribeLevelUps } from '../board/levelUpFeed.js';
-import { perksReachedBy } from './heroPerks.js';
-import { t } from '../../../i18n/index.js';
+import { levelUpUnlocks, mergeUnlocks, hasUnlocks } from './levelUnlocks.js';
 
 /**
  * The hero bar's level-up alerts. Unlike the number floating over the hero on the mat (gone in
  * about 30 s) these stay until the player clears them, so after a long AFK session the bar shows
  * every level gained. One alert per skill, worded with the level it reached ("50 Stealth!"): a
- * later level-up of the same skill rewrites it. A milestone perk reached gets an alert of its own
- * after it ("Perk: Clean Felling"), which a later level-up leaves alone.
+ * later level-up of the same skill rewrites it. What the levels unlocked (perks, recipes, Tokens,
+ * gear, `levelUnlocks.js`) rides on the alert and gathers there until the alert is cleared.
  * UI memory only: never saved, emptied when a game is started or loaded (a page reload, as
  * "Load as I left it" does, starts it empty).
  */
@@ -24,28 +23,17 @@ export const barLevelUpText = (skillName, level) => `${level} ${skillName}!`;
 
 /**
  * Add a level-up to one hero's list (oldest first). A skill already up moves to the newest
- * place with its new level.
+ * place with its new level, keeping what its earlier level-ups unlocked beside this one's.
  *
  * @returns a new list; the input is untouched
  */
-export function addLevelUp(list, { skillName, newLevel }) {
+export function addLevelUp(list, { skillName, newLevel, unlocks = null }) {
     const key = `level:${skillName}`;
-    return [...list.filter(b => b.key !== key), { key, text: barLevelUpText(skillName, newLevel) }];
-}
-
-/** A perk alert's words. */
-export const barPerkText = (title) => t('heroBar.perk', { perk: title });
-
-/**
- * Add the perks a level-up reached to one hero's list, after its level alert, one alert each.
- * @param {Array<{ level: number, effectId: string, title: string }>} perks
- * @returns a new list; the input is untouched
- */
-export function addPerks(list, skillId, perks) {
-    if (!perks?.length) return list;
-    const added = perks.map(p => ({ key: `perk:${skillId}:${p.level}:${p.effectId}`, text: barPerkText(p.title), perk: true }));
-    const keys = new Set(added.map(b => b.key));
-    return [...list.filter(b => !keys.has(b.key)), ...added];
+    const earlier = list.find(b => b.key === key);
+    const merged = mergeUnlocks(earlier?.unlocks, unlocks);
+    const bubble = { key, text: barLevelUpText(skillName, newLevel) };
+    if (hasUnlocks(merged)) bubble.unlocks = merged;
+    return [...list.filter(b => b.key !== key), bubble];
 }
 
 const NONE = Object.freeze([]);
@@ -100,8 +88,8 @@ export function useHeroBarBubbles(heroId) {
 function addLevelUps(rows) {
     byHero = new Map(byHero);
     for (const { heroId, skillId, skillName, oldLevel, newLevel } of rows) {
-        const list = addLevelUp(byHero.get(heroId) || NONE, { skillName, newLevel });
-        byHero.set(heroId, addPerks(list, skillId, perksReachedBy(skillId, oldLevel, newLevel)));
+        const unlocks = levelUpUnlocks(heroId, skillId, oldLevel, newLevel);
+        byHero.set(heroId, addLevelUp(byHero.get(heroId) || NONE, { skillName, newLevel, unlocks }));
     }
     emit();
 }

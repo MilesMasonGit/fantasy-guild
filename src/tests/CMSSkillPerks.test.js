@@ -72,12 +72,17 @@ describe('the workspace holds each skill\'s perk table', () => {
         expect(normaliseWorkspacePerks(undefined)).toBeNull();
     });
 
-    it('shows the five default levels as empty rows until an effect is picked', () => {
-        expect(editorRows(null).map((r) => [r.level, r.virtual])).toEqual([[10, true], [25, true], [50, true], [75, true], [99, true]]);
+    it('shows a default row every 5 levels and at 99, empty until an effect is picked', () => {
+        const every5 = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99];
+        expect(editorRows(null).map((r) => [r.level, r.virtual])).toEqual(every5.map((level) => [level, true]));
         store().setSkillPerkRow('forestry', -1, { level: 10, effectId: FELLING.id });
-        store().setSkillPerkRow('forestry', -1, { level: 40, effectId: '' });
+        store().setSkillPerkRow('forestry', -1, { level: 42, effectId: '' });
         const rows = editorRows(store().skillPerks.forestry);
-        expect(rows.map((r) => `${r.level}${r.virtual ? '' : '*'}`)).toEqual(['10*', '25', '40*', '50', '75', '99']);
+        const shown = rows.map((r) => `${r.level}${r.virtual ? '' : '*'}`);
+        expect(shown.slice(0, 10)).toEqual(['5', '10*', '15', '20', '25', '30', '35', '40', '42*', '45']);
+        expect(shown).toHaveLength(21);
+        // An existing table's stored rows are what they were: the empty defaults are never saved.
+        expect(store().skillPerks.forestry.perks).toEqual([{ level: 10, effectId: FELLING.id, scale: 1 }, { level: 42, effectId: '', scale: 1 }]);
         store().removeSkillPerkRow('forestry', 1);
         expect(store().skillPerks.forestry.perks).toEqual([{ level: 10, effectId: FELLING.id, scale: 1 }]);
     });
@@ -202,7 +207,7 @@ describe('the pages', () => {
         const view = render(React.createElement(SkillPerksPage, { setCurrentView: () => {} }));
         fireEvent.click(view.container.querySelector('[data-perk-skill="forestry"]'));
         const rows = () => [...view.container.querySelectorAll('[data-perk-row]')].map((r) => r.getAttribute('data-perk-row'));
-        expect(rows()).toEqual(['10', '25', '50', '75', '99']);
+        expect(rows()).toEqual(['5', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55', '60', '65', '70', '75', '80', '85', '90', '95', '99']);
         const ten = view.container.querySelector('[data-perk-row="10"]');
         fireEvent.change(ten.querySelector('[data-perk-effect]'), { target: { value: FELLING.id } });
         expect(store().skillPerks.forestry.perks).toEqual([{ level: 10, effectId: FELLING.id, scale: 1 }]);

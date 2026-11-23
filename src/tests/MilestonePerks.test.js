@@ -101,8 +101,9 @@ afterEach(() => {
 });
 
 describe('a perk table', () => {
-    it('offers 10, 25, 50, 75 and 99 by default', () => {
-        expect(DEFAULT_PERK_LEVELS).toEqual([10, 25, 50, 75, 99]);
+    it('offers a row every 5 levels and at 99 by default, none marked apart', () => {
+        expect(DEFAULT_PERK_LEVELS).toEqual([5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99]);
+        expect(DEFAULT_PERK_LEVELS.every(isPerkLevel)).toBe(true);
     });
 
     it('runs whole levels 2 to 99 with an effect, in level order, scale 1 to 5', () => {
