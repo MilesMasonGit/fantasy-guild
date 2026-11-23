@@ -23,7 +23,7 @@ describe('Hero System Enhancements', () => {
     });
 
     // Rewritten with classless heroes: a new hero holds every skill from level 1, combat and
-    // specialist included; there are no Recruits and no promotion.
+    // every skill included; there are no Recruits and no promotion.
     it('generates a hero holding every skill at level 1', () => {
         const hero = generateHero();
 

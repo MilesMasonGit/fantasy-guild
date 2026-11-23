@@ -4,6 +4,7 @@ import { rehydrateHero, updateHeroFromSkills } from '../systems/hero/logic/HeroR
 import * as SkillSystem from '../systems/hero/SkillSystem.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
+import { SKILL_COUNT } from '../config/registries/skillRegistry.js';
 
 /**
  * Skill levels and the hero's modifiers: a level gives no work speed, and `addXP` grants the award
@@ -37,9 +38,8 @@ describe('A skill level adds no work speed', () => {
         hero.skills.mining.level = 99;
         updateHeroFromSkills(hero);
         expect(hero.aggregator.getPercentageBucket(EFFECT_TYPES.SPEED, 'mining')).toBe(1);
-        // Rewritten with classless heroes: the hero level averages all twenty skills, the other
-        // nineteen at 1.
-        expect(hero.level).toBe((99 + 19) / 20);
+        // The hero level averages every skill, the others at 1.
+        expect(hero.level).toBe((99 + (SKILL_COUNT - 1)) / SKILL_COUNT);
     });
 });
 

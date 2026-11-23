@@ -1,20 +1,17 @@
-import { getSkill, heroSheetSkillIds, SKILL_LAYERS } from '../../../config/registries/skillRegistry.js';
+import { getSkill, heroSheetSkillIds } from '../../../config/registries/skillRegistry.js';
 import { getXpProgress, xpForLevel, MAX_SKILL_LEVEL } from '../../../utils/XPCurve.js';
 import { t } from '../../../i18n/index.js';
 import { countdownText } from '../../../utils/Formatters.js';
-
-/** Layers whose rows get their own background colour. */
-export const TIER_LAYERS = new Set([SKILL_LAYERS.SPECIALIST]);
 
 /** How many skills stand in one column of the hero drawer's grid. */
 export const SKILLS_PER_COLUMN = 4;
 
 /**
  * A hero's skills as the hero drawer lists them: every skill, in the sheet's order (combat, then
- * gathering, crafting and specialist, `heroSheetSkillIds`). A skill the record lacks (a hero not yet
+ * gathering, making and the unplaced ones, `heroSheetSkillIds`). A skill the record lacks (a hero not yet
  * settled by a load) reads level 1.
  * @param {{ skills?: object }} hero
- * @returns {{ rows: Array<{ id: string, name: string, layer: string|null, tier: string|null, level: number, xp: number }> }}
+ * @returns {{ rows: Array<{ id: string, name: string, layer: string|null, level: number, xp: number }> }}
  */
 export function heroSkillList(hero) {
     const held = hero?.skills || {};
@@ -25,7 +22,6 @@ export function heroSkillList(hero) {
             id,
             name: getSkill(id)?.name || id,
             layer,
-            tier: TIER_LAYERS.has(layer) ? layer : null,
             level: Math.max(1, Math.floor(state?.level ?? 1)),
             xp: state?.xp ?? 0
         };

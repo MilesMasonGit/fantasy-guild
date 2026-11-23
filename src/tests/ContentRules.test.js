@@ -530,7 +530,7 @@ describe('Registry integrity', () => {
 
 describe('The opening', () => {
     it('the opening Tray is workable by the one hero the player starts with', () => {
-        // A Token in that tray demanding a specialist would be the first thing
+        // A Token in that tray demanding a skill that does not exist would be the first thing
         // a new player tried and the first thing that refused them.
         const starting = new Set(STARTING_SKILL_IDS);
 

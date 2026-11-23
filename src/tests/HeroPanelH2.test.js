@@ -37,12 +37,12 @@ const recruit = (id, name) => ({
     skills: startingSkills()
 });
 
-/** A trained hero: Melee and two specialist skills on top of the Starting nine. */
+/** A trained hero: Melee, Fletching and Faith on top of the everyday nine. */
 const master = (id, name) => ({
     ...recruit(id, name),
     // Held out of layer order on purpose: the panel orders them, not the save. Leadership was cut:
     // a record still carrying it lists without it.
-    skills: { faith: lvl(3), ...startingSkills(), leadership: lvl(12), melee: lvl(25, 10), fletching: lvl(99) }
+    skills: { ...startingSkills(), faith: lvl(3), leadership: lvl(12), melee: lvl(25, 10), fletching: lvl(99) }
 });
 
 
@@ -167,23 +167,23 @@ describe('H2: a closed panel registers no drop targets (T-104)', () => {
 });
 
 // Every hero holds every skill, so the drawer lists all of them in one grid, in the concept's order
-// (brief 570 D2): combat, gathering, crafting, then the specialist skills.
+// (brief 570 D2): combat, gathering, making, then the skills no trade claims yet.
 describe('H2: skills', () => {
     const ALL = [
         'melee', 'ranged', 'magic', 'stealth',
         'mining', 'forestry', 'fishing', 'farming',
-        'smithing', 'crafting', 'cooking', 'alchemy', 'construction',
-        ...getSkillIdsByLayer(SKILL_LAYERS.SPECIALIST)
+        'smithing', 'crafting', 'cooking', 'alchemy', 'construction', 'fletching', 'enchanting', 'tailor',
+        'faith', 'summoning', 'crime', 'taming', 'science'
     ];
 
-    it('lists every skill in one list: combat, gathering, crafting, then the specialist ones', () => {
+    it('lists every skill in one list: combat, gathering, making, then the unplaced ones', () => {
         const g = heroSkillList(master('x', 'X'));
         expect(g.rows.map(r => r.id)).toEqual(ALL);
-        expect(ALL).toHaveLength(20);
-        expect(STARTING.length).toBe(9);
+        expect(ALL).toHaveLength(21);
+        expect(STARTING.length).toBe(17);
         const level = (id) => g.rows.find(r => r.id === id).level;
         expect([level('melee'), level('ranged'), level('mining'), level('fletching'), level('faith'), level('science')])
-            .toEqual([25, 1, 5, 99, 3, 1]);
+            .toEqual([25, 1, 5, 99, 3, 5]);
         expect(Object.keys(g)).toEqual(['rows']);
     });
 
@@ -253,17 +253,13 @@ describe('H2: skills', () => {
         expect(root.textContent).not.toMatch(/Set aside|Locked|Recruit/);
     });
 
-    it('gives the specialist rows their own background and draws no mastered star', () => {
+    it('draws every row in one colour and no mastered star', () => {
         const r = render(panel({ selectedHeroId: 'h1' }));
         const row = (id) => r.container.querySelector(`[data-skill-group="held"] [data-skill-row="${id}"]`);
-        expect(row('fletching').getAttribute('data-skill-tier')).toBe('specialist');
-        expect(row('faith').getAttribute('data-skill-tier')).toBe('specialist');
-        expect(row('melee').getAttribute('data-skill-tier')).toBeNull();
-        expect(row('mining').getAttribute('data-skill-tier')).toBeNull();
+        expect(r.container.querySelector('[data-skill-tier]')).toBeNull();
         const bg = (el) => el.className.split(' ').filter(c => c.startsWith('bg-')).join(' ');
-        expect(bg(row('fletching'))).not.toBe('');
-        expect(bg(row('faith'))).toBe(bg(row('fletching')));
-        expect(bg(row('melee'))).toBe('');
+        expect(bg(row('fletching'))).toBe(bg(row('melee')));
+        expect(bg(row('faith'))).toBe(bg(row('mining')));
         expect(r.container.querySelector('[data-skill-mark]')).toBeNull();
         expect(r.container.textContent).not.toContain('★');
     });

@@ -27,11 +27,6 @@ import { healthTipView } from './healthTip.js';
 import { openEncyclopedia } from '../encyclopedia/encyclopediaLink.js';
 import { t } from '../../../i18n/index.js';
 
-/** The specialist rows' own background. */
-const TIER_BG = {
-    specialist: 'bg-sky-900/30'
-};
-
 /** What can change the health hover: the hero's health and gear, a level (a perk), a star bought. */
 const HEALTH_TIP_EVENTS = Object.freeze([
     ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED, ENGINE_EVENTS.INVENTORY_UPDATED,
@@ -287,12 +282,10 @@ const SkillCell = ({ heroId, row, open = false, onToggle }) => {
         <Tooltip title={`${row.name} ${skillLevelText(row.level)}`} content={<SkillTip heroId={heroId} row={row} />}>
             <div
                 data-skill-row={row.id}
-                data-skill-tier={row.tier || undefined}
                 aria-expanded={open}
                 onClick={onToggle}
                 className={cn(
                     'flex items-center gap-1.5 p-0.5 pr-1.5 cursor-pointer hover:bg-white/5',
-                    row.tier && TIER_BG[row.tier],
                     open && 'bg-white/10'
                 )}
             >

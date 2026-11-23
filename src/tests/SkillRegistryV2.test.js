@@ -1,52 +1,46 @@
 import { describe, it, expect } from 'vitest';
 import {
     SKILLS, SKILL_LAYERS, SKILL_CATEGORIES, SKILL_COUNT, HERO_SKILL_IDS, RETIRED_SKILL_IDS,
-    STARTING_SKILL_IDS, COMBAT_SKILL_IDS, SPECIALIST_SKILL_IDS,
+    STARTING_SKILL_IDS, COMBAT_SKILL_IDS,
     getAllSkillIds, getSkill
 } from '../config/registries/skillRegistry.js';
 import * as SkillRegistry from '../config/registries/skillRegistry.js';
 import { SKILLS as CMS_SKILLS, skillsByLayer } from '../../cms/src/utils/constants.js';
 
 /**
- * The skill registry of classless heroes (brief 270 K1): 20 skills in three layers, every one held
- * by every hero. Rewritten from the class rework's 25 in four layers: five specialist skills were
- * cut and the Advanced and Master layers became one Specialist layer.
+ * The skill registry of classless heroes (brief 270 K1): 21 skills in two layers, every one held
+ * by every hero. Rewritten from the class rework's 25 in two layers: five skills were cut and
+ * every skill that is not a combat style became one list.
  *
  * ⚠️ These pin the owner's table on purpose: a skill moving layer is a design
  * change, and it should be a deliberate edit here as well as in the registry.
  */
 
-describe('The 20 skills in three layers', () => {
-    it('has 20 skills: 9 starting, 4 combat, 7 specialist, every one a hero holds', () => {
-        expect(SKILL_COUNT).toBe(20);
-        expect(getAllSkillIds()).toHaveLength(20);
+describe('The 21 skills in two layers', () => {
+    it('has 21 skills: 17 non-combat, 4 combat, every one a hero holds', () => {
+        expect(SKILL_COUNT).toBe(21);
+        expect(getAllSkillIds()).toHaveLength(21);
         expect(HERO_SKILL_IDS).toEqual(getAllSkillIds());
-        expect(STARTING_SKILL_IDS).toHaveLength(9);
+        expect(STARTING_SKILL_IDS).toHaveLength(17);
         expect(COMBAT_SKILL_IDS).toHaveLength(4);
-        expect(SPECIALIST_SKILL_IDS).toHaveLength(7);
     });
 
-    it('the layers are starting, combat and specialist, in that order', () => {
-        expect(Object.values(SKILL_LAYERS)).toEqual(['starting', 'combat', 'specialist']);
+    it('the layers are starting and combat, in that order', () => {
+        expect(Object.values(SKILL_LAYERS)).toEqual(['starting', 'combat']);
         expect(Object.values(SKILL_CATEGORIES).map(c => c.name))
-            .toEqual(['Starting', 'Combat', 'Specialist']);
+            .toEqual(['Skills', 'Combat']);
     });
 
-    it('the starting layer is exactly mining, forestry, fishing, smithing, crafting, cooking, farming, alchemy, construction', () => {
+    it('the starting layer is the nine everyday skills, then the seven the owner kept and Tailor', () => {
         expect(STARTING_SKILL_IDS).toEqual([
             'mining', 'forestry', 'fishing', 'smithing', 'crafting',
-            'cooking', 'farming', 'alchemy', 'construction'
+            'cooking', 'farming', 'alchemy', 'construction',
+            'fletching', 'faith', 'summoning', 'enchanting', 'tailor', 'crime', 'taming', 'science'
         ]);
     });
 
     it('combat is melee, ranged, magic, stealth', () => {
         expect(COMBAT_SKILL_IDS).toEqual(['melee', 'ranged', 'magic', 'stealth']);
-    });
-
-    it('specialist is fletching, faith, summoning, enchanting, crime, taming, science (the owner\'s kept seven)', () => {
-        expect(SPECIALIST_SKILL_IDS).toEqual([
-            'fletching', 'faith', 'summoning', 'enchanting', 'crime', 'taming', 'science'
-        ]);
     });
 
     it('leadership, commerce, trapping, armory and shadowcraft are cut', () => {
@@ -98,7 +92,7 @@ describe('The CMS skill pickers follow the registry', () => {
     it('groups the pickers by layer in registry order, headed by the game\'s layer names', () => {
         const groups = skillsByLayer();
         expect(groups.map(([label]) => label.split(' ')[0]))
-            .toEqual(['Starting', 'Combat', 'Specialist']);
+            .toEqual(['Skills', 'Combat']);
         expect(groups[0][1].map(s => s.id)).toEqual(STARTING_SKILL_IDS);
     });
 });
