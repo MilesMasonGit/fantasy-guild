@@ -65,6 +65,7 @@ import { eventOf } from './EventTokens.js';
  *
  * @typedef {object} EffectBadge
  * @property {string} key       a {@link EFFECT_KEY}: the badge's place in the row and its icon
+ * @property {string} type      the effect axis it reads (`EFFECT_TYPES`), whose palette entry explains it
  * @property {string} name      the UI_STYLE name ("Speed")
  * @property {string} unit      a {@link UNIT}: what `total`, `counted` and each `amount` are in
  * @property {number} total     `resolved` in the badge's unit, signed: +23 is "+23 %" (Speed: faster). The
@@ -417,6 +418,7 @@ function badgeOf(row, { base, resolved, final, limit, contributions }, ctx, item
     if (!(Math.abs(total) > EPS)) return null;
     return {
         key: row.key,
+        type: typeOf(row),
         name: t(`effectBadges.effect.${row.key}`),
         unit: row.unit,
         total,

@@ -98,7 +98,7 @@ export const HeroCombatView = ({ heroId }) => {
                 {s.effects.length === 0
                     ? <span className="text-gi-muted">–</span>
                     : s.effects.map(e => (
-                        <Tooltip key={e.id} title={e.title} lines={[...e.lines, e.items.join(', ')]}>
+                        <Tooltip key={e.id} title={e.title} lines={[...e.lines, e.items.join(', '), ...e.explains]}>
                             <span data-hero-combat-effect={e.id} className="cursor-help underline decoration-dotted decoration-white/40">{e.title}</span>
                         </Tooltip>
                     ))}

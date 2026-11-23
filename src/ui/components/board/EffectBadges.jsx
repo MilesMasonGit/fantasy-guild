@@ -5,6 +5,7 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { EFFECT_KEY, UNIT } from '../../../systems/board/EffectBreakdown.js';
 import { t } from '../../../i18n/index.js';
+import { explainOf } from '../base/effectExplain.js';
 import {
     EFFECT_GLYPH, TONE_COLOUR, badgeText, badgeTone, badgeTip, heroTipLines, amountColour, effectAmountText
 } from './effectBadgeText.js';
@@ -36,11 +37,13 @@ const TipLine = ({ name, amount, colour, ...rest }) => (
     </div>
 );
 
-/** A badge's hover: one line per source, then the total, and the limit note when one holds it. */
+/** A badge's hover: what the effect means, one line per source, then the total, and the limit note when one holds it. */
 const BadgeTipBody = ({ badge, extra }) => {
     const tip = badgeTip(badge);
+    const explains = explainOf(badge.type)?.text;
     return (
         <div className="flex flex-col" data-badge-tip={badge.key}>
+            {explains && <span className="ui-text-small text-white/70 mb-0.5" data-badge-tip-explains>{explains}</span>}
             {tip.lines.map(line => (
                 <TipLine key={line.key} name={line.name} amount={line.amount} colour={amountColour(line.value)} data-badge-tip-source={line.key} />
             ))}

@@ -802,6 +802,9 @@
         "playtimeTip": "How long the guild has spent here, time away included.",
         "tokensTip": "Tokens on this place's mat, of the Token cap"
     },
+    "effectExplain": {
+        "line": "{name}: {text}"
+    },
     "effectBadges": {
         "effect": {
             "speed": "Speed",

@@ -12,6 +12,13 @@ import { breakChanceOf } from '../../../config/registries/itemBreak.js';
 import { lengthText, chanceFigure } from '../../../utils/Formatters.js';
 import { levelNeeds } from '../../../systems/core/levelNeed.js';
 import { SkillIconText } from '../base/SkillIconText.jsx';
+import { EFFECTS } from '../../../config/registries/effectRegistry.js';
+import { effectRefsOf, effectTitle, statementsFromEntry } from '../../../systems/effects/effectLibrary.js';
+import { renderSegments } from '../../../systems/effects/statementText.js';
+import { KEYWORD } from '../../../systems/effects/statements.js';
+import { carriedRuleNames } from '../dock/heroPerks.js';
+import { RuleLine } from '../base/EffectName.jsx';
+import { explainLinesOf, effectTypesOfStatements } from '../base/effectExplain.js';
 
 /** What kind of item it is, in the player's words. */
 export function itemTypeLabel(item) {
@@ -88,6 +95,47 @@ export const levelNeedsOf = (item) => levelNeeds(gearRequirements(item));
 /** {@link levelNeedsOf} as plain words, for a native `title`: "Needs Melee 15". */
 export const needsLine = (item) => levelNeedsOf(item)?.text ?? null;
 
+/** One effect as the item lists it: its title, its rules as rule lines, and the statements behind them. */
+function effectRow(entry, ref, names, applied = false) {
+    const statements = statementsFromEntry(entry, ref);
+    return {
+        id: ref.effectId,
+        title: effectTitle(entry.name || ref.effectId, ref.scale),
+        lines: statements.map(statement => renderSegments(statement, names)),
+        statements,
+        ...(applied ? { applied: true } : {})
+    };
+}
+
+/**
+ * What an item does, before anyone wears it: each effect it carries by its title, with its rules
+ * in the rule lines' words (`Crit Chance +5% in combat.`), as the hero's own view reads them once
+ * worn. An effect a rule applies (a drink's Merry) follows the rule, with its own rules, since the
+ * rule alone says only its name. `explains` says what each effect named means, once each.
+ * @returns {{ rows: Array<{ id: string, title: string, lines: object[][], applied?: boolean }>, explains: string[] }}
+ */
+export function itemEffects(item) {
+    const refs = effectRefsOf(item);
+    if (!refs.length) return { rows: [], explains: [] };
+    const names = carriedRuleNames();
+    const rows = [];
+    for (const ref of refs) {
+        const entry = EFFECTS[ref.effectId];
+        if (!entry) continue;
+        const row = effectRow(entry, ref, names);
+        rows.push(row);
+        for (const statement of row.statements) {
+            const id = statement.keyword === KEYWORD.APPLIES ? statement.payload?.effectId : null;
+            if (!id || !EFFECTS[id] || rows.some(r => r.id === id)) continue;
+            rows.push(effectRow(EFFECTS[id], { effectId: id, scale: statement.payload.scale }, names, true));
+        }
+    }
+    return {
+        rows: rows.map(({ statements, ...row }) => row),
+        explains: explainLinesOf(effectTypesOfStatements(rows.flatMap(r => r.statements), names))
+    };
+}
+
 /**
  * Everything the tooltip says about an item, as plain facts (the component below draws them).
  * Mounted only while a tooltip is open, so nothing here runs per frame.
@@ -114,6 +162,7 @@ export function itemTipFacts(item) {
         cuts: cutLines(item),
         // Only food heals; a drink or potion is a buff, so a leftover amount is not offered as a promise.
         restores: item?.restoreAmount > 0 && item.equipSlot === 'food' ? item.restoreAmount : null,
+        effects: itemEffects(item),
         tags: Array.isArray(item?.tags) ? item.tags.filter(Boolean) : [],
         description: typeof item?.description === 'string'
             ? item.description.replace(/^["']|["']$/g, '').trim()
@@ -136,6 +185,7 @@ export const ItemTipContent = ({ item, count = null, hint = null, details = true
                 <div data-item-tip-count className="tabular-nums font-bold text-white">{t('itemTip.count', { count: count.toLocaleString('en-US') })}</div>
             )}
             <ItemKindLines facts={facts} />
+            <ItemEffectLines facts={facts} inTip />
             {details && <ItemDetailLines facts={facts} />}
             {hint && <div className="ui-text-small text-white/55">{hint}</div>}
         </div>
@@ -161,6 +211,31 @@ export const ItemToolLines = ({ facts }) => (
         {facts.breaks && <div data-item-tip-breaks className="text-white">{facts.breaks}</div>}
     </>
 );
+
+/**
+ * What the item does: each effect's title, then its rules, every effect's name hoverable. `inTip`
+ * (inside a tooltip, whose box follows the pointer so nothing in it can be hovered) lists what
+ * each name means under them instead.
+ */
+export const ItemEffectLines = ({ facts, inTip = false }) => {
+    const { rows, explains } = facts.effects;
+    if (!rows.length) return null;
+    return (
+        <div data-item-tip-effects className="flex flex-col gap-0.5">
+            {rows.map(row => (
+                <div key={row.id} data-item-tip-effect={row.id} className={row.applied ? 'flex flex-col pl-2' : 'flex flex-col'}>
+                    <span className="font-bold text-gi-gold">{row.title}</span>
+                    {row.lines.map((segments, i) => (
+                        <RuleLine key={i} segments={segments} hover={!inTip} className="text-white leading-snug" data-item-tip-rule />
+                    ))}
+                </div>
+            ))}
+            {inTip && explains.map(line => (
+                <div key={line} data-item-tip-explains className="ui-text-small text-white/60 leading-snug">{line}</div>
+            ))}
+        </div>
+    );
+};
 
 /** Everything past the kind: a weapon's stats, an arrow's shot, resists and cuts, what it restores, its description. */
 export const ItemDetailLines = ({ facts }) => (

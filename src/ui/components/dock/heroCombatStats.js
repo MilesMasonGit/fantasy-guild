@@ -11,6 +11,7 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { COMBAT_SKILL_IDS } from '../../../config/registries/skillRegistry.js';
 import { heroSide } from '../combat/fightView.js';
 import { carriedRuleNames } from './heroPerks.js';
+import { explainLinesOf, effectTypesOfStatements } from '../base/effectExplain.js';
 
 /**
  * The hero drawer's Combat view, as plain values: every number is read from the fight's own code
@@ -66,9 +67,10 @@ export function heroCombatStats(hero) {
 /**
  * What a hero's loadout lends, one entry per effect as the game merges them (two items naming one
  * effect add their scales): its title, its rules in the grammar's words, and the items it comes
- * from. Milestone perks are not here: the Skills view lists them. A drink, potion or fight elixir
- * the guild's Long-lasting Brews or Strong Drink moves says so under its rules ({@link doseLines}).
- * @returns {Array<{ id: string, title: string, lines: string[], items: string[] }>}
+ * from, and what each effect its rules name means (`explains`). Milestone perks are not here: the
+ * Skills view lists them. A drink, potion or fight elixir the guild's Long-lasting Brews or Strong
+ * Drink moves says so under its rules ({@link doseLines}).
+ * @returns {Array<{ id: string, title: string, lines: string[], items: string[], explains: string[] }>}
  */
 export function gearEffects(hero) {
     const out = [];
@@ -81,7 +83,8 @@ export function gearEffects(hero) {
             id: effectId,
             title: stackTitle(entry.name || effectId, ref.scale),
             lines: [...statements.map(s => renderStatement(s, names)), ...doseLines(ref.itemIds, statements, names)],
-            items: ref.itemIds.map(id => getItem(id)?.name || id)
+            items: ref.itemIds.map(id => getItem(id)?.name || id),
+            explains: explainLinesOf(effectTypesOfStatements(statements, names))
         });
     }
     return out;
