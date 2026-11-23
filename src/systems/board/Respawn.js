@@ -13,7 +13,7 @@ import { growTimeOf, nearbyGateMet } from './TileModifiers.js';
  *   ({@link restMsOf}) it refills to its starting charges all at once. A refill may need a Token
  *   in reach (`needsNearby`, {@link gateMet}): without one its rest stands still (a Bare apple
  *   tree with no Orchard stays Bare).
- * - **regrow**: at 0 it becomes its `into` Token (an Oak Tree becomes an Oak Sapling), whose own
+ * - **regrow**: at 0 it becomes its `into` Token (an Oak Tree becomes an Oak Stump), whose own
  *   `grows` block brings it back.
  *
  * Resting is not a state of its own: a Token rests while it holds 0 charges and its type

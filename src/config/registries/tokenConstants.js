@@ -226,7 +226,7 @@ export function foundationTierMeets(def, recipe) {
  *
  * * `refill` — at 0 charges it stays where it stands, resting (nobody can work it), and after
  *   `afterMs` refills to its starting charges all at once.
- * * `regrow` — at 0 charges it becomes `into` (a felled Oak Tree becomes an Oak Sapling), and
+ * * `regrow` — at 0 charges it becomes `into` (a felled Oak Tree becomes an Oak Stump), and
  *   `into`'s own `grows` block brings it back, so the regrow time is set on `into`.
  *
  * A Token type without the block leaves the mat at 0, as it always has. The engine reads the
@@ -298,7 +298,7 @@ let lastGrowsTerms = NO_TERMS;
  *   growth's clock to run: a Stump regrows only beside a Forest of its species. Empty when it
  *   needs none (every growth today).
  * * `cost` — what the growth pays when it happens, from the Bank and then the loot on the mat,
- *   summed by item as `[{ itemId, quantity }]`: a Stump spends one seedling to become a Sapling.
+ *   summed by item as `[{ itemId, quantity }]`: a Stump spends one seedling to become its Tree.
  *   Empty when it is free.
  *
  * Kept per block object (frozen), so a growing Token asking every tick allocates nothing; a

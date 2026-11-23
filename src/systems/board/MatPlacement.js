@@ -86,7 +86,7 @@ let roomMemo = { tokens: -1, recipes: -1, radii: new Map() };
 
 /**
  * The radius of the room a Token of `typeId` takes on the mat: the largest art radius of its whole
- * cycle ({@link cycleFormsOf}). A Stump and a Sapling are drawn small but take their Tree's room, and
+ * cycle ({@link cycleFormsOf}). A Stump is drawn small but takes its Tree's room, and
  * a Foundation the room of the largest Token it can build, so nothing can be put down tight against
  * the small form and what it becomes stands exactly where it stood. Spacing, the mat edge and every
  * push read this; drawing, clicks and where a hero stands read the drawn body (`artRadiusOf`).

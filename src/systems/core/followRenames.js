@@ -1,7 +1,7 @@
 // Fantasy Guild — a loaded save follows the CMS's renames
 
 import { getItem } from '../../config/registries/itemRegistry.js';
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { getEffect } from '../../config/registries/effectRegistry.js';
 import { renameTable } from '../../config/registries/renameRegistry.js';
 import { RENAME_KINDS, followRename } from '../../config/renameTable.js';
@@ -28,6 +28,23 @@ import { logger } from '../../utils/Logger.js';
  * Pure apart from the registries it reads and one log line; returns the same object when nothing
  * needed changing.
  */
+
+/**
+ * Token ids deleted in the CMS with no rename to record, by the Token a save holding one loads as:
+ * the Saplings, gone since Forests and the Orchard plant full Trees, load as their Tree, whole (its
+ * starting charges, no growth left). A change pack cannot write the rename list, so the code holds
+ * these; the CMS's own renames win over them.
+ */
+export const GROWN_SAPLINGS = Object.freeze({
+    token_oak_sapling: 'token_oak_tree',
+    token_apple_sapling: 'token_apple_tree',
+    token_fir_sapling: 'token_fir_tree',
+    token_birch_sapling: 'token_birch_tree',
+    token_maple_sapling: 'token_maple_tree',
+    token_mahogany_sapling: 'token_mahogany_tree',
+    token_ebony_sapling: 'token_ebony_tree',
+    token_cedar_sapling: 'token_cedar_tree'
+});
 
 /** Whether the data defines an id, per kind. */
 const DEFINED = Object.freeze({
@@ -66,9 +83,9 @@ export function activeRenames(table = renameTable(), defined = DEFINED) {
  * @param {{ table?: object, defined?: Record<string, (id: string) => boolean> }} [options]
  * @returns {object}
  */
-export function followRenames(state, { table = renameTable(), defined = DEFINED } = {}) {
+export function followRenames(state, { table = renameTable(), defined = DEFINED, startingUses = tokenStartingUses } = {}) {
     if (!isPlainObject(state)) return state;
-    const active = activeRenames(table, defined);
+    const active = activeRenames({ ...table, tokens: { ...GROWN_SAPLINGS, ...(table?.tokens || {}) } }, defined);
     if (!active) return state;
 
     const followed = new Map();
@@ -80,6 +97,9 @@ export function followRenames(state, { table = renameTable(), defined = DEFINED 
         return to;
     };
     const ids = { item: followerOf('items'), token: followerOf('tokens'), effect: followerOf('effects') };
+    // A Sapling's Tree, when this load turns it into one; the CMS's own rename of the id wins.
+    ids.grownTree = (typeId) => (has(GROWN_SAPLINGS, typeId) && !has(table?.tokens || {}, typeId) ? active.tokens.get(typeId) ?? null : null);
+    ids.startingUses = startingUses;
 
     let out = state;
     const put = (key, value) => {
@@ -211,8 +231,20 @@ function heroFollowing(hero, { item, effect }) {
 
 function tokenFollowing(instance, ids) {
     if (!isPlainObject(instance)) return instance;
+    const tree = ids.grownTree?.(instance.typeId) ?? null;
     let out = instance;
     out = mapField(out, 'typeId', ids.token);
+    if (tree && out.typeId === tree) out = grownWhole(out, ids.startingUses(tree));
+    return out;
+}
+
+/** A Sapling loaded as its Tree: the Tree's starting charges, and the growth clock it ran dropped. */
+function grownWhole(instance, uses) {
+    const out = { ...instance, usesRemaining: uses };
+    if (isPlainObject(instance.clocks) && has(instance.clocks, 'growMs')) {
+        const { growMs: _grown, ...clocks } = instance.clocks;
+        out.clocks = clocks;
+    }
     return out;
 }
 

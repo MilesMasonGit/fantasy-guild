@@ -219,9 +219,9 @@ const WITHIN_MARGIN = 1;
 /**
  * The free legal spot nearest `from` no further than `within` from it, or null: a planting that
  * stays inside its planter's reach. Nothing is pushed.
- * ⚠️ A Sapling takes its Tree's room (`MatPlacement.roomRadiusOf`), so where no spot within reach
- * has room for the tree, nothing is planted: a squeezed Sapling would shift when it grew, and a
- * Stump left out of its Forest's reach by that never regrows.
+ * ⚠️ A planting takes the room of its whole cycle (`MatPlacement.roomRadiusOf`: a Tree's, its
+ * Stump's included), so where no spot within reach has room for it, nothing is planted rather
+ * than pushed: a Tree pushed out of its Forest's reach would leave a Stump that never regrows.
  */
 function spotWithin(typeId, from, within) {
     const spot = MatPlacement.findSpot(typeId, from, { reach: Math.max(0, within - WITHIN_MARGIN) });
