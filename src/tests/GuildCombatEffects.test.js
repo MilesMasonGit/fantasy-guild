@@ -204,8 +204,8 @@ describe('the Hall\'s Effects list shows only effects that work', () => {
 
 describe('the words: the Hall Effects list and the star card', () => {
     const cases = [
-        [rule(EFFECT_TYPES.CRIT_CHANCE, 5), 'Gives every hero 5 more crit chance in combat.', 'Every hero crits more often.', '5 more crit chance'],
-        [rule(EFFECT_TYPES.DODGE, 4), 'Gives every hero 4 more dodge in combat.', 'Every hero dodges more.', '4 more dodge'],
+        [rule(EFFECT_TYPES.CRIT_CHANCE, 5), 'Crit Chance +5% for every hero in combat.', 'Every hero crits more often.', 'Crit Chance +5%'],
+        [rule(EFFECT_TYPES.DODGE, 4), 'Dodge +4% for every hero in combat.', 'Every hero dodges more.', 'Dodge +4%'],
         [rule(EFFECT_TYPES.TYPE_DAMAGE, 10, 'fire'), 'Gives every hero 10% more Fire damage in combat.', 'Every hero hits harder with Fire.', '10% more Fire damage'],
         [rule(EFFECT_TYPES.TYPE_RESIST, 10, 'physical'), 'Gives every hero 10% Physical resistance in combat.', 'Every hero takes less from Physical.', '10% Physical resistance'],
         [rule(EFFECT_TYPES.TYPE_RESIST, -5, 'slash'), 'Gives every hero a 5% Slash weakness in combat.', 'Every hero takes more from Slash.', 'a 5% Slash weakness']

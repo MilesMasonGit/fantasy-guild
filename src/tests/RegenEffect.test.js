@@ -215,11 +215,11 @@ describe('Regen as content', () => {
     });
 
     it('reads as the hero\'s on gear, and every hero\'s on a star', () => {
-        expect(renderStatement(regenRule(0.5), { carried: true })).toBe('Makes the hero heal 50% faster out of a fight.');
+        expect(renderStatement(regenRule(0.5), { carried: true })).toBe('Regen +50% for the hero.');
         holdStar([regenRule(0.25)]);
         const def = getUpgradeDef('mend_star');
         expect(starSentence(def)).toBe('Every hero heals faster out of a fight.');
-        expect(starAmount(def, 1)).toBe('25% faster out of a fight');
+        expect(starAmount(def, 1)).toBe('Regen +25%');
     });
 
     it('a star may carry it; a Token carrying it is named by the content check', () => {
