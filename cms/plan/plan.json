@@ -130,11 +130,11 @@
       },
       "item_blueberry": {
         "status": "live",
-        "tier": 1
+        "tier": 3
       },
       "item_blueberry_pie": {
         "status": "parked",
-        "tier": 1,
+        "tier": 3,
         "note": "Parked (brief 330 W6): No recipe makes it yet."
       },
       "item_dough": {
@@ -146,19 +146,14 @@
         "status": "live",
         "tier": 0
       },
-      "item_shrimp_trawler_potion": {
-        "status": "parked",
-        "tier": 2,
-        "note": "Parked (brief 330 W6): No recipe makes it yet."
-      },
       "item_clay": {
         "status": "live",
-        "tier": 3,
+        "tier": 1,
         "note": "Tier inferred (ledger first fill, to confirm): no map writes a clay or quartz deposit: waits for a later plane."
       },
       "item_quartz": {
         "status": "live",
-        "tier": 3,
+        "tier": 2,
         "note": "Tier inferred (ledger first fill, to confirm): no map writes a clay or quartz deposit: waits for a later plane."
       },
       "item_coal": {
@@ -172,11 +167,11 @@
       },
       "item_blackberry": {
         "status": "live",
-        "tier": 1
+        "tier": 2
       },
       "item_apple": {
         "status": "live",
-        "tier": 0,
+        "tier": 2,
         "note": "Starter Camp (owner 2026-10-30): apples and bee products are made in the camp (the Hall’s Apple Seeds, the Apple Orchard, the Beehive)."
       },
       "item_banana": {
@@ -185,7 +180,7 @@
       },
       "item_cherry": {
         "status": "live",
-        "tier": 1
+        "tier": 3
       },
       "item_coconut": {
         "status": "live",
@@ -193,7 +188,7 @@
       },
       "item_grapes": {
         "status": "live",
-        "tier": 2
+        "tier": 3
       },
       "item_lemon": {
         "status": "live",
@@ -213,7 +208,7 @@
       },
       "item_peach": {
         "status": "live",
-        "tier": 1
+        "tier": 3
       },
       "item_pineapple": {
         "status": "live",
@@ -225,7 +220,7 @@
       },
       "item_strawberry": {
         "status": "live",
-        "tier": 1
+        "tier": 3
       },
       "item_fir_wood": {
         "status": "live",
@@ -301,7 +296,7 @@
       },
       "item_apple_juice": {
         "status": "live",
-        "tier": 0,
+        "tier": 2,
         "note": "Starter Camp (owner 2026-10-30): apples and bee products are made in the camp (the Hall’s Apple Seeds, the Apple Orchard, the Beehive)."
       },
       "item_lemonade": {
@@ -314,7 +309,7 @@
       },
       "item_beer": {
         "status": "live",
-        "tier": 1,
+        "tier": 2,
         "note": "Plane 1 (owner 2026-11-02): planned for Plane 1 instead of lowering its gate, so the Starter Camp stays short."
       },
       "item_raw_beef": {
@@ -323,7 +318,7 @@
       },
       "item_steak": {
         "status": "live",
-        "tier": 1
+        "tier": 3
       },
       "item_bones": {
         "status": "live",
@@ -416,27 +411,12 @@
         "tier": 0,
         "note": "Tier inferred (ledger first fill, to confirm): a starter tool every new game holds, so the Starter Camp's."
       },
-      "item_copper_sickle": {
-        "status": "live",
-        "tier": 0,
-        "note": "Tier inferred (ledger first fill, to confirm): a starter tool every new game holds, so the Starter Camp's."
-      },
       "item_copper_sword": {
         "status": "live",
         "tier": 0,
         "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
       },
       "item_copper_dagger": {
-        "status": "live",
-        "tier": 0,
-        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
-      },
-      "item_copper_cleaver": {
-        "status": "live",
-        "tier": 0,
-        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
-      },
-      "item_copper_greatsword": {
         "status": "live",
         "tier": 0,
         "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
@@ -460,9 +440,8 @@
         "tier": 2
       },
       "item_elixir_of_valor": {
-        "status": "parked",
-        "tier": 2,
-        "note": "Parked (brief 330 W6): No recipe makes it yet."
+        "status": "live",
+        "tier": 3
       },
       "item_elixir_of_ironskin": {
         "status": "live",
@@ -556,11 +535,11 @@
       },
       "item_cooked_crab": {
         "status": "live",
-        "tier": 1
+        "tier": 2
       },
       "item_honey_bread": {
         "status": "live",
-        "tier": 0,
+        "tier": 2,
         "note": "Starter Camp (owner 2026-10-30): apples and bee products are made in the camp (the Hall’s Apple Seeds, the Apple Orchard, the Beehive)."
       },
       "item_copper_helmet": {
@@ -584,7 +563,7 @@
       },
       "item_leather": {
         "status": "live",
-        "tier": 2
+        "tier": 1
       },
       "item_cooked_trout": {
         "status": "live",
@@ -593,14 +572,10 @@
       },
       "item_grape_juice": {
         "status": "live",
-        "tier": 2,
+        "tier": 3,
         "note": "Tier inferred (ledger first fill, to confirm): made from a plane-2 ingredient (trout, grapes, lavender)."
       },
       "item_iron_woodaxe": {
-        "status": "live",
-        "tier": 2
-      },
-      "item_iron_sickle": {
         "status": "live",
         "tier": 2
       },
@@ -613,10 +588,6 @@
         "tier": 2
       },
       "item_iron_cleaver": {
-        "status": "live",
-        "tier": 2
-      },
-      "item_iron_greatsword": {
         "status": "live",
         "tier": 2
       },
@@ -638,22 +609,22 @@
       },
       "item_cooked_tropical_fish": {
         "status": "live",
-        "tier": 0,
+        "tier": 3,
         "note": "Starter Camp (ledger fix pack): cooked from tropical fish."
       },
       "item_cooked_swordfish": {
         "status": "live",
-        "tier": 0,
+        "tier": 3,
         "note": "Starter Camp (ledger fix pack): cooked from swordfish."
       },
       "item_cooked_lobster": {
         "status": "live",
-        "tier": 1,
+        "tier": 3,
         "note": "Plane 1 (owner 2026-11-02): planned for Plane 1 instead of lowering its gate, so the Starter Camp stays short."
       },
       "item_lavender_salmon": {
         "status": "live",
-        "tier": 2,
+        "tier": 3,
         "note": "Plane 2 (ledger fix pack): cooked from salmon."
       },
       "item_coal_prospecting_map": {
@@ -776,6 +747,851 @@
         "status": "live",
         "tier": 0,
         "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+      },
+      "item_mythril_woodaxe": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_adamantine_woodaxe": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_darkmetal_woodaxe": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_iron_shield": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_mythril_dagger": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_mythril_sword": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_mythril_helmet": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_mythril_shield": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_mythril_chestplate": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_adamantine_dagger": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_adamantine_sword": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_adamantine_helmet": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_adamantine_shield": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_adamantine_chestplate": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_darkmetal_dagger": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_darkmetal_sword": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_darkmetal_helmet": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_darkmetal_shield": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_darkmetal_chestplate": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_iron_mace": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_silver_dagger": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_silver_sword": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_masterwork_blade": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_potato": {
+        "status": "live",
+        "tier": 0
+      },
+      "item_potato_seed": {
+        "status": "live",
+        "tier": 0
+      },
+      "item_carrot": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_carrot_seed": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_onion": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_onion_seed": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_celery": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_celery_seed": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_leek": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_leek_seed": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_turnip": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_turnip_seed": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_cabbage": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_cabbage_seed": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_garlic": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_garlic_seed": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_tomato": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_tomato_seed": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_corn": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_corn_seed": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_emberroot": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_emberroot_seed": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_voidcap": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_voidcap_seed": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_milk": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_baked_potato": {
+        "status": "live",
+        "tier": 1
+      },
+      "item_bread": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_carrot_soup": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_redberry_tea": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_plain_stew": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_blackberry_pie": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_apple_pie": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_mirepoix": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_onion_soup": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_butter": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_buttered_potato": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_hot_milk": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_cherry_cordial": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_cheese": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_trout_and_leek": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_cheese_bread": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_cherry_pie": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_beef_and_carrot_stew": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_strawberry_milk": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_potato_leek_stew": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_stout": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_strawberry_tart": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_blueberry_tonic": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_steak_and_onions": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_builder_s_brew": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_cooked_salmon": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_garden_stew": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_peach_nectar": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_peach_pie": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_raspberry_cordial": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_raspberry_tart": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_lemon_fish": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_sofrito": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_tomato_soup": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_orange_juice": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_garlic_steak": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_lavender_tea": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_hearty_beef_stew": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_hearty_potato_stew": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_wine": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_corn_chowder": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_pineapple_punch": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_buttered_lobster": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_golden_stew": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_banana_smoothie": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_banana_bread": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_royal_beef_stew": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_pineapple_cake": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_royal_potato_stew": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_lobster_bisque": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_coconut_milk": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_emberroot_soup": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_watermelon_cooler": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_mead": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_coconut_swordfish": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_coconut_pie": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_ember_steak": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_ember_ale": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_swordfish_in_sofrito": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_spiced_wine": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_ember_stew": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_voidcap_soup": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_voidcap_tea": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_voidcap_pie": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_dark_mead": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_harvest_platter": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_void_stew": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_sunset_punch": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_elder_draught": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_hide": {
+        "status": "live",
+        "tier": 1
+      },
+      "item_oak_plank": {
+        "status": "live",
+        "tier": 1
+      },
+      "item_fir_plank": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_maple_plank": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_mahogany_plank": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_ebony_plank": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_iron_nails": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_mythril_nails": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_silver_ring_band": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_silver_chain": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_gold_ring_band": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_gold_chain": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_leather_shield": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_hard_leather": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_hard_hat": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_hard_shield": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_hard_chest": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_studded_leather": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_studded_hat": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_studded_shield": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_studded_chest": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_red_scale": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_dragonscale": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_dragonscale_hat": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_dragonscale_shield": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_dragonscale_chest": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_uncut_topaz": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_cut_topaz": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_uncut_ruby": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_cut_ruby": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_uncut_sapphire": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_cut_sapphire": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_uncut_emerald": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_cut_emerald": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_uncut_amethyst": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_cut_amethyst": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_uncut_diamond": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_cut_diamond": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_silver_topaz_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_silver_ruby_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_silver_sapphire_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_silver_emerald_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_silver_amethyst_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_silver_diamond_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_silver_topaz_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_silver_ruby_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_silver_sapphire_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_silver_emerald_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_silver_amethyst_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_silver_diamond_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_gold_topaz_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_gold_ruby_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_gold_sapphire_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_gold_emerald_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_gold_amethyst_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_gold_diamond_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_gold_topaz_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_gold_ruby_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_gold_sapphire_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_gold_emerald_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_gold_amethyst_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_gold_diamond_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_mint": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_mint_seed": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_rose": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_rose_seed": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_mandrake": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_mandrake_seed": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_moonpetal": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_moonpetal_seed": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_starflower": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_starflower_seed": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_mushroom": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_prospectors_draught": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_scholars_tonic": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_bountiful_draught": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_greater_ironskin": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_greater_valor": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_elixir_of_legends": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_masters_draught": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_marble": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_iron_gears": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_basalt": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_cut_stone": {
+        "status": "live",
+        "tier": 0
+      },
+      "item_roof_tiles": {
+        "status": "live",
+        "tier": 1
+      },
+      "item_fir_frame": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_maple_frame": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_marble_block": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_mahogany_frame": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_ebony_frame": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_basalt_block": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_wool": {
+        "status": "live",
+        "tier": 1
+      },
+      "item_sheep_banner": {
+        "status": "live",
+        "tier": 2,
+        "note": "Seed map: a rare drop that builds its camp."
+      },
+      "item_master_rod": {
+        "status": "live",
+        "tier": 3
       }
     },
     "tokens": {
@@ -802,11 +1618,6 @@
         "status": "live",
         "tier": 0
       },
-      "token_ceramics_kiln": {
-        "status": "parked",
-        "tier": 3,
-        "note": "Parked (brief 330 W6): A Crafting station nothing builds yet."
-      },
       "token_forge_2": {
         "status": "parked",
         "tier": 3,
@@ -830,11 +1641,6 @@
         "tier": 3,
         "note": "Parked (brief 330 W6): Markets are cut; nothing builds it."
       },
-      "token_campfire": {
-        "status": "parked",
-        "tier": 0,
-        "note": "Parked (brief 330 W6): A Cooking station nothing builds yet."
-      },
       "token_wheat_field": {
         "status": "live",
         "tier": 0,
@@ -844,11 +1650,6 @@
         "status": "live",
         "tier": 0,
         "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
-      },
-      "token_grandma_s_kitchen": {
-        "status": "parked",
-        "tier": 1,
-        "note": "Parked (brief 330 W6): A better kitchen nothing builds yet."
       },
       "token_guild_hall": {
         "status": "live",
@@ -865,12 +1666,12 @@
       },
       "token_quartz_deposit": {
         "status": "live",
-        "tier": 3,
+        "tier": 2,
         "note": "Tier inferred (ledger first fill, to confirm): no map writes it: waits for a later plane (clay, quartz, ceramics)."
       },
       "token_clay_deposit": {
         "status": "live",
-        "tier": 3,
+        "tier": 1,
         "note": "Tier inferred (ledger first fill, to confirm): no map writes it: waits for a later plane (clay, quartz, ceramics)."
       },
       "token_workbench": {
@@ -893,7 +1694,7 @@
       },
       "token_blackberry_bush": {
         "status": "live",
-        "tier": 1
+        "tier": 2
       },
       "token_raspberry_bush": {
         "status": "live",
@@ -901,7 +1702,7 @@
       },
       "token_blueberry_bush": {
         "status": "live",
-        "tier": 1
+        "tier": 3
       },
       "token_pineapple_bush": {
         "status": "live",
@@ -909,20 +1710,20 @@
       },
       "token_strawberry_bush": {
         "status": "live",
-        "tier": 1
+        "tier": 3
       },
       "token_grapevine": {
         "status": "live",
-        "tier": 2
+        "tier": 3
       },
       "token_apple_tree": {
         "status": "live",
-        "tier": 0,
+        "tier": 2,
         "note": "Starter Camp (owner 2026-10-30): apples and bee products are made in the camp (the Hall’s Apple Seeds, the Apple Orchard, the Beehive)."
       },
       "token_cherry_tree": {
         "status": "live",
-        "tier": 1
+        "tier": 3
       },
       "token_lemon_tree": {
         "status": "live",
@@ -938,7 +1739,7 @@
       },
       "token_peach_tree": {
         "status": "live",
-        "tier": 1
+        "tier": 3
       },
       "token_watermelon_patch": {
         "status": "live",
@@ -1030,11 +1831,6 @@
         "status": "live",
         "tier": 1
       },
-      "token_fighter_s_academy": {
-        "status": "live",
-        "tier": 0,
-        "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
-      },
       "token_volcanic_island": {
         "status": "parked",
         "tier": 3,
@@ -1043,11 +1839,6 @@
       "token_cow": {
         "status": "live",
         "tier": 1
-      },
-      "token_oak_sapling": {
-        "status": "live",
-        "tier": 0,
-        "note": "Tier inferred (ledger first fill, to confirm): part of a camp node's cycle (oak sapling and stump; the Coast's shrimp state; the old wheat stages)."
       },
       "token_stone_outcrop": {
         "status": "live",
@@ -1076,11 +1867,6 @@
         "status": "parked",
         "tier": 0,
         "note": "Parked (brief 330 W6): The old growing wheat: the Field grows wheat by its recipe now; nothing places it."
-      },
-      "token_apple_sapling": {
-        "status": "live",
-        "tier": 0,
-        "note": "Tier inferred (ledger first fill, to confirm): grows from the Apple Orchard, which camp Apple Seeds build."
       },
       "token_apple_orchard": {
         "status": "live",
@@ -1160,14 +1946,9 @@
         "tier": 0,
         "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
       },
-      "token_copper_smithy": {
-        "status": "live",
-        "tier": 0
-      },
       "token_brewery": {
         "status": "live",
-        "tier": 0,
-        "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
+        "tier": 3
       },
       "token_alchemy_table": {
         "status": "live",
@@ -1258,14 +2039,9 @@
         "tier": 2,
         "note": "Tier inferred (ledger first fill, to confirm): part of the fir tree's cycle."
       },
-      "token_fir_sapling": {
-        "status": "live",
-        "tier": 2,
-        "note": "Tier inferred (ledger first fill, to confirm): part of the fir tree's cycle."
-      },
       "token_wild_lavender": {
         "status": "live",
-        "tier": 2
+        "tier": 1
       },
       "token_bog_pool": {
         "status": "live",
@@ -1325,19 +2101,15 @@
       },
       "token_iron_smithy": {
         "status": "live",
-        "tier": 2
-      },
-      "token_iron_furnace": {
-        "status": "live",
-        "tier": 2
+        "tier": 3
       },
       "token_fir_workbench": {
         "status": "live",
-        "tier": 2
+        "tier": 3
       },
       "token_tannery": {
         "status": "live",
-        "tier": 2
+        "tier": 3
       },
       "token_logging_camp": {
         "status": "live",
@@ -1363,17 +2135,7 @@
         "tier": 3,
         "note": "Part of the Birch Tree's cycle (world refill pack)."
       },
-      "token_birch_sapling": {
-        "status": "live",
-        "tier": 3,
-        "note": "Part of the Birch Tree's cycle (world refill pack)."
-      },
       "token_maple_stump": {
-        "status": "live",
-        "tier": 3,
-        "note": "Part of the Maple Tree's cycle (world refill pack)."
-      },
-      "token_maple_sapling": {
         "status": "live",
         "tier": 3,
         "note": "Part of the Maple Tree's cycle (world refill pack)."
@@ -1383,27 +2145,12 @@
         "tier": 3,
         "note": "Part of the Mahogany Tree's cycle (world refill pack)."
       },
-      "token_mahogany_sapling": {
-        "status": "live",
-        "tier": 3,
-        "note": "Part of the Mahogany Tree's cycle (world refill pack)."
-      },
       "token_ebony_stump": {
         "status": "live",
         "tier": 3,
         "note": "Part of the Ebony Tree's cycle (world refill pack)."
       },
-      "token_ebony_sapling": {
-        "status": "live",
-        "tier": 3,
-        "note": "Part of the Ebony Tree's cycle (world refill pack)."
-      },
       "token_cedar_stump": {
-        "status": "live",
-        "tier": 3,
-        "note": "Part of the Cedar Tree's cycle (world refill pack)."
-      },
-      "token_cedar_sapling": {
         "status": "live",
         "tier": 3,
         "note": "Part of the Cedar Tree's cycle (world refill pack)."
@@ -1417,6 +2164,154 @@
         "tier": 0
       },
       "token_small_slime": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_cedar_forest": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_ebony_forest": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_geode": {
+        "status": "live",
+        "tier": 2
+      },
+      "token_fossil_bed": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_giant_mushroom": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_marble_vein": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_master_smithy": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_grand_forge": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_smiths_row": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_bakehouse": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_banquet_hall": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_market_kitchen": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_jewellers_hall": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_craftsmens_yard": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_herbalists_hut": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_alchemists_hall": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_masters_study": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_physic_garden": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_sawmill": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_foresters_lodge": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_grovekeepers_hut": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_timber_yard": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_mine_head": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_deep_workings": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_ore_market": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_pier": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_fish_market": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_fishmongers": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_barn": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_greenhouse": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_manor_farm": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_farmers_market": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_basalt_vein": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_town_square": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_builders_yard": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_sheep": {
+        "status": "live",
+        "tier": 1
+      },
+      "token_sheep_pasture": {
         "status": "live",
         "tier": 1
       }
@@ -1473,22 +2368,12 @@
         "tier": 0,
         "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
       },
-      "recipe_copper_cleaver": {
-        "status": "live",
-        "tier": 0,
-        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
-      },
       "recipe_copper_bow": {
         "status": "live",
         "tier": 0,
         "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
       },
       "recipe_copper_wand": {
-        "status": "live",
-        "tier": 0,
-        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
-      },
-      "recipe_copper_greatsword": {
         "status": "live",
         "tier": 0,
         "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
@@ -1508,10 +2393,6 @@
         "tier": 2
       },
       "recipe_iron_woodaxe": {
-        "status": "live",
-        "tier": 2
-      },
-      "recipe_iron_sickle": {
         "status": "live",
         "tier": 2
       },
@@ -1539,18 +2420,9 @@
         "status": "live",
         "tier": 2
       },
-      "recipe_iron_greatsword": {
-        "status": "live",
-        "tier": 2
-      },
       "recipe_iron_chestplate": {
         "status": "live",
         "tier": 2
-      },
-      "recipe_copper_sickle": {
-        "status": "live",
-        "tier": 0,
-        "note": "Starter Camp (ledger fix pack): a second sickle, so more than one hero can farm."
       },
       "recipe_mythril_pickaxe": {
         "status": "live",
@@ -1567,6 +2439,126 @@
         "tier": 3,
         "note": "The pickaxe past iron (brief 330 W6), as the Iron Pickaxe."
       },
+      "recipe_mythril_woodaxe": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_adamantine_woodaxe": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_darkmetal_woodaxe": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_iron_shield": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_mythril_dagger": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_mythril_sword": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_mythril_helmet": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_mythril_shield": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_mythril_chestplate": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_adamantine_dagger": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_adamantine_sword": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_adamantine_helmet": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_adamantine_shield": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_adamantine_chestplate": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_darkmetal_dagger": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_darkmetal_sword": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_darkmetal_helmet": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_darkmetal_shield": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_darkmetal_chestplate": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_iron_mace": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_silver_dagger": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_silver_sword": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_masterwork_blade": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_iron_nails": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_mythril_nails": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_silver_ring_band": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_silver_chain": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_gold_ring_band": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_gold_chain": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_iron_gears": {
+        "status": "live",
+        "tier": 3
+      },
       "recipe_dough": {
         "status": "live",
         "tier": 0,
@@ -1578,7 +2570,7 @@
       },
       "recipe_mtp8qjj6": {
         "status": "live",
-        "tier": 0,
+        "tier": 2,
         "note": "Starter Camp (owner 2026-10-30): apples and bee products are made in the camp (the Hall’s Apple Seeds, the Apple Orchard, the Beehive)."
       },
       "recipe_mtp8qjj7": {
@@ -1591,12 +2583,12 @@
       },
       "recipe_mtp8qjj9": {
         "status": "live",
-        "tier": 1,
+        "tier": 2,
         "note": "Plane 1 (owner 2026-11-02): planned for Plane 1 instead of lowering its gate, so the Starter Camp stays short."
       },
       "recipe_mtym8vxh": {
         "status": "live",
-        "tier": 1
+        "tier": 3
       },
       "recipe_roast_meat": {
         "status": "live",
@@ -1604,11 +2596,11 @@
       },
       "recipe_cooked_crab": {
         "status": "live",
-        "tier": 1
+        "tier": 2
       },
       "recipe_honey_bread": {
         "status": "live",
-        "tier": 0,
+        "tier": 2,
         "note": "Starter Camp (owner 2026-10-30): apples and bee products are made in the camp (the Hall’s Apple Seeds, the Apple Orchard, the Beehive)."
       },
       "recipe_cooked_trout": {
@@ -1618,28 +2610,308 @@
       },
       "recipe_grape_juice": {
         "status": "live",
-        "tier": 2,
+        "tier": 3,
         "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (item_grape_juice, Plane 2)."
       },
       "recipe_cooked_tropical_fish": {
         "status": "live",
-        "tier": 0,
+        "tier": 3,
         "note": "Starter Camp (ledger fix pack): follows what it makes."
       },
       "recipe_cooked_swordfish": {
         "status": "live",
-        "tier": 0,
+        "tier": 3,
         "note": "Starter Camp (ledger fix pack): follows what it makes."
       },
       "recipe_cooked_lobster": {
         "status": "live",
-        "tier": 1,
+        "tier": 3,
         "note": "Plane 1 (owner 2026-11-02): planned for Plane 1 instead of lowering its gate, so the Starter Camp stays short."
       },
       "recipe_lavender_salmon": {
         "status": "live",
-        "tier": 2,
+        "tier": 3,
         "note": "Plane 2 (ledger fix pack): follows what it makes."
+      },
+      "recipe_baked_potato": {
+        "status": "live",
+        "tier": 1
+      },
+      "recipe_bread": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_carrot_soup": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_redberry_tea": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_plain_stew": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_blackberry_pie": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_apple_pie": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_mirepoix": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_onion_soup": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_butter": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_buttered_potato": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_blueberry_pie": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_hot_milk": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_cherry_cordial": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_cheese": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_trout_and_leek": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_cheese_bread": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_cherry_pie": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_beef_and_carrot_stew": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_strawberry_milk": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_potato_leek_stew": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_stout": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_strawberry_tart": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_blueberry_tonic": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_steak_and_onions": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_builder_s_brew": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_cooked_salmon": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_garden_stew": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_peach_nectar": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_peach_pie": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_raspberry_cordial": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_raspberry_tart": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_lemon_fish": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_sofrito": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_tomato_soup": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_orange_juice": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_garlic_steak": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_lavender_tea": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_hearty_beef_stew": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_hearty_potato_stew": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_wine": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_corn_chowder": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_pineapple_punch": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_buttered_lobster": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_golden_stew": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_banana_smoothie": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_banana_bread": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_royal_beef_stew": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_pineapple_cake": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_royal_potato_stew": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_lobster_bisque": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_coconut_milk": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_emberroot_soup": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_watermelon_cooler": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_mead": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_coconut_swordfish": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_coconut_pie": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_ember_steak": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_ember_ale": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_swordfish_in_sofrito": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_spiced_wine": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_ember_stew": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_voidcap_soup": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_voidcap_tea": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_voidcap_pie": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_dark_mead": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_harvest_platter": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_void_stew": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_sunset_punch": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_elder_draught": {
+        "status": "live",
+        "tier": 3
       },
       "recipe_muily2pf": {
         "status": "live",
@@ -1648,7 +2920,7 @@
       },
       "recipe_muily2pg": {
         "status": "live",
-        "tier": 0,
+        "tier": 2,
         "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (item_torch, Starter Camp)."
       },
       "recipe_search_bird_nest": {
@@ -1673,7 +2945,7 @@
       },
       "recipe_leather": {
         "status": "live",
-        "tier": 2
+        "tier": 1
       },
       "recipe_leather_hat": {
         "status": "live",
@@ -1693,18 +2965,282 @@
         "tier": 0,
         "note": "Starter Camp (ledger fix pack): a second trap, so more than one hero can trap."
       },
+      "recipe_oak_plank": {
+        "status": "live",
+        "tier": 1
+      },
+      "recipe_fir_plank": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_maple_plank": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_mahogany_plank": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_ebony_plank": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_leather_shield": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_hard_leather": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_hard_hat": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_hard_shield": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_hard_chest": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_studded_leather": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_studded_hat": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_studded_shield": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_studded_chest": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_dragonscale": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_dragonscale_hat": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_dragonscale_shield": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_dragonscale_chest": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_cut_topaz": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_cut_ruby": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_cut_sapphire": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_cut_emerald": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_cut_amethyst": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_cut_diamond": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_silver_topaz_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_silver_ruby_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_silver_sapphire_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_silver_emerald_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_silver_amethyst_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_silver_diamond_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_silver_topaz_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_silver_ruby_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_silver_sapphire_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_silver_emerald_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_silver_amethyst_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_silver_diamond_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_gold_topaz_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_gold_ruby_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_gold_sapphire_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_gold_emerald_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_gold_amethyst_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_gold_diamond_ring": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_gold_topaz_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_gold_ruby_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_gold_sapphire_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_gold_emerald_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_gold_amethyst_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_gold_diamond_amulet": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_master_rod": {
+        "status": "live",
+        "tier": 3
+      },
       "recipe_wheat": {
         "status": "live",
         "tier": 0
       },
       "recipe_lavender": {
         "status": "live",
-        "tier": 2
+        "tier": 1
       },
       "recipe_flour": {
         "status": "live",
         "tier": 0,
         "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (item_flour, Starter Camp)."
+      },
+      "recipe_potato": {
+        "status": "live",
+        "tier": 0
+      },
+      "recipe_carrot": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_onion": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_celery": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_leek": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_turnip": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_cabbage": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_garlic": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_tomato": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_corn": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_emberroot": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_voidcap": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_mint": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_rose": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_mandrake": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_moonpetal": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_starflower": {
+        "status": "live",
+        "tier": 3
       },
       "recipe_muily2pb": {
         "status": "live",
@@ -1719,11 +3255,6 @@
       "recipe_muily2pd": {
         "status": "live",
         "tier": 0
-      },
-      "recipe_muily2pe": {
-        "status": "live",
-        "tier": 0,
-        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_fighter_s_academy, Starter Camp)."
       },
       "recipe_muil1w5z": {
         "status": "live",
@@ -1744,14 +3275,9 @@
         "status": "live",
         "tier": 0
       },
-      "recipe_build_copper_smithy": {
-        "status": "live",
-        "tier": 0
-      },
       "recipe_build_brewery": {
         "status": "live",
-        "tier": 0,
-        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_brewery, Starter Camp)."
+        "tier": 3
       },
       "recipe_build_alchemy_table": {
         "status": "live",
@@ -1803,23 +3329,19 @@
       },
       "recipe_build_iron_smithy": {
         "status": "live",
-        "tier": 2
-      },
-      "recipe_build_iron_furnace": {
-        "status": "live",
-        "tier": 2
+        "tier": 3
       },
       "recipe_build_fir_workbench": {
         "status": "live",
-        "tier": 2
+        "tier": 3
       },
       "recipe_build_tannery": {
         "status": "live",
-        "tier": 2
+        "tier": 3
       },
       "recipe_build_fir_forest": {
         "status": "live",
-        "tier": 2
+        "tier": 3
       },
       "recipe_build_logging_camp": {
         "status": "live",
@@ -1950,6 +3472,165 @@
         "tier": 3,
         "note": "Plant a forest from its seedlings (brief 330 W6), as the Fir Forest."
       },
+      "recipe_build_cedar_forest": {
+        "status": "live",
+        "tier": 3,
+        "note": "Plant a forest from its seedlings (brief 330 W6), as the Fir Forest."
+      },
+      "recipe_build_ebony_forest": {
+        "status": "live",
+        "tier": 3,
+        "note": "Plant a forest from its seedlings (brief 330 W6), as the Fir Forest."
+      },
+      "recipe_build_master_smithy": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_grand_forge": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_smiths_row": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_bakehouse": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_banquet_hall": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_market_kitchen": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_jewellers_hall": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_craftsmens_yard": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_herbalists_hut": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_alchemists_hall": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_masters_study": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_physic_garden": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_sawmill": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_foresters_lodge": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_grovekeepers_hut": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_timber_yard": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_mine_head": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_deep_workings": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_ore_market": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_pier": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_fish_market": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_fishmongers": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_barn": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_greenhouse": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_manor_farm": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_farmers_market": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_town_square": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_builders_yard": {
+        "status": "live",
+        "tier": 0
+      },
+      "recipe_cut_stone": {
+        "status": "live",
+        "tier": 0
+      },
+      "recipe_roof_tiles": {
+        "status": "live",
+        "tier": 1
+      },
+      "recipe_fir_frame": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_maple_frame": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_marble_block": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_mahogany_frame": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_ebony_frame": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_basalt_block": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_build_sheep_pasture": {
+        "status": "live",
+        "tier": 2,
+        "note": "Builds a creature camp from its banner (brief 330 W6)."
+      },
       "recipe_birdwatcher": {
         "status": "live",
         "tier": 2,
@@ -1959,6 +3640,38 @@
         "status": "live",
         "tier": 2,
         "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (item_elixir_of_ironskin, Plane 2)."
+      },
+      "recipe_elixir_of_valor": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_prospectors_draught": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_scholars_tonic": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_bountiful_draught": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_greater_ironskin": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_greater_valor": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_elixir_of_legends": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_masters_draught": {
+        "status": "live",
+        "tier": 3
       }
     }
   },
@@ -1996,6 +3709,72 @@
         },
         "autoSyncId": true,
         "id": "item_healing_potion"
+      },
+      "item_trout_bait": {
+        "name": "Trout Bait",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Bait for the Mythril-tier fish (Salmon 40, Lobster 50): Crafting 38, 1 Trout makes 2. Planned until brief 770 G2 lets a pool ask it."
+        },
+        "autoSyncId": true,
+        "id": "item_trout_bait"
+      },
+      "item_salmon_bait": {
+        "name": "Salmon Bait",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Bait for the Adamantine-tier fish (Swordfish 63): Crafting 39 (its Salmon comes at Fishing 40; Crafting 60 to 79 are full), 1 Salmon makes 2. Planned until G2."
+        },
+        "autoSyncId": true,
+        "id": "item_salmon_bait"
+      },
+      "item_swordfish_chum": {
+        "name": "Swordfish Chum",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Bait for the Darkmetal-tier fish (Shark 83): Crafting 79, 1 Swordfish makes 2. Planned until G2."
+        },
+        "autoSyncId": true,
+        "id": "item_swordfish_chum"
+      },
+      "item_seaweed": {
+        "name": "Seaweed",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Caught at the Coast from Fishing 15 with any tool; for Alchemy's Angler's Luck and Green Thumb. Planned until the waters pack after G2."
+        },
+        "autoSyncId": true,
+        "id": "item_seaweed"
+      },
+      "item_oyster": {
+        "name": "Oyster",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Caught at the Oyster Bed with a Trap from Fishing 25; for Cooking's Oyster Stew, and rarely a Pearl. Planned until the waters pack after G2."
+        },
+        "autoSyncId": true,
+        "id": "item_oyster"
+      },
+      "item_pearl": {
+        "name": "Pearl",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "A rare Oyster Bed catch from Fishing 25; for Alchemy's Elixir of Keen Eye and Grand Scholar's Tonic. Planned until the waters pack after G2."
+        },
+        "autoSyncId": true,
+        "id": "item_pearl"
       }
     },
     "tokens": {

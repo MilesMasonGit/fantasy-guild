@@ -204,7 +204,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 14,
+    "value": 15,
     "autoSyncId": true,
     "id": "item_dough",
     "valueSource": "recipe_dough",
@@ -230,22 +230,6 @@
       "Berry"
     ]
   },
-  "item_shrimp_trawler_potion": {
-    "name": "Shrimp Trawler Potion",
-    "description": "",
-    "type": "potion",
-    "sprite": "i_potion_shrimp_pink",
-    "stackable": true,
-    "restoreAmount": 5,
-    "equipSlot": "consumable",
-    "value": null,
-    "autoSyncId": true,
-    "id": "item_shrimp_trawler_potion",
-    "valueSource": null,
-    "tags": [
-      "Potion"
-    ]
-  },
   "item_clay": {
     "name": "Clay",
     "description": "",
@@ -254,7 +238,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": 2,
     "autoSyncId": true,
     "id": "item_clay",
     "valueSource": "token_clay_deposit",
@@ -270,7 +254,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": 3,
     "autoSyncId": true,
     "id": "item_quartz",
     "valueSource": "token_quartz_deposit",
@@ -577,7 +561,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 6,
+    "value": 4,
     "valueSource": "token_maple_tree",
     "autoSyncId": true,
     "id": "item_maple_wood",
@@ -593,7 +577,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 50,
+    "value": 19,
     "valueSource": "token_mahogany_tree",
     "autoSyncId": true,
     "id": "item_mahogany_wood",
@@ -609,7 +593,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 73,
+    "value": 56,
     "valueSource": "token_ebony_tree",
     "autoSyncId": true,
     "id": "item_ebony_wood",
@@ -625,7 +609,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 19,
+    "value": 9,
     "valueSource": "token_cedar_tree",
     "autoSyncId": true,
     "id": "item_cedar_wood",
@@ -641,8 +625,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 15,
-    "valueSource": "token_birch_forest",
+    "value": 2,
+    "valueSource": "token_birch_tree",
     "autoSyncId": true,
     "id": "item_birch_wood",
     "tags": [
@@ -657,7 +641,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 4,
+    "value": 6,
     "valueSource": "token_iron_ore_vein",
     "autoSyncId": true,
     "id": "item_iron_ore",
@@ -691,7 +675,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 52,
+    "value": 73,
     "valueSource": "token_gold_ore_vein",
     "autoSyncId": true,
     "id": "item_gold_ore",
@@ -708,7 +692,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 161,
+    "value": 33,
     "valueSource": "token_mythril_ore_vein",
     "autoSyncId": true,
     "id": "item_mythril_ore",
@@ -742,7 +726,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 619,
+    "value": 480,
     "valueSource": "token_darkmetal_ore_vein",
     "autoSyncId": true,
     "id": "item_darkmetal_ore",
@@ -759,7 +743,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 33,
+    "value": 47,
     "valueSource": "recipe_mtp8qjj0",
     "autoSyncId": true,
     "id": "item_iron_ingot",
@@ -776,7 +760,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1856,
+    "value": 384,
     "valueSource": "recipe_mtp8qjj3",
     "autoSyncId": true,
     "id": "item_mythril_ingot",
@@ -793,7 +777,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 496,
+    "value": 695,
     "valueSource": "recipe_mtp8qjj1",
     "autoSyncId": true,
     "id": "item_gold_ingot",
@@ -844,7 +828,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 11399,
+    "value": 8841,
     "valueSource": "recipe_mtp8qjj5",
     "autoSyncId": true,
     "id": "item_darkmetal_ingot",
@@ -861,7 +845,7 @@
     "stackable": true,
     "restoreAmount": 20,
     "equipSlot": "drink",
-    "value": 5,
+    "value": 6,
     "valueSource": "recipe_mtp8qjj6",
     "autoSyncId": true,
     "id": "item_apple_juice",
@@ -930,7 +914,7 @@
     "stackable": true,
     "restoreAmount": 15,
     "equipSlot": "drink",
-    "value": 8,
+    "value": 10,
     "valueSource": "recipe_mtp8qjj9",
     "autoSyncId": true,
     "id": "item_beer",
@@ -988,8 +972,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
-    "valueSource": null,
+    "value": 28,
+    "valueSource": "token_fossil_bed",
     "autoSyncId": true,
     "id": "item_bones",
     "tags": [
@@ -1120,7 +1104,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": 97,
     "valueSource": "token_birch_tree",
     "autoSyncId": true,
     "id": "item_birch_seedling",
@@ -1137,7 +1121,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 29,
+    "value": 41,
     "valueSource": "token_fir_tree",
     "autoSyncId": true,
     "id": "item_fir_seedling",
@@ -1154,7 +1138,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 345,
+    "value": 217,
     "valueSource": "token_maple_tree",
     "autoSyncId": true,
     "id": "item_maple_seedling",
@@ -1171,7 +1155,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 4094,
+    "value": 3174,
     "valueSource": "token_ebony_tree",
     "autoSyncId": true,
     "id": "item_ebony_seedling",
@@ -1188,7 +1172,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1067,
+    "value": 482,
     "valueSource": "token_cedar_tree",
     "autoSyncId": true,
     "id": "item_cedar_seedling",
@@ -1205,7 +1189,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 2793,
+    "value": 1067,
     "valueSource": "token_mahogany_tree",
     "autoSyncId": true,
     "id": "item_mahogany_seedling",
@@ -1222,7 +1206,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 28,
+    "value": 29,
     "valueSource": "recipe_copper_pickaxe",
     "autoSyncId": true,
     "id": "item_copper_pickaxe",
@@ -1244,7 +1228,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 152,
+    "value": 217,
     "valueSource": "recipe_iron_pickaxe",
     "autoSyncId": true,
     "id": "item_iron_pickaxe",
@@ -1265,7 +1249,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 8538,
+    "value": 1771,
     "valueSource": "recipe_mythril_pickaxe",
     "autoSyncId": true,
     "id": "item_mythril_pickaxe",
@@ -1279,14 +1263,14 @@
     ]
   },
   "item_adamantium_pickaxe": {
-    "name": "Adamantium Pickaxe",
+    "name": "Adamantine Pickaxe",
     "description": "",
     "type": "tool",
     "sprite": "i_pick_addy",
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 40213,
+    "value": 40235,
     "valueSource": "recipe_adamantium_pickaxe",
     "autoSyncId": true,
     "id": "item_adamantium_pickaxe",
@@ -1307,7 +1291,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 52435,
+    "value": 40733,
     "valueSource": "recipe_darkmetal_pickaxe",
     "autoSyncId": true,
     "id": "item_darkmetal_pickaxe",
@@ -1328,7 +1312,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 7,
+    "value": 22,
     "valueSource": "recipe_mtozw3la",
     "autoSyncId": true,
     "id": "item_copper_woodaxe",
@@ -1364,28 +1348,6 @@
       "Fishing"
     ]
   },
-  "item_copper_sickle": {
-    "name": "Copper Sickle",
-    "description": "",
-    "type": "tool",
-    "sprite": "i_chisel_copper",
-    "stackable": true,
-    "restoreAmount": 0,
-    "equipSlot": "hand",
-    "value": 14,
-    "valueSource": "recipe_copper_sickle",
-    "autoSyncId": true,
-    "id": "item_copper_sickle",
-    "tool": {
-      "kind": "sickle",
-      "tier": 1,
-      "starter": true
-    },
-    "tags": [
-      "Tool",
-      "Farming"
-    ]
-  },
   "item_copper_sword": {
     "name": "Copper Sword",
     "description": "",
@@ -1394,7 +1356,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 14,
+    "value": 16,
     "valueSource": "recipe_copper_sword",
     "autoSyncId": true,
     "styles": [
@@ -1407,7 +1369,14 @@
       "Weapon",
       "Sword"
     ],
-    "damageType": "slash"
+    "damageType": "slash",
+    "levelRequired": 1,
+    "effects": [
+      {
+        "effectId": "effect_sword",
+        "scale": 1
+      }
+    ]
   },
   "item_copper_dagger": {
     "name": "Copper Dagger",
@@ -1417,7 +1386,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 7,
+    "value": 8,
     "valueSource": "recipe_copper_dagger",
     "autoSyncId": true,
     "styles": [
@@ -1437,62 +1406,8 @@
       "Weapon",
       "Dagger"
     ],
-    "damageType": "stab"
-  },
-  "item_copper_cleaver": {
-    "name": "Copper Cleaver",
-    "description": "",
-    "type": "weapon",
-    "sprite": "i_battleaxe_copper",
-    "stackable": true,
-    "restoreAmount": 0,
-    "equipSlot": "hand",
-    "value": 15,
-    "valueSource": "recipe_copper_cleaver",
-    "autoSyncId": true,
-    "styles": [
-      "melee"
-    ],
-    "damage": 2,
-    "speed": "slow",
-    "effects": [
-      {
-        "effectId": "effect_cleaver",
-        "scale": 1
-      }
-    ],
-    "id": "item_copper_cleaver",
-    "tier": 1,
-    "tags": [
-      "Weapon",
-      "Cleaver"
-    ],
-    "damageType": "slash"
-  },
-  "item_copper_greatsword": {
-    "name": "Copper Greatsword",
-    "description": "",
-    "type": "weapon",
-    "sprite": "i_longsword_copper",
-    "stackable": true,
-    "restoreAmount": 0,
-    "equipSlot": "hand",
-    "value": 28,
-    "valueSource": "recipe_copper_greatsword",
-    "autoSyncId": true,
-    "styles": [
-      "melee"
-    ],
-    "damage": 3,
-    "speed": "slow",
-    "hands": 2,
-    "id": "item_copper_greatsword",
-    "tier": 1,
-    "tags": [
-      "Weapon",
-      "Greatsword"
-    ],
-    "damageType": "crush"
+    "damageType": "stab",
+    "levelRequired": 1
   },
   "item_copper_bow": {
     "name": "Copper Bow",
@@ -1521,7 +1436,8 @@
       "Weapon",
       "Bow"
     ],
-    "damageType": "electric"
+    "damageType": "electric",
+    "levelRequired": 1
   },
   "item_copper_wand": {
     "name": "Copper Wand",
@@ -1545,7 +1461,8 @@
       "Weapon",
       "Wand"
     ],
-    "damageType": "fire"
+    "damageType": "fire",
+    "levelRequired": 1
   },
   "item_leather_hat": {
     "name": "Leather Hat",
@@ -1567,9 +1484,7 @@
       "physical": 5,
       "elemental": 10
     },
-    "damageCut": {
-      "magic": 5
-    }
+    "damageCut": {}
   },
   "item_leather_chest": {
     "name": "Leather Chest",
@@ -1591,9 +1506,7 @@
       "physical": 10,
       "elemental": 10
     },
-    "damageCut": {
-      "magic": 10
-    }
+    "damageCut": {}
   },
   "item_elixir_of_valor": {
     "name": "Elixir of Valor",
@@ -1603,8 +1516,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "consumable",
-    "value": null,
-    "valueSource": null,
+    "value": 39,
+    "valueSource": "recipe_elixir_of_valor",
     "autoSyncId": true,
     "effects": [
       {
@@ -1626,8 +1539,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "consumable",
-    "value": null,
-    "valueSource": null,
+    "value": 8,
+    "valueSource": "recipe_elixir_of_ironskin",
     "autoSyncId": true,
     "effects": [
       {
@@ -1649,7 +1562,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "consumable",
-    "value": 5,
+    "value": 21,
     "valueSource": "recipe_birdwatcher",
     "autoSyncId": true,
     "effects": [
@@ -1671,7 +1584,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 10,
+    "value": 16,
     "valueSource": "token_apple_tree",
     "autoSyncId": true,
     "id": "item_bird_nest",
@@ -1704,8 +1617,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
-    "valueSource": null,
+    "value": 1,
+    "valueSource": "recipe_lavender",
     "autoSyncId": true,
     "id": "item_lavender",
     "tags": [
@@ -1720,8 +1633,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
-    "valueSource": null,
+    "value": 2,
+    "valueSource": "recipe_search_bird_nest",
     "autoSyncId": true,
     "id": "item_lavender_seed",
     "tags": [
@@ -1821,8 +1734,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
-    "valueSource": null,
+    "value": 1,
+    "valueSource": "recipe_potato",
     "autoSyncId": true,
     "id": "item_worm",
     "tags": [
@@ -1837,8 +1750,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "consumable",
-    "value": null,
-    "valueSource": null,
+    "value": 1,
+    "valueSource": "recipe_worm_bait",
     "autoSyncId": true,
     "id": "item_worm_bait",
     "tags": [
@@ -1990,7 +1903,7 @@
     "stackable": true,
     "restoreAmount": 12,
     "equipSlot": "food",
-    "value": 18,
+    "value": 21,
     "valueSource": "recipe_honey_bread",
     "autoSyncId": true,
     "id": "item_honey_bread",
@@ -2031,7 +1944,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "chest",
-    "value": 34,
+    "value": 36,
     "valueSource": "recipe_copper_chestplate",
     "autoSyncId": true,
     "id": "item_copper_chestplate",
@@ -2055,7 +1968,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 40,
+    "value": 54,
     "valueSource": "token_grapevine",
     "autoSyncId": true,
     "id": "item_grape_seed",
@@ -2103,7 +2016,7 @@
     "stackable": true,
     "restoreAmount": 15,
     "equipSlot": "food",
-    "value": 36,
+    "value": 4,
     "valueSource": "recipe_cooked_trout",
     "autoSyncId": true,
     "id": "item_cooked_trout",
@@ -2121,7 +2034,7 @@
     "stackable": true,
     "restoreAmount": 20,
     "equipSlot": "drink",
-    "value": 39,
+    "value": 13,
     "valueSource": "recipe_grape_juice",
     "autoSyncId": true,
     "effects": [
@@ -2144,7 +2057,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 114,
+    "value": 163,
     "valueSource": "recipe_iron_woodaxe",
     "autoSyncId": true,
     "tool": {
@@ -2157,27 +2070,6 @@
       "Woodcutting"
     ]
   },
-  "item_iron_sickle": {
-    "name": "Iron Sickle",
-    "description": "",
-    "type": "tool",
-    "sprite": "i_chisel_iron",
-    "stackable": true,
-    "restoreAmount": 0,
-    "equipSlot": "hand",
-    "value": 76,
-    "valueSource": "recipe_iron_sickle",
-    "autoSyncId": true,
-    "tool": {
-      "kind": "sickle",
-      "tier": 2
-    },
-    "id": "item_iron_sickle",
-    "tags": [
-      "Tool",
-      "Farming"
-    ]
-  },
   "item_iron_sword": {
     "name": "Iron Sword",
     "description": "",
@@ -2186,7 +2078,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 108,
+    "value": 112,
     "valueSource": "recipe_iron_sword",
     "autoSyncId": true,
     "styles": [
@@ -2199,7 +2091,14 @@
       "Weapon",
       "Sword"
     ],
-    "damageType": "slash"
+    "damageType": "slash",
+    "levelRequired": 20,
+    "effects": [
+      {
+        "effectId": "effect_sword",
+        "scale": 1
+      }
+    ]
   },
   "item_iron_dagger": {
     "name": "Iron Dagger",
@@ -2209,7 +2108,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 40,
+    "value": 60,
     "valueSource": "recipe_iron_dagger",
     "autoSyncId": true,
     "styles": [
@@ -2229,7 +2128,8 @@
       "Weapon",
       "Dagger"
     ],
-    "damageType": "stab"
+    "damageType": "stab",
+    "levelRequired": 20
   },
   "item_iron_cleaver": {
     "name": "Iron Cleaver",
@@ -2239,13 +2139,13 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 113,
+    "value": 130,
     "valueSource": "recipe_iron_cleaver",
     "autoSyncId": true,
     "styles": [
       "melee"
     ],
-    "damage": 3,
+    "damage": 4,
     "speed": "slow",
     "effects": [
       {
@@ -2259,32 +2159,8 @@
       "Weapon",
       "Cleaver"
     ],
-    "damageType": "slash"
-  },
-  "item_iron_greatsword": {
-    "name": "Iron Greatsword",
-    "description": "",
-    "type": "weapon",
-    "sprite": "i_longsword_iron",
-    "stackable": true,
-    "restoreAmount": 0,
-    "equipSlot": "hand",
-    "value": 191,
-    "valueSource": "recipe_iron_greatsword",
-    "autoSyncId": true,
-    "styles": [
-      "melee"
-    ],
-    "damage": 4,
-    "speed": "slow",
-    "hands": 2,
-    "id": "item_iron_greatsword",
-    "tier": 2,
-    "tags": [
-      "Weapon",
-      "Greatsword"
-    ],
-    "damageType": "crush"
+    "damageType": "slash",
+    "levelRequired": 20
   },
   "item_iron_bow": {
     "name": "Iron Bow",
@@ -2294,7 +2170,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 48,
+    "value": 62,
     "valueSource": "recipe_iron_bow",
     "autoSyncId": true,
     "styles": [
@@ -2313,7 +2189,8 @@
       "Weapon",
       "Bow"
     ],
-    "damageType": "electric"
+    "damageType": "electric",
+    "levelRequired": 20
   },
   "item_iron_wand": {
     "name": "Iron Wand",
@@ -2323,7 +2200,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 47,
+    "value": 61,
     "valueSource": "recipe_iron_wand",
     "autoSyncId": true,
     "styles": [
@@ -2337,7 +2214,8 @@
       "Weapon",
       "Wand"
     ],
-    "damageType": "ice"
+    "damageType": "ice",
+    "levelRequired": 20
   },
   "item_iron_helmet": {
     "name": "Iron Helmet",
@@ -2347,7 +2225,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hat",
-    "value": 153,
+    "value": 162,
     "valueSource": "recipe_iron_helmet",
     "autoSyncId": true,
     "id": "item_iron_helmet",
@@ -2371,7 +2249,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "chest",
-    "value": 232,
+    "value": 270,
     "valueSource": "recipe_iron_chestplate",
     "autoSyncId": true,
     "id": "item_iron_chestplate",
@@ -2396,7 +2274,7 @@
     "stackable": true,
     "restoreAmount": 4,
     "equipSlot": "food",
-    "value": 3,
+    "value": 23,
     "valueSource": "recipe_cooked_tropical_fish",
     "autoSyncId": true,
     "tags": [
@@ -2407,16 +2285,16 @@
   },
   "item_cooked_swordfish": {
     "id": "item_cooked_swordfish",
-    "name": "Cooked Swordfish",
+    "name": "Swordfish Steak",
     "description": "",
     "type": "food",
     "sprite": "i_swordfish",
     "stackable": true,
     "restoreAmount": 8,
     "equipSlot": "food",
-    "value": 10,
+    "value": 337,
     "valueSource": "recipe_cooked_swordfish",
-    "autoSyncId": true,
+    "autoSyncId": false,
     "tags": [
       "Food",
       "Fish",
@@ -2450,8 +2328,8 @@
     "stackable": true,
     "restoreAmount": 16,
     "equipSlot": "food",
-    "value": null,
-    "valueSource": null,
+    "value": 211,
+    "valueSource": "recipe_lavender_salmon",
     "autoSyncId": true,
     "tags": [
       "Food",
@@ -2782,7 +2660,7 @@
     "restoreAmount": 0,
     "equipSlot": "hand",
     "offHand": true,
-    "value": 17,
+    "value": 19,
     "valueSource": "recipe_copper_shield",
     "autoSyncId": true,
     "resistances": {
@@ -2867,6 +2745,4095 @@
     ],
     "damageType": "slash",
     "breakChance": 1,
+    "valueSource": null,
+    "levelRequired": 1,
+    "effects": [
+      {
+        "effectId": "effect_sword",
+        "scale": 1
+      }
+    ]
+  },
+  "item_mythril_woodaxe": {
+    "name": "Mythril Woodaxe",
+    "description": "",
+    "type": "tool",
+    "sprite": "i_woodaxe_myth",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 1329,
+    "valueSource": "recipe_mythril_woodaxe",
+    "autoSyncId": true,
+    "tool": {
+      "kind": "woodaxe",
+      "tier": 3
+    },
+    "id": "item_mythril_woodaxe",
+    "tags": [
+      "Tool",
+      "Woodcutting"
+    ]
+  },
+  "item_adamantine_woodaxe": {
+    "name": "Adamantine Woodaxe",
+    "description": "",
+    "type": "tool",
+    "sprite": "i_woodaxe_addy",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 30170,
+    "valueSource": "recipe_adamantine_woodaxe",
+    "autoSyncId": true,
+    "tool": {
+      "kind": "woodaxe",
+      "tier": 4
+    },
+    "id": "item_adamantine_woodaxe",
+    "tags": [
+      "Tool",
+      "Woodcutting"
+    ]
+  },
+  "item_darkmetal_woodaxe": {
+    "name": "Darkmetal Woodaxe",
+    "description": "",
+    "type": "tool",
+    "sprite": "i_woodaxe_dark",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 30523,
+    "valueSource": "recipe_darkmetal_woodaxe",
+    "autoSyncId": true,
+    "tool": {
+      "kind": "woodaxe",
+      "tier": 5
+    },
+    "id": "item_darkmetal_woodaxe",
+    "tags": [
+      "Tool",
+      "Woodcutting"
+    ]
+  },
+  "item_iron_shield": {
+    "name": "Iron Shield",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_armor_plate_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 123,
+    "valueSource": "recipe_iron_shield",
+    "autoSyncId": true,
+    "id": "item_iron_shield",
+    "offHand": true,
+    "tags": [
+      "Armour",
+      "Shield"
+    ],
+    "resistances": {
+      "physical": 15
+    },
+    "damageCut": {
+      "magic": 15,
+      "stealth": 15
+    }
+  },
+  "item_mythril_dagger": {
+    "name": "Mythril Dagger",
+    "description": "",
+    "type": "weapon",
+    "sprite": "i_longsword_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 447,
+    "valueSource": "recipe_mythril_dagger",
+    "autoSyncId": true,
+    "id": "item_mythril_dagger",
+    "styles": [
+      "stealth"
+    ],
+    "damage": 3,
+    "speed": "fast",
+    "damageType": "stab",
+    "effects": [
+      {
+        "effectId": "effect_dagger",
+        "scale": 1
+      }
+    ],
+    "tier": 3,
+    "tags": [
+      "Weapon",
+      "Dagger"
+    ],
+    "levelRequired": 40
+  },
+  "item_mythril_sword": {
+    "name": "Mythril Sword",
+    "description": "",
+    "type": "weapon",
+    "sprite": "i_longsword_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 888,
+    "valueSource": "recipe_mythril_sword",
+    "autoSyncId": true,
+    "id": "item_mythril_sword",
+    "styles": [
+      "melee"
+    ],
+    "damage": 5,
+    "damageType": "slash",
+    "tier": 3,
+    "tags": [
+      "Weapon",
+      "Sword"
+    ],
+    "levelRequired": 40,
+    "effects": [
+      {
+        "effectId": "effect_sword",
+        "scale": 1
+      }
+    ]
+  },
+  "item_mythril_helmet": {
+    "name": "Mythril Helmet",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_armor_plate_mythril",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hat",
+    "value": 1325,
+    "valueSource": "recipe_mythril_helmet",
+    "autoSyncId": true,
+    "id": "item_mythril_helmet",
+    "tags": [
+      "Armour",
+      "Helmet"
+    ],
+    "resistances": {
+      "physical": 20
+    },
+    "damageCut": {
+      "magic": 25,
+      "stealth": 15
+    }
+  },
+  "item_mythril_shield": {
+    "name": "Mythril Shield",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_armor_plate_mythril",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 913,
+    "valueSource": "recipe_mythril_shield",
+    "autoSyncId": true,
+    "id": "item_mythril_shield",
+    "offHand": true,
+    "tags": [
+      "Armour",
+      "Shield"
+    ],
+    "resistances": {
+      "physical": 20
+    },
+    "damageCut": {
+      "magic": 20,
+      "stealth": 20
+    }
+  },
+  "item_mythril_chestplate": {
+    "name": "Mythril Chestplate",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_armor_plate_mythril",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "chest",
+    "value": 2208,
+    "valueSource": "recipe_mythril_chestplate",
+    "autoSyncId": true,
+    "id": "item_mythril_chestplate",
+    "tags": [
+      "Armour",
+      "Chestplate"
+    ],
+    "resistances": {
+      "physical": 25
+    },
+    "damageCut": {
+      "magic": 40,
+      "stealth": 20
+    }
+  },
+  "item_adamantine_dagger": {
+    "name": "Adamantine Dagger",
+    "description": "",
+    "type": "weapon",
+    "sprite": "i_longsword_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 10075,
+    "valueSource": "recipe_adamantine_dagger",
+    "autoSyncId": true,
+    "id": "item_adamantine_dagger",
+    "styles": [
+      "stealth"
+    ],
+    "damage": 4,
+    "speed": "fast",
+    "damageType": "stab",
+    "effects": [
+      {
+        "effectId": "effect_dagger",
+        "scale": 1
+      }
+    ],
+    "tier": 4,
+    "tags": [
+      "Weapon",
+      "Dagger"
+    ],
+    "levelRequired": 60
+  },
+  "item_adamantine_sword": {
+    "name": "Adamantine Sword",
+    "description": "",
+    "type": "weapon",
+    "sprite": "i_longsword_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 20128,
+    "valueSource": "recipe_adamantine_sword",
+    "autoSyncId": true,
+    "id": "item_adamantine_sword",
+    "styles": [
+      "melee"
+    ],
+    "damage": 7,
+    "damageType": "slash",
+    "tier": 4,
+    "tags": [
+      "Weapon",
+      "Sword"
+    ],
+    "levelRequired": 60,
+    "effects": [
+      {
+        "effectId": "effect_sword",
+        "scale": 1
+      }
+    ]
+  },
+  "item_adamantine_helmet": {
+    "name": "Adamantine Helmet",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_armor_plate_adamantium",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hat",
+    "value": 30160,
+    "valueSource": "recipe_adamantine_helmet",
+    "autoSyncId": true,
+    "id": "item_adamantine_helmet",
+    "tags": [
+      "Armour",
+      "Helmet"
+    ],
+    "resistances": {
+      "physical": 25
+    },
+    "damageCut": {
+      "magic": 30,
+      "stealth": 20
+    }
+  },
+  "item_adamantine_shield": {
+    "name": "Adamantine Shield",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_armor_plate_adamantium",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 20150,
+    "valueSource": "recipe_adamantine_shield",
+    "autoSyncId": true,
+    "id": "item_adamantine_shield",
+    "offHand": true,
+    "tags": [
+      "Armour",
+      "Shield"
+    ],
+    "resistances": {
+      "physical": 25
+    },
+    "damageCut": {
+      "magic": 25,
+      "stealth": 25
+    }
+  },
+  "item_adamantine_chestplate": {
+    "name": "Adamantine Chestplate",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_armor_plate_adamantium",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "chest",
+    "value": 50266,
+    "valueSource": "recipe_adamantine_chestplate",
+    "autoSyncId": true,
+    "id": "item_adamantine_chestplate",
+    "tags": [
+      "Armour",
+      "Chestplate"
+    ],
+    "resistances": {
+      "physical": 30
+    },
+    "damageCut": {
+      "magic": 50,
+      "stealth": 25
+    }
+  },
+  "item_darkmetal_dagger": {
+    "name": "Darkmetal Dagger",
+    "description": "",
+    "type": "weapon",
+    "sprite": "i_longsword_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 10232,
+    "valueSource": "recipe_darkmetal_dagger",
+    "autoSyncId": true,
+    "id": "item_darkmetal_dagger",
+    "styles": [
+      "stealth"
+    ],
+    "damage": 5,
+    "speed": "fast",
+    "damageType": "stab",
+    "effects": [
+      {
+        "effectId": "effect_dagger",
+        "scale": 1
+      }
+    ],
+    "tier": 5,
+    "tags": [
+      "Weapon",
+      "Dagger"
+    ],
+    "levelRequired": 80
+  },
+  "item_darkmetal_sword": {
+    "name": "Darkmetal Sword",
+    "description": "",
+    "type": "weapon",
+    "sprite": "i_longsword_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 20399,
+    "valueSource": "recipe_darkmetal_sword",
+    "autoSyncId": true,
+    "id": "item_darkmetal_sword",
+    "styles": [
+      "melee"
+    ],
+    "damage": 8,
+    "damageType": "slash",
+    "tier": 5,
+    "tags": [
+      "Weapon",
+      "Sword"
+    ],
+    "levelRequired": 80,
+    "effects": [
+      {
+        "effectId": "effect_sword",
+        "scale": 1
+      }
+    ]
+  },
+  "item_darkmetal_helmet": {
+    "name": "Darkmetal Helmet",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_armor_plate_darkmetal",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hat",
+    "value": 30501,
+    "valueSource": "recipe_darkmetal_helmet",
+    "autoSyncId": true,
+    "id": "item_darkmetal_helmet",
+    "tags": [
+      "Armour",
+      "Helmet"
+    ],
+    "resistances": {
+      "physical": 30
+    },
+    "damageCut": {
+      "magic": 35,
+      "stealth": 25
+    }
+  },
+  "item_darkmetal_shield": {
+    "name": "Darkmetal Shield",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_armor_plate_darkmetal",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 20463,
+    "valueSource": "recipe_darkmetal_shield",
+    "autoSyncId": true,
+    "id": "item_darkmetal_shield",
+    "offHand": true,
+    "tags": [
+      "Armour",
+      "Shield"
+    ],
+    "resistances": {
+      "physical": 30
+    },
+    "damageCut": {
+      "magic": 30,
+      "stealth": 30
+    }
+  },
+  "item_darkmetal_chestplate": {
+    "name": "Darkmetal Chestplate",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_armor_plate_darkmetal",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "chest",
+    "value": 50836,
+    "valueSource": "recipe_darkmetal_chestplate",
+    "autoSyncId": true,
+    "id": "item_darkmetal_chestplate",
+    "tags": [
+      "Armour",
+      "Chestplate"
+    ],
+    "resistances": {
+      "physical": 35
+    },
+    "damageCut": {
+      "magic": 60,
+      "stealth": 30
+    }
+  },
+  "item_iron_mace": {
+    "name": "Iron Mace",
+    "description": "",
+    "type": "weapon",
+    "sprite": "i_battleaxe_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 135,
+    "valueSource": "recipe_iron_mace",
+    "autoSyncId": true,
+    "id": "item_iron_mace",
+    "styles": [
+      "melee"
+    ],
+    "damage": 4,
+    "speed": "slow",
+    "damageType": "crush",
+    "tier": 2,
+    "tags": [
+      "Weapon",
+      "Mace"
+    ],
+    "levelRequired": 20,
+    "effects": [
+      {
+        "effectId": "effect_mace",
+        "scale": 1
+      }
+    ]
+  },
+  "item_silver_dagger": {
+    "name": "Silver Dagger",
+    "description": "",
+    "type": "weapon",
+    "sprite": "i_longsword_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 183,
+    "valueSource": "recipe_silver_dagger",
+    "autoSyncId": true,
+    "id": "item_silver_dagger",
+    "styles": [
+      "stealth"
+    ],
+    "damage": 2,
+    "speed": "fast",
+    "damageType": "stab",
+    "effects": [
+      {
+        "effectId": "effect_dagger",
+        "scale": 1
+      }
+    ],
+    "tier": 2,
+    "tags": [
+      "Weapon",
+      "Dagger",
+      "Silver"
+    ],
+    "levelRequired": 30
+  },
+  "item_silver_sword": {
+    "name": "Silver Sword",
+    "description": "",
+    "type": "weapon",
+    "sprite": "i_longsword_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 333,
+    "valueSource": "recipe_silver_sword",
+    "autoSyncId": true,
+    "id": "item_silver_sword",
+    "styles": [
+      "melee"
+    ],
+    "damage": 4,
+    "damageType": "slash",
+    "tier": 2,
+    "tags": [
+      "Weapon",
+      "Sword",
+      "Silver"
+    ],
+    "levelRequired": 30,
+    "effects": [
+      {
+        "effectId": "effect_sword",
+        "scale": 1
+      }
+    ]
+  },
+  "item_masterwork_blade": {
+    "name": "Masterwork Blade",
+    "description": "",
+    "type": "weapon",
+    "sprite": "i_longsword_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 50672,
+    "valueSource": "recipe_masterwork_blade",
+    "autoSyncId": true,
+    "id": "item_masterwork_blade",
+    "styles": [
+      "melee"
+    ],
+    "damage": 9,
+    "damageType": "slash",
+    "tier": 5,
+    "tags": [
+      "Weapon",
+      "Sword"
+    ],
+    "levelRequired": 80,
+    "effects": [
+      {
+        "effectId": "effect_sword",
+        "scale": 1
+      }
+    ]
+  },
+  "item_potato": {
+    "name": "Potato",
+    "description": "",
+    "type": "material",
+    "sprite": "i_potato",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 1,
+    "valueSource": "recipe_potato",
+    "autoSyncId": true,
+    "id": "item_potato",
+    "tags": [
+      "Vegetable"
+    ]
+  },
+  "item_potato_seed": {
+    "name": "Potato Seed",
+    "description": "",
+    "type": "material",
+    "sprite": "i_seed_pile",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 1,
+    "autoSyncId": true,
+    "id": "item_potato_seed",
+    "tags": [
+      "Seed"
+    ],
+    "valueSource": "recipe_search_bird_nest"
+  },
+  "item_carrot": {
+    "name": "Carrot",
+    "description": "",
+    "type": "material",
+    "sprite": "i_carrot",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 1,
+    "valueSource": "recipe_carrot",
+    "autoSyncId": true,
+    "id": "item_carrot",
+    "tags": [
+      "Vegetable"
+    ]
+  },
+  "item_carrot_seed": {
+    "name": "Carrot Seed",
+    "description": "",
+    "type": "material",
+    "sprite": "i_seed_carrot",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 2,
+    "autoSyncId": true,
+    "id": "item_carrot_seed",
+    "tags": [
+      "Seed"
+    ],
+    "valueSource": "recipe_search_bird_nest"
+  },
+  "item_onion": {
+    "name": "Onion",
+    "description": "",
+    "type": "material",
+    "sprite": "i_onion",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 1,
+    "valueSource": "recipe_onion",
+    "autoSyncId": true,
+    "id": "item_onion",
+    "tags": [
+      "Vegetable"
+    ]
+  },
+  "item_onion_seed": {
+    "name": "Onion Seed",
+    "description": "",
+    "type": "material",
+    "sprite": "i_seed_pile",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 2,
+    "autoSyncId": true,
+    "id": "item_onion_seed",
+    "tags": [
+      "Seed"
+    ],
+    "valueSource": "recipe_search_bird_nest"
+  },
+  "item_celery": {
+    "name": "Celery",
+    "description": "",
+    "type": "material",
+    "sprite": "i_celery",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 1,
+    "valueSource": "recipe_celery",
+    "autoSyncId": true,
+    "id": "item_celery",
+    "tags": [
+      "Vegetable"
+    ]
+  },
+  "item_celery_seed": {
+    "name": "Celery Seed",
+    "description": "",
+    "type": "material",
+    "sprite": "i_seed_pile",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 2,
+    "autoSyncId": true,
+    "id": "item_celery_seed",
+    "tags": [
+      "Seed"
+    ],
+    "valueSource": "recipe_search_bird_nest"
+  },
+  "item_leek": {
+    "name": "Leek",
+    "description": "",
+    "type": "material",
+    "sprite": "i_leek",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 2,
+    "valueSource": "recipe_leek",
+    "autoSyncId": true,
+    "id": "item_leek",
+    "tags": [
+      "Vegetable"
+    ]
+  },
+  "item_leek_seed": {
+    "name": "Leek Seed",
+    "description": "",
+    "type": "material",
+    "sprite": "i_seed_pile",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 2,
+    "autoSyncId": true,
+    "id": "item_leek_seed",
+    "tags": [
+      "Seed"
+    ],
+    "valueSource": "recipe_search_bird_nest"
+  },
+  "item_turnip": {
+    "name": "Turnip",
+    "description": "",
+    "type": "material",
+    "sprite": "i_turnip",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 5,
+    "valueSource": "recipe_turnip",
+    "autoSyncId": true,
+    "id": "item_turnip",
+    "tags": [
+      "Vegetable"
+    ]
+  },
+  "item_turnip_seed": {
+    "name": "Turnip Seed",
+    "description": "",
+    "type": "material",
+    "sprite": "i_seed_pile",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 12,
+    "autoSyncId": true,
+    "id": "item_turnip_seed",
+    "tags": [
+      "Seed"
+    ],
+    "valueSource": "recipe_search_bird_nest"
+  },
+  "item_cabbage": {
+    "name": "Cabbage",
+    "description": "",
+    "type": "material",
+    "sprite": "i_cabbage",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 6,
+    "valueSource": "recipe_cabbage",
+    "autoSyncId": true,
+    "id": "item_cabbage",
+    "tags": [
+      "Vegetable"
+    ]
+  },
+  "item_cabbage_seed": {
+    "name": "Cabbage Seed",
+    "description": "",
+    "type": "material",
+    "sprite": "i_seed_pile",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 12,
+    "autoSyncId": true,
+    "id": "item_cabbage_seed",
+    "tags": [
+      "Seed"
+    ],
+    "valueSource": "recipe_search_bird_nest"
+  },
+  "item_garlic": {
+    "name": "Garlic",
+    "description": "",
+    "type": "material",
+    "sprite": "i_garlic",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 12,
+    "valueSource": "recipe_garlic",
+    "autoSyncId": true,
+    "id": "item_garlic",
+    "tags": [
+      "Vegetable"
+    ]
+  },
+  "item_garlic_seed": {
+    "name": "Garlic Seed",
+    "description": "",
+    "type": "material",
+    "sprite": "i_seed_pile",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 12,
+    "autoSyncId": true,
+    "id": "item_garlic_seed",
+    "tags": [
+      "Seed"
+    ],
+    "valueSource": "recipe_search_bird_nest"
+  },
+  "item_tomato": {
+    "name": "Tomato",
+    "description": "",
+    "type": "material",
+    "sprite": "i_tomato",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 14,
+    "valueSource": "recipe_tomato",
+    "autoSyncId": true,
+    "id": "item_tomato",
+    "tags": [
+      "Vegetable"
+    ]
+  },
+  "item_tomato_seed": {
+    "name": "Tomato Seed",
+    "description": "",
+    "type": "material",
+    "sprite": "i_seed_pile",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 12,
+    "autoSyncId": true,
+    "id": "item_tomato_seed",
+    "tags": [
+      "Seed"
+    ],
+    "valueSource": "recipe_search_bird_nest"
+  },
+  "item_corn": {
+    "name": "Corn",
+    "description": "",
+    "type": "material",
+    "sprite": "i_corn",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 49,
+    "valueSource": "recipe_corn",
+    "autoSyncId": true,
+    "id": "item_corn",
+    "tags": [
+      "Vegetable"
+    ]
+  },
+  "item_corn_seed": {
+    "name": "Corn Seed",
+    "description": "",
+    "type": "material",
+    "sprite": "i_seed_pile",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 12,
+    "autoSyncId": true,
+    "id": "item_corn_seed",
+    "tags": [
+      "Seed"
+    ],
+    "valueSource": "recipe_search_bird_nest"
+  },
+  "item_emberroot": {
+    "name": "Emberroot",
+    "description": "",
+    "type": "material",
+    "sprite": "i_turnip",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 76,
+    "valueSource": "recipe_emberroot",
+    "autoSyncId": true,
+    "id": "item_emberroot",
+    "tags": [
+      "Vegetable"
+    ]
+  },
+  "item_emberroot_seed": {
+    "name": "Emberroot Seed",
+    "description": "",
+    "type": "material",
+    "sprite": "i_seed_pile",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 12,
+    "autoSyncId": true,
+    "id": "item_emberroot_seed",
+    "tags": [
+      "Seed"
+    ],
+    "valueSource": "recipe_search_bird_nest"
+  },
+  "item_voidcap": {
+    "name": "Voidcap",
+    "description": "",
+    "type": "material",
+    "sprite": "i_turnip",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 110,
+    "valueSource": "recipe_voidcap",
+    "autoSyncId": true,
+    "id": "item_voidcap",
+    "tags": [
+      "Vegetable"
+    ]
+  },
+  "item_voidcap_seed": {
+    "name": "Voidcap Seed",
+    "description": "",
+    "type": "material",
+    "sprite": "i_seed_pile",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 12,
+    "autoSyncId": true,
+    "id": "item_voidcap_seed",
+    "tags": [
+      "Seed"
+    ],
+    "valueSource": "recipe_search_bird_nest"
+  },
+  "item_milk": {
+    "name": "Milk",
+    "description": "",
+    "type": "material",
+    "sprite": "i_water",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_milk",
+    "tags": [
+      "Dairy"
+    ]
+  },
+  "item_baked_potato": {
+    "name": "Baked Potato",
+    "description": "",
+    "type": "food",
+    "sprite": "i_potato_baked",
+    "stackable": true,
+    "restoreAmount": 6,
+    "equipSlot": "food",
+    "value": 3,
+    "valueSource": "recipe_baked_potato",
+    "autoSyncId": true,
+    "id": "item_baked_potato",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_bread": {
+    "name": "Bread",
+    "description": "",
+    "type": "food",
+    "sprite": "i_bread",
+    "stackable": true,
+    "restoreAmount": 9,
+    "equipSlot": "food",
+    "value": 18,
+    "valueSource": "recipe_bread",
+    "autoSyncId": true,
+    "id": "item_bread",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_carrot_soup": {
+    "name": "Carrot Soup",
+    "description": "",
+    "type": "food",
+    "sprite": "i_stew_iron",
+    "stackable": true,
+    "restoreAmount": 10,
+    "equipSlot": "food",
+    "value": 6,
+    "valueSource": "recipe_carrot_soup",
+    "autoSyncId": true,
+    "id": "item_carrot_soup",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_redberry_tea": {
+    "name": "Redberry Tea",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_apple_juice",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_redberry_tea",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_redberry_tea_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_plain_stew": {
+    "name": "Plain Stew",
+    "description": "",
+    "type": "food",
+    "sprite": "i_stew_iron",
+    "stackable": true,
+    "restoreAmount": 12,
+    "equipSlot": "food",
+    "value": 7,
+    "valueSource": "recipe_plain_stew",
+    "autoSyncId": true,
+    "id": "item_plain_stew",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_blackberry_pie": {
+    "name": "Blackberry Pie",
+    "description": "",
+    "type": "food",
+    "sprite": "i_pie_blackberry",
+    "stackable": true,
+    "restoreAmount": 13,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_blackberry_pie",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_apple_pie": {
+    "name": "Apple Pie",
+    "description": "",
+    "type": "food",
+    "sprite": "i_pie_cherry",
+    "stackable": true,
+    "restoreAmount": 14,
+    "equipSlot": "food",
+    "value": 23,
+    "valueSource": "recipe_apple_pie",
+    "autoSyncId": true,
+    "id": "item_apple_pie",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_mirepoix": {
+    "name": "Mirepoix",
+    "description": "",
+    "type": "material",
+    "sprite": "i_mirepoix",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 10,
+    "valueSource": "recipe_mirepoix",
+    "autoSyncId": true,
+    "id": "item_mirepoix",
+    "tags": [
+      "Cooking"
+    ]
+  },
+  "item_onion_soup": {
+    "name": "Onion Soup",
+    "description": "",
+    "type": "food",
+    "sprite": "i_stew_iron",
+    "stackable": true,
+    "restoreAmount": 16,
+    "equipSlot": "food",
+    "value": 10,
+    "valueSource": "recipe_onion_soup",
+    "autoSyncId": true,
+    "id": "item_onion_soup",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_butter": {
+    "name": "Butter",
+    "description": "",
+    "type": "material",
+    "sprite": "i_dough",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_butter",
+    "tags": [
+      "Cooking"
+    ]
+  },
+  "item_buttered_potato": {
+    "name": "Buttered Potato",
+    "description": "",
+    "type": "food",
+    "sprite": "i_dough",
+    "stackable": true,
+    "restoreAmount": 18,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_buttered_potato",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_hot_milk": {
+    "name": "Hot Milk",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_apple_juice",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_hot_milk",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_hot_milk_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_cherry_cordial": {
+    "name": "Cherry Cordial",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_apple_juice",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_cherry_cordial",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_cherry_cordial_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_cheese": {
+    "name": "Cheese",
+    "description": "",
+    "type": "material",
+    "sprite": "i_dough",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_cheese",
+    "tags": [
+      "Cooking"
+    ]
+  },
+  "item_trout_and_leek": {
+    "name": "Trout and Leek",
+    "description": "",
+    "type": "food",
+    "sprite": "i_trout_raw",
+    "stackable": true,
+    "restoreAmount": 21,
+    "equipSlot": "food",
+    "value": 21,
+    "valueSource": "recipe_trout_and_leek",
+    "autoSyncId": true,
+    "id": "item_trout_and_leek",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_cheese_bread": {
+    "name": "Cheese Bread",
+    "description": "",
+    "type": "food",
+    "sprite": "i_bread",
+    "stackable": true,
+    "restoreAmount": 22,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_cheese_bread",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_cherry_pie": {
+    "name": "Cherry Pie",
+    "description": "",
+    "type": "food",
+    "sprite": "i_pie_cherry",
+    "stackable": true,
+    "restoreAmount": 22,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_cherry_pie",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_beef_and_carrot_stew": {
+    "name": "Beef and Carrot Stew",
+    "description": "",
+    "type": "food",
+    "sprite": "i_stew_iron",
+    "stackable": true,
+    "restoreAmount": 24,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_beef_and_carrot_stew",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_strawberry_milk": {
+    "name": "Strawberry Milk",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_apple_juice",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_strawberry_milk",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_strawberry_milk_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_potato_leek_stew": {
+    "name": "Potato Leek Stew",
+    "description": "",
+    "type": "food",
+    "sprite": "i_stew_iron",
+    "stackable": true,
+    "restoreAmount": 25,
+    "equipSlot": "food",
+    "value": 42,
+    "valueSource": "recipe_potato_leek_stew",
+    "autoSyncId": true,
+    "id": "item_potato_leek_stew",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_stout": {
+    "name": "Stout",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_beer",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": 36,
+    "valueSource": "recipe_stout",
+    "autoSyncId": true,
+    "id": "item_stout",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_stout_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_strawberry_tart": {
+    "name": "Strawberry Tart",
+    "description": "",
+    "type": "food",
+    "sprite": "i_pie_cherry",
+    "stackable": true,
+    "restoreAmount": 26,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_strawberry_tart",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_blueberry_tonic": {
+    "name": "Blueberry Tonic",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_apple_juice",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_blueberry_tonic",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_blueberry_tonic_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_steak_and_onions": {
+    "name": "Steak and Onions",
+    "description": "",
+    "type": "food",
+    "sprite": "i_steak",
+    "stackable": true,
+    "restoreAmount": 27,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_steak_and_onions",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_builder_s_brew": {
+    "name": "Builder's Brew",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_beer",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_builder_s_brew",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_builder_s_brew_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_cooked_salmon": {
+    "name": "Cooked Salmon",
+    "description": "",
+    "type": "food",
+    "sprite": "i_salmon_raw",
+    "stackable": true,
+    "restoreAmount": 29,
+    "equipSlot": "food",
+    "value": 54,
+    "valueSource": "recipe_cooked_salmon",
+    "autoSyncId": true,
+    "id": "item_cooked_salmon",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_garden_stew": {
+    "name": "Garden Stew",
+    "description": "",
+    "type": "food",
+    "sprite": "i_stew_iron",
+    "stackable": true,
+    "restoreAmount": 31,
+    "equipSlot": "food",
+    "value": 88,
+    "valueSource": "recipe_garden_stew",
+    "autoSyncId": true,
+    "id": "item_garden_stew",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_peach_nectar": {
+    "name": "Peach Nectar",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_apple_juice",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_peach_nectar",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_peach_nectar_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_peach_pie": {
+    "name": "Peach Pie",
+    "description": "",
+    "type": "food",
+    "sprite": "i_pie_cherry",
+    "stackable": true,
+    "restoreAmount": 33,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_peach_pie",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_raspberry_cordial": {
+    "name": "Raspberry Cordial",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_apple_juice",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_raspberry_cordial",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_raspberry_cordial_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_raspberry_tart": {
+    "name": "Raspberry Tart",
+    "description": "",
+    "type": "food",
+    "sprite": "i_pie_cherry",
+    "stackable": true,
+    "restoreAmount": 34,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_raspberry_tart",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_lemon_fish": {
+    "name": "Lemon Fish",
+    "description": "",
+    "type": "food",
+    "sprite": "i_dough",
+    "stackable": true,
+    "restoreAmount": 36,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_lemon_fish",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_sofrito": {
+    "name": "Sofrito",
+    "description": "",
+    "type": "material",
+    "sprite": "i_sofrito",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 164,
+    "valueSource": "recipe_sofrito",
+    "autoSyncId": true,
+    "id": "item_sofrito",
+    "tags": [
+      "Cooking"
+    ]
+  },
+  "item_tomato_soup": {
+    "name": "Tomato Soup",
+    "description": "",
+    "type": "food",
+    "sprite": "i_stew_iron",
+    "stackable": true,
+    "restoreAmount": 37,
+    "equipSlot": "food",
+    "value": 164,
+    "valueSource": "recipe_tomato_soup",
+    "autoSyncId": true,
+    "id": "item_tomato_soup",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_orange_juice": {
+    "name": "Orange Juice",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_orange_juice",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_orange_juice",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_orange_juice_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_garlic_steak": {
+    "name": "Garlic Steak",
+    "description": "",
+    "type": "food",
+    "sprite": "i_steak",
+    "stackable": true,
+    "restoreAmount": 40,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_garlic_steak",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_lavender_tea": {
+    "name": "Lavender Tea",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_apple_juice",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": 232,
+    "valueSource": "recipe_lavender_tea",
+    "autoSyncId": true,
+    "id": "item_lavender_tea",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_lavender_tea_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_hearty_beef_stew": {
+    "name": "Hearty Beef Stew",
+    "description": "",
+    "type": "food",
+    "sprite": "i_stew_iron",
+    "stackable": true,
+    "restoreAmount": 42,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_hearty_beef_stew",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_hearty_potato_stew": {
+    "name": "Hearty Potato Stew",
+    "description": "",
+    "type": "food",
+    "sprite": "i_stew_iron",
+    "stackable": true,
+    "restoreAmount": 42,
+    "equipSlot": "food",
+    "value": 470,
+    "valueSource": "recipe_hearty_potato_stew",
+    "autoSyncId": true,
+    "id": "item_hearty_potato_stew",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_wine": {
+    "name": "Wine",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_beer",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": 361,
+    "valueSource": "recipe_wine",
+    "autoSyncId": true,
+    "id": "item_wine",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_wine_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_corn_chowder": {
+    "name": "Corn Chowder",
+    "description": "",
+    "type": "food",
+    "sprite": "i_stew_iron",
+    "stackable": true,
+    "restoreAmount": 44,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_corn_chowder",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_pineapple_punch": {
+    "name": "Pineapple Punch",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_apple_juice",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_pineapple_punch",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_pineapple_punch_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_buttered_lobster": {
+    "name": "Buttered Lobster",
+    "description": "",
+    "type": "food",
+    "sprite": "i_lobster_raw",
+    "stackable": true,
+    "restoreAmount": 45,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_buttered_lobster",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_golden_stew": {
+    "name": "Golden Stew",
+    "description": "",
+    "type": "food",
+    "sprite": "i_stew_iron",
+    "stackable": true,
+    "restoreAmount": 46,
+    "equipSlot": "food",
+    "value": 701,
+    "valueSource": "recipe_golden_stew",
+    "autoSyncId": true,
+    "id": "item_golden_stew",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_banana_smoothie": {
+    "name": "Banana Smoothie",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_apple_juice",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_banana_smoothie",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_banana_smoothie_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_banana_bread": {
+    "name": "Banana Bread",
+    "description": "",
+    "type": "food",
+    "sprite": "i_bread",
+    "stackable": true,
+    "restoreAmount": 47,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_banana_bread",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_royal_beef_stew": {
+    "name": "Royal Beef Stew",
+    "description": "",
+    "type": "food",
+    "sprite": "i_stew_iron",
+    "stackable": true,
+    "restoreAmount": 48,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_royal_beef_stew",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_pineapple_cake": {
+    "name": "Pineapple Cake",
+    "description": "",
+    "type": "food",
+    "sprite": "i_pie_cherry",
+    "stackable": true,
+    "restoreAmount": 48,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_pineapple_cake",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_royal_potato_stew": {
+    "name": "Royal Potato Stew",
+    "description": "",
+    "type": "food",
+    "sprite": "i_stew_iron",
+    "stackable": true,
+    "restoreAmount": 49,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_royal_potato_stew",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_lobster_bisque": {
+    "name": "Lobster Bisque",
+    "description": "",
+    "type": "food",
+    "sprite": "i_stew_iron",
+    "stackable": true,
+    "restoreAmount": 49,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_lobster_bisque",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_coconut_milk": {
+    "name": "Coconut Milk",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_apple_juice",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_coconut_milk",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_coconut_milk_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_emberroot_soup": {
+    "name": "Emberroot Soup",
+    "description": "",
+    "type": "food",
+    "sprite": "i_stew_iron",
+    "stackable": true,
+    "restoreAmount": 51,
+    "equipSlot": "food",
+    "value": 723,
+    "valueSource": "recipe_emberroot_soup",
+    "autoSyncId": true,
+    "id": "item_emberroot_soup",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_watermelon_cooler": {
+    "name": "Watermelon Cooler",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_apple_juice",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_watermelon_cooler",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_watermelon_cooler_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_mead": {
+    "name": "Mead",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_beer",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": 695,
+    "valueSource": "recipe_mead",
+    "autoSyncId": true,
+    "id": "item_mead",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_mead_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_coconut_swordfish": {
+    "name": "Coconut Swordfish",
+    "description": "",
+    "type": "food",
+    "sprite": "i_swordfish",
+    "stackable": true,
+    "restoreAmount": 52,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_coconut_swordfish",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_coconut_pie": {
+    "name": "Coconut Pie",
+    "description": "",
+    "type": "food",
+    "sprite": "i_pie_cherry",
+    "stackable": true,
+    "restoreAmount": 53,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_coconut_pie",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_ember_steak": {
+    "name": "Ember Steak",
+    "description": "",
+    "type": "food",
+    "sprite": "i_steak",
+    "stackable": true,
+    "restoreAmount": 54,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_ember_steak",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_ember_ale": {
+    "name": "Ember Ale",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_beer",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": 846,
+    "valueSource": "recipe_ember_ale",
+    "autoSyncId": true,
+    "id": "item_ember_ale",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_ember_ale_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_swordfish_in_sofrito": {
+    "name": "Swordfish in Sofrito",
+    "description": "",
+    "type": "food",
+    "sprite": "i_swordfish",
+    "stackable": true,
+    "restoreAmount": 55,
+    "equipSlot": "food",
+    "value": 967,
+    "valueSource": "recipe_swordfish_in_sofrito",
+    "autoSyncId": true,
+    "id": "item_swordfish_in_sofrito",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_spiced_wine": {
+    "name": "Spiced Wine",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_beer",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": 1247,
+    "valueSource": "recipe_spiced_wine",
+    "autoSyncId": true,
+    "id": "item_spiced_wine",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_spiced_wine_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_ember_stew": {
+    "name": "Ember Stew",
+    "description": "",
+    "type": "food",
+    "sprite": "i_stew_iron",
+    "stackable": true,
+    "restoreAmount": 57,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_ember_stew",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_voidcap_soup": {
+    "name": "Voidcap Soup",
+    "description": "",
+    "type": "food",
+    "sprite": "i_stew_iron",
+    "stackable": true,
+    "restoreAmount": 57,
+    "equipSlot": "food",
+    "value": 982,
+    "valueSource": "recipe_voidcap_soup",
+    "autoSyncId": true,
+    "id": "item_voidcap_soup",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_voidcap_tea": {
+    "name": "Voidcap Tea",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_apple_juice",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": 1002,
+    "valueSource": "recipe_voidcap_tea",
+    "autoSyncId": true,
+    "id": "item_voidcap_tea",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_voidcap_tea_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_voidcap_pie": {
+    "name": "Voidcap Pie",
+    "description": "",
+    "type": "food",
+    "sprite": "i_pie_cherry",
+    "stackable": true,
+    "restoreAmount": 59,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_voidcap_pie",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_dark_mead": {
+    "name": "Dark Mead",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_beer",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": 1778,
+    "valueSource": "recipe_dark_mead",
+    "autoSyncId": true,
+    "id": "item_dark_mead",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_dark_mead_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_harvest_platter": {
+    "name": "Harvest Platter",
+    "description": "",
+    "type": "food",
+    "sprite": "i_bread",
+    "stackable": true,
+    "restoreAmount": 61,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_harvest_platter",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_void_stew": {
+    "name": "Void Stew",
+    "description": "",
+    "type": "food",
+    "sprite": "i_stew_iron",
+    "stackable": true,
+    "restoreAmount": 61,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_void_stew",
+    "tags": [
+      "Food",
+      "Cooked"
+    ]
+  },
+  "item_sunset_punch": {
+    "name": "Sunset Punch",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_apple_juice",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_sunset_punch",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_sunset_punch_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_elder_draught": {
+    "name": "Elder Draught",
+    "description": "",
+    "type": "drink",
+    "sprite": "i_beer",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "drink",
+    "value": 2001,
+    "valueSource": "recipe_elder_draught",
+    "autoSyncId": true,
+    "id": "item_elder_draught",
+    "tags": [
+      "Drink"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_elder_draught_drink",
+        "scale": 1
+      }
+    ]
+  },
+  "item_hide": {
+    "name": "Hide",
+    "description": "",
+    "type": "material",
+    "sprite": "i_glove_leather",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "id": "item_hide",
+    "tags": [
+      "Material"
+    ],
     "valueSource": null
+  },
+  "item_oak_plank": {
+    "name": "Oak Plank",
+    "description": "",
+    "type": "material",
+    "sprite": "i_plank_oak",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 4,
+    "autoSyncId": true,
+    "id": "item_oak_plank",
+    "tags": [
+      "Material",
+      "Plank"
+    ],
+    "valueSource": "recipe_oak_plank"
+  },
+  "item_fir_plank": {
+    "name": "Fir Plank",
+    "description": "",
+    "type": "material",
+    "sprite": "i_plank_fir",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 11,
+    "autoSyncId": true,
+    "id": "item_fir_plank",
+    "tags": [
+      "Material",
+      "Plank"
+    ],
+    "valueSource": "recipe_fir_plank"
+  },
+  "item_maple_plank": {
+    "name": "Maple Plank",
+    "description": "",
+    "type": "material",
+    "sprite": "i_plank_maple",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 57,
+    "autoSyncId": true,
+    "id": "item_maple_plank",
+    "tags": [
+      "Material",
+      "Plank"
+    ],
+    "valueSource": "recipe_maple_plank"
+  },
+  "item_mahogany_plank": {
+    "name": "Mahogany Plank",
+    "description": "",
+    "type": "material",
+    "sprite": "i_plank_mahogany",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 280,
+    "autoSyncId": true,
+    "id": "item_mahogany_plank",
+    "tags": [
+      "Material",
+      "Plank"
+    ],
+    "valueSource": "recipe_mahogany_plank"
+  },
+  "item_ebony_plank": {
+    "name": "Ebony Plank",
+    "description": "",
+    "type": "material",
+    "sprite": "i_plank_ebony",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 832,
+    "autoSyncId": true,
+    "id": "item_ebony_plank",
+    "tags": [
+      "Material",
+      "Plank"
+    ],
+    "valueSource": "recipe_ebony_plank"
+  },
+  "item_iron_nails": {
+    "name": "Iron Nails",
+    "description": "",
+    "type": "material",
+    "sprite": "i_ingot_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 58,
+    "autoSyncId": true,
+    "id": "item_iron_nails",
+    "tags": [
+      "Material"
+    ],
+    "valueSource": "recipe_iron_nails"
+  },
+  "item_mythril_nails": {
+    "name": "Mythril Nails",
+    "description": "",
+    "type": "material",
+    "sprite": "i_ingot_mythril",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 442,
+    "autoSyncId": true,
+    "id": "item_mythril_nails",
+    "tags": [
+      "Material"
+    ],
+    "valueSource": "recipe_mythril_nails"
+  },
+  "item_silver_ring_band": {
+    "name": "Silver Ring Band",
+    "description": "",
+    "type": "material",
+    "sprite": "i_ingot_silver",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 191,
+    "autoSyncId": true,
+    "id": "item_silver_ring_band",
+    "tags": [
+      "Material"
+    ],
+    "valueSource": "recipe_silver_ring_band"
+  },
+  "item_silver_chain": {
+    "name": "Silver Chain",
+    "description": "",
+    "type": "material",
+    "sprite": "i_chain_silver",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 336,
+    "autoSyncId": true,
+    "id": "item_silver_chain",
+    "tags": [
+      "Material"
+    ],
+    "valueSource": "recipe_silver_chain"
+  },
+  "item_gold_ring_band": {
+    "name": "Gold Ring Band",
+    "description": "",
+    "type": "material",
+    "sprite": "i_ingot_gold",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 924,
+    "autoSyncId": true,
+    "id": "item_gold_ring_band",
+    "tags": [
+      "Material"
+    ],
+    "valueSource": "recipe_gold_ring_band"
+  },
+  "item_gold_chain": {
+    "name": "Gold Chain",
+    "description": "",
+    "type": "material",
+    "sprite": "i_chain_gold",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 1091,
+    "autoSyncId": true,
+    "id": "item_gold_chain",
+    "tags": [
+      "Material"
+    ],
+    "valueSource": "recipe_gold_chain"
+  },
+  "item_leather_shield": {
+    "name": "Leather Shield",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_body_tunic",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": null,
+    "autoSyncId": true,
+    "id": "item_leather_shield",
+    "tags": [
+      "Armour",
+      "Shield"
+    ],
+    "resistances": {
+      "physical": 5,
+      "elemental": 5
+    },
+    "offHand": true,
+    "valueSource": null
+  },
+  "item_hard_leather": {
+    "name": "Hard Leather",
+    "description": "",
+    "type": "material",
+    "sprite": "i_glove_leather",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "id": "item_hard_leather",
+    "tags": [
+      "Material"
+    ],
+    "valueSource": null
+  },
+  "item_hard_hat": {
+    "name": "Hard Hat",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_hat_mage",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hat",
+    "value": null,
+    "autoSyncId": true,
+    "id": "item_hard_hat",
+    "tags": [
+      "Armour",
+      "Hat"
+    ],
+    "resistances": {
+      "physical": 10,
+      "elemental": 15
+    },
+    "valueSource": null
+  },
+  "item_hard_shield": {
+    "name": "Hard Shield",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_body_tunic",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": null,
+    "autoSyncId": true,
+    "id": "item_hard_shield",
+    "tags": [
+      "Armour",
+      "Shield"
+    ],
+    "resistances": {
+      "physical": 10,
+      "elemental": 10
+    },
+    "offHand": true,
+    "valueSource": null
+  },
+  "item_hard_chest": {
+    "name": "Hard Chest",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_body_tunic",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "chest",
+    "value": null,
+    "autoSyncId": true,
+    "id": "item_hard_chest",
+    "tags": [
+      "Armour",
+      "Chest"
+    ],
+    "resistances": {
+      "physical": 20,
+      "elemental": 20
+    },
+    "valueSource": null
+  },
+  "item_studded_leather": {
+    "name": "Studded Leather",
+    "description": "",
+    "type": "material",
+    "sprite": "i_glove_leather",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "id": "item_studded_leather",
+    "tags": [
+      "Material"
+    ],
+    "valueSource": null
+  },
+  "item_studded_hat": {
+    "name": "Studded Hat",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_hat_mage",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hat",
+    "value": null,
+    "autoSyncId": true,
+    "id": "item_studded_hat",
+    "tags": [
+      "Armour",
+      "Hat"
+    ],
+    "resistances": {
+      "physical": 15,
+      "elemental": 20
+    },
+    "valueSource": null
+  },
+  "item_studded_shield": {
+    "name": "Studded Shield",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_body_tunic",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": null,
+    "autoSyncId": true,
+    "id": "item_studded_shield",
+    "tags": [
+      "Armour",
+      "Shield"
+    ],
+    "resistances": {
+      "physical": 15,
+      "elemental": 15
+    },
+    "offHand": true,
+    "valueSource": null
+  },
+  "item_studded_chest": {
+    "name": "Studded Chest",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_body_tunic",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "chest",
+    "value": null,
+    "autoSyncId": true,
+    "id": "item_studded_chest",
+    "tags": [
+      "Armour",
+      "Chest"
+    ],
+    "resistances": {
+      "physical": 30,
+      "elemental": 30
+    },
+    "valueSource": null
+  },
+  "item_red_scale": {
+    "name": "Red Scale",
+    "description": "",
+    "type": "material",
+    "sprite": "i_scale_red",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 2812,
+    "autoSyncId": true,
+    "id": "item_red_scale",
+    "tags": [
+      "Material"
+    ],
+    "valueSource": "token_fossil_bed"
+  },
+  "item_dragonscale": {
+    "name": "Dragonscale",
+    "description": "",
+    "type": "material",
+    "sprite": "i_scale_red",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 6468,
+    "autoSyncId": true,
+    "id": "item_dragonscale",
+    "tags": [
+      "Material"
+    ],
+    "valueSource": "recipe_dragonscale"
+  },
+  "item_dragonscale_hat": {
+    "name": "Dragonscale Hat",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_hat_mage",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hat",
+    "value": 22315,
+    "autoSyncId": true,
+    "id": "item_dragonscale_hat",
+    "tags": [
+      "Armour",
+      "Hat"
+    ],
+    "resistances": {
+      "physical": 25,
+      "elemental": 30
+    },
+    "valueSource": "recipe_dragonscale_hat"
+  },
+  "item_dragonscale_shield": {
+    "name": "Dragonscale Shield",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_body_tunic",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 14876,
+    "autoSyncId": true,
+    "id": "item_dragonscale_shield",
+    "tags": [
+      "Armour",
+      "Shield"
+    ],
+    "resistances": {
+      "physical": 25,
+      "elemental": 25
+    },
+    "offHand": true,
+    "valueSource": "recipe_dragonscale_shield"
+  },
+  "item_dragonscale_chest": {
+    "name": "Dragonscale Chest",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_body_tunic",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "chest",
+    "value": 37191,
+    "autoSyncId": true,
+    "id": "item_dragonscale_chest",
+    "tags": [
+      "Armour",
+      "Chest"
+    ],
+    "resistances": {
+      "physical": 50,
+      "elemental": 50
+    },
+    "valueSource": "recipe_dragonscale_chest"
+  },
+  "item_uncut_topaz": {
+    "name": "Uncut Topaz",
+    "description": "",
+    "type": "material",
+    "sprite": "i_topaz_uncut",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 1,
+    "autoSyncId": true,
+    "id": "item_uncut_topaz",
+    "tags": [
+      "Gem"
+    ],
+    "valueSource": "token_geode"
+  },
+  "item_cut_topaz": {
+    "name": "Cut Topaz",
+    "description": "",
+    "type": "material",
+    "sprite": "i_topaz",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 19,
+    "autoSyncId": true,
+    "id": "item_cut_topaz",
+    "tags": [
+      "Gem"
+    ],
+    "valueSource": "recipe_cut_topaz"
+  },
+  "item_uncut_ruby": {
+    "name": "Uncut Ruby",
+    "description": "",
+    "type": "material",
+    "sprite": "i_ruby_uncut",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 1,
+    "autoSyncId": true,
+    "id": "item_uncut_ruby",
+    "tags": [
+      "Gem"
+    ],
+    "valueSource": "token_geode"
+  },
+  "item_cut_ruby": {
+    "name": "Cut Ruby",
+    "description": "",
+    "type": "material",
+    "sprite": "i_ruby",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 20,
+    "autoSyncId": true,
+    "id": "item_cut_ruby",
+    "tags": [
+      "Gem"
+    ],
+    "valueSource": "recipe_cut_ruby"
+  },
+  "item_uncut_sapphire": {
+    "name": "Uncut Sapphire",
+    "description": "",
+    "type": "material",
+    "sprite": "i_sapphire_uncut",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 2,
+    "autoSyncId": true,
+    "id": "item_uncut_sapphire",
+    "tags": [
+      "Gem"
+    ],
+    "valueSource": "token_geode"
+  },
+  "item_cut_sapphire": {
+    "name": "Cut Sapphire",
+    "description": "",
+    "type": "material",
+    "sprite": "i_sapphire",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 22,
+    "autoSyncId": true,
+    "id": "item_cut_sapphire",
+    "tags": [
+      "Gem"
+    ],
+    "valueSource": "recipe_cut_sapphire"
+  },
+  "item_uncut_emerald": {
+    "name": "Uncut Emerald",
+    "description": "",
+    "type": "material",
+    "sprite": "i_emerald_uncut",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 4,
+    "autoSyncId": true,
+    "id": "item_uncut_emerald",
+    "tags": [
+      "Gem"
+    ],
+    "valueSource": "token_geode"
+  },
+  "item_cut_emerald": {
+    "name": "Cut Emerald",
+    "description": "",
+    "type": "material",
+    "sprite": "i_emerald",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 28,
+    "autoSyncId": true,
+    "id": "item_cut_emerald",
+    "tags": [
+      "Gem"
+    ],
+    "valueSource": "recipe_cut_emerald"
+  },
+  "item_uncut_amethyst": {
+    "name": "Uncut Amethyst",
+    "description": "",
+    "type": "material",
+    "sprite": "i_amethyst_uncut",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 12,
+    "autoSyncId": true,
+    "id": "item_uncut_amethyst",
+    "tags": [
+      "Gem"
+    ],
+    "valueSource": "token_geode"
+  },
+  "item_cut_amethyst": {
+    "name": "Cut Amethyst",
+    "description": "",
+    "type": "material",
+    "sprite": "i_amethyst",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 39,
+    "autoSyncId": true,
+    "id": "item_cut_amethyst",
+    "tags": [
+      "Gem"
+    ],
+    "valueSource": "recipe_cut_amethyst"
+  },
+  "item_uncut_diamond": {
+    "name": "Uncut Diamond",
+    "description": "",
+    "type": "material",
+    "sprite": "i_diamond_uncut",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 200,
+    "autoSyncId": true,
+    "id": "item_uncut_diamond",
+    "tags": [
+      "Gem"
+    ],
+    "valueSource": "token_geode"
+  },
+  "item_cut_diamond": {
+    "name": "Cut Diamond",
+    "description": "",
+    "type": "material",
+    "sprite": "i_diamond",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 230,
+    "autoSyncId": true,
+    "id": "item_cut_diamond",
+    "tags": [
+      "Gem"
+    ],
+    "valueSource": "recipe_cut_diamond"
+  },
+  "item_silver_topaz_ring": {
+    "name": "Silver Topaz Ring",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ring_silver_topaz",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 331,
+    "autoSyncId": true,
+    "id": "item_silver_topaz_ring",
+    "tags": [
+      "Trinket",
+      "Ring"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_prospector",
+        "scale": 1
+      }
+    ],
+    "valueSource": "recipe_silver_topaz_ring"
+  },
+  "item_silver_ruby_ring": {
+    "name": "Silver Ruby Ring",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ring_silver_ruby",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 309,
+    "autoSyncId": true,
+    "id": "item_silver_ruby_ring",
+    "tags": [
+      "Trinket",
+      "Ring"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_quick_hands",
+        "scale": 1
+      }
+    ],
+    "valueSource": "recipe_silver_ruby_ring"
+  },
+  "item_silver_sapphire_ring": {
+    "name": "Silver Sapphire Ring",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ring_silver_sapphire",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 317,
+    "autoSyncId": true,
+    "id": "item_silver_sapphire_ring",
+    "tags": [
+      "Trinket",
+      "Ring"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_scholar",
+        "scale": 1
+      }
+    ],
+    "valueSource": "recipe_silver_sapphire_ring"
+  },
+  "item_silver_emerald_ring": {
+    "name": "Silver Emerald Ring",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ring_silver_emerald",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 328,
+    "autoSyncId": true,
+    "id": "item_silver_emerald_ring",
+    "tags": [
+      "Trinket",
+      "Ring"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_green_touch",
+        "scale": 1
+      }
+    ],
+    "valueSource": "recipe_silver_emerald_ring"
+  },
+  "item_silver_amethyst_ring": {
+    "name": "Silver Amethyst Ring",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ring_silver_amethyst",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 367,
+    "autoSyncId": true,
+    "id": "item_silver_amethyst_ring",
+    "tags": [
+      "Trinket",
+      "Ring"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_thrift",
+        "scale": 1
+      }
+    ],
+    "valueSource": "recipe_silver_amethyst_ring"
+  },
+  "item_silver_diamond_ring": {
+    "name": "Silver Diamond Ring",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ring_silver_diamond",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 570,
+    "autoSyncId": true,
+    "id": "item_silver_diamond_ring",
+    "tags": [
+      "Trinket",
+      "Ring"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_fortune",
+        "scale": 1
+      }
+    ],
+    "valueSource": "recipe_silver_diamond_ring"
+  },
+  "item_silver_topaz_amulet": {
+    "name": "Silver Topaz Amulet",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ammy_silver_topaz",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 560,
+    "autoSyncId": true,
+    "id": "item_silver_topaz_amulet",
+    "tags": [
+      "Trinket",
+      "Amulet"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_keen_eye",
+        "scale": 1
+      }
+    ],
+    "valueSource": "recipe_silver_topaz_amulet"
+  },
+  "item_silver_ruby_amulet": {
+    "name": "Silver Ruby Amulet",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ammy_silver_ruby",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 517,
+    "autoSyncId": true,
+    "id": "item_silver_ruby_amulet",
+    "tags": [
+      "Trinket",
+      "Amulet"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_valour_amulet",
+        "scale": 1
+      }
+    ],
+    "valueSource": "recipe_silver_ruby_amulet"
+  },
+  "item_silver_sapphire_amulet": {
+    "name": "Silver Sapphire Amulet",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ammy_silver_sapphire",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 531,
+    "autoSyncId": true,
+    "id": "item_silver_sapphire_amulet",
+    "tags": [
+      "Trinket",
+      "Amulet"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_frostward",
+        "scale": 1
+      }
+    ],
+    "valueSource": "recipe_silver_sapphire_amulet"
+  },
+  "item_silver_emerald_amulet": {
+    "name": "Silver Emerald Amulet",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ammy_silver_emerald",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 556,
+    "autoSyncId": true,
+    "id": "item_silver_emerald_amulet",
+    "tags": [
+      "Trinket",
+      "Amulet"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_second_wind",
+        "scale": 1
+      }
+    ],
+    "valueSource": "recipe_silver_emerald_amulet"
+  },
+  "item_silver_amethyst_amulet": {
+    "name": "Silver Amethyst Amulet",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ammy_silver_amethyst",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 592,
+    "autoSyncId": true,
+    "id": "item_silver_amethyst_amulet",
+    "tags": [
+      "Trinket",
+      "Amulet"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_hearty",
+        "scale": 1
+      }
+    ],
+    "valueSource": "recipe_silver_amethyst_amulet"
+  },
+  "item_silver_diamond_amulet": {
+    "name": "Silver Diamond Amulet",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ammy_silver_diamond",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 795,
+    "autoSyncId": true,
+    "id": "item_silver_diamond_amulet",
+    "tags": [
+      "Trinket",
+      "Amulet"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_brilliance",
+        "scale": 1
+      }
+    ],
+    "valueSource": "recipe_silver_diamond_amulet"
+  },
+  "item_gold_topaz_ring": {
+    "name": "Gold Topaz Ring",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ring_gold_topaz",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 1494,
+    "autoSyncId": true,
+    "id": "item_gold_topaz_ring",
+    "tags": [
+      "Trinket",
+      "Ring"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_prospector",
+        "scale": 2
+      }
+    ],
+    "valueSource": "recipe_gold_topaz_ring"
+  },
+  "item_gold_ruby_ring": {
+    "name": "Gold Ruby Ring",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ring_gold_ruby",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 1395,
+    "autoSyncId": true,
+    "id": "item_gold_ruby_ring",
+    "tags": [
+      "Trinket",
+      "Ring"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_quick_hands",
+        "scale": 2
+      }
+    ],
+    "valueSource": "recipe_gold_ruby_ring"
+  },
+  "item_gold_sapphire_ring": {
+    "name": "Gold Sapphire Ring",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ring_gold_sapphire",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 1424,
+    "autoSyncId": true,
+    "id": "item_gold_sapphire_ring",
+    "tags": [
+      "Trinket",
+      "Ring"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_scholar",
+        "scale": 2
+      }
+    ],
+    "valueSource": "recipe_gold_sapphire_ring"
+  },
+  "item_gold_emerald_ring": {
+    "name": "Gold Emerald Ring",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ring_gold_emerald",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 1474,
+    "autoSyncId": true,
+    "id": "item_gold_emerald_ring",
+    "tags": [
+      "Trinket",
+      "Ring"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_green_touch",
+        "scale": 2
+      }
+    ],
+    "valueSource": "recipe_gold_emerald_ring"
+  },
+  "item_gold_amethyst_ring": {
+    "name": "Gold Amethyst Ring",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ring_gold_amethyst",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 1526,
+    "autoSyncId": true,
+    "id": "item_gold_amethyst_ring",
+    "tags": [
+      "Trinket",
+      "Ring"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_thrift",
+        "scale": 2
+      }
+    ],
+    "valueSource": "recipe_gold_amethyst_ring"
+  },
+  "item_gold_diamond_ring": {
+    "name": "Gold Diamond Ring",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ring_gold_diamond",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 1730,
+    "autoSyncId": true,
+    "id": "item_gold_diamond_ring",
+    "tags": [
+      "Trinket",
+      "Ring"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_fortune",
+        "scale": 2
+      }
+    ],
+    "valueSource": "recipe_gold_diamond_ring"
+  },
+  "item_gold_topaz_amulet": {
+    "name": "Gold Topaz Amulet",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ammy_gold_topaz",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 1756,
+    "autoSyncId": true,
+    "id": "item_gold_topaz_amulet",
+    "tags": [
+      "Trinket",
+      "Amulet"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_keen_eye",
+        "scale": 2
+      }
+    ],
+    "valueSource": "recipe_gold_topaz_amulet"
+  },
+  "item_gold_ruby_amulet": {
+    "name": "Gold Ruby Amulet",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ammy_gold_ruby",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 1700,
+    "autoSyncId": true,
+    "id": "item_gold_ruby_amulet",
+    "tags": [
+      "Trinket",
+      "Amulet"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_valour_amulet",
+        "scale": 2
+      }
+    ],
+    "valueSource": "recipe_gold_ruby_amulet"
+  },
+  "item_gold_sapphire_amulet": {
+    "name": "Gold Sapphire Amulet",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ammy_gold_sapphire",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 1733,
+    "autoSyncId": true,
+    "id": "item_gold_sapphire_amulet",
+    "tags": [
+      "Trinket",
+      "Amulet"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_frostward",
+        "scale": 2
+      }
+    ],
+    "valueSource": "recipe_gold_sapphire_amulet"
+  },
+  "item_gold_emerald_amulet": {
+    "name": "Gold Emerald Amulet",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ammy_gold_emerald",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 1752,
+    "autoSyncId": true,
+    "id": "item_gold_emerald_amulet",
+    "tags": [
+      "Trinket",
+      "Amulet"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_second_wind",
+        "scale": 2
+      }
+    ],
+    "valueSource": "recipe_gold_emerald_amulet"
+  },
+  "item_gold_amethyst_amulet": {
+    "name": "Gold Amethyst Amulet",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ammy_gold_amethyst",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 1789,
+    "autoSyncId": true,
+    "id": "item_gold_amethyst_amulet",
+    "tags": [
+      "Trinket",
+      "Amulet"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_hearty",
+        "scale": 2
+      }
+    ],
+    "valueSource": "recipe_gold_amethyst_amulet"
+  },
+  "item_gold_diamond_amulet": {
+    "name": "Gold Diamond Amulet",
+    "description": "",
+    "type": "armor",
+    "sprite": "i_ammy_gold_diamond",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "trinket",
+    "value": 2014,
+    "autoSyncId": true,
+    "id": "item_gold_diamond_amulet",
+    "tags": [
+      "Trinket",
+      "Amulet"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_brilliance",
+        "scale": 2
+      }
+    ],
+    "valueSource": "recipe_gold_diamond_amulet"
+  },
+  "item_mint": {
+    "name": "Mint",
+    "description": "",
+    "type": "material",
+    "sprite": "i_lavender",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 1,
+    "valueSource": "recipe_mint",
+    "autoSyncId": true,
+    "id": "item_mint",
+    "tags": [
+      "Herb"
+    ]
+  },
+  "item_mint_seed": {
+    "name": "Mint Seed",
+    "description": "",
+    "type": "material",
+    "sprite": "i_seed_pile",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 2,
+    "autoSyncId": true,
+    "id": "item_mint_seed",
+    "tags": [
+      "Seed",
+      "Herb"
+    ],
+    "valueSource": "recipe_search_bird_nest"
+  },
+  "item_rose": {
+    "name": "Rose",
+    "description": "",
+    "type": "material",
+    "sprite": "i_rose",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 1,
+    "valueSource": "recipe_rose",
+    "autoSyncId": true,
+    "id": "item_rose",
+    "tags": [
+      "Herb"
+    ]
+  },
+  "item_rose_seed": {
+    "name": "Rose Seed",
+    "description": "",
+    "type": "material",
+    "sprite": "i_seed_pile",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 12,
+    "autoSyncId": true,
+    "id": "item_rose_seed",
+    "tags": [
+      "Seed",
+      "Herb"
+    ],
+    "valueSource": "recipe_search_bird_nest"
+  },
+  "item_mandrake": {
+    "name": "Mandrake",
+    "description": "",
+    "type": "material",
+    "sprite": "i_lavender",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 5,
+    "valueSource": "recipe_mandrake",
+    "autoSyncId": true,
+    "id": "item_mandrake",
+    "tags": [
+      "Herb"
+    ]
+  },
+  "item_mandrake_seed": {
+    "name": "Mandrake Seed",
+    "description": "",
+    "type": "material",
+    "sprite": "i_seed_pile",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 12,
+    "autoSyncId": true,
+    "id": "item_mandrake_seed",
+    "tags": [
+      "Seed",
+      "Herb"
+    ],
+    "valueSource": "recipe_search_bird_nest"
+  },
+  "item_moonpetal": {
+    "name": "Moonpetal",
+    "description": "",
+    "type": "material",
+    "sprite": "i_lavender",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 32,
+    "valueSource": "recipe_moonpetal",
+    "autoSyncId": true,
+    "id": "item_moonpetal",
+    "tags": [
+      "Herb"
+    ]
+  },
+  "item_moonpetal_seed": {
+    "name": "Moonpetal Seed",
+    "description": "",
+    "type": "material",
+    "sprite": "i_seed_pile",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 12,
+    "autoSyncId": true,
+    "id": "item_moonpetal_seed",
+    "tags": [
+      "Seed",
+      "Herb"
+    ],
+    "valueSource": "recipe_search_bird_nest"
+  },
+  "item_starflower": {
+    "name": "Starflower",
+    "description": "",
+    "type": "material",
+    "sprite": "i_lavender",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 83,
+    "valueSource": "recipe_starflower",
+    "autoSyncId": true,
+    "id": "item_starflower",
+    "tags": [
+      "Herb"
+    ]
+  },
+  "item_starflower_seed": {
+    "name": "Starflower Seed",
+    "description": "",
+    "type": "material",
+    "sprite": "i_seed_pile",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 12,
+    "autoSyncId": true,
+    "id": "item_starflower_seed",
+    "tags": [
+      "Seed",
+      "Herb"
+    ],
+    "valueSource": "recipe_search_bird_nest"
+  },
+  "item_mushroom": {
+    "name": "Mushroom",
+    "description": "",
+    "type": "material",
+    "sprite": "i_lavender",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 23,
+    "valueSource": "token_giant_mushroom",
+    "autoSyncId": true,
+    "id": "item_mushroom",
+    "tags": [
+      "Material"
+    ]
+  },
+  "item_prospectors_draught": {
+    "name": "Prospector's Draught",
+    "description": "",
+    "type": "potion",
+    "sprite": "i_potion_gem_ruby",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "consumable",
+    "value": 10,
+    "valueSource": "recipe_prospectors_draught",
+    "autoSyncId": true,
+    "id": "item_prospectors_draught",
+    "tags": [
+      "Potion"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_prospectors_draught_potion",
+        "scale": 1
+      }
+    ]
+  },
+  "item_scholars_tonic": {
+    "name": "Scholar's Tonic",
+    "description": "",
+    "type": "potion",
+    "sprite": "i_potion_myst_purple",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "consumable",
+    "value": 72,
+    "valueSource": "recipe_scholars_tonic",
+    "autoSyncId": true,
+    "id": "item_scholars_tonic",
+    "tags": [
+      "Potion"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_scholars_tonic_potion",
+        "scale": 1
+      }
+    ]
+  },
+  "item_bountiful_draught": {
+    "name": "Bountiful Draught",
+    "description": "",
+    "type": "potion",
+    "sprite": "i_potion_tree_green",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "consumable",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_bountiful_draught",
+    "tags": [
+      "Potion"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_bountiful_draught_potion",
+        "scale": 1
+      }
+    ]
+  },
+  "item_greater_ironskin": {
+    "name": "Greater Ironskin",
+    "description": "",
+    "type": "potion",
+    "sprite": "i_potion_hammer_purple",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "consumable",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_greater_ironskin",
+    "tags": [
+      "Potion",
+      "Elixir"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_greater_ironskin",
+        "scale": 1
+      }
+    ]
+  },
+  "item_greater_valor": {
+    "name": "Greater Valor",
+    "description": "",
+    "type": "potion",
+    "sprite": "i_potion_sun_ember",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "consumable",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_greater_valor",
+    "tags": [
+      "Potion",
+      "Elixir"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_greater_valor",
+        "scale": 1
+      }
+    ]
+  },
+  "item_elixir_of_legends": {
+    "name": "Elixir of Legends",
+    "description": "",
+    "type": "potion",
+    "sprite": "i_potion_dragon_gold",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "consumable",
+    "value": 1498,
+    "valueSource": "recipe_elixir_of_legends",
+    "autoSyncId": true,
+    "id": "item_elixir_of_legends",
+    "tags": [
+      "Potion",
+      "Elixir"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_elixir_of_legends",
+        "scale": 1
+      }
+    ]
+  },
+  "item_masters_draught": {
+    "name": "Master's Draught",
+    "description": "",
+    "type": "potion",
+    "sprite": "i_potion_lr_rainbow",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "consumable",
+    "value": 3154,
+    "valueSource": "recipe_masters_draught",
+    "autoSyncId": true,
+    "id": "item_masters_draught",
+    "tags": [
+      "Potion"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_masters_draught_potion",
+        "scale": 1
+      }
+    ]
+  },
+  "item_marble": {
+    "name": "Marble",
+    "description": "",
+    "type": "material",
+    "sprite": "i_stone_marble",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 52,
+    "valueSource": "token_marble_vein",
+    "autoSyncId": true,
+    "id": "item_marble",
+    "tags": [
+      "Stone"
+    ]
+  },
+  "item_iron_gears": {
+    "name": "Iron Gears",
+    "description": "",
+    "type": "material",
+    "sprite": "i_ingot_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 172,
+    "valueSource": "recipe_iron_gears",
+    "autoSyncId": true,
+    "id": "item_iron_gears",
+    "tags": [
+      "Material"
+    ]
+  },
+  "item_basalt": {
+    "name": "Basalt",
+    "description": "",
+    "type": "material",
+    "sprite": "i_stone_basalt",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 540,
+    "valueSource": "token_basalt_vein",
+    "autoSyncId": true,
+    "id": "item_basalt",
+    "tags": [
+      "Stone"
+    ]
+  },
+  "item_cut_stone": {
+    "name": "Cut Stone",
+    "description": "",
+    "type": "material",
+    "sprite": "t_vein_stone",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 5,
+    "valueSource": "recipe_cut_stone",
+    "autoSyncId": true,
+    "id": "item_cut_stone",
+    "tags": [
+      "Material"
+    ]
+  },
+  "item_roof_tiles": {
+    "name": "Roof Tiles",
+    "description": "",
+    "type": "material",
+    "sprite": "i_clay",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 10,
+    "valueSource": "recipe_roof_tiles",
+    "autoSyncId": true,
+    "id": "item_roof_tiles",
+    "tags": [
+      "Material"
+    ]
+  },
+  "item_fir_frame": {
+    "name": "Fir Frame",
+    "description": "",
+    "type": "material",
+    "sprite": "i_plank_fir",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 171,
+    "valueSource": "recipe_fir_frame",
+    "autoSyncId": true,
+    "id": "item_fir_frame",
+    "tags": [
+      "Material"
+    ]
+  },
+  "item_maple_frame": {
+    "name": "Maple Frame",
+    "description": "",
+    "type": "material",
+    "sprite": "i_plank_maple",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 1213,
+    "valueSource": "recipe_maple_frame",
+    "autoSyncId": true,
+    "id": "item_maple_frame",
+    "tags": [
+      "Material"
+    ]
+  },
+  "item_marble_block": {
+    "name": "Marble Block",
+    "description": "",
+    "type": "material",
+    "sprite": "i_stone_marble",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 234,
+    "valueSource": "recipe_marble_block",
+    "autoSyncId": true,
+    "id": "item_marble_block",
+    "tags": [
+      "Material"
+    ]
+  },
+  "item_mahogany_frame": {
+    "name": "Mahogany Frame",
+    "description": "",
+    "type": "material",
+    "sprite": "i_plank_mahogany",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 1983,
+    "valueSource": "recipe_mahogany_frame",
+    "autoSyncId": true,
+    "id": "item_mahogany_frame",
+    "tags": [
+      "Material"
+    ]
+  },
+  "item_ebony_frame": {
+    "name": "Ebony Frame",
+    "description": "",
+    "type": "material",
+    "sprite": "i_plank_ebony",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 4100,
+    "valueSource": "recipe_ebony_frame",
+    "autoSyncId": true,
+    "id": "item_ebony_frame",
+    "tags": [
+      "Material"
+    ]
+  },
+  "item_basalt_block": {
+    "name": "Basalt Block",
+    "description": "",
+    "type": "material",
+    "sprite": "i_stone_basalt",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 2430,
+    "valueSource": "recipe_basalt_block",
+    "autoSyncId": true,
+    "id": "item_basalt_block",
+    "tags": [
+      "Material"
+    ]
+  },
+  "item_wool": {
+    "name": "Wool",
+    "description": "",
+    "type": "material",
+    "sprite": "i_beef_raw",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_wool",
+    "tags": [
+      "Material"
+    ]
+  },
+  "item_sheep_banner": {
+    "id": "item_sheep_banner",
+    "name": "Sheep Pasture Map",
+    "description": "Shows where a Sheep Pasture can stand: the Build Sheep Pasture recipe spends one.",
+    "type": "material",
+    "sprite": "t_map_spooky",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "tags": [],
+    "valueSource": null
+  },
+  "item_master_rod": {
+    "name": "Master Rod",
+    "description": "",
+    "type": "tool",
+    "sprite": "i_rod_wood",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 1214,
+    "valueSource": "recipe_master_rod",
+    "autoSyncId": true,
+    "tool": {
+      "kind": "fishing_rod",
+      "tier": 3
+    },
+    "id": "item_master_rod",
+    "tags": [
+      "Tool",
+      "Fishing"
+    ]
   }
 }

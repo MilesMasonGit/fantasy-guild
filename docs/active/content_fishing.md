@@ -35,6 +35,25 @@ The owner's rulings from the audit of Fishing ([A8](audit/A8_fishing.md)) and of
 - **Treasure** for Fishing comes as a rare table (T-553), not as a fish.
 - **The Master Rod loses its Salmon gate**: better waters ask a rod tier; within a water, bait picks the fish. The Harpoons, Trap and Lobster Pot gate by kind.
 
+## Items ahead of the waters (2026-11-22)
+
+The owner asked for Fishing's items while its waters wait for brief 770 G2. Pack `2026-11-22-fishing-items`:
+
+- **Live**: the **Master Rod**, Crafting 42, from Maple Planks, Mythril Nails and a Beeswax Comb (the line, as the Fishing Rod has, since String waits on Tailor). It is a tier 3 rod; it gates no fish of its own, and is faster once T-515 lands.
+- **One bait per fish tier** (content agent's names, simplest: each tier's bait is cut from the tier below's fish, as Shrimp Bait is from Raw Shrimp). All are Planned until G2 lets a pool ask for them:
+
+| Fish tier | Fish | Bait | Made |
+|---|---|---|---|
+| Copper (1-19) | Raw Shrimp | none: the Trap | |
+| Copper (1-19) | Trout, Seaweed | Worm Bait | Crafting, from a Worm |
+| Iron (20-39) | Oyster, Tropical Fish | Shrimp Bait | Crafting, from Raw Shrimp |
+| Mythril and Gold (40-59) | Salmon, Lobster | Trout Bait | Crafting 38, from a Trout |
+| Adamantine (60-79) | Swordfish | Salmon Bait | Crafting 39, from a Salmon (Crafting 60 to 79 are full) |
+| Darkmetal (80-99) | Shark | Swordfish Chum | Crafting 79, from a Swordfish |
+
+- **Planned catches**: Seaweed, Oyster and Pearl, with their sources and users in their notes.
+- **Held for G2**: the Lobster Pot and the two Harpoons (their tool kinds don't exist yet), the waters' pools, the Bog Pool's fate and the Fish Shoal. Those come in the waters pack after G2 merges, which also turns the Planned entries live.
+
 ## Fish and what catches them
 
 Fish keep their order from [food and drink](content_food_and_drink.md), on the 20-level tiers.
