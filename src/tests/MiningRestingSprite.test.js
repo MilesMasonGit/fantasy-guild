@@ -111,5 +111,10 @@ describe('a resting vein on the mat', () => {
         const art = artOf(container, vein.id);
         expect(imgSrcs(art)).toContain('/assets/tokens/ore/t_ore_vein_copper.png');
         expect(art.querySelector('.gi-token-resting')).not.toBeNull();
+        // Nothing is announced; the countdown is the only sign.
+        const state = Respawn.respawnState(vein);
+        expect(state.restingSprite).toBeNull();
+        expect(state.resting).toBe(true);
+        expect(state.inMs).toBeGreaterThan(0);
     });
 });

@@ -91,9 +91,9 @@ export function restingMode(instance, def) {
 
 /**
  * The picture a resting Token is drawn as, or null to draw its own art greyed: a refill's
- * `respawn.restingSprite`, while it rests. Every vein names the same empty rock, so the rock says
- * "resting" and the Token's name (its card, its hover) says which ore. A regrow has none: it
- * becomes another Token with its own art.
+ * `respawn.restingSprite`, while it rests. A vein names none, so a resting vein is its own ore's
+ * art greyed, with its countdown, until it gets a spent-vein picture of its own. A regrow has
+ * none: it becomes another Token with its own art.
  */
 export function restingSpriteOf(instance, def = getTokenType(instance?.typeId)) {
     if (!isResting(instance, def) || respawnOf(def)?.mode !== 'refill') return null;

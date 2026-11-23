@@ -551,7 +551,13 @@ const retiredKindsLeft = (tokens, recipes) => [
 // A Passive Production line still carrying a time warns until the change pack strips it.
 const lineTimesLeft = (tokens) => Object.values(tokens).flatMap((t) => (Array.isArray(t.trickle) ? t.trickle : [])
     .flatMap((l, i) => (l?.everyMs !== undefined ? [['warning', t.id, `trickle[${i}].everyMs`]] : [])));
-const shippedAllowed = (tokens, recipes) => [...withAmbushLeft(tokens), ...retiredKindsLeft(tokens, recipes), ...lineTimesLeft(tokens)].sort();
+/** A camp still carrying the never-read `reach`: a warning until the owner's Sync clears it. */
+const campReachLeft = (tokens) => Object.entries(tokens)
+    .filter(([, def]) => def?.camp && typeof def.camp === 'object' && 'reach' in def.camp)
+    .map(([id]) => ['warning', id, 'camp.reach']);
+const shippedAllowed = (tokens, recipes) => [
+    ...withAmbushLeft(tokens), ...retiredKindsLeft(tokens, recipes), ...lineTimesLeft(tokens), ...campReachLeft(tokens)
+].sort();
 
 describe('Lifecycle audit — reaches both audits', () => {
     it('the CMS Economy Audit shows each finding as a row, errors Critical and warnings Warning', () => {

@@ -152,13 +152,13 @@ describe('⭐ the content audit checks a camp', () => {
     const audit = (camp, extra = {}) => auditLifecycleBlocks({ tokens: { t_camp: { id: 't_camp', name: 'Camp', camp, ...extra } }, skills })
         .filter((f) => f.entityId === 't_camp');
 
-    it('a good block says nothing; no skill and a skill that is not one are errors; a reach is not read, so never one', () => {
+    it('a good block says nothing; no skill and a skill that is not one are errors; a reach is warned: nothing reads it', () => {
         expect(audit({ skill: 'forestry' })).toEqual([]);
-        expect(audit({ skill: 'forestry', reach: 300 })).toEqual([]);
+        expect(audit({ skill: 'forestry', reach: 300 })).toEqual([expect.objectContaining({ severity: 'warning', field: 'camp.reach' })]);
         expect(audit({ skill: '' })[0]).toMatchObject({ severity: 'error', field: 'camp.skill' });
         expect(audit({ skill: 'basket_weaving' })[0]).toMatchObject({ severity: 'error', field: 'camp.skill' });
-        expect(audit({ skill: 'mining', reach: 0 })).toEqual([]);
-        expect(audit({ skill: 'mining', reach: 'far' })).toEqual([]);
+        expect(audit({ skill: 'mining', reach: 0 })).toEqual([expect.objectContaining({ severity: 'warning', field: 'camp.reach' })]);
+        expect(audit({ skill: 'mining', reach: 'far' })).toEqual([expect.objectContaining({ severity: 'warning', field: 'camp.reach' })]);
         expect(audit('yes')[0]).toMatchObject({ severity: 'error', field: 'camp' });
     });
 

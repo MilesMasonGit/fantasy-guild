@@ -227,8 +227,8 @@ export const MatToken = React.memo(function MatToken({
 
     const usesRemaining = detail?.usesRemaining ?? null;
     const resting = !!detail?.resting;
-    // Drawn by its state: a Field empty, growing or ripe; a resting vein as the shared empty rock,
-    // not greyed (its name still says which ore).
+    // Drawn by its state: a Field empty, growing or ripe, or a resting Token that names a resting
+    // sprite. A resting Token with none is its own art greyed (`gi-token-resting`).
     const stateSprite = detail?.stateSprite ?? null;
     const alert = detail?.alert ?? null;
     const heroId = detail?.heroId ?? null;
