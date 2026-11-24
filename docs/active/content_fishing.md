@@ -1,4 +1,4 @@
-Status: approved 2026-11-04, amended 2026-11-21, **amended 2026-11-24 by the owner's review** (approval of the write-up pending; a CMS pack still to come)
+Status: approved 2026-11-04, amended 2026-11-21, **amended and approved 2026-11-24 by the owner's review** ([brief 850](briefs/850_fishing_spots.md); a CMS pack still to come)
 
 # Content roadmap: Fishing
 
@@ -95,9 +95,11 @@ next pack.*
     overlapping (one mid, two late); without a lure it rolls among the harpoon fish the spot and
     level allow, as point 5.
 24. **New late rod fish** so the late lure has fish, fresh and sea (owner; names the content agent's).
-25. **Bait has many recipes** (owner): **Fishing** recipes that turn raw fish (Raw Shrimp first) or
-    other sensible materials into Bait, **mostly at early Fishing levels, giving very little XP**.
-    This replaces "Bait is made by Crafting" below.
+25. **Bait has many recipes, one per fish** (owner): a **Fishing** recipe turns a raw fish into
+    Bait, **at the same Fishing level as catching that fish** ("if they can catch it, they can make
+    it into bait"); **rarer fish give more Bait**. Raw Shrimp is the first, free from the Trap. Each
+    gives very little XP. Other sensible materials may join (the content agent's). This replaces
+    "Bait is made by Crafting".
 26. **Seaweed is a rare by-catch at sea** (the rare-finds table), no lure or Trap slot of its own.
 
 **The fish list, lean** (owner's rule: no kind without a gameplay job; subject to change, the content
