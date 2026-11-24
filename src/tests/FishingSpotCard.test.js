@@ -146,7 +146,8 @@ describe('the spot’s card: Fish here', () => {
         expect(row('spot_salmon').textContent).toContain('Fishing Rod or Harpoon');
         expect(row('spot_salmon').textContent).toContain('Lure: Salmon Fly');
         expect(row('spot_salmon').dataset.cardFishLure).toBe('spot_fly');
-        expect(row('spot_salmon').getAttribute('title')).toContain('The Salmon Fly picks it');
+        expect(row('spot_salmon').querySelector('[data-card-fish-lure-name]').textContent).toBe('Lure: Salmon Fly');
+        expect(row('spot_salmon').querySelector('[data-item-bar]').getAttribute('title')).toContain('The Salmon Fly picks it');
         expect(row('spot_shark').textContent).not.toContain('Lure');
         expect(row('spot_shark').dataset.cardFishLure).toBeUndefined();
         expect(row('spot_shrimp').textContent).toContain('Trap');
@@ -165,7 +166,7 @@ describe('the spot’s card: Fish here', () => {
         expect(row('spot_shark').dataset.cardFishReach).toBe('out');
         expect(row('spot_shark').className).toContain('opacity-50');
         expect(row('spot_shark').textContent).toContain('60');
-        expect(row('spot_shark').getAttribute('title')).toContain('No hero has Fishing 60 yet (best 45)');
+        expect(row('spot_shark').querySelector('[data-item-bar]').getAttribute('title')).toContain('No hero has Fishing 60 yet (best 45)');
     });
 
     it('a hero levelling into reach ungreys it; with no heroes everything above nothing is greyed', () => {

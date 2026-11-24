@@ -476,25 +476,29 @@ const FishSection = ({ fish: { skillId, best, rows } }) => {
             <Heading>{t('fishing.card.heading')}</Heading>
             <div className="flex flex-col gap-1">
                 {rows.map(row => {
-                    const tools = toolsSpoken(row.toolNames);
                     const lure = row.lureNames.length ? t('fishing.card.lure', { lure: row.lureNames.join(', ') }) : null;
                     return (
-                        <EntityRibbon
+                        // ⚠️ The lure stands on its own line: a ribbon's subtitle never wraps and would cut it off.
+                        <div
                             key={row.itemId}
-                            kind="item"
-                            id={row.itemId}
-                            subtitle={lure ? `${tools} · ${lure}` : tools}
-                            title={fishTip(row, skill, best, getItem(row.itemId)?.name || row.itemId)}
-                            badge={<SkillIcon skillId={skillId} size={16} />}
-                            countText={String(row.level)}
                             data-card-fish={row.itemId}
                             data-card-fish-reach={row.reachable ? 'in' : 'out'}
                             data-card-fish-lure={row.lures.join(' ') || undefined}
-                            className={row.reachable ? undefined : 'opacity-50 grayscale'}
-                            size="sm"
-                            wrap
-                            onInspect={lookUpRibbon}
-                        />
+                            className={cn('flex flex-col gap-0.5', !row.reachable && 'opacity-50 grayscale')}
+                        >
+                            <EntityRibbon
+                                kind="item"
+                                id={row.itemId}
+                                subtitle={toolsSpoken(row.toolNames)}
+                                title={fishTip(row, skill, best, getItem(row.itemId)?.name || row.itemId)}
+                                badge={<SkillIcon skillId={skillId} size={16} />}
+                                countText={String(row.level)}
+                                size="sm"
+                                wrap
+                                onInspect={lookUpRibbon}
+                            />
+                            {lure && <span data-card-fish-lure-name className="ui-text-small text-gi-muted pl-2 break-words">{lure}</span>}
+                        </div>
                     );
                 })}
             </div>
