@@ -78,3 +78,19 @@ Replaces the lines it clashes with above and in [concept_skill_loops.md](concept
 6. **Hollow Tree, Driftwood Logjam, Giant Mushroom and Bamboo Grove are rich event nodes**: they land
    now and then, give a rich rush, and go when worked out ([content_events.md](content_events.md)).
 
+### Forests are tree spawners (owner, 2026-11-24, same review)
+
+*Replaces "Forests speed up nearby regrowth", "Forests stack fully, down to a floor" and the 2026-10-22
+"a Forest both plants and regrows" mechanics in [concept_skill_loops.md](concept_skill_loops.md); "less
+complicated" (owner).*
+
+7. **A Forest is a tree spawner**: it plants **a few trees of its species** within its reach (about 4
+   or 5, per species in the CMS), and **regrows the trees it spawned**: its own Stumps come back on
+   their own. **No speed boost to other trees, no stacking, no floor.** Spawned trees count toward the
+   Token cap (T-102).
+8. **Every tree a Region starts with belongs to one of its wild Forests**: one rule for all trees.
+9. **Regrow time is fixed per species** (an Oak about 5 minutes, felled to harvestable), **and can be
+   shortened by later upgrades** (a Guild Hall star or a Forestry building, to be designed).
+10. **A demolished Forest's trees stay** as lone trees; once felled, their Stumps never regrow (point 5;
+    clear them with Demolish).
+
