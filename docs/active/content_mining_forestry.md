@@ -1,4 +1,4 @@
-Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
+Status: approved 2026-11-04, **Mining amended 2026-11-24 by the owner's review** (not yet briefed; a CMS pack still to come)
 
 # Content roadmap: Mining and Forestry Tokens
 
@@ -37,4 +37,25 @@ Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
 
 - **A vein asks the pickaxe of the metal before its own**, not its own: a Mythril Vein that asked the Mythril Pickaxe would need mythril to get mythril, a loop the pack gate caught. Copper, Coal, Stone, Clay, Quartz and Iron: Copper Pickaxe; Silver and Mythril: Iron; Gold and Adamantine: Mythril; Darkmetal: Adamantine. The Darkmetal Pickaxe opens Basalt and the Fossil Bed when they come. Trees keep the owner's axe list (2026-11-05), which has no loop.
 - **Adamantine, not Adamantium**: the pickaxe and the vein take the ore's name (ids unchanged).
+
+## Amended 2026-11-24: Mining review (owner)
+
+*The owner's review of the gathering skills, after Fishing ([content_fishing.md](content_fishing.md)).
+Replaces the lines it clashes with above and in [concept_skill_loops.md](concept_skill_loops.md)
+"Mining" (the count of about 5 ore).*
+
+1. **A vein goes to rest by chance**: each cycle has a chance the vein empties (Copper about 1 in 5,
+   keeping today's average), **no counter**; the rest and the refill all at once stay. Nothing counts
+   down on the mat (playmat declutter §15); a resting vein shows its resting look.
+2. **The pickaxe gate stays**: each ore asks the pickaxe of the tier below (21 Nov); a better pick is
+   also faster (730 D6). Fishing's kind-only rule is Fishing's own.
+3. **Veins stay put**: they come from the map (or an Excavation) and never drift like fishing spots.
+4. **Excavation, Mining's gathering foundation, digs a new vein**
+   ([concept_gathering_foundations.md](concept_gathering_foundations.md)). Building it needs an
+   **Ore Prospecting Map** for that ore (one item per ore, spent on the build): a **rare drop from
+   mining that ore**, or from other sources (a Rock Golem's drops). Any Region; **as many as the
+   Token cap allows**. Mines and Minecarts stay on today's Foundations.
+5. **Geode, Fallen Star and Fossil Bed are rich event nodes**: they land now and then like the Fish
+   Shoal, give a rich rush, and go when worked out ([content_events.md](content_events.md)). Clay and
+   Quartz are ordinary veins.
 

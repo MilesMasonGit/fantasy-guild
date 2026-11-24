@@ -20,9 +20,13 @@ Status: draft
    Token**, and offers: the **Fishing Hut** (moved onto it, with its variants), a **Bait Shed** (turns
    Raw Shrimp into Bait) and a **Lure Workshop** (makes lures).
 
+4. **Excavation** digs a new vein, built with an **Ore Prospecting Map** for that ore (a rare drop
+   from mining it or from other sources), any Region, limited only by the Token cap (owner 2026-11-24,
+   [content_mining_forestry.md](content_mining_forestry.md) "Mining review").
+
 ## Open (to interview)
 
-- What each of Excavation, Nursery and Farmland offers, and where each may stand.
+- What Nursery and Farmland offer, and where each may stand; where Excavation may stand.
 - How a gathering foundation is got (bought, built by Construction, a Guild Hall star) and what it costs.
 - Whether buildings that today sit on Wood or Stone Foundations for these skills (a Mine, a Logging
   Camp, a Field) move onto the new ones.
