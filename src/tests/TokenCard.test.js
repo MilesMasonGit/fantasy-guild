@@ -142,7 +142,9 @@ describe('the blocks, top to bottom, per kind', () => {
 
         const work = model.blocks[1];
         expect(work).toMatchObject({ skillId: 'mining', level: 20, xp: 35 });
-        expect(model.blocks[2]).toMatchObject({ cycleMs: 4000, uses: 37 });
+        // It comes back, so it runs out by chance (one over its 37 charges), never a count.
+        expect(model.blocks[2]).toMatchObject({ cycleMs: 4000, uses: null });
+        expect(model.blocks[2].endChance).toBeCloseTo(100 / 37);
         const recipe = model.blocks[3];
         expect(recipe.needs).toEqual([{ itemId: 'fixture_oak_wood', need: 3, have: 0 }]);
         expect(recipe.tools).toEqual([]);
@@ -156,7 +158,8 @@ describe('the blocks, top to bottom, per kind', () => {
         const { container } = mount(h(TokenCard, { typeId: 'card_vein', instanceId: vein.id }));
         expect(domOrder(container)).toEqual(['name', 'stats', 'requires', 'makes', 'lifecycle']);
         expect(container.querySelector('[data-card-cycle]').textContent).toBe('4s');
-        expect(container.querySelector('[data-card-charges]').textContent).toBe('37');
+        expect(container.querySelector('[data-card-charges]')).toBeNull();
+        expect(container.querySelector('[data-card-ends]').textContent).toBe('1 in 37');
     });
 
     it('needs read have/need, red when short', () => {
@@ -290,10 +293,12 @@ describe('the blocks, top to bottom, per kind', () => {
         expect(line(growth(), () => ({}))).toEqual({ kind: 'grow', icon: 'grow', text: '1m 5s', tip: 'Grows into Oak Sapling in 1m\u00a05s, for 1 Oak Seedling from the Bank' });
     });
 
-    it('a Shop card (no instance) shows the type: starting charges, no recipe picker', () => {
+    it('a Shop card (no instance) shows the type: its chance to run out or its charges, no recipe picker', () => {
         const model = tokenCardModel('card_vein');
         expect(ids(model)).toEqual([CARD_BLOCK.NAME, CARD_BLOCK.WORK, CARD_BLOCK.CYCLE, CARD_BLOCK.RECIPE]);
-        expect(model.blocks[2].uses).toBe(37);
+        expect(model.blocks[2].uses).toBeNull();
+        expect(model.blocks[2].endChance).toBeCloseTo(100 / 37);
+        expect(tokenCardModel('card_tree').blocks.find(b => b.id === CARD_BLOCK.CYCLE)).toMatchObject({ uses: 10, endChance: null });
     });
 
     it('unlimited charges read ∞', () => {
@@ -586,7 +591,13 @@ describe('the sections', () => {
         expect(stats.querySelector('[data-card-skill="mining"]').textContent).toContain('20');
         expect(stats.textContent).toContain('+35');
         expect(stats.querySelector('[data-card-cycle]')).not.toBeNull();
-        expect(stats.querySelector('[data-card-charges]')).not.toBeNull();
+        // A vein runs out by chance: its odds stand where a count would.
+        expect(stats.querySelector('[data-card-charges]')).toBeNull();
+        expect(stats.querySelector('[data-card-ends]').textContent).toContain('1 in 37');
+        cleanup();
+        const tree = put('card_tree', 900, 300);
+        const card = mount(h(TokenCard, { typeId: 'card_tree', instanceId: tree.id, onClose: () => {} })).container;
+        expect(card.querySelector('[data-card-block="stats"] [data-card-charges]').textContent).toContain('10');
     });
 
     it('the level cell’s hover is the level writer’s: Needs Mining 20', () => {

@@ -42,6 +42,9 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * standing still, and says what it needs; an Orchard put in reach starts it again from where it
  * stood. The Orchard's Grow Time shortens the rest (floored). The picker waits silently on a Bare
  * tree that is coming back, and idles beside one that is not.
+ *
+ * A fruit tree is picked empty by chance (`ChanceEnd.test.js`); these fixtures author a sure end
+ * (`endChance: 100`), so one pick leaves them Bare and a refill gives back their one life.
  */
 
 const APPLE = 'item_apple';
@@ -56,7 +59,7 @@ registerTokenTypes({
             payload: { type: EFFECT_TYPES.GROW_TIME, bucket: 'percentage', value: -0.5 } }]
     }),
     or_tree: plain('or_tree', 'Test Apple Tree', {
-        uses: 2, requiresHero: true, staysPut: true, config: picking,
+        endChance: 100, requiresHero: true, staysPut: true, config: picking,
         respawn: { mode: 'refill', afterMs: 20000, restingSprite: 't_tree_bare_apple', needsNearby: ['or_orchard'] }
     }),
     // An Orchard that plants Saplings within its reach for a seed each, and speeds its trees.
@@ -69,12 +72,12 @@ registerTokenTypes({
     }),
     or_sapling: plain('or_sapling', 'Test Apple Sapling', { artSize: 'small', grows: { into: 'or_planted_tree', afterMs: 6000 } }),
     or_planted_tree: plain('or_planted_tree', 'Test Planted Apple', {
-        uses: 2, requiresHero: true, staysPut: true, config: picking,
+        endChance: 100, requiresHero: true, staysPut: true, config: picking,
         respawn: { mode: 'refill', afterMs: 20000, needsNearby: ['or_planting_orchard'] }
     }),
     // Today's shape: a refill with no Orchard named comes back wherever it stands.
     or_free_tree: plain('or_free_tree', 'Test Wild Apple', {
-        uses: 2, requiresHero: true, config: picking, respawn: { mode: 'refill', afterMs: 20000 }
+        endChance: 100, requiresHero: true, config: picking, respawn: { mode: 'refill', afterMs: 20000 }
     })
 });
 
@@ -114,13 +117,14 @@ beforeEach(() => {
     GameState.state.inventory.maxSlots = 50;
 });
 
-/** An apple tree (with or without its Orchard in reach), a picker flagged on it, run until it is Bare. */
+/** An apple tree (with or without its Orchard in reach), a picker flagged on it, run until it is Bare and half a second on. */
 function pickedBare({ orchard = true, type = 'or_tree' } = {}) {
     if (orchard) put('or_orchard', TREE.x + 150, TREE.y);
     const tree = put(type, TREE.x, TREE.y);
     TileModifiers.rebuildAll();
     Orders.orderAt('picker', { x: TREE.x, y: TREE.y });
-    run(2600);
+    for (let t = 0; t < 10000 && !Respawn.isResting(tree); t += 100) BoardRunner.tick(100);
+    run(500);
     expect(BoardState.getTokenById(tree.id)).toBeTruthy();
     expect(Respawn.isResting(tree)).toBe(true);
     return tree;
@@ -145,10 +149,10 @@ describe('⭐ picked, not felled: Fruiting → Bare → Fruiting with its Orchar
         // The Orchard's −50 % Grow Time: a 20 s rest takes 10 s.
         expect(Respawn.nextRespawn(tree)).toMatchObject({ mode: 'refill', totalMs: 10000, paused: false });
         run(10000);
-        expect(tree.usesRemaining).toBe(2);
+        expect(tree.usesRemaining).toBe(1);
         expect(Respawn.isResting(tree)).toBe(false);
         expect(Respawn.restingSpriteOf(tree)).toBeNull();
-        expect(InventoryManager.getItemCount(APPLE) + SpriteLayer.countOnBoard(APPLE)).toBeGreaterThanOrEqual(2);
+        expect(InventoryManager.getItemCount(APPLE) + SpriteLayer.countOnBoard(APPLE)).toBeGreaterThanOrEqual(1);
     });
 
     it('the picker waits silently on the Bare tree, then picks it again', () => {
@@ -186,7 +190,7 @@ describe('⭐ a Bare tree with no Orchard in reach stays Bare', () => {
         expect(Flags.waitingOf('picker')).toEqual({ instanceId: tree.id, kind: 'node' });
         run(10000);
         expect(Respawn.isResting(tree)).toBe(false);
-        expect(tree.usesRemaining).toBe(2);
+        expect(tree.usesRemaining).toBe(1);
     });
 
     it('given a charge back while it waits (a copy dropped on it), it is no longer Bare and its mark goes', () => {
@@ -288,13 +292,17 @@ describe('an Apple Tree from an old save, once the content pack makes it a fruit
         const tree = BoardState.getTokenById(saved.id);
         expect(FixedTokens.isFixed(tree)).toBe(true);
         Orders.orderAt('picker', TREE);
+        // Picked empty by chance: every roll under its chance, so its first pick is its last.
+        const rolls = vi.spyOn(Math, 'random').mockReturnValue(0);
         run(5000);
+        rolls.mockRestore();
         expect(BoardState.getTokenById(saved.id)).toBe(tree);
         expect(Respawn.isResting(tree)).toBe(true);
         expect(Respawn.nextRespawn(tree)).toMatchObject({ paused: true });
         put('or_orchard', TREE.x + 150, TREE.y);
         run(20100);
-        expect(tree.usesRemaining).toBe(today.uses);
+        expect(tree.usesRemaining).toBe(tokenStartingUses('token_apple_tree'));
+        expect(tree.usesRemaining).toBe(1);
     });
 });
 

@@ -16,6 +16,7 @@ import * as Camps from '../systems/board/Camps.js';
 import * as Demolition from '../systems/board/Demolition.js';
 import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
 import * as Growth from '../systems/board/Growth.js';
+import * as Fields from '../systems/board/Fields.js';
 import { AudioSystem } from '../systems/core/AudioSystem.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
@@ -96,7 +97,7 @@ registerTokenTypes({
         tokenType: 'station', requiresHero: true, config: work('forestry', 1000, { outputs: [] }),
         statements: [{ id: 'stm_hc_saw', keyword: KEYWORD.STATION, payload: { skill: 'forestry' } }]
     }),
-    /** A Field that starts ripe with two harvests. */
+    /** A Field that starts ripe with two harvests on average (one in two to finish each). */
     hc_field: plain('hc_field', 'HC Field', {
         tokenType: 'station', requiresHero: true, field: { startsWith: CROP },
         config: { skill: 'farming', skillRequired: 1, cycleTimeMs: 1000, xp: 1, inputs: [], outputs: [] },
@@ -353,7 +354,7 @@ describe('⭐ waiting at a camp', () => {
 });
 
 describe('⭐ a Farmstead harvests the ripe Fields in its reach', () => {
-    it('two ripe Fields in turn, each over its load; a Farming station that is not a Field is left alone', () => {
+    it('two ripe Fields in turn, each until a harvest finishes it; a Farming station that is not a Field is left alone', () => {
         const [h] = newBoard();
         const c = fixtures.placeAt('hc_farmstead', 600, 500);
         const f1 = fixtures.placeAt('hc_field', 720, 500);
@@ -361,12 +362,14 @@ describe('⭐ a Farmstead harvests the ripe Fields in its reach', () => {
         const mill = fixtures.placeAt('hc_mill', 480, 500);
         const w = watchCycles();
         expect(Orders.orderAt(h.id, { x: c.x, y: c.y }).success).toBe(true);
-        run(6000);
+        const ripe = (f) => Fields.stageOf(f) === Fields.STAGE.RIPE;
+        for (let t = 0; t < 60000 && (ripe(f1) || ripe(f2)); t += 100) run(100);
+        expect(ripe(f1) || ripe(f2)).toBe(false);
         const cycles = w.stop().map(([, id]) => id);
-        // Two harvests each, one Field after the other.
-        expect(cycles.length).toBe(4);
-        expect(cycles[0]).toBe(cycles[1]);
-        expect(cycles[2]).toBe(cycles[3]);
+        // One Field's harvests until it is finished, then the other's: never back and forth.
+        const turn = cycles.findIndex(id => id !== cycles[0]);
+        expect(turn).toBeGreaterThan(0);
+        expect(cycles.slice(turn).every(id => id !== cycles[0])).toBe(true);
         expect(new Set(cycles)).toEqual(new Set([f1.id, f2.id]));
         expect(cycles).not.toContain(mill.id);
         expect(InventoryManager.getItemCount(WHEAT_ITEM) + 0).toBeGreaterThanOrEqual(0);

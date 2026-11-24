@@ -43,8 +43,9 @@ class SilentAudio {
 
 const plain = (id, name, extra) => ({ id, name, tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature', ...extra });
 registerTokenTypes({
+    // Felled by chance; a sure end, so its first cycle fells it.
     ho_tree: plain('ho_tree', 'HO Oak', {
-        uses: 2, requiresHero: true, staysPut: true, respawn: { mode: 'regrow', into: 'ho_stump' },
+        endChance: 100, requiresHero: true, staysPut: true, respawn: { mode: 'regrow', into: 'ho_stump' },
         config: { skill: 'forestry', skillRequired: 1, cycleTimeMs: 3000, xp: 1, inputs: [],
             outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }] }
     }),
@@ -256,7 +257,7 @@ describe('⭐ when the job stops, the hero waits there', () => {
         const [h] = newBoard();
         const tree = fixtures.placeAt('ho_tree', 400, 300);
         Orders.orderAt(h.id, { x: tree.x, y: tree.y });
-        run(6500);           // two cycles: felled
+        run(6500);           // its first cycle: felled
         const stump = BoardState.tokensAtPoint(400, 300)[0];
         expect(stump.typeId).toBe('ho_stump');
         expect(Flags.pinnedIdOf(h.id)).toBe(stump.id);
@@ -266,7 +267,7 @@ describe('⭐ when the job stops, the hero waits there', () => {
         const sapling = BoardState.tokensAtPoint(400, 300)[0];
         expect(sapling.typeId).toBe('ho_sapling');
         expect(Flags.pinnedIdOf(h.id)).toBe(sapling.id);
-        run(5500);
+        run(2500);
         const again = BoardState.tokensAtPoint(400, 300)[0];
         expect(again.typeId).toBe('ho_tree');
         run(500);

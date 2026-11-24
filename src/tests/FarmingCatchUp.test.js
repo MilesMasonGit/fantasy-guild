@@ -31,10 +31,11 @@ import * as fixtures from '../../bench/fixtures.mjs';
  * before the time away: a pick sows on the next tick), with a Well (Grow Time −25 %), a Composter
  * (+2 to the load) and a Beehive (25 % to double the wheat) in reach, and one more seed in the Bank
  * (each crop's seed stays in the Bank while it grows and is taken by its first harvest).
- * The crop grows about 45 minutes, ripens with twelve harvests of 2.35 s, is harvested over its load,
- * sows again with the last seed, grows and is harvested again, and then stops: no seed. Its times
- * fall part-way through ticks of either size. The Beehive's rolls draw from a seeded `Math.random`
- * in fixed places of each finished cycle, so the same time played in 100 ms steps, in 1000 ms steps
+ * The crop grows about 45 minutes, ripens to give twelve harvests of 2.35 s on average (one in twelve
+ * to finish each), is harvested until a roll finishes it, sows again with the last seed, grows and
+ * is harvested again, and then stops: no seed. Its times fall part-way through ticks of either size.
+ * The Beehive's rolls and the harvests' rolls to finish draw from a seeded `Math.random` in fixed
+ * places of each finished cycle, so the same time played in 100 ms steps, in 1000 ms steps
  * and through the game's own catch-up stands in the same place at two moments: 46 minutes in (the
  * second crop growing, on the same clock) and 100 minutes in (stopped): the same harvests, the same
  * doubles, the same wheat.
@@ -226,16 +227,17 @@ describe('⭐ a catch-up beside a Field with a Well, a Composter and a Beehive i
         expect(snapshot(id, seen)).toEqual(small.snap);
         expect(seen.wheat).toEqual(small.seen.wheat);
 
-        // And what happened. 46 minutes in: the first crop's twelve harvests (ten, the
-        // Composter's two) done and the second crop growing, on a clock that is not a whole second.
-        expect(small.first.cycles).toBe(12);
+        // And what happened. 46 minutes in: the first crop harvested until a roll finished it (one
+        // in twelve each: ten, and the Composter's two) and the second crop growing, on a clock that
+        // is not a whole second.
+        expect(small.first.cycles).toBeGreaterThanOrEqual(1);
         expect(small.first.stage).toBe('growing');
         expect(small.first.clocks.fieldMs % 1000).not.toBe(0);
         // The first crop's seed taken by its first harvest; the second crop's still in the Bank, owed.
         expect(small.first.seeds).toBe(1);
         expect(small.first.field).toEqual({ cropId: WHEAT, seedOwed: true });
         // At the end: two crops harvested, 2.35 s a harvest, sown twice, stopped with the Bank empty.
-        expect(small.snap.cycles).toBe(24);
+        expect(small.snap.cycles).toBeGreaterThan(small.first.cycles);
         expect([...small.seen.cycleMs]).toEqual([2350]);
         expect(small.snap.stages).toEqual(['ripe', 'growing', 'ripe', 'empty']);
         expect(small.snap.stage).toBe('empty');

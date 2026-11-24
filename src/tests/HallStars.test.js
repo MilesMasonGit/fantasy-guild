@@ -69,7 +69,8 @@ const FELLER = 'fixture_producer';      // forestry, 12 s, 4 XP
 
 registerTokenTypes({
     [VEIN]: {
-        id: VEIN, name: 'H1 Vein', tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: 2, sprite: 's_industry', tags: ['Ore'],
+        // Runs out by chance; a sure end, so its first cycle rests it.
+        id: VEIN, name: 'H1 Vein', tokenType: 'resource', rarity: 'common', theme: 'fixture', endChance: 100, sprite: 's_industry', tags: ['Ore'],
         respawn: { mode: 'refill', afterMs: 60000 },
         config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 3000, xp: 2, inputs: [], outputs: [{ itemId: 'fixture_copper_ore', quantity: 1, chance: 100 }] }
     },
@@ -307,11 +308,11 @@ describe('Token upgrades: aimed at a Token kind or a tag', () => {
         buy('m_yield');
         buy('m_rest');
         const vein = place({ x: 300, y: 300 }, VEIN, 'hero_1');
-        run(6000);                     // two cycles: out of charges
+        run(6000);                     // its first cycle: a sure end
         expect(BoardState.getTokenById(vein.id).usesRemaining).toBe(0);
         expect(Respawn.isResting(BoardState.getTokenById(vein.id))).toBe(true);
         for (let t = 0; t < 30000; t += 1000) TimedChanges.tick(1000);
-        expect(BoardState.getTokenById(vein.id).usesRemaining).toBe(2);
+        expect(BoardState.getTokenById(vein.id).usesRemaining).toBe(1);
     });
 
     it('regrows everything with the tag faster', () => {

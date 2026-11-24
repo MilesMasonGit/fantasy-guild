@@ -36,8 +36,9 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * A farmer at a Field (brief 230 S4): they harvest a ripe Field cycle by cycle until its load is
- * gone, the first cycle paying the seed the crop was sown with (and waiting for it while it is gone,
+ * A farmer at a Field (brief 230 S4): they harvest a ripe Field cycle by cycle until a harvest's
+ * roll finishes it (`finishesAt` sets which one), the first cycle paying the seed the crop was sown
+ * with (and waiting for it while it is gone,
  * as any work cycle waits for its inputs); the last cycle sows it again if a seed is there and the
  * farmer lets go, waiting silently for it to
  * ripen ("Waiting for Test Field", not idle), and harvests it again the moment it is ripe. Without
@@ -128,6 +129,19 @@ beforeEach(() => {
     GameState.state.inventory.maxSlots = 50;
 });
 
+/**
+ * The rolls of a Field's harvests: over its chance (not the last) until the `n`th, which rolls just
+ * under it and finishes it; every other draw reads the same while it stands, so another chance (a
+ * perk's) misses as it would on a high roll. Returns the restore.
+ */
+function finishesAt(field, n) {
+    let done = 0;
+    const under = Fields.harvestEndChance(field) / 100 - 0.001;
+    const rolls = vi.spyOn(Math, 'random').mockImplementation(() => (done >= n - 1 ? under : 0.999));
+    const off = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => { if (p.instanceId === field.id) done++; });
+    return () => { off(); rolls.mockRestore(); };
+}
+
 /** A Field sown with wheat and grown ripe (its seed owed to the first harvest), a farmer flagged on it. */
 function ripeField({ seeds = 0, typeId = 'fh_field', at = FIELD, farmer = true } = {}) {
     InventoryManager.addItem(SEED, 1 + seeds);
@@ -139,12 +153,14 @@ function ripeField({ seeds = 0, typeId = 'fh_field', at = FIELD, farmer = true }
     return field;
 }
 
-describe('⭐ a farmer harvests the load, the last cycle sows again, and they wait for it', () => {
+describe('⭐ a farmer harvests until a roll finishes it, the last cycle sows again, and they wait for it', () => {
     it('three harvests, three wheat; sown again for a seed; the farmer waits silently, then harvests again', () => {
         const field = ripeField({ seeds: 1 });
         const cycles = [];
         const off = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => { if (p.instanceId === field.id) cycles.push(p.heroId); });
+        const restore = finishesAt(field, 3);
         run(3500);
+        restore();
         off();
         expect(cycles).toEqual(['farmer', 'farmer', 'farmer']);
         expect(wheat()).toBe(3);
@@ -172,7 +188,9 @@ describe('⭐ a farmer harvests the load, the last cycle sows again, and they wa
 
     it('with no seed the Field stops and says so; the farmer is idle as before', () => {
         const field = ripeField({ seeds: 0 });
+        const restore = finishesAt(field, 3);
         run(3500);
+        restore();
         expect(wheat()).toBe(3);
         expect(Fields.stageOf(field)).toBe(Fields.STAGE.EMPTY);
         expect(Growth.growthAlertOf(field.id)).toEqual({ alert: ALERT.GROW_NEEDS_ITEM, needs: [SEED] });
@@ -212,7 +230,9 @@ describe('⭐ a farmer harvests the load, the last cycle sows again, and they wa
         const farmstead = put('fh_farmstead', FIELD.x + 80, FIELD.y + 160);
         expect(Orders.orderAt('farmer', { x: farmstead.x, y: farmstead.y }).success).toBe(true);
         // A is ripe, B just sown: A is harvested; then B grows ripe while A grows, and B is worked.
+        const restore = finishesAt(a, 3);
         run(3500);
+        restore();
         expect(Fields.stageOf(a)).toBe(Fields.STAGE.GROWING);
         run(17000);
         expect(Fields.stageOf(b)).toBe(Fields.STAGE.RIPE);
@@ -246,7 +266,9 @@ describe('⭐ the seed is checked at sowing and taken at the first harvest', () 
         const off = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => {
             if (p.instanceId === field.id) seedsAt.push(InventoryManager.getItemCount(SEED));
         });
+        const restore = finishesAt(field, 3);
         run(3500);
+        restore();
         off();
         expect(seedsAt).toEqual([0, 0, 0]);
     });
@@ -258,7 +280,7 @@ describe('⭐ the seed is checked at sowing and taken at the first harvest', () 
         run(3000);
         expect(wheat()).toBe(0);
         expect(Fields.stageOf(field)).toBe(Fields.STAGE.RIPE);
-        expect(Fields.fieldState(field).load).toBe(3);
+        expect(Fields.fieldState(field).harvests).toBe(3);
         expect(field.alert).toBe(ALERT.INPUTS);
         expect(field.field.seedOwed).toBe(true);
         // Back: harvested, the seed taken.
@@ -271,6 +293,7 @@ describe('⭐ the seed is checked at sowing and taken at the first harvest', () 
 
     it('lost part-way through the first harvest and back before it ends: the cycle holds its progress, then pays', () => {
         const field = ripeField({ seeds: 0 });
+        const restore = finishesAt(field, 3);
         run(500);
         expect(field.cycleElapsedMs).toBeGreaterThan(0);
         expect(InventoryManager.removeItem(SEED, 1)).toBe(true);
@@ -282,7 +305,10 @@ describe('⭐ the seed is checked at sowing and taken at the first harvest', () 
         run(1000);
         expect(wheat()).toBe(1);
         expect(InventoryManager.getItemCount(SEED)).toBe(0);
-        expect(Fields.fieldState(field).load).toBe(2);
+        restore();
+        // Not its last (its roll missed): still ripe, owing nothing.
+        expect(Fields.stageOf(field)).toBe(Fields.STAGE.RIPE);
+        expect(field.field.seedOwed).toBeUndefined();
     });
 });
 
@@ -290,8 +316,10 @@ describe('supports reach a Field\'s harvest like any work', () => {
     it('a Beehive in reach (100 % double on wheat here) doubles each harvest', () => {
         put('fh_beehive', FIELD.x + 150, FIELD.y);
         TileModifiers.rebuildAll();
-        ripeField({ seeds: 1 });
+        const field = ripeField({ seeds: 1 });
+        const restore = finishesAt(field, 3);
         run(3500);
+        restore();
         expect(wheat()).toBe(6);
     });
 });

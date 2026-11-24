@@ -18,6 +18,7 @@ import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import * as fixtures from '../../bench/fixtures.mjs';
 import { withoutShippedPerks } from './fixtures/noPerks.js';
+import { sameRolls } from './fixtures/sameRolls.js';
 
 // Its forester is Forestry 30: Clean Felling's roll would land on another number in each run.
 withoutShippedPerks();
@@ -26,7 +27,8 @@ withoutShippedPerks();
  * Time away with a felled Oak in a Forest's reach (brief 230 S2a): a forester fells it, it becomes
  * a Stump, the Stump pays the Bank's one seedling and grows into a Sapling, the Sapling into an Oak,
  * the forester fells it again, and the second Stump, with no seedling left, is stopped. The same in
- * 100 ms steps, in 1000 ms steps and through the game's own catch-up.
+ * 100 ms steps, in 1000 ms steps and through the game's own catch-up. The Oak is felled by chance,
+ * so each run draws the same numbers from its start: the steps and the catch-up roll alike.
  */
 
 const NOW = 1_800_000_000_000;
@@ -94,9 +96,11 @@ function snapshot(seen) {
 }
 
 function plainLoop(step) {
+    const rolls = sameRolls();
     buildBoard();
     const w = watch();
     for (let t = 0; t < AWAY_MS; t += step) GameLoop.runHandlers(step);
+    rolls.mockRestore();
     return snapshot(w.stop());
 }
 
@@ -129,9 +133,11 @@ describe('⭐ a catch-up over a felled Oak in a Forest\'s reach', () => {
         const big = plainLoop(1000);
         expect(big).toEqual(small);
 
+        const rolls = sameRolls();
         buildBoard();
         const w = watch();
         await CatchUp.run({ savedAt: NOW - AWAY_MS, now: NOW, save: false, yieldFn: () => Promise.resolve() });
+        rolls.mockRestore();
         expect(snapshot(w.stop())).toEqual(small);
 
         // And what happened: felled, a Stump, the seedling paid, a Sapling, an Oak, felled again,

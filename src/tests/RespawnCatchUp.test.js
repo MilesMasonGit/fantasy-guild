@@ -16,10 +16,12 @@ import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { summaryView } from '../ui/components/hud/catchUpSummary.js';
 import * as fixtures from '../../bench/fixtures.mjs';
+import { sameRolls } from './fixtures/sameRolls.js';
 
 /**
  * Time away with a respawning vein on the mat: the catch-up plays its rests and refills, and its
- * summary never counts it as a Token used up. A vein without the block, beside it, still is.
+ * summary never counts it as a Token used up. A vein without the block, beside it, still is. The
+ * vein runs out by chance, so the runs compared draw the same numbers from their start.
  */
 
 const NOW = 1_800_000_000_000;
@@ -111,15 +113,19 @@ describe('a catch-up over a respawning vein', () => {
     }, 30_000);
 
     it('ends exactly where the same 1000 ms steps through the plain loop end', async () => {
+        let rolls = sameRolls();
         let vein = buildBoard();
         let respawns = countRespawns();
         for (let i = 0; i < AWAY_MS / 1000; i++) GameLoop.runHandlers(1000);
         const plain = { ...veinState(vein), respawns: respawns.stop() };
+        rolls.mockRestore();
 
+        rolls = sameRolls();
         vein = buildBoard();
         respawns = countRespawns();
         await CatchUp.run({ savedAt: NOW - AWAY_MS, now: NOW, save: false, yieldFn: () => Promise.resolve() });
         expect({ ...veinState(vein), respawns: respawns.stop() }).toEqual(plain);
+        rolls.mockRestore();
         expect(plain.respawns).toBeGreaterThanOrEqual(3);
     }, 30_000);
 });

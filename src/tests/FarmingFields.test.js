@@ -27,10 +27,11 @@ import { clearMat, placeAt } from './fixtures/mat.js';
  * Farming (brief 230 S4): a Field is one Token that grows itself, empty → growing → ripe. The crop
  * is a Farming recipe the Field offers (its station kind narrows the list), picked on the Field and
  * kept for every sowing; sowing checks the recipe's inputs (the seed) are there and takes nothing, the
- * first harvest pays them. A ripe Field holds a load of harvest cycles; the last sows again from the
- * Bank, or the Field is stopped without a seed. A
- * Well in reach shortens the growth (to the standard floor), a Composter adds to the load as it
- * ripens. A map's wild patch starts ripe with its crop picked.
+ * first harvest pays them. A ripe Field is harvested until a harvest's roll finishes it (one over
+ * its load, on average its load); the last sows again from the Bank, or the Field is stopped without
+ * a seed. A Well in reach shortens the growth (to the standard floor), a Composter adds to the
+ * harvests it gives on average as it ripens. A map's wild patch starts ripe with its crop picked.
+ * Each harvest here says how it rolls: `harvestOnce` misses (not the last), `harvestLast` hits.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -112,11 +113,18 @@ function arrive(typeId, x = AT.x, y = AT.y) {
 const def = (instance) => getTokenType(instance.typeId);
 const stage = (instance) => Fields.stageOf(instance, def(instance));
 const pick = (instance, recipeId) => expect(StationRecipe.setSelectedRecipe(instance, recipeId)).toBe(true);
-/** One harvest cycle as `BoardRunner.completeCycle` ends it: its inputs (an owed seed) paid, then the harvest. */
-function harvestOnce(instance, opts) {
+/**
+ * One harvest cycle as `BoardRunner.completeCycle` ends it: its inputs (an owed seed) paid, then the
+ * harvest, its roll to be the last at `roll` (over the chance: not the last).
+ */
+function harvestOnce(instance, opts, roll = 0.999) {
     expect(Growth.payCost(effectiveIO(instance.id, instance).inputs)).toBe(true);
+    const rolls = vi.spyOn(Math, 'random').mockReturnValue(roll);
     Fields.harvested(instance, def(instance), opts);
+    rolls.mockRestore();
 }
+/** The harvest whose roll finishes the Field. */
+const harvestLast = (instance, opts) => harvestOnce(instance, opts, 0);
 
 beforeAll(() => TimedChanges.init());
 
@@ -145,15 +153,17 @@ describe('the Field and crop terms', () => {
         expect(Fields.isField(getTokenType('fa_well'))).toBe(false);
     });
 
-    it('a crop reads its grow time, load, ripe sprite and seed; defaults when unauthored; kept per recipe', () => {
+    it('a crop reads its grow time, chance to finish, load, ripe sprite and seed; defaults when unauthored; kept per recipe', () => {
         const recipe = { inputs: [{ itemId: 's', quantity: 1 }, { itemId: 's', quantity: 2 }, { itemId: '', quantity: 1 }], crop: { growMs: 5400000, load: 12, ripeSprite: ' t_x ' } };
         const terms = cropTermsOf(recipe);
-        expect(terms).toEqual({ growMs: 5400000, load: 12, ripeSprite: 't_x', seeds: [{ itemId: 's', quantity: 3 }] });
+        expect(terms).toEqual({ growMs: 5400000, endChance: 100 / 12, load: 12, ripeSprite: 't_x', seeds: [{ itemId: 's', quantity: 3 }] });
         expect(cropTermsOf(recipe)).toBe(terms);
         expect(Object.isFrozen(terms.seeds)).toBe(true);
-        expect(cropTermsOf({})).toEqual({ ...CROP_DEFAULTS, ripeSprite: null, seeds: [] });
+        expect(cropTermsOf({})).toEqual({ ...CROP_DEFAULTS, endChance: 10, ripeSprite: null, seeds: [] });
         expect(CROP_DEFAULTS).toEqual({ growMs: 3600000, load: 10 });
         expect(cropTermsOf({ crop: { growMs: -1, load: 0.5 } })).toMatchObject(CROP_DEFAULTS);
+        // A chance written in place of the load: its load is the average, one over it.
+        expect(cropTermsOf({ crop: { endChance: 25, load: 12 } })).toMatchObject({ endChance: 25, load: 4 });
     });
 
     it('Field, Herb Garden and Windmill are station kinds with words', () => {
@@ -193,12 +203,13 @@ describe('⭐ empty → growing → ripe', () => {
         expect(stage(field)).toBe(Fields.STAGE.GROWING);
         tick(100);
         expect(stage(field)).toBe(Fields.STAGE.RIPE);
-        expect(Fields.fieldState(field).load).toBe(3);
-        expect(field.field).toEqual({ cropId: WHEAT, load: 3, full: 3, seedOwed: true });
+        expect(Fields.fieldState(field)).toMatchObject({ harvests: 3, endChance: 100 / 3 });
+        expect(field.field).toEqual({ cropId: WHEAT, ripe: true, full: 3, seedOwed: true });
         expect(WorkCheck.fixableReason(field.id, field).reason).toBeNull();
         // Ripe, its clock stands at zero: nothing more happens until it is harvested.
         tick(120000);
-        expect(Fields.fieldState(field).load).toBe(3);
+        expect(stage(field)).toBe(Fields.STAGE.RIPE);
+        expect(Fields.fieldState(field).harvests).toBe(3);
         expect(seeds()).toBe(2);
     });
 
@@ -214,7 +225,7 @@ describe('⭐ empty → growing → ripe', () => {
         expect(io.cycleTimeMs).toBe(3000);
         harvestOnce(field);
         expect(seeds()).toBe(0);
-        expect(field.field).toEqual({ cropId: WHEAT, load: 2, full: 3 });
+        expect(field.field).toEqual({ cropId: WHEAT, ripe: true, full: 3 });
         expect(effectiveIO(field.id, field).inputs).toEqual([]);
     });
 
@@ -268,7 +279,7 @@ describe('⭐ empty → growing → ripe', () => {
     });
 });
 
-describe('⭐ harvesting the load; the last cycle sows again', () => {
+describe('⭐ harvesting until a roll finishes it; the last cycle sows again', () => {
     function ripeField(seedsInBank) {
         InventoryManager.addItem(SEED, 1 + seedsInBank);
         const field = arrive('fa_field');
@@ -278,15 +289,15 @@ describe('⭐ harvesting the load; the last cycle sows again', () => {
         return field;
     }
 
-    it('each harvest spends one, the first paying the seed; the last sows the pick again, owing a seed, growing from when it ended', () => {
+    it('each harvest rolls to be the last, the first paying the seed; the last sows the pick again, owing a seed, growing from when it ended', () => {
         const field = ripeField(1);
         expect(seeds()).toBe(2);
         harvestOnce(field);
         expect(seeds()).toBe(1);
         harvestOnce(field);
-        expect(Fields.fieldState(field).load).toBe(1);
+        expect(stage(field)).toBe(Fields.STAGE.RIPE);
         expect(seeds()).toBe(1);
-        harvestOnce(field, { overMs: 400 });
+        harvestLast(field, { overMs: 400 });
         expect(stage(field)).toBe(Fields.STAGE.GROWING);
         expect(seeds()).toBe(1);
         expect(field.field).toEqual({ cropId: WHEAT, seedOwed: true });
@@ -296,7 +307,9 @@ describe('⭐ harvesting the load; the last cycle sows again', () => {
 
     it('with no seed the last harvest leaves it empty and stopped, saying Needs the seed', () => {
         const field = ripeField(0);
-        for (let i = 0; i < 3; i++) harvestOnce(field);
+        harvestOnce(field);
+        harvestOnce(field);
+        harvestLast(field);
         expect(stage(field)).toBe(Fields.STAGE.EMPTY);
         expect(Fields.isStopped(field)).toBe(true);
         expect(Growth.growthAlertOf(field.id)).toEqual({ alert: ALERT.GROW_NEEDS_ITEM, needs: [SEED] });
@@ -330,7 +343,9 @@ describe('⭐ harvesting the load; the last cycle sows again', () => {
         expect(Fields.fieldState(field)).toMatchObject({ stage: 'growing', cropId: WHEAT, pickId: CARROT });
         tick(60000);
         expect(effectiveIO(field.id, field).recipe.id).toBe(WHEAT);
-        for (let i = 0; i < 3; i++) harvestOnce(field);
+        harvestOnce(field);
+        harvestOnce(field);
+        harvestLast(field);
         expect(Fields.plantedCrop(field).id).toBe(CARROT);
         expect(seeds()).toBe(0);
         expect(seeds(CARROT_SEED)).toBe(1);
@@ -351,17 +366,17 @@ describe('supports in reach', () => {
         expect(Fields.nextRipening(field).totalMs).toBe(60000 - 60000 * MAX_SPEED_UP_CUT);
     });
 
-    it('a Composter adds to the load as the crop ripens, read once', () => {
+    it('a Composter adds to the harvests it gives on average as the crop ripens, lowering its chance to finish, read once', () => {
         InventoryManager.addItem(SEED, 1);
         const field = arrive('fa_field');
         arrive('fa_composter', AT.x + 150, AT.y);
         pick(field, WHEAT);
         tick(60100);
-        expect(Fields.fieldState(field).load).toBe(5);
-        expect(Fields.fieldState(field)).toMatchObject({ stage: 'ripe', load: 5, full: 5 });
+        // Three harvests and two more: one in five to finish each, in place of one in three.
+        expect(Fields.fieldState(field)).toMatchObject({ stage: 'ripe', harvests: 5, endChance: 20 });
         // One arriving after it ripened changes nothing until the next crop.
         arrive('fa_composter', AT.x - 150, AT.y);
-        expect(Fields.fieldState(field).load).toBe(5);
+        expect(Fields.fieldState(field)).toMatchObject({ harvests: 5, endChance: 20 });
     });
 });
 
@@ -370,7 +385,7 @@ describe('a map\'s wild patch starts ripe with its crop picked', () => {
         const wild = arrive('fa_wild');
         expect(wild.field).toBeUndefined();
         expect(stage(wild)).toBe(Fields.STAGE.RIPE);
-        expect(Fields.fieldState(wild).load).toBe(3);
+        expect(Fields.fieldState(wild).harvests).toBe(3);
         expect(Fields.pickOf(wild).id).toBe(WHEAT);
         expect(WorkCheck.fixableReason(wild.id, wild).reason).toBeNull();
         tick(10000);
@@ -384,11 +399,11 @@ describe('a map\'s wild patch starts ripe with its crop picked', () => {
         // The crop it starts with owes no seed.
         expect(effectiveIO(wild.id, wild).inputs).toEqual([]);
         harvestOnce(wild);
-        expect(wild.field).toEqual({ cropId: WHEAT, load: 2, full: 3 });
+        expect(wild.field).toEqual({ cropId: WHEAT, ripe: true, full: 3 });
         expect(wild.selectedRecipeId).toBe(WHEAT);
         expect(seeds()).toBe(1);
         harvestOnce(wild);
-        harvestOnce(wild);
+        harvestLast(wild);
         expect(stage(wild)).toBe(Fields.STAGE.GROWING);
         expect(seeds()).toBe(1);
         expect(wild.field.seedOwed).toBe(true);
@@ -488,6 +503,8 @@ describe('old saves and changed content', () => {
             harvestOnce(field);
         }
         expect(seeds()).toBe(1);
-        expect(growing.field).toEqual({ cropId: WHEAT, load: 1, full: 3 });
+        expect(growing.field).toEqual({ cropId: WHEAT, ripe: true, full: 3 });
+        // The older save's count of harvests left is dropped at its first harvest: it ends by chance.
+        expect(ripe.field).toEqual({ cropId: WHEAT, ripe: true, full: 3 });
     });
 });

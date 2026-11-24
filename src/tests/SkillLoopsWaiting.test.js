@@ -40,17 +40,19 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  *   Copper Vein" on the flag and in the Dock, and works the node the moment it is back;
  * - a station out of an input stops and says what is missing ("Needs Coal", the "Needs Pickaxe"
  *   callout's look); its hero waits there unless other work in the flag's reach can run.
+ *
+ * The veins run out by chance; these author a sure end (`endChance: 100`), so each cycle rests them.
  */
 
 registerTokenTypes({
     sw_vein: {
-        id: 'sw_vein', name: 'Copper Vein', tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: 2,
+        id: 'sw_vein', name: 'Copper Vein', tokenType: 'resource', rarity: 'common', theme: 'fixture', endChance: 100,
         sprite: 's_nature', requiresHero: true, respawn: { mode: 'refill', afterMs: 20000 },
         config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 1000, xp: 1, inputs: [],
             outputs: [{ itemId: 'item_copper_ore', chance: 100, minQty: 1, maxQty: 1 }] }
     },
     sw_coal_vein: {
-        id: 'sw_coal_vein', name: 'Coal Vein', tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: 2,
+        id: 'sw_coal_vein', name: 'Coal Vein', tokenType: 'resource', rarity: 'common', theme: 'fixture', endChance: 100,
         sprite: 's_nature', requiresHero: true, respawn: { mode: 'refill', afterMs: 60000 },
         config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 1000, xp: 1, inputs: [],
             outputs: [{ itemId: 'item_coal', chance: 100, minQty: 1, maxQty: 1 }] }
@@ -204,11 +206,11 @@ describe('a station out of an input', () => {
         // The smith never leaves their order for the vein.
         expect(BoardState.workerOf(furnace.id)).toBe('smith');
         expect(BoardState.workerOf(vein.id)).toBeNull();
-        // Two coal mined by the miner, the vein rests, and the smith smelts them.
+        // A coal mined by the miner, the vein rests, and the smith smelts it.
         Orders.orderAt('miner', { x: 950, y: 500 });
         const smelted = cyclesOf(furnace, () => run(15000));
         expect(vein.usesRemaining).toBe(0);
-        expect(smelted).toBe(2);
+        expect(smelted).toBe(1);
         expect(BoardState.workerOf(furnace.id)).toBe('smith');
     });
 });
