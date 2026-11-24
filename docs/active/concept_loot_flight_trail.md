@@ -43,6 +43,21 @@ The owner picks one of each; only the pick is built. The flight's path and timin
 - **Built first, alone**: this base trail, so the owner has a baseline to test on ("build the base
   trail first"). The sparkle shower (§2) and the landing (§3) are tried on top of it afterwards.
 
+**The sparkles** (owner, 2026-11-24, after trying the base trail): "I want a shower of sparkles from
+the item notification bar, with a longer and more dense one for larger pickups. We'll add a lighter
+sparkle trail for the item flight." So, in place of §2's shower along the flight and §3's flash:
+
+- **A shower out of the item notice** the item lands on: pixel sparkles spill from under the notice's
+  sprite and fall out over the mat, never over the notice's count. Its length and density follow the
+  shadows' seven stack steps, from the shortest and sparsest (1 – 9) to the longest and densest
+  (1,000,000 and more): `LANDING_SHOWER_MS` and `LANDING_SHOWER_PER_BEAT` in `lootSparkles.js`.
+- **A lighter sprinkle during the flight**: a few fainter sparkles left behind the item, the same for
+  every stack (`FLIGHT_SPARKLE_EVERY_MS`).
+- **Colour** (the director's call, to show the owner): the item's primary colour lightened toward
+  white, so the sparkles answer the darkening shadows. §2's stack colours are kept in the code as the
+  one other choice (`SPARKLE_COLOUR_SOURCE`).
+- No white flash on the notice (§3) for now.
+
 ## 2. A sparkle shower coloured by stack size
 
 Pixel sparkles shed along the flight, **coloured by the size of the stack flying** (owner):

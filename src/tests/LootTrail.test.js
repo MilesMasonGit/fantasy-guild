@@ -21,6 +21,7 @@ vi.mock('../state/GameState.js', () => ({ GameState: { heroes: [] } }));
 import {
     TRAIL_DARKEN_MAX, TRAIL_STEP_MS, primaryColour, shadowColour, trailArt, trailShadowCount
 } from '../ui/utils/lootTrail.js';
+import { FLIGHT_SPARKLE_LIFE_MS } from '../ui/utils/lootSparkles.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { UI_EVENTS } from '../systems/core/engineEvents.js';
@@ -195,7 +196,20 @@ describe('⭐ in flight', () => {
         const after = frames.filter(f => f.at > landed[0].at);
         expect(after.every(f => f.items === 0)).toBe(true);
         expect(after.some(f => f.shadows > 0)).toBe(true);
-        expect(frames.at(-1).at - landed[0].at).toBeLessThanOrEqual(7 * TRAIL_STEP_MS + 8);
+        const lastShadow = after.filter(f => f.shadows > 0).at(-1);
+        expect(lastShadow.at - landed[0].at).toBeLessThanOrEqual(7 * TRAIL_STEP_MS + 8);
+        // Then only the flight's last sparkles fade (it landed on no notice: no shower), and it sleeps.
+        expect(frames.at(-1).at - landed[0].at).toBeLessThanOrEqual(FLIGHT_SPARKLE_LIFE_MS + 8);
+    });
+
+    it('no work once everything has landed and faded: no frame asked for, nothing drawn', () => {
+        flight(3000000);
+        expect(queue).toEqual([]);
+        drawn = [];
+        clock += 5000;
+        expect(queue).toEqual([]);
+        expect(drawn).toEqual([]);
+        expect(document.querySelector('canvas').style.display).toBe('none');
     });
 
     it('no colour work per frame: one read of the sprite for many flights of it', () => {

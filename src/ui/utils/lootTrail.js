@@ -1,3 +1,5 @@
+import { sparkleColours } from './lootSparkles.js';
+
 /**
  * Collected loot's trail (`ParticleOverlay`): solid shadows of the item's sprite behind it, in the
  * item's primary colour, each darker toward the tail, one to seven as the stack is big.
@@ -61,7 +63,7 @@ export function shadowColour(rgb, i, n) {
  * (the sprite's own shape in one solid colour, at the sprite's own size), nearest the item first.
  * @param {HTMLImageElement} img a loaded sprite
  * @param {() => HTMLCanvasElement} makeCanvas
- * @returns {{ colour: string, byCount: HTMLCanvasElement[][] }|null} null when the sprite cannot
+ * @returns {{ colour: string, byCount: HTMLCanvasElement[][], sparkle: {heart: string, light: string, dim: string} }|null} null when the sprite cannot
  *   be read or has no primary colour: such an item flies with no trail
  */
 export function trailArt(img, makeCanvas = () => document.createElement('canvas')) {
@@ -97,5 +99,6 @@ export function trailArt(img, makeCanvas = () => document.createElement('canvas'
     for (let n = 1; n <= TRAIL_MAX_SHADOWS; n++) {
         byCount.push(Array.from({ length: n }, (_, i) => silhouette(shadowColour(rgb, i, n))));
     }
-    return { colour: shadowColour(rgb, 0, 1), byCount };
+    // The sparkles' colours (`lootSparkles.js`), from the same primary colour, lightened.
+    return { colour: shadowColour(rgb, 0, 1), byCount, sparkle: sparkleColours(rgb) };
 }

@@ -11,6 +11,11 @@ import { isDrawn } from '../../dev/perf/drawSwitches.js';
 import { bookFlight, fliesToStub, landFlight, placeFlights } from '../notifications/stubLanding.js';
 import { LOOT_FLIGHT_SPARKLES } from '../../utils/lootEffects.js';
 import { TRAIL_STEP_MS, trailArt, trailShadowCount } from '../../utils/lootTrail.js';
+import {
+    FLIGHT_SPARKLE_LIFE_MS, FLIGHT_SPARKLE_SINK_PX, SHOWER_REACH, SPARKLE_ART_PX, SPARKLE_COLOUR_SOURCE,
+    forEachFlightSparkle, forEachShowerSparkle, showerLengthMs, stackSparkleColours
+} from '../../utils/lootSparkles.js';
+import { STUB_PX } from '../notifications/stubGeometry.js';
 import { isDrawingPaused } from '../board/frameClock.js';
 
 /** Gap between staggered particles from one collection burst. */
@@ -229,6 +234,8 @@ class ParticleSystem {
         // and the canvas's rect as last set (`_fit`).
         this._bounds = null;
         this._view = { w: 0, h: 0 };
+        /** Each flight's own seed for where its sparkles go. */
+        this._seeds = 0;
         this._rect = null;
     }
 
@@ -255,19 +262,33 @@ class ParticleSystem {
         this.canvas.style.display = 'none';
     }
 
-    /** Widen the canvas's reach over a flight's whole path. */
-    _include(path, size) {
+    /**
+     * Widen the canvas's reach over a flight's whole path, its sparkles sinking below it, and the
+     * shower under the notice it lands on.
+     */
+    _include(p) {
+        const { path, size } = p;
         const half = size / 2;
         const side = Math.max(half, FLIGHT_REACH.side) + EDGE_PX;
         const up = Math.max(half, FLIGHT_REACH.up) + EDGE_PX;
-        const down = Math.max(half, FLIGHT_REACH.down) + EDGE_PX;
+        const down = Math.max(half, FLIGHT_REACH.down) + (p.shadows ? FLIGHT_SPARKLE_SINK_PX : 0) + EDGE_PX;
         // A quadratic curve stays inside the box of its three points.
-        const box = {
+        this._includeBox({
             l: Math.min(path.startX, path.cpX, path.endX) - side,
             t: Math.min(path.startY, path.cpY, path.endY) - up,
             r: Math.max(path.startX, path.cpX, path.endX) + side,
             b: Math.max(path.startY, path.cpY, path.endY) + down
-        };
+        });
+        if (p.showerStep) {
+            const o = this._showerOrigin(p);
+            this._includeBox({
+                l: o.x - SHOWER_REACH.left - EDGE_PX, t: o.y - SPARKLE_ART_PX * 2 - EDGE_PX,
+                r: o.x + SHOWER_REACH.right + EDGE_PX, b: o.y + SHOWER_REACH.down + EDGE_PX
+            });
+        }
+    }
+
+    _includeBox(box) {
         const a = this._bounds;
         this._bounds = a
             ? { l: Math.min(a.l, box.l), t: Math.min(a.t, box.t), r: Math.max(a.r, box.r), b: Math.max(a.b, box.b) }
@@ -404,7 +425,7 @@ class ParticleSystem {
                 continue;
             }
             this.particles.push(particle);
-            this._include(particle.path, particle.size);
+            this._include(particle);
         }
     }
 
@@ -454,6 +475,9 @@ class ParticleSystem {
             trail: !!b.heroId || LOOT_FLIGHT_SPARKLES,
             // Loot's shadows: as many as the stack is big (`lootTrail.js`); a hero has none.
             shadows: b.heroId ? 0 : trailShadowCount(b.quantity),
+            // The shower spills from an item notice only (`lootSparkles.js`), as long as the shadows are many.
+            showerStep: !b.heroId && landsOn === 'stub' ? trailShadowCount(b.quantity) : 0,
+            seed: ++this._seeds,
             landed: false,
             lingerMs: 0
         };
@@ -556,7 +580,7 @@ class ParticleSystem {
                 });
                 if (p.trail) this.sparkles.push({ x: p.path.endX, y: p.path.endY, born: currentTime, color: p.color });
                 p.landed = true;
-                p.lingerMs = this._trailArtOf(p) ? p.shadows * TRAIL_STEP_MS : 0;
+                p.lingerMs = this._lingerOf(p);
                 if (currentTime - p.startTime >= p.duration + p.lingerMs) this.particles.splice(i, 1);
             }
         }
@@ -565,6 +589,59 @@ class ParticleSystem {
         const plinkMs = PLINK_STEPS_PX.length * PLINK_STEP_MS;
         for (let i = this.sparkles.length - 1; i >= 0; i--) {
             if (currentTime - this.sparkles[i].born >= plinkMs) this.sparkles.splice(i, 1);
+        }
+    }
+
+    /**
+     * How long a landed flight stays: while its shadows catch up, its last flight sparkles fade, and
+     * its shower spills and fades. A hero's stays no longer.
+     */
+    _lingerOf(p) {
+        if (!p.shadows) return 0;
+        const shadows = this._trailArtOf(p) ? p.shadows * TRAIL_STEP_MS : 0;
+        return Math.max(shadows, FLIGHT_SPARKLE_LIFE_MS, p.showerStep ? showerLengthMs(p.showerStep) : 0);
+    }
+
+    /** Where a flight's shower starts: the middle of its notice's bottom edge, under the sprite it lands on. */
+    _showerOrigin(p) {
+        return { x: p.path.endX, y: p.path.endY + STUB_PX / 2 + SPARKLE_ART_PX };
+    }
+
+    /** A flight's sparkle colours, made once: from its item's trail art, or the stack's. */
+    _sparkleColoursOf(p) {
+        const art = SPARKLE_COLOUR_SOURCE === 'item' ? this._trailArtOf(p) : null;
+        return art ? art.sparkle : stackSparkleColours(p.shadows);
+    }
+
+    /** One sparkle on whole art pixels: a plus with a lighter heart (stage 0), a pixel, a dimmer pixel. */
+    _drawSparkle(x, y, stage, colours) {
+        const ctx = this.ctx;
+        const a = SPARKLE_ART_PX;
+        const px = Math.round(x / a) * a - a / 2;
+        const py = Math.round(y / a) * a - a / 2;
+        if (stage === 0) {
+            ctx.fillStyle = colours.light;
+            ctx.fillRect(px - a, py, a, a); ctx.fillRect(px + a, py, a, a);
+            ctx.fillRect(px, py - a, a, a); ctx.fillRect(px, py + a, a, a);
+            ctx.fillStyle = colours.heart;
+        } else {
+            ctx.fillStyle = stage === 1 ? colours.light : colours.dim;
+        }
+        ctx.fillRect(px, py, a, a);
+    }
+
+    /** The flight's sprinkle, and once it has landed on a notice, the shower out of it. */
+    _drawSparkles(p, now) {
+        if (!p.shadows) return;
+        const colours = this._sparkleColoursOf(p);
+        const flightMs = now - p.startTime;
+        const pointAt = (k) => ParticleSystem.pointAt(p.path, k);
+        forEachFlightSparkle(flightMs, p.duration, p.size || 32, p.seed, pointAt,
+            (x, y, stage) => this._drawSparkle(x, y, stage, colours));
+        if (p.landed && p.showerStep) {
+            const o = this._showerOrigin(p);
+            forEachShowerSparkle(flightMs - p.duration, p.showerStep, p.seed,
+                (dx, dy, stage) => this._drawSparkle(o.x + dx, o.y + dy, stage, colours));
         }
     }
 
@@ -628,6 +705,7 @@ class ParticleSystem {
             const t = (now - p.startTime) / p.duration;
             const size = p.size || 32;
             this._drawShadows(p, now, size);
+            this._drawSparkles(p, now);
             if (p.landed) continue;
             ctx.fillStyle = p.color;
             if (p.trail) {
