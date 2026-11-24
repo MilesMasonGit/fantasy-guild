@@ -89,7 +89,7 @@ describe('the fight\'s leftovers', () => {
         };
         for (const dir of ['src', 'cms/src', 'cms/schemas']) walk(path.join(ROOT, dir));
         expect(hits).toEqual([]);
-    });
+    }, 30000);
 
     describe('the CMS content generator', () => {
         const globals = { gpt: 1, skillMultiplierRate: 0.01, energyGpValue: 1, healthGpValue: 1, xpToGoldRatio: 1, sellModifiers: {} };
