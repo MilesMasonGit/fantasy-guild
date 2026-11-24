@@ -45,17 +45,25 @@ describe('the landing shower by stack step', () => {
         });
 
     it('every sparkle moves out over the mat, never back into the notice or over its count, and stays in its reach', () => {
+        // The extremes over every step and moment, checked once (an expect per sparkle is slow).
+        const far = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity, n: 0 };
         for (const step of STEPS) {
             for (let t = 0; t < showerLengthMs(step); t += 7) {
-                for (const p of shower(t, step)) {
-                    expect(p.x).toBeLessThanOrEqual(0);
-                    expect(p.y).toBeGreaterThanOrEqual(-SHOWER_REACH.up + 2 * SPARKLE_ART_PX);
-                    expect(p.y).toBeLessThanOrEqual(SHOWER_REACH.down - 2 * SPARKLE_ART_PX);
-                    expect(p.x).toBeGreaterThanOrEqual(-SHOWER_REACH.left + 2 * SPARKLE_ART_PX);
-                    expect(p.x).toBeLessThanOrEqual(SHOWER_REACH.right - 2 * SPARKLE_ART_PX);
-                }
+                forEachShowerSparkle(t, step, 3, (x, y) => {
+                    far.n++;
+                    if (x < far.minX) far.minX = x;
+                    if (x > far.maxX) far.maxX = x;
+                    if (y < far.minY) far.minY = y;
+                    if (y > far.maxY) far.maxY = y;
+                });
             }
         }
+        expect(far.n).toBeGreaterThan(1000);
+        expect(far.maxX).toBeLessThanOrEqual(0);
+        expect(far.maxX).toBeLessThanOrEqual(SHOWER_REACH.right - 2 * SPARKLE_ART_PX);
+        expect(far.minX).toBeGreaterThanOrEqual(-SHOWER_REACH.left + 2 * SPARKLE_ART_PX);
+        expect(far.minY).toBeGreaterThanOrEqual(-SHOWER_REACH.up + 2 * SPARKLE_ART_PX);
+        expect(far.maxY).toBeLessThanOrEqual(SHOWER_REACH.down - 2 * SPARKLE_ART_PX);
     });
 
     it('steps through the plus, the pixel and the dimmer pixel', () => {
