@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-688**
+**Next free number: T-692**
 
 ---
 
@@ -167,6 +167,10 @@ here.
 | T-685 | P2 | open | *Brief 850 F2. For: director.* **Fishing's catch rules**: tool kind gates (Rod, Harpoon, Trap), never tier; one Bait spent per catch, less with a better tool; lures in stacks pick the fish and break by chance; no lure or a harpoon rolls at the longest cycle; one Trap catch per water; Bait recipes in Fishing at each fish's level (points 1-7, 13, 22-25). | owner 2026-11-24 |
 | T-686 | P2 | open | *Brief 850 F3. For: director.* **The Fishing Hut moves its heroes to the next spot; a building raises the spot rate in its reach** (points 18-19). | owner 2026-11-24 |
 | T-687 | P3 | open | *Brief 850 F4. For: director.* **A fishing spot's card lists its fish and lures; hovering a spot shows its possible fish** (points 11, 14). | owner 2026-11-24 |
+| T-688 | P2 | open | *Brief 860 R1. For: director.* **Gathering runs out by chance**: a vein, a tree and a ripe Field end by a chance each cycle instead of a count (averages kept); the Composter lowers a Field's end chance; the ledger reads the average. | owner 2026-11-24 |
+| T-689 | P2 | open | *Brief 860 R2. For: director.* **Forests and Orchards spawn and regrow their own trees**: no regrowth boost, no seedling per Sapling; a demolished Forest's trees stay and never regrow; every map tree belongs to a wild Forest. | owner 2026-11-24 |
+| T-690 | P2 | open | *Brief 860 R3. For: director.* **Gathering foundations**: Excavation (stone, a vein with an Ore Prospecting Map), Nursery (a Forest), Farmland (grass: Field, Orchard, Herb Garden), Dock (shore: Fishing's buildings); Wood and Stone keep supports ([concept_gathering_foundations.md](../active/concept_gathering_foundations.md)). | owner 2026-11-24 |
+| T-691 | P2 | open | *Brief 860, after R3. For: content agent.* **The gathering pack**: end chances, Forest and Orchard tree counts, the four foundations' prices, an Ore Prospecting Map per ore (rare drops from mining it and other sources), moved build lists, and the rich event nodes (Geode, Fallen Star, Fossil Bed; Hollow Tree, Driftwood Logjam, Giant Mushroom, Bamboo Grove). | owner 2026-11-24 |
 
 ### Code review round 4 (triaged 2026-11-07)
 

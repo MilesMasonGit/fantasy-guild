@@ -1,4 +1,4 @@
-Status: draft
+Status: briefed 2026-11-24 (approved 2026-11-24; [brief 860](briefs/860_gathering_rework.md))
 
 # Gathering foundations: one per gathering skill
 
@@ -28,11 +28,19 @@ Status: draft
 6. **Farmland** becomes a Field, an Orchard or a Herb Garden (owner 2026-11-24,
    [content_farming.md](content_farming.md) "Farming review").
 
-## Open (to interview)
+## Settled 2026-11-24 (owner)
 
-- Where each foundation may stand (the Dock: the shore).
-- How a gathering foundation is got (bought, built by Construction, a Guild Hall star) and what it costs.
-- Whether buildings that today sit on Wood or Stone Foundations for these skills (a Mine, a Logging
-  Camp, a Field) move onto the new ones.
-- Whether the Dock's Bait Shed and Lure Workshop replace the Crafting recipes for Bait and lures, or
-  sit beside them ([content_fishing.md](content_fishing.md)).
+7. **Got like today's Foundations**: bought the same way, then built by a Construction hero into its
+   Token, paying that Token's own cost (seeds for a Forest, a Prospecting Map for a vein, a seed for a
+   Field).
+8. **Where each stands**: **Excavation on stone**, **Farmland on grass**, **the Dock on the shore**
+   (owner); the **Nursery on any land** (planning agent's call, not ruled; say if it should ask forest
+   floor or grass).
+9. **Sources go on the gathering foundations; Wood and Stone Foundations build the support
+   buildings** (owner): veins (Excavation), Forests (Nursery), Fields, Orchards and Herb Gardens
+   (Farmland). Mines, Minecarts, Logging Camps, and Farming's Well, Composter, Beehive and Windmill
+   are supports, on Wood or Stone. **Fishing works differently**: its sources are spots that come by
+   themselves, so the Dock holds Fishing's buildings: the Fishing Hut, the spot building, the Bait
+   Shed and the Lure Workshop.
+10. **The Bait Shed and the Lure Workshop are the stations** where Bait (Fishing recipes) and lures
+    are made; lures move off Crafting ([content_fishing.md](content_fishing.md)).

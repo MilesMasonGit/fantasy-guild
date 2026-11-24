@@ -1,4 +1,4 @@
-Status: approved 2026-11-04, **amended 2026-11-24 by the owner's review** (not yet briefed; a CMS pack still to come)
+Status: approved 2026-11-04, **amended 2026-11-24 by the owner's review** ([brief 860](briefs/860_gathering_rework.md); a CMS pack still to come)
 
 # Content roadmap: Farming
 

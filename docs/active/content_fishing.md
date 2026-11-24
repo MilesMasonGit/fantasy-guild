@@ -110,8 +110,8 @@ Lobster); the special spots' own (Oyster with a rare Pearl, Tropical Fish, the S
 
 **Planning agent's calls (simplest first; the content agent may move them):** Raw Shrimp is the
 River and Lake's free Trap catch; Lobster is the Coast's Trap catch; Oyster the Oyster Bed's; **Crab**
-(new, the owner's example) a Trap catch where a water has none, or cut if none is free. Lures are made by
-Crafting (or the Dock's Lure Workshop). *Bait: point 25.*
+(new, the owner's example) a Trap catch where a water has none, or cut if none is free. Lures are made at the
+Dock's Lure Workshop and Bait at its Bait Shed ([concept_gathering_foundations.md](concept_gathering_foundations.md) point 10). *Bait: point 25.*
 
 ## Amended 2026-11-21 (Systems Audit, T-622, T-623, T-604)
 
