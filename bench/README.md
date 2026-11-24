@@ -889,7 +889,7 @@ in the JSON: under a drawer, on a Token, or what of the screen covered it).
 |---|---|---|
 | hero dock → mat | a dock hero → an open spot (the drag carries the hero's flag, as on the mat) | the hero's flag planted within 60 u of the aim (or pinned) |
 | flag → mat | a planted flag → an open spot | the same |
-| Token → mat | a Token on the mat → an open spot | the Token stands within 150 u of the aim |
+| Token → mat | a Token on the mat → an open spot | the Token stands within 150 u of the aim (it is then put back where it was: a spawner counts its family within its reach, so a tree or rock left away is replaced, and over a run the mat filled from 103 Tokens to 159, leaving the Shop's drops no room) |
 | Shop row → mat | an affordable Shop row → an open spot | a new Token of that type stands there (it is then removed, so the mat cap never fills) |
 | Bank item → dock hero | an equippable Bank item → a hero who can wear it, on their figure in the hero bar or their portrait tab beside the Bank, where that is drawn on top at its centre (a figure the open Bank covers takes no drop, by design) | the hero wears it (their gear is cleared first), and one item, one hero holds: a gear copy left the Bank (one fewer there), a shared item (food, drink, potions) took no copy (its count is not checked: working heroes eat and drink from it meanwhile) |
 
@@ -900,7 +900,10 @@ must also pick up the right thing. The Perf HUD is hidden first (it is the
 harness's own overlay and would cover the Shop's lower rows). Set-up is done
 through the game's functions, never as a drag: Bank stock for the Shop's prices
 and equippable items (six gear and six shared, each sort read from one trial
-equip), unequipping before an equip, removing a bought Token. A hero sheet left
+equip), unequipping before an equip, removing a bought Token, putting a moved
+Token back. Each attempt records the Tokens on the mat at its pick (`tokens`) and
+its target's clearance from the nearest Token centre (`target.clearance`, mat
+units). A hero sheet left
 open by an equip drop is closed with Escape before the next kind, and only
 while one is open: Escape closes the top-most layer, which is otherwise the
 open drawer. Both passes run on one page, kinds in the order
@@ -977,7 +980,9 @@ p50/p95, **frame stalls** per drag phase and the grouped **failure causes**:
   *picked up the wrong thing* (what was in the hand, read from what each source
   draws while carried), *dropped, refused by the game* (the warning it raised, or
   the reason it said on the mat: a refused drop is said as a callout there, never
-  as a notification, `dropOnMat.js`, and makes the same "invalid" sound as a drop
+  as a notification, by the drop (`dropOnMat.js`) or, when no spot was found
+  within nudge reach, by the board's refused-drop mark (`Placement.js`,
+  "No room there."), and makes the same "invalid" sound as a drop
   nothing took), *dropped, no target took it* (the drop made the drag system's
   "invalid" sound and the game said nothing; with what was under the drop
   point), or *state not as intended*. A missed

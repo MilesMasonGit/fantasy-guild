@@ -17,6 +17,11 @@ import { pointerToMat } from '../ui/components/board/matPoint.js';
 import * as fixtures from '../../bench/fixtures.mjs';
 import { buildRealistic } from '../../bench/scenarios/realistic.mjs';
 import { installDragKit } from '../../bench/browser/dragKit.mjs';
+import { failureCause } from '../../bench/browser/dragLib.mjs';
+import { EventBus } from '../systems/core/EventBus.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
+import * as Placement from '../systems/board/Placement.js';
+import { reachRadius } from '../systems/board/nearby.js';
 
 /**
  * The drag bench's free spot (`dragKit.freeSpot`) is where its hero, flag, Token and Shop drags are
@@ -241,6 +246,67 @@ describe("the drag bench's free spot on S2", () => {
         const after = BoardState.flagOf(heroId);
         expect(after?.spot).toBe(true);
         expect(Math.hypot(after.x - before.x, after.y - before.y)).toBeGreaterThan(1);
+    });
+
+    /**
+     * A drop the placement finds no room for is refused with the board's refused-drop mark, not a
+     * notification, and sounds like a drop nothing took: read as "no target took it" until the kit
+     * heard the mark (2026-11-23, every Shop and Token drop that failed late in the run).
+     */
+    it('hears a refusal the board says on the mat, so the drop reads as refused, not as taken by nothing', () => {
+        kit.resetProbe();
+        kit.probe.downAt = 1;
+        try {
+            EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, { x: 10, y: 10, severity: 'disallow', type: 'drop_rejected', title: 'Drop rejected: Battlefield', rulesText: 'No room there.' });
+            const notes = kit.readProbe().notes;
+            expect(notes).toEqual(['warning: No room there. (said on the mat)']);
+            expect(failureCause({ pickedUp: true, inHand: 'x', notes, dropSound: 'unassign' })).toBe('dropped, refused by the game: No room there. (said on the mat)');
+        } finally {
+            kit.resetProbe();
+        }
+    });
+
+    /**
+     * A spawner counts its family within its reach, so a tree moved out of its Forest's reach is
+     * replaced: the Token kind's 100 moves took the mat from 103 Tokens to 159 (2026-11-23), and late
+     * in the run the Shop's drops found no room. The check puts a moved Token back.
+     */
+    it('puts a moved Token back, so the spawners do not fill the mat with replacements', () => {
+        const forest = BoardState.tokens().find(t => t.typeId === 'bench_forest');
+        const near = (t) => Math.hypot(t.x - forest.x, t.y - forest.y) <= reachRadius();
+        const trees = BoardState.tokens().filter(t => t.typeId === 'bench_tree' && near(t) && !BoardState.workerOf(t.id));
+        expect(trees.length).toBeGreaterThanOrEqual(2);
+        const random = vi.spyOn(Math, 'random').mockImplementation(seeded(616));
+        const awayFromForest = () => {
+            for (let i = 0; i < 50; i++) {
+                const spot = kit.freeSpot();
+                if (spot && Math.hypot(spot.mat.x - forest.x, spot.mat.y - forest.y) > reachRadius() + 200) return spot;
+            }
+            return null;
+        };
+        const tick = (n) => { for (let i = 0; i < n; i++) GameLoop.runHandlers(100); };
+        // Trees only: the hunters' kills and their camps' returns move the whole mat's count.
+        const treeCount = () => BoardState.tokens().filter(t => t.typeId === 'bench_tree').length;
+        try {
+            // As the drag does, then the check: the Token landed, and is put back.
+            const count = treeCount();
+            const kept = trees[0];
+            const before = { x: kept.x, y: kept.y };
+            const spot = awayFromForest();
+            expect(Placement.moveTokenTo(kept.id, spot.mat).success).toBe(true);
+            expect(kit.check({ kind: 'token', id: kept.id, before, mat: spot.mat }).ok).toBe(true);
+            expect(Math.hypot(BoardState.getTokenById(kept.id).x - before.x, BoardState.getTokenById(kept.id).y - before.y)).toBeLessThan(1);
+            tick(120);
+            expect(treeCount()).toBe(count);
+
+            // The control: a tree left away is replaced.
+            const away = trees[1];
+            expect(Placement.moveTokenTo(away.id, awayFromForest().mat).success).toBe(true);
+            tick(120);
+            expect(treeCount()).toBe(count + 1);
+        } finally {
+            random.mockRestore();
+        }
     });
 
     it('keeps a spot a hero stands on: what is on the mat is the press rules\' to judge', () => {

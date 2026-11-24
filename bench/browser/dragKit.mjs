@@ -63,11 +63,16 @@ export function installDragKit() {
         if (probe.downAt != null && probe.startAt == null && document.body.classList.contains('gi-dnd-active')) probe.startAt = performance.now();
     }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
     G.EventBus.subscribe('notification_added', (n) => { probe.notes.push(`${n?.type || '?'}: ${n?.message || ''}`.slice(0, 160)); });
-    // ⚠️ A drop the game refuses says why as a callout on the mat, never as a notification
-    // (`dropOnMat.js`, `announce`), and makes the same sound as a drop nothing took: the callout
-    // is how the two are told apart.
-    G.EventBus.subscribe('ui:token_alert', (a) => {
-        if (probe.downAt != null && a?.severity === 'disallow') probe.notes.push(`warning: ${a.title || a.message || '?'} (said on the mat)`.slice(0, 160));
+    // ⚠️ A drop the game refuses says why as a callout on the mat, never as a notification, and
+    // makes the same sound as a drop nothing took: the callout is how the two are told apart. The
+    // drop says it (`dropOnMat.js`, `announce`), or the placement already has when no spot was
+    // found within nudge reach (`Placement.js`, `refuseWithAlert`: the board's refused-drop mark).
+    const refusalHeard = (a, why) => {
+        if (probe.downAt != null && a?.severity === 'disallow') probe.notes.push(`warning: ${why || '?'} (said on the mat)`.slice(0, 160));
+    };
+    G.EventBus.subscribe('ui:token_alert', (a) => refusalHeard(a, a?.title || a?.message));
+    G.EventBus.subscribe('board:tile_event_alert', (a) => {
+        if (a?.type === 'drop_rejected') refusalHeard(a, a.rulesText || a.title);
     });
     // The drop's sound says how the drag system judged it (DndKit.jsx, DRAG_SFX): `unassign` =
     // no target took it; `drop` = flown back; a kind's own clip = a target accepted it.
@@ -616,7 +621,7 @@ export function installDragKit() {
             if (!to) return noFreeSpot();
             // A hero picked up off the hero bar carries their flag, as on the mat (`rosterFlagPayload`):
             // the drop plants it, an order.
-            return { source: { ...visibleCentre(el), what: `dock hero ${heroId}`, hand: `flag ${heroId}` }, target: to.screen, expect: { kind: 'flag', heroId, before: flagAt(heroId), mat: to.mat } };
+            return { source: { ...visibleCentre(el), what: `dock hero ${heroId}`, hand: `flag ${heroId}` }, target: { ...to.screen, clearance: to.clearance }, expect: { kind: 'flag', heroId, before: flagAt(heroId), mat: to.mat } };
         },
         /**
          * In two calls, as a player does it. A flag shows only while its hero is hovered, on the
@@ -666,7 +671,7 @@ export function installDragKit() {
             };
             return {
                 source: { x: at.x, y: at.y, heroId, what: `flag ${heroId}${at.bare ? '' : ' (by its cloth, over a Token)'}`, hand: `flag ${heroId}`, scene },
-                target: to.screen, expect: { kind: 'flag', heroId, before: flagAt(heroId), mat: to.mat }
+                target: { ...to.screen, clearance: to.clearance }, expect: { kind: 'flag', heroId, before: flagAt(heroId), mat: to.mat }
             };
         },
         token() {
@@ -685,7 +690,7 @@ export function installDragKit() {
                 // How far the drawn Token is from where the game has it (a slide or a spawn pop-out still playing).
                 drawnOffU: Math.round(Math.hypot(drawn.x - t.x, drawn.y - t.y))
             };
-            return { source: { ...at, what: `Token ${t.typeId} ${t.id}`, hand: `Token ${t.id}`, scene }, target: to.screen, expect: { kind: 'token', id: t.id, before: { x: t.x, y: t.y }, mat: to.mat } };
+            return { source: { ...at, what: `Token ${t.typeId} ${t.id}`, hand: `Token ${t.id}`, scene }, target: { ...to.screen, clearance: to.clearance }, expect: { kind: 'token', id: t.id, before: { x: t.x, y: t.y }, mat: to.mat } };
         },
         shop() {
             const rows = [...document.querySelectorAll('[data-shop-row][data-shop-affordable="true"]')];
@@ -698,7 +703,7 @@ export function installDragKit() {
             const to = kit.freeSpot();
             if (!to) return noFreeSpot();
             const ids = G.BoardState.tokens().filter(t => t.typeId === typeId).map(t => t.id);
-            return { source: { ...at, what: `Shop row ${typeId}`, hand: `Shop row ${typeId}` }, target: to.screen, expect: { kind: 'shop', typeId, beforeIds: ids, mat: to.mat } };
+            return { source: { ...at, what: `Shop row ${typeId}`, hand: `Shop row ${typeId}` }, target: { ...to.screen, clearance: to.clearance }, expect: { kind: 'shop', typeId, beforeIds: ids, mat: to.mat } };
         },
         equip() {
             const heroes = (G.GameState.state.heroes || []).map(h => h.id);
@@ -744,6 +749,11 @@ export function installDragKit() {
                 const d = dist(t, e.mat);
                 const moved = dist(t, e.before) > 1;
                 const ok = moved && d <= 150;
+                // ⚠️ Set-up for the next drags: the Token goes back where it was. A spawner counts
+                // its family within its reach, so a tree or rock moved away is replaced, and the
+                // mat filled up over the run (103 Tokens to 159 on 2026-11-23): no room left for
+                // the Shop's drops, which the game refused.
+                if (moved) G.BoardPlacement.moveTokenTo(e.id, e.before);
                 return { ok, detail: ok ? `landed ${Math.round(d)} u from the aim` : moved ? `landed ${Math.round(d)} u from the aim` : 'the Token did not move' };
             }
             case 'shop': {
