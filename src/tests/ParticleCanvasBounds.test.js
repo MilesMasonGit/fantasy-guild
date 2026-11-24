@@ -50,7 +50,7 @@ function recordingContext() {
     let path = [];
     const t = { e: 0, f: 0 };
     let drawnNow = [];
-    const push = (op, x0, y0, x1, y1) => drawnNow.push({ op, box: [x0 + t.e, y0 + t.f, x1 + t.e, y1 + t.f] });
+    const push = (op, x0, y0, x1, y1, extra) => drawnNow.push({ op, box: [x0 + t.e, y0 + t.f, x1 + t.e, y1 + t.f], ...extra });
     return {
         take() { const d = drawnNow; drawnNow = []; return d; },
         globalAlpha: 1, globalCompositeOperation: 'source-over', fillStyle: '', strokeStyle: '',
@@ -58,7 +58,7 @@ function recordingContext() {
         textBaseline: 'alphabetic', imageSmoothingEnabled: true,
         setTransform(a, b, c, d, e, f) { t.e = e; t.f = f; },
         clearRect(x, y, w, h) { push('clear', x, y, x + w, y + h); },
-        fillRect(x, y, w, h) { push('fillRect', x, y, x + w, y + h); },
+        fillRect(x, y, w, h) { push('fillRect', x, y, x + w, y + h, { style: this.fillStyle }); },
         beginPath() { path = []; },
         moveTo(x, y) { path.push([x, y]); },
         lineTo(x, y) { path.push([x, y]); },
@@ -333,8 +333,8 @@ describe('⭐ the item still lands exactly where it went', () => {
     });
 });
 
-describe('⭐ as shipped, loot flies with no trail and no plink', () => {
-    it('the switch is off: only the item is drawn, and it still lands where it went', () => {
+describe('⭐ as shipped, loot flies with no 2 px trail and no plink', () => {
+    it('the switch is off: none of their squares (in the item colour) is drawn, and it still lands where it went', () => {
         switches.sparkles = null;
         const { container } = render(React.createElement(ParticleOverlay, { disabled: false }));
         const canvas = canvasOf(container);
@@ -343,8 +343,9 @@ describe('⭐ as shipped, loot flies with no trail and no plink', () => {
         runUntilAsleep(canvas);
         expect(landed).toHaveLength(1);
         expect(landed[0]).toMatchObject({ x: target[0], y: target[1] });
-        const drawn = frames.flatMap(f => f.drawn).map(d => d.op);
-        expect(drawn).toContain('text');
-        expect(drawn).not.toContain('fillRect');
+        const drawn = frames.flatMap(f => f.drawn);
+        expect(drawn.map(d => d.op)).toContain('text');
+        // The sparkles (`lootSparkles.js`) are drawn in their own colours, never the item's.
+        expect(drawn.filter(d => d.op === 'fillRect' && d.style === '#4ade80')).toEqual([]);
     });
 });

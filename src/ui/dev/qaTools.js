@@ -13,6 +13,7 @@ import { generateHero } from '../../systems/hero/HeroGenerator.js';
 import { WoundedSystem } from '../../systems/combat/WoundedSystem.js';
 import * as BoardState from '../../systems/board/BoardState.js';
 import * as BoardCombat from '../../systems/board/BoardCombat.js';
+import * as SpriteLayer from '../../systems/board/SpriteLayer.js';
 import * as Placement from '../../systems/board/Placement.js';
 import { takesCopy } from '../../systems/equipment/heldCopies.js';
 import { getAllItems, getItem } from '../../config/registries/itemRegistry.js';
@@ -57,6 +58,15 @@ export function giveAndSay(itemId, amount) {
     return r.overflow > 0
         ? `Gave ${r.added} ${name} to the Bank; ${r.overflow} went onto the mat`
         : `Gave ${r.added} ${name} to the Bank`;
+}
+
+/** The amount of an item as one pile on the mat, at a random spot, to collect and watch it fly. */
+export function dropAndSay(itemId, amount) {
+    const n = Math.floor(Number(amount));
+    const name = getItem(itemId)?.name;
+    if (!name) return `Unknown item id: ${itemId}`;
+    if (!Number.isFinite(n) || n < 1) return 'Amount must be a whole number of at least 1.';
+    return SpriteLayer.addSprite('item', itemId, n, null) ? `Dropped ${n} ${name} on the mat` : 'Could not drop it on the mat';
 }
 
 /**

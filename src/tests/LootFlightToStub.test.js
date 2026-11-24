@@ -14,6 +14,7 @@ import { ParticleOverlay } from '../ui/components/base/ParticleOverlay.jsx';
 import { ItemStubColumn } from '../ui/components/notifications/ItemStubColumn.jsx';
 import { resetCopies, getCopies } from '../ui/components/notifications/stubLanding.js';
 import { STUB_PX, PITCH_PX, SPRITE_INSET_PX, HEADER_PX } from '../ui/components/notifications/stubGeometry.js';
+import { POP_MS } from '../ui/utils/lootPop.js';
 import './fixtures/fixtureItems.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -38,6 +39,8 @@ const HALL = { left: 600, top: 400, width: 128, height: 128 };
 /** The scrolling list's visible box, when the column scrolls. */
 const SCROLL_VIEW = { top: COLUMN.top + HEADER_PX + 20, height: 4 * PITCH_PX };
 let columnHeight = 900;
+/** A stub's width from its shown count, when a test sets it (else 80). */
+let stubWidthOf = null;
 
 const box = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top });
 
@@ -51,7 +54,8 @@ function fakeRect() {
         const group = scroller || this.closest('[data-item-stubs]');
         const i = [...group.querySelectorAll('[data-item-stub]')].indexOf(this);
         const top = scroller ? SCROLL_VIEW.top + i * PITCH_PX : COLUMN.top + HEADER_PX + i * PITCH_PX;
-        return box(1600 - 80, top, 80, STUB_PX);
+        const w = stubWidthOf ? stubWidthOf(this.getAttribute('data-stub-net')) : 80;
+        return box(1600 - w, top, w, STUB_PX);
     }
     if (this.matches?.('[data-stub-sprite]')) {
         const r = this.closest('[data-item-stub]').getBoundingClientRect();
@@ -120,6 +124,7 @@ beforeEach(() => {
     clock = 0;
     landed = [];
     columnHeight = 900;
+    stubWidthOf = null;
     GameState.initNew();
     SpriteLayer.init();
     ItemStubs.reset();
@@ -285,6 +290,64 @@ describe('⭐ collected loot flies to its stub', () => {
         runUntilAsleep();
         expect(landed).toHaveLength(12);
         expect(shownOn(stubEl(view, 'fixture_oak_wood'))).toBe('14');
+    });
+});
+
+describe('⭐ the landing bursts out of the notice, and its amount pops out of its side', () => {
+    it('a new notice grows as its count appears: the burst starts all over it as it then stands; the pop is drawn over everything', async () => {
+        // No number while the loot flies (60 px), its count after the landing (120 px).
+        stubWidthOf = (net) => (net && net !== '0' ? 120 : 60);
+        // Everything drawn, in order, in screen px: squares, and the pop (an image placed with no size).
+        const ops = [];
+        const ctx = new Proxy({}, {
+            get: (t, key) => {
+                if (key === 'clearRect') return () => ops.push({ op: 'clear', at: clock });
+                if (key === 'fillRect') return (x, y, w) => ops.push({ op: 'fill', x, y, w, at: clock });
+                if (key === 'drawImage') return (img, x, y, w) => { if (w === undefined) ops.push({ op: 'pop', x, y, img, at: clock }); };
+                if (key === 'measureText') return () => ({ width: 30 });
+                if (key === 'getImageData' || key === 'createImageData') {
+                    return (...a) => { const [w, h] = a.length === 4 ? a.slice(2) : a; return { data: new Uint8ClampedArray(w * h * 4).fill(255) }; };
+                }
+                return key in t ? t[key] : () => ({ addColorStop() {} });
+            },
+            set: (t, key, value) => { t[key] = value; return true; }
+        });
+        HTMLCanvasElement.prototype.getContext.mockReturnValue(ctx);
+        let landedAt = null;
+        const off = EventBus.subscribe(UI_EVENTS.PARTICLE_LANDED, () => { landedAt = clock; });
+        const view = mountGame();
+        expect(await collectPile('fixture_oak_wood', 12000)).toBe(true);
+        runUntilAsleep();
+        off();
+        expect(landed.at(-1).landsOn).toBe('stub');
+        const stub = stubEl(view, 'fixture_oak_wood').getBoundingClientRect();
+        expect(stub.width).toBe(120);
+
+        // In its first 60 ms the burst is still on the notice, spread over the whole of it as it stands.
+        const early = ops.filter(o => o.op === 'fill' && o.at > landedAt && o.at <= landedAt + 60
+            && o.y + 2 > stub.top && o.y < stub.bottom && o.x < stub.right + 4);
+        expect(early.length).toBeGreaterThan(5);
+        expect(Math.min(...early.map(o => o.x))).toBeLessThan(stub.left + 30);
+        expect(Math.max(...early.map(o => o.x))).toBeGreaterThan(stub.right - 30);
+        // Then it rains out over the mat, left of the notice and below it.
+        const late = ops.filter(o => o.op === 'fill' && o.at > landedAt + 200);
+        expect(late.filter(o => o.x < stub.left).length).toBeGreaterThan(20);
+        expect(late.filter(o => o.y > stub.bottom).length).toBeGreaterThan(20);
+
+        // The amount pops out of the notice's left side, over everything drawn that frame.
+        const pops = ops.filter(o => o.op === 'pop');
+        expect(pops.length).toBeGreaterThan(5);
+        expect(Math.min(...pops.map(o => o.at))).toBeGreaterThan(landedAt);
+        expect(Math.max(...pops.map(o => o.at))).toBeLessThan(landedAt + POP_MS + 20);
+        const popW = pops[0].img.width;
+        for (const pop of pops) expect(pop.x + popW).toBeLessThanOrEqual(stub.left);
+        expect(pops.at(-1).x).toBeLessThan(pops[0].x);
+        const frameEnds = ops.map((o, i) => (ops[i + 1]?.op === 'clear' || i === ops.length - 1 ? i : -1)).filter(i => i >= 0);
+        for (const pop of pops) {
+            const at = ops.indexOf(pop);
+            const end = frameEnds.find(e => e >= at);
+            expect(ops.slice(at + 1, end + 1).filter(o => o.op === 'fill')).toEqual([]);
+        }
     });
 });
 

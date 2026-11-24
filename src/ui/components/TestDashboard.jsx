@@ -9,7 +9,7 @@ import { PerfDevSection } from '../dev/perf/PerfDevSection.jsx';
 import { EventsDevSection } from '../dev/EventsDevSection.jsx';
 import { saveLiveMatToCms, DEFAULT_CMS_URL } from '../dev/starterCampDev.js';
 import {
-    PICKER_ROWS, itemChoices, tokenChoices, filterByName, giveAndSay, devBankEveryKind, devFillBank,
+    PICKER_ROWS, itemChoices, tokenChoices, filterByName, giveAndSay, dropAndSay, devBankEveryKind, devFillBank,
     hireHero, spawnParty, levelAllHeroes, healEveryone, knockOutAHero, devPlaceToken, clearBoard, toggleQaRegenStar
 } from '../dev/qaTools.js';
 import * as Landmarks from '../../systems/board/Landmarks.js';
@@ -115,6 +115,11 @@ export const TestDashboard = /* @__PURE__ */ React.memo(() => {
         say(giveAndSay(item.id, amount));
     };
 
+    const onDrop = () => {
+        if (!item) { say('Pick an item first'); return; }
+        say(dropAndSay(item.id, amount));
+    };
+
     const onPlace = (choice) => {
         const res = devPlaceToken(choice.id);
         say(res?.success ? `Placed ${choice.name}` : (res?.reason || `Could not place ${choice.name}`));
@@ -194,6 +199,7 @@ export const TestDashboard = /* @__PURE__ */ React.memo(() => {
                                     className={cn(inputClass, 'w-16')}
                                 />
                                 <button onClick={onGive} className={cn(buttonClass, 'shrink-0')}>Give</button>
+                                <button onClick={onDrop} className={cn(buttonClass, 'shrink-0')} title="Drop the amount as one pile on the mat">Drop</button>
                             </div>
                             <div className="grid grid-cols-2 gap-1">
                                 <button
