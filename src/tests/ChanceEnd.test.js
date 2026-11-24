@@ -28,6 +28,7 @@ import { buildRateBook, LIFECYCLE } from '../../cms/src/engine/ledger/rates.js';
 import { tokenCardModel, CARD_BLOCK, cardLifecycle, liveCardSources } from '../ui/components/board/tokenCard.js';
 import { oneInText } from '../utils/Formatters.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
+import { migrateState } from '../systems/core/SaveMigration.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -418,6 +419,24 @@ describe('an old save with a count in progress', () => {
         rollsAt(0);
         Fields.harvested(field, def);
         expect(Fields.stageOf(field, def)).toBe(Fields.STAGE.GROWING);
+    });
+
+    it('through a save and a load, both keep what they held until they next work', () => {
+        const vein = placeAt(BoardState.createTokenInstance('ce_vein', 3), AT.x, AT.y);
+        const saved = BoardState.createTokenInstance('ce_field', null);
+        saved.selectedRecipeId = WHEAT;
+        saved.field = { cropId: WHEAT, load: 4, full: 10 };
+        const field = placeAt(saved, AT.x + 400, AT.y);
+        const revived = JSON.parse(JSON.stringify(GameState.serialize()));
+        GameState.state = migrateState(revived.state, revived.version);
+        const loadedVein = BoardState.getTokenById(vein.id);
+        const loadedField = BoardState.getTokenById(field.id);
+        expect(loadedVein.usesRemaining).toBe(3);
+        expect(Respawn.isResting(loadedVein)).toBe(false);
+        expect(Charges.endChanceOf(loadedVein)).toBe(20);
+        expect(loadedField.field).toEqual({ cropId: WHEAT, load: 4, full: 10 });
+        expect(Fields.stageOf(loadedField)).toBe(Fields.STAGE.RIPE);
+        expect(Fields.harvestEndChance(loadedField)).toBe(10);
     });
 
     it('a growing Field saved mid-growth grows on', () => {

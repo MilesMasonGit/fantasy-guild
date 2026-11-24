@@ -18,7 +18,7 @@ import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import * as fixtures from '../../bench/fixtures.mjs';
 import { withoutShippedPerks } from './fixtures/noPerks.js';
-import { sameRolls } from './fixtures/sameRolls.js';
+import { sameRolls } from './fixtures/rolls.js';
 
 // Its forester is Forestry 30: Clean Felling's roll would land on another number in each run.
 withoutShippedPerks();

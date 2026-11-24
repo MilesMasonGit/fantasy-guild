@@ -26,6 +26,7 @@ import { resetMatTuning } from '../config/matTuning.js';
 import { flagStatusLine } from '../ui/components/board/flagText.js';
 import { idleMomentOf } from '../ui/components/board/heroSpeech.js';
 import { skipHint } from '../ui/components/board/boardConstants.js';
+import { finishesAt } from './fixtures/rolls.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -128,19 +129,6 @@ beforeEach(() => {
     GameState.state.heroes = [hero('farmer', { farming: 10 }), hero('miner', { mining: 10 })];
     GameState.state.inventory.maxSlots = 50;
 });
-
-/**
- * The rolls of a Field's harvests: over its chance (not the last) until the `n`th, which rolls just
- * under it and finishes it; every other draw reads the same while it stands, so another chance (a
- * perk's) misses as it would on a high roll. Returns the restore.
- */
-function finishesAt(field, n) {
-    let done = 0;
-    const under = Fields.harvestEndChance(field) / 100 - 0.001;
-    const rolls = vi.spyOn(Math, 'random').mockImplementation(() => (done >= n - 1 ? under : 0.999));
-    const off = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => { if (p.instanceId === field.id) done++; });
-    return () => { off(); rolls.mockRestore(); };
-}
 
 /** A Field sown with wheat and grown ripe (its seed owed to the first harvest), a farmer flagged on it. */
 function ripeField({ seeds = 0, typeId = 'fh_field', at = FIELD, farmer = true } = {}) {

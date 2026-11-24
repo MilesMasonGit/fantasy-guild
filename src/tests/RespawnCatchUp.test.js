@@ -16,7 +16,7 @@ import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { summaryView } from '../ui/components/hud/catchUpSummary.js';
 import * as fixtures from '../../bench/fixtures.mjs';
-import { sameRolls } from './fixtures/sameRolls.js';
+import { sameRolls } from './fixtures/rolls.js';
 
 /**
  * Time away with a respawning vein on the mat: the catch-up plays its rests and refills, and its
