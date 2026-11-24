@@ -114,6 +114,20 @@ export function isFightPanelOpen(heroId) {
     return !!w && !w.minimized;
 }
 
+let openHeroesFor = null;
+let openHeroesSet = new Set();
+
+/** The heroes whose window is open, top or not (a minimized one is not). The same Set until that changes. */
+export function openFightHeroes() {
+    if (openHeroesFor !== windows) {
+        openHeroesFor = windows;
+        const next = new Set(openFightWindows(windows).map(w => w.heroId));
+        const same = next.size === openHeroesSet.size && [...next].every(id => openHeroesSet.has(id));
+        if (!same) openHeroesSet = next;
+    }
+    return openHeroesSet;
+}
+
 /** Close every window (tests only). */
 export function resetFightPanels() {
     seq = 0;
@@ -130,7 +144,7 @@ export function useFightWindows() {
     return useSyncExternalStore(subscribe, fightWindows, fightWindows);
 }
 
-/** The top open window, or null. */
-export function useFightPanelState() {
-    return useSyncExternalStore(subscribe, fightPanelState, fightPanelState);
+/** The heroes whose window is open (`openFightHeroes`). */
+export function useOpenFightHeroes() {
+    return useSyncExternalStore(subscribe, openFightHeroes, openFightHeroes);
 }

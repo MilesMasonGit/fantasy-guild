@@ -39,6 +39,7 @@ import { fightPanelView, activeElixirsOf } from '../ui/components/combat/fightVi
 import * as MatFx from '../ui/components/board/fx/matFx.js';
 import { watchFightFloats } from '../ui/components/board/fx/fightFloats.js';
 import { STRIKE_DELAY_MS } from '../ui/components/board/hitAnimations.js';
+import { LANDED_MS } from '../ui/components/combat/hitLook.js';
 import { fightReach, fightBarShift, CHIP, CHIP_PX, MAT_BAR } from '../ui/components/board/healthBar.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import { setDrawn, resetDrawSwitches } from '../ui/dev/perf/drawSwitches.js';
@@ -381,6 +382,8 @@ describe('the panel, the plate and the floats read the real fight', () => {
             }
             expect(onEnemy.el.className).toContain('gi-ff-white');
             expect(onEnemy.options.delay).toBe(STRIKE_DELAY_MS);
+            expect(onEnemy.options.duration).toBe(LANDED_MS);
+            expect(onHero.options.duration).toBe(LANDED_MS);
             if (onHero.el.getAttribute('data-fight-float') !== MOMENT.HEAL) expect(onHero.el.className).toContain('gi-ff-red');
             expect(onHero.el.style.willChange).toBe('contents');
             // No damage types, verdicts or move names on the mat: the fight window and the bubbles say those.

@@ -25,9 +25,10 @@ import { BubbleText } from '../board/BubbleText.jsx';
 import { SpeechFrame } from '../board/SpeechFrame.jsx';
 import { SkillIconText } from '../base/SkillIconText.jsx';
 import { SPEECH_TONE } from '../board/speechTone.js';
+import { hpToneName, healthFraction } from '../board/healthBar.js';
 import {
     DOCK_STRIP_PX, DOCK_LABEL_GAP_PX, DOCK_LABEL_PX, DOCK_NAME_TEXT_CLASS, ROSTER_FLAG_PX, DOCK_HP_BAR_PX, DOCK_HP_BAR_HEIGHT_PX,
-    dockArtOffset, rosterFlagPlace, rosterAlertPlace, rosterAlertPx, hpPercent, hpTone
+    dockArtOffset, rosterFlagPlace, rosterAlertPlace, rosterAlertPx, hpPercent
 } from './dockHeroView.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { HeroDragMarks, MARK_SCREEN_PX } from '../board/DragMarks.jsx';
@@ -180,7 +181,7 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
     const hp = Math.max(0, Math.round(hero.hp?.current ?? 0));
     const hpMax = Math.max(1, hero.hp?.max ?? 100);
     const pct = hpPercent(hero.hp);
-    const tone = hpTone(pct);
+    const tone = hpToneName(healthFraction(hp, hpMax));
 
     const offset = dockArtOffset(artPx, { hovered: lifted });
     const flagPlace = rosterFlagPlace(artPx);
