@@ -153,9 +153,11 @@ function catchFindings(token, tokenId, items, best, say) {
         } else if (bait && !isConsumableCategory(items[bait]?.equipSlot)) {
             say(`its ${label} takes ${itemName(bait)} as bait, but ${itemName(bait)} is not a Consumable, so no hero can carry it as bait`);
         }
-        const key = `${kind}|${bait || ''}`;
+        // Pools for one tool and bait that hold in different places are not repeats (`catchPools.poolsAt`).
+        const place = ['water', 'biomes'].map(k => (Array.isArray(pool?.[k]) ? pool[k].join(',') : '')).join('|');
+        const key = `${kind}|${bait || ''}|${place}`;
         if (seen.has(key)) {
-            say(`has two catch pools for a ${toolKindLabel(kind)} ${bait ? `with ${itemName(bait)}` : 'with no bait'}: only the first is used`);
+            say(`has two catch pools for a ${toolKindLabel(kind)} ${bait ? `with ${itemName(bait)}` : 'with no bait'}${place !== '|' ? ' in the same place' : ''}: only the first is used`);
         }
         seen.add(key);
         const catches = Array.isArray(pool?.catches) ? pool.catches : [];

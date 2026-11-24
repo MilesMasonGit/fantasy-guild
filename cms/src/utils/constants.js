@@ -184,6 +184,7 @@ export {
   tierValue,
 } from '../../../src/config/registries/toolKinds.js';
 export { toolFindings } from '../../../src/systems/core/toolRule.js';
+export { spotFindings } from '../../../src/systems/core/spotRule.js';
 // Tools and weapons that break: an item's chance per cycle, for the item editor's Break chance field. The game's own reading.
 export { breakChanceOf, canBreak, BREAK_CHANCE_MAX } from '../../../src/config/registries/itemBreak.js';
 // Milestone perks: the shape of a skill's perk table and the content checks for one. The game's own rules and wording.

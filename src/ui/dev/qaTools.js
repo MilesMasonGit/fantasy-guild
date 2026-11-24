@@ -14,6 +14,7 @@ import { WoundedSystem } from '../../systems/combat/WoundedSystem.js';
 import * as BoardState from '../../systems/board/BoardState.js';
 import * as BoardCombat from '../../systems/board/BoardCombat.js';
 import * as Placement from '../../systems/board/Placement.js';
+import * as FishingSpots from '../../systems/board/FishingSpots.js';
 import { takesCopy } from '../../systems/equipment/heldCopies.js';
 import { getAllItems, getItem } from '../../config/registries/itemRegistry.js';
 import { getAllTokenTypes, getTokenType, tokenName, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
@@ -199,12 +200,14 @@ export function toggleQaRegenStar() {
 
 /**
  * Put a Token or enemy of any type on the mat at the first free spot from the middle out
- * (`Placement.placeArrivalNear`), fresh and placed. It ignores the Token cap.
+ * (`Placement.placeArrivalNear`), fresh and placed. It ignores the Token cap. A fishing spot lands
+ * as one arriving by itself would, on a free point of its own water (`FishingSpots.landNow`).
  * @returns {{success: boolean, reason?: string, instance?: object}}
  */
 export function devPlaceToken(typeId) {
     const id = String(typeId || '').trim();
     if (!getTokenType(id)) return { success: false, reason: `No Token type "${id}"` };
+    if (FishingSpots.isSpot({ typeId: id })) return FishingSpots.landNow(id);
     const instance = BoardState.createTokenInstance(id, tokenStartingUses(id));
     const res = Placement.placeArrivalNear(instance, Placement.centreOfBoard());
     return res?.success ? { ...res, instance } : res;
