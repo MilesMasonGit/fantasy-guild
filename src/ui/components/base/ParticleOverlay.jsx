@@ -10,6 +10,7 @@ import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { isDrawn } from '../../dev/perf/drawSwitches.js';
 import { bookFlight, fliesToStub, landFlight, placeFlights } from '../notifications/stubLanding.js';
 import { LOOT_FLIGHT_SPARKLES } from '../../utils/lootEffects.js';
+import { TRAIL_STEP_MS, trailArt, trailShadowCount } from '../../utils/lootTrail.js';
 import { isDrawingPaused } from '../board/frameClock.js';
 
 /** Gap between staggered particles from one collection burst. */
@@ -93,8 +94,10 @@ function boardToScreen(boardEl) {
 /**
  * ParticleOverlay: a Canvas layer for UI-space effects. Visualizes collected loot flying to
  * where it went (effect 5, crisp): its own item stub, or the Guild Hall when the stubs are not
- * drawn. A short trail of hard 2×2 pixels behind it and a four-pixel plink where it lands draw
- * for loot only with `LOOT_FLIGHT_SPARKLES` on; a recalled hero keeps its trail.
+ * drawn. Loot trails solid shadows of itself in its primary colour, one to seven by the stack's
+ * size (`lootTrail.js`); they catch up with the landing after the item has landed. A short trail
+ * of hard 2×2 pixels behind it and a four-pixel plink where it lands draw for loot only with
+ * `LOOT_FLIGHT_SPARKLES` on; a recalled hero keeps its trail.
  * Nothing random: every flight with the same path draws the same pixels.
  * ⚠️ A collection reads no box. Auto-collect runs inside the engine's tick, where one box read lays
  * the page out in the middle of the tick and again for the frame. A flight is booked when it is
@@ -353,10 +356,11 @@ class ParticleSystem {
         const booking = toStub ? bookFlight(template.id, quantity) : null;
         if (toStub && !booking) return;
 
-        this._preloadSprite(template);
+        this._preloadSprite(template, !isHero);
         this.booked.push({
             template,
             booking,
+            quantity,
             heroId: isHero ? actualRefId : null,
             destination,
             instanceId,
@@ -447,7 +451,11 @@ class ParticleSystem {
             duration: flightDurationMs(dist),
             path: { startX: from.x, startY: from.y, endX: end.x, endY: end.y, cpX, cpY },
             color: b.template.color || TRAIL_COLOUR,
-            trail: !!b.heroId || LOOT_FLIGHT_SPARKLES
+            trail: !!b.heroId || LOOT_FLIGHT_SPARKLES,
+            // Loot's shadows: as many as the stack is big (`lootTrail.js`); a hero has none.
+            shadows: b.heroId ? 0 : trailShadowCount(b.quantity),
+            landed: false,
+            lingerMs: 0
         };
     }
 
@@ -489,16 +497,19 @@ class ParticleSystem {
      * same way `ItemIcon.jsx` resolves it. A bare id used the wrong manifest key and every
      * particle silently fell back to the emoji icon.
      */
-    _preloadSprite(template) {
+    _preloadSprite(template, withTrail = false) {
         if (this.spriteCache.has(template.id)) return;
         const img = new Image();
         // `_src` is set for Tokens, whose art lives in the Token registry rather
         // than anywhere `resolveSpritePath` looks.
         img.src = template._src || resolveSpritePath(template);
-        this.spriteCache.set(template.id, { img, loaded: false });
+        this.spriteCache.set(template.id, { img, loaded: false, trail: null });
         img.onload = () => {
             const data = this.spriteCache.get(template.id);
-            if (data) data.loaded = true;
+            if (!data) return;
+            data.loaded = true;
+            // The trail's colours and silhouettes, once per item, never per frame.
+            if (withTrail) data.trail = trailArt(img);
         };
     }
 
@@ -517,6 +528,11 @@ class ParticleSystem {
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const p = this.particles[i];
             if (currentTime < p.startTime) continue;
+            if (p.landed) {
+                // Landed: it stays only while its shadows catch up with the landing.
+                if (currentTime - p.startTime >= p.duration + p.lingerMs) this.particles.splice(i, 1);
+                continue;
+            }
 
             const t = Math.min(1, (currentTime - p.startTime) / p.duration);
             const at = ParticleSystem.pointAt(p.path, t);
@@ -539,7 +555,9 @@ class ParticleSystem {
                     instanceId: p.instanceId
                 });
                 if (p.trail) this.sparkles.push({ x: p.path.endX, y: p.path.endY, born: currentTime, color: p.color });
-                this.particles.splice(i, 1);
+                p.landed = true;
+                p.lingerMs = this._trailArtOf(p) ? p.shadows * TRAIL_STEP_MS : 0;
+                if (currentTime - p.startTime >= p.duration + p.lingerMs) this.particles.splice(i, 1);
             }
         }
 
@@ -547,6 +565,32 @@ class ParticleSystem {
         const plinkMs = PLINK_STEPS_PX.length * PLINK_STEP_MS;
         for (let i = this.sparkles.length - 1; i >= 0; i--) {
             if (currentTime - this.sparkles[i].born >= plinkMs) this.sparkles.splice(i, 1);
+        }
+    }
+
+    /** The trail's art for a flight, once its sprite has loaded and could be read; else null. */
+    _trailArtOf(p) {
+        if (!p.shadows) return null;
+        const sprite = this.spriteCache.get(p.spriteKey);
+        return sprite?.loaded ? sprite.trail : null;
+    }
+
+    /**
+     * The flight's shadows, the tail first so the nearest lies on top: each is the item's silhouette
+     * where the item was {@link TRAIL_STEP_MS} per shadow ago, drawn like the item (whole pixels, no
+     * smoothing), so its art pixels stay whole.
+     */
+    _drawShadows(p, now, size) {
+        const art = this._trailArtOf(p);
+        if (!art) return;
+        const shadows = art.byCount[p.shadows];
+        const ctx = this.ctx;
+        ctx.imageSmoothingEnabled = false;
+        for (let i = shadows.length - 1; i >= 0; i--) {
+            const k = (now - p.startTime - (i + 1) * TRAIL_STEP_MS) / p.duration;
+            if (k <= 0 || k >= 1) continue;
+            const at = ParticleSystem.pointAt(p.path, k);
+            ctx.drawImage(shadows[i], Math.round(at.x - size / 2), Math.round(at.y - size / 2), size, size);
         }
     }
 
@@ -582,6 +626,9 @@ class ParticleSystem {
             if (now < p.startTime) continue;
             if (!isFinite(p.x) || !isFinite(p.y)) continue;
             const t = (now - p.startTime) / p.duration;
+            const size = p.size || 32;
+            this._drawShadows(p, now, size);
+            if (p.landed) continue;
             ctx.fillStyle = p.color;
             if (p.trail) {
                 for (const back of TRAIL_BACK_MS) {
@@ -593,7 +640,6 @@ class ParticleSystem {
             }
 
             const sprite = this.spriteCache.get(p.spriteKey);
-            const size = p.size || 32;
             const x = Math.round(p.x - size / 2);
             const y = Math.round(p.y - size / 2);
             if (sprite && sprite.loaded) {
