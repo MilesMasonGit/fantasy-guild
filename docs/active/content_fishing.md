@@ -68,8 +68,8 @@ next pack.*
 14. **Hovering a fishing spot shows the fish that could be caught there** in its speech bubble (owner;
     the water's version of [concept_playmat_declutter.md](concept_playmat_declutter.md) §12.3); the
     card says which lure each needs.
-15. **A Dock**, its own gathering foundation on the shore, offers the Fishing Hut, a Bait Shed and a
-    Lure Workshop ([concept_gathering_foundations.md](concept_gathering_foundations.md), draft).
+15. **A Dock**, its own gathering foundation on the shore, offers the Fishing Hut and a Bait Shed (no
+    Lure Workshop) ([concept_gathering_foundations.md](concept_gathering_foundations.md)). Lures stay Crafting recipes.
 
 ### Second round, 2026-11-24: spots, lures, the fish list, Bait
 
@@ -110,8 +110,8 @@ Lobster); the special spots' own (Oyster with a rare Pearl, Tropical Fish, the S
 
 **Planning agent's calls (simplest first; the content agent may move them):** Raw Shrimp is the
 River and Lake's free Trap catch; Lobster is the Coast's Trap catch; Oyster the Oyster Bed's; **Crab**
-(new, the owner's example) a Trap catch where a water has none, or cut if none is free. Lures are made at the
-Dock's Lure Workshop and Bait at its Bait Shed ([concept_gathering_foundations.md](concept_gathering_foundations.md) point 10). *Bait: point 25.*
+(new, the owner's example) a Trap catch where a water has none, or cut if none is free. **Lures are Crafting recipes** (owner 2026-11-24), each at about its fish's
+level; Bait is made at the Dock's Bait Shed ([concept_gathering_foundations.md](concept_gathering_foundations.md) point 10). *Bait: point 25.*
 
 ## Amended 2026-11-21 (Systems Audit, T-622, T-623, T-604)
 

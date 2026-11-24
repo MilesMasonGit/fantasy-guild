@@ -18,7 +18,7 @@ Status: briefed 2026-11-24 (approved 2026-11-24; [brief 860](briefs/860_gatherin
 2. **Crafting and the other skills keep today's Wood and Stone Foundations** for their buildings.
 3. **The Dock** stands **on the shore, touching water** (the "Stands on" terrain rule), is **its own
    Token**, and offers: the **Fishing Hut** (moved onto it, with its variants), a **Bait Shed** (turns
-   Raw Shrimp into Bait) and a **Lure Workshop** (makes lures).
+   Raw Shrimp into Bait). *The Lure Workshop was dropped 2026-11-24 (point 10).*
 
 4. **Excavation** digs a new vein, built with an **Ore Prospecting Map** for that ore (a rare drop
    from mining it or from other sources), any Region, limited only by the Token cap (owner 2026-11-24,
@@ -41,6 +41,6 @@ Status: briefed 2026-11-24 (approved 2026-11-24; [brief 860](briefs/860_gatherin
    (Farmland). Mines, Minecarts, Logging Camps, and Farming's Well, Composter, Beehive and Windmill
    are supports, on Wood or Stone. **Fishing works differently**: its sources are spots that come by
    themselves, so the Dock holds Fishing's buildings: the Fishing Hut, the spot building, the Bait
-   Shed and the Lure Workshop.
-10. **The Bait Shed and the Lure Workshop are the stations** where Bait (Fishing recipes) and lures
-    are made; lures move off Crafting ([content_fishing.md](content_fishing.md)).
+   Shed.
+10. **The Bait Shed is the station** where Bait (Fishing recipes) is made. **Lures stay Crafting
+    recipes**, made at Crafting's usual stations; **no Lure Workshop** (owner 2026-11-24) ([content_fishing.md](content_fishing.md)).
