@@ -1,4 +1,4 @@
-// Fantasy Guild — Recipe registry
+// Recipe registry
 
 /**
  * Every recipe in the game, loaded from `data/tokenRecipes.json`.

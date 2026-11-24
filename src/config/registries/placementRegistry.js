@@ -1,4 +1,4 @@
-// Fantasy Guild — where a spawned Token lands
+// Where a spawned Token lands
 
 /**
  * The destinations a `Spawns` rule may choose from.

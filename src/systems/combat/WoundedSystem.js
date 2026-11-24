@@ -1,4 +1,4 @@
-// Fantasy Guild - Wounded System
+// Wounded System
 
 import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from '../hero/HeroManager.js';

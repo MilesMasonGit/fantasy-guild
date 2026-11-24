@@ -1,4 +1,4 @@
-// Fantasy Guild - Loot System
+// Loot System
 
 import { EventBus } from '../core/EventBus.js';
 import { getItem } from '../../config/registries/itemRegistry.js';

@@ -1,4 +1,4 @@
-// Fantasy Guild — a loaded save follows the CMS's renames
+// A loaded save follows the CMS's renames
 
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getTokenType, tokenStartingUses } from '../../config/registries/tokenRegistry.js';

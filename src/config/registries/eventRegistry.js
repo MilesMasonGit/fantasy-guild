@@ -1,4 +1,4 @@
-// Fantasy Guild — the events table (loader)
+// The events table (loader)
 
 import { DatabaseManager } from '../DatabaseManager.js';
 import { normaliseEventTable } from '../eventTable.js';

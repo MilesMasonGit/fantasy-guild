@@ -1,4 +1,4 @@
-// Fantasy Guild — test fixture: the ledger's small world (`ledgerWorld.js`) laid out as world tables
+// Test fixture: the ledger's small world (`ledgerWorld.js`) laid out as world tables
 //
 // Every line has an origin in every strict ring: the fixture's own veins, trees, hive and coast where
 // it has them, a plain node (`token_<line>_<ring>`, yielding `item_<line>_<ring>`) elsewhere. One kit

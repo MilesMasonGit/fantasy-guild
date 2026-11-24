@@ -1,4 +1,4 @@
-// Fantasy Guild — the ready-made shadow and outline images.
+// The ready-made shadow and outline images.
 
 /**
  * ⭐ **Shadows and outlines are pictures, not filters.**

@@ -1,4 +1,4 @@
-// Fantasy Guild — calibration: the progression ledger's rate calculator against the real engine.
+// Calibration: the progression ledger's rate calculator against the real engine.
 //
 //   npm run bench:calibrate                       every setup, seeds 1-3, 8 game-hours each
 //   npm run bench:calibrate -- --only=vein --hours=4 --seeds=1,2

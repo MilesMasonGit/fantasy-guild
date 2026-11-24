@@ -1,4 +1,4 @@
-// Fantasy Guild - Combat Formulas
+// Combat Formulas
 // The numbers live in FormulaRegistry.js; this file reads them off heroes, their gear and enemies.
 
 import {

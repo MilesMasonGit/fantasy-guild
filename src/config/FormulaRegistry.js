@@ -1,4 +1,4 @@
-// Fantasy Guild - Formula Registry
+// Formula Registry
 //
 // The combat numbers (`docs/active/concept_combat.md`, "Detail pass rulings"). Small
 // numbers everywhere: a hero has 10 HP plus their best combat level, a copper sword hits for 2, and

@@ -1,4 +1,4 @@
-// Fantasy Guild - Game State
+// Game State
 
 import { createInitialState, GAME_VERSION } from './StateSchema.js';
 import { logger } from '../utils/Logger.js';

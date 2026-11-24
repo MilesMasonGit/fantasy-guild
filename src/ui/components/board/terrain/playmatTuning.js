@@ -1,4 +1,4 @@
-// Fantasy Guild — Live tuning for the playmat's look (developer tool).
+// Live tuning for the playmat's look (developer tool).
 
 /**
  * The numbers that decide how the playmat *looks*, in one place, adjustable

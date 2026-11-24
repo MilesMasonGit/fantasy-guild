@@ -1,4 +1,4 @@
-// Fantasy Guild — test setup: every test draws the same random numbers on every run.
+// Test setup: every test draws the same random numbers on every run.
 //
 // The game calls `Math.random()` directly, so any test that runs a fight, a
 // stroll or a chance output depends on luck unless it is seeded. This file

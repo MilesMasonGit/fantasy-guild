@@ -1,4 +1,4 @@
-// Fantasy Guild — Defeat penalties
+// Defeat penalties
 
 import * as HeroManager from '../hero/HeroManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';

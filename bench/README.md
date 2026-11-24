@@ -1,4 +1,4 @@
-# Fantasy Guild — the headless engine benchmark (Tier A)
+# Tabletop Guild — the headless engine benchmark (Tier A)
 
 `npm run bench` boots the real game engine in plain Node — no React, no browser,
 no jsdom — builds a board, runs thousands of game ticks as fast as it can, and

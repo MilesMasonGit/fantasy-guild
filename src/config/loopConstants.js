@@ -1,4 +1,4 @@
-// Fantasy Guild - Engine Tunables
+// Engine Tunables
 // Gameplay numbers that the engine imports, so they can be tuned in one place.
 // All times are in milliseconds.
 // ⚠️ Only put a value here if code actually imports it: tuning an unread value changes nothing.

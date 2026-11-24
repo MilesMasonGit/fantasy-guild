@@ -1,4 +1,4 @@
-// Fantasy Guild — generates the sprites' hard shadows and coloured outlines
+// Generates the sprites' hard shadows and coloured outlines
 // (Wave 5, CR3-350). See `src/config/spriteFx.js` for what and why.
 //
 //   node scripts/spriteFx.mjs                 generate (only what changed)

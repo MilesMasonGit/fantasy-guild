@@ -1,4 +1,4 @@
-// Fantasy Guild — the CMS's table of renamed ids (shape)
+// The CMS's table of renamed ids (shape)
 
 /**
  * In the CMS an item's, a Token's or a library effect's id follows its name, so correcting a name

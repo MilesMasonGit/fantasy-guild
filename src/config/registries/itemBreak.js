@@ -1,4 +1,4 @@
-// Fantasy Guild — tools and weapons that break: an item's chance per cycle
+// Tools and weapons that break: an item's chance per cycle
 //
 // ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY (`cms/src/utils/constants.js`): the item
 // editor's Break chance field and the audit read it. Pure: its imports are pure too.

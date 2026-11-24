@@ -1,4 +1,4 @@
-// Fantasy Guild - Main Entry Point
+// Main Entry Point
 
 import './tailwind.css';
 import './styles/main.css';
@@ -28,7 +28,7 @@ import { ENGINE_EVENTS } from './systems/core/engineEvents.js';
 const bootMark = (step) => performance.mark(`fg:boot:${step}`);
 
 /**
- * Fantasy Guild Idle - Bootstrap Lifecycle
+ * Bootstrap Lifecycle
  */
 document.addEventListener('DOMContentLoaded', async () => {
     bootMark('pageReady');

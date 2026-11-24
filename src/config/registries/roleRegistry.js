@@ -1,4 +1,4 @@
-// Fantasy Guild — who a moment puts in the room
+// Who a moment puts in the room
 
 /**
  * The **roles** a moment supplies, and the rule that keeps targeting bounded.

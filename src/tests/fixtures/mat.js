@@ -1,4 +1,4 @@
-// Fantasy Guild — test helper: laying Tokens out on the free playmat (Free Playmat 1.6a)
+// Test helper: laying Tokens out on the free playmat (Free Playmat 1.6a)
 
 /**
  * **For tests only.** `MatHelperGuard.test.js` fails if any file outside

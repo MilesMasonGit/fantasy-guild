@@ -1,4 +1,4 @@
-// Fantasy Guild - milestone perk tables (loader)
+// Milestone perk tables (loader)
 
 import { DatabaseManager } from '../DatabaseManager.js';
 import { perkRowsOf } from '../../systems/hero/perkTable.js';

@@ -1,4 +1,4 @@
-// Fantasy Guild - Skill Registry
+// Skill Registry
 
 /**
  * SkillRegistry: the world's skills, in two layers.

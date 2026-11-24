@@ -1,4 +1,4 @@
-// Fantasy Guild — when a statement spends its charges
+// When a statement spends its charges
 
 /**
  * The moments at which a rule may spend the charges of the Token carrying it.

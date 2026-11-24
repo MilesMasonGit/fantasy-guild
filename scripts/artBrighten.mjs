@@ -1,4 +1,4 @@
-// Fantasy Guild — the brightness script for the art's vibrancy pass.
+// The brightness script for the art's vibrancy pass.
 //
 //   npm run art:brighten                                   all four presets (previews)
 //   npm run art:brighten -- --preset drag                  one preset

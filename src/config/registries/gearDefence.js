@@ -1,4 +1,4 @@
-// Fantasy Guild — gear's defence: the resistances a worn piece lends, and the damage it costs named styles
+// Gear's defence: the resistances a worn piece lends, and the damage it costs named styles
 //
 // ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY (`cms/src/utils/constants.js`): the item
 // editor's Defence block and the audits read the shapes from here. Keep it free of data loading.

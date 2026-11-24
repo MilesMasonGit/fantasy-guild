@@ -1,4 +1,4 @@
-// Fantasy Guild - RNG Utilities
+// RNG Utilities
 
 /**
  * Random Number Generator utilities

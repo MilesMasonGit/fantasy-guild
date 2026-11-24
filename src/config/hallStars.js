@@ -1,4 +1,4 @@
-// Fantasy Guild — the Guild Hall's authored stars, as `data/hallStars.json` holds them
+// The Guild Hall's authored stars, as `data/hallStars.json` holds them
 //
 // ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY (its Sync, Restore and change packs).
 // Keep it pure: no registry that loads `data/`, no store.

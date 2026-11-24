@@ -1,4 +1,4 @@
-// Fantasy Guild — weapons: the one style a weapon fights in, and the level gear asks of its wearer
+// Weapons: the one style a weapon fights in, and the level gear asks of its wearer
 //
 // ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY (`cms/src/utils/constants.js`): the item
 // editor's Weapon block and the audit read the styles from here. Keep it free of data loading.

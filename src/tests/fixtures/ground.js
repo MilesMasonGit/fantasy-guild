@@ -1,4 +1,4 @@
-// Fantasy Guild — test helper: a Region standing on a hand-drawn terrain grid
+// Test helper: a Region standing on a hand-drawn terrain grid
 
 /**
  * **For tests only.** Builds the stored map with `encodeTerrain` and reads it back through

@@ -1,4 +1,4 @@
-// Fantasy Guild — Token vocabulary
+// Token vocabulary
 //
 // ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY.
 // `cms/src/utils/constants.js` takes `TOKEN_TYPES` and `TOKEN_RARITIES`, and

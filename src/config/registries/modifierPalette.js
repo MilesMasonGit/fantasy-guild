@@ -1,4 +1,4 @@
-// Fantasy Guild — The authorable modifier palette
+// The authorable modifier palette
 //
 // ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY. `cms/src/utils/constants.js`
 // re-exports ten names from here by relative path. The CMS is a separate app that `npm run

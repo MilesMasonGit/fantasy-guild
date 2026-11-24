@@ -1,4 +1,4 @@
-// Fantasy Guild — the filters a selector may stack
+// The filters a selector may stack
 
 /**
  * **Which** of the things in range a rule actually picks.

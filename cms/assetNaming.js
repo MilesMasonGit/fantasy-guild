@@ -1,4 +1,4 @@
-// Fantasy Guild — where new art goes, by docs/reference/ASSET_NAMING.md.
+// Where new art goes, by docs/reference/ASSET_NAMING.md.
 //
 // ⚠️ Imports nothing, and lives in cms/: the CMS's server (plain Node), the Studio page (which may
 // import nothing outside cms/) and the rename checker all read it.

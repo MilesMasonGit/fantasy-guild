@@ -1,4 +1,4 @@
-// Fantasy Guild - Name Registry
+// Name Registry
 
 /**
  * NameRegistry - Name pools for hero generation

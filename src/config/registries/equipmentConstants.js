@@ -1,4 +1,4 @@
-// Fantasy Guild - Equipment Constants
+// Equipment Constants
 //
 // A thin FACADE over the authored category table in `equipmentCategories.js`.
 //

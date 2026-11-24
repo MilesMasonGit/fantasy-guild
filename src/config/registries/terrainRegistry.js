@@ -1,4 +1,4 @@
-// Fantasy Guild — how the ground looks: the looks, their rules and the sheets they draw with.
+// How the ground looks: the looks, their rules and the sheets they draw with.
 
 import { TERRAIN } from '../../systems/atlas/TerrainMap.js';
 import { STYLE, STYLE_TERRAIN } from '../../systems/atlas/WaterShapes.js';

@@ -1,4 +1,4 @@
-// Fantasy Guild - the Guild Hall's authored stars (loader)
+// The Guild Hall's authored stars (loader)
 
 import { DatabaseManager } from '../DatabaseManager.js';
 import { setHallSky } from '../guildUpgrades.js';

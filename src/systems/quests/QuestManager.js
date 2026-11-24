@@ -1,4 +1,4 @@
-// Fantasy Guild - Quest Manager
+// Quest Manager
 // Hears the game's events and reports progress to Limes's lessons (`LimesLessons.report`). Only the
 // reports a lesson step or moment counts are made (`lessonPlan.js`): a step that counts a new kind
 // of report adds its subscription here.

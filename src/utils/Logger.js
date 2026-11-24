@@ -1,4 +1,4 @@
-// Fantasy Guild - Logger Utility
+// Logger Utility
 // Centralized logging with dev/production modes
 
 /**

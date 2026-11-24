@@ -1,4 +1,4 @@
-// Fantasy Guild — Token fixtures for the engine test suites
+// Token fixtures for the engine test suites
 
 import { registerTokenTypes } from '../../config/registries/tokenRegistry.js';
 import { registerRecipePools } from '../../config/registries/recipePoolRegistry.js';

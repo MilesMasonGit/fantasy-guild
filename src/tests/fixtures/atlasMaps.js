@@ -1,4 +1,4 @@
-// Fantasy Guild — sample map ingredients for the Atlas generation tests
+// Sample map ingredients for the Atlas generation tests
 
 /**
  * Ingredients in the generation engine's internal recipe shape (see the header of

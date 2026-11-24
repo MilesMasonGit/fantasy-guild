@@ -1,4 +1,4 @@
-// Fantasy Guild — Live tuning for the free playmat's rules (developer tool).
+// Live tuning for the free playmat's rules (developer tool).
 
 /**
  * The numbers that decide how the mat *plays*, adjustable while the game runs in a dev or perf

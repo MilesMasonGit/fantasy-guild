@@ -1,4 +1,4 @@
-// Fantasy Guild sprite crispness check (`npm run bench:crisp`): does anything animating on the
+// The sprite crispness check (`npm run bench:crisp`): does anything animating on the
 // mat change how the Tokens that stand still are drawn? (Tokens twitched and went soft.)
 //
 //   npm run bench:crisp                  perf build, S2, every case

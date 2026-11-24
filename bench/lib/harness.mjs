@@ -1,4 +1,4 @@
-// Fantasy Guild bench — the in-engine half (loaded THROUGH Vite by worker.mjs).
+// The in-engine half (loaded THROUGH Vite by worker.mjs).
 //
 // Boots the real engine the way `EngineBootstrap` + `onSlotSelected` do (minus
 // React, the art preloader, autosave and the wall-clock loop), lets a scenario

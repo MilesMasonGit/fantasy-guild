@@ -1,4 +1,4 @@
-// Fantasy Guild - Formatters
+// Formatters
 
 /**
  * Formatting utilities for display values.

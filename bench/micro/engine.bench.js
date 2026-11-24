@@ -1,4 +1,4 @@
-// Fantasy Guild bench — micro-benchmarks (`npm run bench:micro`).
+// Micro-benchmarks (`npm run bench:micro`).
 //
 // Vitest `bench` in the node environment (bench/micro/vitest.config.mjs) —
 // never jsdom. Each hot function is measured on boards of 40, 150 and 300

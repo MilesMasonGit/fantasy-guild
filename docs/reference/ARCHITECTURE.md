@@ -1,4 +1,4 @@
-# Fantasy Guild — Architecture
+# Tabletop Guild — Architecture
 
 **Status:** reference, the map of the code **as it is** on `main` (v0.8.0, save schema 0.8.1).
 **Checked against code:** 2026-11-06, commit `93338609` (branch `prep/ar`); the module map's sizes and the boot-order line numbers re-measured 2026-11-08 at `7796f8a9`. Every claim below
@@ -235,13 +235,13 @@ event clock, `{ clockMs }`; the events themselves are Tokens carrying `instance.
 hex world, null before a world exists, `:315`). A board stores Tokens **by instance id at a mat
 point** (`board.tokens`, `:56`), heroes' orders in `board.flags` (`:63`), floor loot in
 `board.sprites`. Player settings are **not** in the save: they live in localStorage under
-`fantasy_guild_settings` (`src/systems/core/SettingsManager.js:8`).
+`tabletop_guild_settings` (`src/systems/core/SettingsManager.js:8`).
 
 ### 4.2 Slots and storage
 
 - **3 slots** (`src/systems/core/SaveSlotHelper.js:8`).
-- **Browser and dev builds**: localStorage keys `fantasy_guild_slot_<n>` and
-  `fantasy_guild_slot_<n>_backup` (`SaveSlotHelper.js:4,15-26`); each save rolls the previous
+- **Browser and dev builds**: localStorage keys `tabletop_guild_slot_<n>` and
+  `tabletop_guild_slot_<n>_backup` (`SaveSlotHelper.js:4,15-26`); each save rolls the previous
   one into the backup first (`SaveManager.save`), except while a "While you were away" summary is
   unanswered, when the backup holds the game as left (§4.4).
 - **Desktop (Tauri) build**: one file per slot, `slot<n>.json` and `slot<n>.backup.json` in the

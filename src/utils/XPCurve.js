@@ -1,4 +1,4 @@
-// Fantasy Guild - XP Curve
+// XP Curve
 
 /**
  * XP Curve utilities for skill leveling

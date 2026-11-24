@@ -1,4 +1,4 @@
-// Fantasy Guild — test helper: a hero walking across the mat, step by step, as the game moves them.
+// Test helper: a hero walking across the mat, step by step, as the game moves them.
 
 import React from 'react';
 import { render, act } from '@testing-library/react';

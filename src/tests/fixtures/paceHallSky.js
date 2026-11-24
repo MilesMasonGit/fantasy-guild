@@ -1,4 +1,4 @@
-// Fantasy Guild — test fixture: a Guild Hall sky for the pace world (`paceWorld.js`), read by the
+// Test fixture: a Guild Hall sky for the pace world (`paceWorld.js`), read by the
 // ledger's Hall tests. A Mining constellation linked to the Hall: Lore (+50 % then +100 % Mining XP),
 // Quick Picks (-20 % Mining work time, behind Lore), Deep Veins (-50 % rest, aimed at the Copper Vein,
 // behind Quick Picks), a Gold Leaf no one should buy (+1 % yield for 100,000 Oak Wood), a plane-1

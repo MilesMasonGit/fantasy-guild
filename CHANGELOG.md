@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
+All notable changes to Tabletop Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
 ## [Unreleased]
