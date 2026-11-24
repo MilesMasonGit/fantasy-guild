@@ -1,7 +1,26 @@
 import { HERO_HIT_PX, HERO_BOX_PX } from './boardConstants.js';
 
-/** A health bar's fill colour. */
-export const HP_COLOUR = '#F09595';
+/**
+ * Every health bar's colour by how full it is, heroes and enemies alike: green above
+ * `HP_GREEN_ABOVE`, red below `HP_RED_BELOW`, amber between (both lines amber). Fractions, 0 to 1.
+ */
+export const HP_GREEN_ABOVE = 0.5;
+export const HP_RED_BELOW = 0.25;
+
+/** Each tone's fill and the one-art-pixel lighter and darker rows along its top and foot. */
+export const HP_TONES = Object.freeze({
+    green: Object.freeze({ fill: '#3fa34d', light: '#7fd36b', dark: '#256b33' }),
+    amber: Object.freeze({ fill: '#d9962b', light: '#f2c14e', dark: '#9a6618' }),
+    red: Object.freeze({ fill: '#c8322b', light: '#ee6a55', dark: '#8a1f1b' })
+});
+
+/** A bar's tone by how full it is (a fraction, 0 to 1): `green`, `amber` or `red`. */
+export function hpToneName(fraction) {
+    const f = Number(fraction) || 0;
+    if (f > HP_GREEN_ABOVE) return 'green';
+    if (f < HP_RED_BELOW) return 'red';
+    return 'amber';
+}
 
 /**
  * The bar's measures in plate pixels (one screen pixel at the mat's 2× art, `matMarks.plateUnit`):
@@ -24,6 +43,11 @@ export const HP_BAR = Object.freeze({
 export function healthFraction(cur, max) {
     if (!(max > 0)) return 0;
     return Math.max(0, Math.min(1, cur / max));
+}
+
+/** The fill and edge rows for a bar at `cur` of `max`. */
+export function hpToneOf(cur, max) {
+    return HP_TONES[hpToneName(healthFraction(cur, max))];
 }
 
 /** A percentage, rounded halves up (the combat rounding rule), never below 0. */

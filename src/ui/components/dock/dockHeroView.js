@@ -101,13 +101,6 @@ export function hpPercent(hp) {
     return Math.min(100, Math.round((cur / max) * 100));
 }
 
-/** The HP bar's tone: green above half, amber above a fifth, red at or below it. */
-export function hpTone(percent) {
-    if (percent > 50) return 'green';
-    if (percent > 20) return 'amber';
-    return 'red';
-}
-
 /** The hero's HP bar on the roster: wide enough for its numbers, never wider than a narrow slot. */
 export const DOCK_HP_BAR_PX = 88;
 export const DOCK_HP_BAR_HEIGHT_PX = 14;

@@ -576,6 +576,7 @@
         "card": {
             "level": "Level",
             "style": "Style",
+            "styleTip": "It fights in {style}",
             "health": "Health",
             "hit": "Hit",
             "resists": "Resists",

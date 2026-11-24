@@ -1,29 +1,29 @@
 import * as BoardState from '../../../../systems/board/BoardState.js';
 import * as HeroMotion from '../../../../systems/board/HeroMotion.js';
 import { isDrawn } from '../../../dev/perf/drawSwitches.js';
-import { STRIKE_DELAY_MS } from '../hitAnimations.js';
 import { tokenSizeFor, TOKEN_SURFACE } from '../../base/TokenSprite.jsx';
 import { FX_FRAME_MS, heldPoses } from './pixelSteps.js';
 import { playAt, fxArtUnit } from './matFx.js';
 import { isDrawingPaused } from '../frameClock.js';
-import { startFightWatch, subscribeMoments, MOMENT, statusIcon } from '../../combat/fightWatch.js';
-import { glyphSrc, GLYPH_COLOUR } from '../../combat/combatGlyphs.js';
+import { startFightWatch, subscribeMoments, MOMENT } from '../../combat/fightWatch.js';
+import { glyphSrc } from '../../combat/combatGlyphs.js';
+import { LANDED_MS, LANDED_TONE, landedDelayMs, landedIcon, landedToneName } from '../../combat/hitLook.js';
 import { t } from '../../../../i18n/index.js';
 
 /**
  * A fight's floats on the mat (owner's pick, 2026-11-05, "fewer floats"): every hit both ways, a
  * gold "Crit!" over a big number, "Miss", green heals and the red poison and burn ticks with their
- * drop or flame. Each rises over its fighter, just under the health bar, a hero's blow on the strike
- * frame of their swing, and is gone in half a second. White on the enemy, red on the hero. A
+ * drop or flame. Each rises over its fighter, just under the health bar, with the fight window's
+ * colours, icons and timing (`hitLook.js`): white on the enemy, red on the hero. A
  * hit's damage types, "Weak!" and "Resisted" are the fight window's and the log's; an enemy's move
  * by name is said in a bubble over its bar (`CalloutLayer`). Built from the fight watch's moments
  * (`fightWatch.js`), drawn in the mat's effect layer (`MatFxLayer`), sized in its `--fx-scale` (one
  * screen pixel at the mat's 2×).
  */
 
-/** How a float rises: a quick pop of 6 art pixels in three steps, held, then gone. */
+/** How a float rises: a quick pop of 6 art pixels in three steps, held for the rest of `LANDED_MS`, then gone. */
 const RISE = Object.freeze([
-    { ms: FX_FRAME_MS, y: 0 }, { ms: FX_FRAME_MS, y: -3 }, { ms: FX_FRAME_MS, y: -5 }, { ms: 5 * FX_FRAME_MS, y: -6 }
+    { ms: FX_FRAME_MS, y: 0 }, { ms: FX_FRAME_MS, y: -3 }, { ms: FX_FRAME_MS, y: -5 }, { ms: LANDED_MS - 3 * FX_FRAME_MS, y: -6 }
 ]);
 
 /** How far under the top of its fighter's art a float starts, and how far a second one at once stands below, in art pixels. */
@@ -46,14 +46,14 @@ export function buildFloat(m) {
     el.setAttribute('aria-hidden', 'true');
     el.setAttribute('data-fight-float', m.kind);
     el.setAttribute('data-fight-float-on', m.on);
-    const onHero = m.on === 'hero';
     const span = (cls, text) => {
         const s = document.createElement('span');
         s.className = cls;
         s.textContent = text;
         return s;
     };
-    const tone = onHero ? 'gi-ff-red' : 'gi-ff-white';
+    const look = LANDED_TONE[landedToneName(m)];
+    const tone = look.cls;
     switch (m.kind) {
         case MOMENT.CRIT:
             el.className = `gi-fight-float gi-fight-float-crit ${tone}`;
@@ -64,14 +64,14 @@ export function buildFloat(m) {
             el.appendChild(span('gi-ff-word', t('fight.float.miss')));
             break;
         case MOMENT.HEAL:
-            el.className = 'gi-fight-float gi-ff-green';
+            el.className = `gi-fight-float ${tone}`;
             el.appendChild(span('gi-ff-number', `+${m.amount}`));
             break;
         case MOMENT.TICK: {
-            el.className = 'gi-fight-float gi-ff-red';
+            el.className = `gi-fight-float ${tone}`;
             const icon = document.createElement('img');
-            const name = statusIcon(m.statusId);
-            icon.src = glyphSrc(name, GLYPH_COLOUR.red, true);
+            const name = landedIcon(m);
+            icon.src = glyphSrc(name, look.glyph, true);
             icon.alt = '';
             icon.draggable = false;
             icon.className = 'gi-ff-icon';
@@ -111,8 +111,7 @@ export function playFloat(m, now = performance.now()) {
     const unit = fxArtUnit();
     const at = floatPoint(m, unit);
     if (!at) return null;
-    // A hero's blow lands on the strike frame of their swing; everything else at once.
-    const delay = m.by === 'hero' && m.on === 'enemy' ? STRIKE_DELAY_MS : 0;
+    const delay = landedDelayMs(m);
     const key = `${m.instanceId}|${m.on}`;
     const start = now + delay;
     const prev = lanes.get(key);

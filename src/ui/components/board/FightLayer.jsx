@@ -11,7 +11,7 @@ import { artRadiusOf } from '../../../config/matGeometry.js';
 import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { glyphSrc, GLYPH_COLOUR } from '../combat/combatGlyphs.js';
-import { toggleFightPanel, useFightPanelState } from '../combat/fightPanelStore.js';
+import { toggleFightPanel, useOpenFightHeroes } from '../combat/fightPanelStore.js';
 import { t } from '../../../i18n/index.js';
 
 const BUTTON_POINTER = 'var(--plate-pointer, auto)';
@@ -103,7 +103,7 @@ const FightButton = memo(function FightButton({ tokenId, heroId, typeId, x, y, h
  */
 export const FightLayer = memo(function FightLayer({ fights, yieldToTokens = false }) {
     const fit = useMatFit() || 1;
-    const panel = useFightPanelState();
+    const openHeroes = useOpenFightHeroes();
     return (
         <div
             data-fights
@@ -126,7 +126,7 @@ export const FightLayer = memo(function FightLayer({ fights, yieldToTokens = fal
                             hx={hx}
                             hy={hy}
                             fit={fit}
-                            open={panel?.heroId === f.heroId}
+                            open={openHeroes.has(f.heroId)}
                         />
                     </div>
                 );

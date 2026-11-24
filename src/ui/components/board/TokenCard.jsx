@@ -37,6 +37,7 @@ import { levelNeed, skillLevel } from '../../../systems/core/levelNeed.js';
 import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as Growth from '../../../systems/board/Growth.js';
 import { problemOf, problemText, PROBLEM_COLOUR, PROBLEM_SPRITE } from './problemMark.js';
+import { EnemyCardRows } from '../combat/EnemyCard.jsx';
 
 /** The activity scenes are 256 px square; they only ever draw at whole multiples of it. */
 export const CARD_ART_PX = 256;
@@ -184,6 +185,14 @@ const CycleCells = ({ cycleMs, baseMs, uses }) => (
 
 const CombatCells = ({ skillId, level, xp }) => (
     <>
+        <StatCell caption={t('fight.card.style')}>
+            <Stat
+                icon={<SkillIcon skillId={skillId} size={16} />}
+                text={skillName(skillId)}
+                tip={t('fight.card.styleTip', { style: skillName(skillId) })}
+                data-card-style={skillId}
+            />
+        </StatCell>
         <StatCell caption="Level">
             <Stat
                 icon={<SkillIcon skillId={skillId} size={16} />}
@@ -565,6 +574,13 @@ const DropsSection = ({ drops = [], rare, effects }) => (
     </Section>
 );
 
+/** An enemy in a fight: what it hits with, its moves, what it resists, how often it attacks, its kinds. */
+const FightSection = ({ block }) => (
+    <Section data-card-block="fight">
+        <EnemyCardRows card={block} stats={false} />
+    </Section>
+);
+
 /** What the card's layout has no section of its own for: a landmark's challenge, a buff, the stations a tool drives. */
 export const MoreBlock = ({ typeId }) => {
     const def = getTokenType(typeId);
@@ -716,7 +732,8 @@ const STAT_BLOCKS = new Set([CARD_BLOCK.HP, CARD_BLOCK.COMBAT, CARD_BLOCK.WORK, 
 /**
  * The Token card: the card a click on a Token opens. A header with the name, then one panel of
  * sections following `tokenCardModel`: the stat block with its effect badges, the recipe picked,
- * Requires, Loot and a section per bonus drop source, Rare finds or a water's catches, Events, Boosts, Drops. A section with nothing
+ * Requires, Loot and a section per bonus drop source, Rare finds or a water's catches, Events, Boosts, an
+ * enemy's fight, Drops. A section with nothing
  * to say is left out. Every icon and number explains itself on hover.
  */
 export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewChange = null }) => {
@@ -752,6 +769,7 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
             ];
             case CARD_BLOCK.LIFECYCLE: return [<EventsSection key="lifecycle" lines={block.lines} />];
             case CARD_BLOCK.SUPPORT: return [<SupportSection key="support" boosts={block.boosts} />];
+            case CARD_BLOCK.FIGHT: return [<FightSection key="fight" block={block} />];
             case CARD_BLOCK.DROPS: return [<DropsSection key="drops" drops={block.drops} rare={block.rare} effects={effects} />];
             case CARD_BLOCK.MORE: return [<MoreBlock key="more" typeId={typeId} />];
             default: return [];
