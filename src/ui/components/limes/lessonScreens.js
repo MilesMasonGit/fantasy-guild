@@ -2,6 +2,9 @@ import { LESSON_TARGETS as T } from '../../../systems/quests/lessonPlan.js';
 import { LIMES_TEXT } from '../../../systems/quests/limesText.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
+import { t } from '../../../i18n/index.js';
+import { DEFEAT_PENALTY } from '../../../config/loopConstants.js';
+import { fractionWords, oneInWords } from '../../../utils/limesNumbers.js';
 import { LIMES_TARGET } from './limesMark.js';
 import { LIMES_MAT } from './limesStore.js';
 
@@ -37,7 +40,9 @@ const NAMES = Object.freeze({
     foundation: () => tokenName(T.foundation),
     building: () => tokenName(T.craftBuilding),
     craft: () => getItem(T.craftItem)?.name || T.craftItem,
-    foe: () => tokenName(T.foe)
+    foe: () => tokenName(T.foe),
+    defeatLoss: () => t('limesDefeat.loss', { share: fractionWords(DEFEAT_PENALTY.CONSUMABLE_LOSS_RATIO) }),
+    defeatGear: () => t('limesDefeat.gear', { odds: oneInWords(DEFEAT_PENALTY.GEAR_LOSS_CHANCE) })
 });
 
 /** A line with its names filled in; a brace naming nothing known is left as written. */

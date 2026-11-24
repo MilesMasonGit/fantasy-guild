@@ -20,6 +20,8 @@ import { LimesBlurb } from '../ui/components/limes/LimesBlurb.jsx';
 import { LIMES_TARGET } from '../ui/components/limes/limesMark.js';
 import { useWorldMapRequests, WorldMapRequests } from '../ui/hooks/useWorldMapRequests.js';
 import { DeckDndContext } from '../ui/dnd/DndKit.jsx';
+import { DEFEAT_PENALTY } from '../config/loopConstants.js';
+import { fractionWords, oneInWords } from '../utils/limesNumbers.js';
 import { tokenName } from '../config/registries/tokenRegistry.js';
 
 const h = React.createElement;
@@ -96,6 +98,34 @@ describe('where a step speaks (pure)', () => {
         expect(moment({ bank: true }, false)).toBeNull();
         expect(moment({ guildHall: true, star: 'roster_size' }, false)).toBeNull();
         expect(moment({}, false)).toBeNull();
+    });
+
+    describe('the Defeat warning before the first fight', () => {
+        const fightLines = () => LIMES_TEXT.lessons.fight.mat.map(fillLessonWords);
+        const saved = { ...DEFEAT_PENALTY };
+        afterEach(() => Object.assign(DEFEAT_PENALTY, saved));
+
+        it('comes in order before the fight line, worded from the penalty', () => {
+            const lines = fightLines();
+            expect(lines[0]).toBe('Careful! If your hero is Defeated, you lose a quarter of each food and drink they brought.');
+            expect(lines[1]).toBe('And each piece of gear they wear has a 1 in 10 chance to break. Win, and you lose nothing!');
+            expect(lines[2]).toMatch(/^Now a little fight!/);
+        });
+
+        it('follows a tuning change', () => {
+            DEFEAT_PENALTY.CONSUMABLE_LOSS_RATIO = 0.5;
+            DEFEAT_PENALTY.GEAR_LOSS_CHANCE = 0.2;
+            const lines = fightLines();
+            expect(lines[0]).toContain('lose half of each');
+            expect(lines[1]).toContain('a 1 in 5 chance');
+        });
+
+        it('words a fraction, falling back to a percentage', () => {
+            expect(fractionWords(1 / 3)).toBe('a third');
+            expect(fractionWords(0.4)).toBe('40%');
+            expect(oneInWords(0.25)).toBe('1 in 4');
+            expect(oneInWords(0.15)).toBe('15%');
+        });
     });
 
     it('names in braces come from the content, so the words follow the ids', () => {
