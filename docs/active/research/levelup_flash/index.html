@@ -40,7 +40,7 @@ code { background: #262a33; padding: 0 4px; }
     level flashing gold, then rolling to the new one, a signature perk named in gold at 50, 75 and 99). On top of it the
     reach ring from the mat bursts out once from the hero in gold and breaks up, and a few pixel sparkles fly out.
     The <b>small</b> flash is for every 5 levels; the <b>big</b> one for 10, 25, 50, 75 and 99.
-    Each loop shows the next level. Pick a letter: <b>A</b>, <b>B</b> or <b>C</b>.
+    Each loop shows the next level. Pick a letter: <b>D</b> (the loud one the owner asked for), <b>A</b>, <b>B</b> or <b>C</b>.
     <b>Today</b> is the game as it is now, with no flash.</p>
   <p class="muted">Hard pixels only, like the game: whole art pixels, a black shadow one art pixel down-right, no glow, no
     blending. The float here fades after 3.6 seconds only so the loop can start again; in the game it stays up for 30.
@@ -67,6 +67,11 @@ code { background: #262a33; padding: 0 4px; }
 
   <h2>Today</h2>
   <div class="tiles" id="g-today"></div>
+
+  <h2>D: loud, the owner's ask</h2>
+  <p class="muted">Several glowing rings spread out from the hero one after another, fading in steps as they grow; lots of
+    sparkles, stars and pluses in gold, pale gold and white. The big one has more rings, wider, and twice the sparkles.</p>
+  <div class="tiles" id="g-D"></div>
 
   <h2>A: neat gold</h2>
   <p class="muted">One gold ring, just clear of the hero; a handful of pale-gold sparkles.</p>
@@ -127,6 +132,15 @@ const G = Object.freeze({
    A sparkle set: `n` sparkles in `colours` (taken in turn), launched as the first ring passes `from` x R,
    flying out to R + `reach` (+ a fixed per-sparkle spread), `star` whether they open as the 9-cell star. */
 const HOLD_MS = 60, BREAK_MS = 70;
+/* D's waves: `n` rings to radius R, each starting `stagger` ms after the last, each growing over `grow` ms and fading
+   in steps as it grows (WAVE_FADE: [up to this share of R, opacity]); gone when it reaches R. Each has a glow: a
+   one-art-pixel halo just inside and just outside the line, in the next lighter colour at half the line's opacity. */
+const WAVE_FADE = [[0.4, 1], [0.6, 0.75], [0.8, 0.5], [1, 0.25]];
+const WAVE_HALO = 0.5;
+const LIGHTER = { '#fbbf24': '#fde68a', '#fde68a': '#ffffff', '#ffffff': '#fde68a' };
+function waves(n, R, grow, stagger, colours) {
+  return Array.from({ length: n }, (_, i) => ({ R, delay: i * stagger, grow, colour: colours[i % colours.length], wave: true }));
+}
 const VARIANTS = {
   A: {
     name: 'neat gold',
@@ -148,6 +162,13 @@ const VARIANTS = {
       sparkles: { n: 8, colours: [G.WHITE, G.PALE], from: 0.5, reach: 4, spread: 12, star: false } },
     big: { rings: [{ R: 88, delay: 0, grow: 350, colour: G.WHITE }, { R: 64, delay: 90, grow: 300, colour: G.GOLD }],
       sparkles: { n: 16, colours: [G.WHITE, G.PALE, G.GOLD], from: 0.5, reach: 6, spread: 16, star: true } }
+  },
+  D: {
+    name: 'loud: glowing waves and lots of sparkles',
+    small: { rings: waves(3, 56, 480, 120, [G.GOLD, G.PALE, G.WHITE]),
+      sparkles: { n: 16, colours: [G.GOLD, G.PALE, G.WHITE], from: 0.3, reach: 4, spread: 16, star: 'half', jitter: 200 } },
+    big: { rings: waves(5, 96, 640, 110, [G.WHITE, G.GOLD, G.PALE, G.GOLD, G.WHITE]),
+      sparkles: { n: 30, colours: [G.GOLD, G.PALE, G.WHITE], from: 0.25, reach: 6, spread: 24, star: 'most', jitter: 300 } }
   }
 };
 /* A sparkle's life from its launch (plus a fixed 0..SPARK_JITTER_MS stagger): it flies out over FLY_MS (ease-out,
@@ -168,8 +189,8 @@ const HEROES = [
 ];
 
 /* ---------- the tile and the loop ---------- */
-const W = 240, H = 240;          // art pixels
-const CX = 120, CY = 136;        // the hero's point
+const W = 280, H = 280;          // art pixels
+const CX = 140, CY = 152;        // the hero's point
 const PRE_MS = 500, UP_MS = 3000, POST_MS = 300;
 const LOOP_MS = PRE_MS + UP_MS + G.FADE_MS + POST_MS;
 
@@ -249,7 +270,25 @@ function ringAt(ring, t) {
   return null;
 }
 
+function drawWave(g, ring, t) {
+  const k = t - ring.delay;
+  if (k < 0 || k >= ring.grow) return;
+  const r = Math.round(ring.R * (k / ring.grow));
+  if (r < 2) return;
+  const alpha = WAVE_FADE.find(([upTo]) => r / ring.R <= upTo)[1];
+  const at = (rr) => ringAround(rr).map(([x, y]) => [CX + x, CY + y]);
+  g.save();
+  g.globalAlpha = alpha;
+  for (const [x, y] of at(r)) cell(g, x + 1, y + 1, '#000');
+  g.globalAlpha = alpha * WAVE_HALO;
+  for (const rr of [r - 1, r + 1]) for (const [x, y] of at(rr)) cell(g, x, y, LIGHTER[ring.colour]);
+  g.globalAlpha = alpha;
+  for (const [x, y] of at(r)) cell(g, x, y, ring.colour);
+  g.restore();
+}
+
 function drawRing(g, ring, t) {
+  if (ring.wave) return drawWave(g, ring, t);
   const at = ringAt(ring, t);
   if (!at) return;
   const cells = ringAround(at.r).filter((_, i) => at.keep(i)).map(([x, y]) => [CX + x, CY + y]);
@@ -270,11 +309,12 @@ function sparkleCells(fx, t, seed) {
   const turn = hash(seed * 7 + 3) * Math.PI * 2;
   for (let i = 0; i < s.n; i++) {
     const h1 = hash(seed * 101 + i * 13 + 1), h2 = hash(seed * 101 + i * 13 + 2), h3 = hash(seed * 101 + i * 13 + 3);
-    const k = t - launch - h3 * SPARK_JITTER_MS;
+    const k = t - launch - h3 * (s.jitter ?? SPARK_JITTER_MS);
     if (k < 0) continue;
     const step = SPARK_STEPS.find(([until]) => k < until);
     if (!step || !step[1]) continue;
-    const shape = step[1] === 'star' && !s.star ? 'plus' : step[1];
+    const starred = s.star === true || (s.star === 'half' && i % 2 === 0) || (s.star === 'most' && i % 3 !== 2);
+    const shape = step[1] === 'star' && !starred ? 'plus' : step[1];
     const angle = turn + ((i + 0.5) / s.n + (h1 - 0.5) * 0.6 / s.n) * Math.PI * 2;
     const r0 = first.R * s.from, r1 = first.R + s.reach + h2 * s.spread;
     const f = Math.min(1, k / FLY_MS), ease = 1 - Math.pow(1 - f, 3);
@@ -428,15 +468,19 @@ function numbersTable() {
   for (const [L, v] of Object.entries(VARIANTS)) for (const size of ['small', 'big']) {
     const fx = v[size], s = fx.sparkles;
     rows.push([L, size === 'small' ? 'small (every 5)' : 'big (10, 25, 50, 75, 99)',
-      fx.rings.map(r => `R ${r.R}, ${r.delay} ms, ${r.grow} ms, ${nameOf(r.colour)}`).join('<br>'),
-      `${s.n}, ${s.colours.map(nameOf).join(' / ')}; as the first ring passes ${Math.round(s.from * 100)} % of R; to R + ${s.reach} + 0..${s.spread}`,
-      s.star ? '9-cell star' : '5-cell plus']);
+      fx.rings.map(r => `R ${r.R}, ${r.delay} ms, ${r.grow} ms, ${nameOf(r.colour)}${r.wave ? ', wave with glow' : ''}`).join('<br>'),
+      `${s.n}, ${s.colours.map(nameOf).join(' / ')}; as the first ring passes ${Math.round(s.from * 100)} % of R, staggered 0..${s.jitter ?? SPARK_JITTER_MS} ms; to R + ${s.reach} + 0..${s.spread}`,
+      ({ true: '9-cell star', false: '5-cell plus', half: 'every other a star, the rest pluses', most: 'two in three stars, the rest pluses' })[String(s.star)]]);
   }
   const t = document.getElementById('numbers');
   t.innerHTML = rows.map((r, i) => '<tr>' + r.map(c => i ? `<td>${c}</td>` : `<th>${c}</th>`).join('') + '</tr>').join('');
   const p = document.createElement('p');
   p.className = 'muted';
-  p.innerHTML = `Every variant: a ring holds whole at R for ${HOLD_MS} ms, then breaks into 3-on 3-off dashes at R + 2 for ${BREAK_MS} ms,
+  p.innerHTML = `D's waves: each grows from nothing to R in a straight line and is gone when it gets there; its opacity
+    steps ${WAVE_FADE.map(([u, a]) => a + ' to ' + Math.round(u * 100) + ' % of R').join(', ')}; its glow is a one-art-pixel
+    ring just inside and just outside the line, in the next lighter colour (gold to pale gold, pale gold to white, white to
+    pale gold) at ${WAVE_HALO} of the line's opacity; its black shadow one art pixel down-right fades with it.<br>
+    A, B and C: a ring holds whole at R for ${HOLD_MS} ms, then breaks into 3-on 3-off dashes at R + 2 for ${BREAK_MS} ms,
     then 2-on 6-off at R + 4 for ${BREAK_MS} ms, then is gone. Each ring is drawn over a black copy one art pixel down-right,
     over the hero (rings sit above heroes on the mat). A sparkle starts up to ${SPARK_JITTER_MS} ms late, flies out over
     ${FLY_MS} ms easing out, and shows ${SPARK_STEPS.map(([u, sh]) => (sh || 'nothing') + ' to ' + u).join(', ')} ms
@@ -471,9 +515,11 @@ async function main() {
     B: ['B small', 'Every 5 levels: one gold ring out to 48, 6 gold and pale-gold sparkles.'],
     B2: ['B big', '10 to 99: a gold ring to 72 with a pale-gold ring to 52 just behind, 12 sparkles in three colours, stars.'],
     C: ['C small', 'Every 5 levels: one pale-gold ring out to 44, 8 white and pale-gold sparkles.'],
-    C2: ['C big', '10 to 99: a white ring to 88 with a gold ring to 64 behind it, 16 sparkles, stars.']
+    C2: ['C big', '10 to 99: a white ring to 88 with a gold ring to 64 behind it, 16 sparkles, stars.'],
+    D: ['D small', 'Every 5 levels: 3 glowing waves (gold, pale, white) out to 56, fading as they go, 16 sparkles.'],
+    D2: ['D big', '10 to 99: 5 glowing waves out to 96, fading as they go, 30 sparkles, mostly stars.']
   };
-  for (const L of ['A', 'B', 'C']) {
+  for (const L of ['D', 'A', 'B', 'C']) {
     makeTile('g-' + L, DESC[L][0], DESC[L][1], VARIANTS[L].small, SMALL_RUN);
     makeTile('g-' + L, DESC[L + '2'][0], DESC[L + '2'][1], VARIANTS[L].big, BIG_RUN);
   }
