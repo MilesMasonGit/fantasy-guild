@@ -85,9 +85,7 @@ export function maxChargesOf(instance) {
  */
 export function endChanceOf(instance) {
     if (!instance || isUnlimited(instance)) return null;
-    const def = getTokenType(instance.typeId);
-    if (!Respawn.respawnOf(def)) return null;
-    return endTermsOf(def)?.chance ?? null;
+    return endTermsOf(getTokenType(instance.typeId))?.chance ?? null;
 }
 
 /**

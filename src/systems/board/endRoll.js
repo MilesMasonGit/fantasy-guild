@@ -5,8 +5,10 @@
  * rolls of `chance` percent would end it. A sure end (100 % or more) and a chance of nothing draw
  * nothing, so a source that cannot go either way leaves the seeded stream as it was.
  *
- * ⚠️ One draw per spend, and only where a cycle spends (`Charges.applyDelta`, `Fields.harvested`): a
- * catch-up's long steps then roll exactly as live play's short ticks for the same cycles.
+ * ⚠️ One draw per spend, and only where a cycle spends (`Charges.applyDelta`, `Fields.harvested`),
+ * never per tick: a long step rolls as often as short ones for the same cycles, and a catch-up rolls
+ * exactly as the plain loop's steps of its size. Cycles that end within one step roll in the mat's
+ * order, so small and big steps can hand them different numbers from the stream.
  */
 export function endsNow(chance, times = 1) {
     const p = Number(chance);
