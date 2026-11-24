@@ -1,4 +1,4 @@
-Status: approved 2026-11-04, **Mining amended 2026-11-24 by the owner's review** (not yet briefed; a CMS pack still to come)
+Status: approved 2026-11-04, **Mining and Forestry amended 2026-11-24 by the owner's review** (not yet briefed; a CMS pack still to come)
 
 # Content roadmap: Mining and Forestry Tokens
 
@@ -58,4 +58,23 @@ Replaces the lines it clashes with above and in [concept_skill_loops.md](concept
 5. **Geode, Fallen Star and Fossil Bed are rich event nodes**: they land now and then like the Fish
    Shoal, give a rich rush, and go when worked out ([content_events.md](content_events.md)). Clay and
    Quartz are ordinary veins.
+
+## Amended 2026-11-24: Forestry review (owner)
+
+*Replaces the lines it clashes with above and in [concept_skill_loops.md](concept_skill_loops.md)
+"Forestry" (logs per tree as a count; a seedling per new Sapling).*
+
+1. **A tree is felled by chance**: each chop has a chance it becomes a Stump (an Oak about 1 in 5,
+   keeping today's average of 5 logs), **no counter**.
+2. **The axe gate stays** (5 Nov): Copper for Oak and Fir, Iron for Birch and Maple, Mythril for
+   Cedar, Adamantine for Mahogany, Darkmetal for Ebony; a better axe is also faster.
+3. **The Nursery, Forestry's gathering foundation, becomes a Forest** of a chosen species, paid in that
+   species' seeds as a Forest is today
+   ([concept_gathering_foundations.md](concept_gathering_foundations.md)). Wild Forests on the map stay.
+4. **No seedling per Sapling**: a Forest in reach regrows Stumps and plants Saplings for free; the
+   seeds are paid once, to build the Forest. ⚠️ Overturns 2026-10-22 and 2026-10-24 ("a Stump spends
+   one seedling", "every new Sapling costs one seedling").
+5. **A Stump with no Forest of its kind in reach still never regrows** (kept); it can be demolished.
+6. **Hollow Tree, Driftwood Logjam, Giant Mushroom and Bamboo Grove are rich event nodes**: they land
+   now and then, give a rich rush, and go when worked out ([content_events.md](content_events.md)).
 
