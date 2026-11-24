@@ -2,12 +2,14 @@
 
 import { GameState } from '../../state/GameState.js';
 import { getGrid, categoryOfItem, isConsumableCategory } from '../../config/registries/equipmentConstants.js';
-import { hasCatchPools, poolFor, poolBites, baitsFor, pickCatchIndex } from '../../config/registries/catchPools.js';
+import { hasCatchPools, poolFor, poolBites, baitsFor, pickCatchIndex, poolsAt } from '../../config/registries/catchPools.js';
 import { neededToolOf } from '../../config/registries/toolKinds.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as HeroTools from '../equipment/HeroTools.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as CycleSavings from './CycleSavings.js';
+import * as BoardState from './BoardState.js';
+import * as GroundRules from './GroundRules.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { CARRIED_KIND } from '../../config/registries/carriedKinds.js';
 
@@ -24,6 +26,9 @@ import { CARRIED_KIND } from '../../config/registries/carriedKinds.js';
  * names what they need), except with a Trap (`catchPools.BAIT_FREE_TOOL`), whose pool with no bait
  * catches as it is. A pool another tool works with no bait is never fished.
  *
+ * Only the pools that hold where the water stands are fished ({@link placeOf}): a fishing spot's
+ * catch comes from the water under it and the Region's biome (`catchPools.poolsAt`).
+ *
  * ⚠️ Every pick draws from `Math.random` in a fixed place of the finished cycle
  * (`BoardRunner.completeCycle`), so a catch-up catches exactly what live play does.
  */
@@ -37,11 +42,25 @@ function heroRecord(heroId) {
 }
 
 /**
- * The bait hero `heroId` fishes with at water `def` with a tool of `toolKind`: the first carried
- * consumable, in grid order, that a pool for that tool takes and the Bank holds. Null: no bait.
+ * Where water Token `instance` stands, as its catch pools read it (`GroundRules.placeAt`): the
+ * water kind under it and the Region's biomes. Null with no instance: only pools for everywhere hold.
  */
-export function baitOf(heroId, def, toolKind) {
-    const baits = baitsFor(def, toolKind);
+export function placeOf(instance) {
+    if (!instance || !Number.isFinite(instance.x) || !Number.isFinite(instance.y)) return null;
+    return GroundRules.placeAt(instance.x, instance.y);
+}
+
+/** The catch pools that hold at water Token `instance` (see {@link placeOf}), in authored order. */
+export function poolsHere(def, instance) {
+    return poolsAt(def, placeOf(instance));
+}
+
+/**
+ * The bait hero `heroId` fishes with at water `def` with a tool of `toolKind`: the first carried
+ * consumable, in grid order, that a pool for that tool takes at `place` and the Bank holds. Null: no bait.
+ */
+export function baitOf(heroId, def, toolKind, place = null) {
+    const baits = baitsFor(def, toolKind, place);
     if (!baits.length) return null;
     const hero = heroRecord(heroId);
     if (!hero) return null;
@@ -59,30 +78,32 @@ function toolAt(def, heroId) {
 }
 
 /**
- * How hero `heroId` would fish water `def` right now, as `{ tool, bait, pool }` (`tool` from
- * `HeroTools.catchToolOf`, `bait` an item id or null), or null when they hold no tool it takes or
- * their tool finds no pool that bites: no bait, and no Trap. Draws nothing and spends nothing.
+ * How hero `heroId` would fish water `def` (standing as `instance`) right now, as `{ tool, bait,
+ * pool }` (`tool` from `HeroTools.catchToolOf`, `bait` an item id or null), or null when they hold
+ * no tool it takes or their tool finds no pool that bites there: no bait, and no Trap. Draws
+ * nothing and spends nothing.
  */
-export function fishingOf(def, heroId) {
+export function fishingOf(def, heroId, instance = null) {
     if (!hasCatchPools(def)) return null;
     const tool = toolAt(def, heroId);
     if (!tool) return null;
-    const bait = baitOf(heroId, def, tool.kind);
-    const pool = poolFor(def, tool.kind, bait);
+    const place = placeOf(instance);
+    const bait = baitOf(heroId, def, tool.kind, place);
+    const pool = poolFor(def, tool.kind, bait, place);
     return poolBites(pool) ? { tool, bait, pool } : null;
 }
 
 /**
- * The bait hero `heroId` needs before they fish water `def`, or null when they fish already (or
- * hold no tool it takes: that is the tool's need, not the bait's). The bait they carry that ran
- * dry, in grid order; else the first their tool's pools take. Null too when no pool for their tool
- * takes a bait, as no bait would help.
+ * The bait hero `heroId` needs before they fish water `def` (standing as `instance`), or null when
+ * they fish already (or hold no tool it takes: that is the tool's need, not the bait's). The bait
+ * they carry that ran dry, in grid order; else the first their tool's pools there take. Null too
+ * when no pool for their tool takes a bait there, as no bait would help.
  */
-export function baitNeededOf(def, heroId) {
+export function baitNeededOf(def, heroId, instance = null) {
     if (!hasCatchPools(def)) return null;
     const tool = toolAt(def, heroId);
-    if (!tool || fishingOf(def, heroId)) return null;
-    const baits = baitsFor(def, tool.kind);
+    if (!tool || fishingOf(def, heroId, instance)) return null;
+    const baits = baitsFor(def, tool.kind, placeOf(instance));
     if (!baits.length) return null;
     const hero = heroRecord(heroId);
     const carried = hero ? getGrid(hero).find(itemId => itemId && baits.includes(itemId)
@@ -91,11 +112,11 @@ export function baitNeededOf(def, heroId) {
 }
 
 /**
- * Whether hero `heroId` holds a tool water `def` takes and still cannot fish it: no bait, and no
- * Trap. Always false away from water.
+ * Whether hero `heroId` holds a tool water `def` (standing as `instance`) takes and still cannot
+ * fish it: no bait, and no Trap. Always false away from water.
  */
-export function lacksBait(def, heroId) {
-    return hasCatchPools(def) && !!toolAt(def, heroId) && !fishingOf(def, heroId);
+export function lacksBait(def, heroId, instance = null) {
+    return hasCatchPools(def) && !!toolAt(def, heroId) && !fishingOf(def, heroId, instance);
 }
 
 /**
@@ -111,7 +132,7 @@ export function lacksBait(def, heroId) {
  * @returns {{itemId: string, tool: string, bait: string|null, baitKept: boolean}|null}
  */
 export function catchOf(instanceId, def, heroId, random = Math.random) {
-    const plan = fishingOf(def, heroId);
+    const plan = fishingOf(def, heroId, BoardState.getTokenById(instanceId));
     if (!plan) return null;
     const { catches } = plan.pool;
     const weights = catches.map(c => TileModifiers.resolveAxis(instanceId, EFFECT_TYPES.CATCH_WEIGHT, c.weight, c.itemId));

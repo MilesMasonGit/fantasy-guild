@@ -318,7 +318,7 @@ const NEEDS_ITEM = new Set([ALERT.INPUTS, ALERT.NO_BAIT, ALERT.GROW_NEEDS_ITEM])
 function itemNeeded(instance, heroId, reason) {
     if (reason === ALERT.INPUTS) return WorkCheck.fixableReason(instance.id, instance, heroId).inputCheck?.missing?.[0] || null;
     if (reason === ALERT.NO_BAIT) {
-        const itemId = Fishing.baitNeededOf(getTokenType(instance.typeId), heroId);
+        const itemId = Fishing.baitNeededOf(getTokenType(instance.typeId), heroId, instance);
         return itemId ? { itemId, needed: 1, carried: true, left: true } : null;
     }
     if (reason === ALERT.GROW_NEEDS_ITEM) {

@@ -137,6 +137,7 @@ export function liveCardSources() {
         instanceOf: BoardState.getTokenById,
         heroName: (id) => (GameState.state?.heroes || []).find(h => h?.id === id)?.name || null,
         fishingOf: Fishing.fishingOf,
+        poolsHere: Fishing.poolsHere,
         catchWeight: (instanceId, itemId, weight) => resolveAxis(instanceId, EFFECT_TYPES.CATCH_WEIGHT, weight, itemId),
         rareChance: RareTables.rareChanceAt,
         effects: effectBreakdown,
@@ -324,11 +325,12 @@ function catchRows(catches, weightOf = (c) => c.weight) {
  * What a water's card says it catches. With a hero on it: `setup`, what that hero's tool and bait
  * land now, at the odds the engine rolls (`Fishing.catchOf`), and `groups`, the water's other
  * pools by tool at their authored odds. With none, every pool is in `groups`. `unable` names a
- * hero on it whose hands give them no pool here.
+ * hero on it whose hands give them no pool here. A spot lists only the pools that hold where it
+ * stands (`Fishing.poolsHere`).
  */
 function catchBlockOf(def, instance, src) {
     const heroId = instance ? src.workerOf?.(instance.id) : null;
-    const plan = heroId ? src.fishingOf?.(def, heroId) : null;
+    const plan = heroId ? src.fishingOf?.(def, heroId, instance) : null;
     const setup = plan && {
         toolId: plan.tool.itemId,
         toolName: src.itemName(plan.tool.itemId),
@@ -337,7 +339,7 @@ function catchBlockOf(def, instance, src) {
         catches: catchRows(plan.pool.catches, (c) => src.catchWeight(instance.id, c.itemId, c.weight))
     };
     const groups = [];
-    for (const pool of catchPoolsOf(def)) {
+    for (const pool of (src.poolsHere ? src.poolsHere(def, instance) : catchPoolsOf(def))) {
         if (plan && pool === plan.pool) continue;
         let group = groups.find(g => g.tool === pool.tool);
         if (!group) {

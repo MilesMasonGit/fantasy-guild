@@ -11,6 +11,7 @@ import * as Demolition from './Demolition.js';
 import * as Growth from './Growth.js';
 import * as Fields from './Fields.js';
 import * as EventTokens from './EventTokens.js';
+import * as FishingSpots from './FishingSpots.js';
 import { growTimeOf, nearbyGateMet } from './TileModifiers.js';
 import { ALERT } from './boardEvents.js';
 import { logger } from '../../utils/Logger.js';
@@ -25,8 +26,8 @@ import { logger } from '../../utils/Logger.js';
  * `SpawnerSystem.js`. So is a resting Token's way back (`respawn`, refill or regrow), whose rules
  * live in `Respawn.js`, and a Field's crop sowing and ripening (`Fields.js`). Passive Production pays several lines on its own clock, so {@link tick} runs
  * it beside the table (`PassiveProduction.advance`). An event Token's way out (a buff's time up, a
- * rich node's hour running out) is two more rows, the only ones that take a Token off the mat
- * (`EventTokens.js`).
+ * rich node's hour running out) is two more rows, and a fishing spot drifting off unworked one more
+ * (`EventTokens.js`, `FishingSpots.js`): the only rows that take a Token off the mat.
  *
  * State (saved, on the instance): `instance.clocks = { growMs, spawnMs, … }`, elapsed ms, created
  * only on a Token that has a timed block, absent reads as 0. A change is a transform
@@ -210,6 +211,17 @@ export const HANDLERS = [
             if (ripening && next) lateRefills.set(instance.id, Math.max(0, Number(ctx?.overMs) || 0));
             return next;
         }
+    },
+    {
+        // A fishing spot drifts off after a while with nobody working it (`FishingSpots.js`): its
+        // clock is held at zero while a hero works it, so the while counts from when they let go.
+        id: 'spot_unworked',
+        clock: FishingSpots.SPOT_CLOCK,
+        replaces: true,
+        idleWhile: (instance) => BoardState.workerOf(instance.id) !== null,
+        applies: (instance, def) => FishingSpots.unworkedMsOf(def) > 0,
+        dueMs: (instance, def) => FishingSpots.unworkedMsOf(def),
+        fire: (instance) => (FishingSpots.leave(instance, FishingSpots.LEFT.UNWORKED) ? REMOVED : null)
     },
     {
         // A resting Token refills in place after its rest. One-shot: the clock is gone once it

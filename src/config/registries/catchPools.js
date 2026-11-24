@@ -12,6 +12,10 @@
  *   with no bait catches anything: every other tool fishes with bait or not at all.
  * - `catches`: a weighted pool; each catch lands one of its item. Weights are relative (50, 40,
  *   10 reads as 50 %, 40 %, 10 %).
+ * - `water`, `biomes` (optional): the water kinds (`fishingSpots.WATER_KIND`) and the Region biomes
+ *   the pool holds for. A fishing spot's catch comes from the water it sits on and the Region's
+ *   biome ({@link poolsAt}); a pool naming neither holds everywhere. Where several pools for one
+ *   tool and bait fit, the first wins, so a pool for a warm sea is written before the plain sea's.
  *
  * A Token with at least one usable pool is water: its catch replaces its Outputs, it never runs
  * out, and the tool it needs is any kind a pool names, at any tier.
@@ -34,6 +38,19 @@ const cache = new WeakMap();
 
 const text = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
 
+/** A pool's `water` or `biomes`: trimmed words, blanks and repeats dropped, or null for none. */
+function tagList(raw) {
+    const out = [];
+    for (const v of Array.isArray(raw) ? raw : []) {
+        const word = text(v);
+        if (word && !out.includes(word)) out.push(word);
+    }
+    return out.length ? Object.freeze(out) : null;
+}
+
+/** The key a repeat is found by: the tool, the bait and where the pool holds. */
+const poolKey = (tool, bait, water, biomes) => `${tool}|${bait || ''}|${water ? water.join(',') : ''}|${biomes ? biomes.join(',') : ''}`;
+
 function normalise(raw) {
     if (!Array.isArray(raw)) return EMPTY;
     const out = [];
@@ -42,8 +59,10 @@ function normalise(raw) {
         const tool = text(pool?.tool);
         if (!tool) continue;
         const bait = text(pool?.bait);
-        // The first pool for a tool and bait wins; the audit names the repeat.
-        const key = `${tool}|${bait || ''}`;
+        const water = tagList(pool?.water);
+        const biomes = tagList(pool?.biomes);
+        // The first pool for a tool, a bait and a place wins; the audit names the repeat.
+        const key = poolKey(tool, bait, water, biomes);
         if (seen.has(key)) continue;
         const catches = (Array.isArray(pool?.catches) ? pool.catches : [])
             .map(c => ({ itemId: text(c?.itemId), weight: Number(c?.weight) }))
@@ -51,7 +70,10 @@ function normalise(raw) {
             .map(c => Object.freeze(c));
         if (!catches.length) continue;
         seen.add(key);
-        out.push(Object.freeze({ tool, bait, catches: Object.freeze(catches) }));
+        // Written only when named, so a pool for everywhere reads exactly as it always did.
+        out.push(Object.freeze({
+            tool, bait, catches: Object.freeze(catches), ...(water ? { water } : {}), ...(biomes ? { biomes } : {})
+        }));
     }
     return out.length ? Object.freeze(out) : EMPTY;
 }
@@ -80,16 +102,56 @@ export function catchToolKinds(def) {
 }
 
 /**
- * The pool authored for a tool kind and a bait (null: its pool with no bait), or null. Authored
- * only: whether it catches anything is {@link poolBites}.
+ * Whether a pool holds at `place`, `{ water, biomes }`: the water kind under the Token (null on dry
+ * land) and the Region's biomes. A pool naming a water holds only on it, one naming biomes only in a
+ * Region of one of them; a pool naming neither holds everywhere. No place: only those.
  */
-export function poolFor(def, tool, bait = null) {
-    return catchPoolsOf(def).find(p => p.tool === tool && p.bait === (bait || null)) || null;
+export function poolFits(pool, place = null) {
+    if (pool.water && !(place?.water && pool.water.includes(place.water))) return false;
+    if (pool.biomes && !(Array.isArray(place?.biomes) && pool.biomes.some(b => place.biomes.includes(b)))) return false;
+    return true;
 }
 
-/** The baits a Token type's pools for one tool kind take, in pool order. */
-export function baitsFor(def, tool) {
-    return catchPoolsOf(def).filter(p => p.tool === tool && p.bait).map(p => p.bait);
+/** Pools that fit a place, per definition and place; a place is a kept object (`GroundRules.placeAt`). */
+const fitted = new WeakMap();
+const NO_PLACE = Object.freeze({ water: null, biomes: EMPTY });
+
+/**
+ * A Token type's pools that hold at `place` (see {@link poolFits}), in authored order. Kept per
+ * definition and place object, as the flags ask on every tick.
+ */
+export function poolsAt(def, place = null) {
+    const pools = catchPoolsOf(def);
+    if (!pools.length) return EMPTY;
+    if (!pools.some(p => p.water || p.biomes)) return pools;
+    const at = place && typeof place === 'object' ? place : NO_PLACE;
+    let byPlace = fitted.get(def);
+    if (!byPlace) {
+        byPlace = new WeakMap();
+        fitted.set(def, byPlace);
+    }
+    let out = byPlace.get(at);
+    if (!out) {
+        const kept = pools.filter(p => poolFits(p, at));
+        out = kept.length ? Object.freeze(kept) : EMPTY;
+        byPlace.set(at, out);
+    }
+    return out;
+}
+
+/**
+ * The pool for a tool kind and a bait (null: its pool with no bait) that holds at `place`, or null:
+ * the first that fits. Authored only: whether it catches anything is {@link poolBites}.
+ */
+export function poolFor(def, tool, bait = null, place = null) {
+    return poolsAt(def, place).find(p => p.tool === tool && p.bait === (bait || null)) || null;
+}
+
+/** The baits a Token type's pools for one tool kind take at `place`, in pool order, each once. */
+export function baitsFor(def, tool, place = null) {
+    const out = [];
+    for (const p of poolsAt(def, place)) if (p.tool === tool && p.bait && !out.includes(p.bait)) out.push(p.bait);
+    return out;
 }
 
 /** Every item a Token type's pools can land, each once, in pool order. */

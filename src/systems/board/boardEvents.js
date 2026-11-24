@@ -167,6 +167,19 @@ export const BOARD_EVENTS = {
     EVENT_ENDED: 'board:event_ended',
 
     /**
+     * A fishing spot arrived on the mat by itself (`FishingSpots`): `{ instanceId, typeId, water, x,
+     * y }`, `water` the water kind it landed on.
+     */
+    SPOT_LANDED: 'board:spot_landed',
+
+    /**
+     * A fishing spot left the mat by itself: `{ instanceId, typeId, reason, x, y }`, `reason` one of
+     * `FishingSpots.LEFT` (moved on after a catch, or drifted off unworked). A spot that landed as an
+     * event says `EVENT_ENDED` instead.
+     */
+    SPOT_LEFT: 'board:spot_left',
+
+    /**
      * Something new found no room on the mat and waits for it, said once per wait (`RoomWait.tell`):
      * `{ key, source, instanceId, typeId, name }`. `source` is `'station'`, `'spawner'`,
      * `'arrival'` or `'event'`; `instanceId` and `name` name the waiting station or spawner, null

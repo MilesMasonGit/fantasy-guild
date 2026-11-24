@@ -30,10 +30,12 @@ import { migrateSkillIds } from '../../systems/effects/skillIdMigration.js';
 import { migrateEffectIds } from '../../systems/effects/effectIdMigration.js';
 import { STANDS_ON_CHOICES } from '../../systems/atlas/TerrainMap.js';
 import { neverWearsOut, ENEMY_USES } from '../../systems/core/wearRule.js';
+import { RETIRED_WATER_TOKENS } from './fishingSpots.js';
 
 /**
  * Read `tokens.json` into one keyed object. An entry missing an `id` takes its
- * key, matching how items behave.
+ * key, matching how items behave. The retired fixed waters (`RETIRED_WATER_TOKENS`) are left out
+ * while the data still holds them: nothing places one, and the audit names them for deletion.
  */
 function loadJsonTokens() {
     const tokens = {};
@@ -43,6 +45,7 @@ function loadJsonTokens() {
             try {
                 const data = module.default || module;
                 for (const [typeId, def] of Object.entries(data)) {
+                    if (RETIRED_WATER_TOKENS.includes(typeId)) continue;
                     if (!def.id) def.id = typeId;
                     // Library references become the statements the game runs on, once, here, so everything downstream keeps reading `def.statements`.
                     // Inline statements lose the retired enemy flag here;

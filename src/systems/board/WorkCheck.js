@@ -89,7 +89,7 @@ export function skillFailure(heroId, config) {
  */
 export function baitReason(heroId, instance, def = getTokenType(instance?.typeId)) {
     if (!heroId || !def || Demolition.isMarked(instance)) return null;
-    return Fishing.lacksBait(def, heroId) ? ALERT.NO_BAIT : null;
+    return Fishing.lacksBait(def, heroId, instance) ? ALERT.NO_BAIT : null;
 }
 
 /** {@link heroReason}'s tool gate (`toolNeed.js`). */
