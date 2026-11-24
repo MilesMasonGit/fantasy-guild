@@ -124,9 +124,16 @@
   --color-error: var(--color-gi-danger);
   --color-hp: var(--color-gi-hp);
   --color-xp: #9f7aea;
-  /* The work bar on a worked Token (the cycle ring's colours before it). */
-  --color-work-bar: #f4f1e8;
+  /* The work bar under a worked Token: the work green, a lighter top row and a darker foot row;
+     grey while blocked. */
+  --color-work-bar: var(--color-gi-success);
+  --color-work-bar-hi: color-mix(in srgb, var(--color-gi-success) 45%, #fff);
+  --color-work-bar-lo: color-mix(in srgb, var(--color-gi-success) 65%, #000);
   --color-work-bar-blocked: #8a8a8a;
+  --color-work-bar-blocked-hi: #c4c4c4;
+  --color-work-bar-blocked-lo: #646464;
+  /* The see-through dark strip behind a name, the work bar and round a reach dot (look A). */
+  --color-mat-backing: rgba(10, 8, 6, 0.58);
 
   --color-task: #6090c0;
   --color-recipe: #50a060;
@@ -703,9 +710,11 @@
   white-space: nowrap;
 }
 
-/* The work bar along a worked Token's foot (`workBar.js`): a dark track, and its
+/* The work bar under a worked Token (`WorkBarLayer`, `workBar.js`): a dark track, and its
    fill as the track's own `::after`, scaled to `--work-bar-fill` (whole art pixels,
-   written on the shared step clock). Grey and still while the Token is blocked. */
+   written on the shared step clock). The track is four art pixels tall (`matMarks.BAR.H`), so
+   each quarter is one art-pixel row: a light top row, two of the green, a dark foot row. Grey and
+   still while the Token is blocked. */
 .gi-work-bar {
   background: rgba(10, 8, 6, 0.72);
 }
@@ -714,13 +723,51 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: var(--color-work-bar);
+  background: linear-gradient(to bottom, var(--color-work-bar-hi) 0 25%, var(--color-work-bar) 25% 75%, var(--color-work-bar-lo) 75% 100%);
   transform-origin: left center;
   transform: scaleX(var(--work-bar-fill, 0));
 }
 
 .gi-work-bar[data-work-bar-blocked]::after {
-  background: var(--color-work-bar-blocked);
+  background: linear-gradient(to bottom, var(--color-work-bar-blocked-hi) 0 25%, var(--color-work-bar-blocked) 25% 75%, var(--color-work-bar-blocked-lo) 75% 100%);
+}
+
+/* A name on the mat (`TokenNameBadge`) on the see-through dark strip, hard-cornered (look A). */
+.gi-name-backing {
+  background: var(--color-mat-backing);
+  padding: 2px 6px 3px;
+}
+
+/* The rainbow across a name's letters (look F, made subtle: owner 2026-11-23), drawn while
+   `NAME_SHIMMER` is on (`TokenBadges.jsx`): a copy of the name over it (`data-text`), its fill
+   seven hard bands, red first, each hue mixed 35 % into white so the letters stay mostly white,
+   moving right 2px a step, 84px a loop in 5.6 s. The black outline stays underneath. */
+.gi-name-shimmer {
+  position: relative;
+}
+
+.gi-name-shimmer::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  padding: inherit;
+  color: transparent;
+  text-shadow: none !important;
+  background-image: repeating-linear-gradient(90deg, #ffc1c1 0 12px, #ffe0bb 12px 24px, #fff7c1 24px 36px, #c1ffd0 36px 48px, #c1f1ff 48px 60px, #d2cbff 60px 72px, #ffc6f3 72px 84px);
+  background-size: 84px 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: gi-name-sweep 5.6s steps(42) infinite;
+  pointer-events: none;
+}
+
+@keyframes gi-name-sweep {
+  from { background-position: 0 0; }
+  to { background-position: 84px 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gi-name-shimmer::after { animation: none; }
 }
 
 /* A count ring gliding to its new value (owner, 2026-10-01): a Token's charges
@@ -1029,6 +1076,11 @@ body[data-paused] .gi-gear-alert,
 body[data-paused] .gi-sky-drift-stars,
 body[data-paused] .gi-sky-drift-clouds,
 body[data-paused] .catch-up-sheen {
+  animation-play-state: paused;
+}
+
+/* Its own rule: in the list above, its pseudo-element voided the whole list in the tests' CSS parser. */
+body[data-paused] .gi-name-shimmer::after {
   animation-play-state: paused;
 }
 

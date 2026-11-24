@@ -1,15 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import {
-    timerLines, passiveHoverLines, spawnLine, growthLine, respawnLine, leaveLine, demolitionLine,
+    timerLines, spawnLine, growthLine, respawnLine, leaveLine, demolitionLine,
     produceLine, leftByRegrow, TIMER_KIND
 } from '../ui/components/board/tokenTimers.js';
-import { idleTimerLines, timerCellsOf } from '../ui/components/board/idlePlate.js';
 import { cardLifecycle } from '../ui/components/board/tokenCard.js';
 
 /**
- * One writer for a Token's timer sentences: the card's Events lines and the idle hover's timer
- * cells read the same lines, so they say the same thing in the same words (Exhausted, Respawns,
- * Expires). Every engine read is a stub here.
+ * One writer for a Token's timer sentences, for the card's Events lines (Exhausted, Respawns,
+ * Expires); the mat shows no timers (brief 830 D3). Every engine read is a stub here.
  */
 
 const NB = ' ';
@@ -125,42 +123,34 @@ describe('the words', () => {
     });
 });
 
-describe('timerLines and the idle hover', () => {
+describe('timerLines', () => {
     it('a marked Token is demolition and nothing else', () => {
         const at = { id: 'v', typeId: 'vein', demolish: true };
         const lines = timerLines(at, src({ respawn: () => ({ mode: 'refill', resting: true, inMs: 1000 }) }));
         expect(lines.map(l => l.kind)).toEqual([TIMER_KIND.DEMOLITION]);
-        expect(idleTimerLines(at, src()).map(l => l.kind)).toEqual([TIMER_KIND.DEMOLITION]);
     });
 
-    it('descriptions are the card\'s alone; a running timer is both\'s', () => {
+    it('a description is not a running timer; a resting Token\'s refill is, in the card\'s words', () => {
         const at = { id: 'v', typeId: 'vein' };
         expect(timerLines(at, src({ respawn: () => ({ mode: 'refill', resting: false, afterMs: 60000 }) }))).toEqual([]);
-        expect(idleTimerLines(at, src({ respawn: () => ({ mode: 'refill', resting: false, afterMs: 60000 }) }))).toBeNull();
         const resting = src({ respawn: () => ({ mode: 'refill', resting: true, inMs: 5000 }) });
         const [card] = cardLifecycle(at, TYPES.vein, resting);
-        const [hover] = idleTimerLines(at, resting);
-        expect(hover.tip).toBe(card.tip);
-        expect(hover.text).toBe(card.text);
-        expect(timerCellsOf([hover])).toEqual([{ kind: 'timer', glyph: 'regrow', text: '5s', tip: 'Exhausted · respawns in 5s' }]);
+        const [line] = timerLines(at, resting);
+        expect(line.tip).toBe(card.tip);
+        expect(line.text).toBe('5s');
     });
 
-    it('a spawner: full and asleep on the hover; spawning, and what its problem mark says, left out', () => {
+    it('a spawner: the card keeps every state, its family\'s count in front', () => {
         const at = { id: 'f', typeId: 'forest' };
         const with_ = (state) => src({ spawnerStatus: () => ({ state, count: 5, cap: 5, nextInMs: 2000, needs: ['item_coal'] }) });
-        expect(idleTimerLines(at, with_('at_cap'))).toEqual([expect.objectContaining({ text: 'full' })]);
-        expect(idleTimerLines(at, with_('sleeping'))).toEqual([expect.objectContaining({ text: 'asleep' })]);
-        for (const state of ['spawning', 'needs_item', 'no_room', 'mat_full']) expect(idleTimerLines(at, with_(state))).toBeNull();
-        // The card keeps every state, its family's count in front.
-        expect(cardLifecycle(at, TYPES.forest, with_('spawning'))[0]).toMatchObject({ text: '5/5 · next 2s' });
-        expect(cardLifecycle(at, TYPES.forest, with_('at_cap'))[0]).toMatchObject({ text: '5/5 · full' });
+        expect(cardLifecycle(at, TYPES.forest, with_('spawning'))[0].text).toMatch(/^5\/5 . next 2s$/);
+        expect(cardLifecycle(at, TYPES.forest, with_('at_cap'))[0].text).toMatch(/^5\/5 . full$/);
     });
 
-    it('Passive Production is on the card, and on the hover only in its own tooltip', () => {
+    it('Passive Production is on the card', () => {
         const at = { id: 'h', typeId: 'hall' };
         expect(timerLines(at, src()).map(l => l.kind)).toEqual([TIMER_KIND.PRODUCE]);
         expect(cardLifecycle(at, TYPES.hall, src()).map(l => l.label)).toEqual(['Produces']);
-        expect(idleTimerLines(at, src())).toBeNull();
     });
 
     it('an event, a growth and a refill together, in the card\'s order', () => {
@@ -174,19 +164,3 @@ describe('timerLines and the idle hover', () => {
     });
 });
 
-describe('passiveHoverLines', () => {
-    it('says when the shared timer pays next, then what it pays', () => {
-        expect(passiveHoverLines({ id: 'h', typeId: 'hall', clocks: { passiveMs: 100000 } }, src()))
-            .toEqual(['Passive Production · next in 3m 20s', '2 Oak Seed']);
-    });
-
-    it('starts a fresh clock at the full lap, and lists the Wishing Well Water as a line like any other', () => {
-        expect(passiveHoverLines({ id: 'h', typeId: 'hall' }, src({ passive: hallPassive(2) })))
-            .toEqual(['Passive Production · next in 5m 0s', '2 Oak Seed', '20 Water']);
-    });
-
-    it('is empty for a Token that pays nothing, or no Token', () => {
-        expect(passiveHoverLines({ id: 't', typeId: 'tree' }, src())).toEqual([]);
-        expect(passiveHoverLines(null, src())).toEqual([]);
-    });
-});

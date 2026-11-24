@@ -127,7 +127,7 @@ export function violationAt(view, id) {
         // worse than a rule that quietly does not apply yet.
         if (!kind || payload.kind !== 'adjacency_limit') continue;
 
-        const matched = neighbours.filter(d => matchesTokenTarget(statement.to, d)).length;
+        const matched = neighbours.filter(d => countsAgainst(statement, d)).length;
         if (matched > limitOf(payload)) {
             return {
                 id,
@@ -140,6 +140,16 @@ export function violationAt(view, id) {
         }
     }
     return null;
+}
+
+/**
+ * Whether a Token of `def` standing near counts against one `Cannot` rule: the rule is one the
+ * engine evaluates (an unrecognised kind counts nothing) and its filter names the Token.
+ */
+export function countsAgainst(statement, def) {
+    const payload = statement?.payload || {};
+    if (!getRestrictionKind(payload.kind) || payload.kind !== 'adjacency_limit') return false;
+    return matchesTokenTarget(statement.to, def);
 }
 
 /**

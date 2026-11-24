@@ -18,7 +18,7 @@ import { ALERT } from '../systems/board/boardEvents.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
-import { dockStatusLine, flagTooltip } from '../ui/components/board/flagText.js';
+import { dockStatusLine } from '../ui/components/board/flagText.js';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -98,8 +98,8 @@ describe('the idle mark (FP-29)', () => {
         expect(container.querySelector('.gi-glow-idle')).toBeNull();
     });
 
-    // Brief 720 R4: working is a task ring round the hero and their Token, not an outline.
-    it('a working hero has no glow or outline: the task ring frames the job', () => {
+    // Working is a job area round the hero and their Token, not an outline.
+    it('a working hero has no glow or outline: the job area frames the job', () => {
         const forest = put(TOKEN,'fixture_producer');
         Orders.orderAt('h1', TOKEN);
 
@@ -107,7 +107,7 @@ describe('the idle mark (FP-29)', () => {
         const hero = container.querySelector('[data-board-hero="h1"]');
         expect(hero.getAttribute('data-outline')).toBeNull();
         expect(hero.className).not.toContain('gi-glow-active');
-        expect(container.querySelector(`[data-task-ring="${forest.id}"]`)).not.toBeNull();
+        expect(container.querySelector(`[data-task-jobs*="${forest.id}@"]`)).not.toBeNull();
     });
 
     it('an idle flag is the job flag, has no chip, and its hero stands beside it at 128 px with no glow', () => {
@@ -187,7 +187,7 @@ describe('the flag is just something to drag (brief 30 H4)', () => {
         expect(container.querySelectorAll('button')).toHaveLength(1);
     });
 
-    it('on hover shows the hard outline and the hero name, and clears them on leave', () => {
+    it('on hover shows the hard outline and no tooltip (brief 830 D3), and clears it on leave', () => {
         GameState.state.heroes[0].name = 'Aela';
         Orders.orderAt('h1', BESIDE);
         const Hovering = () => {
@@ -203,7 +203,7 @@ describe('the flag is just something to drag (brief 30 H4)', () => {
         fireEvent.mouseEnter(flag);
         expect(flag.querySelector('[data-sprite-outline="hover"]')).toBeTruthy();
         expect(flag.innerHTML).not.toContain('gi-glow');
-        expect(tip().querySelector('.text-gi-gold').textContent).toBe('Aela');
+        expect(tip()).toBeNull();
 
         fireEvent.mouseLeave(flag);
         expect(flag.querySelector('[data-sprite-outline]')).toBeNull();
@@ -212,7 +212,7 @@ describe('the flag is just something to drag (brief 30 H4)', () => {
 });
 
 describe('the flag has no skill since slice 1.5b (FP-71)', () => {
-    it('draws no skill disc, clicking it opens nothing, and its tooltip title is the hero name', () => {
+    it('draws no skill disc, and clicking it opens nothing', () => {
         Orders.orderAt('h1', BARE);
         const { container } = mount(h(FlagLayer));
         const flag = container.querySelector('[data-flag="h1"]');
@@ -220,8 +220,6 @@ describe('the flag has no skill since slice 1.5b (FP-71)', () => {
 
         fireEvent.click(flag);
         expect(document.querySelector('[role="menu"]')).toBeNull();
-
-        expect(flagTooltip('h1').title).toBe('h1');
     });
 });
 

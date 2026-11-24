@@ -28,8 +28,9 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * The idle hover on the mat: an unworked Token's plate shows the timers and stuck reasons its card
- * has, each cell's tooltip the card's own sentence (one writer, `tokenTimers.js`).
+ * The idle hover is gone (brief 830 D3, concept_playmat_declutter §15.3): resting on an unworked
+ * Token shows no refresh, regrow, spawn or demolition timer on the mat; the card keeps each one in
+ * its own sentence (one writer, `tokenTimers.js`).
  */
 
 registerTokenTypes({
@@ -87,37 +88,35 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
-describe('the idle hover says what the card says', () => {
-    it('an exhausted Token: its countdown, and the card\'s sentence on hover', () => {
+describe('the card says it; the mat shows no timer, hovered or not', () => {
+    it('an exhausted Token: its countdown on the card alone', () => {
         const vein = put('iht_vein');
         vein.usesRemaining = 0;
         vein.clocks = { [Respawn.CLOCK]: 18000 };
         const { container } = mount();
         hover(container, vein);
-        const cells = timerCells(container, vein);
-        expect(cells).toEqual([{ text: '42s', tip: 'Exhausted · respawns in 42s' }]);
-        expect(cardTips(vein)).toContain(cells[0].tip);
+        expect(timerCells(container, vein)).toEqual([]);
+        expect(container.querySelector('[data-idle-plate]')).toBeNull();
+        expect(cardTips(vein)).toContain('Exhausted · respawns in 42s');
     });
 
-    it('a full spawner: full, where a spawning one shows nothing', () => {
+    it('a full spawner: full, on the card alone', () => {
         const forest = put('iht_forest');
         put('iht_sapling', { x: 700, y: 520 });
         put('iht_sapling', { x: 640, y: 380 });
         const { container } = mount();
         hover(container, forest);
-        const cells = timerCells(container, forest);
-        expect(cells).toEqual([{ text: 'full', tip: 'Spawns IHT Sapling. Its family is full: it waits for room.' }]);
-        expect(cardTips(forest)).toContain(cells[0].tip);
+        expect(timerCells(container, forest)).toEqual([]);
+        expect(cardTips(forest)).toContain('Spawns IHT Sapling. Its family is full: it waits for room.');
     });
 
-    it('a Token marked for demolition: waiting for a hero, as its card says', () => {
+    it('a Token marked for demolition: waiting for a hero, on the card alone', () => {
         const vein = put('iht_vein');
         Demolition.mark(vein.id);
         const { container } = mount();
         hover(container, vein);
-        const cells = timerCells(container, vein);
-        expect(cells).toEqual([{ text: '–', tip: 'Marked for demolition: waiting for a hero with Construction' }]);
-        expect(cardTips(vein)).toEqual([cells[0].tip]);
+        expect(timerCells(container, vein)).toEqual([]);
+        expect(cardTips(vein)).toEqual(['Marked for demolition: waiting for a hero with Construction']);
     });
 });
 

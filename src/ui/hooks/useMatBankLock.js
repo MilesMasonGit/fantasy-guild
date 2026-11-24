@@ -10,7 +10,7 @@
  * mat.
  * - `matAccepts` (`dropOnMat.js`) refuses every payload while this is on, so dnd-kit never calls
  * the mat's `onDrop`: nothing can land there either, including a Token or flag dragged from
- * elsewhere. A right-click on the mat gives no order then either (`rightClickOrders.js`).
+ * elsewhere.
  * UI state only: never saved, and it is the Bank drawer's open/closed state, not a mode the
  * player toggles directly.
  */

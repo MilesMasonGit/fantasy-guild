@@ -673,7 +673,7 @@ describe('⭐ a fight\'s health bars draw over the loot (owner, 2026-10-25: drop
         const { heroBoxAt } = await import('../ui/components/board/MatHero.jsx');
         const { tokenBoxPx } = await import('../ui/components/board/MatToken.jsx');
         const { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } = await import('../ui/components/base/TokenSprite.jsx');
-        const { plateUnit } = await import('../ui/components/board/workPlate.js');
+        const { plateUnit } = await import('../ui/components/board/matMarks.js');
         const { container, heroId, enemyId } = await matInFight();
         const u = plateUnit(1);
         const artPx = tokenSizeFor(TOKEN_SURFACE.BOARD, 1, boardScaleAt(1));
@@ -721,11 +721,11 @@ describe('⭐ a fight\'s health bars draw over the loot (owner, 2026-10-25: drop
         expect(container.querySelector(`[data-work-plate="${enemyId}"]`)).toBeNull();
     });
 
-    it('a double-click on the hero\'s bar still opens the hero', async () => {
+    it('a right-click on the hero\'s bar still opens the hero', async () => {
         const { container, heroId } = await matInFight();
         const inspected = [];
         const off = EventBus.subscribe('inspect_hero', (p) => inspected.push(p.heroId));
-        fireEvent.doubleClick(bars(container, 'hero', heroId)[0].querySelector('[data-health-label]'));
+        fireEvent.contextMenu(bars(container, 'hero', heroId)[0].querySelector('[data-health-label]'));
         off();
         expect(inspected).toEqual([heroId]);
     });

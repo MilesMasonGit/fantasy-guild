@@ -18,6 +18,8 @@ import { boardScaleAt } from '../base/TokenSprite.jsx';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { isDrawn } from '../../dev/perf/drawSwitches.js';
 import { LOOT_RARE_TWINKLE, LOOT_PILE_PULSE } from '../../utils/lootEffects.js';
+import { useMatFind } from '../../hooks/useMatFind.js';
+import { foundOnMat, findMarkOf } from './matFind.js';
 
 /**
  * SpriteLayerView: item loot floating **above** the mat. An absolutely-positioned overlay over
@@ -39,6 +41,8 @@ export const SpriteLayerView = () => {
     );
 
     const collect = useCallback((id) => { SpriteLayer.collectSprite(id); }, []);
+    const find = useMatFind();
+    const found = React.useMemo(() => foundOnMat(find, { loot: sprites || [] }), [find, sprites]);
     React.useEffect(() => (LOOT_RARE_TWINKLE ? watchRareDrops() : undefined), []);
 
     if (!sprites?.length) return null;
@@ -49,7 +53,7 @@ export const SpriteLayerView = () => {
             style={{ width: mat.w, height: mat.h, zIndex: MAT_Z.LOOT }}
         >
             {sprites.map(sprite => (
-                <LootSprite key={sprite.id} {...sprite} onCollect={collect} />
+                <LootSprite key={sprite.id} {...sprite} found={findMarkOf(found, 'loot', sprite.id)} onCollect={collect} />
             ))}
         </div>
     );
@@ -93,7 +97,7 @@ const justThrown = (bornAt) => Date.now() - (bornAt ?? 0) < THROW_WINDOW_MS;
  * (`selectFloorLoot`), so a change elsewhere on the floor leaves it alone.
  */
 const LootSprite = React.memo(function LootSprite({
-    id, refId, quantity, x, y, fromX, fromY, bornAt, targetStackId, parentX, parentY, onCollect
+    id, refId, quantity, x, y, fromX, fromY, bornAt, targetStackId, parentX, parentY, found = null, onCollect
 }) {
     const { isDragging: isAnyDragging } = useActiveDrag();
     const [isHovered, setIsHovered] = React.useState(false);
@@ -170,6 +174,7 @@ const LootSprite = React.memo(function LootSprite({
         <button
             ref={elementRef}
             data-item-sprite="true"
+            data-find={found || undefined}
             type="button"
             onClick={handleClick}
             onMouseEnter={() => {
@@ -198,7 +203,7 @@ const LootSprite = React.memo(function LootSprite({
                     isAbsorbingPulse && 'brightness-125 saturate-125'
                 )}
             >
-                <PixelArt src={art} alt={label} size={spriteSize} hovering />
+                <PixelArt src={art} alt={label} size={spriteSize} hovering outline={found === 'match' ? 'hover' : null} />
             </div>
             {quantity > 1 && (
                 <span className="absolute -bottom-1 -right-1 px-1 rounded-full bg-black/85 ui-text-body font-bold text-white tabular-nums">

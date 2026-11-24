@@ -116,11 +116,17 @@ export function reaches(camp, point) {
 export function isCampWork(camp, instance) {
     if (!camp || !instance || instance.id === camp.id) return false;
     const block = campOfInstance(camp);
-    if (block) {
-        if (Demolition.isMarked(instance) || isGuildHall(instance)) return false;
-        return worksType(block, getTokenType(instance.typeId)) && reaches(camp, centreOf(instance));
-    }
+    if (block) return handsOut(block, instance) && reaches(camp, centreOf(instance));
     return isEnemyCamp(camp) && instance.tether === camp.id && isEnemyDef(getTokenType(instance.typeId));
+}
+
+/**
+ * Whether a work camp of `block` (a War Camp too) hands out `instance` when it stands in its reach:
+ * a Token of its kind ({@link worksType}), not marked for demolition, not the Guild Hall.
+ */
+export function handsOut(block, instance) {
+    if (!block || !instance || Demolition.isMarked(instance) || isGuildHall(instance)) return false;
+    return worksType(block, getTokenType(instance.typeId));
 }
 
 /**

@@ -512,7 +512,7 @@ function bearerSource(instance) {
 }
 
 /** Does this adjacency-scoped trigger care about the Token that fired it? */
-function sourceMatches(when, sourceTypeId) {
+export function sourceMatches(when, sourceTypeId) {
     if (!when.source?.mode) return true;
     return matchesTokenTarget(when.source, getTokenType(sourceTypeId));
 }
@@ -627,7 +627,7 @@ export function init() {
     resetCascadeGuard();
 
     for (const definition of TRIGGER_EVENTS) {
-        const { id, event, scopes, settled } = definition;
+        const { id, event, scopes, settled, workOnly } = definition;
         // A fight moment has no bus event: the combat engine fires it through `FightMoments`.
         if (!event) continue;
 
@@ -641,6 +641,8 @@ export function init() {
         unsubscribers.push(EventBus.subscribe(event, (payload) => {
             // A failed cycle produced nothing, so nothing reacts to it.
             if (payload?.failed) return;
+            // A kill is a combat cycle, not work.
+            if (workOnly && payload?.kill) return;
             // COMBAT_RESOLVED fires on defeat too; only a win is an event worth
             // cascading from — a lost fight is the same "nothing happened".
             if (id === 'COMBAT_RESOLVED' && payload?.outcome !== 'victory') return;

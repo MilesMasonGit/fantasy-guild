@@ -5,9 +5,11 @@ import { cn } from '../../utils/cn.js';
  * The one scrolling list (UI_STYLE "Lists and scrolling"): no scrollbar, and an arrow bar above
  * and below only while the content is taller than the box. `axis="x"` turns it on its side (a row
  * of cards, the Shop): the bars stand left and right, and the parent should be a flex row. Content that fits gets no bars and
- * no empty space for them. While it scrolls, an arrow dims at its end of the list but keeps its
- * space. A press scrolls `step` pixels smoothly (about two rows: the caller knows its row
- * height), holding keeps scrolling, and the mouse wheel scrolls the box natively.
+ * no empty space for them. While it scrolls, an arrow shows only while there is more in its
+ * direction: at its end of the list it goes, but its bar keeps its space, so the content never
+ * jumps under the pointer as the ends come and go. A press scrolls `step` pixels smoothly (about
+ * two rows: the caller knows its row height), holding keeps scrolling, and the mouse wheel
+ * scrolls the box natively.
  *
  * Renders up to three siblings (bar, list, bar), so the parent should be a flex column;
  * `className` sizes and lays out the list box itself (`flex-1 min-h-0`, `max-h-[75vh]`, padding,
@@ -63,7 +65,8 @@ const barClass = (compact, axis) => cn(
     'shrink-0 flex items-center justify-center select-none',
     axis === 'x' ? cn('self-stretch', compact ? 'w-5' : 'w-7') : cn('w-full', compact ? 'h-5' : 'h-7'),
     'bg-gi-base/60 text-gi-muted hover:text-gi-gold cursor-pointer',
-    'disabled:opacity-30 disabled:cursor-default disabled:hover:text-gi-muted'
+    // At its end the bar is hidden, not removed: the list keeps the same box either way.
+    'disabled:invisible'
 );
 
 /**
@@ -162,7 +165,7 @@ export const ArrowScrollList = ({
         }, HOLD_DELAY_MS);
     };
 
-    // The arrow can dim (disabled) under a held pointer, and a disabled button gets no
+    // The arrow can go (disabled) under a held pointer, and a disabled button gets no
     // pointerup, so the release is heard on the window.
     useEffect(() => {
         window.addEventListener('pointerup', stopHold);

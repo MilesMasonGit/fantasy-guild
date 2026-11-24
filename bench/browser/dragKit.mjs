@@ -63,6 +63,17 @@ export function installDragKit() {
         if (probe.downAt != null && probe.startAt == null && document.body.classList.contains('gi-dnd-active')) probe.startAt = performance.now();
     }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
     G.EventBus.subscribe('notification_added', (n) => { probe.notes.push(`${n?.type || '?'}: ${n?.message || ''}`.slice(0, 160)); });
+    // ⚠️ A drop the game refuses says why as a callout on the mat, never as a notification, and
+    // makes the same sound as a drop nothing took: the callout is how the two are told apart. The
+    // drop says it (`dropOnMat.js`, `announce`), or the placement already has when no spot was
+    // found within nudge reach (`Placement.js`, `refuseWithAlert`: the board's refused-drop mark).
+    const refusalHeard = (a, why) => {
+        if (probe.downAt != null && a?.severity === 'disallow') probe.notes.push(`warning: ${why || '?'} (said on the mat)`.slice(0, 160));
+    };
+    G.EventBus.subscribe('ui:token_alert', (a) => refusalHeard(a, a?.title || a?.message));
+    G.EventBus.subscribe('board:tile_event_alert', (a) => {
+        if (a?.type === 'drop_rejected') refusalHeard(a, a.rulesText || a.title);
+    });
     // The drop's sound says how the drag system judged it (DndKit.jsx, DRAG_SFX): `unassign` =
     // no target took it; `drop` = flown back; a kind's own clip = a target accepted it.
     G.EventBus.subscribe('audio:play', (p) => { if (probe.downAt != null) probe.sounds.push(p?.clip); });
@@ -243,10 +254,11 @@ export function installDragKit() {
      */
     const matOnTopForAFlag = (sp) => {
         const mat = matEl();
-        return FLAG_REACH.every(([dx, dy]) => {
+        for (const [dx, dy] of FLAG_REACH) {
             const top = document.elementFromPoint(sp.x + dx, sp.y + dy);
-            return !!top && mat.contains(top);
-        });
+            if (!top || !mat.contains(top)) return top ? identityOf(top) : 'off the page';
+        }
+        return null;
     };
 
     /**
@@ -267,20 +279,26 @@ export function installDragKit() {
         const others = G.BoardState.tokens().map(t => ({ x: t.x, y: t.y }));
         for (const f of Object.values(G.BoardState.getFlags())) if (f) others.push({ x: f.x, y: f.y });
         const drawers = drawerRects();
+        // Why the points were turned down, for a skip's report (`spotMiss`).
+        const miss = { drawer: 0, token: 0, covered: {} };
         let best = null;
         for (let i = 0; i < 40; i++) {
             const p = { x: w * (0.08 + 0.84 * Math.random()), y: h * (0.1 + 0.8 * Math.random()) };
             const sp = kit.matToScreen(p);
-            if (drawers.some(r => inRect(sp, r, 24))) continue;
-            if (G.Flags.tokenAtPoint(kit.screenToMat(sp))) continue;
-            if (!matOnTopForAFlag(sp)) continue;
+            if (drawers.some(r => inRect(sp, r, 24))) { miss.drawer++; continue; }
+            if (G.Flags.tokenAtPoint(kit.screenToMat(sp))) { miss.token++; continue; }
+            const over = matOnTopForAFlag(sp);
+            if (over) { miss.covered[over] = (miss.covered[over] || 0) + 1; continue; }
             let clear = Infinity;
             for (const o of others) clear = Math.min(clear, Math.hypot(o.x - p.x, o.y - p.y));
             if (!best || clear > best.clear) best = { p, clear };
         }
+        kit.spotMiss = best ? null : miss;
         if (!best) return null;
         return { mat: { x: Math.round(best.p.x), y: Math.round(best.p.y) }, screen: kit.matToScreen(best.p), clearance: Math.round(best.clear) };
     };
+    /** A pick's skip for want of a free spot, with why the 40 points were turned down. */
+    const noFreeSpot = () => ({ skip: 'no free spot', why: kit.spotMiss });
 
     const pickRandom = (list) => list[Math.floor(Math.random() * list.length)];
     const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -300,7 +318,7 @@ export function installDragKit() {
     };
     kit.equippables = () => {
         const heroes = (G.GameState.state.heroes || []).map(h => h.id);
-        return Object.values(G.getAllItems()).filter(i => i?.id && G.EquipmentValidator.canEquipToSlot(i.id) && heroes.some(h => G.EquipmentValidator.canHeroEquip(h, i.id).canEquip)).map(i => i.id);
+        return Object.values(G.getAllItems()).filter(i => i?.id && !!i.equipSlot && heroes.some(h => G.EquipmentValidator.canHeroEquip(h, i.id).canEquip)).map(i => i.id);
     };
     // Up to six items of each sort: gear (one copy per hero, taken out of the Bank by equipping and
     // put back by unequipping) and shared food, drink and potions (the Bank's stack stays). Which
@@ -422,6 +440,34 @@ export function installDragKit() {
         });
     };
     /**
+     * Where each walking hero's figure will pass: its box now, slid along to where it is going (its
+     * flag's point, or the Token its flag is on). ⚠️ Every flag drag sends a hero walking across the
+     * mat, and the next drag presses another hero's flag while it walks: a press point clear of the
+     * figure at the pick was taken by it at the press (2 of 38 on 2026-11-23).
+     */
+    const walkingSweeps = () => {
+        const out = [];
+        for (const el of document.querySelectorAll('[data-board-hero]')) {
+            const id = el.getAttribute('data-board-hero');
+            const body = G.BoardState.heroBodyOf?.(id);
+            const flag = body?.moving ? G.BoardState.flagOf(id) : null;
+            if (!flag) continue;
+            const on = flag.pinnedTo ? G.BoardState.getTokenById(flag.pinnedTo) : null;
+            const to = kit.matToScreen(on || flag);
+            const now = kit.matToScreen(body);
+            out.push({ box: el.getBoundingClientRect(), dx: to.x - now.x, dy: to.y - now.y });
+        }
+        return out;
+    };
+    /** Whether `p` lies within CLEAR_PX of where a walking hero's box passes (`walkingSweeps`). */
+    const inSweep = (p, s) => {
+        const steps = Math.max(1, Math.ceil(Math.hypot(s.dx, s.dy) / 16));
+        for (let i = 0; i <= steps; i++) {
+            if (inRect({ x: p.x - (s.dx * i) / steps, y: p.y - (s.dy * i) / steps }, s.box, CLEAR_PX)) return true;
+        }
+        return false;
+    };
+    /**
      * Where to press a flag, as the game's rules give a press to it: over bare mat, any point of
      * its round area; over a Token's round body, only its cloth where it is drawn in front of that
      * Token. So: the highest point of the flag clear of every Token's body where the flag is what
@@ -445,9 +491,11 @@ export function installDragKit() {
         // on between the pick and the press (the bench's own reads, the rest before the press): a
         // hero walking in, or a Token sliding or arriving, would take a press the pick saw free.
         const heroBoxes = [...document.querySelectorAll('[data-board-hero], [data-board-hero] [data-health-bar]')].map(e => e.getBoundingClientRect());
+        const sweeps = walkingSweeps();
         for (const p of grid) {
             if (!onScreen(p) || circles.some(t => Math.hypot(t.x - p.x, t.y - p.y) <= t.r + CLEAR_PX)) continue;
             if (heroBoxes.some(b => inRect(p, b, CLEAR_PX)) || G.Flags.tokenAtPoint(kit.screenToMat(p))) continue;
+            if (sweeps.some(s => inSweep(p, s))) continue;
             if (flagOnTop(el, heroId, p)) return { ...p, bare: true, clear: true };
         }
         for (const p of grid) {
@@ -570,45 +618,60 @@ export function installDragKit() {
             const el = pickRandom(els);
             const heroId = el.getAttribute('data-dock-hero');
             const to = kit.freeSpot();
-            if (!to) return { skip: 'no free spot' };
+            if (!to) return noFreeSpot();
             // A hero picked up off the hero bar carries their flag, as on the mat (`rosterFlagPayload`):
             // the drop plants it, an order.
-            return { source: { ...visibleCentre(el), what: `dock hero ${heroId}`, hand: `flag ${heroId}` }, target: to.screen, expect: { kind: 'flag', heroId, before: flagAt(heroId), mat: to.mat } };
+            return { source: { ...visibleCentre(el), what: `dock hero ${heroId}`, hand: `flag ${heroId}` }, target: { ...to.screen, clearance: to.clearance }, expect: { kind: 'flag', heroId, before: flagAt(heroId), mat: to.mat } };
         },
-        flag() {
-            const els = [...document.querySelectorAll('button[data-flag]')].filter(visibleCentre);
-            if (!els.length) return { skip: 'no flag visible' };
-            // A flag with no part a press could reach (all of it lies under Tokens, flags or heroes
-            // drawn in front of it) cannot be picked up on the mat by anyone: the player moves it
-            // by its hero or from the hero bar. Such flags are passed over, and named in the scene.
-            const pressable = [];
-            const hidden = [];
-            for (const f of els) {
-                const p = flagPress(f);
-                (p.bare || p.cloth ? pressable : hidden).push({ el: f, at: p });
+        /**
+         * In two calls, as a player does it. A flag shows only while its hero is hovered, on the
+         * mat or in the hero bar (`FlagLayer.jsx`); every other flag is invisible and takes no
+         * press. So the first call (no hero) picks a hero with a spot order and hands back their
+         * figure in the hero bar for the pointer to rest on (`reveal`), and the second (that hero)
+         * picks the press point while the flag shows. On its way from the figure to the flag the
+         * pointer finds it fading, which still takes the pointer, and over it the flag shows again.
+         * A Token order's flag never takes the pointer (the Token's middle stays the Token's), so
+         * only spot orders are dragged here: a hero on a Token is moved by the hero.
+         */
+        flag(heroId = null) {
+            if (!heroId) {
+                const spot = [...document.querySelectorAll('button[data-flag][data-flag-order="spot"]')].map(f => f.getAttribute('data-flag'));
+                if (!spot.length) {
+                    // ⚠️ Set-up: with no spot order on the mat no drag of this kind makes one, and
+                    // the rest of the pass would be skipped. An order through the game sends a hero
+                    // to an open spot, so the next attempt has a flag to drag.
+                    const to = kit.freeSpot();
+                    const onMat = G.BoardState.heroesOnBoard().map(([id]) => id);
+                    if (to && onMat.length) G.Orders.orderAt(pickRandom(onMat), to.mat);
+                    return { skip: 'no hero has a spot order (set-up: one sent to an open spot)' };
+                }
+                const figures = spot.map(id => ({ id, el: document.querySelector(`[data-dock-hero="${id}"]`) })).filter(f => seenAtCentre(f.el));
+                if (!figures.length) return { skip: 'no hero bar figure to hover' };
+                const f = pickRandom(figures);
+                return { reveal: { ...visibleCentre(f.el), heroId: f.id } };
             }
-            if (!pressable.length) {
-                // ⚠️ This kind drags the one flag it can press (every other has faded once its hero
-                // arrived), so with none no drag of it makes another and the rest of the pass is
-                // skipped. A set-up order through the game sends a hero to an open spot: the next
-                // attempt has their walking flag to press.
+            const el = document.querySelector(`button[data-flag="${heroId}"]`);
+            if (!el || el.hasAttribute('data-flag-gone')) return { skip: 'the flag did not show while its hero was hovered' };
+            const at = flagPress(el);
+            if (!at.bare && !at.cloth) {
+                // A flag with no part a press could reach (all of it lies under Tokens, flags or
+                // heroes drawn in front of it) cannot be picked up on the mat by anyone: the player
+                // moves its hero instead. Set-up: an order through the game sends the hero to an
+                // open spot, so a later attempt finds the flag somewhere it can be pressed.
                 const to = kit.freeSpot();
-                if (to && hidden.length) G.Orders.orderAt(pickRandom(hidden).el.getAttribute('data-flag'), to.mat);
-                return { skip: `every flag is hidden under things drawn in front of it (${hidden.length})` };
+                if (to) G.Orders.orderAt(heroId, to.mat);
+                return { skip: 'the flag is hidden under things drawn in front of it', why: { heroId, coveredBy: coverOf(el) } };
             }
-            const { el, at } = pickRandom(pressable);
-            const heroId = el.getAttribute('data-flag');
             const to = kit.freeSpot();
-            if (!to) return { skip: 'no free spot' };
+            if (!to) return noFreeSpot();
             const scene = {
                 ...flagScene(el, heroId),
-                hiddenFlags: hidden.map(h => ({ heroId: h.el.getAttribute('data-flag'), coveredBy: coverOf(h.el) })),
                 // As at the pick; the bench reads it again just before the press (`describeAt`).
                 atPick: kit.pressScene(at.x, at.y, heroId)
             };
             return {
                 source: { x: at.x, y: at.y, heroId, what: `flag ${heroId}${at.bare ? '' : ' (by its cloth, over a Token)'}`, hand: `flag ${heroId}`, scene },
-                target: to.screen, expect: { kind: 'flag', heroId, before: flagAt(heroId), mat: to.mat }
+                target: { ...to.screen, clearance: to.clearance }, expect: { kind: 'flag', heroId, before: flagAt(heroId), mat: to.mat }
             };
         },
         token() {
@@ -618,7 +681,7 @@ export function installDragKit() {
             const at = tokenPress(t.id);
             if (!at) return { skip: 'Token off screen or under other Tokens' };
             const to = kit.freeSpot();
-            if (!to) return { skip: 'no free spot' };
+            if (!to) return noFreeSpot();
             const pressMat = kit.screenToMat(at);
             const drawn = kit.screenToMat(visibleCentre(document.querySelector(`[data-token-art][data-token-id="${t.id}"]`)));
             const scene = {
@@ -627,7 +690,7 @@ export function installDragKit() {
                 // How far the drawn Token is from where the game has it (a slide or a spawn pop-out still playing).
                 drawnOffU: Math.round(Math.hypot(drawn.x - t.x, drawn.y - t.y))
             };
-            return { source: { ...at, what: `Token ${t.typeId} ${t.id}`, hand: `Token ${t.id}`, scene }, target: to.screen, expect: { kind: 'token', id: t.id, before: { x: t.x, y: t.y }, mat: to.mat } };
+            return { source: { ...at, what: `Token ${t.typeId} ${t.id}`, hand: `Token ${t.id}`, scene }, target: { ...to.screen, clearance: to.clearance }, expect: { kind: 'token', id: t.id, before: { x: t.x, y: t.y }, mat: to.mat } };
         },
         shop() {
             const rows = [...document.querySelectorAll('[data-shop-row][data-shop-affordable="true"]')];
@@ -638,9 +701,9 @@ export function installDragKit() {
             if (!at) return { skip: 'Shop row off screen' };
             const typeId = row.getAttribute('data-shop-row');
             const to = kit.freeSpot();
-            if (!to) return { skip: 'no free spot' };
+            if (!to) return noFreeSpot();
             const ids = G.BoardState.tokens().filter(t => t.typeId === typeId).map(t => t.id);
-            return { source: { ...at, what: `Shop row ${typeId}`, hand: `Shop row ${typeId}` }, target: to.screen, expect: { kind: 'shop', typeId, beforeIds: ids, mat: to.mat } };
+            return { source: { ...at, what: `Shop row ${typeId}`, hand: `Shop row ${typeId}` }, target: { ...to.screen, clearance: to.clearance }, expect: { kind: 'shop', typeId, beforeIds: ids, mat: to.mat } };
         },
         equip() {
             const heroes = (G.GameState.state.heroes || []).map(h => h.id);
@@ -686,6 +749,11 @@ export function installDragKit() {
                 const d = dist(t, e.mat);
                 const moved = dist(t, e.before) > 1;
                 const ok = moved && d <= 150;
+                // ⚠️ Set-up for the next drags: the Token goes back where it was. A spawner counts
+                // its family within its reach, so a tree or rock moved away is replaced, and the
+                // mat filled up over the run (103 Tokens to 159 on 2026-11-23): no room left for
+                // the Shop's drops, which the game refused.
+                if (moved) G.BoardPlacement.moveTokenTo(e.id, e.before);
                 return { ok, detail: ok ? `landed ${Math.round(d)} u from the aim` : moved ? `landed ${Math.round(d)} u from the aim` : 'the Token did not move' };
             }
             case 'shop': {

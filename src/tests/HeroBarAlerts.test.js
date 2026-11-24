@@ -23,8 +23,7 @@ import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { clearAllHeroBubbles } from '../ui/components/dock/heroBarBubbles.js';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
-import { rosterAlertOf, rosterBubbleLine, flagTooltip, ROSTER_ALERT } from '../ui/components/board/flagText.js';
-import { flagTipTone, STATE_TONE, STUCK_TONE } from '../ui/components/board/FlagLayer.jsx';
+import { rosterAlertOf, rosterBubbleLine, ROSTER_ALERT } from '../ui/components/board/flagText.js';
 import { SPEECH_TONE } from '../ui/components/board/speechTone.js';
 import { PROBLEM_SPRITE, SEVERITY } from '../ui/components/board/problemMark.js';
 
@@ -204,27 +203,22 @@ describe('who wears an alert', () => {
     });
 });
 
-describe('the flag’s hover says what the hero bar says', () => {
-    it('a Token stuck under its hero: the bar’s words, in its stuck colour, not a green Working', () => {
+describe('the hero bar’s words for a hero at work (the flag has no tooltip: brief 830 D3)', () => {
+    it('a Token stuck under its hero: what it needs, not Working', () => {
         const anvil = put('hba_anvil', 600, 600);
         InventoryManager.addItem('item_oak_wood', 5);
         send('a', anvil);
         run(30000);
         expect(Flags.statusOf('a')).toMatchObject({ state: 'working', instanceId: anvil.id });
         expect(anvil.alert).toBe('inputs');
-        const tip = flagTooltip('a');
-        expect(tip.status).toBe(rosterBubbleLine('a'));
-        expect(tip.status).toMatch(/^Test Anvil: Needs /);
-        expect(flagTipTone(tip)).toBe(STUCK_TONE);
+        expect(rosterBubbleLine('a')).toMatch(/^Test Anvil: Needs /);
     });
 
-    it('a hero working: Working, in green', () => {
+    it('a hero working: Working', () => {
         const oak = put('hba_oak', 600, 600);
         send('a', oak);
         run(1200);
-        const tip = flagTooltip('a');
-        expect(tip.status).toBe('Working: Test Oak');
-        expect(flagTipTone(tip)).toBe(STATE_TONE.working);
+        expect(rosterBubbleLine('a')).toBe('Working: Test Oak');
     });
 });
 

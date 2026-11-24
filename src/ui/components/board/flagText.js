@@ -19,15 +19,12 @@ import { t } from '../../../i18n/index.js';
 import { countdownText } from '../../../utils/Formatters.js';
 
 /**
- * The words for orders, in one place: the flag's tooltip, a Token's own hover lines and the
- * roster's status line.
+ * The words for orders, in one place: the roster's status line and why a hero passed a Token
+ * over.
  * ⚠️ Read live, when asked. Skips are runtime records that change without an event (a flag
  * re-checks every second), so callers ask at hover time rather than projecting these into
  * React state.
  */
-
-/** A flag lists at most this many skipped Tokens, then "+N more". */
-export const MAX_SKIP_LINES = 5;
 
 /** "a Pickaxe", "an Iron Pickaxe or better": the tool a Token's work needs, or null. */
 function toolOfType(typeId) {
@@ -94,35 +91,6 @@ function skipTail(reason, instanceId, typeId, heroId, extra) {
 export function skipLine(skip, heroId = null) {
     const holder = skip.reason === Flags.SKIP.CLAIMED ? heroName(BoardState.heroOfInstance(skip.instanceId)) : null;
     return `${tokenName(skip.typeId) || 'A Token'} — ${skipTail(skip.reason, skip.instanceId, skip.typeId, heroId, { holder, tool: toolOfType(skip.typeId) })}`;
-}
-
-/**
- * Everything the flag's tooltip shows, as `{ title, state, stuck, status, skips: string[], more }`.
- * The title is the hero's name; the status is the hero bar's line ({@link rosterBubbleLine}), and
- * `stuck` says the Token under a working hero has stopped (it says `working` all the same).
- */
-export function flagTooltip(heroId) {
-    const s = Flags.statusOf(heroId);
-    const all = Flags.skipsOfHero(heroId).map(sk => skipLine(sk, heroId));
-    return {
-        title: heroName(heroId),
-        state: s.state,
-        stuck: s.state === 'working' && !!BoardState.getTokenById(s.instanceId)?.alert,
-        status: rosterBubbleLine(heroId),
-        skips: all.slice(0, MAX_SKIP_LINES),
-        more: Math.max(0, all.length - MAX_SKIP_LINES)
-    };
-}
-
-/** A Token's own hover lines: which heroes' orders passed it over, and why. */
-export function tokenSkipLines(instanceId) {
-    if (!instanceId) return [];
-    return Flags.skipsOf(instanceId).map(s => {
-        const holder = s.reason === Flags.SKIP.CLAIMED ? heroName(BoardState.heroOfInstance(instanceId)) : null;
-        const typeId = BoardState.getTokenById(instanceId)?.typeId;
-        const tool = toolOfType(typeId);
-        return `${heroName(s.heroId)} skipped this: ${skipTail(s.reason, instanceId, typeId, s.heroId, { holder, tool })}`;
-    });
 }
 
 /**

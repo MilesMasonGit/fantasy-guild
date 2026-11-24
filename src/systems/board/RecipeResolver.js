@@ -49,16 +49,21 @@ export function contextTiersAround(instanceId) {
     for (const id of neighbourIds(instanceId)) {
         const instance = BoardState.getTokenById(id);
         if (!instance) continue;
-
-        const def = getTokenType(instance.typeId);
-        if (!def) continue;
-        // An `Acts as` whose upkeep is unpaid is off until stock returns, as an aura is.
-        const provided = getProvidedTagsWithTiers(def, paidTestFor(instance));
-        for (const [tag, tier] of Object.entries(provided)) {
+        for (const [tag, tier] of Object.entries(providedBy(instance))) {
             tiers[tag] = Math.max(tiers[tag] || 0, tier);
         }
     }
     return tiers;
+}
+
+/**
+ * The context tags and tiers one Token on the mat hands its neighbours now, `{ [tag]: tier }`.
+ * An `Acts as` whose upkeep is unpaid is off until stock returns, as an aura is.
+ */
+export function providedBy(instance) {
+    const def = getTokenType(instance?.typeId);
+    if (!def) return {};
+    return getProvidedTagsWithTiers(def, paidTestFor(instance));
 }
 
 /**
@@ -167,25 +172,35 @@ export function servesFrom(contextId) {
         const nInstance = BoardState.getTokenById(id);
         if (!nInstance) continue;
 
-        const neighbourDef = getTokenType(nInstance.typeId);
-
-        // Runs means a work cycle OR a fight. One kill is one cycle, so a Weapon Rack beside an
-        // enemy Token must wear exactly as a Tool Rack beside a Forge does. Checking only for
-        // `config` would exempt combat from the economy, because enemy Tokens carry an `enemyId`
-        // instead.
-        const runs = !!neighbourDef?.config || neighbourDef?.tokenType === 'enemy';
-        if (!runs) continue;                      // inert things aren't served
-
         // A buff Token serves anything that runs beside it. A context Token
         // serves only stations whose active recipe it actually contributes to.
-        if (isBuff) { served.push(id); continue; }
-
-        const { recipe } = resolveRecipe(id, nInstance);
-        if (recipe && contextTagsOf(recipe).some(tag => providedTags.includes(tag))) {
-            served.push(id);
+        if (isBuff) {
+            if (runsBeside(nInstance)) served.push(id);
+            continue;
         }
+        if (servesStation(providedTags, nInstance)) served.push(id);
     }
     return served;
+}
+
+/**
+ * Whether a Token on the mat runs: a work cycle OR a fight. One kill is one cycle, so a Weapon Rack
+ * beside an enemy Token must wear exactly as a Tool Rack beside a Forge does. Checking only for
+ * `config` would exempt combat from the economy, because enemy Tokens carry an `enemyId` instead.
+ */
+function runsBeside(instance) {
+    const def = getTokenType(instance?.typeId);
+    return !!def?.config || def?.tokenType === 'enemy';
+}
+
+/**
+ * Whether a Token handing out the context tags `providedTags` serves the station `instance` when it
+ * stands beside it: the station runs and its chosen recipe wants one of those tags.
+ */
+export function servesStation(providedTags, instance) {
+    if (!providedTags?.length || !runsBeside(instance)) return false;
+    const { recipe } = resolveRecipe(instance.id, instance);
+    return !!recipe && contextTagsOf(recipe).some(tag => providedTags.includes(tag));
 }
 
 /**

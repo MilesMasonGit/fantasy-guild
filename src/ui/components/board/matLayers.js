@@ -58,11 +58,16 @@ export const MAT_Z = Object.freeze({
     /** Heroes on the move: above the standing ones too. */
     WALKING_HERO: TOKEN_TOP + 15,
     /**
+     * The Token whose card is open, its art and then its badges: brought forward over the heroes
+     * and every other Token while the card is about it, so the card's tail points at all of it.
+     */
+    INSPECTED_TOKEN: TOKEN_TOP + 16,
+    /**
      * The badges of the Token the pointer is on (its name, its gear): over the heroes and over any
      * Token in front of it, so what a hover brings up can be read and clicked though the Token's
      * art stays where it is.
      */
-    HOVERED_BADGES: TOKEN_TOP + 16,
+    HOVERED_BADGES: TOKEN_TOP + 18,
     /**
      * The sky's ambient life (`AmbientLife`): cloud shadows over everything on the mat below, then
      * the drifting leaves, petals and embers and the small birds on the Tokens' tops.
@@ -72,8 +77,8 @@ export const MAT_Z = Object.freeze({
     RINGS: TOKEN_TOP + 80,
     /** Loot on the floor. */
     LOOT: TOKEN_TOP + 120,
-    /** The work plates under each hero at work and their Token (`WorkPlateLayer`): over the loot at their feet. */
-    WORK_PLATE: TOKEN_TOP + 130,
+    /** The work bars under each hero at work and their Token (`WorkBarLayer`): over the loot at their feet. */
+    WORK_BAR: TOKEN_TOP + 130,
     /**
      * Each fight's plate, its chip, which opens the fight panel, and both fighters' health bars
      * (`FightLayer`, `FightBarHost`): over the loot, so a kill's drops never cover a number; under
@@ -101,15 +106,14 @@ export function placeZ(place) {
 }
 
 /**
- * The z of the task rings (`TaskRings`), their dim and their line: over the ground and every
- * Token and flag at rest, under every worked Token and hero. So the part of a resting Token inside
- * a ring is dimmed with the ground and the ring's line crosses its art, while the jobs themselves,
- * the action the ring frames, stay bright and stand on the line. Every worked Token stands above
- * every resting one in the stack ({@link stackSequence}), so the lowest worked z is the line
- * between them: the rings take it, and are written before the Tokens, so the worked Token wins the
- * tie. With no Token worked (a last ring shrinking away), over every Token, under the heroes, who
- * also win the tie.
- * ⚠️ The dim's blend reaches only what is drawn below it in the mat's one stacking context, so the
+ * The z of the job areas (`TaskRings`): over the ground and every Token and flag at rest, under
+ * every worked Token and hero. So the part of a resting Token inside an area is toned with the
+ * ground, while the jobs themselves, the action the area frames, stay bright. Every worked Token
+ * stands above every resting one in the stack ({@link stackSequence}), so the lowest worked z is
+ * the line between them: the areas take it, and are written before the Tokens, so the worked Token
+ * wins the tie. With no Token worked (a last area shrinking away), over every Token, under the
+ * heroes, who also win the tie.
+ * ⚠️ The tone's blend reaches only what is drawn below it in the mat's one stacking context, so the
  * layers stay direct stacking siblings of the Tokens (no wrapper with a z-index).
  * @param {Map<string, number>} tokenZ the stack's (`createMatStack`)
  * @param {Iterable<string>} workedIds every Token a hero works

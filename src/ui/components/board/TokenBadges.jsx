@@ -1,26 +1,32 @@
 import { memo } from 'react';
 import { cn } from '../../utils/cn.js';
-import { inputSummary, outputSummary, contextSummary } from './recipeText.js';
 import { SkillIcon } from '../base/SkillIcon.jsx';
 import { getSkill, DEMOLITION_SKILL_ID } from '../../../config/registries/skillRegistry.js';
-import { Tooltip } from '../base/Tooltip.jsx';
 
 /**
- * The small things drawn on a Token besides its ring bubbles: its name above the box, and the
- * recipe gear and the demolition mark, which sit in the middle row (`TokenBubbles` places them).
+ * The small things drawn on a Token: its name over its art's foot, and the recipe gear and the
+ * demolition mark, which sit in its centre (`TokenBubbles` places them).
  * A Token is a circle at a point, so what these badges are about is its **instance id**, and
  * everything they need to draw arrives as a prop from `MatToken`, which already reads the
  * Token's details by id.
  */
 
 /**
- * TokenNameBadge: a Token's or hero's name once the pointer rests on it (`shown`), centred.
- * `foot` (mat units down from the box's top) stands the name's bottom on that line: a Token's
- * name sits over its art's bottom edge, on its plate's top (`plateFootOf`). Otherwise just below
+ * TokenNameBadge: a Token's or hero's name once the pointer rests on it (`shown`), centred, on a
+ * see-through dark strip so it reads on any ground (`.gi-name-backing`). `foot` (mat units down
+ * from the box's top) stands the name's bottom on that line: a Token's name sits over its art's
+ * bottom edge, just above its work bar (`matMarks.nameFootOf`). Otherwise just below
  * the box (`below`) or just above it, `offset` further out past whatever hangs off that edge: a
  * health bar, a hero's art reaching past its box. Memoised: its Token redraws far more often than
  * any of these change.
  */
+/**
+ * ⚠️ The one switch for the soft rainbow sweeping across every name's letters (look F, made subtle,
+ * docs/active/research/mat_marks): on, each name gets `.gi-name-shimmer` (tailwind.css) and its
+ * text again in `data-text` for the sweep's copy. Off, names are plain white on their backing.
+ */
+export const NAME_SHIMMER = true;
+
 export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, shown = false, below = false, offset = 0, foot = null }) {
     if (!name || isDragging || !shown) return null;
 
@@ -39,7 +45,11 @@ export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, s
                 : below ? { top: `calc(100% + ${4 + offset}px)` } : { bottom: `calc(100% + ${4 + offset}px)` }}
         >
             <span
-                className="ui-text-name w-max max-w-[240px] shrink-0 font-bold text-white leading-tight tracking-tight px-1">
+                data-text={NAME_SHIMMER ? name : undefined}
+                className={cn(
+                    "ui-text-name gi-name-backing w-max max-w-[240px] shrink-0 font-bold text-white leading-tight tracking-tight",
+                    NAME_SHIMMER && "gi-name-shimmer"
+                )}>
                 {name}
             </span>
         </div>
@@ -47,13 +57,13 @@ export const TokenNameBadge = memo(function TokenNameBadge({ name, isDragging, s
 });
 
 /**
- * StationGearBadge: the recipe picker's handle, in the middle row of a Token that has something
- * to choose: a Foundation, or a station whose pool is not empty (`centreAlert.gearStateOf`
- * decides; `TokenBubbles` decides when it shows).
+ * StationGearBadge: the recipe choice's handle, in the centre of a Token that has something to
+ * choose, while the pointer is on it: a Foundation, or a station whose pool is not empty
+ * (`centreAlert.gearStateOf` decides; `TokenBubbles` decides when it shows). A click does what a
+ * right-click does: it opens the Token's card, where the choice is made.
  * While nothing is chosen it wears a gold one-art-pixel outline stepping between two golds, and that is all, with no red alert: the Token is
  * waiting, not broken, and heroes pass it over until the player picks. Once a recipe is chosen
  * it is still, so the player can change it.
- * Hovering previews the selected recipe: outputs first, then what it consumes.
  * `px` draws it that many mat units across, filling its button: on a Token, every gear is the
  * problem mark's size (`problemMark.tokenGearPx`). Without it, the small 24px gear (the style sheet).
  */
@@ -79,75 +89,60 @@ const gearOutlineStyle = (dx, dy, inset = GEAR_INSET, artPx = GEAR_ART_PX, size 
     imageRendering: 'pixelated'
 });
 
-export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFoundation = false, isField = false, onClick, px = null }) => {
+export const StationGearBadge = ({ isDragging, pulsing = false, isFoundation = false, isField = false, onClick, px = null }) => {
     if (isDragging) return null;
     const big = px || null;
     const outline = (dx, dy) => (big ? gearOutlineStyle(dx, dy, 0, big / GEAR_SPRITE_PX, big) : gearOutlineStyle(dx, dy));
 
-    const outputs = outputSummary(recipe);
-    const inputs = inputSummary(recipe);
-    const context = contextSummary(recipe);
     const label = isFoundation ? 'Choose what to build' : isField ? 'Choose crop' : 'Choose recipe';
 
-    const title = recipe?.name || (isFoundation ? 'Nothing chosen to build' : isField ? 'No crop picked' : 'No recipe selected');
-    // A crop's inputs are its seed, paid once per sowing rather than per harvest.
-    const preview = (outputs || inputs || context) ? (
-        <>
-            {outputs && <div>Makes {outputs}</div>}
-            {inputs && <div className="text-white/70">{isField ? 'Sown for' : 'Needs'} {inputs}</div>}
-            {context && <div className="text-white/70">Beside {context}</div>}
-        </>
-    ) : null;
-
-    // ⚠️ The shared tooltip, portalled out of the mat: a box drawn inside the Token sat under the
-    // work plate's layer.
+    // No tooltip: nothing on the mat has one. The recipe chosen shows as its output in the bubble
+    // over the Token (`RecipeBubble`), and the card says the rest.
     return (
-        <Tooltip title={title} content={preview}>
-            <div
-                data-station-gear={pulsing ? 'unset' : 'set'}
-                className="relative shrink-0 pointer-events-auto"
+        <div
+            data-station-gear={pulsing ? 'unset' : 'set'}
+            className="relative shrink-0 pointer-events-auto"
+        >
+            <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onClick?.(e); }}
+                aria-label={label}
+                data-gear-px={big || undefined}
+                style={big ? { width: big, height: big } : undefined}
+                className={cn(
+                    !big && 'w-7 h-7',
+                    'flex items-center justify-center p-0 cursor-pointer select-none',
+                    'drop-shadow-[2px_2px_0_#000]',
+                    'group/gear',
+                    pulsing && 'relative'
+                )}
             >
-                <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); onClick?.(e); }}
-                    aria-label={label}
-                    data-gear-px={big || undefined}
-                    style={big ? { width: big, height: big } : undefined}
-                    className={cn(
-                        !big && 'w-7 h-7',
-                        'flex items-center justify-center p-0 cursor-pointer select-none',
-                        'drop-shadow-[2px_2px_0_#000]',
-                        'group/gear',
-                        pulsing && 'relative'
-                    )}
-                >
-                    {pulsing && GEAR_OUTLINE_OFFSETS.map(([dx, dy]) => (
-                        <span
-                            key={`${dx}${dy}`}
-                            data-gear-outline=""
-                            aria-hidden="true"
-                            className={cn('gi-gear-alert absolute pointer-events-none', !big && 'w-6 h-6')}
-                            style={outline(dx, dy)}
-                        />
-                    ))}
-                    {!pulsing && GEAR_OUTLINE_OFFSETS.map(([dx, dy]) => (
-                        <span
-                            key={`h${dx}${dy}`}
-                            data-gear-hover-outline=""
-                            aria-hidden="true"
-                            className={cn('hidden group-hover/gear:block absolute bg-white pointer-events-none', !big && 'w-6 h-6')}
-                            style={outline(dx, dy)}
-                        />
-                    ))}
-                    <img
-                        src={GEAR_SRC}
-                        alt={label}
-                        className={cn('relative object-contain pointer-events-none', !big && 'w-6 h-6')}
-                        style={big ? { width: big, height: big, imageRendering: 'pixelated' } : { imageRendering: 'pixelated' }}
+                {pulsing && GEAR_OUTLINE_OFFSETS.map(([dx, dy]) => (
+                    <span
+                        key={`${dx}${dy}`}
+                        data-gear-outline=""
+                        aria-hidden="true"
+                        className={cn('gi-gear-alert absolute pointer-events-none', !big && 'w-6 h-6')}
+                        style={outline(dx, dy)}
                     />
-                </button>
-            </div>
-        </Tooltip>
+                ))}
+                {!pulsing && GEAR_OUTLINE_OFFSETS.map(([dx, dy]) => (
+                    <span
+                        key={`h${dx}${dy}`}
+                        data-gear-hover-outline=""
+                        aria-hidden="true"
+                        className={cn('hidden group-hover/gear:block absolute bg-white pointer-events-none', !big && 'w-6 h-6')}
+                        style={outline(dx, dy)}
+                    />
+                ))}
+                <img
+                    src={GEAR_SRC}
+                    alt={label}
+                    className={cn('relative object-contain pointer-events-none', !big && 'w-6 h-6')}
+                    style={big ? { width: big, height: big, imageRendering: 'pixelated' } : { imageRendering: 'pixelated' }}
+                />
+            </button>
+        </div>
     );
 };
 
@@ -155,10 +150,10 @@ export const StationGearBadge = ({ isDragging, recipe, pulsing = false, isFounda
  * MarkedBadge: the Construction icon in the middle row of a Token marked for demolition, the whole
  * time it is marked: it is Construction work now, whatever it was.
  */
-export const MarkedBadge = ({ title }) => (
+export const MarkedBadge = () => (
     <div
         data-demolish-badge="true"
-        aria-label={title}
+        aria-label="Marked for demolition"
         className="shrink-0 select-none w-7 h-7 flex items-center justify-center rounded-full bg-black/70 border border-gi-warning/80 drop-shadow-[2px_2px_0_#000]"
     >
         <SkillIcon skill={getSkill(DEMOLITION_SKILL_ID)} skillId={DEMOLITION_SKILL_ID} size={16} />

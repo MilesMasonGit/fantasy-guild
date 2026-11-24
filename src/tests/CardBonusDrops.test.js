@@ -221,7 +221,7 @@ describe('the card shows a working hero bonus drops', () => {
         Orders.orderAt(ana.id, { x: 400, y: 400 });
         expect(bonusOf(tree)).toHaveLength(1);
 
-        Orders.stop(ana.id);
+        Orders.orderAt(ana.id, { x: 900, y: 900 });
         expect(BoardState.workerOf(tree.id)).toBeNull();
         expect(bonusOf(tree)).toEqual([]);
         const { container } = render(React.createElement(TokenCard, { typeId: 'cb_tree', instanceId: tree.id }));
@@ -290,7 +290,7 @@ describe('the card shows a working hero bonus drops', () => {
             expect(stepUntil(() => bonusOf(tree).length > 0)).toBe(true);
             expect(stepUntil(() => seen.length >= 1)).toBe(true);
             expect(bonusOf(tree).map(lineOf)).toEqual([LINE]);
-            Orders.stop(ana.id);
+            Orders.orderAt(ana.id, { x: 900, y: 900 });
             expect(bonusOf(tree)).toEqual([]);
         });
 

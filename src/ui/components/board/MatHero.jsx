@@ -28,13 +28,12 @@ import { HERO_HP_EVENTS, movesHeroHp } from '../../hooks/heroHpEvents.js';
 import { HealthBar } from './HealthBar.jsx';
 import { heroBarPlace, fightBarShift } from './healthBar.js';
 import { TokenNameBadge } from './TokenBadges.jsx';
-import { plateNameDrop, plateUnit } from './workPlate.js';
+import { barNameDrop, plateUnit } from './matMarks.js';
 import { PROBLEM_SPRITE, PROBLEM_MARK_ART_PX, SEVERITY } from './problemMark.js';
 import { useAlertBob } from './alertBob.js';
 import { Tooltip } from '../base/Tooltip.jsx';
 import { t } from '../../../i18n/index.js';
 import { HeroDragMarks, markMatPx } from './DragMarks.jsx';
-import { isSingleClick } from '../../hooks/useMatSelection.js';
 
 /**
  * A hero's health bar, just over their figure's head, the number above it. Reads the hero's HP
@@ -238,8 +237,6 @@ const MatHeroBody = memo(function MatHeroBody({
     z,
     outline = null,
     onHover,
-    onPick,
-    onRightClick,
     animationState = 'idle',
     moving = false,
     facing = 1,
@@ -251,6 +248,7 @@ const MatHeroBody = memo(function MatHeroBody({
     fightBarHost = null,
     fightApart = null,
     needsJob = false,
+    found = null,
     dragRef,
     dragProps
 }) {
@@ -311,27 +309,15 @@ const MatHeroBody = memo(function MatHeroBody({
             data-board-hero={heroId}
             data-hero-limp={limp ? 'true' : undefined}
             data-outline={outline || undefined}
+            data-find={found || undefined}
             aria-label={name || 'Hero'}
-            // A single click selects the hero, or clears them when they are the one selected; a
-            // double-click selects them and opens their Hero drawer too.
-            onClick={(e) => {
-                if (!opaque(e)) return;
-                e.stopPropagation();
-                onPick?.(heroId, isSingleClick(e));
-            }}
-            onDoubleClick={(e) => {
-                if (!opaque(e)) return;
-                e.stopPropagation();
-                onPick?.(heroId);
-                EventBus.publish(UI_EVENTS.INSPECT_HERO, { heroId });
-            }}
-            // A right-click on a drawn pixel is the hero's (`rightClickOrders.js`); through a
-            // see-through one it goes on to the mat, to whatever is under it.
+            // A right-click on a drawn pixel opens the hero's drawer; through a see-through one it
+            // goes on to the mat, to whatever is under it.
             onContextMenu={(e) => {
                 if (!opaque(e)) return;
                 e.preventDefault();
                 e.stopPropagation();
-                onRightClick?.(heroId, e);
+                EventBus.publish(UI_EVENTS.INSPECT_HERO, { heroId });
             }}
             onMouseEnter={() => onHover?.(heroId)}
             onMouseLeave={() => onHover?.(null)}
@@ -416,7 +402,7 @@ const MatHeroBody = memo(function MatHeroBody({
                 fallback={needsJob && !moving ? <NeedsJobMark artPx={artPx} artScale={artScale} /> : null}
             />
             {/* Under the feet: the art reaches past the hero's box by half their difference. */}
-            <TokenNameBadge name={name} shown={rested} below offset={(artPx - HERO_BOX_PX) / 2 + (plated ? plateNameDrop(fit) : 0)} />
+            <TokenNameBadge name={name} shown={rested} below offset={(artPx - HERO_BOX_PX) / 2 + (plated ? barNameDrop(fit) : 0)} />
         </button>
     );
 });

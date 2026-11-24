@@ -166,7 +166,7 @@ export const KEYWORDS = Object.freeze([
          * The first keyword that acts on a person.
          *
          * ⚠️ A moment is REQUIRED: damage happens at an instant. The default is
-         * `SELF_CYCLE_COMPLETE` (the Thorns case; one kill is one cycle).
+         * `SELF_CYCLE_COMPLETE` (the Thorns case: a hero harvesting the bush).
          *
          * ⚠️ It targets a ROLE, not a tile, so it declares no `filter` and no `reach`.
          */
@@ -432,8 +432,8 @@ export function blankPayload(keywordId) {
 function defaultMoment(keywordId) {
     if ([KEYWORD.DEALS, KEYWORD.HEALS, KEYWORD.RESTORES, KEYWORD.REMOVES,
         KEYWORD.SPAWNS, KEYWORD.TRANSFORMS].includes(keywordId)) {
-        // The Thorns case: a cycle completed targeting this entity (a hero harvesting a bush
-        // and a hero killing a monster alike).
+        // The Thorns case: a work cycle completed on this Token (a hero harvesting a bush). An
+        // enemy's death is not its cycle: an enemy's rules act on the fight's moments.
         return { event: 'SELF_CYCLE_COMPLETE', scope: 'self', cooldownMs: 0 };
     }
     return { event: 'ITEM_THRESHOLD', scope: 'global', watchItemId: '', threshold: 1, cooldownMs: 5000 };
@@ -511,17 +511,29 @@ const NEIGHBOUR_KEYWORDS = new Set([KEYWORD.ACTS_AS, KEYWORD.REQUIRES, KEYWORD.C
  * own placement rule, not by reach.
  */
 export function caresAboutNeighbours(def) {
+    return statementsOf(def).some(statement => neighbourPartsOf(statement) !== null);
+}
+
+/**
+ * Which parts of one rule are about what is near its Token, by the test
+ * {@link caresAboutNeighbours} reads, or null when none is: `keyword` (`Acts as`, `Requires`,
+ * `Cannot`), `source` (a "when a nearby Token..." moment), `counted` (a "for each nearby..."
+ * count) and `to` (a `Provides`, `Grants` or `Applies` reaching past the Token itself).
+ * @returns {{keyword: boolean, source: boolean, counted: boolean, to: boolean}|null}
+ */
+export function neighbourPartsOf(statement) {
+    if (!statement) return null;
     const near = (reachId) => reachId !== REACH.SELF && reachId !== REACH.BOARD;
-    return statementsOf(def).some(statement => {
-        if (!statement) return false;
-        if (NEIGHBOUR_KEYWORDS.has(statement.keyword)) return true;
-        if (statement.when?.scope === 'nearby') return true;
-        if (statement.counted && near(reachOf(statement.counted))) return true;
-        const keyword = KEYWORDS.find(k => k.id === statement.keyword);
-        if (!keyword?.reach) return false;
-        if (statement.keyword === KEYWORD.APPLIES && statement.target?.role) return false;
-        return near(reachOf(statement));
-    });
+    const keyword = KEYWORDS.find(k => k.id === statement.keyword);
+    const parts = {
+        keyword: NEIGHBOUR_KEYWORDS.has(statement.keyword),
+        source: statement.when?.scope === 'nearby',
+        counted: !!statement.counted && near(reachOf(statement.counted)),
+        to: !!keyword?.reach
+            && !(statement.keyword === KEYWORD.APPLIES && statement.target?.role)
+            && near(reachOf(statement))
+    };
+    return parts.keyword || parts.source || parts.counted || parts.to ? parts : null;
 }
 
 /**

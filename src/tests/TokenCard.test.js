@@ -210,9 +210,30 @@ describe('the blocks, top to bottom, per kind', () => {
         expect(coverScale(0, 0)).toBe(1);
     });
 
-    it('a list asked for before the card opens (the mat gear) opens the card on it', () => {
+    it('a station with nothing chosen opens on its recipe list, every time; Back shows its usual face', () => {
         GameState.state.heroes = [{ id: 'smith', name: 'Smith', skills: { fixture_station_skill: { level: 10, xp: 0 } } }];
         const station = put('fixture_station');
+        const { container } = mount(h(TokenCard, { typeId: 'fixture_station', instanceId: station.id }));
+        const card = () => container.querySelector('[data-token-card]');
+        expect(card().dataset.cardView).toBe('recipes');
+        fireEvent.click(container.querySelector('[data-recipe-back]'));
+        expect(card().dataset.cardView).toBe('card');
+        expect(container.querySelector('[data-card-change-recipe]')).not.toBeNull();
+        cleanup();
+        const again = mount(h(TokenCard, { typeId: 'fixture_station', instanceId: station.id }));
+        expect(again.container.querySelector('[data-token-card]').dataset.cardView).toBe('recipes');
+        // Choosing one flips it to the card, and the next opening is the card with Change.
+        fireEvent.click(again.container.querySelector('[data-recipe-id="recipe_a"]'));
+        expect(again.container.querySelector('[data-token-card]').dataset.cardView).toBe('card');
+        cleanup();
+        const chosen = mount(h(TokenCard, { typeId: 'fixture_station', instanceId: station.id }));
+        expect(chosen.container.querySelector('[data-token-card]').dataset.cardView).toBe('card');
+        expect(chosen.container.querySelector('[data-card-change-recipe]').textContent).toBe('Change recipe');
+    });
+
+    it('a list asked for before the card opens (back from looking an item up) opens a chosen station on it, once', () => {
+        GameState.state.heroes = [{ id: 'smith', name: 'Smith', skills: { fixture_station_skill: { level: 10, xp: 0 } } }];
+        const station = pickRecipe(put('fixture_station'), 'recipe_a');
         requestRecipeList(station.id);
         const { container } = mount(h(TokenCard, { typeId: 'fixture_station', instanceId: station.id }));
         expect(container.querySelector('[data-token-card]').dataset.cardView).toBe('recipes');
@@ -276,7 +297,7 @@ describe('the blocks, top to bottom, per kind', () => {
     });
 
     it('unlimited charges read ∞', () => {
-        const station = put('fixture_kitchen');
+        const station = pickRecipe(put('fixture_kitchen'), 'pooled_stew');
         station.usesRemaining = null;
         const { container } = mount(h(TokenCard, { typeId: 'fixture_kitchen', instanceId: station.id }));
         expect(container.querySelector('[data-card-charges]').textContent).toBe('∞');
@@ -307,6 +328,8 @@ describe('cells with no work behind them', () => {
         expect(model.blocks.find(b => b.id === CARD_BLOCK.WORK)).toMatchObject({ skillId: 'cooking', level: null, xp: 0 });
         expect(model.blocks.find(b => b.id === CARD_BLOCK.CYCLE)).toMatchObject({ cycleMs: 0, uses: null });
         const view = mount(h(TokenCard, { typeId: 'fixture_kitchen', instanceId: kitchen.id }));
+        // It opens on its recipe list; its usual face is one Back away.
+        fireEvent.click(view.container.querySelector('[data-recipe-back]'));
         expect(view.container.querySelector('[data-card-cycle]')).toBeNull();
         expect(view.container.querySelector('[data-card-skill]')).toBeNull();
         expect(caption(view.container, 'XP')).toBe(false);

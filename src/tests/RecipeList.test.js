@@ -334,16 +334,12 @@ describe('StationGearBadge', () => {
         return tips[tips.length - 1]?.textContent ?? '';
     };
 
-    it('previews the selected recipe on hover (concept §2.1)', () => {
+    it('shows no preview on hover: nothing on the mat has a tooltip (brief 830 D3)', () => {
         const { container } = render(React.createElement(StationGearBadge, {
             isHovered: true, isDragging: false, recipe, onClick: () => { }
         }));
-        const tip = hoverTip(container);
-        expect(tip).toContain('Roast');
-        expect(tip).toContain('Makes 1× Carrot');
-        expect(tip).toContain('Needs 2× Carrot');
-        // Nothing in the fixtures offers a pie tin above the bottom rung, so there is no name to give.
-        expect(tip).toContain('Beside a stronger ctx pie tin');
+        expect(hoverTip(container)).toBeFalsy();
+        expect(document.body.textContent).not.toContain('Roast');
     });
 
     it('opens the picker when clicked', () => {
@@ -360,13 +356,6 @@ describe('StationGearBadge', () => {
             isHovered: true, isDragging: true, recipe, onClick: () => { }
         }));
         expect(container.firstChild).toBeNull();
-    });
-
-    it('reads as unselected when the station has no recipe', () => {
-        const { container } = render(React.createElement(StationGearBadge, {
-            isHovered: true, isDragging: false, recipe: null, onClick: () => { }
-        }));
-        expect(hoverTip(container)).toContain('No recipe selected');
     });
 });
 

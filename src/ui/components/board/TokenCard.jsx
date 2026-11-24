@@ -34,6 +34,9 @@ import { chanceBreakdownText, effectTagOf, TONE_COLOUR as BADGE_COLOUR } from '.
 import { EFFECT_KEY } from '../../../systems/board/EffectBreakdown.js';
 import { STAR_COLOUR } from './fx/rareTwinkle.js';
 import { levelNeed, skillLevel } from '../../../systems/core/levelNeed.js';
+import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
+import * as Growth from '../../../systems/board/Growth.js';
+import { problemOf, problemText, PROBLEM_COLOUR, PROBLEM_SPRITE } from './problemMark.js';
 
 /** The activity scenes are 256 px square; they only ever draw at whole multiples of it. */
 export const CARD_ART_PX = 256;
@@ -80,6 +83,31 @@ const Stat = ({ icon, text, tip, tone, ...rest }) => (
         </span>
     </Tooltip>
 );
+
+/**
+ * What is wrong with the Token, said once: the reason behind its '!' on the mat (the mat itself
+ * has no tooltips), in the mark's colour, read each time the card redraws. Nothing when nothing is
+ * wrong; a choice waiting is the recipe list the card opens on.
+ */
+export const ProblemLine = ({ instanceId }) => {
+    const instance = BoardState.getTokenById(instanceId);
+    if (!instance) return null;
+    const problem = problemOf({
+        alert: instance.alert || null,
+        spawner: SpawnerSystem.spawnerAlertOf(instanceId),
+        growth: Growth.growthAlertOf(instanceId)
+    });
+    const text = problem ? problemText(problem, instanceId) : '';
+    if (!text) return null;
+    return (
+        <Section data-card-block="problem" data-card-problem={problem.kind}>
+            <span className="flex items-center gap-1.5 ui-text-body font-bold" style={{ color: PROBLEM_COLOUR[problem.severity] }}>
+                <img src={PROBLEM_SPRITE[problem.severity]} alt="" draggable={false} className="w-4 h-4 shrink-0" style={{ imageRendering: 'pixelated' }} />
+                {text}
+            </span>
+        </Section>
+    );
+};
 
 /** The book: this card's entry in the Encyclopedia. */
 const LookUpButton = ({ onClick }) => (
@@ -606,11 +634,13 @@ export function artPlacement(w, h, minScale = CARD_ART_MIN_SCALE) {
 }
 
 /**
- * Which face of the card shows: its blocks, or the recipe list Change recipe flips it to. A list
- * asked for before the card opened (the mat's recipe gear) opens it on the list.
+ * Which face of the card shows: its blocks, or the recipe list Change flips it to. A Token with
+ * nothing chosen yet opens on the list, and so does one whose list was asked for before the card
+ * opened (coming back from looking an item up).
  */
-function useCardView(instanceId, onViewChange) {
-    const [view, setViewState] = useState(() => (takeRecipeListRequest(instanceId) ? 'recipes' : 'card'));
+function useCardView(instanceId, onViewChange, unchosen) {
+    const opensOnList = () => takeRecipeListRequest(instanceId) || unchosen;
+    const [view, setViewState] = useState(() => (opensOnList() ? 'recipes' : 'card'));
     const setView = useCallback((next) => {
         setViewState(next);
         onViewChange?.(next);
@@ -618,7 +648,7 @@ function useCardView(instanceId, onViewChange) {
     const first = useRef(true);
     useEffect(() => {
         if (first.current) { first.current = false; return; }
-        setView(takeRecipeListRequest(instanceId) ? 'recipes' : 'card');
+        setView(opensOnList() ? 'recipes' : 'card');
     }, [instanceId]); // eslint-disable-line react-hooks/exhaustive-deps
     useEffect(() => onRecipeListRequest((id) => {
         if (id === instanceId && takeRecipeListRequest(id)) setView('recipes');
@@ -691,14 +721,15 @@ const STAT_BLOCKS = new Set([CARD_BLOCK.HP, CARD_BLOCK.COMBAT, CARD_BLOCK.WORK, 
  */
 export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewChange = null }) => {
     const def = getTokenType(typeId);
-    const [view, setView] = useCardView(instanceId, onViewChange);
+    const model = tokenCardModel(typeId, instanceId);
+    const instance = instanceId != null ? BoardState.getTokenById(instanceId) : null;
+    const choice = instance ? model?.blocks.find(b => b.id === CARD_BLOCK.RECIPE && b.change)?.change : null;
+    const canList = !!choice;
+    const [view, setView] = useCardView(instanceId, onViewChange, !!choice && !choice.chosen);
     // Charges, a picked recipe, a hero arriving: re-read on this Token's own events.
     useTokenDetail(instanceId, def);
     useCardClock(instanceId, !!def?.enemy);
 
-    const model = tokenCardModel(typeId, instanceId);
-    const instance = instanceId != null ? BoardState.getTokenById(instanceId) : null;
-    const canList = !!model && !!instance && model.blocks.some(b => b.id === CARD_BLOCK.RECIPE && b.change);
     const listing = view === 'recipes' && canList;
     if (!model) return null;
     const { art } = model;
@@ -745,6 +776,7 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
         </div>
     ) : (
         <>
+            {instanceId != null && <ProblemLine instanceId={instanceId} />}
             {stats.length > 0 && <StatsSection blocks={stats} effects={effects} />}
             {sections}
             {instanceId != null && <LeaveMatControl instanceId={instanceId} />}

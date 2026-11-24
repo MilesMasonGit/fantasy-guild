@@ -47,8 +47,8 @@ export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
         }
     });
 
-    // A kill's loot is the enemy Token's outputs, carried as `fight.drops` and
-    // resolved by `LootSystem` off the `combat_victory` event below.
+    // A kill's loot is the enemy Token's outputs, read and rolled by `LootSystem` off the
+    // `combat_victory` event below.
 
     fight.status = 'victory';
     assignedHeroIds.forEach(id => HeroManager.setHeroStatus(id, 'idle'));
@@ -59,7 +59,6 @@ export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
     // the kill happened instead of teleporting into the Bank.
     EventBus.publish(ENGINE_EVENTS.COMBAT_VICTORY, {
         cardId: fight.id, heroId, instanceId: fight.instanceId ?? null,
-        enemyId: enemy.id, enemyName: enemy.name,
-        drops: fight.drops || []
+        enemyId: enemy.id, enemyName: enemy.name
     });
 }

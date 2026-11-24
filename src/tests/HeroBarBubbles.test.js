@@ -98,8 +98,8 @@ describe('the hero bar level-up bubbles', () => {
     });
 
     it('clicking a bubble fades it out and clears that one bubble only, without opening the hero', () => {
-        const onSelectHero = vi.fn();
-        const view = mount({ onSelectHero });
+        const onOpenHero = vi.fn();
+        const view = mount({ onOpenHero });
         level('h1', 'Mining', 24, 25);
         level('h1', 'Forestry', 3, 4);
         level('h2', 'Fishing', 9, 10);
@@ -111,7 +111,7 @@ describe('the hero bar level-up bubbles', () => {
         act(() => { vi.advanceTimersByTime(BAR_BUBBLE_FADE_MS + 10); });
         expect(bubbles(view, 'h1')).toEqual(['4 Forestry!']);
         expect(bubbles(view, 'h2')).toEqual(['10 Fishing!']);
-        expect(onSelectHero).not.toHaveBeenCalled();
+        expect(onOpenHero).not.toHaveBeenCalled();
     });
 
     it('clearHeroBubble removes one skill\'s bubble and leaves the rest', () => {
@@ -133,13 +133,13 @@ describe('the hero bar level-up bubbles', () => {
         expect([...b.querySelectorAll('[data-bubble-num]')].map(n => n.textContent)).toEqual(['50']);
     });
 
-    it('clicking the hero clears their bubbles and still selects them', () => {
-        const onSelectHero = vi.fn();
-        const view = mount({ onSelectHero });
+    it('clicking the hero clears their bubbles and still opens them', () => {
+        const onOpenHero = vi.fn();
+        const view = mount({ onOpenHero });
         level('h1', 'Mining', 24, 25);
         level('h2', 'Fishing', 9, 10);
         fireEvent.click(figure(view, 'h1'));
-        expect(onSelectHero).toHaveBeenCalledWith('h1', true);
+        expect(onOpenHero).toHaveBeenCalledWith('h1');
         expect(bubbles(view, 'h1')).toEqual([]);
         expect(bubbles(view, 'h2')).toEqual(['10 Fishing!']);
     });
@@ -176,13 +176,13 @@ describe('the hero bar level-up bubbles', () => {
     });
 
     it('paging clears nothing and opens nothing', () => {
-        const onSelectHero = vi.fn();
-        const view = mount({ onSelectHero });
+        const onOpenHero = vi.fn();
+        const view = mount({ onOpenHero });
         ['Mining', 'Forestry', 'Fishing', 'Cooking'].forEach((s, i) => level('h1', s, i, i + 1));
         fireEvent.click(view.container.querySelector('[data-bar-bubbles="h1"] [data-bar-bubble-older]'));
         act(() => { vi.advanceTimersByTime(BAR_BUBBLE_FADE_MS * 4); });
         expect(bubbles(view, 'h1')).toEqual(['1 Mining!']);
-        expect(onSelectHero).not.toHaveBeenCalled();
+        expect(onOpenHero).not.toHaveBeenCalled();
     });
 
     it('the mouse wheel pages like the arrows, one page per flick, sliding in from its side', () => {

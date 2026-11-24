@@ -10,7 +10,7 @@ import { SPEECH_TONE } from './speechTone.js';
 import { effectTagText } from './effectBadgeText.js';
 import { setLit } from './supportLit.js';
 import { useMatFit } from './MatFitContext.jsx';
-import { plateUnit } from './workPlate.js';
+import { plateUnit } from './matMarks.js';
 
 /** Clear air between the top of a Token's art and the tail of its tag, in mat units. */
 const GAP_PX = 6;

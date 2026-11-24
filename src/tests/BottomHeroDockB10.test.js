@@ -139,14 +139,13 @@ describe('B10 horizontal hero dock', () => {
         expect(labelOf(home).style.bottom).toBe(labelBefore);
     });
 
-    it('click and double-click call the existing handlers', () => {
-        const onSelectHero = vi.fn();
-        const onDoubleClickHero = vi.fn();
-        const view = mount({ onSelectHero, onDoubleClickHero });
+    it('a click and a right-click open the hero', () => {
+        const onOpenHero = vi.fn();
+        const view = mount({ onOpenHero });
         fireEvent.click(figure(view, 'h2'));
-        expect(onSelectHero).toHaveBeenCalledWith('h2', true);
-        fireEvent.doubleClick(figure(view, 'h3'));
-        expect(onDoubleClickHero).toHaveBeenCalledWith('h3');
+        expect(onOpenHero).toHaveBeenCalledWith('h2');
+        fireEvent.contextMenu(figure(view, 'h3'));
+        expect(onOpenHero).toHaveBeenCalledWith('h3');
     });
 
     it('marks the selected hero', () => {

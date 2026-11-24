@@ -2,8 +2,11 @@ import { pointerToMat } from './matPoint.js';
 import { updateAlphaPointerEvents } from '../../utils/alphaHitTest.js';
 import { flagClothOver, onFlagCloth } from './flagCloth.js';
 
-/** Everything a press on a Token is made of, routed alike so a click lands where its press did. */
-export const PRESS_EVENTS = Object.freeze(['pointerdown', 'click', 'dblclick', 'contextmenu']);
+/**
+ * Everything a press on a Token is made of, routed alike so a click (a map mode's) or a right-click
+ * (the card) lands where its press did.
+ */
+export const PRESS_EVENTS = Object.freeze(['pointerdown', 'click', 'contextmenu']);
 
 /** Events this file sent itself, which are already where they belong. */
 const routed = new WeakSet();
@@ -35,8 +38,6 @@ function throughHeroes(e, matEl) {
  * pixel the press reaches the flag or Token beneath, so a hero never hides its own flag.
  * - **A flag** over a Token's circle only on its cloth, where the flag is drawn in front of that
  * Token (`flagCloth.js`).
- * - **A work plate** never over a Token's circle: it is drawn over the Tokens, below its hero's feet,
- * and a press there is that Token's (`WorkPlateLayer`).
  * - **A Token** where two circles overlap: the Token the game says is under the pointer
  * (`tokenAtPoint`: of the circles holding the point, the nearest centre), whichever is drawn on
  * top there. Each Token takes the pointer only inside its own circle (`MatToken`'s
@@ -56,8 +57,7 @@ export function routePress(e, matEl, tokenAtPoint) {
     // The flags' give-way over Tokens is set on pointer moves; a press with none before it (just
     // after a drop, or a tap) asks afresh, both ways.
     const token = tokenOwning(landed, e, matEl, tokenAtPoint)
-        ?? tokenUnderFlag(landed, e, matEl, tokenAtPoint)
-        ?? tokenUnderPlate(landed, e, matEl, tokenAtPoint);
+        ?? tokenUnderFlag(landed, e, matEl, tokenAtPoint);
     const cloth = token ? flagClothOver(matEl, e.clientX, e.clientY, token.getAttribute('data-token-hit')) : null;
     const to = cloth ?? token ?? landed;
     if (!to || to === e.target) return null;
@@ -82,13 +82,6 @@ function tokenOwning(landed, e, matEl, tokenAtPoint) {
 function tokenUnderFlag(landed, e, matEl, tokenAtPoint) {
     const flag = landed?.closest?.('[data-flag]');
     if (!flag || onFlagCloth(flag, e.clientX, e.clientY)) return null;
-    const id = tokenIdAt(e, matEl, tokenAtPoint);
-    return id ? hitCircleOf(matEl, id) : null;
-}
-
-/** The hit circle of the Token under a press that landed on a work plate, or null off every circle. */
-function tokenUnderPlate(landed, e, matEl, tokenAtPoint) {
-    if (!landed?.closest?.('[data-work-plate]')) return null;
     const id = tokenIdAt(e, matEl, tokenAtPoint);
     return id ? hitCircleOf(matEl, id) : null;
 }

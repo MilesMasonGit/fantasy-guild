@@ -636,30 +636,3 @@ describe('⭐ a new order is a walk, not a stroll', () => {
         expect(HeroMotion.isPottering('h1')).toBe(true);
     });
 });
-
-describe('⭐ a stop near the mat edge keeps the flag on the mat', () => {
-    it('stopped working a Token on the bottom edge: the flag is clamped onto the mat', () => {
-        const tok = put({ x: 600, y: matH() - 64 });
-        sendFrom('h1', { x: 300, y: matH() - 64 }, tok);
-        run(5000);
-        expect(BoardState.workTokenOf('h1')).toBe(tok.id);
-        const stood = { ...body('h1') };
-        expect(stood.y - HeroMotion.IDLE_SPOT.dy).toBeGreaterThan(matH());   // unclamped, off the mat
-
-        expect(Flags.stop('h1')).toBe(true);
-        const flag = BoardState.flagOf('h1');
-        expect(flag).toMatchObject({ spot: true, needsJob: true });
-        expect(flag.x).toBeGreaterThanOrEqual(0);
-        expect(flag.x).toBeLessThanOrEqual(matW());
-        expect(flag.y).toBe(matH());
-    });
-
-    it('away from the edge the flag is placed exactly as before: the hero idles where they stand', () => {
-        const tok = put({ x: 800, y: 500 });
-        sendFrom('h1', { x: 500, y: 500 }, tok);
-        run(5000);
-        expect(Flags.stop('h1')).toBe(true);
-        const b = body('h1');
-        expect(HeroMotion.idleSpot(BoardState.flagOf('h1'))).toEqual({ x: b.x, y: b.y });
-    });
-});

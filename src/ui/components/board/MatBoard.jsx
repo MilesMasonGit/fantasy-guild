@@ -5,8 +5,8 @@ import { createStackWriter } from './stackWriter.js';
 import { pointerToMat } from './matPoint.js';
 import { matTuning } from '../../../config/matTuning.js';
 import { installPressRouting } from './pressRouting.js';
-import { flagClothOver, tokenFlagClothAt } from './flagCloth.js';
-import { useHoverRest } from './hoverRest.js';
+import { flagClothOver } from './flagCloth.js';
+import { useHoverRest, RING_REST_MS } from './hoverRest.js';
 import { MatToken, MatTokenGrab } from './MatToken.jsx';
 import { MatHero, heroBoxAt } from './MatHero.jsx';
 import { MatRings } from './MatRings.jsx';
@@ -18,20 +18,16 @@ import { SupportLinkLayer } from './SupportLinkLayer.jsx';
 import { CalloutLayer } from './CalloutLayer.jsx';
 import { HeroBubbleLayer } from './HeroBubbleLayer.jsx';
 import { strikesLive, heroAnimationState, hitSkillOf, hitsOnAttack } from './hitAnimations.js';
-import { problemOf } from './problemMark.js';
 import { FlagLayer } from './FlagLayer.jsx';
 import { OrderDragLine } from './OrderDragLine.jsx';
 import { heroOutline } from './spriteOutline.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
-import { WorkPlateLayer } from './WorkPlateLayer.jsx';
-import { IdlePlateHost } from './IdlePlate.jsx';
+import { WorkBarLayer } from './WorkBarLayer.jsx';
 import { FightLayer, FightBarHost } from './FightLayer.jsx';
-import { EnemyCardTip } from '../combat/EnemyCard.jsx';
 import { TerrainCanvas } from './TerrainCanvas.jsx';
 import { AmbientLife, createGroundPictures } from './AmbientLife.jsx';
 import { TerrainGridOverlay } from './TerrainGridOverlay.jsx';
 import { MAT_EDGE, MAT_EDGE_CSS } from './groundScreen.js';
-import { rightClickEvent } from './rightClickOrders.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useActiveDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND } from '../../dnd/dragConstants.js';
@@ -39,6 +35,8 @@ import {
     MAP_MODE, useMapMode, getMapMode, flipDemolishMark
 } from '../../hooks/useMapMode.js';
 import { mapModeCursor } from './mapModeCursor.js';
+import { useMatFind } from '../../hooks/useMatFind.js';
+import { foundOnMat, findMarkOf } from './matFind.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -62,7 +60,6 @@ import { MatFxLayer } from './fx/MatFxLayer.jsx';
 import { MatLimes } from '../limes/MatLimes.jsx';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
-import { useSelection, clickToken, clickHero, clearSelection, SELECTION_KIND } from '../../hooks/useMatSelection.js';
 
 /**
  * The playmat as it is actually drawn. Every Token, hero and flag is drawn at its own mat
@@ -94,8 +91,7 @@ export const MatBoard = React.memo(function MatBoard({
     const alertsDrawn = useDrawn('alerts');
     const speechDrawn = useDrawn('speech');
     const terrainDrawn = useDrawn('terrain');
-    const platesDrawn = useDrawn('workPlate');
-    const tooltipsDrawn = useDrawn('tooltips');
+    const barsDrawn = useDrawn('workPlate');
     const rootRef = useRef(null);
 
     // Read through the hook so the whole board redraws when the Mat Tuner resizes it.
@@ -103,17 +99,15 @@ export const MatBoard = React.memo(function MatBoard({
 
     const [hoveredId, setHoveredId] = useState(null);
     const [hoverHeroId, setHoverHeroId] = useState(null);
-    // The outline follows the hover at once; the name, the idle plate and the HP bar wait for the
+    // The outline follows the hover at once; the name, the recipe bubble and the HP bar wait for the
     // pointer to rest (`useHoverRest`), so a Token's own rest redraws that Token alone.
     const rest = useHoverRest(hoveredId, hoverHeroId);
+    // Reach rings: the longer rest, so a sweep across the mat pops none.
+    const ringRest = useHoverRest(hoveredId, hoverHeroId, RING_REST_MS);
     /** The pointer is on a Token's art circle, so every flag lets it through. */
     const [flagsYield, setFlagsYield] = useState(false);
-    /** The hero whose flag, shown in the hovered Token's middle, has the pointer on its cloth: its tooltip shows. */
-    const [flagTipHeroId, setFlagTipHeroId] = useState(null);
     /** The fight layer's node the fighters' health bars draw into (`FightBarHost`). */
     const [fightBarHost, setFightBarHost] = useState(null);
-    /** The node the rested Token's idle plate draws into (`IdlePlateHost`). */
-    const [idlePlateHost, setIdlePlateHost] = useState(null);
     const { isDragging, activePayload } = useActiveDrag();
     // The mat Token in the hand, if one is: it stays where it is, hidden, while it is carried.
     const carriedId = isDragging && activePayload?.kind === DRAG_KIND.TOKEN ? (activePayload.from?.instanceId ?? null) : null;
@@ -149,7 +143,7 @@ export const MatBoard = React.memo(function MatBoard({
     const [dragSeen, setDragSeen] = useState(false);
     if (dragSeen !== isDragging) {
         setDragSeen(isDragging);
-        if (isDragging) { setHoveredId(null); setFlagsYield(false); setHoverHeroId(null); setFlagTipHeroId(null); }
+        if (isDragging) { setHoveredId(null); setFlagsYield(false); setHoverHeroId(null); }
     }
 
     // A no-op while dragging, so a hero/flag crossing mid-drag does not reinstate a stray
@@ -247,9 +241,6 @@ export const MatBoard = React.memo(function MatBoard({
                     // no glow (the Token's problem mark says it alone) and stands idle instead
                     // of swinging. The same test as the Token's own hit reaction (`strikesLive`).
                     stuck: !!worked && !strikesLive(heroId, worked.alert),
-                    // The Token they work shows its "!" (the problem mark's own test): the job's
-                    // task ring turns amber.
-                    jobStuck: !!worked && !!problemOf({ alert: worked.alert || null }),
                     // Fighting: idle, one attack per real attack.
                     combat: !!worked && hitsOnAttack(hitSkillOf(getTokenType(worked.typeId))),
                     // Below full health: the health bar shows.
@@ -273,6 +264,11 @@ export const MatBoard = React.memo(function MatBoard({
         null
     );
     const heroes = useMemo(() => heroesRaw || [], [heroesRaw]);
+
+    // The Controls strip's Find: worked out once per change of the find or of who is on the mat,
+    // and handed to each Token and hero as a word, so no find costs anything per frame.
+    const find = useMatFind();
+    const found = useMemo(() => foundOnMat(find, { tokens, heroes }), [find, tokens, heroes]);
 
     /**
      * How many resets (a load, a catch-up, travel) the mat has heard, for the task rings. Read like the
@@ -331,7 +327,6 @@ export const MatBoard = React.memo(function MatBoard({
         if (e.target?.closest?.('[data-limes]')) {
             setFlagsYield(prev => (prev === false ? prev : false));
             setHoveredId(prev => (prev === null ? prev : null));
-            setFlagTipHeroId(prev => (prev === null ? prev : null));
             return;
         }
         /**
@@ -345,7 +340,6 @@ export const MatBoard = React.memo(function MatBoard({
         if (id && flagClothOver(el, e.clientX, e.clientY, id)) {
             setFlagsYield(prev => (prev === false ? prev : false));
             setHoveredId(prev => (prev === null ? prev : null));
-            setFlagTipHeroId(prev => (prev === null ? prev : null));
             return;
         }
         // On a hero's drawn pixel a press is the hero's, so no Token behind them lights as if it
@@ -354,16 +348,7 @@ export const MatBoard = React.memo(function MatBoard({
         if (heroId && id && Flags.statusOf(heroId).instanceId !== id) id = null;
         const onToken = !!id;
         setFlagsYield(prev => (prev === onToken ? prev : onToken));
-        const tip = id ? tokenFlagClothAt(el, e.clientX, e.clientY, id) : null;
-        setFlagTipHeroId(prev => (prev === tip ? prev : tip));
         if (!id) {
-            // Not over a Token: a work plate is its own Token's (over a circle it lets the pointer
-            // through, as flags do).
-            const plateId = e.target?.closest?.('[data-work-plate]')?.getAttribute('data-work-plate') || null;
-            if (plateId) {
-                setHoveredId(prev => (prev === plateId ? prev : plateId));
-                return;
-            }
             // A flag in front keeps the pointer (it is grabbable).
             if (e.target?.closest?.('[data-flag]')) {
                 setHoveredId(prev => (prev === null ? prev : null));
@@ -376,7 +361,7 @@ export const MatBoard = React.memo(function MatBoard({
         setHoveredId(prev => (prev === id ? prev : id));
     }, []);
 
-    const clearHover = useCallback(() => { setHoveredId(null); setFlagsYield(false); setFlagTipHeroId(null); }, []);
+    const clearHover = useCallback(() => { setHoveredId(null); setFlagsYield(false); }, []);
 
     // A press where two Tokens' circles overlap goes to the one hovering would pick, even when no
     // pointer move has lit it yet.
@@ -391,54 +376,11 @@ export const MatBoard = React.memo(function MatBoard({
     useEffect(() => watchRegionSettle(), []);
     useEffect(() => watchEventArrivals(), []);
 
-    /**
-     * The mat's selection (`useMatSelection.js`): a single click picks, or clears what is already
-     * picked (`single`: `isSingleClick`); a double-click inspects and picks. Read here and handed
-     * to each Token and hero as a prop, as the hover is, so a pick redraws only the two Tokens
-     * whose outline changed.
-     */
-    const selection = useSelection();
-    const pickedTokenId = selection?.kind === SELECTION_KIND.TOKEN ? selection.id : null;
-    const pickedHeroId = selection?.kind === SELECTION_KIND.HERO ? selection.id : null;
-    // Read when a pick happens, so the handlers stay the same and no Token redraws for them.
-    const inspectedTokenRef = useRef(inspectedTokenId);
-    inspectedTokenRef.current = inspectedTokenId;
-    // A pick of something else closes an open Token card (a pick of its own Token keeps it).
-    const handlePickToken = useCallback((instanceId, single = false) => {
-        clickToken(instanceId, single);
-        if (inspectedTokenRef.current && inspectedTokenRef.current !== instanceId) onClearInspect?.();
-    }, [onClearInspect]);
-    const handlePickHero = useCallback((heroId, single = false) => {
-        clickHero(heroId, single);
-        if (inspectedTokenRef.current) onClearInspect?.();
-    }, [onClearInspect]);
-
-    /**
-     * A click on blank mat clears the selection. Not one that ends a drag (the press moved), and
-     * not one on anything that takes a click of its own (a Token, a hero, a flag, a button).
-     */
-    const pressAtRef = useRef(null);
-    const handleMatPointerDown = useCallback((e) => { pressAtRef.current = { x: e.clientX, y: e.clientY }; }, []);
-    const handleMatClick = useCallback((e) => {
-        const at = pressAtRef.current;
-        if (at && Math.hypot(e.clientX - at.x, e.clientY - at.y) > CLICK_SLOP_PX) return;
-        if (e.target?.closest?.(TAKES_ITS_OWN_CLICK)) return;
-        clearSelection();
-    }, []);
-
-    /**
-     * A right-click anywhere on the mat is an order for what is selected, or with nothing selected
-     * a stop for the hero right-clicked or working the Token there (`rightClickOrders.js`).
-     */
-    const handleMatRightClick = useCallback((e) => { rightClickEvent(e, rootRef.current); }, []);
-    const handleHeroRightClick = useCallback((heroId, e) => { rightClickEvent(e, rootRef.current, heroId); }, []);
-
     // A hero hovered on the mat or on their roster tab: outlined, and their job lights (their
     // sheet's, when none is hovered).
     const rosterHover = useRosterHover();
     const litHeroId = hoverHeroId || rosterHover || null;
-    // A selected hero's job lights too, and follows a new order while they stay selected.
-    const jobHeroId = litHeroId || pickedHeroId || inspectedHeroId || null;
+    const jobHeroId = litHeroId || inspectedHeroId || null;
     useEffect(() => {
         lightHeroJob(jobHeroId);
         if (!jobHeroId) return undefined;
@@ -468,15 +410,15 @@ export const MatBoard = React.memo(function MatBoard({
     // Only a Token that uses reach shows a ring (`showsNearRing`): a Foundation, a camp, a Token
     // that acts on or depends on its neighbours.
     const hoveredCentre = useMemo(() => {
-        const t = rest.tokenId ? tokens.find(k => k.id === rest.tokenId) : null;
+        const t = ringRest.tokenId ? tokens.find(k => k.id === ringRest.tokenId) : null;
         if (!t || !showsNearRing(t.typeId)) return null;
         // A walker's own point is not in `tokens`: read it live.
         const at = t.x == null ? BoardState.getTokenById(t.id) : t;
         return at ? { x: at.x, y: at.y, id: t.id } : null;
-    }, [rest.tokenId, tokens]);
+    }, [ringRest.tokenId, tokens]);
 
-    /** A work plate for each hero at work, not in a fight, its Token not in the hand. */
-    const plates = useMemo(() => {
+    /** A work bar for each hero at work, not in a fight, its Token not in the hand. */
+    const bars = useMemo(() => {
         const byId = new Map(tokens.map(t => [t.id, t]));
         const out = [];
         for (const h of heroes) {
@@ -506,12 +448,8 @@ export const MatBoard = React.memo(function MatBoard({
         /** heroId → how far they stand from their enemy, for the bars around the fight button. */
         apart: new Map(fights.filter(f => f.hx != null).map(f => [f.heroId, f.hx - f.x]))
     }), [fights]);
-    // The Token the pointer rests on, when it is an enemy: its card shows (not while one is carried).
-    const restType = rest.tokenId && !carriedId ? tokens.find(t => t.id === rest.tokenId)?.typeId : null;
-    const restEnemy = restType && getTokenType(restType)?.enemy ? restType : null;
-
     // Keyed by value, so a walking step redraws no Token or hero for it.
-    const platedKey = platesDrawn ? plates.map(p => p.tokenId).sort().join('|') : '';
+    const platedKey = barsDrawn ? bars.map(p => p.tokenId).sort().join('|') : '';
     const plated = useMemo(() => new Set(platedKey ? platedKey.split('|') : []), [platedKey]);
 
     const workedBy = useMemo(() => {
@@ -531,20 +469,21 @@ export const MatBoard = React.memo(function MatBoard({
 
     /**
      * A camp's reach ring, lit through a hero: the camp of the hero the pointer rests on (or the
-     * hero working the Token it rests on, who is outlined as hovered too), or of the lit hero
-     * (hovered on their roster tab, or their sheet open). None while a hovered Token shows its own
-     * ring (a camp hovered itself is one), nor for a camp in the hand: `MatRings` draws those.
+     * hero working the Token it rests on, who is outlined as hovered too), after the rings' rest,
+     * or at once of a hero hovered on their roster tab or with their sheet open. None while a
+     * hovered Token shows its own ring (a camp hovered itself is one), nor for a camp in the hand:
+     * `MatRings` draws those.
      */
     const campRing = useMemo(() => {
         if (hoveredCentre) return null;
-        const heroId = rest.heroId || (rest.tokenId ? workedBy.get(rest.tokenId) : null) || litHeroId || pickedHeroId || inspectedHeroId;
+        const heroId = ringRest.heroId || (ringRest.tokenId ? workedBy.get(ringRest.tokenId) : null) || rosterHover || inspectedHeroId;
         const jobId = heroId ? heroes.find(h => h.heroId === heroId)?.jobId : null;
         const job = jobId && jobId !== carriedId ? BoardState.getTokenById(jobId) : null;
         const camp = job && Camps.isCampLike(job) ? job : null;
         const ring = camp ? Camps.reachRingOf(camp) : null;
         return ring ? { campId: camp.id, ...ring } : null;
     // `tokens`: a camp moved by the player moves its ring (the ring reads the camp's live point).
-    }, [hoveredCentre, rest.tokenId, rest.heroId, carriedId, litHeroId, pickedHeroId, inspectedHeroId, heroes, tokens, workedBy]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [hoveredCentre, ringRest.tokenId, ringRest.heroId, carriedId, rosterHover, inspectedHeroId, heroes, tokens, workedBy]); // eslint-disable-line react-hooks/exhaustive-deps
     // Keyed by value, so a hero's walking step does not redraw the ring.
     const campRingKey = campRing ? `${campRing.campId}|${campRing.x}|${campRing.y}|${campRing.r}` : '';
     const campRingShown = useMemo(() => campRing, [campRingKey]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -567,8 +506,8 @@ export const MatBoard = React.memo(function MatBoard({
     // Each Token's z goes straight onto its boxes, so a change of place redraws no Token. A
     // layout effect: written in the same commit, before anything is painted.
     const stack = useMemo(() => createStackWriter(), []);
-    useLayoutEffect(() => { stack.apply(order.tokenZ, hoveredId); }, [stack, order, hoveredId]);
-    // The task rings, line and dim: over the Tokens at rest, under the worked ones.
+    useLayoutEffect(() => { stack.apply(order.tokenZ, hoveredId, inspectedTokenId); }, [stack, order, hoveredId, inspectedTokenId]);
+    // The job areas: over the Tokens at rest, under the worked ones.
     const ringZ = useMemo(() => taskRingZ(order.tokenZ, workedBy.keys()), [order, workedBy]);
 
     return (
@@ -580,9 +519,6 @@ export const MatBoard = React.memo(function MatBoard({
             style={{ width: mat.w, height: mat.h, '--map-mode-cursor': mapModeCursor(mapMode) || undefined }}
             onPointerMove={handlePointerMove}
             onPointerLeave={clearHover}
-            onPointerDownCapture={handleMatPointerDown}
-            onClick={handleMatClick}
-            onContextMenu={handleMatRightClick}
         >
             {/**
              * 0: the mat itself, a plain darker surface with a rounded light edge and no soft
@@ -615,8 +551,8 @@ export const MatBoard = React.memo(function MatBoard({
             <AmbientLife pictures={ground ? groundPictures : null} tokens={tokens} workedBy={workedBy} carriedId={carriedId} />
 
             {/**
-              * At `taskRingZ`: a ring round every job in progress, over the Tokens at rest, the
-              * ground and those Tokens dimmed inside it. ⚠️ Before the Tokens and heroes: they win a
+              * At `taskRingZ`: an area round every job in progress, over the Tokens at rest, the
+              * ground and those Tokens toned inside it. ⚠️ Before the Tokens and heroes: they win a
               * tie of z.
               */}
             {ringsDrawn && <TaskRings jobs={taskJobs} z={ringZ} resets={resets} />}
@@ -652,18 +588,16 @@ export const MatBoard = React.memo(function MatBoard({
                     isHovered={hoveredId === t.id}
                     isRested={rest.tokenId === t.id}
                     selected={inspectedTokenId != null && inspectedTokenId === t.id}
-                    picked={pickedTokenId === t.id}
                     hasHero={workedBy.has(t.id)}
                     onInspectToken={onInspectToken}
-                    onPick={handlePickToken}
                     onClearInspect={onClearInspect}
                     onOpenRecipes={onOpenRecipes}
                     mapMode={mapMode}
                     onModeClick={handleModeClick}
                     dragging={carriedId === t.id}
                     fightBarHost={fighters.tokens.has(t.id) ? fightBarHost : null}
-                    plateHost={rest.tokenId === t.id && !workedBy.has(t.id) ? idlePlateHost : null}
                     held={held && Occupation.isHeldType(t.typeId)}
+                    found={findMarkOf(found, 'tokens', t.id)}
                     onPress={handleTokenPress}
                 />
             ))}
@@ -673,6 +607,7 @@ export const MatBoard = React.memo(function MatBoard({
             {heroes.map(h => {
                 // A moving hero's point is MatHero's own.
                 const place = h.x == null ? { left: null, top: null } : heroPlacement(h);
+                const heroFound = findMarkOf(found, 'heroes', h.heroId);
                 const animState = heroAnimationState({
                     moving: h.moving, working: h.state === 'working', stuck: h.stuck, combat: h.combat
                 });
@@ -687,13 +622,11 @@ export const MatBoard = React.memo(function MatBoard({
                         top={place.top}
                         z={heroZ(h)}
                         outline={heroOutline({
-                            picked: pickedHeroId === h.heroId,
-                            hovered: litHeroId === h.heroId || (h.tokenId != null && hoveredId === h.tokenId),
+                            hovered: litHeroId === h.heroId || (h.tokenId != null && hoveredId === h.tokenId) || heroFound === 'match',
                             selected: inspectedHeroId === h.heroId
                         })}
+                        found={heroFound}
                         onHover={handleHoverHero}
-                        onPick={handlePickHero}
-                        onRightClick={handleHeroRightClick}
                         animationState={animState}
                         moving={h.moving}
                         facing={h.facing}
@@ -726,27 +659,13 @@ export const MatBoard = React.memo(function MatBoard({
             {/* `MAT_Z.LOOT`: loot on the floor. */}
             <SpriteLayerView />
 
-            {/* `MAT_Z.WORK_PLATE`: the plate under each hero at work and their Token, over the loot. */}
-            {platesDrawn && (
-                <WorkPlateLayer
-                    plates={plates}
-                    restTokenId={rest.tokenId}
-                    restHeroId={rest.heroId}
-                    onPress={handleTokenPress}
-                    yieldToTokens={flagsYield}
-                />
-            )}
-
-            {/* `MAT_Z.WORK_PLATE`: the idle plate under the Token the pointer rests on, when nobody works it. */}
-            {platesDrawn && <IdlePlateHost hostRef={setIdlePlateHost} />}
+            {/* `MAT_Z.WORK_BAR`: the bar under each hero at work and their Token, over the loot. */}
+            {barsDrawn && <WorkBarLayer bars={bars} />}
 
             {/* `MAT_Z.FIGHT`: each fight's button between the fighters' bars, which opens the fight panel. */}
             {fights.length > 0 && <FightLayer fights={fights} yieldToTokens={flagsYield} />}
             {/* `MAT_Z.FIGHT`: the fighters' health bars while they fight, over the loot. */}
             <FightBarHost hostRef={setFightBarHost} yieldToTokens={flagsYield} />
-
-            {/* The enemy card, by the pointer, while it rests on an enemy. */}
-            {tooltipsDrawn && restEnemy && <EnemyCardTip typeId={restEnemy} instanceId={rest.tokenId} />}
 
             {/* `MAT_Z.FX`: effects standing on the mat (rising numbers, sparks, a knockout). */}
             <MatFxLayer />
@@ -755,10 +674,10 @@ export const MatBoard = React.memo(function MatBoard({
             <FlagLayer
                 flagZ={order.flagZ}
                 tokenZ={order.tokenZ}
+                inspectedTokenId={inspectedTokenId}
                 inspectedHeroId={inspectedHeroId}
                 hoverHeroId={litHeroId}
                 hoveredTokenId={hoveredId}
-                tipHeroId={flagTipHeroId}
                 onHoverHero={handleHoverHero}
                 matRef={rootRef}
                 yieldToTokens={flagsYield}
@@ -797,12 +716,6 @@ export const MatBoard = React.memo(function MatBoard({
 });
 
 const NO_JOBS = Object.freeze([]);
-
-/** How far a press may move and still be a click on blank mat, in screen pixels (a drag starts at 8). */
-const CLICK_SLOP_PX = 6;
-
-/** What takes a click of its own on the mat, so a click there is not one on blank mat. */
-const TAKES_ITS_OWN_CLICK = 'button, a, [data-token-id], [data-token-hit], [data-work-plate], [data-limes], [data-tooltip]';
 
 /** A map mode's edge: above the speech bubbles. */
 const MODE_EDGE_Z = MAT_Z.HERO_BUBBLE + 40;

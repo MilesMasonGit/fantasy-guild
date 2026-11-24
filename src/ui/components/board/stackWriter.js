@@ -7,13 +7,15 @@ import { MAT_Z } from './matLayers.js';
  * the stack keeps every other Token's z when one moves, so a move writes that Token's boxes only.
  * The boxes never render a `zIndex` themselves, so React never writes over what is set here.
  * The badges sit one above the art, except the hovered Token's, which go over the heroes
- * (`MAT_Z.HOVERED_BADGES`).
+ * (`MAT_Z.HOVERED_BADGES`). The Token whose card is open comes forward whole, art and badges, over
+ * the heroes and every other Token (`MAT_Z.INSPECTED_TOKEN`).
  */
 export function createStackWriter() {
     /** Token id → its boxes, each with the z last written to it. */
     const boxes = new Map();
     let zById = null;
     let raisedId = null;
+    let inspectedId = null;
 
     const put = (box, z) => {
         if (!box.el || box.z === z) return;
@@ -23,8 +25,9 @@ export function createStackWriter() {
     const write = (id, b) => {
         const z = zById?.get(id);
         if (z == null) return;
-        put(b.art, String(z));
-        put(b.badges, String(id === raisedId ? MAT_Z.HOVERED_BADGES : z + 1));
+        const forward = id === inspectedId;
+        put(b.art, String(forward ? MAT_Z.INSPECTED_TOKEN : z));
+        put(b.badges, String(id === raisedId ? MAT_Z.HOVERED_BADGES : forward ? MAT_Z.INSPECTED_TOKEN + 1 : z + 1));
     };
 
     return {
@@ -43,10 +46,11 @@ export function createStackWriter() {
             if (!b.art.el && !b.badges.el) boxes.delete(id);
             else if (el) write(id, b);
         },
-        /** The mat's new order and hovered Token: every box whose z changed is written. */
-        apply(next, hoveredId = null) {
+        /** The mat's new order, hovered Token and inspected Token: every box whose z changed is written. */
+        apply(next, hoveredId = null, inspected = null) {
             zById = next;
             raisedId = hoveredId;
+            inspectedId = inspected;
             for (const [id, b] of boxes) write(id, b);
         }
     };

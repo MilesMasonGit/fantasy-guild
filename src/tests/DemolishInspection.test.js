@@ -69,12 +69,12 @@ describe('a marked Token reads as demolition work', () => {
 });
 
 describe('the marked badge', () => {
-    it('shows in the middle row, and neither the recipe gear nor the "choose" mark does while marked', () => {
+    it('shows in the centre, and neither the recipe gear nor the "choose" mark does while marked', () => {
         const t = placeAt('fixture_producer', 400, 300);
         const props = { instanceId: t.id, token: { typeId: t.typeId }, gear: { show: true, pulsing: true, recipe: null }, isHovered: true };
         const plain = mount(h(TokenBubbles, props));
         // Hovered, the "choose" mark is the gear, in the mark's place.
-        expect(plain.container.querySelector('[data-gear-in-mark] [data-station-gear]')).not.toBeNull();
+        expect(plain.container.querySelector('[data-gear-centre] [data-station-gear]')).not.toBeNull();
         expect(plain.container.querySelector('[data-problem-mark]')).toBeNull();
         expect(plain.container.querySelector('[data-demolish-badge]')).toBeNull();
         cleanup();

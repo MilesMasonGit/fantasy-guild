@@ -4,7 +4,7 @@ import { HERO_HIT_PX, HERO_BOX_PX } from './boardConstants.js';
 export const HP_COLOUR = '#F09595';
 
 /**
- * The bar's measures in plate pixels (one screen pixel at the mat's 2× art, `workPlate.plateUnit`):
+ * The bar's measures in plate pixels (one screen pixel at the mat's 2× art, `matMarks.plateUnit`):
  * a thin bar 3 art pixels tall with a 1-art-pixel black edge, the number written above it.
  */
 export const HP_BAR = Object.freeze({
@@ -44,7 +44,7 @@ export function healthFillPx(cur, max, w = HP_BAR.W) {
 }
 
 /**
- * The mat's fighter bar in plate pixels (one screen pixel at the mat's 2× art, `workPlate.plateUnit`):
+ * The mat's fighter bar in plate pixels (one screen pixel at the mat's 2× art, `matMarks.plateUnit`):
  * a small edition of the hero bar's `VitalBar`, its fill on a stepped black edge with the numbers
  * written on it. The fight panel keeps the thin `HP_BAR`.
  */

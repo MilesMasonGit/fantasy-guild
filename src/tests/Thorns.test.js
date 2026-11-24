@@ -146,23 +146,16 @@ describe('⭐ one entry, two bearers', () => {
         expect(hp('hero_1')).toBe(99);
     });
 
-    it('⭐ hurts the hero who KILLS it — a real fight, not a second producer', () => {
+    it('⭐ does NOT hurt the hero who kills an enemy carrying it: a death is not the enemy\'s cycle', () => {
         /**
-         * The actual acceptance criterion, and the reason this test exists
-         * separately from the one above: harvesting and killing are different
-         * code paths in `BoardRunner` and `BoardCombat`, and the whole claim is
-         * that a rule cannot tell them apart. Proving it with a second producer
-         * would have proved only that two Tokens can share a library entry.
+         * A kill is a combat cycle: neighbours hear it as On Neighbour's Kill, and the enemy's own
+         * On Cycle rules do not fire at its death (an enemy stings on the fight's own moments, as
+         * the Thorn Elemental's When Struck does).
+         *
+         * ⚠️ The thorn is enormous and armour-piercing, and `cause: 'effect'` is published by
+         * nothing else in the game: had it fired at the kill, the hero would be downed by it.
          */
-        /**
-         * ⚠️ The thorn is deliberately enormous and armour-piercing, so that
-         * the signal is unambiguous. A real fight moves HP for its own reasons —
-         * the enemy hits back — so "hp went down" would pass whether or not the
-         * thorn ever fired. `cause: 'effect'` is published by nothing else in
-         * the game, which makes it the one assertion that can only be true if a
-         * thorn landed on a genuine kill.
-         */
-        // Free of charge: an enemy is one use, and its kill has spent it before the cycle's rules run.
+        // Free of charge, so only the kind of cycle can stop it, not the enemy's one spent use.
         registerThorns(500, { ignoresArmor: true }, { chargeDelta: 0 });
         registerTokenTypes({
             fixture_thorn_beast: {
@@ -173,14 +166,19 @@ describe('⭐ one entry, two bearers', () => {
         });
 
         const downed = [];
-        const un = EventBus.subscribe('hero_downed', p => downed.push(p));
+        let kills = 0;
+        const offs = [
+            EventBus.subscribe('hero_downed', p => downed.push(p)),
+            EventBus.subscribe('board:combat_resolved', p => { if (p.outcome === 'victory') kills++; })
+        ];
 
         GameState.state.heroes = [makeFighter('hero_1')];
         place(MONSTER, 'fixture_thorn_beast', 'hero_1');
         run(60000);
-        un();
+        offs.forEach(off => off());
 
-        expect(downed).toContainEqual({ heroId: 'hero_1', cause: 'effect' });
+        expect(kills).toBe(1);
+        expect(downed).not.toContainEqual({ heroId: 'hero_1', cause: 'effect' });
     });
 
     it('⭐ is literally the same entry, referenced twice', () => {

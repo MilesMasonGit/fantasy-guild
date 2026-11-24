@@ -21,14 +21,13 @@ import { LootSystem } from '../systems/combat/LootSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
-import { EFFECT_TYPES } from '../systems/effects/constants.js';
+import { EFFECT_TYPES, GIANT_HARVEST_SKILLS } from '../systems/effects/constants.js';
 import { KEYWORD, paletteForKeyword, makeStatement } from '../systems/effects/statements.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import { registerHallSky } from '../config/registries/hallStarRegistry.js';
-import { isGatheringSkill, getAllSkillIds, getSkill, SKILL_TRADES } from '../config/registries/skillRegistry.js';
 import { HALL_NODE, getUpgradeDef } from '../config/guildUpgrades.js';
 import { getPaletteEntry, bucketsFor, MODIFIER_SHAPES } from '../config/registries/modifierPalette.js';
 import { resetMatTuning } from '../config/matTuning.js';
@@ -48,12 +47,13 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * Giant Harvest (brief 620 E1): a chance a gathering cycle's drops come in at ten times. Every drop
- * of the cycle, the rare table's find included; with Double Loot too, both apply (twenty times). A
- * gathering cycle is one whose work skill is a gathering skill (Mining, Forestry, Fishing, Farming);
- * any other work never rolls it. A failed cycle rolls nothing, and no rule means no draw.
+ * Giant Harvest: a chance a Farming work cycle's drops come in at ten times. Every drop of the
+ * cycle, the rare table's find included; with Double Loot too, both apply (twenty times). Any other
+ * work (Mining, Forestry, Fishing, Smithing...) never rolls it, nor does a kill. A failed cycle rolls
+ * nothing, and no rule means no draw.
  */
 
+const CROP = 'fixture_gh_crop';
 const ORE = 'fixture_gh_ore';
 const GEM = 'fixture_gh_gem';
 const LOG = 'fixture_gh_log';
@@ -66,7 +66,7 @@ const item = (id, name) => ({
     stackable: true, restoreAmount: 0, restoreType: '', regen: 0, equipSlot: '', value: 1
 });
 registerItems({
-    [ORE]: item(ORE, 'GH Ore'), [GEM]: item(GEM, 'GH Gem'), [LOG]: item(LOG, 'GH Log'), [BAR]: item(BAR, 'GH Bar'),
+    [CROP]: item(CROP, 'GH Crop'), [ORE]: item(ORE, 'GH Ore'), [GEM]: item(GEM, 'GH Gem'), [LOG]: item(LOG, 'GH Log'), [BAR]: item(BAR, 'GH Bar'),
     [SEED]: item(SEED, 'GH Seed'), [WHEAT]: item(WHEAT, 'GH Wheat'), [NEST]: item(NEST, 'GH Nest')
 });
 const WHEAT_RECIPE = 'gh_recipe_wheat';
@@ -96,8 +96,9 @@ const building = (id, statements) => ({
 const ALL = { mode: 'all' };
 
 registerTokenTypes({
+    gh_patch: work('gh_patch', 'farming', CROP),
     gh_vein: work('gh_vein', 'mining', ORE),
-    gh_rare_vein: work('gh_rare_vein', 'mining', ORE, { rareTable: { chance: 100, entries: [{ itemId: GEM, weight: 1, minQty: 1, maxQty: 1 }] } }),
+    gh_rare_patch: work('gh_rare_patch', 'farming', CROP, { rareTable: { chance: 100, entries: [{ itemId: GEM, weight: 1, minQty: 1, maxQty: 1 }] } }),
     gh_tree: work('gh_tree', 'forestry', LOG),
     gh_anvil: work('gh_anvil', 'smithing', BAR),
     gh_looter: building('gh_looter', [provides(ALL, EFFECT_TYPES.LOOT_MULT, 100)]),
@@ -107,7 +108,7 @@ registerTokenTypes({
         id: 'stm_gh_nest', keyword: 'grants', to: ALL, reach: 'nearby',
         payload: { type: EFFECT_TYPES.BONUS_DROP, itemId: NEST, quantity: 1, chance: 100 }
     }]),
-    gh_empty_vein: { ...work('gh_empty_vein', 'mining', ORE), config: { ...work('gh_empty_vein', 'mining', ORE).config, outputs: [] } },
+    gh_empty_patch: { ...work('gh_empty_patch', 'farming', CROP), config: { ...work('gh_empty_patch', 'farming', CROP).config, outputs: [] } },
     gh_field: {
         id: 'gh_field', name: 'GH Field', tokenType: 'station', rarity: 'common', theme: 'fixture', uses: null, sprite: 't_farmland',
         requiresHero: true, field: {},
@@ -228,84 +229,91 @@ afterEach(() => {
 });
 
 describe('Giant Harvest from a Hall star', () => {
-    it('at 100 %, every mining cycle drops ten times what it would', () => {
+    it('at 100 %, every Farming cycle drops ten times what it would', () => {
         holdStar(100);
-        const { seen } = threeCycles('gh_vein');
+        const { seen } = threeCycles('gh_patch');
         expect(seen.cycles).toBe(3);
-        expect(made(ORE)).toBe(30);
+        expect(made(CROP)).toBe(30);
     });
 
     it('at 0 %, every cycle drops what it always did', () => {
         holdStar(0);
-        const { seen } = threeCycles('gh_vein');
+        const { seen } = threeCycles('gh_patch');
         expect(seen.cycles).toBe(3);
-        expect(made(ORE)).toBe(3);
+        expect(made(CROP)).toBe(3);
     });
 
-    it('narrowed to Mining it reaches the vein; narrowed to Forestry it does not', () => {
-        holdStar(100, { category: 'mining' });
-        threeCycles('gh_vein');
-        expect(made(ORE)).toBe(30);
+    it('narrowed to Farming it reaches the patch; narrowed to Forestry it does not', () => {
+        holdStar(100, { category: 'farming' });
+        threeCycles('gh_patch');
+        expect(made(CROP)).toBe(30);
 
         fresh();
         holdStar(100, { category: 'forestry' });
-        threeCycles('gh_vein');
-        expect(made(ORE)).toBe(3);
+        threeCycles('gh_patch');
+        expect(made(CROP)).toBe(3);
     });
 
-    it('aimed at another Token, it leaves the vein alone', () => {
+    it('aimed at another Token, it leaves the patch alone', () => {
         holdStar(100, { to: { mode: 'id', value: 'gh_tree' } });
-        threeCycles('gh_vein');
-        expect(made(ORE)).toBe(3);
+        threeCycles('gh_patch');
+        expect(made(CROP)).toBe(3);
     });
 
     it('from a building\'s nearby rule too', () => {
-        threeCycles('gh_vein', 'gh_giant_well');
-        expect(made(ORE)).toBe(30);
+        threeCycles('gh_patch', 'gh_giant_well');
+        expect(made(CROP)).toBe(30);
     });
 });
 
 describe('every drop of the cycle', () => {
     it('the rare table\'s find comes in at ten times as well', () => {
         holdStar(100);
-        const { seen } = threeCycles('gh_rare_vein');
+        const { seen } = threeCycles('gh_rare_patch');
         expect(seen.cycles).toBe(3);
-        expect(made(ORE)).toBe(30);
+        expect(made(CROP)).toBe(30);
         expect(made(GEM)).toBe(30);
     });
 
     it('with Double Loot too, both apply: twenty times, the rare find included', () => {
         holdStar(100);
-        const { seen } = threeCycles('gh_rare_vein', 'gh_looter');
+        const { seen } = threeCycles('gh_rare_patch', 'gh_looter');
         expect(seen.cycles).toBe(3);
-        expect(made(ORE)).toBe(60);
+        expect(made(CROP)).toBe(60);
         expect(made(GEM)).toBe(60);
     });
 
     it('Double Loot alone still doubles, so the twenty is ten on top of it', () => {
-        const { seen } = threeCycles('gh_rare_vein', 'gh_looter');
+        const { seen } = threeCycles('gh_rare_patch', 'gh_looter');
         expect(seen.cycles).toBe(3);
-        expect(made(ORE)).toBe(6);
+        expect(made(CROP)).toBe(6);
         expect(made(GEM)).toBe(6);
     });
 });
 
-describe('only gathering work rolls it', () => {
-    it('the gathering skills are Mining, Forestry, Fishing and Farming, read off the registry', () => {
-        expect(['mining', 'forestry', 'fishing', 'farming'].every(isGatheringSkill)).toBe(true);
-        expect(['smithing', 'crafting', 'cooking', 'alchemy', 'construction', 'melee', 'taming', '', null, 'not_a_skill']
-            .some(isGatheringSkill)).toBe(false);
-        expect(getAllSkillIds().filter(isGatheringSkill))
-            .toEqual(getAllSkillIds().filter(id => getSkill(id).trade === SKILL_TRADES.GATHERING));
+describe('only Farming work rolls it', () => {
+    it('Farming is the one skill that rolls it', () => {
+        expect(GIANT_HARVEST_SKILLS).toEqual(['farming']);
     });
 
-    it('a forestry cycle is a gathering cycle: ten times the logs', () => {
-        holdStar(100);
-        threeCycles('gh_tree');
-        expect(made(LOG)).toBe(30);
+    it('a Mining or a Forestry cycle never rolls it, from a guild-wide star or one narrowed to its skill, and draws nothing for it', () => {
+        for (const [typeId, skill, itemId] of [['gh_vein', 'mining', ORE], ['gh_tree', 'forestry', LOG]]) {
+            fresh();
+            const plain = threeCycles(typeId);
+            expect(made(itemId)).toBe(3);
+            for (const category of [undefined, skill]) {
+                fresh();
+                holdStar(100, { category });
+                const starred = threeCycles(typeId);
+                expect(starred.seen.cycles).toBe(3);
+                expect(starred.seen.giants).toHaveLength(0);
+                expect(made(itemId)).toBe(3);
+                expect(starred.draws).toBe(plain.draws);
+            }
+        }
     });
 
-    it('a Field\'s harvest is a gathering cycle: each harvest of its load comes in at ten times', () => {
+    it('a Field\'s harvest is Farming work: each harvest of its load comes in at ten times', () => {
         holdStar(100, { category: 'farming' });
         InventoryManager.addItem(SEED, 1);
         const field = put('gh_field', AT);
@@ -337,75 +345,78 @@ describe('only gathering work rolls it', () => {
         }
     });
 
-    it('the roll itself refuses a skill that is not gathering before reading any rule', () => {
+    it('the roll itself refuses any skill but Farming before reading any rule', () => {
+        holdStar(100);
         const random = vi.spyOn(Math, 'random');
-        expect(OutputRules.rollGiantHarvest('no_such_token', 'smithing')).toBe(false);
+        for (const skill of ['smithing', 'mining', 'forestry', 'fishing', 'melee', '', null]) {
+            expect(OutputRules.rollGiantHarvest('no_such_token', skill)).toBe(false);
+        }
         expect(random).not.toHaveBeenCalled();
     });
 });
 
 describe('⚠️ no rule, no draw', () => {
-    it('the roll on gathering work draws nothing with no rule or one at 0 %, and once at 100 %', () => {
-        const v = put('gh_vein', AT);
+    it('the roll on Farming work draws nothing with no rule or one at 0 %, and once at 100 %', () => {
+        const v = put('gh_patch', AT);
         const random = vi.spyOn(Math, 'random');
-        expect(OutputRules.rollGiantHarvest(v.id, 'mining')).toBe(false);
+        expect(OutputRules.rollGiantHarvest(v.id, 'farming')).toBe(false);
         expect(random).not.toHaveBeenCalled();
         holdStar(0);
-        expect(OutputRules.rollGiantHarvest(v.id, 'mining')).toBe(false);
+        expect(OutputRules.rollGiantHarvest(v.id, 'farming')).toBe(false);
         expect(random).not.toHaveBeenCalled();
         holdStar(100);
-        expect(OutputRules.rollGiantHarvest(v.id, 'mining')).toBe(true);
+        expect(OutputRules.rollGiantHarvest(v.id, 'farming')).toBe(true);
         expect(random).toHaveBeenCalledTimes(1);
     });
 
     it('no rule, or a rule at 0 %, draws nothing for it; at 100 % it draws once a cycle', () => {
-        const none = threeCycles('gh_vein').draws;
+        const none = threeCycles('gh_patch').draws;
         fresh();
         holdStar(0);
-        expect(threeCycles('gh_vein').draws).toBe(none);
+        expect(threeCycles('gh_patch').draws).toBe(none);
         fresh();
         holdStar(100);
-        expect(threeCycles('gh_vein').draws).toBe(none + 3);
+        expect(threeCycles('gh_patch').draws).toBe(none + 3);
     });
 
     it('a failed cycle rolls nothing: no find, nothing dropped and not one draw for it', () => {
-        const jinxed = threeCycles('gh_vein', 'gh_jinx');
+        const jinxed = threeCycles('gh_patch', 'gh_jinx');
         expect(jinxed.seen.failed).toBe(3);
         fresh();
         holdStar(100);
-        const starred = threeCycles('gh_vein', 'gh_jinx');
+        const starred = threeCycles('gh_patch', 'gh_jinx');
         expect(starred.seen.failed).toBe(3);
         expect(starred.draws).toBe(jinxed.draws);
         expect(starred.seen.giants).toHaveLength(0);
-        expect(made(ORE)).toBe(0);
+        expect(made(CROP)).toBe(0);
     });
 });
 
 describe('the celebration on the mat', () => {
     it('each hit says so once over its Token (the mat draws the burst and the "Giant!" float); a miss says nothing', () => {
         holdStar(100);
-        const { v, seen } = threeCycles('gh_vein');
+        const { v, seen } = threeCycles('gh_patch');
         expect(seen.giants).toEqual([{ instanceId: v.id, giant: true }, { instanceId: v.id, giant: true }, { instanceId: v.id, giant: true }]);
 
         fresh();
         holdStar(0);
-        expect(threeCycles('gh_vein').seen.giants).toHaveLength(0);
+        expect(threeCycles('gh_patch').seen.giants).toHaveLength(0);
     });
 
     it('a catch-up (a quiet bus) celebrates nothing, and still drops ten times', () => {
         holdStar(100);
         EventBus.setQuiet(true);
-        const { seen } = threeCycles('gh_vein');
+        const { seen } = threeCycles('gh_patch');
         EventBus.setQuiet(false);
         expect(seen.giants).toHaveLength(0);
-        expect(made(ORE)).toBe(30);
+        expect(made(CROP)).toBe(30);
     });
 });
 
 describe('no badge on the Token card (owner, 2026-11-12)', () => {
     it("a Hall star's Giant Harvest adds no row to the card's effect breakdown; the celebration says it", () => {
         holdStar(25);
-        const vein = put('gh_vein', AT);
+        const vein = put('gh_patch', AT);
         expect(Object.values(EFFECT_KEY)).not.toContain('giantHarvest');
         expect(effectBreakdown(vein.id).effects.map(b => b.name)).not.toContain('Giant Harvest');
     });
@@ -413,44 +424,44 @@ describe('no badge on the Token card (owner, 2026-11-12)', () => {
 
 describe("a building's bonus drop is multiplied as the Token's own drops are", () => {
     it('neither: the bonus drop lands as authored', () => {
-        const { seen } = threeCycles('gh_vein', 'gh_nester');
+        const { seen } = threeCycles('gh_patch', 'gh_nester');
         expect(seen.cycles).toBe(3);
         expect(made(NEST)).toBe(3);
-        expect(made(ORE)).toBe(3);
+        expect(made(CROP)).toBe(3);
     });
 
     it('Double Loot doubles it', () => {
-        threeCycles('gh_vein', 'gh_nester', 'gh_looter');
+        threeCycles('gh_patch', 'gh_nester', 'gh_looter');
         expect(made(NEST)).toBe(6);
-        expect(made(ORE)).toBe(6);
+        expect(made(CROP)).toBe(6);
     });
 
     it('Giant Harvest brings it in at ten times', () => {
         holdStar(100);
-        const { seen } = threeCycles('gh_vein', 'gh_nester');
+        const { seen } = threeCycles('gh_patch', 'gh_nester');
         expect(made(NEST)).toBe(30);
-        expect(made(ORE)).toBe(30);
+        expect(made(CROP)).toBe(30);
         expect(seen.giants).toHaveLength(3);
     });
 
     it('both: twenty times', () => {
         holdStar(100);
-        threeCycles('gh_vein', 'gh_nester', 'gh_looter');
+        threeCycles('gh_patch', 'gh_nester', 'gh_looter');
         expect(made(NEST)).toBe(60);
-        expect(made(ORE)).toBe(60);
+        expect(made(CROP)).toBe(60);
     });
 
     it('a Giant Harvest whose only drop is the bonus is still celebrated', () => {
         holdStar(100);
-        const { seen } = threeCycles('gh_empty_vein', 'gh_nester');
+        const { seen } = threeCycles('gh_empty_patch', 'gh_nester');
         expect(made(NEST)).toBe(30);
         expect(seen.giants).toHaveLength(3);
     });
 
     it('multiplying draws nothing more: the same draws with and without Double Loot at 100 %', () => {
-        const plain = threeCycles('gh_vein', 'gh_nester').draws;
+        const plain = threeCycles('gh_patch', 'gh_nester').draws;
         fresh();
-        const looted = threeCycles('gh_vein', 'gh_nester', 'gh_looter').draws;
+        const looted = threeCycles('gh_patch', 'gh_nester', 'gh_looter').draws;
         // Double Loot's own roll, once a cycle, and nothing for the bonus drop.
         expect(looted).toBe(plain + 3);
     });
@@ -459,71 +470,76 @@ describe("a building's bonus drop is multiplied as the Token's own drops are", (
 describe('in the CMS and the rules text', () => {
     it('is offered as Giant Harvest, a flat percent chance narrowed by skill, with the owner\'s words', () => {
         const entry = getPaletteEntry(EFFECT_TYPES.GIANT_HARVEST);
-        expect(entry).toMatchObject({ label: 'Giant Harvest', shape: MODIFIER_SHAPES.PROC, categories: 'skill', skillTrade: SKILL_TRADES.GATHERING });
+        expect(entry).toMatchObject({ label: 'Giant Harvest', shape: MODIFIER_SHAPES.PROC, categories: 'skill', skillsOnly: ['farming'] });
         expect(bucketsFor(entry)).toEqual(['flat']);
-        expect(entry.hint).toMatch(/^A chance a gathering cycle's drops come in at ten times/);
+        expect(entry.hint).toMatch(/^A chance a Farming cycle's drops come in at ten times/);
+        expect(entry.hint).toMatch(/never a kill/);
         expect(paletteForKeyword(KEYWORD.PROVIDES).some(p => p.type === EFFECT_TYPES.GIANT_HARVEST)).toBe(true);
     });
 
-    it('its "only for" picker offers the gathering skills alone', () => {
+    it('its "only for" picker offers Farming alone', () => {
         const statement = { ...makeStatement(KEYWORD.PROVIDES), payload: { type: EFFECT_TYPES.GIANT_HARVEST, bucket: 'flat', value: 1 } };
         const only = slotsOf(statement).find(s => s.id === 'category');
-        expect(only.options.map(o => o.id)).toEqual(['', ...getAllSkillIds().filter(isGatheringSkill)]);
-        expect(only.options[0].label).toBe('Any gathering skill');
+        expect(only.options.map(o => o.id)).toEqual(['', 'farming']);
+        expect(only.options[0].label).toBe('Any Farming work');
     });
 
     it('reads in plain words on a Token, on a hero, as a support\'s tag and on a Hall star', () => {
         const rule = (value, extra = {}) => ({ id: 's', keyword: 'provides', to: ALL, reach: 'nearby', payload: { type: EFFECT_TYPES.GIANT_HARVEST, bucket: 'flat', value, ...extra } });
-        expect(renderStatement(rule(2, { category: 'mining' })))
-            .toBe('Giant Harvest 2% on every nearby Mining Token.');
+        expect(renderStatement(rule(2, { category: 'farming' })))
+            .toBe('Giant Harvest 2% on every nearby Farming Token.');
         expect(renderStatement(rule(-1))).toBe('Giant Harvest −1% on every nearby Token.');
         expect(renderStatement(rule(2), { carried: true })).toBe('Giant Harvest 2% for the hero.');
         expect(effectTagText({ type: EFFECT_TYPES.GIANT_HARVEST, bucket: 'flat', value: 2 })).toBe('Giant Harvest 2%');
-        expect(hallRuleSentence(starRule(1, { category: 'mining' })))
-            .toBe('Giant Harvest 1% on every Mining Token on the board.');
-        holdStar(1, { category: 'mining' });
-        expect(starSentence(getUpgradeDef('gh_star'))).toBe('Every Mining Token has a chance a gathering cycle\'s drops come in at ten times.');
+        expect(hallRuleSentence(starRule(1, { category: 'farming' })))
+            .toBe('Giant Harvest 1% on every Farming Token on the board.');
+        holdStar(1, { category: 'farming' });
+        expect(starSentence(getUpgradeDef('gh_star'))).toBe('Every Farming Token has a chance a Farming cycle\'s drops come in at ten times.');
     });
 });
 
 describe('the CMS rate calculator', () => {
     const content = (extraTokens = {}) => ({
         tokens: {
-            lr_vein: work('lr_vein', 'mining', ORE, { rareTable: { chance: 10, entries: [{ itemId: GEM, weight: 1, minQty: 1, maxQty: 1 }] } }),
+            lr_patch: work('lr_patch', 'farming', CROP, { rareTable: { chance: 10, entries: [{ itemId: GEM, weight: 1, minQty: 1, maxQty: 1 }] } }),
             lr_anvil: work('lr_anvil', 'smithing', BAR),
+            lr_vein: work('lr_vein', 'mining', ORE),
             lr_giant: building('lr_giant', [provides(ALL, EFFECT_TYPES.GIANT_HARVEST, 10)]),
             lr_looter: building('lr_looter', [provides(ALL, EFFECT_TYPES.LOOT_MULT, 50)]),
             lr_nester: building('lr_nester', [{ id: 'stm_lr_nest', keyword: 'grants', to: ALL, reach: 'nearby', payload: { type: EFFECT_TYPES.BONUS_DROP, itemId: NEST, quantity: 1, chance: 100 } }]),
             ...extraTokens
         },
-        items: Object.fromEntries([ORE, GEM, BAR, NEST].map(id => [id, { id, name: id, type: 'material', stackable: true, equipSlot: '' }])),
+        items: Object.fromEntries([CROP, ORE, GEM, BAR, NEST].map(id => [id, { id, name: id, type: 'material', stackable: true, equipSlot: '' }])),
         recipes: [], effects: {}, starterCamp: { tokens: [] }
     });
 
-    it('counts a gathering cycle\'s drops at 1 + 9 × the chance, the rare finds too, beside Double Loot', () => {
+    it('counts a Farming cycle\'s drops at 1 + 9 × the chance, the rare finds too, beside Double Loot', () => {
         const book = buildRateBook(content());
-        const plain = book.rateOf({ token: 'lr_vein' });
-        const giant = book.rateOf({ token: 'lr_vein' }, { supports: ['lr_giant'] });
+        const plain = book.rateOf({ token: 'lr_patch' });
+        const giant = book.rateOf({ token: 'lr_patch' }, { supports: ['lr_giant'] });
         // 10 % at ten times: 1.9 times as much on average.
-        expect(giant.items[ORE] / plain.items[ORE]).toBeCloseTo(1.9, 9);
+        expect(giant.items[CROP] / plain.items[CROP]).toBeCloseTo(1.9, 9);
         expect(giant.items[GEM] / plain.items[GEM]).toBeCloseTo(1.9, 9);
         expect(giant.unmodelled.some(u => u.what === EFFECT_TYPES.GIANT_HARVEST)).toBe(false);
         // With Double Loot at 50 %: 1.5 × 1.9.
-        const both = book.rateOf({ token: 'lr_vein' }, { supports: ['lr_giant', 'lr_looter'] });
-        expect(both.items[ORE] / plain.items[ORE]).toBeCloseTo(1.5 * 1.9, 9);
+        const both = book.rateOf({ token: 'lr_patch' }, { supports: ['lr_giant', 'lr_looter'] });
+        expect(both.items[CROP] / plain.items[CROP]).toBeCloseTo(1.5 * 1.9, 9);
     });
 
-    it('leaves work that is not gathering as it was', () => {
+    it('leaves work that is not Farming as it was, Mining too', () => {
         const book = buildRateBook(content());
         const plain = book.rateOf({ token: 'lr_anvil' });
         const giant = book.rateOf({ token: 'lr_anvil' }, { supports: ['lr_giant'] });
         expect(giant.items[BAR]).toBeCloseTo(plain.items[BAR], 9);
+        const ore = book.rateOf({ token: 'lr_vein' });
+        const giantOre = book.rateOf({ token: 'lr_vein' }, { supports: ['lr_giant'] });
+        expect(giantOre.items[ORE]).toBeCloseTo(ore.items[ORE], 9);
     });
 
     it("counts a building's bonus drop at Double Loot's and Giant Harvest's times too", () => {
         const book = buildRateBook(content());
-        const plain = book.rateOf({ token: 'lr_vein' }, { supports: ['lr_nester'] });
-        const both = book.rateOf({ token: 'lr_vein' }, { supports: ['lr_nester', 'lr_giant', 'lr_looter'] });
+        const plain = book.rateOf({ token: 'lr_patch' }, { supports: ['lr_nester'] });
+        const both = book.rateOf({ token: 'lr_patch' }, { supports: ['lr_nester', 'lr_giant', 'lr_looter'] });
         expect(plain.items[NEST]).toBeGreaterThan(0);
         expect(both.items[NEST] / plain.items[NEST]).toBeCloseTo(1.5 * 1.9, 9);
     });

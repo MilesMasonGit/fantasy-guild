@@ -17,17 +17,15 @@ import { tokenStartingUses, registerTokenTypes } from '../config/registries/toke
 import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
-import { TokenBubbles, BUBBLE_TIPS } from '../ui/components/board/TokenBubbles.jsx';
+import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import {
-    cycleSecondsText, chargesFraction, ringCount, RING_D_U, RING_STROKE_U, GLIDING_RINGS, TURN_COUNTDOWN_REFRESH_MS
+    cycleSecondsText, chargesFraction, ringCount, RING_D_U, RING_STROKE_U, GLIDING_RINGS
 } from '../ui/components/board/ringRow.js';
-import { WorkBarFill } from '../ui/components/board/WorkPlateLayer.jsx';
-import { PLATE, CELL, plateFootOf, platePlace } from '../ui/components/board/workPlate.js';
-import { idlePlateCells, timerCellsOf } from '../ui/components/board/idlePlate.js';
-import { growthLine, respawnLine, liveTimerSources } from '../ui/components/board/tokenTimers.js';
-import { MAT_Z } from '../ui/components/board/matLayers.js';
+import { WorkBarTrack } from '../ui/components/board/WorkBarLayer.jsx';
+import { BAR, nameFootOf, barPlace } from '../ui/components/board/matMarks.js';
+import { bubbleOutputOf } from '../ui/components/board/RecipeBubble.jsx';
+import { isCapSeen, resetCapSeen } from '../ui/components/board/capSeen.js';
 import { PROBLEM_SPRITE, SEVERITY } from '../ui/components/board/problemMark.js';
-import * as TimedChanges from '../systems/board/TimedChanges.js';
 import { STEP_MS } from '../ui/components/board/frameClock.js';
 import { boardScaleAt } from '../ui/components/base/TokenSprite.jsx';
 import { restHover } from './fixtures/hoverRest.js';
@@ -41,13 +39,12 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ The mat layer (brief 120, C1; concept_token_bars): at rest a Token nobody works shows what is
- * wrong (one problem mark) and nothing else; on hover it gets the idle plate under it (its
- * problem, charges, spawner count, timer) and no ring. A worked Token's cycle,
- * charges and problem are on its work plate (`WorkPlate.test.js`): its own box draws none of them,
- * but it still keeps the bar's model, which the plate's fill draws (here: `WorkBarFill` beside it).
- * Where each piece sits, when it shows, the tooltips, and that pressing any of them grabs the
- * Token.
+ * ⭐ The marks on a Token (brief 830 D3, concept_playmat_declutter §3, §11, §12, §15): at rest a
+ * Token shows what is wrong (one still '!' in its centre) and nothing else; no plate, no timers,
+ * no charges, no tooltip anywhere. On hover: its name, the gear in its centre (a Token that takes
+ * a recipe), and, resting on a station with a recipe chosen, that recipe's output in a speech
+ * bubble. A worked Token's cycle is its work bar (`WorkBar.test.js`): its own box draws none of
+ * it, but it keeps the bar's model, which the bar draws (here: `WorkBarTrack` beside it).
  */
 
 registerTokenTypes({
@@ -73,35 +70,25 @@ const mount = (el) => render(tree(el));
 
 const worked = (extra = {}) => ({ typeId: 'fixture_producer', instanceId: 'tok_r', heroId: 'hero_1', alert: null, usesRemaining: null, ...extra });
 const bub = (props) => h(TokenBubbles, { instanceId: 'tok_r', boxPx: 128, ...props });
-/** The node the idle plate draws into, as the mat's `IdlePlateHost`. */
-let plateHost = null;
-beforeEach(() => {
-    plateHost = document.createElement('div');
-    plateHost.setAttribute('data-test-plate-host', '');
-    document.body.appendChild(plateHost);
-});
-afterEach(() => { plateHost?.remove(); plateHost = null; });
-/** A Token nobody works, rested on by the pointer, with the mat's plate host. */
-const idleBub = (props) => bub({ plateHost, x: 400, y: 300, isHovered: true, ...props });
-const idlePlate = () => plateHost.querySelector('[data-idle-plate]');
-const idleCellKinds = () => [...(idlePlate()?.querySelectorAll('[data-plate-cell]') || [])].map(c => c.getAttribute('data-plate-cell'));
-const idleCell = (kind) => idlePlate()?.querySelector(`[data-plate-cell="${kind}"]`) ?? null;
-/** The Token's bubbles with its plate's fill beside them, as on the mat. */
+/** The Token's bubbles with its work bar beside them, as on the mat. */
 const withFill = (props, blocked = false) => [
     h(TokenBubbles, { key: 'b', instanceId: 'tok_r', boxPx: 128, ...props }),
-    h(WorkBarFill, { key: 'f', instanceId: 'tok_r', blocked })
+    h(WorkBarTrack, { key: 'f', instanceId: 'tok_r', blocked })
 ];
-const ring = (c, kind) => c.querySelector(`[data-ring="${kind}"]`);
-const bubble = (c, kind) => c.querySelector(`[data-bubble="${kind}"]`);
 const bar = (c) => c.querySelector('[data-work-bar]');
 const mark = (c) => c.querySelector('[data-problem-mark]');
+const centre = (c) => c.querySelector('[data-bubble-row="centre"]');
 const progress = (p) => act(() => { EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: 'tok_r', ...p }); });
 const advance = (ms) => act(() => { vi.advanceTimersByTime(ms); });
 /** Past the next step of the shared step clock (its timer, then its frame). */
 const step = () => advance(STEP_MS + 20);
 /** Every element the Token's bubbles drew (dnd-kit's own announcer left out). */
 const drawn = (c) => [...c.querySelector('[data-under-test]').querySelectorAll('*')];
+const say = (alert, needs = []) => act(() => {
+    EventBus.publish(BOARD_EVENTS.SPAWNER_ALERT_CHANGED, { instanceId: 'tok_r', alert, needs });
+});
 
+beforeEach(() => resetCapSeen());
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 describe('the rules, pure', () => {
@@ -134,82 +121,49 @@ describe('the rules, pure', () => {
         expect([...GLIDING_RINGS]).toEqual(['charges']);
     });
 
-    it('⭐ the idle plate’s cells: the problem, then the timers; never charges or a spawner’s count', () => {
-        const timers = timerCellsOf(growing(30000)());
-        const counts = { charges: 4, spawner: { count: 3, cap: 5 } };
-        const cells = idlePlateCells({ problem: { kind: ALERT.INPUTS, severity: SEVERITY.WAITING }, ...counts, timers });
-        expect(cells.map(c => c.kind)).toEqual([CELL.PROBLEM, CELL.TIMER]);
-        expect(cells[1]).toMatchObject({ text: '30s', glyph: 'grow' });
-        expect(cells[1].tip).toMatch(/^Grows into .* in 30s$/);
-        expect(idlePlateCells(counts)).toEqual([]);
-        expect(idlePlateCells({})).toEqual([]);
-    });
-
-    it('the timer cells: the card’s glyph, figure and sentence; nothing counting, none', () => {
-        const src = liveTimerSources();
-        const at = { id: 'v', typeId: 'fixture_bub_grower' };
-        const [rest] = timerCellsOf([respawnLine(at, { mode: 'refill', resting: true, inMs: 15000 }, src)]);
-        expect(rest).toMatchObject({ glyph: 'regrow', text: '15s', tip: 'Exhausted · respawns in 15s' });
-        expect(timerCellsOf(null)).toEqual([]);
+    it('a recipe’s bubble shows its anchored output, else its first; a building recipe its Token', () => {
+        expect(bubbleOutputOf({ outputs: [{ itemId: 'a' }, { itemId: 'b', anchor: true }] })).toBe('b');
+        expect(bubbleOutputOf({ outputs: [{ itemId: 'a' }, { itemId: 'b' }] })).toBe('a');
+        expect(bubbleOutputOf({ outputs: [{ tokenId: 'token_x' }] })).toBe('token_x');
+        expect(bubbleOutputOf({ outputs: [] })).toBeNull();
+        expect(bubbleOutputOf(null)).toBeNull();
     });
 });
 
-/** What `MatToken`'s readTimer hands the plate: the timer writer's lines (`idleTimerLines`). */
-const growing = (inMs) => () => [growthLine({ id: 'g', typeId: 'fixture_bub_grower' }, { inMs, into: 'fixture_b13_sapling', cost: [], needsNearby: [] }, liveTimerSources())];
-
-describe('⭐ at rest: the bar and the marks, nothing else', () => {
-    const everything = {};
-    const clock = growing(3000);
-
-    it('⭐ not worked, nothing wrong: nothing at all, no plate (even in its timer’s last seconds)', () => {
-        const { container } = mount(bub({ token: worked({ heroId: null, usesRemaining: 5 }), ...everything, readTimer: clock, plateHost }));
-        expect(drawn(container)).toEqual([]);
-        expect(plateHost.children).toHaveLength(0);
-    });
-
-    it('⭐ a worked Token draws nothing in its own box: its bar and charges are on its plate', () => {
-        const { container } = mount(bub({ token: worked({ usesRemaining: 5 }), ...everything, readTimer: clock }));
+describe('⭐ at rest: the marks, nothing else', () => {
+    it('⭐ not worked, nothing wrong: nothing at all', () => {
+        const { container } = mount(bub({ token: worked({ heroId: null, usesRemaining: 5 }) }));
         expect(drawn(container)).toEqual([]);
     });
 
-    it('⭐ a charge change does not bring the plate up by itself', () => {
-        vi.useFakeTimers();
-        const { container, rerender } = mount(bub({ token: worked({ heroId: null, usesRemaining: 5 }), plateHost }));
-        rerender(tree(bub({ token: worked({ heroId: null, usesRemaining: 4 }), plateHost })));
-        expect(container.querySelector('[data-ring]')).toBeNull();
-        advance(100);
-        expect(container.querySelector('[data-ring]')).toBeNull();
-        expect(plateHost.children).toHaveLength(0);
-        // The change sets no timers of its own any more.
-        expect(vi.getTimerCount()).toBe(0);
+    it('⭐ a worked Token draws nothing in its own box: its bar is in the bar layer, and no charges anywhere', () => {
+        const { container } = mount(bub({ token: worked({ usesRemaining: 5 }) }));
+        expect(drawn(container)).toEqual([]);
     });
 
-    it('⭐ a worked Token with a problem: one mark above it, as nobody working it would (the plate has the words)', () => {
-        const { container } = mount(bub({ token: worked({ alert: ALERT.INPUTS }), ...everything }));
-        expect(container.querySelectorAll('[data-bubble-row="above"] [data-problem-mark]')).toHaveLength(1);
+    it('⭐ hovered, a Token with nothing wrong and nothing to choose: still nothing in its box (no plate, no timer)', () => {
+        const { container } = mount(bub({ token: worked({ heroId: null, usesRemaining: 5 }), isHovered: true, pointerOn: true }));
+        expect(drawn(container)).toEqual([]);
     });
 
-    it('⭐ a Token nobody works, with a problem: one mark, and no ring', () => {
-        const { container } = mount(bub({ token: worked({ heroId: null, alert: ALERT.INPUTS }), ...everything }));
-        expect(container.querySelectorAll('[data-problem-mark]')).toHaveLength(1);
-        expect(container.querySelector('[data-ring]')).toBeNull();
+    it('⭐ a worked Token with a problem: one mark in its centre, as nobody working it would', () => {
+        const { container } = mount(bub({ token: worked({ alert: ALERT.INPUTS }) }));
+        expect(container.querySelectorAll('[data-bubble-row="centre"] [data-problem-mark]')).toHaveLength(1);
     });
 
     it('nothing while the Token is dragged', () => {
         const { container } = mount(bub({
             token: worked({ heroId: null, alert: ALERT.NO_ROOM, usesRemaining: 4 }), isDragging: true, isHovered: true, marked: true,
-            spawner: { count: 3, cap: 5 }, plateHost, x: 400, y: 300,
             gear: { show: true, pulsing: true, recipe: null }
         }));
         expect(drawn(container)).toEqual([]);
-        expect(plateHost.children).toHaveLength(0);
     });
 });
 
 describe('the work bar', () => {
     const fillOf = (c) => Number(bar(c).getAttribute('data-work-bar-fill'));
 
-    const W = PLATE.FILL_STEPS;
+    const W = BAR.W;
 
     it('⭐ fills in whole art pixels on the shared step clock, and is empty again on CYCLE_COMPLETE', () => {
         vi.useFakeTimers();
@@ -257,9 +211,6 @@ describe('the work bar', () => {
 
     it('⭐ blocked: grey, held where it stood, ignoring progress until the alert clears', () => {
         vi.useFakeTimers();
-        // The '!' over a blocked Token bobs on its own clock (AlertAbove.test.js): held still here,
-        // so the timer count is the bar's alone.
-        vi.stubGlobal('matchMedia', (q) => ({ matches: q.includes('reduce') }));
         const { container, rerender } = render(tree(...withFill({ token: worked() })));
         progress({ percent: 50, elapsedMs: 1500, cycleTimeMs: 3000 });
         step();
@@ -279,11 +230,13 @@ describe('the work bar', () => {
         expect(fillOf(container)).toBeGreaterThanOrEqual(Math.floor(0.9 * W));
     });
 
-    it('a blocked bar is drawn grey by its own rule (tailwind.css)', async () => {
+    it('⭐ the bar is the work green with a lighter top row and a darker foot row; grey while blocked (tailwind.css)', async () => {
         const fs = await import('fs');
         const path = await import('path');
         const css = fs.readFileSync(path.resolve(__dirname, '../tailwind.css'), 'utf8');
-        expect(css).toMatch(/\.gi-work-bar\[data-work-bar-blocked\]::after\s*\{\s*background: var\(--color-work-bar-blocked\);/);
+        expect(css).toMatch(/--color-work-bar: var\(--color-gi-success\);/);
+        expect(css).toMatch(/\.gi-work-bar::after\s*\{[^}]*linear-gradient\(to bottom, var\(--color-work-bar-hi\) 0 25%, var\(--color-work-bar\) 25% 75%, var\(--color-work-bar-lo\) 75% 100%\)/);
+        expect(css).toMatch(/\.gi-work-bar\[data-work-bar-blocked\]::after\s*\{\s*background: linear-gradient\(to bottom, var\(--color-work-bar-blocked-hi\)/);
         expect(css).toMatch(/\.gi-work-bar::after\s*\{[^}]*transform: scaleX\(var\(--work-bar-fill, 0\)\);/);
     });
 
@@ -297,318 +250,99 @@ describe('the work bar', () => {
         expect(container.querySelector('[data-health-bar="enemy"]').getAttribute('data-health-text')).toBe('10/40');
     });
 
-    it('the fill takes no pointer: a press goes through to the plate, which grabs the Token', () => {
-        const { container } = render(tree(...withFill({ token: worked() })));
-        expect(bar(container).className).toContain('pointer-events-none');
+    it('the bar is drawn in the bar layer, not in the Token box', () => {
+        const { container } = mount(bub({ token: worked() }));
+        expect(bar(container)).toBeNull();
     });
 });
 
-describe('⭐ hover: the idle plate under the Token, and the gear', () => {
-    const idle = (extra) => worked({ heroId: null, ...extra });
 
-    it('⭐ charges and a spawner’s count bring no plate: hovered with only those, the name alone', () => {
-        const start = tokenStartingUses('fixture_producer');
-        const { container } = mount(idleBub({
-            token: idle({ usesRemaining: start }),
-            spawner: { count: 4, cap: 5 }
-        }));
-        expect(idlePlate()).toBeNull();
-        expect(plateHost.children).toHaveLength(0);
-        // No ring anywhere, ever.
-        expect(container.querySelector('[data-ring]')).toBeNull();
-        expect(container.querySelector('[data-bubble="charges"]')).toBeNull();
-    });
+describe('⭐ the centre: one thing at a time', () => {
+    const unset = (extra = {}) => ({ show: true, pulsing: true, recipe: null, onClick: vi.fn(), ...extra });
+    const chosen = (extra = {}) => ({ show: true, pulsing: false, recipe: { name: 'R', outputs: [{ itemId: 'fixture_glowcap' }] }, onClick: vi.fn(), ...extra });
 
-    it('⭐ a stuck Token: a plate on hover only, its own; worked, the work plate says it', () => {
-        const token = idle({ alert: ALERT.INPUTS, usesRemaining: 4 });
-        const { rerender } = mount(bub({ token, plateHost, x: 400, y: 300 }));
-        expect(idlePlate()).toBeNull();
-        rerender(tree(idleBub({ token })));
-        expect(idleCellKinds()).toEqual([CELL.PROBLEM]);
-        // Its own Token's, for the mat's hover and press routing, and in the work plates' layer.
-        expect(idlePlate().getAttribute('data-work-plate')).toBe('tok_r');
-        rerender(tree(idleBub({ token, isHovered: false })));
-        expect(idlePlate()).toBeNull();
-        rerender(tree(idleBub({ token: worked({ alert: ALERT.INPUTS, usesRemaining: 4 }) })));
-        expect(idlePlate()).toBeNull();
-    });
-
-    it('⭐ under the Token itself, centred, tucked under its art', () => {
-        mount(idleBub({ token: idle({ alert: ALERT.INPUTS }), typeId: 'fixture_producer' }));
-        const slot = plateHost.querySelector('[data-idle-plate-slot]');
-        expect(parseFloat(slot.style.left) + parseFloat(slot.style.width) / 2).toBe(400);
-        expect(parseFloat(slot.style.top)).toBe(300 + 64 - PLATE.TUCK);
-    });
-
-    it('⭐ no host (the plates switched off, or not the rested Token): no plate', () => {
-        mount(bub({ token: idle({ alert: ALERT.INPUTS }), isHovered: true, x: 400, y: 300 }));
-        expect(document.querySelector('[data-idle-plate]')).toBeNull();
-    });
-
-    it('⭐ an enemy never shows charges and gets no plate: hovered, its name and HP only (rule 6)', () => {
-        const enemy = { typeId: 'fixture_enemy', instanceId: 'tok_r', heroId: null, alert: null, usesRemaining: 20 };
-        const { container } = mount(idleBub({ token: enemy }));
-        expect(idlePlate()).toBeNull();
-        expect(ring(container, 'charges')).toBeNull();
-        expect(bubble(container, 'charges')).toBeNull();
-        expect(container.querySelector('[data-health-bar="enemy"]')).not.toBeNull();
-    });
-
-    it('a change while hovered redraws the same cell', () => {
-        const { rerender } = mount(idleBub({ token: idle({ alert: ALERT.INPUTS }) }));
-        const cell = idleCell(CELL.PROBLEM);
-        rerender(tree(idleBub({ token: idle({ alert: ALERT.NO_ROOM }) })));
-        expect(idleCell(CELL.PROBLEM)).toBe(cell);
-        expect(cell.querySelector('img').getAttribute('src')).toBe(PROBLEM_SPRITE[SEVERITY.CANT]);
-    });
-
-    it('⭐ the timer: only while hovered, on the plate, polling only while it shows', () => {
+    it('⭐ the \'!\' is in the Token\'s centre, still, at the Token\'s art-pixel size, with a hard shadow', () => {
         vi.useFakeTimers();
-        const read = growing(30000);
-        const { container, rerender } = mount(bub({ token: idle(), readTimer: read, plateHost, x: 400, y: 300 }));
-        expect(idlePlate()).toBeNull();
-        expect(vi.getTimerCount()).toBe(0);
-
-        rerender(tree(idleBub({ token: idle(), readTimer: read })));
-        expect(idleCellKinds()).toEqual([CELL.TIMER]);
-        expect(idleCell(CELL.TIMER).textContent).toBe('30s');
-        expect(idleCell(CELL.TIMER).querySelector('img').getAttribute('src')).toContain('svg');
-        expect(container.querySelector('[data-ring]')).toBeNull();
-        expect(vi.getTimerCount()).toBe(1);
-
-        rerender(tree(idleBub({ token: idle(), readTimer: read, isHovered: false })));
-        expect(idlePlate()).toBeNull();
-        expect(vi.getTimerCount()).toBe(0);
-    });
-
-    it('a hovered timer follows the clock', () => {
-        vi.useFakeTimers();
-        let inMs = 12000;
-        const read = () => [respawnLine({ id: 'v', typeId: 'fixture_bub_grower' }, { mode: 'refill', resting: true, inMs }, liveTimerSources())];
-        mount(idleBub({ token: idle(), readTimer: read }));
-        expect(idleCell(CELL.TIMER).textContent).toBe('12s');
-        inMs = 9000;
-        advance(TURN_COUNTDOWN_REFRESH_MS + 50);
-        expect(idleCell(CELL.TIMER).textContent).toBe('9s');
-    });
-
-    it('a Token with no clock running and nothing else to say: no plate (the name still shows)', () => {
-        mount(idleBub({ token: idle(), readTimer: () => null }));
-        expect(idlePlate()).toBeNull();
-    });
-
-    it('⭐ a problem: in the plate, the frame its colour, and the mark stays on the Token (rule 2)', () => {
-        const { container } = mount(idleBub({ token: idle({ alert: ALERT.NO_ROOM, usesRemaining: 4 }) }));
-        expect(idleCellKinds()).toEqual([CELL.PROBLEM]);
-        expect(idlePlate().getAttribute('data-work-plate-tone')).toBe(SEVERITY.CANT);
-        expect(mark(container).getAttribute('data-problem-mark')).toBe(ALERT.NO_ROOM);
-        // Its hover says exactly what, as the mark's does.
-        fireEvent.pointerEnter(idleCell(CELL.PROBLEM));
-        expect(document.body.querySelector('[data-bubble-tip]').textContent).toMatch(/^No room for what it makes$|^Token cap full$/);
-    });
-
-    it('a choice waiting is not repeated on the plate: hovered, its mark is the gear', () => {
-        const gear = { show: true, pulsing: true, recipe: null, onClick: vi.fn() };
-        const { container, rerender } = mount(idleBub({ token: idle({ usesRemaining: 4 }), gear, artUnit: 2 }));
-        expect(idlePlate()).toBeNull();
-        expect(container.querySelector('[data-gear-in-mark]')).not.toBeNull();
-        const read = growing(30000);
-        rerender(tree(idleBub({ token: idle({ usesRemaining: 4 }), gear, artUnit: 2, readTimer: read })));
-        expect(idleCellKinds()).toEqual([CELL.TIMER]);
-        expect(idlePlate().getAttribute('data-work-plate-tone')).toBeNull();
-    });
-
-    it('growth: nextGrowth reads the clock against afterMs; none for a Token that does not grow', () => {
-        expect(TimedChanges.nextGrowth({ typeId: 'fixture_bub_grower', clocks: { growMs: 45000 } }))
-            .toEqual({
-                inMs: 15000, totalMs: 60000, into: 'fixture_b13_sapling',
-                // Brief 230 S2a: a growth that needs no Token in reach and costs nothing.
-                paused: false, stopped: false, needsNearby: [], cost: [], short: []
-            });
-        expect(TimedChanges.nextGrowth({ typeId: 'fixture_producer' })).toBeNull();
-    });
-
-    it('⭐ the gear: only on hover, set or not; never while marked for demolition', () => {
-        const pending = { show: true, pulsing: true, recipe: null, onClick: vi.fn() };
-        const chosen = { show: true, pulsing: false, recipe: { name: 'R' }, onClick: vi.fn() };
-        const { container, rerender } = mount(bub({ token: worked({ heroId: null }), gear: pending }));
-        expect(container.querySelector('[data-station-gear]')).toBeNull();
-        rerender(tree(bub({ token: worked({ heroId: null }), gear: pending, isHovered: true })));
-        expect(container.querySelector('[data-station-gear="unset"]')).not.toBeNull();
-        rerender(tree(bub({ token: worked({ heroId: null }), gear: chosen })));
-        expect(container.querySelector('[data-station-gear]')).toBeNull();
-        rerender(tree(bub({ token: worked({ heroId: null }), gear: chosen, isHovered: true })));
-        expect(container.querySelector('[data-station-gear="set"]')).not.toBeNull();
-        rerender(tree(bub({ token: worked({ heroId: null }), gear: chosen, isHovered: true, marked: true })));
-        expect(container.querySelector('[data-station-gear]')).toBeNull();
-    });
-});
-
-describe('the marks’ rows', () => {
-    it('⭐ the problem mark stands above the art, the demolition mark centred on the box', () => {
-        const { container } = mount(bub({
-            token: worked({ heroId: null, alert: ALERT.INPUTS }), isHovered: true, marked: true,
-            spawner: { count: 3, cap: 5 },
-            gear: { show: true, pulsing: false, recipe: null }
-        }));
-        const row = container.querySelector('[data-bubble-row="middle"]');
+        const { container } = mount(bub({ token: worked({ heroId: null, alert: ALERT.INPUTS }), artUnit: 2 }));
+        const row = centre(container);
         expect(parseFloat(row.style.width)).toBe(128);
         expect(parseFloat(row.style.top)).toBe(64);
         expect(row.style.transform).toContain('translateY(-50%)');
-        const kinds = [...row.children].map(c => c.getAttribute('data-bubble') || (c.hasAttribute('data-problem-mark') ? 'problem' : '?'));
-        expect(kinds).toEqual(['marked']);
-        const above = container.querySelector('[data-bubble-row="above"]');
-        expect([...above.children].map(c => (c.hasAttribute('data-problem-mark') ? 'problem' : '?'))).toEqual(['problem']);
-        // The art fills the box (no `artPx`): the mark's bottom on the box's top.
-        expect(parseFloat(above.style.top)).toBe(0);
-        expect(above.style.transform).toContain('translateY(-100%)');
+        expect(row.firstElementChild).toBe(mark(container));
+        expect(mark(container).style.width).toBe('32px');
+        expect(mark(container).style.filter).toBe('drop-shadow(2px 2px 0 #000)');
+        // Still: nothing moves it, and nothing is scheduled to.
+        advance(3000);
+        expect(mark(container).style.transform).toBe('');
+        expect(vi.getTimerCount()).toBe(0);
+        expect(container.querySelector('[data-bubble-row="above"]')).toBeNull();
     });
 
-    it('⭐ hovering never moves a mark: the gear comes up in a row of its own, above the marks', () => {
-        // A chosen recipe waiting on items: its '!' stays (only a choice waiting swaps for the gear).
-        const props = {
-            token: worked({ heroId: null, alert: ALERT.INPUTS }), gear: { show: true, pulsing: false, recipe: { name: 'R' }, onClick: () => {} },
-            plateHost, x: 400, y: 300
-        };
-        const { container, rerender } = mount(bub(props));
-        const row = container.querySelector('[data-bubble-row="above"]');
-        const markEl = mark(container);
-        const at = () => ({ row: row.getAttribute('style'), children: [...row.children] });
-        const before = at();
-        rerender(tree(bub({ ...props, isHovered: true })));
-        expect(container.querySelector('[data-bubble-row="above"]')).toBe(row);
-        expect(mark(container)).toBe(markEl);
-        expect(at()).toEqual(before);
-        const hoverRow = container.querySelector('[data-bubble-row="hover"]');
-        expect([...hoverRow.children].map(c => c.getAttribute('data-bubble') || (c.querySelector('[data-station-gear]') ? 'gear' : '?')))
-            .toEqual(['gear']);
-        // The problem is on the plate under the Token, not beside the marks.
-        expect(idleCellKinds()).toEqual([CELL.PROBLEM]);
-        // The '!' is above the art, so the gear has the centre.
-        expect(parseFloat(hoverRow.style.top)).toBe(64);
-        expect(hoverRow.style.transform).toContain('translateY(-50%)');
-    });
-
-
-    it('with no marks, the hover row sits at the centre', () => {
-        const { container } = mount(bub({ token: worked({ heroId: null }), isHovered: true, gear: { show: true, pulsing: false, recipe: { name: 'R' }, onClick: () => {} } }));
-        const hoverRow = container.querySelector('[data-bubble-row="hover"]');
-        expect(parseFloat(hoverRow.style.top)).toBe(64);
-        expect(hoverRow.style.transform).toContain('translateY(-50%)');
-        expect(container.querySelector('[data-bubble-row="middle"]')).toBeNull();
-    });
-
-    it('⭐ the demolition mark shows the whole time, hovered or not', () => {
-        const { container, rerender } = mount(bub({ token: worked({ heroId: null }), marked: true }));
-        expect(container.querySelector('[data-demolish-badge]')).not.toBeNull();
-        rerender(tree(bub({ token: worked({ heroId: null }), marked: true, isHovered: true })));
-        expect(container.querySelector('[data-demolish-badge]')).not.toBeNull();
-        rerender(tree(bub({ token: worked({ heroId: null }) })));
-        expect(container.querySelector('[data-demolish-badge]')).toBeNull();
-    });
-});
-
-describe('⭐ a choice waiting: the pointer on the Token, its mark becomes the gear in the same spot, at the mark size', () => {
-    const unset = (extra = {}) => ({ show: true, pulsing: true, recipe: null, onClick: vi.fn(), ...extra });
-    const middle = (c) => c.querySelector('[data-bubble-row="above"]');
-    const gearIn = (c) => c.querySelector('[data-gear-in-mark]');
-
-    it('⭐ an unset station and a Foundation: the mark at rest, the gear in its place the moment the pointer is on it, the mark again after', () => {
-        for (const [gear, kind] of [[unset(), ALERT.CHOOSE_RECIPE], [unset({ isFoundation: true }), ALERT.CHOOSE_BUILD]]) {
-            const { container, rerender } = mount(bub({ token: worked({ heroId: null }), gear, artUnit: 2 }));
-            const row = middle(container);
-            const rowStyle = row.getAttribute('style');
-            expect(mark(container).getAttribute('data-problem-mark')).toBe(kind);
-            expect(gearIn(container)).toBeNull();
-
+    it('⭐ the pointer on a Token that takes a recipe: the gear in the centre at once, in place of any \'!\', the \'!\' again after', () => {
+        for (const [gear, alert] of [[unset(), null], [unset({ isFoundation: true }), null], [chosen(), ALERT.INPUTS], [chosen(), ALERT.NO_ROOM], [chosen(), null]]) {
+            const token = worked({ heroId: null, alert });
+            const { container, rerender } = mount(bub({ token, gear, artUnit: 2 }));
+            const atRest = mark(container)?.getAttribute('data-problem-mark') ?? null;
+            expect(container.querySelector('[data-station-gear]')).toBeNull();
             // The bare hover, not the rest: the swap does not wait.
-            rerender(tree(bub({ token: worked({ heroId: null }), gear, artUnit: 2, pointerOn: true })));
-            // The same row, unmoved, with the gear where the mark was and no '!' and no second gear.
-            expect(middle(container)).toBe(row);
-            expect(row.getAttribute('style')).toBe(rowStyle);
+            rerender(tree(bub({ token, gear, artUnit: 2, pointerOn: true })));
             expect(mark(container)).toBeNull();
-            expect(row.firstElementChild).toBe(gearIn(container));
-            expect(gearIn(container).getAttribute('data-gear-in-mark')).toBe(kind);
-            expect(container.querySelector('[data-bubble-row="hover"]')).toBeNull();
             expect(container.querySelectorAll('[data-station-gear]')).toHaveLength(1);
+            expect(centre(container).querySelector('[data-station-gear]')).not.toBeNull();
+            expect(container.querySelector('[data-station-gear]').getAttribute('data-station-gear')).toBe(gear.pulsing ? 'unset' : 'set');
             // Drawn the mark's size: its 16 art pixels at the Token's art pixel, 32.
-            const button = gearIn(container).querySelector('button');
+            const button = container.querySelector('[data-station-gear] button');
             expect(button.getAttribute('data-gear-px')).toBe('32');
-            expect(button.style.width).toBe('32px');
-            expect(button.querySelector('img').style.width).toBe('32px');
-            // Its click opens the picker, as the mark's did.
+            rerender(tree(bub({ token, gear, artUnit: 2 })));
+            expect(mark(container)?.getAttribute('data-problem-mark') ?? null).toBe(atRest);
+            cleanup();
+        }
+    });
+
+    it('⭐ a click on the gear does what a right-click does (the card opens: `gear.onClick`), and a press grabs the Token', () => {
+        const grab = vi.fn();
+        for (const gear of [unset(), chosen()]) {
+            const { container } = mount(bub({ token: worked({ heroId: null }), gear, pointerOn: true, dragProps: { onPointerDown: grab } }));
+            const button = container.querySelector('[data-station-gear] button');
             fireEvent.click(button);
             expect(gear.onClick).toHaveBeenCalledTimes(1);
-
-            rerender(tree(bub({ token: worked({ heroId: null }), gear, artUnit: 2 })));
-            expect(mark(container).getAttribute('data-problem-mark')).toBe(kind);
-            expect(gearIn(container)).toBeNull();
+            grab.mockClear();
+            fireEvent.pointerDown(button);
+            expect(grab).toHaveBeenCalledTimes(1);
             cleanup();
         }
     });
 
     it('the gear follows the Token’s art-pixel size, as the mark does', () => {
         const { container } = mount(bub({ token: worked({ heroId: null }), gear: unset(), artUnit: 3, isHovered: true }));
-        expect(gearIn(container).querySelector('button').getAttribute('data-gear-px')).toBe('48');
+        expect(container.querySelector('[data-station-gear] button').getAttribute('data-gear-px')).toBe('48');
     });
 
-    it('a chosen recipe gear, in its hover row, is the same size as the gear in a mark', () => {
-        const chosen = { show: true, pulsing: false, recipe: { name: 'R' }, onClick: vi.fn() };
-        for (const artUnit of [2, 3]) {
-            const { container } = mount(bub({ token: worked({ heroId: null }), gear: chosen, artUnit, isHovered: true }));
-            const button = container.querySelector('[data-bubble-row="hover"] [data-station-gear] button');
-            expect(button.getAttribute('data-gear-px')).toBe(String(16 * artUnit));
-            cleanup();
-        }
+    it('⭐ marked for demolition: its badge in the centre the whole time, over any \'!\', and no gear', () => {
+        const { container, rerender } = mount(bub({ token: worked({ heroId: null, alert: ALERT.NO_ROOM }), marked: true, gear: unset() }));
+        expect(centre(container).querySelector('[data-demolish-badge]')).not.toBeNull();
+        expect(mark(container)).toBeNull();
+        rerender(tree(bub({ token: worked({ heroId: null, alert: ALERT.NO_ROOM }), marked: true, gear: unset(), isHovered: true, pointerOn: true })));
+        expect(centre(container).querySelector('[data-demolish-badge]')).not.toBeNull();
+        expect(container.querySelector('[data-station-gear]')).toBeNull();
+        rerender(tree(bub({ token: worked({ heroId: null }) })));
+        expect(container.querySelector('[data-demolish-badge]')).toBeNull();
     });
 
-    it('⭐ waiting on items or room, or a can’t: the \'!\' stays on hover, and a chosen recipe’s gear stays in its own row', () => {
-        const chosen = { show: true, pulsing: false, recipe: { name: 'R' }, onClick: vi.fn() };
-        for (const [alert, gear] of [[ALERT.INPUTS, chosen], [ALERT.NO_ROOM, chosen], [ALERT.NO_ROOM, unset()]]) {
-            const { container } = mount(bub({ token: worked({ heroId: null, alert }), gear, artUnit: 2, isHovered: true }));
-            expect(mark(container).getAttribute('data-problem-mark')).toBe(alert);
-            expect(gearIn(container)).toBeNull();
-            expect(container.querySelector('[data-bubble-row="hover"] [data-station-gear]')).not.toBeNull();
-            cleanup();
-        }
+    it('⭐ an enemy’s health bar and its \'!\' show together: the bar no longer hides the mark', () => {
+        const enemy = { typeId: 'fixture_enemy', instanceId: 'tok_r', heroId: null, alert: ALERT.NO_ROOM, usesRemaining: 3 };
+        const { container } = mount(bub({ token: enemy, isHovered: true, artUnit: 2 }));
+        expect(container.querySelector('[data-health-bar="enemy"]')).not.toBeNull();
+        expect(mark(container)).not.toBeNull();
     });
 
-    it('no gear to show, or marked for demolition: no swap; worked, it swaps as an idle Token does', () => {
-        // An engine choose alert with no gear (nothing to pick from): the mark stays.
-        let r = mount(bub({ token: worked({ heroId: null, alert: ALERT.CHOOSE_RECIPE }), isHovered: true }));
-        expect(mark(r.container).getAttribute('data-problem-mark')).toBe(ALERT.CHOOSE_RECIPE);
-        expect(gearIn(r.container)).toBeNull();
-        cleanup();
-        r = mount(bub({ token: worked({ heroId: null }), gear: unset(), marked: true, isHovered: true }));
-        expect(gearIn(r.container)).toBeNull();
-        expect(r.container.querySelector('[data-station-gear]')).toBeNull();
-        cleanup();
-        r = mount(bub({ token: worked(), gear: unset() }));
-        expect(mark(r.container).getAttribute('data-problem-mark')).toBe(ALERT.CHOOSE_RECIPE);
-        cleanup();
-        r = mount(bub({ token: worked(), gear: unset(), isHovered: true }));
-        expect(gearIn(r.container)).not.toBeNull();
-        expect(mark(r.container)).toBeNull();
-    });
-
-    it('pressing the gear grabs the Token, as pressing the mark did', () => {
-        const grab = vi.fn();
-        const { container } = mount(bub({ token: worked({ heroId: null }), gear: unset(), isHovered: true, dragProps: { onPointerDown: grab } }));
-        fireEvent.pointerDown(gearIn(container).querySelector('button'));
-        expect(grab).toHaveBeenCalledTimes(1);
+    it('an engine choose alert with no gear (nothing to pick from): the mark stays on hover', () => {
+        const { container } = mount(bub({ token: worked({ heroId: null, alert: ALERT.CHOOSE_RECIPE }), isHovered: true, pointerOn: true }));
+        expect(mark(container).getAttribute('data-problem-mark')).toBe(ALERT.CHOOSE_RECIPE);
     });
 });
 
 describe('⭐ the problem mark on a Token', () => {
-    const say = (alert, needs = []) => act(() => {
-        EventBus.publish(BOARD_EVENTS.SPAWNER_ALERT_CHANGED, { instanceId: 'tok_r', alert, needs });
-    });
-    const hoverText = (c) => {
-        fireEvent.pointerEnter(mark(c));
-        const tip = document.querySelector('[data-tooltip]');
-        return tip ? { text: tip.textContent, colour: tip.querySelector('span')?.style.color } : null;
-    };
-
     beforeAll(() => {
         registerItems({
             fixture_stuck_seed: { id: 'fixture_stuck_seed', name: 'Fixture Seed', type: 'resource' },
@@ -616,64 +350,92 @@ describe('⭐ the problem mark on a Token', () => {
         });
     });
 
-    it('a spawner short of items: a yellow mark naming them; red with no room or at the cap', () => {
+    it('⭐ no tooltip: hovering the mark shows nothing', () => {
+        const { container } = mount(bub({ token: worked({ heroId: null, alert: ALERT.NO_ROOM }) }));
+        fireEvent.pointerEnter(mark(container));
+        fireEvent.mouseEnter(mark(container));
+        expect(document.body.querySelector('[data-tooltip]')).toBeNull();
+        expect(document.body.querySelector('[data-bubble-tip]')).toBeNull();
+        expect(mark(container).getAttribute('title')).toBeNull();
+    });
+
+    it('a spawner short of items: a yellow mark; red with no room; yellow at a full Token cap', () => {
         const { container } = mount(bub({ token: worked({ heroId: null }) }));
         expect(mark(container)).toBeNull();
         say(ALERT.SPAWN_NEEDS_ITEM, ['fixture_stuck_seed', 'fixture_stuck_water']);
         expect(mark(container).getAttribute('data-problem-severity')).toBe(SEVERITY.WAITING);
         expect(mark(container).getAttribute('src')).toBe(PROBLEM_SPRITE[SEVERITY.WAITING]);
-        expect(hoverText(container)).toEqual({ text: 'Needs Fixture Seed and Fixture Water to spawn', colour: 'var(--color-ui-gold)' });
-        fireEvent.pointerLeave(mark(container));
-
         say(ALERT.SPAWN_NO_ROOM);
         expect(mark(container).getAttribute('src')).toBe(PROBLEM_SPRITE[SEVERITY.CANT]);
-        expect(hoverText(container)).toEqual({ text: 'No room to spawn', colour: 'var(--color-ui-red)' });
-        fireEvent.pointerLeave(mark(container));
-
         say(ALERT.SPAWN_MAT_FULL);
-        expect(hoverText(container).text).toBe('Token cap full');
-        fireEvent.pointerLeave(mark(container));
-
+        expect(mark(container).getAttribute('data-problem-severity')).toBe(SEVERITY.WAITING);
+        expect(mark(container).getAttribute('src')).toBe(PROBLEM_SPRITE[SEVERITY.WAITING]);
         say(null);
         expect(mark(container)).toBeNull();
-        expect(container.querySelector('[data-bubble-row="middle"]')).toBeNull();
     });
 
-    it('⭐ a Stump with no Forest in reach, or stopped for want of a seedling: a yellow mark saying which (brief 230 S2a)', () => {
+    it('⭐ a full Token cap’s \'!\' goes once the pointer rests on that spawner, and comes back only after the cap frees and fills again', () => {
+        const props = { token: worked({ heroId: null }) };
+        const { container, rerender } = mount(bub(props));
+        say(ALERT.SPAWN_MAT_FULL);
+        expect(mark(container).getAttribute('data-problem-mark')).toBe(ALERT.SPAWN_MAT_FULL);
+        // The bare hover is not enough: the rest is.
+        rerender(tree(bub({ ...props, pointerOn: true })));
+        expect(mark(container)).not.toBeNull();
+        rerender(tree(bub({ ...props, pointerOn: true, isHovered: true })));
+        expect(mark(container)).toBeNull();
+        expect(isCapSeen('tok_r')).toBe(true);
+        // Gone after the pointer leaves, and still gone when remounted (a drag, a redraw).
+        rerender(tree(bub(props)));
+        expect(mark(container)).toBeNull();
+        cleanup();
+        const again = mount(bub(props));
+        expect(mark(again.container)).toBeNull();
+        // Another spawner at the same cap still shows its '!'.
+        const other = mount(h(TokenBubbles, { instanceId: 'tok_other', boxPx: 128, token: { ...props.token, instanceId: 'tok_other' } }));
+        act(() => { EventBus.publish(BOARD_EVENTS.SPAWNER_ALERT_CHANGED, { instanceId: 'tok_other', alert: ALERT.SPAWN_MAT_FULL, needs: [] }); });
+        expect(mark(other.container)).not.toBeNull();
+        // The cap frees: nothing to show; it fills again: the '!' is back.
+        say(null);
+        expect(mark(again.container)).toBeNull();
+        expect(isCapSeen('tok_r')).toBe(false);
+        say(ALERT.SPAWN_MAT_FULL);
+        expect(mark(again.container).getAttribute('data-problem-mark')).toBe(ALERT.SPAWN_MAT_FULL);
+    });
+
+    it('a seen cap does not hide another problem: a spawner short of items still shows', () => {
+        const props = { token: worked({ heroId: null }) };
+        const { container, rerender } = mount(bub(props));
+        say(ALERT.SPAWN_MAT_FULL);
+        rerender(tree(bub({ ...props, isHovered: true })));
+        expect(mark(container)).toBeNull();
+        say(ALERT.SPAWN_NEEDS_ITEM, ['fixture_stuck_seed']);
+        expect(mark(container).getAttribute('data-problem-mark')).toBe(ALERT.SPAWN_NEEDS_ITEM);
+    });
+
+    it('⭐ a Stump with no Forest in reach, or stopped for want of a seedling: a yellow mark (brief 230 S2a)', () => {
         const grow = (alert, needs = []) => act(() => {
             EventBus.publish(BOARD_EVENTS.GROWTH_ALERT_CHANGED, { instanceId: 'tok_r', alert, needs });
         });
         const { container } = mount(bub({ token: worked({ heroId: null }) }));
         grow(ALERT.GROW_NEEDS_NEARBY, ['fixture_b13_forest']);
         expect(mark(container).getAttribute('data-problem-severity')).toBe(SEVERITY.WAITING);
-        expect(hoverText(container)).toEqual({ text: 'Needs a Fixture B1.3 Forest nearby to grow', colour: 'var(--color-ui-gold)' });
-        fireEvent.pointerLeave(mark(container));
-
         grow(ALERT.GROW_NEEDS_ITEM, ['fixture_stuck_seed']);
         expect(mark(container).getAttribute('data-problem-mark')).toBe(ALERT.GROW_NEEDS_ITEM);
-        expect(hoverText(container).text).toBe('Needs Fixture Seed to grow');
-        fireEvent.pointerLeave(mark(container));
-
         grow(null);
         expect(mark(container)).toBeNull();
     });
 
-    it('⭐ an unset station or Foundation: the yellow mark says choose, and a click on it opens the list', () => {
+    it('⭐ an unset station or Foundation: the yellow mark says choose, and a click on it opens the card', () => {
         const onClick = vi.fn();
         const { container, rerender } = mount(bub({ token: worked({ heroId: null }), gear: { show: true, pulsing: true, recipe: null, onClick } }));
         expect(mark(container).getAttribute('data-problem-mark')).toBe(ALERT.CHOOSE_RECIPE);
         expect(mark(container).getAttribute('data-problem-severity')).toBe(SEVERITY.WAITING);
-        expect(hoverText(container).text).toBe('Choose a recipe');
         fireEvent.click(mark(container));
         expect(onClick).toHaveBeenCalledTimes(1);
-
         rerender(tree(bub({ token: worked({ heroId: null }), gear: { show: true, pulsing: true, recipe: null, isFoundation: true, onClick } })));
         expect(mark(container).getAttribute('data-problem-mark')).toBe(ALERT.CHOOSE_BUILD);
-        // A recipe chosen: no mark.
         rerender(tree(bub({ token: worked({ heroId: null }), gear: { show: true, pulsing: false, recipe: { name: 'R' }, onClick } })));
-        expect(mark(container)).toBeNull();
-        // Marked for demolition: nothing to choose.
-        rerender(tree(bub({ token: worked({ heroId: null }), gear: { show: true, pulsing: true, recipe: null, onClick }, marked: true })));
         expect(mark(container)).toBeNull();
     });
 
@@ -692,17 +454,43 @@ describe('⭐ the problem mark on a Token', () => {
 
     it('a can’t beats a waiting: one mark, red', () => {
         const { container } = mount(bub({ token: worked({ heroId: null, alert: ALERT.INPUTS }) }));
-        say(ALERT.SPAWN_MAT_FULL);
+        say(ALERT.SPAWN_NO_ROOM);
         expect(container.querySelectorAll('[data-problem-mark]')).toHaveLength(1);
-        expect(mark(container).getAttribute('data-problem-mark')).toBe(ALERT.SPAWN_MAT_FULL);
+        expect(mark(container).getAttribute('data-problem-mark')).toBe(ALERT.SPAWN_NO_ROOM);
+    });
+});
+
+describe('⭐ the recipe bubble', () => {
+    const chosen = { show: true, pulsing: false, recipe: { name: 'R', outputs: [{ itemId: 'fixture_glowcap' }] }, onClick: vi.fn() };
+
+    it('⭐ resting on a station with a recipe chosen: its output in a speech bubble over the art; never at rest', () => {
+        const { container, rerender } = mount(bub({ token: worked({ heroId: null }), gear: chosen, artPx: 128, artUnit: 2 }));
+        expect(container.querySelector('[data-recipe-bubble]')).toBeNull();
+        // The bare hover is not the rest: a sweep shows none.
+        rerender(tree(bub({ token: worked({ heroId: null }), gear: chosen, artPx: 128, artUnit: 2, pointerOn: true })));
+        expect(container.querySelector('[data-recipe-bubble]')).toBeNull();
+        rerender(tree(bub({ token: worked({ heroId: null }), gear: chosen, artPx: 128, artUnit: 2, pointerOn: true, isHovered: true })));
+        const bubble = container.querySelector('[data-recipe-bubble]');
+        expect(bubble.getAttribute('data-recipe-bubble')).toBe('fixture_glowcap');
+        // The hero speech bubble's frame, with its tail.
+        expect(bubble.querySelector('[data-speech-tone]')).not.toBeNull();
+        expect(bubble.querySelector('[data-speech-tail]')).not.toBeNull();
+        expect(bubble.querySelector('img')).not.toBeNull();
+        expect(bubble.className).toContain('pointer-events-none');
+        expect(bubble.style.transform).toContain('translateY(-100%)');
     });
 
-    it('pressing hides an open tooltip', () => {
-        const { container } = mount(bub({ token: worked({ heroId: null, alert: ALERT.NO_ROOM }), dragProps: { onPointerDown: vi.fn() } }));
-        fireEvent.pointerEnter(mark(container));
-        expect(document.body.querySelector('[data-tooltip]')).not.toBeNull();
-        fireEvent.pointerDown(mark(container));
-        expect(document.body.querySelector('[data-tooltip]')).toBeNull();
+    it('none with nothing chosen, for a Foundation, or while marked for demolition', () => {
+        for (const props of [
+            { gear: { ...chosen, recipe: null, pulsing: true } },
+            { gear: { ...chosen, isFoundation: true } },
+            { gear: chosen, marked: true },
+            {}
+        ]) {
+            const { container } = mount(bub({ token: worked({ heroId: null }), isHovered: true, ...props }));
+            expect(container.querySelector('[data-recipe-bubble]')).toBeNull();
+            cleanup();
+        }
     });
 });
 
@@ -718,43 +506,33 @@ describe('no charge number floats', () => {
     });
 });
 
-describe('tooltips and grabbing', () => {
-    const everything = () => idleBub({
-        token: worked({ heroId: null, usesRemaining: 4 }), marked: true,
-        readTimer: growing(30000)
-    });
-
-    it('⭐ hovering a plate cell or a player mark shows what it means; leaving hides it', () => {
-        const { container } = mount(everything());
-        const tipOf = (el) => {
-            fireEvent.pointerEnter(el);
-            const text = document.body.querySelector('[data-bubble-tip]')?.textContent;
-            fireEvent.pointerLeave(el);
-            expect(document.body.querySelector('[data-bubble-tip]')).toBeNull();
-            return text;
-        };
-        expect(tipOf(idleCell(CELL.TIMER))).toMatch(/^Grows into .* in 30s$/);
-        expect(tipOf(bubble(container, 'marked'))).toBe(BUBBLE_TIPS.marked);
-    });
-
-    it('⭐ pressing the plate or a mark reaches the Token’s drag handle', () => {
+describe('⭐ no tooltips, and grabbing', () => {
+    it('⭐ hovering the demolition mark shows no tooltip; pressing it or the mark reaches the Token’s drag handle', () => {
         const onPointerDown = vi.fn();
-        const { container } = mount(idleBub({
-            token: worked({ heroId: null, usesRemaining: 4, alert: ALERT.INPUTS }), marked: true,
-            readTimer: growing(30000),
-            dragProps: { onPointerDown }
-        }));
-        for (const kind of [CELL.PROBLEM, CELL.TIMER]) {
-            onPointerDown.mockClear();
-            fireEvent.pointerDown(idleCell(kind));
-            expect(onPointerDown, kind).toHaveBeenCalledTimes(1);
-        }
-        onPointerDown.mockClear();
-        fireEvent.pointerDown(bubble(container, 'marked'));
+        const { container, rerender } = mount(bub({ token: worked({ heroId: null }), marked: true, dragProps: { onPointerDown } }));
+        const badge = container.querySelector('[data-bubble="marked"]');
+        fireEvent.pointerEnter(badge);
+        expect(document.body.querySelector('[data-bubble-tip]')).toBeNull();
+        expect(document.body.querySelector('[data-tooltip]')).toBeNull();
+        expect(container.querySelector('[title]')).toBeNull();
+        fireEvent.pointerDown(badge);
         expect(onPointerDown).toHaveBeenCalledTimes(1);
+        rerender(tree(bub({ token: worked({ heroId: null, alert: ALERT.INPUTS }), dragProps: { onPointerDown } })));
         onPointerDown.mockClear();
         fireEvent.pointerDown(mark(container));
         expect(onPointerDown).toHaveBeenCalledTimes(1);
+    });
+
+    it('⭐ hovering the gear shows no recipe preview', () => {
+        const { container } = mount(bub({
+            token: worked({ heroId: null }), pointerOn: true,
+            gear: { show: true, pulsing: false, recipe: { name: 'Glow Stew', outputs: [{ itemId: 'fixture_glowcap', quantity: 1 }] }, onClick: vi.fn() }
+        }));
+        const gear = container.querySelector('[data-station-gear]');
+        fireEvent.pointerEnter(gear);
+        fireEvent.mouseEnter(gear);
+        expect(document.body.querySelector('[data-tooltip]')).toBeNull();
+        expect(document.body.textContent).not.toContain('Glow Stew');
     });
 });
 
@@ -794,75 +572,55 @@ describe('on the mat (MatToken)', () => {
         restHover();
     }
 
-    it('⭐ a spawner at 3 of 5, neither stuck nor counting: nothing at rest; hovered, its name alone, no count and no plate', () => {
+    it('⭐ a spawner at 3 of 5 or a growing Token: nothing at rest; hovered, its name alone, no count, no timer, no plate', () => {
         vi.useFakeTimers();
         const forest = put('fixture_b13_forest');
         put('fixture_b13_sapling', { x: 700, y: 520 });
-        put('fixture_b13_sapling', { x: 640, y: 380 });
-        put('fixture_b13_sapling', { x: 640, y: 660 });
+        const g = put('fixture_bub_grower', { x: 1200, y: 520 });
         const { container } = mount(h(MatBoard));
-        const o = container.querySelector(`[data-token-overlay="${forest.id}"]`);
-        const host = container.querySelector('[data-idle-plates]');
-        expect(Number(host.style.zIndex)).toBe(MAT_Z.WORK_PLATE);
-        expect(o.querySelector('[data-ring]')).toBeNull();
-        expect(o.querySelector('[data-bubble-row]')).toBeNull();
-        expect(host.querySelector('[data-idle-plate]')).toBeNull();
-
-        hover(container, forest);
-        expect(host.querySelector('[data-idle-plate]')).toBeNull();
-        expect(o.querySelector('[data-token-name]')).not.toBeNull();
-        expect(o.querySelector('[data-ring]')).toBeNull();
+        for (const tok of [forest, g]) {
+            const o = container.querySelector(`[data-token-overlay="${tok.id}"]`);
+            expect(o.querySelector('[data-bubble-row]')).toBeNull();
+            hover(container, tok);
+            expect(o.querySelector('[data-token-name]').textContent).toBe(tok === forest ? 'Fixture B1.3 Forest' : 'Fixture Grower');
+            expect(o.querySelector('[data-bubble-row]')).toBeNull();
+            expect(container.querySelector('[data-idle-plate], [data-plate-cell]')).toBeNull();
+        }
     });
 
-    it('⭐ a Sapling-like grower shows its growth time on a plate under it, over the loot, only when hovered, the name just above the plate', () => {
-        vi.useFakeTimers();
-        const g = put('fixture_bub_grower');
-        const { container } = mount(h(MatBoard));
-        const host = container.querySelector('[data-idle-plates]');
-        expect(Number(host.style.zIndex)).toBe(MAT_Z.WORK_PLATE);
-        expect(host.querySelector('[data-idle-plate]')).toBeNull();
-        hover(container, g);
-        const cells = [...host.querySelectorAll(`[data-idle-plate="${g.id}"] [data-plate-cell]`)];
-        expect(cells.map(c => c.getAttribute('data-plate-cell'))).toEqual(['timer']);
-        expect(cells[0].textContent).toMatch(/^(\d+m )?\d+s$/);
-        expect(container.querySelector('[data-ring]')).toBeNull();
-        const slot = host.querySelector('[data-idle-plate-slot]');
-        expect(parseFloat(slot.style.left) + parseFloat(slot.style.width) / 2).toBe(g.x);
-        expect(parseFloat(slot.style.top)).toBeGreaterThan(g.y);
-        // The name stands on the plate's top: over the Token's foot, not under the plate.
-        expect(nameFoot(container, g)).toBe(parseFloat(slot.style.top));
-    });
-
-    it('⭐ the name sits over the Token bottom edge, just above the plate, and stays there with or without one', () => {
+    it('⭐ the name sits over the Token’s bottom edge, just above where its work bar stands, on its see-through backing', () => {
         vi.useFakeTimers();
         const t = put('fixture_consumer');
         t.alert = ALERT.INPUTS;
-        const bare = put('fixture_b13_sapling', { x: 1200, y: 520 });
         const { container } = mount(h(MatBoard));
         hover(container, t);
-        const slot = container.querySelector(`[data-idle-plate-slot="${t.id}"]`);
-        expect(slot).not.toBeNull();
-        // Its bottom on the plate's top, inside the box: over the art's foot, not past the plate.
-        expect(nameFoot(container, t)).toBe(parseFloat(slot.style.top));
-        expect(nameFoot(container, t)).toBe(t.y + plateFootOf(t.typeId, 1));
+        expect(nameFoot(container, t)).toBe(t.y + nameFootOf(t.typeId, 1));
         expect(nameFoot(container, t)).toBeLessThan(t.y + 64);
-        // The same line on a work plate: it tucks under the same foot.
-        expect(nameFoot(container, t)).toBe(platePlace({ x: t.x, y: t.y, typeId: t.typeId, fit: 1 }).top);
-        hover(container, bare);
-        expect(container.querySelector('[data-idle-plate]')).toBeNull();
-        expect(nameFoot(container, bare)).toBe(bare.y + plateFootOf(bare.typeId, 1));
+        expect(nameFoot(container, t)).toBeLessThan(barPlace({ x: t.x, y: t.y, typeId: t.typeId, fit: 1 }).top);
+        const label = container.querySelector(`[data-token-overlay="${t.id}"] [data-token-name] span`);
+        expect(label.className).toContain('gi-name-backing');
+        expect(label.className).toContain('gi-name-shimmer');
     });
 
-    it('⭐ the mark is drawn at the Token’s own art-pixel size', () => {
+    it('⭐ the mark is drawn in the centre at the Token’s own art-pixel size', () => {
         const station = put('fixture_consumer');
         station.alert = ALERT.INPUTS;
         const { container } = mount(h(MatBoard));
         const o = container.querySelector(`[data-token-overlay="${station.id}"]`);
-        const m = o.querySelector('[data-problem-mark]');
+        const m = o.querySelector('[data-bubble-row="centre"] [data-problem-mark]');
         expect(m.getAttribute('data-problem-severity')).toBe(SEVERITY.WAITING);
-        // 16 art pixels at the board's art scale: 2 mat units a pixel with the mat drawn 1:1.
         expect(parseFloat(m.style.width)).toBe(16 * boardScaleAt(1));
         expect(parseFloat(m.style.height)).toBe(16 * boardScaleAt(1));
         expect(m.style.imageRendering).toBe('pixelated');
+    });
+
+    it('⭐ resting on a Token: no title text and no tooltip anywhere on the mat', () => {
+        vi.useFakeTimers();
+        const t = put('fixture_consumer');
+        t.alert = ALERT.INPUTS;
+        const { container } = mount(h(MatBoard));
+        hover(container, t);
+        expect(container.querySelector('[data-token-art][title]')).toBeNull();
+        expect(document.body.querySelector('[data-tooltip], [data-bubble-tip], [data-enemy-card-tip], [data-flag-tooltip]')).toBeNull();
     });
 });

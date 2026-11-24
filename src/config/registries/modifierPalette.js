@@ -6,7 +6,7 @@
 // reader in the running game and must not be deleted as dead code. `src/tests/CMSBoundary.test.js`
 // scans the CMS for these imports and fails if a named export goes missing.
 
-import { EFFECT_TYPES, TARGET_CATEGORIES } from '../../systems/effects/constants.js';
+import { EFFECT_TYPES, TARGET_CATEGORIES, GIANT_HARVEST_SKILLS } from '../../systems/effects/constants.js';
 import { COMBAT_SKILL_IDS } from './skillRegistry.js';
 import { DOSE_KIND_IDS } from './carriedKinds.js';
 import { effectTag } from './effectWords.js';
@@ -131,8 +131,8 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  * * `'doseKind'` — `ConsumptionSystem` passes the kind of dose being drunk (`carriedKinds.DOSE_KINDS`:
  *   drink, potion, elixir), which is how Long-lasting Brews and Strong Drink name what they help.
  *
- * A `'skill'` row may add `skillTrade` (a `SKILL_TRADES` id): its reader rolls it only for that
- * trade's skills (Giant Harvest, gathering), so the CMS's picker lists those alone.
+ * A `'skill'` row may add `skillsOnly` (skill ids): its reader rolls it only for those skills' work
+ * (Giant Harvest, Farming), so the CMS's picker lists those alone.
  *
  * ## `retired` — still read as a sentence, never offered
  *
@@ -532,28 +532,27 @@ export const MODIFIER_PALETTE = [
     },
     {
         /**
-         * Read by `OutputRules.rollGiantHarvest` once per completed cycle, after Double Loot: on a hit
-         * every drop of the cycle (each line and the rare table's find) comes in at ten times, and
-         * Double Loot's doubling as well. Only a gathering skill's work rolls it (`skillTrade`), so the
-         * CMS's skill picker lists those alone; a failed cycle never rolls.
+         * Read by `OutputRules.rollGiantHarvest` once per completed work cycle, after Double Loot: on
+         * a hit every drop of the cycle (each line and the rare table's find) comes in at ten times,
+         * and Double Loot's doubling as well. Only Farming work rolls it (`skillsOnly`), so the CMS's
+         * skill picker lists that alone; a failed cycle and a kill never roll.
          */
         type: EFFECT_TYPES.GIANT_HARVEST,
         reads: {
-            up: (n) => `have a ${n} chance a gathering cycle's drops come in at ten times`,
-            down: (n) => `have ${n} less chance a gathering cycle's drops come in at ten times`
+            up: (n) => `have a ${n} chance a Farming cycle's drops come in at ten times`,
+            down: (n) => `have ${n} less chance a Farming cycle's drops come in at ten times`
         },
         label: 'Giant Harvest',
-        explains: 'A chance a gathering cycle\'s drops come in at ten times',
+        explains: 'A chance a Farming cycle\'s drops come in at ten times',
         when: 'never',
         scales: 'value',
         // A chance is a plain number of percent; resolved from a base of 0, so any other bucket is 0.
         buckets: ['flat'],
         categories: 'skill',
-        // Narrows the skill picker to one trade (`skillRegistry.SKILL_TRADES`).
-        skillTrade: 'gathering',
+        skillsOnly: GIANT_HARVEST_SKILLS,
         shape: MODIFIER_SHAPES.PROC,
         group: 'Support',
-        hint: 'A chance a gathering cycle\'s drops come in at ten times: every drop, the rare table\'s find too, and with Double Loot both apply. In percent. Only gathering work (Mining, Forestry, Fishing, Farming) rolls it; pick one of those to narrow it.'
+        hint: 'A chance a Farming cycle\'s drops come in at ten times: every drop, the rare table\'s find too, and with Double Loot both apply. In percent. Only Farming work rolls it; no other work, and never a kill.'
     },
     {
         /**

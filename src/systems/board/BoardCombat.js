@@ -2,7 +2,7 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { enemyProfileOf, enemyDropsOf, isEnemyDef } from '../../config/registries/enemyProfile.js';
+import { enemyProfileOf, isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { ModifierAggregator } from '../effects/ModifierAggregator.js';
 import * as LiveEffects from '../effects/LiveEffects.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
@@ -180,13 +180,13 @@ function enemyFor(instance) {
  * empty deliberately: `handleVictory` looks for a `unifiedreward` trait, and a Token's rewards come
  * from its outputs instead.
  *
- * `enemy` and `drops` are carried, not looked up: the fight holds the stat block built from the
- * Token and the drop list read off the Token's outputs.
+ * `enemy` is carried, not looked up: the fight holds the stat block built from the Token. Its drops
+ * are not: `LootSystem` reads them off the Token at the kill.
  *
  * `enemyId` is the Token's id. It is what the Bestiary, the kill counts and the discovery
  * notifications key on.
  */
-function createFight(instanceId, heroId, enemy, drops) {
+function createFight(instanceId, heroId, enemy) {
     const aggregator = new ModifierAggregator(`enemy_${instanceId}`);
     const effects = [];
 
@@ -201,7 +201,6 @@ function createFight(instanceId, heroId, enemy, drops) {
         instanceId,
         enemyId: enemy.id,
         enemy,
-        drops,
         /**
          * What makes an enemy an effect bearer.
          *
@@ -464,7 +463,7 @@ export function tickToken(instance, delta, heroId) {
             if (otherId !== id && other.assignedHeroId === heroId) endFight(otherId);
         }
         const kept = instance.fightHp;
-        fight = createFight(id, heroId, enemy, enemyDropsOf(getTokenType(instance.typeId)));
+        fight = createFight(id, heroId, enemy);
         const current = keptHp(kept, fight.combat.enemyHp.max);
         if (current != null) fight.combat.enemyHp.current = current;
         // A mark still naming this hero comes only from a load: its engagement below is the saved
@@ -540,9 +539,11 @@ export function tickToken(instance, delta, heroId) {
 /**
  * A kill.
  *
- * One kill counts as one cycle for every board system outside the combat engine. That single unit
- * is what connects combat to the rest of the board (Limes's lessons, rules on a neighbour's cycle). Nothing
- * beside it wears for it, as nothing beside a craft does: help is free. The enemy is used up by it.
+ * A kill is a cycle of its own kind, a combat cycle: it publishes `CYCLE_COMPLETE` marked `kill`,
+ * with the loot it landed as `produced`, so On Neighbour Produces hears kill loot. A rule on a
+ * work cycle does not hear it (On Neighbour's Cycle, the enemy's own On Cycle): a neighbour hears a
+ * kill as On Neighbour's Kill. Nothing beside it wears for it, as nothing beside a craft does: help
+ * is free. The enemy is used up by it.
  */
 function resolveVictory(instance, fight, enemy, heroId) {
     const id = instance.id;
@@ -570,8 +571,13 @@ function resolveVictory(instance, fight, enemy, heroId) {
         instanceId: id,
         typeId: instance.typeId,
         heroId: heroId || null,
-        failed: false
+        failed: false,
+        kill: true,
+        produced: fight.produced || []
     });
+    // The Token-type tally counts a kill as the enemy Token's cycle, as it counts a work cycle.
+    const counts = GameState.state?.collection?.cardUseCounts;
+    if (counts) counts[instance.typeId] = (counts[instance.typeId] || 0) + 1;
     // `heroId` and `typeId` ride along so a rule reacting to a fight ending can name the victor and
     // the creature, as `CYCLE_COMPLETE` (published just above from the same function) can.
     EventBus.publish(BOARD_EVENTS.COMBAT_RESOLVED, {
@@ -699,6 +705,13 @@ export function init() {
     // clock import this file's neighbours, so importing back would be a static cycle. They announce
     // the death instead and this is the single subscriber that acts on it.
     EventBus.subscribe(ENGINE_EVENTS.HERO_DOWNED, ({ heroId }) => resolveStatusDefeat(heroId));
+
+    // `LootSystem` lands a kill's loot inside the combat engine's victory, before `resolveVictory`
+    // publishes the kill's cycle: what landed is kept on the fight for that cycle's `produced`.
+    EventBus.subscribe(ENGINE_EVENTS.LOOT_GENERATED, ({ instanceId, drops } = {}) => {
+        const fight = getFight(instanceId);
+        if (fight) fight.produced = (drops || []).map(d => d.itemId);
+    });
 
     logger.info('BoardCombat', 'Board combat ready');
 }

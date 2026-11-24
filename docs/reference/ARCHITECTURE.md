@@ -375,25 +375,25 @@ things shrink with the window, so reach and every rule are the same at any size.
 `MatBoard.jsx` (`src/ui/components/board/MatBoard.jsx:62-…`, memoised) draws every Token
 (`MatToken.jsx`), hero (`MatHero.jsx`) and flag (`FlagLayer.jsx`) as **positioned DOM elements**
 keyed by instance id, in the z-layers set out in `matLayers.js` (`MAT_Z`: surface, ground,
-ground fx, grid, Tokens, task dim and task rings, worked Tokens, heroes, sky, rings, loot, work plate). One `pointermove` on the mat asks
+ground fx, grid, Tokens, job areas, worked Tokens, heroes, sky, rings, loot, work plate). One `pointermove` on the mat asks
 the engine which Token is under the pointer (`MatBoard.jsx:62-75`). Other screens: the Guild
 Hall's star web (`GuildHallBoard.jsx`, `HallSky.jsx`) and the Atlas with the hex world map
 (`src/ui/components/atlas/`).
 
-**Task rings** (`TaskRings.jsx`, `taskRing.js`): a ring round every job in progress (a Token
-with a hero standing beside it working it), fitted round the Token's body and each hero's figure
-and centred on them all; work green, or the warning amber (`--color-gi-warning`) while the Token
-shows its "!" (`problemMark.problemOf`, read into MatBoard's hero rows as `jobStuck`). The rings
-draw only the **outer edge** of their merged shape (`edgeRuns`: the cells of the union with a side
-on the ground outside, which round a lone ring is exactly its pixel ring). Inside, **one** dim for
-all the rings, cut to the union less its edge, so overlaps dim once: a grey drawn with
-`mix-blend-mode: saturation`, then a translucent black, then the line over both. All three share
-one z (`matLayers.taskRingZ`), the lowest worked Token's: worked Tokens stand above every resting
-one in the stack, so the dim and the line lie over the ground and every Token at rest (the part
-of one inside a ring dimmed, the line crossing its art) and under the worked Tokens and the
-heroes, who win the tie by coming after them. Drawn when a job starts, ends or turns stuck;
-nothing runs at rest. A worked Token and its
-hero have no outline of their own any more (`spriteOutline.js`).
+**Job areas** (`TaskRings.jsx`, `taskRing.js`): an area round every job in progress (a Token
+with a hero standing beside it working it), centred on the middle of the Token's point and each
+working hero's, its radius reaching the farthest corner of the Token's body and each hero's
+figure. No line, working or stuck: the "!" tells a stuck job. All the areas are **one** shape
+(`dimRuns`, the union), toned like old parchment by the layers of `TASK_AREA_LAYERS` (a grey in
+`mix-blend-mode: saturation`, a tan in `color`, a paper glow in `soft-light`, a touch of black),
+so overlaps are toned once; its outer edge fades in `TASK_FADE_STEPS` bands of
+`TASK_FADE_STEP_PX` art pixels (`fadeBands`: each cell's four-neighbour distance from the ground
+outside, by repeated `erodeRuns`), each layer drawing a band at that layer's opacity times the
+band's strength. Every layer shares one z (`matLayers.taskRingZ`), the lowest worked Token's:
+worked Tokens stand above every resting one in the stack, so the tone lies over the ground and
+every Token at rest (the part of one inside an area toned) and under the worked Tokens and the
+heroes, who win the tie by coming after them. Drawn when a job starts or ends; nothing runs at
+rest. A worked Token and its hero have no outline of their own any more (`spriteOutline.js`).
 
 ### 5.2 What moves and how
 
@@ -496,9 +496,14 @@ the Perf HUD is showing (`src/ui/components/base/FPSCounter.jsx:10-25`,
 - **Banners** (things that must not be missed) and **item stubs** (items gained and spent):
   module stores in `src/systems/notifications/` fed by `routing.js` (`:17-30` says where each
   event goes), drawn by `ui/components/notifications/BannerStack.jsx` and `ItemStubColumn.jsx`.
-  The item stubs sit on the mat's side of the cameras; the banners are one stack outside them
+  The item stubs sit on the mat's side of the cameras; the banners are one corner outside them
   (`ReactRoot.jsx`, after `HallCamera`), so they hold still while the view glides, and over the
-  Hall and the World Map (`away`) show only kinds that point to a Token.
+  Hall and the World Map (`away`) show only kinds that point to a Token. The corner is a
+  show/hide icon at the top right above the item stubs (it counts the banners up, red with a
+  problem among them): shown, every banner is listed, with no limit; hidden, each new banner pops
+  out for `PEEK_MS` (5 s) and tucks back in (`notifications/bannerCorner.js`). Shown or hidden is
+  a per-device setting (`notifications.bannersShown`). The store (`banners.js`) is one list,
+  newest first; a banner put back silently (a load, a standing event) is `quiet` and never pops.
   Banners live in memory except the kinds marked `kept` (knock-out, Bank Full), which `routing.js`
   writes into `ui.banners` on every change and puts back silently on `GAME_LOADED`. Event banners
   are not saved: `GAME_LOADED` and `BOARD_SWAPPED` raise one for each event Token standing on the

@@ -14,6 +14,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
+import { MAT_Z } from '../ui/components/board/matLayers.js';
 import { FlagLayer } from '../ui/components/board/FlagLayer.jsx';
 import { markerBox, MARKER_ART_PX, MARKER_PULSE_EVERY_MS } from '../ui/components/board/flagGeometry.js';
 import { flagClothOver } from '../ui/components/board/flagCloth.js';
@@ -237,6 +238,18 @@ describe('on the mat', () => {
     };
     const outlined = (c, id) => c.querySelector(`[data-token-art][data-token-id="${id}"]`).getAttribute('data-outline');
 
+    it('the Token whose card is open comes forward, and its hero’s flag stays one above it', () => {
+        const tok = placeAt('fixture_producer', 600, 600);
+        Orders.orderAt('h1', { x: tok.x, y: tok.y });
+        const { container } = mount(h(MatBoard, { inspectedTokenId: tok.id }));
+        const root = container.querySelector('[data-mat-board]');
+        root.getBoundingClientRect = () => ({ left: 0, top: 0, width: matW(), height: matH(), right: matW(), bottom: matH(), x: 0, y: 0 });
+        fireEvent.pointerMove(root, { clientX: tok.x, clientY: tok.y });
+        const tokenZ = Number(container.querySelector(`[data-token-art][data-token-id="${tok.id}"]`).style.zIndex);
+        expect(tokenZ).toBe(MAT_Z.INSPECTED_TOKEN);
+        expect(Number(flagOf(container, 'h1').style.zIndex)).toBe(tokenZ + 1);
+    });
+
     it('hovering the Token shows its hero’s flag in its middle, one above it; the Token keeps the pointer', () => {
         const { tok, root, container } = setup();
         expect(flagOf(container, 'h1')).toBeNull();
@@ -253,7 +266,7 @@ describe('on the mat', () => {
         expect(flagClothOver(root, tok.x, tok.y, tok.id)).toBeNull();
     });
 
-    it('the pointer on its cloth shows its tooltip, and the Token stays hovered', () => {
+    it('the pointer on its cloth shows no tooltip (brief 830 D3), and the Token stays hovered', () => {
         const { tok, root, container } = setup();
         fireEvent.pointerMove(root, { clientX: tok.x, clientY: tok.y });
         const flag = flagOf(container, 'h1');
@@ -262,9 +275,9 @@ describe('on the mat', () => {
         const tip = () => document.body.querySelector('[data-flag-tooltip="h1"]');
         expect(tip()).toBeNull();
         fireEvent.pointerMove(root, { clientX: tok.x, clientY: tok.y });
-        expect(tip()).not.toBeNull();
+        expect(tip()).toBeNull();
         expect(outlined(container, tok.id)).toBe('hover');
-        // Off the cloth, still on the Token: no tooltip.
+        // Off the cloth, still on the Token.
         fireEvent.pointerMove(root, { clientX: tok.x + 30, clientY: tok.y + 30 });
         expect(tip()).toBeNull();
         expect(flagOf(container, 'h1')).not.toBeNull();

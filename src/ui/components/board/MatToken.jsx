@@ -1,7 +1,6 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
 import { artRadiusOf, isSmallToken } from '../../../config/matGeometry.js';
-import { tokenSkipLines } from './flagText.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { useDraggable } from '@dnd-kit/core';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
@@ -20,29 +19,23 @@ import { MAP_MODE, isProtectedFromDemolition } from '../../hooks/useMapMode.js';
 import { useTokenEvent } from './tokenEvents.js';
 import { useTokenDetail } from './useTokenDetail.js';
 import { TokenBubbles } from './TokenBubbles.jsx';
-import { idleTimerLines } from './idlePlate.js';
-import { plateFootOf } from './workPlate.js';
+import { nameFootOf } from './matMarks.js';
 import { TokenNameBadge } from './TokenBadges.jsx';
 import { gearStateOf } from './centreAlert.js';
-import { isEnemyDef } from '../../../config/registries/enemyProfile.js';
 import { TokenHitArt } from './TokenHitArt.jsx';
 import { hitSkillOf, strikesLive } from './hitAnimations.js';
 import { tokenOutline } from './spriteOutline.js';
 import * as TokenGlows from '../../../systems/board/TokenGlows.js';
-import { PassiveProductionTooltip } from './PassiveProductionTooltip.jsx';
-import * as PassiveProduction from '../../../systems/board/PassiveProduction.js';
 import { TICK_INTERVAL_MS } from '../../../config/loopConstants.js';
 import { UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { useDrawn, isDrawn } from '../../dev/perf/drawSwitches.js';
 import { takeSpawn, playSpawn } from './spawnMotion.js';
-import { TOKEN_FLIGHT_FX, TOKEN_FLIGHT_MS, playTokenFlight } from './tokenFlight.js';
 import { FX_FRAME_MS, playPoses } from './fx/pixelSteps.js';
 import { takeSettle, playSettle } from './fx/regionSettle.js';
 import { takeArrival, playEventArrival } from './fx/eventArrival.js';
 import { useSupportLit } from './supportLit.js';
 import { useOrderLit } from './orderLit.js';
 import { walkerGlide } from './walkerGlide.js';
-import { isSingleClick } from '../../hooks/useMatSelection.js';
 
 /**
  * A walking enemy's boxes follow the engine without React. While `on`, each `ENEMIES_WALKED`
@@ -152,23 +145,20 @@ export const MatToken = React.memo(function MatToken({
     isHovered = false,
     isRested = false,
     selected = false,
-    picked = false,
     hasHero = false,
     onInspectToken,
-    onPick,
     onClearInspect,
     onOpenRecipes,
     mapMode = null,
     onModeClick,
     dragging = false,
     fightBarHost = null,
-    plateHost = null,
     held = false,
+    found = null,
     onPress
 }) {
     // Perf draw switches: each only stops DRAWING (see drawSwitches.js).
     const bubblesDrawn = useDrawn('bubbles');
-    const tooltipsDrawn = useDrawn('tooltips');
     const walkDrawn = useDrawn('walkDraw');
     // The radius and the art both come from the type (footprint and `artSize` alike), so a
     // small Token is half size here exactly as it is to the engine (`artRadiusOf`).
@@ -221,10 +211,6 @@ export const MatToken = React.memo(function MatToken({
     // (routed to this Token alone).
     const detail = useTokenDetail(id, def);
 
-    // The idle plate's timers poll this (the card's own timer lines, `idleTimerLines`); stable per
-    // Token so its poll is not reset. Read only while the pointer rests on the Token.
-    const readTimer = React.useCallback(() => idleTimerLines(BoardState.getTokenById(id)), [id]);
-
     const usesRemaining = detail?.usesRemaining ?? null;
     const resting = !!detail?.resting;
     // Drawn by its state: a Field empty, growing or ripe, or a resting Token that names a resting
@@ -264,15 +250,7 @@ export const MatToken = React.memo(function MatToken({
         return () => clearTimeout(timer);
     }, [dragging]);
 
-    // Moved by right-click (`tokenFlight.js`): the engine has it on its new spot already, and it
-    // flies there from `flight` (its old point) instead of sliding. Kept for the flight's length.
-    const [flight, setFlight] = React.useState(null);
-    React.useEffect(() => {
-        if (!flight) return undefined;
-        const timer = setTimeout(() => setFlight(null), TOKEN_FLIGHT_MS + 80);
-        return () => clearTimeout(timer);
-    }, [flight]);
-    const still = skipSlide || !!flight;
+    const still = skipSlide;
 
     const [landing, setLanding] = React.useState(false);
     const landingTimer = React.useRef(null);
@@ -287,25 +265,6 @@ export const MatToken = React.memo(function MatToken({
     // A refilled Token hops as it comes back, as a Token does when it lands.
     useTokenEvent(BOARD_EVENTS.TOKEN_RESPAWNED, id, land);
     React.useEffect(() => () => clearTimeout(landingTimer.current), []);
-
-    /**
-     * Resting on a Token also says which flags passed it over, and why. Skips change without an
-     * event (a flag re-checks every second), so they are read when the pointer rests rather
-     * than kept in the projection.
-     */
-    const [skipLines, setSkipLines] = React.useState([]);
-    React.useEffect(() => {
-        if (!isRested) return;
-        // The same lines keep the same array, so a rest with nothing skipped costs no second render.
-        const next = tokenSkipLines(id);
-        setSkipLines(prev => (prev.join('|') === next.join('|') ? prev : next));
-    }, [isRested, id]);
-
-    // A Token with Passive Production (the Guild Hall) shows what it pays in a game-styled
-    // tooltip with a live next-in, not the native title. Read only once the pointer rests.
-    const showPassive = isRested && PassiveProduction.hasPassiveProduction(BoardState.getTokenById(id));
-
-    const hoverTitle = (isRested ? skipLines : []).filter(Boolean).join('\n') || undefined;
 
     // The Token stays exactly where it is: its hero walks up and stands beside it
     // (`HeroMotion.standingSpot`). An enemy walking by its spawner steps once a tick, so it
@@ -367,9 +326,6 @@ export const MatToken = React.memo(function MatToken({
                 : `left ${SLIDE_MS}ms ${SLIDE_EASE}, top ${SLIDE_MS}ms ${SLIDE_EASE}`
     };
     const hidden = dragging;
-    // The idle plate under the rested Token nobody works. `TokenBubbles` decides whether it shows
-    // (a problem or a running timer): a spawner's and a growth's problems are heard only there.
-    const idlePlate = !!plateHost && !staffed && !hidden && !isEnemyDef(def);
     // In a fight the enemy's bar draws in the fight layer (`FightBarHost`), placed by this box's corner.
     const fightBar = React.useMemo(
         () => (fightBarHost && x != null && y != null ? { host: fightBarHost, left: x - boxHalf, top: y - boxHalf } : null),
@@ -381,7 +337,7 @@ export const MatToken = React.memo(function MatToken({
         stack?.attach(id, 'art', el);
     }, [stack, id]);
     // A press anywhere this Token takes one (its circle, a bubble) picks it up, unless it is
-    // fixed: then the press is only the start of a click, which still inspects it.
+    // fixed.
     const dragProps = React.useMemo(
         () => (fixed ? {} : { onPointerDown: (e) => onPress?.(e, { id, typeId, permanent: isPermanent }, artRef.current) }),
         [fixed, onPress, id, typeId, isPermanent]
@@ -399,23 +355,8 @@ export const MatToken = React.memo(function MatToken({
     };
     useTokenEvent(UI_EVENTS.UI_TOKEN_FX, id, (p) => {
         if (p?.fx === 'settle') settle();
-        else if (p?.fx === TOKEN_FLIGHT_FX) setFlight({ x: p.fromX, y: p.fromY });
     });
     React.useLayoutEffect(settle, []);   // eslint-disable-line react-hooks/exhaustive-deps
-
-    // The flight plays once the box stands on its new spot: that draw may come before or after the
-    // one that holds `flight`, so it waits for the point to differ from where it flew from.
-    const flownRef = React.useRef(null);
-    React.useLayoutEffect(() => {
-        if (!flight || flownRef.current === flight) return;
-        const dx = flight.x - px;
-        const dy = flight.y - py;
-        if (!Number.isFinite(dx) || !Number.isFinite(dy) || (dx === 0 && dy === 0)) return;
-        flownRef.current = flight;
-        if (!isDrawn('tokenFx')) return;
-        playTokenFlight(artRef.current, dx, dy, { unit: artScale });
-        playTokenFlight(overlayRef.current, dx, dy, { unit: artScale });
-    }, [flight, px, py]);   // eslint-disable-line react-hooks/exhaustive-deps
 
     // Just spawned: pops out of its spawner and slides to its spot, on both boxes alike. Read once,
     // at mount, so a Token already on the mat never replays it.
@@ -464,7 +405,7 @@ export const MatToken = React.memo(function MatToken({
         }, UI_LISTENER);
     }, [isHall]);
 
-    // A sharp coloured outline: gold picked, white hovered or inspected, red in alert
+    // A sharp coloured outline: gold while its card is open, white hovered, red in alert
     // (`spriteOutline.js`); a worked Token has its task ring instead. It is a generated picture
     // under the art, not a filter.
     // In a map mode the hovered Token takes the mode's colour, or muted grey where the mode cannot
@@ -475,7 +416,7 @@ export const MatToken = React.memo(function MatToken({
     const orderLit = useOrderLit(id);
     const outline = orderLit === 'workable' && !isHovered
         ? 'work'
-        : tokenOutline({ picked, hovered: isHovered, selected, lit: lit || orderLit === 'job', alert: !!alert, mode: mapMode, unavailable: modeUnavailable });
+        : tokenOutline({ hovered: isHovered, selected, lit: lit || orderLit === 'job' || found === 'match', alert: !!alert, mode: mapMode, unavailable: modeUnavailable });
     const gearState = gearStateOf(detail || {});
     const gear = React.useMemo(
         () => (gearState.show ? {
@@ -542,7 +483,6 @@ export const MatToken = React.memo(function MatToken({
                 data-token-type={typeId}
                 data-token-small={small ? 'true' : undefined}
                 data-guild-hall={isHall ? 'true' : undefined}
-                title={hoverTitle}
                 data-tile-alert={alert || undefined}
                 data-tile-staffed={staffed ? 'true' : undefined}
                 data-outline={outline || undefined}
@@ -552,17 +492,12 @@ export const MatToken = React.memo(function MatToken({
                 data-token-state-sprite={stateSprite || undefined}
                 data-token-fixed={fixed ? 'true' : undefined}
                 data-token-protected={demolishProtected ? 'true' : undefined}
-                onClick={(e) => {
-                    if (dragging) return;
-                    // In a map mode a click acts on the Token and does nothing else.
-                    if (mapMode) { onModeClick?.(id); return; }
-                    // A single click picks (selects a movable Token), or clears it when it is the one
-                    // selected; a double-click inspects.
-                    onPick?.(id, isSingleClick(e));
-                }}
-                onDoubleClick={(e) => {
+                data-find={found || undefined}
+                // A plain click acts only in a map mode; orders are given by drag alone.
+                onClick={mapMode ? () => { if (!dragging) onModeClick?.(id); } : undefined}
+                onContextMenu={(e) => {
+                    e.preventDefault();
                     if (mapMode || dragging) return;
-                    onPick?.(id);
                     onInspectToken?.(typeId, e.currentTarget.getBoundingClientRect(), id);
                 }}
                 style={{
@@ -620,14 +555,13 @@ export const MatToken = React.memo(function MatToken({
                     name={label}
                     isDragging={hidden}
                     shown={isRested}
-                    foot={boxHalf + plateFootOf(typeId, fit)}
+                    foot={boxHalf + nameFootOf(typeId, fit)}
                 />
 
                 {/**
-                 * The problem mark of a Token nobody works and the player's marks, and once the
-                 * pointer rests on it the gear and its idle plate (drawn into `plateHost`, which the
-                 * mat hands the rested Token alone). A worked Token's cycle, charges and problem are
-                 * on its work plate (`WorkPlateLayer`).
+                 * The '!', the gear and the player's marks in the Token's centre, the recipe
+                 * bubble over it while the pointer rests on it, and an enemy's health bar. A worked
+                 * Token's cycle is its work bar (`WorkBarLayer`).
                  */}
                 {bubblesDrawn && <TokenBubbles
                     instanceId={id}
@@ -640,8 +574,6 @@ export const MatToken = React.memo(function MatToken({
                     artUnit={artScale}
                     x={x}
                     y={y}
-                    readTimer={readTimer}
-                    plateHost={idlePlate ? plateHost : null}
                     gear={gear}
                     marked={!!detail?.marked}
                     fightBar={fightBar}
@@ -650,7 +582,6 @@ export const MatToken = React.memo(function MatToken({
 
             </div>
 
-            {tooltipsDrawn && showPassive && !hidden && <PassiveProductionTooltip instanceId={id} />}
         </>
     );
 });

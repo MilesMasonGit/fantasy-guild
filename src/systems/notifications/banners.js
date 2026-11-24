@@ -1,31 +1,26 @@
 import { BANNER_KINDS, bannerText } from './bannerKinds.js';
 
 /**
- * The banners: what the player must not miss, dropping in at the top centre of the mat. A
- * milestone stays until clicked; a problem goes when clicked or once its owner finds it fixed
- * ({@link revise}).
+ * The banners: what the player must not miss. A milestone stays until clicked; a problem goes
+ * when clicked or once its owner finds it fixed ({@link revise}). Every banner up is in one list,
+ * newest first, with no limit: the corner (`BannerStack.jsx`) lists them all or tucks them away.
  *
- * Up to {@link MAX_SHOWN} are on screen, newest on top; the rest wait, counted ("+N"). Problems
- * wait ahead of milestones, and a waiting banner of the same kind as a newer one takes it in
- * ("Aela and Bram knocked out") rather than queueing behind it. Two banners from one moment (the
- * recipes a single level-up unlocks, said over several level events) share a `groupKey` and are
- * always one banner, on screen or waiting.
+ * Two banners from one moment (the recipes a single level-up unlocks, said over several level
+ * events) share a `groupKey` and are always one banner; a lasting condition (`mergeShown`, the
+ * Bank full) folds into the one up. A moment kind (a knock-out) raised while one is up is a banner
+ * of its own, as two on screen always were.
  *
- * Pure: the sound a banner makes when it comes on screen is a hook ({@link setOnShow}).
+ * Pure: the sound a banner makes as it is raised is a hook ({@link setOnShow}).
  */
 
-export const MAX_SHOWN = 3;
-
 let nextId = 1;
-/** On screen, newest first. */
+/** Every banner up, newest first. */
 let shown = [];
-/** Waiting, in the order they will come on screen. */
-let waiting = [];
 let version = 0;
 const listeners = new Set();
 let onShow = null;
 
-/** Called with each banner as it comes on screen. */
+/** Called with each banner as it is raised (not for one put back silently). */
 export function setOnShow(fn) {
     onShow = fn || null;
 }
@@ -52,7 +47,8 @@ function unionSubjects(a = [], b = []) {
     return [...seen.values()];
 }
 
-function build({ kind, parts = {}, groupKey = null, sprite = null, subjects = [] }) {
+/** `quiet`: put back, not news, so the corner does not pop it out. */
+function build({ kind, parts = {}, groupKey = null, sprite = null, subjects = [] }, quiet = false) {
     const def = BANNER_KINDS[kind];
     return {
         id: nextId++,
@@ -62,6 +58,7 @@ function build({ kind, parts = {}, groupKey = null, sprite = null, subjects = []
         groupKey,
         sprite,
         subjects: unionSubjects(subjects),
+        quiet,
         ...bannerText(kind, parts)
     };
 }
@@ -79,15 +76,6 @@ function mergeInto(old, incoming) {
 
 const isProblem = (b) => BANNER_KINDS[b.kind]?.tone === 'problem';
 
-/** Problems first; within a tone, the order they arrived. */
-function sortWaiting() {
-    waiting = [...waiting.filter(isProblem), ...waiting.filter(b => !isProblem(b))];
-}
-
-function replace(list, old, next) {
-    return list.map(b => (b === old ? next : b));
-}
-
 function show(b, silent = false) {
     shown = [b, ...shown];
     if (!silent) onShow?.(b);
@@ -97,8 +85,8 @@ function show(b, silent = false) {
  * Raise a banner, or fold it into one it belongs with.
  * @param {{kind: string, parts?: object, groupKey?: string, sprite?: object,
  *   subjects?: {type: 'hero'|'token', id: string}[]}} input
- * @param {{silent?: boolean}} [options] `silent`: no sound if it comes on screen now (a banner
- *   put back, not news)
+ * @param {{silent?: boolean}} [options] `silent`: no sound and no pop-out (a banner put back, not
+ *   news)
  * @returns {number|null} the id of the banner that now says it
  */
 export function push(input, { silent = false } = {}) {
@@ -106,108 +94,78 @@ export function push(input, { silent = false } = {}) {
     if (!def) return null;
 
     const sameGroup = (b) => input.groupKey != null && b.groupKey === input.groupKey;
-    const target =
-        shown.find(sameGroup) || waiting.find(sameGroup)
-        || (def.mergeShown ? shown.find(b => b.kind === input.kind) : null)
-        || (def.merge ? waiting.find(b => b.kind === input.kind) : null);
+    const target = shown.find(sameGroup) || (def.mergeShown ? shown.find(b => b.kind === input.kind) : null);
 
     if (target) {
         const next = mergeInto(target, input);
-        if (shown.includes(target)) shown = replace(shown, target, next);
-        else waiting = replace(waiting, target, next);
+        shown = shown.map(b => (b === target ? next : b));
         emit();
         return next.id;
     }
 
-    const b = build(input);
-    if (shown.length < MAX_SHOWN) show(b, silent);
-    else {
-        waiting = [...waiting, b];
-        sortWaiting();
-    }
+    const b = build(input, silent);
+    show(b, silent);
     emit();
     return b.id;
 }
 
-/** A click: the banner goes, and the next waiting one comes on screen. */
+/** A click: the banner goes. */
 export function dismiss(id) {
     const before = shown.length;
     shown = shown.filter(b => b.id !== id);
-    if (shown.length === before) return;
-    if (waiting.length && shown.length < MAX_SHOWN) {
-        const [next, ...rest] = waiting;
-        waiting = rest;
-        show(next);
-    }
-    emit();
+    if (shown.length !== before) emit();
 }
 
 /**
- * Take back the banner of `groupKey`, on screen or waiting, as if it had been clicked: an event's,
- * once its Token has left the mat. Nothing when there is none.
+ * Take back the banner of `groupKey` as if it had been clicked: an event's, once its Token has
+ * left the mat. Nothing when there is none.
  */
 export function withdraw(groupKey) {
     if (groupKey == null) return;
-    const onScreen = shown.find(b => b.groupKey === groupKey);
-    if (onScreen) {
-        dismiss(onScreen.id);
-        return;
-    }
-    const before = waiting.length;
-    waiting = waiting.filter(b => b.groupKey !== groupKey);
-    if (waiting.length !== before) emit();
+    const before = shown.length;
+    shown = shown.filter(b => b.groupKey !== groupKey);
+    if (shown.length !== before) emit();
 }
 
-/** Whether any banner of `kind` is up, on screen or waiting. */
+/** Whether any banner of `kind` is up. */
 export function hasKind(kind) {
-    return shown.some(b => b.kind === kind) || waiting.some(b => b.kind === kind);
+    return shown.some(b => b.kind === kind);
 }
 
 /**
- * Rewrite every banner of `kind`, on screen or waiting, from what still stands: `fn(parts)`
- * returns the parts to keep (the same object when nothing changed), or null when nothing is left
- * to say, and that banner goes as if clicked.
+ * Rewrite every banner of `kind` from what still stands: `fn(parts)` returns the parts to keep
+ * (the same object when nothing changed), or null when nothing is left to say, and that banner
+ * goes as if clicked.
  */
 export function revise(kind, fn) {
     let changed = false;
-    const goes = [];
-    const rewrite = (b) => {
-        if (b.kind !== kind) return b;
+    const next = [];
+    for (const b of shown) {
+        if (b.kind !== kind) {
+            next.push(b);
+            continue;
+        }
         const parts = fn(b.parts);
-        if (parts === b.parts) return b;
+        if (parts === b.parts) {
+            next.push(b);
+            continue;
+        }
         changed = true;
-        if (parts == null) {
-            goes.push(b);
-            return b;
-        }
-        return { ...b, parts, ...bannerText(kind, parts) };
-    };
-    shown = shown.map(rewrite);
-    waiting = waiting.map(rewrite).filter(b => !goes.includes(b));
-    if (!changed) return;
-    for (const b of goes) {
-        if (!shown.includes(b)) continue;
-        shown = shown.filter(x => x !== b);
-        if (waiting.length && shown.length < MAX_SHOWN) {
-            const [next, ...rest] = waiting;
-            waiting = rest;
-            show(next);
-        }
+        if (parts != null) next.push({ ...b, parts, ...bannerText(kind, parts) });
     }
+    if (!changed) return;
+    shown = next;
     emit();
 }
 
-/**
- * What the stack draws: the banners on screen (newest first), how many wait, and whether a
- * problem is among them.
- */
+/** What the corner draws: every banner up (newest first), and whether a problem is among them. */
 export function getView() {
-    return { shown, waiting: waiting.length, problemWaiting: waiting.some(isProblem) };
+    return { shown, problem: shown.some(isProblem) };
 }
 
-/** Every banner, on screen and waiting (tests and the dev page). */
+/** Every banner up (tests and the dev page). */
 export function getAll() {
-    return [...shown, ...waiting];
+    return [...shown];
 }
 
 const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -218,13 +176,13 @@ const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArr
  * banners of one moment, and a later run's keys start again.
  */
 export function serializeKept() {
-    return [...[...shown].reverse(), ...waiting]
+    return [...shown].reverse()
         .filter(b => BANNER_KINDS[b.kind]?.kept)
         .map(b => JSON.parse(JSON.stringify({ kind: b.kind, parts: b.parts, sprite: b.sprite, subjects: b.subjects })));
 }
 
 /**
- * Put a save's kept banners back, silently, on screen and waiting as they stood. Malformed
+ * Put a save's kept banners back, silently, in the order they stood. Malformed
  * entries are skipped: a banner is never a reason for a load to fail.
  */
 export function restore(list) {
@@ -238,15 +196,11 @@ export function restore(list) {
                 parts: isPlainObject(entry.parts) ? entry.parts : {},
                 sprite: isPlainObject(entry.sprite) ? entry.sprite : null,
                 subjects: Array.isArray(entry.subjects) ? entry.subjects.filter(isPlainObject) : []
-            });
+            }, true);
         } catch {
             continue;
         }
-        if (shown.length < MAX_SHOWN) show(b, true);
-        else {
-            waiting = [...waiting, b];
-            sortWaiting();
-        }
+        show(b, true);
     }
     emit();
 }
@@ -254,6 +208,5 @@ export function restore(list) {
 /** Forget every banner (a new game or another save loaded). */
 export function reset() {
     shown = [];
-    waiting = [];
     emit();
 }

@@ -15,7 +15,6 @@ import { registerRecipePools } from '../config/registries/recipePoolRegistry.js'
 import { tokenDetailOf } from '../ui/components/board/useTokenDetail.js';
 import { tokenCardModel, liveCardSources, CARD_BLOCK } from '../ui/components/board/tokenCard.js';
 import { problemOf, problemText } from '../ui/components/board/problemMark.js';
-import { idleTimerLines } from '../ui/components/board/idlePlate.js';
 import { clearMat, placeAt } from './fixtures/mat.js';
 
 /**
@@ -152,22 +151,5 @@ describe('the card', () => {
         const src = liveCardSources();
         expect(src.field).toBe(Fields.fieldState);
         expect(src.fieldCrop).toBe(Fields.cropOf);
-    });
-});
-
-describe('the idle hover', () => {
-    it('growing: the same countdown and sentence as the card; ripe, nothing; stopped, left to its problem mark', () => {
-        InventoryManager.addItem(SEED, 1);
-        const field = arrive('fv_field');
-        StationRecipe.setSelectedRecipe(field, WHEAT);
-        tick(100);
-        const cardLine = block(card(field), CARD_BLOCK.LIFECYCLE).lines[0];
-        expect(idleTimerLines(field)).toEqual([expect.objectContaining({ kind: 'ripen', text: cardLine.text, tip: cardLine.tip })]);
-        tick(60000);
-        expect(idleTimerLines(field)).toBeNull();
-        InventoryManager.removeItem(SEED, 1);
-        for (let i = 0; i < 3; i++) Fields.harvested(field, getTokenType(field.typeId));
-        expect(block(card(field), CARD_BLOCK.LIFECYCLE).lines[0]).toMatchObject({ tip: 'Stopped: needs View Wheat Seed to sow Wheat' });
-        expect(idleTimerLines(field)).toBeNull();
     });
 });

@@ -14,11 +14,10 @@ import { t } from '../../../i18n/index.js';
 import { countdownText, lengthText } from '../../../utils/Formatters.js';
 
 /**
- * A Token's timer sentences, written once: the Token card's Events lines and the idle hover's
- * timer cells both read them, so the two never word the same clock differently. Each line is
+ * A Token's timer sentences, written once, for the Token card's Events lines. Each line is
  * `{ kind, icon, label?, text, tip, tone?, alert? }`: `text` the short figure (`4m 57s`, `full`),
- * `tip` the sentence. `alert` marks a stuck reason the problem mark already carries on the hover
- * (a spawner short of items or room, a growth or refill waiting); the hover leaves those to it.
+ * `tip` the sentence. `alert` marks a stuck reason the Token's problem mark also carries (a
+ * spawner short of items or room, a growth or refill waiting).
  * Every engine read comes in through `src`, so tests need no mat.
  */
 
@@ -113,7 +112,7 @@ export function leaveLine(leave) {
 
 /**
  * A spawner's state: its next spawn, or why it waits. `state` is `SpawnerSystem`'s; the family's
- * count is the card's own business (the hover leaves it out).
+ * count is the card's own business.
  */
 export function spawnLine(def, status, src) {
     const spawns = (def.spawner?.spawns || []).filter(e => e?.typeId).map(e => src.tokenName(e.typeId)).join(' or ');
@@ -199,24 +198,7 @@ export function produceLine(passive, src) {
 }
 
 /**
- * **Passive Production as hover text**: a heading with the shared timer's countdown
- * (`Passive Production · next in 4m 57s`), then one line per item a lap pays ("1 Oak Seed",
- * "10 Water"). Empty for a Token that pays nothing.
- * @returns {string[]}
- */
-export function passiveHoverLines(instance, src) {
-    if (!instance) return [];
-    const passive = src.passive?.(instance);
-    const pays = (passive?.lines || [])
-        .filter(l => l?.itemId && Number(l.quantity) > 0)
-        .map(l => `${Math.floor(Number(l.quantity))} ${src.itemName(l.itemId)}`);
-    if (!pays.length) return [];
-    return [`Passive Production · next in ${countdownText(passive.nextInMs)}`, ...pays];
-}
-
-/**
- * Every running timer and stuck reason a Token has, in the card's order: what the idle hover
- * shows. A marked Token is demolition and nothing else (its own clocks stand still).
+ * Every running timer and stuck reason a Token has, in the card's order. A marked Token is demolition and nothing else (its own clocks stand still).
  * @returns {object[]} lines as above; descriptive ones (`live: false`) are left out
  */
 export function timerLines(instance, src = liveTimerSources()) {

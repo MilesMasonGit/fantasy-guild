@@ -20,8 +20,9 @@ import { MatToken } from '../ui/components/board/MatToken.jsx';
 import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
 import { MatTopBar } from '../ui/components/board/MatTopBar.jsx';
 import {
-    MapModeToggles, MapModeBanner, MODE_BANNER_TEXT
+    MapModeBanner, MODE_BANNER_TEXT
 } from '../ui/components/board/MatModeControls.jsx';
+import { MatControls } from '../ui/components/board/MatControls.jsx';
 import { tokenOutline } from '../ui/components/board/spriteOutline.js';
 import { mapModeCursor, cursorPixels, mapModeIconSrc } from '../ui/components/board/mapModeCursor.js';
 import { OUTLINE_COLOURS } from '../config/spriteFx.js';
@@ -53,8 +54,13 @@ const OTHER = 'fixture_station';
 const mountMat = (props = {}) => render(
     h(DndContext, null, h(MatBoard, props), h(CalloutLayer))
 );
-/** The bar as the game draws it: banner in the middle, toggles on the right. */
-const mountBar = () => render(h(MatTopBar, { middle: h(MapModeBanner), right: h(MapModeToggles) }));
+/** As the game draws them: the banner in the top bar's middle, the toggle in the Controls panel, opened. */
+const openControls = (c) => fireEvent.click(c.querySelector('[data-mat-controls-button]'));
+const mountBar = () => {
+    const view = render(h(React.Fragment, null, h(MatTopBar, { middle: h(MapModeBanner) }), h(MatControls)));
+    openControls(view.container);
+    return view;
+};
 
 const artOf = (container, id) => container.querySelector(`[data-token-id="${id}"][data-token-art]`);
 const toggle = (c, mode) => c.querySelector(`[data-map-mode-toggle="${mode}"]`);
@@ -109,16 +115,17 @@ describe('⭐ the toggle', () => {
         expect(toggle(container, MAP_MODE.DEMOLISH).getAttribute('aria-pressed')).toBe('false');
     });
 
-    it('Demolish is the only toggle on the right; Disallow is gone', () => {
+    it('Demolish is the only toggle, in the Controls panel and no longer on the top bar; Disallow is gone', () => {
         const { container } = mountBar();
-        const right = container.querySelector('[data-mat-top-bar-right]');
-        expect([...right.querySelectorAll('[data-map-mode-toggle]')].map(b => b.textContent))
+        const panel = container.querySelector('[data-mat-controls-panel]');
+        expect([...panel.querySelectorAll('[data-map-mode-toggle]')].map(b => b.textContent))
             .toEqual(['Demolish']);
+        expect(container.querySelector('[data-mat-top-bar] [data-map-mode-toggle]')).toBeNull();
         expect(Object.values(MAP_MODE)).toEqual(['demolish']);
         expect(container.textContent).not.toMatch(/disallow/i);
     });
 
-    it('⭐ Demolish wears its cursor’s pixel X beside its word, not a text mark', () => {
+    it('⭐ Demolish is a row wearing its cursor’s pixel X beside its word, not a text mark', () => {
         const { container } = mountBar();
         const button = toggle(container, MAP_MODE.DEMOLISH);
         const icon = button.querySelector('img[data-map-mode-icon="demolish"]');
@@ -140,11 +147,37 @@ describe('⭐ the toggle', () => {
         expect(banner(container)).toBeNull();
     });
 
-    it('leaving the playmat (the bar goes away) ends the mode', () => {
+    it('leaving the playmat (the Controls go away) ends the mode', () => {
         const { container, unmount } = mountBar();
         fireEvent.click(toggle(container, MAP_MODE.DEMOLISH));
         unmount();
         expect(getMapMode()).toBeNull();
+    });
+
+    it('⭐ the Guild Hall or the World Map opening (the Controls away) ends the mode and closes the panel', () => {
+        const { container, rerender } = render(h(MatControls));
+        openControls(container);
+        fireEvent.click(toggle(container, MAP_MODE.DEMOLISH));
+        expect(getMapMode()).toBe(MAP_MODE.DEMOLISH);
+        rerender(h(MatControls, { away: true }));
+        expect(getMapMode()).toBeNull();
+        expect(container.querySelector('[data-mat-controls]').style.visibility).toBe('hidden');
+        expect(container.querySelector('[data-mat-controls-panel]')).toBeNull();
+    });
+
+    it('⭐ Demolish stays on with the panel closed, and the Controls button wears its colour', () => {
+        const { container } = mountBar();
+        const button = container.querySelector('[data-mat-controls-button]');
+        expect(button.getAttribute('data-mode-on')).toBe('false');
+        fireEvent.click(toggle(container, MAP_MODE.DEMOLISH));
+        fireEvent.click(button);
+        expect(container.querySelector('[data-mat-controls-panel]')).toBeNull();
+        expect(getMapMode()).toBe(MAP_MODE.DEMOLISH);
+        expect(button.getAttribute('data-mode-on')).toBe('true');
+        expect(button.className).toContain('border-[var(--color-ui-red)]');
+        act(() => setMapMode(null));
+        expect(button.getAttribute('data-mode-on')).toBe('false');
+        expect(button.className).not.toContain('border-[var(--color-ui-red)]');
     });
 });
 
@@ -194,14 +227,14 @@ describe('⭐ the banner', () => {
 });
 
 describe('⭐ the mode on the mat', () => {
-    it('with no mode on, a double-click inspects and changes nothing; a shift-double-click does the same', () => {
+    it('with no mode on, a right-click inspects and changes nothing; a shift-right-click does the same', () => {
         const oak = placeAt(WORKABLE, 400, 200);
         const other = placeAt(WORKABLE, 560, 200);
         const onInspectToken = vi.fn();
         const { container } = mountMat({ onInspectToken });
-        fireEvent.doubleClick(artOf(container, oak.id));
+        fireEvent.contextMenu(artOf(container, oak.id));
         expect(onInspectToken).toHaveBeenCalledTimes(1);
-        fireEvent.doubleClick(artOf(container, other.id), { shiftKey: true });
+        fireEvent.contextMenu(artOf(container, other.id), { shiftKey: true });
         expect(onInspectToken).toHaveBeenCalledTimes(2);
         expect([oak, other].map(marked)).toEqual([false, false]);
         expect([oak, other].some(t => 'disallowed' in BoardState.getTokenById(t.id))).toBe(false);
@@ -351,7 +384,7 @@ describe('⭐ the hover outline takes the mode’s colour', () => {
         expect(tokenOutline({ hovered: true, mode: 'demolish', unavailable: true })).toBe('muted');
         // Not hovered, a Token keeps its usual outline in a mode.
         expect(tokenOutline({ alert: true, mode: 'demolish' })).toBe('alert');
-        expect(tokenOutline({ selected: true, mode: 'demolish' })).toBe('hover');
+        expect(tokenOutline({ selected: true, mode: 'demolish' })).toBe('select');
     });
 
     it('the two new outline colours are UI_STYLE’s muted grey and red', () => {

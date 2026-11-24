@@ -33,18 +33,3 @@ export function flagClothOver(matEl, clientX, clientY, tokenId) {
     }
     return best;
 }
-
-/**
- * The hero whose shown flag in Token `tokenId`'s middle has its cloth at a client point, or null:
- * that flag's tooltip shows, while the pointer stays the Token's.
- * @param {HTMLElement} matEl the mat (`data-mat-board`)
- * @returns {string|null}
- */
-export function tokenFlagClothAt(matEl, clientX, clientY, tokenId) {
-    if (!matEl || !tokenId) return null;
-    for (const flag of matEl.querySelectorAll('button[data-flag-pinned]')) {
-        if (flag.getAttribute('data-flag-pinned') !== tokenId) continue;
-        if (onFlagCloth(flag, clientX, clientY)) return flag.getAttribute('data-flag');
-    }
-    return null;
-}

@@ -3,8 +3,8 @@ import * as Banners from '../systems/notifications/banners.js';
 import { nameList, bannerText } from '../systems/notifications/bannerKinds.js';
 
 /**
- * The banner queue: three on screen newest on top, the rest counted ("+N"), problems waiting
- * ahead of milestones, same-kind waiting banners merged, one moment always one banner.
+ * The banners up: every one in one list, newest first, no limit and no "+N"; one moment always
+ * one banner, a lasting problem folded into the one up, a moment kind a banner of its own.
  */
 
 const hero = (name, extra = {}) => ({ kind: 'hero', parts: { heroes: [name] }, ...extra });
@@ -15,44 +15,36 @@ beforeEach(() => Banners.reset());
 afterEach(() => { Banners.reset(); Banners.setOnShow(null); });
 
 describe('the stack', () => {
-    it('shows up to three, newest on top, then counts the rest', () => {
-        for (const n of ['A', 'B', 'C', 'D']) Banners.push(upgrade(n));
+    it('keeps every banner up, newest first, with no limit', () => {
+        for (const n of ['A', 'B', 'C', 'D', 'E']) Banners.push(upgrade(n));
         const view = Banners.getView();
-        expect(view.shown.map(b => b.parts.upgrades[0])).toEqual(['C', 'B', 'A']);
-        expect(view.waiting).toBe(1);
+        expect(view.shown.map(b => b.parts.upgrades[0])).toEqual(['E', 'D', 'C', 'B', 'A']);
+        expect(view).not.toHaveProperty('waiting');
     });
 
-    it('a click dismisses, and the next waiting one comes on screen on top', () => {
+    it('a click dismisses that banner only', () => {
         Banners.push(upgrade('A'));
         Banners.push(hero('Bram'));
         Banners.push(upgrade('C'));
         Banners.push(hero('Dana'));
         const [top] = Banners.getView().shown;
         Banners.dismiss(top.id);
-        const view = Banners.getView();
-        expect(view.shown.map(b => b.line)).toEqual(['Dana joined the guild', 'Bram joined the guild', 'A: more']);
-        expect(view.waiting).toBe(0);
+        expect(Banners.getView().shown.map(b => b.line)).toEqual(['C: more', 'Bram joined the guild', 'A: more']);
     });
 
-    it('problems wait ahead of milestones', () => {
-        for (const n of ['A', 'B', 'C']) Banners.push(upgrade(n));
-        Banners.push(hero('Bram'));                     // a milestone waits
-        Banners.push(knockout('Aela'));                 // a problem arrives later
-        const view = Banners.getView();
-        expect(view.waiting).toBe(2);
-        expect(view.problemWaiting).toBe(true);
-        Banners.dismiss(view.shown[0].id);
-        expect(Banners.getView().shown[0].kind).toBe('knockout');
-    });
-
-    it('same-kind waiting banners merge into one', () => {
-        for (const n of ['A', 'B', 'C']) Banners.push(upgrade(n));
+    it('says whether a problem is among them', () => {
+        for (const n of ['A', 'B', 'C', 'D']) Banners.push(upgrade(n));
+        expect(Banners.getView().problem).toBe(false);
         Banners.push(knockout('Aela'));
-        Banners.push(knockout('Bram'));
-        expect(Banners.getView().waiting).toBe(1);
-        const waiting = Banners.getAll()[3];
-        expect(waiting.line).toBe('Aela and Bram knocked out and carried home. Nothing was lost.');
-        expect(waiting.subjects.map(s => s.id)).toEqual(['Aela', 'Bram']);
+        expect(Banners.getView().problem).toBe(true);
+        Banners.dismiss(Banners.getView().shown[0].id);
+        expect(Banners.getView().problem).toBe(false);
+    });
+
+    it('a banner put back silently is marked quiet; news is not', () => {
+        Banners.push(hero('Bram'), { silent: true });
+        Banners.push(hero('Dana'));
+        expect(Banners.getAll().map(b => b.quiet)).toEqual([false, true]);
     });
 
     it('a banner on screen is not changed by a later one of its kind', () => {
@@ -87,14 +79,16 @@ describe('the stack', () => {
         expect(Banners.getView().shown.map(b => b.title)).toEqual(['Save Restored', 'Save Failed!']);
     });
 
-    it('makes its sound as each banner comes on screen, not while it waits or merges', () => {
+    it('makes its sound as each banner is raised, not when it merges or is put back', () => {
         const heard = vi.fn();
         Banners.setOnShow(heard);
         for (const n of ['A', 'B', 'C', 'D']) Banners.push(upgrade(n));
-        expect(heard).toHaveBeenCalledTimes(3);
-        Banners.dismiss(Banners.getView().shown[0].id);
         expect(heard).toHaveBeenCalledTimes(4);
-        expect(heard.mock.calls[3][0].parts.upgrades).toEqual(['D']);
+        Banners.push({ kind: 'bankFull', parts: { items: ['Oak Log'] } });
+        Banners.push({ kind: 'bankFull', parts: { items: ['Copper Ore'] } });
+        expect(heard).toHaveBeenCalledTimes(5);
+        Banners.push(hero('Bram'), { silent: true });
+        expect(heard).toHaveBeenCalledTimes(5);
     });
 
     it('an unknown kind raises nothing', () => {
@@ -119,13 +113,13 @@ describe('the words', () => {
     });
 
     it('⭐ a knock-out banner for several heroes says what each one lost', () => {
-        for (const n of ['A', 'B', 'C']) Banners.push(upgrade(n));
-        Banners.push({ ...knockout('Aela'), parts: { heroes: ['Aela'], lost: ['Iron Sword'] } });
-        Banners.push({ ...knockout('Bram'), parts: { heroes: ['Bram'], lost: ['3 Shrimp'] } });
-        Banners.push({ ...knockout('Cara'), parts: { heroes: ['Cara'], lost: [] } });
-        Banners.push({ ...knockout('Aela'), parts: { heroes: ['Aela'], lost: ['3 Shrimp'] } });
-        expect(Banners.getView().waiting).toBe(1);
-        expect(Banners.getAll()[3].line).toBe('Aela, Bram and Cara knocked out and carried home. Aela lost: Iron Sword, 3 Shrimp. Bram lost: 3 Shrimp.');
+        const ko = (name, lost) => ({ ...knockout(name), groupKey: 'catch_up_knockouts:1', parts: { heroes: [name], lost } });
+        Banners.push(ko('Aela', ['Iron Sword']));
+        Banners.push(ko('Bram', ['3 Shrimp']));
+        Banners.push(ko('Cara', []));
+        Banners.push(ko('Aela', ['3 Shrimp']));
+        expect(Banners.getAll()).toHaveLength(1);
+        expect(Banners.getAll()[0].line).toBe('Aela, Bram and Cara knocked out and carried home. Aela lost: Iron Sword, 3 Shrimp. Bram lost: 3 Shrimp.');
     });
 });
 
@@ -158,25 +152,12 @@ describe('the clear rule: a banner rewritten from what still stands', () => {
         expect(Banners.getAll().map(b => b.kind)).toEqual(['hero']);
     });
 
-    it('a waiting one can go too', () => {
-        for (const n of ['A', 'B', 'C']) Banners.push(upgrade(n));
-        Banners.push(full('Oak'));
-        expect(Banners.getView().waiting).toBe(1);
-        Banners.revise('bankFull', () => null);
-        expect(Banners.getView().waiting).toBe(0);
-    });
-
-    it('a shown one going brings the next waiting one on screen, with its sound', () => {
-        const heard = [];
-        Banners.setOnShow((b) => heard.push(b.kind));
+    it('one among many goes; the rest stay in their order', () => {
         Banners.push(upgrade('A'));
         Banners.push(full('Oak'));
         Banners.push(upgrade('B'));
         Banners.push(hero('Bram'));
-        expect(Banners.getView().waiting).toBe(1);
-        heard.length = 0;
         Banners.revise('bankFull', () => null);
         expect(Banners.getView().shown.map(b => b.kind)).toEqual(['hero', 'upgrade', 'upgrade']);
-        expect(heard).toEqual(['hero']);
     });
 });

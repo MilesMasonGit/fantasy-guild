@@ -1,14 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
 
-/** How long the pointer rests on a Token or hero before its name and rings come up, in ms. */
+/** How long the pointer rests on a Token or hero before its name comes up, in ms. */
 export const HOVER_REST_MS = 150;
+
+/**
+ * How long the pointer rests on a Token or hero before a reach ring comes up (the Token's own, or
+ * the camp ring lit through a hero), in ms: longer than the name's, so a slow sweep across the mat
+ * reads names and pops no rings. A Token in the hand shows its ring at once.
+ */
+export const RING_REST_MS = 400;
 
 const NONE = Object.freeze({ tokenId: null, heroId: null, tokenTurn: 0, heroTurn: 0 });
 
 /**
- * Which Token and which hero the pointer has rested on for `HOVER_REST_MS`. The outline follows
- * the hover at once; everything else on hover waits for this, so sweeping the pointer across the
- * mat mounts nothing but outlines.
+ * Which Token and which hero the pointer has rested on for `ms` (`HOVER_REST_MS` unless said). The
+ * outline follows the hover at once; everything else on hover waits for this, so sweeping the
+ * pointer across the mat mounts nothing but outlines.
  * One timer for the whole mat, restarted whenever either hover changes. The Token half and the
  * hero half are kept apart, so the pointer moving from a Token onto its hero keeps the name.
  * ⚠️ A rest is never cleared by a render of its own: it simply stops counting once the hover it
@@ -17,9 +24,10 @@ const NONE = Object.freeze({ tokenId: null, heroId: null, tokenTurn: 0, heroTurn
  * coming back to A within the delay would otherwise show A's name at once.
  * @param {string|null} tokenId the hovered Token
  * @param {string|null} heroId the hovered hero
+ * @param {number} [ms] how long the rest is
  * @returns {{tokenId: string|null, heroId: string|null}} what the pointer rests on
  */
-export function useHoverRest(tokenId, heroId) {
+export function useHoverRest(tokenId, heroId, ms = HOVER_REST_MS) {
     const turns = useRef({ tokenId: null, heroId: null, token: 0, hero: 0 });
     const [rested, setRested] = useState(NONE);
     useEffect(() => {
@@ -33,9 +41,9 @@ export function useHoverRest(tokenId, heroId) {
             prev.tokenId === tokenId && prev.heroId === heroId && prev.tokenTurn === tokenTurn && prev.heroTurn === heroTurn
                 ? prev
                 : { tokenId, heroId, tokenTurn, heroTurn }
-        )), HOVER_REST_MS);
+        )), ms);
         return () => clearTimeout(timer);
-    }, [tokenId, heroId]);
+    }, [tokenId, heroId, ms]);
     // Read in render on purpose: the turns change only in the effect that follows a hover change,
     // and in the render before it the ids already differ.
     const t = turns.current;

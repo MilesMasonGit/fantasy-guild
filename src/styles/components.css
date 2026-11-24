@@ -85,6 +85,12 @@ gi-slot-label {
     filter: drop-shadow(2px 0 0 #facc15) drop-shadow(-2px 0 0 #facc15) drop-shadow(0 2px 0 #facc15) drop-shadow(0 -2px 0 #facc15);
 }
 
+/* The Controls strip's Find (`matFind.js`): what is not a match fades a little while a find is on;
+   a match wears the white outline, drawn by its own sprite. */
+[data-find="dim"] {
+    opacity: 0.45;
+}
+
 /* === Catch-up loading bar ====================================================
    Moved only by transform, so the compositor keeps it going while a slice of
    catch-up work holds the page's script. */

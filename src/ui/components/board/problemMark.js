@@ -16,10 +16,11 @@ import { neededToolOf, toolNeedPhrase } from '../../../config/registries/toolKin
 import { joinNames } from './heroBubbles.js';
 
 /**
- * A Token's one problem mark: which problem it shows, how bad it is, and what its hover says.
- * **Waiting** (yellow) is a Token that needs something given to it: items, a Token beside it,
- * charges, a choice. **Can't** (red) is one that cannot go on however it is fed: no room, the
- * mat at its cap, a hero who cannot do the work.
+ * A Token's one problem mark: which problem it shows, how bad it is, and what the Token card
+ * says of it. **Waiting** (yellow) is a Token that needs something given to it or waits for room:
+ * items, a Token beside it, charges, a choice, a full Token cap (a spawner's: the cap frees as
+ * Tokens leave). **Can't** (red) is one that cannot go on however it is fed: no room, a hero who
+ * cannot do the work.
  */
 
 export const SEVERITY = Object.freeze({ WAITING: 'waiting', CANT: 'cant' });
@@ -40,7 +41,7 @@ export const PROBLEM_SEVERITY = Object.freeze({
     [ALERT.UNSKILLED]: SEVERITY.CANT,
     [ALERT.NO_TOOL]: SEVERITY.CANT,
     [ALERT.SPAWN_NO_ROOM]: SEVERITY.CANT,
-    [ALERT.SPAWN_MAT_FULL]: SEVERITY.CANT
+    [ALERT.SPAWN_MAT_FULL]: SEVERITY.WAITING
 });
 
 /** The mark's picture for each severity: placeholders until the owner draws the problem mark. */
@@ -59,7 +60,7 @@ export const PROBLEM_MARK_ART_PX = 16;
  */
 export const tokenGearPx = (artUnit = 2) => PROBLEM_MARK_ART_PX * artUnit;
 
-/** The hover text's colour for each severity (UI_STYLE colours). */
+/** The reason's colour on the Token card for each severity (UI_STYLE colours). */
 export const PROBLEM_COLOUR = Object.freeze({
     [SEVERITY.WAITING]: 'var(--color-ui-gold)',
     [SEVERITY.CANT]: 'var(--color-ui-red)'
@@ -113,8 +114,8 @@ function workerHero(instance) {
 }
 
 /**
- * What the mark's hover says, read from the engine NOW (so call it when the pointer arrives,
- * never per render): exactly what is missing or in the way.
+ * What the Token card says of the problem, read from the engine NOW: exactly what is missing or
+ * in the way.
  * @param {{kind: string, needs?: string[]}} problem from {@link problemOf}
  * @param {string} instanceId
  */

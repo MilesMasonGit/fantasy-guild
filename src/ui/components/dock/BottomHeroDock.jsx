@@ -7,7 +7,6 @@ import { DOCK_STRIP_PX, DOCK_SLOT_PX, DOCK_SLOT_MIN_PX, dockArtPx } from './dock
 import { useLiveMatFit } from '../board/MatFitContext.jsx';
 import { HeroManager } from '../../../systems/hero/HeroManager.js';
 import { reorderHeroInDock } from './dockReorder.js';
-import { useSelectedHeroId } from '../../hooks/useMatSelection.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 
 /**
@@ -16,20 +15,16 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
  * Hall), over the side drawers and the hero panel; a bottom panel (the Shop) rises from behind it.
  * Each hero idles at the mat's own art size, cut off at the waist by the strip's bottom edge,
  * with a name, an HP bar and what they are doing (idle, busy, hurt) over the head
- * (`DockHeroFigure`). Every hero is also on the mat: a click selects them (a gold outline here and
- * on the mat, their job lit) or, on the one selected, clears them; a double-click opens their Hero
- * drawer; hovering lights them and
- * their job, and dragging one gives them an order.
+ * (`DockHeroFigure`). Every hero is also on the mat: a click or a right-click opens their Hero
+ * drawer; hovering lights them and their job, and dragging one gives them an order.
  */
 export const BottomHeroDock = ({
     selectedHeroId,
-    onSelectHero,
-    onDoubleClickHero
+    onOpenHero
 }) => {
     // The same art size the mat draws its heroes at (whole steps).
     const fit = useLiveMatFit();
     const artPx = dockArtPx(fit);
-    const pickedHeroId = useSelectedHeroId();
 
     const heroIds = useGameState(
         state => (state.heroes || []).map(h => h.id),
@@ -63,9 +58,7 @@ export const BottomHeroDock = ({
                             heroIds={heroIds}
                             artPx={artPx}
                             isSelected={selectedHeroId === heroId}
-                            picked={pickedHeroId === heroId}
-                            onSelect={onSelectHero}
-                            onDoubleClick={onDoubleClickHero}
+                            onOpen={onOpenHero}
                             onReorder={handleReorderHero}
                         />
                     </motion.div>
