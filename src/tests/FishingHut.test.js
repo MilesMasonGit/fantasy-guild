@@ -15,6 +15,7 @@ import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { registerItems, getAllItems } from '../config/registries/itemRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
+import { idleMomentOf, momentText } from '../ui/components/board/heroSpeech.js';
 import { standOnWater } from './fixtures/fishingWater.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -213,3 +214,35 @@ describe('⭐ when a spot goes', () => {
     });
 });
 
+
+describe('⭐ with no spot in reach', () => {
+    it('a Hut hero waits silently with the idle mark, and takes the next spot as it arrives', () => {
+        GameState.state.heroes = [hero('fisher')];
+        placeAt('fh_hut', HUT.x, HUT.y);
+        placeAt('fh_spot', OUT.x, OUT.y);
+        expect(Orders.orderAt('fisher', HUT).success).toBe(true);
+        run(300);
+        expect(working('fisher')).toBeNull();
+        const status = Flags.statusOf('fisher');
+        expect(status).toMatchObject({ order: 'token', needsJob: false });
+        expect(BoardRunner.isHeroIdle('fisher')).toBe(true);
+        expect(idleMomentOf(null, null, { order: status.order, needsJob: status.needsJob, waitsForSpot: !!status.campId })).toBeNull();
+
+        const fresh = arrive('fh_spot', NEAR);
+        run(300);
+        expect(working('fisher')).toBe(fresh.id);
+    });
+
+    it('a hero ordered onto a spot by hand still needs a job when it goes', () => {
+        GameState.state.heroes = [hero('fisher')];
+        const spot = placeAt('fh_spot', NEAR.x, NEAR.y);
+        expect(Orders.orderAt('fisher', NEAR).success).toBe(true);
+        run(300);
+        FishingSpots.leave(spot, FishingSpots.LEFT.MOVED_ON);
+        run(300);
+        const status = Flags.statusOf('fisher');
+        expect(status.needsJob).toBe(true);
+        expect(idleMomentOf(null, null, { order: status.order, needsJob: status.needsJob, waitsForSpot: !!status.campId }))
+            .toMatchObject({ text: momentText.needsJob() });
+    });
+});

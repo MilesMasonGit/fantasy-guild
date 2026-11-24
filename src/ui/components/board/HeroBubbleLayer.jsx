@@ -16,7 +16,7 @@ import * as HeroMotion from '../../../systems/board/HeroMotion.js';
 import * as Flags from '../../../systems/board/Flags.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { isEnemyDef } from '../../../config/registries/enemyProfile.js';
-import { isWarCamp } from '../../../config/registries/tokenConstants.js';
+import { isWarCamp, campOf } from '../../../config/registries/tokenConstants.js';
 import { layoutStacks, bubbleAnchorY } from './bubbleLayout.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { walkerGlide } from './walkerGlide.js';
@@ -166,7 +166,8 @@ export const HeroBubbleLayer = ({ heroes }) => {
                 const name = busy ? (getTokenType(busy.typeId)?.name || tokenName(busy.typeId) || busy.typeId) : null;
                 const status = Flags.statusOf(h.heroId);
                 const fights = !!status.campId && isWarCamp(getTokenType(BoardState.getTokenById(status.campId)?.typeId));
-                const moment = idleMomentOf(busy ? waiting : null, name, { order: status.order, needsJob: status.needsJob, fights });
+                const waitsForSpot = !!status.campId && campOf(getTokenType(BoardState.getTokenById(status.campId)?.typeId))?.skill === 'fishing';
+                const moment = idleMomentOf(busy ? waiting : null, name, { order: status.order, needsJob: status.needsJob, fights, waitsForSpot });
                 if (moment) sayRef.current(h.heroId, moment.kind, { key: moment.key, text: moment.text });
             }
         }
