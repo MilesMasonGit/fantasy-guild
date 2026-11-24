@@ -17,6 +17,7 @@ import { boardScaleAt } from '../base/TokenSprite.jsx';
 import { SupportLinkLayer } from './SupportLinkLayer.jsx';
 import { CalloutLayer } from './CalloutLayer.jsx';
 import { HeroBubbleLayer } from './HeroBubbleLayer.jsx';
+import { LevelUpFlashLayer } from './LevelUpFlashLayer.jsx';
 import { strikesLive, heroAnimationState, hitSkillOf, hitsOnAttack } from './hitAnimations.js';
 import { FlagLayer } from './FlagLayer.jsx';
 import { OrderDragLine } from './OrderDragLine.jsx';
@@ -90,6 +91,7 @@ export const MatBoard = React.memo(function MatBoard({
     const ringsDrawn = useDrawn('rings');
     const alertsDrawn = useDrawn('alerts');
     const speechDrawn = useDrawn('speech');
+    const matFxDrawn = useDrawn('matFx');
     const terrainDrawn = useDrawn('terrain');
     const barsDrawn = useDrawn('workPlate');
     const rootRef = useRef(null);
@@ -652,6 +654,8 @@ export const MatBoard = React.memo(function MatBoard({
             {ringsDrawn && <SupportLinkLayer matRef={rootRef} />}
             {/* `MAT_Z.RINGS`: a camp's reach, while a hero working from it is lit. */}
             {ringsDrawn && <CampReachRing ring={campRingShown} />}
+            {/* `MAT_Z.RINGS`: a hero levelling up bursts with rings and sparkles. */}
+            {matFxDrawn && <LevelUpFlashLayer heroes={heroes} />}
 
             {/* `MAT_Z.GROUND_GRID`: with a Token in the hand, the cells it may stand on, under every Token. */}
             <TerrainGridOverlay mat={mat} />
