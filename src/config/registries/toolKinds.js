@@ -15,17 +15,19 @@ import { hasCatchPools, catchToolKinds } from './catchPools.js';
  *
  * ⚠️ Water is the exception (`catchPools.js`): it needs any kind its catch pools name, and a
  * fishing tool's tier never gates. Its need carries the list as `kinds`. A fishing kind is marked
- * `catches`: its tools lend their effects wherever they are held, and the first in hand fishes.
+ * `catches`: its tools lend their effects wherever they are held, and the first in hand fishes. A
+ * kind marked `lures` fishes with a lure (`fishRules.js`); a harpoon and a Trap never do.
  *
  * Adding a kind is one row here: the editors offer it and the audit accepts it.
  */
 export const TOOL_KINDS = Object.freeze([
     Object.freeze({ id: 'pickaxe', label: 'Pickaxe' }),
     Object.freeze({ id: 'woodaxe', label: 'Woodaxe' }),
-    Object.freeze({ id: 'fishing_rod', label: 'Fishing Rod', catches: true }),
+    Object.freeze({ id: 'fishing_rod', label: 'Fishing Rod', catches: true, lures: true }),
     Object.freeze({ id: 'sickle', label: 'Sickle' }),
     Object.freeze({ id: 'fishing_net', label: 'Fishing Net', catches: true }),
-    Object.freeze({ id: 'fishing_trap', label: 'Trap', catches: true })
+    Object.freeze({ id: 'fishing_trap', label: 'Trap', catches: true }),
+    Object.freeze({ id: 'harpoon', label: 'Harpoon', catches: true })
 ]);
 
 /** A hero has two hands. A tool takes one; a two-handed weapon takes both. */
@@ -55,6 +57,11 @@ export function isToolKind(id) {
 /** Whether `id` is a fishing kind (`catches`), whose tools keep lending from anywhere in hand. */
 export function isCatchKind(id) {
     return TOOL_KINDS.some(k => k.id === id && k.catches === true);
+}
+
+/** Whether a fishing kind's tools fish with a lure (`lures`): a rod does, a harpoon and a Trap never. */
+export function takesLure(id) {
+    return TOOL_KINDS.some(k => k.id === id && k.lures === true);
 }
 
 /** A kind's name for the player ("Fishing Rod"), or the id itself for a kind the game lacks. */

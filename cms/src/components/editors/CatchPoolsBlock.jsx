@@ -78,8 +78,8 @@ export default function CatchPoolsBlock({ token, onPatch }) {
   }));
 
   const addPool = () => {
-    const used = new Set(pools.filter((p) => !p.bait).map((p) => p.tool));
-    const tool = ['fishing_rod', 'fishing_net', 'fishing_trap', ...TOOL_KINDS.map((k) => k.id)].find((k) => !used.has(k)) || 'fishing_rod';
+    const used = new Set(pools.map((p) => p.tool));
+    const tool = ['fishing_rod', 'harpoon', 'fishing_trap', ...TOOL_KINDS.map((k) => k.id)].find((k) => !used.has(k)) || 'fishing_rod';
     write([...pools, { tool, catches: [] }]);
   };
 
@@ -87,11 +87,13 @@ export default function CatchPoolsBlock({ token, onPatch }) {
     <Section title="Catch pools" icon={<Fish size={14} />}>
       <div data-field="catch-pools" className="space-y-3">
         <p className="text-[11px] text-gray-500 leading-relaxed">
-          Water: what a hero catches here, picked by the tool in their hand and the bait they carry.
-          One pool per tool and bait; the pool with no bait is the water&apos;s basic catch. One bait
-          is spent per catch. With a pool here the Token never runs out, its Outputs are not used,
-          and any tool a pool names will do, at any tier. On a fishing spot, a pool can hold only on
-          some water or in some biomes: the spot catches from the first that fits where it lands.
+          Water: what a hero catches here, picked by the tool in their hand. One pool per tool; it
+          spends the Bait it names, as much a catch as each fish asks (the fish&apos;s item), and only a
+          Trap&apos;s pool may name none (a free catch). A rod&apos;s lure picks one of its fish; with no lure
+          the hero rolls among the fish their level allows. With a pool here the Token never runs
+          out, its Outputs are not used, and any tool a pool names will do, at any tier. On a fishing
+          spot, a pool can hold only on some water or in some biomes: the spot catches from the
+          first for the tool that fits where it lands. A Trap&apos;s pool lands one catch.
         </p>
 
         {pools.map((pool, n) => {
@@ -132,7 +134,7 @@ export default function CatchPoolsBlock({ token, onPatch }) {
                   className="flex-1 min-w-0"
                   style={{ fontSize: 12 }}
                 >
-                  <option value="">No bait (the basic catch)</option>
+                  <option value="">No Bait (a free Trap catch)</option>
                   {!baitKnown && <option value={pool.bait}>{items?.[pool.bait]?.name || pool.bait} (not a Consumable)</option>}
                   {baitList.map((i) => <option key={i.id} value={i.id}>{i.name || i.id}</option>)}
                 </select>
@@ -220,8 +222,8 @@ export default function CatchPoolsBlock({ token, onPatch }) {
               </button>
               <p className="text-[10px] text-gray-600 leading-relaxed">
                 {pool.bait
-                  ? <>A hero holding a {toolKindLabel(pool.tool)} and carrying {items?.[pool.bait]?.name || pool.bait} catches from this pool, spending one per catch.</>
-                  : <>A hero holding a {toolKindLabel(pool.tool)} with none of its baits catches from this pool.</>}
+                  ? <>A hero holding a {toolKindLabel(pool.tool)} and carrying {items?.[pool.bait]?.name || pool.bait} catches from this pool, spending what each fish asks.</>
+                  : <>A hero holding a {toolKindLabel(pool.tool)} catches from this pool with no Bait (a Trap only).</>}
                 {' '}Weights are shares of the pool: 50, 40 and 10 read as 50 %, 40 % and 10 %.
               </p>
             </div>

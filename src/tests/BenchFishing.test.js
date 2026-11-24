@@ -58,6 +58,7 @@ describe('FS, the fishing scenario', () => {
         for (const hut of huts) expect(GroundRules.waterKindAt(hut.x, hut.y)).toBeNull();
         expect(GameState.state.heroes).toHaveLength(4);
         expect(GameState.state.heroes.every(h => h.equipment.includes('bench_rod') && h.equipment.includes('bench_bait'))).toBe(true);
+        expect(GameState.state.heroes.filter(h => h.equipment.includes('bench_lure'))).toHaveLength(2);
     });
 
     it('over its warm-up and measured window spots arrive, are fished, and move on', () => {
@@ -81,6 +82,9 @@ describe('FS, the fishing scenario', () => {
         expect(seen.landed).toBeGreaterThan(6);
         expect(seen.left).toBeGreaterThan(0);
         expect(seen.caught).toBeGreaterThan(20);
+        // The lure is carried, picks its Cod and breaks now and then.
+        expect(InventoryManager.getItemCount('bench_lure')).toBeLessThan(1000);
+        expect(InventoryManager.getItemCount('bench_lure')).toBeGreaterThan(800);
         const spots = BoardState.tokens().filter(t => t.typeId === 'bench_spot' || t.typeId === 'bench_rare_spot');
         expect(spots.every(s => GroundRules.waterKindAt(s.x, s.y) !== null)).toBe(true);
     });

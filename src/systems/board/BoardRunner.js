@@ -825,8 +825,9 @@ export function tick(delta) {
 
         // WORK_TIME, widened to the neighbours, then floored twice (`TileModifiers.workTimeOf`).
         // `io.cycleTimeMs` is the active recipe's own timing when it has one, falling back to the
-        // station's flat config.
-        const baseCycle = io.cycleTimeMs || config.cycleTimeMs || 10000;
+        // station's flat config. At water it is the catch's own (`Fishing.cycleMsOf`).
+        const authoredCycle = io.cycleTimeMs || config.cycleTimeMs || 10000;
+        const baseCycle = Fishing.isWater(def) ? Fishing.cycleMsOf(def, heroId, instance, authoredCycle) : authoredCycle;
         const cycleTime = TileModifiers.workTimeOf(id, baseCycle, config.skill);
 
         if (instance.cycleElapsedMs >= cycleTime) {

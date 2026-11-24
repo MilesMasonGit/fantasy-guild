@@ -191,15 +191,16 @@ describe('the placeholder tables', () => {
 });
 
 describe('what a price may ask for, read from the Tokens', () => {
-    it('sure outputs and a basic pool\'s main catch, never a rare drop', () => {
+    it('sure outputs and each tool\'s pool\'s main catch, never a rare drop', () => {
         expect(materialsOfToken(getTokenType('token_oak_tree'))).toEqual(['item_oak_wood']);
         expect(materialsOfToken(getTokenType('token_copper_ore_vein'))).toEqual(['item_copper_ore']);
-        // A water's basic pool: its main catch, not the minor one (the River this read is retired).
+        // A water's pool for each tool: its main catch, not the minor one; a rod pool naming no Bait never bites.
         const water = { config: { skill: 'fishing' }, catchPools: [
             { tool: 'fishing_trap', catches: [{ itemId: 'item_raw_shrimp', weight: 70 }, { itemId: 'item_lobster', weight: 30 }] },
             { tool: 'fishing_rod', bait: 'item_worm_bait', catches: [{ itemId: 'item_salmon', weight: 1 }] }
         ] };
-        expect(materialsOfToken(water)).toEqual(['item_raw_shrimp']);
+        expect(materialsOfToken(water)).toEqual(['item_raw_shrimp', 'item_salmon']);
+        expect(materialsOfToken({ catchPools: [{ tool: 'fishing_rod', catches: [{ itemId: 'item_trout', weight: 1 }] }] })).toEqual([]);
         expect(materialsOfToken(null)).toEqual([]);
         const memo = materialsFromTokens(getTokenType);
         expect(memo('token_oak_tree')).toBe(memo('token_oak_tree'));

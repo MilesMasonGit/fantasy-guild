@@ -675,7 +675,9 @@
         "built": "{token} built",
         "became": "{token}",
         "recovered": "Recovered, ready to work!",
-        "needs": "Needs {item}"
+        "needs": "Needs {item}",
+        "needsLevel": "Needs {skill} {level}",
+        "noFishHere": "No {fish} here"
     },
     "orders": {
         "needs": "Needs {what}",

@@ -9,7 +9,9 @@
 // What it exercises each tick: `FishingSpots.tick` (each kind's clock; a landing's darts and
 // placement test), the place-filtered catch pools (`GroundRules.placeAt`, `catchPools.poolsAt`)
 // through `Flags` and `WorkCheck` for every fisher, the catch and its bait, the move-on roll, and
-// the `spot_unworked` timed change. Rods and bait are bench items; the catch is bench fish.
+// the `spot_unworked` timed change, the catch rules (each fish's level, time and Bait; a lure on two
+// of the four heroes, picking the Cod and breaking now and then; the lureless roll at the longest
+// time). Rods, Bait and the lure are bench items; the catch is bench fish.
 //
 // The mat is pinned to the 1920 × 1040 the water map was drawn for. Its types are registered here,
 // in this scenario's own process, so no other scenario's content or work changes.
@@ -23,13 +25,18 @@ import { standOnWater } from '../../src/tests/fixtures/fishingWater.js';
 const MAT_STEPS = 12;
 const MAT_ASPECT = 1040 / 1920;
 
-const fish = (id, name) => ({ id, name, type: 'material', stackable: true, equipSlot: '', sprite: 'i_trout_raw' });
+const fish = (id, name, terms) => ({ id, name, type: 'material', stackable: true, equipSlot: '', sprite: 'i_trout_raw', fish: terms });
 
 registerItems({
-    bench_trout: fish('bench_trout', 'Bench Trout'),
-    bench_cod: fish('bench_cod', 'Bench Cod'),
-    bench_oyster: fish('bench_oyster', 'Bench Oyster'),
+    bench_trout: fish('bench_trout', 'Bench Trout', { level: 1, cycleMs: 3000, bait: 1 }),
+    bench_cod: fish('bench_cod', 'Bench Cod', { level: 10, cycleMs: 4000, bait: 2 }),
+    bench_oyster: fish('bench_oyster', 'Bench Oyster', { level: 25, cycleMs: 3500, bait: 1 }),
     bench_bait: { id: 'bench_bait', name: 'Bench Bait', type: 'material', stackable: true, equipSlot: 'consumable', sprite: 'i_fish_bait' },
+    // Picks the Cod where a spot holds it, and breaks now and then.
+    bench_lure: {
+        id: 'bench_lure', name: 'Bench Cod Lure', type: 'material', stackable: true, equipSlot: 'consumable', sprite: 'i_fish_bait',
+        lure: { fish: ['bench_cod'], breakChance: 10 }
+    },
     bench_rod: {
         id: 'bench_rod', name: 'Bench Rod', type: 'tool', equipSlot: 'hand', stackable: true, sprite: 'i_rod_wood',
         tool: { kind: 'fishing_rod', tier: 1 }
@@ -86,11 +93,14 @@ export default {
         GameState.state.inventory.maxSlots = 64;
         inventory.addItem('bench_rod', 4);
         inventory.addItem('bench_bait', 100000);
+        inventory.addItem('bench_lure', 1000);
 
+        // One hero by each water carries the lure: the others fish the lureless roll.
         const heroes = makeHeroes(4, { fishing: 30 });
         heroes.forEach((hero, i) => {
             EquipmentManager.equipItem(hero.id, 'bench_rod');
             EquipmentManager.equipItem(hero.id, 'bench_bait');
+            if (i % 2 === 0) EquipmentManager.equipItem(hero.id, 'bench_lure');
             orderAt(hero.id, i < 2 ? HUT_BY_SEA : HUT_BY_LAKE);
         });
     }

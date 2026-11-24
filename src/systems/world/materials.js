@@ -1,12 +1,12 @@
 // what a world cell's origins yield, read from Token definitions (pure)
 
-import { poolFor, catchToolKinds } from '../../config/registries/catchPools.js';
+import { poolForTool, poolBites, catchToolKinds } from '../../config/registries/catchPools.js';
 
 /**
  * A price asks for materials, and a cell's materials are what its origins (wild nodes) yield. Read
  * from the Token's own definition so the game, the CMS and the ledger agree: its Outputs that come
  * at least {@link MAIN_OUTPUT_CHANCE} percent of the time, and for water the catches making up at
- * least {@link MAIN_CATCH_SHARE} of a basic (no-bait) pool. Rare drops (a bird nest at 3 %) are
+ * least {@link MAIN_CATCH_SHARE} of a tool's pool that bites (`catchPools.poolForTool`). Rare drops (a bird nest at 3 %) are
  * never asked for.
  *
  * ⚠️ Not a rate: a Field's crop, a spawner's family and a drop table are not read here. The ledger
@@ -18,7 +18,7 @@ import { poolFor, catchToolKinds } from '../../config/registries/catchPools.js';
 /** An output this likely (percent) is one a price may ask for. */
 export const MAIN_OUTPUT_CHANCE = 50;
 
-/** A catch this large a share of its basic pool is one a price may ask for. */
+/** A catch this large a share of its pool is one a price may ask for. */
 export const MAIN_CATCH_SHARE = 0.5;
 
 /** The items one Token definition yields as a matter of course, each once. */
@@ -31,8 +31,8 @@ export function materialsOfToken(def) {
         if (Number(o?.chance) >= MAIN_OUTPUT_CHANCE) add(o.itemId);
     }
     for (const tool of catchToolKinds(def)) {
-        const pool = poolFor(def, tool, null);
-        const catches = pool?.catches || [];
+        const pool = poolForTool(def, tool, null);
+        const catches = poolBites(pool) ? pool.catches : [];
         const total = catches.reduce((n, c) => n + c.weight, 0);
         for (const c of catches) if (total > 0 && c.weight / total >= MAIN_CATCH_SHARE) add(c.itemId);
     }

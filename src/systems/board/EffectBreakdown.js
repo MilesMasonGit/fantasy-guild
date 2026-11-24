@@ -332,7 +332,7 @@ function outputItemIds(ctx) {
     if (ctx.outputs) return ctx.outputs;
     let lines = [];
     if (ctx.enemy) lines = ctx.def.config?.outputs || [];
-    else if (ctx.works && Fishing.isWater(ctx.def)) lines = ctx.heroId ? (Fishing.fishingOf(ctx.def, ctx.heroId, ctx.instance)?.pool?.catches || []) : [];
+    else if (ctx.works && Fishing.isWater(ctx.def)) lines = ctx.heroId ? (Fishing.fishingOf(ctx.def, ctx.heroId, ctx.instance)?.catches || []) : [];
     else if (ctx.works) lines = ctx.io?.outputs || [];
     ctx.outputs = [...new Set(lines.filter(l => l?.itemId && !l.currency).map(l => l.itemId))];
     return ctx.outputs;

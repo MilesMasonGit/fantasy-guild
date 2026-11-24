@@ -336,7 +336,7 @@ function catchBlockOf(def, instance, src) {
         toolName: src.itemName(plan.tool.itemId),
         baitId: plan.bait,
         baitName: plan.bait ? src.itemName(plan.bait) : null,
-        catches: catchRows(plan.pool.catches, (c) => src.catchWeight(instance.id, c.itemId, c.weight))
+        catches: catchRows(plan.catches, (c) => src.catchWeight(instance.id, c.itemId, c.weight))
     };
     const groups = [];
     for (const pool of (src.poolsHere ? src.poolsHere(def, instance) : catchPoolsOf(def))) {

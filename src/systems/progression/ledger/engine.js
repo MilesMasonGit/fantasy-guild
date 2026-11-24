@@ -11,6 +11,7 @@ import {
     stationKindOffers, foundationTierMeets, growsTermsOf, respawnOf, cropTermsOf, fieldOf, outputRange, PASSIVE_LAP_BASE_MS
 } from '../../../config/registries/tokenConstants.js';
 import { catchPoolsOf, hasCatchPools } from '../../../config/registries/catchPools.js';
+import { fishBait, fishCycleMs } from '../../../config/registries/fishRules.js';
 import { rareTableOf, rareEntryChances } from '../../../config/registries/rareTables.js';
 import { toolOf, neededToolOf, toolMeets, starterToolIds } from '../../../config/registries/toolKinds.js';
 import { STRICT_RINGS, SKILL_OF, EXTRA_KIND } from '../../../config/worldTablesShape.js';
@@ -422,13 +423,17 @@ export function buildWorld(content = {}) {
             continue;
         }
 
-        // Water: each pool, its tool and its bait; one catch a cycle, by weight.
+        // Water: each pool, its tool and its Bait; one catch a cycle, by weight, as the lureless
+        // roll lands it: the Bait its fish ask on average, at the longest catch time among them.
         if (hasCatchPools(def)) {
-            const cycleMs = finite(Number(def.config?.cycleTimeMs), null);
+            const ownMs = finite(Number(def.config?.cycleTimeMs), null);
             const gates = gate(def.config?.skill, def.config?.skillRequired);
             catchPoolsOf(def).forEach((pool, i) => {
                 const total = pool.catches.reduce((sum, c) => sum + c.weight, 0);
-                const bait = pool.bait ? [{ key: itemKey(pool.bait), quantity: 1 }] : [];
+                const asked = total > 0 ? pool.catches.reduce((sum, c) => sum + c.weight * fishBait(items[c.itemId]), 0) / total : 1;
+                const bait = pool.bait && asked > 0 ? [{ key: itemKey(pool.bait), quantity: asked }] : [];
+                const times = pool.catches.map(c => fishCycleMs(items[c.itemId], ownMs)).filter(ms => Number.isFinite(ms));
+                const cycleMs = times.length ? Math.max(...times) : ownMs;
                 add({
                     id: `catch:${id}:${i}`, how: HOW.CATCH, via: self, needs: [self, ...needKeys(bait)], inputs: bait,
                     tool: noteNeed({ kind: pool.tool, minTier: 1 }), gates, cycleMs, pool: { tool: pool.tool, bait: pool.bait },

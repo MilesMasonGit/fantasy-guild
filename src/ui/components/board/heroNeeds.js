@@ -14,6 +14,7 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getGrid, categoryOfItem, isConsumableCategory } from '../../../config/registries/equipmentConstants.js';
 import { toolOf, toolKindLabel, neededToolOf } from '../../../config/registries/toolKinds.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
+import { getSkill } from '../../../config/registries/skillRegistry.js';
 import * as WorkCheck from '../../../systems/board/WorkCheck.js';
 import { availableOf } from '../../../systems/board/InputAllocator.js';
 import { raiseBubble, bubbleKeysOf } from './speechBubbles.js';
@@ -165,6 +166,72 @@ export function needsItemSpec(heroId, itemId, { quantity = 1, carried = false, l
         },
         checkOn: NEEDS_CHECK_ON
     };
+}
+
+/** The key a hero's "Needs Fishing 40" is raised under: one per skill and level. */
+export const needsLevelKey = (skill, level) => `needs:level:${skill}:${level}`;
+
+/** A skill's name for the player ("Fishing"), else the id. */
+function skillName(skill) {
+    return getSkill(skill)?.name || String(skill || '');
+}
+
+/**
+ * The bubble for a hero stopped at water `instanceId` because its fish are above them: "Needs
+ * Fishing 40". It stands while they keep the job and have not gone back to work on it.
+ */
+export function needsLevelSpec(heroId, { instanceId, skill, level }) {
+    const job = jobOf(heroId);
+    return {
+        key: needsLevelKey(skill, level),
+        text: t('messages.needsLevel', { skill: skillName(skill), level }),
+        tone: SPEECH_TONE.CANT,
+        holds: () => {
+            if (!heroRecord(heroId) || jobOf(heroId) !== job) return false;
+            if (BoardState.workTokenOf(heroId) === instanceId) return false;
+            const at = BoardState.getTokenById(instanceId);
+            return !!at && WorkCheck.baitReason(heroId, at) === ALERT.FISH_LEVEL;
+        },
+        checkOn: NEEDS_CHECK_ON
+    };
+}
+
+/** Raise {@link needsLevelSpec} for a `CATCH_NEEDS_LEVEL` payload, once: a bubble already up is kept. */
+export function raiseNeedsLevel({ heroId, instanceId, skill, level } = {}) {
+    if (!heroId || !instanceId || !(level > 0)) return false;
+    return raiseBubble(heroId, needsLevelSpec(heroId, { instanceId, skill, level }), { keepExisting: true });
+}
+
+/** The key a hero's "No Salmon here" is raised under: one per spot and lure. */
+export const noFishKey = (instanceId, lureId) => `noFish:${instanceId}:${lureId}`;
+
+/** "Trout", "Trout or Salmon", "Trout, Tuna or Salmon": a lure's fish by name. */
+function fishWords(fish) {
+    const names = (fish || []).map(id => getItem(id)?.name || id);
+    return names.length < 2 ? (names[0] || '') : `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`;
+}
+
+/**
+ * The bubble for a hero whose lure names no fish of spot `instanceId`: "No Salmon here", said once.
+ * It stands while they work that spot carrying the lure, or until hovered.
+ */
+export function noFishSpec(heroId, { instanceId, lureId, fish }) {
+    return {
+        key: noFishKey(instanceId, lureId),
+        text: t('messages.noFishHere', { fish: fishWords(fish) }),
+        tone: SPEECH_TONE.ATTENTION,
+        holds: () => {
+            const hero = heroRecord(heroId);
+            return !!hero && BoardState.workTokenOf(heroId) === instanceId && getGrid(hero).includes(lureId);
+        },
+        checkOn: NEEDS_CHECK_ON
+    };
+}
+
+/** Raise {@link noFishSpec} for a `LURE_FISH_ABSENT` payload, once: a bubble already up, drawn or dismissed, is kept. */
+export function raiseNoFish({ heroId, instanceId, lureId, fish } = {}) {
+    if (!heroId || !instanceId || !lureId) return false;
+    return raiseBubble(heroId, noFishSpec(heroId, { instanceId, lureId, fish }), { keepExisting: true });
 }
 
 /** Whether a waiting bubble already says why the hero stopped: going idle then says nothing more. */

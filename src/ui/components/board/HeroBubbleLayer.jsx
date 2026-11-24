@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } fr
 import { MAT_Z } from './matLayers.js';
 import { addMoment, liveMoments, stackOf, momentText, speaksMoment, idleMomentOf, BEATEN_TTL_MS } from './heroSpeech.js';
 import { raiseBubble, dismissBubble, bubblesOf, registerRebuild, startSpeechBubbles, subscribeBubbles, bubblesVersion } from './speechBubbles.js';
-import { gearBrokeSpecOf, rebuildGearBroke, recoveredSpec, raiseNeedsItem, rebuildNeedsItem, saysWhyStopped } from './heroNeeds.js';
+import { gearBrokeSpecOf, rebuildGearBroke, recoveredSpec, raiseNeedsItem, rebuildNeedsItem, saysWhyStopped, raiseNeedsLevel, raiseNoFish } from './heroNeeds.js';
 import { floatsOf, anyFloats, subscribeFloats } from './levelUpFloats.js';
 import { LevelUpFloats } from './LevelUpFloat.jsx';
 import { useMatFit } from './MatFitContext.jsx';
@@ -136,7 +136,11 @@ export const HeroBubbleLayer = ({ heroes }) => {
             // Their station is out of an input: they say which until it is back in the Bank.
             EventBus.subscribe(BOARD_EVENTS.INPUT_NEEDED, (p) => {
                 if (p?.heroId && p.itemId) raiseNeedsItem(p.heroId, p.itemId, { quantity: p.needed, carried: p.carried === true, leftFrom: p.left ? p.instanceId : null });
-            }, UI_LISTENER)
+            }, UI_LISTENER),
+            // The fish at their water are above them: they say the level they need.
+            EventBus.subscribe(BOARD_EVENTS.CATCH_NEEDS_LEVEL, (p) => { raiseNeedsLevel(p); }, UI_LISTENER),
+            // Their lure's fish is not at this spot: they say so once and fish as with no lure.
+            EventBus.subscribe(BOARD_EVENTS.LURE_FISH_ABSENT, (p) => { raiseNoFish(p); }, UI_LISTENER)
         ];
         return () => unsubs.forEach(u => u());
     }, []);

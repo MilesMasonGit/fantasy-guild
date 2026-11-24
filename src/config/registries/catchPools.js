@@ -7,9 +7,11 @@
  * A fishing spot names what can be caught there, per tool kind and bait:
  * `catchPools: [{ tool, bait, catches: [{ itemId, weight }] }]` on the Token type.
  *
- * - `tool`: a tool kind (`fishing_rod`, `fishing_net`, …). The hero's tool picks the pools.
- * - `bait`: an item id, or null for a pool worked with no bait. Only a {@link BAIT_FREE_TOOL} pool
- *   with no bait catches anything: every other tool fishes with bait or not at all.
+ * - `tool`: a tool kind (`fishing_rod`, `harpoon`, …). The hero's tool picks the pool: the first for
+ *   its kind that holds where the water stands ({@link poolForTool}).
+ * - `bait`: the Bait its catches spend (an item id; one Bait serves all fishing, each fish saying how
+ *   much, `fishRules.js`), or null for a pool worked with none. Only a {@link BAIT_FREE_TOOL} pool
+ *   with no bait catches anything: every other tool fishes with Bait or not at all.
  * - `catches`: a weighted pool; each catch lands one of its item. Weights are relative (50, 40,
  *   10 reads as 50 %, 40 %, 10 %).
  * - `water`, `biomes` (optional): the water kinds (`fishingSpots.WATER_KIND`) and the Region biomes
@@ -145,6 +147,15 @@ export function poolsAt(def, place = null) {
  */
 export function poolFor(def, tool, bait = null, place = null) {
     return poolsAt(def, place).find(p => p.tool === tool && p.bait === (bait || null)) || null;
+}
+
+/**
+ * The pool a hero holding a tool of kind `tool` fishes at `place`: the first for that kind that
+ * holds there, whatever bait it names, or null. One Bait serves all fishing, so the bait carried
+ * never picks between pools; a pool's `bait` is what it spends.
+ */
+export function poolForTool(def, tool, place = null) {
+    return poolsAt(def, place).find(p => p.tool === tool) || null;
 }
 
 /** The baits a Token type's pools for one tool kind take at `place`, in pool order, each once. */

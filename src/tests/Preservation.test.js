@@ -205,7 +205,6 @@ registerTokenTypes({
         id: 'pv_lake', name: 'Lake', tokenType: 'resource', rarity: 'common', theme: 'fixture', sprite: 't_lake_small', requiresHero: true,
         uses: null, tags: ['water'],
         catchPools: [
-            { tool: 'fishing_rod', catches: [{ itemId: TROUT, weight: 1 }] },
             { tool: 'fishing_rod', bait: WORM, catches: [{ itemId: SALMON, weight: 1 }] }
         ],
         config: { skill: 'fishing', skillRequired: 1, cycleTimeMs: 1000, xp: 1, inputs: [], outputs: [] }
