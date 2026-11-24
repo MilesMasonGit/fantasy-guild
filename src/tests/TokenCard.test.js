@@ -424,21 +424,21 @@ describe('what the card says', () => {
 });
 
 describe('the enemy card', () => {
-    it('name, HP with numbers, combat line, drops with chances', () => {
+    it('name, HP with numbers, combat line, its fight, drops with chances', () => {
         const goblin = put('card_enemy');
         const model = tokenCardModel('card_enemy', goblin.id);
         expect(model.enemy).toBe(true);
-        expect(ids(model)).toEqual([CARD_BLOCK.NAME, CARD_BLOCK.HP, CARD_BLOCK.COMBAT, CARD_BLOCK.DROPS]);
+        expect(ids(model)).toEqual([CARD_BLOCK.NAME, CARD_BLOCK.HP, CARD_BLOCK.COMBAT, CARD_BLOCK.FIGHT, CARD_BLOCK.DROPS]);
         const hp = model.blocks[1];
         expect(hp.cur).toBe(hp.max);
         expect(hp.max).toBeGreaterThan(0);
         expect(model.blocks[2]).toMatchObject({ skillId: 'melee', level: 3 });
         expect(model.blocks[2].xp).toBeGreaterThan(0);
-        expect(model.blocks[3].drops.map(d => [d.itemId, d.chance])).toEqual([['item_bones', 100], ['item_copper_ore', 30]]);
+        expect(model.blocks[4].drops.map(d => [d.itemId, d.chance])).toEqual([['item_bones', 100], ['item_copper_ore', 30]]);
 
         const { container } = mount(h(TokenCard, { typeId: 'card_enemy', instanceId: goblin.id }));
         expect(container.querySelector('[data-token-card]').getAttribute('data-token-card')).toBe('enemy');
-        expect(domOrder(container)).toEqual(['name', 'stats', 'drops']);
+        expect(domOrder(container)).toEqual(['name', 'stats', 'fight', 'drops']);
         expect(container.querySelector('[data-card-hp-text]').textContent).toBe(`${hp.max}/${hp.max}`);
         expect(container.querySelectorAll('[data-card-block="drops"] [data-item-bar]')).toHaveLength(2);
     });

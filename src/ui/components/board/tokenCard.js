@@ -7,6 +7,8 @@ import { neededToolOf, toolNeedPhrase, toolItemFor, toolKindLabel } from '../../
 import { hasCatchPools, catchPoolsOf } from '../../../config/registries/catchPools.js';
 import { rareTableOf, rareEntryChances } from '../../../config/registries/rareTables.js';
 import { enemyProfileOf } from '../../../config/registries/enemyProfile.js';
+import { movesView, enemyHitTypes, kindView, enemyResistLines, hasFought } from '../combat/fightView.js';
+import { PLAIN_ENEMY_HIT_TYPE } from '../../../config/registries/damageTypes.js';
 import { fieldOf, cropTermsOf, campOf, isWarCamp } from '../../../config/registries/tokenConstants.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
@@ -47,6 +49,7 @@ export const CARD_BLOCK = Object.freeze({
     NAME: 'name',
     HP: 'hp',
     COMBAT: 'combat',
+    FIGHT: 'fight',
     WORK: 'work',
     CYCLE: 'cycle',
     RECIPE: 'recipe',
@@ -108,6 +111,25 @@ export function cardArtOf(def, { typeOf = getTokenType, resolve = resolveSpriteP
     return scene ? { path: scene, source: 'activity' } : null;
 }
 
+/**
+ * ⚠️ The card's one read of an enemy's moves: what each is called and hits with or does, and the
+ * types its attacks hit with. A change to how moves are authored changes this reader alone.
+ * @returns {{ moves: Array<object>|null, hitTypes: string[] }}
+ */
+export function enemyMovesOnCard(profile) {
+    return { moves: movesView(profile?.moves), hitTypes: enemyHitTypes(profile?.moves) };
+}
+
+/**
+ * ⚠️ The card's one read of an enemy's kinds, each with its name and what it does; null until the
+ * guild has fought one of this enemy (the card then says to fight one). A change to how kinds are
+ * authored changes this reader alone.
+ */
+export function enemyKindsOnCard(profile, fought) {
+    if (!fought) return null;
+    return (profile?.kinds || []).map(kindView).filter(Boolean);
+}
+
 /** The live readers the card takes. */
 export function liveCardSources() {
     return {
@@ -130,6 +152,7 @@ export function liveCardSources() {
         fieldCrop: Fields.cropOf,
         recipeOf: getRecipe,
         fightOf: BoardCombat.getFight,
+        fought: hasFought,
         supports: (instanceId) => ({ boosts: SupportLinks.boosts(instanceId) }),
         // The engine's own list (`OutputRules.dropBonusGrants`), less a grant whose item has run out:
         // that one would not land.
@@ -419,7 +442,8 @@ function spawnCardLine(def, status, src) {
  * A Token's card: name; work (skill, level, XP); cycle (time, charges); the current recipe
  * (needs, tools, makes, rare finds or a water's catches, and a station's Change recipe); lifecycle
  * lines; what it boosts.
- * An enemy's card: name; HP; combat (style, level, XP a kill); drops and rare finds.
+ * An enemy's card: name; HP; combat (style, level, XP a kill); its fight (hit, moves, resistances,
+ * how often it attacks, its kinds once fought); drops and rare finds.
  * The card draws `hp`, `combat`, `work` and `cycle` together as its stat block.
  * After them, `more`: what the card's layout has no block for yet (a landmark's challenge, a
  * buff, the stations a tool Token drives).
@@ -441,6 +465,18 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
         const cur = hp ? hp.current : (kept > 0 && kept < enemy.hp ? kept : enemy.hp);
         blocks.push({ id: CARD_BLOCK.HP, cur, max: hp ? hp.max : enemy.hp });
         blocks.push({ id: CARD_BLOCK.COMBAT, skillId: enemy.combatType, level: enemy.level, xp: enemy.xpAwarded });
+        const { moves, hitTypes } = enemyMovesOnCard(enemy);
+        blocks.push({
+            id: CARD_BLOCK.FIGHT,
+            typeId,
+            hit: enemy.hit,
+            hitType: hitTypes[0] ?? PLAIN_ENEMY_HIT_TYPE,
+            hitTypes,
+            moves,
+            resists: enemyResistLines(enemy.resistances),
+            attackEveryMs: enemy.attackSpeed,
+            kinds: enemyKindsOnCard(enemy, !!src.fought?.(typeId))
+        });
         const drops = dropsOf(def.config?.outputs);
         const rare = rareBlockOf(def, instance, src, def.config?.skill || '');
         if (drops.length || rare) blocks.push({ id: CARD_BLOCK.DROPS, drops, rare });
