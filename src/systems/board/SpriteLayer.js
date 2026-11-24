@@ -10,6 +10,7 @@ import { TOKEN_PX, MAT_STEP_U } from '../../config/matGeometry.js';
 import { matW, matH } from '../../config/matGeometry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as BoardState from './BoardState.js';
+import { taskRingOf, oneHeroReachOf } from './jobArea.js';
 import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
 import { logger } from '../../utils/Logger.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
@@ -134,15 +135,20 @@ const clampX = (v) => Math.max(TOKEN_PX * 0.25, Math.min(matW() - TOKEN_PX * 0.2
 const clampY = (v) => Math.max(TOKEN_PX * 0.25, Math.min(matH() - TOKEN_PX * 0.25, v));
 
 /**
- * Where a sprite lands: 1-2 tiles from its source, in a random direction. A source of `null`
- * scatters anywhere: the overflow case, which has no originating tile.
- *
- * Also returns where it came from (`fromX`/`fromY`), which is what makes the arc possible. For the
- * overflow case there is nowhere to fly from, so origin and landing are the same point and the
- * sprite appears in place.
+ * Max distance (in mat units) between a drop's source and an existing stack of its item for the two
+ * to merge (~2 tiles). A wide job's own edge can reach past it: see `mergeReachOf`.
  */
-/** Max distance (in px) between source token and an existing stack for them to merge (~2 tiles). */
 const MAX_STACK_MERGE_DISTANCE_PX = 2.25 * MAT_STEP_U;
+
+/** How far from its stack a merging drop lands before it slides in, at most. */
+const MERGE_LANDING_MAX_PX = 48;
+
+/**
+ * Mat units per art pixel the engine measures a job's area at: the board's natural scale, as the
+ * mat draws it at a fit of 1 (`TOKEN_SCALE` in the UI). The drawn area's pad follows the window's
+ * fit, a few units either way.
+ */
+const LANDING_ART_SCALE = 2;
 
 /**
  * Where a sprite comes from, as a mat point. A source is one of:
@@ -172,19 +178,54 @@ export function sourcePoint(source) {
 }
 
 /**
- * Where a sprite lands: within a tile's distance from its source, in a random direction. A source
- * of `null` scatters anywhere: the overflow case.
- *
- * If `existingTarget` is provided, lands in close proximity to that stack.
+ * The ground a drop lands round, `{ x, y, r }` in mat units, or null for a source with no point.
+ * A Token being worked: its job's area (`jobArea.taskRingOf`), round it and every hero standing at
+ * it. A Token nobody works, a fight's Token whose hero has gone, or any other source point: a
+ * circle round that point as wide as a one-hero job's area round it would be.
  */
-function scatterFrom(source, existingTarget = null) {
-    const sourcePos = sourcePoint(source);
+export function landingAreaOf(source) {
+    const pos = sourcePoint(source);
+    if (!pos) return null;
+    const token = typeof source === 'string' ? BoardState.getTokenById(source) : null;
+    if (token) {
+        const heroes = [];
+        for (const [heroId, body] of BoardState.heroBodies()) {
+            if (!body || body.moving || !Number.isFinite(body.x) || !Number.isFinite(body.y)) continue;
+            if (BoardState.workTokenOf(heroId) === token.id) heroes.push({ x: body.x, y: body.y });
+        }
+        if (heroes.length) {
+            const { x, y, r } = taskRingOf(token, heroes, LANDING_ART_SCALE);
+            return { x, y, r };
+        }
+    }
+    return { x: pos.x, y: pos.y, r: oneHeroReachOf(token?.typeId, LANDING_ART_SCALE) };
+}
 
+/**
+ * How far from its source a drop looks for a stack of its item to join: at least
+ * {@link MAX_STACK_MERGE_DISTANCE_PX}, and always far enough to reach any stack on its own area's
+ * edge, so a busy job's drops still pile up together.
+ */
+function mergeReachOf(sourcePos, area) {
+    if (!sourcePos || !area) return MAX_STACK_MERGE_DISTANCE_PX;
+    const far = Math.hypot(area.x - sourcePos.x, area.y - sourcePos.y) + area.r + MERGE_LANDING_MAX_PX;
+    return Math.max(MAX_STACK_MERGE_DISTANCE_PX, far);
+}
+
+/**
+ * Where a sprite lands, and where it flies from (`fromX`/`fromY`, which is what makes the arc
+ * possible):
+ * - joining `existingTarget`, a stack of its item: close beside that stack;
+ * - with a source: on the edge of its landing area (`landingAreaOf`), in a random direction,
+ * clamped onto the mat;
+ * - with no source (the overflow case): anywhere on the mat, appearing in place.
+ */
+function scatterFrom(sourcePos, area, existingTarget = null) {
     if (existingTarget) {
         const fx = sourcePos ? sourcePos.x : existingTarget.x;
         const fy = sourcePos ? sourcePos.y : existingTarget.y;
         const offsetAngle = Math.random() * Math.PI * 2;
-        const offsetDistance = 24 + Math.random() * 24;
+        const offsetDistance = 24 + Math.random() * (MERGE_LANDING_MAX_PX - 24);
         return {
             x: clampX(existingTarget.x + Math.cos(offsetAngle) * offsetDistance),
             y: clampY(existingTarget.y + Math.sin(offsetAngle) * offsetDistance),
@@ -193,19 +234,20 @@ function scatterFrom(source, existingTarget = null) {
         };
     }
 
-    if (!sourcePos) {
+    if (!sourcePos || !area) {
         const x = clampX(Math.random() * matW());
         const y = clampY(Math.random() * matH());
         return { x, y, fromX: x, fromY: y };
     }
 
     const angle = Math.random() * Math.PI * 2;
-    // Items land within a tile's distance of the output token (0.4 - 0.85 TOKEN_PX)
-    const distance = TOKEN_PX * (0.4 + 0.45 * Math.random());
+    // ⚠️ Every landing draws two numbers, as it did when the distance was random too: the seeded
+    // runs (tests, the bench's work check) keep every later roll where it was.
+    Math.random();
 
     return {
-        x: clampX(sourcePos.x + Math.cos(angle) * distance),
-        y: clampY(sourcePos.y + Math.sin(angle) * distance),
+        x: clampX(area.x + Math.cos(angle) * area.r),
+        y: clampY(area.y + Math.sin(angle) * area.r),
         fromX: sourcePos.x,
         fromY: sourcePos.y
     };
@@ -289,6 +331,8 @@ export function addSprite(kind, refId, quantity = 1, source = null) {
 
     ItemRateTracker.recordGain(refId, quantity);
     const sourcePos = sourcePoint(source);
+    const area = landingAreaOf(source);
+    const mergeReach = mergeReachOf(sourcePos, area);
 
     // Find primary stacks of the same item
     let targetExisting = null;
@@ -298,12 +342,11 @@ export function addSprite(kind, refId, quantity = 1, source = null) {
 
     if (candidates.length > 0) {
         if (sourcePos) {
-            // Find closest candidate within MAX_STACK_MERGE_DISTANCE_PX (2 tiles)
             let closest = null;
             let closestDist = Infinity;
             for (const cand of candidates) {
                 const dist = Math.hypot(cand.x - sourcePos.x, cand.y - sourcePos.y);
-                if (dist <= MAX_STACK_MERGE_DISTANCE_PX && dist < closestDist) {
+                if (dist <= mergeReach && dist < closestDist) {
                     closest = cand;
                     closestDist = dist;
                 }
@@ -314,7 +357,7 @@ export function addSprite(kind, refId, quantity = 1, source = null) {
         }
     }
 
-    const { x, y, fromX, fromY } = scatterFrom(source, targetExisting);
+    const { x, y, fromX, fromY } = scatterFrom(sourcePos, area, targetExisting);
     const sprite = {
         id: nextId(),
         kind,
