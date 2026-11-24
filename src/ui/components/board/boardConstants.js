@@ -48,11 +48,7 @@ export const columnWidthCss = (spec) => `clamp(${spec.min}px, ${spec.vw}vw, ${sp
 import { ALERT } from '../../../systems/board/boardEvents.js';
 
 
-/** The hero's clickable box, narrower than the art it draws. */
-export const HERO_HIT_PX = 64;
-
-/** The hero's box height: the 64 px art at 2×, centred on the hero's point. */
-export const HERO_BOX_PX = 128;
+export { HERO_HIT_PX, HERO_BOX_PX } from '../../../systems/board/jobArea.js';
 
 /**
  * Why a flag passed a Token over, as the tail of one hover line, e.g. 'Iron Forge — needs

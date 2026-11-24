@@ -20,10 +20,11 @@ import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { HeroDrawer } from '../ui/components/dock/HeroDrawer.jsx';
 import {
-    DOCK_STRIP_PX, dockArtPx, dockArtOffset, hpPercent, hpTone,
+    DOCK_STRIP_PX, dockArtPx, dockArtOffset, hpPercent,
     ROSTER_FLAG_PX, rosterFlagPlace, rosterAlertPlace, rosterAlertPx
 } from '../ui/components/dock/dockHeroView.js';
 import { flagFill } from '../systems/board/FlagColours.js';
+import { hpToneName } from '../ui/components/board/healthBar.js';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 import { drawnPoint } from './fixtures/drawnPoint.js';
 
@@ -155,12 +156,12 @@ describe('B10 horizontal hero dock', () => {
     });
 
     it('colours the HP bar green, amber, red; wounded heroes are marked', () => {
-        expect(hpTone(100)).toBe('green');
-        expect(hpTone(51)).toBe('green');
-        expect(hpTone(50)).toBe('amber');
-        expect(hpTone(21)).toBe('amber');
-        expect(hpTone(20)).toBe('red');
-        expect(hpTone(0)).toBe('red');
+        expect(hpToneName(1)).toBe('green');
+        expect(hpToneName(0.51)).toBe('green');
+        expect(hpToneName(0.5)).toBe('amber');
+        expect(hpToneName(0.25)).toBe('amber');
+        expect(hpToneName(0.24)).toBe('red');
+        expect(hpToneName(0)).toBe('red');
         expect(hpPercent({ current: 30, max: 60 })).toBe(50);
         expect(hpPercent({ current: -5, max: 60 })).toBe(0);
 

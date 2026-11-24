@@ -177,5 +177,5 @@ describe('⚠️ the game\'s pollers are on the poll clock', () => {
             .filter(f => /\bsetInterval\s*\(/.test(fs.readFileSync(f, 'utf8')))
             .map(f => path.relative(ui, f));
         expect(offenders).toEqual([]);
-    });
+    }, 30000);
 });

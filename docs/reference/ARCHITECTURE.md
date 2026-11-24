@@ -383,7 +383,8 @@ Hall's star web (`GuildHallBoard.jsx`, `HallSky.jsx`) and the Atlas with the hex
 **Job areas** (`TaskRings.jsx`, `taskRing.js`): an area round every job in progress (a Token
 with a hero standing beside it working it), centred on the middle of the Token's point and each
 working hero's, its radius reaching the farthest corner of the Token's body and each hero's
-figure. No line, working or stuck: the "!" tells a stuck job. All the areas are **one** shape
+figure (`taskRingOf`, pure maths in the engine's `systems/board/jobArea.js`, because loot lands
+on the same edge: `SpriteLayer.landingAreaOf`). No line, working or stuck: the "!" tells a stuck job. All the areas are **one** shape
 (`dimRuns`, the union), toned like old parchment by the layers of `TASK_AREA_LAYERS` (a grey in
 `mix-blend-mode: saturation`, a tan in `color`, a paper glow in `soft-light`, a touch of black),
 so overlaps are toned once; its outer edge fades in `TASK_FADE_STEPS` bands of

@@ -1,4 +1,15 @@
 {
+    "limesDefeat": {
+        "loss": "Careful! If your hero is Defeated, you lose {share} of each food and drink they brought.",
+        "gear": "And each piece of gear they wear has a {odds} chance to break. Win, and you lose nothing!",
+        "half": "half",
+        "third": "a third",
+        "quarter": "a quarter",
+        "twoThirds": "two thirds",
+        "threeQuarters": "three quarters",
+        "percent": "{percent}%",
+        "oneIn": "1 in {n}"
+    },
     "demolish": {
         "mark": "Demolish",
         "cancel": "Cancel demolition"
@@ -576,6 +587,7 @@
         "card": {
             "level": "Level",
             "style": "Style",
+            "styleTip": "It fights in {style}",
             "health": "Health",
             "hit": "Hit",
             "resists": "Resists",

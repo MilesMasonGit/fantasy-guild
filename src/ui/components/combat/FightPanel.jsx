@@ -18,6 +18,7 @@ import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { CombatGlyph } from './CombatGlyph.jsx';
 import { GLYPH_COLOUR, damageTypeGlyph } from './combatGlyphs.js';
 import { fightsOf, subscribeFights, subscribeMoments, startFightWatch, TONE, OUTCOME, MOMENT } from './fightWatch.js';
+import { LANDED_MS, MOVE_MS, LANDED_TONE, landedDelayMs, landedIcon, landedToneName } from './hitLook.js';
 import { HitParts, ResistChips, resistTip } from './CombatStatParts.jsx';
 import { fightPanelView, levelText, styleName, damageText, damageTypeName } from './fightView.js';
 import { lengthText, elapsedText } from '../../../utils/Formatters.js';
@@ -49,9 +50,6 @@ const BAR_H = 14;
 /** Where each fighter stands: a quarter in from each side. */
 const HERO_X = Math.round(PANEL_W / 4 - FIGHTER_PX / 2 + 4);
 const ENEMY_CX = Math.round((3 * PANEL_W) / 4 - 4);
-/** How long what just landed shows over a fighter, and an enemy's move over its bar. */
-const LANDED_MS = 700;
-const MOVE_MS = 1400;
 /** About two log rows a press of an arrow. */
 const LOG_STEP_PX = 40;
 
@@ -83,14 +81,16 @@ function useLastSwingAt(heroId, live) {
 
 /**
  * What just landed in this hero's fight, for the battle: the last moment on each side, and the
- * enemy's last named move, each gone after a moment. Only while the window is drawn and the fight
- * is live, so a minimized window or a finished fight listens to nothing.
+ * enemy's last named move, each shown when and for as long as the mat shows it (`hitLook.js`). Only
+ * while the window is drawn and the fight is live, so a minimized window or a finished fight
+ * listens to nothing.
  */
 function useLanded(heroId, live) {
     const [landed, setLanded] = useState({ hero: null, enemy: null, move: null });
     useEffect(() => {
         if (!live || !heroId) return undefined;
         const timers = new Map();
+        const waiting = new Set();
         let n = 0;
         const show = (slot, value, ms) => {
             clearTimeout(timers.get(slot));
@@ -101,22 +101,38 @@ function useLanded(heroId, live) {
             if (m?.heroId !== heroId) return;
             if (m.move) show('move', { text: m.move, n: ++n }, MOVE_MS);
             if (m.kind === MOMENT.MOVE) return;
-            show(m.on === 'hero' ? 'hero' : 'enemy', m, LANDED_MS);
+            const slot = m.on === 'hero' ? 'hero' : 'enemy';
+            const delay = landedDelayMs(m);
+            if (!delay) {
+                show(slot, m, LANDED_MS);
+                return;
+            }
+            const id = setTimeout(() => {
+                waiting.delete(id);
+                show(slot, m, LANDED_MS);
+            }, delay);
+            waiting.add(id);
         });
         return () => {
             off();
             for (const id of timers.values()) clearTimeout(id);
+            for (const id of waiting) clearTimeout(id);
         };
     }, [heroId, live]);
     return live ? landed : { hero: null, enemy: null, move: null };
 }
 
-/** A moment over its fighter: the number (or Miss, or Crit! over it), Weak! or Resisted, the hit's types. */
+/**
+ * A moment over its fighter, in the mat's colours and icons (`hitLook.js`): the number (or Miss,
+ * or Crit! over it, or a tick's drop or flame before it), Weak! or Resisted, the hit's types.
+ */
 const Landed = ({ m, cx, bottom }) => {
     if (!m) return null;
     const heal = m.kind === MOMENT.HEAL;
-    const colour = heal ? 'var(--color-ui-green)' : m.on === 'hero' ? 'var(--color-ui-red)' : 'var(--color-ui-white)';
-    const glyphColour = heal ? GLYPH_COLOUR.green : m.on === 'hero' ? GLYPH_COLOUR.red : GLYPH_COLOUR.white;
+    const look = LANDED_TONE[landedToneName(m)];
+    const colour = look.css;
+    const glyphColour = look.glyph;
+    const icon = landedIcon(m);
     const verdict = m.verdict === 'weak' ? t('fight.float.weak') : m.verdict === 'resisted' ? t('fight.float.resisted') : null;
     return (
         <div
@@ -132,6 +148,11 @@ const Landed = ({ m, cx, bottom }) => {
                 </span>
             )}
             <span className="inline-flex items-center gap-1 ui-text-title" style={{ color: colour }}>
+                {icon && (
+                    <span className="inline-flex" data-fight-landed-icon={icon}>
+                        <CombatGlyph name={icon} colour={glyphColour} />
+                    </span>
+                )}
                 {m.kind === MOMENT.MISS ? t('fight.float.miss') : `${heal ? '+' : ''}${m.amount ?? ''}`}
                 {(m.types || []).map(type => (
                     <span key={type} className="inline-flex" data-fight-landed-type={type}>
@@ -203,9 +224,10 @@ export const FightArena = ({ view }) => {
             {landed.move && (
                 <SpeechFrame
                     tail
+                    key={landed.move.n}
                     data-fight-landed-move={landed.move.text}
-                    className="absolute ui-text-small font-bold whitespace-nowrap pointer-events-none"
-                    style={{ left: ENEMY_CX, bottom: barBottom + BAR_H + 14, transform: 'translateX(-50%)' }}
+                    className="callout-bubble absolute ui-text-small font-bold whitespace-nowrap pointer-events-none"
+                    style={{ left: ENEMY_CX, bottom: barBottom + BAR_H + 14, translate: '-50% 0' }}
                 >
                     {landed.move.text}
                 </SpeechFrame>

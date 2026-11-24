@@ -102,6 +102,19 @@ describe('Give items', () => {
         expect(view.getByRole('status').textContent).toBe('Gave 7 Quartz Lump to the Bank');
     });
 
+    it('Drop puts the amount of the picked item on the mat as one pile', () => {
+        const view = openPanel();
+        const picker = view.getByTestId('qa-item-picker');
+        fireEvent.change(picker.querySelector('input'), { target: { value: 'quartz lump' } });
+        fireEvent.click(rows(picker)[0]);
+        fireEvent.change(view.getByLabelText('Amount'), { target: { value: '2500' } });
+        fireEvent.click(view.getByText('Drop'));
+        const piles = SpriteLayer.getSprites().filter(s => s.refId === 'item_qa_quartz_lump');
+        expect(piles.map(s => s.quantity)).toEqual([2500]);
+        expect(InventoryManager.getItemCount('item_qa_quartz_lump')).toBe(0);
+        expect(view.getByRole('status').textContent).toBe('Dropped 2500 Quartz Lump on the mat');
+    });
+
     it('Give with nothing picked says so and gives nothing', () => {
         const view = openPanel();
         fireEvent.click(view.getByText('Give'));

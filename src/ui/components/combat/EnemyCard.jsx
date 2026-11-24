@@ -29,23 +29,28 @@ const MoveLine = ({ move }) => (
  * damage type (each of its moves' types), its moves when it has some (what each hits with or does),
  * what it resists and is weak to (rows only when it has some; "Nothing" when it has neither), how often it attacks,
  * and its kinds once the guild has fought one (until then "? fight one to learn").
- * No forecast: the player does the sums. `card` is `fightView.enemyCardView`'s.
+ * No forecast: the player does the sums. `card` is `fightView.enemyCardView`'s. Without `stats`,
+ * the level, style and health rows are left to the Token card's own stat block.
  */
-export const EnemyCardRows = ({ card }) => {
+export const EnemyCardRows = ({ card, stats = true }) => {
     const resists = (card.resists || []).filter(l => l.value > 0);
     const weak = (card.resists || []).filter(l => l.value < 0);
     const hitTypes = card.hitTypes?.length ? card.hitTypes : [card.hitType];
     return (
         <div data-enemy-card={card.typeId} className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 ui-text-body text-white" style={{ minWidth: 220 }}>
-            <span className="text-gi-muted">{t('fight.card.level')}</span>
-            <span className="font-bold tabular-nums" data-enemy-card-level>{levelText(card.level)}</span>
-            <span className="text-gi-muted">{t('fight.card.style')}</span>
-            <span className="inline-flex items-center gap-1 font-bold" data-enemy-card-style={card.style}>
-                <SkillIcon skill={card.style} size={16} />
-                {styleName(card.style)}
-            </span>
-            <span className="text-gi-muted">{t('fight.card.health')}</span>
-            <span className="font-bold tabular-nums" data-enemy-card-hp>{card.hp}</span>
+            {stats && (
+                <>
+                    <span className="text-gi-muted">{t('fight.card.level')}</span>
+                    <span className="font-bold tabular-nums" data-enemy-card-level>{levelText(card.level)}</span>
+                    <span className="text-gi-muted">{t('fight.card.style')}</span>
+                    <span className="inline-flex items-center gap-1 font-bold" data-enemy-card-style={card.style}>
+                        <SkillIcon skill={card.style} size={16} />
+                        {styleName(card.style)}
+                    </span>
+                    <span className="text-gi-muted">{t('fight.card.health')}</span>
+                    <span className="font-bold tabular-nums" data-enemy-card-hp>{card.hp}</span>
+                </>
+            )}
             <span className="text-gi-muted">{t('fight.card.hit')}</span>
             <span className="inline-flex items-center gap-1 font-bold tabular-nums" data-enemy-card-hit>
                 {damageText(card.hit)}

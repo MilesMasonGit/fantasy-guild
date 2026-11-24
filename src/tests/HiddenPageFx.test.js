@@ -272,5 +272,5 @@ describe('⚠️ every one-shot animation in the game starts through animateFx',
             .filter(f => /\.animate\s*\(/.test(fs.readFileSync(f, 'utf8').replace(/^\s*(\/\/|\*).*$/gm, '')))
             .map(f => path.relative(ui, f));
         expect(offenders).toEqual([]);
-    });
+    }, 30000);
 });

@@ -14,7 +14,8 @@
 // screen stays with the mat's Limes. Each entry is one bubble per line (Next between them).
 // The steps and what counts for each are `lessonPlan.js`. A name in braces is filled in from the
 // content as Limes says it, so the words follow the ids in `LESSON_TARGETS`: {foundation} the
-// Foundation, {building} Crafting's building, {craft} the craft suggested, {foe} the first foe.
+// Foundation, {building} Crafting's building, {craft} the craft suggested, {foe} the first foe,
+// {defeatLoss} and {defeatGear} the Defeat penalty, worded from `DEFEAT_PENALTY`.
 
 export const LIMES_TEXT = Object.freeze({
     /** Limes's name, as the bubble and the small sprites are labelled for screen readers. */
@@ -96,7 +97,7 @@ export const LIMES_TEXT = Object.freeze({
         }),
         // 8. ...and the fight.
         fight: Object.freeze({
-            mat: Object.freeze(['Now a little fight! Drag your hero onto a {foe}. You can do it!'])
+            mat: Object.freeze(['{defeatLoss}', '{defeatGear}', 'Now a little fight! Drag your hero onto a {foe}. You can do it!'])
         }),
         // Then the one big goal: settle a place on the world map.
         settle: Object.freeze({
