@@ -89,7 +89,6 @@ describe('⭐ shipped content', () => {
         ['token_cooking_pot', NEVER_WEARS.STATION],
         ['token_furnace', NEVER_WEARS.STATION],
         ['token_windmill', NEVER_WEARS.STATION],
-        ['token_coast', NEVER_WEARS.WATER],
         ['token_copper_anvil', NEVER_WEARS.SUPPORT]
     ])('%s never wears out and starts unlimited', (id, reason) => {
         const def = getTokenType(id);

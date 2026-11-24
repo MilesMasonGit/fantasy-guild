@@ -360,3 +360,15 @@ describe('the QA landing and the event clock', () => {
         }
     });
 });
+
+describe('a kind lands only on its own water', () => {
+    it('a fresh-water kind never lands on the sea, however many arrive', () => {
+        registerTokenTypes({
+            fs_pond_only: kind('fs_pond_only', { water: ['fresh'], everyMinutes: 0.1, most: 12 }, [rodPool([{ itemId: 'fs_trout', weight: 1 }])])
+        });
+        run(10 * 60000, 1000);
+        const ponds = spotsOf('fs_pond_only');
+        expect(ponds.length).toBeGreaterThanOrEqual(6);
+        expect(new Set(ponds.map(p => GroundRules.waterKindAt(p.x, p.y)))).toEqual(new Set(['fresh']));
+    });
+});

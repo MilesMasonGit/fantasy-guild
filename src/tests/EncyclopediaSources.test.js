@@ -257,11 +257,8 @@ describe('the shipped content', () => {
         expect(waysIn(book, T('token_copper_comet')).map(w => w.how)).toEqual([EVENT_WAY]);
     });
 
-    it('Salmon: both River pools, plain and with bait; Trout from the Fish Shoal, ×4 at 70 %', () => {
-        const river = from(I('item_salmon'), T('token_river'));
-        expect(river).toHaveLength(2);
-        expect(river.map(w => w.bait === null).sort()).toEqual([false, true]);
-        expect(river.every(w => w.toolKind && w.inputs.some(i => i.held))).toBe(true);
+    it('Trout from the Fish Shoal, ×4 at 70 %', () => {
+        // Every catch pool of a water is a way in: the fixture world's Coast, above (the shipped River is retired).
         expect(from(I('item_trout'), T('token_fish_shoal')).map(w => [yieldText(w.yields), w.chance])).toEqual([['×4', 0.7]]);
     });
 
@@ -300,8 +297,9 @@ describe('on the page', () => {
     });
 
     it('the held tool\'s word and the catch\'s hover sentence name the tool', () => {
-        const book = encyclopedia();
-        const { container } = view(book, I('item_salmon'));
+        // The fixture world's Coast: the shipped fixed waters are retired, and spots come with the Fishing pack.
+        const book = buildEncyclopedia(ledgerContent());
+        const { container } = view(book, I('item_trout'));
         expect([...container.querySelectorAll('[data-codex-word="held"]')].length).toBeGreaterThan(0);
         expect(box(container, I('item_fishing_rod') ).querySelector('[data-codex-need]')).toBeNull();
     });
