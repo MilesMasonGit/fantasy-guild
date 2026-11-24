@@ -25,13 +25,16 @@ describe('⭐ the mat column reaches under the bubbles\' inner padding', () => {
     });
 });
 
-describe('⭐ the Controls strip is under the mat, left of the hero bar', () => {
-    it('the screen\'s foot holds the strip, then the hero bar; the strip is away over the Hall and the World Map', () => {
+describe('⭐ the Controls button lies over the hero bar\'s left end and takes none of its room', () => {
+    it('the screen\'s foot gives the column\'s reach back, so the hero bar spans and centres as before; the button lies over it', () => {
         const root = read('ui/ReactRoot.jsx');
         const foot = root.slice(root.indexOf('data-screen-foot'));
-        expect(foot.indexOf('<MatControls')).toBeGreaterThan(-1);
-        expect(foot.indexOf('<MatControls')).toBeLessThan(foot.indexOf('<BottomHeroDock'));
+        expect(foot).toMatch(/^data-screen-foot className=\{cn\('relative shrink-0', menuRight \? 'mr-3' : 'ml-3'\)\}/);
+        expect(foot.indexOf('<BottomHeroDock')).toBeGreaterThan(-1);
+        expect(foot.indexOf('<BottomHeroDock')).toBeLessThan(foot.indexOf('<MatControls'));
         expect(foot).toMatch(/<MatControls away=\{isGuildView \|\| isAtlasOpen\} \/>/);
         expect([...root.matchAll(/<MatControls\b/g)]).toHaveLength(1);
+        // Nothing beside the hero bar in a row: it is the foot's only box in the flow.
+        expect(foot.slice(0, foot.indexOf('<BottomHeroDock'))).not.toMatch(/flex-1|flex /);
     });
 });

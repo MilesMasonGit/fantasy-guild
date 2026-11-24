@@ -20,7 +20,7 @@ import { MatToken } from '../ui/components/board/MatToken.jsx';
 import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
 import { MatTopBar } from '../ui/components/board/MatTopBar.jsx';
 import {
-    MapModeBanner, MODE_BANNER_TEXT, CONTROL_BUTTON_PX
+    MapModeBanner, MODE_BANNER_TEXT
 } from '../ui/components/board/MatModeControls.jsx';
 import { MatControls } from '../ui/components/board/MatControls.jsx';
 import { tokenOutline } from '../ui/components/board/spriteOutline.js';
@@ -54,8 +54,13 @@ const OTHER = 'fixture_station';
 const mountMat = (props = {}) => render(
     h(DndContext, null, h(MatBoard, props), h(CalloutLayer))
 );
-/** As the game draws them: the banner in the top bar's middle, the toggle on the Controls strip. */
-const mountBar = () => render(h(React.Fragment, null, h(MatTopBar, { middle: h(MapModeBanner) }), h(MatControls)));
+/** As the game draws them: the banner in the top bar's middle, the toggle in the Controls panel, opened. */
+const openControls = (c) => fireEvent.click(c.querySelector('[data-mat-controls-button]'));
+const mountBar = () => {
+    const view = render(h(React.Fragment, null, h(MatTopBar, { middle: h(MapModeBanner) }), h(MatControls)));
+    openControls(view.container);
+    return view;
+};
 
 const artOf = (container, id) => container.querySelector(`[data-token-id="${id}"][data-token-art]`);
 const toggle = (c, mode) => c.querySelector(`[data-map-mode-toggle="${mode}"]`);
@@ -110,17 +115,17 @@ describe('⭐ the toggle', () => {
         expect(toggle(container, MAP_MODE.DEMOLISH).getAttribute('aria-pressed')).toBe('false');
     });
 
-    it('Demolish is the only toggle, on the Controls strip and no longer on the top bar; Disallow is gone', () => {
+    it('Demolish is the only toggle, in the Controls panel and no longer on the top bar; Disallow is gone', () => {
         const { container } = mountBar();
-        const strip = container.querySelector('[data-mat-controls]');
-        expect([...strip.querySelectorAll('[data-map-mode-toggle]')].map(b => b.getAttribute('aria-label')))
+        const panel = container.querySelector('[data-mat-controls-panel]');
+        expect([...panel.querySelectorAll('[data-map-mode-toggle]')].map(b => b.textContent))
             .toEqual(['Demolish']);
         expect(container.querySelector('[data-mat-top-bar] [data-map-mode-toggle]')).toBeNull();
         expect(Object.values(MAP_MODE)).toEqual(['demolish']);
         expect(container.textContent).not.toMatch(/disallow/i);
     });
 
-    it('⭐ Demolish is a square button wearing its cursor’s pixel X, its word in the tooltip, not a text mark', () => {
+    it('⭐ Demolish is a row wearing its cursor’s pixel X beside its word, not a text mark', () => {
         const { container } = mountBar();
         const button = toggle(container, MAP_MODE.DEMOLISH);
         const icon = button.querySelector('img[data-map-mode-icon="demolish"]');
@@ -129,10 +134,8 @@ describe('⭐ the toggle', () => {
         expect(mapModeCursor(MAP_MODE.DEMOLISH)).toContain(mapModeIconSrc(MAP_MODE.DEMOLISH));
         expect(icon.getAttribute('width')).toBe('22');
         expect(icon.style.imageRendering).toBe('pixelated');
-        expect(button.textContent).toBe('');
-        expect(button.getAttribute('aria-label')).toBe('Demolish');
-        expect(button.style.width).toBe(`${CONTROL_BUTTON_PX}px`);
-        expect(button.style.height).toBe(`${CONTROL_BUTTON_PX}px`);
+        expect(button.textContent).toBe('Demolish');
+        expect(button.textContent).not.toContain('✕');
     });
 
     it('Esc ends the mode', () => {
@@ -144,20 +147,37 @@ describe('⭐ the toggle', () => {
         expect(banner(container)).toBeNull();
     });
 
-    it('leaving the playmat (the strip goes away) ends the mode', () => {
+    it('leaving the playmat (the Controls go away) ends the mode', () => {
         const { container, unmount } = mountBar();
         fireEvent.click(toggle(container, MAP_MODE.DEMOLISH));
         unmount();
         expect(getMapMode()).toBeNull();
     });
 
-    it('⭐ the Guild Hall or the World Map opening (the strip away, kept in place) ends the mode', () => {
+    it('⭐ the Guild Hall or the World Map opening (the Controls away) ends the mode and closes the panel', () => {
         const { container, rerender } = render(h(MatControls));
+        openControls(container);
         fireEvent.click(toggle(container, MAP_MODE.DEMOLISH));
         expect(getMapMode()).toBe(MAP_MODE.DEMOLISH);
         rerender(h(MatControls, { away: true }));
         expect(getMapMode()).toBeNull();
         expect(container.querySelector('[data-mat-controls]').style.visibility).toBe('hidden');
+        expect(container.querySelector('[data-mat-controls-panel]')).toBeNull();
+    });
+
+    it('⭐ Demolish stays on with the panel closed, and the Controls button wears its colour', () => {
+        const { container } = mountBar();
+        const button = container.querySelector('[data-mat-controls-button]');
+        expect(button.getAttribute('data-mode-on')).toBe('false');
+        fireEvent.click(toggle(container, MAP_MODE.DEMOLISH));
+        fireEvent.click(button);
+        expect(container.querySelector('[data-mat-controls-panel]')).toBeNull();
+        expect(getMapMode()).toBe(MAP_MODE.DEMOLISH);
+        expect(button.getAttribute('data-mode-on')).toBe('true');
+        expect(button.className).toContain('border-[var(--color-ui-red)]');
+        act(() => setMapMode(null));
+        expect(button.getAttribute('data-mode-on')).toBe('false');
+        expect(button.className).not.toContain('border-[var(--color-ui-red)]');
     });
 });
 

@@ -16,14 +16,14 @@ const BUTTON_CLS = 'flex items-center gap-1.5 px-3 py-1.5 border-2 whitespace-no
 const OFF_CLS = 'bg-black/30 border-[#2a1d15] text-amber-100 hover:border-[var(--color-ui-white)] hover:text-white';
 
 /**
- * The Controls strip's square icon buttons (`MatControls`): one size, a 1-art-pixel line, white on
- * hover or while lit.
+ * The Controls panel's rows (`MatControls`): a square icon well and the row's word, a 1-art-pixel
+ * line, white on hover or while lit.
  */
-export const CONTROL_BUTTON_PX = 40;
-export const CONTROL_BUTTON_CLS = 'shrink-0 flex items-center justify-center border-2 cursor-pointer transition-colors';
+export const CONTROL_ICON_PX = 32;
+export const CONTROL_ROW_CLS = 'w-full flex items-center gap-2 pr-2 border-2 cursor-pointer transition-colors whitespace-nowrap';
 export const CONTROL_OFF_CLS = 'bg-black/30 border-[#2a1d15] text-amber-100 hover:border-[var(--color-ui-white)] hover:text-white';
 /** A mode's toggle while it is on, in the mode's colour. */
-const ON_CLS = {
+export const MODE_ON_CLS = {
     [MAP_MODE.DEMOLISH]: 'bg-black/50 border-[var(--color-ui-red)] text-[var(--color-ui-red)]'
 };
 
@@ -36,10 +36,6 @@ const ON_CLS = {
 export const MODE_BANNER_TEXT = Object.freeze({
     [MAP_MODE.DEMOLISH]: 'Demolish mode: click Tokens to mark them. A Construction hero takes them down. Nothing is refunded.'
 });
-
-const TOGGLES = [
-    { mode: MAP_MODE.DEMOLISH, labelKey: 'matControls.demolish', tipKey: 'matControls.demolishTip' }
-];
 
 const click = () => EventBus.publish(ENGINE_EVENTS.AUDIO_PLAY, { clip: 'button_click' });
 
@@ -62,43 +58,40 @@ export const ModeIcon = ({ mode }) => {
 };
 
 /**
- * One mode's toggle, a square icon button on the Controls strip: a second press, or Esc, ends it.
+ * The Demolish toggle, a row of the Controls panel: a second press, or Esc, ends the mode.
  */
-const ModeToggle = ({ mode, labelKey, tipKey, on }) => (
-    <Tooltip title={t(labelKey)} lines={[on ? t('matControls.demolishOnTip') : t(tipKey)]}>
-        <button
-            type="button"
-            data-map-mode-toggle={mode}
-            data-on={on ? 'true' : 'false'}
-            aria-pressed={on}
-            aria-label={t(labelKey)}
-            onClick={() => { click(); toggleMapMode(mode); }}
-            className={cn(CONTROL_BUTTON_CLS, on ? ON_CLS[mode] : CONTROL_OFF_CLS)}
-            style={{ width: CONTROL_BUTTON_PX, height: CONTROL_BUTTON_PX }}
-        >
-            <ModeIcon mode={mode} />
-        </button>
-    </Tooltip>
-);
-
-/**
- * The mode toggles (Demolish), on the Controls strip. While a mode is on, Esc ends it, and so does
- * this going away with the strip (leaving the playmat).
- */
-export const MapModeToggles = () => {
-    const mode = useMapMode();
-
-    useEscapeLayer(!!mode, () => setMapMode(null));
-
-    // Off the playmat, the mode is off: the strip is only drawn there.
-    useEffect(() => () => setMapMode(null), []);
-
+export const DemolishToggle = () => {
+    const on = useMapMode() === MAP_MODE.DEMOLISH;
     return (
-        <>
-            {TOGGLES.map(toggle => <ModeToggle key={toggle.mode} {...toggle} on={mode === toggle.mode} />)}
-        </>
+        <Tooltip title={t('matControls.demolish')} lines={[on ? t('matControls.demolishOnTip') : t('matControls.demolishTip')]}>
+            <button
+                type="button"
+                data-map-mode-toggle={MAP_MODE.DEMOLISH}
+                data-on={on ? 'true' : 'false'}
+                aria-pressed={on}
+                onClick={() => { click(); toggleMapMode(MAP_MODE.DEMOLISH); }}
+                className={cn(CONTROL_ROW_CLS, on ? MODE_ON_CLS[MAP_MODE.DEMOLISH] : CONTROL_OFF_CLS)}
+            >
+                <span className="shrink-0 flex items-center justify-center" style={{ width: CONTROL_ICON_PX, height: CONTROL_ICON_PX }}>
+                    <ModeIcon mode={MAP_MODE.DEMOLISH} />
+                </span>
+                <span>{t('matControls.demolish')}</span>
+            </button>
+        </Tooltip>
     );
 };
+
+/**
+ * The map mode's life outside the toggle, held by whatever stays mounted while the player is on
+ * the playmat (the Controls button): Esc ends a mode that is on, and the holder going away (leaving
+ * the playmat) ends it too. The toggle itself may come and go with its panel.
+ */
+export function useMapModeEnds() {
+    const mode = useMapMode();
+    useEscapeLayer(!!mode, () => setMapMode(null));
+    useEffect(() => () => setMapMode(null), []);
+    return mode;
+}
 
 /**
  * **Cancel all marks**: every Token marked for demolition unmarked at once, no confirm (the

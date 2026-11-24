@@ -133,28 +133,60 @@ describe('⭐ the find store', () => {
 
 // --- The strip ---------------------------------------------------------------------------------
 
-describe('⭐ the Controls strip', () => {
+describe('⭐ the Controls button and its panel', () => {
     afterEach(() => { cleanup(); clearMatFind(); });
 
-    it('⭐ a framed row the hero bar\'s height: Demolish, then Heroes, Tokens, Enemies, Items, then the search box', () => {
+    const button = (c) => c.querySelector('[data-mat-controls-button]');
+    const panel = (c) => c.querySelector('[data-mat-controls-panel]');
+    const mountOpen = () => {
+        const view = render(h(MatControls));
+        fireEvent.click(button(view.container));
+        return view;
+    };
+
+    it('⭐ one square button the hero bar\'s height, laid over the foot at its left, taking no room', () => {
         const { container } = render(h(MatControls));
-        const strip = container.querySelector('[data-mat-controls]');
-        expect(strip.getAttribute('data-pixel-frame')).toBe('studs');
-        expect(strip.style.height).toBe(`${DOCK_STRIP_PX}px`);
-        const order = [...strip.querySelectorAll('[data-map-mode-toggle], [data-find-category], [data-find-search]')]
+        const b = button(container);
+        expect(b.style.width).toBe(`${DOCK_STRIP_PX}px`);
+        expect(b.style.height).toBe(`${DOCK_STRIP_PX}px`);
+        expect(b.getAttribute('aria-label')).toBe('Controls');
+        expect(b.getAttribute('aria-expanded')).toBe('false');
+        const root = container.querySelector('[data-mat-controls]');
+        expect(root.className.split(' ')).toEqual(expect.arrayContaining(['absolute', 'left-0', 'bottom-0']));
+        expect(panel(container)).toBeNull();
+    });
+
+    it('⭐ a click opens the panel upward from the button: Demolish, then Heroes, Tokens, Enemies, Items, then the search box, one per row', () => {
+        const { container } = mountOpen();
+        const p = panel(container);
+        expect(button(container).getAttribute('aria-expanded')).toBe('true');
+        expect(p.className.split(' ')).toEqual(expect.arrayContaining(['absolute', 'bottom-full', 'left-0']));
+        expect(p.getAttribute('data-pixel-frame')).toBe('chamfer');
+        expect(p.querySelector('.ui-frame-chamfer').className).toContain('flex-col');
+        const order = [...p.querySelectorAll('[data-map-mode-toggle], [data-find-category], [data-find-search]')]
             .map(e => e.getAttribute('data-map-mode-toggle') || e.getAttribute('data-find-category') || 'search');
         expect(order).toEqual(['demolish', 'heroes', 'tokens', 'enemies', 'items', 'search']);
         expect(FIND_BUTTONS.map(b => b.category)).toEqual(['heroes', 'tokens', 'enemies', 'items']);
-        // Square icon buttons, each named for its tooltip and for a screen reader.
-        for (const b of strip.querySelectorAll('[data-find-category]')) {
-            expect(b.style.width).toBe(b.style.height);
-            expect(b.textContent).toBe('');
-            expect(b.getAttribute('aria-label')).toMatch(/^Find /);
-        }
+        expect([...p.querySelectorAll('[data-find-category]')].map(e => e.textContent)).toEqual(['Heroes', 'Tokens', 'Enemies', 'Items']);
     });
 
-    it('⭐ a Find button lights its category while hovered, and moving off ends it', () => {
-        const { container } = render(h(MatControls));
+    it('⭐ a second click, Esc or a click outside closes it', () => {
+        const { container } = mountOpen();
+        fireEvent.click(button(container));
+        expect(panel(container)).toBeNull();
+        fireEvent.click(button(container));
+        fireEvent.keyDown(document, { key: 'Escape' });
+        expect(panel(container)).toBeNull();
+        fireEvent.click(button(container));
+        // A press inside the panel keeps it.
+        fireEvent.pointerDown(panel(container).querySelector('[data-find-category="heroes"]'));
+        expect(panel(container)).not.toBeNull();
+        fireEvent.pointerDown(document.body);
+        expect(panel(container)).toBeNull();
+    });
+
+    it('⭐ a Find row lights its category while hovered, and moving off ends it', () => {
+        const { container } = mountOpen();
         const enemies = container.querySelector('[data-find-category="enemies"]');
         fireEvent.pointerEnter(enemies);
         expect(getMatFind()).toEqual({ category: 'enemies' });
@@ -164,34 +196,39 @@ describe('⭐ the Controls strip', () => {
         expect(enemies.getAttribute('data-lit')).toBe('false');
     });
 
-    it('⭐ a hover shows the button\'s tooltip', () => {
-        const { container } = render(h(MatControls));
+    it('⭐ a hover shows the row\'s tooltip', () => {
+        const { container } = mountOpen();
         fireEvent.pointerEnter(container.querySelector('[data-find-category="items"]'), { clientX: 10, clientY: 10 });
-        expect(document.body.textContent).toContain('Find items');
         expect(document.body.textContent).toContain('lying on the mat');
     });
 
-    it('⭐ the search box lights while it has text; emptying it or Esc ends it', () => {
-        const { container } = render(h(MatControls));
-        const input = container.querySelector('[data-find-search-input]');
-        fireEvent.change(input, { target: { value: 'copper' } });
+    it('⭐ the search box lights while it has text and the panel is open; emptying it, Esc or closing the panel ends it', () => {
+        const { container } = mountOpen();
+        const input = () => container.querySelector('[data-find-search-input]');
+        fireEvent.change(input(), { target: { value: 'copper' } });
         expect(getMatFind()).toEqual({ text: 'copper' });
-        fireEvent.change(input, { target: { value: '' } });
+        fireEvent.change(input(), { target: { value: '' } });
         expect(getMatFind()).toBeNull();
-        fireEvent.change(input, { target: { value: 'oak' } });
+        fireEvent.change(input(), { target: { value: 'oak' } });
         expect(escapeLayerCount()).toBeGreaterThan(0);
-        fireEvent.keyDown(input, { key: 'Escape' });
+        fireEvent.keyDown(input(), { key: 'Escape' });
         expect(getMatFind()).toBeNull();
-        expect(input.value).toBe('');
+        expect(input().value).toBe('');
+        // Esc cleared the text first; the panel is still open, and closing it ends a new search.
+        expect(panel(container)).not.toBeNull();
+        fireEvent.change(input(), { target: { value: 'oak' } });
+        fireEvent.click(button(container));
+        expect(getMatFind()).toBeNull();
+        expect(getFindText()).toBe('');
     });
 
-    it('⭐ leaving the playmat ends the find, the strip kept in place', () => {
-        const { container, rerender } = render(h(MatControls));
+    it('⭐ leaving the playmat closes the panel and ends the find', () => {
+        const { container, rerender } = mountOpen();
         fireEvent.change(container.querySelector('[data-find-search-input]'), { target: { value: 'oak' } });
         rerender(h(MatControls, { away: true }));
         expect(getMatFind()).toBeNull();
         expect(container.querySelector('[data-mat-controls]').style.visibility).toBe('hidden');
-        expect(container.querySelector('[data-mat-controls]')).not.toBeNull();
+        expect(panel(container)).toBeNull();
     });
 });
 

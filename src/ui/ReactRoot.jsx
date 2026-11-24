@@ -334,25 +334,26 @@ const ReactRoot = () => {
                          * Guild Hall's included. A crash in it stays local to it.
                          */}
                         {/**
-                         * The foot of the screen: the Controls strip (Demolish, Find) at the left,
-                         * the mat's only, then the hero bar.
+                         * The foot of the screen: the hero bar, and over its left end the Controls
+                         * button (Demolish, Find), the mat's only. ⚠️ Margined back to the column's
+                         * own box (it reaches under the bubbles' padding above), so the hero bar spans
+                         * and centres exactly as it would with no Controls and no reach; the button
+                         * lies over it and takes none of its width.
                          */}
-                        <div data-screen-foot className="shrink-0 flex items-end min-w-0">
+                        <div data-screen-foot className={cn('relative shrink-0', menuRight ? 'mr-3' : 'ml-3')}>
+                            {dockDrawn && (
+                                <ErrorBoundary label="HeroDock" corner="bottom-left">
+                                    <PerfProfiler id="HeroDock">
+                                        <BottomHeroDock
+                                            selectedHeroId={inspectHeroId}
+                                            onOpenHero={setInspectHeroId}
+                                        />
+                                    </PerfProfiler>
+                                </ErrorBoundary>
+                            )}
                             <ErrorBoundary label="MatControls" corner="bottom-left">
                                 <MatControls away={isGuildView || isAtlasOpen} />
                             </ErrorBoundary>
-                            <div className="flex-1 min-w-0">
-                                {dockDrawn && (
-                                    <ErrorBoundary label="HeroDock" corner="bottom-left">
-                                        <PerfProfiler id="HeroDock">
-                                            <BottomHeroDock
-                                                selectedHeroId={inspectHeroId}
-                                                onOpenHero={setInspectHeroId}
-                                            />
-                                        </PerfProfiler>
-                                    </ErrorBoundary>
-                                )}
-                            </div>
                         </div>
                     </div>
                     {menuRight && <BubbleMenu ui={ui} side="right" />}
