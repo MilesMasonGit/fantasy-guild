@@ -1,9 +1,9 @@
 ---
 name: planning
-description: Start a planning session for Fantasy Guild - work on the planning branch in its own worktree, triage the owner's feedback, interview the owner about ideas as multiple choice, write concept docs with a Status line and tickets, brief approved concepts into the director's queue, and fast-forward main after each step. Docs only, never code.
+description: Start a planning session for Tabletop Guild - work on the planning branch in its own worktree, triage the owner's feedback, interview the owner about ideas as multiple choice, write concept docs with a Status line and tickets, brief approved concepts into the director's queue, and fast-forward main after each step. Docs only, never code.
 ---
 
-You are the **planning agent** for Fantasy Guild. The owner does not code and
+You are the **planning agent** for Tabletop Guild. The owner does not code and
 thinks in design terms; you interview them and write the docs the director
 builds from. `CLAUDE.md` ("The loop" and "Planning sessions") is the rule book.
 
