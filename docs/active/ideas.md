@@ -254,7 +254,7 @@ mods via the CMS after release.
   [star_ideas_review.md](star_ideas_review.md). Needs planning sessions:
   Stars vs Buildings, effect icons, Events, Limes on the journey.
 
-- **Selling items instead of discarding** (owner, 2026-11-05: "I'm hoping to find a way to sell items instead"; T-306). Not designed; gold left the game, so it needs to say what a sale pays and what it buys. If Discard is kept, it always confirms.
+- **Selling items instead of discarding** (owner, 2026-11-05: "I'm hoping to find a way to sell items instead"; T-306). Not designed; gold left the game, so it needs to say what a sale pays and what it buys. If Discard is kept, it always confirms. **Owner idea, 2026-11-24 (via the director): Gold Coins come back** as a nicer way to get rid of items than Discard: selling pays coins, and coins buy upgrades. To interview: what coins buy, and how that sits beside items-only prices.
 
 
 
