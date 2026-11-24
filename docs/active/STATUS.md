@@ -584,7 +584,7 @@ None open.
 
 ## Questions for the owner
 
-- **A Fishing Hut hero with no spot left in reach (850 F3).** (a) **Recommended:** waits silently with the idle mark until the next spot arrives, as an enemy camp's heroes wait for its next spawn; (b) keeps today's "Nothing to work here".
+- ~~A Fishing Hut hero with no spot left in reach (850 F3)~~ **Answered 24 Nov: waits silently with the idle mark** (follow-up on `feat/fishing-spot-card`).
 - ~~Does a fish's price count its bait (770 G1)?~~ **Answered Mon 23 Nov: yes, a fish's price includes its bait, like any resource used in production.** Built with the CMS's water pricing when the Fishing pack lands.
 **Answered Sun 22 Nov (owner, in chat):**
 - Description Sync after 790 W3: **the director runs the CMS sync command on main right after W3 merges** (data-only commit, check only description lines moved), and tells the owner.
