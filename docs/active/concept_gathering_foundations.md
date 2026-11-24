@@ -25,10 +25,12 @@ Status: draft
    [content_mining_forestry.md](content_mining_forestry.md) "Mining review").
 5. **Nursery** becomes a Forest of a chosen species, paid in that species' seeds (owner 2026-11-24,
    [content_mining_forestry.md](content_mining_forestry.md) "Forestry review").
+6. **Farmland** becomes a Field, an Orchard or a Herb Garden (owner 2026-11-24,
+   [content_farming.md](content_farming.md) "Farming review").
 
 ## Open (to interview)
 
-- What Farmland offers; where each foundation may stand.
+- Where each foundation may stand (the Dock: the shore).
 - How a gathering foundation is got (bought, built by Construction, a Guild Hall star) and what it costs.
 - Whether buildings that today sit on Wood or Stone Foundations for these skills (a Mine, a Logging
   Camp, a Field) move onto the new ones.

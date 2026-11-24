@@ -1,4 +1,4 @@
-Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
+Status: approved 2026-11-04, **amended 2026-11-24 by the owner's review** (not yet briefed; a CMS pack still to come)
 
 # Content roadmap: Farming
 
@@ -42,3 +42,28 @@ From [Construction](content_construction.md): **Well** (shorter growth), **Compo
 
 The Sickle goes first (pack `2026-11-21-farming-no-sickle`). **The levels come with the new crops**, not before: alone, Wheat at 4 and Lavender at 5 leave a new hero nothing to train on until Potato (2) and Flax (3) exist, and the pack gate blocks it. The new crops come with the recipes that use them (Cooking, Tailor), so no crop arrives without a job.
 - **The crops came with Cooking** (pack `2026-11-21-cooking-and-crops`): Potato to Voidcap, each a Field recipe from its seed, on the plan's levels with the bushes and trees. A Bird Nest can hold every new seed, Potato's always, so the first seed of each crop is a nest away; harvests keep seeds back after that. Flax waits for Tailor; the herb gardens for Alchemy.
+
+## Amended 2026-11-24: Farming review (owner)
+
+*The owner's review of the gathering skills, after Fishing, Mining and Forestry. Replaces the lines it
+clashes with above and in [concept_skill_loops.md](concept_skill_loops.md) "Farming".*
+
+1. **A ripe Field is harvested out by chance**: each harvest cycle has a chance to finish it (Wheat
+   about 1 in 10, keeping today's average load), **no counter**; the last cycle replants. The
+   **Composter** now lowers that chance (a bigger harvest on average) instead of adding to a count.
+2. **Seeds stay for Fields**: each replant spends a seed of the picked crop; with none, the Field
+   waits with its yellow '!'. Harvests give some seeds back. (Forestry dropped its seedlings; Farming
+   keeps them as its own loop.)
+3. **Farmland, Farming's gathering foundation, becomes a Field, an Orchard or a Herb Garden**
+   ([concept_gathering_foundations.md](concept_gathering_foundations.md)). The supports (Well,
+   Composter, Beehive, Windmill) stay on today's Foundations.
+4. **Orchards follow Forests**: an Orchard plants a few fruit trees of its kind and refruits its own;
+   fruit trees are picked, not felled (picked empty, they rest and fruit again). No boost to other
+   trees, no seedling per tree ([content_mining_forestry.md](content_mining_forestry.md) "Forests are
+   tree spawners").
+5. **The supports stay** (owner: Farming's progress is crops, places and buildings that boost
+   production): Well (faster growth, to the floor), Composter (bigger harvests), Beehive (a chance of
+   bonus crops or seeds; honey and wax), Windmill (mills grain).
+6. **Grow time stays 1 to 2 hours** per crop (Wheat about 1 hour).
+7. **No special Farming event Tokens for now.**
+
