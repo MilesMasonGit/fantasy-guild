@@ -56,23 +56,18 @@ export const LEFT = Object.freeze({ MOVED_ON: 'moved_on', UNWORKED: 'unworked' }
 // The kinds
 // ---------------------------------------------------------------------------
 
-let kindsKept = { version: -1, all: [], arriving: [] };
+let kindsKept = { version: -1, arriving: [] };
 
 function syncKinds() {
     const version = registryVersion();
     if (kindsKept.version === version) return kindsKept;
-    const all = [];
+    const arriving = [];
     for (const [typeId, def] of Object.entries(getAllTokenTypes())) {
         const spot = spotOf(def);
-        if (spot) all.push({ typeId, def, spot });
+        if (arrivesByItself(spot)) arriving.push({ typeId, def, spot });
     }
-    kindsKept = { version, all, arriving: all.filter(k => arrivesByItself(k.spot)) };
+    kindsKept = { version, arriving };
     return kindsKept;
-}
-
-/** Every spot kind's type id, in registry order. */
-export function spotKindIds() {
-    return syncKinds().all.map(k => k.typeId);
 }
 
 /** Whether a Token on the mat is a fishing spot: its type is a spot kind. */
