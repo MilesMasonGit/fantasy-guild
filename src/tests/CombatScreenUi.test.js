@@ -14,7 +14,7 @@ import { buildFloat } from '../ui/components/board/fx/fightFloats.js';
 import { MOMENT, statusIcon } from '../ui/components/combat/fightWatch.js';
 import { EnemyCardRows } from '../ui/components/combat/EnemyCard.jsx';
 import { enemyCardView } from '../ui/components/combat/fightView.js';
-import { plateUnit } from '../ui/components/board/workPlate.js';
+import { plateUnit } from '../ui/components/board/matMarks.js';
 import { MAT_BAR, CHIP, CHIP_PX, fightBarShift, fightButtonPlace } from '../ui/components/board/healthBar.js';
 import { panelPlace } from '../ui/components/combat/FightPanelPopup.jsx';
 import { t } from '../i18n/index.js';

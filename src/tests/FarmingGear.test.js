@@ -6,8 +6,7 @@ import { StationGearBadge } from '../ui/components/board/TokenBadges.jsx';
 
 /**
  * A Field's gear (brief 230 S4): the crop is picked with the station's gear and recipe list, so the
- * gear says so in a Field's words: "Choose crop", "No crop picked", and its preview says what a
- * sowing costs ("Sown for"), not what each harvest needs. Every other station is unchanged.
+ * gear says so in a Field's words: "Choose crop". Every other station is unchanged.
  */
 
 const h = React.createElement;
@@ -25,18 +24,11 @@ describe('the gear on a Field', () => {
         expect(container.querySelector('button').getAttribute('aria-label')).toBe('Choose crop');
     });
 
-    it('previews the crop as sown for its seed; a station still says Needs', async () => {
-        const field = render(h(StationGearBadge, { isDragging: false, recipe: wheat, isField: true, onClick: () => {} }));
-        fireEvent.pointerEnter(field.container.querySelector('[data-station-gear]'));
-        fireEvent.mouseEnter(field.container.querySelector('[data-station-gear]'));
-        const sown = await screen.findByText(/Sown for/);
-        expect(sown.textContent).toMatch(/Sown for 1/);
-        cleanup();
-
-        const station = render(h(StationGearBadge, { isDragging: false, recipe: wheat, onClick: () => {} }));
-        expect(station.container.querySelector('button').getAttribute('aria-label')).toBe('Choose recipe');
-        fireEvent.pointerEnter(station.container.querySelector('[data-station-gear]'));
-        fireEvent.mouseEnter(station.container.querySelector('[data-station-gear]'));
-        expect((await screen.findByText(/Needs/)).textContent).toMatch(/Needs 1/);
+    it('shows no preview on the mat: the crop chosen is the card’s to say (brief 830 D3)', () => {
+        const { container } = render(h(StationGearBadge, { isDragging: false, recipe: wheat, isField: true, onClick: () => {} }));
+        fireEvent.pointerEnter(container.querySelector('[data-station-gear]'));
+        fireEvent.mouseEnter(container.querySelector('[data-station-gear]'));
+        expect(screen.queryByText(/Sown for/)).toBeNull();
+        expect(container.querySelector('button').getAttribute('aria-label')).toBe('Choose crop');
     });
 });

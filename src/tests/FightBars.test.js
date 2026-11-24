@@ -4,7 +4,7 @@ import * as HeroMotion from '../systems/board/HeroMotion.js';
 import { enemyBarPlace, heroBarPlace, HP_BAR } from '../ui/components/board/healthBar.js';
 import { heroBoxAt } from '../ui/components/board/MatHero.jsx';
 import { tokenBoxPx } from '../ui/components/board/MatToken.jsx';
-import { plateUnit } from '../ui/components/board/workPlate.js';
+import { plateUnit } from '../ui/components/board/matMarks.js';
 import { tokenSizeFor, boardScaleAt, boardArtSteps, TOKEN_SURFACE } from '../ui/components/base/TokenSprite.jsx';
 
 /**

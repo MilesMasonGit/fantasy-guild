@@ -23,7 +23,6 @@ import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 import { DndContext } from '@dnd-kit/core';
 import * as Charges from '../systems/board/Charges.js';
 import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
-import { chargesText } from '../ui/components/board/workPlate.js';
 import { HeroBubbleLayer } from '../ui/components/board/HeroBubbleLayer.jsx';
 import { ALERT, BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { BEATEN_TTL_MS } from '../ui/components/board/heroSpeech.js';
@@ -237,7 +236,7 @@ describe('⭐ on the mat: a change to one hero\'s flag redraws that flag alone',
     });
 });
 
-describe('⭐ a charge spent: the Token and its plate redraw, its art does not, all in one commit', () => {
+describe('⭐ a charge spent: the Token redraws, its art and its work bar do not, all in one commit', () => {
     beforeAll(() => Flags.init());
     afterAll(() => { Flags.teardown(); resetMatTuning(); });
     beforeEach(() => {
@@ -257,7 +256,7 @@ describe('⭐ a charge spent: the Token and its plate redraw, its art does not, 
         cleanup();
     });
 
-    it('on the mat: one charge spent draws the Token and its plate\'s number, never its art, sprite or name, and no ring or floater', async () => {
+    it('on the mat: one charge spent draws the Token, never its art, sprite, name or work bar, and no ring, floater or count', async () => {
         GameState.state.heroes = [{ id: 'h1', name: 'h1', status: 'idle', level: 50, skills: { forestry: { level: 50, xp: 0 } }, hp: { current: 100, max: 100 } }];
         const t = placeAt('fixture_producer', 600, 400);
         placeAt('fixture_producer', 1000, 400);
@@ -273,18 +272,19 @@ describe('⭐ a charge spent: the Token and its plate redraw, its art does not, 
         await act(async () => { Charges.applyDelta(t, -1); });
         await flush();
         renders.stop();
-        // No ring comes up by itself (brief 120) and no -1 floats: the plate counts down.
+        // No ring comes up by itself (brief 120), no -1 floats, and the mat shows no charges (brief 830 D3).
         expect(view.container.querySelector(`[data-bubble="charges"][data-bubble-of="${t.id}"]`)).toBeNull();
-        expect(view.container.querySelector(`[data-work-plate="${t.id}"] [data-plate-cell="charges"]`).textContent).toBe(chargesText(t.usesRemaining));
+        expect(view.container.querySelector('[data-plate-cell]')).toBeNull();
+        expect(view.container.querySelector(`[data-work-strip="${t.id}"]`)).not.toBeNull();
         const all = JSON.stringify(renders.all());
         expect(renders.of('MatToken'), all).toBe(1);
         expect(renders.of('TokenBubbles'), all).toBe(1);
-        expect(renders.of('WorkPlate'), all).toBe(1);
+        expect(renders.of('WorkBar'), all).toBe(0);
         expect(renders.of('TokenHitArt'), all).toBe(0);
         expect(renders.of('TokenSprite'), all).toBe(0);
         expect(renders.of('PixelArt'), all).toBe(0);
         expect(renders.of('TokenNameBadge'), all).toBe(0);
-        // One commit: the plate's number came with the charge, not a commit later.
+        // One commit.
         expect(renders.commits().length, all).toBe(1);
     });
 

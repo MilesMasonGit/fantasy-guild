@@ -23,7 +23,6 @@ import * as Banners from '../systems/notifications/banners.js';
 import { wireNotifications, unwireNotifications } from '../systems/notifications/routing.js';
 import { effectBreakdown, EFFECT_KEY, SOURCE_KIND } from '../systems/board/EffectBreakdown.js';
 import { tokenCardModel, CARD_BLOCK } from '../ui/components/board/tokenCard.js';
-import { timerCellsOf } from '../ui/components/board/idlePlate.js';
 import { leaveLine } from '../ui/components/board/tokenTimers.js';
 import {
     watchEventArrivals, takeArrival, resetEventArrivals, nodeFallPoses, buffDriftPoses, NODE_FALL
@@ -348,9 +347,9 @@ describe('the pulse', () => {
 });
 
 describe('time left', () => {
-    it('the hover plate counts a buff down in the card’s words: Expires in', () => {
-        const [buff] = timerCellsOf([leaveLine({ inMs: 125_000, buff: true })]);
-        expect(buff).toMatchObject({ kind: 'timer', glyph: 'clock', text: '2m 5s' });
+    it('a buff counts down in the card’s words: Expires in', () => {
+        const buff = leaveLine({ inMs: 125_000, buff: true });
+        expect(buff).toMatchObject({ icon: 'clock', text: '2m 5s' });
         expect(buff.tip).toBe('Expires in 2m\u00a05s');
         expect(leaveLine({ inMs: 60_000, buff: false }).tip).toBe('Expires in 1m\u00a00s, worked or not');
     });

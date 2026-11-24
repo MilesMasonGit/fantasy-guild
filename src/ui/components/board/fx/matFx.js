@@ -31,7 +31,7 @@ import { t as i18n } from '../../../../i18n/index.js';
 let host = null;
 /** Mat units per art pixel: the board's art step (`boardScaleAt`), so every move is whole screen pixels. */
 let unit = 1;
-/** Mat units per plate pixel (`workPlate.plateUnit`): the health bar's and the frames' unit. */
+/** Mat units per plate pixel (`matMarks.plateUnit`): the health bar's and the frames' unit. */
 let plateU = 1;
 
 /** The layer's element, the mat's art unit and its plate unit (`MatFxLayer` keeps them current). */

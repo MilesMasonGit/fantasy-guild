@@ -20,7 +20,7 @@ import { keepInMat, guessCalloutSize } from './calloutPlace.js';
 import { clearOfFight } from './healthBar.js';
 import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt } from '../base/TokenSprite.jsx';
 import { SPEECH_TONE } from './speechTone.js';
-import { plateUnit, platePlace } from './workPlate.js';
+import { plateUnit, barPlace } from './matMarks.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { isDrawingPaused } from './frameClock.js';
 
@@ -31,14 +31,14 @@ let nextId = 1;
 
 /**
  * The foot of a callout's tail over a Token (or a spot), in mat units: clear of the Token's art,
- * and over its work plate or its fight when it wears one. `at` is `{ x, y, typeId, anchorId }`.
+ * and over its work bar or its fight when it wears one. `at` is `{ x, y, typeId, anchorId }`.
  */
 export function calloutTopOf({ x, y, typeId, anchorId = null }, { fit, matH, u }) {
     let top = y - (typeId ? artRadiusOf(typeId) : 0) - GAP_PX;
-    // A worked Token near the mat's foot wears its work plate over its head: say it above.
+    // A worked Token near the mat's foot wears its work bar over its head: say it above.
     if (anchorId && BoardState.workerOf(anchorId)) {
-        const plateTop = platePlace({ x, y, typeId, fit, matH }).top;
-        if (plateTop < y) top = Math.min(top, plateTop - GAP_PX);
+        const barTop = barPlace({ x, y, typeId, fit, matH }).top;
+        if (barTop < y) top = Math.min(top, barTop - GAP_PX);
         // An enemy in a fight: above its health bar and the fight button, never on them.
         if (getTokenType(typeId)?.enemy) {
             const art = tokenSizeFor(TOKEN_SURFACE.BOARD, typeId, boardScaleAt(fit));

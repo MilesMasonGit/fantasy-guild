@@ -12,8 +12,8 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
 import { GEAR_ONLY_ALERTS } from '../ui/components/board/centreAlert.js';
 import { STEP_MS } from '../ui/components/board/frameClock.js';
-import { WorkBarFill } from '../ui/components/board/WorkPlateLayer.jsx';
-import { PLATE } from '../ui/components/board/workPlate.js';
+import { WorkBarTrack } from '../ui/components/board/WorkBarLayer.jsx';
+import { BAR } from '../ui/components/board/matMarks.js';
 import { PROBLEM_SEVERITY } from '../ui/components/board/problemMark.js';
 
 /** Every alert value that can reach a Token (one enum). */
@@ -36,12 +36,12 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
-describe('a Token with an alert: no words, one mark; worked, the same mark and its plate says it in words', () => {
+describe('a Token with an alert: no words, one mark in its centre, worked or not (the card has the words)', () => {
     const row = (alert, extra = {}) => React.createElement(TokenBubbles, { instanceId: 'tok_1', token: worked(alert, extra) });
-    /** A worked Token's bubbles and its plate's fill, held grey while it has an alert (as the plate does). */
+    /** A worked Token's bubbles and its work bar, held grey while it has an alert. */
     const withFill = (alert) => React.createElement(React.Fragment, null,
         row(alert),
-        React.createElement(WorkBarFill, { instanceId: 'tok_1', blocked: !!alert }));
+        React.createElement(WorkBarTrack, { instanceId: 'tok_1', blocked: !!alert }));
     const bar = (container) => container.querySelector('[data-work-bar]');
 
     it.each(TOKEN_ALERTS)('nobody working it: no label, one %s mark', (alert) => {
@@ -52,10 +52,10 @@ describe('a Token with an alert: no words, one mark; worked, the same mark and i
         expect(marks[0].getAttribute('data-problem-severity')).toBe(PROBLEM_SEVERITY[alert]);
     });
 
-    it.each(TOKEN_ALERTS)('worked: no label, one %s mark above it; the plate has the words', (alert) => {
+    it.each(TOKEN_ALERTS)('worked: no label, one %s mark in the centre', (alert) => {
         const { container } = render(tree(row(alert)));
         expect(container.querySelector('[data-tile-alert-hint]')).toBeNull();
-        const marks = container.querySelectorAll('[data-bubble-row="above"] [data-problem-mark]');
+        const marks = container.querySelectorAll('[data-bubble-row="centre"] [data-problem-mark]');
         expect(marks).toHaveLength(1);
         expect(marks[0].getAttribute('data-problem-severity')).toBe(PROBLEM_SEVERITY[alert]);
     });
@@ -82,6 +82,6 @@ describe('a Token with an alert: no words, one mark; worked, the same mark and i
         expect(container.querySelector('[data-problem-mark]')).toBeNull();
         act(() => { EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: 'tok_1', percent: 50, elapsedMs: 5000, cycleTimeMs: 10000 }); });
         step();
-        expect(Number(bar(container).getAttribute('data-work-bar-fill'))).toBe(PLATE.FILL_STEPS / 2);
+        expect(Number(bar(container).getAttribute('data-work-bar-fill'))).toBe(BAR.W / 2);
     });
 });

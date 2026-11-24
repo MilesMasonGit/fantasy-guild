@@ -1,7 +1,6 @@
 /**
- * Rings: a number inside a ring that fills or empties, as the mat's Token plates draw their charges,
- * cycle and XP. The mat's Tokens say theirs on the plate (`workPlate.js`,
- * `idlePlate.js`).
+ * Rings: a number inside a ring that fills or empties, for charges, a cycle and XP. The mat's
+ * Tokens no longer draw them: a worked Token shows its work bar (`WorkBarLayer`).
  */
 import { countdownText } from '../../../utils/Formatters.js';
 
@@ -52,5 +51,5 @@ export function ringCount(n) {
     return `${(v / 1e6).toFixed(a < 1e7 ? 1 : 0).replace(/\.0$/, '')}M`;
 }
 
-/** How often a timer on the idle plate re-reads its game-time clock (ms). */
+/** How often a turn countdown re-reads its game-time clock (ms). */
 export const TURN_COUNTDOWN_REFRESH_MS = 250;

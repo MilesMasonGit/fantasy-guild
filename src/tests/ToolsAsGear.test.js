@@ -34,7 +34,7 @@ import { toolFindings } from '../systems/core/toolRule.js';
 import { problemText, PROBLEM_SEVERITY, SEVERITY } from '../ui/components/board/problemMark.js';
 import { blockedText } from '../ui/components/board/heroBubbles.js';
 import { SKIP_HINT, skipHint } from '../ui/components/board/boardConstants.js';
-import { skipLine, tokenSkipLines } from '../ui/components/board/flagText.js';
+import { skipLine } from '../ui/components/board/flagText.js';
 import { calloutText, dueAgain, TOOL_CALLOUT_GAP_MS } from '../ui/components/board/callouts.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -319,13 +319,12 @@ describe('a hero without the tool: refused, or passing the Token over, and the T
         return { hero, vein };
     }
 
-    it('a hero whose pickaxe is put down passes the vein over with no tool, and both hovers name it', () => {
+    it('a hero whose pickaxe is put down passes the vein over with no tool, and the skip line names it', () => {
         const { hero, vein } = sentThenDisarmed();
         expect(BoardState.claimOfHero(hero.id)).toBeNull();
         expect(Flags.skipsOf(vein.id)).toEqual([{ heroId: hero.id, reason: ALERT.NO_TOOL }]);
         expect(heard).toContainEqual({ instanceId: vein.id, heroId: hero.id, kind: 'pickaxe', minTier: 1 });
         expect(skipLine({ instanceId: vein.id, reason: ALERT.NO_TOOL, typeId: 'fx_vein' })).toBe('Fixture Vein — needs a Pickaxe in hand');
-        expect(tokenSkipLines(vein.id)).toEqual([`${hero.name} skipped this: needs a Pickaxe in hand`]);
         // The ordered hero's missing tool keeps the vein's "!" up, naming the tool.
         tick(5);
         expect(vein.alert).toBe(ALERT.NO_TOOL);

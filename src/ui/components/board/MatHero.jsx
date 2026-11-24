@@ -28,7 +28,7 @@ import { HERO_HP_EVENTS, movesHeroHp } from '../../hooks/heroHpEvents.js';
 import { HealthBar } from './HealthBar.jsx';
 import { heroBarPlace, fightBarShift } from './healthBar.js';
 import { TokenNameBadge } from './TokenBadges.jsx';
-import { plateNameDrop, plateUnit } from './workPlate.js';
+import { barNameDrop, plateUnit } from './matMarks.js';
 import { PROBLEM_SPRITE, PROBLEM_MARK_ART_PX, SEVERITY } from './problemMark.js';
 import { useAlertBob } from './alertBob.js';
 import { Tooltip } from '../base/Tooltip.jsx';
@@ -400,7 +400,7 @@ const MatHeroBody = memo(function MatHeroBody({
                 fallback={needsJob && !moving ? <NeedsJobMark artPx={artPx} artScale={artScale} /> : null}
             />
             {/* Under the feet: the art reaches past the hero's box by half their difference. */}
-            <TokenNameBadge name={name} shown={rested} below offset={(artPx - HERO_BOX_PX) / 2 + (plated ? plateNameDrop(fit) : 0)} />
+            <TokenNameBadge name={name} shown={rested} below offset={(artPx - HERO_BOX_PX) / 2 + (plated ? barNameDrop(fit) : 0)} />
         </button>
     );
 });

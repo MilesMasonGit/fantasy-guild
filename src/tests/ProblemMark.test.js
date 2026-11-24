@@ -61,14 +61,14 @@ function put(typeId, point = AT) {
 const text = (kind, id, extra = {}) => problemText({ kind, ...extra }, id);
 
 describe('which problems are yellow and which red', () => {
-    it('⭐ waiting (yellow): items, a Token beside it, charges, a choice, a spawner short of items', () => {
-        for (const kind of [ALERT.INPUTS, ALERT.NO_RECIPE, ALERT.CHARGES, ALERT.CHOOSE_RECIPE, ALERT.CHOOSE_BUILD, ALERT.SPAWN_NEEDS_ITEM]) {
+    it('⭐ waiting (yellow): items, a Token beside it, charges, a choice, a spawner short of items, a full Token cap', () => {
+        for (const kind of [ALERT.INPUTS, ALERT.NO_RECIPE, ALERT.CHARGES, ALERT.CHOOSE_RECIPE, ALERT.CHOOSE_BUILD, ALERT.SPAWN_NEEDS_ITEM, ALERT.SPAWN_MAT_FULL]) {
             expect(PROBLEM_SEVERITY[kind], kind).toBe(SEVERITY.WAITING);
         }
     });
 
-    it('⭐ can’t (red): no room, the cap, the hero’s level or skill', () => {
-        for (const kind of [ALERT.NO_ROOM, ALERT.ACCESS, ALERT.UNSKILLED, ALERT.SPAWN_NO_ROOM, ALERT.SPAWN_MAT_FULL]) {
+    it('⭐ can’t (red): no room, the hero’s level or skill', () => {
+        for (const kind of [ALERT.NO_ROOM, ALERT.ACCESS, ALERT.UNSKILLED, ALERT.SPAWN_NO_ROOM]) {
             expect(PROBLEM_SEVERITY[kind], kind).toBe(SEVERITY.CANT);
         }
     });
@@ -103,14 +103,15 @@ describe('problemOf: one mark, the worst first', () => {
     });
 
     it('a can’t beats a waiting; between equals, the work alert, then the spawner’s, then the choice', () => {
-        expect(problemOf({ alert: ALERT.INPUTS, spawner: { alert: ALERT.SPAWN_MAT_FULL } }).kind).toBe(ALERT.SPAWN_MAT_FULL);
+        expect(problemOf({ alert: ALERT.INPUTS, spawner: { alert: ALERT.SPAWN_NO_ROOM } }).kind).toBe(ALERT.SPAWN_NO_ROOM);
+        expect(problemOf({ alert: ALERT.INPUTS, spawner: { alert: ALERT.SPAWN_MAT_FULL } }).kind).toBe(ALERT.INPUTS);
         expect(problemOf({ alert: ALERT.NO_ROOM, choose: 'recipe' }).kind).toBe(ALERT.NO_ROOM);
         expect(problemOf({ alert: ALERT.INPUTS, spawner: { alert: ALERT.SPAWN_NEEDS_ITEM }, choose: 'recipe' }).kind).toBe(ALERT.INPUTS);
         expect(problemOf({ spawner: { alert: ALERT.SPAWN_NEEDS_ITEM }, choose: 'recipe' }).kind).toBe(ALERT.SPAWN_NEEDS_ITEM);
     });
 });
 
-describe('⭐ the hover says exactly what, from the engine', () => {
+describe('⭐ the card says exactly what, from the engine', () => {
     beforeAll(() => Flags.init());
     afterAll(() => { Flags.teardown(); resetMatTuning(); });
     beforeEach(() => {
@@ -188,22 +189,17 @@ describe('⭐ the hover says exactly what, from the engine', () => {
 describe('the mark itself', () => {
     afterEach(cleanup);
 
-    it('reads its hover only when the pointer arrives, not when drawn', () => {
-        const tip = vi.fn(() => 'Needs Fixture Oak Wood');
-        const { container } = render(React.createElement(ProblemMark, { problem: { kind: ALERT.INPUTS, severity: SEVERITY.WAITING }, tip, artUnit: 2 }));
-        expect(tip).not.toHaveBeenCalled();
+    it('⭐ has no tooltip: hovering it shows nothing (the card says what is wrong: brief 830 D3)', () => {
+        const { container } = render(React.createElement(ProblemMark, { problem: { kind: ALERT.INPUTS, severity: SEVERITY.WAITING }, artUnit: 2 }));
         const img = container.querySelector('[data-problem-mark]');
         fireEvent.pointerEnter(img);
-        expect(tip).toHaveBeenCalledTimes(1);
-        const shown = document.querySelector('[data-tooltip]');
-        expect(shown.textContent).toBe('Needs Fixture Oak Wood');
-        expect(shown.querySelector('span').style.color).toBe('var(--color-ui-gold)');
-        fireEvent.pointerLeave(img);
+        fireEvent.mouseEnter(img);
         expect(document.querySelector('[data-tooltip]')).toBeNull();
+        expect(img.getAttribute('title')).toBeNull();
     });
 
     it('one element, crisp, 16 art pixels at the Token’s art size, with a hard shadow', () => {
-        const { container } = render(React.createElement(ProblemMark, { problem: { kind: ALERT.NO_ROOM, severity: SEVERITY.CANT }, tip: 'x', artUnit: 3 }));
+        const { container } = render(React.createElement(ProblemMark, { problem: { kind: ALERT.NO_ROOM, severity: SEVERITY.CANT }, artUnit: 3 }));
         expect(container.querySelectorAll('*')).toHaveLength(1);
         const img = container.querySelector('img');
         expect(img.getAttribute('src')).toBe(PROBLEM_SPRITE[SEVERITY.CANT]);

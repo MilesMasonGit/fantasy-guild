@@ -1,7 +1,5 @@
-import { useActiveDrag } from '../../dnd/DndKit.jsx';
-import { FloatingTip } from '../base/Tooltip.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
-import { enemyCardView, levelText, styleName, damageText, damageTypeName } from './fightView.js';
+import { levelText, styleName, damageText, damageTypeName } from './fightView.js';
 import { lengthText } from '../../../utils/Formatters.js';
 import { CombatGlyph } from './CombatGlyph.jsx';
 import { GLYPH_COLOUR, damageTypeGlyph } from './combatGlyphs.js';
@@ -95,27 +93,5 @@ export const EnemyCardRows = ({ card }) => {
                 </span>
             )}
         </div>
-    );
-};
-
-/**
- * The enemy card by the pointer while it rests on an enemy on the mat: the game's floating tooltip
- * (pointer-events none, so dragging and clicking the enemy work as before), hidden during a drag.
- */
-export const EnemyCardTip = ({ typeId, instanceId = null }) => {
-    const { isDragging } = useActiveDrag();
-    const card = enemyCardView(typeId);
-    if (!card || isDragging) return null;
-    const anchor = typeof document !== 'undefined' && instanceId
-        ? document.querySelector(`[data-token-art="true"][data-token-id="${instanceId}"]`)
-        : null;
-    return (
-        <FloatingTip
-            anchor={anchor}
-            title={card.name}
-            maxWidth={300}
-            tipProps={{ 'data-enemy-card-tip': typeId }}
-            content={<EnemyCardRows card={card} />}
-        />
     );
 };

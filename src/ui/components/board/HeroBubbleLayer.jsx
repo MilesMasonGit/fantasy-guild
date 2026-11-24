@@ -24,7 +24,7 @@ import { publishHeroColumns } from './speechColumns.js';
 import { SpeechFrame, tailInset, speechTailDrop } from './SpeechFrame.jsx';
 import { clearOfFight } from './healthBar.js';
 import { momentTone } from './speechTone.js';
-import { plateUnit } from './workPlate.js';
+import { plateUnit } from './matMarks.js';
 import { subscribeHints, hintsShowing } from './dragHints.js';
 import { onPoll } from './frameClock.js';
 

@@ -7,16 +7,16 @@ import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import { ProblemMark } from '../ui/components/board/ProblemMark.jsx';
 import { setDrawingPaused } from '../ui/components/board/frameClock.js';
 import {
-    ALERT_BOB_STOPS, ALERT_BOB_STOP_MS, ALERT_BOB_PERIOD_MS, alertBobAt
+    ALERT_BOB_STOPS, ALERT_BOB_STOP_MS, ALERT_BOB_PERIOD_MS, alertBobAt, startAlertBob
 } from '../ui/components/board/alertBob.js';
 
 /**
- * ⭐ **The alert "!" stands above the Token's art and bobs** (owner, 2026-11-20). It was centred
- * in an unworked Token; now it sits on the art's top edge, on a worked Token too (its plate keeps
- * the words), and rises two whole art pixels and sinks again on a slow loop. The bob is written on
- * the shared sprite clock, only when a stop changes, so it costs nothing between stops and stops
- * with every other clock while drawing is paused (minimised). A mark can also be placed anywhere
- * (where an event stood).
+ * ⭐ **A Token's "!" stands still in its centre** (brief 830 D3, concept_playmat_declutter §3), on
+ * a worked Token too, so it is plain which Token it belongs to. A hero's "needs a job" mark over
+ * their head still bobs: two whole art pixels up and down on a slow loop, written on the shared
+ * sprite clock only when a stop changes, so it costs nothing between stops and stops with every
+ * other clock while drawing is paused (minimised). A mark can also be placed anywhere (where an
+ * event stood).
  */
 
 const h = React.createElement;
@@ -84,61 +84,84 @@ describe('the bob, as a table', () => {
     });
 });
 
-describe('⭐ where the "!" stands', () => {
-    it('on the art\'s top edge, centred: the art is centred in the box', () => {
+describe('⭐ where a Token’s "!" stands', () => {
+    it('in the centre of the box (the art is centred in it), and nothing above the art', () => {
         const { container } = render(h(TokenBubbles, { instanceId: 'tb1', token: token(ALERT.NO_ROOM), boxPx: 160, artPx: 128, artUnit: 2 }));
-        const row = container.querySelector('[data-bubble-row="above"]');
+        const row = container.querySelector('[data-bubble-row="centre"]');
         expect(row).not.toBeNull();
-        expect(row.style.top).toBe('16px');
-        expect(row.style.transform).toBe('translateY(-100%)');
+        expect(row.style.top).toBe('80px');
+        expect(row.style.transform).toBe('translateY(-50%)');
         expect(row.style.width).toBe('160px');
         expect(row.querySelector('[data-problem-mark]')).not.toBeNull();
-        expect(container.querySelector('[data-bubble-row="middle"]')).toBeNull();
+        expect(container.querySelector('[data-bubble-row="above"]')).toBeNull();
     });
 
     it('⭐ a worked Token with a problem wears it too', () => {
         const { container } = render(h(TokenBubbles, { instanceId: 'tb1', token: token(ALERT.INPUTS, 'h1'), boxPx: 128, artPx: 128, artUnit: 2 }));
-        expect(container.querySelector('[data-bubble-row="above"] [data-problem-mark]')).not.toBeNull();
-    });
-
-    it('the demolition mark keeps the middle', () => {
-        const { container } = render(h(TokenBubbles, { instanceId: 'tb1', token: token(null), marked: true }));
-        expect(container.querySelector('[data-bubble-row="middle"]')).not.toBeNull();
-        expect(container.querySelector('[data-bubble-row="above"]')).toBeNull();
+        expect(container.querySelector('[data-bubble-row="centre"] [data-problem-mark]')).not.toBeNull();
     });
 
     it('a mark can be placed anywhere: where an event stood', () => {
         const problem = { kind: ALERT.NO_ROOM, severity: 'cant' };
-        const { container } = render(h(ProblemMark, { problem, tip: 'x', style: { position: 'absolute', left: 300, top: 200 } }));
+        const { container } = render(h(ProblemMark, { problem, style: { position: 'absolute', left: 300, top: 200 } }));
         const mark = container.querySelector('[data-problem-mark]');
         expect([mark.style.position, mark.style.left, mark.style.top]).toEqual(['absolute', '300px', '200px']);
     });
 });
 
-describe('⭐ the bob', () => {
+describe('⭐ a Token’s "!" is still', () => {
     const problem = { kind: ALERT.NO_ROOM, severity: 'cant' };
 
-    it('steps through the stops in whole art pixels, at any art unit', () => {
+    it('it never moves and asks for no frames, at any art unit', () => {
         for (const unit of [2, 3]) {
             clock = 0;
-            const { container, unmount } = render(h(ProblemMark, { problem, tip: 'x', artUnit: unit }));
+            framesAsked = 0;
+            const { container, unmount } = render(h(ProblemMark, { problem, artUnit: unit }));
             const el = container.querySelector('[data-problem-mark]');
-            expect(watch(el, unit, ALERT_BOB_PERIOD_MS)).toEqual([0, 1, 2, 1, 0]);
+            expect(watch(el, unit, 2 * ALERT_BOB_PERIOD_MS)).toEqual([0]);
+            expect(framesAsked).toBe(0);
             unmount();
         }
     });
 
+    it('nor does the gear that stands in a choice’s "!" on hover', () => {
+        const gear = { show: true, pulsing: true, isFoundation: false, recipe: null, onClick: () => {} };
+        const { container } = render(h(TokenBubbles, { instanceId: 'tb1', token: token(null), gear, pointerOn: true }));
+        const gearEl = container.querySelector('[data-bubble-row="centre"] [data-station-gear]');
+        expect(gearEl).not.toBeNull();
+        for (let t = 0; t < ALERT_BOB_PERIOD_MS; t += 6) frame();
+        expect(gearEl.parentElement.style.transform).toBe('');
+        expect(container.querySelector('[data-problem-mark]')).toBeNull();
+    });
+});
+
+describe('⭐ a hero’s mark still bobs (startAlertBob)', () => {
+    const bobbing = (unit) => {
+        const el = document.createElement('div');
+        document.body.appendChild(el);
+        const stop = startAlertBob(el, unit);
+        return { el, stop: () => { stop(); el.remove(); } };
+    };
+
+    it('steps through the stops in whole art pixels, at any art unit', () => {
+        for (const unit of [2, 3]) {
+            clock = 0;
+            const { el, stop } = bobbing(unit);
+            expect(watch(el, unit, ALERT_BOB_PERIOD_MS)).toEqual([0, 1, 2, 1, 0]);
+            stop();
+        }
+    });
+
     it('⭐ costs nothing between stops: a frame only when a stop falls due', () => {
-        render(h(ProblemMark, { problem, tip: 'x' }));
+        const { stop } = bobbing(2);
         framesAsked = 0;
         for (let t = 0; t < 4 * ALERT_BOB_PERIOD_MS; t += 6) frame();
-        // One frame a stop, no more.
         expect(framesAsked).toBeLessThanOrEqual(4 * ALERT_BOB_STOPS.length + 1);
+        stop();
     });
 
     it('⭐ stops while drawing is paused (minimised), and goes on when it is back', () => {
-        const { container } = render(h(ProblemMark, { problem, tip: 'x' }));
-        const el = container.querySelector('[data-problem-mark]');
+        const { el, stop } = bobbing(2);
         for (let t = 0; t < ALERT_BOB_STOP_MS * 2 + 10; t += 6) frame();
         const held = el.style.transform;
         expect(held).not.toBe('');
@@ -149,22 +172,13 @@ describe('⭐ the bob', () => {
         expect(framesAsked).toBe(0);
         setDrawingPaused(false);
         expect(watch(el, 2, ALERT_BOB_PERIOD_MS).length).toBeGreaterThan(1);
+        stop();
     });
 
     it('with reduced motion the mark stands still', () => {
         vi.stubGlobal('matchMedia', (q) => ({ matches: q.includes('reduce'), addEventListener() {}, removeEventListener() {} }));
-        const { container } = render(h(ProblemMark, { problem, tip: 'x' }));
-        const el = container.querySelector('[data-problem-mark]');
+        const { el, stop } = bobbing(2);
         expect(watch(el, 2, ALERT_BOB_PERIOD_MS)).toEqual([0]);
-    });
-
-    it('the gear that stands in a choice\'s "!" does not bob', () => {
-        const gear = { show: true, pulsing: true, isFoundation: false, recipe: null, onClick: () => {} };
-        const { container } = render(h(TokenBubbles, { instanceId: 'tb1', token: token(null), gear, pointerOn: true }));
-        const inMark = container.querySelector('[data-bubble-row="above"] [data-gear-in-mark]');
-        expect(inMark).not.toBeNull();
-        for (let t = 0; t < ALERT_BOB_PERIOD_MS; t += 6) frame();
-        expect(inMark.style.transform).toBe('');
-        expect(container.querySelector('[data-problem-mark]')).toBeNull();
+        stop();
     });
 });

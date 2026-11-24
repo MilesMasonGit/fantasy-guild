@@ -282,7 +282,7 @@ describe('on the mat', () => {
         const o = overlay(container, f.id);
         expect(o.querySelector('[data-problem-mark]')).not.toBeNull();
         hoverAt(container, f);
-        const gear = o.querySelector('[data-gear-in-mark]');
+        const gear = o.querySelector('[data-gear-centre]');
         expect(gear).not.toBeNull();
         expect(o.querySelector('[data-problem-mark]')).toBeNull();
         // The pointer crosses the gear from edge to edge, landing on it: the same gear the whole way.
@@ -292,7 +292,7 @@ describe('on the mat', () => {
             for (const dy of [-30, 0, 30]) {
                 fireEvent.pointerMove(button, { clientX: f.x + dx, clientY: f.y + dy });
                 act(() => { vi.advanceTimersByTime(50); });
-                expect(o.querySelector('[data-gear-in-mark]')).toBe(gear);
+                expect(o.querySelector('[data-gear-centre]')).toBe(gear);
                 expect(o.querySelector('[data-problem-mark]')).toBeNull();
             }
         }
@@ -301,7 +301,7 @@ describe('on the mat', () => {
         // Off the Token, the mark comes back.
         fireEvent.pointerMove(root, { clientX: 40, clientY: 40 });
         restHover();
-        expect(o.querySelector('[data-gear-in-mark]')).toBeNull();
+        expect(o.querySelector('[data-gear-centre]')).toBeNull();
         expect(o.querySelector('[data-problem-mark]')).not.toBeNull();
     });
 
@@ -319,17 +319,17 @@ describe('on the mat', () => {
             expect(o.querySelector('[data-problem-mark]')).not.toBeNull();
             // Arrived, no time passed: the gear is in the mark's spot; the name still waits.
             fireEvent.pointerMove(root, { clientX: tok.x, clientY: tok.y });
-            expect(o.querySelector('[data-gear-in-mark]')).not.toBeNull();
+            expect(o.querySelector('[data-gear-centre]')).not.toBeNull();
             expect(o.querySelector('[data-problem-mark]')).toBeNull();
             expect(o.querySelector('[data-token-name]')).toBeNull();
-            const gear = o.querySelector('[data-gear-in-mark]');
+            const gear = o.querySelector('[data-gear-centre]');
             restHover();
             // Rested: the same gear, and now the name.
-            expect(o.querySelector('[data-gear-in-mark]')).toBe(gear);
+            expect(o.querySelector('[data-gear-centre]')).toBe(gear);
             expect(o.querySelector('[data-token-name]')).not.toBeNull();
             // Off it, the mark is back at once.
             fireEvent.pointerMove(root, { clientX: 40, clientY: 40 });
-            expect(o.querySelector('[data-gear-in-mark]')).toBeNull();
+            expect(o.querySelector('[data-gear-centre]')).toBeNull();
             expect(o.querySelector('[data-problem-mark]')).not.toBeNull();
             restHover();
         }
@@ -391,7 +391,7 @@ describe('on the mat', () => {
         expect(o.querySelector('[data-spawner-count]')).toBeNull();
     });
 
-    it('a spawner that needs an item draws one yellow problem mark above its art, and nothing else', () => {
+    it('a spawner that needs an item draws one yellow problem mark in its centre, and nothing else', () => {
         vi.useFakeTimers();
         const forest = put('fixture_q2_forest');
         SpawnerSystem.syncAlerts();
@@ -399,13 +399,13 @@ describe('on the mat', () => {
         expect(SpawnerSystem.spawnerAlertOf(forest.id)?.alert).toBe(ALERT.SPAWN_NEEDS_ITEM);
         expect(container.querySelector('[data-spawner-alert], [data-worked-alert], [data-alert-kind], [data-token-notice]')).toBeNull();
         const o = container.querySelector(`[data-token-overlay="${forest.id}"]`);
-        const mark = o.querySelector('[data-bubble-row="above"] [data-problem-mark]');
+        const mark = o.querySelector('[data-bubble-row="centre"] [data-problem-mark]');
         expect(mark.getAttribute('data-problem-mark')).toBe(ALERT.SPAWN_NEEDS_ITEM);
         expect(mark.getAttribute('src')).toContain('u_alert_yellow');
         expect(container.querySelectorAll('img[src*="u_alert"]').length).toBe(1);
-        // Stuck, it gets the hover plate, with the problem and nothing else.
+        // Hovered: the same one mark, and no plate (brief 830 D3).
         hoverAt(container, forest);
-        const cells = [...container.querySelectorAll(`[data-idle-plate="${forest.id}"] [data-plate-cell]`)];
-        expect(cells.map(c => c.getAttribute('data-plate-cell'))).toEqual(['problem']);
+        expect(container.querySelector('[data-idle-plate], [data-plate-cell]')).toBeNull();
+        expect(o.querySelector('[data-bubble-row="centre"] [data-problem-mark]')).toBe(mark);
     });
 });

@@ -10,7 +10,7 @@ const stepped = (s) => `polygon(${s}px 0, calc(100% - ${s}px) 0, calc(100% - ${s
  * pick, 2026-11-05): the fill in the hero bar's light red (`HP_TONE`) on a stepped black edge, `19/24` written on
  * it. The fill steps in whole art pixels and never animates, so a bar redraws only when its number
  * moves. `style` places the bar (`left`/`top`/`width`) inside whatever it hangs from; `u` is mat
- * units a plate pixel (`workPlate.plateUnit`). `outward` is the side the number may grow to when
+ * units a plate pixel (`matMarks.plateUnit`). `outward` is the side the number may grow to when
  * it is wider than the bar (-1 left, 1 right, 0 both): away from the other fighter. `dragProps`
  * (a Token's drag handle) makes pressing it grab the Token like its art. `who` is `enemy` or
  * `hero`, `of` the Token's or hero's id.

@@ -23,7 +23,7 @@ import { idleMomentOf, momentText } from '../ui/components/board/heroSpeech.js';
 import { calloutText, INPUT_CALLOUT_GAP_MS } from '../ui/components/board/callouts.js';
 import { HeroBubbleLayer } from '../ui/components/board/HeroBubbleLayer.jsx';
 import { CalloutLayer } from '../ui/components/board/CalloutLayer.jsx';
-import { platePlace } from '../ui/components/board/workPlate.js';
+import { barPlace } from '../ui/components/board/matMarks.js';
 import { matH } from '../config/matGeometry.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -238,14 +238,14 @@ describe('the mat says it', () => {
         expect(calloutText.needsInput('Coal')).toBe('Needs Coal');
     });
 
-    it('near the foot of the mat, where the work plate rides over the station, a callout over it goes above the plate', () => {
+    it('near the foot of the mat, where the work bar rides over the station, a callout over it goes above the bar', () => {
         const y = matH() - 80;
         const furnace = put('sw_furnace', 800, y);
         InventoryManager.addItem('item_coal', 10);
         Orders.orderAt('smith', { x: 800, y });
         run(3000);
         expect(BoardState.workerOf(furnace.id)).toBe('smith');
-        const plateTop = platePlace({ x: 800, y, typeId: 'sw_furnace', fit: 1, matH: matH() }).top;
+        const plateTop = barPlace({ x: 800, y, typeId: 'sw_furnace', fit: 1, matH: matH() }).top;
         expect(plateTop).toBeLessThan(y);
         const { container } = render(h(CalloutLayer));
         act(() => {
