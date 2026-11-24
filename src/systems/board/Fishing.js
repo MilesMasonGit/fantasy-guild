@@ -95,11 +95,16 @@ function carriedLures(hero) {
     return out;
 }
 
+/** The Fishing level a catch of `itemId` at water `def` asks: its fish's own, else the water's. */
+export function catchLevelOf(def, itemId) {
+    return fishLevel(getItem(itemId), Math.max(1, Number(def?.config?.skillRequired) || 1));
+}
+
 /** A catch's level, time and Bait, its water's standing in for what its fish leaves out. */
 function catchTerms(c, def) {
     const item = getItem(c.itemId);
     return {
-        level: fishLevel(item, Math.max(1, Number(def?.config?.skillRequired) || 1)),
+        level: catchLevelOf(def, c.itemId),
         cycleMs: fishCycleMs(item, Number(def?.config?.cycleTimeMs) || null),
         bait: fishBait(item)
     };

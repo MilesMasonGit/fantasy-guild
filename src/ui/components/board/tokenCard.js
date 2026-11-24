@@ -34,6 +34,7 @@ import { landmarkLines } from '../drawer/landmarkLines.js';
 import * as SupportLinks from '../../../systems/board/supportLinks.js';
 import { reachRadius } from '../../../systems/board/nearby.js';
 import { effectTagOf, effectTagText } from './effectBadgeText.js';
+import { spotFishRows, luresIn } from './spotFish.js';
 import {
     liveTimerSources, demolitionLine, leaveLine, spawnLine, growthLine, fieldTimerLine, respawnLine, produceLine
 } from './tokenTimers.js';
@@ -138,6 +139,8 @@ export function liveCardSources() {
         heroName: (id) => (GameState.state?.heroes || []).find(h => h?.id === id)?.name || null,
         fishingOf: Fishing.fishingOf,
         poolsHere: Fishing.poolsHere,
+        catchLevel: Fishing.catchLevelOf,
+        bestLevel: (skillId) => Math.max(0, ...(GameState.state?.heroes || []).map(h => Number(h?.skills?.[skillId]?.level) || 0)),
         catchWeight: (instanceId, itemId, weight) => resolveAxis(instanceId, EFFECT_TYPES.CATCH_WEIGHT, weight, itemId),
         rareChance: RareTables.rareChanceAt,
         effects: effectBreakdown,
@@ -351,6 +354,25 @@ function catchBlockOf(def, instance, src) {
     return { heroName: heroId ? (src.heroName?.(heroId) || 'This hero') : null, setup: setup || null, unable: !!heroId && !plan, groups };
 }
 
+/**
+ * A water's fish list: every fish it can give where it stands, each with the tool kinds that catch
+ * it, its Fishing level (out of reach while no hero has it) and the lures that pick it.
+ */
+function fishBlockOf(def, instance, src) {
+    const pools = src.poolsHere ? src.poolsHere(def, instance) : catchPoolsOf(def);
+    const skillId = def.config?.skill || 'fishing';
+    const best = src.bestLevel ? src.bestLevel(skillId) : 0;
+    const rows = spotFishRows(pools, {
+        levelOf: (itemId) => (src.catchLevel ? src.catchLevel(def, itemId) : 1),
+        best,
+        lures: luresIn(src.allItems?.() || {})
+    }).map(row => ({
+        ...row,
+        toolNames: row.tools.map(toolKindLabel),
+        lureNames: row.lures.map(id => src.itemName(id))
+    }));
+    return rows.length ? { skillId, best, rows } : null;
+}
 
 /** "1 Oak Seedling", "1 Oak Seedling and 2 Resin". */
 function itemsSpoken(lines, src) {
@@ -442,7 +464,7 @@ function spawnCardLine(def, status, src) {
  * and holds only the blocks that apply; `effects` is the badges' breakdown, on the mat only.
  *
  * A Token's card: name; work (skill, level, XP); cycle (time, charges); the current recipe
- * (needs, tools, makes, rare finds or a water's catches, and a station's Change recipe); lifecycle
+ * (needs, tools, makes, rare finds or a water's fish and catches, and a station's Change recipe); lifecycle
  * lines; what it boosts.
  * An enemy's card: name; HP; combat (style, level, XP a kill); its fight (hit, moves, resistances,
  * how often it attacks, its kinds once fought); drops and rare finds.
@@ -537,8 +559,9 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
             }
             : null;
         const catches = water ? catchBlockOf(def, instance, src) : null;
-        if (needs.length || tools.length || makes.length || bonus.length || rare || change || catches) {
-            blocks.push({ id: CARD_BLOCK.RECIPE, recipeName: recipe?.name || null, recipeId: recipe?.id || null, needs, tools, makes, bonus, rare, change, catches });
+        const fish = water ? fishBlockOf(def, instance, src) : null;
+        if (needs.length || tools.length || makes.length || bonus.length || rare || change || catches || fish) {
+            blocks.push({ id: CARD_BLOCK.RECIPE, recipeName: recipe?.name || null, recipeId: recipe?.id || null, needs, tools, makes, bonus, rare, change, catches, fish });
         }
     }
 

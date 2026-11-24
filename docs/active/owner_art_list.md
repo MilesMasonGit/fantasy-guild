@@ -193,6 +193,9 @@ Tokens. Stand-ins from existing sprites until drawn.
 | Bait, worms, a work potion, two drinks (items) | **NEW** | Item icons. The S6b QA scene stands in `i_potion_donut_green` (Birdwatcher), `i_potion_donut_orange` (Coffee) and `i_nest_bird` (Bird Nest); Beer has `i_beer` |
 | Fishing Net and Trap (tool icons) | **NEW** / ADAPT | Held in one hand like the rod (brief 230 S5); a new game starts with a Trap in the Bank. Stand-ins: the Trap uses `i_fish_trap`; no net picture yet |
 | Fish for the first catch pools | ADAPT / **NEW** | Trout, Salmon, Shark, Lobster, Tropical Fish icons exist (`items/fish/`); a Dolphin or Crab, if the pools want them, is new |
+| Fishing Spot Token (sea; fresh water for rivers and lakes) | **NEW** | Brief 850: spots drift in on water cells and leave again. One 64 px Token sprite per water kind the spot block names; placeholders are whatever sprite the content agent's pack gives each spot kind (today's water Token art, `t_coast`, `t_fish_spot`, `t_lake_small`). Resting on a spot shows its fish's own item sprites in the speech bubble, so nothing new to draw for that |
+| Rare spot kinds: Oyster Bed, Coral Reef, Shipwreck, Shark-Infested Waters (and the Fish Shoal as a spot) | **NEW** | One Token sprite each; placeholders from the pack until drawn |
+| The inland water's look (rivers and lakes) | **NEW** / ADAPT | River and Lake are one water kept as two looks (content_fishing point 8); today they draw with the terrain's own water ground (the placeholder). Point the fresh-water ground at a new sheet once drawn |
 
 
 ## 5. Combat screen (brief 220 C6)
