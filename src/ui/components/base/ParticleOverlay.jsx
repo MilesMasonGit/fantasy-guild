@@ -15,7 +15,8 @@ import {
     FLIGHT_SPARKLE_LIFE_MS, FLIGHT_SPARKLE_SINK_PX, SHOWER_REACH, SPARKLE_ART_PX, SPARKLE_COLOUR_SOURCE,
     forEachFlightSparkle, forEachShowerSparkle, showerLengthMs, stackSparkleColours
 } from '../../utils/lootSparkles.js';
-import { SPRITE_PX } from '../notifications/stubGeometry.js';
+import { SPRITE_INSET_PX, SPRITE_PX, STUB_PX } from '../notifications/stubGeometry.js';
+import { POP_MS, POP_TRAVEL_PX, popAt, popPictures, popText } from '../../utils/lootPop.js';
 import { FRAME_BAND_PX } from './PixelFrame.jsx';
 import { isDrawingPaused } from '../board/frameClock.js';
 
@@ -69,8 +70,8 @@ const TRAIL_COLOUR = '#ffe27a';
  */
 const FLIGHT_REACH = { side: 12, up: 12, down: 12 };
 const EDGE_PX = 0;
-/** The landing shower starts this far out from its notice's left edge. */
-const SHOWER_GAP_PX = 4;
+/** The amount's pop stands this far out from its notice's left edge before it slides. */
+const POP_GAP_PX = 2;
 /** Where a notice cannot be found, this much of it is guessed left of its sprite. */
 const NOTICE_TEXT_GUESS_PX = 96;
 /**
@@ -290,11 +291,18 @@ class ParticleSystem {
             b: Math.max(path.startY, path.cpY, path.endY) + down
         });
         if (p.showerStep) {
-            const o = this._showerOrigin(p);
+            const n = this._noticeBox(p);
             this._includeBox({
-                l: o.x - SHOWER_REACH.left - EDGE_PX, t: o.y - SHOWER_REACH.up - EDGE_PX,
-                r: o.x + SHOWER_REACH.right + EDGE_PX, b: o.y + SHOWER_REACH.down + EDGE_PX
+                l: n.x - SHOWER_REACH.left - EDGE_PX, t: n.y - SHOWER_REACH.up - EDGE_PX,
+                r: n.x + n.w + SHOWER_REACH.right + EDGE_PX, b: n.y + n.h + SHOWER_REACH.down + EDGE_PX
             });
+            if (p.pop) {
+                const y = p.path.endY;
+                this._includeBox({
+                    l: n.x - POP_GAP_PX - p.pop.w - POP_TRAVEL_PX - EDGE_PX, t: y - p.pop.h / 2 - 1 - EDGE_PX,
+                    r: n.x + EDGE_PX, b: y + p.pop.h / 2 + 1 + EDGE_PX
+                });
+            }
         }
     }
 
@@ -489,7 +497,11 @@ class ParticleSystem {
             showerStep: !b.heroId && landsOn === 'stub' ? trailShadowCount(b.quantity) : 0,
             // The notice's left edge, read once on the frame after the landing (`_readNotice`).
             noticeLeft: null,
+            noticeRight: null,
             noticeRead: false,
+            quantity: b.quantity,
+            // The amount's pop, its pictures made when the notice is read (`lootPop.js`).
+            pop: null,
             landedAt: 0,
             seed: ++this._seeds,
             landed: false,
@@ -615,12 +627,12 @@ class ParticleSystem {
     _lingerOf(p) {
         if (!p.shadows) return 0;
         const shadows = this._trailArtOf(p) ? p.shadows * TRAIL_STEP_MS : 0;
-        return Math.max(shadows, FLIGHT_SPARKLE_LIFE_MS, p.showerStep ? showerLengthMs(p.showerStep) : 0);
+        return Math.max(shadows, FLIGHT_SPARKLE_LIFE_MS, p.showerStep ? Math.max(showerLengthMs(p.showerStep), POP_MS) : 0);
     }
 
     /**
-     * Read the notice a flight landed on, once, for where its shower starts: its left edge where it
-     * rests, flush with the column's right side.
+     * Read the notice a flight landed on, once, for where its shower bursts from and its amount pops
+     * out: its box where it rests, flush with the column's right side.
      * ⚠️ Not before the frame after the landing: the count it lands with is drawn then, and a notice
      * with no number yet grows wider with it; read sooner, the shower starts over its text. Not at the
      * collection either (no box is read in the engine's tick). One read per landing.
@@ -632,15 +644,44 @@ class ParticleSystem {
         const column = el?.closest('[data-item-stubs]');
         if (el && column) {
             const r = el.getBoundingClientRect();
-            if (r.width > 0) p.noticeLeft = column.getBoundingClientRect().right - r.width;
+            if (r.width > 0) {
+                p.noticeRight = column.getBoundingClientRect().right;
+                p.noticeLeft = p.noticeRight - r.width;
+            }
         }
+        p.pop = this._popPicturesOf(popText(p.quantity));
         this._include(p);
     }
 
-    /** Where a flight's shower starts: just out from its notice's left edge, level with its sprite. */
-    _showerOrigin(p) {
+    /** The pop's pictures for a text, made once per text (a sweep lands many of the same). */
+    _popPicturesOf(text) {
+        if (!this._pops) this._pops = new Map();
+        if (!this._pops.has(text)) this._pops.set(text, popPictures(text));
+        return this._pops.get(text);
+    }
+
+    /** The notice a flight lands on, as read (or guessed round its sprite before then), in screen px. */
+    _noticeBox(p) {
+        const right = p.noticeRight ?? p.path.endX + SPRITE_INSET_PX;
         const left = p.noticeLeft ?? p.path.endX - SPRITE_PX / 2 - NOTICE_TEXT_GUESS_PX;
-        return { x: left - SHOWER_GAP_PX, y: p.path.endY };
+        return { x: left, y: p.path.endY - STUB_PX / 2, w: right - left, h: STUB_PX };
+    }
+
+    /**
+     * The amount's pop out of the notice's left side: drawn after every flight and sparkle, so it is
+     * over them all. Its fade is in opacity steps.
+     */
+    _drawPop(p, now) {
+        if (!p.pop || !p.landed) return;
+        const st = popAt(now - p.startTime - p.duration);
+        if (!st) return;
+        const ctx = this.ctx;
+        const n = this._noticeBox(p);
+        ctx.globalAlpha = st.alpha;
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(st.white ? p.pop.white : p.pop.coloured,
+            Math.round(n.x - POP_GAP_PX - p.pop.w - st.out), Math.round(p.path.endY - p.pop.h / 2));
+        ctx.globalAlpha = 1;
     }
 
     /** A flight's sparkle colours, made once: from its item's trail art, or the stack's. */
@@ -680,9 +721,9 @@ class ParticleSystem {
             if (!overNotice(x, y)) this._drawSparkle(x, y, stage, colours);
         });
         if (p.landed && p.showerStep && p.noticeRead) {
-            const o = this._showerOrigin(p);
-            forEachShowerSparkle(flightMs - p.duration, p.showerStep, p.seed,
-                (dx, dy, stage) => this._drawSparkle(o.x + dx, o.y + dy, stage, colours));
+            const n = this._noticeBox(p);
+            forEachShowerSparkle(flightMs - p.duration, p.showerStep, p.seed, n.w, n.h,
+                (x, y, stage) => this._drawSparkle(n.x + x, n.y + y, stage, colours));
         }
     }
 
@@ -772,5 +813,7 @@ class ParticleSystem {
                 ctx.fillText(p.icon, Math.round(p.x), Math.round(p.y));
             }
         }
+        // ⚠️ Last: the amount's pop stands over every flight and sparkle.
+        for (const p of this.particles) this._drawPop(p, now);
     }
 }

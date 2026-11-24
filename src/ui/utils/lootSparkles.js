@@ -1,6 +1,7 @@
 /**
  * Collected loot's sparkles (`ParticleOverlay`): a light sprinkle left behind the flying item, and a
- * shower spilling out of the item notice it lands on, longer and denser for a bigger stack.
+ * burst out of the item notice it lands on, raining down over the mat, longer and denser for a bigger
+ * stack.
  * Nothing random: where every sparkle is comes from the flight's own seed and the time, so the same
  * flight draws the same pixels at any frame rate. A sparkle steps through three looks and is gone:
  * a plus of five art pixels with a lighter heart, then one pixel, then one dimmer pixel.
@@ -13,7 +14,7 @@ export const SPARKLE_ART_PX = 2;
 export const SPARKLE_EMIT_STEP_MS = 16;
 
 /** How long one shower sparkle lives. */
-export const SHOWER_SPARKLE_LIFE_MS = 420;
+export const SHOWER_SPARKLE_LIFE_MS = 480;
 
 /**
  * The landing shower, per stack step (index 0: a stack of 1 to 9, one shadow; index 6: 1,000,000 and
@@ -21,34 +22,34 @@ export const SHOWER_SPARKLE_LIFE_MS = 420;
  */
 export const LANDING_SHOWER_MS = Object.freeze([240, 320, 420, 540, 680, 840, 1000]);
 /** ...and how many it spills on each beat ({@link SPARKLE_EMIT_STEP_MS}). */
-export const LANDING_SHOWER_PER_BEAT = Object.freeze([1, 1, 2, 2, 3, 4, 5]);
+export const LANDING_SHOWER_PER_BEAT = Object.freeze([2, 2, 3, 3, 4, 5, 6]);
 
 /** The flight's sprinkle: one sparkle every this many ms of flight, whatever the stack. */
 export const FLIGHT_SPARKLE_EVERY_MS = 48;
 /** How long a flight sparkle lives; it starts as one pixel (no plus), so it reads fainter. */
 export const FLIGHT_SPARKLE_LIFE_MS = 300;
 
-/** Shower sparkles fall: px per ms per ms. */
-const GRAVITY = 0.0005;
-/** Shower sparkles leave from the notice's left edge, from up to this far out from it. */
-const SHOWER_SPAN_PX = 6;
-/**
- * A shower sparkle's speed as it leaves, px per ms: always out over the mat (left), some rising a
- * little before they fall, so the shower fans out instead of piling up.
- */
-const SHOWER_VX = { min: -0.22, max: -0.04 };
-const SHOWER_VY = { min: -0.12, max: 0.04 };
 /** Flight sparkles: scattered over this share of the item's size round its centre, sinking slowly. */
 const FLIGHT_SCATTER = 0.5;
 const FLIGHT_SINK = 0.04;
 
+/** Shower sparkles fall like rain: px per ms per ms. */
+const GRAVITY = 0.0007;
 /**
- * How far a shower reaches from where it starts, in px (a sparkle's own half-size added): the canvas
- * must cover it. ⚠️ Follows the numbers above: `ParticleCanvasBounds.test.js` fails when a sparkle is
- * drawn outside the canvas.
+ * A shower sparkle's speed as it bursts out, px per ms: always to the left (out over the mat), at a
+ * spread of speeds, some rising first before they fall.
+ */
+const SHOWER_VX = { min: -0.26, max: -0.05 };
+const SHOWER_VY = { min: -0.16, max: 0.03 };
+
+/**
+ * How far a shower reaches past the notice it bursts from, in px (a sparkle's own half-size added):
+ * the canvas must cover it. Every sparkle starts somewhere on the notice and only ever moves left.
+ * ⚠️ Follows the numbers above: `ParticleCanvasBounds.test.js` fails when a sparkle is drawn outside
+ * the canvas.
  */
 export const SHOWER_REACH = Object.freeze({
-    left: Math.ceil(SHOWER_SPAN_PX - SHOWER_VX.min * SHOWER_SPARKLE_LIFE_MS) + 2 * SPARKLE_ART_PX,
+    left: Math.ceil(-SHOWER_VX.min * SHOWER_SPARKLE_LIFE_MS) + 2 * SPARKLE_ART_PX,
     right: 2 * SPARKLE_ART_PX,
     up: Math.ceil(Math.max(0, -SHOWER_VY.min) ** 2 / (2 * GRAVITY)) + 2 * SPARKLE_ART_PX,
     down: Math.ceil(SHOWER_VY.max * SHOWER_SPARKLE_LIFE_MS + GRAVITY * SHOWER_SPARKLE_LIFE_MS ** 2 / 2) + 2 * SPARKLE_ART_PX
@@ -89,11 +90,11 @@ export function sparkleStage(age, life) {
 }
 
 /**
- * Every shower sparkle alive `sinceLandMs` after the landing, relative to where the shower starts
- * (just out from the notice's left edge, halfway down it): `fn(dx, dy, stage)`. `dx` is never above
- * 0: every sparkle moves out over the mat, never back into the notice or over its count.
+ * Every shower sparkle alive `sinceLandMs` after the landing: `fn(x, y, stage, x0, y0)`, relative to
+ * the notice's top-left corner, where `w` and `h` are its size. Each starts at its own point anywhere
+ * on the notice (`x0`, `y0`), bursts left and falls; `x` is never right of `x0`.
  */
-export function forEachShowerSparkle(sinceLandMs, step, seed, fn) {
+export function forEachShowerSparkle(sinceLandMs, step, seed, w, h, fn) {
     if (!(sinceLandMs >= 0)) return;
     const i = stepIndex(step);
     const dur = LANDING_SHOWER_MS[i];
@@ -103,11 +104,12 @@ export function forEachShowerSparkle(sinceLandMs, step, seed, fn) {
         const age = sinceLandMs - k * SPARKLE_EMIT_STEP_MS;
         if (age >= SHOWER_SPARKLE_LIFE_MS) continue;
         for (let m = 0; m < per; m++) {
-            const j = (seed * 4099 + k * 8 + m) * 3;
-            const x0 = -hash(j) * SHOWER_SPAN_PX;
+            const j = (seed * 4099 + k * 8 + m) * 4;
+            const x0 = hash(j) * w;
+            const y0 = hash(j + 3) * h;
             const vx = between(hash(j + 1), SHOWER_VX);
             const vy = between(hash(j + 2), SHOWER_VY);
-            fn(x0 + vx * age, vy * age + (GRAVITY * age * age) / 2, sparkleStage(age, SHOWER_SPARKLE_LIFE_MS));
+            fn(x0 + vx * age, y0 + vy * age + (GRAVITY * age * age) / 2, sparkleStage(age, SHOWER_SPARKLE_LIFE_MS), x0, y0);
         }
     }
 }

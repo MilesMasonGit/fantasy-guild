@@ -2,8 +2,9 @@ import { describe, it, expect } from 'vitest';
 
 /**
  * ⭐ **Loot's sparkles** (owner, after the base trail): a light sprinkle behind the flying item, the
- * same for every stack, and a shower spilling out of the item notice it lands on, longer and denser
- * for a bigger stack, on the shadows' seven stack steps. Nothing random, nothing over the notice.
+ * same for every stack, and a raining burst out of the item notice it lands on (from anywhere on it,
+ * always to the left, then falling), longer and denser for a bigger stack, on the shadows' seven
+ * stack steps. Nothing random.
  */
 
 import {
@@ -15,7 +16,13 @@ import {
 import { TRAIL_MAX_SHADOWS, trailShadowCount } from '../ui/utils/lootTrail.js';
 
 const STEPS = [1, 2, 3, 4, 5, 6, 7];
-const shower = (t, step, seed = 3) => { const out = []; forEachShowerSparkle(t, step, seed, (x, y, s) => out.push({ x, y, s })); return out; };
+/** The notice the burst comes out of, in px. */
+const NW = 120, NH = 44;
+const shower = (t, step, seed = 3) => {
+    const out = [];
+    forEachShowerSparkle(t, step, seed, NW, NH, (x, y, s, x0, y0) => out.push({ x, y, s, x0, y0 }));
+    return out;
+};
 const line = (k) => ({ x: 100 + k * 400, y: 500 - k * 300 });
 const flight = (t, dur, seed = 3) => { const out = []; forEachFlightSparkle(t, dur, 64, seed, line, (x, y, s) => out.push({ x, y, s })); return out; };
 
@@ -44,26 +51,50 @@ describe('the landing shower by stack step', () => {
             expect(shower(showerLengthMs(step), step)).toEqual([]);
         });
 
-    it('every sparkle moves out over the mat, never back into the notice or over its count, and stays in its reach', () => {
+    it('bursts from anywhere on the notice, not from one spout', () => {
+        const starts = shower(0, 7, 5).concat(shower(16, 7, 5), shower(32, 7, 5));
+        const xs = starts.map(p => p.x0), ys = starts.map(p => p.y0);
+        expect(Math.min(...xs)).toBeGreaterThanOrEqual(0);
+        expect(Math.max(...xs)).toBeLessThanOrEqual(NW);
+        expect(Math.min(...xs)).toBeLessThan(NW * 0.25);
+        expect(Math.max(...xs)).toBeGreaterThan(NW * 0.75);
+        expect(Math.min(...ys)).toBeLessThan(NH * 0.25);
+        expect(Math.max(...ys)).toBeGreaterThan(NH * 0.75);
+    });
+
+    it('every sparkle heads left and stays in the reach the canvas covers', () => {
         // The extremes over every step and moment, checked once (an expect per sparkle is slow).
-        const far = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity, n: 0 };
+        const far = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity, right: -Infinity, n: 0 };
         for (const step of STEPS) {
             for (let t = 0; t < showerLengthMs(step); t += 7) {
-                forEachShowerSparkle(t, step, 3, (x, y) => {
+                forEachShowerSparkle(t, step, 3, NW, NH, (x, y, s, x0) => {
                     far.n++;
-                    if (x < far.minX) far.minX = x;
-                    if (x > far.maxX) far.maxX = x;
-                    if (y < far.minY) far.minY = y;
-                    if (y > far.maxY) far.maxY = y;
+                    far.right = Math.max(far.right, x - x0);
+                    far.minX = Math.min(far.minX, x); far.maxX = Math.max(far.maxX, x);
+                    far.minY = Math.min(far.minY, y); far.maxY = Math.max(far.maxY, y);
                 });
             }
         }
         expect(far.n).toBeGreaterThan(1000);
-        expect(far.maxX).toBeLessThanOrEqual(0);
-        expect(far.maxX).toBeLessThanOrEqual(SHOWER_REACH.right - 2 * SPARKLE_ART_PX);
+        expect(far.right).toBeLessThanOrEqual(0);
+        expect(far.maxX).toBeLessThanOrEqual(NW + SHOWER_REACH.right - 2 * SPARKLE_ART_PX);
         expect(far.minX).toBeGreaterThanOrEqual(-SHOWER_REACH.left + 2 * SPARKLE_ART_PX);
         expect(far.minY).toBeGreaterThanOrEqual(-SHOWER_REACH.up + 2 * SPARKLE_ART_PX);
-        expect(far.maxY).toBeLessThanOrEqual(SHOWER_REACH.down - 2 * SPARKLE_ART_PX);
+        expect(far.maxY).toBeLessThanOrEqual(NH + SHOWER_REACH.down - 2 * SPARKLE_ART_PX);
+    });
+
+    it('falls like rain: some rise first, and each falls ever faster', () => {
+        // The same sparkle (the first of the first beat) at three moments, an equal step apart.
+        const at = (t) => shower(t, 7, 9)[0];
+        const [a, b, c] = [60, 160, 260].map(at);
+        expect(c.y - 2 * b.y + a.y).toBeGreaterThan(0);
+        const rises = [];
+        for (let seed = 1; seed < 40; seed++) {
+            const p0 = shower(0, 1, seed)[0], p1 = shower(40, 1, seed)[0];
+            rises.push(p1.y < p0.y);
+        }
+        expect(rises.some(Boolean)).toBe(true);
+        expect(rises.every(Boolean)).toBe(false);
     });
 
     it('steps through the plus, the pixel and the dimmer pixel', () => {
