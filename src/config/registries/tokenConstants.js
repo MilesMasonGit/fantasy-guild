@@ -268,10 +268,9 @@ function refillNeedsOf(block) {
  * A Token type's respawn as `{ mode, afterMs, into, needsNearby }`, or null when it has none: no
  * block, a mode the game does not know, or a regrow that names nothing to regrow from. `afterMs` is
  * a refill's rest (defaulted, floored at {@link RESPAWN_MIN_MS}) and null on a regrow; `into` is
- * null on a refill. `needsNearby` is a refill's Token type ids, any one of which must stand within
- * reach (Near) for its rest to run (a Bare apple tree fruits again only beside an Orchard); empty
- * when it needs none, and always on a regrow. The same array each ask, so a resting Token's cached
- * answer (`TileModifiers.nearbyGateMet`) holds.
+ * null on a refill. `needsNearby` is a refill's Token type ids its owner must be one of for its
+ * rest to run (a Bare apple tree fruits again only while its own Orchard stands,
+ * `Groves.ownGateMet`); empty when it needs none, and always on a regrow. The same array each ask.
  */
 export function respawnOf(def) {
     const block = def?.respawn;
@@ -335,12 +334,12 @@ let lastGrowsTerms = NO_TERMS;
 /**
  * What a `grows` block asks before its Token may grow, as `{ needsNearby, cost }`:
  *
- * * `needsNearby` — Token type ids, any one of which must stand within reach (Near) for the
- *   growth's clock to run: a Stump regrows only beside a Forest of its species. Empty when it
- *   needs none (every growth today).
+ * * `needsNearby` — Token type ids its owner must be one of for the growth's clock to run
+ *   (`Groves.ownGateMet`): a Stump regrows only while its own Forest stands. Empty when it needs
+ *   none.
  * * `cost` — what the growth pays when it happens, from the Bank and then the loot on the mat,
- *   summed by item as `[{ itemId, quantity }]`: a Stump spends one seedling to become its Tree.
- *   Empty when it is free.
+ *   summed by item as `[{ itemId, quantity }]`. Always empty on a growth that needs its owner: its
+ *   Forest regrows it for free.
  *
  * Kept per block object (frozen), so a growing Token asking every tick allocates nothing; a
  * content reload hands out new block objects.
@@ -366,6 +365,8 @@ export function growsTermsOf(def) {
         if (typeof line?.itemId !== 'string' || !line.itemId || !(q > 0)) continue;
         total.set(line.itemId, (total.get(line.itemId) || 0) + q);
     }
+    // A growth that needs its own Forest is the Forest's to give: free, whatever cost is authored.
+    if (nearby.length) total.clear();
     terms = (!nearby.length && !total.size) ? NO_TERMS : Object.freeze({
         needsNearby: Object.freeze(nearby),
         cost: Object.freeze([...total].map(([itemId, quantity]) => Object.freeze({ itemId, quantity })))
@@ -542,4 +543,47 @@ export function rollOutputQuantity(output, random = Math.random) {
 export function expectedOutputQuantity(output) {
     const { min, max } = outputRange(output);
     return (min + max) / 2;
+}
+
+/**
+ * The Token types a Token of this type needs as its owner to come back (`instance.tether`): what its
+ * refill, or any growth on its way back, names in `needsNearby`, following a regrow's `into` and each
+ * `grows.into` (a tree, its Stump, the tree again). A tree needs its Forest, a fruit tree its
+ * Orchard; empty when it needs none. `lookup` maps a type id to its def.
+ */
+export function ownerTypesOf(def, lookup) {
+    const out = new Set();
+    const seen = new Set();
+    const stack = def ? [def] : [];
+    while (stack.length) {
+        const at = stack.pop();
+        if (!at || seen.has(at)) continue;
+        seen.add(at);
+        const respawn = respawnOf(at);
+        if (respawn) for (const id of respawn.needsNearby) out.add(id);
+        for (const id of growsTermsOf(at).needsNearby) out.add(id);
+        if (respawn?.mode === 'regrow') stack.push(lookup(respawn.into));
+        if (typeof at.grows?.into === 'string') stack.push(lookup(at.grows.into));
+    }
+    return [...out];
+}
+
+/**
+ * Whether a spawner type owns what it spawns, a **Forest** or an **Orchard**: one of its spawns needs
+ * it as its owner ({@link ownerTypesOf}). It counts only its own against its allowance, ties each
+ * spawn to itself and plants for free (`SpawnerSystem`).
+ */
+export function isGroveSpawnerDef(def, lookup, id = def?.id) {
+    const spawns = def?.spawner?.spawns;
+    if (!id || !Array.isArray(spawns)) return false;
+    return spawns.some(s => typeof s?.typeId === 'string' && ownerTypesOf(lookup(s.typeId), lookup).includes(id));
+}
+
+/**
+ * What a spawner charges for one spawn, as authored (`spawner.upkeep`), or nothing for a Forest or an
+ * Orchard ({@link isGroveSpawnerDef}): its seeds were paid once, to build it.
+ */
+export function spawnerUpkeepOf(def, lookup, id = def?.id) {
+    if (isGroveSpawnerDef(def, lookup, id)) return [];
+    return Array.isArray(def?.spawner?.upkeep) ? def.spawner.upkeep : [];
 }

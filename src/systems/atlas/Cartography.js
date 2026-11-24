@@ -1,12 +1,15 @@
 // writing a Region from recipes: the preview and a Region's board
 
 import { GameState } from '../../state/GameState.js';
-import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
+import { tokenStartingUses, getTokenType } from '../../config/registries/tokenRegistry.js';
+import { ownerTypesOf } from '../../config/registries/tokenConstants.js';
 import * as BoardState from '../board/BoardState.js';
+import { reachRadius } from '../board/nearby.js';
 import { matCap } from '../board/MatCap.js';
 import { budget } from './Budget.js';
 import { layout } from './Layout.js';
 import { layoutOptions } from './layoutInputs.js';
+import { withWildForests } from './wildForests.js';
 import { nextSeed, seedFromText } from './seededRandom.js';
 
 /**
@@ -70,8 +73,15 @@ export function previewSeed() {
     return atlas.seed;
 }
 
+/** The wild Forest a map tree belongs to: the owner its way back needs that plants its type, or null. */
+function wildForestOf(typeId) {
+    const owners = ownerTypesOf(getTokenType(typeId), getTokenType);
+    return owners.find(id => getTokenType(id)?.spawner?.spawns?.some(s => s?.typeId === typeId)) || null;
+}
+
 function planOf(recipes, summary, seed) {
-    const result = layout(summary, layoutOptions(summary, seed));
+    const laid = layout(summary, layoutOptions(summary, seed));
+    const result = { ...laid, nodes: withWildForests(laid.nodes, { headOf: wildForestOf, reach: reachRadius() }) };
     return {
         seed: result.seed,
         recipes,
@@ -110,8 +120,9 @@ export function fixtureId(regionId, index) {
 
 /**
  * A settled layout as its Region's board, built off the mat: each node a `placed` instance with
- * the map's mark (`fixture`) and its starting charges, in layout order. The Hall is not
- * on it: it travels with the guild and lands in the clearing at the mat's centre.
+ * the map's mark (`fixture`) and its starting charges, in layout order, a map tree tied to its wild
+ * Forest (`node.owner`, `wildForests.js`). The Hall is not on it: it travels with the guild and
+ * lands in the clearing at the mat's centre.
  */
 export function regionBoard(result, regionId) {
     return BoardState.detachedBoard((result?.nodes || []).map((node, i) => {
@@ -119,6 +130,7 @@ export function regionBoard(result, regionId) {
             node.typeId, tokenStartingUses(node.typeId), null, BoardState.ORIGIN.PLACED, fixtureId(regionId, i)
         );
         instance.fixture = true;
+        if (Number.isInteger(node.owner)) BoardState.setTether(instance, fixtureId(regionId, node.owner));
         return { instance, x: node.x, y: node.y };
     }));
 }

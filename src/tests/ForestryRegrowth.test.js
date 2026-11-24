@@ -18,10 +18,10 @@ import { registerItems } from '../config/registries/itemRegistry.js';
 import { clearMat, placeAt } from './fixtures/mat.js';
 
 /**
- * Forestry regrowth (brief 230 S2a): a felled tree's Stump grows back into a Sapling only with a
- * Forest of its species in reach (its clock stands still without one), and pays one seedling from
- * the Bank when it does; with none it is stopped and says so. A Sapling whose Forest goes finishes
- * growing. The Forest answer is cached per Token, refreshed by the neighbourhood rebuild.
+ * Forestry regrowth: a felled tree's Stump grows back only while its own Forest stands (its clock
+ * stands still without it, and no other Forest takes it in), at its fixed time and for free. A
+ * growth that needs no Forest may still pay a cost from the Bank; with none it is stopped and says
+ * so. A Sapling whose Forest goes finishes growing.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -76,6 +76,11 @@ function arrive(typeId, x, y) {
     TileModifiers.rebuildAround([{ x, y }]);
     return t;
 }
+/** Make `forest` the Token's own, as a Forest's planting does. */
+function own(instance, forest) {
+    BoardState.setTether(instance, forest.id);
+    return instance;
+}
 /** Take one off as the game does. */
 function leave(instance) {
     const at = { x: instance.x, y: instance.y };
@@ -115,31 +120,37 @@ describe('the terms a growth asks', () => {
         expect(growsTermsOf({})).toBe(terms);
     });
 
-    it('needs nearby: blanks dropped, duplicates once; cost summed by item, bad lines dropped; kept per block', () => {
+    it('needs nearby: blanks dropped, duplicates once; its cost dropped (its Forest regrows it for free); kept per block', () => {
         const def = {
             grows: {
                 into: 'x', afterMs: 1000, needsNearby: ['a', ' ', 'a', 'b', 7],
-                cost: [{ itemId: 's', quantity: 1 }, { itemId: 's', quantity: 2 }, { itemId: '', quantity: 1 }, { itemId: 't', quantity: 0 }]
+                cost: [{ itemId: 's', quantity: 1 }]
             }
         };
         const terms = growsTermsOf(def);
-        expect(terms).toEqual({ needsNearby: ['a', 'b'], cost: [{ itemId: 's', quantity: 3 }] });
+        expect(terms).toEqual({ needsNearby: ['a', 'b'], cost: [] });
         expect(growsTermsOf(def)).toBe(terms);
         expect(Object.isFrozen(terms.needsNearby)).toBe(true);
     });
+
+    it('a cost on a growth that needs no Forest: summed by item, bad lines dropped', () => {
+        const def = {
+            grows: { into: 'x', afterMs: 1000, cost: [{ itemId: 's', quantity: 1 }, { itemId: 's', quantity: 2 }, { itemId: '', quantity: 1 }, { itemId: 't', quantity: 0 }] }
+        };
+        expect(growsTermsOf(def)).toEqual({ needsNearby: [], cost: [{ itemId: 's', quantity: 3 }] });
+    });
 });
 
-describe('⭐ a Stump regrows only with a Forest of its species in reach', () => {
-    it('with one in reach it grows in its time and pays one seedling', () => {
+describe('⭐ a Stump regrows only while its own Forest stands', () => {
+    it('with its own Forest it grows in its time, for free', () => {
         InventoryManager.addItem(SEEDLING, 3);
-        arrive('fo_forest', AT.x + 150, AT.y);
-        arrive('fo_stump', AT.x, AT.y);
+        const forest = arrive('fo_forest', AT.x + 150, AT.y);
+        own(arrive('fo_stump', AT.x, AT.y), forest);
         tick(19900);
         expect(typeAt()).toBe('fo_stump');
-        expect(seedlings()).toBe(3);
         tick(100);
         expect(typeAt()).toBe('fo_sapling');
-        expect(seedlings()).toBe(2);
+        expect(seedlings()).toBe(3);
         expect(watch.log).toEqual([]);
     });
 
@@ -155,59 +166,53 @@ describe('⭐ a Stump regrows only with a Forest of its species in reach', () =>
         expect(TimedChanges.nextGrowth(stump)).toMatchObject({ paused: true, stopped: false, inMs: 20000, into: 'fo_sapling' });
     });
 
-    it('a Forest of another species does not count, nor one out of reach', () => {
-        arrive('fo_birch_forest', AT.x + 150, AT.y);
-        arrive('fo_forest', AT.x + 400, AT.y);
-        const stump = arrive('fo_stump', AT.x, AT.y);
+    it('a Forest of another species does not count as its own, nor one of its species that is not its own', () => {
+        const birch = arrive('fo_birch_forest', AT.x + 150, AT.y);
+        arrive('fo_forest', AT.x, AT.y + 150);
+        const stump = own(arrive('fo_stump', AT.x, AT.y), birch);
         InventoryManager.addItem(SEEDLING, 1);
         tick(30000, 1000);
         expect(typeAt()).toBe('fo_stump');
         expect(stump.clocks?.growMs ?? 0).toBe(0);
     });
 
-    it('⭐ a Forest planted beside it later starts its clock from where it stood, and the alert drops', () => {
-        InventoryManager.addItem(SEEDLING, 1);
+    it('⭐ a Forest planted beside it later does not take it in: a lone Stump stays a Stump', () => {
         const stump = arrive('fo_stump', AT.x, AT.y);
         tick(5000);
-        expect(stump.clocks?.growMs ?? 0).toBe(0);
         arrive('fo_forest', AT.x, AT.y + 150);
-        tick(19900);
+        tick(60000);
         expect(typeAt()).toBe('fo_stump');
-        expect(Growth.growthAlertOf(stump.id)).toBeNull();
-        tick(100);
-        expect(typeAt()).toBe('fo_sapling');
-        expect(watch.log.map(e => e.alert)).toEqual([ALERT.GROW_NEEDS_NEARBY, null]);
+        expect(stump.clocks?.growMs ?? 0).toBe(0);
+        expect(watch.log.map(e => e.alert)).toEqual([ALERT.GROW_NEEDS_NEARBY]);
     });
 
-    it('⭐ its Forest going stops the clock where it stands; another arriving carries on from there', () => {
-        InventoryManager.addItem(SEEDLING, 1);
+    it('⭐ its Forest going stops the clock where it stands, for good: another arriving is not its own', () => {
         const forest = arrive('fo_forest', AT.x + 150, AT.y);
-        const stump = arrive('fo_stump', AT.x, AT.y);
+        const stump = own(arrive('fo_stump', AT.x, AT.y), forest);
         tick(12000);
         leave(forest);
         tick(30000);
         expect(typeAt()).toBe('fo_stump');
         expect(stump.clocks.growMs).toBe(12000);
         arrive('fo_forest', AT.x - 150, AT.y);
-        tick(7900);
+        tick(30000);
+        expect(typeAt()).toBe('fo_stump');
+        expect(stump.clocks.growMs).toBe(12000);
+    });
+
+    it('its own Forest speeds nothing: a Grow Time on the species leaves the regrowth at its fixed time', () => {
+        const forest = arrive('fo_fast_forest', AT.x + 150, AT.y);
+        const stump = own(arrive('fo_stump', AT.x, AT.y), forest);
+        expect(TimedChanges.nextGrowth(stump)).toMatchObject({ totalMs: 20000, paused: false });
+        tick(19900);
         expect(typeAt()).toBe('fo_stump');
         tick(100);
         expect(typeAt()).toBe('fo_sapling');
     });
 
-    it('a Forest that speeds its species halves the regrowth too, and the floor and the gate work together', () => {
-        InventoryManager.addItem(SEEDLING, 1);
-        const stump = arrive('fo_stump', AT.x, AT.y);
-        arrive('fo_fast_forest', AT.x + 150, AT.y);
-        expect(TimedChanges.nextGrowth(stump)).toMatchObject({ totalMs: 10000, paused: false });
-        tick(10000);
-        expect(typeAt()).toBe('fo_sapling');
-    });
-
     it('⭐ a Sapling whose Forest goes finishes growing (only a Stump needs the Forest)', () => {
-        InventoryManager.addItem(SEEDLING, 1);
         const forest = arrive('fo_forest', AT.x + 150, AT.y);
-        arrive('fo_stump', AT.x, AT.y);
+        own(arrive('fo_stump', AT.x, AT.y), forest);
         tick(20000);
         expect(typeAt()).toBe('fo_sapling');
         leave(forest);
@@ -215,15 +220,14 @@ describe('⭐ a Stump regrows only with a Forest of its species in reach', () =>
         expect(typeAt()).toBe('fo_tree');
     });
 
-    it('⭐ the answer is kept per Token, not scanned per tick: a Forest moved with no rebuild is not seen until the rebuild', () => {
+    it('⭐ ownership, not reach: its own Forest moved far off still regrows it; gone, it does not', () => {
         const forest = arrive('fo_forest', AT.x + 150, AT.y);
-        const stump = arrive('fo_stump', AT.x, AT.y);
+        const stump = own(arrive('fo_stump', AT.x, AT.y), forest);
         expect(Growth.gateMet(stump)).toBe(true);
-        // Moved out of reach behind the rebuild's back: the kept answer stands.
-        BoardState.setTokenPoint(forest.id, AT.x + 600, AT.y);
+        BoardState.setTokenPoint(forest.id, AT.x + 900, AT.y);
+        TileModifiers.rebuildAround([{ x: AT.x + 150, y: AT.y }, { x: AT.x + 900, y: AT.y }]);
         expect(Growth.gateMet(stump)).toBe(true);
-        // The rebuild a real move makes (both ends) is what refreshes it.
-        TileModifiers.rebuildAround([{ x: AT.x + 150, y: AT.y }, { x: AT.x + 600, y: AT.y }]);
+        leave(forest);
         expect(Growth.gateMet(stump)).toBe(false);
     });
 
@@ -235,7 +239,7 @@ describe('⭐ a Stump regrows only with a Forest of its species in reach', () =>
     });
 });
 
-describe('⭐ every regrowth costs a seedling from the Bank', () => {
+describe('a growth that needs no Forest may cost an item from the Bank', () => {
     it('none in the Bank: stopped at its finish, says "needs" once, and grows the tick a seedling comes', () => {
         const stump = arrive('fo_paid_stump', AT.x, AT.y);
         tick(25000);
@@ -270,10 +274,12 @@ describe('⭐ every regrowth costs a seedling from the Bank', () => {
         expect(SpriteLayer.countOnBoard(SEEDLING)).toBe(1);
     });
 
-    it('a free gated growth (no cost) never stops for want of one', () => {
-        arrive('fo_forest', AT.x + 150, AT.y);
-        arrive('fo_free_stump', AT.x, AT.y);
+    it('a gated growth never stops for want of a seedling, authored or not', () => {
+        const forest = arrive('fo_forest', AT.x + 150, AT.y);
+        own(arrive('fo_free_stump', AT.x, AT.y), forest);
+        own(arrive('fo_stump', AT.x, AT.y + 300), forest);
         tick(20000);
+        expect(BoardState.tokensAtPoint(AT.x, AT.y + 300)[0]?.typeId).toBe('fo_sapling');
         expect(typeAt()).toBe('fo_sapling');
     });
 
@@ -303,15 +309,15 @@ describe('the alert follows the Token', () => {
 });
 
 describe('a regrowth falls due at the same moment whatever the step', () => {
-    it('Stump → Sapling → Tree, one seedling, in 100 ms and in 1000 ms ticks', () => {
+    it('Stump → Sapling → Tree, for free, in 100 ms and in 1000 ms ticks', () => {
         const run = (step) => {
             GameState.initNew();
             InventoryManager.init();
             clearMat();
             TileModifiers.clearAll();
             InventoryManager.addItem(SEEDLING, 1);
-            arrive('fo_forest', AT.x + 150, AT.y);
-            arrive('fo_stump', AT.x, AT.y);
+            const forest = arrive('fo_forest', AT.x + 150, AT.y);
+            own(arrive('fo_stump', AT.x, AT.y), forest);
             const seen = [{ at: 0, typeId: typeAt() }];
             for (let t = 0; t < 32000; t += step) {
                 TimedChanges.tick(step);
@@ -324,6 +330,6 @@ describe('a regrowth falls due at the same moment whatever the step', () => {
         expect(run(1000)).toEqual(small);
         expect(small.seen.map(s => s.typeId)).toEqual(['fo_stump', 'fo_sapling', 'fo_tree']);
         expect(small.seen.map(s => s.at)).toEqual([0, 20000, 30000]);
-        expect(small.seedlings).toBe(0);
+        expect(small.seedlings).toBe(1);
     });
 });

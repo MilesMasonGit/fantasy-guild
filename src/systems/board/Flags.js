@@ -905,7 +905,7 @@ function lapseWhereStanding(heroId, pointFor) {
  * - `'fight'`: an enemy another hero is fighting (`claimed`). Every fight is one-on-one, so a hero
  * sent to that enemy (or to its camp) waits beside it and takes it the moment it is free.
  * - `'node'`: a Token resting until it respawns (`resting`) that the hero could work and that is
- * coming back by itself (`Respawn.isComingBack`: not a Bare tree with no Orchard in reach), or a
+ * coming back by itself (`Respawn.isComingBack`: not a Bare tree with no Orchard of its own), or a
  * Field whose crop grows (`growing`): the skip reason is the Token's own, so the hero's skill,
  * level and tool have already passed. They wait silently and work it the moment it is back
  * (`TOKEN_RESPAWNED`, or the Field's `TILE_CHANGED` as it ripens, marks flags dirty). Failing
@@ -945,8 +945,8 @@ export function waitingOf(heroId) {
 /**
  * What grows back into `heroId`'s work, as `{ instanceId, kind: 'node' }`, or null: a Stump or
  * Sapling (no work of its own) whose growth chain reaches a Token of a skill the hero holds, at a
- * level they have, with the tool in hand, and that is truly on its way (its Forest in reach, not
- * stopped for want of its seedling: `Growth.isGrowingBack`). A Token order waits only for its own
+ * level they have, with the tool in hand, and that is truly on its way (its own Forest standing,
+ * not stopped for want of a cost: `Growth.isGrowingBack`). A Token order waits only for its own
  * Token; a camp order for the nearest in the camp's reach, then the earlier-placed.
  *
  * ⚠️ Worked out when asked (the roster's words, the speech, the idle mark), never on the pass:
@@ -987,7 +987,7 @@ function growingFor(heroId) {
 /**
  * An order's own Token growing back into work the hero could do (the Stump or Sapling a felled tree
  * became, {@link followTransform}), as `{ instanceId, kind: 'node' }`, or null when it is not on its
- * way (no Forest in reach, or stopped for want of its seedling).
+ * way (its Forest gone, or stopped for want of a cost).
  */
 function pinnedGrowing(heroId, instance) {
     const toward = instance ? Growth.growsTowardWork(instance.typeId) : null;

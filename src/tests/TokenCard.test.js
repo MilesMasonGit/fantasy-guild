@@ -274,7 +274,7 @@ describe('the blocks, top to bottom, per kind', () => {
         ]);
     });
 
-    it('a Stump respawns: counts down naming its cost; with no Forest in reach it waits; short of its seedling it is stopped (brief 230 S2a)', () => {
+    it('a Stump respawns: counts down naming its cost; with its Forest gone it waits; short of its seedling it is stopped (brief 230 S2a)', () => {
         const names = { tree: 'Oak Sapling', forest: 'Oak Forest', seed: 'Oak Seedling' };
         // The Stump is what a used-up Oak leaves, so its growth is the Oak coming back.
         const types = { oak: { respawn: { mode: 'regrow', into: 'stump' } }, stump: { grows: { into: 'tree' } } };
@@ -287,7 +287,7 @@ describe('the blocks, top to bottom, per kind', () => {
         })[0];
         const base = { kind: 'grow', icon: 'grow', label: 'Respawns' };
         expect(line(growth())).toEqual({ ...base, text: '1m 5s', tip: 'Respawns as Oak Sapling in 1m\u00a05s, for 1 Oak Seedling from the Bank' });
-        expect(line(growth({ paused: true }))).toEqual({ ...base, text: '–', tip: 'Respawns as Oak Sapling only with an Oak Forest nearby', tone: 'warning', alert: true });
+        expect(line(growth({ paused: true }))).toEqual({ ...base, text: '–', tip: 'Respawns as Oak Sapling only while its own Oak Forest stands', tone: 'warning', alert: true });
         expect(line(growth({ stopped: true, inMs: 0, short: ['seed'] }))).toEqual({ ...base, text: '–', tip: 'Stopped: needs 1 Oak Seedling to respawn as Oak Sapling', tone: 'warning', alert: true });
         // A growth nothing used up left behind (a Sapling a Forest planted) grows.
         expect(line(growth(), () => ({}))).toEqual({ kind: 'grow', icon: 'grow', text: '1m 5s', tip: 'Grows into Oak Sapling in 1m\u00a05s, for 1 Oak Seedling from the Bank' });

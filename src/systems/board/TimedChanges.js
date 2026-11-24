@@ -11,7 +11,8 @@ import * as Demolition from './Demolition.js';
 import * as Growth from './Growth.js';
 import * as Fields from './Fields.js';
 import * as EventTokens from './EventTokens.js';
-import { growTimeOf, nearbyGateMet } from './TileModifiers.js';
+import { growTimeOf } from './TileModifiers.js';
+import { ownGateMet, ownRegrowMs } from './Groves.js';
 import { ALERT } from './boardEvents.js';
 import { logger } from '../../utils/Logger.js';
 
@@ -19,8 +20,8 @@ import { logger } from '../../utils/Logger.js';
  * Everything on the mat that happens on a clock rather than a hero's work.
  *
  * `grows: { into, afterMs, needsNearby?, cost? }`: after `afterMs` the Token becomes `into` (a
- * Sapling becomes a Tree). A growth may need a Token in reach to run (its clock stands still
- * without one) and pay a cost when it happens (stopped at its finish until it can): `Growth.js`.
+ * Stump becomes a Tree). A growth may need its owner to run (its clock stands still without it) or
+ * pay a cost when it happens (stopped at its finish until it can): `Growth.js`.
  * Spawner intervals are one more row of the {@link HANDLERS} table; the attempt itself lives in
  * `SpawnerSystem.js`. So is a resting Token's way back (`respawn`, refill or regrow), whose rules
  * live in `Respawn.js`, and a Field's crop sowing and ripening (`Fields.js`). Passive Production pays several lines on its own clock, so {@link tick} runs
@@ -61,17 +62,19 @@ export const MAX_CHANGES_PER_TICK = 64;
 
 /**
  * How long a Token's growth takes: its authored `grows.afterMs` with the Grow Time its neighbours
- * give it, floored (`TileModifiers.growTimeOf`). The one reader of a growth's time.
+ * give it, floored (`TileModifiers.growTimeOf`); a Stump its Forest regrows takes its species'
+ * fixed time (`Groves.ownRegrowMs`). The one reader of a growth's time.
  */
 export function growMsOf(instance, def = getTokenType(instance?.typeId)) {
-    return growTimeOf(instance, Number(def?.grows?.afterMs) || 0);
+    const afterMs = Number(def?.grows?.afterMs) || 0;
+    return Growth.growsTermsOf(def).needsNearby.length ? ownRegrowMs(afterMs) : growTimeOf(instance, afterMs);
 }
 
 /**
  * When a growing Token (a Sapling) next changes, for the mat's growth bubble and the inspection
  * lines: `{ inMs, totalMs, into, paused, stopped, needsNearby, cost, short }`, `totalMs` being the
  * whole growth as sped up ({@link growMsOf}). `inMs` is 0 while the change is held (in the hand,
- * nowhere to stand, or stopped). `paused`: it needs one of `needsNearby` in reach and has none, so
+ * nowhere to stand, or stopped). `paused`: it needs an owner of `needsNearby` and has none, so
  * its clock stands still (`inMs` stays where it is). `stopped`: it fell due and the Bank cannot pay
  * its `cost`; `short` names the items it lacks. Null for a Token that does not grow.
  */
@@ -110,16 +113,16 @@ function growInto(instance, def) {
 }
 
 /**
- * Whether a growth's clock stands still: it needs a Token in reach (a Stump, its Forest) and none
- * is there. Raises the Token's "needs nearby" alert while so, and drops it once one is.
+ * Whether a growth's clock stands still: it needs its owner (a Stump, its Forest) and that is not
+ * standing. Raises the Token's "needs nearby" alert while so, and drops it once it is.
  */
 function growthPaused(instance, def) {
     return gatePaused(instance, Growth.growsTermsOf(def).needsNearby);
 }
 
 /**
- * Whether a refill's rest stands still: it needs a Token in reach (a Bare apple tree, its Orchard)
- * and none is there. The same alert as a growth's, so the Token says what it needs the same way.
+ * Whether a refill's rest stands still: it needs its owner (a Bare apple tree, its Orchard) and that
+ * is not standing. The same alert as a growth's, so the Token says what it needs the same way.
  */
 function refillPaused(instance, def) {
     return gatePaused(instance, Respawn.respawnOf(def)?.needsNearby);
@@ -127,7 +130,7 @@ function refillPaused(instance, def) {
 
 function gatePaused(instance, needsNearby) {
     if (!needsNearby?.length) return false;
-    const paused = !nearbyGateMet(instance, needsNearby);
+    const paused = !ownGateMet(instance, needsNearby);
     const prev = Growth.growthAlertOf(instance.id);
     if (paused) {
         if (prev?.alert !== ALERT.GROW_NEEDS_NEARBY || prev.needs !== needsNearby) {
@@ -152,7 +155,7 @@ function gatePaused(instance, needsNearby) {
  * * `idleWhile(instance, def)` — optional: while true the clock is held at zero
  *   (a full enemy camp);
  * * `pausedWhile(instance, def)` — optional: while true the clock stands still
- *   where it is and nothing falls due (a Stump with no Forest in reach);
+ *   where it is and nothing falls due (a Stump whose Forest is gone);
  * * `once` — true when the clock is done once it acts (a refill), rather than
  *   starting another lap;
  * * `resting` — true for the rows whose `applies` moves with the Token's
@@ -172,7 +175,7 @@ function gatePaused(instance, needsNearby) {
  */
 export const HANDLERS = [
     {
-        // A growth (`Growth.js`): it may need a Token in reach to run and pay a cost to happen.
+        // A growth (`Growth.js`): it may need its owner to run, or pay a cost to happen.
         id: 'grows',
         clock: 'growMs',
         replaces: true,
@@ -214,7 +217,7 @@ export const HANDLERS = [
     {
         // A resting Token refills in place after its rest. One-shot: the clock is gone once it
         // refills, and the next rest starts it afresh (`Respawn.restInstead`). A refill that needs
-        // a Token in reach stands still without one.
+        // its owner stands still without it.
         id: 'refill',
         clock: Respawn.CLOCK,
         once: true,

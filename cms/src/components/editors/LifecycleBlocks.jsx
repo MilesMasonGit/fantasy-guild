@@ -18,7 +18,7 @@ import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
 const BLOCK_INFO = {
   spawner: { title: 'Spawner', what: 'Adds new Tokens to the mat on a clock, up to its allowance.' },
-  grows: { title: 'Grows', what: 'Becomes another Token after a time (Sapling → Tree); it may need a Token in reach and cost an item (Stump → Sapling).' },
+  grows: { title: 'Grows', what: 'Becomes another Token after a time (Sapling → Tree); it may need its own Forest (a Stump regrows only while the Forest that planted it stands) or cost an item.' },
   foundation: { title: 'Foundation', what: 'Bought at the Shop and built on with a recipe.' },
   shop: { title: 'Shop', what: 'Sold at the Shop, priced in items.' },
   trickle: { title: 'Passive Production', what: 'Drops these items beside the Token once a lap (10 minutes, shortened by Guild Hall stars), all on one timer, no hero needed (Guild Hall only, for now). The Wishing Well adds its Water to the Hall’s.' },
@@ -161,7 +161,7 @@ function GrowsBlock({ block, selfId, tokenOptions, items, onChange }) {
         <IntField label="After (ms)" min={1000} step={1000} value={block.afterMs} onChange={(afterMs) => patch({ afterMs })} />
       </div>
       <div data-field="needs-nearby">
-        <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">Needs one of these in reach</label>
+        <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">Needs its own one of these (its Forest)</label>
         <div className="space-y-1.5">
           {nearby.map((typeId, i) => (
             <div key={i} className="flex items-center gap-1.5">
@@ -192,7 +192,7 @@ function GrowsBlock({ block, selfId, tokenOptions, items, onChange }) {
       </div>
       <p className="text-[10px] text-gray-600">
         {nearby.length
-          ? 'Its clock stands still while none of these stands within reach (a Stump with no Forest stays a Stump).'
+          ? 'It grows only while the Token of these that owns it stands (a Stump whose Forest is gone stays a Stump), at its fixed time and for free: a cost is ignored.'
           : 'Grows wherever it stands.'}
         {Array.isArray(block.cost) && block.cost.length
           ? ' When it grows it pays the cost; with none in the Bank it stops and says what it needs.'
@@ -361,7 +361,7 @@ function RespawnBlock({ block, selfId, tokens, tokenOptions, onChange }) {
   let note;
   if (mode === 'refill') {
     note = 'At 0 charges it stays where it stands, resting, then refills to its starting charges all at once. With a resting sprite it is drawn as that picture while it rests (every vein shares one empty rock; its name still says which ore); without one, as its own art, greyed.';
-    if (nearby.length) note += ' Its rest stands still while none of the Tokens below stands within reach (a Bare apple tree with no Orchard stays Bare).';
+    if (nearby.length) note += ' Its rest stands still while the Token below that owns it is gone (a Bare apple tree whose Orchard is gone stays Bare), and no Grow Time shortens it.';
   }
   else if (!block.into) note = 'Pick the Token it becomes at 0 charges; that Token’s Grows block brings it back.';
   else if (!into) note = `${block.into} does not exist.`;
@@ -401,7 +401,7 @@ function RespawnBlock({ block, selfId, tokens, tokenOptions, onChange }) {
       )}
       {mode === 'refill' && (
         <div data-field="refill-needs-nearby">
-          <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">Refills only with one of these in reach</label>
+          <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">Refills only while its own one of these stands</label>
           <div className="space-y-1.5">
             {nearby.map((typeId, i) => (
               <div key={i} className="flex items-center gap-1.5">
