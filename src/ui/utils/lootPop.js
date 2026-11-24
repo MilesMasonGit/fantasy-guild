@@ -2,8 +2,9 @@ import { signedAmount } from '../components/notifications/stubText.js';
 
 /**
  * The amount gained, popped out of an item notice's side as collected loot lands on it
- * (`ParticleOverlay`): written as the notice writes its count ("+12", "+2.5k"), in the notice's own
- * font, size and black outline, made hard-edged. It slides out to the left (the mat side), flashes
+ * (`ParticleOverlay`): written as the notice writes its count ("+12", "+2.5k"), in the font its count
+ * renders in (the player's font setting decides it), at its size, with its black outline, made
+ * hard-edged. It slides out to the left (the mat side), flashes
  * white, turns the gain green, and fades in steps. Its picture is made once per landing, never per frame.
  */
 
@@ -18,7 +19,7 @@ const POP_SLIDE_SHARE = 0.4;
 /** The fade: the last of `POP_MS`, in two steps. */
 const POP_FADE_MS = 200;
 
-/** The notice's count: its font (`font-pixel`, `ui-text-body`, bold) and gain colour (`--color-gi-success`). */
+/** The notice's count, where it cannot be read: the pixel font, the body text size, bold. Its gain colour (`--color-gi-success`). */
 export const POP_FONT = 'bold 16px "Pixelify Sans", monospace';
 export const POP_COLOUR = '#09b554';
 /** Room round the text for its 1 px outline. */
@@ -41,20 +42,21 @@ export function popAt(ms) {
 }
 
 /**
- * The pop's two pictures, white and coloured, each with the black outline: the text drawn once,
- * cut to hard pixels (no soft edge), its outline one pixel round it.
+ * The pop's two pictures, white and coloured, each with the black outline: the text drawn once in
+ * `font` (a canvas font string), cut to hard pixels (no soft edge), its outline one pixel round it.
  * @returns {{ white: HTMLCanvasElement, coloured: HTMLCanvasElement, w: number, h: number }|null}
  */
-export function popPictures(text, makeCanvas = () => document.createElement('canvas')) {
+export function popPictures(text, font = POP_FONT, makeCanvas = () => document.createElement('canvas')) {
     try {
         const probe = makeCanvas().getContext('2d');
-        probe.font = POP_FONT;
+        probe.font = font;
         const w = Math.ceil(probe.measureText(text).width) + PAD * 2;
-        const h = 16 + PAD * 2 + 4;
+        const size = parseFloat(/(\d+(?:\.\d+)?)px/.exec(font)?.[1]) || 16;
+        const h = Math.ceil(size) + PAD * 2 + 4;
         const c = makeCanvas();
         c.width = w; c.height = h;
         const g = c.getContext('2d', { willReadFrequently: true });
-        g.font = POP_FONT;
+        g.font = font;
         g.textBaseline = 'middle';
         g.fillStyle = '#ffffff';
         g.fillText(text, PAD, h / 2);

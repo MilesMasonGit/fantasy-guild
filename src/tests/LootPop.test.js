@@ -65,7 +65,7 @@ describe('the pop pictures', () => {
 
     it('one text drawing; white and coloured, hard-edged, with a black outline round the text', () => {
         const log = { texts: 0 };
-        const p = popPictures('+12k', maker(log));
+        const p = popPictures('+12k', 'bold 16px Pixelify Sans', maker(log));
         expect(log.texts).toBe(1);
         const green = [1, 3, 5].map(i => parseInt(POP_COLOUR.slice(i, i + 2), 16));
         expect(colourAt(p.white, 5, 6)).toEqual([255, 255, 255, 255]);
@@ -79,6 +79,6 @@ describe('the pop pictures', () => {
     });
 
     it('a canvas that cannot draw gives no pop', () => {
-        expect(popPictures('+1', () => ({ getContext: () => null }))).toBeNull();
+        expect(popPictures('+1', undefined, () => ({ getContext: () => null }))).toBeNull();
     });
 });

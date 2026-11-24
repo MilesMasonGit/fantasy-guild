@@ -47,16 +47,25 @@ The owner picks one of each; only the pick is built. The flight's path and timin
 the item notification bar, with a longer and more dense one for larger pickups. We'll add a lighter
 sparkle trail for the item flight." So, in place of §2's shower along the flight and §3's flash:
 
-- **A shower out of the item notice** the item lands on: pixel sparkles spill out of the notice's
-  left edge, fan out over the mat and fall, never back over the notice or its count (spilled from
-  under it, the first try, they piled onto the notice below and hid its count). Its length and density follow the
-  shadows' seven stack steps, from the shortest and sparsest (1 – 9) to the longest and densest
-  (1,000,000 and more): `LANDING_SHOWER_MS` and `LANDING_SHOWER_PER_BEAT` in `lootSparkles.js`.
+- **A raining burst out of the item notice** the item lands on (owner, after seeing the first
+  shower: "looks like a spout, but I want it to look more like a raining burst. The particles can come
+  out of anywhere on the notification, and can fall down overtop of other notifications. But I still
+  want it to burst/spray to the left"): each sparkle starts at its own point anywhere on the notice,
+  bursts out to the left at its own speed (some rising first) and falls like rain, over the notices
+  below too. Its length and density follow the shadows' seven stack steps, from the shortest and
+  sparsest (1 – 9) to the longest and densest (1,000,000 and more): `LANDING_SHOWER_MS` and
+  `LANDING_SHOWER_PER_BEAT` in `lootSparkles.js` (densities raised a step for the burst to read as
+  rain).
+- **The amount pops out of the notice's side** (owner: "I want the item number gained to pop out of
+  the side of the notification bar and flash when the item lands. This will be z-leveled above the
+  sparkles."): the amount gained, written as the notice writes its count ("+12", "+2.5k"), in its
+  font and outline, slides out of the notice's left side, white for a moment, then the gain green,
+  and fades; drawn last, over every sparkle. `POP_MS` and `POP_TRAVEL_PX` in `lootPop.js`.
 - **A lighter sprinkle during the flight**: a few fainter sparkles left behind the item, the same for
   every stack (`FLIGHT_SPARKLE_EVERY_MS`).
-- **Colour** (the director's call, to show the owner): the item's primary colour lightened toward
-  white, so the sparkles answer the darkening shadows. §2's stack colours are kept in the code as the
-  one other choice (`SPARKLE_COLOUR_SOURCE`).
+- **Colour**: the item's primary colour lightened toward white, so the sparkles answer the darkening
+  shadows (the director's call, kept by the owner: "the light item-colored sparkles are preferred").
+  §2's stack colours stay in the code as the one other choice (`SPARKLE_COLOUR_SOURCE`).
 - No white flash on the notice (§3) for now.
 
 ## 2. A sparkle shower coloured by stack size

@@ -16,7 +16,7 @@ import {
     forEachFlightSparkle, forEachShowerSparkle, showerLengthMs, stackSparkleColours
 } from '../../utils/lootSparkles.js';
 import { SPRITE_INSET_PX, SPRITE_PX, STUB_PX } from '../notifications/stubGeometry.js';
-import { POP_MS, POP_TRAVEL_PX, popAt, popPictures, popText } from '../../utils/lootPop.js';
+import { POP_FONT, POP_MS, POP_TRAVEL_PX, popAt, popPictures, popText } from '../../utils/lootPop.js';
 import { FRAME_BAND_PX } from './PixelFrame.jsx';
 import { isDrawingPaused } from '../board/frameClock.js';
 
@@ -649,15 +649,26 @@ class ParticleSystem {
                 p.noticeLeft = p.noticeRight - r.width;
             }
         }
-        p.pop = this._popPicturesOf(popText(p.quantity));
+        p.pop = this._popPicturesOf(popText(p.quantity), this._countFontOf(el));
         this._include(p);
     }
 
-    /** The pop's pictures for a text, made once per text (a sweep lands many of the same). */
-    _popPicturesOf(text) {
+    /**
+     * The font a notice's count renders in, as a canvas font: the player's font setting decides it
+     * (`body[data-font]`), so it is read from the count itself. Its default when there is none.
+     */
+    _countFontOf(el) {
+        const count = el?.querySelector('.tabular-nums');
+        const st = count && globalThis.getComputedStyle?.(count);
+        return st?.fontFamily && st.fontSize ? `${st.fontWeight || 'bold'} ${st.fontSize} ${st.fontFamily}` : POP_FONT;
+    }
+
+    /** The pop's pictures for a text in a font, made once each (a sweep lands many of the same). */
+    _popPicturesOf(text, font) {
         if (!this._pops) this._pops = new Map();
-        if (!this._pops.has(text)) this._pops.set(text, popPictures(text));
-        return this._pops.get(text);
+        const key = font + '|' + text;
+        if (!this._pops.has(key)) this._pops.set(key, popPictures(text, font));
+        return this._pops.get(key);
     }
 
     /** The notice a flight lands on, as read (or guessed round its sprite before then), in screen px. */
