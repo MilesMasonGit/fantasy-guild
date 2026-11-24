@@ -106,12 +106,12 @@ describe('a level-up on the mat', () => {
     it('plays once over the hero and is gone, asking for no frames at rest', () => {
         const calls = recordCanvas();
         const { container } = render(h(LevelUpFlashLayer, { heroes }));
-        expect(container.querySelector('[data-level-flash-layer]')).toBeNull();
+        expect(container.querySelector('[data-levelup-burst-layer]')).toBeNull();
         expect(frames.pending()).toBe(0);
 
         level(24, 25);
-        const canvas = container.querySelector('[data-level-flash="h1"]');
-        expect(canvas.getAttribute('data-level-flash-size')).toBe('big');
+        const canvas = container.querySelector('[data-levelup-burst="h1"]');
+        expect(canvas.getAttribute('data-levelup-burst-size')).toBe('big');
         expect(frames.pending()).toBe(1);
         frames.run(300);
         expect(calls.some(([k, colour]) => k === 'fill' && colour === FLASH_GOLD)).toBe(true);
@@ -119,7 +119,7 @@ describe('a level-up on the mat', () => {
         expect(canvas.style.transform).toContain('translate(');
 
         frames.run(flashEndMs('big'));
-        expect(container.querySelector('[data-level-flash-layer]')).toBeNull();
+        expect(container.querySelector('[data-levelup-burst-layer]')).toBeNull();
         expect(currentFlashes()).toEqual([]);
         expect(frames.pending()).toBe(0);
     });

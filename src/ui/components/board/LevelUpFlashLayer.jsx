@@ -70,7 +70,7 @@ export const LevelUpFlashLayer = memo(function LevelUpFlashLayer({ heroes }) {
     if (!list.length) return null;
     return (
         <div
-            data-level-flash-layer
+            data-levelup-burst-layer
             aria-hidden="true"
             className="absolute left-0 top-0 pointer-events-none overflow-hidden"
             style={{ width: mat.w, height: mat.h, zIndex: MAT_Z.RINGS, borderRadius: MAT_EDGE.radius }}
@@ -80,8 +80,8 @@ export const LevelUpFlashLayer = memo(function LevelUpFlashLayer({ heroes }) {
                 return (
                     <canvas
                         key={f.id}
-                        data-level-flash={f.heroId}
-                        data-level-flash-size={f.size}
+                        data-levelup-burst={f.heroId}
+                        data-levelup-burst-size={f.size}
                         ref={el => { if (el) canvases.current.set(f.id, el); else canvases.current.delete(f.id); }}
                         width={side}
                         height={side}
