@@ -65,17 +65,51 @@ next pack.*
     offers to Mining, Forestry, Fishing and Farming ([concept_world_map.md](concept_world_map.md)).
 13. **A lure for a fish this water lacks**: the hero fishes the lureless random roll, **the lure is not
     used up**, and their bubble says "No Salmon here" once (owner).
-14. **Hovering a water shows the fish that could be caught there** in its speech bubble (owner;
+14. **Hovering a fishing spot shows the fish that could be caught there** in its speech bubble (owner;
     the water's version of [concept_playmat_declutter.md](concept_playmat_declutter.md) §12.3); the
     card says which lure each needs.
 15. **A Dock**, its own gathering foundation on the shore, offers the Fishing Hut, a Bait Shed and a
     Lure Workshop ([concept_gathering_foundations.md](concept_gathering_foundations.md), draft).
 
+### Second round, 2026-11-24: spots, lures, the fish list, Bait
+
+16. **Water is ground; fishing spots are Tokens that come and go** (owner). The mat's water cells
+    (sea, river, lake) are terrain; **Fishing Spot** Tokens drift in on them and leave by themselves,
+    with no player doing anything. Today's Coast, River and Lake Tokens go. A spot's fish come from
+    the water it sits on plus the Region's biome (point 10).
+17. **A spot moves on by chance**: each catch has a small chance the spot leaves (no counter); an
+    unworked spot drifts off after a while (owner).
+18. **When a spot goes, a hero ordered by hand stops; a Fishing Hut's hero moves to the next spot**
+    in reach that fits their tool and level (owner). The Hut is what keeps fishing running.
+19. **A new Dock building makes spots more common** in its reach (owner; name the content agent's,
+    e.g. a Chum Station). The Fishing Hut keeps heroes moving; this one brings the fish.
+20. **Spots don't count toward the Token cap** (owner), as events don't.
+21. **Special waters are rare spot kinds** (owner): the Oyster Bed, Coral Reef, Shipwreck and
+    Shark-Infested Waters drift in rarely on the right water and biome (a Coral Reef only on warm
+    sea), each with **its own fixed catch**: lures don't matter there, only the tool kind, level and
+    Bait. The **Fish Shoal** is the richest, an event ([content_events.md](content_events.md)).
+22. **Three lures** (owner), early, mid and late in the main, **overlapping tiers**: a lure covers a
+    few fish across bands (a Feather Lure: two early fish and one mid). **A map holds at most one fish
+    per lure**, so a lure always means one fish there; the world tables enforce it.
+23. **Harpoons take no lure, but spend Bait** (owner). A harpoon covers its own few fish, also
+    overlapping (one mid, two late); without a lure it rolls among the harpoon fish the spot and
+    level allow, as point 5.
+24. **New late rod fish** so the late lure has fish, fresh and sea (owner; names the content agent's).
+25. **Bait has many recipes** (owner): **Fishing** recipes that turn raw fish (Raw Shrimp first) or
+    other sensible materials into Bait, **mostly at early Fishing levels, giving very little XP**.
+    This replaces "Bait is made by Crafting" below.
+26. **Seaweed is a rare by-catch at sea** (the rare-finds table), no lure or Trap slot of its own.
+
+**The fish list, lean** (owner's rule: no kind without a gameplay job; subject to change, the content
+agent's to fill within these rules): rod fish in three lure groups with overlap (early: Trout,
+Anchovy; mid: Salmon, Tuna; late: two new rod fish, fresh and sea); harpoon fish (one mid, two late:
+Swordfish, and the Shark at its own spot); Trap catches, one per water (Raw Shrimp free; Crab,
+Lobster); the special spots' own (Oyster with a rare Pearl, Tropical Fish, the Shipwreck's goods).
+
 **Planning agent's calls (simplest first; the content agent may move them):** Raw Shrimp is the
 River and Lake's free Trap catch; Lobster is the Coast's Trap catch; Oyster the Oyster Bed's; **Crab**
-(new, the owner's example) a Trap catch where a water has none, or cut if none is free. Bait is made
-by Crafting, from Raw Shrimp (one recipe; the amount the ledger's). Lures are made by Crafting, each
-at about its fish's level.
+(new, the owner's example) a Trap catch where a water has none, or cut if none is free. Lures are made by
+Crafting (or the Dock's Lure Workshop). *Bait: point 25.*
 
 ## Amended 2026-11-21 (Systems Audit, T-622, T-623, T-604)
 
