@@ -12,7 +12,7 @@ import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { summariseMat, rowLabel } from '../systems/board/MatSummary.js';
-import { MatTopBar, MAT_TOP_BAR_PX } from '../ui/components/board/MatTopBar.jsx';
+import { MatTopBar, MAT_TOP_BAR_PX, MatLogo, MAT_LOGO_SLOT_PX, SHOW_MAT_COUNTS } from '../ui/components/board/MatTopBar.jsx';
 import { hallCameraSides } from './fixtures/hallCameraSides.js';
 import { MatCapBadge, liveMatSummary } from '../ui/components/board/MatCapBadge.jsx';
 import * as SpawnerSystem from '../systems/board/SpawnerSystem.js';
@@ -23,7 +23,7 @@ import path from 'node:path';
 import { MatRegionName, liveRegionName } from '../ui/components/board/MatRegionName.jsx';
 import { MatUpkeepBadge } from '../ui/components/board/MatUpkeepBadge.jsx';
 import { HOVER_HIDE_DELAY_MS } from '../ui/hooks/useHoverOpen.js';
-import { MapModeToggles, MapModeBanner } from '../ui/components/board/MatModeControls.jsx';
+import { MapModeBanner } from '../ui/components/board/MatModeControls.jsx';
 import { MAP_MODE, setMapMode } from '../ui/hooks/useMapMode.js';
 import { REGION_BANNER_PX, REGION_BANNER_SCALE } from '../ui/components/board/MatRegionName.jsx';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
@@ -327,63 +327,100 @@ describe('⭐ Token Summary (MatCapBadge)', () => {
     });
 });
 
-describe('⭐ the restyled bar (T-170)', () => {
+describe('⭐ the bar without its frame (playmat declutter)', () => {
     const regionBar = (c) => c.querySelector('[data-mat-region-name]');
 
-    it('wears the studded pixel frame', () => {
+    it('⭐ has no frame and no fill of its own, and is the content row\'s height', () => {
         const { container } = render(React.createElement(MatTopBar));
         const bar = container.querySelector('[data-mat-top-bar]');
-        expect(bar.getAttribute('data-pixel-frame')).toBe('studs');
-        expect(bar.querySelector('.ui-frame-studs')).not.toBeNull();
-        expect(bar.querySelector('[data-pixel-frame-shadow]').className).toContain('ui-frame-shadow-studs');
+        expect(bar.hasAttribute('data-pixel-frame')).toBe(false);
+        expect(container.querySelector('[data-pixel-frame]')).toBeNull();
+        expect(container.querySelector('[class*="ui-frame-"]')).toBeNull();
+        expect(bar.className).not.toMatch(/\bbg-/);
+        expect(MAT_TOP_BAR_PX).toBe(64);
     });
 
-    const mountWholeBar = () => render(React.createElement(MatTopBar, {
-        left: React.createElement(MatRegionName, { readName: () => ({ name: 'Elderfield', practical: 'Starter Camp' }), readBanner: () => 'b_village' }),
-        middle: React.createElement(MapModeBanner, {
-            fallback: React.createElement(React.Fragment, null,
-                React.createElement(MatCapBadge),
-                React.createElement(MatUpkeepBadge, { readTotal: () => 0 }))
-        }),
-        right: React.createElement(MapModeToggles)
+    const mountWholeBar = (fallback = null) => render(React.createElement(MatTopBar, {
+        left: React.createElement(MatLogo, { logoSrc: '/no-such-logo.png' }),
+        middle: React.createElement(MapModeBanner, { fallback }),
+        right: React.createElement(MatRegionName, { readName: () => ({ name: 'Elderfield', practical: 'Starter Camp' }), readBanner: () => 'b_village' })
     }));
 
-    it('⭐ left: the Region name on its banner; centre: Tokens and Upkeep, each an item bar; right: the toggles', () => {
+    it('⭐ left: the logo\'s words in the title screen\'s type, in a slot the logo\'s width; right: the Region name on its banner; middle: empty with no mode on', () => {
         const { container } = mountWholeBar();
         const left = container.querySelector('[data-mat-top-bar-left]');
-        expect([...left.children].map(e => e.getAttribute('data-mat-region-banner'))).toEqual(['b_village']);
-        const middle = container.querySelector('[data-mat-top-bar-middle]');
-        const bars = [...middle.children];
-        expect(bars.map(e => e.getAttribute('data-mat-cap-badge') !== null ? 'tokens'
-            : e.getAttribute('data-mat-upkeep-badge') !== null ? 'upkeep' : '?')).toEqual(['tokens', 'upkeep']);
-        expect(bars.every(e => e.hasAttribute('data-item-bar'))).toBe(true);
-        expect([...container.querySelectorAll('[data-mat-top-bar-right] [data-map-mode-toggle]')]
-            .map(b => b.getAttribute('data-map-mode-toggle'))).toEqual(['demolish']);
+        const logo = left.querySelector('[data-mat-logo="text"]');
+        expect(logo.style.width).toBe(`${MAT_LOGO_SLOT_PX}px`);
+        const words = logo.querySelector('[data-mat-logo-text]');
+        expect(words.textContent).toBe('Tabletop Guild');
+        expect(words.className).toContain('ui-text-display');
+        expect(words.className).toContain('ui-text-outline-2');
+        const right = container.querySelector('[data-mat-top-bar-right]');
+        expect([...right.children].map(e => e.getAttribute('data-mat-region-banner'))).toEqual(['b_village']);
+        expect(right.style.minWidth).toBe(`${MAT_LOGO_SLOT_PX}px`);
+        expect(container.querySelector('[data-mat-top-bar-middle]').children).toHaveLength(0);
+        expect(container.querySelector('[data-mat-top-bar] [data-map-mode-toggle]')).toBeNull();
         // The side columns are equal, so the centre sits on the mat's centre line.
-        expect(container.querySelector('.ui-frame-studs').className).toContain('grid-cols-[1fr_auto_1fr]');
+        expect(container.querySelector('[data-mat-top-bar]').className).toContain('grid-cols-[1fr_auto_1fr]');
     });
 
-    it('⭐ the banner may run on under the middle and right: the frame is its size container, and they paint over it', () => {
+    it('⭐ once the logo is drawn it stands in the slot, at a whole multiple that fits the bar', async () => {
+        const OrigImage = globalThis.Image;
+        globalThis.Image = class {
+            constructor() { this.naturalWidth = 120; this.naturalHeight = 24; }
+            set src(v) { this._src = v; setTimeout(() => this.onload?.(), 0); }
+            get src() { return this._src; }
+        };
+        try {
+            const { container } = render(React.createElement(MatLogo, { logoSrc: '/logo.png' }));
+            await act(async () => { await new Promise(r => setTimeout(r, 5)); });
+            const img = container.querySelector('[data-mat-logo="logo"] img');
+            expect(img.getAttribute('src')).toBe('/logo.png');
+            expect(img.getAttribute('alt')).toBe('Tabletop Guild');
+            // 288 / 120 = 2.4 and (64 - 8) / 24 = 2.33: twice its size.
+            expect(img.style.width).toBe('240px');
+            expect(img.style.height).toBe('48px');
+            expect(img.style.imageRendering).toBe('pixelated');
+        } finally {
+            globalThis.Image = OrigImage;
+        }
+    });
+
+    it('⭐ the Token cap and Upkeep are switched off, their code kept', () => {
+        expect(SHOW_MAT_COUNTS).toBe(false);
+        const code = fs.readFileSync('src/ui/ReactRoot.jsx', 'utf8');
+        expect(code).toMatch(/SHOW_MAT_COUNTS \? <><MatCapBadge \/><MatUpkeepBadge \/><\/> : null/);
+        expect(code).toMatch(/left=\{<MatLogo \/>\}/);
+        expect(code).toMatch(/right=\{<MatRegionName /);
+    });
+
+    it('⭐ the banner runs on under the middle and the logo: the bar is its size container, and they paint over it', () => {
         const { container } = mountWholeBar();
-        expect(container.querySelector('.ui-frame-studs').className).toContain('[container-type:inline-size]');
-        for (const end of ['middle', 'right']) {
-            expect(container.querySelector(`[data-mat-top-bar-${end}]`).className.split(' ')).toContain('relative');
-        }
-        // Each badge keeps its own dark fill over the picture.
-        for (const badge of container.querySelectorAll('[data-mat-top-bar-middle] [data-item-bar]')) {
-            expect(badge.className).toMatch(/bg-\[#181412\]/);
+        expect(container.querySelector('[data-mat-top-bar]').className).toContain('[container-type:inline-size]');
+        for (const end of ['left', 'middle']) {
+            const cls = container.querySelector(`[data-mat-top-bar-${end}]`).className.split(' ');
+            expect(cls).toContain('relative');
+            expect(cls).toContain('z-10');
         }
     });
 
-    it('⭐ while a mode is on its banner takes the centre in place of Tokens and Upkeep, and they come back after', () => {
+    it('⭐ while a mode is on its banner takes the centre, and it empties after', () => {
         const { container } = mountWholeBar();
         const middle = container.querySelector('[data-mat-top-bar-middle]');
         act(() => setMapMode(MAP_MODE.DEMOLISH));
         expect(middle.querySelector('[data-map-mode-banner="demolish"] [data-cancel-all-marks]')).not.toBeNull();
-        expect(middle.querySelector('[data-mat-cap-badge]')).toBeNull();
         act(() => setMapMode(null));
         expect(middle.querySelector('[data-map-mode-banner]')).toBeNull();
-        expect(middle.querySelector('[data-mat-cap-badge]')).not.toBeNull();
+        expect(middle.children).toHaveLength(0);
+    });
+
+    it('the counts come back in the middle when switched on again (the fallback)', () => {
+        const { container } = mountWholeBar(React.createElement(React.Fragment, null,
+            React.createElement(MatCapBadge),
+            React.createElement(MatUpkeepBadge, { readTotal: () => 0 })));
+        const bars = [...container.querySelector('[data-mat-top-bar-middle]').children];
+        expect(bars.map(e => e.getAttribute('data-mat-cap-badge') !== null ? 'tokens'
+            : e.getAttribute('data-mat-upkeep-badge') !== null ? 'upkeep' : '?')).toEqual(['tokens', 'upkeep']);
     });
 
     it('⭐ the bar is exactly as wide as the mat on screen, following the fit and the Mat Tuner', () => {
@@ -404,7 +441,7 @@ describe('⭐ the restyled bar (T-170)', () => {
         }
     });
 
-    it('⭐ the Region banner: the Atlas banner at 3x, one picture wide but never past the bar, fading out to the right; a big name; no badge, no icon', () => {
+    it('⭐ the Region banner: the Atlas banner at 3x, one picture wide but never past the bar, fading out to the left; a big name at the right; no badge, no icon', () => {
         const { container } = render(React.createElement(MatRegionName, {
             readName: () => ({ name: 'Elderfield', practical: 'Starter Camp' }), readBanner: () => 'b_village'
         }));
@@ -416,7 +453,9 @@ describe('⭐ the restyled bar (T-170)', () => {
         // The cap at the bar's far end (`max-width: 100cqw`) is checked in the browser: jsdom drops container units.
         expect(slice.querySelector('img').getAttribute('data-banner-scale')).toBe('3');
         expect(slice.querySelector('[data-mat-region-name-text]').className).toContain('ui-text-bar-name');
-        expect(art.style.maskImage || art.style.webkitMaskImage).toMatch(/linear-gradient\(to right/);
+        expect(art.style.maskImage || art.style.webkitMaskImage).toMatch(/linear-gradient\(to left/);
+        expect(art.style.left).toBe('auto');
+        expect(slice.className).toContain('justify-end');
         expect(slice.querySelector('img').style.imageRendering).toBe('pixelated');
         expect(slice.querySelector('[data-item-bar]')).toBeNull();
         expect(slice.querySelectorAll('img').length).toBe(1);

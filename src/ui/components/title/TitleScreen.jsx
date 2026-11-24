@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useOptionalImage } from '../../hooks/useOptionalImage.js';
 import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
 import { cn } from '../../utils/cn.js';
 import { t } from '../../../i18n/index.js';
@@ -6,21 +7,6 @@ import {
     TITLE_LOGO_SRC, TITLE_PAINTING_SRC, TITLE_BANNER_SIZE, titleBannerSrc,
     TITLE_LOOK, DEFAULT_TITLE_LOOK, coverScale, fitScale
 } from './titleArt.js';
-
-/** A picture that may not exist yet: its size once it loads, else null (a missing file stays null). */
-function useOptionalImage(src) {
-    const [art, setArt] = useState(null);
-    useEffect(() => {
-        let live = true;
-        const img = new Image();
-        img.onload = () => {
-            if (live && img.naturalWidth > 0) setArt({ src, width: img.naturalWidth, height: img.naturalHeight });
-        };
-        img.src = src;
-        return () => { live = false; };
-    }, [src]);
-    return art;
-}
 
 function useViewport() {
     const read = () => ({ width: window.innerWidth || 0, height: window.innerHeight || 0 });

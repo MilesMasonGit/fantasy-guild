@@ -154,6 +154,7 @@ export const MatToken = React.memo(function MatToken({
     dragging = false,
     fightBarHost = null,
     held = false,
+    found = null,
     onPress
 }) {
     // Perf draw switches: each only stops DRAWING (see drawSwitches.js).
@@ -415,7 +416,7 @@ export const MatToken = React.memo(function MatToken({
     const orderLit = useOrderLit(id);
     const outline = orderLit === 'workable' && !isHovered
         ? 'work'
-        : tokenOutline({ hovered: isHovered, selected, lit: lit || orderLit === 'job', alert: !!alert, mode: mapMode, unavailable: modeUnavailable });
+        : tokenOutline({ hovered: isHovered, selected, lit: lit || orderLit === 'job' || found === 'match', alert: !!alert, mode: mapMode, unavailable: modeUnavailable });
     const gearState = gearStateOf(detail || {});
     const gear = React.useMemo(
         () => (gearState.show ? {
@@ -491,6 +492,7 @@ export const MatToken = React.memo(function MatToken({
                 data-token-state-sprite={stateSprite || undefined}
                 data-token-fixed={fixed ? 'true' : undefined}
                 data-token-protected={demolishProtected ? 'true' : undefined}
+                data-find={found || undefined}
                 // A plain click acts only in a map mode; orders are given by drag alone.
                 onClick={mapMode ? () => { if (!dragging) onModeClick?.(id); } : undefined}
                 onContextMenu={(e) => {

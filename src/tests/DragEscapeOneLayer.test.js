@@ -25,7 +25,7 @@ import { BottomHeroDock } from '../ui/components/dock/BottomHeroDock.jsx';
 import { HeroDrawer } from '../ui/components/dock/HeroDrawer.jsx';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 import { toggleMapMode, setMapMode, MAP_MODE } from '../ui/hooks/useMapMode.js';
-import { MapModeToggles } from '../ui/components/board/MatModeControls.jsx';
+import { MatControls } from '../ui/components/board/MatControls.jsx';
 
 const h = React.createElement;
 
@@ -96,11 +96,11 @@ describe('Escape mid-drag does not also end a map mode (CR3-409)', () => {
         const { container } = render(
             h(DeckDndProvider, null,
                     h(BottomHeroDock, { selectedHeroId: null }),
-                    h(MapModeToggles))
+                    h(MatControls))
         );
 
         act(() => toggleMapMode(MAP_MODE.DEMOLISH));
-        expect(container.querySelector('[data-map-mode-toggle="demolish"][data-on="true"]')).not.toBeNull();
+        expect(container.querySelector('[data-mat-controls-button][data-mode-on="true"]')).not.toBeNull();
 
         act(() => startRealDrag(container));
         expect(document.body.classList.contains('gi-dnd-active')).toBe(true);
@@ -109,10 +109,10 @@ describe('Escape mid-drag does not also end a map mode (CR3-409)', () => {
 
         expect(document.body.classList.contains('gi-dnd-active')).toBe(false);
         // Demolish mode is still on: the drag's Escape did not also turn it off.
-        expect(container.querySelector('[data-map-mode-toggle="demolish"][data-on="true"]')).not.toBeNull();
+        expect(container.querySelector('[data-mat-controls-button][data-mode-on="true"]')).not.toBeNull();
 
         // A second Escape, with no drag live, does end it.
         act(() => fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' }));
-        expect(container.querySelector('[data-map-mode-toggle="demolish"][data-on="false"]')).not.toBeNull();
+        expect(container.querySelector('[data-mat-controls-button][data-mode-on="false"]')).not.toBeNull();
     });
 });

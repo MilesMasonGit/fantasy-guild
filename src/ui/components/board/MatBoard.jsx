@@ -35,6 +35,8 @@ import {
     MAP_MODE, useMapMode, getMapMode, flipDemolishMark
 } from '../../hooks/useMapMode.js';
 import { mapModeCursor } from './mapModeCursor.js';
+import { useMatFind } from '../../hooks/useMatFind.js';
+import { foundOnMat, findMarkOf } from './matFind.js';
 import { useMatFit } from './MatFitContext.jsx';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -262,6 +264,11 @@ export const MatBoard = React.memo(function MatBoard({
         null
     );
     const heroes = useMemo(() => heroesRaw || [], [heroesRaw]);
+
+    // The Controls strip's Find: worked out once per change of the find or of who is on the mat,
+    // and handed to each Token and hero as a word, so no find costs anything per frame.
+    const find = useMatFind();
+    const found = useMemo(() => foundOnMat(find, { tokens, heroes }), [find, tokens, heroes]);
 
     /**
      * How many resets (a load, a catch-up, travel) the mat has heard, for the task rings. Read like the
@@ -590,6 +597,7 @@ export const MatBoard = React.memo(function MatBoard({
                     dragging={carriedId === t.id}
                     fightBarHost={fighters.tokens.has(t.id) ? fightBarHost : null}
                     held={held && Occupation.isHeldType(t.typeId)}
+                    found={findMarkOf(found, 'tokens', t.id)}
                     onPress={handleTokenPress}
                 />
             ))}
@@ -599,6 +607,7 @@ export const MatBoard = React.memo(function MatBoard({
             {heroes.map(h => {
                 // A moving hero's point is MatHero's own.
                 const place = h.x == null ? { left: null, top: null } : heroPlacement(h);
+                const heroFound = findMarkOf(found, 'heroes', h.heroId);
                 const animState = heroAnimationState({
                     moving: h.moving, working: h.state === 'working', stuck: h.stuck, combat: h.combat
                 });
@@ -613,9 +622,10 @@ export const MatBoard = React.memo(function MatBoard({
                         top={place.top}
                         z={heroZ(h)}
                         outline={heroOutline({
-                            hovered: litHeroId === h.heroId || (h.tokenId != null && hoveredId === h.tokenId),
+                            hovered: litHeroId === h.heroId || (h.tokenId != null && hoveredId === h.tokenId) || heroFound === 'match',
                             selected: inspectedHeroId === h.heroId
                         })}
+                        found={heroFound}
                         onHover={handleHoverHero}
                         animationState={animState}
                         moving={h.moving}

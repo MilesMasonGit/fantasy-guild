@@ -1,14 +1,24 @@
-import { PixelFrame, FRAME_KIND } from '../base/PixelFrame.jsx';
+import { useOptionalImage } from '../../hooks/useOptionalImage.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { useLiveMatFit } from './MatFitContext.jsx';
+import { t } from '../../../i18n/index.js';
+import { TITLE_LOGO_SRC } from '../title/titleArt.js';
 
 /**
- * The bar's height in px: the studded frame's 6 px band above and below 64 px of content, a row of
- * item bars with 32 px sprites and title-size text. The mat does not sit under it: `ReactRoot`
- * stacks the bar above `Board` in a column, so the box `Board` measures for its fit
- * (`useBoardScale`) is this much shorter and the mat shrinks to match.
+ * The bar's height in px: a row of title-size text over the Region's banner. The mat does not sit
+ * under it: `ReactRoot` stacks the bar above `Board` in a column, so the box `Board` measures for
+ * its fit (`useBoardScale`) is this much shorter and the mat shrinks to match.
  */
-export const MAT_TOP_BAR_PX = 76;
+export const MAT_TOP_BAR_PX = 64;
+
+/**
+ * Whether the bar's middle shows the Token cap and Upkeep while no map mode is on. Off for now
+ * (owner: not used enough); the badges' code stays for their return.
+ */
+export const SHOW_MAT_COUNTS = false;
+
+/** The left end's width, px: kept for the game's logo whether the logo or its words stand there. */
+export const MAT_LOGO_SLOT_PX = 288;
 
 /**
  * The bar's own icons, drawn at 32 px, their art's own size. Placeholders until the owner draws the
@@ -36,12 +46,39 @@ export function useMatScreenWidth() {
 }
 
 /**
- * The mat's top bar: a strip above the mat, exactly as wide as it, in the studded pixel frame with
- * its hard shadow. Three parts:
- * * **left**: the Region name on its banner,
- * * **middle**, centred on the mat: the Token cap and Upkeep, or the map mode's banner while a
- *   mode is on,
- * * **right**, at the mat's right edge: controls (the Demolish toggle).
+ * The bar's left end: the game's logo (the title screen's picture, once the owner draws it, at a
+ * whole multiple that fits the bar), else its words in the title screen's display type. The slot
+ * keeps the logo's width either way.
+ * @param {{ logoSrc?: string }} props  `logoSrc` for tests
+ */
+export const MatLogo = ({ logoSrc = TITLE_LOGO_SRC }) => {
+    const logo = useOptionalImage(logoSrc);
+    const scale = logo ? Math.max(1, Math.floor(Math.min(MAT_LOGO_SLOT_PX / logo.width, (MAT_TOP_BAR_PX - 8) / logo.height))) : 0;
+    return (
+        <div data-mat-logo={logo ? 'logo' : 'text'} className="shrink-0 h-full flex items-center pl-2" style={{ width: MAT_LOGO_SLOT_PX }}>
+            {logo ? (
+                <img
+                    src={logo.src}
+                    alt={t('matTopBar.logoText')}
+                    draggable={false}
+                    style={{ width: logo.width * scale, height: logo.height * scale, maxWidth: 'none', imageRendering: 'pixelated' }}
+                />
+            ) : (
+                <span data-mat-logo-text className="ui-text-display ui-text-outline-2 font-bold text-white tracking-widest whitespace-nowrap">
+                    {t('matTopBar.logoText')}
+                </span>
+            )}
+        </div>
+    );
+};
+
+/**
+ * The mat's top bar: a strip above the mat, exactly as wide as it, with no frame or fill of its
+ * own. Three parts:
+ * * **left**: the game's logo ({@link MatLogo}),
+ * * **middle**, centred on the mat: the map mode's banner while a mode is on (and the Token cap
+ *   and Upkeep while {@link SHOW_MAT_COUNTS}),
+ * * **right**, at the mat's right edge: the Region name on its banner.
  * Only drawn on the playmat, never on the Guild Hall upgrade screen (ReactRoot lays it on the
  * table side of the Hall camera, with the mat).
  * @param {{ left?: React.ReactNode, middle?: React.ReactNode, right?: React.ReactNode, width?: number }} props
@@ -50,20 +87,19 @@ export function useMatScreenWidth() {
 export const MatTopBar = ({ left = null, middle = null, right = null, width }) => {
     const matWidth = useMatScreenWidth();
     return (
-        <PixelFrame
-            kind={FRAME_KIND.STUDS}
+        <div
             data-mat-top-bar
             style={{ height: MAT_TOP_BAR_PX, width: width ?? matWidth, maxWidth: '100%' }}
-            className="shrink-0 self-center select-none pointer-events-auto z-20"
             // ⚠️ Equal side columns keep the middle on the mat's centre line whatever the two ends hold.
-            // The frame is a size container so the Region's banner can reach across it (`100cqw`).
-            frameClassName="w-full grid grid-cols-[1fr_auto_1fr] items-center gap-3 pr-1 ui-text-title text-amber-100 [container-type:inline-size]"
+            // The bar is a size container so the Region's banner can reach across it (`100cqw`).
+            className="shrink-0 self-center select-none pointer-events-auto z-20 grid grid-cols-[1fr_auto_1fr] items-center gap-3 ui-text-title text-amber-100 [container-type:inline-size]"
         >
-            <div data-mat-top-bar-left className="flex items-center gap-2 h-full">{left}</div>
-            {/* ⚠️ Positioned so they paint over the left end's banner, which runs on under them. */}
-            <div data-mat-top-bar-middle className="relative flex items-center justify-center gap-2 min-w-0 h-full">{middle}</div>
-            <div data-mat-top-bar-right className="relative flex items-center gap-2 h-full justify-self-end">{right}</div>
-        </PixelFrame>
+            {/* ⚠️ Raised so they paint over the right end's banner, which runs on under them. */}
+            <div data-mat-top-bar-left className="relative z-10 flex items-center gap-2 h-full">{left}</div>
+            <div data-mat-top-bar-middle className="relative z-10 flex items-center justify-center gap-2 min-w-0 h-full">{middle}</div>
+            {/* As wide as the logo's end at least, so the middle stays on the mat's centre line when it is crowded. */}
+            <div data-mat-top-bar-right className="flex items-center justify-end gap-2 h-full" style={{ minWidth: MAT_LOGO_SLOT_PX }}>{right}</div>
+        </div>
     );
 };
 
