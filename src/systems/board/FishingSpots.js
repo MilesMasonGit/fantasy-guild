@@ -13,7 +13,7 @@ import {
 import { spotOf, arrivesByItself } from '../../config/registries/fishingSpots.js';
 
 /**
- * **Fishing spots** (brief 850 F1). Water is ground; a spot kind (`fishingSpots.js`: a Token type
+ * **Fishing spots**. Water is ground; a spot kind (`fishingSpots.js`: a Token type
  * with a `spot` block) arrives on water cells of its kinds by itself and leaves by itself.
  *
  * ## Arriving
