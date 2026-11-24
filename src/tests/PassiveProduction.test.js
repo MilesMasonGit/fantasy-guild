@@ -9,6 +9,7 @@ import * as TimedChanges from '../systems/board/TimedChanges.js';
 import * as PassiveProduction from '../systems/board/PassiveProduction.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
+import { oneHeroReachOf } from '../systems/board/jobArea.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
@@ -270,7 +271,8 @@ describe('⭐ the pay drops as loot beside the Token', () => {
         const drops = SpriteLayer.getSprites().filter(s => s.refId === 'fixture_pp_wood');
         expect(drops).toHaveLength(1);
         expect(drops[0]).toMatchObject({ kind: 'item', quantity: 2, fromX: hall.x, fromY: hall.y });
-        expect(Math.hypot(drops[0].x - hall.x, drops[0].y - hall.y)).toBeLessThan(130);
+        // Nobody works it: a one-hero job's edge round it, at the board's natural art scale (2).
+        expect(Math.hypot(drops[0].x - hall.x, drops[0].y - hall.y)).toBeCloseTo(oneHeroReachOf(hall.typeId, 2), 6);
         expect(banked('fixture_pp_wood')).toBe(0);
     });
 
