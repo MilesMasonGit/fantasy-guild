@@ -14,6 +14,8 @@ import { DatabaseManager } from '../config/DatabaseManager.js';
 import { getTokenType, getAllTokenTypes } from '../config/registries/tokenRegistry.js';
 import { RETIRED_WATER_TOKENS } from '../config/registries/fishingSpots.js';
 import { placeAt } from './fixtures/mat.js';
+import { worldTables } from '../config/registries/worldTablesRegistry.js';
+import { regionBoard } from '../systems/atlas/Cartography.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -66,6 +68,25 @@ describe('⭐ the fixed waters are gone from the game', () => {
         const laid = StarterCamp.placementsOf().map(p => p.typeId).filter(id => OLD_WATERS.includes(id));
         // Whatever the camp's file still names, none stands on the mat.
         expect(BoardState.tokens().filter(t => laid.includes(t.typeId))).toEqual([]);
+    });
+});
+
+describe('⭐ no world puts one on a map', () => {
+    it('the world tables the game reads name none as an origin or a key, whatever the file says', () => {
+        const tables = worldTables();
+        const named = tables.lines.flatMap(line => Object.values(line.origins).flat().map(o => o.id));
+        const keys = Object.values(tables.keys || {}).flat();
+        expect(named.length).toBeGreaterThan(0);
+        expect([...named, ...keys].filter(id => OLD_WATERS.includes(id))).toEqual([]);
+    });
+
+    it('a cell an older world wrote with one settles without it', () => {
+        const board = regionBoard({ nodes: [
+            { typeId: 'token_oak_tree', x: 300, y: 300 },
+            { typeId: 'token_river', x: 600, y: 300 },
+            { typeId: 'token_copper_ore_vein', x: 900, y: 300 }
+        ] }, 'region_9');
+        expect(Object.values(board.tokens).map(t => t.typeId)).toEqual(['token_oak_tree', 'token_copper_ore_vein']);
     });
 });
 
