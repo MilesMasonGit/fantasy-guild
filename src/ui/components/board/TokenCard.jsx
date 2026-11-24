@@ -13,7 +13,7 @@ import { LeaveMatControl } from '../drawer/LeaveMatControl.jsx';
 import { useTokenDetail } from './useTokenDetail.js';
 import { subscribeToken } from './tokenEvents.js';
 import { CARD_BLOCK, tokenCardModel, drivenBy } from './tokenCard.js';
-import { lengthText, chanceText } from '../../../utils/Formatters.js';
+import { lengthText, chanceText, oneInText } from '../../../utils/Formatters.js';
 import { ArrowScrollList, PixelTriangle } from '../base/ArrowScrollList.jsx';
 import { withArticle } from '../../../systems/effects/toolNames.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
@@ -165,21 +165,32 @@ const cycleTip = (cycleMs, baseMs) => {
     return `One round of work takes this long: ${base} ${cycleMs < baseMs ? 'before speed-ups' : 'before slow-downs'}`;
 };
 
-const CycleCells = ({ cycleMs, baseMs, uses }) => (
+const CycleCells = ({ cycleMs, baseMs, uses, endChance }) => (
     <>
         {cycleMs > 0 && (
             <StatCell caption="Time">
                 <Stat icon={<PixelGlyph name="clock" />} text={lengthText(cycleMs)} tip={cycleTip(cycleMs, baseMs)} data-card-cycle />
             </StatCell>
         )}
-        <StatCell caption="Charges">
-            <Stat
-                icon={<PixelGlyph name="charges" />}
-                text={uses == null ? '∞' : uses.toLocaleString('en-US')}
-                tip={uses == null ? 'Charges: unlimited' : `Charges: ${uses.toLocaleString('en-US')} left. Each round of work uses one`}
-                data-card-charges
-            />
-        </StatCell>
+        {endChance != null ? (
+            <StatCell caption="Runs out">
+                <Stat
+                    icon={<PixelGlyph name="charges" />}
+                    text={oneInText(endChance)}
+                    tip={`Each round of work has a ${oneInText(endChance)} chance to be its last`}
+                    data-card-ends
+                />
+            </StatCell>
+        ) : (
+            <StatCell caption="Charges">
+                <Stat
+                    icon={<PixelGlyph name="charges" />}
+                    text={uses == null ? '∞' : uses.toLocaleString('en-US')}
+                    tip={uses == null ? 'Charges: unlimited' : `Charges: ${uses.toLocaleString('en-US')} left. Each round of work uses one`}
+                    data-card-charges
+                />
+            </StatCell>
+        )}
     </>
 );
 

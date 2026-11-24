@@ -178,6 +178,13 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
     const checkTime = (report, field, what, value) => {
         if (!isTime(value)) report(field, `${what} is ${show(value)}; it must be at least ${MIN_MS} ms.`);
     };
+    /** A chance to run out, in percent: above 0, 100 at most (`tokenConstants.endTermsOf`, `cropTermsOf`). */
+    const checkEndChance = (report, field, what, value) => {
+        const n = Number(value);
+        if (typeof value !== 'number' || !Number.isFinite(n) || n <= 0 || n > 100) {
+            report(field, `${what} is ${show(value)}; it must be a chance above 0 % and at most 100 %.`);
+        }
+    };
     const checkList = (report, field, what, list) => {
         if (!Array.isArray(list) || list.length === 0) {
             report(field, `${what} is empty; it needs at least one entry.`);
@@ -202,6 +209,16 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
         const neverWears = neverWearsReason(def);
         if (neverWears && def.uses !== undefined && def.uses !== null) {
             warn('uses', `has ${show(def.uses)} Charges, which the game ignores. ${NEVER_WEARS_WHY[neverWears]} Clear them in the CMS, under Lifecycle → Charges (allowed).`);
+        }
+
+        // ── a chance to run out: only a Token that comes back reads it (`tokenConstants.endTermsOf`) ──
+        if (def.endChance !== undefined && def.endChance !== null) {
+            checkEndChance(err, 'endChance', 'chance to run out', def.endChance);
+            if (neverWears) {
+                warn('endChance', `has a chance to run out, which the game ignores. ${NEVER_WEARS_WHY[neverWears]}`);
+            } else if (!def.respawn || def.enemy || def.spawner || def.foundation) {
+                warn('endChance', `has a chance to run out but does not come back, so the chance does nothing: it ${def.uses == null ? 'never runs out' : `keeps its ${show(def.uses)} Charges`}. Only a Token that rests or regrows runs out by chance.`);
+            }
         }
 
         // ── spawner ──
@@ -374,8 +391,8 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
             if (r?.mode === 'regrow' && hasValue(r.restingSprite)) {
                 warn('respawn.restingSprite', 'has a resting sprite but regrows; it becomes another Token with its own art, so the sprite is never drawn.');
             }
-            if (def.uses === null || def.uses === undefined) {
-                warn('respawn', 'respawns but has unlimited charges, so it never runs out and never rests (allowed).');
+            if ((def.uses === null || def.uses === undefined) && !(Number(def.endChance) > 0)) {
+                warn('respawn', 'respawns but has no chance to run out (and unlimited charges), so it never runs out and never rests (allowed).');
             }
         }
 
@@ -486,6 +503,7 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
         }
         if (c.growMs !== undefined) checkTime((field, text) => recipeError(recipe, field, text), 'crop.growMs', 'crop grow time', c.growMs);
         if (c.load !== undefined) checkPositive((field, text) => recipeError(recipe, field, text), 'crop.load', 'crop load', c.load);
+        if (c.endChance !== undefined) checkEndChance((field, text) => recipeError(recipe, field, text), 'crop.endChance', 'crop chance to finish', c.endChance);
         if (!Array.isArray(recipe.inputs) || recipe.inputs.length === 0) {
             recipeWarning(recipe, 'inputs', 'is a crop with no inputs, so sowing it costs no seed (allowed).');
         }

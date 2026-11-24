@@ -8,7 +8,7 @@ import { reachOf, reachCovers, RELATION } from '../../../../src/config/registrie
 import { FILTER_NEEDS, matchesFilters, filtersOf, getFilterKind, targetModeMatches } from '../../../../src/config/registries/filterRegistry.js';
 import {
     outputRange, respawnOf, growsTermsOf, RESPAWN_MIN_MS, stationKindOffers, fieldOf, cropTermsOf,
-    PASSIVE_LAP_BASE_MS, foundationTierMeets, campOf
+    PASSIVE_LAP_BASE_MS, foundationTierMeets, campOf, endTermsOf, CHANCE_LIFE
 } from '../../../../src/config/registries/tokenConstants.js';
 import { neededToolOf, toolOf, toolMeets, toolItemFor } from '../../../../src/config/registries/toolKinds.js';
 import { hasCatchPools, catchPoolsOf } from '../../../../src/config/registries/catchPools.js';
@@ -319,7 +319,7 @@ function targetMatch(spec, targetDef, hero) {
     const available = new Set([FILTER_NEEDS.DEF, FILTER_NEEDS.INSTANCE, FILTER_NEEDS.TILE]);
     const ok = matchesFilters(spec, {
         def: targetDef,
-        instance: { typeId: targetDef.id, usesRemaining: neverWearsOut(targetDef) ? null : (targetDef.uses ?? null) },
+        instance: { typeId: targetDef.id, usesRemaining: neverWearsOut(targetDef) ? null : endTermsOf(targetDef) ? CHANCE_LIFE : (targetDef.uses ?? null) },
         heroOnTile: 'calculator',
         heroCarries: (effectId) => hero.carries.has(effectId)
     }, available);
@@ -647,16 +647,19 @@ function familyMembers(book, setup, skill) {
  * How the worked Token comes back after it runs out, and so how many cycles an hour it can offer one
  * hero standing by it: unlimited; refilled after a rest (a vein, a ripe Field's next crop); regrown
  * through a chain of growths back to itself (a felled tree, its stump, its sapling); or worn out for
- * good (a chest).
+ * good (a chest). `cycles` is a life's cycles, on average for one that runs out by chance (one that
+ * comes back: each charge a roll at its chance, `Charges.applyDelta`).
  */
 function lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes, kind, skill) {
     if (kind === WORK.FIELD) return fieldLifecycle(book, def, recipe, cycleMs, setup, guild, notes, skill);
     if (kind === WORK.FIGHT) return fightLifecycle(book, def, setup);
     if (kind === WORK.BUILD || kind === WORK.WATER) return { kind: LIFECYCLE.UNLIMITED, supplyPerHour: Infinity, used: new Set() };
-    const uses = neverWearsOut(def) ? null : (def.uses ?? null);
+    const ends = neverWearsOut(def) ? null : endTermsOf(def);
+    const uses = neverWearsOut(def) ? null : (ends ? ends.life : (def.uses ?? null));
     const cost = ownCycleCost(def);
     if (uses == null || !(cost > 0)) return { kind: LIFECYCLE.UNLIMITED, supplyPerHour: Infinity, used: new Set() };
-    const cycles = Math.floor(uses / cost);
+    // By chance, a cycle of several charges ends it when any of their rolls does.
+    const cycles = !ends ? Math.floor(uses / cost) : cost === 1 ? ends.life : 1 / (1 - (1 - ends.chance / 100) ** cost);
     const respawn = respawnOf(def);
     if (respawn?.mode === 'refill') {
         if (!hasNearby(setup, respawn.needsNearby)) {
@@ -700,16 +703,17 @@ function lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes, kind, skil
 }
 
 /**
- * A Field (`Fields.js`): it ripens with its crop's load (Crop Load in reach added, rounded, never
- * under one), is harvested that many cycles, then sows again and grows for its grow time (Grow Time
- * in reach, floored), paying the crop's seed once a sowing.
+ * A Field (`Fields.js`): it ripens to give its crop's load on average (Crop Load in reach added,
+ * never under one; its chance to finish each harvest is one over that), is harvested that many
+ * cycles on average, then sows again and grows for its grow time (Grow Time in reach, floored),
+ * paying the crop's seed once a sowing.
  */
 function fieldLifecycle(book, def, recipe, cycleMs, setup, guild, notes, skill) {
     const terms = cropTermsOf(recipe);
     const tile = tileScope(tileRules(book, def, setup, { carries: new Set() }, notes).modifiers);
     const resolve = makeResolver(tile, guild, { statements: [], live: [] });
     const load = resolve(EFFECT_TYPES.CROP_LOAD, terms.load, skill || TARGET_CATEGORIES.ALL, { withHero: false });
-    const cycles = Math.max(1, Math.round(load.value) || 1);
+    const cycles = Math.max(1, Number(load.value) || 1);
     const grown = resolve(EFFECT_TYPES.GROW_TIME, terms.growMs, growSkillOf(book, def.id), { withHero: false });
     const restMs = floorSpeedUp(terms.growMs, grown.value);
     const used = new Set([...load.used, ...grown.used]);

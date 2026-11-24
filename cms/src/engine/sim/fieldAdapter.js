@@ -1,7 +1,7 @@
 /** Economic simulator: the field adapter. Tokens and Recipes describe the same idea (a work cycle that consumes items and produces others) in two vocabularies: skill is `config.skill` / `skill`, required level `config.skillRequired` / `levelRequirement`, cycle length `config.cycleTimeMs` / `durationMs`, and I/O is `config.outputs` + `config.inputs` / `outputs` + `inputs`. Every pass reads adapted entities only; no pass in `sim/` may contain `entity.config?.skillRequired ?? entity.levelRequirement`, because a field name is chosen here, once. Every pass in this directory is a pure function over data a caller hands in. */
 
 import { catchPoolsOf, hasCatchPools } from '../../../../src/config/registries/catchPools.js';
-import { cropTermsOf, fieldOf, stationKindOffers } from '../../../../src/config/registries/tokenConstants.js';
+import { cropTermsOf, fieldOf, stationKindOffers, endTermsOf } from '../../../../src/config/registries/tokenConstants.js';
 import { stationSkillOf, stationKindOf } from '../../../../src/systems/effects/statements.js';
 
 /** The Token kinds this simulator does not model, plus passives. Such a Token can never anchor an item, but if it has a work cycle it is still seen, as a deferred-scope Info row, so a passive producer is not silently forgotten. */
@@ -15,11 +15,11 @@ export const DEFERRED_TOKEN_TYPES = Object.freeze([
 ]);
 
 /**
- * A Token's live charge count.
- * ⚠️ `uses` is the field; `charges` is never read. `tokenStartingUses` in `src/config/registries/tokenRegistry.js` is the game's only reader and is `def.uses ?? null`; the CMS cannot import it (it reads the game's registry singleton, not the CMS store), so the semantics are mirrored here. Reading `charges` would not fail loudly, it would silently multiply some Tokens' lifetimes.
+ * A Token's charges over one life: its `uses`, or for one that runs out by chance (one that comes back) the charges it spends on average, one over its chance (`tokenConstants.endTermsOf`).
+ * ⚠️ `uses` is the field; `charges` is never read. `tokenStartingUses` in `src/config/registries/tokenRegistry.js` is the game's only reader of the pool; the CMS cannot import it (it reads the game's registry singleton, not the CMS store), so the lifetime is worked out here from the same fields. Reading `charges` would not fail loudly, it would silently multiply some Tokens' lifetimes.
  */
 export function liveCharges(def) {
-    return def?.uses ?? null;
+    return endTermsOf(def)?.life ?? def?.uses ?? null;
 }
 
 /**

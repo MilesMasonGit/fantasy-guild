@@ -286,6 +286,47 @@ export function respawnOf(def) {
     return { mode: 'refill', afterMs, into: null, needsNearby: refillNeedsOf(block) };
 }
 
+/**
+ * What a Token that ends by chance holds while it lasts: one life, spent whole when a roll ends it.
+ * Its count is no measure of how much is left.
+ */
+export const CHANCE_LIFE = 1;
+
+const endTermsMemo = new WeakMap();
+
+/**
+ * ⭐ **A Token that comes back runs out by chance** (brief 860): a vein rests, a tree becomes its
+ * Stump. Each charge it would spend is a roll at `chance` percent that ends it then; there is no
+ * count. `endChance` on the Token type (percent, above 0, 100 at most) is the authored chance;
+ * unauthored, it is one over its `uses`, so the average life is today's count.
+ *
+ * Returns `{ chance, life }` (`life` the average charges spent before it ends), or null for a type
+ * that keeps a count or never runs out: no respawn block (it leaves the mat, a chest), neither a
+ * chance nor a count (unlimited), or a type the engine never lets respawn (an enemy, a spawner, a
+ * Foundation). Whether it wears at all (a station never does) is the caller's: the registry's
+ * `tokenStartingUses`, `wearRule`.
+ */
+export function endTermsOf(def) {
+    if (!def || typeof def !== 'object') return null;
+    // Asked on every tick for every Token at work (`Charges.canAfford`), so kept per type, checked
+    // against the fields it reads in case a type is edited in place.
+    const memo = endTermsMemo.get(def);
+    if (memo && memo.endChance === def.endChance && memo.uses === def.uses && memo.respawn === def.respawn) return memo.terms;
+    let terms = null;
+    if (respawnOf(def) && !def.enemy && !def.spawner && !def.foundation) {
+        const authored = Number(def.endChance);
+        const uses = Math.floor(Number(def.uses));
+        if (Number.isFinite(authored) && authored > 0) {
+            const chance = Math.min(100, authored);
+            terms = Object.freeze({ chance, life: 100 / chance });
+        } else if (uses >= 1) {
+            terms = Object.freeze({ chance: 100 / uses, life: uses });
+        }
+    }
+    endTermsMemo.set(def, { endChance: def.endChance, uses: def.uses, respawn: def.respawn, terms });
+    return terms;
+}
+
 const NO_TERMS = Object.freeze({ needsNearby: Object.freeze([]), cost: Object.freeze([]) });
 const growsTermsMemo = new WeakMap();
 let lastGrowsBlock = null;
@@ -405,12 +446,16 @@ export const CROP_DEFAULTS = Object.freeze({ growMs: 60 * 60 * 1000, load: 10 })
 export const CROP_MIN_GROW_MS = 1000;
 
 /**
- * What a crop recipe asks of the Field that grows it, as `{ growMs, load, ripeSprite, seeds }`:
+ * What a crop recipe asks of the Field that grows it, as `{ growMs, endChance, load, ripeSprite,
+ * seeds }`:
  *
  * * `growMs` — how long it grows before it is ripe (`crop.growMs`, defaulted, floored at
  *   {@link CROP_MIN_GROW_MS}); Grow Time from Tokens in reach (a Well) shortens it.
- * * `load` — how many harvest cycles a ripe Field holds (`crop.load`, a whole number from 1); a
- *   Crop Load rule in reach (a Composter) adds to it as it ripens.
+ * * `endChance` — the chance in percent that a harvest is a ripe Field's last (`crop.endChance`,
+ *   above 0, 100 at most); unauthored, one over `crop.load`, so the average harvest stays.
+ * * `load` — the harvests a ripe Field gives on average, `100 / endChance` (exactly `crop.load`
+ *   when the chance is not authored); a Crop Load rule in reach (a Composter) adds to it as it
+ *   ripens, which lowers the chance.
  * * `ripeSprite` — the picture of a ripe Field of this crop, or null (the Token's own art).
  * * `seeds` — the recipe's `inputs`, summed by item: what one sowing costs, paid from the Bank once
  *   per planting, never per harvest.
@@ -423,7 +468,9 @@ export function cropTermsOf(recipe) {
     if (terms) return terms;
     const crop = recipe.crop && typeof recipe.crop === 'object' ? recipe.crop : {};
     const grow = Number(crop.growMs);
-    const load = Math.floor(Number(crop.load));
+    const authored = Number(crop.endChance);
+    const counted = Math.floor(Number(crop.load));
+    const load = Number.isFinite(authored) && authored > 0 ? 100 / Math.min(100, authored) : (counted >= 1 ? counted : CROP_DEFAULTS.load);
     const sprite = typeof crop.ripeSprite === 'string' && crop.ripeSprite.trim() ? crop.ripeSprite.trim() : null;
     const total = new Map();
     for (const line of Array.isArray(recipe.inputs) ? recipe.inputs : []) {
@@ -433,7 +480,8 @@ export function cropTermsOf(recipe) {
     }
     terms = Object.freeze({
         growMs: Number.isFinite(grow) && grow > 0 ? Math.max(CROP_MIN_GROW_MS, grow) : CROP_DEFAULTS.growMs,
-        load: load >= 1 ? load : CROP_DEFAULTS.load,
+        endChance: Number.isFinite(authored) && authored > 0 ? Math.min(100, authored) : 100 / load,
+        load,
         ripeSprite: sprite,
         seeds: Object.freeze([...total].map(([itemId, quantity]) => Object.freeze({ itemId, quantity })))
     });
@@ -441,7 +489,7 @@ export function cropTermsOf(recipe) {
     return terms;
 }
 const cropTermsMemo = new WeakMap();
-const DEFAULT_CROP_TERMS = Object.freeze({ ...CROP_DEFAULTS, ripeSprite: null, seeds: Object.freeze([]) });
+const DEFAULT_CROP_TERMS = Object.freeze({ ...CROP_DEFAULTS, endChance: 100 / CROP_DEFAULTS.load, ripeSprite: null, seeds: Object.freeze([]) });
 
 /**
  * Passive Production's one timer, before any Guild Hall star shortens it: every line of a Token's

@@ -16,6 +16,9 @@ import { growTimeOf, nearbyGateMet } from './TileModifiers.js';
  * - **regrow**: at 0 it becomes its `into` Token (an Oak Tree becomes an Oak Stump), whose own
  *   `grows` block brings it back.
  *
+ * It runs out by chance, not by a count: it holds one life, and each charge it would spend is a roll
+ * at its chance that ends it (`Charges.endChanceOf`), so a refill gives back that one life.
+ *
  * Resting is not a state of its own: a Token rests while it holds 0 charges and its type
  * respawns ({@link isResting}). Where a Token would be removed for running out
  * (`Charges.destroyToken`, a support worn out by a kill in `BoardCombat`), {@link restInstead}

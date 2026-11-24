@@ -470,7 +470,7 @@ function FieldBlock({ block, token, effects, recipePools, items, onChange }) {
   let note;
   if (!skill) note = 'A Field works as a station (a Works as rule, Farming, kind Field or Herb Garden): give it one, and its crops are those recipes.';
   else if (!crops.length) note = `No ${kindName ? `${kindName} ` : ''}recipe of its skill yet: add crop recipes (Made at ${kindName || 'it'}).`;
-  else note = `Crops: ${crops.map((r) => `${r.name || r.id} (${minutes(cropTermsOf(r).growMs)}, ${cropTermsOf(r).load} harvests, sown for ${seedText(r)})`).join('; ')}.`;
+  else note = `Crops: ${crops.map((r) => `${r.name || r.id} (${minutes(cropTermsOf(r).growMs)}, about ${Math.round(cropTermsOf(r).load * 10) / 10} harvests, sown for ${seedText(r)})`).join('; ')}.`;
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
