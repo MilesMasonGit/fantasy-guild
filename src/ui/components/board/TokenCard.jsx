@@ -165,6 +165,9 @@ const cycleTip = (cycleMs, baseMs) => {
     return `One round of work takes this long: ${base} ${cycleMs < baseMs ? 'before speed-ups' : 'before slow-downs'}`;
 };
 
+/** The Ends cell's figure: the odds while they fit ("1 in 5", "1 in 25"), else the chance ("0.1%"). */
+const endsCellText = (endChance) => (100 / endChance < 99.5 ? oneInText(endChance) : chanceText(endChance));
+
 const CycleCells = ({ cycleMs, baseMs, uses, endChance }) => (
     <>
         {cycleMs > 0 && (
@@ -173,10 +176,10 @@ const CycleCells = ({ cycleMs, baseMs, uses, endChance }) => (
             </StatCell>
         )}
         {endChance != null ? (
-            <StatCell caption="Runs out">
+            <StatCell caption="Ends">
+                {/* No icon and the odds on one line: the cell is as narrow as a count's. */}
                 <Stat
-                    icon={<PixelGlyph name="charges" />}
-                    text={oneInText(endChance)}
+                    text={<span className="whitespace-nowrap">{endsCellText(endChance)}</span>}
                     tip={`Each round of work has a ${oneInText(endChance)} chance to be its last`}
                     data-card-ends
                 />
