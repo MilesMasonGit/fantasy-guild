@@ -103,6 +103,20 @@ export function isSpotKind(def) {
     return spotOf(def) !== null;
 }
 
+/** The most a spot-rate block raises the rate by, in percent. */
+export const SPOT_RATE_MAX = 1000;
+
+/**
+ * How much a Token type raises the spot rate in its reach, in percent (`spotRate: { percent }`,
+ * any Token type may carry it): on the water within the one standard reach of its centre, spots
+ * arrive that much more often (100: twice as often there). 0 when it carries none.
+ */
+export function spotRateOf(def) {
+    const raw = def && typeof def === 'object' ? def.spotRate : null;
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return 0;
+    return Math.min(SPOT_RATE_MAX, nonNegative(raw.percent));
+}
+
 /** Whether a spot kind arrives on a mat by itself: some water, a rate, and room for at least one. */
 export function arrivesByItself(spot) {
     return !!spot && spot.water.length > 0 && spot.everyMs > 0 && spot.most > 0;

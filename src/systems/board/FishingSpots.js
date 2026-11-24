@@ -7,10 +7,13 @@ import * as BoardState from './BoardState.js';
 import * as MatPlacement from './MatPlacement.js';
 import * as GroundRules from './GroundRules.js';
 import * as EventTokens from './EventTokens.js';
+import * as Demolition from './Demolition.js';
+import { centreOf, reachRadius } from './nearby.js';
+import { matW, matH } from '../../config/matGeometry.js';
 import {
     getTokenType, getAllTokenTypes, registryVersion, tokenStartingUses
 } from '../../config/registries/tokenRegistry.js';
-import { spotOf, arrivesByItself } from '../../config/registries/fishingSpots.js';
+import { spotOf, arrivesByItself, spotRateOf } from '../../config/registries/fishingSpots.js';
 
 /**
  * **Fishing spots**. Water is ground; a spot kind (`fishingSpots.js`: a Token type
@@ -29,6 +32,16 @@ import { spotOf, arrivesByItself } from '../../config/registries/fishingSpots.js
  *
  * ⚠️ A board with no water draws nothing and writes nothing: every meadow, every test and bench
  * board, plays exactly as before.
+ *
+ * ## Raising the rate
+ * A Token with a spot-rate block (`fishingSpots.spotRateOf`: `spotRate: { percent }`, any Token
+ * type; not one marked for demolition) raises the rate on the water in its reach (the one standard
+ * reach, to a water cell's centre): each such cell weighs 1 plus every reaching raiser's percent as
+ * a fraction, and every other cell 1. A kind's clock then runs at its cells' mean weight times the
+ * loop's `delta`, and its landing darts pick their cell by weight ({@link raisedRateOf}). So the
+ * water beyond every reach sees spots exactly as often as before, and the water in reach that much
+ * more often. The kind's `most` still holds. ⚠️ With no raiser reaching a kind's water, its clock
+ * and its darts are the plain ones above, draw for draw.
  *
  * ## Leaving
  * - By chance per catch ({@link afterCatch}, from `BoardRunner.completeCycle`): one draw against the
@@ -107,6 +120,123 @@ function fitsHere(spot, biomes) {
     return GroundRules.waterCellsOf(spot.water).length > 0;
 }
 
+// ---------------------------------------------------------------------------
+// Raising the rate
+// ---------------------------------------------------------------------------
+
+/** The Tokens on the mat with a spot-rate block, remembered while nothing arrives or leaves. */
+let raisersKept = { tokens: null, version: -1, regVersion: -1, list: [] };
+
+function raiserTokens() {
+    const { tokens, version } = BoardState.membershipVersion();
+    const regVersion = registryVersion();
+    if (raisersKept.tokens !== tokens || raisersKept.version !== version || raisersKept.regVersion !== regVersion) {
+        const list = [];
+        for (const t of BoardState.tokens()) {
+            if (spotRateOf(getTokenType(t.typeId)) > 0) list.push(t);
+        }
+        raisersKept = { tokens, version, regVersion, list };
+    }
+    return raisersKept.list;
+}
+
+/** Each raiser standing now as `{ x, y, share }`: its centre, and its percent as a fraction. */
+function raisersNow() {
+    const out = [];
+    for (const t of raiserTokens()) {
+        if (Demolition.isMarked(t)) continue;
+        const c = centreOf(t);
+        if (c) out.push({ x: c.x, y: c.y, share: spotRateOf(getTokenType(t.typeId)) / 100 });
+    }
+    return out;
+}
+
+/** The cells a kind may land on: water of its kinds that its "Stands on" also allows. */
+function landingCells(typeId, spot) {
+    const water = GroundRules.waterCellsOf(spot.water);
+    if (!water.length) return water;
+    const rules = GroundRules.rulesFor(typeId);
+    return rules ? water.filter(i => rules.mask[i] === 1) : water;
+}
+
+/** Per kind, its landing weights and the key they were worked out for. */
+const weightsKept = new Map();
+
+/**
+ * A kind's landing weights under `raisers` (see the module header): `{ cells, cumulative, total,
+ * rate }`, or null when no raiser reaches any of its cells (the plain clock and darts). Worked out
+ * again only when the ground, the content, the reach or a raiser changes.
+ */
+function weightsFor(typeId, spot, raisers) {
+    if (!raisers.length) return null;
+    const ground = GroundRules.groundHere();
+    const r = reachRadius();
+    const room = MatPlacement.roomRadiusOf(typeId);
+    const w = matW();
+    const h = matH();
+    let key = `${ground.version}|${registryVersion()}|${r}|${room}|${w}|${h}`;
+    for (const p of raisers) key += `|${p.x},${p.y},${p.share}`;
+    const kept = weightsKept.get(typeId);
+    if (kept && kept.key === key) return kept.weights;
+    const cells = landingCells(typeId, spot);
+    let weights = null;
+    if (cells.length) {
+        const cumulative = new Float64Array(cells.length);
+        const r2 = r * r;
+        let total = 0;
+        let counted = 0;
+        let raised = false;
+        for (let k = 0; k < cells.length; k++) {
+            const i = cells[k];
+            const x = (i % ground.cols + 0.5) * ground.cell;
+            const y = (Math.floor(i / ground.cols) + 0.5) * ground.cell;
+            // A cell no spot fits in (off the mat's edge) weighs nothing: the plain darts miss it and
+            // throw again, so counting it would thin out the raise.
+            if (x < room || y < room || x > w - room || y > h - room) {
+                cumulative[k] = total;
+                continue;
+            }
+            let weight = 1;
+            for (const p of raisers) {
+                const dx = p.x - x;
+                const dy = p.y - y;
+                if (dx * dx + dy * dy <= r2) weight += p.share;
+            }
+            if (weight > 1) raised = true;
+            total += weight;
+            counted++;
+            cumulative[k] = total;
+        }
+        if (raised) weights = { cells, cumulative, total, rate: total / counted };
+    }
+    weightsKept.set(typeId, { key, weights });
+    return weights;
+}
+
+/** The index of the cell a draw `u` in [0, 1) picks, by weight. */
+function pickWeighted(weights, u) {
+    const target = u * weights.total;
+    const { cumulative } = weights;
+    let lo = 0;
+    let hi = cumulative.length - 1;
+    while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (cumulative[mid] > target) hi = mid;
+        else lo = mid + 1;
+    }
+    return lo;
+}
+
+/**
+ * How many times its own rate spot kind `typeId` arrives at on this mat now: its water cells' mean
+ * weight under the raisers standing (see the module header). 1 when none reaches its water.
+ */
+export function raisedRateOf(typeId) {
+    const spot = spotOf(getTokenType(typeId));
+    if (!spot) return 1;
+    return weightsFor(typeId, spot, raisersNow())?.rate ?? 1;
+}
+
 /** A fresh wait for a kind, uniform in [½, 1½) of its rate, whole ms. */
 export function drawWait(spot, random = Math.random) {
     return Math.round(spot.everyMs * (0.5 + random()));
@@ -115,17 +245,15 @@ export function drawWait(spot, random = Math.random) {
 /**
  * A free point for spot kind `typeId` on water of its kinds that its "Stands on" also allows: up to
  * {@link LANDING_DARTS} random points, the first legal one kept (clear of every Token, inside the
- * mat, breaking no rule). Nothing is pushed. Null when none had room.
+ * mat, breaking no rule). Nothing is pushed. Null when none had room. With `weights` (a raiser's,
+ * {@link weightsFor}) each dart's cell is picked by weight; without, every cell alike.
  */
-export function landingSpot(typeId, spot, random = Math.random) {
-    const water = GroundRules.waterCellsOf(spot.water);
-    if (!water.length) return null;
-    const rules = GroundRules.rulesFor(typeId);
-    const cells = rules ? water.filter(i => rules.mask[i] === 1) : water;
+export function landingSpot(typeId, spot, random = Math.random, weights = null) {
+    const cells = weights ? weights.cells : landingCells(typeId, spot);
     if (!cells.length) return null;
     const ground = GroundRules.groundHere();
     for (let i = 0; i < LANDING_DARTS; i++) {
-        const index = cells[Math.floor(random() * cells.length)];
+        const index = weights ? cells[pickWeighted(weights, random())] : cells[Math.floor(random() * cells.length)];
         const col = index % ground.cols;
         const row = Math.floor(index / ground.cols);
         const dart = { x: Math.floor((col + random()) * ground.cell), y: Math.floor((row + random()) * ground.cell) };
@@ -160,6 +288,7 @@ export function tick(delta, random = Math.random) {
     if (!board || !GroundRules.groundHere().hasWater) return;
     const biomes = GroundRules.regionBiomes();
     let clocks = board.spotClocks && typeof board.spotClocks === 'object' ? board.spotClocks : null;
+    const raisers = raisersNow();
     for (const { typeId, spot } of arriving) {
         if (!fitsHere(spot, biomes) || countOnMat(typeId) >= spot.most) {
             if (clocks && typeId in clocks) delete clocks[typeId];
@@ -168,9 +297,10 @@ export function tick(delta, random = Math.random) {
         if (!clocks) clocks = board.spotClocks = {};
         let clock = clocks[typeId];
         if (!validClock(clock)) clock = clocks[typeId] = { ms: 0, waitMs: drawWait(spot, random) };
-        clock.ms += delta;
+        const weights = weightsFor(typeId, spot, raisers);
+        clock.ms += weights ? delta * weights.rate : delta;
         if (clock.ms < clock.waitMs) continue;
-        const at = landingSpot(typeId, spot, random);
+        const at = landingSpot(typeId, spot, random, weights);
         if (at) land(typeId, at);
         clocks[typeId] = { ms: clock.ms - clock.waitMs, waitMs: drawWait(spot, random) };
     }
