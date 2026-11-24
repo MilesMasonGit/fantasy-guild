@@ -36,7 +36,7 @@ export function buildSystemPrompt(globals, existingItems, existingEffects) {
     ? `compounding exponentially at +${(globals.skillMultiplierRate * 100).toFixed(1)}% per skill level`
     : `scaling linearly at +${(globals.skillMultiplierRate * 100).toFixed(1)}% per skill level`;
 
-  return `You are a game economy balancing engine for "Fantasy Guild", an idle RPG with 99 skill levels.
+  return `You are a game economy balancing engine for "Tabletop Guild", an idle RPG with 99 skill levels.
 
 ## YOUR ROLE
 Generate structurally sound, economically balanced game entities (Items and Tasks) as JSON.

@@ -407,7 +407,7 @@ export function report() {
     } catch { census = null; }
 
     return {
-        tool: 'fantasy-guild-perf-hud',
+        tool: 'tabletop-guild-perf-hud',
         reportVersion: REPORT_VERSION,
         scenario: scenario ? { ...scenario } : null,
         running,

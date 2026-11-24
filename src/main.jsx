@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    logger.info('main', 'Fantasy Guild Initializing...');
+    logger.info('main', 'Tabletop Guild Initializing...');
 
     // Prevent default browser context menu globally for game/desktop feel
     document.addEventListener('contextmenu', (e) => {

@@ -27,9 +27,9 @@ const row = (n) => document.querySelector(`[data-save-slot="${n}"]`);
 const EMOJI = /\p{Extended_Pictographic}/u;
 
 function plantSlots() {
-    localStorage.setItem('fantasy_guild_slot_0', slotSave(3, Date.now() - 3 * HOUR));
-    localStorage.setItem('fantasy_guild_slot_2', '{"version":"0.8.1", "savedAt": 12'); // cut off mid-write
-    localStorage.setItem('fantasy_guild_last_slot', '0');
+    localStorage.setItem('tabletop_guild_slot_0', slotSave(3, Date.now() - 3 * HOUR));
+    localStorage.setItem('tabletop_guild_slot_2', '{"version":"0.8.1", "savedAt": 12'); // cut off mid-write
+    localStorage.setItem('tabletop_guild_last_slot', '0');
 }
 
 beforeEach(() => {
@@ -80,7 +80,7 @@ describe('the slots', () => {
         plantSlots();
         const named = JSON.parse(slotSave(1, Date.now()));
         named.state.meta.guildName = 'The Lantern Company';
-        localStorage.setItem('fantasy_guild_slot_1', JSON.stringify(named));
+        localStorage.setItem('tabletop_guild_slot_1', JSON.stringify(named));
         render(h(SlotSelectionModal, { isOpen: true, onSelect: () => {} }));
         expect(row(2).querySelector('[data-slot-guild-name]').textContent).toBe('The Lantern Company');
         expect(row(2).textContent).toContain('Slot 2');
@@ -95,11 +95,11 @@ describe('the slots', () => {
         expect(row(1).textContent).toContain('Delete forever?');
         fireEvent.click([...row(1).querySelectorAll('button')].find(b => b.textContent.includes('Cancel')));
         expect(row(1).textContent).not.toContain('Delete forever?');
-        expect(localStorage.getItem('fantasy_guild_slot_0')).not.toBeNull();
+        expect(localStorage.getItem('tabletop_guild_slot_0')).not.toBeNull();
 
         fireEvent.click(row(1).querySelector('[data-slot-delete]'));
         fireEvent.click([...row(1).querySelectorAll('button')].find(b => b.textContent.includes('Confirm')));
-        expect(localStorage.getItem('fantasy_guild_slot_0')).toBeNull();
+        expect(localStorage.getItem('tabletop_guild_slot_0')).toBeNull();
         expect(row(1).getAttribute('data-slot-state')).toBe('empty');
         expect(document.querySelector('[data-slot-message]').textContent).toBe('Slot 1 deleted');
     });
@@ -109,7 +109,7 @@ describe('the slots', () => {
         render(h(SlotSelectionModal, { isOpen: true, onSelect: () => {} }));
         fireEvent.click(row(3).querySelector('[data-slot-delete]'));
         fireEvent.click([...row(3).querySelectorAll('button')].find(b => b.textContent.includes('Confirm')));
-        expect(localStorage.getItem('fantasy_guild_slot_2')).toBeNull();
+        expect(localStorage.getItem('tabletop_guild_slot_2')).toBeNull();
         expect(row(3).getAttribute('data-slot-state')).toBe('empty');
     });
 
@@ -122,7 +122,7 @@ describe('the slots', () => {
     });
 
     it('a slot whose save cannot be parsed reads as damaged, not empty', () => {
-        localStorage.setItem('fantasy_guild_slot_1', 'not json');
+        localStorage.setItem('tabletop_guild_slot_1', 'not json');
         expect(SaveManager.getSlotInfo(1)).toMatchObject({ slotIndex: 1, damaged: true });
         expect(SaveManager.getSlotInfo(0)).toBeNull();
     });
@@ -133,7 +133,7 @@ describe('the title', () => {
         render(h(SlotSelectionModal, { isOpen: true, onSelect: () => {} }));
         const name = document.querySelector('[data-title-name]');
         expect(name.getAttribute('data-title-name')).toBe('text');
-        expect(name.textContent).toBe('Fantasy Guild');
+        expect(name.textContent).toBe('Tabletop Guild');
         expect(name.className).toContain('ui-text-display');
         expect(document.querySelector('[data-title-picture]').getAttribute('data-title-picture')).toBe(areaBannerSrc(TITLE_BANNER));
     });
@@ -221,14 +221,14 @@ describe('each slot shows the time away it has built up', () => {
     it('on the screen: the away stat replaces last saved, whose time moves to its tip; none on empty or damaged slots', () => {
         expect(AWAY_REPLACES_LAST_SAVED).toBe(true);
         plantSlots();
-        localStorage.setItem('fantasy_guild_slot_1', slotSave(1, Date.now() - 30 * HOUR));
+        localStorage.setItem('tabletop_guild_slot_1', slotSave(1, Date.now() - 30 * HOUR));
         render(h(SlotSelectionModal, { isOpen: true, onSelect: () => {} }));
         const away = row(1).querySelector('[data-slot-stat="away"]');
         expect(away.textContent.trim()).toBe('3h 0m');
         expect(away.getAttribute('title')).toContain('last saved 3 hours ago');
         expect(row(1).querySelector('[data-slot-stat="saved"]')).toBeNull();
         expect(row(2).querySelector('[data-slot-stat="away"]').textContent.trim()).toBe('1d 0h (max)');
-        localStorage.removeItem('fantasy_guild_slot_1');
+        localStorage.removeItem('tabletop_guild_slot_1');
         cleanup();
         render(h(SlotSelectionModal, { isOpen: true, onSelect: () => {} }));
         expect(row(2).querySelector('[data-slot-stat]')).toBeNull();

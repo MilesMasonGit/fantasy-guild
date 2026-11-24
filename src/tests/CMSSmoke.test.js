@@ -107,7 +107,7 @@ describe('CMS smoke — the screens mount without throwing', () => {
 
     it('renders the app shell with nothing selected', () => {
         const { container } = render(React.createElement(App));
-        expect(container.textContent).toContain('Fantasy Guild CMS');
+        expect(container.textContent).toContain('Tabletop Guild CMS');
     });
 
     it('renders the Token editor for a fully populated Token', () => {

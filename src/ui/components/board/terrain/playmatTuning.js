@@ -491,7 +491,7 @@ const DEFAULTS = Object.freeze(
     Object.fromEntries(TUNABLES.map(t => [t.key, t.def]))
 );
 
-const STORAGE_KEY = 'fantasy_guild_playmat_tuning';
+const STORAGE_KEY = 'tabletop_guild_playmat_tuning';
 
 /** @type {Record<string, number>} */
 let values = { ...DEFAULTS };

@@ -17,7 +17,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
  * test build (a plain `vite build`) uses the game values, as a ship build does.
  */
 
-const TUNING_KEY = 'fantasy_guild_mat_tuning';
+const TUNING_KEY = 'tabletop_guild_mat_tuning';
 const TUNED = { matSteps: 6, matAspect: 0.5, reach: 500 };
 
 /** The tuning, geometry and reach modules as a build of `mode` loads them, with `TUNED` stored. */

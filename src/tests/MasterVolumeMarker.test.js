@@ -26,7 +26,7 @@ describe('A new player\'s master volume survives the next load', () => {
     });
 
     it('settings stored before the mute still lose their old volume once', () => {
-        localStorage.setItem('fantasy_guild_settings', JSON.stringify({ audio: { masterVolume: 100 } }));
+        localStorage.setItem('tabletop_guild_settings', JSON.stringify({ audio: { masterVolume: 100 } }));
         SettingsManager.load();
         expect(SettingsManager.get('audio.masterVolume')).toBe(0);
     });

@@ -58,7 +58,7 @@ function EditorRouter({ openGenerate }) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4" style={{ color: 'var(--color-text-muted)' }}>
         <div className="text-6xl">⚒️</div>
-        <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Fantasy Guild CMS</h2>
+        <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Tabletop Guild CMS</h2>
         <p className="text-sm">Select an entity from the sidebar, or create one to begin</p>
         <div className="flex flex-wrap gap-3 mt-2 justify-center max-w-md">
           <Hint icon={<Package size={13} />} label="Items" />

@@ -142,7 +142,7 @@ const DEFAULTS = Object.freeze(
     Object.fromEntries(MAT_TUNABLES.map(t => [t.key, t.def]))
 );
 
-const STORAGE_KEY = 'fantasy_guild_mat_tuning';
+const STORAGE_KEY = 'tabletop_guild_mat_tuning';
 
 /**
  * ⚠️ The panel stores every value, touched or not, so a device that ever opened it holds the old
