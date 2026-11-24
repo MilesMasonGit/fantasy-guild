@@ -38,6 +38,8 @@ const HALL = { left: 600, top: 400, width: 128, height: 128 };
 /** The scrolling list's visible box, when the column scrolls. */
 const SCROLL_VIEW = { top: COLUMN.top + HEADER_PX + 20, height: 4 * PITCH_PX };
 let columnHeight = 900;
+/** A stub's width from its shown count, when a test sets it (else 80). */
+let stubWidthOf = null;
 
 const box = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top });
 
@@ -51,7 +53,8 @@ function fakeRect() {
         const group = scroller || this.closest('[data-item-stubs]');
         const i = [...group.querySelectorAll('[data-item-stub]')].indexOf(this);
         const top = scroller ? SCROLL_VIEW.top + i * PITCH_PX : COLUMN.top + HEADER_PX + i * PITCH_PX;
-        return box(1600 - 80, top, 80, STUB_PX);
+        const w = stubWidthOf ? stubWidthOf(this.getAttribute('data-stub-net')) : 80;
+        return box(1600 - w, top, w, STUB_PX);
     }
     if (this.matches?.('[data-stub-sprite]')) {
         const r = this.closest('[data-item-stub]').getBoundingClientRect();
@@ -120,6 +123,7 @@ beforeEach(() => {
     clock = 0;
     landed = [];
     columnHeight = 900;
+    stubWidthOf = null;
     GameState.initNew();
     SpriteLayer.init();
     ItemStubs.reset();
@@ -285,6 +289,37 @@ describe('⭐ collected loot flies to its stub', () => {
         runUntilAsleep();
         expect(landed).toHaveLength(12);
         expect(shownOn(stubEl(view, 'fixture_oak_wood'))).toBe('14');
+    });
+});
+
+describe('⭐ the landing shower spills out of the notice, never over its count', () => {
+    it('a new notice grows as its count appears; the shower starts out from its edge as it then stands', async () => {
+        // No number while the loot flies (60 px), its count after the landing (120 px).
+        stubWidthOf = (net) => (net && net !== '0' ? 120 : 60);
+        // Every square drawn, in screen px (what the overlay draws in, under its canvas's offset).
+        const fills = [];
+        const ctx = new Proxy({}, {
+            get: (t, key) => {
+                if (key === 'fillRect') return (x, y, w) => fills.push({ x, y, w, at: clock });
+                return key in t ? t[key] : () => ({ addColorStop() {} });
+            },
+            set: (t, key, value) => { t[key] = value; return true; }
+        });
+        HTMLCanvasElement.prototype.getContext.mockReturnValue(ctx);
+        const view = mountGame();
+        expect(await collectPile('fixture_oak_wood', 12000)).toBe(true);
+        runUntilAsleep();
+        const last = landed.at(-1);
+        expect(last.landsOn).toBe('stub');
+        const stub = stubEl(view, 'fixture_oak_wood').getBoundingClientRect();
+        expect(stub.width).toBe(120);
+        // The count's place: from the notice's edge (as it stands once grown) to the gap before its sprite.
+        const textRight = 1600 - SPRITE_INSET_PX - 16 - 4;
+        const overText = fills.filter(f => f.x + f.w > stub.left && f.x < textRight && f.y + 2 > stub.top && f.y < stub.bottom);
+        expect(overText).toEqual([]);
+        // The shower itself is there, out over the mat left of the notice, after the landing.
+        const landedAt = Math.max(...fills.filter(f => f.x >= textRight).map(f => f.at));
+        expect(fills.filter(f => f.x + f.w <= stub.left && f.at > landedAt - 300).length).toBeGreaterThan(20);
     });
 });
 

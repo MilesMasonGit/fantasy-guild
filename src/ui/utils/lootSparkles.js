@@ -29,12 +29,15 @@ export const FLIGHT_SPARKLE_EVERY_MS = 48;
 export const FLIGHT_SPARKLE_LIFE_MS = 300;
 
 /** Shower sparkles fall: px per ms per ms. */
-const GRAVITY = 0.0004;
-/** Shower sparkles leave from under the notice's sprite, across this width (the sprite's). */
-const SHOWER_SPAN_PX = 32;
-/** A shower sparkle's speed as it leaves, px per ms: mostly out over the mat (left), and down. */
-const SHOWER_VX = { min: -0.15, max: 0.03 };
-const SHOWER_VY = { min: 0.02, max: 0.1 };
+const GRAVITY = 0.0005;
+/** Shower sparkles leave from the notice's left edge, from up to this far out from it. */
+const SHOWER_SPAN_PX = 6;
+/**
+ * A shower sparkle's speed as it leaves, px per ms: always out over the mat (left), some rising a
+ * little before they fall, so the shower fans out instead of piling up.
+ */
+const SHOWER_VX = { min: -0.22, max: -0.04 };
+const SHOWER_VY = { min: -0.12, max: 0.04 };
 /** Flight sparkles: scattered over this share of the item's size round its centre, sinking slowly. */
 const FLIGHT_SCATTER = 0.5;
 const FLIGHT_SINK = 0.04;
@@ -45,9 +48,10 @@ const FLIGHT_SINK = 0.04;
  * drawn outside the canvas.
  */
 export const SHOWER_REACH = Object.freeze({
-    left: Math.ceil(SHOWER_SPAN_PX / 2 - SHOWER_VX.min * SHOWER_SPARKLE_LIFE_MS) + 2 * SPARKLE_ART_PX,
-    right: Math.ceil(SHOWER_SPAN_PX / 2 + SHOWER_VX.max * SHOWER_SPARKLE_LIFE_MS) + 2 * SPARKLE_ART_PX,
-    down: Math.ceil(SHOWER_VY.max * SHOWER_SPARKLE_LIFE_MS + GRAVITY * SHOWER_SPARKLE_LIFE_MS ** 2 / 2) + 3 * SPARKLE_ART_PX
+    left: Math.ceil(SHOWER_SPAN_PX - SHOWER_VX.min * SHOWER_SPARKLE_LIFE_MS) + 2 * SPARKLE_ART_PX,
+    right: 2 * SPARKLE_ART_PX,
+    up: Math.ceil(Math.max(0, -SHOWER_VY.min) ** 2 / (2 * GRAVITY)) + 2 * SPARKLE_ART_PX,
+    down: Math.ceil(SHOWER_VY.max * SHOWER_SPARKLE_LIFE_MS + GRAVITY * SHOWER_SPARKLE_LIFE_MS ** 2 / 2) + 2 * SPARKLE_ART_PX
 });
 /** How far below its path a flight sparkle can sink, its half-size added. */
 export const FLIGHT_SPARKLE_SINK_PX = Math.ceil(FLIGHT_SINK * FLIGHT_SPARKLE_LIFE_MS) + 2 * SPARKLE_ART_PX;
@@ -86,8 +90,8 @@ export function sparkleStage(age, life) {
 
 /**
  * Every shower sparkle alive `sinceLandMs` after the landing, relative to where the shower starts
- * (the middle of the notice's bottom edge under its sprite): `fn(dx, dy, stage)`. `dy` is never
- * negative, so no sparkle rises into the notice or over its count.
+ * (just out from the notice's left edge, halfway down it): `fn(dx, dy, stage)`. `dx` is never above
+ * 0: every sparkle moves out over the mat, never back into the notice or over its count.
  */
 export function forEachShowerSparkle(sinceLandMs, step, seed, fn) {
     if (!(sinceLandMs >= 0)) return;
@@ -100,7 +104,7 @@ export function forEachShowerSparkle(sinceLandMs, step, seed, fn) {
         if (age >= SHOWER_SPARKLE_LIFE_MS) continue;
         for (let m = 0; m < per; m++) {
             const j = (seed * 4099 + k * 8 + m) * 3;
-            const x0 = (hash(j) - 0.5) * SHOWER_SPAN_PX;
+            const x0 = -hash(j) * SHOWER_SPAN_PX;
             const vx = between(hash(j + 1), SHOWER_VX);
             const vy = between(hash(j + 2), SHOWER_VY);
             fn(x0 + vx * age, vy * age + (GRAVITY * age * age) / 2, sparkleStage(age, SHOWER_SPARKLE_LIFE_MS));

@@ -44,11 +44,12 @@ describe('the landing shower by stack step', () => {
             expect(shower(showerLengthMs(step), step)).toEqual([]);
         });
 
-    it('every sparkle stays under the notice (never over its count) and inside its reach', () => {
+    it('every sparkle moves out over the mat, never back into the notice or over its count, and stays in its reach', () => {
         for (const step of STEPS) {
             for (let t = 0; t < showerLengthMs(step); t += 7) {
                 for (const p of shower(t, step)) {
-                    expect(p.y).toBeGreaterThanOrEqual(0);
+                    expect(p.x).toBeLessThanOrEqual(0);
+                    expect(p.y).toBeGreaterThanOrEqual(-SHOWER_REACH.up + 2 * SPARKLE_ART_PX);
                     expect(p.y).toBeLessThanOrEqual(SHOWER_REACH.down - 2 * SPARKLE_ART_PX);
                     expect(p.x).toBeGreaterThanOrEqual(-SHOWER_REACH.left + 2 * SPARKLE_ART_PX);
                     expect(p.x).toBeLessThanOrEqual(SHOWER_REACH.right - 2 * SPARKLE_ART_PX);

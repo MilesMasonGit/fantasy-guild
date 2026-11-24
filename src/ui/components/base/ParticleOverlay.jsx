@@ -15,7 +15,8 @@ import {
     FLIGHT_SPARKLE_LIFE_MS, FLIGHT_SPARKLE_SINK_PX, SHOWER_REACH, SPARKLE_ART_PX, SPARKLE_COLOUR_SOURCE,
     forEachFlightSparkle, forEachShowerSparkle, showerLengthMs, stackSparkleColours
 } from '../../utils/lootSparkles.js';
-import { STUB_PX } from '../notifications/stubGeometry.js';
+import { SPRITE_PX } from '../notifications/stubGeometry.js';
+import { FRAME_BAND_PX } from './PixelFrame.jsx';
 import { isDrawingPaused } from '../board/frameClock.js';
 
 /** Gap between staggered particles from one collection burst. */
@@ -68,6 +69,15 @@ const TRAIL_COLOUR = '#ffe27a';
  */
 const FLIGHT_REACH = { side: 12, up: 12, down: 12 };
 const EDGE_PX = 0;
+/** The landing shower starts this far out from its notice's left edge. */
+const SHOWER_GAP_PX = 4;
+/** Where a notice cannot be found, this much of it is guessed left of its sprite. */
+const NOTICE_TEXT_GUESS_PX = 96;
+/**
+ * The flight's sprinkle keeps off the notice it lands on: no sparkle on the notice's rows this close
+ * to the left of where it lands (its count and name are there), measured or not.
+ */
+const NOTICE_CLEAR_PX = 140;
 /** The highest a flight to a stub may arc: the item stays on screen under the top edge. */
 const STUB_ARC_TOP_PX = 25;
 
@@ -282,7 +292,7 @@ class ParticleSystem {
         if (p.showerStep) {
             const o = this._showerOrigin(p);
             this._includeBox({
-                l: o.x - SHOWER_REACH.left - EDGE_PX, t: o.y - SPARKLE_ART_PX * 2 - EDGE_PX,
+                l: o.x - SHOWER_REACH.left - EDGE_PX, t: o.y - SHOWER_REACH.up - EDGE_PX,
                 r: o.x + SHOWER_REACH.right + EDGE_PX, b: o.y + SHOWER_REACH.down + EDGE_PX
             });
         }
@@ -477,6 +487,10 @@ class ParticleSystem {
             shadows: b.heroId ? 0 : trailShadowCount(b.quantity),
             // The shower spills from an item notice only (`lootSparkles.js`), as long as the shadows are many.
             showerStep: !b.heroId && landsOn === 'stub' ? trailShadowCount(b.quantity) : 0,
+            // The notice's left edge, read once on the frame after the landing (`_readNotice`).
+            noticeLeft: null,
+            noticeRead: false,
+            landedAt: 0,
             seed: ++this._seeds,
             landed: false,
             lingerMs: 0
@@ -553,6 +567,7 @@ class ParticleSystem {
             const p = this.particles[i];
             if (currentTime < p.startTime) continue;
             if (p.landed) {
+                if (p.showerStep && !p.noticeRead && currentTime > p.landedAt) this._readNotice(p);
                 // Landed: it stays only while its shadows catch up with the landing.
                 if (currentTime - p.startTime >= p.duration + p.lingerMs) this.particles.splice(i, 1);
                 continue;
@@ -580,6 +595,7 @@ class ParticleSystem {
                 });
                 if (p.trail) this.sparkles.push({ x: p.path.endX, y: p.path.endY, born: currentTime, color: p.color });
                 p.landed = true;
+                p.landedAt = currentTime;
                 p.lingerMs = this._lingerOf(p);
                 if (currentTime - p.startTime >= p.duration + p.lingerMs) this.particles.splice(i, 1);
             }
@@ -602,9 +618,29 @@ class ParticleSystem {
         return Math.max(shadows, FLIGHT_SPARKLE_LIFE_MS, p.showerStep ? showerLengthMs(p.showerStep) : 0);
     }
 
-    /** Where a flight's shower starts: the middle of its notice's bottom edge, under the sprite it lands on. */
+    /**
+     * Read the notice a flight landed on, once, for where its shower starts: its left edge where it
+     * rests, flush with the column's right side.
+     * ⚠️ Not before the frame after the landing: the count it lands with is drawn then, and a notice
+     * with no number yet grows wider with it; read sooner, the shower starts over its text. Not at the
+     * collection either (no box is read in the engine's tick). One read per landing.
+     */
+    _readNotice(p) {
+        p.noticeRead = true;
+        const id = globalThis.CSS?.escape ? CSS.escape(p.itemId) : p.itemId;
+        const el = document.querySelector(p.booking?.copy ? `[data-stub-copy="${id}"]` : `[data-item-stub="${id}"]`);
+        const column = el?.closest('[data-item-stubs]');
+        if (el && column) {
+            const r = el.getBoundingClientRect();
+            if (r.width > 0) p.noticeLeft = column.getBoundingClientRect().right - r.width;
+        }
+        this._include(p);
+    }
+
+    /** Where a flight's shower starts: just out from its notice's left edge, level with its sprite. */
     _showerOrigin(p) {
-        return { x: p.path.endX, y: p.path.endY + STUB_PX / 2 + SPARKLE_ART_PX };
+        const left = p.noticeLeft ?? p.path.endX - SPRITE_PX / 2 - NOTICE_TEXT_GUESS_PX;
+        return { x: left - SHOWER_GAP_PX, y: p.path.endY };
     }
 
     /** A flight's sparkle colours, made once: from its item's trail art, or the stack's. */
@@ -636,9 +672,14 @@ class ParticleSystem {
         const colours = this._sparkleColoursOf(p);
         const flightMs = now - p.startTime;
         const pointAt = (k) => ParticleSystem.pointAt(p.path, k);
-        forEachFlightSparkle(flightMs, p.duration, p.size || 32, p.seed, pointAt,
-            (x, y, stage) => this._drawSparkle(x, y, stage, colours));
-        if (p.landed && p.showerStep) {
+        const end = p.path;
+        const clearLeft = Math.min(p.noticeLeft ?? Infinity, end.endX - NOTICE_CLEAR_PX) - SPARKLE_ART_PX;
+        const overNotice = (x, y) => p.landsOn === 'stub' && x > clearLeft
+            && Math.abs(y - end.endY) < SPRITE_PX / 2 + FRAME_BAND_PX + SPARKLE_ART_PX * 2 && x < end.endX - SPRITE_PX / 2;
+        forEachFlightSparkle(flightMs, p.duration, p.size || 32, p.seed, pointAt, (x, y, stage) => {
+            if (!overNotice(x, y)) this._drawSparkle(x, y, stage, colours);
+        });
+        if (p.landed && p.showerStep && p.noticeRead) {
             const o = this._showerOrigin(p);
             forEachShowerSparkle(flightMs - p.duration, p.showerStep, p.seed,
                 (dx, dy, stage) => this._drawSparkle(o.x + dx, o.y + dy, stage, colours));

@@ -1,6 +1,8 @@
 // Records the loot trail as the game draws it (brief 840 F2): from a running dev server, a New Game at
-// 1920 x 1080 (New Game, Begin), a pile of copper ore dropped on the mat (as the QA panel's Drop does) at 1 (one shadow),
-// 12,000 (five) and 3,000,000 (seven), each collected and its flight to its item notice recorded with
+// 1920 x 1080 (New Game, Begin), a pile dropped in the mat's far corner (as the QA panel's Drop does,
+// placed) of copper ore at 1 (one shadow), iron ore at
+// 12,000 (five) and gold ore at 3,000,000 (seven), each collected and its flight to its item notice, with the
+// shower out of the notice after it (2.6 s in all), recorded with
 // Chrome's screencast, every frame it paints. Writes game_1.gif, game_5.gif and game_7.gif here,
 // cropped to the flight and the notice column, at the frames' own timing.
 //   node capture_game_trail.mjs <url>      e.g. http://localhost:5322
@@ -17,8 +19,7 @@ const { PNG } = createRequire(path.join(root, 'package.json'))('pngjs');
 
 const url = process.argv[2] || 'http://localhost:5322';
 const W = 1920, H = 1080;
-const ITEM = 'item_copper_ore';
-const RUNS = [[1, 'game_1.gif'], [12000, 'game_5.gif'], [3000000, 'game_7.gif']];
+const RUNS = [[1, 'game_1.gif', 'item_copper_ore'], [12000, 'game_5.gif', 'item_iron_ore'], [3000000, 'game_7.gif', 'item_gold_ore']];
 
 const chrome = await launchChrome({ width: W, height: H });
 try {
@@ -35,8 +36,15 @@ try {
     await page.waitFor('!!window.Game.GameState.state', { timeoutMs: 60000 });
     await sleep(6000);
 
-    for (const [qty, file] of RUNS) {
-        const said = await page.evaluate(`import('/src/ui/dev/qaTools.js').then(m => m.dropAndSay('${ITEM}', ${qty}))`);
+    for (const [qty, file, item] of RUNS) {
+        // As the QA panel's Drop does (one pile of the amount), but at a fixed spot in the mat's far
+        // corner, so every flight is a long one; each run its own ore, so no pile merges into another.
+        const said = await page.evaluate(`(async () => {
+            const { matW, matH } = await import('/src/config/matGeometry.js');
+            const SL = await import('/src/systems/board/SpriteLayer.js');
+            const s = SL.addSprite('item', '${item}', ${qty}, { centre: { x: matW() * 0.3, y: matH() * 0.72 } });
+            return s ? 'Dropped ' + s.quantity + ' ${item} at ' + Math.round(s.x) + ',' + Math.round(s.y) : 'no pile';
+        })()`);
         console.log(said);
         await sleep(2500);
         const frames = [];
@@ -49,7 +57,7 @@ try {
         // The pile's collect, as a click on it does; where the flight's canvas stands as it flies.
         const box = await page.evaluate(`(async () => {
             const SL = await import('/src/systems/board/SpriteLayer.js');
-            const pile = SL.getSprites().filter(s => s.refId === '${ITEM}').at(-1);
+            const pile = SL.getSprites().filter(s => s.refId === '${item}').at(-1);
             if (!pile) return null;
             SL.collectSprite(pile.id);
             const boxes = [];
@@ -57,7 +65,7 @@ try {
             await new Promise(done => { const step = () => {
                 const c = document.querySelector('canvas[class*="mat-flights"]');
                 if (c && c.style.display !== 'none') boxes.push({ l: parseFloat(c.style.left), t: parseFloat(c.style.top), w: c.width, h: c.height });
-                if (performance.now() - t0 < 1400) requestAnimationFrame(step); else done();
+                if (performance.now() - t0 < 2600) requestAnimationFrame(step); else done();
             }; requestAnimationFrame(step); });
             return boxes.reduce((a, b) => ({ l: Math.min(a.l, b.l), t: Math.min(a.t, b.t), r: Math.max(a.r, b.l + b.w), b: Math.max(a.b, b.t + b.h) }), { l: Infinity, t: Infinity, r: -Infinity, b: -Infinity });
         })()`);
