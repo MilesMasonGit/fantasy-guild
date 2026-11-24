@@ -12,7 +12,7 @@ import { syncFiles } from '../../cms/src/engine/recipeSync';
 import { auditConnectivity } from '../../cms/src/engine/connectivityAuditor';
 import { spotFindings as CMS_SPOT_FINDINGS } from '../../cms/src/utils/constants';
 import { spotFindings } from '../systems/core/spotRule.js';
-import { spotOf } from '../config/registries/fishingSpots.js';
+import { spotOf, spotRateOf } from '../config/registries/fishingSpots.js';
 import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
 
 /**
@@ -104,6 +104,28 @@ describe('⭐ the Fishing spot block', () => {
         const synced = syncPayload()['tokens.json'][SPOT_ID];
         expect(synced.spot).toEqual(spot);
         expect(synced.standsOn).toEqual(['water']);
+    });
+});
+
+describe('⭐ the Draws fishing spots block (any Token: the spot building)', () => {
+    it('ticking it writes a raise of 100%; the number writes what the game reads; unticking drops the key', () => {
+        const container = openEditor(SPOT_ID);
+        expect(store().tokens[SPOT_ID].spotRate).toBeUndefined();
+        fireEvent.click(q(container, '[data-spot-rate-on]'));
+        expect(store().tokens[SPOT_ID].spotRate).toEqual({ percent: 100 });
+        fireEvent.change(q(container, '[data-spot-rate-percent]'), { target: { value: '60' } });
+        expect(store().tokens[SPOT_ID].spotRate).toEqual({ percent: 60 });
+        expect(spotRateOf(store().tokens[SPOT_ID])).toBe(60);
+        expect(q(container, '[data-spot-rate-summary]').textContent).toContain('60% more often');
+
+        fireEvent.click(q(container, '[data-spot-rate-on]'));
+        expect(store().tokens[SPOT_ID].spotRate).toBeUndefined();
+        expect(JSON.parse(JSON.stringify(syncPayload()['tokens.json'][SPOT_ID]))).not.toHaveProperty('spotRate');
+    });
+
+    it('survives Recalculate and Sync as authored', () => {
+        store().updateToken(SPOT_ID, { spotRate: { percent: 150 } });
+        expect(syncPayload()['tokens.json'][SPOT_ID].spotRate).toEqual({ percent: 150 });
     });
 });
 

@@ -12,6 +12,7 @@ import Statements from './Statements';
 import LifecycleBlocks from './LifecycleBlocks';
 import CatchPoolsBlock from './CatchPoolsBlock';
 import FishingSpotBlock from './FishingSpotBlock';
+import SpotRateBlock from './SpotRateBlock';
 import RareTableBlock from './RareTableBlock';
 import EnemyMovesFields from './EnemyMovesFields';
 import PlanFields from '../shared/PlanFields';
@@ -368,6 +369,8 @@ export default function TokenEditor() {
       <CatchPoolsBlock token={token} onPatch={(patch) => updateToken(activeId, patch)} />
 
       <FishingSpotBlock token={token} onPatch={(patch) => updateToken(activeId, patch)} />
+
+      <SpotRateBlock token={token} onPatch={(patch) => updateToken(activeId, patch)} />
 
       <RareTableBlock token={token} onPatch={(patch) => updateToken(activeId, patch)} />
 

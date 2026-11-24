@@ -4,12 +4,13 @@
 // on its left (`src/tests/fixtures/fishingWater.js`, the map the spot tests use), and fishing spots
 // arrive on it by themselves, are fished, move on by chance after a catch or drift off unworked,
 // and arrive again. Two Fishing Huts (camps), one by the sea and one by the lake, keep four heroes
-// on whichever spots are in their reach; a hero whose spot left walks to the next.
+// on whichever spots are in their reach; a hero whose spot left walks to the next. A spot building
+// on the shore beside the sea's Hut raises the spot rate on the water in its reach.
 //
 // What it exercises each tick: `FishingSpots.tick` (each kind's clock; a landing's darts and
 // placement test), the place-filtered catch pools (`GroundRules.placeAt`, `catchPools.poolsAt`)
 // through `Flags` and `WorkCheck` for every fisher, the catch and its bait, the move-on roll, and
-// the `spot_unworked` timed change, the catch rules (each fish's level, time and Bait; a lure on two
+// the `spot_unworked` timed change, the raised rate's weighted landings, the catch rules (each fish's level, time and Bait; a lure on two
 // of the four heroes, picking the Cod and breaking now and then; the lureless roll at the longest
 // time). Rods, Bait and the lure are bench items; the catch is bench fish.
 //
@@ -69,12 +70,19 @@ registerTokenTypes({
     bench_fishing_hut: {
         id: 'bench_fishing_hut', name: 'Bench Fishing Hut', tokenType: 'camp', rarity: 'common', theme: 'fixture',
         sprite: 't_market_fish', uses: null, requiresHero: false, camp: { skill: 'fishing' }
+    },
+    /** The spot building: spots arrive twice as often on the water in its reach. */
+    bench_chum_station: {
+        id: 'bench_chum_station', name: 'Bench Chum Station', tokenType: 'passive', rarity: 'common', theme: 'fixture',
+        sprite: 't_market_fish', uses: null, requiresHero: false, spotRate: { percent: 100 }
     }
 });
 
 /** By the sea, and by the lake: dry points, each with water in its reach. */
 const HUT_BY_SEA = { x: 960, y: 740 };
 const HUT_BY_LAKE = { x: 640, y: 360 };
+/** On the shore beside the sea's Hut: its reach covers much of the Hut's water, not all of the sea. */
+const CHUM_BY_SEA = { x: 1100, y: 740 };
 
 export default {
     id: 'FS',
@@ -89,6 +97,7 @@ export default {
         placeAt('bench_hall', 1500, 520);
         placeAt('bench_fishing_hut', HUT_BY_SEA.x, HUT_BY_SEA.y);
         placeAt('bench_fishing_hut', HUT_BY_LAKE.x, HUT_BY_LAKE.y);
+        placeAt('bench_chum_station', CHUM_BY_SEA.x, CHUM_BY_SEA.y);
 
         GameState.state.inventory.maxSlots = 64;
         inventory.addItem('bench_rod', 4);

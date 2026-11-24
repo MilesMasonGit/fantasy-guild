@@ -201,6 +201,13 @@
             "reach": { "type": "number", "minimum": 0, "description": "Not read: every camp works the one standard reach (reachRegistry.js STANDARD_REACH_U). Kept so older content still validates." }
           }
         },
+        "spotRate": {
+          "description": "Raises the fishing spot rate on the water in its reach (src/config/registries/fishingSpots.js spotRateOf; src/systems/board/FishingSpots.js). Any Token may carry it.",
+          "type": "object",
+          "properties": {
+            "percent": { "type": "number", "minimum": 0, "maximum": 1000, "description": "How much more often spots arrive there: 100 is twice as often. SPOT_RATE_MAX caps it." }
+          }
+        },
         "standsOn": {
           "type": "array",
           "items": { "type": "string", "enum": ["water", "shore", "grass", "rock", "sand", "stone"] },

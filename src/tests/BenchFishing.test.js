@@ -8,6 +8,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as GroundRules from '../systems/board/GroundRules.js';
+import * as FishingSpots from '../systems/board/FishingSpots.js';
 import { AudioSystem } from '../systems/core/AudioSystem.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
@@ -56,6 +57,11 @@ describe('FS, the fishing scenario', () => {
         const huts = BoardState.tokens().filter(t => t.typeId === 'bench_fishing_hut');
         expect(huts).toHaveLength(2);
         for (const hut of huts) expect(GroundRules.waterKindAt(hut.x, hut.y)).toBeNull();
+        // The spot building stands on the shore and raises the sea's rate, not by all of it.
+        const chum = BoardState.tokens().find(t => t.typeId === 'bench_chum_station');
+        expect(GroundRules.waterKindAt(chum.x, chum.y)).toBeNull();
+        expect(FishingSpots.raisedRateOf('bench_spot')).toBeGreaterThan(1);
+        expect(FishingSpots.raisedRateOf('bench_spot')).toBeLessThan(2);
         expect(GameState.state.heroes).toHaveLength(4);
         expect(GameState.state.heroes.every(h => h.equipment.includes('bench_rod') && h.equipment.includes('bench_bait'))).toBe(true);
         expect(GameState.state.heroes.filter(h => h.equipment.includes('bench_lure'))).toHaveLength(2);

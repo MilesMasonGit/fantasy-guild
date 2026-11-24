@@ -147,7 +147,8 @@ change, `src/systems/board/TimedChanges.js:298`; an event Token's way out, a buf
 rich node leaving after its hour, worked or not, is two more rows, `event_time_up` and `event_unworked`, and a
 fishing spot drifting off unworked one more, `spot_unworked`: the only rows that take a Token off the mat) (`:484`)
 → `FishingSpots.tick` (each fishing spot kind's arrival clock, saved as `board.spotClocks`; a spot lands on water of
-its kinds, and a mat with no water does nothing) → `Flags.assign` (heroes keep, change
+its kinds, faster and more often within the reach of a Token with a spot-rate block, and a mat
+with no water does nothing) → `Flags.assign` (heroes keep, change
 or find work) (`:494`) → `HeroMotion.tick` (`:499`) → `EnemyMotion.tick` (`:503`) → then one pass
 over every Token on the mat (`:511`): effect-block upkeep (`:522`), trigger cooldowns (`:529`),
 enemies run `BoardCombat.tickToken` (`:550`), demolition, otherwise the work cycle (start,
