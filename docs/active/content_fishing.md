@@ -1,4 +1,4 @@
-Status: approved 2026-11-04, amended 2026-11-21 (a CMS pack of Planned entries still to come)
+Status: approved 2026-11-04, amended 2026-11-21, **amended 2026-11-24 by the owner's review** (approval of the write-up pending; a CMS pack still to come)
 
 # Content roadmap: Fishing
 
@@ -16,7 +16,70 @@ Status: approved 2026-11-04, amended 2026-11-21 (a CMS pack of Planned entries s
 - **More special spots to come**, for interesting ingredients for Alchemy and other skills.
 - **Kept**: water never runs out; water type, bait and tool choose the catch. *Amended 2026-11-21: bait is no longer optional except at the Trap, and each fish tier has its own bait (below).*
 
+## Amended 2026-11-24: one Bait, lures pick the fish (owner review)
+
+*The owner's review of the 21 Nov plan, before brief 770 G2. **It replaces every line below that it
+clashes with**: the bait ladder, "better waters ask a rod tier", the Lobster Pot and the Bog Pool. The
+items already shipped Planned in pack `2026-11-22-fishing-items` (the per-tier baits) are cut by the
+next pack.*
+
+> "You can hunt a shark with any kind of harpoon, but using a higher tier one will be more efficient.
+> [...] The player changes the lure to pick what fish they want to catch." (owner)
+
+1. **Three tool kinds: Rod, Harpoon, Trap.** The **Lobster Pot goes**. A fish asks a tool **kind**,
+   never a tier: any rod catches any rod fish, any harpoon any harpoon fish. ⚠️ This takes back the
+   11-04 "better tools gate fish" and the 21 Nov "better waters ask a rod tier" (Coral Reef no longer
+   asks the Fine Rod, Shark-Infested Waters any harpoon); the GDD's "a tool's tier never gates" holds
+   for Fishing again.
+2. **Better rods and harpoons make higher fish practical**: a better tier is faster and **uses less
+   Bait per catch**, and may carry bonuses of its own (yield, rare finds), as other tool families do
+   (T-515). The content agent sets each tier's numbers with the ledger.
+3. **One Bait for all fishing.** A single item, **Bait**, spent on every rod and harpoon catch, and
+   **more of it for rarer fish** (a Shark asks more than a Trout). Made **mainly from Raw Shrimp**: a
+   poor food for heroes, easy to gather in bulk, so it turns into a lot of Bait. Carried in a
+   consumable cell, as today (bait in the Bank alone does not do). Out of Bait: "Needs Bait" (G1's rule).
+4. **Lures pick the fish.** One lure per rod or harpoon fish (a Salmon Lure, a Shark Lure). A lure is
+   **equipped in a stack** and has **a chance to break** each catch: one lure lands many fish, but a
+   long expedition needs a supply. The lure carried picks which fish bite, if the water holds it.
+5. **No lure: a random roll.** A hero fishing without a lure rolls among the water's fish their tool
+   kind and Fishing level allow, and the catch takes **the longest cycle of those fish**. A lure is how
+   you fish fast for one fish.
+6. **The Fishing level still gates each fish**, and Cooking's recipe still opens at the same level. A
+   lure for a fish above the hero's level: they don't fish there and say "Needs Fishing 40".
+7. **The Trap: one Trap fish per area, no lure.** Each water (or special water) holds at most one Trap
+   catch. **Raw Shrimp needs no Bait** (the free start); every other Trap catch (Lobster, Crab, Oyster)
+   **spends Bait**.
+8. **River and Lake are one water**: the same catch (both kept as looks). **The Bog Pool goes.**
+9. **Seaweed is a Field fertiliser** (a Farming input) and **Pearls go into gear** (Enchanting or
+   jewellery); the content agent places them in the pack.
+
+10. **Which fish a place holds: the water's kind plus the Region's biome** (owner). A water's kind
+    (Coast, River/Lake, a special water) sets its base catch; the biome adds or swaps a few (a warm
+    Coast holds Tropical Fish). ⚠️ **Fish are a world resource to balance across the hex map** (owner):
+    higher fish in later rings, and **every fish reachable somewhere** ([concept_atlas.md](concept_atlas.md),
+    the ladder's rung mapping, T-294).
+11. **The water's Token card lists every fish it holds, plainly** (owner): name and sprite, its tool
+    kind and Fishing level, greyed with the level it asks while out of reach, and **which lure picks
+    it**.
+12. **The world map's resource view gets a section per gathering skill** (owner): what each place
+    offers to Mining, Forestry, Fishing and Farming ([concept_world_map.md](concept_world_map.md)).
+13. **A lure for a fish this water lacks**: the hero fishes the lureless random roll, **the lure is not
+    used up**, and their bubble says "No Salmon here" once (owner).
+14. **Hovering a water shows the fish that could be caught there** in its speech bubble (owner;
+    the water's version of [concept_playmat_declutter.md](concept_playmat_declutter.md) §12.3); the
+    card says which lure each needs.
+15. **A Dock**, its own gathering foundation on the shore, offers the Fishing Hut, a Bait Shed and a
+    Lure Workshop ([concept_gathering_foundations.md](concept_gathering_foundations.md), draft).
+
+**Planning agent's calls (simplest first; the content agent may move them):** Raw Shrimp is the
+River and Lake's free Trap catch; Lobster is the Coast's Trap catch; Oyster the Oyster Bed's; **Crab**
+(new, the owner's example) a Trap catch where a water has none, or cut if none is free. Bait is made
+by Crafting, from Raw Shrimp (one recipe; the amount the ledger's). Lures are made by Crafting, each
+at about its fish's level.
+
 ## Amended 2026-11-21 (Systems Audit, T-622, T-623, T-604)
+
+*Partly superseded 2026-11-24 (above): bait is one item, lures pick the fish, tiers never gate.*
 
 The owner's rulings from the audit of Fishing ([A8](audit/A8_fishing.md)) and of events ([A4](audit/A4_events.md)). They replace the lines they clash with above.
 
@@ -37,6 +100,8 @@ The owner's rulings from the audit of Fishing ([A8](audit/A8_fishing.md)) and of
 - **The Master Rod loses its Salmon gate**: better waters ask a rod tier; within a water, bait picks the fish. The Harpoons, Trap and Lobster Pot gate by kind.
 
 ## Items ahead of the waters (2026-11-22)
+
+*Superseded 2026-11-24: the per-tier baits below are replaced by one Bait and a lure per fish; the Master Rod stands; the Lobster Pot goes.*
 
 The owner asked for Fishing's items while its waters wait for brief 770 G2. Pack `2026-11-22-fishing-items`:
 
