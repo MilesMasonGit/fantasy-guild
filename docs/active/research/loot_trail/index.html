@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Loot Trail Pick</title>
+<style>
+:root {
+  --bg: #121417; --panel: #1a1d24; --ink: #ece7dc; --muted: #a09c93; --gold: #fbbf24; --line: rgba(255,255,255,.13);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, "Segoe UI", sans-serif; }
+main { max-width: 2040px; margin: 0 auto; padding: 16px; }
+h1 { font-size: 22px; margin: 0 0 4px; }
+h2 { font-size: 17px; margin: 28px 0 4px; color: var(--gold); }
+p { margin: 4px 0 10px; max-width: 980px; }
+.muted { color: var(--muted); }
+.controls { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin: 12px 0 4px;
+  padding: 10px 12px; background: var(--panel); border: 1px solid var(--line); }
+.controls label { display: flex; gap: 6px; align-items: center; }
+select, button { font: inherit; background: #262a33; color: var(--ink); border: 1px solid var(--line); padding: 3px 6px; }
+button[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); }
+.tiles { display: flex; flex-wrap: wrap; gap: 12px; }
+.tile { background: var(--panel); border: 1px solid var(--line); padding: 8px; max-width: 100%; }
+.tile .head { display: flex; gap: 10px; align-items: baseline; margin-bottom: 6px; max-width: 480px; }
+.tile .letter { font-weight: 700; font-size: 24px; color: var(--gold); min-width: 1.2em; }
+.tile .desc { font-size: 14px; }
+.scroll { overflow-x: auto; max-width: 100%; }
+canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
+code { background: #262a33; padding: 0 4px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Loot flight: a trail and a landing</h1>
+  <p>The same flight in every tile, all in step, played on a loop: collected loot flies off the mat to its item notice
+    (top right) with the game's own path, timing and sizes. Each pass flies the next item. Pick one trail
+    (<b>A</b> to <b>L</b>: a colour set, a fade, a length), and say whether the sparkle shower (<b>M</b> to <b>Q</b>,
+    one stack colour each) and the landing (<b>R</b>) look right. <b>Today</b> is the game as it is now.</p>
+  <p class="muted">Hard pixels only, like the game: no glow, no blending. The flight here is the game's own length for
+    the distance in the tile (shorter than most flights in the game, which run up to 800 ms); slow it down to look closely.</p>
+
+  <div class="controls">
+    <label>Items <select id="item"></select></label>
+    <label>Rarity colour (I to L) <select id="rarity"></select></label>
+    <span>Speed
+      <button data-speed="1" aria-pressed="true">1x</button>
+      <button data-speed="0.5">1/2</button>
+      <button data-speed="0.25">1/4</button>
+      <button id="pause">Pause</button>
+    </span>
+    <span>Zoom
+      <button data-zoom="1" aria-pressed="true">1x</button>
+      <button data-zoom="2">2x</button>
+    </span>
+  </div>
+
+  <h2>Today</h2>
+  <div class="tiles" id="g-today"></div>
+
+  <h2>Trails: the item's own colours</h2>
+  <p class="muted">Shadows coloured from the item's sprite, its most-used colours (dark outline colours left out).</p>
+  <div class="tiles" id="g-item"></div>
+
+  <h2>Trails: a rainbow run</h2>
+  <p class="muted">Red, orange, yellow, green, blue (three shadows: red, yellow, blue).</p>
+  <div class="tiles" id="g-rainbow"></div>
+
+  <h2>Trails: a rarity colour's shades</h2>
+  <p class="muted">One rarity colour, shaded by the fade. The recordings use epic purple, the one rarity colour that is not
+    also a stack colour; pick another above.</p>
+  <div class="tiles" id="g-rarity"></div>
+
+  <h2>Sparkle shower and landing, by stack size</h2>
+  <p class="muted">Sparkles shed along the flight in the stack's colour; on landing the notice flashes white and sparkles pop out
+    of it, more for bigger stacks (3, 4, 5, 6, 8), in the same colour. No trail here, so the shower reads alone.</p>
+  <div class="tiles" id="g-shower"></div>
+
+  <h2>The landing alone</h2>
+  <div class="tiles" id="g-landing"></div>
+
+  <h2>Try them together</h2>
+  <div class="controls">
+    <label>Trail <select id="mix-trail"></select></label>
+    <label>Stack <select id="mix-stack"></select></label>
+    <label>Landing <select id="mix-landing"><option value="1">flash and sparkles</option><option value="0">as today</option></select></label>
+  </div>
+  <div class="tiles" id="g-mix"></div>
+</main>
+
+<script>
+// ASSETS-BEGIN
+const ASSETS = {"g_grass":"data:image/png;base64,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",
+"i_blueberry":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAPoAAAD6AG1e1JrAAABrklEQVR42u2VL0sFQRTFV18TsQsigijyQARFXtFgU9BiMggPyxaDr2ixCQYRwWA020wWk6DNLyD4BaziJxjnN+4Zrk8Mu+s+EObCYZeZnXvO/TN3syxZsmT/0VpzR84im+l9YRA2PLvvlnYf3Mreo1vYuY+YWL9x2VTesAgfJUT5+XsgHVm8CJjevHUbvZfwbFaEFwBJfvbhuidvbnT5MgiAPApotBSFgE73KQgAW4evAaxHARaTB652ww21jwNwRgna23cx7YockBFI2QeUaXzt2tE35Zl9LVvzp241f46AHEFjnatvgFhP9mlSiDmvHqmUbhHjnCeOiYxs4FwCeAdkiD0i5zut816uN4o0UmMbKbVWWn/U2kPCJMCilgAI1WxWQD+JzQ7faI0yVBJAtwOR0wMAEjnnSjIXAGVCoERoTpQX4GtJBECTDjI1ltIsYsSpYdWA+JCIasPJH8KRultgXY2miShR7EcBRAxxrcnoD9s0KhoJgAxIgEpW/e7/IiJMMxON7roFPyfIdS0b/yOqPPYG6Lo2/1csMmP7Q++DIe8vT4G/q3uyZMkGaJ/xLwXN+LD2mgAAAABJRU5ErkJggg==",
+"i_ingot_gold":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAPoAAAD6AG1e1JrAAABEElEQVR42u2XzQ3CMAxGc2MYRmAYFmAt5mAPTuzAAEGuasl1PsdOm9BLLEVVq5b35J+SpjRjRsd43FKmdRr8+0w553d+3S//EyEQAfPnulkkM1SCwQTipQXo2D0bCGwJyOuHRWSqEbwmwL2xqyy6xhbcEljOVzhnISShU90qoMG8XAEr1U0CAKwlTDg9DGvoCKBU1wQKCX6RyB8rammJgRrvFijqvopEmysK30hIOJrxRUKKVMA1AXQfFIASnA0xz0fhGwH9AGw08UfTIuDCrZFBWfDgWsAE67nvJeA2nLWJiAi01N4FI4lIL3gCTeCISItAty2ZFmG4NwHDNpksEerqkbvdwzXuVZb5ATKjZ/wA/hUXWGHq9tEAAAAASUVORK5CYII=",
+"i_longsword_copper":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAPoAAAD6AG1e1JrAAABIklEQVR42mNgGAU0BHVu/P9xYbpYjgvQ3AH4LD9XrUtbB6BY/uwiCgZZTlMHoPv879JiOKa5A/BZTnMHELKcpg4gxnKYxSDsJiX0n+4+h+V9uluOXPAMM5/D8vaA+BypYKG5z/V52f7bK0r9J9ZyqvocZPn/B+vBGOQImO/oZvn2Cv//f28theMZidr0sRzmgHnp9lgdQbfUDnMECONyBM1SO7IjmmzVsDqC5pajh8T1+Tn/P2yuwHAEzS0H5QJQWoBFB8gRMIeA5GlmOTjVg7Lh131gGjlN0NwR6JaD+NiiA0RT1QGgAgeEQYajW44tTcRaCVLPclBqRyl0oCUgrrRB9aAHOQAWtyBM0wSGK/iRExlVg5cUR4AsBmFcwT8KqA0AT9E7QiMRQAUAAAAASUVORK5CYII=",
+"i_ore_copper":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAPoAAAD6AG1e1JrAAAB2UlEQVR42u2XPU4DMRBGcwbK0NOloqNG9ByCHkSZFnETDsElkKg4QbgFMjshb/UyMWBvtoylURKT9ffmN2axOK3T+mfdLM9Ktur3rm+LbTbxt/XqwDJECG42H6Pdr5/K6vKqzCL+9fJYyuf7jw0rPhuiJo5NhkDcwogDEGYxjP0AmxdgeCUaAIRAiOH59plhbSM0BwDm0I97A8jy/GIrghgRCnOd/FW8v644PAvW3gNBzr0fZme6IAgpnvuV9xZ3IcaeHSCVkwCyqFOBx64D0gHAtm52KewCeH64OwgroedwPAMKgLD8bHcKAsBDhVzueUaX7CDwPg8kQJoAyGseLHG4o2AAp4SuwOgO4Jsqn8KyeOzZ41p9jL8XEm8GyMMnHuIAh9FDKcztxl5+nu80eW8ADsue1OaAhxBn5EHVPHw8ch2B+LvbkZBn4VJe9yrfKekawW4j6gJIwlrz3JCkp/l3wVHI1e2u8LCx57lAQ5y9pjZ0SH2IR65DWhu59j470wzh/HIwEAbwxaV2c3Iau8YxlU3buSgByK1ocX8GDuA+APU0Bzsy/v0HrAbUfR8wQPZsLzXcgHYArnZAeKb7ZjTO9sqVnNFs746+CU+5tk3ybE6I079ux65vgIi9xfWwfzMAAAAASUVORK5CYII=",
+"i_potion_sun_red":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAPoAAAD6AG1e1JrAAABsklEQVR42u2Wr04EMRDGl5fAoVE4EgwQDBZzAnUKnuCCAcEboEgOheERIEHgCQSDwZAgwCEJLzDsN9kZpt32brOdu+SSazKZptvt95vp36palgUtlLH5AYyGe3R1OmC/v7sxVwAWgyjEIwCaVZqD9ruPb/olYkMddnZzn+xbAqZC0QA0urim45NzGhweqKEt7ieAvQEQVQ4C7TIFiehVPJOZIghNu02/EXITD6KVATH46w+1IGBoF+CS1CezIOIP72/08vXEHkbjS/YxhFf0rTmFOEQFQnycCbfo7W6At6IWhvvsbAVZ6LsF9UcZCOK0UhE9PrNgy9CO742NG2j8a7LRCaZ1yAgABlURAak9oqbtzf/60TAAiMebBhGsYhvFbbXKg6tgXVcvQKjXHn0twJTTMj8FspoBgKg+19c0WvZSR4GvASBuAaK10G89WAiN2poRt+n3vKAUgCGaVNtpEHEBcD0D7AkHAYjZBWctkXq/Q8guqpRw3MflHkjd+fHqzn0rPRFTtxrF90Mi3QFICcTEl06H/a0QRVmY8HOX022mj9XiJ5fLQ8X73vecomVZjPIH5QGnrX5bMasAAAAASUVORK5CYII=",
+"i_salmon_raw":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAPoAAAD6AG1e1JrAAABb0lEQVR42u2WMUsDQRSE80ts/Q3+AGNnIRaSLtjFxkYIthaKhEDAxsoiYiFWAVuDjY2lhYWNlZ2Nf+DkW5hjcuyxJzm8Zh8Mm717OzP37u1eer0cOXKsGRtb+wXoTPz8dtGNAYnvHF4E/IsJlRtIGIyv70oTjtaFh2dXQYwn95HrQMZaey0uDCl4+vgMonUjuZv9Ua2BRhVy4fnyJcBF7l/foiP3Mcm6al+IU31Ta6AqDN6/f8K12eNzEGMeG1UlGdo9vlzpGe+VpDikzBmPpjelCcglqryYGcS4z1qMMyZ3DDdIppRyLgOQyoDvAODVipkq5pNicDpNb1dvED0pwAAkGNgeTUohdT6/JSR8nQyLxd7BSvlZm9wdJLAYSARCyESscpLroi4scXE26gE3AYGMuDhQlTR30aq4c8pEozPCX4dIEVI1YoLKJScmIhN/PqTcjEpdd+ymDpm1j+lg4mHW3Se48/8AOXLkyNF2/AKy1py1/qFmvgAAAABJRU5ErkJggg==",
+"i_watermelon":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAPoAAAD6AG1e1JrAAABTklEQVR42u2XMQ7CMAxFAydg4gCMDEhInACxMiAYWdkZewpWVm7CxBG4BRdgCnVUFyd14pQmlZBq6YtWovnv2y4SSg011I9VjJSm6t1cXy9frZf9QRjz0tACmE70a9xTJ7j0AADKDmCZ7zd1elTWLlitB3PQ6WABZO2ClR5BHPNsEFZ6+AS56cl98lHU6dG8vAYTCnBUKk8XjDkciqm59IySdaFufymTks5eAOkMYKVnZu+2PSkEax7Y/OQLaQBw5r7N96jzQmJ6cxCXPvAKJllIungxs4/ZhWgI3+zd977NHkSPgjWv0kcBCG+I2IXxdqStIukbAEzC4CiqAo8gwOI8M2pUGzPG+Pm+6+KxkgHgSwgBgnsJJmQMRc8MAtAu0IfwGlLEFiamz4vmFAKFB+xu8waQ2y0fOJ71008yB+MDcFvdyViCkTT8c/qb+gC4xK1pDX/9AQAAAABJRU5ErkJggg==",
+"i_wood_oak":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAPoAAAD6AG1e1JrAAACNUlEQVR42u2WwUoDMRCG+wAiiiDtwUprt1aRClqLpVQEb+pJEKW92auCHoQei2/hwaMUBU99AZ+jTyF4lsgf+ctsNms3cRUUF4ZNskn+LzOTYTOZ/+e3PTetsoqzbxcdnlXVy7Cn1OtzxDCO76nCWEVHj+qpXY0Yxm0wXxbnpiExiwds370hbOKm6+OAME+Ooe0MgQXmJqY4gUxBc35qAEk9YI55AewXinqRFE2aA3IN2tinOJV1B4D1G5VQLnDTQXslcguk8Nvofnzyq3rJDwAL8d6cy2kQWxhstYDCEG1XlvQeEqA/2FUwJwD20WZ+mIZxeu04CLToyWohBADhw14jOQBF0b+oVcZtGvrylIRmH7aXz+v3+d2Oqna2tPhGd9sN4OFgXRvaAJEAFLUByHbQqevTAyJxDsDgRhPADA/GyrPzITgCLE5/gGH9dS1Qy6dNddRvTvYANsMitPGmN+IApHfodh4E6zGGORBHGCZCNLMLEQDpBZkTaGM+ATAXJycMgbDv5W0rWSK6APCuQ4huR0h4auc6gIUUJABDEucBupynNfvOADLW9AC8gjfFu2tBCIDzJQQ84VUJKYKiQhjpGRuAeWp5I7wAmPkykyWADIEURbs0k/MPASsc7zfrAEPDnOA3Zr8tD7wBzAJDAMJIALP4yKvnBYAHLoQI3qiGstgQCN949UwA5gUgvX9MsRjGROTdZszRp2BcCFL5PYcQTktBxlx6gIKpCn/mFdqPiP7p5x2TKzIVIb8kWAAAAABJRU5ErkJggg=="};
+// ASSETS-END
+</script>
+<script>
+'use strict';
+
+/* The game's own numbers, copied (2026-11-24):
+   src/ui/components/base/ParticleOverlay.jsx  FLIGHT_MIN_MS, FLIGHT_MAX_MS, FLIGHT_MS_PER_PX, flightDurationMs,
+     STUB_ARC_TOP_PX, the arc (control point at the midpoint, raised by 0.2 of the distance), pointAt (a quadratic
+     curve walked at an even pace, no easing), sprites drawn at Math.round of the top-left with no smoothing,
+     TRAIL_BACK_MS's 35 ms step and the 2 px art pixel.
+   src/ui/utils/lootFlight.js  lootSpriteScreenPx(1) = 64: an item flies at its floor size.
+   src/ui/components/notifications/stubGeometry.js  STUB_PX 44, FRAME_BAND_PX 6, SPRITE_PX 32, PAD_LEFT_PX 2,
+     PAD_RIGHT_PX 4, ROW_GAP_PX 4, SPRITE_INSET_PX 20 (where a flight lands: the stub sprite's centre).
+   public/assets/ui/u_frame_chamfer.png  the stub's frame (gold #977316 on #0d0a08, no right side).
+   src/ui/components/notifications/stubText.js  the count, green for a gain; thousands as 2.5k. */
+const G = Object.freeze({
+  FLIGHT_MIN_MS: 280, FLIGHT_MAX_MS: 800, FLIGHT_MS_PER_PX: 0.45, STUB_ARC_TOP_PX: 25, ARC_RISE: 0.2,
+  ITEM_PX: 64, STUB_PX: 44, BAND_PX: 6, SPRITE_PX: 32, PAD_LEFT_PX: 2, PAD_RIGHT_PX: 4, ROW_GAP_PX: 4,
+  SPRITE_INSET_PX: 20, TRAIL_STEP_MS: 35, ART_PX: 2
+});
+const flightDurationMs = (d) => Math.round(Math.min(G.FLIGHT_MAX_MS, Math.max(G.FLIGHT_MIN_MS, G.FLIGHT_MIN_MS + d * G.FLIGHT_MS_PER_PX)));
+
+const W = 480, H = 300;
+const FROM = { x: 90, y: 250 };
+const STUB_TOP = 32;
+const TO = { x: W - G.SPRITE_INSET_PX, y: STUB_TOP + G.STUB_PX / 2 };
+const PATH = (() => {
+  const dist = Math.hypot(TO.x - FROM.x, TO.y - FROM.y);
+  const cpX = (FROM.x + TO.x) / 2;
+  // A flight to a stub never arcs over the top of the screen.
+  const cpY = Math.max(G.STUB_ARC_TOP_PX, (FROM.y + TO.y) / 2 - dist * G.ARC_RISE);
+  return { sx: FROM.x, sy: FROM.y, ex: TO.x, ey: TO.y, cpX, cpY, dist };
+})();
+const DUR = flightDurationMs(PATH.dist);
+const FRAME_MS = 20;
+const PRE_MS = 300, POST_MS = 800;
+const LOOP_MS = Math.ceil((PRE_MS + DUR + POST_MS) / FRAME_MS) * FRAME_MS;
+
+const pointAt = (k) => {
+  const t = Math.max(0, Math.min(1, k)), u = 1 - t;
+  return { x: u * u * PATH.sx + 2 * u * t * PATH.cpX + t * t * PATH.ex, y: u * u * PATH.sy + 2 * u * t * PATH.cpY + t * t * PATH.ey };
+};
+
+const ITEMS = [
+  { id: 'i_ore_copper', name: 'Copper ore' },
+  { id: 'i_blueberry', name: 'Blueberry' },
+  { id: 'i_watermelon', name: 'Watermelon' },
+  { id: 'i_potion_sun_red', name: 'Elixir of valor' },
+  { id: 'i_ingot_gold', name: 'Gold ingot' },
+  { id: 'i_salmon_raw', name: 'Raw salmon' },
+  { id: 'i_wood_oak', name: 'Oak wood' },
+  { id: 'i_longsword_copper', name: 'Copper sword' }
+];
+/** The recordings' item run: four varied ones, one per pass. */
+const RUN = ['i_ore_copper', 'i_blueberry', 'i_watermelon', 'i_potion_sun_red'];
+
+/** src/styles/main.css --color-rarity-*. */
+const RARITY = { common: '#a0a0a0', uncommon: '#68d391', rare: '#63b3ed', epic: '#b794f4', legendary: '#fbd38d' };
+/** Concept §2, from the game's palette (rarity common, gi-info, gi-success, gi-gold, gi-danger). */
+const STACKS = [
+  { key: 'grey', name: 'grey', range: '1 to 9', colour: '#a0a0a0', qty: 5, base: 12, landing: 3 },
+  { key: 'blue', name: 'blue', range: '10 to 99', colour: '#3b9eff', qty: 40, base: 80, landing: 4 },
+  { key: 'green', name: 'green', range: '100 to 999', colour: '#09b554', qty: 300, base: 600, landing: 5 },
+  { key: 'gold', name: 'gold', range: '1,000 to 9,999', colour: '#fbbf24', qty: 2500, base: 5000, landing: 6 },
+  { key: 'red', name: 'red', range: '10,000 and more', colour: '#ff2d55', qty: 12000, base: 24000, landing: 8 }
+];
+const RAINBOW5 = ['#ff3b30', '#ff9500', '#ffd60a', '#34c759', '#0a84ff'];
+const RAINBOW3 = ['#ff3b30', '#ffd60a', '#0a84ff'];
+
+const state = { item: 'run', rarity: 'epic', speed: 1, zoom: 1, paused: false };
+
+/* ---------- colour ---------- */
+const hex = (c) => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16));
+const toHex = (rgb) => '#' + rgb.map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
+const mix = (c, to, f) => { const a = hex(c), b = hex(to); return toHex(a.map((v, i) => v + (b[i] - v) * f)); };
+const lum = ([r, g, b]) => (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+
+/* ---------- assets ---------- */
+const IMG = {};
+const SPRITE_COLOURS = {};
+async function loadAssets() {
+  for (const [id, src] of Object.entries(ASSETS)) {
+    const img = new Image();
+    img.src = src;
+    await img.decode();
+    IMG[id] = img;
+  }
+  for (const it of ITEMS) SPRITE_COLOURS[it.id] = spriteColours(IMG[it.id]);
+}
+
+/** The sprite's opaque colours, most used first, leaving out near-black outline colours. */
+function spriteColours(img) {
+  const c = document.createElement('canvas');
+  c.width = img.width; c.height = img.height;
+  const g = c.getContext('2d');
+  g.drawImage(img, 0, 0);
+  const d = g.getImageData(0, 0, c.width, c.height).data;
+  const count = new Map();
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i + 3] < 128) continue;
+    const key = toHex([d[i], d[i + 1], d[i + 2]]);
+    count.set(key, (count.get(key) || 0) + 1);
+  }
+  return [...count.entries()].filter(([k]) => lum(hex(k)) > 0.1).sort((a, b) => b[1] - a[1]).map(([k]) => k);
+}
+
+/** `n` distinct colours from the sprite: each far enough from the ones already taken, relaxed if too few. */
+function itemSet(id, n) {
+  const all = SPRITE_COLOURS[id];
+  for (const gap of [70, 45, 25, 0]) {
+    const out = [];
+    for (const c of all) {
+      if (out.every(o => { const a = hex(o), b = hex(c); return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) >= gap; })) out.push(c);
+      if (out.length === n) return out;
+    }
+  }
+  const out = [];
+  for (let i = 0; i < n; i++) out.push(all[i % all.length]);
+  return out;
+}
+
+/** The shadows' colours, nearest the item first. A fade mixes toward white or black, more toward the tail. */
+function trailColours(trail, itemId) {
+  const n = trail.length;
+  let base;
+  if (trail.set === 'item') base = itemSet(itemId, n);
+  else if (trail.set === 'rainbow') base = n === 3 ? RAINBOW3 : RAINBOW5;
+  else base = Array(n).fill(RARITY[state.rarity]);
+  const to = trail.fade === 'lighter' ? '#ffffff' : '#000000';
+  return base.map((c, i) => mix(c, to, (i / (n - 1)) * 0.6));
+}
+
+const tintCache = new Map();
+function tinted(id, colour) {
+  const key = id + colour;
+  let c = tintCache.get(key);
+  if (c) return c;
+  const img = IMG[id];
+  c = document.createElement('canvas');
+  c.width = img.width; c.height = img.height;
+  const g = c.getContext('2d');
+  g.drawImage(img, 0, 0);
+  g.globalCompositeOperation = 'source-in';
+  g.fillStyle = colour;
+  g.fillRect(0, 0, c.width, c.height);
+  tintCache.set(key, c);
+  return c;
+}
+
+let GROUND = null;
+function ground() {
+  if (GROUND) return GROUND;
+  GROUND = document.createElement('canvas');
+  GROUND.width = W; GROUND.height = H;
+  const g = GROUND.getContext('2d');
+  g.imageSmoothingEnabled = false;
+  const tile = IMG.g_grass, s = tile.width * G.ART_PX;
+  for (let y = 0; y < H; y += s) for (let x = 0; x < W; x += s) g.drawImage(tile, x, y, s, s);
+  return GROUND;
+}
+
+/* ---------- a pixel font for the count (5x7, drawn at 2 px) ---------- */
+const FONT = {
+  '0': ['.###.', '#...#', '#..##', '#.#.#', '##..#', '#...#', '.###.'],
+  '1': ['..#..', '.##..', '..#..', '..#..', '..#..', '..#..', '.###.'],
+  '2': ['.###.', '#...#', '....#', '...#.', '..#..', '.#...', '#####'],
+  '3': ['#####', '...#.', '..#..', '...#.', '....#', '#...#', '.###.'],
+  '4': ['...#.', '..##.', '.#.#.', '#..#.', '#####', '...#.', '...#.'],
+  '5': ['#####', '#....', '####.', '....#', '....#', '#...#', '.###.'],
+  '6': ['..##.', '.#...', '#....', '####.', '#...#', '#...#', '.###.'],
+  '7': ['#####', '....#', '...#.', '..#..', '.#...', '.#...', '.#...'],
+  '8': ['.###.', '#...#', '#...#', '.###.', '#...#', '#...#', '.###.'],
+  '9': ['.###.', '#...#', '#...#', '.####', '....#', '...#.', '.##..'],
+  '+': ['.....', '..#..', '..#..', '#####', '..#..', '..#..', '.....'],
+  'k': ['#....', '#....', '#..#.', '#.#..', '##...', '#.#..', '#..#.'],
+  '.': ['..', '..', '..', '..', '..', '##', '##']
+};
+const textWidth = (s) => [...s].reduce((w, ch) => w + (FONT[ch][0].length + 1) * G.ART_PX, -G.ART_PX);
+function drawText(g, s, x, y, colour) {
+  g.fillStyle = colour;
+  for (const ch of s) {
+    const rows = FONT[ch];
+    rows.forEach((row, r) => { for (let c = 0; c < row.length; c++) if (row[c] === '#') g.fillRect(x + c * G.ART_PX, y + r * G.ART_PX, G.ART_PX, G.ART_PX); });
+    x += (rows[0].length + 1) * G.ART_PX;
+  }
+}
+function signedAmount(n) {
+  if (n < 1000) return '+' + n;
+  const t = Math.floor((n / 1000) * 10) / 10;
+  return '+' + t.toFixed(1).replace(/\.0$/, '') + 'k';
+}
+
+/* ---------- the stub ---------- */
+const GOLD = '#977316', DARK = '#0d0a08', GAIN = '#09b554';
+/** One stub, flush with the right edge: the chamfer frame at 2 px with no right side. `flash`: 0 none, 2 all white, 1 frame white. */
+function drawStub(g, itemId, count, flash) {
+  const text = signedAmount(count);
+  const w = G.BAND_PX + G.PAD_LEFT_PX + textWidth(text) + G.ROW_GAP_PX + G.SPRITE_PX + G.PAD_RIGHT_PX;
+  const x0 = W - w, y0 = STUB_TOP, rows = G.STUB_PX / G.ART_PX, cols = Math.ceil(w / G.ART_PX);
+  const frame = flash ? '#ffffff' : GOLD, fill = flash === 2 ? '#ffffff' : DARK;
+  for (let r = 0; r < rows; r++) {
+    const edge = r === 0 || r === rows - 1 ? 0 : r === 1 || r === rows - 2 ? 1 : 2;
+    for (let c = 0; c < cols; c++) {
+      let colour = null;
+      if (edge === 0) colour = c < 2 ? null : frame;
+      else if (edge === 1) colour = c === 0 ? null : c === 1 ? frame : fill;
+      else colour = c === 0 ? frame : fill;
+      if (!colour) continue;
+      g.fillStyle = colour;
+      g.fillRect(x0 + c * G.ART_PX, y0 + r * G.ART_PX, G.ART_PX, G.ART_PX);
+    }
+  }
+  if (flash === 2) return x0;
+  const tx = x0 + G.BAND_PX + G.PAD_LEFT_PX;
+  drawText(g, text, tx, y0 + (G.STUB_PX - 14) / 2, GAIN);
+  g.drawImage(IMG[itemId], W - G.PAD_RIGHT_PX - G.SPRITE_PX, y0 + G.BAND_PX, G.SPRITE_PX, G.SPRITE_PX);
+  return x0;
+}
+
+/* ---------- sparkles ---------- */
+/** A fixed hash: nothing random, every loop draws the same pixels (as the game's flight does). */
+const hash = (n) => { let x = (n | 0) * 374761393 + 668265263; x = (x ^ (x >>> 13)) * 1274126177; x ^= x >>> 16; return (x >>> 0) / 4294967296; };
+const A = G.ART_PX;
+/** A sparkle at age `age` ms of `life`: a plus of five art pixels (lighter heart), then one pixel, then one darker pixel. */
+function drawSparkle(g, x, y, colour, age, life) {
+  const px = Math.round(x / A) * A, py = Math.round(y / A) * A;
+  const p = age / life;
+  if (p < 0.4) {
+    g.fillStyle = colour;
+    g.fillRect(px - A, py, A, A); g.fillRect(px + A, py, A, A); g.fillRect(px, py - A, A, A); g.fillRect(px, py + A, A, A);
+    g.fillStyle = mix(colour, '#ffffff', 0.6);
+    g.fillRect(px, py, A, A);
+  } else if (p < 0.75) {
+    g.fillStyle = colour; g.fillRect(px, py, A, A);
+  } else {
+    g.fillStyle = mix(colour, '#000000', 0.35); g.fillRect(px, py, A, A);
+  }
+}
+const SHOWER_EVERY_MS = 16, SHOWER_EACH = 2, SHOWER_LIFE_MS = 420;
+/**
+ * The shower: shed from under the item along the flight (two each 16 ms), drifting down as they fade.
+ * None over the notice (left edge `x0`): they stay out on the mat.
+ */
+function drawShower(g, ft, colour, x0) {
+  for (let e = 0, j = 0; e < DUR; e += SHOWER_EVERY_MS) {
+    for (let m = 0; m < SHOWER_EACH; m++, j++) {
+      const age = ft - e;
+      if (age < 0 || age >= SHOWER_LIFE_MS) continue;
+      const at = pointAt(e / DUR);
+      const jx = (hash(j * 3) - 0.5) * G.ITEM_PX * 0.7, jy = (hash(j * 3 + 1) - 0.5) * G.ITEM_PX * 0.7;
+      const vx = (hash(j * 3 + 2) - 0.5) * 0.06, vy = 0.02 + hash(j * 7 + 5) * 0.06;
+      const x = at.x + jx + vx * age, y = at.y + jy + vy * age;
+      if (x >= x0 - 2 * A && y >= STUB_TOP - 2 * A && y <= STUB_TOP + G.STUB_PX + 2 * A) continue;
+      drawSparkle(g, x, y, colour, age, SHOWER_LIFE_MS);
+    }
+  }
+}
+const LAND_STEP_MS = 50, LAND_OUT_PX = [2, 6, 10, 13, 15];
+/**
+ * The landing's sparkles: popped out of the notice's edge (top, side facing the mat, bottom), evenly
+ * round it, stepping outward. `x0` is the notice's left edge; it is flush with the screen's right edge.
+ */
+function drawLanding(g, age, colour, n, x0) {
+  const step = Math.floor(age / LAND_STEP_MS);
+  if (step >= LAND_OUT_PX.length) return;
+  const out = LAND_OUT_PX[step];
+  const y0 = STUB_TOP, h = G.STUB_PX, run = W - 8 - x0;
+  const total = run + h + run;
+  for (let i = 0; i < n; i++) {
+    let d = ((i + 0.5) / n) * total, x, y;
+    if (d < run) { x = W - 8 - d; y = y0 - out; }
+    else if ((d -= run) < h) { x = x0 - out; y = y0 + d; }
+    else { d -= h; x = x0 + d; y = y0 + h + out; }
+    drawSparkle(g, x, y, colour, age, LAND_STEP_MS * LAND_OUT_PX.length);
+  }
+}
+const FLASH_ALL_MS = 60, FLASH_FRAME_MS = 120;
+
+/* ---------- one frame of a tile ---------- */
+/**
+ * spec: { trail: {set, fade, length} | null, stack: STACKS entry | null (the shower), landing: STACKS entry | null }
+ * `time` in ms since the loop began; the pass picks the item.
+ */
+function renderTile(g, spec, time, run) {
+  const pass = Math.floor(time / LOOP_MS);
+  const t = time - pass * LOOP_MS;
+  const itemId = run[pass % run.length];
+  const ft = t - PRE_MS;
+  const landed = ft >= DUR;
+  const qty = spec.qtyFrom ? spec.qtyFrom.qty : 1;
+  const base = spec.qtyFrom ? spec.qtyFrom.base : 3;
+
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.imageSmoothingEnabled = false;
+  g.globalAlpha = 1;
+  g.globalCompositeOperation = 'source-over';
+  g.drawImage(ground(), 0, 0);
+
+  const sinceLand = ft - DUR;
+  let flash = 0;
+  if (spec.landing && landed) flash = sinceLand < FLASH_ALL_MS ? 2 : sinceLand < FLASH_FRAME_MS ? 1 : 0;
+  const stubLeft = drawStub(g, itemId, landed ? base + qty : base, flash);
+
+  const S = G.ITEM_PX;
+  const draw = (img, k) => { const at = pointAt(k); g.drawImage(img, Math.round(at.x - S / 2), Math.round(at.y - S / 2), S, S); };
+
+  if (ft < 0) g.drawImage(IMG[itemId], Math.round(FROM.x - S / 2), Math.round(FROM.y - S / 2), S, S);
+
+  if (spec.trail && ft >= 0) {
+    const cols = trailColours(spec.trail, itemId);
+    for (let i = cols.length - 1; i >= 0; i--) {
+      const k = (ft - (i + 1) * G.TRAIL_STEP_MS) / DUR;
+      if (k > 0 && k < 1) draw(tinted(itemId, cols[i]), k);
+    }
+  }
+  if (spec.stack) drawShower(g, ft, spec.stack.colour, stubLeft);
+  if (ft >= 0 && ft < DUR) draw(IMG[itemId], ft / DUR);
+  if (spec.landing && landed) drawLanding(g, sinceLand, spec.landing.colour, spec.landing.landing, stubLeft);
+}
+
+/* ---------- the tiles ---------- */
+const TRAIL_SETS = [
+  { set: 'item', group: 'g-item', words: "the item's own colours" },
+  { set: 'rainbow', group: 'g-rainbow', words: 'a rainbow run' },
+  { set: 'rarity', group: 'g-rarity', words: "a rarity colour's shades" }
+];
+const TILES = [{ letter: 'Today', group: 'g-today', desc: 'The game now: no trail, no shower; the count ticks as the item lands.', spec: {} }];
+{
+  let code = 65;
+  for (const s of TRAIL_SETS) {
+    for (const fade of ['lighter', 'darker']) {
+      for (const length of [3, 5]) {
+        const letter = String.fromCharCode(code++);
+        TILES.push({ letter, group: s.group, desc: `${s.words}, fading ${fade} toward the tail, ${length} shadows.`, spec: { trail: { set: s.set, fade, length } } });
+      }
+    }
+  }
+  for (const st of STACKS) {
+    const letter = String.fromCharCode(code++);
+    TILES.push({ letter, group: 'g-shower', desc: `Stack ${st.range}: the ${st.name} shower, then the flash and ${st.landing} ${st.name} sparkles.`, spec: { stack: st, landing: st, qtyFrom: st } });
+  }
+  const letter = String.fromCharCode(code++);
+  TILES.push({ letter, group: 'g-landing', desc: 'The landing alone, one item: the white flash and 3 grey sparkles; no trail, no shower.', spec: { landing: STACKS[0] } });
+}
+const MIX = { letter: 'Mix', group: 'g-mix', desc: '', spec: {} };
+
+function runOf() { return state.item === 'run' ? RUN : [state.item]; }
+
+const live = [];
+function mount(tile) {
+  const box = document.createElement('div');
+  box.className = 'tile';
+  box.innerHTML = `<div class="head"><span class="letter"></span><span class="desc"></span></div><div class="scroll"></div>`;
+  box.querySelector('.letter').textContent = tile.letter;
+  box.querySelector('.desc').textContent = tile.desc;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  box.querySelector('.scroll').appendChild(canvas);
+  document.getElementById(tile.group).appendChild(box);
+  const entry = { tile, canvas, g: canvas.getContext('2d'), box };
+  live.push(entry);
+  return entry;
+}
+
+function setZoom() {
+  for (const e of live) { e.canvas.style.width = W * state.zoom + 'px'; e.canvas.style.height = H * state.zoom + 'px'; }
+}
+
+let clock = 0, last = null;
+function frame(now) {
+  if (last != null && !state.paused) clock += (now - last) * state.speed;
+  last = now;
+  const run = runOf();
+  for (const e of live) renderTile(e.g, e.tile.spec, clock, run);
+  requestAnimationFrame(frame);
+}
+
+/* ---------- GIF recording (for sending a tile as a file) ---------- */
+/** Every frame of a tile's whole run (one pass per item) at FRAME_MS, as an animated GIF, base64. */
+function gifOf(letter) {
+  const tile = letter === 'Mix' ? MIX : TILES.find(t => t.letter === letter);
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  const total = RUN.length * LOOP_MS;
+  const frames = [];
+  for (let time = 0; time < total; time += FRAME_MS) {
+    renderTile(g, tile.spec, time, RUN);
+    frames.push(new Uint32Array(g.getImageData(0, 0, W, H).data.buffer.slice(0)));
+  }
+  return encodeGif(frames, W, H, FRAME_MS / 10);
+}
+
+function encodeGif(frames, w, h, delayCs) {
+  // Palette: index 0 is transparent (pixels unchanged since the last frame).
+  const counts = new Map();
+  for (const f of frames) for (let i = 0; i < f.length; i++) counts.set(f[i], (counts.get(f[i]) || 0) + 1);
+  let colours = [...counts.keys()];
+  if (colours.length > 255) colours = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 255).map(e => e[0]);
+  const index = new Map(colours.map((c, i) => [c, i + 1]));
+  const rgb = (c) => [c & 255, (c >>> 8) & 255, (c >>> 16) & 255];
+  const nearest = (c) => {
+    let best = 1, bd = Infinity;
+    const [r, gg, b] = rgb(c);
+    colours.forEach((k, i) => { const [r2, g2, b2] = rgb(k); const d = (r - r2) ** 2 + (gg - g2) ** 2 + (b - b2) ** 2; if (d < bd) { bd = d; best = i + 1; } });
+    index.set(c, best);
+    return best;
+  };
+  const idx = (c) => index.get(c) ?? nearest(c);
+
+  const out = [];
+  const u8 = (v) => out.push(v & 255);
+  const u16 = (v) => { u8(v); u8(v >> 8); };
+  for (const ch of 'GIF89a') u8(ch.charCodeAt(0));
+  u16(w); u16(h);
+  u8(0xF7); u8(0); u8(0); // global table of 256
+  for (let i = 0; i < 256; i++) { const c = i === 0 || i > colours.length ? [0, 0, 0] : rgb(colours[i - 1]); u8(c[0]); u8(c[1]); u8(c[2]); }
+  // Loop forever.
+  u8(0x21); u8(0xFF); u8(11); for (const ch of 'NETSCAPE2.0') u8(ch.charCodeAt(0)); u8(3); u8(1); u16(0); u8(0);
+
+  let prev = null;
+  for (const f of frames) {
+    let x0 = 0, y0 = 0, x1 = w - 1, y1 = h - 1;
+    if (prev) {
+      x0 = w; y0 = h; x1 = -1; y1 = -1;
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        if (f[i] !== prev[i]) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+      }
+      if (x1 < 0) { x0 = 0; y0 = 0; x1 = 0; y1 = 0; }
+    }
+    const fw = x1 - x0 + 1, fh = y1 - y0 + 1;
+    const px = new Uint8Array(fw * fh);
+    for (let y = 0; y < fh; y++) for (let x = 0; x < fw; x++) {
+      const i = (y + y0) * w + (x + x0);
+      px[y * fw + x] = prev && f[i] === prev[i] ? 0 : idx(f[i]);
+    }
+    u8(0x21); u8(0xF9); u8(4); u8(0x05); u16(delayCs); u8(0); u8(0); // keep the last frame, index 0 transparent
+    u8(0x2C); u16(x0); u16(y0); u16(fw); u16(fh); u8(0);
+    u8(8);
+    const data = lzw(px, 8);
+    for (let i = 0; i < data.length; i += 255) { const n = Math.min(255, data.length - i); u8(n); for (let j = 0; j < n; j++) out.push(data[i + j]); }
+    u8(0);
+    prev = f;
+  }
+  u8(0x3B);
+  let s = '';
+  const bytes = Uint8Array.from(out);
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
+/** GIF LZW, codes packed least significant bit first. */
+function lzw(px, minSize) {
+  const clear = 1 << minSize, eoi = clear + 1;
+  let size = minSize + 1, next = eoi + 1;
+  let table = new Map();
+  const out = [];
+  let acc = 0, bits = 0;
+  const emit = (code) => { acc |= code << bits; bits += size; while (bits >= 8) { out.push(acc & 255); acc >>>= 8; bits -= 8; } };
+  emit(clear);
+  let cur = px[0];
+  for (let i = 1; i < px.length; i++) {
+    const k = px[i];
+    const key = (cur << 8) | k;
+    const hit = table.get(key);
+    if (hit !== undefined) { cur = hit; continue; }
+    emit(cur);
+    if (next === 4096) {
+      emit(clear);
+      next = eoi + 1; size = minSize + 1; table = new Map();
+    } else {
+      if (next >= (1 << size)) size++;
+      table.set(key, next++);
+    }
+    cur = k;
+  }
+  emit(cur);
+  emit(eoi);
+  if (bits > 0) out.push(acc & 255);
+  return out;
+}
+
+/* ---------- start ---------- */
+(async () => {
+  await loadAssets();
+  const itemSel = document.getElementById('item');
+  itemSel.add(new Option('Four in turn (ore, blueberry, watermelon, potion)', 'run'));
+  for (const it of ITEMS) itemSel.add(new Option(it.name, it.id));
+  itemSel.onchange = () => { state.item = itemSel.value; };
+  const rar = document.getElementById('rarity');
+  for (const k of Object.keys(RARITY)) rar.add(new Option(k, k, false, k === state.rarity));
+  rar.onchange = () => { state.rarity = rar.value; };
+  for (const b of document.querySelectorAll('[data-speed]')) b.onclick = () => {
+    state.speed = Number(b.dataset.speed);
+    document.querySelectorAll('[data-speed]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  };
+  for (const b of document.querySelectorAll('[data-zoom]')) b.onclick = () => {
+    state.zoom = Number(b.dataset.zoom);
+    document.querySelectorAll('[data-zoom]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    setZoom();
+  };
+  const pause = document.getElementById('pause');
+  pause.onclick = () => { state.paused = !state.paused; pause.setAttribute('aria-pressed', String(state.paused)); };
+
+  const mixTrail = document.getElementById('mix-trail'), mixStack = document.getElementById('mix-stack'), mixLanding = document.getElementById('mix-landing');
+  mixTrail.add(new Option('none', ''));
+  for (const t of TILES) if (t.spec.trail) mixTrail.add(new Option(t.letter + ': ' + t.desc, t.letter));
+  mixStack.add(new Option('none', ''));
+  for (const st of STACKS) mixStack.add(new Option(`${st.name} (${st.range})`, st.key));
+  mixTrail.value = 'B'; mixStack.value = 'gold';
+  const remix = () => {
+    const tr = TILES.find(t => t.letter === mixTrail.value);
+    const st = STACKS.find(s => s.key === mixStack.value) || null;
+    const land = mixLanding.value === '1' ? (st || STACKS[0]) : null;
+    MIX.spec = { trail: tr ? tr.spec.trail : null, stack: st, landing: land, qtyFrom: st };
+    const words = [tr ? 'trail ' + tr.letter : 'no trail', st ? st.name + ' shower' : 'no shower', land ? 'flash and sparkles' : 'landing as today'];
+    MIX.desc = words.join(', ') + '.';
+    if (mixEntry) mixEntry.box.querySelector('.desc').textContent = MIX.desc;
+  };
+  let mixEntry = null;
+  remix();
+  mixTrail.onchange = mixStack.onchange = mixLanding.onchange = remix;
+
+  for (const t of TILES) mount(t);
+  mixEntry = mount(MIX);
+  setZoom();
+  window.__tiles = TILES.map(t => ({ letter: t.letter, desc: t.desc }));
+  window.__timing = { DUR, LOOP_MS, dist: Math.round(PATH.dist), frames: RUN.length * LOOP_MS / FRAME_MS };
+  window.__gif = gifOf;
+  window.__render = (letter, g, time) => renderTile(g, (letter === 'Mix' ? MIX : TILES.find(t => t.letter === letter)).spec, time, RUN);
+  window.__ready = true;
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
