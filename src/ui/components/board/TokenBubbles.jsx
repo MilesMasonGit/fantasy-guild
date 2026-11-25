@@ -22,7 +22,7 @@ import { useMatFit } from './MatFitContext.jsx';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as BoardCombat from '../../../systems/board/BoardCombat.js';
 
-const CHOOSE_KINDS = new Set([ALERT.CHOOSE_RECIPE, ALERT.CHOOSE_BUILD]);
+const CHOOSE_KINDS = new Set([ALERT.CHOOSE_RECIPE, ALERT.CHOOSE_BUILD, ALERT.CHOOSE_CAMP]);
 
 /** The gap in a row, in mat units. */
 const ROW_GAP_U = 4;
@@ -214,7 +214,7 @@ export const TokenBubbles = ({
     const spawner = capFull && capSeen ? null : stuck;
 
     // A marked Token runs no recipe, so there is nothing to choose.
-    const choose = gear?.pulsing && !marked ? (gear.isFoundation ? 'build' : 'recipe') : null;
+    const choose = gear?.pulsing && !marked ? (gear.isFoundation ? 'build' : gear.isHideout ? 'camp' : 'recipe') : null;
     const problem = useMemo(() => problemOf({ alert, spawner, growth, choose }), [alert, spawner, growth, choose]);
     const problemClick = problem && CHOOSE_KINDS.has(problem.kind) ? gear?.onClick ?? null : null;
 

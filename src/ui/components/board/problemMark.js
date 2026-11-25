@@ -5,6 +5,7 @@ import * as Respawn from '../../../systems/board/Respawn.js';
 import { getMissingRequirements } from '../../../systems/board/RecipeResolver.js';
 import { siteTypeOf, buildRefusal } from '../../../systems/board/SiteRules.js';
 import { workConfigOf } from '../../../systems/board/StationRecipe.js';
+import * as Hideouts from '../../../systems/board/Hideouts.js';
 import { levelNeed, heroLevel } from '../../../systems/core/levelNeed.js';
 import { GameState } from '../../../state/GameState.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
@@ -32,6 +33,8 @@ export const PROBLEM_SEVERITY = Object.freeze({
     [ALERT.CHARGES]: SEVERITY.WAITING,
     [ALERT.CHOOSE_RECIPE]: SEVERITY.WAITING,
     [ALERT.CHOOSE_BUILD]: SEVERITY.WAITING,
+    [ALERT.CHOOSE_CAMP]: SEVERITY.WAITING,
+    [ALERT.GUARDED]: SEVERITY.WAITING,
     [ALERT.SPAWN_NEEDS_ITEM]: SEVERITY.WAITING,
     [ALERT.GROW_NEEDS_NEARBY]: SEVERITY.WAITING,
     [ALERT.GROW_NEEDS_ITEM]: SEVERITY.WAITING,
@@ -73,7 +76,8 @@ export const PROBLEM_COLOUR = Object.freeze({
  * - `spawner`: a spawner's `{ alert, needs }` (`SpawnerSystem.spawnerAlertOf`);
  * - `growth`: a growing Token's `{ alert, needs }` (`Growth.growthAlertOf`: a Stump with no Forest
  * in reach, or stopped for want of a seedling);
- * - `choose`: `'recipe'` or `'build'` while a station or Foundation has nothing chosen.
+ * - `choose`: `'recipe'`, `'build'` or `'camp'` while a station, a Foundation or a Hideout has
+ * nothing chosen.
  * A can't beats a waiting; otherwise the work alert first, then the spawner's, the growth's, then
  * the choice.
  * @returns {{kind: string, severity: string, needs?: string[]}|null}
@@ -87,7 +91,7 @@ export function problemOf({ alert = null, spawner = null, growth = null, choose 
         }
     }
     if (choose) {
-        const kind = choose === 'build' ? ALERT.CHOOSE_BUILD : ALERT.CHOOSE_RECIPE;
+        const kind = choose === 'build' ? ALERT.CHOOSE_BUILD : choose === 'camp' ? ALERT.CHOOSE_CAMP : ALERT.CHOOSE_RECIPE;
         found.push({ kind, severity: PROBLEM_SEVERITY[kind] });
     }
     return found.find(p => p.severity === SEVERITY.CANT) || found[0] || null;
@@ -139,6 +143,15 @@ export function problemText(problem, instanceId) {
             return 'Choose a recipe';
         case ALERT.CHOOSE_BUILD:
             return 'Choose what to build';
+        case ALERT.CHOOSE_CAMP:
+            return 'Choose a camp to rob';
+        case ALERT.GUARDED: {
+            const camp = instance ? Hideouts.targetOf(instance) : null;
+            const guard = camp ? Hideouts.guardOf(camp) : null;
+            return camp && guard
+                ? `Guarded: beat the ${getTokenType(guard.typeId)?.name || 'guard'} on ${getTokenType(camp.typeId)?.name || 'the camp'} to rob it again`
+                : 'Guarded: beat the guard to rob it again';
+        }
         case ALERT.BUILD_SITE: {
             // The build's own sentence: Needs stone., Needs a Leyline nearby.
             const built = instance ? siteTypeOf(instance) : null;
