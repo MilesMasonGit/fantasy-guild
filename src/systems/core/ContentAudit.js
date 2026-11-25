@@ -1,7 +1,8 @@
 // Boot-time content-integrity audit: warns about content references that do not resolve.
 
 import { TOKENS, getTokenType } from '../../config/registries/tokenRegistry.js';
-import { statementsOf, hasRetiredEffectData, stationSkillOf, KEYWORD, getKeyword, keywordAllowsRole } from '../effects/statements.js';
+import { statementsOf, hasRetiredEffectData, stationSkillOf, stationKindOf, KEYWORD, getKeyword, keywordAllowsRole } from '../effects/statements.js';
+import { LABORATORY_KIND } from '../../config/registries/mastery.js';
 import { getTriggerEvent, momentSupplies, everyOf } from '../../config/registries/triggerRegistry.js';
 import { getRole } from '../../config/registries/roleRegistry.js';
 import { getReach, DEFAULT_REACH } from '../../config/registries/reachRegistry.js';
@@ -146,7 +147,8 @@ function auditTokens(out) {
         }
 
         checkRef(out, where, 'sprite', def.sprite, 'Its artwork');
-        checkRef(out, where, 'recipe pool', stationSkillOf(def), 'The skill it works as');
+        // A Laboratory studies a node and runs no recipe, so its skill needs no pool.
+        if (stationKindOf(def) !== LABORATORY_KIND) checkRef(out, where, 'recipe pool', stationSkillOf(def), 'The skill it works as');
 
         // A hero-worked Token must name a skill. Reported only.
         if (isWorkedWithoutSkill(def)) {

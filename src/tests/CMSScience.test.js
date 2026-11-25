@@ -206,6 +206,14 @@ describe('the audit lines', () => {
         expect(out.find(f => f.entityId === 'b').message).toMatch(/"high", which is not a whole level/);
     });
 
+    it('a well-formed Laboratory draws no line: it runs no recipe, so Science needs no recipe pool', () => {
+        registerTokenTypes({ fixture_cms_sc_lab: {
+            id: 'fixture_cms_sc_lab', name: 'Fixture Audit Lab', tokenType: 'station', rarity: 'common', uses: null, sprite: 't_alembic_small', requiresHero: true,
+            config: { skill: 'science', skillRequired: 1, cycleTimeMs: 10000, xp: 2, inputs: [], outputs: [] }, laboratory: { maxLevel: 20 }, statements: worksAsLab
+        } });
+        expect(auditContent().filter(f => JSON.stringify(f).includes('fixture_cms_sc_lab'))).toEqual([]);
+    });
+
     it('the boot audit and the Economy Audit carry the same lines', () => {
         registerEffects({ [YIELD.id]: YIELD });
         registerTokenTypes({ fixture_cms_sc_stump: { id: 'fixture_cms_sc_stump', name: 'Fixture Odd Stump', tokenType: 'resource', grows: { into: 'token_oak_tree', afterMs: 1000 }, mastery: { ranks: [{ points: 5, effectId: YIELD.id }] } } });
