@@ -54,7 +54,7 @@ registerTokenTypes({
     fixture_tc_enemy: {
         id: 'fixture_tc_enemy', name: 'Census Enemy', tokenType: 'enemy', rarity: 'common', theme: 'fixture',
         uses: 1, sprite: 's_occult', requiresHero: true,
-        enemy: { level: 1, style: 'melee', budgetScale: 0.1 },
+        enemy: { level: 1, style: 'melee', hp: 2, xp: 1 },
         config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] }
     },
     fixture_tc_den: {
@@ -70,7 +70,7 @@ registerTokenTypes({
     fixture_tc_brute: {
         id: 'fixture_tc_brute', name: 'Census Brute', tokenType: 'enemy', rarity: 'common', theme: 'fixture',
         uses: 1, sprite: 's_occult', requiresHero: true,
-        enemy: { level: 1, style: 'melee', budgetScale: 0.1 },
+        enemy: { level: 1, style: 'melee', hp: 2, xp: 1 },
         config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] }
     },
     fixture_tc_nursery: {
@@ -86,7 +86,7 @@ registerTokenTypes({
     fixture_tc_ambusher: {
         id: 'fixture_tc_ambusher', name: 'Census Ambusher', tokenType: 'enemy', rarity: 'common', theme: 'fixture',
         uses: 1, sprite: 's_occult', requiresHero: true,
-        enemy: { level: 1, style: 'melee', budgetScale: 0.1 },
+        enemy: { level: 1, style: 'melee', hp: 2, xp: 1 },
         config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] }
     },
     /** A camp whose rule also names its enemy: the game refuses a rule that spawns an enemy. */

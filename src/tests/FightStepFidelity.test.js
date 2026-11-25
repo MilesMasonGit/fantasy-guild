@@ -44,7 +44,7 @@ registerTokenTypes({
     fsf_goblin: {
         id: 'fsf_goblin', name: 'FSF Goblin', tokenType: 'enemy', rarity: 'common', theme: 'fixture',
         uses: 1, sprite: 's_crime', requiresHero: true,
-        enemy: { level: 1, style: 'melee', budgetScale: 0.3 },
+        enemy: { level: 1, style: 'melee', hp: 6, xp: 3 },
         config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] }
     },
     fsf_camp: {

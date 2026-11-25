@@ -20,7 +20,7 @@ import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import * as CF from '../systems/combat/CombatFormulas.js';
-import { VENOM_EFFECT_ID } from '../config/registries/enemyKinds.js';
+import { VENOM_EFFECT_ID } from '../config/registries/damageTypes.js';
 import { STATUS_TICK_INTERVAL_MS } from '../config/FormulaRegistry.js';
 import { ROLE } from '../config/registries/roleRegistry.js';
 

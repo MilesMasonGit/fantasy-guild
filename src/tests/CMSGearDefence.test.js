@@ -18,8 +18,7 @@ import { isOffHand, isWeapon } from '../config/registries/weaponStyles.js';
  * ⭐ Gear's defence in the CMS (brief 280 V2): a hand item that is not a tool is held as a weapon or
  * as an off-hand item; any worn piece has a Defence block, its resistances in free percents by type
  * or group and its damage cut to named styles; everything written survives Recalculate, Sync and a
- * reload unchanged, and the Economy Audit names a stack reaching 100 %. A workspace still holding
- * the Poison status moves it to Venom on load.
+ * reload unchanged, and the Economy Audit names a stack reaching 100 %.
  *
  * ⚠️ No real workspace: the store's persistence is a no-op here (TESTING, "The CMS").
  */
@@ -28,13 +27,6 @@ const DATA = path.resolve(__dirname, '../../data');
 const FILES = ['items.json', 'tokens.json', 'tokenRecipes.json', 'effects.json'];
 const read = (file) => fs.readFileSync(path.join(DATA, file), 'utf8').replace(/\r\n/g, '\n');
 const raw = Object.fromEntries(FILES.map((f) => [f, asLoaded(f, read(f))]));
-
-/** The shipped content as a workspace saved before the rename: Venom back under Poison's id and name, in its place. */
-function withPoison() {
-    const files = Object.fromEntries(FILES.map((f) => [f, JSON.parse(read(f).replaceAll('"effect_venom"', '"effect_poison"'))]));
-    files['effects.json'].effect_poison.name = 'Poison';
-    return files;
-}
 
 function workspaceFromFiles(files) {
     const recipePools = {};
@@ -195,27 +187,5 @@ describe('the Economy Audit names a stack reaching 100 %', () => {
         expect(named).toHaveLength(1);
         expect(named[0].details).toContain('Fire 100%');
         expect(named[0].severity).toBe('Critical');
-    });
-});
-
-describe('a workspace still holding the Poison status', () => {
-    it('loads with Venom under its new id, every reference following, and Syncs it so', () => {
-        // The shipped Venom is landed by enemy moves (the Greater Slime's Acid Spit).
-        const acidSpit = (tokens) => tokens.token_greater_slime.enemy.moves.find(m => m.name === 'Acid Spit');
-        const old = withPoison();
-        expect(old['effects.json'].effect_venom).toBeUndefined();
-        expect(acidSpit(old['tokens.json']).effectId).toBe('effect_poison');
-        load(old);
-        const s = store();
-        expect(s.effects.effect_poison).toBeUndefined();
-        expect(s.effects.effect_venom).toMatchObject({ id: 'effect_venom', name: 'Venom', status: { stacks: 3, ticks: 0 } });
-        expect(acidSpit(s.tokens).effectId).toBe('effect_venom');
-        expect(JSON.stringify([s.tokens, s.items, s.effects])).not.toContain('effect_poison');
-        // The library keeps its order: Venom sits where Poison sat.
-        const ids = Object.keys(s.effects);
-        expect(ids.indexOf('effect_venom')).toBe(Object.keys(old['effects.json']).indexOf('effect_poison'));
-        const files = syncPayload();
-        expect(files['effects.json'].effect_venom.name).toBe('Venom');
-        expect(files['effects.json'].effect_poison).toBeUndefined();
     });
 });

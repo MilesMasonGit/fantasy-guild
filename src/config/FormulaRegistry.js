@@ -173,6 +173,9 @@ export const WEAPON_TIERS = Object.freeze([
  */
 export const STATUS_TICK_INTERVAL_MS = 3000;
 
+/** The most stacks a status may build, whatever its effect asks for (the CMS's Stacks field stops here). */
+export const STATUS_STACK_LIMIT = 5;
+
 /**
  * How far a Swing Time effect may move a swing: never under a quarter of its time, never over
  * four times it.

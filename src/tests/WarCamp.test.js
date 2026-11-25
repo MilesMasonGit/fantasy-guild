@@ -61,7 +61,7 @@ const camp = (id, name, skill) => ({
 const enemyConfig = { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] };
 const enemy = (id, name, extra = {}) => ({
     id, name, tokenType: 'enemy', rarity: 'common', theme: 'fixture', uses: 1, sprite: 's_occult',
-    enemy: { level: 1, style: 'melee', budgetScale: 0.3 }, config: enemyConfig, ...extra
+    enemy: { level: 1, style: 'melee', hp: 6, xp: 3 }, config: enemyConfig, ...extra
 });
 
 registerTokenTypes({
@@ -75,7 +75,7 @@ registerTokenTypes({
     /** An enemy whose work names a skill and a level (no enemy should): a hero sent straight at it is never asked for them. */
     wc_gated_goblin: enemy('wc_gated_goblin', 'WC Gated Goblin', { config: { ...enemyConfig, skill: 'melee', skillRequired: 50 } }),
     /** Far too strong for a level 1 hero. */
-    wc_brute: enemy('wc_brute', 'WC Brute', { enemy: { level: 60, style: 'melee', budgetScale: 1 } }),
+    wc_brute: enemy('wc_brute', 'WC Brute', { enemy: { level: 60, style: 'melee' } }),
     wc_tree: {
         id: 'wc_tree', name: 'WC Tree', tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: 3, sprite: 's_nature',
         requiresHero: true, config: { skill: 'forestry', skillRequired: 1, cycleTimeMs: 1000, xp: 1, inputs: [], outputs: [] }

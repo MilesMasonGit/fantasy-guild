@@ -3,10 +3,10 @@
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { FIGHT_MOMENT, everyOf, healthBelowOf, getTriggerEvent } from '../../config/registries/triggerRegistry.js';
 import { ROLE } from '../../config/registries/roleRegistry.js';
-import { getEnemyKind } from '../../config/registries/enemyKinds.js';
 import { effectName } from '../../config/registries/effectRegistry.js';
 import { KEYWORD, statementsOf, rolledToFire } from '../effects/statements.js';
 import * as LiveEffects from '../effects/LiveEffects.js';
+import { kindRules } from '../effects/enemyKindEffects.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import * as BoardCombat from './BoardCombat.js';
@@ -23,11 +23,11 @@ import { SIDE, MOVE_LANDS, setFightMomentRunner, talliesOf } from '../combat/Fig
  * The fight moments (`FIGHT_MOMENT`: On Swing, On Hit, When Struck, On Health Below), run for one
  * side of a fight when the combat engine says so (`combat/FightHooks.js`).
  *
- * A side's rules: an enemy's are its Token's own rules, any lingering effect on it, its kinds'
- * (Venomous: "On Hit: applies Venom to the hero") and the effect of the move its swing makes; a
- * hero's are their items', the arrow being shot and their lingering effects'. In that order, each in
- * authored order, so the random numbers a chance draws come out the same in a catch-up as live: an
- * Applies chance as it lands, a Deals chance (`rolledToFire`) just before it acts.
+ * A side's rules: an enemy's are its Token's own rules and its kinds' (its passives), any lingering
+ * effect on it, then the effect of the move its swing makes; a hero's are their items', the arrow being shot
+ * and their lingering effects'. In that order, each in authored order, so the random numbers a chance
+ * draws come out the same in a catch-up as live: an Applies chance as it lands, a Deals chance
+ * (`rolledToFire`) just before it acts.
  *
  * Not routed through `TriggerSystem`: a fight moment spends no Token charge and has no cooldown
  * (its own count is its rhythm), and its roles are the two fighters: `itself` is the side carrying
@@ -35,25 +35,6 @@ import { SIDE, MOVE_LANDS, setFightMomentRunner, talliesOf } from '../combat/Fig
  *
  * Four verbs act here: Applies, Deals, Heals and Removes. Anything else on a fight moment is inert.
  */
-
-/** A kind's built-in rules, as statements (Venomous's poison on a hit). */
-function kindStatements(fight) {
-    const out = [];
-    for (const kindId of fight.enemy?.kinds || []) {
-        const onHit = getEnemyKind(kindId)?.onHit;
-        if (!onHit?.effectId) continue;
-        out.push({
-            id: `kind_${kindId}_on_hit`,
-            keyword: KEYWORD.APPLIES,
-            when: { event: FIGHT_MOMENT.HIT, scope: 'self' },
-            target: { role: ROLE.ACTOR },
-            payload: { effectId: onHit.effectId, chance: 100 },
-            // Said over the enemy as it lands, like any named rule.
-            effectTitle: effectName(onHit.effectId)
-        });
-    }
-    return out;
-}
 
 /**
  * The enemy Token's own rules that are on: one whose upkeep the Bank has not paid is off until stock
@@ -70,8 +51,8 @@ function rulesOf(fight, side) {
     if (side === SIDE.ENEMY) {
         return [
             ...enemyTokenRules(fight),
+            ...kindRules(fight.enemy?.kindEffects),
             ...LiveEffects.liveStatements(fight),
-            ...kindStatements(fight),
             ...moveStatements(fight)
         ];
     }
@@ -153,9 +134,11 @@ function healthShare(fight, side) {
 }
 
 /**
- * Whether a rule waiting on this moment fires now: every Nth swing or hit (a moment with no count,
- * When Struck, every time), or the first time this fight that its side's health (`share`, read once
- * for the whole moment) is below its share.
+ * Whether a rule waiting on this moment fires now: a hero's every Nth swing or hit (a moment with no
+ * count, When Struck, every time), or the first time this fight that its side's health (`share`, read
+ * once for the whole moment) is below its share.
+ * An enemy's swing and hit rules fire on every one, whatever `every` they carry: an enemy's attacks
+ * are its moves, picked by weight, with no every-Nth timing (the content audit names a stray count).
  * ⚠️ A health rule is marked as fired the moment its share is crossed, whatever it then does: once
  * per fight is once.
  */
@@ -169,7 +152,7 @@ function fires(statement, fight, side, momentId, count, share) {
         fired[key] = true;
         return true;
     }
-    const every = getTriggerEvent(momentId)?.countNoun ? everyOf(when) : 1;
+    const every = side === SIDE.HERO && getTriggerEvent(momentId)?.countNoun ? everyOf(when) : 1;
     return count > 0 && count % every === 0;
 }
 

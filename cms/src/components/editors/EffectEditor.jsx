@@ -2,7 +2,7 @@ import { Sparkles, ScrollText, Library, Boxes, Flame } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import { StatementList } from './Statements';
-import { rulesLinesOf, effectRefsOf, hasWorkingStatements, statusBlockOf, MAX_STATUS_STACKS, VENOM_EFFECT_ID, SKILLS } from '../../utils/constants';
+import { rulesLinesOf, effectRefsOf, hasWorkingStatements, statusBlockOf, MAX_STATUS_STACKS, VENOM_EFFECT_ID, SKILLS, isEnemyDef } from '../../utils/constants';
 import { perkUsersOf } from '../../engine/skillPerks';
 
 /**
@@ -29,10 +29,15 @@ export default function EffectEditor() {
 
   const perkUsers = perkUsersOf(effect.id, skillPerks, (id) => SKILLS.find((s) => s.id === id)?.name || id);
 
+  /** Enemies that carry it as a kind (`enemy.kinds`): it moves their own numbers in every fight. */
+  const kindUsers = Object.values(tokens).filter((t) => Array.isArray(t?.enemy?.kinds) && t.enemy.kinds.includes(effect.id));
+
   const itemUsed = Object.values(items).some((i) => effectRefsOf(i).some((r) => r.effectId === effect.id));
 
   /** ⚠️ A library entry can be shared by Tokens and items: it reads as the hero's only when no Token uses it, and something a hero carries does. */
   const carried = users.length === 0 && (perkUsers.length > 0 || itemUsed);
+  /** Held by enemies alone: an enemy's rules fire on every swing and hit, so no every-Nth count is offered. */
+  const enemyHeld = (users.length > 0 || kindUsers.length > 0) && users.every((u) => isEnemyDef(u.token)) && !itemUsed && perkUsers.length === 0;
 
   const names = {
     carried,
@@ -69,12 +74,20 @@ export default function EffectEditor() {
       </Section>
 
       <Section title="Used by" icon={<Library size={14} />}>
+        {kindUsers.length > 0 && (
+          <p data-kind-users className="text-[11px] text-gray-400 leading-relaxed mb-2">
+            A kind of: {kindUsers.map((t) => (
+              <button key={t.id} type="button" className="hover:underline mr-1.5" onClick={() => setActiveEntity(t.id, 'token')}>{t.name || t.id}</button>
+            ))}
+            (an enemy always carries it: its numbers add to the enemy&rsquo;s own in every fight).
+          </p>
+        )}
         {perkUsers.length > 0 && (
           <p data-perk-users className="text-[11px] text-gray-400 leading-relaxed mb-2">
             A milestone perk: {perkUsers.map((u) => u.name).join(', ')} (the Skill Perks page).
           </p>
         )}
-        {users.length === 0 ? (perkUsers.length > 0 ? null : (
+        {users.length === 0 ? (perkUsers.length > 0 || kindUsers.length > 0 ? null : (
           <p className="text-[11px] text-gray-500 leading-relaxed">
             Nothing uses this effect yet. Not a problem if you are still building
             what it is for — add it from a Token&rsquo;s Rules section.
@@ -140,7 +153,7 @@ export default function EffectEditor() {
                 onChange={(e) => setStatus({ stacks: Number(e.target.value) || 1 })}
                 className="input w-full"
               />
-              <p className="text-[10px] text-gray-600 mt-1">1 does not stack: landing again renews it.</p>
+              <p className="text-[10px] text-gray-600 mt-1" data-field="status-stack-limit">1 does not stack: landing again renews it. At most {MAX_STATUS_STACKS}, the game&rsquo;s limit for every status.</p>
             </Field>
             <Field label="Lasts (ticks)">
               <input
@@ -156,7 +169,7 @@ export default function EffectEditor() {
         )}
         {effect.id === VENOM_EFFECT_ID && (
           <p className="text-[10px] mt-2 leading-relaxed" style={{ color: 'var(--color-warning)' }}>
-            Venomous enemies land this effect by its id ({VENOM_EFFECT_ID}). Keep the id as it is.
+            The game knows Venom by its id ({VENOM_EFFECT_ID}): its ticks deal Poison damage, which Poison resistance cuts. Keep the id as it is.
           </p>
         )}
       </Section>
@@ -167,6 +180,7 @@ export default function EffectEditor() {
           onChange={(next) => setEffectStatements(effect.id, next)}
           carried={carried}
           onToken={users.length > 0}
+          enemyHeld={enemyHeld}
         />
       </Section>
 

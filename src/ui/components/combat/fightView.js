@@ -16,6 +16,7 @@ import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { tokenName, getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { EFFECTS } from '../../../config/registries/effectRegistry.js';
 import { statusBlockOf } from '../../../systems/effects/effectLibrary.js';
+import { enemyAtRest } from '../../../systems/effects/enemyKindEffects.js';
 import { rulesLinesOf } from '../../../systems/effects/statementText.js';
 import { carriedRuleNames } from '../dock/heroPerks.js';
 import { explainLinesOf, effectTypesOfStatements } from '../base/effectExplain.js';
@@ -265,20 +266,35 @@ export function heroSide(hero) {
     };
 }
 
-/** An enemy's side of the versus card: live from its fight, or its type's numbers. */
+/**
+ * An enemy's hit, resistances and how often it attacks, as the engine reads them off `subject` (a
+ * fight's enemy, or one at rest, `enemyAtRest`): the hit the engine swings for (`enemyBlow`) before
+ * the matchup and the hero's resistances, with the flat Damage and the Damage percentage its effects
+ * and kinds lend it.
+ */
+function enemyNumbers(subject) {
+    return {
+        hit: Math.max(0, CombatFormulas.enemyBaseHit(subject) * CombatFormulas.damageMultiplierOf(subject)),
+        resists: liveEnemyResistLines(subject),
+        attackEveryMs: CombatFormulas.enemyAttackSpeedMs(subject)
+    };
+}
+
+/** An enemy Token type's hit, resistances and attack time before any fight: its own numbers and its kinds'. */
+export function enemyRestNumbers(profile) {
+    return profile ? enemyNumbers(enemyAtRest(profile)) : null;
+}
+
+/** An enemy's side of the versus card: live from its fight, or its type's numbers with its kinds. */
 export function enemySide(typeId, fight = null) {
     const profile = fight?.enemy || getEnemyProfile(typeId);
     if (!profile) return null;
     const live = !!fight;
-    // Live, the hit is the one the engine swings for (`enemyBlow`) before the matchup and the
-    // hero's resistances: with the flat Damage and the Damage percentage rules lend it.
-    const multiplier = live ? CombatFormulas.damageMultiplierOf(profile) : 1;
-    const hit = Math.max(0, (live ? CombatFormulas.enemyBaseHit(profile) : (profile.hit ?? 1)) * multiplier);
+    const subject = live ? profile : enemyAtRest(profile);
+    const { hit, resists, attackEveryMs } = enemyNumbers(subject);
     const known = hasFought(typeId);
     const hitTypes = enemyHitTypes(profile.moves);
-    const boosts = live
-        ? hitTypes.map(type => ({ type, n: CombatFormulas.typeDamageBoost(profile, type) })).filter(b => b.n)
-        : [];
+    const boosts = hitTypes.map(type => ({ type, n: CombatFormulas.typeDamageBoost(subject, type) })).filter(b => b.n);
     return {
         typeId,
         name: profile.name || tokenName(typeId),
@@ -293,18 +309,28 @@ export function enemySide(typeId, fight = null) {
         hitType: hitTypes[0] ?? PLAIN_ENEMY_HIT_TYPE,
         hitTypes,
         moves: movesView(profile.moves),
-        resists: live ? liveEnemyResistLines(profile) : enemyResistLines(profile.resistances),
-        attackEveryMs: live ? CombatFormulas.enemyAttackSpeedMs(profile) : (profile.attackSpeed || 3000),
+        resists,
+        attackEveryMs,
         kinds: known ? (profile.kinds || []).map(kindView).filter(Boolean) : null,
         statuses: live ? statusesView(fight) : [],
         buffs: live ? enemyBuffs(fight) : []
     };
 }
 
-/** A kind as the player reads it: its name and what it does. */
+/**
+ * A kind as the player reads it: its name and what it does. A kind that is a library effect is
+ * called by the effect's name; what it does is the effect's description once it has one, else the
+ * built-in words of the preset it replaces (Armoured, Nimble, Swift, Brute), else none.
+ */
 export function kindView(id) {
-    if (!getEnemyKind(id)) return null;
-    return { id, name: t(`fight.kinds.${id}.name`), tip: t(`fight.kinds.${id}.tip`) };
+    const entry = EFFECTS[id];
+    const preset = getEnemyKind(id);
+    if (entry) {
+        const own = typeof entry.description === 'string' ? entry.description.trim() : '';
+        return { id, name: entry.name || id, tip: own || (preset ? t(`fight.kinds.${preset.id}.tip`) : '') };
+    }
+    if (!preset) return null;
+    return { id, name: t(`fight.kinds.${preset.id}.name`), tip: t(`fight.kinds.${preset.id}.tip`) };
 }
 
 /** The enemy card's rows for an enemy Token type, or null. */

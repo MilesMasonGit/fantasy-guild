@@ -2,17 +2,16 @@
 
 import { TOKENS, getTokenType } from '../../config/registries/tokenRegistry.js';
 import { statementsOf, hasRetiredEffectData, stationSkillOf, KEYWORD, getKeyword, keywordAllowsRole } from '../effects/statements.js';
-import { getTriggerEvent, momentSupplies } from '../../config/registries/triggerRegistry.js';
+import { getTriggerEvent, momentSupplies, everyOf } from '../../config/registries/triggerRegistry.js';
 import { getRole } from '../../config/registries/roleRegistry.js';
 import { getReach, DEFAULT_REACH } from '../../config/registries/reachRegistry.js';
 import { filtersOf, getFilterKind, FILTER_NEEDS } from '../../config/registries/filterRegistry.js';
 import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js';
 import { isOutputCurrency } from '../../config/registries/tokenConstants.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
-import { isEnemyDef } from '../../config/registries/enemyProfile.js';
+import { isEnemyDef, enemyProfileOf, LEFTOVER_ENEMY_FIELDS } from '../../config/registries/enemyProfile.js';
 import { EFFECTS, getEffect } from '../../config/registries/effectRegistry.js';
 import { effectRefsOf, duplicateRefsOf, hasWorkingStatements, usedBy, statusBlockOf } from '../effects/effectLibrary.js';
-import { VENOM_EFFECT_ID } from '../../config/registries/enemyKinds.js';
 import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
 import { coinWorthFindings } from '../../config/registries/itemCoins.js';
 import { STANDS_ON_CHOICES, isStandsOnWord } from '../atlas/TerrainMap.js';
@@ -22,6 +21,7 @@ import { currentSpriteName } from '../../utils/AssetManager.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
 import { isWorkedWithoutSkill, WORK_SKILL_WHY } from './workSkillRule.js';
 import { auditLifecycleBlocks } from './lifecycleAudit.js';
+import { kindStatements } from '../effects/enemyKindEffects.js';
 import { findUnknownRefs } from './unknownRefRule.js';
 import { toolFindings } from './toolRule.js';
 import { spotFindings } from './spotRule.js';
@@ -178,7 +178,8 @@ function auditTokens(out) {
         auditCombatAxes(out, where, def);
         auditGuildOnlyAxes(out, where, def);
         auditHeroOrGuildAxes(out, where, def);
-        auditVenom(out, where, def);
+        auditEnemyCounts(out, where, def);
+        auditEnemyLeftovers(out, where, def);
         auditStatements(out, where, def);
         auditDerivedType(out, where, def);
         auditStandsOn(out, where, def);
@@ -257,6 +258,41 @@ function auditEffectRefs(out, where, def) {
 }
 
 /**
+ * An enemy's rule on its swings or hits fires on every one: its attacks are its moves, picked by
+ * weight, with no every-Nth timing (`FightMoments`). A count left on one (an old "every 4th swing"
+ * heavy strike) is ignored, so it is named.
+ */
+function auditEnemyCounts(out, where, def) {
+    if (!isEnemyDef(def)) return;
+    for (const statement of [...statementsOf(def), ...kindStatements(enemyProfileOf(def)?.kindEffects)]) {
+        const moment = getTriggerEvent(statement?.when?.event);
+        if (!moment?.fightMoment || !moment.countNoun || everyOf(statement.when) <= 1) continue;
+        const holder = statement.sourceEffectId ? ` (in its effect "${statement.sourceEffectId}")` : '';
+        const noun = moment.countNoun.toLowerCase();
+        out.push(finding(where,
+            `has a rule${holder} that fires once every ${everyOf(statement.when)} ${noun}s, but an enemy's rules ` +
+            `fire on every ${noun}: the count is ignored. Set it to 1, or make it one of its moves.`));
+    }
+}
+
+/**
+ * Marks an enemy may still carry that the game no longer reads (`LEFTOVER_ENEMY_FIELDS`), and a work
+ * cycle's XP on one, which a kill never pays. Harmless, so named here at boot (and removed with one
+ * click in the CMS) rather than among the CMS's blocking findings.
+ */
+function auditEnemyLeftovers(out, where, def) {
+    if (!isEnemyDef(def)) return;
+    for (const field of LEFTOVER_ENEMY_FIELDS) {
+        if (def.enemy[field] !== undefined) {
+            out.push(finding(where, `still carries "${field}", which the game no longer reads (a boss is what a boss camp spawns; the level fills the numbers). Remove it in the CMS.`));
+        }
+    }
+    if (Number(def.config?.xp) > 0) {
+        out.push(finding(where, `carries a work cycle's XP (${def.config.xp}), which a kill never pays: a kill pays its level's XP. Remove it in the CMS, under Fight.`));
+    }
+}
+
+/**
  * A combat number on a Token that is not an enemy reaches nobody.
  *
  * `CombatFormulas` reads Armor, Accuracy, Block, Resistance and Damage off a
@@ -266,15 +302,6 @@ function auditEffectRefs(out, where, def) {
  * read by nothing — the "authored but inert" failure this project keeps paying
  * for, so it is named out loud instead.
  */
-/** A Venomous enemy lands the library's Venom by id; without that status it lands nothing. */
-function auditVenom(out, where, def) {
-    if (!isEnemyDef(def) || !(def.enemy.kinds || []).includes('venomous')) return;
-    if (statusBlockOf(getEffect(VENOM_EFFECT_ID))) return;
-    out.push(finding(where,
-        `is Venomous, which lands the status effect "${VENOM_EFFECT_ID}" on every hit, and the effect ` +
-        `library has no such status, so it lands nothing. Make a status effect named Venom.`));
-}
-
 function auditCombatAxes(out, where, def) {
     if (isEnemyDef(def)) return;
 
@@ -322,6 +349,9 @@ function auditHeroOrGuildAxes(out, where, def) {
 function auditEffects(out) {
     const perkEffects = new Set(Object.values(authoredSkillPerks() || {})
         .flatMap(record => (Array.isArray(record?.perks) ? record.perks : []).map(row => row?.effectId)));
+    // An enemy's kinds are library effects too.
+    const kindEffects = new Set(Object.values(TOKENS || {})
+        .flatMap(def => (isEnemyDef(def) ? enemyProfileOf(def)?.kindEffects || [] : [])));
     for (const [effectId, entry] of Object.entries(EFFECTS || {})) {
         const where = `Effect "${entry?.name || effectId}"`;
 
@@ -337,7 +367,7 @@ function auditEffects(out) {
         // tripwires have to read the library too.
         auditAppliesTargetShape(out, where, entry);
 
-        if (usedBy(effectId, TOKENS || {}, ITEMS || {}).length === 0 && !perkEffects.has(effectId)) {
+        if (usedBy(effectId, TOKENS || {}, ITEMS || {}).length === 0 && !perkEffects.has(effectId) && !kindEffects.has(effectId)) {
             out.push(finding(where, 'is not used by anything. Not a fault if you are still ' +
                 'building what it is for — but nothing references it today.'));
         }

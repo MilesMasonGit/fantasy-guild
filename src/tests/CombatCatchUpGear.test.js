@@ -28,8 +28,8 @@ import * as LiveEffects from '../systems/effects/LiveEffects.js';
 import { registerStatusFixtures, VENOM } from './fixtures/statusEffects.js';
 
 /**
- * The gear pass's random numbers in a catch-up (brief 220, C2): a Cleaver's chance to double Raw
- * Beef draws one number per beef that lands, and a Venomous enemy's poison one per hit it lands.
+ * The gear pass's random numbers in a catch-up: a Cleaver's chance to double Raw Beef draws one
+ * number per beef that lands, against a Brute whose venomous move poisons with the hits it lands.
  * Both come from `Math.random` in a fixed order, so time away ends exactly where the same time
  * played live ends. The same harness as `CombatCatchUp.test.js`, kept in its own file.
  */
@@ -45,7 +45,7 @@ class SilentAudio {
     removeEventListener() {}
 }
 
-// The Venomous kind lands the library's Venom status.
+// Its move lands the library's Venom status.
 registerStatusFixtures();
 
 registerEffects({
@@ -63,11 +63,11 @@ registerItems({
 });
 
 registerTokenTypes({
-    // Venomous (a random number per landed hit) and Brute, dropping beef for the Cleaver.
+    // A Brute whose bite carries Venom, dropping beef for the Cleaver.
     gearcatchup_enemy: {
         id: 'gearcatchup_enemy', name: 'Catch-up Venomous Brute', tokenType: 'enemy', rarity: 'common',
         theme: 'fixture', uses: 20, sprite: 's_crime', requiresHero: true,
-        enemy: { level: 5, style: 'melee', kinds: ['venomous', 'brute'] },
+        enemy: { level: 5, style: 'melee', kinds: ['brute'], moves: [{ name: 'Venom Bite', damageType: 'stab', effectId: VENOM, target: 'hero' }] },
         config: {
             skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [],
             outputs: [
@@ -90,7 +90,7 @@ function seeded() {
 }
 const realRandom = Math.random;
 
-/** A Melee 60 hero with a Cleaver, pinned to a Venomous Brute that drops Bones and Raw Beef. */
+/** A Melee 60 hero with a Cleaver, pinned to a venomous Brute that drops Bones and Raw Beef. */
 function buildBoard() {
     stream.state = 11;
     stream.draws = 0;
@@ -162,7 +162,7 @@ afterAll(() => {
 });
 
 describe('gear abilities and enemy kinds during a catch-up', () => {
-    it('a Cleaver against a Venomous Brute ends exactly where the same 1000 ms steps through the plain loop end', async () => {
+    it('a Cleaver against a venomous Brute ends exactly where the same 1000 ms steps through the plain loop end', async () => {
         let fighterId = buildBoard();
         let seen = listen();
         for (let i = 0; i < AWAY_MS / 1000; i++) GameLoop.runHandlers(1000);
