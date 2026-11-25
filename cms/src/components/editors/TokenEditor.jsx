@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Gauge } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
-import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, stationKindsOfSkill, isRetiredStationKind, ENEMY_STYLES, enemyFilledStats, MAX_ENEMY_KINDS, enemyKindsOf, enemyFightNumbers, isKindCandidate, kindResistances, rulesLinesOf, ATTACK_SPEED_MS, RETIRED_ENEMY_FIELDS, LEFTOVER_ENEMY_FIELDS, DAMAGE_TYPES, DAMAGE_GROUPS, RESISTANCE_STEPS, damageTypeLabel, isDamageTypeId, isDamageGroupId, typesOfGroup, withGroupFilled, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY, ENEMY_USES, neededToolOf, toolNeedPhrase, hasCatchPools } from '../../utils/constants';
+import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, stationKindsOfSkill, isRetiredStationKind, ENEMY_STYLES, enemyFilledStats, MAX_ENEMY_KINDS, enemyKindsOf, enemyFightNumbers, isKindCandidate, kindResistances, ATTACK_SPEED_MS, RETIRED_ENEMY_FIELDS, LEFTOVER_ENEMY_FIELDS, DAMAGE_TYPES, DAMAGE_GROUPS, RESISTANCE_STEPS, damageTypeLabel, isDamageTypeId, isDamageGroupId, typesOfGroup, withGroupFilled, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY, ENEMY_USES, neededToolOf, toolNeedPhrase, hasCatchPools } from '../../utils/constants';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
@@ -851,6 +851,21 @@ function EnemyKinds({ enemy, effects, onChange }) {
     write(next.filter((k, i) => k && next.indexOf(k) === i));
   };
   const nameOf = (k) => (k.effectId ? effects?.[k.effectId]?.name || k.effectId : `${k.preset.label} (built in)`);
+  /** What one kind does to this enemy, by the game's own numbers: the enemy with it against the enemy without any. */
+  const summaryOf = (effectId) => {
+    const bare = enemyFightNumbers({ enemy: { level: enemy?.level ?? 1 } }, effects);
+    const kinded = enemyFightNumbers({ enemy: { level: enemy?.level ?? 1, kinds: [effectId] } }, effects);
+    if (!bare || !kinded) return '';
+    const parts = [];
+    const resists = resistancesText(kinded.resistances);
+    if (resists !== 'none') parts.push(`resists ${resists}`);
+    if (kinded.dodge !== bare.dodge) parts.push(`Dodge ${kinded.dodge - bare.dodge > 0 ? '+' : ''}${kinded.dodge - bare.dodge}`);
+    if (kinded.accuracy !== bare.accuracy) parts.push(`Accuracy ${kinded.accuracy - bare.accuracy > 0 ? '+' : ''}${kinded.accuracy - bare.accuracy}`);
+    if (kinded.critChance !== bare.critChance) parts.push(`Crit ${kinded.critChance}%`);
+    if (Math.abs(kinded.hit - bare.hit) > 1e-9) parts.push(`hits ×${Math.round((kinded.hit / bare.hit) * 100) / 100}`);
+    if (kinded.attackSpeed !== bare.attackSpeed) parts.push(`attacks every ${(kinded.attackSpeed / 1000).toFixed(1)}s`);
+    return parts.join('; ') || 'no numbers of its own';
+  };
 
   return (
     <div className="mt-3" data-field="enemy-kinds">
@@ -882,7 +897,7 @@ function EnemyKinds({ enemy, effects, onChange }) {
       <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed" data-field="enemy-kinds-note">
         {kinds.length
           ? kinds.map((k) => (k.effectId
-            ? `${nameOf(k)}: ${rulesLinesOf(effects[k.effectId]).join(' ') || 'no rules yet'}`
+            ? `${nameOf(k)}: ${summaryOf(k.effectId)}.`
             : `${k.preset.label} (built in, until the library has its effect ${k.preset.effectId}): ${k.preset.blurb}`)).join(' ')
           : 'The player finds out its kinds by fighting it. A kind is an effect from the library; its numbers add to the ones below.'}
       </p>

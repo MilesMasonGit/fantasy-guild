@@ -332,6 +332,7 @@ describe('⭐ the kinds: none, one or two library effects', () => {
         expect(field(container, 'enemy-kind-2').disabled).toBe(true);
         fireEvent.change(field(container, 'enemy-kind-1'), { target: { value: 'effect_armoured' } });
         expect(store().tokens[cow].enemy.kinds).toEqual(['effect_armoured']);
+        expect(field(container, 'enemy-kinds-note').textContent).toBe('Armoured: resists Slash 50%, Crush 50%, Stab 50%; attacks every 4.0s.');
         expect(field(container, 'enemy-kind-2').disabled).toBe(false);
         expect(options(field(container, 'enemy-kind-2'))).not.toContain('effect_armoured');
         fireEvent.change(field(container, 'enemy-kind-2'), { target: { value: 'effect_brute' } });
