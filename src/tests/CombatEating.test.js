@@ -7,7 +7,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const { state } = vi.hoisted(() => ({ state: { meal: null, drink: null } }));
 
 vi.mock('../systems/hero/ConsumptionSystem.js', () => ({
-    tryEat: vi.fn(() => [state.meal, state.drink].filter(Boolean))
+    tryEat: vi.fn(() => [state.meal, state.drink].filter(Boolean)),
+    // A poison counts each attack (brief 750 S3); none here.
+    countPoisonAttack: vi.fn(() => [])
 }));
 
 vi.mock('../systems/hero/HeroManager.js', () => ({

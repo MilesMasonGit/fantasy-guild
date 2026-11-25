@@ -73,8 +73,8 @@ describe('which problems are yellow and which red', () => {
         }
     });
 
-    it('every alert the engine can raise has a mark, except resting, a Field’s growing crop, no bait, a fish above the hero and a full shrine, which are not problems', () => {
-        const notProblems = [ALERT.RESTING, ALERT.GROWING, ALERT.NO_BAIT, ALERT.FISH_LEVEL, ALERT.SHRINE_FULL];
+    it('every alert the engine can raise has a mark, except resting, a Field’s growing crop, no bait, no arrows, a fish above the hero and a full shrine, which are not problems', () => {
+        const notProblems = [ALERT.RESTING, ALERT.GROWING, ALERT.NO_BAIT, ALERT.NO_AMMO, ALERT.FISH_LEVEL, ALERT.SHRINE_FULL];
         for (const kind of Object.values(ALERT)) {
             if (notProblems.includes(kind)) expect(PROBLEM_SEVERITY[kind]).toBeUndefined();
             else expect(PROBLEM_SEVERITY[kind], kind).toBeDefined();

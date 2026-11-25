@@ -7,7 +7,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const state = { meal: null };
 vi.mock('../systems/hero/ConsumptionSystem.js', () => ({
-    tryEat: vi.fn(() => (state.meal ? [state.meal] : []))
+    tryEat: vi.fn(() => (state.meal ? [state.meal] : [])),
+    // A poison counts each attack (brief 750 S3); none here.
+    countPoisonAttack: vi.fn(() => [])
 }));
 
 const { handleHeroAttack } = await import('../systems/combat/CombatAttackProcessor.js');
