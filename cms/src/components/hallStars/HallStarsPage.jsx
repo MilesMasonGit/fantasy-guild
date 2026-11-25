@@ -37,6 +37,14 @@ function withTier(rank, value) {
   return value === '' ? rest : { ...rest, tier: Number(value) };
 }
 
+/** A raw rank with its coins set (a whole number above 0), or cleared by anything else. */
+function withCoins(rank, value) {
+  const rest = { ...(rank || {}) };
+  delete rest.coins;
+  const n = Number(value);
+  return String(value).trim() !== '' && Number.isInteger(n) && n > 0 ? { ...rest, coins: n } : rest;
+}
+
 const ALL_TOKENS = { mode: 'all', value: '' };
 /** A star's rule as it holds: guild-wide, every Token unless it names some. */
 const asGuildRule = (st) => ({ ...st, reach: 'board', to: st?.to?.mode || st?.to?.filters?.length ? st.to : ALL_TOKENS });
@@ -92,6 +100,11 @@ export default function HallStarsPage() {
 
   const setTier = (starId, index, value) => {
     const ranks = (hallStars?.[starId]?.ranks || []).map((r, j) => (j === index ? withTier(r, value) : r));
+    setHallStar(starId, { ranks });
+  };
+
+  const setCoins = (starId, index, value) => {
+    const ranks = (hallStars?.[starId]?.ranks || []).map((r, j) => (j === index ? withCoins(r, value) : r));
     setHallStar(starId, { ranks });
   };
 
@@ -198,7 +211,20 @@ export default function HallStarsPage() {
                               <option value="">No tier set</option>
                               {[...new Set([...PLAN_TIERS, ...(rank.tier != null ? [rank.tier] : [])])].sort((a, b) => a - b).map((t) => <option key={t} value={t}>{tierLabel(t)}</option>)}
                             </select>
-                            <span>{rank.price.length ? rank.price.map((p) => `${p.quantity} ${names.item(p.itemId)}`).join(' + ') : 'free'}</span>
+                            <span>{rank.price.length ? rank.price.map((p) => `${p.quantity} ${names.item(p.itemId)}`).join(' + ') : (rank.coins ? '' : 'free')}</span>
+                            <label className="flex items-center gap-1">
+                              {rank.price.length ? '+' : ''}
+                              <input
+                                type="number" min={0} step={1} placeholder="0"
+                                defaultValue={rank.coins ? String(rank.coins) : ''}
+                                onChange={(e) => setCoins(star.id, i, e.target.value)}
+                                aria-label={`Coins of rank ${i + 1}`}
+                                data-hall-rank-coins
+                                className="w-14"
+                                style={{ fontSize: 11, padding: '1px 4px' }}
+                              />
+                              coins
+                            </label>
                             <RankPricing row={priced[i + 1]} />
                           </div>
                           {rankEffectLabel(star.id, i + 1) && <div data-hall-rank-by-id>{rankEffectLabel(star.id, i + 1)} (given by the game, by the star id)</div>}

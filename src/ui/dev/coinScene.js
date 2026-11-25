@@ -14,6 +14,7 @@ import { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManag
 import { generateHero } from '../../systems/hero/HeroGenerator.js';
 import { GameState } from '../../state/GameState.js';
 import { registerTokenTypes, getTokenType, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
+import { registerHallSky, authoredHallSky } from '../../config/registries/hallStarRegistry.js';
 import { EFFECT_TYPES } from '../../systems/effects/constants.js';
 import { KEYWORD } from '../../systems/effects/statements.js';
 import { reachRadius } from '../../systems/board/nearby.js';
@@ -25,6 +26,8 @@ import { xpForLevel } from '../../utils/XPCurve.js';
  *   stands in a QA Counting House's reach (Coin Find +100%), so its goblins drop 10;
  * - in the Shop, first in the list: a QA Coin Foundation (a Wood Foundation for 2 Oak Wood and 40
  *   coins) and a QA Coin Farmland (a Farmland for 2 Oak Wood and 25 coins);
+ * - in the Guild Hall's sky, a QA Coin Star linked to the Hall: rank 1 for 1 Oak Wood and 30 coins,
+ *   rank 2 for 60 coins (it gives nothing);
  * - QA Fighter (Melee 40) at the Guild Hall, to send at the camps.
  * ⚠️ Changes the game, like Spawn Party.
  */
@@ -35,6 +38,27 @@ const FOUNDATION = 'qa_coin_foundation';
 const FARMLAND = 'qa_coin_farmland';
 const COIN_DROP = 5;
 const FIGHTER_LEVEL = 40;
+const STAR = 'qa_coin_star';
+
+/** The authored sky with the QA Coin Star beside the Hall, in a QA constellation of its own. */
+function registerStar() {
+    const sky = authoredHallSky() || {};
+    registerHallSky({
+        constellations: { ...(sky.constellations || {}), qa_coins: { id: 'qa_coins', name: 'QA Coins', label: { x: 0, y: 1.6 } } },
+        stars: {
+            ...(sky.stars || {}),
+            [STAR]: {
+                id: STAR, constellation: 'qa_coins', name: 'QA Coin Star', description: 'Asks coins; gives nothing.',
+                node: { x: 0, y: 1.2 }, links: ['hall'],
+                ranks: [
+                    { price: [{ itemId: 'item_oak_wood', quantity: 1 }], coins: 30, rules: [], lines: [] },
+                    { price: [], coins: 60, rules: [], lines: [] }
+                ]
+            }
+        }
+    });
+    GuildUpgradeManager.recompute();
+}
 
 function registerScene() {
     const goblin = getTokenType('token_goblin');
@@ -88,6 +112,7 @@ export function setUpCoinScene() {
         if (!getTokenType(id)) return { ok: false, error: `No ${id} in the content` };
     }
     registerScene();
+    registerStar();
     const centre = Placement.centreOfBoard();
     const apart = Math.round(reachRadius() * 1.6);
     const rich = place(CAMP, { x: centre.x - apart, y: centre.y });

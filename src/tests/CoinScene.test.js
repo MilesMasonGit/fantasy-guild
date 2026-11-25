@@ -22,6 +22,8 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as Shop from '../systems/board/Shop.js';
 import * as CoinDrops from '../systems/board/CoinDrops.js';
 import { getTokenType } from '../config/registries/tokenRegistry.js';
+import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
+import { registerHallSky } from '../config/registries/hallStarRegistry.js';
 
 /**
  * The coin eye-check's scene, one click on the QA panel (⚠️ temporary, deleted with the scene once
@@ -40,6 +42,7 @@ beforeEach(() => {
 
 afterEach(() => {
     cleanup();
+    registerHallSky(null);
     TileModifiers.teardown();
 });
 
@@ -67,5 +70,11 @@ describe('the QA panel\'s coin scene', () => {
         addCoins(40);
         expect(Shop.canBuy('qa_coin_foundation').success).toBe(true);
         expect(Shop.priceLines('qa_coin_farmland').find(l => l.coins)?.need).toBe(25);
+
+        // The QA Coin Star asks 30 coins beside its Oak Wood (the guild holds 40), then 60.
+        expect(GuildUpgradeManager.getRanksCoins('qa_coin_star', 1)).toBe(30);
+        expect(GuildUpgradeManager.purchase('qa_coin_star')).toEqual({ success: true });
+        expect(GuildUpgradeManager.purchase('qa_coin_star').success).toBe(false);
+        expect(GuildUpgradeManager.getRanksCoins('qa_coin_star', 1)).toBe(60);
     });
 });

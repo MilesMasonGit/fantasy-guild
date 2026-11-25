@@ -262,7 +262,7 @@ export const TestDashboard = /* @__PURE__ */ React.memo(() => {
                                 className={cn(buttonClass, 'w-full')}
                                 onClick={() => {
                                     const r = setUpCoinScene();
-                                    say(r.ok ? 'Two QA Coin Camps (one by a QA Counting House), two Shop Tokens that ask coins, a QA Fighter at home' : r.error);
+                                    say(r.ok ? 'Two QA Coin Camps (one by a QA Counting House), two Shop Tokens and a Hall star that ask coins, a QA Fighter at home' : r.error);
                                 }}
                             >
                                 Set up a coin scene

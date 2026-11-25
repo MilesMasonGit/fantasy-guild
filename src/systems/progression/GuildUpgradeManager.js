@@ -2,8 +2,10 @@ import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
+import { getCoins, spendCoins } from '../inventory/Coins.js';
+import { COIN_ITEM_ID } from '../../config/registries/coinCosts.js';
 import {
-    getUpgradeDef, getUpgradePrice, totalPrice, isUpgradeAccessible, getLockReason,
+    getUpgradeDef, getUpgradePrice, getUpgradeCoins, totalPrice, isUpgradeAccessible, getLockReason,
     rosterLimitForRank, authoredStars, BANK_TAB_SLOTS, BANK_TAB_CAP, ROSTER_STAR, BANK_TABS_STAR
 } from '../../config/guildUpgrades.js';
 // Loads the authored stars into the sky (`data/hallStars.json`) before anything reads it.
@@ -53,10 +55,11 @@ export const GuildUpgradeManager = {
 
     /**
      * What the Bank is short of for a price: `[{ itemId, name, needed, have }]`,
-     * empty when it can pay in full.
+     * empty when it can pay in full. `coins` the price asks beside its items are checked against
+     * the guild's coins, a short line `{ itemId: <coin item>, name, needed, have, coins: true }` last.
      */
-    getShortfall(price) {
-        return totalPrice(price)
+    getShortfall(price, coins = 0) {
+        const short = totalPrice(price)
             .map(({ itemId, quantity }) => ({
                 itemId,
                 name: getItem(itemId)?.name || itemId,
@@ -64,6 +67,9 @@ export const GuildUpgradeManager = {
                 have: InventoryManager.getItemCount(itemId)
             }))
             .filter(s => s.have < s.needed);
+        const have = getCoins();
+        if (coins > 0 && have < coins) short.push({ itemId: COIN_ITEM_ID, name: getItem(COIN_ITEM_ID)?.name || 'Coins', needed: coins, have, coins: true });
+        return short;
     },
 
     /** True when the next rank is buyable right now with what the Bank holds. */
@@ -74,16 +80,16 @@ export const GuildUpgradeManager = {
     /** True when the next `count` ranks together are buyable right now with what the Bank holds. */
     canAffordRanks(upgradeId, count = 1) {
         const price = this.getRanksCost(upgradeId, count);
-        return price != null && this.getShortfall(price).length === 0;
+        return price != null && this.getShortfall(price, this.getRanksCoins(upgradeId, count)).length === 0;
     },
 
     /**
-     * Take a whole price out of the Bank, all or nothing. Checks every item
-     * first; if a removal still fails part-way, the items already taken are
-     * put back. Returns { success, error? }.
+     * Take a whole price out of the Bank, all or nothing, and its `coins`. Checks every item and
+     * the coins first; if a removal still fails part-way, the items already taken are put back.
+     * Returns { success, error? }.
      */
-    _payItems(price) {
-        const shortfall = this.getShortfall(price);
+    _payItems(price, coins = 0) {
+        const shortfall = this.getShortfall(price, coins);
         if (shortfall.length > 0) {
             const list = shortfall
                 .map(s => `${s.needed} ${s.name} (have ${s.have})`)
@@ -98,12 +104,25 @@ export const GuildUpgradeManager = {
             }
             taken.push({ itemId, quantity });
         }
+        spendCoins(coins);
         return { success: true };
     },
 
     /** Buy the next rank of an upgrade. Returns { success, error? }. */
     purchase(upgradeId) {
         return this.purchaseRanks(upgradeId, 1);
+    },
+
+    /** The coins the next `count` ranks ask together, beside their items (0 when fewer are left). */
+    getRanksCoins(upgradeId, count = 1) {
+        const def = getUpgradeDef(upgradeId);
+        const n = Math.floor(Number(count) || 0);
+        if (!def || n < 1) return 0;
+        const rank = this.getRank(upgradeId);
+        if (rank + n > def.maxRank) return 0;
+        let coins = 0;
+        for (let r = rank; r < rank + n; r++) coins += getUpgradeCoins(def, r);
+        return coins;
     },
 
     /**
@@ -148,7 +167,8 @@ export const GuildUpgradeManager = {
         if (rank + n > def.maxRank) return { success: false, error: `Only ${def.maxRank - rank} ranks left` };
 
         const price = this.getRanksCost(upgradeId, n) || [];
-        const paid = this._payItems(price);
+        const coins = this.getRanksCoins(upgradeId, n);
+        const paid = this._payItems(price, coins);
         if (!paid.success) return paid;
 
         const xpBefore = xpForEveryoneOf(authoredStars(), ranks);
@@ -171,7 +191,7 @@ export const GuildUpgradeManager = {
         }
 
         EventBus.publish(ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, { upgradeId, rank: newRank, fromRank: rank, count: n });
-        logger.info('GuildUpgradeManager', `Purchased ${upgradeId} rank ${n > 1 ? `${rank + 1}-` : ''}${newRank} for ${price.map(p => `${p.quantity}x ${p.itemId}`).join(', ') || 'free'}`);
+        logger.info('GuildUpgradeManager', `Purchased ${upgradeId} rank ${n > 1 ? `${rank + 1}-` : ''}${newRank} for ${price.map(p => `${p.quantity}x ${p.itemId}`).join(', ') || 'free'}${coins ? ` and ${coins} coins` : ''}`);
         return { success: true };
     },
 

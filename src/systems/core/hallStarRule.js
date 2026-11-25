@@ -5,6 +5,7 @@ import {
     FALLBACK_CONSTELLATION_IDS, FALLBACK_STAR_IDS, FALLBACK_SKY, HALL_NODE, RANKS_BY_ID, ROSTER_STAR, BANK_TABS_STAR
 } from '../../config/guildUpgrades.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
+import { coinAmountProblem } from '../../config/registries/coinCosts.js';
 import { KEYWORD } from '../effects/statements.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { hallRulesOf, xpForEveryoneOf, RETIRED_AXIS, NEVER_ON_GUILD, CARRIED_ONLY_AXIS } from '../progression/hallModifiers.js';
@@ -44,6 +45,11 @@ export function hallStarFindings({ sky, items = {}, tokens = {} } = {}) {
         if (!normaliseStar(raw, key) && raw && typeof raw === 'object') {
             push({ id: raw.id || key, name: raw.name }, 'ranks', 'has no rank to buy, so it is left out of the sky.');
         }
+        // A rank's coins are dropped to 0 by the normaliser, so they are read here as written.
+        (Array.isArray(raw?.ranks) ? raw.ranks : []).forEach((rank, i) => {
+            const problem = coinAmountProblem(rank?.coins, `rank ${i + 1}'s coins`);
+            if (problem) push({ id: raw.id || key, name: raw.name }, 'ranks', `${problem.replace(/^its /, '')}.`);
+        });
     }
 
     for (const star of stars) {
