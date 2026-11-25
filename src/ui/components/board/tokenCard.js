@@ -35,7 +35,7 @@ import * as SupportLinks from '../../../systems/board/supportLinks.js';
 import { reachRadius } from '../../../systems/board/nearby.js';
 import { effectTagOf, effectTagText } from './effectBadgeText.js';
 import {
-    liveTimerSources, demolitionLine, leaveLine, spawnLine, growthLine, fieldTimerLine, respawnLine, produceLine
+    liveTimerSources, demolitionLine, leaveLine, spawnLine, growthLine, fieldTimerLine, respawnLine, produceLine, litLine
 } from './tokenTimers.js';
 
 /**
@@ -425,6 +425,10 @@ export function cardLifecycle(instance, def, src) {
 
     const produce = produceLine(src.passive?.(instance), src);
     if (produce) out.push(produce);
+
+    // A shrine: how long it stays lit, or that it is out (its bar on the mat shows the same time).
+    const shrine = src.shrine?.(instance);
+    if (shrine) out.push(litLine(shrine));
     return out;
 }
 

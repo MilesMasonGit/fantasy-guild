@@ -11,6 +11,8 @@ import { KEYWORD } from '../systems/effects/statements.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { litLine, timerLines, TIMER_KIND } from '../ui/components/board/tokenTimers.js';
+import { cardLifecycle, liveCardSources } from '../ui/components/board/tokenCard.js';
+import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { createLitBar } from '../ui/components/board/litBar.js';
 import { shrineBarOf, isShrineType, BAR } from '../ui/components/board/matMarks.js';
 import { WorkBarLayer } from '../ui/components/board/WorkBarLayer.jsx';
@@ -61,6 +63,16 @@ describe('the card says how long a shrine stays lit', () => {
 
     it('out: its blessing is off until an offering lights it', () => {
         expect(litLine({ lit: false, litMs: 0, maxLitMs: 600_000, full: false })).toMatchObject({ label: 'Out', text: '–', tone: 'warning' });
+    });
+
+    it('is on the Token card of a shrine, among its lifecycle lines', () => {
+        const shrine = placeAt(SHRINE, 400, 400);
+        shrine.shrine = { litMs: 30_000 };
+        const lines = cardLifecycle(shrine, getTokenType(SHRINE), liveCardSources());
+        expect(lines).toContainEqual(expect.objectContaining({ kind: TIMER_KIND.LIT, label: 'Lit', text: '30s' }));
+        shrine.shrine = { litMs: 0 };
+        expect(cardLifecycle(shrine, getTokenType(SHRINE), liveCardSources()))
+            .toContainEqual(expect.objectContaining({ kind: TIMER_KIND.LIT, label: 'Out' }));
     });
 
     it('is one of the card\'s timer lines for a shrine, and only a shrine', () => {

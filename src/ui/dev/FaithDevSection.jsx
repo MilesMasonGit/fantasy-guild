@@ -20,7 +20,7 @@ export function FaithDevSection() {
                 onClick={() => {
                     const r = setUpFaithScene();
                     setStatus(r.ok
-                        ? `A QA Shrine with its priest, and a vein with its miner; ${QA_FAITH_WOOD} Oak Wood to offer, then it fades`
+                        ? `A QA Shrine with its priest, and a vein with its miner; ${QA_FAITH_WOOD} more Oak Wood in the Bank to offer. Once the Bank has none, it fades`
                         : r.error);
                 }}
             >
