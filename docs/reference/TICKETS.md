@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-698**
+**Next free number: T-700**
 
 ---
 
@@ -177,6 +177,8 @@ here.
 | T-695 | P4 | open | *For: director.* **The water kinds sea and fresh go unused**: after the Fishing pack every spot kind names both. Simplify the water kinds away or keep them for later content. | content agent 2026-11-24 |
 | T-696 | P3 | open | *For: director.* **CombatScreen's fight-layer bar tests fail under load**: the three tests that render MatBoard time out at 5 s (or find no bar host) while other suites run; all 29 pass alone with a longer timeout. Give that describe a longer timeout or a lighter mount. | director 2026-11-24 |
 | T-697 | P3 | open | *For: director.* **One ledger report takes 35 to 45 s on the real workspace** (`ledgerJobs.js` says about a third of a second): the level tracks (`bestXp`, `profileOf`, `rateOf`) take about three quarters of it, so a pack gate takes 1.5 to 3 minutes and the CMS ledger watch lags after each edit. | gate-hang engineer 2026-11-24 |
+| T-698 | P2 | open | *For: planning agent, then director.* **Green Thumb does nothing once 860 R2 merges**: `star_forestry_regrowth` gives Grow Time on Oak and Fir, but an owned Stump regrows at its fixed time (`Groves.ownRegrowMs` ignores Grow Time). Point the star at `ownRegrowMs` (the brief's later regrowth upgrade) or retire it: owner's call. | content agent 2026-11-25 |
+| T-699 | P2 | open | *For: planning agent.* **A whole-game XP pass**: the CMS balance preview proposes about 105 XP cuts, many twenty times down (Cooking at the Bakehouse, Crafting planks, Farming at the Windmill, tree and vein XP), reading those sources as far too fast against the XP curve. Beyond any one pack: needs the owner's view of the curve first. | content agent 2026-11-25 |
 
 ### Code review round 4 (triaged 2026-11-07)
 
