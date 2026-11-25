@@ -254,7 +254,9 @@ describe('the palette declares both, rather than inferring them', () => {
             // Refresh's (`CycleSavings.rollRefresh`) the Token's own work skill.
             EFFECT_TYPES.REFRESH,
             // Giant Harvest's (`OutputRules.rollGiantHarvest`) too, a gathering skill only.
-            EFFECT_TYPES.GIANT_HARVEST
+            EFFECT_TYPES.GIANT_HARVEST,
+            // Quiet's (`Hideouts.caughtChanceAt`) the Hideout's skill, Crime only.
+            EFFECT_TYPES.QUIET
         ]));
     });
 
