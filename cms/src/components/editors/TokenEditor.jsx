@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Gauge } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
-import { HIDEOUT_KIND, TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, stationKindsOfSkill, isRetiredStationKind, ENEMY_STYLES, enemyFilledStats, MAX_ENEMY_KINDS, enemyKindsOf, enemyFightNumbers, isKindCandidate, kindResistances, ATTACK_SPEED_MS, RETIRED_ENEMY_FIELDS, LEFTOVER_ENEMY_FIELDS, DAMAGE_TYPES, DAMAGE_GROUPS, RESISTANCE_STEPS, damageTypeLabel, isDamageTypeId, isDamageGroupId, typesOfGroup, withGroupFilled, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY, ENEMY_USES, neededToolOf, toolNeedPhrase, hasCatchPools, endTermsOf } from '../../utils/constants';
+import { HIDEOUT_KIND, TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, stationKindsOfSkill, isRetiredStationKind, ENEMY_STYLES, enemyFilledStats, MAX_ENEMY_KINDS, enemyKindsOf, enemyFightNumbers, isKindCandidate, kindResistances, ATTACK_SPEED_MS, RETIRED_ENEMY_FIELDS, LEFTOVER_ENEMY_FIELDS, DAMAGE_TYPES, DAMAGE_GROUPS, RESISTANCE_STEPS, damageTypeLabel, isDamageTypeId, isDamageGroupId, typesOfGroup, withGroupFilled, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY, ENEMY_USES, neededToolOf, toolNeedPhrase, hasCatchPools, endTermsOf, enemyCoinDropOf } from '../../utils/constants';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
@@ -789,6 +789,7 @@ export default function TokenEditor() {
                   ))}
                 </select>
               </Field>
+              <EnemyCoinDrop key={token.id} enemy={enemy} onChange={(next) => update('enemy', next)} />
             </div>
 
             <EnemyKinds enemy={enemy} effects={effects} onChange={(next) => update('enemy', next)} />
@@ -961,6 +962,34 @@ const ENEMY_NUMBER_FIELDS = [
   { field: 'accuracy', label: 'Accuracy', min: 0 },
   { field: 'critChance', label: 'Crit %', min: 0 },
 ];
+
+/**
+ * The coins one kill drops, as a pile collected into the guild's coins (`coinCosts.js`), written as
+ * `coinDrop` only when a whole number above 0; blank or 0 drops none. Coin Find in reach raises it.
+ */
+function EnemyCoinDrop({ enemy, onChange }) {
+  const [draft, setDraft] = useState(enemy?.coinDrop == null ? '' : String(enemy.coinDrop));
+  const write = (text) => {
+    setDraft(text);
+    const n = Number(text);
+    const { coinDrop: _drop, ...rest } = enemy || {};
+    onChange(text.trim() !== '' && Number.isInteger(n) && n > 0 ? { ...rest, coinDrop: n } : rest);
+  };
+  const coins = enemyCoinDropOf({ enemy });
+  return (
+    <Field label="Coin drop">
+      <input
+        type="number" min={0} step={1} aria-label="Coin drop" data-field="enemy-coin-drop"
+        value={draft} placeholder="0"
+        onChange={(e) => write(e.target.value)}
+        className="w-full"
+      />
+      <p data-field="enemy-coin-drop-line" className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+        {coins > 0 ? `Each kill drops ${coins} ${coins === 1 ? 'coin' : 'coins'}.` : 'Drops no coins.'} Blank drops none.
+      </p>
+    </Field>
+  );
+}
 
 /** `Peck Stab, Scratch Slash, Flutter`: an enemy's moves (the profile's) for the preview, or null without any. */
 function movesText(moves) {

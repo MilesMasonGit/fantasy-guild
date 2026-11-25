@@ -4,7 +4,7 @@ import { useEntityStore, makeLifecycleBlock, makeWeightedTokenEntry, makeTrickle
 import {
   FOUNDATION_KINDS, RESPAWN_MODES, RESPAWN_DEFAULTS, RESPAWN_MIN_MS, skillsByLayer,
   expandBearer, stationSkillOf, stationKindOf, stationKindOffers, stationKindLabel, cropTermsOf,
-  fieldOf, STANDARD_REACH_U, SKILLS, isWarCampBlock,
+  fieldOf, STANDARD_REACH_U, SKILLS, isWarCampBlock, shopCoinsOf,
   shrineOf, offeringTermsOf, SHRINE_MIN_MS, statementsOf, KEYWORD,
 } from '../../utils/constants';
 import { Section, Field } from '../shared/EditorLayout';
@@ -21,7 +21,7 @@ const BLOCK_INFO = {
   spawner: { title: 'Spawner', what: 'Adds new Tokens to the mat on a clock, up to its allowance.' },
   grows: { title: 'Grows', what: 'Becomes another Token after a time (Sapling → Tree); it may need its own Forest (a Stump regrows only while the Forest that planted it stands) or cost an item.' },
   foundation: { title: 'Foundation', what: 'Bought at the Shop and built on with a recipe.' },
-  shop: { title: 'Shop', what: 'Sold at the Shop, priced in items.' },
+  shop: { title: 'Shop', what: 'Sold at the Shop, priced in items and coins.' },
   trickle: { title: 'Passive Production', what: 'Drops these items beside the Token once a lap (10 minutes, shortened by Guild Hall stars), all on one timer, no hero needed (Guild Hall only, for now). The Wishing Well adds its Water to the Hall’s.' },
   respawn: { title: 'Respawns', what: 'Comes back after it runs out instead of leaving the mat: refills where it stands after a rest, or regrows from another Token (Tree → Sapling → Tree).' },
   field: { title: 'Field', what: 'Grows its own crop: empty, growing, ripe. Its crops are the recipes it works (a Field or Herb Garden station); the player picks one on it.' },
@@ -88,7 +88,7 @@ export default function LifecycleBlocks({ token, onChange }) {
                     <FoundationBlock block={token.foundation} onChange={(v) => set('foundation', v)} />
                   )}
                   {key === 'shop' && (
-                    <ShopBlock block={token.shop} items={items} groupNames={shopGroupNames} onChange={(v) => set('shop', v)} />
+                    <ShopBlock key={token.id} block={token.shop} items={items} groupNames={shopGroupNames} onChange={(v) => set('shop', v)} />
                   )}
                   {key === 'trickle' && (
                     <TrickleBlock lines={token.trickle} items={items} onChange={(v) => set('trickle', v)} />
@@ -239,6 +239,7 @@ function ShopBlock({ block, items, groupNames = [], onChange }) {
         canCreate={false}
         onChange={(price) => patch({ price })}
       />
+      <ShopCoinsField block={block} onChange={onChange} />
       <Field label="Shop section">
         <SkillSelect value={block.section} onChange={(section) => patch({ section })} general />
       </Field>
@@ -274,6 +275,34 @@ function ShopBlock({ block, items, groupNames = [], onChange }) {
         />
       </Field>
     </div>
+  );
+}
+
+/**
+ * The coins the Shop asks beside the items, written as `coins` only when a whole number above 0
+ * (`coinCosts.js`); blank or 0 writes nothing and asks none. The words typed are kept while typing.
+ */
+function ShopCoinsField({ block, onChange }) {
+  const [draft, setDraft] = useState(block.coins == null ? '' : String(block.coins));
+  const write = (text) => {
+    setDraft(text);
+    const n = Number(text);
+    const { coins: _drop, ...rest } = block;
+    onChange(text.trim() !== '' && Number.isInteger(n) && n > 0 ? { ...rest, coins: n } : rest);
+  };
+  const coins = shopCoinsOf({ shop: block });
+  return (
+    <Field label="Coins (optional)">
+      <input
+        type="number" min={0} step={1} data-field="shop-coins" aria-label="Coins"
+        value={draft} placeholder="0"
+        onChange={(e) => write(e.target.value)}
+        className="w-full" style={{ fontSize: 11 }}
+      />
+      <p data-field="shop-coins-line" className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+        {coins > 0 ? `Asks ${coins} ${coins === 1 ? 'coin' : 'coins'} beside the items.` : 'Asks no coins.'} A whole number; blank asks none.
+      </p>
+    </Field>
   );
 }
 

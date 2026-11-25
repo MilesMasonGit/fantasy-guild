@@ -24,6 +24,7 @@ import { plateUnit, barPlace } from './matMarks.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { isDrawingPaused } from './frameClock.js';
 import { startTheftWatch } from './lastTheft.js';
+import { coinsText } from '../base/coinsText.js';
 
 /** Clear air between the top of a Token's art and the bottom of its callout's tail, in mat units. */
 const GAP_PX = 6;
@@ -182,6 +183,7 @@ export const CalloutLayer = memo(function CalloutLayer() {
             EventBus.subscribe(ENGINE_EVENTS.TOKEN_REFUNDED, (p) => {
                 if (!p?.typeId) return;
                 const lines = (p.price || []).map(l => `${l.quantity} ${getItem(l.itemId)?.name || l.itemId}`);
+                if (p.coins > 0) lines.push(coinsText(p.coins));
                 say({ x: p.x, y: p.y, typeId: p.typeId, text: calloutText.refunded(lines) });
             }, UI_LISTENER),
             // A drop the mat refused names a point, not a Token: say why where it was aimed. A

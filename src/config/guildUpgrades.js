@@ -228,6 +228,7 @@ export function upgradeDefOfStar(star, describeRank = null) {
         links: star.links,
         maxRank: star.ranks.length,
         prices: star.ranks.map(r => r.price),
+        coinPrices: star.ranks.map(r => r.coins || 0),
         statLabel: label,
         nextStatLabel: rank => label(rank + 1),
         sprite: star.sprite || UPGRADE_SPRITES.star,
@@ -332,6 +333,12 @@ export function getUpgradePrice(def, rank) {
     if (!def || rank >= def.maxRank) return null;
     const price = def.prices?.[rank] || [];
     return price.map(p => ({ itemId: p.itemId, quantity: p.quantity }));
+}
+
+/** The coins the NEXT rank asks beside its items (`rank` = ranks already owned); 0 for none or past the top. */
+export function getUpgradeCoins(def, rank) {
+    if (!def || rank >= def.maxRank) return 0;
+    return def.coinPrices?.[rank] || 0;
 }
 
 /**

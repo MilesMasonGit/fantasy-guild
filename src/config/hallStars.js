@@ -3,6 +3,8 @@
 // ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY (its Sync, Restore and change packs).
 // Keep it pure: no registry that loads `data/`, no store.
 
+import { coinsOf } from './registries/coinCosts.js';
+
 /**
  * The sky's authored part: constellations and their stars, written only by the CMS's Sync to Game.
  * Bunk Beds (`roster_size`), Bank Tabs (`bank_tabs`) and the Wishing Well (`wishing_well`) are stars
@@ -16,7 +18,7 @@
  *   stars: {
  *     star_mining_xp: {
  *       id, constellation, name, description, node: { x, y }, tag?, links: ['hall'], sprite?, outline?, opensRing?,
- *       ranks: [{ tier, price: [{ itemId, quantity }], rules: [statement], lines: [{ itemId, quantity }] }]
+ *       ranks: [{ tier, price: [{ itemId, quantity }], coins?, rules: [statement], lines: [{ itemId, quantity }] }]
  *     }
  *   }
  * }
@@ -34,7 +36,8 @@
  * - `opensRing` makes it a ring star: once its first rank is bought the guild may settle that ring of
  *   the world map (a whole number from 2; ring 1 is always open). See `systems/world/ringStars.js`.
  * - `tier` is the tier the owner gives the rank (the ledger prices by it); `price` is what the rank
- *   costs, paid from the Bank.
+ *   costs, paid from the Bank, and `coins` the coins it asks beside them (a whole number; absent
+ *   is 0, `coinCosts.js`). No star's rules touch coins (Coin Find is `neverOnGuild`).
  */
 
 /** The first ring of the world map a star can open: ring 1 is open from the start. */
@@ -81,12 +84,17 @@ export function tierOf(value) {
     return Number.isInteger(n) && n >= 0 ? n : null;
 }
 
-/** One rank as the game reads it. */
+/**
+ * One rank as the game reads it. `coins` is kept only when above 0, so a sky without coins is
+ * written by Sync exactly as before.
+ */
 export function normaliseRank(raw) {
     const rules = (Array.isArray(raw?.rules) ? raw.rules : []).filter(s => isPlainObject(s) && text(s.keyword));
+    const coins = coinsOf(raw?.coins);
     return {
         tier: tierOf(raw?.tier),
         price: itemLines(raw?.price),
+        ...(coins > 0 ? { coins } : {}),
         rules,
         lines: itemLines(raw?.lines)
     };

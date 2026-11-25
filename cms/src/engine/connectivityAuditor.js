@@ -1,4 +1,4 @@
-import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, crimeFindings, stealOf, spotFindings, fishFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, gearDefenceFindings, effectStackFindings, hallStarFindings, coinWorthFindings } from '../utils/constants';
+import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, crimeFindings, stealOf, spotFindings, fishFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, gearDefenceFindings, effectStackFindings, hallStarFindings, coinWorthFindings, coinCostFindings } from '../utils/constants';
 import { eventProblems, EVENT_BIOMES } from '../../../src/config/eventTable.js';
 import { STANDS_ON_CHOICES } from '../../../src/systems/atlas/TerrainMap.js';
 
@@ -255,8 +255,9 @@ export function auditConnectivity(entities, solverRefusals = []) {
     });
   }
 
-  // An item's Coin worth the game cannot read (`itemCoins.js`), in the boot audit's words.
-  for (const f of coinWorthFindings({ items })) {
+  // An item's Coin worth, a Shop Token's coins or an enemy's Coin drop the game cannot read
+  // (`itemCoins.js`, `coinCosts.js`), in the boot audit's words.
+  for (const f of [...coinWorthFindings({ items }), ...coinCostFindings({ tokens })]) {
     issues.push({
       entityId: f.entityId,
       entityName: f.entityName,

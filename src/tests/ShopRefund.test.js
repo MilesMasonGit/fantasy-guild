@@ -144,7 +144,7 @@ describe('a refund', () => {
         const off = EventBus.subscribe(ENGINE_EVENTS.TOKEN_REFUNDED, (d) => heard.push(d));
         Shop.refund(f.id);
         off?.();
-        expect(heard).toEqual([{ typeId: 'fixture_rf_foundation', instanceId: f.id, price: PRICE, x, y, heroId: null }]);
+        expect(heard).toEqual([{ typeId: 'fixture_rf_foundation', instanceId: f.id, price: PRICE, coins: 0, x, y, heroId: null }]);
     });
 
     it('with a full Bank the price waits on the floor as loot, none of it lost', () => {

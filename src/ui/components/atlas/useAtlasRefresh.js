@@ -5,12 +5,13 @@ import { onMatTuningChanged } from '../../../config/matTuning.js';
 
 /**
  * What the Atlas screen redraws on: the Regions (`ATLAS_CHANGED`), what the world map's prices are
- * read against (the Bank, a hero recruited or a level reached), a ring star bought and the Token cap
+ * read against (the Bank, the guild's coins, a hero recruited or a level reached), a ring star bought and the Token cap
  * (`GUILD_UPGRADES_UPDATED`, and the Mat Tuner's cap override), and a travel or a load.
  */
 export const ATLAS_SCREEN_EVENTS = Object.freeze([
     ENGINE_EVENTS.ATLAS_CHANGED,
     ENGINE_EVENTS.INVENTORY_UPDATED,
+    ENGINE_EVENTS.COINS_UPDATED,
     ENGINE_EVENTS.HERO_RECRUITED,
     ENGINE_EVENTS.HERO_LEVELED,
     ENGINE_EVENTS.GUILD_UPGRADES_UPDATED,

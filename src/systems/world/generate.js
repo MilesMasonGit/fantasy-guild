@@ -200,7 +200,8 @@ export function priceTemplateOf(tables, ring) {
     const growth = power(tables.wild.priceGrowth, beyond);
     return {
         items: base.items.map(s => ({ ...s, qty: Math.round(s.qty * growth) })),
-        skills: base.skills.map(s => ({ ...s, level: Math.min(MAX_LEVEL, s.level + tables.wild.levelStep * beyond) }))
+        skills: base.skills.map(s => ({ ...s, level: Math.min(MAX_LEVEL, s.level + tables.wild.levelStep * beyond) })),
+        coins: Math.round((base.coins || 0) * growth)
     };
 }
 
