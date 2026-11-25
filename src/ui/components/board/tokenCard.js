@@ -36,6 +36,8 @@ import * as SupportLinks from '../../../systems/board/supportLinks.js';
 import { reachRadius } from '../../../systems/board/nearby.js';
 import { effectTagOf, effectTagText } from './effectBadgeText.js';
 import { spotFishRows, luresIn } from './spotFish.js';
+import { isLaboratory } from '../../../systems/board/Laboratories.js';
+import { studyBlockOf, nodeMasteryOf } from './laboratoryCard.js';
 import {
     liveTimerSources, demolitionLine, leaveLine, spawnLine, growthLine, fieldTimerLine, respawnLine, produceLine, litLine
 } from './tokenTimers.js';
@@ -55,6 +57,8 @@ export const CARD_BLOCK = Object.freeze({
     WORK: 'work',
     CYCLE: 'cycle',
     RECIPE: 'recipe',
+    STUDY: 'study',
+    MASTERY: 'mastery',
     LIFECYCLE: 'lifecycle',
     SUPPORT: 'support',
     DROPS: 'drops',
@@ -165,7 +169,10 @@ export function liveCardSources() {
         bonusGrants: (instanceId) => heroItemGrants(instanceId, EFFECT_TYPES.BONUS_DROP).filter(canPayLoadoutCost),
         demolitionConfig: Demolition.DEMOLITION_CONFIG,
         allItems: getAllItems,
-        art: (def) => cardArtOf(def)
+        art: (def) => cardArtOf(def),
+        study: (instance, def) => studyBlockOf(instance, def),
+        mastery: (instance, def) => nodeMasteryOf(instance, def),
+        workConfig: StationRecipe.workConfigOf
     };
 }
 
@@ -527,7 +534,8 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
         ? (isField ? (src.fieldCrop?.(instance, def) ?? null) : src.selectedRecipe(instance, def))
         : null;
 
-    const work = marked ? src.demolitionConfig : def.config;
+    // A Laboratory's level is its chosen node's, as a station's is its recipe's.
+    const work = marked ? src.demolitionConfig : (instance && isLaboratory(def) && src.workConfig ? src.workConfig(def, instance) : def.config);
     const skillId = marked ? work?.skill : (def.config?.skill || def.foundation?.skill || null);
     // A station with nothing chosen has no work yet: its type's own config is only the engine's
     // fallback, and no recipe runs at that time, level or XP.
@@ -575,7 +583,13 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
         if (needs.length || tools.length || makes.length || bonus.length || rare || change || catches || fish) {
             blocks.push({ id: CARD_BLOCK.RECIPE, recipeName: recipe?.name || null, recipeId: recipe?.id || null, needs, tools, makes, bonus, rare, change, catches, fish });
         }
+        // A Laboratory: the node it studies, its kind's mastery, Change node (`laboratoryCard.js`).
+        if (isLaboratory(def) && src.study) blocks.push({ id: CARD_BLOCK.STUDY, ...src.study(instance, def) });
     }
+
+    // A node of a kind with a mastery track: the guild's rank in it and the next buff.
+    const mastery = src.mastery?.(instance, def);
+    if (mastery) blocks.push({ id: CARD_BLOCK.MASTERY, ...mastery });
 
     const lifecycle = cardLifecycle(instance, def, src);
     if (lifecycle.length) blocks.push({ id: CARD_BLOCK.LIFECYCLE, lines: lifecycle });

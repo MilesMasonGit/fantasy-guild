@@ -35,6 +35,10 @@ export function blockedText(alert, { token, missing = null, skill = null, tool =
             return `Choose what to build on ${token}.`;
         case ALERT.CHOOSE_RECIPE:
             return `Choose a recipe for ${token}.`;
+        case ALERT.CHOOSE_NODE:
+            return `Choose a node for ${token} to study.`;
+        case ALERT.NODE_MASTERED:
+            return `We have learned all ${token}'s node can teach. Choose another.`;
         case ALERT.BUILD_SITE:
             return `What ${token} is set to build can’t stand there.`;
         case ALERT.NO_ROOM:
