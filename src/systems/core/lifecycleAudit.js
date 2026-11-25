@@ -2,7 +2,8 @@
 
 import {
     FOUNDATION_KINDS, RESPAWN_MODES, respawnOf, foundationTierOf, foundationMinTierOf, foundationTierMeets,
-    STATION_KINDS, stationKindOffers, isRetiredStationKind, retiredStationKindsOf, stationKindLabel
+    STATION_KINDS, stationKindOffers, isRetiredStationKind, retiredStationKindsOf, stationKindLabel,
+    isGroveSpawnerDef
 } from '../../config/registries/tokenConstants.js';
 import { stationSkillOf, stationKindOf, getProvidedTagsWithTiers, statementsOf, KEYWORD } from '../effects/statements.js';
 import { neverWearsReason, NEVER_WEARS_WHY } from './wearRule.js';
@@ -237,7 +238,8 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
                 checkItemRef(err, `spawner.upkeep[${i}].itemId`, 'spawner upkeep names', entry?.itemId);
                 checkPositive(err, `spawner.upkeep[${i}].quantity`, `spawner upkeep quantity of ${show(entry?.itemId ?? '?')}`, entry?.quantity);
             });
-            if (upkeep.length === 0) {
+            // A Forest or an Orchard plants for free by rule, whatever its upkeep says.
+            if (upkeep.length === 0 && !isGroveSpawnerDef(def, (t) => tokens[t], id)) {
                 warn('spawner.upkeep', 'spawner has no upkeep, so it spawns for free (allowed; SP-70 is decided per Token).');
             }
 

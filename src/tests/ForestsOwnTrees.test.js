@@ -330,3 +330,15 @@ describe('⭐ every map tree belongs to a wild Forest', () => {
         expect('tether' in forest).toBe(false);
     });
 });
+
+describe('the lifecycle audit', () => {
+    it('says nothing of a Forest planting for free, but still notes a free Quarry', async () => {
+        const { auditLifecycleBlocks } = await import('../systems/core/lifecycleAudit.js');
+        const free = (id) => ({ ...getTokenType(id), spawner: { ...getTokenType(id).spawner, upkeep: [] } });
+        const tokens = Object.fromEntries(['ot_tree', 'ot_stump', 'ot_apple', 'ot_rock'].map(id => [id, getTokenType(id)]));
+        Object.assign(tokens, { ot_forest: free('ot_forest'), ot_orchard: free('ot_orchard'), ot_quarry: free('ot_quarry') });
+        const notes = auditLifecycleBlocks({ tokens, items: {}, recipes: [], skills: {} })
+            .filter(f => f.field === 'spawner.upkeep').map(f => f.entityId);
+        expect(notes).toEqual(['ot_quarry']);
+    });
+});
