@@ -134,7 +134,7 @@
           "price": [
             {
               "itemId": "item_oak_wood",
-              "quantity": 61
+              "quantity": 50
             }
           ],
           "rules": [
@@ -385,7 +385,7 @@
           "price": [
             {
               "itemId": "item_iron_ore",
-              "quantity": 510
+              "quantity": 135
             }
           ],
           "rules": [

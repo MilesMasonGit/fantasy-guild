@@ -4467,7 +4467,7 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.1,
+          "value": -0.05,
           "category": "mining"
         },
         "chargeDelta": 0,
@@ -4486,7 +4486,7 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.1,
+          "value": -0.05,
           "category": "forestry"
         },
         "chargeDelta": 0,
@@ -4707,7 +4707,7 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.1,
+          "value": -0.05,
           "category": "forestry"
         },
         "chargeDelta": 0,
@@ -4726,7 +4726,7 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.1,
+          "value": -0.05,
           "category": "mining"
         },
         "chargeDelta": 0,
@@ -5274,7 +5274,7 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.05
+          "value": -0.03
         },
         "chargeDelta": 0,
         "to": {
@@ -5369,7 +5369,8 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.05
+          "value": -0.05,
+          "category": "mining"
         },
         "chargeDelta": 0,
         "to": {
@@ -5393,7 +5394,8 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.05
+          "value": -0.05,
+          "category": "forestry"
         },
         "chargeDelta": 0,
         "to": {
