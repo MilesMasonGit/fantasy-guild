@@ -503,11 +503,12 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
             const built = builtId ? tokens[builtId] : null;
             if (!built) continue;
             const builtGround = groundOf(built);
-            for (const fdef of ofKind) {
+            for (const [fid, fdef] of Object.entries(tokens)) {
+                if (fdef?.foundation?.kind !== kind) continue;
                 const own = groundOf(fdef);
                 if (!own.length || groundsMeet(own, builtGround)) continue;
                 recipeError(recipe, 'foundationKinds',
-                    `builds ${tokenLabel(builtId)} on ${kind} Foundations, but ${tokenLabel(fdef.id)} stands on ${groundWords(own)} and ${built.name || builtId} on ${groundWords(builtGround)}: no ground is both, so it can never be built there.`);
+                    `builds ${tokenLabel(builtId)} on ${kind} Foundations, but ${tokenLabel(fid)} stands on ${groundWords(own)} and ${built.name || builtId} on ${groundWords(builtGround)}: no ground is both, so it can never be built there.`);
             }
         }
     }
