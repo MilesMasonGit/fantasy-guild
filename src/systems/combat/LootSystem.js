@@ -9,6 +9,7 @@ import * as SpriteLayer from '../board/SpriteLayer.js';
 import * as OutputRules from '../board/OutputRules.js';
 import * as RareDrops from '../board/RareDrops.js';
 import * as RareTables from '../board/RareTables.js';
+import * as CoinDrops from '../board/CoinDrops.js';
 import * as BoardState from '../board/BoardState.js';
 import { getTokenType, rollOutputQuantity } from '../../config/registries/tokenRegistry.js';
 import { enemyDropsOf } from '../../config/registries/enemyProfile.js';
@@ -73,13 +74,17 @@ const LootSystem = {
         }
         if (rareDrop) RareDrops.noteRareFind(SpriteLayer.addSprite('item', rareDrop.itemId, rareDrop.quantity, instanceId), find.chance);
         const bonus = OutputRules.dropBonusGrants(instanceId, doubled ? 2 : 1);
+        // Its coins last, a pile of their own: Double Loot and Yield are the items' rules, Coin
+        // Find the coins'.
+        const coins = CoinDrops.dropKillCoins(instanceId, typeDef, skill);
 
         // Everything that landed, the bonus drops too: the fight window's Drops line, the time-away
         // tally and the kill's cycle (`BoardCombat`, for On Neighbour Produces) all read this.
         const all = [
             ...generatedDrops,
             ...(rareDrop ? [{ ...rareDrop, rare: true }] : []),
-            ...bonus.map(b => ({ ...this._describe(b.itemId), quantity: b.quantity, bonus: true }))
+            ...bonus.map(b => ({ ...this._describe(b.itemId), quantity: b.quantity, bonus: true })),
+            ...(coins ? [{ ...this._describe(coins.itemId), ...coins }] : [])
         ];
         EventBus.publish(ENGINE_EVENTS.LOOT_GENERATED, { cardId, heroId, enemyId, enemyName, instanceId, drops: all });
     },

@@ -162,9 +162,10 @@ export function shopPanelTransform(state, { under = 0, peek = 0 } = {}) {
 
 export const shopCardPayload = (typeId) => ({ typeId, from: { shop: typeId } });
 
-/** What re-reads the catalogue: the Bank and the cap. */
+/** What re-reads the catalogue: the Bank, the guild's coins and the cap. */
 const SHOP_EVENTS = Object.freeze([
     ENGINE_EVENTS.TOKEN_PURCHASED, ENGINE_EVENTS.TOKEN_REFUNDED, ENGINE_EVENTS.INVENTORY_UPDATED, ENGINE_EVENTS.GAME_RESET, ENGINE_EVENTS.GAME_LOADED,
+    ENGINE_EVENTS.COINS_UPDATED,
     BOARD_EVENTS.TOKEN_PLACED, BOARD_EVENTS.TOKEN_DEPLETED,
     // A price is paid from the floor too (`InputAllocator.availableOf`); an upgrade raises the cap.
     BOARD_EVENTS.SPRITES_CHANGED, ENGINE_EVENTS.GUILD_UPGRADES_UPDATED

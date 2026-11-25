@@ -109,7 +109,7 @@ function hallStarErrors(value, label) {
         if (rank.tier !== undefined && tierOrNull(rank.tier) !== rank.tier) out.push(`${at}: "tier" must be a whole number from 0.`);
         for (const rule of Array.isArray(rank.rules) ? rank.rules : []) {
             const entry = getPaletteEntry(rule?.payload?.type);
-            if (entry?.neverOnGuild) out.push(`${at} carries a ${entry.label} rule, which a star cannot carry: it lands only on the fighter struck. Leave it out.`);
+            if (entry?.neverOnGuild) out.push(`${at} carries a ${entry.label} rule, which a star cannot carry: ${entry.guildWhy}. Leave it out.`);
         }
     });
     return out;

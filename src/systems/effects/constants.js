@@ -88,6 +88,10 @@ export const EFFECT_TYPES = {
     // Strong Drink: a percentage on every modifier a dose's effects give, narrowed to the kind of
     // dose. Guild-wide only — ConsumptionSystem.doseStrength, LiveEffects (an instance's `boost`).
     STRONG_DRINK: 'STRONG_DRINK',
+    // Coin Find: a percentage on the coins an enemy defeated in reach drops (and, once Hideouts
+    // steal coins, on the coins a Hideout in reach steals). A building's only: no Guild Hall star
+    // touches coins — CoinDrops.
+    COIN_FIND: 'COIN_FIND',
 
     /**
      * A chance to yield an extra, **different** item on top of a Token's normal output.

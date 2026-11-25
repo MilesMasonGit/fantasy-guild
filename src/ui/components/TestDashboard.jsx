@@ -7,6 +7,7 @@ import { CloseX } from './base/CloseX.jsx';
 import { AnimationStudioModal } from './dev/AnimationStudioModal.jsx';
 import { PerfDevSection } from '../dev/perf/PerfDevSection.jsx';
 import { EventsDevSection } from '../dev/EventsDevSection.jsx';
+import { setUpCoinScene } from '../dev/coinScene.js';
 import { saveLiveMatToCms, DEFAULT_CMS_URL } from '../dev/starterCampDev.js';
 import {
     PICKER_ROWS, itemChoices, tokenChoices, filterByName, giveAndSay, dropAndSay, devBankEveryKind, devFillBank,
@@ -251,6 +252,22 @@ export const TestDashboard = /* @__PURE__ */ React.memo(() => {
                         </div>
 
                         <EventsDevSection />
+
+                        {/* ⚠️ Temporary: the coin costs and drops eye-check's scene, deleted with its test once the look is accepted. */}
+                        <div className="mb-3 pb-3 border-b border-gi-border space-y-1" data-testid="qa-coin-scene">
+                            <div className={labelClass}>Eye-check: Coins</div>
+                            <button
+                                type="button"
+                                data-qa-coin-scene
+                                className={cn(buttonClass, 'w-full')}
+                                onClick={() => {
+                                    const r = setUpCoinScene();
+                                    say(r.ok ? 'Two QA Coin Camps (one by a QA Counting House), two Shop Tokens that ask coins, a QA Fighter at home' : r.error);
+                                }}
+                            >
+                                Set up a coin scene
+                            </button>
+                        </div>
 
                         <div className="space-y-1" data-testid="qa-tools" data-qa-group>
                             <div className={labelClass}>Tools</div>

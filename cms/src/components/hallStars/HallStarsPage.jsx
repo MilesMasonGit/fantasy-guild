@@ -205,7 +205,7 @@ export default function HallStarsPage() {
                           {rulesLinesOf({ statements: rank.rules.map(asGuildRule) }, names).map((line, j) => <div key={`r${j}`}>{line}</div>)}
                           {rank.rules.map((rule) => getPaletteEntry(rule?.payload?.type)).map((entry, j) => entry?.neverOnGuild && (
                             <div key={`x${j}`} data-hall-rule-refused style={{ color: 'var(--color-error)', fontWeight: 700 }}>
-                              Refused: a star cannot carry {entry.label}, which lands only on the fighter struck. The game leaves this rule out.
+                              Refused: a star cannot carry {entry.label}: {entry.guildWhy}. The game leaves this rule out.
                             </div>
                           ))}
                           {rank.lines.map((l, j) => <div key={`l${j}`}>{l.quantity} {names.item(l.itemId)} each Passive Production lap</div>)}

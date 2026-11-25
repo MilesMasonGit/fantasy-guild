@@ -87,7 +87,7 @@ export function hallStarFindings({ sky, items = {}, tokens = {} } = {}) {
                     push(star, 'ranks', `rank ${r} has a rule aimed at the Token "${to.value}", which does not exist, so it reaches nothing.`);
                 }
                 const entry = statement?.keyword === KEYWORD.PROVIDES ? getPaletteEntry(statement.payload?.type) : null;
-                if (entry?.neverOnGuild) push(star, 'ranks', `rank ${r} has a ${entry.label} rule, which a star cannot carry: it lands only on the fighter struck, so the rule is left out. Delete the rule in the CMS.`);
+                if (entry?.neverOnGuild) push(star, 'ranks', `rank ${r} has a ${entry.label} rule, which a star cannot carry: ${entry.guildWhy}, so the rule is left out. Delete the rule in the CMS.`);
                 else if (entry?.heroOnly && !entry.fromGuild && !entry.retired) push(star, 'ranks', `rank ${r} has a ${entry.label} rule, which only reaches a hero from what they carry, so it does nothing from the Hall.`);
                 if (entry?.categories === 'combatStyle' && !isCombatStyleScope(statement.payload?.category)) {
                     push(star, 'ranks', `rank ${r} has a ${entry.label} rule narrowed to "${statement.payload.category}", which is no combat style, so it helps no fighter. Pick Melee, Ranged, Magic or Stealth, or no style, in the CMS.`);

@@ -29,6 +29,20 @@ export function addCoins(amount) {
     return progress.coins;
 }
 
+/**
+ * Take `amount` coins, all or nothing: true when paid (0 always is), false, taking nothing, when
+ * the guild holds fewer. Announces the new count.
+ */
+export function spendCoins(amount) {
+    const n = Math.max(0, Math.floor(Number(amount) || 0));
+    const progress = GameState.state?.progress;
+    if (n === 0) return true;
+    if (!progress || getCoins() < n) return false;
+    progress.coins = getCoins() - n;
+    EventBus.publish(ENGINE_EVENTS.COINS_UPDATED, { coins: progress.coins, spent: n });
+    return true;
+}
+
 /** What the Bank's stack of `itemId` would sell for: `{ count, coins }`. */
 export function bankStackWorth(itemId) {
     const count = InventoryManager.getItemCount(itemId);

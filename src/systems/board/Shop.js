@@ -16,6 +16,8 @@ import * as Placement from './Placement.js';
 import * as Foundations from './Foundations.js';
 import * as Landmarks from './Landmarks.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
+import { getCoins, addCoins, spendCoins } from '../inventory/Coins.js';
+import { shopCoinsOf, COIN_ITEM_ID } from '../../config/registries/coinCosts.js';
 import { logger } from '../../utils/Logger.js';
 import { matW, matH } from '../../config/matGeometry.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
@@ -30,8 +32,9 @@ import { BOARD_EVENTS } from './boardEvents.js';
  * lowest first, with unordered Tokens after the ordered ones.
  *
  * Everything with a `shop` block is listed from the start; the price is the only gate. Items are
- * the only price, paid all or nothing through `InputAllocator` (Bank first, then loot on the
- * floor). A purchase is refused once the mat's Token count reaches `MatCap.matCap()`.
+ * paid all or nothing through `InputAllocator` (Bank first, then loot on the floor), and
+ * `shop.coins` (`coinCosts.js`) from the guild's coins beside them. A purchase is refused once the
+ * mat's Token count reaches `MatCap.matCap()`.
  *
  * A bought Token is created with `origin: 'placed'`, beside the Guild Hall via
  * `Placement.placeArrivalNear` aimed at `Placement.centreOfBoard()`. When that area is crowded it
@@ -67,6 +70,11 @@ export function priceOf(typeId) {
     return totalPrice(shopBlockOf(typeId)?.price || []);
 }
 
+/** The coins a Token's price asks beside its items (0: none). */
+export function coinPriceOf(typeId) {
+    return shopBlockOf(typeId) ? shopCoinsOf(getTokenType(typeId)) : 0;
+}
+
 /** The heading a section is shown under: the skill's name, or "General". */
 export function sectionName(section) {
     if (!section || section === GENERAL_SECTION) return 'General';
@@ -75,10 +83,12 @@ export function sectionName(section) {
 
 /**
  * The price shaped for display, with what the Bank holds against each line: `[{ itemId, name, need,
- * have, enough }]`. `have` counts loot on the floor too, since payment takes that as well.
+ * have, enough }]`. `have` counts loot on the floor too, since payment takes that as well. A price
+ * that asks coins ends with a coin line, `coins: true`, against the guild's coins, named and drawn
+ * as the coin item.
  */
 export function priceLines(typeId) {
-    return priceOf(typeId).map(({ itemId, quantity }) => {
+    const lines = priceOf(typeId).map(({ itemId, quantity }) => {
         const have = InputAllocator.availableOf(itemId);
         return {
             itemId,
@@ -88,6 +98,12 @@ export function priceLines(typeId) {
             enough: have >= quantity
         };
     });
+    const coins = coinPriceOf(typeId);
+    if (coins > 0) {
+        const have = getCoins();
+        lines.push({ itemId: COIN_ITEM_ID, name: getItem(COIN_ITEM_ID)?.name || 'Coins', need: coins, have, enough: have >= coins, coins: true });
+    }
+    return lines;
 }
 
 /** What the Bank is short of, as "3× Oak Wood, 1× Stone". Empty when it can pay. */
@@ -157,6 +173,7 @@ function purchase(typeId, place) {
     if (!allowed.success) return allowed;
 
     const price = priceOf(typeId);
+    const coins = coinPriceOf(typeId);
     const instance = BoardState.createTokenInstance(
         typeId, tokenStartingUses(typeId), null, BoardState.ORIGIN.PLACED
     );
@@ -165,15 +182,16 @@ function purchase(typeId, place) {
     const placed = place(instance);
     if (!placed?.success) return { ...(placed || {}), ...refuse(placed?.reason || 'No room on the mat') };
 
-    if (!InputAllocator.consumeInputs(price)) {
+    if (getCoins() < coins || !InputAllocator.consumeInputs(price)) {
         // Unreachable in practice (checked above); undo the placement so a
         // Token is never handed out for free.
         BoardState.removeToken(instance.id);
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, x: placed.x, y: placed.y, typeId: null });
         return refuse('Not enough items');
     }
+    spendCoins(coins);
 
-    EventBus.publish(ENGINE_EVENTS.TOKEN_PURCHASED, { typeId, instanceId: instance.id, price });
+    EventBus.publish(ENGINE_EVENTS.TOKEN_PURCHASED, { typeId, instanceId: instance.id, price, coins });
     logger.info('Shop', `Bought ${tokenName(typeId)}`);
     return { success: true, instance, x: placed.x, y: placed.y, nudged: !!placed.nudged };
 }
@@ -204,7 +222,7 @@ export function canRefund(instanceId) {
 }
 
 /**
- * Take an unbuilt Foundation off the mat and give its whole Shop price back ({@link canRefund}
+ * Take an unbuilt Foundation off the mat and give its whole Shop price back, its coins too ({@link canRefund}
  * says which). A build in progress is simply stopped: a cycle takes its inputs only when it
  * completes, so nothing of the build was ever paid. The Token leaves the mat by the one removal
  * path (`Placement.removePlacedToken`), so a hero working it lets go as when any Token leaves.
@@ -212,7 +230,7 @@ export function canRefund(instanceId) {
  * The price goes in through `InventoryManager.addItem`: what the Bank has no room for waits on the
  * floor as loot, as all income does.
  *
- * @returns {{success: boolean, reason?: string, typeId?: string, price?: object[], heroId?: string|null}}
+ * @returns {{success: boolean, reason?: string, typeId?: string, price?: object[], coins?: number, heroId?: string|null}}
  */
 export function refund(instanceId) {
     const allowed = canRefund(instanceId);
@@ -221,6 +239,7 @@ export function refund(instanceId) {
     const { typeId } = instance;
     const at = { x: instance.x, y: instance.y };
     const price = priceOf(typeId);
+    const coins = coinPriceOf(typeId);
 
     const removed = Placement.removePlacedToken(instanceId);
     if (!removed?.success) return refuse(removed?.reason || 'It cannot leave the mat');
@@ -229,10 +248,11 @@ export function refund(instanceId) {
     InventoryManager.batch(() => {
         for (const { itemId, quantity } of price) InventoryManager.addItem(itemId, quantity);
     });
+    addCoins(coins);
 
-    EventBus.publish(ENGINE_EVENTS.TOKEN_REFUNDED, { typeId, instanceId, price, ...at, heroId });
+    EventBus.publish(ENGINE_EVENTS.TOKEN_REFUNDED, { typeId, instanceId, price, coins, ...at, heroId });
     logger.info('Shop', `Refunded ${tokenName(typeId)}: ${price.map(l => `${l.quantity}× ${getItem(l.itemId)?.name || l.itemId}`).join(', ') || 'nothing'}`);
-    return { success: true, typeId, price, heroId };
+    return { success: true, typeId, price, coins, heroId };
 }
 
 /** Total quantity of a price, used to order a group cheapest first. */

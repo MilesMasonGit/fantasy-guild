@@ -14,6 +14,7 @@ import { EFFECTS, getEffect } from '../../config/registries/effectRegistry.js';
 import { effectRefsOf, duplicateRefsOf, hasWorkingStatements, usedBy, statusBlockOf } from '../effects/effectLibrary.js';
 import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
 import { coinWorthFindings } from '../../config/registries/itemCoins.js';
+import { coinCostFindings } from '../../config/registries/coinCosts.js';
 import { STANDS_ON_CHOICES, isStandsOnWord } from '../atlas/TerrainMap.js';
 import { listPooledSkillIds } from '../../config/registries/recipePoolRegistry.js';
 import { SPRITE_MANIFEST } from '../../config/registries/sprite-manifest.js';
@@ -799,9 +800,10 @@ function auditEffectStacks(out) {
     }
 }
 
-/** An item's Coin worth the game cannot read (`itemCoins.js`), shared with the CMS Economy Audit. */
+/** An item's Coin worth, a Shop Token's coins or an enemy's Coin drop the game cannot read, shared with the CMS Economy Audit. */
 function auditCoinWorth(out) {
     for (const f of coinWorthFindings({ items: ITEMS })) out.push(finding(`${f.entityType} "${f.entityId}"`, f.message));
+    for (const f of coinCostFindings({ tokens: TOKENS })) out.push(finding(`${f.entityType} "${f.entityId}"`, f.message));
 }
 
 /**
