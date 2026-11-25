@@ -10,7 +10,7 @@ import { fieldOf } from './tokenConstants.js';
 /** The station kind a Laboratory works as: Science's building, which studies a node instead of running recipes. */
 export const LABORATORY_KIND = 'laboratory';
 
-/** The ranks a new track starts with in the CMS (owner 2026-11-25: five ranks per track). The engine reads any number. */
+/** The ranks a track has, as the CMS says (content_science.md). The engine reads any number. */
 export const NEW_TRACK_RANKS = 5;
 
 /** Mastery points one study cycle gives the node kind it studies. */

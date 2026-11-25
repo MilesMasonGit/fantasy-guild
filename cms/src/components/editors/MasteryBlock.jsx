@@ -42,7 +42,7 @@ export function MasteryTrack({ block, holder, effects, tokens = {}, onChange, ki
         Science studies this kind at a Laboratory: each study cycle gives one point, guild-wide, and each rank, reached at
         its points, gives its effect to every {kind === 'Recipe' ? 'Field growing this crop' : 'Token of this kind (a Stump counts as its tree)'},
         now and later. Ranks count in points order. Only Provides rules reach the Tokens; leave the effect&apos;s aim and
-        reach as they are, mastery ignores them. {NEW_TRACK_RANKS} ranks a track (owner, 2026-11-25).
+        reach as they are, mastery ignores them. A track has {NEW_TRACK_RANKS} ranks.
       </p>
       {ranks.map((row, i) => {
         const effect = row.effectId ? effects?.[row.effectId] : null;
