@@ -138,7 +138,11 @@ describe('The Combat chain in shipped data (7.7)', () => {
     it('a Chief is a tougher boss: higher level, a Brute, one kill, a typed hit of 3', () => {
         expect(chief.enemy).toEqual({
             level: 12, style: 'melee', kinds: ['brute'], boss: true, hit: 3,
-            moves: [{ name: 'Cleave', damageType: 'slash' }, { name: 'Bash', damageType: 'crush' }]
+            moves: [
+                { name: 'Cleave', damageType: 'slash', weight: 5 },
+                { name: 'Bash', damageType: 'crush', weight: 5 },
+                { name: 'Heavy Strike', damageType: 'crush', weight: 2, effectId: 'effect_heavy_strike', target: 'self', lasts: 'swing' }
+            ]
         });
         expect(chief.enemy.hit).toBe(enemyFilledStats(chief.enemy).hit + 1);
         expect(chief.uses).toBe(1);

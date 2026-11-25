@@ -200,14 +200,16 @@ describe('the Economy Audit names a stack reaching 100 %', () => {
 
 describe('a workspace still holding the Poison status', () => {
     it('loads with Venom under its new id, every reference following, and Syncs it so', () => {
+        // The shipped Venom is landed by enemy moves (the Greater Slime's Acid Spit).
+        const acidSpit = (tokens) => tokens.token_greater_slime.enemy.moves.find(m => m.name === 'Acid Spit');
         const old = withPoison();
         expect(old['effects.json'].effect_venom).toBeUndefined();
-        expect(old['effects.json'].effect_greater_slime_moves.statements[0].payload.effectId).toBe('effect_poison');
+        expect(acidSpit(old['tokens.json']).effectId).toBe('effect_poison');
         load(old);
         const s = store();
         expect(s.effects.effect_poison).toBeUndefined();
         expect(s.effects.effect_venom).toMatchObject({ id: 'effect_venom', name: 'Venom', status: { stacks: 3, ticks: 0 } });
-        expect(s.effects.effect_greater_slime_moves.statements[0].payload.effectId).toBe('effect_venom');
+        expect(acidSpit(s.tokens).effectId).toBe('effect_venom');
         expect(JSON.stringify([s.tokens, s.items, s.effects])).not.toContain('effect_poison');
         // The library keeps its order: Venom sits where Poison sat.
         const ids = Object.keys(s.effects);
