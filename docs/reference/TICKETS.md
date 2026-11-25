@@ -182,7 +182,7 @@ here.
 | T-700 | P2 | open | *Brief 870 C1. For: director.* **Coins and selling**: a coin count in the top bar, an item's coin worth from the CMS, Sell replaces Discard (always confirms), Sell selected in the Bank's select mode ([concept_gold_coins.md](../active/concept_gold_coins.md)). | owner 2026-11-25 |
 | T-701 | P2 | open | *Brief 870 C2. For: director.* **Coins as a cost**: coin prices beside items on Shop Tokens, Foundations, Hall stars and settling; enemy coin drops; all 0 until the pack. | owner 2026-11-25 |
 | T-702 | P2 | open | *Brief 870 C3. For: director.* **The ledger prices coins**: item worth, enemy drops, coin costs rising with rank and distance, coins in the pace checks. | owner 2026-11-25 |
-| T-703 | P2 | open | *For: content agent, after 870 C3.* **The coin pack**: the cost curve, item worth overrides, enemy coin drops, which prices ask coins. | owner 2026-11-25 |
+| T-703 | P2 | open | *For: content agent, after 870 C3.* **The coin pack**: the cost curve, item worth overrides, enemy coin drops, which prices ask coins, and the coin building (more coins from enemies and Hideouts in reach); coins in camps' steal tables once 810 K4 lands. | owner 2026-11-25 |
 
 ### Code review round 4 (triaged 2026-11-07)
 

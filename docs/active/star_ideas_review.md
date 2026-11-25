@@ -166,5 +166,7 @@ Not raised again unless the owner brings them back.
 3. ~~**Events**~~ (landings and buffs done 2026-11-12: [concept_events.md](concept_events.md), brief 640): what an Event is (a short-lived special Token), how often,
    what it gives, and how Stars tilt them. Weather, the merchant and the
    fallen star are the first examples.
+*Coins (owner 2026-11-25, [concept_gold_coins.md](concept_gold_coins.md)): no coin stars; one coin building in reach.*
+
 4. **Limes on the journey** (smaller): Limes following the guild and
    wandering the mat, maybe with a buff.

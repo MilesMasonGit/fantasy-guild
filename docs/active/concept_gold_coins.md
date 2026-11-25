@@ -45,6 +45,15 @@ October (slice 2.1, "Guild Hall upgrades cost items, not gold"); this brings coi
    between tabs) gains **Sell selected**, one confirm with the total. It existed before gold left
    (the old bulk sell in `BankTab.jsx`).
 
+## Stars and buildings (owner 2026-11-25)
+
+11. **No coin stars**: no Hall star raises sale prices, coin drops or lowers coin costs. Coins stay a
+    clean measure of profit.
+12. **One coin building** (the content agent names it, a Counting House or similar): **enemies
+    defeated in its reach drop more coins, and a Hideout in its reach steals more coins**. One building
+    effect, big and in reach like the others.
+13. **Crime steals coins too**: a camp's steal table (brief 810 K4) can hold coins beside goods.
+
 ## Seeing coins
 
 10. **A coin count in the top bar** (owner), with a coin icon, in the space the Token count and Upkeep

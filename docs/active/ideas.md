@@ -251,8 +251,8 @@ mods via the CMS after release.
   owner's marks on 117 Star ideas and four takeaways (families with
   per-target versions; effect icons on the Token card; Stars tiny and global
   vs Buildings big and in reach; an Events session) →
-  [star_ideas_review.md](star_ideas_review.md). Needs planning sessions:
-  Stars vs Buildings, effect icons, Events, Limes on the journey.
+  [star_ideas_review.md](star_ideas_review.md). Stars vs Buildings, effect icons and Events
+  were done 2026-11-11/12 (briefs 600, 620, 630, 640); only **Limes on the journey** is left.
 
 - **The detail pass** (UI and UX, section by section): [concept_detail_pass.md](concept_detail_pass.md).
 - **The content roadmap** (every item, skill, recipe and enemy, so art is known in advance):
