@@ -263,12 +263,12 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const s = supplyOf(itemId, BEFORE_HALL, cap).perHour;
         return s > 0 ? 1 / s : Infinity;
     };
-    /** Bare hero-hours to have one of a Token: free where the camp or a Region places it, else its price and its build. */
+    /** Bare hero-hours to have one of a Token: free where the camp or a Region places it (or it drifts in), else its price and its build. */
     const costHours = (key, cap) => {
         const at = reach.get(key);
         if (!at?.rule) return Infinity;
         const rule = at.rule;
-        if ([HOW.STARTER_CAMP, HOW.WORLD, HOW.HALL, HOW.SPAWN, HOW.GROW, HOW.REGROW].includes(rule.how)) return 0;
+        if ([HOW.STARTER_CAMP, HOW.WORLD, HOW.HALL, HOW.SPAWN, HOW.GROW, HOW.REGROW, HOW.ARRIVE, HOW.EVENT].includes(rule.how)) return 0;
         if (rule.how === HOW.SHOP) return sum(rule.inputs.map(i => i.quantity * unitHours(parseKey(i.key).id, cap)));
         if (rule.how === HOW.CRAFT) {
             const recipe = rates.recipes[parseKey(rule.via).id];
@@ -478,12 +478,13 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             // A fishing spot's catch is its own pool's, where the spot stands; a fixed water's, its best pool's.
             const own = rule.pathVia ? rule.pool?.key : null;
             const pools = works.filter(w => w.target.token === id && w.target.pool && (!own || w.target.pool === own));
-            // The level the fish asks, where it is above the pool's own gate: the hero fishes at it.
+            // The hero fishes at the level the fish asks, or the pool's lowest fish's if that is higher:
+            // a water's own gate may be under every fish it holds, and no catch lands there.
             const asks = rule.gates.reduce((top, g) => Math.max(top, g.level), 0);
             let best = done(Infinity, 'no pool catches it');
             for (const w of pools) {
-                const gate = profiles.contextOf(w.target).gate ?? 1;
-                const r = firstOf(workAt(w, profile, Math.max(cap, w.tier ?? cap), asks > gate ? asks : null), give.key);
+                const level = Math.max(asks, profiles.contextOf(w.target).gate ?? 1);
+                const r = firstOf(workAt(w, profile, Math.max(cap, w.tier ?? cap), level > 1 ? level : null), give.key);
                 if (r.hours < best.hours) best = r;
             }
             return best;

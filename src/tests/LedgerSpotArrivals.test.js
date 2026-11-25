@@ -143,6 +143,24 @@ describe('its rate: how often a spot arrives and how long it stays', () => {
         expect(r.cyclesPerHour).toBeCloseTo(3600000 * 12.5 / (stay + 45 * 60000));
     });
 
+    it('a spot-rate raiser among its supports brings them that much more often, its reach taken to cover the water', () => {
+        const c = spotContent();
+        c.tokens.token_chum = { id: 'token_chum', name: 'Chum Station', tokenType: 'buff', uses: null, config: null, spotRate: { percent: 100 } };
+        const b = buildRateBook(c);
+        const raised = b.rateOf({ token: 'token_spot', pool: poolOf(0) }, { supports: ['token_chum'] });
+        // One every 3 minutes, 25 catches each: 500 an hour, under the hero's 600.
+        expect(raised.cyclesPerHour).toBeCloseTo(500);
+        expect(raised.factors.find(f => f.id === 'support:token_chum')).toMatchObject({ on: true, axes: ['spotRate'] });
+        expect(b.rateOf({ token: 'token_spot', pool: poolOf(0) }, { supports: ['token_chum'], off: ['support:token_chum'] }).cyclesPerHour).toBeCloseTo(250);
+        expect(b.rateOf({ token: 'token_spot', pool: poolOf(0) }, { supports: [{ id: 'token_chum', distant: true }] }).cyclesPerHour).toBeCloseTo(250);
+        // Standing in the camp, Maxed builds it beside the spots.
+        c.starterCamp.tokens.push({ typeId: 'token_chum', x: 9, y: 0 });
+        const pace = buildPace(c, buildLedger(c), null);
+        const maxed = pace.rateAt({ token: 'token_spot', pool: poolOf(0) }, PROFILE.MAXED);
+        expect(maxed.chosen.map(x => x.id)).toContain('token_chum');
+        expect(maxed.items.item_spot_shrimp).toBeCloseTo(500);
+    });
+
     it('arriving faster than a hero fishes, the hero is the limit', () => {
         const r = buildRateBook(spotContent({ spot: { everyMinutes: 1 } })).rateOf({ token: 'token_spot', pool: poolOf(0) });
         expect(r).toMatchObject({ limitedBy: LIMIT.HERO });
@@ -157,6 +175,14 @@ describe('its rate: how often a spot arrives and how long it stays', () => {
         expect(Number.isFinite(pace.pathOf(itemKey('item_grilled_shrimp'), PROFILE.TYPICAL).hours)).toBe(true);
         expect(Number.isFinite(pace.pathOf(itemKey('item_spot_pike'), PROFILE.TYPICAL).hours)).toBe(true);
         expect(pace.pathOf(itemKey('item_spot_pike'), PROFILE.TYPICAL).hours).toBeGreaterThan(pace.pathOf(itemKey('item_spot_perch'), PROFILE.TYPICAL).hours);
+    });
+
+    it('times a fish whose level is above its water\'s own: the hero fishes at the fish\'s level', () => {
+        const content = spotContent();
+        content.items.item_spot_perch.fish.level = 5;
+        const path = buildPace(content, buildLedger(content), null).pathOf(itemKey('item_spot_perch'), PROFILE.TYPICAL);
+        expect(path.waitsOn).toEqual({ skill: 'fishing', level: 5 });
+        expect(Number.isFinite(path.hours)).toBe(true);
     });
 });
 
@@ -178,6 +204,15 @@ describe('a spot kind an event lands', () => {
     it('not when its event lands it on dry ground only, or in a biome the place is not', () => {
         expect(buildLedger(withEvent({ e: { ...EVENTS.event_shoal, ground: ['grass'] } })).reachOf(tokenKey('token_spot')).tier).toBeNull();
         expect(buildLedger(withEvent({ e: { ...EVENTS.event_shoal, biomes: ['coast'] } })).reachOf(tokenKey('token_spot')).tier).toBeNull();
+    });
+
+    it('gives way, at the same tier, to a kind that drifts in by itself: that is the path', () => {
+        const c = withEvent({ e: { ...EVENTS.event_shoal, typeId: 'token_shoal' } });
+        const shoal = { ...structuredClone(SPOT), id: 'token_shoal', name: 'Shoal', spot: { ...SPOT.spot, everyMinutes: 0 } };
+        c.tokens = { token_shoal: shoal, ...c.tokens, token_spot: { ...c.tokens.token_spot, spot: SPOT.spot } };
+        const l = buildLedger(c);
+        expect(l.reachOf(spotPoolKey('token_shoal', poolOf(0)))).toMatchObject({ tier: 0, how: HOW.EVENT });
+        expect(l.pathOf(itemKey('item_spot_shrimp'))).toBe('Raw Shrimp ← Fishing Spot, meadow (Fishing 1) ← drifts in on the water by itself');
     });
 
     it('is rated by the event clock: its share of the events, the next a whole wait after it goes', () => {

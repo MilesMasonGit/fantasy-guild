@@ -12,7 +12,7 @@ import {
 } from '../../../../src/config/registries/tokenConstants.js';
 import { neededToolOf, toolOf, toolMeets, toolItemFor, takesLure } from '../../../../src/config/registries/toolKinds.js';
 import { hasCatchPools, catchPoolsOf, poolKeyOf } from '../../../../src/config/registries/catchPools.js';
-import { spotOf, arrivesByItself } from '../../../../src/config/registries/fishingSpots.js';
+import { spotOf, arrivesByItself, spotRateOf } from '../../../../src/config/registries/fishingSpots.js';
 import { normaliseEventTable, isRunnable } from '../../../../src/config/eventTable.js';
 import { lureOf, baitSavingOf, baitSpent, fishLevel, fishCycleMs, fishBait } from '../../../../src/config/registries/fishRules.js';
 import { rareTableOf, rareEntryChances } from '../../../../src/config/registries/rareTables.js';
@@ -660,7 +660,7 @@ function familyMembers(book, setup, skill) {
 function lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes, kind, skill) {
     if (kind === WORK.FIELD) return fieldLifecycle(book, def, recipe, cycleMs, setup, guild, notes, skill);
     if (kind === WORK.FIGHT) return fightLifecycle(book, def, setup);
-    if (kind === WORK.WATER && spotOf(def)) return spotLifecycle(book, def, cycleMs, notes);
+    if (kind === WORK.WATER && spotOf(def)) return spotLifecycle(book, def, cycleMs, setup, notes);
     if (kind === WORK.BUILD || kind === WORK.WATER) return { kind: LIFECYCLE.UNLIMITED, supplyPerHour: Infinity, used: new Set() };
     const ends = neverWearsOut(def) ? null : endTermsOf(def);
     const uses = neverWearsOut(def) ? null : (ends ? ends.life : (def.uses ?? null));
@@ -722,21 +722,34 @@ function lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes, kind, skil
  *   goes, and the spot is its share of the events that can land (each as if it fits), so its kind
  *   comes once in that many waits, the clock held while it stands.
  *
+ * A spot-rate raiser among the supports (`fishingSpots.spotRateOf`: a Chum Station) brings its kind
+ * that much more often, its reach taken to cover all the water the kind lands on: the most it can
+ * give, and what it gives on a small water such as the Starter Camp's pond. It never moves an event.
+ *
  * Read as a refill: `cycles` catches, then a rest, so one hero's catches an hour are those the
  * spots bring, at most the hero's own pace. ⚠️ Not read: how long a spot nobody works stays, which
- * a hero fishing as spots come never meets; a spot-rate raiser in reach, whose lift depends on how
- * much of the water its reach covers.
+ * a hero fishing as spots come never meets.
  */
-function spotLifecycle(book, def, cycleMs, notes) {
+function spotLifecycle(book, def, cycleMs, setup, notes) {
     const spot = spotOf(def);
     const cycles = spot.leaveChance > 0 ? 100 / spot.leaveChance : Infinity;
+    const used = new Set();
     let waitMs = null;
     let overlaps = false;
     let how = '';
     if (arrivesByItself(spot)) {
-        waitMs = spot.everyMs;
+        let raise = 0;
+        for (const raw of list(setup.supports)) {
+            const e = supportEntry(raw);
+            const percent = e && !e.distant && e.count > 0 ? spotRateOf(book.token(e.id)) : 0;
+            const id = `${FACTOR.SUPPORT}:${e?.id}`;
+            if (!(percent > 0) || isOff(setup, id, FACTOR.SUPPORT)) continue;
+            raise += e.count * percent / 100;
+            used.add(id);
+        }
+        waitMs = spot.everyMs / (1 + raise);
         overlaps = spot.most > 1;
-        how = `one arrives every ${Math.round(spot.everyMs / 60000 * 10) / 10} min on average${overlaps ? ', the next on its way while one is fished' : ', the next a whole wait after it goes'}`;
+        how = `one arrives every ${Math.round(waitMs / 60000 * 10) / 10} min on average${overlaps ? ', the next on its way while one is fished' : ', the next a whole wait after it goes'}`;
     } else {
         const total = book.events.reduce((n, e) => n + e.weight, 0);
         const share = total > 0 ? book.events.filter(e => e.typeId === def.id).reduce((n, e) => n + e.weight, 0) / total : 0;
@@ -752,7 +765,7 @@ function spotLifecycle(book, def, cycleMs, notes) {
     const stayMs = cycles * cycleMs;
     const restMs = overlaps ? Math.max(0, waitMs - stayMs) : waitMs;
     notes.assumptions.push({ source: def.id, what: 'arrivals', why: `a fishing spot: ${how}; it gives ${Math.round(cycles * 10) / 10} catches before it moves on` });
-    return { kind: LIFECYCLE.REFILL, cycles, restMs, members: 1, supplyPerHour: HOUR_MS * cycles / (stayMs + restMs), used: new Set() };
+    return { kind: LIFECYCLE.REFILL, cycles, restMs, members: 1, supplyPerHour: HOUR_MS * cycles / (stayMs + restMs), used: new Set(), raisedBy: used };
 }
 
 /**
@@ -1164,6 +1177,7 @@ function rateOf(book, target = {}, setup = {}) {
 
     const life = lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes, kind, skill);
     note(EFFECT_TYPES.GROW_TIME, life.used);
+    note('spotRate', life.raisedBy || []);
     note(EFFECT_TYPES.CROP_LOAD, life.kind === LIFECYCLE.REFILL && kind === WORK.FIELD ? life.used : []);
     const camp = campOfSetup(book, setup, skill);
     if (camp && life.members > 1) note('family', [`${FACTOR.SUPPORT}:${camp.id}`]);

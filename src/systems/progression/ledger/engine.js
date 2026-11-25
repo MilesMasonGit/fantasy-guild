@@ -383,6 +383,10 @@ export function buildWorld(content = {}) {
         }
     }
 
+    // A fishing spot's catches are added after the loop, the kinds that arrive by themselves first:
+    // where two kinds give a fish at the same tier, the one that drifts in every few minutes is the
+    // path, not one an event lands now and then (reach keeps the first of equals).
+    const spotCatches = [];
     for (const [id, def] of Object.entries(tokens)) {
         const self = tokenKey(id);
         const isEnemy = isObject(def.enemy);
@@ -466,6 +470,7 @@ export function buildWorld(content = {}) {
             const ownMs = finite(Number(def.config?.cycleTimeMs), null);
             const ownLevel = Math.max(1, Math.floor(finite(Number(def.config?.skillRequired), 1)));
             const isSpot = spotOf(def) !== null;
+            const put = isSpot ? (rule) => spotCatches.push({ rule, first: arrivesByItself(spotOf(def)) }) : add;
             catchPoolsOf(def).forEach((pool, i) => {
                 const total = pool.catches.reduce((sum, c) => sum + c.weight, 0);
                 const asked = total > 0 ? pool.catches.reduce((sum, c) => sum + c.weight * fishBait(items[c.itemId]), 0) / total : 1;
@@ -481,7 +486,7 @@ export function buildWorld(content = {}) {
                     if (!byLevel.has(level)) byLevel.set(level, []);
                     byLevel.get(level).push(c);
                 }
-                [...byLevel].sort((a, b) => a[0] - b[0]).forEach(([level, catches], n) => add({
+                [...byLevel].sort((a, b) => a[0] - b[0]).forEach(([level, catches], n) => put({
                     id: `catch:${id}:${i}${byLevel.size > 1 ? `:${level}` : ''}`, how: HOW.CATCH, via: self,
                     ...(isSpot ? { pathVia: stands } : {}), needs: [stands, ...needKeys(bait)], inputs: bait,
                     tool: noteNeed({ kind: pool.tool, minTier: 1 }), gates: gate(def.config?.skill, level), cycleMs,
@@ -506,6 +511,8 @@ export function buildWorld(content = {}) {
             });
         }
     }
+
+    for (const { rule } of [...spotCatches.filter(c => c.first), ...spotCatches.filter(c => !c.first)]) add(rule);
 
     // Recipes: offered by a working station of their skill and kind, or built on a Foundation of their kind.
     // ⚠️ A station is gated by its own skill, level and tool; the recipe's level gates only picking it.
