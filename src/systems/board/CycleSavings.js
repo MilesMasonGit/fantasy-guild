@@ -32,6 +32,16 @@ export function rollChance(chance, random = Math.random) {
 }
 
 /**
+ * Whether a roll at `chance` percent hits, sure at 100 or more: no draw at a sure chance nor at
+ * none, one between. The gathering signature perks roll this way, so a perk at its own 100 moves
+ * the random stream not at all.
+ */
+export function sureOrRolled(chance, random = Math.random) {
+    if (!(chance > 0)) return false;
+    return chance >= 100 || random() * 100 < chance;
+}
+
+/**
  * Whether a rule-driven chance on `type` hits, for Token `instanceId` narrowed to `category`:
  * {@link chanceOf}, then rolled once. No chance, no draw.
  */
@@ -48,14 +58,17 @@ export function rollRefresh(instanceId, skill) {
 }
 
 /**
- * NEVER_RUNS_OUT (a shrine's blessing): whether Token `instanceId`'s work of `skill` spends none of
- * its own charges (a Field, none of its load), whatever the cycle. On or off, so it draws nothing.
- * ⚠️ The one reader of the blessing: `BoardRunner.completeCycle` skips the cycle's spend on it, and
- * with the spend the chance to end of a source that ends by chance (`endRoll.endsNow`), so no
- * other place needs to ask.
+ * NEVER_RUNS_OUT (a shrine's blessing, the Motherlode perk): whether this cycle of `skill` at Token
+ * `instanceId` spends none of its own charges (a Field, none of its load), failed or not. A chance
+ * from every scope (a Token in reach, the guild's stars, its hero's perks and gear), rolled by
+ * {@link sureOrRolled}: sure at 100, one draw below, none with no rule.
+ * ⚠️ The one reader of the effect: `BoardRunner.completeCycle` skips the cycle's spend on it, and
+ * with the spend the chance to end of a source that ends by chance (`endRoll.endsNow`) and a ripe
+ * Field's harvest, so no other place needs to ask. A rule's own charge cost (`TriggerSystem`) is no
+ * cycle's spend and is not kept.
  */
 export function neverRunsOut(instanceId, skill) {
-    return chanceOf(instanceId, EFFECT_TYPES.NEVER_RUNS_OUT, skill) > 0;
+    return sureOrRolled(chanceOf(instanceId, EFFECT_TYPES.NEVER_RUNS_OUT, skill));
 }
 
 /**

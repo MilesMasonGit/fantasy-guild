@@ -6,7 +6,6 @@ import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import { getTokenType, rollOutputQuantity, outputRange, tokenName } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as BoardState from './BoardState.js';
-import * as SpriteLayer from './SpriteLayer.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as RecipeResolver from './RecipeResolver.js';
@@ -20,6 +19,7 @@ import * as Flags from './Flags.js';
 import * as HeroMotion from './HeroMotion.js';
 import * as EnemyMotion from './EnemyMotion.js';
 import * as Groves from './Groves.js';
+import * as GroveFelling from './GroveFelling.js';
 import * as TimedChanges from './TimedChanges.js';
 import * as WorkCheck from './WorkCheck.js';
 import * as Foundations from './Foundations.js';
@@ -266,25 +266,21 @@ function landOutputs(made, { doubled, giant }) {
     const times = (doubled ? 2 : 1) * (giant ? OutputRules.GIANT_HARVEST_TIMES : 1);
     let giantLanded = false;
 
-    // One item line, once its chance has landed: the authored range rolled, then the cycle's rules.
-    // Every drop lands this way, the rare table's too. `note` hears the sprite (for the twinkle).
+    // One item line, once its chance has landed: the authored range rolled, then the cycle's rules
+    // (`OutputRules.landItemLine`). Every drop lands this way, the rare table's too. `note` hears the
+    // sprite (for the twinkle). A line naming no item pays nothing: the cycle still runs and still
+    // takes its inputs.
     const landLine = (output, note) => {
-        // Roll the authored range FIRST, then widen it, so a 1-5 output buffs a lucky cycle more
-        // than an unlucky one.
-        const rolled = OutputRules.widenYield(id, config.skill, rollOutputQuantity(output));
-        const widened = rolled * times;
-        // A chance that this one item comes out doubled, after everything else.
-        const quantity = !output.itemId ? widened : OutputRules.doubleItemDrop(id, output.itemId, widened);
-        if (quantity <= 0) return;
-
-        // An output names a Token or an item. One that names neither pays nothing: the cycle still
-        // runs and still takes its inputs.
-        if (output.itemId) {
-            note(SpriteLayer.addSprite('item', output.itemId, quantity, id));
-            produced.push(output.itemId);
-            if (io.steal) stolen.push({ itemId: output.itemId, quantity });
-            giantLanded = giant;
+        const quantity = OutputRules.landItemLine(id, config.skill, output, times, note);
+        if (!quantity) return;
+        produced.push(output.itemId);
+        // One line an item, so an Echo's second landing (or a rare find of a line's item) adds up.
+        if (io.steal) {
+            const same = stolen.find(s => s.itemId === output.itemId);
+            if (same) same.quantity += quantity;
+            else stolen.push({ itemId: output.itemId, quantity });
         }
+        giantLanded = giant;
     };
 
     // A build makes its Token by becoming it (below), never as a sprite.
@@ -501,10 +497,12 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // ⚠️ Nothing near the Token pays for this cycle: help is free (owner, 2026-10-24). A support or
     // a context Token never wears out, and a gathering node that helps its neighbours spends its
     // charges only on its own gathering (`Charges.planContextCharges`, `wearRule.js`).
-    // Can't Run Out, a shrine's blessing: nothing is spent, failed or not, and Refresh is not drawn.
+    // Can't Run Out (a shrine's blessing, the Motherlode perk): on a hit of its chance nothing is
+    // spent, failed or not, and Refresh is not drawn.
     // ⚠️ Not spending is also what keeps a source that ends by chance from drawing its end: that roll
     // lives where a charge is spent (`Charges.applyDelta`) and where a ripe Field is harvested
-    // (`Fields.harvested`, which a refreshed cycle leaves before it rolls).
+    // (`Fields.harvested`, which a refreshed cycle leaves before it rolls). So a tree it keeps never
+    // falls, and Grove Felling below never hears of it.
     // Refresh: a cycle that succeeded and would spend something may spend nothing. A failed cycle
     // still burns its charge and never rolls, and neither does one with nothing to spend.
     const isField = Fields.isField(def);
@@ -512,13 +510,15 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     const unending = spends && CycleSavings.neverRunsOut(id, config.skill);
     const refreshed = unending || (!failed && spends
         && CycleSavings.rollRefresh(id, config.skill));
-    if (!refreshed) Charges.commitPlan(chargePlan, { heroId });
+    const ended = refreshed ? [] : Charges.commitPlan(chargePlan, { heroId });
     // Used up just now: its rest began when this cycle ended, `overMs` before the tick's end.
     Respawn.restBeganEarlier(instance, overMs);
+    // A tree felled by a cycle that worked may fell the touching trees of its kind (Grove Felling).
+    if (!failed && heroId && ended.includes(id)) GroveFelling.afterFall(instance, def, io, heroId, config.skill);
 
     // A Field spends one harvest of its load; the last sows its crop again, growing from the moment
     // this cycle ended (`overMs` into the tick), or stops it without a seed (`Fields.js`).
-    if (isField) Fields.harvested(instance, def, { overMs, refreshed });
+    if (isField) Fields.harvested(instance, def, { overMs, refreshed, heroId });
 
     // The board's universal unit of work. One kill counts as one cycle too, so combat feeds this
     // exactly as production does.

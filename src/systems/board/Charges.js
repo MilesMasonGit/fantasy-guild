@@ -89,6 +89,22 @@ export function endChanceOf(instance) {
 }
 
 /**
+ * End a Token that runs out by chance now, with no roll: its whole life spent, so it rests (a tree
+ * falls to its Stump). For a rule that fells it outright (`GroveFelling`). False, and nothing done,
+ * for a Token that does not run out by chance or is already resting.
+ */
+export function spendLife(instance, { heroId = null } = {}) {
+    if (!instance || !(instance.usesRemaining > 0) || endChanceOf(instance) == null) return false;
+    const applied = -instance.usesRemaining;
+    instance.usesRemaining = 0;
+    EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
+        instanceId: instance.id, delta: applied, remaining: 0, typeId: instance.typeId
+    });
+    destroyToken(instance, { heroId });
+    return true;
+}
+
+/**
  * Whether this Token can pay `amount` charges. Unlimited pays anything; one that runs out by chance
  * pays anything while it lasts.
  */
@@ -167,7 +183,8 @@ export function destroyToken(instance, { heroId = null, exhaustedBy = heroId } =
  * Move a Token's charge pool by `delta` and destroy it if that empties it.
  * - Negative spends, floored at 0. Callers gate first (`canAfford`); the floor is there so a
  * mis-gated caller cannot drive a pool negative. On a Token that runs out by chance it is one roll
- * for the charges spent: a hit spends all it holds (it rests), a miss spends nothing.
+ * for the charges spent: a hit spends all it holds (it rests), a miss spends nothing. (Can't Run Out
+ * is read before a cycle spends at all, `CycleSavings.neverRunsOut`, so it never reaches here.)
  * - Positive restores, ceilinged at `maxChargesOf`: it can never exceed the Token type's starting
  * charges, so a `+3` on a Token one charge below full grants one.
  * - Zero, and anything on an unlimited Token, changes nothing and publishes nothing.

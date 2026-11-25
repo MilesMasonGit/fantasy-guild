@@ -255,11 +255,15 @@ describe('the palette declares both, rather than inferring them', () => {
             EFFECT_TYPES.REFRESH,
             // Giant Harvest's (`OutputRules.rollGiantHarvest`) too, a gathering skill only.
             EFFECT_TYPES.GIANT_HARVEST,
-            // Faith's blessings: Can't Run Out (`CycleSavings.neverRunsOut`) and Echo
-            // (`CycleSavings.rollEcho`), both the Token's own work skill.
+            // Faith's blessings: Can't Run Out (`CycleSavings.neverRunsOut`, also the Motherlode
+            // perk) and Echo (`CycleSavings.rollEcho`), both the Token's own work skill.
             EFFECT_TYPES.NEVER_RUNS_OUT, EFFECT_TYPES.ECHO,
             // Quiet's (`Hideouts.caughtChanceAt`) the Hideout's skill, Crime only.
-            EFFECT_TYPES.QUIET
+            EFFECT_TYPES.QUIET,
+            // The other gathering signature perks' readers pass the worked Token's skill: Free
+            // Replant (`Fields.harvested`), Grove Felling (`GroveFelling.afterFall`) and Better Catch
+            // (`Fishing.catchOf`).
+            EFFECT_TYPES.FREE_REPLANT, EFFECT_TYPES.GROVE_FELLING, EFFECT_TYPES.BETTER_CATCH
         ]));
     });
 

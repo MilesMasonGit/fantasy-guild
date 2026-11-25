@@ -23,7 +23,7 @@ import { xpForLevel } from '../../utils/XPCurve.js';
 /**
  * Made in memory for this check only (never written to `data/`, gone on reload):
  * - QA Shrine: a Faith shrine lit at most 90 s, blessing the Tokens in its reach with Can't Run Out
- *   and Echo 50 %; it burns QA Wood Offerings (1 Oak Wood each, 1 s to offer, 20 s lit apiece), so it
+ *   100 % and Echo 50 %; it burns QA Wood Offerings (1 Oak Wood each, 1 s to offer, 20 s lit apiece), so it
  *   is lit before the vein's first cycle ends;
  * - QA Shrine Vein: Copper Ore, 3 s a cycle, 3 charges, so unblessed it is gone in three cycles.
  * A QA Priest (Faith 10) tends the shrine and a QA Shrine Miner (Mining 10) works the vein, with
@@ -56,7 +56,7 @@ function register() {
             config: { skill: 'faith', skillRequired: 1, cycleTimeMs: 1000, xp: 0, inputs: [], outputs: [] },
             statements: [
                 { id: `stm_${SHRINE}_works`, keyword: 'station', payload: { skill: 'faith', stationKind: 'shrine' } },
-                rule(`stm_${SHRINE}_unending`, { type: EFFECT_TYPES.NEVER_RUNS_OUT, bucket: 'flat', value: 1 }),
+                rule(`stm_${SHRINE}_unending`, { type: EFFECT_TYPES.NEVER_RUNS_OUT, bucket: 'flat', value: 100 }),
                 rule(`stm_${SHRINE}_echo`, { type: EFFECT_TYPES.ECHO, bucket: 'flat', value: 50 })
             ]
         },

@@ -133,7 +133,7 @@ registerTokenTypes({
         id: 'fbg_jinx', name: 'Jinx', tokenType: 'buff', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
         requiresHero: false, statements: [bless(EFFECT_TYPES.FAIL_CHANCE, 100)]
     },
-    fbg_nature: shrine('fbg_nature', [bless(EFFECT_TYPES.NEVER_RUNS_OUT, 1)]),
+    fbg_nature: shrine('fbg_nature', [bless(EFFECT_TYPES.NEVER_RUNS_OUT, 100)]),
     fbg_echo: shrine('fbg_echo', [bless(EFFECT_TYPES.ECHO, 100)])
 });
 

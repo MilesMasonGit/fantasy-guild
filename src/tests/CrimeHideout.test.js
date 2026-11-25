@@ -66,6 +66,7 @@ const BARE_CAMP = 'fixture_ch_bare_camp';
 const BOSS = 'fixture_ch_boss';
 const BOSS_CAMP = 'fixture_ch_boss_camp';
 const FOREST = 'fixture_ch_forest';
+const ECHO_SHRINE = 'fixture_ch_echo_shrine';
 const TREE = 'fixture_ch_tree';
 
 const THEFT_MS = 2000;
@@ -129,7 +130,18 @@ function registerFixtures() {
             sprite: 't_tree_oak', requiresHero: true,
             config: { skill: 'forestry', skillRequired: 1, cycleTimeMs: 4000, xp: 1, inputs: [], outputs: [] }
         },
-        [FOREST]: camp(FOREST, 'Fixture Forest', TREE)
+        [FOREST]: camp(FOREST, 'Fixture Forest', TREE),
+        // A Faith shrine whose Echo (100) reaches the Hideout once it is lit.
+        [ECHO_SHRINE]: {
+            id: ECHO_SHRINE, name: 'Fixture Echo Shrine', tokenType: 'station', rarity: 'common', theme: 'fixture', uses: null,
+            sprite: 't_shrine_forest', requiresHero: true, shrine: { maxLitMs: 600_000 },
+            config: { skill: 'faith', skillRequired: 1, cycleTimeMs: 2000, xp: 0, inputs: [], outputs: [] },
+            statements: [
+                { id: `stm_${ECHO_SHRINE}_works`, keyword: KEYWORD.STATION, payload: { skill: 'faith', stationKind: 'shrine' } },
+                { id: `stm_${ECHO_SHRINE}_echo`, keyword: KEYWORD.PROVIDES, to: { mode: 'all', value: '' }, reach: 'nearby',
+                    payload: { type: EFFECT_TYPES.ECHO, bucket: 'flat', value: 100 } }
+            ]
+        }
     });
 }
 
@@ -345,6 +357,25 @@ describe('each cycle its hero steals, and the enemy stays', () => {
         expect(heard).toHaveLength(1);
         expect(heard[0]).toMatchObject({ instanceId: hide.id, campId: goblins.id, heroId, caught: false, guardId: null });
         expect(heard[0].items).toEqual(expect.arrayContaining([{ itemId: INGOT, quantity: 2 }, { itemId: NAILS, quantity: 1 }, { itemId: COIN_PURSE, quantity: 1 }]));
+    });
+
+    it('an Echo repeats a theft for free: the table lands again with its XP, and is said once, added up', () => {
+        const { hide } = build({ typeId: NEVER_CAUGHT });
+        const shrine = fixtures.placeAt(ECHO_SHRINE, HIDEOUT_AT.x - 160, HIDEOUT_AT.y);
+        shrine.shrine = { litMs: 600_000 };
+        TileModifiers.rebuildAll();
+        const xp0 = GameState.state.heroes[0].skills.crime.xp;
+        const heard = [];
+        const off = EventBus.subscribe(BOARD_EVENTS.THEFT, (p) => heard.push(p));
+        step(THEFT_MS + 100);
+        off();
+        expect(heard).toHaveLength(1);
+        expect(heard[0].instanceId).toBe(hide.id);
+        expect(heard[0].items).toEqual([{ itemId: INGOT, quantity: 4 }, { itemId: NAILS, quantity: 2 }, { itemId: COIN_PURSE, quantity: 2 }]);
+        expect(lootOf(INGOT)).toBe(4);
+        expect(lootOf(NAILS)).toBe(2);
+        expect(lootOf(COIN_PURSE)).toBe(2);
+        expect(GameState.state.heroes[0].skills.crime.xp - xp0).toBe(14);
     });
 
     it('thieves and fighters share a camp: a theft takes nothing from the camp\'s count', () => {

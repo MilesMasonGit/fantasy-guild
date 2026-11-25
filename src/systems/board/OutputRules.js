@@ -6,6 +6,7 @@ import * as SupportLinks from './supportLinks.js';
 import * as CycleSavings from './CycleSavings.js';
 import { EFFECT_TYPES, GIANT_HARVEST_TIMES, GIANT_HARVEST_SKILLS } from '../effects/constants.js';
 import { getHeroCombatStyle } from '../combat/CombatFormulas.js';
+import { rollOutputQuantity } from '../../config/registries/tokenRegistry.js';
 
 /**
  * The output rules a finished cycle pays through: a work cycle (`BoardRunner`) and a kill, a combat
@@ -86,6 +87,25 @@ export function roundUp(scaled) {
  */
 export function widenYield(instanceId, skill, rolled) {
     return roundUp(Math.max(0, TileModifiers.resolveAxis(instanceId, EFFECT_TYPES.YIELD, rolled, skill)));
+}
+
+/**
+ * One item line of a work cycle's drops, once its chance has landed: the authored range rolled
+ * FIRST, then widened by Yield (so a 1-5 output buffs a lucky cycle more than an unlucky one), then
+ * `times` over (the cycle's Double Loot and Giant Harvest), then Double Item. The rules resolve at
+ * Token `instanceId`; the sprite lands from `landAt` (that Token unless named), and `note` hears it.
+ * A line naming no item lands nothing (its Yield and rounding still draw, as they always have).
+ *
+ * @returns {number} how many landed (a theft says it, `Thefts.afterTheft`); 0 when nothing did
+ */
+export function landItemLine(instanceId, skill, output, times = 1, note = null, landAt = instanceId) {
+    const rolled = widenYield(instanceId, skill, rollOutputQuantity(output));
+    const widened = rolled * times;
+    const quantity = !output.itemId ? widened : doubleItemDrop(instanceId, output.itemId, widened);
+    if (quantity <= 0 || !output.itemId) return 0;
+    const sprite = SpriteLayer.addSprite('item', output.itemId, quantity, landAt);
+    note?.(sprite);
+    return quantity;
 }
 
 /**

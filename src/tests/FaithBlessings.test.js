@@ -24,7 +24,7 @@ import { renderStatement, effectParts } from '../systems/effects/statementText.j
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
-import { getPaletteEntry } from '../config/registries/modifierPalette.js';
+import { getPaletteEntry, MODIFIER_SHAPES } from '../config/registries/modifierPalette.js';
 import { effectTag } from '../config/registries/effectWords.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { withoutShippedPerks } from './fixtures/noPerks.js';
@@ -42,8 +42,9 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /**
  * Faith's blessings (T-705), the effects no building gives, carried by a shrine on the Tokens in its
  * reach while it is lit:
- * - **Can't Run Out** (`NEVER_RUNS_OUT`): a Token it reaches spends none of its charges on its own
- *   work, and a Field none of its load, failed cycles included, so it never runs out.
+ * - **Can't Run Out** (`NEVER_RUNS_OUT`): a chance a Token it reaches spends none of its charges on
+ *   its own work, and a Field none of its load, failed cycles included; at 100 it never runs out.
+ *   (One effect with the Motherlode perk, whose chance below 100 is `Motherlode.test.js`'.)
  * - **Echo** (`ECHO`): a chance a finished work cycle repeats at once, for free: its outputs again and
  *   its XP again, with no inputs, charges, load or tool wear, and no second cycle for the rules.
  * Blessings add up: two shrines' Echoes are one chance of their sum.
@@ -101,8 +102,8 @@ registerTokenTypes({
     fb_vein: vein('fb_vein'),
     fb_jinx: { id: 'fb_jinx', name: 'Jinx', tokenType: 'buff', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature', requiresHero: false,
         statements: [bless(EFFECT_TYPES.FAIL_CHANCE, 100)] },
-    fb_nature: shrine('fb_nature', [bless(EFFECT_TYPES.NEVER_RUNS_OUT, 1)]),
-    fb_nature_forestry: shrine('fb_nature_forestry', [bless(EFFECT_TYPES.NEVER_RUNS_OUT, 1, { category: 'forestry' })]),
+    fb_nature: shrine('fb_nature', [bless(EFFECT_TYPES.NEVER_RUNS_OUT, 100)]),
+    fb_nature_forestry: shrine('fb_nature_forestry', [bless(EFFECT_TYPES.NEVER_RUNS_OUT, 100, { category: 'forestry' })]),
     fb_echo: shrine('fb_echo', [bless(EFFECT_TYPES.ECHO, 100)]),
     fb_echo_half: shrine('fb_echo_half', [bless(EFFECT_TYPES.ECHO, 50)]),
     fb_echo_none: shrine('fb_echo_none', [bless(EFFECT_TYPES.ECHO, 0)]),
@@ -232,15 +233,16 @@ describe('Can\'t Run Out: a lit shrine\'s nodes never run out', () => {
         }
     });
 
-    it('is offered on a rule with no number: it reads as what it does', () => {
+    it('is offered as a chance, a blessing, and reads with its number', () => {
         const entry = getPaletteEntry(EFFECT_TYPES.NEVER_RUNS_OUT);
-        expect(entry).toMatchObject({ label: 'Can\'t Run Out', flag: true });
+        expect(entry).toMatchObject({ label: 'Can\'t Run Out', shape: MODIFIER_SHAPES.PROC, blessing: true });
+        expect(entry.flag).toBeFalsy();
         expect(paletteForKeyword(KEYWORD.PROVIDES, false, { onToken: true }).map(e => e.type)).toContain(EFFECT_TYPES.NEVER_RUNS_OUT);
-        const payload = { type: EFFECT_TYPES.NEVER_RUNS_OUT, bucket: 'flat', value: 1 };
-        expect(effectTag(entry, payload).text).toBe('Can\'t Run Out');
+        const payload = { type: EFFECT_TYPES.NEVER_RUNS_OUT, bucket: 'flat', value: 100 };
+        expect(effectTag(entry, payload).text).toBe('Can\'t Run Out 100%');
         expect(renderStatement({ keyword: KEYWORD.PROVIDES, reach: 'nearby', to: { mode: 'all', value: '' }, payload }))
-            .toBe('Can\'t Run Out on every nearby Token.');
-        expect(effectParts({ keyword: KEYWORD.PROVIDES, payload })).toBeNull();
+            .toBe('Can\'t Run Out 100% on every nearby Token.');
+        expect(effectParts({ keyword: KEYWORD.PROVIDES, payload })).not.toBeNull();
     });
 });
 

@@ -24,7 +24,7 @@ import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
 /**
  * Brief 810 K3 in the CMS: a Token's Shrine block (the most it can be lit) and an offering recipe's
  * Offering row (how long one keeps the shrine lit), each carried through Recalculate, Sync and a
- * reload exactly as written; Can't Run Out authored with no number; the content audit's lines on
+ * reload exactly as written; Can't Run Out authored as a chance; the content audit's lines on
  * shrines, offerings and blessings worn by something that is not a shrine.
  *
  * ⚠️ No real workspace: the store's persistence is a no-op here (TESTING, "The CMS").
@@ -66,7 +66,7 @@ const OFFERING_ITEM = 'item_oak_wood';
 const worksAsShrine = { id: 'stm_cms_shrine_works', keyword: 'station', payload: { skill: 'faith', stationKind: 'shrine' } };
 const nature = {
     id: 'stm_cms_shrine_nature', keyword: 'provides', to: { mode: 'all', value: '' }, reach: 'nearby',
-    payload: { type: EFFECT_TYPES.NEVER_RUNS_OUT, bucket: 'flat', value: 1 }
+    payload: { type: EFFECT_TYPES.NEVER_RUNS_OUT, bucket: 'flat', value: 100 }
 };
 
 /** A shrine Token and an offering it burns, in the store. */
@@ -169,16 +169,15 @@ describe('⭐ the Offering row on a recipe a shrine burns', () => {
     });
 });
 
-describe('Can\'t Run Out is authored with no number', () => {
-    it('its rule offers what it reaches, never an amount; picking it writes it on', () => {
+describe('Can\'t Run Out is authored as a chance', () => {
+    it('its rule offers an amount and what it reaches; picking it starts at no chance, as Echo does', () => {
         const ids = slotsOf(nature, { onToken: true }).map((s) => s.id);
-        expect(ids).not.toContain('value');
-        expect(ids).not.toContain('bucket');
+        expect(ids).toContain('value');
         expect(ids).toContain('category');
         const echo = { ...nature, payload: { type: EFFECT_TYPES.ECHO, bucket: 'flat', value: 10 } };
         const typeSlot = slotsOf(echo, { onToken: true }).find((s) => s.id === 'type');
-        expect(typeSlot.patch(EFFECT_TYPES.NEVER_RUNS_OUT)).toEqual({ payload: { type: EFFECT_TYPES.NEVER_RUNS_OUT, bucket: 'flat', value: 1 } });
-        expect(slotsOf(echo, { onToken: true }).map((s) => s.id)).toContain('value');
+        expect(typeSlot.patch(EFFECT_TYPES.NEVER_RUNS_OUT)).toEqual({ payload: { type: EFFECT_TYPES.NEVER_RUNS_OUT, bucket: 'flat', value: 0 } });
+        expect(typeSlot.patch(EFFECT_TYPES.ECHO)).toEqual({ payload: { type: EFFECT_TYPES.ECHO, bucket: 'flat', value: 0 } });
     });
 });
 

@@ -41,11 +41,11 @@
         "id": "effect_nature_blessing",
         "name": "Nature's Blessing",
         "statements": [
-          { "id": "stm_nature_blessing", "keyword": "provides", "payload": { "type": "NEVER_RUNS_OUT", "bucket": "flat", "value": 1 }, "chargeDelta": 0, "to": { "mode": "all", "value": "" }, "reach": "nearby", "target": null, "when": null, "upkeep": null }
+          { "id": "stm_nature_blessing", "keyword": "provides", "payload": { "type": "NEVER_RUNS_OUT", "bucket": "flat", "value": 100 }, "chargeDelta": 0, "to": { "mode": "all", "value": "" }, "reach": "nearby", "target": null, "when": null, "upkeep": null }
         ],
         "autoSyncId": true
       },
-      "note": "Can't Run Out on every nearby Token while the shrine is lit: veins, trees and Fields spend no charges (content_faith.md, Faith 1)"
+      "note": "Can't Run Out 100% on every nearby Token while the shrine is lit: veins, trees and Fields spend no charges (content_faith.md, Faith 1)"
     },
     {
       "op": "create",
