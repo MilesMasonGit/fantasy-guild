@@ -482,27 +482,6 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         EffectFeedback.echo(id, () => SupportLinks.firstSupportOf(id, EFFECT_TYPES.ECHO, config.skill));
     }
 
-    // `Applies`: a neighbour putting a status on the hero who just worked here. The same moment and
-    // the same rules as BONUS_DROP directly above: skipped on a failed cycle, and it needs a
-    // person, because a status has nowhere to live on a tile.
-    // ⚠️ Deliberately here rather than on a clock. A status is a stack applied at an instant, not a
-    // field that hangs in the air: reapplying one every tick would pin every DoT at maximum and
-    // never let a buff decay.
-    if (!failed && heroId) {
-        for (const application of TileModifiers.collectStatusApplications(id)) {
-            // `applyAt` already answers whether it rolled AND found somebody to land on, so the
-            // announcement follows the status rather than the attempt.
-            // ⚠️ Checked, then applied, then paid. `applyAt` rolls the chance internally, so paying
-            // up front would spend a potion on a roll that missed; paying without checking first
-            // could apply a status the hero cannot afford.
-            if (!HeroEffects.canPayLoadoutCost(application)) continue;
-            if (StatusApplication.applyAt(id, application)) {
-                CycleSavings.payItemRule(id, application);
-                EffectFeedback.announce(id, application);
-            }
-        }
-    }
-
     // Pay the plan built at the top of this function: the Token's own operational cost. Anything
     // that hits 0 is destroyed by `commitPlan`, which is also where `null`-means-unlimited is
     // honoured: `null` is the opposite of 0, not a large version of it.
