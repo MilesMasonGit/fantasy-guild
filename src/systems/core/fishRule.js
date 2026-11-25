@@ -2,7 +2,7 @@
 
 import { catchPoolsOf, poolFits, BAIT_FREE_TOOL } from '../../config/registries/catchPools.js';
 import { spotOf, arrivesByItself, RETIRED_WATER_TOKENS } from '../../config/registries/fishingSpots.js';
-import { lureOf } from '../../config/registries/fishRules.js';
+import { lureOf, badFishXp } from '../../config/registries/fishRules.js';
 import { takesLure, toolKindLabel } from '../../config/registries/toolKinds.js';
 import { isConsumableCategory } from '../../config/registries/equipmentConstants.js';
 import { BIOMES } from '../../config/biomeTerrain.js';
@@ -17,6 +17,7 @@ import { BIOMES } from '../../config/biomeTerrain.js';
  * - **One fish per lure per map**: in a Region of one biome, the spot kinds that arrive by
  *   themselves there could give two of one lure's fish, so the lure would not mean one fish.
  *   (A kind landed only by an event, the Fish Shoal, is not counted: it can come anywhere.)
+ * - **A catch's XP**: a fish's `xp` written as anything but a whole number of 0 or more.
  *
  * Pure: the caller hands in the Tokens and the items.
  *
@@ -72,6 +73,15 @@ export function fishFindings({ tokens = {}, items = {} } = {}) {
                     : `its lure names ${nameOf(fishId)}, which no water lands`);
             }
         }
+    }
+
+    for (const [key, item] of Object.entries(items || {})) {
+        if (!badFishXp(item)) continue;
+        const id = item?.id || key;
+        out.push({
+            entityType: 'Item', entityId: id, entityName: item?.name || id,
+            message: `its catch XP is "${item.fish.xp}": write a whole number of 0 or more, or leave it blank for the spot's own`
+        });
     }
 
     // One fish per lure per map, biome by biome.

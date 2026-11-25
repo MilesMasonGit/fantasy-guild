@@ -225,7 +225,7 @@ export function auditConnectivity(entities, solverRefusals = []) {
     });
   }
 
-  // Fishing's catch rules: a second Bait, two Trap catches on a water, a lure that never picks its fish, two of a lure's fish on one map (`fishRule.js`, as the boot audit says it).
+  // Fishing's catch rules: a second Bait, two Trap catches on a water, a lure that never picks its fish, two of a lure's fish on one map, a catch XP no catch can teach (`fishRule.js`, as the boot audit says it).
   for (const f of fishFindings({ tokens, items })) {
     issues.push({
       entityId: f.entityId,
