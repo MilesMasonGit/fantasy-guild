@@ -8,6 +8,7 @@ import { AnimationStudioModal } from './dev/AnimationStudioModal.jsx';
 import { PerfDevSection } from '../dev/perf/PerfDevSection.jsx';
 import { EventsDevSection } from '../dev/EventsDevSection.jsx';
 import { FaithDevSection } from '../dev/FaithDevSection.jsx';
+import { ScienceDevSection } from '../dev/ScienceDevSection.jsx';
 import { saveLiveMatToCms, DEFAULT_CMS_URL } from '../dev/starterCampDev.js';
 import {
     PICKER_ROWS, itemChoices, tokenChoices, filterByName, giveAndSay, dropAndSay, devBankEveryKind, devFillBank,
@@ -254,6 +255,8 @@ export const TestDashboard = /* @__PURE__ */ React.memo(() => {
                         <EventsDevSection />
 
                         <FaithDevSection />
+
+                        <ScienceDevSection />
 
                         <div className="space-y-1" data-testid="qa-tools" data-qa-group>
                             <div className={labelClass}>Tools</div>
