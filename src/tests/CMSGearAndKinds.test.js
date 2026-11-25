@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { asLoaded } from './fixtures/shippedAsLoaded.js';
 import React from 'react';
-import { render, cleanup, fireEvent, within, act } from '@testing-library/react';
+import { render, cleanup, fireEvent, within } from '@testing-library/react';
 
 import { useEntityStore } from '../../cms/src/stores/useEntityStore';
 import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
