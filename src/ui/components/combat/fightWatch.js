@@ -9,6 +9,7 @@ import { EFFECTS } from '../../../config/registries/effectRegistry.js';
 import { getEnemyProfile } from '../../../config/registries/enemyProfile.js';
 import { isSpecialMove } from '../../../config/registries/enemyMoves.js';
 import { t } from '../../../i18n/index.js';
+import { namesStatus } from '../board/callouts.js';
 
 /**
  * What the combat screen knows about each fight, read from the engine's events: who swung, what
@@ -289,6 +290,14 @@ function onAte(p) {
 function onConsumed(p) {
     if (!p?.elixir || !p.heroId) return;
     const line = { icon: 'potion', tone: TONE.NOTE, key: 'drinks', vars: { hero: heroName(p.heroId), item: itemName(p.itemId) }, itemId: p.itemId };
+    // ⚠️ Only into the fight the hero is in now: one drunk as a new fight engages can arrive while
+    // the record of the one before is still open.
+    const record = byHero.get(p.heroId)?.current;
+    if (record && BoardCombat.fightOfHero(p.heroId)?.instanceId === record.instanceId) {
+        say(record, line);
+        changed(p.heroId);
+        return;
+    }
     // Drunk as the fight engages, before its record exists: kept for it.
     if (!pending.has(p.heroId)) pending.set(p.heroId, []);
     pending.get(p.heroId).push({ at: Date.now(), line });
@@ -332,11 +341,7 @@ function onStatusTick(p) {
     changed(record.heroId);
 }
 
-/** Whether a callout's title names a status (its landing has a line of its own: "Poison on Aela"). */
-function namesStatus(title) {
-    return Object.values(EFFECTS).some(e => e?.status && e.name && (title === e.name || title.startsWith(`${e.name} `)));
-}
-
+/** A callout naming a status is not logged: its landing has a line of its own ("Poison on Aela"). */
 function onEffectFired(p) {
     const record = p?.instanceId != null ? recordOfEnemy(p.instanceId) : null;
     if (!record || !p.title || namesStatus(p.title)) return;

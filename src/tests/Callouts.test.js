@@ -166,14 +166,14 @@ describe('a Token used up: a popup where it stood', () => {
         expect(container.querySelector('[data-hero-bubble]')).toBeNull();
     });
 
-    it('an enemy is not used up: the hero who beat it says "{name} Beaten", and it goes by itself', () => {
+    it('an enemy is not used up: the hero who beat it says "{name} Defeated", and it goes by itself', () => {
         const { container } = render(h('div', null, h(CalloutLayer), h(HeroBubbleLayer, { heroes })));
         later();
         act(() => {
             EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'e', x: 420, y: 300, typeId: 'fixture_enemy', exhaustedBy: 'h2' });
         });
         expect(container.querySelector('[data-callout]')).toBeNull();
-        expect(stackOf(container, 'h2')).toEqual(['Fixture Enemy Beaten']);
+        expect(stackOf(container, 'h2')).toEqual(['Fixture Enemy Defeated']);
         expect(stackOf(container, 'h1')).toEqual([]);
         act(() => { vi.advanceTimersByTime(BEATEN_TTL_MS + 600); });
         expect(stackOf(container, 'h2')).toEqual([]);

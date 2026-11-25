@@ -194,8 +194,8 @@ describe('the fight panel', () => {
         act(() => { fireEvent.click(q(panel, '[data-fight-log-tab="last"]')); });
         const last = [...panel.querySelectorAll('[data-fight-log-line]')];
         expect(last).toHaveLength(KIT_LAST.log.length);
-        expect(words(last[0])).toBe('Aela beats Goblin Warlord');
-        expect(text(q(panel, '[data-fight-log-heading]'))).toBe('Beat Goblin Warlord in 42s');
+        expect(words(last[0])).toBe('Aela defeats Goblin Warlord');
+        expect(text(q(panel, '[data-fight-log-heading]'))).toBe('Defeated Goblin Warlord in 42s');
 
         act(() => { fireEvent.click(q(panel, '[data-fight-log-toggle]')); });
         expect(q(panel, '[data-fight-log-line]')).toBeNull();

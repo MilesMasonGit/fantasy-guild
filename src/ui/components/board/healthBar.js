@@ -24,7 +24,7 @@ export function hpToneName(fraction) {
 
 /**
  * The bar's measures in plate pixels (one screen pixel at the mat's 2× art, `matMarks.plateUnit`):
- * a thin bar 3 art pixels tall with a 1-art-pixel black edge, the number written above it.
+ * a thin bar 3 art pixels tall with a 1-art-pixel black edge.
  */
 export const HP_BAR = Object.freeze({
     /** The bar's width over a fighter, and its thickness. */
@@ -32,8 +32,7 @@ export const HP_BAR = Object.freeze({
     H: 6,
     /** Its hard edge, all round. */
     EDGE: 2,
-    /** Between the number and the bar, and between the bar and the art under it. */
-    LABEL_GAP: 4,
+    /** Between the bar and the art under it. */
     GAP: 3,
     /** The fill moves in whole art pixels: 32 steps. */
     STEP: 2
@@ -48,18 +47,6 @@ export function healthFraction(cur, max) {
 /** The fill and edge rows for a bar at `cur` of `max`. */
 export function hpToneOf(cur, max) {
     return HP_TONES[hpToneName(healthFraction(cur, max))];
-}
-
-/** A percentage, rounded halves up (the combat rounding rule), never below 0. */
-export function healthPercent(cur, max) {
-    if (!(max > 0)) return 0;
-    return Math.floor((Math.max(0, Number(cur) || 0) / max) * 100 + 0.5);
-}
-
-/** What a bar says: the number and the percentage, `17 · 57%`, whole, never below 0. */
-export function healthText(cur, max) {
-    const c = Math.max(0, Math.round(Number(cur) || 0));
-    return `${c.toLocaleString()} · ${healthPercent(cur, max)}%`;
 }
 
 /** The fill's width in plate pixels: the fraction cut to whole art pixels. */

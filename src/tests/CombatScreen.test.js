@@ -313,7 +313,7 @@ describe('the panel, the plate and the floats read the real fight', () => {
         runUntil(() => (fightsOf(heroId).current?.log.length || 0) > 2, 20);
         const view = fightPanelView(heroId, fightsOf(heroId));
         expect(view.live).toBe(true);
-        expect(view.title).toBe(`${HeroManager.getHero(heroId).name} vs Screen Venomous`);
+        expect([view.hero.name, view.enemy.name]).toEqual([HeroManager.getHero(heroId).name, 'Screen Venomous']);
         // Screen Sword 3 + level 20's step of 1, Slash; Physical 25 % from the elixir's buff (it was
         // armour 1 before damage types); a normal swing.
         expect(view.hero).toMatchObject({ style: 'melee', level: 20, hit: 4, resists: [{ id: 'physical', value: 25 }], attackEveryMs: 3000 });

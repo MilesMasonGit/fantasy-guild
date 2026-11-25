@@ -189,12 +189,14 @@ describe('"While you were away"', () => {
         expect(sectionsIn('items')).toEqual(['items']);
     });
 
-    it('the news in the brief\'s order: knock-outs and items lost, recipes, finds, level-ups, Tokens used up, fights', () => {
+    it('the news in the GDD\'s order: defeats and items lost first, then events, recipes, finds, level-ups, Tokens used up, fights', () => {
         start();
-        finish(fullResult());
-        expect(sectionsIn('news')).toEqual(['knockouts', 'bankFull', 'recipes', 'finds', 'levels', 'depleted', 'kills']);
+        const result = fullResult();
+        result.summary.events = [{ instanceId: 'ev1', typeId: 'fixture_cu_rock', name: 'Fixture Fair', ended: 'time_up' }];
+        finish(result);
+        expect(sectionsIn('news')).toEqual(['knockouts', 'events', 'bankFull', 'recipes', 'finds', 'levels', 'depleted', 'kills']);
         const headings = [...column('news').querySelectorAll('[data-summary-heading]')].map(h => h.textContent);
-        expect(headings).toEqual(['Knocked out', 'Bank full: waiting on the mat', 'New recipes', 'First finds', 'Level-ups', 'Tokens used up', 'Fights']);
+        expect(headings).toEqual(['Defeats', 'Events', 'Bank full: waiting on the mat', 'New recipes', 'First finds', 'Level-ups', 'Tokens used up', 'Fights']);
     });
 
     it('the heading is centred: While you were away, then how long', () => {
@@ -291,7 +293,7 @@ describe('"While you were away"', () => {
             { name: 'Fixture Wolf', short: '×9', exact: '×9' },
             { name: 'Fixture Rock', short: '×2', exact: '×2' }
         ]);
-        expect(kills[0].getAttribute('title')).toBe('Fixture Wolf: beaten 9 times');
+        expect(kills[0].getAttribute('title')).toBe('Defeated Fixture Wolf 9 times');
         expect(kills[0].querySelector('[data-item-bar-sprite] img')).not.toBeNull();
         const panel = q('[data-catch-up-summary]').textContent;
         for (const gone of ['won', 'lost ·', 'Used', 'Drops', 'Fixture Meal', 'Fixture Elixir']) expect(panel).not.toContain(gone);

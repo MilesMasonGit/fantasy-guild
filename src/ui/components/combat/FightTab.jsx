@@ -59,7 +59,7 @@ export const FightTab = memo(function FightTab({ heroId }) {
  * enemy: {cur, max}, outcome }`, `still` the hero's picture.
  */
 export const FightTabView = ({ heroId, tab, still, onOpen }) => {
-    const result = resultWord(tab.outcome);
+    const result = resultWord(tab.outcome, tab.enemyName);
     const enemyPx = tab.typeId ? tokenSizeFor(TOKEN_SURFACE.INSPECT, tab.typeId) : 64;
     const label = `${t('fight.panel.title', { hero: tab.heroName, enemy: tab.enemyName })}: ${t('fight.window.restore')}`;
     return (

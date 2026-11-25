@@ -493,7 +493,7 @@ function endText(record) {
     if (!record?.endedAt) return null;
     const time = elapsedText(record.endedAt - record.startedAt);
     if (record.outcome === OUTCOME.WON) return t('fight.panel.won', { enemy: record.enemyName, time });
-    if (record.outcome === OUTCOME.LOST) return t('fight.panel.lost', { time });
+    if (record.outcome === OUTCOME.LOST) return t('fight.panel.lost', { enemy: record.enemyName, time });
     return t('fight.panel.left', { time });
 }
 
@@ -588,10 +588,10 @@ export const MinimizeButton = ({ onClick, label = t('fight.window.minimize'), ..
     </button>
 );
 
-/** How the hero's last fight ended, for a window or tab between fights: Won, Lost, or nothing. */
-export function resultWord(outcome) {
-    if (outcome === OUTCOME.WON) return { text: t('fight.window.won'), colour: 'var(--color-ui-green)' };
-    if (outcome === OUTCOME.LOST) return { text: t('fight.window.lost'), colour: 'var(--color-ui-red)' };
+/** How the hero's last fight ended, for a window or tab between fights: "Defeated Goblin", "Defeated by Goblin", or nothing. */
+export function resultWord(outcome, enemy) {
+    if (outcome === OUTCOME.WON) return { text: t('fight.window.won', { enemy }), colour: 'var(--color-ui-green)' };
+    if (outcome === OUTCOME.LOST) return { text: t('fight.window.lost', { enemy }), colour: 'var(--color-ui-red)' };
     return null;
 }
 
@@ -609,7 +609,7 @@ const BREAK = <div aria-hidden="true" className="h-0.5 bg-white/10" />;
  * `onDragStart(pointerEvent)` is handed the title bar's press, to move the window.
  */
 export const FightPanelView = ({ view, fights, onClose, onMinimize = null, onDragStart = null, logOpen, onToggleLog, tab, onTab }) => {
-    const result = view.ended ? resultWord(view.ended.outcome) : null;
+    const result = view.ended ? resultWord(view.ended.outcome, view.enemy.name) : null;
     return (
         <PixelFrame kind={FRAME_KIND.CHAMFER} backdrop="fight" data-fight-panel={view.heroId} data-fight-live={view.live ? 'true' : 'false'} style={{ width: PANEL_W + 12 }}>
             <div className="relative flex flex-col" style={{ width: PANEL_W }}>

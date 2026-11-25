@@ -119,7 +119,7 @@ describe('the words', () => {
         Banners.push(ko('Cara', []));
         Banners.push(ko('Aela', ['3 Shrimp']));
         expect(Banners.getAll()).toHaveLength(1);
-        expect(Banners.getAll()[0].line).toBe('Aela, Bram and Cara knocked out and carried home. Aela lost: Iron Sword, 3 Shrimp. Bram lost: 3 Shrimp.');
+        expect(Banners.getAll()[0].line).toBe('Aela, Bram and Cara were defeated and carried home. Aela lost: Iron Sword, 3 Shrimp. Bram lost: 3 Shrimp.');
     });
 });
 

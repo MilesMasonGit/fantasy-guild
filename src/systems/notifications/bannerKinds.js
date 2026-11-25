@@ -95,7 +95,7 @@ export const BANNER_KINDS = Object.freeze({
             const said = rows.filter(r => r.lost.length).map(r => `${r.hero} lost: ${r.lost.join(', ')}.`);
             return {
                 title: t('bannerTitle.knockout'),
-                line: `${nameList(heroes)} knocked out and carried home. ${said.length ? said.join(' ') : 'Nothing was lost.'}`
+                line: `${nameList(heroes)} were defeated and carried home. ${said.length ? said.join(' ') : 'Nothing was lost.'}`
             };
         },
         merge: (a, b) => {

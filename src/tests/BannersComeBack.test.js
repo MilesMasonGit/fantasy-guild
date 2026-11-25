@@ -184,7 +184,7 @@ describe('unclicked knock-out and Bank-full banners are saved', () => {
         expect(before).toHaveLength(4);
         saveAndLoad();
         expect(lines()).toEqual(before);
-        expect(Banners.getAll()[0].line).toBe('Dorn and Eli knocked out and carried home. Dorn lost: Axe. Eli lost: Shield.');
+        expect(Banners.getAll()[0].line).toBe('Dorn and Eli were defeated and carried home. Dorn lost: Axe. Eli lost: Shield.');
         expect(Banners.getAll().every(b => b.quiet)).toBe(true);
     });
 
@@ -203,7 +203,7 @@ describe('unclicked knock-out and Bank-full banners are saved', () => {
     it('a merged knock-out saved before `losses` existed still reads', () => {
         GameState.state.ui.banners = [{ kind: 'knockout', parts: { heroes: ['Aela', 'Bram'], lost: ['Iron Sword'] }, subjects: [] }];
         saveAndLoad();
-        expect(Banners.getAll().map(b => b.title)).toEqual(['Knocked out!']);
+        expect(Banners.getAll().map(b => b.title)).toEqual(['Defeated!']);
     });
 
     it('a new game or another save does not carry them over', () => {

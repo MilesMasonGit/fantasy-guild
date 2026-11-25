@@ -22,10 +22,8 @@ import { explainLinesOf, effectTypesOfStatements } from '../base/effectExplain.j
 import { statementsOf } from '../../../systems/effects/statements.js';
 import { GameState } from '../../../state/GameState.js';
 import { resolveAnimationPath, resolveSpritePath, resolveEnemyAnimationPath } from '../../../utils/AssetManager.js';
-import { healthText } from '../board/healthBar.js';
 import { statusIcon } from './fightWatch.js';
 import { t } from '../../../i18n/index.js';
-import { elapsedText } from '../../../utils/Formatters.js';
 
 /**
  * What the combat screen shows, as plain values read from the engine: both fighters' numbers for
@@ -364,7 +362,7 @@ export function enemySheet(typeId) {
  * @param {string} heroId
  * @param {{current: object|null, last: object|null}} fights
  */
-export function fightPanelView(heroId, fights, now = Date.now()) {
+export function fightPanelView(heroId, fights) {
     const record = fights?.current || fights?.last || null;
     if (!record) return null;
     const live = !!fights.current;
@@ -390,11 +388,9 @@ export function fightPanelView(heroId, fights, now = Date.now()) {
     return {
         heroId,
         live,
-        title: t('fight.panel.title', { hero: heroView.name, enemy: enemyView.name }),
-        clock: elapsedText((record.endedAt ?? now) - record.startedAt),
         ended: live ? null : { outcome: record.outcome },
-        hero: { ...heroView, hpText: healthText(heroView.hp.cur, heroView.hp.max), art: heroArt(heroView.sprite) },
-        enemy: { ...enemyView, hpText: healthText(enemyView.hp.cur, enemyView.hp.max), sheet: enemySheet(record.typeId), lastMove: record.lastMove ?? null },
+        hero: { ...heroView, art: heroArt(heroView.sprite) },
+        enemy: { ...enemyView, sheet: enemySheet(record.typeId), lastMove: record.lastMove ?? null },
         instanceId: record.instanceId
     };
 }

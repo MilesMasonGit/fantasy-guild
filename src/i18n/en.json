@@ -139,7 +139,7 @@
         "heroes": "New heroes!",
         "upgrade": "Guild upgrade!",
         "settled": "New place settled!",
-        "knockout": "Knocked out!",
+        "knockout": "Defeated!",
         "bankFull": "Bank full!",
         "stackFull": "Stack full!",
         "saveProblem": "Save problem",
@@ -470,8 +470,8 @@
             "heals": "{who} heals",
             "move": "{move}",
             "drops": "Drops {items}",
-            "won": "{hero} beats {enemy}",
-            "lost": "{hero} is knocked out",
+            "won": "{hero} defeats {enemy}",
+            "lost": "{hero} is defeated by {enemy}",
             "left": "{hero} leaves the fight"
         },
         "float": {
@@ -513,16 +513,14 @@
             "title": "{hero} vs {enemy}",
             "versus": "vs",
             "noStyle": "No style",
-            "showLog": "Show log",
-            "hideLog": "Hide log",
             "thisFight": "This fight",
             "lastFight": "Last fight",
             "noFight": "No fight now: the next one starts here",
             "noLastFight": "No fight before this one yet",
             "joinedLate": "seen from partway through",
             "trimmed": "Earlier lines dropped",
-            "won": "Beat {enemy} in {time}",
-            "lost": "Knocked out after {time}",
+            "won": "Defeated {enemy} in {time}",
+            "lost": "Defeated by {enemy} after {time}",
             "left": "Left the fight after {time}",
             "unknownKinds": "? fight one to learn",
             "noKinds": "None",
@@ -539,8 +537,8 @@
             "fightsLeft": "fights left",
             "noElixirs": "No elixirs",
             "log": "Log",
-            "won": "Won",
-            "lost": "Lost",
+            "won": "Defeated {enemy}",
+            "lost": "Defeated by {enemy}",
             "hit": "Hit",
             "attackEvery": "Attacks every",
             "resist": "Resist"
@@ -636,7 +634,7 @@
         "news": {
             "title": "News",
             "empty": "No other news.",
-            "knockouts": "Knocked out",
+            "knockouts": "Defeats",
             "lost": "Lost: {items}",
             "broken": "Broken",
             "brokeStopped": "{hero} stopped",
@@ -654,8 +652,8 @@
             },
             "kills": "Fights",
             "killTip": {
-                "one": "{enemy}: beaten once",
-                "other": "{enemy}: beaten {count} times"
+                "one": "Defeated {enemy} once",
+                "other": "Defeated {enemy} {count} times"
             }
         },
         "buttons": {

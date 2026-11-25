@@ -3,7 +3,6 @@
 // Nothing in the game reads this file.
 
 import { TONE, OUTCOME, MOMENT } from '../../ui/components/combat/fightWatch.js';
-import { healthText } from '../../ui/components/board/healthBar.js';
 import { kindView } from '../../ui/components/combat/fightView.js';
 
 const line = (n, icon, tone, key, vars, amount = null) => ({ n, icon, tone, key, vars, amount });
@@ -64,9 +63,9 @@ export function kitPanelView() {
         kinds: ['brute', 'venomous'].map(kindView), statuses: [], buffs: [], sheet: null
     };
     return {
-        heroId: 'kit_aela', live: false, title: 'Aela vs Goblin Warlord', clock: '0:12', ended: null, instanceId: 'kit_warlord',
-        hero: { ...hero, hpText: healthText(17, 30) },
-        enemy: { ...enemy, hpText: healthText(24, 40) }
+        heroId: 'kit_aela', live: false, ended: null, instanceId: 'kit_warlord',
+        hero,
+        enemy
     };
 }
 

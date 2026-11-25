@@ -63,8 +63,8 @@ export const momentText = {
     waiting: (enemy) => `Waiting for ${enemy}.`,
     // The Token an order named is gone for good: a new order is wanted.
     needsJob: () => 'I need a job.',
-    // An enemy leaving: the hero who beat it says so. A Token used up is a popup over it instead.
-    beaten: (enemy) => `${enemy} Beaten`,
+    // An enemy leaving: the hero who defeated it says so. A Token used up is a popup over it instead.
+    beaten: (enemy) => `${enemy} Defeated`,
     // A status landing on the hero in a fight, said as a callout over an enemy is: "Venom!".
     statusLands: (statusId) => calloutText.statusLands(statusId)
 };

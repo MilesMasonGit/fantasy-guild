@@ -366,7 +366,7 @@ describe('after time away: the catch-up\'s news, handed over', () => {
         }), false);
         const knockouts = Banners.getAll().filter(b => b.kind === 'knockout');
         expect(knockouts).toHaveLength(1);
-        expect(knockouts[0].line).toBe('Aela and Bram knocked out and carried home. Aela lost: Iron Sword. Bram lost: 3 Shrimp.');
+        expect(knockouts[0].line).toBe('Aela and Bram were defeated and carried home. Aela lost: Iron Sword. Bram lost: 3 Shrimp.');
     });
 
     it('a long absence with no summary stays merged: one banner per kind, and no wall of stubs', () => {
@@ -381,7 +381,7 @@ describe('after time away: the catch-up\'s news, handed over', () => {
         }), false);
         expect(kinds().sort()).toEqual(['bankFull', 'knockout', 'recipe']);
         expect(Banners.getAll().find(b => b.kind === 'recipe').line).toBe('Aela, Bram and 3 more unlocked 5 recipes: Dish 0, Dish 1, ...');
-        expect(Banners.getAll().find(b => b.kind === 'knockout').line).toBe('Aela, Bram and 3 more knocked out and carried home. Nothing was lost.');
+        expect(Banners.getAll().find(b => b.kind === 'knockout').line).toBe('Aela, Bram and 3 more were defeated and carried home. Nothing was lost.');
         ItemStubs.flush();
         expect(ItemStubs.getStubs()).toHaveLength(MAX_FIND_STUBS);
         expect(ItemStubs.getStubs().every(s => s.isNew)).toBe(true);

@@ -336,6 +336,27 @@ function Summary({ result, asking, restoring, undoFailed, onClose, onAsk, onCanc
                             <Empty>{t('catchUp.news.empty')}</Empty>
                         </Section>
                     )}
+                    {/* Defeats lead the news. */}
+                    {view.knockouts.length > 0 && (
+                        <Section id="knockouts" title={t('catchUp.news.knockouts')} enter={enter}>
+                            {view.knockouts.map(k => {
+                                const e = enter();
+                                return (
+                                    <EntityRibbon
+                                        key={k.heroId}
+                                        data-hero-id={k.heroId}
+                                        icon={<CombatGlyph name="down" colour={GLYPH_COLOUR.red} />}
+                                        name={k.heroName}
+                                        subtitle={k.lost.length ? t('catchUp.news.lost', { items: k.lost.join(', ') }) : null}
+                                        countText={`×${k.times}`}
+                                        size="sm"
+                                        className={e.className}
+                                        style={e.style}
+                                    />
+                                );
+                            })}
+                        </Section>
+                    )}
                     {view.events.length > 0 && (
                         <Section id="events" title={t('catchUp.news.events')} enter={enter}>
                             {view.events.map(ev => {
@@ -349,26 +370,6 @@ function Summary({ result, asking, restoring, undoFailed, onClose, onAsk, onCanc
                                         name={ev.name}
                                         subtitle={ev.count > 1 ? ev.leavesText : null}
                                         countText={ev.countText}
-                                        size="sm"
-                                        className={e.className}
-                                        style={e.style}
-                                    />
-                                );
-                            })}
-                        </Section>
-                    )}
-                    {view.knockouts.length > 0 && (
-                        <Section id="knockouts" title={t('catchUp.news.knockouts')} enter={enter}>
-                            {view.knockouts.map(k => {
-                                const e = enter();
-                                return (
-                                    <EntityRibbon
-                                        key={k.heroId}
-                                        data-hero-id={k.heroId}
-                                        icon={<CombatGlyph name="down" colour={GLYPH_COLOUR.red} />}
-                                        name={k.heroName}
-                                        subtitle={k.lost.length ? t('catchUp.news.lost', { items: k.lost.join(', ') }) : null}
-                                        countText={`×${k.times}`}
                                         size="sm"
                                         className={e.className}
                                         style={e.style}
