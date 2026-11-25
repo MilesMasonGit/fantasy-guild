@@ -217,7 +217,7 @@ export const TokenBubbles = ({
     const spawner = capFull && capSeen ? null : stuck;
 
     // A marked Token runs no recipe, so there is nothing to choose.
-    const choose = gear?.pulsing && !marked ? (gear.isFoundation ? 'build' : gear.isHideout ? 'camp' : 'recipe') : null;
+    const choose = gear?.pulsing && !marked ? (gear.isFoundation ? 'build' : gear.isHideout ? 'camp' : gear.isLaboratory ? 'node' : 'recipe') : null;
     const problem = useMemo(() => problemOf({ alert, spawner, growth, choose }), [alert, spawner, growth, choose]);
     const problemClick = problem && CHOOSE_KINDS.has(problem.kind) ? gear?.onClick ?? null : null;
 

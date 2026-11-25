@@ -91,6 +91,8 @@ function everyBlock() {
         field: { emptySprite: 't_farmland', growingSprite: 't_garden' },
         camp: { skill: 'forestry', reach: 280 },
         shrine: { maxLitMs: 120000 },
+        laboratory: { maxLevel: 40 },
+        mastery: { ranks: [{ points: 10, effectId: 'effect_oak_forest_growth', scale: 1 }] },
     };
 }
 

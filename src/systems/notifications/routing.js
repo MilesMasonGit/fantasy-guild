@@ -3,6 +3,9 @@ import { ENGINE_EVENTS, UI_EVENTS } from '../core/engineEvents.js';
 import { BOARD_EVENTS } from '../board/boardEvents.js';
 import { GameState } from '../../state/GameState.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
+import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { effectName } from '../../config/registries/effectRegistry.js';
+import { effectTitle } from '../effects/effectLibrary.js';
 import { listRecipes } from '../../config/registries/recipePoolRegistry.js';
 import { getUpgradeDef } from '../../config/guildUpgrades.js';
 import { resolveSpritePath } from '../../utils/AssetManager.js';
@@ -138,6 +141,16 @@ export const ROUTES = [
                 sprite: def.sprite ? { kind: 'src', src: def.sprite } : null
             });
         }
+    },
+    {
+        // A rank of Science mastery: every Token of the kind has its buff from now on.
+        event: ENGINE_EVENTS.MASTERY_RANK_UP, to: 'banner:mastery',
+        handle: ({ kind, kindName, rank, effectId, scale } = {}) => Banners.push({
+            kind: 'mastery',
+            groupKey: `mastery:${kind}`,
+            parts: { kind: kindName || kind || '', rank, buff: effectId ? effectTitle(effectName(effectId), scale ?? 1) : '' },
+            sprite: kind && getTokenType(kind) ? { kind: 'token', id: kind } : null
+        })
     },
     {
         event: BOARD_EVENTS.HERO_DEFEATED, to: 'banner:knockout',

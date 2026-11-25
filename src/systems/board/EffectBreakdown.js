@@ -12,6 +12,7 @@ import { GameState } from '../../state/GameState.js';
 import { t } from '../../i18n/index.js';
 import { toRoman } from '../../utils/Formatters.js';
 import { hallSourceOf } from '../progression/hallModifiers.js';
+import * as Mastery from '../progression/Mastery.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { averageXpBonus } from '../hero/xpBonus.js';
 import { getCombatXpAward, getHeroCombatStyle } from '../combat/CombatFormulas.js';
@@ -138,6 +139,8 @@ export const SOURCE_KIND = Object.freeze({
     PERK: 'perk',
     CARRIED: 'carried',
     GUILD: 'guild',
+    /** Science's mastery of the Token's kind, guild-wide (`progression/Mastery.js`). */
+    MASTERY: 'mastery',
     /** An event's buff Token in reach, named by its event. */
     EVENT: 'event'
 });
@@ -471,6 +474,14 @@ function describe(c, ctx) {
         return {
             key: `star:${star.starId}`, kind: SOURCE_KIND.STAR, starId: star.starId, rank,
             name: t('effectBadges.source.star', { star: name, rank: toRoman(rank) })
+        };
+    }
+    const mastery = Mastery.masterySourceOf(modifier.source);
+    if (mastery) {
+        const { kind, rank } = mastery;
+        return {
+            key: `mastery:${kind}:${rank}`, kind: SOURCE_KIND.MASTERY, masteryKind: kind, rank,
+            name: t('effectBadges.source.mastery', { kind: Mastery.kindName(kind), rank: toRoman(Math.max(1, rank)) })
         };
     }
     return { key: `guild:${modifier.source}`, kind: SOURCE_KIND.GUILD, name: t('effectBadges.source.guild') };

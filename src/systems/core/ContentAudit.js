@@ -1,7 +1,8 @@
 // Boot-time content-integrity audit: warns about content references that do not resolve.
 
 import { TOKENS, getTokenType } from '../../config/registries/tokenRegistry.js';
-import { statementsOf, hasRetiredEffectData, stationSkillOf, KEYWORD, getKeyword, keywordAllowsRole } from '../effects/statements.js';
+import { statementsOf, hasRetiredEffectData, stationSkillOf, stationKindOf, KEYWORD, getKeyword, keywordAllowsRole } from '../effects/statements.js';
+import { LABORATORY_KIND } from '../../config/registries/mastery.js';
 import { getTriggerEvent, momentSupplies, everyOf } from '../../config/registries/triggerRegistry.js';
 import { getRole } from '../../config/registries/roleRegistry.js';
 import { getReach, DEFAULT_REACH } from '../../config/registries/reachRegistry.js';
@@ -34,6 +35,7 @@ import { SKILLS } from '../../config/registries/skillRegistry.js';
 import { listRecipes } from '../../config/registries/recipePoolRegistry.js';
 import { authoredSkillPerks } from '../../config/registries/perkRegistry.js';
 import { perkFindings } from './perkRule.js';
+import { masteryFindings } from './masteryRule.js';
 import { authoredHallSky } from '../../config/registries/hallStarRegistry.js';
 import { hallStarFindings, hallFallbackFindings } from './hallStarRule.js';
 import { gearDefenceFindings } from './gearDefenceRule.js';
@@ -148,7 +150,8 @@ function auditTokens(out) {
         }
 
         checkRef(out, where, 'sprite', def.sprite, 'Its artwork');
-        checkRef(out, where, 'recipe pool', stationSkillOf(def), 'The skill it works as');
+        // A Laboratory studies a node and runs no recipe, so its skill needs no pool.
+        if (stationKindOf(def) !== LABORATORY_KIND) checkRef(out, where, 'recipe pool', stationSkillOf(def), 'The skill it works as');
 
         // A hero-worked Token must name a skill. Reported only.
         if (isWorkedWithoutSkill(def)) {
@@ -355,6 +358,9 @@ function auditEffects(out) {
     // An enemy's kinds are library effects too.
     const kindEffects = new Set(Object.values(TOKENS || {})
         .flatMap(def => (isEnemyDef(def) ? enemyProfileOf(def)?.kindEffects || [] : [])));
+    // So are a mastery track's ranks, on a node or a crop recipe.
+    const masteryEffects = new Set([...Object.values(TOKENS || {}), ...listRecipes()]
+        .flatMap(holder => (Array.isArray(holder?.mastery?.ranks) ? holder.mastery.ranks : []).map(row => row?.effectId)));
     for (const [effectId, entry] of Object.entries(EFFECTS || {})) {
         const where = `Effect "${entry?.name || effectId}"`;
 
@@ -370,7 +376,7 @@ function auditEffects(out) {
         // tripwires have to read the library too.
         auditAppliesTargetShape(out, where, entry);
 
-        if (usedBy(effectId, TOKENS || {}, ITEMS || {}).length === 0 && !perkEffects.has(effectId) && !kindEffects.has(effectId)) {
+        if (usedBy(effectId, TOKENS || {}, ITEMS || {}).length === 0 && !perkEffects.has(effectId) && !kindEffects.has(effectId) && !masteryEffects.has(effectId)) {
             out.push(finding(where, 'is not used by anything. Not a fault if you are still ' +
                 'building what it is for — but nothing references it today.'));
         }
@@ -789,6 +795,17 @@ function auditPerks(out) {
 }
 
 /**
+ * Science: a mastery track on something that is no node kind, a rank no study reaches or naming a
+ * missing effect, a rank's rule mastery cannot carry, a Laboratory block that cannot work. The rule
+ * lives in `masteryRule.js`, shared with the CMS Economy Audit.
+ */
+function auditMastery(out) {
+    for (const f of masteryFindings({ tokens: TOKENS, recipes: listRecipes(), effects: EFFECTS })) {
+        out.push(finding(`${f.entityType} "${f.entityId}"`, f.message));
+    }
+}
+
+/**
  * The Guild Hall's authored stars: one that cannot open, names a missing item, Token or
  * constellation, or carries a rule the guild cannot hold; and, allowed, each of Bunk Beds, Bank Tabs,
  * the Wishing Well and their constellations still on the game's stand-in. The rules live in
@@ -857,7 +874,7 @@ function auditWorldBiomes(out) {
 export function auditContent({ starterCamp = null } = {}) {
     const out = [];
     const steps = [
-        auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditTools, auditSpots, auditSummons, auditFish, auditCrime, auditPerks, auditHallStars,
+        auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditTools, auditSpots, auditSummons, auditFish, auditCrime, auditPerks, auditMastery, auditHallStars,
         auditGearDefence, auditEffectStacks, auditCoinWorth, auditEvents, auditWorldBiomes,
         (o) => auditStarterCamp(o, starterCamp)
     ];

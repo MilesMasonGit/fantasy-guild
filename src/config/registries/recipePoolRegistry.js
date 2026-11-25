@@ -67,6 +67,7 @@ import { stationSkillOf, stationKindOf } from '../../systems/effects/statements.
 import { foundationTierMeets, stationKindOffers } from './tokenConstants.js';
 import { migrateRecipeList } from '../../systems/effects/skillIdMigration.js';
 import { HIDEOUT_KIND } from './crime.js';
+import { LABORATORY_KIND } from './mastery.js';
 
 /** Concatenate every recipe JSON source into one flat list. */
 function loadJsonRecipes() {
@@ -168,7 +169,9 @@ export function recipesForToken(def) {
  * instead (`Hideouts.js`), and a Crime recipe is never offered there.
  */
 export function recipesForStation(skillId, kind = null) {
-    if (kind === HIDEOUT_KIND) return [];
+    // A Hideout robs the camp and a Laboratory studies the node chosen on its card instead
+    // (`Hideouts.js`, `Laboratories.js`): never a recipe.
+    if (kind === HIDEOUT_KIND || kind === LABORATORY_KIND) return [];
     const pool = getSkillRecipePool(skillId);
     return kind ? pool.filter(r => stationKindOffers(kind, r)) : pool;
 }

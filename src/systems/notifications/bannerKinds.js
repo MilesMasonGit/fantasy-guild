@@ -17,6 +17,9 @@
  */
 
 import { t } from '../../i18n/index.js';
+import { toRoman } from '../../utils/Formatters.js';
+
+const romanOf = (n) => toRoman(Math.max(1, Math.floor(Number(n) || 1)));
 
 export const TONE = Object.freeze({ MILESTONE: 'milestone', PROBLEM: 'problem' });
 
@@ -67,6 +70,16 @@ export const BANNER_KINDS = Object.freeze({
             line: upgrades.length === 1 && detail ? `${upgrades[0]}: ${detail}` : `${nameList(upgrades)} upgraded`
         }),
         merge: (a, b) => ({ upgrades: union(a.upgrades, b.upgrades), detail: b.detail })
+    },
+    // A rank of Science mastery: `{ kind, rank, buff }`, the kind's name, the rank reached and its
+    // buff's title. Two ranks of one kind at once are one banner, the higher rank.
+    mastery: {
+        tone: TONE.MILESTONE,
+        text: ({ kind = '', rank = 1, buff = '' }) => ({
+            title: t('bannerTitle.mastery'),
+            line: buff ? t('science.rankUp', { kind, rank: romanOf(rank), buff }) : t('science.rankUpPlain', { kind, rank: romanOf(rank) })
+        }),
+        merge: (a, b) => ((b.rank || 0) >= (a.rank || 0) ? b : a)
     },
     settled: {
         tone: TONE.MILESTONE,

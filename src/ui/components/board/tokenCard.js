@@ -38,6 +38,8 @@ import { effectTagOf, effectTagText } from './effectBadgeText.js';
 import { spotFishRows, luresIn } from './spotFish.js';
 import { isHideout } from '../../../systems/board/Hideouts.js';
 import { theftBlockOf } from './hideoutCard.js';
+import { isLaboratory } from '../../../systems/board/Laboratories.js';
+import { studyBlockOf, nodeMasteryOf } from './laboratoryCard.js';
 import {
     liveTimerSources, demolitionLine, leaveLine, spawnLine, growthLine, fieldTimerLine, respawnLine, produceLine, litLine
 } from './tokenTimers.js';
@@ -58,6 +60,8 @@ export const CARD_BLOCK = Object.freeze({
     CYCLE: 'cycle',
     RECIPE: 'recipe',
     THEFT: 'theft',
+    STUDY: 'study',
+    MASTERY: 'mastery',
     LIFECYCLE: 'lifecycle',
     SUPPORT: 'support',
     DROPS: 'drops',
@@ -169,7 +173,10 @@ export function liveCardSources() {
         demolitionConfig: Demolition.DEMOLITION_CONFIG,
         allItems: getAllItems,
         art: (def) => cardArtOf(def),
-        theft: (instance, def) => theftBlockOf(instance, def)
+        theft: (instance, def) => theftBlockOf(instance, def),
+        study: (instance, def) => studyBlockOf(instance, def),
+        mastery: (instance, def) => nodeMasteryOf(instance, def),
+        workConfig: StationRecipe.workConfigOf
     };
 }
 
@@ -532,7 +539,8 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
         ? (isField ? (src.fieldCrop?.(instance, def) ?? null) : src.selectedRecipe(instance, def))
         : null;
 
-    const work = marked ? src.demolitionConfig : def.config;
+    // A Laboratory's level is its chosen node's, as a station's is its recipe's.
+    const work = marked ? src.demolitionConfig : (instance && isLaboratory(def) && src.workConfig ? src.workConfig(def, instance) : def.config);
     const skillId = marked ? work?.skill : (def.config?.skill || def.foundation?.skill || null);
     // A station with nothing chosen has no work yet: its type's own config is only the engine's
     // fallback, and no recipe runs at that time, level or XP.
@@ -583,7 +591,13 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
         }
         // A Hideout: the camp it robs, what a theft takes, the odds of a catch (`hideoutCard.js`).
         if (isHideout(def) && src.theft) blocks.push({ id: CARD_BLOCK.THEFT, ...src.theft(instance, def) });
+        // A Laboratory: the node it studies, its kind's mastery, Change node (`laboratoryCard.js`).
+        if (isLaboratory(def) && src.study) blocks.push({ id: CARD_BLOCK.STUDY, ...src.study(instance, def) });
     }
+
+    // A node of a kind with a mastery track: the guild's rank in it and the next buff.
+    const mastery = src.mastery?.(instance, def);
+    if (mastery) blocks.push({ id: CARD_BLOCK.MASTERY, ...mastery });
 
     const lifecycle = cardLifecycle(instance, def, src);
     if (lifecycle.length) blocks.push({ id: CARD_BLOCK.LIFECYCLE, lines: lifecycle });

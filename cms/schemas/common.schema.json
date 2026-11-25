@@ -26,6 +26,23 @@
         }
       ]
     },
+    "masteryTrack": {
+      "description": "A node kind's Science mastery track (src/config/registries/mastery.js masteryTrackOf; src/systems/progression/Mastery.js): on a node's Token type or a crop's recipe. Each rank is reached at its points, the guild's total in that kind, and gives its library effect to every Token of the kind; a rank reached keeps its effect. Written by the CMS's Mastery block.",
+      "type": "object",
+      "properties": {
+        "ranks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "points": { "type": "number", "minimum": 0, "description": "The kind's mastery points that reach this rank (a whole number from 1); one study cycle gives one." },
+              "effectId": { "type": "string", "description": "The library effect the rank gives (data/effects.json); its Provides rules go on every Token of the kind." },
+              "scale": { "type": "number", "description": "How strong: a whole number 1 to 5 (normaliseScale)." }
+            }
+          }
+        }
+      }
+    },
     "itemQuantity": {
       "description": "An item and how many: a cost, an input, an upkeep, a price.",
       "type": "object",

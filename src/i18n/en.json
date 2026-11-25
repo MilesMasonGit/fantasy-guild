@@ -143,6 +143,7 @@
         "hero": "New hero!",
         "heroes": "New heroes!",
         "upgrade": "Guild upgrade!",
+        "mastery": "Mastery!",
         "settled": "New place settled!",
         "knockout": "Defeated!",
         "bankFull": "Bank full!",
@@ -336,6 +337,9 @@
         "rankAmount": "rank {rank} {amount}",
         "rankAmountShort": "{rank} {amount}",
         "hallRanks": "{star}: {ranks}",
+        "mastery": "{kind} mastery: rank {rank} of {ranks}",
+        "masteryNext": "Next, rank {rank}: {buff} in {toGo} studies",
+        "masteryFull": "Fully mastered",
         "again": "already above",
         "have": "Have {count}",
         "haveNeed": "Have {have}; one {name} needs {need}",
@@ -691,6 +695,11 @@
         "stoleNothing": "Found nothing to steal at {camp}",
         "caught": "Caught at {camp}! A guard stands on it"
     },
+    "science": {
+        "rankUp": "{kind} mastery {rank}: {buff} on every {kind}",
+        "rankUpPlain": "{kind} mastery {rank}",
+        "studied": "+1 {kind} mastery"
+    },
     "messages": {
         "usedUp": "{token} used up",
         "gearBroke": "My {item} broke!",
@@ -897,6 +906,7 @@
             "gear": "{hero}'s {item}",
             "perk": "{hero}'s {perk}",
             "carried": "{hero}'s {effect}",
+            "mastery": "{kind} mastery {rank}",
             "guild": "The guild"
         },
         "limit": {

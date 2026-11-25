@@ -9,6 +9,7 @@ import * as StationRecipe from './StationRecipe.js';
 import * as Fields from './Fields.js';
 import * as BoardState from './BoardState.js';
 import * as Hideouts from './Hideouts.js';
+import * as Laboratories from './Laboratories.js';
 import { paidTestFor } from './BlockUpkeep.js';
 
 /**
@@ -110,6 +111,11 @@ export function resolveRecipe(instanceId, instance) {
         const theft = Hideouts.theftOf(instance);
         return theft.ok ? { status: RECIPE.OK, recipe: null } : { status: RECIPE.NONE, recipe: null, reason: theft.reason };
     }
+    // A Laboratory runs no recipe: it studies the node its player chose, while it can (`Laboratories.js`).
+    if (Laboratories.isLaboratory(def)) {
+        const study = Laboratories.studyOf(instance);
+        return study.ok ? { status: RECIPE.OK, recipe: null } : { status: RECIPE.NONE, recipe: null, reason: study.reason };
+    }
 
     const recipes = recipesForToken(def);
 
@@ -163,6 +169,21 @@ export function effectiveIO(instanceId, instance) {
             cycleTimeMs: def?.config?.cycleTimeMs,
             xp: robbed.steal.xp ?? def?.config?.xp,
             steal: { campId: camp.id, campTypeId: camp.typeId, enemyTypeId: robbed.typeId, table: robbed.steal }
+        };
+    }
+
+    // A Laboratory's cycle is a study: no outputs, and what a gathering cycle at its node would take
+    // (a ripe Field's seed still owed). `study` tells the runner which node to wear and which kind learns.
+    if (Laboratories.isLaboratory(def)) {
+        const { node, kind } = Laboratories.studyOf(instance);
+        return {
+            status,
+            recipe: null,
+            inputs: Laboratories.studyInputsOf(node),
+            outputs: [],
+            cycleTimeMs: def?.config?.cycleTimeMs,
+            xp: def?.config?.xp,
+            study: { nodeId: node.id, kind }
         };
     }
 

@@ -44,6 +44,8 @@ import { problemOf, problemText, PROBLEM_COLOUR, PROBLEM_SPRITE } from './proble
 import { EnemyCardRows } from '../combat/EnemyCard.jsx';
 import { TheftSection, StealsSection, CampList } from './HideoutCard.jsx';
 import * as Hideouts from '../../../systems/board/Hideouts.js';
+import { StudySection, MasterySection, NodeList } from './LaboratoryCard.jsx';
+import * as Laboratories from '../../../systems/board/Laboratories.js';
 
 /** The activity scenes are 256 px square; they only ever draw at whole multiples of it. */
 export const CARD_ART_PX = 256;
@@ -862,10 +864,13 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
     const model = tokenCardModel(typeId, instanceId);
     const instance = instanceId != null ? BoardState.getTokenById(instanceId) : null;
     const choice = instance ? model?.blocks.find(b => b.id === CARD_BLOCK.RECIPE && b.change)?.change : null;
-    // A Hideout's choice is the camp it robs: its list face is the camps in reach.
+    // A Hideout's choice is the camp it robs, a Laboratory's the node it studies: the list face of
+    // each is what stands in its reach.
     const theft = instance ? model?.blocks.find(b => b.id === CARD_BLOCK.THEFT && b.change) : null;
-    const canList = !!choice || !!theft;
-    const [view, setView] = useCardView(instanceId, onViewChange, choice ? !choice.chosen : (!!theft && !theft.change.chosen));
+    const study = instance ? model?.blocks.find(b => b.id === CARD_BLOCK.STUDY && b.change) : null;
+    const reachPick = theft || study;
+    const canList = !!choice || !!reachPick;
+    const [view, setView] = useCardView(instanceId, onViewChange, choice ? !choice.chosen : (!!reachPick && !reachPick.change.chosen));
     // Charges, a picked recipe, a hero arriving: re-read on this Token's own events.
     useTokenDetail(instanceId, def);
     useCardClock(instanceId, !!def?.enemy);
@@ -892,6 +897,10 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
     const chooseCamp = (campId) => {
         if (Hideouts.setTarget(BoardState.getTokenById(instanceId), campId)) setView('card');
     };
+    // `setTarget` is the only writer of a Laboratory's node, and refuses one it may not study.
+    const chooseNode = (nodeId) => {
+        if (Laboratories.setTarget(BoardState.getTokenById(instanceId), nodeId)) setView('card');
+    };
 
     const { effects } = model;
     const stats = model.blocks.filter(b => STAT_BLOCKS.has(b.id));
@@ -909,6 +918,11 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
                 <TheftSection key="theft" block={block} onChangeCamp={() => setView('recipes')} />,
                 <StealsSection key="steals" block={block} rare={block.rare ? <RareFinds rare={block.rare} lucky={luckyOf(effects)} /> : null} />
             ];
+            case CARD_BLOCK.STUDY: return [
+                <StudySection key="study" block={block} onChangeNode={() => setView('recipes')} />,
+                <MasterySection key="study-mastery" mastery={block.mastery} />
+            ];
+            case CARD_BLOCK.MASTERY: return [<MasterySection key="mastery" mastery={block} />];
             case CARD_BLOCK.LIFECYCLE: return [<EventsSection key="lifecycle" lines={block.lines} />];
             case CARD_BLOCK.SUPPORT: return [<SupportSection key="support" boosts={block.boosts} />];
             case CARD_BLOCK.FIGHT: return [<FightSection key="fight" block={block} />];
@@ -922,6 +936,10 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
     const panel = listing && theft ? (
         <div className="p-1.5">
             <CampList key={instanceId} block={theft} onChoose={chooseCamp} onBack={() => setView('card')} />
+        </div>
+    ) : listing && study ? (
+        <div className="p-1.5">
+            <NodeList key={instanceId} block={study} onChoose={chooseNode} onBack={() => setView('card')} />
         </div>
     ) : listing ? (
         <div className="p-1.5">

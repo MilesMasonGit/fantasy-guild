@@ -132,14 +132,16 @@ export const FOUNDATION_KINDS = Object.freeze(['wood', 'stone', 'farmland', 'exc
  * ⚠️ Both sides are opt-in: a station with no kind offers its whole skill, and a recipe with no
  * kinds is offered by every station of its skill.
  */
-export const STATION_KINDS = Object.freeze(['field', 'herb_garden', 'windmill', 'altar', 'shrine', 'hideout']);
+export const STATION_KINDS = Object.freeze(['field', 'herb_garden', 'windmill', 'altar', 'shrine', 'hideout', 'laboratory']);
 
 /**
- * The skill each kind splits; the CMS offers a kind only on its own skill. A Hideout (Crime) is no
- * split: it robs a camp and runs no recipe (`crime.js`, `systems/board/Hideouts.js`).
+ * The skill each kind splits; the CMS offers a kind only on its own skill. A Hideout (Crime) and a
+ * Laboratory (Science) are no split: one robs a camp, the other studies a node, and neither runs a
+ * recipe (`crime.js`, `systems/board/Hideouts.js`; `mastery.js`, `systems/board/Laboratories.js`).
  */
 const STATION_KIND_SKILLS = Object.freeze({
-    field: 'farming', herb_garden: 'farming', windmill: 'farming', altar: 'faith', shrine: 'faith', hideout: 'crime'
+    field: 'farming', herb_garden: 'farming', windmill: 'farming', altar: 'faith', shrine: 'faith', hideout: 'crime',
+    laboratory: 'science'
 });
 
 /**
@@ -177,7 +179,8 @@ const STATION_KIND_LABELS = Object.freeze({
     windmill: 'Windmill',
     altar: 'Altar',
     shrine: 'Shrine',
-    hideout: 'Hideout'
+    hideout: 'Hideout',
+    laboratory: 'Laboratory'
 });
 
 /** A station kind in words; an unknown kind shows its id rather than vanishing. */

@@ -39,7 +39,7 @@
         "sim": { "$ref": "common.schema.json#/$defs/sim" },
         "stationKinds": {
           "type": "array",
-          "items": { "type": "string", "enum": ["furnace", "smithy", "kitchen", "brewery", "tannery", "workbench", "alchemy_table", "summoning_circle", "field", "herb_garden", "windmill", "altar", "shrine", "hideout"] },
+          "items": { "type": "string", "enum": ["furnace", "smithy", "kitchen", "brewery", "tannery", "workbench", "alchemy_table", "summoning_circle", "field", "herb_garden", "windmill", "altar", "shrine", "hideout", "laboratory"] },
           "description": "STATION_KINDS (src/config/registries/tokenConstants.js): which stations of the skill offer it; empty means all of them. The RETIRED_STATION_KINDS stay valid words but narrow nothing (a leftover the audit asks to clear)."
         },
         "foundationKinds": {
@@ -57,6 +57,7 @@
             "ripeSprite": { "type": ["string", "null"] }
           }
         },
+        "mastery": { "$ref": "common.schema.json#/$defs/masteryTrack" },
         "offering": {
           "description": "An offering a shrine burns (tokenConstants.js offeringTermsOf; src/systems/board/Shrines.js): its inputs are the offering.",
           "type": "object",

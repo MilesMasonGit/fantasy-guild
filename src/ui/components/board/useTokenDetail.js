@@ -11,6 +11,7 @@ import * as Fields from '../../../systems/board/Fields.js';
 import * as Demolition from '../../../systems/board/Demolition.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
 import * as Hideouts from '../../../systems/board/Hideouts.js';
+import * as Laboratories from '../../../systems/board/Laboratories.js';
 
 /** The side the hero working `id` stands on (−1 / 1), or null. */
 function sideOfWorker(id) {
@@ -51,6 +52,9 @@ export function tokenDetailOf(id, def) {
         campChosen: Hideouts.isHideout(def) && !!Hideouts.targetOf(instance),
         // A Field picks a crop with the same gear, sown for its seed.
         isField: Fields.isField(def),
+        // A Laboratory picks the node it studies with the same gear.
+        isLaboratory: Laboratories.isLaboratory(def),
+        nodeChosen: Laboratories.isLaboratory(def) && !!Laboratories.targetOf(instance),
         isSpawner,
         // The family's live count against its cap, `{ count, cap }`.
         spawnerCounts: isSpawner ? SpawnerSystem.spawnerCounts(id) : null,

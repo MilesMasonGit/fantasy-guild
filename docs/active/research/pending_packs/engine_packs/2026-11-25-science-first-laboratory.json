@@ -1,0 +1,486 @@
+{
+  "format": "fantasy-guild-change-pack",
+  "version": 1,
+  "id": "2026-11-25-science-first-laboratory",
+  "createdAt": "2026-11-25T12:00:00Z",
+  "asked": "Science mastery of nodes (owner 2026-11-25, content_science.md): the first Laboratory, a University and the Oak Tree track, for the K6 eye-check. Thresholds and sizes are placeholders for the ledger (T-663).",
+  "entries": [
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_laboratory_station",
+      "value": {
+        "id": "effect_laboratory_station",
+        "name": "Laboratory Station",
+        "statements": [
+          {
+            "id": "stm_laboratory_station",
+            "keyword": "station",
+            "payload": {
+              "skill": "science",
+              "stationKind": "laboratory"
+            },
+            "chargeDelta": 0,
+            "to": null,
+            "reach": null,
+            "target": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true
+      },
+      "note": "Works as Science, kind Laboratory: it studies the node picked on its card and runs no recipe"
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_laboratory",
+      "value": {
+        "id": "token_laboratory",
+        "name": "Laboratory",
+        "description": "",
+        "sprite": "t_alembic_small",
+        "tokenType": "station",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": true,
+        "config": {
+          "skill": "science",
+          "skillRequired": 1,
+          "cycleTimeMs": 10000,
+          "xp": 2,
+          "inputs": [],
+          "outputs": []
+        },
+        "laboratory": {
+          "maxLevel": 20
+        },
+        "autoSyncId": true,
+        "effects": [
+          {
+            "effectId": "effect_laboratory_station",
+            "scale": 1
+          }
+        ]
+      },
+      "note": "Science's building: studies nodes up to level 20 in its reach (content_science.md: variants at Science 20, 40, 60, 80 reach higher)",
+      "placeholderArt": true
+    },
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_university_study",
+      "value": {
+        "id": "effect_university_study",
+        "name": "University",
+        "statements": [
+          {
+            "id": "stm_university_study",
+            "keyword": "provides",
+            "payload": {
+              "type": "WORK_TIME",
+              "bucket": "percentage",
+              "value": -0.1,
+              "category": "science"
+            },
+            "chargeDelta": 0,
+            "to": {
+              "mode": "all",
+              "value": ""
+            },
+            "reach": "nearby",
+            "target": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true
+      },
+      "note": "Speed for Science in its reach: a Laboratory beside it studies faster"
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_university",
+      "value": {
+        "id": "token_university",
+        "name": "University",
+        "description": "",
+        "sprite": "t_school_wizard",
+        "tokenType": "buff",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "effects": [
+          {
+            "effectId": "effect_university_study",
+            "scale": 1
+          }
+        ]
+      },
+      "note": "The support building that speeds Science (content_science.md)",
+      "placeholderArt": true
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_build_laboratory",
+      "value": {
+        "id": "recipe_build_laboratory",
+        "name": "Build Laboratory",
+        "skill": "construction",
+        "levelRequirement": 1,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 10
+          },
+          {
+            "itemId": "item_stone",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_laboratory",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 90000,
+        "xp": 15,
+        "foundationKinds": [
+          "wood"
+        ]
+      },
+      "note": "Built on a Wood Foundation; the price is a placeholder"
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_build_university",
+      "value": {
+        "id": "recipe_build_university",
+        "name": "Build University",
+        "skill": "construction",
+        "levelRequirement": 1,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_stone",
+            "quantity": 10
+          },
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_university",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 90000,
+        "xp": 15,
+        "foundationKinds": [
+          "stone"
+        ]
+      },
+      "note": "Built on a Stone Foundation like other supports; the price is a placeholder"
+    },
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_oak_mastery_speed",
+      "value": {
+        "id": "effect_oak_mastery_speed",
+        "name": "Oak Mastery: Quick Felling",
+        "statements": [
+          {
+            "id": "stm_oak_mastery_speed",
+            "keyword": "provides",
+            "payload": {
+              "type": "WORK_TIME",
+              "bucket": "percentage",
+              "value": -0.05
+            },
+            "chargeDelta": 0,
+            "to": {
+              "mode": "all",
+              "value": ""
+            },
+            "reach": "self",
+            "target": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true
+      },
+      "note": "Oak rank 1: Speed"
+    },
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_oak_mastery_yield",
+      "value": {
+        "id": "effect_oak_mastery_yield",
+        "name": "Oak Mastery: Heavy Logs",
+        "statements": [
+          {
+            "id": "stm_oak_mastery_yield",
+            "keyword": "provides",
+            "payload": {
+              "type": "YIELD",
+              "bucket": "percentage",
+              "value": 0.05
+            },
+            "chargeDelta": 0,
+            "to": {
+              "mode": "all",
+              "value": ""
+            },
+            "reach": "self",
+            "target": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true
+      },
+      "note": "Oak rank 2: Yield"
+    },
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_oak_mastery_refresh",
+      "value": {
+        "id": "effect_oak_mastery_refresh",
+        "name": "Oak Mastery: Deep Roots",
+        "statements": [
+          {
+            "id": "stm_oak_mastery_refresh",
+            "keyword": "provides",
+            "payload": {
+              "type": "REFRESH",
+              "bucket": "flat",
+              "value": 5,
+              "category": "forestry"
+            },
+            "chargeDelta": 0,
+            "to": {
+              "mode": "all",
+              "value": ""
+            },
+            "reach": "self",
+            "target": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true
+      },
+      "note": "Oak rank 3: Refresh (a lower chance to run out)"
+    },
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_oak_mastery_lucky",
+      "value": {
+        "id": "effect_oak_mastery_lucky",
+        "name": "Oak Mastery: Keen Eye",
+        "statements": [
+          {
+            "id": "stm_oak_mastery_lucky",
+            "keyword": "provides",
+            "payload": {
+              "type": "LUCKY",
+              "bucket": "percentage",
+              "value": 0.25
+            },
+            "chargeDelta": 0,
+            "to": {
+              "mode": "all",
+              "value": ""
+            },
+            "reach": "self",
+            "target": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true
+      },
+      "note": "Oak rank 4: Lucky (does nothing until the Oak has a rare table)"
+    },
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_oak_mastery_double",
+      "value": {
+        "id": "effect_oak_mastery_double",
+        "name": "Oak Mastery: Twin Logs",
+        "statements": [
+          {
+            "id": "stm_oak_mastery_double",
+            "keyword": "provides",
+            "payload": {
+              "type": "DOUBLE_DROP",
+              "bucket": "flat",
+              "value": 5,
+              "category": "item_oak_wood"
+            },
+            "chargeDelta": 0,
+            "to": {
+              "mode": "all",
+              "value": ""
+            },
+            "reach": "self",
+            "target": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true
+      },
+      "note": "Oak rank 5: Double Item on Oak Wood"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_oak_tree",
+      "value": {
+        "name": "Oak Tree",
+        "description": "Needs a Woodaxe in hand.",
+        "sprite": "t_tree_oak",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Forest",
+          "Oak"
+        ],
+        "provides": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": 5,
+        "requiresHero": true,
+        "config": {
+          "skill": "forestry",
+          "skillRequired": 1,
+          "cycleTimeMs": 3000,
+          "xp": 3,
+          "inputs": [],
+          "outputs": [
+            {
+              "itemId": "item_oak_wood",
+              "chance": 100,
+              "minQty": 1,
+              "maxQty": 2,
+              "baseQty": {
+                "min": 1,
+                "max": 2
+              },
+              "variable": false
+            },
+            {
+              "itemId": "item_oak_seedling",
+              "chance": 20,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            },
+            {
+              "itemId": "item_bird_nest",
+              "chance": 3,
+              "minQty": 1,
+              "maxQty": 1,
+              "baseQty": {
+                "min": 1,
+                "max": 1
+              },
+              "variable": true
+            }
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_oak_tree",
+        "sim": {
+          "tempo": "quick",
+          "purpose": "iph",
+          "xpPinned": true
+        },
+        "needsTool": {
+          "kind": "woodaxe",
+          "minTier": 1
+        },
+        "staysPut": true,
+        "respawn": {
+          "mode": "regrow",
+          "into": "token_oak_stump"
+        },
+        "mastery": {
+          "ranks": [
+            {
+              "points": 20,
+              "effectId": "effect_oak_mastery_speed",
+              "scale": 1
+            },
+            {
+              "points": 50,
+              "effectId": "effect_oak_mastery_yield",
+              "scale": 1
+            },
+            {
+              "points": 100,
+              "effectId": "effect_oak_mastery_refresh",
+              "scale": 1
+            },
+            {
+              "points": 200,
+              "effectId": "effect_oak_mastery_lucky",
+              "scale": 1
+            },
+            {
+              "points": 400,
+              "effectId": "effect_oak_mastery_double",
+              "scale": 1
+            }
+          ]
+        }
+      },
+      "note": "The Oak Tree track (Trees: Speed, Yield, Refresh, Lucky, Double Item); an Oak Stump counts as Oak",
+      "fingerprint": "fp:ae5e6b08d7910c76"
+    }
+  ]
+}

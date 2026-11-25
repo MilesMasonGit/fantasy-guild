@@ -71,6 +71,7 @@ describe('the routing table', () => {
             [ENGINE_EVENTS.HERO_LEVELED]: 'banner:recipe',
             [ENGINE_EVENTS.HERO_RECRUITED]: 'banner:hero',
             [ENGINE_EVENTS.GUILD_UPGRADES_UPDATED]: 'banner:upgrade',
+            [ENGINE_EVENTS.MASTERY_RANK_UP]: 'banner:mastery',
             [BOARD_EVENTS.HERO_DEFEATED]: 'banner:knockout',
             [ENGINE_EVENTS.BANK_FULL]: 'banner:bankFull',
             [ENGINE_EVENTS.ATLAS_CHANGED]: 'banner:settled',
