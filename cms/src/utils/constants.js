@@ -204,6 +204,9 @@ export { coinWorthOf, coinWorthFindings } from '../../../src/config/registries/i
 // Milestone perks: the shape of a skill's perk table and the content checks for one. The game's own rules and wording.
 export { DEFAULT_PERK_LEVELS, MIN_PERK_LEVEL, isPerkLevel, perkRowsOf, normaliseSkillPerks } from '../../../src/systems/hero/perkTable.js';
 export { perkFindings } from '../../../src/systems/core/perkRule.js';
+// Science: a Laboratory (`laboratory: { maxLevel }`) studies a node for its kind's mastery track (`mastery: { ranks }`, on a node or a crop recipe). The shapes and the audit's words are the game's.
+export { LABORATORY_KIND, NEW_TRACK_RANKS, laboratoryOf, masteryTrackOf } from '../../../src/config/registries/mastery.js';
+export { masteryFindings } from '../../../src/systems/core/masteryRule.js';
 // A water Token's catch pools (tool kind × bait → a weighted catch): the game's own reader, so the Catch pools block and the game read the same pools.
 export { catchPoolsOf, hasCatchPools, catchItemIds, baitItemIds } from '../../../src/config/registries/catchPools.js';
 export { rareTableOf, rareTableChance, rareEntryChances } from '../../../src/config/registries/rareTables.js';

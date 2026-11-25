@@ -10,6 +10,7 @@ import {
   cropTermsOf, CROP_MIN_GROW_MS, offeringTermsOf, shrineOf, SHRINE_MIN_MS,
 } from '../../utils/constants';
 import { SpriteField } from './LifecycleBlocks';
+import { MasteryTrack } from './MasteryBlock';
 import { NumberCell } from '../shared/IOEntryList';
 import SupplyChainColumn from '../layout/SupplyChainColumn';
 import { Field } from '../shared/EditorLayout';
@@ -603,6 +604,27 @@ function OfferingRow({ recipe, shrines, onChange }) {
   );
 }
 
+/** A crop's mastery track (brief 810 K6): Add, edit, Remove, as a Token's Mastery block. */
+function CropMasteryRow({ recipe, onChange }) {
+  const effects = useEntityStore((s) => s.effects);
+  const present = recipe.mastery && typeof recipe.mastery === 'object';
+  return (
+    <div data-testid="crop-mastery-row" className="rounded-lg border border-white/10 bg-black/20 p-3 space-y-2">
+      <div className="flex items-center gap-2">
+        <label className="text-[10px] font-bold uppercase tracking-wider block text-gray-500 flex-1">Mastery track (Science)</label>
+        {present ? (
+          <button type="button" className="btn-ghost text-[10px]" style={{ padding: '2px 8px' }} onClick={() => onChange({ mastery: undefined })}>Remove</button>
+        ) : (
+          <button type="button" data-crop-mastery-add className="btn-ghost text-[10px] flex items-center gap-1" style={{ padding: '2px 8px' }} onClick={() => onChange({ mastery: { ranks: [] } })}>
+            <Plus size={10} /> Add
+          </button>
+        )}
+      </div>
+      {present && <MasteryTrack block={recipe.mastery} holder={recipe} kind="Recipe" effects={effects} onChange={(v) => onChange({ mastery: v })} />}
+    </div>
+  );
+}
+
 function RecipeCard({ recipe, tokens, stations = [], skillName, availableContext, onChange, onDelete }) {
   const building = buildsOnFoundation(recipe);
   const [tagDraft, setTagDraft] = useState('');
@@ -659,6 +681,11 @@ function RecipeCard({ recipe, tokens, stations = [], skillName, availableContext
           fields={stations.filter((s) => s.token.field && stationKindOffers(s.kind, recipe)).map((s) => s.token)}
           onChange={onChange}
         />
+      )}
+
+      {/* A crop's Science mastery track: a Field's kind is the crop in its ground. */}
+      {!building && (recipe.crop || recipe.mastery) && (
+        <CropMasteryRow recipe={recipe} onChange={onChange} />
       )}
 
       {/* An offering: a shrine offering it, or an offering block already written. */}

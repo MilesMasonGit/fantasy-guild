@@ -1,4 +1,4 @@
-import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, spotFindings, fishFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, gearDefenceFindings, effectStackFindings, hallStarFindings, coinWorthFindings } from '../utils/constants';
+import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, spotFindings, fishFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, masteryFindings, gearDefenceFindings, effectStackFindings, hallStarFindings, coinWorthFindings } from '../utils/constants';
 import { eventProblems, EVENT_BIOMES } from '../../../src/config/eventTable.js';
 import { STANDS_ON_CHOICES } from '../../../src/systems/atlas/TerrainMap.js';
 
@@ -177,6 +177,18 @@ export function auditConnectivity(entities, solverRefusals = []) {
 
   // Milestone perks: a table on a skill the game does not have, a perk at a level no hero reaches or naming a missing effect, a rule that does nothing on a hero. The game's own rule (`perkRule.js`), so this tab and the boot audit say the same thing.
   for (const f of perkFindings({ skillPerks, effects })) {
+    issues.push({
+      entityId: f.entityId,
+      entityName: f.entityName,
+      entityType: f.entityType,
+      issueType: 'Data Integrity',
+      severity: 'Warning',
+      details: f.message.charAt(0).toUpperCase() + f.message.slice(1),
+    });
+  }
+
+  // Science: a mastery track on something that is no node kind, a rank no study reaches or naming a missing effect, a Laboratory block that cannot work. The game's own rule (`masteryRule.js`), so this tab and the boot audit say the same thing.
+  for (const f of masteryFindings({ tokens, recipes: allRecipes, effects })) {
     issues.push({
       entityId: f.entityId,
       entityName: f.entityName,
