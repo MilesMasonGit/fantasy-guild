@@ -75,6 +75,7 @@ export const SKIP_HINT = {
     [ALERT.SPAWN_MAT_FULL]: 'Token cap full',
     [ALERT.RESTING]: 'resting, it comes back soon',
     [ALERT.GROWING]: 'its crop is growing',
+    [ALERT.SHRINE_FULL]: 'lit to the full: it needs no offering yet',
     // A growing Token's own waits (a Stump; a Field stopped for want of a seed records the second).
     [ALERT.GROW_NEEDS_NEARBY]: 'waiting for what it needs nearby to grow',
     [ALERT.GROW_NEEDS_ITEM]: 'stopped: can’t pay to grow',

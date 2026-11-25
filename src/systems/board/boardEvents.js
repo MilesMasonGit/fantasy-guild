@@ -304,7 +304,14 @@ export const BOARD_EVENTS = {
      * `Flags.init` subscribes: a broken weapon ends the order (fighting needs none, so a kept order
      * would punch on); a broken tool leaves the order, and the hero lets go for want of it.
      */
-    GEAR_BROKE: 'board:gear_broke'
+    GEAR_BROKE: 'board:gear_broke',
+
+    /**
+     * A shrine lit, or went out (`Shrines.js`): `{ instanceId, lit, litMs, maxLitMs }`, said when an
+     * offering lands (lit, its lit time now) and when its lit time runs out (`lit: false`). Between
+     * the two its lit time runs down at game speed, so the mat's lit bar runs on from the last one.
+     */
+    SHRINE_LIT: 'board:shrine_lit'
 };
 
 /**
@@ -409,5 +416,11 @@ export const ALERT = {
      * (`Fields.js`). Like `RESTING`: a flag skips it and its hero lets go and waits silently for it,
      * and it is never a Token's alert.
      */
-    GROWING: 'growing'
+    GROWING: 'growing',
+    /**
+     * A shrine is lit too full to take another whole offering (`Shrines.js`). Like `RESTING`: a flag
+     * skips it and its hero lets go and waits by it, it is never a Token's alert, and the hero tends it
+     * again once it has burned down enough, so no offering is spent for nothing.
+     */
+    SHRINE_FULL: 'shrine_full'
 };

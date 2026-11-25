@@ -37,6 +37,7 @@ import * as CycleSavings from './CycleSavings.js';
 import * as InputCost from './InputCost.js';
 import * as Fishing from './Fishing.js';
 import * as Fields from './Fields.js';
+import * as Shrines from './Shrines.js';
 import * as LoadoutMoments from './LoadoutMoments.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import * as HeroManager from '../hero/HeroManager.js';
@@ -398,6 +399,12 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // Celebrated only once something did come in at ten times (a line whose chance missed did not).
     if (giantLanded) EffectFeedback.giantHarvest(id);
 
+    // A shrine's offering: the cycle that spent it keeps the shrine lit longer. Lit from out, its
+    // blessing starts reaching its neighbours now.
+    if (!failed && !buildTypeId && Shrines.light(instance, def, io.recipe)) {
+        TileModifiers.rebuildAround([centreOf(instance)]);
+    }
+
     // `Applies`: a neighbour putting a status on the hero who just worked here. The same moment and
     // the same rules as BONUS_DROP directly above: skipped on a failed cycle, and it needs a
     // person, because a status has nowhere to live on a tile.
@@ -606,6 +613,11 @@ export function tick(delta) {
         // it. When a block switches between paid and unpaid the neighbourhood must be rebuilt: an
         // aura going dark has to actually stop applying, not just be flagged.
         if (BlockUpkeep.tickUpkeep(instance, def, delta)) {
+            TileModifiers.rebuildAround([centreOf(instance)]);
+        }
+        // A shrine burns down on the same footing: tended or not, in the hand too. Going out turns
+        // its whole blessing off.
+        if (Shrines.burn(instance, def, delta)) {
             TileModifiers.rebuildAround([centreOf(instance)]);
         }
 
