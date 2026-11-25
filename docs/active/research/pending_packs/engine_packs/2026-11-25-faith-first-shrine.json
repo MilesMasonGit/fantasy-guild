@@ -1,0 +1,152 @@
+{
+  "format": "fantasy-guild-change-pack",
+  "version": 1,
+  "id": "2026-11-25-faith-first-shrine",
+  "createdAt": "2026-11-25T10:00:00Z",
+  "asked": "Faith's shrines and offerings (owner 2026-11-25, content_faith.md): the first shrine, the Nature Shrine, with its Altar and offerings, for the K3 eye-check",
+  "entries": [
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_altar_station",
+      "value": {
+        "id": "effect_altar_station",
+        "name": "Altar Station",
+        "statements": [
+          { "id": "stm_altar_station", "keyword": "station", "payload": { "skill": "faith", "stationKind": "altar" }, "chargeDelta": 0, "to": null, "reach": null, "target": null, "when": null, "upkeep": null }
+        ],
+        "autoSyncId": true
+      },
+      "note": "Works as Faith, kind Altar: it offers the recipes marked Made at Altar (the offerings it makes)"
+    },
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_shrine_station",
+      "value": {
+        "id": "effect_shrine_station",
+        "name": "Shrine Station",
+        "statements": [
+          { "id": "stm_shrine_station", "keyword": "station", "payload": { "skill": "faith", "stationKind": "shrine" }, "chargeDelta": 0, "to": null, "reach": null, "target": null, "when": null, "upkeep": null }
+        ],
+        "autoSyncId": true
+      },
+      "note": "Works as Faith, kind Shrine: it offers the recipes marked Made at Shrine (the offerings it burns)"
+    },
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_nature_blessing",
+      "value": {
+        "id": "effect_nature_blessing",
+        "name": "Nature's Blessing",
+        "statements": [
+          { "id": "stm_nature_blessing", "keyword": "provides", "payload": { "type": "NEVER_RUNS_OUT", "bucket": "flat", "value": 1 }, "chargeDelta": 0, "to": { "mode": "all", "value": "" }, "reach": "nearby", "target": null, "when": null, "upkeep": null }
+        ],
+        "autoSyncId": true
+      },
+      "note": "Can't Run Out on every nearby Token while the shrine is lit: veins, trees and Fields spend no charges (content_faith.md, Faith 1)"
+    },
+    {
+      "op": "create",
+      "kind": "item",
+      "id": "item_lavender_incense",
+      "value": { "id": "item_lavender_incense", "name": "Lavender Incense", "description": "An offering: keeps a Nature Shrine lit longer.", "type": "material", "tags": [], "sprite": "i_lavender", "stackable": true, "restoreAmount": 0, "equipSlot": "", "value": 1, "autoSyncId": true },
+      "note": "The Nature Shrine's richer offering (content_faith.md: Altar, Faith 5, from Lavender)",
+      "placeholderArt": true
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_altar",
+      "value": {
+        "id": "token_altar", "name": "Altar", "description": "", "sprite": "t_shrine_forge_major", "tokenType": "station", "rarity": "common", "tier": 1,
+        "tags": [], "acceptedTokens": [], "size": 1, "uses": null, "requiresHero": true,
+        "config": { "skill": "faith", "skillRequired": 1, "cycleTimeMs": 12000, "xp": 0, "inputs": [], "outputs": [] },
+        "autoSyncId": true,
+        "effects": [{ "effectId": "effect_altar_station", "scale": 1 }]
+      },
+      "note": "Faith's making building: offerings by recipe",
+      "placeholderArt": true
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_nature_shrine",
+      "value": {
+        "id": "token_nature_shrine", "name": "Nature Shrine", "description": "", "sprite": "t_shrine_forest", "tokenType": "station", "rarity": "common", "tier": 1,
+        "tags": [], "acceptedTokens": [], "size": 1, "uses": null, "requiresHero": true,
+        "config": { "skill": "faith", "skillRequired": 1, "cycleTimeMs": 12000, "xp": 0, "inputs": [], "outputs": [] },
+        "shrine": { "maxLitMs": 600000 },
+        "autoSyncId": true,
+        "effects": [{ "effectId": "effect_shrine_station", "scale": 1 }, { "effectId": "effect_nature_blessing", "scale": 1 }]
+      },
+      "note": "Faith 1 shrine: lit at most 10 minutes (the ledger's number); nodes in its reach can't run out while it is lit"
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_lavender_incense",
+      "value": {
+        "id": "recipe_lavender_incense", "name": "Lavender Incense", "skill": "faith", "levelRequirement": 5, "requiresContext": [],
+        "stationKinds": ["altar"],
+        "inputs": [{ "itemId": "item_lavender", "quantity": 2 }],
+        "outputs": [{ "itemId": "item_lavender_incense", "chance": 100, "minQty": 1, "maxQty": 1, "baseQty": { "min": 1, "max": 1 }, "variable": false }],
+        "durationMs": 6000, "xp": 8
+      },
+      "note": "Made at the Altar (content_faith.md, Faith 5); amounts and times are the ledger's"
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_offer_oak_charcoal",
+      "value": {
+        "id": "recipe_offer_oak_charcoal", "name": "Offer Oak Wood and Charcoal", "skill": "faith", "levelRequirement": 1, "requiresContext": [],
+        "stationKinds": ["shrine"],
+        "inputs": [{ "itemId": "item_oak_wood", "quantity": 2 }, { "itemId": "item_charcoal", "quantity": 1 }],
+        "outputs": [],
+        "offering": { "litMs": 60000 },
+        "durationMs": 4000, "xp": 3
+      },
+      "note": "The Nature Shrine's ordinary offering (owner: a Nature shrine might need Wood and Ash): each keeps it lit 1 minute"
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_offer_lavender_incense",
+      "value": {
+        "id": "recipe_offer_lavender_incense", "name": "Offer Lavender Incense", "skill": "faith", "levelRequirement": 5, "requiresContext": [],
+        "stationKinds": ["shrine"],
+        "inputs": [{ "itemId": "item_lavender_incense", "quantity": 1 }],
+        "outputs": [],
+        "offering": { "litMs": 180000 },
+        "durationMs": 4000, "xp": 5
+      },
+      "note": "Lavender Incense keeps the Nature Shrine lit longer: 3 minutes each"
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_build_altar",
+      "value": {
+        "id": "recipe_build_altar", "name": "Build Altar", "skill": "construction", "levelRequirement": 1, "requiresContext": [],
+        "inputs": [{ "itemId": "item_stone", "quantity": 5 }],
+        "outputs": [{ "tokenId": "token_altar", "chance": 100, "minQty": 1, "maxQty": 1, "baseQty": { "min": 1, "max": 1 }, "variable": false }],
+        "durationMs": 90000, "xp": 15, "foundationKinds": ["stone"]
+      },
+      "note": "Built on a Stone Foundation (it already lists Faith in its Shop skills)"
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_build_nature_shrine",
+      "value": {
+        "id": "recipe_build_nature_shrine", "name": "Build Nature Shrine", "skill": "construction", "levelRequirement": 1, "requiresContext": [],
+        "inputs": [{ "itemId": "item_stone", "quantity": 5 }, { "itemId": "item_oak_wood", "quantity": 5 }],
+        "outputs": [{ "tokenId": "token_nature_shrine", "chance": 100, "minQty": 1, "maxQty": 1, "baseQty": { "min": 1, "max": 1 }, "variable": false }],
+        "durationMs": 90000, "xp": 15, "foundationKinds": ["stone"]
+      },
+      "note": "Built on a Stone Foundation; price is the ledger's"
+    }
+  ]
+}

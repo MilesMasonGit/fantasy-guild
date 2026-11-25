@@ -1,0 +1,97 @@
+{
+  "format": "fantasy-guild-change-pack",
+  "version": 1,
+  "id": "2026-11-25-gathering-signature-perks",
+  "createdAt": "2026-11-25T10:00:00Z",
+  "asked": "The 99 signature perks for Mining, Farming, Forestry and Fishing: Motherlode, Evergreen, Grove Feller, Master Angler (concept_milestone_perks.md, owner 2026-11-21; rules built by brief 800 P1 and P2)",
+  "entries": [
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_motherlode",
+      "value": {
+        "name": "Motherlode",
+        "statements": [
+          {
+            "id": "stm_motherlode",
+            "keyword": "provides",
+            "payload": { "type": "NEVER_RUNS_OUT", "bucket": "flat", "value": 100, "category": "mining" },
+            "chargeDelta": 0,
+            "to": { "mode": "all", "value": "" },
+            "target": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true
+      },
+      "note": "Mining 99: a vein this hero works never rests (Never Runs Out 100% on Mining)"
+    },
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_evergreen",
+      "value": {
+        "name": "Evergreen",
+        "statements": [
+          {
+            "id": "stm_evergreen",
+            "keyword": "provides",
+            "payload": { "type": "FREE_REPLANT", "bucket": "flat", "value": 100, "category": "farming" },
+            "chargeDelta": 0,
+            "to": { "mode": "all", "value": "" },
+            "target": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true
+      },
+      "note": "Farming 99: a Field this hero harvests out replants itself, no seed spent (Free Replant 100% on Farming)"
+    },
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_grove_feller",
+      "value": {
+        "name": "Grove Feller",
+        "statements": [
+          {
+            "id": "stm_grove_feller",
+            "keyword": "provides",
+            "payload": { "type": "GROVE_FELLING", "bucket": "flat", "value": 100, "category": "forestry" },
+            "chargeDelta": 0,
+            "to": { "mode": "all", "value": "" },
+            "target": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true
+      },
+      "note": "Forestry 99: a falling tree fells the touching trees of its kind, each paid (Grove Felling 100% on Forestry)"
+    },
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_master_angler",
+      "value": {
+        "name": "Master Angler",
+        "statements": [
+          {
+            "id": "stm_master_angler",
+            "keyword": "provides",
+            "payload": { "type": "BETTER_CATCH", "bucket": "flat", "value": 20, "category": "fishing" },
+            "chargeDelta": 0,
+            "to": { "mode": "all", "value": "" },
+            "target": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true
+      },
+      "note": "Fishing 99: a catch is sometimes the next fish up (Better Catch on Fishing; 20% is a starting number for the content agent to set with the ledger)"
+    }
+  ]
+}
