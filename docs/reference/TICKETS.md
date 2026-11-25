@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-706**
+**Next free number: T-707**
 
 ---
 
@@ -185,6 +185,7 @@ here.
 | T-703 | P2 | open | *For: content agent, after 870 C3.* **The coin pack**: the cost curve, item worth overrides, enemy coin drops, which prices ask coins, and the coin building (more coins from enemies and Hideouts in reach); coins in camps' steal tables once 810 K4 lands. | owner 2026-11-25 |
 | T-704 | P3 | open | *Brief 810 K4. For: director.* **A Quiet effect for the Hideout**: a CMS effect that lowers a thief's caught odds, for the Hideout's Quiet variant ([content_crime.md](../active/content_crime.md)). Build with K4. | owner 2026-11-25 |
 | T-705 | P2 | open | *Brief 810 K3. For: director.* **Faith's five blessing effects**, as CMS effects a shrine carries on Tokens and heroes in its reach while lit: nodes can't run out; a gift item from the next tier; never Defeated (flee at 0 HP, keep everything); shared XP among heroes in reach; a chance a finished cycle repeats for free. Blessings add up ([content_faith.md](../active/content_faith.md)). | owner 2026-11-25 |
+| T-706 | P2 | open | *For: content agent.* **The enemy roster pack**: the 25 enemies of [content_enemies.md](../active/content_enemies.md) as Planned entries with camps, biomes, fight drops and steal tables; match each new material to a job (Alchemy's late potions first) or cut it. | owner 2026-11-25 |
 
 ### Code review round 4 (triaged 2026-11-07)
 
