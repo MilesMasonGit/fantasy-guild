@@ -4,6 +4,7 @@ import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as MatPlacement from '../systems/board/MatPlacement.js';
+import * as GroundRules from '../systems/board/GroundRules.js';
 import * as Orders from '../systems/board/Orders.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
@@ -88,6 +89,8 @@ registerTokenTypes({
     gf_nursery: foundation('gf_nursery', 'GF Nursery', 'nursery'),
     gf_farmland: foundation('gf_farmland', 'GF Farmland', 'farmland', ['grass']),
     gf_dock: foundation('gf_dock', 'GF Dock', 'dock', ['shore']),
+    gf_wood_foundation: foundation('gf_wood_foundation', 'GF Wood Foundation', 'wood'),
+    gf_boat: { id: 'gf_boat', name: 'GF Boat', rarity: 'common', theme: 'fixture', size: 1, uses: null, tokenType: 'buff', standsOn: ['water'] },
 
     // A vein names no ground of its own: the map's veins stand where the map put them.
     gf_vein: {
@@ -289,6 +292,18 @@ describe('⭐ a Foundation keeps its own ground once a build is chosen', () => {
         const dock = put('gf_dock', SHORE);
         StationRecipe.setSelectedRecipe(dock, 'gf_build_hut');
         expect(Placement.placeTokenAt(dock, GRASS, { excludeId: dock.id })).toMatchObject({ success: false, reason: 'Needs the shore.' });
+    });
+
+    it('a Foundation with no ground of its own stands under its build’s alone, as before, even water', () => {
+        expect(GroundRules.siteRulesFor('gf_wood_foundation', 'gf_boat')).toBe(GroundRules.rulesFor('gf_boat'));
+        const rules = GroundRules.siteRulesFor('gf_wood_foundation', 'gf_boat');
+        expect(GroundRules.allowsAt(rules, SHORE.x - 64, SHORE.y)).toBe(true);
+        expect(GroundRules.allowsAt(rules, GRASS.x, GRASS.y)).toBe(false);
+        // With one of its own, only the cells both allow: an Excavation set to dig a vein, Stone.
+        const both = GroundRules.siteRulesFor('gf_excavation', 'gf_vein');
+        expect(GroundRules.allowsAt(both, STONE.x, STONE.y)).toBe(true);
+        expect(GroundRules.allowsAt(both, GRASS.x, GRASS.y)).toBe(false);
+        expect(both.reason).toBe('Needs stone.');
     });
 
     it('a Nursery set to plant a Forest goes anywhere dry, as a Forest does', () => {
