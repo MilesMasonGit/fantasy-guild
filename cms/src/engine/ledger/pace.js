@@ -3,7 +3,8 @@
 import { buildRateBook, LIFECYCLE, WORK } from './rates.js';
 import { buildProfiles, targetKey, PROFILE, PROFILES, PROFILE_TEXT, BOOST_KIND, BOOST_KIND_TEXT, boostKindOf, BEFORE_HALL, pickKindOf, RARE_FIND_KINDS } from './profiles.js';
 import { starAddsRate } from './hall.js';
-import { settingsOf, minutesPerLevelAt, minutesToReach, formatMinutes, levelAtMinutes } from './settings.js';
+import { settingsOf, minutesPerLevelAt, minutesToReach, formatMinutes, levelAtMinutes, coinMinutesAt } from './settings.js';
+import { ledgerCoinWorth } from './coins.js';
 import { HOW, COMBAT, parseKey, itemKey, tokenKey, recipeKey, wedgeKey, starKey, spotPoolKey, LEDGER_ENGINE_TEXT } from '../../../../src/systems/progression/ledger/engine.js';
 import { spotOf } from '../../../../src/config/registries/fishingSpots.js';
 import { ringOfStar } from '../../../../src/systems/world/ringStars.js';
@@ -12,6 +13,9 @@ import { planOf, PLAN_STATUS, tierLabel } from '../../../../src/systems/progress
 import { xpForLevel, MAX_SKILL_LEVEL } from '../../../../src/utils/XPCurve.js';
 import { SKILLS, SKILL_LAYERS } from '../../../../src/config/registries/skillRegistry.js';
 import { STRICT_RINGS } from '../../../../src/config/worldTablesShape.js';
+import { stationKindOf } from '../../../../src/systems/effects/statements.js';
+import { HIDEOUT_KIND, stealOf, crimeLevelOf, caughtCurveOf, caughtChance } from '../../../../src/config/registries/crime.js';
+import { shopCoinsOf, enemyCoinDropOf } from '../../../../src/config/registries/coinCosts.js';
 
 /**
  * How the game is paced for the target player, worked out statically from the content at the three
@@ -29,9 +33,14 @@ import { STRICT_RINGS } from '../../../../src/config/worldTablesShape.js';
  *   engine shows, a step starts once everything it needs is had and its level gates are reached
  *   (skills level side by side, each by its own hero: one job per hero), then takes its own time
  *   (gathering what it spends, a build, a cycle, a chance at average luck).
+ * - **Coins** (brief 870 C3): the guild's coin supply at a stage, the best one hero earns
+ *   ({@link COINS}: selling what a work makes at its coin worth less what it spends, a kill's Coin
+ *   drop, a Hideout's thefts); a price that asks coins (a Shop Token, a Guild Hall rank, settling a
+ *   ring) gathers them beside its items, so its step waits for them; a coin cost proposed from the
+ *   coin curve (`coinPrices`).
  * - **Checks D**: walls (a level far slower than the pace curve), a long wait for one unlock, a
  *   stage's time against its budget, Bare and Maxed out of their bounds, a Guild Hall rank slow to
- *   pay back, a boost off its target strength, and what the calculator cannot read.
+ *   pay back, a boost off its target strength, a coin price nothing earns, and what the calculator cannot read.
  * - **The Guild Hall**: every rank's payback at Typical (the hours to gather its price against the
  *   hours it saves an hour on the work it pays best on, at the tier the owner gave it), and a
  *   proposed price for it (a preview: brief 290's rule, until the calculator is seen to agree with
@@ -46,6 +55,12 @@ import { STRICT_RINGS } from '../../../../src/config/worldTablesShape.js';
  */
 
 const HOUR_MS = 3_600_000;
+
+/**
+ * The guild's coins where an item would stand: a step's `gather.item` when its coins set its time,
+ * a fed rate's `short` when coins hold it back (a build paying its Foundation's coins).
+ */
+export const COINS = 'coins';
 
 /** A star open already: no star to light on the way. */
 const OPEN = Object.freeze({ path: Object.freeze([]), cost: 0 });
@@ -75,7 +90,15 @@ export const PACE_TEXT = Object.freeze({
     times: (r) => `${r >= 10 ? Math.round(r) : Math.round(r * 10) / 10}×`,
     opensRing: (ring) => `opens ring ${ring} of the world map`,
     skill: (s) => (s === COMBAT ? 'Combat' : s ? s.charAt(0).toUpperCase() + s.slice(1) : '—'),
-    waits: Object.freeze({ need: 'waits for', level: 'levels', own: 'its own time' })
+    waits: Object.freeze({ need: 'waits for', level: 'levels', own: 'its own time' }),
+    coins: (n) => `${n} ${n === 1 ? 'coin' : 'coins'}`,
+    earning: (n) => `earning ${n} ${n === 1 ? 'coin' : 'coins'}`,
+    noCoins: 'nothing earns its coins by then',
+    coinSupply: (name, coins, stage) => `${name} asks ${coins} ${coins === 1 ? 'coin' : 'coins'}, but nothing the guild has by ${stage} earns coins: give what its work makes a coin worth (a value), an enemy a Coin drop or a steal table coins.`,
+    theft: (enemy, hideout) => `thefts from ${enemy} at ${hideout}`,
+    noCurve: (stage) => `no coin curve point at or before ${stage}`,
+    noIncome: (stage) => `nothing the guild has by ${stage} earns coins`,
+    notReached: 'never reached'
 });
 
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -217,9 +240,18 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                     short = item;
                 }
             }
+            // A build that pays its Foundation's coins is fed coins as an input is fed items.
+            if (rate.coins < 0) {
+                const s = coinSupplyOf(profile, cap).perHour;
+                if (s / -rate.coins < scale) {
+                    scale = s / -rate.coins;
+                    short = COINS;
+                }
+            }
             scale = Math.max(0, Math.min(1, scale));
             const times = (m) => Object.fromEntries(Object.entries(m || {}).map(([k, v]) => [k, v * scale]));
             out = { rate, scale, items: times(rate.items), xp: times(rate.xp), tokens: times(rate.tokens), inputs: times(rate.inputs), short };
+            if (rate.coins !== undefined) out.coins = rate.coins * scale;
         }
         if (leave() === Infinity) fedMemo.set(key, out);
         return out;
@@ -275,24 +307,32 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const s = supplyOf(itemId, BEFORE_HALL, cap).perHour;
         return s > 0 ? 1 / s : Infinity;
     };
+    /** Hours `coins` take to earn at a profile and stage: 0 for none, Infinity when nothing earns coins then. */
+    const coinCostHours = (coins, profile, cap) => {
+        if (!(coins > 0)) return 0;
+        const s = coinSupplyOf(profile, cap).perHour;
+        return s > 0 ? coins / s : Infinity;
+    };
     /** Bare hero-hours to have one of a Token: free where the camp or a Region places it (or it drifts in), else its price and its build. */
     const costHours = (key, cap) => {
         const at = reach.get(key);
         if (!at?.rule) return Infinity;
         const rule = at.rule;
         if ([HOW.STARTER_CAMP, HOW.WORLD, HOW.HALL, HOW.SPAWN, HOW.GROW, HOW.REGROW, HOW.ARRIVE, HOW.EVENT].includes(rule.how)) return 0;
-        if (rule.how === HOW.SHOP) return sum(rule.inputs.map(i => i.quantity * unitHours(parseKey(i.key).id, cap)));
+        if (rule.how === HOW.SHOP) return sum(rule.inputs.map(i => i.quantity * unitHours(parseKey(i.key).id, cap))) + coinCostHours(rule.coins, PROFILE.BARE, cap);
         if (rule.how === HOW.CRAFT) {
             const recipe = rates.recipes[parseKey(rule.via).id];
             const build = reach.get(rule.via)?.rule;
             const foundation = build?.how === HOW.BUILD ? reach.get(build.via)?.rule : null;
             const price = foundation?.how === HOW.SHOP ? foundation.inputs : [];
-            return sum([...rule.inputs, ...price].map(i => i.quantity * unitHours(parseKey(i.key).id, cap))) + (Number(recipe?.durationMs) || 0) / HOUR_MS;
+            const coins = foundation?.how === HOW.SHOP ? coinCostHours(foundation.coins, PROFILE.BARE, cap) : 0;
+            return sum([...rule.inputs, ...price].map(i => i.quantity * unitHours(parseKey(i.key).id, cap))) + (Number(recipe?.durationMs) || 0) / HOUR_MS + coins;
         }
         return Infinity;
     };
     profiles = buildProfiles(rates, {
         tierOf: tierOfKey, unitHours, costHours, hallUnitHours, horizonHours: () => settings.paybackHours, hallHorizonHours: () => settings.hallPaybackHours,
+        hallCoinHours: (coins, cap) => coinCostHours(coins, BEFORE_HALL, cap),
         campMembers: settings.campMembers,
         inputScale: (rate, cap, profile) => {
             let scale = 1;
@@ -306,6 +346,91 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
 
     /** A work's profile rate at a stage, fed. */
     const workAt = (work, profile, cap, level = null) => fed(work, profile, cap, new Map(), level);
+
+    // ── coins ──────────────────────────────────────────────────────────────────────────────────
+    /** One copy's coin worth, as Recalculate writes it (`coins.js`). */
+    const worthOf = (itemId) => ledgerCoinWorth(rates.items[itemId]);
+
+    /** A fed work's coins an hour: what it makes at its worth, less what it spends at theirs, and its own coins (a kill's drop). */
+    function coinRateOf(f) {
+        if (!f?.rate?.ok) return 0;
+        let n = f.coins || 0;
+        for (const [item, q] of Object.entries(f.items || {})) n += q * worthOf(item);
+        for (const [item, q] of Object.entries(f.inputs || {})) n -= q * worthOf(item);
+        return n;
+    }
+
+    const tierWithin = (key, cap) => {
+        const t = tierOfKey(key);
+        return t !== null && t <= cap;
+    };
+    const bossCamps = new Set((ledger.world.worldTables?.kits || []).flatMap(k => list(k?.bossCamps)));
+    const theftMemo = new Map();
+    /**
+     * Thefts that take coins by stage `cap`: each Hideout had by then robbing each camp had by then
+     * whose enemy's steal table takes coins (the camp's enemy is the first its spawns name that
+     * carries a table, `Hideouts.js`; a boss camp is never robbed). A theft a cycle at the Hideout's
+     * own time, less those caught at its curve, the thief at its own level against the camp's Crime
+     * level: `[{ hideout, enemy, camp, thefts, coins, perHour }]`. Not modelled: the time a guard
+     * stands on the camp after a catch, Quiet, Coin Find at the Hideout.
+     */
+    function theftsAt(cap) {
+        if (theftMemo.has(cap)) return theftMemo.get(cap);
+        const out = [];
+        const hideouts = Object.keys(ledger.world.tokens).filter(id => stationKindOf(rates.token(id)) === HIDEOUT_KIND && tierWithin(tokenKey(id), cap));
+        if (hideouts.length) {
+            const robbed = [];
+            for (const [campId, def] of Object.entries(ledger.world.tokens)) {
+                if (!isObject(def.spawner) || bossCamps.has(campId) || !tierWithin(tokenKey(campId), cap)) continue;
+                const enemyId = list(def.spawner.spawns).map(sp => sp.typeId).find(id => isObject(rates.token(id)?.enemy) && stealOf(rates.token(id)));
+                const enemy = enemyId ? rates.token(enemyId) : null;
+                const coins = enemy ? stealOf(enemy).coins : 0;
+                if (coins > 0 && tierWithin(tokenKey(enemyId), cap)) robbed.push({ camp: campId, enemy: enemyId, def: enemy, coins });
+            }
+            for (const hideout of hideouts) {
+                const def = rates.token(hideout);
+                const cycleMs = Number(def.config?.cycleTimeMs);
+                if (!(cycleMs > 0)) continue;
+                const level = Math.max(1, Math.floor(Number(def.config?.skillRequired) || 1));
+                for (const r of robbed) {
+                    const caught = caughtChance(level, crimeLevelOf(r.def), caughtCurveOf(def)) / 100;
+                    const thefts = (HOUR_MS / cycleMs) * (1 - caught);
+                    out.push({ hideout, enemy: r.enemy, camp: r.camp, thefts, coins: r.coins, perHour: thefts * r.coins });
+                }
+            }
+        }
+        theftMemo.set(cap, out);
+        return out;
+    }
+
+    const coinMemo = new Map();
+    const coinBusy = new Set();
+    /**
+     * The guild's coins an hour at a profile and stage: the best one hero earns, `{ perHour, work,
+     * theft }`: a work's net coins fed as the guild feeds it ({@link coinRateOf}), or a Hideout's
+     * thefts ({@link theftsAt}). A work that pays coins (a build on a Foundation that asks them)
+     * earns none here. Asked only of a price that asks coins, so content without coin costs never
+     * reads it.
+     */
+    function coinSupplyOf(profile, cap) {
+        const key = `${profile}|${cap}`;
+        if (coinMemo.has(key)) return coinMemo.get(key);
+        // ⚠️ A guard, never met while no work's coin income asks for coins itself.
+        if (coinBusy.has(key)) return { perHour: 0, work: null, theft: null };
+        coinBusy.add(key);
+        let best = { perHour: 0, work: null, theft: null };
+        for (const work of works) {
+            if (work.tier === null || work.tier > cap) continue;
+            const { rate } = profiles.profileOf(work.target, profile, cap);
+            if (!rate.ok || rate.coins < 0) continue;
+            const n = coinRateOf(workAt(work, profile, cap));
+            if (n > best.perHour) best = { perHour: n, work, theft: null };
+        }
+        for (const t of theftsAt(cap)) if (t.perHour > best.perHour) best = { perHour: t.perHour, work: null, theft: t };
+        coinBusy.delete(key);
+        coinMemo.set(key, best);
+        return best;
+    }
 
     /**
      * The level a hero levelling `skill` at `level` works a piece of work at, as far as its rate goes:
@@ -444,8 +569,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     }
 
     // ── path time ──────────────────────────────────────────────────────────────────────────────
-    const gatherHours = (inputs, profile, cap) => {
-        // One hero on each item: the slowest item sets the time.
+    const gatherHours = (inputs, profile, cap, coins = 0) => {
+        // One hero on each item, and one earning its coins: the slowest sets the time.
         let worst = 0;
         let item = null;
         for (const { key, quantity } of inputs) {
@@ -454,8 +579,12 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const h = s > 0 ? quantity / s : Infinity;
             if (h > worst) { worst = h; item = key; }
         }
-        return { hours: worst, item };
+        if (!(coins > 0)) return { hours: worst, item };
+        const h = coinCostHours(coins, profile, cap);
+        if (h > worst) { worst = h; item = COINS; }
+        return { hours: worst, item, coins };
     };
+    const priceWhy = (g) => (Number.isFinite(g.hours) ? null : g.item === COINS ? PACE_TEXT.noCoins : 'its price is never made');
 
     /** The own time of the step that gives `give` by `rule` at a profile: `{ hours, complete, why }`. */
     function stepOf(rule, give, profile, cap) {
@@ -515,8 +644,14 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         }
         case HOW.SHOP:
         case HOW.STAR: {
-            const g = gatherHours(rule.inputs, profile, cap);
-            return done(g.hours, Number.isFinite(g.hours) ? null : 'its price is never made', { gather: g });
+            const g = gatherHours(rule.inputs, profile, cap, rule.coins);
+            return done(g.hours, priceWhy(g), { gather: g });
+        }
+        case HOW.SETTLE: {
+            // A ring's coins are earned with what the rings before it give: settling is the way in.
+            if (!(rule.coins > 0)) return done(0);
+            const g = gatherHours([], profile, Math.min(cap, ringBudgetTier(rule.floor)), rule.coins);
+            return done(g.hours, priceWhy(g), { gather: g });
         }
         case HOW.SPAWN: {
             const def = rates.token(parseKey(rule.via).id);
@@ -770,6 +905,9 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             }
         }
 
+        // A price that asks coins nothing the guild has by then earns.
+        for (const c of coinGaps()) add('coin-supply', c.key, PACE_TEXT.coinSupply(c.name, c.coins, tierLabel(c.cap)), { name: c.name });
+
         for (const { key, r, level, expected, ratio } of unlockWalls()) {
             add('unlock-wall', key, `Its own step (${stepWords(r)}) takes ${PACE_TEXT.hours(r.own)} at Typical once it can start (${PACE_TEXT.hours(r.start)} in), ${PACE_TEXT.times(ratio)} the ${formatMinutes(expected)} the pace allows a wait there (a level at ${level} on the curve, at least a check-in).`);
         }
@@ -864,6 +1002,110 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     }
 
     /**
+     * Every price asking coins that nothing the guild has by its stage earns, at Typical: a Shop Token
+     * or a Guild Hall star by its own key, settling once per ring (`ring:<n>`), with the coins asked
+     * and the stage they are earned at (`cap`). A ring star's ring, which its star's rule also gives,
+     * is the star's.
+     */
+    function coinGaps() {
+        const out = [];
+        const seen = new Set();
+        for (const [key, at] of reach) {
+            const rule = at?.rule;
+            if (!rule || !(rule.coins > 0) || !Number.isInteger(at.tier) || key.startsWith('ring:')) continue;
+            if (isEntry(key) && !counted(key)) continue;
+            const settle = rule.how === HOW.SETTLE;
+            const id = settle ? `ring:${rule.floor}` : key;
+            if (seen.has(id)) continue;
+            seen.add(id);
+            const cap = settle ? Math.min(at.tier, ringBudgetTier(rule.floor)) : at.tier;
+            if (coinSupplyOf(PROFILE.TYPICAL, cap).perHour > 0) continue;
+            out.push({ key: id, name: settle ? `Ring ${rule.floor}` : nameOf(key), coins: rule.coins, cap });
+        }
+        return out;
+    }
+
+    let coinPriceMemo = null;
+    /**
+     * A coin cost for every price that may ask coins, proposed from the coin curve: the coins one hero
+     * earns at the price's stage ({@link coinSupplyOf}) in the curve's minutes there
+     * (`settings.coinMinutesAt`), times its rank for a Guild Hall rank, rounded down to two figures.
+     * Further out costs more twice over: a later stage earns more an hour, and the curve may ask more
+     * minutes. A Shop Token's stage is its own (the owner's tier, else when it is first reached),
+     * earned at Typical; a Guild Hall rank's its tier (else its price's), earned at Typical before the
+     * Hall as its items are; settling a ring-n cell's stage n, earned with what the stage before gives
+     * (`ringBudgetTier`). A stage past the last the pace knows is earned at the last.
+     *
+     * @returns {{ kind: 'shop'|'hall'|'ring', id, name, rank?, ring?, coins, tier, cap, minutes, perHour,
+     *   source, proposed: number|null, why: string|null }[]} `coins` what it asks now; `proposed` null
+     *   with `why` when the curve has no point there or nothing earns coins by then
+     */
+    function coinPrices() {
+        if (coinPriceMemo) return coinPriceMemo;
+        const rows = [];
+        const propose = (base, profile, tier, earnAt, rank = 1) => {
+            if (tier === null) return { ...base, tier: null, cap: null, minutes: null, perHour: 0, source: null, proposed: null, why: PACE_TEXT.notReached };
+            const cap = Math.min(maxTier, earnAt);
+            const minutes = coinMinutesAt(settings, tier);
+            const s = coinSupplyOf(profile, cap);
+            const out = { ...base, tier, cap, minutes, perHour: s.perHour, source: coinSourceName(s) };
+            if (minutes === null) return { ...out, proposed: null, why: PACE_TEXT.noCurve(tierLabel(tier)) };
+            if (!(s.perHour > 0)) return { ...out, proposed: null, why: PACE_TEXT.noIncome(tierLabel(cap)) };
+            return { ...out, proposed: Math.max(1, roundDown(s.perHour * minutes / 60 * rank)), why: null };
+        };
+        for (const [id, def] of Object.entries(ledger.world.tokens)) {
+            if (!isObject(def.shop) || !counted(tokenKey(id))) continue;
+            const tier = effTier(tokenKey(id));
+            rows.push(propose({ kind: 'shop', id, name: nameOf(tokenKey(id)), coins: shopCoinsOf(def) }, PROFILE.TYPICAL, tier, tier));
+        }
+        for (const track of profiles.hallTracks) {
+            if (track.builtIn) continue;
+            for (let rank = 1; rank <= track.maxRank; rank++) {
+                const tier = track.tier(rank) ?? priceTierOf(track.price(rank));
+                rows.push(propose({ kind: 'hall', id: track.id, name: track.name, rank, coins: track.coins(rank) }, BEFORE_HALL, tier, tier, rank));
+            }
+        }
+        const tables = ledger.world.worldTables;
+        if (tables) {
+            for (let ring = 1; ring <= STRICT_RINGS; ring++) {
+                rows.push(propose({ kind: 'ring', id: `ring:${ring}`, name: `Ring ${ring}`, ring, coins: Number(tables.prices?.[ring]?.coins) || 0 }, PROFILE.TYPICAL, ring, ringBudgetTier(ring)));
+            }
+        }
+        coinPriceMemo = rows;
+        return rows;
+    }
+
+    let coinDropMemo = null;
+    /**
+     * Every Live enemy's Coin drop beside what one kill's drops sell for at their coin worth (Bare,
+     * average luck, its rare table counted), and that as its proposed Coin drop: a kill drops coins
+     * like a sale of its loot. `[{ id, name, level, tier, coinDrop, proposed }]`, weakest first.
+     */
+    function coinDrops() {
+        if (coinDropMemo) return coinDropMemo;
+        const rows = [];
+        for (const work of works) {
+            const def = rates.token(work.target.token);
+            if (!isObject(def?.enemy) || work.target.recipe || !counted(work.entry)) continue;
+            const cap = work.tier ?? maxTier;
+            const { rate } = profiles.profileOf(work.target, PROFILE.BARE, cap);
+            let sells = 0;
+            for (const [item, n] of Object.entries(rate.perCycle || {})) sells += n * worthOf(item);
+            rows.push({ id: def.id, name: nameOf(tokenKey(def.id)), level: Number(def.enemy.level) || null, tier: work.tier, coinDrop: enemyCoinDropOf(def), proposed: Math.round(sells) });
+        }
+        rows.sort((a, b) => (a.level ?? 0) - (b.level ?? 0) || a.name.localeCompare(b.name));
+        coinDropMemo = rows;
+        return rows;
+    }
+
+    /** Where a coin supply comes from, in words: the work, or the thefts. */
+    function coinSourceName(s) {
+        if (s.work) return workName(s.work);
+        if (s.theft) return PACE_TEXT.theft(nameOf(tokenKey(s.theft.enemy)), nameOf(tokenKey(s.theft.hideout)));
+        return null;
+    }
+
+    /**
      * Boosts over their target strength at Maxed, beyond the tolerance: one group per kind and set of
      * boosts, `{ kind, factors, factorKeys, names, target, works }`, its works most lifted first.
      */
@@ -880,6 +1122,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     }
 
     const stepWords = (r) => {
+        if (r.step?.gather?.item === COINS) return PACE_TEXT.earning(r.step.gather.coins);
         if (r.step?.gather?.item) return `gathering ${nameOf(r.step.gather.item)}`;
         const how = LEDGER_ENGINE_TEXT.how[r.how] || r.how;
         return r.via ? `${how} ${nameOf(r.via)}` : how;
@@ -890,7 +1133,11 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     };
 
     // ── the Guild Hall ─────────────────────────────────────────────────────────────────────────
-    const priceWords = (price) => (price.length ? price.map(p => `${p.quantity} ${nameOf(itemKey(p.itemId))}`).join(', ') : 'nothing');
+    const priceWords = (price, coins = 0) => {
+        const parts = price.map(p => `${p.quantity} ${nameOf(itemKey(p.itemId))}`);
+        if (coins > 0) parts.push(PACE_TEXT.coins(coins));
+        return parts.length ? parts.join(', ') : 'nothing';
+    };
     const stageWords = (row) => (row.tier !== null && row.tier > row.cap
         ? `${tierLabel(row.tier)}, measured at ${tierLabel(row.cap)}, the last stage the pace knows`
         : tierLabel(row.tier ?? row.cap));
@@ -936,6 +1183,14 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         return best;
     }
 
+    /** Hours a Hall rank's coins take to earn at Typical before the Hall, at the stage it is measured at. */
+    const rankCoinHours = (row) => (row.coins > 0 ? coinCostHours(row.coins, BEFORE_HALL, row.cap) : 0);
+    /** The tier a Hall price is first had at: its latest item's, the last stage when one is never had. */
+    const priceTierOf = (price) => {
+        const tiers = price.map(p => tierOfKey(itemKey(p.itemId)));
+        return tiers.every(Number.isInteger) ? Math.max(0, ...tiers) : maxTier;
+    };
+
     let hallMemo = null;
     /**
      * Every Guild Hall rank, stand-in and authored: its tier, price, the hours that price takes to
@@ -952,13 +1207,12 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         for (const track of profiles.hallTracks) {
             for (let rank = 1; rank <= track.maxRank; rank++) {
                 const price = track.price(rank);
+                const coins = track.coins(rank);
                 const tier = track.tier(rank);
-                const priceTiers = price.map(p => tierOfKey(itemKey(p.itemId)));
-                const priceTier = priceTiers.every(Number.isInteger) ? Math.max(0, ...priceTiers) : maxTier;
-                const cap = Math.min(maxTier, tier ?? priceTier);
+                const cap = Math.min(maxTier, tier ?? priceTierOf(price));
                 const base = {
-                    id: track.id, name: track.name, rank, builtIn: track.builtIn, tier, cap, price,
-                    priceText: priceWords(price), priceHours: profiles.hallPriceHours(price, cap)
+                    id: track.id, name: track.name, rank, builtIn: track.builtIn, tier, cap, price, ...(coins > 0 ? { coins } : {}),
+                    priceText: priceWords(price, coins), priceHours: profiles.hallPriceHours(price, cap, coins)
                 };
                 const ring = !track.builtIn && rank === 1 ? ringOfStar(track.star) : null;
                 if (ring !== null) {
@@ -1002,7 +1256,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 if (p.itemId === before.itemId) quantity = Math.max(quantity, before.quantity);
                 if (quantity > p.quantity) {
                     const priceHours = quantity / perHour;
-                    const payback = (priceHours + row.opening.cost) / row.gain;
+                    const payback = (priceHours + rankCoinHours(row) + row.opening.cost) / row.gain;
                     row.proposed = {
                         ...p, quantity, priceHours, payback, raised: true,
                         pays: payback <= settings.hallPaybackHours,
@@ -1123,12 +1377,13 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         if (!(row.gain > 0)) return { why: 'it saves no time at its tier' };
         const material = materialFor(track.star, row.tier, row.cap);
         if (!material) return { why: 'no gathered material at its tier' };
-        // What is left of the payback time once the stars on the way are lit.
-        const left = settings.hallPaybackHours * row.gain - row.opening.cost;
-        if (!(left > 0)) return { why: `opening it (${openingWords(row.opening)}) takes longer than it can pay back` };
+        // What is left of the payback time once the stars on the way are lit and the rank's coins earned.
+        const coinHours = rankCoinHours(row);
+        const left = settings.hallPaybackHours * row.gain - row.opening.cost - coinHours;
+        if (!(left > 0)) return { why: row.coins > 0 ? `opening it and earning its ${PACE_TEXT.coins(row.coins)} take longer than it can pay back` : `opening it (${openingWords(row.opening)}) takes longer than it can pay back` };
         const quantity = Math.max(1, roundDown(left * material.perHour));
         const priceHours = quantity / material.perHour;
-        const payback = (priceHours + row.opening.cost) / row.gain;
+        const payback = (priceHours + coinHours + row.opening.cost) / row.gain;
         return { itemId: material.itemId, quantity, priceText: priceWords([{ itemId: material.itemId, quantity }]), priceHours, payback, pays: payback <= settings.hallPaybackHours, work: material.work };
     }
 
@@ -1353,6 +1608,12 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         effTier,
         boostRows,
         breakdown,
+        /** The guild's coins an hour at a profile and stage: `{ perHour, work, theft }` ({@link coinSupplyOf}). */
+        coinSupplyOf: (profile, cap = maxTier) => coinSupplyOf(profile, cap),
+        /** One copy's coin worth, as Recalculate writes it. */
+        coinWorthOf: worthOf,
+        coinPrices,
+        coinDrops,
         findings
     };
 }

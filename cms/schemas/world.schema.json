@@ -133,7 +133,8 @@
                 "level": { "type": "number" }
               }
             }
-          }
+          },
+          "coins": { "type": "integer", "minimum": 0, "description": "Coins settling a cell of the ring asks, read live (src/systems/world/Settling.js); wild rings grow it by wild.priceGrowth." }
         }
       }
     },

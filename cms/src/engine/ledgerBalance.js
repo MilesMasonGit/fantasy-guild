@@ -84,6 +84,7 @@ export function balanceText(result, { moves = 15 } = {}) {
     for (const p of sortedProposals(result.proposals).slice(0, moves)) lines.push(`- ${p.name} · ${p.label}: ${changeText(p)}. ${p.why}`);
     if (result.proposals.length > moves) lines.push(`- and ${result.proposals.length - moves} more`);
     if (by[LEVER.XP]) lines.push('XP a cycle: a change pack pins these numbers where Recalculate would derive them, so Sync keeps them.');
+    if (by[LEVER.COINS]) lines.push('Coins: only prices that already ask coins are set to the coin curve (node cms/changePackTool.mjs coins lists every price).');
     lines.push(`What numbers alone cannot fix: ${result.cantFix.length}.`);
     for (const g of cantFixGroups(result.cantFix)) {
         lines.push(`- ${g.label} (${g.rows.length}):`);
@@ -91,6 +92,22 @@ export function balanceText(result, { moves = 15 } = {}) {
         if ((g.cause === CANT_FIX.HALL || g.cause === CANT_FIX.LUCK) && g.rows.length > 3) lines.push(`  - and ${g.rows.length - 3} more`);
     }
     return lines.join('\n');
+}
+
+/** A copy of a record with each proposal's field set to its number (`prices.2.coins`). */
+function withFields(record, proposals) {
+    if (!record) return null;
+    const out = structuredClone(record);
+    for (const p of proposals) {
+        const parts = p.field.split('.');
+        let at = out;
+        for (const part of parts.slice(0, -1)) {
+            if (at[part] === null || typeof at[part] !== 'object') at[part] = {};
+            at = at[part];
+        }
+        at[parts[parts.length - 1]] = p.to;
+    }
+    return out;
 }
 
 /** The skill a recipe's pool is kept under in the workspace. */
@@ -126,7 +143,8 @@ export function balancePack(state, result, { id = null, createdAt = new Date().t
     const entries = [];
     for (const { kind, id: entityId, list } of byEntity.values()) {
         const current = currentValue(state, kind, entityId);
-        let value = recordOf(applied, kind, entityId);
+        // The ledger reads the world tables normalised; the pack carries the workspace's own record, changed.
+        let value = kind === 'world' ? withFields(current, list) : recordOf(applied, kind, entityId);
         if (!current || !value) continue;
         if (kind === 'recipe' && !value.skill) value = { ...value, skill: poolOf(state, entityId) };
         const pin = list.some((p) => p.lever === LEVER.XP) && xpIsDerived(kind, value);

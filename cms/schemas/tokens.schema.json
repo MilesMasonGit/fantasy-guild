@@ -123,6 +123,7 @@
           "type": "object",
           "properties": {
             "price": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/itemQuantity" } },
+            "coins": { "type": "integer", "minimum": 0, "description": "Coins it asks beside its price (src/config/registries/coinCosts.js shopCoinsOf, src/systems/board/Shop.js); the ledger waits for them (cms/src/engine/ledger/pace.js)." },
             "section": { "type": "string", "description": "A skill id or general; UI grouping only (MatCapBadge.jsx)." },
             "skills": { "type": "array", "items": { "type": "string" }, "description": "Skill ids; unknown ones are dropped." },
             "order": { "type": "number", "minimum": 1, "description": "Its place in the list; missing sorts last." },
@@ -247,6 +248,7 @@
           "type": "object",
           "properties": {
             "level": { "type": "number", "minimum": 1 },
+            "coinDrop": { "type": "integer", "minimum": 0, "description": "Coins one kill drops (src/config/registries/coinCosts.js enemyCoinDropOf, src/systems/board/CoinDrops.js); a coin supply in the ledger." },
             "style": { "type": "string", "enum": ["melee", "ranged", "magic", "stealth"], "description": "ENEMY_STYLES (enemyProfile.js); anything else is melee." },
             "kinds": {
               "type": "array",

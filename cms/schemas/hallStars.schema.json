@@ -53,6 +53,7 @@
             "properties": {
               "tier": { "type": "number", "minimum": 0, "description": "The tier the owner gives the rank (the ledger prices by it)." },
               "price": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/itemQuantity" }, "description": "Paid from the Bank." },
+              "coins": { "type": "integer", "minimum": 0, "description": "Coins it asks beside its price (src/config/hallStars.js normaliseRank); the ledger counts them in its price hours." },
               "rules": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/statement" }, "description": "Held guild-wide while the rank is held." },
               "lines": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/itemQuantity" }, "description": "Passive Production lines the Guild Hall pays every lap." }
             }

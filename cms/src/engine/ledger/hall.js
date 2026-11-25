@@ -10,9 +10,9 @@ import { EFFECT_TYPES } from '../../../../src/systems/effects/constants.js';
  * with (`book.hall`, from the content's `hallSky`, with the game's stand-ins for Bunk Beds, Bank Tabs
  * and the Wishing Well where it lacks them), each as
  *
- *     { id, name, builtIn, maxRank, links, price(rank), tier(rank), star }
+ *     { id, name, builtIn, maxRank, links, price(rank), coins(rank), tier(rank), star }
  *
- * `price(r)` and `tier(r)` are rank r's own (r from 1). `builtIn` marks a stand-in: it has no tier and
+ * `price(r)`, `coins(r)` (the coins it asks beside its items, 0 for none) and `tier(r)` are rank r's own (r from 1). `builtIn` marks a stand-in: it has no tier and
  * the ledger proposes no price for it. Once authored, the three are priced like any star.
  *
  * Pure.
@@ -34,7 +34,8 @@ export function starMovesLap(star) {
 export function hallTracksOf(book) {
     return (book.hall?.stars || []).map(star => ({
         id: star.id, name: star.name, builtIn: !!star.fallback, maxRank: star.ranks.length, links: star.links,
-        price: (r) => rankOf(star, r)?.price || [], tier: (r) => rankOf(star, r)?.tier ?? null, star, description: star.description
+        price: (r) => rankOf(star, r)?.price || [], coins: (r) => rankOf(star, r)?.coins || 0,
+        tier: (r) => rankOf(star, r)?.tier ?? null, star, description: star.description
     }));
 }
 

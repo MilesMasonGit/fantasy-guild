@@ -26,6 +26,7 @@ import { perkRowsOf, perksEarnedAt } from '../../../../src/systems/hero/perkTabl
 import { neverWearsOut } from '../../../../src/systems/core/wearRule.js';
 import { isSpentCategory, isAlwaysOn, isWorkMoment, workSkillMatches, doseKindsOf, DOSE, DOSE_LENGTH } from '../../../../src/systems/core/consumableRule.js';
 import { keyed, MEAN_EVENT_WAIT_MS } from '../../../../src/systems/progression/ledger/engine.js';
+import { enemyCoinDropOf, shopCoinsOf } from '../../../../src/config/registries/coinCosts.js';
 import { isPlanned } from '../../../../src/systems/progression/ledger/plan.js';
 
 /**
@@ -1224,6 +1225,22 @@ function rateOf(book, target = {}, setup = {}) {
     const inputs = perHour(inputsPerCycle);
     for (const c of life.costs || []) inputs[c.itemId] = (inputs[c.itemId] || 0) + c.perLife * cyclesPerHour / life.cycles;
 
+    // Coins a cycle: a kill's Coin drop, raised by Coin Find in reach and dropped in whole coins
+    // (`CoinDrops.killCoins`), less what a build pays for its Foundation's coins at the Shop.
+    // ⚠️ Kept off the rate when none, so a rate without coins is exactly as it was.
+    let coinsPerCycle = 0;
+    if (kind === WORK.FIGHT) {
+        const drop = enemyCoinDropOf(def);
+        if (drop > 0) {
+            const raised = resolve(EFFECT_TYPES.COIN_FIND, drop, category);
+            note(EFFECT_TYPES.COIN_FIND, raised.used);
+            coinsPerCycle += Math.max(0, Math.round(raised.value));
+        }
+    } else if (kind === WORK.BUILD) {
+        coinsPerCycle -= shopCoinsOf(def);
+    }
+    const coins = coinsPerCycle !== 0 ? { coinsPerCycle, coins: coinsPerCycle * cyclesPerHour } : {};
+
     return {
         ok: gates.ok,
         reason: gates.reason,
@@ -1245,6 +1262,7 @@ function rateOf(book, target = {}, setup = {}) {
         inputs,
         xpPerCycle,
         xp: skill ? { [skill]: xpPerCycle * cyclesPerHour } : {},
+        ...coins,
         factors: factorList(book, def, setup, hero, usedBy),
         unmodelled: dedupe(notes.unmodelled),
         assumptions: dedupe(notes.assumptions)
