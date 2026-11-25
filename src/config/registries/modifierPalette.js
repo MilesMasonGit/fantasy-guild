@@ -596,14 +596,15 @@ export const MODIFIER_PALETTE = [
         categories: 'skill',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Blessing',
-        hint: 'A shrine\'s blessing: the Tokens it reaches spend none of their charges as they are worked (a Field none of its load), even on a failed cycle, so they never run out. No number: it is on or off. Aim it at Tokens; the skill narrows it.'
+        hint: 'A shrine\'s blessing: the Tokens it reaches spend none of their charges as they are worked (a Field none of its load), even on a failed cycle, so they never run out: a vein, tree or Field that ends by chance never draws its end. No number: it is on or off. Aim it at Tokens; the skill narrows it.'
     },
     {
         /**
          * Read by `BoardRunner.completeCycle` once per work cycle that did not fail, after its XP:
-         * on a hit the cycle's outputs land again (rolled afresh, a water's catch the same fish) and
-         * its XP is given again, paying no inputs and spending no charges, load or tool. The rules
-         * hear one cycle. A kill and a build never roll.
+         * on a hit the cycle's outputs land again (rolled afresh, a water's catch the same fish, no
+         * Bait or lure spent) and its XP is given again, paying no inputs and spending no charges,
+         * load or tool, so no chance to end is drawn. The rules hear one cycle. A kill and a build
+         * never roll.
          */
         type: EFFECT_TYPES.ECHO,
         reads: {
@@ -620,7 +621,7 @@ export const MODIFIER_PALETTE = [
         categories: 'skill',
         shape: MODIFIER_SHAPES.PROC,
         group: 'Blessing',
-        hint: 'A shrine\'s blessing: a chance a finished work cycle repeats at once, for free: its outputs again and its XP again, with no inputs, charges or tool wear. In percent. Two shrines add their chances. Never a kill or a build.'
+        hint: 'A shrine\'s blessing: a chance a finished work cycle repeats at once, for free: its outputs again and its XP again, with no inputs, charges, Bait or tool wear, and no chance to end. In percent. Two shrines add their chances. Never a kill or a build.'
     },
 
     // --- Combat ---------------------------------------------------------

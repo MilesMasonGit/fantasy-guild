@@ -473,9 +473,10 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     giveCycleXp(made, heroId);
 
     // ECHO, a shrine's blessing: the cycle that just ended repeats at once, for free. Its outputs land
-    // again (rolled afresh; a water's catch is the same fish, no bait) and its XP comes again; it
-    // pays nothing, spends no charge, load or tool, and the rules hear one cycle. Never a failed
-    // cycle or a build, and never an echo of an echo. ⚠️ No rule reaching it, nothing is drawn.
+    // again (rolled afresh; a water's catch is the same fish, with no Bait spent and no lure's break
+    // rolled) and its XP comes again (a fish's own); it pays nothing, spends no charge, load or tool,
+    // so it draws no chance to end, and the rules hear one cycle. Never a failed cycle or a build,
+    // and never an echo of an echo. ⚠️ No rule reaching it, nothing is drawn.
     if (!failed && !buildTypeId && CycleSavings.rollEcho(id, config.skill)) {
         landOutputs(made, rollMultipliers(id, config, false));
         giveCycleXp(made, heroId);
@@ -489,7 +490,9 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // a context Token never wears out, and a gathering node that helps its neighbours spends its
     // charges only on its own gathering (`Charges.planContextCharges`, `wearRule.js`).
     // Can't Run Out, a shrine's blessing: nothing is spent, failed or not, and Refresh is not drawn.
-    // ⚠️ Brief 860 R1's chance for a node to end must be skipped here too.
+    // ⚠️ Not spending is also what keeps a source that ends by chance from drawing its end: that roll
+    // lives where a charge is spent (`Charges.applyDelta`) and where a ripe Field is harvested
+    // (`Fields.harvested`, which a refreshed cycle leaves before it rolls).
     // Refresh: a cycle that succeeded and would spend something may spend nothing. A failed cycle
     // still burns its charge and never rolls, and neither does one with nothing to spend.
     const isField = Fields.isField(def);
