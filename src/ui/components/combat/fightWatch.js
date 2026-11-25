@@ -407,7 +407,7 @@ function onProgress(p) {
 }
 
 /**
- * A hero who let go of their enemy without a kill or a knockout (recalled, their flag moved, a
+ * A hero who let go of their enemy without a kill or being defeated (recalled, their flag moved, a
  * re-plant) ends their fight with no event: their record is closed when they are next heard of.
  */
 export function reconcile(heroId) {
@@ -469,7 +469,7 @@ export function startFightWatch() {
             EventBus.subscribe(ENGINE_EVENTS.LOOT_GENERATED, onLoot, UI_LISTENER),
             EventBus.subscribe(BOARD_EVENTS.COMBAT_RESOLVED, onResolved, UI_LISTENER),
             EventBus.subscribe(BOARD_EVENTS.PROGRESS, onProgress, UI_LISTENER),
-            // After the publish that moved them has finished: a knockout moves the hero (their flag
+            // After the publish that moved them has finished: a defeat moves the hero (their flag
             // furls) before it says how the fight ended.
             EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, (p) => {
                 if (p?.heroId) queueMicrotask(() => reconcile(p.heroId));

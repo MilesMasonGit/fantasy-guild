@@ -64,3 +64,21 @@ describe('bubble numbers', () => {
         expect(splitNumbers('Nothing to work here.')).toEqual([{ text: 'Nothing to work here.', num: false }]);
     });
 });
+
+describe('the hero speech words live in the strings file', () => {
+    it('Defeated and Waiting for are read from en.json, their text kept', async () => {
+        const { setLanguage, registerLanguage } = await import('../i18n/index.js');
+        const en = (await import('../i18n/en.json')).default;
+        expect(en.heroSpeech).toEqual({ beaten: '{enemy} Defeated', waiting: 'Waiting for {enemy}.' });
+        registerLanguage('xx', { ...en, heroSpeech: { beaten: 'B {enemy}', waiting: 'W {enemy}' } });
+        try {
+            setLanguage('xx');
+            expect(momentText.beaten('Goblin')).toBe('B Goblin');
+            expect(momentText.waiting('Goblin')).toBe('W Goblin');
+        } finally {
+            setLanguage('en');
+        }
+        expect(momentText.beaten('Goblin')).toBe('Goblin Defeated');
+        expect(momentText.waiting('Goblin')).toBe('Waiting for Goblin.');
+    });
+});
