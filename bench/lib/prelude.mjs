@@ -1,4 +1,4 @@
-// Fantasy Guild bench — the process boundary (plain Node, loaded BEFORE Vite).
+// The process boundary (plain Node, loaded BEFORE Vite).
 //
 // Everything here stands in for a browser just far enough for the engine to
 // boot and tick. None of it is game code, and none of it is loaded by the game.

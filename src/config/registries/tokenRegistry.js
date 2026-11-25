@@ -1,4 +1,4 @@
-// Fantasy Guild — Token registry (loader)
+// Token registry (loader)
 
 /**
  * The Token registry — the *type* half of "a Token is a definition plus board

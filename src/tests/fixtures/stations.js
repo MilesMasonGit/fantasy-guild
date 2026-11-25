@@ -1,4 +1,4 @@
-// Fantasy Guild — test helper: a player picking a station's recipe
+// Test helper: a player picking a station's recipe
 
 /**
  * **For tests only.**

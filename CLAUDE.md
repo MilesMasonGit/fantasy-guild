@@ -1,4 +1,4 @@
-# Fantasy Guild — Working Notes for Claude Code
+# Tabletop Guild — Working Notes for Claude Code
 
 ## The owner
 

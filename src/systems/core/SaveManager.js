@@ -18,9 +18,9 @@ import { t } from '../../i18n/index.js';
 import { loadSavedState } from './LoadedState.js';
 import { MARK_KEY, attachMark, fingerprint, readMark } from './unansweredSummary.js';
 
-const LAST_SLOT_KEY = 'fantasy_guild_last_slot';
+const LAST_SLOT_KEY = 'tabletop_guild_last_slot';
 /** sessionStorage: the slot the next page load opens by itself, without a catch-up. */
-const RESUME_SLOT_KEY = 'fantasy_guild_resume_slot';
+const RESUME_SLOT_KEY = 'tabletop_guild_resume_slot';
 const MAX_SLOTS = SlotHelper.SLOT_COUNT;
 
 /**

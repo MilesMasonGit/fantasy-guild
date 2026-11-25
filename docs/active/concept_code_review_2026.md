@@ -10,7 +10,7 @@ from this round carry the origin `CR4-NNN`; the findings live in
 
 ## Why
 
-Fantasy Guild is an idle game meant to run for hours beside a player's other
+Tabletop Guild is an idle game meant to run for hours beside a player's other
 programs, so memory and idle cost matter as much as speed, and it must feel
 fluid and tactile when the player does act. The engine is feature-complete
 for now. The code was written entirely by AI agents, through a long

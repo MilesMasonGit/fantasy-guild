@@ -1,11 +1,11 @@
 ---
 name: Animator
-description: Lead VFX & Animation Prompt Engineer for Fantasy Guild Idle pixel art animations and sprite sheets.
+description: Lead VFX & Animation Prompt Engineer for Tabletop Guild Idle pixel art animations and sprite sheets.
 ---
 
 # Animator Skill Guide
 
-This skill guides the pixel art animation pipeline for **Fantasy Guild Idle**.
+This skill guides the pixel art animation pipeline for **Tabletop Guild Idle**.
 
 ## 1. Quick Workflow Summary
 

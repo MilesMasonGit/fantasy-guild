@@ -1,4 +1,4 @@
-// Fantasy Guild — the world tables (loader)
+// The world tables (loader)
 
 import { DatabaseManager } from '../DatabaseManager.js';
 import { normaliseWorldTables } from '../worldTablesShape.js';

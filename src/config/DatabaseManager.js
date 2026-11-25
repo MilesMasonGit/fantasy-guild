@@ -1,4 +1,4 @@
-// Fantasy Guild - Centralized Database Manager
+// Centralized Database Manager
 // Coordinates all Vite JSON globs for standard game configuration.
 
 export const DatabaseManager = {

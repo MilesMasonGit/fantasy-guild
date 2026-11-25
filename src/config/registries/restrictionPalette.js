@@ -1,4 +1,4 @@
-// Fantasy Guild — what a `Cannot` statement may forbid
+// What a `Cannot` statement may forbid
 
 /**
  * The restriction kinds the `Cannot` keyword can express.

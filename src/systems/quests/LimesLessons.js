@@ -1,4 +1,4 @@
-// Fantasy Guild - Limes's lessons: where the guild stands in them
+// Limes's lessons: where the guild stands in them
 //
 // The progress lives in the save (`guide.progress`) and counts `QuestManager`'s reports, which it
 // makes from the engine's own events: a catch-up counts as live play does (its listeners are the

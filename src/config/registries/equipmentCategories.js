@@ -1,4 +1,4 @@
-// Fantasy Guild — Equipment Category Registry
+// Equipment Category Registry
 //
 // Equipment categories are DATA, not constants baked into the engine, so
 // adding a category must be an authoring change with no engine edit.

@@ -1,4 +1,4 @@
-// Fantasy Guild memory soak (`npm run bench:soak`): does the real page (React, the DOM, listeners,
+// The memory soak (`npm run bench:soak`): does the real page (React, the DOM, listeners,
 // canvases) grow while the game idles for a long time, and does it stop drawing while hidden?
 // The engine bench's S6 says the engine alone keeps a steady heap; this is the whole page, in the
 // installed Chrome, headless, real GPU, on the perf build (as `bench:draw`).
@@ -234,7 +234,7 @@ async function main() {
     const file = path.join(resultsDir, `soak-${stamp}.json`);
     fs.mkdirSync(resultsDir, { recursive: true });
 
-    console.log(`Fantasy Guild memory soak — ${meta.commit} on ${meta.branch}${meta.dirty && Object.values(meta.dirty).some(Boolean) ? ` (uncommitted: ${Object.entries(meta.dirty).filter(([, v]) => v).map(([k]) => k).join(', ')})` : ''} · ${meta.machine} · ${meta.cpu}`);
+    console.log(`Tabletop Guild memory soak — ${meta.commit} on ${meta.branch}${meta.dirty && Object.values(meta.dirty).some(Boolean) ? ` (uncommitted: ${Object.entries(meta.dirty).filter(([, v]) => v).map(([k]) => k).join(', ')})` : ''} · ${meta.machine} · ${meta.cpu}`);
     const hiddenNote = plan.hiddenStartS === null ? 'no hidden phase' : `hidden ${fmt(plan.hiddenStartS / 60, 1)}–${fmt(plan.hiddenEndS / 60, 1)} min`;
     console.log(`${scene.name} · ${args.minutes} min, a sample every ${args.every} s (${plan.steps.length} samples) · ${hiddenNote} · fit from ${fmt(args.warmup, 1)} min · settle ${args.settle} s${args.snapshot ? ' · heap snapshots' : ''}`);
 

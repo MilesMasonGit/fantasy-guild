@@ -1,4 +1,4 @@
-// Fantasy Guild — damage types: the nine types a hit can carry, in three groups
+// Damage types: the nine types a hit can carry, in three groups
 //
 // ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY (`cms/src/utils/constants.js`): the item
 // editor's type dropdowns, the enemy's resistances and the Rules rows' type picker read the list

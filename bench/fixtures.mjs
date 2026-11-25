@@ -1,4 +1,4 @@
-// Fantasy Guild bench — runtime-registered content and layout helpers.
+// Runtime-registered content and layout helpers.
 //
 // Loaded THROUGH Vite (by the harness), so it shares module instances with the
 // engine. Registers Token and item types in memory for this process only.

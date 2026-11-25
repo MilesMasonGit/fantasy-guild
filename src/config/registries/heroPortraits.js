@@ -1,4 +1,4 @@
-// Fantasy Guild — Hero portrait catalogue
+// Hero portrait catalogue
 
 /**
  * Every portrait a hero can wear, as sprite ids.

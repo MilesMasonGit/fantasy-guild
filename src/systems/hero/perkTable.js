@@ -1,4 +1,4 @@
-// Fantasy Guild - milestone perks: the shape of a skill's perk table
+// Milestone perks: the shape of a skill's perk table
 //
 // ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY (its Skill Perks page, Sync and the
 // change packs). Keep it pure: no registry that loads `data/`, no store.

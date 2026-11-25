@@ -170,7 +170,7 @@ describe('shown or hidden is kept per device', () => {
         const view = render(createElement(BannerStack));
         fireEvent.click(icon(view.container));
         expect(SettingsManager.get(BANNERS_SHOWN_SETTING)).toBe(false);
-        const stored = JSON.parse(localStorage.getItem('fantasy_guild_settings'));
+        const stored = JSON.parse(localStorage.getItem('tabletop_guild_settings'));
         expect(stored.notifications.bannersShown).toBe(false);
     });
 

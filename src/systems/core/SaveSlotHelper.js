@@ -1,8 +1,8 @@
 import { cleanGuildName } from './GuildName.js';
 import * as SaveFiles from './SaveFiles.js';
 
-const SLOT_KEY_PREFIX = 'fantasy_guild_slot_';
-const LAST_SLOT_KEY = 'fantasy_guild_last_slot';
+const SLOT_KEY_PREFIX = 'tabletop_guild_slot_';
+const LAST_SLOT_KEY = 'tabletop_guild_last_slot';
 
 /** How many save slots the title screen offers. */
 export const SLOT_COUNT = 3;

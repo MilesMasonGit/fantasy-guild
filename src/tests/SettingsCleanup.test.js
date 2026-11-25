@@ -142,7 +142,7 @@ describe('the 1-minute auto-save is for dev builds', () => {
 
 describe('a settings file from an older build keeps working', () => {
     it('in a dev build: the player\'s choices load, the retired keys are dropped, 1 minute stays', () => {
-        localStorage.setItem('fantasy_guild_settings', JSON.stringify(OLD_FILE));
+        localStorage.setItem('tabletop_guild_settings', JSON.stringify(OLD_FILE));
         expect(() => SettingsManager.load()).not.toThrow();
         expect(SettingsManager.get('ui.fontFamily')).toBe('dotgothic');
         expect(SettingsManager.get('ui.allCaps')).toBe(false);
@@ -159,7 +159,7 @@ describe('a settings file from an older build keeps working', () => {
     });
 
     it('in a shipped build: a 1-minute auto-save becomes the 10-minute default, the rest as stored', async () => {
-        localStorage.setItem('fantasy_guild_settings', JSON.stringify(OLD_FILE));
+        localStorage.setItem('tabletop_guild_settings', JSON.stringify(OLD_FILE));
         vi.stubEnv('DEV', false);
         vi.resetModules();
         const { SettingsManager: Shipped } = await import('../systems/core/SettingsManager.js');
@@ -175,7 +175,7 @@ describe('a settings file from an older build keeps working', () => {
         vi.resetModules();
         const { SettingsManager: Shipped } = await import('../systems/core/SettingsManager.js');
         for (const minutes of [10, 60, 0]) {
-            localStorage.setItem('fantasy_guild_settings', JSON.stringify({ gameplay: { autoSaveIntervalMinutes: minutes } }));
+            localStorage.setItem('tabletop_guild_settings', JSON.stringify({ gameplay: { autoSaveIntervalMinutes: minutes } }));
             Shipped.load();
             expect(Shipped.get('gameplay.autoSaveIntervalMinutes')).toBe(minutes);
         }

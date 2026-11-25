@@ -1,4 +1,4 @@
-// Fantasy Guild — what a Token *is*, read off what it has
+// What a Token *is*, read off what it has
 
 import { KEYWORD, statementsOf } from '../../systems/effects/statements.js';
 import { isEnemyDef } from './enemyProfile.js';

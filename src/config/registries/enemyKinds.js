@@ -1,4 +1,4 @@
-// Fantasy Guild — enemy kinds: the presets an author ticks on an enemy
+// Enemy kinds: the presets an author ticks on an enemy
 //
 // ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY (`cms/src/utils/constants.js`): the Token
 // editor's Kinds checkboxes and the audit read the kinds from here. Pure: no imports.

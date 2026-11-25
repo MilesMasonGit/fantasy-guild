@@ -1,6 +1,6 @@
-# Fantasy Guild CMS
+# Tabletop Guild CMS
 
-The content editor for Fantasy Guild: the **only** place Tokens, items,
+The content editor for Tabletop Guild: the **only** place Tokens, items,
 recipes, effects, perks, the Guild Hall's sky and the world tables are
 authored. A separate local React app, never shipped with the game. Agents
 mostly prepare content for it from the command line; the owner reviews and

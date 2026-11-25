@@ -8,7 +8,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
  * stored width is still a choice and is kept.
  */
 
-const TUNING_KEY = 'fantasy_guild_mat_tuning';
+const TUNING_KEY = 'tabletop_guild_mat_tuning';
 
 async function loadWith(stored) {
     vi.resetModules();

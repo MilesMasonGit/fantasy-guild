@@ -111,7 +111,7 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
     >
       <div className="flex items-center gap-3">
         <h1 className="text-sm font-bold tracking-tight" style={{ color: 'var(--color-accent)' }}>
-          ⚔️ Fantasy Guild CMS
+          ⚔️ Tabletop Guild CMS
         </h1>
         <span
           className="text-xs px-2 py-0.5 rounded-full"

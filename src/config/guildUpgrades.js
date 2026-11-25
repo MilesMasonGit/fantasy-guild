@@ -1,4 +1,4 @@
-// Fantasy Guild — Guild Hall upgrade definitions & the upgrade web.
+// Guild Hall upgrade definitions & the upgrade web.
 //
 // ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY (the progression ledger). Keep it pure:
 // the authored stars are handed in by `hallStarRegistry.js` ({@link setHallSky}), never loaded here.

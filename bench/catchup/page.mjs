@@ -1,4 +1,4 @@
-// Fantasy Guild bench — a long catch-up timed in the REAL page (offline progress, brief 40 O1).
+// A long catch-up timed in the REAL page (offline progress, brief 40 O1).
 //
 // The perf build (production React + the perf harness) in headless Chrome, the S2 stress board,
 // the whole UI mounted and listening. After the bench's 20 s settle it stops the live loop, puts a

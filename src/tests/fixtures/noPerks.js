@@ -1,4 +1,4 @@
-// Fantasy Guild — tests: take the shipped milestone perks off.
+// Tests: take the shipped milestone perks off.
 
 import { registerSkillPerks, skillsWithPerks } from '../../config/registries/perkRegistry.js';
 

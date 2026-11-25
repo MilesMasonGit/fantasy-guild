@@ -56,7 +56,7 @@ describe('the pixel ring', () => {
 });
 
 describe('the hitbox ships at its new default', () => {
-    const TUNING_KEY = 'fantasy_guild_mat_tuning';
+    const TUNING_KEY = 'tabletop_guild_mat_tuning';
 
     async function loadWith(stored) {
         vi.resetModules();

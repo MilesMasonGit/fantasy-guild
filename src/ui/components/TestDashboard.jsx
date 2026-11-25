@@ -27,7 +27,7 @@ const buttonClass = 'px-2 py-1 rounded bg-gi-primary/10 hover:bg-gi-primary/20 b
 const sectionClass = 'mb-2 pb-2 border-b border-gi-border space-y-1';
 
 /** Remembered on this device by the Starter Camp tool: where the CMS runs. */
-const CMS_URL_KEY = 'fantasy_guild_dev_cms_url';
+const CMS_URL_KEY = 'tabletop_guild_dev_cms_url';
 function storedCmsUrl() {
     try { return localStorage.getItem(CMS_URL_KEY) || DEFAULT_CMS_URL; } catch { return DEFAULT_CMS_URL; }
 }

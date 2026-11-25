@@ -1,4 +1,4 @@
-// Fantasy Guild - Item Registry
+// Item Registry
 
 /**
  * ItemRegistry - Defines all item templates loaded dynamically from data/

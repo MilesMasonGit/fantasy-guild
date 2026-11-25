@@ -74,7 +74,7 @@ try {
             const page = await chrome.newPage();
             await page.setViewport(1920, 1080);
             await page.navigate(url);
-            await page.evaluate(`localStorage.setItem('fantasy_guild_mat_tuning', JSON.stringify({ matSteps: ${v.steps}, matAspect: ${v.aspect} }))`);
+            await page.evaluate(`localStorage.setItem('tabletop_guild_mat_tuning', JSON.stringify({ matSteps: ${v.steps}, matAspect: ${v.aspect} }))`);
             await page.navigate(url);
             await page.waitFor('!!window.Game', { timeoutMs: 120000 });
             await sleep(3000);

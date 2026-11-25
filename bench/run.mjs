@@ -1,4 +1,4 @@
-// Fantasy Guild bench — Tier A, the headless engine benchmark (`npm run bench`).
+// Tier A, the headless engine benchmark (`npm run bench`).
 //
 // Runs each scenario in a fresh Node process (bench/worker.mjs), a few times,
 // takes the median, prints a table and writes JSON to bench/results/.
@@ -458,7 +458,7 @@ async function main() {
         platform: `${os.platform()} ${os.release()}`,
         args: { ...args, only: args.only ? [...args.only] : null }
     };
-    console.log(`Fantasy Guild bench — ${meta.commit}${meta.dirty ? ' (uncommitted changes)' : ''} on ${meta.branch} · Node ${meta.node} · ${meta.machine} · ${meta.cpu}`);
+    console.log(`Tabletop Guild bench — ${meta.commit}${meta.dirty ? ' (uncommitted changes)' : ''} on ${meta.branch} · Node ${meta.node} · ${meta.machine} · ${meta.cpu}`);
     if (args.injectSlowMs) console.log(`⚠ --inject-slow=${args.injectSlowMs}: every tick runs an extra busy-wait handler`);
 
     const rows = [];

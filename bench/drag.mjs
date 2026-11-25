@@ -1,4 +1,4 @@
-// Fantasy Guild drag-reliability bench (`npm run bench:drag`): N real drags of each kind on a busy
+// The drag-reliability bench (`npm run bench:drag`): N real drags of each kind on a busy
 // S2 mat, in the installed Chrome, headless. The drags are REAL browser input
 // (`Input.dispatchMouseEvent`: press, stepped moves, release), never JavaScript-made events, so
 // the browser's own hit-testing decides what the press lands on; that is where "something is
@@ -159,7 +159,7 @@ async function main() {
     const kinds = KINDS.filter(k => !args.kinds || args.kinds.includes(k.id));
     const passes = args.overlays ? ['plain', 'overlays'] : ['plain'];
     const target = args.slowdownTarget ?? args.cpu;
-    console.log(`Fantasy Guild drag bench — ${meta.commit} on ${meta.branch} · ${args.board} board · ${args.build} build · CPU ${args.cpu}× · ${args.n} drags per kind and pass · ${meta.machine}`);
+    console.log(`Tabletop Guild drag bench — ${meta.commit} on ${meta.branch} · ${args.board} board · ${args.build} build · CPU ${args.cpu}× · ${args.n} drags per kind and pass · ${meta.machine}`);
 
     let server = null;
     let chrome = null;

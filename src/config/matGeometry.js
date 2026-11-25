@@ -1,4 +1,4 @@
-// Fantasy Guild — Token geometry on the free playmat
+// Token geometry on the free playmat
 
 import { getTokenType } from './registries/tokenRegistry.js';
 import { tunedOr } from './matTuning.js';

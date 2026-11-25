@@ -2,7 +2,7 @@ import { SPRITE_MANIFEST } from '../config/registries/sprite-manifest.js';
 import { LEGACY_SPRITE_NAMES } from '../config/registries/legacySpriteNames.js';
 
 /**
- * Fantasy Guild - Asset Manager
+ * Asset Manager
  * Universal utility for resolving visual assets (Sprites vs Emojis)
  * with consistent scaling and framing.
  *

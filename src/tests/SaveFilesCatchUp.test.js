@@ -292,7 +292,7 @@ describe('"Load as I left it" with files', () => {
             await new Promise(r => setTimeout(r, 0));
             // The file is still being written: no reload yet, and nothing else may save.
             expect(reload).not.toHaveBeenCalled();
-            expect(sessionStorage.getItem('fantasy_guild_resume_slot')).toBeNull();
+            expect(sessionStorage.getItem('tabletop_guild_resume_slot')).toBeNull();
             expect(SaveManager.save(false)).toBe(false);
             // A second Confirm meanwhile is the same write.
             expect(CatchUp.undoLast()).toBe(undoing);
@@ -334,7 +334,7 @@ describe('"Load as I left it" with files', () => {
             await SaveFiles.flush();
             expect(reload).not.toHaveBeenCalled();
             expect(Banners.getAll().map(b => b.parts?.title)).toContain('Load failed');
-            expect(sessionStorage.getItem('fantasy_guild_resume_slot')).toBeNull();
+            expect(sessionStorage.getItem('tabletop_guild_resume_slot')).toBeNull();
             expect(SaveManager.savingSuspended).toBe(false);
             expect(disk.main(0)).toBe(caughtUp);
             expect(CatchUp.canUndo()).toBe(true);
@@ -346,7 +346,7 @@ describe('"Load as I left it" with files', () => {
             expect(reload).toHaveBeenCalledTimes(1);
             expect(played(disk.main(0))).toBe(played(before));
             expect(JSON.parse(disk.main(0)).savedAt).toBe(NOW);
-            expect(sessionStorage.getItem('fantasy_guild_resume_slot')).toBe('0');
+            expect(sessionStorage.getItem('tabletop_guild_resume_slot')).toBe('0');
         } finally {
             reload.mockRestore();
         }

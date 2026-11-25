@@ -5,10 +5,10 @@ import { logger } from '../../utils/Logger.js';
 import { ENGINE_EVENTS } from './engineEvents.js';
 import { currentSpriteName } from '../../utils/AssetManager.js';
 
-const SETTINGS_STORAGE_KEY = 'fantasy_guild_settings';
+const SETTINGS_STORAGE_KEY = 'tabletop_guild_settings';
 
 /** Marker for the one-time dev-mute migration — see `load()`. */
-const DEV_MUTE_MIGRATION_KEY = 'fantasy_guild_dev_mute_applied';
+const DEV_MUTE_MIGRATION_KEY = 'tabletop_guild_dev_mute_applied';
 
 /** Dev and perf builds: the only ones with the 1-minute auto-save and the Dev Tools tab. */
 export const isDevBuild = () => !!(import.meta.env?.DEV || import.meta.env?.MODE === 'perf');

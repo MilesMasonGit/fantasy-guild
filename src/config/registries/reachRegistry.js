@@ -1,4 +1,4 @@
-// Fantasy Guild — how far a rule reaches
+// How far a rule reaches
 
 /**
  * **How far** a statement reaches, as a declared vocabulary rather than a fact

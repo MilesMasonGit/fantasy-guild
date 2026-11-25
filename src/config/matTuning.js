@@ -1,4 +1,4 @@
-// Fantasy Guild — Live tuning for the free playmat's rules (developer tool).
+// Live tuning for the free playmat's rules (developer tool).
 
 /**
  * The numbers that decide how the mat *plays*, adjustable while the game runs in a dev or perf
@@ -142,7 +142,7 @@ const DEFAULTS = Object.freeze(
     Object.fromEntries(MAT_TUNABLES.map(t => [t.key, t.def]))
 );
 
-const STORAGE_KEY = 'fantasy_guild_mat_tuning';
+const STORAGE_KEY = 'tabletop_guild_mat_tuning';
 
 /**
  * ⚠️ The panel stores every value, touched or not, so a device that ever opened it holds the old

@@ -1,4 +1,4 @@
-// Fantasy Guild — runtime warning for content that does not resolve
+// Runtime warning for content that does not resolve
 
 import { logger } from './Logger.js';
 

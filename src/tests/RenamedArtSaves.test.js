@@ -94,7 +94,7 @@ describe('the table background setting', () => {
     });
 
     it('an old name saved before the rename loads as the new one', () => {
-        localStorage.setItem('fantasy_guild_settings', JSON.stringify({ ui: { backgroundTile: 'pm_table_forest' } }));
+        localStorage.setItem('tabletop_guild_settings', JSON.stringify({ ui: { backgroundTile: 'pm_table_forest' } }));
         SettingsManager.load();
         expect(SettingsManager.get('ui.backgroundTile')).toBe('u_table_forest');
     });

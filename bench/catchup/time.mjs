@@ -1,4 +1,4 @@
-// Fantasy Guild bench — how long a long catch-up takes (offline progress, brief 40 O1).
+// How long a long catch-up takes (offline progress, brief 40 O1).
 //
 // Builds S2 (bench/scenarios/realistic.mjs) and drives the real engine through
 // `GameLoop.runHandlers(step)` for N game-hours, headless, with the bench's seeded randomness

@@ -1,4 +1,4 @@
-// Fantasy Guild bench — what a player waits on at the world map: settling a place, and reading the map.
+// What a player waits on at the world map: settling a place, and reading the map.
 //
 // Vitest `bench` in the node environment (bench/micro/vitest.config.mjs). Run alone with
 //   npm run bench:micro -- bench/micro/atlasWorld.bench.js

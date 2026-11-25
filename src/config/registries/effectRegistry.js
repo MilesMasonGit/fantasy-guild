@@ -1,4 +1,4 @@
-// Fantasy Guild — Effect registry (loader)
+// Effect registry (loader)
 
 import { DatabaseManager } from '../DatabaseManager.js';
 import { migrateAppliesTargets } from '../../systems/effects/effectMigration.js';

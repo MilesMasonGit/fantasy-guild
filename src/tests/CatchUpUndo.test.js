@@ -209,7 +209,7 @@ describe('a write back that fails can be tried again', () => {
             expect(reload).not.toHaveBeenCalled();
             expect(CatchUp.canUndo()).toBe(true);
             expect(SaveManager.savingSuspended).toBe(false);
-            expect(sessionStorage.getItem('fantasy_guild_resume_slot')).toBeNull();
+            expect(sessionStorage.getItem('tabletop_guild_resume_slot')).toBeNull();
             expect(slotJson(0)).toBe(caughtUp);
             expect(Banners.getAll().map(b => b.parts?.title)).toContain('Load failed');
 
@@ -296,7 +296,7 @@ describe('SaveManager: writing the old save back and reloading', () => {
     });
 
     it('a resume flag for an empty slot opens nothing', () => {
-        sessionStorage.setItem('fantasy_guild_resume_slot', '2');
+        sessionStorage.setItem('tabletop_guild_resume_slot', '2');
         expect(SaveManager.takeResumeSlot()).toBe(null);
     });
 

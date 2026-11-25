@@ -1,4 +1,4 @@
-// Fantasy Guild - putting a loaded save into play
+// Putting a loaded save into play
 
 import { GameState } from '../../state/GameState.js';
 import { rehydrateHero } from '../hero/HeroManager.js';

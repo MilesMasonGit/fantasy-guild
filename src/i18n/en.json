@@ -85,7 +85,7 @@
         "done": "Done"
     },
     "titleScreen": {
-        "gameName": "Fantasy Guild",
+        "gameName": "Tabletop Guild",
         "chooseSave": "Choose a save",
         "slot": "Slot {n}",
         "slotEmpty": "Slot {n} — empty",

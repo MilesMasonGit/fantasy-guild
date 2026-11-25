@@ -1,4 +1,4 @@
-// Fantasy Guild bench — load-time probes for the PROFILE pass only.
+// Load-time probes for the PROFILE pass only.
 //
 // ES-module exports cannot be monkey-patched from outside (Vite freezes the
 // module namespace), and a call a module makes to its own function never goes
@@ -93,7 +93,7 @@ function rewrite(code, file, probes) {
 export function instrumentPlugin(root) {
     const base = root.replace(/\\/g, '/').replace(/\/$/, '');
     return {
-        name: 'fantasy-guild-bench-probes',
+        name: 'tabletop-guild-bench-probes',
         enforce: 'pre',
         transform(code, id) {
             const clean = id.split('?')[0].replace(/\\/g, '/');

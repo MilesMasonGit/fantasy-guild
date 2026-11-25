@@ -26,7 +26,7 @@ export function fakeSaveDisk() {
         cancelled: 0,
         claimed: 0,
         opened: 0,
-        folderPath: 'C:\\Users\\player\\AppData\\Roaming\\com.fantasyguild.game\\saves',
+        folderPath: 'C:\\Users\\player\\AppData\\Roaming\\com.tabletopguild.game\\saves',
 
         main: (slot) => files.get(mainName(slot)) ?? null,
         backup: (slot) => files.get(backupName(slot)) ?? null,

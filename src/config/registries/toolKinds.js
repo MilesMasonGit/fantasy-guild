@@ -1,4 +1,4 @@
-// Fantasy Guild — gathering tools: the kinds, an item's tool, a Token's need, hands
+// Gathering tools: the kinds, an item's tool, a Token's need, hands
 //
 // ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY (`cms/src/utils/constants.js`): the item
 // editor's Tool field, the Token editor's Needs tool field and the audit read the kinds from here.

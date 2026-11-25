@@ -1,4 +1,4 @@
-// Fantasy Guild — where a number comes from
+// Where a number comes from
 
 import { ROLE } from './roleRegistry.js';
 

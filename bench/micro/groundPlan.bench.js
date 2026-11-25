@@ -1,4 +1,4 @@
-// Fantasy Guild bench — the ground plan's build time (terrain roadmap B3).
+// The ground plan's build time (terrain roadmap B3).
 //
 // Vitest `bench` in the node environment (bench/micro/vitest.config.mjs). Run alone with
 //   npx vitest bench --config bench/micro/vitest.config.mjs --run bench/micro/groundPlan.bench.js

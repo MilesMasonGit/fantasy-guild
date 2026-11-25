@@ -1,4 +1,4 @@
-// Fantasy Guild — test setup: heroes arrive the moment they claim.
+// Test setup: heroes arrive the moment they claim.
 //
 // ⚠️ A global marker, NOT an import of `BoardState`: a setup file that loads
 // game modules loads them before the test file's `vi.mock` calls, and those

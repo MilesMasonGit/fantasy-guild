@@ -1,4 +1,4 @@
-// Fantasy Guild — enemy moves: the few attacks an enemy picks from at random, one each swing
+// Enemy moves: the few attacks an enemy picks from at random, one each swing
 //
 // ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY (`cms/src/utils/constants.js`): the Token
 // editor's Moves block and the audits read the shapes from here. Keep it free of data loading.

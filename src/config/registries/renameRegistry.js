@@ -1,4 +1,4 @@
-// Fantasy Guild — the CMS's renamed ids (loader)
+// The CMS's renamed ids (loader)
 
 import { DatabaseManager } from '../DatabaseManager.js';
 import { normaliseRenames } from '../renameTable.js';

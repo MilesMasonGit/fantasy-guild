@@ -1,4 +1,4 @@
-// Fantasy Guild bench — one scenario run, in its own Node process.
+// One scenario run, in its own Node process.
 //
 // Spawned by `bench/run.mjs`. A fresh process per run means fresh module state
 // (the engine keeps runtime maps at module level), a clean heap to measure, and

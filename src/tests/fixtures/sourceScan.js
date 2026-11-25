@@ -1,4 +1,4 @@
-// Fantasy Guild — test helper: reading the game's own source for guard tests.
+// Test helper: reading the game's own source for guard tests.
 //
 // **For tests only.** Guard tests (round-3 review, Wave 0) read non-test
 // `src/` as text and fail when a rule about who may touch what is broken.

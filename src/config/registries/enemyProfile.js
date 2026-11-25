@@ -1,4 +1,4 @@
-// Fantasy Guild — an enemy, read off the Token that is one
+// An enemy, read off the Token that is one
 
 import { getTokenType } from './tokenRegistry.js';
 import { outputRange } from './tokenConstants.js';

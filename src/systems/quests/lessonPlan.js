@@ -1,4 +1,4 @@
-// Fantasy Guild - Limes's lessons: the steps in order and what counts for each
+// Limes's lessons: the steps in order and what counts for each
 //
 // Every word Limes says is in `limesText.js`. Where a step speaks and what it outlines is the UI's
 // (`ui/components/limes/lessonScreens.js`). The progress is `LimesLessons.js`.

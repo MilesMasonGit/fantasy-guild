@@ -1,4 +1,4 @@
-// Fantasy Guild drawing bench (`npm run bench:draw`): how much drawing the game costs, measured
+// The drawing bench (`npm run bench:draw`): how much drawing the game costs, measured
 // by the in-game Perf HUD (`window.__perf`) in the installed Chrome, headless, real GPU.
 //
 //   npm run bench:draw                    perf build, CPU 1× and 4×, every scene
@@ -125,7 +125,7 @@ async function main() {
     // The cost table runs on one board: S2, or the one `--only` names (a cap board, say).
     const switchScene = sceneFor(args.only?.[0] ?? 'S2');
     const scenes = args.switches ? [switchScene] : (args.only || SCENE_IDS).map(id => sceneFor(id));
-    console.log(`Fantasy Guild drawing bench — ${meta.commit} on ${meta.branch}${meta.dirty && Object.values(meta.dirty).some(Boolean) ? ` (uncommitted: ${Object.entries(meta.dirty).filter(([, v]) => v).map(([k]) => k).join(', ')})` : ''} · ${meta.machine} · ${meta.cpu}`);
+    console.log(`Tabletop Guild drawing bench — ${meta.commit} on ${meta.branch}${meta.dirty && Object.values(meta.dirty).some(Boolean) ? ` (uncommitted: ${Object.entries(meta.dirty).filter(([, v]) => v).map(([k]) => k).join(', ')})` : ''} · ${meta.machine} · ${meta.cpu}`);
 
     const servers = {};
     let chrome = null;

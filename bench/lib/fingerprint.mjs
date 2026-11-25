@@ -1,4 +1,4 @@
-// Fantasy Guild bench — the work fingerprint (CR3-550). Loaded THROUGH Vite, so
+// The work fingerprint (CR3-550). Loaded THROUGH Vite, so
 // it reads the same engine modules the scenario ran.
 //
 // A run's fingerprint says WHAT the engine did, never how fast. Two runs of one

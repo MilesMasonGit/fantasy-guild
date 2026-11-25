@@ -1,4 +1,4 @@
-// Fantasy Guild - every word Limes says, in one place
+// Every word Limes says, in one place
 //
 // The owner reads and edits these at the eye-check. Limes is cheerful and blobby: short, warm,
 // a little silly, clear words, easy to translate. Everything here is a draft until then.

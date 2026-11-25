@@ -1,4 +1,4 @@
-// Fantasy Guild — test fixture: a small world for the ledger's balancing preview (brief 290 L9).
+// Test fixture: a small world for the ledger's balancing preview (brief 290 L9).
 //
 // Everything stands in the Starter Camp and needs no tool, so each rate reads by hand: a work of
 // 10 s is 360 cycles an hour. Forestry sits on the pace curve (an Oak of 5 XP: 1800 XP an hour, an

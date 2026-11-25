@@ -38,7 +38,7 @@ import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js'
 /** Fired once a stress board is live, so ReactRoot can close the slot picker. */
 export const STRESS_STARTED_EVENT = UI_EVENTS.DEV_STRESS_STARTED;
 
-const PROTECTED_KEYS = ['fantasy_guild_mat_tuning', 'fantasy_guild_settings'];
+const PROTECTED_KEYS = ['tabletop_guild_mat_tuning', 'tabletop_guild_settings'];
 
 /**
  * Scenario name → the bench module that builds it. The names are what

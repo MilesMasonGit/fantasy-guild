@@ -1,4 +1,4 @@
-// Fantasy Guild drawing profile (`npm run bench:profile`): WHERE a scene's frame time goes, for
+// The drawing profile (`npm run bench:profile`): WHERE a scene's frame time goes, for
 // ranking causes (brief 60). `bench:draw` says how much a frame costs; this says what in it.
 //
 //   npm run bench:profile -- --scene=S2 --cpu=4       one scene, settled, then a trace and a CPU profile
@@ -496,7 +496,7 @@ async function main() {
     const scene = sceneFor(args.scene);
     let commit = 'unknown';
     try { commit = execSync('git rev-parse --short HEAD', { cwd: root }).toString().trim(); } catch { /* not a checkout */ }
-    console.log(`Fantasy Guild drawing profile — ${commit} · ${scene.name} · CPU ${args.cpu}× · settle ${args.settleS} s, trace ${args.traceS} s, CPU profile ${args.sampleS} s${args.off.length ? ` · off: ${args.off.join(',')}` : ''}`);
+    console.log(`Tabletop Guild drawing profile — ${commit} · ${scene.name} · CPU ${args.cpu}× · settle ${args.settleS} s, trace ${args.traceS} s, CPU profile ${args.sampleS} s${args.off.length ? ` · off: ${args.off.join(',')}` : ''}`);
     if (args.build) {
         process.stdout.write(`Building the profiling build (perf, unminified, source maps → ${PROFILE_OUT_DIR}/)…\n`);
         buildPerf({ profile: true });

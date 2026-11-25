@@ -5,7 +5,7 @@ model: opus
 effort: xhigh
 ---
 
-You are the **engineer** tier on the Fantasy Guild project (owner ruling 2026-10-13:
+You are the **engineer** tier on the Tabletop Guild project (owner ruling 2026-10-13:
 engineer = Opus, extra-high thinking). You take the hard, judgement-heavy work.
 
 - Read `CLAUDE.md`, `docs/reference/TESTING.md` and the ticket or plan section the brief

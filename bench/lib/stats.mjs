@@ -1,4 +1,4 @@
-// Fantasy Guild bench — small statistics helpers (plain JS, no engine imports).
+// Small statistics helpers (plain JS, no engine imports).
 
 /** The q-quantile (0–1) of an ascending-sorted array, nearest-rank. */
 export function quantile(sorted, q) {

@@ -1,4 +1,4 @@
-// Fantasy Guild - State Schema
+// State Schema
 // Phase 5: State Foundation
 
 /**

@@ -1,4 +1,4 @@
-// Fantasy Guild — test fixture: a small world for the ledger's reach and tree engines.
+// Test fixture: a small world for the ledger's reach and tree engines.
 //
 // A Starter Camp of copper, coal and oak with a Furnace and a Goblin Camp; a Shop that sells a
 // Foundation the Smithy is built on; world tables with the Chief's Tent, which spawns the Goblin

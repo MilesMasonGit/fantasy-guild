@@ -1,4 +1,4 @@
-// Fantasy Guild — Triggered Token vocabulary
+// Triggered Token vocabulary
 
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import { ROLE, AMBIENT_ROLES } from './roleRegistry.js';

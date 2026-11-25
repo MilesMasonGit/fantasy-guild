@@ -1,4 +1,4 @@
-// Fantasy Guild — test helper: which components rendered, by name, while counting.
+// Test helper: which components rendered, by name, while counting.
 //
 // ⚠️ Import this before anything that imports React: it stands in for React DevTools, which
 // React tells about every commit it makes, and React only looks for it as it loads.

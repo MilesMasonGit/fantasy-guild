@@ -1,4 +1,4 @@
-// Fantasy Guild — test helper: the two sides of the Guild Hall camera in ReactRoot's layout.
+// Test helper: the two sides of the Guild Hall camera in ReactRoot's layout.
 //
 // **For tests only.**
 

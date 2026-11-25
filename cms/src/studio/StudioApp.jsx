@@ -23,7 +23,7 @@ export default function StudioApp() {
         style={{ minHeight: 52, backgroundColor: 'var(--color-bg-surface)', borderColor: 'var(--color-border-subtle)' }}
       >
         <h1 className="text-sm font-bold tracking-tight" style={{ color: 'var(--color-accent)' }}>
-          🎨 Fantasy Guild Studio
+          🎨 Tabletop Guild Studio
         </h1>
         <div role="tablist" className="flex items-center gap-1 rounded-lg p-0.5" style={{ background: 'var(--color-bg-base)' }}>
           {TABS.map((t) => (

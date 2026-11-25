@@ -1,4 +1,4 @@
-// Fantasy Guild — test fixture: a small world for the ledger's pace (profiles, path time, checks D).
+// Test fixture: a small world for the ledger's pace (profiles, path time, checks D).
 //
 // A Starter Camp of a copper vein (five charges, a minute's rest), an unlimited oak and a Still that
 // makes Beer from wood; a Shop Foundation (10 Oak Wood) that takes builds: a Hut (Construction 1,

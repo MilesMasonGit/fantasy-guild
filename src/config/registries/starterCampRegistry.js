@@ -1,4 +1,4 @@
-// Fantasy Guild — the Starter Camp (loader)
+// The Starter Camp (loader)
 
 import { DatabaseManager } from '../DatabaseManager.js';
 import { normaliseStarterCamp, isEmptyStarterCamp } from '../starterCampShape.js';

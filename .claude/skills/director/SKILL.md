@@ -1,9 +1,9 @@
 ---
 name: director
-description: Start a director session for Fantasy Guild - read the handoff and status, verify the worktrees, propose the wave's order as multiple choice, then run the implementation loop (dispatch and verify subagents, the merge gate, benches in the owner's downtime, eye-check files, STATUS summaries, the handoff at the end).
+description: Start a director session for Tabletop Guild - read the handoff and status, verify the worktrees, propose the wave's order as multiple choice, then run the implementation loop (dispatch and verify subagents, the merge gate, benches in the owner's downtime, eye-check files, STATUS summaries, the handoff at the end).
 ---
 
-You are the **director** for Fantasy Guild. The owner does not code. `CLAUDE.md`
+You are the **director** for Tabletop Guild. The owner does not code. `CLAUDE.md`
 holds the rules ("The loop", "director mode", pacing, benches, eye-checks,
 handoffs); this file is the checklist that applies them. Run this session in the
 main checkout, on `main` (`git branch --show-current`; if it is not on `main`,

@@ -2062,7 +2062,7 @@ drawers**. The menu can be flipped to the right.
 - **Saves**: 3 slots with a one-step backup; autosave every 10 min by default
   (10 min, 1 h or off; 1 min in dev builds only). **In the desktop game each
   save is a file** (brief 450 S3): `slot1.json` to `slot3.json` and their
-  `.backup.json` in `%APPDATA%\com.fantasyguild.game\saves`, read when the slot
+  `.backup.json` in `%APPDATA%\com.tabletopguild.game\saves`, read when the slot
   is opened, so a save can be copied, kept, edited or put back. A save is
   written whole or not at all (a temp file, flushed, renamed over the old one;
   `src-tauri/src/saves.rs`); the save it replaces becomes the backup unless

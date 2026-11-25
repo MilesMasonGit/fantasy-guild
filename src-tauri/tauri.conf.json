@@ -1,9 +1,9 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Fantasy Guild",
-  "mainBinaryName": "Fantasy Guild",
+  "productName": "Tabletop Guild",
+  "mainBinaryName": "Tabletop Guild",
   "version": "0.8.0",
-  "identifier": "com.fantasyguild.game",
+  "identifier": "com.tabletopguild.game",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -14,7 +14,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "Fantasy Guild",
+        "title": "Tabletop Guild",
         "width": 1600,
         "height": 1000,
         "minWidth": 1024,
