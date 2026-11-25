@@ -610,6 +610,8 @@ const BREAK = <div aria-hidden="true" className="h-0.5 bg-white/10" />;
  */
 export const FightPanelView = ({ view, fights, onClose, onMinimize = null, onDragStart = null, logOpen, onToggleLog, tab, onTab }) => {
     const result = view.ended ? resultWord(view.ended.outcome) : null;
+    // Between fights the view is drawn from the last fight, so its record says how that one ended.
+    const resultLine = view.ended ? endText(fights?.last) : null;
     return (
         <PixelFrame kind={FRAME_KIND.CHAMFER} backdrop="fight" data-fight-panel={view.heroId} data-fight-live={view.live ? 'true' : 'false'} style={{ width: PANEL_W + 12 }}>
             <div className="relative flex flex-col" style={{ width: PANEL_W }}>
@@ -625,6 +627,11 @@ export const FightPanelView = ({ view, fights, onClose, onMinimize = null, onDra
                     {onMinimize && <MinimizeButton onClick={onMinimize} data-fight-minimize={view.heroId} />}
                     {onClose && <CloseX onClick={onClose} data-fight-close={view.heroId} />}
                 </div>
+                {resultLine && (
+                    <div className="ui-text-small font-bold pl-1 pb-1 whitespace-nowrap overflow-hidden" data-fight-result-line={view.ended.outcome} style={{ color: result?.colour }}>
+                        {resultLine}
+                    </div>
+                )}
                 <div className="relative">
                     <FightArena view={view} />
                     {/* The arena's corner: the title bar has no room to spare for long names. */}
