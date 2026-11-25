@@ -7,7 +7,7 @@ import * as ConsumptionSystem from '../hero/ConsumptionSystem.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 import { FIGHT_MOMENT } from '../../config/registries/triggerRegistry.js';
 import { SIDE, MOVE_LANDS, fightMoment, talliesOf } from './FightHooks.js';
-import { spendArrow, nextArrowOf } from './Arrows.js';
+import * as Ammo from './Ammo.js';
 import { pickMove } from '../../config/registries/enemyMoves.js';
 
 /**
@@ -18,9 +18,9 @@ import { pickMove } from '../../config/registries/enemyMoves.js';
  * crit can be shown.
  *
  * Each swing runs the fight moments in a fixed order, so a catch-up draws the same random numbers
- * as live play: the swinger's On Swing rules (before the roll, so they can shape it), a Ranged
- * hero's arrow spent (hit or miss; where a Preservation rule reaches, one draw says it is kept), the
- * miss and crit roll, the damage and its fraction sub-roll,
+ * as live play: the swinger's On Swing rules (before the roll, so they can shape it), the ammo the
+ * hero's weapon spends (an arrow, a Mote, a Kunai: hit or miss; where a Preservation rule reaches,
+ * one draw says it is kept; `Ammo.js`), the miss and crit roll, the damage and its fraction sub-roll,
  * then, on a hit that leaves the other side standing, the swinger's On Hit rules and, if both still
  * stand, the struck side's When Struck rules. Whatever was carried "for the swing" comes off, and On
  * Health Below is checked.
@@ -76,7 +76,14 @@ export function checkHealth(fight, hero) {
     }
 }
 
+/**
+ * One attack by the hero, or none: a bow with no arrow left does not shoot, and its hero leaves the
+ * fight at the next look (`Flags`, `WorkCheck.carriedStop`); the swing's time is not spent.
+ * @returns {boolean} whether the hero's turn was taken (an attack, or a meal in its place)
+ */
 export function handleHeroAttack(fight, hero, enemy, attackSpeed) {
+    if (Ammo.leavesWithout(hero)) return false;
+
     // Eating mid-fight: the hero skips this attack while the enemy's timer keeps
     // running, so the enemy gets a free swing. That price keeps HP management
     // tense. Uncapped on purpose: a hero who can't out-heal the damage should lose. Only food
@@ -90,33 +97,39 @@ export function handleHeroAttack(fight, hero, enemy, attackSpeed) {
             });
         }
         fight.combat.heroTickProcesses[hero.id] -= attackSpeed;
-        return;
+        return true;
     }
 
     const tallies = talliesOf(fight);
     tallies.swings.hero += 1;
     // The arrow this swing shoots: its own rules join the hero's for this swing only.
-    tallies.arrowId = nextArrowOf(hero);
+    tallies.arrowId = Ammo.nextArrowOf(hero);
     fightMoment(fight, SIDE.HERO, FIGHT_MOMENT.SWING, tallies.swings.hero);
 
     // A rule on the swing may have ended the fight before the blow: either side may have fallen.
-    if (!isDown(hero) && fight.combat.enemyHp.current > 0) {
-        const shot = spendArrow(hero, fight.instanceId ?? null);
-        const arrowId = shot?.itemId ?? null;
+    const shot = !isDown(hero) && fight.combat.enemyHp.current > 0 ? Ammo.spendAmmo(hero, fight.instanceId ?? null) : null;
+    // ⚠️ A bow whose last arrow went in the swing's own rules shoots nothing, as one out of arrows.
+    const noShot = shot?.kind === Ammo.AMMO.ARROW && !shot.itemId;
+    if (!isDown(hero) && fight.combat.enemyHp.current > 0 && !noShot) {
+        const arrowId = shot?.kind === Ammo.AMMO.ARROW ? shot.itemId : null;
         tallies.arrowId = arrowId;
+        const short = !!shot?.short;
+        if (short) Ammo.sayShortOnce(fight, hero);
+        // What the attack spent, for the time-away tally: the item, and whether Preservation kept it.
+        const spent = { ...(shot?.itemId ? { ammoId: shot.itemId } : {}), ...(shot?.kept ? { ammoKept: true } : {}), ...(short ? { short: true } : {}) };
         const swing = CombatFormulas.rollSwing(
             CombatFormulas.heroMissChance(hero, enemy),
             CombatFormulas.heroCritChance(hero)
         );
 
         if (swing.hit) {
-            const blow = CombatFormulas.heroBlow(hero, enemy, { crit: swing.crit, arrow: shot?.arrow ?? null });
+            const blow = CombatFormulas.heroBlow(hero, enemy, { crit: swing.crit, arrow: shot?.arrow ?? null, short });
             const damage = CombatFormulas.rollFraction(blow.exact);
             const types = blow.parts.map(p => p.type);
             const verdict = CombatFormulas.blowVerdict(blow.parts);
             fight.combat.enemyHp.current = Math.max(0, fight.combat.enemyHp.current - damage);
 
-            EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage, hit: true, crit: swing.crit, types, verdict, arrowId, enemyHpRemaining: fight.combat.enemyHp.current });
+            EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage, hit: true, crit: swing.crit, types, verdict, arrowId, ...spent, enemyHpRemaining: fight.combat.enemyHp.current });
 
             if (fight.combat.enemyHp.current > 0 && !isDown(hero)) {
                 tallies.hits.hero += 1;
@@ -127,7 +140,7 @@ export function handleHeroAttack(fight, hero, enemy, attackSpeed) {
                 }
             }
         } else {
-            EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, crit: false, arrowId, enemyHpRemaining: fight.combat.enemyHp.current });
+            EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, crit: false, arrowId, ...spent, enemyHpRemaining: fight.combat.enemyHp.current });
         }
     }
 
@@ -138,6 +151,7 @@ export function handleHeroAttack(fight, hero, enemy, attackSpeed) {
     // Carry the overshoot instead of resetting; a reset would quantize every
     // attack up to a whole engine tick.
     fight.combat.heroTickProcesses[hero.id] -= attackSpeed;
+    return true;
 }
 
 /** One enemy swing at a hero who is still standing. */

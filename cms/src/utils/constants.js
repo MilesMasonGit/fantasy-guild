@@ -157,7 +157,7 @@ export { ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf } from '../../..
 export { enemyFightNumbers, isKindCandidate, kindResistances } from '../../../src/systems/effects/enemyKindEffects.js';
 
 // Weapons: the one style a weapon fights in, and the level gear asks of its wearer, for the item editor's Weapon and Requirement blocks.
-export { isWeapon, isOffHand, weaponStyleOf, authoredWeaponStyles, gearLevelRequirement } from '../../../src/config/registries/weaponStyles.js';
+export { isWeapon, isOffHand, weaponStyleOf, authoredWeaponStyles, gearLevelRequirement, weaponMoteOf, isThrownWeapon } from '../../../src/config/registries/weaponStyles.js';
 // Gear's defence: a worn piece's resistances (free percents by type) and its damage cut to named styles, for the item editor's Defence block.
 export { gearResistancesOf, gearDamageCutOf, isWornGear, isGearResistLine, isDamageCut, GEAR_RESIST_LINE_MAX } from '../../../src/config/registries/gearDefence.js';
 // The three swing speeds and the proposed weapon tiers' damage, so the Weapon block offers what the fight reads.

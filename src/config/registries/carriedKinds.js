@@ -7,7 +7,7 @@
  * potion.
  *
  * `food` and `drink` are the loadout's own categories (`equipmentCategories.js`); `potion` and
- * `elixir` the doses' (`consumableRule.DOSE`); `ammo` (an arrow a Ranged hero shoots) and `bait` (what
+ * `elixir` the doses' (`consumableRule.DOSE`); `ammo` (an arrow a Ranged hero shoots, a Mote a mage burns, a Kunai thrown) and `bait` (what
  * a hero fishes with) are named here for the first time.
  *
  * ⚠️ These ids sit in a rule's `category` beside skill ids and item ids, so none may ever equal one.
@@ -26,7 +26,7 @@ export const CARRIED_KIND = Object.freeze({
  * used up"), and the picker's hint.
  */
 export const CARRIED_KINDS = Object.freeze([
-    { id: CARRIED_KIND.AMMO, label: 'Ammo', phrase: 'ammo', hint: 'An arrow, each time a Ranged hero shoots one.' },
+    { id: CARRIED_KIND.AMMO, label: 'Ammo', phrase: 'ammo', hint: 'An arrow, a Mote or a Kunai, each time a shot, a cast or a throw spends one.' },
     { id: CARRIED_KIND.FOOD, label: 'Food', phrase: 'Food', hint: 'A meal, each time a hurt hero eats one, in a fight or out.' },
     { id: CARRIED_KIND.DRINK, label: 'Drink', phrase: 'a drink', hint: 'A drink, each time a hero starts a new dose as a work cycle starts.' },
     { id: CARRIED_KIND.POTION, label: 'Potion', phrase: 'a potion', hint: 'A potion: a work potion drunk for each cycle of its skill, or a Consumable its own rule spends as it fires.' },

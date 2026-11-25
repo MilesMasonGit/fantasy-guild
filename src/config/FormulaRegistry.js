@@ -87,6 +87,15 @@ export function cappedCritChance(pct) {
     return clamp(Number(pct) || 0, 0, CRIT_CHANCE_CAP);
 }
 
+// --- Ammo -----------------------------------------------------------------------------------
+
+/**
+ * What a hit is worth when its weapon's ammo is out but the hero fights on: a mage casting with no
+ * Mote, a Kunai thrower down to the one in hand. One number for both. (A bow with no arrow does not
+ * shoot at all: its hero leaves the fight.)
+ */
+export const NO_AMMO_DAMAGE_FACTOR = 0.5;
+
 // --- The style cycle ------------------------------------------------------------------------
 
 /** A good matchup deals 25 % more, a bad one 25 % less. */

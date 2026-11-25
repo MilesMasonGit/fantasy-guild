@@ -2,7 +2,8 @@ import React from 'react';
 import { t } from '../../../i18n/index.js';
 import { toolOf, toolKindLabel, handsOf, HANDS, neededToolOf, toolMeets } from '../../../config/registries/toolKinds.js';
 import { getAllTokenTypes, tokenName } from '../../../config/registries/tokenRegistry.js';
-import { weaponStyleOf, isOffHand, gearRequirements } from '../../../config/registries/weaponStyles.js';
+import { weaponStyleOf, isOffHand, gearRequirements, weaponMoteOf, isThrownWeapon } from '../../../config/registries/weaponStyles.js';
+import { getItem } from '../../../config/registries/itemRegistry.js';
 import { weaponDamageTypeOf, arrowOf, DAMAGE_TYPES } from '../../../config/registries/damageTypes.js';
 import { gearResistancesOf, gearDamageCutOf } from '../../../config/registries/gearDefence.js';
 import { COMBAT_SKILL_IDS } from '../../../config/registries/skillRegistry.js';
@@ -140,6 +141,13 @@ export function itemEffects(item) {
  * Everything the tooltip says about an item, as plain facts (the component below draws them).
  * Mounted only while a tooltip is open, so nothing here runs per frame.
  */
+/** What a weapon spends an attack, or null: "Burns Fire Mote each cast", "Thrown: each throw spends one from the Bank". */
+function ammoLine(item) {
+    const mote = weaponMoteOf(item);
+    if (mote) return t('itemTip.mote', { item: getItem(mote)?.name || mote });
+    return isThrownWeapon(item) ? t('itemTip.thrown') : null;
+}
+
 export function itemTipFacts(item) {
     const tool = toolOf(item);
     const hands = handsOf(item);
@@ -156,6 +164,8 @@ export function itemTipFacts(item) {
         stats: weaponStats(item, style, hands),
         // What an arrow adds to a bow's shot: the damage and its type.
         arrow: arrow ? t('itemTip.arrow', { damage: arrow.damage, type: t(`fight.types.${arrow.damageType}`) }) : null,
+        // What a weapon spends an attack: the Mote a Magic weapon burns, a Kunai thrown (`Ammo.js`).
+        ammo: ammoLine(item),
         offHand: isOffHand(item) ? t('itemTip.offHand') : null,
         // What a worn piece resists, and what it costs: the styles it cuts, shown red.
         resists: resistLines(item),
@@ -251,6 +261,7 @@ export const ItemDetailLines = ({ facts }) => (
             </div>
         )}
         {facts.arrow && <div data-item-tip-arrow className="text-white">{facts.arrow}</div>}
+        {facts.ammo && <div data-item-tip-ammo className="text-white">{facts.ammo}</div>}
         {facts.offHand && <div data-item-tip-offhand className="text-white/70">{facts.offHand}</div>}
         {facts.resists.map(line => <div key={line} data-item-tip-resist className="text-white">{line}</div>)}
         {facts.cuts.map(line => <div key={line} data-item-tip-cut className="text-gi-danger">{line}</div>)}

@@ -2,7 +2,7 @@
 
 import { isSkillId, COMBAT_SKILL_IDS, getSkill } from '../../config/registries/skillRegistry.js';
 import { getEnemyKind, kindEffectIdOf, kindsClash, MAX_ENEMY_KINDS } from '../../config/registries/enemyKinds.js';
-import { isWeapon, authoredWeaponStyles, weaponStyleOf } from '../../config/registries/weaponStyles.js';
+import { isWeapon, authoredWeaponStyles, weaponStyleOf, weaponMoteOf } from '../../config/registries/weaponStyles.js';
 import { getPaletteEntry, isCombatStyleScope } from '../../config/registries/modifierPalette.js';
 import { isDamageTypeId, isDamageGroupId, groupLineAdvice, resistanceProblems } from '../../config/registries/damageTypes.js';
 import { RETIRED_ENEMY_FIELDS } from '../../config/registries/enemyProfile.js';
@@ -145,6 +145,34 @@ function damageTypeFindings(def, push) {
     }
 }
 
+/**
+ * Findings for what a weapon spends: a Magic weapon naming no Mote (it casts free) or one that is no
+ * Consumable item, a Mote on a weapon that is not Magic, and a thrown flag on anything but a Stealth
+ * weapon. `itemOf` looks an item up when the caller gave items; without, the Mote is taken on trust.
+ */
+function ammoFindings(def, push, itemOf) {
+    if (!isWeapon(def)) {
+        if (def.thrown === true) push('thrown', 'is marked thrown but is not a weapon — only a Stealth weapon (a Kunai) spends itself, so it is ignored.');
+        return;
+    }
+    const style = weaponStyleOf(def);
+    if (style === 'magic') {
+        const mote = weaponMoteOf(def);
+        if (!mote) {
+            push('mote', 'is a Magic weapon naming no Mote — it casts free, at full damage. Pick the Mote it burns in the CMS.');
+        } else if (itemOf) {
+            const item = itemOf(mote);
+            if (!item) push('mote', `burns the Mote "${mote}", which is no item — it casts at half damage for want of it. Pick its Mote again in the CMS.`);
+            else if (!isConsumableCategory(item.equipSlot)) push('mote', `burns ${item.name || mote}, which is not a Consumable — no hero can carry it, so it casts at half damage. Make it a Consumable in the CMS.`);
+        }
+    } else if (hasValue(def.mote)) {
+        push('mote', `names a Mote but fights as ${getSkill(style)?.name || style} — only a Magic weapon burns one, so it is ignored.`);
+    }
+    if (def.thrown === true && style !== 'stealth') {
+        push('thrown', `is marked thrown but fights as ${getSkill(style)?.name || style} — only a Stealth weapon (a Kunai) spends itself, so it is ignored.`);
+    }
+}
+
 /** The kind that landed Venom on every hit, before a poisoning move carried Venom itself. */
 const RETIRED_VENOMOUS_KIND = 'venomous';
 
@@ -194,6 +222,8 @@ export function findUnknownRefs({ tokens, items, recipes, effects } = {}) {
         : {};
     const itemIds = !items ? null : new Set(Array.isArray(items) ? items.map(i => i?.id).filter(Boolean) : Object.keys(items));
     const isItemId = itemIds ? (id) => itemIds.has(id) : null;
+    const itemById = !items ? null : new Map(asList(items).filter(i => i?.id).map(i => [i.id, i]));
+    const itemOf = itemById ? (id) => itemById.get(id) || null : null;
 
     for (const entry of asList(effects)) {
         if (!entry || typeof entry !== 'object') continue;
@@ -250,6 +280,7 @@ export function findUnknownRefs({ tokens, items, recipes, effects } = {}) {
             push('styles', `names ${authoredWeaponStyles(def).length} styles; a weapon has one, so it fights as ${first} (the first). Pick its one style in the CMS.`);
         }
         damageTypeFindings(def, push);
+        ammoFindings(def, push, itemOf);
         statementFindings(def, push, isItemId);
     }
 

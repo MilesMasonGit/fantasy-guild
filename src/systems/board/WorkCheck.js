@@ -14,6 +14,8 @@ import * as SiteRules from './SiteRules.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import * as HeroTools from '../equipment/HeroTools.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { isEnemyDef } from '../../config/registries/enemyProfile.js';
+import * as Ammo from '../combat/Ammo.js';
 import { toolNeedOf } from './toolNeed.js';
 
 /**
@@ -96,6 +98,26 @@ export function baitReason(heroId, instance, def = getTokenType(instance?.typeId
     const stop = Fishing.stopOf(def, heroId, instance);
     if (!stop) return null;
     return stop === 'level' ? ALERT.FISH_LEVEL : ALERT.NO_BAIT;
+}
+
+/**
+ * `ALERT.NO_AMMO` when `heroId`'s bow has no arrow to shoot (`Ammo.leavesWithout`), else null. A
+ * Mote or a Kunai never stops a fight: the hero fights on at half.
+ */
+export function ammoReason(heroId) {
+    return heroId && Ammo.leavesWithout(heroId) ? ALERT.NO_AMMO : null;
+}
+
+/**
+ * The one stop for work that wants something its hero carries: why `heroId` lets go of Token
+ * `instance` and waits by it, keeping the order, until given what they need; null when nothing
+ * stops them. At a water, the bait (or the level its fish ask, {@link baitReason}); at an enemy, the
+ * arrows ({@link ammoReason}), the enemy keeping its wounds. Never a badge and never a refusal:
+ * the hero says "Needs X" (`Flags`, `INPUT_NEEDED`).
+ */
+export function carriedStop(heroId, instance, def = getTokenType(instance?.typeId)) {
+    if (isEnemyDef(def)) return ammoReason(heroId);
+    return baitReason(heroId, instance, def);
 }
 
 /** {@link heroReason}'s tool gate (`toolNeed.js`). */

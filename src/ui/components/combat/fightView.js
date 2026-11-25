@@ -4,9 +4,9 @@ import * as LiveEffects from '../../../systems/effects/LiveEffects.js';
 import { isFightElixir } from '../../../systems/hero/ConsumptionSystem.js';
 import { MAX_SKILL_LEVEL } from '../../../utils/XPCurve.js';
 import * as CombatFormulas from '../../../systems/combat/CombatFormulas.js';
-import { levelDamageBonus, UNARMED_DAMAGE } from '../../../config/FormulaRegistry.js';
+import { levelDamageBonus, UNARMED_DAMAGE, NO_AMMO_DAMAGE_FACTOR } from '../../../config/FormulaRegistry.js';
 import { DAMAGE_TYPES, PLAIN_ENEMY_HIT_TYPE, arrowOf } from '../../../config/registries/damageTypes.js';
-import { nextArrowOf, shootsArrows, carriedArrowIds } from '../../../systems/combat/Arrows.js';
+import { nextArrowOf, shootsArrows, carriedArrowIds, nextAmmoOf, AMMO } from '../../../systems/combat/Ammo.js';
 import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
 import { getEquippedEntries, isConsumableCategory } from '../../../config/registries/equipmentConstants.js';
 import { getEnemyProfile } from '../../../config/registries/enemyProfile.js';
@@ -85,6 +85,21 @@ export function arrowsView(hero) {
         return { itemId: carried[0] || null, name: carried[0] ? getItem(carried[0])?.name || carried[0] : null, count: 0, arrow: null };
     }
     return { itemId, name: getItem(itemId)?.name || itemId, count: InventoryManager.getItemCount(itemId), arrow: arrowOf(getItem(itemId)) };
+}
+
+/**
+ * A Mote or Kunai hero's ammo: the item their attack spends, how many the Bank holds, and whether
+ * none is left (`short`: they attack at half). Null for a weapon that spends neither.
+ * @returns {{kind: string, itemId: string, name: string, count: number, short: boolean}|null}
+ */
+export function spentAmmoView(hero) {
+    const next = hero ? nextAmmoOf(hero) : null;
+    if (!next || next.rule.kind === AMMO.ARROW || !next.rule.needs) return null;
+    const itemId = next.rule.needs;
+    return {
+        kind: next.rule.kind, itemId, name: getItem(itemId)?.name || itemId,
+        count: next.itemId ? InventoryManager.getItemCount(itemId) : 0, short: !next.itemId
+    };
 }
 
 /** `20/99`. */
@@ -225,7 +240,10 @@ export function heroSide(hero) {
     const weapon = CombatFormulas.getHeroWeapon(hero);
     // The cut worn gear makes to this style (a mage in an iron chestplate) is in the hit shown.
     const cut = CombatFormulas.styleDamageCut(hero, style);
-    const buffs = CombatFormulas.heroDamageMultiplier(hero, style) * CombatFormulas.styleCutFactor(hero, style);
+    const ammo = spentAmmoView(hero);
+    // A cast with no Mote, or a throw of the last Kunai, lands at half.
+    const buffs = CombatFormulas.heroDamageMultiplier(hero, style) * CombatFormulas.styleCutFactor(hero, style)
+        * (ammo?.short ? NO_AMMO_DAMAGE_FACTOR : 1);
     const arrows = arrowsView(hero);
     const hitParts = CombatFormulas.heroHitParts(hero, arrows?.arrow || null)
         .map(p => ({ type: p.type, hit: Math.max(0, p.base * buffs), arrow: !!p.arrow }));
@@ -247,6 +265,7 @@ export function heroSide(hero) {
         hit,
         hitParts,
         arrows,
+        ammo,
         armed: !!weapon,
         hitLines: [
             weapon ? t('fight.tip.weapon', { item: weapon.name, n: `${weaponDamage} ${damageTypeName(hitParts[0].type)}` }) : t('fight.tip.fist'),
@@ -254,7 +273,8 @@ export function heroSide(hero) {
             more ? t('fight.tip.moreDamage', { n: `${more > 0 ? '+' : '−'}${damageText(Math.abs(more))}` }) : null,
             cut ? t('fight.tip.styleCut', { style: styleName(style), n: `−${damageText(cut)}%` }) : null,
             arrows?.arrow ? t('fight.tip.arrow', { item: arrows.name, n: damageText(arrows.arrow.damage), type: damageTypeName(arrows.arrow.damageType) }) : null,
-            arrows ? (arrows.count > 0 ? t('fight.tip.arrowsLeft', { count: arrows.count }) : t('fight.tip.noArrows')) : null,
+            arrows ? t('fight.tip.arrowsLeft', { count: arrows.count }) : null,
+            ammo ? (ammo.short ? t('fight.tip.ammoShort', { item: ammo.name }) : t(`fight.tip.${ammo.kind}Left`, { item: ammo.name, count: ammo.count })) : null,
             ...boosts.map(b => t('fight.tip.typeBoost', { type: damageTypeName(b.type), n: `${b.n > 0 ? '+' : ''}${b.n}%` })),
             hitParts.some(p => Math.abs(p.hit - Math.round(p.hit)) > 1e-9) ? t('fight.tip.fraction') : null
         ].filter(Boolean),
@@ -379,7 +399,7 @@ export function fightPanelView(heroId, fights) {
     const liveFight = fight && fight.assignedHeroId === heroId ? fight : null;
     const heroView = heroSide(hero) || {
         id: heroId, name: record.heroName, style: null, level: null, sprite: null, hp: record.hp.hero,
-        hit: 0, hitParts: [], arrows: null, hitLines: [], resists: [], attackEveryMs: 0, elixirs: [], statuses: [], buffs: []
+        hit: 0, hitParts: [], arrows: null, ammo: null, hitLines: [], resists: [], attackEveryMs: 0, elixirs: [], statuses: [], buffs: []
     };
     const enemyView = enemySide(record.typeId, liveFight) || {
         typeId: record.typeId, name: record.enemyName, style: 'melee', level: null, hp: record.hp.enemy,

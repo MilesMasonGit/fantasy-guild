@@ -53,6 +53,25 @@ export function weaponStyleOf(item) {
     return authoredWeaponStyles(item)[0] || BAREHANDED_STYLE_ID;
 }
 
+/**
+ * The Mote a Magic weapon burns, one a cast: the item id in its `mote` field, or null (not a Magic
+ * weapon, or it names none and casts free). Whether that item exists is the content check's.
+ * @returns {string|null}
+ */
+export function weaponMoteOf(item) {
+    if (weaponStyleOf(item) !== 'magic') return null;
+    const id = typeof item.mote === 'string' ? item.mote.trim() : '';
+    return id || null;
+}
+
+/**
+ * Whether a weapon is thrown and spends itself, one a throw (a Kunai): `thrown: true` on a Stealth
+ * weapon. The copy in hand is kept; each throw spends another from the Bank.
+ */
+export function isThrownWeapon(item) {
+    return item?.thrown === true && weaponStyleOf(item) === 'stealth';
+}
+
 const wholeLevel = (value) => {
     const n = Math.floor(Number(value));
     return Number.isFinite(n) && n >= 1 ? n : null;

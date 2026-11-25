@@ -10,6 +10,7 @@ import {
     BASE_CRIT_CHANCE,
     CRIT_MULTIPLIER,
     cappedCritChance,
+    NO_AMMO_DAMAGE_FACTOR,
     matchupMultiplier,
     SWING_TIME_FACTOR_RANGE,
 } from '../../config/FormulaRegistry.js';
@@ -397,12 +398,15 @@ function landedBlow(parts, multiplier, crit, boostOf, resistOf) {
 
 /**
  * A hero's landed blow on an enemy, before the fraction sub-roll. The multiplier holds the buffs, the
- * matchup and the cut their worn gear makes to the style they fight in ({@link styleCutFactor}).
- * @param {{ crit?: boolean, arrow?: {damage: number, damageType: string}|null }} [options]
+ * matchup and the cut their worn gear makes to the style they fight in ({@link styleCutFactor}), and
+ * halves the blow when the weapon's ammo is out and the hero fights on (`short`: no Mote, the last
+ * Kunai; `NO_AMMO_DAMAGE_FACTOR`, `Ammo.js`).
+ * @param {{ crit?: boolean, arrow?: {damage: number, damageType: string}|null, short?: boolean }} [options]
  */
-export function heroBlow(hero, enemy, { crit = false, arrow = null } = {}) {
+export function heroBlow(hero, enemy, { crit = false, arrow = null, short = false } = {}) {
     const style = getHeroCombatStyle(hero);
-    const multiplier = heroDamageMultiplier(hero, style) * matchupMultiplier(style, enemy?.combatType) * styleCutFactor(hero, style);
+    const multiplier = heroDamageMultiplier(hero, style) * matchupMultiplier(style, enemy?.combatType) * styleCutFactor(hero, style)
+        * (short ? NO_AMMO_DAMAGE_FACTOR : 1);
     return landedBlow(heroHitParts(hero, arrow), multiplier, crit,
         (type) => heroTypeDamageBoost(hero, type),
         (type) => enemyTypeResistance(enemy, type));
@@ -464,7 +468,7 @@ export function rollFraction(exact) {
 
 /**
  * A hero's landed hit on an enemy, as a whole number. ⚠️ Draws for a fraction ({@link rollFraction}).
- * @param {{ crit?: boolean, arrow?: {damage: number, damageType: string}|null }} [options]
+ * @param {{ crit?: boolean, arrow?: {damage: number, damageType: string}|null, short?: boolean }} [options]
  */
 export function heroHitDamage(hero, enemy, options = {}) {
     return rollFraction(heroBlow(hero, enemy, options).exact);

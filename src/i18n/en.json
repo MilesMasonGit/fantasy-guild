@@ -232,6 +232,8 @@
             "hands": "Hands"
         },
         "arrow": "Arrow: +{damage} {type} a shot, from a bow",
+        "mote": "Burns a {item} each cast; with none, half damage",
+        "thrown": "Thrown: each throw spends one more from the Bank; with none there, half damage",
         "offHand": "Off hand: beside a weapon, never swung",
         "resists": "Resists {type} {n}%",
         "weakTo": "Weak to {type} {n}%",
@@ -572,7 +574,9 @@
                 "one": "{count} arrow in the Bank",
                 "other": "{count} arrows in the Bank"
             },
-            "noArrows": "No arrows: the bow shoots its own part alone",
+            "moteLeft": "Burns {item} each cast: {count} in the Bank",
+            "kunaiLeft": "Throws {item}, one a throw: {count} more in the Bank",
+            "ammoShort": "No {item} left: half damage",
             "typeBoost": "{type} damage: {n}",
             "heroResists": "What {name} resists, from gear and elixirs",
             "enemyResists": "What {name} resists and is weak to",
