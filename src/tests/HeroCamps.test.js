@@ -109,7 +109,7 @@ registerTokenTypes({
     }),
     hc_goblin: {
         id: 'hc_goblin', name: 'HC Goblin', tokenType: 'enemy', rarity: 'common', theme: 'fixture',
-        uses: 1, sprite: 's_occult', enemy: { level: 1, style: 'melee', budgetScale: 0.3 }, config: enemyConfig
+        uses: 1, sprite: 's_occult', enemy: { level: 1, style: 'melee', hp: 6, xp: 3 }, config: enemyConfig
     },
     hc_den: {
         id: 'hc_den', name: 'HC Den', tokenType: 'spawner', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_crime',

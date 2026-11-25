@@ -88,7 +88,7 @@ describe('⭐ no Boss mark: a boss is what a boss camp spawns', () => {
         expect(container.querySelector('[data-field="enemy-leftovers"]').textContent).toContain('boss');
         fireEvent.click(container.querySelector('[data-field="enemy-leftovers-remove"]'));
         expect(useEntityStore.getState().tokens[id].enemy).toEqual(before);
-        expect(syncPayload()['tokens.json'][id].enemy).toEqual(before);
+        expect(syncTwice()['tokens.json'][id].enemy).toEqual(before);
     });
 });
 

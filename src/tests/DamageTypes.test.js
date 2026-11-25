@@ -174,9 +174,10 @@ describe('the registry: nine types in three groups', () => {
     });
 
     it('resistances keep the owner\'s steps on types only; a group\'s line is dropped', () => {
-        expect(RESISTANCE_STEPS).toEqual([100, 50, 25, -25, -50]);
-        expect(normaliseResistances({ physical: 50, crush: -50, fire: 30, earth: 50, ice: '-25' }))
-            .toEqual({ crush: -50, ice: -25 });
+        // Weak 100 % lets a line undo a kind's resistance and more (the Crab's Crush −100 on Armoured's 50).
+        expect(RESISTANCE_STEPS).toEqual([100, 50, 25, -25, -50, -100]);
+        expect(normaliseResistances({ physical: 50, crush: -50, fire: 30, earth: 50, ice: '-25', stab: -100, light: -75 }))
+            .toEqual({ crush: -50, ice: -25, stab: -100 });
         const skeleton = { slash: 50, crush: -50 };
         expect(resistanceFor(skeleton, 'slash')).toBe(50);
         expect(resistanceFor(skeleton, 'crush')).toBe(-50);

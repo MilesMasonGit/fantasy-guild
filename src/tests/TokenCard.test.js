@@ -64,7 +64,7 @@ const CARD_TOKENS = {
     card_enemy: {
         id: 'card_enemy', name: 'Card Goblin', tokenType: 'enemy', rarity: 'common', uses: 1,
         sprite: 'e_goblin', requiresHero: true,
-        enemy: { level: 3, style: 'melee', budgetScale: 1 },
+        enemy: { level: 3, style: 'melee' },
         config: {
             skill: '', skillRequired: 1, cycleTimeMs: 12000, xp: 0, inputs: [],
             outputs: [
