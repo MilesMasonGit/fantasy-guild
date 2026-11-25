@@ -20,6 +20,8 @@ import { takesCopy } from '../../systems/equipment/heldCopies.js';
 import { getAllItems, getItem } from '../../config/registries/itemRegistry.js';
 import { getAllTokenTypes, getTokenType, tokenName, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { isEnemyDef } from '../../config/registries/enemyProfile.js';
+import { isSummonType } from '../../config/registries/summonRules.js';
+import { guildHeroes } from '../../systems/hero/summoned.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
 import { getGlobalAggregator } from '../../systems/effects/GuildModifiers.js';
 import { EFFECT_TYPES } from '../../systems/effects/constants.js';
@@ -34,9 +36,10 @@ export function itemChoices() {
         .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/** Every Token type, enemies among them, by name: `{id, name, enemy}`. */
+/** Every Token type, enemies among them, by name: `{id, name, enemy}`. A summon is called by a Circle, never placed. */
 export function tokenChoices(allTypes = getAllTokenTypes()) {
     return Object.keys(allTypes || {})
+        .filter(id => !isSummonType(allTypes[id]))
         .map(id => ({ id, name: tokenName(id), enemy: isEnemyDef(allTypes[id]) }))
         .sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -109,7 +112,7 @@ export function devFillBank() {
  */
 function ensureRosterRoom(count) {
     const ranks = GuildUpgradeManager.getRanks();
-    const neededRank = GameState.state.heroes.length + count;
+    const neededRank = guildHeroes(GameState.state.heroes).length + count;
     if ((ranks.roster_size || 0) < neededRank) {
         ranks.roster_size = neededRank;
         GuildUpgradeManager.recompute();
@@ -155,7 +158,7 @@ export function spawnParty() {
 
 /** Every hero's skills up by `n` levels. @returns {number} heroes raised */
 export function levelAllHeroes(n) {
-    const heroes = HeroManager.getAllHeroes().filter(h => !h.isVillager);
+    const heroes = guildHeroes(HeroManager.getAllHeroes()).filter(h => !h.isVillager);
     for (const hero of heroes) raiseSkills(hero, n);
     return heroes.length;
 }
@@ -175,7 +178,7 @@ export function healEveryone() {
  * @returns {{ok: boolean, name?: string, error?: string}}
  */
 export function knockOutAHero() {
-    const heroes = GameState.state?.heroes || [];
+    const heroes = guildHeroes(GameState.state?.heroes);
     const hero = heroes.find(h => BoardState.flagOf(h.id) && h.status !== 'wounded')
         || heroes.find(h => h.status !== 'wounded');
     if (!hero) return { ok: false, error: 'No hero to knock out' };
@@ -217,6 +220,7 @@ export function toggleQaRegenStar() {
 export function devPlaceToken(typeId) {
     const id = String(typeId || '').trim();
     if (!getTokenType(id)) return { success: false, reason: `No Token type "${id}"` };
+    if (isSummonType(getTokenType(id))) return { success: false, reason: 'A Summoned worker is called by a Summoning Circle' };
     if (FishingSpots.isSpot({ typeId: id })) return FishingSpots.landNow(id);
     const instance = BoardState.createTokenInstance(id, tokenStartingUses(id));
     const res = Placement.placeArrivalNear(instance, Placement.centreOfBoard());

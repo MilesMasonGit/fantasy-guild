@@ -22,5 +22,5 @@ export function hasFixedSkills(hero) {
 
 /** The guild's heroes among `records`: every one that is not a Summoned worker. */
 export function guildHeroes(records) {
-    return (records || []).filter(h => h && !isSummoned(h));
+    return Array.isArray(records) ? records.filter(h => h && !isSummoned(h)) : [];
 }

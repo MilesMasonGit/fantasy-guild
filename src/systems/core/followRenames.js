@@ -12,7 +12,7 @@ import { logger } from '../../utils/Logger.js';
  * a library effect, its Sync records old id to new id (`data/renames.json`, `renameTable.js`), and
  * a save loading later is rewritten here, everywhere such an id lives:
  * - the Bank: its stacks, each tab's order and the tab an item is filed in;
- * - each hero: the loadout, the drink and elixir counters, the live effects;
+ * - each hero: the loadout, the drink and elixir counters, the live effects; a Summoned worker's kind;
  * - the live mat and every other Region's mat: each Token's type and the loot on the floor;
  * - the world map's places: origins, camps, chests, arrivals, a wild place's focus, the price asked;
  * - the collection's discoveries and counts, and the pinned item stubs.
@@ -217,9 +217,11 @@ function inventoryFollowing(inv, { item }) {
     return out;
 }
 
-function heroFollowing(hero, { item, effect }) {
+function heroFollowing(hero, { item, effect, token }) {
     if (!isPlainObject(hero)) return hero;
     let out = hero;
+    // A Summoned worker names its kind, a Token type.
+    out = mapField(out, 'summon', block => mapField(block, 'typeId', token));
     // A loadout is a grid of item ids; an older save's is an object of named slots.
     if (Array.isArray(hero.equipment)) out = mapField(out, 'equipment', list => mapList(list, item));
     else if (isPlainObject(hero.equipment)) out = mapField(out, 'equipment', slots => mapValues(slots, item));

@@ -1,4 +1,4 @@
-import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, spotFindings, fishFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, gearDefenceFindings, effectStackFindings, hallStarFindings, coinWorthFindings } from '../utils/constants';
+import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, spotFindings, summonFindings, fishFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, gearDefenceFindings, effectStackFindings, hallStarFindings, coinWorthFindings } from '../utils/constants';
 import { eventProblems, EVENT_BIOMES } from '../../../src/config/eventTable.js';
 import { STANDS_ON_CHOICES } from '../../../src/systems/atlas/TerrainMap.js';
 
@@ -227,6 +227,18 @@ export function auditConnectivity(entities, solverRefusals = []) {
 
   // Fishing's catch rules: a second Bait, two Trap catches on a water, a lure that never picks its fish, two of a lure's fish on one map, a catch XP no catch can teach (`fishRule.js`, as the boot audit says it).
   for (const f of fishFindings({ tokens, items })) {
+    issues.push({
+      entityId: f.entityId,
+      entityName: f.entityName,
+      entityType: f.entityType,
+      issueType: 'Data Integrity',
+      severity: 'Warning',
+      details: f.message.charAt(0).toUpperCase() + f.message.slice(1) + '.',
+    });
+  }
+
+  // Summoned workers: a summon that can work nothing, names what the game lacks, works a making skill or is never called, a recipe calling one wrongly (`summonRule.js`, as the boot audit says it). Expanded Tokens, so a Circle's Works as is seen.
+  for (const f of summonFindings({ tokens: expandedTokens, recipes, effects })) {
     issues.push({
       entityId: f.entityId,
       entityName: f.entityName,

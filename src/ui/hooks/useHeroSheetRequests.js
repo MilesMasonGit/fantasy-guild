@@ -1,7 +1,25 @@
-import { startTransition, useEffect } from 'react';
+import { startTransition, useCallback, useEffect } from 'react';
 import { EventBus, UI_LISTENER } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS, UI_EVENTS } from '../../systems/core/engineEvents.js';
+import { GameState } from '../../state/GameState.js';
+import { isSummoned } from '../../systems/hero/summoned.js';
 import { isHandingOver } from '../components/dock/dockEquip.js';
+
+/** Whether `heroId` has a hero sheet: every hero on the roster, never a Summoned worker. */
+export function hasHeroSheet(heroId) {
+    const record = (GameState.state?.heroes || []).find(h => h?.id === heroId);
+    return !!record && !isSummoned(record);
+}
+
+/**
+ * `open` (the hero sheet's state setter) as every opener calls it: a record with no sheet (a
+ * Summoned worker) opens nothing, and `null` still closes.
+ */
+export function useHeroSheetOpener(open) {
+    return useCallback((heroId) => {
+        if (heroId == null || hasHeroSheet(heroId)) open(heroId);
+    }, [open]);
+}
 
 /**
  * Opens the hero sheet (`open(heroId)`) when something asks for it: a click on a hero

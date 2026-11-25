@@ -50,6 +50,7 @@ export const TOKEN_TYPES = Object.freeze([
     'promotion',  // ⚠️ an older Token with a retired Promotes rule; jobs are gone, no hero works it
     'spawner',    // puts other Tokens on the mat on a clock (Token lifecycle §3.1)
     'camp',       // heroes sent to it work the Tokens of its skill in its reach (brief 260)
+    'summon',     // a Summoned worker's kind: a Summoning Circle's recipe calls it; never on the mat itself
 ]);
 
 /**

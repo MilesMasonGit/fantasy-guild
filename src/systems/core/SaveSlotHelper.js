@@ -1,5 +1,6 @@
 import { cleanGuildName } from './GuildName.js';
 import * as SaveFiles from './SaveFiles.js';
+import { guildHeroes } from '../hero/summoned.js';
 
 const SLOT_KEY_PREFIX = 'tabletop_guild_slot_';
 const LAST_SLOT_KEY = 'tabletop_guild_last_slot';
@@ -53,7 +54,7 @@ export function getSlotInfo(slotIndex) {
         return {
             slotIndex,
             guildName: cleanGuildName(state.meta?.guildName),
-            heroCount: state.heroes?.length || 0,
+            heroCount: guildHeroes(state.heroes).length,
             playtime: state.meta?.totalPlaytime || 0,
             lastSavedAt: data.savedAt || state.meta?.lastSavedAt || null,
             version: data.version || state.meta?.version || '0.0.0',
