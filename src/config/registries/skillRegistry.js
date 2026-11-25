@@ -131,12 +131,12 @@ export const SKILLS = {
     },
     faith: {
         id: 'faith', name: 'Faith', layer: SKILL_LAYERS.STARTING,
-        description: 'Shrines, altars and wards that bless the heroes and Tokens around them.',
+        description: "A shrine's strong blessing holds only while a Faith hero keeps it supplied with offerings, made at an altar from other skills' goods.",
         icon: '✝️'
     },
     summoning: {
         id: 'summoning', name: 'Summoning', layer: SKILL_LAYERS.STARTING,
-        description: 'Raising thralls and spirits that fight in a hero’s place.',
+        description: 'Calls Summoned workers that work but never fight, until their charges run out. A higher level calls more kinds and adds more charges.',
         icon: '👻'
     },
     enchanting: {
@@ -151,13 +151,13 @@ export const SKILLS = {
     },
     crime: {
         id: 'crime', name: 'Crime', layer: SKILL_LAYERS.STARTING,
-        description: 'Locks, contraband and the things other people would rather keep.',
+        description: 'Steals from enemy camps instead of fighting them, for a different set of goods. A theft that goes wrong puts a guard on the camp.',
         icon: '🗝️',
         sprite: 'assets/skills/s_crime.png'
     },
     science: {
         id: 'science', name: 'Science', layer: SKILL_LAYERS.STARTING,
-        description: 'Laboratories that convert goods in bulk into other materials.',
+        description: 'Studies nearby nodes in a Laboratory for lasting mastery of each kind of node, instead of goods.',
         icon: '⚗️'
     }
 };
