@@ -36,6 +36,7 @@ import * as RareTables from './RareTables.js';
 import * as OutputRules from './OutputRules.js';
 import * as CycleSavings from './CycleSavings.js';
 import * as Fortune from './Fortune.js';
+import * as Wisdom from './Wisdom.js';
 import * as InputCost from './InputCost.js';
 import * as Fishing from './Fishing.js';
 import * as FishingSpots from './FishingSpots.js';
@@ -329,7 +330,8 @@ function landOutputs(made, { doubled, giant }) {
 /**
  * A finished cycle's XP to its hero: the active recipe's when it defines its own (a Feast should
  * teach more than Bread even though both run on a Kitchen), a catch its fish's own when it names one,
- * widened by XP_BONUS the way YIELD widens output. A failed cycle teaches nothing.
+ * widened by XP_BONUS the way YIELD widens output, and shared by a Wisdom rule reaching the Token
+ * (`Wisdom.js`). A failed cycle teaches nothing.
  */
 function giveCycleXp({ instance, io, config, caught, failed }, heroId) {
     const baseXp = caught?.xp ?? io.xp ?? config.xp;
@@ -338,6 +340,7 @@ function giveCycleXp({ instance, io, config, caught, failed }, heroId) {
     ));
     if (xpAwarded > 0 && heroId && config.skill) {
         SkillSystem.addXP(heroId, config.skill, xpAwarded);
+        Wisdom.shareXp(instance.id, heroId, config.skill, xpAwarded);
     }
 }
 

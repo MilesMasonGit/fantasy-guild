@@ -118,6 +118,11 @@ export const EFFECT_TYPES = {
     // no defeat costs (their food and drink and their gear are kept), still carried home wounded.
     // Read at the enemy they fight, with the hero's own scope — CycleSavings.fleesDefeat.
     VALIANT: 'VALIANT',
+    // Wisdom: when a hero earns XP at a Token it reaches (a work cycle, a kill), every other hero
+    // working or fighting a Token the same rule reaches gets this many percent of it, in the same
+    // skill; a share is never shared again. Read off the Tokens' own rules (a shrine's reach), not the
+    // guild's or a hero's; narrowed to the skill the XP was earned in — Wisdom.js.
+    WISDOM: 'WISDOM',
 
     /**
      * A chance to yield an extra, **different** item on top of a Token's normal output.

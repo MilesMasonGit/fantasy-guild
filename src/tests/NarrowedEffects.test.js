@@ -257,8 +257,8 @@ describe('the palette declares both, rather than inferring them', () => {
             EFFECT_TYPES.GIANT_HARVEST,
             // Faith's blessings: Can't Run Out (`CycleSavings.neverRunsOut`, also the Motherlode
             // perk), Echo (`CycleSavings.rollEcho`) and Fortune (`Fortune.countCycle`), all the
-            // Token's own work skill.
-            EFFECT_TYPES.NEVER_RUNS_OUT, EFFECT_TYPES.ECHO, EFFECT_TYPES.FORTUNE,
+            // Token's own work skill; Wisdom (`Wisdom.shareXp`) the skill the XP was earned in.
+            EFFECT_TYPES.NEVER_RUNS_OUT, EFFECT_TYPES.ECHO, EFFECT_TYPES.FORTUNE, EFFECT_TYPES.WISDOM,
             // Quiet's (`Hideouts.caughtChanceAt`) the Hideout's skill, Crime only.
             EFFECT_TYPES.QUIET,
             // The other gathering signature perks' readers pass the worked Token's skill: Free

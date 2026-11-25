@@ -700,6 +700,29 @@ export const MODIFIER_PALETTE = [
         group: 'Blessing',
         hint: 'A shrine\'s blessing: a hero brought to 0 HP fighting an enemy it reaches is never Defeated. They flee and keep all their food, drink and gear, though they still go home wounded and heal; the log and banner say Fled. In percent: 100 is always. Aim it at the enemies (or camps\' enemies) in the shrine\'s reach.'
     },
+    {
+        /**
+         * Read by `Wisdom.shareXp` each time a hero earns XP (a work cycle, a kill) at a Token it
+         * reaches: every other hero working or fighting a Token the same rule reaches gets this share
+         * of it, in the same skill. Off the Tokens' own rules only: on gear or a Hall star it reaches
+         * nobody. The skill is the one the XP was earned in (a kill's, its combat style).
+         */
+        type: EFFECT_TYPES.WISDOM,
+        reads: {
+            up: (n) => `share ${n} of the XP earned here with every other hero working or fighting in reach`,
+            down: (n) => `share ${n} less of the XP earned here with every other hero working or fighting in reach`
+        },
+        label: 'Wisdom',
+        explains: 'Heroes working or fighting in its reach share a part of the XP each earns',
+        when: 'never',
+        scales: 'value',
+        blessing: true,
+        buckets: ['flat'],
+        categories: 'skill',
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Blessing',
+        hint: 'A shrine\'s blessing: when a hero earns XP at a Token it reaches (a work cycle or a kill), every other hero working or fighting a Token in the same shrine\'s reach gets this many percent of it, in the same skill (a kill\'s, its combat style). A share is never shared again; heroes walking, idle or at home get none. Two shrines add up. In percent. Pick a skill to share only that work\'s XP. Only a Token\'s rule shares: on gear or a Hall star it does nothing.'
+    },
 
     // The gathering signature perks (Motherlode, Evergreen, Grove Feller, Master Angler): each a
     // chance, so the perk is 100 and a star or gear may hold less. Read at the worked Token through

@@ -12,6 +12,7 @@ import * as RareDrops from './RareDrops.js';
 import * as RareTables from './RareTables.js';
 import * as Respawn from './Respawn.js';
 import * as TileModifiers from './TileModifiers.js';
+import * as Wisdom from './Wisdom.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import { neighbourIds, centreOf, distanceSq } from './nearby.js';
 
@@ -74,7 +75,10 @@ function payOneCycle(workedId, felled, def, io, heroId, skill) {
 
     const baseXp = io?.xp ?? def?.config?.xp ?? 0;
     const xp = SkillSystem.applyXpBonus(baseXp || 0, TileModifiers.resolveAxis(workedId, EFFECT_TYPES.XP_BONUS, baseXp || 0, skill));
-    if (xp > 0 && skill) SkillSystem.addXP(heroId, skill, xp);
+    if (xp > 0 && skill) {
+        SkillSystem.addXP(heroId, skill, xp);
+        Wisdom.shareXp(workedId, heroId, skill, xp);
+    }
 }
 
 /**
