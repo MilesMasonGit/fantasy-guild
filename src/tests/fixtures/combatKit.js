@@ -1,5 +1,5 @@
 // A fixture fight for the combat screen's tests: Aela (Melee 20) with Valor and Ironskin,
-// poisoned ×2, against a Goblin Warlord (a Brute, Venomous) at 0:12, and the fight before it.
+// poisoned ×2, against a Goblin Warlord (a Brute, Armoured) at 0:12, and the fight before it.
 // Nothing in the game reads this file.
 
 import { TONE, OUTCOME, MOMENT } from '../../ui/components/combat/fightWatch.js';
@@ -61,7 +61,7 @@ export function kitPanelView() {
     const enemy = {
         typeId: 'token_goblin_chief', name: 'Goblin Warlord', style: 'melee', level: 20,
         hp: { cur: 24, max: 40 }, hit: 3, hitType: 'crush', resists: [{ id: 'fire', value: 50 }, { id: 'slash', value: -25 }], attackEveryMs: 4000,
-        kinds: ['brute', 'venomous'].map(kindView), statuses: [], buffs: [], sheet: null
+        kinds: ['brute', 'armoured'].map(kindView), statuses: [], buffs: [], sheet: null
     };
     return {
         heroId: 'kit_aela', live: false, title: 'Aela vs Goblin Warlord', clock: '0:12', ended: null, instanceId: 'kit_warlord',
@@ -91,6 +91,6 @@ export const KIT_FLOATS = Object.freeze([
 
 /** The enemy card's two states: fought (its kinds show) and never fought. */
 export const KIT_CARDS = Object.freeze([
-    { typeId: 'token_goblin_chief', name: 'Goblin Warlord', level: 20, style: 'melee', hp: 40, hit: 3, hitType: 'crush', resists: [{ id: 'slash', value: 50 }, { id: 'crush', value: -50 }, { id: 'stab', value: 50 }], attackEveryMs: 4000, kinds: ['brute', 'venomous'].map(kindView) },
+    { typeId: 'token_goblin_chief', name: 'Goblin Warlord', level: 20, style: 'melee', hp: 40, hit: 3, hitType: 'crush', resists: [{ id: 'slash', value: 50 }, { id: 'crush', value: -50 }, { id: 'stab', value: 50 }], attackEveryMs: 4000, kinds: ['brute', 'armoured'].map(kindView) },
     { typeId: 'token_goblin', name: 'Goblin Scout', level: 5, style: 'melee', hp: 25, hit: 1, hitType: 'crush', resists: [], attackEveryMs: 2000, kinds: null }
 ]);

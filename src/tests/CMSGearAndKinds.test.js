@@ -315,7 +315,8 @@ describe('⭐ the kinds: none, one or two presets', () => {
         expect(field(container, 'enemy-kind-brute').disabled).toBe(false);
         fireEvent.click(field(container, 'enemy-kind-nimble'));
         expect(store().tokens[cow].enemy.kinds).toEqual(['armoured', 'nimble']);
-        for (const kind of ['brute', 'venomous', 'swift']) expect(field(container, `enemy-kind-${kind}`).disabled, kind).toBe(true);
+        for (const kind of ['brute', 'swift']) expect(field(container, `enemy-kind-${kind}`).disabled, kind).toBe(true);
+        expect(container.querySelector('[data-field="enemy-kind-venomous"]')).toBeNull();
 
         fireEvent.click(field(container, 'enemy-kind-armoured'));
         fireEvent.click(field(container, 'enemy-kind-nimble'));
@@ -325,35 +326,26 @@ describe('⭐ the kinds: none, one or two presets', () => {
     it('kinds and typed numbers reach tokens.json as written, survive a reload, and the fight reads them', () => {
         const { container } = tokenEditor(cow);
         fireEvent.click(field(container, 'enemy-kind-brute'));
-        fireEvent.click(field(container, 'enemy-kind-venomous'));
+        fireEvent.click(field(container, 'enemy-kind-nimble'));
         fireEvent.change(field(container, 'enemy-dodge'), { target: { value: '5' } });
 
         const files = expectStableRoundTrip();
         const written = files['tokens.json'][cow];
-        expect(written.enemy).toEqual({ ...shipped()['tokens.json'][cow].enemy, kinds: ['brute', 'venomous'], dodge: 5 });
-        expect(enemyProfileOf(written)).toMatchObject({ hit: 2, speed: 'slow', dodge: 5, kinds: ['brute', 'venomous'] });
+        expect(written.enemy).toEqual({ ...shipped()['tokens.json'][cow].enemy, kinds: ['brute', 'nimble'], dodge: 5 });
+        expect(enemyProfileOf(written)).toMatchObject({ hit: 2, speed: 'slow', dodge: 5, kinds: ['brute', 'nimble'] });
         const before = shipped()['tokens.json'];
         for (const other of Object.keys(before).filter(t => t !== cow)) {
             expect(JSON.stringify(files['tokens.json'][other]), other).toBe(JSON.stringify(before[other]));
         }
     });
 
-    it('the preview shows what the fight uses, kinds included: Venomous lands the Venom status effect', () => {
-        // A library without Venom, whatever ships.
-        act(() => useEntityStore.setState((s) => {
-            const { effect_venom: _gone, ...effects } = s.effects;
-            return { effects };
-        }));
+    it('the preview shows what the fight uses, kinds included; no kind lands an effect any more', () => {
         const { container } = tokenEditor(cow);
-        fireEvent.click(field(container, 'enemy-kind-venomous'));
+        fireEvent.click(field(container, 'enemy-kind-armoured'));
         const box = () => within(container).getByText('What the fight uses').parentElement.parentElement;
-        // No Venom in the library yet: the preview says so.
-        expect(box().textContent).toContain('On hiteffect_venom (missing)');
-        // Once the library has it, its name.
-        act(() => useEntityStore.setState((s) => ({
-            effects: { ...s.effects, effect_venom: { id: 'effect_venom', name: 'Venom', status: { stacks: 3, ticks: 0 }, statements: [] } }
-        })));
-        expect(box().textContent).toContain('On hitVenom');
+        expect(field(container, 'enemy-preview-resists').textContent).toBe('Slash 50%, Crush 50%, Stab 50%');
+        expect(box().textContent).toContain('Attacks every4.0s');
+        expect(box().textContent).not.toContain('On hit');
     });
 });
 

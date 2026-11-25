@@ -30,9 +30,9 @@ import { enemyCampType } from './fixtures/enemyCamp.js';
 import { registerStatusFixtures, providesPct, providesFlat, VENOM, BURN } from './fixtures/statusEffects.js';
 
 /**
- * Statuses and boss moves during a catch-up (brief 220, C4): a Venomous enemy's Venom, a burning
- * attacker's Burn (with its half-healing food), and a boss using all four moves, against fed
- * heroes. Every random number comes from `Math.random` in a fixed order (a chance on a rule is the
+ * Statuses and boss moves during a catch-up: a venomous move's Venom, a burning attacker's Burn
+ * (with its half-healing food), and a boss using all four rules (its swing and hit rules on every
+ * one, whatever count they carry), against fed heroes. Every random number comes from `Math.random` in a fixed order (a chance on a rule is the
  * only draw these add), and the 3 s Rules tick runs on the loop's own clock, so time away ends
  * exactly where the same time played live ends. The harness is `CombatCatchUpGear.test.js`'s.
  */
@@ -89,7 +89,7 @@ const enemy = (id, name, enemyBlock, effects = []) => ({
 });
 
 registerTokenTypes({
-    cus_venom: enemy('cus_venom', 'Catch-up Venomous', { level: 12, kinds: ['venomous'] }),
+    cus_venom: enemy('cus_venom', 'Catch-up Venomous', { level: 12, moves: [{ name: 'Fang', damageType: 'stab', effectId: VENOM, target: 'hero' }] }),
     cus_burner: enemy('cus_burner', 'Catch-up Burner', { level: 12 }, [{ effectId: 'cus_burning_touch' }]),
     cus_boss: enemy('cus_boss', 'Catch-up Boss', { level: 15, hp: 60 }, [
         { effectId: 'cus_move_heavy' }, { effectId: 'cus_move_burn' }, { effectId: 'cus_move_mend' }, { effectId: 'cus_move_enrage' }

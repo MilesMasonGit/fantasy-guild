@@ -2,7 +2,7 @@ import { Sparkles, ScrollText, Library, Boxes, Flame } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import { StatementList } from './Statements';
-import { rulesLinesOf, effectRefsOf, hasWorkingStatements, statusBlockOf, MAX_STATUS_STACKS, VENOM_EFFECT_ID, SKILLS } from '../../utils/constants';
+import { rulesLinesOf, effectRefsOf, hasWorkingStatements, statusBlockOf, MAX_STATUS_STACKS, VENOM_EFFECT_ID, SKILLS, isEnemyDef } from '../../utils/constants';
 import { perkUsersOf } from '../../engine/skillPerks';
 
 /**
@@ -33,6 +33,8 @@ export default function EffectEditor() {
 
   /** ⚠️ A library entry can be shared by Tokens and items: it reads as the hero's only when no Token uses it, and something a hero carries does. */
   const carried = users.length === 0 && (perkUsers.length > 0 || itemUsed);
+  /** Held by enemies alone: an enemy's rules fire on every swing and hit, so no every-Nth count is offered. */
+  const enemyHeld = users.length > 0 && users.every((u) => isEnemyDef(u.token)) && !itemUsed && perkUsers.length === 0;
 
   const names = {
     carried,
@@ -156,7 +158,7 @@ export default function EffectEditor() {
         )}
         {effect.id === VENOM_EFFECT_ID && (
           <p className="text-[10px] mt-2 leading-relaxed" style={{ color: 'var(--color-warning)' }}>
-            Venomous enemies land this effect by its id ({VENOM_EFFECT_ID}). Keep the id as it is.
+            The game knows Venom by its id ({VENOM_EFFECT_ID}): its ticks deal Poison damage, which Poison resistance cuts. Keep the id as it is.
           </p>
         )}
       </Section>
@@ -167,6 +169,7 @@ export default function EffectEditor() {
           onChange={(next) => setEffectStatements(effect.id, next)}
           carried={carried}
           onToken={users.length > 0}
+          enemyHeld={enemyHeld}
         />
       </Section>
 

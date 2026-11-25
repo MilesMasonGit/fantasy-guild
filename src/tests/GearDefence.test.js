@@ -30,7 +30,7 @@ import { enemyProfileOf } from '../config/registries/enemyProfile.js';
 import { isWeapon, isOffHand } from '../config/registries/weaponStyles.js';
 import { handsOf } from '../config/registries/toolKinds.js';
 import { gearResistancesOf, gearDamageCutOf, isWornGear } from '../config/registries/gearDefence.js';
-import { VENOM_EFFECT_ID } from '../config/registries/enemyKinds.js';
+import { VENOM_EFFECT_ID } from '../config/registries/damageTypes.js';
 import { gearDefenceFindings, bestResistanceStacks } from '../systems/core/gearDefenceRule.js';
 import { heroSide, liveEnemyResistLines } from '../ui/components/combat/fightView.js';
 import { itemTipFacts } from '../ui/components/drawer/ItemTip.jsx';
@@ -104,7 +104,7 @@ const enemyType = (id, enemy) => ({
 registerTokenTypes({
     gd_dummy: enemyType('gd_dummy', { hit: 10 }),
     gd_crab: enemyType('gd_crab', { kinds: ['armoured'], resistances: { crush: -50 } }),
-    gd_venom_rat: enemyType('gd_venom_rat', { hit: 4, kinds: ['venomous'] })
+    gd_venom_rat: enemyType('gd_venom_rat', { hit: 4, moves: [{ name: 'Venom Bite', damageType: 'crush', effectId: VENOM_EFFECT_ID, target: 'hero' }] })
 });
 
 const profile = (enemy) => enemyProfileOf({ id: 'e', name: 'E', enemy: { level: 1, style: 'melee', ...enemy } });
@@ -487,16 +487,14 @@ describe('an arrow\'s rules count on the shot that spends it', () => {
 });
 
 describe('the Venom status (once Poison)', () => {
-    it('the shipped library has it under its new id and name, and Venomous lands it', () => {
+    it('the shipped library has it under its new id and name', () => {
         expect(VENOM_EFFECT_ID).toBe('effect_venom');
         expect(VENOM).toBe(VENOM_EFFECT_ID);
         expect(EFFECTS.effect_poison).toBeUndefined();
         expect(statusBlockOf(getEffect('effect_venom'))).toEqual({ stacks: 3, ticks: 0 });
-        const slime = Object.values(EFFECTS).find(e => e.id === 'effect_greater_slime_moves');
-        if (slime) expect(slime.statements[0].payload.effectId).toBe('effect_venom');
     });
 
-    it('a Venomous enemy lands Venom on the hero it hits; the hero\'s gear resists its Crush swing', () => {
+    it('a venomous move lands Venom on the hero it hits; the hero\'s gear resists its Crush swing', () => {
         vi.spyOn(Math, 'random').mockReturnValue(0.5);
         const hero = addHero('Dara', { melee: 1 });
         equip(hero, 'gd_sword');

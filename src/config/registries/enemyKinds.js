@@ -21,14 +21,7 @@
  * (slow, same hit) for its Slash, Crush and Stab resistance.
  */
 
-/**
- * The library effect a Venomous enemy lands on a hit: the Venom status (once named Poison, before
- * Poison was a damage type; content still saying `effect_poison` is read as this id,
- * `effectIdMigration.js`).
- */
-export const VENOM_EFFECT_ID = 'effect_venom';
-
-/** @type {ReadonlyArray<{id: string, label: string, blurb: string, resistances?: Object<string, number>, dodge?: number, speed?: string, hitScale?: number, hitAtLeastMore?: number, onHit?: {effectId: string}}>} */
+/** @type {ReadonlyArray<{id: string, label: string, blurb: string, resistances?: Object<string, number>, dodge?: number, speed?: string, hitScale?: number, hitAtLeastMore?: number}>} */
 export const ENEMY_KINDS = Object.freeze([
     Object.freeze({
         id: 'armoured', label: 'Armoured',
@@ -49,20 +42,6 @@ export const ENEMY_KINDS = Object.freeze([
         id: 'brute', label: 'Brute',
         blurb: 'Big hits, attacks every 4 s: its hit × 4/3, and at least 1 more than the level gives.',
         speed: 'slow', hitScale: 4 / 3, hitAtLeastMore: 1
-    }),
-    Object.freeze({
-        /**
-         * Lands the Venom status (`VENOM_EFFECT_ID`, a library effect) on the hero with every hit
-         * that leaves them standing: an "On Hit: applies Venom to the hero" rule the kind carries
-         * (`board/FightMoments.js`).
-         *
-         * ⚠️ Names the library effect by id: the content's Venom must be `effect_venom`, the id
-         * the CMS gives an effect named Venom. Without it the kind lands nothing, and
-         * `ContentAudit` says so.
-         */
-        id: 'venomous', label: 'Venomous',
-        blurb: 'Lands Venom on the hero with every hit it lands (one Venom stack a hit).',
-        onHit: Object.freeze({ effectId: VENOM_EFFECT_ID })
     })
 ]);
 

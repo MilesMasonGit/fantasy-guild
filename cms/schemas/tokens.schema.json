@@ -216,7 +216,7 @@
             "kinds": {
               "type": "array",
               "maxItems": 2,
-              "items": { "type": "string", "enum": ["armoured", "nimble", "swift", "brute", "venomous"] },
+              "items": { "type": "string", "enum": ["armoured", "nimble", "swift", "brute"] },
               "description": "ENEMY_KINDS (src/config/registries/enemyKinds.js), at most two."
             },
             "resistances": {

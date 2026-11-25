@@ -27,7 +27,7 @@ import * as fixtures from '../../bench/fixtures.mjs';
 
 /**
  * Gear and defence during time away end exactly where the same time played live ends: a knight in
- * a chestplate and a shield against a Venomous rat (its Crush swings resisted, Venom landing), a
+ * a chestplate and a shield against a rat whose bite carries Venom (its Crush swings resisted, Venom landing), a
  * mage in the chestplate (its cut on every spell), a spear and a sundering arrow stripping an
  * Armoured crab's resistance stack by stack. Nothing here adds a random draw: the cut and the
  * resistances move the fraction a hit rolls, never whether it rolls.
@@ -75,7 +75,7 @@ const enemy = (id, block) => ({
     config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [{ itemId: 'item_bones', chance: 100, minQty: 1, maxQty: 1 }] }
 });
 registerTokenTypes({
-    gdc_rat: enemy('gdc_rat', { style: 'melee', hit: 3, kinds: ['venomous'] }),
+    gdc_rat: enemy('gdc_rat', { style: 'melee', hit: 3, moves: [{ name: 'Venom Bite', damageType: 'crush', effectId: VENOM, target: 'hero' }] }),
     gdc_dummy: enemy('gdc_dummy', { style: 'melee' }),
     gdc_crab: enemy('gdc_crab', { style: 'stealth', kinds: ['armoured'], resistances: { crush: -50 } })
 });

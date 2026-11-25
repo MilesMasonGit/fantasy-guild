@@ -811,11 +811,10 @@ export default function TokenEditor() {
                   <div><div className="text-gray-600 text-[10px]">Attacks every</div><div className="text-gray-200 font-semibold">{(enemyStats.attackSpeed / 1000).toFixed(1)}s</div></div>
                   <div><div className="text-gray-600 text-[10px]">XP</div><div className="text-gray-200 font-semibold">{enemyStats.xpAwarded}</div></div>
                 </div>
-                <div className="grid grid-cols-4 gap-3 text-[11px] mt-2">
+                <div className="grid grid-cols-3 gap-3 text-[11px] mt-2">
                   <div><div className="text-gray-600 text-[10px]">Dodge</div><div className="text-gray-200 font-semibold">{enemyStats.dodge}</div></div>
                   <div><div className="text-gray-600 text-[10px]">Accuracy</div><div className="text-gray-200 font-semibold">{enemyStats.accuracy}</div></div>
                   <div><div className="text-gray-600 text-[10px]">Crit</div><div className="text-gray-200 font-semibold">{enemyStats.critChance}%</div></div>
-                  <div><div className="text-gray-600 text-[10px]">On hit</div><div className="text-gray-200 font-semibold">{enemyStats.onHit?.length ? enemyStats.onHit.map((s) => effects[s.effectId]?.name || `${s.effectId} (missing)`).join(', ') : '—'}</div></div>
                 </div>
                 <p className="text-[10px] text-gray-600 mt-2.5 leading-relaxed">
                   A level {enemy?.level ?? 1} enemy with no kinds is an even fight for a level {enemy?.level ?? 1} hero

@@ -86,7 +86,7 @@ export const RETIRED_ENEMY_FIELDS = Object.freeze(['armor', 'pierce']);
  * until their numbers are authored directly. Speed is not scaled.
  *
  * @param {Object} enemy a Token's `enemy` block
- * @returns {{hp: number, hit: number, speed: string, xp: number, dodge: number, accuracy: number, critChance: number, resistances: Object<string, number>, onHit: Array<{effectId: string}>}}
+ * @returns {{hp: number, hit: number, speed: string, xp: number, dodge: number, accuracy: number, critChance: number, resistances: Object<string, number>}}
  */
 export function enemyFilledStats(enemy) {
     const table = enemyLevelStats(enemy?.level);
@@ -102,8 +102,7 @@ export function enemyFilledStats(enemy) {
         dodge: 0,
         accuracy: 0,
         critChance: BASE_CRIT_CHANCE,
-        resistances: {},
-        onHit: []
+        resistances: {}
     };
 
     for (const kind of enemyKindsOf(enemy)) {
@@ -112,7 +111,6 @@ export function enemyFilledStats(enemy) {
         if (kind.speed) filled.speed = kind.speed;
         if (kind.hitScale) filled.hit = Math.max(1, roundHalfUp(filled.hit * kind.hitScale));
         if (kind.hitAtLeastMore) filled.hit = Math.max(filled.hit, levelHit + kind.hitAtLeastMore);
-        if (kind.onHit) filled.onHit.push({ ...kind.onHit });
     }
 
     return filled;
@@ -162,8 +160,6 @@ export function enemyProfileOf(def) {
         xpAwarded: Math.max(0, numberOr(authored.xp, filled.xp)),
         // The kinds it carries, for the enemy card once the guild has fought one.
         kinds,
-        // What a landed hit puts on the hero (Venomous), by library effect; `FightMoments` lands it.
-        ...(filled.onHit.length ? { onHit: filled.onHit } : {}),
         // The moves it picks from each swing (`enemyMoves.js`); without any, a plain Crush hit.
         ...(moves.length ? { moves } : {}),
         // Enemy traits are not authorable yet and nothing reads them; an empty array is the

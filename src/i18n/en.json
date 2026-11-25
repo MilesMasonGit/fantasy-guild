@@ -615,10 +615,6 @@
             "brute": {
                 "name": "Brute",
                 "tip": "Big hits, attacks every 4s"
-            },
-            "venomous": {
-                "name": "Venomous",
-                "tip": "Each hit adds a stack of Venom"
             }
         }
     },

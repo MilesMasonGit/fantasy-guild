@@ -145,11 +145,15 @@ function damageTypeFindings(def, push) {
     }
 }
 
+/** The kind that landed Venom on every hit, before a poisoning move carried Venom itself. */
+const RETIRED_VENOMOUS_KIND = 'venomous';
+
 /** Findings for an enemy's kinds: one the game does not have, more than two, or two that clash. */
 function enemyKindFindings(def, push) {
     const kinds = Array.isArray(def?.enemy?.kinds) ? def.enemy.kinds : [];
     for (const id of kinds) {
-        if (!getEnemyKind(id)) push('enemy.kinds', `has the enemy kind "${id}", which does not exist — it changes nothing. Tick its kinds again in the CMS.`);
+        if (id === RETIRED_VENOMOUS_KIND) push('enemy.kinds', `has the enemy kind "${id}", which is retired — it lands nothing. Give the moves that poison the Venom effect instead, and untick it in the CMS.`);
+        else if (!getEnemyKind(id)) push('enemy.kinds', `has the enemy kind "${id}", which does not exist — it changes nothing. Tick its kinds again in the CMS.`);
     }
     const known = kinds.filter(getEnemyKind);
     if (known.length > MAX_ENEMY_KINDS) {
