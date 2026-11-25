@@ -227,9 +227,11 @@ export const INITIAL_STATE = {
     //                 field? { cropId?, load?, full?, seedOwed? } on a Field: the crop in its ground, the harvests left, the seed its first harvest still owes (`Fields.js`; its growth on clocks.fieldMs)
     //                 fightHp? { current, heroId?, restMs?, leftAt? } on a hurt enemy: its health (`BoardCombat.keepHp`); heroId while its fight is live (a reload goes on with that hero),
     //                 restMs the part second of healing out of a fight, leftAt (on a frozen Region's board) when the guild left, so the rest it missed is played on return; absent is whole
+    //                 fortune? number   the Token's count toward Fortune's sure rare find, 0 to under 100 (`Fortune.js`); absent is 0
     //   nextTokenOrder number               the next Token's placedAt
-    //   flags       { [heroId]: { x, y, plantedAt, pinnedTo?, spot?, needsJob? } }  each hero's order: pinnedTo = the Token instance id it
-    //                 works; spot = a point to idle at (any record not pinned is one); needsJob = the ordered Token is gone for good
+    //   flags       { [heroId]: { x, y, plantedAt, pinnedTo?, spot?, needsJob?, returnTo? } }  each hero's order: pinnedTo = the Token instance id it
+    //                 works; spot = a point to idle at (any record not pinned is one); needsJob = the ordered Token is gone for good;
+    //                 returnTo = a caught thief's Hideout, gone back to once the guard they were sent at is beaten (`Flags.goForGuard`)
     //   orders      1                       the flags are orders (an older save's board is migrated as it loads, `SaveMigration.migrateStateToOrders`)
     //   nextFlagOrder number                the next flag's plantedAt
     //   sprites     [ ... ]                 item loot on the floor (D-40), added Phase 3;
