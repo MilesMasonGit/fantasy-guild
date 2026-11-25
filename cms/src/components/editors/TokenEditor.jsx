@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Gauge } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
-import { HIDEOUT_KIND, TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, stationKindsOfSkill, isRetiredStationKind, ENEMY_STYLES, enemyFilledStats, MAX_ENEMY_KINDS, enemyKindsOf, enemyFightNumbers, isKindCandidate, kindResistances, ATTACK_SPEED_MS, RETIRED_ENEMY_FIELDS, LEFTOVER_ENEMY_FIELDS, DAMAGE_TYPES, DAMAGE_GROUPS, RESISTANCE_STEPS, damageTypeLabel, isDamageTypeId, isDamageGroupId, typesOfGroup, withGroupFilled, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY, ENEMY_USES, neededToolOf, toolNeedPhrase, hasCatchPools, endTermsOf, enemyCoinDropOf } from '../../utils/constants';
+import { HIDEOUT_KIND, LABORATORY_KIND, TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, stationKindsOfSkill, isRetiredStationKind, ENEMY_STYLES, enemyFilledStats, MAX_ENEMY_KINDS, enemyKindsOf, enemyFightNumbers, isKindCandidate, kindResistances, ATTACK_SPEED_MS, RETIRED_ENEMY_FIELDS, LEFTOVER_ENEMY_FIELDS, DAMAGE_TYPES, DAMAGE_GROUPS, RESISTANCE_STEPS, damageTypeLabel, isDamageTypeId, isDamageGroupId, typesOfGroup, withGroupFilled, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY, ENEMY_USES, neededToolOf, toolNeedPhrase, hasCatchPools, endTermsOf, enemyCoinDropOf } from '../../utils/constants';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
@@ -61,6 +61,8 @@ export default function TokenEditor() {
   const stationSkill = stationSkillOf(expandBearer(token, effects));
   const isPooled = !!stationSkill;
   const stationKind = stationKindOf(expandBearer(token, effects));
+  // A Hideout robs a camp and a Laboratory studies a node: neither runs a recipe of its skill.
+  const runsNoRecipe = stationKind === HIDEOUT_KIND || stationKind === LABORATORY_KIND;
   const pooledRecipes = isPooled ? (recipePools[stationSkill] || []).filter((r) => stationKindOffers(stationKind, r)) : [];
   const skillName = (id) => SKILLS.find((s) => s.id === id)?.name || id;
   const isUnlimited = token?.uses == null;
@@ -700,15 +702,17 @@ export default function TokenEditor() {
               <p className="text-[11px] text-gray-400 leading-relaxed">
                 {stationKind === HIDEOUT_KIND
                   ? <>A Hideout runs no recipe, of {skillName(stationSkill)} or any skill: it robs the enemy camp the player picks on its card (the Hideout block below).</>
+                  : stationKind === LABORATORY_KIND
+                  ? <>A Laboratory runs no recipe, of {skillName(stationSkill)} or any skill: it studies the node the player picks on its card, for its kind&apos;s mastery (the Laboratory block).</>
                   : stationKind && isRetiredStationKind(stationKind)
                   ? <>{stationKindLabel(stationKind)} is a retired station kind, which narrows nothing: this station can run anything in the {skillName(stationSkill)} pool, as the skill&apos;s building does. Pick Any station to clear it.</>
                   : stationKind
                     ? <>This station runs the {skillName(stationSkill)} recipes marked {stationKindLabel(stationKind)}, and those marked for no station.</>
                     : <>This station can run anything in the {skillName(stationSkill)} pool.</>}{' '}
-                {stationKind !== HIDEOUT_KIND && <>The player picks which one; its neighbours decide whether the pick can run
+                {!runsNoRecipe && <>The player picks which one; its neighbours decide whether the pick can run
                 right now. A station has no recipes of its own.</>}
               </p>
-              {stationKind === HIDEOUT_KIND ? null : pooledRecipes.length === 0 ? (
+              {runsNoRecipe ? null : pooledRecipes.length === 0 ? (
                 <p className="text-[11px] text-gray-600">
                   The pool is empty. Author recipes in the Recipes screen.
                 </p>

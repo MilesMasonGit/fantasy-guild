@@ -121,6 +121,16 @@ describe('⭐ the Laboratory and Mastery blocks on a Token', () => {
         expect(JSON.stringify(syncPayload()['tokens.json'].token_copper_ore_vein)).not.toContain('"mastery"');
     });
 
+    it('a Laboratory\'s Recipes section says it runs no recipe, never that its pool is empty, as a Hideout\'s does', () => {
+        const lab = useEntityStore.getState().addToken({ name: 'Fixture Lab', statements: worksAsLab, config: { skill: 'science', skillRequired: 1, cycleTimeMs: 4000, xp: 2, inputs: [], outputs: [] } });
+        useEntityStore.getState().setActiveEntity(lab, 'token');
+        const { container } = render(React.createElement(TokenEditor));
+        const text = container.querySelector('[data-testid="station-kind"]').parentElement.textContent;
+        expect(text).toMatch(/A Laboratory runs no recipe, of Science or any skill: it studies the node the player picks on its card/);
+        expect(text).not.toMatch(/The pool is empty/);
+        expect(text).not.toMatch(/The player picks which one/);
+    });
+
     it('a track on a Stump says it belongs on its tree', () => {
         useEntityStore.setState((s) => ({ effects: { ...s.effects, [YIELD.id]: YIELD } }));
         const block = openToken('token_oak_stump', 'mastery');
