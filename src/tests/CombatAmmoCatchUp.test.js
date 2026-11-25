@@ -16,6 +16,9 @@ import * as CatchUp from '../systems/core/CatchUp.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
+import { registerEffects } from '../config/registries/effectRegistry.js';
+import { makeStatement, KEYWORD } from '../systems/effects/statements.js';
+import { enemyCampType } from './fixtures/enemyCamp.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
 import * as EquipmentManager from '../systems/equipment/EquipmentManager.js';
 import { resetMatTuning } from '../config/matTuning.js';
@@ -27,7 +30,8 @@ import * as fixtures from '../../bench/fixtures.mjs';
  * runs out of arrows part-way and leaves the fight, a mage burns its last Mote and casts on at half,
  * a Kunai thrower throws its last spare and fights on with the one in hand. The catch-up plays the
  * same 1000 ms steps through the same handlers, so the arrows, Motes and Kunai left, every hit, the
- * enemies' wounds and the draws match.
+ * enemies' wounds and the draws match. A poisoner at an enemy camp takes a poison as each fight
+ * starts when the last has run out, its attacks carried from fight to fight (brief 750 S3).
  */
 
 const NOW = 1_800_000_000_000;
@@ -46,7 +50,16 @@ registerItems({
     amc_arrow: { id: 'amc_arrow', name: 'Arrow', equipSlot: 'consumable', stackable: true, arrow: { damage: 1, damageType: 'stab' } },
     amc_mote: { id: 'amc_mote', name: 'Mote', equipSlot: 'consumable', stackable: true },
     amc_wand: { id: 'amc_wand', name: 'Wand', type: 'weapon', equipSlot: 'hand', styles: ['magic'], damage: 2, damageType: 'fire', mote: 'amc_mote' },
-    amc_kunai: { id: 'amc_kunai', name: 'Kunai', type: 'weapon', equipSlot: 'hand', stackable: true, styles: ['stealth'], damage: 2, speed: 'fast', thrown: true }
+    amc_kunai: { id: 'amc_kunai', name: 'Kunai', type: 'weapon', equipSlot: 'hand', stackable: true, styles: ['stealth'], damage: 2, speed: 'fast', thrown: true },
+    amc_dagger: { id: 'amc_dagger', name: 'Dagger', type: 'weapon', equipSlot: 'hand', stackable: true, styles: ['stealth'], damage: 2, speed: 'fast' },
+    amc_poison: { id: 'amc_poison', name: 'Poison', equipSlot: 'consumable', stackable: true, effects: [{ effectId: 'amc_poison_rule' }] }
+});
+registerEffects({
+    amc_coat: { id: 'amc_coat', name: 'Coat', statements: [{ ...makeStatement(KEYWORD.PROVIDES), to: null, payload: { type: 'DAMAGE', bucket: 'flat', value: 1 } }] },
+    amc_poison_rule: {
+        id: 'amc_poison_rule', name: 'Poison rule',
+        statements: [{ ...makeStatement(KEYWORD.APPLIES), when: { event: 'COMBAT_ENGAGED', scope: 'self' }, payload: { effectId: 'amc_coat', scale: 1, durationMs: 0, forAttacks: 7, chance: 100 } }]
+    }
 });
 
 const enemy = (id, style) => ({
@@ -57,8 +70,10 @@ const enemy = (id, style) => ({
 registerTokenTypes({
     amc_target_a: enemy('amc_target_a', 'ranged'),
     amc_target_b: enemy('amc_target_b', 'melee'),
-    amc_target_c: enemy('amc_target_c', 'ranged')
+    amc_target_c: enemy('amc_target_c', 'ranged'),
+    amc_small: { ...enemy('amc_small', 'ranged'), enemy: { level: 1, style: 'ranged', hp: 25 } }
 });
+const SMALL_CAMP = enemyCampType('amc_small', { intervalMs: 3000 });
 
 /** A seeded `Math.random` (mulberry32) that counts its draws, as the bench's prelude does. */
 const stream = { state: 1, draws: 0 };
@@ -80,11 +95,12 @@ function buildBoard() {
     // The first run's fights are still going: a hero fighting cannot change gear.
     BoardCombat.clearAll();
     InventoryManager.init();
-    const [archer, mage, thief] = fixtures.makeHeroes(3, {});
+    const [archer, mage, thief, poisoner] = fixtures.makeHeroes(4, {});
     archer.skills.ranged = { level: 20, xp: xpForLevel(20) };
     mage.skills.magic = { level: 20, xp: xpForLevel(20) };
     thief.skills.stealth = { level: 20, xp: xpForLevel(20) };
-    for (const h of [archer, mage, thief]) {
+    poisoner.skills.stealth = { level: 20, xp: xpForLevel(20) };
+    for (const h of [archer, mage, thief, poisoner]) {
         HeroManager.updateHeroFromSkills(h);
         // Enough health that nobody is defeated: each fight runs the whole time away.
         h.hp = { current: 5000, max: 5000 };
@@ -98,14 +114,18 @@ function buildBoard() {
     give(mage, 'amc_wand', 1);
     give(mage, 'amc_mote', 9);
     give(thief, 'amc_kunai', 8);
+    give(poisoner, 'amc_dagger', 1);
+    give(poisoner, 'amc_poison', 40);
     const a = fixtures.placeAt('amc_target_a', 400, 400);
     const b = fixtures.placeAt('amc_target_b', 1100, 400);
     const c = fixtures.placeAt('amc_target_c', 1800, 400);
     fixtures.orderAt(archer.id, { x: a.x, y: a.y });
     fixtures.orderAt(mage.id, { x: b.x, y: b.y });
     fixtures.orderAt(thief.id, { x: c.x, y: c.y });
+    const camp = fixtures.placeAt(SMALL_CAMP, 1100, 1100);
+    fixtures.orderAt(poisoner.id, { x: camp.x, y: camp.y });
     TileModifiers.rebuildAll();
-    return { ids: [archer.id, mage.id, thief.id] };
+    return { ids: [archer.id, mage.id, thief.id, poisoner.id] };
 }
 
 function listen() {
@@ -119,10 +139,11 @@ function listen() {
 const end = ({ ids }, seen) => ({
     heroes: ids.map(id => {
         const h = GameState.state.heroes.find(x => x.id === id);
-        return { id, hp: { ...h.hp }, status: h.status, fighting: !!BoardCombat.fightOfHero(id) };
+        return { id, hp: { ...h.hp }, status: h.status, fighting: !!BoardCombat.fightOfHero(id), poisonAttacks: h.poisonAttacks || null };
     }),
     enemies: BoardState.tokens().filter(t => t.typeId.startsWith('amc_')).map(t => `${t.typeId}:${t.fightHp?.current ?? 'whole'}`),
-    left: ['amc_arrow', 'amc_mote', 'amc_kunai'].map(id => InventoryManager.getItemCount(id)),
+    left: ['amc_arrow', 'amc_mote', 'amc_kunai', 'amc_poison'].map(id => InventoryManager.getItemCount(id)),
+    kills: GameState.state.collection?.cardUseCounts?.amc_small || 0,
     draws: stream.draws,
     seen
 });
@@ -173,12 +194,16 @@ describe('ammo spent during a catch-up', () => {
         const [archerId, mageId, thiefId] = board.ids;
         const of = (id) => plain.seen.attacks.filter(a => a.startsWith(`${id}|`));
         expect(of(archerId)).toHaveLength(12);
-        expect(plain.left).toEqual([0, 0, 0]);
+        expect(plain.left.slice(0, 3)).toEqual([0, 0, 0]);
         expect(plain.heroes[0].fighting).toBe(false);
         expect(of(mageId).filter(a => a.endsWith('|amc_mote|'))).toHaveLength(9);
         expect(of(mageId).filter(a => a.endsWith('|half')).length).toBeGreaterThan(5);
         expect(of(thiefId).filter(a => a.endsWith('|amc_kunai|'))).toHaveLength(7);
         expect(of(thiefId).filter(a => a.endsWith('|half')).length).toBeGreaterThan(5);
         expect(plain.heroes[1].fighting && plain.heroes[2].fighting).toBe(true);
+        // Several fights at the camp: poisons taken as fights started, one a dose of seven attacks.
+        expect(plain.kills).toBeGreaterThan(3);
+        expect(plain.left[3]).toBeLessThan(39);
+        expect(plain.left[3]).toBeGreaterThan(0);
     }, 60_000);
 });

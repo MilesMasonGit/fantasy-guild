@@ -142,6 +142,12 @@ export function handleHeroAttack(fight, hero, enemy, attackSpeed) {
         } else {
             EventBus.publish(ENGINE_EVENTS.COMBAT_HERO_ATTACK, { cardId: fight.id, instanceId: fight.instanceId, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, crit: false, arrowId, ...spent, enemyHpRemaining: fight.combat.enemyHp.current });
         }
+
+        // A poison counts every attack, hit or miss; one that runs out leaves the fight unpoisoned.
+        for (const itemId of ConsumptionSystem.countPoisonAttack(hero, fight.instanceId)) {
+            LiveEffects.endPoisonEffects(hero, itemId);
+            LiveEffects.endPoisonEffects(fight, itemId);
+        }
     }
 
     tallies.arrowId = null;

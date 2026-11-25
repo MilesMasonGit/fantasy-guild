@@ -10,10 +10,11 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { getGlobalAggregator } from '../effects/GuildModifiers.js';
 import { roundHalfUp } from '../../config/FormulaRegistry.js';
-import { doseKindsOf, DOSE, DOSE_LENGTH, isWorkMoment, workSkillMatches, lastingDoseLength, exactDoseLength, doseLengthSpan } from '../core/consumableRule.js';
+import { doseKindsOf, DOSE, DOSE_LENGTH, isWorkMoment, workSkillMatches, lastingDoseLength, exactDoseLength, doseLengthSpan, poisonAttacksOf } from '../core/consumableRule.js';
 import { CARRIED_KIND } from '../../config/registries/carriedKinds.js';
 import * as BoardState from '../board/BoardState.js';
 import * as CycleSavings from '../board/CycleSavings.js';
+import { getHeroCombatStyle } from '../combat/CombatFormulas.js';
 
 /**
  * ConsumptionSystem — heroes feed themselves from their own loadout grid.
@@ -23,6 +24,8 @@ import * as CycleSavings from '../board/CycleSavings.js';
  * and lasting `DRINK_CYCLES` cycles, and a work potion is drunk for each cycle of its skill
  * (`startWorkDoses`).
  * Elixirs are drunk as a fight starts and last `ELIXIR_FIGHTS` fights (`startFightElixirs`).
+ * Poisons are taken as a fight starts by a hero with a Stealth weapon and last the attacks their
+ * rule names, carried into later fights (`startFightPoisons`, `countPoisonAttack`).
  *
  * Consuming draws one unit from the Guild Bank; an equipped item with no stock
  * is skipped and the hero goes without. In a fight eating has no cooldown or limit (a meal costs a
@@ -118,12 +121,29 @@ export const FIGHT_START = 'COMBAT_ENGAGED';
 
 /**
  * Whether an item is a fight elixir: a Consumable carrying at least one rule on the fight-start
- * moment. A Consumable without one (a potion for work) is never drunk by a fight.
+ * moment, none of them lasting "for N attacks" (that is a poison, {@link isPoison}). A Consumable
+ * without one (a potion for work) is never drunk by a fight.
  */
 export function isFightElixir(itemId) {
     const item = getItem(itemId);
     if (!item || !isConsumableCategory(item.equipSlot)) return false;
-    return HeroEffects.itemStatements(itemId).some(s => s?.when?.event === FIGHT_START);
+    const statements = HeroEffects.itemStatements(itemId);
+    return statements.some(s => s?.when?.event === FIGHT_START) && poisonAttacksOf(statements) === 0;
+}
+
+/**
+ * Whether an item is a poison: a Consumable whose fight-start rule lasts "for N attacks"
+ * (`consumableRule.poisonAttacksOf`). Taken only by a hero holding a Stealth weapon.
+ */
+export function isPoison(itemId) {
+    const item = getItem(itemId);
+    if (!item || !isConsumableCategory(item.equipSlot)) return false;
+    return poisonAttacksOf(HeroEffects.itemStatements(itemId)) > 0;
+}
+
+/** How many attacks a fresh dose of poison `itemId` lasts, 0 for anything else. */
+export function poisonAttacksOfItem(itemId) {
+    return isPoison(itemId) ? poisonAttacksOf(HeroEffects.itemStatements(itemId)) : 0;
 }
 
 /**
@@ -229,6 +249,81 @@ export function startFightElixirs(heroId, instanceId = null, { resumed = false }
     if (active.length && instanceId) hero.fightElixirs = { at: instanceId, items: active };
     else delete hero.fightElixirs;
     return active;
+}
+
+/**
+ * A fight is starting: a hero holding a Stealth weapon takes up every carried poison. One with
+ * attacks left from earlier fights works on (`hero.poisonAttacks`, saved with them); one with none
+ * left takes a fresh one from the Bank, lasting {@link poisonAttacksOfItem} attacks, and is logged
+ * as an elixir is (`HERO_CONSUMED` with `poison`); one with none in the Bank sits out the fight. Any
+ * other weapon takes none, and the attacks left wait. A Preservation hit at `instanceId` (the enemy
+ * Token) starts the fresh one without taking it from the Bank.
+ *
+ * Which poisons work in the fight is noted on the hero (`hero.fightPoisons`, saved), so a fight saved
+ * mid-way and going on after a load (`resumed`) works with those still holding attacks and takes
+ * nothing fresh, as elixirs do.
+ *
+ * Draws no random number unless a Preservation rule reaches a fresh one (one draw for it).
+ *
+ * @param {{resumed?: boolean}} [options]
+ * @returns {string[]} the poison item ids working in this fight, in grid order
+ */
+export function startFightPoisons(heroId, instanceId = null, { resumed = false } = {}) {
+    const hero = HeroManager.getHero(heroId);
+    if (!hero) return [];
+    const left = (itemId) => Number(hero.poisonAttacks?.[itemId]) || 0;
+
+    if (resumed) {
+        const noted = hero.fightPoisons;
+        if (noted?.at !== instanceId || !Array.isArray(noted.items)) return [];
+        const equipped = new Set(getEquippedEntries(hero).map(e => e.itemId));
+        return noted.items.filter(id => equipped.has(id) && isPoison(id) && left(id) > 0);
+    }
+
+    delete hero.fightPoisons;
+    if (getHeroCombatStyle(hero) !== 'stealth') return [];
+    const active = [];
+    const seen = new Set();
+    for (const entry of getEquippedEntries(hero)) {
+        if (!isConsumableCategory(entry.category) || seen.has(entry.itemId)) continue;
+        seen.add(entry.itemId);
+        if (!isPoison(entry.itemId)) continue;
+        let attacks = left(entry.itemId);
+        if (attacks <= 0) {
+            if (!InventoryManager.hasItem(entry.itemId, 1)) continue;
+            const preserved = kept(instanceId, entry.itemId, CARRIED_KIND.POISON);
+            if (!preserved) InventoryManager.removeItem(entry.itemId, 1);
+            attacks = poisonAttacksOfItem(entry.itemId);
+            EventBus.publish(ENGINE_EVENTS.HERO_CONSUMED, {
+                heroId, itemId: entry.itemId, category: entry.category, amount: 0, poison: true, ...(preserved ? { preserved } : {})
+            });
+            logger.debug('ConsumptionSystem', `${hero.name} took ${entry.itemId}`);
+        }
+        if (!hero.poisonAttacks) hero.poisonAttacks = {};
+        hero.poisonAttacks[entry.itemId] = attacks;
+        active.push(entry.itemId);
+    }
+    if (active.length && instanceId) hero.fightPoisons = { at: instanceId, items: active };
+    return active;
+}
+
+/**
+ * The hero has made an attack in the fight against Token `instanceId`, hit or miss: one attack off
+ * every poison working in it. Those that reach none stop working for the rest of the fight.
+ * @returns {string[]} the poisons that ran out with this attack
+ */
+export function countPoisonAttack(hero, instanceId) {
+    const noted = hero?.fightPoisons;
+    if (!noted?.items?.length || noted.at !== instanceId) return [];
+    const ended = [];
+    for (const itemId of noted.items) {
+        const now = Math.max(0, (Number(hero.poisonAttacks?.[itemId]) || 0) - 1);
+        if (!hero.poisonAttacks) hero.poisonAttacks = {};
+        hero.poisonAttacks[itemId] = now;
+        if (now === 0) ended.push(itemId);
+    }
+    if (ended.length) noted.items = noted.items.filter(id => !ended.includes(id));
+    return ended;
 }
 
 /**

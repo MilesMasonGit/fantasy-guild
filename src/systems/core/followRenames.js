@@ -225,6 +225,7 @@ function heroFollowing(hero, { item, effect }) {
     else if (isPlainObject(hero.equipment)) out = mapField(out, 'equipment', slots => mapValues(slots, item));
     out = mapField(out, 'drinkCycles', counts => renameKeys(counts, item, keepFirst));
     out = mapField(out, 'elixirFights', counts => renameKeys(counts, item, keepFirst));
+    out = mapField(out, 'poisonAttacks', counts => renameKeys(counts, item, keepFirst));
     out = mapField(out, 'effects', list => mapList(list, e => mapField(e, 'effectId', effect)));
     return out;
 }

@@ -1023,14 +1023,18 @@ function bodySegments(statement, names) {
             /**
              * A library effect (a status included). With a duration it lingers, "for the fight" it
              * lasts until its fight ends, "for the swing" until the swing being made is over, "for
-             * the cycle" until the work cycle starting is over; without any it fires immediately
-             * (chaining). A status's own lifetime is its effect's, and the editor offers none for one.
+             * the cycle" until the work cycle starting is over, "for N attacks" (a poison's) that many
+             * of its hero's attacks; without any it fires immediately (chaining). A status's own
+             * lifetime is its effect's, and the editor offers none for one.
              */
             if (payload.effectId) {
                 const title = names.effect ? names.effect(payload.effectId) : payload.effectId;
                 const ms = Number(payload.durationMs) || 0;
+                const attacks = Math.floor(Number(payload.forAttacks)) || 0;
                 const lasting = payload.forSwing
                     ? segs(' ', d('for the swing', 'forSwing'))
+                    : attacks > 0
+                        ? segs(' ', d(`for ${attacks} attack${attacks === 1 ? '' : 's'}`, 'forAttacks'))
                     : payload.forFight
                         ? segs(' ', d('for the fight', 'forFight'))
                         : payload.forCycle

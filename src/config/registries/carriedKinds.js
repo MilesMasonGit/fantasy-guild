@@ -18,7 +18,9 @@ export const CARRIED_KIND = Object.freeze({
     FOOD: 'food',
     DRINK: 'drink',
     POTION: 'potion',
-    ELIXIR: 'elixir'
+    ELIXIR: 'elixir',
+    // Not 'poison': that is a damage type's id, which other rules name as their category.
+    POISON: 'poison_dose'
 });
 
 /**
@@ -31,7 +33,8 @@ export const CARRIED_KINDS = Object.freeze([
     { id: CARRIED_KIND.DRINK, label: 'Drink', phrase: 'a drink', hint: 'A drink, each time a hero starts a new dose as a work cycle starts.' },
     { id: CARRIED_KIND.POTION, label: 'Potion', phrase: 'a potion', hint: 'A potion: a work potion drunk for each cycle of its skill, or a Consumable its own rule spends as it fires.' },
     { id: CARRIED_KIND.ELIXIR, label: 'Fight elixir', phrase: 'a fight elixir', hint: 'An elixir, each time a new dose is drunk as a fight starts.' },
-    { id: CARRIED_KIND.BAIT, label: 'Bait', phrase: 'bait', hint: 'Bait, each time a catch would spend one.' }
+    { id: CARRIED_KIND.BAIT, label: 'Bait', phrase: 'bait', hint: 'Bait, each time a catch would spend one.' },
+    { id: CARRIED_KIND.POISON, label: 'Poison', phrase: 'a poison', hint: 'A poison, each time a Stealth hero takes a fresh one as a fight starts.' }
 ]);
 
 const BY_ID = new Map(CARRIED_KINDS.map(kind => [kind.id, kind]));

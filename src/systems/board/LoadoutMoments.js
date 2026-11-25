@@ -60,15 +60,22 @@ function cycleSkillOf(instanceId) {
 /**
  * A dose's rules, marked as fired from it. Under Strong Drink (`ConsumptionSystem.doseStrength` for
  * its kind of dose) an effect it applies carries the strength as its `boost`, which multiplies the
- * numbers that effect provides (`LiveEffects`); with none, the rules are the item's own.
+ * numbers that effect provides (`LiveEffects`); with none, the rules are the item's own. A poison's
+ * "for N attacks" is carried for the fight, marked as that poison's, and comes off when its attacks
+ * run out (`ConsumptionSystem.countPoisonAttack`, `LiveEffects.endPoisonEffects`).
  */
 function dosedStatements(itemId, dose) {
     const strength = ConsumptionSystem.doseStrength(dose);
-    return HeroEffects.itemStatements(itemId).map(s => (
-        strength !== 1 && s.keyword === KEYWORD.APPLIES && s.payload?.effectId
-            ? { ...s, dosed: true, payload: { ...s.payload, boost: strength } }
-            : { ...s, dosed: true }
-    ));
+    return HeroEffects.itemStatements(itemId).map(s => {
+        if (s.keyword !== KEYWORD.APPLIES || !s.payload?.effectId) return { ...s, dosed: true };
+        let payload = strength !== 1 ? { ...s.payload, boost: strength } : s.payload;
+        if (dose === DOSE.POISON && Number(payload.forAttacks) > 0) {
+            const { forAttacks, durationMs, ...rest } = payload;
+            void forAttacks; void durationMs;
+            payload = { ...rest, forFight: true, poison: itemId };
+        }
+        return payload === s.payload ? { ...s, dosed: true } : { ...s, dosed: true, payload };
+    });
 }
 
 /**
@@ -103,7 +110,9 @@ export function fire(instanceId, heroId, eventId, { resumed = false } = {}) {
     if (workStart) LiveEffects.endHeroOtherCycleEffects(heroId, instanceId);
 
     // Preservation on a fresh dose is read here: the enemy Token, or the Token whose cycle starts.
-    const doses = fightStart ? ConsumptionSystem.startFightElixirs(heroId, instanceId, { resumed })
+    const elixirs = fightStart ? ConsumptionSystem.startFightElixirs(heroId, instanceId, { resumed }) : [];
+    const poisons = fightStart ? ConsumptionSystem.startFightPoisons(heroId, instanceId, { resumed }) : [];
+    const doses = fightStart ? [...elixirs, ...poisons]
         : workStart ? ConsumptionSystem.startWorkDoses(heroId, skill, instanceId) : [];
     const isDoseItem = fightStart ? (id) => isConsumableCategory(categoryOfItem(id))
         : workStart ? ConsumptionSystem.isWorkDose : null;
@@ -116,7 +125,9 @@ export function fire(instanceId, heroId, eventId, { resumed = false } = {}) {
         ...HeroEffects.loadoutStatements(hero).filter(s => !fromDosesOnly(s)),
         // The tool used here, and only here (`HeroEffects.workToolStatements`).
         ...HeroEffects.workToolStatements(hero, toolNeedOf(BoardState.getTokenById(instanceId))),
-        ...doses.flatMap(id => dosedStatements(id, fightStart ? DOSE.ELIXIR : ConsumptionSystem.workDoseKindOf(id)))
+        ...elixirs.flatMap(id => dosedStatements(id, DOSE.ELIXIR)),
+        ...poisons.flatMap(id => dosedStatements(id, DOSE.POISON)),
+        ...(workStart ? doses.flatMap(id => dosedStatements(id, ConsumptionSystem.workDoseKindOf(id))) : [])
     ];
     const waitsHere = (statement) => {
         const event = statement?.when?.event;

@@ -158,6 +158,10 @@ function keepStronger(instance, boost) {
  * `boost` (a dose's Strong Drink, set by `LoadoutMoments`) multiplies every number the effect
  * provides while it is carried ({@link boostOf}); a stronger landing wins, as a higher scale does.
  *
+ * `poison` (a poison's item id, set by `LoadoutMoments` on a dose's "for N attacks" rule) marks an
+ * effect carried for the fight that also comes off when that poison's attacks run out
+ * ({@link endPoisonEffects}).
+ *
  * @param {object} bearer  a descriptor from `heroBearer` or a registered source
  * @param {{effectId: string, scale?: number, durationMs?: number, forFight?: boolean, forSwing?: boolean, forAttack?: number, forCycle?: string|boolean, boost?: number}} spec
  * @param {string|null} sourceId  what applied it, for the readout
@@ -211,6 +215,7 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
             }
             if (forFight) existing.forFight = true;
             if (forCycle) existing.forCycle = forCycle;
+            if (spec.poison && existing.forFight && existing.poison == null && existing.remainingMs == null) existing.poison = spec.poison;
             delete existing.forSwing;
             delete existing.forAttack;
         }
@@ -222,7 +227,8 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
             ...(boost !== null ? { boost } : {}),
             ...(forFight ? { forFight: true } : {}),
             ...(forSwing ? { forSwing: true } : {}),
-            ...(forCycle ? { forCycle } : {})
+            ...(forCycle ? { forCycle } : {}),
+            ...(forFight && !forSwing && spec.poison ? { poison: spec.poison } : {})
         });
     }
 
@@ -383,6 +389,19 @@ function outlivesFight(instance) {
     delete instance.forSwing;
     delete instance.forAttack;
     return true;
+}
+
+/**
+ * Poison `itemId`'s attacks have run out mid-fight: take off what its dose put on this bearer for the
+ * fight (`poison`). The rest of the fight goes unpoisoned.
+ * @returns {number} how many instances ended
+ */
+export function endPoisonEffects(target, itemId) {
+    if (!itemId || !target?.effects?.some(e => e.poison === itemId)) return 0;
+    const before = target.effects.length;
+    target.effects = target.effects.filter(e => e.poison !== itemId);
+    syncAggregator(target);
+    return before - target.effects.length;
 }
 
 /** The same for a hero, by id. */

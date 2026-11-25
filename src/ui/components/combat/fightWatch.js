@@ -288,8 +288,8 @@ function onAte(p) {
 }
 
 function onConsumed(p) {
-    if (!p?.elixir || !p.heroId) return;
-    const line = { icon: 'potion', tone: TONE.NOTE, key: 'drinks', vars: { hero: heroName(p.heroId), item: itemName(p.itemId) }, itemId: p.itemId };
+    if (!(p?.elixir || p?.poison) || !p.heroId) return;
+    const line = { icon: 'potion', tone: TONE.NOTE, key: p.poison ? 'poisons' : 'drinks', vars: { hero: heroName(p.heroId), item: itemName(p.itemId) }, itemId: p.itemId };
     // ⚠️ Only into the fight the hero is in now: one drunk as a new fight engages can arrive while
     // the record of the one before is still open.
     const record = byHero.get(p.heroId)?.current;
