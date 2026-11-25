@@ -65,3 +65,18 @@ export function giantHarvest(instanceId) {
     if (instanceId == null || EventBus.isQuiet()) return;
     EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, { instanceId, giant: true });
 }
+
+/**
+ * An Echo just repeated Token `instanceId`'s cycle: the mat says "Echo!" over it with a spark from
+ * the shrine (`sourceOf`, asked only when it will be drawn). Silent during a catch-up, like
+ * `popBonus`.
+ * @param {string} instanceId
+ * @param {(() => string|null)|null} [sourceOf]
+ */
+export function echo(instanceId, sourceOf = null) {
+    if (instanceId == null || EventBus.isQuiet()) return;
+    const payload = { instanceId, echo: true };
+    const from = sourceOf?.() ?? null;
+    if (from != null) payload.fromTokenId = from;
+    EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, payload);
+}

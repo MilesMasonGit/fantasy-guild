@@ -7,7 +7,7 @@ import {
   SKILLS, skillsByLayer, KEYWORD, statementsOf, stationSkillOf, expandBearer,
   FOUNDATION_KINDS, foundationTierOf, foundationMinTierOf,
   stationKindLabel, recipeStationKinds, stationKindOffers, stationKindOf, retiredStationKindsOf, stationKindsOfSkill,
-  cropTermsOf, CROP_MIN_GROW_MS,
+  cropTermsOf, CROP_MIN_GROW_MS, offeringTermsOf, shrineOf, SHRINE_MIN_MS,
 } from '../../utils/constants';
 import { SpriteField } from './LifecycleBlocks';
 import { NumberCell } from '../shared/IOEntryList';
@@ -572,6 +572,37 @@ function CropRow({ recipe, fields, onChange }) {
   );
 }
 
+/**
+ * An offering: how long one cycle of it keeps a shrine lit. Shown for a recipe a shrine offers (a station with a Shrine
+ * block whose kind offers it) or one that already has an offering block. Its inputs are the offering, spent each cycle.
+ */
+function OfferingRow({ recipe, shrines, onChange }) {
+  const terms = offeringTermsOf(recipe);
+  const written = recipe.offering && typeof recipe.offering === 'object';
+  const most = shrines.length ? Math.min(...shrines.map((t) => shrineOf(t).maxLitMs)) : null;
+  return (
+    <div data-testid="offering-row" className="rounded-lg border border-white/10 bg-black/20 p-3 space-y-2">
+      <label className="text-[10px] font-bold uppercase tracking-wider block text-gray-500">Offering (burned at a shrine)</label>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Keeps it lit for (s)">
+          <input
+            type="number" aria-label="Keeps it lit for (s)" min={1} step={5}
+            value={Math.round(terms.litMs / 1000)}
+            onChange={(e) => onChange({ offering: { ...(written ? recipe.offering : {}), litMs: Math.max(SHRINE_MIN_MS, Math.round(Number(e.target.value) || 1) * 1000) } })}
+            className="w-full"
+          />
+        </Field>
+      </div>
+      <p className="text-[10px] text-gray-600 leading-relaxed" data-testid="offering-note">
+        {shrines.length ? `Burned at ${shrines.map((t) => t.name || t.id).join(', ')}. ` : 'No shrine offers this yet. '}
+        Each cycle spends its inputs above and keeps the shrine lit {Math.round(terms.litMs / 1000)} s longer
+        {most != null ? `, up to its most (${Math.round(most / 60000)} min)` : ''}. It makes nothing else: leave its outputs empty.
+        {written ? '' : ' (Not yet written: the game uses this default.)'}
+      </p>
+    </div>
+  );
+}
+
 function RecipeCard({ recipe, tokens, stations = [], skillName, availableContext, onChange, onDelete }) {
   const building = buildsOnFoundation(recipe);
   const [tagDraft, setTagDraft] = useState('');
@@ -626,6 +657,15 @@ function RecipeCard({ recipe, tokens, stations = [], skillName, availableContext
         <CropRow
           recipe={recipe}
           fields={stations.filter((s) => s.token.field && stationKindOffers(s.kind, recipe)).map((s) => s.token)}
+          onChange={onChange}
+        />
+      )}
+
+      {/* An offering: a shrine offering it, or an offering block already written. */}
+      {!building && (stations.some((s) => s.token.shrine && stationKindOffers(s.kind, recipe)) || recipe.offering) && (
+        <OfferingRow
+          recipe={recipe}
+          shrines={stations.filter((s) => s.token.shrine && stationKindOffers(s.kind, recipe)).map((s) => s.token)}
           onChange={onChange}
         />
       )}

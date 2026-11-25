@@ -125,17 +125,19 @@ export const FOUNDATION_KINDS = Object.freeze(['wood', 'stone', 'farmland', 'exc
 /**
  * The kinds of station, which split one skill's recipes between several stations of it: a
  * `stationKind` on the Token's `Works as` rule, `stationKinds` on a recipe. A skill's building
- * names no kind, so it offers every recipe of its skill, the list gated by level; only Farming
- * still splits its own (a Field and a Herb Garden each grow their crops, `cropTermsOf`; a Windmill
- * mills grain).
+ * names no kind, so it offers every recipe of its skill, the list gated by level; only Farming and
+ * Faith split their own (a Field and a Herb Garden each grow their crops, `cropTermsOf`; a Windmill
+ * mills grain; the Altar makes offerings and a shrine burns them, `offeringTermsOf`).
  *
  * ⚠️ Both sides are opt-in: a station with no kind offers its whole skill, and a recipe with no
  * kinds is offered by every station of its skill.
  */
-export const STATION_KINDS = Object.freeze(['field', 'herb_garden', 'windmill']);
+export const STATION_KINDS = Object.freeze(['field', 'herb_garden', 'windmill', 'altar', 'shrine']);
 
 /** The skill each kind splits; the CMS offers a kind only on its own skill. */
-const STATION_KIND_SKILLS = Object.freeze({ field: 'farming', herb_garden: 'farming', windmill: 'farming' });
+const STATION_KIND_SKILLS = Object.freeze({
+    field: 'farming', herb_garden: 'farming', windmill: 'farming', altar: 'faith', shrine: 'faith'
+});
 
 /**
  * Kinds that used to split a craft skill between stations (a Furnace smelted, a Smithy made tools).
@@ -169,7 +171,9 @@ const STATION_KIND_LABELS = Object.freeze({
     summoning_circle: 'Summoning Circle',
     field: 'Field',
     herb_garden: 'Herb Garden',
-    windmill: 'Windmill'
+    windmill: 'Windmill',
+    altar: 'Altar',
+    shrine: 'Shrine'
 });
 
 /** A station kind in words; an unknown kind shows its id rather than vanishing. */
@@ -496,6 +500,56 @@ export function cropTermsOf(recipe) {
 }
 const cropTermsMemo = new WeakMap();
 const DEFAULT_CROP_TERMS = Object.freeze({ ...CROP_DEFAULTS, endChance: 100 / CROP_DEFAULTS.load, ripeSprite: null, seeds: Object.freeze([]) });
+
+/**
+ * ⭐ **A shrine** (brief 810 K3): `shrine: { maxLitMs }` on a Token that works as a station (Faith,
+ * kind `shrine`). Its rules, its blessing, hold only while it is lit; a hero working it spends an
+ * offering each cycle (its recipe's inputs) and each keeps it lit longer (`offeringTermsOf`), up to
+ * `maxLitMs`. Lit or out, it burns down on game time (`systems/board/Shrines.js`).
+ */
+export const SHRINE_DEFAULTS = Object.freeze({ maxLitMs: 10 * 60 * 1000 });
+
+/** How long an offering keeps a shrine lit when its recipe names no time. */
+export const OFFERING_DEFAULTS = Object.freeze({ litMs: 60 * 1000 });
+
+/** The shortest lit time the engine honours, for an offering and a shrine's most alike. */
+export const SHRINE_MIN_MS = 1000;
+
+const shrineTermsMemo = new WeakMap();
+const positiveMs = (value, fallback) => {
+    const ms = Number(value);
+    return Number.isFinite(ms) && ms > 0 ? Math.max(SHRINE_MIN_MS, ms) : fallback;
+};
+
+/** A Token type's shrine terms, `{ maxLitMs }` (defaulted), or null for a Token that is not a shrine. */
+export function shrineOf(def) {
+    const block = def?.shrine;
+    if (!block || typeof block !== 'object' || Array.isArray(block)) return null;
+    let terms = shrineTermsMemo.get(block);
+    if (!terms || terms.src !== block.maxLitMs) {
+        terms = { src: block.maxLitMs, terms: Object.freeze({ maxLitMs: positiveMs(block.maxLitMs, SHRINE_DEFAULTS.maxLitMs) }) };
+        shrineTermsMemo.set(block, terms);
+    }
+    return terms.terms;
+}
+
+const DEFAULT_OFFERING_TERMS = Object.freeze({ litMs: OFFERING_DEFAULTS.litMs });
+
+/**
+ * What a recipe a shrine burns gives it, `{ litMs }`: how long one cycle's offering keeps it lit
+ * (`offering.litMs`, defaulted, floored at {@link SHRINE_MIN_MS}). Its inputs are the offering.
+ */
+export function offeringTermsOf(recipe) {
+    const block = recipe?.offering;
+    if (!block || typeof block !== 'object') return DEFAULT_OFFERING_TERMS;
+    let terms = offeringTermsMemo.get(block);
+    if (!terms || terms.src !== block.litMs) {
+        terms = { src: block.litMs, terms: Object.freeze({ litMs: positiveMs(block.litMs, OFFERING_DEFAULTS.litMs) }) };
+        offeringTermsMemo.set(block, terms);
+    }
+    return terms.terms;
+}
+const offeringTermsMemo = new WeakMap();
 
 /**
  * Passive Production's one timer, before any Guild Hall star shortens it: every line of a Token's

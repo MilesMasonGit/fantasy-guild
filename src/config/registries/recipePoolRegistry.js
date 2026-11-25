@@ -14,9 +14,9 @@
  * Smelting, Weaponsmithing, Toolsmithing and Jewelry are all `smithing`,
  * and Baking and Cooking are both `cooking`. A skill's building names no
  * station kind, so it draws every recipe of its skill, the picker gating them
- * by level. Only Farming still splits its recipes by kind (`STATION_KINDS`: a
- * recipe's `stationKinds` names the stations that make it, a Field's crops or
- * the Windmill's flour). A recipe with no `stationKinds`, or a station with no
+ * by level. Only Farming and Faith still split their recipes by kind (`STATION_KINDS`: a
+ * recipe's `stationKinds` names the stations that make it, a Field's crops,
+ * the Windmill's flour, the Altar's offerings or what a shrine burns). A recipe with no `stationKinds`, or a station with no
  * kind or a retired one, is unnarrowed.
  *
  * ## A station's pool comes from its `Works as` statement

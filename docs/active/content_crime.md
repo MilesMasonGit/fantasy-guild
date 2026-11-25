@@ -22,7 +22,7 @@ the CMS pack (T-663). Amounts and odds are the ledger's.*
 | Cow Pasture | Cow (1) | Bones, Hide, Raw Beef, Milk | Wheat Seed, Wheat, Milk |
 | Sheep Pasture | Sheep (1) | Bones, Wool | Wool (sheared), Wheat |
 | Thorn Thicket | Thorn Elemental (1) | Blackberries | Blackberries, a rare Nature Mote |
-| Slime Pit | Small Slime (1) | Redberries | What it swallowed: Copper Ore, Coins, Redberries |
+| Slime Pit ⚠️ | Small Slime (1) | Redberries | What it swallowed: Copper Ore, Coins, Redberries |
 | Crab Rocks | Crab (3) | Crab Meat, Raw Shrimp, Tropical Fish, Lobster | Pearls, Seaweed, Raw Shrimp |
 | Wolf Den | Wolf (4) | Game Meat, Hide, Bones | The den's cache: Game Meat, Feathers |
 | Goblin Camp | Goblin (5) | Bones, Copper Ore | Copper Ingots, Copper Nails, Coins |
@@ -35,6 +35,8 @@ the CMS pack (T-663). Amounts and odds are the ledger's.*
 and the Slime that swallows things); Pearls, Seaweed, Feathers and Motes are planned items not yet in
 the game, so those lines wait for their items. Bosses (the Chief's Tent, Alpha's Den, Queen's Hive,
 Tide Pool, Wind Stones, Smoking Crater, Basking Stone, Toxic Pool) have no table.
+
+⚠️ *Slime Pit* spawns the Greater Slime boss and the world tables list it as a boss camp, so it can't be robbed as built (director 2026-11-25): the pack moves this table to a regular Small Slime camp or makes Slime Pit a regular camp.
 
 ## The Hideout's variants
 

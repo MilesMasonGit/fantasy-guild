@@ -294,8 +294,9 @@ export const BOARD_EVENTS = {
 
     /**
      * A named effect just did something on a Token — `{ instanceId, title }`. Also, untitled, a
-     * support's bonus landing (`{ instanceId, amount, bonus, fromTokenId? }`) and a Giant Harvest
-     * (`{ instanceId, giant: true }`), both from `EffectFeedback`.
+     * support's bonus landing (`{ instanceId, amount, bonus, fromTokenId? }`), a Giant Harvest
+     * (`{ instanceId, giant: true }`) and an Echo (`{ instanceId, echo: true, fromTokenId? }`), all
+     * from `EffectFeedback`.
      *
      * ⚠️ **Not an alert.** `TILE_EVENT_ALERT` is for problems a player has to
      * act on (no inputs, no charges, a refused placement). An effect firing is
@@ -333,6 +334,13 @@ export const BOARD_EVENTS = {
      * would punch on); a broken tool leaves the order, and the hero lets go for want of it.
      */
     GEAR_BROKE: 'board:gear_broke',
+
+    /**
+     * A shrine lit, or went out (`Shrines.js`): `{ instanceId, lit, litMs, maxLitMs }`, said when an
+     * offering lands (lit, its lit time now) and when its lit time runs out (`lit: false`). Between
+     * the two its lit time runs down at game speed, so the mat's lit bar runs on from the last one.
+     */
+    SHRINE_LIT: 'board:shrine_lit',
 
     /**
      * A Summoned worker changed (`Summons.js`): `{ heroId, typeId, circleId, charges, change,
@@ -452,5 +460,11 @@ export const ALERT = {
      * (`Fields.js`). Like `RESTING`: a flag skips it and its hero lets go and waits silently for it,
      * and it is never a Token's alert.
      */
-    GROWING: 'growing'
+    GROWING: 'growing',
+    /**
+     * A shrine is lit too full to take another whole offering (`Shrines.js`). Like `RESTING`: a flag
+     * skips it and its hero lets go and waits by it, it is never a Token's alert, and the hero tends it
+     * again once it has burned down enough, so no offering is spent for nothing.
+     */
+    SHRINE_FULL: 'shrine_full'
 };

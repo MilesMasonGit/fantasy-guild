@@ -1,4 +1,6 @@
 import * as BoardState from '../../../systems/board/BoardState.js';
+import * as Shrines from '../../../systems/board/Shrines.js';
+import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { STAND_GAP } from '../../../systems/board/HeroMotion.js';
 import { artRadiusOf } from '../../../config/matGeometry.js';
 import { tokenSizeFor, TOKEN_SURFACE, boardScaleAt, boardArtSteps } from '../base/TokenSprite.jsx';
@@ -107,5 +109,31 @@ export function workBarOf(id) {
         heroId,
         side: BoardState.heroBodyOf(heroId)?.side === -1 ? -1 : 1,
         blocked: !!instance.alert
+    };
+}
+
+/** Whether Token type `typeId` is a shrine: its bar on the mat is its lit time, not a cycle's. */
+export function isShrineType(typeId) {
+    return Shrines.isShrine(getTokenType(typeId));
+}
+
+/**
+ * What a shrine's lit bar needs, as a flat projection (`useTokenState`'s contract), or null when it
+ * is out and nobody tends it, or is no shrine. `litMs` is as the engine last said it; the bar runs it
+ * down from there.
+ * @returns {{typeId: string, heroId: string|null, side: number, litMs: number, maxLitMs: number}|null}
+ */
+export function shrineBarOf(id) {
+    const instance = BoardState.getTokenById(id);
+    const state = instance ? Shrines.shrineState(instance) : null;
+    if (!state) return null;
+    const heroId = BoardState.workerOf(id) || null;
+    if (!state.lit && !heroId) return null;
+    return {
+        typeId: instance.typeId,
+        heroId,
+        side: heroId ? (BoardState.heroBodyOf(heroId)?.side === -1 ? -1 : 1) : 0,
+        litMs: state.litMs,
+        maxLitMs: state.maxLitMs
     };
 }

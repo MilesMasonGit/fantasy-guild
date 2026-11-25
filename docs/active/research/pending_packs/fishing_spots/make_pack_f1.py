@@ -4,7 +4,7 @@ Built on ws_now.json (the owner's workspace)."""
 import json, copy, os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-w = json.load(open(os.path.join(HERE, 'ws_now.json'), encoding='utf-8'))['workspace']
+w = json.load(open(os.path.join(HERE, 'ws_now5.json'), encoding='utf-8'))['workspace']
 I, T, E, R = w['items'], w['tokens'], w['effects'], w['recipePools']
 entries = []
 def add(op, kind, id_, value, note, art=False):
@@ -12,7 +12,7 @@ def add(op, kind, id_, value, note, art=False):
     if value is not None: e['value'] = value
     if art: e['placeholderArt'] = True
     entries.append(e)
-def tier_for(lvl): return 1 if lvl <= 19 else (2 if lvl <= 49 else 3)
+def tier_for(lvl): return 0 if lvl <= 5 else (2 if lvl <= 20 else 3)  # the stages as the content stands: Starter Camp to 5, Plane 2 to about 20
 def recipe(sk, rid): return next(r for r in R[sk] if r['id'] == rid)
 OUT = lambda iid, q=1: {'itemId': iid, 'chance': 100, 'minQty': q, 'maxQty': q, 'baseQty': {'min': q, 'max': q}, 'variable': False}
 WATER = ['sea', 'fresh']
@@ -34,17 +34,21 @@ FISH = [
     ('item_shark', 'Shark', 83, 20, 5, 'harpoon', 'i_shark_raw', True),
     ('item_anglerfish', 'Anglerfish', 89, 18, 5, 'rod', 'i_trout_raw', True),
 ]
+FISH_XP = {'item_raw_shrimp': 2, 'item_trout': 6, 'item_anchovy': 15, 'item_oyster': 15, 'item_tropical_fish': 18, 'item_salmon': 25, 'item_tuna': 30,
+           'item_lobster': 35, 'item_stingray': 45, 'item_sturgeon': 55, 'item_swordfish': 70, 'item_shark': 110, 'item_anglerfish': 130}  # on the tree and vein ladder of the XP pass
 FISH_SRC = {'item_tropical_fish': 'token_coral_reef', 'item_oyster': 'token_oyster_bed', 'item_shark': 'token_shark_waters'}
 for iid, name, lvl, cyc, bait, tool, spr, new in FISH:
-    block = {'level': lvl, 'cycleMs': cyc * 1000, 'bait': bait}
+    block = {'level': lvl, 'cycleMs': cyc * 1000, 'bait': bait, 'xp': FISH_XP[iid]}
     src = FISH_SRC.get(iid, 'token_fishing_spot')
     if new:
         add('create', 'item', iid, {'name': name, 'description': '', 'type': 'material', 'sprite': spr, 'stackable': True, 'restoreAmount': 0,
             'equipSlot': '', 'value': 1, 'valueSource': src, 'autoSyncId': True, 'id': iid, 'tags': ['Fish', 'Seafood'], 'fish': block,
             'plan': {'status': 'live', 'tier': tier_for(lvl)}},
-            f'{name}: a {tool} fish at Fishing {lvl}, {cyc} s a catch, {bait} Bait. A neighbouring fish\'s picture stands in.', art=True)
+            f'{name}: a {tool} fish at Fishing {lvl}, {cyc} s a catch, {bait} Bait, {FISH_XP[iid]} XP. A neighbouring fish\'s picture stands in.', art=True)
     else:
         v = copy.deepcopy(I[iid]); v['fish'] = block; v['valueSource'] = src
+        v['plan'] = {**(v.get('plan') or {}), 'status': (v.get('plan') or {}).get('status', 'live'), 'tier': tier_for(lvl)}
+        v['plan'].pop('note', None)
         if v.get('plan', {}).get('status') == 'planned':
             v['plan'] = {'status': 'live', 'tier': tier_for(lvl)}
             v.setdefault('type', 'material'); v.setdefault('stackable', True); v.setdefault('sprite', 'i_shrimp_raw')
@@ -146,10 +150,10 @@ def spot_token(tid, name, sprite, spot, pools, desc, rarity='common', tags=('Wat
     return v
 
 spot = spot_token('token_fishing_spot', 'Fishing Spot', 't_fish_spot',
-    {'water': WATER, 'biomes': [], 'everyMinutes': 6, 'most': 3, 'leaveChance': 4, 'unworkedMinutes': 20}, pools_for(MAPS),
+    {'water': WATER, 'biomes': [], 'everyMinutes': 3, 'most': 3, 'leaveChance': 3, 'unworkedMinutes': 20}, pools_for(MAPS),
     'Fish gather here for a while, then move on.')
 add('create', 'token', 'token_fishing_spot', {**spot, 'plan': {'status': 'live', 'tier': 0}},
-    'Fishing Spot: drifts in on any water about every 6 minutes, at most 3 a map; 4% to move on each catch, 20 minutes unworked. '
+    'Fishing Spot: drifts in on any water about every 3 minutes, at most 3 a map; 3% to move on each catch, 20 minutes unworked. '
     'Each map holds three rod fish (one per lure), one Trap catch and on two maps harpoon fish (owner 2026-11-24). The Fish Shoal picture stands in.', art=True)
 
 v = copy.deepcopy(shoal)
@@ -170,7 +174,7 @@ RARE = [('token_coral_reef', 'Coral Reef', ['coast'], 45, [{'tool': 'fishing_rod
 for tid, name, biomes, every, pools, desc, note in RARE:
     t = spot_token(tid, name, 't_fish_spot', {'water': WATER, 'biomes': biomes, 'everyMinutes': every, 'most': 1, 'leaveChance': 8, 'unworkedMinutes': 20},
                    pools, desc, rarity='rare')
-    add('create', 'token', tid, {**t, 'plan': {'status': 'live', 'tier': 2 if tid != 'token_shark_waters' else 3}}, note + ' 8% to move on a catch. The Fish Shoal picture stands in.', art=True)
+    add('create', 'token', tid, {**t, 'plan': {'status': 'live', 'tier': 3}}, note + ' 8% to move on a catch. The Fish Shoal picture stands in.', art=True)
 add('create', 'token', 'token_shipwreck', {'name': 'Shipwreck', 'plan': {'status': 'planned', 'tier': 2,
     'note': 'A rare spot kind with the Shipwreck\'s goods as its fixed catch (owner 2026-11-24); waits for its goods (a Fishing rare table, T-553).'}, 'autoSyncId': True, 'id': 'token_shipwreck'},
     'Shipwreck: Planned, waits for its goods.')
@@ -199,15 +203,15 @@ shed.update({'name': 'Bait Shed', 'description': 'Works as a Fishing station: Ba
 shed['config'] = {**shed['config'], 'skill': 'fishing'}
 add('create', 'token', 'token_bait_shed', shed, 'Bait Shed: where Bait is made from fish. On today\'s Foundations until the Dock is approved. The Fishing Hut picture stands in.', art=True)
 chum = {k: copy.deepcopy(T['token_fishing_hut'][k]) for k in ('tokenType', 'rarity', 'tier', 'tags', 'acceptedTokens', 'size', 'uses', 'requiresHero', 'config')}
-chum.update({'tokenType': 'buff', 'requiresHero': False, 'config': None, 'name': 'Chum Station', 'description': 'Fishing spots turn up twice as often on the water nearby.', 'sprite': 't_market_fish',
-             'autoSyncId': True, 'id': 'token_chum_station', 'spotRate': {'percent': 100}, 'plan': {'status': 'live', 'tier': 1}})
-add('create', 'token', 'token_chum_station', chum, 'Chum Station: spots arrive twice as often on water in its reach (owner\'s Dock building, named here). On today\'s Foundations. The Fishing Hut picture stands in.', art=True)
+chum.update({'tokenType': 'buff', 'requiresHero': False, 'config': None, 'name': 'Chum Station', 'description': 'Fishing spots turn up a third more often on the water nearby.', 'sprite': 't_market_fish',
+             'autoSyncId': True, 'id': 'token_chum_station', 'spotRate': {'percent': 30}, 'plan': {'status': 'live', 'tier': 2}})
+add('create', 'token', 'token_chum_station', chum, 'Chum Station: spots arrive 30 % more often on water in its reach (the 30 % building target) (owner\'s Dock building, named here). On today\'s Foundations. The Fishing Hut picture stands in.', art=True)
 base = recipe('construction', 'recipe_build_fishing_hut')
 for rid, name, tid, lvl, ins in (('recipe_build_bait_shed', 'Build Bait Shed', 'token_bait_shed', 2, [('item_oak_wood', 10), ('item_stone', 5)]),
                                  ('recipe_build_chum_station', 'Build Chum Station', 'token_chum_station', 12, [('item_oak_wood', 15), ('item_stone', 10), ('item_bait', 20)])):
     b = copy.deepcopy(base)
     b.update({'id': rid, 'name': name, 'levelRequirement': lvl, 'inputs': [{'itemId': i, 'quantity': q} for i, q in ins],
-              'outputs': [{**base['outputs'][0], 'tokenId': tid}], 'plan': {'status': 'live', 'tier': 0 if lvl < 5 else 1}})
+              'outputs': [{**base['outputs'][0], 'tokenId': tid}], 'plan': {'status': 'live', 'tier': tier_for(lvl)}})
     add('create', 'recipe', rid, b, f'{name}: Construction {lvl}, ' + ', '.join(f'{q} {I[i]["name"] if i in I else "Bait"}' for i, q in ins) + '.')
 
 pack = {'format': 'fantasy-guild-change-pack', 'version': 1, 'id': '2026-11-24-fishing-spots',

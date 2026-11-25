@@ -3,7 +3,7 @@
   "version": 1,
   "id": "2026-11-24-fishing-spots",
   "createdAt": "2026-11-24T22:00:00Z",
-  "asked": "Fishing (brief 850, owner review 2026-11-24): fishing spots on the water, one Bait, three lures, harpoons, Bait recipes, the fixed waters retired. Sync together with the fishing code (the director merges it with this pack).",
+  "asked": "Fishing (brief 850, owner review 2026-11-24): fishing spots on the water, one Bait, three lures, harpoons, Bait recipes, catch XP per fish, the fixed waters retired. Accept after the XP pack and the Forests pack.",
   "entries": [
     {
       "op": "edit",
@@ -33,7 +33,8 @@
         "fish": {
           "level": 1,
           "cycleMs": 6000,
-          "bait": 0
+          "bait": 0,
+          "xp": 2
         }
       },
       "fingerprint": "fp:04ebd8e847b67eae"
@@ -61,12 +62,13 @@
         ],
         "plan": {
           "status": "live",
-          "tier": 2
+          "tier": 0
         },
         "fish": {
           "level": 5,
           "cycleMs": 8000,
-          "bait": 1
+          "bait": 1,
+          "xp": 6
         }
       },
       "fingerprint": "fp:3d3e1d97a8e5dde9"
@@ -75,7 +77,7 @@
       "op": "create",
       "kind": "item",
       "id": "item_anchovy",
-      "note": "Anchovy: a rod fish at Fishing 25, 10 s a catch, 1 Bait. A neighbouring fish's picture stands in.",
+      "note": "Anchovy: a rod fish at Fishing 25, 10 s a catch, 1 Bait, 15 XP. A neighbouring fish's picture stands in.",
       "value": {
         "name": "Anchovy",
         "description": "",
@@ -95,11 +97,12 @@
         "fish": {
           "level": 25,
           "cycleMs": 10000,
-          "bait": 1
+          "bait": 1,
+          "xp": 15
         },
         "plan": {
           "status": "live",
-          "tier": 2
+          "tier": 3
         }
       },
       "placeholderArt": true
@@ -127,13 +130,13 @@
         ],
         "plan": {
           "status": "live",
-          "tier": 0,
-          "note": "Tier inferred (ledger first fill, to confirm): the camp Coast catches it (rod, or trap with Worm Bait); the docs name only shrimp for the fishing spot."
+          "tier": 3
         },
         "fish": {
           "level": 30,
           "cycleMs": 11000,
-          "bait": 2
+          "bait": 2,
+          "xp": 18
         }
       },
       "fingerprint": "fp:dc34374b7d2d2e39"
@@ -148,14 +151,15 @@
         "type": "material",
         "plan": {
           "status": "live",
-          "tier": 2
+          "tier": 3
         },
         "autoSyncId": true,
         "id": "item_oyster",
         "fish": {
           "level": 25,
           "cycleMs": 12000,
-          "bait": 2
+          "bait": 2,
+          "xp": 15
         },
         "valueSource": "token_oyster_bed",
         "stackable": true,
@@ -193,13 +197,13 @@
         ],
         "plan": {
           "status": "live",
-          "tier": 0,
-          "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+          "tier": 3
         },
         "fish": {
           "level": 40,
           "cycleMs": 12000,
-          "bait": 2
+          "bait": 2,
+          "xp": 25
         }
       },
       "fingerprint": "fp:bb0834fd565a92f7"
@@ -208,7 +212,7 @@
       "op": "create",
       "kind": "item",
       "id": "item_tuna",
-      "note": "Tuna: a rod fish at Fishing 45, 13 s a catch, 2 Bait. A neighbouring fish's picture stands in.",
+      "note": "Tuna: a rod fish at Fishing 45, 13 s a catch, 2 Bait, 30 XP. A neighbouring fish's picture stands in.",
       "value": {
         "name": "Tuna",
         "description": "",
@@ -228,11 +232,12 @@
         "fish": {
           "level": 45,
           "cycleMs": 13000,
-          "bait": 2
+          "bait": 2,
+          "xp": 30
         },
         "plan": {
           "status": "live",
-          "tier": 2
+          "tier": 3
         }
       },
       "placeholderArt": true
@@ -241,7 +246,7 @@
       "op": "create",
       "kind": "item",
       "id": "item_stingray",
-      "note": "Stingray: a harpoon fish at Fishing 54, 14 s a catch, 3 Bait. A neighbouring fish's picture stands in.",
+      "note": "Stingray: a harpoon fish at Fishing 54, 14 s a catch, 3 Bait, 45 XP. A neighbouring fish's picture stands in.",
       "value": {
         "name": "Stingray",
         "description": "",
@@ -261,7 +266,8 @@
         "fish": {
           "level": 54,
           "cycleMs": 14000,
-          "bait": 3
+          "bait": 3,
+          "xp": 45
         },
         "plan": {
           "status": "live",
@@ -292,13 +298,13 @@
         ],
         "plan": {
           "status": "live",
-          "tier": 1,
-          "note": "Plane 1 (director 2026-11-02, with Cooked Lobster): its first catch is a chain (Worm, Worm Bait, then the trap) that held the Starter Camp at 44 min; the camp Coast still catches it."
+          "tier": 3
         },
         "fish": {
           "level": 50,
           "cycleMs": 12000,
-          "bait": 2
+          "bait": 2,
+          "xp": 35
         }
       },
       "fingerprint": "fp:e6ff3cc9c632c9d7"
@@ -307,7 +313,7 @@
       "op": "create",
       "kind": "item",
       "id": "item_sturgeon",
-      "note": "Sturgeon: a rod fish at Fishing 60, 15 s a catch, 3 Bait. A neighbouring fish's picture stands in.",
+      "note": "Sturgeon: a rod fish at Fishing 60, 15 s a catch, 3 Bait, 55 XP. A neighbouring fish's picture stands in.",
       "value": {
         "name": "Sturgeon",
         "description": "",
@@ -327,7 +333,8 @@
         "fish": {
           "level": 60,
           "cycleMs": 15000,
-          "bait": 3
+          "bait": 3,
+          "xp": 55
         },
         "plan": {
           "status": "live",
@@ -359,13 +366,13 @@
         ],
         "plan": {
           "status": "live",
-          "tier": 0,
-          "note": "Tier inferred (ledger first fill, to confirm): the camp Coast catches it (rod, or trap with Worm Bait); the docs name only shrimp for the fishing spot."
+          "tier": 3
         },
         "fish": {
           "level": 63,
           "cycleMs": 16000,
-          "bait": 4
+          "bait": 4,
+          "xp": 70
         }
       },
       "fingerprint": "fp:b82fef79038a16fb"
@@ -374,7 +381,7 @@
       "op": "create",
       "kind": "item",
       "id": "item_shark",
-      "note": "Shark: a harpoon fish at Fishing 83, 20 s a catch, 5 Bait. A neighbouring fish's picture stands in.",
+      "note": "Shark: a harpoon fish at Fishing 83, 20 s a catch, 5 Bait, 110 XP. A neighbouring fish's picture stands in.",
       "value": {
         "name": "Shark",
         "description": "",
@@ -394,7 +401,8 @@
         "fish": {
           "level": 83,
           "cycleMs": 20000,
-          "bait": 5
+          "bait": 5,
+          "xp": 110
         },
         "plan": {
           "status": "live",
@@ -407,7 +415,7 @@
       "op": "create",
       "kind": "item",
       "id": "item_anglerfish",
-      "note": "Anglerfish: a rod fish at Fishing 89, 18 s a catch, 5 Bait. A neighbouring fish's picture stands in.",
+      "note": "Anglerfish: a rod fish at Fishing 89, 18 s a catch, 5 Bait, 130 XP. A neighbouring fish's picture stands in.",
       "value": {
         "name": "Anglerfish",
         "description": "",
@@ -427,7 +435,8 @@
         "fish": {
           "level": 89,
           "cycleMs": 18000,
-          "bait": 5
+          "bait": 5,
+          "xp": 130
         },
         "plan": {
           "status": "live",
@@ -622,7 +631,7 @@
         },
         "plan": {
           "status": "live",
-          "tier": 1
+          "tier": 0
         }
       }
     },
@@ -665,7 +674,7 @@
         },
         "plan": {
           "status": "live",
-          "tier": 1
+          "tier": 0
         }
       }
     },
@@ -708,7 +717,7 @@
         },
         "plan": {
           "status": "live",
-          "tier": 1
+          "tier": 0
         }
       }
     },
@@ -751,7 +760,7 @@
         },
         "plan": {
           "status": "live",
-          "tier": 2
+          "tier": 3
         }
       }
     },
@@ -794,7 +803,7 @@
         },
         "plan": {
           "status": "live",
-          "tier": 2
+          "tier": 3
         }
       }
     },
@@ -837,7 +846,7 @@
         },
         "plan": {
           "status": "live",
-          "tier": 2
+          "tier": 3
         }
       }
     },
@@ -880,7 +889,7 @@
         },
         "plan": {
           "status": "live",
-          "tier": 2
+          "tier": 3
         }
       }
     },
@@ -923,7 +932,7 @@
         },
         "plan": {
           "status": "live",
-          "tier": 2
+          "tier": 3
         }
       }
     },
@@ -1214,7 +1223,7 @@
         },
         "plan": {
           "status": "live",
-          "tier": 1
+          "tier": 2
         }
       },
       "placeholderArt": true
@@ -1262,7 +1271,7 @@
         },
         "plan": {
           "status": "live",
-          "tier": 1
+          "tier": 2
         }
       }
     },
@@ -1295,7 +1304,7 @@
         },
         "plan": {
           "status": "live",
-          "tier": 2
+          "tier": 3
         }
       },
       "placeholderArt": true
@@ -1343,7 +1352,7 @@
         },
         "plan": {
           "status": "live",
-          "tier": 2
+          "tier": 3
         }
       }
     },
@@ -1376,7 +1385,7 @@
         },
         "plan": {
           "status": "live",
-          "tier": 2
+          "tier": 3
         }
       },
       "placeholderArt": true
@@ -1424,7 +1433,7 @@
         },
         "plan": {
           "status": "live",
-          "tier": 2
+          "tier": 3
         }
       }
     },
@@ -1784,7 +1793,7 @@
       "op": "create",
       "kind": "token",
       "id": "token_fishing_spot",
-      "note": "Fishing Spot: drifts in on any water about every 6 minutes, at most 3 a map; 4% to move on each catch, 20 minutes unworked. Each map holds three rod fish (one per lure), one Trap catch and on two maps harpoon fish (owner 2026-11-24). The Fish Shoal picture stands in.",
+      "note": "Fishing Spot: drifts in on any water about every 3 minutes, at most 3 a map; 3% to move on each catch, 20 minutes unworked. Each map holds three rod fish (one per lure), one Trap catch and on two maps harpoon fish (owner 2026-11-24). The Fish Shoal picture stands in.",
       "value": {
         "tokenType": "resource",
         "size": 1,
@@ -1825,9 +1834,9 @@
             "fresh"
           ],
           "biomes": [],
-          "everyMinutes": 6,
+          "everyMinutes": 3,
           "most": 3,
-          "leaveChance": 4,
+          "leaveChance": 3,
           "unworkedMinutes": 20
         },
         "catchPools": [
@@ -2429,7 +2438,7 @@
         ],
         "plan": {
           "status": "live",
-          "tier": 2
+          "tier": 3
         }
       },
       "placeholderArt": true
@@ -2501,7 +2510,7 @@
         ],
         "plan": {
           "status": "live",
-          "tier": 2
+          "tier": 3
         }
       },
       "placeholderArt": true
@@ -2626,7 +2635,7 @@
       "kind": "token",
       "id": "token_shrimp_coast",
       "note": "Shrimp Coast: water is ground now; fishing spots come and go on it (owner 2026-11-24).",
-      "fingerprint": "fp:9f218c0641f4340c"
+      "fingerprint": "fp:5a66c92a745a0104"
     },
     {
       "op": "edit",
@@ -3066,7 +3075,6 @@
             "id": "highland",
             "name": "Highland",
             "biome": "mountain",
-            "stone": 5,
             "work": {
               "mining": 2,
               "forestry": 1,
@@ -3087,7 +3095,6 @@
             "id": "woodland",
             "name": "Woodland",
             "biome": "forest",
-            "stone": 2,
             "work": {
               "forestry": 2,
               "mining": 1,
@@ -3106,7 +3113,6 @@
             "id": "plains",
             "name": "Plains",
             "biome": "meadow",
-            "stone": 1,
             "work": {
               "farming": 2,
               "forestry": 1,
@@ -3126,7 +3132,6 @@
             "id": "wetland",
             "name": "Wetland",
             "biome": "bog",
-            "stone": 1,
             "work": {
               "alchemy": 1,
               "fishing": 1,
@@ -3145,7 +3150,6 @@
             "id": "riverside",
             "name": "Riverside",
             "biome": "coast",
-            "stone": 2,
             "work": {
               "fishing": 2,
               "farming": 1,
@@ -3505,6 +3509,132 @@
               "weight": 1
             }
           ]
+        },
+        "biomes": {
+          "meadow": {
+            "water": [
+              "lake_river",
+              "lake_river",
+              "lake",
+              "river",
+              "split",
+              "spring"
+            ],
+            "sea": [
+              0,
+              0
+            ],
+            "stone": [
+              1,
+              1
+            ]
+          },
+          "flower_meadow": {
+            "water": [
+              "lake_river",
+              "lake_river",
+              "lake",
+              "river",
+              "split",
+              "spring"
+            ],
+            "sea": [
+              0,
+              0
+            ],
+            "stone": [
+              0,
+              0
+            ]
+          },
+          "forest": {
+            "water": [
+              "pond"
+            ],
+            "sea": [
+              0,
+              0
+            ],
+            "stone": [
+              2,
+              2
+            ]
+          },
+          "cherry_grove": {
+            "water": [
+              "pond"
+            ],
+            "sea": [
+              0,
+              0
+            ],
+            "stone": [
+              0,
+              0
+            ]
+          },
+          "mountain": {
+            "water": [
+              "tarn",
+              "mountain_river"
+            ],
+            "sea": [
+              0,
+              0
+            ],
+            "stone": [
+              5,
+              5
+            ]
+          },
+          "yellowstone": {
+            "water": [
+              "sulphur"
+            ],
+            "sea": [
+              0,
+              0
+            ],
+            "stone": [
+              0,
+              0
+            ]
+          },
+          "volcano": {
+            "water": [],
+            "sea": [
+              0,
+              0
+            ],
+            "stone": [
+              0,
+              0
+            ]
+          },
+          "coast": {
+            "water": [],
+            "sea": [
+              0.3,
+              0.3
+            ],
+            "stone": [
+              2,
+              2
+            ]
+          },
+          "bog": {
+            "water": [
+              "marsh"
+            ],
+            "sea": [
+              0,
+              0
+            ],
+            "stone": [
+              1,
+              1
+            ]
+          }
         }
       },
       "fingerprint": "fp:c4c149f5d815441b"
@@ -3607,7 +3737,7 @@
       "op": "create",
       "kind": "token",
       "id": "token_chum_station",
-      "note": "Chum Station: spots arrive twice as often on water in its reach (owner's Dock building, named here). On today's Foundations. The Fishing Hut picture stands in.",
+      "note": "Chum Station: spots arrive 30 % more often on water in its reach (the 30 % building target) (owner's Dock building, named here). On today's Foundations. The Fishing Hut picture stands in.",
       "value": {
         "tokenType": "buff",
         "rarity": "common",
@@ -3619,16 +3749,16 @@
         "requiresHero": false,
         "config": null,
         "name": "Chum Station",
-        "description": "Fishing spots turn up twice as often on the water nearby.",
+        "description": "Fishing spots turn up a third more often on the water nearby.",
         "sprite": "t_market_fish",
         "autoSyncId": true,
         "id": "token_chum_station",
         "spotRate": {
-          "percent": 100
+          "percent": 30
         },
         "plan": {
           "status": "live",
-          "tier": 1
+          "tier": 2
         }
       },
       "placeholderArt": true
@@ -3731,7 +3861,7 @@
         },
         "plan": {
           "status": "live",
-          "tier": 1
+          "tier": 2
         }
       }
     }

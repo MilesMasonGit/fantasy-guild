@@ -3,7 +3,7 @@
   "version": 1,
   "id": "2026-11-24-forests-own-trees",
   "createdAt": "2026-11-24T23:30:00Z",
-  "asked": "Forests and Orchards own their trees (brief 860 R2, T-691): free planting and regrowth of their own, a count per species, the Growth boosts gone. Sync together with the R2 code (the director merges it with this pack).",
+  "asked": "Forests and Orchards own their trees (brief 860 R2, T-691): free planting and regrowth of their own, a count per species, the Growth boosts gone. Accept after the XP pack (2026-11-25-xp-broad-strokes): together they leave the Starter Camp at 1 h 4 min and Plane 1 at 43 min, both faster than today.",
   "entries": [
     {
       "op": "edit",
@@ -46,7 +46,7 @@
           "tier": 0
         }
       },
-      "fingerprint": "fp:94e178c246c332a8"
+      "fingerprint": "fp:c68504ffff811081"
     },
     {
       "op": "edit",
@@ -128,7 +128,7 @@
           "tier": 2
         }
       },
-      "fingerprint": "fp:6b7e41897a6ca6b3"
+      "fingerprint": "fp:b3bdcb34f93c0082"
     },
     {
       "op": "edit",
@@ -210,7 +210,7 @@
           "tier": 3
         }
       },
-      "fingerprint": "fp:000acaf24838b054"
+      "fingerprint": "fp:f38718e53d506dfb"
     },
     {
       "op": "edit",
@@ -292,7 +292,7 @@
           "tier": 3
         }
       },
-      "fingerprint": "fp:900225be107db554"
+      "fingerprint": "fp:08794c93a3bc3535"
     },
     {
       "op": "edit",
@@ -374,7 +374,7 @@
           "tier": 3
         }
       },
-      "fingerprint": "fp:76090fea00895098"
+      "fingerprint": "fp:bc5373c3307f57fd"
     },
     {
       "op": "edit",
@@ -456,7 +456,7 @@
           "tier": 3
         }
       },
-      "fingerprint": "fp:38acf8f8fa6d6fca"
+      "fingerprint": "fp:fe505c07f9c60f15"
     },
     {
       "op": "edit",
@@ -538,7 +538,7 @@
           "tier": 3
         }
       },
-      "fingerprint": "fp:2b3abdd12d0bc1a3"
+      "fingerprint": "fp:c7e301081585a8e6"
     },
     {
       "op": "edit",
@@ -619,7 +619,7 @@
           "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
         }
       },
-      "fingerprint": "fp:03f30d0477a038ae"
+      "fingerprint": "fp:0d3528c99ce1d21f"
     },
     {
       "op": "delete",
@@ -677,5 +677,19 @@
       "note": "Apple Orchard Growth: Forests and Orchards no longer speed regrowth (brief 860 R2).",
       "fingerprint": "fp:beeb4b8870fa9ac2"
     }
-  ]
+  ],
+  "intent": {
+    "stages": [
+      {
+        "tier": 0,
+        "move": "slower",
+        "note": "The Starter Camp waits on Oak: Forests no longer speed regrowth by 25 % (owner 2026-11-24, brief 860 R2): an Oak regrows in its full 5 minutes."
+      },
+      {
+        "tier": 1,
+        "move": "slower",
+        "note": "Plane 1 waits on Oak: Forests no longer speed regrowth by 25 % (owner 2026-11-24, brief 860 R2): an Oak regrows in its full 5 minutes."
+      }
+    ]
+  }
 }

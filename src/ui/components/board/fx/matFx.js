@@ -494,7 +494,7 @@ export function usedBubble(heroId, itemId, text) {
 
 /**
  * The layer's listeners: a rule's number and its neighbour's spark when a rule fires (a fight's
- * numbers are `fightFloats.js`'), a Giant Harvest's celebration, a hero's green flash when food heals them in
+ * numbers are `fightFloats.js`'), a Giant Harvest's celebration, an Echo's "Echo!", a hero's green flash when food heals them in
  * a fight, the "used" bubble when a hero eats, drinks or drinks an elixir, the knockout when a
  * fight is won.
  * ⚠️ None while drawing is paused (a hidden window): it draws no frames, so each would stay on the
@@ -511,6 +511,11 @@ export function watchMatFx() {
             }
             const from = p.fromTokenId && p.fromTokenId !== p.instanceId ? p.fromTokenId : null;
             if (from) spark(from, p.instanceId);
+            // An Echo: the shrine's spark, then "Echo!" off the Token whose cycle came again.
+            if (p.echo) {
+                floatNumber(p.instanceId, i18n('effectBadges.float.echo'), 'gain', { delay: from ? SPARK_MS : 0 });
+                return;
+            }
             const n = Number(p.amount);
             if (n > 0) floatNumber(p.instanceId, `+${n}`, 'gain', { delay: from ? SPARK_MS : 0 });
         }, UI_LISTENER),

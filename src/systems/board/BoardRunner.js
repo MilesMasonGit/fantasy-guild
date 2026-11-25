@@ -39,6 +39,8 @@ import * as InputCost from './InputCost.js';
 import * as Fishing from './Fishing.js';
 import * as FishingSpots from './FishingSpots.js';
 import * as Fields from './Fields.js';
+import * as Shrines from './Shrines.js';
+import * as SupportLinks from './supportLinks.js';
 import * as LoadoutMoments from './LoadoutMoments.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import * as HeroManager from '../hero/HeroManager.js';
@@ -236,6 +238,125 @@ function relocateOffender(instance) {
 }
 
 /**
+ * A finished cycle's Double Loot and Giant Harvest, rolled: `{ doubled, giant }`. A failed cycle
+ * rolls neither.
+ * YIELD and LOOT_MULT are the output rules a kill's loot follows too (`OutputRules`).
+ * GIANT_HARVEST: a Farming cycle's drops all come in at ten times, Double Loot's on top. ⚠️ Rolled
+ * after Double Loot and only for Farming work a rule reaches, so without one nothing is drawn; and
+ * before a water's catch, which draws too.
+ */
+function rollMultipliers(instanceId, config, failed) {
+    return {
+        doubled: failed ? false : OutputRules.rollDoubleLoot(instanceId, config.skill),
+        giant: failed ? false : OutputRules.rollGiantHarvest(instanceId, config.skill)
+    };
+}
+
+/**
+ * What a finished cycle makes, once it is paid: its outputs (`made.outputs`, already the catch on a
+ * water) rolled and landed with its Double Loot and Giant Harvest (`rolls`), the rare table's find,
+ * the bonus drops, and a shrine's offering lighting it. A failed cycle makes nothing here. Run once
+ * per cycle, and once more for an Echo. Fills `made.produced`.
+ * Item output lands on the BOARD, not in the Bank: it is not banked until collected, and if the
+ * Bank is full it simply waits there. A Token output stands on the mat beside the station.
+ */
+function landOutputs(made, { doubled, giant }) {
+    const { instance, def, io, config, outputs, produced, failed, building } = made;
+    const id = instance.id;
+    const times = (doubled ? 2 : 1) * (giant ? OutputRules.GIANT_HARVEST_TIMES : 1);
+    let giantLanded = false;
+
+    // One item line, once its chance has landed: the authored range rolled, then the cycle's rules.
+    // Every drop lands this way, the rare table's too. `note` hears the sprite (for the twinkle).
+    const landLine = (output, note) => {
+        // Roll the authored range FIRST, then widen it, so a 1-5 output buffs a lucky cycle more
+        // than an unlucky one.
+        const rolled = OutputRules.widenYield(id, config.skill, rollOutputQuantity(output));
+        const widened = rolled * times;
+        // A chance that this one item comes out doubled, after everything else.
+        const quantity = !output.itemId ? widened : OutputRules.doubleItemDrop(id, output.itemId, widened);
+        if (quantity <= 0) return;
+
+        // An output names a Token or an item. One that names neither pays nothing: the cycle still
+        // runs and still takes its inputs.
+        if (output.itemId) {
+            note(SpriteLayer.addSprite('item', output.itemId, quantity, id));
+            produced.push(output.itemId);
+            giantLanded = giant;
+        }
+    };
+
+    // A build makes its Token by becoming it (below), never as a sprite. A summon is charged once,
+    // by `chargeSummons`, never landed.
+    for (const output of outputs) {
+        if (Summons.isSummonOutput(output)) continue;
+        const chance = output.chance ?? 100;
+        if (chance < 100 && Math.random() * 100 > chance) continue;
+
+        if (output.tokenId) {
+            placeTokenOutput(instance, output);
+            continue;
+        }
+        landLine(output, (sprite) => RareDrops.noteDrop(sprite, chance));
+    }
+
+    // The Token's rare drop table, after its own lines: one roll at its chance widened by Lucky,
+    // and on a hit one find by weight, landed as any line is (Double Loot doubles it, Double Item
+    // works on it) and always marked a rare find for the mat's twinkle (`RareDrops.noteRareFind`;
+    // the twinkle itself is switched off in `lootEffects.js`). A failed cycle rolls nothing, a build drops nothing, and
+    // a Token with no table draws nothing.
+    if (!failed && !building) {
+        const find = RareTables.rollRareTable(id, def, config.skill);
+        if (find) landLine(find.entry, (sprite) => RareDrops.noteRareFind(sprite, find.chance));
+    }
+    // BONUS_DROP, skipped entirely on a failed cycle: nothing happened, so nothing drops. Double Loot
+    // and Giant Harvest multiply it as they do the Token's own drops.
+    if (!failed) {
+        const bonus = OutputRules.dropBonusGrants(id, times);
+        if (bonus.length) giantLanded = giant;
+        for (const drop of bonus) produced.push(drop.itemId);
+    }
+    // Celebrated only once something did come in at ten times (a line whose chance missed did not).
+    if (giantLanded) EffectFeedback.giantHarvest(id);
+
+    // A shrine's offering: the cycle that spent it keeps the shrine lit longer. Lit from out, its
+    // blessing starts reaching its neighbours now.
+    if (!failed && !building && Shrines.light(instance, def, io.recipe)) {
+        TileModifiers.rebuildAround([centreOf(instance)]);
+    }
+}
+
+/**
+ * A finished cycle's summon outputs (a Summoning Circle's call, `Summons.isSummonOutput`), each
+ * charging the Circle's Summoned worker for `heroId`'s level once its chance has landed. Once a
+ * cycle: an Echo lands the outputs again but never charges again. A failed cycle or a build has no
+ * outputs here.
+ */
+function chargeSummons({ instance, config, outputs }, heroId) {
+    for (const output of outputs) {
+        if (!Summons.isSummonOutput(output)) continue;
+        const chance = output.chance ?? 100;
+        if (chance < 100 && Math.random() * 100 > chance) continue;
+        Summons.chargeFromCircle(instance, output.tokenId, heroId, config.skill);
+    }
+}
+
+/**
+ * A finished cycle's XP to its hero: the active recipe's when it defines its own (a Feast should
+ * teach more than Bread even though both run on a Kitchen), a catch its fish's own when it names one,
+ * widened by XP_BONUS the way YIELD widens output. A failed cycle teaches nothing.
+ */
+function giveCycleXp({ instance, io, config, caught, failed }, heroId) {
+    const baseXp = caught?.xp ?? io.xp ?? config.xp;
+    const xpAwarded = failed ? 0 : SkillSystem.applyXpBonus(baseXp || 0, TileModifiers.resolveAxis(
+        instance.id, EFFECT_TYPES.XP_BONUS, baseXp || 0, config.skill
+    ));
+    if (xpAwarded > 0 && heroId && config.skill) {
+        SkillSystem.addXP(heroId, config.skill, xpAwarded);
+    }
+}
+
+/**
  * One Token finished a cycle.
  *
  * Order matters: pay first, then produce. Deciding the whole exchange before any of it happens is
@@ -323,15 +444,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     const preserved = keepChance > 0 && !failed && CycleSavings.rollChance(keepChance);
     if (keepChance > 0 && !preserved) pay();
 
-    // Item output lands on the BOARD, not in the Bank: it is not banked until collected, and if the
-    // Bank is full it simply waits there. A Token output stands on the mat beside the station.
-    // YIELD and LOOT_MULT are the output rules a kill's loot follows too (`OutputRules`).
-    const doubled = failed ? false : OutputRules.rollDoubleLoot(id, config.skill);
-    // GIANT_HARVEST: a Farming cycle's drops all come in at ten times, Double Loot's on top. ⚠️ Rolled
-    // after Double Loot and only for Farming work a rule reaches, so without one nothing is drawn.
-    const giant = failed ? false : OutputRules.rollGiantHarvest(id, config.skill);
-    const times = (doubled ? 2 : 1) * (giant ? OutputRules.GIANT_HARVEST_TIMES : 1);
-    let giantLanded = false;
+    const rolls = rollMultipliers(id, config, failed);
 
     // What this cycle actually made, for the `a neighbour produces X` trigger.
     // ⚠️ Only what genuinely landed: an output whose chance roll missed, or
@@ -351,58 +464,11 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         outputs = caught ? [{ itemId: caught.itemId, chance: 100, minQty: 1, maxQty: 1 }] : [];
     }
 
-    // One item line, once its chance has landed: the authored range rolled, then the cycle's rules.
-    // Every drop lands this way, the rare table's too. `note` hears the sprite (for the twinkle).
-    const landLine = (output, note) => {
-        // Roll the authored range FIRST, then widen it, so a 1-5 output buffs a lucky cycle more
-        // than an unlucky one.
-        const rolled = OutputRules.widenYield(id, config.skill, rollOutputQuantity(output));
-        const widened = rolled * times;
-        // A chance that this one item comes out doubled, after everything else.
-        const quantity = !output.itemId ? widened : OutputRules.doubleItemDrop(id, output.itemId, widened);
-        if (quantity <= 0) return;
-
-        // An output names a Token or an item. One that names neither pays nothing: the cycle still
-        // runs and still takes its inputs.
-        if (output.itemId) {
-            note(SpriteLayer.addSprite('item', output.itemId, quantity, id));
-            produced.push(output.itemId);
-            giantLanded = giant;
-        }
-    };
-
-    // A build makes its Token by becoming it (below), never as a sprite.
-    for (const output of outputs) {
-        const chance = output.chance ?? 100;
-        if (chance < 100 && Math.random() * 100 > chance) continue;
-
-        if (output.tokenId) {
-            // A summon is a Summoned worker for this Circle to charge, never a Token beside it.
-            if (Summons.isSummonOutput(output)) Summons.chargeFromCircle(instance, output.tokenId, heroId, config.skill);
-            else placeTokenOutput(instance, output);
-            continue;
-        }
-        landLine(output, (sprite) => RareDrops.noteDrop(sprite, chance));
-    }
-
-    // The Token's rare drop table, after its own lines: one roll at its chance widened by Lucky,
-    // and on a hit one find by weight, landed as any line is (Double Loot doubles it, Double Item
-    // works on it) and always marked a rare find for the mat's twinkle (`RareDrops.noteRareFind`;
-    // the twinkle itself is switched off in `lootEffects.js`). A failed cycle rolls nothing, a build drops nothing, and
-    // a Token with no table draws nothing.
-    if (!failed && !buildTypeId) {
-        const find = RareTables.rollRareTable(id, def, config.skill);
-        if (find) landLine(find.entry, (sprite) => RareDrops.noteRareFind(sprite, find.chance));
-    }
-    // BONUS_DROP, skipped entirely on a failed cycle: nothing happened, so nothing drops. Double Loot
-    // and Giant Harvest multiply it as they do the Token's own drops.
-    if (!failed) {
-        const bonus = OutputRules.dropBonusGrants(id, times);
-        if (bonus.length) giantLanded = giant;
-        for (const drop of bonus) produced.push(drop.itemId);
-    }
-    // Celebrated only once something did come in at ten times (a line whose chance missed did not).
-    if (giantLanded) EffectFeedback.giantHarvest(id);
+    const made = { instance, def, io, config, outputs, caught, produced, failed, building: !!buildTypeId };
+    landOutputs(made, rolls);
+    // A summon is a Summoned worker for this Circle to charge, never a Token beside it: charged here,
+    // once a cycle, so an Echo (which lands the outputs again) does not charge it twice.
+    chargeSummons(made, heroId);
 
     // `Applies`: a neighbour putting a status on the hero who just worked here. The same moment and
     // the same rules as BONUS_DROP directly above: skipped on a failed cycle, and it needs a
@@ -425,15 +491,17 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         }
     }
 
-    // XP likewise comes from the active recipe when it defines its own: a Feast should teach more
-    // than Bread even though both run on a Kitchen; a catch teaches its fish's own when it names one.
-    // XP_BONUS then widens it the same way YIELD widens output.
-    const baseXp = caught?.xp ?? io.xp ?? config.xp;
-    const xpAwarded = failed ? 0 : SkillSystem.applyXpBonus(baseXp || 0, TileModifiers.resolveAxis(
-        id, EFFECT_TYPES.XP_BONUS, baseXp || 0, config.skill
-    ));
-    if (xpAwarded > 0 && heroId && config.skill) {
-        SkillSystem.addXP(heroId, config.skill, xpAwarded);
+    giveCycleXp(made, heroId);
+
+    // ECHO, a shrine's blessing: the cycle that just ended repeats at once, for free. Its outputs land
+    // again (rolled afresh; a water's catch is the same fish, with no Bait spent and no lure's break
+    // rolled) and its XP comes again (a fish's own); it pays nothing, spends no charge, load or tool,
+    // so it draws no chance to end, and the rules hear one cycle. Never a failed cycle or a build,
+    // and never an echo of an echo. ⚠️ No rule reaching it, nothing is drawn.
+    if (!failed && !buildTypeId && CycleSavings.rollEcho(id, config.skill)) {
+        landOutputs(made, rollMultipliers(id, config, false));
+        giveCycleXp(made, heroId);
+        EffectFeedback.echo(id, () => SupportLinks.firstSupportOf(id, EFFECT_TYPES.ECHO, config.skill));
     }
 
     // Pay the plan built at the top of this function: the Token's own operational cost. Anything
@@ -442,12 +510,17 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // ⚠️ Nothing near the Token pays for this cycle: help is free (owner, 2026-10-24). A support or
     // a context Token never wears out, and a gathering node that helps its neighbours spends its
     // charges only on its own gathering (`Charges.planContextCharges`, `wearRule.js`).
+    // Can't Run Out, a shrine's blessing: nothing is spent, failed or not, and Refresh is not drawn.
+    // ⚠️ Not spending is also what keeps a source that ends by chance from drawing its end: that roll
+    // lives where a charge is spent (`Charges.applyDelta`) and where a ripe Field is harvested
+    // (`Fields.harvested`, which a refreshed cycle leaves before it rolls).
     // Refresh: a cycle that succeeded and would spend something may spend nothing. A failed cycle
     // still burns its charge and never rolls, and neither does one with nothing to spend.
     const isField = Fields.isField(def);
     const spends = chargePlan.debits.length > 0 || (isField && Fields.stageOf(instance, def) === Fields.STAGE.RIPE);
-    const refreshed = !failed && spends
-        && CycleSavings.rollRefresh(id, config.skill);
+    const unending = spends && CycleSavings.neverRunsOut(id, config.skill);
+    const refreshed = unending || (!failed && spends
+        && CycleSavings.rollRefresh(id, config.skill));
     if (!refreshed) Charges.commitPlan(chargePlan, { heroId });
     // Used up just now: its rest began when this cycle ended, `overMs` before the tick's end.
     Respawn.restBeganEarlier(instance, overMs);
@@ -624,6 +697,11 @@ export function tick(delta) {
         // it. When a block switches between paid and unpaid the neighbourhood must be rebuilt: an
         // aura going dark has to actually stop applying, not just be flagged.
         if (BlockUpkeep.tickUpkeep(instance, def, delta)) {
+            TileModifiers.rebuildAround([centreOf(instance)]);
+        }
+        // A shrine burns down on the same footing: tended or not, in the hand too. Going out turns
+        // its whole blessing off.
+        if (Shrines.burn(instance, def, delta)) {
             TileModifiers.rebuildAround([centreOf(instance)]);
         }
 

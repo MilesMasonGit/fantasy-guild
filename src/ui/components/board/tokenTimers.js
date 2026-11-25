@@ -10,6 +10,7 @@ import * as TimedChanges from '../../../systems/board/TimedChanges.js';
 import * as Fields from '../../../systems/board/Fields.js';
 import * as Demolition from '../../../systems/board/Demolition.js';
 import * as EventTokens from '../../../systems/board/EventTokens.js';
+import * as Shrines from '../../../systems/board/Shrines.js';
 import { t } from '../../../i18n/index.js';
 import { countdownText, lengthText } from '../../../utils/Formatters.js';
 
@@ -30,7 +31,8 @@ export const TIMER_KIND = Object.freeze({
     RIPEN: 'ripen',
     FIELD: 'field',
     RESPAWN: 'respawn',
-    PRODUCE: 'produce'
+    PRODUCE: 'produce',
+    LIT: 'lit'
 });
 
 /** A time inside a sentence: non-breaking, so a tooltip never wraps between its parts. */
@@ -55,7 +57,8 @@ export function liveTimerSources() {
         nextGrowth: TimedChanges.nextGrowth,
         field: Fields.fieldState,
         respawn: Respawn.respawnState,
-        passive: (instance) => ({ lines: PassiveProduction.linesOf(instance), nextInMs: PassiveProduction.nextInMs(instance), lapMs: PassiveProduction.lapMs() })
+        passive: (instance) => ({ lines: PassiveProduction.linesOf(instance), nextInMs: PassiveProduction.nextInMs(instance), lapMs: PassiveProduction.lapMs() }),
+        shrine: Shrines.shrineState
     };
 }
 
@@ -195,6 +198,21 @@ export function produceLine(passive, src) {
 }
 
 /**
+ * A shrine's lit time: how long its blessing holds, or that it is out. `full`: lit too full for
+ * another offering, so its hero waits.
+ */
+export function litLine(state) {
+    const base = { kind: TIMER_KIND.LIT, icon: 'clock' };
+    if (!state.lit) {
+        return { ...base, label: 'Out', text: '–', tip: 'Out: its blessing holds only while it is lit. A Faith hero working it lights it with an offering', tone: 'warning' };
+    }
+    const tail = state.full
+        ? `full: its hero offers again once it has burned down (lit at most ${lengthIn(state.maxLitMs)})`
+        : `each offering a Faith hero makes keeps it lit longer, at most ${lengthIn(state.maxLitMs)}`;
+    return { ...base, label: 'Lit', text: countdownText(state.litMs), tip: `Lit: its blessing holds ${timeIn(state.litMs)} more; ${tail}` };
+}
+
+/**
  * Every running timer and stuck reason a Token has, in the card's order. A marked Token is demolition and nothing else (its own clocks stand still).
  * @returns {object[]} lines as above; descriptive ones (`live: false`) are left out
  */
@@ -217,5 +235,7 @@ export function timerLines(instance, src = liveTimerSources()) {
     if (rest && rest.live !== false) out.push(rest);
     const produce = produceLine(src.passive?.(instance), src);
     if (produce) out.push(produce);
+    const shrine = src.shrine?.(instance);
+    if (shrine) out.push(litLine(shrine));
     return out;
 }

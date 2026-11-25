@@ -1,4 +1,4 @@
-import { statementsOf, stationSkillOf, renderStatement, derivedTokenType, toolNamer, neededToolOf, toolNeedPhrase, campOf, isWarCampBlock, STANDARD_REACH_U, SKILLS } from '../utils/constants';
+import { statementsOf, stationSkillOf, renderStatement, derivedTokenType, toolNamer, neededToolOf, toolNeedPhrase, campOf, isWarCampBlock, STANDARD_REACH_U, SKILLS, shrineOf } from '../utils/constants';
 
 /** Description Dictionary Engine: composes mechanical descriptions for Tokens from their production, recipes, effects, triggers and lifecycle. */
 
@@ -148,6 +148,12 @@ export function getCampClause(token) {
   return `A camp: heroes sent here work the ${skill} Tokens within ${STANDARD_REACH_U} u, one hero each.`;
 }
 
+/** A shrine's clause: its rules hold only while offerings keep it lit. Empty for a Token that is not a shrine. */
+export function getShrineClause(token) {
+  if (!shrineOf(token)) return '';
+  return 'A shrine: its blessing holds only while it is lit, and each offering a Faith hero makes keeps it lit longer.';
+}
+
 /**
  * Composes a full, polished description for a Token from its mechanics.
  * @param {object} token - Token entity
@@ -179,6 +185,9 @@ export function composeTokenDescription(token, items = {}, recipePools = {}, tok
 
   const campClause = getCampClause(token);
   if (campClause) clauses.push(campClause);
+
+  const shrineClause = getShrineClause(token);
+  if (shrineClause) clauses.push(shrineClause);
 
   const traitClauses = getTraitClauses(token);
   clauses.push(...traitClauses);

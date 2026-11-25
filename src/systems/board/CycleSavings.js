@@ -48,6 +48,25 @@ export function rollRefresh(instanceId, skill) {
 }
 
 /**
+ * NEVER_RUNS_OUT (a shrine's blessing): whether Token `instanceId`'s work of `skill` spends none of
+ * its own charges (a Field, none of its load), whatever the cycle. On or off, so it draws nothing.
+ * ⚠️ The one reader of the blessing: `BoardRunner.completeCycle` skips the cycle's spend on it, and
+ * with the spend the chance to end of a source that ends by chance (`endRoll.endsNow`), so no
+ * other place needs to ask.
+ */
+export function neverRunsOut(instanceId, skill) {
+    return chanceOf(instanceId, EFFECT_TYPES.NEVER_RUNS_OUT, skill) > 0;
+}
+
+/**
+ * ECHO (a shrine's blessing): whether a finished cycle of `skill` at Token `instanceId` repeats at
+ * once, for free. No chance, no draw.
+ */
+export function rollEcho(instanceId, skill) {
+    return procHits(instanceId, EFFECT_TYPES.ECHO, skill);
+}
+
+/**
  * PRESERVATION on a cycle: the percent chance a cycle of `skill` at Token `instanceId` uses none of
  * its materials. Asked first and rolled later (`rollChance`): `BoardRunner.completeCycle` rolls it
  * only once it knows the cycle did not fail, and keeps its old order when nothing offers it.

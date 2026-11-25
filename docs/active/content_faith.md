@@ -23,9 +23,9 @@ the ledger's.*
 | Faith | Shrine | Blessing on everything in its reach, while lit | Offerings |
 |---|---|---|---|
 | 1 | **Nature Shrine** | Veins, trees and Fields **can't run out** | Oak Logs, Charcoal (or Lavender Incense, which keeps it lit longer) |
-| 20 | **Shrine of Fortune** | A finished cycle sometimes drops a **gift**: a random item from the next tier up | Beeswax Candles, Honey |
-| 40 | **Shrine of the Valiant** | A hero fighting here is **never Defeated**: at 0 HP they flee and keep all their supplies and gear | Tallow Candles, Bones |
-| 60 | **Shrine of Wisdom** | Heroes **share XP**: each gets a part of the XP the others earn | Sage Incense, Parchment |
+| 20 | **Shrine of Fortune** | **A sure rare find**: every so many finished cycles (about every tenth, the ledger's), a Token gives its rarest drop for certain (owner 2026-11-25, replacing the next-tier gift, which the game can't read: most items carry no tier) | Beeswax Candles, Honey |
+| 40 | **Shrine of the Valiant** | A hero fighting here is **never Defeated**: at 0 HP they flee and keep all their supplies and gear; they still go home wounded and heal, and the log and banner say Fled (owner 2026-11-25) | Tallow Candles, Bones |
+| 60 | **Shrine of Wisdom** | Heroes **share XP**: when a hero working or fighting in reach earns XP, every other hero working or fighting in that reach gets a share in the same skill; shares are never re-shared; idle heroes get none (owner 2026-11-25) | Sage Incense, Parchment |
 | 80 | **Shrine of Echoes** | A finished cycle sometimes **repeats at once, for free** | Rose Garlands, Light Mote |
 
 ## The offerings' recipes (Crafting)
@@ -46,7 +46,7 @@ Farming and Alchemy (herbs, roses), Tailor (String), Crafting (Charcoal, Parchme
 
 ## New effects for the code (T-705)
 
-Five blessings are rules the game doesn't have yet: **can't run out**, **a gift from the next tier**,
+Five blessings are rules the game doesn't have yet: **can't run out**, **a sure rare find**,
 **never Defeated (flee and keep all)**, **shared XP** and **a free repeat**. They are built with brief
 810 K3 as CMS effects a shrine can carry.
 

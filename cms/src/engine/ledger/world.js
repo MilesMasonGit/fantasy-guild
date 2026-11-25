@@ -1,7 +1,8 @@
 // the ledger meets the world: origins' wedges and rings, a world for a seed read as places, checks F, many worlds swept (pure)
 
 import { PLAN_STATUS, statusOf, planPlaceOf } from '../../../../src/systems/progression/ledger/plan.js';
-import { HOW, buildLedger, computeReach, itemKey, tokenKey, recipeKey, ringKey, isOneOff } from '../../../../src/systems/progression/ledger/engine.js';
+import { HOW, buildLedger, computeReach, itemKey, tokenKey, recipeKey, ringKey, isOneOff, spotArrivalRules } from '../../../../src/systems/progression/ledger/engine.js';
+import { groundWaterKinds } from '../../../../src/config/registries/fishingSpots.js';
 import { SEVERITY, ruleIndex, whyNever } from './checks.js';
 import { generateWorld, priceTemplateOf } from '../../../../src/systems/world/generate.js';
 import { worldFindings, WORLD_CHECK } from '../../../../src/systems/world/checks.js';
@@ -85,6 +86,9 @@ const SEED_FREE = new Set([HOW.SETTLE, HOW.WORLD]);
 
 /** Rules that place a Token where it stands rather than make it. */
 const PLACING = new Set([...SEED_FREE, HOW.STARTER_CAMP]);
+
+/** A fishing spot's arrival on a wedge's ground: the main ledger's, which a seed's own cells replace. */
+const isWedgeArrival = (rule) => (rule.how === HOW.ARRIVE || rule.how === HOW.EVENT) && typeof rule.via === 'string' && rule.via.startsWith('wedge:');
 
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 const cellKey = (id) => `cell:${id}`;
@@ -241,7 +245,7 @@ export function worldContext(content, { baseTables, ledger = null } = {}) {
     return {
         content, base, tables, baseTables, moved, unknown, materialsOf, skillOf, hallOrigins,
         records, nameOf, lineName, kitName, cellName, origins, effortOf,
-        keptRules: lw.rules.filter(r => !SEED_FREE.has(r.how))
+        keptRules: lw.rules.filter(r => !SEED_FREE.has(r.how) && !isWedgeArrival(r))
     };
 }
 
@@ -285,10 +289,14 @@ function worldReach(ctx, world, mats) {
         const gates = (cell.requires?.skills || []).map(s => ({ skill: s.skill, level: s.level }));
         const needs = lw.ringStars?.has(cell.ring) ? [ringKey(cell.ring)] : [];
         rules.push(ruleOf({ id: `settle:${cell.id}`, how: HOW.SETTLE, via: null, floor: cell.ring, needs, gates, gives: [{ key, chance: 1 }] }));
-        const placed = placedTokens(mats.get(cell.id));
+        const mat = mats.get(cell.id);
+        const placed = placedTokens(mat);
         if (placed.length) {
             rules.push(ruleOf({ id: `world:${cell.id}`, how: HOW.WORLD, via: key, needs: [key], floor: cell.ring, gives: placed.map(t => ({ key: tokenKey(t), chance: 1 })) }));
         }
+        // Fishing spots drift in on the cell's water, by its mat's biome.
+        const ground = { id: key, via: key, needs: [key], floor: cell.ring, biome: mat.biome, waters: groundWaterKinds(mat.water, mat.inland), maybe: false };
+        for (const rule of spotArrivalRules(lw, ground)) rules.push(ruleOf(rule));
     }
     const placers = new Map();
     for (const rule of rules) {

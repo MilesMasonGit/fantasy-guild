@@ -8,6 +8,7 @@ import * as Charges from './Charges.js';
 import * as Respawn from './Respawn.js';
 import * as Fields from './Fields.js';
 import * as Fishing from './Fishing.js';
+import * as Shrines from './Shrines.js';
 import * as Demolition from './Demolition.js';
 import * as SiteRules from './SiteRules.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
@@ -34,16 +35,18 @@ export const HERO_GATES = new Set([ALERT.ACCESS, ALERT.UNSKILLED, ALERT.NO_TOOL]
 
 /**
  * The Token's own reasons that no hero fixes by standing there: it rests until it respawns, its
- * crop grows, or its Field is stopped for want of a seed. Its hero lets go; it never draws a badge.
+ * crop grows, its Field is stopped for want of a seed, or its shrine is lit too full for another
+ * offering. Its hero lets go; it never draws a badge.
  */
-export const AWAY = new Set([ALERT.RESTING, ALERT.GROWING, ALERT.GROW_NEEDS_ITEM]);
+export const AWAY = new Set([ALERT.RESTING, ALERT.GROWING, ALERT.GROW_NEEDS_ITEM, ALERT.SHRINE_FULL]);
 
 /**
  * Whether a Token is away in that sense ({@link AWAY}), read from its state alone (cheap: `Flags`
  * asks it of every held Token on every pass).
  */
 export function isAway(instance, def = getTokenType(instance?.typeId)) {
-    return Respawn.isResting(instance, def) || Fields.workReason(instance, def) != null;
+    return Respawn.isResting(instance, def) || Fields.workReason(instance, def) != null
+        || (!!def?.shrine && Shrines.isFull(instance, def));
 }
 
 /**
@@ -135,6 +138,11 @@ export function fixableReason(instanceId, instance, heroId = undefined) {
         if (io.reason === 'choose_recipe') return { reason: ALERT.CHOOSE_RECIPE, io };
         return { reason: ALERT.NO_RECIPE, io };
     }
+
+    // A shrine lit too full for its offering waits, before its inputs are asked: a full shrine with
+    // no offering in the Bank is not short of anything yet.
+    const shrine = Shrines.workReason(instance, undefined, io.recipe);
+    if (shrine) return { reason: shrine, io };
 
     // A Foundation set to build what may not stand where it is: asked before the inputs, so it never
     // pays for a build that would have to land somewhere else.

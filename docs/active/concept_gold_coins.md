@@ -19,8 +19,8 @@ October (slice 2.1, "Guild Hall upgrades cost items, not gold"); this brings coi
    - **Shop Tokens and Foundations** (and what Foundations build);
    - **Guild Hall stars**, rising with the rank;
    - **settling new places** on the world map, more the further out.
-   - Recipes and tasks: possibly a few, likely none (owner). The CMS can give a recipe a coin cost;
-     none is planned.
+   - **No recipe coin costs for now** (owner 2026-11-25): coins are spent at the Shop, on Foundations,
+     on settling and on Hall stars only.
 3. **Coin costs rise with rank and with distance** from the Starter Camp: a Shop Token in a far
    Region costs more coins than the same Token at home.
 
@@ -47,7 +47,7 @@ October (slice 2.1, "Guild Hall upgrades cost items, not gold"); this brings coi
 
 ## Stars and buildings (owner 2026-11-25)
 
-11. **No coin stars**: no Hall star raises sale prices, coin drops or lowers coin costs. Coins stay a
+11. **No coin stars**: no Hall star raises sale prices, coin drops or lowers coin costs; stars **may cost** coins (owner 2026-11-25). Coins stay a
     clean measure of profit.
 12. **One coin building** (the content agent names it, a Counting House or similar): **enemies
     defeated in its reach drop more coins, and a Hideout in its reach steals more coins**. One building

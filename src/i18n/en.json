@@ -879,7 +879,8 @@
             "abundance": "Abundance"
         },
         "float": {
-            "giantHarvest": "Giant!"
+            "giantHarvest": "Giant!",
+            "echo": "Echo!"
         },
         "source": {
             "star": "Hall star {star} {rank}",

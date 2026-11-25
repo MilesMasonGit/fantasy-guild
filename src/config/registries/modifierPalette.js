@@ -574,6 +574,56 @@ export const MODIFIER_PALETTE = [
         hint: 'How often one fish bites from a water\'s catch pool: a percentage on its weight there (+100% doubles it). Pick the fish; "any item" moves every catch alike, which changes nothing.'
     },
 
+    // --- Blessings -------------------------------------------------------
+    //
+    // Faith's shrines carry these (owner, 2026-11-25: effects no building gives); `blessing` lets
+    // the content audit name one on a Token that is not a shrine.
+    {
+        /**
+         * Read by `CycleSavings.neverRunsOut` once per completed work cycle that would spend the
+         * Token's own charges (a Field, its load), before Refresh is rolled: reached, it spends none,
+         * failed or not, and Refresh is never drawn. A kill never reads it. `flag`: the rule has no
+         * number to type, only on (its value 1) or off.
+         */
+        type: EFFECT_TYPES.NEVER_RUNS_OUT,
+        reads: { up: () => 'can\'t run out', down: () => 'can run out again' },
+        label: 'Can\'t Run Out',
+        explains: 'Its work spends none of its charges, so it never runs out',
+        when: 'never',
+        flag: true,
+        blessing: true,
+        buckets: ['flat'],
+        categories: 'skill',
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Blessing',
+        hint: 'A shrine\'s blessing: the Tokens it reaches spend none of their charges as they are worked (a Field none of its load), even on a failed cycle, so they never run out: a vein, tree or Field that ends by chance never draws its end. No number: it is on or off. Aim it at Tokens; the skill narrows it.'
+    },
+    {
+        /**
+         * Read by `BoardRunner.completeCycle` once per work cycle that did not fail, after its XP:
+         * on a hit the cycle's outputs land again (rolled afresh, a water's catch the same fish, no
+         * Bait or lure spent) and its XP is given again, paying no inputs and spending no charges,
+         * load or tool, so no chance to end is drawn. The rules hear one cycle. A kill and a build
+         * never roll.
+         */
+        type: EFFECT_TYPES.ECHO,
+        reads: {
+            up: (n) => `have a ${n} chance a finished cycle repeats at once, for free`,
+            down: (n) => `have ${n} less chance a finished cycle repeats at once, for free`
+        },
+        label: 'Echo',
+        explains: 'A chance a finished cycle repeats at once, for free',
+        when: 'never',
+        scales: 'value',
+        blessing: true,
+        // A chance is a plain number of percent; resolved from a base of 0, so any other bucket is 0.
+        buckets: ['flat'],
+        categories: 'skill',
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Blessing',
+        hint: 'A shrine\'s blessing: a chance a finished work cycle repeats at once, for free: its outputs again and its XP again, with no inputs, charges, Bait or tool wear, and no chance to end. In percent. Two shrines add their chances. Never a kill or a build.'
+    },
+
     // --- Combat ---------------------------------------------------------
     //
     // ⚠️ Every row here has a live reader in `CombatFormulas` or
