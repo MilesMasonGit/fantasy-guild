@@ -12,18 +12,18 @@ import { syncFiles } from '../../cms/src/engine/recipeSync';
 import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
 import { enemyProfileOf } from '../config/registries/enemyProfile.js';
 import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
-import { DAMAGE_GROUPS, DAMAGE_TYPES, damageTypeLabel } from '../config/registries/damageTypes.js';
+import { DAMAGE_TYPES, damageTypeLabel } from '../config/registries/damageTypes.js';
 
-/** The preview's resistances as the editor writes them: groups first, a weakness said so. */
+/** The preview's resistances as the editor writes them: by type, a weakness said so. */
 const resistText = (map) => {
-    const ids = [...DAMAGE_GROUPS, ...DAMAGE_TYPES].map(x => x.id).filter(id => map?.[id]);
+    const ids = DAMAGE_TYPES.map(x => x.id).filter(id => map?.[id]);
     return ids.length ? ids.map(id => (map[id] < 0 ? `${damageTypeLabel(id)} weak ${-map[id]}%` : `${damageTypeLabel(id)} ${map[id]}%`)).join(', ') : 'none';
 };
 
-/** The preview's hit: a plain Physical swing, or its moves by name and the type each hits with. */
+/** The preview's hit: a plain Crush swing, or its moves by name and the type each hits with. */
 const hitText = (p) => (p.moves?.length
     ? `${p.hit} · ${p.moves.map(m => `${m.name || 'Attack'}${m.hits ? ` ${damageTypeLabel(m.type)}` : ''}`).join(', ')}`
-    : `${p.hit} Physical`);
+    : `${p.hit} Crush`);
 
 /**
  * The CMS's enemy block: a control Sync changes nothing, the Style dropdown, the level preview. No
@@ -139,6 +139,6 @@ describe('the Token editor’s level preview', () => {
         useEntityStore.getState().updateToken(id, { enemy: { level: 1, style: 'melee', budgetScale: 0.3 } });
         const { container } = editor(id);
         const box = within(container).getByText('What the fight uses').parentElement.parentElement;
-        expect(box.textContent).toContain('HP6Hit1 PhysicalResistsnoneAttacks every3.0sXP3');
+        expect(box.textContent).toContain('HP6Hit1 CrushResistsnoneAttacks every3.0sXP3');
     });
 });

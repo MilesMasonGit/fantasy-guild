@@ -109,23 +109,48 @@ describe('⭐ the Defence block: resistances and a damage cut on any worn piece'
     it('adds, edits and removes resistance lines and cuts; the last removed drops the key', () => {
         const id = store().addItem({ name: 'Plate Fixture', equipSlot: 'chest' });
         const { container } = itemEditor(id);
-        fireEvent.change(field(container, 'gear-resist-add'), { target: { value: 'physical' } });
-        expect(store().items[id].resistances).toEqual({ physical: 10 });
-        fireEvent.change(field(container, 'gear-resist-physical-value'), { target: { value: '20' } });
+        fireEvent.change(field(container, 'gear-resist-add'), { target: { value: 'crush' } });
+        expect(store().items[id].resistances).toEqual({ crush: 10 });
+        fireEvent.change(field(container, 'gear-resist-crush-value'), { target: { value: '20' } });
         fireEvent.change(field(container, 'gear-resist-add'), { target: { value: 'fire' } });
         fireEvent.change(field(container, 'gear-resist-fire-value'), { target: { value: '-10' } });
-        expect(store().items[id].resistances).toEqual({ physical: 20, fire: -10 });
+        expect(store().items[id].resistances).toEqual({ crush: 20, fire: -10 });
 
         fireEvent.change(field(container, 'gear-cut-add'), { target: { value: 'magic' } });
         fireEvent.change(field(container, 'gear-cut-magic-value'), { target: { value: '30' } });
         expect(store().items[id].damageCut).toEqual({ magic: 30 });
-        expect(gearResistancesOf(store().items[id])).toEqual({ physical: 20, fire: -10 });
+        expect(gearResistancesOf(store().items[id])).toEqual({ crush: 20, fire: -10 });
         expect(gearDamageCutOf(store().items[id])).toEqual({ magic: 30 });
 
         fireEvent.change(field(container, 'gear-cut-magic-value'), { target: { value: '' } });
         expect(store().items[id].damageCut).toBeUndefined();
         fireEvent.change(field(container, 'gear-resist-fire-value'), { target: { value: '0' } });
-        expect(store().items[id].resistances).toEqual({ physical: 20 });
+        expect(store().items[id].resistances).toEqual({ crush: 20 });
+    });
+
+    it('offers types only, never a group; Set all Physical fills Slash, Crush and Stab', () => {
+        const id = store().addItem({ name: 'Mail Fixture', equipSlot: 'chest' });
+        const { container } = itemEditor(id);
+        const offered = [...field(container, 'gear-resist-add').querySelectorAll('option')].map(o => o.value).filter(Boolean);
+        expect(offered).toEqual(['slash', 'crush', 'stab', 'fire', 'ice', 'electric', 'poison', 'light', 'dark']);
+        fireEvent.change(field(container, 'gear-resist-fill-value'), { target: { value: '15' } });
+        fireEvent.click(field(container, 'gear-resist-fill-physical'));
+        expect(store().items[id].resistances).toEqual({ slash: 15, crush: 15, stab: 15 });
+        fireEvent.change(field(container, 'gear-resist-fill-value'), { target: { value: '-5' } });
+        fireEvent.click(field(container, 'gear-resist-fill-special'));
+        expect(store().items[id].resistances).toEqual({ slash: 15, crush: 15, stab: 15, poison: -5, light: -5, dark: -5 });
+        fireEvent.change(field(container, 'gear-resist-fill-value'), { target: { value: '0' } });
+        expect(field(container, 'gear-resist-fill-elemental').disabled).toBe(true);
+    });
+
+    it('a line left on a group says the game ignores it, and Split writes its three types', () => {
+        const id = store().addItem({ name: 'Old Hat Fixture', equipSlot: 'hat' });
+        store().updateItem(id, { resistances: { physical: 5, fire: 10 } });
+        const { container } = itemEditor(id);
+        expect(field(container, 'gear-resist-physical').textContent).toContain('the game ignores it');
+        fireEvent.click(field(container, 'gear-resist-physical-split'));
+        expect(store().items[id].resistances).toEqual({ fire: 10, slash: 5, crush: 5, stab: 5 });
+        expect(field(container, 'gear-resist-physical')).toBeNull();
     });
 
     it('a food has no Defence block, and leaving the gear categories clears the fields', () => {
@@ -144,10 +169,10 @@ describe('⭐ the Defence block: resistances and a damage cut on any worn piece'
         const id = store().addItem({ name: 'Kite Fixture', equipSlot: 'hand' });
         const { container } = itemEditor(id);
         fireEvent.change(field(container, 'held-as'), { target: { value: 'offhand' } });
-        fireEvent.change(field(container, 'gear-resist-add'), { target: { value: 'physical' } });
+        fireEvent.change(field(container, 'gear-resist-add'), { target: { value: 'stab' } });
         fireEvent.change(field(container, 'gear-cut-add'), { target: { value: 'stealth' } });
         const files = expectStableRoundTrip();
-        expect(files['items.json'][id]).toMatchObject({ offHand: true, resistances: { physical: 10 }, damageCut: { stealth: 15 } });
+        expect(files['items.json'][id]).toMatchObject({ offHand: true, resistances: { stab: 10 }, damageCut: { stealth: 15 } });
         const before = shipped()['items.json'];
         for (const other of Object.keys(before)) {
             expect(JSON.stringify(files['items.json'][other]), other).toBe(JSON.stringify(before[other]));
@@ -162,7 +187,7 @@ describe('the Economy Audit names a stack reaching 100 %', () => {
         const a = store().addItem({ name: 'Fire Hat Fixture', equipSlot: 'hat' });
         const b = store().addItem({ name: 'Fire Chest Fixture', equipSlot: 'chest' });
         store().updateItem(a, { resistances: { fire: 50 } });
-        store().updateItem(b, { resistances: { elemental: 50 } });
+        store().updateItem(b, { resistances: { fire: 50 } });
         const s = store();
         const items = { [a]: s.items[a], [b]: s.items[b] };
         const issues = auditConnectivity({ items, tokens: s.tokens, recipes: {}, effects: s.effects, skillPerks: s.skillPerks });
@@ -175,14 +200,16 @@ describe('the Economy Audit names a stack reaching 100 %', () => {
 
 describe('a workspace still holding the Poison status', () => {
     it('loads with Venom under its new id, every reference following, and Syncs it so', () => {
+        // The shipped Venom is landed by enemy moves (the Greater Slime's Acid Spit).
+        const acidSpit = (tokens) => tokens.token_greater_slime.enemy.moves.find(m => m.name === 'Acid Spit');
         const old = withPoison();
         expect(old['effects.json'].effect_venom).toBeUndefined();
-        expect(old['effects.json'].effect_greater_slime_moves.statements[0].payload.effectId).toBe('effect_poison');
+        expect(acidSpit(old['tokens.json']).effectId).toBe('effect_poison');
         load(old);
         const s = store();
         expect(s.effects.effect_poison).toBeUndefined();
         expect(s.effects.effect_venom).toMatchObject({ id: 'effect_venom', name: 'Venom', status: { stacks: 3, ticks: 0 } });
-        expect(s.effects.effect_greater_slime_moves.statements[0].payload.effectId).toBe('effect_venom');
+        expect(acidSpit(s.tokens).effectId).toBe('effect_venom');
         expect(JSON.stringify([s.tokens, s.items, s.effects])).not.toContain('effect_poison');
         // The library keeps its order: Venom sits where Poison sat.
         const ids = Object.keys(s.effects);

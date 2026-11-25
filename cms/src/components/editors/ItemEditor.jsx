@@ -210,7 +210,7 @@ function ArrowFields({ item, onChange }) {
               <DamageTypeOptions />
             </select>
             <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
-              Usually Physical (Stab): a ghost immune to Physical still takes the bow's part.
+              Usually Stab: a ghost immune to Stab still takes the bow's part.
             </p>
           </Field>
         </>

@@ -1,6 +1,5 @@
 import { TARGET_CATEGORIES } from './constants.js';
 import { COMBAT_SKILL_IDS } from '../../config/registries/skillRegistry.js';
-import { isDamageGroupId, isDamageTypeId, groupOf } from '../../config/registries/damageTypes.js';
 
 /**
  * Three-Bucket math:  Final = (Base + Σ flat) × (Σ multipliers) × (1 + Σ percentages)
@@ -288,9 +287,10 @@ export class ModifierAggregator {
     /**
      * Check if a category is a parent of another.
      *
-     * Two hierarchies exist: `combat` over the combat styles, and each damage group over its types
-     * (a Type Resistance on Physical counts against Slash). Every skill is top-level, so a modifier
-     * targeting `mining` targets Mining and nothing else; to cover several skills it must name them.
+     * One hierarchy exists: `combat` over the combat styles. A damage group is no parent: a Type row
+     * on Physical counts against nothing (only the nine types carry numbers). Every skill is
+     * top-level, so a modifier targeting `mining` targets Mining and nothing else; to cover several
+     * skills it must name them.
      *
      * Categories are compared case-insensitively (modifier targets are often
      * uppercased).
@@ -301,9 +301,6 @@ export class ModifierAggregator {
 
         if (parentId === TARGET_CATEGORIES.COMBAT) {
             return COMBAT_SKILL_IDS.includes(childId);
-        }
-        if (isDamageGroupId(parentId)) {
-            return isDamageTypeId(childId) && groupOf(childId) === parentId;
         }
         return false;
     }

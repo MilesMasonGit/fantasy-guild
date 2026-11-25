@@ -16,7 +16,7 @@ export const KIT_CURRENT = Object.freeze({
     log: [
         line(1, 'potion', TONE.NOTE, 'drinks', { hero: 'Aela', item: 'Elixir of Valor' }),
         { ...line(2, 'star', TONE.HIT, 'heroCrits', AV, '8'), types: ['slash'], verdict: 'weak' },
-        { ...line(3, 'star', TONE.HURT, 'enemyCrits', AV, '−4'), types: ['physical'], verdict: 'resisted' },
+        { ...line(3, 'star', TONE.HURT, 'enemyCrits', AV, '−4'), types: ['crush'], verdict: 'resisted' },
         line(4, 'drop', TONE.NOTE, 'statusLands', { status: 'Venom', who: 'Aela' }, '×2'),
         line(5, 'miss', TONE.MISS, 'heroMisses', AV),
         line(6, 'drop', TONE.HURT, 'statusHurts', { status: 'Venom', who: 'Aela' }, '−2'),
@@ -47,7 +47,7 @@ export function kitPanelView() {
     const hero = {
         id: 'kit_aela', name: 'Aela', style: 'melee', level: 20, sprite: 'fighter',
         hp: { cur: 17, max: 30 }, hit: 4, hitParts: [{ type: 'slash', hit: 4 }], arrows: null, attackEveryMs: 3000,
-        resists: [{ id: 'physical', value: 25 }],
+        resists: [{ id: 'crush', value: 25 }],
         hitLines: ['Copper Sword: 2 Slash', 'Combat level: +1', 'Elixirs and gear: +1'],
         elixirs: [
             { itemId: 'item_elixir_of_valor', name: 'Elixir of Valor', left: 6, count: 7 },
@@ -59,7 +59,7 @@ export function kitPanelView() {
     };
     const enemy = {
         typeId: 'token_goblin_chief', name: 'Goblin Warlord', style: 'melee', level: 20,
-        hp: { cur: 24, max: 40 }, hit: 3, hitType: 'physical', resists: [{ id: 'fire', value: 50 }, { id: 'slash', value: -25 }], attackEveryMs: 4000,
+        hp: { cur: 24, max: 40 }, hit: 3, hitType: 'crush', resists: [{ id: 'fire', value: 50 }, { id: 'slash', value: -25 }], attackEveryMs: 4000,
         kinds: ['brute', 'venomous'].map(kindView), statuses: [], buffs: [], sheet: null
     };
     return {
@@ -90,6 +90,6 @@ export const KIT_FLOATS = Object.freeze([
 
 /** The enemy card's two states: fought (its kinds show) and never fought. */
 export const KIT_CARDS = Object.freeze([
-    { typeId: 'token_goblin_chief', name: 'Goblin Warlord', level: 20, style: 'melee', hp: 40, hit: 3, hitType: 'physical', resists: [{ id: 'physical', value: 50 }, { id: 'crush', value: -50 }], attackEveryMs: 4000, kinds: ['brute', 'venomous'].map(kindView) },
-    { typeId: 'token_goblin', name: 'Goblin Scout', level: 5, style: 'melee', hp: 25, hit: 1, hitType: 'physical', resists: [], attackEveryMs: 2000, kinds: null }
+    { typeId: 'token_goblin_chief', name: 'Goblin Warlord', level: 20, style: 'melee', hp: 40, hit: 3, hitType: 'crush', resists: [{ id: 'slash', value: 50 }, { id: 'crush', value: -50 }, { id: 'stab', value: 50 }], attackEveryMs: 4000, kinds: ['brute', 'venomous'].map(kindView) },
+    { typeId: 'token_goblin', name: 'Goblin Scout', level: 5, style: 'melee', hp: 25, hit: 1, hitType: 'crush', resists: [], attackEveryMs: 2000, kinds: null }
 ]);

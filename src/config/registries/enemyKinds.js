@@ -12,13 +12,13 @@
  *   2. each kind, in the order ticked, adds its resistances or Dodge, sets its speed and scales
  *      its hit (a hit is rounded halves up and is never below 1);
  *   3. a number the author typed on the enemy replaces the result outright, and a resistance the
- *      author wrote replaces the kind's for that type or group.
+ *      author wrote replaces the kind's for that type.
  * Kinds never change HP or XP.
  *
  * Swift and Brute keep about the same damage per second as the level's normal swing, by the same
  * rule weapons follow (a fast swing hits about 2/3 as hard, a slow one about 4/3); a Brute always
  * hits at least 1 harder than the level. Armoured gives up a quarter of its damage per second
- * (slow, same hit) for its Physical resistance.
+ * (slow, same hit) for its Slash, Crush and Stab resistance.
  */
 
 /**
@@ -32,8 +32,8 @@ export const VENOM_EFFECT_ID = 'effect_venom';
 export const ENEMY_KINDS = Object.freeze([
     Object.freeze({
         id: 'armoured', label: 'Armoured',
-        blurb: 'Resists Physical 50 %, and attacks every 4 s with its usual hit.',
-        resistances: Object.freeze({ physical: 50 }), speed: 'slow'
+        blurb: 'Resists Slash, Crush and Stab 50 %, and attacks every 4 s with its usual hit.',
+        resistances: Object.freeze({ slash: 50, crush: 50, stab: 50 }), speed: 'slow'
     }),
     Object.freeze({
         id: 'nimble', label: 'Nimble',

@@ -258,7 +258,7 @@ export const COMBAT_GLYPHS = Object.freeze({
     ]
 });
 
-/** The glyph a damage type or group wears (a placeholder until the owner draws them). */
+/** The glyph a damage type wears (a placeholder until the owner draws them). */
 export const damageTypeGlyph = (id) => (COMBAT_GLYPHS[`dt_${id}`] ? `dt_${id}` : 'hit');
 
 /** The kit colours as plain values: a picture cannot read a CSS variable. */

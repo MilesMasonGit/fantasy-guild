@@ -26,7 +26,7 @@ import { enemyMovesOf } from './enemyMoves.js';
  * (`FormulaRegistry.enemyLevelStats`), and the level is also what the miss chance compares with
  * the hero's combat level. `kinds` (none, one or two of `enemyKinds.js`) twist those numbers, and
  * any one number can be written beside the level to replace the result. `resistances` (a damage
- * type or group → a signed step, `damageTypes.js`) say what the enemy shrugs off or is weak to, and
+ * type → a signed step, `damageTypes.js`) say what the enemy shrugs off or is weak to, and
  * `moves` (`enemyMoves.js`) what it does with each swing.
  *
  * ## Drops
@@ -69,7 +69,7 @@ export const ENEMY_OVERRIDE_FIELDS = Object.freeze(['hp', 'hit', 'speed', 'xp', 
 
 /**
  * Numbers older content may still carry that the game no longer reads: flat armour and Pierce
- * gave way to damage types (the Armoured kind is a Physical resistance now). The audits name them.
+ * gave way to damage types (the Armoured kind is a Slash, Crush and Stab resistance now). The audits name them.
  */
 export const RETIRED_ENEMY_FIELDS = Object.freeze(['armor', 'pierce']);
 
@@ -122,7 +122,7 @@ export function enemyFilledStats(enemy) {
  * Build the enemy stat block for a Token definition: what the level and kinds fill
  * (`enemyFilledStats`), with any number the author wrote beside the level on the Token's `enemy`
  * (`hp`, `hit`, `speed`, `xp`, `dodge`, `accuracy`, `critChance`) replacing that one outright, and
- * each resistance the author wrote replacing the kind's for that type or group.
+ * each resistance the author wrote replacing the kind's for that type.
  *
  * `id` is the **Token's** id: the Bestiary, kill counts and discovery
  * notifications key on an id and look up a name.
@@ -164,7 +164,7 @@ export function enemyProfileOf(def) {
         kinds,
         // What a landed hit puts on the hero (Venomous), by library effect; `FightMoments` lands it.
         ...(filled.onHit.length ? { onHit: filled.onHit } : {}),
-        // The moves it picks from each swing (`enemyMoves.js`); without any, a plain Physical hit.
+        // The moves it picks from each swing (`enemyMoves.js`); without any, a plain Crush hit.
         ...(moves.length ? { moves } : {}),
         // Enemy traits are not authorable yet and nothing reads them; an empty array is the
         // right value.

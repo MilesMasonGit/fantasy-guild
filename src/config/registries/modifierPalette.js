@@ -108,8 +108,8 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  * * `'item'`   — `OutputRules.doubleItemDrop` passes the id of each item a
  *   cycle or kill dropped, which is how `DOUBLE_DROP` names its item.
  * * `'damageType'` — `CombatFormulas` passes a hit's damage type, which is how
- *   Type Damage % and Type Resistance % name a type; a group's row counts on its
- *   types (`ModifierAggregator._isParentOf`).
+ *   Type Damage % and Type Resistance % name a type; a row on a group counts on
+ *   nothing.
  *
  * Declaring the vocabulary per row is what lets the CMS show a skill
  * picker on Yield and a status picker on Immunity without knowing either list.
@@ -649,8 +649,7 @@ export const MODIFIER_PALETTE = [
     {
         /**
          * Percent points, in the flat bucket like Crit Chance: the loadout registers flats only.
-         * The type or group is the rule's category; a group's row counts on each of its types
-         * (`ModifierAggregator._isParentOf`).
+         * The type is the rule's category; a row on a group counts on nothing (the audits name it).
          */
         type: EFFECT_TYPES.TYPE_DAMAGE,
         label: 'Type Damage %',
@@ -663,7 +662,7 @@ export const MODIFIER_PALETTE = [
         categories: 'damageType',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'Percent more damage on hits of one damage type or group: 15 means +15% (a Poisoner\'s Cloak: Poison 15). Pick which type.'
+        hint: 'Percent more damage on hits of one damage type: 15 means +15% (a Poisoner\'s Cloak: Poison 15). Pick which type.'
     },
     {
         type: EFFECT_TYPES.TYPE_RESIST,
@@ -677,7 +676,7 @@ export const MODIFIER_PALETTE = [
         categories: 'damageType',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'Percent off hits of one damage type or group taken: 20 means 20% less, a negative number a weakness. Pick which type. An enemy\'s plain Strike is Physical.'
+        hint: 'Percent off hits of one damage type taken: 20 means 20% less, a negative number a weakness. Pick which type. An enemy\'s plain Strike is Crush.'
     },
     {
         /**

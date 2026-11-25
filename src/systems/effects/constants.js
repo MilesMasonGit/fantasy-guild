@@ -6,9 +6,9 @@ export const EFFECT_TYPES = {
     ACCURACY: 'ACCURACY',     // points off the bearer's miss chance — CombatFormulas
     DODGE: 'DODGE',           // points on the miss chance of whoever attacks the bearer
     CRIT_CHANCE: 'CRIT_CHANCE', // points on the bearer's crit chance
-    // Percent on the bearer's hits of one damage type or group (the category) — CombatFormulas.typeDamageBoost.
+    // Percent on the bearer's hits of one damage type (the category) — CombatFormulas.typeDamageBoost.
     TYPE_DAMAGE: 'TYPE_DAMAGE',
-    // Percent off hits of one damage type or group the bearer takes (the category) — CombatFormulas.
+    // Percent off hits of one damage type the bearer takes (the category) — CombatFormulas.
     TYPE_RESIST: 'TYPE_RESIST',
     // Points off every resistance the bearer has, never below 0 (the Sunder status) — CombatFormulas.
     SUNDER: 'SUNDER',

@@ -17,7 +17,7 @@ import * as EffectActions from './EffectActions.js';
 import * as EffectFeedback from './EffectFeedback.js';
 import * as BoardState from './BoardState.js';
 import { paidTestFor } from './BlockUpkeep.js';
-import { SIDE, setFightMomentRunner, talliesOf } from '../combat/FightHooks.js';
+import { SIDE, MOVE_LANDS, setFightMomentRunner, talliesOf } from '../combat/FightHooks.js';
 
 /**
  * The fight moments (`FIGHT_MOMENT`: On Swing, On Hit, When Struck, On Health Below), run for one
@@ -93,14 +93,18 @@ function arrowStatements(fight) {
 
 /**
  * The effect of the move the enemy's swing makes (`talliesOf(fight).move`, set for the swing by the
- * combat engine), as one Applies on the moment it lands: on itself as the move is made (before the
- * roll, so a heavy strike counts); on the hero with the hit that lands, or as a move that does not
- * hit is made. Always lands (no chance roll, so no draw), and says nothing over the enemy: the move's
- * name is said with its swing.
+ * combat engine), as one Applies on the moment it lands: on itself as the move is made, hit or miss
+ * (before the roll, so a heavy strike counts); on the hero only with the attack that lands, a hit that
+ * leaves them standing or, for a move that does not hit, its accuracy roll (`MOVE_LANDS`, run in
+ * place of the hit: `moment` says when it runs, `when` still reads as a hit, so the hero is the
+ * one it names). No chance of its own (so no draw), and says nothing over the enemy: the move's name
+ * is said with its swing.
  *
  * "For one attack" lasts through the next attack on its bearer: on itself, the hero's next swing; on
  * the hero, the enemy's next swing after this one.
  */
+const MOVE_STATEMENT_ID = 'enemy_move';
+
 function moveStatements(fight) {
     const tallies = talliesOf(fight);
     const move = tallies.move;
@@ -110,12 +114,24 @@ function moveStatements(fight) {
         : move.lasts === 'attack' ? { forAttack: (onSelf ? tallies.swings.hero : tallies.swings.enemy) + 1 }
             : { forFight: true };
     return [{
-        id: 'enemy_move',
+        id: MOVE_STATEMENT_ID,
         keyword: KEYWORD.APPLIES,
-        when: { event: onSelf || !move.hits ? FIGHT_MOMENT.SWING : FIGHT_MOMENT.HIT, scope: 'self' },
+        when: { event: onSelf ? FIGHT_MOMENT.SWING : FIGHT_MOMENT.HIT, scope: 'self' },
+        moment: onSelf ? FIGHT_MOMENT.SWING : move.hits ? FIGHT_MOMENT.HIT : MOVE_LANDS,
         target: { role: onSelf ? ROLE.OPPONENT : ROLE.ACTOR },
         payload: { effectId: move.effectId, chance: 100, ...lifetime }
     }];
+}
+
+/**
+ * What a rule that acted is called over the enemy Token. An enemy's own rule landing an effect (its
+ * passive: Enrage below half health) is called by the effect it lands, not by the effect holding its
+ * rules ("Wolf Alpha Moves"); any other rule keeps its holder's name, a hero's gear rule its item's.
+ */
+function announced(statement, side) {
+    if (side !== SIDE.ENEMY || statement.keyword !== KEYWORD.APPLIES) return statement;
+    const effectId = statement.payload?.effectId;
+    return effectId ? { ...statement, effectTitle: effectName(effectId) } : statement;
 }
 
 /** Who a side's rules name. */
@@ -190,12 +206,12 @@ export function run(fight, side, momentId, count = 0) {
     const share = momentId === FIGHT_MOMENT.HP_BELOW ? healthShare(fight, side) : 100;
     let acted = 0;
     for (const statement of rulesOf(fight, side)) {
-        if (statement?.when?.event !== momentId) continue;
+        if ((statement?.moment ?? statement?.when?.event) !== momentId) continue;
         if (!fires(statement, fight, side, momentId, count, share)) continue;
         if (!rolledToFire(statement)) continue;
         if (!act(statement, roles, fight)) continue;
-        // The creature's name for its move, or the item's, over the enemy Token.
-        EffectFeedback.announce(fight.instanceId, statement);
+        // A move's own name was said with its swing.
+        if (statement.id !== MOVE_STATEMENT_ID) EffectFeedback.announce(fight.instanceId, announced(statement, side));
         acted += 1;
     }
     return acted;
