@@ -17,6 +17,7 @@ import {
 import { HIDEOUT_KIND, stealOf, caughtCurveOf, CAUGHT_DEFAULTS } from '../config/registries/crime.js';
 import { crimeFindings } from '../systems/core/crimeRule.js';
 import { auditContent } from '../systems/core/ContentAudit.js';
+import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { getPaletteEntry } from '../config/registries/modifierPalette.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { KEYWORD } from '../systems/effects/statements.js';
@@ -226,5 +227,14 @@ describe('the content rule, shared by both audits', () => {
     it('the shipped content raises no Crime finding at boot', () => {
         const crime = auditContent().filter(f => /steal|Hideout|caught curve|robbed/i.test(f.message || f.what || JSON.stringify(f)));
         expect(crime).toEqual([]);
+    });
+
+    it('a well-formed Hideout draws no line at boot: it runs no recipe, so Crime needs no recipe pool', () => {
+        registerTokenTypes({ fixture_cms_cr_hideout: {
+            id: 'fixture_cms_cr_hideout', name: 'Fixture Audit Hideout', tokenType: 'station', rarity: 'common', uses: null, sprite: 't_campfire', requiresHero: true,
+            config: { skill: 'crime', skillRequired: 1, cycleTimeMs: 12000, xp: 2, inputs: [], outputs: [] },
+            statements: [{ id: 'stm_cms_cr_hideout_works', keyword: KEYWORD.STATION, payload: { skill: 'crime', stationKind: HIDEOUT_KIND } }]
+        } });
+        expect(auditContent().filter(f => JSON.stringify(f).includes('fixture_cms_cr_hideout'))).toEqual([]);
     });
 });

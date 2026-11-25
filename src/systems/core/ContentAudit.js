@@ -2,7 +2,6 @@
 
 import { TOKENS, getTokenType } from '../../config/registries/tokenRegistry.js';
 import { statementsOf, hasRetiredEffectData, stationSkillOf, stationKindOf, KEYWORD, getKeyword, keywordAllowsRole } from '../effects/statements.js';
-import { LABORATORY_KIND } from '../../config/registries/mastery.js';
 import { getTriggerEvent, momentSupplies, everyOf } from '../../config/registries/triggerRegistry.js';
 import { getRole } from '../../config/registries/roleRegistry.js';
 import { getReach, DEFAULT_REACH } from '../../config/registries/reachRegistry.js';
@@ -17,7 +16,7 @@ import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
 import { coinWorthFindings } from '../../config/registries/itemCoins.js';
 import { coinCostFindings } from '../../config/registries/coinCosts.js';
 import { STANDS_ON_CHOICES, isStandsOnWord } from '../atlas/TerrainMap.js';
-import { listPooledSkillIds } from '../../config/registries/recipePoolRegistry.js';
+import { listPooledSkillIds, runsNoRecipe } from '../../config/registries/recipePoolRegistry.js';
 import { SPRITE_MANIFEST } from '../../config/registries/sprite-manifest.js';
 import { currentSpriteName } from '../../utils/AssetManager.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
@@ -150,8 +149,8 @@ function auditTokens(out) {
         }
 
         checkRef(out, where, 'sprite', def.sprite, 'Its artwork');
-        // A Laboratory studies a node and runs no recipe, so its skill needs no pool.
-        if (stationKindOf(def) !== LABORATORY_KIND) checkRef(out, where, 'recipe pool', stationSkillOf(def), 'The skill it works as');
+        // A Hideout robs a camp and a Laboratory studies a node: neither runs a recipe, so its skill needs no pool.
+        if (!runsNoRecipe(stationKindOf(def))) checkRef(out, where, 'recipe pool', stationSkillOf(def), 'The skill it works as');
 
         // A hero-worked Token must name a skill. Reported only.
         if (isWorkedWithoutSkill(def)) {
