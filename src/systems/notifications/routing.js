@@ -10,6 +10,7 @@ import * as ItemStubs from './itemStubs.js';
 import * as Banners from './banners.js';
 import { TONE } from './bannerKinds.js';
 import { recipesUnlockedByLevelUp } from './recipeUnlocks.js';
+import { guildHeroes } from '../hero/summoned.js';
 import { hasNews } from './catchUpNews.js';
 import * as Atlas from '../atlas/Atlas.js';
 import { defaultBannerFor } from '../../config/areaBanners.js';
@@ -100,7 +101,7 @@ export const ROUTES = [
     {
         event: ENGINE_EVENTS.HERO_LEVELED, to: 'banner:recipe',
         handle: ({ heroId, heroName, skillId, oldLevel, newLevel, startLevel } = {}) => {
-            const unlocked = recipesUnlockedByLevelUp(listRecipes(), GameState.heroes, { heroId, skillId, oldLevel, newLevel });
+            const unlocked = recipesUnlockedByLevelUp(listRecipes(), guildHeroes(GameState.heroes), { heroId, skillId, oldLevel, newLevel });
             if (!unlocked.length) return;
             const name = heroName || heroOf(heroId)?.name || 'A hero';
             Banners.push({

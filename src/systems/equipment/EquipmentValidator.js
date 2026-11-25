@@ -3,6 +3,7 @@ import * as HeroManager from '../hero/HeroManager.js';
 import { unmetGearRequirement } from '../../config/registries/weaponStyles.js';
 import { t } from '../../i18n/index.js';
 import { levelNeed } from '../core/levelNeed.js';
+import { isSummoned } from '../hero/summoned.js';
 
 /**
  * Whether a hero meets an item's level requirements: a weapon's in its own style, armour's in the
@@ -17,6 +18,9 @@ export function canHeroEquip(heroId, itemId) {
 
     if (hero.isVillager) {
         return { canEquip: false, reason: t('equipment.villager') };
+    }
+    if (isSummoned(hero)) {
+        return { canEquip: false, reason: t('equipment.summoned') };
     }
 
     const template = getItem(itemId);

@@ -5,10 +5,15 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { getGrid } from '../../config/registries/equipmentConstants.js';
 import { toolOf, toolMeets, HAND_CATEGORY } from '../../config/registries/toolKinds.js';
 import { slotBacked } from './heldCopies.js';
+import { isSummoned } from '../hero/summoned.js';
 
 /**
  * A tool counts while it is held in the hands (its item's category is Hand) and backed: a copy the
  * hero holds always is; an older save's link only while the Bank holds one (`heldCopies.js`).
+ *
+ * A Summoned worker holds no tool and needs none: its skill is all its work asks
+ * ({@link holdsToolFor}). At water it fishes the first kind the water names, with nothing of a
+ * tool's own ({@link catchToolOf}).
  *
  * ⚠️ Reads the hero record straight from state, not through `HeroManager.getHero`, which rehydrates
  * as a side effect: this is asked by the flag chooser and the board runner every tick.
@@ -50,13 +55,15 @@ export function catchToolOf(heroId, kinds) {
     if (!Array.isArray(kinds) || !kinds.length) return null;
     const hero = heroRecord(heroId);
     if (!hero) return null;
+    if (isSummoned(hero)) return { itemId: null, kind: kinds[0], tier: 1 };
     const tool = toolsOfHero(hero).find(t => t.backed && kinds.includes(t.kind));
     return tool ? { itemId: tool.itemId, kind: tool.kind, tier: tool.tier } : null;
 }
 
-/** Whether hero `heroId` holds a backed tool that answers `need`. No need: true. */
+/** Whether hero `heroId` holds a backed tool that answers `need`. No need, or a Summoned worker: true. */
 export function holdsToolFor(heroId, need) {
     if (!need) return true;
+    if (isSummoned(heroRecord(heroId))) return true;
     return fittingToolOf(heroId, need) !== null;
 }
 

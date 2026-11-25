@@ -1,20 +1,21 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Plus, X, VenetianMask } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
-import { Section } from '../shared/EditorLayout';
+import { Section, Field } from '../shared/EditorLayout';
 import { NumberCell } from '../shared/IOEntryList';
 import RareTableBlock from './RareTableBlock';
-import { crimeLevelOf } from '../../utils/constants';
+import { crimeLevelOf, stealCoinsOf } from '../../utils/constants';
 
 /**
- * An enemy's **steal table** (`steal: { crimeLevel, xp, outputs, rareTable }`): what a thief at a
- * Hideout takes from its camp each theft, beside the enemy's fight drops. Lines roll as drops do
+ * An enemy's **steal table** (`steal: { crimeLevel, xp, outputs, rareTable, coins }`): what a thief at
+ * a Hideout takes from its camp each theft, beside the enemy's fight drops. Lines roll as drops do
  * (each at its chance); the rare table after them, which a Lucky Hideout raises. `crimeLevel` is the
  * camp's Crime level a thief's is measured against (missing: the enemy's level); `xp` a theft's Crime
- * XP (missing: the Hideout's). The game's reader is `src/config/registries/crime.js`.
+ * XP (missing: the Hideout's); `coins` the guild's coins every theft takes, which Coin Find reaching
+ * the Hideout raises (`coinCosts.stealCoinsOf`). The game's reader is `src/config/registries/crime.js`.
  *
- * Written only while it holds a line or a rare find: removing the last drops the key, so every other
- * Token's record stays byte-identical. A boss's table is never rolled: bosses are never robbed.
+ * Written only while it holds a line, a rare find or coins: removing the last drops the key, so every
+ * other Token's record stays byte-identical. A boss's table is never rolled: bosses are never robbed.
  */
 
 const NEW_LINE = Object.freeze({ itemId: '', chance: 100, minQty: 1, maxQty: 1 });
@@ -26,7 +27,35 @@ function tidy(next) {
   if (!out.rareTable) delete out.rareTable;
   if (out.crimeLevel == null || out.crimeLevel === '') delete out.crimeLevel;
   if (out.xp == null || out.xp === '') delete out.xp;
-  return out.outputs || out.rareTable ? out : undefined;
+  if (!(Number.isInteger(out.coins) && out.coins > 0)) delete out.coins;
+  return out.outputs || out.rareTable || out.coins ? out : undefined;
+}
+
+/**
+ * The coins one theft takes, written as `coins` only when a whole number above 0; blank or 0 takes
+ * none. A pile of the guild's coins every theft that is not caught, as a kill's Coin drop is.
+ */
+function StealCoins({ steal, onChange }) {
+  const [draft, setDraft] = useState(steal?.coins == null ? '' : String(steal.coins));
+  const write = (text) => {
+    setDraft(text);
+    const n = Number(text);
+    onChange(text.trim() !== '' && Number.isInteger(n) && n > 0 ? n : undefined);
+  };
+  const coins = stealCoinsOf({ steal });
+  return (
+    <Field label="Coins a theft">
+      <input
+        type="number" min={0} step={1} aria-label="Coins a theft" data-field="steal-coins"
+        value={draft} placeholder="0"
+        onChange={(e) => write(e.target.value)}
+        className="w-full"
+      />
+      <p data-field="steal-coins-line" className="text-[10px] text-gray-600 mt-1 leading-relaxed">
+        {coins > 0 ? `Each theft takes ${coins} ${coins === 1 ? 'coin' : 'coins'}, more where Coin Find reaches the Hideout.` : 'Takes no coins.'} Blank takes none; a caught thief takes none.
+      </p>
+    </Field>
+  );
 }
 
 export default function StealTableBlock({ token, onPatch }) {
@@ -47,9 +76,9 @@ export default function StealTableBlock({ token, onPatch }) {
       <div data-field="steal-table" className="space-y-3">
         <p className="text-[11px] text-gray-500 leading-relaxed">
           What a thief at a Hideout takes from this enemy&apos;s camp each theft, in place of a fight:
-          what the enemy keeps (its stores and hoard), never its body parts. The enemy stays where it
-          stands. Each line rolls at its chance, then the rare finds; a Lucky Hideout raises their
-          chance. A thief caught takes nothing and puts a guard on the camp. Bosses are never robbed, so
+          what the enemy keeps (its stores, its hoard and its coins), never its body parts. The enemy
+          stays where it stands. Each line rolls at its chance, then the rare finds; a Lucky Hideout
+          raises their chance. A thief caught takes nothing and puts a guard on the camp. Bosses are never robbed, so
           a boss&apos;s table does nothing.
         </p>
 
@@ -78,6 +107,8 @@ export default function StealTableBlock({ token, onPatch }) {
             </p>
           </div>
         </div>
+
+        <StealCoins key={token?.id} steal={steal} onChange={(coins) => write({ ...(steal || {}), coins })} />
 
         {lines.map((l, i) => {
           const known = !l.itemId || items?.[l.itemId];

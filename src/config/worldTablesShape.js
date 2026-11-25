@@ -38,7 +38,7 @@ import { normaliseBiomeTable } from './biomeTerrain.js';
  *   ringValue: { 1: 6, 2: 12, 3: 12 },                      // what a cell's extras are worth, per ring
  *   valueTolerance: 0.1,
  *   prices: { 1: { items: [{ qty: 20 }, { qty: 10, from: 'hall' }, { qty: 2, item: 'item_rope' }],
- *                  skills: [{ skill: 'line', level: 5 }] }, 2: ..., 3: ... },
+ *                  skills: [{ skill: 'line', level: 5 }], coins: 0 }, 2: ..., 3: ... },  // coins: asked beside the items, read live at settling
  *   wild: { rings: 3, priceGrowth: 1.5, levelStep: 10, valueGrowth: 1.5, extremeShare: 0.5,
  *           compositionShare: 0.75,  // how much of a one-resource wild mat its one resource takes
  *           layouts: [{ id: 'islands', weight: 1 }] },
@@ -173,11 +173,19 @@ function skillSlot(raw) {
     return { skill, level: Math.min(MAX_LEVEL, level) };
 }
 
+/** A ring's coins as written: a whole number of 0 or more, or null when it is not one (absent is 0). */
+function ringCoins(raw) {
+    if (raw == null) return 0;
+    const n = Number(raw);
+    return raw !== '' && Number.isInteger(n) && n >= 0 ? n : null;
+}
+
 function priceTemplate(raw) {
     const block = isObject(raw) ? raw : {};
     return {
         items: listOf(block.items).map(priceSlot).filter(Boolean),
-        skills: listOf(block.skills).map(skillSlot).filter(Boolean)
+        skills: listOf(block.skills).map(skillSlot).filter(Boolean),
+        coins: ringCoins(block.coins) ?? 0
     };
 }
 
@@ -325,6 +333,10 @@ export function normaliseWorldTables(raw) {
 
     const ringValue = perRing(raw.ringValue, v => (finite(v) && v >= 0 ? v : 0));
     const prices = perRing(raw.prices, priceTemplate);
+    for (let ring = 1; ring <= STRICT_RINGS; ring++) {
+        const written = isObject(raw.prices) && isObject(raw.prices[ring]) ? raw.prices[ring].coins : undefined;
+        if (ringCoins(written) == null) issues.push(`Ring ${ring}'s coins "${written}" is not a whole number of 0 or more, so it asks none`);
+    }
     for (let ring = 2; ring <= STRICT_RINGS; ring++) {
         const total = (r) => prices[r].items.reduce((n, s) => n + s.qty, 0);
         if (total(ring) <= total(ring - 1)) issues.push(`Ring ${ring}'s price is not dearer than ring ${ring - 1}'s`);

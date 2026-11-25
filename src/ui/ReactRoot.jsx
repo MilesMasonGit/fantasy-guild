@@ -14,7 +14,7 @@ import { useEscapeLayer } from './utils/escapeLayers.js';
 import { useInspectTokenHandlers } from './hooks/useInspectTokenHandlers.js';
 import { useInspectFollowsToken } from './hooks/useInspectFollowsToken.js';
 import { useEncyclopediaBack } from './hooks/useEncyclopediaBack.js';
-import { useHeroSheetRequests } from './hooks/useHeroSheetRequests.js';
+import { useHeroSheetRequests, useHeroSheetOpener } from './hooks/useHeroSheetRequests.js';
 import { useOneBottomDrawer } from './hooks/useOneBottomDrawer.js';
 import { WorldMapRequests } from './hooks/useWorldMapRequests.js';
 import { useShowOnMat } from './hooks/useShowOnMat.js';
@@ -184,8 +184,10 @@ const ReactRoot = () => {
 
     const [inspectHeroId, setInspectHeroId] = React.useState(null);
     const closeInspectHero = React.useCallback(() => setInspectHeroId(null), []);
+    // A Summoned worker has no hero sheet: every opener goes through this one gate.
+    const openHeroSheet = useHeroSheetOpener(setInspectHeroId);
 
-    useHeroSheetRequests(setInspectHeroId);
+    useHeroSheetRequests(openHeroSheet);
     useOneBottomDrawer({ shopOpen: ui.shop.isOpen, heroId: inspectHeroId, closeShop: ui.shop.close, closeHero: closeInspectHero });
     // A banner pointing to its Token, clicked over the World Map, the Hall or the book: back to the mat first.
     const backToMat = React.useCallback(() => {
@@ -347,7 +349,7 @@ const ReactRoot = () => {
                                     <PerfProfiler id="HeroDock">
                                         <BottomHeroDock
                                             selectedHeroId={inspectHeroId}
-                                            onOpenHero={setInspectHeroId}
+                                            onOpenHero={openHeroSheet}
                                         />
                                     </PerfProfiler>
                                 </ErrorBoundary>

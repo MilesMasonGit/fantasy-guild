@@ -348,7 +348,16 @@ export const BOARD_EVENTS = {
      * offering lands (lit, its lit time now) and when its lit time runs out (`lit: false`). Between
      * the two its lit time runs down at game speed, so the mat's lit bar runs on from the last one.
      */
-    SHRINE_LIT: 'board:shrine_lit'
+    SHRINE_LIT: 'board:shrine_lit',
+
+    /**
+     * A Summoned worker changed (`Summons.js`): `{ heroId, typeId, circleId, charges, change,
+     * added?, reason? }`, `change` being `'called'` (a Circle's cycle called it beside the Circle),
+     * `'charged'` (a cycle added `added` charges), `'spent'` (a work cycle spent one) or `'left'` (it
+     * is gone from the roster and the mat: `reason` `'spent'` at no charges, `'replaced'` when its
+     * Circle was set to call another).
+     */
+    SUMMON_CHANGED: 'board:summon_changed'
 };
 
 /**

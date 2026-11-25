@@ -4,7 +4,9 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { GuildUpgradeManager } from '../../../systems/progression/GuildUpgradeManager.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
-import { getUpgradePrice, getLockDetail, LOCK_KIND } from '../../../config/guildUpgrades.js';
+import { getUpgradePrice, getUpgradeCoins, getLockDetail, LOCK_KIND } from '../../../config/guildUpgrades.js';
+import { getCoins } from '../../../systems/inventory/Coins.js';
+import { COIN_ITEM_ID } from '../../../config/registries/coinCosts.js';
 import { starSentence, starAmount } from '../../../systems/progression/hallStarText.js';
 import { formatCompact, toRoman } from '../../../utils/Formatters.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
@@ -72,15 +74,15 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose = null }) => {
     const rank = id ? GuildUpgradeManager.getRank(id) : 0;
     const top = upgradeDef?.maxRank || 0;
 
-    // Every rank left's items against the Bank, as one flat 'itemId:have' signature, so the
-    // drawer re-renders when any of them changes (`useGameState`'s selector contract).
+    // Every rank left's items against the Bank, and the guild's coins, as one flat 'itemId:have'
+    // signature, so the drawer re-renders when any of them changes (`useGameState`'s selector contract).
     useGameState(
         () => {
             if (!upgradeDef) return '';
             const left = GuildUpgradeManager.getRanksCost(upgradeDef.id, upgradeDef.maxRank - GuildUpgradeManager.getRank(upgradeDef.id)) || [];
-            return left.map(p => `${p.itemId}:${InventoryManager.getItemCount(p.itemId)}`).join(',');
+            return [...left.map(p => `${p.itemId}:${InventoryManager.getItemCount(p.itemId)}`), `coins:${getCoins()}`].join(',');
         },
-        [ENGINE_EVENTS.INVENTORY_UPDATED, ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.GAME_RESET]
+        [ENGINE_EVENTS.INVENTORY_UPDATED, ENGINE_EVENTS.COINS_UPDATED, ENGINE_EVENTS.GUILD_UPGRADES_UPDATED, ENGINE_EVENTS.GAME_RESET]
     );
 
     // The chosen rank: the next one by default, again after a buy or on another star.
@@ -111,10 +113,14 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose = null }) => {
     const count = buyable ? Math.max(1, Math.min(top, target) - rank) : 0;
     const total = buyable ? GuildUpgradeManager.getRanksCost(id, count) || [] : [];
     const canAfford = buyable && GuildUpgradeManager.canAffordRanks(id, count);
-    const shortfall = buyable && !canAfford ? GuildUpgradeManager.getShortfall(total) : [];
+    const totalCoins = buyable ? GuildUpgradeManager.getRanksCoins(id, count) : 0;
+    const shortfall = buyable && !canAfford ? GuildUpgradeManager.getShortfall(total, totalCoins) : [];
     const showTotal = totalShown && count > 1;
     const shownRank = rank + count;
-    const shownPrice = showTotal ? total : (buyable ? getUpgradePrice(upgradeDef, shownRank - 1) || [] : []);
+    const shownItems = showTotal ? total : (buyable ? getUpgradePrice(upgradeDef, shownRank - 1) || [] : []);
+    const shownCoins = showTotal ? totalCoins : (buyable ? getUpgradeCoins(upgradeDef, shownRank - 1) : 0);
+    // Coins sit beside the items as one more line, against the guild's coins rather than the Bank.
+    const shownPrice = shownCoins > 0 ? [...shownItems, { itemId: COIN_ITEM_ID, quantity: shownCoins, coins: true }] : shownItems;
     const icon = upgradeDef.star?.sprite || outlineSrc(upgradeDef) || upgradeDef.sprite;
 
     const choose = (r) => {
@@ -211,13 +217,13 @@ export const GuildUpgradeInspection = ({ upgradeDef, onClose = null }) => {
                             ) : (
                                 <div className="flex flex-col gap-1" data-upgrade-bank-check>
                                     {shownPrice.map(p => {
-                                        const have = InventoryManager.getItemCount(p.itemId);
+                                        const have = p.coins ? getCoins() : InventoryManager.getItemCount(p.itemId);
                                         const short = have < p.quantity;
                                         // The ribbon's own have/required count is unshortened: the
                                         // count is given here in short numbers, with its short look.
                                         return (
                                             <EntityRibbon
-                                                key={p.itemId}
+                                                key={p.coins ? 'coins' : p.itemId}
                                                 kind="item"
                                                 id={p.itemId}
                                                 countText={<span data-price-count className={short ? 'text-gi-danger font-semibold' : undefined}>{haveOfPrice(have, p.quantity)}</span>}

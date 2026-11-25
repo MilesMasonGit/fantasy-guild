@@ -1,8 +1,10 @@
 // settling the world map's places: what each cell is now, what it asks, and paying for it
 
 import { InventoryManager } from '../inventory/InventoryManager.js';
+import { getCoins, spendCoins } from '../inventory/Coins.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { getSkillLevel } from '../hero/SkillSystem.js';
+import { guildHeroes } from '../hero/summoned.js';
 import * as CatchUp from '../core/CatchUp.js';
 import { SaveManager } from '../core/SaveManager.js';
 import * as Atlas from '../atlas/Atlas.js';
@@ -20,6 +22,7 @@ import { materialsFromTokens } from './materials.js';
 import { currentWorld } from './worldState.js';
 import { HALL_CELL, CELL_STATE, settledIds, cellStates, priceRows, cellOutputs } from './frontier.js';
 import { recipesOfCell } from './cellRegion.js';
+import { priceTemplateOf } from './generate.js';
 import { ringLock } from './ringStars.js';
 import * as Arrival from './Arrival.js';
 import * as HeroMotion from '../board/HeroMotion.js';
@@ -64,20 +67,27 @@ function allRegions() {
     return Atlas.list().map(r => Atlas.getRegion(r.id)).filter(Boolean);
 }
 
-/** The best level any hero has reached in `skill`, 0 with none. */
+/** The best level any hero has reached in `skill`, 0 with none. A Summoned worker's is not the guild's. */
 export function guildSkillLevel(skill) {
     let best = 0;
-    for (const hero of HeroManager.getAllHeroes() || []) {
+    for (const hero of guildHeroes(HeroManager.getAllHeroes())) {
         const level = getSkillLevel(hero.id, skill);
         if (Number.isFinite(level) && level > best) best = level;
     }
     return best;
 }
 
+/** The coins the world tables ask now for settling a cell of this ring (`prices[ring].coins`). */
+function coinsAsked(cell) {
+    return cell?.ring >= 1 ? priceTemplateOf(worldTables(), cell.ring)?.coins || 0 : 0;
+}
+
 const guild = () => ({
     itemCount: (itemId) => InventoryManager.getItemCount(itemId),
     itemKnown: (itemId) => getItem(itemId) != null,
-    skillLevel: guildSkillLevel
+    skillLevel: guildSkillLevel,
+    coinsAsked,
+    coinCount: getCoins
 });
 
 /** The settled cells' ids, the Hall's always among them; empty with no world. */
@@ -206,7 +216,7 @@ export function arriveAt(region, mat, { save = true } = {}) {
 }
 
 /**
- * Settle cell `id`: pay its whole price from the Bank, write its Region, take the guild there and
+ * Settle cell `id`: pay its whole price from the Bank (and its coins, `frontier.priceRows`), write its Region, take the guild there and
  * put the place's arrival on its mat. Refuses, taking nothing, with no world, a cell that is not on
  * the frontier, while the time away is still playing, a ring whose Guild Hall star the guild does
  * not hold (with `lock`), or a price the guild cannot meet.
@@ -234,6 +244,7 @@ export function settleCell(id) {
     if (!written.success) return written;
 
     for (const row of price.items) InventoryManager.removeItem(row.itemId, row.need);
+    if (price.coins) spendCoins(price.coins.need);
     const { travel, arrival, walkIn } = arriveAt(written.region, written.mat, { save: false });
     saveNow();
     logger.info('World', `Settled ${id} as ${written.region.id}${travel.success ? `, and the guild moved there to ${arrival.ids.length} enemies` : ''}`);

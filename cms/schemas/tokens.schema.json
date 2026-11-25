@@ -26,7 +26,7 @@
         "artSize": { "type": "string", "enum": ["small"], "description": "Only small counts, and only on a 1-by-1 Token (src/config/matGeometry.js)." },
         "tokenType": {
           "type": "string",
-          "enum": ["resource", "station", "passive", "context", "buff", "manager", "market", "enemy", "promotion", "spawner", "camp"],
+          "enum": ["resource", "station", "passive", "context", "buff", "manager", "market", "enemy", "promotion", "spawner", "camp", "summon"],
           "description": "TOKEN_TYPES (src/config/registries/tokenConstants.js). Derived from the rules by Recalculate (writeBack.js deriveTokenType), never picked; read by targeting (filterRegistry.js), RecipeResolver.js and QuestManager.js."
         },
         "rarity": {
@@ -216,13 +216,14 @@
           }
         },
         "steal": {
-          "description": "An enemy's steal table (src/config/registries/crime.js stealOf): what a thief at a Hideout takes from its camp each theft, beside its fight drops; the enemy stays. Rolled by src/systems/board/BoardRunner.js in place of a Hideout's outputs (src/systems/board/Hideouts.js). A boss's table is never rolled (bosses are never robbed). Written by cms/src/components/editors/StealTableBlock.jsx only while it holds a line or a rare find.",
+          "description": "An enemy's steal table (src/config/registries/crime.js stealOf): what a thief at a Hideout takes from its camp each theft, beside its fight drops; the enemy stays. Rolled by src/systems/board/BoardRunner.js in place of a Hideout's outputs (src/systems/board/Hideouts.js). A boss's table is never rolled (bosses are never robbed). Written by cms/src/components/editors/StealTableBlock.jsx only while it holds a line, a rare find or coins.",
           "type": "object",
           "properties": {
             "crimeLevel": { "type": "number", "minimum": 1, "description": "The camp's Crime level a thief's is measured against; missing, the enemy's level." },
             "xp": { "type": "number", "minimum": 0, "description": "A theft's Crime XP; missing, the Hideout's own config.xp. A caught thief gets none." },
             "outputs": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/output" }, "description": "Item lines, each rolled at its chance like a drop; a tokenId line is no line." },
-            "rareTable": { "type": "object", "description": "Rare finds, the shape of a Token's rareTable, rolled after the lines; a Lucky Hideout widens its chance." }
+            "rareTable": { "type": "object", "description": "Rare finds, the shape of a Token's rareTable, rolled after the lines; a Lucky Hideout widens its chance." },
+            "coins": { "type": "integer", "minimum": 0, "description": "The guild's coins a theft takes (src/config/registries/coinCosts.js stealCoinsOf), landed as a pile at the Hideout by src/systems/board/CoinDrops.js; Coin Find reaching the Hideout raises them, a caught thief takes none." }
           }
         },
         "hideout": {
@@ -283,6 +284,34 @@
             "accuracy": { "type": "number" },
             "critChance": { "type": "number", "description": "Percent." },
             "budgetScale": { "type": "number", "description": "Retired: the level table fills the numbers. Read by nothing; the audit names it (LEFTOVER_ENEMY_FIELDS)." }
+          }
+        },
+        "summon": {
+          "description": "It is a Summoned worker's kind (src/config/registries/summonRules.js summonOf): never a Token on the mat. A Summoning recipe whose output names it calls and charges one Summoned worker per Circle (src/systems/board/Summons.js), ordered like a hero, working only its own skills.",
+          "type": "object",
+          "properties": {
+            "of": { "$ref": "common.schema.json#/$defs/id", "description": "The enemy it is a recolour of, for its art and the audit (the Circle's recipe spends that enemy's drops)." },
+            "skills": {
+              "type": "object",
+              "description": "Its own skills, skill id to a fixed level 1 to 99. It holds no other skill and never gains XP.",
+              "additionalProperties": { "type": "number", "minimum": 1, "maximum": 99 }
+            },
+            "trait": {
+              "description": "Its one trait: a library effect it carries as a hero carries a perk, reaching the Token it works.",
+              "type": "object",
+              "properties": {
+                "effectId": { "type": "string" },
+                "scale": { "type": "number", "exclusiveMinimum": 0 }
+              }
+            }
+          }
+        },
+        "summonCircle": {
+          "description": "A Summoning Circle's charges (summonRules.js circleChargesAt): each finished cycle adds charges plus perLevel for every Summoning level of its hero, rounded down, never fewer than 1. Absent: 5 and 0.1.",
+          "type": "object",
+          "properties": {
+            "charges": { "type": "number", "minimum": 0 },
+            "perLevel": { "type": "number", "minimum": 0 }
           }
         },
         "provides": { "type": "array", "description": "Retired inline capability tags (strings or { tag, tier }), still read by statements.js and QuestManager.js; the CMS removes them when a rule is added." },

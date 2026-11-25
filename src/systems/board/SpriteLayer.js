@@ -5,6 +5,7 @@ import { createEmptyBoard } from '../../state/StateSchema.js';
 import { EventBus } from '../core/EventBus.js';
 import { SettingsManager } from '../core/SettingsManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
+import { addCoins } from '../inventory/Coins.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { TOKEN_PX, MAT_STEP_U } from '../../config/matGeometry.js';
 import { matW, matH } from '../../config/matGeometry.js';
@@ -35,6 +36,9 @@ import * as GameClock from '../core/GameClock.js';
  * Collection confers no mechanical advantage: manual and automatic pickup are identical in outcome,
  * and nothing here may ever pay a bonus for collecting by hand.
  */
+
+/** The piles that pay the guild's coins when collected: the coin item (`coinCosts.COIN_ITEM_ID`) and older names for it. */
+const COIN_REFS = new Set(['item_coins', 'item_coin', 'coins', 'coin']);
 
 /** Same-type sprites merge into counted stacks after this long. */
 const MERGE_GRACE_MS = 1100;
@@ -442,11 +446,12 @@ export function collectSprite(id) {
     let changed = false;
     try {
         if (sprite.kind === 'item' || sprite.kind === 'gold' || sprite.kind === 'currency') {
-            if (sprite.refId === 'item_coins' || sprite.refId === 'item_coin' || sprite.refId === 'coins' || sprite.refId === 'coin' || sprite.kind === 'gold' || sprite.kind === 'currency') {
-                // Gold is retired: a coin pile is swept off the floor and pays nothing. It is not
-                // banked either: coins as an item would be gold under another name.
-                logger.debug('SpriteLayer', `Collected ${sprite.quantity || 1} coins; gold is retired, nothing credited`);
+            if (COIN_REFS.has(sprite.refId) || sprite.kind === 'gold' || sprite.kind === 'currency') {
+                // A coin pile pays the guild's coins, never the Bank: coins are a number on the
+                // guild (`inventory/Coins.js`), so a pile is always swept, whatever the Bank holds.
+                // A pile from before gold left pays the same.
                 takeSprite(id);
+                addCoins(sprite.quantity || 1);
                 announceCollected(sprite, 'bank');
                 changed = true;
                 return true;
@@ -491,8 +496,6 @@ export function collectSprite(id) {
  * Without it, a full Bank under a big loot flood re-tries every pile every tick, each through a
  * linear lookup.
  */
-const COIN_REFS = new Set(['item_coins', 'item_coin', 'coins', 'coin']);
-
 function bankRefusal(sprite) {
     if (sprite.kind !== 'item' || COIN_REFS.has(sprite.refId)) return null;
     if (!getItem(sprite.refId)) return null;

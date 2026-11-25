@@ -196,12 +196,18 @@ export {
 export { fishOf, lureOf, baitSavingOf } from '../../../src/config/registries/fishRules.js';
 export { toolFindings } from '../../../src/systems/core/toolRule.js';
 export { spotFindings } from '../../../src/systems/core/spotRule.js';
+// Summoned workers: a summon's skills, trait and copied enemy, a Circle's charges, and the audit. The game's own reading and wording.
+export { summonFindings } from '../../../src/systems/core/summonRule.js';
+export { summonOf, isSummonType, circleChargeSetting, circleChargesAt, DEFAULT_CIRCLE_CHARGES, SUMMONING_SKILL } from '../../../src/config/registries/summonRules.js';
+export { isGatheringSkill } from '../../../src/config/registries/skillRegistry.js';
 export { fishFindings } from '../../../src/systems/core/fishRule.js';
 export { crimeFindings } from '../../../src/systems/core/crimeRule.js';
 // Tools and weapons that break: an item's chance per cycle, for the item editor's Break chance field. The game's own reading.
 export { breakChanceOf, canBreak, BREAK_CHANCE_MAX } from '../../../src/config/registries/itemBreak.js';
 // An item's coin worth, for the item editor's Coin worth field and the audit. The game's own reading and wording.
 export { coinWorthOf, coinWorthFindings } from '../../../src/config/registries/itemCoins.js';
+// A Shop Token's coins, an enemy's Coin drop and its steal table's coins, for their fields and the audit. The game's own reading and wording.
+export { shopCoinsOf, enemyCoinDropOf, stealCoinsOf, coinCostFindings } from '../../../src/config/registries/coinCosts.js';
 // Milestone perks: the shape of a skill's perk table and the content checks for one. The game's own rules and wording.
 export { DEFAULT_PERK_LEVELS, MIN_PERK_LEVEL, isPerkLevel, perkRowsOf, normaliseSkillPerks } from '../../../src/systems/hero/perkTable.js';
 export { perkFindings } from '../../../src/systems/core/perkRule.js';

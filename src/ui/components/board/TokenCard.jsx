@@ -20,7 +20,10 @@ import { withArticle } from '../../../systems/effects/toolNames.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as StationRecipe from '../../../systems/board/StationRecipe.js';
+import * as Summons from '../../../systems/board/Summons.js';
 import { GameState } from '../../../state/GameState.js';
+import { useGameState } from '../../hooks/useGameState.js';
+import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { RecipeList } from './RecipeList.jsx';
 import { takeRecipeListRequest, onRecipeListRequest } from './recipeFlip.js';
 import { CloseX } from '../base/CloseX.jsx';
@@ -289,6 +292,7 @@ const RecipeChoice = ({ block, instanceId, onChangeRecipe }) => {
                     {block.change.empty}
                 </span>
             )}
+            {instanceId != null && <CircleSummonLine instanceId={instanceId} />}
             {block.change && instanceId != null && (
                 <button
                     type="button"
@@ -301,6 +305,25 @@ const RecipeChoice = ({ block, instanceId, onChangeRecipe }) => {
                 </button>
             )}
         </Section>
+    );
+};
+
+/** A Summoning Circle's Summoned worker and its charges left, while one it called stands. */
+const CircleSummonLine = ({ instanceId }) => {
+    const summon = useGameState(
+        () => {
+            const record = Summons.summonOfCircle(instanceId);
+            return record ? { name: record.name, charges: Summons.chargesOf(record.id) } : null;
+        },
+        [BOARD_EVENTS.SUMMON_CHANGED, ENGINE_EVENTS.HEROES_UPDATED, ENGINE_EVENTS.GAME_RESET],
+        null,
+        { deps: [instanceId] }
+    );
+    if (!summon) return null;
+    return (
+        <span data-card-summon className="ui-text-body text-gi-gold">
+            {t('summon.ofCircle', { name: summon.name, charges: t('summon.charges', { count: summon.charges }) })}
+        </span>
     );
 };
 
@@ -804,6 +827,36 @@ const STAT_BLOCKS = new Set([CARD_BLOCK.HP, CARD_BLOCK.COMBAT, CARD_BLOCK.WORK, 
  * enemy's fight, Drops. A section with nothing
  * to say is left out. Every icon and number explains itself on hover.
  */
+/**
+ * The warning a Summoning Circle's card gives before a pick that dismisses its Summoned worker
+ * (`Summons.dismissWarning`): its name and charges, Change to go ahead, Keep to stay as it is.
+ */
+const SummonDismissConfirm = ({ warning, onConfirm, onKeep }) => (
+    <div data-summon-dismiss={warning.heroId} className="mb-1.5 bg-black/75 border border-gi-gold/60 px-2 py-1.5 flex flex-col gap-1.5">
+        <span className="ui-text-body text-white leading-tight">
+            {t('summon.dismissWarning', { name: warning.name, charges: t('summon.charges', { count: warning.charges }) })}
+        </span>
+        <div className="flex gap-1.5 justify-end">
+            <button
+                type="button"
+                data-summon-dismiss-keep
+                onClick={(e) => { e.stopPropagation(); onKeep(); }}
+                className="bg-black/65 px-2 py-0.5 ui-text-body text-gi-muted hover:text-white cursor-pointer"
+            >
+                {t('summon.dismissKeep')}
+            </button>
+            <button
+                type="button"
+                data-summon-dismiss-confirm
+                onClick={(e) => { e.stopPropagation(); onConfirm(); }}
+                className="bg-gi-gold/20 px-2 py-0.5 ui-text-body font-bold text-gi-gold hover:text-white cursor-pointer"
+            >
+                {t('summon.dismissConfirm')}
+            </button>
+        </div>
+    </div>
+);
+
 export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewChange = null }) => {
     const def = getTokenType(typeId);
     const model = tokenCardModel(typeId, instanceId);
@@ -817,13 +870,23 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
     useTokenDetail(instanceId, def);
     useCardClock(instanceId, !!def?.enemy);
 
+    // A Summoning Circle's pick that would dismiss its Summoned worker, held until the player says.
+    const [dismissing, setDismissing] = useState(null);
+
     const listing = view === 'recipes' && canList;
     if (!model) return null;
     const { art } = model;
 
-    const choose = (recipeId) => {
+    const pick = (recipeId) => {
+        setDismissing(null);
         // `setSelectedRecipe` is the only writer, and refuses an id outside this Token's pool.
         if (StationRecipe.setSelectedRecipe(BoardState.getTokenById(instanceId), recipeId, def)) setView('card');
+    };
+    // One summon per Circle: picking another kind asks first, since it dismisses the one standing.
+    const choose = (recipeId) => {
+        const warning = Summons.dismissWarning(BoardState.getTokenById(instanceId), recipeId);
+        if (warning) setDismissing({ recipeId, ...warning });
+        else pick(recipeId);
     };
     // `setTarget` is the only writer of a Hideout's camp, and refuses one not in its reach.
     const chooseCamp = (campId) => {
@@ -862,6 +925,13 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
         </div>
     ) : listing ? (
         <div className="p-1.5">
+            {dismissing && (
+                <SummonDismissConfirm
+                    warning={dismissing}
+                    onConfirm={() => pick(dismissing.recipeId)}
+                    onKeep={() => setDismissing(null)}
+                />
+            )}
             {/* Keyed by Token: another station's list starts with an empty search, scrolled to its own recipe. */}
             <RecipeList
                 key={instanceId}

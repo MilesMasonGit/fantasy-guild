@@ -42,10 +42,12 @@ import * as Fields from './Fields.js';
 import * as Shrines from './Shrines.js';
 import * as SupportLinks from './supportLinks.js';
 import * as Thefts from './Thefts.js';
+import * as CoinDrops from './CoinDrops.js';
 import * as LoadoutMoments from './LoadoutMoments.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as Breakage from '../equipment/Breakage.js';
+import * as Summons from './Summons.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import { centreOf } from './nearby.js';
 import * as Hand from './Hand.js';
@@ -153,12 +155,12 @@ function setAlert(instance, reason) {
 
 /**
  * The most copies a recipe's Token outputs can make in one cycle: each output's authored maximum,
- * `chance` ignored (room is reserved for all).
+ * `chance` ignored (room is reserved for all). A summon is no Token on the mat: it needs no room.
  */
 function tokenOutputCount(io) {
     let n = 0;
     for (const output of io?.outputs || []) {
-        if (output?.tokenId) n += Math.max(0, outputRange(output).max);
+        if (output?.tokenId && !Summons.isSummonOutput(output)) n += Math.max(0, outputRange(output).max);
     }
     return n;
 }
@@ -171,7 +173,7 @@ function hasRoomForTokenOutputs(id, io) {
     const count = tokenOutputCount(io);
     if (count <= 0) return true;
     for (const output of io.outputs) {
-        if (output?.tokenId && !Placement.hasRoomForProduct(id, output.tokenId, count)) return false;
+        if (output?.tokenId && !Summons.isSummonOutput(output) && !Placement.hasRoomForProduct(id, output.tokenId, count)) return false;
     }
     return true;
 }
@@ -255,8 +257,9 @@ function rollMultipliers(instanceId, config, failed) {
 /**
  * What a finished cycle makes, once it is paid: its outputs (`made.outputs`, already the catch on a
  * water) rolled and landed with its Double Loot and Giant Harvest (`rolls`), the rare table's find,
- * the bonus drops, and a shrine's offering lighting it. A failed cycle makes nothing here. Run once
- * per cycle, and once more for an Echo. Fills `made.produced`, and on a theft `made.stolen`.
+ * the bonus drops, a theft's coins, and a shrine's offering lighting it. A failed cycle makes nothing
+ * here. Run once per cycle, and once more for an Echo. Fills `made.produced`, and on a theft
+ * `made.stolen` (its coins among them, marked `coins`).
  * Item output lands on the BOARD, not in the Bank: it is not banked until collected, and if the
  * Bank is full it simply waits there. A Token output stands on the mat beside the station.
  */
@@ -266,6 +269,13 @@ function landOutputs(made, { doubled, giant }) {
     const times = (doubled ? 2 : 1) * (giant ? OutputRules.GIANT_HARVEST_TIMES : 1);
     let giantLanded = false;
 
+    // What a theft took, one line an item, so an Echo's second landing (or a rare find of a line's
+    // item) adds up.
+    const noteStolen = (line) => {
+        const same = stolen.find(s => s.itemId === line.itemId);
+        if (same) same.quantity += line.quantity;
+        else stolen.push({ ...line });
+    };
     // One item line, once its chance has landed: the authored range rolled, then the cycle's rules
     // (`OutputRules.landItemLine`). Every drop lands this way, the rare table's too. `note` hears the
     // sprite (for the twinkle). A line naming no item pays nothing: the cycle still runs and still
@@ -274,17 +284,14 @@ function landOutputs(made, { doubled, giant }) {
         const quantity = OutputRules.landItemLine(id, config.skill, output, times, note);
         if (!quantity) return;
         produced.push(output.itemId);
-        // One line an item, so an Echo's second landing (or a rare find of a line's item) adds up.
-        if (io.steal) {
-            const same = stolen.find(s => s.itemId === output.itemId);
-            if (same) same.quantity += quantity;
-            else stolen.push({ itemId: output.itemId, quantity });
-        }
+        if (io.steal) noteStolen({ itemId: output.itemId, quantity });
         giantLanded = giant;
     };
 
-    // A build makes its Token by becoming it (below), never as a sprite.
+    // A build makes its Token by becoming it (below), never as a sprite. A summon is charged once,
+    // by `chargeSummons`, never landed.
     for (const output of outputs) {
+        if (Summons.isSummonOutput(output)) continue;
         const chance = output.chance ?? 100;
         if (chance < 100 && Math.random() * 100 > chance) continue;
 
@@ -312,6 +319,13 @@ function landOutputs(made, { doubled, giant }) {
         if (bonus.length) giantLanded = giant;
         for (const drop of bonus) produced.push(drop.itemId);
     }
+    // A theft's coins last, a pile of their own as a kill's are (`CoinDrops`): Coin Find reaching the
+    // Hideout raises them, Double Loot never does. A caught thief takes none; an Echo takes them again.
+    // ⚠️ A table with no coins draws nothing here.
+    if (io.steal && !failed && !building) {
+        const coins = CoinDrops.dropStolenCoins(id, io.steal.table, config.skill);
+        if (coins) noteStolen(coins);
+    }
     // Celebrated only once something did come in at ten times (a line whose chance missed did not).
     if (giantLanded) EffectFeedback.giantHarvest(id);
 
@@ -319,6 +333,21 @@ function landOutputs(made, { doubled, giant }) {
     // blessing starts reaching its neighbours now.
     if (!failed && !building && Shrines.light(instance, def, io.recipe)) {
         TileModifiers.rebuildAround([centreOf(instance)]);
+    }
+}
+
+/**
+ * A finished cycle's summon outputs (a Summoning Circle's call, `Summons.isSummonOutput`), each
+ * charging the Circle's Summoned worker for `heroId`'s level once its chance has landed. Once a
+ * cycle: an Echo lands the outputs again but never charges again. A failed cycle or a build has no
+ * outputs here.
+ */
+function chargeSummons({ instance, config, outputs }, heroId) {
+    for (const output of outputs) {
+        if (!Summons.isSummonOutput(output)) continue;
+        const chance = output.chance ?? 100;
+        if (chance < 100 && Math.random() * 100 > chance) continue;
+        Summons.chargeFromCircle(instance, output.tokenId, heroId, config.skill);
     }
 }
 
@@ -453,6 +482,9 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
 
     const made = { instance, def, io, config, outputs, caught, produced, stolen, failed, building: !!buildTypeId };
     landOutputs(made, rolls);
+    // A summon is a Summoned worker for this Circle to charge, never a Token beside it: charged here,
+    // once a cycle, so an Echo (which lands the outputs again) does not charge it twice.
+    chargeSummons(made, heroId);
 
     // `Applies`: a neighbour putting a status on the hero who just worked here. The same moment and
     // the same rules as BONUS_DROP directly above: skipped on a failed cycle, and it needs a
@@ -564,6 +596,9 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
 
     // A fishing spot may move on after a catch, last since it takes the Token off the mat.
     if (caught) FishingSpots.afterCatch(instance, def);
+
+    // A Summoned worker spends a charge for the cycle, and at none leaves: last, once it has landed.
+    Summons.afterWorkCycle(heroId);
 }
 
 /**

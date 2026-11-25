@@ -1,7 +1,10 @@
 // Crime: what a camp's enemy gives a thief, and how often a thief is caught (a leaf module)
 //
 // ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY (through `cms/src/utils/constants.js`),
-// for the enemy editor's steal table and the Hideout's caught curve. Pure: it imports nothing.
+// for the enemy editor's steal table and the Hideout's caught curve. Pure: it imports only the coin
+// reader, as pure.
+
+import { coinsOf } from './coinCosts.js';
 
 /** The station kind a Hideout works as: Crime's one building, which robs a camp instead of running recipes. */
 export const HIDEOUT_KIND = 'hideout';
@@ -82,15 +85,17 @@ function stealLine(raw) {
  *   "crimeLevel": 5,      // the camp's Crime level; missing: the enemy's level
  *   "xp": 6,              // a theft's Crime XP; missing: the Hideout's own
  *   "outputs": [ { "itemId": "item_wheat", "chance": 80, "minQty": 1, "maxQty": 2 } ],
- *   "rareTable": { "chance": 2, "entries": [ { "itemId": "item_nature_mote", "weight": 1 } ] }
+ *   "rareTable": { "chance": 2, "entries": [ { "itemId": "item_nature_mote", "weight": 1 } ] },
+ *   "coins": 12           // coins a theft takes, beside the lines; Coin Find at the Hideout raises them
  * }
  * ```
  *
  * `outputs` are item lines, rolled each theft as a cycle's drops are (a Token line is no line);
- * `rareTable` is a rare drop table (`rareTables.js`), rolled after them, which Lucky widens. A
- * table with no usable line and no rare table is no table: the camp cannot be robbed.
+ * `rareTable` is a rare drop table (`rareTables.js`), rolled after them, which Lucky widens; `coins`
+ * (`coinCosts.stealCoinsOf`) a pile of the guild's coins every theft that is not caught. A table
+ * with no usable line, no rare table and no coins is no table: the camp cannot be robbed.
  *
- * @returns {{ crimeLevel: number|null, xp: number|null, outputs: object[], rareTable: object|null, block: object }|null}
+ * @returns {{ crimeLevel: number|null, xp: number|null, outputs: object[], rareTable: object|null, coins: number, block: object }|null}
  * `block` is the authored object itself, the stable key a rare table is read by.
  */
 export function stealOf(def) {
@@ -102,12 +107,14 @@ export function stealOf(def) {
         const rare = block.rareTable && typeof block.rareTable === 'object' ? block.rareTable : null;
         const level = Number(block.crimeLevel);
         const xp = Number(block.xp);
-        steal = outputs.length || rare
+        const coins = coinsOf(block.coins);
+        steal = outputs.length || rare || coins > 0
             ? Object.freeze({
                 crimeLevel: block.crimeLevel != null && Number.isFinite(level) ? level : null,
                 xp: block.xp != null && Number.isFinite(xp) && xp >= 0 ? xp : null,
                 outputs: Object.freeze(outputs),
                 rareTable: rare,
+                coins,
                 block
             })
             : NONE;

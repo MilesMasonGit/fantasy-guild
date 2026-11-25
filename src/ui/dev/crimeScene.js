@@ -25,7 +25,7 @@ import { xpForLevel } from '../../utils/XPCurve.js';
 /**
  * Made in memory for this check only (never written to `data/`, gone on reload):
  * - QA Pasture: a Cow Pasture of QA Cows (three at most), whose steal table is Wheat (80 %), Milk
- *   (50 %) and a rare Wheat Seed (5 %), the camp's Crime level 5;
+ *   (50 %), 6 coins every theft and a rare Wheat Seed (5 %), the camp's Crime level 5;
  * - QA Hideout and QA Quiet Hideout (Quiet 20) in the pasture's reach, a theft every 4 s;
  * - QA Thief (Crime 3) ordered onto the QA Hideout, which has no camp chosen yet; QA Fighter
  *   (Melee 40) at the Guild Hall, to beat a guard. At Crime 3 against 5 the thief is caught about
@@ -60,7 +60,8 @@ function registerScene() {
                     { itemId: 'item_wheat', chance: 80, minQty: 1, maxQty: 2 },
                     { itemId: 'item_milk', chance: 50, minQty: 1, maxQty: 1 }
                 ],
-                rareTable: { chance: 5, entries: [{ itemId: 'item_wheat_seed', weight: 1, minQty: 1, maxQty: 3 }] }
+                rareTable: { chance: 5, entries: [{ itemId: 'item_wheat_seed', weight: 1, minQty: 1, maxQty: 3 }] },
+                coins: 6
             }
         },
         [PASTURE]: {

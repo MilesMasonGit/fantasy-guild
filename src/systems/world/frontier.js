@@ -43,9 +43,13 @@ export function cellStates(world, settled) {
 }
 
 /**
- * A cell's price against what the guild has: `{ items, skills, dropped, met }`, where each item is
- * `{ itemId, need, have, short }`, each skill `{ skill, need, have, short }`, and `dropped` the
- * item ids the price names that have no definition now. A cell with no price (the Hall's) is met.
+ * A cell's price against what the guild has: `{ items, skills, coins, dropped, met }`, where each
+ * item is `{ itemId, need, have, short }`, each skill `{ skill, need, have, short }`, `coins` is
+ * `{ need, have, short }` when the price asks coins (else null), and `dropped` the item ids the
+ * price names that have no definition now. A cell with no price (the Hall's) is met.
+ *
+ * The coins are not stored on the cell: `guild.coinsAsked(cell)` reads them from the world tables
+ * now (by ring), so tables that start asking coins reach a world written before.
  *
  * ⚠️ The world's prices are written once, at the new game, so an item deleted or renamed in the
  * CMS since would make its place unpayable for good: such a row is not asked (and not paid), and
@@ -53,9 +57,9 @@ export function cellStates(world, settled) {
  *
  * @param {object} cell a world cell
  * @param {{ itemCount: (itemId: string) => number, skillLevel: (skill: string) => number,
- *   itemKnown?: (itemId: string) => boolean }} guild
+ *   itemKnown?: (itemId: string) => boolean, coinsAsked?: (cell: object) => number, coinCount?: () => number }} guild
  */
-export function priceRows(cell, { itemCount, skillLevel, itemKnown = () => true }) {
+export function priceRows(cell, { itemCount, skillLevel, itemKnown = () => true, coinsAsked = () => 0, coinCount = () => 0 }) {
     const req = cell?.requires || { items: [], skills: [] };
     const dropped = [];
     const items = [];
@@ -71,7 +75,10 @@ export function priceRows(cell, { itemCount, skillLevel, itemKnown = () => true 
         const have = Math.max(0, Math.floor(Number(skillLevel(skill)) || 0));
         return { skill, need: level, have, short: have < level };
     });
-    return { items, skills, dropped, met: !items.some(r => r.short) && !skills.some(r => r.short) };
+    const need = cell?.requires ? Math.max(0, Math.floor(Number(coinsAsked(cell)) || 0)) : 0;
+    const have = need > 0 ? Math.max(0, Math.floor(Number(coinCount()) || 0)) : 0;
+    const coins = need > 0 ? { need, have, short: have < need } : null;
+    return { items, skills, coins, dropped, met: !items.some(r => r.short) && !skills.some(r => r.short) && !coins?.short };
 }
 
 /**

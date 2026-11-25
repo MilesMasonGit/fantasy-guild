@@ -14,6 +14,7 @@ import { EFFECTS, getEffect } from '../../config/registries/effectRegistry.js';
 import { effectRefsOf, duplicateRefsOf, hasWorkingStatements, usedBy, statusBlockOf } from '../effects/effectLibrary.js';
 import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
 import { coinWorthFindings } from '../../config/registries/itemCoins.js';
+import { coinCostFindings } from '../../config/registries/coinCosts.js';
 import { STANDS_ON_CHOICES, isStandsOnWord } from '../atlas/TerrainMap.js';
 import { listPooledSkillIds } from '../../config/registries/recipePoolRegistry.js';
 import { SPRITE_MANIFEST } from '../../config/registries/sprite-manifest.js';
@@ -25,6 +26,7 @@ import { kindStatements } from '../effects/enemyKindEffects.js';
 import { findUnknownRefs } from './unknownRefRule.js';
 import { toolFindings } from './toolRule.js';
 import { spotFindings } from './spotRule.js';
+import { summonFindings } from './summonRule.js';
 import { fishFindings } from './fishRule.js';
 import { crimeFindings } from './crimeRule.js';
 import { isSpentCategory, isAlwaysOn, ALWAYS_ON_IDLE_WHY } from './consumableRule.js';
@@ -742,6 +744,17 @@ function auditSpots(out) {
 }
 
 /**
+ * Summoned workers: a summon that can work nothing, names what the game lacks, works a making skill
+ * or is never called, and a recipe calling one wrongly. The rule lives in `summonRule.js`, shared
+ * with the CMS Economy Audit.
+ */
+function auditSummons(out) {
+    for (const f of summonFindings({ tokens: TOKENS, recipes: listRecipes(), effects: EFFECTS })) {
+        out.push(finding(`${f.entityType} "${f.entityId}"`, f.message));
+    }
+}
+
+/**
  * Fishing's catch rules: a second Bait, a water with two Trap catches, a lure that never picks its
  * fish, two of one lure's fish on one map. The rule lives in `fishRule.js`, shared with the CMS
  * Economy Audit.
@@ -812,9 +825,10 @@ function auditEffectStacks(out) {
     }
 }
 
-/** An item's Coin worth the game cannot read (`itemCoins.js`), shared with the CMS Economy Audit. */
+/** An item's Coin worth, a Shop Token's coins or an enemy's Coin drop the game cannot read, shared with the CMS Economy Audit. */
 function auditCoinWorth(out) {
     for (const f of coinWorthFindings({ items: ITEMS })) out.push(finding(`${f.entityType} "${f.entityId}"`, f.message));
+    for (const f of coinCostFindings({ tokens: TOKENS })) out.push(finding(`${f.entityType} "${f.entityId}"`, f.message));
 }
 
 /**
@@ -843,7 +857,7 @@ function auditWorldBiomes(out) {
 export function auditContent({ starterCamp = null } = {}) {
     const out = [];
     const steps = [
-        auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditTools, auditSpots, auditFish, auditCrime, auditPerks, auditHallStars,
+        auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditTools, auditSpots, auditSummons, auditFish, auditCrime, auditPerks, auditHallStars,
         auditGearDefence, auditEffectStacks, auditCoinWorth, auditEvents, auditWorldBiomes,
         (o) => auditStarterCamp(o, starterCamp)
     ];
@@ -944,6 +958,7 @@ function collectSaveRefs(state, note) {
         for (const itemId of hero?.equipment || []) {
             note('item', itemId, `equipped by ${hero?.name || 'a hero'}`);
         }
+        if (hero?.summon) note('Token', hero.summon.typeId, `as the kind of the Summoned worker ${hero?.name || ''}`.trim());
     }
 }
 

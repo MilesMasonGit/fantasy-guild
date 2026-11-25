@@ -6,6 +6,8 @@ import { formatCompact } from '../../../utils/Formatters.js';
 import { cn } from '../../utils/cn.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
+import { coinsText } from '../base/coinsText.js';
+import { COIN_ITEM_ID } from '../../../config/registries/coinCosts.js';
 
 const skillName = (id) => SKILLS[id]?.name || (id ? id.charAt(0).toUpperCase() + id.slice(1) : '');
 const itemName = (id) => getItem(id)?.name || id;
@@ -15,7 +17,8 @@ const countCls = (short) => cn('tabular-nums', short ? 'text-[var(--color-ui-red
 export function shortWords(price) {
     const parts = [
         ...price.items.filter(r => r.short).map(r => `${(r.need - r.have).toLocaleString('en-US')} ${itemName(r.itemId)}`),
-        ...price.skills.filter(r => r.short).map(r => `${skillName(r.skill)} ${r.need}`)
+        ...price.skills.filter(r => r.short).map(r => `${skillName(r.skill)} ${r.need}`),
+        ...(price.coins?.short ? [coinsText(price.coins.need - price.coins.have)] : [])
     ];
     return parts.length ? t('worldMap.short', { what: parts.join(', ') }) : null;
 }
@@ -35,8 +38,11 @@ const DroppedNote = ({ price, className }) => {
     return <div data-world-price-dropped className={cn('text-white/55', className)}>{t('worldMap.dropped', { what: price.dropped.join(', ') })}</div>;
 };
 
+/** Whether a price asks nothing at all. */
+const asksNothing = (price) => !price.items.length && !price.skills.length && !price.coins;
+
 const PricePillRow = ({ price }) => {
-    if (!price.items.length && !price.skills.length) return <div className="text-white/60">{t('worldMap.nothingAsked')}</div>;
+    if (asksNothing(price)) return <div className="text-white/60">{t('worldMap.nothingAsked')}</div>;
     return (
         <div className="flex flex-wrap gap-x-2 gap-y-0.5">
             {price.items.map(r => (
@@ -51,6 +57,12 @@ const PricePillRow = ({ price }) => {
                     <span className={countCls(r.short)}>{r.have}/{r.need}</span>
                 </span>
             ))}
+            {price.coins && (
+                <span data-world-price-coins className="flex items-center gap-1">
+                    <ItemIcon item={COIN_ITEM_ID} size={32} title={null} />
+                    <span className={countCls(price.coins.short)}>{haveNeed(price.coins.have, price.coins.need)}</span>
+                </span>
+            )}
         </div>
     );
 };
@@ -64,7 +76,7 @@ const PricePills = ({ price }) => (
 );
 
 const PriceRowList = ({ price }) => {
-    if (!price.items.length && !price.skills.length) return <div className="font-pixel ui-text-body text-white/60">{t('worldMap.nothingAsked')}</div>;
+    if (asksNothing(price)) return <div className="font-pixel ui-text-body text-white/60">{t('worldMap.nothingAsked')}</div>;
     const row = (key, attrs, icon, name, count, short) => (
         <div key={key} {...attrs} className="flex items-center gap-1.5 font-pixel ui-text-body">
             {icon}
@@ -76,6 +88,7 @@ const PriceRowList = ({ price }) => {
         <div className="flex flex-col gap-0.5">
             {price.items.map(r => row(r.itemId, { 'data-world-price-item': r.itemId }, <ItemIcon item={r.itemId} size={32} title={null} />, itemName(r.itemId), haveNeed(r.have, r.need), r.short))}
             {price.skills.map(r => row(r.skill, { 'data-world-price-skill': r.skill }, <SkillIcon skillId={r.skill} size={32} />, skillName(r.skill), `${r.have}/${r.need}`, r.short))}
+            {price.coins && row('coins', { 'data-world-price-coins': true }, <ItemIcon item={COIN_ITEM_ID} size={32} title={null} />, t('matTopBar.coins'), haveNeed(price.coins.have, price.coins.need), price.coins.short)}
         </div>
     );
 };

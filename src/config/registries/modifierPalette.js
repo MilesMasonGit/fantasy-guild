@@ -168,8 +168,9 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  *
  * ## `neverOnGuild` — a star or a guild rule cannot carry it
  *
- * Sunder lands on the fighter struck: a star carrying it is refused by the CMS's pack check and
- * named by the boot audit, and the guild never registers it (`hallModifiers.hallRulesOf`).
+ * Sunder lands on the fighter struck, and no star touches coins (Coin Find): a star carrying either
+ * is refused by the CMS's pack check and named by the boot audit, and the guild never registers it
+ * (`hallModifiers.hallRulesOf`). `guildWhy` says why, in the words those refusals use.
  *
  * ## `heroOnly` — the axis reaches a person, never a tile
  *
@@ -422,6 +423,25 @@ export const MODIFIER_PALETTE = [
         shape: MODIFIER_SHAPES.PROC,
         group: 'Support',
         hint: 'Percent chance the whole cycle yields double.'
+    },
+    {
+        /**
+         * Read by `CoinDrops.killCoins` as a kill drops its coins: the enemy's Coin drop raised by
+         * every rule reaching the enemy's Token, rounded to whole coins. `CoinDrops.stolenCoins` reads
+         * it the same way at a Hideout, for the coins a theft takes.
+         */
+        type: EFFECT_TYPES.COIN_FIND,
+        reads: { up: (n) => `drop ${n} more coins`, down: (n) => `drop ${n} fewer coins` },
+        label: 'Coin Find',
+        explains: 'Enemies defeated in reach drop more coins, and a Hideout in reach steals more',
+        when: 'never',
+        scales: 'value',
+        buckets: ['percentage'],
+        neverOnGuild: true,
+        guildWhy: 'no Guild Hall star touches coins',
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Support',
+        hint: 'A percentage on the coins an enemy defeated in reach drops, and on the coins a Hideout in reach steals. For a building; a Guild Hall star cannot carry it.'
     },
     {
         type: EFFECT_TYPES.FAIL_CHANCE,
@@ -838,6 +858,7 @@ export const MODIFIER_PALETTE = [
         buckets: ['flat'],
         heroOnly: true,
         neverOnGuild: true,
+        guildWhy: 'it lands only on the fighter struck',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
         hint: 'Points off every resistance the bearer has, never below 0 (a weakness stays as it is). Put it on a status: Sunder 10 stacking to 3 takes up to 30 off. Spears and some arrows land it.'

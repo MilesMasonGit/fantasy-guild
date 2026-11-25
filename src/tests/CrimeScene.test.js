@@ -10,6 +10,8 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as Hideouts from '../systems/board/Hideouts.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { resetMatTuning } from '../config/matTuning.js';
+import { getTokenType } from '../config/registries/tokenRegistry.js';
+import { stealOf } from '../config/registries/crime.js';
 import { setUpCrimeScene } from '../ui/dev/crimeScene.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -42,6 +44,8 @@ describe('the Hideout scene', () => {
         const [hideout] = byType('qa_crime_hideout');
         const [quiet] = byType('qa_crime_quiet_hideout');
         expect(byType('qa_crime_cow').length).toBe(3);
+        // A theft not caught takes 6 coins beside the goods.
+        expect(stealOf(getTokenType('qa_crime_cow')).coins).toBe(6);
         expect(Hideouts.campsInReach(hideout).map(c => c.id)).toEqual([pasture.id]);
         expect(Hideouts.campsInReach(quiet).map(c => c.id)).toEqual([pasture.id]);
         expect(Hideouts.targetOf(hideout)).toBeNull();

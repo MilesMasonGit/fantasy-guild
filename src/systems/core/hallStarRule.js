@@ -5,6 +5,7 @@ import {
     FALLBACK_CONSTELLATION_IDS, FALLBACK_STAR_IDS, FALLBACK_SKY, HALL_NODE, RANKS_BY_ID, ROSTER_STAR, BANK_TABS_STAR
 } from '../../config/guildUpgrades.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
+import { coinAmountProblem } from '../../config/registries/coinCosts.js';
 import { KEYWORD } from '../effects/statements.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { hallRulesOf, xpForEveryoneOf, RETIRED_AXIS, NEVER_ON_GUILD, CARRIED_ONLY_AXIS } from '../progression/hallModifiers.js';
@@ -44,6 +45,11 @@ export function hallStarFindings({ sky, items = {}, tokens = {} } = {}) {
         if (!normaliseStar(raw, key) && raw && typeof raw === 'object') {
             push({ id: raw.id || key, name: raw.name }, 'ranks', 'has no rank to buy, so it is left out of the sky.');
         }
+        // A rank's coins are dropped to 0 by the normaliser, so they are read here as written.
+        (Array.isArray(raw?.ranks) ? raw.ranks : []).forEach((rank, i) => {
+            const problem = coinAmountProblem(rank?.coins, `rank ${i + 1}'s coins`);
+            if (problem) push({ id: raw.id || key, name: raw.name }, 'ranks', `${problem.replace(/^its /, '')}.`);
+        });
     }
 
     for (const star of stars) {
@@ -87,7 +93,7 @@ export function hallStarFindings({ sky, items = {}, tokens = {} } = {}) {
                     push(star, 'ranks', `rank ${r} has a rule aimed at the Token "${to.value}", which does not exist, so it reaches nothing.`);
                 }
                 const entry = statement?.keyword === KEYWORD.PROVIDES ? getPaletteEntry(statement.payload?.type) : null;
-                if (entry?.neverOnGuild) push(star, 'ranks', `rank ${r} has a ${entry.label} rule, which a star cannot carry: it lands only on the fighter struck, so the rule is left out. Delete the rule in the CMS.`);
+                if (entry?.neverOnGuild) push(star, 'ranks', `rank ${r} has a ${entry.label} rule, which a star cannot carry: ${entry.guildWhy}, so the rule is left out. Delete the rule in the CMS.`);
                 else if (entry?.heroOnly && !entry.fromGuild && !entry.retired) push(star, 'ranks', `rank ${r} has a ${entry.label} rule, which only reaches a hero from what they carry, so it does nothing from the Hall.`);
                 if (entry?.categories === 'combatStyle' && !isCombatStyleScope(statement.payload?.category)) {
                     push(star, 'ranks', `rank ${r} has a ${entry.label} rule narrowed to "${statement.payload.category}", which is no combat style, so it helps no fighter. Pick Melee, Ranged, Magic or Stealth, or no style, in the CMS.`);

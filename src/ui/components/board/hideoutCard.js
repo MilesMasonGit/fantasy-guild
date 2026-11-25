@@ -8,15 +8,19 @@ import { chanceFigure } from '../../../utils/Formatters.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Hideouts from '../../../systems/board/Hideouts.js';
 import * as RareTables from '../../../systems/board/RareTables.js';
+import * as CoinDrops from '../../../systems/board/CoinDrops.js';
 import * as SkillSystem from '../../../systems/hero/SkillSystem.js';
+import { COIN_ITEM_ID } from '../../../config/registries/coinCosts.js';
 import { GameState } from '../../../state/GameState.js';
+import { coinsText } from '../base/coinsText.js';
 import { lastTheftOf } from './lastTheft.js';
 
 /**
  * What a Hideout's card says, as plain data (`tokenCard.js` calls it for the `theft` block): the
  * camp it is set to rob and its Crime level, a guard standing on it, what a theft there takes (each
- * line at its chance, and the rare finds with Lucky counted), the odds the hero on it is caught,
- * the last theft, and the camps in reach to pick from (the card's list face, `CampList`).
+ * line at its chance, its coins with Coin Find at the Hideout counted, and the rare finds with Lucky
+ * counted), the odds the hero on it is caught, the last theft, and the camps in reach to pick from
+ * (the card's list face, `CampList`).
  * Every engine read goes through `src`, so a test can pin it without a mat.
  */
 
@@ -35,6 +39,7 @@ export function liveTheftSources() {
         robbedEnemyOf: Hideouts.robbedEnemyOfType,
         caughtChanceAt: Hideouts.caughtChanceAt,
         luckyChance: RareTables.luckyChance,
+        stolenCoins: CoinDrops.stolenCoins,
         lastTheft: lastTheftOf
     };
 }
@@ -45,6 +50,13 @@ function stealRows(steal) {
         const { min, max } = outputRange(o);
         return { itemId: o.itemId, min, max, chance: chanceFigure(o.chance ?? 100) };
     });
+}
+
+/** The coins a theft takes as a line of its own, every theft (Coin Find at the Hideout counted), or null. */
+function coinRow(steal, hideoutId, skill, src) {
+    if (!(steal?.coins > 0)) return null;
+    const coins = src.stolenCoins ? src.stolenCoins(hideoutId, steal.coins, skill) : steal.coins;
+    return coins > 0 ? { itemId: COIN_ITEM_ID, min: coins, max: coins, chance: 100, coins: true } : null;
 }
 
 /** The steal table's rare finds: its chance at the Hideout (Lucky counted), each entry at its share. */
@@ -69,7 +81,7 @@ function campRow(camp, src) {
         enemyTypeId: robbed?.typeId || null,
         crimeLevel: robbed ? crimeLevelOf(robbed.def) : null,
         guarded: !!guard,
-        steals: stealRows(robbed?.steal).map(r => r.itemId)
+        steals: [...stealRows(robbed?.steal).map(r => r.itemId), ...(robbed?.steal?.coins > 0 ? [COIN_ITEM_ID] : [])]
     };
 }
 
@@ -102,7 +114,7 @@ export function theftBlockOf(instance, def, src = liveTheftSources()) {
         // A camp was picked but is not one it may rob now (gone, out of reach).
         lost: !camp && typeof instance.stealFrom === 'string',
         guard: guard ? { id: guard.id, typeId: guard.typeId, name: src.tokenName(guard.typeId) } : null,
-        steals: stealRows(robbed?.steal),
+        steals: [...stealRows(robbed?.steal), coinRow(robbed?.steal, instance.id, skill, src)].filter(Boolean),
         rare: stealRare(robbed?.steal, instance.id, skill, src),
         caught,
         curve,
@@ -113,11 +125,18 @@ export function theftBlockOf(instance, def, src = liveTheftSources()) {
     };
 }
 
+/** What a theft took, a phrase a line: `2 Wheat`, and its coins in words (`12 coins`). */
+export function stolenWords(items, itemName) {
+    return (items || [])
+        .filter(i => i?.itemId && i.quantity > 0)
+        .map(i => (i.coins ? coinsText(i.quantity) : `${i.quantity} ${itemName(i.itemId)}`));
+}
+
 /** The words for the last theft: "Stole 2 Wheat, 1 Milk", "Stole nothing", "Caught!". */
 export function lastTheftText(last, itemName) {
     if (!last) return '';
     if (last.caught) return 'Caught! A guard stands on the camp';
-    const items = (last.items || []).filter(i => i?.itemId && i.quantity > 0);
-    if (!items.length) return 'Stole nothing';
-    return `Stole ${items.map(i => `${i.quantity} ${itemName(i.itemId)}`).join(', ')}`;
+    const words = stolenWords(last.items, itemName);
+    if (!words.length) return 'Stole nothing';
+    return `Stole ${words.join(', ')}`;
 }
