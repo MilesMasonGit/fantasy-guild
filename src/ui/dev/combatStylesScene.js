@@ -58,8 +58,8 @@ function register() {
         [QA_CS.BOW]: weapon(QA_CS.BOW, 'Test Bow', 'i_arrow', { styles: ['ranged'], damage: 1 }),
         [QA_CS.ARROW]: { id: QA_CS.ARROW, name: 'Test Arrow', type: 'material', equipSlot: 'consumable', stackable: true, sprite: 'i_arrow', arrow: { damage: 1, damageType: 'stab' } },
         [QA_CS.MOTE]: { id: QA_CS.MOTE, name: 'Test Fire Mote', type: 'material', equipSlot: 'consumable', stackable: true, sprite: 'i_ruby' },
-        [QA_CS.WAND]: weapon(QA_CS.WAND, 'Test Ember Wand', 'i_rod_wood', { styles: ['magic'], damage: 2, damageType: 'fire', mote: QA_CS.MOTE }),
-        [QA_CS.KUNAI]: weapon(QA_CS.KUNAI, 'Test Kunai', 'i_longsword_copper', { styles: ['stealth'], damage: 2, speed: 'fast', thrown: true }),
+        [QA_CS.WAND]: weapon(QA_CS.WAND, 'Test Ember Wand', 'i_rod_wood', { styles: ['magic'], damage: 4, damageType: 'fire', mote: QA_CS.MOTE }),
+        [QA_CS.KUNAI]: weapon(QA_CS.KUNAI, 'Test Kunai', 'i_longsword_copper', { styles: ['stealth'], damage: 4, speed: 'fast', thrown: true }),
         [QA_CS.CHARM]: { id: QA_CS.CHARM, name: 'Test Lucky Charm', type: 'armor', equipSlot: 'trinket', stackable: true, sprite: 'i_ring_silver_ruby', effects: [{ effectId: 'qa_cs_luck', scale: 1 }] },
         [QA_CS.VENOM]: { id: QA_CS.VENOM, name: 'Test Venom', type: 'consumable', equipSlot: 'consumable', stackable: true, sprite: 'i_potion_myst_purple', effects: [{ effectId: 'qa_cs_venom_rule', scale: 1 }] }
     });

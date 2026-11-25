@@ -31,6 +31,8 @@ import * as Ammo from '../systems/combat/Ammo.js';
 import * as WorkCheck from '../systems/board/WorkCheck.js';
 import { heroSide } from '../ui/components/combat/fightView.js';
 import { itemTipFacts } from '../ui/components/drawer/ItemTip.jsx';
+import { raiseNeedsItem, needsItemKey } from '../ui/components/board/heroNeeds.js';
+import { bubbleKeysOf, recheck, clearBubbles } from '../ui/components/board/speechBubbles.js';
 
 /**
  * One ammo rule for a bow's arrows, a wand's Motes and a Kunai thrown (`Ammo.js`): one spent an
@@ -190,6 +192,26 @@ describe('arrows: out of them, the hero leaves the fight and says so', () => {
         InventoryManager.addItem('am_arrow', 2);
         const again = play(10000);
         expect(again.hero.length).toBe(2);
+    });
+
+    it('the Needs bubble stands until the Bank holds the arrow again, then the hero fights on', () => {
+        clearBubbles();
+        const archer = addHero('Cara', { ranged: 10 });
+        equip(archer, 'am_bow');
+        equip(archer, 'am_arrow', 1);
+        startFight(archer);
+        const seen = play(10000);
+        // Raised as the mat's bubble layer does from the event.
+        const p = seen.needs.at(-1);
+        raiseNeedsItem(p.heroId, p.itemId, { quantity: p.needed, carried: p.carried === true, leftFrom: p.left ? p.instanceId : null });
+        expect(bubbleKeysOf(archer.id)).toContain(needsItemKey('am_arrow'));
+        recheck();
+        expect(bubbleKeysOf(archer.id)).toContain(needsItemKey('am_arrow'));
+        InventoryManager.addItem('am_arrow', 2);
+        recheck();
+        expect(bubbleKeysOf(archer.id)).not.toContain(needsItemKey('am_arrow'));
+        expect(play(10000).hero.length).toBe(2);
+        clearBubbles();
     });
 
     it('a hero carrying no arrow at all names an arrow the game has', () => {
