@@ -3,15 +3,13 @@
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { LABORATORY_KIND, laboratoryOf } from '../../config/registries/mastery.js';
 import { stationKindOf } from '../effects/statements.js';
-import { EventBus } from '../core/EventBus.js';
-import { BOARD_EVENTS } from './boardEvents.js';
 import * as BoardState from './BoardState.js';
 import * as Demolition from './Demolition.js';
 import * as Respawn from './Respawn.js';
 import * as Fields from './Fields.js';
 import * as Hand from './Hand.js';
 import * as Mastery from '../progression/Mastery.js';
-import { centreOf, distanceSq, reachRadius } from './nearby.js';
+import { inReach, tokensInReach, writePick } from './reachPick.js';
 
 /**
  * Science's one building (brief 810 K6). A **Laboratory** is a station that works as Science with
@@ -26,8 +24,8 @@ import { centreOf, distanceSq, reachRadius } from './nearby.js';
  * the node's kind, guild-wide (`Studies.js`). Its hero needs the kind's gathering level in Science
  * (`StationRecipe.workConfigOf` folds it in, as a recipe's level). No risk.
  *
- * The same shape as the Crime Hideout's camp (`Hideouts.js`, brief 810 K4): a station whose card
- * picks one Token in its reach, kept by instance id and refused out of reach.
+ * The same shape as the Crime Hideout's camp (`Hideouts.js`): a station whose card picks one Token
+ * in its reach, kept by instance id and refused out of reach (`reachPick.js`).
  *
  * While the node is **away** (resting, a Stump growing back, a Field with nothing ripe, in the
  * player's hand) the Laboratory waits, its hero beside it; a node that left the mat (a spot that
@@ -56,14 +54,6 @@ export function maxLevelOf(lab) {
     return laboratoryOf(getTokenType(lab?.typeId)).maxLevel;
 }
 
-/** Whether `node` stands in `lab`'s reach: the one standard reach, centre to centre, inclusive. */
-export function inReach(lab, node) {
-    const a = centreOf(lab);
-    const b = centreOf(node);
-    const r = reachRadius();
-    return !!a && !!b && distanceSq(a, b) <= r * r;
-}
-
 /**
  * Why a Laboratory may not study a Token on the mat, wherever it stands, or null when it may:
  * `'none'` for a Token that is no node with a track (a Laboratory, a station, an enemy, one marked
@@ -82,18 +72,14 @@ export function refusalOf(lab, node) {
     return null;
 }
 
-const byNearest = (at) => (a, b) => (distanceSq(at, centreOf(a)) - distanceSq(at, centreOf(b))) || ((a.placedAt ?? 0) - (b.placedAt ?? 0));
-
 /**
  * Every node in `lab`'s reach whose kind has a track, nearest first (then the earlier placed), as
  * `{ node, kind, level, refusal }`: `refusal` null for one it may study, else `'level'` or
  * `'mastered'` (the card shows those, greyed).
  */
 export function candidatesOf(lab) {
-    if (!lab) return [];
-    const at = centreOf(lab);
     const out = [];
-    for (const node of BoardState.tokens().filter(t => inReach(lab, t)).sort(byNearest(at))) {
+    for (const node of tokensInReach(lab)) {
         const refusal = refusalOf(lab, node);
         if (refusal === 'none') continue;
         const kind = Mastery.kindOf(node);
@@ -130,14 +116,7 @@ export function targetOf(lab) {
 export function setTarget(lab, nodeId) {
     if (!lab || !isLaboratory(getTokenType(lab.typeId))) return false;
     if (!nodesInReach(lab).some(n => n.id === nodeId)) return false;
-    if (lab.studies === nodeId) return true;
-    lab.studies = nodeId;
-    if (lab.cycleElapsedMs > 0 && !Demolition.isMarked(lab)) {
-        lab.cycleElapsedMs = 0;
-        EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: lab.id, percent: 0 });
-    }
-    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: lab.id, typeId: lab.typeId });
-    return true;
+    return writePick(lab, 'studies', nodeId);
 }
 
 /**
