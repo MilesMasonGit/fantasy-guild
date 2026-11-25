@@ -381,6 +381,18 @@ describe('⭐ one summon per Circle', () => {
         circleAt();
         expect(Summons.dismissWarning(circle, 'recipe_k5_digger')).toBeNull();
     });
+
+    it('a cycle calling another kind, however the pick changed, dismisses the one standing before it calls', () => {
+        const s = callOne();
+        const left = [];
+        const off = EventBus.subscribe(BOARD_EVENTS.SUMMON_CHANGED, (p) => { if (p.change === 'left') left.push(p.reason); });
+        const next = Summons.chargeFromCircle(circle, 'k5_summoned_digger', 'summoner');
+        off();
+        expect(left).toEqual(['replaced']);
+        expect(summoned().map(x => x.id)).toEqual([next.id]);
+        expect(next.id).not.toBe(s.id);
+        expect(next.summon.typeId).toBe('k5_summoned_digger');
+    });
 });
 
 describe('⭐ its trait, and nothing a hero has', () => {
@@ -412,7 +424,11 @@ describe('⭐ its trait, and nothing a hero has', () => {
         expect(SkillSystem.addXP(s.id, 'mining', 500).success).toBe(false);
         expect(SkillSystem.giveXpInEverySkill(s.id, 500)).toBeNull();
         expect(s.skills.mining.xp).toBe(before);
-        expect(EquipmentManager.equipItem(s.id, 'k5_ore').success).toBe(false);
+        // A pickaxe a hero could hold is refused it, and stays in the Bank.
+        InventoryManager.addItem('k5_pick', 1);
+        expect(EquipmentManager.equipItem(s.id, 'k5_pick')).toMatchObject({ success: false });
+        expect(s.equipment.every(slot => !slot)).toBe(true);
+        expect(InventoryManager.getItemCount('k5_pick')).toBe(1);
         // A roster of 3 holding one hero and one Summoned worker has room for two more heroes.
         expect(HeroManager.isRosterFull()).toBe(false);
         hero('second', 1);
@@ -463,5 +479,15 @@ describe('⭐ save and load', () => {
         saveAndReload();
         const back = GameState.state.heroes.find(h => h.id === s.id);
         expect(back.skills).toEqual({ mining: { level: 30, xp: xpForLevel(30) } });
+    });
+
+    it('one whose kind is gone from the content loads with the skills it was saved with, never the full sheet a hero holds', () => {
+        const s = callOne();
+        const saved = JSON.parse(GameState.serializeJson());
+        saved.state.heroes.find(h => h.id === s.id).summon.typeId = 'k5_gone_kind';
+        loadSavedState(migrateState(saved.state, saved.version));
+        const back = GameState.state.heroes.find(h => h.id === s.id);
+        expect(back.skills).toEqual({ mining: { level: 30, xp: xpForLevel(30) } });
+        expect(HeroEffects.loadoutStatements(back)).toEqual([]);
     });
 });
