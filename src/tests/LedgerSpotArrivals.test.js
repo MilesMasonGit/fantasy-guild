@@ -108,6 +108,15 @@ describe('a spot kind that arrives by itself, at the Starter Camp', () => {
         expect(l.reachOf(itemKey('item_spot_carp')).tier).toBeNull();
     });
 
+    it('fishes nothing with a tool whose first pool there never bites (a rod with no Bait named)', () => {
+        const c = spotContent();
+        c.tokens.token_spot.catchPools[1].bait = null;
+        const l = buildLedger(c);
+        expect(l.reachOf(itemKey('item_spot_perch')).tier).toBeNull();
+        expect(l.reachOf(itemKey('item_spot_carp')).tier).toBeNull();
+        expect(l.reachOf(itemKey('item_spot_shrimp')).tier).toBe(0);
+    });
+
     it('gates each fish by its own level, as the game does', () => {
         const l = buildLedger(spotContent());
         expect(l.reachOf(itemKey('item_spot_perch')).levels).toEqual({ fishing: 1 });

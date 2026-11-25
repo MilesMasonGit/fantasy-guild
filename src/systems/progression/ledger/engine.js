@@ -10,7 +10,7 @@ import { stationSkillOf, stationKindOf, KEYWORD } from '../../effects/statements
 import {
     stationKindOffers, foundationTierMeets, growsTermsOf, respawnOf, spawnerUpkeepOf, cropTermsOf, fieldOf, outputRange, PASSIVE_LAP_BASE_MS
 } from '../../../config/registries/tokenConstants.js';
-import { catchPoolsOf, hasCatchPools, poolForTool, poolKeyOf, catchToolKinds } from '../../../config/registries/catchPools.js';
+import { catchPoolsOf, hasCatchPools, poolForTool, poolKeyOf, catchToolKinds, poolBites } from '../../../config/registries/catchPools.js';
 import { fishBait, fishCycleMs, fishLevel } from '../../../config/registries/fishRules.js';
 import { spotOf, arrivesByItself, groundWaterKinds, WATER_KIND } from '../../../config/registries/fishingSpots.js';
 import { rareTableOf, rareEntryChances } from '../../../config/registries/rareTables.js';
@@ -745,8 +745,8 @@ function eventFits(event, def, place) {
  *   water (`EventClock.fitsHere`), at its share of the events that fit there, about once a wait.
  *
  * A rule gives the spot kind and, on each water it lands on there, for each tool its pools name,
- * the first pool that holds there (`catchPools.poolForTool`), as {@link spotPoolKey}: the pool a hero
- * fishes there. The place's `maybe` marks a ground only some worlds hold.
+ * the first pool that holds there (`catchPools.poolForTool`) when it bites, as {@link spotPoolKey}:
+ * the pool a hero fishes there. The place's `maybe` marks a ground only some worlds hold.
  *
  * Not modelled: how many spots stand at once (a kind's `most`), the room on the water, a spot-rate
  * raiser in reach. The rate calculator reads the arrival rate and the stay.
@@ -762,8 +762,9 @@ export function spotArrivalRules(world, place) {
         for (const water of waters) {
             const at = { water, biomes: [place.biome] };
             for (const tool of kind.tools) {
+                // The first pool for the tool is the one fished; one that never bites lands nothing there (`Fishing.fishingOf`).
                 const pool = poolForTool(kind.def, tool, at);
-                const key = pool ? spotPoolKey(kind.id, poolKeyOf(pool)) : null;
+                const key = pool && poolBites(pool) ? spotPoolKey(kind.id, poolKeyOf(pool)) : null;
                 if (key && !keys.includes(key)) keys.push(key);
             }
         }
