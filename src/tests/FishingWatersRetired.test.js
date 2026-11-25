@@ -88,6 +88,17 @@ describe('⭐ no world puts one on a map', () => {
         ] }, 'region_9');
         expect(Object.values(board.tokens).map(t => t.typeId)).toEqual(['token_oak_tree', 'token_copper_ore_vein']);
     });
+
+    it('a map tree after one still names its own Forest', () => {
+        const board = regionBoard({ nodes: [
+            { typeId: 'token_river', x: 600, y: 300 },
+            { typeId: 'token_oak_forest', x: 300, y: 300 },
+            { typeId: 'token_oak_tree', x: 360, y: 300, owner: 1 }
+        ] }, 'region_9');
+        const all = Object.values(board.tokens);
+        const forest = all.find(t => t.typeId === 'token_oak_forest');
+        expect(all.find(t => t.typeId === 'token_oak_tree').tether).toBe(forest.id);
+    });
 });
 
 describe('⭐ an older save holding them', () => {
