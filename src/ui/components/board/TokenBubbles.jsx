@@ -17,14 +17,13 @@ import { isCapSeen, seeCap, capAlertNow } from './capSeen.js';
 import { StationGearBadge, MarkedBadge } from './TokenBadges.jsx';
 import { ProblemMark } from './ProblemMark.jsx';
 import { problemOf, tokenGearPx } from './problemMark.js';
+import { isGearOnlyAlert } from './centreAlert.js';
 import { createWorkBar, shareWorkBar } from './workBar.js';
 import { shareCycle } from './cycleShare.js';
 import { plateUnit } from './matMarks.js';
 import { useMatFit } from './MatFitContext.jsx';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as BoardCombat from '../../../systems/board/BoardCombat.js';
-
-const CHOOSE_KINDS = new Set([ALERT.CHOOSE_RECIPE, ALERT.CHOOSE_BUILD, ALERT.CHOOSE_CAMP]);
 
 /** The gap in a row, in mat units. */
 const ROW_GAP_U = 4;
@@ -219,7 +218,8 @@ export const TokenBubbles = ({
     // A marked Token runs no recipe, so there is nothing to choose.
     const choose = gear?.pulsing && !marked ? (gear.isFoundation ? 'build' : gear.isHideout ? 'camp' : gear.isLaboratory ? 'node' : 'recipe') : null;
     const problem = useMemo(() => problemOf({ alert, spawner, growth, choose }), [alert, spawner, growth, choose]);
-    const problemClick = problem && CHOOSE_KINDS.has(problem.kind) ? gear?.onClick ?? null : null;
+    // A choice waiting (a recipe, a build, a camp, a node): a click on its mark opens the card.
+    const problemClick = problem && isGearOnlyAlert(problem.kind) ? gear?.onClick ?? null : null;
 
     const barUnit = plateUnit(useMatFit() || 1);
 

@@ -439,6 +439,19 @@ describe('⭐ the problem mark on a Token', () => {
         expect(mark(container)).toBeNull();
     });
 
+    it('⭐ a Hideout with no camp and a Laboratory with no node: the mark says choose, and a click on it opens the card', () => {
+        const onClick = vi.fn();
+        const { container, rerender } = mount(bub({ token: worked({ heroId: null }), gear: { show: true, pulsing: true, recipe: null, isHideout: true, onClick } }));
+        expect(mark(container).getAttribute('data-problem-mark')).toBe(ALERT.CHOOSE_CAMP);
+        fireEvent.click(mark(container));
+        expect(onClick).toHaveBeenCalledTimes(1);
+        rerender(tree(bub({ token: worked({ heroId: null }), gear: { show: true, pulsing: true, recipe: null, isLaboratory: true, onClick } })));
+        expect(mark(container).getAttribute('data-problem-mark')).toBe(ALERT.CHOOSE_NODE);
+        expect(mark(container).getAttribute('data-problem-severity')).toBe(SEVERITY.WAITING);
+        fireEvent.click(mark(container));
+        expect(onClick).toHaveBeenCalledTimes(2);
+    });
+
     it('a mark a click does not fix does nothing on click but still grabs the Token on a press', () => {
         const grab = vi.fn();
         const onClick = vi.fn();
