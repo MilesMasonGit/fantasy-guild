@@ -193,6 +193,13 @@
             "startsWith": { "type": "string", "description": "The id of a crop recipe it starts sown with." }
           }
         },
+        "shrine": {
+          "description": "A shrine (tokenConstants.js shrineOf; src/systems/board/Shrines.js): a station whose rules hold only while it is lit; its recipes are offerings.",
+          "type": "object",
+          "properties": {
+            "maxLitMs": { "type": "number", "minimum": 0, "description": "The most milliseconds it can be lit at once (minimum 1000, default 600000)." }
+          }
+        },
         "camp": {
           "description": "A camp that heroes of a skill work from (tokenConstants.js campOf; src/systems/board/Camps.js). No skill means not a camp.",
           "type": "object",

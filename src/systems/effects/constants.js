@@ -89,6 +89,15 @@ export const EFFECT_TYPES = {
     // dose. Guild-wide only — ConsumptionSystem.doseStrength, LiveEffects (an instance's `boost`).
     STRONG_DRINK: 'STRONG_DRINK',
 
+    // Faith's blessings, the effects no building gives (owner, 2026-11-25), carried by a shrine.
+    // Can't Run Out: on or off (any value above 0), a Token it reaches spends none of its own charges
+    // on its work, and a Field none of its load, failed cycles too; narrowed to the Token's skill —
+    // BoardRunner.completeCycle, CycleSavings.neverRunsOut.
+    NEVER_RUNS_OUT: 'NEVER_RUNS_OUT',
+    // Echo: a chance a finished work cycle repeats at once, for free (its outputs and XP again, no
+    // inputs, charges, load or tool wear); narrowed to the Token's skill — BoardRunner.completeCycle.
+    ECHO: 'ECHO',
+
     /**
      * A chance to yield an extra, **different** item on top of a Token's normal output.
      *
