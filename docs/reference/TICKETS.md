@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-704**
+**Next free number: T-705**
 
 ---
 
@@ -183,6 +183,7 @@ here.
 | T-701 | P2 | open | *Brief 870 C2. For: director.* **Coins as a cost**: coin prices beside items on Shop Tokens, Foundations, Hall stars and settling; enemy coin drops; all 0 until the pack. | owner 2026-11-25 |
 | T-702 | P2 | open | *Brief 870 C3. For: director.* **The ledger prices coins**: item worth, enemy drops, coin costs rising with rank and distance, coins in the pace checks. | owner 2026-11-25 |
 | T-703 | P2 | open | *For: content agent, after 870 C3.* **The coin pack**: the cost curve, item worth overrides, enemy coin drops, which prices ask coins, and the coin building (more coins from enemies and Hideouts in reach); coins in camps' steal tables once 810 K4 lands. | owner 2026-11-25 |
+| T-704 | P3 | open | *Brief 810 K4. For: director.* **A Quiet effect for the Hideout**: a CMS effect that lowers a thief's caught odds, for the Hideout's Quiet variant ([content_crime.md](../active/content_crime.md)). Build with K4. | owner 2026-11-25 |
 
 ### Code review round 4 (triaged 2026-11-07)
 
@@ -324,7 +325,7 @@ Detail, order and tiers in [brief 210](../active/briefs/210_backlog_intake.md); 
 | T-660 | P3 | open | *Brief 810 K4. For: director.* **Crime: the Hideout**: a station with a reach steals from a chosen camp in reach via the enemy's steal table, leaving the enemy; caught odds by Crime level against the camp's; a catch spawns a guard past the cap that blocks robbing until defeated; bosses never robbed. See the concept doc | owner 2026-11-22 |
 | T-661 | P3 | open | *Brief 810 K5. For: director.* **Summoning: Summoned workers**: a recoloured-enemy token ordered like a hero, own skills at fixed levels, no XP, one trait, work only; charges spent working, added by the Summoning Circle from enemy drops and magic supplies, more per cycle with level; one summon per Circle with a dismiss warning. See the concept doc | owner 2026-11-22 |
 | T-662 | P3 | open | *Brief 810 K6. For: director.* **Science: mastery of nodes**: a Laboratory with a reach studies a chosen node, spending its charges for no goods, raising guild-wide mastery of that node kind; ranks on a track give CMS effects to every Token of the kind; Science level gates kinds; variants reach further, a University speeds it. See the concept doc | owner 2026-11-22 |
-| T-663 | P3 | open | *For: content agent (after each brief 810 phase lands).* **Content for Faith, Crime, Summoning and Science**: offerings and altar recipes and the shrines; a steal table and Crime level for every camp (owner's example: Cows give Seeds, Wheat and Milk to a thief); the summons (which enemy, skills and levels, trait, Circle cost); a mastery track per node kind within its share of the boost budget (BALANCE_RULES section 5); the Hideout, Circle, Laboratory and University buildings and variants; each skill's level climb. Packs for the owner to review. | owner 2026-11-22 |
+| T-663 | P3 | open | *For: content agent (after each brief 810 phase lands).* **Content for Faith, Crime, Summoning and Science** (Summoning, Crime and Science approved as lists 2026-11-25: content_summoning.md, content_crime.md, content_science.md; turn them into catalogue entries and packs): offerings and altar recipes and the shrines; a steal table and Crime level for every camp (owner's example: Cows give Seeds, Wheat and Milk to a thief); the summons (which enemy, skills and levels, trait, Circle cost); a mastery track per node kind within its share of the boost budget (BALANCE_RULES section 5); the Hideout, Circle, Laboratory and University buildings and variants; each skill's level climb. Packs for the owner to review. | owner 2026-11-22 |
 | T-664 | P2 | open | *Brief 820 N1, N2. For: director.* **The game is called Tabletop Guild** (owner, 2026-11-22; Fantasy Guild was the working title): every name the player sees, the app ID (`com.tabletopguild.game`, so the next build starts with no saves or settings), the game's storage keys, docs and agent instructions; code comments drop the name. The CMS workspace key, pack format tags, schema ids and `data/` stay; the GitHub repository and the project folder keep their names. | owner 2026-11-22 |
 | T-665 | P2 | open | *Brief 830 D1. For: director.* **Drag only; right-click inspects** ([concept_playmat_declutter.md](../active/concept_playmat_declutter.md) §4, §7; owner 2026-11-23): select and right-click orders removed (brief 610 retired); right-click opens a Token's card or a hero's drawer, double-click retired; a dropped hero goes exactly where dropped. | owner 2026-11-23 |
 | T-666 | P2 | open | *Brief 830 D2. For: director.* **The Token card** (playmat declutter §5, §12.2): scroll arrows only when there is more; a tail pointing at the Token; the inspected Token on top with the gold outline; the recipe choice inside the card (list when none chosen, Change button otherwise). | owner 2026-11-23 |

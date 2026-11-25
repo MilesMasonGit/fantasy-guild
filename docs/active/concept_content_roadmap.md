@@ -160,6 +160,9 @@ measured.*
 - [Fishing](content_fishing.md): approved 2026-11-04; fish gated by tools, four special waters.
 - [Farming](content_farming.md): approved 2026-11-04; 38 unlocks, one per level.
 - [Alchemy](content_alchemy.md): approved 2026-11-04; 21 potions, eight herbs.
+- [Summoning](content_summoning.md): approved 2026-11-25; five Summoned enemies, one per main tier, gathering only.
+- [Crime](content_crime.md): approved 2026-11-25; steal tables for 11 camps, the Hideout's variants.
+- [Science](content_science.md): approved 2026-11-25; five-rank mastery tracks for every gathering node.
 - [Events](content_events.md): draft 2026-11-13; six rich nodes and six weather buffs, pack in the CMS inbox.
 
 ## Open links
