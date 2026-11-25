@@ -99,27 +99,24 @@ export const SKILLS = {
     // === Combat (4): the style is the weapon's =============================
     // There is no Defence skill: the style a hero fights in supplies both halves. A hero with a
     // sword at Melee 30 attacks at 30 and defends at 30.
+    // A combat style's one text is its hero-sheet line (`skillPurpose` in `en.json`): no second here.
     melee: {
         id: 'melee', name: 'Melee', layer: SKILL_LAYERS.COMBAT,
-        description: 'Frontline fighting with blades, axes and hammers.',
         icon: '⚔️',
         sprite: 'assets/skills/s_melee.png'
     },
     ranged: {
         id: 'ranged', name: 'Ranged', layer: SKILL_LAYERS.COMBAT,
-        description: 'Fighting at distance with bows, crossbows and thrown weapons.',
         icon: '🏹',
         sprite: 'assets/skills/s_ranged.png'
     },
     magic: {
         id: 'magic', name: 'Magic', layer: SKILL_LAYERS.COMBAT,
-        description: 'Elemental spellcraft with staves, wands and tomes.',
         icon: '✨',
         sprite: 'assets/skills/s_magic.png'
     },
     stealth: {
         id: 'stealth', name: 'Stealth', layer: SKILL_LAYERS.COMBAT,
-        description: 'Fighting from the shadows with daggers, cloaks and poisons.',
         icon: '🗡️'
     },
 

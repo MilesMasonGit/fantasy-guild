@@ -23,7 +23,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
-import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
+import { COMBAT_SKILL_IDS, getSkill } from '../config/registries/skillRegistry.js';
 import * as FormulaRegistry from '../config/FormulaRegistry.js';
 import * as Ammo from '../systems/combat/Ammo.js';
 import { startFightWatch, resetFightWatch, fightsOf } from '../ui/components/combat/fightWatch.js';
@@ -153,6 +153,16 @@ describe('styles', () => {
         const guide = fs.readFileSync(path.resolve(__dirname, '../../docs/reference/CONTENT_PHILOSOPHY.md'), 'utf8');
         expect(guide).toMatch(/## Weapon tiers/);
         expect(guide).toMatch(/\| Copper \| 1 \| 1 \| 2 \| 3 \|/);
+    });
+});
+
+describe("each style's one text (brief 750 S5)", () => {
+    it('the hero sheet says what each style is about, in the approved words; the registry holds no second text', () => {
+        expect(t('skillPurpose.melee')).toBe("Steady damage and strong defence. Swords and cleavers from one metal, no ammo. The beginner's style.");
+        expect(t('skillPurpose.ranged')).toBe('Hits hard from afar, paid for in arrows. Pick the arrow for the enemy.');
+        expect(t('skillPurpose.magic')).toBe("Strikes an enemy's weakness with the right element. Wands, staffs and tomes, each burning Motes.");
+        expect(t('skillPurpose.stealth')).toBe('Wild and fragile: weaker hits, frequent crits. Daggers, thrown Kunai and optional poisons.');
+        for (const id of COMBAT_SKILL_IDS) expect(getSkill(id).description).toBeUndefined();
     });
 });
 

@@ -809,10 +809,10 @@
         }
     },
     "skillPurpose": {
-        "melee": "Fights up close with blades, axes and hammers, or barehanded. Strong against Ranged, weak against Stealth. A hero's best combat skill sets their health.",
-        "ranged": "Fights at a distance with bows, shooting arrows from the Bank. Strong against Magic, weak against Melee. A hero's best combat skill sets their health.",
-        "magic": "Fights with staves, wands and tomes. Strong against Stealth, weak against Ranged. A hero's best combat skill sets their health.",
-        "stealth": "Fights from the shadows with daggers. Strong against Melee, weak against Magic. A hero's best combat skill sets their health.",
+        "melee": "Steady damage and strong defence. Swords and cleavers from one metal, no ammo. The beginner's style.",
+        "ranged": "Hits hard from afar, paid for in arrows. Pick the arrow for the enemy.",
+        "magic": "Strikes an enemy's weakness with the right element. Wands, staffs and tomes, each burning Motes.",
+        "stealth": "Wild and fragile: weaker hits, frequent crits. Daggers, thrown Kunai and optional poisons.",
         "mining": "Mines ore, stone and gems from veins, for Smithing, Crafting and Construction.",
         "forestry": "Fells trees for logs, sap and bark, for Construction, Crafting and fuel.",
         "fishing": "Catches fish and finds from the water, for Cooking and Crafting.",
