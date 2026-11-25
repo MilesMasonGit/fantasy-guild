@@ -239,14 +239,14 @@ export const MODIFIER_PALETTE = [
     },
     {
         /**
-         * Read by `Fields.loadAtRipening` once, as a Field's crop ripens: the harvest cycles it
-         * then holds. From its neighbours and the guild-wide rules (a Composter in reach), narrowed
-         * to the Field's own work skill.
+         * Read by `Fields.loadAtRipening` once, as a Field's crop ripens: the harvests it then gives
+         * on average, which sets its chance to finish each harvest. From its neighbours and the
+         * guild-wide rules (a Composter in reach), narrowed to the Field's own work skill.
          */
         type: EFFECT_TYPES.CROP_LOAD,
         reads: {
-            up: (n, size) => `hold ${n} more ${size === '1' ? 'harvest' : 'harvests'} when ripe`,
-            down: (n, size) => `hold ${n} fewer ${size === '1' ? 'harvest' : 'harvests'} when ripe`
+            up: (n, size) => `give ${n} more ${size === '1' ? 'harvest' : 'harvests'} on average when ripe`,
+            down: (n, size) => `give ${n} fewer ${size === '1' ? 'harvest' : 'harvests'} on average when ripe`
         },
         label: 'Abundance',
         explains: 'A Token kind holds more charges before it rests',
@@ -256,7 +256,7 @@ export const MODIFIER_PALETTE = [
         categories: 'skill',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Production',
-        hint: 'How many harvests a Field holds when its crop ripens (a Composter adds to the load). Read as the crop ripens; never fewer than one.'
+        hint: 'How many harvests a Field gives on average when its crop ripens (a Composter adds to them, which lowers its chance to finish each harvest). Read as the crop ripens; never fewer than one.'
     },
     {
         /**

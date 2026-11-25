@@ -684,7 +684,9 @@
         "built": "{token} built",
         "became": "{token}",
         "recovered": "Recovered, ready to work!",
-        "needs": "Needs {item}"
+        "needs": "Needs {item}",
+        "needsLevel": "Needs {skill} {level}",
+        "noFishHere": "No {fish} here"
     },
     "orders": {
         "needs": "Needs {what}",
@@ -927,6 +929,16 @@
             "expiresIn": "Expires in",
             "buffTip": "Expires in {time}",
             "nodeTip": "Expires in {time}, worked or not"
+        }
+    },
+    "fishing": {
+        "card": {
+            "heading": "Fish here",
+            "toolsJoin": " or ",
+            "lure": "Lure: {lure}",
+            "tip": "{fish}: caught with a {tools} at {skill} {level}.",
+            "tipOut": "{fish}: caught with a {tools} at {skill} {level}. No hero has {skill} {level} yet (best {best}).",
+            "tipLure": "The {lure} picks it."
         }
     }
 }

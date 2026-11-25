@@ -22,6 +22,7 @@ import { registerTokenTypes, tokenStartingUses, getTokenType } from '../config/r
 import { registerEffects } from '../config/registries/effectRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { KEYWORD, makeStatement, firingChanceOf } from '../systems/effects/statements.js';
+import * as EndRoll from '../systems/board/endRoll.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { ROLE } from '../config/registries/roleRegistry.js';
 import { slotsOf, costSlots } from '../../cms/src/engine/ledger/statementSlots.js';
@@ -34,6 +35,10 @@ import { composeTokenDescription } from '../../cms/src/engine/descriptionDiction
  * charges gives 25 harvests a refill, as the Blackberry Bush beside it does, where Thorns' own
  * charge made it 13. Authored here the way the content pack writes it: the library rule's chance
  * and its "charges spent" of 0.
+ *
+ * The bush comes back, so it runs out by chance: each charge spent is a roll at one in 25. Here the
+ * roll is stood in by its count (`endsAtCount`: the 25th charge spent ends it, as one in 25 does on
+ * average), so what Thorns spends is counted exactly; the roll itself is `ChanceEnd.test.js`'s.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -43,6 +48,21 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 vi.mock('../systems/progression/RegistryManager.js', () => ({
     RegistryManager: { recordItemGain: vi.fn() }
 }));
+vi.mock('../systems/board/endRoll.js', async (importOriginal) => {
+    const real = await importOriginal();
+    return { ...real, endsNow: vi.fn(real.endsNow) };
+});
+
+/** The end roll stood in by a count: the `n`th charge spent ends it, and the count starts again. */
+function endsAtCount(n) {
+    let spent = 0;
+    EndRoll.endsNow.mockImplementation((chance, times = 1) => {
+        spent += times;
+        if (spent < n) return false;
+        spent = 0;
+        return true;
+    });
+}
 
 /** On Cycle: deals 1 damage to the hero, `chance` of the time, spending `charge`. */
 const thorns = (id, { chance, charge }) => ({
@@ -113,6 +133,7 @@ function harvestUntilResting(typeId) {
 }
 
 beforeEach(() => {
+    endsAtCount(25);
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();

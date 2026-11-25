@@ -19,6 +19,7 @@ import * as BoardCombat from './BoardCombat.js';
 import * as Flags from './Flags.js';
 import * as HeroMotion from './HeroMotion.js';
 import * as EnemyMotion from './EnemyMotion.js';
+import * as Groves from './Groves.js';
 import * as TimedChanges from './TimedChanges.js';
 import * as WorkCheck from './WorkCheck.js';
 import * as Foundations from './Foundations.js';
@@ -36,6 +37,7 @@ import * as OutputRules from './OutputRules.js';
 import * as CycleSavings from './CycleSavings.js';
 import * as InputCost from './InputCost.js';
 import * as Fishing from './Fishing.js';
+import * as FishingSpots from './FishingSpots.js';
 import * as Fields from './Fields.js';
 import * as LoadoutMoments from './LoadoutMoments.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
@@ -340,10 +342,11 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // one fish), in place of the Token's own outputs. It then lands like any output.
     // A failed cycle catches nothing and keeps its bait.
     let outputs = io.outputs || [];
+    let caught = null;
     if (failed || buildTypeId) {
         outputs = [];
     } else if (Fishing.isWater(def)) {
-        const caught = Fishing.catchOf(id, def, heroId);
+        caught = Fishing.catchOf(id, def, heroId);
         outputs = caught ? [{ itemId: caught.itemId, chance: 100, minQty: 1, maxQty: 1 }] : [];
     }
 
@@ -489,8 +492,11 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         }
     }
 
-    // ⚠️ Last of all, after every other draw this cycle made: the tool it used may break.
+    // ⚠️ After every other draw of the cycle's work: the tool it used may break.
     Breakage.afterWorkCycle(heroId, def, instance);
+
+    // A fishing spot may move on after a catch, last since it takes the Token off the mat.
+    if (caught) FishingSpots.afterCatch(instance, def);
 }
 
 /**
@@ -557,6 +563,8 @@ export function tick(delta) {
     // next camp of their kind, before any camp counts what it spawned below.
     EnemyMotion.attachUntethered();
     EnemyMotion.rehomeOrphans();
+    // An older save's trees join the Forest in their reach, before any Forest counts its own.
+    Groves.attachUntethered();
 
     // Timed changes: growths and spawners, on clocks advanced by this tick's
     // `delta`, so a catch-up fast-forwards them with everything else. Before Flags, so a hero
@@ -569,6 +577,10 @@ export function tick(delta) {
     for (const [id, sinceMs] of TimedChanges.lateRefillsThisTick()) {
         if (sinceMs < delta) carryIn.set(id, sinceMs - delta);
     }
+
+    // Fishing spots arrive on the water by themselves: after the timed changes, before Flags, so
+    // a Fishing Hut's hero sees a new spot this tick. Nothing on a mat with no water.
+    FishingSpots.tick(delta);
 
     // Flags keep, change or find their work: after the timed changes above, so a hero sees any new
     // Token this tick, and before any Token ticks, so `workerOf` below is already settled.
@@ -816,8 +828,9 @@ export function tick(delta) {
 
         // WORK_TIME, widened to the neighbours, then floored twice (`TileModifiers.workTimeOf`).
         // `io.cycleTimeMs` is the active recipe's own timing when it has one, falling back to the
-        // station's flat config.
-        const baseCycle = io.cycleTimeMs || config.cycleTimeMs || 10000;
+        // station's flat config. At water it is the catch's own (`Fishing.cycleMsOf`).
+        const authoredCycle = io.cycleTimeMs || config.cycleTimeMs || 10000;
+        const baseCycle = Fishing.isWater(def) ? Fishing.cycleMsOf(def, heroId, instance, authoredCycle) : authoredCycle;
         const cycleTime = TileModifiers.workTimeOf(id, baseCycle, config.skill);
 
         if (instance.cycleElapsedMs >= cycleTime) {

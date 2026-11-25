@@ -37,9 +37,9 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * Out of bait or seed, the hero leaves and says so. At a water a hero fishes only with bait
- * carried in a consumable cell and still held by the Bank, except with a Trap, whose pool with no
- * bait lands Raw Shrimp. With none the hero lets go of the water, as of a resting vein, keeps the
+ * Out of bait or seed, the hero leaves and says so. At a water a hero fishes only with the Bait
+ * their tool's pool spends, carried in a consumable cell and still held by the Bank, except with a
+ * Trap whose pool spends none (Raw Shrimp). With none the hero lets go of the water, as of a resting vein, keeps the
  * order, and says "Needs Worm Bait" in the shared running-out bubble. A Field stopped for want of
  * its seed has its hero say "Needs Wheat Seed" the same way, and keeps its own yellow mark.
  */
@@ -76,16 +76,16 @@ registerRecipePools({
 });
 
 registerTokenTypes({
-    // As shipped before the Fishing pack: each water still authors a rod pool with no bait, which no
-    // longer bites.
+    // One pool per tool: the rod's spends the Bait it names, the Trap's here is free.
     ob_river: water('ob_river', 'River', [
-        { tool: 'fishing_rod', catches: [{ itemId: 'ob_trout', weight: 70 }, { itemId: 'ob_salmon', weight: 30 }] },
         { tool: 'fishing_rod', bait: 'ob_worm_bait', catches: [{ itemId: 'ob_salmon', weight: 1 }] }
     ]),
     ob_coast: water('ob_coast', 'Coast', [
-        { tool: 'fishing_rod', catches: [{ itemId: 'ob_trout', weight: 1 }] },
         { tool: 'fishing_rod', bait: 'ob_shrimp_bait', catches: [{ itemId: 'ob_salmon', weight: 1 }] },
-        { tool: 'fishing_trap', catches: [{ itemId: 'ob_raw_shrimp', weight: 1 }] },
+        { tool: 'fishing_trap', catches: [{ itemId: 'ob_raw_shrimp', weight: 1 }] }
+    ]),
+    // A Trap catch that spends Bait.
+    ob_sea: water('ob_sea', 'Sea', [
         { tool: 'fishing_trap', bait: 'ob_worm_bait', catches: [{ itemId: 'ob_lobster', weight: 1 }] }
     ]),
     ob_field: {
@@ -292,14 +292,15 @@ describe('the Trap fishes with no bait', () => {
         expect(Fishing.baitNeededOf(getTokenType('ob_coast'), 'trapper')).toBeNull();
     });
 
-    it('a Trap with bait it takes fishes the baited pool', () => {
-        const coast = put('ob_coast');
+    it('a Trap catch other than Raw Shrimp spends Bait, and stops when it runs out', () => {
+        const sea = put('ob_sea');
         GameState.state.heroes = [hero('trapper', ['ob_trap', 'ob_worm_bait'])];
         InventoryManager.addItem('ob_worm_bait', 2);
         Orders.orderAt('trapper', AT);
-        const landed = catchesOf(coast, () => run(5_000));
-        expect(landed.slice(0, 2)).toEqual(['ob_lobster', 'ob_lobster']);
-        expect(new Set(landed.slice(2))).toEqual(new Set(['ob_raw_shrimp']));
+        let landed;
+        const said = saidWhile(() => { landed = catchesOf(sea, () => run(5_000)); });
+        expect(landed).toEqual(['ob_lobster', 'ob_lobster']);
+        expect(said[0]).toMatchObject({ itemId: 'ob_worm_bait', carried: true });
     });
 });
 

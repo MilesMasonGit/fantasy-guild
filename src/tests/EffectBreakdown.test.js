@@ -439,7 +439,7 @@ describe('item badges sit on their item', () => {
         });
     });
 
-    it('a ripe Field keeps the load it ripened with; a neighbour placed or removed since counts from the next crop', () => {
+    it('a ripe Field keeps the harvests it ripened with; a neighbour placed or removed since counts from the next crop', () => {
         const field = arrive(FIELD);
         const fieldDef = getTokenType(FIELD);
         StationRecipe.setSelectedRecipe(field, WHEAT);
@@ -448,7 +448,7 @@ describe('item badges sit on their item', () => {
         Fields.clockFired(field, fieldDef);
         Fields.clockFired(field, fieldDef);
         const base = cropTermsOf(Fields.cropOf(field)).load;
-        expect(Fields.fieldState(field)).toMatchObject({ stage: 'ripe', full: base + 2 });
+        expect(Fields.fieldState(field)).toMatchObject({ stage: 'ripe', harvests: base + 2 });
         const stored = { total: 2, base, final: base + 2 };
         expect(badge(effectBreakdown(field.id), EFFECT_KEY.ABUNDANCE)).toMatchObject(stored);
         // A second Composter placed after ripening changes nothing on the card.

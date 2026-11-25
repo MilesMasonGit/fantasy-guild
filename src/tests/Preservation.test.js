@@ -13,6 +13,7 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as Growth from '../systems/board/Growth.js';
 import * as Fields from '../systems/board/Fields.js';
+import { finishesAt } from './fixtures/rolls.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
 import * as TriggerSystem from '../systems/board/TriggerSystem.js';
 import * as LiveEffects from '../systems/effects/LiveEffects.js';
@@ -205,7 +206,6 @@ registerTokenTypes({
         id: 'pv_lake', name: 'Lake', tokenType: 'resource', rarity: 'common', theme: 'fixture', sprite: 't_lake_small', requiresHero: true,
         uses: null, tags: ['water'],
         catchPools: [
-            { tool: 'fishing_rod', catches: [{ itemId: TROUT, weight: 1 }] },
             { tool: 'fishing_rod', bait: WORM, catches: [{ itemId: SALMON, weight: 1 }] }
         ],
         config: { skill: 'fishing', skillRequired: 1, cycleTimeMs: 1000, xp: 1, inputs: [], outputs: [] }
@@ -561,15 +561,17 @@ describe('a Field\'s owed seed', () => {
     it('is never paid for that crop when the harvest that owed it kept its materials (owner, 2026-11-11)', () => {
         holdStar(100, { category: 'farming' });
         const field = ripeField();
+        const restore = finishesAt(field, 3);
         run(1100);
         expect(made(WHEAT)).toBe(1);
-        expect(Fields.fieldState(field).load).toBe(2);
+        expect(Fields.stageOf(field)).toBe(Fields.STAGE.RIPE);
         expect(field.field.seedOwed).toBeUndefined();
         expect(InventoryManager.getItemCount(SEED)).toBe(1);
 
         // Without the rule, the crop's later harvests owe nothing: the seed stays in the Bank.
         dropStar();
         run(2000);
+        restore();
         expect(made(WHEAT)).toBe(3);
         expect(InventoryManager.getItemCount(SEED)).toBe(1);
 

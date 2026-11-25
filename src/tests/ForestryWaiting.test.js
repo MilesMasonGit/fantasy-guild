@@ -90,7 +90,8 @@ function felledInAForest({ seedlings = 1, forest = true } = {}) {
     if (forest) put('fw_forest', TREE.x + 150, TREE.y);
     put('fw_tree', TREE.x, TREE.y);
     Orders.orderAt('forester', { x: TREE.x, y: TREE.y });
-    run(3000);
+    // Felled by chance: chop until it falls, so what follows counts from the Stump.
+    for (let t = 0; t < 60000 && at(TREE.x, TREE.y)?.typeId !== 'fw_stump'; t += 100) BoardRunner.tick(100);
     expect(at(TREE.x, TREE.y)?.typeId).toBe('fw_stump');
     return at(TREE.x, TREE.y);
 }
@@ -117,7 +118,8 @@ describe('⭐ a forester waits silently for the felled Oak to grow back', () => 
         expect(at(TREE.x, TREE.y)?.typeId).toBe('fw_tree');
         run(200);
         expect(Flags.statusOf('forester')).toMatchObject({ state: 'working', typeId: 'fw_tree' });
-        expect(InventoryManager.getItemCount(SEEDLING)).toBe(0);
+        // Its own Forest regrows it for free.
+        expect(InventoryManager.getItemCount(SEEDLING)).toBe(1);
     });
 
     it('sent to a Logging Camp, waits for a Forest\'s fresh Sapling in its reach, though nothing was felled', () => {
@@ -139,13 +141,15 @@ describe('nothing on its way back is nothing to wait for', () => {
         expect(BoardRunner.isHeroIdle('forester')).toBe(true);
     });
 
-    it('a Stump stopped with no seedling for it: idle, as before (while it still counts down, one may come)', () => {
+    it('a Stump whose Forest is demolished: idle, its Stump never coming back', () => {
         const stump = felledInAForest({ seedlings: 0 });
         run(1000);
         expect(Flags.waitingOf('forester')).toEqual({ instanceId: stump.id, kind: 'node' });
+        const forest = BoardState.tokens().find(t => t.typeId === 'fw_forest');
+        BoardState.removeToken(forest.id);
         run(20000);
         expect(at(TREE.x, TREE.y)?.typeId).toBe('fw_stump');
-        expect(Growth.growthAlertOf(stump.id)?.alert).toBe('grow_needs_item');
+        expect(Growth.growthAlertOf(stump.id)?.alert).toBe('grow_needs_nearby');
         expect(Flags.waitingOf('forester')).toBeNull();
         expect(BoardRunner.isHeroIdle('forester')).toBe(true);
     });

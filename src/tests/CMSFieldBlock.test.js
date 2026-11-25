@@ -16,7 +16,7 @@ import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
 
 /**
  * Brief 230 S4 in the CMS: a Token's Field block (its empty and growing pictures, the crop a wild
- * patch starts ripe with) and a crop recipe's Crop row (grow time, load, ripe picture), each carried
+ * patch starts ripe with) and a crop recipe's Crop row (grow time, chance to finish, ripe picture), each carried
  * through Recalculate, Sync and a reload exactly as written, and gone without a trace when removed.
  *
  * ⚠️ No real workspace: the store's persistence is a no-op here (TESTING, "The CMS").
@@ -89,7 +89,7 @@ describe('⭐ the Field block', () => {
         fireEvent.click(within(block()).getByText('Add'));
         expect(useEntityStore.getState().tokens[id].field).toEqual({});
         // It lists its crops.
-        expect(within(block()).getByText(/Fixture Wheat \(1 h, 10 harvests, sown for 1 /)).toBeTruthy();
+        expect(within(block()).getByText(/Fixture Wheat \(1 h, about 10 harvests, sown for 1 /)).toBeTruthy();
 
         fireEvent.change(within(block()).getByLabelText('Empty sprite'), { target: { value: 't_farmland' } });
         fireEvent.change(within(block()).getByLabelText('Growing sprite'), { target: { value: 't_garden' } });
@@ -134,25 +134,27 @@ describe('⭐ the Crop row on a recipe a Field offers', () => {
         return () => container.querySelector('[data-testid="crop-row"]');
     }
 
-    it('shows the game\'s defaults until edited; grow time, load and ripe sprite write a crop block that round-trips', () => {
+    it('shows the game\'s defaults until edited; grow time, chance to finish and ripe sprite write a crop block that round-trips', () => {
         const { recipe } = authorField({});
         const row = openRecipe(recipe.id);
         expect(row()).toBeTruthy();
         expect(within(row()).getByLabelText('Grows for (min)').value).toBe('60');
-        expect(within(row()).getByLabelText('Load (harvests)').value).toBe('10');
+        // Ten harvests on average: one in ten to finish each.
+        expect(within(row()).getByLabelText('Chance to finish (%)').value).toBe('10');
         // The shipped Fields are listed too; the fixture's is among them.
         expect(within(row()).getByText(/Grown on .*Fixture Field/)).toBeTruthy();
         const crop = () => useEntityStore.getState().recipePools.farming.find((r) => r.id === recipe.id).crop;
         expect(crop()).toBeUndefined();
 
         fireEvent.change(within(row()).getByLabelText('Grows for (min)'), { target: { value: '90' } });
-        expect(crop()).toEqual({ growMs: 5400000, load: 10 });
-        fireEvent.change(within(row()).getByLabelText('Load (harvests)'), { target: { value: '12' } });
+        expect(crop()).toEqual({ growMs: 5400000, endChance: 10 });
+        fireEvent.change(within(row()).getByLabelText('Chance to finish (%)'), { target: { value: '12.5' } });
         fireEvent.change(within(row()).getByLabelText('Ripe sprite'), { target: { value: 't_field_wheat' } });
-        expect(crop()).toEqual({ growMs: 5400000, load: 12, ripeSprite: 't_field_wheat' });
+        expect(crop()).toEqual({ growMs: 5400000, endChance: 12.5, ripeSprite: 't_field_wheat' });
+        expect(within(row()).getByTestId('crop-note').textContent).toContain('about 8 harvests');
 
         const first = syncPayload();
-        expect(first['tokenRecipes.json'].find((r) => r.id === recipe.id).crop).toEqual({ growMs: 5400000, load: 12, ripeSprite: 't_field_wheat' });
+        expect(first['tokenRecipes.json'].find((r) => r.id === recipe.id).crop).toEqual({ growMs: 5400000, endChance: 12.5, ripeSprite: 't_field_wheat' });
         const text = serialise(first);
         reload(text);
         const second = syncPayload();
@@ -162,7 +164,7 @@ describe('⭐ the Crop row on a recipe a Field offers', () => {
         cleanup();
         const again = openRecipe(recipe.id);
         fireEvent.change(within(again()).getByLabelText('Ripe sprite'), { target: { value: '' } });
-        expect(crop()).toEqual({ growMs: 5400000, load: 12 });
+        expect(crop()).toEqual({ growMs: 5400000, endChance: 12.5 });
     });
 
     it('a recipe no Field offers shows no Crop row', () => {

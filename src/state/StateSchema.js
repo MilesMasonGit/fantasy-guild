@@ -79,6 +79,9 @@ export function createEmptyBoard() {
         // enemy placed by hand later is never tethered by a reload. 0 reads as
         // not yet, exactly as a missing field did.
         enemyTethers: 0,
+        // 1 once `Groves.attachUntethered` has run on this board: an older save's
+        // trees have joined the Forest in their reach. 0 reads as not yet.
+        groveTethers: 0,
         // `tokenBank`, `tray`, `nextTrayZ`, `tokenBankSlots`, `tokenTabsUnlocked`
         // and `tokenGroups` went with the Token Vault and the Tray (Token
         // Lifecycle 9.3): Tokens live on the mat. `migrateState` drops them

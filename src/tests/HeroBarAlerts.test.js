@@ -187,7 +187,7 @@ describe('who wears an alert', () => {
         run(30000);
         expect(rosterAlertOf('a')).toBe(ROSTER_ALERT.ACT);
         expectAgreement('a');
-        expect(rosterBubbleLine('a')).toMatch(/^Test Stump: Needs a Test Forest nearby to grow$/);
+        expect(rosterBubbleLine('a')).toMatch(/^Test Stump: Needs its own Test Forest to grow$/);
     });
 
     it('waiting for a Token another hero works: a normal wait, nothing', () => {

@@ -46,7 +46,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * Refresh (brief 590 P2): a chance a completed cycle spends none of the Token's charges, and a
  * Field's harvest none of its load. From a building's nearby rule and from a Hall star, aimed by the
  * rule's `to` and narrowed by skill. A failed cycle still burns its charge and never rolls; no rule,
- * no draw.
+ * no draw. The veins counted here keep a count (no way back); a Token that comes back runs out by
+ * chance, and a refreshed cycle never rolls it (`rf_rest_vein`, a sure end, and the Field).
  */
 
 const ORE = 'fixture_rf_ore';
@@ -72,7 +73,6 @@ const USES = 5;
 const vein = (id) => ({
     id, name: id, tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: USES, sprite: 's_nature',
     tags: ['RfOre'], requiresHero: true,
-    respawn: { mode: 'refill', afterMs: 60000 },
     config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 1000, xp: 1, inputs: [], outputs: [{ itemId: ORE, chance: 100, minQty: 1, maxQty: 1 }] }
 });
 let stm = 0;
@@ -84,16 +84,21 @@ const building = (id, statements) => ({
     id, name: id, tokenType: 'buff', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature', requiresHero: false, statements
 });
 const AT_VEIN = { mode: 'id', value: 'rf_vein' };
+const AT_REST_VEIN = { mode: 'id', value: 'rf_rest_vein' };
 registerTokenTypes({
     rf_vein: vein('rf_vein'),
     rf_other_vein: vein('rf_other_vein'),
-    rf_endless_vein: { ...vein('rf_endless_vein'), uses: null, respawn: undefined },
+    rf_endless_vein: { ...vein('rf_endless_vein'), uses: null },
+    // Comes back, and runs out at its first cycle that spends: what a refreshed cycle skips.
+    rf_rest_vein: { ...vein('rf_rest_vein'), uses: undefined, endChance: 100, respawn: { mode: 'refill', afterMs: 60000 } },
     rf_well_100: building('rf_well_100', [provides(AT_VEIN, EFFECT_TYPES.REFRESH, 100)]),
     rf_well_0: building('rf_well_0', [provides(AT_VEIN, EFFECT_TYPES.REFRESH, 0)]),
     rf_well_50: building('rf_well_50', [provides(AT_VEIN, EFFECT_TYPES.REFRESH, 50)]),
     rf_well_forestry: building('rf_well_forestry', [provides(AT_VEIN, EFFECT_TYPES.REFRESH, 100, { category: 'forestry' })]),
     rf_well_mining_tag: building('rf_well_mining_tag', [provides({ mode: 'tag', value: 'RfOre' }, EFFECT_TYPES.REFRESH, 100, { category: 'mining' })]),
     rf_jinx: building('rf_jinx', [provides(AT_VEIN, EFFECT_TYPES.FAIL_CHANCE, 100)]),
+    rf_rest_well_50: building('rf_rest_well_50', [provides(AT_REST_VEIN, EFFECT_TYPES.REFRESH, 50)]),
+    rf_rest_well_0: building('rf_rest_well_0', [provides(AT_REST_VEIN, EFFECT_TYPES.REFRESH, 0)]),
     rf_field: {
         id: 'rf_field', name: 'Test Field', tokenType: 'station', rarity: 'common', theme: 'fixture', uses: null, sprite: 't_farmland',
         requiresHero: true, field: {},
@@ -346,8 +351,8 @@ describe('⚠️ no rule, no draw', () => {
 });
 
 describe('a vein that rests', () => {
-    it('rests later, never sooner: it rests only once five charges are spent, however many cycles that takes', () => {
-        const v = scene({ beside: 'rf_well_50' });
+    it('rests later, never sooner: a refreshed cycle never rolls its end, however many cycles that takes', () => {
+        const v = scene({ beside: 'rf_rest_well_50', typeId: 'rf_rest_vein' });
         const seen = watch(v.id);
         // Every draw before the first cycle ends reads 0.1, under the 50 % Refresh, so at least one
         // cycle spends nothing whatever the test seed; later cycles draw from the seeded stream.
@@ -372,14 +377,15 @@ describe('a vein that rests', () => {
         spy.mockRestore();
         seen.off();
         expect(restedAfter).not.toBeNull();
-        expect(seen.spent).toBe(USES);
+        // Its one life, spent whole by the first cycle that rolled (a sure end).
+        expect(seen.spent).toBe(1);
         expect(refreshed).toBeGreaterThanOrEqual(1);
         // Later by exactly the cycles that kept their charge, never sooner.
-        expect(restedAfter).toBe(USES + refreshed);
+        expect(restedAfter).toBe(1 + refreshed);
     });
 
-    it('at 0 %, it rests after exactly five cycles, as without the rule', () => {
-        const v = scene({ beside: 'rf_well_0' });
+    it('at 0 %, it rests at its first cycle, as without the rule', () => {
+        const v = scene({ beside: 'rf_rest_well_0', typeId: 'rf_rest_vein' });
         const seen = watch(v.id);
         let restedAfter = null;
         for (let t = 0; t < 10000 && restedAfter == null; t += 100) {
@@ -387,7 +393,7 @@ describe('a vein that rests', () => {
             if (Respawn.isResting(v)) restedAfter = seen.cycles;
         }
         seen.off();
-        expect(restedAfter).toBe(USES);
+        expect(restedAfter).toBe(1);
     });
 });
 
@@ -403,20 +409,27 @@ describe('Refresh on a Field', () => {
         return field;
     }
 
-    it('at 100 %, harvests never count down its load, and the seed it owed is paid once', () => {
+    it('at 100 %, no harvest rolls to finish it, and the seed it owed is paid once', () => {
         const field = ripeField('rf_field_well');
-        expect(Fields.fieldState(field).load).toBe(3);
+        expect(Fields.fieldState(field).harvests).toBe(3);
+        // Every roll under its chance: only Refresh keeps it ripe.
+        const rolls = vi.spyOn(Math, 'random').mockReturnValue(0);
         run(6000);
+        rolls.mockRestore();
         expect(InventoryManager.getItemCount(WHEAT_ITEM) + SpriteLayer.countOnBoard(WHEAT_ITEM)).toBeGreaterThanOrEqual(4);
-        expect(Fields.fieldState(field)).toMatchObject({ stage: Fields.STAGE.RIPE, load: 3 });
+        expect(Fields.fieldState(field)).toMatchObject({ stage: Fields.STAGE.RIPE, harvests: 3 });
         expect(field.field.seedOwed).toBeUndefined();
         expect(InventoryManager.getItemCount(SEED)).toBe(0);
     });
 
-    it('without it, each harvest counts the load down', () => {
+    it('without it, a harvest under its chance finishes it and it sows again', () => {
         const field = ripeField(null);
-        run(2100);
-        expect(Fields.fieldState(field).load).toBe(1);
+        // One seed for the first harvest's owed seed, one to sow again.
+        InventoryManager.addItem(SEED, 1);
+        const rolls = vi.spyOn(Math, 'random').mockReturnValue(0);
+        run(1500);
+        rolls.mockRestore();
+        expect(Fields.stageOf(field)).toBe(Fields.STAGE.GROWING);
     });
 });
 

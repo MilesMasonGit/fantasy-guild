@@ -154,20 +154,6 @@ export const SETUPS = [
         }
     },
     {
-        id: 'coast',
-        // A rod fishes only with bait: Shrimp Bait carried, more than nine hours of it in the Bank.
-        name: 'Water: one fisher on the Coast with a Fishing Rod and Shrimp Bait',
-        warmupMs: 10 * 60_000,
-        compare: { items: ['item_tropical_fish', 'item_salmon', 'item_swordfish'], skills: ['fishing'] },
-        works: [{ target: { token: 'token_coast', pool: 'fishing_rod|item_shrimp_bait' }, setup: { level: 10, bait: 'item_shrimp_bait' } }],
-        bank: { item_shrimp_bait: 20_000 },
-        build({ place, hero, order }) {
-            const coast = place('token_coast', 800, 560);
-            const fisher = hero('Fisher', { fishing: 10 }, ['item_fishing_rod', 'item_shrimp_bait']);
-            order(fisher, coast);
-        }
-    },
-    {
         id: 'field',
         name: 'A Field: one farmer on a Wild Wheat Patch, harvesting its load and waiting out each regrowth',
         // An hour and a half in, the patch is part-way through a regrowth, as it is at any time after.

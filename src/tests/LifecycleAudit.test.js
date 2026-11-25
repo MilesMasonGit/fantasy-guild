@@ -247,7 +247,16 @@ describe('Lifecycle audit — errors: shape rules', () => {
 
     it('a foundation kind that is not one of FOUNDATION_KINDS', () => {
         expectOne((w) => { w.tokens.token_stone_foundation.foundation.kind = 'marble'; },
-            { id: 'token_stone_foundation', field: 'foundation.kind', includes: ['marble', 'wood, stone, farmland, excavation, battlefield'] });
+            { id: 'token_stone_foundation', field: 'foundation.kind', includes: ['marble', 'wood, stone, farmland, excavation, dock, battlefield'] });
+    });
+
+    it('a Dock is a Foundation kind, on a Token and on a building recipe; a Nursery is not (Farmland plants Forests)', () => {
+        const world = clean();
+        world.tokens.token_stone_foundation.foundation.kind = 'dock';
+        world.recipes.recipe_build_furnace.foundationKinds = ['dock'];
+        expect(auditLifecycleBlocks(world)).toEqual([]);
+        expectOne((w) => { w.tokens.token_stone_foundation.foundation.kind = 'nursery'; },
+            { id: 'token_stone_foundation', field: 'foundation.kind', includes: 'nursery' });
     });
 
     it('a shop skill icon that is not a real skill', () => {
@@ -361,6 +370,40 @@ describe('Lifecycle audit — errors: shape rules', () => {
     });
 });
 
+describe('Lifecycle audit — a Foundation keeps its own ground while it builds (brief 860 R3)', () => {
+    const grounds = (w, foundation, built) => {
+        if (foundation) w.tokens.token_stone_foundation.standsOn = foundation;
+        if (built) w.tokens.token_furnace.standsOn = built;
+    };
+
+    it('a build that may stand on none of its Foundation’s ground can never be built there', () => {
+        expectOne((w) => grounds(w, ['stone'], ['grass']), {
+            id: 'recipe_build_furnace', field: 'foundationKinds',
+            includes: ['Furnace', 'Stone Foundation', 'stands on stone', 'grass', 'can never be built']
+        });
+    });
+
+    it('the shore is dry land, so a Dock never builds a Token that stands on water', () => {
+        expectOne((w) => grounds(w, ['shore'], ['water']), {
+            id: 'recipe_build_furnace', field: 'foundationKinds', includes: ['the shore', 'water']
+        });
+    });
+
+    it('ground the two share is fine: the shore can be grass; a build that names none stands where its Foundation does', () => {
+        for (const [foundation, built] of [[['shore'], ['grass']], [['stone'], null], [['grass', 'sand'], ['sand']], [['stone'], ['stone']]]) {
+            const world = clean();
+            grounds(world, foundation, built);
+            expect(auditLifecycleBlocks(world), `${foundation} / ${built}`).toEqual([]);
+        }
+    });
+
+    it('a Foundation with no ground of its own stands under its build’s, as before, even water', () => {
+        const world = clean();
+        grounds(world, null, ['water']);
+        expect(auditLifecycleBlocks(world)).toEqual([]);
+    });
+});
+
 describe('Lifecycle audit — respawn', () => {
     it('the clean world carries both kinds and says nothing about them', () => {
         const w = clean();
@@ -440,6 +483,22 @@ describe('Lifecycle audit — respawn', () => {
     it('a Token that never runs out is warned that it never rests (allowed)', () => {
         expectOne((w) => { delete w.tokens.token_copper_vein.uses; },
             { severity: 'warning', id: 'token_copper_vein', field: 'respawn', includes: 'never runs out' });
+    });
+
+    it('a chance to run out in place of Charges is clean; one outside 0 to 100 % is an error', () => {
+        const w = clean();
+        delete w.tokens.token_copper_vein.uses;
+        w.tokens.token_copper_vein.endChance = 20;
+        expect(auditLifecycleBlocks(w)).toEqual([]);
+        expectOne((x) => { x.tokens.token_copper_vein.endChance = 0; },
+            { id: 'token_copper_vein', field: 'endChance', includes: 'above 0 %' });
+        expectOne((x) => { x.tokens.token_copper_vein.endChance = 150; },
+            { id: 'token_copper_vein', field: 'endChance', includes: 'at most 100 %' });
+    });
+
+    it('a chance to run out on a Token that does not come back does nothing, and says so', () => {
+        expectOne((w) => { w.tokens.token_oak_tree.endChance = 20; },
+            { severity: 'warning', id: 'token_oak_tree', field: 'endChance', includes: 'does not come back' });
     });
 
     it('a family counts the Token a spawned tree regrows from', () => {
@@ -690,6 +749,8 @@ describe('Lifecycle audit — Fields and crops (brief 230 S4)', () => {
             { id: 'recipe_wheat', field: 'crop.growMs', includes: 'crop grow time' });
         expectOne(withField((w) => { w.recipes.recipe_wheat.crop.load = 0; }),
             { id: 'recipe_wheat', field: 'crop.load', includes: 'crop load' });
+        expectOne(withField((w) => { w.recipes.recipe_wheat.crop.endChance = -5; }),
+            { id: 'recipe_wheat', field: 'crop.endChance', includes: 'crop chance to finish' });
         expectOne(withField((w) => { w.recipes.recipe_wheat.inputs = []; }),
             { severity: 'warning', id: 'recipe_wheat', field: 'inputs', includes: 'costs no seed' });
     });

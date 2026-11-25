@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import { Fish, Plus, X } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { TOOL_KINDS, toolKindLabel, isConsumableCategory } from '../../utils/constants';
+import { WATER_KIND_CHOICES } from '../../../../src/config/registries/fishingSpots.js';
+import { BIOMES } from '../../../../src/config/biomeTerrain.js';
 import { Section } from '../shared/EditorLayout';
 
 /**
@@ -16,6 +18,36 @@ import { Section } from '../shared/EditorLayout';
  */
 
 const NEW_CONFIG = { skill: 'fishing', cycleTimeMs: 10000, xp: 1 };
+
+const WATER_ORDER = WATER_KIND_CHOICES.map((c) => c.id);
+const biomeLabel = (id) => id.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+/** A pool's `water` or `biomes` with `id` toggled, kept in `order`; none drops the key. */
+function withTag(pool, key, id, order) {
+  const now = Array.isArray(pool[key]) ? pool[key] : [];
+  const toggled = now.includes(id) ? now.filter((y) => y !== id) : [...now, id];
+  const next = order.filter((x) => toggled.includes(x));
+  const out = { ...pool };
+  if (next.length) out[key] = next;
+  else delete out[key];
+  return out;
+}
+
+function TagChip({ on, onClick, children, ...rest }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={onClick}
+      className={`px-1.5 py-0.5 rounded text-[10px] border transition-colors ${on
+        ? 'bg-sky-500/20 border-sky-500/50 text-sky-200'
+        : 'bg-white/5 border-white/10 text-gray-500 hover:text-gray-200'}`}
+      {...rest}
+    >
+      {children}
+    </button>
+  );
+}
 
 /** A share of the pool's weight, as the author reads it: `50%`, `33.3%`. */
 function share(weight, total) {
@@ -46,8 +78,8 @@ export default function CatchPoolsBlock({ token, onPatch }) {
   }));
 
   const addPool = () => {
-    const used = new Set(pools.filter((p) => !p.bait).map((p) => p.tool));
-    const tool = ['fishing_rod', 'fishing_net', 'fishing_trap', ...TOOL_KINDS.map((k) => k.id)].find((k) => !used.has(k)) || 'fishing_rod';
+    const used = new Set(pools.map((p) => p.tool));
+    const tool = ['fishing_rod', 'harpoon', 'fishing_trap', ...TOOL_KINDS.map((k) => k.id)].find((k) => !used.has(k)) || 'fishing_rod';
     write([...pools, { tool, catches: [] }]);
   };
 
@@ -55,10 +87,13 @@ export default function CatchPoolsBlock({ token, onPatch }) {
     <Section title="Catch pools" icon={<Fish size={14} />}>
       <div data-field="catch-pools" className="space-y-3">
         <p className="text-[11px] text-gray-500 leading-relaxed">
-          Water: what a hero catches here, picked by the tool in their hand and the bait they carry.
-          One pool per tool and bait; the pool with no bait is the water&apos;s basic catch. One bait
-          is spent per catch. With a pool here the Token never runs out, its Outputs are not used,
-          and any tool a pool names will do, at any tier.
+          Water: what a hero catches here, picked by the tool in their hand. One pool per tool; it
+          spends the Bait it names, as much a catch as each fish asks (the fish&apos;s item), and only a
+          Trap&apos;s pool may name none (a free catch). A rod&apos;s lure picks one of its fish; with no lure
+          the hero rolls among the fish their level allows. With a pool here the Token never runs
+          out, its Outputs are not used, and any tool a pool names will do, at any tier. On a fishing
+          spot, a pool can hold only on some water or in some biomes: the spot catches from the
+          first for the tool that fits where it lands. A Trap&apos;s pool lands one catch.
         </p>
 
         {pools.map((pool, n) => {
@@ -99,7 +134,7 @@ export default function CatchPoolsBlock({ token, onPatch }) {
                   className="flex-1 min-w-0"
                   style={{ fontSize: 12 }}
                 >
-                  <option value="">No bait (the basic catch)</option>
+                  <option value="">No Bait (a free Trap catch)</option>
                   {!baitKnown && <option value={pool.bait}>{items?.[pool.bait]?.name || pool.bait} (not a Consumable)</option>}
                   {baitList.map((i) => <option key={i.id} value={i.id}>{i.name || i.id}</option>)}
                 </select>
@@ -113,6 +148,27 @@ export default function CatchPoolsBlock({ token, onPatch }) {
                 >
                   <X size={13} />
                 </button>
+              </div>
+
+              <div data-pool-place className="space-y-1" title="Where this pool holds, for a fishing spot: the water it sits on and the Region's biome. None ticked: everywhere. Where several pools for one tool and bait hold, the first wins.">
+                <div className="flex flex-wrap items-center gap-1">
+                  <span className="text-[10px] text-gray-500 mr-1">On</span>
+                  {WATER_KIND_CHOICES.map((c) => (
+                    <TagChip key={c.id} data-pool-water={c.id} on={(pool.water || []).includes(c.id)} onClick={() => setPool(n, (p) => withTag(p, 'water', c.id, WATER_ORDER))}>
+                      {c.label}
+                    </TagChip>
+                  ))}
+                  {!(pool.water || []).length && <span className="text-[10px] text-gray-600 ml-1">any water</span>}
+                </div>
+                <div className="flex flex-wrap items-center gap-1">
+                  <span className="text-[10px] text-gray-500 mr-1">In</span>
+                  {BIOMES.map((b) => (
+                    <TagChip key={b} data-pool-biome={b} on={(pool.biomes || []).includes(b)} onClick={() => setPool(n, (p) => withTag(p, 'biomes', b, BIOMES))}>
+                      {biomeLabel(b)}
+                    </TagChip>
+                  ))}
+                  {!(pool.biomes || []).length && <span className="text-[10px] text-gray-600 ml-1">any Region</span>}
+                </div>
               </div>
 
               {catches.length === 0 && (
@@ -166,8 +222,8 @@ export default function CatchPoolsBlock({ token, onPatch }) {
               </button>
               <p className="text-[10px] text-gray-600 leading-relaxed">
                 {pool.bait
-                  ? <>A hero holding a {toolKindLabel(pool.tool)} and carrying {items?.[pool.bait]?.name || pool.bait} catches from this pool, spending one per catch.</>
-                  : <>A hero holding a {toolKindLabel(pool.tool)} with none of its baits catches from this pool.</>}
+                  ? <>A hero holding a {toolKindLabel(pool.tool)} and carrying {items?.[pool.bait]?.name || pool.bait} catches from this pool, spending what each fish asks.</>
+                  : <>A hero holding a {toolKindLabel(pool.tool)} catches from this pool with no Bait (a Trap only).</>}
                 {' '}Weights are shares of the pool: 50, 40 and 10 read as 50 %, 40 % and 10 %.
               </p>
             </div>

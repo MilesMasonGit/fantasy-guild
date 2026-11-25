@@ -84,7 +84,7 @@ describe('⭐ the Grows block: the Forest it needs in reach, and its seedling', 
         fireEvent.click(within(grows().querySelector('[data-field="needs-nearby"]')).getByText('Add Token'));
         fireEvent.change(within(grows()).getByLabelText('Needs in reach'), { target: { value: 'token_oak_forest' } });
         expect(token('token_oak_stump').grows).toEqual({ ...before, needsNearby: ['token_oak_forest'] });
-        expect(grows().textContent).toContain('Its clock stands still while none of these stands within reach');
+        expect(grows().textContent).toContain('It grows only while the Token of these that owns it stands');
 
         fireEvent.click(grows().querySelector('[data-field="needs-nearby"] button.text-gray-600'));
         expect(token('token_oak_stump').grows).toEqual(before);

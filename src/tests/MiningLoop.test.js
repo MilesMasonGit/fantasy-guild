@@ -178,21 +178,24 @@ describe('a resting vein shows the shared empty rock', () => {
 });
 
 describe('a vein refills all at once', () => {
-    it('five ore, then a minute\'s rest at 0, then all five back in one step', () => {
+    it('a roll rests it, a minute\'s rest at 0, then its one life back in one step', () => {
         const vein = placeAt('mine_vein', VEIN.x, VEIN.y);
         Orders.orderAt('hero_1', VEIN);
         const charges = [];
         const off = EventBus.subscribe(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, (p) => { if (p.instanceId === vein.id) charges.push(p.remaining); });
+        // It runs out by chance: every roll under its one in five, so its first cycle is its last.
+        const rolls = vi.spyOn(Math, 'random').mockReturnValue(0);
         run(15000);
+        rolls.mockRestore();
         expect(vein.usesRemaining).toBe(0);
         expect(Respawn.restingSpriteOf(vein)).toBe(EMPTY_ROCK);
         run(60000);
         off();
         expect(charges).toContain(0);
-        // From 0 straight to 5: no charge in between.
-        const back = charges.indexOf(5, charges.indexOf(0));
+        // From 0 straight back to its one life: nothing in between.
+        const back = charges.indexOf(1, charges.indexOf(0));
         expect(back).toBe(charges.indexOf(0) + 1);
-        expect(made(ORE)).toBeGreaterThanOrEqual(5);
+        expect(made(ORE)).toBeGreaterThanOrEqual(1);
     });
 });
 

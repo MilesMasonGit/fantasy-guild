@@ -229,8 +229,8 @@ describe('the catch pools, as content', () => {
 });
 
 describe('the tool: any kind a pool names, at any tier', () => {
-    it('six kinds; water needs any of its pools\' kinds, whatever its own Needs tool says', () => {
-        expect(TOOL_KINDS.map(k => k.id)).toEqual(['pickaxe', 'woodaxe', 'fishing_rod', 'sickle', 'fishing_net', 'fishing_trap']);
+    it('seven kinds, the Harpoon last; water needs any of its pools\' kinds, whatever its own Needs tool says', () => {
+        expect(TOOL_KINDS.map(k => k.id)).toEqual(['pickaxe', 'woodaxe', 'fishing_rod', 'sickle', 'fishing_net', 'fishing_trap', 'harpoon']);
         const need = neededToolOf(getTokenType('s5_lake'));
         expect(need).toEqual({ kind: 'fishing_rod', kinds: ['fishing_rod', 'fishing_net', 'fishing_trap'], minTier: 1 });
         expect(toolMeets({ kind: 'fishing_rod', tier: 1 }, need)).toBe(true);
@@ -320,18 +320,16 @@ describe('a cycle at the water lands one catch from the pool', () => {
         expect(fine.s5_trout).toBeCloseTo(50 / 190, 1);
     });
 
-    it('bait in a consumable cell: one spent per catch, the first carried the Bank holds picks the pool, then no more', () => {
+    it('bait in a consumable cell: the rod\'s first pool spends its own, one a catch, then no more; other bait carried picks nothing', () => {
         const lake = put('s5_lake');
         setHeroes(hero('fisher', ['s5_rod', 's5_squid', 's5_worm']));
         InventoryManager.addItem('s5_squid', 3);
         InventoryManager.addItem('s5_worm', 2);
         Orders.orderAt('fisher', LAKE);
         const landed = catchesOf(lake, () => run(30_000));
-        expect(landed.slice(0, 3)).toEqual(['s5_salmon', 's5_salmon', 's5_salmon']);
-        expect(InventoryManager.getItemCount('s5_squid')).toBe(0);
-        // Then the worm's pool, then nothing: the rod's pool with no bait never bites.
-        expect(landed.length).toBe(5);
+        expect(landed.length).toBe(2);
         expect(InventoryManager.getItemCount('s5_worm')).toBe(0);
+        expect(InventoryManager.getItemCount('s5_squid')).toBe(3);
     });
 
     it('bait the Bank does not hold, or carried in the food cell, is no bait', () => {
@@ -561,7 +559,7 @@ describe('how water reads', () => {
         const tokens = {
             bad: { id: 'bad', name: 'Bad Water', config: { skill: 'fishing', outputs: [{ itemId: 's5_trout' }] }, needsTool: { kind: 'fishing_rod' },
                 catchPools: [
-                    { tool: 'harpoon', catches: [{ itemId: 's5_trout', weight: 1 }] },
+                    { tool: 'lobster_pot', catches: [{ itemId: 's5_trout', weight: 1 }] },
                     { tool: 'fishing_rod', bait: 's5_bread_bait', catches: [{ itemId: 'nope', weight: 1 }] },
                     { tool: 'fishing_rod', bait: 's5_bread_bait', catches: [{ itemId: 's5_trout', weight: 0 }] }
                 ] },
@@ -570,10 +568,10 @@ describe('how water reads', () => {
         };
         const found = toolFindings({ items, tokens }).map(f => `${f.entityId}: ${f.message}`);
         expect(found).toEqual(expect.arrayContaining([
-            expect.stringMatching(/^bad: its catch pool 1 names the tool kind "harpoon"/),
+            expect.stringMatching(/^bad: its catch pool 1 names the tool kind "lobster_pot"/),
             expect.stringMatching(/^bad: its catch pool 2 takes Bread Bait as bait, but Bread Bait is not a Consumable/),
             expect.stringMatching(/^bad: its catch pool 2 lands "nope", which is not an item/),
-            expect.stringMatching(/^bad: has two catch pools for a Fishing Rod with Bread Bait/),
+            expect.stringMatching(/^bad: has two catch pools for a Fishing Rod: only the first is fished/),
             expect.stringMatching(/^bad: its catch pool 3 has no catch with a weight above 0/),
             expect.stringMatching(/^dry: its catch pool for a Fishing Rod takes no bait, so no hero fishes it: only a Trap catches without bait/),
             expect.stringMatching(/^bad: has catch pools, so its Outputs are never made/),

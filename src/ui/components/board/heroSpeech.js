@@ -79,12 +79,15 @@ export const momentText = {
  * * a node that is resting or growing back, or an enemy camp's next spawn: nothing. They wait
  * silently and work it when it is back; the flag's hover and the roster say "Waiting for Copper
  * Vein" ("Waiting for Goblin");
+ * * a camp of Fishing (`waitsForSpot`) with no spot in its reach: nothing. They wait for the next
+ * spot to arrive, the idle mark still showing;
  * * otherwise: "Nothing to work here.", or at a War Camp (`fights`) "Nothing to fight here."
  */
-export function idleMomentOf(waiting, name = null, { order = null, needsJob = false, fights = false } = {}) {
+export function idleMomentOf(waiting, name = null, { order = null, needsJob = false, fights = false, waitsForSpot = false } = {}) {
     if (needsJob) return { kind: 'needsJob', key: 'idle', text: momentText.needsJob() };
     if (order === 'spot') return null;
     if (waiting?.kind === 'node' || waiting?.kind === 'spawn') return null;
+    if (waitsForSpot && !waiting) return null;
     if (waiting?.kind === 'fight' || waiting?.kind === 'busy') return { kind: 'waiting', key: 'idle', text: momentText.waiting(name) };
     return { kind: 'idle', key: 'idle', text: momentText.idle(fights) };
 }

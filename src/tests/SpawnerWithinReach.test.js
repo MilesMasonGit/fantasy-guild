@@ -18,8 +18,9 @@ import { reachRadius } from '../systems/board/nearby.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
 
 /**
- * Every spawner but an enemy camp lands within its own reach and counts its family standing there
- * against its own allowance, map trees included, not every one on the mat.
+ * Every spawner but an enemy camp lands within its own reach. A Forest (its trees' Stumps need it)
+ * counts its own trees against its own allowance, an older save's map trees in its reach included
+ * (they join it on the first tick), never one beyond, and plants for free.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -81,13 +82,13 @@ afterEach(() => {
 });
 
 describe('⭐ a spawner counts and lands in its reach', () => {
-    it('lands every Sapling within its reach, up to its own allowance, a seedling each', () => {
+    it('lands every Sapling within its reach, up to its own allowance, for free', () => {
         InventoryManager.addItem(SEED, 10);
         const forest = placeAt('wr_forest', 800, 500);
         run(10 * 60000);
         expect(family()).toHaveLength(3);
         for (const t of family()) expect(dist(t, forest)).toBeLessThanOrEqual(reachRadius());
-        expect(seeds()).toBe(7);
+        expect(seeds()).toBe(10);
         expect(SpawnerSystem.spawnerStatus(forest.id)).toMatchObject({ state: 'at_cap', count: 3, cap: 3 });
         expect(SpawnerSystem.spawnerCounts(forest.id)).toEqual({ count: 3, cap: 3 });
     });
@@ -103,7 +104,7 @@ describe('⭐ a spawner counts and lands in its reach', () => {
         run(10 * 60000);
         expect(near(forest)).toHaveLength(3);
         expect(family()).toHaveLength(5);
-        expect(seeds()).toBe(9);
+        expect(seeds()).toBe(10);
     });
 
     it('a felled tree\'s Stump in its reach still counts toward it', () => {
@@ -155,7 +156,7 @@ describe('⭐ a spawner counts and lands in its reach', () => {
         InventoryManager.addItem(SEED, 10);
         placeAt('wr_forest', 800, 500);
         run(10 * 60000);
-        expect(getSpawnerKindCounts()).toEqual([{ id: expect.any(String), kind: 'wr_forest (its reach)', count: 3, cap: 3 }]);
+        expect(getSpawnerKindCounts()).toEqual([{ id: expect.any(String), kind: 'wr_forest (its own)', count: 3, cap: 3 }]);
     });
 });
 

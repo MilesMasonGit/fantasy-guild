@@ -106,8 +106,16 @@ export function siteTypeOf(instance) {
     return builtTypeOf(recipesForFoundation(def).find(r => r.id === id));
 }
 
-/** Why the Foundation `instance` cannot build `typeId` where it stands, or null. */
+/**
+ * Why the Foundation `instance` cannot build `typeId` where it stands, or null: off its own ground
+ * (a Foundation with a "Stands on" of its own, found where it may not stand), then its build's site.
+ * A Foundation with no list of its own asks only its build's, as `GroundRules.siteRulesFor` does.
+ */
 export function buildRefusal(instance, typeId) {
     if (!instance || !typeId || !Number.isFinite(instance.x) || !Number.isFinite(instance.y)) return null;
-    return siteRefusal(typeId, { x: instance.x, y: instance.y }, { excludeId: instance.id });
+    const point = { x: instance.x, y: instance.y };
+    if (standsOnOf(instance.typeId).length && !GroundRules.mayStandAt(instance.typeId, point)) {
+        return GroundRules.refusalFor(instance.typeId);
+    }
+    return siteRefusal(typeId, point, { excludeId: instance.id });
 }

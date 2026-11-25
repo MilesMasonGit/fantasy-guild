@@ -354,6 +354,17 @@
             "spriteHash"
           ]
         }
+      },
+      {
+        "ticket": "T-684",
+        "commit": "d57fcbac",
+        "branch": "merge/fish-main",
+        "dirty": false,
+        "date": "2026-11-25T08:16:03.323Z",
+        "node": "v24.11.1",
+        "scenarios": {
+          "FS": []
+        }
       }
     ]
   },
@@ -623,6 +634,27 @@
         "spriteHash": "cbbb656a",
         "binHash": "811c9dc5",
         "randomDraws": 2038
+      },
+      "fingerprintOptions": {
+        "seed": 1
+      }
+    },
+    "FS": {
+      "p50": 0.044800000000122964,
+      "p99": 0.18220000000019354,
+      "fingerprint": {
+        "tokens": 8,
+        "uses": 0,
+        "bankItems": 100915,
+        "heroXp": 53542,
+        "sprites": 3,
+        "gameTimeMs": 600000,
+        "tokensHash": "5a62516b",
+        "bankHash": "43f2b0f4",
+        "heroHash": "f17869bb",
+        "spriteHash": "a6a83174",
+        "binHash": "811c9dc5",
+        "randomDraws": 1724
       },
       "fingerprintOptions": {
         "seed": 1

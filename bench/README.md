@@ -14,7 +14,7 @@ layout/paint cost are Tier B (the in-game Perf HUD). `npm run bench:draw` and
 
 | Command | What it does | Time |
 |---|---|---|
-| `npm run bench` | S1–S8, C240 and C256, 3 timing runs each (S4 11, S6 and S8F once), profile passes for S2–S5, S7, C240 and C256 | ~6 min |
+| `npm run bench` | S1–S8, C240, C256 and FS, 3 timing runs each (S4 11, S6 and S8F once), profile passes for S2–S5, S7, C240, C256 and FS | ~6 min |
 | `npm run bench -- --only=S2,S3` | only some scenarios | |
 | `npm run bench -- --compare` | also compare with `bench/baseline.json`: **exits 2** (WORK CHANGED) if any scenario did different work, **exits 1** if any checked number is more than 20 % slower — see below | |
 | `npm run bench -- --accept-work-change=CR3-123` | compare, but let a deliberate, ruled change of work through: rewrites only the fingerprints in `bench/baseline.json` and records the ticket (implies `--compare`) | |
@@ -117,7 +117,7 @@ it to make a speed fix pass: a speed fix that changes the work is not identical.
 
 #### The timings
 
-`--compare` checks, per scenario, **p50 and p99** of the tick (S1–S3, S5–S7, C240, C256),
+`--compare` checks, per scenario, **p50 and p99** of the tick (S1–S3, S5–S7, C240, C256, FS),
 for S4 the **worst arrival**, the **p50 landing drop**, the **worst
 refused drop** and **the shrink**, each on its own, and for S8 the **wall time
 of the catch-up hour**. A number fails when it is
@@ -198,6 +198,7 @@ timings from one machine mean nothing on another.
 | S8F | Same hour, 100 ms ticks | The same save and load, then 36,000 ticks of 100 ms: the fidelity reference. Run once. | 1,000 + 36,000 |
 | C240 | Cap 240, mat about full | S2's mix on the shipped 11-step mat with the Token cap at 240 (`scenarios/cap.mjs`, `capPlaced`): every free 160 u cell built, more Forests and Quarries than S2, filled by the spawners. At the 30 % overlap the mat holds about this many Tokens, so the spawners meet the Token cap (cheap: held) and a mat with no room (a missed try) by turns. Same 8 heroes and flags as S2; at the cap a killed goblin's place goes to a tree more often than not (a Forest tries every 5 s, a camp every 30 s), so the hunters wait: about 120 kills a game-hour in the measured window. | 1,000 + 3,000 |
 | C256 | Cap 256, mat full first | As C240 at the top cap, 256 (`cap256`, the drawing bench's board). The mat fills before the cap does, so some twenty Forests and Quarries under their own caps miss every try for want of room all run long: the cost of a spawner with no room on a big full mat. Their clocks start together, so they all try in the same tick once each 5 s interval. The two hunters empty their camps in the warm-up and the trees take the places, so the measured window has no fights (before brief 500, 3). | 1,000 + 3,000 |
+| FS | Fishing spots | The first board that fishes (brief 850 F1). The shipped 1920 × 1040 mat on a stored terrain map: a sea along its foot and a lake up on its left (`src/tests/fixtures/fishingWater.js`, the map the spot tests use), in a Coast Region. Two spot kinds registered in the scenario: a plain spot on sea and fresh water (one every 30 s or so, at most 6, 10 % to move on after a catch, gone after 3 minutes unworked; its catch by the water it sits on) and a rare one on the warm sea only (every 3 minutes or so, at most 1, a fixed catch). Two Fishing Huts (camps), one by the sea and one by the lake, with two heroes each holding a rod and carrying bait. Spots arrive, are fished, move on or drift off, and arrive again through the whole run; a hut's hero whose spot left takes the next in reach. `BenchFishing.test.js` checks the board still does all of that. Added under T-684 with `--accept-work-change` (no baseline before). | 3,000 + 3,000 |
 
 Every spawner is filled to its cap before the heroes arrive (`prefillSpawners`,
 through the real `SpawnerSystem.attemptSpawn`), so the warm-up warms the JIT
