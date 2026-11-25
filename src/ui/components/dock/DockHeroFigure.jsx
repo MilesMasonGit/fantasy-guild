@@ -33,6 +33,8 @@ import {
 import { ENGINE_EVENTS, UI_EVENTS } from '../../../systems/core/engineEvents.js';
 import { HeroDragMarks, MARK_SCREEN_PX } from '../board/DragMarks.jsx';
 import { onPoll } from '../board/frameClock.js';
+import { isSummoned } from '../../../systems/hero/summoned.js';
+import { t } from '../../../i18n/index.js';
 
 /**
  * One hero standing on the roster.
@@ -72,8 +74,8 @@ export const DockHeroFigure = memo(function DockHeroFigure(props) {
     const drop = useEntityDrop({
         id: `dock-hero-drop-${heroId}`,
         surface: DND_SURFACE.DRAWER,
-        // An item equips, another roster hero reorders.
-        accepts: p => (p.kind === DRAG_KIND.ITEM && p.fromHeroId !== heroId)
+        // An item equips (never on a Summoned worker, who wears nothing), another roster hero reorders.
+        accepts: p => (p.kind === DRAG_KIND.ITEM && p.fromHeroId !== heroId && hero?.charges == null)
             || (isRosterFlag(p) && p.heroId !== heroId),
         onDrop: p => {
             if (p.kind === DRAG_KIND.ITEM && p.itemId) {
@@ -122,7 +124,7 @@ export const DockHeroFigure = memo(function DockHeroFigure(props) {
 /**
  * Flat projection per the useGameState selector contract: `hp` is rebuilt fresh from primitives
  * each evaluation, never the store's own nested object, so an in-place HP mutation is actually
- * seen as a change.
+ * seen as a change. `charges` is a Summoned worker's charges left, null for a hero.
  */
 function useDockHero(heroId) {
     return useGameState(
@@ -135,7 +137,8 @@ function useDockHero(heroId) {
                 heroSprite: h.heroSprite,
                 status: h.status,
                 flagColour: h.flagColour || null,
-                hp: { current: h.hp?.current ?? 0, max: h.hp?.max ?? 100 }
+                hp: { current: h.hp?.current ?? 0, max: h.hp?.max ?? 100 },
+                charges: isSummoned(h) ? Math.max(0, Number(h.summon.charges) || 0) : null
             } : null;
         },
         [...HERO_HP_EVENTS, ENGINE_EVENTS.HERO_EQUIPMENT_CHANGED],
@@ -334,14 +337,24 @@ const DockHeroFigureBody = memo(function DockHeroFigureBody({
                 >
                     {hero.name}
                 </span>
-                <VitalBar
-                    data-dock-hp={pct}
-                    data-dock-hp-tone={tone}
-                    value={hp}
-                    max={hpMax}
-                    height={DOCK_HP_BAR_HEIGHT_PX}
-                    style={{ width: DOCK_HP_BAR_PX, maxWidth: '100%' }}
-                />
+                {/* A Summoned worker never fights: its charges left stand where a hero's health does. */}
+                {hero.charges != null ? (
+                    <span
+                        data-dock-charges={hero.charges}
+                        className={cn('max-w-full truncate px-1 font-bold leading-none text-gi-gold', DOCK_NAME_TEXT_CLASS)}
+                    >
+                        {t('summon.charges', { count: hero.charges })}
+                    </span>
+                ) : (
+                    <VitalBar
+                        data-dock-hp={pct}
+                        data-dock-hp-tone={tone}
+                        value={hp}
+                        max={hpMax}
+                        height={DOCK_HP_BAR_HEIGHT_PX}
+                        style={{ width: DOCK_HP_BAR_PX, maxWidth: '100%' }}
+                    />
+                )}
             </div>
 
             {/**

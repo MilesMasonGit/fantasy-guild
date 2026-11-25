@@ -4,6 +4,7 @@ import { InventoryManager } from '../inventory/InventoryManager.js';
 import { getCoins, spendCoins } from '../inventory/Coins.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { getSkillLevel } from '../hero/SkillSystem.js';
+import { guildHeroes } from '../hero/summoned.js';
 import * as CatchUp from '../core/CatchUp.js';
 import { SaveManager } from '../core/SaveManager.js';
 import * as Atlas from '../atlas/Atlas.js';
@@ -66,10 +67,10 @@ function allRegions() {
     return Atlas.list().map(r => Atlas.getRegion(r.id)).filter(Boolean);
 }
 
-/** The best level any hero has reached in `skill`, 0 with none. */
+/** The best level any hero has reached in `skill`, 0 with none. A Summoned worker's is not the guild's. */
 export function guildSkillLevel(skill) {
     let best = 0;
-    for (const hero of HeroManager.getAllHeroes() || []) {
+    for (const hero of guildHeroes(HeroManager.getAllHeroes())) {
         const level = getSkillLevel(hero.id, skill);
         if (Number.isFinite(level) && level > best) best = level;
     }

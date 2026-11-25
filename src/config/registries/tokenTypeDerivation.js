@@ -3,6 +3,7 @@
 import { KEYWORD, statementsOf } from '../../systems/effects/statements.js';
 import { isEnemyDef } from './enemyProfile.js';
 import { hasCatchPools } from './catchPools.js';
+import { isSummonType } from './summonRules.js';
 
 /**
  * `tokenType`, derived rather than picked.
@@ -66,6 +67,10 @@ export function deriveTokenType(def) {
     const hasCycle = !!config && (outputs.length > 0 || inputs.length > 0);
 
     if (isEnemyDef(def)) return { type: 'enemy', why: 'it is a creature a hero can fight' };
+
+    // Told, like an enemy: the Summoned worker section is what makes it one. Never on the mat, so no
+    // rung below describes it.
+    if (isSummonType(def)) return { type: 'summon', why: 'it is a Summoned worker a Summoning Circle calls, ordered like a hero' };
 
     // An older Promotion Token: its Promotes rule is retired (jobs are gone), so no hero works it.
     if (has(KEYWORD.PROMOTES)) return { type: 'promotion', why: 'it carries a retired Promotes rule: no hero works it' };

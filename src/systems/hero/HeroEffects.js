@@ -18,6 +18,9 @@ import { earnedPerkRefs } from './HeroPerks.js';
 import { skillsWithPerks, perkRowsFor } from '../../config/registries/perkRegistry.js';
 import { toolOf, isCatchKind, HAND_CATEGORY } from '../../config/registries/toolKinds.js';
 import { fittingToolSlotOf } from '../equipment/HeroTools.js';
+import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { summonOf } from '../../config/registries/summonRules.js';
+import { isSummoned } from './summoned.js';
 
 /**
  * A hero's equipped items are bearers, like a Token: the same grammar and effect
@@ -227,6 +230,7 @@ function keepLoadout(hero) {
 
     return {
         villager: hero.isVillager,
+        summonDef: summonDefOf(hero),
         slots, defs, backed,
         skillIds, skillRecords, skillLevels: skillRecords.map(levelField),
         perkSkills, perkTables: perkSkills.map(perkRowsFor),
@@ -238,6 +242,7 @@ function keepLoadout(hero) {
 /** Whether everything a kept loadout was built from still reads the same. */
 function stillStands(entry, hero) {
     if (hero.isVillager !== entry.villager) return false;
+    if (summonDefOf(hero) !== entry.summonDef) return false;
 
     const grid = getGrid(hero);
     const { slots, defs, backed } = entry;
@@ -290,7 +295,28 @@ function expandLoadout(hero, library) {
     }
 
     const perks = expandPerks(hero, library);
-    return perks.length ? out.concat(perks) : out;
+    if (perks.length) out.push(...perks);
+    const trait = expandTrait(hero, library);
+    return trait.length ? out.concat(trait) : out;
+}
+
+/** A Summoned worker's kind (its summon Token type), or null for anyone else. */
+function summonDefOf(hero) {
+    return isSummoned(hero) ? (getTokenType(hero.summon.typeId) || null) : null;
+}
+
+/**
+ * The statements a Summoned worker's one trait contributes (its kind's `summon.trait`), stamped as a
+ * perk's are (`perk: true`, nothing to spend, no item) and `trait: true`: it reaches the Token the
+ * Summoned worker works, and the fight it never has, through the same door as a hero's perks.
+ */
+function expandTrait(hero, library) {
+    const ref = summonOf(summonDefOf(hero))?.trait;
+    if (!ref) return NO_STATEMENTS;
+    const entry = EFFECTS[ref.effectId];
+    library?.set(ref.effectId, entry);
+    if (!entry) return NO_STATEMENTS;                // ContentAudit reports it by name
+    return statementsFromStack(entry, ref).map(statement => ({ ...statement, chargeDelta: 0, sourceItemIds: [], perk: true, trait: true }));
 }
 
 /**

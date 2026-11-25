@@ -7,6 +7,7 @@ import { getSkill } from '../../config/registries/skillRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import { XpRateTracker } from './XpRateTracker.js';
 import { addXpToEverySkill } from './everySkillXp.js';
+import { hasFixedSkills } from './summoned.js';
 import { ENGINE_EVENTS, XP_FOR_EVERYONE_SOURCE } from '../core/engineEvents.js';
 
 /**
@@ -66,8 +67,9 @@ export function addXP(heroId, skillId, amount) {
         return { success: false, error: 'HERO_NOT_FOUND' };
     }
 
-    if (hero.isVillager) {
-        return { success: false, error: 'VILLAGERS_CANNOT_GAIN_XP' };
+    // A villager's or a Summoned worker's skills are fixed.
+    if (hasFixedSkills(hero)) {
+        return { success: false, error: 'FIXED_SKILLS' };
     }
 
     const targetSkillId = skillId;
@@ -156,11 +158,12 @@ function announceLevelUps(hero, skillId, oldLevel, newLevel, extra = null) {
  * @param {string} heroId
  * @param {number} amount whole XP
  * @returns {Array<{ skillId: string, skillName: string, oldLevel: number, newLevel: number }>|null}
- *   the skills that gained a level, or null when the hero gained nothing (no such hero, a villager)
+ *   the skills that gained a level, or null when the hero gained nothing (no such hero, a villager, a
+ *   Summoned worker)
  */
 export function giveXpInEverySkill(heroId, amount) {
     const hero = HeroManager.getHero(heroId);
-    if (!hero || hero.isVillager || !(Math.round(amount) >= 1)) return null;
+    if (!hero || hasFixedSkills(hero) || !(Math.round(amount) >= 1)) return null;
     const levelUps = addXpToEverySkill(hero, amount);
     if (levelUps.length) {
         HeroManager.updateHeroFromSkills(hero);

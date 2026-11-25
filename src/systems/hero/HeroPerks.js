@@ -1,6 +1,7 @@
 import { perkRowsFor, skillsWithPerks } from '../../config/registries/perkRegistry.js';
 import { perksEarnedAt } from './perkTable.js';
 import { normaliseScale } from '../effects/effectLibrary.js';
+import { hasFixedSkills } from './summoned.js';
 
 /**
  * The milestone perks a hero holds, read off their levels every time they are asked for. Nothing is
@@ -10,7 +11,7 @@ import { normaliseScale } from '../effects/effectLibrary.js';
 
 const NONE = Object.freeze([]);
 
-/** A hero's level in one skill, 0 when the record lacks it (a villager, a hero not yet settled). */
+/** A hero's level in one skill, 0 when the record lacks it (a hero not yet settled). */
 function levelOf(hero, skillId) {
     const level = hero?.skills?.[skillId]?.level;
     return Number.isFinite(level) ? level : 0;
@@ -18,10 +19,11 @@ function levelOf(hero, skillId) {
 
 /**
  * Every perk the hero holds, as `{ skillId, level, effectId, scale }`, skill by skill in the perk
- * tables' order, each skill's in level order. Villagers hold none.
+ * tables' order, each skill's in level order. Villagers and Summoned workers hold none: a Summoned
+ * worker's one trait is its kind's (`HeroEffects`), whatever its level.
  */
 export function earnedPerks(hero) {
-    if (!hero || hero.isVillager) return NONE;
+    if (!hero || hasFixedSkills(hero)) return NONE;
     const skills = skillsWithPerks();
     if (!skills.length) return NONE;
     let out = null;

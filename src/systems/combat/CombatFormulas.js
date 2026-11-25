@@ -24,6 +24,7 @@ import { getGlobalAggregator } from '../effects/GuildModifiers.js';
 import { combinePercentages } from '../effects/ModifierAggregator.js';
 import { roundByChance, WHOLE_EPSILON } from '../../utils/RNG.js';
 import { MAX_TICK_DELTA_MS } from '../../config/loopConstants.js';
+import { isSummoned } from '../hero/summoned.js';
 
 /** A hero's level in one skill, as saved; 0 when they hold none of it (a villager). */
 function skillLevelOf(hero, skillId) {
@@ -83,9 +84,12 @@ export function getHeroCombatLevel(hero) {
     return getHeroCombatSkillEntry(hero).level;
 }
 
-/** Whether this hero can fight at all. Everyone fights; barehanded is a punch. */
+/**
+ * Whether this hero can fight at all. Every hero fights; barehanded is a punch. A Summoned worker
+ * never does: it works only, so no enemy, enemy camp or War Camp takes its order.
+ */
 export function canHeroFight(hero) {
-    return !!hero;
+    return !!hero && !isSummoned(hero);
 }
 
 /**

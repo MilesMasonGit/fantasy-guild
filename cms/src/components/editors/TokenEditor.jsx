@@ -17,6 +17,7 @@ import RareTableBlock from './RareTableBlock';
 import StealTableBlock from './StealTableBlock';
 import HideoutBlock from './HideoutBlock';
 import EnemyMovesFields from './EnemyMovesFields';
+import { SummonedWorkerSection, SummoningCircleFields } from './SummonBlocks';
 import SetAllTypes from './SetAllTypes';
 import PlanFields from '../shared/PlanFields';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
@@ -832,6 +833,9 @@ export default function TokenEditor() {
           </>
         )}
       </Section>
+
+      <SummonedWorkerSection token={token} tokens={allTokens} effects={effects} onChange={(next) => update('summon', next)} />
+      <SummoningCircleFields token={token} stationSkill={stationSkill} onChange={(next) => update('summonCircle', next)} />
 
       <LifecycleBlocks token={token} onChange={update} />
 

@@ -160,6 +160,7 @@
         "unmet": "{item}: {needs}. It does nothing until then",
         "notFound": "That hero or item is gone",
         "villager": "Villagers cannot equip items",
+        "summoned": "Summoned workers wear nothing",
         "cannotEquip": "That cannot be equipped",
         "alreadyEquipped": "{item} is already equipped",
         "outOfStock": "Out of stock",
@@ -725,7 +726,17 @@
         "needsJob": "Needs a job",
         "idle": "Idle",
         "hurt": "Hurt",
-        "busy": "Busy"
+        "busy": "Busy",
+        "summonNeverFights": "Summoned workers never fight",
+        "summonWorksOnly": "Works only at {skills}"
+    },
+    "summon": {
+        "charges": { "one": "{count} charge", "other": "{count} charges" },
+        "dismissWarning": "{name} will be dismissed ({charges} left).",
+        "dismissConfirm": "Change",
+        "dismissKeep": "Keep",
+        "ofCircle": "{name}: {charges} left",
+        "leftSpent": "Out of charges"
     },
     "levelUp": {
         "count": {

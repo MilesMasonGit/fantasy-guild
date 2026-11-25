@@ -104,7 +104,7 @@ export function heroRecord(heroId) {
     return (GameState.state?.heroes || []).find(h => h?.id === heroId) || null;
 }
 
-/** Whether the hero can fight at all (everyone can; see `CombatFormulas.canHeroFight`). */
+/** Whether the hero can fight at all (every hero can, a Summoned worker never: `CombatFormulas.canHeroFight`). */
 export function canFight(heroId) {
     return CombatFormulas.canHeroFight(heroRecord(heroId));
 }

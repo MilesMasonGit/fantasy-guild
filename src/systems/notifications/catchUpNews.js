@@ -4,6 +4,7 @@ import { BOARD_EVENTS } from '../board/boardEvents.js';
 import { GameState } from '../../state/GameState.js';
 import { listRecipes } from '../../config/registries/recipePoolRegistry.js';
 import { recipesUnlockedByLevelUp } from './recipeUnlocks.js';
+import { guildHeroes } from '../hero/summoned.js';
 
 /**
  * The news a catch-up's quiet bus keeps from the banners and the item stubs (every route is a
@@ -38,7 +39,7 @@ export function startNewsCollector() {
     const offs = [
         EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, ({ heroId, heroName, skillId, oldLevel, newLevel } = {}) => {
             // The same reading the live banner makes, at the same moment.
-            const unlocked = recipesUnlockedByLevelUp(listRecipes(), GameState.heroes, { heroId, skillId, oldLevel, newLevel });
+            const unlocked = recipesUnlockedByLevelUp(listRecipes(), guildHeroes(GameState.heroes), { heroId, skillId, oldLevel, newLevel });
             if (!unlocked.length) return;
             const key = `${heroId}|${skillId}`;
             if (!recipes.has(key)) {

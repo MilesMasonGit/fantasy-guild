@@ -196,6 +196,10 @@ export {
 export { fishOf, lureOf, baitSavingOf } from '../../../src/config/registries/fishRules.js';
 export { toolFindings } from '../../../src/systems/core/toolRule.js';
 export { spotFindings } from '../../../src/systems/core/spotRule.js';
+// Summoned workers: a summon's skills, trait and copied enemy, a Circle's charges, and the audit. The game's own reading and wording.
+export { summonFindings } from '../../../src/systems/core/summonRule.js';
+export { summonOf, isSummonType, circleChargeSetting, circleChargesAt, DEFAULT_CIRCLE_CHARGES, SUMMONING_SKILL } from '../../../src/config/registries/summonRules.js';
+export { isGatheringSkill } from '../../../src/config/registries/skillRegistry.js';
 export { fishFindings } from '../../../src/systems/core/fishRule.js';
 export { crimeFindings } from '../../../src/systems/core/crimeRule.js';
 // Tools and weapons that break: an item's chance per cycle, for the item editor's Break chance field. The game's own reading.

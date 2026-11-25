@@ -17,6 +17,8 @@ import * as Camps from './Camps.js';
 import { isGuildHall } from './MatCap.js';
 import { workConfigOf } from './StationRecipe.js';
 import { levelNeed, heroLevel } from '../core/levelNeed.js';
+import { isEnemyDef } from '../../config/registries/enemyProfile.js';
+import { isSummoned } from '../hero/summoned.js';
 
 /**
  * A hero dropped on the mat (`dropOnMat`, from the figure, the flag or the roster tab) gets an
@@ -50,6 +52,8 @@ function woundedHero(heroId) {
  * reach (`Flags.orderToken`'s `refusedOn`), or the camp's own skill.
  */
 export function refusalWords(heroId, instance, reason) {
+    const summoned = summonedRefusal(heroOf(heroId), instance, reason);
+    if (summoned) return { text: summoned, icons: [] };
     const def = getTokenType(instance?.typeId);
     const skillId = def ? (Camps.campOf(def)?.skill || workConfigOf(def, instance)?.skill) : null;
     const skill = skillId ? (getSkill(skillId)?.name || skillId) : null;
@@ -67,6 +71,21 @@ export function refusalWords(heroId, instance, reason) {
         case ALERT.UNSKILLED: return plain(skill ? t('orders.needs', { what: skill }) : t('orders.nothing'));
         default: return plain(t('orders.nothing'));
     }
+}
+
+/**
+ * A Summoned worker's refusal for want of a skill, in its own words: it never fights (an enemy, an
+ * enemy camp, a War Camp), and otherwise works only at its own skills. Null for anyone else, and for
+ * any other reason (a level, the mat held), which reads as a hero's.
+ */
+function summonedRefusal(hero, instance, reason) {
+    if (!isSummoned(hero) || reason !== ALERT.UNSKILLED) return null;
+    if (isEnemyDef(getTokenType(instance?.typeId)) || Camps.isEnemyCamp(instance) || Camps.isWarCamp(instance)) {
+        return t('orders.summonNeverFights');
+    }
+    const names = Object.keys(hero.skills || {}).map(id => getSkill(id)?.name || id);
+    const skills = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : (names[0] || '');
+    return t('orders.summonWorksOnly', { skills });
 }
 
 /** {@link refusalWords} as plain words, for a spot that holds only text (the drop's callout). */

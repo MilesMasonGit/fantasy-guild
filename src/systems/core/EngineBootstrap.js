@@ -32,6 +32,7 @@ import * as BoardCombat from '../board/BoardCombat.js';
 import * as LoadoutMoments from '../board/LoadoutMoments.js';
 import * as MatResize from '../board/MatResize.js';
 import * as Flags from '../board/Flags.js';
+import * as Summons from '../board/Summons.js';
 import * as Orders from '../board/Orders.js';
 import * as Camps from '../board/Camps.js';
 // Marking Tokens for demolition from the console (`Game.Demolition.mark(id)`).
@@ -135,6 +136,8 @@ export const EngineBootstrap = {
         // TriggerSystem.init() internally) so this subscription registers LAST for that event.
         LoadoutMoments.init();
         Flags.init();
+        // A Summoning Circle set to call another kind dismisses the one it called.
+        Summons.init();
         QuestManager.init();
         SpawnerSystem.init();
         // A growing Token's alerts (a Stump that needs its Forest or a seedling) belong to its board.

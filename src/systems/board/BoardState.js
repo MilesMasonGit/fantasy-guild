@@ -479,6 +479,17 @@ export function setFlag(heroId, flag) {
     else delete b.flags[heroId];
 }
 
+/**
+ * Forget `heroId` on `someBoard` (the live board or a Region's frozen one): its flag and its saved
+ * work note. For a record leaving the roster (a Summoned worker gone), so no board keeps an order
+ * for no one.
+ */
+export function forgetHeroOn(someBoard, heroId) {
+    if (!someBoard || !heroId) return;
+    if (someBoard.flags) delete someBoard.flags[heroId];
+    if (someBoard.workClaims) delete someBoard.workClaims[heroId];
+}
+
 /** Take the next `plantedAt` number. */
 export function takeFlagOrder() {
     const b = board();

@@ -510,6 +510,17 @@ export function placeAtFlag(heroId) {
 }
 
 /**
+ * A Summoned worker just called: its body appears where it will idle by the spot order `flag` it is
+ * about to be given, not at the Guild Hall, so it stands by its Circle from the first moment. Called
+ * before the order, which then finds the body there and keeps it.
+ */
+export function appearFor(heroId, flag) {
+    if (!heroId || !flag || BoardState.heroBodyOf(heroId)) return;
+    const at = onMatIdle(idleSpot(flag));
+    BoardState.setHeroBody(heroId, { x: at.x, y: at.y, targetId: null, side: -1, atWork: null, moving: false, facing: 1 });
+}
+
+/**
  * A hero is being sent out: their body appears (at the Hall), or, still on their way home, turns
  * around. A new order (`Flags.orderToken`, `orderSpot`) calls this BEFORE choosing, so nearest is
  * measured from where they really are.
