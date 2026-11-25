@@ -247,7 +247,14 @@ describe('Lifecycle audit — errors: shape rules', () => {
 
     it('a foundation kind that is not one of FOUNDATION_KINDS', () => {
         expectOne((w) => { w.tokens.token_stone_foundation.foundation.kind = 'marble'; },
-            { id: 'token_stone_foundation', field: 'foundation.kind', includes: ['marble', 'wood, stone, farmland, excavation, battlefield'] });
+            { id: 'token_stone_foundation', field: 'foundation.kind', includes: ['marble', 'wood, stone, farmland, excavation, nursery, dock, battlefield'] });
+    });
+
+    it('a Nursery and a Dock are Foundation kinds, on a Token and on a building recipe', () => {
+        const world = clean();
+        world.tokens.token_stone_foundation.foundation.kind = 'nursery';
+        world.recipes.recipe_build_furnace.foundationKinds = ['nursery', 'dock'];
+        expect(auditLifecycleBlocks(world)).toEqual([]);
     });
 
     it('a shop skill icon that is not a real skill', () => {
@@ -358,6 +365,40 @@ describe('Lifecycle audit — errors: shape rules', () => {
                 upkeep: [{ itemId: 'item_oak_seed', quantity: 1 }],
             };
         }, { id: 'token_shrimp_coast', field: 'spawner, foundation', includes: 'at most one of spawner and foundation' });
+    });
+});
+
+describe('Lifecycle audit — a Foundation keeps its own ground while it builds (brief 860 R3)', () => {
+    const grounds = (w, foundation, built) => {
+        if (foundation) w.tokens.token_stone_foundation.standsOn = foundation;
+        if (built) w.tokens.token_furnace.standsOn = built;
+    };
+
+    it('a build that may stand on none of its Foundation’s ground can never be built there', () => {
+        expectOne((w) => grounds(w, ['stone'], ['grass']), {
+            id: 'recipe_build_furnace', field: 'foundationKinds',
+            includes: ['Furnace', 'Stone Foundation', 'stands on stone', 'grass', 'can never be built']
+        });
+    });
+
+    it('the shore is dry land, so a Dock never builds a Token that stands on water', () => {
+        expectOne((w) => grounds(w, ['shore'], ['water']), {
+            id: 'recipe_build_furnace', field: 'foundationKinds', includes: ['the shore', 'water']
+        });
+    });
+
+    it('ground the two share is fine: the shore can be grass; a build that names none stands where its Foundation does', () => {
+        for (const [foundation, built] of [[['shore'], ['grass']], [['stone'], null], [['grass', 'sand'], ['sand']], [['stone'], ['stone']]]) {
+            const world = clean();
+            grounds(world, foundation, built);
+            expect(auditLifecycleBlocks(world), `${foundation} / ${built}`).toEqual([]);
+        }
+    });
+
+    it('a Foundation with no ground of its own stands under its build’s, as before, even water', () => {
+        const world = clean();
+        grounds(world, null, ['water']);
+        expect(auditLifecycleBlocks(world)).toEqual([]);
     });
 });
 

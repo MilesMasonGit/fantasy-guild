@@ -7,6 +7,7 @@ import {
 } from '../../config/registries/tokenConstants.js';
 import { stationSkillOf, stationKindOf, getProvidedTagsWithTiers, statementsOf, KEYWORD } from '../effects/statements.js';
 import { neverWearsReason, NEVER_WEARS_WHY } from './wearRule.js';
+import { isStandsOnWord, groundsMeet, needsText } from '../atlas/TerrainMap.js';
 
 /**
  * The one checker for the eight Token Lifecycle blocks (`spawner`, `grows`,
@@ -67,6 +68,10 @@ const isPositiveInteger = (v) => Number.isInteger(v) && v > 0;
 const isTime = (v) => typeof v === 'number' && Number.isFinite(v) && v >= MIN_MS;
 const hasValue = (v) => v !== undefined && v !== null && v !== '';
 const show = (v) => (typeof v === 'string' ? v : JSON.stringify(v));
+/** A Token's "Stands on" as placement reads it: the known words only (`standsOnOf`). */
+const groundOf = (def) => (Array.isArray(def?.standsOn) ? def.standsOn.filter(isStandsOnWord) : []);
+/** "stone", "the shore", "grass or sand", "dry land". */
+const groundWords = (list) => needsText(list).slice('Needs '.length, -1);
 
 /**
  * A spawner's family: every type in its `spawns` list plus everything they
@@ -491,6 +496,18 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
             if (mismatched.length > 0) {
                 recipeError(recipe, 'skill',
                     `is a ${show(recipe.skill ?? 'blank')} recipe, but ${kind} Foundations are built with ${mismatched.join(', ')}.`);
+            }
+            // A Foundation with a "Stands on" of its own keeps it while it builds
+            // (`GroundRules.siteRulesFor`), so a build that may stand on none of it never happens there.
+            const builtId = outputs.length === 1 ? outputs[0]?.tokenId : null;
+            const built = builtId ? tokens[builtId] : null;
+            if (!built) continue;
+            const builtGround = groundOf(built);
+            for (const fdef of ofKind) {
+                const own = groundOf(fdef);
+                if (!own.length || groundsMeet(own, builtGround)) continue;
+                recipeError(recipe, 'foundationKinds',
+                    `builds ${tokenLabel(builtId)} on ${kind} Foundations, but ${tokenLabel(fdef.id)} stands on ${groundWords(own)} and ${built.name || builtId} on ${groundWords(builtGround)}: no ground is both, so it can never be built there.`);
             }
         }
     }

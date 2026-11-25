@@ -114,8 +114,12 @@ export function isTokenRarity(value) {
  * place the list lives: the CMS's Foundation dropdown and its recipe picker
  * import it across the boundary (see the header note), and the engine and the
  * content audit read the same list.
+ *
+ * Each gathering skill has its own kind for its sources (Farmland, Excavation, Nursery, Dock); Wood
+ * and Stone build the other buildings. Nothing in the engine reads a kind's name: a recipe is
+ * offered on a Foundation whose kind its list names, whatever the kind.
  */
-export const FOUNDATION_KINDS = Object.freeze(['wood', 'stone', 'farmland', 'excavation', 'battlefield']);
+export const FOUNDATION_KINDS = Object.freeze(['wood', 'stone', 'farmland', 'excavation', 'nursery', 'dock', 'battlefield']);
 
 /**
  * The kinds of station, which split one skill's recipes between several stations of it: a

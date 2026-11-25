@@ -149,6 +149,52 @@ export function rulesForWords(standsOn) {
     return rules;
 }
 
+/**
+ * The ground rules a Token of `typeId` stands under while it is set to become `siteOf` (a
+ * Foundation with a build chosen, `SiteRules.siteTypeOf`): the build's, and, when the Foundation
+ * has a "Stands on" of its own (an Excavation on Stone), only the cells both allow, so choosing a
+ * vein never lets an Excavation leave its Stone.
+ *
+ * ⚠️ A Foundation with no list of its own stands under its build's alone, exactly as before: its
+ * empty list means anywhere dry, which would otherwise forbid a build that stands on water.
+ */
+export function siteRulesFor(typeId, siteOf) {
+    if (!siteOf || siteOf === typeId) return rulesFor(typeId);
+    const own = standsOnOf(typeId);
+    if (own.length === 0) return rulesFor(siteOf);
+    return bothRules(own, standsOnOf(siteOf));
+}
+
+/** {@link rulesForWords} for the cells two lists both allow, from the same per-map cache. */
+function bothRules(own, other) {
+    const ground = groundHere();
+    const key = `${own.join('|')}&${other.join('|')}`;
+    let rules = ground.rules.get(key);
+    if (!rules) {
+        const first = rulesForWords(own);
+        const second = rulesForWords(other);
+        const mask = new Uint8Array(ground.cols * ground.rows);
+        let allowed = 0;
+        for (let i = 0; i < mask.length; i++) {
+            if ((!first || first.mask[i] === 1) && (!second || second.mask[i] === 1)) {
+                mask[i] = 1;
+                allowed++;
+            }
+        }
+        const sameWords = other.length === 0 || (other.length === own.length && other.every(w => own.includes(w)));
+        rules = Object.freeze({
+            grid: Object.freeze({ cols: ground.cols, rows: ground.rows }),
+            cell: ground.cell,
+            mask,
+            standsOn: own,
+            allowed,
+            reason: sameWords ? needsText(own) : `${needsText(own).slice(0, -1)} and ${needsText(other).slice('Needs '.length)}`
+        });
+        ground.rules.set(key, rules);
+    }
+    return rules;
+}
+
 /** Whether the cell under `(x, y)` is one `rules` (from {@link rulesFor}) allows. */
 export function allowsAt(rules, x, y) {
     return rules.mask[cellIndex(rules.grid, x, y, rules.cell)] === 1;
