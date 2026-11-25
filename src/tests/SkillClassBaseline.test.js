@@ -269,6 +269,16 @@ describe('Every hero holds every skill', () => {
         expect(read.skills[CUT]).toBeUndefined();
     });
 
+    it('a save holding Taming XP loads, the XP dropped quietly', () => {
+        const old = makeRecruit('hero_3', 1);
+        old.skills.taming = { level: 12, xp: 900 };
+        GameState.state.heroes = [old];
+        const read = HeroManager.getHero('hero_3');
+        expect(read.skills.taming).toBeUndefined();
+        expect(Object.keys(read.skills).sort()).toEqual([...HERO_SKILL_IDS].sort());
+        expect(HERO_SKILL_IDS).not.toContain('taming');
+    });
+
     it('the deleted ids are gone from the registry', () => {
         // Content or a save still naming one of these must fail loudly, not
         // resolve to something approximate. The first five went with the

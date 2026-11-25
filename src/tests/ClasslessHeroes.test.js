@@ -77,15 +77,15 @@ beforeEach(() => {
 describe('the skills: 17 non-combat, 4 combat', () => {
     it('has twenty-one skills in two layers', () => {
         expect(Object.values(SKILL_LAYERS)).toEqual(['starting', 'combat']);
-        expect(STARTING_SKILL_IDS).toHaveLength(17);
+        expect(STARTING_SKILL_IDS).toHaveLength(16);
         expect(COMBAT_SKILL_IDS).toEqual(['melee', 'ranged', 'magic', 'stealth']);
-        expect(HERO_SKILL_IDS).toHaveLength(21);
-        expect(Object.keys(SKILLS)).toHaveLength(21);
+        expect(HERO_SKILL_IDS).toHaveLength(20);
+        expect(Object.keys(SKILLS)).toHaveLength(20);
         expect(getSkillIdsByLayer(SKILL_LAYERS.STARTING)).toEqual(STARTING_SKILL_IDS);
     });
 
-    it('the five cut skills are gone', () => {
-        expect(RETIRED_SKILL_IDS).toEqual(['leadership', 'commerce', 'trapping', 'armory', 'shadowcraft']);
+    it('the six cut skills are gone', () => {
+        expect(RETIRED_SKILL_IDS).toEqual(['leadership', 'commerce', 'trapping', 'armory', 'shadowcraft', 'taming']);
         for (const id of RETIRED_SKILL_IDS) expect(isSkillId(id), id).toBe(false);
     });
 });

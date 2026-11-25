@@ -155,11 +155,6 @@ export const SKILLS = {
         icon: '🗝️',
         sprite: 'assets/skills/s_crime.png'
     },
-    taming: {
-        id: 'taming', name: 'Taming', layer: SKILL_LAYERS.STARTING,
-        description: 'Beasts of burden that harvest, haul and graze unattended.',
-        icon: '🐾'
-    },
     science: {
         id: 'science', name: 'Science', layer: SKILL_LAYERS.STARTING,
         description: 'Laboratories that convert goods in bulk into other materials.',
@@ -216,11 +211,11 @@ export const SKILL_CATEGORIES = {
 };
 
 /**
- * Skills cut when heroes became classless. ⚠️ Not skills any more: an older save's levels in them
+ * Skills cut from the game (heroes became classless; Taming left). ⚠️ Not skills any more: an older save's levels in them
  * are dropped on load (`HeroRehydration.settleSkillSheet`), and content still naming one is listed
  * by the boot audit and the CMS Economy Audit as a skill that does not exist.
  */
-export const RETIRED_SKILL_IDS = Object.freeze(['leadership', 'commerce', 'trapping', 'armory', 'shadowcraft']);
+export const RETIRED_SKILL_IDS = Object.freeze(['leadership', 'commerce', 'trapping', 'armory', 'shadowcraft', 'taming']);
 
 /** How many skills exist in the world. */
 export const SKILL_COUNT = Object.keys(SKILLS).length;
