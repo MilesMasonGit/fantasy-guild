@@ -208,13 +208,12 @@ describe('the Hall sky: the shipped constellations', () => {
     it('puts every upgrade in one of the named constellations', () => {
         const ids = new Set(CONSTELLATIONS.map(c => c.id));
         for (const def of GUILD_UPGRADES) expect(ids.has(def.constellation), def.id).toBe(true);
-        expect(CONSTELLATIONS.map(c => c.name)).toEqual([
-            'The Hearth', 'The Vault', 'The Well',
-            ...Object.values(authoredHallSky().constellations).map(c => c.name)
-        ]);
-        // The stand-ins hold the three until the data authors them.
-        expect(CONSTELLATIONS.slice(0, 3).map(c => c.id)).toEqual(FALLBACK_CONSTELLATION_IDS);
-        expect(CONSTELLATIONS.slice(0, 3).every(c => c.fallback === true)).toBe(true);
+        expect(CONSTELLATIONS.map(c => c.name)).toEqual(Object.values(authoredHallSky().constellations).map(c => c.name));
+        // The data authors the three the stand-ins held (The Hearth, The Vault, The Well), so none is a stand-in.
+        for (const id of FALLBACK_CONSTELLATION_IDS) expect(ids.has(id), id).toBe(true);
+        expect(CONSTELLATIONS.filter(c => c.fallback).map(c => c.id)).toEqual([]);
+        expect(CONSTELLATIONS.filter(c => FALLBACK_CONSTELLATION_IDS.includes(c.id)).map(c => c.name))
+            .toEqual(['The Hearth', 'The Vault', 'The Well']);
     });
 });
 
