@@ -13,7 +13,7 @@ import * as Fields from './Fields.js';
 import * as EventTokens from './EventTokens.js';
 import * as FishingSpots from './FishingSpots.js';
 import { growTimeOf } from './TileModifiers.js';
-import { ownGateMet, ownRegrowMs } from './Groves.js';
+import { ownGateMet } from './Groves.js';
 import { ALERT } from './boardEvents.js';
 import { logger } from '../../utils/Logger.js';
 
@@ -62,13 +62,13 @@ import { logger } from '../../utils/Logger.js';
 export const MAX_CHANGES_PER_TICK = 64;
 
 /**
- * How long a Token's growth takes: its authored `grows.afterMs` with the Grow Time its neighbours
- * give it, floored (`TileModifiers.growTimeOf`); a Stump its Forest regrows takes its species'
- * fixed time (`Groves.ownRegrowMs`). The one reader of a growth's time.
+ * How long a Token's growth takes: its authored `grows.afterMs` with the Grow Time that reaches it,
+ * floored (`TileModifiers.growTimeOf`: a Hall star on its kind such as Green Thumb, a building in
+ * reach). A Stump its Forest regrows reads it the same way; its Forest only decides whether it
+ * grows back. The one reader of a growth's time.
  */
 export function growMsOf(instance, def = getTokenType(instance?.typeId)) {
-    const afterMs = Number(def?.grows?.afterMs) || 0;
-    return Growth.growsTermsOf(def).needsNearby.length ? ownRegrowMs(afterMs) : growTimeOf(instance, afterMs);
+    return growTimeOf(instance, Number(def?.grows?.afterMs) || 0);
 }
 
 /**

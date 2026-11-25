@@ -24,8 +24,9 @@ import { placeAt, clearMat } from './fixtures/mat.js';
 
 /**
  * ⭐ Forests and Orchards own their trees: a Forest plants a few trees of its species in its reach
- * (its allowance), each one its own, and regrows only its own Stumps, at the species' fixed time,
- * for free. It speeds nothing up. A demolished Forest's trees stay, and their Stumps never regrow.
+ * (its allowance), each one its own, and regrows only its own Stumps, for free, in the species'
+ * time as the Grow Time reaching them shortens it (a Hall star such as Green Thumb; the content no
+ * longer gives a Forest one). A demolished Forest's trees stay, and their Stumps never regrow.
  * An Orchard does the same with its fruit trees, which rest and fruit again. An older save's trees
  * join the Forest in their reach once; a new Region's map trees each belong to a wild Forest.
  */
@@ -48,8 +49,9 @@ registerItems({
 
 const plain = (id, extra) => ({ id, name: id, tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature', ...extra });
 const work = { skill: 'forestry', skillRequired: 1, cycleTimeMs: 3000, xp: 1, inputs: [], outputs: [] };
-// What today's content still holds and the rules retire: a seed per spawn, a seed per regrowth and
-// a Grow Time boost on the species.
+// What today's content still holds: a seed per spawn and a seed per regrowth, which the rules
+// retire, and a Grow Time boost on the species, which reaches its trees like any Grow Time (the R2
+// pack takes it off the Forests).
 const speedUp = [{ id: 'stm_ot_fast', keyword: 'provides', to: { mode: 'tag', value: 'OtOak' },
     payload: { type: EFFECT_TYPES.GROW_TIME, bucket: 'percentage', value: -0.5 } }];
 registerTokenTypes({
@@ -181,7 +183,7 @@ describe('⭐ a Forest plants its own trees', () => {
     });
 });
 
-describe('⭐ a Forest regrows only its own Stumps, at a fixed time, for free', () => {
+describe('⭐ a Forest regrows only its own Stumps, for free, in their Grow Time', () => {
     function ownTree() {
         const forest = arrive('ot_forest', 800, 500);
         const tree = arrive('ot_tree', 900, 500);
@@ -189,15 +191,16 @@ describe('⭐ a Forest regrows only its own Stumps, at a fixed time, for free', 
         return { forest, tree };
     }
 
-    it('its felled tree becomes its Stump, which grows back in the species time, Grow Time boost or not, no seedling', () => {
+    it('its felled tree becomes its Stump, which grows back in the species time as the Grow Time reaching it shortens it, no seedling', () => {
         const { forest, tree } = ownTree();
         useUp(tree);
         tickClocks(100);
         const stump = at(900, 500);
         expect(stump.typeId).toBe('ot_stump');
         expect(stump.tether).toBe(forest.id);
-        expect(TimedChanges.nextGrowth(stump).totalMs).toBe(20000);
-        tickClocks(19800);
+        // The fixture Forest's own −50 % on its species reaches the Stump, as Green Thumb would.
+        expect(TimedChanges.nextGrowth(stump).totalMs).toBe(10000);
+        tickClocks(9800);
         expect(at(900, 500).typeId).toBe('ot_stump');
         tickClocks(200);
         expect(at(900, 500).typeId).toBe('ot_tree');
@@ -232,7 +235,7 @@ describe('⭐ a Forest regrows only its own Stumps, at a fixed time, for free', 
 });
 
 describe('⭐ an Orchard plants its own fruit trees, which rest and fruit again', () => {
-    it('its own picked-empty tree fruits again in its fixed rest; one not its own stays bare', () => {
+    it('its own picked-empty tree fruits again in its rest (Grow Time reaching it shortens it); one not its own stays bare', () => {
         const orchard = arrive('ot_orchard', 800, 500);
         const own = arrive('ot_apple', 900, 500);
         BoardState.setTether(own, orchard.id);
@@ -240,8 +243,8 @@ describe('⭐ an Orchard plants its own fruit trees, which rest and fruit again'
         BoardState.setTether(stranger, null);
         useUp(own);
         useUp(stranger);
-        expect(Respawn.restMsOf(own)).toBe(30000);
-        tickClocks(30000);
+        expect(Respawn.restMsOf(own)).toBe(15000);
+        tickClocks(15000);
         expect(own.usesRemaining).toBeGreaterThan(0);
         expect(stranger.usesRemaining).toBe(0);
         expect(Respawn.isComingBack(stranger)).toBe(false);

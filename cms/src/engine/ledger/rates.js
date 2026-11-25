@@ -666,8 +666,8 @@ function lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes, kind, skil
         if (!hasNearby(setup, respawn.needsNearby)) {
             return { kind: LIFECYCLE.ONE_OFF, cycles, supplyPerHour: 0, used: new Set(), why: 'its refill needs a neighbour the setup lacks' };
         }
-        // A fruit tree its Orchard brings back rests its fixed time (`Respawn.restMsOf`).
-        const { ms, used } = respawn.needsNearby.length ? { ms: respawn.afterMs, used: new Set() } : growTime(book, def.id, respawn.afterMs, setup, guild, notes);
+        // A fruit tree its Orchard brings back rests as Grow Time shortens it, like any rest (`Respawn.restMsOf`).
+        const { ms, used } = growTime(book, def.id, respawn.afterMs, setup, guild, notes);
         const restMs = Math.max(RESPAWN_MIN_MS, ms);
         // Only a camp moves a hero on to the next copy while this one rests.
         const members = setup.camp !== undefined && setup.camp !== null ? familyMembers(book, setup, skill) : 1;
@@ -687,9 +687,8 @@ function lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes, kind, skil
             if (!hasNearby(setup, terms.needsNearby)) {
                 return { kind: LIFECYCLE.ONE_OFF, cycles, supplyPerHour: 0, used, why: `${at} grows only beside ${terms.needsNearby.join(' or ')}` };
             }
-            // A Stump its Forest regrows takes its fixed time (`TimedChanges.growMsOf`).
-            const baseMs = Number(stepDef.grows.afterMs) || 0;
-            const grown = terms.needsNearby.length ? { ms: baseMs, used: new Set() } : growTime(book, at, baseMs, setup, guild, notes);
+            // A Stump its Forest regrows reads Grow Time like any growth (`TimedChanges.growMsOf`).
+            const grown = growTime(book, at, Number(stepDef.grows.afterMs) || 0, setup, guild, notes);
             grown.used.forEach(f => used.add(f));
             steps.push({ typeId: at, ms: grown.ms });
             for (const c of terms.cost) costs.push({ itemId: c.itemId, perLife: c.quantity });

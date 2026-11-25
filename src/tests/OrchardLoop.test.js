@@ -40,7 +40,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * its Bare picture) → Fruiting again, all at once. The refill runs only while its own Orchard
  * stands (`respawn.needsNearby` names the kind): a Bare tree with none stays Bare, its clock
  * standing still, and says what it needs; an Orchard put beside it later does not take it in. The
- * rest is its fixed time: an Orchard's Grow Time does not shorten it. These boards start as an
+ * rest reads the Grow Time that reaches it, as any rest does (these fixture Orchards carry −50 % on
+ * their fruit; Green Thumb is the shipped kind of it). These boards start as an
  * older save's: on the first tick a tree joins the Orchard in its reach. The picker waits silently
  * on a Bare tree that is coming back, and idles beside one that is not.
  *
@@ -143,13 +144,13 @@ describe('the refill block names what it needs in reach', () => {
 });
 
 describe('⭐ picked, not felled: Fruiting → Bare → Fruiting with its Orchard in reach', () => {
-    it('stays where it stands, Bare (its resting picture), and fruits again all at once, in its fixed rest', () => {
+    it('stays where it stands, Bare (its resting picture), and fruits again all at once, its rest shortened by the Grow Time reaching it', () => {
         const tree = pickedBare();
         expect(FixedTokens.isFixed(tree)).toBe(true);
         expect(Respawn.restingSpriteOf(tree)).toBe('t_tree_bare_apple');
-        // The Orchard's −50 % Grow Time does not reach it: the 20 s rest stands.
-        expect(Respawn.nextRespawn(tree)).toMatchObject({ mode: 'refill', totalMs: 20000, paused: false });
-        run(20000);
+        // The Orchard's −50 % Grow Time reaches it: a 20 s rest takes 10 s.
+        expect(Respawn.nextRespawn(tree)).toMatchObject({ mode: 'refill', totalMs: 10000, paused: false });
+        run(10000);
         expect(tree.usesRemaining).toBe(1);
         expect(Respawn.isResting(tree)).toBe(false);
         expect(Respawn.restingSpriteOf(tree)).toBeNull();
@@ -238,7 +239,7 @@ describe('an Orchard plants its own fruit trees within its reach, for free, as a
     const ORCHARD = { x: 800, y: 500 };
     const family = () => BoardState.tokens().filter(t => t.typeId === 'or_sapling' || t.typeId === 'or_planted_tree');
 
-    it('plants Saplings within reach up to its allowance, no seed spent; they grow into fixed, fruiting trees of its own, at their fixed rest', () => {
+    it('plants Saplings within reach up to its allowance, no seed spent; they grow into fixed, fruiting trees of its own, their rest read with its Grow Time', () => {
         InventoryManager.addItem(SEED, 5);
         const orchard = put('or_planting_orchard', ORCHARD.x, ORCHARD.y);
         run(30000);
@@ -249,7 +250,7 @@ describe('an Orchard plants its own fruit trees within its reach, for free, as a
             expect(Math.hypot(t.x - ORCHARD.x, t.y - ORCHARD.y)).toBeLessThanOrEqual(164);
             expect(FixedTokens.isFixed(t)).toBe(true);
             expect(t.tether).toBe(orchard.id);
-            expect(Respawn.restMsOf(t)).toBe(20000);
+            expect(Respawn.restMsOf(t)).toBe(10000);
         }
     });
 
@@ -316,6 +317,6 @@ describe('what a Bare tree says', () => {
 
     it('with one: its countdown, as a resting vein says it', () => {
         const tree = pickedBare();
-        expect(cardLine(tree)).toMatchObject({ label: 'Exhausted', text: '20s', tip: 'Exhausted · respawns in 20s' });
+        expect(cardLine(tree)).toMatchObject({ label: 'Exhausted', text: '10s', tip: 'Exhausted · respawns in 10s' });
     });
 });

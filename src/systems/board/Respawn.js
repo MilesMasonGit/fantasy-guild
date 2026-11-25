@@ -6,7 +6,7 @@ import { getTokenType, tokenStartingUses } from '../../config/registries/tokenRe
 import { respawnOf as respawnBlockOf, RESPAWN_MIN_MS } from '../../config/registries/tokenConstants.js';
 import * as BoardState from './BoardState.js';
 import { growTimeOf } from './TileModifiers.js';
-import { ownGateMet, ownRegrowMs } from './Groves.js';
+import { ownGateMet } from './Groves.js';
 
 /**
  * A Token type with a `respawn` block does not leave the mat when its charges run out: it rests.
@@ -52,15 +52,15 @@ export function respawnOf(def) {
 
 /**
  * How long a resting Token rests before it refills, in ms: the authored rest with the Grow Time
- * its neighbours give it (`TileModifiers.growTimeOf`, floored), and never under the engine's
- * shortest rest; a fruit tree its Orchard brings back rests its species' fixed time
- * (`Groves.ownRegrowMs`). The one reader of the time. A regrow's time is its `into` Token's growth.
+ * that reaches it (`TileModifiers.growTimeOf`, floored: a Hall star on its kind, a building in
+ * reach), and never under the engine's shortest rest. A fruit tree its Orchard brings back reads
+ * it the same way; its Orchard only decides whether it comes back. The one reader of the time. A
+ * regrow's time is its `into` Token's growth.
  */
 export function restMsOf(instance, def = getTokenType(instance?.typeId)) {
-    const respawn = respawnOf(def);
-    const afterMs = respawn?.afterMs;
+    const afterMs = respawnOf(def)?.afterMs;
     if (afterMs == null) return 0;
-    return Math.max(RESPAWN_MIN_MS, respawn.needsNearby.length ? ownRegrowMs(afterMs) : growTimeOf(instance, afterMs));
+    return Math.max(RESPAWN_MIN_MS, growTimeOf(instance, afterMs));
 }
 
 /**

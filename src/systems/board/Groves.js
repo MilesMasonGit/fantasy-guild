@@ -25,15 +25,6 @@ export function ownGateMet(instance, typeIds) {
     return !!owner && typeIds.includes(owner.typeId);
 }
 
-/**
- * How long a tree its owner brings back takes, a Stump's growth or a fruit tree's rest: its
- * species' authored time, which no Grow Time shortens. The one reader, so a later upgrade that
- * shortens regrowth changes it here.
- */
-export function ownRegrowMs(baseMs) {
-    return baseMs;
-}
-
 /** Type id → the owner types it needs ({@link ownerTypesOf}), memoised on the registry's version. */
 let owners = { version: -1, byType: new Map() };
 

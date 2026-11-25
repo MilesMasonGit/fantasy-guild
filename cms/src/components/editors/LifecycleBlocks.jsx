@@ -192,7 +192,7 @@ function GrowsBlock({ block, selfId, tokenOptions, items, onChange }) {
       </div>
       <p className="text-[10px] text-gray-600">
         {nearby.length
-          ? 'It grows only while the Token of these that owns it stands (a Stump whose Forest is gone stays a Stump), at its fixed time and for free: a cost is ignored.'
+          ? 'It grows only while the Token of these that owns it stands (a Stump whose Forest is gone stays a Stump), for free: a cost is ignored. Grow Time that reaches it (a Hall star such as Green Thumb) shortens it, as any growth.'
           : 'Grows wherever it stands.'}
         {Array.isArray(block.cost) && block.cost.length
           ? ' When it grows it pays the cost; with none in the Bank it stops and says what it needs.'
@@ -361,7 +361,7 @@ function RespawnBlock({ block, selfId, tokens, tokenOptions, onChange }) {
   let note;
   if (mode === 'refill') {
     note = 'At 0 charges it stays where it stands, resting, then refills to its starting charges all at once. With a resting sprite it is drawn as that picture while it rests (every vein shares one empty rock; its name still says which ore); without one, as its own art, greyed.';
-    if (nearby.length) note += ' Its rest stands still while the Token below that owns it is gone (a Bare apple tree whose Orchard is gone stays Bare), and no Grow Time shortens it.';
+    if (nearby.length) note += ' Its rest stands still while the Token below that owns it is gone (a Bare apple tree whose Orchard is gone stays Bare); Grow Time that reaches it shortens it, as any rest.';
   }
   else if (!block.into) note = 'Pick the Token it becomes at 0 charges; that Token’s Grows block brings it back.';
   else if (!into) note = `${block.into} does not exist.`;

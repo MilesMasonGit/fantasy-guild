@@ -222,10 +222,11 @@ describe('a station, a chain, a regrowing family', () => {
         expect(chain.xp).toMatchObject({ mining: 250, smithing: expect.closeTo(117.1875, 3) });
     });
 
-    it('regrows a felled tree through its stump (its fixed time, for free) and sapling (sped by the forest), the forest\'s allowance taking turns', () => {
+    it('regrows a felled tree through its stump and sapling, each sped by the Grow Time reaching it (here the forest\'s), for free, the forest\'s allowance taking turns', () => {
         const r = book().rateOf({ token: 'rt_tree' }, { supports: ['rt_forest'], family: { spawner: 'rt_forest' } });
-        expect(r.lifecycle).toMatchObject({ kind: LIFECYCLE.REGROW, cycles: 5, members: 5, growMs: 262500 });
-        const perHour = 5 * 5 * 3600000 / 277500;
+        // Stump and Sapling 150 s each at −25 %: an owned Stump reads Grow Time as any growth does.
+        expect(r.lifecycle).toMatchObject({ kind: LIFECYCLE.REGROW, cycles: 5, members: 5, growMs: 225000 });
+        const perHour = 5 * 5 * 3600000 / 240000;
         expect(r.cyclesPerHour).toBeCloseTo(perHour);
         expect(r.items.rt_wood).toBeCloseTo(perHour * 1.5);
         expect(r.inputs.rt_seedling ?? 0).toBe(0);

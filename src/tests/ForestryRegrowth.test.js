@@ -19,7 +19,8 @@ import { clearMat, placeAt } from './fixtures/mat.js';
 
 /**
  * Forestry regrowth: a felled tree's Stump grows back only while its own Forest stands (its clock
- * stands still without it, and no other Forest takes it in), at its fixed time and for free. A
+ * stands still without it, and no other Forest takes it in), for free, in its time as the Grow Time
+ * reaching it shortens it (owner 2026-11-24: Green Thumb speeds regrowth). A
  * growth that needs no Forest may still pay a cost from the Bank; with none it is stopped and says
  * so. A Sapling whose Forest goes finishes growing.
  */
@@ -200,11 +201,11 @@ describe('⭐ a Stump regrows only while its own Forest stands', () => {
         expect(stump.clocks.growMs).toBe(12000);
     });
 
-    it('its own Forest speeds nothing: a Grow Time on the species leaves the regrowth at its fixed time', () => {
+    it('a Grow Time that reaches its Stump shortens the regrowth, as any growth reads it (here its Forest’s own)', () => {
         const forest = arrive('fo_fast_forest', AT.x + 150, AT.y);
         const stump = own(arrive('fo_stump', AT.x, AT.y), forest);
-        expect(TimedChanges.nextGrowth(stump)).toMatchObject({ totalMs: 20000, paused: false });
-        tick(19900);
+        expect(TimedChanges.nextGrowth(stump)).toMatchObject({ totalMs: 10000, paused: false });
+        tick(9900);
         expect(typeAt()).toBe('fo_stump');
         tick(100);
         expect(typeAt()).toBe('fo_sapling');
