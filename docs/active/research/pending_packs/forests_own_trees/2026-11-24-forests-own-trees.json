@@ -1,0 +1,681 @@
+{
+  "format": "fantasy-guild-change-pack",
+  "version": 1,
+  "id": "2026-11-24-forests-own-trees",
+  "createdAt": "2026-11-24T23:30:00Z",
+  "asked": "Forests and Orchards own their trees (brief 860 R2, T-691): free planting and regrowth of their own, a count per species, the Growth boosts gone. Sync together with the R2 code (the director merges it with this pack).",
+  "entries": [
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_oak_forest",
+      "note": "Oak Forest: plants and regrows its own 5 trees for free (owner: about 4 or 5 a species; fewer for the slower woods); no seedling upkeep, no Growth boost.",
+      "value": {
+        "name": "Oak Forest",
+        "description": "Plants up to 5 Oak Trees nearby and regrows their Stumps, for free. Operates passively without requiring a hero.",
+        "sprite": "t_forest_oak",
+        "tokenType": "spawner",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [
+          "Forest"
+        ],
+        "provides": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "id": "token_oak_forest",
+        "spawner": {
+          "spawns": [
+            {
+              "typeId": "token_oak_tree",
+              "weight": 1
+            }
+          ],
+          "allowance": 5,
+          "intervalMs": 20000,
+          "withinReach": true
+        },
+        "clearable": true,
+        "effects": [],
+        "plan": {
+          "status": "live",
+          "tier": 0
+        }
+      },
+      "fingerprint": "fp:94e178c246c332a8"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_oak_stump",
+      "note": "Oak Stump: regrows free while its own Forest stands (no seedling).",
+      "value": {
+        "name": "Oak Stump",
+        "description": "Operates passively without requiring a hero.",
+        "sprite": "t_stump_oak",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Oak"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "staysPut": true,
+        "clearable": true,
+        "grows": {
+          "into": "token_oak_tree",
+          "afterMs": 300000,
+          "needsNearby": [
+            "token_oak_forest"
+          ]
+        },
+        "id": "token_oak_stump",
+        "artSize": "small",
+        "plan": {
+          "status": "live",
+          "tier": 0,
+          "note": "Tier inferred (ledger first fill, to confirm): part of a camp node's cycle (oak sapling and stump; the Coast's shrimp state; the old wheat stages)."
+        }
+      },
+      "fingerprint": "fp:90221126d09eac74"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_fir_forest",
+      "note": "Fir Forest: plants and regrows its own 5 trees for free (owner: about 4 or 5 a species; fewer for the slower woods); no seedling upkeep, no Growth boost.",
+      "value": {
+        "name": "Fir Forest",
+        "description": "Plants up to 5 Fir Trees nearby and regrows their Stumps, for free. Operates passively without requiring a hero.",
+        "sprite": "t_forest_fir",
+        "tokenType": "spawner",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [
+          "Forest"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "autoSyncId": true,
+        "id": "token_fir_forest",
+        "config": null,
+        "clearable": true,
+        "spawner": {
+          "spawns": [
+            {
+              "typeId": "token_fir_tree",
+              "weight": 1
+            }
+          ],
+          "allowance": 5,
+          "intervalMs": 30000,
+          "withinReach": true
+        },
+        "effects": [],
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "fingerprint": "fp:6b7e41897a6ca6b3"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_fir_stump",
+      "note": "Fir Stump: regrows free while its own Forest stands (no seedling).",
+      "value": {
+        "name": "Fir Stump",
+        "description": "Operates passively without requiring a hero.",
+        "sprite": "t_stump_fir",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Fir"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "staysPut": true,
+        "clearable": true,
+        "grows": {
+          "into": "token_fir_tree",
+          "afterMs": 480000,
+          "needsNearby": [
+            "token_fir_forest"
+          ]
+        },
+        "id": "token_fir_stump",
+        "artSize": "small",
+        "plan": {
+          "status": "live",
+          "tier": 2,
+          "note": "Tier inferred (ledger first fill, to confirm): part of the fir tree's cycle."
+        }
+      },
+      "fingerprint": "fp:9e0d3a76c6746870"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_birch_forest",
+      "note": "Birch Forest: plants and regrows its own 5 trees for free (owner: about 4 or 5 a species; fewer for the slower woods); no seedling upkeep, no Growth boost.",
+      "value": {
+        "name": "Birch Forest",
+        "description": "Plants up to 5 Birch Trees nearby and regrows their Stumps, for free. Operates passively without requiring a hero.",
+        "sprite": "t_forest_birch",
+        "tokenType": "spawner",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [
+          "Forest"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "autoSyncId": true,
+        "id": "token_birch_forest",
+        "config": null,
+        "clearable": true,
+        "spawner": {
+          "spawns": [
+            {
+              "typeId": "token_birch_tree",
+              "weight": 1
+            }
+          ],
+          "allowance": 5,
+          "intervalMs": 40000,
+          "withinReach": true
+        },
+        "effects": [],
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "fingerprint": "fp:000acaf24838b054"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_birch_stump",
+      "note": "Birch Stump: regrows free while its own Forest stands (no seedling).",
+      "value": {
+        "name": "Birch Stump",
+        "description": "Operates passively without requiring a hero.",
+        "sprite": "t_stump_birch",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Birch"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "staysPut": true,
+        "clearable": true,
+        "grows": {
+          "into": "token_birch_tree",
+          "afterMs": 600000,
+          "needsNearby": [
+            "token_birch_forest"
+          ]
+        },
+        "id": "token_birch_stump",
+        "artSize": "small",
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Part of the Birch Tree's cycle (world refill pack)."
+        }
+      },
+      "fingerprint": "fp:99416ada203efd50"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_maple_forest",
+      "note": "Maple Forest: plants and regrows its own 4 trees for free (owner: about 4 or 5 a species; fewer for the slower woods); no seedling upkeep, no Growth boost.",
+      "value": {
+        "name": "Maple Forest",
+        "description": "Plants up to 4 Maple Trees nearby and regrows their Stumps, for free. Operates passively without requiring a hero.",
+        "sprite": "t_forest_maple",
+        "tokenType": "spawner",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [
+          "Forest"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "autoSyncId": true,
+        "id": "token_maple_forest",
+        "config": null,
+        "clearable": true,
+        "spawner": {
+          "spawns": [
+            {
+              "typeId": "token_maple_tree",
+              "weight": 1
+            }
+          ],
+          "allowance": 4,
+          "intervalMs": 45000,
+          "withinReach": true
+        },
+        "effects": [],
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "fingerprint": "fp:900225be107db554"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_maple_stump",
+      "note": "Maple Stump: regrows free while its own Forest stands (no seedling).",
+      "value": {
+        "name": "Maple Stump",
+        "description": "Operates passively without requiring a hero.",
+        "sprite": "t_stump_maple",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Maple"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "staysPut": true,
+        "clearable": true,
+        "grows": {
+          "into": "token_maple_tree",
+          "afterMs": 600000,
+          "needsNearby": [
+            "token_maple_forest"
+          ]
+        },
+        "id": "token_maple_stump",
+        "artSize": "small",
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Part of the Maple Tree's cycle (world refill pack)."
+        }
+      },
+      "fingerprint": "fp:7cd10a067ba2255c"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_cedar_forest",
+      "note": "Cedar Forest: plants and regrows its own 4 trees for free (owner: about 4 or 5 a species; fewer for the slower woods); no seedling upkeep, no Growth boost.",
+      "value": {
+        "name": "Cedar Forest",
+        "description": "Plants up to 4 Cedar Trees nearby and regrows their Stumps, for free. Operates passively without requiring a hero.",
+        "sprite": "t_forest_cedar",
+        "tokenType": "spawner",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [
+          "Forest"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "autoSyncId": true,
+        "id": "token_cedar_forest",
+        "config": null,
+        "clearable": true,
+        "spawner": {
+          "spawns": [
+            {
+              "typeId": "token_cedar_tree",
+              "weight": 1
+            }
+          ],
+          "allowance": 4,
+          "intervalMs": 50000,
+          "withinReach": true
+        },
+        "effects": [],
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "fingerprint": "fp:76090fea00895098"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_cedar_stump",
+      "note": "Cedar Stump: regrows free while its own Forest stands (no seedling).",
+      "value": {
+        "name": "Cedar Stump",
+        "description": "Operates passively without requiring a hero.",
+        "sprite": "t_stump_cedar",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Cedar"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "staysPut": true,
+        "clearable": true,
+        "grows": {
+          "into": "token_cedar_tree",
+          "afterMs": 600000,
+          "needsNearby": [
+            "token_cedar_forest"
+          ]
+        },
+        "id": "token_cedar_stump",
+        "artSize": "small",
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Part of the Cedar Tree's cycle (world refill pack)."
+        }
+      },
+      "fingerprint": "fp:120dce6ad4483668"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_mahogany_forest",
+      "note": "Mahogany Forest: plants and regrows its own 4 trees for free (owner: about 4 or 5 a species; fewer for the slower woods); no seedling upkeep, no Growth boost.",
+      "value": {
+        "name": "Mahogany Forest",
+        "description": "Plants up to 4 Mahogany Trees nearby and regrows their Stumps, for free. Operates passively without requiring a hero.",
+        "sprite": "t_forest_mahogany",
+        "tokenType": "spawner",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [
+          "Forest"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "autoSyncId": true,
+        "id": "token_mahogany_forest",
+        "config": null,
+        "clearable": true,
+        "spawner": {
+          "spawns": [
+            {
+              "typeId": "token_mahogany_tree",
+              "weight": 1
+            }
+          ],
+          "allowance": 4,
+          "intervalMs": 60000,
+          "withinReach": true
+        },
+        "effects": [],
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "fingerprint": "fp:38acf8f8fa6d6fca"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_mahogany_stump",
+      "note": "Mahogany Stump: regrows free while its own Forest stands (no seedling).",
+      "value": {
+        "name": "Mahogany Stump",
+        "description": "Operates passively without requiring a hero.",
+        "sprite": "t_stump_mahogany",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Mahogany"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "staysPut": true,
+        "clearable": true,
+        "grows": {
+          "into": "token_mahogany_tree",
+          "afterMs": 600000,
+          "needsNearby": [
+            "token_mahogany_forest"
+          ]
+        },
+        "id": "token_mahogany_stump",
+        "artSize": "small",
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Part of the Mahogany Tree's cycle (world refill pack)."
+        }
+      },
+      "fingerprint": "fp:e991ba7afbee58b8"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_ebony_forest",
+      "note": "Ebony Forest: plants and regrows its own 4 trees for free (owner: about 4 or 5 a species; fewer for the slower woods); no seedling upkeep, no Growth boost.",
+      "value": {
+        "name": "Ebony Forest",
+        "description": "Plants up to 4 Ebony Trees nearby and regrows their Stumps, for free. Operates passively without requiring a hero.",
+        "sprite": "t_forest_ebony",
+        "tokenType": "spawner",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [
+          "Forest"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "autoSyncId": true,
+        "id": "token_ebony_forest",
+        "config": null,
+        "clearable": true,
+        "spawner": {
+          "spawns": [
+            {
+              "typeId": "token_ebony_tree",
+              "weight": 1
+            }
+          ],
+          "allowance": 4,
+          "intervalMs": 80000,
+          "withinReach": true
+        },
+        "effects": [],
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "fingerprint": "fp:2b3abdd12d0bc1a3"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_ebony_stump",
+      "note": "Ebony Stump: regrows free while its own Forest stands (no seedling).",
+      "value": {
+        "name": "Ebony Stump",
+        "description": "Operates passively without requiring a hero.",
+        "sprite": "t_stump_ebony",
+        "tokenType": "resource",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Ebony"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "staysPut": true,
+        "clearable": true,
+        "grows": {
+          "into": "token_ebony_tree",
+          "afterMs": 600000,
+          "needsNearby": [
+            "token_ebony_forest"
+          ]
+        },
+        "id": "token_ebony_stump",
+        "artSize": "small",
+        "plan": {
+          "status": "live",
+          "tier": 3,
+          "note": "Part of the Ebony Tree's cycle (world refill pack)."
+        }
+      },
+      "fingerprint": "fp:d1eed7129f2af3a0"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_apple_orchard",
+      "note": "Apple Orchard: plants its own 2 Apple Trees for free (its count kept); no seed upkeep, no Growth boost.",
+      "value": {
+        "name": "Apple Orchard",
+        "description": "Plants up to 2 Apple Trees nearby; picked bare, they fruit again while it stands. Operates passively without requiring a hero.",
+        "sprite": "t_orchard_red",
+        "tokenType": "spawner",
+        "rarity": "uncommon",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "spawner": {
+          "spawns": [
+            {
+              "typeId": "token_apple_tree",
+              "weight": 1
+            }
+          ],
+          "allowance": 2,
+          "intervalMs": 45000,
+          "withinReach": true
+        },
+        "id": "token_apple_orchard",
+        "clearable": true,
+        "effects": [],
+        "plan": {
+          "status": "live",
+          "tier": 0,
+          "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
+        }
+      },
+      "fingerprint": "fp:03f30d0477a038ae"
+    },
+    {
+      "op": "delete",
+      "kind": "effect",
+      "id": "effect_oak_forest_growth",
+      "note": "Oak Forest Growth: Forests and Orchards no longer speed regrowth (brief 860 R2).",
+      "fingerprint": "fp:6b02ea8a8273c25c"
+    },
+    {
+      "op": "delete",
+      "kind": "effect",
+      "id": "effect_fir_forest_growth",
+      "note": "Fir Forest Growth: Forests and Orchards no longer speed regrowth (brief 860 R2).",
+      "fingerprint": "fp:2f4094045328ccd2"
+    },
+    {
+      "op": "delete",
+      "kind": "effect",
+      "id": "effect_birch_forest_growth",
+      "note": "Birch Forest Growth: Forests and Orchards no longer speed regrowth (brief 860 R2).",
+      "fingerprint": "fp:c849119603f8fcd4"
+    },
+    {
+      "op": "delete",
+      "kind": "effect",
+      "id": "effect_maple_forest_growth",
+      "note": "Maple Forest Growth: Forests and Orchards no longer speed regrowth (brief 860 R2).",
+      "fingerprint": "fp:f543ccb40e6fd882"
+    },
+    {
+      "op": "delete",
+      "kind": "effect",
+      "id": "effect_cedar_forest_growth",
+      "note": "Cedar Forest Growth: Forests and Orchards no longer speed regrowth (brief 860 R2).",
+      "fingerprint": "fp:3815de58084d2d0e"
+    },
+    {
+      "op": "delete",
+      "kind": "effect",
+      "id": "effect_mahogany_forest_growth",
+      "note": "Mahogany Forest Growth: Forests and Orchards no longer speed regrowth (brief 860 R2).",
+      "fingerprint": "fp:17dcaa92f874c588"
+    },
+    {
+      "op": "delete",
+      "kind": "effect",
+      "id": "effect_ebony_forest_growth",
+      "note": "Ebony Forest Growth: Forests and Orchards no longer speed regrowth (brief 860 R2).",
+      "fingerprint": "fp:f30c2a8c47bfe5f2"
+    },
+    {
+      "op": "delete",
+      "kind": "effect",
+      "id": "effect_apple_orchard_growth",
+      "note": "Apple Orchard Growth: Forests and Orchards no longer speed regrowth (brief 860 R2).",
+      "fingerprint": "fp:beeb4b8870fa9ac2"
+    }
+  ]
+}

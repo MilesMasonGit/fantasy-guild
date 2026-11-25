@@ -8,7 +8,7 @@
     ],
     "sprite": "i_water",
     "stackable": true,
-    "restoreAmount": 1,
+    "restoreAmount": 0,
     "restoreType": "HP",
     "regen": 0,
     "equipSlot": "drink",
@@ -843,7 +843,7 @@
     "type": "drink",
     "sprite": "i_apple_juice",
     "stackable": true,
-    "restoreAmount": 20,
+    "restoreAmount": 0,
     "equipSlot": "drink",
     "value": 6,
     "valueSource": "recipe_mtp8qjj6",
@@ -866,7 +866,7 @@
     "type": "drink",
     "sprite": "i_lemonade",
     "stackable": true,
-    "restoreAmount": 25,
+    "restoreAmount": 0,
     "equipSlot": "drink",
     "value": null,
     "valueSource": null,
@@ -889,7 +889,7 @@
     "type": "drink",
     "sprite": "i_limeade",
     "stackable": true,
-    "restoreAmount": 30,
+    "restoreAmount": 0,
     "equipSlot": "drink",
     "value": null,
     "valueSource": null,
@@ -912,7 +912,7 @@
     "type": "drink",
     "sprite": "i_beer",
     "stackable": true,
-    "restoreAmount": 15,
+    "restoreAmount": 0,
     "equipSlot": "drink",
     "value": 10,
     "valueSource": "recipe_mtp8qjj9",
@@ -1218,6 +1218,12 @@
     "tags": [
       "Tool",
       "Mining"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_pickaxe_speed",
+        "scale": 1
+      }
     ]
   },
   "item_iron_pickaxe": {
@@ -1239,6 +1245,12 @@
     "tags": [
       "Tool",
       "Mining"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_pickaxe_speed",
+        "scale": 2
+      }
     ]
   },
   "item_mythril_pickaxe": {
@@ -1260,6 +1272,12 @@
     "tags": [
       "Tool",
       "Mining"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_pickaxe_speed",
+        "scale": 3
+      }
     ]
   },
   "item_adamantium_pickaxe": {
@@ -1281,6 +1299,12 @@
     "tags": [
       "Tool",
       "Mining"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_pickaxe_speed",
+        "scale": 4
+      }
     ]
   },
   "item_darkmetal_pickaxe": {
@@ -1302,6 +1326,12 @@
     "tags": [
       "Tool",
       "Mining"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_pickaxe_speed",
+        "scale": 5
+      }
     ]
   },
   "item_copper_woodaxe": {
@@ -1324,6 +1354,12 @@
     "tags": [
       "Tool",
       "Woodcutting"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_woodaxe_speed",
+        "scale": 1
+      }
     ]
   },
   "item_fishing_rod": {
@@ -1481,8 +1517,12 @@
       "Hat"
     ],
     "resistances": {
-      "physical": 5,
-      "elemental": 10
+      "slash": 5,
+      "crush": 5,
+      "stab": 5,
+      "fire": 10,
+      "ice": 10,
+      "electric": 10
     },
     "damageCut": {}
   },
@@ -1503,8 +1543,12 @@
       "Chestplate"
     ],
     "resistances": {
-      "physical": 10,
-      "elemental": 10
+      "slash": 10,
+      "crush": 10,
+      "stab": 10,
+      "fire": 10,
+      "ice": 10,
+      "electric": 10
     },
     "damageCut": {}
   },
@@ -1929,7 +1973,9 @@
       "Helmet"
     ],
     "resistances": {
-      "physical": 10
+      "slash": 10,
+      "crush": 10,
+      "stab": 10
     },
     "damageCut": {
       "magic": 15,
@@ -1953,7 +1999,9 @@
       "Chestplate"
     ],
     "resistances": {
-      "physical": 15
+      "slash": 15,
+      "crush": 15,
+      "stab": 15
     },
     "damageCut": {
       "magic": 20,
@@ -2032,7 +2080,7 @@
     "type": "drink",
     "sprite": "i_potion_wine_grape",
     "stackable": true,
-    "restoreAmount": 20,
+    "restoreAmount": 0,
     "equipSlot": "drink",
     "value": 13,
     "valueSource": "recipe_grape_juice",
@@ -2068,6 +2116,12 @@
     "tags": [
       "Tool",
       "Woodcutting"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_woodaxe_speed",
+        "scale": 2
+      }
     ]
   },
   "item_iron_sword": {
@@ -2234,7 +2288,9 @@
       "Helmet"
     ],
     "resistances": {
-      "physical": 15
+      "slash": 15,
+      "crush": 15,
+      "stab": 15
     },
     "damageCut": {
       "magic": 20,
@@ -2258,7 +2314,9 @@
       "Chestplate"
     ],
     "resistances": {
-      "physical": 20
+      "slash": 20,
+      "crush": 20,
+      "stab": 20
     },
     "damageCut": {
       "magic": 30,
@@ -2664,7 +2722,9 @@
     "valueSource": "recipe_copper_shield",
     "autoSyncId": true,
     "resistances": {
-      "physical": 10
+      "slash": 10,
+      "crush": 10,
+      "stab": 10
     },
     "damageCut": {
       "magic": 10,
@@ -2697,7 +2757,13 @@
       "Rusty"
     ],
     "breakChance": 1,
-    "valueSource": null
+    "valueSource": null,
+    "effects": [
+      {
+        "effectId": "effect_pickaxe_speed",
+        "scale": 1
+      }
+    ]
   },
   "item_rusty_woodaxe": {
     "name": "Rusty Woodaxe",
@@ -2720,7 +2786,13 @@
       "Rusty"
     ],
     "breakChance": 1,
-    "valueSource": null
+    "valueSource": null,
+    "effects": [
+      {
+        "effectId": "effect_woodaxe_speed",
+        "scale": 1
+      }
+    ]
   },
   "item_rusty_sword": {
     "name": "Rusty Sword",
@@ -2773,6 +2845,12 @@
     "tags": [
       "Tool",
       "Woodcutting"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_woodaxe_speed",
+        "scale": 3
+      }
     ]
   },
   "item_adamantine_woodaxe": {
@@ -2794,6 +2872,12 @@
     "tags": [
       "Tool",
       "Woodcutting"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_woodaxe_speed",
+        "scale": 4
+      }
     ]
   },
   "item_darkmetal_woodaxe": {
@@ -2815,6 +2899,12 @@
     "tags": [
       "Tool",
       "Woodcutting"
+    ],
+    "effects": [
+      {
+        "effectId": "effect_woodaxe_speed",
+        "scale": 5
+      }
     ]
   },
   "item_iron_shield": {
@@ -2835,7 +2925,9 @@
       "Shield"
     ],
     "resistances": {
-      "physical": 15
+      "slash": 15,
+      "crush": 15,
+      "stab": 15
     },
     "damageCut": {
       "magic": 15,
@@ -2920,7 +3012,9 @@
       "Helmet"
     ],
     "resistances": {
-      "physical": 20
+      "slash": 20,
+      "crush": 20,
+      "stab": 20
     },
     "damageCut": {
       "magic": 25,
@@ -2945,7 +3039,9 @@
       "Shield"
     ],
     "resistances": {
-      "physical": 20
+      "slash": 20,
+      "crush": 20,
+      "stab": 20
     },
     "damageCut": {
       "magic": 20,
@@ -2969,7 +3065,9 @@
       "Chestplate"
     ],
     "resistances": {
-      "physical": 25
+      "slash": 25,
+      "crush": 25,
+      "stab": 25
     },
     "damageCut": {
       "magic": 40,
@@ -3054,7 +3152,9 @@
       "Helmet"
     ],
     "resistances": {
-      "physical": 25
+      "slash": 25,
+      "crush": 25,
+      "stab": 25
     },
     "damageCut": {
       "magic": 30,
@@ -3079,7 +3179,9 @@
       "Shield"
     ],
     "resistances": {
-      "physical": 25
+      "slash": 25,
+      "crush": 25,
+      "stab": 25
     },
     "damageCut": {
       "magic": 25,
@@ -3103,7 +3205,9 @@
       "Chestplate"
     ],
     "resistances": {
-      "physical": 30
+      "slash": 30,
+      "crush": 30,
+      "stab": 30
     },
     "damageCut": {
       "magic": 50,
@@ -3188,7 +3292,9 @@
       "Helmet"
     ],
     "resistances": {
-      "physical": 30
+      "slash": 28,
+      "crush": 28,
+      "stab": 28
     },
     "damageCut": {
       "magic": 35,
@@ -3213,7 +3319,9 @@
       "Shield"
     ],
     "resistances": {
-      "physical": 30
+      "slash": 28,
+      "crush": 28,
+      "stab": 28
     },
     "damageCut": {
       "magic": 30,
@@ -3237,7 +3345,9 @@
       "Chestplate"
     ],
     "resistances": {
-      "physical": 35
+      "slash": 34,
+      "crush": 34,
+      "stab": 34
     },
     "damageCut": {
       "magic": 60,
@@ -5265,8 +5375,12 @@
       "Shield"
     ],
     "resistances": {
-      "physical": 5,
-      "elemental": 5
+      "slash": 5,
+      "crush": 5,
+      "stab": 5,
+      "fire": 5,
+      "ice": 5,
+      "electric": 5
     },
     "offHand": true,
     "valueSource": null
@@ -5303,8 +5417,12 @@
       "Hat"
     ],
     "resistances": {
-      "physical": 10,
-      "elemental": 15
+      "slash": 10,
+      "crush": 10,
+      "stab": 10,
+      "fire": 15,
+      "ice": 15,
+      "electric": 15
     },
     "valueSource": null
   },
@@ -5324,8 +5442,12 @@
       "Shield"
     ],
     "resistances": {
-      "physical": 10,
-      "elemental": 10
+      "slash": 10,
+      "crush": 10,
+      "stab": 10,
+      "fire": 10,
+      "ice": 10,
+      "electric": 10
     },
     "offHand": true,
     "valueSource": null
@@ -5346,8 +5468,12 @@
       "Chest"
     ],
     "resistances": {
-      "physical": 20,
-      "elemental": 20
+      "slash": 20,
+      "crush": 20,
+      "stab": 20,
+      "fire": 20,
+      "ice": 20,
+      "electric": 20
     },
     "valueSource": null
   },
@@ -5383,8 +5509,12 @@
       "Hat"
     ],
     "resistances": {
-      "physical": 15,
-      "elemental": 20
+      "slash": 15,
+      "crush": 15,
+      "stab": 15,
+      "fire": 20,
+      "ice": 20,
+      "electric": 20
     },
     "valueSource": null
   },
@@ -5404,8 +5534,12 @@
       "Shield"
     ],
     "resistances": {
-      "physical": 15,
-      "elemental": 15
+      "slash": 15,
+      "crush": 15,
+      "stab": 15,
+      "fire": 15,
+      "ice": 15,
+      "electric": 15
     },
     "offHand": true,
     "valueSource": null
@@ -5426,8 +5560,12 @@
       "Chest"
     ],
     "resistances": {
-      "physical": 30,
-      "elemental": 30
+      "slash": 30,
+      "crush": 30,
+      "stab": 30,
+      "fire": 30,
+      "ice": 30,
+      "electric": 30
     },
     "valueSource": null
   },
@@ -5479,8 +5617,12 @@
       "Hat"
     ],
     "resistances": {
-      "physical": 25,
-      "elemental": 30
+      "slash": 20,
+      "crush": 20,
+      "stab": 20,
+      "fire": 25,
+      "ice": 25,
+      "electric": 25
     },
     "valueSource": "recipe_dragonscale_hat"
   },
@@ -5500,8 +5642,12 @@
       "Shield"
     ],
     "resistances": {
-      "physical": 25,
-      "elemental": 25
+      "slash": 20,
+      "crush": 20,
+      "stab": 20,
+      "fire": 20,
+      "ice": 20,
+      "electric": 20
     },
     "offHand": true,
     "valueSource": "recipe_dragonscale_shield"
@@ -5522,8 +5668,12 @@
       "Chest"
     ],
     "resistances": {
-      "physical": 50,
-      "elemental": 50
+      "slash": 30,
+      "crush": 30,
+      "stab": 30,
+      "fire": 30,
+      "ice": 30,
+      "electric": 30
     },
     "valueSource": "recipe_dragonscale_chest"
   },
