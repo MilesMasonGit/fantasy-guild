@@ -9,6 +9,7 @@ import * as Respawn from './Respawn.js';
 import * as Fields from './Fields.js';
 import * as Fishing from './Fishing.js';
 import * as Shrines from './Shrines.js';
+import * as Laboratories from './Laboratories.js';
 import * as Demolition from './Demolition.js';
 import * as SiteRules from './SiteRules.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
@@ -27,7 +28,10 @@ import { toolNeedOf } from './toolNeed.js';
  */
 
 /** Reasons a player can fix from the board: these keep a red badge. */
-export const FIXABLE = new Set([ALERT.INPUTS, ALERT.CHARGES, ALERT.NO_RECIPE, ALERT.CHOOSE_BUILD, ALERT.CHOOSE_RECIPE, ALERT.BUILD_SITE]);
+export const FIXABLE = new Set([
+    ALERT.INPUTS, ALERT.CHARGES, ALERT.NO_RECIPE, ALERT.CHOOSE_BUILD, ALERT.CHOOSE_RECIPE, ALERT.BUILD_SITE,
+    ALERT.CHOOSE_NODE, ALERT.NODE_MASTERED
+]);
 
 /** The hero's own gates: a hero stopped by one lets go of the Token at once. Never a badge, except a hero ordered onto a
  * Token without its tool (`Flags.hasToolSkip`). */
@@ -38,7 +42,7 @@ export const HERO_GATES = new Set([ALERT.ACCESS, ALERT.UNSKILLED, ALERT.NO_TOOL]
  * crop grows, its Field is stopped for want of a seed, or its shrine is lit too full for another
  * offering. Its hero lets go; it never draws a badge.
  */
-export const AWAY = new Set([ALERT.RESTING, ALERT.GROWING, ALERT.GROW_NEEDS_ITEM, ALERT.SHRINE_FULL]);
+export const AWAY = new Set([ALERT.RESTING, ALERT.GROWING, ALERT.GROW_NEEDS_ITEM, ALERT.SHRINE_FULL, ALERT.NODE_AWAY]);
 
 /**
  * Whether a Token is away in that sense ({@link AWAY}), read from its state alone (cheap: `Flags`
@@ -46,7 +50,7 @@ export const AWAY = new Set([ALERT.RESTING, ALERT.GROWING, ALERT.GROW_NEEDS_ITEM
  */
 export function isAway(instance, def = getTokenType(instance?.typeId)) {
     return Respawn.isResting(instance, def) || Fields.workReason(instance, def) != null
-        || (!!def?.shrine && Shrines.isFull(instance, def));
+        || (!!def?.shrine && Shrines.isFull(instance, def)) || Laboratories.isWaiting(instance, def);
 }
 
 /**
@@ -136,6 +140,10 @@ export function fixableReason(instanceId, instance, heroId = undefined) {
         if (io.reason === 'choose_build') return { reason: ALERT.CHOOSE_BUILD, io };
         // A station with nothing picked likewise.
         if (io.reason === 'choose_recipe') return { reason: ALERT.CHOOSE_RECIPE, io };
+        // A Laboratory with no node it may study chosen, its kind mastered, or its node away.
+        if (io.reason === 'choose_node') return { reason: ALERT.CHOOSE_NODE, io };
+        if (io.reason === 'mastered') return { reason: ALERT.NODE_MASTERED, io };
+        if (io.reason === 'node_away') return { reason: ALERT.NODE_AWAY, io };
         return { reason: ALERT.NO_RECIPE, io };
     }
 

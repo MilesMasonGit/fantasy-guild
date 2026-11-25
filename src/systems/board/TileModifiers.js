@@ -1,7 +1,8 @@
 // per-Token modifier scope
 
 import { ModifierAggregator, applyThreeBucket, combineMultipliers, combinePercentages } from '../effects/ModifierAggregator.js';
-import { getGlobalAggregator, aimedModifiers } from '../effects/GuildModifiers.js';
+import { getGlobalAggregator, aimedModifiers, hasKindModifiers, kindModifiersOf } from '../effects/GuildModifiers.js';
+import { kindOfToken } from '../../config/registries/mastery.js';
 import { TARGET_CATEGORIES, EFFECT_TYPES } from '../effects/constants.js';
 import { floorSpeedUp, MIN_WORK_CYCLE_MS, flooredWorkTime } from './workTime.js';
 import { nearby, reachFrom, tokensAround, reachRadius, centreOf, distanceSq } from './nearby.js';
@@ -512,6 +513,20 @@ export function rebuildToken(instanceId) {
             if (matchesTokenTarget(to, def, { instance: self, tokenId: instanceId })) agg.addModifier(modifier);
         }
     }
+
+    // The guild's rules on every Token of one node kind (Science's mastery), by what kind it is now.
+    if (hasKindModifiers()) {
+        const self = BoardState.getTokenById(instanceId);
+        for (const modifier of kindModifiersOf(kindOfToken(self, getTokenType(self.typeId), getTokenType))) agg.addModifier(modifier);
+    }
+}
+
+/**
+ * A Token's node kind may have changed with no board change (a Field sowing another crop): rebuild
+ * it while some kind holds guild rules, and do nothing otherwise.
+ */
+export function kindMayHaveChanged(instanceId) {
+    if (hasKindModifiers()) rebuildToken(instanceId);
 }
 
 /**

@@ -12,6 +12,7 @@ import * as Growth from './Growth.js';
 import * as Fields from './Fields.js';
 import * as EventTokens from './EventTokens.js';
 import * as FishingSpots from './FishingSpots.js';
+import * as Laboratories from './Laboratories.js';
 import { growTimeOf } from './TileModifiers.js';
 import { ownGateMet } from './Groves.js';
 import { ALERT } from './boardEvents.js';
@@ -221,7 +222,8 @@ export const HANDLERS = [
         id: 'spot_unworked',
         clock: FishingSpots.SPOT_CLOCK,
         replaces: true,
-        idleWhile: (instance) => BoardState.workerOf(instance.id) !== null,
+        // A spot a Laboratory studies is worked too (`Laboratories.isStudied`).
+        idleWhile: (instance) => BoardState.workerOf(instance.id) !== null || Laboratories.isStudied(instance),
         applies: (instance, def) => FishingSpots.unworkedMsOf(def) > 0,
         dueMs: (instance, def) => FishingSpots.unworkedMsOf(def),
         fire: (instance) => (FishingSpots.leave(instance, FishingSpots.LEFT.UNWORKED) ? REMOVED : null)

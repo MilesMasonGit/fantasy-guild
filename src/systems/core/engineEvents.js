@@ -108,6 +108,12 @@ export const ENGINE_EVENTS = Object.freeze({
 
     /** Payload: `{ upgradeId, rank }`. */
     GUILD_UPGRADES_UPDATED: 'guild_upgrades_updated',
+    /**
+     * The guild reached a mastery rank in a node kind (`progression/Mastery.js`), one event a rank.
+     * Payload: `{ kind, kindName, rank, ranks, effectId, scale, heroId, instanceId }`: `instanceId`
+     * the Laboratory whose study reached it, `effectId` and `scale` the rank's buff.
+     */
+    MASTERY_RANK_UP: 'mastery_rank_up',
     /** First time an item was seen. Payload: `{ itemId, itemName }`. */
     ITEM_DISCOVERED: 'item_discovered',
     /** First time an enemy was seen. Payload: `{ enemyId, enemyName }`. */

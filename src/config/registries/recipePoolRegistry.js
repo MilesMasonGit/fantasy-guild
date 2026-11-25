@@ -66,6 +66,7 @@ import { DatabaseManager } from '../DatabaseManager.js';
 import { stationSkillOf, stationKindOf } from '../../systems/effects/statements.js';
 import { foundationTierMeets, stationKindOffers } from './tokenConstants.js';
 import { migrateRecipeList } from '../../systems/effects/skillIdMigration.js';
+import { LABORATORY_KIND } from './mastery.js';
 
 /** Concatenate every recipe JSON source into one flat list. */
 function loadJsonRecipes() {
@@ -166,6 +167,8 @@ export function recipesForToken(def) {
  * A null kind is the whole skill pool.
  */
 export function recipesForStation(skillId, kind = null) {
+    // A Laboratory studies the node chosen on its card instead (`Laboratories.js`): never a recipe.
+    if (kind === LABORATORY_KIND) return [];
     const pool = getSkillRecipePool(skillId);
     return kind ? pool.filter(r => stationKindOffers(kind, r)) : pool;
 }

@@ -46,6 +46,8 @@ import * as EnemyMotion from '../board/EnemyMotion.js';
 import * as SpawnerSystem from '../board/SpawnerSystem.js';
 import * as RoomWait from '../board/RoomWait.js';
 import * as TimedChanges from '../board/TimedChanges.js';
+import * as Studies from '../board/Studies.js';
+import * as Mastery from '../progression/Mastery.js';
 // The guild's Regions and travel (`Game.Atlas`).
 import * as Atlas from '../atlas/Atlas.js';
 import * as Arrival from '../world/Arrival.js';
@@ -145,6 +147,9 @@ export const EngineBootstrap = {
         Arrival.init();
         // No room: each wait is told once, on the board it was told on.
         RoomWait.init();
+        // Science: a Laboratory's pick follows a tree to its Stump; mastery's rules go back in on a load.
+        Studies.init();
+        Mastery.init();
 
         // 2. Register Game Loop Intervals
         this._registerTickHandlers();

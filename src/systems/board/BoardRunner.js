@@ -40,6 +40,7 @@ import * as Fishing from './Fishing.js';
 import * as FishingSpots from './FishingSpots.js';
 import * as Fields from './Fields.js';
 import * as Shrines from './Shrines.js';
+import * as Studies from './Studies.js';
 import * as SupportLinks from './supportLinks.js';
 import * as LoadoutMoments from './LoadoutMoments.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
@@ -262,6 +263,11 @@ function rollMultipliers(instanceId, config, failed) {
 function landOutputs(made, { doubled, giant }) {
     const { instance, def, io, config, outputs, produced, failed, building } = made;
     const id = instance.id;
+    // A Laboratory's study makes no goods: its one yield is a mastery point to the node's kind.
+    if (io.study) {
+        if (!failed) Studies.land(instance, io.study, made.heroId);
+        return;
+    }
     const times = (doubled ? 2 : 1) * (giant ? OutputRules.GIANT_HARVEST_TIMES : 1);
     let giantLanded = false;
 
@@ -446,7 +452,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         outputs = caught ? [{ itemId: caught.itemId, chance: 100, minQty: 1, maxQty: 1 }] : [];
     }
 
-    const made = { instance, def, io, config, outputs, caught, produced, failed, building: !!buildTypeId };
+    const made = { instance, def, io, config, outputs, caught, produced, failed, building: !!buildTypeId, heroId };
     landOutputs(made, rolls);
 
     // `Applies`: a neighbour putting a status on the hero who just worked here. The same moment and
@@ -507,6 +513,9 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // A Field spends one harvest of its load; the last sows its crop again, growing from the moment
     // this cycle ended (`overMs` into the tick), or stops it without a seed (`Fields.js`).
     if (isField) Fields.harvested(instance, def, { overMs, refreshed });
+
+    // A study wears its node as a gathering cycle there would: its chance to end, a harvest, a spot's move on.
+    if (io.study) Studies.wear(io.study, { failed, overMs });
 
     // The board's universal unit of work. One kill counts as one cycle too, so combat feeds this
     // exactly as production does.
@@ -803,7 +812,8 @@ export function tick(delta) {
             continue;
         }
 
-        if (check.reason === ALERT.CHOOSE_BUILD || check.reason === ALERT.CHOOSE_RECIPE || check.reason === ALERT.BUILD_SITE) {
+        if (check.reason === ALERT.CHOOSE_BUILD || check.reason === ALERT.CHOOSE_RECIPE || check.reason === ALERT.BUILD_SITE
+            || check.reason === ALERT.CHOOSE_NODE || check.reason === ALERT.NODE_MASTERED) {
             // A Foundation or a station with nothing picked. Flags do not claim one, so this is
             // only reached by a hero already on it when the pick was cleared. It waits, saying so.
             // Likewise a Foundation whose build may not stand where it is (moved off its Stone).

@@ -62,3 +62,34 @@ export function setAimedModifiers(owner, list) {
 export function aimedModifiers() {
     return aimedFlat;
 }
+
+/**
+ * Each owner's **kind** modifiers: guild-wide rules on every Token of one node kind (Science's
+ * mastery, `progression/Mastery.js`), by kind id. A kind is read off the Token as it is rebuilt
+ * (`mastery.kindOfToken`), so they are added to each Token of the kind's own aggregator
+ * (`TileModifiers.rebuildToken`); whoever changes them rebuilds the mat.
+ */
+const kindByOwner = new Map();
+let kindMerged = new Map();
+const NO_MODIFIERS = Object.freeze([]);
+
+/** Replace one owner's kind modifiers (`Map<kind, modifier[]>`). The caller rebuilds the mat when they changed. */
+export function setKindModifiers(owner, byKind) {
+    if (byKind && byKind.size) kindByOwner.set(owner, byKind);
+    else kindByOwner.delete(owner);
+    const merged = new Map();
+    for (const map of kindByOwner.values()) {
+        for (const [kind, list] of map) merged.set(kind, [...(merged.get(kind) || []), ...list]);
+    }
+    kindMerged = merged;
+}
+
+/** Whether any owner holds a kind modifier: without one, no Token's kind is read. */
+export function hasKindModifiers() {
+    return kindMerged.size > 0;
+}
+
+/** The modifiers every Token of `kind` takes; none for no kind. */
+export function kindModifiersOf(kind) {
+    return (kind && kindMerged.get(kind)) || NO_MODIFIERS;
+}

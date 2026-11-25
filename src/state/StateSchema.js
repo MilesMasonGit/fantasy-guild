@@ -188,7 +188,9 @@ export const INITIAL_STATE = {
         // from it on every load.
         guildUpgrades: {},
         // The guild's coins, a whole number (`inventory/Coins.js`); an older save gets 0 from `migrateState`.
-        coins: 0
+        coins: 0,
+        // Science's mastery points by node kind, guild-wide: { kindId: points } (`progression/Mastery.js`).
+        mastery: {}
     },
 
     // === Time ===

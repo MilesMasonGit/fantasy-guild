@@ -131,11 +131,13 @@ export const FOUNDATION_KINDS = Object.freeze(['wood', 'stone', 'farmland', 'exc
  * ⚠️ Both sides are opt-in: a station with no kind offers its whole skill, and a recipe with no
  * kinds is offered by every station of its skill.
  */
-export const STATION_KINDS = Object.freeze(['field', 'herb_garden', 'windmill', 'altar', 'shrine']);
+export const STATION_KINDS = Object.freeze(['field', 'herb_garden', 'windmill', 'altar', 'shrine', 'laboratory']);
 
 /** The skill each kind splits; the CMS offers a kind only on its own skill. */
 const STATION_KIND_SKILLS = Object.freeze({
-    field: 'farming', herb_garden: 'farming', windmill: 'farming', altar: 'faith', shrine: 'faith'
+    field: 'farming', herb_garden: 'farming', windmill: 'farming', altar: 'faith', shrine: 'faith',
+    // A Laboratory (Science) is no split: it studies a node and runs no recipe (`mastery.js`, `systems/board/Laboratories.js`).
+    laboratory: 'science'
 });
 
 /**
@@ -172,7 +174,8 @@ const STATION_KIND_LABELS = Object.freeze({
     herb_garden: 'Herb Garden',
     windmill: 'Windmill',
     altar: 'Altar',
-    shrine: 'Shrine'
+    shrine: 'Shrine',
+    laboratory: 'Laboratory'
 });
 
 /** A station kind in words; an unknown kind shows its id rather than vanishing. */

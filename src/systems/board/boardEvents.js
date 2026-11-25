@@ -340,7 +340,14 @@ export const BOARD_EVENTS = {
      * offering lands (lit, its lit time now) and when its lit time runs out (`lit: false`). Between
      * the two its lit time runs down at game speed, so the mat's lit bar runs on from the last one.
      */
-    SHRINE_LIT: 'board:shrine_lit'
+    SHRINE_LIT: 'board:shrine_lit',
+
+    /**
+     * A Laboratory's hero finished a study of its node (`Laboratories.js`): `{ instanceId, typeId,
+     * nodeId, kind, kindName, points, rank, heroId }`, `instanceId` the Laboratory, `points` and
+     * `rank` the kind's after it. Its card and the node's re-read on it.
+     */
+    STUDIED: 'board:studied'
 };
 
 /**
@@ -399,6 +406,21 @@ export const ALERT = {
      * choose; until they do nobody works it. The station twin of `CHOOSE_BUILD`.
      */
     CHOOSE_RECIPE: 'choose_recipe',
+    /**
+     * A Laboratory with no node chosen to study, or whose chosen node is no longer one it can (out
+     * of its reach, gone, above its level). The Laboratory twin of `CHOOSE_RECIPE`.
+     */
+    CHOOSE_NODE: 'choose_node',
+    /**
+     * A Laboratory whose node's kind the guild has fully mastered: nothing is left to learn from it,
+     * so nobody studies it until the player picks another.
+     */
+    NODE_MASTERED: 'node_mastered',
+    /**
+     * A Laboratory whose node is away: resting, a Stump growing back, a Field with nothing ripe. Like
+     * `RESTING`, never a badge: its hero lets go and waits until the node is back.
+     */
+    NODE_AWAY: 'node_away',
     /**
      * A Foundation is set to build a Token that may not stand where the Foundation is: a mine off
      * its Stone, a crystal with no leyline in reach (`SiteRules`). Nobody works it and nothing is
