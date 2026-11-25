@@ -10,6 +10,7 @@ import * as Growth from './Growth.js';
 import { growTimeOf, resolveAxis } from './TileModifiers.js';
 import * as EffectFeedback from './EffectFeedback.js';
 import * as SupportLinks from './supportLinks.js';
+import { endsNow } from './endRoll.js';
 
 /**
  * A Field is one Token that grows itself (brief 230 S4): a station (Works as Farming, kind `field`
@@ -25,15 +26,20 @@ import * as SupportLinks from './supportLinks.js';
  * * **Growing**: its clock (`clocks.fieldMs`, a row of `TimedChanges.HANDLERS`) counts up to the
  *   crop's grow time, shortened by Grow Time from Tokens in reach (a Well) down to the standard
  *   floor (`TileModifiers.growTimeOf`, cached per Token).
- * * **Ripe**: it holds a load, a number of harvest cycles (the crop's `load`, plus Crop Load from
- *   Tokens in reach, a Composter, read once as it ripens). A Farming hero harvests it like any work:
- *   each cycle makes the crop's outputs; the first also takes the seed the crop was sown with, as
- *   any work cycle takes its inputs as it ends (it waits while the seed is gone); and **the last
- *   cycle sows again** with the pick ({@link harvested}, from `BoardRunner`), or stops without a seed.
+ * * **Ripe**: it is harvested until a harvest's roll finishes it: each harvest has a chance to be
+ *   the last, one over the harvests it gives on average (the crop's `load`, plus Crop Load from
+ *   Tokens in reach, a Composter, read once as it ripens), so there is no count. A Farming hero
+ *   harvests it like any work: each cycle makes the crop's outputs; the first also takes the seed
+ *   the crop was sown with, as any work cycle takes its inputs as it ends (it waits while the seed is
+ *   gone); and **the last cycle sows again** with the pick ({@link harvested}, from `BoardRunner`),
+ *   or stops without a seed.
  *
- * Saved on the instance as `field: { cropId, load, full, seedOwed }`: `cropId` is the crop in the
- * ground (absent: empty), `load` the harvests left (0 or absent while growing), `full` the load it
- * ripened with, `seedOwed` true until the first harvest has paid the seed.
+ * Saved on the instance as `field: { cropId, ripe, full, seedOwed }`: `cropId` is the crop in the
+ * ground (absent: empty), `ripe` true once it has ripened, `full` the harvests it gives on average
+ * as it ripened (its end chance is `100 / full`), `seedOwed` true until the first harvest has paid
+ * the seed.
+ * ⚠️ An older save counted harvests: a `load` above 0 there reads as ripe, and its first harvest
+ * drops the count.
  * ⚠️ An absent `seedOwed` means nothing is owed: a crop saved while seeds were paid at sowing has
  * paid already, and a wild patch never pays for the crop it starts with. A change of pick while a crop grows or stands ripe applies at the next sowing: the crop in
  * the ground is not dug up.
@@ -97,10 +103,15 @@ function stateOf(instance, def) {
     let state = wildStates.get(wild);
     if (!state) {
         const { load } = cropTermsOf(wild);
-        state = Object.freeze({ cropId: wild.id, load, full: load });
+        state = Object.freeze({ cropId: wild.id, ripe: true, full: load });
         wildStates.set(wild, state);
     }
     return state;
+}
+
+/** Whether a saved state is ripe: it has ripened, or an older save still counts harvests left. */
+function isRipeState(state) {
+    return state.ripe === true || Number(state.load) > 0;
 }
 
 /** The crop in the ground (growing or ripe), or null when the Field is empty. */
@@ -117,7 +128,7 @@ export function stageOf(instance, def = getTokenType(instance?.typeId)) {
     if (!instance || !isField(def)) return null;
     const state = stateOf(instance, def);
     if (!state.cropId || !cropById(def, state.cropId)) return STAGE.EMPTY;
-    return state.load > 0 ? STAGE.RIPE : STAGE.GROWING;
+    return isRipeState(state) ? STAGE.RIPE : STAGE.GROWING;
 }
 
 /**
@@ -174,14 +185,28 @@ export function growMsOf(instance, def = getTokenType(instance?.typeId)) {
 }
 
 /**
- * The harvests a crop ripens with on this Field: its `load` with the Crop Load in reach (a
- * Composter), rounded, never under one. Read once, as it ripens.
+ * The harvests a crop ripens to give on average on this Field: its `load` with the Crop Load in
+ * reach (a Composter), never under one. Not rounded: it sets the chance, not a count. Read once, as
+ * it ripens.
  */
 export function loadAtRipening(instance, def, crop) {
     const base = cropTermsOf(crop).load;
     const skill = typeof def?.config?.skill === 'string' && def.config.skill ? def.config.skill : TARGET_CATEGORIES.ALL;
-    const load = Math.round(resolveAxis(instance.id, EFFECT_TYPES.CROP_LOAD, base, skill));
+    const load = resolveAxis(instance.id, EFFECT_TYPES.CROP_LOAD, base, skill);
     return Number.isFinite(load) && load >= 1 ? load : 1;
+}
+
+/**
+ * The chance in percent that the next harvest is a ripe Field's last: one over the harvests it
+ * ripened to give on average, so the crop's own chance when nothing in reach added any. Null unless
+ * it is ripe.
+ */
+export function harvestEndChance(instance, def = getTokenType(instance?.typeId)) {
+    if (stageOf(instance, def) !== STAGE.RIPE) return null;
+    const terms = cropTermsOf(plantedCrop(instance, def));
+    const full = Number(stateOf(instance, def).full);
+    if (!(full >= 1) || full === terms.load) return terms.endChance;
+    return 100 / full;
 }
 
 /**
@@ -233,11 +258,11 @@ function ripen(instance, def) {
     const crop = plantedCrop(instance, def);
     if (!crop) return null;
     const { seedOwed } = settle(instance, def);
-    const load = loadAtRipening(instance, def, crop);
-    instance.field = seedOwed ? { cropId: crop.id, load, full: load, seedOwed } : { cropId: crop.id, load, full: load };
+    const full = loadAtRipening(instance, def, crop);
+    instance.field = seedOwed ? { cropId: crop.id, ripe: true, full, seedOwed } : { cropId: crop.id, ripe: true, full };
     announce(instance);
-    // Harvests a Composter added pop over the Field as it ripens.
-    EffectFeedback.popBonus(instance.id, load - cropTermsOf(crop).load,
+    // Harvests a Composter added on average pop over the Field as it ripens.
+    EffectFeedback.popBonus(instance.id, Math.round(full - cropTermsOf(crop).load),
         () => SupportLinks.firstSupportOf(instance.id, EFFECT_TYPES.CROP_LOAD));
     return instance;
 }
@@ -285,21 +310,27 @@ export function clockFired(instance, def) {
 
 /**
  * A harvest cycle on this Field completed (`BoardRunner.completeCycle`, failed or not: a cycle
- * spent is a harvest spent). The cycle has paid its inputs by then, an owed seed among them. One
- * fewer left; the last sows the pick again, its growth counting from the moment the cycle ended
- * (`overMs` of the tick after it), or stops the Field without a seed. A `refreshed` harvest (Refresh
- * hit) keeps its load as it was; the seed it paid is still paid. A `preserved` harvest (Preservation
- * hit) paid nothing, and a seed it owed is never paid for this crop (owner, 2026-11-11): the next
- * crop owes its own as usual.
+ * spent is a harvest spent). The cycle has paid its inputs by then, an owed seed among them. Its
+ * roll at {@link harvestEndChance} decides whether it was the last; the last sows the pick again,
+ * its growth counting from the moment the cycle ended (`overMs` of the tick after it), or stops the
+ * Field without a seed. A `refreshed` harvest (Refresh hit) rolls nothing and stays ripe; the seed
+ * it paid is still paid. A `preserved` harvest (Preservation hit) paid nothing, and a seed it owed
+ * is never paid for this crop (owner, 2026-11-11): the next crop owes its own as usual.
  */
 export function harvested(instance, def, { overMs = 0, refreshed = false } = {}) {
     if (stageOf(instance, def) !== STAGE.RIPE) return;
+    const chance = harvestEndChance(instance, def);
     const state = settle(instance, def);
     // Paid or, on a Preservation hit, forgiven: either way this crop owes nothing more.
     delete state.seedOwed;
     if (refreshed) return;
-    state.load = Math.max(0, (Number(state.load) || 0) - 1);
-    if (state.load > 0) return;
+    if (!endsNow(chance)) {
+        if ('load' in state) {
+            delete state.load;
+            state.ripe = true;
+        }
+        return;
+    }
     instance.field = {};
     if (instance.clocks && CLOCK in instance.clocks) instance.clocks[CLOCK] = 0;
     // The cycle's own outputs have already landed, so a seed it dropped counts for the sowing.
@@ -333,10 +364,11 @@ export function nextRipening(instance) {
 
 /**
  * What the card and the inspection say about a Field, or null for any other Token: `{ stage,
- * cropId, pickId, load, full, inMs, totalMs, stopped, short }`. `cropId` is the crop in the ground,
- * `pickId` the one the next sowing uses (they differ after a change of pick); `inMs`, `totalMs`
- * count down a growing crop; `stopped` and `short` (the item ids it lacks) an empty Field waiting
- * for a seed.
+ * cropId, pickId, endChance, harvests, inMs, totalMs, stopped, short }`. `cropId` is the crop in
+ * the ground, `pickId` the one the next sowing uses (they differ after a change of pick);
+ * `endChance` the chance a ripe Field's next harvest is its last and `harvests` what it gives on
+ * average (null unless ripe); `inMs`, `totalMs` count down a growing crop; `stopped` and `short`
+ * (the item ids it lacks) an empty Field waiting for a seed.
  */
 export function fieldState(instance) {
     const def = getTokenType(instance?.typeId);
@@ -349,8 +381,8 @@ export function fieldState(instance) {
         stage,
         cropId: plantedCrop(instance, def)?.id ?? null,
         pickId: pickOf(instance, def)?.id ?? null,
-        load: stage === STAGE.RIPE ? state.load : 0,
-        full: stage === STAGE.RIPE ? (state.full || state.load) : 0,
+        endChance: stage === STAGE.RIPE ? harvestEndChance(instance, def) : null,
+        harvests: stage === STAGE.RIPE ? (Number(state.full) >= 1 ? Number(state.full) : cropTermsOf(plantedCrop(instance, def)).load) : null,
         inMs: growing ? growing.inMs : null,
         totalMs: growing ? growing.totalMs : null,
         stopped,

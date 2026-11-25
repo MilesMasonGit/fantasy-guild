@@ -1,13 +1,16 @@
 // writing a Region from recipes: the preview and a Region's board
 
 import { GameState } from '../../state/GameState.js';
-import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
+import { tokenStartingUses, getTokenType } from '../../config/registries/tokenRegistry.js';
 import { RETIRED_WATER_TOKENS } from '../../config/registries/fishingSpots.js';
+import { ownerTypesOf } from '../../config/registries/tokenConstants.js';
 import * as BoardState from '../board/BoardState.js';
+import { reachRadius } from '../board/nearby.js';
 import { matCap } from '../board/MatCap.js';
 import { budget } from './Budget.js';
 import { layout } from './Layout.js';
 import { layoutOptions } from './layoutInputs.js';
+import { withWildForests } from './wildForests.js';
 import { nextSeed, seedFromText } from './seededRandom.js';
 
 /**
@@ -71,8 +74,15 @@ export function previewSeed() {
     return atlas.seed;
 }
 
+/** The wild Forest a map tree belongs to: the owner its way back needs that plants its type, or null. */
+function wildForestOf(typeId) {
+    const owners = ownerTypesOf(getTokenType(typeId), getTokenType);
+    return owners.find(id => getTokenType(id)?.spawner?.spawns?.some(s => s?.typeId === typeId)) || null;
+}
+
 function planOf(recipes, summary, seed) {
-    const result = layout(summary, layoutOptions(summary, seed));
+    const laid = layout(summary, layoutOptions(summary, seed));
+    const result = { ...laid, nodes: withWildForests(laid.nodes, { headOf: wildForestOf, reach: reachRadius() }) };
     return {
         seed: result.seed,
         recipes,
@@ -111,17 +121,22 @@ export function fixtureId(regionId, index) {
 
 /**
  * A settled layout as its Region's board, built off the mat: each node a `placed` instance with
- * the map's mark (`fixture`) and its starting charges, in layout order. The Hall is not
- * on it: it travels with the guild and lands in the clearing at the mat's centre. A retired fixed
- * water an older world's cell still names (`fishingSpots.RETIRED_WATER_TOKENS`) is left off.
+ * the map's mark (`fixture`) and its starting charges, in layout order, a map tree tied to its wild
+ * Forest (`node.owner`, `wildForests.js`). The Hall is not on it: it travels with the guild and
+ * lands in the clearing at the mat's centre. A retired fixed water an older world's cell still
+ * names (`fishingSpots.RETIRED_WATER_TOKENS`) is left off.
  */
 export function regionBoard(result, regionId) {
-    const nodes = (result?.nodes || []).filter(node => !RETIRED_WATER_TOKENS.includes(node?.typeId));
-    return BoardState.detachedBoard(nodes.map((node, i) => {
+    // ⚠️ Ids keep the node's place in the whole layout, so a tree's `owner` (an index into it) still
+    // names its Forest after the retired waters are left off.
+    const nodes = (result?.nodes || []).map((node, i) => ({ node, i }))
+        .filter(({ node }) => !RETIRED_WATER_TOKENS.includes(node?.typeId));
+    return BoardState.detachedBoard(nodes.map(({ node, i }) => {
         const instance = BoardState.createTokenInstance(
             node.typeId, tokenStartingUses(node.typeId), null, BoardState.ORIGIN.PLACED, fixtureId(regionId, i)
         );
         instance.fixture = true;
+        if (Number.isInteger(node.owner)) BoardState.setTether(instance, fixtureId(regionId, node.owner));
         return { instance, x: node.x, y: node.y };
     }));
 }

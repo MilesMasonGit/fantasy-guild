@@ -926,13 +926,13 @@ describe('the shipped content', () => {
         expect(waysIn(book, T('token_oak_forest')).find(w => w.recipe)?.from).toBe(T('token_farmland'));
     });
 
-    it('an Oak Tree: planted whole by the Oak Forest, or grown back from its stump; no stump box', () => {
+    it('an Oak Tree: planted whole by the Oak Forest, or grown back from its stump for free; no stump box', () => {
         const ways = waysIn(book, T('token_oak_tree'));
         expect(ways.some(w => isGrowingStage(book, w.from ?? ''))).toBe(false);
         const planted = ways.find(w => w.from === T('token_oak_forest'));
         expect(planted).toBeTruthy();
         expect(planted.through ?? []).toEqual([]);
-        expect(ways.find(w => w.regrow)?.inputs.map(i => i.key)).toEqual([I('item_oak_seedling')]);
+        expect(ways.find(w => w.regrow)?.inputs.map(i => i.key)).toEqual([]);
     });
 
     it('Iron Ore: its vein first', () => {

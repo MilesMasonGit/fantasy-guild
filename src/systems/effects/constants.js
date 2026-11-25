@@ -63,8 +63,8 @@ export const EFFECT_TYPES = {
     // How long a Token takes to grow (`grows`) or to refill after a rest (`respawn` refill), as a
     // percentage: negative is faster — TileModifiers.growTimeOf.
     GROW_TIME: 'GROW_TIME',
-    // How many harvest cycles a Field holds when its crop ripens (a Composter adds to the load);
-    // read once, as it ripens — Fields.loadAtRipening.
+    // How many harvests a Field gives on average when its crop ripens (a Composter adds to them,
+    // lowering its chance to finish each harvest); read once, as it ripens — Fields.loadAtRipening.
     CROP_LOAD: 'CROP_LOAD',
     // How far a camp hands out work, as a percentage on its authored reach — Camps.reachOf.
     CAMP_REACH: 'CAMP_REACH',

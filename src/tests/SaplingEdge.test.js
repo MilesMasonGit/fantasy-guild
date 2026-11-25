@@ -128,7 +128,8 @@ describe('⭐ a Forest plants a Sapling only where it counts as inside its reach
         run(5000);
         expect(only(SAPLING)).toHaveLength(1);
         expect(inReach(only(SAPLING)[0], forest)).toBe(true);
-        expect(InventoryManager.getItemCount(SEED)).toBe(4);
+        // A Forest plants for free.
+        expect(InventoryManager.getItemCount(SEED)).toBe(5);
         expect(SpawnerSystem.spawnerStatus(forest.id)).toMatchObject({ state: 'at_cap', count: 1, cap: 1 });
     });
 });

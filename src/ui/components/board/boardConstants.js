@@ -77,7 +77,7 @@ export const SKIP_HINT = {
     [ALERT.RESTING]: 'resting, it comes back soon',
     [ALERT.GROWING]: 'its crop is growing',
     // A growing Token's own waits (a Stump; a Field stopped for want of a seed records the second).
-    [ALERT.GROW_NEEDS_NEARBY]: 'waiting for what it needs nearby to grow',
+    [ALERT.GROW_NEEDS_NEARBY]: 'its Forest or Orchard is gone: it never comes back',
     [ALERT.GROW_NEEDS_ITEM]: 'stopped: can’t pay to grow',
     no_skill: 'names no skill',
     occupied: 'enemies hold this place: beat them first',

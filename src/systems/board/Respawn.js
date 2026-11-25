@@ -5,16 +5,20 @@ import { BOARD_EVENTS } from './boardEvents.js';
 import { getTokenType, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { respawnOf as respawnBlockOf, RESPAWN_MIN_MS } from '../../config/registries/tokenConstants.js';
 import * as BoardState from './BoardState.js';
-import { growTimeOf, nearbyGateMet } from './TileModifiers.js';
+import { growTimeOf } from './TileModifiers.js';
+import { ownGateMet, ownRegrowMs } from './Groves.js';
 
 /**
  * A Token type with a `respawn` block does not leave the mat when its charges run out: it rests.
  * - **refill**: it stays where it stands at 0 charges, nobody can work it, and after its rest
- *   ({@link restMsOf}) it refills to its starting charges all at once. A refill may need a Token
- *   in reach (`needsNearby`, {@link gateMet}): without one its rest stands still (a Bare apple
- *   tree with no Orchard stays Bare).
+ *   ({@link restMsOf}) it refills to its starting charges all at once. A refill may need its owner
+ *   (`needsNearby`, {@link gateMet}): without it its rest stands still (a Bare apple tree whose
+ *   Orchard is gone stays Bare).
  * - **regrow**: at 0 it becomes its `into` Token (an Oak Tree becomes an Oak Stump), whose own
  *   `grows` block brings it back.
+ *
+ * It runs out by chance, not by a count: it holds one life, and each charge it would spend is a roll
+ * at its chance that ends it (`Charges.endChanceOf`), so a refill gives back that one life.
  *
  * Resting is not a state of its own: a Token rests while it holds 0 charges and its type
  * respawns ({@link isResting}). Where a Token would be removed for running out
@@ -49,27 +53,28 @@ export function respawnOf(def) {
 /**
  * How long a resting Token rests before it refills, in ms: the authored rest with the Grow Time
  * its neighbours give it (`TileModifiers.growTimeOf`, floored), and never under the engine's
- * shortest rest. The one reader of the time. A regrow's time is its `into` Token's growth.
+ * shortest rest; a fruit tree its Orchard brings back rests its species' fixed time
+ * (`Groves.ownRegrowMs`). The one reader of the time. A regrow's time is its `into` Token's growth.
  */
 export function restMsOf(instance, def = getTokenType(instance?.typeId)) {
-    const afterMs = respawnOf(def)?.afterMs;
+    const respawn = respawnOf(def);
+    const afterMs = respawn?.afterMs;
     if (afterMs == null) return 0;
-    return Math.max(RESPAWN_MIN_MS, growTimeOf(instance, afterMs));
+    return Math.max(RESPAWN_MIN_MS, respawn.needsNearby.length ? ownRegrowMs(afterMs) : growTimeOf(instance, afterMs));
 }
 
 /**
- * Whether a refill's rest may run: it needs none of `respawn.needsNearby` in reach, or one stands
- * within Near (an apple tree's Orchard). Cached per Token (`TileModifiers.nearbyGateMet`). Always
- * true for a regrow, and for a Token whose type does not respawn.
+ * Whether a refill's rest may run: it needs no owner (`respawn.needsNearby`), or its own one stands
+ * (an apple tree's Orchard, `Groves.ownGateMet`). Always true for a regrow, and for a Token whose
+ * type does not respawn.
  */
 export function gateMet(instance, def = getTokenType(instance?.typeId)) {
-    const needsNearby = respawnOf(def)?.needsNearby;
-    return !needsNearby?.length || nearbyGateMet(instance, needsNearby);
+    return ownGateMet(instance, respawnOf(def)?.needsNearby);
 }
 
 /**
  * Whether a resting Token will come back by itself: a regrow always does; a refill does when its
- * rest may run ({@link gateMet}). A Bare tree with no Orchard in reach is resting but not coming
+ * rest may run ({@link gateMet}). A Bare tree with no Orchard of its own is resting but not coming
  * back, so a hero has nothing to wait for. False for a Token that is not resting.
  */
 export function isComingBack(instance, def = getTokenType(instance?.typeId)) {
@@ -160,7 +165,7 @@ export function regrown(from, into) {
  * What the inspection says about a Token's respawn: `{ mode, into, afterMs, resting, inMs,
  * restingSprite, paused, needsNearby }`, its type's way back and, while it rests, how long a
  * refill has left (`inMs`, null otherwise), the picture it is drawn as ({@link restingSpriteOf})
- * and whether its rest stands still for want of a Token in reach. Null for a Token whose type
+ * and whether its rest stands still for want of its owner. Null for a Token whose type
  * never respawns.
  */
 export function respawnState(instance) {
@@ -180,7 +185,7 @@ export function respawnState(instance) {
  * A resting Token's way back, for the countdown bubble and the inspection lines: `{ mode, inMs,
  * totalMs, into, paused, needsNearby }`. A refill counts down its rest; a regrow happens on the
  * next tick (`inMs` 0), or on the drop while it is in the player's hand. `paused`: a refill that
- * needs one of `needsNearby` in reach and has none, so its clock stands still. Null for a Token
+ * needs an owner of `needsNearby` and has none standing, so its clock stands still. Null for a Token
  * that is not resting.
  */
 export function nextRespawn(instance) {

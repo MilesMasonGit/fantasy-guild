@@ -113,9 +113,9 @@ const Byproduct = ({ out }) => (
     </Tooltip>
 );
 
-/** A crop's grow time and how many harvests it gives once ripe. */
+/** A crop's grow time and how many harvests it gives on average once ripe (a ripe Field finishes by chance). */
 const CropTerms = ({ crop }) => {
-    const harvests = `${crop.load.toLocaleString('en-US')} ${crop.load === 1 ? 'harvest' : 'harvests'}`;
+    const harvests = `about ${crop.load.toLocaleString('en-US', { maximumFractionDigits: 1 })} ${crop.load === 1 ? 'harvest' : 'harvests'}`;
     return (
         <Tooltip title="Once sown" lines={[`Grows for ${lengthText(crop.growMs)}, then gives ${harvests}`]}>
             <span data-recipe-crop className="inline-flex items-center gap-1 ui-text-small text-gi-muted tabular-nums">

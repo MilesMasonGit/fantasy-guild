@@ -18,6 +18,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { ALERT, BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { KEYWORD } from '../systems/effects/statements.js';
+import { endTermsOf, CHANCE_LIFE } from '../config/registries/tokenConstants.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { neverWearsReason, neverWearsOut, NEVER_WEARS } from '../systems/core/wearRule.js';
 import { getTokenType, registerTokenTypes, tokenStartingUses, neverWearsOutType } from '../config/registries/tokenRegistry.js';
@@ -99,10 +100,16 @@ describe('⭐ shipped content', () => {
     });
 
     it.each(['token_blackberry_bush', 'token_shrimp_coast', 'token_oak_tree', 'token_copper_ore_vein'])(
-        '%s keeps its charges', (id) => {
+        '%s wears: its charges, or the one life of a Token that runs out by chance', (id) => {
             expect(neverWearsOutType(id)).toBe(false);
-            expect(tokenStartingUses(id)).toBe(getTokenType(id).uses);
+            const def = getTokenType(id);
+            expect(tokenStartingUses(id)).toBe(endTermsOf(def) ? CHANCE_LIFE : def.uses);
         });
+
+    it('a vein, an Oak and a bush come back, so they run out by chance; the Shrimp Coast keeps a count', () => {
+        for (const id of ['token_blackberry_bush', 'token_oak_tree', 'token_copper_ore_vein']) expect(endTermsOf(getTokenType(id))).not.toBeNull();
+        expect(endTermsOf(getTokenType('token_shrimp_coast'))).toBeNull();
+    });
 });
 
 // ---------------------------------------------------------------------------

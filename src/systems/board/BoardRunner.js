@@ -19,6 +19,7 @@ import * as BoardCombat from './BoardCombat.js';
 import * as Flags from './Flags.js';
 import * as HeroMotion from './HeroMotion.js';
 import * as EnemyMotion from './EnemyMotion.js';
+import * as Groves from './Groves.js';
 import * as TimedChanges from './TimedChanges.js';
 import * as WorkCheck from './WorkCheck.js';
 import * as Foundations from './Foundations.js';
@@ -562,6 +563,8 @@ export function tick(delta) {
     // next camp of their kind, before any camp counts what it spawned below.
     EnemyMotion.attachUntethered();
     EnemyMotion.rehomeOrphans();
+    // An older save's trees join the Forest in their reach, before any Forest counts its own.
+    Groves.attachUntethered();
 
     // Timed changes: growths and spawners, on clocks advanced by this tick's
     // `delta`, so a catch-up fast-forwards them with everything else. Before Flags, so a hero

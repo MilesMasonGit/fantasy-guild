@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Gauge } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
-import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, stationKindsOfSkill, isRetiredStationKind, ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, ATTACK_SPEED_MS, RETIRED_ENEMY_FIELDS, DAMAGE_TYPES, DAMAGE_GROUPS, RESISTANCE_STEPS, damageTypeLabel, isTypeOrGroupId, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY, ENEMY_USES, neededToolOf, toolNeedPhrase, hasCatchPools } from '../../utils/constants';
+import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, stationKindsOfSkill, isRetiredStationKind, ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, ATTACK_SPEED_MS, RETIRED_ENEMY_FIELDS, DAMAGE_TYPES, DAMAGE_GROUPS, RESISTANCE_STEPS, damageTypeLabel, isTypeOrGroupId, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY, ENEMY_USES, neededToolOf, toolNeedPhrase, hasCatchPools, endTermsOf } from '../../utils/constants';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
@@ -78,6 +78,10 @@ export default function TokenEditor() {
   );
 
   if (!token) return <Empty text="Select a Token from the sidebar to edit" />;
+
+  // A Token that comes back runs out by a chance each round instead of a count (`tokenConstants.endTermsOf`).
+  const comesBack = !!token.respawn && !token.spawner && !token.foundation;
+  const ends = endTermsOf(token);
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-10">
@@ -409,6 +413,8 @@ export default function TokenEditor() {
                 </div>
               )}
             </Field>
+          ) : comesBack ? (
+            <EndChanceField token={token} ends={ends} onPatch={(patch) => updateToken(activeId, patch)} />
           ) : (
           <Field label="Charges">
             <div className="flex items-center gap-2">
@@ -1114,5 +1120,51 @@ function TokenSummary({ token, derived, needsSkill }) {
 
       <SimAnswer entityId={token.id} record={token} />
     </Section>
+  );
+}
+
+/**
+ * How a Token that comes back runs out: a chance each round of work, in percent, written as `endChance` in place of its
+ * Charges (`uses`), which the game then only reads for the chance it gives (one over the count) while no chance is written.
+ * Never runs out clears both.
+ */
+function EndChanceField({ token, ends, onPatch }) {
+  const authored = Number(token.endChance) > 0;
+  const never = !ends;
+  const shown = ends ? Math.round(ends.chance * 100) / 100 : '';
+  const oneIn = ends ? Math.round(ends.life * 10) / 10 : null;
+  const after = token.respawn?.mode === 'regrow' ? 'it regrows' : 'it rests, then refills';
+  return (
+    <Field label="Runs out (chance a round)">
+      <div className="flex items-center gap-2">
+        <input
+          type="number" min={0.1} max={100} step={0.1} aria-label="Chance to run out (%)" data-field="end-chance"
+          value={never ? '' : shown}
+          disabled={never}
+          placeholder={never ? 'never' : ''}
+          onChange={(e) => {
+            const v = Number(e.target.value);
+            if (!(v > 0)) return;
+            onPatch({ endChance: Math.min(100, v), uses: undefined });
+          }}
+          className="w-full"
+        />
+        <span className="text-[11px] text-gray-400">%</span>
+      </div>
+      <div data-field="end-chance-note" className="text-[10px] text-gray-500 mt-1 leading-relaxed">
+        {never
+          ? 'It never runs out, so it never rests.'
+          : `Each round of work has this chance to be its last (about 1 in ${oneIn}); then ${after}. No count shows on the mat.${authored ? '' : ` From its ${token.uses} Charges; type a chance to write it in their place.`}`}
+      </div>
+      <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={never}
+          onChange={(e) => onPatch(e.target.checked ? { endChance: undefined, uses: null } : { endChance: 20, uses: undefined })}
+          className="rounded border-white/10 text-emerald-500 cursor-pointer"
+        />
+        <span className="text-[11px] text-gray-400">Never runs out</span>
+      </label>
+    </Field>
   );
 }

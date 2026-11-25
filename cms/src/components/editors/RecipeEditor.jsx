@@ -519,18 +519,21 @@ function StationKindsRow({ recipe, stations, skillName, onChange }) {
 }
 
 /**
- * A crop: how long it grows on a Field, how many harvests a ripe Field holds, and its ripe picture. Shown for a recipe a
- * Field offers (a station with a Field block whose kind offers it) or one that already has a crop block. Its inputs are
- * its seed, paid once per sowing, not per harvest.
+ * A crop: how long it grows on a Field, its chance to finish each harvest of a ripe Field, and its ripe picture. Shown
+ * for a recipe a Field offers (a station with a Field block whose kind offers it) or one that already has a crop block.
+ * Its inputs are its seed, paid once per sowing, not per harvest. The chance is written as `endChance` in place of the
+ * old count (`load`), which the game reads only for the chance it gives (one over it) while no chance is written.
  */
 function CropRow({ recipe, fields, onChange }) {
   const terms = cropTermsOf(recipe);
   const crop = recipe.crop && typeof recipe.crop === 'object' ? recipe.crop : null;
   const write = (p) => {
-    const next = { growMs: terms.growMs, load: terms.load, ...(crop || {}), ...p };
+    const next = { growMs: terms.growMs, endChance: terms.endChance, ...(crop || {}), ...p };
+    delete next.load;
     if (!next.ripeSprite) delete next.ripeSprite;
     onChange({ crop: next });
   };
+  const harvests = Math.round(terms.load * 10) / 10;
   const seeds = terms.seeds.length ? 'its inputs above (the seed)' : 'nothing (no inputs: add the seed as an input)';
   return (
     <div data-testid="crop-row" className="rounded-lg border border-white/10 bg-black/20 p-3 space-y-2">
@@ -544,11 +547,14 @@ function CropRow({ recipe, fields, onChange }) {
             className="w-full"
           />
         </Field>
-        <Field label="Load (harvests)">
+        <Field label="Chance to finish (%)">
           <input
-            type="number" aria-label="Load (harvests)" min={1} step={1}
-            value={terms.load}
-            onChange={(e) => write({ load: Math.max(1, Math.round(Number(e.target.value) || 1)) })}
+            type="number" aria-label="Chance to finish (%)" min={0.1} max={100} step={0.1}
+            value={Math.round(terms.endChance * 100) / 100}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              if (v > 0) write({ endChance: Math.min(100, v) });
+            }}
             className="w-full"
           />
         </Field>
@@ -559,7 +565,7 @@ function CropRow({ recipe, fields, onChange }) {
       />
       <p className="text-[10px] text-gray-600 leading-relaxed" data-testid="crop-note">
         {fields.length ? `Grown on ${fields.map((t) => t.name || t.id).join(', ')}. ` : 'No Field offers this yet. '}
-        Sowing costs {seeds}, once. A ripe Field holds {terms.load} harvests, each a cycle making the outputs; the last sows it again.
+        Sowing costs {seeds}, once. A ripe Field is harvested until a harvest finishes it, about {harvests} harvests (a Composter adds more), each a cycle making the outputs; the last sows it again.
         {crop ? '' : ' (Not yet written: the game uses these defaults.)'}
       </p>
     </div>

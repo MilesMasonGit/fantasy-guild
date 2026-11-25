@@ -8,14 +8,14 @@ import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import * as BoardState from './BoardState.js';
 import * as Demolition from './Demolition.js';
 import * as InputAllocator from './InputAllocator.js';
-import { nearbyGateMet } from './TileModifiers.js';
+import { ownGateMet } from './Groves.js';
 
 /**
  * A `grows` block may ask two things before its Token grows (`tokenConstants.growsTermsOf`):
  *
- * * **a Token in reach** (`needsNearby`): while none of those types stands within Near, the
- *   growth's clock stands still where it is (`TimedChanges`' grows row): a Stump with no Forest of
- *   its species stays a Stump. The answer is cached per Token (`TileModifiers.nearbyGateMet`).
+ * * **its owner** (`needsNearby`): while its own Forest (`instance.tether`) is not one of those
+ *   types standing on the mat, the growth's clock stands still where it is (`TimedChanges`' grows
+ *   row): a Stump whose Forest is gone stays a Stump (`Groves.ownGateMet`). Such a growth is free.
  * * **a cost** (`cost`): paid when the growth happens, from the Bank and then the loot on the mat,
  *   only once the new Token has landed. Short of it, the growth is **stopped**: held at its finish
  *   and tried again every tick, as a growth with nowhere to stand is. ⚠️ What the Bank and the mat
@@ -30,10 +30,9 @@ import { nearbyGateMet } from './TileModifiers.js';
 
 export { growsTermsOf };
 
-/** Whether this growth's Token stands within reach of one it needs; true when it needs none. */
+/** Whether this growth's Token has the owner it needs standing; true when it needs none. */
 export function gateMet(instance, def = getTokenType(instance?.typeId)) {
-    const { needsNearby } = growsTermsOf(def);
-    return needsNearby.length === 0 || nearbyGateMet(instance, needsNearby);
+    return ownGateMet(instance, growsTermsOf(def).needsNearby);
 }
 
 const NONE = Object.freeze([]);
@@ -170,8 +169,8 @@ export function resetGrowthAlerts() {
 
 /**
  * Whether a Token is growing and its growth will happen by itself: it has a growth, is not marked
- * for demolition, stands in reach of what it needs, and has not stopped for want of its cost. A
- * Stump with no Forest, or stopped with no seedling for it, is not: nothing is on its way. (One
+ * for demolition, has the owner it needs, and has not stopped for want of its cost. A Stump whose
+ * Forest is gone is not: nothing is on its way. (One
  * still counting down is, even with no seedling in the Bank yet: one may come before it is due.)
  */
 export function isGrowingBack(instance, def = getTokenType(instance?.typeId)) {

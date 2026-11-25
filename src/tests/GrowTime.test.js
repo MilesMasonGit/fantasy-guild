@@ -205,7 +205,8 @@ describe('a resting vein near a support', () => {
         tick(11900);
         expect(vein.usesRemaining).toBe(0);
         tick(100);
-        expect(vein.usesRemaining).toBe(3);
+        // Back to its one life: it runs out by chance, not by a count.
+        expect(vein.usesRemaining).toBe(1);
     });
 
     it('⭐ a −50 % support in reach halves the rest, and the countdown says so', () => {
@@ -215,7 +216,7 @@ describe('a resting vein near a support', () => {
         tick(5900);
         expect(vein.usesRemaining).toBe(0);
         tick(100);
-        expect(vein.usesRemaining).toBe(3);
+        expect(vein.usesRemaining).toBe(1);
     });
 
     it('stacks to the floor: five give 2.4 s, a fifth of 12 s', () => {

@@ -442,6 +442,22 @@ describe('Lifecycle audit — respawn', () => {
             { severity: 'warning', id: 'token_copper_vein', field: 'respawn', includes: 'never runs out' });
     });
 
+    it('a chance to run out in place of Charges is clean; one outside 0 to 100 % is an error', () => {
+        const w = clean();
+        delete w.tokens.token_copper_vein.uses;
+        w.tokens.token_copper_vein.endChance = 20;
+        expect(auditLifecycleBlocks(w)).toEqual([]);
+        expectOne((x) => { x.tokens.token_copper_vein.endChance = 0; },
+            { id: 'token_copper_vein', field: 'endChance', includes: 'above 0 %' });
+        expectOne((x) => { x.tokens.token_copper_vein.endChance = 150; },
+            { id: 'token_copper_vein', field: 'endChance', includes: 'at most 100 %' });
+    });
+
+    it('a chance to run out on a Token that does not come back does nothing, and says so', () => {
+        expectOne((w) => { w.tokens.token_oak_tree.endChance = 20; },
+            { severity: 'warning', id: 'token_oak_tree', field: 'endChance', includes: 'does not come back' });
+    });
+
     it('a family counts the Token a spawned tree regrows from', () => {
         const w = clean();
         w.tokens.token_oak_forest.spawner.spawns = [{ typeId: 'token_birch_tree', weight: 1 }];
@@ -690,6 +706,8 @@ describe('Lifecycle audit — Fields and crops (brief 230 S4)', () => {
             { id: 'recipe_wheat', field: 'crop.growMs', includes: 'crop grow time' });
         expectOne(withField((w) => { w.recipes.recipe_wheat.crop.load = 0; }),
             { id: 'recipe_wheat', field: 'crop.load', includes: 'crop load' });
+        expectOne(withField((w) => { w.recipes.recipe_wheat.crop.endChance = -5; }),
+            { id: 'recipe_wheat', field: 'crop.endChance', includes: 'crop chance to finish' });
         expectOne(withField((w) => { w.recipes.recipe_wheat.inputs = []; }),
             { severity: 'warning', id: 'recipe_wheat', field: 'inputs', includes: 'costs no seed' });
     });

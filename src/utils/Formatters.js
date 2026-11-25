@@ -205,6 +205,18 @@ export function chanceText(percent) {
     return `${chanceFigure(percent)}%`;
 }
 
+/**
+ * A chance as odds when it is one over a whole number: `1 in 5`, `1 in 1,000`; otherwise as a
+ * chance (`15%`). How a source that runs out by chance says its chance.
+ */
+export function oneInText(percent) {
+    const p = Number(percent);
+    if (!(p > 0)) return chanceText(0);
+    const n = 100 / p;
+    const whole = Math.round(n);
+    return whole >= 1 && Math.abs(n - whole) < 0.05 ? `1 in ${whole.toLocaleString('en-US')}` : chanceText(p);
+}
+
 /** A factor as a multiplier: `×1.2`, `×1.15`, `×2`; two decimals at most, trailing zeros dropped. */
 export function timesText(factor) {
     return `×${Math.round((Number(factor) || 0) * 100) / 100}`;

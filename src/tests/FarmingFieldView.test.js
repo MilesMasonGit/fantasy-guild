@@ -125,14 +125,14 @@ describe('the card', () => {
         expect(recipe.change).toEqual({ label: 'Change crop', chosen: false, empty: 'No crop chosen' });
     });
 
-    it('ripe: harvests left; after a change of pick, what it sows next', () => {
+    it('ripe: its chance to finish each harvest, no count; after a change of pick, what it sows next', () => {
         InventoryManager.addItem(SEED, 1);
         const field = arrive('fv_field');
         StationRecipe.setSelectedRecipe(field, WHEAT);
         tick(60100);
         StationRecipe.setSelectedRecipe(field, OATS);
         const lines = block(card(field), CARD_BLOCK.LIFECYCLE).lines;
-        expect(lines[0]).toMatchObject({ text: '3/3', tip: 'Wheat ripe: 3 of 3 harvests left; the last sows it again' });
+        expect(lines[0]).toMatchObject({ text: '1 in 3', tip: 'Wheat ripe: each harvest has a 1 in 3 chance to be the last; the last sows it again' });
         expect(lines[1]).toMatchObject({ text: 'Oats', tip: 'Sows Oats next' });
     });
 

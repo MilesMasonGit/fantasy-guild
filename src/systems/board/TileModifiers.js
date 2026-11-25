@@ -4,7 +4,7 @@ import { ModifierAggregator, applyThreeBucket, combineMultipliers, combinePercen
 import { getGlobalAggregator, aimedModifiers } from '../effects/GuildModifiers.js';
 import { TARGET_CATEGORIES, EFFECT_TYPES } from '../effects/constants.js';
 import { floorSpeedUp, MIN_WORK_CYCLE_MS, flooredWorkTime } from './workTime.js';
-import { nearby, reachFrom, tokensAround, reachRadius, centreOf, distanceSq, neighbourIds } from './nearby.js';
+import { nearby, reachFrom, tokensAround, reachRadius, centreOf, distanceSq } from './nearby.js';
 import { onMatTuningChanged } from '../../config/matTuning.js';
 import { getTokenType, registryVersion } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsOf } from '../effects/statements.js';
@@ -56,13 +56,6 @@ const aggregators = new Map();
  */
 const growTimes = new Map();
 
-/**
- * Each Token's answer to "does a Token of one of these types stand within reach?", keyed by
- * instance id ({@link nearbyGateMet}).
- *
- * @type {Map<string, {agg: ModifierAggregator, aggVersion: number, regVersion: number, typeIds: readonly string[], met: boolean}>}
- */
-const gates = new Map();
 
 /** The aggregator for Token `instanceId`, created on first use. */
 export function getTokenAggregator(instanceId) {
@@ -78,7 +71,6 @@ export function getTokenAggregator(instanceId) {
 export function clearAll() {
     aggregators.clear();
     growTimes.clear();
-    gates.clear();
     liveKeys.clear();
     lastWorkOf.clear();
     // Every Token's buffs are gone, so the next board-reach rebuild is whole.
@@ -484,7 +476,6 @@ export function rebuildToken(instanceId) {
     if (!BoardState.getTokenById(instanceId)) {
         aggregators.delete(instanceId);
         growTimes.delete(instanceId);
-        gates.delete(instanceId);
         liveKeys.delete(instanceId);
         return;
     }
@@ -1054,46 +1045,6 @@ export function explainGrowTime(instance, baseMs) {
     }
     const sums = growSums(collectAxis(instance.id, EFFECT_TYPES.GROW_TIME, growSkillOf(instance.typeId), false, contributions));
     return { resolved: sums.any ? growResolved(base, sums) : base, final: growTimeOf(instance, base), contributions };
-}
-
-/**
- * Whether a Token of one of `typeIds` stands within reach (Near, centre to centre) of this Token:
- * the gate on a growth that needs a neighbour (`grows.needsNearby`: a Stump regrows only beside a
- * Forest of its species). True when `typeIds` is empty; false for a Token not on the mat.
- *
- * ⚠️ Cached per Token like {@link growTimeOf}, for the same reason: every gated Token asks on every
- * tick, a day's catch-up is 86,400 ticks, and a neighbour scan each time would cost seconds. The
- * answer is kept while the Token's aggregator and the Token registry stand at the versions it was
- * read at. Every arrival, departure or move within Near of a Token rebuilds that Token's
- * aggregator (`rebuildAround`, both ends of a move), which moves its version, so the next ask
- * scans afresh: exactly as fresh as scanning every time.
- *
- * @param {object} instance the Token on the mat
- * @param {readonly string[]} typeIds the types any one of which will do; pass the same (frozen)
- * list each time (`tokenConstants.growsTermsOf`), since a different list object re-scans
- * @returns {boolean}
- */
-export function nearbyGateMet(instance, typeIds) {
-    if (!typeIds?.length) return true;
-    const id = instance?.id;
-    if (id == null) return false;
-    const regVersion = registryVersion();
-    let entry = gates.get(id);
-    if (!entry || entry.agg.version !== entry.aggVersion || entry.regVersion !== regVersion || entry.typeIds !== typeIds) {
-        if (!BoardState.getTokenById(id)) return false;
-        const agg = getTokenAggregator(id);
-        let met = false;
-        for (const otherId of neighbourIds(id)) {
-            const other = BoardState.getTokenById(otherId);
-            if (other && typeIds.includes(other.typeId)) {
-                met = true;
-                break;
-            }
-        }
-        entry = { agg, aggVersion: agg.version, regVersion, typeIds, met };
-        gates.set(id, entry);
-    }
-    return entry.met;
 }
 
 /**

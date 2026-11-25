@@ -31,6 +31,7 @@ import { migrateEffectIds } from '../../systems/effects/effectIdMigration.js';
 import { STANDS_ON_CHOICES } from '../../systems/atlas/TerrainMap.js';
 import { neverWearsOut, ENEMY_USES } from '../../systems/core/wearRule.js';
 import { RETIRED_WATER_TOKENS } from './fishingSpots.js';
+import { endTermsOf, CHANCE_LIFE } from './tokenConstants.js';
 
 /**
  * Read `tokens.json` into one keyed object. An entry missing an `id` takes its
@@ -190,14 +191,17 @@ export function tokenName(typeId) {
  *
  * A station or a support never wears out (`wearRule.js`): its type starts unlimited whatever
  * `uses` it authors, so every copy made from here (bought, built, spawned, laid by a map) is.
- * An enemy is one use (`ENEMY_USES`) whatever it authors.
+ * An enemy is one use (`ENEMY_USES`) whatever it authors. A type that runs out by chance (one that
+ * comes back, `tokenConstants.endTermsOf`) starts with its one life (`CHANCE_LIFE`), whatever its
+ * `uses` says: there the count only sets the chance.
  */
 export function tokenStartingUses(typeId) {
     const def = getTokenType(typeId);
     if (!def) return null;
     // Mirrors `enemyProfile.isEnemyDef`, which reads this registry.
     if (def.enemy?.level != null) return ENEMY_USES;
-    return neverWearsOutType(typeId) ? null : (def.uses ?? null);
+    if (neverWearsOutType(typeId)) return null;
+    return endTermsOf(def) ? CHANCE_LIFE : (def.uses ?? null);
 }
 
 /** {@link neverWearsOutType}'s answers, per type id, for one registry version. */

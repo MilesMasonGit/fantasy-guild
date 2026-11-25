@@ -25,6 +25,7 @@ import { resetMatTuning } from '../config/matTuning.js';
 import { registerHallSky } from '../config/registries/hallStarRegistry.js';
 import * as HallRules from '../systems/progression/HallRules.js';
 import * as Respawn from '../systems/board/Respawn.js';
+import * as TimedChanges from '../systems/board/TimedChanges.js';
 import { xpForLevel } from '../utils/XPCurve.js';
 
 /**
@@ -221,12 +222,13 @@ describe('a station, a chain, a regrowing family', () => {
         expect(chain.xp).toMatchObject({ mining: 250, smithing: expect.closeTo(117.1875, 3) });
     });
 
-    it('regrows a felled tree through its stump and sapling, sped by the forest, the forest\'s allowance taking turns', () => {
+    it('regrows a felled tree through its stump (its fixed time, for free) and sapling (sped by the forest), the forest\'s allowance taking turns', () => {
         const r = book().rateOf({ token: 'rt_tree' }, { supports: ['rt_forest'], family: { spawner: 'rt_forest' } });
-        expect(r.lifecycle).toMatchObject({ kind: LIFECYCLE.REGROW, cycles: 5, members: 5, growMs: 225000 });
-        expect(r.cyclesPerHour).toBeCloseTo(5 * 5 * 3600000 / 240000);
-        expect(r.items.rt_wood).toBeCloseTo(375 * 1.5);
-        expect(r.inputs.rt_seedling).toBeCloseTo(375 / 5);
+        expect(r.lifecycle).toMatchObject({ kind: LIFECYCLE.REGROW, cycles: 5, members: 5, growMs: 262500 });
+        const perHour = 5 * 5 * 3600000 / 277500;
+        expect(r.cyclesPerHour).toBeCloseTo(perHour);
+        expect(r.items.rt_wood).toBeCloseTo(perHour * 1.5);
+        expect(r.inputs.rt_seedling ?? 0).toBe(0);
         expect(r.factors.find(f => f.id === 'support:rt_forest').axes).toEqual([EFFECT_TYPES.GROW_TIME]);
     });
 
@@ -413,7 +415,7 @@ describe('⭐ against the board: every axis the calculator resolves is the one T
         TileModifiers.rebuildAll();
         const r = book().rateOf({ token: 'rt_tree' }, { supports: ['rt_forest'], family: { spawner: 'rt_forest' } });
         expect(r.lifecycle.steps).toEqual([
-            { typeId: 'rt_stump', ms: TileModifiers.growTimeOf(stump, 150000) },
+            { typeId: 'rt_stump', ms: TimedChanges.growMsOf(stump) },
             { typeId: 'rt_sapling', ms: TileModifiers.growTimeOf(sapling, 150000) }
         ]);
     });

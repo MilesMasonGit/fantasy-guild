@@ -12,7 +12,8 @@ import { logger } from '../utils/Logger.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import './fixtures/testTokens.js';
-import { getAllTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { getAllTokenTypes, tokenStartingUses, neverWearsOutType } from '../config/registries/tokenRegistry.js';
+import { endTermsOf } from '../config/registries/tokenConstants.js';
 import { resetMissingContentWarnings } from '../utils/missingContent.js';
 
 /**
@@ -162,7 +163,8 @@ describe('CR2-192: a Token\'s XP lives on config, nowhere else', () => {
 describe('CR2-121: `uses` is the charge field, `charges` is not read', () => {
     it('tokenStartingUses reads `uses` and ignores a disagreeing `charges`', () => {
         const types = getAllTokenTypes();
-        const [id, def] = Object.entries(types).find(([, d]) => d.uses != null) || [];
+        // A Token that keeps a count: not one that runs out by chance (one life), an enemy or one that never wears.
+        const [id, def] = Object.entries(types).find(([tid, d]) => d.uses != null && !endTermsOf(d) && d.enemy?.level == null && !neverWearsOutType(tid)) || [];
         expect(id, 'no authored Token has `uses`').toBeTruthy();
         expect(tokenStartingUses(id)).toBe(def.uses);
 

@@ -8,7 +8,7 @@ import { ringStarsOf, ringOfStar } from '../../world/ringStars.js';
 import { expandBearer } from '../../effects/effectLibrary.js';
 import { stationSkillOf, stationKindOf, KEYWORD } from '../../effects/statements.js';
 import {
-    stationKindOffers, foundationTierMeets, growsTermsOf, respawnOf, cropTermsOf, fieldOf, outputRange, PASSIVE_LAP_BASE_MS
+    stationKindOffers, foundationTierMeets, growsTermsOf, respawnOf, spawnerUpkeepOf, cropTermsOf, fieldOf, outputRange, PASSIVE_LAP_BASE_MS
 } from '../../../config/registries/tokenConstants.js';
 import { catchPoolsOf, hasCatchPools } from '../../../config/registries/catchPools.js';
 import { fishBait, fishCycleMs } from '../../../config/registries/fishRules.js';
@@ -362,11 +362,11 @@ export function buildWorld(content = {}) {
             add({ id: `shop:${id}`, how: HOW.SHOP, via: null, needs: needKeys(price), inputs: price, gives: [{ key: self, chance: 1 }] });
         }
 
-        // A spawner's spawns, paid by its upkeep; no hero needed.
+        // A spawner's spawns, paid by its upkeep (none for a Forest or an Orchard); no hero needed.
         if (isSpawner) {
             const spawns = list(def.spawner.spawns).filter(s => text(s.typeId) && weightOf(s) > 0);
             const total = spawns.reduce((sum, s) => sum + weightOf(s), 0);
-            const upkeep = inputsOf(def.spawner.upkeep);
+            const upkeep = inputsOf(spawnerUpkeepOf(def, typeId => tokens[typeId], id));
             if (spawns.length) {
                 add({
                     id: `spawn:${id}`, how: HOW.SPAWN, via: self, needs: [self, ...needKeys(upkeep)], inputs: upkeep,
@@ -376,7 +376,7 @@ export function buildWorld(content = {}) {
             }
         }
 
-        // Growth, once any one Token it needs nearby stands, paying its cost.
+        // Growth, once its owner stands (a Stump's Forest, any one of those named), paying its cost.
         if (isObject(def.grows) && text(def.grows.into)) {
             const terms = growsTermsOf(def);
             const cost = terms.cost.map(c => ({ key: itemKey(c.itemId), quantity: c.quantity }));

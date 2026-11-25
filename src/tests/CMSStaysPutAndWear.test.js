@@ -149,10 +149,36 @@ describe('⭐ Charges on a station or a support', () => {
         expect(container.querySelector('[data-field="never-wears"]').textContent).toContain('helps the Tokens near it');
     });
 
-    it('a gathering node keeps its Charges field', () => {
+    it('a gathering node that leaves the mat keeps its Charges field', () => {
+        const container = openEditor('token_copper_comet');
+        expect(container.querySelector('[data-field="never-wears"]')).toBeNull();
+        expect(container.querySelector('[data-field="end-chance"]')).toBeNull();
+        expect(container.textContent).toContain('Never depletes');
+    });
+
+    it('a gathering node that comes back runs out by chance: its chance in place of Charges', () => {
+        // The shipped bush rests and refills, and authors 25 Charges: one in 25 a round until a chance is written.
         const container = openEditor('token_blackberry_bush');
         expect(container.querySelector('[data-field="never-wears"]')).toBeNull();
-        expect(container.textContent).toContain('Never depletes');
+        expect(container.textContent).not.toContain('Never depletes');
+        const input = container.querySelector('[data-field="end-chance"]');
+        expect(input.value).toBe('4');
+        expect(container.querySelector('[data-field="end-chance-note"]').textContent).toContain('about 1 in 25');
+        expect(container.querySelector('[data-field="end-chance-note"]').textContent).toContain('From its 25 Charges');
+
+        fireEvent.change(input, { target: { value: '20' } });
+        const bush = useEntityStore.getState().tokens.token_blackberry_bush;
+        expect(bush.endChance).toBe(20);
+        expect(bush.uses).toBeUndefined();
+        expect(container.querySelector('[data-field="end-chance-note"]').textContent).toContain('about 1 in 5');
+        const synced = syncPayload()['tokens.json'].token_blackberry_bush;
+        expect(synced.endChance).toBe(20);
+        expect(JSON.parse(JSON.stringify(synced))).not.toHaveProperty('uses');
+
+        fireEvent.click(container.querySelector('[data-field="end-chance"]').closest('div').parentElement.querySelector('input[type="checkbox"]'));
+        expect(useEntityStore.getState().tokens.token_blackberry_bush).toMatchObject({ uses: null });
+        expect(useEntityStore.getState().tokens.token_blackberry_bush.endChance).toBeUndefined();
+        expect(container.querySelector('[data-field="end-chance-note"]').textContent).toContain('never runs out');
     });
 
     it('the Economy Audit flags the ignored charges, as a warning', () => {

@@ -64,12 +64,9 @@ function itemsSpoken(lines, src) {
     return lines.map(l => `${l.quantity} ${src.itemName(l.itemId)}`).join(' and ');
 }
 
-/** "an Oak Forest", "an Oak Forest or a Wild Oak Forest": any one of them will do. */
+/** "Oak Forest", "Oak Forest or Wild Oak Forest": any one of them will do, after "its own". */
 function anyOf(typeIds, src) {
-    const names = (typeIds || []).map(id => {
-        const name = src.tokenName(id);
-        return `${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}`;
-    });
+    const names = (typeIds || []).map(id => src.tokenName(id));
     return names.length < 2 ? names[0] || '' : `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`;
 }
 
@@ -135,7 +132,7 @@ export function spawnLine(def, status, src) {
 }
 
 /**
- * A growing Token's line: its countdown, or why it waits (no Token it needs in reach, or short of
+ * A growing Token's line: its countdown, or why it waits (its owner gone, or short of
  * its cost; either way no time). What a used-up Token left behind respawns rather than grows.
  */
 export function growthLine(instance, growth, src) {
@@ -144,7 +141,7 @@ export function growthLine(instance, growth, src) {
     const verb = respawns ? `Respawns as ${into}` : `Grows into ${into}`;
     const base = { kind: TIMER_KIND.GROW, icon: 'grow', ...(respawns ? { label: 'Respawns' } : {}) };
     if (growth.paused) {
-        return { ...base, text: '–', tip: `${verb} only with ${anyOf(growth.needsNearby, src)} nearby`, tone: 'warning', alert: true };
+        return { ...base, text: '–', tip: `${verb} only while its own ${anyOf(growth.needsNearby, src)} stands`, tone: 'warning', alert: true };
     }
     if (growth.stopped) {
         const short = (growth.cost || []).filter(c => (growth.short || []).includes(c.itemId));
@@ -176,7 +173,7 @@ export function respawnLine(instance, r, src) {
     const base = { kind: TIMER_KIND.RESPAWN, icon: 'regrow' };
     if (r.mode === 'refill') {
         if (r.resting && r.paused) {
-            return { ...base, label: 'Exhausted', text: '–', tip: `Exhausted · respawns only with ${anyOf(r.needsNearby, src)} nearby`, tone: 'warning', alert: true };
+            return { ...base, label: 'Exhausted', text: '–', tip: `Exhausted · respawns only while its own ${anyOf(r.needsNearby, src)} stands`, tone: 'warning', alert: true };
         }
         if (r.resting) return { ...base, label: 'Exhausted', text: countdownText(r.inMs), tip: `Exhausted · respawns in ${timeIn(r.inMs)}` };
         return { ...base, label: 'Respawns', text: lengthText(r.afterMs), tip: `Respawns ${lengthIn(r.afterMs)} after it's used up`, live: false };

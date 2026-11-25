@@ -1,5 +1,5 @@
 import {
-    getTokenType, getAllTokenTypes, getProvidedTagsWithTiers, outputRange, productionRoutes
+    getTokenType, getAllTokenTypes, getProvidedTagsWithTiers, outputRange, productionRoutes, neverWearsOutType
 } from '../../../config/registries/tokenRegistry.js';
 import { contextRequirementsOf, getRecipe } from '../../../config/registries/recipePoolRegistry.js';
 import { getAllItems } from '../../../config/registries/itemRegistry.js';
@@ -9,13 +9,14 @@ import { rareTableOf, rareEntryChances } from '../../../config/registries/rareTa
 import { enemyProfileOf } from '../../../config/registries/enemyProfile.js';
 import { movesView, enemyHitTypes, kindView, enemyResistLines, hasFought } from '../combat/fightView.js';
 import { PLAIN_ENEMY_HIT_TYPE } from '../../../config/registries/damageTypes.js';
-import { fieldOf, cropTermsOf, campOf, isWarCamp } from '../../../config/registries/tokenConstants.js';
+import { fieldOf, cropTermsOf, campOf, isWarCamp, endTermsOf } from '../../../config/registries/tokenConstants.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as BoardCombat from '../../../systems/board/BoardCombat.js';
 import * as StationRecipe from '../../../systems/board/StationRecipe.js';
 import * as Fields from '../../../systems/board/Fields.js';
+import * as Charges from '../../../systems/board/Charges.js';
 import * as Fishing from '../../../systems/board/Fishing.js';
 import * as Demolition from '../../../systems/board/Demolition.js';
 import * as RareTables from '../../../systems/board/RareTables.js';
@@ -29,7 +30,7 @@ import { GameState } from '../../../state/GameState.js';
 import { effectiveIO } from '../../../systems/board/RecipeResolver.js';
 import { availableOf } from '../../../systems/board/InputAllocator.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
-import { chanceFigure } from '../../../utils/Formatters.js';
+import { chanceFigure, oneInText } from '../../../utils/Formatters.js';
 import { landmarkLines } from '../drawer/landmarkLines.js';
 import * as SupportLinks from '../../../systems/board/supportLinks.js';
 import { reachRadius } from '../../../systems/board/nearby.js';
@@ -154,6 +155,7 @@ export function liveCardSources() {
         selectedRecipe: StationRecipe.selectedRecipe,
         poolFor: StationRecipe.poolFor,
         fieldCrop: Fields.cropOf,
+        endChance: Charges.endChanceOf,
         recipeOf: getRecipe,
         fightOf: BoardCombat.getFight,
         fought: hasFought,
@@ -380,8 +382,9 @@ function itemsSpoken(lines, src) {
 }
 
 /**
- * A Field's card lines: its crop ripening or stopped for a seed (the timer writer's), ripe
- * (harvests left), or about to be sown; and, after a change of pick, what it sows next.
+ * A Field's card lines: its crop ripening or stopped for a seed (the timer writer's), ripe (its
+ * chance to finish each harvest), or about to be sown; and, after a change of pick, what it sows
+ * next.
  */
 function fieldCardLines(field, src) {
     const name = (id) => (id ? src.recipeName(id) : 'its crop');
@@ -390,7 +393,8 @@ function fieldCardLines(field, src) {
     if (timer) {
         out.push(timer);
     } else if (field.stage === 'ripe') {
-        out.push({ icon: 'grow', text: `${field.load}/${field.full}`, tip: `${name(field.cropId)} ripe: ${field.load} of ${field.full} harvests left; the last sows it again` });
+        const odds = oneInText(field.endChance);
+        out.push({ icon: 'grow', text: odds, tip: `${name(field.cropId)} ripe: each harvest has a ${odds} chance to be the last; the last sows it again` });
     } else if (field.pickId) {
         out.push({ icon: 'grow', text: '–', tip: `Sowing ${name(field.pickId)}` });
     }
@@ -463,7 +467,7 @@ function spawnCardLine(def, status, src) {
  * The card for one Token, as `{ enemy, name, art, blocks, effects }`. `blocks` is in display order
  * and holds only the blocks that apply; `effects` is the badges' breakdown, on the mat only.
  *
- * A Token's card: name; work (skill, level, XP); cycle (time, charges); the current recipe
+ * A Token's card: name; work (skill, level, XP); cycle (time, charges or the chance it runs out); the current recipe
  * (needs, tools, makes, rare finds or a water's fish and catches, and a station's Change recipe); lifecycle
  * lines; what it boosts.
  * An enemy's card: name; HP; combat (style, level, XP a kill); its fight (hit, moves, resistances,
@@ -534,9 +538,11 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
     const cycleMs = baseMs > 0 && instance && !marked && typeId !== GUILD_HALL && src.workTime
         ? Number(src.workTime(instance.id, baseMs, skillId)) || baseMs
         : baseMs;
-    const uses = instance ? (instance.usesRemaining ?? null) : (def.uses ?? null);
+    // A Token that runs out by chance shows its chance, never a count.
+    const endChance = instance ? (src.endChance?.(instance) ?? null) : typeEndChance(def);
+    const uses = endChance != null ? null : instance ? (instance.usesRemaining ?? null) : (def.uses ?? null);
     // A station with nothing chosen keeps its Charges cell: only the time goes.
-    if (cycleMs > 0 || uses != null || unchosen) blocks.push({ id: CARD_BLOCK.CYCLE, cycleMs, baseMs, uses });
+    if (cycleMs > 0 || uses != null || endChance != null || unchosen) blocks.push({ id: CARD_BLOCK.CYCLE, cycleMs, baseMs, uses, endChance });
 
     if (!marked) {
         // A crop's inputs are its seed, paid once per sowing (its lifecycle line says so), not per harvest.
@@ -578,6 +584,12 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
     };
     if (more.landmark || more.buff || more.drives) blocks.push({ id: CARD_BLOCK.MORE, ...more });
     return { enemy: false, name, art, blocks, effects: effectsOf(instance, src) };
+}
+
+/** The chance a Token type runs out each cycle, off the mat (a shop, the Encyclopedia), or null. */
+function typeEndChance(def) {
+    if (!def?.id || neverWearsOutType(def.id)) return null;
+    return endTermsOf(def)?.chance ?? null;
 }
 
 /** The effect badges' numbers for a Token on the mat (`effectBreakdown`), else null. */

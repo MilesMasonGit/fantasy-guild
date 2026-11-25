@@ -11,6 +11,8 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
+import * as BoardState from '../systems/board/BoardState.js';
+import * as Respawn from '../systems/board/Respawn.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
 import * as HeroTools from '../systems/equipment/HeroTools.js';
 import { applyDefeatPenalties } from '../systems/combat/DefeatPenalties.js';
@@ -136,7 +138,10 @@ describe('⭐ a Rusty tool works like a copper one, and breaks only as a cycle e
         const run = listen();
         play(60_000);
         run.stop();
-        expect(run.seen.cycles).toBe(getTokenType('token_copper_ore_vein').uses);
+        // The vein runs out by chance, one in five: this draw is under that, so its first cycle is its
+        // last; the pick's roll misses on it all the same.
+        expect(run.seen.cycles).toBe(1);
+        expect(Respawn.isResting(BoardState.getTokenById(ids.tokenId))).toBe(true);
         expect(landed(ORE)).toBeGreaterThanOrEqual(run.seen.cycles);
         expect(run.seen.breaks).toEqual([]);
         expect(heroRec(ids.heroId).equipment[0]).toBe(PICK);
