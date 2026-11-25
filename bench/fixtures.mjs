@@ -88,11 +88,15 @@ export const BENCH_TOKENS = {
         spawner: { spawns: [{ typeId: 'bench_goblin', weight: 1 }], allowance: 5, intervalMs: 30000, upkeep: [] }
     },
 
-    /** A hostile level-1 melee enemy with one charge: a kill clears it and its camp respawns it. */
+    /**
+     * A level-1 melee enemy with one charge: a kill clears it and its camp respawns it. Its numbers
+     * are the ones the retired `budgetScale` 0.3 gave it (6 HP, 3 XP; the level's hit of 1), written
+     * out so the bench's work stays the same.
+     */
     bench_goblin: {
         id: 'bench_goblin', name: 'Bench Goblin', tokenType: 'enemy',
         rarity: 'common', theme: 'fixture', uses: 1, sprite: 's_crime', requiresHero: true,
-        enemy: { level: 1, style: 'melee', budgetScale: 0.3, hostile: true },
+        enemy: { level: 1, style: 'melee', hp: 6, xp: 3 },
         config: {
             skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0,
             inputs: [],

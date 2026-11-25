@@ -39,7 +39,8 @@ registerTokenTypes({
     env_brute: {
         id: 'env_brute', name: 'Envelope Brute', tokenType: 'enemy',
         rarity: 'common', theme: 'fixture', uses: 1, sprite: 's_crime', requiresHero: true,
-        enemy: { level: 1, style: 'melee', budgetScale: 0.4, speed: 'slow', hp: 1000000 },
+        // The XP the retired `budgetScale` 0.4 gave it, written out so the bench's work stays the same.
+        enemy: { level: 1, style: 'melee', speed: 'slow', hp: 1000000, xp: 4 },
         config: {
             skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0,
             inputs: [],

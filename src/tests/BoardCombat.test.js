@@ -37,7 +37,7 @@ registerTokenTypes({
     fixture_enemy_weak: {
         id: 'fixture_enemy_weak', name: 'Fixture Weak Enemy', tokenType: 'enemy',
         rarity: 'common', theme: 'fixture', uses: 20, sprite: 's_occult',
-        enemy: { level: 1, style: 'melee', budgetScale: 0.25 },
+        enemy: { level: 1, style: 'melee', hp: 5, xp: 3 },
         config: {
             skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0,
             inputs: [],

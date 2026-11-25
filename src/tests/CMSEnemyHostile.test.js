@@ -133,12 +133,12 @@ describe('the Token editor’s level preview', () => {
         }
     });
 
-    // A fixture, not a shipped enemy: what an older budget scale does must not hang on content.
-    it('a level 1 enemy scaled by a budget of 0.3 reads 6 HP, a hit of 1 and 3 XP', () => {
+    // A fixture, not a shipped enemy: an older budget scale is retired and scales nothing.
+    it('a level 1 enemy with an older budget of 0.3 reads the level numbers: 21 HP, a hit of 1 and 10 XP', () => {
         const id = 'token_cow';
         useEntityStore.getState().updateToken(id, { enemy: { level: 1, style: 'melee', budgetScale: 0.3 } });
         const { container } = editor(id);
         const box = within(container).getByText('What the fight uses').parentElement.parentElement;
-        expect(box.textContent).toContain('HP6Hit1 CrushResistsnoneAttacks every3.0sXP3');
+        expect(box.textContent).toContain('HP21Hit1 CrushResistsnoneAttacks every3.0sXP10');
     });
 });

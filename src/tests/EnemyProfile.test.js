@@ -72,15 +72,10 @@ describe('The stat block', () => {
         expect(getCombatXpAward(p)).toBeGreaterThan(1);
     });
 
-    it('scales HP, hit and XP together when an older budgetScale is set', () => {
-        // Level 40, where the table's hit (3) is big enough for a quarter of it to show.
+    it('an older budgetScale scales nothing: the level fills the numbers (the audit names it)', () => {
         const full = enemyProfileOf({ ...bear(), enemy: { level: 40, style: 'ranged' } });
-        const pushover = enemyProfileOf({ ...bear(), enemy: { level: 40, style: 'ranged', budgetScale: 0.25 } });
-        expect(pushover.hp).toBeLessThan(full.hp);
-        expect(pushover.hit).toBeLessThan(full.hit);
-        expect(pushover.xpAwarded).toBeLessThan(full.xpAwarded);
-        // Difficulty scales; the level itself does not lie about its band.
-        expect(pushover.level).toBe(40);
+        const scaled = enemyProfileOf({ ...bear(), enemy: { level: 40, style: 'ranged', budgetScale: 0.25 } });
+        expect(scaled).toMatchObject({ hp: full.hp, hit: full.hit, xpAwarded: full.xpAwarded, level: 40 });
     });
 
     it('keeps an authored style, and refuses one the engine has never heard of', () => {

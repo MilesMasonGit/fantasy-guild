@@ -60,12 +60,12 @@ registerTokenTypes({
     /** A quick one-kill enemy, peaceful. */
     enc_imp: {
         id: 'enc_imp', name: 'Encounter Imp', tokenType: 'enemy', rarity: 'common', theme: 'fixture',
-        uses: 100, sprite: 's_occult', enemy: { level: 1, style: 'melee', budgetScale: 0.3 }, config: enemyConfig
+        uses: 100, sprite: 's_occult', enemy: { level: 1, style: 'melee', hp: 6, xp: 3 }, config: enemyConfig
     },
     /** A boss. */
     enc_boss: {
         id: 'enc_boss', name: 'Encounter Boss', tokenType: 'enemy', rarity: 'rare', theme: 'fixture',
-        uses: 1, sprite: 's_occult', enemy: { level: 1, style: 'melee', budgetScale: 0.3, boss: true },
+        uses: 1, sprite: 's_occult', enemy: { level: 1, style: 'melee', hp: 6, xp: 3 },
         config: enemyConfig
     },
     /** A guardian: a tough enemy whose camp stands by a rich node. */
