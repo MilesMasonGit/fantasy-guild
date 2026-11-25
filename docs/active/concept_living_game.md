@@ -1,4 +1,4 @@
-Status: approved 2026-10-09 (brief after the crunch)
+Status: approved 2026-10-09 (brief after the crunch); **visitors and quests cut 2026-11-25** (owner)
 
 # A living game: events, the return, hero identity
 
@@ -30,6 +30,8 @@ Status: approved 2026-10-09 (brief after the crunch)
   visitors deeper in).
 
 ## Visitors and dialogue
+
+> **Cut** (owner 2026-11-25): no visitors and no quests in the game. Kept for the record only.
 
 - **Dialogue in speech bubbles on the mat**: the visitor speaks in bubbles;
   the player's replies appear as small buttons under them. A few lines and a

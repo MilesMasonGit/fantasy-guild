@@ -32,7 +32,7 @@ multiple choice at wave start.
 | 15 | [140 Hero bar](140_hero_bar.md): Work Permissions, level-up, shine | 11, T-152 | yes |
 | 16 | [150 Notifications](150_notifications.md) | 11, 15 | yes |
 | 17 | [160 Atlas tome and Hall sky](160_atlas_tome.md): tome, banners, sky, camera moves | 11, 12 | yes, two batches |
-| 18 | ~~[170 The quest board](170_quest_boards.md)~~ **postponed** (owner 2026-10-20: written, not built until later mechanics settle what quests are for) | 13, 14, 16 | yes |
+| 18 | ~~[170 The quest board](170_quest_boards.md)~~ **cut 2026-11-25** (owner: no quests), earlier **postponed** (owner 2026-10-20: written, not built until later mechanics settle what quests are for) | 13, 14, 16 | yes |
 | 19 | [180 Ground structure](180_ground_structure.md): tint pattern, organic earth, grouped props, the owner's edge pieces | 10 | yes |
 | 19b | [190 Playmat style](190_playmat_style.md): Clean ground at 2×, quieter decorations, darker rim, shadows, ambient life | 19, 12, 13 (P2) | yes, per phase |
 | 19c | [200 CMS change packs](200_cms_change_packs.md): agents author content for the owner to review (T-133); first pack: the starting maps | — | yes (CMS) |
@@ -105,7 +105,7 @@ multiple choice at wave start.
 | 85 | [830 Playmat declutter](830_playmat_declutter.md) (owner interview 2026-11-23): job areas without a ring line, centred on the art, look picked from four; reach rings after a 0.4 s rest with dots only on what they affect; the '!' centred, still and said once; no plates, a progress bar with the cycle length instead; names and dots stand out (picked from screenshots); no hover tooltips on the mat; drag only, right-click opens the card (recipe choice inside) or the Hero drawer; card tail and the Token brought forward; more space between Tokens; heroes drop anywhere; top bar without frame or Token/Upkeep, logo space; a Controls strip with Demolish and Find; banners in a show/hide corner; loot lands at the focus area's edge; eight phases; no owner CMS | D1 → D2 → D3; D6 after D1; D8 after D4; D4, D5, D7 any time | yes, three looks (D4 picked from screenshots first) |
 | 86 | [840 Loot flight trail](840_loot_flight_trail.md) (owner interview 2026-11-23): flying loot trails coloured shadows (look picked from an animated page) and a sparkle shower coloured by stack size; the item notice flashes and sparkles on landing; path and timing unchanged; two phases, drawing only; no owner CMS | — (any time) | yes, after F2 (F1 is the owner's pick) |
 | 87 | [850 Fishing spots, Bait and lures](850_fishing_spots.md) (owner review 2026-11-24; **replaces 770 G2**): water is ground and fishing spots come and go (chance per catch, outside the cap, rare spot kinds with fixed catches, the Fish Shoal richest); tool kinds gate, tiers speed and save Bait; one Bait per catch, made in Fishing from fish you can catch; three overlapping lures that break by chance, harpoons lure-free; the Fishing Hut moves heroes between spots, a building raises spot rates; four phases, WORK CHANGED expected; then the content agent's Fishing pack | 770 G1 (built) | yes, after F3 + F4 |
-| 88 | [860 Gathering rework](860_gathering_rework.md) (owner review 2026-11-24): veins, trees and ripe Fields run out by chance, not a count; Forests and Orchards spawn and regrow their own trees (no boost, no seedlings); gathering foundations: Excavation (a vein, with an Ore Prospecting Map), Nursery (a Forest), Farmland (Field, Orchard, Herb Garden), Dock (Fishing's buildings), Wood and Stone keep supports; three phases, WORK CHANGED expected; then the content agent's pack with the rich event nodes | 850 F3 for R3's Dock | yes, after R3 |
+| 88 | [860 Gathering rework](860_gathering_rework.md) (owner review 2026-11-24): veins, trees and ripe Fields run out by chance, not a count; Forests and Orchards spawn and regrow their own trees (no boost, no seedlings); gathering foundations: Excavation (a vein, with an Ore Prospecting Map), Farmland (Field, Orchard, Herb Garden, Forest; no Nursery, owner 2026-11-25), Dock (Fishing's buildings), Wood and Stone keep supports; three phases, WORK CHANGED expected; then the content agent's pack with the rich event nodes | 850 F3 for R3's Dock | yes, after R3 |
 
 Order ruled by the owner 2026-10-07: UI phases that don't touch skills first,
 then class rework v2, then the hero bar/panel on the new skill list, then
@@ -115,7 +115,7 @@ so the owner can work the art over the weekend; Friday's remaining tweaks
 move to the next wave. Brief 80 (T0 to T4) was built alongside, 2026-10-15. The refinement-pass briefs (100–170) run after terrain and before the
 Envelope, foundations first (owner, 2026-10-14); the Envelope measures the
 finished game. `T-` entries under Needs are wave 2 tickets that must be
-merged first. Collectors (`concept_collectors.md`) stays a draft for now.
+merged first. Collectors (`concept_collectors.md`) was cut 2026-11-25 (owner).
 Code phases on different files may run in parallel in worktrees (`CLAUDE.md`);
 a brief's read-only research may overlap another's build.
 

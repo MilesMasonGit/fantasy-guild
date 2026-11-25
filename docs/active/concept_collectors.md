@@ -1,4 +1,4 @@
-Status: draft (interview done 2026-10-13; owner holds approval until they have played the refinement-pass UI, 2026-10-14)
+Status: retired 2026-11-25 (owner: collectors are cut from the game; T-175 dropped)
 
 # Collectors: the Guild Hall and warehouses
 
