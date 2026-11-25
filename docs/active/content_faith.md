@@ -14,7 +14,7 @@ the ledger's.*
 2. **Blessings are effects no building gives**: each shrine does something of its own, not a
    stronger Speed or Yield. ⚠️ This amends the 21 Nov wording ("stronger than a support
    building's"): shrines are different in kind, not just stronger.
-3. **Offerings are a mix**: specialised items Faith makes (candles, incense, garlands) and ordinary
+3. **Offerings are made primarily by Crafting** (owner 2026-11-25), at its Workshop; there is no Altar, and Faith's work is tending shrines. They are a mix: specialised items (candles, incense, garlands) and ordinary
    goods ("A Nature shrine might need Wood and Ash", owner).
 4. **Blessings add up**: a Token in reach of two shrines gets both, and two of the same kind stack.
 
@@ -28,9 +28,9 @@ the ledger's.*
 | 60 | **Shrine of Wisdom** | Heroes **share XP**: each gets a part of the XP the others earn | Sage Incense, Parchment |
 | 80 | **Shrine of Echoes** | A finished cycle sometimes **repeats at once, for free** | Rose Garlands, Light Mote |
 
-## The Altar's recipes (Faith)
+## The offerings' recipes (Crafting)
 
-| Faith | Offering | Made from | Used by |
+| Level | Offering | Made from | Used by |
 |---|---|---|---|
 | 5 | Lavender Incense | Lavender (Alchemy's herb, Farming's Herb Garden) | Nature Shrine (lasts longer) |
 | 15 | Beeswax Candle | Beeswax Comb (Bees) | Shrine of Fortune |
@@ -38,7 +38,7 @@ the ledger's.*
 | 55 | Sage Incense | Sage | Shrine of Wisdom |
 | 75 | Rose Garland | Roses, String | Shrine of Echoes |
 
-*Planning agent's calls:* the levels sit just below the shrine that first asks for each offering;
+*Planning agent's calls:* the levels are Crafting levels for now, kept just below the Faith level of the shrine that first asks for each offering (the content agent fits them into Crafting's open levels);
 Lavender Incense, which the owner approved, has no shrine of its own, so it is the Nature Shrine's
 richer offering (no item without a job). Interlocks: Faith takes from Combat (wax, tallow, bones),
 Farming and Alchemy (herbs, roses), Tailor (String), Crafting (Charcoal, Parchment) and Enchanting

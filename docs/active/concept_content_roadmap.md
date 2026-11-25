@@ -161,7 +161,7 @@ measured.*
 - [Farming](content_farming.md): approved 2026-11-04; 38 unlocks, one per level.
 - [Alchemy](content_alchemy.md): approved 2026-11-04; 21 potions, eight herbs.
 - [Enemies](content_enemies.md): approved 2026-11-25; 24 new enemies (three camps and a boss per tier from Iron to Darkmetal) and a Chicken at Copper, by biome.
-- [Faith](content_faith.md): approved 2026-11-25; five shrines with blessings no building gives, five Altar offerings.
+- [Faith](content_faith.md): approved 2026-11-25; five shrines with blessings no building gives; five offerings made by Crafting.
 - [Summoning](content_summoning.md): approved 2026-11-25; five Summoned enemies, one per main tier, gathering only.
 - [Crime](content_crime.md): approved 2026-11-25; steal tables for 11 camps, the Hideout's variants.
 - [Science](content_science.md): approved 2026-11-25; five-rank mastery tracks for every gathering node.

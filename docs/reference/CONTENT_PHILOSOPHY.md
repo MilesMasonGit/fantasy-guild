@@ -57,7 +57,7 @@ The levels follow the metals' amended ladder (copper 1, iron 20 and on, as in [S
 | Fletching | Bows, Crossbows, Arrows | Fletcher's Lodge |
 | Enchanting | Wands, Staves, Tomes; enchants jewellery and gear; special weapons | Enchanter's Tower |
 | Tailor | Stealth and Magic armour, Capes, String, fabrics, cloth for buildings | Tailor's Shop |
-| Crafting | Ranged armour, jewellery, cut gems, Planks, Parchment, Books, Rods, Traps, Bait, Charcoal | Workshop |
+| Crafting | Ranged armour, jewellery, cut gems, Planks, Parchment, Books, Rods, Traps, Charcoal, Faith's offerings (candles, incense, garlands; owner 2026-11-25) | Workshop |
 | Cooking | Food (heals in fights), drinks (work buffs only; never heal) | Kitchen |
 | Alchemy | Work potions, elixirs, poisons | Apothecary |
 | Construction | Every building and Token that's built, on a Foundation; building parts (owner 2026-11-21) | Builder's Yard |
