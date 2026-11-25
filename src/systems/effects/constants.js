@@ -114,6 +114,10 @@ export const EFFECT_TYPES = {
     // rare find; the cycle that fills the count gives the Token's rarest drop for certain (25: every
     // fourth cycle). The count is the Token's own, saved; narrowed to the Token's skill — Fortune.js.
     FORTUNE: 'FORTUNE',
+    // Valiant: a chance a hero brought to 0 HP in a fight it reaches flees instead of being Defeated:
+    // no defeat costs (their food and drink and their gear are kept), still carried home wounded.
+    // Read at the enemy they fight, with the hero's own scope — CycleSavings.fleesDefeat.
+    VALIANT: 'VALIANT',
 
     /**
      * A chance to yield an extra, **different** item on top of a Token's normal output.

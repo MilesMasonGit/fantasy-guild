@@ -494,6 +494,7 @@ function endText(record) {
     const time = elapsedText(record.endedAt - record.startedAt);
     if (record.outcome === OUTCOME.WON) return t('fight.panel.won', { enemy: record.enemyName, time });
     if (record.outcome === OUTCOME.LOST) return t('fight.panel.lost', { enemy: record.enemyName, time });
+    if (record.outcome === OUTCOME.FLED) return t('fight.panel.fled', { enemy: record.enemyName, time });
     return t('fight.panel.left', { time });
 }
 
@@ -588,10 +589,11 @@ export const MinimizeButton = ({ onClick, label = t('fight.window.minimize'), ..
     </button>
 );
 
-/** How the hero's last fight ended, for a window or tab between fights: Won, Lost, or nothing. */
+/** How the hero's last fight ended, for a window or tab between fights: Won, Lost, Fled, or nothing. */
 export function resultWord(outcome) {
     if (outcome === OUTCOME.WON) return { text: t('fight.window.won'), colour: 'var(--color-ui-green)' };
     if (outcome === OUTCOME.LOST) return { text: t('fight.window.lost'), colour: 'var(--color-ui-red)' };
+    if (outcome === OUTCOME.FLED) return { text: t('fight.window.fled'), colour: 'var(--color-ui-gold)' };
     return null;
 }
 

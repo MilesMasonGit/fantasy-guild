@@ -253,7 +253,10 @@ export const BOARD_EVENTS = {
      */
     RARE_DROP: 'board:rare_drop',
 
-    /** Combat on an enemy Token resolved. Payload: `{ instanceId, outcome: 'victory'|'defeat', heroId, typeId }` */
+    /**
+     * Combat on an enemy Token resolved. Payload: `{ instanceId, outcome: 'victory'|'defeat'|'fled',
+     * heroId, typeId }` (`fled`: brought down under Valiant, losing nothing).
+     */
     COMBAT_RESOLVED: 'board:combat_resolved',
 
     /**
@@ -322,7 +325,8 @@ export const BOARD_EVENTS = {
     COMBAT_ENGAGED: 'board:combat_engaged',
 
     /**
-     * A hero was defeated: `{ heroId, heroName, lost }` (`lost`: the names of the gear it cost).
+     * A hero was defeated: `{ heroId, heroName, lost, fled? }` (`lost`: the names of the gear it
+     * cost; `fled`: Valiant reached the fight, so they fled, losing nothing, and are wounded as ever).
      *
      * Published by `BoardCombat.resolveDefeat` instead of a direct call into `Flags`, which would
      * make a `BoardCombat ↔ Flags` import cycle. `Flags.init` subscribes and furls the hero's flag;

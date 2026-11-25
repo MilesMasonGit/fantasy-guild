@@ -108,6 +108,16 @@ export const BANNER_KINDS = Object.freeze({
             return { heroes: union(a.heroes, b.heroes), losses };
         }
     },
+    // Valiant: a hero brought down where a shrine's Valiant reached fled instead, losing nothing.
+    fled: {
+        tone: TONE.PROBLEM,
+        kept: true,
+        text: ({ heroes = [] }) => ({
+            title: t('bannerTitle.fled'),
+            line: `${nameList(heroes)} fled the fight and went home to heal. Nothing was lost.`
+        }),
+        merge: (a, b) => ({ heroes: union(a.heroes, b.heroes) })
+    },
     bankFull: {
         tone: TONE.PROBLEM,
         kept: true,

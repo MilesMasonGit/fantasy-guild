@@ -80,6 +80,17 @@ export function rollEcho(instanceId, skill) {
 }
 
 /**
+ * VALIANT (a shrine's blessing): whether `heroId`, brought to 0 HP fighting enemy Token `instanceId`,
+ * flees instead of being Defeated, keeping everything. A chance from every scope (a shrine reaching
+ * the enemy, the guild's stars, the hero's own perks and gear), rolled by {@link sureOrRolled}: sure
+ * at 100 (no draw), one draw below, none with no rule. Read by `BoardCombat.resolveDefeat` alone.
+ */
+export function fleesDefeat(instanceId, heroId) {
+    if (!instanceId) return false;
+    return sureOrRolled(TileModifiers.resolveAxis(instanceId, EFFECT_TYPES.VALIANT, 0, undefined, heroId || undefined));
+}
+
+/**
  * PRESERVATION on a cycle: the percent chance a cycle of `skill` at Token `instanceId` uses none of
  * its materials. Asked first and rolled later (`rollChance`): `BoardRunner.completeCycle` rolls it
  * only once it knows the cycle did not fail, and keeps its old order when nothing offers it.

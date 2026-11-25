@@ -140,12 +140,16 @@ export const ROUTES = [
     },
     {
         event: BOARD_EVENTS.HERO_DEFEATED, to: 'banner:knockout',
-        handle: ({ heroId, heroName, lost = [] } = {}) => Banners.push({
-            kind: 'knockout',
-            parts: { heroes: [heroName || heroOf(heroId)?.name || 'Your hero'], lost: Array.isArray(lost) ? lost : [] },
-            sprite: heroSprite(heroId),
-            subjects: heroId ? [{ type: 'hero', id: heroId }] : []
-        })
+        // A hero who fled under Valiant lost nothing: their own banner says Fled.
+        handle: ({ heroId, heroName, lost = [], fled = false } = {}) => {
+            const heroes = [heroName || heroOf(heroId)?.name || 'Your hero'];
+            Banners.push({
+                kind: fled ? 'fled' : 'knockout',
+                parts: fled ? { heroes } : { heroes, lost: Array.isArray(lost) ? lost : [] },
+                sprite: heroSprite(heroId),
+                subjects: heroId ? [{ type: 'hero', id: heroId }] : []
+            });
+        }
     },
     {
         event: ENGINE_EVENTS.BANK_FULL, to: 'banner:bankFull',
@@ -376,10 +380,12 @@ export function deliverCatchUpNews(news) {
         });
     }
     for (const row of news.knockouts || []) {
+        // A hero who only ever fled (Valiant) is told as Fled; one Defeated even once, as Defeated.
+        const fled = row.times > 0 && row.fled === row.times;
         Banners.push({
-            kind: 'knockout',
-            groupKey: `catch_up_knockouts:${batch}`,
-            parts: { heroes: [row.heroName], lost: row.lost || [] },
+            kind: fled ? 'fled' : 'knockout',
+            groupKey: `catch_up_${fled ? 'fled' : 'knockouts'}:${batch}`,
+            parts: fled ? { heroes: [row.heroName] } : { heroes: [row.heroName], lost: row.lost || [] },
             sprite: heroSprite(row.heroId),
             subjects: row.heroId ? [{ type: 'hero', id: row.heroId }] : []
         });
