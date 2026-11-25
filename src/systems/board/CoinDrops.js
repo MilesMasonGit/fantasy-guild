@@ -39,11 +39,23 @@ export function dropKillCoins(instanceId, def, skill) {
 }
 
 /**
- * The coins a theft at Hideout `hideoutId` takes when its steal table asks `coins`: raised by Coin
- * Find reaching the Hideout, as a kill's are by Coin Find reaching the enemy.
- *
- * ⚠️ The hook for a Hideout's coin steals: nothing calls it until a steal table can hold coins.
+ * The coins a theft at Hideout `hideoutId` takes when its steal table asks `coins`
+ * (`coinCosts.stealCoinsOf`): raised by Coin Find reaching the Hideout, as a kill's are by Coin
+ * Find reaching the enemy. Coin Find reaching only the camp raises nothing: a theft is made where
+ * the thief works.
  */
 export function stolenCoins(hideoutId, coins, skill) {
     return raised(hideoutId, coins, skill);
+}
+
+/**
+ * Land a theft's coins as a pile at the Hideout, as its stolen lines land: the line as a theft's
+ * word lists it, `{ itemId, quantity, coins: true }`, or null when the table takes none. Called once
+ * per theft that is not caught, and once more for its Echo.
+ */
+export function dropStolenCoins(hideoutId, steal, skill) {
+    const coins = stolenCoins(hideoutId, steal?.coins, skill);
+    if (coins <= 0) return null;
+    SpriteLayer.addSprite('item', COIN_ITEM_ID, coins, hideoutId);
+    return { itemId: COIN_ITEM_ID, quantity: coins, coins: true };
 }

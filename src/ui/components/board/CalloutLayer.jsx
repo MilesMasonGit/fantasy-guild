@@ -24,6 +24,7 @@ import { plateUnit, barPlace } from './matMarks.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { isDrawingPaused } from './frameClock.js';
 import { startTheftWatch } from './lastTheft.js';
+import { stolenWords } from './hideoutCard.js';
 import { coinsText } from '../base/coinsText.js';
 
 /** Clear air between the top of a Token's art and the bottom of its callout's tail, in mat units. */
@@ -154,7 +155,7 @@ export const CalloutLayer = memo(function CalloutLayer() {
                     say({ anchorId: p.instanceId, text: calloutText.caught(camp), tone: SPEECH_TONE.CANT });
                     return;
                 }
-                const items = (p.items || []).map(i => `${i.quantity} ${getItem(i.itemId)?.name || i.itemId}`);
+                const items = stolenWords(p.items, (id) => getItem(id)?.name || id);
                 say({ anchorId: p.instanceId, text: calloutText.stole(items, camp) });
             }, UI_LISTENER),
             // A Token that has just become another (built, grown, grown back, turned): its new name

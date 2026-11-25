@@ -1,12 +1,14 @@
-// Coin costs and coin drops: what a Shop Token asks in coins, what an enemy drops
+// Coin costs and coin drops: what a Shop Token asks in coins, what an enemy drops or a thief takes
 //
 // ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY (`cms/src/utils/constants.js`): the
-// Shop block's Coins field, the enemy's Coin drop field and the audit read it. Pure, with no imports.
+// Shop block's Coins field, the enemy's Coin drop field, the steal table's Coins and the audit read
+// it. Pure, with no imports.
 
 /**
  * A coin cost sits beside a price's items: `shop.coins` on a Token sold at the Shop (a Foundation
  * among them), and `prices[ring].coins` in the world tables (`worldTablesShape.js`). An enemy's
- * `enemy.coinDrop` is the coins one kill drops. Each is a whole number of coins; absent is 0.
+ * `enemy.coinDrop` is the coins one kill drops, and its steal table's `steal.coins` the coins one
+ * theft from its camp takes (`crime.js`). Each is a whole number of coins; absent is 0.
  */
 
 /**
@@ -38,6 +40,12 @@ export function enemyCoinDropOf(def) {
     return coinsOf(def.enemy.coinDrop);
 }
 
+/** The coins one theft from this enemy's camp takes, before any rule reaching the Hideout raises them. */
+export function stealCoinsOf(def) {
+    if (!def?.steal || typeof def.steal !== 'object' || Array.isArray(def.steal)) return 0;
+    return coinsOf(def.steal.coins);
+}
+
 /** Why a written coin amount is not read, or null when it is (or is absent). */
 export function coinAmountProblem(value, label) {
     if (value == null || coinValue(value) != null) return null;
@@ -45,7 +53,7 @@ export function coinAmountProblem(value, label) {
 }
 
 /**
- * Every Token whose Shop coins or enemy Coin drop is not read: `{ entityType: 'Token', entityId,
+ * Every Token whose Shop coins, enemy Coin drop or steal table's coins is not read: `{ entityType: 'Token', entityId,
  * entityName, message }`. For the boot audit and the CMS Economy Audit.
  */
 export function coinCostFindings({ tokens = {} } = {}) {
@@ -56,6 +64,9 @@ export function coinCostFindings({ tokens = {} } = {}) {
         if (shop) out.push({ ...where, message: shop });
         const drop = def?.enemy && typeof def.enemy === 'object' ? coinAmountProblem(def.enemy.coinDrop, 'Coin drop') : null;
         if (drop) out.push({ ...where, message: drop });
+        const steal = def?.steal && typeof def.steal === 'object' && !Array.isArray(def.steal)
+            ? coinAmountProblem(def.steal.coins, "steal table's coins") : null;
+        if (steal) out.push({ ...where, message: steal });
     }
     return out;
 }

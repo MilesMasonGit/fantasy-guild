@@ -216,13 +216,14 @@
           }
         },
         "steal": {
-          "description": "An enemy's steal table (src/config/registries/crime.js stealOf): what a thief at a Hideout takes from its camp each theft, beside its fight drops; the enemy stays. Rolled by src/systems/board/BoardRunner.js in place of a Hideout's outputs (src/systems/board/Hideouts.js). A boss's table is never rolled (bosses are never robbed). Written by cms/src/components/editors/StealTableBlock.jsx only while it holds a line or a rare find.",
+          "description": "An enemy's steal table (src/config/registries/crime.js stealOf): what a thief at a Hideout takes from its camp each theft, beside its fight drops; the enemy stays. Rolled by src/systems/board/BoardRunner.js in place of a Hideout's outputs (src/systems/board/Hideouts.js). A boss's table is never rolled (bosses are never robbed). Written by cms/src/components/editors/StealTableBlock.jsx only while it holds a line, a rare find or coins.",
           "type": "object",
           "properties": {
             "crimeLevel": { "type": "number", "minimum": 1, "description": "The camp's Crime level a thief's is measured against; missing, the enemy's level." },
             "xp": { "type": "number", "minimum": 0, "description": "A theft's Crime XP; missing, the Hideout's own config.xp. A caught thief gets none." },
             "outputs": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/output" }, "description": "Item lines, each rolled at its chance like a drop; a tokenId line is no line." },
-            "rareTable": { "type": "object", "description": "Rare finds, the shape of a Token's rareTable, rolled after the lines; a Lucky Hideout widens its chance." }
+            "rareTable": { "type": "object", "description": "Rare finds, the shape of a Token's rareTable, rolled after the lines; a Lucky Hideout widens its chance." },
+            "coins": { "type": "integer", "minimum": 0, "description": "The guild's coins a theft takes (src/config/registries/coinCosts.js stealCoinsOf), landed as a pile at the Hideout by src/systems/board/CoinDrops.js; Coin Find reaching the Hideout raises them, a caught thief takes none." }
           }
         },
         "hideout": {
