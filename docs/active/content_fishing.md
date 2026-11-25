@@ -160,7 +160,7 @@ catch that spends Bait always spends at least 1. The Fishing Net's effect goes.
 
 | Kind | Where | About every | Most | Moves on | Catch |
 |---|---|---|---|---|---|
-| Fishing Spot | any map | 6 min | 3 | 4 % a catch, 20 min unworked | the map's (above) |
+| Fishing Spot | any map | 3 min | 3 | 3 % a catch, 20 min unworked | the map's (above) |
 | Coral Reef | coast | 45 min | 1 | 8 % | Tropical Fish, rod |
 | Oyster Bed | coast, bog | 40 min | 1 | 8 % | Oyster, Trap with Bait |
 | Shark-Infested Waters | coast | 1 h | 1 | 8 % | Shark, harpoon |
@@ -168,14 +168,15 @@ catch that spends Bait always spends at least 1. The Fishing Net's effect goes.
 | Shipwreck | Planned | | | | waits for its goods (T-553) |
 
 **Buildings** (today's Foundations until the Dock): the **Bait Shed** (above) and the **Chum Station**
-(Construction 12; Oak Wood 15, Stone 10, Bait 20): spots arrive twice as often on water in its reach.
+(Construction 12; Oak Wood 15, Stone 10, Bait 20): spots arrive 30 % more often on water in its reach (the 30 % building target).
 The Fishing Hut loses its unread reach. The Coast, River, Lake, Bog Pool and Shrimp Coast Tokens go;
 the Starter Camp's Coast goes; the world's Waters line stays but places nothing.
 
+**Catch XP per fish** (2026-11-25): Raw Shrimp 2, Trout 6, Anchovy 15, Oyster 15, Tropical Fish 18, Salmon 25, Tuna 30, Lobster 35, Stingray 45, Sturgeon 55, Swordfish 70, Shark 110, Anglerfish 130, on the XP pass's tree and vein ladder.
+
 **Open**: the new fish's dishes (next Cooking review); Pearl at the Oyster Bed once Pearls have gear;
 Seaweed's rare by-catch at sea; the Shipwreck's goods; numbers for the balance tool once the gate
-runs. **For the director**: a spot's XP is per spot (2 a catch), not per fish, so a Shark teaches what
-a Trout does; the water kinds (sea, fresh) go unused, since the owner says there is only water.
+runs. The water kinds (sea, fresh) go unused, since the owner says there is only water (T-695).
 
 ## Amended 2026-11-21 (Systems Audit, T-622, T-623, T-604)
 

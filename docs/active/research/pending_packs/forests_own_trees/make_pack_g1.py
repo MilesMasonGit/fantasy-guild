@@ -1,7 +1,7 @@
 """Pack G1: Forests and Orchards own their trees (brief 860 R2, T-689, T-691's forest slice). Built on ws_now2.json."""
 import json, copy, os
 HERE = os.path.dirname(os.path.abspath(__file__))
-w = json.load(open(os.path.join(HERE, 'ws_now2.json'), encoding='utf-8'))['workspace']
+w = json.load(open(os.path.join(HERE, 'ws_now5.json'), encoding='utf-8'))['workspace']
 T, E = w['tokens'], w['effects']
 entries = []
 def add(op, kind, id_, value, note):
