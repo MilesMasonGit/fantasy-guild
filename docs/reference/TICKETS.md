@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-696**
+**Next free number: T-698**
 
 ---
 
@@ -175,6 +175,8 @@ here.
 | T-693 | P2 | open | *For: director.* **Regrowth runs ahead in 1000 ms steps**: a Stump born part-way through a tick starts growing up to one tick early, so from the second regrowth on 1000 ms steps run ahead of 100 ms steps (growMs 4000 against 2200 at 90 s). Hidden before by the seedling cost; `ForestryCatchUp` cut to 85 s with a warning until fixed. | 860 R2 builder 2026-11-24 |
 | T-694 | P2 | open | *For: director.* **The CMS pack gate spins forever on every pack** since 22 Nov (`changePackTool.mjs gate`; stamp and check fine); the combat pack was staged without it. Engineer on `fix/ledger-gate-hang`. | content agent 2026-11-24 |
 | T-695 | P4 | open | *For: director.* **The water kinds sea and fresh go unused**: after the Fishing pack every spot kind names both. Simplify the water kinds away or keep them for later content. | content agent 2026-11-24 |
+| T-696 | P3 | open | *For: director.* **CombatScreen's fight-layer bar tests fail under load**: the three tests that render MatBoard time out at 5 s (or find no bar host) while other suites run; all 29 pass alone with a longer timeout. Give that describe a longer timeout or a lighter mount. | director 2026-11-24 |
+| T-697 | P3 | open | *For: director.* **One ledger report takes 35 to 45 s on the real workspace** (`ledgerJobs.js` says about a third of a second): the level tracks (`bestXp`, `profileOf`, `rateOf`) take about three quarters of it, so a pack gate takes 1.5 to 3 minutes and the CMS ledger watch lags after each edit. | gate-hang engineer 2026-11-24 |
 
 ### Code review round 4 (triaged 2026-11-07)
 
