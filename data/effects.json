@@ -543,7 +543,6 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "nearby",
         "target": null,
         "when": null,
         "upkeep": null
@@ -568,7 +567,6 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "nearby",
         "target": null,
         "when": null,
         "upkeep": null
@@ -594,7 +592,6 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "nearby",
         "target": null,
         "when": null,
         "upkeep": null
@@ -632,13 +629,51 @@
     "name": "Ironskin",
     "statements": [
       {
-        "id": "stm_v5_ironskin_physical",
+        "id": "stm_v5_ironskin_physical_slash",
         "keyword": "provides",
         "payload": {
           "type": "TYPE_RESIST",
           "bucket": "flat",
           "value": 20,
-          "category": "physical"
+          "category": "slash"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      },
+      {
+        "id": "stm_v5_ironskin_physical_crush",
+        "keyword": "provides",
+        "payload": {
+          "type": "TYPE_RESIST",
+          "bucket": "flat",
+          "value": 20,
+          "category": "crush"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      },
+      {
+        "id": "stm_v5_ironskin_physical_stab",
+        "keyword": "provides",
+        "payload": {
+          "type": "TYPE_RESIST",
+          "bucket": "flat",
+          "value": 20,
+          "category": "stab"
         },
         "chargeDelta": 0,
         "to": {
@@ -672,7 +707,6 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "nearby",
         "target": {
           "role": "actor"
         },
@@ -704,7 +738,6 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "nearby",
         "target": {
           "role": "actor"
         },
@@ -1206,7 +1239,6 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "nearby",
         "target": null,
         "when": null,
         "upkeep": null
@@ -1259,7 +1291,6 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "nearby",
         "target": {
           "role": "actor"
         },
@@ -1317,7 +1348,6 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "nearby",
         "target": {
           "role": "actor"
         },
@@ -1375,7 +1405,6 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "nearby",
         "target": {
           "role": "actor"
         },
@@ -1433,7 +1462,6 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "nearby",
         "target": {
           "role": "actor"
         },
@@ -1491,7 +1519,6 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "nearby",
         "target": {
           "role": "actor"
         },
@@ -1548,7 +1575,6 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "nearby",
         "target": {
           "role": "actor"
         },
@@ -1657,7 +1683,6 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "nearby",
         "target": {
           "role": "actor"
         },
@@ -1787,36 +1812,6 @@
     "autoSyncId": true,
     "id": "effect_wolf_alpha_moves"
   },
-  "effect_goblin_chief_moves": {
-    "name": "Goblin Chief Moves",
-    "statements": [
-      {
-        "id": "stm_k1b_chief_heavy",
-        "keyword": "applies",
-        "payload": {
-          "effectId": "effect_heavy_strike",
-          "scale": 1,
-          "durationMs": 0,
-          "forSwing": true,
-          "chance": 100
-        },
-        "chargeDelta": 0,
-        "to": null,
-        "reach": null,
-        "target": {
-          "role": "opponent"
-        },
-        "when": {
-          "scope": "self",
-          "event": "FIGHT_SWING",
-          "every": 6
-        },
-        "upkeep": null
-      }
-    ],
-    "autoSyncId": true,
-    "id": "effect_goblin_chief_moves"
-  },
   "effect_water_elemental_moves": {
     "name": "Water Elemental Moves",
     "statements": [
@@ -1842,65 +1837,6 @@
     ],
     "autoSyncId": true,
     "id": "effect_water_elemental_moves"
-  },
-  "effect_greater_slime_moves": {
-    "name": "Greater Slime Moves",
-    "statements": [
-      {
-        "id": "stm_k1b_slime_acid",
-        "keyword": "applies",
-        "payload": {
-          "effectId": "effect_venom",
-          "scale": 1,
-          "durationMs": 0,
-          "chance": 100
-        },
-        "chargeDelta": 0,
-        "to": null,
-        "reach": null,
-        "target": {
-          "role": "actor"
-        },
-        "when": {
-          "scope": "self",
-          "event": "FIGHT_HIT",
-          "every": 3
-        },
-        "upkeep": null
-      }
-    ],
-    "autoSyncId": true,
-    "id": "effect_greater_slime_moves"
-  },
-  "effect_wind_elemental_moves": {
-    "name": "Wind Elemental Moves",
-    "statements": [
-      {
-        "id": "stm_k1b_wind_gust",
-        "keyword": "applies",
-        "payload": {
-          "effectId": "effect_heavy_strike",
-          "scale": 1,
-          "durationMs": 0,
-          "forSwing": true,
-          "chance": 100
-        },
-        "chargeDelta": 0,
-        "to": null,
-        "reach": null,
-        "target": {
-          "role": "opponent"
-        },
-        "when": {
-          "scope": "self",
-          "event": "FIGHT_SWING",
-          "every": 3
-        },
-        "upkeep": null
-      }
-    ],
-    "autoSyncId": true,
-    "id": "effect_wind_elemental_moves"
   },
   "effect_queen_bee_moves": {
     "name": "Queen Bee Moves",
@@ -1932,35 +1868,6 @@
     "autoSyncId": true,
     "id": "effect_queen_bee_moves"
   },
-  "effect_fire_elemental_chief_moves": {
-    "id": "effect_fire_elemental_chief_moves",
-    "name": "Fire Elemental Chief Moves",
-    "statements": [
-      {
-        "id": "stm_kf_fire_chief_burn",
-        "keyword": "applies",
-        "payload": {
-          "effectId": "effect_burn",
-          "scale": 1,
-          "durationMs": 0,
-          "chance": 100
-        },
-        "chargeDelta": 0,
-        "to": null,
-        "reach": null,
-        "target": {
-          "role": "actor"
-        },
-        "when": {
-          "scope": "self",
-          "event": "FIGHT_HIT",
-          "every": 3
-        },
-        "upkeep": null
-      }
-    ],
-    "autoSyncId": true
-  },
   "effect_steady_pick": {
     "name": "Steady Pick",
     "statements": [
@@ -1978,7 +1885,6 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "nearby",
         "target": null,
         "when": null,
         "upkeep": null
@@ -2004,7 +1910,6 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "nearby",
         "target": null,
         "when": null,
         "upkeep": null
@@ -2030,7 +1935,6 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "nearby",
         "target": null,
         "when": null,
         "upkeep": null
@@ -2056,7 +1960,6 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "nearby",
         "target": null,
         "when": null,
         "upkeep": null
@@ -2082,7 +1985,6 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "nearby",
         "target": null,
         "when": null,
         "upkeep": null
@@ -2108,7 +2010,6 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "nearby",
         "target": null,
         "when": null,
         "upkeep": null
@@ -2134,7 +2035,6 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "nearby",
         "target": null,
         "when": null,
         "upkeep": null
@@ -2160,7 +2060,6 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "nearby",
         "target": null,
         "when": null,
         "upkeep": null
@@ -2186,7 +2085,6 @@
           "mode": "all",
           "value": ""
         },
-        "reach": "nearby",
         "target": null,
         "when": null,
         "upkeep": null
@@ -2255,13 +2153,45 @@
     "autoSyncId": true,
     "statements": [
       {
-        "id": "stm_v5_flutter",
+        "id": "stm_v5_flutter_slash",
         "keyword": "provides",
         "payload": {
           "type": "TYPE_RESIST",
           "bucket": "flat",
           "value": 50,
-          "category": "physical"
+          "category": "slash"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      },
+      {
+        "id": "stm_v5_flutter_crush",
+        "keyword": "provides",
+        "payload": {
+          "type": "TYPE_RESIST",
+          "bucket": "flat",
+          "value": 50,
+          "category": "crush"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      },
+      {
+        "id": "stm_v5_flutter_stab",
+        "keyword": "provides",
+        "payload": {
+          "type": "TYPE_RESIST",
+          "bucket": "flat",
+          "value": 50,
+          "category": "stab"
         },
         "chargeDelta": 0,
         "to": null,
@@ -3885,13 +3815,51 @@
     "name": "Frostward",
     "statements": [
       {
-        "id": "stm_frostward",
+        "id": "stm_frostward_fire",
         "keyword": "provides",
         "payload": {
           "type": "TYPE_RESIST",
           "bucket": "flat",
-          "value": 10,
-          "category": "elemental"
+          "value": 5,
+          "category": "fire"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      },
+      {
+        "id": "stm_frostward_ice",
+        "keyword": "provides",
+        "payload": {
+          "type": "TYPE_RESIST",
+          "bucket": "flat",
+          "value": 5,
+          "category": "ice"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      },
+      {
+        "id": "stm_frostward_electric",
+        "keyword": "provides",
+        "payload": {
+          "type": "TYPE_RESIST",
+          "bucket": "flat",
+          "value": 5,
+          "category": "electric"
         },
         "chargeDelta": 0,
         "to": {
@@ -5389,5 +5357,53 @@
       }
     ],
     "autoSyncId": true
+  },
+  "effect_pickaxe_speed": {
+    "id": "effect_pickaxe_speed",
+    "name": "Pickaxe Speed",
+    "autoSyncId": true,
+    "statements": [
+      {
+        "id": "stm_pickaxe_speed",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.05
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ]
+  },
+  "effect_woodaxe_speed": {
+    "id": "effect_woodaxe_speed",
+    "name": "Woodaxe Speed",
+    "autoSyncId": true,
+    "statements": [
+      {
+        "id": "stm_woodaxe_speed",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.05
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ]
   }
 }
