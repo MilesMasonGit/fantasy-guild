@@ -933,7 +933,10 @@ The fight). **Poisons** ride there too (§6 The fight).
   **no cap**: gear numbers are kept
   small instead, and the content audit names any type a hero's best possible
   stack (best hat, chest, two trinkets, hands, every perk) takes to 100 % or
-  more. *(`gearDefence.js`, `gearDefenceRule.js`)*
+  more. The best gear stack tops out at **90 %** in any type (owner
+  2026-11-24: Darkmetal for Slash, Crush and Stab; Dragonscale with the two
+  Sapphire Amulets for Fire, Ice and Electric), leaving room for a fight's
+  own buffs such as Ironskin. *(`gearDefence.js`, `gearDefenceRule.js`)*
 - **Level requirement** (K1): **every weapon asks a level in its own style by
   its metal** (owner 2026-11-20, T-566): copper 1, iron 15, silver 30 and on up
   the tier table, all four styles (`levelRequired`: "Iron Sword: Melee 15"); armour, off-hand items and

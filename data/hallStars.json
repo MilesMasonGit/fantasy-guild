@@ -88,6 +88,30 @@
         "x": -1.86,
         "y": 0.12
       }
+    },
+    "hearth": {
+      "id": "hearth",
+      "name": "The Hearth",
+      "label": {
+        "x": 0,
+        "y": -0.8
+      }
+    },
+    "vault": {
+      "id": "vault",
+      "name": "The Vault",
+      "label": {
+        "x": -0.72,
+        "y": 0.3
+      }
+    },
+    "well": {
+      "id": "well",
+      "name": "The Well",
+      "label": {
+        "x": 0,
+        "y": 0.8
+      }
     }
   },
   "stars": {
@@ -3093,6 +3117,460 @@
             }
           ],
           "lines": []
+        }
+      ]
+    },
+    "roster_size": {
+      "id": "roster_size",
+      "constellation": "hearth",
+      "name": "Bunk Beds",
+      "description": "Expand guild sleeping quarters to recruit new heroes and increase roster capacity.",
+      "node": {
+        "x": 0,
+        "y": -0.5
+      },
+      "tag": "below",
+      "links": [
+        "hall"
+      ],
+      "outline": "t_bunk_bed",
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [],
+          "rules": [],
+          "lines": []
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 20
+            }
+          ],
+          "rules": [],
+          "lines": []
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 30
+            }
+          ],
+          "rules": [],
+          "lines": []
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 40
+            }
+          ],
+          "rules": [],
+          "lines": []
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 50
+            }
+          ],
+          "rules": [],
+          "lines": []
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 60
+            }
+          ],
+          "rules": [],
+          "lines": []
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 70
+            }
+          ],
+          "rules": [],
+          "lines": []
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 80
+            }
+          ],
+          "rules": [],
+          "lines": []
+        }
+      ]
+    },
+    "bank_tabs": {
+      "id": "bank_tabs",
+      "constellation": "vault",
+      "name": "Bank Tabs",
+      "description": "Unlock another Bank tab: more kinds of items in storage.",
+      "node": {
+        "x": -0.5,
+        "y": 0
+      },
+      "tag": "below",
+      "links": [
+        "hall"
+      ],
+      "outline": "i_key_gold",
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 10
+            }
+          ],
+          "rules": [],
+          "lines": []
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 20
+            }
+          ],
+          "rules": [],
+          "lines": []
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 30
+            }
+          ],
+          "rules": [],
+          "lines": []
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 40
+            }
+          ],
+          "rules": [],
+          "lines": []
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 50
+            }
+          ],
+          "rules": [],
+          "lines": []
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 60
+            }
+          ],
+          "rules": [],
+          "lines": []
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 70
+            }
+          ],
+          "rules": [],
+          "lines": []
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 80
+            }
+          ],
+          "rules": [],
+          "lines": []
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 90
+            }
+          ],
+          "rules": [],
+          "lines": []
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 100
+            }
+          ],
+          "rules": [],
+          "lines": []
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 110
+            }
+          ],
+          "rules": [],
+          "lines": []
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 120
+            }
+          ],
+          "rules": [],
+          "lines": []
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 130
+            }
+          ],
+          "rules": [],
+          "lines": []
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 140
+            }
+          ],
+          "rules": [],
+          "lines": []
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 150
+            }
+          ],
+          "rules": [],
+          "lines": []
+        }
+      ]
+    },
+    "wishing_well": {
+      "id": "wishing_well",
+      "constellation": "well",
+      "name": "Wishing Well",
+      "description": "The Guild Hall draws fresh Water as Passive Production every lap. No hero needed.",
+      "node": {
+        "x": 0,
+        "y": 0.5
+      },
+      "tag": "below",
+      "links": [
+        "hall"
+      ],
+      "outline": "i_water",
+      "ranks": [
+        {
+          "tier": 0,
+          "price": [],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_water",
+              "quantity": 10
+            }
+          ]
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 20
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_water",
+              "quantity": 20
+            }
+          ]
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 30
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_water",
+              "quantity": 30
+            }
+          ]
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 40
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_water",
+              "quantity": 40
+            }
+          ]
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 50
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_water",
+              "quantity": 50
+            }
+          ]
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 60
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_water",
+              "quantity": 60
+            }
+          ]
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 70
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_water",
+              "quantity": 70
+            }
+          ]
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 80
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_water",
+              "quantity": 80
+            }
+          ]
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 90
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_water",
+              "quantity": 90
+            }
+          ]
+        },
+        {
+          "tier": 0,
+          "price": [
+            {
+              "itemId": "item_oak_wood",
+              "quantity": 100
+            }
+          ],
+          "rules": [],
+          "lines": [
+            {
+              "itemId": "item_water",
+              "quantity": 100
+            }
+          ]
         }
       ]
     }

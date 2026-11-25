@@ -1,0 +1,3739 @@
+{
+  "format": "fantasy-guild-change-pack",
+  "version": 1,
+  "id": "2026-11-24-fishing-spots",
+  "createdAt": "2026-11-24T22:00:00Z",
+  "asked": "Fishing (brief 850, owner review 2026-11-24): fishing spots on the water, one Bait, three lures, harpoons, Bait recipes, the fixed waters retired. Sync together with the fishing code (the director merges it with this pack).",
+  "entries": [
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_raw_shrimp",
+      "note": "Raw Shrimp: Fishing 1, 6 s a catch, no Bait (the Trap's free start). Priced from token_fishing_spot.",
+      "value": {
+        "name": "Raw Shrimp",
+        "description": "",
+        "type": "material",
+        "sprite": "i_shrimp_raw",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": 1,
+        "autoSyncId": true,
+        "id": "item_raw_shrimp",
+        "valueSource": "token_fishing_spot",
+        "tags": [
+          "Seafood",
+          "Raw"
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 0
+        },
+        "fish": {
+          "level": 1,
+          "cycleMs": 6000,
+          "bait": 0
+        }
+      },
+      "fingerprint": "fp:04ebd8e847b67eae"
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_trout",
+      "note": "Trout: Fishing 5, 8 s a catch, 1 Bait a catch. Priced from token_fishing_spot.",
+      "value": {
+        "name": "Trout",
+        "description": "",
+        "type": "material",
+        "sprite": "i_trout_raw",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": 1,
+        "valueSource": "token_fishing_spot",
+        "autoSyncId": true,
+        "id": "item_trout",
+        "tags": [
+          "Fish",
+          "Seafood"
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 2
+        },
+        "fish": {
+          "level": 5,
+          "cycleMs": 8000,
+          "bait": 1
+        }
+      },
+      "fingerprint": "fp:3d3e1d97a8e5dde9"
+    },
+    {
+      "op": "create",
+      "kind": "item",
+      "id": "item_anchovy",
+      "note": "Anchovy: a rod fish at Fishing 25, 10 s a catch, 1 Bait. A neighbouring fish's picture stands in.",
+      "value": {
+        "name": "Anchovy",
+        "description": "",
+        "type": "material",
+        "sprite": "i_trout_raw",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": 1,
+        "valueSource": "token_fishing_spot",
+        "autoSyncId": true,
+        "id": "item_anchovy",
+        "tags": [
+          "Fish",
+          "Seafood"
+        ],
+        "fish": {
+          "level": 25,
+          "cycleMs": 10000,
+          "bait": 1
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "placeholderArt": true
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_tropical_fish",
+      "note": "Tropical Fish: Fishing 30, 11 s a catch, 2 Bait a catch. Priced from token_coral_reef.",
+      "value": {
+        "name": "Tropical Fish",
+        "description": "",
+        "type": "material",
+        "sprite": "i_tropical_fish_raw",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": 1,
+        "valueSource": "token_coral_reef",
+        "autoSyncId": true,
+        "id": "item_tropical_fish",
+        "tags": [
+          "Fish",
+          "Seafood"
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 0,
+          "note": "Tier inferred (ledger first fill, to confirm): the camp Coast catches it (rod, or trap with Worm Bait); the docs name only shrimp for the fishing spot."
+        },
+        "fish": {
+          "level": 30,
+          "cycleMs": 11000,
+          "bait": 2
+        }
+      },
+      "fingerprint": "fp:dc34374b7d2d2e39"
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_oyster",
+      "note": "Oyster: Fishing 25, 12 s a catch, 2 Bait a catch. Priced from token_oyster_bed.",
+      "value": {
+        "name": "Oyster",
+        "type": "material",
+        "plan": {
+          "status": "live",
+          "tier": 2
+        },
+        "autoSyncId": true,
+        "id": "item_oyster",
+        "fish": {
+          "level": 25,
+          "cycleMs": 12000,
+          "bait": 2
+        },
+        "valueSource": "token_oyster_bed",
+        "stackable": true,
+        "sprite": "i_shrimp_raw",
+        "equipSlot": "",
+        "value": 1,
+        "restoreAmount": 0,
+        "tags": [
+          "Fish",
+          "Seafood"
+        ]
+      },
+      "fingerprint": "fp:a14d942c0016eb62"
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_salmon",
+      "note": "Salmon: Fishing 40, 12 s a catch, 2 Bait a catch. Priced from token_fishing_spot.",
+      "value": {
+        "name": "Salmon",
+        "description": "",
+        "type": "material",
+        "sprite": "i_salmon_raw",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": 5,
+        "valueSource": "token_fishing_spot",
+        "autoSyncId": true,
+        "id": "item_salmon",
+        "tags": [
+          "Fish",
+          "Seafood"
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 0,
+          "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+        },
+        "fish": {
+          "level": 40,
+          "cycleMs": 12000,
+          "bait": 2
+        }
+      },
+      "fingerprint": "fp:bb0834fd565a92f7"
+    },
+    {
+      "op": "create",
+      "kind": "item",
+      "id": "item_tuna",
+      "note": "Tuna: a rod fish at Fishing 45, 13 s a catch, 2 Bait. A neighbouring fish's picture stands in.",
+      "value": {
+        "name": "Tuna",
+        "description": "",
+        "type": "material",
+        "sprite": "i_salmon_raw",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": 1,
+        "valueSource": "token_fishing_spot",
+        "autoSyncId": true,
+        "id": "item_tuna",
+        "tags": [
+          "Fish",
+          "Seafood"
+        ],
+        "fish": {
+          "level": 45,
+          "cycleMs": 13000,
+          "bait": 2
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "placeholderArt": true
+    },
+    {
+      "op": "create",
+      "kind": "item",
+      "id": "item_stingray",
+      "note": "Stingray: a harpoon fish at Fishing 54, 14 s a catch, 3 Bait. A neighbouring fish's picture stands in.",
+      "value": {
+        "name": "Stingray",
+        "description": "",
+        "type": "material",
+        "sprite": "i_swordfish",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": 1,
+        "valueSource": "token_fishing_spot",
+        "autoSyncId": true,
+        "id": "item_stingray",
+        "tags": [
+          "Fish",
+          "Seafood"
+        ],
+        "fish": {
+          "level": 54,
+          "cycleMs": 14000,
+          "bait": 3
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "placeholderArt": true
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_lobster",
+      "note": "Lobster: Fishing 50, 12 s a catch, 2 Bait a catch. Priced from token_fishing_spot.",
+      "value": {
+        "name": "Lobster",
+        "description": "",
+        "type": "material",
+        "sprite": "i_lobster_raw",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": null,
+        "valueSource": "token_fishing_spot",
+        "autoSyncId": true,
+        "id": "item_lobster",
+        "tags": [
+          "Seafood"
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 1,
+          "note": "Plane 1 (director 2026-11-02, with Cooked Lobster): its first catch is a chain (Worm, Worm Bait, then the trap) that held the Starter Camp at 44 min; the camp Coast still catches it."
+        },
+        "fish": {
+          "level": 50,
+          "cycleMs": 12000,
+          "bait": 2
+        }
+      },
+      "fingerprint": "fp:e6ff3cc9c632c9d7"
+    },
+    {
+      "op": "create",
+      "kind": "item",
+      "id": "item_sturgeon",
+      "note": "Sturgeon: a rod fish at Fishing 60, 15 s a catch, 3 Bait. A neighbouring fish's picture stands in.",
+      "value": {
+        "name": "Sturgeon",
+        "description": "",
+        "type": "material",
+        "sprite": "i_salmon_raw",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": 1,
+        "valueSource": "token_fishing_spot",
+        "autoSyncId": true,
+        "id": "item_sturgeon",
+        "tags": [
+          "Fish",
+          "Seafood"
+        ],
+        "fish": {
+          "level": 60,
+          "cycleMs": 15000,
+          "bait": 3
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "placeholderArt": true
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_swordfish",
+      "note": "Swordfish: Fishing 63, 16 s a catch, 4 Bait a catch. Priced from token_fishing_spot.",
+      "value": {
+        "name": "Swordfish",
+        "description": "",
+        "type": "material",
+        "sprite": "i_swordfish",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": 7,
+        "valueSource": "token_fishing_spot",
+        "autoSyncId": true,
+        "id": "item_swordfish",
+        "tags": [
+          "Fish",
+          "Seafood"
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 0,
+          "note": "Tier inferred (ledger first fill, to confirm): the camp Coast catches it (rod, or trap with Worm Bait); the docs name only shrimp for the fishing spot."
+        },
+        "fish": {
+          "level": 63,
+          "cycleMs": 16000,
+          "bait": 4
+        }
+      },
+      "fingerprint": "fp:b82fef79038a16fb"
+    },
+    {
+      "op": "create",
+      "kind": "item",
+      "id": "item_shark",
+      "note": "Shark: a harpoon fish at Fishing 83, 20 s a catch, 5 Bait. A neighbouring fish's picture stands in.",
+      "value": {
+        "name": "Shark",
+        "description": "",
+        "type": "material",
+        "sprite": "i_shark_raw",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": 1,
+        "valueSource": "token_shark_waters",
+        "autoSyncId": true,
+        "id": "item_shark",
+        "tags": [
+          "Fish",
+          "Seafood"
+        ],
+        "fish": {
+          "level": 83,
+          "cycleMs": 20000,
+          "bait": 5
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "placeholderArt": true
+    },
+    {
+      "op": "create",
+      "kind": "item",
+      "id": "item_anglerfish",
+      "note": "Anglerfish: a rod fish at Fishing 89, 18 s a catch, 5 Bait. A neighbouring fish's picture stands in.",
+      "value": {
+        "name": "Anglerfish",
+        "description": "",
+        "type": "material",
+        "sprite": "i_trout_raw",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "",
+        "value": 1,
+        "valueSource": "token_fishing_spot",
+        "autoSyncId": true,
+        "id": "item_anglerfish",
+        "tags": [
+          "Fish",
+          "Seafood"
+        ],
+        "fish": {
+          "level": 89,
+          "cycleMs": 18000,
+          "bait": 5
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "placeholderArt": true
+    },
+    {
+      "op": "create",
+      "kind": "item",
+      "id": "item_cooked_shark",
+      "note": "Cooked Shark: cooked from its fish at Cooking 83. A neighbouring picture stands in.",
+      "value": {
+        "name": "Cooked Shark",
+        "description": "",
+        "type": "food",
+        "sprite": "i_shark",
+        "stackable": true,
+        "restoreAmount": 28,
+        "equipSlot": "food",
+        "value": 1,
+        "valueSource": "recipe_cooked_shark",
+        "autoSyncId": true,
+        "id": "item_cooked_shark",
+        "tags": [
+          "Food",
+          "Fish",
+          "Cooked"
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "placeholderArt": true
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_cooked_shark",
+      "note": "Cooked Shark at Cooking 83, the level that catches its fish. XP on the Cooking curve, for the balance tool to confirm.",
+      "value": {
+        "id": "recipe_cooked_shark",
+        "name": "Cooked Shark",
+        "skill": "cooking",
+        "levelRequirement": 83,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_shark",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_cooked_shark",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 34845,
+        "stationChargeCost": 1,
+        "xp": 1350,
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      }
+    },
+    {
+      "op": "create",
+      "kind": "item",
+      "id": "item_bait",
+      "note": "Bait: the one Bait for all fishing (owner 2026-11-24), carried in a consumable cell; each fish says how much a catch spends.",
+      "value": {
+        "name": "Bait",
+        "description": "",
+        "type": "material",
+        "sprite": "i_fish_bait",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "consumable",
+        "value": 1,
+        "valueSource": "recipe_bait_from_raw_shrimp",
+        "autoSyncId": true,
+        "id": "item_bait",
+        "tags": [
+          "Bait"
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 0
+        }
+      }
+    },
+    {
+      "op": "delete",
+      "kind": "item",
+      "id": "item_worm_bait",
+      "note": "Worm Bait: replaced by the one Bait (owner 2026-11-24).",
+      "fingerprint": "fp:7d9fae1c1d75faea"
+    },
+    {
+      "op": "delete",
+      "kind": "item",
+      "id": "item_shrimp_bait",
+      "note": "Shrimp Bait: replaced by the one Bait (owner 2026-11-24).",
+      "fingerprint": "fp:f327ceefe8410861"
+    },
+    {
+      "op": "delete",
+      "kind": "item",
+      "id": "item_trout_bait",
+      "note": "Trout Bait: replaced by the one Bait (owner 2026-11-24).",
+      "fingerprint": "fp:2b4b3d2ad018c170"
+    },
+    {
+      "op": "delete",
+      "kind": "item",
+      "id": "item_salmon_bait",
+      "note": "Salmon Bait: replaced by the one Bait (owner 2026-11-24).",
+      "fingerprint": "fp:e9f341ffa4323ad5"
+    },
+    {
+      "op": "delete",
+      "kind": "item",
+      "id": "item_swordfish_chum",
+      "note": "Swordfish Chum: replaced by the one Bait (owner 2026-11-24).",
+      "fingerprint": "fp:74a8420fd1ebd205"
+    },
+    {
+      "op": "delete",
+      "kind": "recipe",
+      "id": "recipe_worm_bait",
+      "note": "Worm Bait: Bait is a Fishing recipe now (owner 2026-11-24).",
+      "fingerprint": "fp:406e4c181b640dc6"
+    },
+    {
+      "op": "delete",
+      "kind": "recipe",
+      "id": "recipe_shrimp_bait",
+      "note": "Shrimp Bait: Bait is a Fishing recipe now (owner 2026-11-24).",
+      "fingerprint": "fp:aead913d9c9f04a3"
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_bait_from_raw_shrimp",
+      "note": "Bait from Raw Shrimp: 3 Bait at the Bait Shed, Fishing 1 (\"if they can catch it, they can make it into bait\"; rarer fish give more). Little XP.",
+      "value": {
+        "id": "recipe_bait_from_raw_shrimp",
+        "name": "Bait from Raw Shrimp",
+        "skill": "fishing",
+        "levelRequirement": 1,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_raw_shrimp",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_bait",
+            "chance": 100,
+            "minQty": 3,
+            "maxQty": 3,
+            "baseQty": {
+              "min": 3,
+              "max": 3
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 4000,
+        "stationChargeCost": 1,
+        "xp": 1,
+        "sim": {
+          "tempo": "quick",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 1
+        }
+      }
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_bait_from_worm",
+      "note": "Bait from Worm: 2 Bait at the Bait Shed, Fishing 2 (\"if they can catch it, they can make it into bait\"; rarer fish give more). Little XP.",
+      "value": {
+        "id": "recipe_bait_from_worm",
+        "name": "Bait from Worm",
+        "skill": "fishing",
+        "levelRequirement": 2,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_worm",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_bait",
+            "chance": 100,
+            "minQty": 2,
+            "maxQty": 2,
+            "baseQty": {
+              "min": 2,
+              "max": 2
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 4000,
+        "stationChargeCost": 1,
+        "xp": 1,
+        "sim": {
+          "tempo": "quick",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 1
+        }
+      }
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_bait_from_trout",
+      "note": "Bait from Trout: 4 Bait at the Bait Shed, Fishing 5 (\"if they can catch it, they can make it into bait\"; rarer fish give more). Little XP.",
+      "value": {
+        "id": "recipe_bait_from_trout",
+        "name": "Bait from Trout",
+        "skill": "fishing",
+        "levelRequirement": 5,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_trout",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_bait",
+            "chance": 100,
+            "minQty": 4,
+            "maxQty": 4,
+            "baseQty": {
+              "min": 4,
+              "max": 4
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 4000,
+        "stationChargeCost": 1,
+        "xp": 1,
+        "sim": {
+          "tempo": "quick",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 1
+        }
+      }
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_bait_from_anchovy",
+      "note": "Bait from Anchovy: 4 Bait at the Bait Shed, Fishing 25 (\"if they can catch it, they can make it into bait\"; rarer fish give more). Little XP.",
+      "value": {
+        "id": "recipe_bait_from_anchovy",
+        "name": "Bait from Anchovy",
+        "skill": "fishing",
+        "levelRequirement": 25,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_anchovy",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_bait",
+            "chance": 100,
+            "minQty": 4,
+            "maxQty": 4,
+            "baseQty": {
+              "min": 4,
+              "max": 4
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 4000,
+        "stationChargeCost": 1,
+        "xp": 2,
+        "sim": {
+          "tempo": "quick",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      }
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_bait_from_tropical_fish",
+      "note": "Bait from Tropical Fish: 5 Bait at the Bait Shed, Fishing 30 (\"if they can catch it, they can make it into bait\"; rarer fish give more). Little XP.",
+      "value": {
+        "id": "recipe_bait_from_tropical_fish",
+        "name": "Bait from Tropical Fish",
+        "skill": "fishing",
+        "levelRequirement": 30,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_tropical_fish",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_bait",
+            "chance": 100,
+            "minQty": 5,
+            "maxQty": 5,
+            "baseQty": {
+              "min": 5,
+              "max": 5
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 4000,
+        "stationChargeCost": 1,
+        "xp": 3,
+        "sim": {
+          "tempo": "quick",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      }
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_bait_from_oyster",
+      "note": "Bait from Oyster: 5 Bait at the Bait Shed, Fishing 25 (\"if they can catch it, they can make it into bait\"; rarer fish give more). Little XP.",
+      "value": {
+        "id": "recipe_bait_from_oyster",
+        "name": "Bait from Oyster",
+        "skill": "fishing",
+        "levelRequirement": 25,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_oyster",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_bait",
+            "chance": 100,
+            "minQty": 5,
+            "maxQty": 5,
+            "baseQty": {
+              "min": 5,
+              "max": 5
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 4000,
+        "stationChargeCost": 1,
+        "xp": 2,
+        "sim": {
+          "tempo": "quick",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      }
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_bait_from_salmon",
+      "note": "Bait from Salmon: 6 Bait at the Bait Shed, Fishing 40 (\"if they can catch it, they can make it into bait\"; rarer fish give more). Little XP.",
+      "value": {
+        "id": "recipe_bait_from_salmon",
+        "name": "Bait from Salmon",
+        "skill": "fishing",
+        "levelRequirement": 40,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_salmon",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_bait",
+            "chance": 100,
+            "minQty": 6,
+            "maxQty": 6,
+            "baseQty": {
+              "min": 6,
+              "max": 6
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 4000,
+        "stationChargeCost": 1,
+        "xp": 4,
+        "sim": {
+          "tempo": "quick",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      }
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_bait_from_tuna",
+      "note": "Bait from Tuna: 6 Bait at the Bait Shed, Fishing 45 (\"if they can catch it, they can make it into bait\"; rarer fish give more). Little XP.",
+      "value": {
+        "id": "recipe_bait_from_tuna",
+        "name": "Bait from Tuna",
+        "skill": "fishing",
+        "levelRequirement": 45,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_tuna",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_bait",
+            "chance": 100,
+            "minQty": 6,
+            "maxQty": 6,
+            "baseQty": {
+              "min": 6,
+              "max": 6
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 4000,
+        "stationChargeCost": 1,
+        "xp": 4,
+        "sim": {
+          "tempo": "quick",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      }
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_bait_from_stingray",
+      "note": "Bait from Stingray: 8 Bait at the Bait Shed, Fishing 54 (\"if they can catch it, they can make it into bait\"; rarer fish give more). Little XP.",
+      "value": {
+        "id": "recipe_bait_from_stingray",
+        "name": "Bait from Stingray",
+        "skill": "fishing",
+        "levelRequirement": 54,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_stingray",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_bait",
+            "chance": 100,
+            "minQty": 8,
+            "maxQty": 8,
+            "baseQty": {
+              "min": 8,
+              "max": 8
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 4000,
+        "stationChargeCost": 1,
+        "xp": 5,
+        "sim": {
+          "tempo": "quick",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      }
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_bait_from_lobster",
+      "note": "Bait from Lobster: 6 Bait at the Bait Shed, Fishing 50 (\"if they can catch it, they can make it into bait\"; rarer fish give more). Little XP.",
+      "value": {
+        "id": "recipe_bait_from_lobster",
+        "name": "Bait from Lobster",
+        "skill": "fishing",
+        "levelRequirement": 50,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_lobster",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_bait",
+            "chance": 100,
+            "minQty": 6,
+            "maxQty": 6,
+            "baseQty": {
+              "min": 6,
+              "max": 6
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 4000,
+        "stationChargeCost": 1,
+        "xp": 5,
+        "sim": {
+          "tempo": "quick",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      }
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_bait_from_sturgeon",
+      "note": "Bait from Sturgeon: 8 Bait at the Bait Shed, Fishing 60 (\"if they can catch it, they can make it into bait\"; rarer fish give more). Little XP.",
+      "value": {
+        "id": "recipe_bait_from_sturgeon",
+        "name": "Bait from Sturgeon",
+        "skill": "fishing",
+        "levelRequirement": 60,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_sturgeon",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_bait",
+            "chance": 100,
+            "minQty": 8,
+            "maxQty": 8,
+            "baseQty": {
+              "min": 8,
+              "max": 8
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 4000,
+        "stationChargeCost": 1,
+        "xp": 6,
+        "sim": {
+          "tempo": "quick",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      }
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_bait_from_swordfish",
+      "note": "Bait from Swordfish: 10 Bait at the Bait Shed, Fishing 63 (\"if they can catch it, they can make it into bait\"; rarer fish give more). Little XP.",
+      "value": {
+        "id": "recipe_bait_from_swordfish",
+        "name": "Bait from Swordfish",
+        "skill": "fishing",
+        "levelRequirement": 63,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_swordfish",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_bait",
+            "chance": 100,
+            "minQty": 10,
+            "maxQty": 10,
+            "baseQty": {
+              "min": 10,
+              "max": 10
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 4000,
+        "stationChargeCost": 1,
+        "xp": 6,
+        "sim": {
+          "tempo": "quick",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      }
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_bait_from_shark",
+      "note": "Bait from Shark: 12 Bait at the Bait Shed, Fishing 83 (\"if they can catch it, they can make it into bait\"; rarer fish give more). Little XP.",
+      "value": {
+        "id": "recipe_bait_from_shark",
+        "name": "Bait from Shark",
+        "skill": "fishing",
+        "levelRequirement": 83,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_shark",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_bait",
+            "chance": 100,
+            "minQty": 12,
+            "maxQty": 12,
+            "baseQty": {
+              "min": 12,
+              "max": 12
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 4000,
+        "stationChargeCost": 1,
+        "xp": 8,
+        "sim": {
+          "tempo": "quick",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      }
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_bait_from_anglerfish",
+      "note": "Bait from Anglerfish: 12 Bait at the Bait Shed, Fishing 89 (\"if they can catch it, they can make it into bait\"; rarer fish give more). Little XP.",
+      "value": {
+        "id": "recipe_bait_from_anglerfish",
+        "name": "Bait from Anglerfish",
+        "skill": "fishing",
+        "levelRequirement": 89,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_anglerfish",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_bait",
+            "chance": 100,
+            "minQty": 12,
+            "maxQty": 12,
+            "baseQty": {
+              "min": 12,
+              "max": 12
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 4000,
+        "stationChargeCost": 1,
+        "xp": 8,
+        "sim": {
+          "tempo": "quick",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      }
+    },
+    {
+      "op": "create",
+      "kind": "item",
+      "id": "item_fly_lure",
+      "note": "Fly Lure: picks Trout or Salmon, whichever the map holds (one per map); 5% to break each catch. The bait picture stands in.",
+      "value": {
+        "name": "Fly Lure",
+        "description": "",
+        "type": "material",
+        "sprite": "i_fish_bait",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "consumable",
+        "value": 1,
+        "valueSource": "recipe_fly_lure",
+        "autoSyncId": true,
+        "id": "item_fly_lure",
+        "tags": [
+          "Lure"
+        ],
+        "lure": {
+          "fish": [
+            "item_trout",
+            "item_salmon"
+          ],
+          "breakChance": 5
+        },
+        "plan": {
+          "status": "live",
+          "tier": 1
+        }
+      },
+      "placeholderArt": true
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_fly_lure",
+      "note": "Fly Lure: 3 at Crafting 11, near the level of its first fish (a free Crafting level).",
+      "value": {
+        "id": "recipe_fly_lure",
+        "name": "Fly Lure",
+        "skill": "crafting",
+        "levelRequirement": 11,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_wool",
+            "quantity": 1
+          },
+          {
+            "itemId": "item_copper_nails",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_fly_lure",
+            "chance": 100,
+            "minQty": 3,
+            "maxQty": 3,
+            "baseQty": {
+              "min": 3,
+              "max": 3
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 15000,
+        "stationChargeCost": 1,
+        "xp": 11,
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 1
+        }
+      }
+    },
+    {
+      "op": "create",
+      "kind": "item",
+      "id": "item_spinner_lure",
+      "note": "Spinner Lure: picks Anchovy or Sturgeon, whichever the map holds (one per map); 5% to break each catch. The bait picture stands in.",
+      "value": {
+        "name": "Spinner Lure",
+        "description": "",
+        "type": "material",
+        "sprite": "i_fish_bait",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "consumable",
+        "value": 1,
+        "valueSource": "recipe_spinner_lure",
+        "autoSyncId": true,
+        "id": "item_spinner_lure",
+        "tags": [
+          "Lure"
+        ],
+        "lure": {
+          "fish": [
+            "item_anchovy",
+            "item_sturgeon"
+          ],
+          "breakChance": 5
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "placeholderArt": true
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_spinner_lure",
+      "note": "Spinner Lure: 3 at Crafting 30, near the level of its first fish (a free Crafting level).",
+      "value": {
+        "id": "recipe_spinner_lure",
+        "name": "Spinner Lure",
+        "skill": "crafting",
+        "levelRequirement": 30,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_iron_nails",
+            "quantity": 2
+          },
+          {
+            "itemId": "item_fir_plank",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_spinner_lure",
+            "chance": 100,
+            "minQty": 3,
+            "maxQty": 3,
+            "baseQty": {
+              "min": 3,
+              "max": 3
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 15000,
+        "stationChargeCost": 1,
+        "xp": 30,
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      }
+    },
+    {
+      "op": "create",
+      "kind": "item",
+      "id": "item_glow_lure",
+      "note": "Glow Lure: picks Tuna or Anglerfish, whichever the map holds (one per map); 5% to break each catch. The bait picture stands in.",
+      "value": {
+        "name": "Glow Lure",
+        "description": "",
+        "type": "material",
+        "sprite": "i_fish_bait",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "consumable",
+        "value": 1,
+        "valueSource": "recipe_glow_lure",
+        "autoSyncId": true,
+        "id": "item_glow_lure",
+        "tags": [
+          "Lure"
+        ],
+        "lure": {
+          "fish": [
+            "item_tuna",
+            "item_anglerfish"
+          ],
+          "breakChance": 5
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "placeholderArt": true
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_glow_lure",
+      "note": "Glow Lure: 3 at Crafting 38, near the level of its first fish (a free Crafting level).",
+      "value": {
+        "id": "recipe_glow_lure",
+        "name": "Glow Lure",
+        "skill": "crafting",
+        "levelRequirement": 38,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_beeswax_comb",
+            "quantity": 2
+          },
+          {
+            "itemId": "item_iron_nails",
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_glow_lure",
+            "chance": 100,
+            "minQty": 3,
+            "maxQty": 3,
+            "baseQty": {
+              "min": 3,
+              "max": 3
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 15000,
+        "stationChargeCost": 1,
+        "xp": 38,
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      }
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_fishing_rod",
+      "note": "Fishing Rod: saves 0 Bait a catch (a better rod spends less, owner 2026-11-24).",
+      "value": {
+        "name": "Fishing Rod",
+        "description": "",
+        "type": "tool",
+        "sprite": "i_rod_wood",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "hand",
+        "value": null,
+        "valueSource": null,
+        "autoSyncId": true,
+        "id": "item_fishing_rod",
+        "tool": {
+          "kind": "fishing_rod",
+          "tier": 1,
+          "starter": true,
+          "baitSaving": 0
+        },
+        "tags": [
+          "Tool",
+          "Fishing"
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 0,
+          "note": "Tier inferred (ledger first fill, to confirm): a starter tool every new game holds, so the Starter Camp's."
+        }
+      },
+      "fingerprint": "fp:de95a41283583a20"
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_fine_fishing_rod",
+      "note": "Fine Fishing Rod: saves 1 Bait a catch (a better rod spends less, owner 2026-11-24).",
+      "value": {
+        "name": "Fine Fishing Rod",
+        "description": "",
+        "type": "tool",
+        "sprite": "i_rod_wood",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "hand",
+        "value": null,
+        "valueSource": null,
+        "autoSyncId": true,
+        "tool": {
+          "kind": "fishing_rod",
+          "tier": 2,
+          "baitSaving": 1
+        },
+        "effects": [
+          {
+            "effectId": "effect_keen_line",
+            "scale": 1
+          }
+        ],
+        "id": "item_fine_fishing_rod",
+        "tags": [
+          "Tool",
+          "Fishing"
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 0,
+          "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+        }
+      },
+      "fingerprint": "fp:05c6bdd91aa58eeb"
+    },
+    {
+      "op": "edit",
+      "kind": "item",
+      "id": "item_master_rod",
+      "note": "Master Rod: saves 2 Bait a catch (a better rod spends less, owner 2026-11-24).",
+      "value": {
+        "name": "Master Rod",
+        "description": "",
+        "type": "tool",
+        "sprite": "i_rod_wood",
+        "stackable": true,
+        "restoreAmount": 0,
+        "equipSlot": "hand",
+        "value": 1214,
+        "valueSource": "recipe_master_rod",
+        "autoSyncId": true,
+        "tool": {
+          "kind": "fishing_rod",
+          "tier": 3,
+          "baitSaving": 2
+        },
+        "id": "item_master_rod",
+        "tags": [
+          "Tool",
+          "Fishing"
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "fingerprint": "fp:9d6143c485409a42"
+    },
+    {
+      "op": "create",
+      "kind": "item",
+      "id": "item_mythril_harpoon",
+      "note": "Mythril Harpoon: catches any harpoon fish (Stingray, Swordfish, Shark); tier 1, saves 0 Bait a catch. The rod picture stands in.",
+      "value": {
+        "name": "Mythril Harpoon",
+        "description": "",
+        "type": "tool",
+        "sprite": "i_rod_wood",
+        "stackable": false,
+        "restoreAmount": 0,
+        "equipSlot": "hand",
+        "value": 1,
+        "valueSource": "recipe_mythril_harpoon",
+        "autoSyncId": true,
+        "id": "item_mythril_harpoon",
+        "tags": [
+          "Tool"
+        ],
+        "tool": {
+          "kind": "harpoon",
+          "tier": 1,
+          "baitSaving": 0
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "placeholderArt": true
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_mythril_harpoon",
+      "note": "Mythril Harpoon at Smithing 54.",
+      "value": {
+        "id": "recipe_mythril_harpoon",
+        "name": "Mythril Harpoon",
+        "skill": "smithing",
+        "levelRequirement": 54,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_mythril_ingot",
+            "quantity": 3
+          },
+          {
+            "itemId": "item_maple_plank",
+            "quantity": 2
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_mythril_harpoon",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 28610,
+        "stationChargeCost": 1,
+        "xp": 64,
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      }
+    },
+    {
+      "op": "create",
+      "kind": "item",
+      "id": "item_adamantine_harpoon",
+      "note": "Adamantine Harpoon: catches any harpoon fish (Stingray, Swordfish, Shark); tier 2, saves 1 Bait a catch. The rod picture stands in.",
+      "value": {
+        "name": "Adamantine Harpoon",
+        "description": "",
+        "type": "tool",
+        "sprite": "i_rod_wood",
+        "stackable": false,
+        "restoreAmount": 0,
+        "equipSlot": "hand",
+        "value": 1,
+        "valueSource": "recipe_adamantine_harpoon",
+        "autoSyncId": true,
+        "id": "item_adamantine_harpoon",
+        "tags": [
+          "Tool"
+        ],
+        "tool": {
+          "kind": "harpoon",
+          "tier": 2,
+          "baitSaving": 1
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "placeholderArt": true
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_adamantine_harpoon",
+      "note": "Adamantine Harpoon at Smithing 63.",
+      "value": {
+        "id": "recipe_adamantine_harpoon",
+        "name": "Adamantine Harpoon",
+        "skill": "smithing",
+        "levelRequirement": 63,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_adamantine_ingot",
+            "quantity": 3
+          },
+          {
+            "itemId": "item_mahogany_plank",
+            "quantity": 2
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_adamantine_harpoon",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 30545,
+        "stationChargeCost": 1,
+        "xp": 73,
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      }
+    },
+    {
+      "op": "create",
+      "kind": "item",
+      "id": "item_darkmetal_harpoon",
+      "note": "Darkmetal Harpoon: catches any harpoon fish (Stingray, Swordfish, Shark); tier 3, saves 2 Bait a catch. The rod picture stands in.",
+      "value": {
+        "name": "Darkmetal Harpoon",
+        "description": "",
+        "type": "tool",
+        "sprite": "i_rod_wood",
+        "stackable": false,
+        "restoreAmount": 0,
+        "equipSlot": "hand",
+        "value": 1,
+        "valueSource": "recipe_darkmetal_harpoon",
+        "autoSyncId": true,
+        "id": "item_darkmetal_harpoon",
+        "tags": [
+          "Tool"
+        ],
+        "tool": {
+          "kind": "harpoon",
+          "tier": 3,
+          "baitSaving": 2
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "placeholderArt": true
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_darkmetal_harpoon",
+      "note": "Darkmetal Harpoon at Smithing 83.",
+      "value": {
+        "id": "recipe_darkmetal_harpoon",
+        "name": "Darkmetal Harpoon",
+        "skill": "smithing",
+        "levelRequirement": 83,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_darkmetal_ingot",
+            "quantity": 3
+          },
+          {
+            "itemId": "item_ebony_plank",
+            "quantity": 2
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_darkmetal_harpoon",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 34845,
+        "stationChargeCost": 1,
+        "xp": 93,
+        "sim": {
+          "tempo": "medium",
+          "purpose": "iph"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      }
+    },
+    {
+      "op": "delete",
+      "kind": "effect",
+      "id": "effect_fishing_net",
+      "note": "Fishing Net: the plan has Rod, Harpoon and Trap only; no item carries it (the director removes the kind after).",
+      "fingerprint": "fp:62132bf68fe1cd50"
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_fishing_spot",
+      "note": "Fishing Spot: drifts in on any water about every 6 minutes, at most 3 a map; 4% to move on each catch, 20 minutes unworked. Each map holds three rod fish (one per lure), one Trap catch and on two maps harpoon fish (owner 2026-11-24). The Fish Shoal picture stands in.",
+      "value": {
+        "tokenType": "resource",
+        "size": 1,
+        "requiresHero": true,
+        "acceptedTokens": [],
+        "staysPut": true,
+        "standsOn": [
+          "water"
+        ],
+        "name": "Fishing Spot",
+        "description": "Fish gather here for a while, then move on.",
+        "sprite": "t_fish_spot",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [
+          "Water",
+          "Fishing Spot"
+        ],
+        "uses": null,
+        "autoSyncId": true,
+        "id": "token_fishing_spot",
+        "config": {
+          "skill": "fishing",
+          "skillRequired": 1,
+          "cycleTimeMs": 8000,
+          "xp": 2,
+          "inputs": [],
+          "outputs": []
+        },
+        "sim": {
+          "tempo": "fast",
+          "purpose": "iph",
+          "xpPinned": true
+        },
+        "spot": {
+          "water": [
+            "sea",
+            "fresh"
+          ],
+          "biomes": [],
+          "everyMinutes": 6,
+          "most": 3,
+          "leaveChance": 4,
+          "unworkedMinutes": 20
+        },
+        "catchPools": [
+          {
+            "tool": "fishing_rod",
+            "bait": "item_bait",
+            "biomes": [
+              "meadow"
+            ],
+            "catches": [
+              {
+                "itemId": "item_trout",
+                "weight": 60
+              },
+              {
+                "itemId": "item_anchovy",
+                "weight": 50
+              },
+              {
+                "itemId": "item_tuna",
+                "weight": 35
+              }
+            ]
+          },
+          {
+            "tool": "fishing_trap",
+            "bait": null,
+            "biomes": [
+              "meadow"
+            ],
+            "catches": [
+              {
+                "itemId": "item_raw_shrimp",
+                "weight": 100
+              }
+            ]
+          },
+          {
+            "tool": "fishing_rod",
+            "bait": "item_bait",
+            "biomes": [
+              "forest"
+            ],
+            "catches": [
+              {
+                "itemId": "item_trout",
+                "weight": 60
+              },
+              {
+                "itemId": "item_sturgeon",
+                "weight": 25
+              },
+              {
+                "itemId": "item_tuna",
+                "weight": 35
+              }
+            ]
+          },
+          {
+            "tool": "fishing_trap",
+            "bait": null,
+            "biomes": [
+              "forest"
+            ],
+            "catches": [
+              {
+                "itemId": "item_raw_shrimp",
+                "weight": 100
+              }
+            ]
+          },
+          {
+            "tool": "fishing_rod",
+            "bait": "item_bait",
+            "biomes": [
+              "mountain"
+            ],
+            "catches": [
+              {
+                "itemId": "item_salmon",
+                "weight": 40
+              },
+              {
+                "itemId": "item_sturgeon",
+                "weight": 25
+              },
+              {
+                "itemId": "item_tuna",
+                "weight": 35
+              }
+            ]
+          },
+          {
+            "tool": "fishing_trap",
+            "bait": null,
+            "biomes": [
+              "mountain"
+            ],
+            "catches": [
+              {
+                "itemId": "item_raw_shrimp",
+                "weight": 100
+              }
+            ]
+          },
+          {
+            "tool": "fishing_rod",
+            "bait": "item_bait",
+            "biomes": [
+              "bog"
+            ],
+            "catches": [
+              {
+                "itemId": "item_trout",
+                "weight": 60
+              },
+              {
+                "itemId": "item_sturgeon",
+                "weight": 25
+              },
+              {
+                "itemId": "item_anglerfish",
+                "weight": 15
+              }
+            ]
+          },
+          {
+            "tool": "fishing_trap",
+            "bait": null,
+            "biomes": [
+              "bog"
+            ],
+            "catches": [
+              {
+                "itemId": "item_raw_shrimp",
+                "weight": 100
+              }
+            ]
+          },
+          {
+            "tool": "harpoon",
+            "bait": "item_bait",
+            "biomes": [
+              "bog"
+            ],
+            "catches": [
+              {
+                "itemId": "item_stingray",
+                "weight": 60
+              }
+            ]
+          },
+          {
+            "tool": "fishing_rod",
+            "bait": "item_bait",
+            "biomes": [
+              "coast"
+            ],
+            "catches": [
+              {
+                "itemId": "item_salmon",
+                "weight": 40
+              },
+              {
+                "itemId": "item_anchovy",
+                "weight": 50
+              },
+              {
+                "itemId": "item_anglerfish",
+                "weight": 15
+              }
+            ]
+          },
+          {
+            "tool": "fishing_trap",
+            "bait": "item_bait",
+            "biomes": [
+              "coast"
+            ],
+            "catches": [
+              {
+                "itemId": "item_lobster",
+                "weight": 100
+              }
+            ]
+          },
+          {
+            "tool": "harpoon",
+            "bait": "item_bait",
+            "biomes": [
+              "coast"
+            ],
+            "catches": [
+              {
+                "itemId": "item_stingray",
+                "weight": 60
+              },
+              {
+                "itemId": "item_swordfish",
+                "weight": 40
+              }
+            ]
+          },
+          {
+            "tool": "fishing_rod",
+            "bait": "item_bait",
+            "catches": [
+              {
+                "itemId": "item_trout",
+                "weight": 60
+              },
+              {
+                "itemId": "item_anchovy",
+                "weight": 50
+              },
+              {
+                "itemId": "item_tuna",
+                "weight": 35
+              }
+            ]
+          },
+          {
+            "tool": "fishing_trap",
+            "bait": null,
+            "catches": [
+              {
+                "itemId": "item_raw_shrimp",
+                "weight": 100
+              }
+            ]
+          }
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 0
+        }
+      },
+      "placeholderArt": true
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_fish_shoal",
+      "note": "Fish Shoal: a spot kind brought by its event only; the map's own fish with the rarer ones weighted up, harpoon fish anywhere, and it stays (1% to move on a catch). Its old fixed 4-fish output and 100 charges go (T-604).",
+      "value": {
+        "name": "Fish Shoal",
+        "description": "Needs a Fishing Rod in hand.",
+        "sprite": "t_fish_spot",
+        "tokenType": "resource",
+        "rarity": "rare",
+        "tier": 1,
+        "tags": [
+          "Event",
+          "Water"
+        ],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": true,
+        "config": {
+          "skill": "fishing",
+          "skillRequired": 1,
+          "cycleTimeMs": 8000,
+          "xp": 1,
+          "inputs": [],
+          "outputs": []
+        },
+        "autoSyncId": true,
+        "id": "token_fish_shoal",
+        "staysPut": true,
+        "standsOn": [
+          "water"
+        ],
+        "spot": {
+          "water": [
+            "sea",
+            "fresh"
+          ],
+          "biomes": [],
+          "everyMinutes": 0,
+          "most": 1,
+          "leaveChance": 1,
+          "unworkedMinutes": 30
+        },
+        "catchPools": [
+          {
+            "tool": "fishing_rod",
+            "bait": "item_bait",
+            "biomes": [
+              "meadow"
+            ],
+            "catches": [
+              {
+                "itemId": "item_trout",
+                "weight": 80
+              },
+              {
+                "itemId": "item_anchovy",
+                "weight": 70
+              },
+              {
+                "itemId": "item_tuna",
+                "weight": 55
+              }
+            ]
+          },
+          {
+            "tool": "fishing_trap",
+            "bait": null,
+            "biomes": [
+              "meadow"
+            ],
+            "catches": [
+              {
+                "itemId": "item_raw_shrimp",
+                "weight": 100
+              }
+            ]
+          },
+          {
+            "tool": "fishing_rod",
+            "bait": "item_bait",
+            "biomes": [
+              "forest"
+            ],
+            "catches": [
+              {
+                "itemId": "item_trout",
+                "weight": 80
+              },
+              {
+                "itemId": "item_sturgeon",
+                "weight": 45
+              },
+              {
+                "itemId": "item_tuna",
+                "weight": 55
+              }
+            ]
+          },
+          {
+            "tool": "fishing_trap",
+            "bait": null,
+            "biomes": [
+              "forest"
+            ],
+            "catches": [
+              {
+                "itemId": "item_raw_shrimp",
+                "weight": 100
+              }
+            ]
+          },
+          {
+            "tool": "fishing_rod",
+            "bait": "item_bait",
+            "biomes": [
+              "mountain"
+            ],
+            "catches": [
+              {
+                "itemId": "item_salmon",
+                "weight": 60
+              },
+              {
+                "itemId": "item_sturgeon",
+                "weight": 45
+              },
+              {
+                "itemId": "item_tuna",
+                "weight": 55
+              }
+            ]
+          },
+          {
+            "tool": "fishing_trap",
+            "bait": null,
+            "biomes": [
+              "mountain"
+            ],
+            "catches": [
+              {
+                "itemId": "item_raw_shrimp",
+                "weight": 100
+              }
+            ]
+          },
+          {
+            "tool": "fishing_rod",
+            "bait": "item_bait",
+            "biomes": [
+              "bog"
+            ],
+            "catches": [
+              {
+                "itemId": "item_trout",
+                "weight": 80
+              },
+              {
+                "itemId": "item_sturgeon",
+                "weight": 45
+              },
+              {
+                "itemId": "item_anglerfish",
+                "weight": 35
+              }
+            ]
+          },
+          {
+            "tool": "fishing_trap",
+            "bait": null,
+            "biomes": [
+              "bog"
+            ],
+            "catches": [
+              {
+                "itemId": "item_raw_shrimp",
+                "weight": 100
+              }
+            ]
+          },
+          {
+            "tool": "harpoon",
+            "bait": "item_bait",
+            "biomes": [
+              "bog"
+            ],
+            "catches": [
+              {
+                "itemId": "item_stingray",
+                "weight": 60
+              }
+            ]
+          },
+          {
+            "tool": "fishing_rod",
+            "bait": "item_bait",
+            "biomes": [
+              "coast"
+            ],
+            "catches": [
+              {
+                "itemId": "item_salmon",
+                "weight": 60
+              },
+              {
+                "itemId": "item_anchovy",
+                "weight": 70
+              },
+              {
+                "itemId": "item_anglerfish",
+                "weight": 35
+              }
+            ]
+          },
+          {
+            "tool": "fishing_trap",
+            "bait": "item_bait",
+            "biomes": [
+              "coast"
+            ],
+            "catches": [
+              {
+                "itemId": "item_lobster",
+                "weight": 100
+              }
+            ]
+          },
+          {
+            "tool": "harpoon",
+            "bait": "item_bait",
+            "biomes": [
+              "coast"
+            ],
+            "catches": [
+              {
+                "itemId": "item_stingray",
+                "weight": 60
+              },
+              {
+                "itemId": "item_swordfish",
+                "weight": 40
+              }
+            ]
+          },
+          {
+            "tool": "fishing_rod",
+            "bait": "item_bait",
+            "catches": [
+              {
+                "itemId": "item_trout",
+                "weight": 60
+              },
+              {
+                "itemId": "item_anchovy",
+                "weight": 50
+              },
+              {
+                "itemId": "item_tuna",
+                "weight": 35
+              }
+            ]
+          },
+          {
+            "tool": "fishing_trap",
+            "bait": null,
+            "catches": [
+              {
+                "itemId": "item_raw_shrimp",
+                "weight": 100
+              }
+            ]
+          },
+          {
+            "tool": "harpoon",
+            "bait": "item_bait",
+            "catches": [
+              {
+                "itemId": "item_stingray",
+                "weight": 60
+              },
+              {
+                "itemId": "item_swordfish",
+                "weight": 40
+              }
+            ]
+          }
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 0
+        }
+      },
+      "fingerprint": "fp:2bdb638fb93a5a85"
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_coral_reef",
+      "note": "Coral Reef: rare, warm sea only (coast maps), about every 45 minutes; its fixed catch is Tropical Fish by rod. 8% to move on a catch. The Fish Shoal picture stands in.",
+      "value": {
+        "tokenType": "resource",
+        "size": 1,
+        "requiresHero": true,
+        "acceptedTokens": [],
+        "staysPut": true,
+        "standsOn": [
+          "water"
+        ],
+        "name": "Coral Reef",
+        "description": "Tropical Fish swim only here.",
+        "sprite": "t_fish_spot",
+        "rarity": "rare",
+        "tier": 1,
+        "tags": [
+          "Water",
+          "Fishing Spot"
+        ],
+        "uses": null,
+        "autoSyncId": true,
+        "id": "token_coral_reef",
+        "config": {
+          "skill": "fishing",
+          "skillRequired": 1,
+          "cycleTimeMs": 8000,
+          "xp": 2,
+          "inputs": [],
+          "outputs": []
+        },
+        "sim": {
+          "tempo": "fast",
+          "purpose": "iph",
+          "xpPinned": true
+        },
+        "spot": {
+          "water": [
+            "sea",
+            "fresh"
+          ],
+          "biomes": [
+            "coast"
+          ],
+          "everyMinutes": 45,
+          "most": 1,
+          "leaveChance": 8,
+          "unworkedMinutes": 20
+        },
+        "catchPools": [
+          {
+            "tool": "fishing_rod",
+            "bait": "item_bait",
+            "catches": [
+              {
+                "itemId": "item_tropical_fish",
+                "weight": 100
+              }
+            ]
+          }
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "placeholderArt": true
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_oyster_bed",
+      "note": "Oyster Bed: rare, coast and bog maps, about every 40 minutes; Oyster by Trap with Bait. Pearl joins as a rare find once Pearls have their gear. 8% to move on a catch. The Fish Shoal picture stands in.",
+      "value": {
+        "tokenType": "resource",
+        "size": 1,
+        "requiresHero": true,
+        "acceptedTokens": [],
+        "staysPut": true,
+        "standsOn": [
+          "water"
+        ],
+        "name": "Oyster Bed",
+        "description": "Oysters cling to the rocks here.",
+        "sprite": "t_fish_spot",
+        "rarity": "rare",
+        "tier": 1,
+        "tags": [
+          "Water",
+          "Fishing Spot"
+        ],
+        "uses": null,
+        "autoSyncId": true,
+        "id": "token_oyster_bed",
+        "config": {
+          "skill": "fishing",
+          "skillRequired": 1,
+          "cycleTimeMs": 8000,
+          "xp": 2,
+          "inputs": [],
+          "outputs": []
+        },
+        "sim": {
+          "tempo": "fast",
+          "purpose": "iph",
+          "xpPinned": true
+        },
+        "spot": {
+          "water": [
+            "sea",
+            "fresh"
+          ],
+          "biomes": [
+            "coast",
+            "bog"
+          ],
+          "everyMinutes": 40,
+          "most": 1,
+          "leaveChance": 8,
+          "unworkedMinutes": 20
+        },
+        "catchPools": [
+          {
+            "tool": "fishing_trap",
+            "bait": "item_bait",
+            "catches": [
+              {
+                "itemId": "item_oyster",
+                "weight": 100
+              }
+            ]
+          }
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 2
+        }
+      },
+      "placeholderArt": true
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_shark_waters",
+      "note": "Shark-Infested Waters: rare, coast maps, about every hour; the Shark by any harpoon. 8% to move on a catch. The Fish Shoal picture stands in.",
+      "value": {
+        "tokenType": "resource",
+        "size": 1,
+        "requiresHero": true,
+        "acceptedTokens": [],
+        "staysPut": true,
+        "standsOn": [
+          "water"
+        ],
+        "name": "Shark-Infested Waters",
+        "description": "Fins circle in the water.",
+        "sprite": "t_fish_spot",
+        "rarity": "rare",
+        "tier": 1,
+        "tags": [
+          "Water",
+          "Fishing Spot"
+        ],
+        "uses": null,
+        "autoSyncId": true,
+        "id": "token_shark_waters",
+        "config": {
+          "skill": "fishing",
+          "skillRequired": 1,
+          "cycleTimeMs": 8000,
+          "xp": 2,
+          "inputs": [],
+          "outputs": []
+        },
+        "sim": {
+          "tempo": "fast",
+          "purpose": "iph",
+          "xpPinned": true
+        },
+        "spot": {
+          "water": [
+            "sea",
+            "fresh"
+          ],
+          "biomes": [
+            "coast"
+          ],
+          "everyMinutes": 60,
+          "most": 1,
+          "leaveChance": 8,
+          "unworkedMinutes": 20
+        },
+        "catchPools": [
+          {
+            "tool": "harpoon",
+            "bait": "item_bait",
+            "catches": [
+              {
+                "itemId": "item_shark",
+                "weight": 100
+              }
+            ]
+          }
+        ],
+        "plan": {
+          "status": "live",
+          "tier": 3
+        }
+      },
+      "placeholderArt": true
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_shipwreck",
+      "note": "Shipwreck: Planned, waits for its goods.",
+      "value": {
+        "name": "Shipwreck",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "A rare spot kind with the Shipwreck's goods as its fixed catch (owner 2026-11-24); waits for its goods (a Fishing rare table, T-553)."
+        },
+        "autoSyncId": true,
+        "id": "token_shipwreck"
+      }
+    },
+    {
+      "op": "delete",
+      "kind": "token",
+      "id": "token_coast",
+      "note": "Coast: water is ground now; fishing spots come and go on it (owner 2026-11-24).",
+      "fingerprint": "fp:779a91d98c78dfc3"
+    },
+    {
+      "op": "delete",
+      "kind": "token",
+      "id": "token_river",
+      "note": "River: water is ground now; fishing spots come and go on it (owner 2026-11-24).",
+      "fingerprint": "fp:d356e23c32a0406a"
+    },
+    {
+      "op": "delete",
+      "kind": "token",
+      "id": "token_lake",
+      "note": "Lake: water is ground now; fishing spots come and go on it (owner 2026-11-24).",
+      "fingerprint": "fp:42b6b2977e6aa3dd"
+    },
+    {
+      "op": "delete",
+      "kind": "token",
+      "id": "token_bog_pool",
+      "note": "Bog Pool: water is ground now; fishing spots come and go on it (owner 2026-11-24).",
+      "fingerprint": "fp:317245bcf429f6a2"
+    },
+    {
+      "op": "delete",
+      "kind": "token",
+      "id": "token_shrimp_coast",
+      "note": "Shrimp Coast: water is ground now; fishing spots come and go on it (owner 2026-11-24).",
+      "fingerprint": "fp:9f218c0641f4340c"
+    },
+    {
+      "op": "edit",
+      "kind": "starterCamp",
+      "id": "starterCamp",
+      "note": "Starter Camp: its Coast Token at (1460, 270) goes; spots arrive on the camp's pond.",
+      "value": {
+        "version": 1,
+        "savedAt": "2026-10-26T12:00:00.000Z",
+        "mat": {
+          "w": 1760,
+          "h": 1126
+        },
+        "hall": {
+          "x": 880,
+          "y": 563
+        },
+        "tokens": [
+          {
+            "typeId": "token_oak_forest",
+            "x": 379,
+            "y": 253
+          },
+          {
+            "typeId": "token_copper_mine",
+            "x": 1364,
+            "y": 740
+          },
+          {
+            "typeId": "token_oak_tree",
+            "x": 250,
+            "y": 190
+          },
+          {
+            "typeId": "token_oak_tree",
+            "x": 505,
+            "y": 195
+          },
+          {
+            "typeId": "token_oak_tree",
+            "x": 290,
+            "y": 375
+          },
+          {
+            "typeId": "token_oak_tree",
+            "x": 480,
+            "y": 360
+          },
+          {
+            "typeId": "token_copper_ore_vein",
+            "x": 1235,
+            "y": 670
+          },
+          {
+            "typeId": "token_copper_ore_vein",
+            "x": 1495,
+            "y": 670
+          },
+          {
+            "typeId": "token_coal_vein",
+            "x": 1250,
+            "y": 860
+          },
+          {
+            "typeId": "token_coal_vein",
+            "x": 1480,
+            "y": 860
+          },
+          {
+            "typeId": "token_stone_outcrop",
+            "x": 1365,
+            "y": 965
+          },
+          {
+            "typeId": "token_redberry_bush",
+            "x": 680,
+            "y": 230
+          },
+          {
+            "typeId": "token_wild_wheat_patch",
+            "x": 1120,
+            "y": 250
+          },
+          {
+            "typeId": "token_goblin_camp",
+            "x": 400,
+            "y": 890
+          },
+          {
+            "typeId": "token_scrap_heap",
+            "x": 660,
+            "y": 600
+          },
+          {
+            "typeId": "token_small_slime",
+            "x": 690,
+            "y": 800
+          }
+        ],
+        "bank": {
+          "item_oak_wood": 10,
+          "item_oak_seedling": 5,
+          "item_wheat_seed": 5,
+          "item_shrimp": 15
+        }
+      },
+      "fingerprint": "fp:1e8b76f7a60727ed"
+    },
+    {
+      "op": "edit",
+      "kind": "world",
+      "id": "world",
+      "note": "World: the Waters line keeps its place but places nothing (its Coast, River, Lake, Bog Pool and Shrimp Coast are retired); fish come from spots on each map's water, by its biome.",
+      "value": {
+        "version": 1,
+        "lines": [
+          {
+            "id": "ores",
+            "name": "Ores",
+            "skill": "mining",
+            "kits": {
+              "highland": 3,
+              "riverside": 1
+            },
+            "origins": {
+              "1": [
+                {
+                  "id": "token_copper_ore_vein",
+                  "weight": 3
+                },
+                {
+                  "id": "token_coal_vein",
+                  "weight": 2
+                },
+                {
+                  "id": "token_stone_outcrop",
+                  "weight": 2
+                },
+                {
+                  "id": "token_clay_deposit",
+                  "weight": 1
+                }
+              ],
+              "2": [
+                {
+                  "id": "token_iron_ore_vein",
+                  "weight": 3
+                },
+                {
+                  "id": "token_geode",
+                  "weight": 1
+                },
+                {
+                  "id": "token_quartz_deposit",
+                  "weight": 1
+                }
+              ],
+              "3": [
+                {
+                  "id": "token_silver_ore_vein",
+                  "weight": 2
+                },
+                {
+                  "id": "token_gold_ore_vein",
+                  "weight": 2
+                },
+                {
+                  "id": "token_mythril_ore_vein",
+                  "weight": 2
+                },
+                {
+                  "id": "token_adamantium_ore",
+                  "weight": 1
+                },
+                {
+                  "id": "token_darkmetal_ore_vein",
+                  "weight": 1
+                },
+                {
+                  "id": "token_fossil_bed",
+                  "weight": 1
+                },
+                {
+                  "id": "token_marble_vein",
+                  "weight": 1
+                },
+                {
+                  "id": "token_basalt_vein",
+                  "weight": 1
+                }
+              ]
+            }
+          },
+          {
+            "id": "trees",
+            "name": "Trees",
+            "skill": "forestry",
+            "kits": {
+              "woodland": 3,
+              "highland": 1
+            },
+            "origins": {
+              "1": [
+                {
+                  "id": "token_oak_tree",
+                  "weight": 1
+                }
+              ],
+              "2": [
+                {
+                  "id": "token_fir_tree",
+                  "weight": 2
+                }
+              ],
+              "3": [
+                {
+                  "id": "token_birch_tree",
+                  "weight": 2
+                },
+                {
+                  "id": "token_maple_tree",
+                  "weight": 2
+                },
+                {
+                  "id": "token_cedar_tree",
+                  "weight": 1
+                },
+                {
+                  "id": "token_mahogany_tree",
+                  "weight": 1
+                },
+                {
+                  "id": "token_ebony_tree",
+                  "weight": 1
+                },
+                {
+                  "id": "token_giant_mushroom",
+                  "weight": 1
+                }
+              ]
+            }
+          },
+          {
+            "id": "crops",
+            "name": "Crops",
+            "skill": "farming",
+            "kits": {
+              "plains": 3,
+              "woodland": 1
+            },
+            "origins": {
+              "1": [
+                {
+                  "id": "token_apple_tree",
+                  "weight": 2
+                },
+                {
+                  "id": "token_blackberry_bush",
+                  "weight": 1
+                },
+                {
+                  "id": "token_blueberry_bush",
+                  "weight": 1
+                },
+                {
+                  "id": "token_strawberry_bush",
+                  "weight": 1
+                },
+                {
+                  "id": "token_cherry_tree",
+                  "weight": 1
+                },
+                {
+                  "id": "token_peach_tree",
+                  "weight": 1
+                }
+              ],
+              "2": [
+                {
+                  "id": "token_grapevine",
+                  "weight": 2
+                },
+                {
+                  "id": "token_cherry_tree",
+                  "weight": 1
+                },
+                {
+                  "id": "token_strawberry_bush",
+                  "weight": 1
+                },
+                {
+                  "id": "token_peach_tree",
+                  "weight": 1
+                }
+              ],
+              "3": [
+                {
+                  "id": "token_raspberry_bush",
+                  "weight": 1
+                },
+                {
+                  "id": "token_pineapple_bush",
+                  "weight": 1
+                },
+                {
+                  "id": "token_lemon_tree",
+                  "weight": 1
+                },
+                {
+                  "id": "token_lime_tree",
+                  "weight": 1
+                },
+                {
+                  "id": "token_orange_tree",
+                  "weight": 1
+                },
+                {
+                  "id": "token_watermelon_patch",
+                  "weight": 1
+                },
+                {
+                  "id": "token_banana_tree",
+                  "weight": 1
+                },
+                {
+                  "id": "token_coconut_tree",
+                  "weight": 1
+                }
+              ]
+            }
+          },
+          {
+            "id": "herbs",
+            "name": "Herbs",
+            "skill": "alchemy",
+            "kits": {
+              "wetland": 3,
+              "plains": 1
+            },
+            "origins": {
+              "1": [
+                {
+                  "id": "token_wild_lavender",
+                  "weight": 1
+                }
+              ],
+              "2": [
+                {
+                  "id": "token_wild_lavender",
+                  "weight": 1
+                }
+              ],
+              "3": [
+                {
+                  "id": "token_wild_lavender",
+                  "weight": 1
+                }
+              ]
+            }
+          },
+          {
+            "id": "waters",
+            "name": "Waters",
+            "skill": "fishing",
+            "kits": {
+              "riverside": 3,
+              "wetland": 1
+            },
+            "origins": {
+              "1": [],
+              "2": [],
+              "3": []
+            }
+          },
+          {
+            "id": "arcane",
+            "name": "Arcane",
+            "skill": "magic",
+            "kits": {
+              "highland": 1,
+              "woodland": 1,
+              "plains": 1,
+              "wetland": 1,
+              "riverside": 1
+            },
+            "origins": {
+              "1": [
+                {
+                  "id": "token_wishing_well",
+                  "weight": 1
+                }
+              ],
+              "2": [
+                {
+                  "id": "token_wishing_well",
+                  "weight": 1
+                },
+                {
+                  "id": "token_quartz_deposit",
+                  "weight": 1
+                }
+              ],
+              "3": [
+                {
+                  "id": "token_quartz_deposit",
+                  "weight": 1
+                }
+              ]
+            }
+          }
+        ],
+        "neighbours": [
+          {
+            "a": "waters",
+            "b": "herbs",
+            "weight": 1
+          },
+          {
+            "a": "waters",
+            "b": "crops",
+            "weight": 1
+          }
+        ],
+        "neighbourStrength": 8,
+        "mainPerCell": 1,
+        "blendsPerNeighbour": 1,
+        "keys": {
+          "1": [],
+          "2": [
+            "token_iron_ore_vein",
+            "token_fir_tree"
+          ],
+          "3": []
+        },
+        "kits": [
+          {
+            "id": "highland",
+            "name": "Highland",
+            "biome": "mountain",
+            "stone": 5,
+            "work": {
+              "mining": 2,
+              "forestry": 1,
+              "farming": 0.5,
+              "fishing": 0.5,
+              "combat": 0.5
+            },
+            "camps": [
+              "token_goblin_camp",
+              "token_sheep_pasture"
+            ],
+            "bossCamps": [
+              "token_chief_tent",
+              "token_wind_stones"
+            ]
+          },
+          {
+            "id": "woodland",
+            "name": "Woodland",
+            "biome": "forest",
+            "stone": 2,
+            "work": {
+              "forestry": 2,
+              "mining": 1,
+              "farming": 0.5,
+              "fishing": 0.5,
+              "combat": 0.5
+            },
+            "camps": [
+              "token_wolf_den"
+            ],
+            "bossCamps": [
+              "token_alpha_den"
+            ]
+          },
+          {
+            "id": "plains",
+            "name": "Plains",
+            "biome": "meadow",
+            "stone": 1,
+            "work": {
+              "farming": 2,
+              "forestry": 1,
+              "mining": 0.5,
+              "fishing": 0.5,
+              "combat": 0.5
+            },
+            "camps": [
+              "token_wild_hive",
+              "token_cow_pasture"
+            ],
+            "bossCamps": [
+              "token_queens_hive"
+            ]
+          },
+          {
+            "id": "wetland",
+            "name": "Wetland",
+            "biome": "bog",
+            "stone": 1,
+            "work": {
+              "alchemy": 1,
+              "fishing": 1,
+              "farming": 1,
+              "forestry": 0.5,
+              "combat": 0.5
+            },
+            "camps": [
+              "token_thorn_thicket"
+            ],
+            "bossCamps": [
+              "token_slime_pit"
+            ]
+          },
+          {
+            "id": "riverside",
+            "name": "Riverside",
+            "biome": "coast",
+            "stone": 2,
+            "work": {
+              "fishing": 2,
+              "farming": 1,
+              "forestry": 0.5,
+              "mining": 0.5,
+              "combat": 0.5
+            },
+            "camps": [
+              "token_crab_rocks"
+            ],
+            "bossCamps": [
+              "token_tide_pool"
+            ]
+          }
+        ],
+        "camps": {
+          "1": [
+            "token_wolf_den",
+            "token_crab_rocks",
+            "token_wild_hive",
+            "token_cow_pasture",
+            "token_sheep_pasture",
+            "token_thorn_thicket",
+            {
+              "id": "token_alpha_den",
+              "kits": [
+                "woodland"
+              ]
+            },
+            {
+              "id": "token_chief_tent",
+              "kits": [
+                "highland"
+              ]
+            },
+            {
+              "id": "token_tide_pool",
+              "kits": [
+                "riverside"
+              ]
+            },
+            {
+              "id": "token_slime_pit",
+              "kits": [
+                "wetland"
+              ]
+            },
+            {
+              "id": "token_wind_stones",
+              "kits": [
+                "highland"
+              ]
+            },
+            {
+              "id": "token_queens_hive",
+              "kits": [
+                "plains"
+              ]
+            }
+          ],
+          "2": [
+            {
+              "id": "token_ember_vents",
+              "kits": [
+                "highland"
+              ]
+            },
+            {
+              "id": "token_sulphur_rocks",
+              "kits": [
+                "highland"
+              ]
+            },
+            {
+              "id": "token_frog_pond",
+              "kits": [
+                "wetland"
+              ]
+            },
+            {
+              "id": "token_smoking_crater",
+              "kits": [
+                "highland"
+              ]
+            },
+            {
+              "id": "token_basking_stone",
+              "kits": [
+                "plains"
+              ]
+            },
+            {
+              "id": "token_toxic_pool",
+              "kits": [
+                "wetland"
+              ]
+            }
+          ],
+          "3": []
+        },
+        "heroTokens": {
+          "mining": 5,
+          "forestry": 4,
+          "farming": 3,
+          "fishing": 2,
+          "alchemy": 3,
+          "combat": 1
+        },
+        "specialtyHeroes": 1,
+        "arrival": {
+          "1": {
+            "count": [
+              3,
+              4
+            ],
+            "enemies": [
+              {
+                "id": "token_goblin",
+                "weight": 3
+              },
+              {
+                "id": "token_wolf",
+                "weight": 2
+              },
+              {
+                "id": "token_crab",
+                "weight": 2
+              },
+              {
+                "id": "token_bee",
+                "weight": 1
+              },
+              {
+                "id": "token_thorn_elemental",
+                "weight": 1
+              },
+              {
+                "id": "token_cow",
+                "weight": 1
+              }
+            ],
+            "bossChance": 0,
+            "bosses": []
+          },
+          "2": {
+            "count": [
+              4,
+              5
+            ],
+            "enemies": [
+              {
+                "id": "token_wolf",
+                "weight": 2
+              },
+              {
+                "id": "token_bee",
+                "weight": 2
+              },
+              {
+                "id": "token_crab",
+                "weight": 1
+              },
+              {
+                "id": "token_frog",
+                "weight": 1
+              },
+              {
+                "id": "token_sulphur_lizard",
+                "weight": 1
+              }
+            ],
+            "bossChance": 0.3,
+            "bosses": [
+              {
+                "id": "token_wolf_alpha",
+                "weight": 1
+              },
+              {
+                "id": "token_greater_slime",
+                "weight": 1
+              },
+              {
+                "id": "token_water_elemental",
+                "weight": 1
+              },
+              {
+                "id": "token_wind_elemental",
+                "weight": 1
+              },
+              {
+                "id": "token_queen_bee",
+                "weight": 1
+              }
+            ]
+          },
+          "3": {
+            "count": [
+              5,
+              6
+            ],
+            "enemies": [
+              {
+                "id": "token_frog",
+                "weight": 2
+              },
+              {
+                "id": "token_sulphur_lizard",
+                "weight": 2
+              },
+              {
+                "id": "token_fire_elemental",
+                "weight": 2
+              },
+              {
+                "id": "token_bee",
+                "weight": 1
+              }
+            ],
+            "bossChance": 0.5,
+            "bosses": [
+              {
+                "id": "token_goblin_chief",
+                "weight": 1
+              },
+              {
+                "id": "token_toxic_frog",
+                "weight": 1
+              },
+              {
+                "id": "token_big_lizard",
+                "weight": 1
+              },
+              {
+                "id": "token_fire_elemental_chief",
+                "weight": 1
+              }
+            ]
+          }
+        },
+        "specialties": [
+          "mining",
+          "forestry",
+          "farming",
+          "fishing",
+          "alchemy",
+          "combat"
+        ],
+        "pityWindow": 4,
+        "extras": [
+          {
+            "id": "token_copper_chest",
+            "kind": "treasure",
+            "value": 6,
+            "rings": [
+              1,
+              2
+            ],
+            "max": 2
+          },
+          {
+            "id": "token_iron_chest",
+            "kind": "treasure",
+            "value": 12,
+            "rings": [
+              2,
+              3
+            ],
+            "max": 2
+          }
+        ],
+        "ringValue": {
+          "1": 6,
+          "2": 12,
+          "3": 12
+        },
+        "valueTolerance": 0.1,
+        "prices": {
+          "1": {
+            "items": [
+              {
+                "qty": 20
+              },
+              {
+                "qty": 10
+              }
+            ],
+            "skills": [
+              {
+                "skill": "line",
+                "level": 5
+              }
+            ]
+          },
+          "2": {
+            "items": [
+              {
+                "qty": 60
+              },
+              {
+                "qty": 30
+              },
+              {
+                "qty": 30,
+                "from": "hall"
+              }
+            ],
+            "skills": [
+              {
+                "skill": "line",
+                "level": 15
+              }
+            ]
+          },
+          "3": {
+            "items": [
+              {
+                "qty": 150
+              },
+              {
+                "qty": 75
+              },
+              {
+                "qty": 75,
+                "from": "hall"
+              }
+            ],
+            "skills": [
+              {
+                "skill": "line",
+                "level": 30
+              }
+            ]
+          }
+        },
+        "wild": {
+          "rings": 3,
+          "priceGrowth": 1.5,
+          "levelStep": 10,
+          "valueGrowth": 1.5,
+          "extremeShare": 0.5,
+          "compositionShare": 0.75,
+          "layouts": [
+            {
+              "id": "islands",
+              "weight": 1
+            },
+            {
+              "id": "chasm",
+              "weight": 1
+            },
+            {
+              "id": "mostly_water",
+              "weight": 1
+            },
+            {
+              "id": "cramped",
+              "weight": 1
+            }
+          ]
+        }
+      },
+      "fingerprint": "fp:c4c149f5d815441b"
+    },
+    {
+      "op": "edit",
+      "kind": "token",
+      "id": "token_fishing_hut",
+      "note": "Fishing Hut: its unread reach (280) goes; every camp works the one standard reach.",
+      "value": {
+        "name": "Fishing Hut",
+        "description": "A camp: heroes sent here work the Fishing Tokens within 240 u, one hero each.",
+        "sprite": "t_market_fish",
+        "tokenType": "camp",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "autoSyncId": true,
+        "camp": {
+          "skill": "fishing"
+        },
+        "id": "token_fishing_hut",
+        "plan": {
+          "status": "live",
+          "tier": 0,
+          "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
+        }
+      },
+      "fingerprint": "fp:9447136aa5a36070"
+    },
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_bait_shed_station",
+      "note": "Bait Shed: works as Fishing's station, for making Bait.",
+      "value": {
+        "id": "effect_bait_shed_station",
+        "name": "Bait Shed Station",
+        "statements": [
+          {
+            "id": "stm_bait_shed_station",
+            "keyword": "station",
+            "payload": {
+              "skill": "fishing"
+            },
+            "to": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true
+      }
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_bait_shed",
+      "note": "Bait Shed: where Bait is made from fish. On today's Foundations until the Dock is approved. The Fishing Hut picture stands in.",
+      "value": {
+        "name": "Bait Shed",
+        "description": "Works as a Fishing station: Bait Shed.",
+        "sprite": "t_market_fish",
+        "tokenType": "station",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": true,
+        "config": {
+          "skill": "fishing",
+          "skillRequired": 1,
+          "cycleTimeMs": 12000,
+          "xp": 0,
+          "inputs": [],
+          "outputs": []
+        },
+        "autoSyncId": true,
+        "effects": [
+          {
+            "effectId": "effect_bait_shed_station",
+            "scale": 1
+          }
+        ],
+        "id": "token_bait_shed",
+        "plan": {
+          "status": "live",
+          "tier": 0
+        }
+      },
+      "placeholderArt": true
+    },
+    {
+      "op": "create",
+      "kind": "token",
+      "id": "token_chum_station",
+      "note": "Chum Station: spots arrive twice as often on water in its reach (owner's Dock building, named here). On today's Foundations. The Fishing Hut picture stands in.",
+      "value": {
+        "tokenType": "buff",
+        "rarity": "common",
+        "tier": 1,
+        "tags": [],
+        "acceptedTokens": [],
+        "size": 1,
+        "uses": null,
+        "requiresHero": false,
+        "config": null,
+        "name": "Chum Station",
+        "description": "Fishing spots turn up twice as often on the water nearby.",
+        "sprite": "t_market_fish",
+        "autoSyncId": true,
+        "id": "token_chum_station",
+        "spotRate": {
+          "percent": 100
+        },
+        "plan": {
+          "status": "live",
+          "tier": 1
+        }
+      },
+      "placeholderArt": true
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_build_bait_shed",
+      "note": "Build Bait Shed: Construction 2, 10 Oak Wood, 5 Stone.",
+      "value": {
+        "id": "recipe_build_bait_shed",
+        "name": "Build Bait Shed",
+        "skill": "construction",
+        "levelRequirement": 2,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 10
+          },
+          {
+            "itemId": "item_stone",
+            "quantity": 5
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_bait_shed",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 60000,
+        "stationChargeCost": 1,
+        "xp": 30,
+        "foundationKinds": [
+          "wood"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 0
+        }
+      }
+    },
+    {
+      "op": "create",
+      "kind": "recipe",
+      "id": "recipe_build_chum_station",
+      "note": "Build Chum Station: Construction 12, 15 Oak Wood, 10 Stone, 20 Bait.",
+      "value": {
+        "id": "recipe_build_chum_station",
+        "name": "Build Chum Station",
+        "skill": "construction",
+        "levelRequirement": 12,
+        "requiresContext": [],
+        "inputs": [
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 15
+          },
+          {
+            "itemId": "item_stone",
+            "quantity": 10
+          },
+          {
+            "itemId": "item_bait",
+            "quantity": 20
+          }
+        ],
+        "outputs": [
+          {
+            "tokenId": "token_chum_station",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "durationMs": 60000,
+        "stationChargeCost": 1,
+        "xp": 30,
+        "foundationKinds": [
+          "wood"
+        ],
+        "sim": {
+          "tempo": "heavy"
+        },
+        "plan": {
+          "status": "live",
+          "tier": 1
+        }
+      }
+    }
+  ]
+}

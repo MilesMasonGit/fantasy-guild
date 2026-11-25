@@ -113,6 +113,70 @@ River and Lake's free Trap catch; Lobster is the Coast's Trap catch; Oyster the 
 (new, the owner's example) a Trap catch where a water has none, or cut if none is free. **Lures are Crafting recipes** (owner 2026-11-24), each at about its fish's
 level; Bait is made at the Dock's Bait Shed ([concept_gathering_foundations.md](concept_gathering_foundations.md) point 10). *Bait: point 25.*
 
+## The Fishing pack (content agent, 2026-11-24)
+
+*Pack `2026-11-24-fishing-spots` (72 entries), written on brief 850's code. The owner's answers the
+same day: **there is only water** (no sea or fresh); **each map holds 3 to 4 fish, never two for one
+lure**; a **Mythril Harpoon**; the **new fish are caught for Bait only** until the next Cooking review
+(Cooking has a planned dish at every level).*
+
+**Lures, in pairs across two bands** (one fish of each pair per map, so a lure always means one fish):
+
+| Lure | Crafting | Fish | Made with |
+|---|---|---|---|
+| Fly Lure | 11 | Trout (5) or Salmon (40) | Wool, Copper Nails |
+| Spinner Lure | 30 | Anchovy (25) or Sturgeon (60) | Iron Nails 2, Fir Plank |
+| Glow Lure | 38 | Tuna (45) or Anglerfish (89) | Beeswax Comb 2, Iron Nails |
+
+Three a craft, 5 % to break each catch. (The owner's example was a Feather Lure; there are no
+feathers yet, so the first is a Fly Lure tied from Wool.)
+
+**The maps** (a spot's fish by the Region's biome; anywhere else reads as meadow, the Starter Camp's):
+
+| Map | Rod (Fly, Spinner, Glow) | Trap | Harpoon |
+|---|---|---|---|
+| Meadow | Trout, Anchovy, Tuna | Raw Shrimp (free) | none |
+| Forest | Trout, Sturgeon, Tuna | Raw Shrimp (free) | none |
+| Mountain | Salmon, Sturgeon, Tuna | Raw Shrimp (free) | none |
+| Bog | Trout, Sturgeon, Anglerfish | Raw Shrimp (free) | Stingray |
+| Coast | Salmon, Anchovy, Anglerfish | Lobster | Stingray, Swordfish |
+
+**Fish** (level, seconds a catch, Bait a catch): Raw Shrimp 1, 6 s, none · Trout 5, 8 s, 1 · Anchovy
+25, 10 s, 1 · Oyster 25, 12 s, 2 · Tropical Fish 30, 11 s, 2 · Salmon 40, 12 s, 2 · Tuna 45, 13 s, 2 ·
+Lobster 50, 12 s, 2 · Stingray 54, 14 s, 3 · Sturgeon 60, 15 s, 3 · Swordfish 63, 16 s, 4 · Shark 83,
+20 s, 5 · Anglerfish 89, 18 s, 5. New: Anchovy, Tuna, Stingray, Sturgeon, Anglerfish (Bait and XP only
+for now) and the Shark, with **Cooked Shark** at Cooking 83 as planned.
+
+**Bait**: one item, carried. **Bait recipes are Fishing recipes at a Bait Shed** (a Fishing station,
+Construction 2), one per fish at its catch level, rarer fish giving more: Raw Shrimp 3, Worm 2 (Fishing
+2), Trout 4, Anchovy 4, Oyster 5, Tropical Fish 5, Salmon 6, Tuna 6, Lobster 6, Stingray 8, Sturgeon 8,
+Swordfish 10, Shark 12, Anglerfish 12. Worm Bait, Shrimp Bait and the three Planned baits go.
+
+**Tools**: Fishing Rod saves 0 Bait a catch, Fine Rod 1, Master Rod 2. **Harpoons** (Smithing):
+Mythril 54 (saves 0), Adamantine 63 (1), Darkmetal 83 (2); any harpoon catches any harpoon fish. A
+catch that spends Bait always spends at least 1. The Fishing Net's effect goes.
+
+**Spot kinds** (all on any water, outside the Token cap):
+
+| Kind | Where | About every | Most | Moves on | Catch |
+|---|---|---|---|---|---|
+| Fishing Spot | any map | 6 min | 3 | 4 % a catch, 20 min unworked | the map's (above) |
+| Coral Reef | coast | 45 min | 1 | 8 % | Tropical Fish, rod |
+| Oyster Bed | coast, bog | 40 min | 1 | 8 % | Oyster, Trap with Bait |
+| Shark-Infested Waters | coast | 1 h | 1 | 8 % | Shark, harpoon |
+| Fish Shoal | its event only | | 1 | 1 % | the map's fish, rarer ones weighted up, harpoon fish anywhere |
+| Shipwreck | Planned | | | | waits for its goods (T-553) |
+
+**Buildings** (today's Foundations until the Dock): the **Bait Shed** (above) and the **Chum Station**
+(Construction 12; Oak Wood 15, Stone 10, Bait 20): spots arrive twice as often on water in its reach.
+The Fishing Hut loses its unread reach. The Coast, River, Lake, Bog Pool and Shrimp Coast Tokens go;
+the Starter Camp's Coast goes; the world's Waters line stays but places nothing.
+
+**Open**: the new fish's dishes (next Cooking review); Pearl at the Oyster Bed once Pearls have gear;
+Seaweed's rare by-catch at sea; the Shipwreck's goods; numbers for the balance tool once the gate
+runs. **For the director**: a spot's XP is per spot (2 a catch), not per fish, so a Shark teaches what
+a Trout does; the water kinds (sea, fresh) go unused, since the owner says there is only water.
+
 ## Amended 2026-11-21 (Systems Audit, T-622, T-623, T-604)
 
 *Partly superseded 2026-11-24 (above): bait is one item, lures pick the fish, tiers never gate.*

@@ -359,7 +359,6 @@
       "id": "highland",
       "name": "Highland",
       "biome": "mountain",
-      "stone": 5,
       "work": {
         "mining": 2,
         "forestry": 1,
@@ -380,7 +379,6 @@
       "id": "woodland",
       "name": "Woodland",
       "biome": "forest",
-      "stone": 2,
       "work": {
         "forestry": 2,
         "mining": 1,
@@ -399,7 +397,6 @@
       "id": "plains",
       "name": "Plains",
       "biome": "meadow",
-      "stone": 1,
       "work": {
         "farming": 2,
         "forestry": 1,
@@ -419,7 +416,6 @@
       "id": "wetland",
       "name": "Wetland",
       "biome": "bog",
-      "stone": 1,
       "work": {
         "alchemy": 1,
         "fishing": 1,
@@ -438,7 +434,6 @@
       "id": "riverside",
       "name": "Riverside",
       "biome": "coast",
-      "stone": 2,
       "work": {
         "fishing": 2,
         "farming": 1,
@@ -798,5 +793,131 @@
         "weight": 1
       }
     ]
+  },
+  "biomes": {
+    "meadow": {
+      "water": [
+        "lake_river",
+        "lake_river",
+        "lake",
+        "river",
+        "split",
+        "spring"
+      ],
+      "sea": [
+        0,
+        0
+      ],
+      "stone": [
+        1,
+        1
+      ]
+    },
+    "flower_meadow": {
+      "water": [
+        "lake_river",
+        "lake_river",
+        "lake",
+        "river",
+        "split",
+        "spring"
+      ],
+      "sea": [
+        0,
+        0
+      ],
+      "stone": [
+        0,
+        0
+      ]
+    },
+    "forest": {
+      "water": [
+        "pond"
+      ],
+      "sea": [
+        0,
+        0
+      ],
+      "stone": [
+        2,
+        2
+      ]
+    },
+    "cherry_grove": {
+      "water": [
+        "pond"
+      ],
+      "sea": [
+        0,
+        0
+      ],
+      "stone": [
+        0,
+        0
+      ]
+    },
+    "mountain": {
+      "water": [
+        "tarn",
+        "mountain_river"
+      ],
+      "sea": [
+        0,
+        0
+      ],
+      "stone": [
+        5,
+        5
+      ]
+    },
+    "yellowstone": {
+      "water": [
+        "sulphur"
+      ],
+      "sea": [
+        0,
+        0
+      ],
+      "stone": [
+        0,
+        0
+      ]
+    },
+    "volcano": {
+      "water": [],
+      "sea": [
+        0,
+        0
+      ],
+      "stone": [
+        0,
+        0
+      ]
+    },
+    "coast": {
+      "water": [],
+      "sea": [
+        0.3,
+        0.3
+      ],
+      "stone": [
+        2,
+        2
+      ]
+    },
+    "bog": {
+      "water": [
+        "marsh"
+      ],
+      "sea": [
+        0,
+        0
+      ],
+      "stone": [
+        1,
+        1
+      ]
+    }
   }
 }

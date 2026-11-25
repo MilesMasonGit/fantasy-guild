@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-692**
+**Next free number: T-696**
 
 ---
 
@@ -171,6 +171,10 @@ here.
 | T-689 | P2 | open | *Brief 860 R2. For: director.* **Forests and Orchards spawn and regrow their own trees**: no regrowth boost, no seedling per Sapling; a demolished Forest's trees stay and never regrow; every map tree belongs to a wild Forest. | owner 2026-11-24 |
 | T-690 | P2 | open | *Brief 860 R3. For: director.* **Gathering foundations**: Excavation (stone, a vein with an Ore Prospecting Map), Nursery (a Forest), Farmland (grass: Field, Orchard, Herb Garden), Dock (shore: Fishing's buildings); Wood and Stone keep supports ([concept_gathering_foundations.md](../active/concept_gathering_foundations.md)). | owner 2026-11-24 |
 | T-691 | P2 | open | *Brief 860, after R3. For: content agent.* **The gathering pack**: end chances, Forest and Orchard tree counts, the four foundations' prices, an Ore Prospecting Map per ore (rare drops from mining it and other sources), moved build lists, and the rich event nodes (Geode, Fallen Star, Fossil Bed; Hollow Tree, Driftwood Logjam, Giant Mushroom, Bamboo Grove). | owner 2026-11-24 |
+| T-692 | P3 | open | *For: planning agent, then director.* **A catch's XP comes from the spot, not the fish**: every catch teaches the spot's `config.xp` (2), so a Shark teaches as much as a Trout. Per-fish XP would need a field on the item's Fish block (`fish.xp` or a rule from its level). Design call first. | content agent 2026-11-24 |
+| T-693 | P2 | open | *For: director.* **Regrowth runs ahead in 1000 ms steps**: a Stump born part-way through a tick starts growing up to one tick early, so from the second regrowth on 1000 ms steps run ahead of 100 ms steps (growMs 4000 against 2200 at 90 s). Hidden before by the seedling cost; `ForestryCatchUp` cut to 85 s with a warning until fixed. | 860 R2 builder 2026-11-24 |
+| T-694 | P2 | open | *For: director.* **The CMS pack gate spins forever on every pack** since 22 Nov (`changePackTool.mjs gate`; stamp and check fine); the combat pack was staged without it. Engineer on `fix/ledger-gate-hang`. | content agent 2026-11-24 |
+| T-695 | P4 | open | *For: director.* **The water kinds sea and fresh go unused**: after the Fishing pack every spot kind names both. Simplify the water kinds away or keep them for later content. | content agent 2026-11-24 |
 
 ### Code review round 4 (triaged 2026-11-07)
 
