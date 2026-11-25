@@ -62,6 +62,10 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 const VEIN = 'h1_vein';
 const OTHER_VEIN = 'h1_other_vein';
 const STUMP = 'h1_stump';
+const OWN_FOREST = 'h1_forest';
+const OWN_STUMP = 'h1_own_stump';
+const OWN_ORCHARD = 'h1_orchard';
+const OWN_FRUIT = 'h1_own_fruit';
 const CAMP = 'h1_camp';
 const OTHER_CAMP = 'h1_other_camp';
 const MINER = 'fixture_producer_alt';   // mining, 15 s, 5 XP
@@ -69,7 +73,8 @@ const FELLER = 'fixture_producer';      // forestry, 12 s, 4 XP
 
 registerTokenTypes({
     [VEIN]: {
-        id: VEIN, name: 'H1 Vein', tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: 2, sprite: 's_industry', tags: ['Ore'],
+        // Runs out by chance; a sure end, so its first cycle rests it.
+        id: VEIN, name: 'H1 Vein', tokenType: 'resource', rarity: 'common', theme: 'fixture', endChance: 100, sprite: 's_industry', tags: ['Ore'],
         respawn: { mode: 'refill', afterMs: 60000 },
         config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 3000, xp: 2, inputs: [], outputs: [{ itemId: 'fixture_copper_ore', quantity: 1, chance: 100 }] }
     },
@@ -81,6 +86,25 @@ registerTokenTypes({
     [STUMP]: {
         id: STUMP, name: 'H1 Stump', tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature', tags: ['Oak'],
         requiresHero: false, grows: { into: FELLER, afterMs: 100000 }
+    },
+    // A Forest's own Stump and an Orchard's own fruit tree: they come back only while their owner
+    // stands, at their authored time as the Grow Time reaching them shortens it.
+    [OWN_FOREST]: {
+        id: OWN_FOREST, name: 'H1 Forest', tokenType: 'spawner', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
+        requiresHero: false, spawner: { spawns: [{ typeId: OWN_STUMP, weight: 1 }], allowance: 0, intervalMs: 600000, upkeep: [] }
+    },
+    [OWN_STUMP]: {
+        id: OWN_STUMP, name: 'H1 Own Stump', tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature', tags: ['Oak'],
+        requiresHero: false, grows: { into: FELLER, afterMs: 100000, needsNearby: [OWN_FOREST] }
+    },
+    [OWN_ORCHARD]: {
+        id: OWN_ORCHARD, name: 'H1 Orchard', tokenType: 'spawner', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature',
+        requiresHero: false, spawner: { spawns: [{ typeId: OWN_FRUIT, weight: 1 }], allowance: 0, intervalMs: 600000, upkeep: [] }
+    },
+    [OWN_FRUIT]: {
+        id: OWN_FRUIT, name: 'H1 Own Fruit Tree', tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: 2, sprite: 's_nature', tags: ['Oak'],
+        respawn: { mode: 'refill', afterMs: 60000, needsNearby: [OWN_ORCHARD] },
+        config: { skill: 'farming', skillRequired: 1, cycleTimeMs: 3000, xp: 1, inputs: [], outputs: [] }
     },
     [CAMP]: {
         id: CAMP, name: 'H1 Camp', tokenType: 'station', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_industry',
@@ -307,11 +331,11 @@ describe('Token upgrades: aimed at a Token kind or a tag', () => {
         buy('m_yield');
         buy('m_rest');
         const vein = place({ x: 300, y: 300 }, VEIN, 'hero_1');
-        run(6000);                     // two cycles: out of charges
+        run(6000);                     // its first cycle: a sure end
         expect(BoardState.getTokenById(vein.id).usesRemaining).toBe(0);
         expect(Respawn.isResting(BoardState.getTokenById(vein.id))).toBe(true);
         for (let t = 0; t < 30000; t += 1000) TimedChanges.tick(1000);
-        expect(BoardState.getTokenById(vein.id).usesRemaining).toBe(2);
+        expect(BoardState.getTokenById(vein.id).usesRemaining).toBe(1);
     });
 
     it('regrows everything with the tag faster', () => {
@@ -319,6 +343,27 @@ describe('Token upgrades: aimed at a Token kind or a tag', () => {
         expect(TimedChanges.growMsOf(stump)).toBe(100000);
         buy('f_regrow');
         expect(TimedChanges.growMsOf(BoardState.getTokenById(stump.id))).toBe(50000);
+    });
+
+    it('⭐ Green Thumb regrows a Forest’s own Stump faster, and rests an Orchard’s own fruit tree shorter', () => {
+        const forest = place({ x: 300, y: 300 }, OWN_FOREST);
+        const stump = place({ x: 400, y: 300 }, OWN_STUMP);
+        BoardState.setTether(stump, forest.id);
+        const orchard = place({ x: 900, y: 300 }, OWN_ORCHARD);
+        const fruit = place({ x: 1000, y: 300 }, OWN_FRUIT);
+        BoardState.setTether(fruit, orchard.id);
+        expect(TimedChanges.growMsOf(stump)).toBe(100000);
+        expect(Respawn.restMsOf(fruit)).toBe(60000);
+
+        buy('f_regrow');
+        expect(TimedChanges.growMsOf(BoardState.getTokenById(stump.id))).toBe(50000);
+        expect(Respawn.restMsOf(BoardState.getTokenById(fruit.id))).toBe(30000);
+
+        // Its own Stump grows back in the shortened time.
+        for (let t = 0; t < 49000; t += 1000) TimedChanges.tick(1000);
+        expect(BoardState.tokensAtPoint(400, 300)[0]?.typeId).toBe(OWN_STUMP);
+        for (let t = 0; t < 2000; t += 1000) TimedChanges.tick(1000);
+        expect(BoardState.tokensAtPoint(400, 300)[0]?.typeId).toBe(FELLER);
     });
 
     it('a Camp Reach star (retired) widens no camp: every camp keeps the one standard reach', () => {

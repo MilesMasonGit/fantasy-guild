@@ -30,10 +30,11 @@ import { slotsOf, costSlots } from '../../cms/src/engine/ledger/statementSlots.j
 import { registerStatusFixtures, providesPct, providesFlat, BURN, VENOM } from './fixtures/statusEffects.js';
 
 /**
- * Boss moves as Rules effects (brief 220, C4): two new moments a fighter's own rules wait on, "On
- * Every Nth Swing" (and its sibling "On Hit") and "On Health Below X%" (once a fight), and the
- * first moves built from ordinary verbs: a heavy strike, a status attack, a heal or a Physical resistance, an
- * enrage. Any enemy can carry them; a hero's items can too.
+ * Rules on the fight moments: "On Swing" (and its sibling "On Hit") and "On Health Below X%" (once a
+ * fight), built from ordinary verbs: a heavy strike, a status attack, a heal or a Crush resistance, an
+ * enrage. Any enemy can carry them; a hero's items can too. An enemy's swing and hit rules fire on
+ * every one, whatever count they carry (its attacks are its moves, picked by weight); a hero's gear
+ * keeps its every-Nth count.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -46,8 +47,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 registerEffects({
     bm_heavy: { id: 'bm_heavy', name: 'Heavy Strike', statements: [providesPct('stm_bm_heavy', EFFECT_TYPES.DAMAGE, 1)] },
-    // Flat armour is gone with damage types: Stone Skin resists Physical (a fist is Crush) 40 %.
-    bm_stone_skin: { id: 'bm_stone_skin', name: 'Stone Skin', statements: [{ ...providesFlat('stm_bm_skin', EFFECT_TYPES.TYPE_RESIST, 40), payload: { type: EFFECT_TYPES.TYPE_RESIST, bucket: 'flat', value: 40, category: 'physical' } }] },
+    // Flat armour is gone with damage types: Stone Skin resists Crush (a fist) 40 %.
+    bm_stone_skin: { id: 'bm_stone_skin', name: 'Stone Skin', statements: [{ ...providesFlat('stm_bm_skin', EFFECT_TYPES.TYPE_RESIST, 40), payload: { type: EFFECT_TYPES.TYPE_RESIST, bucket: 'flat', value: 40, category: 'crush' } }] },
     bm_enrage: { id: 'bm_enrage', name: 'Enrage', statements: [providesPct('stm_bm_enrage', EFFECT_TYPES.SWING_TIME, -0.5)] }
 });
 
@@ -86,12 +87,20 @@ registerEffects({
     bm_fire_edge: {
         id: 'bm_fire_edge', name: 'Fire Edge',
         statements: [rule('stm_fire_edge', KEYWORD.APPLIES, { event: 'FIGHT_HIT' }, { role: ROLE.OPPONENT }, { effectId: BURN, chance: 100 })]
+    },
+    bm_third_edge: {
+        id: 'bm_third_edge', name: 'Third Edge',
+        statements: [rule('stm_third_edge', KEYWORD.APPLIES, { event: 'FIGHT_HIT', every: 3 }, { role: ROLE.OPPONENT }, { effectId: BURN, chance: 100 })]
     }
 });
 registerItems({
     bm_fire_sword: {
         id: 'bm_fire_sword', name: 'Fire Sword', type: 'weapon', equipSlot: 'hand', styles: ['melee'], damage: 2,
         effects: [{ effectId: 'bm_fire_edge', scale: 1 }]
+    },
+    bm_third_sword: {
+        id: 'bm_third_sword', name: 'Third Sword', type: 'weapon', equipSlot: 'hand', styles: ['melee'], damage: 2,
+        effects: [{ effectId: 'bm_third_edge', scale: 1 }]
     }
 });
 
@@ -149,11 +158,16 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-describe('On Every Nth Swing: a heavy strike', () => {
-    it('every 4th swing hits double, and only that swing', () => {
+describe('On Swing: a heavy strike', () => {
+    it('an enemy\'s swing rule fires on every swing: its "every 4th" count is ignored', () => {
         startFight('bm_heavy_boss');
         const seen = play(40000);
-        expect(seen.enemyHits.slice(0, 9)).toEqual([2, 2, 2, 4, 2, 2, 2, 4, 2]);
+        expect(seen.enemyHits.slice(0, 9)).toEqual([4, 4, 4, 4, 4, 4, 4, 4, 4]);
+    });
+
+    it('a plain enemy hits for its own hit', () => {
+        startFight('bm_dummy');
+        expect(play(20000).enemyHits.slice(0, 4)).toEqual([2, 2, 2, 2]);
     });
 
     it('"for the swing" comes off as the swing ends', () => {
@@ -164,12 +178,27 @@ describe('On Every Nth Swing: a heavy strike', () => {
 });
 
 describe('On Hit: a status attack', () => {
-    it('every 3rd landed hit burns the hero', () => {
+    it('an enemy\'s hit rule fires on every landed hit: its "every 3rd" count is ignored', () => {
         startFight('bm_burner');
         const seen = play(10500);
-        // Hits land at 3, 6 and 9 s of the fight: the third one burns.
+        // Hits land at 3, 6 and 9 s of the fight: each one burns.
         expect(seen.enemyHits.length).toBe(3);
-        expect(seen.applied).toEqual([`hero:${BURN}`]);
+        expect(seen.applied).toEqual([`hero:${BURN}`, `hero:${BURN}`, `hero:${BURN}`]);
+    });
+
+    it('a hero\'s weapon keeps its count: every 3rd landed hit burns the enemy, and only that one', () => {
+        const { hero } = startFight('bm_dummy');
+        InventoryManager.addItem('bm_third_sword', 1);
+        expect(EquipmentManager.equipItem(hero.id, 'bm_third_sword').success).toBe(true);
+        const landed = [];
+        const off = EventBus.subscribe(ENGINE_EVENTS.COMBAT_HERO_ATTACK, (p) => { if (p.hit) landed.push(p.damage); });
+        const burnsAt = [];
+        const offBurn = EventBus.subscribe(ENGINE_EVENTS.STATUS_APPLIED, (p) => { if (p.targetType === 'enemy') burnsAt.push(landed.length); });
+        play(30000);
+        off();
+        offBurn();
+        expect(landed.length).toBeGreaterThanOrEqual(6);
+        expect(burnsAt.slice(0, 2)).toEqual([3, 6]);
     });
 
     it('a hero\'s weapon can do the same to the enemy (a weapon\'s on-hit status)', () => {
@@ -182,8 +211,8 @@ describe('On Hit: a status attack', () => {
     });
 });
 
-describe('On Health Below X%: a heal, a Physical resistance and an enrage, once a fight', () => {
-    it('below half it heals itself 10 and resists Physical 40 %, once; below 30% it enrages, once', () => {
+describe('On Health Below X%: a heal, a Crush resistance and an enrage, once a fight', () => {
+    it('below half it heals itself 10 and resists Crush 40 %, once; below 30% it enrages, once', () => {
         startFight('bm_healer');
         const seen = play(60000);
         // The hero hits for 5 (1 + 4 for level 99). 40 → 15 crosses half: heal to 25, and 5 × 60 % = 3.
@@ -230,15 +259,16 @@ describe('a boss move that knocks the hero out', () => {
 
     it('never comes from a boss a status already finished: the kill comes before its next swing', () => {
         const { hero, enemy } = startFight('bm_crusher');
-        // Up to its first swing (the crush waits for the second).
+        // Into the fight, before its first swing (the crush comes with every one).
         let fight = null;
-        for (let t = 0; t < 20000 && !(fight?.combat?.moments?.swings?.enemy >= 1); t += 100) {
+        for (let t = 0; t < 20000 && !fight?.combat; t += 100) {
             BoardRunner.tick(100);
             fight = BoardCombat.getFight(enemy.id);
         }
+        expect(fight?.combat?.moments?.swings?.enemy || 0).toBe(0);
         LiveEffects.applyTo(BoardCombat.enemyBearerOfToken(enemy.id), { effectId: VENOM });
         fight.combat.enemyHp.current = 1;
-        fight.combat.enemyTickProgress = 2950;          // its second swing is due on the next board tick
+        fight.combat.enemyTickProgress = 2950;          // its first swing is due on the next board tick
         fight.combat.heroTickProcesses[hero.id] = 0;    // and the hero's is not
         LiveEffects.tick(3000, TriggerSystem.fireLiveStatement);
         const kills = [];
@@ -277,6 +307,16 @@ describe('the moves read as sentences, and edit as slots', () => {
         expect(costSlots(HEAL)).toEqual([]);
         const every = slotsOf(HEAVY, { effects: {} }).find(s => s.id === 'every');
         expect(every.patch(6).when.every).toBe(6);
+    });
+
+    it('an enemy\'s effect offers no count; one left over keeps its slot, saying it is ignored', () => {
+        const ids = (st) => slotsOf(st, { effects: {}, onToken: true, enemyHeld: true }).map(s => s.id);
+        const plain = { ...HEAVY, when: { event: 'FIGHT_SWING', scope: 'self' } };
+        expect(ids(plain)).not.toContain('every');
+        expect(ids({ ...BURN_ATTACK, when: { event: 'FIGHT_HIT', scope: 'self', every: 1 } })).not.toContain('every');
+        const stray = slotsOf(HEAVY, { effects: {}, onToken: true, enemyHeld: true }).find(s => s.id === 'every');
+        expect(stray.hint).toContain('ignored');
+        expect(stray.patch(1).when.every).toBe(1);
         const below = slotsOf(HEAL, { effects: {} }).find(s => s.id === 'belowPct');
         expect(below.patch(130).when.belowPct).toBe(99);
     });

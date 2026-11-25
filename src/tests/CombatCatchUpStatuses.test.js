@@ -30,9 +30,9 @@ import { enemyCampType } from './fixtures/enemyCamp.js';
 import { registerStatusFixtures, providesPct, providesFlat, VENOM, BURN } from './fixtures/statusEffects.js';
 
 /**
- * Statuses and boss moves during a catch-up (brief 220, C4): a Venomous enemy's Venom, a burning
- * attacker's Burn (with its half-healing food), and a boss using all four moves, against fed
- * heroes. Every random number comes from `Math.random` in a fixed order (a chance on a rule is the
+ * Statuses and boss moves during a catch-up: a venomous move's Venom, a burning attacker's Burn
+ * (with its half-healing food), and a boss using all four rules (its swing and hit rules on every
+ * one, whatever count they carry), against fed heroes. Every random number comes from `Math.random` in a fixed order (a chance on a rule is the
  * only draw these add), and the 3 s Rules tick runs on the loop's own clock, so time away ends
  * exactly where the same time played live ends. The harness is `CombatCatchUpGear.test.js`'s.
  */
@@ -62,7 +62,8 @@ registerEffects({
     cus_heavy_strike: { id: 'cus_heavy_strike', name: 'Heavy Strike', statements: [providesPct('stm_cus_heavy', EFFECT_TYPES.DAMAGE, 1)] },
     cus_stone_skin: { id: 'cus_stone_skin', name: 'Stone Skin', statements: [providesFlat('stm_cus_skin', EFFECT_TYPES.ARMOR, 2)] },
     cus_enrage: { id: 'cus_enrage', name: 'Enrage', statements: [providesPct('stm_cus_enrage', EFFECT_TYPES.SWING_TIME, -0.5)] },
-    // The boss's four moves, each a library effect so it announces itself by name.
+    // The boss's four rules, each in a library effect: one landing an effect is said by that effect's
+    // name (Heavy Strike), the heal by its holder's (Boss Mend).
     cus_move_heavy: { id: 'cus_move_heavy', name: 'Boss Heavy', statements: [
         rule('stm_cus_m_heavy', KEYWORD.APPLIES, { event: 'FIGHT_SWING', every: 4 }, ROLE.OPPONENT, { effectId: 'cus_heavy_strike', forSwing: true, chance: 100 })] },
     cus_move_burn: { id: 'cus_move_burn', name: 'Boss Burn', statements: [
@@ -88,7 +89,7 @@ const enemy = (id, name, enemyBlock, effects = []) => ({
 });
 
 registerTokenTypes({
-    cus_venom: enemy('cus_venom', 'Catch-up Venomous', { level: 12, kinds: ['venomous'] }),
+    cus_venom: enemy('cus_venom', 'Catch-up Venomous', { level: 12, moves: [{ name: 'Fang', damageType: 'stab', effectId: VENOM, target: 'hero' }] }),
     cus_burner: enemy('cus_burner', 'Catch-up Burner', { level: 12 }, [{ effectId: 'cus_burning_touch' }]),
     cus_boss: enemy('cus_boss', 'Catch-up Boss', { level: 15, hp: 60 }, [
         { effectId: 'cus_move_heavy' }, { effectId: 'cus_move_burn' }, { effectId: 'cus_move_mend' }, { effectId: 'cus_move_enrage' }
@@ -201,13 +202,13 @@ describe('poison, burn and boss moves during a catch-up', () => {
 
         expect(caughtUp).toEqual(plain);
 
-        // It all really ran: poison and burn landed and ticked, every boss move fired, and a
+        // It all really ran: poison and burn landed and ticked, every boss rule fired, and a
         // burning hero's meal healed less than a whole Shrimp.
         expect(plain.seen.kills).toBeGreaterThanOrEqual(3);
         expect(plain.seen.applied[VENOM]).toBeGreaterThan(0);
         expect(plain.seen.applied[BURN]).toBeGreaterThan(0);
         expect(plain.seen.ticks).toBeGreaterThan(0);
-        for (const move of ['Boss Heavy', 'Boss Burn', 'Boss Mend', 'Boss Enrage', 'Burning Touch']) {
+        for (const move of ['Heavy Strike', 'Burn', 'Boss Mend', 'Stone Skin', 'Enrage']) {
             expect(plain.seen.moves[move], move).toBeGreaterThan(0);
         }
         expect(plain.seen.meals).toContain(5);

@@ -10,7 +10,7 @@ import * as BoardCombat from './BoardCombat.js';
 import { countMatches } from './EffectActions.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 import { heroTypeResistance, enemyTypeResistance, typeFactor } from '../combat/CombatFormulas.js';
-import { VENOM_EFFECT_ID } from '../../config/registries/enemyKinds.js';
+import { STATUS_DAMAGE_TYPES } from '../../config/registries/damageTypes.js';
 import { roundByChance } from '../../utils/RNG.js';
 
 /**
@@ -34,9 +34,6 @@ import { roundByChance } from '../../utils/RNG.js';
  * (for `isEnemyToken`/`getFight`); that is not a cycle as long as `BoardCombat` does not import
  * back.
  */
-
-/** The damage type a status's ticks hurt in, by library effect id. A status not listed is untyped. */
-const STATUS_DAMAGE_TYPES = Object.freeze({ [VENOM_EFFECT_ID]: 'poison' });
 
 /** The entity a role points at, as something damage can be applied to. */
 function targetOf(role, roles, statement) {

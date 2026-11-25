@@ -308,7 +308,7 @@ function announceInputNeeded(instance, heroId) {
 }
 
 /** The skip reasons a hero says as "Needs {item}". */
-const NEEDS_ITEM = new Set([ALERT.INPUTS, ALERT.NO_BAIT, ALERT.GROW_NEEDS_ITEM]);
+const NEEDS_ITEM = new Set([ALERT.INPUTS, ALERT.NO_BAIT, ALERT.GROW_NEEDS_ITEM, ALERT.FISH_LEVEL]);
 
 /**
  * What a hero passed over `instance` for `reason` (one of {@link NEEDS_ITEM}) needs, as
@@ -318,8 +318,8 @@ const NEEDS_ITEM = new Set([ALERT.INPUTS, ALERT.NO_BAIT, ALERT.GROW_NEEDS_ITEM])
 function itemNeeded(instance, heroId, reason) {
     if (reason === ALERT.INPUTS) return WorkCheck.fixableReason(instance.id, instance, heroId).inputCheck?.missing?.[0] || null;
     if (reason === ALERT.NO_BAIT) {
-        const itemId = Fishing.baitNeededOf(getTokenType(instance.typeId), heroId);
-        return itemId ? { itemId, needed: 1, carried: true, left: true } : null;
+        const need = Fishing.baitNeedOf(getTokenType(instance.typeId), heroId, instance);
+        return need ? { itemId: need.itemId, needed: need.needed, carried: true, left: true } : null;
     }
     if (reason === ALERT.GROW_NEEDS_ITEM) {
         const seed = Fields.seedNeededOf(instance);
@@ -328,8 +328,17 @@ function itemNeeded(instance, heroId, reason) {
     return null;
 }
 
-/** Publish `INPUT_NEEDED` for what {@link itemNeeded} names. */
+/**
+ * Publish `INPUT_NEEDED` for what {@link itemNeeded} names; for a water whose fish are above the
+ * hero (`ALERT.FISH_LEVEL`), `CATCH_NEEDS_LEVEL` with the level they need.
+ */
 function announceItemNeeded(instance, heroId, reason) {
+    if (reason === ALERT.FISH_LEVEL) {
+        const def = getTokenType(instance.typeId);
+        const level = Fishing.levelNeededOf(def, heroId, instance);
+        if (level) EventBus.publish(BOARD_EVENTS.CATCH_NEEDS_LEVEL, { instanceId: instance.id, heroId, skill: def.config?.skill || null, level });
+        return;
+    }
     const missing = itemNeeded(instance, heroId, reason);
     if (!missing?.itemId) return;
     EventBus.publish(BOARD_EVENTS.INPUT_NEEDED, {
@@ -905,7 +914,7 @@ function lapseWhereStanding(heroId, pointFor) {
  * - `'fight'`: an enemy another hero is fighting (`claimed`). Every fight is one-on-one, so a hero
  * sent to that enemy (or to its camp) waits beside it and takes it the moment it is free.
  * - `'node'`: a Token resting until it respawns (`resting`) that the hero could work and that is
- * coming back by itself (`Respawn.isComingBack`: not a Bare tree with no Orchard in reach), or a
+ * coming back by itself (`Respawn.isComingBack`: not a Bare tree with no Orchard of its own), or a
  * Field whose crop grows (`growing`), or a shrine lit too full for another offering (`shrine_full`,
  * found again on the retry clock as it burns down): the skip reason is the Token's own, so the hero's skill,
  * level and tool have already passed. They wait silently and work it the moment it is back
@@ -946,8 +955,8 @@ export function waitingOf(heroId) {
 /**
  * What grows back into `heroId`'s work, as `{ instanceId, kind: 'node' }`, or null: a Stump or
  * Sapling (no work of its own) whose growth chain reaches a Token of a skill the hero holds, at a
- * level they have, with the tool in hand, and that is truly on its way (its Forest in reach, not
- * stopped for want of its seedling: `Growth.isGrowingBack`). A Token order waits only for its own
+ * level they have, with the tool in hand, and that is truly on its way (its own Forest standing,
+ * not stopped for want of a cost: `Growth.isGrowingBack`). A Token order waits only for its own
  * Token; a camp order for the nearest in the camp's reach, then the earlier-placed.
  *
  * ⚠️ Worked out when asked (the roster's words, the speech, the idle mark), never on the pass:
@@ -988,7 +997,7 @@ function growingFor(heroId) {
 /**
  * An order's own Token growing back into work the hero could do (the Stump or Sapling a felled tree
  * became, {@link followTransform}), as `{ instanceId, kind: 'node' }`, or null when it is not on its
- * way (no Forest in reach, or stopped for want of its seedling).
+ * way (its Forest gone, or stopped for want of a cost).
  */
 function pinnedGrowing(heroId, instance) {
     const toward = instance ? Growth.growsTowardWork(instance.typeId) : null;

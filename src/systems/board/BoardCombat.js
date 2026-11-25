@@ -4,6 +4,7 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { enemyProfileOf, isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { ModifierAggregator } from '../effects/ModifierAggregator.js';
+import { registerKinds } from '../effects/enemyKindEffects.js';
 import * as LiveEffects from '../effects/LiveEffects.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { processCombat } from '../combat/CombatProcessor.js';
@@ -30,7 +31,7 @@ import * as GameClock from '../core/GameClock.js';
  * hero is dropped onto an enemy Token.
  *
  * `CombatProcessor.processCombat(fight, trait, delta)` operates on a rich fight object
- * (`fight.combat`, `fight.status`, `fight.traits`). A Token instance is deliberately light (typeId,
+ * (`fight.combat`, `fight.status`). A Token instance is deliberately light (typeId,
  * charges, elapsed). Rather than fatten every Token to satisfy a signature, this keeps one
  * ephemeral combat object per fought enemy Token, in a runtime-only map keyed by the enemy's
  * instance id. At most a handful exist at once.
@@ -165,10 +166,9 @@ export function isEnemyToken(instance) {
 /**
  * The creature a Token *is*.
  *
- * Built fresh from the Token each call rather than cached. The stat block is
- * five multiplications off one authored number, it is only wanted once per
- * tick per fighting tile, and deriving it live means an enemy re-authored in
- * the CMS is correct on the next tick with nothing to invalidate.
+ * Built fresh from the Token each call rather than cached: it is cheap, wanted once per tick per
+ * fighting tile, and an enemy re-authored in the CMS is correct on the next tick with nothing to
+ * invalidate. Its kinds go on the fight's aggregator once, as the fight starts (`createFight`).
  */
 function enemyFor(instance) {
     return enemyProfileOf(getTokenType(instance?.typeId));
@@ -176,9 +176,8 @@ function enemyFor(instance) {
 
 /**
  * The card-shaped object the ported engine works on: only the fields `CombatProcessor`,
- * `CombatAttackProcessor` and `CombatResolutionProcessor` actually read. `traits` is present and
- * empty deliberately: `handleVictory` looks for a `unifiedreward` trait, and a Token's rewards come
- * from its outputs instead.
+ * `CombatAttackProcessor` and `CombatResolutionProcessor` actually read. A kill's loot comes from the
+ * Token's outputs (`LootSystem`).
  *
  * `enemy` is carried, not looked up: the fight holds the stat block built from the Token. Its drops
  * are not: `LootSystem` reads them off the Token at the kill.
@@ -189,6 +188,8 @@ function enemyFor(instance) {
 function createFight(instanceId, heroId, enemy) {
     const aggregator = new ModifierAggregator(`enemy_${instanceId}`);
     const effects = [];
+    // Its kinds, the traits it always carries, for the whole fight (`enemyKindEffects.js`).
+    registerKinds(aggregator, enemy.kindEffects);
 
     // Wired onto the stat block here as well as on every later tick, so that
     // `fight.enemy` is never the one profile in the game without them.
@@ -215,7 +216,6 @@ function createFight(instanceId, heroId, enemy) {
         aggregator,
         assignedHeroId: heroId,
         status: 'idle',
-        traits: [],
         combat: {
             enemyHp: { current: enemy.hp, max: enemy.hp },
             enemyTickProgress: 0,
@@ -237,7 +237,7 @@ const fightSource = (instanceId) => `fight:${instanceId}`;
  *
  * An enemy is a Token, and a Token's rules are named library effects. Its combat-axis `Provides`
  * are registered onto the hero's aggregator for as long as the fight lasts, so an enemy authored
- * with `Provides -25 Type Resistance % on Physical` makes its hero softer, using numbers
+ * with `Provides -25 Type Resistance % on Crush` makes its hero softer, using numbers
  * `CombatFormulas` already reads.
  * Registered per fight and removed with it, so the debuff cannot outlive the creature that imposed
  * it.

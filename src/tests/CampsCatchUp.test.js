@@ -42,7 +42,12 @@ withoutShippedPerks();
  *
  * Fights and refills, the same through the catch-up as in the plain loop's 1000 ms steps (the
  * combat catch-up's own standard): a hunter at an enemy camp whose goblins come one at a time, and
- * woodcutters waiting on trees that rest and refill.
+ * woodcutters waiting on trees that rest by chance and refill.
+ *
+ * ⚠️ A ripe Field finishes by chance, and within one 1000 ms step the cycles that end in it roll in
+ * the mat's order, not the order they ended in, so small and big steps would roll different numbers
+ * for it: the crop here authors a sure end (`endChance: 100`), one harvest a sowing, to keep the
+ * small and big steps comparable. The catch-up against 1000 ms steps rolls alike either way.
  */
 
 const NOW = 1_800_000_000_000;
@@ -68,7 +73,7 @@ registerRecipePools({
         id: CROP, name: 'CCU Wheat', levelRequirement: 1, durationMs: 1300, xp: 1, stationKinds: ['field'],
         inputs: [{ itemId: SEED, quantity: 1 }],
         outputs: [{ itemId: WHEAT, chance: 100, minQty: 1, maxQty: 1 }],
-        crop: { growMs: 6_570, load: 3 }
+        crop: { growMs: 6_570, endChance: 100 }
     }]
 });
 
@@ -85,7 +90,7 @@ registerTokenTypes({
     ccu_farmstead: camp('ccu_farmstead', 'CCU Farmstead', 'farming'),
     /** Used up in three cycles and gone. */
     ccu_tree: plain('ccu_tree', 'CCU Tree', { uses: 3, requiresHero: true, config: chop(2_300) }),
-    /** Rests when used up and refills where it stands. */
+    /** Rests by chance (one in three) and refills where it stands. */
     ccu_resting_tree: plain('ccu_resting_tree', 'CCU Resting Tree', {
         uses: 3, requiresHero: true, respawn: { mode: 'refill', afterMs: 9_500 }, config: chop(2_300)
     }),
@@ -96,7 +101,7 @@ registerTokenTypes({
     }),
     ccu_goblin: {
         id: 'ccu_goblin', name: 'CCU Goblin', tokenType: 'enemy', rarity: 'common', theme: 'fixture',
-        uses: 1, sprite: 's_occult', enemy: { level: 1, style: 'melee', budgetScale: 0.3 },
+        uses: 1, sprite: 's_occult', enemy: { level: 1, style: 'melee', hp: 6, xp: 3 },
         config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [{ itemId: 'fixture_copper_ore', quantity: 1, chance: 100 }] }
     },
     ccu_den: {
@@ -304,18 +309,18 @@ describe('⭐ a catch-up with heroes working from camps', () => {
 
         // And what happened: the woodcutters used up all five trees between them, three cycles
         // each, never sharing one (a tree's last cycle is counted as it leaves the mat, "gone"); the
-        // farmer harvested both Fields over their loads, moving to the other while one grew, until
-        // the three seeds were spent: five loads of three.
+        // farmer harvested both Fields, moving to the other while one grew, until the three seeds
+        // were spent: five sowings of one harvest.
         const [a, b, farmer] = small.byHero;
         const trees = (list) => new Set(list.filter(k => k !== 'gone'));
         expect(a.length + b.length).toBe(15);
         expect(trees(a).size + trees(b).size).toBe(5);
         for (const key of trees(a)) expect(b).not.toContain(key);
         expect(small.wood).toBe(15);
-        expect(farmer.length).toBe(15);
+        expect(farmer.length).toBe(5);
         expect(new Set(farmer).size).toBe(2);
-        expect(farmer.slice(0, 6)).toEqual([...Array(3).fill(farmer[0]), ...Array(3).fill(farmer[3])]);
-        expect(small.wheat).toBe(15);
+        expect(farmer[1]).not.toBe(farmer[0]);
+        expect(small.wheat).toBe(5);
         expect(small.seeds).toBe(0);
     }, 120_000);
 

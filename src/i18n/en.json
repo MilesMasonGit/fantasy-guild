@@ -15,7 +15,12 @@
         "cancel": "Cancel demolition"
     },
     "matTopBar": {
-        "logoText": "Tabletop Guild"
+        "logoText": "Tabletop Guild",
+        "coins": "Coins",
+        "coinsTip": "The guild's coins. Sell items from the Bank to earn them."
+    },
+    "coins": {
+        "amount": { "one": "{amount} coin", "other": "{amount} coins" }
     },
     "matControls": {
         "label": "Controls",
@@ -171,11 +176,16 @@
         "drawer": {
             "label": "Item",
             "collected": "Collected this run: {count}",
-            "discard": "Discard",
-            "discardConfirm": "Throw away all {count} {item} in the Bank? Nothing comes back. Worn gear stays worn; a carried food, drink or potion shows empty until the Bank holds more.",
+            "sell": "Sell",
+            "sellConfirm": "Sell all {count} {item} in the Bank for {pay}? Worn gear stays worn; a carried food, drink or potion shows empty until the Bank holds more.",
             "empty": "The Bank is empty",
             "emptyHint": "Items the guild collects land here."
         },
+        "sellSelected": "Sell selected",
+        "sellSelectedTip": "Sell every selected stack in the Bank",
+        "sellSelectedConfirm": "Sell {stacks} ({items}) for {pay}? Worn gear stays worn; a carried food, drink or potion shows empty until the Bank holds more.",
+        "stacks": { "one": "{amount} stack", "other": "{amount} stacks" },
+        "items": { "one": "{amount} item", "other": "{amount} items" },
         "searchPlaceholder": "Search items…",
         "clearSearch": "Clear search",
         "sort": "Sort",
@@ -600,7 +610,7 @@
         "kinds": {
             "armoured": {
                 "name": "Armoured",
-                "tip": "Resists Physical 50%, attacks every 4s"
+                "tip": "Resists Slash, Crush and Stab 50%, attacks every 4s"
             },
             "nimble": {
                 "name": "Nimble",
@@ -613,10 +623,6 @@
             "brute": {
                 "name": "Brute",
                 "tip": "Big hits, attacks every 4s"
-            },
-            "venomous": {
-                "name": "Venomous",
-                "tip": "Each hit adds a stack of Venom"
             }
         }
     },
@@ -684,7 +690,9 @@
         "built": "{token} built",
         "became": "{token}",
         "recovered": "Recovered, ready to work!",
-        "needs": "Needs {item}"
+        "needs": "Needs {item}",
+        "needsLevel": "Needs {skill} {level}",
+        "noFishHere": "No {fish} here"
     },
     "orders": {
         "needs": "Needs {what}",
@@ -808,13 +816,12 @@
         "alchemy": "Brews potions heroes use in fights and at work.",
         "construction": "Builds stations and buildings on Foundations, and takes down marked Tokens.",
         "fletching": "Arrows, bows and hunting gear, made and tuned by hand.",
-        "faith": "Shrines, altars and wards that bless the heroes and Tokens around them.",
-        "summoning": "Raising thralls and spirits that fight in a hero's place.",
+        "faith": "A shrine's strong blessing holds only while a Faith hero keeps it supplied with offerings, made at an altar from other skills' goods.",
+        "summoning": "Calls Summoned workers that work but never fight, until their charges run out. A higher level calls more kinds and adds more charges.",
         "enchanting": "Binding gems and dust into gear to make it more than it was.",
         "tailor": "Weaves cloth and stitches leather into robes, hoods, cloaks and string, for Magic and Stealth heroes and for Fletching.",
-        "crime": "Locks, contraband and the things other people would rather keep.",
-        "taming": "Beasts of burden that harvest, haul and graze unattended.",
-        "science": "Laboratories that convert goods in bulk into other materials."
+        "crime": "Steals from enemy camps instead of fighting them, for a different set of goods. A theft that goes wrong puts a guard on the camp.",
+        "science": "Studies nearby nodes in a Laboratory for lasting mastery of each kind of node, instead of goods."
     },
     "worldMap": {
         "label": "The world map",
@@ -930,5 +937,19 @@
             "buffTip": "Expires in {time}",
             "nodeTip": "Expires in {time}, worked or not"
         }
+    },
+    "fishing": {
+        "card": {
+            "heading": "Fish here",
+            "toolsJoin": " or ",
+            "lure": "Lure: {lure}",
+            "tip": "{fish}: caught with a {tools} at {skill} {level}.",
+            "tipOut": "{fish}: caught with a {tools} at {skill} {level}. No hero has {skill} {level} yet (best {best}).",
+            "tipLure": "The {lure} picks it."
+        }
+    },
+    "heroSpeech": {
+        "beaten": "{enemy} Defeated",
+        "waiting": "Waiting for {enemy}."
     }
 }

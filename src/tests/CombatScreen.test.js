@@ -69,7 +69,7 @@ registerItems({
     cs_elixir: { id: 'cs_elixir', name: 'Elixir of Testing', type: 'potion', sprite: 'i_potion_sun_red', stackable: true, equipSlot: 'consumable', effects: [{ effectId: 'cs_fx_elixir' }] }
 });
 registerEffects({
-    cs_fx_buff: { id: 'cs_fx_buff', name: 'Tested', statements: [{ ...providesFlat('stm_cs_buff', EFFECT_TYPES.TYPE_RESIST, 25), payload: { type: EFFECT_TYPES.TYPE_RESIST, bucket: 'flat', value: 25, category: 'physical' } }] },
+    cs_fx_buff: { id: 'cs_fx_buff', name: 'Tested', statements: [{ ...providesFlat('stm_cs_buff', EFFECT_TYPES.TYPE_RESIST, 25), payload: { type: EFFECT_TYPES.TYPE_RESIST, bucket: 'flat', value: 25, category: 'crush' } }] },
     cs_fx_elixir: {
         id: 'cs_fx_elixir', name: 'Elixir of Testing', statements: [{
             ...makeStatement(KEYWORD.APPLIES), id: 'stm_cs_elixir',
@@ -85,7 +85,7 @@ const enemy = (id, name, enemyBlock) => ({
     config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [{ itemId: 'item_bones', chance: 100, minQty: 1, maxQty: 1 }] }
 });
 registerTokenTypes({
-    cs_venom: enemy('cs_venom', 'Screen Venomous', { level: 10, kinds: ['venomous'] }),
+    cs_venom: enemy('cs_venom', 'Screen Venomous', { level: 10, moves: [{ name: 'Venom Bite', damageType: 'crush', effectId: VENOM, target: 'hero' }] }),
     cs_rogue: enemy('cs_rogue', 'Screen Rogue', { level: 10, moves: [{ name: 'Shiv', damageType: 'stab' }, { name: 'Poison Shiv', damageType: 'stab', effectId: VENOM }] })
 });
 
@@ -185,7 +185,8 @@ describe('the fight watch: this fight and the last one', () => {
         // The elixir drunk as it engaged opens the log; the kill closes it, after its drops.
         expect(keys[0]).toBe('drinks');
         expect(keys).toContain('heroHits');
-        expect(keys.some(k => k === 'enemyHits' || k === 'enemyMisses')).toBe(true);
+        // Its one move, Venom Bite, is said by name.
+        expect(keys.some(k => k === 'enemyMoveHits' || k === 'enemyMoveMisses')).toBe(true);
         expect(keys.at(-1)).toBe('won');
         expect(keys.at(-2)).toBe('drops');
         expect(last.hp.enemy.cur).toBe(0);
@@ -226,7 +227,7 @@ describe('the fight watch: this fight and the last one', () => {
         stop();
     });
 
-    it('lands Venomous poison and its ticks in the log, each tick saying what it took', () => {
+    it('lands a venomous move\'s poison and its ticks in the log, each tick saying what it took', () => {
         const { heroId } = buildFight();
         const stop = startFightWatch();
         const ticks = [];
@@ -314,16 +315,16 @@ describe('the panel, the plate and the floats read the real fight', () => {
         const view = fightPanelView(heroId, fightsOf(heroId));
         expect(view.live).toBe(true);
         expect([view.hero.name, view.enemy.name]).toEqual([HeroManager.getHero(heroId).name, 'Screen Venomous']);
-        // Screen Sword 3 + level 20's step of 1, Slash; Physical 25 % from the elixir's buff (it was
+        // Screen Sword 3 + level 20's step of 1, Slash; Crush 25 % from the elixir's buff (it was
         // armour 1 before damage types); a normal swing.
-        expect(view.hero).toMatchObject({ style: 'melee', level: 20, hit: 4, resists: [{ id: 'physical', value: 25 }], attackEveryMs: 3000 });
+        expect(view.hero).toMatchObject({ style: 'melee', level: 20, hit: 4, resists: [{ id: 'crush', value: 25 }], attackEveryMs: 3000 });
         expect(view.hero.hitParts).toEqual([{ type: 'slash', hit: 4, arrow: false }]);
         // Ten fights to a dose, this one counted (owner, 2026-10-25); nine more after it.
         expect(view.hero.elixirs).toEqual([{ itemId: 'cs_elixir', name: 'Elixir of Testing', left: 9, count: 10 }]);
-        // Level 10 from the table: 30 health, a Physical hit of 1, no resistances; Venomous shows once fought.
-        expect(view.enemy).toMatchObject({ level: 10, hit: 1, hitType: 'physical', resists: [], attackEveryMs: 3000 });
+        // Level 10 from the table: 30 health, a Crush hit of 1, no resistances; no kinds, shown once fought.
+        expect(view.enemy).toMatchObject({ level: 10, hit: 1, hitType: 'crush', resists: [], attackEveryMs: 3000 });
         expect(view.enemy.hp.max).toBe(30);
-        expect(view.enemy.kinds.map(k => k.id)).toEqual(['venomous']);
+        expect(view.enemy.kinds).toEqual([]);
         stop();
     });
 

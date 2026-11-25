@@ -204,14 +204,13 @@ describe('Can\'t Run Out: a lit shrine\'s nodes never run out', () => {
         expect(count(ORE)).toBe(0);
     });
 
-    it('a Field in its reach keeps its load', () => {
+    it('a Field in its reach stays ripe, harvest after harvest', () => {
         const f = put('fb_field', WORK);
         litShrine('fb_nature');
         Orders.orderAt('farmer', WORK);
         InventoryManager.addItem(SEED, 1);
         run(5200);
         expect(Fields.stageOf(f)).toBe(Fields.STAGE.RIPE);
-        expect(f.field.load).toBe(3);
         expect(count(WHEAT)).toBeGreaterThanOrEqual(5);
     });
 

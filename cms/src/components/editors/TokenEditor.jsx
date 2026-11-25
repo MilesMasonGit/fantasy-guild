@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Gauge } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
-import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, stationKindsOfSkill, isRetiredStationKind, ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, ATTACK_SPEED_MS, RETIRED_ENEMY_FIELDS, DAMAGE_TYPES, DAMAGE_GROUPS, RESISTANCE_STEPS, damageTypeLabel, isTypeOrGroupId, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY, ENEMY_USES, neededToolOf, toolNeedPhrase, hasCatchPools } from '../../utils/constants';
+import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, stationKindsOfSkill, isRetiredStationKind, ENEMY_STYLES, enemyFilledStats, MAX_ENEMY_KINDS, enemyKindsOf, enemyFightNumbers, isKindCandidate, kindResistances, ATTACK_SPEED_MS, RETIRED_ENEMY_FIELDS, LEFTOVER_ENEMY_FIELDS, DAMAGE_TYPES, DAMAGE_GROUPS, RESISTANCE_STEPS, damageTypeLabel, isDamageTypeId, isDamageGroupId, typesOfGroup, withGroupFilled, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY, ENEMY_USES, neededToolOf, toolNeedPhrase, hasCatchPools, endTermsOf } from '../../utils/constants';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
@@ -11,8 +11,11 @@ import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
 import LifecycleBlocks from './LifecycleBlocks';
 import CatchPoolsBlock from './CatchPoolsBlock';
+import FishingSpotBlock from './FishingSpotBlock';
+import SpotRateBlock from './SpotRateBlock';
 import RareTableBlock from './RareTableBlock';
 import EnemyMovesFields from './EnemyMovesFields';
+import SetAllTypes from './SetAllTypes';
 import PlanFields from '../shared/PlanFields';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
@@ -71,11 +74,15 @@ export default function TokenEditor() {
   const isEnemy = derived.type === 'enemy';
   const enemy = token?.enemy || null;
   const enemyStats = useMemo(
-    () => (enemy?.level != null ? enemyProfileOf({ enemy }) : null),
-    [enemy]
+    () => (enemy?.level != null ? enemyFightNumbers({ enemy }, effects) : null),
+    [enemy, effects]
   );
 
   if (!token) return <Empty text="Select a Token from the sidebar to edit" />;
+
+  // A Token that comes back runs out by a chance each round instead of a count (`tokenConstants.endTermsOf`).
+  const comesBack = !!token.respawn && !token.spawner && !token.foundation;
+  const ends = endTermsOf(token);
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-10">
@@ -265,7 +272,29 @@ export default function TokenEditor() {
                   />
                 </Field>
               )}
-              {isPooled ? (
+              {isEnemy ? (
+                // A kill pays its level's XP (the Enemy section's numbers), never a work cycle's.
+                <Field label="XP per cycle">
+                  <div className="text-[11px] text-gray-500 leading-relaxed" data-field="enemy-cycle-xp">
+                    {Number(config.xp) > 0 ? `${config.xp}: a kill never pays it (it pays its level's XP). ` : "A kill pays its level's XP, below."}
+                    {Number(config.xp) > 0 && (
+                      <button
+                        type="button"
+                        className="hover:underline"
+                        style={{ color: 'var(--color-warning)' }}
+                        data-field="enemy-cycle-xp-remove"
+                        onClick={() => {
+                          const rest = { ...config };
+                          delete rest.xp;
+                          update('config', rest);
+                        }}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </Field>
+              ) : isPooled ? (
                 <Field label="XP per cycle">
                   <div
                     className="w-full px-3 py-2 rounded-lg text-xs"
@@ -366,6 +395,10 @@ export default function TokenEditor() {
 
       <CatchPoolsBlock token={token} onPatch={(patch) => updateToken(activeId, patch)} />
 
+      <FishingSpotBlock token={token} onPatch={(patch) => updateToken(activeId, patch)} />
+
+      <SpotRateBlock token={token} onPatch={(patch) => updateToken(activeId, patch)} />
+
       <RareTableBlock token={token} onPatch={(patch) => updateToken(activeId, patch)} />
 
       <Section title="Lifecycle" icon={<Timer size={14} />}>
@@ -403,6 +436,8 @@ export default function TokenEditor() {
                 </div>
               )}
             </Field>
+          ) : comesBack ? (
+            <EndChanceField token={token} ends={ends} onPatch={(patch) => updateToken(activeId, patch)} />
           ) : (
           <Field label="Charges">
             <div className="flex items-center gap-2">
@@ -746,54 +781,17 @@ export default function TokenEditor() {
                   ))}
                 </select>
               </Field>
-              {/* Older content only: before the level table an enemy's numbers were a budget times this scale. Shown while an enemy still carries one, so it can be read and cleared; new enemies type their numbers below instead. */}
-              {enemy?.budgetScale != null && (
-                <Field label="Budget scale (older)">
-                  <input
-                    type="number"
-                    step={0.05}
-                    min={0.05}
-                    aria-label="Budget scale"
-                    value={enemy.budgetScale}
-                    onChange={(e) =>
-                      update('enemy', { ...enemy, budgetScale: Number(e.target.value) || 1 })
-                    }
-                    className="w-full"
-                  />
-                  <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
-                    Scales the level&apos;s HP, hit and XP. Typing those numbers below is clearer.
-                  </p>
-                </Field>
-              )}
             </div>
 
-            <EnemyKinds enemy={enemy} onChange={(next) => update('enemy', next)} />
+            <EnemyKinds enemy={enemy} effects={effects} onChange={(next) => update('enemy', next)} />
 
-            <EnemyNumbers enemy={enemy} onChange={(next) => update('enemy', next)} />
+            <EnemyNumbers enemy={enemy} effects={effects} onChange={(next) => update('enemy', next)} />
 
-            <EnemyResistances enemy={enemy} onChange={(next) => update('enemy', next)} />
+            <EnemyResistances enemy={enemy} effects={effects} onChange={(next) => update('enemy', next)} />
+
+            <EnemyLeftovers enemy={enemy} onChange={(next) => update('enemy', next)} />
 
             <EnemyMovesFields enemy={enemy} effects={effects} onChange={(next) => update('enemy', next)} />
-
-            {/* A boss comes from a camp of its own (a spawner that keeps one) or a Summoning Circle (a Token whose work uses up a summon item and makes it). Boss moves hang on this mark. Written ONLY when ticked. */}
-            <label className="flex items-center gap-2.5 cursor-pointer select-none mt-3">
-              <input
-                type="checkbox"
-                aria-label="Boss"
-                data-field="enemy-boss"
-                checked={enemy?.boss === true}
-                onChange={(e) => {
-                  const next = { ...enemy };
-                  if (e.target.checked) next.boss = true;
-                  else delete next.boss;
-                  update('enemy', next);
-                }}
-              />
-              <span className="text-[11px] text-gray-300">Boss</span>
-              <span className="text-[10px] text-gray-600">
-                comes from a camp of its own or a Summoning Circle
-              </span>
-            </label>
 
             {/* Read-only, and built by the GAME's own profile (level table, kinds, the numbers typed
                 above) rather than a copy of it here — so what the author is shown is what the fight uses. */}
@@ -805,20 +803,19 @@ export default function TokenEditor() {
                 </div>
                 <div className="grid grid-cols-5 gap-3 text-[11px]">
                   <div><div className="text-gray-600 text-[10px]">HP</div><div className="text-gray-200 font-semibold">{enemyStats.hp}</div></div>
-                  <div><div className="text-gray-600 text-[10px]">Hit</div><div className="text-gray-200 font-semibold" data-field="enemy-preview-hit">{enemyStats.hit} {movesText(enemyStats.moves) ? `· ${movesText(enemyStats.moves)}` : 'Physical'}</div></div>
+                  <div><div className="text-gray-600 text-[10px]">Hit</div><div className="text-gray-200 font-semibold" data-field="enemy-preview-hit">{Math.round(enemyStats.hit * 100) / 100} {movesText(enemyStats.moves) ? `· ${movesText(enemyStats.moves)}` : 'Crush'}</div></div>
                   <div><div className="text-gray-600 text-[10px]">Resists</div><div className="text-gray-200 font-semibold" data-field="enemy-preview-resists">{resistancesText(enemyStats.resistances)}</div></div>
                   <div><div className="text-gray-600 text-[10px]">Attacks every</div><div className="text-gray-200 font-semibold">{(enemyStats.attackSpeed / 1000).toFixed(1)}s</div></div>
                   <div><div className="text-gray-600 text-[10px]">XP</div><div className="text-gray-200 font-semibold">{enemyStats.xpAwarded}</div></div>
                 </div>
-                <div className="grid grid-cols-4 gap-3 text-[11px] mt-2">
+                <div className="grid grid-cols-3 gap-3 text-[11px] mt-2">
                   <div><div className="text-gray-600 text-[10px]">Dodge</div><div className="text-gray-200 font-semibold">{enemyStats.dodge}</div></div>
                   <div><div className="text-gray-600 text-[10px]">Accuracy</div><div className="text-gray-200 font-semibold">{enemyStats.accuracy}</div></div>
                   <div><div className="text-gray-600 text-[10px]">Crit</div><div className="text-gray-200 font-semibold">{enemyStats.critChance}%</div></div>
-                  <div><div className="text-gray-600 text-[10px]">On hit</div><div className="text-gray-200 font-semibold">{enemyStats.onHit?.length ? enemyStats.onHit.map((s) => effects[s.effectId]?.name || `${s.effectId} (missing)`).join(', ') : '—'}</div></div>
                 </div>
                 <p className="text-[10px] text-gray-600 mt-2.5 leading-relaxed">
                   A level {enemy?.level ?? 1} enemy with no kinds is an even fight for a level {enemy?.level ?? 1} hero
-                  holding their tier's weapon: a duel of ten or more attacks. A kind makes it harder.
+                  holding their tier's weapon: a duel of ten or more attacks. Its kinds are added here, as the fight adds them.
                   What it <strong>drops</strong> is authored as its outputs, in the Drops column.
                 </p>
               </div>
@@ -841,58 +838,115 @@ export default function TokenEditor() {
 }
 
 /**
- * The enemy kinds: none, one or two presets that twist what the level fills (`enemyKinds.js` says
- * how). Written in the order ticked; none ticked drops the key. A kind that would make a third, or
- * that sets a different attack speed from one already ticked, cannot be ticked.
+ * The enemy kinds: none, one or two library effects the enemy always carries, picked in two boxes
+ * (`enemyKinds.js`). A kind is an ordinary effect, edited in the Effects library; its numbers add to
+ * the ones below in every fight. Only an effect that can be a trait is offered (`isKindCandidate`: no
+ * status, every rule a combat number or a fight moment). Written in box order; none drops the key.
+ *
+ * ⚠️ A kind still naming a built-in preset (Armoured, Nimble, Swift, Brute) shows as that preset until
+ * the library holds its effect; picking anything writes the effect's id.
  */
-function EnemyKinds({ enemy, onChange }) {
-  const ticked = enemyKindsOf(enemy).map((k) => k.id);
-  const toggle = (id) => {
-    const next = ticked.includes(id) ? ticked.filter((k) => k !== id) : [...ticked, id];
+function EnemyKinds({ enemy, effects, onChange }) {
+  const kinds = enemyKindsOf(enemy, effects);
+  const offered = Object.values(effects || {})
+    .filter((e) => e?.id && isKindCandidate(e))
+    .sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id));
+  const write = (next) => {
     const copy = { ...enemy };
-    if (next.length) copy.kinds = next; else delete copy.kinds;
+    const ids = next.filter(Boolean);
+    if (ids.length) copy.kinds = ids; else delete copy.kinds;
     onChange(copy);
+  };
+  const pick = (slot, id) => {
+    const next = Array.from({ length: MAX_ENEMY_KINDS }, (_, i) => kinds[i]?.id || '');
+    next[slot] = id;
+    write(next.filter((k, i) => k && next.indexOf(k) === i));
+  };
+  const nameOf = (k) => (k.effectId ? effects?.[k.effectId]?.name || k.effectId : `${k.preset.label} (built in)`);
+  /** What one kind does to this enemy, by the game's own numbers: the enemy with it against the enemy without any. */
+  const summaryOf = (effectId) => {
+    const bare = enemyFightNumbers({ enemy: { level: enemy?.level ?? 1 } }, effects);
+    const kinded = enemyFightNumbers({ enemy: { level: enemy?.level ?? 1, kinds: [effectId] } }, effects);
+    if (!bare || !kinded) return '';
+    const parts = [];
+    const resists = resistancesText(kinded.resistances);
+    if (resists !== 'none') parts.push(`resists ${resists}`);
+    if (kinded.dodge !== bare.dodge) parts.push(`Dodge ${kinded.dodge - bare.dodge > 0 ? '+' : ''}${kinded.dodge - bare.dodge}`);
+    if (kinded.accuracy !== bare.accuracy) parts.push(`Accuracy ${kinded.accuracy - bare.accuracy > 0 ? '+' : ''}${kinded.accuracy - bare.accuracy}`);
+    if (kinded.critChance !== bare.critChance) parts.push(`Crit ${kinded.critChance}%`);
+    if (Math.abs(kinded.hit - bare.hit) > 1e-9) parts.push(`hits ×${Math.round((kinded.hit / bare.hit) * 100) / 100}`);
+    if (kinded.attackSpeed !== bare.attackSpeed) parts.push(`attacks every ${(kinded.attackSpeed / 1000).toFixed(1)}s`);
+    return parts.join('; ') || 'no numbers of its own';
   };
 
   return (
-    <div className="mt-3">
-      <span className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">Kinds (none, one or two)</span>
-      <div className="flex flex-wrap gap-x-4 gap-y-1.5">
-        {ENEMY_KINDS.map((kind) => {
-          const on = ticked.includes(kind.id);
-          const clash = !on && ticked.find((k) => kindsClash(k, kind.id));
-          const full = !on && ticked.length >= MAX_ENEMY_KINDS;
-          const why = clash
-            ? `Cannot go with ${ENEMY_KINDS.find((k) => k.id === clash)?.label}: both set how often it attacks.`
-            : full ? `An enemy has at most ${MAX_ENEMY_KINDS} kinds.` : kind.blurb;
+    <div className="mt-3" data-field="enemy-kinds">
+      <span className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">Kinds (none, one or two effects it always carries)</span>
+      <div className="grid grid-cols-2 gap-3">
+        {Array.from({ length: MAX_ENEMY_KINDS }, (_, slot) => {
+          const current = kinds[slot] || null;
+          const taken = new Set(kinds.filter((_, i) => i !== slot).map((k) => k.id));
+          const disabled = slot > kinds.length;
           return (
-            <label key={kind.id} title={why} className={`flex items-center gap-1.5 select-none ${clash || full ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
-              <input
-                type="checkbox"
-                aria-label={kind.label}
-                data-field={`enemy-kind-${kind.id}`}
-                checked={on}
-                disabled={!!clash || full}
-                onChange={() => toggle(kind.id)}
-              />
-              <span className="text-[11px] text-gray-300">{kind.label}</span>
-            </label>
+            <select
+              key={slot}
+              aria-label={`Kind ${slot + 1}`}
+              data-field={`enemy-kind-${slot + 1}`}
+              value={current?.id || ''}
+              disabled={disabled}
+              onChange={(e) => pick(slot, e.target.value)}
+              className={`w-full ${disabled ? 'opacity-40' : ''}`}
+            >
+              <option value="">None</option>
+              {current?.preset && <option value={current.id}>{nameOf(current)}</option>}
+              {offered.filter((e) => !taken.has(e.id)).map((e) => (
+                <option key={e.id} value={e.id}>{e.name || e.id}</option>
+              ))}
+            </select>
           );
         })}
       </div>
-      <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
-        {ticked.length
-          ? enemyKindsOf(enemy).map((k) => `${k.label}: ${k.blurb}`).join(' ')
-          : 'The player finds out its kinds by fighting it. A number typed below replaces whatever the level and kinds give.'}
+      <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed" data-field="enemy-kinds-note">
+        {kinds.length
+          ? kinds.map((k) => (k.effectId
+            ? `${nameOf(k)}: ${summaryOf(k.effectId)}.`
+            : `${k.preset.label} (built in, until the library has its effect ${k.preset.effectId}): ${k.preset.blurb}`)).join(' ')
+          : 'The player finds out its kinds by fighting it. A kind is an effect from the library; its numbers add to the ones below.'}
       </p>
     </div>
+  );
+}
+
+/**
+ * Marks older content may carry that the game no longer reads (`LEFTOVER_ENEMY_FIELDS`: a boss tick,
+ * Hostile, a budget scale, traits), shown only while one is there, with a button to remove them.
+ */
+function EnemyLeftovers({ enemy, onChange }) {
+  const left = LEFTOVER_ENEMY_FIELDS.filter((f) => enemy?.[f] !== undefined);
+  if (!left.length) return null;
+  return (
+    <p className="text-[11px] mt-3 leading-relaxed" style={{ color: 'var(--color-warning)' }} data-field="enemy-leftovers">
+      {`${left.join(', ')}: the game no longer reads ${left.length > 1 ? 'these' : 'this'} (a boss is what a boss camp spawns; the level fills the numbers). `}
+      <button
+        type="button"
+        className="hover:underline"
+        data-field="enemy-leftovers-remove"
+        onClick={() => {
+          const copy = { ...enemy };
+          for (const f of left) delete copy[f];
+          onChange(copy);
+        }}
+      >
+        Remove
+      </button>
+    </p>
   );
 }
 
 /** The numbers the level and kinds fill, each one the author may replace, in the order the fight card lists them. */
 const ENEMY_NUMBER_FIELDS = [
   { field: 'hp', label: 'HP', min: 1 },
-  { field: 'hit', label: 'Hit', min: 1 },
+  { field: 'hit', label: 'Hit', min: 0.25 },
   { field: 'xp', label: 'XP', min: 0 },
   { field: 'speed', label: 'Attacks every', wide: true },
   { field: 'dodge', label: 'Dodge', min: 0 },
@@ -906,26 +960,33 @@ function movesText(moves) {
   return moves.map((m) => `${m.name || 'Strike'}${m.hits ? ` ${damageTypeLabel(m.type)}` : ''}`).join(', ');
 }
 
-/** `Physical 50%, Crush weak 50%`, or `none`: a resistances map as the author wrote it. */
+/** `Slash 50%, Crush weak 50%`, or `none`: a resistances map, in type order. */
 function resistancesText(map) {
-  const ids = [...DAMAGE_GROUPS, ...DAMAGE_TYPES].map((x) => x.id).filter((id) => map?.[id]);
+  const ids = DAMAGE_TYPES.map((x) => x.id).filter((id) => map?.[id]);
   if (!ids.length) return 'none';
   return ids.map((id) => (map[id] < 0 ? `${damageTypeLabel(id)} weak ${-map[id]}%` : `${damageTypeLabel(id)} ${map[id]}%`)).join(', ');
 }
 
-const STEP_WORDS = { 100: 'Resist 100% (immune)', 50: 'Resist 50%', 25: 'Resist 25%', '-25': 'Weak 25%', '-50': 'Weak 50%' };
+const STEP_WORDS = { 100: 'Resist 100% (immune)', 50: 'Resist 50%', 25: 'Resist 25%', '-25': 'Weak 25%', '-50': 'Weak 50%', '-100': 'Weak 100%' };
+
+/** `Resist 25%`, `Weak 50%`, `None`: a signed resistance in the player's words. */
+const resistWords = (n) => (n > 0 ? `Resist ${n}%` : n < 0 ? `Weak ${-n}%` : 'None');
 
 /**
- * What the enemy resists and is weak to, by damage type or group, in the owner's fixed steps:
- * resist 25, 50 or 100 %, weak 25 or 50 %. Written as `resistances: { physical: 50, crush: -50 }`;
- * a line on one type replaces its group's line for that type ("Physical 50, Crush weak 50" reads as
- * written). A kind's line (Armoured: Physical 50) shows greyed until the author writes that type.
+ * What the enemy resists and is weak to, by damage type, in the owner's fixed steps: resist 25, 50
+ * or 100 %, weak 25, 50 or 100 %. Written as `resistances: { slash: 50, crush: -50 }`; Set all fills a
+ * group's three types, and a line still on a group (ignored by the game) shows with a Split button.
+ * A kind that is an effect adds its lines to these in a fight, so a type it touches shows what the
+ * fight adds up to (the Crab's own Crush −100 and Armoured's 50 make weak 50 %); a built-in preset's
+ * line shows greyed until the author writes that type, which then replaces it.
  * Removing the last line drops the key. Retired numbers (Armour, Pierce) still on older content
  * show here with a button to remove them.
  */
-function EnemyResistances({ enemy, onChange }) {
+function EnemyResistances({ enemy, effects, onChange }) {
   const own = enemy?.resistances && typeof enemy.resistances === 'object' ? enemy.resistances : {};
-  const fromKinds = enemyFilledStats(enemy).resistances || {};
+  const fromKinds = enemyFilledStats(enemy, effects).resistances || {};
+  const kindEffects = enemyKindsOf(enemy, effects).filter((k) => k.effectId).map((k) => k.effectId);
+  const addedByKinds = kindResistances(kindEffects, effects);
   const write = (next) => {
     const copy = { ...enemy };
     if (Object.keys(next).length) copy.resistances = next; else delete copy.resistances;
@@ -936,9 +997,11 @@ function EnemyResistances({ enemy, onChange }) {
     if (step === '') delete next[id]; else next[id] = Number(step);
     write(next);
   };
-  const ids = [...DAMAGE_GROUPS, ...DAMAGE_TYPES].map((x) => x.id);
-  const rows = ids.filter((id) => own[id] != null || fromKinds[id] != null);
-  const unknown = Object.keys(own).filter((id) => !isTypeOrGroupId(id));
+  const fillGroup = (groupId, step) => write(withGroupFilled(own, groupId, step));
+  const ids = DAMAGE_TYPES.map((x) => x.id);
+  const rows = ids.filter((id) => own[id] != null || fromKinds[id] != null || addedByKinds[id] != null);
+  const groupLines = Object.keys(own).filter((id) => isDamageGroupId(id));
+  const unknown = Object.keys(own).filter((id) => !isDamageTypeId(id) && !isDamageGroupId(id));
   const free = ids.filter((id) => own[id] == null);
   const retired = RETIRED_ENEMY_FIELDS.filter((f) => enemy?.[f] != null && enemy?.[f] !== '');
 
@@ -963,12 +1026,28 @@ function EnemyResistances({ enemy, onChange }) {
                   <option key={step} value={String(step)}>{STEP_WORDS[step]}</option>
                 ))}
               </select>
+              {addedByKinds[id] != null && (
+                <span className="text-[10px] text-gray-500 w-40" data-field={`enemy-resist-${id}-total`}>
+                  {`kinds add ${addedByKinds[id] > 0 ? '+' : ''}${addedByKinds[id]}: ${resistWords((Number(own[id]) || 0) + addedByKinds[id])} in a fight`}
+                </span>
+              )}
             </div>
           );
         })}
+        {groupLines.map((id) => (
+          <div key={id} className="text-[11px]" style={{ color: 'var(--color-warning)' }} data-field={`enemy-resist-${id}`}>
+            {`${damageTypeLabel(id)} ${own[id]}: a group carries no number, the game ignores it. `}
+            {RESISTANCE_STEPS.includes(Number(own[id])) && (
+              <button type="button" className="hover:underline mr-2" data-field={`enemy-resist-${id}-split`} onClick={() => fillGroup(id, Number(own[id]))}>
+                {`Split into ${typesOfGroup(id).map(damageTypeLabel).join(', ')}`}
+              </button>
+            )}
+            <button type="button" className="hover:underline" onClick={() => setLine(id, '')}>Remove it</button>
+          </div>
+        ))}
         {unknown.map((id) => (
           <div key={id} className="text-[11px]" style={{ color: 'var(--color-warning)' }} data-field="enemy-resist-unknown">
-            {`"${id}" is not a damage type or group. `}
+            {`"${id}" is not a damage type. `}
             <button type="button" className="hover:underline" onClick={() => setLine(id, '')}>Remove it</button>
           </div>
         ))}
@@ -983,7 +1062,6 @@ function EnemyResistances({ enemy, onChange }) {
             <option value="">Add a resistance or weakness…</option>
             {DAMAGE_GROUPS.map((g) => (
               <optgroup key={g.id} label={g.label}>
-                {free.includes(g.id) && <option value={g.id}>{g.label} (the whole group)</option>}
                 {DAMAGE_TYPES.filter((t) => t.group === g.id && free.includes(t.id)).map((t) => (
                   <option key={t.id} value={t.id}>{t.label}</option>
                 ))}
@@ -991,13 +1069,14 @@ function EnemyResistances({ enemy, onChange }) {
             ))}
           </select>
         )}
+        <SetAllTypes dataField="enemy-resist-fill" steps={RESISTANCE_STEPS} stepWords={STEP_WORDS} initial={50} onFill={fillGroup} />
       </div>
       <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
-        Shown on the enemy&apos;s card. A type&apos;s line replaces its group&apos;s for that type. Keep most enemies to 0 or 1 lines, bosses up to 3, and never shut out every type a style can reach.
+        Shown on the enemy&apos;s card. Only types carry numbers: Set all fills a group&apos;s three types, and a kind&apos;s lines add to the ones you write (a built-in preset&apos;s are replaced by yours). Keep most enemies to 0 or 1 lines, bosses up to 3, and never shut out every type a style can reach.
       </p>
       {retired.length > 0 && (
         <p className="text-[11px] mt-1 leading-relaxed" style={{ color: 'var(--color-warning)' }} data-field="enemy-retired-numbers">
-          {retired.map((f) => (f === 'armor' ? `Armour ${enemy.armor}` : `Pierce ${enemy.pierce}`)).join(', ')}: retired, the fight ignores it (use a Physical resistance).{' '}
+          {retired.map((f) => (f === 'armor' ? `Armour ${enemy.armor}` : `Pierce ${enemy.pierce}`)).join(', ')}: retired, the fight ignores it (use Slash, Crush and Stab resistances).{' '}
           <button
             type="button"
             className="hover:underline"
@@ -1018,13 +1097,16 @@ const SPEED_WORDS = { fast: 'Fast', normal: 'Normal', slow: 'Slow' };
 const speedWords = (id) => `${(ATTACK_SPEED_MS[id] || 0) / 1000} s (${SPEED_WORDS[id] || id})`;
 
 /**
- * Every number the fight reads, shown filled from the level and kinds (greyed, "from level") until
- * the author types one, which is then written on the enemy and wins outright ("yours", with a
- * button back to the filled value). Changing the level moves every number the author has not typed.
+ * The enemy's own numbers, shown filled from the level (greyed, "from level") until the author types
+ * one, which is then written on the enemy ("yours", with a button back to the filled value). Its
+ * kinds add to these in a fight, as every effect does (a built-in preset still replaces them, as it
+ * always has). The Hit may be a fraction: a hit of 2.25 rolls 2 or 3, as every hit's fraction does.
+ * Changing the level moves every number the author has not typed.
  */
-function EnemyNumbers({ enemy, onChange }) {
-  const filled = enemyFilledStats(enemy);
-  const hasKinds = enemyKindsOf(enemy).length > 0;
+function EnemyNumbers({ enemy, effects, onChange }) {
+  const filled = enemyFilledStats(enemy, effects);
+  const kinds = enemyKindsOf(enemy, effects);
+  const source = kinds.some((k) => k.preset) ? 'from level + kinds' : kinds.length ? 'from level; kinds add in a fight' : 'from level';
   const authored = (field) => enemy?.[field] !== undefined && enemy?.[field] !== null && enemy?.[field] !== '';
   const set = (field, value) => {
     const copy = { ...enemy };
@@ -1034,7 +1116,7 @@ function EnemyNumbers({ enemy, onChange }) {
 
   return (
     <div className="mt-3">
-      <span className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">Numbers (filled from the level and kinds; type to change)</span>
+      <span className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">Numbers (filled from the level; type to change)</span>
       <div className="grid grid-cols-4 gap-3">
         {ENEMY_NUMBER_FIELDS.map(({ field, label, min, wide }) => {
           const own = authored(field);
@@ -1059,12 +1141,14 @@ function EnemyNumbers({ enemy, onChange }) {
                 <input
                   type="number"
                   min={min}
+                  step={field === 'hit' ? 0.25 : 1}
                   aria-label={`Enemy ${label}`}
                   data-field={`enemy-${field}`}
                   value={shown}
                   onChange={(e) => {
                     const raw = e.target.value;
-                    set(field, raw === '' ? undefined : Math.max(min, Math.floor(Number(raw) || 0)));
+                    const n = Number(raw) || 0;
+                    set(field, raw === '' ? undefined : Math.max(min, field === 'hit' ? Math.round(n * 100) / 100 : Math.floor(n)));
                   }}
                   className={`w-full ${own ? '' : 'text-gray-500 italic'}`}
                 />
@@ -1075,7 +1159,7 @@ function EnemyNumbers({ enemy, onChange }) {
                     yours · back to {field === 'speed' ? speedWords(filled.speed) : filled[field]}
                   </button>
                 ) : (
-                  <span className="text-gray-600">{hasKinds ? 'from level + kinds' : 'from level'}</span>
+                  <span className="text-gray-600">{source}</span>
                 )}
               </div>
             </div>
@@ -1108,5 +1192,51 @@ function TokenSummary({ token, derived, needsSkill }) {
 
       <SimAnswer entityId={token.id} record={token} />
     </Section>
+  );
+}
+
+/**
+ * How a Token that comes back runs out: a chance each round of work, in percent, written as `endChance` in place of its
+ * Charges (`uses`), which the game then only reads for the chance it gives (one over the count) while no chance is written.
+ * Never runs out clears both.
+ */
+function EndChanceField({ token, ends, onPatch }) {
+  const authored = Number(token.endChance) > 0;
+  const never = !ends;
+  const shown = ends ? Math.round(ends.chance * 100) / 100 : '';
+  const oneIn = ends ? Math.round(ends.life * 10) / 10 : null;
+  const after = token.respawn?.mode === 'regrow' ? 'it regrows' : 'it rests, then refills';
+  return (
+    <Field label="Runs out (chance a round)">
+      <div className="flex items-center gap-2">
+        <input
+          type="number" min={0.1} max={100} step={0.1} aria-label="Chance to run out (%)" data-field="end-chance"
+          value={never ? '' : shown}
+          disabled={never}
+          placeholder={never ? 'never' : ''}
+          onChange={(e) => {
+            const v = Number(e.target.value);
+            if (!(v > 0)) return;
+            onPatch({ endChance: Math.min(100, v), uses: undefined });
+          }}
+          className="w-full"
+        />
+        <span className="text-[11px] text-gray-400">%</span>
+      </div>
+      <div data-field="end-chance-note" className="text-[10px] text-gray-500 mt-1 leading-relaxed">
+        {never
+          ? 'It never runs out, so it never rests.'
+          : `Each round of work has this chance to be its last (about 1 in ${oneIn}); then ${after}. No count shows on the mat.${authored ? '' : ` From its ${token.uses} Charges; type a chance to write it in their place.`}`}
+      </div>
+      <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={never}
+          onChange={(e) => onPatch(e.target.checked ? { endChance: undefined, uses: null } : { endChance: 20, uses: undefined })}
+          className="rounded border-white/10 text-emerald-500 cursor-pointer"
+        />
+        <span className="text-[11px] text-gray-400">Never runs out</span>
+      </label>
+    </Field>
   );
 }

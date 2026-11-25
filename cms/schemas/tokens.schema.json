@@ -74,7 +74,7 @@
           "description": "The tool a hero must hold (toolKinds.js neededToolOf; WorkCheck.js, Flags.js). Ignored when catchPools is present.",
           "type": "object",
           "properties": {
-            "kind": { "type": "string", "enum": ["pickaxe", "woodaxe", "fishing_rod", "sickle", "fishing_net", "fishing_trap"], "description": "TOOL_KINDS (toolKinds.js)." },
+            "kind": { "type": "string", "enum": ["pickaxe", "woodaxe", "fishing_rod", "sickle", "fishing_net", "fishing_trap", "harpoon"], "description": "TOOL_KINDS (toolKinds.js)." },
             "minTier": { "type": "number", "minimum": 1 }
           }
         },
@@ -113,7 +113,7 @@
           "description": "A building site: which building recipes it offers (recipePoolRegistry.js recipesForFoundation; StationRecipe.js, Foundations.js). Both kind and skill are needed.",
           "type": "object",
           "properties": {
-            "kind": { "type": "string", "enum": ["wood", "stone", "farmland", "excavation", "battlefield"], "description": "FOUNDATION_KINDS (tokenConstants.js)." },
+            "kind": { "type": "string", "enum": ["wood", "stone", "farmland", "excavation", "dock", "battlefield"], "description": "FOUNDATION_KINDS (tokenConstants.js)." },
             "skill": { "type": "string", "description": "A skill id (construction, ...)." },
             "tier": { "type": "number", "minimum": 1, "description": "Its tier, against a recipe's foundationMinTier (tokenConstants.js foundationTierOf)." }
           }
@@ -144,12 +144,12 @@
         },
         "catchPools": {
           "type": "array",
-          "description": "A water's catches by tool and bait (src/config/registries/catchPools.js catchPoolsOf; src/systems/board/Fishing.js). The first pool per tool and bait wins.",
+          "description": "A water's catches by tool and bait (src/config/registries/catchPools.js catchPoolsOf; src/systems/board/Fishing.js). The first pool per tool that holds where the water stands is fished.",
           "items": {
             "type": "object",
             "properties": {
-              "tool": { "type": "string", "enum": ["pickaxe", "woodaxe", "fishing_rod", "sickle", "fishing_net", "fishing_trap"], "description": "A TOOL_KINDS kind." },
-              "bait": { "type": ["string", "null"], "description": "An item id, or null for the basic pool." },
+              "tool": { "type": "string", "enum": ["pickaxe", "woodaxe", "fishing_rod", "sickle", "fishing_net", "fishing_trap", "harpoon"], "description": "A TOOL_KINDS kind." },
+              "bait": { "type": ["string", "null"], "description": "The Bait its catches spend (one Bait for all fishing; each fish says how much, items fish.bait), or null: only a Trap's pool with none catches." },
               "catches": {
                 "type": "array",
                 "items": {
@@ -208,6 +208,13 @@
             "reach": { "type": "number", "minimum": 0, "description": "Not read: every camp works the one standard reach (reachRegistry.js STANDARD_REACH_U). Kept so older content still validates." }
           }
         },
+        "spotRate": {
+          "description": "Raises the fishing spot rate on the water in its reach (src/config/registries/fishingSpots.js spotRateOf; src/systems/board/FishingSpots.js). Any Token may carry it.",
+          "type": "object",
+          "properties": {
+            "percent": { "type": "number", "minimum": 0, "maximum": 1000, "description": "How much more often spots arrive there: 100 is twice as often. SPOT_RATE_MAX caps it." }
+          }
+        },
         "standsOn": {
           "type": "array",
           "items": { "type": "string", "enum": ["water", "shore", "grass", "rock", "sand", "stone"] },
@@ -223,13 +230,13 @@
             "kinds": {
               "type": "array",
               "maxItems": 2,
-              "items": { "type": "string", "enum": ["armoured", "nimble", "swift", "brute", "venomous"] },
-              "description": "ENEMY_KINDS (src/config/registries/enemyKinds.js), at most two."
+              "items": { "type": "string" },
+              "description": "Library effect ids it always carries, at most two (src/config/registries/enemyKinds.js); a built-in preset id (ENEMY_KINDS) is read as the preset until the library holds its effect."
             },
             "resistances": {
               "type": "object",
-              "description": "By damage type or group; each value one of 100, 50, 25, -25, -50, others dropped (damageTypes.js normaliseResistances).",
-              "additionalProperties": { "type": "number", "enum": [100, 50, 25, -25, -50] }
+              "description": "By damage type or group; each value one of 100, 50, 25, -25, -50, -100, others dropped (damageTypes.js normaliseResistances).",
+              "additionalProperties": { "type": "number", "enum": [100, 50, 25, -25, -50, -100] }
             },
             "moves": {
               "type": "array",
@@ -247,15 +254,15 @@
                 }
               }
             },
-            "boss": { "type": "boolean", "description": "Display only (lifecycleLines.js)." },
-            "hit": { "type": "number", "description": "Authored hit, replacing the level's." },
+            "boss": { "type": "boolean", "description": "Retired: a boss is what a boss camp spawns. Read by nothing; the audit names it (LEFTOVER_ENEMY_FIELDS)." },
+            "hit": { "type": "number", "description": "Authored hit, replacing the level's; a fraction rolls, as every hit's does." },
             "hp": { "type": "number" },
             "speed": { "type": "string", "enum": ["fast", "normal", "slow"] },
             "xp": { "type": "number" },
             "dodge": { "type": "number" },
             "accuracy": { "type": "number" },
             "critChance": { "type": "number", "description": "Percent." },
-            "budgetScale": { "type": "number", "description": "An older multiplier." }
+            "budgetScale": { "type": "number", "description": "Retired: the level table fills the numbers. Read by nothing; the audit names it (LEFTOVER_ENEMY_FIELDS)." }
           }
         },
         "provides": { "type": "array", "description": "Retired inline capability tags (strings or { tag, tier }), still read by statements.js and QuestManager.js; the CMS removes them when a rule is added." },

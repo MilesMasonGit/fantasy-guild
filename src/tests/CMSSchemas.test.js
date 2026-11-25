@@ -10,7 +10,7 @@ import { workspaceFromImport } from '../../cms/src/engine/workspaceSeeds.js';
 import { saveWorkspaceFile } from '../../cms/workspaceFile.js';
 
 import { TOOL_KINDS } from '../config/registries/toolKinds.js';
-import { DAMAGE_TYPES } from '../config/registries/damageTypes.js';
+import { DAMAGE_TYPES, RESISTANCE_STEPS } from '../config/registries/damageTypes.js';
 import { ITEM_TYPES } from '../config/registries/itemRegistry.js';
 import { TOKEN_TYPES, TOKEN_RARITIES, FOUNDATION_KINDS, STATION_KINDS, RETIRED_STATION_KINDS, RESPAWN_MODES, OUTPUT_CURRENCIES } from '../config/registries/tokenConstants.js';
 import { KEYWORD } from '../systems/effects/statements.js';
@@ -20,7 +20,6 @@ import { ROLES } from '../config/registries/roleRegistry.js';
 import { CHARGE_MOMENTS } from '../config/registries/chargeMomentRegistry.js';
 import { TARGET_MODES, MODIFIER_BUCKETS } from '../config/registries/modifierPalette.js';
 import { ENEMY_STYLES } from '../config/registries/enemyProfile.js';
-import { ENEMY_KINDS } from '../config/registries/enemyKinds.js';
 import { STANDS_ON_CHOICES } from '../systems/atlas/TerrainMap.js';
 import { TEMPO_NAMES } from '../../cms/src/engine/ledger/tempoBands.js';
 import { ATTACK_SPEED_MS } from '../config/FormulaRegistry.js';
@@ -150,7 +149,9 @@ describe('the schemas\' word lists are the game\'s', () => {
         same(at('tokens', `${token}/foundation/properties/kind/enum`), FOUNDATION_KINDS);
         same(at('tokens', `${token}/standsOn/items/enum`), STANDS_ON_CHOICES.map((c) => c.id));
         same(at('tokens', `${token}/enemy/properties/style/enum`), ENEMY_STYLES);
-        same(at('tokens', `${token}/enemy/properties/kinds/items/enum`), ENEMY_KINDS);
+        // A kind is a library effect's id (or a built-in preset's): any string, no list.
+        expect(at('tokens', `${token}/enemy/properties/kinds/items`)).toEqual({ type: 'string' });
+        same(at('tokens', `${token}/enemy/properties/resistances/additionalProperties/enum`), RESISTANCE_STEPS);
         same(at('tokens', `${token}/enemy/properties/moves/items/properties/damageType/enum`), DAMAGE_TYPES);
         same(at('tokens', `${token}/enemy/properties/speed/enum`), Object.keys(ATTACK_SPEED_MS));
     });

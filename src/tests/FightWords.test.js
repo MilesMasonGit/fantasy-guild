@@ -8,7 +8,8 @@ import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { startFightWatch, resetFightWatch, fightsOf } from '../ui/components/combat/fightWatch.js';
-import { FightLog } from '../ui/components/combat/FightPanel.jsx';
+import { FightLog, FightPanelView } from '../ui/components/combat/FightPanel.jsx';
+import { FightTabView } from '../ui/components/combat/FightTab.jsx';
 import { fightPanelView } from '../ui/components/combat/fightView.js';
 import { bannerText } from '../systems/notifications/bannerKinds.js';
 import { momentText } from '../ui/components/board/heroSpeech.js';
@@ -153,6 +154,50 @@ describe('Defeated, for winning and losing', () => {
         const banners = readFileSync('src/systems/notifications/bannerKinds.js', 'utf8');
         const literals = banners.match(/`[^`]*`|'[^'\n]*'/g) || [];
         expect(literals.filter(s => said.test(s) && !/^'[\w.]+'$/.test(s))).toEqual([]);
+    });
+});
+
+describe('the fight window says the whole result on its own line', () => {
+    const noop = () => {};
+    const panel = (fightsNow) => render(React.createElement(FightPanelView, {
+        view: fightPanelView('h1', fightsNow), fights: fightsNow, onClose: noop, logOpen: false, onToggleLog: noop, tab: 'last', onTab: noop
+    })).container;
+    const finish = (outcome, ms) => {
+        engage();
+        resolve(outcome);
+        const record = fightsOf('h1').last;
+        record.endedAt = record.startedAt + ms;
+        return fightsOf('h1');
+    };
+    const lineOf = (container) => container.querySelector('[data-fight-result-line]');
+
+    it('a win: Defeated Goblin in 42s under the title bar, which still says Won', () => {
+        const c = panel(finish('victory', 42_000));
+        expect(lineOf(c)?.textContent).toBe('Defeated Goblin in 42s');
+        expect(lineOf(c).getAttribute('data-fight-result-line')).toBe('won');
+        const bar = c.querySelector('[data-fight-titlebar]');
+        expect(bar.contains(lineOf(c))).toBe(false);
+        expect(bar.querySelector('[data-fight-result]').textContent).toBe('Won');
+    });
+
+    it('a loss: Defeated by Goblin after 1m 5s, the title bar Lost', () => {
+        const c = panel(finish('defeat', 65_000));
+        expect(lineOf(c)?.textContent).toBe('Defeated by Goblin after 1m 5s');
+        expect(c.querySelector('[data-fight-titlebar] [data-fight-result]').textContent).toBe('Lost');
+    });
+
+    it('a fight under way has no result line', () => {
+        engage();
+        expect(lineOf(panel(fightsOf('h1')))).toBeNull();
+    });
+
+    it('the minimised tab keeps Won or Lost', () => {
+        const tabOf = (outcome) => render(React.createElement(FightTabView, {
+            heroId: 'h1', tab: { heroName: 'Kira', enemyName: 'Goblin', typeId: null, hero: { cur: 30, max: 30 }, enemy: { cur: 0, max: 20 }, outcome },
+            still: null, onOpen: noop
+        })).container.querySelector('[data-fight-tab-result]')?.textContent;
+        expect(tabOf('won')).toBe('Won');
+        expect(tabOf('lost')).toBe('Lost');
     });
 });
 

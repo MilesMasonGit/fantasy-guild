@@ -121,39 +121,39 @@ describe('a star\'s Type Damage % and Type Resistance % reach every hero', () =>
         expect(heroBlow(swordsman, ENEMY).exact).toBeCloseTo(before / 1.1 * 1.3, 9);
     });
 
-    it('a group\'s row (Physical) counts on each of its types, as a hero\'s own does today', () => {
+    it('a star\'s row on a group (Physical) counts on none of its types: only types carry numbers', () => {
         const before = heroBlow(swordsman, ENEMY).exact;
         holdStar([rule(EFFECT_TYPES.TYPE_DAMAGE, 20, 'physical')]);
-        expect(heroBlow(swordsman, ENEMY).exact).toBeCloseTo(before * 1.2, 9);
+        expect(heroBlow(swordsman, ENEMY).exact).toBe(before);
     });
 
-    it('+15 Physical resistance is summed with the hero\'s own and cuts an enemy\'s plain swing', () => {
-        carry(fist, EFFECT_TYPES.TYPE_RESIST, 10, 'physical');
-        const before = { slash: heroTypeResistance(fist, 'slash'), physical: heroTypeResistance(fist, 'physical'), fire: heroTypeResistance(fist, 'fire') };
+    it('+15 Crush resistance is summed with the hero\'s own and cuts an enemy\'s plain swing', () => {
+        carry(fist, EFFECT_TYPES.TYPE_RESIST, 10, 'crush');
+        const before = { slash: heroTypeResistance(fist, 'slash'), crush: heroTypeResistance(fist, 'crush'), fire: heroTypeResistance(fist, 'fire') };
         const blowBefore = enemyBlow(ENEMY, fist).exact;
-        holdStar([rule(EFFECT_TYPES.TYPE_RESIST, 15, 'physical')]);
-        expect(heroTypeResistance(fist, 'slash')).toBe(before.slash + 15);
-        expect(heroTypeResistance(fist, 'physical')).toBe(before.physical + 15);
+        holdStar([rule(EFFECT_TYPES.TYPE_RESIST, 15, 'crush')]);
+        expect(heroTypeResistance(fist, 'crush')).toBe(before.crush + 15);
+        expect(heroTypeResistance(fist, 'slash')).toBe(before.slash);
         expect(heroTypeResistance(fist, 'fire')).toBe(before.fire);
         expect(enemyBlow(ENEMY, fist).exact).toBeCloseTo(blowBefore / 0.9 * 0.75, 9);
     });
 
     it('Sunder on the hero lowers the guild\'s resistance with their own', () => {
-        holdStar([rule(EFFECT_TYPES.TYPE_RESIST, 15, 'physical')]);
+        holdStar([rule(EFFECT_TYPES.TYPE_RESIST, 15, 'crush')]);
         carry(fist, EFFECT_TYPES.SUNDER, 10);
-        expect(heroTypeResistance(fist, 'slash')).toBe(5);
+        expect(heroTypeResistance(fist, 'crush')).toBe(5);
     });
 
     it('the fight window shows the star\'s boost and resistance', () => {
-        holdStar([rule(EFFECT_TYPES.TYPE_DAMAGE, 20, 'slash'), rule(EFFECT_TYPES.TYPE_RESIST, 15, 'physical')]);
+        holdStar([rule(EFFECT_TYPES.TYPE_DAMAGE, 20, 'slash'), rule(EFFECT_TYPES.TYPE_RESIST, 15, 'crush')]);
         expect(heroSide(swordsman).hitLines.some(l => l.includes('20%'))).toBe(true);
-        expect(heroResistLines(fist).find(l => l.id === 'physical')?.value).toBe(15);
+        expect(heroResistLines(fist).find(l => l.id === 'crush')?.value).toBe(15);
     });
 });
 
 describe('enemies never read the guild\'s', () => {
     it('a star\'s four combat effects leave an enemy\'s numbers alone', () => {
-        const enemy = { ...ENEMY, resistances: { physical: 10 } };
+        const enemy = { ...ENEMY, resistances: { slash: 10 } };
         const read = () => ({
             crit: enemyCritChance(enemy), dodge: enemyDodge(enemy), boost: typeDamageBoost(enemy, 'slash'),
             resist: enemyTypeResistance(enemy, 'slash'), blow: enemyBlow(enemy, swordsman).exact
@@ -161,7 +161,7 @@ describe('enemies never read the guild\'s', () => {
         const before = read();
         holdStar([
             rule(EFFECT_TYPES.CRIT_CHANCE, 10), rule(EFFECT_TYPES.DODGE, 8),
-            rule(EFFECT_TYPES.TYPE_DAMAGE, 20, 'physical')
+            rule(EFFECT_TYPES.TYPE_DAMAGE, 20, 'slash'), rule(EFFECT_TYPES.TYPE_RESIST, 15, 'slash')
         ]);
         expect(read()).toEqual(before);
     });
@@ -207,7 +207,7 @@ describe('the words: the Hall Effects list and the star card', () => {
         [rule(EFFECT_TYPES.CRIT_CHANCE, 5), 'Crit Chance +5% for every hero in combat.', 'Every hero crits more often.', 'Crit Chance +5%'],
         [rule(EFFECT_TYPES.DODGE, 4), 'Dodge +4% for every hero in combat.', 'Every hero dodges more.', 'Dodge +4%'],
         [rule(EFFECT_TYPES.TYPE_DAMAGE, 10, 'fire'), 'Gives every hero 10% more Fire damage in combat.', 'Every hero hits harder with Fire.', '10% more Fire damage'],
-        [rule(EFFECT_TYPES.TYPE_RESIST, 10, 'physical'), 'Gives every hero 10% Physical resistance in combat.', 'Every hero takes less from Physical.', '10% Physical resistance'],
+        [rule(EFFECT_TYPES.TYPE_RESIST, 10, 'crush'), 'Gives every hero 10% Crush resistance in combat.', 'Every hero takes less from Crush.', '10% Crush resistance'],
         [rule(EFFECT_TYPES.TYPE_RESIST, -5, 'slash'), 'Gives every hero a 5% Slash weakness in combat.', 'Every hero takes more from Slash.', 'a 5% Slash weakness']
     ];
     it.each(cases)('%#: says who it helps and how', (statement, line, sentence, amount) => {

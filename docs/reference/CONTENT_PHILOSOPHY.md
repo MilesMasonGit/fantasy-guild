@@ -57,14 +57,14 @@ The levels follow the metals' amended ladder (copper 1, iron 20 and on, as in [S
 | Fletching | Bows, Crossbows, Arrows | Fletcher's Lodge |
 | Enchanting | Wands, Staves, Tomes; enchants jewellery and gear; special weapons | Enchanter's Tower |
 | Tailor | Stealth and Magic armour, Capes, String, fabrics, cloth for buildings | Tailor's Shop |
-| Crafting | Ranged armour, jewellery, cut gems, Planks, Parchment, Books, Rods, Traps, Bait, Charcoal | Workshop |
+| Crafting | Ranged armour, jewellery, cut gems, Planks, Parchment, Books, Rods, Traps, Charcoal, Faith's offerings (candles, incense, garlands; owner 2026-11-25) | Workshop |
 | Cooking | Food (heals in fights), drinks (work buffs only; never heal) | Kitchen |
 | Alchemy | Work potions, elixirs, poisons | Apothecary |
 | Construction | Every building and Token that's built, on a Foundation; building parts (owner 2026-11-21) | Builder's Yard |
 | Mining, Forestry, Fishing, Farming | Gather; see below | Mining Camp, Logging Camp, Fishing Hut, Farmstead |
 | Melee, Ranged, Magic, Stealth | Fight | War Camp |
 
-Faith, Summoning, Science and Crime are designed in `concept_skill_identities.md` (brief 810); their content waits on the build. Taming is cut (owner, 2026-11-22): Wool drops from a Sheep enemy instead. Placeholder buildings: Chapel, Summoning Circle, Laboratory, Hideout.
+Faith, Summoning, Science and Crime are designed in `concept_skill_identities.md` (brief 810). Summoning, Crime and Science have content pages (owner 2026-11-25): [content_summoning.md](../active/content_summoning.md), [content_crime.md](../active/content_crime.md), [content_science.md](../active/content_science.md); Faith's offerings are in the concept. Taming is cut (owner, 2026-11-22): Wool drops from a Sheep enemy instead. Placeholder buildings: Chapel, Summoning Circle, Laboratory, Hideout.
 
 ## How the skills interlock
 

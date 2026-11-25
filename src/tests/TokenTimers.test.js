@@ -59,7 +59,7 @@ describe('the words', () => {
         expect(respawnLine(at, { mode: 'refill', resting: true, inMs: 240000 }, src()))
             .toMatchObject({ label: 'Exhausted', text: '4m 0s', tip: `Exhausted · respawns in 4m${NB}0s` });
         expect(respawnLine(at, { mode: 'refill', resting: true, paused: true, needsNearby: ['orchard'] }, src()))
-            .toMatchObject({ label: 'Exhausted', text: '–', tip: 'Exhausted · respawns only with an Apple Orchard nearby', tone: 'warning', alert: true });
+            .toMatchObject({ label: 'Exhausted', text: '–', tip: 'Exhausted · respawns only while its own Apple Orchard stands', tone: 'warning', alert: true });
     });
 
     it('before it runs out, how it respawns: a refill in its rest, a regrow as what it leaves', () => {
@@ -83,7 +83,7 @@ describe('the words', () => {
     it('a growth waiting says why, with no time, and leaves the hover to its problem mark', () => {
         const at = { id: 's', typeId: 'stump' };
         expect(growthLine(at, { inMs: 0, into: 'sapling', paused: true, needsNearby: ['forest'], cost: [] }, src()))
-            .toMatchObject({ text: '–', tip: 'Respawns as Oak Sapling only with an Oak Forest nearby', alert: true });
+            .toMatchObject({ text: '–', tip: 'Respawns as Oak Sapling only while its own Oak Forest stands', alert: true });
         const cost = [{ itemId: 'item_seedling', quantity: 1 }];
         expect(growthLine(at, { inMs: 0, into: 'sapling', stopped: true, short: ['item_seedling'], cost, needsNearby: [] }, src()))
             .toMatchObject({ text: '–', tip: 'Stopped: needs 1 Oak Seedling to respawn as Oak Sapling', alert: true });

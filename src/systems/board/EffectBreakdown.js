@@ -277,16 +277,16 @@ function measureLucky(ctx, type) {
     return { base, resolved, final, limit, contributions };
 }
 
-/** A Field's harvests as its crop ripens (`Fields.loadAtRipening`). */
+/** A Field's harvests on average as its crop ripens (`Fields.loadAtRipening`), which set its chance to finish. */
 function measureAbundance(ctx, type) {
     const { instance, def } = ctx;
     if (!Fields.isField(def)) return null;
     const state = Fields.fieldState(instance);
-    // ⚠️ A ripe Field keeps the load it ripened with; a neighbour placed or removed since counts from the next crop.
+    // ⚠️ A ripe Field keeps the harvests it ripened with; a neighbour placed or removed since counts from the next crop.
     if (state.stage === Fields.STAGE.RIPE) {
         const planted = Fields.plantedCrop(instance, def);
         const base = cropTermsOf(planted).load;
-        return { base, resolved: state.full, final: state.full, limit: null, contributions: [] };
+        return { base, resolved: state.harvests, final: state.harvests, limit: null, contributions: [] };
     }
     const crop = Fields.cropOf(instance, def);
     if (!crop) return null;
@@ -294,13 +294,7 @@ function measureAbundance(ctx, type) {
     const skill = typeof def.config?.skill === 'string' && def.config.skill ? def.config.skill : TARGET_CATEGORIES.ALL;
     const { resolved, contributions } = TileModifiers.explainAxis(instance.id, type, base, skill);
     const final = Fields.loadAtRipening(instance, def, crop);
-    return { base, resolved, final, limit: wholeLimit(resolved, final), contributions };
-}
-
-/** A whole-number rule's limit: under one held at one, else a rounding that moved it. */
-function wholeLimit(resolved, final) {
-    if (Math.round(resolved) < 1) return LIMIT.AT_LEAST_ONE;
-    return Math.abs(final - resolved) > EPS ? LIMIT.WHOLE : null;
+    return { base, resolved, final, limit: resolved < 1 - EPS ? LIMIT.AT_LEAST_ONE : null, contributions };
 }
 
 // --- One Token -----------------------------------------------------------------------------------
@@ -332,7 +326,7 @@ function outputItemIds(ctx) {
     if (ctx.outputs) return ctx.outputs;
     let lines = [];
     if (ctx.enemy) lines = ctx.def.config?.outputs || [];
-    else if (ctx.works && Fishing.isWater(ctx.def)) lines = ctx.heroId ? (Fishing.fishingOf(ctx.def, ctx.heroId)?.pool?.catches || []) : [];
+    else if (ctx.works && Fishing.isWater(ctx.def)) lines = ctx.heroId ? (Fishing.fishingOf(ctx.def, ctx.heroId, ctx.instance)?.catches || []) : [];
     else if (ctx.works) lines = ctx.io?.outputs || [];
     ctx.outputs = [...new Set(lines.filter(l => l?.itemId && !l.currency).map(l => l.itemId))];
     return ctx.outputs;

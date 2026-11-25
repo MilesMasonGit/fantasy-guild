@@ -8,9 +8,10 @@ import { ringStarsOf, ringOfStar } from '../../world/ringStars.js';
 import { expandBearer } from '../../effects/effectLibrary.js';
 import { stationSkillOf, stationKindOf, KEYWORD } from '../../effects/statements.js';
 import {
-    stationKindOffers, foundationTierMeets, growsTermsOf, respawnOf, cropTermsOf, fieldOf, outputRange, PASSIVE_LAP_BASE_MS
+    stationKindOffers, foundationTierMeets, growsTermsOf, respawnOf, spawnerUpkeepOf, cropTermsOf, fieldOf, outputRange, PASSIVE_LAP_BASE_MS
 } from '../../../config/registries/tokenConstants.js';
 import { catchPoolsOf, hasCatchPools } from '../../../config/registries/catchPools.js';
+import { fishBait, fishCycleMs } from '../../../config/registries/fishRules.js';
 import { rareTableOf, rareEntryChances } from '../../../config/registries/rareTables.js';
 import { toolOf, neededToolOf, toolMeets, starterToolIds } from '../../../config/registries/toolKinds.js';
 import { STRICT_RINGS, SKILL_OF, EXTRA_KIND } from '../../../config/worldTablesShape.js';
@@ -361,11 +362,11 @@ export function buildWorld(content = {}) {
             add({ id: `shop:${id}`, how: HOW.SHOP, via: null, needs: needKeys(price), inputs: price, gives: [{ key: self, chance: 1 }] });
         }
 
-        // A spawner's spawns, paid by its upkeep; no hero needed.
+        // A spawner's spawns, paid by its upkeep (none for a Forest or an Orchard); no hero needed.
         if (isSpawner) {
             const spawns = list(def.spawner.spawns).filter(s => text(s.typeId) && weightOf(s) > 0);
             const total = spawns.reduce((sum, s) => sum + weightOf(s), 0);
-            const upkeep = inputsOf(def.spawner.upkeep);
+            const upkeep = inputsOf(spawnerUpkeepOf(def, typeId => tokens[typeId], id));
             if (spawns.length) {
                 add({
                     id: `spawn:${id}`, how: HOW.SPAWN, via: self, needs: [self, ...needKeys(upkeep)], inputs: upkeep,
@@ -375,7 +376,7 @@ export function buildWorld(content = {}) {
             }
         }
 
-        // Growth, once any one Token it needs nearby stands, paying its cost.
+        // Growth, once its owner stands (a Stump's Forest, any one of those named), paying its cost.
         if (isObject(def.grows) && text(def.grows.into)) {
             const terms = growsTermsOf(def);
             const cost = terms.cost.map(c => ({ key: itemKey(c.itemId), quantity: c.quantity }));
@@ -422,13 +423,17 @@ export function buildWorld(content = {}) {
             continue;
         }
 
-        // Water: each pool, its tool and its bait; one catch a cycle, by weight.
+        // Water: each pool, its tool and its Bait; one catch a cycle, by weight, as the lureless
+        // roll lands it: the Bait its fish ask on average, at the longest catch time among them.
         if (hasCatchPools(def)) {
-            const cycleMs = finite(Number(def.config?.cycleTimeMs), null);
+            const ownMs = finite(Number(def.config?.cycleTimeMs), null);
             const gates = gate(def.config?.skill, def.config?.skillRequired);
             catchPoolsOf(def).forEach((pool, i) => {
                 const total = pool.catches.reduce((sum, c) => sum + c.weight, 0);
-                const bait = pool.bait ? [{ key: itemKey(pool.bait), quantity: 1 }] : [];
+                const asked = total > 0 ? pool.catches.reduce((sum, c) => sum + c.weight * fishBait(items[c.itemId]), 0) / total : 1;
+                const bait = pool.bait && asked > 0 ? [{ key: itemKey(pool.bait), quantity: asked }] : [];
+                const times = pool.catches.map(c => fishCycleMs(items[c.itemId], ownMs)).filter(ms => Number.isFinite(ms));
+                const cycleMs = times.length ? Math.max(...times) : ownMs;
                 add({
                     id: `catch:${id}:${i}`, how: HOW.CATCH, via: self, needs: [self, ...needKeys(bait)], inputs: bait,
                     tool: noteNeed({ kind: pool.tool, minTier: 1 }), gates, cycleMs, pool: { tool: pool.tool, bait: pool.bait },

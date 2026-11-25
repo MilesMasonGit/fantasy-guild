@@ -10,7 +10,9 @@ import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { Bubble } from './Bubble.jsx';
 import { HealthBar } from './HealthBar.jsx';
 import { enemyBarPlace, fightBarShift } from './healthBar.js';
-import { RecipeBubble } from './RecipeBubble.jsx';
+import { RecipeBubble, SpriteBubble } from './RecipeBubble.jsx';
+import { spotFishIds } from './spotFish.js';
+import * as Fishing from '../../../systems/board/Fishing.js';
 import { isCapSeen, seeCap, capAlertNow } from './capSeen.js';
 import { StationGearBadge, MarkedBadge } from './TokenBadges.jsx';
 import { ProblemMark } from './ProblemMark.jsx';
@@ -58,7 +60,8 @@ const PLATE_POINTER = 'var(--plate-pointer, auto)';
  * the mat hands it `fightBar` (`{ host, left, top }`: the fight layer's node and this box's
  * corner in mat units) and the bar draws there, over the loot (`FightBarHost`).
  * - **The recipe bubble** (`RecipeBubble`): resting on a Token with a recipe chosen, its output
- * in a speech bubble over the art.
+ * in a speech bubble over the art. Resting on a water (a fishing spot), the fish it can give
+ * where it stands, in the same bubble.
  * `isHovered` is the mat's rest (`useHoverRest`), not the bare hover: the pointer has stayed on
  * the Token for a moment, so a sweep across the mat mounts none of the rested things.
  * - While the Token is dragged: nothing.
@@ -220,6 +223,15 @@ export const TokenBubbles = ({
 
     const barUnit = plateUnit(useMatFit() || 1);
 
+    // Read only while rested on: a spot's place does not change under it.
+    const fish = useMemo(() => {
+        if (!isHovered || marked || !instanceId) return null;
+        const def = getTokenType(typeId);
+        if (!Fishing.isWater(def)) return null;
+        const ids = spotFishIds(Fishing.poolsHere(def, BoardState.getTokenById(instanceId)));
+        return ids.length ? ids : null;
+    }, [isHovered, marked, instanceId, typeId]);
+
     if (isDragging) return null;
 
     const fight = hasHero && combat;
@@ -267,6 +279,7 @@ export const TokenBubbles = ({
             })()}
 
             {showRecipe && <RecipeBubble recipe={gear.recipe} boxPx={boxPx} top={artTop} u={barUnit} />}
+            {!showRecipe && fish && <SpriteBubble ids={fish} boxPx={boxPx} top={artTop} u={barUnit} data-fish-bubble={fish.join(' ')} />}
 
             {(showGear || showProblem || marked) && (
                 <div

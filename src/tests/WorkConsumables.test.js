@@ -349,7 +349,9 @@ describe('⭐ nothing acts by sitting in the Bank', () => {
         const findings = auditContent();
         expect(findings.find(f => f.where === 'Item "s6b_haste_potion"')?.what).toMatch(/always-on rule .*does nothing/);
         expect(findings.find(f => f.where === 'Item "s6b_haste_snack"')).toBeTruthy();
-        expect(findings.find(f => f.where === 'Item "s6b_haste_charm"')).toBeUndefined();
+        // The charm's -50 % Speed beside the shipped tools' may reach the speed-up floor, which the
+        // stack audit names on it; the consumables check never does.
+        expect(findings.find(f => f.where === 'Item "s6b_haste_charm"' && /always-on rule/.test(f.what))).toBeUndefined();
         expect(findings.find(f => f.where === 'Item "s6b_coffee"')).toBeUndefined();
     });
 

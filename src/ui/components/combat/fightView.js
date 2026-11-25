@@ -5,7 +5,7 @@ import { isFightElixir } from '../../../systems/hero/ConsumptionSystem.js';
 import { MAX_SKILL_LEVEL } from '../../../utils/XPCurve.js';
 import * as CombatFormulas from '../../../systems/combat/CombatFormulas.js';
 import { levelDamageBonus, UNARMED_DAMAGE } from '../../../config/FormulaRegistry.js';
-import { DAMAGE_GROUPS, DAMAGE_TYPES, PLAIN_ENEMY_HIT_TYPE, arrowOf } from '../../../config/registries/damageTypes.js';
+import { DAMAGE_TYPES, PLAIN_ENEMY_HIT_TYPE, arrowOf } from '../../../config/registries/damageTypes.js';
 import { nextArrowOf, shootsArrows, carriedArrowIds } from '../../../systems/combat/Arrows.js';
 import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
 import { getEquippedEntries, isConsumableCategory } from '../../../config/registries/equipmentConstants.js';
@@ -16,6 +16,7 @@ import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { tokenName, getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { EFFECTS } from '../../../config/registries/effectRegistry.js';
 import { statusBlockOf } from '../../../systems/effects/effectLibrary.js';
+import { enemyAtRest } from '../../../systems/effects/enemyKindEffects.js';
 import { rulesLinesOf } from '../../../systems/effects/statementText.js';
 import { carriedRuleNames } from '../dock/heroPerks.js';
 import { explainLinesOf, effectTypesOfStatements } from '../base/effectExplain.js';
@@ -40,53 +41,35 @@ export function damageText(n) {
     return String(Math.round(v * 100) / 100);
 }
 
-/** A damage type's or group's name in the player's words. */
+/** A damage type's name in the player's words. */
 export const damageTypeName = (id) => t(`fight.types.${id}`);
 
-/** Resistance lines in reading order, groups before types: `[{ id, value }]`, a weakness negative. */
+/** Resistance lines in type order: `[{ id, value }]`, a weakness negative. */
 function orderedLines(valueOf) {
     const out = [];
-    for (const { id } of [...DAMAGE_GROUPS, ...DAMAGE_TYPES]) {
+    for (const { id } of DAMAGE_TYPES) {
         const value = valueOf(id);
         if (value) out.push({ id, value });
     }
     return out;
 }
 
-/** An enemy's resistances as written (a type's line beside its group's, as the author put it). */
+/** An enemy's resistances as written. */
 export function enemyResistLines(resistances) {
     return orderedLines(id => Number(resistances?.[id]) || 0);
 }
 
 /**
  * An enemy's resistances in a fight, as they stand: its own, what effects on it lend and after any
- * Sunder (`CombatFormulas.enemyTypeResistance`). Each group's line, then a type's only where it
- * differs from its group's, as an enemy's lines read (a type's replaces its group's).
+ * Sunder (`CombatFormulas.enemyTypeResistance`).
  */
 export function liveEnemyResistLines(enemy) {
-    const groupValue = {};
-    for (const g of DAMAGE_GROUPS) groupValue[g.id] = CombatFormulas.enemyTypeResistance(enemy, g.id);
-    const out = [];
-    for (const g of DAMAGE_GROUPS) if (groupValue[g.id]) out.push({ id: g.id, value: groupValue[g.id] });
-    for (const type of DAMAGE_TYPES) {
-        const value = CombatFormulas.enemyTypeResistance(enemy, type.id);
-        if (value !== groupValue[type.group]) out.push({ id: type.id, value });
-    }
-    return out;
+    return orderedLines(id => CombatFormulas.enemyTypeResistance(enemy, id));
 }
 
-/**
- * A hero's resistances from what they carry and the guild gives: each group's rows, then each type's own rows beyond
- * its group's (the aggregator counts a group's row on its types, so a type's own is the difference).
- */
+/** A hero's resistances from what they carry and the guild gives, each type's lines added. */
 export function heroResistLines(hero) {
-    const groupValue = {};
-    for (const g of DAMAGE_GROUPS) groupValue[g.id] = CombatFormulas.heroTypeResistance(hero, g.id);
-    return orderedLines(id => {
-        if (groupValue[id] != null) return groupValue[id];
-        const type = DAMAGE_TYPES.find(x => x.id === id);
-        return Math.round((CombatFormulas.heroTypeResistance(hero, id) - (groupValue[type.group] || 0)) * 100) / 100;
-    });
+    return orderedLines(id => Math.round(CombatFormulas.heroTypeResistance(hero, id) * 100) / 100);
 }
 
 /**
@@ -200,7 +183,7 @@ export function movesView(moves) {
     }));
 }
 
-/** The types an enemy's attacks hit with: its moves' that hit, each once, or the plain Physical Strike's. */
+/** The types an enemy's attacks hit with: its moves' that hit, each once, or the plain Crush Strike's. */
 export function enemyHitTypes(moves) {
     if (!Array.isArray(moves) || moves.length === 0) return [PLAIN_ENEMY_HIT_TYPE];
     return [...new Set(moves.filter(m => m.hits).map(m => m.type))];
@@ -283,20 +266,35 @@ export function heroSide(hero) {
     };
 }
 
-/** An enemy's side of the versus card: live from its fight, or its type's numbers. */
+/**
+ * An enemy's hit, resistances and how often it attacks, as the engine reads them off `subject` (a
+ * fight's enemy, or one at rest, `enemyAtRest`): the hit the engine swings for (`enemyBlow`) before
+ * the matchup and the hero's resistances, with the flat Damage and the Damage percentage its effects
+ * and kinds lend it.
+ */
+function enemyNumbers(subject) {
+    return {
+        hit: Math.max(0, CombatFormulas.enemyBaseHit(subject) * CombatFormulas.damageMultiplierOf(subject)),
+        resists: liveEnemyResistLines(subject),
+        attackEveryMs: CombatFormulas.enemyAttackSpeedMs(subject)
+    };
+}
+
+/** An enemy Token type's hit, resistances and attack time before any fight: its own numbers and its kinds'. */
+export function enemyRestNumbers(profile) {
+    return profile ? enemyNumbers(enemyAtRest(profile)) : null;
+}
+
+/** An enemy's side of the versus card: live from its fight, or its type's numbers with its kinds. */
 export function enemySide(typeId, fight = null) {
     const profile = fight?.enemy || getEnemyProfile(typeId);
     if (!profile) return null;
     const live = !!fight;
-    // Live, the hit is the one the engine swings for (`enemyBlow`) before the matchup and the
-    // hero's resistances: with the flat Damage and the Damage percentage rules lend it.
-    const multiplier = live ? CombatFormulas.damageMultiplierOf(profile) : 1;
-    const hit = Math.max(0, (live ? CombatFormulas.enemyBaseHit(profile) : (profile.hit ?? 1)) * multiplier);
+    const subject = live ? profile : enemyAtRest(profile);
+    const { hit, resists, attackEveryMs } = enemyNumbers(subject);
     const known = hasFought(typeId);
     const hitTypes = enemyHitTypes(profile.moves);
-    const boosts = live
-        ? hitTypes.map(type => ({ type, n: CombatFormulas.typeDamageBoost(profile, type) })).filter(b => b.n)
-        : [];
+    const boosts = hitTypes.map(type => ({ type, n: CombatFormulas.typeDamageBoost(subject, type) })).filter(b => b.n);
     return {
         typeId,
         name: profile.name || tokenName(typeId),
@@ -311,18 +309,28 @@ export function enemySide(typeId, fight = null) {
         hitType: hitTypes[0] ?? PLAIN_ENEMY_HIT_TYPE,
         hitTypes,
         moves: movesView(profile.moves),
-        resists: live ? liveEnemyResistLines(profile) : enemyResistLines(profile.resistances),
-        attackEveryMs: live ? CombatFormulas.enemyAttackSpeedMs(profile) : (profile.attackSpeed || 3000),
+        resists,
+        attackEveryMs,
         kinds: known ? (profile.kinds || []).map(kindView).filter(Boolean) : null,
         statuses: live ? statusesView(fight) : [],
         buffs: live ? enemyBuffs(fight) : []
     };
 }
 
-/** A kind as the player reads it: its name and what it does. */
+/**
+ * A kind as the player reads it: its name and what it does. A kind that is a library effect is
+ * called by the effect's name; what it does is the effect's description once it has one, else the
+ * built-in words of the preset it replaces (Armoured, Nimble, Swift, Brute), else none.
+ */
 export function kindView(id) {
-    if (!getEnemyKind(id)) return null;
-    return { id, name: t(`fight.kinds.${id}.name`), tip: t(`fight.kinds.${id}.tip`) };
+    const entry = EFFECTS[id];
+    const preset = getEnemyKind(id);
+    if (entry) {
+        const own = typeof entry.description === 'string' ? entry.description.trim() : '';
+        return { id, name: entry.name || id, tip: own || (preset ? t(`fight.kinds.${preset.id}.tip`) : '') };
+    }
+    if (!preset) return null;
+    return { id, name: t(`fight.kinds.${preset.id}.name`), tip: t(`fight.kinds.${preset.id}.tip`) };
 }
 
 /** The enemy card's rows for an enemy Token type, or null. */

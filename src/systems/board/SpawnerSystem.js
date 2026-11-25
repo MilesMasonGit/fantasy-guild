@@ -2,6 +2,7 @@
 
 import { getTokenType, registryVersion } from '../../config/registries/tokenRegistry.js';
 import { isEnemyDef } from '../../config/registries/enemyProfile.js';
+import { isGroveSpawnerDef } from '../../config/registries/tokenConstants.js';
 import { PLACEMENT } from '../../config/registries/placementRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import { EventBus } from '../core/EventBus.js';
@@ -37,11 +38,11 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
  *
  * One attempt, in order:
  * 1. Cap: the family's live count must be below the spawner's own allowance: the family standing in
- * its reach, or for an enemy camp what it spawned ({@link isEnemyCampType}).
+ * its reach, or for an enemy camp, a Forest or an Orchard what it spawned ({@link countsOwn}).
  * 2. Mat cap: the mat must have room under the Token cap (`MatCap.canPlaceMore`); spawned Tokens
  * count toward it.
  * 3. Upkeep: the Bank and the item loot lying on the mat must hold all of it between them (checked,
- * not yet taken).
+ * not yet taken). A Forest or an Orchard has none ({@link upkeepOf}).
  * 4. Pick: a weighted pick from `spawns`.
  * 5. Land: `EffectActions.spawn` with `nearest_free` around the spawner; placed Tokens are fixed. A
  * spawner other than an enemy camp lands only within its reach, never pushing.
@@ -117,13 +118,34 @@ export function isEnemyCampType(spawnerTypeId) {
 }
 
 /**
+ * Whether a spawner type is a **Forest** or an **Orchard**: it owns what it spawns
+ * (`tokenConstants.isGroveSpawnerDef`). Like an enemy camp it ties each spawn to itself and counts
+ * only those against its allowance, so a lone tree of its species in its reach never fills it, and
+ * it plants for free. Memoised with {@link familyOf}.
+ */
+export function isGroveSpawnerType(spawnerTypeId) {
+    syncFamilyCaches();
+    let answer = groveCache.get(spawnerTypeId);
+    if (answer === undefined) {
+        answer = isGroveSpawnerDef(getTokenType(spawnerTypeId), getTokenType);
+        groveCache.set(spawnerTypeId, answer);
+    }
+    return answer;
+}
+
+/** Whether a spawner counts what it spawned rather than what stands in its reach. */
+function countsOwn(spawnerTypeId) {
+    return isEnemyCampType(spawnerTypeId) || isGroveSpawnerType(spawnerTypeId);
+}
+
+/**
  * ⚠️ Under the test suite every count from the census is compared with a walk of the mat, and a
  * difference fails the test that saw it (`tests/setup/tetherCensusCheck.js`). Off everywhere else: a
  * walk per answer is the very cost the census saves.
  */
 const CHECK_TETHER_CENSUS = import.meta.env?.MODE === 'test';
 
-/** How many of its family stand on the mat tethered to enemy camp `instance`: what it spawned. */
+/** How many of its family stand on the mat tethered to `instance`: what it spawned. */
 function countOwn(instance) {
     const ids = familySetOf(instance.typeId);
     let n = 0;
@@ -162,10 +184,10 @@ function countNear(instance) {
 
 /**
  * A spawner's live family count and its cap, `{ count, cap }`: within its reach against its own
- * allowance, or for an enemy camp what it spawned against its own allowance.
+ * allowance, or for an enemy camp, a Forest or an Orchard what it spawned against its own allowance.
  */
 function countsOf(instance, def) {
-    const count = isEnemyCampType(instance.typeId) ? countOwn(instance) : countNear(instance);
+    const count = countsOwn(instance.typeId) ? countOwn(instance) : countNear(instance);
     return { count, cap: allowanceOf(def) };
 }
 
@@ -176,6 +198,7 @@ function countsOf(instance, def) {
  */
 const familyCache = new Map();
 const enemyCampCache = new Map();
+const groveCache = new Map();
 let familyCacheRegVersion = -1;
 
 function syncFamilyCaches() {
@@ -183,6 +206,7 @@ function syncFamilyCaches() {
     if (regVersion === familyCacheRegVersion) return;
     familyCache.clear();
     enemyCampCache.clear();
+    groveCache.clear();
     familyCacheRegVersion = regVersion;
 }
 
@@ -264,9 +288,13 @@ function familyLabel(family) {
     return first ? (getTokenType(first)?.name || first) : '';
 }
 
-/** `upkeep` summed by item, so a list naming one item twice is checked as one. */
+/**
+ * `upkeep` summed by item, so a list naming one item twice is checked as one. A Forest or an Orchard
+ * pays none, whatever is authored: its seeds were paid once, to build it.
+ */
 function upkeepOf(def) {
     const total = new Map();
+    if (def?.id && isGroveSpawnerType(def.id)) return [];
     for (const line of Array.isArray(def?.spawner?.upkeep) ? def.spawner.upkeep : []) {
         const q = Math.floor(Number(line?.quantity));
         if (!line?.itemId || !(q > 0)) continue;
@@ -359,8 +387,9 @@ function tryToSpawn(instance, def, random, ctx) {
 
     const spawned = BoardState.getTokenById(landed.instanceId);
     // Tethered to the spawner that made it (this instance, not its type), saved: an enemy potters by
-    // it (`EnemyMotion`), and an enemy camp counts what it spawned by it, an enemy or not.
-    if (spawned && (isEnemyCampType(instance.typeId) || isEnemyDef(getTokenType(spawned.typeId)))) {
+    // it (`EnemyMotion`), an enemy camp counts what it spawned by it, an enemy or not, and a Forest's
+    // tree is its own (`Groves`).
+    if (spawned && (countsOwn(instance.typeId) || isEnemyDef(getTokenType(spawned.typeId)))) {
         BoardState.setTether(spawned, instance.id);
     }
     if (spawned && ctx.overMs > 0 && typeof ctx.advance === 'function') ctx.advance(spawned, ctx.overMs, random);
@@ -455,7 +484,7 @@ export function familyCounts() {
         const family = familyOf(s.typeId);
         if (!family.length) continue;
         const def = getTokenType(s.typeId);
-        const own = isEnemyCampType(s.typeId) ? 'its own' : 'its reach';
+        const own = countsOwn(s.typeId) ? 'its own' : 'its reach';
         rows.push({ id: s.id, kind: `${def?.name || s.typeId} (${own})`, typeIds: family, ...countsOf(s, def) });
     }
     return rows;

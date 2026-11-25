@@ -79,6 +79,9 @@ export function createEmptyBoard() {
         // enemy placed by hand later is never tethered by a reload. 0 reads as
         // not yet, exactly as a missing field did.
         enemyTethers: 0,
+        // 1 once `Groves.attachUntethered` has run on this board: an older save's
+        // trees have joined the Forest in their reach. 0 reads as not yet.
+        groveTethers: 0,
         // `tokenBank`, `tray`, `nextTrayZ`, `tokenBankSlots`, `tokenTabsUnlocked`
         // and `tokenGroups` went with the Token Vault and the Tray (Token
         // Lifecycle 9.3): Tokens live on the mat. `migrateState` drops them
@@ -183,7 +186,9 @@ export const INITIAL_STATE = {
         // Guild Hall upgrade ranks: { upgradeId: rank }. Owned by
         // GuildUpgradeManager, which derives rosterLimit and the bank caps
         // from it on every load.
-        guildUpgrades: {}
+        guildUpgrades: {},
+        // The guild's coins, a whole number (`inventory/Coins.js`); an older save gets 0 from `migrateState`.
+        coins: 0
     },
 
     // === Time ===

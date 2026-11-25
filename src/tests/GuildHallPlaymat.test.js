@@ -68,12 +68,17 @@ describe('Guild Hall upgrade web', () => {
         expect(keys.length).toBe(GUILD_UPGRADES.reduce((n, d) => n + d.links.length, 0));
     });
 
-    // Every built-in star joins the Hall, so a new game opens them all: Bank Tabs, once beyond
-    // Bank Slots, moved in when Bank Slots retired (brief 310). Only the test star is shut. The
-    // Compass's three (Token Cap, Cartography Table, Notice Board) retired with brief 320.
-    it('opens every built-in upgrade on a new game', () => {
-        const open = GUILD_UPGRADES.filter(d => !d.authored && isUpgradeAccessible(d.id, {})).map(d => d.id).sort();
-        expect(open).toEqual(['bank_tabs', 'roster_size', 'wishing_well']);
+    // Bunk Beds, Bank Tabs and the Wishing Well each join the Hall, so a new game opens them all:
+    // Bank Tabs, once beyond Bank Slots, moved in when Bank Slots retired (brief 310). The data
+    // authors the three now, so no stand-in is left. The Compass's three (Token Cap, Cartography
+    // Table, Notice Board) retired with brief 320.
+    it('opens Bunk Beds, Bank Tabs and the Wishing Well on a new game, all three authored', () => {
+        const three = ['bank_tabs', 'roster_size', 'wishing_well'];
+        for (const id of three) {
+            expect(getUpgradeDef(id)?.authored, id).toBe(true);
+            expect(isUpgradeAccessible(id, {}), id).toBe(true);
+        }
+        expect(GUILD_UPGRADES.filter(d => d.fallback).map(d => d.id)).toEqual([]);
         for (const id of ['token_cap', 'cartography_slots', 'notice_board']) expect(getUpgradeDef(id), id).toBeNull();
     });
 

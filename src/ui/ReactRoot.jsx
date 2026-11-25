@@ -57,6 +57,7 @@ import { LimesLessonSpeaker } from './components/limes/LimesLessonSpeaker.jsx';
 import MatRegionName from './components/board/MatRegionName.jsx';
 import MatCapBadge from './components/board/MatCapBadge.jsx';
 import MatUpkeepBadge from './components/board/MatUpkeepBadge.jsx';
+import MatCoinCount from './components/board/MatCoinCount.jsx';
 import { MapModeBanner } from './components/board/MatModeControls.jsx';
 import { PerfProfiler, usePerfHudShowing } from './dev/perf/PerfProfiler.jsx';
 import { useDrawn } from './dev/perf/drawSwitches.js';
@@ -288,7 +289,7 @@ const ReactRoot = () => {
                             <PerfProfiler id="TopBar">
                                 <MatTopBar
                                     left={<MatLogo />}
-                                    middle={<MapModeBanner fallback={SHOW_MAT_COUNTS ? <><MatCapBadge /><MatUpkeepBadge /></> : null} />}
+                                    middle={<MapModeBanner fallback={SHOW_MAT_COUNTS ? <><MatCapBadge /><MatUpkeepBadge /></> : <MatCoinCount />} />}
                                     right={<MatRegionName onOpenAtlas={openAtlasFromBar} />}
                                 />
                             </PerfProfiler>

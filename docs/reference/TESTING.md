@@ -167,6 +167,7 @@ Phases that touch the same files stay sequential.
 - In a worktree, run **simple single git commands** (`git -C <path> …`): no
   loops, heredocs or chained `cd && git`; the safety check refuses git
   commands it can't read.
+- **Never `git stash` in a worktree**: the stash list is shared by every worktree, so one agent's pop can apply another's changes. Set work aside with a WIP commit or a patch file.
 - Read the worktree's copy of a file before editing it (Edit refuses a file
   you haven't read at that path).
 

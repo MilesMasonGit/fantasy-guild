@@ -19,7 +19,7 @@ import { MAGNITUDE_KIND, statsForRoles } from '../../../../src/config/registries
 import { PLACEMENTS, placementOf } from '../../../../src/config/registries/placementRegistry.js';
 import { getAllSkills, getSkill, COMBAT_SKILL_IDS } from '../../../../src/config/registries/skillRegistry.js';
 import { CARRIED_KINDS } from '../../../../src/config/registries/carriedKinds.js';
-import { DAMAGE_GROUPS, DAMAGE_TYPES, typesOfGroup, damageTypeLabel } from '../../../../src/config/registries/damageTypes.js';
+import { DAMAGE_TYPES, damageTypeLabel } from '../../../../src/config/registries/damageTypes.js';
 import { stationKindLabel, stationKindsOfSkill, isRetiredStationKind } from '../../../../src/config/registries/tokenConstants.js';
 
 /**
@@ -140,10 +140,9 @@ const statusOptions = (ctx) => Object.values(ctx?.effects || {})
     .filter(e => statusBlockOf(e))
     .map(e => option(e.id, e.name || e.id, 'A status effect.'));
 
-/** The damage groups, then the types under them: what a Type Damage or Resistance row may name. */
+/** Every type, then the nine types: what a Type Damage or Resistance row may name (a group carries no number). */
 const damageTypeOptions = () => [
     option('', 'Every type', 'Every hit, whatever its type.'),
-    ...DAMAGE_GROUPS.map(g => option(g.id, g.label, `The ${g.label} group: ${typesOfGroup(g.id).map(damageTypeLabel).join(', ')}.`)),
     ...DAMAGE_TYPES.map(t => option(t.id, t.label, `${t.label}, one ${damageTypeLabel(t.group)} type.`))
 ];
 
@@ -566,7 +565,8 @@ function payloadSlots(statement, ctx) {
  * @param {object} statement
  * @param {object} [ctx]  the vocabulary (`tokens`, `items`, `effects`, `capabilities`), and
  *   `carried: true` when a hero carries the rule (an item's, a perk's), `onToken: true` when a
- *   Token does (its own rules, or a library effect a Token names)
+ *   Token does (its own rules, or a library effect a Token names), `enemyHeld: true` when only
+ *   enemies do (no every-Nth count)
  * @returns {Array<object>} slots, each with `id`, `kind`, `label`, `value` and
  *   a `patch(value)` returning the change to merge into the statement
  */
@@ -620,13 +620,18 @@ export function slotsOf(statement, ctx = {}) {
                 patch: v => ({ when: { ...statement.when, threshold: Math.max(1, Number(v) || 1) } })
             });
         }
-        // A counted fight moment: every Nth swing or hit.
-        if (moment.countNoun) {
+        // A counted fight moment: every Nth swing or hit. An enemy's rules fire on every one (its
+        // attacks are its moves, picked by weight), so an enemy's effect is not offered a count; one
+        // left over keeps its slot, to be seen and set back to 1.
+        const stray = ctx.enemyHeld && everyOf(statement?.when) > 1;
+        if (moment.countNoun && (!ctx.enemyHeld || stray)) {
             const noun = moment.countNoun.toLowerCase();
             slots.push({
                 id: 'every', kind: SLOT_KIND.NUMBER, label: `every Nth ${noun}`, min: 1,
                 value: everyOf(statement?.when),
-                hint: `1 fires on every ${noun}; 4 on the 4th, 8th, 12th… of each fight.`,
+                hint: stray
+                    ? `An enemy's rules fire on every ${noun}, so this count is ignored. Set it to 1.`
+                    : `1 fires on every ${noun}; 4 on the 4th, 8th, 12th… of each fight.`,
                 patch: v => ({ when: { ...statement.when, every: Math.max(1, Math.floor(Number(v) || 1)) } })
             });
         }

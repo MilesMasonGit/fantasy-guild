@@ -48,6 +48,8 @@ describe('⭐ a cell\'s mat (the placeholder tables)', () => {
             for (const cell of strictCells(worldOf(seed))) {
                 const mat = cellMat(cell, TABLES, LOOKUPS);
                 const skills = new Set(mat.nodes.map(n => n.skill).filter(Boolean));
+                // Fish come from spots on the water, not from nodes: a mat with water offers Fishing.
+                if (mat.water > 0 || mat.inland.length) skills.add('fishing');
                 expect(skills.size, `${seed} ${cell.id} ${[...skills]}`).toBeGreaterThanOrEqual(3);
                 expect(mat.camps.reduce((n, c) => n + c.count, 0), `${seed} ${cell.id}`).toBeGreaterThanOrEqual(1);
             }

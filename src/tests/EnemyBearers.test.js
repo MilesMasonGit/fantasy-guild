@@ -193,12 +193,15 @@ describe('a fight is a bearer', () => {
 // Rewritten for damage types: flat armour (and the old DEFENSE axis) is gone. What an enemy shrugs
 // off is its resistances, from its own block and from what lingers on it, by damage type.
 describe('an enemy has resistances, and they mean what a hero\'s mean', () => {
-    it('sums its own block and the aggregator; a type\'s line replaces its group\'s, rows add', () => {
+    it('sums its own line and the aggregator\'s rows for the type; a group\'s line or row counts nowhere', () => {
         const aggregator = new ModifierAggregator('e');
-        aggregator.addModifier({ type: EFFECT_TYPES.TYPE_RESIST, value: 25, bucket: 'flat', source: 't', target: { category: 'physical' } });
-        const enemy = { resistances: { physical: 50, crush: -50 }, aggregator };
+        aggregator.addModifier({ type: EFFECT_TYPES.TYPE_RESIST, value: 25, bucket: 'flat', source: 't', target: { category: 'slash' } });
+        aggregator.addModifier({ type: EFFECT_TYPES.TYPE_RESIST, value: 25, bucket: 'flat', source: 'u', target: { category: 'crush' } });
+        aggregator.addModifier({ type: EFFECT_TYPES.TYPE_RESIST, value: 40, bucket: 'flat', source: 'v', target: { category: 'physical' } });
+        const enemy = { resistances: { slash: 50, crush: -50, physical: 50 }, aggregator };
         expect(enemyTypeResistance(enemy, 'slash')).toBe(75);
         expect(enemyTypeResistance(enemy, 'crush')).toBe(-25);
+        expect(enemyTypeResistance(enemy, 'stab')).toBe(0);
         expect(enemyTypeResistance(enemy, 'fire')).toBe(0);
     });
 
@@ -233,7 +236,7 @@ describe('an enemy has resistances, and they mean what a hero\'s mean', () => {
 
     it('a carried shield effect is what lends a fighting enemy its resistance', () => {
         const fight = engage();
-        authored('effect_monster_shield', lasting(EFFECT_TYPES.TYPE_RESIST, 50, 'physical'));
+        authored('effect_monster_shield', lasting(EFFECT_TYPES.TYPE_RESIST, 50, 'stab'));
 
         expect(enemyTypeResistance(fight.enemy, 'stab')).toBe(0);
         LiveEffects.applyTo(bearer(), { effectId: 'effect_monster_shield', durationMs: 60000 });
@@ -242,7 +245,7 @@ describe('an enemy has resistances, and they mean what a hero\'s mean', () => {
 
     it('and gives it back when the effect is removed', () => {
         const fight = engage();
-        authored('effect_temp_shield', lasting(EFFECT_TYPES.TYPE_RESIST, 50, 'physical'));
+        authored('effect_temp_shield', lasting(EFFECT_TYPES.TYPE_RESIST, 50, 'stab'));
         const b = bearer();
         LiveEffects.applyTo(b, { effectId: 'effect_temp_shield', durationMs: 60000 });
 

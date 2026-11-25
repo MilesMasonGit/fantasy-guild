@@ -8,6 +8,7 @@
  */
 
 import { calloutText } from './callouts.js';
+import { t } from '../../../i18n/index.js';
 
 /** Bubbles above one head at once. */
 export const MAX_BUBBLES = 3;
@@ -15,7 +16,7 @@ export const MAX_BUBBLES = 3;
 /** How long a moment stays up. */
 export const MOMENT_TTL_MS = 5000;
 
-/** How long "{enemy} Beaten" stays up: a hero at a camp says it after every kill. */
+/** How long "{enemy} Defeated" stays up: a hero at a camp says it after every kill. */
 export const BEATEN_TTL_MS = 3000;
 
 /**
@@ -60,11 +61,11 @@ export const momentText = {
     idle: (fights = false) => (fights ? 'Nothing to fight here.' : 'Nothing to work here.'),
     // Going idle because the fight they were sent to is taken: every fight is one-on-one. Also the
     // Token an order names, which another hero is working.
-    waiting: (enemy) => `Waiting for ${enemy}.`,
+    waiting: (enemy) => t('heroSpeech.waiting', { enemy }),
     // The Token an order named is gone for good: a new order is wanted.
     needsJob: () => 'I need a job.',
     // An enemy leaving: the hero who defeated it says so. A Token used up is a popup over it instead.
-    beaten: (enemy) => `${enemy} Defeated`,
+    beaten: (enemy) => t('heroSpeech.beaten', { enemy }),
     // A status landing on the hero in a fight, said as a callout over an enemy is: "Venom!".
     statusLands: (statusId) => calloutText.statusLands(statusId)
 };
@@ -79,12 +80,15 @@ export const momentText = {
  * * a node that is resting or growing back, or an enemy camp's next spawn: nothing. They wait
  * silently and work it when it is back; the flag's hover and the roster say "Waiting for Copper
  * Vein" ("Waiting for Goblin");
+ * * a camp of Fishing (`waitsForSpot`) with no spot in its reach: nothing. They wait for the next
+ * spot to arrive, the idle mark still showing;
  * * otherwise: "Nothing to work here.", or at a War Camp (`fights`) "Nothing to fight here."
  */
-export function idleMomentOf(waiting, name = null, { order = null, needsJob = false, fights = false } = {}) {
+export function idleMomentOf(waiting, name = null, { order = null, needsJob = false, fights = false, waitsForSpot = false } = {}) {
     if (needsJob) return { kind: 'needsJob', key: 'idle', text: momentText.needsJob() };
     if (order === 'spot') return null;
     if (waiting?.kind === 'node' || waiting?.kind === 'spawn') return null;
+    if (waitsForSpot && !waiting) return null;
     if (waiting?.kind === 'fight' || waiting?.kind === 'busy') return { kind: 'waiting', key: 'idle', text: momentText.waiting(name) };
     return { kind: 'idle', key: 'idle', text: momentText.idle(fights) };
 }

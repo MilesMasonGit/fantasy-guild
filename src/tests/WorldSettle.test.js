@@ -19,6 +19,7 @@ import { SETTLE_TEXT } from '../systems/world/Settling.js';
 import { HALL_CELL, CELL_STATE, settledIds, cellStates, priceRows, cellOutputs } from '../systems/world/frontier.js';
 import { cellsWithin, cellId } from '../systems/world/hex.js';
 import { resetMatTuning } from '../config/matTuning.js';
+import { getTokenType } from '../config/registries/tokenRegistry.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -141,9 +142,12 @@ describe('⭐ settling a cell', () => {
         expect(World.regionIdOfCell(cell.id)).toBe(result.region.id);
         expect(World.regionIdOfCell(HALL_CELL)).toBe(home);
         expect(result.region.practicalName).toBe(World.cellName(cell));
-        // Its board holds the cell's origins as the Region's own nodes.
-        const typeIds = new Set(BoardState.tokens().filter(t => BoardState.isFixture(t)).map(t => t.typeId));
-        for (const o of cell.origins) expect(typeIds.has(o.id), o.id).toBe(true);
+        // Its board holds the cell's origins as the Region's own nodes; a tree may stand as its wild
+        // Forest alone, which plants it.
+        const fixtures = BoardState.tokens().filter(t => BoardState.isFixture(t));
+        const typeIds = new Set(fixtures.map(t => t.typeId));
+        const planted = new Set(fixtures.flatMap(t => (getTokenType(t.typeId)?.spawner?.spawns || []).map(s => s.typeId)));
+        for (const o of cell.origins) expect(typeIds.has(o.id) || planted.has(o.id), o.id).toBe(true);
         // The cell is settled, and its outer neighbours are the frontier now.
         const states = World.cellStatesNow();
         expect(states.get(cell.id)).toBe(CELL_STATE.SETTLED);

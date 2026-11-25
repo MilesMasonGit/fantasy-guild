@@ -86,13 +86,16 @@ export function skillFailure(heroId, config) {
 }
 
 /**
- * `ALERT.NO_BAIT` when `heroId` holds a tool the water `instance` takes but no bait to fish it with
+ * `ALERT.FISH_LEVEL` when `heroId` holds a tool the water `instance` takes but its fish are above
+ * their Fishing level (`Fishing.levelNeededOf`); `ALERT.NO_BAIT` when they have too little Bait
  * (`Fishing.lacksBait`), else null. Not a {@link heroReason}: an order onto the water still stands,
  * and the hero lets go of it and waits, as by a resting vein, until given bait.
  */
 export function baitReason(heroId, instance, def = getTokenType(instance?.typeId)) {
     if (!heroId || !def || Demolition.isMarked(instance)) return null;
-    return Fishing.lacksBait(def, heroId) ? ALERT.NO_BAIT : null;
+    const stop = Fishing.stopOf(def, heroId, instance);
+    if (!stop) return null;
+    return stop === 'level' ? ALERT.FISH_LEVEL : ALERT.NO_BAIT;
 }
 
 /** {@link heroReason}'s tool gate (`toolNeed.js`). */

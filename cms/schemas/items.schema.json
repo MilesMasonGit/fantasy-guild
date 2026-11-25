@@ -35,9 +35,27 @@
           "description": "What tool it is (src/config/registries/toolKinds.js toolOf, used by HeroTools.js).",
           "type": "object",
           "properties": {
-            "kind": { "type": "string", "enum": ["pickaxe", "woodaxe", "fishing_rod", "sickle", "fishing_net", "fishing_trap"], "description": "TOOL_KINDS (toolKinds.js); any other kind makes it not a tool." },
+            "kind": { "type": "string", "enum": ["pickaxe", "woodaxe", "fishing_rod", "sickle", "fishing_net", "fishing_trap", "harpoon"], "description": "TOOL_KINDS (toolKinds.js); any other kind makes it not a tool." },
             "tier": { "type": "number", "minimum": 1, "description": "A whole number from 1; anything else reads as 1." },
-            "starter": { "type": "boolean", "description": "true puts it in a new hero's hands (StarterTools.js)." }
+            "starter": { "type": "boolean", "description": "true puts it in a new hero's hands (StarterTools.js)." },
+            "baitSaving": { "type": "integer", "minimum": 0, "description": "A fishing tool's Bait off each catch, never below 1 for a catch that spends any (src/config/registries/fishRules.js baitSpent)." }
+          }
+        },
+        "fish": {
+          "description": "A catch's terms (src/config/registries/fishRules.js fishOf, read by src/systems/board/Fishing.js); a field left out is the water's own.",
+          "type": "object",
+          "properties": {
+            "level": { "type": "integer", "minimum": 1, "description": "The Fishing level that catches it." },
+            "cycleMs": { "type": "number", "exclusiveMinimum": 0, "description": "How long one catch of it takes, in ms." },
+            "bait": { "type": "integer", "minimum": 0, "description": "Bait a catch of it spends, before a tool's saving; 0 spends none. Absent: 1." }
+          }
+        },
+        "lure": {
+          "description": "A lure carried in a Consumable cell (src/config/registries/fishRules.js lureOf): it picks its first fish a spot holds, for a rod.",
+          "type": "object",
+          "properties": {
+            "fish": { "type": "array", "items": { "type": "string" }, "description": "The fish (item ids) it picks." },
+            "breakChance": { "type": "number", "minimum": 0, "maximum": 100, "description": "% chance one is used up each catch it picks." }
           }
         },
         "styles": {

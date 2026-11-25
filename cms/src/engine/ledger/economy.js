@@ -4,6 +4,7 @@ import { HOW, FIND, parseKey, itemKey, tokenKey } from '../../../../src/systems/
 import { ruleIndex, ruleTier } from './checks.js';
 import { buildRateBook, LIFECYCLE } from './rates.js';
 import { planOf, tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
+import { spawnerUpkeepOf } from '../../../../src/config/registries/tokenConstants.js';
 
 /**
  * Checks E, worked out from the ledger and the content and handed to `runChecks` as `extra`
@@ -110,7 +111,7 @@ export function economyFindings(ledger, content = {}, { book = null } = {}) {
     };
     for (const id of rates.tokenIds()) {
         const def = rates.token(id);
-        const upkeep = list(def?.spawner?.upkeep).filter(u => typeof u?.itemId === 'string' && Number(u.quantity) > 0);
+        const upkeep = list(spawnerUpkeepOf(def, rates.token, id)).filter(u => typeof u?.itemId === 'string' && Number(u.quantity) > 0);
         const key = tokenKey(id);
         if (!upkeep.length || !counted(key) || !Number.isInteger(reach.get(key)?.tier)) continue;
         const cost = upkeep.map(u => ({ itemId: u.itemId, value: valueOf(u.itemId), quantity: Number(u.quantity) }));

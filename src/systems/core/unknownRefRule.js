@@ -1,10 +1,10 @@
 // Content that names a skill, a job or a damage type the game does not have, or a rule, style or number it no longer reads; an enemy's malformed moves.
 
 import { isSkillId, COMBAT_SKILL_IDS, getSkill } from '../../config/registries/skillRegistry.js';
-import { getEnemyKind, kindsClash, MAX_ENEMY_KINDS } from '../../config/registries/enemyKinds.js';
+import { getEnemyKind, kindEffectIdOf, kindsClash, MAX_ENEMY_KINDS } from '../../config/registries/enemyKinds.js';
 import { isWeapon, authoredWeaponStyles, weaponStyleOf } from '../../config/registries/weaponStyles.js';
 import { getPaletteEntry, isCombatStyleScope } from '../../config/registries/modifierPalette.js';
-import { isDamageTypeId, isTypeOrGroupId, resistanceProblems } from '../../config/registries/damageTypes.js';
+import { isDamageTypeId, isDamageGroupId, groupLineAdvice, resistanceProblems } from '../../config/registries/damageTypes.js';
 import { RETIRED_ENEMY_FIELDS } from '../../config/registries/enemyProfile.js';
 import { moveProblems } from '../../config/registries/enemyMoves.js';
 import { statusBlockOf } from '../effects/effectLibrary.js';
@@ -85,8 +85,12 @@ function effectRowFindings(entry, push) {
         if (provides && hasValue(payload.type) && !row) {
             push('statements', `provides "${payload.type}", which the game does not have: it does nothing. Delete the rule in the CMS.`);
         }
-        if (row?.categories === 'damageType' && hasValue(payload.category) && !isTypeOrGroupId(payload.category)) {
-            push('statements', `has a rule aimed at the damage type "${payload.category}", which does not exist — the rule matches nothing. Pick the type again in the CMS.`);
+        if (row?.categories === 'damageType' && hasValue(payload.category) && !isDamageTypeId(payload.category)) {
+            if (isDamageGroupId(payload.category)) {
+                push('statements', `provides ${row.label} ${groupLineAdvice(payload.category, { rule: true })} in the CMS.`);
+            } else {
+                push('statements', `has a rule aimed at the damage type "${payload.category}", which does not exist — the rule matches nothing. Pick the type again in the CMS.`);
+            }
         }
     }
 }
@@ -95,13 +99,13 @@ function effectRowFindings(entry, push) {
 function enemyResistanceFindings(def, push) {
     if (!def?.enemy || typeof def.enemy !== 'object') return;
     for (const problem of resistanceProblems(def.enemy.resistances)) {
-        push('enemy.resistances', `${problem} — that line is ignored. Pick it again in the CMS.`);
+        push('enemy.resistances', `${problem}.`);
     }
     for (const field of RETIRED_ENEMY_FIELDS) {
         const value = def.enemy[field];
         if (value != null && value !== '') {
             const what = field === 'armor' ? 'Armour' : 'Pierce';
-            push(`enemy.${field}`, `has ${what} ${value}, retired with damage types: the fight ignores it. Give it a Physical resistance instead, or remove the number in the CMS.`);
+            push(`enemy.${field}`, `has ${what} ${value}, retired with damage types: the fight ignores it. Give it Slash, Crush and Stab resistances instead, or remove the number in the CMS.`);
         }
     }
 }
@@ -141,19 +145,36 @@ function damageTypeFindings(def, push) {
     }
 }
 
-/** Findings for an enemy's kinds: one the game does not have, more than two, or two that clash. */
-function enemyKindFindings(def, push) {
+/** The kind that landed Venom on every hit, before a poisoning move carried Venom itself. */
+const RETIRED_VENOMOUS_KIND = 'venomous';
+
+/**
+ * Findings for an enemy's kinds: one that is neither a library effect nor a built-in preset, more than
+ * two, or two presets that clash. Effects are looked up only when the library is given; without it a
+ * kind that is no preset is taken on trust.
+ */
+function enemyKindFindings(def, push, effectById) {
     const kinds = Array.isArray(def?.enemy?.kinds) ? def.enemy.kinds : [];
+    const library = effectById ? Object.fromEntries(effectById) : null;
+    const known = [];
     for (const id of kinds) {
-        if (!getEnemyKind(id)) push('enemy.kinds', `has the enemy kind "${id}", which does not exist — it changes nothing. Tick its kinds again in the CMS.`);
+        if (id === RETIRED_VENOMOUS_KIND) {
+            push('enemy.kinds', `has the enemy kind "${id}", which is retired — it lands nothing. Give the moves that poison the Venom effect instead, and untick it in the CMS.`);
+            continue;
+        }
+        const effectId = library ? kindEffectIdOf(id, library) : null;
+        if (effectId || getEnemyKind(id) || (!library && typeof id === 'string' && id)) {
+            known.push(effectId ? { id: effectId } : getEnemyKind(id) || { id });
+            continue;
+        }
+        push('enemy.kinds', `has the enemy kind "${id}", which is no effect in the library — it changes nothing. Pick its kinds again in the CMS.`);
     }
-    const known = kinds.filter(getEnemyKind);
     if (known.length > MAX_ENEMY_KINDS) {
         push('enemy.kinds', `has ${known.length} enemy kinds; an enemy carries at most ${MAX_ENEMY_KINDS}, so only the first ${MAX_ENEMY_KINDS} count.`);
     }
     const used = known.slice(0, MAX_ENEMY_KINDS);
     if (used.length === 2 && kindsClash(used[0], used[1])) {
-        push('enemy.kinds', `is both ${used[0]} and ${used[1]}, which set different attack speeds — the second wins. Untick one in the CMS.`);
+        push('enemy.kinds', `is both ${used[0].id} and ${used[1].id}, which set different attack speeds — the second wins. Untick one in the CMS.`);
     }
 }
 
@@ -199,7 +220,7 @@ export function findUnknownRefs({ tokens, items, recipes, effects } = {}) {
         if (hasValue(section) && section !== GENERAL_SHOP_SECTION && !isSkillId(section)) {
             push('shop.section', `is sold in the Shop section "${section}", which is neither a skill nor General — the Shop heads it with that raw id. Pick its section again in the CMS.`);
         }
-        enemyKindFindings(def, push);
+        enemyKindFindings(def, push, effectById);
         enemyResistanceFindings(def, push);
         enemyMoveFindings(def, push, library);
         statementFindings(def, push, isItemId);

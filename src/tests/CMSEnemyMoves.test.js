@@ -60,7 +60,7 @@ function tokenEditor(id) {
 const COW = 'token_cow';
 const flutterEffect = () => store().addEffect({
     name: 'Flutter',
-    statements: [{ ...makeStatement(KEYWORD.PROVIDES), to: null, payload: { type: EFFECT_TYPES.TYPE_RESIST, bucket: 'flat', value: 50, category: 'physical' } }]
+    statements: [{ ...makeStatement(KEYWORD.PROVIDES), to: null, payload: { type: EFFECT_TYPES.TYPE_RESIST, bucket: 'flat', value: 50, category: 'crush' } }]
 });
 
 describe('⭐ the Token editor\'s Moves block', () => {
@@ -70,11 +70,11 @@ describe('⭐ the Token editor\'s Moves block', () => {
         store().updateToken(COW, { enemy: plain });
     });
 
-    it('an enemy with none says it makes a plain Physical Strike, and writes no key', () => {
+    it('an enemy with none says it makes a plain Crush Strike, and writes no key', () => {
         const { container } = tokenEditor(COW);
         expect(field(container, 'enemy-moves')).not.toBeNull();
         expect(field(container, 'enemy-move-0')).toBeNull();
-        expect(field(container, 'enemy-preview-hit').textContent).toMatch(/Physical$/);
+        expect(field(container, 'enemy-preview-hit').textContent).toMatch(/Crush$/);
         expect(store().tokens[COW].enemy).not.toHaveProperty('moves');
     });
 

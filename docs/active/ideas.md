@@ -251,18 +251,17 @@ mods via the CMS after release.
   owner's marks on 117 Star ideas and four takeaways (families with
   per-target versions; effect icons on the Token card; Stars tiny and global
   vs Buildings big and in reach; an Events session) →
-  [star_ideas_review.md](star_ideas_review.md). Needs planning sessions:
-  Stars vs Buildings, effect icons, Events, Limes on the journey.
-
-- **Selling items instead of discarding** (owner, 2026-11-05: "I'm hoping to find a way to sell items instead"; T-306). Not designed; gold left the game, so it needs to say what a sale pays and what it buys. If Discard is kept, it always confirms. **Owner idea, 2026-11-24 (via the director): Gold Coins come back** as a nicer way to get rid of items than Discard: selling pays coins, and coins buy upgrades. To interview: what coins buy, and how that sits beside items-only prices.
-
-
+  [star_ideas_review.md](star_ideas_review.md). Stars vs Buildings, effect icons and Events
+  were done 2026-11-11/12 (briefs 600, 620, 630, 640); only **Limes on the journey** is left.
 
 - **The detail pass** (UI and UX, section by section): [concept_detail_pass.md](concept_detail_pass.md).
 - **The content roadmap** (every item, skill, recipe and enemy, so art is known in advance):
   [concept_content_roadmap.md](concept_content_roadmap.md).
 
 ## Moved on
+
+- **Selling items, Gold Coins** (owner 2026-11-05, 2026-11-24) → [concept_gold_coins.md](concept_gold_coins.md), brief 870 (2026-11-25).
+- **Collectors, visitors and quests**: cut by the owner 2026-11-25.
 
 - **Skill identities: Faith, Crime, Summoning, Science** → approved 2026-11-22 after a deep dive (Taming cut; Crime steals from camps, Summoning charges Summoned workers, Science builds node mastery), [concept_skill_identities.md](concept_skill_identities.md); [brief 810](briefs/810_skill_identities.md), content T-663.
 - **Milestone perks: signature perks and small steps** → approved 2026-11-21, [concept_milestone_perks.md](concept_milestone_perks.md); brief 800 for the new rules and the level-up flash, T-522 for the tables (content agent).

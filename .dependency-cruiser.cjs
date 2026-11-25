@@ -11,7 +11,7 @@ const CONFIG_KERNEL = [
   '^src/systems/atlas/(TerrainMap|WaterShapes)[.]js$',
   '^src/systems/board/boardEvents[.]js$',
   '^src/systems/core/(engineEvents|wearRule)[.]js$',
-  '^src/systems/effects/(constants|effectIdMigration|effectLibrary|effectMigration|skillIdMigration|statements)[.]js$',
+  '^src/systems/effects/(constants|effectLibrary|effectMigration|skillIdMigration|statements)[.]js$',
   '^src/systems/hero/perkTable[.]js$',
   '^src/systems/progression/hallStarText[.]js$'
 ];

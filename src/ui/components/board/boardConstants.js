@@ -64,6 +64,7 @@ export const SKIP_HINT = {
     [ALERT.UNSKILLED]: 'doesn’t have the skill',
     [ALERT.NO_TOOL]: 'needs {tool} in hand',
     [ALERT.NO_BAIT]: 'needs bait',
+    [ALERT.FISH_LEVEL]: 'fish here need a higher Fishing level',
     [ALERT.NO_RECIPE]: 'missing a Token its recipe needs beside it',
     [ALERT.CHARGES]: 'not enough charges for a cycle',
     [ALERT.CHOOSE_BUILD]: 'nothing chosen to build',
@@ -77,7 +78,7 @@ export const SKIP_HINT = {
     [ALERT.GROWING]: 'its crop is growing',
     [ALERT.SHRINE_FULL]: 'lit to the full: it needs no offering yet',
     // A growing Token's own waits (a Stump; a Field stopped for want of a seed records the second).
-    [ALERT.GROW_NEEDS_NEARBY]: 'waiting for what it needs nearby to grow',
+    [ALERT.GROW_NEEDS_NEARBY]: 'its Forest or Orchard is gone: it never comes back',
     [ALERT.GROW_NEEDS_ITEM]: 'stopped: can’t pay to grow',
     no_skill: 'names no skill',
     occupied: 'enemies hold this place: beat them first',

@@ -76,9 +76,10 @@ registerTokenTypes({
         theme: 'fixture', uses: null, sprite: 's_nature',
         spawner: { spawns: [{ typeId: 'demo_sapling', weight: 1 }], allowance: 3, intervalMs: 5000, upkeep: [{ itemId: 'fixture_carrot', quantity: 1 }] }
     },
+    // Runs out by chance; a sure end, so a charge spent rests it and a refill gives back its one life.
     demo_vein: {
         id: 'demo_vein', name: 'Demo Vein', tokenType: 'resource', rarity: 'common',
-        theme: 'fixture', uses: 3, sprite: 's_industry',
+        theme: 'fixture', endChance: 100, sprite: 's_industry',
         config: { ...logging, skill: 'mining' },
         respawn: { mode: 'refill', afterMs: 12000 }
     },
@@ -566,7 +567,7 @@ describe('a resting Token', () => {
         expect(vein.usesRemaining).toBe(0);
         Demolition.unmark(vein.id);
         run(12100);
-        expect(vein.usesRemaining).toBe(3);
+        expect(vein.usesRemaining).toBe(1);
     });
 });
 

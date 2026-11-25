@@ -164,9 +164,9 @@ describe('The Farming chain in shipped data (7.4)', () => {
 
     it('the Guild Hall trickles Oak Seedling, Wheat and Apple Seeds (SP-66 placeholder)', () => {
         expect(hall.trickle).toEqual([
-            { itemId: 'item_oak_seedling', quantity: 1, everyMs: 300000 },
-            { itemId: 'item_wheat_seed', quantity: 1, everyMs: 300000 },
-            { itemId: 'item_apple_seed', quantity: 1, everyMs: 600000 },
+            { itemId: 'item_oak_seedling', quantity: 1 },
+            { itemId: 'item_wheat_seed', quantity: 1 },
+            { itemId: 'item_apple_seed', quantity: 1 },
         ]);
     });
 
@@ -177,9 +177,7 @@ describe('The Farming chain in shipped data (7.4)', () => {
             ...recipes.filter((r) => r.skill === 'farming').map((r) => r.id),
         ]);
         const findings = auditLifecycleBlocks({ tokens: expanded, items, recipes, skills: SKILLS })
-            .filter((f) => f.severity === 'error' || ids.has(f.entityId))
-            // The Hall's seed lines keep a time of their own until a CMS pack strips it; the warning says so.
-            .filter((f) => !/^trickle\[\d+\]\.everyMs$/.test(f.field));
+            .filter((f) => f.severity === 'error' || ids.has(f.entityId));
         expect(findings).toEqual([]);
     });
 });

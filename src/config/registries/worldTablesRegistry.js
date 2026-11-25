@@ -3,6 +3,7 @@
 import { DatabaseManager } from '../DatabaseManager.js';
 import { normaliseWorldTables } from '../worldTablesShape.js';
 import { PLACEHOLDER_WORLD_TABLES } from '../worldPlaceholder.js';
+import { RETIRED_WATER_TOKENS } from './fishingSpots.js';
 
 /**
  * The tables the world is generated from: `data/world.json` once the CMS syncs one, else the
@@ -11,9 +12,29 @@ import { PLACEHOLDER_WORLD_TABLES } from '../worldPlaceholder.js';
  * ⚠️ Never hand-edit `data/world.json`: the CMS writes it wholesale.
  */
 
+/**
+ * The tables without the retired fixed waters (`fishingSpots.RETIRED_WATER_TOKENS`) as origins or
+ * keys, while `data/` still names them: the Token registry never loads them, so a world must never
+ * put one on a map. A copy; the module's own record is left as read.
+ */
+function withoutRetiredWaters(raw) {
+    if (!raw || typeof raw !== 'object' || !Array.isArray(raw.lines)) return raw;
+    const kept = (list) => (Array.isArray(list)
+        ? list.filter(o => !RETIRED_WATER_TOKENS.includes(o && typeof o === 'object' ? o.id : o))
+        : list);
+    const perRing = (rings) => (rings && typeof rings === 'object'
+        ? Object.fromEntries(Object.entries(rings).map(([ring, list]) => [ring, kept(list)]))
+        : rings);
+    return {
+        ...raw,
+        lines: raw.lines.map(line => (line && typeof line === 'object' ? { ...line, origins: perRing(line.origins) } : line)),
+        ...(raw.keys ? { keys: perRing(raw.keys) } : {})
+    };
+}
+
 function loadJsonTables() {
     for (const [path, module] of Object.entries(DatabaseManager.worldFilesSingle || {})) {
-        const tables = normaliseWorldTables(module.default || module);
+        const tables = normaliseWorldTables(withoutRetiredWaters(module.default || module));
         if (tables) return tables;
         console.warn(`[World] ${path} is not usable world tables (six lines with distinct ids); the placeholder is used`);
     }

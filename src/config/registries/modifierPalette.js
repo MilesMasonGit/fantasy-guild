@@ -108,8 +108,8 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  * * `'item'`   — `OutputRules.doubleItemDrop` passes the id of each item a
  *   cycle or kill dropped, which is how `DOUBLE_DROP` names its item.
  * * `'damageType'` — `CombatFormulas` passes a hit's damage type, which is how
- *   Type Damage % and Type Resistance % name a type; a group's row counts on its
- *   types (`ModifierAggregator._isParentOf`).
+ *   Type Damage % and Type Resistance % name a type; a row on a group counts on
+ *   nothing.
  *
  * Declaring the vocabulary per row is what lets the CMS show a skill
  * picker on Yield and a status picker on Immunity without knowing either list.
@@ -239,14 +239,14 @@ export const MODIFIER_PALETTE = [
     },
     {
         /**
-         * Read by `Fields.loadAtRipening` once, as a Field's crop ripens: the harvest cycles it
-         * then holds. From its neighbours and the guild-wide rules (a Composter in reach), narrowed
-         * to the Field's own work skill.
+         * Read by `Fields.loadAtRipening` once, as a Field's crop ripens: the harvests it then gives
+         * on average, which sets its chance to finish each harvest. From its neighbours and the
+         * guild-wide rules (a Composter in reach), narrowed to the Field's own work skill.
          */
         type: EFFECT_TYPES.CROP_LOAD,
         reads: {
-            up: (n, size) => `hold ${n} more ${size === '1' ? 'harvest' : 'harvests'} when ripe`,
-            down: (n, size) => `hold ${n} fewer ${size === '1' ? 'harvest' : 'harvests'} when ripe`
+            up: (n, size) => `give ${n} more ${size === '1' ? 'harvest' : 'harvests'} on average when ripe`,
+            down: (n, size) => `give ${n} fewer ${size === '1' ? 'harvest' : 'harvests'} on average when ripe`
         },
         label: 'Abundance',
         explains: 'A Token kind holds more charges before it rests',
@@ -256,7 +256,7 @@ export const MODIFIER_PALETTE = [
         categories: 'skill',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Production',
-        hint: 'How many harvests a Field holds when its crop ripens (a Composter adds to the load). Read as the crop ripens; never fewer than one.'
+        hint: 'How many harvests a Field gives on average when its crop ripens (a Composter adds to them, which lowers its chance to finish each harvest). Read as the crop ripens; never fewer than one.'
     },
     {
         /**
@@ -698,8 +698,7 @@ export const MODIFIER_PALETTE = [
     {
         /**
          * Percent points, in the flat bucket like Crit Chance: the loadout registers flats only.
-         * The type or group is the rule's category; a group's row counts on each of its types
-         * (`ModifierAggregator._isParentOf`).
+         * The type is the rule's category; a row on a group counts on nothing (the audits name it).
          */
         type: EFFECT_TYPES.TYPE_DAMAGE,
         label: 'Type Damage %',
@@ -712,7 +711,7 @@ export const MODIFIER_PALETTE = [
         categories: 'damageType',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'Percent more damage on hits of one damage type or group: 15 means +15% (a Poisoner\'s Cloak: Poison 15). Pick which type.'
+        hint: 'Percent more damage on hits of one damage type: 15 means +15% (a Poisoner\'s Cloak: Poison 15). Pick which type.'
     },
     {
         type: EFFECT_TYPES.TYPE_RESIST,
@@ -726,7 +725,7 @@ export const MODIFIER_PALETTE = [
         categories: 'damageType',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'Percent off hits of one damage type or group taken: 20 means 20% less, a negative number a weakness. Pick which type. An enemy\'s plain Strike is Physical.'
+        hint: 'Percent off hits of one damage type taken: 20 means 20% less, a negative number a weakness. Pick which type. An enemy\'s plain Strike is Crush.'
     },
     {
         /**
@@ -827,7 +826,7 @@ export const MODIFIER_PALETTE = [
         categories: 'status',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Protection',
-        hint: 'Moves how many stacks of one status can build up on the hero: -1 means at most 1 fewer (a Hide Vest against poison). Pick which status. At 0 stacks it cannot land; stacks already carried are never stripped.'
+        hint: 'Moves how many stacks of one status can build up on the hero: -1 means at most 1 fewer (against Venom, say). Pick which status. At 0 stacks it cannot land; stacks already carried are never stripped.'
     },
 
     // --- Grants -------------------------------------------------------------

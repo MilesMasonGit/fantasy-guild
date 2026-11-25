@@ -282,7 +282,7 @@ describe('⭐ quiet pops when a bonus lands', () => {
         EventBus.setQuiet(true);
         tick(61000, 1000);
         off();
-        expect(field.field.load).toBe(5);
+        expect(field.field.full).toBe(5);
         expect(heard).toEqual([]);
     });
 });

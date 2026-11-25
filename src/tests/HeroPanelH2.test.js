@@ -173,14 +173,14 @@ describe('H2: skills', () => {
         'melee', 'ranged', 'magic', 'stealth',
         'mining', 'forestry', 'fishing', 'farming',
         'smithing', 'crafting', 'cooking', 'alchemy', 'construction', 'fletching', 'enchanting', 'tailor',
-        'faith', 'summoning', 'crime', 'taming', 'science'
+        'faith', 'summoning', 'crime', 'science'
     ];
 
     it('lists every skill in one list: combat, gathering, making, then the unplaced ones', () => {
         const g = heroSkillList(master('x', 'X'));
         expect(g.rows.map(r => r.id)).toEqual(ALL);
-        expect(ALL).toHaveLength(21);
-        expect(STARTING.length).toBe(17);
+        expect(ALL).toHaveLength(20);
+        expect(STARTING.length).toBe(16);
         const level = (id) => g.rows.find(r => r.id === id).level;
         expect([level('melee'), level('ranged'), level('mining'), level('fletching'), level('faith'), level('science')])
             .toEqual([25, 1, 5, 99, 3, 5]);

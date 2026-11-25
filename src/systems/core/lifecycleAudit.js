@@ -3,11 +3,12 @@
 import {
     FOUNDATION_KINDS, RESPAWN_MODES, respawnOf, foundationTierOf, foundationMinTierOf, foundationTierMeets,
     STATION_KINDS, stationKindOffers, isRetiredStationKind, retiredStationKindsOf, stationKindLabel,
-    shrineOf, offeringTermsOf
+    isGroveSpawnerDef, shrineOf, offeringTermsOf
 } from '../../config/registries/tokenConstants.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { stationSkillOf, stationKindOf, getProvidedTagsWithTiers, statementsOf, KEYWORD } from '../effects/statements.js';
 import { neverWearsReason, NEVER_WEARS_WHY } from './wearRule.js';
+import { isStandsOnWord, groundsMeet, needsText } from '../atlas/TerrainMap.js';
 
 /**
  * The one checker for the nine Token Lifecycle blocks (`spawner`, `grows`,
@@ -68,6 +69,10 @@ const isPositiveInteger = (v) => Number.isInteger(v) && v > 0;
 const isTime = (v) => typeof v === 'number' && Number.isFinite(v) && v >= MIN_MS;
 const hasValue = (v) => v !== undefined && v !== null && v !== '';
 const show = (v) => (typeof v === 'string' ? v : JSON.stringify(v));
+/** A Token's "Stands on" as placement reads it: the known words only (`standsOnOf`). */
+const groundOf = (def) => (Array.isArray(def?.standsOn) ? def.standsOn.filter(isStandsOnWord) : []);
+/** "stone", "the shore", "grass or sand", "dry land". */
+const groundWords = (list) => needsText(list).slice('Needs '.length, -1);
 
 /**
  * A spawner's family: every type in its `spawns` list plus everything they
@@ -180,6 +185,13 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
     const checkTime = (report, field, what, value) => {
         if (!isTime(value)) report(field, `${what} is ${show(value)}; it must be at least ${MIN_MS} ms.`);
     };
+    /** A chance to run out, in percent: above 0, 100 at most (`tokenConstants.endTermsOf`, `cropTermsOf`). */
+    const checkEndChance = (report, field, what, value) => {
+        const n = Number(value);
+        if (typeof value !== 'number' || !Number.isFinite(n) || n <= 0 || n > 100) {
+            report(field, `${what} is ${show(value)}; it must be a chance above 0 % and at most 100 %.`);
+        }
+    };
     const checkList = (report, field, what, list) => {
         if (!Array.isArray(list) || list.length === 0) {
             report(field, `${what} is empty; it needs at least one entry.`);
@@ -206,6 +218,16 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
             warn('uses', `has ${show(def.uses)} Charges, which the game ignores. ${NEVER_WEARS_WHY[neverWears]} Clear them in the CMS, under Lifecycle → Charges (allowed).`);
         }
 
+        // ── a chance to run out: only a Token that comes back reads it (`tokenConstants.endTermsOf`) ──
+        if (def.endChance !== undefined && def.endChance !== null) {
+            checkEndChance(err, 'endChance', 'chance to run out', def.endChance);
+            if (neverWears) {
+                warn('endChance', `has a chance to run out, which the game ignores. ${NEVER_WEARS_WHY[neverWears]}`);
+            } else if (!def.respawn || def.enemy || def.spawner || def.foundation) {
+                warn('endChance', `has a chance to run out but does not come back, so the chance does nothing: it ${def.uses == null ? 'never runs out' : `keeps its ${show(def.uses)} Charges`}. Only a Token that rests or regrows runs out by chance.`);
+            }
+        }
+
         // ── spawner ──
         if (def.spawner) {
             const s = def.spawner;
@@ -222,7 +244,8 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
                 checkItemRef(err, `spawner.upkeep[${i}].itemId`, 'spawner upkeep names', entry?.itemId);
                 checkPositive(err, `spawner.upkeep[${i}].quantity`, `spawner upkeep quantity of ${show(entry?.itemId ?? '?')}`, entry?.quantity);
             });
-            if (upkeep.length === 0) {
+            // A Forest or an Orchard plants for free by rule, whatever its upkeep says.
+            if (upkeep.length === 0 && !isGroveSpawnerDef(def, (t) => tokens[t], id)) {
                 warn('spawner.upkeep', 'spawner has no upkeep, so it spawns for free (allowed; SP-70 is decided per Token).');
             }
 
@@ -376,8 +399,8 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
             if (r?.mode === 'regrow' && hasValue(r.restingSprite)) {
                 warn('respawn.restingSprite', 'has a resting sprite but regrows; it becomes another Token with its own art, so the sprite is never drawn.');
             }
-            if (def.uses === null || def.uses === undefined) {
-                warn('respawn', 'respawns but has unlimited charges, so it never runs out and never rests (allowed).');
+            if ((def.uses === null || def.uses === undefined) && !(Number(def.endChance) > 0)) {
+                warn('respawn', 'respawns but has no chance to run out (and unlimited charges), so it never runs out and never rests (allowed).');
             }
         }
 
@@ -512,6 +535,19 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
                 recipeError(recipe, 'skill',
                     `is a ${show(recipe.skill ?? 'blank')} recipe, but ${kind} Foundations are built with ${mismatched.join(', ')}.`);
             }
+            // A Foundation with a "Stands on" of its own keeps it while it builds
+            // (`GroundRules.siteRulesFor`), so a build that may stand on none of it never happens there.
+            const builtId = outputs.length === 1 ? outputs[0]?.tokenId : null;
+            const built = builtId ? tokens[builtId] : null;
+            if (!built) continue;
+            const builtGround = groundOf(built);
+            for (const [fid, fdef] of Object.entries(tokens)) {
+                if (fdef?.foundation?.kind !== kind) continue;
+                const own = groundOf(fdef);
+                if (!own.length || groundsMeet(own, builtGround)) continue;
+                recipeError(recipe, 'foundationKinds',
+                    `builds ${tokenLabel(builtId)} on ${kind} Foundations, but ${tokenLabel(fid)} stands on ${groundWords(own)} and ${built.name || builtId} on ${groundWords(builtGround)}: no ground is both, so it can never be built there.`);
+            }
         }
     }
 
@@ -525,6 +561,7 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
         }
         if (c.growMs !== undefined) checkTime((field, text) => recipeError(recipe, field, text), 'crop.growMs', 'crop grow time', c.growMs);
         if (c.load !== undefined) checkPositive((field, text) => recipeError(recipe, field, text), 'crop.load', 'crop load', c.load);
+        if (c.endChance !== undefined) checkEndChance((field, text) => recipeError(recipe, field, text), 'crop.endChance', 'crop chance to finish', c.endChance);
         if (!Array.isArray(recipe.inputs) || recipe.inputs.length === 0) {
             recipeWarning(recipe, 'inputs', 'is a crop with no inputs, so sowing it costs no seed (allowed).');
         }

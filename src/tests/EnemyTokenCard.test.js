@@ -41,8 +41,8 @@ registerTokenTypes({
         id: 'etc_hen', name: 'Card Hen', tokenType: 'enemy', rarity: 'common', theme: 'fixture', uses: 5, sprite: 'e_chicken',
         requiresHero: true,
         enemy: {
-            level: 4, style: 'ranged', kinds: ['brute', 'venomous'],
-            resistances: { physical: 25, fire: -50 },
+            level: 4, style: 'ranged', kinds: ['brute', 'nimble'],
+            resistances: { slash: 25, crush: 25, stab: 25, fire: -50 },
             moves: [
                 { name: 'Peck', damageType: 'stab' },
                 { name: 'Flutter', hits: false, effectId: 'etc_flutter', target: 'self', lasts: 'attack' }
@@ -111,7 +111,7 @@ describe('the model: every field, read from the enemy', () => {
         const fight = fightBlock();
         expect(fight).toMatchObject({ hit: profile.hit, hitTypes: ['stab'], attackEveryMs: profile.attackSpeed });
         expect(fight.moves.map(m => [m.name, m.hits, m.type])).toEqual([['Peck', true, 'stab'], ['Flutter', false, null]]);
-        expect(fight.resists).toEqual([{ id: 'physical', value: 25 }, { id: 'fire', value: -50 }]);
+        expect(fight.resists).toEqual([{ id: 'slash', value: 25 }, { id: 'crush', value: 25 }, { id: 'stab', value: 25 }, { id: 'fire', value: -50 }]);
     });
 
     it('drops with their chances', () => {
@@ -122,7 +122,7 @@ describe('the model: every field, read from the enemy', () => {
     it('⭐ kinds are hidden until one has been fought, then named', () => {
         expect(fightBlock().kinds).toBeNull();
         fightOne();
-        expect(fightBlock().kinds.map(k => k.id)).toEqual(['brute', 'venomous']);
+        expect(fightBlock().kinds.map(k => k.id)).toEqual(['brute', 'nimble']);
         expect(fightBlock().kinds[0]).toMatchObject({ name: 'Brute', tip: 'Big hits, attacks every 4s' });
     });
 
@@ -131,8 +131,8 @@ describe('the model: every field, read from the enemy', () => {
         expect(enemyKindsOnCard({ kinds: ['brute'] }, false)).toBeNull();
     });
 
-    it('an enemy with no moves hits plain Physical and lists none', () => {
-        expect(enemyMovesOnCard({ moves: [] })).toEqual({ moves: null, hitTypes: ['physical'] });
+    it('an enemy with no moves makes a plain Crush Strike and lists none', () => {
+        expect(enemyMovesOnCard({ moves: [] })).toEqual({ moves: null, hitTypes: ['crush'] });
     });
 });
 
@@ -153,7 +153,7 @@ describe('the card as drawn', () => {
         expect(q(fight, '[data-enemy-card-hp]')).toBeNull();
         expect(q(fight, '[data-enemy-card-style]')).toBeNull();
         expect([...fight.querySelectorAll('[data-enemy-card-move]')].map(words)).toEqual(['Peck Stab', 'Flutter Flutter on itself, for one attack']);
-        expect(text(q(fight, '[data-enemy-card-resists="some"]'))).toBe('Physical 25%');
+        expect([...q(fight, '[data-enemy-card-resists="some"]').children].map(text)).toEqual(['Slash 25%', 'Crush 25%', 'Stab 25%']);
         expect(text(q(fight, '[data-enemy-card-weak="some"]'))).toBe('Fire 50%');
         expect(q(fight, '[data-enemy-card-attack-every]')).not.toBeNull();
         expect(q(fight, '[data-enemy-card-hit]')).not.toBeNull();
@@ -171,7 +171,7 @@ describe('the card as drawn', () => {
         first.rerender(h(DndContext, null, h(TokenCard, { typeId: 'etc_hen', instanceId: hen.id })));
         kinds = q(first.container, '[data-enemy-card-kinds]');
         expect(kinds.getAttribute('data-enemy-card-kinds')).toBe('known');
-        expect([...first.container.querySelectorAll('[data-enemy-card-kind]')].map(e => e.getAttribute('data-enemy-card-kind'))).toEqual(['brute', 'venomous']);
+        expect([...first.container.querySelectorAll('[data-enemy-card-kind]')].map(e => e.getAttribute('data-enemy-card-kind'))).toEqual(['brute', 'nimble']);
     });
 
     it('off the mat (no instance) the card shows the same fight rows', () => {

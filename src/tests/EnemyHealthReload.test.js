@@ -46,7 +46,7 @@ function registerFixtures() {
         // A sturdy enemy, so a fight lasts long enough to be saved mid-way.
         [ENEMY]: {
             ...fixtures.BENCH_TOKENS.bench_goblin, id: ENEMY, name: 'Reload Ogre', uses: null,
-            enemy: { level: 5, style: 'melee', budgetScale: 1, hostile: true }
+            enemy: { level: 5, style: 'melee', hostile: true }
         }
     });
     const forTheFight = (effectId) => ({

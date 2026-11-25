@@ -48,7 +48,7 @@ registerTokenTypes({
     }),
     sf_goblin: plain('sf_goblin', {
         tokenType: 'enemy', uses: 1, sprite: 's_crime', requiresHero: true,
-        enemy: { level: 1, style: 'melee', budgetScale: 0.3 }
+        enemy: { level: 1, style: 'melee', hp: 6, xp: 3 }
     })
 });
 

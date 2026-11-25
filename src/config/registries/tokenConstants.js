@@ -114,8 +114,12 @@ export function isTokenRarity(value) {
  * place the list lives: the CMS's Foundation dropdown and its recipe picker
  * import it across the boundary (see the header note), and the engine and the
  * content audit read the same list.
+ *
+ * The gathering skills have their own kinds for their sources (Excavation, Farmland, which also
+ * plants Forests, and the Dock); Wood and Stone build the other buildings. Nothing in the engine reads a kind's name: a recipe is
+ * offered on a Foundation whose kind its list names, whatever the kind.
  */
-export const FOUNDATION_KINDS = Object.freeze(['wood', 'stone', 'farmland', 'excavation', 'battlefield']);
+export const FOUNDATION_KINDS = Object.freeze(['wood', 'stone', 'farmland', 'excavation', 'dock', 'battlefield']);
 
 /**
  * The kinds of station, which split one skill's recipes between several stations of it: a
@@ -272,10 +276,9 @@ function refillNeedsOf(block) {
  * A Token type's respawn as `{ mode, afterMs, into, needsNearby }`, or null when it has none: no
  * block, a mode the game does not know, or a regrow that names nothing to regrow from. `afterMs` is
  * a refill's rest (defaulted, floored at {@link RESPAWN_MIN_MS}) and null on a regrow; `into` is
- * null on a refill. `needsNearby` is a refill's Token type ids, any one of which must stand within
- * reach (Near) for its rest to run (a Bare apple tree fruits again only beside an Orchard); empty
- * when it needs none, and always on a regrow. The same array each ask, so a resting Token's cached
- * answer (`TileModifiers.nearbyGateMet`) holds.
+ * null on a refill. `needsNearby` is a refill's Token type ids its owner must be one of for its
+ * rest to run (a Bare apple tree fruits again only while its own Orchard stands,
+ * `Groves.ownGateMet`); empty when it needs none, and always on a regrow. The same array each ask.
  */
 export function respawnOf(def) {
     const block = def?.respawn;
@@ -290,6 +293,47 @@ export function respawnOf(def) {
     return { mode: 'refill', afterMs, into: null, needsNearby: refillNeedsOf(block) };
 }
 
+/**
+ * What a Token that ends by chance holds while it lasts: one life, spent whole when a roll ends it.
+ * Its count is no measure of how much is left.
+ */
+export const CHANCE_LIFE = 1;
+
+const endTermsMemo = new WeakMap();
+
+/**
+ * ⭐ **A Token that comes back runs out by chance** (brief 860): a vein rests, a tree becomes its
+ * Stump. Each charge it would spend is a roll at `chance` percent that ends it then; there is no
+ * count. `endChance` on the Token type (percent, above 0, 100 at most) is the authored chance;
+ * unauthored, it is one over its `uses`, so the average life is today's count.
+ *
+ * Returns `{ chance, life }` (`life` the average charges spent before it ends), or null for a type
+ * that keeps a count or never runs out: no respawn block (it leaves the mat, a chest), neither a
+ * chance nor a count (unlimited), or a type the engine never lets respawn (an enemy, a spawner, a
+ * Foundation). Whether it wears at all (a station never does) is the caller's: the registry's
+ * `tokenStartingUses`, `wearRule`.
+ */
+export function endTermsOf(def) {
+    if (!def || typeof def !== 'object') return null;
+    // Asked on every tick for every Token at work (`Charges.canAfford`), so kept per type, checked
+    // against the fields it reads in case a type is edited in place.
+    const memo = endTermsMemo.get(def);
+    if (memo && memo.endChance === def.endChance && memo.uses === def.uses && memo.respawn === def.respawn) return memo.terms;
+    let terms = null;
+    if (respawnOf(def) && !def.enemy && !def.spawner && !def.foundation) {
+        const authored = Number(def.endChance);
+        const uses = Math.floor(Number(def.uses));
+        if (Number.isFinite(authored) && authored > 0) {
+            const chance = Math.min(100, authored);
+            terms = Object.freeze({ chance, life: 100 / chance });
+        } else if (uses >= 1) {
+            terms = Object.freeze({ chance: 100 / uses, life: uses });
+        }
+    }
+    endTermsMemo.set(def, { endChance: def.endChance, uses: def.uses, respawn: def.respawn, terms });
+    return terms;
+}
+
 const NO_TERMS = Object.freeze({ needsNearby: Object.freeze([]), cost: Object.freeze([]) });
 const growsTermsMemo = new WeakMap();
 let lastGrowsBlock = null;
@@ -298,12 +342,12 @@ let lastGrowsTerms = NO_TERMS;
 /**
  * What a `grows` block asks before its Token may grow, as `{ needsNearby, cost }`:
  *
- * * `needsNearby` — Token type ids, any one of which must stand within reach (Near) for the
- *   growth's clock to run: a Stump regrows only beside a Forest of its species. Empty when it
- *   needs none (every growth today).
+ * * `needsNearby` — Token type ids its owner must be one of for the growth's clock to run
+ *   (`Groves.ownGateMet`): a Stump regrows only while its own Forest stands. Empty when it needs
+ *   none.
  * * `cost` — what the growth pays when it happens, from the Bank and then the loot on the mat,
- *   summed by item as `[{ itemId, quantity }]`: a Stump spends one seedling to become its Tree.
- *   Empty when it is free.
+ *   summed by item as `[{ itemId, quantity }]`. Always empty on a growth that needs its owner: its
+ *   Forest regrows it for free.
  *
  * Kept per block object (frozen), so a growing Token asking every tick allocates nothing; a
  * content reload hands out new block objects.
@@ -329,6 +373,8 @@ export function growsTermsOf(def) {
         if (typeof line?.itemId !== 'string' || !line.itemId || !(q > 0)) continue;
         total.set(line.itemId, (total.get(line.itemId) || 0) + q);
     }
+    // A growth that needs its own Forest is the Forest's to give: free, whatever cost is authored.
+    if (nearby.length) total.clear();
     terms = (!nearby.length && !total.size) ? NO_TERMS : Object.freeze({
         needsNearby: Object.freeze(nearby),
         cost: Object.freeze([...total].map(([itemId, quantity]) => Object.freeze({ itemId, quantity })))
@@ -409,12 +455,16 @@ export const CROP_DEFAULTS = Object.freeze({ growMs: 60 * 60 * 1000, load: 10 })
 export const CROP_MIN_GROW_MS = 1000;
 
 /**
- * What a crop recipe asks of the Field that grows it, as `{ growMs, load, ripeSprite, seeds }`:
+ * What a crop recipe asks of the Field that grows it, as `{ growMs, endChance, load, ripeSprite,
+ * seeds }`:
  *
  * * `growMs` — how long it grows before it is ripe (`crop.growMs`, defaulted, floored at
  *   {@link CROP_MIN_GROW_MS}); Grow Time from Tokens in reach (a Well) shortens it.
- * * `load` — how many harvest cycles a ripe Field holds (`crop.load`, a whole number from 1); a
- *   Crop Load rule in reach (a Composter) adds to it as it ripens.
+ * * `endChance` — the chance in percent that a harvest is a ripe Field's last (`crop.endChance`,
+ *   above 0, 100 at most); unauthored, one over `crop.load`, so the average harvest stays.
+ * * `load` — the harvests a ripe Field gives on average, `100 / endChance` (exactly `crop.load`
+ *   when the chance is not authored); a Crop Load rule in reach (a Composter) adds to it as it
+ *   ripens, which lowers the chance.
  * * `ripeSprite` — the picture of a ripe Field of this crop, or null (the Token's own art).
  * * `seeds` — the recipe's `inputs`, summed by item: what one sowing costs, paid from the Bank once
  *   per planting, never per harvest.
@@ -427,7 +477,9 @@ export function cropTermsOf(recipe) {
     if (terms) return terms;
     const crop = recipe.crop && typeof recipe.crop === 'object' ? recipe.crop : {};
     const grow = Number(crop.growMs);
-    const load = Math.floor(Number(crop.load));
+    const authored = Number(crop.endChance);
+    const counted = Math.floor(Number(crop.load));
+    const load = Number.isFinite(authored) && authored > 0 ? 100 / Math.min(100, authored) : (counted >= 1 ? counted : CROP_DEFAULTS.load);
     const sprite = typeof crop.ripeSprite === 'string' && crop.ripeSprite.trim() ? crop.ripeSprite.trim() : null;
     const total = new Map();
     for (const line of Array.isArray(recipe.inputs) ? recipe.inputs : []) {
@@ -437,7 +489,8 @@ export function cropTermsOf(recipe) {
     }
     terms = Object.freeze({
         growMs: Number.isFinite(grow) && grow > 0 ? Math.max(CROP_MIN_GROW_MS, grow) : CROP_DEFAULTS.growMs,
-        load: load >= 1 ? load : CROP_DEFAULTS.load,
+        endChance: Number.isFinite(authored) && authored > 0 ? Math.min(100, authored) : 100 / load,
+        load,
         ripeSprite: sprite,
         seeds: Object.freeze([...total].map(([itemId, quantity]) => Object.freeze({ itemId, quantity })))
     });
@@ -445,7 +498,7 @@ export function cropTermsOf(recipe) {
     return terms;
 }
 const cropTermsMemo = new WeakMap();
-const DEFAULT_CROP_TERMS = Object.freeze({ ...CROP_DEFAULTS, ripeSprite: null, seeds: Object.freeze([]) });
+const DEFAULT_CROP_TERMS = Object.freeze({ ...CROP_DEFAULTS, endChance: 100 / CROP_DEFAULTS.load, ripeSprite: null, seeds: Object.freeze([]) });
 
 /**
  * ⭐ **A shrine** (brief 810 K3): `shrine: { maxLitMs }` on a Token that works as a station (Faith,
@@ -548,4 +601,47 @@ export function rollOutputQuantity(output, random = Math.random) {
 export function expectedOutputQuantity(output) {
     const { min, max } = outputRange(output);
     return (min + max) / 2;
+}
+
+/**
+ * The Token types a Token of this type needs as its owner to come back (`instance.tether`): what its
+ * refill, or any growth on its way back, names in `needsNearby`, following a regrow's `into` and each
+ * `grows.into` (a tree, its Stump, the tree again). A tree needs its Forest, a fruit tree its
+ * Orchard; empty when it needs none. `lookup` maps a type id to its def.
+ */
+export function ownerTypesOf(def, lookup) {
+    const out = new Set();
+    const seen = new Set();
+    const stack = def ? [def] : [];
+    while (stack.length) {
+        const at = stack.pop();
+        if (!at || seen.has(at)) continue;
+        seen.add(at);
+        const respawn = respawnOf(at);
+        if (respawn) for (const id of respawn.needsNearby) out.add(id);
+        for (const id of growsTermsOf(at).needsNearby) out.add(id);
+        if (respawn?.mode === 'regrow') stack.push(lookup(respawn.into));
+        if (typeof at.grows?.into === 'string') stack.push(lookup(at.grows.into));
+    }
+    return [...out];
+}
+
+/**
+ * Whether a spawner type owns what it spawns, a **Forest** or an **Orchard**: one of its spawns needs
+ * it as its owner ({@link ownerTypesOf}). It counts only its own against its allowance, ties each
+ * spawn to itself and plants for free (`SpawnerSystem`).
+ */
+export function isGroveSpawnerDef(def, lookup, id = def?.id) {
+    const spawns = def?.spawner?.spawns;
+    if (!id || !Array.isArray(spawns)) return false;
+    return spawns.some(s => typeof s?.typeId === 'string' && ownerTypesOf(lookup(s.typeId), lookup).includes(id));
+}
+
+/**
+ * What a spawner charges for one spawn, as authored (`spawner.upkeep`), or nothing for a Forest or an
+ * Orchard ({@link isGroveSpawnerDef}): its seeds were paid once, to build it.
+ */
+export function spawnerUpkeepOf(def, lookup, id = def?.id) {
+    if (isGroveSpawnerDef(def, lookup, id)) return [];
+    return Array.isArray(def?.spawner?.upkeep) ? def.spawner.upkeep : [];
 }

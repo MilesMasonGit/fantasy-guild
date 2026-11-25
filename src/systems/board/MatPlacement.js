@@ -237,9 +237,10 @@ function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudg
     }
 
     const buckets = bucketNeighbours(neighbours, largestGap);
-    // `siteOf`: a Foundation set to build stands under its build's site rules, not its own.
+    // `siteOf`: a Foundation set to build stands under its build's site rules, and its own ground
+    // as well when it has one (`GroundRules.siteRulesFor`).
     const siteType = siteOf || typeId;
-    const ground = GroundRules.rulesFor(siteType);
+    const ground = GroundRules.siteRulesFor(typeId, siteOf);
     const nearRules = SiteRules.nearRulesFor(siteType);
     const near = nearRules ? { ...nearRules, anchors: SiteRules.anchorsFor(nearRules, excludeId), radius: reachRadius() } : null;
     return {
@@ -465,7 +466,7 @@ export function findSpotAnywhere(typeId, point, options = {}) {
 
     // ⚠️ A station whose recipe makes a boat in a Region with no water asks this every tick: with no
     // cell at all to stand on, the whole-mat scan below (some 30,000 candidates) cannot succeed.
-    if (GroundRules.rulesFor(options.siteOf || typeId)?.allowed === 0) return null;
+    if (GroundRules.siteRulesFor(typeId, options.siteOf)?.allowed === 0) return null;
 
     const r = roomRadiusOf(typeId);
     const w = matW();

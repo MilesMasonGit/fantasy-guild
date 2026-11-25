@@ -84,9 +84,9 @@ describe('The Forestry chain in shipped data (7.0, 7.1)', () => {
         for (const def of [forest, tree, stump]) expect(def.acceptedTokens || []).toEqual([]);
     });
 
-    it('the Guild Hall trickles an Oak Seedling every 5 minutes (SP-66)', () => {
+    it('the Guild Hall trickles an Oak Seedling once a lap (SP-66)', () => {
         // Other chains add their own seed lines (7.4: Wheat and Apple Seed).
-        expect(hall.trickle).toContainEqual({ itemId: 'item_oak_seedling', quantity: 1, everyMs: 300000 });
+        expect(hall.trickle).toContainEqual({ itemId: 'item_oak_seedling', quantity: 1 });
         expect(hall.trickle.filter((t) => t.itemId === 'item_oak_seedling')).toHaveLength(1);
     });
 
@@ -95,9 +95,7 @@ describe('The Forestry chain in shipped data (7.0, 7.1)', () => {
         // free mines). Errors anywhere still fail.
         const ids = new Set(['token_oak_forest', 'token_oak_tree', 'token_oak_stump', 'token_guild_hall']);
         const findings = auditLifecycleBlocks({ tokens: expanded, items, recipes, skills: SKILLS })
-            .filter((f) => f.severity === 'error' || ids.has(f.entityId))
-            // The Hall's seed lines keep a time of their own until a CMS pack strips it; the warning says so.
-            .filter((f) => !/^trickle\[\d+\]\.everyMs$/.test(f.field));
+            .filter((f) => f.severity === 'error' || ids.has(f.entityId));
         expect(findings).toEqual([]);
     });
 });

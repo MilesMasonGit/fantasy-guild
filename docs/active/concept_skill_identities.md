@@ -24,8 +24,8 @@ blessings differ from supports and Hall stars, its levels.
 **Settled 2026-11-21:** a shrine's blessing is strong but holds only while a
 Faith hero tends it with offerings; untended, it fades. Support buildings stay
 passive and weaker. Offerings (candles from wax or tallow, incense from herbs,
-flower garlands from Farming) are made by Faith at an altar from other skills'
-goods: no new nodes.
+flower garlands from Farming) are made from other skills' goods: no new nodes. *Amended 2026-11-25 (owner): offerings are made
+primarily by **Crafting**, not Faith; no altar station. Faith tends shrines.*
 
 ## Summoning: Summoned workers
 

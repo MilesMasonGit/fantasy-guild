@@ -44,7 +44,7 @@
         },
         "foundationKinds": {
           "type": "array",
-          "items": { "type": "string", "enum": ["wood", "stone", "farmland", "excavation", "battlefield"] },
+          "items": { "type": "string", "enum": ["wood", "stone", "farmland", "excavation", "dock", "battlefield"] },
           "description": "FOUNDATION_KINDS: a building recipe offered on these Foundations, kept out of station pools (recipePoolRegistry.js)."
         },
         "foundationMinTier": { "type": "number", "minimum": 1, "description": "The lowest Foundation tier that offers it (tokenConstants.js foundationMinTierOf)." },

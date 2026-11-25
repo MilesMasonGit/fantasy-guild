@@ -220,7 +220,7 @@ describe('crits double before the type factor; no flat armour, no floor', () => 
 
     it('a hit can do 0: immunity means 0, and the old armour numbers are read by nothing', () => {
         const h = hero({ skill: 'melee', level: 1, weapon: 'rules_copper_sword' });
-        expect(CF.heroHitDamage(h, enemy(1, { resistances: { physical: 100 } }))).toBe(0);
+        expect(CF.heroHitDamage(h, enemy(1, { resistances: { slash: 100 } }))).toBe(0);
         expect(CF.heroHitDamage(h, enemy(1, { armor: 9 }))).toBe(2);
         const plated = recruit();
         give(plated, EFFECT_TYPES.ARMOR, 5);
@@ -351,10 +351,9 @@ describe('the enemy level table', () => {
     });
 
     it('older content\'s budgetScale still scales HP, hit and XP (not speed)', () => {
-        const goblin = enemy(1, { budgetScale: 0.3 });
-        expect(goblin).toMatchObject({ hp: 6, hit: 1, attackSpeed: 3000, xpAwarded: 3 });
-        const chief = enemy(3, { budgetScale: 0.6 });
-        expect(chief).toMatchObject({ hp: 14, hit: 1, xpAwarded: 7 });
+        // Retired: the level fills the numbers, and the audit names a budgetScale left on an enemy.
+        expect(enemy(1, { budgetScale: 0.3 })).toMatchObject({ hp: 21, hit: 1, attackSpeed: 3000, xpAwarded: 10 });
+        expect(enemy(3, { budgetScale: 0.6 })).toMatchObject(enemy(3, {}));
     });
 });
 

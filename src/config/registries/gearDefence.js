@@ -3,19 +3,18 @@
 // ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY (`cms/src/utils/constants.js`): the item
 // editor's Defence block and the audits read the shapes from here. Keep it free of data loading.
 
-import { isTypeOrGroupId } from './damageTypes.js';
+import { isDamageTypeId } from './damageTypes.js';
 import { COMBAT_SKILL_IDS } from './skillRegistry.js';
 import { getCategoryDef, CATEGORY_KINDS } from './equipmentCategories.js';
 
 /**
- * There is no flat Armour: a piece of gear lends **resistances** in percent, by damage type or
- * group, and every piece is a trade-off, listing a **damage cut** to named styles (owner, brief
- * 280: "Iron Chestplate: Physical resist 20 %; Magic damage −30 %, Stealth damage −15 %").
+ * There is no flat Armour: a piece of gear lends **resistances** in percent, by damage type, and
+ * every piece is a trade-off, listing a **damage cut** to named styles (an Iron Chestplate: Slash,
+ * Crush and Stab resist 20 %; Magic damage −30 %, Stealth damage −15 %).
  *
- *   `resistances: { physical: 20, ice: -10 }` — percent off hits of that type or group the wearer
- *     takes; negative is a weakness. Lines add: a group's line counts on each of its types beside a
- *     type's own (the Type Resistance % rows do the same), unlike an enemy's, where a type's line
- *     replaces its group's.
+ *   `resistances: { slash: 20, crush: 20, stab: 20, ice: -10 }` — percent off hits of that type the
+ *     wearer takes; negative is a weakness. A hero's lines for a type add, with their Type
+ *     Resistance % rows.
  *   `damageCut: { magic: 30, stealth: 15 }` — percent off the wearer's hits while they fight in that
  *     style (the weapon's; Melee barehanded). Cuts from several pieces add, and 100 or more leaves
  *     nothing.
@@ -39,9 +38,9 @@ export function isWornGear(item) {
 const isPlainObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 
 /**
- * A worn piece's resistances as the engine reads them: known types and groups only, each a number
- * other than 0, held within ±100. Anything else is dropped (the audits name it). Empty for anything
- * that is not worn gear.
+ * A worn piece's resistances as the engine reads them: known types only, each a number other than
+ * 0, held within ±100. Anything else, a group's line included, is dropped (the audits name it).
+ * Empty for anything that is not worn gear.
  * @returns {Object<string, number>}
  */
 export function gearResistancesOf(item) {
@@ -49,7 +48,7 @@ export function gearResistancesOf(item) {
     if (!isWornGear(item) || !isPlainObject(item.resistances)) return out;
     for (const [id, value] of Object.entries(item.resistances)) {
         const n = Number(value);
-        if (!isTypeOrGroupId(id) || !Number.isFinite(n) || n === 0) continue;
+        if (!isDamageTypeId(id) || !Number.isFinite(n) || n === 0) continue;
         out[id] = Math.max(-100, Math.min(100, n));
     }
     return out;

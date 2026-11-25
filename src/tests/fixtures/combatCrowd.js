@@ -13,7 +13,7 @@ import { generateHero } from '../../systems/hero/HeroGenerator.js';
 import { getTokenType, registerTokenTypes } from '../../config/registries/tokenRegistry.js';
 import { registerItems, getItem } from '../../config/registries/itemRegistry.js';
 import { EFFECTS, registerEffects } from '../../config/registries/effectRegistry.js';
-import { VENOM_EFFECT_ID } from '../../config/registries/enemyKinds.js';
+import { VENOM_EFFECT_ID } from '../../config/registries/damageTypes.js';
 import { ROLE } from '../../config/registries/roleRegistry.js';
 import { makeStatement, KEYWORD } from '../../systems/effects/statements.js';
 import { heroMaxHpFromSkills } from '../../systems/combat/CombatFormulas.js';
@@ -42,7 +42,7 @@ function registerQaContent() {
     if (!getItem('item_elixir_of_valor') || !getItem('item_elixir_of_ironskin')) {
         registerEffects({
             qa_c6_fx_valor: { id: 'qa_c6_fx_valor', name: 'Valor', statements: [provides('DAMAGE')] },
-            qa_c6_fx_ironskin: { id: 'qa_c6_fx_ironskin', name: 'Ironskin', statements: [{ ...provides('TYPE_RESIST'), payload: { type: 'TYPE_RESIST', bucket: 'flat', value: 25, category: 'physical' } }] },
+            qa_c6_fx_ironskin: { id: 'qa_c6_fx_ironskin', name: 'Ironskin', statements: [{ ...provides('TYPE_RESIST'), payload: { type: 'TYPE_RESIST', bucket: 'flat', value: 25, category: 'crush' } }] },
             qa_c6_fx_elixir_valor: { id: 'qa_c6_fx_elixir_valor', name: 'Elixir of Valor', statements: [forTheFight('qa_c6_fx_valor')] },
             qa_c6_fx_elixir_ironskin: { id: 'qa_c6_fx_elixir_ironskin', name: 'Elixir of Ironskin', statements: [forTheFight('qa_c6_fx_ironskin')] }
         });
@@ -65,7 +65,10 @@ function registerQaContent() {
         config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [{ itemId: 'item_bones', chance: 100, minQty: 1, maxQty: 1 }] }
     });
     registerTokenTypes({
-        [QA_ENEMIES.WARLORD]: enemy(QA_ENEMIES.WARLORD, 'Goblin Warlord', chief?.sprite || goblin?.sprite || 's_crime', { level: 20, kinds: ['brute', 'venomous'] }, 50),
+        [QA_ENEMIES.WARLORD]: enemy(QA_ENEMIES.WARLORD, 'Goblin Warlord', chief?.sprite || goblin?.sprite || 's_crime', {
+            level: 20, kinds: ['brute'],
+            moves: [{ name: 'Cleave', damageType: 'slash' }, { name: 'Venom Stab', damageType: 'stab', effectId: VENOM_EFFECT_ID, target: 'hero' }]
+        }, 50),
         [QA_ENEMIES.SCOUT]: enemy(QA_ENEMIES.SCOUT, 'Goblin Scout', goblin?.sprite || 's_crime', { level: 5, kinds: ['swift'] }, 5)
     });
 }
@@ -93,7 +96,7 @@ export function placeBesideHall(typeId, dx, dy) {
  * motion of a busy mat can be judged: the fights that would cover one another stepping apart as
  * their heroes arrive (`FightRoom`), bars, the fight buttons, floats, the Bee's Flutter said in a
  * bubble while every plain hit is not (only special moves bubble), and the Goblin Warlord's Venom
- * landing on Cora ("Venom!"). The content's own enemies
+ * Stab landing Venom on Cora ("Venom!"). The content's own enemies
  * where it has them; heroes matched to their enemy, Shrimp to eat so the fights last, elixirs on
  * some.
  * @returns {{ok: boolean, fights?: number, error?: string}}

@@ -5,7 +5,7 @@ import {
   EQUIP_CATEGORIES, TOOL_KINDS, HAND_CATEGORY, tierValue, SKILLS, ENEMY_STYLES, weaponStyleOf, authoredWeaponStyles, ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, WEAPON_TIERS,
   expandBearer, statementsOf, doseKindsOf, DOSE_WHY, noDoseWhy, isSpentCategory,
   DAMAGE_TYPES, DAMAGE_GROUPS, DEFAULT_DAMAGE_TYPE_BY_STYLE, DEFAULT_ARROW_DAMAGE_TYPE, damageTypeLabel, isConsumableCategory,
-  isWornGear, BREAK_CHANCE_MAX,
+  isWornGear, BREAK_CHANCE_MAX, catchItemIds, coinWorthOf,
 } from '../../utils/constants';
 import { Header, Section, Field, Empty, DerivedMark } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
@@ -13,6 +13,7 @@ import Statements from './Statements';
 import ChainInspector from '../shared/ChainInspector';
 import GearLevelField from './GearLevelField';
 import GearDefenceFields from './GearDefenceFields';
+import FishingItemFields from './FishingItemFields';
 import PlanFields from '../shared/PlanFields';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
@@ -210,7 +211,7 @@ function ArrowFields({ item, onChange }) {
               <DamageTypeOptions />
             </select>
             <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
-              Usually Physical (Stab): a ghost immune to Physical still takes the bow's part.
+              Usually Stab: a ghost immune to Stab still takes the bow's part.
             </p>
           </Field>
         </>
@@ -276,6 +277,38 @@ function BreakChanceField({ item, isTool, onChange }) {
   );
 }
 
+/**
+ * What one copy sells for from the Bank, written as `coinWorth` only when a whole number of 0 or
+ * more (`itemCoins.js`). Blank writes nothing and sells for 0. The words typed are kept while typing.
+ */
+function CoinWorthField({ item, onChange }) {
+  const [draft, setDraft] = useState(item.coinWorth == null ? '' : String(item.coinWorth));
+  const write = (text) => {
+    setDraft(text);
+    const n = Number(text);
+    onChange({ coinWorth: text.trim() !== '' && Number.isInteger(n) && n >= 0 ? n : undefined });
+  };
+  const worth = coinWorthOf(item);
+  return (
+    <Field label="Coin worth" className="col-span-1">
+      <input
+        type="number"
+        min={0}
+        step="1"
+        aria-label="Coin worth"
+        data-field="coin-worth"
+        value={draft}
+        placeholder="0"
+        onChange={(e) => write(e.target.value)}
+        className="w-full"
+      />
+      <p data-field="coin-worth-line" className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+        One sells for {worth} {worth === 1 ? 'coin' : 'coins'} from the Bank. A whole number; blank sells for 0.
+      </p>
+    </Field>
+  );
+}
+
 /** Maps equipSlot to standard item type for game registry compatibility */
 function slotToType(slot) {
   if (!slot) return 'material';
@@ -290,6 +323,8 @@ function slotToType(slot) {
 export default function ItemEditor() {
   const activeId = useEntityStore((s) => s.activeEntityId);
   const item = useEntityStore((s) => s.items[activeId]);
+  const items = useEntityStore((s) => s.items);
+  const tokens = useEntityStore((s) => s.tokens);
   const updateItem = useEntityStore((s) => s.updateItem);
   const deleteItem = useEntityStore((s) => s.deleteItem);
   const effects = useEntityStore((s) => s.effects);
@@ -319,8 +354,12 @@ export default function ItemEditor() {
   // `tool: { kind, tier, starter? }`, written whole; no kind clears it. `starter` is written only when ticked.
   const setTool = (patch) => {
     if (patch === null) return updateItem(activeId, { tool: undefined });
-    const next = { kind: item.tool?.kind, tier: tierValue(item.tool?.tier), ...(item.tool?.starter ? { starter: true } : {}), ...patch };
+    const next = {
+      kind: item.tool?.kind, tier: tierValue(item.tool?.tier), ...(item.tool?.starter ? { starter: true } : {}),
+      ...(item.tool?.baitSaving > 0 ? { baitSaving: item.tool.baitSaving } : {}), ...patch,
+    };
     if (!next.starter) delete next.starter;
+    if (!(next.baitSaving > 0)) delete next.baitSaving;
     updateItem(activeId, { tool: next, hands: undefined, offHand: undefined, ...WEAPON_CLEARED });
   };
   const isHand = item.equipSlot === HAND_CATEGORY;
@@ -497,6 +536,8 @@ export default function ItemEditor() {
 
           <GearLevelField item={item} onChange={(patch) => updateItem(activeId, patch)} />
 
+          <FishingItemFields item={item} items={items} landed={Object.values(tokens || {}).some((t) => catchItemIds(t).includes(item.id))} onTool={setTool} onChange={(patch) => updateItem(activeId, patch)} />
+
           {isHand && !isOffHandItem && (
             <BreakChanceField key={item.id} item={item} isTool={isTool} onChange={(patch) => updateItem(activeId, patch)} />
           )}
@@ -543,6 +584,9 @@ export default function ItemEditor() {
       </Section>
 
       <Section title="Value" icon={<Lock size={14} />}>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <CoinWorthField key={item.id} item={item} onChange={(patch) => updateItem(activeId, patch)} />
+        </div>
         <div className="flex items-center gap-4">
           <div className="flex-1">
             <span className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 mb-1.5 text-gray-500">

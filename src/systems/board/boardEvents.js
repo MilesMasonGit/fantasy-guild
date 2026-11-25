@@ -105,6 +105,21 @@ export const BOARD_EVENTS = {
     INPUT_NEEDED: 'board:input_needed',
 
     /**
+     * A water a hero is ordered onto holds no fish they may land at their level: their lure picks
+     * one above it, or with no lure every fish there is (`ALERT.FISH_LEVEL`). Payload: `{ instanceId,
+     * heroId, skill, level }`, the level they need. Published by `Flags` as `INPUT_NEEDED` is; the
+     * hero's "Needs Fishing 40" bubble is raised once and waits (`heroNeeds.js`).
+     */
+    CATCH_NEEDS_LEVEL: 'board:catch_needs_level',
+
+    /**
+     * A hero fishing with a lure whose fish the spot lacks fished as with no lure, the lure not
+     * spent (`Fishing.catchOf`). Payload: `{ instanceId, heroId, lureId, fish }`, `fish` the lure's
+     * fish. The hero says "No Salmon here" once (`heroNeeds.js`).
+     */
+    LURE_FISH_ABSENT: 'board:lure_fish_absent',
+
+    /**
      * A Foundation finished its build and became the Token it built, in place (Farmland planted by
      * Farming included). Payload: `{ instanceId, typeId, fromTypeId, heroId }`: the new Token, what
      * it was built as, the Foundation's type, and the hero who built it.
@@ -165,6 +180,19 @@ export const BOARD_EVENTS = {
      * `reason` one of `EventTokens.ENDED` (worked out, time up, demolished).
      */
     EVENT_ENDED: 'board:event_ended',
+
+    /**
+     * A fishing spot arrived on the mat by itself (`FishingSpots`): `{ instanceId, typeId, water, x,
+     * y }`, `water` the water kind it landed on.
+     */
+    SPOT_LANDED: 'board:spot_landed',
+
+    /**
+     * A fishing spot left the mat by itself: `{ instanceId, typeId, reason, x, y }`, `reason` one of
+     * `FishingSpots.LEFT` (moved on after a catch, or drifted off unworked). A spot that landed as an
+     * event says `EVENT_ENDED` instead.
+     */
+    SPOT_LEFT: 'board:spot_left',
 
     /**
      * Something new found no room on the mat and waits for it, said once per wait (`RoomWait.tell`):
@@ -344,6 +372,12 @@ export const ALERT = {
      * it never refuses an order: the hero waits by the water until given bait.
      */
     NO_BAIT: 'no_bait',
+    /**
+     * At a water, the lure the hero carries picks a fish above their Fishing level, or with no lure
+     * every fish there is (`Fishing.levelNeededOf`). Like `NO_BAIT`: never a badge, never a refusal;
+     * the hero lets go and says the level they need.
+     */
+    FISH_LEVEL: 'fish_level',
     /**
      * The station cannot run the recipe it is set to, because the context Tokens that recipe names
      * are not beside it. (A station with nothing picked says `CHOOSE_RECIPE` instead.)
