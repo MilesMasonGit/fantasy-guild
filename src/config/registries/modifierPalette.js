@@ -574,6 +574,93 @@ export const MODIFIER_PALETTE = [
         hint: 'How often one fish bites from a water\'s catch pool: a percentage on its weight there (+100% doubles it). Pick the fish; "any item" moves every catch alike, which changes nothing.'
     },
 
+    // The gathering signature perks (Motherlode, Evergreen, Grove Feller, Master Angler): each a
+    // chance, so the perk is 100 and a star or gear may hold less. Read at the worked Token through
+    // every scope, so a Token in reach may carry one too.
+    {
+        /**
+         * Read by `Charges.applyDelta` beside the end roll of a Token that runs out by chance: when
+         * the roll would end it, this chance keeps it going (one draw, none at 100). A Field's
+         * harvest and a Token that counts down are not read.
+         */
+        type: EFFECT_TYPES.NEVER_RUNS_OUT,
+        reads: {
+            up: (n) => `have a ${n} chance not to run out as they are worked`,
+            down: (n) => `have ${n} less chance not to run out as they are worked`
+        },
+        label: 'Never Runs Out',
+        explains: 'A chance a vein or tree that would run out keeps going',
+        when: 'never',
+        scales: 'value',
+        // A chance is a plain number of percent; resolved from a base of 0, so any other bucket is 0.
+        buckets: ['flat'],
+        categories: 'skill',
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Support',
+        hint: 'A chance that a cycle which would end a Token that comes back (a vein resting, a tree falling to its Stump) does not: at 100% it never runs out while the rule reaches it. In percent. Only Tokens that run out by chance; a Field\'s harvest and a Token that leaves the mat are untouched. On a perk, narrow it to the skill (Motherlode: Mining).'
+    },
+    {
+        /**
+         * Read by `Fields.harvested` on the harvest that ends a ripe Field, after its end roll: the
+         * crop just harvested is sown again with no seed owed or needed, if it is still the pick.
+         */
+        type: EFFECT_TYPES.FREE_REPLANT,
+        reads: {
+            up: (n) => `have a ${n} chance to sow their crop again with no seed when harvested out`,
+            down: (n) => `have ${n} less chance to sow their crop again with no seed when harvested out`
+        },
+        label: 'Free Replant',
+        explains: 'A chance a harvested-out Field sows its crop again with no seed',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        categories: 'skill',
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Support',
+        hint: 'A chance that the harvest which ends a ripe Field sows the same crop again at once, owing no seed and needing none in the Bank: at 100% the Field replants itself every time. In percent. A Field whose pick the player has changed sows the new crop as usual.'
+    },
+    {
+        /**
+         * Read by `GroveFelling.afterFall` once per tree that falls to its Stump at the end of a
+         * successful cycle: on a hit, the lasting trees of its type whose drawn bodies touch it fall
+         * too, each paying one cycle's output and XP to the hero who felled the first.
+         */
+        type: EFFECT_TYPES.GROVE_FELLING,
+        reads: {
+            up: (n) => `have a ${n} chance a falling tree fells the touching trees of its kind`,
+            down: (n) => `have ${n} less chance a falling tree fells the touching trees of its kind`
+        },
+        label: 'Grove Felling',
+        explains: 'A chance a falling tree fells the touching trees of its kind, each paid',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        categories: 'skill',
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Support',
+        hint: 'A chance that a tree falling to its Stump (a Token that regrows when it runs out) fells the trees of the same kind touching it, not the whole reach. Each felled tree pays the hero one cycle\'s output and XP and becomes its own Stump; a felled tree fells nothing more. In percent, rolled once a fall.'
+    },
+    {
+        /**
+         * Read by `Fishing.catchOf` once per catch, after the pick, only when the pool fished holds a
+         * fish above the one that bit that the hero's level allows: on a hit that fish lands instead.
+         */
+        type: EFFECT_TYPES.BETTER_CATCH,
+        reads: {
+            up: (n) => `have a ${n} chance a catch is the next fish up`,
+            down: (n) => `have ${n} less chance a catch is the next fish up`
+        },
+        label: 'Better Catch',
+        explains: 'A chance a catch is the next fish up that water holds',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        categories: 'skill',
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Support',
+        hint: 'A chance a catch lands as the next fish up the pool the hero fishes: the lowest Fishing level above the fish that bit, among those the hero\'s level allows. The Bait spent is the fish that bit\'s. In percent, rolled after the pick. A lure still picks the fish that bites; the top fish, and a Trap\'s one catch, stay as they are.'
+    },
+
     // --- Combat ---------------------------------------------------------
     //
     // ⚠️ Every row here has a live reader in `CombatFormulas` or

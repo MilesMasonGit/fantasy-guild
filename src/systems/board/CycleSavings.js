@@ -32,6 +32,16 @@ export function rollChance(chance, random = Math.random) {
 }
 
 /**
+ * Whether a roll at `chance` percent hits, sure at 100 or more: no draw at a sure chance nor at
+ * none, one between. The gathering signature perks roll this way, so a perk at its own 100 moves
+ * the random stream not at all.
+ */
+export function sureOrRolled(chance, random = Math.random) {
+    if (!(chance > 0)) return false;
+    return chance >= 100 || random() * 100 < chance;
+}
+
+/**
  * Whether a rule-driven chance on `type` hits, for Token `instanceId` narrowed to `category`:
  * {@link chanceOf}, then rolled once. No chance, no draw.
  */

@@ -43,9 +43,10 @@ import { CARRIED_KIND } from '../../config/registries/carriedKinds.js';
  * catch comes from the water under it and the Region's biome (`catchPools.poolsAt`).
  *
  * ⚠️ Every draw is from `Math.random` in a fixed place of the finished cycle
- * (`BoardRunner.completeCycle`): the pick (none for one fish), then a Preservation chance on the
- * Bait when a rule offers one, then a lure's break when it has a chance. A catch-up catches exactly
- * what live play does.
+ * (`BoardRunner.completeCycle`): the pick (none for one fish), then Better Catch when a rule offers
+ * it below 100 and a fish is above the one that bit, then a Preservation chance on the Bait when a
+ * rule offers one, then a lure's break when it has a chance. A catch-up catches exactly what live
+ * play does.
  */
 
 export { hasCatchPools as isWater };
@@ -126,6 +127,7 @@ function assess(def, heroId, instance) {
     out.pool = pool;
     const hero = heroRecord(heroId);
     const heroLevel = Number(hero?.skills?.[def.config?.skill]?.level) || 0;
+    out.heroLevel = heroLevel;
 
     let lured = null;
     if (takesLure(tool.kind) && hero) {
@@ -228,12 +230,45 @@ export function levelNeededOf(def, heroId, instance = null) {
 }
 
 /**
+ * The next fish up from `bit` in the pool `a` fishes: the lowest Fishing level above `bit`'s among
+ * the fish the hero's level allows (the first in the pool's order on a tie), or null when nothing is
+ * above it (the top fish, a Trap's one catch).
+ */
+function nextFishUp(a, bit) {
+    const from = a.terms.get(bit)?.level ?? Infinity;
+    let next = null;
+    let nextLevel = Infinity;
+    for (const c of a.pool.catches) {
+        const level = a.terms.get(c)?.level;
+        if (!(level > from) || level > a.heroLevel || !(level < nextLevel)) continue;
+        next = c;
+        nextLevel = level;
+    }
+    return next;
+}
+
+/**
+ * Better Catch (Master Angler): the fish that lands in place of `bit` at water Token `instanceId`,
+ * the next fish up ({@link nextFishUp}), on a hit of the chance the rules reaching the water give
+ * hero `heroId` (their perk, a Token in reach, a Hall star), narrowed to its skill; else null. Rolled
+ * only when there is a fish above, and not at all at 100.
+ */
+function betterCatchOf(instanceId, def, a, bit, heroId, random) {
+    const next = nextFishUp(a, bit);
+    if (!next) return null;
+    const skill = def?.config?.skill || undefined;
+    const chance = TileModifiers.resolveAxis(instanceId, EFFECT_TYPES.BETTER_CATCH, 0, skill, heroId || undefined);
+    return CycleSavings.sureOrRolled(chance, random) ? next : null;
+}
+
+/**
  * One finished cycle's catch at water Token `instanceId` (type `def`), worked by `heroId`: picks
  * the fish, spends the Bait, and may break the lure. Each fish's weight is widened by the Catch
  * Weight rules that reach it (the hero's rod, a Token in reach), with the fish as the narrowing.
  *
  * Nothing bites (null) when the hero does not fish there ({@link fishingOf}): nothing is spent then.
- * A Preservation hit at the water keeps the Bait in the Bank (`baitKept`).
+ * A Better Catch hit lands the next fish up instead ({@link betterCatchOf}), for the Bait of the one
+ * that bit. A Preservation hit at the water keeps the Bait in the Bank (`baitKept`).
  *
  * @returns {{itemId: string, tool: string, bait: string|null, baitSpent: number, baitKept: boolean,
  *   lure: string|null, lureBroke: boolean}|null}
@@ -244,8 +279,10 @@ export function catchOf(instanceId, def, heroId, random = Math.random) {
     const weights = a.catches.map(c => TileModifiers.resolveAxis(instanceId, EFFECT_TYPES.CATCH_WEIGHT, c.weight, c.itemId));
     const index = pickCatchIndex(weights, random);
     if (index == null) return null;
-    const caught = a.catches[index];
-    const spent = a.bait ? baitSpent(a.terms.get(caught).bait, baitSavingOf(getItem(a.tool.itemId))) : 0;
+    const bit = a.catches[index];
+    const caught = betterCatchOf(instanceId, def, a, bit, heroId, random) || bit;
+    // The Bait is the fish that bit's, even when a better one lands (Master Angler).
+    const spent = a.bait ? baitSpent(a.terms.get(bit).bait, baitSavingOf(getItem(a.tool.itemId))) : 0;
     const baitKept = spent > 0 && CycleSavings.keepsCarried(instanceId, a.bait, CARRIED_KIND.BAIT, random);
     if (spent > 0 && !baitKept) InventoryManager.removeItem(a.bait, spent);
     let lureBroke = false;

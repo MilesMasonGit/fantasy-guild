@@ -254,7 +254,11 @@ describe('the palette declares both, rather than inferring them', () => {
             // Refresh's (`CycleSavings.rollRefresh`) the Token's own work skill.
             EFFECT_TYPES.REFRESH,
             // Giant Harvest's (`OutputRules.rollGiantHarvest`) too, a gathering skill only.
-            EFFECT_TYPES.GIANT_HARVEST
+            EFFECT_TYPES.GIANT_HARVEST,
+            // The gathering signature perks' readers pass the worked Token's skill: Never Runs Out
+            // (`Charges.applyDelta`), Free Replant (`Fields.harvested`), Grove Felling
+            // (`GroveFelling.afterFall`) and Better Catch (`Fishing.catchOf`).
+            EFFECT_TYPES.NEVER_RUNS_OUT, EFFECT_TYPES.FREE_REPLANT, EFFECT_TYPES.GROVE_FELLING, EFFECT_TYPES.BETTER_CATCH
         ]));
     });
 

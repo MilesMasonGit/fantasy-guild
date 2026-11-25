@@ -11,6 +11,7 @@ import { growTimeOf, resolveAxis } from './TileModifiers.js';
 import * as EffectFeedback from './EffectFeedback.js';
 import * as SupportLinks from './supportLinks.js';
 import { endsNow } from './endRoll.js';
+import { sureOrRolled } from './CycleSavings.js';
 
 /**
  * A Field is one Token that grows itself (brief 230 S4): a station (Works as Farming, kind `field`
@@ -233,19 +234,19 @@ function announce(instance) {
 /**
  * Sow the pick: with its seed in the Bank or on the mat, start it growing, its clock at `clockMs`,
  * the seed owed to the first harvest. Short of the seed the Field is stopped and says what it lacks;
- * returns null then (and when nothing is picked).
+ * returns null then (and when nothing is picked). `free` (Free Replant) needs no seed and owes none.
  */
-function sow(instance, def, clockMs = 0) {
+function sow(instance, def, clockMs = 0, { free = false } = {}) {
     const crop = pickOf(instance, def);
     if (!crop) return null;
     const { seeds } = cropTermsOf(crop);
-    const short = Growth.shortOfCost(seeds);
+    const short = free ? [] : Growth.shortOfCost(seeds);
     if (short.length) {
         Growth.setGrowthAlert(instance.id, ALERT.GROW_NEEDS_ITEM, short);
         return null;
     }
     settle(instance, def);
-    instance.field = seeds.length ? { cropId: crop.id, seedOwed: true } : { cropId: crop.id };
+    instance.field = seeds.length && !free ? { cropId: crop.id, seedOwed: true } : { cropId: crop.id };
     const clocks = instance.clocks && typeof instance.clocks === 'object' ? instance.clocks : (instance.clocks = {});
     clocks[CLOCK] = Math.max(0, clockMs);
     if (Growth.anyGrowthAlert()) Growth.setGrowthAlert(instance.id, null);
@@ -316,10 +317,13 @@ export function clockFired(instance, def) {
  * Field without a seed. A `refreshed` harvest (Refresh hit) rolls nothing and stays ripe; the seed
  * it paid is still paid. A `preserved` harvest (Preservation hit) paid nothing, and a seed it owed
  * is never paid for this crop (owner, 2026-11-11): the next crop owes its own as usual.
+ * Free Replant (Evergreen) reaching the harvest that ends it, for `heroId`, sows the crop just
+ * harvested again with no seed, if it is still the pick ({@link replantsFree}).
  */
-export function harvested(instance, def, { overMs = 0, refreshed = false } = {}) {
+export function harvested(instance, def, { overMs = 0, refreshed = false, heroId = null } = {}) {
     if (stageOf(instance, def) !== STAGE.RIPE) return;
     const chance = harvestEndChance(instance, def);
+    const cropId = plantedCrop(instance, def)?.id ?? null;
     const state = settle(instance, def);
     // Paid or, on a Preservation hit, forgiven: either way this crop owes nothing more.
     delete state.seedOwed;
@@ -331,10 +335,23 @@ export function harvested(instance, def, { overMs = 0, refreshed = false } = {})
         }
         return;
     }
+    const free = replantsFree(instance, def, cropId, heroId);
     instance.field = {};
     if (instance.clocks && CLOCK in instance.clocks) instance.clocks[CLOCK] = 0;
     // The cycle's own outputs have already landed, so a seed it dropped counts for the sowing.
-    if (!sow(instance, def, overMs)) announce(instance);
+    if (!sow(instance, def, overMs, { free })) announce(instance);
+}
+
+/**
+ * Free Replant: whether the harvest that has just ended this Field sows crop `cropId` again with no
+ * seed, by the rules that reach it for `heroId` (their perk, a Token in reach, a Hall star), narrowed
+ * to its skill. Only while that crop is still the pick: a pick the player changed is a new crop,
+ * sown as always. Asked only then, so it draws nothing otherwise, and nothing at 100.
+ */
+function replantsFree(instance, def, cropId, heroId) {
+    if (!cropId || pickOf(instance, def)?.id !== cropId) return false;
+    const skill = typeof def?.config?.skill === 'string' && def.config.skill ? def.config.skill : TARGET_CATEGORIES.ALL;
+    return sureOrRolled(resolveAxis(instance.id, EFFECT_TYPES.FREE_REPLANT, 0, skill, heroId || undefined));
 }
 
 /**

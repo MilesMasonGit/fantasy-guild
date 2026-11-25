@@ -40,6 +40,19 @@ export const EFFECT_TYPES = {
     // How often ONE fish bites from a water's catch pool, as a percentage on its weight; the item is
     // the rule's category (`Fishing.catchOf`).
     CATCH_WEIGHT: 'CATCH_WEIGHT',
+    // Never Runs Out: a chance that a spend which would end a Token that runs out by chance (a vein,
+    // a tree) does not; at 100 it never rests. Narrowed to the Token's skill — Charges.applyDelta.
+    NEVER_RUNS_OUT: 'NEVER_RUNS_OUT',
+    // Free Replant: a chance that the harvest which ends a ripe Field sows the same crop again with
+    // no seed; narrowed to the Field's skill — Fields.harvested.
+    FREE_REPLANT: 'FREE_REPLANT',
+    // Grove Felling: a chance that a tree which falls to its Stump fells the touching trees of its
+    // kind too, each paying one cycle's output and XP; narrowed to the tree's skill — GroveFelling.js.
+    GROVE_FELLING: 'GROVE_FELLING',
+    // Better Catch: a chance a catch is the next fish up the pool fished (the lowest Fishing level
+    // above the one that bit, within the hero's level), spending the Bait of the one that bit;
+    // narrowed to the water's skill — Fishing.catchOf.
+    BETTER_CATCH: 'BETTER_CATCH',
     // Moves how many stacks of one status (the category, a status effect's id) can build up on the bearer — LiveEffects.
     STATUS_MAX_STACKS: 'STATUS_MAX_STACKS',
     // How long the bearer's swing takes, as a percentage: negative is faster — CombatFormulas.

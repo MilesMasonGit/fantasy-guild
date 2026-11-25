@@ -20,6 +20,7 @@ import * as Flags from './Flags.js';
 import * as HeroMotion from './HeroMotion.js';
 import * as EnemyMotion from './EnemyMotion.js';
 import * as Groves from './Groves.js';
+import * as GroveFelling from './GroveFelling.js';
 import * as TimedChanges from './TimedChanges.js';
 import * as WorkCheck from './WorkCheck.js';
 import * as Foundations from './Foundations.js';
@@ -350,24 +351,14 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         outputs = caught ? [{ itemId: caught.itemId, chance: 100, minQty: 1, maxQty: 1 }] : [];
     }
 
-    // One item line, once its chance has landed: the authored range rolled, then the cycle's rules.
-    // Every drop lands this way, the rare table's too. `note` hears the sprite (for the twinkle).
+    // One item line, once its chance has landed: the authored range rolled, then the cycle's rules
+    // (`OutputRules.landItemLine`). Every drop lands this way, the rare table's too. `note` hears the
+    // sprite (for the twinkle). A line naming no item pays nothing: the cycle still runs and still
+    // takes its inputs.
     const landLine = (output, note) => {
-        // Roll the authored range FIRST, then widen it, so a 1-5 output buffs a lucky cycle more
-        // than an unlucky one.
-        const rolled = OutputRules.widenYield(id, config.skill, rollOutputQuantity(output));
-        const widened = rolled * times;
-        // A chance that this one item comes out doubled, after everything else.
-        const quantity = !output.itemId ? widened : OutputRules.doubleItemDrop(id, output.itemId, widened);
-        if (quantity <= 0) return;
-
-        // An output names a Token or an item. One that names neither pays nothing: the cycle still
-        // runs and still takes its inputs.
-        if (output.itemId) {
-            note(SpriteLayer.addSprite('item', output.itemId, quantity, id));
-            produced.push(output.itemId);
-            giantLanded = giant;
-        }
+        if (!OutputRules.landItemLine(id, config.skill, output, times, note)) return;
+        produced.push(output.itemId);
+        giantLanded = giant;
     };
 
     // A build makes its Token by becoming it (below), never as a sprite.
@@ -445,13 +436,15 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     const spends = chargePlan.debits.length > 0 || (isField && Fields.stageOf(instance, def) === Fields.STAGE.RIPE);
     const refreshed = !failed && spends
         && CycleSavings.rollRefresh(id, config.skill);
-    if (!refreshed) Charges.commitPlan(chargePlan, { heroId });
+    const ended = refreshed ? [] : Charges.commitPlan(chargePlan, { heroId });
     // Used up just now: its rest began when this cycle ended, `overMs` before the tick's end.
     Respawn.restBeganEarlier(instance, overMs);
+    // A tree felled by a cycle that worked may fell the touching trees of its kind (Grove Felling).
+    if (!failed && heroId && ended.includes(id)) GroveFelling.afterFall(instance, def, io, heroId, config.skill);
 
     // A Field spends one harvest of its load; the last sows its crop again, growing from the moment
     // this cycle ended (`overMs` into the tick), or stops it without a seed (`Fields.js`).
-    if (isField) Fields.harvested(instance, def, { overMs, refreshed });
+    if (isField) Fields.harvested(instance, def, { overMs, refreshed, heroId });
 
     // The board's universal unit of work. One kill counts as one cycle too, so combat feeds this
     // exactly as production does.

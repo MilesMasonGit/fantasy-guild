@@ -12,6 +12,9 @@ import * as Hand from './Hand.js';
 import * as Respawn from './Respawn.js';
 import { paidTestFor } from './BlockUpkeep.js';
 import { endsNow } from './endRoll.js';
+import * as TileModifiers from './TileModifiers.js';
+import * as CycleSavings from './CycleSavings.js';
+import { EFFECT_TYPES, TARGET_CATEGORIES } from '../effects/constants.js';
 
 /**
  * The one place a Token's charge pool is read, moved, or spent. Two axes spend against that pool:
@@ -86,6 +89,33 @@ export function maxChargesOf(instance) {
 export function endChanceOf(instance) {
     if (!instance || isUnlimited(instance)) return null;
     return endTermsOf(getTokenType(instance.typeId))?.chance ?? null;
+}
+
+/**
+ * Never Runs Out (Motherlode): whether an end roll that hit this Token is kept from ending it, by
+ * the rules that reach it as it is worked (its hero's perk, a Token in reach, a Hall star), narrowed
+ * to its skill. Asked only once the roll has hit, so it draws nothing unless it would matter, and
+ * nothing at 100.
+ */
+function keptGoing(instance, heroId) {
+    const skill = getTokenType(instance.typeId)?.config?.skill || TARGET_CATEGORIES.ALL;
+    return CycleSavings.sureOrRolled(TileModifiers.resolveAxis(instance.id, EFFECT_TYPES.NEVER_RUNS_OUT, 0, skill, heroId || undefined));
+}
+
+/**
+ * End a Token that runs out by chance now, with no roll: its whole life spent, so it rests (a tree
+ * falls to its Stump). For a rule that fells it outright (`GroveFelling`). False, and nothing done,
+ * for a Token that does not run out by chance or is already resting.
+ */
+export function spendLife(instance, { heroId = null } = {}) {
+    if (!instance || !(instance.usesRemaining > 0) || endChanceOf(instance) == null) return false;
+    const applied = -instance.usesRemaining;
+    instance.usesRemaining = 0;
+    EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
+        instanceId: instance.id, delta: applied, remaining: 0, typeId: instance.typeId
+    });
+    destroyToken(instance, { heroId });
+    return true;
 }
 
 /**
@@ -167,7 +197,8 @@ export function destroyToken(instance, { heroId = null, exhaustedBy = heroId } =
  * Move a Token's charge pool by `delta` and destroy it if that empties it.
  * - Negative spends, floored at 0. Callers gate first (`canAfford`); the floor is there so a
  * mis-gated caller cannot drive a pool negative. On a Token that runs out by chance it is one roll
- * for the charges spent: a hit spends all it holds (it rests), a miss spends nothing.
+ * for the charges spent: a hit spends all it holds (it rests), unless Never Runs Out keeps it going
+ * ({@link keptGoing}); a miss spends nothing.
  * - Positive restores, ceilinged at `maxChargesOf`: it can never exceed the Token type's starting
  * charges, so a `+3` on a Token one charge below full grants one.
  * - Zero, and anything on an unlimited Token, changes nothing and publishes nothing.
@@ -188,7 +219,7 @@ export function applyDelta(instance, delta, { heroId = null } = {}) {
     } else if (delta < 0) {
         const chance = instance.usesRemaining > 0 ? endChanceOf(instance) : null;
         // A count an older save holds is spent whole too: it is not a count any more.
-        if (chance != null) applied = endsNow(chance, -delta) ? -instance.usesRemaining : 0;
+        if (chance != null) applied = endsNow(chance, -delta) && !keptGoing(instance, heroId) ? -instance.usesRemaining : 0;
         else applied = -Math.min(-delta, instance.usesRemaining);
     }
 
