@@ -3,6 +3,7 @@
 import * as MatPlacement from './MatPlacement.js';
 import * as EffectActions from './EffectActions.js';
 import * as FixedTokens from './FixedTokens.js';
+import { paidAfterBuild } from './BuildPrices.js';
 import { centreOf } from './nearby.js';
 
 /**
@@ -51,12 +52,16 @@ export function hasRoomToBuild(instance, typeId) {
 }
 
 /**
- * The Foundation becomes `typeId` at its point, keeping its origin. Returns the new instance, or
- * null when there was no room after all.
+ * The Foundation becomes `typeId` at its point, keeping its origin, and what it cost: the
+ * Foundation's own price as paid and the build's `materials` as paid (`[{ itemId, quantity }]`),
+ * what Salvage gives a share of (`BuildPrices`). Returns the new instance, or null when there was no
+ * room after all.
  */
-export function buildInPlace(instance, typeId) {
+export function buildInPlace(instance, typeId, materials = []) {
+    const paid = paidAfterBuild(instance, materials);
     return EffectActions.transformInstance(instance, typeId, {
         fixPlaced: true,
-        cause: 'build'
+        cause: 'build',
+        ...(paid ? { extra: { paid } } : {})
     });
 }

@@ -8,6 +8,7 @@ import { DEMOLITION_SKILL_ID } from '../../config/registries/skillRegistry.js';
 import * as BoardState from './BoardState.js';
 import { isGuildHall } from './MatCap.js';
 import * as Landmarks from './Landmarks.js';
+import * as BuildPrices from './BuildPrices.js';
 
 /**
  * Two questions about removing a Token for good.
@@ -20,7 +21,9 @@ import * as Landmarks from './Landmarks.js';
  * and the Starter Camp's Tokens: the layout is permanent) or enemies, and never a landmark
  * or a camp Token, dev tool or not. A marked Token
  * (`instance.demolish: true`, saved) is taken away by a hero holding Construction: no refund, no
- * loot, never a depletion. An event Token (`EventTokens.js`) is marked and cleared like any other.
+ * loot, never a depletion, unless that hero holds Salvage, which gives back a share of what the
+ * Token cost as loot where it stood (`BuildPrices.salvageOf`). An event Token (`EventTokens.js`) is
+ * marked and cleared like any other.
  *
  * While marked the Token is that work and nothing else: `StationRecipe.workConfigOf(def,
  * instance)` answers {@link DEMOLITION_CONFIG}, so flags send Construction heroes to it whatever
@@ -192,9 +195,9 @@ export function markedTokens() {
 }
 
 /**
- * A demolition finished: the Token leaves the mat with nothing paid back and nothing dropped.
- * Called by the runner when its hero's work completes. Every event names the spot it stood on, as
- * a depletion's do.
+ * A demolition finished: the Token leaves the mat, nothing dropped but what its hero's Salvage gives
+ * back of what it cost, landed where it stood once it is gone. Called by the runner when its hero's
+ * work completes. Every event names the spot it stood on, as a depletion's do.
  *
  * @returns {boolean} whether a Token was removed
  */
@@ -202,6 +205,7 @@ export function finish(instance, { heroId = null } = {}) {
     const token = tokenOf(instance);
     if (!token) return false;
     const at = { x: token.x, y: token.y };
+    const salvage = BuildPrices.salvageOf(token, heroId);
     BoardState.removeToken(token.id);
 
     // `event`: the event an event Token landed as, so the event clock can say how it ended.
@@ -211,5 +215,6 @@ export function finish(instance, { heroId = null } = {}) {
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: token.id, ...at, typeId: null });
     if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { heroId, ...at });
     EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { points: [at] });
+    BuildPrices.dropSalvage(salvage, at);
     return true;
 }

@@ -35,6 +35,9 @@ const TIME_AXES = new Set([
     EFFECT_TYPES.WORK_TIME, EFFECT_TYPES.GROW_TIME, EFFECT_TYPES.WOUND_TIME, EFFECT_TYPES.PASSIVE_LAP, EFFECT_TYPES.SWING_TIME
 ]);
 
+/** Flat axes that are a share of a price in percent, read plain as a chance is: `Salvage 50%`. */
+const SHARE_AXES = new Set([EFFECT_TYPES.SALVAGE, EFFECT_TYPES.BUILD_DISCOUNT]);
+
 /** A chance rolled once per cycle (`MODIFIER_SHAPES.PROC`; named here, the palette imports this file). */
 const PROC = 'proc';
 
@@ -54,6 +57,7 @@ export function effectAmount(entry, payload) {
     if (entry?.shape === PROC || payload?.type === EFFECT_TYPES.BONUS_DROP) {
         return { text: chanceAmountText(v), against: entry?.harmful ? v > 0 : v < 0 };
     }
+    if (SHARE_AXES.has(payload?.type)) return { text: chanceAmountText(v), against: v < 0 };
     // Lucky's percentage is a share of the rare table's chance: as `+20%` it would read as points.
     if (payload?.type === EFFECT_TYPES.LUCKY && payload?.bucket !== 'flat') {
         const factor = payload?.bucket === 'multiplier' ? Math.abs(v) : Math.max(0, 1 + v);

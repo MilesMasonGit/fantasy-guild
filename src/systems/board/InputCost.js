@@ -4,10 +4,12 @@ import { workConfigOf } from './StationRecipe.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { roundByChance, mostByChance } from '../../utils/RNG.js';
+import { inputFactorAt } from './BuildPrices.js';
 
 /**
  * What a cycle's inputs cost once Efficiency (`INPUT_COST`) reaches its Token: each authored
- * quantity widened by the Token's neighbours, the guild's stars and its hero.
+ * quantity widened by the Token's neighbours, the guild's stars and its hero. A build on a
+ * Foundation comes down by the guild's Build Discount too (Master Builder, `BuildPrices`).
  *
  * A fractional cost is made whole by chance as the cycle pays (owner, 2026-11-11): 10 Coal at −12 %
  * is 8.8, so 9 Coal four times in five and 8 one time in five; an increase rounds the same way.
@@ -24,9 +26,11 @@ import { roundByChance, mostByChance } from '../../utils/RNG.js';
  * The exact cost of an input authored at `quantity` (missing: 1) at Token `instanceId`, for work of
  * `skill`: unrounded, never below 0. Draws nothing. What a cycle pays on average. `heroId` counts
  * that hero's Efficiency in place of whoever works the Token now (a flag weighing a Token for them).
+ * `factor` is the Token's Build Discount as a multiplier (`BuildPrices.inputFactorAt`), read here
+ * when not handed in.
  */
-export function exactInputQuantity(instanceId, quantity, skill, heroId = undefined) {
-    return Math.max(0, TileModifiers.resolveAxis(instanceId, EFFECT_TYPES.INPUT_COST, quantity || 1, skill, heroId));
+export function exactInputQuantity(instanceId, quantity, skill, heroId = undefined, factor = inputFactorAt(instanceId)) {
+    return Math.max(0, TileModifiers.resolveAxis(instanceId, EFFECT_TYPES.INPUT_COST, quantity || 1, skill, heroId)) * factor;
 }
 
 /**
@@ -36,8 +40,10 @@ export function exactInputQuantity(instanceId, quantity, skill, heroId = undefin
  */
 export function costedInputs(instanceId, inputs, skill, heroId = undefined) {
     const out = [];
-    for (const input of inputs || []) {
-        const exact = exactInputQuantity(instanceId, input?.quantity, skill, heroId);
+    if (!inputs?.length) return out;
+    const factor = inputFactorAt(instanceId);
+    for (const input of inputs) {
+        const exact = exactInputQuantity(instanceId, input?.quantity, skill, heroId, factor);
         const most = mostByChance(exact);
         if (most > 0) out.push({ ...input, exact, quantity: most });
     }

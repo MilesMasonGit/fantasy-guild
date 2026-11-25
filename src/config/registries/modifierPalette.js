@@ -10,6 +10,7 @@ import { EFFECT_TYPES, TARGET_CATEGORIES, GIANT_HARVEST_SKILLS } from '../../sys
 import { COMBAT_SKILL_IDS } from './skillRegistry.js';
 import { DOSE_KIND_IDS } from './carriedKinds.js';
 import { effectTag } from './effectWords.js';
+import { MAX_BUILD_DISCOUNT } from '../buildPrices.js';
 
 /** The work Quiet is read for: a Hideout's thefts. */
 const CRIME_SKILLS = Object.freeze(['crime']);
@@ -738,6 +739,51 @@ export const MODIFIER_PALETTE = [
         shape: MODIFIER_SHAPES.PROC,
         group: 'Support',
         hint: 'A chance a catch lands as the next fish up the pool the hero fishes: the lowest Fishing level above the fish that bit, among those the hero\'s level allows. The Bait spent is the fish that bit\'s. In percent, rolled after the pick. A lure still picks the fish that bites; the top fish, and a Trap\'s one catch, stay as they are.'
+    },
+
+    // The building perks (Salvage, Master Builder): each a percent read from a hero (what they
+    // carry, their perks, what lingers on them) and the guild's stars, never from a Token, so they
+    // are `heroOrGuild` and have no skill to narrow to. `BuildPrices.js` reads both.
+    {
+        /**
+         * Read by `BuildPrices.salvageOf` as a demolition finishes, off the hero who did it: their
+         * share of what the Token cost (`instance.paid`), each line rounded down, at most 100.
+         */
+        type: EFFECT_TYPES.SALVAGE,
+        reads: {
+            up: (n) => `give back ${n}% of what a demolished Token cost`,
+            down: (n) => `give back ${n}% less of what a demolished Token cost`
+        },
+        label: 'Salvage',
+        explains: 'A Token this hero demolishes gives back part of what it cost',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        heroOrGuild: true,
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Support',
+        hint: 'The share of what a Token cost that comes back, as loot where it stood, when a hero holding this demolishes it: its Shop price as bought and, for a building, its Foundation and the build\'s materials as paid, coins too. In percent (50 gives back half), each line rounded down, at most 100. Only Tokens the guild bought or built give anything back. On gear or a perk; a Token\'s reaches nobody.'
+    },
+    {
+        /**
+         * Read by `BuildPrices.buildDiscount` for a Foundation's Shop price (`Shop.priceOf`) and a
+         * build's materials (`InputCost.exactInputQuantity`): the guild's best hero's, never the sum,
+         * at most `MAX_BUILD_DISCOUNT`.
+         */
+        type: EFFECT_TYPES.BUILD_DISCOUNT,
+        reads: {
+            up: (n) => `cut ${n}% off Foundations and their builds`,
+            down: (n) => `cut ${n}% less off Foundations and their builds`
+        },
+        label: 'Build Discount',
+        explains: 'Foundations and the buildings made on them cost less while this hero is in the guild',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        heroOrGuild: true,
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Support',
+        hint: `Percent off the Shop price of every Foundation (its items and coins, each rounded up) and off the materials of every build on a Foundation, while a hero holding this is in the guild. Only the guild's best holder counts, never the sum of several, and at most ${MAX_BUILD_DISCOUNT}% comes off. A Foundation goes back to the Shop for what it was bought for. On gear or a perk; a Token's reaches nobody.`
     },
 
     // --- Combat ---------------------------------------------------------
