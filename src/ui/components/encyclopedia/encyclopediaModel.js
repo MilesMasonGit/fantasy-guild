@@ -89,6 +89,12 @@ export function entryKey(kind, id) {
 /** A rule that only says "holding this tool answers that need": not a source of anything shown. */
 const UNSHOWN = new Set([HOW.HOLD]);
 
+/**
+ * A fishing spot coming to a place: its events show as events (`EVENT_WAY`), and the screen has no
+ * words yet for a spot drifting in by itself, so neither is a row.
+ */
+const NOT_SHOWN = new Set([HOW.ARRIVE, HOW.EVENT]);
+
 /** The ledger's rules written one per statement (`buildWorld`'s bonus drops and spawns by a rule). */
 const PER_STATEMENT = /^(bonus|effect-spawn):/;
 
@@ -182,6 +188,7 @@ export function buildEncyclopedia(content = gameContent()) {
     for (const rule of world.rules) {
         // The Hall's tracks, at every rank, stand for the ledger's Well (rank 1 only).
         if (hallRows && rule.how === HOW.UPGRADE) continue;
+        if (NOT_SHOWN.has(rule.how)) continue;
         if (UNSHOWN.has(rule.how)) {
             // A tool is used by every Token whose work asks for what it answers.
             for (const give of rule.gives) {

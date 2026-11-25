@@ -11,7 +11,9 @@ import {
     PASSIVE_LAP_BASE_MS, foundationTierMeets, campOf, endTermsOf, CHANCE_LIFE
 } from '../../../../src/config/registries/tokenConstants.js';
 import { neededToolOf, toolOf, toolMeets, toolItemFor, takesLure } from '../../../../src/config/registries/toolKinds.js';
-import { hasCatchPools, catchPoolsOf } from '../../../../src/config/registries/catchPools.js';
+import { hasCatchPools, catchPoolsOf, poolKeyOf } from '../../../../src/config/registries/catchPools.js';
+import { spotOf, arrivesByItself } from '../../../../src/config/registries/fishingSpots.js';
+import { normaliseEventTable, isRunnable } from '../../../../src/config/eventTable.js';
 import { lureOf, baitSavingOf, baitSpent, fishLevel, fishCycleMs, fishBait } from '../../../../src/config/registries/fishRules.js';
 import { rareTableOf, rareEntryChances } from '../../../../src/config/registries/rareTables.js';
 import { skyWithFallback } from '../../../../src/config/guildUpgrades.js';
@@ -23,7 +25,8 @@ import { averageXpBonus } from '../../../../src/systems/hero/xpBonus.js';
 import { perkRowsOf, perksEarnedAt } from '../../../../src/systems/hero/perkTable.js';
 import { neverWearsOut } from '../../../../src/systems/core/wearRule.js';
 import { isSpentCategory, isAlwaysOn, isWorkMoment, workSkillMatches, doseKindsOf, DOSE, DOSE_LENGTH } from '../../../../src/systems/core/consumableRule.js';
-import { keyed } from '../../../../src/systems/progression/ledger/engine.js';
+import { keyed, MEAN_EVENT_WAIT_MS } from '../../../../src/systems/progression/ledger/engine.js';
+import { isPlanned } from '../../../../src/systems/progression/ledger/plan.js';
 
 /**
  * What one hero earns working one Token (or one recipe at a station) at the content's own numbers,
@@ -157,8 +160,11 @@ export function buildRateBook(content = {}) {
     const starsById = new Map(stars.map(s => [s.id, s]));
     const hall = { stars, constellations: sky.constellations, star: (id) => starsById.get(id) || null, memo: new WeakMap() };
 
+    // The events that can land, for a fishing spot an event brings: its share of them all.
+    const events = Object.values(normaliseEventTable(content.events)).filter(e => isRunnable(e) && rawTokens[e.typeId] && !isPlanned(rawTokens[e.typeId]));
+
     const book = {
-        library, items, recipes, perkTables, hall,
+        library, items, recipes, perkTables, hall, events,
         tokenIds: () => Object.keys(rawTokens),
         token: tokenDef,
         rateOf: (target, setup) => rateOf(book, target, setup),
@@ -654,6 +660,7 @@ function familyMembers(book, setup, skill) {
 function lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes, kind, skill) {
     if (kind === WORK.FIELD) return fieldLifecycle(book, def, recipe, cycleMs, setup, guild, notes, skill);
     if (kind === WORK.FIGHT) return fightLifecycle(book, def, setup);
+    if (kind === WORK.WATER && spotOf(def)) return spotLifecycle(book, def, cycleMs, notes);
     if (kind === WORK.BUILD || kind === WORK.WATER) return { kind: LIFECYCLE.UNLIMITED, supplyPerHour: Infinity, used: new Set() };
     const ends = neverWearsOut(def) ? null : endTermsOf(def);
     const uses = neverWearsOut(def) ? null : (ends ? ends.life : (def.uses ?? null));
@@ -703,6 +710,49 @@ function lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes, kind, skil
         };
     }
     return { kind: LIFECYCLE.ONE_OFF, cycles, supplyPerHour: 0, used: new Set() };
+}
+
+/**
+ * A fishing spot (`FishingSpots.js`): worked, it gives `100 / leaveChance` catches on average before
+ * it moves on (a draw after each catch), then the guild waits for the next of its kind:
+ * - **By itself**, one every `everyMinutes` on average (each wait drawn from half to one and a half
+ *   of it). With room for more than one (`most` over 1) the clock runs on while the hero fishes, so
+ *   the next may be waiting; with room for one it is held till the spot goes, a whole wait after.
+ * - **With its event**: the event clock waits {@link MEAN_EVENT_WAIT_MS} on average after an event
+ *   goes, and the spot is its share of the events that can land (each as if it fits), so its kind
+ *   comes once in that many waits, the clock held while it stands.
+ *
+ * Read as a refill: `cycles` catches, then a rest, so one hero's catches an hour are those the
+ * spots bring, at most the hero's own pace. ⚠️ Not read: how long a spot nobody works stays, which
+ * a hero fishing as spots come never meets; a spot-rate raiser in reach, whose lift depends on how
+ * much of the water its reach covers.
+ */
+function spotLifecycle(book, def, cycleMs, notes) {
+    const spot = spotOf(def);
+    const cycles = spot.leaveChance > 0 ? 100 / spot.leaveChance : Infinity;
+    let waitMs = null;
+    let overlaps = false;
+    let how = '';
+    if (arrivesByItself(spot)) {
+        waitMs = spot.everyMs;
+        overlaps = spot.most > 1;
+        how = `one arrives every ${Math.round(spot.everyMs / 60000 * 10) / 10} min on average${overlaps ? ', the next on its way while one is fished' : ', the next a whole wait after it goes'}`;
+    } else {
+        const total = book.events.reduce((n, e) => n + e.weight, 0);
+        const share = total > 0 ? book.events.filter(e => e.typeId === def.id).reduce((n, e) => n + e.weight, 0) / total : 0;
+        if (share > 0) {
+            waitMs = MEAN_EVENT_WAIT_MS / share;
+            how = `it lands with an event, ${Math.round(share * 1000) / 10} % of the events, every ${Math.round(MEAN_EVENT_WAIT_MS / 60000)} min on average after one goes`;
+        }
+    }
+    if (waitMs === null) {
+        return { kind: LIFECYCLE.ONE_OFF, cycles, supplyPerHour: 0, used: new Set(), why: 'it never arrives by itself and no event lands it' };
+    }
+    if (!Number.isFinite(cycles)) return { kind: LIFECYCLE.UNLIMITED, supplyPerHour: Infinity, used: new Set() };
+    const stayMs = cycles * cycleMs;
+    const restMs = overlaps ? Math.max(0, waitMs - stayMs) : waitMs;
+    notes.assumptions.push({ source: def.id, what: 'arrivals', why: `a fishing spot: ${how}; it gives ${Math.round(cycles * 10) / 10} catches before it moves on` });
+    return { kind: LIFECYCLE.REFILL, cycles, restMs, members: 1, supplyPerHour: HOUR_MS * cycles / (stayMs + restMs), used: new Set() };
 }
 
 /**
@@ -862,13 +912,15 @@ function fishingPlan(book, def, pool, gates, setup, ownMs) {
 }
 
 /**
- * The catch pool a hero fishes at a water: `target.pool` (`'tool|bait'`) when named, else the
+ * The catch pool a hero fishes at a water: `target.pool` ({@link poolKey}) when named, else the
  * first pool for the tool in hand (the setup's, else the water's first kind), as `Fishing.fishingOf`
  * picks it.
  */
 function poolOf(book, def, target, setup) {
     const pools = catchPoolsOf(def);
     if (text(target.pool)) {
+        const exact = pools.find(p => poolKey(p) === target.pool);
+        if (exact) return exact;
         const [tool, bait] = target.pool.split('|');
         return pools.find(p => p.tool === tool && (p.bait || '') === (bait || '')) || null;
     }
@@ -878,9 +930,9 @@ function poolOf(book, def, target, setup) {
     return pools.find(p => p.tool === kind) || null;
 }
 
-/** A pool as `target.pool` names it. */
+/** A pool as `target.pool` names it (`catchPools.poolKeyOf`): its tool and bait, and where it holds when it names that. */
 export function poolKey(pool) {
-    return `${pool.tool}|${pool.bait || ''}`;
+    return poolKeyOf(pool);
 }
 
 /**

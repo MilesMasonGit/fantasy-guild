@@ -35,6 +35,8 @@ export const contentOf = (state) => ({
     skillPerks: state.skillPerks,
     hallSky: { constellations: state.hallConstellations || {}, stars: state.hallStars || {} },
     worldTables: plannedTables(baseWorldTables(state), state.tokens || {}).tables,
+    // The events that land a fishing spot are a way in to it.
+    events: state.events ?? null,
 });
 
 export function workspaceLedger(state = {}, { sim = null } = {}) {

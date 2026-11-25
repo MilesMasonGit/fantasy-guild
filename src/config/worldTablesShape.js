@@ -390,6 +390,22 @@ export function kitById(tables, id) {
     return tables?.kits?.find(k => k.id === id) || null;
 }
 
+/** The ground each placeholder kit stands on when its row names none. */
+export const KIT_BIOME = Object.freeze({
+    highland: 'mountain',
+    woodland: 'forest',
+    plains: 'meadow',
+    wetland: 'bog',
+    riverside: 'coast'
+});
+
+export const DEFAULT_BIOME = 'meadow';
+
+/** The ground a kit stands on: a cell's mat's biome (`cellMat.js`), and the ledger's for its wedges. */
+export function kitBiome(tables, kitId) {
+    return kitById(tables, kitId)?.biome || KIT_BIOME[kitId] || DEFAULT_BIOME;
+}
+
 /** The line in `tables` with this id, or null. */
 export function lineById(tables, id) {
     return tables?.lines?.find(l => l.id === id) || null;

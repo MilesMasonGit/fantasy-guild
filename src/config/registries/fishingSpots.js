@@ -29,6 +29,26 @@
 /** The water kinds a spot may land on. River and lake are one water (fresh); a sulphur spring is its own. */
 export const WATER_KIND = Object.freeze({ SEA: 'sea', FRESH: 'fresh', SULPHUR: 'sulphur' });
 
+/** The inland water shape that is a sulphur spring (`WaterShapes.WATER_KIND.SULPHUR`): every other is fresh water. */
+export const SULPHUR_SHAPE = 'sulphur';
+
+/**
+ * The water kinds a place's ground may hold, in {@link WATER_KIND}'s order: the sea when its share
+ * of the mat may be above nothing, fresh water for an inland shape other than a sulphur spring, and
+ * a sulphur spring for its own (as `GroundRules.waterKindsOf` reads the drawn shapes).
+ *
+ * @param {number} sea the most of the mat the edge sea may take (0 to 1)
+ * @param {string|string[]} inland the inland water shapes it may roll (`biomeTerrain.WATER_SHAPES`)
+ */
+export function groundWaterKinds(sea, inland) {
+    const shapes = (Array.isArray(inland) ? inland : [inland]).filter(s => typeof s === 'string' && s);
+    const out = [];
+    if (Number(sea) > 0) out.push(WATER_KIND.SEA);
+    if (shapes.some(s => s !== SULPHUR_SHAPE)) out.push(WATER_KIND.FRESH);
+    if (shapes.includes(SULPHUR_SHAPE)) out.push(WATER_KIND.SULPHUR);
+    return out;
+}
+
 /** The kinds as the CMS's chips show them, in their order. */
 export const WATER_KIND_CHOICES = Object.freeze([
     Object.freeze({ id: WATER_KIND.SEA, label: 'Sea' }),

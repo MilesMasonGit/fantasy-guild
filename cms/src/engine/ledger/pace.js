@@ -4,7 +4,8 @@ import { buildRateBook, LIFECYCLE, WORK } from './rates.js';
 import { buildProfiles, targetKey, PROFILE, PROFILES, PROFILE_TEXT, BOOST_KIND, BOOST_KIND_TEXT, boostKindOf, BEFORE_HALL, pickKindOf, RARE_FIND_KINDS } from './profiles.js';
 import { starAddsRate } from './hall.js';
 import { settingsOf, minutesPerLevelAt, minutesToReach, formatMinutes, levelAtMinutes } from './settings.js';
-import { HOW, COMBAT, parseKey, itemKey, tokenKey, recipeKey, wedgeKey, starKey, LEDGER_ENGINE_TEXT } from '../../../../src/systems/progression/ledger/engine.js';
+import { HOW, COMBAT, parseKey, itemKey, tokenKey, recipeKey, wedgeKey, starKey, spotPoolKey, LEDGER_ENGINE_TEXT } from '../../../../src/systems/progression/ledger/engine.js';
+import { spotOf } from '../../../../src/config/registries/fishingSpots.js';
 import { ringOfStar } from '../../../../src/systems/world/ringStars.js';
 import { HALL_NODE, ROSTER_STAR } from '../../../../src/config/guildUpgrades.js';
 import { planOf, PLAN_STATUS, tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
@@ -129,6 +130,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         if (target.pool) {
             const bait = target.pool.split('|')[1];
             if (bait) parts.push(tierOfKey(itemKey(bait)));
+            // A fishing spot's pool is fished once the spot stands where it holds.
+            if (spotOf(rates.token(target.token))) parts.push(tierOfKey(spotPoolKey(target.token, target.pool)));
         }
         const tier = parts.some(t => t === null) ? null : Math.max(...parts);
         const work = { target, key: targetKey(target), entry, tier };
@@ -472,10 +475,15 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         }
         case HOW.CATCH: {
             const id = parseKey(rule.via).id;
-            const pools = works.filter(w => w.target.token === id && w.target.pool);
+            // A fishing spot's catch is its own pool's, where the spot stands; a fixed water's, its best pool's.
+            const own = rule.pathVia ? rule.pool?.key : null;
+            const pools = works.filter(w => w.target.token === id && w.target.pool && (!own || w.target.pool === own));
+            // The level the fish asks, where it is above the pool's own gate: the hero fishes at it.
+            const asks = rule.gates.reduce((top, g) => Math.max(top, g.level), 0);
             let best = done(Infinity, 'no pool catches it');
             for (const w of pools) {
-                const r = firstOf(workAt(w, profile, Math.max(cap, w.tier ?? cap)), give.key);
+                const gate = profiles.contextOf(w.target).gate ?? 1;
+                const r = firstOf(workAt(w, profile, Math.max(cap, w.tier ?? cap), asks > gate ? asks : null), give.key);
                 if (r.hours < best.hours) best = r;
             }
             return best;
@@ -661,7 +669,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     const workName = (work) => {
         if (!work) return '—';
         const t = work.target;
-        const base = t.recipe ? `${nameOf(recipeKey(t.recipe))} at ${nameOf(tokenKey(t.token))}` : nameOf(tokenKey(t.token));
+        const water = t.pool && spotOf(rates.token(t.token)) ? spotPoolKey(t.token, t.pool) : tokenKey(t.token);
+        const base = t.recipe ? `${nameOf(recipeKey(t.recipe))} at ${nameOf(tokenKey(t.token))}` : nameOf(water);
         return t.pool && t.pool.split('|')[1] ? `${base} (${nameOf(itemKey(t.pool.split('|')[1]))})` : base;
     };
 
