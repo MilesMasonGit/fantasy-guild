@@ -482,7 +482,9 @@
             "drops": "Drops {items}",
             "won": "{hero} defeats {enemy}",
             "lost": "{hero} is defeated by {enemy}",
-            "left": "{hero} leaves the fight"
+            "left": "{hero} leaves the fight",
+            "guard": "{enemy} caught a thief at {camp}: it stands guard, and nobody robs {camp} until it is beaten",
+            "guardGone": "a camp now gone"
         },
         "float": {
             "crit": "Crit!",
@@ -682,6 +684,11 @@
         "undoFailed": "Could not load the game as you left it. You can try again.",
         "offeredAgain": "You closed the game before choosing, so here it is again.",
         "undoGone": "The save from before your time away is gone, so Load as I left it cannot be offered."
+    },
+    "crime": {
+        "stole": "Stole {items} from {camp}",
+        "stoleNothing": "Found nothing to steal at {camp}",
+        "caught": "Caught at {camp}! A guard stands on it"
     },
     "messages": {
         "usedUp": "{token} used up",

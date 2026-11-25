@@ -8,6 +8,7 @@ import { AnimationStudioModal } from './dev/AnimationStudioModal.jsx';
 import { PerfDevSection } from '../dev/perf/PerfDevSection.jsx';
 import { EventsDevSection } from '../dev/EventsDevSection.jsx';
 import { FaithDevSection } from '../dev/FaithDevSection.jsx';
+import { setUpCrimeScene } from '../dev/crimeScene.js';
 import { saveLiveMatToCms, DEFAULT_CMS_URL } from '../dev/starterCampDev.js';
 import {
     PICKER_ROWS, itemChoices, tokenChoices, filterByName, giveAndSay, dropAndSay, devBankEveryKind, devFillBank,
@@ -254,6 +255,21 @@ export const TestDashboard = /* @__PURE__ */ React.memo(() => {
                         <EventsDevSection />
 
                         <FaithDevSection />
+                        {/* ⚠️ Temporary: the Crime eye-check's scene (brief 810 K4), deleted with its test once the look is accepted. */}
+                        <div className="mb-3 pb-3 border-b border-gi-border space-y-1" data-testid="qa-crime-scene">
+                            <div className={labelClass}>Eye-check: Crime</div>
+                            <button
+                                type="button"
+                                data-qa-crime-scene
+                                className={cn(buttonClass, 'w-full')}
+                                onClick={() => {
+                                    const r = setUpCrimeScene();
+                                    say(r.ok ? 'A QA Pasture, two Hideouts, a QA Thief on one and a QA Fighter at home' : r.error);
+                                }}
+                            >
+                                Set up a Hideout scene
+                            </button>
+                        </div>
 
                         <div className="space-y-1" data-testid="qa-tools" data-qa-group>
                             <div className={labelClass}>Tools</div>

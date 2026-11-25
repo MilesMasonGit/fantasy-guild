@@ -36,6 +36,8 @@ import * as SupportLinks from '../../../systems/board/supportLinks.js';
 import { reachRadius } from '../../../systems/board/nearby.js';
 import { effectTagOf, effectTagText } from './effectBadgeText.js';
 import { spotFishRows, luresIn } from './spotFish.js';
+import { isHideout } from '../../../systems/board/Hideouts.js';
+import { theftBlockOf } from './hideoutCard.js';
 import {
     liveTimerSources, demolitionLine, leaveLine, spawnLine, growthLine, fieldTimerLine, respawnLine, produceLine, litLine
 } from './tokenTimers.js';
@@ -55,6 +57,7 @@ export const CARD_BLOCK = Object.freeze({
     WORK: 'work',
     CYCLE: 'cycle',
     RECIPE: 'recipe',
+    THEFT: 'theft',
     LIFECYCLE: 'lifecycle',
     SUPPORT: 'support',
     DROPS: 'drops',
@@ -165,7 +168,8 @@ export function liveCardSources() {
         bonusGrants: (instanceId) => heroItemGrants(instanceId, EFFECT_TYPES.BONUS_DROP).filter(canPayLoadoutCost),
         demolitionConfig: Demolition.DEMOLITION_CONFIG,
         allItems: getAllItems,
-        art: (def) => cardArtOf(def)
+        art: (def) => cardArtOf(def),
+        theft: (instance, def) => theftBlockOf(instance, def)
     };
 }
 
@@ -472,8 +476,9 @@ function spawnCardLine(def, status, src) {
  * and holds only the blocks that apply; `effects` is the badges' breakdown, on the mat only.
  *
  * A Token's card: name; work (skill, level, XP); cycle (time, charges or the chance it runs out); the current recipe
- * (needs, tools, makes, rare finds or a water's fish and catches, and a station's Change recipe); lifecycle
- * lines; what it boosts.
+ * (needs, tools, makes, rare finds or a water's fish and catches, and a station's Change recipe), or a
+ * Hideout's theft (its camp, what it steals, the odds of a catch, Change camp); lifecycle lines;
+ * what it boosts.
  * An enemy's card: name; HP; combat (style, level, XP a kill); its fight (hit, moves, resistances,
  * how often it attacks, its kinds once fought); drops and rare finds.
  * The card draws `hp`, `combat`, `work` and `cycle` together as its stat block.
@@ -562,7 +567,8 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
         const makes = makesOf(outputs);
         // The Hall pays no output rules, so no bonus drop either (`BoardRunner`).
         const bonus = typeId === GUILD_HALL ? [] : bonusOf(instance, src);
-        const rare = def.foundation ? null : rareBlockOf(def, instance, src, def.config?.skill);
+        // A Hideout rolls the camp's steal table's rare finds, never its own (its theft block shows them).
+        const rare = def.foundation || isHideout(def) ? null : rareBlockOf(def, instance, src, def.config?.skill);
         const change = isStation && instance
             ? {
                 label: def.foundation ? (recipe ? 'Change building' : 'Choose what to build') : isField ? 'Change crop' : 'Change recipe',
@@ -575,6 +581,8 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
         if (needs.length || tools.length || makes.length || bonus.length || rare || change || catches || fish) {
             blocks.push({ id: CARD_BLOCK.RECIPE, recipeName: recipe?.name || null, recipeId: recipe?.id || null, needs, tools, makes, bonus, rare, change, catches, fish });
         }
+        // A Hideout: the camp it robs, what a theft takes, the odds of a catch (`hideoutCard.js`).
+        if (isHideout(def) && src.theft) blocks.push({ id: CARD_BLOCK.THEFT, ...src.theft(instance, def) });
     }
 
     const lifecycle = cardLifecycle(instance, def, src);

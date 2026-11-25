@@ -39,6 +39,8 @@ import * as SpawnerSystem from '../../../systems/board/SpawnerSystem.js';
 import * as Growth from '../../../systems/board/Growth.js';
 import { problemOf, problemText, PROBLEM_COLOUR, PROBLEM_SPRITE } from './problemMark.js';
 import { EnemyCardRows } from '../combat/EnemyCard.jsx';
+import { TheftSection, StealsSection, CampList } from './HideoutCard.jsx';
+import * as Hideouts from '../../../systems/board/Hideouts.js';
 
 /** The activity scenes are 256 px square; they only ever draw at whole multiples of it. */
 export const CARD_ART_PX = 256;
@@ -807,8 +809,10 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
     const model = tokenCardModel(typeId, instanceId);
     const instance = instanceId != null ? BoardState.getTokenById(instanceId) : null;
     const choice = instance ? model?.blocks.find(b => b.id === CARD_BLOCK.RECIPE && b.change)?.change : null;
-    const canList = !!choice;
-    const [view, setView] = useCardView(instanceId, onViewChange, !!choice && !choice.chosen);
+    // A Hideout's choice is the camp it robs: its list face is the camps in reach.
+    const theft = instance ? model?.blocks.find(b => b.id === CARD_BLOCK.THEFT && b.change) : null;
+    const canList = !!choice || !!theft;
+    const [view, setView] = useCardView(instanceId, onViewChange, choice ? !choice.chosen : (!!theft && !theft.change.chosen));
     // Charges, a picked recipe, a hero arriving: re-read on this Token's own events.
     useTokenDetail(instanceId, def);
     useCardClock(instanceId, !!def?.enemy);
@@ -820,6 +824,10 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
     const choose = (recipeId) => {
         // `setSelectedRecipe` is the only writer, and refuses an id outside this Token's pool.
         if (StationRecipe.setSelectedRecipe(BoardState.getTokenById(instanceId), recipeId, def)) setView('card');
+    };
+    // `setTarget` is the only writer of a Hideout's camp, and refuses one not in its reach.
+    const chooseCamp = (campId) => {
+        if (Hideouts.setTarget(BoardState.getTokenById(instanceId), campId)) setView('card');
     };
 
     const { effects } = model;
@@ -834,6 +842,10 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
                 block.fish ? <FishSection key="fish" fish={block.fish} /> : null,
                 block.catches ? <CatchSection key="catch" catches={block.catches} effects={effects} /> : null
             ];
+            case CARD_BLOCK.THEFT: return [
+                <TheftSection key="theft" block={block} onChangeCamp={() => setView('recipes')} />,
+                <StealsSection key="steals" block={block} rare={block.rare ? <RareFinds rare={block.rare} lucky={luckyOf(effects)} /> : null} />
+            ];
             case CARD_BLOCK.LIFECYCLE: return [<EventsSection key="lifecycle" lines={block.lines} />];
             case CARD_BLOCK.SUPPORT: return [<SupportSection key="support" boosts={block.boosts} />];
             case CARD_BLOCK.FIGHT: return [<FightSection key="fight" block={block} />];
@@ -844,7 +856,11 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
     });
 
     const header = <NameBlock name={model.name} onClose={onClose} onLookUp={onClose ? () => lookUpToken(typeId) : null} />;
-    const panel = listing ? (
+    const panel = listing && theft ? (
+        <div className="p-1.5">
+            <CampList key={instanceId} block={theft} onChoose={chooseCamp} onBack={() => setView('card')} />
+        </div>
+    ) : listing ? (
         <div className="p-1.5">
             {/* Keyed by Token: another station's list starts with an empty search, scrolled to its own recipe. */}
             <RecipeList

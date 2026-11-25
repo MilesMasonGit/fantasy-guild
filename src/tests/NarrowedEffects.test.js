@@ -257,7 +257,9 @@ describe('the palette declares both, rather than inferring them', () => {
             EFFECT_TYPES.GIANT_HARVEST,
             // Faith's blessings: Can't Run Out (`CycleSavings.neverRunsOut`) and Echo
             // (`CycleSavings.rollEcho`), both the Token's own work skill.
-            EFFECT_TYPES.NEVER_RUNS_OUT, EFFECT_TYPES.ECHO
+            EFFECT_TYPES.NEVER_RUNS_OUT, EFFECT_TYPES.ECHO,
+            // Quiet's (`Hideouts.caughtChanceAt`) the Hideout's skill, Crime only.
+            EFFECT_TYPES.QUIET
         ]));
     });
 

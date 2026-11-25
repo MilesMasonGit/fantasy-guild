@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Gauge } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
-import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, stationKindsOfSkill, isRetiredStationKind, ENEMY_STYLES, enemyFilledStats, MAX_ENEMY_KINDS, enemyKindsOf, enemyFightNumbers, isKindCandidate, kindResistances, ATTACK_SPEED_MS, RETIRED_ENEMY_FIELDS, LEFTOVER_ENEMY_FIELDS, DAMAGE_TYPES, DAMAGE_GROUPS, RESISTANCE_STEPS, damageTypeLabel, isDamageTypeId, isDamageGroupId, typesOfGroup, withGroupFilled, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY, ENEMY_USES, neededToolOf, toolNeedPhrase, hasCatchPools, endTermsOf } from '../../utils/constants';
+import { HIDEOUT_KIND, TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, stationSkillOf, stationKindOf, STATION_KINDS, stationKindLabel, stationKindOffers, recipeStationKinds, stationKindsOfSkill, isRetiredStationKind, ENEMY_STYLES, enemyFilledStats, MAX_ENEMY_KINDS, enemyKindsOf, enemyFightNumbers, isKindCandidate, kindResistances, ATTACK_SPEED_MS, RETIRED_ENEMY_FIELDS, LEFTOVER_ENEMY_FIELDS, DAMAGE_TYPES, DAMAGE_GROUPS, RESISTANCE_STEPS, damageTypeLabel, isDamageTypeId, isDamageGroupId, typesOfGroup, withGroupFilled, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, STANDS_ON_CHOICES, TOOL_KINDS, tierValue, neverWearsReason, NEVER_WEARS_WHY, ENEMY_USES, neededToolOf, toolNeedPhrase, hasCatchPools, endTermsOf } from '../../utils/constants';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
@@ -14,6 +14,8 @@ import CatchPoolsBlock from './CatchPoolsBlock';
 import FishingSpotBlock from './FishingSpotBlock';
 import SpotRateBlock from './SpotRateBlock';
 import RareTableBlock from './RareTableBlock';
+import StealTableBlock from './StealTableBlock';
+import HideoutBlock from './HideoutBlock';
 import EnemyMovesFields from './EnemyMovesFields';
 import SetAllTypes from './SetAllTypes';
 import PlanFields from '../shared/PlanFields';
@@ -401,6 +403,10 @@ export default function TokenEditor() {
 
       <RareTableBlock token={token} onPatch={(patch) => updateToken(activeId, patch)} />
 
+      {isEnemy && <StealTableBlock token={token} onPatch={(patch) => updateToken(activeId, patch)} />}
+
+      {stationKind === HIDEOUT_KIND && <HideoutBlock token={token} onPatch={(patch) => updateToken(activeId, patch)} />}
+
       <Section title="Lifecycle" icon={<Timer size={14} />}>
         <div className="grid grid-cols-2 gap-4">
           {/* ⚠️ The label is Charges and the field is `uses`, deliberately: Charges is the game's own word (the Token card badge, `Charges.js`). Not the retired top-level `charges` field, which is stripped on every Recalculate (`RETIRED_TOKEN_FIELDS`). */}
@@ -691,15 +697,17 @@ export default function TokenEditor() {
                 </select>
               </label>
               <p className="text-[11px] text-gray-400 leading-relaxed">
-                {stationKind && isRetiredStationKind(stationKind)
+                {stationKind === HIDEOUT_KIND
+                  ? <>A Hideout runs no recipe, of {skillName(stationSkill)} or any skill: it robs the enemy camp the player picks on its card (the Hideout block below).</>
+                  : stationKind && isRetiredStationKind(stationKind)
                   ? <>{stationKindLabel(stationKind)} is a retired station kind, which narrows nothing: this station can run anything in the {skillName(stationSkill)} pool, as the skill&apos;s building does. Pick Any station to clear it.</>
                   : stationKind
                     ? <>This station runs the {skillName(stationSkill)} recipes marked {stationKindLabel(stationKind)}, and those marked for no station.</>
                     : <>This station can run anything in the {skillName(stationSkill)} pool.</>}{' '}
-                The player picks which one; its neighbours decide whether the pick can run
-                right now. A station has no recipes of its own.
+                {stationKind !== HIDEOUT_KIND && <>The player picks which one; its neighbours decide whether the pick can run
+                right now. A station has no recipes of its own.</>}
               </p>
-              {pooledRecipes.length === 0 ? (
+              {stationKind === HIDEOUT_KIND ? null : pooledRecipes.length === 0 ? (
                 <p className="text-[11px] text-gray-600">
                   The pool is empty. Author recipes in the Recipes screen.
                 </p>

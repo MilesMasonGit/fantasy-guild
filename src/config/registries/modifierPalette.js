@@ -11,6 +11,9 @@ import { COMBAT_SKILL_IDS } from './skillRegistry.js';
 import { DOSE_KIND_IDS } from './carriedKinds.js';
 import { effectTag } from './effectWords.js';
 
+/** The work Quiet is read for: a Hideout's thefts. */
+const CRIME_SKILLS = Object.freeze(['crime']);
+
 /**
  * Which effect axes content may be authored against, and in what shape.
  *
@@ -553,6 +556,30 @@ export const MODIFIER_PALETTE = [
         shape: MODIFIER_SHAPES.PROC,
         group: 'Support',
         hint: 'A chance a Farming cycle\'s drops come in at ten times: every drop, the rare table\'s find too, and with Double Loot both apply. In percent. Only Farming work rolls it; no other work, and never a kill.'
+    },
+    {
+        /**
+         * Read by `Hideouts.caughtChanceAt` once per theft, before the thief's caught roll: its points
+         * come off the chance the Hideout's curve gives (`crime.caughtChance`), which still never goes
+         * under the curve's floor. Only Crime work reads it (`skillsOnly`). Usually on a Hideout's
+         * Quiet variant (reach Self); a Token in reach or what the thief carries may give it too.
+         */
+        type: EFFECT_TYPES.QUIET,
+        reads: {
+            up: (n) => `have ${n} less chance a thief is caught`,
+            down: (n) => `have ${n} more chance a thief is caught`
+        },
+        label: 'Quiet',
+        explains: 'A thief is caught less often',
+        when: 'never',
+        scales: 'value',
+        // Points of a chance, resolved from a base of 0, so any other bucket is 0.
+        buckets: ['flat'],
+        categories: 'skill',
+        skillsOnly: CRIME_SKILLS,
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Support',
+        hint: 'Percentage points off a thief\'s chance of being caught at a Hideout (20 turns 30% into 10%); the Hideout\'s floor still holds. Only Crime work reads it.'
     },
     {
         /**

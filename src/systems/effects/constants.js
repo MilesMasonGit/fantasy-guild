@@ -37,6 +37,9 @@ export const EFFECT_TYPES = {
     // Giant Harvest: a chance a Farming work cycle's drops all come in at ten times, the rare table's
     // too; narrowed to the Token's skill, and no other work rolls it — OutputRules.rollGiantHarvest.
     GIANT_HARVEST: 'GIANT_HARVEST',
+    // Quiet: percentage points off a thief's chance of being caught at a Hideout, narrowed to the
+    // Hideout's skill (Crime) — Hideouts.caughtChanceAt.
+    QUIET: 'QUIET',
     // How often ONE fish bites from a water's catch pool, as a percentage on its weight; the item is
     // the rule's category (`Fishing.catchOf`).
     CATCH_WEIGHT: 'CATCH_WEIGHT',
