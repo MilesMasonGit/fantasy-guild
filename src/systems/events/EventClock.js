@@ -53,9 +53,6 @@ export { EVENT_WAIT_MIN_MS, EVENT_WAIT_MAX_MS, EVENT_RETRY_MS };
 /** Random spots tried on the event's ground before a landing is given up until the next try. */
 export const LANDING_DARTS = 48;
 
-/** The biome of a Region no map wrote (the Starter Camp), as its ground is meadow (`GroundRules`). */
-const NO_MAP_BIOME = 'meadow';
-
 let enabled = false;
 
 /** Turn events on or off (see the module header). */
@@ -130,14 +127,8 @@ export function eventTokenOnMat() {
 // Where an event may land
 // ---------------------------------------------------------------------------
 
-/** The biomes of the Region the guild is in: those its maps gave any weight. */
-export function regionBiomes() {
-    const atlas = GameState.state?.atlas;
-    const weights = atlas?.regions?.[atlas?.activeRegionId]?.biome;
-    if (!weights || typeof weights !== 'object') return [NO_MAP_BIOME];
-    const out = Object.keys(weights).filter(b => Number(weights[b]) > 0);
-    return out.length ? out : [NO_MAP_BIOME];
-}
+/** The biomes of the Region the guild is in: those its maps gave any weight (`GroundRules`). */
+export const regionBiomes = GroundRules.regionBiomes;
 
 /** The rules of an event's own ground, or null when it lists none. */
 function eventGround(event) {

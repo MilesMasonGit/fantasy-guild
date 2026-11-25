@@ -5,7 +5,7 @@ import {
   EQUIP_CATEGORIES, TOOL_KINDS, HAND_CATEGORY, tierValue, SKILLS, ENEMY_STYLES, weaponStyleOf, authoredWeaponStyles, ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, WEAPON_TIERS,
   expandBearer, statementsOf, doseKindsOf, DOSE_WHY, noDoseWhy, isSpentCategory,
   DAMAGE_TYPES, DAMAGE_GROUPS, DEFAULT_DAMAGE_TYPE_BY_STYLE, DEFAULT_ARROW_DAMAGE_TYPE, damageTypeLabel, isConsumableCategory,
-  isWornGear, BREAK_CHANCE_MAX,
+  isWornGear, BREAK_CHANCE_MAX, catchItemIds,
 } from '../../utils/constants';
 import { Header, Section, Field, Empty, DerivedMark } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
@@ -13,6 +13,7 @@ import Statements from './Statements';
 import ChainInspector from '../shared/ChainInspector';
 import GearLevelField from './GearLevelField';
 import GearDefenceFields from './GearDefenceFields';
+import FishingItemFields from './FishingItemFields';
 import PlanFields from '../shared/PlanFields';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
@@ -290,6 +291,8 @@ function slotToType(slot) {
 export default function ItemEditor() {
   const activeId = useEntityStore((s) => s.activeEntityId);
   const item = useEntityStore((s) => s.items[activeId]);
+  const items = useEntityStore((s) => s.items);
+  const tokens = useEntityStore((s) => s.tokens);
   const updateItem = useEntityStore((s) => s.updateItem);
   const deleteItem = useEntityStore((s) => s.deleteItem);
   const effects = useEntityStore((s) => s.effects);
@@ -319,8 +322,12 @@ export default function ItemEditor() {
   // `tool: { kind, tier, starter? }`, written whole; no kind clears it. `starter` is written only when ticked.
   const setTool = (patch) => {
     if (patch === null) return updateItem(activeId, { tool: undefined });
-    const next = { kind: item.tool?.kind, tier: tierValue(item.tool?.tier), ...(item.tool?.starter ? { starter: true } : {}), ...patch };
+    const next = {
+      kind: item.tool?.kind, tier: tierValue(item.tool?.tier), ...(item.tool?.starter ? { starter: true } : {}),
+      ...(item.tool?.baitSaving > 0 ? { baitSaving: item.tool.baitSaving } : {}), ...patch,
+    };
     if (!next.starter) delete next.starter;
+    if (!(next.baitSaving > 0)) delete next.baitSaving;
     updateItem(activeId, { tool: next, hands: undefined, offHand: undefined, ...WEAPON_CLEARED });
   };
   const isHand = item.equipSlot === HAND_CATEGORY;
@@ -496,6 +503,8 @@ export default function ItemEditor() {
           )}
 
           <GearLevelField item={item} onChange={(patch) => updateItem(activeId, patch)} />
+
+          <FishingItemFields item={item} items={items} landed={Object.values(tokens || {}).some((t) => catchItemIds(t).includes(item.id))} onTool={setTool} onChange={(patch) => updateItem(activeId, patch)} />
 
           {isHand && !isOffHandItem && (
             <BreakChanceField key={item.id} item={item} isTool={isTool} onChange={(patch) => updateItem(activeId, patch)} />

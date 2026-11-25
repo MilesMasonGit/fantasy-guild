@@ -2,6 +2,7 @@
 
 import { GameState } from '../../state/GameState.js';
 import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
+import { RETIRED_WATER_TOKENS } from '../../config/registries/fishingSpots.js';
 import * as BoardState from '../board/BoardState.js';
 import { matCap } from '../board/MatCap.js';
 import { budget } from './Budget.js';
@@ -111,10 +112,12 @@ export function fixtureId(regionId, index) {
 /**
  * A settled layout as its Region's board, built off the mat: each node a `placed` instance with
  * the map's mark (`fixture`) and its starting charges, in layout order. The Hall is not
- * on it: it travels with the guild and lands in the clearing at the mat's centre.
+ * on it: it travels with the guild and lands in the clearing at the mat's centre. A retired fixed
+ * water an older world's cell still names (`fishingSpots.RETIRED_WATER_TOKENS`) is left off.
  */
 export function regionBoard(result, regionId) {
-    return BoardState.detachedBoard((result?.nodes || []).map((node, i) => {
+    const nodes = (result?.nodes || []).filter(node => !RETIRED_WATER_TOKENS.includes(node?.typeId));
+    return BoardState.detachedBoard(nodes.map((node, i) => {
         const instance = BoardState.createTokenInstance(
             node.typeId, tokenStartingUses(node.typeId), null, BoardState.ORIGIN.PLACED, fixtureId(regionId, i)
         );

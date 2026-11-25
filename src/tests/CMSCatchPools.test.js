@@ -117,7 +117,7 @@ describe('⭐ the Catch pools block', () => {
         ] });
         const container = openEditor('token_shrimp_coast');
         const kinds = [...q(container, '[data-catch-tool]').querySelectorAll('option')].map((o) => o.value);
-        expect(kinds).toEqual(['pickaxe', 'woodaxe', 'fishing_rod', 'sickle', 'fishing_net', 'fishing_trap']);
+        expect(kinds).toEqual(['pickaxe', 'woodaxe', 'fishing_rod', 'sickle', 'fishing_net', 'fishing_trap', 'harpoon']);
         expect(q(container, '[data-field="needs-tool"]')).toBeNull();
         expect(q(container, '[data-field="needs-tool-pools"]').textContent).toContain('a Fishing Rod or Fishing Net, at any tier');
         expect(q(container, '[data-field="needs-tool-pools"]').textContent).toContain('Its own Needs tool is ignored.');
@@ -173,11 +173,12 @@ describe('⭐ catch pools through Recalculate, Sync and a reload', () => {
         };
         const unreachable = () => audit().filter((r) => r.entityId === troutId && /Unreachable/.test(r.details));
         expect(unreachable()).toHaveLength(1);
-        store().updateToken('token_coast', {
+        // Not a retired fixed water: the audits leave those to the spot audit.
+        store().updateToken('token_shrimp_coast', {
             config: { skill: 'fishing', skillRequired: 1, cycleTimeMs: 10000, xp: 1, inputs: [], outputs: [] },
-            catchPools: [{ tool: 'fishing_rod', catches: [{ itemId: troutId, weight: 1 }] }, { tool: 'harpoon', catches: [{ itemId: troutId, weight: 1 }] }]
+            catchPools: [{ tool: 'fishing_rod', catches: [{ itemId: troutId, weight: 1 }] }, { tool: 'lobster_pot', catches: [{ itemId: troutId, weight: 1 }] }]
         });
         expect(unreachable()).toHaveLength(0);
-        expect(audit().some((r) => r.entityId === 'token_coast' && /names the tool kind "harpoon"/.test(r.details))).toBe(true);
+        expect(audit().some((r) => r.entityId === 'token_shrimp_coast' && /names the tool kind "lobster_pot"/.test(r.details))).toBe(true);
     });
 });

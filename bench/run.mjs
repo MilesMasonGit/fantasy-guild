@@ -67,7 +67,9 @@ const SCENARIOS = [
     // S2's mix filled to the Token cap on the shipped mat (bench/scenarios/cap.mjs). C256's mat
     // fills before its cap, so its Forests and Quarries wait for room all run long; C240 sits at the edge.
     { id: 'C240', file: 'c240-cap.mjs', name: 'Cap 240, mat about full', profile: true },
-    { id: 'C256', file: 'c256-cap.mjs', name: 'Cap 256, mat full first', profile: true }
+    { id: 'C256', file: 'c256-cap.mjs', name: 'Cap 256, mat full first', profile: true },
+    // Fishing spots arriving on water, fished from two Fishing Huts, leaving and arriving again (bench/scenarios/fs-fishing.mjs).
+    { id: 'FS', file: 'fs-fishing.mjs', name: 'Fishing spots', profile: true }
 ];
 
 /** A regression is > 20 % slower AND more than this many ms slower (timer noise floor). */

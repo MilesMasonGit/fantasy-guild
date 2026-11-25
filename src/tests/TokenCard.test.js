@@ -92,8 +92,9 @@ const CARD_TOKENS = {
         sprite: 't_lake_small', requiresHero: true,
         config: { skill: 'fishing', skillRequired: 1, cycleTimeMs: 3000, xp: 1, inputs: [], outputs: [] },
         catchPools: [
-            { tool: 'fishing_rod', catches: [{ itemId: 'card_trout', weight: 3 }, { itemId: 'card_salmon', weight: 1 }] },
+            // The rod's first pool is the one fished; the second, naming no Bait, only lists.
             { tool: 'fishing_rod', bait: 'card_worm', catches: [{ itemId: 'card_salmon', weight: 1 }] },
+            { tool: 'fishing_rod', catches: [{ itemId: 'card_trout', weight: 3 }, { itemId: 'card_salmon', weight: 1 }] },
             { tool: 'fishing_net', catches: [{ itemId: 'card_shrimp', weight: 1 }] }
         ]
     }

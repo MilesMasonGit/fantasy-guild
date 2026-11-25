@@ -35,7 +35,7 @@ function keyedItems(items) {
 export function runSim({ tokens = {}, recipes = {}, items = {} } = {}, dialOverrides = {}) {
     const dials = normaliseDials(dialOverrides);
     const priced = keyedItems(items);
-    const entities = adaptCorpus({ tokens, recipes });
+    const entities = adaptCorpus({ tokens, recipes, items: priced });
     const tokenIds = new Set(idsOf(tokens));
 
     const time = runTempoPass(entities);

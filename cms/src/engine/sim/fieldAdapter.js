@@ -1,6 +1,8 @@
 /** Economic simulator: the field adapter. Tokens and Recipes describe the same idea (a work cycle that consumes items and produces others) in two vocabularies: skill is `config.skill` / `skill`, required level `config.skillRequired` / `levelRequirement`, cycle length `config.cycleTimeMs` / `durationMs`, and I/O is `config.outputs` + `config.inputs` / `outputs` + `inputs`. Every pass reads adapted entities only; no pass in `sim/` may contain `entity.config?.skillRequired ?? entity.levelRequirement`, because a field name is chosen here, once. Every pass in this directory is a pure function over data a caller hands in. */
 
-import { catchPoolsOf, hasCatchPools } from '../../../../src/config/registries/catchPools.js';
+import { catchPoolsOf, hasCatchPools, poolBites } from '../../../../src/config/registries/catchPools.js';
+import { fishBait } from '../../../../src/config/registries/fishRules.js';
+import { RETIRED_WATER_TOKENS } from '../../../../src/config/registries/fishingSpots.js';
 import { cropTermsOf, fieldOf, stationKindOffers } from '../../../../src/config/registries/tokenConstants.js';
 import { stationSkillOf, stationKindOf } from '../../../../src/systems/effects/statements.js';
 
@@ -106,24 +108,57 @@ function adaptCommon({ id, name, kind, skill, level, cycleTimeMs, xp, inputs, ou
 }
 
 /**
- * A water Token's work as Outputs: one catch a cycle from its no-bait pools, each fish at its share.
- * Several no-bait pools (a rod's and a net's) share the cycles evenly, so a fish in both counts once
- * at its average share. A baited pool is left out: bait is a choice, the no-bait catch is the
- * water's own.
+ * A retired fixed water (`fishingSpots.RETIRED_WATER_TOKENS`) the data still holds until a pack
+ * deletes it: the game never loads it, so it keeps the pricing it had (its no-bait pools, no Bait
+ * input) and a Recalculate moves no value for it.
+ */
+function retiredPricing(def) {
+    return RETIRED_WATER_TOKENS.includes(def?.id);
+}
+
+/** A water Token's pools that catch anything (`catchPools.poolBites`): a Bait, or a free Trap. */
+function bitingPools(def) {
+    return catchPoolsOf(def).filter(poolBites);
+}
+
+/**
+ * A water Token's work as Outputs: one catch a cycle from its pools that bite, each fish at its
+ * share. Several pools (a rod's and a Trap's) share the cycles evenly, so a fish in both counts once
+ * at its average share. A pool that never bites (a rod's with no Bait) is left out.
  * ⚠️ The catch replaces the Token's Outputs in the game, so its authored `config.outputs` are never
  * read here, and `writeBack.applyTokenResults` never writes them.
  */
 export function waterOutputs(def) {
-    const basic = catchPoolsOf(def).filter(p => !p.bait);
+    const pools = retiredPricing(def) ? catchPoolsOf(def).filter(p => !p.bait) : bitingPools(def);
     const shares = new Map();
-    for (const pool of basic) {
+    for (const pool of pools) {
         const total = pool.catches.reduce((s, c) => s + c.weight, 0);
         for (const c of pool.catches) shares.set(c.itemId, (shares.get(c.itemId) || 0) + c.weight * 100 / total);
     }
-    return [...shares].map(([itemId, percent]) => ({ itemId, chance: percent / basic.length, minQty: 1, maxQty: 1 }));
+    return [...shares].map(([itemId, percent]) => ({ itemId, chance: percent / pools.length, minQty: 1, maxQty: 1 }));
 }
 
-export function adaptToken(def, id = def?.id) {
+/**
+ * A water Token's Bait as Inputs, so a fish's price includes the Bait it spent (owner): each pool's
+ * Bait at the average its fish ask (`fishRules.fishBait`, weighted as they bite), the pools sharing
+ * the cycles as in {@link waterOutputs}. A plain tool's: no tool's saving is counted.
+ */
+export function waterInputs(def, items = {}) {
+    if (retiredPricing(def)) return [];
+    const pools = bitingPools(def);
+    const perBait = new Map();
+    for (const pool of pools) {
+        if (!pool.bait) continue;
+        const total = pool.catches.reduce((s, c) => s + c.weight, 0);
+        const amount = pool.catches.reduce((s, c) => s + c.weight * fishBait(items?.[c.itemId]), 0) / total;
+        perBait.set(pool.bait, (perBait.get(pool.bait) || 0) + amount / pools.length);
+    }
+    return [...perBait].filter(([, quantity]) => quantity > 0).map(([itemId, quantity]) => ({ itemId, quantity: Math.round(quantity * 1e6) / 1e6 }));
+}
+
+/** `items`: the item catalogue, by id, that a water's fish and Bait are read from. */
+export function adaptToken(def, id = def?.id, items = {}) {
+    const water = hasCatchPools(def);
     return adaptCommon({
         id,
         name: def?.name,
@@ -132,8 +167,8 @@ export function adaptToken(def, id = def?.id) {
         level: def?.config?.skillRequired,
         cycleTimeMs: def?.config?.cycleTimeMs,
         xp: def?.config?.xp,
-        inputs: def?.config?.inputs,
-        outputs: hasCatchPools(def) ? waterOutputs(def) : def?.config?.outputs,
+        inputs: water ? [...(def?.config?.inputs || []), ...waterInputs(def, items)] : def?.config?.inputs,
+        outputs: water ? waterOutputs(def) : def?.config?.outputs,
         sim: def?.sim,
         // Tokens have no downcycle concept today; the field is read anyway so
         // one shape serves both kinds.
@@ -206,10 +241,10 @@ export function cropRecipeIds(tokens, recipes) {
 }
 
 /** Adapt a whole corpus. Returns entities sorted by id: every later pass iterates this array, and a stable order is what makes two runs byte-identical. */
-export function adaptCorpus({ tokens, recipes } = {}) {
+export function adaptCorpus({ tokens, recipes, items = {} } = {}) {
     const crops = cropRecipeIds(tokens, recipes);
     const adapted = [
-        ...entries(tokens).map(([id, def]) => adaptToken(def, def?.id ?? id)),
+        ...entries(tokens).map(([id, def]) => adaptToken(def, def?.id ?? id, items)),
         ...entries(recipes).map(([id, def]) => adaptRecipe(def, def?.id ?? id, crops.has(def?.id ?? id))),
     ];
     adapted.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));

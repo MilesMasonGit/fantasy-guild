@@ -24,8 +24,9 @@ import * as fixtures from '../../bench/fixtures.mjs';
  * Brief 230 S5: fishing during time away ends exactly where the same time played live ends. Each
  * catch's pick draws from `Math.random` in a fixed place of the finished cycle, and each bait is
  * spent at its catch, so a catch-up that replays the same steps lands the same fish and runs out
- * of bait on the same catch. Two fishers: one with a rod and five worms that run out part-way
- * (the worm pool, then they stop fishing), one with a Trap, which needs no bait.
+ * of bait on the same catch, and each lure breaks on the same catch. Two fishers: one with a rod,
+ * three Salmon Lures that break by chance and eight worms that run out part-way (then they stop
+ * fishing), one with a Trap, which needs no bait.
  */
 
 const NOW = 1_800_000_000_000;
@@ -44,6 +45,8 @@ const material = (id) => ({ id, name: id, type: 'material', stackable: true, equ
 registerItems({
     ...Object.fromEntries(FISH.map(id => [id, material(id)])),
     cu5_worm: { id: 'cu5_worm', name: 'Worm', type: 'material', stackable: true, equipSlot: 'consumable', sprite: 'i_fish_bait' },
+    // Picks the Salmon, and breaks often: its break is one more draw a lured catch.
+    cu5_lure: { id: 'cu5_lure', name: 'Salmon Lure', type: 'material', stackable: true, equipSlot: 'consumable', sprite: 'i_fish_bait', lure: { fish: ['cu5_salmon'], breakChance: 50 } },
     cu5_rod: { id: 'cu5_rod', name: 'Rod', type: 'tool', equipSlot: 'hand', stackable: true, tool: { kind: 'fishing_rod', tier: 1 } },
     cu5_trap: { id: 'cu5_trap', name: 'Trap', type: 'tool', equipSlot: 'hand', stackable: true, tool: { kind: 'fishing_trap', tier: 1 } }
 });
@@ -54,7 +57,6 @@ registerTokenTypes({
         sprite: 't_lake_small', requiresHero: true,
         config: { skill: 'fishing', skillRequired: 1, cycleTimeMs: 2500, xp: 2, inputs: [], outputs: [] },
         catchPools: [
-            { tool: 'fishing_rod', catches: [{ itemId: 'cu5_trout', weight: 50 }, { itemId: 'cu5_pike', weight: 40 }, { itemId: 'cu5_eel', weight: 10 }] },
             { tool: 'fishing_rod', bait: 'cu5_worm', catches: [{ itemId: 'cu5_salmon', weight: 70 }, { itemId: 'cu5_eel', weight: 30 }] },
             { tool: 'fishing_trap', catches: [{ itemId: 'cu5_shrimp', weight: 3 }, { itemId: 'cu5_trout', weight: 1 }] }
         ]
@@ -84,9 +86,11 @@ function buildBoard() {
     angler.equipment[0] = 'cu5_rod';
     markHeld(angler, 0, true);
     angler.equipment[1] = 'cu5_worm';
+    angler.equipment[2] = 'cu5_lure';
+    InventoryManager.addItem('cu5_lure', 3);
     netter.equipment[0] = 'cu5_trap';
     markHeld(netter, 0, true);
-    InventoryManager.addItem('cu5_worm', 5);
+    InventoryManager.addItem('cu5_worm', 8);
     const a = fixtures.placeAt('cu5_lake', 400, 400);
     const b = fixtures.placeAt('cu5_lake', 1300, 400);
     fixtures.orderAt(angler.id, { x: a.x, y: a.y });
@@ -115,6 +119,7 @@ function end(ids, seen) {
     return {
         seen, caught,
         worms: InventoryManager.getItemCount('cu5_worm'),
+        lures: InventoryManager.getItemCount('cu5_lure'),
         xp: angler.skills.fishing.xp,
         lakes: BoardState.tokens().filter(t => t.typeId === 'cu5_lake').map(t => t.usesRemaining),
         draws: stream.draws
@@ -162,11 +167,14 @@ describe('fishing during a catch-up', () => {
 
         expect(caughtUp).toEqual(plain);
 
-        // And the fishing really happened: the five worms landed the worm pool's catches, then the
-        // rod stopped (its pool with no bait never bites); the Trap kept landing its own pool.
+        // And the fishing really happened: the eight worms landed the worm pool's catches, the lure
+        // picking the Salmon and breaking now and then, then the rod stopped; the Trap kept landing its own pool.
         const rod = plain.seen.rod;
-        expect(rod).toHaveLength(5);
+        expect(rod).toHaveLength(8);
         expect(plain.worms).toBe(0);
+        expect(plain.lures).toBeLessThan(3);
+        // A lure still left picked the Salmon every catch.
+        if (plain.lures > 0) expect(new Set(rod)).toEqual(new Set(['cu5_salmon']));
         expect(rod.every(f => f === 'cu5_salmon' || f === 'cu5_eel')).toBe(true);
         expect(rod).toContain('cu5_salmon');
         expect(plain.seen.net.length).toBeGreaterThanOrEqual(30);

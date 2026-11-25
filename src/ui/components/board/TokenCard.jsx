@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { cn } from '../../utils/cn.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
+import { getItem } from '../../../config/registries/itemRegistry.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
 import { Tooltip } from '../base/Tooltip.jsx';
@@ -454,6 +455,57 @@ const CatchSection = ({ catches: { heroName, setup, unable, groups }, effects })
     </Section>
 );
 
+/** "Fishing Rod or Harpoon". */
+const toolsSpoken = (names) => names.join(t('fishing.card.toolsJoin'));
+
+/** A fish row's hover: what catches it, at what level, whether a hero has it yet, which lure picks it. */
+function fishTip(row, skill, best, fishName) {
+    const vars = { fish: fishName, tools: toolsSpoken(row.toolNames), skill, level: row.level, best };
+    const caught = t(row.reachable ? 'fishing.card.tip' : 'fishing.card.tipOut', vars);
+    return row.lureNames.length ? `${caught} ${t('fishing.card.tipLure', { lure: row.lureNames.join(', ') })}` : caught;
+}
+
+/**
+ * A water's fish: every fish it can give where it stands, each with the tool that catches it, its
+ * Fishing level (greyed while no hero has it) and the lure that picks it.
+ */
+const FishSection = ({ fish: { skillId, best, rows } }) => {
+    const skill = skillName(skillId);
+    return (
+        <Section data-card-block="fish">
+            <Heading>{t('fishing.card.heading')}</Heading>
+            <div className="flex flex-col gap-1">
+                {rows.map(row => {
+                    const lure = row.lureNames.length ? t('fishing.card.lure', { lure: row.lureNames.join(', ') }) : null;
+                    return (
+                        // ⚠️ The lure stands on its own line: a ribbon's subtitle never wraps and would cut it off.
+                        <div
+                            key={row.itemId}
+                            data-card-fish={row.itemId}
+                            data-card-fish-reach={row.reachable ? 'in' : 'out'}
+                            data-card-fish-lure={row.lures.join(' ') || undefined}
+                            className={cn('flex flex-col gap-0.5', !row.reachable && 'opacity-50 grayscale')}
+                        >
+                            <EntityRibbon
+                                kind="item"
+                                id={row.itemId}
+                                subtitle={toolsSpoken(row.toolNames)}
+                                title={fishTip(row, skill, best, getItem(row.itemId)?.name || row.itemId)}
+                                badge={<SkillIcon skillId={skillId} size={16} />}
+                                countText={String(row.level)}
+                                size="sm"
+                                wrap
+                                onInspect={lookUpRibbon}
+                            />
+                            {lure && <span data-card-fish-lure-name className="ui-text-small text-gi-muted pl-2 break-words">{lure}</span>}
+                        </div>
+                    );
+                })}
+            </div>
+        </Section>
+    );
+};
+
 /** What a lifecycle line's icon reads as in the Events section, unless the line names itself. */
 const EVENT_LABEL = { grow: 'Grows', regrow: 'Respawns', spawn: 'Spawns', clock: 'Timer', reach: 'Reach' };
 
@@ -732,7 +784,7 @@ const STAT_BLOCKS = new Set([CARD_BLOCK.HP, CARD_BLOCK.COMBAT, CARD_BLOCK.WORK, 
 /**
  * The Token card: the card a click on a Token opens. A header with the name, then one panel of
  * sections following `tokenCardModel`: the stat block with its effect badges, the recipe picked,
- * Requires, Loot and a section per bonus drop source, Rare finds or a water's catches, Events, Boosts, an
+ * Requires, Loot and a section per bonus drop source, Rare finds or a water's fish and catches, Events, Boosts, an
  * enemy's fight, Drops. A section with nothing
  * to say is left out. Every icon and number explains itself on hover.
  */
@@ -765,6 +817,7 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
                 <RequiresSection key="requires" block={block} effects={effects} />,
                 <MakesSection key="makes" makes={block.makes} bonus={block.bonus} effects={effects} />,
                 block.rare ? <DropsSection key="rare" rare={block.rare} effects={effects} /> : null,
+                block.fish ? <FishSection key="fish" fish={block.fish} /> : null,
                 block.catches ? <CatchSection key="catch" catches={block.catches} effects={effects} /> : null
             ];
             case CARD_BLOCK.LIFECYCLE: return [<EventsSection key="lifecycle" lines={block.lines} />];

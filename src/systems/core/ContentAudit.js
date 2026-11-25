@@ -23,6 +23,8 @@ import { isWorkedWithoutSkill, WORK_SKILL_WHY } from './workSkillRule.js';
 import { auditLifecycleBlocks } from './lifecycleAudit.js';
 import { findUnknownRefs } from './unknownRefRule.js';
 import { toolFindings } from './toolRule.js';
+import { spotFindings } from './spotRule.js';
+import { fishFindings } from './fishRule.js';
 import { isSpentCategory, isAlwaysOn, ALWAYS_ON_IDLE_WHY } from './consumableRule.js';
 import { SKILLS } from '../../config/registries/skillRegistry.js';
 import { listRecipes } from '../../config/registries/recipePoolRegistry.js';
@@ -698,6 +700,27 @@ function auditTools(out) {
 }
 
 /**
+ * Fishing spots: a spot kind that can never land or catches nothing, and a water or biome the game
+ * does not have. The rule lives in `spotRule.js`, shared with the CMS Economy Audit.
+ */
+function auditSpots(out) {
+    for (const f of spotFindings({ tokens: TOKENS })) {
+        out.push(finding(`${f.entityType} "${f.entityId}"`, f.message));
+    }
+}
+
+/**
+ * Fishing's catch rules: a second Bait, a water with two Trap catches, a lure that never picks its
+ * fish, two of one lure's fish on one map. The rule lives in `fishRule.js`, shared with the CMS
+ * Economy Audit.
+ */
+function auditFish(out) {
+    for (const f of fishFindings({ tokens: TOKENS, items: ITEMS })) {
+        out.push(finding(`${f.entityType} "${f.entityId}"`, f.message));
+    }
+}
+
+/**
  * Milestone perks: a table on a skill the game does not have, a perk at a level no hero reaches or
  * naming a missing effect, a rule that does nothing on a hero. The rule lives in `perkRule.js`,
  * shared with the CMS Economy Audit.
@@ -771,7 +794,7 @@ function auditWorldBiomes(out) {
 export function auditContent({ starterCamp = null } = {}) {
     const out = [];
     const steps = [
-        auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditTools, auditPerks, auditHallStars,
+        auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditTools, auditSpots, auditFish, auditPerks, auditHallStars,
         auditGearDefence, auditEffectStacks, auditEvents, auditWorldBiomes,
         (o) => auditStarterCamp(o, starterCamp)
     ];

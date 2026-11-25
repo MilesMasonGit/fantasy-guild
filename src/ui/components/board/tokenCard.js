@@ -34,6 +34,7 @@ import { landmarkLines } from '../drawer/landmarkLines.js';
 import * as SupportLinks from '../../../systems/board/supportLinks.js';
 import { reachRadius } from '../../../systems/board/nearby.js';
 import { effectTagOf, effectTagText } from './effectBadgeText.js';
+import { spotFishRows, luresIn } from './spotFish.js';
 import {
     liveTimerSources, demolitionLine, leaveLine, spawnLine, growthLine, fieldTimerLine, respawnLine, produceLine
 } from './tokenTimers.js';
@@ -137,6 +138,9 @@ export function liveCardSources() {
         instanceOf: BoardState.getTokenById,
         heroName: (id) => (GameState.state?.heroes || []).find(h => h?.id === id)?.name || null,
         fishingOf: Fishing.fishingOf,
+        poolsHere: Fishing.poolsHere,
+        catchLevel: Fishing.catchLevelOf,
+        bestLevel: (skillId) => Math.max(0, ...(GameState.state?.heroes || []).map(h => Number(h?.skills?.[skillId]?.level) || 0)),
         catchWeight: (instanceId, itemId, weight) => resolveAxis(instanceId, EFFECT_TYPES.CATCH_WEIGHT, weight, itemId),
         rareChance: RareTables.rareChanceAt,
         effects: effectBreakdown,
@@ -324,20 +328,21 @@ function catchRows(catches, weightOf = (c) => c.weight) {
  * What a water's card says it catches. With a hero on it: `setup`, what that hero's tool and bait
  * land now, at the odds the engine rolls (`Fishing.catchOf`), and `groups`, the water's other
  * pools by tool at their authored odds. With none, every pool is in `groups`. `unable` names a
- * hero on it whose hands give them no pool here.
+ * hero on it whose hands give them no pool here. A spot lists only the pools that hold where it
+ * stands (`Fishing.poolsHere`).
  */
 function catchBlockOf(def, instance, src) {
     const heroId = instance ? src.workerOf?.(instance.id) : null;
-    const plan = heroId ? src.fishingOf?.(def, heroId) : null;
+    const plan = heroId ? src.fishingOf?.(def, heroId, instance) : null;
     const setup = plan && {
         toolId: plan.tool.itemId,
         toolName: src.itemName(plan.tool.itemId),
         baitId: plan.bait,
         baitName: plan.bait ? src.itemName(plan.bait) : null,
-        catches: catchRows(plan.pool.catches, (c) => src.catchWeight(instance.id, c.itemId, c.weight))
+        catches: catchRows(plan.catches, (c) => src.catchWeight(instance.id, c.itemId, c.weight))
     };
     const groups = [];
-    for (const pool of catchPoolsOf(def)) {
+    for (const pool of (src.poolsHere ? src.poolsHere(def, instance) : catchPoolsOf(def))) {
         if (plan && pool === plan.pool) continue;
         let group = groups.find(g => g.tool === pool.tool);
         if (!group) {
@@ -349,6 +354,25 @@ function catchBlockOf(def, instance, src) {
     return { heroName: heroId ? (src.heroName?.(heroId) || 'This hero') : null, setup: setup || null, unable: !!heroId && !plan, groups };
 }
 
+/**
+ * A water's fish list: every fish it can give where it stands, each with the tool kinds that catch
+ * it, its Fishing level (out of reach while no hero has it) and the lures that pick it.
+ */
+function fishBlockOf(def, instance, src) {
+    const pools = src.poolsHere ? src.poolsHere(def, instance) : catchPoolsOf(def);
+    const skillId = def.config?.skill || 'fishing';
+    const best = src.bestLevel ? src.bestLevel(skillId) : 0;
+    const rows = spotFishRows(pools, {
+        levelOf: (itemId) => (src.catchLevel ? src.catchLevel(def, itemId) : 1),
+        best,
+        lures: luresIn(src.allItems?.() || {})
+    }).map(row => ({
+        ...row,
+        toolNames: row.tools.map(toolKindLabel),
+        lureNames: row.lures.map(id => src.itemName(id))
+    }));
+    return rows.length ? { skillId, best, rows } : null;
+}
 
 /** "1 Oak Seedling", "1 Oak Seedling and 2 Resin". */
 function itemsSpoken(lines, src) {
@@ -440,7 +464,7 @@ function spawnCardLine(def, status, src) {
  * and holds only the blocks that apply; `effects` is the badges' breakdown, on the mat only.
  *
  * A Token's card: name; work (skill, level, XP); cycle (time, charges); the current recipe
- * (needs, tools, makes, rare finds or a water's catches, and a station's Change recipe); lifecycle
+ * (needs, tools, makes, rare finds or a water's fish and catches, and a station's Change recipe); lifecycle
  * lines; what it boosts.
  * An enemy's card: name; HP; combat (style, level, XP a kill); its fight (hit, moves, resistances,
  * how often it attacks, its kinds once fought); drops and rare finds.
@@ -535,8 +559,9 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
             }
             : null;
         const catches = water ? catchBlockOf(def, instance, src) : null;
-        if (needs.length || tools.length || makes.length || bonus.length || rare || change || catches) {
-            blocks.push({ id: CARD_BLOCK.RECIPE, recipeName: recipe?.name || null, recipeId: recipe?.id || null, needs, tools, makes, bonus, rare, change, catches });
+        const fish = water ? fishBlockOf(def, instance, src) : null;
+        if (needs.length || tools.length || makes.length || bonus.length || rare || change || catches || fish) {
+            blocks.push({ id: CARD_BLOCK.RECIPE, recipeName: recipe?.name || null, recipeId: recipe?.id || null, needs, tools, makes, bonus, rare, change, catches, fish });
         }
     }
 

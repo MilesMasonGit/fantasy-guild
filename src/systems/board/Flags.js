@@ -308,7 +308,7 @@ function announceInputNeeded(instance, heroId) {
 }
 
 /** The skip reasons a hero says as "Needs {item}". */
-const NEEDS_ITEM = new Set([ALERT.INPUTS, ALERT.NO_BAIT, ALERT.GROW_NEEDS_ITEM]);
+const NEEDS_ITEM = new Set([ALERT.INPUTS, ALERT.NO_BAIT, ALERT.GROW_NEEDS_ITEM, ALERT.FISH_LEVEL]);
 
 /**
  * What a hero passed over `instance` for `reason` (one of {@link NEEDS_ITEM}) needs, as
@@ -318,8 +318,8 @@ const NEEDS_ITEM = new Set([ALERT.INPUTS, ALERT.NO_BAIT, ALERT.GROW_NEEDS_ITEM])
 function itemNeeded(instance, heroId, reason) {
     if (reason === ALERT.INPUTS) return WorkCheck.fixableReason(instance.id, instance, heroId).inputCheck?.missing?.[0] || null;
     if (reason === ALERT.NO_BAIT) {
-        const itemId = Fishing.baitNeededOf(getTokenType(instance.typeId), heroId);
-        return itemId ? { itemId, needed: 1, carried: true, left: true } : null;
+        const need = Fishing.baitNeedOf(getTokenType(instance.typeId), heroId, instance);
+        return need ? { itemId: need.itemId, needed: need.needed, carried: true, left: true } : null;
     }
     if (reason === ALERT.GROW_NEEDS_ITEM) {
         const seed = Fields.seedNeededOf(instance);
@@ -328,8 +328,17 @@ function itemNeeded(instance, heroId, reason) {
     return null;
 }
 
-/** Publish `INPUT_NEEDED` for what {@link itemNeeded} names. */
+/**
+ * Publish `INPUT_NEEDED` for what {@link itemNeeded} names; for a water whose fish are above the
+ * hero (`ALERT.FISH_LEVEL`), `CATCH_NEEDS_LEVEL` with the level they need.
+ */
 function announceItemNeeded(instance, heroId, reason) {
+    if (reason === ALERT.FISH_LEVEL) {
+        const def = getTokenType(instance.typeId);
+        const level = Fishing.levelNeededOf(def, heroId, instance);
+        if (level) EventBus.publish(BOARD_EVENTS.CATCH_NEEDS_LEVEL, { instanceId: instance.id, heroId, skill: def.config?.skill || null, level });
+        return;
+    }
     const missing = itemNeeded(instance, heroId, reason);
     if (!missing?.itemId) return;
     EventBus.publish(BOARD_EVENTS.INPUT_NEEDED, {
