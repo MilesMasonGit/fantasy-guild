@@ -18,14 +18,15 @@ import { enemyProfileOf, enemyFilledStats } from '../config/registries/enemyProf
 import { ENEMY_KINDS, MAX_ENEMY_KINDS, enemyKindsOf, kindsClash } from '../config/registries/enemyKinds.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { findUnknownRefs } from '../systems/core/unknownRefRule.js';
+import { auditContent } from '../systems/core/ContentAudit.js';
 import * as FightMoments from '../systems/board/FightMoments.js';
-import * as LiveEffects from '../systems/effects/LiveEffects.js';
-import { registerStatusFixtures, VENOM } from './fixtures/statusEffects.js';
+import { registerStatusFixtures } from './fixtures/statusEffects.js';
 
 /**
- * The five enemy kinds (brief 220, C2): presets an author ticks on an enemy, none to two, that twist
- * what the level table fills. The table first (older content's budgetScale on HP, hit and XP), then
- * each kind in the order ticked, then any number the author typed, which wins outright.
+ * The four built-in kind presets, read as before until the library holds their effects (then a kind
+ * is that effect, `EnemyKindEffects.test.js`): none to two on an enemy, twisting what the level table
+ * fills: the table first, then each preset in the order ticked, then any number the author typed,
+ * which wins outright. (Venomous retired: a poisoning move carries Venom itself, `EnemyMoves.test.js`.)
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -40,9 +41,9 @@ const stats = (level, kinds, more = {}) => enemyProfileOf({ id: 'e', name: 'E', 
 const pick = (p) => ({ hp: p.hp, hit: p.hit, resistances: p.resistances, speed: p.speed, xp: p.xpAwarded, dodge: p.dodge });
 const PHYS_50 = { slash: 50, crush: 50, stab: 50 };
 
-describe('the five kinds, all from the start', () => {
-    it('Armoured, Nimble, Swift, Brute, Venomous; at most two per enemy', () => {
-        expect(ENEMY_KINDS.map(k => k.id)).toEqual(['armoured', 'nimble', 'swift', 'brute', 'venomous']);
+describe('the four kinds, all from the start', () => {
+    it('Armoured, Nimble, Swift, Brute; at most two per enemy', () => {
+        expect(ENEMY_KINDS.map(k => k.id)).toEqual(['armoured', 'nimble', 'swift', 'brute']);
         expect(MAX_ENEMY_KINDS).toBe(2);
     });
 });
@@ -51,7 +52,6 @@ describe('how a kind combines with the level table', () => {
     it('no kind: exactly the level table (level 1: 21 HP, hit 1, no resistances, 3 s, 10 XP)', () => {
         expect(pick(stats(1, undefined))).toEqual({ hp: 21, hit: 1, resistances: {}, speed: 'normal', xp: 10, dodge: 0 });
         expect(stats(1, []).kinds).toEqual([]);
-        expect(stats(1, []).onHit).toBeUndefined();
     });
 
     // Rewritten for damage types: Armoured's +2 armour became a resistance step on Slash, Crush and
@@ -80,9 +80,10 @@ describe('how a kind combines with the level table', () => {
         expect(stats(1, ['brute']).attackSpeed).toBe(4000);
     });
 
-    it('Venomous: every landed hit lands the Venom status effect (effect_venom)', () => {
-        expect(stats(1, ['venomous']).onHit).toEqual([{ effectId: 'effect_venom' }]);
+    it('Venomous is retired: an enemy still carrying it is a plain enemy that lands nothing', () => {
+        expect(stats(1, ['venomous']).kinds).toEqual([]);
         expect(pick(stats(1, ['venomous']))).toEqual(pick(stats(1, [])));
+        expect(stats(1, ['venomous']).onHit).toBeUndefined();
     });
 
     it('two kinds apply in the order ticked: Armoured Brute at 20 resists Slash, Crush and Stab 50, hits 3, slow', () => {
@@ -98,13 +99,30 @@ describe('how a kind combines with the level table', () => {
         expect(pick(stats(1, ['nimble'], { dodge: 0 }))).toMatchObject({ dodge: 0 });
     });
 
-    it('older content\'s budgetScale scales the level first; a Brute is still at least 1 harder than that', () => {
-        // The Goblin: level 1 × 0.3 → 6 HP, hit 1, 3 XP; as a Brute, hit 2.
-        expect(pick(stats(1, ['brute'], { budgetScale: 0.3 }))).toEqual({ hp: 6, hit: 2, resistances: {}, speed: 'slow', xp: 3, dodge: 0 });
+    it('older content\'s budgetScale is read by nothing: the level fills the numbers (the audit names it)', () => {
+        expect(pick(stats(1, ['brute'], { budgetScale: 0.3 }))).toEqual(pick(stats(1, ['brute'])));
+        const enemy = (id, block, config) => ({
+            id, name: id, tokenType: 'enemy', rarity: 'common', theme: 'fixture', uses: 1, sprite: 's_occult',
+            enemy: { level: 1, style: 'melee', ...block },
+            config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, inputs: [], outputs: [], ...config }
+        });
+        registerTokenTypes({
+            ek_left: enemy('ek_left', { budgetScale: 0.3, boss: true }, { xp: 0 }),
+            ek_xp: enemy('ek_xp', {}, { xp: 2 })
+        });
+        const named = (id) => auditContent().filter(f => f.where === `Token "${id}"`).map(f => f.what);
+        // Harmless leftovers: named at boot, never among the CMS's blocking findings.
+        expect(named('ek_left').filter(w => w.includes('which the game no longer reads'))).toEqual([
+            expect.stringContaining('"boss"'), expect.stringContaining('"budgetScale"')
+        ]);
+        expect(findUnknownRefs({ tokens: { ek_left: enemy('ek_left', { budgetScale: 0.3, boss: true }) } })).toEqual([]);
+        // A work cycle's XP on an enemy is never paid; a 0 left by the editor's default says nothing.
+        expect(named('ek_xp').some(w => w.includes("carries a work cycle's XP (2)"))).toBe(true);
+        expect(named('ek_left').some(w => w.includes("work cycle's XP"))).toBe(false);
     });
 
     it('an unknown kind, a repeat and a third kind are ignored; clashing speeds let the later win', () => {
-        expect(enemyKindsOf({ kinds: ['nimble', 'nimble', 'giant', 'venomous', 'armoured'] }).map(k => k.id)).toEqual(['nimble', 'venomous']);
+        expect(enemyKindsOf({ kinds: ['nimble', 'nimble', 'giant', 'venomous', 'brute', 'armoured'] }).map(k => k.id)).toEqual(['nimble', 'brute']);
         expect(kindsClash('swift', 'armoured')).toBe(true);
         expect(kindsClash('swift', 'brute')).toBe(true);
         expect(kindsClash('armoured', 'brute')).toBe(false);
@@ -187,22 +205,30 @@ describe('a fight against each kind', () => {
         expect([...new Set(plated)].sort()).toEqual([2, 3]);
     });
 
-    it('Venomous poisons the hero on the hits it lands, up to 3 stacks; the others never do', () => {
-        const venom = duel('kind_venomous');
-        expect(venom.statuses.filter(s => s === VENOM).length).toBeGreaterThan(3);
-        expect(LiveEffects.statusesOf(venom.hero)).toEqual([{ effectId: VENOM, stacks: 3, ticksLeft: null }]);
-        expect(duel('kind_none').statuses).toEqual([]);
+    it('no kind lands a status on the hero: poison comes from a move that carries it', () => {
+        for (const kind of ['none', ...ENEMY_KINDS.map(k => k.id)]) expect(duel(`kind_${kind}`).statuses, kind).toEqual([]);
     });
 });
 
 describe('the audit names a kind the game does not have, a third kind, or a clash', () => {
     const token = (kinds) => ({ id: 't', name: 'T', enemy: { level: 1, style: 'melee', kinds } });
-    const fields = (kinds) => findUnknownRefs({ tokens: { t: token(kinds) } }).map(f => f.message);
+    // Checked against a library with no kind effects: the presets stand on their own.
+    const fields = (kinds) => findUnknownRefs({ tokens: { t: token(kinds) }, effects: {} }).map(f => f.message);
 
     it('reports each problem once, and nothing for a good pair', () => {
         expect(fields(['armoured', 'nimble'])).toEqual([]);
         expect(fields(['giant'])[0]).toContain('"giant"');
-        expect(fields(['armoured', 'nimble', 'venomous'])[0]).toContain('at most 2');
+        // Without a library to look in, a kind that is no preset is taken on trust (it may be an effect).
+        expect(findUnknownRefs({ tokens: { t: token(['effect_armoured']) } })).toEqual([]);
+        expect(fields(['armoured', 'nimble', 'brute'])[0]).toContain('at most 2');
         expect(fields(['swift', 'armoured'])[0]).toContain('different attack speeds');
+    });
+
+    it('names a Venomous kind left on an enemy as retired, saying a poisoning move carries Venom now', () => {
+        const [message, ...rest] = fields(['venomous']);
+        expect(rest).toEqual([]);
+        expect(message).toContain('"venomous"');
+        expect(message).toContain('retired');
+        expect(message).toContain('Venom effect');
     });
 });

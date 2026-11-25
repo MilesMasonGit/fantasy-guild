@@ -12,6 +12,7 @@ import {
   effectRefsOf, expandBearer, rulesLinesOf,
   scaleStatement, effectTitle, MAX_SCALE,
   isSpentCategory, isAlwaysOn, ALWAYS_ON_IDLE_WHY,
+  isEnemyDef,
 } from '../../utils/constants';
 import { Field } from '../shared/EditorLayout';
 import RulesLine, { RulesPanel } from './RulesLine';
@@ -43,9 +44,10 @@ const KEYWORD_ICON = {
  * @param {string|null} [emptyNote]  what an empty list says
  * @param {boolean} [carried]  a hero carries these rules (an item's, a perk's): the sentences and the moment picker read as the hero's
  * @param {boolean} [onToken]  a Token carries these rules: an effect that reaches only heroes and the guild (Regen) is not offered
+ * @param {boolean} [enemyHeld]  only enemies carry these rules: a swing or hit moment offers no every-Nth count
  */
 export function StatementList({
-  statements, onChange, content, carried = false, onToken = false,
+  statements, onChange, content, carried = false, onToken = false, enemyHeld = false,
   cursor: heldCursor, onCursor, panel = 'always', canAdd = true, lockKeyword = false,
   rowNote = null,
   emptyNote = 'This effect has a name and nothing behind it. A named effect must carry at least one rule — add one below, or delete the effect.',
@@ -60,7 +62,7 @@ export function StatementList({
   /** ⚠️ Creating an item writes to the persisted store, so a list given its own vocabulary offers no Create anywhere (panel search, conversion table, upkeep list). */
   const canCreate = !content;
   const capabilities = useCapabilityVocabulary(tokens);
-  const ctx = useMemo(() => ({ tokens, items, capabilities, effects, carried, onToken }), [tokens, items, capabilities, effects, carried, onToken]);
+  const ctx = useMemo(() => ({ tokens, items, capabilities, effects, carried, onToken, enemyHeld }), [tokens, items, capabilities, effects, carried, onToken, enemyHeld]);
   const [menuOpen, setMenuOpen] = useState(false);
 
   /** One cursor for the whole list, because there is one panel: `{ statementId, slotId, occurrence, mode, query, active, moved }`. Updates are functional so a blur arriving after a Tab cannot clobber the word Tab moved to. */
@@ -427,6 +429,7 @@ export default function Statements({ token, item }) {
                   {...cursorFor(effectId)}
                   carried={!token}
                   onToken={!!token}
+                  enemyHeld={!!token && isEnemyDef(token)}
                   panel="focused"
                   canAdd={false}
                   emptyNote="This effect has no rule left. Open it to add one, or remove it from here."

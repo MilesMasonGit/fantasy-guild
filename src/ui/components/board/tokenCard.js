@@ -7,7 +7,7 @@ import { neededToolOf, toolNeedPhrase, toolItemFor, toolKindLabel } from '../../
 import { hasCatchPools, catchPoolsOf } from '../../../config/registries/catchPools.js';
 import { rareTableOf, rareEntryChances } from '../../../config/registries/rareTables.js';
 import { enemyProfileOf } from '../../../config/registries/enemyProfile.js';
-import { movesView, enemyHitTypes, kindView, enemyResistLines, hasFought } from '../combat/fightView.js';
+import { movesView, enemyHitTypes, kindView, enemyRestNumbers, hasFought } from '../combat/fightView.js';
 import { PLAIN_ENEMY_HIT_TYPE } from '../../../config/registries/damageTypes.js';
 import { fieldOf, cropTermsOf, campOf, isWarCamp, endTermsOf } from '../../../config/registries/tokenConstants.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
@@ -494,15 +494,17 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
         blocks.push({ id: CARD_BLOCK.HP, cur, max: hp ? hp.max : enemy.hp });
         blocks.push({ id: CARD_BLOCK.COMBAT, skillId: enemy.combatType, level: enemy.level, xp: enemy.xpAwarded });
         const { moves, hitTypes } = enemyMovesOnCard(enemy);
+        // Its own numbers with its kinds', as a fight starts from them.
+        const rest = enemyRestNumbers(enemy);
         blocks.push({
             id: CARD_BLOCK.FIGHT,
             typeId,
-            hit: enemy.hit,
+            hit: rest.hit,
             hitType: hitTypes[0] ?? PLAIN_ENEMY_HIT_TYPE,
             hitTypes,
             moves,
-            resists: enemyResistLines(enemy.resistances),
-            attackEveryMs: enemy.attackSpeed,
+            resists: rest.resists,
+            attackEveryMs: rest.attackEveryMs,
             kinds: enemyKindsOnCard(enemy, !!src.fought?.(typeId))
         });
         const drops = dropsOf(def.config?.outputs);

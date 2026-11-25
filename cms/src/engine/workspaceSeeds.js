@@ -1,6 +1,5 @@
 import {
     statementsOf, migrateBearers, migrateAppliesTargetsIn, migrateSkillIdsIn, migrateRecipePools,
-    migrateEffectLibrary, migrateEffectIdsIn, migratePerkEffectIds,
 } from '../utils/constants';
 import { seedSimIntent } from '../stores/simIntentNormaliser';
 import { normaliseStarterCamp } from './starterCamp';
@@ -68,25 +67,6 @@ export function seedSkillIds(state) {
     return next;
 }
 
-/**
- * A renamed library effect (the Poison status became Venom) moves to its new id, keeping its place, and every Token, item, effect and perk naming it follows.
- * ⚠️ Runs on the same three load paths and calls the same pure functions the game's loaders call: Sync to Game writes this workspace wholesale, so a workspace still naming the old id would write it back into `data/`. Idempotent.
- */
-export function seedEffectIds(state) {
-    if (!state || typeof state !== 'object') return state;
-    let next = state;
-    const replace = (key, value) => {
-        if (value === state[key]) return;
-        if (next === state) next = { ...state };
-        next[key] = value;
-    };
-    replace('effects', migrateEffectLibrary(state.effects));
-    replace('tokens', migrateEffectIdsIn(state.tokens));
-    replace('items', migrateEffectIdsIn(state.items));
-    replace('skillPerks', migratePerkEffectIds(state.skillPerks));
-    return next;
-}
-
 /** A workspace saved before maps were items carries the retired `maps` collection; it is dropped on load, never read. */
 export function dropRetiredCollections(state) {
     if (!state || typeof state !== 'object' || !('maps' in state)) return state;
@@ -116,7 +96,7 @@ export function seedWorldBiomes(state) {
  * store's persist `merge` and `migrate` run.
  */
 export function seedStoredWorkspace(state) {
-    return seedWorldBiomes(seedRenames(seedEffectIds(seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(state))))))));
+    return seedWorldBiomes(seedRenames(seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(state)))))));
 }
 
 /**
@@ -124,13 +104,13 @@ export function seedStoredWorkspace(state) {
  * holds it: what `hydrate` sets, without the open-entity selection.
  */
 export function workspaceFromImport(data = {}) {
-    const seeded = seedEffectIds(seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent({
+    const seeded = seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent({
         items: data.items || {},
         tokens: data.tokens || {},
         effects: data.effects || {},
         recipePools: data.recipePools || {},
         skillPerks: data.skillPerks,
-    })))));
+    }))));
     return {
         items: seeded.items,
         tokens: seeded.tokens,

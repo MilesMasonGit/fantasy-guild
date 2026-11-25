@@ -13,8 +13,8 @@ import EffectEditor from '../../cms/src/components/editors/EffectEditor.jsx';
 
 /**
  * ⭐ A status in the CMS (brief 220, C4): the Effect editor's Status section makes a library effect
- * a status (how many stacks, how many ticks), the Rules Text says so, the Poison the Venomous kind
- * names is flagged as an id to keep, and the block survives Recalculate, Sync and a reload.
+ * a status (how many stacks, how many ticks), the Rules Text says so, Venom (whose ticks hurt as
+ * Poison, by its id) is flagged as an id to keep, and the block survives Recalculate, Sync and a reload.
  *
  * ⚠️ No real workspace: the store's persistence is a no-op here (TESTING, "The CMS").
  */
@@ -55,7 +55,7 @@ function effectEditor(id) {
 }
 
 describe('⭐ the Effect editor makes a status', () => {
-    it('a new effect named Venom gets the id Venomous names, and is flagged to keep it', () => {
+    it('a new effect named Venom gets the id the game knows Venom by, and is flagged to keep it', () => {
         // A library without Venom, whatever ships.
         useEntityStore.setState((s) => {
             const { effect_venom: _gone, ...effects } = s.effects;
@@ -64,7 +64,7 @@ describe('⭐ the Effect editor makes a status', () => {
         const id = store().addEffect({ name: 'Venom' });
         expect(id).toBe('effect_venom');
         const { container } = effectEditor(id);
-        expect(container.textContent).toContain('Venomous enemies land this effect by its id');
+        expect(container.textContent).toContain('The game knows Venom by its id (effect_venom): its ticks deal Poison damage');
     });
 
     it('ticking Status writes the block; stacks and ticks write into it; the Rules Text says so', () => {

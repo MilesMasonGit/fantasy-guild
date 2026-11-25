@@ -22,7 +22,6 @@ import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegi
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
-import { isBossEnemy } from '../config/registries/enemyProfile.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { PLACEMENT } from '../config/registries/placementRegistry.js';
@@ -61,12 +60,12 @@ registerTokenTypes({
     /** A quick one-kill enemy, peaceful. */
     enc_imp: {
         id: 'enc_imp', name: 'Encounter Imp', tokenType: 'enemy', rarity: 'common', theme: 'fixture',
-        uses: 100, sprite: 's_occult', enemy: { level: 1, style: 'melee', budgetScale: 0.3 }, config: enemyConfig
+        uses: 100, sprite: 's_occult', enemy: { level: 1, style: 'melee', hp: 6, xp: 3 }, config: enemyConfig
     },
     /** A boss. */
     enc_boss: {
         id: 'enc_boss', name: 'Encounter Boss', tokenType: 'enemy', rarity: 'rare', theme: 'fixture',
-        uses: 1, sprite: 's_occult', enemy: { level: 1, style: 'melee', budgetScale: 0.3, boss: true },
+        uses: 1, sprite: 's_occult', enemy: { level: 1, style: 'melee', hp: 6, xp: 3 },
         config: enemyConfig
     },
     /** A guardian: a tough enemy whose camp stands by a rich node. */
@@ -329,7 +328,6 @@ describe('⭐ camps of one: bosses and guardians from ordinary spawners', () => 
 
 describe('⭐ bosses: never first to attack, hurt for the next hero, called by a Summoning Circle', () => {
     it('a boss, like every enemy, never attacks a hero working beside it', () => {
-        expect(isBossEnemy({ enemy: { level: 1, boss: true } })).toBe(true);
         const boss = placeAt('enc_boss', A.x, A.y);
         // A hero working right beside it.
         Orders.orderAt('h1', placeAt('enc_node', boss.x + 160, boss.y));

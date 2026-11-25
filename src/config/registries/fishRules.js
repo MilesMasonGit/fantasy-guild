@@ -6,10 +6,10 @@
 /**
  * Three item blocks, each optional:
  *
- * - **A fish** (any item a catch pool lands): `fish: { level, cycleMs, bait }`. `level` is the
+ * - **A fish** (any item a catch pool lands): `fish: { level, cycleMs, bait, xp }`. `level` is the
  *   Fishing level that catches it, `cycleMs` how long one catch of it takes, `bait` how much Bait a
- *   catch of it spends (more for rarer fish). A field left out falls back to the water's own: its
- *   Token's level and cycle, and 1 Bait.
+ *   catch of it spends (more for rarer fish), `xp` the Fishing XP a catch of it teaches. A field left
+ *   out falls back to the water's own: its Token's level, cycle and `config.xp`, and 1 Bait.
  * - **A lure**: `lure: { fish: [itemId, …], breakChance }`. Carried in a consumable cell, it picks
  *   which of its fish bites, when the spot holds one of them; `breakChance` is the % chance one is
  *   used up each catch it picks.
@@ -33,7 +33,7 @@ const lureCache = new WeakMap();
  * An item's fish block in one shape, or null when it has none. A field the block leaves out (or
  * writes as nonsense) is null, so the water's own stands in for it.
  *
- * @returns {{level: number|null, cycleMs: number|null, bait: number|null}|null}
+ * @returns {{level: number|null, cycleMs: number|null, bait: number|null, xp: number|null}|null}
  */
 export function fishOf(item) {
     const raw = item && typeof item === 'object' ? item.fish : null;
@@ -44,7 +44,8 @@ export function fishOf(item) {
         fish = Object.freeze({
             level: level === null ? null : Math.floor(level),
             cycleMs: positive(raw.cycleMs) === null ? null : Math.round(Number(raw.cycleMs)),
-            bait: whole(raw.bait)
+            bait: whole(raw.bait),
+            xp: whole(raw.xp)
         });
         fishCache.set(item, fish);
     }
@@ -95,6 +96,22 @@ export function fishLevel(item, fallback = 1) {
 /** A fish's catch time in ms, else `fallback` (its water's cycle). */
 export function fishCycleMs(item, fallback) {
     return fishOf(item)?.cycleMs ?? fallback;
+}
+
+/** The XP a catch of this fish teaches, before any XP Bonus: its own, else `fallback` (its water's). */
+export function fishXp(item, fallback) {
+    return fishOf(item)?.xp ?? fallback;
+}
+
+/**
+ * Whether an item's fish block writes an `xp` no catch can teach: not a whole number of 0 or more.
+ * Blank (left out) is fine: the water's own stands in.
+ */
+export function badFishXp(item) {
+    const raw = item && typeof item === 'object' && item.fish && typeof item.fish === 'object' ? item.fish.xp : undefined;
+    if (raw === undefined || raw === null || raw === '') return false;
+    const n = Number(raw);
+    return !(Number.isInteger(n) && n >= 0);
 }
 
 /** The Bait a catch of this fish asks before any tool's saving: its own amount, else 1. */

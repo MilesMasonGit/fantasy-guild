@@ -6,7 +6,7 @@ import { BOARD_EVENTS } from './boardEvents.js';
 import { getGrid, categoryOfItem, isConsumableCategory } from '../../config/registries/equipmentConstants.js';
 import { hasCatchPools, poolForTool, poolBites, pickCatchIndex, poolsAt } from '../../config/registries/catchPools.js';
 import { neededToolOf, takesLure } from '../../config/registries/toolKinds.js';
-import { lureOf, baitSavingOf, baitSpent, fishLevel, fishCycleMs, fishBait } from '../../config/registries/fishRules.js';
+import { lureOf, baitSavingOf, baitSpent, fishLevel, fishCycleMs, fishBait, fishXp } from '../../config/registries/fishRules.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as HeroTools from '../equipment/HeroTools.js';
@@ -233,10 +233,11 @@ export function levelNeededOf(def, heroId, instance = null) {
  * Weight rules that reach it (the hero's rod, a Token in reach), with the fish as the narrowing.
  *
  * Nothing bites (null) when the hero does not fish there ({@link fishingOf}): nothing is spent then.
- * A Preservation hit at the water keeps the Bait in the Bank (`baitKept`).
+ * A Preservation hit at the water keeps the Bait in the Bank (`baitKept`). `xp` is the fish's own
+ * catch XP, or null when it names none (the water's `config.xp` then teaches).
  *
  * @returns {{itemId: string, tool: string, bait: string|null, baitSpent: number, baitKept: boolean,
- *   lure: string|null, lureBroke: boolean}|null}
+ *   lure: string|null, lureBroke: boolean, xp: number|null}|null}
  */
 export function catchOf(instanceId, def, heroId, random = Math.random) {
     const a = assess(def, heroId, BoardState.getTokenById(instanceId));
@@ -258,5 +259,5 @@ export function catchOf(instanceId, def, heroId, random = Math.random) {
     } else if (a.absent) {
         EventBus.publish(BOARD_EVENTS.LURE_FISH_ABSENT, { instanceId, heroId, lureId: a.absent.lureId, fish: [...a.absent.fish] });
     }
-    return { itemId: caught.itemId, tool: a.tool.kind, bait: a.bait, baitSpent: spent, baitKept, lure: a.lure, lureBroke };
+    return { itemId: caught.itemId, tool: a.tool.kind, bait: a.bait, baitSpent: spent, baitKept, lure: a.lure, lureBroke, xp: fishXp(getItem(caught.itemId), null) };
 }

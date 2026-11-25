@@ -180,7 +180,7 @@ function enemySwing(fight, enemy, hero) {
                 if (hero.hp.current <= 0) {
                     handleHeroWounded(fight, hero.id);
                 } else {
-                    // Where a move's effect on the hero lands, and a Venomous enemy's poison.
+                    // Where a move's effect on the hero lands.
                     tallies.hits.enemy += 1;
                     fightMoment(fight, SIDE.ENEMY, FIGHT_MOMENT.HIT, tallies.hits.enemy);
                     // The hero's armour striking back, once the hit's own rules have run.

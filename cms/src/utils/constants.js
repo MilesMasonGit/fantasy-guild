@@ -92,7 +92,6 @@ export {
 } from '../../../src/systems/effects/effectMigration.js';
 export { migrateSkillIdsIn, migrateRecipePools } from '../../../src/systems/effects/skillIdMigration.js';
 // A renamed library effect (the Poison status is Venom): the same pure functions the game's loaders call.
-export { migrateEffectLibrary, migrateEffectIdsIn, migratePerkEffectIds } from '../../../src/systems/effects/effectIdMigration.js';
 
 // When a rule spends its Token's charges. Same extensibility rule as TRIGGER_EVENTS: adding a moment in the game puts it in the editor's picker with no CMS change.
 export {
@@ -127,9 +126,9 @@ export { campOf, isWarCampBlock } from '../../../src/config/registries/tokenCons
 export { STANDARD_REACH_U } from '../../../src/config/registries/reachRegistry.js';
 
 // An enemy is a Token: it carries `enemy: { level, style }`. `ENEMY_STYLES` fills the Style dropdown and `enemyProfileOf` powers the editor's read-only stat preview, imported from the game so the numbers shown are the numbers the fight uses.
-export { ENEMY_STYLES, enemyProfileOf, enemyFilledStats, ENEMY_OVERRIDE_FIELDS, RETIRED_ENEMY_FIELDS } from '../../../src/config/registries/enemyProfile.js';
+export { ENEMY_STYLES, isEnemyDef, enemyProfileOf, enemyFilledStats, ENEMY_OVERRIDE_FIELDS, RETIRED_ENEMY_FIELDS, LEFTOVER_ENEMY_FIELDS } from '../../../src/config/registries/enemyProfile.js';
 
-// Damage types: the nine types (the three groups only name sets of them, for the Set all buttons), a weapon's and an arrow's type, an enemy's resistance steps and the type a weapon with none hits with. The game's own list.
+// Damage types: the nine types (the three groups only name sets of them, for the Set all buttons), a weapon's and an arrow's type, an enemy's resistance steps, the type a weapon with none hits with, and the Venom status whose ticks hurt as Poison. The game's own list.
 export {
   DAMAGE_TYPES,
   DAMAGE_GROUPS,
@@ -144,13 +143,15 @@ export {
   isDamageGroupId,
   typesOfGroup,
   withGroupFilled,
+  VENOM_EFFECT_ID,
 } from '../../../src/config/registries/damageTypes.js';
 
 // Enemy moves: the few attacks an enemy picks from each swing (a type to hit with, an effect to land), their shapes and the audit's sentences. The game's own.
 export { MOVE_TARGETS, MOVE_LASTS, moveLastsFor, moveProblems, enemyMovesOf } from '../../../src/config/registries/enemyMoves.js';
 
-// Enemy kinds (Armoured, Nimble, Swift, Brute, Venomous): the presets the Token editor offers, none to two per enemy, and which pairs clash.
-export { ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf, VENOM_EFFECT_ID } from '../../../src/config/registries/enemyKinds.js';
+// Enemy kinds: none to two library effects an enemy always carries (built-in presets until the library has Armoured, Nimble, Swift and Brute), what the Token editor offers in its kind boxes, and the numbers a fight starts from with them added. The game's own.
+export { ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf } from '../../../src/config/registries/enemyKinds.js';
+export { enemyFightNumbers, isKindCandidate, kindResistances } from '../../../src/systems/effects/enemyKindEffects.js';
 
 // Weapons: the one style a weapon fights in, and the level gear asks of its wearer, for the item editor's Weapon and Requirement blocks.
 export { isWeapon, isOffHand, weaponStyleOf, authoredWeaponStyles, gearLevelRequirement } from '../../../src/config/registries/weaponStyles.js';
@@ -195,6 +196,8 @@ export { spotFindings } from '../../../src/systems/core/spotRule.js';
 export { fishFindings } from '../../../src/systems/core/fishRule.js';
 // Tools and weapons that break: an item's chance per cycle, for the item editor's Break chance field. The game's own reading.
 export { breakChanceOf, canBreak, BREAK_CHANCE_MAX } from '../../../src/config/registries/itemBreak.js';
+// An item's coin worth, for the item editor's Coin worth field and the audit. The game's own reading and wording.
+export { coinWorthOf, coinWorthFindings } from '../../../src/config/registries/itemCoins.js';
 // Milestone perks: the shape of a skill's perk table and the content checks for one. The game's own rules and wording.
 export { DEFAULT_PERK_LEVELS, MIN_PERK_LEVEL, isPerkLevel, perkRowsOf, normaliseSkillPerks } from '../../../src/systems/hero/perkTable.js';
 export { perkFindings } from '../../../src/systems/core/perkRule.js';

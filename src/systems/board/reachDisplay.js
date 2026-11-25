@@ -3,7 +3,6 @@
 import { getTokenType, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
 import { recipesForToken, contextTagsOf } from '../../config/registries/recipePoolRegistry.js';
 import { KEYWORD, caresAboutNeighbours, neighbourPartsOf, statementsOf } from '../effects/statements.js';
-import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { campOf } from '../../config/registries/tokenConstants.js';
 import { reachRadius, isWithin, centreOf } from './nearby.js';
 import { isStatementPaid, paidTestFor } from './BlockUpkeep.js';
@@ -15,6 +14,7 @@ import { resolveRecipe, servesStation, providedBy } from './RecipeResolver.js';
 import { validateSelection } from './StationRecipe.js';
 import { buildTargetOf } from './Foundations.js';
 import * as Camps from './Camps.js';
+import { isEnemyCampType } from './SpawnerSystem.js';
 import * as BoardState from './BoardState.js';
 
 /**
@@ -29,7 +29,7 @@ import * as BoardState from './BoardState.js';
  */
 export function showsNearRing(typeId) {
     const def = getTokenType(typeId);
-    if (!def || isEnemyCampDef(def)) return false;
+    if (!def || isEnemyCampType(typeId)) return false;
     // A Foundation shows the reach of whatever it will become; a work camp hands out work in it.
     if (def.foundation || campOf(def)) return true;
     if (caresAboutNeighbours(def)) return true;
@@ -150,8 +150,3 @@ function toTest(statement) {
     return (def, ctx) => narrowingFits(payload, def) && matchesTokenTarget(statement.to, def, ctx);
 }
 
-/** Whether a Token type is a spawner of enemies. */
-function isEnemyCampDef(def) {
-    const spawns = def?.spawner?.spawns;
-    return Array.isArray(spawns) && spawns.some(entry => isEnemyDef(getTokenType(entry?.typeId)));
-}

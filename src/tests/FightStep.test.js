@@ -74,7 +74,7 @@ registerTokenTypes({
     fs_goblin: {
         id: 'fs_goblin', name: 'FS Goblin', tokenType: 'enemy',
         rarity: 'common', theme: 'fixture', uses: 1, sprite: 's_occult',
-        enemy: { level: 1, style: 'melee', budgetScale: 0.3 },
+        enemy: { level: 1, style: 'melee', hp: 6, xp: 3 },
         config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] }
     },
     fs_goblin_camp: {

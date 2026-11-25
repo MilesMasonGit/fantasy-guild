@@ -12,7 +12,7 @@ import {
 } from '../../../../src/config/registries/tokenConstants.js';
 import { neededToolOf, toolOf, toolMeets, toolItemFor, takesLure } from '../../../../src/config/registries/toolKinds.js';
 import { hasCatchPools, catchPoolsOf } from '../../../../src/config/registries/catchPools.js';
-import { lureOf, baitSavingOf, baitSpent, fishLevel, fishCycleMs, fishBait } from '../../../../src/config/registries/fishRules.js';
+import { lureOf, baitSavingOf, baitSpent, fishLevel, fishCycleMs, fishBait, fishXp } from '../../../../src/config/registries/fishRules.js';
 import { rareTableOf, rareEntryChances } from '../../../../src/config/registries/rareTables.js';
 import { skyWithFallback } from '../../../../src/config/guildUpgrades.js';
 import { rankOf } from '../../../../src/config/hallStars.js';
@@ -1020,6 +1020,7 @@ function rateOf(book, target = {}, setup = {}) {
     // Water lands one catch a cycle, picked by weight, each weight widened by Catch Weight with the
     // fish as the narrowing (`Fishing.catchOf`); then it lands like any output.
     let baitPerCatch = 0;
+    let catchXp = null;
     if (kind === WORK.WATER) {
         const weights = fishing.catches.map(c => {
             const r = resolve(EFFECT_TYPES.CATCH_WEIGHT, c.weight, c.itemId);
@@ -1029,6 +1030,8 @@ function rateOf(book, target = {}, setup = {}) {
         const total = weights.reduce((a, b) => a + b, 0);
         io.outputs = total > 0 ? fishing.catches.map((c, i) => ({ itemId: c.itemId, chance: 100 * weights[i] / total, minQty: 1, maxQty: 1 })) : [];
         if (fishing.bait && total > 0) baitPerCatch = fishing.catches.reduce((sum, c, i) => sum + fishing.bait.perCatch(c) * weights[i] / total, 0);
+        // A catch teaches its fish's own XP, else the water's (`BoardRunner.completeCycle`).
+        if (total > 0) catchXp = fishing.catches.map((c, i) => ({ base: Number(fishXp(book.items[c.itemId], io.xp)) || 0, share: weights[i] / total }));
     }
 
     // A failed cycle pays its inputs and makes nothing (`BoardRunner.completeCycle`).
@@ -1088,11 +1091,15 @@ function rateOf(book, target = {}, setup = {}) {
 
     // XP: the cycle's own, widened by XP Bonus on average (`BoardRunner` carries the fraction by
     // chance), held at 1 or more as `SkillSystem.addXP` grants it (it applies no bonus of its own).
-    const baseXp = Number(io.xp) || 0;
-    const xb = resolve(EFFECT_TYPES.XP_BONUS, baseXp, category);
-    note(EFFECT_TYPES.XP_BONUS, xb.used);
-    const awarded = averageXpBonus(baseXp, xb.value);
-    const granted = awarded > 0 ? Math.max(1, awarded) : 0;
+    const grantedOf = (baseXp) => {
+        const xb = resolve(EFFECT_TYPES.XP_BONUS, baseXp, category);
+        note(EFFECT_TYPES.XP_BONUS, xb.used);
+        const awarded = averageXpBonus(baseXp, xb.value);
+        return awarded > 0 ? Math.max(1, awarded) : 0;
+    };
+    const granted = catchXp
+        ? catchXp.reduce((sum, c) => sum + c.share * grantedOf(c.base), 0)
+        : grantedOf(Number(io.xp) || 0);
     const xpPerCycle = skill ? (1 - pFail) * granted : 0;
 
     const inputsPerCycle = {};

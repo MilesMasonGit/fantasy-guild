@@ -9,7 +9,6 @@ import { asLoaded } from './fixtures/shippedAsLoaded.js';
 import { useEntityStore } from '../../cms/src/stores/useEntityStore';
 import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 import { syncFiles } from '../../cms/src/engine/recipeSync';
-import { isBossEnemy } from '../config/registries/enemyProfile.js';
 import { auditLifecycleBlocks } from '../systems/core/lifecycleAudit.js';
 import { slotsOf } from '../../cms/src/engine/ledger/statementSlots.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
@@ -76,27 +75,20 @@ afterEach(() => {
     useSimulationStore.getState().clearResults();
 });
 
-describe('⭐ the Boss mark', () => {
-    it('ticking Boss writes enemy.boss and leaves the rest of the block as written; there is no Hostile box', () => {
+describe('⭐ no Boss mark: a boss is what a boss camp spawns', () => {
+    it('there is no Boss box and no Hostile box; a boss tick left on an enemy is named, and one click removes it', () => {
         const id = 'token_cow';
         const before = { ...useEntityStore.getState().tokens[id].enemy };
+        const first = openEditor(id).container;
+        expect(within(first).queryByLabelText('Boss')).toBeNull();
+        expect(within(first).queryByLabelText('Hostile')).toBeNull();
+        cleanup();
+        useEntityStore.getState().updateToken(id, { enemy: { ...before, boss: true } });
         const { container } = openEditor(id);
-        expect(within(container).queryByLabelText('Hostile')).toBeNull();
-        fireEvent.click(within(container).getByLabelText('Boss'));
-        expect(useEntityStore.getState().tokens[id].enemy).toEqual({ ...before, boss: true });
-
-        const written = syncTwice()['tokens.json'][id];
-        expect(isBossEnemy(written)).toBe(true);
-    });
-
-    it('unticking leaves no key behind, and the rest of the enemy block untouched', () => {
-        const id = 'token_cow';
-        const before = { ...useEntityStore.getState().tokens[id].enemy };
-        const { container } = openEditor(id);
-        fireEvent.click(within(container).getByLabelText('Boss'));
-        fireEvent.click(within(container).getByLabelText('Boss'));
+        expect(container.querySelector('[data-field="enemy-leftovers"]').textContent).toContain('boss');
+        fireEvent.click(container.querySelector('[data-field="enemy-leftovers-remove"]'));
         expect(useEntityStore.getState().tokens[id].enemy).toEqual(before);
-        expect(syncPayload()['tokens.json'][id].enemy).toEqual(before);
+        expect(syncTwice()['tokens.json'][id].enemy).toEqual(before);
     });
 });
 

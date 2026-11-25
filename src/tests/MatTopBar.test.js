@@ -386,10 +386,10 @@ describe('⭐ the bar without its frame (playmat declutter)', () => {
         }
     });
 
-    it('⭐ the Token cap and Upkeep are switched off, their code kept', () => {
+    it('⭐ the Token cap and Upkeep are switched off, their code kept; the coins stand in their place', () => {
         expect(SHOW_MAT_COUNTS).toBe(false);
         const code = fs.readFileSync('src/ui/ReactRoot.jsx', 'utf8');
-        expect(code).toMatch(/SHOW_MAT_COUNTS \? <><MatCapBadge \/><MatUpkeepBadge \/><\/> : null/);
+        expect(code).toMatch(/SHOW_MAT_COUNTS \? <><MatCapBadge \/><MatUpkeepBadge \/><\/> : <MatCoinCount \/>/);
         expect(code).toMatch(/left=\{<MatLogo \/>\}/);
         expect(code).toMatch(/right=\{<MatRegionName /);
     });

@@ -562,7 +562,8 @@ function payloadSlots(statement, ctx) {
  * @param {object} statement
  * @param {object} [ctx]  the vocabulary (`tokens`, `items`, `effects`, `capabilities`), and
  *   `carried: true` when a hero carries the rule (an item's, a perk's), `onToken: true` when a
- *   Token does (its own rules, or a library effect a Token names)
+ *   Token does (its own rules, or a library effect a Token names), `enemyHeld: true` when only
+ *   enemies do (no every-Nth count)
  * @returns {Array<object>} slots, each with `id`, `kind`, `label`, `value` and
  *   a `patch(value)` returning the change to merge into the statement
  */
@@ -616,13 +617,18 @@ export function slotsOf(statement, ctx = {}) {
                 patch: v => ({ when: { ...statement.when, threshold: Math.max(1, Number(v) || 1) } })
             });
         }
-        // A counted fight moment: every Nth swing or hit.
-        if (moment.countNoun) {
+        // A counted fight moment: every Nth swing or hit. An enemy's rules fire on every one (its
+        // attacks are its moves, picked by weight), so an enemy's effect is not offered a count; one
+        // left over keeps its slot, to be seen and set back to 1.
+        const stray = ctx.enemyHeld && everyOf(statement?.when) > 1;
+        if (moment.countNoun && (!ctx.enemyHeld || stray)) {
             const noun = moment.countNoun.toLowerCase();
             slots.push({
                 id: 'every', kind: SLOT_KIND.NUMBER, label: `every Nth ${noun}`, min: 1,
                 value: everyOf(statement?.when),
-                hint: `1 fires on every ${noun}; 4 on the 4th, 8th, 12th… of each fight.`,
+                hint: stray
+                    ? `An enemy's rules fire on every ${noun}, so this count is ignored. Set it to 1.`
+                    : `1 fires on every ${noun}; 4 on the 4th, 8th, 12th… of each fight.`,
                 patch: v => ({ when: { ...statement.when, every: Math.max(1, Math.floor(Number(v) || 1)) } })
             });
         }

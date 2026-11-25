@@ -158,7 +158,7 @@ describe('the fight panel', () => {
         expect(text(q(panel, '[data-fight-elixir="item_elixir_of_ironskin"]'))).toBe('3');
         expect(words(q(panel, '[data-fight-effects="hero"] [data-fight-status="effect_venom"]'))).toBe('Venom ×2');
         expect(words(q(panel, '[data-fight-effects="enemy"]'))).toBe('On Goblin Warlord None');
-        expect([...panel.querySelectorAll('[data-fight-kind]')].map(text)).toEqual(['Brute', 'Venomous']);
+        expect([...panel.querySelectorAll('[data-fight-kind]')].map(text)).toEqual(['Brute', 'Armoured']);
         // An enemy without moves has its one plain Strike as its attack.
         expect([...panel.querySelectorAll('[data-fight-move]')].map(e => e.getAttribute('data-fight-move'))).toEqual(['Strike']);
     });
@@ -215,7 +215,7 @@ describe('the enemy card', () => {
     registerTokenTypes({
         cs_ui_brute: {
             id: 'cs_ui_brute', name: 'Card Brute', tokenType: 'enemy', rarity: 'common', theme: 'fixture', uses: 5, sprite: 's_crime',
-            enemy: { level: 20, style: 'melee', kinds: ['brute', 'venomous'] },
+            enemy: { level: 20, style: 'melee', kinds: ['brute', 'nimble'] },
             config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0 }
         }
     });
@@ -232,7 +232,7 @@ describe('the enemy card', () => {
         GameState.state.collection.discoveredEnemies.cs_ui_brute = true;
         const known = enemyCardView('cs_ui_brute');
         root = render(React.createElement(EnemyCardRows, { card: known })).container;
-        expect([...root.querySelectorAll('[data-enemy-card-kind]')].map(e => e.getAttribute('data-enemy-card-kind'))).toEqual(['brute', 'venomous']);
+        expect([...root.querySelectorAll('[data-enemy-card-kind]')].map(e => e.getAttribute('data-enemy-card-kind'))).toEqual(['brute', 'nimble']);
         expect(text(q(root, '[data-enemy-card-kind="brute"]'))).toBe('Brute Big hits, attacks every 4s');
     });
 

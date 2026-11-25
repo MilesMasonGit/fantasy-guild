@@ -777,7 +777,7 @@ export const MODIFIER_PALETTE = [
         categories: 'status',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Protection',
-        hint: 'Moves how many stacks of one status can build up on the hero: -1 means at most 1 fewer (a Hide Vest against poison). Pick which status. At 0 stacks it cannot land; stacks already carried are never stripped.'
+        hint: 'Moves how many stacks of one status can build up on the hero: -1 means at most 1 fewer (against Venom, say). Pick which status. At 0 stacks it cannot land; stacks already carried are never stripped.'
     },
 
     // --- Grants -------------------------------------------------------------

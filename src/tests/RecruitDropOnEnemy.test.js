@@ -40,7 +40,7 @@ registerTokenTypes({
     fixture_drop_goblin: {
         id: 'fixture_drop_goblin', name: 'Fixture Drop Goblin', tokenType: 'enemy',
         rarity: 'common', theme: 'fixture', uses: 1, sprite: 's_occult',
-        enemy: { level: 1, style: 'melee', budgetScale: 0.3 },
+        enemy: { level: 1, style: 'melee', hp: 6, xp: 3 },
         config: { skill: '', skillRequired: 1, cycleTimeMs: 12000, xp: 0, inputs: [], outputs: [] }
     }
 });

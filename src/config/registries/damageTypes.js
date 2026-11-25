@@ -88,6 +88,15 @@ export const DEFAULT_ARROW_DAMAGE_TYPE = 'stab';
 export const PLAIN_ENEMY_HIT_TYPE = 'crush';
 
 /**
+ * The library's Venom status. ⚠️ Named by id: its ticks hurt as Poison ({@link STATUS_DAMAGE_TYPES}),
+ * so the content's Venom must be `effect_venom`, the id the CMS gives an effect named Venom.
+ */
+export const VENOM_EFFECT_ID = 'effect_venom';
+
+/** The damage type a status's ticks hurt in, by library effect id (`DealDamage`). A status not listed is untyped. */
+export const STATUS_DAMAGE_TYPES = Object.freeze({ [VENOM_EFFECT_ID]: 'poison' });
+
+/**
  * The type a weapon hits with: the `damageType` it names, else its style's default
  * ({@link DEFAULT_DAMAGE_TYPE_BY_STYLE}).
  * @param {object} item a weapon
@@ -117,10 +126,11 @@ export function arrowOf(item) {
 // --- Enemy resistances and weaknesses --------------------------------------------------------
 
 /**
- * The steps an enemy's resistance may take (owner): resist 25, 50 or 100 %, weak 25 or 50 %. Stored
- * signed, a weakness negative: `resistances: { slash: 50, crush: -50 }`.
+ * The steps an enemy's resistance may take (owner): resist 25, 50 or 100 %, weak 25 or 50 %, and
+ * weak 100 % so a line can undo a kind's resistance and more (the Crab's Crush −100 on top of
+ * Armoured's 50 is weak 50 %). Stored signed, a weakness negative: `resistances: { slash: 50, crush: -50 }`.
  */
-export const RESISTANCE_STEPS = Object.freeze([100, 50, 25, -25, -50]);
+export const RESISTANCE_STEPS = Object.freeze([100, 50, 25, -25, -50, -100]);
 
 export const isResistanceStep = (n) => RESISTANCE_STEPS.includes(n);
 
@@ -170,7 +180,7 @@ export function resistanceProblems(raw) {
     for (const [id, value] of Object.entries(raw)) {
         if (isDamageGroupId(id)) out.push(`its ${damageTypeLabel(id)} ${value} resistance is ${groupLineAdvice(id)}`);
         else if (!isDamageTypeId(id)) out.push(`a resistance names "${id}", which is not a damage type${again}`);
-        else if (!isResistanceStep(Number(value))) out.push(`its ${damageTypeLabel(id)} resistance is ${value}, not one of the steps (resist 25, 50 or 100; weak 25 or 50)${again}`);
+        else if (!isResistanceStep(Number(value))) out.push(`its ${damageTypeLabel(id)} resistance is ${value}, not one of the steps (resist 25, 50 or 100; weak 25, 50 or 100)${again}`);
     }
     return out;
 }

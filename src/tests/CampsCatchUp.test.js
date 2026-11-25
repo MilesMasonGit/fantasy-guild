@@ -101,7 +101,7 @@ registerTokenTypes({
     }),
     ccu_goblin: {
         id: 'ccu_goblin', name: 'CCU Goblin', tokenType: 'enemy', rarity: 'common', theme: 'fixture',
-        uses: 1, sprite: 's_occult', enemy: { level: 1, style: 'melee', budgetScale: 0.3 },
+        uses: 1, sprite: 's_occult', enemy: { level: 1, style: 'melee', hp: 6, xp: 3 },
         config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [{ itemId: 'fixture_copper_ore', quantity: 1, chance: 100 }] }
     },
     ccu_den: {

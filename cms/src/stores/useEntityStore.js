@@ -315,13 +315,18 @@ function performRename(state, oldId, newId, entityType) {
             })
         );
 
-        // An enemy's moves name the effect each lands.
+        // An enemy's moves name the effect each lands, and its kinds are effects.
         const repointMoves = (token) => {
             const moves = token?.enemy?.moves;
             if (!Array.isArray(moves) || !moves.some((m) => m?.effectId === oldId)) return token;
             return { ...token, enemy: { ...token.enemy, moves: moves.map((m) => (m?.effectId === oldId ? { ...m, effectId: newId } : m)) } };
         };
-        patch.tokens = Object.fromEntries(Object.entries(repoint(state.tokens)).map(([id, token]) => [id, repointMoves(token)]));
+        const repointKinds = (token) => {
+            const kinds = token?.enemy?.kinds;
+            if (!Array.isArray(kinds) || !kinds.includes(oldId)) return token;
+            return { ...token, enemy: { ...token.enemy, kinds: kinds.map((k) => (k === oldId ? newId : k)) } };
+        };
+        patch.tokens = Object.fromEntries(Object.entries(repoint(state.tokens)).map(([id, token]) => [id, repointKinds(repointMoves(token))]));
         patch.items = repoint(state.items);
         // A perk table names its effects too.
         if (state.skillPerks) {

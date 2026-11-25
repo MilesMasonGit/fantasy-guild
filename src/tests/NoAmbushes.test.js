@@ -45,7 +45,7 @@ registerTokenTypes({
     fixture_na_goblin: {
         id: 'fixture_na_goblin', name: 'Fixture NA Goblin', tokenType: 'enemy',
         rarity: 'common', theme: 'fixture', uses: 1, sprite: 's_occult',
-        enemy: { level: 1, style: 'melee', budgetScale: 0.3, hostile: true },
+        enemy: { level: 1, style: 'melee', hp: 6, xp: 3, hostile: true },
         config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] }
     }
 });
