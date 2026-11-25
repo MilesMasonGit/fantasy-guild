@@ -5,9 +5,10 @@ import { prefersReducedMotion } from './fx/pixelSteps.js';
 
 /**
  * The level-up flash: glowing rings spread out from the hero one after another, fading as they
- * grow, and a shower of pixel sparkles, as the level-up float appears (`levelUpFloats.js`). A small
- * flash every 5 levels, a big one at the majors. Picked from the screenshot page
- * (`docs/active/research/levelup_flash/`, tile D), whose table these numbers are.
+ * grow, and a shower of pixel sparkles, as the level-up float appears (`levelUpFloats.js`). Every
+ * level gained gets the same big flash. Picked from the screenshot page
+ * (`docs/active/research/levelup_flash/`, tile D), whose table these numbers are, its times
+ * stretched to 1.75 times.
  * One-shot and UI memory only: a flash is held here from its level-up until it has played, drawn by
  * `LevelUpFlashLayer.jsx`. None while drawing is paused (a minimised window) or the player asked for
  * less motion, and none for the level-ups of time away: the catch-up summary tells those.
@@ -22,12 +23,8 @@ export const FLASH_WHITE = '#ffffff';
 /** A ring's glow: the next lighter colour. */
 const LIGHTER = { [FLASH_GOLD]: FLASH_PALE, [FLASH_PALE]: FLASH_WHITE, [FLASH_WHITE]: FLASH_PALE };
 
-/** The levels that get the big flash; every other multiple of {@link SMALL_FLASH_EVERY} gets the small one. */
-export const BIG_FLASH_LEVELS = Object.freeze([10, 25, 50, 75, 99]);
-export const SMALL_FLASH_EVERY = 5;
-
 /**
- * The two flashes. `rings`: `count` rings to radius `R`, each starting `staggerMs` after the one
+ * The flash. `rings`: `count` rings to radius `R`, each starting `staggerMs` after the one
  * before and growing from nothing to `R` in a straight line over `growMs`, gone when it gets there.
  * `sparkles`: `count` sparkles in `colours` (taken in turn), spread evenly round the hero, each
  * launched as the first ring passes `fromShare` of `R` plus a fixed stagger of up to `jitterMs`,
@@ -35,18 +32,11 @@ export const SMALL_FLASH_EVERY = 5;
  * the 5-cell plus (`half`: every other one, `most`: two in three).
  */
 export const LEVEL_UP_FLASH = Object.freeze({
-    small: Object.freeze({
-        rings: Object.freeze({ count: 3, R: 56, growMs: 480, staggerMs: 120, colours: Object.freeze([FLASH_GOLD, FLASH_PALE, FLASH_WHITE]) }),
-        sparkles: Object.freeze({
-            count: 16, colours: Object.freeze([FLASH_GOLD, FLASH_PALE, FLASH_WHITE]),
-            fromShare: 0.3, reach: 4, spread: 16, stars: 'half', jitterMs: 200
-        })
-    }),
     big: Object.freeze({
-        rings: Object.freeze({ count: 5, R: 96, growMs: 640, staggerMs: 110, colours: Object.freeze([FLASH_WHITE, FLASH_GOLD, FLASH_PALE, FLASH_GOLD, FLASH_WHITE]) }),
+        rings: Object.freeze({ count: 5, R: 96, growMs: 1120, staggerMs: 193, colours: Object.freeze([FLASH_WHITE, FLASH_GOLD, FLASH_PALE, FLASH_GOLD, FLASH_WHITE]) }),
         sparkles: Object.freeze({
             count: 30, colours: Object.freeze([FLASH_GOLD, FLASH_PALE, FLASH_WHITE]),
-            fromShare: 0.25, reach: 6, spread: 24, stars: 'most', jitterMs: 300
+            fromShare: 0.25, reach: 6, spread: 24, stars: 'most', jitterMs: 525
         })
     })
 });
@@ -56,10 +46,10 @@ export const RING_FADE = Object.freeze([[0.4, 1], [0.6, 0.75], [0.8, 0.5], [1, 0
 /** The glow either side of a ring line, as a share of the line's opacity. */
 export const RING_GLOW = 0.5;
 /** How long a sparkle takes to fly out (easing out). */
-export const SPARKLE_FLY_MS = 450;
+export const SPARKLE_FLY_MS = 788;
 /** A sparkle's shapes from its launch: `[until ms, shape]`, null for nothing shown. */
 export const SPARKLE_STEPS = Object.freeze([
-    [150, 'star'], [300, 'plus'], [450, 'dot'], [520, null], [620, 'plus'], [720, 'dot'], [780, null], [860, 'dot']
+    [263, 'star'], [525, 'plus'], [788, 'dot'], [910, null], [1085, 'plus'], [1260, 'dot'], [1365, null], [1505, 'dot']
 ]);
 
 /** Cells of each shape round the sparkle's centre: `[dx, dy, tip]`, a tip in the lighter colour. */
@@ -72,19 +62,14 @@ const SHAPES = {
 const TIP = { [FLASH_GOLD]: FLASH_PALE, [FLASH_PALE]: FLASH_GOLD, [FLASH_WHITE]: FLASH_PALE };
 
 /**
- * Which flash a level-up from `oldLevel` to `newLevel` gets: the biggest of the levels it passes,
+ * Which flash a level-up from `oldLevel` to `newLevel` gets: the big one for any level gained,
  * or null for none.
- * @returns {'big'|'small'|null}
+ * @returns {'big'|null}
  */
 export function flashSizeFor(oldLevel, newLevel) {
     if (!Number.isFinite(newLevel)) return null;
     const from = Number.isFinite(oldLevel) ? oldLevel : newLevel - 1;
-    let size = null;
-    for (let level = from + 1; level <= newLevel; level++) {
-        if (BIG_FLASH_LEVELS.includes(level)) return 'big';
-        if (level % SMALL_FLASH_EVERY === 0) size = 'small';
-    }
-    return size;
+    return newLevel > from ? 'big' : null;
 }
 
 /** When a flash of `size` has finished playing, ms after it starts. */
@@ -218,7 +203,7 @@ export function startFlash(heroId, oldLevel, newLevel, now = performance.now()) 
     if (!heroId || !size || isDrawingPaused() || prefersReducedMotion()) return null;
     const kept = flashes.filter(f => now - f.at < flashEndMs(f.size));
     const playing = kept.find(f => f.heroId === heroId);
-    if (playing && !(size === 'big' && playing.size === 'small')) {
+    if (playing) {
         if (kept.length !== flashes.length) { flashes = Object.freeze(kept); emit(); }
         return null;
     }

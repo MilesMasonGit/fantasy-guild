@@ -6,7 +6,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { floatsOf, clearAllFloats } from '../ui/components/board/levelUpFloats.js';
 import {
-    LEVEL_UP_FLASH, BIG_FLASH_LEVELS, flashSizeFor, flashFrame, flashEndMs, currentFlashes, clearAllFlashes,
+    LEVEL_UP_FLASH, SPARKLE_STEPS, SPARKLE_FLY_MS, flashSizeFor, flashFrame, flashEndMs, currentFlashes, clearAllFlashes,
     FLASH_GOLD, FLASH_WHITE
 } from '../ui/components/board/levelUpFlash.js';
 import { LevelUpFlashLayer } from '../ui/components/board/LevelUpFlashLayer.jsx';
@@ -15,8 +15,8 @@ import { manualFrames } from './fixtures/manualFrames.js';
 
 /**
  * The level-up flash (brief 800 F2, picked from the page's tile D): glowing rings spread from the
- * hero one after another, fading as they grow, with a shower of sparkles; small every 5 levels, big
- * at 10, 25, 50, 75 and 99. It starts with the level-up float, plays once and is gone: nothing at
+ * hero one after another, fading as they grow, with a shower of sparkles; the same big one for every
+ * level gained. It starts with the level-up float, plays once and is gone: nothing at
  * rest, none while minimised, under reduced motion or for the level-ups of time away.
  */
 
@@ -53,27 +53,22 @@ afterEach(() => {
 });
 
 describe('which flash a level-up gets', () => {
-    it('big at 10, 25, 50, 75 and 99; small at every other 5; none between', () => {
-        for (const L of BIG_FLASH_LEVELS) expect(flashSizeFor(L - 1, L)).toBe('big');
-        for (const L of [5, 15, 20, 30, 45, 60, 95]) expect(flashSizeFor(L - 1, L)).toBe('small');
-        for (const L of [2, 7, 11, 24, 51, 98]) expect(flashSizeFor(L - 1, L)).toBeNull();
-    });
-
-    it('a jump of several levels takes the biggest it passes', () => {
+    it('every level gained gets the big flash, none for no gain', () => {
+        expect(flashSizeFor(3, 4)).toBe('big');
+        for (const L of [2, 5, 7, 10, 11, 24, 51, 99]) expect(flashSizeFor(L - 1, L)).toBe('big');
         expect(flashSizeFor(8, 11)).toBe('big');
-        expect(flashSizeFor(11, 16)).toBe('small');
-        expect(flashSizeFor(16, 19)).toBeNull();
+        expect(flashSizeFor(5, 5)).toBeNull();
+        expect(flashSizeFor(5, 4)).toBeNull();
+        expect(flashSizeFor(3, NaN)).toBeNull();
+        expect(flashSizeFor(3, undefined)).toBeNull();
     });
 
-    it('the big one has more rings, wider, and more sparkles than the small one', () => {
-        const { small, big } = LEVEL_UP_FLASH;
-        expect(big.rings.count).toBeGreaterThan(small.rings.count);
-        expect(big.rings.R).toBeGreaterThan(small.rings.R);
-        expect(big.sparkles.count).toBeGreaterThan(small.sparkles.count);
-        // Halfway through its first ring the big one shows more at once.
-        const at = (size) => flashFrame(size, LEVEL_UP_FLASH[size].rings.growMs * 0.75, 1);
-        expect(at('big').rings.length).toBeGreaterThan(at('small').rings.length);
-        expect(at('big').sparkles.length).toBeGreaterThan(at('small').sparkles.length);
+    it('there is one flash, lasting 1.75 times as long as it did', () => {
+        expect(Object.keys(LEVEL_UP_FLASH)).toEqual(['big']);
+        const { rings, sparkles } = LEVEL_UP_FLASH.big;
+        expect([rings.growMs, rings.staggerMs, sparkles.jitterMs, SPARKLE_FLY_MS]).toEqual([1120, 193, 525, 788]);
+        expect(SPARKLE_STEPS.map(([until]) => until)).toEqual([263, 525, 788, 910, 1085, 1260, 1365, 1505]);
+        expect(flashEndMs('big')).toBe(2310);
     });
 
     it('each ring grows from the hero and fades in steps as it grows, gone at its radius', () => {
@@ -96,11 +91,11 @@ describe('a level-up on the mat', () => {
         expect(flash).toMatchObject({ heroId: 'h1', size: 'big', at: performance.now() });
     });
 
-    it('small every 5 levels, big at the majors, none between', () => {
+    it('every level gained flashes big', () => {
         level(4, 5, 'h1');
         level(74, 75, 'h2');
         level(6, 7, 'h3');
-        expect(currentFlashes().map(f => [f.heroId, f.size])).toEqual([['h1', 'small'], ['h2', 'big']]);
+        expect(currentFlashes().map(f => [f.heroId, f.size])).toEqual([['h1', 'big'], ['h2', 'big'], ['h3', 'big']]);
     });
 
     it('plays once over the hero and is gone, asking for no frames at rest', () => {
@@ -150,12 +145,10 @@ describe('a level-up on the mat', () => {
         }
     });
 
-    it('a hero already flashing keeps theirs unless the new one is bigger', () => {
+    it('a hero already flashing keeps theirs', () => {
         level(4, 5);
-        const small = currentFlashes()[0];
+        const first = currentFlashes()[0];
         level(14, 15);
-        expect(currentFlashes()).toEqual([small]);
-        level(9, 10);
-        expect(currentFlashes().map(f => f.size)).toEqual(['big']);
+        expect(currentFlashes()).toEqual([first]);
     });
 });
