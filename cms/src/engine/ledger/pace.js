@@ -145,25 +145,27 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     // ── supply: Bare first (it prices every boost), then the profiles that buy them ─────────────
     const supplyMemo = new Map();
     const fedMemo = new Map();
-    // Per open supply or fed question, innermost last: whether it read an item in stock from a question outside it.
+    // Per open supply or fed question, innermost last: the outermost question it read an item in stock
+    // from (that question's place here), Infinity while it read none: its answer then stands on its own.
     const open = [];
-    // Beside each open question: the items it read in stock from outside it.
-    const reads = [];
+    // Beside each, a number no other question gets: whether the question at a place is still the same one.
+    const asks = [];
+    let asked = 0;
     const enter = () => {
-        reads.push({ inStock: new Set() });
-        return open.push(false) - 1;
+        asks.push(asked++);
+        return open.push(Infinity) - 1;
     };
-    /** Closes the innermost question: whether its answer stands on its own (it read no stand-in from outside it), and what it read. */
-    const leave = () => ({ kept: !open.pop(), read: reads.pop() });
-    /** An item read in stock: every open question inside its making read a stand-in. */
-    const readInStock = (itemId, stack) => {
-        for (let i = stack.get(itemId) + 1; i < open.length; i++) {
-            open[i] = true;
-            reads[i].inStock.add(itemId);
-        }
+    /** Closes the innermost question: the outermost question it read a stand-in from, Infinity when none. */
+    const leave = () => {
+        asks.pop();
+        return open.pop();
+    };
+    /** The item asked at `at` read in stock: every open question inside its making read a stand-in. */
+    const readInStock = (at) => {
+        for (let i = at + 1; i < open.length; i++) if (open[i] > at) open[i] = at;
     };
     // A supply answer that read a stand-in, by key: kept inside the loop it was asked in, until the
-    // outermost question it read in stock (`until`, open at `at`) is answered, then forgotten with it.
+    // outermost question it read in stock (at `at`, its number `ask`) is answered, then forgotten with it.
     // ⚠️ Worked out afresh down every path through a loop instead, a loop of many drinks and potions asks
     // its answers once per path: the paths multiply with each drink, and the pace never finishes.
     const inLoop = new Map();
@@ -214,7 +216,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const times = (m) => Object.fromEntries(Object.entries(m || {}).map(([k, v]) => [k, v * scale]));
             out = { rate, scale, items: times(rate.items), xp: times(rate.xp), tokens: times(rate.tokens), inputs: times(rate.inputs), short };
         }
-        if (leave().kept) fedMemo.set(key, out);
+        if (leave() === Infinity) fedMemo.set(key, out);
         return out;
     }
 
@@ -225,13 +227,13 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         // An item asked for inside its own making (seeds for the tree that drops them) is in stock, for
         // every question inside that making: their answers are kept only inside the loop (`inLoop`).
         if (stack.has(itemId)) {
-            readInStock(itemId, stack);
+            readInStock(stack.get(itemId));
             return { perHour: Infinity, work: null, loop: true };
         }
         const held = inLoop.get(key);
-        if (held && held.stack === stack && reads[held.at] === held.until) {
-            // It leans on what it read in stock: the questions inside those makings are not kept either.
-            for (const id of held.inStock) if (stack.has(id)) readInStock(id, stack);
+        if (held && held.stack === stack && asks[held.at] === held.ask) {
+            // It leans on what it read in stock: the questions inside that making are not kept either.
+            readInStock(held.at);
             return held.best;
         }
         indexMakers();
@@ -244,14 +246,9 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             if (n > best.perHour) best = { perHour: n, work };
         }
         stack.delete(itemId);
-        const { kept, read } = leave();
-        if (kept) {
-            supplyMemo.set(key, best);
-        } else {
-            const inStock = [...read.inStock];
-            const at = Math.min(...inStock.map(id => stack.get(id)));
-            inLoop.set(key, { best, stack, inStock, at, until: reads[at] });
-        }
+        const at = leave();
+        if (at === Infinity) supplyMemo.set(key, best);
+        else inLoop.set(key, { best, stack, at, ask: asks[at] });
         return best;
     }
 
