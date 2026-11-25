@@ -25,7 +25,7 @@ function percent(value) {
   return `${v >= 1 ? Math.round(v * 10) / 10 : Number(v.toPrecision(2))}%`;
 }
 
-export default function RareTableBlock({ token, onPatch }) {
+export default function RareTableBlock({ token, onPatch, title = 'Rare drop table', dataField = 'rare-table' }) {
   const items = useEntityStore((s) => s.items);
   const table = token?.rareTable && typeof token.rareTable === 'object' ? token.rareTable : null;
   const entries = Array.isArray(table?.entries) ? table.entries : [];
@@ -41,8 +41,8 @@ export default function RareTableBlock({ token, onPatch }) {
   const setEntry = (i, patch) => write({ ...table, entries: entries.map((e, k) => (k === i ? { ...e, ...patch } : e)) });
 
   return (
-    <Section title="Rare drop table" icon={<Gem size={14} />}>
-      <div data-field="rare-table" className="space-y-3">
+    <Section title={title} icon={<Gem size={14} />}>
+      <div data-field={dataField} className="space-y-3">
         <p className="text-[11px] text-gray-500 leading-relaxed">
           A chance each cycle (or each kill of an enemy) to roll this table; on a hit one find, picked
           by weight, drops like any output, after the Token&apos;s own. Double Loot and Double Item work

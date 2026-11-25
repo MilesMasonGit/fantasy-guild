@@ -187,6 +187,7 @@ export {
   tierValue,
 } from '../../../src/config/registries/toolKinds.js';
 export { toolFindings } from '../../../src/systems/core/toolRule.js';
+export { crimeFindings } from '../../../src/systems/core/crimeRule.js';
 // Tools and weapons that break: an item's chance per cycle, for the item editor's Break chance field. The game's own reading.
 export { breakChanceOf, canBreak, BREAK_CHANCE_MAX } from '../../../src/config/registries/itemBreak.js';
 // Milestone perks: the shape of a skill's perk table and the content checks for one. The game's own rules and wording.
@@ -195,6 +196,10 @@ export { perkFindings } from '../../../src/systems/core/perkRule.js';
 // A water Token's catch pools (tool kind × bait → a weighted catch): the game's own reader, so the Catch pools block and the game read the same pools.
 export { catchPoolsOf, hasCatchPools, catchItemIds, baitItemIds } from '../../../src/config/registries/catchPools.js';
 export { rareTableOf, rareTableChance, rareEntryChances } from '../../../src/config/registries/rareTables.js';
+// Crime: an enemy's steal table and a Hideout's caught curve (`crime.js`).
+export {
+  HIDEOUT_KIND, CAUGHT_DEFAULTS, caughtCurveOf, caughtChance, stealOf, hasStealTable, crimeLevelOf
+} from '../../../src/config/registries/crime.js';
 // Bait is carried in a Consumable cell: the Catch pools block offers only items of a consumable category.
 export { isConsumableCategory } from '../../../src/config/registries/equipmentCategories.js';
 // How a carried food, drink or potion is used (an elixir's fights, a drink's work cycles, a work potion's one cycle), and that its always-on rules do nothing: the game's own rule and wording.

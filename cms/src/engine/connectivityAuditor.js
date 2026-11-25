@@ -1,4 +1,4 @@
-import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, gearDefenceFindings, effectStackFindings, hallStarFindings } from '../utils/constants';
+import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, crimeFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, gearDefenceFindings, effectStackFindings, hallStarFindings } from '../utils/constants';
 import { eventProblems, EVENT_BIOMES } from '../../../src/config/eventTable.js';
 import { STANDS_ON_CHOICES } from '../../../src/systems/atlas/TerrainMap.js';
 
@@ -12,7 +12,7 @@ const tokenSkill = (token) => token?.config?.skill ?? token?.skill ?? token?.ski
 const tokenLevel = (token) => token?.config?.skillRequired ?? token?.skillRequirement ?? 1;
 
 export function auditConnectivity(entities, solverRefusals = []) {
-  const { items = {}, tokens = {}, recipes = {}, enemies = {}, effects = {}, skillPerks = null, hallSky = null, events = null } = entities;
+  const { items = {}, tokens = {}, recipes = {}, enemies = {}, effects = {}, skillPerks = null, hallSky = null, events = null, world = null } = entities;
   const issues = [];
 
   const allItems = Object.values(items || {});
@@ -215,6 +215,19 @@ export function auditConnectivity(entities, solverRefusals = []) {
 
   // Gathering tools: a tool no hero can hold, a need no tool answers, content still written as tool Tokens. The game's own rule (`toolRule.js`), so this tab and the boot audit say the same thing. Expanded Tokens, so a tool Token's Acts as is seen.
   for (const f of toolFindings({ items, tokens: expandedTokens, recipes })) {
+    issues.push({
+      entityId: f.entityId,
+      entityName: f.entityName,
+      entityType: f.entityType,
+      issueType: 'Data Integrity',
+      severity: 'Warning',
+      details: f.message.charAt(0).toUpperCase() + f.message.slice(1) + '.',
+    });
+  }
+
+  // Crime: a steal table no thief can roll, a caught curve out of range, a Hideout's own drops. The game's own rule (`crimeRule.js`); the boss camps are the world tables' own.
+  const bossCampIds = (Array.isArray(world?.kits) ? world.kits : []).flatMap((k) => (Array.isArray(k?.bossCamps) ? k.bossCamps : []));
+  for (const f of crimeFindings({ items, tokens: expandedTokens, recipes, bossCampIds })) {
     issues.push({
       entityId: f.entityId,
       entityName: f.entityName,

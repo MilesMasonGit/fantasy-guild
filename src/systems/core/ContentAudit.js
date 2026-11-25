@@ -23,6 +23,7 @@ import { isWorkedWithoutSkill, WORK_SKILL_WHY } from './workSkillRule.js';
 import { auditLifecycleBlocks } from './lifecycleAudit.js';
 import { findUnknownRefs } from './unknownRefRule.js';
 import { toolFindings } from './toolRule.js';
+import { crimeFindings } from './crimeRule.js';
 import { isSpentCategory, isAlwaysOn, ALWAYS_ON_IDLE_WHY } from './consumableRule.js';
 import { SKILLS } from '../../config/registries/skillRegistry.js';
 import { listRecipes } from '../../config/registries/recipePoolRegistry.js';
@@ -698,6 +699,18 @@ function auditTools(out) {
 }
 
 /**
+ * Crime: a steal table no thief can roll (on a Token that is no enemy, on a boss, naming a missing
+ * item), a caught curve out of range, a Hideout's own outputs that never land. The rule lives in
+ * `crimeRule.js`, shared with the CMS Economy Audit.
+ */
+function auditCrime(out) {
+    const bossCampIds = (worldTables()?.kits || []).flatMap(k => k?.bossCamps || []);
+    for (const f of crimeFindings({ tokens: TOKENS, items: ITEMS, recipes: listRecipes(), bossCampIds })) {
+        out.push(finding(`${f.entityType} "${f.entityId}"`, f.message));
+    }
+}
+
+/**
  * Milestone perks: a table on a skill the game does not have, a perk at a level no hero reaches or
  * naming a missing effect, a rule that does nothing on a hero. The rule lives in `perkRule.js`,
  * shared with the CMS Economy Audit.
@@ -771,7 +784,7 @@ function auditWorldBiomes(out) {
 export function auditContent({ starterCamp = null } = {}) {
     const out = [];
     const steps = [
-        auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditTools, auditPerks, auditHallStars,
+        auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditTools, auditCrime, auditPerks, auditHallStars,
         auditGearDefence, auditEffectStacks, auditEvents, auditWorldBiomes,
         (o) => auditStarterCamp(o, starterCamp)
     ];
