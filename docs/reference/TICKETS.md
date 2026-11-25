@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-707**
+**Next free number: T-712**
 
 ---
 
@@ -186,6 +186,11 @@ here.
 | T-704 | P3 | open | *Brief 810 K4. For: director.* **A Quiet effect for the Hideout**: a CMS effect that lowers a thief's caught odds, for the Hideout's Quiet variant ([content_crime.md](../active/content_crime.md)). Build with K4. | owner 2026-11-25 |
 | T-705 | P2 | open | *Brief 810 K3. For: director.* **Faith's five blessing effects**, as CMS effects a shrine carries on Tokens and heroes in its reach while lit: nodes can't run out; a sure rare find every so many cycles (replaces the next-tier gift, owner 2026-11-25); never Defeated (flee at 0 HP, keep everything, still wounded, Fled in the log); shared XP among heroes working or fighting in reach, same skill, never re-shared; a chance a finished cycle repeats for free. Blessings add up ([content_faith.md](../active/content_faith.md)). | owner 2026-11-25 |
 | T-706 | P2 | open | *For: content agent.* **The enemy roster pack**: the 25 enemies of [content_enemies.md](../active/content_enemies.md) as Planned entries with camps, biomes, fight drops and steal tables; match each new material to a job (Alchemy's late potions first) or cut it. | owner 2026-11-25 |
+| T-707 | P3 | open | *For: director.* **Mastery ranks reached during time away are not in the away summary**: the Mastery banner is silenced during catch-up and the summary never names them (810 K6). | K6 builder 2026-11-25 |
+| T-708 | P4 | open | *For: director.* **A Summoned worker vanishes at zero charges with no word**: add an out-of-charges bubble or popup (810 K5). | K5 builder 2026-11-25 |
+| T-709 | P4 | open | *For: director.* **Small cleanups**: the summon audit calls Crime a making skill (Crime, Faith, Science, Summoning have no trade); CMS lint errors `maxLevel` in connectivityAuditor and `_drop` in TokenEditor's EnemyCoinDrop; the Can't Run Out field starts at 0% in the CMS (an author must type 100); the generic flag effect code now has no user. | join engineers 2026-11-25 |
+| T-710 | P3 | open | *For: director.* **Retire the game-time effect clock (`durationMs`)**: no content uses it; touches LiveEffects timed instances, SaveMigration, the sentence writer, the CMS slot and about 15 test files (740 C5 leftover). | C5 builder 2026-11-25 |
+| T-711 | P4 | open | *For: director.* **A vein's card still says 1 in 5 to run out while a Motherlode hero works it**, and the Token card's effect badges don't list the four gathering perks (800 P1/P2). | P1/P2 builder 2026-11-25 |
 
 ### Code review round 4 (triaged 2026-11-07)
 
