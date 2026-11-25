@@ -115,6 +115,11 @@ registerTokenTypes({
         id: 'k5_summoned_fisher', name: 'Summoned Fixture Fisher', rarity: 'common', theme: 'fixture', sprite: 's_occult',
         summon: { of: 'k5_slime', skills: { fishing: 10 } }
     },
+    /** A support giving every cycle beside it an Echo: it repeats at once, for free. */
+    k5_echo: {
+        id: 'k5_echo', name: 'Fixture Echo', tokenType: 'buff', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature', requiresHero: false,
+        statements: [{ id: 'stm_k5_echo', keyword: KEYWORD.PROVIDES, to: { mode: 'all', value: '' }, reach: 'nearby', payload: { type: EFFECT_TYPES.ECHO, bucket: 'flat', value: 100 } }]
+    },
     k5_tree: {
         id: 'k5_tree', name: 'Fixture Tree', tokenType: 'resource', rarity: 'common', theme: 'fixture',
         uses: null, sprite: 's_nature',
@@ -251,6 +256,17 @@ describe('⭐ a Summoning Circle calls and charges its one Summoned worker', () 
         run(4000);
         expect(summoned()).toHaveLength(1);
         expect(summoned()[0].summon.charges).toBe(8);
+    });
+
+    it('an Echo on the Circle repeats its cycle but charges its Summoned worker once', () => {
+        placeAt('k5_echo', CIRCLE.x + 160, CIRCLE.y);
+        circleAt();
+        TileModifiers.rebuildAll();
+        run(2000);
+        // The Echo did repeat the cycle: its hero learnt the recipe's XP twice.
+        expect(GameState.state.heroes.find(h => h.id === 'summoner').skills.summoning.xp).toBe(xpForLevel(10) + 14);
+        expect(summoned()).toHaveLength(1);
+        expect(summoned()[0].summon.charges).toBe(4);
     });
 
     it('a Circle\'s charges grow with its hero\'s Summoning level', () => {
