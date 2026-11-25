@@ -68,7 +68,7 @@ Replaces the lines it clashes with above and in [concept_skill_loops.md](concept
    keeping today's average of 5 logs), **no counter**.
 2. **The axe gate stays** (5 Nov): Copper for Oak and Fir, Iron for Birch and Maple, Mythril for
    Cedar, Adamantine for Mahogany, Darkmetal for Ebony; a better axe is also faster.
-3. **The Nursery, Forestry's gathering foundation, becomes a Forest** of a chosen species, paid in that
+3. **Farmland becomes a Forest** (owner 2026-11-25: no Nursery; Farmland on grass builds Forests as well as Fields) of a chosen species, paid in that
    species' seeds as a Forest is today
    ([concept_gathering_foundations.md](concept_gathering_foundations.md)). Wild Forests on the map stay.
 4. **No seedling per Sapling**: a Forest in reach regrows Stumps and plants Saplings for free; the

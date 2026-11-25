@@ -54,7 +54,7 @@ clashes with above and in [concept_skill_loops.md](concept_skill_loops.md) "Farm
 2. **Seeds stay for Fields**: each replant spends a seed of the picked crop; with none, the Field
    waits with its yellow '!'. Harvests give some seeds back. (Forestry dropped its seedlings; Farming
    keeps them as its own loop.)
-3. **Farmland, Farming's gathering foundation, becomes a Field, an Orchard or a Herb Garden**
+3. **Farmland, Farming's gathering foundation, becomes a Field, an Orchard, a Herb Garden or a Forest (owner 2026-11-25, no Nursery)**
    ([concept_gathering_foundations.md](concept_gathering_foundations.md)). The supports (Well,
    Composter, Beehive, Windmill) stay on today's Foundations.
 4. **Orchards follow Forests**: an Orchard plants a few fruit trees of its kind and refruits its own;

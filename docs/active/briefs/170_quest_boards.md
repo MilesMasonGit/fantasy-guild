@@ -1,5 +1,7 @@
 # Brief 170 — The quest board
 
+> **Cut** (owner 2026-11-25): quests are cut from the game. Not to be built.
+
 > **Postponed** (owner, 2026-10-20): the brief is ready but is not built
 > until later mechanics show what quests should be for. Re-check the concept
 > with the owner before building.
