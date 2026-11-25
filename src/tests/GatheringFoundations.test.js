@@ -39,14 +39,13 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 /**
- * ⭐ **Gathering foundations** (brief 860 R3; `concept_gathering_foundations.md`). Each gathering
- * skill has its own Foundation, bought like the Wood and Stone Foundations and built by a
- * Construction hero into that skill's sources:
+ * ⭐ **Gathering foundations** (brief 860 R3; `concept_gathering_foundations.md`). Three gathering
+ * Foundations, bought like the Wood and Stone Foundations and built by a Construction hero into
+ * their skills' sources (owner 2026-11-25: Farmland plants Forests too):
  * - **Excavation** stands on Stone and digs a vein of the ore its Prospecting Map names, the map
  *   spent on the build;
- * - **Nursery** stands on any dry land and becomes a Forest of a chosen species, paid in its seeds,
- *   which plants and regrows its own trees (R2);
- * - **Farmland** stands on grass and becomes a Field, an Orchard or a Herb Garden;
+ * - **Farmland** stands on grass and becomes a Field, an Orchard, a Herb Garden, or a Forest of a
+ *   chosen species, paid in its seeds, which plants and regrows its own trees (R2);
  * - **Dock** stands on the shore and builds the Fishing Hut, the spot building and the Bait Shed.
  * A Foundation keeps its own ground once a build is chosen: an Excavation set to dig a vein (a
  * vein names no ground of its own) still stands only on Stone.
@@ -86,7 +85,6 @@ const felling = { skill: 'forestry', skillRequired: 1, cycleTimeMs: 2000, xp: 1,
 
 registerTokenTypes({
     gf_excavation: foundation('gf_excavation', 'GF Excavation', 'excavation', ['stone']),
-    gf_nursery: foundation('gf_nursery', 'GF Nursery', 'nursery'),
     gf_farmland: foundation('gf_farmland', 'GF Farmland', 'farmland', ['grass']),
     gf_dock: foundation('gf_dock', 'GF Dock', 'dock', ['shore']),
     gf_wood_foundation: foundation('gf_wood_foundation', 'GF Wood Foundation', 'wood'),
@@ -128,7 +126,7 @@ const build = (id, kind, tokenId, inputs = []) => ({
 registerRecipePools({
     construction: [
         build('gf_dig_copper', 'excavation', 'gf_vein', [{ itemId: MAP, quantity: 1 }]),
-        build('gf_plant_oaks', 'nursery', 'gf_forest', [{ itemId: SEED, quantity: 3 }]),
+        build('gf_plant_oaks', 'farmland', 'gf_forest', [{ itemId: SEED, quantity: 3 }]),
         build('gf_plant_orchard', 'farmland', 'gf_orchard'),
         build('gf_build_hut', 'dock', 'gf_hut'),
         build('gf_build_bait_shed', 'dock', 'gf_bait_shed'),
@@ -230,8 +228,7 @@ describe('each gathering Foundation stands on its own ground, and is refused els
     const cases = [
         ['an Excavation', 'gf_excavation', [STONE], [[GRASS, 'Needs stone.'], [SHORE, 'Needs stone.']]],
         ['a Farmland', 'gf_farmland', [GRASS, SHORE], [[STONE, 'Needs grass.']]],
-        ['a Dock', 'gf_dock', [SHORE], [[GRASS, 'Needs the shore.'], [STONE, 'Needs the shore.']]],
-        ['a Nursery', 'gf_nursery', [GRASS, STONE, SHORE], []]
+        ['a Dock', 'gf_dock', [SHORE], [[GRASS, 'Needs the shore.'], [STONE, 'Needs the shore.']]]
     ];
     for (const [label, typeId, good, bad] of cases) {
         it(`${label} goes down on its ground and nowhere else`, () => {
@@ -306,10 +303,10 @@ describe('⭐ a Foundation keeps its own ground once a build is chosen', () => {
         expect(both.reason).toBe('Needs stone.');
     });
 
-    it('a Nursery set to plant a Forest goes anywhere dry, as a Forest does', () => {
-        const f = put('gf_nursery', GRASS);
+    it('a Farmland set to plant a Forest (which names no ground) stays on grass', () => {
+        const f = put('gf_farmland', GRASS);
         StationRecipe.setSelectedRecipe(f, 'gf_plant_oaks');
-        expect(Placement.placeTokenAt(f, STONE, { excludeId: f.id }).success).toBe(true);
+        expect(Placement.placeTokenAt(f, STONE, { excludeId: f.id })).toMatchObject({ success: false, reason: 'Needs grass.' });
         expect(Placement.placeTokenAt(f, SHORE, { excludeId: f.id }).success).toBe(true);
     });
 
@@ -364,10 +361,10 @@ describe('an Excavation digs a vein of the ore its Prospecting Map names', () =>
     });
 });
 
-describe('a Nursery becomes a Forest of the chosen species, which owns its trees (R2)', () => {
+describe('a Farmland becomes a Forest of the chosen species, which owns its trees (R2)', () => {
     it('paid in its seeds, it plants its allowance in reach, every tree its own', () => {
         InventoryManager.addItem(SEED, 3);
-        const f = building('gf_nursery', 'gf_plant_oaks', GRASS);
+        const f = building('gf_farmland', 'gf_plant_oaks', GRASS);
         run(2500);
         expect(BoardState.getTokenById(f.id)).toBeNull();
         expect(InventoryManager.getItemCount(SEED)).toBe(0);
@@ -381,7 +378,7 @@ describe('a Nursery becomes a Forest of the chosen species, which owns its trees
     });
 
     it('without its seeds it waits and builds nothing', () => {
-        const f = building('gf_nursery', 'gf_plant_oaks', GRASS);
+        const f = building('gf_farmland', 'gf_plant_oaks', GRASS);
         run(4000);
         expect(BoardState.getTokenById(f.id)).toBeTruthy();
         expect(onMat('gf_forest')).toHaveLength(0);
@@ -390,7 +387,7 @@ describe('a Nursery becomes a Forest of the chosen species, which owns its trees
 
     it('its felled tree’s Stump regrows; once the Forest is demolished, its Stumps never do', () => {
         InventoryManager.addItem(SEED, 3);
-        building('gf_nursery', 'gf_plant_oaks', GRASS);
+        building('gf_farmland', 'gf_plant_oaks', GRASS);
         run(2500);
         const [forest] = onMat('gf_forest');
         Flags.furl('h1');

@@ -226,7 +226,7 @@ describe('Renames reach the lifecycle blocks', () => {
 describe('The recipe field foundationKinds', () => {
     it('is the game’s list, re-exported rather than copied', () => {
         expect(FOUNDATION_KINDS).toBe(GAME_FOUNDATION_KINDS);
-        expect([...FOUNDATION_KINDS]).toEqual(['wood', 'stone', 'farmland', 'excavation', 'nursery', 'dock', 'battlefield']);
+        expect([...FOUNDATION_KINDS]).toEqual(['wood', 'stone', 'farmland', 'excavation', 'dock', 'battlefield']);
     });
 
     it('survives load → edit → Recalculate → Sync, and absent stays absent', () => {
@@ -324,7 +324,7 @@ describe('The Token editor’s Lifecycle section', () => {
         expect(useEntityStore.getState().tokens[id].foundation.tier).toBe(1);
     });
 
-    it('the Foundation block offers every gathering kind: a Nursery and a Dock reach tokens.json', () => {
+    it('the Foundation block offers every gathering kind: an Excavation and a Dock reach tokens.json', () => {
         const id = useEntityStore.getState().addToken({ name: 'Kind Fixture' });
         useEntityStore.getState().updateToken(id, { foundation: { kind: 'wood', skill: 'construction' } });
         useEntityStore.getState().setActiveEntity(id, 'token');
@@ -332,10 +332,11 @@ describe('The Token editor’s Lifecycle section', () => {
         const kindSelect = () => [...container.querySelectorAll('[data-block="foundation"] select')]
             .find((s) => [...s.options].some((o) => o.value === 'wood'));
         const labels = [...kindSelect().options].map((o) => o.textContent);
-        expect(labels).toEqual(expect.arrayContaining(['Excavation', 'Nursery', 'Dock', 'Farmland']));
+        expect(labels).toEqual(expect.arrayContaining(['Excavation', 'Dock', 'Farmland']));
+        expect(labels).not.toContain('Nursery');
 
-        fireEvent.change(kindSelect(), { target: { value: 'nursery' } });
-        expect(syncPayload()['tokens.json'][id].foundation).toEqual({ kind: 'nursery', skill: 'construction' });
+        fireEvent.change(kindSelect(), { target: { value: 'excavation' } });
+        expect(syncPayload()['tokens.json'][id].foundation).toEqual({ kind: 'excavation', skill: 'construction' });
         fireEvent.change(kindSelect(), { target: { value: 'dock' } });
         expect(syncPayload()['tokens.json'][id].foundation).toEqual({ kind: 'dock', skill: 'construction' });
     });

@@ -181,17 +181,17 @@ describe('The Recipe editor’s building flow', () => {
         expect(container.querySelector('[data-testid="builds-column"]')).toBeNull();
     });
 
-    it('a building recipe can be ticked onto a Nursery or a Dock', () => {
+    it('a building recipe can be ticked onto an Excavation or a Dock', () => {
         clearConstructionPool();
         useEntityStore.getState().addRecipe('construction', { name: 'Build Gathering' });
 
         const { container } = render(React.createElement(RecipeEditor));
         fireEvent.click(screen.getByText('Construction'));
         const row = () => container.querySelector('[data-testid="foundation-kinds"]');
-        fireEvent.click(within(row()).getByLabelText('Nursery'));
-        expect(useEntityStore.getState().recipePools.construction[0].foundationKinds).toEqual(['nursery']);
+        fireEvent.click(within(row()).getByLabelText('Excavation'));
+        expect(useEntityStore.getState().recipePools.construction[0].foundationKinds).toEqual(['excavation']);
         fireEvent.click(within(row()).getByLabelText('Dock'));
-        expect(useEntityStore.getState().recipePools.construction[0].foundationKinds).toEqual(['nursery', 'dock']);
+        expect(useEntityStore.getState().recipePools.construction[0].foundationKinds).toEqual(['excavation', 'dock']);
     });
 
     it('a building recipe edits its minimum Foundation tier; unticking every kind drops it', () => {

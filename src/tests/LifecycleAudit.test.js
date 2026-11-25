@@ -247,14 +247,16 @@ describe('Lifecycle audit — errors: shape rules', () => {
 
     it('a foundation kind that is not one of FOUNDATION_KINDS', () => {
         expectOne((w) => { w.tokens.token_stone_foundation.foundation.kind = 'marble'; },
-            { id: 'token_stone_foundation', field: 'foundation.kind', includes: ['marble', 'wood, stone, farmland, excavation, nursery, dock, battlefield'] });
+            { id: 'token_stone_foundation', field: 'foundation.kind', includes: ['marble', 'wood, stone, farmland, excavation, dock, battlefield'] });
     });
 
-    it('a Nursery and a Dock are Foundation kinds, on a Token and on a building recipe', () => {
+    it('a Dock is a Foundation kind, on a Token and on a building recipe; a Nursery is not (Farmland plants Forests)', () => {
         const world = clean();
-        world.tokens.token_stone_foundation.foundation.kind = 'nursery';
-        world.recipes.recipe_build_furnace.foundationKinds = ['nursery', 'dock'];
+        world.tokens.token_stone_foundation.foundation.kind = 'dock';
+        world.recipes.recipe_build_furnace.foundationKinds = ['dock'];
         expect(auditLifecycleBlocks(world)).toEqual([]);
+        expectOne((w) => { w.tokens.token_stone_foundation.foundation.kind = 'nursery'; },
+            { id: 'token_stone_foundation', field: 'foundation.kind', includes: 'nursery' });
     });
 
     it('a shop skill icon that is not a real skill', () => {
