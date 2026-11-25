@@ -240,7 +240,8 @@ describe('Can\'t Run Out: a lit shrine\'s nodes never run out', () => {
         const payload = { type: EFFECT_TYPES.NEVER_RUNS_OUT, bucket: 'flat', value: 1 };
         expect(effectTag(entry, payload).text).toBe('Can\'t Run Out');
         expect(renderStatement({ keyword: KEYWORD.PROVIDES, reach: 'nearby', to: { mode: 'all', value: '' }, payload }))
-            .toMatch(/can't run out/i);
+            .toBe('Can\'t Run Out on every nearby Token.');
+        expect(effectParts({ keyword: KEYWORD.PROVIDES, payload })).toBeNull();
     });
 });
 

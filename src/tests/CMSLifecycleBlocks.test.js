@@ -90,6 +90,7 @@ function everyBlock() {
         respawn: { mode: 'refill', afterMs: 15000 },
         field: { emptySprite: 't_farmland', growingSprite: 't_garden' },
         camp: { skill: 'forestry', reach: 280 },
+        shrine: { maxLitMs: 120000 },
     };
 }
 

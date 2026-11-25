@@ -313,6 +313,8 @@ function headSegments(statement, names) {
     if (payload.type === EFFECT_TYPES.XP_FOR_EVERYONE) return actionSegments(statement, names);
 
     const name = fx(d(effectName(entry, payload.type), 'type'), payload.type);
+    // An on-or-off effect (Can't Run Out) has no number, so no amount to click.
+    if (entry.flag) return value > 0 ? segs(name) : segs(name, ' off');
     if (!value) return segs(name, ' ', d('unchanged', 'value'));
     const amount = d(effectAmount(entry, payload).text, 'value');
 

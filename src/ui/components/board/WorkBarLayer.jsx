@@ -131,8 +131,10 @@ const SHRINE_ROUTES = Object.freeze([
  * no plates on the mat, the shrine's timer on its bar). Hidden while it is out and untended.
  */
 const ShrineBar = memo(function ShrineBar({ tokenId, x, y, typeId, fit, matH }) {
-    const bar = useTokenState(tokenId, () => shrineBarOf(tokenId), () => ({
+    // `HERO_MOVED` names the Token a hero goes to: its tender leaving is heard by the tender's id.
+    const bar = useTokenState(tokenId, () => shrineBarOf(tokenId), (state) => ({
         byId: SHRINE_ROUTES,
+        byKey: [{ event: BOARD_EVENTS.HERO_MOVED, field: 'heroId', key: state?.heroId ?? null }],
         broadcast: [ENGINE_EVENTS.GAME_RESET]
     }));
     const [model] = useState(() => createLitBar());
