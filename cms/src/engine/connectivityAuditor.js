@@ -1,4 +1,4 @@
-import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, spotFindings, fishFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, gearDefenceFindings, effectStackFindings, hallStarFindings } from '../utils/constants';
+import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, spotFindings, fishFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, gearDefenceFindings, effectStackFindings, hallStarFindings, coinWorthFindings } from '../utils/constants';
 import { eventProblems, EVENT_BIOMES } from '../../../src/config/eventTable.js';
 import { STANDS_ON_CHOICES } from '../../../src/systems/atlas/TerrainMap.js';
 
@@ -239,6 +239,18 @@ export function auditConnectivity(entities, solverRefusals = []) {
 
   // Fishing spots: a retired fixed water still here, a spot kind that can never land or catches nothing, a water or biome the game lacks (`spotRule.js`, as the boot audit says it).
   for (const f of spotFindings({ tokens })) {
+    issues.push({
+      entityId: f.entityId,
+      entityName: f.entityName,
+      entityType: f.entityType,
+      issueType: 'Data Integrity',
+      severity: 'Warning',
+      details: f.message.charAt(0).toUpperCase() + f.message.slice(1) + '.',
+    });
+  }
+
+  // An item's Coin worth the game cannot read (`itemCoins.js`), in the boot audit's words.
+  for (const f of coinWorthFindings({ items })) {
     issues.push({
       entityId: f.entityId,
       entityName: f.entityName,

@@ -3,6 +3,9 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { cn } from '../../utils/cn.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
+import { bankStacksWorth, sellBankStacks } from '../../../systems/inventory/Coins.js';
+import { coinsText } from '../base/coinsText.js';
+import { KitButton, KIT_BUTTON_TONE } from '../base/KitButton.jsx';
 import * as EquipmentManager from '../../../systems/equipment/EquipmentManager.js';
 import { unequipOrAnnounce } from '../dock/dockEquip.js';
 import { useEntityDrag, useEntityDrop, DropTarget, mergeRefs } from '../../dnd/DndKit.jsx';
@@ -34,9 +37,10 @@ import { pickBankItem, lastPickedBankItem, chooseShownEntry, setShownBankEntry }
 export const BankTab = () => {
     const [activeTabId, setActiveTabId] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
-    // Select mode: multi-select stacks to drag-move between tabs.
+    // Select mode: multi-select stacks to drag-move between tabs, or to sell at once.
     const [selectMode, setSelectMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState(() => new Set());
+    const [confirmingSale, setConfirmingSale] = useState(false);
     // The item last clicked, kept for the session (`bankInspection.js`); the Item drawer shows it.
     const [pickedId, setPickedId] = useState(lastPickedBankItem);
 
@@ -178,6 +182,7 @@ export const BankTab = () => {
     const exitSelectMode = () => {
         setSelectMode(false);
         setSelectedIds(new Set());
+        setConfirmingSale(false);
     };
 
     // Live entries for the current selection (stale ids drop out naturally).
@@ -185,6 +190,13 @@ export const BankTab = () => {
         () => stocked.filter(e => selectedIds.has(e.id)),
         [stocked, selectedIds]
     );
+    // Only the Bank's stacks are sold: worn copies stay worn.
+    const sale = confirmingSale && selectedEntries.length > 0 ? bankStacksWorth(selectedEntries.map(e => e.id)) : null;
+    const sellSelected = () => {
+        sellBankStacks(selectedEntries.map(e => e.id));
+        setSelectedIds(new Set());
+        setConfirmingSale(false);
+    };
 
     return (
         <div className="h-full min-h-0 flex flex-row">
@@ -197,7 +209,7 @@ export const BankTab = () => {
                     firstItemByTab={Object.fromEntries(bank.groupOrder.map(gid => [gid, tabItems[gid]?.[0]?.template || null]))}
                     onDropToTab={handleTabDrop}
                 />
-                <Tooltip lines={[selectMode ? 'Exit select mode' : 'Select multiple items to move']}>
+                <Tooltip lines={[selectMode ? 'Exit select mode' : 'Select multiple items to move or sell']}>
                 <button
                     onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
                     className={cn(
@@ -214,12 +226,20 @@ export const BankTab = () => {
                     onSortTab={() => sortTabs([currentTabId])}
                     onSortAll={() => sortTabs(bank.groupOrder)}
                 />
-                {/**
-                 * No Sell button: nothing sells to the merchant. Select mode only moves
-                 * stacks.
-                 */}
                 {selectMode && (
                     <span className="text-(length:--font-size-xs) text-gi-muted tabular-nums">{selectedEntries.length} selected</span>
+                )}
+                {selectMode && (
+                    <Tooltip lines={[t('bank.sellSelectedTip')]}>
+                    <button
+                        data-bank-sell-selected
+                        disabled={selectedEntries.length === 0}
+                        onClick={() => setConfirmingSale(true)}
+                        className="ui-pixel-edge flex items-center gap-1.5 px-2 py-1 text-(length:--font-size-xs) font-bold uppercase tracking-wide transition-colors cursor-pointer text-[var(--color-ui-gold)] hover:text-gi-text disabled:opacity-40 disabled:cursor-default"
+                    >
+                        {t('bank.sellSelected')}
+                    </button>
+                    </Tooltip>
                 )}
                 <BankSearch value={searchQuery} onChange={setSearchQuery} />
                 <Tooltip lines={searching
@@ -239,6 +259,24 @@ export const BankTab = () => {
                 </span>
                 </Tooltip>
             </div>
+
+            {sale && (
+                <div className="shrink-0 flex flex-wrap items-center gap-2 gi-drawer-pad-x py-2 border-b border-gi-border/40">
+                    <p data-bank-sell-confirm className="w-full ui-text-small text-amber-200 leading-snug">
+                        {t('bank.sellSelectedConfirm', {
+                            stacks: t('bank.stacks', { count: sale.stacks, amount: sale.stacks.toLocaleString('en-US') }),
+                            items: t('bank.items', { count: sale.count, amount: sale.count.toLocaleString('en-US') }),
+                            pay: coinsText(sale.coins)
+                        })}
+                    </p>
+                    <KitButton tone={KIT_BUTTON_TONE.MAIN} onClick={sellSelected} buttonClassName="py-1 px-3 text-xs" data-bank-sell-yes>
+                        {t('common.confirm')}
+                    </KitButton>
+                    <KitButton tone={KIT_BUTTON_TONE.PLAIN} onClick={() => setConfirmingSale(false)} buttonClassName="py-1 px-3 text-xs" data-bank-sell-no>
+                        {t('common.cancel')}
+                    </KitButton>
+                </div>
+            )}
 
             {/**
              * No Upkeep toggle: the Upkeep Summary lives on the mat's top bar, so the Bank
@@ -262,7 +300,7 @@ export const BankTab = () => {
                 )}
                 {selectMode && (
                     <div className="mb-2 text-(length:--font-size-xs) text-gi-muted italic">
-                        Click items to select them — drag any selected item onto a tab to move them all.
+                        Click items to select them — drag any selected item onto a tab to move them all, or sell them all.
                     </div>
                 )}
                 {visible.length > 0 ? (
