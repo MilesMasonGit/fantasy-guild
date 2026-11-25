@@ -222,10 +222,13 @@ function onHeroSwing(p) {
     const vars = { hero: record.heroName, enemy: record.enemyName };
     const damage = Math.round(Number(p.damage) || 0);
     const typed = p.hit ? typesOf(p) : { types: [], verdict: null };
+    // A shot names its arrow ("Cara's Copper Arrow hits Goblin").
+    const arrow = p.arrowId ? { arrow: itemName(p.arrowId) } : null;
+    const keyed = (base) => (arrow ? `${base}Arrow` : base);
     if (!p.hit) {
-        say(record, { icon: 'miss', tone: TONE.MISS, key: 'heroMisses', vars });
+        say(record, { icon: 'miss', tone: TONE.MISS, key: keyed('heroMisses'), vars: { ...vars, ...arrow } });
     } else {
-        say(record, { icon: p.crit ? 'star' : 'hit', tone: TONE.HIT, key: p.crit ? 'heroCrits' : 'heroHits', vars, amount: `${damage}`, ...typed });
+        say(record, { icon: p.crit ? 'star' : 'hit', tone: TONE.HIT, key: keyed(p.crit ? 'heroCrits' : 'heroHits'), vars: { ...vars, ...arrow }, amount: `${damage}`, ...typed });
     }
     if (Number.isFinite(p.enemyHpRemaining)) record.hp.enemy.cur = Math.max(0, p.enemyHpRemaining);
     moment({ heroId: record.heroId, instanceId: record.instanceId, by: 'hero', on: 'enemy', kind: !p.hit ? MOMENT.MISS : p.crit ? MOMENT.CRIT : MOMENT.HIT, amount: damage, ...typed });

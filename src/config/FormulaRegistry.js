@@ -142,7 +142,8 @@ export function matchupMultiplier(attackerType, defenderType) {
  *   hit     = 1 + 1 per 20 levels
  *   speed   = normal (3 s)
  *   XP      = 10 × 1.065^(level − 1), rounded
- * The worked duels are in `concept_combat.md` ("The level table and weapon tiers").
+ * The worked duels are in `concept_combat.md` ("The level table and weapon tiers"); the weapon tier
+ * table is an authoring rule in `docs/reference/CONTENT_PHILOSOPHY.md` (Weapon tiers), not code.
  * ⚠️ The 4 HP per 30 levels stands where 1 armour per 30 levels stood before damage types: without
  * it the even fight at the start of the gold, mythril, adamantine and darkmetal tiers drops under
  * the owner's 10 swings (`CombatRules.test.js` checks every level).
@@ -171,22 +172,6 @@ export function enemyLevelStats(level) {
         xp: Math.max(1, roundHalfUp(t.XP_BASE * Math.pow(t.XP_GROWTH, L - 1)))
     };
 }
-
-/**
- * The proposed weapon tiers, by the smithing ingots' levels: a normal weapon's damage, a fast one
- * about 2/3 of it, a slow one about 4/3, so the three deal about the same per second. A proposal
- * for authoring; every weapon carries its own `damage`, and the
- * engine never reads this table.
- */
-export const WEAPON_TIERS = Object.freeze([
-    { tier: 'copper',     level: 1,  fast: 1, normal: 2, slow: 3 },
-    { tier: 'iron',       level: 15, fast: 2, normal: 3, slow: 4 },
-    { tier: 'silver',     level: 30, fast: 3, normal: 4, slow: 5 },
-    { tier: 'gold',       level: 45, fast: 3, normal: 5, slow: 7 },
-    { tier: 'mythril',    level: 60, fast: 4, normal: 6, slow: 8 },
-    { tier: 'adamantine', level: 75, fast: 5, normal: 7, slow: 9 },
-    { tier: 'darkmetal',  level: 90, fast: 5, normal: 8, slow: 11 }
-]);
 
 // --- The Rules tick -------------------------------------------------------------------------
 

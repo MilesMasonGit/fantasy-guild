@@ -15,7 +15,7 @@ import { toolOf, HAND_CATEGORY } from './toolKinds.js';
  */
 
 /**
- * Whether an item is an off-hand item (a shield, a quiver, a focus orb): held in one hand beside a
+ * Whether an item is an off-hand item (a shield): held in one hand beside a
  * weapon, never swung, lending its resistances and its rules like a piece of armour.
  * `offHand: true` on a hand item that is not a gathering tool.
  */

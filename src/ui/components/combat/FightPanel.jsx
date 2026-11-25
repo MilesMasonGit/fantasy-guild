@@ -293,7 +293,7 @@ const StyleValue = ({ side, shown }) => {
     const style = styleName(side.style);
     return (
         <Value
-            tip={style ? t('fight.tip.level', { name: side.name, style, level: levelText(side.level) }) : t(side.armed ? 'fight.tip.noStyleArmed' : 'fight.tip.noStyle', { name: side.name })}
+            tip={style ? t('fight.tip.level', { name: side.name, style, level: levelText(side.level) }) : null}
             data-fight-style={side.style || 'none'}
         >
             {side.style && side.style !== shown ? <SkillIcon skill={side.style} size={16} /> : null}

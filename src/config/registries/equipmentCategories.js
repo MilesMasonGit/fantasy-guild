@@ -19,7 +19,7 @@ export const GRID_SLOT_COUNT = 9;
  *
  *   gear        — worn equipment; contributes stats, can be damaged/lost
  *   sustenance  — food & drink, consumed on need (the 25% rule)
- *   consumable  — potions, scrolls, runes
+ *   consumable  — potions, elixirs, poisons, bait, arrows, Motes
  */
 export const CATEGORY_KINDS = {
     GEAR: 'gear',
@@ -62,7 +62,7 @@ export const EQUIPMENT_CATEGORY_DEFS = [
         label: 'Consumable',
         icon: '🧪',
         kind: CATEGORY_KINDS.CONSUMABLE,
-        // Uncapped on purpose: a wall of scrolls is a legitimate build.
+        // Uncapped on purpose: a wall of potions and ammo is a legitimate build.
         cap: UNCAPPED
     }
 ];
@@ -120,7 +120,7 @@ export function isSustenanceCategory(categoryId) {
     return getCategoryDef(categoryId)?.kind === CATEGORY_KINDS.SUSTENANCE;
 }
 
-/** True when items of this category are potions/scrolls/runes. */
+/** True when items of this category are Consumables: potions, bait, arrows and the like. */
 export function isConsumableCategory(categoryId) {
     return getCategoryDef(categoryId)?.kind === CATEGORY_KINDS.CONSUMABLE;
 }

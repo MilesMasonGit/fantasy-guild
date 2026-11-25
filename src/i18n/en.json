@@ -467,6 +467,9 @@
             "heroHits": "{hero} hits {enemy}",
             "heroCrits": "{hero} crits {enemy}",
             "heroMisses": "{hero} misses",
+            "heroHitsArrow": "{hero}'s {arrow} hits {enemy}",
+            "heroCritsArrow": "{hero}'s {arrow} crits {enemy}",
+            "heroMissesArrow": "{hero}'s {arrow} misses",
             "enemyHits": "{enemy} hits {hero}",
             "enemyCrits": "{enemy} crits {hero}",
             "enemyMisses": "{enemy} misses {hero}",
@@ -559,8 +562,6 @@
         },
         "tip": {
             "level": "{name}: {style} {level}",
-            "noStyle": "{name} fights barehanded, with no style",
-            "noStyleArmed": "{name} fights with no style",
             "enemyStyle": "{name} fights {style}",
             "hp": "{name}: {cur} of {max} health",
             "heroHit": "Hits for {hit} before the matchup and the enemy's resistances",

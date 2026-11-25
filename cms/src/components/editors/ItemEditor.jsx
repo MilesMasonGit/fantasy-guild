@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Settings2, Shield, HelpCircle, Lock, Sparkles } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import {
-  EQUIP_CATEGORIES, TOOL_KINDS, HAND_CATEGORY, tierValue, SKILLS, ENEMY_STYLES, weaponStyleOf, authoredWeaponStyles, ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, WEAPON_TIERS, weaponMoteOf,
+  EQUIP_CATEGORIES, TOOL_KINDS, HAND_CATEGORY, tierValue, SKILLS, COMBAT_SKILL_IDS, weaponStyleOf, authoredWeaponStyles, ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, weaponMoteOf,
   expandBearer, statementsOf, doseKindsOf, DOSE_WHY, noDoseWhy, isSpentCategory,
   DAMAGE_TYPES, DAMAGE_GROUPS, DEFAULT_DAMAGE_TYPE_BY_STYLE, DEFAULT_ARROW_DAMAGE_TYPE, damageTypeLabel, isConsumableCategory,
   isWornGear, BREAK_CHANCE_MAX, catchItemIds, coinWorthOf,
@@ -57,7 +57,7 @@ function WeaponFields({ item, items, onChange }) {
       type: 'weapon',
       styles: [id],
       // The style lives in `styles` now; an older item's one-style field would only shadow it.
-      ...(ENEMY_STYLES.includes(item.skillRequired) ? { skillRequired: undefined } : {}),
+      ...(COMBAT_SKILL_IDS.includes(item.skillRequired) ? { skillRequired: undefined } : {}),
       // What a weapon spends belongs to its style: a Mote to Magic, a throw to Stealth.
       ...(id !== 'magic' ? { mote: undefined } : {}),
       ...(id !== 'stealth' ? { thrown: undefined } : {}),
@@ -67,7 +67,6 @@ function WeaponFields({ item, items, onChange }) {
     .filter((i) => i?.id && isConsumableCategory(i.equipSlot))
     .sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id));
   const speed = ATTACK_SPEED_MS[item.speed] ? item.speed : DEFAULT_ATTACK_SPEED;
-  const tierLine = WEAPON_TIERS.map((t) => `${t.tier} ${t.fast}/${t.normal}/${t.slow}`).join(', ');
 
   return (
     <div className="col-span-2 grid grid-cols-2 gap-4">
@@ -79,7 +78,7 @@ function WeaponFields({ item, items, onChange }) {
           onChange={(e) => pickStyle(e.target.value)}
           className="w-full"
         >
-          {ENEMY_STYLES.map((id) => (
+          {COMBAT_SKILL_IDS.map((id) => (
             <option key={id} value={id}>{styleName(id)}</option>
           ))}
         </select>
@@ -126,7 +125,7 @@ function WeaponFields({ item, items, onChange }) {
         />
         <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
           What every hit does before the level step, the matchup and the enemy's resistances. Blank hits like a fist (1).
-          Proposed tiers, fast/normal/slow: {tierLine}.
+          The tier table (damage by metal and speed, the level by tier) is the content guide's: CONTENT_PHILOSOPHY, Weapon tiers.
         </p>
       </Field>
 

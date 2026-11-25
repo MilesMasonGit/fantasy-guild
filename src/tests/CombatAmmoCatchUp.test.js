@@ -184,8 +184,12 @@ describe('ammo spent during a catch-up', () => {
 
         board = buildBoard();
         watch = listen();
-        await CatchUp.run({ savedAt: NOW - AWAY_MS, now: NOW, save: false, yieldFn: () => Promise.resolve() });
+        const result = await CatchUp.run({ savedAt: NOW - AWAY_MS, now: NOW, save: false, yieldFn: () => Promise.resolve() });
         const caughtUp = end(board, watch.stop());
+
+        // The away summary counts what was spent beside food, elixirs and drops (brief 750 S4).
+        expect(result.summary.combat.ammo).toEqual({ amc_arrow: 12, amc_mote: 9, amc_kunai: 7 });
+        expect(result.summary.combat.poisons.amc_poison).toBe(40 - InventoryManager.getItemCount('amc_poison'));
 
         expect(caughtUp).toEqual(plain);
 

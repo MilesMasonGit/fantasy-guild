@@ -3,7 +3,7 @@
 import { getItem, getAllItems } from '../../config/registries/itemRegistry.js';
 import { getGrid, categoryOfItem, isConsumableCategory } from '../../config/registries/equipmentConstants.js';
 import { arrowOf } from '../../config/registries/damageTypes.js';
-import { weaponStyleOf, weaponMoteOf, isThrownWeapon } from '../../config/registries/weaponStyles.js';
+import { weaponStyleOf, weaponMoteOf, isThrownWeapon, meetsGearRequirements } from '../../config/registries/weaponStyles.js';
 import { CARRIED_KIND } from '../../config/registries/carriedKinds.js';
 import { GameState } from '../../state/GameState.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
@@ -45,18 +45,25 @@ function heroOf(heroOrId) {
     return (GameState.state?.heroes || []).find(h => h?.id === heroOrId) || null;
 }
 
-/** Whether `hero` carries `itemId` in a consumable cell. */
+/**
+ * Whether `hero` carries `itemId` in a consumable cell, at the level it asks: ammo is checked as gear
+ * is (`HeroEffects`), so an arrow or Mote asking a level the hero lacks is carried but never spent.
+ */
 function carriesInCell(hero, itemId) {
-    return getGrid(hero).some(id => id === itemId && isConsumableCategory(categoryOfItem(id)));
+    const item = getItem(itemId);
+    return !!item && meetsGearRequirements(item, hero)
+        && getGrid(hero).some(id => id === itemId && isConsumableCategory(categoryOfItem(id)));
 }
 
-/** The arrows a hero carries, in grid order, whatever the Bank holds: item ids, each once. */
+/**
+ * The arrows a hero carries and may shoot, in grid order, whatever the Bank holds: item ids, each
+ * once. An arrow asking a level the hero lacks is left out ({@link carriesInCell}).
+ */
 export function carriedArrowIds(hero) {
     const out = [];
     for (const itemId of getGrid(hero)) {
         if (!itemId || out.includes(itemId)) continue;
-        if (!isConsumableCategory(categoryOfItem(itemId))) continue;
-        if (arrowOf(getItem(itemId))) out.push(itemId);
+        if (arrowOf(getItem(itemId)) && carriesInCell(hero, itemId)) out.push(itemId);
     }
     return out;
 }

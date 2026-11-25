@@ -8,7 +8,6 @@ import {
     missChance,
     matchupMultiplier,
     enemyLevelStats,
-    WEAPON_TIERS,
     BASE_CRIT_CHANCE,
     CRIT_CHANCE_CAP,
     CRIT_MULTIPLIER,
@@ -359,6 +358,18 @@ describe('the enemy level table', () => {
             for (const k of ['hp', 'hit', 'xp']) expect(b[k], `${k} at ${L}`).toBeGreaterThanOrEqual(a[k]);
         }
     });
+
+    /**
+     * The normal-speed column of the weapon tier proposal the level table was tuned against, on its
+     * old 15-level ladder. The code no longer holds a tier table: the authoring table is
+     * `docs/reference/CONTENT_PHILOSOPHY.md` (Weapon tiers), on the metals' amended ladder.
+     */
+    const WEAPON_TIERS = [
+        { tier: 'copper', level: 1, normal: 2 }, { tier: 'iron', level: 15, normal: 3 },
+        { tier: 'silver', level: 30, normal: 4 }, { tier: 'gold', level: 45, normal: 5 },
+        { tier: 'mythril', level: 60, normal: 6 }, { tier: 'adamantine', level: 75, normal: 7 },
+        { tier: 'darkmetal', level: 90, normal: 8 }
+    ];
 
     /**
      * The tuning target: a hero with their tier's normal weapon against an enemy of their own

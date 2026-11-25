@@ -158,10 +158,12 @@ export { enemyFightNumbers, isKindCandidate, kindResistances } from '../../../sr
 
 // Weapons: the one style a weapon fights in, and the level gear asks of its wearer, for the item editor's Weapon and Requirement blocks.
 export { isWeapon, isOffHand, weaponStyleOf, authoredWeaponStyles, gearLevelRequirement, weaponMoteOf, isThrownWeapon } from '../../../src/config/registries/weaponStyles.js';
+// The four combat skills, the styles a weapon may fight in (the item editor's Weapon style list).
+export { COMBAT_SKILL_IDS } from '../../../src/config/registries/skillRegistry.js';
 // Gear's defence: a worn piece's resistances (free percents by type) and its damage cut to named styles, for the item editor's Defence block.
 export { gearResistancesOf, gearDamageCutOf, isWornGear, isGearResistLine, isDamageCut, GEAR_RESIST_LINE_MAX } from '../../../src/config/registries/gearDefence.js';
-// The three swing speeds and the proposed weapon tiers' damage, so the Weapon block offers what the fight reads.
-export { ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, WEAPON_TIERS } from '../../../src/config/FormulaRegistry.js';
+// The three swing speeds, so the Weapon block offers what the fight reads.
+export { ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED } from '../../../src/config/FormulaRegistry.js';
 
 // A hero-worked Token must name a skill. The game's own rule and wording, so the CMS and the boot audit name the same Tokens.
 export { isWorkedWithoutSkill, WORK_SKILL_WHY } from '../../../src/systems/core/workSkillRule.js';
