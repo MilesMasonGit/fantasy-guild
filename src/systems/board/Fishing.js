@@ -16,6 +16,7 @@ import * as BoardState from './BoardState.js';
 import * as GroundRules from './GroundRules.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { CARRIED_KIND } from '../../config/registries/carriedKinds.js';
+import { isSummoned } from '../hero/summoned.js';
 
 /**
  * Fishing. A water Token (one with catch pools, `catchPools.js`) never runs out and makes no Outputs
@@ -34,7 +35,7 @@ import { CARRIED_KIND } from '../../config/registries/carriedKinds.js';
  * - **Bait**: a pool naming a bait spends it each catch, the fish's amount less the tool's saving
  *   (`fishRules.baitSpent`), carried in a consumable cell with the Bank holding enough for the
  *   dearest fish the hero may land. A Trap's pool naming none catches free; any other pool naming
- *   none is never fished.
+ *   none is never fished. A Summoned worker carries nothing: its Bait comes straight from the Bank.
  *
  * A fish's level, time and Bait come from its item's `fish` block, else the water's own level and
  * cycle and 1 Bait (`fishRules.js`).
@@ -78,8 +79,9 @@ function toolAt(def, heroId) {
     return HeroTools.catchToolOf(heroId, neededToolOf(def)?.kinds);
 }
 
-/** Whether `hero` carries `itemId` in a consumable cell. */
+/** Whether `hero` carries `itemId` in a consumable cell; a Summoned worker, carrying nothing, draws on the Bank as if it did. */
 function carriesInCell(hero, itemId) {
+    if (isSummoned(hero)) return true;
     return getGrid(hero).some(id => id === itemId && isConsumableCategory(categoryOfItem(id)));
 }
 

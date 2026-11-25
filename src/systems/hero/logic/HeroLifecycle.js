@@ -8,6 +8,7 @@ import { xpForEveryoneOf } from '../../progression/hallModifiers.js';
 import { addXpToEverySkill } from '../everySkillXp.js';
 import { ENGINE_EVENTS } from '../../core/engineEvents.js';
 import { ensureFlagColour } from '../../board/FlagColours.js';
+import { guildHeroes } from '../summoned.js';
 
 /**
  * Hero Lifecycle: creation and recruitment. The player never removes a hero from
@@ -27,9 +28,9 @@ export function getRosterLimit() {
         ?? rosterLimitForRank(GameState.state?.progress?.guildUpgrades?.roster_size);
 }
 
-/** Whether the roster is at its cap — recruiting is refused while true. */
+/** Whether the roster is at its cap — recruiting is refused while true. Summoned workers take no place on it. */
 export function isRosterFull() {
-    return GameState.heroes.length >= getRosterLimit();
+    return guildHeroes(GameState.heroes).length >= getRosterLimit();
 }
 
 /**

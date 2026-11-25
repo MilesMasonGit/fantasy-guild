@@ -43,6 +43,7 @@ import * as LoadoutMoments from './LoadoutMoments.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as Breakage from '../equipment/Breakage.js';
+import * as Summons from './Summons.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import { centreOf } from './nearby.js';
 import * as Hand from './Hand.js';
@@ -150,12 +151,12 @@ function setAlert(instance, reason) {
 
 /**
  * The most copies a recipe's Token outputs can make in one cycle: each output's authored maximum,
- * `chance` ignored (room is reserved for all).
+ * `chance` ignored (room is reserved for all). A summon is no Token on the mat: it needs no room.
  */
 function tokenOutputCount(io) {
     let n = 0;
     for (const output of io?.outputs || []) {
-        if (output?.tokenId) n += Math.max(0, outputRange(output).max);
+        if (output?.tokenId && !Summons.isSummonOutput(output)) n += Math.max(0, outputRange(output).max);
     }
     return n;
 }
@@ -168,7 +169,7 @@ function hasRoomForTokenOutputs(id, io) {
     const count = tokenOutputCount(io);
     if (count <= 0) return true;
     for (const output of io.outputs) {
-        if (output?.tokenId && !Placement.hasRoomForProduct(id, output.tokenId, count)) return false;
+        if (output?.tokenId && !Summons.isSummonOutput(output) && !Placement.hasRoomForProduct(id, output.tokenId, count)) return false;
     }
     return true;
 }
@@ -376,7 +377,9 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         if (chance < 100 && Math.random() * 100 > chance) continue;
 
         if (output.tokenId) {
-            placeTokenOutput(instance, output);
+            // A summon is a Summoned worker for this Circle to charge, never a Token beside it.
+            if (Summons.isSummonOutput(output)) Summons.chargeFromCircle(instance, output.tokenId, heroId, config.skill);
+            else placeTokenOutput(instance, output);
             continue;
         }
         landLine(output, (sprite) => RareDrops.noteDrop(sprite, chance));
@@ -497,6 +500,9 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
 
     // A fishing spot may move on after a catch, last since it takes the Token off the mat.
     if (caught) FishingSpots.afterCatch(instance, def);
+
+    // A Summoned worker spends a charge for the cycle, and at none leaves: last, once it has landed.
+    Summons.afterWorkCycle(heroId);
 }
 
 /**

@@ -6,6 +6,9 @@ import { createEmptyEquipment } from '../../../config/registries/equipmentConsta
 import { normaliseHeldCopies } from '../../equipment/heldCopies.js';
 import { HERO_SKILL_IDS, RETIRED_SKILL_IDS } from '../../../config/registries/skillRegistry.js';
 import { xpForLevel } from '../../../utils/XPCurve.js';
+import { hasFixedSkills, isSummoned } from '../summoned.js';
+import { getTokenType } from '../../../config/registries/tokenRegistry.js';
+import { isSummonType, summonSkillSheet } from '../../../config/registries/summonRules.js';
 
 /**
  * Hero Rehydration: Restores Logic (Aggregator) and Display data.
@@ -14,13 +17,13 @@ import { xpForLevel } from '../../../utils/XPCurve.js';
 /**
  * Bring a hero's sheet to today's shape, as every load and every new hero does: every skill in the
  * registry held, at level 1 where the hero has none. An older save's levels are kept: levels in a
- * cut skill (`RETIRED_SKILL_IDS`) are dropped, and the job is dropped. Villagers are left alone.
+ * cut skill (`RETIRED_SKILL_IDS`) are dropped, and the job is dropped. Villagers and Summoned workers are left alone: their sheet is their own.
  *
  * @returns {{ dropped: string[], added: string[] }} skill ids
  */
 export function settleSkillSheet(hero) {
     const result = { dropped: [], added: [] };
-    if (!hero || hero.isVillager) return result;
+    if (!hero || hasFixedSkills(hero)) return result;
     if (!hero.skills || typeof hero.skills !== 'object') hero.skills = {};
     for (const skillId of RETIRED_SKILL_IDS) {
         if (!hero.skills[skillId]) continue;
@@ -42,6 +45,7 @@ export function rehydrateHero(hero) {
     hero.aggregator = new ModifierAggregator(hero.id);
 
     if (hero.isVillager) hero.className = 'Villager';
+    else if (isSummoned(hero)) hero.className = 'Summoned';
     else delete hero.className;
     hero.traitName = '';
     if (!hero.spriteId) hero.spriteId = 'hn_recruit_por';
@@ -49,6 +53,8 @@ export function rehydrateHero(hero) {
 
     // Every skill on the sheet, an older save's job dropped. Runs before the derived stats.
     settleSkillSheet(hero);
+    // A Summoned worker holds its kind's skills at their fixed levels, as the content says now.
+    summonSheetFromContent(hero);
 
     updateHeroFromSkills(hero);
 
@@ -90,6 +96,16 @@ export function rehydrateHero(hero) {
     hero._rev = (hero._rev || 0) + 1;
 
     return hero;
+}
+
+/**
+ * A Summoned worker's skills, read again from its kind (`summonRules.summonSkillSheet`), so a level
+ * the CMS changes reaches the ones already called. Kept as saved when its kind is gone from the data.
+ */
+function summonSheetFromContent(hero) {
+    if (!isSummoned(hero)) return;
+    const def = getTokenType(hero.summon.typeId);
+    if (isSummonType(def)) hero.skills = summonSkillSheet(def);
 }
 
 /**

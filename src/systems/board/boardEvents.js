@@ -332,7 +332,16 @@ export const BOARD_EVENTS = {
      * `Flags.init` subscribes: a broken weapon ends the order (fighting needs none, so a kept order
      * would punch on); a broken tool leaves the order, and the hero lets go for want of it.
      */
-    GEAR_BROKE: 'board:gear_broke'
+    GEAR_BROKE: 'board:gear_broke',
+
+    /**
+     * A Summoned worker changed (`Summons.js`): `{ heroId, typeId, circleId, charges, change,
+     * added?, reason? }`, `change` being `'called'` (a Circle's cycle called it beside the Circle),
+     * `'charged'` (a cycle added `added` charges), `'spent'` (a work cycle spent one) or `'left'` (it
+     * is gone from the roster and the mat: `reason` `'spent'` at no charges, `'replaced'` when its
+     * Circle was set to call another).
+     */
+    SUMMON_CHANGED: 'board:summon_changed'
 };
 
 /**
