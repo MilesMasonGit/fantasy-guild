@@ -171,6 +171,7 @@ export function buildRateBook(content = {}) {
         stationsFor: (recipeId) => stationsFor(book, recipeId),
         buildsOn: (recipeId) => buildsOn(book, recipeId),
         workTargets: () => workTargets(book),
+        catchesOf: (target) => catchesOf(book, target),
         workKindOf: (target) => {
             const def = rawTokens[target?.token] ? tokenDef(target.token) : null;
             return def ? workKindOf(def, text(target.recipe) ? recipes[target.recipe] ?? null : null) : { why: 'no such Token' };
@@ -580,7 +581,7 @@ function gatesOf(book, def, config, recipe, setup, pool = null) {
     let reason = null;
     if (skill && level < needed) reason = 'level';
     else if (need && !toolMeets(toolOf(book.items[toolItem]), need)) reason = 'no_tool';
-    return { skill, needed, level, need, toolItem, ok: !reason, reason };
+    return { skill, needed, level, need, toolItem, ok: !reason, reason, asked: Number.isFinite(asked) && asked > 0 };
 }
 
 // ── lifecycles ──────────────────────────────────────────────────────────────────────────────────
@@ -881,7 +882,13 @@ function prepare(book, target, setup) {
     let fishing = null;
     if (kind.kind === WORK.WATER) {
         fishing = fishingPlan(book, def, pool, gates, setup, baseCycleMs);
-        if (fishing.level && gates.ok) {
+        if (fishing.level && gates.ok && !gates.asked) {
+            // A water's own gate is the lowest level its pool lands anything at (its fish may all
+            // ask more than the Token does): a hero asked no level fishes at that one.
+            gates.level = fishing.level;
+            gates.needed = fishing.level;
+            fishing = fishingPlan(book, def, pool, gates, setup, baseCycleMs);
+        } else if (fishing.level && gates.ok) {
             gates.ok = false;
             gates.reason = 'level';
             gates.needed = fishing.level;
@@ -941,6 +948,18 @@ function poolOf(book, def, target, setup) {
     const kind = held || pools[0]?.tool;
     // One Bait serves all fishing: the tool's first pool is fished, whatever bait it spends (`catchPools.poolForTool`).
     return pools.find(p => p.tool === kind) || null;
+}
+
+/**
+ * What a water target's pool can land, each fish with the Fishing level a catch of it asks
+ * (`Fishing.catchLevelOf`, never under the water's own): `[{ itemId, level }]`; none for other work.
+ */
+function catchesOf(book, target) {
+    const def = book.token(target?.token);
+    if (!def || !hasCatchPools(def)) return [];
+    const pool = poolOf(book, def, target, {});
+    const own = Math.max(1, Number(def.config?.skillRequired) || 1);
+    return pool ? pool.catches.map(c => ({ itemId: c.itemId, level: Math.max(own, fishLevel(book.items[c.itemId], own)) })) : [];
 }
 
 /** A pool as `target.pool` names it (`catchPools.poolKeyOf`): its tool and bait, and where it holds when it names that. */

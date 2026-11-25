@@ -178,12 +178,14 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     const indexMakers = () => {
         if (indexed) return;
         indexed = true;
-        // What each work can make with or without every boost, read without pricing anything (pricing reads this index).
+        // What each work can make with or without every boost, read without pricing anything (pricing reads this index);
+        // a water, every fish its pool lands, at whatever level.
         for (const work of works) {
             if (work.tier === null) continue;
             const r = profiles.everythingOf(work.target, maxTier);
             const b = profiles.profileOf(work.target, PROFILE.BARE, maxTier).rate;
-            for (const item of new Set([...Object.keys(r.items || {}), ...Object.keys(b.items || {})])) {
+            const fish = rates.catchesOf(work.target).map(c => c.itemId);
+            for (const item of new Set([...Object.keys(r.items || {}), ...Object.keys(b.items || {}), ...fish])) {
                 if (!madeBy.has(item)) madeBy.set(item, []);
                 madeBy.get(item).push(work);
             }
@@ -244,7 +246,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         let best = { perHour: 0, work: null };
         for (const work of madeBy.get(itemId) || []) {
             if (work.tier === null || work.tier > cap) continue;
-            const f = fed(work, profile, cap, stack);
+            const f = fed(work, profile, cap, stack, catchLevel(work, itemId));
             const n = f.items[itemId] || 0;
             if (n > best.perHour) best = { perHour: n, work };
         }
@@ -253,6 +255,16 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         if (at === Infinity) supplyMemo.set(key, best);
         else inLoop.set(key, { best, stack, at, ask: asks[at] });
         return best;
+    }
+
+    /**
+     * The level a hero fishes a water at to land `itemId`: the fish's own, where it is above the
+     * pool's lowest (a pool's rate at its gate lands only the fish open there). Null for other work.
+     */
+    function catchLevel(work, itemId) {
+        if (!work.target.pool) return null;
+        const level = rates.catchesOf(work.target).find(c => c.itemId === itemId)?.level ?? null;
+        return level !== null && level > (profiles.contextOf(work.target).gate ?? 1) ? level : null;
     }
 
     const unitHours = (itemId, cap) => {

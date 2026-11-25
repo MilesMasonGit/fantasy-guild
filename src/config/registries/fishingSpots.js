@@ -30,7 +30,7 @@
 export const WATER_KIND = Object.freeze({ SEA: 'sea', FRESH: 'fresh', SULPHUR: 'sulphur' });
 
 /** The inland water shape that is a sulphur spring (`WaterShapes.WATER_KIND.SULPHUR`): every other is fresh water. */
-export const SULPHUR_SHAPE = 'sulphur';
+const SULPHUR_SHAPE = 'sulphur';
 
 /**
  * The water kinds a place's ground may hold, in {@link WATER_KIND}'s order: the sea when its share

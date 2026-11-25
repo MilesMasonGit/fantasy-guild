@@ -183,6 +183,23 @@ describe('its rate: how often a spot arrives and how long it stays', () => {
         const path = buildPace(content, buildLedger(content), null).pathOf(itemKey('item_spot_perch'), PROFILE.TYPICAL);
         expect(path.waitsOn).toEqual({ skill: 'fishing', level: 5 });
         expect(Number.isFinite(path.hours)).toBe(true);
+        // Asked no level, a hero fishes the pool at the lowest level it lands anything at; asked one under it, none.
+        const book = buildRateBook(content);
+        expect(book.rateOf({ token: 'token_spot', pool: poolOf(1) })).toMatchObject({ ok: true, gates: { level: 5, needed: 5 } });
+        expect(book.rateOf({ token: 'token_spot', pool: poolOf(1) }, { level: 3 })).toMatchObject({ ok: false, reason: 'level' });
+    });
+
+    it('supplies a fish above its pool\'s lowest at its own level, so what it feeds is timed', () => {
+        const content = spotContent();
+        content.items.item_grilled_pike = { id: 'item_grilled_pike', name: 'Grilled Pike', type: 'food', plan: { tier: 0 } };
+        content.recipes.push({
+            id: 'recipe_grilled_pike', name: 'Grilled Pike', skill: 'cooking', levelRequirement: 1, stationKinds: ['still'], durationMs: 5000, xp: 5,
+            inputs: [{ itemId: 'item_spot_pike', quantity: 1 }], outputs: [{ itemId: 'item_grilled_pike', chance: 100, minQty: 1, maxQty: 1 }]
+        });
+        const pace = buildPace(content, buildLedger(content), null);
+        // At Fishing 30 the meadow rod lands Pike 40 in 100: 250 catches an hour, 100 Pike.
+        expect(pace.supplyOf('item_spot_pike', PROFILE.BARE, 0).perHour).toBeCloseTo(100);
+        expect(Number.isFinite(pace.pathOf(itemKey('item_grilled_pike'), PROFILE.TYPICAL).hours)).toBe(true);
     });
 });
 

@@ -89,7 +89,7 @@ export const STARTER_CAMP_GROUND = Object.freeze({ biome: 'meadow', waters: Obje
  * A wedge's ground is sure at a ring when at least this share of its cells stand on it (the share
  * its kits' lean gives the biome); under it, only some worlds hold it there.
  */
-export const SURE_GROUND_SHARE = 0.5;
+const SURE_GROUND_SHARE = 0.5;
 
 /** The event clock's mean wait between events (`EventClock.drawWait`). */
 export const MEAN_EVENT_WAIT_MS = (EVENT_WAIT_MIN_MS + EVENT_WAIT_MAX_MS) / 2;
@@ -193,7 +193,7 @@ export const ringKey = (ring) => `ring:${ring}`;
 export const spotPoolKey = (typeId, poolKey) => `spot:${typeId}|${poolKey}`;
 const toolKey = (need) => `tool:${(need.kinds || [need.kind]).join('|')}:${need.minTier}`;
 
-/** `{ kind, id }` of a key: kind is item, token, recipe, tool, wedge, star or ring. */
+/** `{ kind, id }` of a key: kind is item, token, recipe, tool, wedge, star, ring or spot. */
 export function parseKey(key) {
     const at = key.indexOf(':');
     return { kind: key.slice(0, at), id: key.slice(at + 1) };
