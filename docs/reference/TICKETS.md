@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-700**
+**Next free number: T-704**
 
 ---
 
@@ -88,7 +88,7 @@ here.
 | T-314 | P2 | open | **Every enemy has a basic attack and special attacks at a chance** (owner 2026-11-05): a basic attack that never bubbles on the mat, plus special moves (an effect, or no hit) each with a percentage chance. Moves already pick by `weight` (`src/config/registries/enemyMoves.js`); likely the CMS shows the chance as a percentage and the content agent authors a basic attack for every enemy. Needs a short interview: is the chance per swing, and do specials replace the basic attack or come on top | director |
 | T-312 | P3 | open | **C256 p99 about 20 ms**: on a full mat the waiting Forests and Quarries whose clocks line up all try in one tick (mean 1.9 ms; clocks spread give p99 8.8). The rest of a failed push's cost; a spatial grid for moved Tokens was tried and was slower | engineer 2026-11-05 |
 | T-310 | P2 | open | **The QA panel is too cluttered** (owner 2026-11-05): sort it so the owner's checks are quick to find; drop sections nobody uses; dev-only look switches go once their pick is built. Needs a short interview on what the owner uses it for. |
-| T-306 | P3 | open, needs an interview | **Discard, or selling, in the Bank's inspection window** (owner 2026-11-05, moved out of brief 400 B3): amounts 1, 50 %, All, All −1 or a slider, and **Discard always confirms**. The owner hopes to find a way to sell items instead ([ideas.md](../active/ideas.md)); gold left the game, so a sale needs designing first. |
+| T-306 | P3 | open (designed 2026-11-25: brief 870, Sell replaces Discard) | **Discard, or selling, in the Bank's inspection window** (owner 2026-11-05, moved out of brief 400 B3): amounts 1, 50 %, All, All −1 or a slider, and **Discard always confirms**. The owner hopes to find a way to sell items instead ([ideas.md](../active/ideas.md)); gold left the game, so a sale needs designing first. |
 | T-307 | P2 | briefed: [brief 630](../active/briefs/630_building_upgrades.md) | **One clear building per skill** ([content_construction.md](../active/content_construction.md); owner 2026-11-05): a spread of buildings, so the different building effects can be tested. **Waits until the owner has polished content planning.** Today's rules split recipes by station kind, and the tutorial, ledger and Starter Camp name today's stations. Brief 480's L2 to L4 wait for this; brief 410 doesn't. |
 | T-300 | P3 | open | **Leftovers from the map retirement, for a decision**: Region rules (`RegionRules.js`, recipe `rules`, the ledger's region factor) are tested but no shipped recipe carries one, leave until brief 380 settles; `data/maps.json` is `{}` and read by nothing; `src/ui/dev/terrainDev.js` is imported only by tests; a saved stack of a deleted item stays hidden and still takes a Bank slot (no fix recommended: old saves are abandoned) | T-292 engineer 2026-11-03 |
 | T-299 | P3 | open | **A forced layout bigger than the loot flight's** (20 s trace on enemies80, busy machine, one run): the hero bubble layer's measurement, now at `HeroBubbleLayer.jsx:252-256`, 24 style and 25 layout passes, 82.5 ms. The second half (`healthTextWidth` in `FightLayer.jsx`) no longer exists (review round 4, CR4-056). Measure on a quiet machine first | T-287 engineer 2026-11-03 |
@@ -179,6 +179,10 @@ here.
 | T-697 | P3 | open | *For: director.* **One ledger report takes 35 to 45 s on the real workspace** (`ledgerJobs.js` says about a third of a second): the level tracks (`bestXp`, `profileOf`, `rateOf`) take about three quarters of it, so a pack gate takes 1.5 to 3 minutes and the CMS ledger watch lags after each edit. | gate-hang engineer 2026-11-24 |
 | T-698 | P2 | open | *For: planning agent, then director.* **Green Thumb does nothing once 860 R2 merges**: `star_forestry_regrowth` gives Grow Time on Oak and Fir, but an owned Stump regrows at its fixed time (`Groves.ownRegrowMs` ignores Grow Time). Point the star at `ownRegrowMs` (the brief's later regrowth upgrade) or retire it: owner's call. **Owner ruled 2026-11-24: Green Thumb speeds up a Forest's own regrowth** (recorded in content_mining_forestry.md point 9); the director builds it with 860 R3. *For: director.* | content agent 2026-11-25 |
 | T-699 | P2 | open | *For: planning agent.* **A whole-game XP pass**: the CMS balance preview proposes about 105 XP cuts, many twenty times down (Cooking at the Bakehouse, Crafting planks, Farming at the Windmill, tree and vein XP), reading those sources as far too fast against the XP curve. Beyond any one pack: needs the owner's view of the curve first. | content agent 2026-11-25 |
+| T-700 | P2 | open | *Brief 870 C1. For: director.* **Coins and selling**: a coin count in the top bar, an item's coin worth from the CMS, Sell replaces Discard (always confirms), Sell selected in the Bank's select mode ([concept_gold_coins.md](../active/concept_gold_coins.md)). | owner 2026-11-25 |
+| T-701 | P2 | open | *Brief 870 C2. For: director.* **Coins as a cost**: coin prices beside items on Shop Tokens, Foundations, Hall stars and settling; enemy coin drops; all 0 until the pack. | owner 2026-11-25 |
+| T-702 | P2 | open | *Brief 870 C3. For: director.* **The ledger prices coins**: item worth, enemy drops, coin costs rising with rank and distance, coins in the pace checks. | owner 2026-11-25 |
+| T-703 | P2 | open | *For: content agent, after 870 C3.* **The coin pack**: the cost curve, item worth overrides, enemy coin drops, which prices ask coins. | owner 2026-11-25 |
 
 ### Code review round 4 (triaged 2026-11-07)
 
