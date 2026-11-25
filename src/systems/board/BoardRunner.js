@@ -6,7 +6,6 @@ import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import { getTokenType, rollOutputQuantity, outputRange, tokenName } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as BoardState from './BoardState.js';
-import * as SpriteLayer from './SpriteLayer.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as RecipeResolver from './RecipeResolver.js';
