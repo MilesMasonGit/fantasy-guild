@@ -90,7 +90,7 @@ complicated" (owner).*
    Token cap (T-102).
 8. **Every tree a Region starts with belongs to one of its wild Forests**: one rule for all trees.
 9. **Regrow time is fixed per species** (an Oak about 5 minutes, felled to harvestable), **and can be
-   shortened by later upgrades** (a Guild Hall star or a Forestry building, to be designed).
+   shortened by later upgrades** (a Guild Hall star or a Forestry building, to be designed). **The first is the Hall star Green Thumb** (owner 2026-11-24): its Grow Time shortens a Forest's own regrowth (T-698).
 10. **A demolished Forest's trees stay** as lone trees; once felled, their Stumps never regrow (point 5;
     clear them with Demolish).
 
