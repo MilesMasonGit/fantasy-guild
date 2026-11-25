@@ -311,7 +311,10 @@ export function hasRoomToSpawn(typeId, bearerId, options = {}) {
  * spot nearest it, never pushing; nowhere free that close and the spawn is skipped. A Forest that
  * plants within its own reach (`SpawnerSystem`) passes its reach; the placement is then ignored.
  *
- * @param {{within?: number}} [options]
+ * `options.fields`: written onto the new Token before it lands, so the mat never holds it without
+ * them (a Hideout's guard: its `guardOf`, which the Token cap reads).
+ *
+ * @param {{within?: number, fields?: object}} [options]
  * @returns {{instanceId: string, x: number, y: number, replacedBearer: boolean}|null}
  */
 export function spawn(statement, roles, random = Math.random, options = {}) {
@@ -346,6 +349,7 @@ export function spawn(statement, roles, random = Math.random, options = {}) {
     const instance = BoardState.createTokenInstance(
         typeId, tokenStartingUses(typeId), null, BoardState.ORIGIN.SPAWNED
     );
+    if (options?.fields) Object.assign(instance, options.fields);
     BoardState.addToken(instance, where.x, where.y);
     // A Token that takes its bearer's place (a Stump left behind) glows like a transform, under its
     // new id: also where a bearer that has already left stood. Ordinary spawns elsewhere get the

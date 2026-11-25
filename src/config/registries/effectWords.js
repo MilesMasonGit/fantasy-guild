@@ -92,7 +92,7 @@ export function effectAmount(entry, payload) {
  */
 export function effectTag(entry, payload, itemName = (id) => id) {
     const item = (id) => (id ? (itemName(id) || id) : null);
-    // An on-or-off effect (Can't Run Out) has no number to say.
+    // An on-or-off effect (a palette entry marked `flag`) has no number to say.
     if (entry?.flag) return { text: effectName(entry, payload?.type), against: false };
     const amount = effectAmount(entry, payload);
     switch (payload?.type) {

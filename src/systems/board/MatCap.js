@@ -28,14 +28,14 @@ export function isGuildHall(instance) {
 
 /**
  * Whether a Token counts toward the cap: not an event Token (`instance.event`), an arrival
- * enemy (`instance.arrival`), a map's node (a settled place's own Tokens stand outside the cap, so
- * the count starts from what the player adds), a fishing spot (its type a spot kind) or the Guild
- * Hall. Events, arrivals and spots come to the mat on their own and must never stop the player
- * building. One type lookup.
+ * enemy (`instance.arrival`), a guard a caught thief set on a camp (`instance.guardOf`), a map's
+ * node (a settled place's own Tokens stand outside the cap, so the count starts from what the
+ * player adds), a fishing spot (its type a spot kind) or the Guild Hall. Events, arrivals, guards
+ * and spots come to the mat on their own and must never stop the player building. One type lookup.
  */
 export function countsTowardCap(instance) {
     const typeId = instance?.typeId;
-    if (!typeId || instance.event || instance.arrival || instance.fixture === BoardState.FIXTURE.MAP) return false;
+    if (!typeId || instance.event || instance.arrival || instance.guardOf || instance.fixture === BoardState.FIXTURE.MAP) return false;
     if (typeId === 'token_guild_hall') return false;
     const def = getTokenType(typeId);
     return !def?.isGuildHall && !isSpotKind(def);

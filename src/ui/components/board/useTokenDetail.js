@@ -10,6 +10,7 @@ import * as Respawn from '../../../systems/board/Respawn.js';
 import * as Fields from '../../../systems/board/Fields.js';
 import * as Demolition from '../../../systems/board/Demolition.js';
 import { stationSkillOf } from '../../../systems/effects/statements.js';
+import * as Hideouts from '../../../systems/board/Hideouts.js';
 
 /** The side the hero working `id` stands on (−1 / 1), or null. */
 function sideOfWorker(id) {
@@ -45,6 +46,9 @@ export function tokenDetailOf(id, def) {
         // so it gets no gear.
         hasPool: stationSkill ? StationRecipe.poolFor(def).length > 0 : false,
         isFoundation: !!def?.foundation,
+        // A Hideout picks the camp it robs with the same gear.
+        isHideout: Hideouts.isHideout(def),
+        campChosen: Hideouts.isHideout(def) && !!Hideouts.targetOf(instance),
         // A Field picks a crop with the same gear, sown for its seed.
         isField: Fields.isField(def),
         isSpawner,

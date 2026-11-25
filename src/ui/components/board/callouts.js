@@ -35,7 +35,10 @@ export const calloutText = {
     // A Token that has just become another, said over it: its new name, or "Sawmill built".
     became: (name, cause) => t(cause === 'build' ? 'messages.built' : 'messages.became', { token: name }),
     // A status landing on a fighter, over their bar: "Venom!".
-    statusLands: (statusId) => t('fight.float.lands', { status: EFFECTS[statusId]?.name || statusId })
+    statusLands: (statusId) => t('fight.float.lands', { status: EFFECTS[statusId]?.name || statusId }),
+    // A Hideout's theft, over it: "Stole 2 Wheat, 1 Milk from Cow Pasture", or the catch.
+    stole: (items, camp) => (items.length ? t('crime.stole', { items: items.join(', '), camp }) : t('crime.stoleNothing', { camp })),
+    caught: (camp) => t('crime.caught', { camp })
 };
 
 /** Whether a fired effect's title names a status: in a fight its landing is said over whoever it lands on instead. */

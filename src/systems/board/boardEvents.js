@@ -240,6 +240,14 @@ export const BOARD_EVENTS = {
     TOKEN_SPAWNED: 'board:token_spawned',
 
     /**
+     * A Hideout's hero robbed its camp (`Hideouts.js`). Payload: `{ instanceId, typeId, campId,
+     * campTypeId, heroId, caught, guardId, items }`: `instanceId` the Hideout, `items` what landed
+     * (`{ itemId, quantity }`, none when caught), `guardId` the guard a catch set on the camp, else
+     * null. Said over the Hideout; a guard's fight names it in the log.
+     */
+    THEFT: 'board:theft',
+
+    /**
      * Loot just dropped from a line rolled at a low chance (`RareDrops.RARE_DROP_CHANCE`). Payload:
      * `{ spriteId, itemId, chance }`. For the eye only: the mat makes the item twinkle.
      */
@@ -399,6 +407,16 @@ export const ALERT = {
      * choose; until they do nobody works it. The station twin of `CHOOSE_BUILD`.
      */
     CHOOSE_RECIPE: 'choose_recipe',
+    /**
+     * A Hideout with no camp chosen to rob, or whose chosen camp is no longer one it can rob (out
+     * of its reach, gone). The Hideout twin of `CHOOSE_RECIPE`: nobody works it until the player picks.
+     */
+    CHOOSE_CAMP: 'choose_camp',
+    /**
+     * A Hideout whose chosen camp has a guard standing on it, set by a thief caught there
+     * (`Hideouts.js`): nobody robs the camp until the guard is beaten. Its thief stays by it.
+     */
+    GUARDED: 'guarded',
     /**
      * A Foundation is set to build a Token that may not stand where the Foundation is: a mine off
      * its Stone, a crystal with no leyline in reach (`SiteRules`). Nobody works it and nothing is

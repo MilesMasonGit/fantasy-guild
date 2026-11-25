@@ -23,6 +23,7 @@ import { SPEECH_TONE } from './speechTone.js';
 import { plateUnit, barPlace } from './matMarks.js';
 import { useMatSize } from '../../hooks/useMatSize.js';
 import { isDrawingPaused } from './frameClock.js';
+import { startTheftWatch } from './lastTheft.js';
 
 /** Clear air between the top of a Token's art and the bottom of its callout's tail, in mat units. */
 const GAP_PX = 6;
@@ -144,6 +145,17 @@ export const CalloutLayer = memo(function CalloutLayer() {
                 if (!p?.instanceId || !p.typeId) return;
                 say({ anchorId: p.instanceId, x: p.x, y: p.y, typeId: p.typeId, text: calloutText.exhausted(tokenName(p.typeId)) });
             }, UI_LISTENER),
+            // A Hideout's theft, said over it: what was taken, or the catch (in the refusal's red).
+            EventBus.subscribe(BOARD_EVENTS.THEFT, (p) => {
+                if (!p?.instanceId) return;
+                const camp = tokenName(p.campTypeId) || 'the camp';
+                if (p.caught) {
+                    say({ anchorId: p.instanceId, text: calloutText.caught(camp), tone: SPEECH_TONE.CANT });
+                    return;
+                }
+                const items = (p.items || []).map(i => `${i.quantity} ${getItem(i.itemId)?.name || i.itemId}`);
+                say({ anchorId: p.instanceId, text: calloutText.stole(items, camp) });
+            }, UI_LISTENER),
             // A Token that has just become another (built, grown, grown back, turned): its new name
             // over it, with the glow it appears in (`TokenGlows`).
             EventBus.subscribe(BOARD_EVENTS.TOKEN_TRANSFORMED, (p) => {
@@ -185,6 +197,8 @@ export const CalloutLayer = memo(function CalloutLayer() {
             }, UI_LISTENER)
         ];
         const stopWatch = startFightWatch();
+        // The Hideout card's last theft is heard from here, the one layer always on the mat.
+        startTheftWatch();
         return () => {
             unsubs.forEach(u => u());
             stopWatch();

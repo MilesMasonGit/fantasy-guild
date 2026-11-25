@@ -37,9 +37,22 @@ export const EFFECT_TYPES = {
     // Giant Harvest: a chance a Farming work cycle's drops all come in at ten times, the rare table's
     // too; narrowed to the Token's skill, and no other work rolls it — OutputRules.rollGiantHarvest.
     GIANT_HARVEST: 'GIANT_HARVEST',
+    // Quiet: percentage points off a thief's chance of being caught at a Hideout, narrowed to the
+    // Hideout's skill (Crime) — Hideouts.caughtChanceAt.
+    QUIET: 'QUIET',
     // How often ONE fish bites from a water's catch pool, as a percentage on its weight; the item is
     // the rule's category (`Fishing.catchOf`).
     CATCH_WEIGHT: 'CATCH_WEIGHT',
+    // Free Replant: a chance that the harvest which ends a ripe Field sows the same crop again with
+    // no seed; narrowed to the Field's skill — Fields.harvested.
+    FREE_REPLANT: 'FREE_REPLANT',
+    // Grove Felling: a chance that a tree which falls to its Stump fells the touching trees of its
+    // kind too, each paying one cycle's output and XP; narrowed to the tree's skill — GroveFelling.js.
+    GROVE_FELLING: 'GROVE_FELLING',
+    // Better Catch: a chance a catch is the next fish up the pool fished (the lowest Fishing level
+    // above the one that bit, within the hero's level), spending the Bait of the one that bit;
+    // narrowed to the water's skill — Fishing.catchOf.
+    BETTER_CATCH: 'BETTER_CATCH',
     // Moves how many stacks of one status (the category, a status effect's id) can build up on the bearer — LiveEffects.
     STATUS_MAX_STACKS: 'STATUS_MAX_STACKS',
     // How long the bearer's swing takes, as a percentage: negative is faster — CombatFormulas.
@@ -90,9 +103,9 @@ export const EFFECT_TYPES = {
     STRONG_DRINK: 'STRONG_DRINK',
 
     // Faith's blessings, the effects no building gives (owner, 2026-11-25), carried by a shrine.
-    // Can't Run Out: on or off (any value above 0), a Token it reaches spends none of its own charges
-    // on its work, and a Field none of its load, failed cycles too; narrowed to the Token's skill —
-    // BoardRunner.completeCycle, CycleSavings.neverRunsOut.
+    // Can't Run Out (also the Motherlode perk): a chance a work cycle at a Token it reaches spends none
+    // of the Token's own charges, and a Field none of its load, failed cycles too; at 100 it never runs
+    // out. Narrowed to the Token's skill — BoardRunner.completeCycle, CycleSavings.neverRunsOut.
     NEVER_RUNS_OUT: 'NEVER_RUNS_OUT',
     // Echo: a chance a finished work cycle repeats at once, for free (its outputs and XP again, no
     // inputs, charges, load or tool wear); narrowed to the Token's skill — BoardRunner.completeCycle.

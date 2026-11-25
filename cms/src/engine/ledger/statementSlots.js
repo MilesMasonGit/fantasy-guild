@@ -124,7 +124,7 @@ const carriedOptions = (ctx) => [
  */
 function payloadForAxis(type) {
     const entry = getPaletteEntry(type);
-    // An on-or-off effect (Can't Run Out) is born on: it has no number to type.
+    // An on-or-off effect (a palette entry marked `flag`) is born on: it has no number to type.
     if (entry?.flag) return { type, bucket: 'flat', value: 1 };
     if (entry?.shape === 'proc') return { type, bucket: 'flat', value: 0 };
     // ⚠️ An axis that allows only some buckets starts in the first of them: a combat axis is read as

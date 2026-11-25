@@ -2,6 +2,7 @@ import { EventBus, UI_LISTENER } from '../../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardCombat from '../../../systems/board/BoardCombat.js';
+import * as BoardState from '../../../systems/board/BoardState.js';
 import * as HeroManager from '../../../systems/hero/HeroManager.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
@@ -17,7 +18,8 @@ import { namesStatus } from '../board/callouts.js';
  * fight, kept per hero: the fight they are in now and the one before it ("This fight" / "Last
  * fight" in the panel's log), in memory only and never saved. The same reading feeds the mat's
  * floating numbers as "moments" (`subscribeMoments`). An enemy's swing names its move when it has
- * moves (the log line, the float and the record's `lastMove`, which the panel marks).
+ * moves (the log line, the float and the record's `lastMove`, which the panel marks). A guard a
+ * caught thief set on a camp opens its fight's log naming the camp.
  * ⚠️ Every listener is a UI listener: a catch-up (a quiet bus) records and draws nothing. A fight
  * that was already running when the watch started, or that a catch-up started, is picked up at
  * its next event (`joinedLate`).
@@ -100,7 +102,7 @@ function makeRecord(heroId, instanceId, typeId = null, joinedLate = false) {
     const type = typeId || fight?.enemy?.id || null;
     const hp = fight?.combat?.enemyHp;
     const enemyMax = hp?.max ?? fight?.enemy?.hp ?? 0;
-    return {
+    const record = {
         id: ++seq,
         heroId,
         heroName: hero?.name || heroId,
@@ -119,6 +121,13 @@ function makeRecord(heroId, instanceId, typeId = null, joinedLate = false) {
         trimmed: 0,
         lastMove: null
     };
+    // A guard a caught thief set on a camp: its fight opens by saying so (`Hideouts.js`).
+    const guarded = BoardState.getTokenById(instanceId)?.guardOf;
+    if (typeof guarded === 'string') {
+        const camp = BoardState.getTokenById(guarded);
+        say(record, { icon: 'star', tone: TONE.NOTE, key: 'guard', vars: { enemy: record.enemyName, camp: camp ? tokenName(camp.typeId) : t('fight.log.guardGone') } });
+    }
+    return record;
 }
 
 /** Add a line to a record's log: `key` and `vars` for `t('fight.log.<key>')`, `amount` its number. */

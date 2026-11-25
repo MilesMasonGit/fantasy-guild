@@ -11,6 +11,9 @@ import { COMBAT_SKILL_IDS } from './skillRegistry.js';
 import { DOSE_KIND_IDS } from './carriedKinds.js';
 import { effectTag } from './effectWords.js';
 
+/** The work Quiet is read for: a Hideout's thefts. */
+const CRIME_SKILLS = Object.freeze(['crime']);
+
 /**
  * Which effect axes content may be authored against, and in what shape.
  *
@@ -556,6 +559,30 @@ export const MODIFIER_PALETTE = [
     },
     {
         /**
+         * Read by `Hideouts.caughtChanceAt` once per theft, before the thief's caught roll: its points
+         * come off the chance the Hideout's curve gives (`crime.caughtChance`), which still never goes
+         * under the curve's floor. Only Crime work reads it (`skillsOnly`). Usually on a Hideout's
+         * Quiet variant (reach Self); a Token in reach or what the thief carries may give it too.
+         */
+        type: EFFECT_TYPES.QUIET,
+        reads: {
+            up: (n) => `have ${n} less chance a thief is caught`,
+            down: (n) => `have ${n} more chance a thief is caught`
+        },
+        label: 'Quiet',
+        explains: 'A thief is caught less often',
+        when: 'never',
+        scales: 'value',
+        // Points of a chance, resolved from a base of 0, so any other bucket is 0.
+        buckets: ['flat'],
+        categories: 'skill',
+        skillsOnly: CRIME_SKILLS,
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Support',
+        hint: 'Percentage points off a thief\'s chance of being caught at a Hideout (20 turns 30% into 10%); the Hideout\'s floor still holds. Only Crime work reads it.'
+    },
+    {
+        /**
          * A better rod's bonus: one fish bites more often from a water's catch pool. Its weight in
          * the pool is widened by this percentage before the pick (`Fishing.catchOf` resolves the axis
          * once per catch in the pool, with the item id as the category), so +100 % on a Dolphin
@@ -577,26 +604,30 @@ export const MODIFIER_PALETTE = [
     // --- Blessings -------------------------------------------------------
     //
     // Faith's shrines carry these (owner, 2026-11-25: effects no building gives); `blessing` lets
-    // the content audit name one on a Token that is not a shrine.
+    // the content audit name one on a Token that is not a shrine. Can't Run Out is also the
+    // Motherlode perk, a hero's, which no audit names.
     {
         /**
          * Read by `CycleSavings.neverRunsOut` once per completed work cycle that would spend the
-         * Token's own charges (a Field, its load), before Refresh is rolled: reached, it spends none,
-         * failed or not, and Refresh is never drawn. A kill never reads it. `flag`: the rule has no
-         * number to type, only on (its value 1) or off.
+         * Token's own charges (a Field, its load), before Refresh is rolled: on a hit it spends none,
+         * failed or not, and Refresh is never drawn. A chance, sure at 100 (no draw) and one draw
+         * below. A kill never reads it, nor a rule's own charge cost.
          */
         type: EFFECT_TYPES.NEVER_RUNS_OUT,
-        reads: { up: () => 'can\'t run out', down: () => 'can run out again' },
+        reads: {
+            up: (n) => `have a ${n} chance not to run out as they are worked`,
+            down: (n) => `have ${n} less chance not to run out as they are worked`
+        },
         label: 'Can\'t Run Out',
-        explains: 'Its work spends none of its charges, so it never runs out',
+        explains: 'A chance its work spends none of its charges, so it does not run out',
         when: 'never',
-        flag: true,
+        scales: 'value',
         blessing: true,
         buckets: ['flat'],
         categories: 'skill',
-        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        shape: MODIFIER_SHAPES.PROC,
         group: 'Blessing',
-        hint: 'A shrine\'s blessing: the Tokens it reaches spend none of their charges as they are worked (a Field none of its load), even on a failed cycle, so they never run out: a vein, tree or Field that ends by chance never draws its end. No number: it is on or off. Aim it at Tokens; the skill narrows it.'
+        hint: 'A chance that the Tokens it reaches spend none of their charges as they are worked (a Field none of its load), even on a failed cycle, so a vein, tree or Field that ends by chance does not draw its end: at 100% they never run out while it reaches them. In percent. A shrine\'s blessing (aim it at Tokens; the skill narrows it), and the Motherlode perk (narrow it to Mining).'
     },
     {
         /**
@@ -622,6 +653,71 @@ export const MODIFIER_PALETTE = [
         shape: MODIFIER_SHAPES.PROC,
         group: 'Blessing',
         hint: 'A shrine\'s blessing: a chance a finished work cycle repeats at once, for free: its outputs again and its XP again, with no inputs, charges, Bait or tool wear, and no chance to end. In percent. Two shrines add their chances. Never a kill or a build.'
+    },
+
+    // The gathering signature perks (Motherlode, Evergreen, Grove Feller, Master Angler): each a
+    // chance, so the perk is 100 and a star or gear may hold less. Read at the worked Token through
+    // every scope, so a Token in reach may carry one too. Motherlode is Can't Run Out, above.
+    {
+        /**
+         * Read by `Fields.harvested` on the harvest that ends a ripe Field, after its end roll: the
+         * crop just harvested is sown again with no seed owed or needed, if it is still the pick.
+         */
+        type: EFFECT_TYPES.FREE_REPLANT,
+        reads: {
+            up: (n) => `have a ${n} chance to sow their crop again with no seed when harvested out`,
+            down: (n) => `have ${n} less chance to sow their crop again with no seed when harvested out`
+        },
+        label: 'Free Replant',
+        explains: 'A chance a harvested-out Field sows its crop again with no seed',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        categories: 'skill',
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Support',
+        hint: 'A chance that the harvest which ends a ripe Field sows the same crop again at once, owing no seed and needing none in the Bank: at 100% the Field replants itself every time. In percent. A Field whose pick the player has changed sows the new crop as usual.'
+    },
+    {
+        /**
+         * Read by `GroveFelling.afterFall` once per tree that falls to its Stump at the end of a
+         * successful cycle: on a hit, the lasting trees of its type whose drawn bodies touch it fall
+         * too, each paying one cycle's output and XP to the hero who felled the first.
+         */
+        type: EFFECT_TYPES.GROVE_FELLING,
+        reads: {
+            up: (n) => `have a ${n} chance a falling tree fells the touching trees of its kind`,
+            down: (n) => `have ${n} less chance a falling tree fells the touching trees of its kind`
+        },
+        label: 'Grove Felling',
+        explains: 'A chance a falling tree fells the touching trees of its kind, each paid',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        categories: 'skill',
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Support',
+        hint: 'A chance that a tree falling to its Stump (a Token that regrows when it runs out) fells the trees of the same kind touching it, not the whole reach. Each felled tree pays the hero one cycle\'s output and XP and becomes its own Stump; a felled tree fells nothing more. In percent, rolled once a fall.'
+    },
+    {
+        /**
+         * Read by `Fishing.catchOf` once per catch, after the pick, only when the pool fished holds a
+         * fish above the one that bit that the hero's level allows: on a hit that fish lands instead.
+         */
+        type: EFFECT_TYPES.BETTER_CATCH,
+        reads: {
+            up: (n) => `have a ${n} chance a catch is the next fish up`,
+            down: (n) => `have ${n} less chance a catch is the next fish up`
+        },
+        label: 'Better Catch',
+        explains: 'A chance a catch is the next fish up that water holds',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        categories: 'skill',
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Support',
+        hint: 'A chance a catch lands as the next fish up the pool the hero fishes: the lowest Fishing level above the fish that bit, among those the hero\'s level allows. The Bait spent is the fish that bit\'s. In percent, rolled after the pick. A lure still picks the fish that bites; the top fish, and a Trap\'s one catch, stay as they are.'
     },
 
     // --- Combat ---------------------------------------------------------

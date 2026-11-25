@@ -27,7 +27,10 @@ import { toolNeedOf } from './toolNeed.js';
  */
 
 /** Reasons a player can fix from the board: these keep a red badge. */
-export const FIXABLE = new Set([ALERT.INPUTS, ALERT.CHARGES, ALERT.NO_RECIPE, ALERT.CHOOSE_BUILD, ALERT.CHOOSE_RECIPE, ALERT.BUILD_SITE]);
+export const FIXABLE = new Set([
+    ALERT.INPUTS, ALERT.CHARGES, ALERT.NO_RECIPE, ALERT.CHOOSE_BUILD, ALERT.CHOOSE_RECIPE, ALERT.BUILD_SITE,
+    ALERT.CHOOSE_CAMP, ALERT.GUARDED
+]);
 
 /** The hero's own gates: a hero stopped by one lets go of the Token at once. Never a badge, except a hero ordered onto a
  * Token without its tool (`Flags.hasToolSkip`). */
@@ -136,6 +139,9 @@ export function fixableReason(instanceId, instance, heroId = undefined) {
         if (io.reason === 'choose_build') return { reason: ALERT.CHOOSE_BUILD, io };
         // A station with nothing picked likewise.
         if (io.reason === 'choose_recipe') return { reason: ALERT.CHOOSE_RECIPE, io };
+        // A Hideout with no camp it may rob chosen, or whose camp a guard stands on.
+        if (io.reason === 'choose_camp') return { reason: ALERT.CHOOSE_CAMP, io };
+        if (io.reason === 'guarded') return { reason: ALERT.GUARDED, io };
         return { reason: ALERT.NO_RECIPE, io };
     }
 

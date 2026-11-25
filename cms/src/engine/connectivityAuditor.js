@@ -1,4 +1,4 @@
-import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, spotFindings, fishFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, gearDefenceFindings, effectStackFindings, hallStarFindings, coinWorthFindings } from '../utils/constants';
+import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, crimeFindings, stealOf, spotFindings, fishFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, gearDefenceFindings, effectStackFindings, hallStarFindings, coinWorthFindings } from '../utils/constants';
 import { eventProblems, EVENT_BIOMES } from '../../../src/config/eventTable.js';
 import { STANDS_ON_CHOICES } from '../../../src/systems/atlas/TerrainMap.js';
 
@@ -12,7 +12,7 @@ const tokenSkill = (token) => token?.config?.skill ?? token?.skill ?? token?.ski
 const tokenLevel = (token) => token?.config?.skillRequired ?? token?.skillRequirement ?? 1;
 
 export function auditConnectivity(entities, solverRefusals = []) {
-  const { items = {}, tokens = {}, recipes = {}, enemies = {}, effects = {}, skillPerks = null, hallSky = null, events = null } = entities;
+  const { items = {}, tokens = {}, recipes = {}, enemies = {}, effects = {}, skillPerks = null, hallSky = null, events = null, world = null } = entities;
   const issues = [];
 
   const allItems = Object.values(items || {});
@@ -51,6 +51,12 @@ export function auditConnectivity(entities, solverRefusals = []) {
     for (const entry of rareTableOf(token)?.entries || []) {
       if (!producedBy[entry.itemId]) producedBy[entry.itemId] = [];
       producedBy[entry.itemId].push({ id: token.id, type: 'token' });
+    }
+    // An enemy's steal table: a Hideout's thief takes each of its lines and rare finds from the enemy's camp.
+    const steal = stealOf(token);
+    for (const oid of [...(steal?.outputs || []).map((o) => o.itemId), ...(steal ? rareTableOf(steal.block)?.entries || [] : []).map((e) => e.itemId)]) {
+      if (!producedBy[oid]) producedBy[oid] = [];
+      producedBy[oid].push({ id: token.id, type: 'token' });
     }
   }
 
@@ -251,6 +257,19 @@ export function auditConnectivity(entities, solverRefusals = []) {
 
   // An item's Coin worth the game cannot read (`itemCoins.js`), in the boot audit's words.
   for (const f of coinWorthFindings({ items })) {
+    issues.push({
+      entityId: f.entityId,
+      entityName: f.entityName,
+      entityType: f.entityType,
+      issueType: 'Data Integrity',
+      severity: 'Warning',
+      details: f.message.charAt(0).toUpperCase() + f.message.slice(1) + '.',
+    });
+  }
+
+  // Crime: a steal table no thief can roll, a caught curve out of range, a Hideout's own drops. The game's own rule (`crimeRule.js`); the boss camps are the world tables' own.
+  const bossCampIds = (Array.isArray(world?.kits) ? world.kits : []).flatMap((k) => (Array.isArray(k?.bossCamps) ? k.bossCamps : []));
+  for (const f of crimeFindings({ items, tokens: expandedTokens, recipes, bossCampIds })) {
     issues.push({
       entityId: f.entityId,
       entityName: f.entityName,

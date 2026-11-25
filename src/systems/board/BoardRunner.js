@@ -6,7 +6,6 @@ import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import { getTokenType, rollOutputQuantity, outputRange, tokenName } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as BoardState from './BoardState.js';
-import * as SpriteLayer from './SpriteLayer.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as RecipeResolver from './RecipeResolver.js';
@@ -20,6 +19,7 @@ import * as Flags from './Flags.js';
 import * as HeroMotion from './HeroMotion.js';
 import * as EnemyMotion from './EnemyMotion.js';
 import * as Groves from './Groves.js';
+import * as GroveFelling from './GroveFelling.js';
 import * as TimedChanges from './TimedChanges.js';
 import * as WorkCheck from './WorkCheck.js';
 import * as Foundations from './Foundations.js';
@@ -41,6 +41,7 @@ import * as FishingSpots from './FishingSpots.js';
 import * as Fields from './Fields.js';
 import * as Shrines from './Shrines.js';
 import * as SupportLinks from './supportLinks.js';
+import * as Thefts from './Thefts.js';
 import * as LoadoutMoments from './LoadoutMoments.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import * as HeroManager from '../hero/HeroManager.js';
@@ -255,34 +256,31 @@ function rollMultipliers(instanceId, config, failed) {
  * What a finished cycle makes, once it is paid: its outputs (`made.outputs`, already the catch on a
  * water) rolled and landed with its Double Loot and Giant Harvest (`rolls`), the rare table's find,
  * the bonus drops, and a shrine's offering lighting it. A failed cycle makes nothing here. Run once
- * per cycle, and once more for an Echo. Fills `made.produced`.
+ * per cycle, and once more for an Echo. Fills `made.produced`, and on a theft `made.stolen`.
  * Item output lands on the BOARD, not in the Bank: it is not banked until collected, and if the
  * Bank is full it simply waits there. A Token output stands on the mat beside the station.
  */
 function landOutputs(made, { doubled, giant }) {
-    const { instance, def, io, config, outputs, produced, failed, building } = made;
+    const { instance, def, io, config, outputs, produced, stolen, failed, building } = made;
     const id = instance.id;
     const times = (doubled ? 2 : 1) * (giant ? OutputRules.GIANT_HARVEST_TIMES : 1);
     let giantLanded = false;
 
-    // One item line, once its chance has landed: the authored range rolled, then the cycle's rules.
-    // Every drop lands this way, the rare table's too. `note` hears the sprite (for the twinkle).
+    // One item line, once its chance has landed: the authored range rolled, then the cycle's rules
+    // (`OutputRules.landItemLine`). Every drop lands this way, the rare table's too. `note` hears the
+    // sprite (for the twinkle). A line naming no item pays nothing: the cycle still runs and still
+    // takes its inputs.
     const landLine = (output, note) => {
-        // Roll the authored range FIRST, then widen it, so a 1-5 output buffs a lucky cycle more
-        // than an unlucky one.
-        const rolled = OutputRules.widenYield(id, config.skill, rollOutputQuantity(output));
-        const widened = rolled * times;
-        // A chance that this one item comes out doubled, after everything else.
-        const quantity = !output.itemId ? widened : OutputRules.doubleItemDrop(id, output.itemId, widened);
-        if (quantity <= 0) return;
-
-        // An output names a Token or an item. One that names neither pays nothing: the cycle still
-        // runs and still takes its inputs.
-        if (output.itemId) {
-            note(SpriteLayer.addSprite('item', output.itemId, quantity, id));
-            produced.push(output.itemId);
-            giantLanded = giant;
+        const quantity = OutputRules.landItemLine(id, config.skill, output, times, note);
+        if (!quantity) return;
+        produced.push(output.itemId);
+        // One line an item, so an Echo's second landing (or a rare find of a line's item) adds up.
+        if (io.steal) {
+            const same = stolen.find(s => s.itemId === output.itemId);
+            if (same) same.quantity += quantity;
+            else stolen.push({ itemId: output.itemId, quantity });
         }
+        giantLanded = giant;
     };
 
     // A build makes its Token by becoming it (below), never as a sprite.
@@ -302,8 +300,9 @@ function landOutputs(made, { doubled, giant }) {
     // works on it) and always marked a rare find for the mat's twinkle (`RareDrops.noteRareFind`;
     // the twinkle itself is switched off in `lootEffects.js`). A failed cycle rolls nothing, a build drops nothing, and
     // a Token with no table draws nothing.
+    // A theft rolls its camp's steal table's rare finds, never the Hideout's own.
     if (!failed && !building) {
-        const find = RareTables.rollRareTable(id, def, config.skill);
+        const find = RareTables.rollRareTable(id, io.steal ? io.steal.table.block : def, config.skill);
         if (find) landLine(find.entry, (sprite) => RareDrops.noteRareFind(sprite, find.chance));
     }
     // BONUS_DROP, skipped entirely on a failed cycle: nothing happened, so nothing drops. Double Loot
@@ -419,7 +418,11 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     const failChance = TileModifiers.resolveAxis(
         id, EFFECT_TYPES.FAIL_CHANCE, 0, config.skill
     );
-    const failed = failChance > 0 && Math.random() * 100 < failChance;
+    const failedRoll = failChance > 0 && Math.random() * 100 < failChance;
+    // A Hideout's theft (`io.steal`): a thief caught takes nothing and learns nothing, a failed cycle
+    // in all but name, and the camp gets its guard below. One draw, only for a theft that did not fail.
+    const thiefCaught = !failedRoll && !!io.steal && Thefts.rollCaught(id, heroId, io.steal);
+    const failed = failedRoll || thiefCaught;
 
     // The cycle still runs, makes its outputs and spends its charges; a Field's owed seed is never
     // paid for that crop, and a build that kept its materials remembers paying nothing.
@@ -433,6 +436,8 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // whose quantity rounded to nothing, did not happen and must not fire a
     // listener that says it did.
     const produced = [];
+    // What a theft took, with how many, for its word (`Thefts.afterTheft`).
+    const stolen = [];
 
     // Water: one catch from the pool the hero's tool and bait pick (one draw, unless the pool holds
     // one fish), in place of the Token's own outputs. It then lands like any output.
@@ -446,7 +451,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         outputs = caught ? [{ itemId: caught.itemId, chance: 100, minQty: 1, maxQty: 1 }] : [];
     }
 
-    const made = { instance, def, io, config, outputs, caught, produced, failed, building: !!buildTypeId };
+    const made = { instance, def, io, config, outputs, caught, produced, stolen, failed, building: !!buildTypeId };
     landOutputs(made, rolls);
 
     // `Applies`: a neighbour putting a status on the hero who just worked here. The same moment and
@@ -483,16 +488,21 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         EffectFeedback.echo(id, () => SupportLinks.firstSupportOf(id, EFFECT_TYPES.ECHO, config.skill));
     }
 
+    // A theft is said (and a catch's guard set) once its drops and XP are in, a failed one never.
+    if (io.steal && !failedRoll) Thefts.afterTheft(instance, io.steal, { heroId, caught: thiefCaught, items: stolen });
+
     // Pay the plan built at the top of this function: the Token's own operational cost. Anything
     // that hits 0 is destroyed by `commitPlan`, which is also where `null`-means-unlimited is
     // honoured: `null` is the opposite of 0, not a large version of it.
     // ⚠️ Nothing near the Token pays for this cycle: help is free (owner, 2026-10-24). A support or
     // a context Token never wears out, and a gathering node that helps its neighbours spends its
     // charges only on its own gathering (`Charges.planContextCharges`, `wearRule.js`).
-    // Can't Run Out, a shrine's blessing: nothing is spent, failed or not, and Refresh is not drawn.
+    // Can't Run Out (a shrine's blessing, the Motherlode perk): on a hit of its chance nothing is
+    // spent, failed or not, and Refresh is not drawn.
     // ⚠️ Not spending is also what keeps a source that ends by chance from drawing its end: that roll
     // lives where a charge is spent (`Charges.applyDelta`) and where a ripe Field is harvested
-    // (`Fields.harvested`, which a refreshed cycle leaves before it rolls).
+    // (`Fields.harvested`, which a refreshed cycle leaves before it rolls). So a tree it keeps never
+    // falls, and Grove Felling below never hears of it.
     // Refresh: a cycle that succeeded and would spend something may spend nothing. A failed cycle
     // still burns its charge and never rolls, and neither does one with nothing to spend.
     const isField = Fields.isField(def);
@@ -500,13 +510,15 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     const unending = spends && CycleSavings.neverRunsOut(id, config.skill);
     const refreshed = unending || (!failed && spends
         && CycleSavings.rollRefresh(id, config.skill));
-    if (!refreshed) Charges.commitPlan(chargePlan, { heroId });
+    const ended = refreshed ? [] : Charges.commitPlan(chargePlan, { heroId });
     // Used up just now: its rest began when this cycle ended, `overMs` before the tick's end.
     Respawn.restBeganEarlier(instance, overMs);
+    // A tree felled by a cycle that worked may fell the touching trees of its kind (Grove Felling).
+    if (!failed && heroId && ended.includes(id)) GroveFelling.afterFall(instance, def, io, heroId, config.skill);
 
     // A Field spends one harvest of its load; the last sows its crop again, growing from the moment
     // this cycle ended (`overMs` into the tick), or stops it without a seed (`Fields.js`).
-    if (isField) Fields.harvested(instance, def, { overMs, refreshed });
+    if (isField) Fields.harvested(instance, def, { overMs, refreshed, heroId });
 
     // The board's universal unit of work. One kill counts as one cycle too, so combat feeds this
     // exactly as production does.
@@ -803,10 +815,12 @@ export function tick(delta) {
             continue;
         }
 
-        if (check.reason === ALERT.CHOOSE_BUILD || check.reason === ALERT.CHOOSE_RECIPE || check.reason === ALERT.BUILD_SITE) {
+        if (check.reason === ALERT.CHOOSE_BUILD || check.reason === ALERT.CHOOSE_RECIPE || check.reason === ALERT.BUILD_SITE
+            || check.reason === ALERT.CHOOSE_CAMP || check.reason === ALERT.GUARDED) {
             // A Foundation or a station with nothing picked. Flags do not claim one, so this is
             // only reached by a hero already on it when the pick was cleared. It waits, saying so.
-            // Likewise a Foundation whose build may not stand where it is (moved off its Stone).
+            // Likewise a Foundation whose build may not stand where it is (moved off its Stone), and
+            // a Hideout whose camp has left its reach or has a guard on it (its thief stays by it).
             setAlert(instance, check.reason);
             continue;
         }
