@@ -59,4 +59,34 @@ describe('the Hideout scene', () => {
         off();
         expect(heard.length).toBeGreaterThan(0);
     });
+
+    it('caught, the thief goes for the guard, beats it and goes back to stealing', () => {
+        GameState.initNew();
+        InventoryManager.init();
+        TileModifiers.clearAll();
+        expect(setUpCrimeScene()).toEqual({ ok: true });
+        const [pasture] = BoardState.tokens().filter(t => t.typeId === 'qa_crime_pasture');
+        const [hideout] = BoardState.tokens().filter(t => t.typeId === 'qa_crime_hideout');
+        const thief = GameState.state.heroes.find(h => h.name === 'QA Thief');
+        expect(Hideouts.setTarget(hideout, pasture.id)).toBe(true);
+        const heard = [];
+        const defeats = [];
+        const offs = [
+            EventBus.subscribe(BOARD_EVENTS.THEFT, (p) => heard.push(p)),
+            EventBus.subscribe(BOARD_EVENTS.HERO_DEFEATED, (p) => defeats.push(p))
+        ];
+        let guardId = null;
+        for (let t = 0; t < 10 * 60_000 && !guardId; t += 100) {
+            GameLoop.runHandlers(100);
+            guardId = heard.find(p => p.caught)?.guardId ?? null;
+        }
+        expect(guardId).toBeTruthy();
+        expect(BoardState.flagOf(thief.id)).toMatchObject({ pinnedTo: guardId, returnTo: hideout.id });
+        for (let t = 0; t < 120_000 && BoardState.getTokenById(guardId); t += 100) GameLoop.runHandlers(100);
+        offs.forEach(off => off());
+        expect(BoardState.getTokenById(guardId)).toBeNull();
+        expect(defeats).toEqual([]);
+        GameLoop.runHandlers(100);
+        expect(BoardState.flagOf(thief.id)?.pinnedTo).toBe(hideout.id);
+    });
 });

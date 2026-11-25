@@ -27,9 +27,10 @@ import { xpForLevel } from '../../utils/XPCurve.js';
  * - QA Pasture: a Cow Pasture of QA Cows (three at most), whose steal table is Wheat (80 %), Milk
  *   (50 %) and a rare Wheat Seed (5 %), the camp's Crime level 5;
  * - QA Hideout and QA Quiet Hideout (Quiet 20) in the pasture's reach, a theft every 4 s;
- * - QA Thief (Crime 3) ordered onto the QA Hideout, which has no camp chosen yet; QA Fighter
- *   (Melee 40) at the Guild Hall, to beat a guard. At Crime 3 against 5 the thief is caught about
- *   one theft in three at the QA Hideout, one in nine at the Quiet one.
+ * - QA Thief (Crime 3, Melee 20) ordered onto the QA Hideout, which has no camp chosen yet; QA
+ *   Fighter (Melee 40) at the Guild Hall, to beat a guard. At Crime 3 against 5 the thief is caught
+ *   about one theft in three at the QA Hideout, one in nine at the Quiet one; caught, they go for
+ *   the guard, beat it and go back to stealing.
  * ⚠️ Changes the game, like Spawn Party.
  */
 const COW = 'qa_crime_cow';
@@ -37,6 +38,7 @@ const PASTURE = 'qa_crime_pasture';
 const HIDEOUT = 'qa_crime_hideout';
 const QUIET = 'qa_crime_quiet_hideout';
 const THIEF_LEVEL = 3;
+const THIEF_MELEE = 20;
 const FIGHTER_LEVEL = 40;
 
 const works = (id) => ({ id: `stm_${id}_works`, keyword: KEYWORD.STATION, payload: { skill: 'crime', stationKind: HIDEOUT_KIND } });
@@ -112,7 +114,7 @@ export function setUpCrimeScene() {
     for (let i = 0; i < 3; i++) SpawnerSystem.attemptSpawn(pasture, getTokenType(PASTURE));
     TileModifiers.rebuildAll();
 
-    const thief = addHero('QA Thief', { crime: THIEF_LEVEL });
+    const thief = addHero('QA Thief', { crime: THIEF_LEVEL, melee: THIEF_MELEE });
     const fighter = addHero('QA Fighter', { melee: FIGHTER_LEVEL });
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'dev_crime_scene' });
     if (!thief || !fighter) return { ok: false, error: 'The roster would not take the QA heroes' };
