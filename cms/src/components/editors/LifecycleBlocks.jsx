@@ -5,6 +5,7 @@ import {
   FOUNDATION_KINDS, RESPAWN_MODES, RESPAWN_DEFAULTS, RESPAWN_MIN_MS, skillsByLayer,
   expandBearer, stationSkillOf, stationKindOf, stationKindOffers, stationKindLabel, cropTermsOf,
   fieldOf, STANDARD_REACH_U, SKILLS, isWarCampBlock,
+  shrineOf, offeringTermsOf, SHRINE_MIN_MS, statementsOf, KEYWORD,
 } from '../../utils/constants';
 import { Section, Field } from '../shared/EditorLayout';
 import { ItemPicker, ItemList } from './Statements';
@@ -12,7 +13,7 @@ import SpritePickerModal from './SpritePickerModal';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
 /**
- * The Token Lifecycle blocks: spawner, grows, foundation, shop, trickle, respawn, field and camp, each added or removed as a whole.
+ * The Token Lifecycle blocks: spawner, grows, foundation, shop, trickle, respawn, field, camp and shrine, each added or removed as a whole.
  * ⚠️ Removing a block writes `undefined`, which JSON.stringify omits, so an absent block stays absent in the file.
  */
 
@@ -25,6 +26,7 @@ const BLOCK_INFO = {
   respawn: { title: 'Respawns', what: 'Comes back after it runs out instead of leaving the mat: refills where it stands after a rest, or regrows from another Token (Tree → Sapling → Tree).' },
   field: { title: 'Field', what: 'Grows its own crop: empty, growing, ripe. Its crops are the recipes it works (a Field or Herb Garden station); the player picks one on it.' },
   camp: { title: 'Camp', what: 'Heroes sent to it work the Tokens of its skill within its reach, one hero per Token (a Logging Camp, a Farmstead). Built on a Foundation like a station.' },
+  shrine: { title: 'Shrine', what: 'Its rules (its blessing) hold only while it is lit. A Faith hero working it spends an offering each cycle, which keeps it lit longer; untended it burns down and the blessing goes out.' },
 };
 
 export default function LifecycleBlocks({ token, onChange }) {
@@ -99,6 +101,9 @@ export default function LifecycleBlocks({ token, onChange }) {
                   )}
                   {key === 'camp' && (
                     <CampBlock block={token.camp} selfId={token.id} tokens={tokens} effects={effects} onChange={(v) => set('camp', v)} />
+                  )}
+                  {key === 'shrine' && (
+                    <ShrineBlock block={token.shrine} token={token} effects={effects} recipePools={recipePools} items={items} onChange={(v) => set('shrine', v)} />
                   )}
                 </div>
               )}
@@ -535,6 +540,44 @@ function CampBlock({ block, selfId, tokens, effects, onChange }) {
       </div>
       <p className="text-[10px] text-gray-600" data-field="camp-note">
         {note} Every camp, like every nearby rule, reaches the game&apos;s one standard reach, {reach} u centre to centre (the mat is 160 u a step).
+      </p>
+    </div>
+  );
+}
+
+/**
+ * A shrine: the most it can be lit at once. Its offerings are the recipes its Works as station offers (Faith, kind
+ * Shrine), each keeping it lit for its own time (set on the recipe); its rules are its blessing, off while it is out.
+ */
+const litTime = (ms) => (ms < 60000 ? seconds(ms) : minutes(ms));
+
+function ShrineBlock({ block, token, effects, recipePools, items, onChange }) {
+  const terms = shrineOf({ shrine: block });
+  const { skill, kind, crops: offerings } = cropsOfToken(token, effects, recipePools);
+  const expanded = expandBearer(token, effects);
+  const blessings = statementsOf(expanded).filter((s) => s?.keyword !== KEYWORD.STATION);
+  const inputsText = (r) => ((r.inputs || []).map((i) => `${i.quantity ?? 1} ${items?.[i.itemId]?.name || i.itemId}`).join(' and ') || 'nothing');
+  let note;
+  if (!skill) note = 'A shrine works as a station (a Works as rule, Faith, kind Shrine): its offerings are that station’s recipes.';
+  else if (!offerings.length) note = `No ${kind ? `${stationKindLabel(kind)} ` : ''}recipe of its skill yet: add offering recipes (Made at ${kind ? stationKindLabel(kind) : 'it'}).`;
+  else note = `Offerings: ${offerings.map((r) => `${r.name || r.id} (${inputsText(r)}, lit ${litTime(offeringTermsOf(r).litMs)})`).join('; ')}.`;
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Lit at most (min)">
+          <input
+            type="number" aria-label="Lit at most (min)" min={1} step={1}
+            value={Math.round(terms.maxLitMs / 60000)}
+            onChange={(e) => onChange({ ...block, maxLitMs: Math.max(SHRINE_MIN_MS, Math.round(Number(e.target.value) || 1) * 60000) })}
+            className="w-full"
+          />
+        </Field>
+      </div>
+      <p className="text-[10px] text-gray-600" data-field="shrine-note">
+        {note} {blessings.length
+          ? `Its ${blessings.length === 1 ? 'rule is its blessing' : `${blessings.length} rules are its blessing`}, on only while it is lit.`
+          : 'It has no rule yet: give it a blessing (Can’t Run Out, Echo, or any rule), which holds only while it is lit.'}
+        {' '}A hero offers only when a whole offering fits under the most; a shrine that is out always takes one.
       </p>
     </div>
   );

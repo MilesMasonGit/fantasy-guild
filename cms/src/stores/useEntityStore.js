@@ -5,7 +5,7 @@ import { useSimulationStore } from './useSimulationStore';
 import {
     statementsOf, makeStatement, KEYWORD,
     effectRefsOf, provisionalName,
-    normaliseScale, FOUNDATION_KINDS, RESPAWN_DEFAULTS,
+    normaliseScale, FOUNDATION_KINDS, RESPAWN_DEFAULTS, SHRINE_DEFAULTS,
 } from '../utils/constants';
 import { normaliseStarterCamp, emptyStarterCamp, withBankCount, withoutToken } from '../engine/starterCamp';
 import { withPerkRow, withoutPerkRow } from '../engine/skillPerks';
@@ -436,10 +436,10 @@ export function makeTokenOutputEntry(tokenId) {
     return { tokenId, chance: 100, minQty: 1, maxQty: 1 };
 }
 
-// Token Lifecycle blocks: `spawner`, `grows`, `foundation`, `shop`, `trickle`, `respawn`, `field`, `camp`. These factories only give the editor a starting value when an author ADDS a block.
+// Token Lifecycle blocks: `spawner`, `grows`, `foundation`, `shop`, `trickle`, `respawn`, `field`, `camp`, `shrine`. These factories only give the editor a starting value when an author ADDS a block.
 // ⚠️ Absent means absent: `makeToken` creates none of them and nothing on the load or sync path fills them in, so a Token without a block round-trips without one, byte for byte.
 
-export const TOKEN_LIFECYCLE_BLOCKS = Object.freeze(['spawner', 'grows', 'foundation', 'shop', 'trickle', 'respawn', 'field', 'camp']);
+export const TOKEN_LIFECYCLE_BLOCKS = Object.freeze(['spawner', 'grows', 'foundation', 'shop', 'trickle', 'respawn', 'field', 'camp', 'shrine']);
 
 export function makeWeightedTokenEntry(typeId = '') {
     return { typeId, weight: 1 };
@@ -472,6 +472,9 @@ export function makeLifecycleBlock(key) {
         case 'camp':
             // A camp of no skill yet (the audit reports it); every camp works the game's one standard reach.
             return { skill: '' };
+        case 'shrine':
+            // A shrine lit at most for the game's default; each offering recipe says how long it keeps it lit.
+            return { maxLitMs: SHRINE_DEFAULTS.maxLitMs };
         default:
             return undefined;
     }

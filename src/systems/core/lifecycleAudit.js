@@ -2,15 +2,17 @@
 
 import {
     FOUNDATION_KINDS, RESPAWN_MODES, respawnOf, foundationTierOf, foundationMinTierOf, foundationTierMeets,
-    STATION_KINDS, stationKindOffers, isRetiredStationKind, retiredStationKindsOf, stationKindLabel
+    STATION_KINDS, stationKindOffers, isRetiredStationKind, retiredStationKindsOf, stationKindLabel,
+    shrineOf, offeringTermsOf
 } from '../../config/registries/tokenConstants.js';
+import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { stationSkillOf, stationKindOf, getProvidedTagsWithTiers, statementsOf, KEYWORD } from '../effects/statements.js';
 import { neverWearsReason, NEVER_WEARS_WHY } from './wearRule.js';
 
 /**
- * The one checker for the eight Token Lifecycle blocks (`spawner`, `grows`,
- * `foundation`, `shop`, `trickle` (Passive Production), `respawn`, `field`, `camp`) and the recipe
- * fields `foundationKinds`, `foundationMinTier` and `crop`, shared by the game's boot audit (`ContentAudit`) and the
+ * The one checker for the nine Token Lifecycle blocks (`spawner`, `grows`,
+ * `foundation`, `shop`, `trickle` (Passive Production), `respawn`, `field`, `camp`, `shrine`) and the recipe
+ * fields `foundationKinds`, `foundationMinTier`, `crop` and `offering`, shared by the game's boot audit (`ContentAudit`) and the
  * CMS's Economy Audit (`connectivityAuditor`), so the two can never disagree.
  *
  * The rules are the "Validation" list of `docs/archive/token_lifecycle_roadmap_v1.md`
@@ -424,6 +426,43 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
             }
         }
 
+        // ── shrine: its rules hold only while it is lit, offerings keep it lit (`Shrines.js`) ──
+        if (def.shrine !== undefined && def.shrine !== null) {
+            const s = def.shrine;
+            const skill = stationSkillOf(def);
+            if (typeof s !== 'object' || Array.isArray(s)) {
+                err('shrine', `shrine is ${show(s)}; it must be a block.`);
+            } else if (!skill) {
+                err('shrine', 'is a shrine but works as no station; give it a Works as rule (Faith, kind Shrine): its offerings are that station’s recipes.');
+            } else {
+                if (hasValue(s.maxLitMs)) checkTime(err, 'shrine.maxLitMs', 'most lit time', s.maxLitMs);
+                const kind = stationKindOf(def);
+                const offerings = recipes.filter((r) => r?.skill === skill
+                    && !(Array.isArray(r.foundationKinds) && r.foundationKinds.length > 0) && stationKindOffers(kind, r));
+                if (!offerings.some((r) => r.offering)) {
+                    warn('shrine', `is a shrine but no ${show(skill)} recipe${kind ? ` made at a ${stationKindLabel(kind)}` : ''} is an offering yet (allowed while it is being authored; each would keep it lit for the default time).`);
+                }
+                const most = shrineOf(def).maxLitMs;
+                for (const r of offerings.filter((o) => offeringTermsOf(o).litMs > most)) {
+                    warn('shrine.maxLitMs', `is lit at most ${Math.round(most / 1000)} s, less than one ${show(r.name || r.id)} (${Math.round(offeringTermsOf(r).litMs / 1000)} s): it is offered only when the shrine is out, and lit no longer than its most.`);
+                }
+                if (!statementsOf(def).some((st) => st?.keyword !== KEYWORD.STATION)) {
+                    warn('shrine', 'is a shrine with no rule but its Works as: lit or out, it blesses nothing (allowed while it is being authored).');
+                }
+            }
+        }
+
+        // ── a blessing on a Token that is not a shrine: Faith's are effects no building gives (owner, 2026-11-25) ──
+        if (def.shrine === undefined || def.shrine === null) {
+            const blessings = [...new Set(statementsOf(def)
+                .map((st) => getPaletteEntry(st?.payload?.type))
+                .filter((entry) => entry?.blessing)
+                .map((entry) => entry.label))];
+            if (blessings.length) {
+                warn('statements', `carries ${blessings.join(' and ')}, a shrine’s blessing, but is not a shrine: it works, always on, but the owner keeps blessings to shrines. Move it to a shrine, or give this Token a Shrine block.`);
+            }
+        }
+
         // ── a rule that spawns an enemy: refused, enemies come only from camps (`TriggerSystem`) ──
         for (const statement of statementsOf(def)) {
             if (statement?.keyword !== KEYWORD.SPAWNS) continue;
@@ -488,6 +527,23 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
         if (c.load !== undefined) checkPositive((field, text) => recipeError(recipe, field, text), 'crop.load', 'crop load', c.load);
         if (!Array.isArray(recipe.inputs) || recipe.inputs.length === 0) {
             recipeWarning(recipe, 'inputs', 'is a crop with no inputs, so sowing it costs no seed (allowed).');
+        }
+    }
+
+    // ── Offerings: a recipe a shrine burns ──
+    for (const recipe of recipes) {
+        if (!recipe || recipe.offering === undefined || recipe.offering === null) continue;
+        const o = recipe.offering;
+        if (typeof o !== 'object' || Array.isArray(o)) {
+            recipeError(recipe, 'offering', `offering is ${show(o)}; it must be a block.`);
+            continue;
+        }
+        if (o.litMs !== undefined) checkTime((field, text) => recipeError(recipe, field, text), 'offering.litMs', 'offering lit time', o.litMs);
+        if (!Array.isArray(recipe.inputs) || recipe.inputs.length === 0) {
+            recipeWarning(recipe, 'inputs', 'is an offering with no inputs, so it keeps its shrine lit for nothing (allowed).');
+        }
+        if (Array.isArray(recipe.outputs) && recipe.outputs.length > 0) {
+            recipeWarning(recipe, 'outputs', 'is an offering that also makes something; a shrine’s cycle lights it, and its outputs land as well (allowed, but likely a leftover).');
         }
     }
 

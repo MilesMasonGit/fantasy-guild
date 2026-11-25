@@ -124,6 +124,8 @@ const carriedOptions = (ctx) => [
  */
 function payloadForAxis(type) {
     const entry = getPaletteEntry(type);
+    // An on-or-off effect (Can't Run Out) is born on: it has no number to type.
+    if (entry?.flag) return { type, bucket: 'flat', value: 1 };
     if (entry?.shape === 'proc') return { type, bucket: 'flat', value: 0 };
     // ⚠️ An axis that allows only some buckets starts in the first of them: a combat axis is read as
     // a flat sum, and a rule born in the percentage bucket there would do nothing.
@@ -323,7 +325,8 @@ function payloadSlots(statement, ctx) {
                     ],
                     patch: v => ({ payload: payloadForAxis(v) })
                 },
-                {
+                // An on-or-off effect has no amount and nothing to combine: only what it reaches.
+                ...(entry?.flag ? [] : [{
                     id: 'bucket', kind: SLOT_KIND.VOCABULARY, label: 'how it combines',
                     value: payload.bucket || 'percentage',
                     options: bucketsFor(entry).map(b => option(
@@ -354,7 +357,7 @@ function payloadSlots(statement, ctx) {
                             : typed;
                         return { payload: { ...payload, value: clampModifierValue(entry, stored) } };
                     }
-                },
+                }]),
                 ...(entry?.categories ? [{
                     // ⚠️ Optional: an unset skill scope means "any", so the editor must not paint it as a
                     // blank that needs filling.
