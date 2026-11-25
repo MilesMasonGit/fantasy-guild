@@ -341,7 +341,7 @@ describe('⭐ speech bubbles: the twice-a-second look draws only when what is sa
         const { container } = render(h(HeroBubbleLayer, { heroes: stuck(ALERT.CHARGES) }));
         wait(10);
         act(() => { EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { instanceId: 'o', x: 1, y: 1, typeId: 'fixture_enemy', exhaustedBy: 'hs' }); });
-        expect(said(container)).toEqual(['Fixture Enemy Beaten']);
+        expect(said(container)).toEqual(['Fixture Enemy Defeated']);
         renders.start();
         wait(BEATEN_TTL_MS + 500);
         renders.stop();

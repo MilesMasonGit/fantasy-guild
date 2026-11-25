@@ -493,7 +493,7 @@ function endText(record) {
     if (!record?.endedAt) return null;
     const time = elapsedText(record.endedAt - record.startedAt);
     if (record.outcome === OUTCOME.WON) return t('fight.panel.won', { enemy: record.enemyName, time });
-    if (record.outcome === OUTCOME.LOST) return t('fight.panel.lost', { time });
+    if (record.outcome === OUTCOME.LOST) return t('fight.panel.lost', { enemy: record.enemyName, time });
     return t('fight.panel.left', { time });
 }
 

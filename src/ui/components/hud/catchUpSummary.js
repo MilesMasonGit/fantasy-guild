@@ -141,7 +141,7 @@ function eventRows(summaryEvents, live) {
 /**
  * The "While you were away" panel's content, from a catch-up's result (`CatchUp.run`), in two
  * columns. `items` is the left one (`itemChanges`). The right one is the news, in this order:
- * `events`, `knockouts`, `broken`, `bankFull`, `stackFull`, `recipes`, `finds`, `levelUps`, `depleted`, `kills`. Every list is
+ * `knockouts` (the defeats), `events`, `broken`, `bankFull`, `stackFull`, `recipes`, `finds`, `levelUps`, `depleted`, `kills`. Every list is
  * empty when there is nothing to say, so the panel can leave that section out; `hasNews` says
  * whether the right column has anything at all. The news the banners and stubs also get once it
  * closes (`summary.news`) are the knock-outs, `bankFull`, `stackFull`, `recipes` and `finds`.
@@ -188,7 +188,7 @@ export function summaryView(result, live = LIVE_EVENTS) {
         /** Events that landed or left while away, and those still on the mat, one row per kind (`eventRows`). */
         events: eventRows(summary.events || [], live)
     };
-    view.hasNews = ['events', 'knockouts', 'broken', 'bankFull', 'stackFull', 'recipes', 'finds', 'levelUps', 'depleted', 'kills'].some(k => view[k].length > 0);
+    view.hasNews = ['knockouts', 'events', 'broken', 'bankFull', 'stackFull', 'recipes', 'finds', 'levelUps', 'depleted', 'kills'].some(k => view[k].length > 0);
     return view;
 }
 

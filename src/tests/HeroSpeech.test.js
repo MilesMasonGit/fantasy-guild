@@ -36,7 +36,7 @@ describe('A hero’s stack of speech bubbles', () => {
     it('words the moments plainly', () => {
         expect(momentText.arrived('Campfire')).toBe('Working at Campfire.');
         expect(momentText.idle()).toBe('Nothing to work here.');
-        expect(momentText.beaten('Goblin')).toBe('Goblin Beaten');
+        expect(momentText.beaten('Goblin')).toBe('Goblin Defeated');
         expect(momentText.waiting('Goblin')).toBe('Waiting for Goblin.');
     });
 

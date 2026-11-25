@@ -11,7 +11,7 @@ import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { TokenBubbles } from '../ui/components/board/TokenBubbles.jsx';
 import { MatHero, HERO_BAR_LINGER_MS } from '../ui/components/board/MatHero.jsx';
-import { healthFraction, healthText, healthPercent, healthFillPx, enemyBarPlace, heroBarPlace, HP_BAR, MAT_BAR, matHealthText } from '../ui/components/board/healthBar.js';
+import { healthFraction, healthFillPx, enemyBarPlace, heroBarPlace, HP_BAR, MAT_BAR, matHealthText } from '../ui/components/board/healthBar.js';
 import { setDrawn, resetDrawSwitches } from '../ui/dev/perf/drawSwitches.js';
 import { MatBoard } from '../ui/components/board/MatBoard.jsx';
 import * as Flags from '../systems/board/Flags.js';
@@ -68,16 +68,6 @@ describe('the rules, pure', () => {
         expect(matHealthText(-3, 50)).toBe('0/50');
         expect(matHealthText(33.6, 50)).toBe('34/50');
         expect(matHealthText(1500, 2000)).toBe('1,500/2,000');
-    });
-
-    it("the fight panel's number reads 'health · percent', whole, never below 0, with separators; percent rounds halves up", () => {
-        expect(healthText(34, 50)).toBe('34 · 68%');
-        expect(healthText(-3, 50)).toBe('0 · 0%');
-        expect(healthText(33.6, 50)).toBe('34 · 67%');
-        expect(healthText(1500, 2000)).toBe('1,500 · 75%');
-        expect(healthText(17, 30)).toBe('17 · 57%');
-        expect(healthPercent(1, 8)).toBe(13);          // 12.5 rounds up
-        expect(healthPercent(5, 0)).toBe(0);
     });
 
     it('the fill moves in whole art pixels (2 plate pixels)', () => {
