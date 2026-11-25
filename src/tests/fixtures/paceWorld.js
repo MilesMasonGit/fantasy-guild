@@ -83,6 +83,29 @@ export function paceContent() {
     };
 }
 
+/**
+ * The world with a web of potions: `count` bushes, each giving 900 of its own herb an hour (a 4 s
+ * cycle), and as many potions, each brewed at the Still from one herb in 3 s and lifting every
+ * bush's yield by 10 %. Maxed drinks every potion at every bush, so each herb's supply runs through
+ * every other herb's: one loop through all of them.
+ */
+export function potionWebContent(count) {
+    const c = paceContent();
+    for (let j = 0; j < count; j++) {
+        c.effects[`pw_fx_grow_${j}`] = { id: `pw_fx_grow_${j}`, name: `Grow ${j}`, statements: [provides(`pw_grow_${j}`, 'YIELD', 'percentage', 0.1, { mode: 'all', value: '' })] };
+        c.effects[`pw_fx_potion_${j}`] = {
+            id: `pw_fx_potion_${j}`, name: `Potion ${j}`,
+            statements: [{ id: `stm_pw_potion_${j}`, keyword: 'applies', to: { mode: 'all', value: '' }, target: { role: 'actor' }, when: { event: 'WORK_START', scope: 'self', skill: 'forestry' }, payload: { effectId: `pw_fx_grow_${j}`, scale: 1, durationMs: 0, forCycle: true, chance: 100 } }]
+        };
+        c.items[`item_herb_${j}`] = { id: `item_herb_${j}`, name: `Herb ${j}`, type: 'material', plan: { tier: 0 } };
+        c.items[`item_potion_${j}`] = { id: `item_potion_${j}`, name: `Potion ${j}`, type: 'potion', equipSlot: 'consumable', stackable: true, effects: [{ effectId: `pw_fx_potion_${j}`, scale: 1 }], plan: { tier: 0 } };
+        c.tokens[`token_bush_${j}`] = { id: `token_bush_${j}`, name: `Bush ${j}`, uses: null, config: { skill: 'forestry', skillRequired: 1, cycleTimeMs: 4000, xp: 1, inputs: [], outputs: [out(`item_herb_${j}`)] } };
+        c.recipes.push({ id: `recipe_potion_${j}`, name: `Potion ${j}`, skill: 'cooking', levelRequirement: 1, stationKinds: ['still'], durationMs: 3000, xp: 1, inputs: [{ itemId: `item_herb_${j}`, quantity: 1 }], outputs: [out(`item_potion_${j}`)] });
+        c.starterCamp.tokens.push({ typeId: `token_bush_${j}`, x: 3 + j, y: 0 });
+    }
+    return c;
+}
+
 /** The same world as the CMS workspace holds it (recipes in pools by skill). */
 export function paceWorkspace() {
     const c = paceContent();

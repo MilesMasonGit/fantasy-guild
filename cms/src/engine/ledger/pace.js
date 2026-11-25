@@ -147,9 +147,26 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     const fedMemo = new Map();
     // Per open supply or fed question, innermost last: whether it read an item in stock from a question outside it.
     const open = [];
-    const enter = () => open.push(false) - 1;
-    /** Closes the innermost question: whether its answer stands on its own (it read no stand-in from outside it). */
-    const leave = () => !open.pop();
+    // Beside each open question: the items it read in stock from outside it.
+    const reads = [];
+    const enter = () => {
+        reads.push({ inStock: new Set() });
+        return open.push(false) - 1;
+    };
+    /** Closes the innermost question: whether its answer stands on its own (it read no stand-in from outside it), and what it read. */
+    const leave = () => ({ kept: !open.pop(), read: reads.pop() });
+    /** An item read in stock: every open question inside its making read a stand-in. */
+    const readInStock = (itemId, stack) => {
+        for (let i = stack.get(itemId) + 1; i < open.length; i++) {
+            open[i] = true;
+            reads[i].inStock.add(itemId);
+        }
+    };
+    // A supply answer that read a stand-in, by key: kept inside the loop it was asked in, until the
+    // outermost question it read in stock (`until`, open at `at`) is answered, then forgotten with it.
+    // ⚠️ Worked out afresh down every path through a loop instead, a loop of many drinks and potions asks
+    // its answers once per path: the paths multiply with each drink, and the pace never finishes.
+    const inLoop = new Map();
     const madeBy = new Map();
     let profiles = null;
     let indexed = false;
@@ -197,7 +214,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const times = (m) => Object.fromEntries(Object.entries(m || {}).map(([k, v]) => [k, v * scale]));
             out = { rate, scale, items: times(rate.items), xp: times(rate.xp), tokens: times(rate.tokens), inputs: times(rate.inputs), short };
         }
-        if (leave()) fedMemo.set(key, out);
+        if (leave().kept) fedMemo.set(key, out);
         return out;
     }
 
@@ -206,10 +223,16 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const key = `${itemId}|${profile}|${cap}`;
         if (supplyMemo.has(key)) return supplyMemo.get(key);
         // An item asked for inside its own making (seeds for the tree that drops them) is in stock, for
-        // every question inside that making: their answers are not kept.
+        // every question inside that making: their answers are kept only inside the loop (`inLoop`).
         if (stack.has(itemId)) {
-            for (let i = stack.get(itemId) + 1; i < open.length; i++) open[i] = true;
+            readInStock(itemId, stack);
             return { perHour: Infinity, work: null, loop: true };
+        }
+        const held = inLoop.get(key);
+        if (held && held.stack === stack && reads[held.at] === held.until) {
+            // It leans on what it read in stock: the questions inside those makings are not kept either.
+            for (const id of held.inStock) if (stack.has(id)) readInStock(id, stack);
+            return held.best;
         }
         indexMakers();
         stack.set(itemId, enter());
@@ -221,7 +244,14 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             if (n > best.perHour) best = { perHour: n, work };
         }
         stack.delete(itemId);
-        if (leave()) supplyMemo.set(key, best);
+        const { kept, read } = leave();
+        if (kept) {
+            supplyMemo.set(key, best);
+        } else {
+            const inStock = [...read.inStock];
+            const at = Math.min(...inStock.map(id => stack.get(id)));
+            inLoop.set(key, { best, stack, inStock, at, until: reads[at] });
+        }
         return best;
     }
 

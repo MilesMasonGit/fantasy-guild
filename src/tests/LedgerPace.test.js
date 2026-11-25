@@ -9,7 +9,7 @@ import { PROFILE, PROFILES } from '../../cms/src/engine/ledger/profiles.js';
 import { runChecks, CHECKS } from '../../cms/src/engine/ledger/checks.js';
 import { settingsOf, levelAtMinutes, minutesToReach } from '../../cms/src/engine/ledger/settings.js';
 import { xpForLevel } from '../utils/XPCurve.js';
-import { paceContent } from './fixtures/paceWorld.js';
+import { paceContent, potionWebContent } from './fixtures/paceWorld.js';
 
 /**
  * The progression ledger's pace (brief 290 L5): every kind of work rated, the three profiles (Bare,
@@ -274,6 +274,46 @@ describe('a loop through the drinks', () => {
             }
         }
     });
+});
+
+describe('a web of potions', () => {
+    // Nine bushes, nine potions each brewed from one bush's herb, every potion lifting every bush: at Maxed
+    // each herb's supply runs through all the others. Worked out afresh down every path through that
+    // loop, the pace took a minute here and nine times longer with each potion more, and a change pack's
+    // gate on the real content never finished.
+    const POTIONS = 9;
+    const supplies = (pace) => {
+        const out = {};
+        for (let j = 0; j < POTIONS; j++) {
+            for (const profile of PROFILES) {
+                out[`item_herb_${j}|${profile}`] = pace.supplyOf(`item_herb_${j}`, profile).perHour;
+                out[`item_potion_${j}|${profile}`] = pace.supplyOf(`item_potion_${j}`, profile).perHour;
+            }
+        }
+        return out;
+    };
+
+    it('is worked out in moments, each herb fed by all nine potions, whichever question is asked first', () => {
+        const c = potionWebContent(POTIONS);
+        const pace = buildPace(c, buildLedger(c), null);
+        const maxed = pace.rateAt({ token: 'token_bush_0' }, PROFILE.MAXED);
+        for (let j = 0; j < POTIONS; j++) expect(maxed.chosen.map(x => x.id)).toContain(`item_potion_${j}`);
+        expect(maxed.scale).toBeCloseTo(1);
+        // 900 herbs an hour, 90 % more with nine potions; each potion brewed as fast as the Still can, 1200 an hour.
+        expect(pace.supplyOf('item_herb_0', PROFILE.MAXED).perHour).toBeCloseTo(1710);
+        expect(pace.supplyOf('item_potion_0', PROFILE.MAXED).perHour).toBeCloseTo(1200);
+        // Typical takes no potion (a potion costs more than its 10 % gives); Bare brews only as fast as one bush feeds it.
+        expect(pace.supplyOf('item_herb_0', PROFILE.TYPICAL).perHour).toBeCloseTo(900);
+        expect(pace.supplyOf('item_potion_0', PROFILE.BARE).perHour).toBeCloseTo(900);
+        for (const row of pace.trackOf('construction').levels) {
+            expect(row.hours.maxed).toBeLessThanOrEqual(row.hours.typical + 1e-9);
+            expect(row.hours.typical).toBeLessThanOrEqual(row.hours.bare + 1e-9);
+        }
+
+        const brewFirst = buildPace(c, buildLedger(c), null);
+        brewFirst.rateAt({ token: 'token_still', recipe: `recipe_potion_${POTIONS - 1}` }, PROFILE.MAXED);
+        expect(supplies(brewFirst)).toEqual(supplies(pace));
+    }, 10000);
 });
 
 describe('checks D', () => {
