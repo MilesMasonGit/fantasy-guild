@@ -49,7 +49,7 @@ describe('the words', () => {
     });
 
     it('an enemy kind says how often it attacks, in the game and the CMS', () => {
-        expect(t('fight.kinds.armoured.tip')).toBe('Resists Physical 50%, attacks every 4s');
+        expect(t('fight.kinds.armoured.tip')).toBe('Resists Slash, Crush and Stab 50%, attacks every 4s');
         expect(t('fight.kinds.swift.tip')).toBe('Small hits, attacks every 2s');
         expect(t('fight.kinds.brute.tip')).toBe('Big hits, attacks every 4s');
         for (const kind of ENEMY_KINDS) expect(kind.blurb, kind.id).not.toMatch(/swing/i);
