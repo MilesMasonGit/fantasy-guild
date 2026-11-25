@@ -11,13 +11,14 @@ import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 import { syncFiles } from '../../cms/src/engine/recipeSync';
 import ItemEditor from '../../cms/src/components/editors/ItemEditor.jsx';
 import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
+import EffectEditor from '../../cms/src/components/editors/EffectEditor.jsx';
 import { enemyProfileOf } from '../config/registries/enemyProfile.js';
 import { weaponStyleOf, gearLevelRequirement } from '../config/registries/weaponStyles.js';
 
 /**
  * ⭐ Gear and enemies in the CMS (brief 220, C2; classless heroes): a hand item that is not a tool is
- * a weapon with one style, damage and speed, and gear asks a level in its style; an enemy's numbers are filled from its level and kinds, shown as
- * defaults, and any can be typed over; the kinds are presets, none to two. Everything written
+ * a weapon with one style, damage and speed, and gear asks a level in its style; an enemy's numbers are filled from its level, shown as
+ * defaults, and any can be typed over; its kinds are none to two library effects, whose numbers add in a fight. Everything written
  * survives Recalculate, Sync and a reload unchanged.
  *
  * ⚠️ No real workspace: the store's persistence is a no-op here (TESTING, "The CMS").
@@ -267,85 +268,134 @@ describe('⭐ the Token editor: an enemy\'s numbers, filled from the level and k
         expect(store().tokens[cow].enemy).not.toHaveProperty('speed');
     });
 
-    it('an older enemy shows its budget scale; one without does not', () => {
-        expect(within(tokenEditor(cow).container).queryByLabelText('Budget scale')).toBeNull();
+    it('there is no Boss or Budget scale box; leftovers the game no longer reads are named and removed with one click', () => {
+        const first = tokenEditor(cow).container;
+        expect(within(first).queryByLabelText('Budget scale')).toBeNull();
+        expect(within(first).queryByLabelText('Boss')).toBeNull();
+        expect(field(first, 'enemy-leftovers')).toBeNull();
         cleanup();
-        store().updateToken(cow, { enemy: { level: 1, style: 'melee', budgetScale: 0.3 } });
-        const scale = within(tokenEditor(cow).container).queryByLabelText('Budget scale');
-        expect(scale).not.toBeNull();
-        expect(scale.value).toBe('0.3');
+        store().updateToken(cow, { enemy: { level: 1, style: 'melee', budgetScale: 0.3, boss: true, hostile: true } });
+        const { container } = tokenEditor(cow);
+        expect(field(container, 'enemy-leftovers').textContent).toContain('boss, hostile, budgetScale');
+        // The level fills the numbers: a budget scale no longer scales them.
+        expect(field(container, 'enemy-hp').value).toBe('21');
+        fireEvent.click(field(container, 'enemy-leftovers-remove'));
+        expect(store().tokens[cow].enemy).toEqual({ level: 1, style: 'melee' });
+    });
+
+    it('an enemy\'s work-cycle XP is shown as never paid (a kill pays its level\'s), and one click removes it', () => {
+        expect(store().tokens[cow].config.xp).toBe(2);
+        const { container } = tokenEditor(cow);
+        expect(field(container, 'enemy-cycle-xp').textContent).toContain('a kill never pays it');
+        fireEvent.click(field(container, 'enemy-cycle-xp-remove'));
+        expect(store().tokens[cow].config).not.toHaveProperty('xp');
+        expect(field(container, 'enemy-cycle-xp').textContent).toBe("A kill pays its level's XP, below.");
     });
 });
 
-describe('⭐ the kinds: none, one or two presets', () => {
+describe('⭐ the kinds: none, one or two library effects', () => {
     const cow = 'token_cow';
+    const THIRD = 1 / 3;
+    const provides = (type, value, bucket, category) => ({ id: `stm_k_${type}_${category || bucket}_${value}`, keyword: 'provides', payload: { type, bucket, value, ...(category ? { category } : {}) }, to: null, target: null, when: null });
+    /** The four kinds as the content pack authors them. */
+    const KINDS = {
+        effect_armoured: { id: 'effect_armoured', name: 'Armoured', autoSyncId: true, statements: [
+            provides('TYPE_RESIST', 50, 'flat', 'slash'), provides('TYPE_RESIST', 50, 'flat', 'crush'), provides('TYPE_RESIST', 50, 'flat', 'stab'),
+            provides('SWING_TIME', THIRD, 'percentage')
+        ] },
+        effect_nimble: { id: 'effect_nimble', name: 'Nimble', autoSyncId: true, statements: [provides('DODGE', 15, 'flat')] },
+        effect_swift: { id: 'effect_swift', name: 'Swift', autoSyncId: true, statements: [provides('SWING_TIME', -THIRD, 'percentage'), provides('DAMAGE', -THIRD, 'percentage')] },
+        effect_brute: { id: 'effect_brute', name: 'Brute', autoSyncId: true, statements: [provides('SWING_TIME', THIRD, 'percentage'), provides('DAMAGE', THIRD, 'percentage')] }
+    };
+    const withKinds = () => useEntityStore.setState((st) => ({ effects: { ...st.effects, ...KINDS } }));
+    const options = (select) => [...select.options].map((o) => o.value);
 
-    // Rewritten for damage types: Armoured's +2 armour became a resistance of 50 % on Slash, Crush and Stab.
-    it('ticking Armoured writes it and the numbers follow (Slash, Crush and Stab resistance 50 %, a 4 s swing)', () => {
+    it('until the library has its effect, a built-in preset shows as one and is read as before', () => {
+        store().updateToken(cow, { enemy: { ...store().tokens[cow].enemy, kinds: ['armoured'] } });
         const { container } = tokenEditor(cow);
-        fireEvent.click(field(container, 'enemy-kind-armoured'));
-        expect(store().tokens[cow].enemy.kinds).toEqual(['armoured']);
+        expect(field(container, 'enemy-kind-1').value).toBe('armoured');
+        expect(field(container, 'enemy-kind-1').selectedOptions[0].textContent).toBe('Armoured (built in)');
         for (const type of ['slash', 'crush', 'stab']) {
-            expect(field(container, `enemy-resist-${type}-step`).value).toBe('');
             expect(field(container, `enemy-resist-${type}-step`).selectedOptions[0].textContent).toBe('Resist 50% (from kinds)');
         }
-        expect(field(container, 'enemy-resist-physical-step')).toBeNull();
         expect(field(container, 'enemy-speed').selectedOptions[0].textContent).toBe('4 s (Slow)');
         expect(field(container, 'enemy-speed-source').textContent).toBe('from level + kinds');
-        expect(store().tokens[cow].enemy).not.toHaveProperty('resistances');
-        // Set all Physical writes the three types; the author's lines now stand for the kind's.
-        fireEvent.change(field(container, 'enemy-resist-fill-value'), { target: { value: '25' } });
-        fireEvent.click(field(container, 'enemy-resist-fill-physical'));
-        expect(store().tokens[cow].enemy.resistances).toEqual({ slash: 25, crush: 25, stab: 25 });
-        expect(field(container, 'enemy-resist-crush-step').value).toBe('25');
+        expect(field(container, 'enemy-kinds-note').textContent).toContain('until the library has its effect effect_armoured');
     });
 
-    it('an enemy\'s line left on a group says the game ignores it, and Split writes its three types', () => {
-        store().updateToken(cow, { enemy: { ...store().tokens[cow].enemy, resistances: { physical: 25 } } });
+    it('the boxes offer effects that can be a trait, never a status; picking writes the effect\'s id, the second box opens', () => {
+        withKinds();
         const { container } = tokenEditor(cow);
-        expect(field(container, 'enemy-resist-physical').textContent).toContain('the game ignores it');
-        fireEvent.click(field(container, 'enemy-resist-physical-split'));
-        expect(store().tokens[cow].enemy.resistances).toEqual({ slash: 25, crush: 25, stab: 25 });
-    });
-
-    it('Swift cannot go with Armoured (both set the swing); a third kind cannot be ticked', () => {
-        const { container } = tokenEditor(cow);
-        fireEvent.click(field(container, 'enemy-kind-armoured'));
-        expect(field(container, 'enemy-kind-swift').disabled).toBe(true);
-        expect(field(container, 'enemy-kind-brute').disabled).toBe(false);
-        fireEvent.click(field(container, 'enemy-kind-nimble'));
-        expect(store().tokens[cow].enemy.kinds).toEqual(['armoured', 'nimble']);
-        for (const kind of ['brute', 'swift']) expect(field(container, `enemy-kind-${kind}`).disabled, kind).toBe(true);
-        expect(container.querySelector('[data-field="enemy-kind-venomous"]')).toBeNull();
-
-        fireEvent.click(field(container, 'enemy-kind-armoured'));
-        fireEvent.click(field(container, 'enemy-kind-nimble'));
+        const offered = options(field(container, 'enemy-kind-1'));
+        for (const id of Object.keys(KINDS)) expect(offered).toContain(id);
+        expect(offered).not.toContain('effect_venom');
+        expect(field(container, 'enemy-kind-2').disabled).toBe(true);
+        fireEvent.change(field(container, 'enemy-kind-1'), { target: { value: 'effect_armoured' } });
+        expect(store().tokens[cow].enemy.kinds).toEqual(['effect_armoured']);
+        expect(field(container, 'enemy-kind-2').disabled).toBe(false);
+        expect(options(field(container, 'enemy-kind-2'))).not.toContain('effect_armoured');
+        fireEvent.change(field(container, 'enemy-kind-2'), { target: { value: 'effect_brute' } });
+        expect(store().tokens[cow].enemy.kinds).toEqual(['effect_armoured', 'effect_brute']);
+        // None in the first box keeps the second.
+        fireEvent.change(field(container, 'enemy-kind-1'), { target: { value: '' } });
+        expect(store().tokens[cow].enemy.kinds).toEqual(['effect_brute']);
+        fireEvent.change(field(container, 'enemy-kind-1'), { target: { value: '' } });
         expect(store().tokens[cow].enemy).not.toHaveProperty('kinds');
     });
 
-    it('kinds and typed numbers reach tokens.json as written, survive a reload, and the fight reads them', () => {
+    it('a kind\'s lines add to the ones written: the Crab\'s Crush −100 and Armoured\'s 50 make weak 50 % in a fight', () => {
+        withKinds();
+        store().updateToken(cow, { enemy: { ...store().tokens[cow].enemy, kinds: ['effect_armoured'], resistances: { crush: -100 } } });
         const { container } = tokenEditor(cow);
-        fireEvent.click(field(container, 'enemy-kind-brute'));
-        fireEvent.click(field(container, 'enemy-kind-nimble'));
-        fireEvent.change(field(container, 'enemy-dodge'), { target: { value: '5' } });
+        expect(field(container, 'enemy-resist-crush-step').value).toBe('-100');
+        expect(field(container, 'enemy-resist-crush-total').textContent).toBe('kinds add +50: Weak 50% in a fight');
+        expect(field(container, 'enemy-resist-slash-step').value).toBe('');
+        expect(field(container, 'enemy-resist-slash-total').textContent).toBe('kinds add +50: Resist 50% in a fight');
+        expect(field(container, 'enemy-resist-electric')).toBeNull();
+        expect(field(container, 'enemy-preview-resists').textContent).toBe('Slash 50%, Crush weak 50%, Stab 50%');
+        const box = within(container).getByText('What the fight uses').parentElement.parentElement;
+        expect(box.textContent).toContain('Attacks every4.0s');
+        expect(field(container, 'enemy-speed-source').textContent).toBe('from level; kinds add in a fight');
+        // A preset id on content reads as its effect now the library has it.
+        cleanup();
+        store().updateToken(cow, { enemy: { ...store().tokens[cow].enemy, kinds: ['armoured'] } });
+        expect(field(tokenEditor(cow).container, 'enemy-kind-1').value).toBe('effect_armoured');
+    });
 
+    it('a Brute\'s Damage % rolls on its written hit, which may be a fraction: 2.25 hits 3', () => {
+        withKinds();
+        store().updateToken(cow, { enemy: { ...store().tokens[cow].enemy, kinds: ['effect_brute'] } });
+        const { container } = tokenEditor(cow);
+        fireEvent.change(field(container, 'enemy-hit'), { target: { value: '2.25' } });
+        expect(store().tokens[cow].enemy.hit).toBe(2.25);
+        expect(field(container, 'enemy-preview-hit').textContent).toMatch(/^3 /);
+    });
+
+    it('kinds reach tokens.json as written, survive a reload, and the fight reads them; renaming the effect moves them', () => {
+        withKinds();
+        const { container } = tokenEditor(cow);
+        fireEvent.change(field(container, 'enemy-kind-1'), { target: { value: 'effect_nimble' } });
+        fireEvent.change(field(container, 'enemy-dodge'), { target: { value: '5' } });
         const files = expectStableRoundTrip();
         const written = files['tokens.json'][cow];
-        expect(written.enemy).toEqual({ ...shipped()['tokens.json'][cow].enemy, kinds: ['brute', 'nimble'], dodge: 5 });
-        expect(enemyProfileOf(written)).toMatchObject({ hit: 2, speed: 'slow', dodge: 5, kinds: ['brute', 'nimble'] });
+        expect(written.enemy).toEqual({ ...shipped()['tokens.json'][cow].enemy, kinds: ['effect_nimble'], dodge: 5 });
+        expect(enemyProfileOf(written, files['effects.json'])).toMatchObject({ dodge: 5, kinds: ['effect_nimble'], kindEffects: ['effect_nimble'] });
         const before = shipped()['tokens.json'];
         for (const other of Object.keys(before).filter(t => t !== cow)) {
             expect(JSON.stringify(files['tokens.json'][other]), other).toBe(JSON.stringify(before[other]));
         }
+        cleanup();
+        store().updateEffect('effect_nimble', { name: 'Quick Feet' });
+        expect(store().effects.effect_quick_feet).toBeDefined();
+        expect(store().tokens[cow].enemy.kinds).toEqual(['effect_quick_feet']);
     });
 
-    it('the preview shows what the fight uses, kinds included; no kind lands an effect any more', () => {
-        const { container } = tokenEditor(cow);
-        fireEvent.click(field(container, 'enemy-kind-armoured'));
-        const box = () => within(container).getByText('What the fight uses').parentElement.parentElement;
-        expect(field(container, 'enemy-preview-resists').textContent).toBe('Slash 50%, Crush 50%, Stab 50%');
-        expect(box().textContent).toContain('Attacks every4.0s');
-        expect(box().textContent).not.toContain('On hit');
+    it('the Effect editor names the enemies carrying it as a kind', () => {
+        withKinds();
+        store().updateToken(cow, { enemy: { ...store().tokens[cow].enemy, kinds: ['effect_armoured'] } });
+        store().setActiveEntity('effect_armoured', 'effect');
+        const { container } = render(React.createElement(EffectEditor));
+        expect(container.querySelector('[data-kind-users]').textContent).toContain(store().tokens[cow].name);
     });
 });
 

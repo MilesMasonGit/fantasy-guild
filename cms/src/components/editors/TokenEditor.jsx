@@ -266,7 +266,29 @@ export default function TokenEditor() {
                   />
                 </Field>
               )}
-              {isPooled ? (
+              {isEnemy ? (
+                // A kill pays its level's XP (the Enemy section's numbers), never a work cycle's.
+                <Field label="XP per cycle">
+                  <div className="text-[11px] text-gray-500 leading-relaxed" data-field="enemy-cycle-xp">
+                    {Number(config.xp) > 0 ? `${config.xp}: a kill never pays it (it pays its level's XP). ` : "A kill pays its level's XP, below."}
+                    {Number(config.xp) > 0 && (
+                      <button
+                        type="button"
+                        className="hover:underline"
+                        style={{ color: 'var(--color-warning)' }}
+                        data-field="enemy-cycle-xp-remove"
+                        onClick={() => {
+                          const rest = { ...config };
+                          delete rest.xp;
+                          update('config', rest);
+                        }}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </Field>
+              ) : isPooled ? (
                 <Field label="XP per cycle">
                   <div
                     className="w-full px-3 py-2 rounded-lg text-xs"

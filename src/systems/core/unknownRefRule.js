@@ -113,6 +113,9 @@ function enemyResistanceFindings(def, push) {
             push(`enemy.${field}`, `still carries "${field}", which the game no longer reads (a boss is what a boss camp spawns; the level fills the numbers). Remove it in the CMS.`);
         }
     }
+    if (Number(def.config?.xp) > 0 && def.enemy.level != null) {
+        push('config.xp', `carries a work cycle's XP (${def.config.xp}), which a kill never pays: a kill pays its level's XP. Remove it in the CMS, under Fight.`);
+    }
 }
 
 /**

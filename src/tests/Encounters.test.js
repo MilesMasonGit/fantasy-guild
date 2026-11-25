@@ -22,7 +22,6 @@ import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegi
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
-import { isBossEnemy } from '../config/registries/enemyProfile.js';
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { KEYWORD, makeStatement } from '../systems/effects/statements.js';
 import { PLACEMENT } from '../config/registries/placementRegistry.js';
@@ -329,7 +328,6 @@ describe('⭐ camps of one: bosses and guardians from ordinary spawners', () => 
 
 describe('⭐ bosses: never first to attack, hurt for the next hero, called by a Summoning Circle', () => {
     it('a boss, like every enemy, never attacks a hero working beside it', () => {
-        expect(isBossEnemy({ enemy: { level: 1, boss: true } })).toBe(true);
         const boss = placeAt('enc_boss', A.x, A.y);
         // A hero working right beside it.
         Orders.orderAt('h1', placeAt('enc_node', boss.x + 160, boss.y));

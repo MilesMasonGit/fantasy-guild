@@ -22,9 +22,10 @@ import * as FightMoments from '../systems/board/FightMoments.js';
 import { registerStatusFixtures } from './fixtures/statusEffects.js';
 
 /**
- * The four enemy kinds: presets an author ticks on an enemy, none to two, that twist what the level
- * table fills. (Venomous retired: a poisoning move carries Venom itself, `EnemyMoves.test.js`.) The table first (older content's budgetScale on HP, hit and XP), then
- * each kind in the order ticked, then any number the author typed, which wins outright.
+ * The four built-in kind presets, read as before until the library holds their effects (then a kind
+ * is that effect, `EnemyKindEffects.test.js`): none to two on an enemy, twisting what the level table
+ * fills: the table first, then each preset in the order ticked, then any number the author typed,
+ * which wins outright. (Venomous retired: a poisoning move carries Venom itself, `EnemyMoves.test.js`.)
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -97,9 +98,14 @@ describe('how a kind combines with the level table', () => {
         expect(pick(stats(1, ['nimble'], { dodge: 0 }))).toMatchObject({ dodge: 0 });
     });
 
-    it('older content\'s budgetScale scales the level first; a Brute is still at least 1 harder than that', () => {
-        // The Goblin: level 1 × 0.3 → 6 HP, hit 1, 3 XP; as a Brute, hit 2.
-        expect(pick(stats(1, ['brute'], { budgetScale: 0.3 }))).toEqual({ hp: 6, hit: 2, resistances: {}, speed: 'slow', xp: 3, dodge: 0 });
+    it('older content\'s budgetScale is read by nothing: the level fills the numbers (the audit names it)', () => {
+        expect(pick(stats(1, ['brute'], { budgetScale: 0.3 }))).toEqual(pick(stats(1, ['brute'])));
+        const left = findUnknownRefs({ tokens: { t: { id: 't', name: 'T', enemy: { level: 1, budgetScale: 0.3, boss: true } } } }).map(f => f.field);
+        expect(left).toEqual(['enemy.boss', 'enemy.budgetScale']);
+        // A work cycle's XP on an enemy is never paid; a 0 left by the editor's default says nothing.
+        const xp = (n) => findUnknownRefs({ tokens: { t: { id: 't', name: 'T', enemy: { level: 1 }, config: { xp: n } } } }).map(f => f.field);
+        expect(xp(2)).toEqual(['config.xp']);
+        expect(xp(0)).toEqual([]);
     });
 
     it('an unknown kind, a repeat and a third kind are ignored; clashing speeds let the later win', () => {
@@ -193,11 +199,14 @@ describe('a fight against each kind', () => {
 
 describe('the audit names a kind the game does not have, a third kind, or a clash', () => {
     const token = (kinds) => ({ id: 't', name: 'T', enemy: { level: 1, style: 'melee', kinds } });
-    const fields = (kinds) => findUnknownRefs({ tokens: { t: token(kinds) } }).map(f => f.message);
+    // Checked against a library with no kind effects: the presets stand on their own.
+    const fields = (kinds) => findUnknownRefs({ tokens: { t: token(kinds) }, effects: {} }).map(f => f.message);
 
     it('reports each problem once, and nothing for a good pair', () => {
         expect(fields(['armoured', 'nimble'])).toEqual([]);
         expect(fields(['giant'])[0]).toContain('"giant"');
+        // Without a library to look in, a kind that is no preset is taken on trust (it may be an effect).
+        expect(findUnknownRefs({ tokens: { t: token(['effect_armoured']) } })).toEqual([]);
         expect(fields(['armoured', 'nimble', 'brute'])[0]).toContain('at most 2');
         expect(fields(['swift', 'armoured'])[0]).toContain('different attack speeds');
     });
