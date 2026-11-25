@@ -131,12 +131,12 @@ export const SKILLS = {
     },
     faith: {
         id: 'faith', name: 'Faith', layer: SKILL_LAYERS.STARTING,
-        description: 'Shrines, altars and wards that bless the heroes and Tokens around them.',
+        description: "A shrine's strong blessing holds only while a Faith hero keeps it supplied with offerings, made at an altar from other skills' goods.",
         icon: '✝️'
     },
     summoning: {
         id: 'summoning', name: 'Summoning', layer: SKILL_LAYERS.STARTING,
-        description: 'Raising thralls and spirits that fight in a hero’s place.',
+        description: 'Calls Summoned workers that work but never fight, until their charges run out. A higher level calls more kinds and adds more charges.',
         icon: '👻'
     },
     enchanting: {
@@ -151,18 +151,13 @@ export const SKILLS = {
     },
     crime: {
         id: 'crime', name: 'Crime', layer: SKILL_LAYERS.STARTING,
-        description: 'Locks, contraband and the things other people would rather keep.',
+        description: 'Steals from enemy camps instead of fighting them, for a different set of goods. A theft that goes wrong puts a guard on the camp.',
         icon: '🗝️',
         sprite: 'assets/skills/s_crime.png'
     },
-    taming: {
-        id: 'taming', name: 'Taming', layer: SKILL_LAYERS.STARTING,
-        description: 'Beasts of burden that harvest, haul and graze unattended.',
-        icon: '🐾'
-    },
     science: {
         id: 'science', name: 'Science', layer: SKILL_LAYERS.STARTING,
-        description: 'Laboratories that convert goods in bulk into other materials.',
+        description: 'Studies nearby nodes in a Laboratory for lasting mastery of each kind of node, instead of goods.',
         icon: '⚗️'
     }
 };
@@ -216,11 +211,11 @@ export const SKILL_CATEGORIES = {
 };
 
 /**
- * Skills cut when heroes became classless. ⚠️ Not skills any more: an older save's levels in them
+ * Skills cut from the game (heroes became classless; Taming left). ⚠️ Not skills any more: an older save's levels in them
  * are dropped on load (`HeroRehydration.settleSkillSheet`), and content still naming one is listed
  * by the boot audit and the CMS Economy Audit as a skill that does not exist.
  */
-export const RETIRED_SKILL_IDS = Object.freeze(['leadership', 'commerce', 'trapping', 'armory', 'shadowcraft']);
+export const RETIRED_SKILL_IDS = Object.freeze(['leadership', 'commerce', 'trapping', 'armory', 'shadowcraft', 'taming']);
 
 /** How many skills exist in the world. */
 export const SKILL_COUNT = Object.keys(SKILLS).length;

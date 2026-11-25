@@ -14,8 +14,8 @@ import { skillArt, SKILL_PLACEHOLDER_SPRITE } from '../ui/components/base/SkillI
 
 /** Tailor, the 21st skill: one entry in the registry, and everything that lists skills follows it. */
 describe('Tailor in the registry', () => {
-    it('is the 21st skill, a making skill every hero holds', () => {
-        expect(SKILL_COUNT).toBe(21);
+    it('is one of the 20 skills, a making skill every hero holds', () => {
+        expect(SKILL_COUNT).toBe(20);
         expect(getSkill('tailor')).toMatchObject({
             id: 'tailor', name: 'Tailor', trade: SKILL_TRADES.CRAFTING, layer: SKILL_LAYERS.STARTING
         });
