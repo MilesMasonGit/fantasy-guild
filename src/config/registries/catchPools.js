@@ -53,6 +53,16 @@ function tagList(raw) {
 /** The key a repeat is found by: the tool, the bait and where the pool holds. */
 const poolKey = (tool, bait, water, biomes) => `${tool}|${bait || ''}|${water ? water.join(',') : ''}|${biomes ? biomes.join(',') : ''}`;
 
+/**
+ * A usable pool's name among its Token type's pools, one each: its tool and bait
+ * (`fishing_rod|item_bait`), then, for a pool naming where it holds, its water and its biomes
+ * (`fishing_rod|item_bait||coast`). The ledger names the pool a hero fishes by it.
+ */
+export function poolKeyOf(pool) {
+    const base = `${pool.tool}|${pool.bait || ''}`;
+    return pool.water || pool.biomes ? poolKey(pool.tool, pool.bait, pool.water, pool.biomes) : base;
+}
+
 function normalise(raw) {
     if (!Array.isArray(raw)) return EMPTY;
     const out = [];

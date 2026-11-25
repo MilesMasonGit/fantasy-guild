@@ -4,7 +4,8 @@ import { buildRateBook, LIFECYCLE, WORK } from './rates.js';
 import { buildProfiles, targetKey, PROFILE, PROFILES, PROFILE_TEXT, BOOST_KIND, BOOST_KIND_TEXT, boostKindOf, BEFORE_HALL, pickKindOf, RARE_FIND_KINDS } from './profiles.js';
 import { starAddsRate } from './hall.js';
 import { settingsOf, minutesPerLevelAt, minutesToReach, formatMinutes, levelAtMinutes } from './settings.js';
-import { HOW, COMBAT, parseKey, itemKey, tokenKey, recipeKey, wedgeKey, starKey, LEDGER_ENGINE_TEXT } from '../../../../src/systems/progression/ledger/engine.js';
+import { HOW, COMBAT, parseKey, itemKey, tokenKey, recipeKey, wedgeKey, starKey, spotPoolKey, LEDGER_ENGINE_TEXT } from '../../../../src/systems/progression/ledger/engine.js';
+import { spotOf } from '../../../../src/config/registries/fishingSpots.js';
 import { ringOfStar } from '../../../../src/systems/world/ringStars.js';
 import { HALL_NODE, ROSTER_STAR } from '../../../../src/config/guildUpgrades.js';
 import { planOf, PLAN_STATUS, tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
@@ -129,6 +130,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         if (target.pool) {
             const bait = target.pool.split('|')[1];
             if (bait) parts.push(tierOfKey(itemKey(bait)));
+            // A fishing spot's pool is fished once the spot stands where it holds.
+            if (spotOf(rates.token(target.token))) parts.push(tierOfKey(spotPoolKey(target.token, target.pool)));
         }
         const tier = parts.some(t => t === null) ? null : Math.max(...parts);
         const work = { target, key: targetKey(target), entry, tier };
@@ -175,12 +178,14 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     const indexMakers = () => {
         if (indexed) return;
         indexed = true;
-        // What each work can make with or without every boost, read without pricing anything (pricing reads this index).
+        // What each work can make with or without every boost, read without pricing anything (pricing reads this index);
+        // a water, every fish its pool lands, at whatever level.
         for (const work of works) {
             if (work.tier === null) continue;
             const r = profiles.everythingOf(work.target, maxTier);
             const b = profiles.profileOf(work.target, PROFILE.BARE, maxTier).rate;
-            for (const item of new Set([...Object.keys(r.items || {}), ...Object.keys(b.items || {})])) {
+            const fish = rates.catchesOf(work.target).map(c => c.itemId);
+            for (const item of new Set([...Object.keys(r.items || {}), ...Object.keys(b.items || {}), ...fish])) {
                 if (!madeBy.has(item)) madeBy.set(item, []);
                 madeBy.get(item).push(work);
             }
@@ -241,7 +246,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         let best = { perHour: 0, work: null };
         for (const work of madeBy.get(itemId) || []) {
             if (work.tier === null || work.tier > cap) continue;
-            const f = fed(work, profile, cap, stack);
+            const f = fed(work, profile, cap, stack, catchLevel(work, itemId));
             const n = f.items[itemId] || 0;
             if (n > best.perHour) best = { perHour: n, work };
         }
@@ -252,6 +257,16 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         return best;
     }
 
+    /**
+     * The level a hero fishes a water at to land `itemId`: the fish's own, where it is above the
+     * pool's lowest (a pool's rate at its gate lands only the fish open there). Null for other work.
+     */
+    function catchLevel(work, itemId) {
+        if (!work.target.pool) return null;
+        const level = rates.catchesOf(work.target).find(c => c.itemId === itemId)?.level ?? null;
+        return level !== null && level > (profiles.contextOf(work.target).gate ?? 1) ? level : null;
+    }
+
     const unitHours = (itemId, cap) => {
         const s = supplyOf(itemId, PROFILE.BARE, cap).perHour;
         return s > 0 ? 1 / s : Infinity;
@@ -260,12 +275,12 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const s = supplyOf(itemId, BEFORE_HALL, cap).perHour;
         return s > 0 ? 1 / s : Infinity;
     };
-    /** Bare hero-hours to have one of a Token: free where the camp or a Region places it, else its price and its build. */
+    /** Bare hero-hours to have one of a Token: free where the camp or a Region places it (or it drifts in), else its price and its build. */
     const costHours = (key, cap) => {
         const at = reach.get(key);
         if (!at?.rule) return Infinity;
         const rule = at.rule;
-        if ([HOW.STARTER_CAMP, HOW.WORLD, HOW.HALL, HOW.SPAWN, HOW.GROW, HOW.REGROW].includes(rule.how)) return 0;
+        if ([HOW.STARTER_CAMP, HOW.WORLD, HOW.HALL, HOW.SPAWN, HOW.GROW, HOW.REGROW, HOW.ARRIVE, HOW.EVENT].includes(rule.how)) return 0;
         if (rule.how === HOW.SHOP) return sum(rule.inputs.map(i => i.quantity * unitHours(parseKey(i.key).id, cap)));
         if (rule.how === HOW.CRAFT) {
             const recipe = rates.recipes[parseKey(rule.via).id];
@@ -472,10 +487,16 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         }
         case HOW.CATCH: {
             const id = parseKey(rule.via).id;
-            const pools = works.filter(w => w.target.token === id && w.target.pool);
+            // A fishing spot's catch is its own pool's, where the spot stands; a fixed water's, its best pool's.
+            const own = rule.pathVia ? rule.pool?.key : null;
+            const pools = works.filter(w => w.target.token === id && w.target.pool && (!own || w.target.pool === own));
+            // The hero fishes at the level the fish asks, or the pool's lowest fish's if that is higher:
+            // a water's own gate may be under every fish it holds, and no catch lands there.
+            const asks = rule.gates.reduce((top, g) => Math.max(top, g.level), 0);
             let best = done(Infinity, 'no pool catches it');
             for (const w of pools) {
-                const r = firstOf(workAt(w, profile, Math.max(cap, w.tier ?? cap)), give.key);
+                const level = Math.max(asks, profiles.contextOf(w.target).gate ?? 1);
+                const r = firstOf(workAt(w, profile, Math.max(cap, w.tier ?? cap), level > 1 ? level : null), give.key);
                 if (r.hours < best.hours) best = r;
             }
             return best;
@@ -661,7 +682,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     const workName = (work) => {
         if (!work) return '—';
         const t = work.target;
-        const base = t.recipe ? `${nameOf(recipeKey(t.recipe))} at ${nameOf(tokenKey(t.token))}` : nameOf(tokenKey(t.token));
+        const water = t.pool && spotOf(rates.token(t.token)) ? spotPoolKey(t.token, t.pool) : tokenKey(t.token);
+        const base = t.recipe ? `${nameOf(recipeKey(t.recipe))} at ${nameOf(tokenKey(t.token))}` : nameOf(water);
         return t.pool && t.pool.split('|')[1] ? `${base} (${nameOf(itemKey(t.pool.split('|')[1]))})` : base;
     };
 

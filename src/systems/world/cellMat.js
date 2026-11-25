@@ -1,6 +1,6 @@
 // what a world cell's mat holds: its kit's work, its specialty's better things, its chests and its wild oddness (pure)
 
-import { STRICT_RINGS, heroTokensOf, kitById, lineById } from '../../config/worldTablesShape.js';
+import { STRICT_RINGS, heroTokensOf, kitById, lineById, KIT_BIOME, DEFAULT_BIOME, kitBiome } from '../../config/worldTablesShape.js';
 import { biomeRow, rollBiomeTerrain } from '../../config/biomeTerrain.js';
 import { mulberry32, seedFromText } from '../atlas/seededRandom.js';
 import { apportion } from '../atlas/Budget.js';
@@ -57,16 +57,7 @@ export const DEFAULT_HEROES = 5;
 /** The most heroes a mat's natural work keeps busy (owner: four to six); the rest is built. */
 export const MAX_HEROES = 6;
 
-/** The ground each placeholder kit stands on when its row names none. */
-export const KIT_BIOME = Object.freeze({
-    highland: 'mountain',
-    woodland: 'forest',
-    plains: 'meadow',
-    wetland: 'bog',
-    riverside: 'coast'
-});
-
-export const DEFAULT_BIOME = 'meadow';
+export { KIT_BIOME, DEFAULT_BIOME, kitBiome };
 
 /** The odd layouts a wild cell may have (owner: islands, a chasm, mostly water, little building room). */
 export const WILD_LAYOUT = Object.freeze({ ISLANDS: 'islands', CHASM: 'chasm', MOSTLY_WATER: 'mostly_water', CRAMPED: 'cramped' });
@@ -84,11 +75,6 @@ export const LAYOUT_GROUND = Object.freeze({
 });
 
 const byText = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
-
-/** The ground a kit stands on. */
-export function kitBiome(tables, kitId) {
-    return kitById(tables, kitId)?.biome || KIT_BIOME[kitId] || DEFAULT_BIOME;
-}
 
 /** The everyday origins of `skill` for a cell of tier `tier`: earlier rings' and the Hall's, weighted. */
 function everydayOf(skill, tier, tables, skillOf, hallOrigins) {

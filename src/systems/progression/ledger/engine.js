@@ -10,11 +10,16 @@ import { stationSkillOf, stationKindOf, KEYWORD } from '../../effects/statements
 import {
     stationKindOffers, foundationTierMeets, growsTermsOf, respawnOf, spawnerUpkeepOf, cropTermsOf, fieldOf, outputRange, PASSIVE_LAP_BASE_MS
 } from '../../../config/registries/tokenConstants.js';
-import { catchPoolsOf, hasCatchPools } from '../../../config/registries/catchPools.js';
-import { fishBait, fishCycleMs } from '../../../config/registries/fishRules.js';
+import { catchPoolsOf, hasCatchPools, poolForTool, poolKeyOf, catchToolKinds, poolBites } from '../../../config/registries/catchPools.js';
+import { fishBait, fishCycleMs, fishLevel } from '../../../config/registries/fishRules.js';
+import { spotOf, arrivesByItself, groundWaterKinds, WATER_KIND } from '../../../config/registries/fishingSpots.js';
 import { rareTableOf, rareEntryChances } from '../../../config/registries/rareTables.js';
 import { toolOf, neededToolOf, toolMeets, starterToolIds } from '../../../config/registries/toolKinds.js';
-import { STRICT_RINGS, SKILL_OF, EXTRA_KIND } from '../../../config/worldTablesShape.js';
+import { STRICT_RINGS, SKILL_OF, EXTRA_KIND, kitBiome } from '../../../config/worldTablesShape.js';
+import { biomeRow } from '../../../config/biomeTerrain.js';
+import { normaliseEventTable, isRunnable } from '../../../config/eventTable.js';
+import { EVENT_WAIT_MIN_MS, EVENT_WAIT_MAX_MS } from '../../../config/eventTiming.js';
+import { allowsTerrain, TERRAIN } from '../../atlas/TerrainMap.js';
 
 /**
  * Two engines over one picture of the content (`buildWorld`), shared by the CMS's ledger views and
@@ -44,7 +49,8 @@ import { STRICT_RINGS, SKILL_OF, EXTRA_KIND } from '../../../config/worldTablesS
  * the Wishing Well), the Shop, spawners, growth and turning and regrowth, the world's cells,
  * Foundations and the
  * buildings built on them, stations and their kinds, Fields and their crops, tool kinds and tiers,
- * catch pools and bait, drops, bonus drops and spawns from rules. A new way
+ * catch pools and bait, fishing spots drifting in on water (and the spot kinds an event lands, see
+ * {@link spotArrivalRules}), drops, bonus drops and spawns from rules. A new way
  * content appears belongs in `buildWorld`, as a rule.
  * ⚠️ A Planned entry is not in the world: it never reaches the game, so it makes nothing and nothing
  * makes it; its reach is null.
@@ -70,6 +76,23 @@ export const LUCK_BELOW = 0.05;
 export const STEADY_FINDS_PER_DAY = 1;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * The Starter Camp's ground as fishing spots read it: a Region no map wrote is meadow
+ * (`GroundRules.NO_MAP_BIOME`), and a new game digs its pond, fresh water, near the camp
+ * (`StarterCamp.starterCampTerrain`). ⚠️ The game digs none where no spot keeps off every Token;
+ * the ledger takes the pond as dug.
+ */
+export const STARTER_CAMP_GROUND = Object.freeze({ biome: 'meadow', waters: Object.freeze([WATER_KIND.FRESH]) });
+
+/**
+ * A wedge's ground is sure at a ring when at least this share of its cells stand on it (the share
+ * its kits' lean gives the biome); under it, only some worlds hold it there.
+ */
+const SURE_GROUND_SHARE = 0.5;
+
+/** The event clock's mean wait between events (`EventClock.drawWait`). */
+export const MEAN_EVENT_WAIT_MS = (EVENT_WAIT_MIN_MS + EVENT_WAIT_MAX_MS) / 2;
 
 /** How a give comes: a steady source, a rare but steady one, or luck. */
 export const FIND = Object.freeze({ STEADY: 'steady', RARE: 'rare', LUCK: 'luck' });
@@ -104,7 +127,9 @@ export const HOW = Object.freeze({
     HOLD: 'hold',
     SETTLE: 'settle',
     WORLD: 'world',
-    STAR: 'hall-star'
+    STAR: 'hall-star',
+    ARRIVE: 'arrive',
+    EVENT: 'event-lands'
 });
 
 /** Author-facing words, kept together for translation. */
@@ -130,7 +155,9 @@ export const LEDGER_ENGINE_TEXT = Object.freeze({
         hold: 'held',
         settle: 'settled on the world map',
         world: 'on a world cell',
-        'hall-star': 'a Guild Hall star lit'
+        'hall-star': 'a Guild Hall star lit',
+        arrive: 'drifts in on the water by itself',
+        'event-lands': 'lands with an event'
     }),
     ring: (ring) => `Ring ${ring} opened`,
     someWorlds: 'in some worlds',
@@ -158,9 +185,15 @@ export const wedgeKey = (line, ring) => `wedge:${line}:${ring}`;
 export const starKey = (id) => `star:${id}`;
 /** A ring of the world map the guild may settle: its ring star lit. */
 export const ringKey = (ring) => `ring:${ring}`;
+/**
+ * A fishing spot kind standing where one of its pools is the one fished (`catchPools.poolKeyOf`
+ * names the pool): what that pool's catches need, so a spot's catch follows the water and biome it
+ * stands on.
+ */
+export const spotPoolKey = (typeId, poolKey) => `spot:${typeId}|${poolKey}`;
 const toolKey = (need) => `tool:${(need.kinds || [need.kind]).join('|')}:${need.minTier}`;
 
-/** `{ kind, id }` of a key: kind is item, token, recipe, tool, wedge, star or ring. */
+/** `{ kind, id }` of a key: kind is item, token, recipe, tool, wedge, star, ring or spot. */
 export function parseKey(key) {
     const at = key.indexOf(':');
     return { kind: key.slice(0, at), id: key.slice(at + 1) };
@@ -350,6 +383,10 @@ export function buildWorld(content = {}) {
         }
     }
 
+    // A fishing spot's catches are added after the loop, the kinds that arrive by themselves first:
+    // where two kinds give a fish at the same tier, the one that drifts in every few minutes is the
+    // path, not one an event lands now and then (reach keeps the first of equals).
+    const spotCatches = [];
     for (const [id, def] of Object.entries(tokens)) {
         const self = tokenKey(id);
         const isEnemy = isObject(def.enemy);
@@ -425,20 +462,40 @@ export function buildWorld(content = {}) {
 
         // Water: each pool, its tool and its Bait; one catch a cycle, by weight, as the lureless
         // roll lands it: the Bait its fish ask on average, at the longest catch time among them.
+        // Each fish from its own level (`Fishing.catchLevelOf`): one rule per level the pool's fish
+        // ask. A fishing spot's pool is fished only where it stands on water and in a biome it holds
+        // for, so its catches need the spot standing there (`spotPoolKey`, given by
+        // `spotArrivalRules`), and its path runs back through that place.
         if (hasCatchPools(def)) {
             const ownMs = finite(Number(def.config?.cycleTimeMs), null);
-            const gates = gate(def.config?.skill, def.config?.skillRequired);
+            const ownLevel = Math.max(1, Math.floor(finite(Number(def.config?.skillRequired), 1)));
+            const isSpot = spotOf(def) !== null;
+            const put = isSpot ? (rule) => spotCatches.push({ rule, first: arrivesByItself(spotOf(def)) }) : add;
             catchPoolsOf(def).forEach((pool, i) => {
                 const total = pool.catches.reduce((sum, c) => sum + c.weight, 0);
                 const asked = total > 0 ? pool.catches.reduce((sum, c) => sum + c.weight * fishBait(items[c.itemId]), 0) / total : 1;
                 const bait = pool.bait && asked > 0 ? [{ key: itemKey(pool.bait), quantity: asked }] : [];
                 const times = pool.catches.map(c => fishCycleMs(items[c.itemId], ownMs)).filter(ms => Number.isFinite(ms));
                 const cycleMs = times.length ? Math.max(...times) : ownMs;
-                add({
-                    id: `catch:${id}:${i}`, how: HOW.CATCH, via: self, needs: [self, ...needKeys(bait)], inputs: bait,
-                    tool: noteNeed({ kind: pool.tool, minTier: 1 }), gates, cycleMs, pool: { tool: pool.tool, bait: pool.bait },
-                    gives: [...pool.catches.map(c => ({ key: itemKey(c.itemId), chance: total > 0 ? c.weight / total : 0, perCycle: total > 0 ? c.weight / total : 0, min: 1, max: 1 })), ...rare]
-                });
+                const poolKey = poolKeyOf(pool);
+                const stands = isSpot ? spotPoolKey(id, poolKey) : self;
+                if (isSpot) names.set(stands, spotPoolName(def.name || id, pool));
+                const byLevel = new Map();
+                for (const c of pool.catches) {
+                    const level = Math.max(ownLevel, fishLevel(items[c.itemId], ownLevel));
+                    if (!byLevel.has(level)) byLevel.set(level, []);
+                    byLevel.get(level).push(c);
+                }
+                [...byLevel].sort((a, b) => a[0] - b[0]).forEach(([level, catches], n) => put({
+                    id: `catch:${id}:${i}${byLevel.size > 1 ? `:${level}` : ''}`, how: HOW.CATCH, via: self,
+                    ...(isSpot ? { pathVia: stands } : {}), needs: [stands, ...needKeys(bait)], inputs: bait,
+                    tool: noteNeed({ kind: pool.tool, minTier: 1 }), gates: gate(def.config?.skill, level), cycleMs,
+                    pool: { tool: pool.tool, bait: pool.bait, key: poolKey },
+                    gives: [
+                        ...catches.map(c => ({ key: itemKey(c.itemId), chance: total > 0 ? c.weight / total : 0, perCycle: total > 0 ? c.weight / total : 0, min: 1, max: 1 })),
+                        ...(n === 0 ? rare : [])
+                    ]
+                }));
             });
             continue;
         }
@@ -454,6 +511,8 @@ export function buildWorld(content = {}) {
             });
         }
     }
+
+    for (const { rule } of [...spotCatches.filter(c => c.first), ...spotCatches.filter(c => !c.first)]) add(rule);
 
     // Recipes: offered by a working station of their skill and kind, or built on a Foundation of their kind.
     // ⚠️ A station is gated by its own skill, level and tool; the recipe's level gates only picking it.
@@ -527,6 +586,14 @@ export function buildWorld(content = {}) {
             ringNeeds: (ring) => (ringStars.has(ring) ? [ringKey(ring)] : [])
         });
     }
+
+    // Fishing spots drift in on each place's water: the Starter Camp's pond, and each wedge's ground.
+    const spots = spotKindsOf(tokens, content.events);
+    const places = [
+        ...(camp ? [{ id: 'starter-camp', via: null, needs: [], floor: 0, ...STARTER_CAMP_GROUND, maybe: false }] : []),
+        ...(tables ? wedgeGrounds(tables) : [])
+    ];
+    for (const place of places) for (const rule of spotArrivalRules({ tokens, spots }, place)) add(rule);
 
     // Things made on the side by rules: a bonus drop granted to the work in reach (or carried by a
     // hero, or lent for a cycle by a status an item applies), a Token a rule spawns. ⚠️ A rule that
@@ -604,7 +671,130 @@ export function buildWorld(content = {}) {
 
     for (const [key, need] of toolNeeds) names.set(key, need.kinds ? need.kinds.join(' or ') : `${need.kind} ${need.minTier}+`);
 
-    return { items, tokens, recipes, rules, names, planned, worldTables: tables, ringStars };
+    return { items, tokens, recipes, rules, names, planned, worldTables: tables, ringStars, spots };
+}
+
+// ── fishing spots ───────────────────────────────────────────────────────────────────────────────
+
+/** A spot pool's place in words, for its key's name: "Fishing Spot, coast", "Fishing Spot, sea". */
+function spotPoolName(name, pool) {
+    const where = [...(pool.water || []), ...(pool.biomes || [])].map(w => w.replace(/_/g, ' '));
+    return where.length ? `${name}, ${where.join(', ')}` : name;
+}
+
+/**
+ * The spot kinds (`fishingSpots.spotOf`: a Token type with a spot block) and the events that can
+ * land, each with its Token: `{ kinds: [{ id, def, spot, byItself, tools }], events: [{ event, def }] }`.
+ */
+function spotKindsOf(tokens, rawEvents) {
+    const kinds = [];
+    for (const [id, def] of Object.entries(tokens)) {
+        const spot = spotOf(def);
+        if (spot) kinds.push({ id, def, spot, byItself: arrivesByItself(spot), tools: catchToolKinds(def) });
+    }
+    const events = Object.values(normaliseEventTable(rawEvents))
+        .filter(event => isRunnable(event) && tokens[event.typeId])
+        .map(event => ({ event, def: tokens[event.typeId] }));
+    return { kinds, events };
+}
+
+/**
+ * Each wedge's ground at each strict ring, as places spots may land: one per biome its cells may
+ * stand on (`worldTablesShape.kitBiome` of each kit its line leans to, as the generation deals a
+ * cell's kit), with the water that biome's terrain row may roll (`biomeRow`). A biome is sure when
+ * at least {@link SURE_GROUND_SHARE} of the wedge's cells stand on it, else only some worlds'.
+ */
+function wedgeGrounds(tables) {
+    const kits = Array.isArray(tables.kits) ? tables.kits : [];
+    const out = [];
+    for (const line of tables.lines) {
+        const shares = new Map();
+        const share = (biome, n) => shares.set(biome, (shares.get(biome) || 0) + n);
+        const lean = Object.entries(isObject(line.kits) ? line.kits : {});
+        const total = lean.reduce((n, [, w]) => n + (Number(w) > 0 ? Number(w) : 0), 0);
+        if (lean.length && total > 0) for (const [kitId, w] of lean) { if (Number(w) > 0) share(kitBiome(tables, kitId), Number(w) / total); }
+        else if (!lean.length && kits.length) for (const kit of kits) share(kitBiome(tables, kit.id), 1 / kits.length);
+        else share(kitBiome(tables, null), 1);
+        for (let ring = 1; ring <= STRICT_RINGS; ring++) {
+            const at = wedgeKey(line.id, ring);
+            for (const [biome, n] of shares) {
+                const row = biomeRow(tables, biome);
+                out.push({
+                    id: `${line.id}:${ring}:${biome}`, via: at, needs: [at], floor: ring, biome,
+                    waters: groundWaterKinds(row.sea[1], row.water), maybe: n < SURE_GROUND_SHARE
+                });
+            }
+        }
+    }
+    return out;
+}
+
+/** Whether an event's Token may land on a place's ground: grass, and its water when it has some. */
+function eventFits(event, def, place) {
+    if (event.biomes.length && !event.biomes.includes(place.biome)) return false;
+    const grounds = [TERRAIN.GRASS, ...(place.waters.length ? [TERRAIN.WATER] : [])];
+    return grounds.some(t => allowsTerrain(def.standsOn, t) && (!event.ground.length || allowsTerrain(event.ground, t)));
+}
+
+/**
+ * The rules by which fishing spots come to a place, `{ id, via, needs, floor, biome, waters, maybe }`
+ * (the Starter Camp, a wedge's ground at a ring, a seed's cell):
+ * - **By itself**: each spot kind that arrives by itself (`fishingSpots.arrivesByItself`) on water
+ *   the place has, in a biome it lists (any, when it lists none), every `everyMinutes`.
+ * - **With its event**: each event that lands a spot kind, where its event may land on the place's
+ *   water (`EventClock.fitsHere`), at its share of the events that fit there, about once a wait.
+ *
+ * A rule gives the spot kind and, on each water it lands on there, for each tool its pools name,
+ * the first pool that holds there (`catchPools.poolForTool`) when it bites, as {@link spotPoolKey}:
+ * the pool a hero fishes there. The place's `maybe` marks a ground only some worlds hold.
+ *
+ * Not modelled: how many spots stand at once (a kind's `most`), the room on the water, a spot-rate
+ * raiser in reach. The rate calculator reads the arrival rate and the stay.
+ *
+ * @param {{ tokens: object, spots: object }} world `buildWorld`'s (its `spots`)
+ */
+export function spotArrivalRules(world, place) {
+    const { kinds = [], events = [] } = world?.spots || {};
+    const out = [];
+    const give = (key, chance) => (place.maybe ? { key, chance, maybe: true } : { key, chance });
+    const poolsAt = (kind, waters) => {
+        const keys = [];
+        for (const water of waters) {
+            const at = { water, biomes: [place.biome] };
+            for (const tool of kind.tools) {
+                // The first pool for the tool is the one fished; one that never bites lands nothing there (`Fishing.fishingOf`).
+                const pool = poolForTool(kind.def, tool, at);
+                const key = pool && poolBites(pool) ? spotPoolKey(kind.id, poolKeyOf(pool)) : null;
+                if (key && !keys.includes(key)) keys.push(key);
+            }
+        }
+        return keys;
+    };
+    for (const kind of kinds) {
+        if (!kind.byItself) continue;
+        if (kind.spot.biomes.length && !kind.spot.biomes.includes(place.biome)) continue;
+        const waters = kind.spot.water.filter(w => place.waters.includes(w));
+        if (!waters.length) continue;
+        out.push({
+            id: `arrive:${kind.id}:${place.id}`, how: HOW.ARRIVE, via: place.via, needs: place.needs, floor: place.floor,
+            rollMs: kind.spot.everyMs, repeatable: true, gives: [tokenKey(kind.id), ...poolsAt(kind, waters)].map(key => give(key, 1))
+        });
+    }
+    const fitting = events.filter(({ event, def }) => eventFits(event, def, place));
+    const weight = fitting.reduce((n, { event }) => n + event.weight, 0);
+    for (const { event, def } of fitting) {
+        const kind = kinds.find(k => k.id === event.typeId);
+        if (!kind || !place.waters.length) continue;
+        const wet = allowsTerrain(def.standsOn, TERRAIN.WATER) && (!event.ground.length || allowsTerrain(event.ground, TERRAIN.WATER));
+        if (!wet) continue;
+        const chance = event.weight / weight;
+        out.push({
+            id: `event:${event.id}:${place.id}`, how: HOW.EVENT, via: place.via, needs: place.needs, floor: place.floor,
+            rollMs: MEAN_EVENT_WAIT_MS, repeatable: true, event: event.id,
+            gives: [tokenKey(kind.id), ...poolsAt(kind, place.waters)].map(key => give(key, chance))
+        });
+    }
+    return out;
 }
 
 /** The Wishing Well's star (`hallStars.js` record): `hallSky`'s, the stand-in when it lacks one, or the game's sky's when there is no `hallSky`. */
@@ -967,7 +1157,8 @@ export function oneOffFindOf(reach, key) {
  * The chain that first reaches a key, from it back to an origin: each step the thing reached, how,
  * and the gates and chance of the rule that reached it. Follows each rule's `via` (the Token that
  * works or drops it, the recipe that makes it, the station or Foundation a recipe runs on, the map
- * that writes it).
+ * that writes it), or its `pathVia` where it has one (a fishing spot's catch: the spot standing
+ * where that pool is fished, whose place says where it came).
  *
  * @returns {{key, name, how, via, tier, chance, maybe, gates}[]}
  */
@@ -977,11 +1168,12 @@ export function reachPath(reach, key) {
     let at = reach.get(key);
     while (at && at.tier !== null && !seen.has(at.key)) {
         seen.add(at.key);
+        const via = at.rule?.pathVia ?? at.via;
         steps.push({
-            key: at.key, name: at.name, how: at.how, via: at.via, tier: at.tier,
+            key: at.key, name: at.name, how: at.how, via, tier: at.tier,
             chance: at.chance, maybe: at.maybe === true, gates: at.rule?.gates || []
         });
-        at = at.via ? reach.get(at.via) : null;
+        at = via ? reach.get(via) : null;
     }
     return steps;
 }

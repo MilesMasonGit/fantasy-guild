@@ -7,6 +7,7 @@ import { reachOf, reachCovers, RELATION } from '../../../../src/config/registrie
 import { targetModeMatches, matchesFilters, FILTER_NEEDS } from '../../../../src/config/registries/filterRegistry.js';
 import { respawnOf, growsTermsOf, campOf, fieldOf } from '../../../../src/config/registries/tokenConstants.js';
 import { toolOf, toolMeets, toolItemFor } from '../../../../src/config/registries/toolKinds.js';
+import { spotOf, arrivesByItself, spotRateOf } from '../../../../src/config/registries/fishingSpots.js';
 import { getCategoryDef } from '../../../../src/config/registries/equipmentCategories.js';
 import { isSpentCategory, isWorkMoment, workSkillMatches } from '../../../../src/systems/core/consumableRule.js';
 import { FACTOR, WORK } from './rates.js';
@@ -206,6 +207,11 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
         return !isObject(def.enemy) && !isObject(def.foundation) && statementsOf(def).some(s => AMBIENT.has(s?.keyword) && !s?.when?.event);
     });
     const camps = tokenIds.filter(id => campOf(book.token(id)));
+    // A Token that brings fishing spots more often in its reach (a Chum Station): a support of the spots that arrive by themselves.
+    const raisers = tokenIds.filter(id => {
+        const def = book.token(id);
+        return !isObject(def.enemy) && !isObject(def.foundation) && spotRateOf(def) > 0;
+    });
     const spawners = tokenIds.filter(id => isObject(book.token(id).spawner));
     const items = Object.values(book.items).filter(isObject);
     const withEffects = items.filter(def => list(def.effects).length);
@@ -263,6 +269,7 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
         }
         const reachable = chain.length ? chain : [def];
         ctx.supports = supports.filter(id => !ctx.required.includes(id) && !camps.includes(id) && mayReach(book.token(id), reachable));
+        if (kind === WORK.WATER && arrivesByItself(spotOf(def))) for (const id of raisers) if (!ctx.supports.includes(id)) ctx.supports.push(id);
         if (ctx.skill) {
             ctx.consumables = consumables.filter(item => statementsOf(expandBearer(item, book.library)).some(s =>
                 s?.keyword === KEYWORD.APPLIES && isWorkMoment(s.when?.event) && workSkillMatches(s.when, ctx.skill))).map(i => i.id);
