@@ -94,3 +94,9 @@ complicated" (owner).*
 10. **A demolished Forest's trees stay** as lone trees; once felled, their Stumps never regrow (point 5;
     clear them with Demolish).
 
+**The pack** (content agent, 2026-11-24; `2026-11-24-forests-own-trees`, 23 entries, lands with brief
+860 R2's code): each Forest plants **5 trees for Oak, Fir and Birch, 4 for Maple, Cedar, Mahogany and
+Ebony** (the slower woods a little fewer); no seedling upkeep, no Growth boost (the eight Growth
+effects go), and its Stumps regrow free at today's times (Oak 5 minutes, up to 10 for the late woods).
+The Apple Orchard keeps its 2 Apple Trees, free, which fruit again while it stands.
+
