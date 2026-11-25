@@ -53,18 +53,20 @@ const open = (id) => {
 };
 
 describe('⭐ the item editor: fishing fields', () => {
-    it('a fish a water lands takes a level, a catch time and its Bait; blanks drop the block', () => {
+    it('a fish a water lands takes a level, a catch time, its Bait and its XP; blanks drop the block', () => {
         store().updateToken('token_coast', { catchPools: [{ tool: 'fishing_rod', bait: 'item_shrimp_bait', catches: [{ itemId: 'item_salmon', weight: 1 }] }] });
         const container = open('item_salmon');
         input(container, 'fish-level', 40);
         input(container, 'fish-cycle', 6.5);
         input(container, 'fish-bait', 3);
-        expect(store().items.item_salmon.fish).toEqual({ level: 40, cycleMs: 6500, bait: 3 });
-        expect(fishOf(store().items.item_salmon)).toEqual({ level: 40, cycleMs: 6500, bait: 3 });
-        expect(syncPayload()['items.json'].item_salmon.fish).toEqual({ level: 40, cycleMs: 6500, bait: 3 });
+        input(container, 'fish-xp', 12);
+        expect(store().items.item_salmon.fish).toEqual({ level: 40, cycleMs: 6500, bait: 3, xp: 12 });
+        expect(fishOf(store().items.item_salmon)).toEqual({ level: 40, cycleMs: 6500, bait: 3, xp: 12 });
+        expect(syncPayload()['items.json'].item_salmon.fish).toEqual({ level: 40, cycleMs: 6500, bait: 3, xp: 12 });
         input(container, 'fish-level', '');
         input(container, 'fish-cycle', '');
         input(container, 'fish-bait', '');
+        input(container, 'fish-xp', '');
         expect(store().items.item_salmon.fish).toBeUndefined();
     });
 

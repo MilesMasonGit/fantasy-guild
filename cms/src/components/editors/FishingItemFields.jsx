@@ -5,8 +5,8 @@ import { Field } from '../shared/EditorLayout';
  * An item's fishing fields (`src/config/registries/fishRules.js`):
  * - a fishing tool's **Bait saved** each catch (`tool.baitSaving`);
  * - a lure, on a Consumable: the **fish it picks** and its **chance to break** each catch (`lure`);
- * - a catch, on an item a water lands that a hero does not hold or carry: its **Fishing level**, **catch time** and
- *   **Bait** a catch spends (`fish`), each left blank to take the water's own.
+ * - a catch, on an item a water lands that a hero does not hold or carry: its **Fishing level**, **catch time**,
+ *   **Bait** a catch spends and **XP** a catch teaches (`fish`), each left blank to take the water's own.
  * A block with nothing left in it is dropped, so an item that is no fish or lure keeps no trace.
  */
 export default function FishingItemFields({ item, items = {}, landed = false, onTool, onChange }) {
@@ -108,7 +108,7 @@ export default function FishingItemFields({ item, items = {}, landed = false, on
       )}
 
       {catchable && (
-        <div className="col-span-2 grid grid-cols-3 gap-4" data-fish>
+        <div className="col-span-2 grid grid-cols-4 gap-4" data-fish>
           <Field label="Catch: Fishing level" className="col-span-1">
             <input type="number" min={1} aria-label="Catch Fishing level" data-field="fish-level"
               value={fish.level ?? ''} placeholder="water's" onChange={(e) => setFish('level', e.target.value)} className="w-full" />
@@ -121,8 +121,12 @@ export default function FishingItemFields({ item, items = {}, landed = false, on
             <input type="number" min={0} aria-label="Bait a catch" data-field="fish-bait"
               value={fish.bait ?? ''} placeholder="1" onChange={(e) => setFish('bait', e.target.value)} className="w-full" />
           </Field>
-          <p className="col-span-3 text-[10px] text-gray-600 -mt-2 leading-relaxed">
-            Only for a fish a water lands. Blank takes the water's own level and time, and 1 Bait. With no lure a hero's catch takes the longest time of the fish they may land.
+          <Field label="XP a catch" className="col-span-1">
+            <input type="number" min={0} aria-label="XP a catch" data-field="fish-xp"
+              value={fish.xp ?? ''} placeholder="spot's" onChange={(e) => setFish('xp', e.target.value)} className="w-full" />
+          </Field>
+          <p className="col-span-4 text-[10px] text-gray-600 -mt-2 leading-relaxed">
+            Only for a fish a water lands. Blank takes the water's own level, time and XP, and 1 Bait. With no lure a hero's catch takes the longest time of the fish they may land.
           </p>
         </div>
       )}

@@ -23,7 +23,7 @@ import { registerRecipePools } from '../config/registries/recipePoolRegistry.js'
 import { KEYWORD } from '../systems/effects/statements.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
 import { TOOL_KINDS, takesLure } from '../config/registries/toolKinds.js';
-import { fishOf, lureOf, baitSavingOf, baitSpent } from '../config/registries/fishRules.js';
+import { fishOf, fishXp, lureOf, baitSavingOf, baitSpent } from '../config/registries/fishRules.js';
 import { fishFindings } from '../systems/core/fishRule.js';
 import { adaptToken } from '../../cms/src/engine/sim/fieldAdapter.js';
 import { buildRateBook } from '../../cms/src/engine/ledger/rates.js';
@@ -61,6 +61,8 @@ registerItems({
     rc_shrimp: fish('rc_shrimp', 'Raw Shrimp', { level: 1, cycleMs: 1000 }),
     rc_lobster: fish('rc_lobster', 'Lobster', { level: 1, cycleMs: 1000, bait: 1 }),
     rc_cod: fish('rc_cod', 'Cod'),
+    rc_eel: fish('rc_eel', 'Eel', { xp: 7 }),
+    rc_minnow: fish('rc_minnow', 'Minnow', { xp: 0 }),
     rc_bait: carried('rc_bait', 'Bait'),
     rc_other_bait: carried('rc_other_bait', 'Squid Bait'),
     rc_feather_lure: carried('rc_feather_lure', 'Feather Lure', { lure: { fish: ['rc_trout', 'rc_salmon'] } }),
@@ -88,6 +90,10 @@ registerTokenTypes({
     ]),
     rc_sea: water('rc_sea', [
         { tool: 'fishing_trap', bait: 'rc_bait', catches: [{ itemId: 'rc_lobster', weight: 1 }] }
+    ]),
+    // Catch XP: the Eel teaches its own 7, the Trout the water's 1, the Minnow none.
+    rc_eel_pond: water('rc_eel_pond', [
+        { tool: 'fishing_rod', bait: 'rc_bait', catches: [{ itemId: 'rc_eel', weight: 1 }, { itemId: 'rc_trout', weight: 1 }, { itemId: 'rc_minnow', weight: 1 }] }
     ]),
     // Two rod pools: with one Bait, the bait carried no longer picks between them; the first does.
     rc_pond: water('rc_pond', [
@@ -179,10 +185,15 @@ afterEach(() => {
 
 describe('the item blocks, as content', () => {
     it('a fish names its level, its catch time and its Bait; a field left out is the water\'s', () => {
-        expect(fishOf(getAllItems().rc_salmon)).toEqual({ level: 20, cycleMs: 5000, bait: 2 });
-        expect(fishOf(getAllItems().rc_shrimp)).toEqual({ level: 1, cycleMs: 1000, bait: null });
+        expect(fishOf(getAllItems().rc_salmon)).toEqual({ level: 20, cycleMs: 5000, bait: 2, xp: null });
+        expect(fishOf(getAllItems().rc_shrimp)).toEqual({ level: 1, cycleMs: 1000, bait: null, xp: null });
         expect(fishOf(getAllItems().rc_cod)).toBeNull();
-        expect(fishOf({ fish: { level: 'x', cycleMs: -1, bait: 0 } })).toEqual({ level: null, cycleMs: null, bait: 0 });
+        expect(fishOf({ fish: { level: 'x', cycleMs: -1, bait: 0 } })).toEqual({ level: null, cycleMs: null, bait: 0, xp: null });
+        expect(fishOf(getAllItems().rc_eel).xp).toBe(7);
+        expect(fishXp(getAllItems().rc_eel, 1)).toBe(7);
+        expect(fishXp(getAllItems().rc_minnow, 1)).toBe(0);
+        expect(fishXp(getAllItems().rc_trout, 1)).toBe(1);
+        expect(fishXp(getAllItems().rc_cod, 3)).toBe(3);
     });
 
     it('a lure names its fish and a chance to break; a lure naming no fish is none', () => {
@@ -429,6 +440,55 @@ describe('what the hero says', () => {
         } finally {
             vi.useRealTimers();
         }
+    });
+});
+
+describe('catch XP comes per fish', () => {
+    it("a catch teaches its fish's own XP, else the water's config.xp; a fish of 0 teaches none", () => {
+        const pond = put('rc_eel_pond');
+        // Below level 10, where Fishing's first perk would widen every award.
+        setHeroes(hero('fisher', ['rc_rod', 'rc_bait'], 5));
+        InventoryManager.addItem('rc_bait', 500);
+        Orders.orderAt('fisher', AT);
+        const angler = GameState.state.heroes[0];
+        const taught = [];
+        let before = angler.skills.fishing.xp;
+        const off = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => {
+            if (p?.instanceId !== pond.id) return;
+            taught.push([p.produced.join('+'), angler.skills.fishing.xp - before]);
+            before = angler.skills.fishing.xp;
+        });
+        try { run(60_000); } finally { off(); }
+        const byFish = {};
+        for (const [fishId, xp] of taught) (byFish[fishId] ||= new Set()).add(xp);
+        expect(Object.keys(byFish).sort()).toEqual(['rc_eel', 'rc_minnow', 'rc_trout']);
+        expect([...byFish.rc_eel]).toEqual([7]);
+        expect([...byFish.rc_trout]).toEqual([1]);
+        expect([...byFish.rc_minnow]).toEqual([0]);
+    });
+
+    it("the rate calculator counts each fish's XP at its share of the catches", () => {
+        const book = buildRateBook({ items: getAllItems(), tokens: { rc_eel_pond: getTokenType('rc_eel_pond'), rc_lake: getTokenType('rc_lake') } });
+        const r = book.rateOf({ token: 'rc_eel_pond' }, { tool: 'rc_rod', level: 5 });
+        expect(r.ok).toBe(true);
+        // One Eel (7), one Trout (the water's 1), one Minnow (0) in three catches.
+        expect(r.xpPerCycle).toBeCloseTo(8 / 3, 6);
+        // Today's waters, no fish XP: the water's own, as before.
+        expect(book.rateOf({ token: 'rc_lake' }, { tool: 'rc_rod', level: 5 }).xpPerCycle).toBeCloseTo(1, 6);
+    });
+
+    it('the audit names a catch XP that is not a whole number of 0 or more', () => {
+        const odd = {
+            ...getAllItems(),
+            rc_bad_a: fish('rc_bad_a', 'Bad A', { xp: -2 }),
+            rc_bad_b: fish('rc_bad_b', 'Bad B', { xp: 'lots' }),
+            rc_bad_c: fish('rc_bad_c', 'Bad C', { xp: 1.5 })
+        };
+        const out = fishFindings({ items: odd, tokens: { rc_eel_pond: getTokenType('rc_eel_pond') } });
+        for (const id of ['rc_bad_a', 'rc_bad_b', 'rc_bad_c']) {
+            expect(out.some(f => f.entityId === id && /catch XP/.test(f.message))).toBe(true);
+        }
+        expect(out.some(f => ['rc_eel', 'rc_minnow', 'rc_trout'].includes(f.entityId) && /catch XP/.test(f.message))).toBe(false);
     });
 });
 

@@ -946,5 +946,9 @@
             "tipOut": "{fish}: caught with a {tools} at {skill} {level}. No hero has {skill} {level} yet (best {best}).",
             "tipLure": "The {lure} picks it."
         }
+    },
+    "heroSpeech": {
+        "beaten": "{enemy} Defeated",
+        "waiting": "Waiting for {enemy}."
     }
 }

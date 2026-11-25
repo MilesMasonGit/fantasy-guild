@@ -423,9 +423,9 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     }
 
     // XP likewise comes from the active recipe when it defines its own: a Feast should teach more
-    // than Bread even though both run on a Kitchen. XP_BONUS then widens it the same way YIELD
-    // widens output.
-    const baseXp = io.xp ?? config.xp;
+    // than Bread even though both run on a Kitchen; a catch teaches its fish's own when it names one.
+    // XP_BONUS then widens it the same way YIELD widens output.
+    const baseXp = caught?.xp ?? io.xp ?? config.xp;
     const xpAwarded = failed ? 0 : SkillSystem.applyXpBonus(baseXp || 0, TileModifiers.resolveAxis(
         id, EFFECT_TYPES.XP_BONUS, baseXp || 0, config.skill
     ));
