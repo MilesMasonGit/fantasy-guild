@@ -269,16 +269,17 @@ function landOutputs(made, { doubled, giant }) {
     const times = (doubled ? 2 : 1) * (giant ? OutputRules.GIANT_HARVEST_TIMES : 1);
     let giantLanded = false;
 
-    // One item line, once its chance has landed: the authored range rolled, then the cycle's rules
-    // (`OutputRules.landItemLine`). Every drop lands this way, the rare table's too. `note` hears the
-    // sprite (for the twinkle). A line naming no item pays nothing: the cycle still runs and still
-    // takes its inputs.
-    // One line an item, so an Echo's second landing (or a rare find of a line's item) adds up.
+    // What a theft took, one line an item, so an Echo's second landing (or a rare find of a line's
+    // item) adds up.
     const noteStolen = (line) => {
         const same = stolen.find(s => s.itemId === line.itemId);
         if (same) same.quantity += line.quantity;
         else stolen.push({ ...line });
     };
+    // One item line, once its chance has landed: the authored range rolled, then the cycle's rules
+    // (`OutputRules.landItemLine`). Every drop lands this way, the rare table's too. `note` hears the
+    // sprite (for the twinkle). A line naming no item pays nothing: the cycle still runs and still
+    // takes its inputs.
     const landLine = (output, note) => {
         const quantity = OutputRules.landItemLine(id, config.skill, output, times, note);
         if (!quantity) return;
