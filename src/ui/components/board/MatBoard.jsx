@@ -24,6 +24,7 @@ import { OrderDragLine } from './OrderDragLine.jsx';
 import { heroOutline } from './spriteOutline.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
 import { WorkBarLayer } from './WorkBarLayer.jsx';
+import { isShrineType } from './matMarks.js';
 import { FightLayer, FightBarHost } from './FightLayer.jsx';
 import { TerrainCanvas } from './TerrainCanvas.jsx';
 import { AmbientLife, createGroundPictures } from './AmbientLife.jsx';
@@ -419,7 +420,10 @@ export const MatBoard = React.memo(function MatBoard({
         return at ? { x: at.x, y: at.y, id: t.id } : null;
     }, [ringRest.tokenId, tokens]);
 
-    /** A work bar for each hero at work, not in a fight, its Token not in the hand. */
+    /**
+     * A work bar for each hero at work, not in a fight, its Token not in the hand; and every shrine
+     * not in the hand, worked or not, whose bar is its lit time (`ShrineBar` hides it while out).
+     */
     const bars = useMemo(() => {
         const byId = new Map(tokens.map(t => [t.id, t]));
         const out = [];
@@ -428,6 +432,10 @@ export const MatBoard = React.memo(function MatBoard({
             const t = byId.get(h.tokenId);
             if (!t || t.x == null) continue;
             out.push({ tokenId: h.tokenId, heroId: h.heroId, typeId: t.typeId, x: t.x, y: t.y });
+        }
+        for (const t of tokens) {
+            if (t.x == null || t.id === carriedId || !isShrineType(t.typeId) || out.some(b => b.tokenId === t.id)) continue;
+            out.push({ tokenId: t.id, heroId: null, typeId: t.typeId, x: t.x, y: t.y });
         }
         return out;
     }, [heroes, tokens, carriedId]);

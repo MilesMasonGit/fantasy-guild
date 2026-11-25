@@ -132,6 +132,10 @@
   --color-work-bar-blocked: #8a8a8a;
   --color-work-bar-blocked-hi: #c4c4c4;
   --color-work-bar-blocked-lo: #646464;
+  /* A shrine's lit bar: candle gold, draining as its lit time runs down. */
+  --color-shrine-bar: var(--color-gi-gold);
+  --color-shrine-bar-hi: color-mix(in srgb, var(--color-gi-gold) 45%, #fff);
+  --color-shrine-bar-lo: color-mix(in srgb, var(--color-gi-gold) 65%, #000);
   /* The see-through dark strip behind a name, the work bar and round a reach dot (look A). */
   --color-mat-backing: rgba(10, 8, 6, 0.58);
 
@@ -723,6 +727,10 @@
 
 .gi-work-bar[data-work-bar-blocked]::after {
   background: linear-gradient(to bottom, var(--color-work-bar-blocked-hi) 0 25%, var(--color-work-bar-blocked) 25% 75%, var(--color-work-bar-blocked-lo) 75% 100%);
+}
+
+.gi-work-bar[data-shrine-bar]::after {
+  background: linear-gradient(to bottom, var(--color-shrine-bar-hi) 0 25%, var(--color-shrine-bar) 25% 75%, var(--color-shrine-bar-lo) 75% 100%);
 }
 
 /* A name on the mat (`TokenNameBadge`) on the see-through dark strip, hard-cornered (look A). */

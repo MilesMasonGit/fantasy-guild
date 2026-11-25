@@ -20,10 +20,12 @@ import { PROBLEM_SEVERITY } from '../ui/components/board/problemMark.js';
 const ALERT_VALUES = Object.values(ALERT);
 
 /**
- * Every alert the engine writes on a Token: all but resting, a Field's growing crop and a hero with
- * no bait or a fish above them, which are never written as one.
+ * Every alert the engine writes on a Token: all but resting, a Field's growing crop, a hero with
+ * no bait or a fish above them, and a shrine lit too full for an offering, which are never written
+ * as one.
  */
-const TOKEN_ALERTS = ALERT_VALUES.filter(a => a !== ALERT.RESTING && a !== ALERT.GROWING && a !== ALERT.NO_BAIT && a !== ALERT.FISH_LEVEL);
+const NOT_WRITTEN = [ALERT.RESTING, ALERT.GROWING, ALERT.NO_BAIT, ALERT.FISH_LEVEL, ALERT.SHRINE_FULL];
+const TOKEN_ALERTS = ALERT_VALUES.filter(a => !NOT_WRITTEN.includes(a));
 
 const tree = (el) => React.createElement(DndContext, null, el);
 

@@ -39,7 +39,7 @@
         "sim": { "$ref": "common.schema.json#/$defs/sim" },
         "stationKinds": {
           "type": "array",
-          "items": { "type": "string", "enum": ["furnace", "smithy", "kitchen", "brewery", "tannery", "workbench", "alchemy_table", "summoning_circle", "field", "herb_garden", "windmill"] },
+          "items": { "type": "string", "enum": ["furnace", "smithy", "kitchen", "brewery", "tannery", "workbench", "alchemy_table", "summoning_circle", "field", "herb_garden", "windmill", "altar", "shrine"] },
           "description": "STATION_KINDS (src/config/registries/tokenConstants.js): which stations of the skill offer it; empty means all of them. The RETIRED_STATION_KINDS stay valid words but narrow nothing (a leftover the audit asks to clear)."
         },
         "foundationKinds": {
@@ -55,6 +55,13 @@
             "growMs": { "type": "number", "minimum": 0, "description": "Milliseconds to ripen (minimum 1000, default 3600000)." },
             "load": { "type": "number", "minimum": 1, "description": "Harvests a sowing yields (default 10)." },
             "ripeSprite": { "type": ["string", "null"] }
+          }
+        },
+        "offering": {
+          "description": "An offering a shrine burns (tokenConstants.js offeringTermsOf; src/systems/board/Shrines.js): its inputs are the offering.",
+          "type": "object",
+          "properties": {
+            "litMs": { "type": "number", "minimum": 0, "description": "Milliseconds one cycle keeps the shrine lit (minimum 1000, default 60000), up to the shrine's maxLitMs." }
           }
         },
         "plan": { "$ref": "common.schema.json#/$defs/plan" }

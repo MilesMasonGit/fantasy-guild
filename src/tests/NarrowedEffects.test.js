@@ -254,7 +254,10 @@ describe('the palette declares both, rather than inferring them', () => {
             // Refresh's (`CycleSavings.rollRefresh`) the Token's own work skill.
             EFFECT_TYPES.REFRESH,
             // Giant Harvest's (`OutputRules.rollGiantHarvest`) too, a gathering skill only.
-            EFFECT_TYPES.GIANT_HARVEST
+            EFFECT_TYPES.GIANT_HARVEST,
+            // Faith's blessings: Can't Run Out (`CycleSavings.neverRunsOut`) and Echo
+            // (`CycleSavings.rollEcho`), both the Token's own work skill.
+            EFFECT_TYPES.NEVER_RUNS_OUT, EFFECT_TYPES.ECHO
         ]));
     });
 

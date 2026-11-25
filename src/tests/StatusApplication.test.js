@@ -11,6 +11,8 @@ import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as TriggerSystem from '../systems/board/TriggerSystem.js';
 import * as LiveEffects from '../systems/effects/LiveEffects.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
+import { EventBus } from '../systems/core/EventBus.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
 import { KEYWORD } from '../systems/effects/statements.js';
@@ -72,6 +74,13 @@ registerTokenTypes({
         rarity: 'common', theme: 'fixture', uses: null, sprite: 's_flask',
         requiresHero: false,
         statements: [AMBIENT]
+    },
+    /** The Cook Fire's rule as a library effect hands it in, named, so its landing is said. */
+    fixture_cook_stove: {
+        id: 'fixture_cook_stove', name: 'Fixture Cook Stove', tokenType: 'buff',
+        rarity: 'common', theme: 'fixture', uses: null, sprite: 's_flask',
+        requiresHero: false,
+        statements: [{ ...AMBIENT, id: 'stm_cookout_named', effectTitle: 'Cookout' }]
     },
     /** The same rule, but on a trigger rather than ambient. */
     fixture_cook_bell: {
@@ -173,6 +182,23 @@ describe('A Token filter resolves to the heroes working those Tokens', () => {
 
         expect(carried('hero_1')).toEqual(['fx_cookout']);
         expect(carried('hero_2')).toEqual(['fx_cookout']);
+    });
+
+    it('lands once per cycle: one landing said for each cycle the hero finishes', () => {
+        place(8, 'fixture_cook_stove');
+        const bed = place(9, 'fixture_shrimp_bed', 'hero_1');
+        const seen = { cycles: 0, landed: 0 };
+        const offs = [
+            EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (e) => { if (e.instanceId === bed.id) seen.cycles += 1; }),
+            EventBus.subscribe(BOARD_EVENTS.EFFECT_FIRED, (e) => { if (e.instanceId === bed.id && e.title === 'Cookout') seen.landed += 1; })
+        ];
+
+        run(25000);
+        offs.forEach(off => off());
+
+        expect(seen.cycles).toBe(2);
+        expect(seen.landed).toBe(2);
+        expect(carried('hero_1')).toEqual(['fx_cookout']);
     });
 
     it('needs a completed cycle — a Token nobody is working applies nothing', () => {

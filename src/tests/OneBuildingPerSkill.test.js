@@ -185,10 +185,11 @@ describe('today\'s stations keep working until they are deleted', () => {
     });
 });
 
-describe('Farming still splits its recipes between its stations', () => {
-    it('Field, Herb Garden and Windmill are the kinds left, all Farming\'s', () => {
-        expect([...STATION_KINDS]).toEqual(['field', 'herb_garden', 'windmill']);
+describe('Farming and Faith still split their recipes between their stations', () => {
+    it('Field, Herb Garden and Windmill are Farming\'s kinds; Altar and Shrine are Faith\'s (brief 810 K3)', () => {
+        expect([...STATION_KINDS]).toEqual(['field', 'herb_garden', 'windmill', 'altar', 'shrine']);
         expect(stationKindsOfSkill('farming')).toEqual(['field', 'herb_garden', 'windmill']);
+        expect(stationKindsOfSkill('faith')).toEqual(['altar', 'shrine']);
         expect(stationKindsOfSkill('smithing')).toEqual([]);
         expect(stationKindsOfSkill(null)).toEqual([]);
     });

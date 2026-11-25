@@ -915,7 +915,8 @@ function lapseWhereStanding(heroId, pointFor) {
  * sent to that enemy (or to its camp) waits beside it and takes it the moment it is free.
  * - `'node'`: a Token resting until it respawns (`resting`) that the hero could work and that is
  * coming back by itself (`Respawn.isComingBack`: not a Bare tree with no Orchard of its own), or a
- * Field whose crop grows (`growing`): the skip reason is the Token's own, so the hero's skill,
+ * Field whose crop grows (`growing`), or a shrine lit too full for another offering (`shrine_full`,
+ * found again on the retry clock as it burns down): the skip reason is the Token's own, so the hero's skill,
  * level and tool have already passed. They wait silently and work it the moment it is back
  * (`TOKEN_RESPAWNED`, or the Field's `TILE_CHANGED` as it ripens, marks flags dirty). Failing
  * those, a Stump or Sapling (the ordered Token, or in a camp's reach) growing back into work they could do
@@ -939,7 +940,7 @@ export function waitingOf(heroId) {
             if (Respawn.isComingBack(BoardState.getTokenById(s.instanceId))) return { instanceId: s.instanceId, kind: 'node' };
             continue;
         }
-        if (s.reason === ALERT.GROWING) return { instanceId: s.instanceId, kind: 'node' };
+        if (s.reason === ALERT.GROWING || s.reason === ALERT.SHRINE_FULL) return { instanceId: s.instanceId, kind: 'node' };
         if (s.reason !== SKIP.CLAIMED) continue;
         if (BoardCombat.isEnemyToken(BoardState.getTokenById(s.instanceId))) return { instanceId: s.instanceId, kind: 'fight' };
         // An order onto a Token another hero works: the newcomer waits beside it.

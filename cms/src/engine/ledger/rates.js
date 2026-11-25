@@ -64,8 +64,11 @@ const READ_AXES = new Set([
     EFFECT_TYPES.GIANT_HARVEST
 ]);
 
-/** Axes the board reads on some work this calculator does not model yet: reaching one is reported. */
-const UNREAD_WORK_AXES = new Set([EFFECT_TYPES.REFRESH, EFFECT_TYPES.PRESERVATION]);
+/**
+ * Axes the board reads on some work this calculator does not model yet: reaching one is reported.
+ * Faith's blessings too: a shrine's hold only while it is lit, which a rate cannot know.
+ */
+const UNREAD_WORK_AXES = new Set([EFFECT_TYPES.REFRESH, EFFECT_TYPES.PRESERVATION, EFFECT_TYPES.NEVER_RUNS_OUT, EFFECT_TYPES.ECHO]);
 
 /** The kinds of factor, as the switches name them. */
 export const FACTOR = Object.freeze({

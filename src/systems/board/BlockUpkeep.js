@@ -2,6 +2,7 @@
 
 import { statementsOf } from '../effects/statements.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
+import * as Shrines from './Shrines.js';
 
 /**
  * A statement can cost items to sustain, on its own clock: not folded into the Token's production
@@ -47,18 +48,23 @@ function upkeepState(instance) {
     return instance.blockUpkeep;
 }
 
-/** Whether a statement on this instance is currently paid up. */
+/**
+ * Whether a statement on this instance is currently paid up. A shrine that is out pays for none of
+ * its rules: they are its blessing, kept by offerings rather than the Bank (`Shrines.js`), and every
+ * rule reader asks here, so its blessing goes out everywhere at once.
+ */
 export function isStatementPaid(instance, statementId) {
     const state = instance?.blockUpkeep?.[statementId];
-    return state ? state.paid !== false : true;
+    if (state && state.paid === false) return false;
+    return !Shrines.isOut(instance);
 }
 
 /**
- * The paid test for one Token copy's statements, as a predicate, or null when the copy has never
- * been charged (everything is paid), so the common case builds nothing.
+ * The paid test for one Token copy's statements, as a predicate, or null when every rule is paid (a
+ * copy never charged, and no shrine), so the common case builds nothing.
  */
 export function paidTestFor(instance) {
-    if (!instance?.blockUpkeep) return null;
+    if (!instance?.blockUpkeep && !Shrines.isOut(instance)) return null;
     return (statement) => isStatementPaid(instance, statement?.id);
 }
 
