@@ -59,6 +59,8 @@ registerItems({
     k5_drop: { id: 'k5_drop', name: 'Slime Gel', type: 'material', stackable: true, sprite: 'i_bones' },
     k5_mote: { id: 'k5_mote', name: 'Earth Mote', type: 'material', stackable: true, sprite: 'i_bones' },
     k5_ore: { id: 'k5_ore', name: 'Fixture Ore', type: 'material', stackable: true, sprite: 'i_bones' },
+    k5_worm: { id: 'k5_worm', name: 'Fixture Worm', type: 'material', stackable: true, equipSlot: 'consumable', sprite: 'i_fish_bait' },
+    k5_fish: { id: 'k5_fish', name: 'Fixture Fish', type: 'material', stackable: true, sprite: 'i_trout_raw' },
     k5_pick: { id: 'k5_pick', name: 'Fixture Deep Pickaxe', type: 'tool', equipSlot: 'hand', sprite: 'i_bones', tool: { kind: 'pickaxe', tier: 3 } }
 });
 
@@ -101,6 +103,17 @@ registerTokenTypes({
     k5_vein: {
         id: 'k5_vein', name: 'Fixture Deep Vein', tokenType: 'resource', rarity: 'common', theme: 'fixture',
         uses: null, sprite: 's_industry', needsTool: { kind: 'pickaxe', minTier: 3 }, config: mining(20)
+    },
+    /** A water fished with a net and Worms: a Summoned worker holds neither. */
+    k5_pond: {
+        id: 'k5_pond', name: 'Fixture Pond', tokenType: 'resource', rarity: 'common', theme: 'fixture', sprite: 't_lake_small',
+        requiresHero: true, tags: ['water'], uses: null,
+        catchPools: [{ tool: 'fishing_net', bait: 'k5_worm', catches: [{ itemId: 'k5_fish', weight: 1 }] }],
+        config: { skill: 'fishing', skillRequired: 1, cycleTimeMs: 1000, xp: 1, inputs: [], outputs: [] }
+    },
+    k5_summoned_fisher: {
+        id: 'k5_summoned_fisher', name: 'Summoned Fixture Fisher', rarity: 'common', theme: 'fixture', sprite: 's_occult',
+        summon: { of: 'k5_slime', skills: { fishing: 10 } }
     },
     k5_tree: {
         id: 'k5_tree', name: 'Fixture Tree', tokenType: 'resource', rarity: 'common', theme: 'fixture',
@@ -317,6 +330,26 @@ describe('⭐ a Summoned worker is ordered like a hero, works only, and leaves a
         expect(Orders.orderAt('miner', VEIN).success).toBe(true);
         run(1000);
         expect(BoardState.workTokenOf('miner')).toBe(vein.id);
+    });
+});
+
+describe('⭐ at water, with nothing in hand', () => {
+    it('fishes with the water\'s first kind of tool, spending its Bait straight from the Bank, and waits without any', () => {
+        circle = placeAt('k5_circle', CIRCLE.x, CIRCLE.y);
+        const s = Summons.chargeFromCircle(circle, 'k5_summoned_fisher', 'summoner');
+        const pond = placeAt('k5_pond', VEIN.x, VEIN.y);
+        InventoryManager.addItem('k5_worm', 2);
+        expect(Orders.orderAt(s.id, VEIN).success).toBe(true);
+        run(2000);
+        expect(BoardState.workTokenOf(s.id) ?? BoardState.claimOfHero(s.id)?.instanceId ?? null).toBe(pond.id);
+        expect(SpriteLayer.countOnBoard('k5_fish')).toBe(2);
+        expect(InventoryManager.getItemCount('k5_worm')).toBe(0);
+        const charges = s.summon.charges;
+        run(2000);
+        // No Bait left: no catch and no charge spent; the order stands and it waits by the water.
+        expect(SpriteLayer.countOnBoard('k5_fish')).toBe(2);
+        expect(s.summon.charges).toBe(charges);
+        expect(Flags.pinnedIdOf(s.id)).toBe(pond.id);
     });
 });
 

@@ -62,7 +62,7 @@ top folders by import count from `npm run depcruise` (JSON output, 604 modules, 
 | `src/state/` | 2 / 489 | The save's shape and validation (`StateSchema.js`), the live store and serialisation (`GameState.js`). | `GameState.js` | utils; nothing in systems (§7) |
 | `src/utils/` | 6 / 568 | Logger, RNG, formatters, XP curve, sprite path resolution (`AssetManager.js`). | — | config (2 edges) |
 | `src/systems/core/` | 30 / 6,091 | Loop, clocks, bus, saves, catch-up, settings, audio, content audits (`ContentAudit.js`, `lifecycleAudit.js`, `*Rule.js`). | `EngineBootstrap.js`, `GameLoop.js`, `SaveManager.js`, `CatchUp.js` | config, board, effects, utils |
-| `src/systems/board/` | 61 / 15,699 | The playmat: Token storage (`BoardState.js`), placement rules and geometry (`Placement.js`, `MatPlacement.js`), hero orders (`Flags.js`), walking (`HeroMotion.js`, `EnemyMotion.js`), work cycles (`BoardRunner.js`), modifier caches (`TileModifiers.js`), combat on the mat (`BoardCombat.js`), timed changes and spawners (`TimedChanges.js`, `SpawnerSystem.js`), loot sprites (`SpriteLayer.js`). | `BoardRunner.js` | config (146), core, effects, hero, state |
+| `src/systems/board/` | 61 / 15,699 | The playmat: Token storage (`BoardState.js`), placement rules and geometry (`Placement.js`, `MatPlacement.js`), hero orders (`Flags.js`), walking (`HeroMotion.js`, `EnemyMotion.js`), Summoned workers (`Summons.js`), work cycles (`BoardRunner.js`), modifier caches (`TileModifiers.js`), combat on the mat (`BoardCombat.js`), timed changes and spawners (`TimedChanges.js`, `SpawnerSystem.js`), loot sprites (`SpriteLayer.js`). | `BoardRunner.js` | config (146), core, effects, hero, state |
 | `src/systems/effects/` | 11 / 3,401 | The statement grammar (`statements.js`), its text (`statementText.js`), modifier math (`ModifierAggregator.js`), live statuses (`LiveEffects.js`), content id migrations. | `statements.js`, `LiveEffects.js` | config |
 | `src/systems/hero/` | 15 / 1,561 | Hero records, generation, regen, skills, consumption, rehydration. | `HeroManager.js` | config, core, effects |
 | `src/systems/combat/` | 9 / 1,152 | Attack resolution and the combat maths (`CombatFormulas.js`), loot rolls, wounded clock, defeat penalties. | `CombatProcessor.js`, `WoundedSystem.js` | config, core, utils, hero |
@@ -230,7 +230,7 @@ these numbers: **unverified**, re-run in a bench window.
 ### 4.1 The shape
 
 `INITIAL_STATE` (`src/state/StateSchema.js:138-320`) has these top-level sections: `meta`,
-`heroes` (hero shape owned by `HeroGenerator`/`HeroRehydration`), `inventory` (the Bank), `progress` (roster limit, Hall upgrade
+`heroes` (hero shape owned by `HeroGenerator`/`HeroRehydration`; a record carrying a `summon` block is a Summoned worker, ordered like a hero and refused by each hero-only path through `hero/summoned.js`), `inventory` (the Bank), `progress` (roster limit, Hall upgrade
 ranks), `time` (`gameTimeMs`), `collection` (discoveries and counters), `ui` (New! badges, pinned
 stubs, unclicked knock-out and Bank Full banners), `board` (the active Region's mat, `createEmptyBoard`, `:52-88`), `events` (the
 event clock, `{ clockMs }`; the events themselves are Tokens carrying `instance.event`), `atlas`
