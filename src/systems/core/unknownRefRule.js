@@ -5,7 +5,7 @@ import { getEnemyKind, kindEffectIdOf, kindsClash, MAX_ENEMY_KINDS } from '../..
 import { isWeapon, authoredWeaponStyles, weaponStyleOf } from '../../config/registries/weaponStyles.js';
 import { getPaletteEntry, isCombatStyleScope } from '../../config/registries/modifierPalette.js';
 import { isDamageTypeId, isDamageGroupId, groupLineAdvice, resistanceProblems } from '../../config/registries/damageTypes.js';
-import { RETIRED_ENEMY_FIELDS, LEFTOVER_ENEMY_FIELDS } from '../../config/registries/enemyProfile.js';
+import { RETIRED_ENEMY_FIELDS } from '../../config/registries/enemyProfile.js';
 import { moveProblems } from '../../config/registries/enemyMoves.js';
 import { statusBlockOf } from '../effects/effectLibrary.js';
 import { isConsumableCategory } from '../../config/registries/equipmentCategories.js';
@@ -107,14 +107,6 @@ function enemyResistanceFindings(def, push) {
             const what = field === 'armor' ? 'Armour' : 'Pierce';
             push(`enemy.${field}`, `has ${what} ${value}, retired with damage types: the fight ignores it. Give it Slash, Crush and Stab resistances instead, or remove the number in the CMS.`);
         }
-    }
-    for (const field of LEFTOVER_ENEMY_FIELDS) {
-        if (def.enemy[field] !== undefined) {
-            push(`enemy.${field}`, `still carries "${field}", which the game no longer reads (a boss is what a boss camp spawns; the level fills the numbers). Remove it in the CMS.`);
-        }
-    }
-    if (Number(def.config?.xp) > 0 && def.enemy.level != null) {
-        push('config.xp', `carries a work cycle's XP (${def.config.xp}), which a kill never pays: a kill pays its level's XP. Remove it in the CMS, under Fight.`);
     }
 }
 

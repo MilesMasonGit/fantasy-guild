@@ -9,7 +9,7 @@ import { filtersOf, getFilterKind, FILTER_NEEDS } from '../../config/registries/
 import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js';
 import { isOutputCurrency } from '../../config/registries/tokenConstants.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
-import { isEnemyDef, enemyProfileOf } from '../../config/registries/enemyProfile.js';
+import { isEnemyDef, enemyProfileOf, LEFTOVER_ENEMY_FIELDS } from '../../config/registries/enemyProfile.js';
 import { EFFECTS, getEffect } from '../../config/registries/effectRegistry.js';
 import { effectRefsOf, duplicateRefsOf, hasWorkingStatements, usedBy, statusBlockOf } from '../effects/effectLibrary.js';
 import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
@@ -176,6 +176,7 @@ function auditTokens(out) {
         auditGuildOnlyAxes(out, where, def);
         auditHeroOrGuildAxes(out, where, def);
         auditEnemyCounts(out, where, def);
+        auditEnemyLeftovers(out, where, def);
         auditStatements(out, where, def);
         auditDerivedType(out, where, def);
         auditStandsOn(out, where, def);
@@ -268,6 +269,23 @@ function auditEnemyCounts(out, where, def) {
         out.push(finding(where,
             `has a rule${holder} that fires once every ${everyOf(statement.when)} ${noun}s, but an enemy's rules ` +
             `fire on every ${noun}: the count is ignored. Set it to 1, or make it one of its moves.`));
+    }
+}
+
+/**
+ * Marks an enemy may still carry that the game no longer reads (`LEFTOVER_ENEMY_FIELDS`), and a work
+ * cycle's XP on one, which a kill never pays. Harmless, so named here at boot (and removed with one
+ * click in the CMS) rather than among the CMS's blocking findings.
+ */
+function auditEnemyLeftovers(out, where, def) {
+    if (!isEnemyDef(def)) return;
+    for (const field of LEFTOVER_ENEMY_FIELDS) {
+        if (def.enemy[field] !== undefined) {
+            out.push(finding(where, `still carries "${field}", which the game no longer reads (a boss is what a boss camp spawns; the level fills the numbers). Remove it in the CMS.`));
+        }
+    }
+    if (Number(def.config?.xp) > 0) {
+        out.push(finding(where, `carries a work cycle's XP (${def.config.xp}), which a kill never pays: a kill pays its level's XP. Remove it in the CMS, under Fight.`));
     }
 }
 

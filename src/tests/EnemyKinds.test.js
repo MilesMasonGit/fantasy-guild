@@ -18,6 +18,7 @@ import { enemyProfileOf, enemyFilledStats } from '../config/registries/enemyProf
 import { ENEMY_KINDS, MAX_ENEMY_KINDS, enemyKindsOf, kindsClash } from '../config/registries/enemyKinds.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { findUnknownRefs } from '../systems/core/unknownRefRule.js';
+import { auditContent } from '../systems/core/ContentAudit.js';
 import * as FightMoments from '../systems/board/FightMoments.js';
 import { registerStatusFixtures } from './fixtures/statusEffects.js';
 
@@ -100,12 +101,24 @@ describe('how a kind combines with the level table', () => {
 
     it('older content\'s budgetScale is read by nothing: the level fills the numbers (the audit names it)', () => {
         expect(pick(stats(1, ['brute'], { budgetScale: 0.3 }))).toEqual(pick(stats(1, ['brute'])));
-        const left = findUnknownRefs({ tokens: { t: { id: 't', name: 'T', enemy: { level: 1, budgetScale: 0.3, boss: true } } } }).map(f => f.field);
-        expect(left).toEqual(['enemy.boss', 'enemy.budgetScale']);
+        const enemy = (id, block, config) => ({
+            id, name: id, tokenType: 'enemy', rarity: 'common', theme: 'fixture', uses: 1, sprite: 's_occult',
+            enemy: { level: 1, style: 'melee', ...block },
+            config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, inputs: [], outputs: [], ...config }
+        });
+        registerTokenTypes({
+            ek_left: enemy('ek_left', { budgetScale: 0.3, boss: true }, { xp: 0 }),
+            ek_xp: enemy('ek_xp', {}, { xp: 2 })
+        });
+        const named = (id) => auditContent().filter(f => f.where === `Token "${id}"`).map(f => f.what);
+        // Harmless leftovers: named at boot, never among the CMS's blocking findings.
+        expect(named('ek_left').filter(w => w.includes('which the game no longer reads'))).toEqual([
+            expect.stringContaining('"boss"'), expect.stringContaining('"budgetScale"')
+        ]);
+        expect(findUnknownRefs({ tokens: { ek_left: enemy('ek_left', { budgetScale: 0.3, boss: true }) } })).toEqual([]);
         // A work cycle's XP on an enemy is never paid; a 0 left by the editor's default says nothing.
-        const xp = (n) => findUnknownRefs({ tokens: { t: { id: 't', name: 'T', enemy: { level: 1 }, config: { xp: n } } } }).map(f => f.field);
-        expect(xp(2)).toEqual(['config.xp']);
-        expect(xp(0)).toEqual([]);
+        expect(named('ek_xp').some(w => w.includes("carries a work cycle's XP (2)"))).toBe(true);
+        expect(named('ek_left').some(w => w.includes("work cycle's XP"))).toBe(false);
     });
 
     it('an unknown kind, a repeat and a third kind are ignored; clashing speeds let the later win', () => {
