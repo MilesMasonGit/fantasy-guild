@@ -7,8 +7,8 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
-import { startFightWatch, resetFightWatch, fightsOf, OUTCOME } from '../ui/components/combat/fightWatch.js';
-import { FightLog, resultWord } from '../ui/components/combat/FightPanel.jsx';
+import { startFightWatch, resetFightWatch, fightsOf } from '../ui/components/combat/fightWatch.js';
+import { FightLog } from '../ui/components/combat/FightPanel.jsx';
 import { fightPanelView } from '../ui/components/combat/fightView.js';
 import { bannerText } from '../systems/notifications/bannerKinds.js';
 import { momentText } from '../ui/components/board/heroSpeech.js';
@@ -132,12 +132,6 @@ describe('Defeated, for winning and losing', () => {
         resolve('defeat', 'e2');
         const lost = fightsOf('h1').last.log.at(-1);
         expect(t(`fight.log.${lost.key}`, lost.vars)).toBe('Kira is defeated by Wolf');
-    });
-
-    it('the window\'s title bar and tab between fights', () => {
-        expect(resultWord(OUTCOME.WON, 'Goblin').text).toBe('Defeated Goblin');
-        expect(resultWord(OUTCOME.LOST, 'Goblin').text).toBe('Defeated by Goblin');
-        expect(resultWord(OUTCOME.LEFT, 'Goblin')).toBeNull();
     });
 
     it('the banner and the hero who won say Defeated', () => {

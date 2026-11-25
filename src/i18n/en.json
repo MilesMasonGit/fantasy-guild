@@ -537,8 +537,8 @@
             "fightsLeft": "fights left",
             "noElixirs": "No elixirs",
             "log": "Log",
-            "won": "Defeated {enemy}",
-            "lost": "Defeated by {enemy}",
+            "won": "Won",
+            "lost": "Lost",
             "hit": "Hit",
             "attackEvery": "Attacks every",
             "resist": "Resist"

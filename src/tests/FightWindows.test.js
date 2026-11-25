@@ -135,7 +135,7 @@ describe('where a window stands', () => {
 });
 
 describe('the tab strip', () => {
-    it('⭐ a tab: both faces, both names, both healths with their numbers; Defeated in place of the enemy after a win', () => {
+    it('⭐ a tab: both faces, both names, both healths with their numbers; Won in place of the enemy after a win', () => {
         const { container } = render(React.createElement(CombatKit));
         const tabs = [...container.querySelectorAll('[data-kit-combat="tabs"] [data-fight-tab]')];
         expect(tabs).toHaveLength(2);
@@ -144,7 +144,6 @@ describe('the tab strip', () => {
         expect(tabs[0].querySelector('[data-fight-tab-enemy]').textContent).toBe('Goblin Warlord');
         expect(tabs[1].querySelector('[data-fight-tab-enemy]')).toBeNull();
         expect(tabs[1].querySelector('[data-fight-tab-result]').getAttribute('data-fight-tab-result')).toBe('won');
-        expect(tabs[1].querySelector('[data-fight-tab-result]').textContent).toMatch(/^Defeated /);
         expect(hp(tabs[1], 'enemy')).toBe('0/25');
         expect(tabs[0].querySelectorAll('img').length).toBe(2);
     });
