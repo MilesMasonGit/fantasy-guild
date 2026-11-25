@@ -312,7 +312,7 @@ export function hasRoomToSpawn(typeId, bearerId, options = {}) {
  * plants within its own reach (`SpawnerSystem`) passes its reach; the placement is then ignored.
  *
  * `options.fields`: written onto the new Token before it lands, so the mat never holds it without
- * them (a Hideout's guard: its `guardOf` and `tether`, which the Token cap and the camps' counts read).
+ * them (a Hideout's guard: its `guardOf`, which the Token cap reads).
  *
  * @param {{within?: number, fields?: object}} [options]
  * @returns {{instanceId: string, x: number, y: number, replacedBearer: boolean}|null}

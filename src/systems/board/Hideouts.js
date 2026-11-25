@@ -38,9 +38,20 @@ import { centreOf, distanceSq, reachRadius } from './nearby.js';
  * cycle through the spawners.
  */
 
-/** Whether a Token type is a Hideout: a station of the Hideout kind. */
+const hideoutMemo = new WeakMap();
+
+/**
+ * Whether a Token type is a Hideout: a station of the Hideout kind. Kept per definition object: the
+ * recipe resolver asks it of every station it resolves, many times a tick.
+ */
 export function isHideout(def) {
-    return stationKindOf(def) === HIDEOUT_KIND;
+    if (!def || typeof def !== 'object') return false;
+    let answer = hideoutMemo.get(def);
+    if (answer === undefined) {
+        answer = stationKindOf(def) === HIDEOUT_KIND;
+        hideoutMemo.set(def, answer);
+    }
+    return answer;
 }
 
 /** Whether a Token type is a boss camp: a kit of the world tables names it among its `bossCamps`. */

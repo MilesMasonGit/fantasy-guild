@@ -317,8 +317,8 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     const failedRoll = failChance > 0 && Math.random() * 100 < failChance;
     // A Hideout's theft (`io.steal`): a thief caught takes nothing and learns nothing, a failed cycle
     // in all but name, and the camp gets its guard below. One draw, only for a theft that did not fail.
-    const caught = !failedRoll && !!io.steal && Thefts.rollCaught(id, heroId, io.steal);
-    const failed = failedRoll || caught;
+    const thiefCaught = !failedRoll && !!io.steal && Thefts.rollCaught(id, heroId, io.steal);
+    const failed = failedRoll || thiefCaught;
 
     // The cycle still runs, makes its outputs and spends its charges; a Field's owed seed is never
     // paid for that crop, and a build that kept its materials remembers paying nothing.
@@ -440,7 +440,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     }
 
     // A theft is said (and a catch's guard set) once its drops and XP are in, a failed one never.
-    if (io.steal && !failedRoll) Thefts.afterTheft(instance, io.steal, { heroId, caught, items: stolen });
+    if (io.steal && !failedRoll) Thefts.afterTheft(instance, io.steal, { heroId, caught: thiefCaught, items: stolen });
 
     // Pay the plan built at the top of this function: the Token's own operational cost. Anything
     // that hits 0 is destroyed by `commitPlan`, which is also where `null`-means-unlimited is

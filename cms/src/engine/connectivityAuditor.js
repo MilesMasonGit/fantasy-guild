@@ -1,4 +1,4 @@
-import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, crimeFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, gearDefenceFindings, effectStackFindings, hallStarFindings } from '../utils/constants';
+import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, crimeFindings, stealOf, catchItemIds, baitItemIds, rareTableOf, perkFindings, gearDefenceFindings, effectStackFindings, hallStarFindings } from '../utils/constants';
 import { eventProblems, EVENT_BIOMES } from '../../../src/config/eventTable.js';
 import { STANDS_ON_CHOICES } from '../../../src/systems/atlas/TerrainMap.js';
 
@@ -51,6 +51,12 @@ export function auditConnectivity(entities, solverRefusals = []) {
     for (const entry of rareTableOf(token)?.entries || []) {
       if (!producedBy[entry.itemId]) producedBy[entry.itemId] = [];
       producedBy[entry.itemId].push({ id: token.id, type: 'token' });
+    }
+    // An enemy's steal table: a Hideout's thief takes each of its lines and rare finds from the enemy's camp.
+    const steal = stealOf(token);
+    for (const oid of [...(steal?.outputs || []).map((o) => o.itemId), ...(steal ? rareTableOf(steal.block)?.entries || [] : []).map((e) => e.itemId)]) {
+      if (!producedBy[oid]) producedBy[oid] = [];
+      producedBy[oid].push({ id: token.id, type: 'token' });
     }
   }
 

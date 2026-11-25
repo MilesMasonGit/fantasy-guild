@@ -39,13 +39,16 @@ export function setGuard(camp, enemyTypeId, random = Math.random) {
         { payload: { typeId: enemyTypeId, placement: PLACEMENT.NEAREST_FREE } },
         { self: camp.id },
         random,
-        { fields: { tether: null, guardOf: camp.id } }
+        { fields: { guardOf: camp.id } }
     );
     if (!landed) {
         logger.warn('Thefts', `No room on the mat for a guard on ${camp.typeId}`);
         return null;
     }
-    return BoardState.getTokenById(landed.instanceId);
+    const guard = BoardState.getTokenById(landed.instanceId);
+    // Tethered to nothing, said outright, so no camp ever adopts it (`EnemyMotion.attachUntethered`).
+    if (guard) BoardState.setTether(guard, null);
+    return guard;
 }
 
 /**

@@ -213,6 +213,16 @@ describe('the content rule, shared by both audits', () => {
         expect(issues.some(i => i.entityId === 'token_goblin_chief' && /bosses are never robbed/.test(i.details))).toBe(true);
     });
 
+    it('an item only a steal table yields is reached: the audit counts a theft as its source', () => {
+        const items = { pearl: { id: 'pearl', name: 'Pearl' }, gem: { id: 'gem', name: 'Gem' } };
+        const tokens = {
+            crab: { id: 'crab', name: 'Crab', enemy: { level: 3 }, steal: { outputs: [{ itemId: 'pearl' }], rareTable: { chance: 1, entries: [{ itemId: 'gem', weight: 1 }] } } }
+        };
+        const unreachable = auditConnectivity({ items, tokens, recipes: {}, effects: {} })
+            .filter(i => i.entityType === 'Item' && /Unreachable/.test(i.details)).map(i => i.entityId);
+        expect(unreachable).toEqual([]);
+    });
+
     it('the shipped content raises no Crime finding at boot', () => {
         const crime = auditContent().filter(f => /steal|Hideout|caught curve|robbed/i.test(f.message || f.what || JSON.stringify(f)));
         expect(crime).toEqual([]);
