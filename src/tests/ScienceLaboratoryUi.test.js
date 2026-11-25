@@ -159,6 +159,12 @@ describe('a node\'s card and the badges', () => {
         expect(block.held.map(h => h.buff)).toEqual(['Keen Eye']);
         const yieldBadge = effectBreakdown(node.id).effects.find(e => e.type === EFFECT_TYPES.YIELD);
         expect(yieldBadge.sources).toEqual([expect.objectContaining({ kind: SOURCE_KIND.MASTERY, name: 'Fixture Glow Vein mastery I', amount: 25 })]);
+        // Each buff is named by the rank that gave it.
+        GameState.state.progress.mastery[VEIN] = 5;
+        Mastery.apply();
+        const badges = effectBreakdown(node.id).effects;
+        expect(badges.find(e => e.type === EFFECT_TYPES.YIELD).sources[0].name).toBe('Fixture Glow Vein mastery I');
+        expect(badges.find(e => e.type === EFFECT_TYPES.WORK_TIME).sources[0].name).toBe('Fixture Glow Vein mastery II');
     });
 
     it('a Stump shows its tree\'s mastery; a Token of no tracked kind shows none', () => {

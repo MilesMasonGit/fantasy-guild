@@ -35,10 +35,16 @@ const OWNER = 'mastery';
 /** The source id a mastery rule registers under; `sourceOfMastery` reads it back. */
 const sourceFor = (kind, effectId, statementId) => `mastery:${kind}|${effectId}|${statementId || 'rule'}`;
 
-/** The kind a modifier came from, read off its `source`, or null for any other source. */
-export function masteryKindOfSource(source) {
-    const match = /^mastery:([^|]+)\|/.exec(typeof source === 'string' ? source : '');
-    return match ? match[1] : null;
+/**
+ * Where a modifier came from, read off its `source`: `{ kind, rank }`, the kind and the first rank
+ * held that gives its effect; null for any other source.
+ */
+export function masterySourceOf(source) {
+    const match = /^mastery:([^|]+)\|([^|]+)\|/.exec(typeof source === 'string' ? source : '');
+    if (!match) return null;
+    const [, kind, effectId] = match;
+    const row = heldRanksOf(trackOf(kind), pointsOf(kind)).find(r => r.effectId === effectId);
+    return { kind, rank: row?.rank ?? rankOf(kind) };
 }
 
 /** The guild's points, by kind: the save's own record, made on first write. */

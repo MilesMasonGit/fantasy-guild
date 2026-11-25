@@ -19,7 +19,8 @@ import { registerEffects } from '../../config/registries/effectRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { LABORATORY_KIND } from '../../config/registries/mastery.js';
 import { EFFECT_TYPES } from '../../systems/effects/constants.js';
-import { reachRadius } from '../../systems/board/nearby.js';
+import { reachRadius, centreOf } from '../../systems/board/nearby.js';
+import { matW, matH } from '../../config/matGeometry.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
 
 /**
@@ -100,19 +101,39 @@ function placeNear(typeId, aim, reach = 200) {
 }
 
 /**
- * Lays the scene out on the current mat, the Laboratory near its middle.
+ * The open ground furthest from every Token on the mat, on a lattice kept a reach from the edges, so
+ * the Laboratory and its Oaks stand clear of the camp (a Token right beside the Guild Hall is
+ * clicked as the Hall).
+ */
+function openGround(margin) {
+    const centres = BoardState.tokens().map(centreOf).filter(Boolean);
+    let best = Placement.centreOfBoard();
+    let bestGap = -1;
+    for (let y = margin; y <= matH() - margin; y += 40) {
+        for (let x = margin; x <= matW() - margin; x += 40) {
+            let gap = Infinity;
+            for (const c of centres) gap = Math.min(gap, Math.hypot(c.x - x, c.y - y));
+            if (gap > bestGap) { bestGap = gap; best = { x, y }; }
+        }
+    }
+    return best;
+}
+
+/**
+ * Lays the scene out on the current mat, the Laboratory on its most open ground.
  * @returns {{ok: boolean, error?: string, labId?: string, oakIds?: string[], farOakId?: string}}
  */
 export function setUpScienceScene() {
     if (!getItem(WOOD)) return { ok: false, error: 'No Oak Wood in the content' };
     register();
-    const centre = Placement.centreOfBoard();
-    const lab = placeNear(LAB, centre);
+    const lab = placeNear(LAB, openGround(Math.round(reachRadius())));
     if (!lab) return { ok: false, error: 'No room on the mat for the QA Laboratory' };
     const near = Math.round(reachRadius() * 0.6);
     const oaks = [placeNear(QA_OAK, { x: lab.x + near, y: lab.y }, 80), placeNear(QA_OAK, { x: lab.x, y: lab.y + near }, 80)];
     const university = placeNear(UNIVERSITY, { x: lab.x - near, y: lab.y }, 80);
-    const far = placeNear(QA_OAK, { x: lab.x + reachRadius() * 2.5, y: lab.y }, 300);
+    // Out of the Laboratory's reach, on whichever side of it has more mat.
+    const side = lab.x < matW() / 2 ? 1 : -1;
+    const far = placeNear(QA_OAK, { x: lab.x + side * reachRadius() * 1.6, y: lab.y }, 120);
     if (oaks.some(o => !o) || !university || !far) return { ok: false, error: 'No room on the mat around the QA Laboratory' };
     // The ranks rise again from none on each run.
     const mastery = GameState.state?.progress?.mastery;

@@ -476,11 +476,11 @@ function describe(c, ctx) {
             name: t('effectBadges.source.star', { star: name, rank: toRoman(rank) })
         };
     }
-    const kind = Mastery.masteryKindOfSource(modifier.source);
-    if (kind) {
-        const rank = Mastery.rankOf(kind);
+    const mastery = Mastery.masterySourceOf(modifier.source);
+    if (mastery) {
+        const { kind, rank } = mastery;
         return {
-            key: `mastery:${kind}`, kind: SOURCE_KIND.MASTERY, masteryKind: kind, rank,
+            key: `mastery:${kind}:${rank}`, kind: SOURCE_KIND.MASTERY, masteryKind: kind, rank,
             name: t('effectBadges.source.mastery', { kind: Mastery.kindName(kind), rank: toRoman(Math.max(1, rank)) })
         };
     }
