@@ -14,6 +14,7 @@ import { EFFECTS, getEffect } from '../../config/registries/effectRegistry.js';
 import { effectRefsOf, duplicateRefsOf, hasWorkingStatements, usedBy, statusBlockOf } from '../effects/effectLibrary.js';
 import { VENOM_EFFECT_ID } from '../../config/registries/enemyKinds.js';
 import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
+import { coinWorthFindings } from '../../config/registries/itemCoins.js';
 import { STANDS_ON_CHOICES, isStandsOnWord } from '../atlas/TerrainMap.js';
 import { listPooledSkillIds } from '../../config/registries/recipePoolRegistry.js';
 import { SPRITE_MANIFEST } from '../../config/registries/sprite-manifest.js';
@@ -745,6 +746,11 @@ function auditEffectStacks(out) {
     }
 }
 
+/** An item's Coin worth the game cannot read (`itemCoins.js`), shared with the CMS Economy Audit. */
+function auditCoinWorth(out) {
+    for (const f of coinWorthFindings({ items: ITEMS })) out.push(finding(`${f.entityType} "${f.entityId}"`, f.message));
+}
+
 /**
  * The events table: a row that can never land (no kind, no Token, a weight of 0), names a Token
  * that does not exist, a buff with no time, or ground and biomes the game does not know. The rule
@@ -772,7 +778,7 @@ export function auditContent({ starterCamp = null } = {}) {
     const out = [];
     const steps = [
         auditTokens, auditEffects, auditItems, auditItemEffects, auditLifecycle, auditUnknownRefs, auditTools, auditPerks, auditHallStars,
-        auditGearDefence, auditEffectStacks, auditEvents, auditWorldBiomes,
+        auditGearDefence, auditEffectStacks, auditCoinWorth, auditEvents, auditWorldBiomes,
         (o) => auditStarterCamp(o, starterCamp)
     ];
     for (const step of steps) {

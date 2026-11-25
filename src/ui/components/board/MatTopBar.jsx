@@ -22,11 +22,12 @@ export const MAT_LOGO_SLOT_PX = 288;
 
 /**
  * The bar's own icons, drawn at 32 px, their art's own size. Placeholders until the owner draws the
- * Token and upkeep icons (owner_art_list.md).
+ * Token, upkeep and coin icons (owner_art_list.md).
  */
 export const TOP_BAR_ICON = Object.freeze({
     TOKENS: '/assets/ui/u_tree.png',
-    UPKEEP: '/assets/ui/u_coin_small.png'
+    UPKEEP: '/assets/ui/u_coin_small.png',
+    COINS: '/assets/ui/u_coin_small.png'
 });
 
 /** One of {@link TOP_BAR_ICON}, crisp at the item bar's 32 px. */
@@ -76,8 +77,8 @@ export const MatLogo = ({ logoSrc = TITLE_LOGO_SRC }) => {
  * The mat's top bar: a strip above the mat, exactly as wide as it, with no frame or fill of its
  * own. Three parts:
  * * **left**: the game's logo ({@link MatLogo}),
- * * **middle**, centred on the mat: the map mode's banner while a mode is on (and the Token cap
- *   and Upkeep while {@link SHOW_MAT_COUNTS}),
+ * * **middle**, centred on the mat: the map mode's banner while a mode is on, else the guild's
+ *   coins (`MatCoinCount`; the Token cap and Upkeep instead while {@link SHOW_MAT_COUNTS}),
  * * **right**, at the mat's right edge: the Region name on its banner.
  * Only drawn on the playmat, never on the Guild Hall upgrade screen (ReactRoot lays it on the
  * table side of the Hall camera, with the mat).

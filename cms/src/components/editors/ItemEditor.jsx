@@ -5,7 +5,7 @@ import {
   EQUIP_CATEGORIES, TOOL_KINDS, HAND_CATEGORY, tierValue, SKILLS, ENEMY_STYLES, weaponStyleOf, authoredWeaponStyles, ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, WEAPON_TIERS,
   expandBearer, statementsOf, doseKindsOf, DOSE_WHY, noDoseWhy, isSpentCategory,
   DAMAGE_TYPES, DAMAGE_GROUPS, DEFAULT_DAMAGE_TYPE_BY_STYLE, DEFAULT_ARROW_DAMAGE_TYPE, damageTypeLabel, isConsumableCategory,
-  isWornGear, BREAK_CHANCE_MAX,
+  isWornGear, BREAK_CHANCE_MAX, coinWorthOf,
 } from '../../utils/constants';
 import { Header, Section, Field, Empty, DerivedMark } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
@@ -271,6 +271,38 @@ function BreakChanceField({ item, isTool, onChange }) {
           ? 'Checked as each work cycle it is used for ends: it breaks and is gone, and its hero stops.'
           : 'Checked at each kill made with it: it breaks and is gone, and its hero stops.'}
         {' '}Blank never breaks.
+      </p>
+    </Field>
+  );
+}
+
+/**
+ * What one copy sells for from the Bank, written as `coinWorth` only when a whole number of 0 or
+ * more (`itemCoins.js`). Blank writes nothing and sells for 0. The words typed are kept while typing.
+ */
+function CoinWorthField({ item, onChange }) {
+  const [draft, setDraft] = useState(item.coinWorth == null ? '' : String(item.coinWorth));
+  const write = (text) => {
+    setDraft(text);
+    const n = Number(text);
+    onChange({ coinWorth: text.trim() !== '' && Number.isInteger(n) && n >= 0 ? n : undefined });
+  };
+  const worth = coinWorthOf(item);
+  return (
+    <Field label="Coin worth" className="col-span-1">
+      <input
+        type="number"
+        min={0}
+        step="1"
+        aria-label="Coin worth"
+        data-field="coin-worth"
+        value={draft}
+        placeholder="0"
+        onChange={(e) => write(e.target.value)}
+        className="w-full"
+      />
+      <p data-field="coin-worth-line" className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+        One sells for {worth} {worth === 1 ? 'coin' : 'coins'} from the Bank. A whole number; blank sells for 0.
       </p>
     </Field>
   );
@@ -543,6 +575,9 @@ export default function ItemEditor() {
       </Section>
 
       <Section title="Value" icon={<Lock size={14} />}>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <CoinWorthField key={item.id} item={item} onChange={(patch) => updateItem(activeId, patch)} />
+        </div>
         <div className="flex items-center gap-4">
           <div className="flex-1">
             <span className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 mb-1.5 text-gray-500">

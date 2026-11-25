@@ -186,6 +186,8 @@ export {
 export { toolFindings } from '../../../src/systems/core/toolRule.js';
 // Tools and weapons that break: an item's chance per cycle, for the item editor's Break chance field. The game's own reading.
 export { breakChanceOf, canBreak, BREAK_CHANCE_MAX } from '../../../src/config/registries/itemBreak.js';
+// An item's coin worth, for the item editor's Coin worth field and the audit. The game's own reading and wording.
+export { coinWorthOf, coinWorthFindings } from '../../../src/config/registries/itemCoins.js';
 // Milestone perks: the shape of a skill's perk table and the content checks for one. The game's own rules and wording.
 export { DEFAULT_PERK_LEVELS, MIN_PERK_LEVEL, isPerkLevel, perkRowsOf, normaliseSkillPerks } from '../../../src/systems/hero/perkTable.js';
 export { perkFindings } from '../../../src/systems/core/perkRule.js';

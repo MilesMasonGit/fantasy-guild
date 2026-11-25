@@ -183,7 +183,9 @@ export const INITIAL_STATE = {
         // Guild Hall upgrade ranks: { upgradeId: rank }. Owned by
         // GuildUpgradeManager, which derives rosterLimit and the bank caps
         // from it on every load.
-        guildUpgrades: {}
+        guildUpgrades: {},
+        // The guild's coins, a whole number (`inventory/Coins.js`); an older save gets 0 from `migrateState`.
+        coins: 0
     },
 
     // === Time ===

@@ -15,7 +15,12 @@
         "cancel": "Cancel demolition"
     },
     "matTopBar": {
-        "logoText": "Tabletop Guild"
+        "logoText": "Tabletop Guild",
+        "coins": "Coins",
+        "coinsTip": "The guild's coins. Sell items from the Bank to earn them."
+    },
+    "coins": {
+        "amount": { "one": "{amount} coin", "other": "{amount} coins" }
     },
     "matControls": {
         "label": "Controls",
@@ -171,11 +176,16 @@
         "drawer": {
             "label": "Item",
             "collected": "Collected this run: {count}",
-            "discard": "Discard",
-            "discardConfirm": "Throw away all {count} {item} in the Bank? Nothing comes back. Worn gear stays worn; a carried food, drink or potion shows empty until the Bank holds more.",
+            "sell": "Sell",
+            "sellConfirm": "Sell all {count} {item} in the Bank for {pay}? Worn gear stays worn; a carried food, drink or potion shows empty until the Bank holds more.",
             "empty": "The Bank is empty",
             "emptyHint": "Items the guild collects land here."
         },
+        "sellSelected": "Sell selected",
+        "sellSelectedTip": "Sell every selected stack in the Bank",
+        "sellSelectedConfirm": "Sell {stacks} ({items}) for {pay}? Worn gear stays worn; a carried food, drink or potion shows empty until the Bank holds more.",
+        "stacks": { "one": "{amount} stack", "other": "{amount} stacks" },
+        "items": { "one": "{amount} item", "other": "{amount} items" },
         "searchPlaceholder": "Search items…",
         "clearSearch": "Clear search",
         "sort": "Sort",

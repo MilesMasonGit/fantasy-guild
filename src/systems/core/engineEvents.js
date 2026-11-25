@@ -96,6 +96,8 @@ export const ENGINE_EVENTS = Object.freeze({
 
     /** The Bank changed. Payload: `{ itemId, amount, added|removed }`, or none for a bulk change. */
     INVENTORY_UPDATED: 'inventory_updated',
+    /** The guild's coins changed. Payload: `{ coins, added }` (`added` below 0 for a spend). */
+    COINS_UPDATED: 'coins_updated',
     /** Items did not fit in the Bank. Payload: `{ itemId, amount }`. */
     INVENTORY_OVERFLOW: 'inventory_overflow',
     /**

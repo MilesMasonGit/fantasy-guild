@@ -9,6 +9,7 @@ import * as HeroManager from '../systems/hero/HeroManager.js';
 import { rehydrateHero } from '../systems/hero/logic/HeroRehydration.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
+import { getCoins } from '../systems/inventory/Coins.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { DeckDndProvider } from '../ui/dnd/DndKit.jsx';
 import { BankDrawer } from '../ui/components/drawer/BankDrawer.jsx';
@@ -41,7 +42,7 @@ registerItems({
         id: 'dr_sword', name: 'Drawer Sword', type: 'weapon', equipSlot: 'hand', stackable: true,
         damage: 4, tags: ['Weapon', 'Sword', 'Unwritten Tag'], description: 'Sharp on both sides.'
     },
-    dr_ore: { id: 'dr_ore', name: 'Drawer Ore', type: 'material', stackable: true }
+    dr_ore: { id: 'dr_ore', name: 'Drawer Ore', type: 'material', stackable: true, coinWorth: 2 }
 });
 
 beforeEach(() => {
@@ -271,7 +272,7 @@ describe('the tag lines file', () => {
     });
 });
 
-describe('Discard throws the Bank stack away, after a confirm', () => {
+describe('Sell sells the Bank stack for its worth, after a confirm', () => {
     const open = (id) => {
         const view = mountBank();
         fireEvent.click(tile(view, id));
@@ -279,24 +280,40 @@ describe('Discard throws the Bank stack away, after a confirm', () => {
     };
     const q = (view, sel) => drawerOf(view).querySelector(sel);
 
-    it('asks first; Cancel keeps the stack', () => {
+    it('there is no Discard: Sell stands in its place', () => {
         InventoryManager.addItem('dr_ore', 7);
         const view = open('dr_ore');
-        expect(q(view, '[data-item-drawer-discard-confirm]')).toBeNull();
-        fireEvent.click(q(view, '[data-item-drawer-discard]'));
-        expect(q(view, '[data-item-drawer-discard-confirm]').textContent).toMatch(/all 7 Drawer Ore.*Nothing comes back.*Worn gear stays worn/);
-        fireEvent.click(q(view, '[data-item-drawer-discard-no]'));
-        expect(q(view, '[data-item-drawer-discard-confirm]')).toBeNull();
-        expect(InventoryManager.getItemCount('dr_ore')).toBe(7);
+        expect(q(view, '[data-item-drawer-discard]')).toBeNull();
+        expect(q(view, '[data-item-drawer-sell]').textContent).toBe('Sell');
     });
 
-    it('Confirm removes the whole stack and nothing comes back', () => {
+    it('asks first, saying what it pays; Cancel keeps the stack and the coins', () => {
         InventoryManager.addItem('dr_ore', 7);
         const view = open('dr_ore');
-        fireEvent.click(q(view, '[data-item-drawer-discard]'));
-        fireEvent.click(q(view, '[data-item-drawer-discard-yes]'));
+        expect(q(view, '[data-item-drawer-sell-confirm]')).toBeNull();
+        fireEvent.click(q(view, '[data-item-drawer-sell]'));
+        expect(q(view, '[data-item-drawer-sell-confirm]').textContent).toMatch(/Sell all 7 Drawer Ore in the Bank for 14 coins\?.*Worn gear stays worn/);
+        fireEvent.click(q(view, '[data-item-drawer-sell-no]'));
+        expect(q(view, '[data-item-drawer-sell-confirm]')).toBeNull();
+        expect(InventoryManager.getItemCount('dr_ore')).toBe(7);
+        expect(getCoins()).toBe(0);
+    });
+
+    it('Confirm sells the whole stack and the coins rise by its worth', () => {
+        InventoryManager.addItem('dr_ore', 7);
+        const view = open('dr_ore');
+        fireEvent.click(q(view, '[data-item-drawer-sell]'));
+        fireEvent.click(q(view, '[data-item-drawer-sell-yes]'));
         expect(InventoryManager.getItemCount('dr_ore')).toBe(0);
         expect(GameState.state.inventory.items.dr_ore).toBeUndefined();
+        expect(getCoins()).toBe(14);
+    });
+
+    it('an item worth nothing still confirms, and says it pays 0 coins', () => {
+        InventoryManager.addItem('dr_sword', 1);
+        const view = open('dr_sword');
+        fireEvent.click(q(view, '[data-item-drawer-sell]'));
+        expect(q(view, '[data-item-drawer-sell-confirm]').textContent).toMatch(/Sell all 1 Drawer Sword in the Bank for 0 coins\?/);
     });
 
     it('a worn copy stays worn', () => {
@@ -310,8 +327,8 @@ describe('Discard throws the Bank stack away, after a confirm', () => {
         const bankBefore = InventoryManager.getItemCount('dr_sword');
         expect(bankBefore).toBeGreaterThan(0);
         const view = open('dr_sword');
-        fireEvent.click(q(view, '[data-item-drawer-discard]'));
-        fireEvent.click(q(view, '[data-item-drawer-discard-yes]'));
+        fireEvent.click(q(view, '[data-item-drawer-sell]'));
+        fireEvent.click(q(view, '[data-item-drawer-sell-yes]'));
         expect(InventoryManager.getItemCount('dr_sword')).toBe(0);
         expect(HeroManager.getHero(hero.id).equipment).toContain('dr_sword');
     });

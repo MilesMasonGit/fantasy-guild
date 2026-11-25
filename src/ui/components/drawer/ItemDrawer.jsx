@@ -11,9 +11,10 @@ import { itemTagPills } from './itemTags.js';
 import { useShownBankEntry } from './bankInspection.js';
 import { lifetimeOf } from '../../../systems/progression/collectionLog.js';
 import { itemKey } from '../../../systems/progression/ledger/engine.js';
-import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
+import { bankStackWorth, sellBankStack } from '../../../systems/inventory/Coins.js';
 import { KitButton, KIT_BUTTON_TONE } from '../base/KitButton.jsx';
 import { lookUpItem } from '../encyclopedia/encyclopediaLink.js';
+import { coinsText } from '../base/coinsText.js';
 
 /** Item art is 32 px; the drawer shows it at 4×, a whole multiple, so it can be examined closely. */
 export const DRAWER_SPRITE_PX = 128;
@@ -24,7 +25,7 @@ export const DRAWER_SPRITE_PX = 128;
  * tab's first item, else a calm empty line (`bankInspection.js` picks). Top to bottom: the name
  * with the book to its Encyclopedia page, the sprite at 4×, the count, the tags as pills (each
  * explains itself on hover), what it does (tool, break chance, weapon stats, resists, what it
- * restores, the description), then the actions and, at the foot, how many were collected this
+ * restores, the description), then the actions (Sell) and, at the foot, how many were collected this
  * run.
  * @param {{ open: boolean, menuRight?: boolean }} props
  */
@@ -44,12 +45,12 @@ export const ItemDrawerBody = ({ entry }) => {
     const pills = itemTagPills(template);
     const collected = lifetimeOf(itemKey(entry.id)).collected || 0;
     const [confirming, setConfirming] = useState(false);
-    // Only the Bank's stack goes: worn copies stay worn, and a carried consumable reads the Bank's count.
-    const discard = () => {
-        const held = InventoryManager.getItemCount(entry.id);
-        if (held > 0) InventoryManager.removeItem(entry.id, held);
+    // Only the Bank's stack is sold: worn copies stay worn, and a carried consumable reads the Bank's count.
+    const sell = () => {
+        sellBankStack(entry.id);
         setConfirming(false);
     };
+    const pay = bankStackWorth(entry.id).coins;
     return (
         <>
             {/* 1. The name, and the book in the top corner. */}
@@ -98,24 +99,24 @@ export const ItemDrawerBody = ({ entry }) => {
                     </div>
                 </ArrowScrollList>
             </div>
-            {/* 6. The actions (Discard) and, at the very foot, collected this run. */}
+            {/* 6. The actions (Sell) and, at the very foot, collected this run. */}
             <footer className="shrink-0 flex flex-col gap-2 px-3 pt-2 pb-3 border-t border-gi-border/40">
                 <div data-item-drawer-actions className="flex flex-wrap items-center gap-2">
                     {confirming ? (
                         <>
-                            <p data-item-drawer-discard-confirm className="w-full ui-text-small text-red-400 leading-snug">
-                                {t('bank.drawer.discardConfirm', { count: count.toLocaleString('en-US'), item: template.name })}
+                            <p data-item-drawer-sell-confirm className="w-full ui-text-small text-amber-200 leading-snug">
+                                {t('bank.drawer.sellConfirm', { count: count.toLocaleString('en-US'), item: template.name, pay: coinsText(pay) })}
                             </p>
-                            <KitButton tone={KIT_BUTTON_TONE.DANGER} onClick={discard} buttonClassName="py-1 px-3 text-xs" data-item-drawer-discard-yes>
+                            <KitButton tone={KIT_BUTTON_TONE.MAIN} onClick={sell} buttonClassName="py-1 px-3 text-xs" data-item-drawer-sell-yes>
                                 {t('common.confirm')}
                             </KitButton>
-                            <KitButton tone={KIT_BUTTON_TONE.PLAIN} onClick={() => setConfirming(false)} buttonClassName="py-1 px-3 text-xs" data-item-drawer-discard-no>
+                            <KitButton tone={KIT_BUTTON_TONE.PLAIN} onClick={() => setConfirming(false)} buttonClassName="py-1 px-3 text-xs" data-item-drawer-sell-no>
                                 {t('common.cancel')}
                             </KitButton>
                         </>
                     ) : (
-                        <KitButton tone={KIT_BUTTON_TONE.DANGER} onClick={() => setConfirming(true)} buttonClassName="py-1 px-3 text-xs" data-item-drawer-discard>
-                            {t('bank.drawer.discard')}
+                        <KitButton tone={KIT_BUTTON_TONE.MAIN} onClick={() => setConfirming(true)} buttonClassName="py-1 px-3 text-xs" data-item-drawer-sell>
+                            {t('bank.drawer.sell')}
                         </KitButton>
                     )}
                 </div>
