@@ -358,8 +358,8 @@ function tryToSpawn(instance, def, random, ctx) {
     InputAllocator.consumeInputs(upkeepOf(def));
 
     const spawned = BoardState.getTokenById(landed.instanceId);
-    // Tethered to the spawner that made it (this instance, not its type), saved: an enemy potters by
-    // it (`EnemyMotion`), and an enemy camp counts what it spawned by it, an enemy or not.
+    // Tethered to the spawner that made it (this instance, not its type), saved: an enemy camp counts
+    // what it spawned by it, an enemy or not.
     if (spawned && (isEnemyCampType(instance.typeId) || isEnemyDef(getTokenType(spawned.typeId)))) {
         BoardState.setTether(spawned, instance.id);
     }

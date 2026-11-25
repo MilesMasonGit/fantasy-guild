@@ -216,13 +216,13 @@
             "kinds": {
               "type": "array",
               "maxItems": 2,
-              "items": { "type": "string", "enum": ["armoured", "nimble", "swift", "brute"] },
-              "description": "ENEMY_KINDS (src/config/registries/enemyKinds.js), at most two."
+              "items": { "type": "string" },
+              "description": "Library effect ids it always carries, at most two (src/config/registries/enemyKinds.js); a built-in preset id (ENEMY_KINDS) is read as the preset until the library holds its effect."
             },
             "resistances": {
               "type": "object",
-              "description": "By damage type or group; each value one of 100, 50, 25, -25, -50, others dropped (damageTypes.js normaliseResistances).",
-              "additionalProperties": { "type": "number", "enum": [100, 50, 25, -25, -50] }
+              "description": "By damage type or group; each value one of 100, 50, 25, -25, -50, -100, others dropped (damageTypes.js normaliseResistances).",
+              "additionalProperties": { "type": "number", "enum": [100, 50, 25, -25, -50, -100] }
             },
             "moves": {
               "type": "array",
@@ -240,15 +240,15 @@
                 }
               }
             },
-            "boss": { "type": "boolean", "description": "Display only (lifecycleLines.js)." },
-            "hit": { "type": "number", "description": "Authored hit, replacing the level's." },
+            "boss": { "type": "boolean", "description": "Retired: a boss is what a boss camp spawns. Read by nothing; the audit names it (LEFTOVER_ENEMY_FIELDS)." },
+            "hit": { "type": "number", "description": "Authored hit, replacing the level's; a fraction rolls, as every hit's does." },
             "hp": { "type": "number" },
             "speed": { "type": "string", "enum": ["fast", "normal", "slow"] },
             "xp": { "type": "number" },
             "dodge": { "type": "number" },
             "accuracy": { "type": "number" },
             "critChance": { "type": "number", "description": "Percent." },
-            "budgetScale": { "type": "number", "description": "An older multiplier." }
+            "budgetScale": { "type": "number", "description": "Retired: the level table fills the numbers. Read by nothing; the audit names it (LEFTOVER_ENEMY_FIELDS)." }
           }
         },
         "provides": { "type": "array", "description": "Retired inline capability tags (strings or { tag, tier }), still read by statements.js and QuestManager.js; the CMS removes them when a rule is added." },

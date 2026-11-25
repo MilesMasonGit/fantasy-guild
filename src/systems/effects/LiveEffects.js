@@ -4,8 +4,7 @@ import { statementsFromEntry, normaliseScale, scaleStatement, statusBlockOf, str
 import { KEYWORD } from './statements.js';
 import { EFFECT_TYPES } from './constants.js';
 import { heroStatusStackCap } from '../combat/CombatFormulas.js';
-import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
-import * as HeroEffects from '../hero/HeroEffects.js';
+import { registerProvides } from './providesModifiers.js';
 import { STATUS_TICK_INTERVAL_MS } from '../../config/FormulaRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import * as HeroManager from '../hero/HeroManager.js';
@@ -277,7 +276,7 @@ function applyForAttack(bearer, effectId, scale, untilAttack, sourceId) {
  * Land one stack of a status (`statusBlockOf`) on a bearer.
  *
  * ⚠️ Only in a fight: a status lasts until its fight ends, so one landing on a gatherer would
- * never end at all. Immunity, and a stack cap moved to 0 (a Hide Vest's −1 on a 1-stack status),
+ * never end at all. Immunity, and a stack cap moved to 0 (a Status Stack Limit of −1 on a 1-stack status),
  * block it, said as `STATUS_BLOCKED`.
  */
 function applyStatus(bearer, spec, block, sourceId) {
@@ -576,7 +575,7 @@ export function grantStatements(hero, at = undefined) {
 }
 
 /**
- * Push a hero's carried combat modifiers onto their aggregator.
+ * Push a bearer's carried combat modifiers onto its aggregator (`providesModifiers.registerProvides`).
  *
  * ⚠️ Called on every change, because an expiry is a change nobody asks about: a live effect
  * ends on its own, with no player action. Registered under one source id so a re-sync is a
@@ -584,31 +583,7 @@ export function grantStatements(hero, at = undefined) {
  */
 export function syncAggregator(hero) {
     if (!hero?.aggregator) return;
-
-    const source = 'live:effects';
-    hero.aggregator.removeModifiersBySource(source);
-
-    for (const { type, value, category } of HeroEffects.combatContributions(modifierStatements(hero))) {
-        hero.aggregator.addModifier({
-            type, value, bucket: 'flat', source,
-            ...(category ? { target: { category } } : {})
-        });
-    }
-
-    // ⚠️ Percentage-bucketed combat axes ride along separately: `combatContributions` refuses
-    // anything but flat because `ModifierAggregator.query` skips the other buckets. `DAMAGE` has
-    // a real percentage reader (`getPercentageBucket`), which is what makes Well Fed expressible.
-    for (const statement of modifierStatements(hero)) {
-        const payload = statement.payload || {};
-        if (payload.bucket !== 'percentage') continue;
-        if (!getPaletteEntry(payload.type)?.heroOnly) continue;
-        const value = Number(payload.value);
-        if (!Number.isFinite(value) || value === 0) continue;
-        hero.aggregator.addModifier({
-            type: payload.type, value, bucket: 'percentage', source,
-            ...(payload.category ? { target: { category: payload.category } } : {})
-        });
-    }
+    registerProvides(hero.aggregator, 'live:effects', modifierStatements(hero));
 }
 
 /**

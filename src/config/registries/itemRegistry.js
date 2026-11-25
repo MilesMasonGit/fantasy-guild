@@ -18,7 +18,6 @@
 
 import { DatabaseManager } from '../DatabaseManager.js';
 import { migrateSkillIds } from '../../systems/effects/skillIdMigration.js';
-import { migrateEffectIds } from '../../systems/effects/effectIdMigration.js';
 
 // === Item Type Constants ===
 export const DEFAULT_MAX_STACK = 1e12;
@@ -48,7 +47,7 @@ function loadJsonItems() {
             const itemsData = module.default || module;
             for (const [itemId, itemDef] of Object.entries(itemsData)) {
                 if (!itemDef.id) itemDef.id = itemId;
-                dynamicItems[itemId] = migrateEffectIds(migrateSkillIds(itemDef));
+                dynamicItems[itemId] = migrateSkillIds(itemDef);
             }
         } catch (error) {
             console.warn(`Error loading item JSON from ${path}:`, error);

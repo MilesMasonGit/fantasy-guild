@@ -17,7 +17,7 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { getEquippedEntries, getGrid, isWeaponCategory } from '../../config/registries/equipmentConstants.js';
 import { isWeapon, weaponStyleOf, meetsGearRequirements } from '../../config/registries/weaponStyles.js';
 import {
-    weaponDamageTypeOf, BAREHANDED_DAMAGE_TYPE, PLAIN_ENEMY_HIT_TYPE, resistanceFor
+    weaponDamageTypeOf, BAREHANDED_DAMAGE_TYPE, PLAIN_ENEMY_HIT_TYPE, resistanceFor, DAMAGE_TYPES
 } from '../../config/registries/damageTypes.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { getGlobalAggregator } from '../effects/GuildModifiers.js';
@@ -181,8 +181,8 @@ export function heroCritChance(hero) {
 
 /**
  * The most stacks of status `statusId` (a status effect's id) that can build up on this fighter:
- * the status's own cap moved by what they carry for it (a Hide Vest: poison stacks at most 1
- * lower). Never below 0; at 0 the status cannot land.
+ * the status's own cap moved by what they carry for it (a Status Stack Limit of −1 on Venom: one
+ * stack fewer). Never below 0; at 0 the status cannot land.
  */
 export function heroStatusStackCap(hero, statusId, baseMax) {
     const shift = hero?.aggregator?.query(EFFECT_TYPES.STATUS_MAX_STACKS, statusId) || 0;
@@ -423,6 +423,29 @@ export function enemyBlow(enemy, hero, { crit = false, type = null } = {}) {
     return landedBlow([{ type: type || PLAIN_ENEMY_HIT_TYPE, base }], multiplier, crit,
         (type) => typeDamageBoost(enemy, type),
         (type) => heroTypeResistance(hero, type));
+}
+
+/**
+ * An enemy's numbers as a fight reads them off whatever aggregator it carries (a fight's, or its kinds
+ * alone out of a fight, `enemyKindEffects.enemyAtRest`): its hit before the matchup, the crit and the
+ * hero's resistances, how often it attacks, its Dodge, Accuracy and Crit, and each type it resists
+ * or is weak to. The CMS shows these as "what the fight uses".
+ * @returns {{hit: number, attackSpeedMs: number, dodge: number, accuracy: number, critChance: number, resistances: Object<string, number>}}
+ */
+export function enemyNumbers(enemy) {
+    const resistances = {};
+    for (const { id } of DAMAGE_TYPES) {
+        const value = enemyTypeResistance(enemy, id);
+        if (value) resistances[id] = value;
+    }
+    return {
+        hit: Math.max(0, enemyBaseHit(enemy) * damageMultiplierOf(enemy)),
+        attackSpeedMs: enemyAttackSpeedMs(enemy),
+        dodge: enemyDodge(enemy),
+        accuracy: enemyAccuracy(enemy),
+        critChance: enemyCritChance(enemy),
+        resistances
+    };
 }
 
 /**

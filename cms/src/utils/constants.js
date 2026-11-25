@@ -92,7 +92,6 @@ export {
 } from '../../../src/systems/effects/effectMigration.js';
 export { migrateSkillIdsIn, migrateRecipePools } from '../../../src/systems/effects/skillIdMigration.js';
 // A renamed library effect (the Poison status is Venom): the same pure functions the game's loaders call.
-export { migrateEffectLibrary, migrateEffectIdsIn, migratePerkEffectIds } from '../../../src/systems/effects/effectIdMigration.js';
 
 // When a rule spends its Token's charges. Same extensibility rule as TRIGGER_EVENTS: adding a moment in the game puts it in the editor's picker with no CMS change.
 export {
@@ -127,7 +126,7 @@ export { campOf, isWarCampBlock } from '../../../src/config/registries/tokenCons
 export { STANDARD_REACH_U } from '../../../src/config/registries/reachRegistry.js';
 
 // An enemy is a Token: it carries `enemy: { level, style }`. `ENEMY_STYLES` fills the Style dropdown and `enemyProfileOf` powers the editor's read-only stat preview, imported from the game so the numbers shown are the numbers the fight uses.
-export { ENEMY_STYLES, isEnemyDef, enemyProfileOf, enemyFilledStats, ENEMY_OVERRIDE_FIELDS, RETIRED_ENEMY_FIELDS } from '../../../src/config/registries/enemyProfile.js';
+export { ENEMY_STYLES, isEnemyDef, enemyProfileOf, enemyFilledStats, ENEMY_OVERRIDE_FIELDS, RETIRED_ENEMY_FIELDS, LEFTOVER_ENEMY_FIELDS } from '../../../src/config/registries/enemyProfile.js';
 
 // Damage types: the nine types (the three groups only name sets of them, for the Set all buttons), a weapon's and an arrow's type, an enemy's resistance steps, the type a weapon with none hits with, and the Venom status whose ticks hurt as Poison. The game's own list.
 export {
@@ -150,8 +149,9 @@ export {
 // Enemy moves: the few attacks an enemy picks from each swing (a type to hit with, an effect to land), their shapes and the audit's sentences. The game's own.
 export { MOVE_TARGETS, MOVE_LASTS, moveLastsFor, moveProblems, enemyMovesOf } from '../../../src/config/registries/enemyMoves.js';
 
-// Enemy kinds (Armoured, Nimble, Swift, Brute): the presets the Token editor offers, none to two per enemy, and which pairs clash.
+// Enemy kinds: none to two library effects an enemy always carries (built-in presets until the library has Armoured, Nimble, Swift and Brute), what the Token editor offers in its kind boxes, and the numbers a fight starts from with them added. The game's own.
 export { ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf } from '../../../src/config/registries/enemyKinds.js';
+export { enemyFightNumbers, isKindCandidate, kindResistances } from '../../../src/systems/effects/enemyKindEffects.js';
 
 // Weapons: the one style a weapon fights in, and the level gear asks of its wearer, for the item editor's Weapon and Requirement blocks.
 export { isWeapon, isOffHand, weaponStyleOf, authoredWeaponStyles, gearLevelRequirement } from '../../../src/config/registries/weaponStyles.js';

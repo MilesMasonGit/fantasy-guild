@@ -9,7 +9,7 @@ import { filtersOf, getFilterKind, FILTER_NEEDS } from '../../config/registries/
 import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js';
 import { isOutputCurrency } from '../../config/registries/tokenConstants.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
-import { isEnemyDef } from '../../config/registries/enemyProfile.js';
+import { isEnemyDef, enemyProfileOf } from '../../config/registries/enemyProfile.js';
 import { EFFECTS, getEffect } from '../../config/registries/effectRegistry.js';
 import { effectRefsOf, duplicateRefsOf, hasWorkingStatements, usedBy, statusBlockOf } from '../effects/effectLibrary.js';
 import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
@@ -20,6 +20,7 @@ import { currentSpriteName } from '../../utils/AssetManager.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
 import { isWorkedWithoutSkill, WORK_SKILL_WHY } from './workSkillRule.js';
 import { auditLifecycleBlocks } from './lifecycleAudit.js';
+import { kindStatements } from '../effects/enemyKindEffects.js';
 import { findUnknownRefs } from './unknownRefRule.js';
 import { toolFindings } from './toolRule.js';
 import { isSpentCategory, isAlwaysOn, ALWAYS_ON_IDLE_WHY } from './consumableRule.js';
@@ -259,7 +260,7 @@ function auditEffectRefs(out, where, def) {
  */
 function auditEnemyCounts(out, where, def) {
     if (!isEnemyDef(def)) return;
-    for (const statement of statementsOf(def)) {
+    for (const statement of [...statementsOf(def), ...kindStatements(enemyProfileOf(def)?.kindEffects)]) {
         const moment = getTriggerEvent(statement?.when?.event);
         if (!moment?.fightMoment || !moment.countNoun || everyOf(statement.when) <= 1) continue;
         const holder = statement.sourceEffectId ? ` (in its effect "${statement.sourceEffectId}")` : '';
@@ -327,6 +328,9 @@ function auditHeroOrGuildAxes(out, where, def) {
 function auditEffects(out) {
     const perkEffects = new Set(Object.values(authoredSkillPerks() || {})
         .flatMap(record => (Array.isArray(record?.perks) ? record.perks : []).map(row => row?.effectId)));
+    // An enemy's kinds are library effects too.
+    const kindEffects = new Set(Object.values(TOKENS || {})
+        .flatMap(def => (isEnemyDef(def) ? enemyProfileOf(def)?.kindEffects || [] : [])));
     for (const [effectId, entry] of Object.entries(EFFECTS || {})) {
         const where = `Effect "${entry?.name || effectId}"`;
 
@@ -342,7 +346,7 @@ function auditEffects(out) {
         // tripwires have to read the library too.
         auditAppliesTargetShape(out, where, entry);
 
-        if (usedBy(effectId, TOKENS || {}, ITEMS || {}).length === 0 && !perkEffects.has(effectId)) {
+        if (usedBy(effectId, TOKENS || {}, ITEMS || {}).length === 0 && !perkEffects.has(effectId) && !kindEffects.has(effectId)) {
             out.push(finding(where, 'is not used by anything. Not a fault if you are still ' +
                 'building what it is for — but nothing references it today.'));
         }

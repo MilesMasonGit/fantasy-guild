@@ -1,6 +1,7 @@
 import { statementsOf, getKeyword, KEYWORD } from './statements.js';
 import { getPaletteEntry, clampModifierValue } from '../../config/registries/modifierPalette.js';
 import { EFFECT_TYPES } from './constants.js';
+import { STATUS_STACK_LIMIT } from '../../config/FormulaRegistry.js';
 
 /**
  * A named effect is a title wrapping one or more statements, stored once and referenced by
@@ -53,8 +54,8 @@ export function stackScale(value) {
     return n;
 }
 
-/** The most stacks a status may be authored to build. */
-export const MAX_STATUS_STACKS = 5;
+/** The most stacks a status may be authored to build: the tuning number `STATUS_STACK_LIMIT`. */
+export const MAX_STATUS_STACKS = STATUS_STACK_LIMIT;
 
 /**
  * A status's own rules, or null for an ordinary effect.

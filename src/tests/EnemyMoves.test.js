@@ -24,7 +24,6 @@ import { registerEffects } from '../config/registries/effectRegistry.js';
 import { makeStatement, KEYWORD } from '../systems/effects/statements.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { findUnknownRefs } from '../systems/core/unknownRefRule.js';
-import { migrateEffectIds } from '../systems/effects/effectIdMigration.js';
 import { enemyProfileOf } from '../config/registries/enemyProfile.js';
 import { enemyMovesOf, pickMove, moveLastsFor, moveProblems } from '../config/registries/enemyMoves.js';
 import * as CF from '../systems/combat/CombatFormulas.js';
@@ -503,15 +502,3 @@ describe('the audits', () => {
     });
 });
 
-describe('the Venom rename reaches a move', () => {
-    it('a move landing effect_poison lands effect_venom; a token without moves is the same object', () => {
-        const def = { id: 'e', enemy: { level: 1, moves: [{ name: 'Bite', effectId: 'effect_poison' }, PECK] } };
-        const next = migrateEffectIds(def);
-        expect(next.enemy.moves[0].effectId).toBe('effect_venom');
-        expect(next.enemy.moves[1]).toBe(PECK);
-        const plain = { id: 'p', enemy: { level: 1 } };
-        expect(migrateEffectIds(plain)).toBe(plain);
-        const done = { id: 'd', enemy: { level: 1, moves: [PECK] } };
-        expect(migrateEffectIds(done)).toBe(done);
-    });
-});

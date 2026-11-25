@@ -6,6 +6,7 @@ import { ROLE } from '../../config/registries/roleRegistry.js';
 import { effectName } from '../../config/registries/effectRegistry.js';
 import { KEYWORD, statementsOf, rolledToFire } from '../effects/statements.js';
 import * as LiveEffects from '../effects/LiveEffects.js';
+import { kindRules } from '../effects/enemyKindEffects.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import * as BoardCombat from './BoardCombat.js';
@@ -22,8 +23,8 @@ import { SIDE, MOVE_LANDS, setFightMomentRunner, talliesOf } from '../combat/Fig
  * The fight moments (`FIGHT_MOMENT`: On Swing, On Hit, When Struck, On Health Below), run for one
  * side of a fight when the combat engine says so (`combat/FightHooks.js`).
  *
- * A side's rules: an enemy's are its Token's own rules (its passives) and any lingering effect on
- * it, then the effect of the move its swing makes; a hero's are their items', the arrow being shot
+ * A side's rules: an enemy's are its Token's own rules and its kinds' (its passives), any lingering
+ * effect on it, then the effect of the move its swing makes; a hero's are their items', the arrow being shot
  * and their lingering effects'. In that order, each in authored order, so the random numbers a chance
  * draws come out the same in a catch-up as live: an Applies chance as it lands, a Deals chance
  * (`rolledToFire`) just before it acts.
@@ -50,6 +51,7 @@ function rulesOf(fight, side) {
     if (side === SIDE.ENEMY) {
         return [
             ...enemyTokenRules(fight),
+            ...kindRules(fight.enemy?.kindEffects),
             ...LiveEffects.liveStatements(fight),
             ...moveStatements(fight)
         ];

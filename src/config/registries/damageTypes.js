@@ -126,10 +126,11 @@ export function arrowOf(item) {
 // --- Enemy resistances and weaknesses --------------------------------------------------------
 
 /**
- * The steps an enemy's resistance may take (owner): resist 25, 50 or 100 %, weak 25 or 50 %. Stored
- * signed, a weakness negative: `resistances: { slash: 50, crush: -50 }`.
+ * The steps an enemy's resistance may take (owner): resist 25, 50 or 100 %, weak 25 or 50 %, and
+ * weak 100 % so a line can undo a kind's resistance and more (the Crab's Crush −100 on top of
+ * Armoured's 50 is weak 50 %). Stored signed, a weakness negative: `resistances: { slash: 50, crush: -50 }`.
  */
-export const RESISTANCE_STEPS = Object.freeze([100, 50, 25, -25, -50]);
+export const RESISTANCE_STEPS = Object.freeze([100, 50, 25, -25, -50, -100]);
 
 export const isResistanceStep = (n) => RESISTANCE_STEPS.includes(n);
 
@@ -179,7 +180,7 @@ export function resistanceProblems(raw) {
     for (const [id, value] of Object.entries(raw)) {
         if (isDamageGroupId(id)) out.push(`its ${damageTypeLabel(id)} ${value} resistance is ${groupLineAdvice(id)}`);
         else if (!isDamageTypeId(id)) out.push(`a resistance names "${id}", which is not a damage type${again}`);
-        else if (!isResistanceStep(Number(value))) out.push(`its ${damageTypeLabel(id)} resistance is ${value}, not one of the steps (resist 25, 50 or 100; weak 25 or 50)${again}`);
+        else if (!isResistanceStep(Number(value))) out.push(`its ${damageTypeLabel(id)} resistance is ${value}, not one of the steps (resist 25, 50 or 100; weak 25, 50 or 100)${again}`);
     }
     return out;
 }
