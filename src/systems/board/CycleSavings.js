@@ -62,10 +62,11 @@ export function rollRefresh(instanceId, skill) {
  * `instanceId` spends none of its own charges (a Field, none of its load), failed or not. A chance
  * from every scope (a Token in reach, the guild's stars, its hero's perks and gear), rolled by
  * {@link sureOrRolled}: sure at 100, one draw below, none with no rule.
- * ⚠️ The one reader of the effect: `BoardRunner.completeCycle` skips the cycle's spend on it, and
+ * ⚠️ Read only where a cycle spends: `BoardRunner.completeCycle` skips the cycle's spend on it, and
  * with the spend the chance to end of a source that ends by chance (`endRoll.endsNow`) and a ripe
- * Field's harvest, so no other place needs to ask. A rule's own charge cost (`TriggerSystem`) is no
- * cycle's spend and is not kept.
+ * Field's harvest; a Laboratory's study, which wears its node as that node's own cycle would, asks
+ * it at the node (`Studies.wear`). No other place needs to ask. A rule's own charge cost
+ * (`TriggerSystem`) is no cycle's spend and is not kept.
  */
 export function neverRunsOut(instanceId, skill) {
     return sureOrRolled(chanceOf(instanceId, EFFECT_TYPES.NEVER_RUNS_OUT, skill));
