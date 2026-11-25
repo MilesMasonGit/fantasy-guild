@@ -221,7 +221,7 @@ const WITHIN_MARGIN = 1;
  * stays inside its planter's reach. Nothing is pushed.
  * ⚠️ A planting takes the room of its whole cycle (`MatPlacement.roomRadiusOf`: a Tree's, its
  * Stump's included), so where no spot within reach has room for it, nothing is planted rather
- * than pushed: a Tree pushed out of its Forest's reach would leave a Stump that never regrows.
+ * than pushed: a Forest plants only in its own reach.
  */
 function spotWithin(typeId, from, within) {
     const spot = MatPlacement.findSpot(typeId, from, { reach: Math.max(0, within - WITHIN_MARGIN) });
@@ -426,8 +426,8 @@ export function transformInstance(old, typeId, options = {}) {
         typeId, tokenStartingUses(typeId), null, BoardState.originOf(old)
     );
     if (options.extra) Object.assign(instance, options.extra);
-    // An enemy's tether to its spawner is a fact about where it belongs, not about what it was, so
-    // it is carried across like `origin`.
+    // A tether (an enemy's spawner, a tree's Forest) is a fact about where it belongs, not about
+    // what it was, so it is carried across like `origin`.
     if (typeof old.tether === 'string') BoardState.setTether(instance, old.tether);
     // So is a fixture's mark, as it was: an Oak a map wrote stays the map's through a regrowth, and
     // what the Starter Camp laid stays the camp's.

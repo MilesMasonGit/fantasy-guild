@@ -125,8 +125,8 @@ beforeEach(() => {
 });
 
 describe('the vocabulary: kinds, a tool, a need, hands', () => {
-    it('six kinds (a net and a trap beside the rod, for fishing), and a hero has two hands', () => {
-        expect(TOOL_KINDS.map(k => k.id)).toEqual(['pickaxe', 'woodaxe', 'fishing_rod', 'sickle', 'fishing_net', 'fishing_trap']);
+    it('seven kinds (a net, a trap and a harpoon beside the rod, for fishing), and a hero has two hands', () => {
+        expect(TOOL_KINDS.map(k => k.id)).toEqual(['pickaxe', 'woodaxe', 'fishing_rod', 'sickle', 'fishing_net', 'fishing_trap', 'harpoon']);
         expect(HANDS).toBe(2);
     });
 

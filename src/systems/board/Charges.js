@@ -3,6 +3,7 @@
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { getTokenType, tokenName, tokenStartingUses, getProvidedTagsWithTiers, neverWearsOutType } from '../../config/registries/tokenRegistry.js';
+import { endTermsOf } from '../../config/registries/tokenConstants.js';
 import { neighbourIds } from './nearby.js';
 import { contextRequirementsOf } from '../../config/registries/recipePoolRegistry.js';
 import { DEFAULT_STATION_CHARGE_COST, statementChargeDelta, statementCycleCost } from './cycleCharges.js';
@@ -10,6 +11,7 @@ import * as BoardState from './BoardState.js';
 import * as Hand from './Hand.js';
 import * as Respawn from './Respawn.js';
 import { paidTestFor } from './BlockUpkeep.js';
+import { endsNow } from './endRoll.js';
 
 /**
  * The one place a Token's charge pool is read, moved, or spent. Two axes spend against that pool:
@@ -27,6 +29,11 @@ import { paidTestFor } from './BlockUpkeep.js';
  * Nothing partial: a caller plans the whole set of debits, verifies it, and only then commits it
  * (`planCycle` → `commitPlan`). A plan that cannot be paid in full deducts nothing, from any tile;
  * that is why planning and committing are two functions.
+ *
+ * A Token that comes back (a vein, a tree) runs out **by chance** ({@link endChanceOf}): it holds one
+ * life, it affords any cost while it lasts, and each charge it would spend is a roll at its chance
+ * that spends the whole life (`endRoll.endsNow`). There its `usesRemaining` is only "lasting" (above
+ * 0) or "resting" (0), never a count.
  */
 
 // What one cycle costs a Token lives in a pure module the progression ledger's rate calculator shares.
@@ -71,11 +78,25 @@ export function maxChargesOf(instance) {
     return instance?.typeId ? tokenStartingUses(instance.typeId) : null;
 }
 
-/** Whether this Token can pay `amount` charges. Unlimited pays anything. */
+/**
+ * The chance in percent that one charge spent ends this Token, for a Token that runs out by chance
+ * (its type comes back and wears: `tokenConstants.endTermsOf`); null for one that keeps a count or
+ * never runs out.
+ */
+export function endChanceOf(instance) {
+    if (!instance || isUnlimited(instance)) return null;
+    return endTermsOf(getTokenType(instance.typeId))?.chance ?? null;
+}
+
+/**
+ * Whether this Token can pay `amount` charges. Unlimited pays anything; one that runs out by chance
+ * pays anything while it lasts.
+ */
 export function canAfford(instance, amount) {
     if (!instance) return false;
     if (amount <= 0) return true;
     if (isUnlimited(instance)) return true;
+    if (endChanceOf(instance) != null) return instance.usesRemaining > 0;
     return instance.usesRemaining >= amount;
 }
 
@@ -145,7 +166,8 @@ export function destroyToken(instance, { heroId = null, exhaustedBy = heroId } =
 /**
  * Move a Token's charge pool by `delta` and destroy it if that empties it.
  * - Negative spends, floored at 0. Callers gate first (`canAfford`); the floor is there so a
- * mis-gated caller cannot drive a pool negative.
+ * mis-gated caller cannot drive a pool negative. On a Token that runs out by chance it is one roll
+ * for the charges spent: a hit spends all it holds (it rests), a miss spends nothing.
  * - Positive restores, ceilinged at `maxChargesOf`: it can never exceed the Token type's starting
  * charges, so a `+3` on a Token one charge below full grants one.
  * - Zero, and anything on an unlimited Token, changes nothing and publishes nothing.
@@ -164,7 +186,10 @@ export function applyDelta(instance, delta, { heroId = null } = {}) {
         const cap = ceiling == null ? instance.usesRemaining : ceiling;
         applied = Math.max(0, Math.min(delta, cap - instance.usesRemaining));
     } else if (delta < 0) {
-        applied = -Math.min(-delta, instance.usesRemaining);
+        const chance = instance.usesRemaining > 0 ? endChanceOf(instance) : null;
+        // A count an older save holds is spent whole too: it is not a count any more.
+        if (chance != null) applied = endsNow(chance, -delta) ? -instance.usesRemaining : 0;
+        else applied = -Math.min(-delta, instance.usesRemaining);
     }
 
     if (applied === 0) {
@@ -268,7 +293,7 @@ export function planCycle(instanceId, instance, io) {
     const ownCost = stationCost + statementCycleCost(getTokenType(instance?.typeId));
 
     if (ownCost > 0 && !isUnlimited(instance)) {
-        if (instance.usesRemaining < ownCost) {
+        if (!canAfford(instance, ownCost)) {
             missing.push({ reason: 'station', short: ownCost - instance.usesRemaining });
         } else {
             debits.push({ id: instanceId, instance, amount: ownCost, isStation: true });

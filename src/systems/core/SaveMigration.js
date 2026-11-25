@@ -2,6 +2,7 @@ import { INITIAL_STATE, GAME_VERSION } from '../../state/StateSchema.js';
 import { logger } from '../../utils/Logger.js';
 import { currentSpriteName } from '../../utils/AssetManager.js';
 import { followRenames } from './followRenames.js';
+import { RETIRED_WATER_TOKENS } from '../../config/registries/fishingSpots.js';
 
 /**
  * Thrown when a save was created under an incompatible schema version. Reworks
@@ -72,6 +73,8 @@ export function migrateState(state, savedVersion) {
     migrated = withoutDisallowMarks(migrated);
     // Retired bounties: their Tokens leave every board quietly, unpaid, progress and all.
     migrated = withoutQuestTokens(migrated);
+    // Retired fixed waters (the fishing spots came): they leave every board quietly too.
+    migrated = withoutRetiredWaters(migrated);
 
     const ranks = migrated.progress?.guildUpgrades;
     if (isPlainObject(ranks) && RETIRED_UPGRADES.some(id => id in ranks)) {
@@ -212,15 +215,40 @@ export function boardWithoutQuestTokens(board) {
 
 /** A saved state with no bounty Token on any board: the live board and every Region's. */
 export function withoutQuestTokens(state) {
+    return onEveryBoard(state, boardWithoutQuestTokens);
+}
+
+/** A board with none of the retired fixed waters (`RETIRED_WATER_TOKENS`), or the same board. */
+export function boardWithoutRetiredWaters(board) {
+    const tokens = board?.tokens;
+    const isRetired = (t) => isPlainObject(t) && RETIRED_WATER_TOKENS.includes(t.typeId);
+    if (!isPlainObject(tokens) || !Object.values(tokens).some(isRetired)) return board;
+    const kept = {};
+    for (const [id, t] of Object.entries(tokens)) {
+        if (!isRetired(t)) kept[id] = t;
+    }
+    return { ...board, tokens: kept };
+}
+
+/**
+ * A saved state with none of the retired fixed waters on any board. A hero's order onto one lapses
+ * on the first tick, as for any Token that leaves (`Flags`): they idle where it stood.
+ */
+export function withoutRetiredWaters(state) {
+    return onEveryBoard(state, boardWithoutRetiredWaters);
+}
+
+/** `state` with `edit` applied to the live board and every Region's, sharing what it leaves alone. */
+function onEveryBoard(state, edit) {
     let out = state;
-    const board = boardWithoutQuestTokens(state.board);
+    const board = edit(state.board);
     if (board !== state.board) out = { ...out, board };
     const regions = state.atlas?.regions;
     if (isPlainObject(regions)) {
         let changed = false;
         const next = {};
         for (const [id, r] of Object.entries(regions)) {
-            const b = isPlainObject(r?.board) ? boardWithoutQuestTokens(r.board) : r?.board;
+            const b = isPlainObject(r?.board) ? edit(r.board) : r?.board;
             if (b !== r?.board) { changed = true; next[id] = { ...r, board: b }; } else next[id] = r;
         }
         if (changed) out = { ...out, atlas: { ...state.atlas, regions: next } };

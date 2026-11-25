@@ -74,7 +74,7 @@
           "description": "The tool a hero must hold (toolKinds.js neededToolOf; WorkCheck.js, Flags.js). Ignored when catchPools is present.",
           "type": "object",
           "properties": {
-            "kind": { "type": "string", "enum": ["pickaxe", "woodaxe", "fishing_rod", "sickle", "fishing_net", "fishing_trap"], "description": "TOOL_KINDS (toolKinds.js)." },
+            "kind": { "type": "string", "enum": ["pickaxe", "woodaxe", "fishing_rod", "sickle", "fishing_net", "fishing_trap", "harpoon"], "description": "TOOL_KINDS (toolKinds.js)." },
             "minTier": { "type": "number", "minimum": 1 }
           }
         },
@@ -113,7 +113,7 @@
           "description": "A building site: which building recipes it offers (recipePoolRegistry.js recipesForFoundation; StationRecipe.js, Foundations.js). Both kind and skill are needed.",
           "type": "object",
           "properties": {
-            "kind": { "type": "string", "enum": ["wood", "stone", "farmland", "excavation", "battlefield"], "description": "FOUNDATION_KINDS (tokenConstants.js)." },
+            "kind": { "type": "string", "enum": ["wood", "stone", "farmland", "excavation", "dock", "battlefield"], "description": "FOUNDATION_KINDS (tokenConstants.js)." },
             "skill": { "type": "string", "description": "A skill id (construction, ...)." },
             "tier": { "type": "number", "minimum": 1, "description": "Its tier, against a recipe's foundationMinTier (tokenConstants.js foundationTierOf)." }
           }
@@ -144,12 +144,12 @@
         },
         "catchPools": {
           "type": "array",
-          "description": "A water's catches by tool and bait (src/config/registries/catchPools.js catchPoolsOf; src/systems/board/Fishing.js). The first pool per tool and bait wins.",
+          "description": "A water's catches by tool and bait (src/config/registries/catchPools.js catchPoolsOf; src/systems/board/Fishing.js). The first pool per tool that holds where the water stands is fished.",
           "items": {
             "type": "object",
             "properties": {
-              "tool": { "type": "string", "enum": ["pickaxe", "woodaxe", "fishing_rod", "sickle", "fishing_net", "fishing_trap"], "description": "A TOOL_KINDS kind." },
-              "bait": { "type": ["string", "null"], "description": "An item id, or null for the basic pool." },
+              "tool": { "type": "string", "enum": ["pickaxe", "woodaxe", "fishing_rod", "sickle", "fishing_net", "fishing_trap", "harpoon"], "description": "A TOOL_KINDS kind." },
+              "bait": { "type": ["string", "null"], "description": "The Bait its catches spend (one Bait for all fishing; each fish says how much, items fish.bait), or null: only a Trap's pool with none catches." },
               "catches": {
                 "type": "array",
                 "items": {
@@ -199,6 +199,13 @@
           "properties": {
             "skill": { "type": "string" },
             "reach": { "type": "number", "minimum": 0, "description": "Not read: every camp works the one standard reach (reachRegistry.js STANDARD_REACH_U). Kept so older content still validates." }
+          }
+        },
+        "spotRate": {
+          "description": "Raises the fishing spot rate on the water in its reach (src/config/registries/fishingSpots.js spotRateOf; src/systems/board/FishingSpots.js). Any Token may carry it.",
+          "type": "object",
+          "properties": {
+            "percent": { "type": "number", "minimum": 0, "maximum": 1000, "description": "How much more often spots arrive there: 100 is twice as often. SPOT_RATE_MAX caps it." }
           }
         },
         "standsOn": {

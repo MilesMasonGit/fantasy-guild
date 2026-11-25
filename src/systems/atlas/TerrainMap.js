@@ -68,6 +68,20 @@ export function allowsTerrain(standsOn, terrain, shore = false) {
     return false;
 }
 
+/**
+ * Whether two "Stands on" lists share any ground: a cell of some terrain the game writes, on the
+ * shore or not, that both allow. An empty list is anywhere dry, so it meets every dry list.
+ */
+export function groundsMeet(a, b) {
+    for (const terrain of Object.values(TERRAIN)) {
+        for (const shore of [false, true]) {
+            if (shore && terrain === TERRAIN.WATER) continue;
+            if (allowsTerrain(a, terrain, shore) && allowsTerrain(b, terrain, shore)) return true;
+        }
+    }
+    return false;
+}
+
 /** What a Token the ground refused needs, in one sentence: "Needs water.", "Needs grass, rock or sand." */
 export function needsText(standsOn) {
     const words = STANDS_ON_ORDER.filter(word => standsOn?.includes(word)).map(word => NEEDS_WORD[word]);

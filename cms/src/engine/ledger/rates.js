@@ -8,10 +8,11 @@ import { reachOf, reachCovers, RELATION } from '../../../../src/config/registrie
 import { FILTER_NEEDS, matchesFilters, filtersOf, getFilterKind, targetModeMatches } from '../../../../src/config/registries/filterRegistry.js';
 import {
     outputRange, respawnOf, growsTermsOf, RESPAWN_MIN_MS, stationKindOffers, fieldOf, cropTermsOf,
-    PASSIVE_LAP_BASE_MS, foundationTierMeets, campOf
+    PASSIVE_LAP_BASE_MS, foundationTierMeets, campOf, endTermsOf, CHANCE_LIFE
 } from '../../../../src/config/registries/tokenConstants.js';
-import { neededToolOf, toolOf, toolMeets, toolItemFor } from '../../../../src/config/registries/toolKinds.js';
+import { neededToolOf, toolOf, toolMeets, toolItemFor, takesLure } from '../../../../src/config/registries/toolKinds.js';
 import { hasCatchPools, catchPoolsOf } from '../../../../src/config/registries/catchPools.js';
+import { lureOf, baitSavingOf, baitSpent, fishLevel, fishCycleMs, fishBait } from '../../../../src/config/registries/fishRules.js';
 import { rareTableOf, rareEntryChances } from '../../../../src/config/registries/rareTables.js';
 import { skyWithFallback } from '../../../../src/config/guildUpgrades.js';
 import { rankOf } from '../../../../src/config/hallStars.js';
@@ -319,7 +320,7 @@ function targetMatch(spec, targetDef, hero) {
     const available = new Set([FILTER_NEEDS.DEF, FILTER_NEEDS.INSTANCE, FILTER_NEEDS.TILE]);
     const ok = matchesFilters(spec, {
         def: targetDef,
-        instance: { typeId: targetDef.id, usesRemaining: neverWearsOut(targetDef) ? null : (targetDef.uses ?? null) },
+        instance: { typeId: targetDef.id, usesRemaining: neverWearsOut(targetDef) ? null : endTermsOf(targetDef) ? CHANCE_LIFE : (targetDef.uses ?? null) },
         heroOnTile: 'calculator',
         heroCarries: (effectId) => hero.carries.has(effectId)
     }, available);
@@ -647,21 +648,25 @@ function familyMembers(book, setup, skill) {
  * How the worked Token comes back after it runs out, and so how many cycles an hour it can offer one
  * hero standing by it: unlimited; refilled after a rest (a vein, a ripe Field's next crop); regrown
  * through a chain of growths back to itself (a felled tree, its stump, its sapling); or worn out for
- * good (a chest).
+ * good (a chest). `cycles` is a life's cycles, on average for one that runs out by chance (one that
+ * comes back: each charge a roll at its chance, `Charges.applyDelta`).
  */
 function lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes, kind, skill) {
     if (kind === WORK.FIELD) return fieldLifecycle(book, def, recipe, cycleMs, setup, guild, notes, skill);
     if (kind === WORK.FIGHT) return fightLifecycle(book, def, setup);
     if (kind === WORK.BUILD || kind === WORK.WATER) return { kind: LIFECYCLE.UNLIMITED, supplyPerHour: Infinity, used: new Set() };
-    const uses = neverWearsOut(def) ? null : (def.uses ?? null);
+    const ends = neverWearsOut(def) ? null : endTermsOf(def);
+    const uses = neverWearsOut(def) ? null : (ends ? ends.life : (def.uses ?? null));
     const cost = ownCycleCost(def);
     if (uses == null || !(cost > 0)) return { kind: LIFECYCLE.UNLIMITED, supplyPerHour: Infinity, used: new Set() };
-    const cycles = Math.floor(uses / cost);
+    // By chance, a cycle of several charges ends it when any of their rolls does.
+    const cycles = !ends ? Math.floor(uses / cost) : cost === 1 ? ends.life : 1 / (1 - (1 - ends.chance / 100) ** cost);
     const respawn = respawnOf(def);
     if (respawn?.mode === 'refill') {
         if (!hasNearby(setup, respawn.needsNearby)) {
             return { kind: LIFECYCLE.ONE_OFF, cycles, supplyPerHour: 0, used: new Set(), why: 'its refill needs a neighbour the setup lacks' };
         }
+        // A fruit tree its Orchard brings back rests as Grow Time shortens it, like any rest (`Respawn.restMsOf`).
         const { ms, used } = growTime(book, def.id, respawn.afterMs, setup, guild, notes);
         const restMs = Math.max(RESPAWN_MIN_MS, ms);
         // Only a camp moves a hero on to the next copy while this one rests.
@@ -682,6 +687,7 @@ function lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes, kind, skil
             if (!hasNearby(setup, terms.needsNearby)) {
                 return { kind: LIFECYCLE.ONE_OFF, cycles, supplyPerHour: 0, used, why: `${at} grows only beside ${terms.needsNearby.join(' or ')}` };
             }
+            // A Stump its Forest regrows reads Grow Time like any growth (`TimedChanges.growMsOf`).
             const grown = growTime(book, at, Number(stepDef.grows.afterMs) || 0, setup, guild, notes);
             grown.used.forEach(f => used.add(f));
             steps.push({ typeId: at, ms: grown.ms });
@@ -700,16 +706,17 @@ function lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes, kind, skil
 }
 
 /**
- * A Field (`Fields.js`): it ripens with its crop's load (Crop Load in reach added, rounded, never
- * under one), is harvested that many cycles, then sows again and grows for its grow time (Grow Time
- * in reach, floored), paying the crop's seed once a sowing.
+ * A Field (`Fields.js`): it ripens to give its crop's load on average (Crop Load in reach added,
+ * never under one; its chance to finish each harvest is one over that), is harvested that many
+ * cycles on average, then sows again and grows for its grow time (Grow Time in reach, floored),
+ * paying the crop's seed once a sowing.
  */
 function fieldLifecycle(book, def, recipe, cycleMs, setup, guild, notes, skill) {
     const terms = cropTermsOf(recipe);
     const tile = tileScope(tileRules(book, def, setup, { carries: new Set() }, notes).modifiers);
     const resolve = makeResolver(tile, guild, { statements: [], live: [] });
     const load = resolve(EFFECT_TYPES.CROP_LOAD, terms.load, skill || TARGET_CATEGORIES.ALL, { withHero: false });
-    const cycles = Math.max(1, Math.round(load.value) || 1);
+    const cycles = Math.max(1, Number(load.value) || 1);
     const grown = resolve(EFFECT_TYPES.GROW_TIME, terms.growMs, growSkillOf(book, def.id), { withHero: false });
     const restMs = floorSpeedUp(terms.growMs, grown.value);
     const used = new Set([...load.used, ...grown.used]);
@@ -804,22 +811,60 @@ function prepare(book, target, setup) {
         notes.assumptions.push({ source: def.id, what: 'fight', why: 'coarse: one kill a fight cycle of its authored time, won every time; levels and gear left out until brief 280' });
         notes.unmodelled.push({ source: def.id, what: 'combat XP', why: 'what a fight teaches its hero is not rated' });
     }
-    const baseCycleMs = Number(io.cycleTimeMs) || Number(config?.cycleTimeMs);
+    let baseCycleMs = Number(io.cycleTimeMs) || Number(config?.cycleTimeMs);
     if (!(baseCycleMs > 0)) return refuse('no cycle time', [{ source: def.id, what: 'cycleTimeMs', why: 'no cycle time authored' }]);
 
     const gates = gatesOf(book, def, config, recipe, setup, pool);
+    let fishing = null;
+    if (kind.kind === WORK.WATER) {
+        fishing = fishingPlan(book, def, pool, gates, setup, baseCycleMs);
+        if (fishing.level && gates.ok) {
+            gates.ok = false;
+            gates.reason = 'level';
+            gates.needed = fishing.level;
+        }
+        baseCycleMs = fishing.cycleMs;
+    }
     const hero = heroRules(book, gates.skill, setup, gates, notes);
     const reaching = tileRules(book, def, setup, hero, notes);
     const tile = tileScope(reaching.modifiers);
     const guild = guildScope(book, setup);
     const resolve = makeResolver(tile, guild, hero);
-    return { def, recipe, kind: kind.kind, pool, io, baseCycleMs, gates, hero, tileGrants: reaching.grants, guild, resolve, notes };
+    return { def, recipe, kind: kind.kind, pool, fishing, io, baseCycleMs, gates, hero, tileGrants: reaching.grants, guild, resolve, notes };
+}
+
+/**
+ * How a hero fishes `pool` (`Fishing.js`): the setup's `lure` (an item id) picks its first fish the
+ * pool holds, at that fish's own time, else the lureless roll among the fish the hero's level allows
+ * at the longest time of those. `{ catches, cycleMs, bait: { itemId, perCatch(c) } | null, lure:
+ * { itemId, breakChance } | null, level }`, `level` set when the hero's level lands nothing.
+ */
+function fishingPlan(book, def, pool, gates, setup, ownMs) {
+    const ownLevel = Math.max(1, Number(def.config?.skillRequired) || 1);
+    const levelOf = (c) => fishLevel(book.items[c.itemId], ownLevel);
+    const lureId = text(setup.lure);
+    const lure = lureId && takesLure(pool.tool) ? lureOf(book.items[lureId]) : null;
+    const lured = lure ? lure.fish.map(f => pool.catches.find(c => c.itemId === f)).find(Boolean) : null;
+    let catches = lured ? [lured] : pool.catches.filter(c => levelOf(c) <= gates.level);
+    let level = null;
+    if (lured && levelOf(lured) > gates.level) level = levelOf(lured);
+    if (!catches.length) level = Math.min(...pool.catches.map(levelOf));
+    if (level) catches = lured ? [lured] : pool.catches;
+    const times = catches.map(c => fishCycleMs(book.items[c.itemId], ownMs)).filter(ms => ms > 0);
+    const saving = baitSavingOf(book.items[gates.toolItem]);
+    return {
+        catches,
+        cycleMs: times.length ? Math.max(...times) : ownMs,
+        bait: pool.bait ? { itemId: pool.bait, perCatch: (c) => baitSpent(fishBait(book.items[c.itemId]), saving) } : null,
+        lure: lured ? { itemId: lureId, breakChance: lure.breakChance } : null,
+        level
+    };
 }
 
 /**
  * The catch pool a hero fishes at a water: `target.pool` (`'tool|bait'`) when named, else the
- * pool for the tool in hand (the setup's, else the water's first kind) with the setup's `bait`,
- * else that tool's basic pool, as `Fishing.fishingOf` picks it.
+ * first pool for the tool in hand (the setup's, else the water's first kind), as `Fishing.fishingOf`
+ * picks it.
  */
 function poolOf(book, def, target, setup) {
     const pools = catchPoolsOf(def);
@@ -829,8 +874,8 @@ function poolOf(book, def, target, setup) {
     }
     const held = text(setup.tool) ? toolOf(book.items[setup.tool])?.kind : null;
     const kind = held || pools[0]?.tool;
-    const bait = text(setup.bait);
-    return pools.find(p => p.tool === kind && p.bait === bait) || pools.find(p => p.tool === kind && !p.bait) || null;
+    // One Bait serves all fishing: the tool's first pool is fished, whatever bait it spends (`catchPools.poolForTool`).
+    return pools.find(p => p.tool === kind) || null;
 }
 
 /** A pool as `target.pool` names it. */
@@ -944,7 +989,7 @@ export function axisResolverOf(book, target, setup = {}) {
  *     spawner's allowance (all of them in the hero's reach). For a fight, the camp that spawns it.
  *   - `camp`: a camp of the work's skill the hero works from (an id or `{ id, members }`): it works
  *     `members` copies in turn (else the family's allowance); named but unusable, one copy
- *   - `bait`: the bait carried at water; `hallRanks`: Guild Hall ranks by star id (a held rank's
+ *   - `lure`: the lure carried at water (an item id), picking its fish; `hallRanks`: Guild Hall ranks by star id (a held rank's
  *     rules reach the work, its lines pay at the Hall)
  *   - `heroes`: how many heroes work it (default 1; only a family can take more than one)
  *   - `off`: factor ids or kinds switched off (`support:token_copper_mine`, `consumable`, …)
@@ -955,7 +1000,7 @@ function rateOf(book, target = {}, setup = {}) {
     if (passiveDef && !text(target.recipe) && workKindOf(passiveDef, null).kind === WORK.PASSIVE) return passiveRate(book, passiveDef, setup);
     const prepared = prepare(book, target, setup);
     if (prepared.refused) return prepared.refused;
-    const { def, recipe, kind, pool, baseCycleMs, gates, hero, tileGrants, guild, resolve, notes } = prepared;
+    const { def, recipe, kind, pool, fishing, baseCycleMs, gates, hero, tileGrants, guild, resolve, notes } = prepared;
     const io = { ...prepared.io };
     const skill = gates.skill;
     const category = skill || TARGET_CATEGORIES.ALL;
@@ -974,14 +1019,16 @@ function rateOf(book, target = {}, setup = {}) {
 
     // Water lands one catch a cycle, picked by weight, each weight widened by Catch Weight with the
     // fish as the narrowing (`Fishing.catchOf`); then it lands like any output.
+    let baitPerCatch = 0;
     if (kind === WORK.WATER) {
-        const weights = pool.catches.map(c => {
+        const weights = fishing.catches.map(c => {
             const r = resolve(EFFECT_TYPES.CATCH_WEIGHT, c.weight, c.itemId);
             note(EFFECT_TYPES.CATCH_WEIGHT, r.used);
             return Math.max(0, r.value);
         });
         const total = weights.reduce((a, b) => a + b, 0);
-        io.outputs = total > 0 ? pool.catches.map((c, i) => ({ itemId: c.itemId, chance: 100 * weights[i] / total, minQty: 1, maxQty: 1 })) : [];
+        io.outputs = total > 0 ? fishing.catches.map((c, i) => ({ itemId: c.itemId, chance: 100 * weights[i] / total, minQty: 1, maxQty: 1 })) : [];
+        if (fishing.bait && total > 0) baitPerCatch = fishing.catches.reduce((sum, c, i) => sum + fishing.bait.perCatch(c) * weights[i] / total, 0);
     }
 
     // A failed cycle pays its inputs and makes nothing (`BoardRunner.completeCycle`).
@@ -1058,8 +1105,10 @@ function rateOf(book, target = {}, setup = {}) {
         inputsPerCycle[input.itemId] = (inputsPerCycle[input.itemId] || 0) + Math.max(0, ic.value);
     }
     for (const c of hero.costs) inputsPerCycle[c.itemId] = (inputsPerCycle[c.itemId] || 0) + c.perCycle;
-    // A catch with bait spends one; a failed cycle keeps it (`BoardRunner.completeCycle`).
-    if (pool?.bait) inputsPerCycle[pool.bait] = (inputsPerCycle[pool.bait] || 0) + (1 - pFail);
+    // A catch spends its fish's Bait less the tool's saving, and may break the lure that picked it;
+    // a failed cycle keeps both (`BoardRunner.completeCycle`).
+    if (fishing?.bait && baitPerCatch > 0) inputsPerCycle[fishing.bait.itemId] = (inputsPerCycle[fishing.bait.itemId] || 0) + (1 - pFail) * baitPerCatch;
+    if (fishing?.lure?.breakChance > 0) inputsPerCycle[fishing.lure.itemId] = (inputsPerCycle[fishing.lure.itemId] || 0) + (1 - pFail) * fishing.lure.breakChance / 100;
 
     const life = lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes, kind, skill);
     note(EFFECT_TYPES.GROW_TIME, life.used);

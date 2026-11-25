@@ -21,9 +21,9 @@ const ALERT_VALUES = Object.values(ALERT);
 
 /**
  * Every alert the engine writes on a Token: all but resting, a Field's growing crop and a hero with
- * no bait, which are never written as one.
+ * no bait or a fish above them, which are never written as one.
  */
-const TOKEN_ALERTS = ALERT_VALUES.filter(a => a !== ALERT.RESTING && a !== ALERT.GROWING && a !== ALERT.NO_BAIT);
+const TOKEN_ALERTS = ALERT_VALUES.filter(a => a !== ALERT.RESTING && a !== ALERT.GROWING && a !== ALERT.NO_BAIT && a !== ALERT.FISH_LEVEL);
 
 const tree = (el) => React.createElement(DndContext, null, el);
 

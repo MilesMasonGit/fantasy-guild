@@ -33,9 +33,8 @@ export const GUILD_HALL_TYPE = 'token_guild_hall';
 const BUILT_IN_OFFSET = 320;
 
 /**
- * The built-in camp's Bank: Oak Seeds so the Forest spawns trees at once (it pays one seed per
- * spawn), a little Oak Wood towards the first Shop purchase, and two Wheat Seeds for the first
- * Farmland.
+ * The built-in camp's Bank: a few Oak Seeds (its Forest plants for free), a little Oak Wood
+ * towards the first Shop purchase, and two Wheat Seeds for the first Farmland.
  */
 export const BUILT_IN_BANK = Object.freeze({ item_oak_seedling: 3, item_oak_wood: 10, item_wheat_seed: 2 });
 

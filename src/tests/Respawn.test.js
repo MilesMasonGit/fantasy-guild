@@ -31,6 +31,9 @@ import { clearMat } from './fixtures/mat.js';
  * Respawning fixtures: a Token type with a `respawn` block does not leave the mat when its charges
  * run out. A refill Token rests where it stands and refills after its time; a regrow Token becomes
  * its `into` Token, which grows back into it. A type without the block still leaves at 0.
+ *
+ * A Token that comes back runs out by chance (`ChanceEnd.test.js`); these fixtures author a sure end
+ * (`endChance: 100`), so each cycle or charge spent rests them and a refill gives back their one life.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -53,13 +56,13 @@ const logging = {
 registerTokenTypes({
     respawn_vein: {
         id: 'respawn_vein', name: 'Respawn Vein', tokenType: 'resource', rarity: 'common',
-        theme: 'fixture', uses: 3, sprite: 's_industry', config: mining,
+        theme: 'fixture', endChance: 100, sprite: 's_industry', config: mining,
         respawn: { mode: 'refill', afterMs: 12000 }
     },
     /** Needs an item the Bank never has, so a flag skips it for a fixable reason. */
     respawn_kiln: {
         id: 'respawn_kiln', name: 'Respawn Kiln', tokenType: 'resource', rarity: 'common',
-        theme: 'fixture', uses: 3, sprite: 's_industry',
+        theme: 'fixture', endChance: 100, sprite: 's_industry',
         config: { ...mining, inputs: [{ itemId: 'fixture_oak_wood', quantity: 1 }] },
         respawn: { mode: 'refill', afterMs: 12000 }
     },
@@ -70,7 +73,7 @@ registerTokenTypes({
      */
     respawn_buff_vein: {
         ...FIXTURE_TOKENS.fixture_trigger_any,
-        id: 'respawn_buff_vein', name: 'Respawn Buff Vein', tokenType: 'resource', uses: 50, config: mining,
+        id: 'respawn_buff_vein', name: 'Respawn Buff Vein', tokenType: 'resource', endChance: 100, config: mining,
         respawn: { mode: 'refill', afterMs: 12000 }
     },
     /** The same vein with no block: the guard. */
@@ -80,7 +83,7 @@ registerTokenTypes({
     },
     respawn_tree: {
         id: 'respawn_tree', name: 'Respawn Tree', tokenType: 'resource', rarity: 'common',
-        theme: 'fixture', uses: 2, sprite: 's_nature', config: logging,
+        theme: 'fixture', endChance: 100, sprite: 's_nature', config: logging,
         respawn: { mode: 'regrow', into: 'respawn_sapling' }
     },
     respawn_sapling: {
@@ -97,7 +100,7 @@ registerTokenTypes({
     /** Spawns grown trees that regrow from a stump: only `respawn.into` puts the stump in the family. */
     stump_tree: {
         id: 'stump_tree', name: 'Stump Tree', tokenType: 'resource', rarity: 'common',
-        theme: 'fixture', uses: 2, sprite: 's_nature', config: logging,
+        theme: 'fixture', endChance: 100, sprite: 's_nature', config: logging,
         respawn: { mode: 'regrow', into: 'stump' }
     },
     stump: {
@@ -252,7 +255,7 @@ describe('a refill Token rests where it stands and refills', () => {
         expect(Respawn.nextRespawn(vein)).toMatchObject({ mode: 'refill', inMs: 100, totalMs: 12000 });
 
         BoardRunner.tick(100);
-        expect(vein.usesRemaining).toBe(3);
+        expect(vein.usesRemaining).toBe(1);
         expect(Respawn.isResting(vein)).toBe(false);
         expect(vein.clocks?.respawnMs).toBeUndefined();
         expect(events.respawned).toEqual([expect.objectContaining({ instanceId: vein.id, typeId: 'respawn_vein', mode: 'refill' })]);
@@ -298,7 +301,7 @@ describe('a refill Token rests where it stands and refills', () => {
         expect(claimOf('hero_1')).toBeNull();
         expect(BoardState.flagOf('hero_1').pinnedTo).toBe(vein.id);
 
-        expect(runUntil(() => vein.usesRemaining === 3, 13000)).toBe(true);
+        expect(runUntil(() => vein.usesRemaining === 1, 13000)).toBe(true);
         expect(claimOf('hero_1')).toBe(vein.id);
     });
 
@@ -361,9 +364,9 @@ describe('a refill Token rests where it stands and refills', () => {
         offs.push(EventBus.subscribe(BOARD_EVENTS.CYCLE_START, p => { if (p.instanceId === vein.id) starts.push(p); }));
         offs.push(EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, p => { if (p.instanceId === vein.id) completes.push(p); }));
 
-        // Three charges of 2 s, then 12 s of rest: 18 s a round, its refill falling due on a step's end.
-        run(5 * 18_000, step);
-        expect(completes.length).toBe(15);
+        // One cycle of 2 s, then 12 s of rest: 14 s a round, its refill falling due on a step's end.
+        run(5 * 14_000, step);
+        expect(completes.length).toBe(5);
         expect(starts.length - completes.length).toBeLessThanOrEqual(1);
     });
 
@@ -380,7 +383,7 @@ describe('a refill Token rests where it stands and refills', () => {
         run(6900);
         expect(loaded.usesRemaining).toBe(0);
         run(100);
-        expect(loaded.usesRemaining).toBe(3);
+        expect(loaded.usesRemaining).toBe(1);
     });
 });
 
@@ -401,7 +404,7 @@ describe('a regrow Token becomes its `into`, which grows back into it', () => {
         })]);
 
         expect(runUntil(() => at(spot)?.typeId === 'respawn_tree', 31000)).toBe(true);
-        expect(at(spot).usesRemaining).toBe(2);
+        expect(at(spot).usesRemaining).toBe(1);
         expect(events.depleted).toEqual([]);
         expect(events.alerts.filter(a => a.severity === 'red')).toEqual([]);
     });
@@ -415,7 +418,7 @@ describe('a regrow Token becomes its `into`, which grows back into it', () => {
         expect(at(spot)).toMatchObject({ typeId: 'respawn_sapling', fixture: true });
         expect(BoardState.isFixture(at(spot))).toBe(true);
         expect(runUntil(() => at(spot)?.typeId === 'respawn_tree', 31000)).toBe(true);
-        expect(at(spot)).toMatchObject({ fixture: true, usesRemaining: 2 });
+        expect(at(spot)).toMatchObject({ fixture: true, usesRemaining: 1 });
     });
 
     it('a tree spawned by a Forest regrows in place and keeps counting toward its family cap', () => {
@@ -479,7 +482,7 @@ describe('one big tick equals many small ones', () => {
         vein = restingVein();
         for (let i = 0; i < 150; i++) TimedChanges.tick(100);
         expect(snapshot(vein)).toEqual(bigPast);
-        expect(bigPast.usesRemaining).toBe(3);
+        expect(bigPast.usesRemaining).toBe(1);
     });
 
     it('a regrow: one 40 s tick turns the Tree into a Sapling and grows it back, as 400 small ones do', () => {
@@ -490,7 +493,7 @@ describe('one big tick equals many small ones', () => {
         tree();
         for (let i = 0; i < 400; i++) TimedChanges.tick(100);
         expect(snapshot(BoardState.tokens()[0])).toEqual(big);
-        expect(big).toMatchObject({ typeId: 'respawn_tree', usesRemaining: 2 });
+        expect(big).toMatchObject({ typeId: 'respawn_tree', usesRemaining: 1 });
     });
 });
 
@@ -520,7 +523,7 @@ describe('in the player\'s hand it rests and never leaves', () => {
 
         run(12000);
         expect(BoardState.getTokenById(vein.id)).toBe(vein);
-        expect(vein.usesRemaining).toBe(3);
+        expect(vein.usesRemaining).toBe(1);
         putDown(vein);
         expect(BoardState.getTokenById(vein.id)).toBe(vein);
         expect(events.depleted).toEqual([]);

@@ -165,10 +165,10 @@ export function problemText(problem, instanceId) {
             return names.length ? `Needs ${joinNames(names)} to spawn` : 'Needs items to spawn';
         }
         case ALERT.GROW_NEEDS_NEARBY: {
-            const names = (problem.needs || []).map(id => withArticle(getTokenType(id)?.name || id));
-            // The same wait on an exhausted Token (a Bare apple tree with no Orchard) is for its respawn.
+            const names = (problem.needs || []).map(id => getTokenType(id)?.name || id);
+            // The same wait on an exhausted Token (a Bare apple tree whose Orchard is gone) is for its respawn.
             const what = Respawn.isResting(instance) ? 'respawn' : 'grow';
-            return names.length ? `Needs ${joinOr(names)} nearby to ${what}` : `Needs a Token nearby to ${what}`;
+            return names.length ? `Needs its own ${joinOr(names)} to ${what}` : `Needs its owner to ${what}`;
         }
         case ALERT.GROW_NEEDS_ITEM: {
             const names = (problem.needs || []).map(id => getItem(id)?.name || id);

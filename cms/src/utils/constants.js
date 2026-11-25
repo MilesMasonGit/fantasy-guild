@@ -116,7 +116,7 @@ export {
 // A turning Token rolls a chance once per cycle, both ways. The defaults a new Turns block starts with are the game's.
 
 // A Token that comes back after it runs out: refill in place or regrow from another Token. The modes, the default rest and its floor are the game's.
-export { RESPAWN_MODES, RESPAWN_DEFAULTS, RESPAWN_MIN_MS } from '../../../src/config/registries/tokenConstants.js';
+export { RESPAWN_MODES, RESPAWN_DEFAULTS, RESPAWN_MIN_MS, endTermsOf } from '../../../src/config/registries/tokenConstants.js';
 
 // A Field grows its own crop: its block's terms, and each crop recipe's grow time, load and ripe sprite with the game's defaults.
 export { fieldOf, cropTermsOf, CROP_DEFAULTS, CROP_MIN_GROW_MS } from '../../../src/config/registries/tokenConstants.js';
@@ -185,8 +185,14 @@ export {
   toolKindLabel,
   toolNeedPhrase,
   tierValue,
+  isCatchKind,
+  takesLure,
 } from '../../../src/config/registries/toolKinds.js';
+// A fish's level, catch time and Bait, a lure's fish and break chance, a fishing tool's Bait saving: the game's own reading.
+export { fishOf, lureOf, baitSavingOf } from '../../../src/config/registries/fishRules.js';
 export { toolFindings } from '../../../src/systems/core/toolRule.js';
+export { spotFindings } from '../../../src/systems/core/spotRule.js';
+export { fishFindings } from '../../../src/systems/core/fishRule.js';
 // Tools and weapons that break: an item's chance per cycle, for the item editor's Break chance field. The game's own reading.
 export { breakChanceOf, canBreak, BREAK_CHANCE_MAX } from '../../../src/config/registries/itemBreak.js';
 // Milestone perks: the shape of a skill's perk table and the content checks for one. The game's own rules and wording.

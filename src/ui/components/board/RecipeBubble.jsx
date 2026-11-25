@@ -18,34 +18,51 @@ export function bubbleOutputOf(recipe) {
     return main ? (main.itemId || main.tokenId || null) : null;
 }
 
+/** The gap between sprites in a bubble of several, in plate pixels. */
+const SPRITE_GAP_PX = 2;
+
 /**
- * RecipeBubble: over a Token with a recipe chosen, while the pointer rests on it, that recipe's
- * output sprite in a speech bubble (the hero speech bubble's frame and tail, `SpeechFrame`),
- * its tail on the art's top edge. Hover only, never at rest (docs/active/concept_playmat_declutter.md
- * §12.3). `top` is the art's top in the Token's box, `boxPx` the box's width, `u` one plate pixel.
- * Takes no pointer.
+ * SpriteBubble: item or Token sprites in a speech bubble (the hero speech bubble's frame and tail,
+ * `SpeechFrame`), its tail on the art's top edge. Hover only, never at rest
+ * (docs/active/concept_playmat_declutter.md §12.3). `ids` are item or Token ids, drawn in order; one
+ * with no sprite is left out, and with none the bubble is not drawn. `top` is the art's top in the
+ * Token's box, `boxPx` the box's width, `u` one plate pixel. Takes no pointer. Other props (data
+ * attributes) go on its box.
  */
-export const RecipeBubble = memo(function RecipeBubble({ recipe, boxPx, top, u = 1 }) {
-    const id = bubbleOutputOf(recipe);
-    if (!id) return null;
-    const src = resolveSpritePath(getItem(id) || getTokenType(id) || id);
-    if (!src) return null;
+export const SpriteBubble = memo(function SpriteBubble({ ids, boxPx, top, u = 1, ...rest }) {
+    const srcs = (Array.isArray(ids) ? ids : [])
+        .map(id => ({ id, src: resolveSpritePath(getItem(id) || getTokenType(id) || id) }))
+        .filter(s => s.src);
+    if (!srcs.length) return null;
     const size = SPRITE_PX * u;
     return (
         <div
-            data-recipe-bubble={id}
+            {...rest}
             className="absolute z-30 flex justify-center pointer-events-none"
             style={{ left: 0, width: boxPx, top: top - speechTailDrop(u), transform: 'translateY(-100%)' }}
         >
             <SpeechFrame tone={SPEECH_TONE.PLAIN} u={u} tail className="pointer-events-none">
-                <img
-                    src={src}
-                    alt=""
-                    draggable={false}
-                    className="block"
-                    style={{ width: size, height: size, imageRendering: 'pixelated' }}
-                />
+                <span className="flex" style={{ gap: SPRITE_GAP_PX * u }}>
+                    {srcs.map(({ id, src }) => (
+                        <img
+                            key={id}
+                            data-bubble-sprite={id}
+                            src={src}
+                            alt=""
+                            draggable={false}
+                            className="block shrink-0"
+                            style={{ width: size, height: size, imageRendering: 'pixelated' }}
+                        />
+                    ))}
+                </span>
             </SpeechFrame>
         </div>
     );
+});
+
+/** RecipeBubble: over a Token with a recipe chosen, while the pointer rests on it, that recipe's output. */
+export const RecipeBubble = memo(function RecipeBubble({ recipe, boxPx, top, u = 1 }) {
+    const id = bubbleOutputOf(recipe);
+    if (!id) return null;
+    return <SpriteBubble ids={[id]} boxPx={boxPx} top={top} u={u} data-recipe-bubble={id} />;
 });

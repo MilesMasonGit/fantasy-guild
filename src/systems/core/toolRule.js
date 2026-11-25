@@ -6,6 +6,7 @@ import {
 import { getProvidedTagsWithTiers } from '../effects/statements.js';
 import { isConsumableCategory } from '../../config/registries/equipmentCategories.js';
 import { catchPoolsOf, poolBites, BAIT_FREE_TOOL } from '../../config/registries/catchPools.js';
+import { RETIRED_WATER_TOKENS } from '../../config/registries/fishingSpots.js';
 import { breakChanceProblem } from '../../config/registries/itemBreak.js';
 import { gearRequirements } from '../../config/registries/weaponStyles.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
@@ -74,7 +75,8 @@ export function toolFindings({ items = {}, tokens = {}, recipes = [] } = {}) {
             }
         }
 
-        catchFindings(token, tokenId, items, best, (message) => push('Token', tokenId, token, message));
+        // A retired fixed water is the spot audit's to name (`spotRule.js`): the game never loads it.
+        if (!RETIRED_WATER_TOKENS.includes(tokenId)) catchFindings(token, tokenId, items, best, (message) => push('Token', tokenId, token, message));
 
         for (const tag of Object.keys(getProvidedTagsWithTiers(token))) {
             const kind = RETIRED_TOOL_TAGS[tag];
@@ -131,7 +133,7 @@ function tierScaleFindings(items, push) {
 /**
  * A water Token's catch pools (`catchPools.js`), written in a way that cannot work: a tool kind the
  * game lacks or no item is, a bait or catch that is not an item, a bait no hero can carry, a pool
- * with nothing to catch or written twice, a pool with no bait for any tool but a Trap, and the fields the
+ * with nothing to catch or a second for one tool in one place, a pool with no bait for any tool but a Trap, and the fields the
  * pools make pointless (Outputs, Needs tool) or need (a work cycle).
  */
 function catchFindings(token, tokenId, items, best, say) {
@@ -153,9 +155,13 @@ function catchFindings(token, tokenId, items, best, say) {
         } else if (bait && !isConsumableCategory(items[bait]?.equipSlot)) {
             say(`its ${label} takes ${itemName(bait)} as bait, but ${itemName(bait)} is not a Consumable, so no hero can carry it as bait`);
         }
-        const key = `${kind}|${bait || ''}`;
+        // Pools for one tool that hold in different places are not repeats (`catchPools.poolsAt`). One
+        // Bait serves all fishing, so a second pool for the tool in the same place is never fished,
+        // whatever bait it names (`catchPools.poolForTool`).
+        const place = ['water', 'biomes'].map(k => (Array.isArray(pool?.[k]) ? pool[k].join(',') : '')).join('|');
+        const key = `${kind}|${place}`;
         if (seen.has(key)) {
-            say(`has two catch pools for a ${toolKindLabel(kind)} ${bait ? `with ${itemName(bait)}` : 'with no bait'}: only the first is used`);
+            say(`has two catch pools for a ${toolKindLabel(kind)}${place !== '|' ? ' in the same place' : ''}: only the first is fished, whatever bait it spends`);
         }
         seen.add(key);
         const catches = Array.isArray(pool?.catches) ? pool.catches : [];
