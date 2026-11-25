@@ -69,9 +69,23 @@ export function missChance(attackerLevel, defenderLevel, dodge = 0, accuracy = 0
 
 // --- Crits ----------------------------------------------------------------------------------
 
-/** About 1 swing in 20 crits for double, the doubling applied before the type factor. Gear adds chance. */
+/**
+ * About 1 swing in 20 crits for double, the doubling applied before the type factor. Gear adds
+ * chance, never size: a crit is double for everyone, and there is no Crit Damage effect.
+ */
 export const BASE_CRIT_CHANCE = 5;
 export const CRIT_MULTIPLIER = 2;
+
+/**
+ * The most a fighter's crit chance can reach, in percent, heroes and enemies alike: every source
+ * adds in full, and the total stops here, so a landed hit never crits every time.
+ */
+export const CRIT_CHANCE_CAP = 75;
+
+/** A crit chance as the fight rolls it: never below 0, never above {@link CRIT_CHANCE_CAP}. */
+export function cappedCritChance(pct) {
+    return clamp(Number(pct) || 0, 0, CRIT_CHANCE_CAP);
+}
 
 // --- The style cycle ------------------------------------------------------------------------
 

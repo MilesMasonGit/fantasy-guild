@@ -10,6 +10,7 @@ import { EFFECT_TYPES, TARGET_CATEGORIES, GIANT_HARVEST_SKILLS } from '../../sys
 import { COMBAT_SKILL_IDS } from './skillRegistry.js';
 import { DOSE_KIND_IDS } from './carriedKinds.js';
 import { effectTag } from './effectWords.js';
+import { CRIT_CHANCE_CAP } from '../FormulaRegistry.js';
 
 /**
  * Which effect axes content may be authored against, and in what shape.
@@ -694,7 +695,7 @@ export const MODIFIER_PALETTE = [
         fromGuild: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'Percentage points added to the bearer\'s chance to crit, a hero\'s or an enemy\'s: 5% unless an enemy sets its own (a crit doubles the hit).'
+        hint: `Percentage points added to the bearer's chance to crit, a hero's or an enemy's: 5% unless an enemy sets its own. Every source adds in full, up to ${CRIT_CHANCE_CAP}% at most. A crit doubles the hit, for everyone.`
     },
     {
         /**

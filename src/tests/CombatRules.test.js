@@ -10,6 +10,8 @@ import {
     enemyLevelStats,
     WEAPON_TIERS,
     BASE_CRIT_CHANCE,
+    CRIT_CHANCE_CAP,
+    CRIT_MULTIPLIER,
     REGEN_CONFIG,
 } from '../config/FormulaRegistry.js';
 import * as CF from '../systems/combat/CombatFormulas.js';
@@ -241,6 +243,35 @@ describe('crits double before the type factor; no flat armour, no floor', () => 
         expect(CF.heroCritChance(h)).toBe(15);
         expect(CF.enemyCritChance(enemy(1))).toBe(5);
         expect(CF.enemyCritChance(enemy(1, { critChance: 0 }))).toBe(0);
+    });
+
+    it('crit chance stops at 75 %, heroes and enemies alike; every source adds in full under it', () => {
+        expect(CRIT_CHANCE_CAP).toBe(75);
+        const h = recruit();
+        give(h, EFFECT_TYPES.CRIT_CHANCE, 30);
+        h.aggregator.addModifier({ type: EFFECT_TYPES.CRIT_CHANCE, value: 30, bucket: 'flat', source: 'second_source' });
+        expect(CF.heroCritChance(h)).toBe(65);
+        h.aggregator.addModifier({ type: EFFECT_TYPES.CRIT_CHANCE, value: 30, bucket: 'flat', source: 'third_source' });
+        expect(CF.heroCritChance(h)).toBe(75);
+        expect(CF.enemyCritChance(enemy(1, { critChance: 90 }))).toBe(75);
+        const keen = enemy(1, { critChance: 50 });
+        give(keen, EFFECT_TYPES.CRIT_CHANCE, 40);
+        expect(CF.enemyCritChance(keen)).toBe(75);
+        expect(CF.enemyNumbers(keen).critChance).toBe(75);
+    });
+
+    it('a crit is double for everyone, and there is no Crit Damage effect', () => {
+        expect(CRIT_MULTIPLIER).toBe(2);
+        expect(Object.keys(EFFECT_TYPES).filter(k => /CRIT/.test(k))).toEqual(['CRIT_CHANCE']);
+        const h = hero({ skill: 'stealth', level: 1, weapon: 'rules_copper_sword' });
+        give(h, EFFECT_TYPES.CRIT_CHANCE, 200);
+        expect(CF.heroHitDamage(h, enemy(1), { crit: true })).toBe(2 * CF.heroHitDamage(h, enemy(1)));
+    });
+
+    it('at the cap about three landed hits in four crit', () => {
+        let crits = 0;
+        for (let i = 0; i < 20000; i++) if (CF.rollSwing(0, CRIT_CHANCE_CAP).crit) crits++;
+        expect(crits / 20000).toBeCloseTo(0.75, 1);
     });
 });
 

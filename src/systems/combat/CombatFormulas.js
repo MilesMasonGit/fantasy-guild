@@ -9,6 +9,7 @@ import {
     missChance,
     BASE_CRIT_CHANCE,
     CRIT_MULTIPLIER,
+    cappedCritChance,
     matchupMultiplier,
     SWING_TIME_FACTOR_RANGE,
 } from '../../config/FormulaRegistry.js';
@@ -174,9 +175,9 @@ export function heroDodge(hero) {
     return heroGuildAxis(hero, EFFECT_TYPES.DODGE);
 }
 
-/** Crit chance in percent: 5 plus what the hero carries and the guild gives. */
+/** Crit chance in percent: 5 plus what the hero carries and the guild gives, at most the cap (`CRIT_CHANCE_CAP`). */
 export function heroCritChance(hero) {
-    return BASE_CRIT_CHANCE + heroGuildAxis(hero, EFFECT_TYPES.CRIT_CHANCE);
+    return cappedCritChance(BASE_CRIT_CHANCE + heroGuildAxis(hero, EFFECT_TYPES.CRIT_CHANCE));
 }
 
 /**
@@ -200,8 +201,9 @@ export function enemyAccuracy(enemy) {
     return (enemy?.accuracy || 0) + axis(enemy, EFFECT_TYPES.ACCURACY);
 }
 
+/** An enemy's crit chance in percent: its own (5 unless authored) plus what effects lend it, at most the cap. */
 export function enemyCritChance(enemy) {
-    return (enemy?.critChance ?? BASE_CRIT_CHANCE) + axis(enemy, EFFECT_TYPES.CRIT_CHANCE);
+    return cappedCritChance((enemy?.critChance ?? BASE_CRIT_CHANCE) + axis(enemy, EFFECT_TYPES.CRIT_CHANCE));
 }
 
 /** How long an enemy's swing takes: its speed, moved by any Swing Time on it (an enrage). */

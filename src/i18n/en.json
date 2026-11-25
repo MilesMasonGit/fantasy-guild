@@ -781,7 +781,7 @@
             "dodge": "Dodge",
             "dodgeTip": "Added to an attacker's chance to miss the hero, never below {min}% or above {max}%",
             "critChance": "Crit",
-            "critChanceTip": "The chance a landed hit is critical, for double damage",
+            "critChanceTip": "The chance a landed hit is critical, for double damage, at most {cap}%",
             "resists": "Resists",
             "cuts": "Style cuts",
             "cutsTip": "What worn gear cuts from the hero's damage in each style",
