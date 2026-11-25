@@ -654,6 +654,29 @@ export const MODIFIER_PALETTE = [
         group: 'Blessing',
         hint: 'A shrine\'s blessing: a chance a finished work cycle repeats at once, for free: its outputs again and its XP again, with no inputs, charges, Bait or tool wear, and no chance to end. In percent. Two shrines add their chances. Never a kill or a build.'
     },
+    {
+        /**
+         * Read by `Fortune.countCycle` once per finished work cycle (not failed, no build) of a Token
+         * with a rarest drop: its number is added to the Token's saved count, and the cycle that
+         * fills it to 100 lands that drop for certain, unrolled (`BoardRunner.landOutputs`). Points
+         * a cycle, not a chance, though resolved from 0 like one: 10 is every tenth cycle.
+         */
+        type: EFFECT_TYPES.FORTUNE,
+        reads: {
+            up: (n) => `have each finished cycle count ${n} toward a sure rare find`,
+            down: (n) => `have each finished cycle count ${n} less toward a sure rare find`
+        },
+        label: 'Fortune',
+        explains: 'Every so many finished cycles, the Token gives its rarest drop for certain',
+        when: 'never',
+        scales: 'value',
+        blessing: true,
+        buckets: ['flat'],
+        categories: 'skill',
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Blessing',
+        hint: 'A shrine\'s blessing: each finished work cycle of a Token it reaches counts this many percent toward a sure rare find, and the cycle that reaches 100% gives the Token\'s rarest drop for certain (10 is every tenth cycle, 25 every fourth). The rarest drop is the lowest-chance entry of its rare table, or with no table its lowest-chance output line; a Token whose lines all drop for certain has none. Each Token keeps its own count. Two shrines add up. Never a failed cycle, a kill or a build.'
+    },
 
     // The gathering signature perks (Motherlode, Evergreen, Grove Feller, Master Angler): each a
     // chance, so the perk is 100 and a star or gear may hold less. Read at the worked Token through

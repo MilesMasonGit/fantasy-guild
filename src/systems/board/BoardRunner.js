@@ -35,6 +35,7 @@ import * as RareDrops from './RareDrops.js';
 import * as RareTables from './RareTables.js';
 import * as OutputRules from './OutputRules.js';
 import * as CycleSavings from './CycleSavings.js';
+import * as Fortune from './Fortune.js';
 import * as InputCost from './InputCost.js';
 import * as Fishing from './Fishing.js';
 import * as FishingSpots from './FishingSpots.js';
@@ -261,7 +262,7 @@ function rollMultipliers(instanceId, config, failed) {
  * Bank is full it simply waits there. A Token output stands on the mat beside the station.
  */
 function landOutputs(made, { doubled, giant }) {
-    const { instance, def, io, config, outputs, produced, stolen, failed, building } = made;
+    const { instance, def, io, config, outputs, produced, stolen, failed, building, sure } = made;
     const id = instance.id;
     const times = (doubled ? 2 : 1) * (giant ? OutputRules.GIANT_HARVEST_TIMES : 1);
     let giantLanded = false;
@@ -283,10 +284,11 @@ function landOutputs(made, { doubled, giant }) {
         giantLanded = giant;
     };
 
-    // A build makes its Token by becoming it (below), never as a sprite.
+    // A build makes its Token by becoming it (below), never as a sprite. Fortune's sure find on a
+    // Token with no rare table is its rarest line (`sure.line`), landed without its roll.
     for (const output of outputs) {
         const chance = output.chance ?? 100;
-        if (chance < 100 && Math.random() * 100 > chance) continue;
+        if (output !== sure?.line && chance < 100 && Math.random() * 100 > chance) continue;
 
         if (output.tokenId) {
             placeTokenOutput(instance, output);
@@ -300,9 +302,11 @@ function landOutputs(made, { doubled, giant }) {
     // works on it) and always marked a rare find for the mat's twinkle (`RareDrops.noteRareFind`;
     // the twinkle itself is switched off in `lootEffects.js`). A failed cycle rolls nothing, a build drops nothing, and
     // a Token with no table draws nothing.
-    // A theft rolls its camp's steal table's rare finds, never the Hideout's own.
+    // A theft rolls its camp's steal table's rare finds, never the Hideout's own. Fortune's sure find
+    // (`sure.entry`) is the table's rarest, landed with no roll and no pick.
     if (!failed && !building) {
-        const find = RareTables.rollRareTable(id, io.steal ? io.steal.table.block : def, config.skill);
+        const block = io.steal ? io.steal.table.block : def;
+        const find = sure?.entry ? RareTables.sureFind(id, block, config.skill) : RareTables.rollRareTable(id, block, config.skill);
         if (find) landLine(find.entry, (sprite) => RareDrops.noteRareFind(sprite, find.chance));
     }
     // BONUS_DROP, skipped entirely on a failed cycle: nothing happened, so nothing drops. Double Loot
@@ -451,8 +455,14 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         outputs = caught ? [{ itemId: caught.itemId, chance: 100, minQty: 1, maxQty: 1 }] : [];
     }
 
-    const made = { instance, def, io, config, outputs, caught, produced, stolen, failed, building: !!buildTypeId };
+    // FORTUNE, a shrine's blessing: a finished cycle counts toward a sure rare find, and the one that
+    // fills the count lands the Token's rarest drop for certain (`Fortune.js`). Draws nothing.
+    const sure = failed || buildTypeId ? null
+        : Fortune.countCycle(instance, config.skill, Fortune.rarestDropOf(io.steal ? io.steal.table.block : def, outputs));
+
+    const made = { instance, def, io, config, outputs, caught, produced, stolen, failed, building: !!buildTypeId, sure };
     landOutputs(made, rolls);
+    if (sure) EffectFeedback.fortune(id, () => SupportLinks.firstSupportOf(id, EFFECT_TYPES.FORTUNE, config.skill));
 
     // `Applies`: a neighbour putting a status on the hero who just worked here. The same moment and
     // the same rules as BONUS_DROP directly above: skipped on a failed cycle, and it needs a
@@ -481,9 +491,10 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // again (rolled afresh; a water's catch is the same fish, with no Bait spent and no lure's break
     // rolled) and its XP comes again (a fish's own); it pays nothing, spends no charge, load or tool,
     // so it draws no chance to end, and the rules hear one cycle. Never a failed cycle or a build,
-    // and never an echo of an echo. ⚠️ No rule reaching it, nothing is drawn.
+    // and never an echo of an echo. Fortune's sure find is the cycle's, not its echo's. ⚠️ No rule
+    // reaching it, nothing is drawn.
     if (!failed && !buildTypeId && CycleSavings.rollEcho(id, config.skill)) {
-        landOutputs(made, rollMultipliers(id, config, false));
+        landOutputs({ ...made, sure: null }, rollMultipliers(id, config, false));
         giveCycleXp(made, heroId);
         EffectFeedback.echo(id, () => SupportLinks.firstSupportOf(id, EFFECT_TYPES.ECHO, config.skill));
     }

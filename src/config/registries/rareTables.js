@@ -85,6 +85,17 @@ export function rareEntryChances(table, chance = table?.chance) {
 }
 
 /**
+ * A table's rarest entry: the one with the lowest chance a cycle, which is the lowest weight, the
+ * first in table order among equals. Null for no table. Draws nothing (Fortune's sure find).
+ */
+export function rarestEntry(table) {
+    if (!table) return null;
+    let best = null;
+    for (const entry of table.entries) if (!best || entry.weight < best.weight) best = entry;
+    return best;
+}
+
+/**
  * The entry a hit picks, by weight: one draw, none when the table holds one entry
  * (`catchPools.pickCatchIndex`).
  */

@@ -303,8 +303,8 @@ export const BOARD_EVENTS = {
     /**
      * A named effect just did something on a Token — `{ instanceId, title }`. Also, untitled, a
      * support's bonus landing (`{ instanceId, amount, bonus, fromTokenId? }`), a Giant Harvest
-     * (`{ instanceId, giant: true }`) and an Echo (`{ instanceId, echo: true, fromTokenId? }`), all
-     * from `EffectFeedback`.
+     * (`{ instanceId, giant: true }`), an Echo (`{ instanceId, echo: true, fromTokenId? }`) and
+     * Fortune's sure find (`{ instanceId, fortune: true, fromTokenId? }`), all from `EffectFeedback`.
      *
      * ⚠️ **Not an alert.** `TILE_EVENT_ALERT` is for problems a player has to
      * act on (no inputs, no charges, a refused placement). An effect firing is

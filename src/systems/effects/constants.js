@@ -110,6 +110,10 @@ export const EFFECT_TYPES = {
     // Echo: a chance a finished work cycle repeats at once, for free (its outputs and XP again, no
     // inputs, charges, load or tool wear); narrowed to the Token's skill — BoardRunner.completeCycle.
     ECHO: 'ECHO',
+    // Fortune: each finished work cycle at a Token it reaches counts this many percent toward a sure
+    // rare find; the cycle that fills the count gives the Token's rarest drop for certain (25: every
+    // fourth cycle). The count is the Token's own, saved; narrowed to the Token's skill — Fortune.js.
+    FORTUNE: 'FORTUNE',
 
     /**
      * A chance to yield an extra, **different** item on top of a Token's normal output.
