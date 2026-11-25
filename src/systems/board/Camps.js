@@ -36,7 +36,8 @@ import { centreOf, distanceSq, reachRadius } from './nearby.js';
  *
  * An **enemy camp** is any working spawner of enemies (the Goblin Camp, a boss's camp of one): no
  * block needed. A hero ordered onto one hunts what it spawned (the enemies tethered to it,
- * `instance.tether`) and waits for the next when it stands empty.
+ * `instance.tether`) and any guard a caught thief set on it (`guardOf`), and waits for the next when
+ * it stands empty.
  *
  * A camp marked for demolition is only that job (`Demolition`): it hands out nothing until the mark
  * comes off.
@@ -117,7 +118,9 @@ export function isCampWork(camp, instance) {
     if (!camp || !instance || instance.id === camp.id) return false;
     const block = campOfInstance(camp);
     if (block) return handsOut(block, instance) && reaches(camp, centreOf(instance));
-    return isEnemyCamp(camp) && instance.tether === camp.id && isEnemyDef(getTokenType(instance.typeId));
+    // A guard a thief's catch set on the camp is its to fight too (`Hideouts.js`).
+    return isEnemyCamp(camp) && (instance.tether === camp.id || instance.guardOf === camp.id)
+        && isEnemyDef(getTokenType(instance.typeId));
 }
 
 /**

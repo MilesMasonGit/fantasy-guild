@@ -8,6 +8,7 @@ import * as InputCost from './InputCost.js';
 import * as StationRecipe from './StationRecipe.js';
 import * as Fields from './Fields.js';
 import * as BoardState from './BoardState.js';
+import * as Hideouts from './Hideouts.js';
 import { paidTestFor } from './BlockUpkeep.js';
 
 /**
@@ -104,6 +105,12 @@ export function unmetContext(instanceId, recipe) {
 export function resolveRecipe(instanceId, instance) {
     const def = getTokenType(instance?.typeId);
 
+    // A Hideout runs no recipe: it robs the camp its player chose, while it may (`Hideouts.js`).
+    if (Hideouts.isHideout(def)) {
+        const theft = Hideouts.theftOf(instance);
+        return theft.ok ? { status: RECIPE.OK, recipe: null } : { status: RECIPE.NONE, recipe: null, reason: theft.reason };
+    }
+
     const recipes = recipesForToken(def);
 
     // Not a station: its config's own inputs/outputs apply.
@@ -142,6 +149,22 @@ export function effectiveIO(instanceId, instance) {
     const { status, recipe, reason } = resolveRecipe(instanceId, instance);
 
     if (status !== RECIPE.OK) return { status, reason, inputs: [], outputs: [] };
+
+    // A Hideout's cycle is a theft: its camp's steal table in place of outputs, and the table's XP
+    // where it writes one (a camp worth more to rob teaches more). `steal` tells the runner to roll
+    // the caught odds and the table's own rare finds.
+    if (Hideouts.isHideout(def)) {
+        const { camp, robbed } = Hideouts.theftOf(instance);
+        return {
+            status,
+            recipe: null,
+            inputs: [],
+            outputs: robbed.steal.outputs,
+            cycleTimeMs: def?.config?.cycleTimeMs,
+            xp: robbed.steal.xp ?? def?.config?.xp,
+            steal: { campId: camp.id, campTypeId: camp.typeId, enemyTypeId: robbed.typeId, table: robbed.steal }
+        };
+    }
 
     return {
         status,

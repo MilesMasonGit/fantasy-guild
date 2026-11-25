@@ -127,10 +127,13 @@ export const FOUNDATION_KINDS = Object.freeze(['wood', 'stone', 'farmland', 'exc
  * ⚠️ Both sides are opt-in: a station with no kind offers its whole skill, and a recipe with no
  * kinds is offered by every station of its skill.
  */
-export const STATION_KINDS = Object.freeze(['field', 'herb_garden', 'windmill']);
+export const STATION_KINDS = Object.freeze(['field', 'herb_garden', 'windmill', 'hideout']);
 
-/** The skill each kind splits; the CMS offers a kind only on its own skill. */
-const STATION_KIND_SKILLS = Object.freeze({ field: 'farming', herb_garden: 'farming', windmill: 'farming' });
+/**
+ * The skill each kind splits; the CMS offers a kind only on its own skill. A Hideout (Crime) is no
+ * split: it robs a camp and runs no recipe (`crime.js`, `systems/board/Hideouts.js`).
+ */
+const STATION_KIND_SKILLS = Object.freeze({ field: 'farming', herb_garden: 'farming', windmill: 'farming', hideout: 'crime' });
 
 /**
  * Kinds that used to split a craft skill between stations (a Furnace smelted, a Smithy made tools).
@@ -164,7 +167,8 @@ const STATION_KIND_LABELS = Object.freeze({
     summoning_circle: 'Summoning Circle',
     field: 'Field',
     herb_garden: 'Herb Garden',
-    windmill: 'Windmill'
+    windmill: 'Windmill',
+    hideout: 'Hideout'
 });
 
 /** A station kind in words; an unknown kind shows its id rather than vanishing. */

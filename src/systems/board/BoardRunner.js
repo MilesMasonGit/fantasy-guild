@@ -37,6 +37,7 @@ import * as CycleSavings from './CycleSavings.js';
 import * as InputCost from './InputCost.js';
 import * as Fishing from './Fishing.js';
 import * as Fields from './Fields.js';
+import * as Thefts from './Thefts.js';
 import * as LoadoutMoments from './LoadoutMoments.js';
 import * as HeroEffects from '../hero/HeroEffects.js';
 import * as HeroManager from '../hero/HeroManager.js';
@@ -313,7 +314,11 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     const failChance = TileModifiers.resolveAxis(
         id, EFFECT_TYPES.FAIL_CHANCE, 0, config.skill
     );
-    const failed = failChance > 0 && Math.random() * 100 < failChance;
+    const failedRoll = failChance > 0 && Math.random() * 100 < failChance;
+    // A Hideout's theft (`io.steal`): a thief caught takes nothing and learns nothing, a failed cycle
+    // in all but name, and the camp gets its guard below. One draw, only for a theft that did not fail.
+    const caught = !failedRoll && !!io.steal && Thefts.rollCaught(id, heroId, io.steal);
+    const failed = failedRoll || caught;
 
     // The cycle still runs, makes its outputs and spends its charges; a Field's owed seed is never
     // paid for that crop, and a build that kept its materials remembers paying nothing.
@@ -335,6 +340,8 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // whose quantity rounded to nothing, did not happen and must not fire a
     // listener that says it did.
     const produced = [];
+    // What a theft took, with how many, for its word (`Thefts.afterTheft`).
+    const stolen = [];
 
     // Water: one catch from the pool the hero's tool and bait pick (one draw, unless the pool holds
     // one fish), in place of the Token's own outputs. It then lands like any output.
@@ -363,6 +370,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         if (output.itemId) {
             note(SpriteLayer.addSprite('item', output.itemId, quantity, id));
             produced.push(output.itemId);
+            if (io.steal) stolen.push({ itemId: output.itemId, quantity });
             giantLanded = giant;
         }
     };
@@ -384,8 +392,9 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // works on it) and always marked a rare find for the mat's twinkle (`RareDrops.noteRareFind`;
     // the twinkle itself is switched off in `lootEffects.js`). A failed cycle rolls nothing, a build drops nothing, and
     // a Token with no table draws nothing.
+    // A theft rolls its camp's steal table's rare finds, never the Hideout's own.
     if (!failed && !buildTypeId) {
-        const find = RareTables.rollRareTable(id, def, config.skill);
+        const find = RareTables.rollRareTable(id, io.steal ? io.steal.table.block : def, config.skill);
         if (find) landLine(find.entry, (sprite) => RareDrops.noteRareFind(sprite, find.chance));
     }
     // BONUS_DROP, skipped entirely on a failed cycle: nothing happened, so nothing drops. Double Loot
@@ -429,6 +438,9 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     if (xpAwarded > 0 && heroId && config.skill) {
         SkillSystem.addXP(heroId, config.skill, xpAwarded);
     }
+
+    // A theft is said (and a catch's guard set) once its drops and XP are in, a failed one never.
+    if (io.steal && !failedRoll) Thefts.afterTheft(instance, io.steal, { heroId, caught, items: stolen });
 
     // Pay the plan built at the top of this function: the Token's own operational cost. Anything
     // that hits 0 is destroyed by `commitPlan`, which is also where `null`-means-unlimited is
@@ -731,10 +743,12 @@ export function tick(delta) {
             continue;
         }
 
-        if (check.reason === ALERT.CHOOSE_BUILD || check.reason === ALERT.CHOOSE_RECIPE || check.reason === ALERT.BUILD_SITE) {
+        if (check.reason === ALERT.CHOOSE_BUILD || check.reason === ALERT.CHOOSE_RECIPE || check.reason === ALERT.BUILD_SITE
+            || check.reason === ALERT.CHOOSE_CAMP || check.reason === ALERT.GUARDED) {
             // A Foundation or a station with nothing picked. Flags do not claim one, so this is
             // only reached by a hero already on it when the pick was cleared. It waits, saying so.
-            // Likewise a Foundation whose build may not stand where it is (moved off its Stone).
+            // Likewise a Foundation whose build may not stand where it is (moved off its Stone), and
+            // a Hideout whose camp has left its reach or has a guard on it (its thief stays by it).
             setAlert(instance, check.reason);
             continue;
         }

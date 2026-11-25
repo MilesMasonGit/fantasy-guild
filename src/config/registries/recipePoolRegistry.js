@@ -66,6 +66,7 @@ import { DatabaseManager } from '../DatabaseManager.js';
 import { stationSkillOf, stationKindOf } from '../../systems/effects/statements.js';
 import { foundationTierMeets, stationKindOffers } from './tokenConstants.js';
 import { migrateRecipeList } from '../../systems/effects/skillIdMigration.js';
+import { HIDEOUT_KIND } from './crime.js';
 
 /** Concatenate every recipe JSON source into one flat list. */
 function loadJsonRecipes() {
@@ -163,9 +164,11 @@ export function recipesForToken(def) {
 
 /**
  * A station's pool: the ordinary recipes of its skill that its kind offers (`stationKindOffers`).
- * A null kind is the whole skill pool.
+ * A null kind is the whole skill pool. A Hideout has none: it robs the camp chosen on its card
+ * instead (`Hideouts.js`), and a Crime recipe is never offered there.
  */
 export function recipesForStation(skillId, kind = null) {
+    if (kind === HIDEOUT_KIND) return [];
     const pool = getSkillRecipePool(skillId);
     return kind ? pool.filter(r => stationKindOffers(kind, r)) : pool;
 }
