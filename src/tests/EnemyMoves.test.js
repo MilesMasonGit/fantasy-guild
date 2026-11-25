@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as Orders from '../systems/board/Orders.js';
@@ -32,8 +33,8 @@ import { registerStatusFixtures, VENOM } from './fixtures/statusEffects.js';
 /**
  * Enemy moves (brief 280 V3): an enemy may list a few moves, one made each swing, picked at random
  * by weight; each hits in its own type or lands an effect, or both (owner's chicken: Peck, Stab;
- * Scratch, Slash; Flutter, +50 % Physical resistance for one attack). An enemy without moves swings
- * a plain Physical hit and draws exactly what it drew before.
+ * Scratch, Slash; Flutter, +50 % Slash, Crush and Stab resistance for one attack). An enemy without
+ * moves swings a plain Crush hit and draws exactly what it drew before.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -49,10 +50,20 @@ const provides = (id, type, value, category, bucket = 'flat') => ({
     payload: { type, bucket, value, ...(category ? { category } : {}) }
 });
 
+/** A Type Resistance row on each of Slash, Crush and Stab: a Physical line, split. */
+const physicalRows = (id, value) => ['slash', 'crush', 'stab'].map(t => provides(`${id}_${t}`, EFFECT_TYPES.TYPE_RESIST, value, t));
+
 registerEffects({
-    em_flutter: { id: 'em_flutter', name: 'Flutter', statements: [provides('stm_em_flutter', EFFECT_TYPES.TYPE_RESIST, 50, 'physical')] },
+    em_flutter: { id: 'em_flutter', name: 'Flutter', statements: physicalRows('stm_em_flutter', 50) },
     em_heavy: { id: 'em_heavy', name: 'Heavy Strike', statements: [provides('stm_em_heavy', EFFECT_TYPES.DAMAGE, 1, null, 'percentage')] },
-    em_exposed: { id: 'em_exposed', name: 'Exposed', statements: [provides('stm_em_exposed', EFFECT_TYPES.TYPE_RESIST, -50, 'physical')] }
+    em_exposed: { id: 'em_exposed', name: 'Exposed', statements: physicalRows('stm_em_exposed', -50) },
+    em_nothing: { id: 'em_nothing', name: 'Nothing', statements: [] },
+    em_enrage: { id: 'em_enrage', name: 'Enrage', statements: [provides('stm_em_enrage', EFFECT_TYPES.DAMAGE, 1, null, 'percentage')] },
+    // A passive rule's holder: an enemy's rules live in an effect named after it.
+    em_alpha_moves: { id: 'em_alpha_moves', name: 'Alpha Moves', statements: [
+        { ...makeStatement(KEYWORD.APPLIES), id: 'stm_em_alpha_enrage', chargeDelta: 0, when: { scope: 'self', event: 'FIGHT_HP_BELOW', belowPct: 50 },
+            target: { role: 'opponent' }, payload: { effectId: 'em_enrage', forFight: true, chance: 100 } }
+    ] }
 });
 
 const PECK = { name: 'Peck', damageType: 'stab' };
@@ -75,11 +86,15 @@ registerTokenTypes({
     em_smasher: enemyType('em_smasher', { moves: [{ name: 'Smash', damageType: 'crush', effectId: 'em_heavy', target: 'self', lasts: 'swing' }] }),
     em_exposer: enemyType('em_exposer', {
         moves: [{ name: 'Expose', hits: false, effectId: 'em_exposed', target: 'hero', lasts: 'attack' }, { name: 'Swipe', weight: 3 }]
-    })
+    }),
+    em_expose_only: enemyType('em_expose_only', { moves: [{ name: 'Expose', hits: false, effectId: 'em_exposed', target: 'hero', lasts: 'attack' }] }),
+    em_glare: enemyType('em_glare', { moves: [{ name: 'Glare', hits: false, effectId: 'em_nothing', target: 'hero' }] }),
+    em_pose: enemyType('em_pose', { moves: [{ name: 'Pose', hits: false, effectId: 'em_nothing', target: 'self' }] }),
+    em_alpha: { ...enemyType('em_alpha', { hp: 20, moves: [PECK] }), effects: [{ effectId: 'em_alpha_moves' }] }
 });
 
 registerItems({
-    em_plate: { id: 'em_plate', name: 'Plate', type: 'armor', equipSlot: 'chest', stackable: true, resistances: { physical: 20 } },
+    em_plate: { id: 'em_plate', name: 'Plate', type: 'armor', equipSlot: 'chest', stackable: true, resistances: { slash: 20, crush: 20, stab: 20 } },
     em_slash_guard: { id: 'em_slash_guard', name: 'Slash Guard', type: 'armor', equipSlot: 'hat', stackable: true, resistances: { slash: 50 } },
     em_dagger: { id: 'em_dagger', name: 'Dagger', type: 'weapon', equipSlot: 'hand', stackable: true, styles: ['melee'], damage: 3, speed: 'fast' }
 });
@@ -149,17 +164,19 @@ afterEach(() => {
 });
 
 describe('the shape', () => {
-    it('a move hits by default, Physical when it names no type; one that does not hit has no type', () => {
+    it('a move hits by default, Crush when it names no type; one that does not hit has no type', () => {
         expect(enemyMovesOf({ moves: [{ name: ' Peck ', damageType: 'stab' }, { name: 'Swipe' }, FLUTTER] })).toEqual([
             { name: 'Peck', hits: true, type: 'stab', effectId: null, target: 'hero', lasts: 'fight', weight: 1 },
-            { name: 'Swipe', hits: true, type: 'physical', effectId: null, target: 'hero', lasts: 'fight', weight: 1 },
+            { name: 'Swipe', hits: true, type: 'crush', effectId: null, target: 'hero', lasts: 'fight', weight: 1 },
             { name: 'Flutter', hits: false, type: null, effectId: 'em_flutter', target: 'self', lasts: 'attack', weight: 1 }
         ]);
     });
 
     it('reads what it cannot use as the default and drops what is not a move', () => {
         const [m] = enemyMovesOf({ moves: [{ name: 'Odd', damageType: 'stob', target: 'tail', lasts: 'ever', weight: -2 }, 'peck', null] });
-        expect(m).toEqual({ name: 'Odd', hits: true, type: 'physical', effectId: null, target: 'hero', lasts: 'fight', weight: 1 });
+        expect(m).toEqual({ name: 'Odd', hits: true, type: 'crush', effectId: null, target: 'hero', lasts: 'fight', weight: 1 });
+        // A group is no type: a move naming one hits as Crush.
+        expect(enemyMovesOf({ moves: [{ name: 'Gust', damageType: 'elemental' }] })[0].type).toBe('crush');
         expect(enemyMovesOf({ moves: ['peck', null] })).toEqual([]);
     });
 
@@ -217,7 +234,7 @@ describe('a fight with moves', () => {
         expect(byMove('Flutter').every(p => p.effectOnly === true && p.hit === false && p.damage === 0 && !p.types)).toBe(true);
     });
 
-    it('Flutter resists Physical 50 % for the hero\'s next swing only, then comes off', () => {
+    it('Flutter resists Slash, Crush and Stab 50 % for the hero\'s next swing only, then comes off', () => {
         countedRandom(0.5);    // every swing hits, none crits, a .5 rolls down
         const hero = addHero('Aela', { melee: 99 });
         equip(hero, 'em_dagger');                       // 3 + 4 for the level = 7 Slash, every 2 s
@@ -250,7 +267,7 @@ describe('a fight with moves', () => {
         expect(LiveEffects.carries(BoardCombat.getFight(enemy.id), 'em_flutter')).toBe(false);
     });
 
-    it('the fight panel reads Flutter on the enemy: its Physical 50 while it lasts', () => {
+    it('the fight panel reads Flutter on the enemy: its Slash 50 while it lasts', () => {
         countedRandom(0.5);
         const hero = addHero('Aela', { melee: 99 });
         equip(hero, 'em_dagger');
@@ -261,7 +278,7 @@ describe('a fight with moves', () => {
         expect(fight.effects.find(e => e.effectId === 'em_flutter')).toMatchObject({ forAttack: 3, forFight: true });
     });
 
-    it('a hero in Physical gear resists Peck and Scratch alike; a Slash guard only Scratch', () => {
+    it('a hero in Slash, Crush and Stab gear resists Peck and Scratch alike; a Slash guard only Scratch', () => {
         countedRandom(0.5);
         const plated = addHero('Dara');
         equip(plated, 'em_plate');
@@ -279,7 +296,7 @@ describe('a fight with moves', () => {
         const enemy = enemyProfileOf({ id: 'c', name: 'C', enemy: { level: 1, style: 'melee', hit: 2 } });
         expect(CF.enemyBlow(enemy, guarded, { type: 'slash' }).exact).toBe(1);
         expect(CF.enemyBlow(enemy, guarded, { type: 'stab' }).exact).toBe(2);
-        expect(CF.enemyBlow(enemy, guarded).parts[0].type).toBe('physical');
+        expect(CF.enemyBlow(enemy, guarded).parts[0].type).toBe('crush');
     });
 
     it('a move\'s effect on the hero lands with its hit, never on a miss (a Venom Bite)', () => {
@@ -315,7 +332,7 @@ describe('a fight with moves', () => {
         const off = EventBus.subscribe(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, (p) => seen.enemy.push({ ...p, exposed: LiveEffects.carries(hero, 'em_exposed') }));
         // At 3, 6 and 9 s both swing, the hero first: its miss and crit draws (a fist's 1 is whole, so
         // no fraction), then the enemy's target pick, then its move: 0.1 picks Expose (weight 1 of 4),
-        // 0.9 Swipe.
+        // 0.9 Swipe. Expose's accuracy roll and Swipe's swing draw the 0.5 after: both land.
         for (let t = 0; t < 9100; t += 100) {
             if ((t + 100) % 3000 === 0) script.push(0.5, 0.5, 0.5, (t + 100) === 3000 ? 0.1 : 0.9);
             LiveEffects.tick(100, TriggerSystem.fireLiveStatement);
@@ -323,10 +340,79 @@ describe('a fight with moves', () => {
         }
         off();
         expect(seen.enemy.map(p => p.move)).toEqual(['Expose', 'Swipe', 'Swipe']);
-        // Exposed (Physical −50) lands with Expose, so Expose's own event has it on; the Swipe after
+        // Exposed (Crush −50 among its lines) lands with Expose, so Expose's own event has it on; the Swipe after
         // it hits 2 × 1.5 = 3 Weak!, and it is gone for the second Swipe.
         expect(seen.enemy.map(p => p.exposed)).toEqual([true, true, false]);
         expect(seen.enemy.slice(1).map(p => [p.damage, p.verdict])).toEqual([[3, 'weak'], [2, null]]);
+    });
+});
+
+describe('a move that does not hit, aimed at the hero', () => {
+    it('lands only if it hits, by the same accuracy as any attack: a miss lands nothing and reads as a miss', () => {
+        const hero = addHero('Aela');
+        startFight('em_expose_only', hero);
+        countedRandom(0);    // every roll misses
+        let carried = false;
+        const off = EventBus.subscribe(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, () => { carried ||= LiveEffects.carries(hero, 'em_exposed'); });
+        const missed = play(9100);
+        off();
+        expect(missed.enemy.length).toBeGreaterThan(0);
+        expect(carried).toBe(false);
+        expect(missed.enemy.every(p => p.move === 'Expose' && p.hit === false && !p.effectOnly)).toBe(true);
+
+        vi.restoreAllMocks();
+        countedRandom(0.5);  // every roll hits
+        const landed = play(3100);
+        expect(landed.enemy.every(p => p.move === 'Expose' && p.effectOnly === true && p.damage === 0)).toBe(true);
+        expect(LiveEffects.carries(hero, 'em_exposed')).toBe(true);
+    });
+
+    it('draws one number a swing for its accuracy; a move on itself draws none', () => {
+        const draws = (typeId) => {
+            GameState.initNew();
+            BoardCombat.clearAll();
+            TileModifiers.clearAll();
+            GameState.state.heroes = [];
+            const hero = addHero('Aela');
+            startFight(typeId, hero);
+            const counter = countedRandom(0.5);
+            const seen = play(30000);
+            vi.restoreAllMocks();
+            return { draws: counter.draws, swings: seen.enemy.length };
+        };
+        const pose = draws('em_pose');
+        const glare = draws('em_glare');
+        expect(pose.swings).toBeGreaterThan(5);
+        expect(glare.swings).toBe(pose.swings);
+        expect(glare.draws).toBe(pose.draws + pose.swings);
+    });
+});
+
+describe('who names what', () => {
+    /** Every title said over the enemy Token. */
+    function titles(typeId, ms) {
+        const hero = addHero('Aela', { melee: 99 });
+        equip(hero, 'em_dagger');
+        startFight(typeId, hero);
+        const said = [];
+        const off = EventBus.subscribe(BOARD_EVENTS.EFFECT_FIRED, (p) => { if (p.title) said.push(p.title); });
+        countedRandom(0.5);
+        const seen = play(ms);
+        off();
+        return { said, seen };
+    }
+
+    it('an enemy\'s passive is named by the effect it lands (Enrage), not by the effect holding it', () => {
+        const { said } = titles('em_alpha', 6100);
+        expect(said).toContain('Enrage');
+        expect(said).not.toContain('Alpha Moves');
+    });
+
+    it('a move with an effect is said by its own name with its swing, never by its effect\'s', () => {
+        const { said, seen } = titles('em_smasher', 6100);
+        expect(seen.enemy.length).toBeGreaterThan(0);
+        expect(seen.enemy.every(p => p.move === 'Smash')).toBe(true);
+        expect(said).not.toContain('Heavy Strike');
     });
 });
 
@@ -399,7 +485,7 @@ describe('the audits', () => {
         expect(found).toEqual([
             'its move 1 is not a move — it is never made. Author it again in the CMS.',
             'its move 2 has no name — the fight screen calls it "Strike". Name it in the CMS.',
-            'its move "Stob" hits with "stob", which is not a damage type or group — it hits as Physical. Pick its type again in the CMS.',
+            'its move "Stob" hits with "stob", which is not a damage type — it hits as Crush. Pick its type again in the CMS.',
             'its move "Idle" neither hits nor lands an effect — the attack does nothing. Tick Hits or pick an effect in the CMS.',
             'its move "Ghost" lands the effect "em_missing", which is not in the effect library — it lands nothing. Pick the effect again in the CMS.',
             'its move "Tail" aims its effect at "tail", which is neither itself nor the hero — it lands on the hero. Pick its target again in the CMS.',
@@ -408,7 +494,7 @@ describe('the audits', () => {
             'its move "Heavy" has the weight "0" — a weight is a number above 0, so it counts as 1. Type it again in the CMS.',
             'its move "Maybe" says it hits "no", which is neither yes nor no — it hits. Tick or untick Hits in the CMS.'
         ]);
-        expect(messages('peck')).toEqual(['its moves are not a list — it makes a plain Physical Strike. Author its moves again in the CMS.']);
+        expect(messages('peck')).toEqual(['its moves are not a list — it makes a plain Crush Strike. Author its moves again in the CMS.']);
     });
 
     it('say nothing about good moves; a status on the hero "for the swing" keeps its own lifetime, so it passes', () => {

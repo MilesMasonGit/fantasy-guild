@@ -1,4 +1,4 @@
-import { DAMAGE_TYPES, DAMAGE_GROUPS, isTypeOrGroupId, statusBlockOf, MOVE_TARGETS, moveLastsFor, moveProblems } from '../../utils/constants';
+import { DAMAGE_TYPES, DAMAGE_GROUPS, isDamageTypeId, statusBlockOf, MOVE_TARGETS, moveLastsFor, moveProblems } from '../../utils/constants';
 
 const TARGET_WORDS = { self: 'Itself', hero: 'The hero' };
 // ⚠️ `swing` is the lifetime id stored in content; it reads "For this attack".
@@ -14,10 +14,10 @@ function withField(move, key, value) {
 
 /**
  * An enemy's moves (`enemyMoves.js`): a few attacks, one made each attack, picked at random by weight
- * (owner's chicken: Peck, Stab; Scratch, Slash; Flutter, +50 % Physical resistance for one attack).
- * Each row: a name, whether it hits and in which type (Physical when none is picked), an effect it
- * lands from the library, on itself or the hero, and for how long, and its weight. No moves, the key
- * goes: the enemy makes a plain Physical Strike. Each problem the audit would name shows under its row.
+ * (owner's chicken: Peck, Stab; Scratch, Slash; Flutter, a resistance for one attack). Each row: a
+ * name, whether it hits and in which type (Crush when none is picked), an effect it lands from the
+ * library, on itself or the hero, and for how long, and its weight. No moves, the key goes: the
+ * enemy makes a plain Crush Strike. Each problem the audit would name shows under its row.
  */
 export default function EnemyMovesFields({ enemy, effects, onChange }) {
   const raw = enemy?.moves;
@@ -40,7 +40,7 @@ export default function EnemyMovesFields({ enemy, effects, onChange }) {
       <span className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">Moves (one made each attack, at random)</span>
       {raw != null && !Array.isArray(raw) && (
         <p className="text-[11px] mb-1.5" style={{ color: 'var(--color-warning)' }} data-field="enemy-moves-broken">
-          Its moves are not a list, so it makes a plain Physical Strike.{' '}
+          Its moves are not a list, so it makes a plain Crush Strike.{' '}
           <button type="button" className="hover:underline" onClick={() => write([])}>Clear them</button>
         </p>
       )}
@@ -89,14 +89,13 @@ export default function EnemyMovesFields({ enemy, effects, onChange }) {
                   aria-label={`Move ${i + 1} damage type`}
                   data-field={`enemy-move-${i}-type`}
                   disabled={!hits}
-                  value={hits && isTypeOrGroupId(move.damageType) ? move.damageType : ''}
+                  value={hits && isDamageTypeId(move.damageType) ? move.damageType : ''}
                   onChange={(e) => setMove(i, withField(move, 'damageType', e.target.value || undefined))}
                   className={`w-36 ${hits && move.damageType ? '' : 'text-gray-500 italic'}`}
                 >
-                  <option value="">{hits ? 'Physical (plain)' : 'No hit'}</option>
+                  <option value="">{hits ? 'Crush (plain)' : 'No hit'}</option>
                   {DAMAGE_GROUPS.map((g) => (
                     <optgroup key={g.id} label={g.label}>
-                      <option value={g.id}>{g.label} (the whole group)</option>
                       {DAMAGE_TYPES.filter((t) => t.group === g.id).map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
                     </optgroup>
                   ))}
@@ -173,11 +172,12 @@ export default function EnemyMovesFields({ enemy, effects, onChange }) {
         <button type="button" className="self-start text-[11px] text-gray-400 hover:text-white" data-field="enemy-move-add" onClick={addMove}>+ Add a move</button>
       </div>
       <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
-        No moves: it makes a plain Physical Strike. Each attack makes one move, picked at random (a weight of 2 is twice as likely as 1).
+        No moves: it makes a plain Crush Strike. Each attack makes one move, picked at random (a weight of 2 is twice as likely as 1).
         A move hits with the enemy&apos;s Hit in its type, and may land an effect: on itself as the move is made (Flutter, a heavy strike
-        for this attack), on the hero with the hit that lands. For one attack lasts until the next attack on whoever carries it, hit or miss.
+        for this attack), always; on the hero (Venom on a bite) only if the attack lands, by the same accuracy as any attack, so a miss
+        lands nothing (a move that does not hit still rolls to land it). For one attack lasts until the next attack on whoever carries it, hit or miss.
         Shown on the enemy&apos;s card and named in the fight.
-        {moves.some((m) => isPlainObject(m) && m.damageType && !isTypeOrGroupId(m.damageType)) ? ' A type the game does not have hits as Physical.' : ''}
+        {moves.some((m) => isPlainObject(m) && m.damageType && !isDamageTypeId(m.damageType)) ? ' A type the game does not have (a group included) hits as Crush.' : ''}
       </p>
     </div>
   );

@@ -27,7 +27,7 @@ import * as fixtures from '../../bench/fixtures.mjs';
 
 /**
  * Gear and defence during time away end exactly where the same time played live ends: a knight in
- * a chestplate and a shield against a Venomous rat (its Physical swings resisted, Venom landing), a
+ * a chestplate and a shield against a Venomous rat (its Crush swings resisted, Venom landing), a
  * mage in the chestplate (its cut on every spell), a spear and a sundering arrow stripping an
  * Armoured crab's resistance stack by stack. Nothing here adds a random draw: the cut and the
  * resistances move the fraction a hit rolls, never whether it rolls.
@@ -60,9 +60,9 @@ registerEffects({
 
 registerItems({
     gdc_sword: { id: 'gdc_sword', name: 'Sword', type: 'weapon', equipSlot: 'hand', styles: ['melee'], damage: 2 },
-    gdc_shield: { id: 'gdc_shield', name: 'Kite Shield', type: 'armor', equipSlot: 'hand', offHand: true, resistances: { physical: 15 } },
-    gdc_plate: { id: 'gdc_plate', name: 'Iron Chestplate', type: 'armor', equipSlot: 'chest', resistances: { physical: 20 }, damageCut: { magic: 30, stealth: 15 } },
-    gdc_plate_b: { id: 'gdc_plate_b', name: 'Iron Chestplate B', type: 'armor', equipSlot: 'chest', resistances: { physical: 20 }, damageCut: { magic: 30, stealth: 15 } },
+    gdc_shield: { id: 'gdc_shield', name: 'Kite Shield', type: 'armor', equipSlot: 'hand', offHand: true, resistances: { slash: 15, crush: 15, stab: 15 } },
+    gdc_plate: { id: 'gdc_plate', name: 'Iron Chestplate', type: 'armor', equipSlot: 'chest', resistances: { slash: 20, crush: 20, stab: 20 }, damageCut: { magic: 30, stealth: 15 } },
+    gdc_plate_b: { id: 'gdc_plate_b', name: 'Iron Chestplate B', type: 'armor', equipSlot: 'chest', resistances: { slash: 20, crush: 20, stab: 20 }, damageCut: { magic: 30, stealth: 15 } },
     gdc_wand: { id: 'gdc_wand', name: 'Frost Wand', type: 'weapon', equipSlot: 'hand', styles: ['magic'], damage: 2, damageType: 'ice' },
     gdc_spear: { id: 'gdc_spear', name: 'Spear', type: 'weapon', equipSlot: 'hand', styles: ['melee'], damage: 2, damageType: 'stab', effects: [{ effectId: 'gdc_sundering', scale: 1 }] },
     gdc_bow: { id: 'gdc_bow', name: 'Bow', type: 'weapon', equipSlot: 'hand', styles: ['ranged'], damage: 1, damageType: 'electric' },

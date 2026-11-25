@@ -220,7 +220,7 @@ describe('crits double before the type factor; no flat armour, no floor', () => 
 
     it('a hit can do 0: immunity means 0, and the old armour numbers are read by nothing', () => {
         const h = hero({ skill: 'melee', level: 1, weapon: 'rules_copper_sword' });
-        expect(CF.heroHitDamage(h, enemy(1, { resistances: { physical: 100 } }))).toBe(0);
+        expect(CF.heroHitDamage(h, enemy(1, { resistances: { slash: 100 } }))).toBe(0);
         expect(CF.heroHitDamage(h, enemy(1, { armor: 9 }))).toBe(2);
         const plated = recruit();
         give(plated, EFFECT_TYPES.ARMOR, 5);

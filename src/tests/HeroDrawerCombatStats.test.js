@@ -59,7 +59,7 @@ describe('the Combat view reads the fight\'s own numbers', () => {
                 [`${EFFECT_TYPES.CRIT_CHANCE}:`]: 2,
                 [`${EFFECT_TYPES.STYLE_DAMAGE_CUT}:magic`]: 20,
                 [`${EFFECT_TYPES.STYLE_DAMAGE_CUT}:stealth`]: 10,
-                [`${EFFECT_TYPES.TYPE_RESIST}:physical`]: 15
+                [`${EFFECT_TYPES.TYPE_RESIST}:crush`]: 15
             })
         });
         const s = heroCombatStats(hero);

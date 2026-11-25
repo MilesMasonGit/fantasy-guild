@@ -1,4 +1,5 @@
-import { DAMAGE_TYPES, DAMAGE_GROUPS, damageTypeLabel, isTypeOrGroupId, SKILLS, ENEMY_STYLES, isGearResistLine, isDamageCut, GEAR_RESIST_LINE_MAX } from '../../utils/constants';
+import { DAMAGE_TYPES, DAMAGE_GROUPS, damageTypeLabel, isDamageTypeId, isDamageGroupId, typesOfGroup, withGroupFilled, SKILLS, ENEMY_STYLES, isGearResistLine, isDamageCut, GEAR_RESIST_LINE_MAX } from '../../utils/constants';
+import SetAllTypes from './SetAllTypes';
 
 const styleName = (id) => SKILLS.find((s) => s.id === id)?.name || id;
 const isPlainObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -11,15 +12,15 @@ function withLine(map, id, value) {
 }
 
 /**
- * A worn piece's defence (`gearDefence.js`): what it resists, in free percents by damage type or
- * group (`resistances: { physical: 20, ice: -10 }`, a negative a weakness; lines add, a group's
- * counting on each of its types), and what it costs: a damage cut to named styles
+ * A worn piece's defence (`gearDefence.js`): what it resists, in free percents by damage type
+ * (`resistances: { slash: 20, ice: -10 }`, a negative a weakness; Set all fills a group's three
+ * types; a line still on a group is ignored by the game and shows with a Split button), and what it costs: a damage cut to named styles
  * (`damageCut: { magic: 30 }`, shown red in the game's tooltip). Removing the last line drops the key.
  */
 export default function GearDefenceFields({ item, onChange }) {
   const resistances = isPlainObject(item.resistances) ? item.resistances : {};
   const cuts = isPlainObject(item.damageCut) ? item.damageCut : {};
-  const ids = [...DAMAGE_GROUPS, ...DAMAGE_TYPES].map((x) => x.id);
+  const ids = DAMAGE_TYPES.map((x) => x.id);
   const rows = Object.keys(resistances);
   const free = ids.filter((id) => resistances[id] == null);
   const cutRows = Object.keys(cuts);
@@ -29,6 +30,7 @@ export default function GearDefenceFields({ item, onChange }) {
     const n = raw === '' ? '' : Math.trunc(Number(raw));
     onChange({ resistances: withLine(resistances, id, n === '' || !Number.isFinite(n) || n === 0 ? '' : n) });
   };
+  const fillGroup = (groupId, value) => onChange({ resistances: withGroupFilled(resistances, groupId, value) });
   const setCut = (id, raw) => {
     const n = raw === '' ? '' : Math.trunc(Number(raw));
     onChange({ damageCut: withLine(cuts, id, n === '' || !Number.isFinite(n) || n <= 0 ? '' : n) });
@@ -40,7 +42,21 @@ export default function GearDefenceFields({ item, onChange }) {
         <span className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">Resists (%)</span>
         <div className="flex flex-col gap-1.5">
           {rows.map((id) => {
-            const known = isTypeOrGroupId(id);
+            if (isDamageGroupId(id)) {
+              const value = resistances[id];
+              return (
+                <div key={id} className="text-[11px]" style={{ color: 'var(--color-warning)' }} data-field={`gear-resist-${id}`}>
+                  {`${damageTypeLabel(id)} ${value}: a group carries no number, the game ignores it. `}
+                  {isGearResistLine(value) && (
+                    <button type="button" className="hover:underline mr-2" data-field={`gear-resist-${id}-split`} onClick={() => fillGroup(id, Number(value))}>
+                      {`Split into ${typesOfGroup(id).map(damageTypeLabel).join(', ')}`}
+                    </button>
+                  )}
+                  <button type="button" className="hover:underline" onClick={() => setResist(id, '')}>Remove</button>
+                </div>
+              );
+            }
+            const known = isDamageTypeId(id);
             const ok = known && isGearResistLine(resistances[id]);
             return (
               <div key={id} className="flex items-center gap-2" data-field={`gear-resist-${id}`}>
@@ -73,7 +89,6 @@ export default function GearDefenceFields({ item, onChange }) {
               <option value="">Add a resistance or weakness…</option>
               {DAMAGE_GROUPS.map((g) => (
                 <optgroup key={g.id} label={g.label}>
-                  {free.includes(g.id) && <option value={g.id}>{g.label} (the whole group)</option>}
                   {DAMAGE_TYPES.filter((t) => t.group === g.id && free.includes(t.id)).map((t) => (
                     <option key={t.id} value={t.id}>{t.label}</option>
                   ))}
@@ -81,9 +96,10 @@ export default function GearDefenceFields({ item, onChange }) {
               ))}
             </select>
           )}
+          <SetAllTypes dataField="gear-resist-fill" min={-GEAR_RESIST_LINE_MAX} max={GEAR_RESIST_LINE_MAX} initial={10} onFill={fillGroup} />
         </div>
         <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
-          Percent off hits of that type the wearer takes; negative is a weakness. A group&apos;s line counts on each of its types, beside a type&apos;s own. Keep numbers small: no hero&apos;s best stack may reach 100 % in any type (the audit checks).
+          Percent off hits of that type the wearer takes; negative is a weakness. Only types carry numbers: Set all fills a group&apos;s three types. Keep numbers small: no hero&apos;s best stack may reach 100 % in any type (the audit checks).
         </p>
       </div>
 

@@ -19,7 +19,7 @@ import { MAGNITUDE_KIND, statsForRoles } from '../../../../src/config/registries
 import { PLACEMENTS, placementOf } from '../../../../src/config/registries/placementRegistry.js';
 import { getAllSkills, getSkill, COMBAT_SKILL_IDS } from '../../../../src/config/registries/skillRegistry.js';
 import { CARRIED_KINDS } from '../../../../src/config/registries/carriedKinds.js';
-import { DAMAGE_GROUPS, DAMAGE_TYPES, typesOfGroup, damageTypeLabel } from '../../../../src/config/registries/damageTypes.js';
+import { DAMAGE_TYPES, damageTypeLabel } from '../../../../src/config/registries/damageTypes.js';
 import { stationKindLabel, stationKindsOfSkill, isRetiredStationKind } from '../../../../src/config/registries/tokenConstants.js';
 
 /**
@@ -138,10 +138,9 @@ const statusOptions = (ctx) => Object.values(ctx?.effects || {})
     .filter(e => statusBlockOf(e))
     .map(e => option(e.id, e.name || e.id, 'A status effect.'));
 
-/** The damage groups, then the types under them: what a Type Damage or Resistance row may name. */
+/** Every type, then the nine types: what a Type Damage or Resistance row may name (a group carries no number). */
 const damageTypeOptions = () => [
     option('', 'Every type', 'Every hit, whatever its type.'),
-    ...DAMAGE_GROUPS.map(g => option(g.id, g.label, `The ${g.label} group: ${typesOfGroup(g.id).map(damageTypeLabel).join(', ')}.`)),
     ...DAMAGE_TYPES.map(t => option(t.id, t.label, `${t.label}, one ${damageTypeLabel(t.group)} type.`))
 ];
 

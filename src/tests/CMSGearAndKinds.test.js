@@ -280,16 +280,32 @@ describe('⭐ the Token editor: an enemy\'s numbers, filled from the level and k
 describe('⭐ the kinds: none, one or two presets', () => {
     const cow = 'token_cow';
 
-    // Rewritten for damage types: Armoured's +2 armour became a Physical resistance of 50 %.
-    it('ticking Armoured writes it and the numbers follow (Physical resistance 50 %, a 4 s swing)', () => {
+    // Rewritten for damage types: Armoured's +2 armour became a resistance of 50 % on Slash, Crush and Stab.
+    it('ticking Armoured writes it and the numbers follow (Slash, Crush and Stab resistance 50 %, a 4 s swing)', () => {
         const { container } = tokenEditor(cow);
         fireEvent.click(field(container, 'enemy-kind-armoured'));
         expect(store().tokens[cow].enemy.kinds).toEqual(['armoured']);
-        expect(field(container, 'enemy-resist-physical-step').value).toBe('');
-        expect(field(container, 'enemy-resist-physical-step').selectedOptions[0].textContent).toBe('Resist 50% (from kinds)');
+        for (const type of ['slash', 'crush', 'stab']) {
+            expect(field(container, `enemy-resist-${type}-step`).value).toBe('');
+            expect(field(container, `enemy-resist-${type}-step`).selectedOptions[0].textContent).toBe('Resist 50% (from kinds)');
+        }
+        expect(field(container, 'enemy-resist-physical-step')).toBeNull();
         expect(field(container, 'enemy-speed').selectedOptions[0].textContent).toBe('4 s (Slow)');
         expect(field(container, 'enemy-speed-source').textContent).toBe('from level + kinds');
         expect(store().tokens[cow].enemy).not.toHaveProperty('resistances');
+        // Set all Physical writes the three types; the author's lines now stand for the kind's.
+        fireEvent.change(field(container, 'enemy-resist-fill-value'), { target: { value: '25' } });
+        fireEvent.click(field(container, 'enemy-resist-fill-physical'));
+        expect(store().tokens[cow].enemy.resistances).toEqual({ slash: 25, crush: 25, stab: 25 });
+        expect(field(container, 'enemy-resist-crush-step').value).toBe('25');
+    });
+
+    it('an enemy\'s line left on a group says the game ignores it, and Split writes its three types', () => {
+        store().updateToken(cow, { enemy: { ...store().tokens[cow].enemy, resistances: { physical: 25 } } });
+        const { container } = tokenEditor(cow);
+        expect(field(container, 'enemy-resist-physical').textContent).toContain('the game ignores it');
+        fireEvent.click(field(container, 'enemy-resist-physical-split'));
+        expect(store().tokens[cow].enemy.resistances).toEqual({ slash: 25, crush: 25, stab: 25 });
     });
 
     it('Swift cannot go with Armoured (both set the swing); a third kind cannot be ticked', () => {

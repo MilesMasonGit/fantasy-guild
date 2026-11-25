@@ -236,6 +236,11 @@ export function rollSwing(missPct, critPct) {
     return { hit: true, crit: Math.random() * 100 < critPct };
 }
 
+/** Whether an attack that deals no damage lands, by the same miss chance as a swing: one draw, no crit. */
+export function rollLands(missPct) {
+    return !(Math.random() * 100 < missPct);
+}
+
 /** The hero's miss chance against this enemy. */
 export function heroMissChance(hero, enemy) {
     return missChance(getHeroCombatLevel(hero), enemy?.level || 1, enemyDodge(enemy), heroAccuracy(hero));
@@ -273,15 +278,12 @@ export function heroDamageType(hero) {
     return weapon ? weaponDamageTypeOf(weapon, weaponStyleOf(weapon)) : BAREHANDED_DAMAGE_TYPE;
 }
 
-/**
- * What a fighter's hits of type `type` gain, in percent: their Type Damage rows on the type and on
- * its group (the aggregator counts a group's row on each of its types).
- */
+/** What a fighter's hits of type `type` gain, in percent: all their Type Damage rows on that type, added. */
 export function typeDamageBoost(entity, type) {
     return axis(entity, EFFECT_TYPES.TYPE_DAMAGE, type);
 }
 
-/** {@link typeDamageBoost} for a hero: their rows and the guild's, on the type and on its group. */
+/** {@link typeDamageBoost} for a hero: their rows on the type and the guild's, added. */
 export function heroTypeDamageBoost(hero, type) {
     return heroGuildAxis(hero, EFFECT_TYPES.TYPE_DAMAGE, type);
 }
@@ -301,18 +303,17 @@ export function afterSunder(resistPct, sunderPct) {
 }
 
 /**
- * How much a hero resists hits of `type` (a type, or a group for a hit typed only by its group), in
- * percent: what they carry (worn gear's resistances, Type Resistance rows) and what the guild gives,
- * after any Sunder on them.
+ * How much a hero resists hits of `type`, in percent: every line they have for that type added (worn
+ * gear's resistances, Type Resistance rows, what the guild gives), after any Sunder on them.
  */
 export function heroTypeResistance(hero, type) {
     return afterSunder(heroGuildAxis(hero, EFFECT_TYPES.TYPE_RESIST, type), sunderOf(hero));
 }
 
 /**
- * How much an enemy resists hits of `type`, in signed percent (a weakness negative): its own
- * resistances, where a line on the type replaces its group's, plus what effects on it lend, after
- * any Sunder on it.
+ * How much an enemy resists hits of `type`, in signed percent (a weakness negative): its own line
+ * for the type (an authored line replaces its kind's, `enemyProfile.js`) plus what effects on it
+ * lend for the type, after any Sunder on it.
  */
 export function enemyTypeResistance(enemy, type) {
     return afterSunder(resistanceFor(enemy?.resistances, type) + axis(enemy, EFFECT_TYPES.TYPE_RESIST, type), sunderOf(enemy));
@@ -412,7 +413,7 @@ export function enemyBaseHit(enemy) {
 
 /**
  * An enemy's landed blow on a hero, before the fraction sub-roll: its hit plus any flat Damage lent
- * to it, in one type (its move's, `type`; a plain swing is Physical), × the matchup and any Damage
+ * to it, in one type (its move's, `type`; a plain swing is Crush), × the matchup and any Damage
  * percentage (a heavy strike, an enrage), crit, then the hero's resistance to that type.
  * @param {{ crit?: boolean, type?: string|null }} [options]
  */

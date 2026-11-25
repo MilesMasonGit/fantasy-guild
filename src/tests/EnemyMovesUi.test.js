@@ -99,7 +99,7 @@ describe('a special move: only it is said in a bubble on the mat (owner, 2026-11
         swing({ damage: 1, hit: true, crit: false, types: ['stab'], move: 'Gnaw' });
         swing({ damage: 2, hit: true, crit: false, types: ['stab'], move: 'Venom Bite' });
         swing({ damage: 0, hit: false, crit: false, move: 'Venom Bite' });
-        swing({ damage: 1, hit: true, crit: false, types: ['physical'] });
+        swing({ damage: 1, hit: true, crit: false, types: ['crush'] });
         off();
         stop();
         expect(moments.map(m => [m.move ?? null, m.special ?? null])).toEqual([
@@ -122,7 +122,7 @@ describe('the log and the moments', () => {
         swing({ damage: 4, hit: true, crit: true, types: ['slash'], verdict: null, move: 'Scratch' });
         swing({ damage: 0, hit: false, crit: false, move: 'Peck' });
         swing({ damage: 0, hit: false, crit: false, move: 'Flutter', effectOnly: true });
-        swing({ damage: 1, hit: true, crit: false, types: ['physical'], verdict: null });
+        swing({ damage: 1, hit: true, crit: false, types: ['crush'], verdict: null });
         off();
         stop();
         const record = fightsOf('h1').current;
@@ -142,7 +142,7 @@ describe('the log and the moments', () => {
         GameState.initNew();
         const stop = startFightWatch();
         engage();
-        swing({ damage: 1, hit: true, crit: false, types: ['physical'], move: '' });
+        swing({ damage: 1, hit: true, crit: false, types: ['crush'], move: '' });
         stop();
         expect(t('fight.log.enemyMoveHits', fightsOf('h1').current.log[0].vars)).toBe(`Chicken's ${t('fight.moves.unnamed')} hits h1`);
     });
@@ -159,7 +159,7 @@ describe('what the screen lists', () => {
         ]);
         expect(movesView([])).toBeNull();
         expect(enemyHitTypes(moves)).toEqual(['stab', 'slash', 'poison']);
-        expect(enemyHitTypes(undefined)).toEqual(['physical']);
+        expect(enemyHitTypes(undefined)).toEqual(['crush']);
         expect(moveEffectText(enemyMovesOf({ moves: [{ name: 'X', effectId: 'emu_flutter', target: 'self', lasts: 'swing' }] })[0])).toBe('Flutter on itself, for this attack');
         expect(moveEffectText(enemyMovesOf({ moves: [{ name: 'X', effectId: 'emu_flutter' }] })[0])).toBe('Flutter on the hero, for the fight');
     });
@@ -175,12 +175,12 @@ describe('what the screen lists', () => {
         ]);
     });
 
-    it('an enemy without moves keeps its card as it was: one Physical glyph and its name, no Moves row', () => {
+    it('an enemy without moves keeps its card as it was: one Crush glyph and its name, no Moves row', () => {
         GameState.initNew();
         const card = enemyCardView('token_goblin') || enemyCardView('emu_chicken');
-        const plain = { ...card, hitType: 'physical', hitTypes: ['physical'], moves: null };
+        const plain = { ...card, hitType: 'crush', hitTypes: ['crush'], moves: null };
         const root = render(React.createElement(EnemyCardRows, { card: plain })).container;
-        expect(text(q(root, '[data-enemy-card-hit]'))).toBe(`${plain.hit}Physical`);
+        expect(text(q(root, '[data-enemy-card-hit]'))).toBe(`${plain.hit}Crush`);
         expect(root.querySelectorAll('[data-enemy-card-hit] [data-glyph]')).toHaveLength(1);
         expect(q(root, '[data-enemy-card-moves]')).toBeNull();
     });

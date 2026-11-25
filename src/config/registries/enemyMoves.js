@@ -3,12 +3,12 @@
 // ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY (`cms/src/utils/constants.js`): the Token
 // editor's Moves block and the audits read the shapes from here. Keep it free of data loading.
 
-import { isTypeOrGroupId, PLAIN_ENEMY_HIT_TYPE } from './damageTypes.js';
+import { isDamageTypeId, isDamageGroupId, damageTypeLabel, PLAIN_ENEMY_HIT_TYPE } from './damageTypes.js';
 
 /**
  * An enemy may list a few moves (the owner's chicken: Peck, Stab; Scratch, Slash; Flutter,
- * +50 % Physical resistance for one attack). Each swing makes one, picked at random by weight. An
- * enemy with none swings as it always has: a plain Physical hit.
+ * +50 % Slash, Crush and Stab resistance for one attack). Each swing makes one, picked at random by weight. An
+ * enemy with none swings a plain Crush hit, like a fist.
  *
  * ```json
  * "moves": [
@@ -20,7 +20,7 @@ import { isTypeOrGroupId, PLAIN_ENEMY_HIT_TYPE } from './damageTypes.js';
  *
  *   `name`        what the fight screen calls it.
  *   `hits`        false for a move that deals no damage and rolls nothing (Flutter); a hit otherwise.
- *   `damageType`  a hit's type or group (the enemy's hit, in this type); Physical when absent.
+ *   `damageType`  a hit's type (the enemy's hit, in this type); Crush when absent.
  *   `effectId`    a library effect the move lands, a status included.
  *   `target`      `self` (as the move is made) or `hero` (with the hit that lands, or as a move that
  *                 does not hit is made). The hero when absent.
@@ -46,7 +46,7 @@ const isPlainObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const hasText = (v) => typeof v === 'string' && v.trim() !== '';
 
 /**
- * One move as the engine reads it. A hit with an unknown type hits as Physical; an unknown target is
+ * One move as the engine reads it. A hit with an unknown type (a group's name included) hits as Crush; an unknown target is
  * the hero, an unknown lifetime the fight, a weight that is not above 0 is 1. The audits name each.
  * @returns {{name: string, hits: boolean, type: string|null, effectId: string|null, target: string, lasts: string, weight: number}}
  */
@@ -56,7 +56,7 @@ export function normaliseMove(raw) {
     return {
         name: hasText(raw.name) ? raw.name.trim() : '',
         hits,
-        type: hits ? (isTypeOrGroupId(raw.damageType) ? raw.damageType : PLAIN_ENEMY_HIT_TYPE) : null,
+        type: hits ? (isDamageTypeId(raw.damageType) ? raw.damageType : PLAIN_ENEMY_HIT_TYPE) : null,
         effectId: hasText(raw.effectId) ? raw.effectId : null,
         target: MOVE_TARGETS.includes(raw.target) ? raw.target : DEFAULT_MOVE_TARGET,
         lasts: MOVE_LASTS.includes(raw.lasts) ? raw.lasts : DEFAULT_MOVE_LASTS,
@@ -113,7 +113,7 @@ export function isSpecialMove(move) {
  */
 export function moveProblems(raw, { hasEffect = null, isStatus = null } = {}) {
     if (raw == null) return [];
-    if (!Array.isArray(raw)) return ['its moves are not a list — it makes a plain Physical Strike. Author its moves again in the CMS'];
+    if (!Array.isArray(raw)) return ['its moves are not a list — it makes a plain Crush Strike. Author its moves again in the CMS'];
     const out = [];
     raw.forEach((move, i) => {
         if (!isPlainObject(move)) {
@@ -126,8 +126,11 @@ export function moveProblems(raw, { hasEffect = null, isStatus = null } = {}) {
         if (move.hits != null && typeof move.hits !== 'boolean') {
             out.push(`its move ${label} says it hits "${move.hits}", which is neither yes nor no — it hits. Tick or untick Hits in the CMS`);
         }
-        if (hits && move.damageType != null && move.damageType !== '' && !isTypeOrGroupId(move.damageType)) {
-            out.push(`its move ${label} hits with "${move.damageType}", which is not a damage type or group — it hits as Physical. Pick its type again in the CMS`);
+        if (hits && move.damageType != null && move.damageType !== '' && !isDamageTypeId(move.damageType)) {
+            const what = isDamageGroupId(move.damageType)
+                ? `the ${damageTypeLabel(move.damageType)} group, which is not a damage type`
+                : `"${move.damageType}", which is not a damage type`;
+            out.push(`its move ${label} hits with ${what} — it hits as Crush. Pick its type again in the CMS`);
         }
         const effectId = hasText(move.effectId) ? move.effectId : null;
         if (!hits && !effectId) out.push(`its move ${label} neither hits nor lands an effect — the attack does nothing. Tick Hits or pick an effect in the CMS`);

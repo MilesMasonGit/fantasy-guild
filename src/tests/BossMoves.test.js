@@ -32,7 +32,7 @@ import { registerStatusFixtures, providesPct, providesFlat, BURN, VENOM } from '
 /**
  * Boss moves as Rules effects (brief 220, C4): two new moments a fighter's own rules wait on, "On
  * Every Nth Swing" (and its sibling "On Hit") and "On Health Below X%" (once a fight), and the
- * first moves built from ordinary verbs: a heavy strike, a status attack, a heal or a Physical resistance, an
+ * first moves built from ordinary verbs: a heavy strike, a status attack, a heal or a Crush resistance, an
  * enrage. Any enemy can carry them; a hero's items can too.
  */
 
@@ -46,8 +46,8 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 registerEffects({
     bm_heavy: { id: 'bm_heavy', name: 'Heavy Strike', statements: [providesPct('stm_bm_heavy', EFFECT_TYPES.DAMAGE, 1)] },
-    // Flat armour is gone with damage types: Stone Skin resists Physical (a fist is Crush) 40 %.
-    bm_stone_skin: { id: 'bm_stone_skin', name: 'Stone Skin', statements: [{ ...providesFlat('stm_bm_skin', EFFECT_TYPES.TYPE_RESIST, 40), payload: { type: EFFECT_TYPES.TYPE_RESIST, bucket: 'flat', value: 40, category: 'physical' } }] },
+    // Flat armour is gone with damage types: Stone Skin resists Crush (a fist) 40 %.
+    bm_stone_skin: { id: 'bm_stone_skin', name: 'Stone Skin', statements: [{ ...providesFlat('stm_bm_skin', EFFECT_TYPES.TYPE_RESIST, 40), payload: { type: EFFECT_TYPES.TYPE_RESIST, bucket: 'flat', value: 40, category: 'crush' } }] },
     bm_enrage: { id: 'bm_enrage', name: 'Enrage', statements: [providesPct('stm_bm_enrage', EFFECT_TYPES.SWING_TIME, -0.5)] }
 });
 
@@ -182,8 +182,8 @@ describe('On Hit: a status attack', () => {
     });
 });
 
-describe('On Health Below X%: a heal, a Physical resistance and an enrage, once a fight', () => {
-    it('below half it heals itself 10 and resists Physical 40 %, once; below 30% it enrages, once', () => {
+describe('On Health Below X%: a heal, a Crush resistance and an enrage, once a fight', () => {
+    it('below half it heals itself 10 and resists Crush 40 %, once; below 30% it enrages, once', () => {
         startFight('bm_healer');
         const seen = play(60000);
         // The hero hits for 5 (1 + 4 for level 99). 40 → 15 crosses half: heal to 25, and 5 × 60 % = 3.

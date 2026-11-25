@@ -602,7 +602,7 @@
         "kinds": {
             "armoured": {
                 "name": "Armoured",
-                "tip": "Resists Physical 50%, attacks every 4s"
+                "tip": "Resists Slash, Crush and Stab 50%, attacks every 4s"
             },
             "nimble": {
                 "name": "Nimble",
