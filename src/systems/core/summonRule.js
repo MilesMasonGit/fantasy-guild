@@ -2,14 +2,14 @@
 
 import { summonOf, isSummonType, SUMMONING_SKILL } from '../../config/registries/summonRules.js';
 import { isEnemyDef } from '../../config/registries/enemyProfile.js';
-import { getSkill, isSkillId, isGatheringSkill } from '../../config/registries/skillRegistry.js';
+import { getSkill, isSkillId, isGatheringSkill, SKILL_TRADES } from '../../config/registries/skillRegistry.js';
 import { MAX_SKILL_LEVEL } from '../../utils/XPCurve.js';
 import { stationSkillOf } from '../effects/statements.js';
 
 /**
  * Where Summoned worker content is written in a way that cannot work, or against the owner's
  * rulings for summons (gathering only, one trait each): a summon with no skill, a skill the game
- * lacks or a making skill, a level out of range, a trait or copied enemy that does not exist, a
+ * lacks or one that is not gathering, a level out of range, a trait or copied enemy that does not exist, a
  * summon no Summoning recipe calls, a recipe calling one outside Summoning or making something
  * besides, and a Circle setting on a Token that does not work as Summoning.
  *
@@ -62,7 +62,8 @@ export function summonFindings({ tokens = {}, recipes = [], effects = {} } = {})
                     push('Token', id, def, `is a Summoned worker whose ${skillName(skillId)} level is not a whole number from 1 to ${MAX_SKILL_LEVEL}${summon.skills[skillId] ? `, read as ${summon.skills[skillId]}` : ', so it does not hold the skill'}`);
                 }
                 if (!isGatheringSkill(skillId)) {
-                    push('Token', id, def, `is a Summoned worker that works ${skillName(skillId)}, a making skill: summons work only Mining, Forestry, Fishing or Farming, so heroes still make everything`);
+                    const what = getSkill(skillId)?.trade === SKILL_TRADES.CRAFTING ? 'a making skill' : 'which is not a gathering skill';
+                    push('Token', id, def, `is a Summoned worker that works ${skillName(skillId)}, ${what}: summons work only Mining, Forestry, Fishing or Farming, so heroes still make everything`);
                 }
             }
             if (!Object.keys(summon.skills).length) {

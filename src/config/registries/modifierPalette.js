@@ -656,6 +656,8 @@ export const MODIFIER_PALETTE = [
         buckets: ['flat'],
         categories: 'skill',
         shape: MODIFIER_SHAPES.PROC,
+        // A new rule in the CMS starts here: the shrine and the Motherlode perk both mean 100.
+        startsAt: 100,
         group: 'Blessing',
         hint: 'A chance that the Tokens it reaches spend none of their charges as they are worked (a Field none of its load), even on a failed cycle, so a vein, tree or Field that ends by chance does not draw its end: at 100% they never run out while it reaches them. In percent. A shrine\'s blessing (aim it at Tokens; the skill narrows it), and the Motherlode perk (narrow it to Mining).'
     },

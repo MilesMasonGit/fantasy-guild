@@ -39,6 +39,14 @@ describe('in the CMS palette', () => {
         const only = slotsOf(statement).find(s => s.id === 'category');
         expect(only.options.map(o => o.id)).toContain(skill);
     });
+
+    it("a new Can't Run Out rule starts at 100, never running out; the other perks start at 0", () => {
+        const statement = { ...makeStatement(KEYWORD.PROVIDES), payload: { type: EFFECT_TYPES.YIELD, bucket: 'percentage', value: 0 } };
+        const pick = (type) => slotsOf(statement).find(s => s.id === 'type').patch(type).payload;
+        expect(pick(EFFECT_TYPES.NEVER_RUNS_OUT)).toEqual({ type: EFFECT_TYPES.NEVER_RUNS_OUT, bucket: 'flat', value: 100 });
+        expect(pick(EFFECT_TYPES.ECHO)).toEqual({ type: EFFECT_TYPES.ECHO, bucket: 'flat', value: 0 });
+        expect(pick(EFFECT_TYPES.FREE_REPLANT)).toEqual({ type: EFFECT_TYPES.FREE_REPLANT, bucket: 'flat', value: 0 });
+    });
 });
 
 describe('in plain words', () => {
