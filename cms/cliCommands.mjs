@@ -36,7 +36,7 @@ export const USAGE = `Usage: npm run cms -- <command> [options]
                                   cms/incoming/). A made item gets a Planned recipe, a gathering
                                   Token its cycle, a crop its numbers: level, seconds (pinned, so
                                   Recalculate keeps them), XP, inputs with counts, what a craft
-                                  makes (a gather's yield stays the content's). Everything stays
+                                  makes, pinned (a gather's yield stays the content's). Everything stays
                                   Planned. --rows reads
                                   a solver output ({ rows } or a list); without it the solver runs
                                   on docs/active/content_catalogue.json (with --dials). Entries with
@@ -53,11 +53,13 @@ export const USAGE = `Usage: npm run cms -- <command> [options]
                                   (default docs/active/content_cms_ids.json) matches to the
                                   catalogue (default docs/active/content_catalogue.json): edits with
                                   level, time and XP (both pinned, so Recalculate keeps them), input
-                                  counts and a craft's count, uses and rest. A build or Dig recipe
-                                  follows the Token it places and an offering its shrine (skipped:
-                                  no timed work); the Bait recipes are timed by their own fish. A
-                                  Live entry with no match, other ingredients or another output than
-                                  the catalogue's is listed, never guessed. Its own pack.
+                                  counts and a craft's count (outputs it writes pinned too), uses
+                                  and rest. A build or Dig recipe follows the Token it places and an
+                                  offering its shrine (skipped: no timed work); each Bait recipe
+                                  unlocks at its fish's level, timed as a prepare step there by the
+                                  solver's rule (with --dials). A Live entry with no match, other
+                                  ingredients or another output than the catalogue's is listed,
+                                  never guessed. Its own pack.
   recalc [--all]                  Recalculate (the economic simulator) on the workspace and save it.
   sync [--confirm-removals] [--no-commit]
                                   Recalculate, then write data/ exactly as Sync to Game does, and
@@ -401,6 +403,14 @@ function readJsonFile(file, what) {
     }
 }
 
+/** The solver's own prepare rule (`timeStep` at `'prepare'`) with the dials given (--dials, else its own): what times a Bait recipe. */
+function prepareStepFor(paths, options) {
+    const solver = createRequire(import.meta.url)(path.join(paths.root, ...SOLVER));
+    const dials = typeof options.dials === 'string' ? readJsonFile(path.resolve(options.dials), 'dials file') : {};
+    const rules = solver.make(dials);
+    return (level, xpLevel) => solver.timeStep(rules, 'prepare', level, xpLevel);
+}
+
 /** The solver's rows: a file of them (--rows), or the solver run on the content catalogue with the dials given. */
 function rowsFor(paths, options, out) {
     if (typeof options.rows === 'string') {
@@ -450,11 +460,12 @@ async function cmdPackNumbers(paths, options, out) {
         const idsFile = typeof options.ids === 'string' ? path.resolve(options.ids) : path.join(paths.root, ...ID_MAP);
         const catalogueFile = typeof options.catalogue === 'string' ? path.resolve(options.catalogue) : path.join(paths.root, ...CATALOGUE);
         try {
-            result = writeLiveNumberPack(disk.workspace, rows, { id, ids: readJsonFile(idsFile, 'id map'), catalogue: readJsonFile(catalogueFile, 'content catalogue') });
+            result = writeLiveNumberPack(disk.workspace, rows, { id, ids: readJsonFile(idsFile, 'id map'), catalogue: readJsonFile(catalogueFile, 'content catalogue'), prepareStep: prepareStepFor(paths, options) });
         } catch (err) {
             throw err instanceof CliError ? err : new CliError(err.message);
         }
         out(`Live mode: the Live recipes and gathering Tokens ${shortPath(paths.root, idsFile)} matches to ${shortPath(paths.root, catalogueFile)}.`);
+        out(`  Bait recipes are timed as a prepare step by the solver's rule at their fish's level, ${typeof options.dials === 'string' ? `with the dials in ${shortPath(paths.root, path.resolve(options.dials))}` : 'with its own dials'}.`);
     } else {
         result = writeNumberPack(disk.workspace, rows, { id });
     }

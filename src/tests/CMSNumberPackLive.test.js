@@ -30,7 +30,7 @@ const fixtureWorkspace = () => ({
     items: Object.fromEntries([
         ['item_flax', 'Flax'], ['item_water', 'Water'], ['item_string', 'String'], ['item_twine', 'Twine'], ['item_rope', 'Rope'],
         ['item_bucket', 'Bucket'], ['item_scrap', 'Scrap'], ['item_old_thing', 'Old Thing'], ['item_copper_ore', 'Copper Ore'],
-        ['item_gem', 'Gem'], ['item_oak_wood', 'Oak Wood'], ['item_fir_wood', 'Fir Wood'], ['item_birch_wood', 'Birch Wood'], ['item_carp', 'Carp'],
+        ['item_gem', 'Gem'], ['item_oak_wood', 'Oak Wood'], ['item_fir_wood', 'Fir Wood'], ['item_birch_wood', 'Birch Wood'], ['item_carp', 'Carp'], ['item_bait', 'Bait'],
     ].map(([id, name]) => [id, item(id, name)])),
     tokens: {
         token_copper_vein: {
@@ -64,6 +64,9 @@ const fixtureWorkspace = () => ({
             { id: 'recipe_bucket', name: 'Bucket', skill: 'crafting', inputs: [{ itemId: 'item_water', quantity: 1 }], outputs: [out1('item_bucket', 1), out1('item_scrap', 1)], xp: 4, durationMs: 6000, levelRequirement: 5, plan: live },
             { id: 'recipe_old_thing', name: 'Old Thing', skill: 'crafting', inputs: [], outputs: [out1('item_old_thing', 1)], xp: 1, durationMs: 1000, levelRequirement: 1 },
         ],
+        fishing: [
+            { id: 'recipe_bait_from_carp', name: 'Bait from Carp', skill: 'fishing', levelRequirement: 1, inputs: [{ itemId: 'item_carp', quantity: 1 }], outputs: [out1('item_bait', 4)], xp: 1, durationMs: 3000, plan: live },
+        ],
     },
 });
 
@@ -81,6 +84,8 @@ const fixtureCatalogue = () => ({
         { id: 'copper_vein', name: 'Copper Vein', category: 'token', skill: 'Mining', level: 1, gives: ['copper_ore', 'gem'] },
         { id: 'oak_tree', name: 'Oak Tree', category: 'token', skill: 'Forestry', level: 1, gives: ['oak_wood'] },
         { id: 'logjam', name: 'Logjam', category: 'token', skill: 'Forestry', level: 10, gives: ['oak_wood', 'fir_wood', 'birch_wood'] },
+        { id: 'carp', name: 'Carp', category: 'item', skill: 'Fishing', level: 5 },
+        { id: 'bait', name: 'Bait', category: 'item', type: 'bait', skill: 'Fishing', level: 1, madeWith: ['carp'] },
     ],
 });
 
@@ -92,6 +97,7 @@ const fixtureIds = () => ({
         copper_ore: { cms: 'item_copper_ore', how: 'live' }, gem: { cms: 'item_gem', how: 'live' },
         oak_wood: { cms: 'item_oak_wood', how: 'live' }, fir_wood: { cms: 'item_fir_wood', how: 'live' }, birch_wood: { cms: 'item_birch_wood', how: 'live' },
         copper_vein: { cms: 'token_copper_vein', how: 'live' }, oak_tree: { cms: 'token_oak_tree', how: 'live' }, logjam: { cms: 'token_logjam', how: 'live' },
+        carp: { cms: 'item_carp', how: 'live' }, bait: { cms: 'item_bait', how: 'live' },
     },
 });
 
@@ -102,6 +108,8 @@ const fixtureRows = () => [
     { id: 'copper_vein', name: 'Copper Vein', skill: 'Mining', category: 'token', planned: 1, level: 1, work: 'gather', inputs: [], seconds: 6, xp: 2, makes: 1 },
     { id: 'oak_tree', name: 'Oak Tree', skill: 'Forestry', category: 'token', planned: 1, level: 1, work: 'gather', inputs: [], seconds: 5, xp: 2, makes: 1 },
     { id: 'logjam', name: 'Logjam', skill: 'Forestry', category: 'token', planned: 10, level: 11, work: 'gather', inputs: [], seconds: 6.6, xp: 3, makes: 1 },
+    { id: 'carp', name: 'Carp', skill: 'Fishing', category: 'item', planned: 5, level: 5, work: 'gather', inputs: [], seconds: 6.7, xp: 3, makes: 1, xpLevel: 10 },
+    { id: 'bait', name: 'Bait', skill: 'Fishing', category: 'item', type: 'bait', planned: 1, level: 1, work: 'make', inputs: [{ id: 'carp', name: 'Carp', count: 1 }], seconds: 11.9, xp: 4, makes: 1 },
 ];
 
 const hashOf = (file) => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
@@ -155,7 +163,7 @@ describe('pack numbers --live', () => {
         expect(run.code, run.err).toBe(0);
         expect(pack).not.toBeNull();
         expect(validatePack(pack, { fileName: 'test-live-numbers.json' })).toEqual({ ok: true });
-        expect(Object.keys(byId).sort()).toEqual(['recipe_twine', 'token_copper_vein', 'token_logjam', 'token_oak_stump', 'token_oak_tree']);
+        expect(Object.keys(byId).sort()).toEqual(['recipe_bait_from_carp', 'recipe_twine', 'token_copper_vein', 'token_logjam', 'token_oak_stump', 'token_oak_tree']);
         for (const e of pack.entries) {
             expect(e.op).toBe('edit');
             expect(e.fingerprint).toMatch(/^fp:[0-9a-f]{16}$/);
@@ -171,7 +179,7 @@ describe('pack numbers --live', () => {
             inputs: [{ itemId: 'item_flax', quantity: 2 }], outputs: [out1('item_twine', 1)],
             plan: { status: 'live' },
         });
-        expect(byId.recipe_twine.value.sim).toEqual({ tempo: 'quick', purpose: 'iph', xpPinned: true, timePinned: true });
+        expect(byId.recipe_twine.value.sim).toEqual({ tempo: 'quick', purpose: 'iph', xpPinned: true, timePinned: true, outputsPinned: true });
     });
 
     it('gives a matched Live Token its cycle, time and XP pinned, its outputs as they are', () => {
@@ -180,6 +188,13 @@ describe('pack numbers --live', () => {
         expect(v.config.outputs).toEqual([range('item_copper_ore', 1, 2), range('item_gem', 1, 1, 5)]);
         expect(v.sim).toEqual({ tempo: 'quick', purpose: 'iph', xpPinned: true, timePinned: true });
         expect(byId.token_copper_vein.note).not.toMatch(/was 1 to 2/);
+    });
+
+    it('times a Bait recipe as a prepare step at its fish\'s level, by the solver\'s own rule', () => {
+        // 8 s x 1.15^(5/20), 8.3 s, trimmed for whole XP at the Carp's rate (its xpLevel 10): 4 XP in 9 s.
+        expect(byId.recipe_bait_from_carp.value).toMatchObject({ levelRequirement: 5, durationMs: 9000, xp: 4, outputs: [out1('item_bait', 4)] });
+        expect(byId.recipe_bait_from_carp.value.sim).toEqual({ xpPinned: true, timePinned: true });
+        expect(run.out).toMatch(/Bait recipes are timed as a prepare step by the solver's rule/);
     });
 
     it('writes uses and rest by the rest rule: about 30 s of work, back in about 30 s', () => {
@@ -220,7 +235,7 @@ describe('pack numbers --live', () => {
         expect(listed).toMatch(/recipe_bucket.*output.*item_scrap/);
         expect(listed).toMatch(/recipe_old_thing.*no catalogue match/);
         expect(listed).toMatch(/token_pond.*no catalogue match/);
-        expect(run.out).toMatch(/4 entries written, 4 unclear/);
+        expect(run.out).toMatch(/5 entries written, 4 unclear/);
     });
 
     it('leaves the Planned entries and everything unmatched alone, and every entry Live', () => {

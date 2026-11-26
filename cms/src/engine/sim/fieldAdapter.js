@@ -53,10 +53,11 @@ export function authoredChance(output) {
 
 /**
  * One normalised output entry. `chance` is a fraction; `chancePercent` is authored.
+ * ⚠️ On a pinned record (`sim.outputsPinned`) the chance is the one written: the write-back keeps it, so a `baseChance` an earlier tuning left behind would price a chance the game never rolls.
  */
-function adaptOutput(output) {
+function adaptOutput(output, pinned = false) {
     const { min, max } = quantityRange(output);
-    const percent = authoredChance(output);
+    const percent = pinned ? (Number.isFinite(output?.chance) ? output.chance : 100) : authoredChance(output);
     const avgQty = expectedQuantity(output);
     const chance = percent / 100;
     const itemId = output?.itemId ?? null;
@@ -83,7 +84,8 @@ function adaptInput(input) {
 }
 
 function adaptCommon({ id, name, kind, skill, level, cycleTimeMs, xp, inputs, outputs, sim, downcycle, rarity, tokenType, charges }) {
-    const adaptedOutputs = Object.freeze((outputs || []).map((o) => adaptOutput(o)));
+    const outputsPinned = sim?.outputsPinned === true;
+    const adaptedOutputs = Object.freeze((outputs || []).map((o) => adaptOutput(o, outputsPinned)));
     const adaptedInputs = Object.freeze((inputs || []).map((i) => adaptInput(i)));
     return Object.freeze({
         id,
@@ -101,6 +103,7 @@ function adaptCommon({ id, name, kind, skill, level, cycleTimeMs, xp, inputs, ou
         purpose: sim?.purpose ?? null,
         xpPinned: sim?.xpPinned === true,
         timePinned: sim?.timePinned === true,
+        outputsPinned,
         downcycle: downcycle === true,
         rarity: rarity ?? null,
         tokenType: tokenType ?? null,

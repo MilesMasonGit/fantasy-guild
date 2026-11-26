@@ -61,6 +61,18 @@
     return { d, minutes, xpHour, xpToNext, cycle, count, opt, typ };
   }
 
+  // One action's time and XP by the rules: its kind's time at its level (a make step longer for
+  // each main ingredient past the first), XP at the rate of `xpLevel`. XP is whole, so the
+  // action's length is trimmed to pay the rule's XP an hour exactly, within 15 % of the rule's
+  // time (section 1: seconds that give whole XP early on). `R` is `make(dials)`.
+  function timeStep(R, work, level, xpLevel, bars = 1) {
+    const ruleSeconds = R.cycle(work, level) * (work === 'make' ? 1 + R.d.extraPerBar * (bars - 1) : 1);
+    const perSecond = R.xpHour(xpLevel) / 3600 / R.opt(level);
+    const xp = Math.max(1, Math.round(perSecond * ruleSeconds));
+    const seconds = Math.round(Math.min(ruleSeconds * 1.15, Math.max(ruleSeconds * 0.85, xp / perSecond)) * 10) / 10;
+    return { seconds, ruleSeconds, xp };
+  }
+
   function solve(entries, dials) {
     const R = make(dials);
     const d = R.d;
@@ -147,13 +159,7 @@
           return { id: x, name: byId.get(x) ? byId.get(x).name : x, count: n };
         });
         const bars = made.length ? fixed : 1;
-        t.seconds = R.cycle(t.work, t.level) * (t.work === 'make' ? 1 + d.extraPerBar * (bars - 1) : 1);
-        // XP is whole, so the action's length is trimmed to pay the rule's XP an hour exactly,
-        // within 15 % of the rule's time (section 1: seconds that give whole XP early on).
-        const perSecond = R.xpHour(t.xpLevel) / 3600 / R.opt(t.level);
-        t.ruleSeconds = t.seconds;
-        t.xp = Math.max(1, Math.round(perSecond * t.seconds));
-        t.seconds = Math.round(Math.min(t.ruleSeconds * 1.15, Math.max(t.ruleSeconds * 0.85, t.xp / perSecond)) * 10) / 10;
+        Object.assign(t, timeStep(R, t.work, t.level, t.xpLevel, bars));
         t.xpHourOpt = t.xp * 3600 / t.seconds * R.opt(t.level);
         t.makes = makesOf(e);
       });
@@ -244,7 +250,7 @@
       rules: R };
   }
 
-  const api = { DIALS, solve, make, TIERS };
+  const api = { DIALS, solve, make, timeStep, TIERS };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.BalanceSolver = api;
 

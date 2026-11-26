@@ -216,11 +216,12 @@ function tuningOverrides(tuning) {
     return overrides;
 }
 
-function deriveOutputs(outputs, downcycleEntry, tuning) {
+function deriveOutputs(outputs, downcycleEntry, tuning, pinned = false) {
     if (!Array.isArray(outputs)) return outputs;
     // A downcycle recipe is never tuned (its quantities come from the recovery
     // cap), so the two override sources can never collide.
-    const overrides = downcycleEntry ? downcycleOverrides(downcycleEntry) : tuningOverrides(tuning);
+    // ⚠️ Pinned outputs (`sim.outputsPinned`) take neither: their counts and chances go back as written.
+    const overrides = pinned ? new Map() : downcycleEntry ? downcycleOverrides(downcycleEntry) : tuningOverrides(tuning);
     let changed = false;
     const next = outputs.map((output, index) => {
         const derived = deriveOutput(output, overrides.get(index));
@@ -256,7 +257,7 @@ export function applyItemResults(items = {}, sim, { coins = false } = {}) {
     return next;
 }
 
-/** Tokens: derived `config.cycleTimeMs` and per-output quantities. A Token the passes skipped (inert or untagged) keeps its authored cycle time exactly as typed: the simulator does not guess a tag, so it does not touch the numbers that would follow from one. */
+/** Tokens: derived `config.cycleTimeMs` and per-output quantities (none where `sim.outputsPinned`). A Token the passes skipped (inert or untagged) keeps its authored cycle time exactly as typed: the simulator does not guess a tag, so it does not touch the numbers that would follow from one. */
 export function applyTokenResults(tokens = {}, sim) {
     const next = {};
     for (const [id, token] of Object.entries(tokens)) {
@@ -268,7 +269,7 @@ export function applyTokenResults(tokens = {}, sim) {
         // ⚠️ Water's work is its catch pools (`fieldAdapter.waterOutputs`): a tuning of it is index-parallel
         // to those, not to `config.outputs`, so its Outputs are kept exactly as typed (or absent).
         if (!hasCatchPools(token)) {
-            config.outputs = deriveOutputs(token.config.outputs, sim.downcycles.get(tokenId), sim.tunings?.get(tokenId));
+            config.outputs = deriveOutputs(token.config.outputs, sim.downcycles.get(tokenId), sim.tunings?.get(tokenId), token.sim?.outputsPinned === true);
         }
         if (Number.isFinite(cycleTimeMs)) config.cycleTimeMs = cycleTimeMs;
 
@@ -291,7 +292,7 @@ export function applyRecipePoolResults(recipePools = {}, sim) {
         next[skillId] = pool.map((recipe) => {
             if (!recipe) return recipe;
             const stripped = without(recipe, RETIRED_RECIPE_FIELDS);
-            const outputs = deriveOutputs(recipe.outputs, sim.downcycles.get(recipe.id), sim.tunings?.get(recipe.id));
+            const outputs = deriveOutputs(recipe.outputs, sim.downcycles.get(recipe.id), sim.tunings?.get(recipe.id), recipe.sim?.outputsPinned === true);
             const durationMs = sim.cycleTimes.get(recipe.id);
             const result = { ...stripped, outputs };
             if (Number.isFinite(durationMs)) result.durationMs = durationMs;
