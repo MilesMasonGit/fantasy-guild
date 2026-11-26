@@ -846,6 +846,8 @@ export function rebuildAll() {
     if (boardReachLive) rememberWholeRebuild(index, boardSignature(index));
 }
 
+const NO_SHARES = Object.freeze([]);
+
 /** Where one contribution to an axis came from (`explainAxis`). */
 export const AXIS_SCOPE = Object.freeze({ TOKEN: 'token', GUILD: 'guild', HERO: 'hero' });
 
@@ -866,38 +868,30 @@ function collectAxis(instanceId, effectType, category, withHero, trace, heroId =
     const tileTrace = trace ? [] : null;
     const guildTrace = trace ? [] : null;
     const heroTrace = trace && withHero ? [] : null;
+    // An aggregator holding nothing of this axis adds nothing to it, so it is not walked: most
+    // Tokens on most axes, asked every tick (a Token's Work Time).
+    const fromTile = tile.hasType(effectType);
+    const fromGuild = guild.hasType(effectType);
+    const tileFlat = fromTile ? tile.getFlat(effectType, category, tileTrace) : 0;
+    const guildFlat = fromGuild ? guild.getFlat(effectType, category, guildTrace) : 0;
+    const tileMultipliers = fromTile ? tile.collectMultipliers(effectType, category, tileTrace) : NO_SHARES;
+    const guildMultipliers = fromGuild ? guild.collectMultipliers(effectType, category, guildTrace) : NO_SHARES;
+    const tilePercentages = fromTile ? tile.collectPercentages(effectType, category, tileTrace) : NO_SHARES;
+    const guildPercentages = fromGuild ? guild.collectPercentages(effectType, category, guildTrace) : NO_SHARES;
 
     let buckets;
     if (withHero) {
         const hero = heroContributions(instanceId, effectType, category, heroTrace, heroId);
         buckets = {
-            flat: [
-                tile.getFlat(effectType, category, tileTrace),
-                guild.getFlat(effectType, category, guildTrace),
-                hero.flat
-            ],
-            multipliers: [
-                ...tile.collectMultipliers(effectType, category, tileTrace),
-                ...guild.collectMultipliers(effectType, category, guildTrace),
-                ...hero.multipliers
-            ],
-            percentages: [
-                ...tile.collectPercentages(effectType, category, tileTrace),
-                ...guild.collectPercentages(effectType, category, guildTrace),
-                ...hero.percentages
-            ]
+            flat: [tileFlat, guildFlat, hero.flat],
+            multipliers: [...tileMultipliers, ...guildMultipliers, ...hero.multipliers],
+            percentages: [...tilePercentages, ...guildPercentages, ...hero.percentages]
         };
     } else {
         buckets = {
-            flat: [tile.getFlat(effectType, category, tileTrace), guild.getFlat(effectType, category, guildTrace)],
-            multipliers: [
-                ...tile.collectMultipliers(effectType, category, tileTrace),
-                ...guild.collectMultipliers(effectType, category, guildTrace)
-            ],
-            percentages: [
-                ...tile.collectPercentages(effectType, category, tileTrace),
-                ...guild.collectPercentages(effectType, category, guildTrace)
-            ]
+            flat: [tileFlat, guildFlat],
+            multipliers: [...tileMultipliers, ...guildMultipliers],
+            percentages: [...tilePercentages, ...guildPercentages]
         };
     }
 

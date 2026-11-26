@@ -101,6 +101,23 @@ export class ModifierAggregator {
         // Moves on every change to what this aggregator holds, so a reader may keep an answer
         // derived from it until the number moves (`TileModifiers.growTimeOf`).
         this.version = 0;
+        // The effect types held, for `hasType`, as at `typesVersion`.
+        this.types = null;
+        this.typesVersion = -1;
+    }
+
+    /**
+     * Whether any modifier held is of `effectType`: when none is, every sum below of that axis is
+     * empty, so a reader asked it every tick may skip it unread. Kept until {@link version} moves.
+     */
+    hasType(effectType) {
+        if (this.typesVersion !== this.version) {
+            const types = new Set();
+            for (const mods of this.modifiers.values()) for (const mod of mods) types.add(mod.type);
+            this.types = types;
+            this.typesVersion = this.version;
+        }
+        return this.types.has(effectType);
     }
 
     /**

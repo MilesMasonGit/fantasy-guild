@@ -6,6 +6,9 @@ import * as StationRecipe from '../systems/board/StationRecipe.js';
 import { registerTokenTypes, getTokenType } from '../config/registries/tokenRegistry.js';
 import { registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import { KEYWORD } from '../systems/effects/statements.js';
+import { ModifierAggregator } from '../systems/effects/ModifierAggregator.js';
+import { EFFECT_TYPES, TARGET_CATEGORIES } from '../systems/effects/constants.js';
+import * as TileModifiers from '../systems/board/TileModifiers.js';
 
 /**
  * The engine's per-tick lookups that are kept between ticks rather than worked out again: each must
@@ -68,10 +71,13 @@ describe('a station\'s recipe pool follows the recipes and the Token types', () 
         expect(ids()).toEqual(['memo_r1']);
         registerRecipePools({ memo_skill_a: [recipe('memo_r2')] }, { takeOver: false });
         expect(ids()).toEqual(['memo_r1', 'memo_r2']);
-        registerRecipePools({ memo_skill_b: [recipe('memo_r3')] });
-        registerRecipePools({ memo_skill_b: [] });
+        // Beside the skill's own (it has none), then a takeover with no recipes: the pool empties
+        // though the recipe list and the Token types are as they were.
+        registerRecipePools({ memo_skill_b: [recipe('memo_r3')] }, { takeOver: false });
         registerTokenTypes({ fixture_memo_station: station('memo_skill_b') });
         expect(ids()).toEqual(['memo_r3']);
+        registerRecipePools({ memo_skill_b: [] });
+        expect(ids()).toEqual([]);
     });
 
     it('a Token type registered again with another skill draws the new skill\'s pool', () => {
@@ -99,5 +105,36 @@ describe('a station\'s recipe pool follows the recipes and the Token types', () 
         const pool = StationRecipe.poolFor(getTokenType('fixture_memo_station'));
         expect(StationRecipe.poolFor(getTokenType('fixture_memo_station'))).toBe(pool);
         expect(Object.isFrozen(pool)).toBe(true);
+    });
+});
+
+describe('which axes an aggregator holds follows every modifier added and removed', () => {
+    const mod = (source, type, value = 0.1) => ({ source, type, value, bucket: 'percentage', target: { category: TARGET_CATEGORIES.ALL } });
+
+    it('added, removed by source and cleared', () => {
+        const agg = new ModifierAggregator('memo');
+        expect(agg.hasType(EFFECT_TYPES.WORK_TIME)).toBe(false);
+        agg.addModifier(mod('a', EFFECT_TYPES.WORK_TIME));
+        expect(agg.hasType(EFFECT_TYPES.WORK_TIME)).toBe(true);
+        expect(agg.hasType(EFFECT_TYPES.YIELD)).toBe(false);
+        agg.addModifier(mod('b', EFFECT_TYPES.YIELD));
+        expect(agg.hasType(EFFECT_TYPES.YIELD)).toBe(true);
+        agg.removeModifiersBySource('a');
+        expect(agg.hasType(EFFECT_TYPES.WORK_TIME)).toBe(false);
+        expect(agg.hasType(EFFECT_TYPES.YIELD)).toBe(true);
+        agg.clearAll();
+        expect(agg.hasType(EFFECT_TYPES.YIELD)).toBe(false);
+    });
+
+    it('a Token axis reads a modifier the moment it arrives, and its authored value once it goes', () => {
+        GameState.state = { board: { tokens: {}, nextTokenOrder: 0, flags: {}, nextFlagOrder: 0 }, heroes: [] };
+        TileModifiers.clearAll();
+        const agg = TileModifiers.getTokenAggregator('tok_memo');
+        agg.addModifier(mod('a', EFFECT_TYPES.YIELD));
+        expect(TileModifiers.resolveAxis('tok_memo', EFFECT_TYPES.WORK_TIME, 1000)).toBe(1000);
+        agg.addModifier(mod('b', EFFECT_TYPES.WORK_TIME, -0.25));
+        expect(TileModifiers.resolveAxis('tok_memo', EFFECT_TYPES.WORK_TIME, 1000)).toBe(750);
+        agg.removeModifiersBySource('b');
+        expect(TileModifiers.resolveAxis('tok_memo', EFFECT_TYPES.WORK_TIME, 1000)).toBe(1000);
     });
 });
