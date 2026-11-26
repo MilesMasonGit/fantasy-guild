@@ -171,6 +171,15 @@ beside the entry's `tempo` and `purpose` keeps its `config.xp` (a recipe's `xp`)
 `changePackTool.mjs balance --out` sets it on the XP numbers it proposes. The owner sees and clears a
 pin in the editor, under the XP field.
 
+An item's coin worth (`coinWorth`) is derived the same way: Recalculate writes its value in whole
+coins. A pack that sets a worth by hand pins it beside: `"sim": { "coinWorthPinned": true }` on the
+item, and Recalculate keeps the number. Coin costs (`shop.coins` on a Shop Token, `coins` on a Guild
+Hall star's rank, `prices[ring].coins` in the world tables) and an enemy's `enemy.coinDrop` are never
+derived: a pack writes them. `node cms/changePackTool.mjs coins [--from <workspace.json>]` lists
+what one hero earns in coins by each stage, what the Ledger's coin curve proposes for every price,
+and each enemy's Coin drop beside what its loot sells for; `balance --out` sets the coins of every
+price that already asks some to the curve's number.
+
 ### Declaring a move (optional)
 
 A pack that means to move a stage's time (the time a new game first has everything planned for
@@ -204,7 +213,7 @@ node cms/changePackTool.mjs check cms/incoming/<id>.json   # will the CMS accept
 node cms/changePackTool.mjs gate cms/incoming/<id>.json    # the gate: may the pack go to the owner?
 ```
 
-Without `--from`, `stamp`, `gate`, `world` and `balance` read `cms/workspace/workspace.json`
+Without `--from`, `stamp`, `gate`, `world`, `balance` and `coins` read `cms/workspace/workspace.json`
 when it exists. Without it they read the newest autosave while it is newer than every file in
 `data/`; otherwise (`data/` is newer, or there is no autosave) `data/` with `cms/plan/plan.json`,
 which may flag conflicts the owner then judges. Each prints which it used and why
