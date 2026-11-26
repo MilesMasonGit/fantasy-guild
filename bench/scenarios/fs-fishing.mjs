@@ -16,10 +16,14 @@
 //
 // The mat is pinned to the 1920 × 1040 the water map was drawn for. Its types are registered here,
 // in this scenario's own process, so no other scenario's content or work changes.
+//
+// Only the fixture spot kinds arrive: every shipped spot kind (`data/tokens.json`) is held to
+// "never by itself" here (`stillShippedSpots`), so a fishing content Sync never moves FS's work.
 
 import { GameState } from '../../src/state/GameState.js';
 import * as EquipmentManager from '../../src/systems/equipment/EquipmentManager.js';
-import { registerTokenTypes } from '../../src/config/registries/tokenRegistry.js';
+import { registerTokenTypes, getAllTokenTypes } from '../../src/config/registries/tokenRegistry.js';
+import { spotOf, arrivesByItself } from '../../src/config/registries/fishingSpots.js';
 import { registerItems } from '../../src/config/registries/itemRegistry.js';
 import { standOnWater } from '../../src/tests/fixtures/fishingWater.js';
 
@@ -78,6 +82,22 @@ registerTokenTypes({
     }
 });
 
+const FIXTURE_SPOTS = new Set(['bench_spot', 'bench_rare_spot']);
+
+/**
+ * Re-register every spot kind but the fixture ones that would arrive by itself with its clock off
+ * (`everyMinutes: 0`, as the Fish Shoal ships): it stays a spot kind and never lands on FS's water.
+ * Run in `build`, after the engine has loaded `data/`.
+ */
+function stillShippedSpots() {
+    const stilled = {};
+    for (const [typeId, def] of Object.entries(getAllTokenTypes())) {
+        if (FIXTURE_SPOTS.has(typeId) || !arrivesByItself(spotOf(def))) continue;
+        stilled[typeId] = { ...def, spot: { ...def.spot, everyMinutes: 0 } };
+    }
+    if (Object.keys(stilled).length) registerTokenTypes(stilled);
+}
+
 /** By the sea, and by the lake: dry points, each with water in its reach. */
 const HUT_BY_SEA = { x: 960, y: 740 };
 const HUT_BY_LAKE = { x: 640, y: 360 };
@@ -92,6 +112,7 @@ export default {
         const { placeAt, makeHeroes, orderAt, inventory } = fixtures;
         setMatTuning('matSteps', MAT_STEPS);
         setMatTuning('matAspect', MAT_ASPECT);
+        stillShippedSpots();
         standOnWater({ biome: { coast: 1 } });
 
         placeAt('bench_hall', 1500, 520);

@@ -16,6 +16,8 @@ import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
 import { matW, matH } from '../config/matGeometry.js';
 import * as fixtures from '../../bench/fixtures.mjs';
 import fishingScenario from '../../bench/scenarios/fs-fishing.mjs';
+import { getTokenType, getAllTokenTypes } from '../config/registries/tokenRegistry.js';
+import { spotOf, isSpotKind, arrivesByItself } from '../config/registries/fishingSpots.js';
 
 /**
  * The bench's fishing scenario (FS) does what it says: on its sea and lake, spots arrive by
@@ -93,5 +95,20 @@ describe('FS, the fishing scenario', () => {
         expect(InventoryManager.getItemCount('bench_lure')).toBeGreaterThan(800);
         const spots = BoardState.tokens().filter(t => t.typeId === 'bench_spot' || t.typeId === 'bench_rare_spot');
         expect(spots.every(s => GroundRules.waterKindAt(s.x, s.y) !== null)).toBe(true);
+        // Only the fixture kinds keep clocks and land: shipped spot kinds never move FS's work.
+        expect(Object.keys(GameState.state.board.spotClocks || {}).sort()).toEqual(['bench_rare_spot', 'bench_spot']);
+        expect(BoardState.tokens().filter(t => isSpotKind(getTokenType(t.typeId))).every(t => t.typeId.startsWith('bench_'))).toBe(true);
+    });
+
+    it('arrives only its own fixture spot kinds, whatever spot kinds the content ships', () => {
+        resetMatTuning();
+        GameState.initNew();
+        InventoryManager.init();
+        fishingScenario.build({ fixtures, setMatTuning });
+        const arriving = Object.entries(getAllTokenTypes())
+            .filter(([, def]) => arrivesByItself(spotOf(def)))
+            .map(([id]) => id)
+            .sort();
+        expect(arriving).toEqual(['bench_rare_spot', 'bench_spot']);
     });
 });
