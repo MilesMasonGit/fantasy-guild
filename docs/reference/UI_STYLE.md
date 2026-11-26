@@ -227,7 +227,7 @@ normal text colour; a new meaning needs the owner's OK.
   grid, always in view; **Skills / Combat**, two tabs (glyph and word, the open one over a gold
   line). **Skills**: in columns of four, one list by kind in one colour, no specialist column (owner
   2026-11-21, T-643): combat, gathering, making (Fletching, Enchanting and Tailor among the making
-  skills), then Faith, Summoning, Crime, Taming and Science; no headers, no scrolling; each cell the skill's icon at 3x (48 px), its name in white, its level and the XP
+  skills), then Faith, Summoning, Crime and Science; no headers, no scrolling; each cell the skill's icon at 3x (48 px), its name in white, its level and the XP
   bar; hover gives a clean stat block under the name and level (XP, to the next level, XP/h); a
   click opens the **skill panel**, a chamfer panel on the drawer's teal backdrop standing over the
   drawer's top edge, its right on the blocks' right, with its own X (Escape closes it first;

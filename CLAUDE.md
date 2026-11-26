@@ -59,6 +59,13 @@ built, so batches stay small and the owner looks often):
   or tweak items, recipes, Tokens and buildings. It works on branch
   `planning-content`, by the owner's rules in
   [`docs/reference/CONTENT_PHILOSOPHY.md`](docs/reference/CONTENT_PHILOSOPHY.md).
+- **Balancer** (owner, 2026-11-25): type `/balancer` in a fresh session (Opus)
+  to keep the game's numbers by the owner's rules and dials
+  ([`concept_balancer_agent.md`](docs/active/concept_balancer_agent.md)). It
+  works on branch `planning-balance`, owns `BALANCE_RULES.md`, the balance
+  scripts and the Guild Balance Dials page, proposes dial changes and number
+  packs for approval, and hands empty stretches to `/content` on
+  `docs/active/balance_gaps.md`.
 - **Owner**: shares ideas and answers interviews with the planning agent,
   makes art, plays the game and the eye-checks, writes what they notice into
   `owner_feedback.md`, and answers the director's parked questions.

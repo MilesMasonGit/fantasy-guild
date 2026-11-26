@@ -590,6 +590,13 @@ Owner 2026-11-01: Guild Hall H1 and the walker glide need no look (marked looked
 
 None open.
 
+## For the content agent (queue, Wed 25 Nov)
+
+- **Harpoon fish later** (owner): Stingray and Shark need a harpoon from the start but harpoons need Mythril+; move harpoon-only fish to later biomes and spots. Tests red: NewGameOpening (every material, every tool), ToolsAsGear (no starter harpoon).
+- **Rule 1, tool materials** (owner: routes to regain tools, base items from enemies): Mythril, Adamantine and Darkmetal ore, Maple, Cedar, Mahogany and Ebony wood have only tool-gated sources; add a toolless source (enemy drops). Test red: ContentRules Rule 1. The pending fish-tool-free pack is no longer needed.
+- Packs owed: 860 R3 gathering foundations (spec sent), 740 C5 enemy kinds (spec sent), Taming leftovers (retarget the draught to Farming XP), coin worths and coin costs (870 T-703, after C3 merges), Faith first shrine, Crime steal tables and Hideout (Slime Pit is a boss camp), Summoning circle and summons, Science Laboratory and tracks, signature perks (gathering, building, combat). Engine drafts in `docs/active/research/pending_packs/engine_packs/`. Planning lists: enemies first.
+- Small: two effects named Second Wind (Emerald Amulets and the Melee perk), rename one; the Coral Reef should be warm sea only.
+
 ## Questions for the owner
 
 **Many Hands (800 P3, Crafting 99: two recipes at once at a station), Wed 25 Nov.** Recommendation first. P3-1 build: (A) a second lane, own clock and materials, two phases; (B) shared clock at the longer time, a third of the cost; (C) drop the rule, a bigger Double Item instead. P3-2 runs: (A) only while that station's hero holds it; (B) any guild hero. P3-3 same recipe twice: (A) no; (B) yes. P3-4 one short of materials: (A) the other carries on; (B) both wait. P3-5 second progress: (A) card only; (B) a second ring on the mat. P3-6 stations: (A) making stations with a pool, Crafting-narrowed; (B) any. P3-7 second picker shows: (A) while the station's hero holds it or once set; (B) everywhere once any hero holds it.

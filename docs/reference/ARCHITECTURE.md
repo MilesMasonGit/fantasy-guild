@@ -556,8 +556,11 @@ src/config/DatabaseManager.js ──▶ src/config/registries/*.js ──▶ sys
 Game** overwrites `data/` and commits it on the checked-out branch. It imports 62 game modules
 directly (mostly `src/config/registries`, `src/systems/progression/ledger/engine.js` and `plan.js`, `src/systems/effects`,
 the content rules in `src/systems/core/*Rule.js`, and one UI file,
-`src/ui/components/atlas/worldMapLayout.js`), so a game-side change can break it. Internals: see
-[`cms/README.md`](../../cms/README.md).
+`src/ui/components/atlas/worldMapLayout.js`), so a game-side change can break it. Its Recalculate
+writes the derived fields the game reads (`cms/src/engine/sim/writeBack.js`): an item's `value` and
+the `coinWorth` that follows from it once the content uses coins (`cms/src/engine/ledger/coins.js`,
+kept as typed when pinned),
+cycle times, output quantities and XP. Internals: see [`cms/README.md`](../../cms/README.md).
 
 ---
 

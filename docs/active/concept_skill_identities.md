@@ -84,6 +84,8 @@ camp's Crime level and steal table, Crime's level climb.
 **Cut 2026-11-22 (owner):** Taming leaves the game. Its pasture idea (wild animals
 tamed into a Pasture) and its helpers that work Tokens without a hero are dropped with it. Wool, which
 Tailor's tier 2 needs, now drops from a Sheep enemy (owner, 2026-11-22; pack `2026-11-22-sheep-wool`).
+Confirmed 2026-11-25 (owner). The code dropped it in brief 810 K1; the plan's Stable and Banana Smoothie's
+Taming Draught (in the CMS) are left over, for the content agent (T-712).
 
 ## Science: mastery of nodes
 

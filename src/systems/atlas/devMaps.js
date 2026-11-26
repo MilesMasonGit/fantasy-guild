@@ -32,9 +32,10 @@ const BASE_MAPS = Object.freeze({
             { typeId: 'token_stone_outcrop', weight: 2 }
         ]
     }),
+    // A rocky shore: its fish come from the spots that drift in on its sea.
     coast: Object.freeze({
         id: 'dev_map_coast', name: 'Coast Map', kind: 'base', biome: 'coast', points: 12,
-        nodes: [{ typeId: 'token_coast', weight: 1 }]
+        nodes: [{ typeId: 'token_stone_outcrop', weight: 1 }]
     }),
     meadow: Object.freeze({
         id: 'dev_map_meadow', name: 'Meadow Map', kind: 'base', biome: 'meadow', points: 20,
@@ -133,8 +134,7 @@ export const DEV_MAPS = Object.freeze({
 
 const GLYPHS = Object.freeze({
     token_oak_tree: 'O', token_fir_tree: 'F', token_redberry_bush: 'R', token_blackberry_bush: 'B',
-    token_copper_ore_vein: 'C', token_coal_vein: 'K', token_stone_outcrop: 'S', token_goblin_camp: 'G',
-    token_coast: 'W'
+    token_copper_ore_vein: 'C', token_coal_vein: 'K', token_stone_outcrop: 'S', token_goblin_camp: 'G'
 });
 const GROUND = Object.freeze({ grass: ',', rock: '^', sand: ':', water: '~' });
 
@@ -185,6 +185,6 @@ export function asciiLayout(result, { artRadius = () => 64 } = {}) {
     }
 
     const legend = 'H Hall, O Oak, F Fir, R Redberry, B Blackberry, C Copper, K Coal, S Stone, G Goblin Camp, '
-        + 'W Coast, ? other (capital: its centre; lower case: the rest of its art)';
+        + '? other (capital: its centre; lower case: the rest of its art)';
     return [legend, ...tokens, '', 'Ground: , grass  ^ rock  : sand  ~ water', ...ground].join('\n');
 }

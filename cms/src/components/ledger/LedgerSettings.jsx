@@ -214,6 +214,29 @@ export default function LedgerSettings() {
         </table>
       </Card>
 
+      <Card title="Coin costs" help="The coin curve: from a stage on, a coin cost (a Shop Token, a Guild Hall rank, settling a ring) asks the coins one hero earns in this many minutes there, and a Guild Hall rank that many times its rank. A later stage earns more an hour, so the same minutes already cost more further out. The balancing preview sets the prices that ask coins to these numbers; which prices ask coins is the content's.">
+        <div className="flex flex-wrap items-center gap-3 text-[11px]" style={{ color: 'var(--color-text-secondary)' }} data-coin-curve>
+          {settings.coinCurve.length === 0 && <span className="text-gray-500">no curve: no coin cost is proposed</span>}
+          {settings.coinCurve.map((p, i) => (
+            <span key={p.tier} className="flex items-center gap-1">
+              {tierLabel(p.tier)}:
+              <NumberInput value={p.minutes} min={0.1} onCommit={(v) => save({ coinCurve: settings.coinCurve.map((q, j) => (j === i ? { ...q, minutes: v } : q)) })} label={`Coin cost minutes from ${tierLabel(p.tier)}`} width={56} />
+              min
+              <IconButton onClick={() => save({ coinCurve: settings.coinCurve.filter((_, j) => j !== i) })} label={`Remove the coin cost point at ${tierLabel(p.tier)}`}><Trash2 size={11} /></IconButton>
+            </span>
+          ))}
+          <IconButton
+            onClick={() => {
+              const last = settings.coinCurve[settings.coinCurve.length - 1];
+              save({ coinCurve: [...settings.coinCurve, { tier: last ? last.tier + 1 : 0, minutes: last ? last.minutes : 10 }] });
+            }}
+            label="Add a coin cost point"
+          >
+            <Plus size={12} />
+          </IconButton>
+        </div>
+      </Card>
+
       <Card title="Rules" help="The roster rules the pace follows.">
         <select
           value={settings.rulesVersion}

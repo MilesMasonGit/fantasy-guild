@@ -35,6 +35,10 @@ const NOT_CONTENT_IDS = {
     token_cap: 'retired Guild Hall upgrade id (SaveMigration drops it from old saves)',
     token_bank_slots: 'retired Guild Hall upgrade ids (SaveMigration drops them from old saves)',
     token_bank_tabs: 'retired Guild Hall upgrade ids (SaveMigration drops them from old saves)',
+    token_coast: 'retired fixed water (fishingSpots.RETIRED_WATER_TOKENS: SaveMigration drops it from old saves)',
+    token_river: 'retired fixed water (fishingSpots.RETIRED_WATER_TOKENS: SaveMigration drops it from old saves)',
+    token_lake: 'retired fixed water (fishingSpots.RETIRED_WATER_TOKENS: SaveMigration drops it from old saves)',
+    token_bog_pool: 'retired fixed water (fishingSpots.RETIRED_WATER_TOKENS: SaveMigration drops it from old saves)',
     item_coin: 'SpriteLayer legacy alias next to item_coins, kept as a harmless match'
 };
 

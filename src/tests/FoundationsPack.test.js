@@ -78,8 +78,10 @@ describe('the shipped data, after the Sync', () => {
 
     // The CMS writes a Token's description from its rules on Sync, so the pack's hand-written
     // descriptions for the two new Foundations never ship; everything else must.
-    // Fields a later pack has moved since: the Coast's work and its sim tags (the fishing items pack).
-    const LATER = { token_coast: ['config', 'sim'] };
+    // Fields a later pack has moved since, by entry; and entries a later pack deleted: the Coast (the
+    // fishing spots pack retired the fixed waters).
+    const LATER = {};
+    const DELETED_LATER = new Set(['token_coast']);
 
     it('holds every entry of the pack as the pack sets it, the description and the fields later packs moved aside', () => {
         const shipped = shippedWorkspace();
@@ -89,6 +91,10 @@ describe('the shipped data, after the Sync', () => {
             return canonicalJson(out);
         };
         for (const entry of PACK.entries) {
+            if (DELETED_LATER.has(entry.id)) {
+                expect(currentValue(shipped, entry.kind, entry.id), `${entry.kind} ${entry.id} is gone`).toBeNull();
+                continue;
+            }
             expect(asPacked(entry.id, currentValue(shipped, entry.kind, entry.id)), `${entry.kind} ${entry.id}`)
                 .toBe(asPacked(entry.id, proposedValue(entry)));
         }

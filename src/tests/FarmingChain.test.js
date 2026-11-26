@@ -126,16 +126,16 @@ describe('The Farming chain in shipped data (7.4)', () => {
     });
 
     describe('Apples (SP-73)', () => {
-        it('the Apple Orchard is a spawner of Apple Trees within its reach, allowance 2, every 45 s, paying 1 Apple Seed', () => {
+        it('the Apple Orchard is a spawner of Apple Trees within its reach, allowance 2, every 45 s, for free', () => {
             expect(orchard.spawner).toEqual({
                 spawns: [{ typeId: 'token_apple_tree', weight: 1 }],
                 allowance: 2,
                 intervalMs: 45000,
-                upkeep: [{ itemId: 'item_apple_seed', quantity: 1 }],
                 withinReach: true,
             });
             expect(orchard.config).toBeNull();
             expect(orchard.shop).toBeUndefined();
+            expect(orchard.effects ?? []).toEqual([]);
         });
 
         it('the Orchard plants whole Apple Trees: its family is the Tree alone', () => {

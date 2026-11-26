@@ -199,8 +199,10 @@ function familySpawnerOf(book, def, spawners) {
  * @param {number} [options.campMembers]  copies of a refilling Token a camp hands one hero
  * @param {(itemId: string, cap: number) => number} [options.hallUnitHours]  hours one of an item takes
  *   to gather at Typical before the Hall (a Hall rank's price); Bare's when absent
+ * @param {(coins: number, cap: number) => number} [options.hallCoinHours]  hours `coins` take to earn at
+ *   Typical before the Hall (a Hall rank's coins); never asked of a rank that asks none
  */
-export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours, hallHorizonHours = horizonHours, inputScale = () => 1, campMembers = DEFAULT_CAMP_MEMBERS, hallUnitHours = unitHours }) {
+export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours, hallHorizonHours = horizonHours, inputScale = () => 1, campMembers = DEFAULT_CAMP_MEMBERS, hallUnitHours = unitHours, hallCoinHours = () => Infinity }) {
     const tokenIds = book.tokenIds();
     const supports = tokenIds.filter(id => {
         const def = book.token(id);
@@ -371,9 +373,10 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
         return track.price(rank).every(p => within(itemTier(p.itemId), cap));
     }
 
-    /** Hours to gather a Hall price at Typical before the Hall: one hero's hours on each item, added. */
-    function hallPriceHours(price, cap) {
-        return price.reduce((sum, p) => sum + p.quantity * hallUnitHours(p.itemId, cap), 0);
+    /** Hours to gather a Hall price at Typical before the Hall: one hero's hours on each item, added, and on its coins. */
+    function hallPriceHours(price, cap, coins = 0) {
+        const items = price.reduce((sum, p) => sum + p.quantity * hallUnitHours(p.itemId, cap), 0);
+        return coins > 0 ? items + hallCoinHours(coins, cap) : items;
     }
 
     /** A track's rank in a setup, its free ranks counted. */
@@ -385,7 +388,7 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
     function lightCost(id, cap) {
         const t = trackById.get(id);
         if (!t || !rankWithin(t, 1, cap)) return Infinity;
-        return hallPriceHours(t.price(1), cap);
+        return hallPriceHours(t.price(1), cap, t.coins(1));
     }
 
     /**
@@ -401,7 +404,7 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
         const track = trackById.get(offer.upgrade);
         let next = offer.apply(setup);
         let price = 0;
-        for (let r = held + 1; r <= offer.rank; r++) price += hallPriceHours(track.price(r), cap);
+        for (let r = held + 1; r <= offer.rank; r++) price += hallPriceHours(track.price(r), cap, track.coins(r));
         let path = [];
         if (held === 0) {
             const opening = openingPath(offer.upgrade, graph, (id) => heldRank(setup, id), (id) => lightCost(id, cap));

@@ -155,8 +155,10 @@ describe('the placeholder tables', () => {
     });
 
     it('over 500 seeds the only findings are today\'s holes, each one also listed by the generation', () => {
-        // Herbs and Arcane have too few origins; a cell whose only origins yield nothing a price may
+        // Herbs and Arcane have too few origins and Waters none (fish come from spots on the water,
+        // as in the shipped tables); a cell whose only origins yield nothing a price may
         // name (a Wild Wheat Patch's crop is not read) leaves the cell beyond it nothing to ask for.
+        const HOLES = ['herbs', 'waters', 'arcane'];
         const tables = PLACEHOLDER;
         const { materialsOf, hallOrigins } = lookups();
         const kinds = new Set();
@@ -165,14 +167,14 @@ describe('the placeholder tables', () => {
             const noSource = new Set();
             for (const p of world.problems) {
                 expect([PROBLEM.EMPTY_TABLE, PROBLEM.NO_PRICE_SOURCE]).toContain(p.kind);
-                if (p.kind === PROBLEM.EMPTY_TABLE) expect(['herbs', 'arcane']).toContain(p.line);
+                if (p.kind === PROBLEM.EMPTY_TABLE) expect(HOLES).toContain(p.line);
                 else noSource.add(p.cellId);
             }
             const cells = new Map(world.cells.map(c => [c.id, c]));
             for (const f of worldFindings(world, tables, { materialsOf, hallOrigins })) {
                 kinds.add(f.check);
                 expect([WORLD_CHECK.NO_MAIN, WORLD_CHECK.PRICE_PLACES]).toContain(f.check);
-                if (f.check === WORLD_CHECK.NO_MAIN) expect(['herbs', 'arcane']).toContain(cells.get(f.cellId).wedge);
+                if (f.check === WORLD_CHECK.NO_MAIN) expect(HOLES).toContain(cells.get(f.cellId).wedge);
                 else expect(noSource.has(f.cellId)).toBe(true);
             }
         }

@@ -15,6 +15,7 @@ import GearLevelField from './GearLevelField';
 import GearDefenceFields from './GearDefenceFields';
 import FishingItemFields from './FishingItemFields';
 import PlanFields from '../shared/PlanFields';
+import { coinWorthFromValue, isCoinWorthPinned } from '../../engine/ledger/coins.js';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
 /** The Item editor: simplified field set. Value is derived by the balance engine and cannot be typed; inputs and recipes match on exact item IDs, so there are no tags. */
@@ -320,19 +321,30 @@ function BreakChanceField({ item, isTool, onChange }) {
 }
 
 /**
- * What one copy sells for from the Bank, written as `coinWorth` only when a whole number of 0 or
- * more (`itemCoins.js`). Blank writes nothing and sells for 0. The words typed are kept while typing.
+ * What one copy sells for from the Bank, `coinWorth` (`itemCoins.js`). Recalculate writes it from
+ * the item's value once the content uses coins (`engine/ledger/coins.js`); a whole number of 0 or more typed here is written and
+ * pinned (`sim.coinWorthPinned`), so Recalculate keeps it, and unticking the pin derives it again.
+ * Blank, or a number that is not one, writes nothing and drops the pin. The words typed are kept while typing.
  */
 function CoinWorthField({ item, onChange }) {
   const [draft, setDraft] = useState(item.coinWorth == null ? '' : String(item.coinWorth));
+  const pinned = isCoinWorthPinned(item);
+  const sim = (pin) => {
+    const next = { ...(item.sim || {}) };
+    if (pin) next.coinWorthPinned = true;
+    else delete next.coinWorthPinned;
+    return Object.keys(next).length ? next : undefined;
+  };
   const write = (text) => {
     setDraft(text);
     const n = Number(text);
-    onChange({ coinWorth: text.trim() !== '' && Number.isInteger(n) && n >= 0 ? n : undefined });
+    const ok = text.trim() !== '' && Number.isInteger(n) && n >= 0;
+    onChange({ coinWorth: ok ? n : undefined, sim: sim(ok) });
   };
   const worth = coinWorthOf(item);
+  const fromValue = coinWorthFromValue(item.value);
   return (
-    <Field label="Coin worth" className="col-span-1">
+    <Field label="Coin worth" className="col-span-1" derived={!pinned}>
       <input
         type="number"
         min={0}
@@ -344,8 +356,25 @@ function CoinWorthField({ item, onChange }) {
         onChange={(e) => write(e.target.value)}
         className="w-full"
       />
+      <label className="flex items-start gap-1.5 mt-1.5 cursor-pointer select-none" data-coin-pin={pinned ? 'on' : 'off'}>
+        <input
+          type="checkbox"
+          aria-label="Pin this coin worth"
+          checked={pinned}
+          onChange={(e) => onChange({ sim: sim(e.target.checked) })}
+          className="rounded border-white/10 cursor-pointer mt-0.5"
+        />
+        <span className="text-[10px] leading-relaxed" style={{ color: pinned ? 'var(--color-accent-hover)' : 'var(--color-text-muted)' }}>
+          {pinned ? 'Pinned' : 'Pin this number'}
+        </span>
+      </label>
       <p data-field="coin-worth-line" className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
-        One sells for {worth} {worth === 1 ? 'coin' : 'coins'} from the Bank. A whole number; blank sells for 0.
+        One sells for {worth} {worth === 1 ? 'coin' : 'coins'} from the Bank.{' '}
+        {pinned
+          ? 'Pinned: Recalculate keeps it. Untick to take it from the value again.'
+          : fromValue === null
+            ? 'Nothing prices it yet, so Recalculate writes none (it sells for 0) unless a number is pinned.'
+            : `From its value (${fromValue}) at each Recalculate, once anything in the game asks or drops coins; a number typed here is pinned.`}
       </p>
     </Field>
   );

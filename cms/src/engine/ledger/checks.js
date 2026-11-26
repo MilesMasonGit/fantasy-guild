@@ -75,6 +75,7 @@ export const CHECKS = Object.freeze({
     'hall-payback': { group: 'D', severity: SEVERITY.WARN, label: 'A Guild Hall rank slow to pay back' },
     'ring-open': { group: 'D', severity: SEVERITY.WARN, label: 'A ring of the world map opening before the stage before it ends' },
     'boost-target': { group: 'D', severity: SEVERITY.WARN, label: 'A boost over its target strength' },
+    'coin-supply': { group: 'D', severity: SEVERITY.WARN, label: 'A coin price nothing earns by then' },
     unmodelled: { group: 'D', severity: SEVERITY.INFO, label: 'A factor the calculator cannot read' },
     'calibration-stale': { group: 'D', severity: SEVERITY.WARN, label: 'The calculator needs calibrating' },
     'hub-one-source': { group: 'E', severity: SEVERITY.WARN, label: 'A hub with one source' },

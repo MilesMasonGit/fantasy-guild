@@ -542,16 +542,12 @@ describe('content: the rules the audit checks', () => {
             expect(toolItemFor(neededToolOf(def), items), tokenId).toBeTruthy();
         }
         // Every kind a shipped Token needs (any of a water's kinds) has a starter, one each, in kind order.
-        // The net and the trap arrive with the content pack: whether a new game starts
-        // with one is that pack's call.
         const starters = starterToolIds(items).map(id => items[id].tool.kind);
         const needed = new Set(needing.flatMap(([, def]) => neededToolOf(def).kinds || [neededToolOf(def).kind]));
         for (const kind of needed) expect(starters, kind).toContain(kind);
         expect(starters).toEqual(TOOL_KINDS.map(k => k.id).filter(k => starters.includes(k)));
-        // A water's rod pool with no bait is never fished and the audit names it; today's waters keep
-        // theirs until the Fishing pack replaces their pools.
-        const retired = /its catch pool for a .* takes no bait, so no hero fishes it/;
-        expect(toolFindings({ items, tokens, recipes: read('tokenRecipes.json') }).filter(f => !retired.test(f.message))).toEqual([]);
+        // A water's rod pool with no bait is never fished, and the audit would name it.
+        expect(toolFindings({ items, tokens, recipes: read('tokenRecipes.json') })).toEqual([]);
     });
 });
 

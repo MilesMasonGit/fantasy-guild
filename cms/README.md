@@ -53,7 +53,7 @@ sits in `<dir>/../plan`), `--plan=<dir>`, `--backups=<dir>`, or
 and `backups/`). Only the project's own `data/` and plan are ever committed.
 
 The change-pack helper `changePackTool.mjs` (`stamp`, `gate`, `world`,
-`balance`; `incoming/README.md`) runs beside it and reads the same workspace
+`balance`, `coins`; `incoming/README.md`) runs beside it and reads the same workspace
 file by default.
 
 **Before writing a change pack**, an agent runs `npm run cms -- validate --data`
