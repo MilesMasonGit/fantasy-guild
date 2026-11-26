@@ -11,9 +11,10 @@
  * ⚠️ Design commentary on authoring and retuning Tokens lives in `docs/archive/token_content_notes.md`.
  *
  * The rule that most needs restating here, because a test depends on it:
- * ⚠️ **every material must have at least one tool-free source.**
- * `ContentRules.test.js` asserts it mechanically — it is the only thing
- * preventing a supply hard-lock.
+ * ⚠️ **every material a tool is made from must have a source that needs no tool**,
+ * so a lost tool can always be made again. `ContentRules.test.js` asserts it
+ * mechanically (`toolRule.toolMaterialGaps`) — it is the only thing preventing
+ * a tool hard-lock.
  *
  * ⚠️ **Never hand-edit `data/tokens.json`.**
  * The CMS writes it wholesale; anything added by hand is destroyed on the next
@@ -245,7 +246,7 @@ export function productionRoutes(typeId) {
     // Pooled recipes count as routes, so
     // content validation sees a Kitchen's whole Cooking pool. Without this,
     // opting a station into a pool would silently exempt everything it makes
-    // from rule 1's tool-free-source check.
+    // from rule 1's check that a tool's materials need no tool.
     const recipes = recipesForToken(def);
     if (recipes.length) {
         return recipes.map(r => ({

@@ -183,3 +183,64 @@ function catchFindings(token, tokenId, items, best, say) {
     if ((token.config?.outputs || []).length) say('has catch pools, so its Outputs are never made: the catch replaces them');
     if (token.needsTool) say('has catch pools, so its Needs tool is ignored: any tool its pools name will do, at any tier');
 }
+
+/**
+ * **The tool rebuild rule**: the materials a tool is made from that no source gives without a tool.
+ * A hero who loses or breaks a tool must be able to make it again without one, so every material
+ * a tool's recipe needs, and every material those are made from through a source that needs no
+ * tool, must have at least one such source: an enemy's drop, a Token worked barehanded, a Token's
+ * trickle. A source needs a tool when its Token's work needs one in hand (`neededToolOf`), when
+ * its recipe asks for a tool nearby (a context tag in `toolTags`), and always for a catch.
+ * Materials no tool is made from (fish, food) are outside the rule.
+ *
+ * Pure: the caller hands in the catalogues, and `routesOf(def)`, a Token's production routes in
+ * `tokenRegistry.productionRoutes`' shape (`[{ id, inputs, outputs, requiresContext }]`); trickle
+ * and catches are read here.
+ *
+ * @param {{ tokens?: Record<string, object>, items?: Record<string, object>,
+ *   routesOf?: (def: object) => { id?: string|null, inputs?: object[], outputs?: object[], requiresContext?: string[] }[],
+ *   toolTags?: Set<string> }} content
+ * @returns {{ itemId: string, sources: { by: string, needsTool: boolean }[] }[]} each gap with every
+ *   source that makes it (none when nothing does), by item id
+ */
+export function toolMaterialGaps({ tokens = {}, items = {}, routesOf = () => [], toolTags = new Set() } = {}) {
+    const ids = (lines) => (lines || []).map(l => l?.itemId).filter(Boolean);
+    const sources = [];
+    for (const [key, def] of Object.entries(tokens || {})) {
+        if (!def || typeof def !== 'object') continue;
+        const id = def.id || key;
+        const heldTool = !!neededToolOf(def);
+        for (const route of routesOf(def) || []) {
+            const nearbyTool = (route.requiresContext || []).some(tag => toolTags.has(tag));
+            sources.push({
+                by: route.id ? `${id} (${route.id})` : id, inputs: ids(route.inputs), outputs: ids(route.outputs),
+                needsTool: heldTool || nearbyTool
+            });
+        }
+        for (const t of def.trickle || []) {
+            if (t?.itemId) sources.push({ by: `${id} (trickle)`, inputs: [], outputs: [t.itemId], needsTool: false });
+        }
+        for (const pool of catchPoolsOf(def)) {
+            sources.push({ by: `${id} (catch)`, inputs: pool.bait ? [pool.bait] : [], outputs: ids(pool.catches), needsTool: true });
+        }
+    }
+    const makers = (itemId) => sources.filter(s => s.outputs.includes(itemId));
+    const isTool = (itemId) => !!toolOf(items?.[itemId]);
+
+    const chain = new Set();
+    const next = sources.filter(s => s.outputs.some(isTool)).flatMap(s => s.inputs);
+    while (next.length) {
+        const itemId = next.pop();
+        if (chain.has(itemId)) continue;
+        chain.add(itemId);
+        for (const s of makers(itemId)) if (!s.needsTool) next.push(...s.inputs);
+    }
+
+    const gaps = [];
+    for (const itemId of [...chain].sort()) {
+        const made = makers(itemId);
+        if (made.some(s => !s.needsTool)) continue;
+        gaps.push({ itemId, sources: made.map(s => ({ by: s.by, needsTool: s.needsTool })) });
+    }
+    return gaps;
+}
