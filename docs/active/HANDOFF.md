@@ -1,53 +1,57 @@
-# HANDOFF — what a fresh director resumes from
+# HANDOFF: what a fresh director resumes from
 
-*Replaced whole each time. Written Mon 23 Nov 2026, 05:00, after batch 12 merged. Read `CLAUDE.md`,
-this file and `STATUS.md` (batch 12 section: the 05:00 summary, rows, content packs owed, the notes
-for the planning agent), then verify with `git worktree list` and `git log --oneline -5`.*
+*Replaced whole each time. Written Wed 25 Nov 2026, evening, during the owner's mechanics week. Read `CLAUDE.md`, this file and `STATUS.md` (the dated summaries at the top, "For the content agent", "Questions for the owner"), then verify with `git worktree list` and `git log --oneline -5`.*
 
-## On `main`
+## The week's plan (owner, 25 Nov)
 
-Batch 12 is merged and pushed (939f3d05): briefs 710, 720, 730, 735 V1-V3, 740 C1, C3, C6, 760 V1-V7,
-765 W1-W4, 770 G3/G4 code parts, 780 J1-J6, 790 W1-W3, W5-W8, 795 M1-M2 and follow-ups, the task ring
-as the owner accepted it, plus the owner's three CMS Syncs (183 Tokens, 359 items, 322 recipes) and the
-Description Sync. Tickets closed d879fea9. Bench baseline: fingerprints updated for T-599, T-637,
-T-304, timings kept from 14 Nov (a quiet-machine retake is due, T-181). Known red: `LedgerPace`
-"Maxed is never slower than Typical" (Cooking, the new recipes; red on main before the join).
+Build the briefs queue empty this week (all basic mechanics). Next week is content and balancing. Look and play changes merge on the gate plus the work check, with **one eye-check build at the week's end** covering everything. The engine work check (`npm run bench -- --compare`) runs anytime, but the director runs it: agents refuse outside the windows. No mid-week builds. Missing features go to the planning agent in groups. Memory: `project_mechanics_week.md`.
 
-## Branches still waiting
+## On `main` (77c7e01b, pushed)
 
-- `fix/types-without-groups` (740 C2, `cb2`) and `fix/enemy-moves-named` (C4 step 1, `cb4`): wait for
-  the content agent's group-split and six-enemy packs; they are on the old base and need re-joining.
-- `merge/batch12` (`b12`) and every batch 12 phase worktree are merged: clean them up (junctions first,
-  `cmd //c rmdir`, then `git worktree remove`; never `rm -rf`).
+Everything from batches 12 to 16, plus this week:
+- **Rename:** the game is Tabletop Guild (820). Desktop builds start with fresh saves and settings.
+- **Combat (740, 750):**
+  - C2 damage types without groups; C4 enemy moves named, Venomous retired, enemies not every-Nth; C5 step 1 enemy kinds as library effects (presets as fallback until the pack); C10 Defeated wording plus the fight window's result line.
+  - 750 S1 to S6: crit cap 75, one ammo rule (`Ammo.js`), Stealth poisons, leftovers, style texts, gear attack speed.
+- **Fishing (850) and gathering (860):**
+  - Fishing: spots, catch rules, the Hut, the spot card, catch XP per fish.
+  - Gathering: R1 chance ends, R2 Forests own their trees, R3 Excavation, Farmland and the Dock (no Nursery). Green Thumb speeds owned regrowth.
+- **Skills (810):** K1 Taming gone, K2 sheet lines, K3 Faith shrines (Can't Run Out, Echo, Fortune, Valiant, Wisdom), K4 Crime Hideout (steal tables, Quiet, the thief goes for the guard and returns), K5 Summoned workers, K6 Science Laboratory and mastery.
+- **Gold Coins (870):** C1 count, Sell, save; C2 coin costs (Shop, Foundations, settling, Hall stars), coin drops, coin thefts, Coin Find; C3 the CMS ledger prices coins.
+- **Signature perks (800):** P1 and P2 (Motherlode is Can't Run Out, Evergreen, Grove Feller, Master Angler); P4 (Salvage, Master Builder); P5 (Second Wind, Unbreakable, Twin Shot and Double Cast, Shadowstep); the level-up flash on every level, longer.
+- **CMS:** the pack gate hang fixed (`pace.js`); drifting spots are wild sources in the ledger.
+- **The owner's Syncs:** combat, Hall/tools/drinks, tool speed tuning, XP pass, Forests, Fishing (9ed92a87).
+- **The director's settings:** the Ledger pace curve was set to the smooth points.
 
-## Eye-check waiting
+**Bench:** baseline current. FS isolated from shipped spot kinds (T-712). Accepted this week: T-684, T-658.
 
-`batch-12` on the Guild Eye-checks page, build `_builds/2026-11-23-batch-12/Fantasy Guild.exe`, 12 checks.
-After the verdicts: fixes on new branches, archive to `docs/archive/eyecheck/2026-11-23_batch-12.md`.
-The broken-tool bubble and its Token "!" have no click path (needs a QA way to break a tool).
+**Known red: 4 content gaps**, left on purpose for the content agent:
+- ContentRules Rule 1 (now tool materials only): later ores and woods with only tool-gated sources;
+- NewGameOpening ×2 and ToolsAsGear: harpoon fish and harpoons in the early game.
 
-## Owner to-dos
+## Building
 
-The eye-check; on main, Ledger > World: check the Biome terrain card, Sync; Goodbye lines per event.
+**800 P3 Many Hands**, as two lanes per the owner's rulings (STATUS 16:30). Branch `feat/many-hands`, worktree `mh2`, cut from merge/round. When it reports:
+- read the diff of `BoardRunner`;
+- run the work check plus a timing look, since it is the hot path;
+- then merge.
 
-## Next phases
+That empties the briefs queue.
 
-790 W4 (effect descriptions, now unblocked); 740 C5 (after C2/C4 packs), C7 to C10; 750 (after 740);
-770 G1 (out of bait or seed, uses `raiseNeedsItem`) and G2 (after the amended fishing plan); 795 M3;
-735 V4 (Limes' lines first); 800; and the planning agent's new briefs 810 (skill identities) and 820
-(Tabletop Guild rename). Small follow-ups: heroBubbles' level line should call `levelNeed`; the
-fishing_net kind goes once the pack deletes `effect_fishing_net`; the one-line Recalculate strip of
-`stationChargeCost` after its pack; the retired station kinds' reader after 8 recipes and 7 effects
-stop naming them.
+## Next
+
+1. **End-of-week eye-check:** one desktop test build of main (`npm run tauri:build` with `CARGO_TARGET_DIR` at `mh\src-tauri\target`, exe to `_builds/`, then `git checkout -- src-tauri`) and one tab on the Guild Eye-checks page.
+   - Use the QA scenes: Faith/Blessings, Crime, coin, Science, Combat styles, Combat tricks.
+   - Also the director's calls listed in STATUS: K5 1a to 5a, K6 1a to 6a, 750 Q2 to Q4, Fortune on work only, Motherlode keeping count-down Tokens, P4 old buildings and stars, coins hidden in map modes.
+   - After the look, delete the temporary QA scenes and their tests.
+2. **The content agent's queue:** STATUS "For the content agent". All engine-side draft packs are in `docs/active/research/pending_packs/engine_packs/`.
+3. **Small tickets:** T-693, T-696, T-697, T-707 to T-711 (T-710 retires `durationMs`).
+4. **Worktree cleanup:** about 100 dead worktrees. Do junctions first with `cmd //c rmdir`, then `git worktree remove`; never `rm -rf`.
 
 ## Lessons this session
 
-- Join everything ahead of the window on a scratch branch, gate each step, tag it, and bench only the
-  tags in the window: 32 steps benched in about two hours.
-- Builders never bench, so a fixture problem (S8's hunters starting the hour nearly dead) surfaced only
-  at merge: diagnose before blaming the engine, and bench step by step with `--compare --save-baseline`
-  carried forward for attribution.
-- The owner Syncs on main while branches wait: before joining, id-diff data between the base and main
-  and grep src/ for deleted ids.
-- Four agents is the practical ceiling on this PC; agents report twice when their own tests keep
-  running, so kill leftover vitest processes by worktree.
+- **Never `git stash` in a worktree:** two agents swapped each other's work through the shared stash list (now in TESTING.md).
+- **Join, don't stack:** branches built in parallel join on a scratch branch in `b16`, one engineer per round, then the director benches and merges from main's side.
+- **Merging main into a branch** after an owner Sync trips the data/code hook, and the override is refused. Merge the branch into main instead; that commit carries code only.
+- **A Sync moves tests that read shipped data.** Run the full suite right after, and sort failures into "follows data", "code leftover" and "real content gap". Keep the gaps red.
+- **The usage limit cuts agents mid-work.** Resume each with SendMessage; their work is saved.
