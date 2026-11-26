@@ -66,10 +66,10 @@ function registerQaContent() {
     });
     registerTokenTypes({
         [QA_ENEMIES.WARLORD]: enemy(QA_ENEMIES.WARLORD, 'Goblin Warlord', chief?.sprite || goblin?.sprite || 's_crime', {
-            level: 20, kinds: ['brute'],
+            level: 20, kinds: ['effect_brute'],
             moves: [{ name: 'Cleave', damageType: 'slash' }, { name: 'Venom Stab', damageType: 'stab', effectId: VENOM_EFFECT_ID, target: 'hero' }]
         }, 50),
-        [QA_ENEMIES.SCOUT]: enemy(QA_ENEMIES.SCOUT, 'Goblin Scout', goblin?.sprite || 's_crime', { level: 5, kinds: ['swift'] }, 5)
+        [QA_ENEMIES.SCOUT]: enemy(QA_ENEMIES.SCOUT, 'Goblin Scout', goblin?.sprite || 's_crime', { level: 5, kinds: ['effect_swift'] }, 5)
     });
 }
 

@@ -67,7 +67,7 @@ registerTokenTypes({
     gearcatchup_enemy: {
         id: 'gearcatchup_enemy', name: 'Catch-up Venomous Brute', tokenType: 'enemy', rarity: 'common',
         theme: 'fixture', uses: 20, sprite: 's_crime', requiresHero: true,
-        enemy: { level: 5, style: 'melee', kinds: ['brute'], moves: [{ name: 'Venom Bite', damageType: 'stab', effectId: VENOM, target: 'hero' }] },
+        enemy: { level: 5, style: 'melee', kinds: ['effect_brute'], moves: [{ name: 'Venom Bite', damageType: 'stab', effectId: VENOM, target: 'hero' }] },
         config: {
             skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [],
             outputs: [

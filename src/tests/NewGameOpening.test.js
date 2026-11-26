@@ -13,7 +13,7 @@ import { getTokenType, getAllTokenTypes, registerTokenTypes } from '../config/re
 import { setStarterCampForTests, resetStarterCampForTests } from '../config/registries/starterCampRegistry.js';
 import { recipesForToken } from '../config/registries/recipePoolRegistry.js';
 import { getItem, getAllItems, registerItems } from '../config/registries/itemRegistry.js';
-import { starterToolIds, neededToolOf, toolOf, toolMeets } from '../config/registries/toolKinds.js';
+import { starterToolIds, toolOf, toolMeets } from '../config/registries/toolKinds.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { catchPoolsOf } from '../config/registries/catchPools.js';
 import { stationSkillOf } from '../systems/effects/statements.js';
@@ -22,7 +22,9 @@ import {
 } from '../config/guildUpgrades.js';
 
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
-import { effectYields, worldTokens, arrivingSpots, planeWorld, wellItems } from './fixtures/planeReach.js';
+import {
+    effectYields, worldTokens, arrivingSpots, planeWorld, wellItems, poolsOnPlanes, planeNeedOf, rareFindsOf
+} from './fixtures/planeReach.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -222,7 +224,8 @@ describe('a new game opens in the Starter Camp the owner laid out', () => {
  * Close over what the player can get: Tokens (in the Starter Camp, drifting in on its water or a
  * world cell's ({@link arrivingSpots}), bought, spawned, grown,
  * built, ambushing) and items (the camp's Bank and the starter tools, trickle, worked from a
- * Token whose inputs are already reachable, caught from water's catch pools, a bonus drop of an
+ * Token whose inputs are already reachable with its rare finds, caught from the catch pools that
+ * bite on the planes' ground ({@link poolsOnPlanes}), a bonus drop of an
  * effect on a reachable Token or item, the Wishing Well's Water). A Token is bought
  * once its whole price is reachable; a recipe runs once its inputs are; a Token whose work needs a
  * tool is worked once a tool that will do is. The world map's cells of rings up to `maxPlane` write
@@ -244,7 +247,7 @@ function reachable({ maxPlane = 2 } = {}) {
     const all = Object.values(getAllTokenTypes());
     const have = (list) => (list || []).every(x => items.has(x.itemId));
     const toolFor = (def) => {
-        const need = neededToolOf(def);
+        const need = planeNeedOf(def);
         return !need || [...items].some(id => toolMeets(toolOf(getItem(id)), need));
     };
     const gain = (outputs) => {
@@ -269,10 +272,11 @@ function reachable({ maxPlane = 2 } = {}) {
                 const fx = effectYields(def);
                 for (const id of fx.items) items.add(id);
                 for (const id of fx.tokens) tokens.add(id);
+                for (const id of rareFindsOf(def)) items.add(id);
             }
             // Water lands its catch instead of its Outputs: a pool bites once a tool of its kind is
             // in hand and its bait (if any) can be had.
-            for (const pool of catchPoolsOf(def)) {
+            for (const pool of poolsOnPlanes(def)) {
                 const tool = [...items].some(id => toolOf(getItem(id))?.kind === pool.tool);
                 if (!tool || (pool.bait && !items.has(pool.bait))) continue;
                 for (const c of pool.catches) items.add(c.itemId);
@@ -407,7 +411,28 @@ const NOT_YET_PLACED = Object.freeze({
     token_master_smithy: 'built from Maple Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
     token_masters_study: 'built from Mahogany Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
     token_tannery: 'built from Maple Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
-    token_town_square: 'built from Ebony Frame, Basalt Block, Gold Ingot, which the two planes do not reach yet'
+    token_town_square: 'built from Ebony Frame, Basalt Block, Gold Ingot, which the two planes do not reach yet',
+    // A station offers every tier, and the later tiers wait for later planes (content session,
+    // 2026-11-26): the Excavation offers a Dig for every vein, but a later vein's Prospecting Map
+    // comes only from that vein's own rare finds, as no copper-tier drop feeds a late material.
+    item_silver_prospecting_map: 'a later plane: only the Silver Ore Vein finds it (the Excavation\'s Dig Silver Vein asks for it)',
+    item_gold_prospecting_map: 'a later plane: only the Gold Ore Vein finds it (the Excavation\'s Dig Gold Vein asks for it)',
+    item_mythril_prospecting_map: 'a later plane: only the Mythril Ore Vein finds it (the Excavation\'s Dig Mythril Vein asks for it)',
+    item_adamantine_prospecting_map: 'a later plane: only the Adamantine veins find it (the Excavation\'s Dig Adamantine Vein asks for it)',
+    item_darkmetal_prospecting_map: 'a later plane: only the Darkmetal Ore Vein finds it (the Excavation\'s Dig Darkmetal Vein asks for it)',
+    token_silver_ore_vein: 'a later plane: dug from a Silver Prospecting Map, which only a Silver Ore Vein finds',
+    token_gold_ore_vein: 'a later plane: dug from a Gold Prospecting Map, which only a Gold Ore Vein finds',
+    token_mythril_ore_vein: 'a later plane: dug from a Mythril Prospecting Map, which only a Mythril Ore Vein finds',
+    token_adamantium_ore: 'a later plane: dug from an Adamantine Prospecting Map, which only an Adamantine vein finds',
+    token_darkmetal_ore_vein: 'a later plane: dug from a Darkmetal Prospecting Map, which only a Darkmetal Ore Vein finds',
+    // The harpoon fish moved later (Shark Waters arrive only in Flower Meadow, the Fishing Spot's
+    // harpoon pool bites only in Flower Meadow and Cherry Grove), and so did the harpoons.
+    item_shark: 'a later plane: only Shark Waters land it, in Flower Meadow (Cooked Shark, cooking level 83, and Bait from Shark ask for it)',
+    item_cooked_shark: 'a later plane: cooked from Shark (cooking, level 83)',
+    item_stingray: 'a later plane: only a harpoon in Flower Meadow or Cherry Grove lands it (Bait from Stingray, fishing level 54, asks for it)',
+    item_mythril_harpoon: 'a later plane: forged from Mythril Ingots and Maple Planks (smithy, level 54)',
+    item_adamantine_harpoon: 'a later plane: forged from Adamantine Ingots and Mahogany Planks (smithy, level 63)',
+    item_darkmetal_harpoon: 'a later plane: forged from Darkmetal Ingots and Ebony Planks (smithy, level 83)'
 });
 
 /**
@@ -417,7 +442,11 @@ const NOT_YET_PLACED = Object.freeze({
 const NO_TOOL_YET = Object.freeze({
     token_cedar_tree: 'a tier-3 woodaxe: the Mythril Woodaxe, from Mythril Ingots the two planes do not reach',
     token_mahogany_tree: 'a tier-4 woodaxe: the Adamantine Woodaxe, from Adamantine Ingots the two planes do not reach',
-    token_ebony_tree: 'a tier-5 woodaxe: the Darkmetal Woodaxe, from Darkmetal Ingots the two planes do not reach'
+    token_ebony_tree: 'a tier-5 woodaxe: the Darkmetal Woodaxe, from Darkmetal Ingots the two planes do not reach',
+    // The later veins the Excavation's Digs offer (NOT_YET_PLACED: their maps wait for later planes).
+    token_gold_ore_vein: 'a tier-3 pickaxe: the Mythril Pickaxe, from Mythril Ingots the two planes do not reach',
+    token_adamantium_ore: 'a tier-3 pickaxe: the Mythril Pickaxe, from Mythril Ingots the two planes do not reach',
+    token_darkmetal_ore_vein: 'a tier-4 pickaxe: the Adamantine Pickaxe, from Adamantine Ingots the two planes do not reach'
 });
 
 /** What makes an item anywhere in the content: Token ids and recipe ids. */
@@ -428,7 +457,8 @@ function makersOf(itemId) {
             ...(def.config?.outputs || []),
             ...(def.trickle || []),
             ...catchPoolsOf(def).flatMap(p => p.catches),
-            ...effectYields(def).items.map(id => ({ itemId: id }))
+            ...effectYields(def).items.map(id => ({ itemId: id })),
+            ...rareFindsOf(def).map(id => ({ itemId: id }))
         ];
         if (lines.some(o => o.itemId === itemId)) makers.push(def.id);
         for (const r of recipesForToken(def) || []) {

@@ -81,10 +81,14 @@ describe('The Fishing chain in shipped data (7.3)', () => {
         ]);
     });
 
-    it('the Dock is not worked: it speeds nearby water', () => {
+    it('the Dock is a Foundation on the shore, sold at the Shop: the Bait Shed and the other fishing buildings are built on it', () => {
         expect(dock.config).toBeNull();
-        expect(dock.requiresHero).toBe(false);
-        expect(dock.effects.map((e) => e.effectId)).toEqual(['effect_dock_speed']);
+        expect(dock.foundation).toEqual({ kind: 'dock', skill: 'construction' });
+        expect(dock.standsOn).toEqual(['shore']);
+        expect(dock.shop).toMatchObject({ section: 'fishing' });
+        const builtOnDock = recipes.filter((r) => r.foundationKinds?.includes('dock')).flatMap((r) => r.outputs.map((o) => o.tokenId));
+        expect(builtOnDock).toContain('token_bait_shed');
+        expect(builtOnDock).toContain('token_fishing_hut');
     });
 
     it('the lifecycle audit has nothing to say about the chain', () => {

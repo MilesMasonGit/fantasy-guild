@@ -1,7 +1,7 @@
 /** Economic simulator: the write-back. The passes in `simRunner` return Maps and write nothing; this is the one place that turns them back into the field names the game reads in `data/items.json`, `tokens.json` and `tokenRecipes.json`. Two jobs: land the derived numbers (item `value` and `valueSource`, cycle length, each output's `minQty`/`maxQty`/`chance`), and ⚠️ delete the retired fields wherever they are found, on every run. Sync writes from the store, not from `data/`, so a browser workspace saved before a field was retired would otherwise put it straight back. */
 
 import { quantityRange } from './fieldAdapter.js';
-import { deriveTokenType } from '../../utils/constants';
+import { deriveTokenType, isEnemyDef } from '../../utils/constants';
 import { slugify } from '../../utils/idGenerator';
 import { hasCatchPools } from '../../../../src/config/registries/catchPools.js';
 import { derivedCoinWorth, isCoinWorthPinned } from '../ledger/coins.js';
@@ -274,8 +274,9 @@ export function applyTokenResults(tokens = {}, sim) {
 
         // Derived XP. A Token the XP pass had no answer for keeps its authored `config.xp` exactly as typed, the same rule as the cycle time.
         // ⚠️ `token.xp` (top level) is never written here: it is deleted in `migrateLegacyIntent` before the passes run.
+        // ⚠️ Nor onto an enemy: a kill pays its level's XP, never a work cycle's, so a Purpose-tagged enemy keeps whatever it was written with.
         const xp = sim.xp?.get(tokenId);
-        if (Number.isFinite(xp)) config.xp = xp;
+        if (Number.isFinite(xp) && !isEnemyDef(token)) config.xp = xp;
 
         next[id] = { ...token, config };
     }

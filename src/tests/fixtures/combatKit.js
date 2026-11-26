@@ -60,7 +60,7 @@ export function kitPanelView() {
     const enemy = {
         typeId: 'token_goblin_chief', name: 'Goblin Warlord', style: 'melee', level: 20,
         hp: { cur: 24, max: 40 }, hit: 3, hitType: 'crush', resists: [{ id: 'fire', value: 50 }, { id: 'slash', value: -25 }], attackEveryMs: 4000,
-        kinds: ['brute', 'armoured'].map(kindView), statuses: [], buffs: [], sheet: null
+        kinds: ['effect_brute', 'effect_armoured'].map(kindView), statuses: [], buffs: [], sheet: null
     };
     return {
         heroId: 'kit_aela', live: false, ended: null, instanceId: 'kit_warlord',
@@ -90,6 +90,6 @@ export const KIT_FLOATS = Object.freeze([
 
 /** The enemy card's two states: fought (its kinds show) and never fought. */
 export const KIT_CARDS = Object.freeze([
-    { typeId: 'token_goblin_chief', name: 'Goblin Warlord', level: 20, style: 'melee', hp: 40, hit: 3, hitType: 'crush', resists: [{ id: 'slash', value: 50 }, { id: 'crush', value: -50 }, { id: 'stab', value: 50 }], attackEveryMs: 4000, kinds: ['brute', 'armoured'].map(kindView) },
+    { typeId: 'token_goblin_chief', name: 'Goblin Warlord', level: 20, style: 'melee', hp: 40, hit: 3, hitType: 'crush', resists: [{ id: 'slash', value: 50 }, { id: 'crush', value: -50 }, { id: 'stab', value: 50 }], attackEveryMs: 4000, kinds: ['effect_brute', 'effect_armoured'].map(kindView) },
     { typeId: 'token_goblin', name: 'Goblin Scout', level: 5, style: 'melee', hp: 25, hit: 1, hitType: 'crush', resists: [], attackEveryMs: 2000, kinds: null }
 ]);

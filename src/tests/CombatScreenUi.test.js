@@ -215,7 +215,7 @@ describe('the enemy card', () => {
     registerTokenTypes({
         cs_ui_brute: {
             id: 'cs_ui_brute', name: 'Card Brute', tokenType: 'enemy', rarity: 'common', theme: 'fixture', uses: 5, sprite: 's_crime',
-            enemy: { level: 20, style: 'melee', kinds: ['brute', 'nimble'] },
+            enemy: { level: 20, style: 'melee', kinds: ['effect_brute', 'effect_nimble'] },
             config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0 }
         }
     });
@@ -232,14 +232,16 @@ describe('the enemy card', () => {
         GameState.state.collection.discoveredEnemies.cs_ui_brute = true;
         const known = enemyCardView('cs_ui_brute');
         root = render(React.createElement(EnemyCardRows, { card: known })).container;
-        expect([...root.querySelectorAll('[data-enemy-card-kind]')].map(e => e.getAttribute('data-enemy-card-kind'))).toEqual(['brute', 'nimble']);
-        expect(text(q(root, '[data-enemy-card-kind="brute"]'))).toBe('Brute Big hits, attacks every 4s');
+        expect([...root.querySelectorAll('[data-enemy-card-kind]')].map(e => e.getAttribute('data-enemy-card-kind'))).toEqual(['effect_brute', 'effect_nimble']);
+        expect(text(q(root, '[data-enemy-card-kind="effect_brute"]'))).toBe('Brute Hits +33%; attacks every 4s');
     });
 
-    it('its numbers are the level table\'s and the kinds\' (level 20 Brute: 40 health, hits 3 every 4s)', () => {
+    // Brute's Damage +33 % on the level's hit of 2, rolled each hit: no floor of one above the level.
+    it('its numbers are the level table\'s and the kinds\' (level 20 Brute: 40 health, hits 2 × 4/3 every 4s)', () => {
         GameState.initNew();
         const card = enemyCardView('cs_ui_brute');
-        expect(card).toMatchObject({ level: 20, style: 'melee', hp: 40, hit: 3, hitType: 'crush', resists: [], attackEveryMs: 4000 });
+        expect(card).toMatchObject({ level: 20, style: 'melee', hp: 40, hitType: 'crush', resists: [], attackEveryMs: 4000 });
+        expect(card.hit).toBeCloseTo(8 / 3, 9);
         const root = render(React.createElement(EnemyCardRows, { card })).container;
         expect(text(q(root, '[data-enemy-card-level]'))).toBe('20/99');
         expect(q(root, '[data-enemy-card-resists="none"]')).not.toBeNull();

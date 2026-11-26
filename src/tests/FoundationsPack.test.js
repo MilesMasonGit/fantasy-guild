@@ -48,10 +48,33 @@ const shippedWorkspace = () => workspaceFromDataFiles({
     tokenRecipes: readJson('data/tokenRecipes.json'), plan: readJson('cms/plan/plan.json'),
 });
 
-/** The shipped content with every entry of the pack applied, as the CMS's Finish review does. */
+// Fields a later pack has moved since, by entry: the fishing buildings went to the Dock (and with them
+// Fishing off the Wood Foundation's Shop skills), Farmland stands on grass and an Excavation on stone,
+// and the mines went onto the Stone Foundation, the Coal Mine asking for a Coal Prospecting Map. And
+// entries a later pack deleted: the Coast (the fishing spots pack retired the fixed waters).
+const LATER = {
+    token_wood_foundation: ['shop'],
+    token_farmland: ['standsOn'],
+    token_excavation: ['standsOn'],
+    recipe_build_copper_mine: ['foundationKinds'],
+    recipe_build_coal_mine: ['inputs', 'foundationKinds']
+};
+const DELETED_LATER = new Set(['token_coast']);
+
+/**
+ * The shipped content with every entry of the pack applied, as the CMS's Finish review does, but for
+ * the fields a later pack has moved since, which stay as shipped.
+ */
 function appliedWorkspace() {
     let ws = shippedWorkspace();
-    for (const entry of PACK.entries) ws = { ...ws, ...setValue(ws, entry.kind, entry.id, proposedValue(entry)) };
+    for (const entry of PACK.entries) {
+        const value = { ...proposedValue(entry) };
+        const now = currentValue(ws, entry.kind, entry.id) || {};
+        for (const field of LATER[entry.id] || []) {
+            if (now[field] === undefined) delete value[field]; else value[field] = now[field];
+        }
+        ws = { ...ws, ...setValue(ws, entry.kind, entry.id, value) };
+    }
     return ws;
 }
 
@@ -77,11 +100,8 @@ describe('the shipped data, after the Sync', () => {
     });
 
     // The CMS writes a Token's description from its rules on Sync, so the pack's hand-written
-    // descriptions for the two new Foundations never ship; everything else must.
-    // Fields a later pack has moved since, by entry; and entries a later pack deleted: the Coast (the
-    // fishing spots pack retired the fixed waters).
-    const LATER = {};
-    const DELETED_LATER = new Set(['token_coast']);
+    // descriptions for the two new Foundations never ship; everything else must, but for the fields
+    // later packs moved (`LATER`).
 
     it('holds every entry of the pack as the pack sets it, the description and the fields later packs moved aside', () => {
         const shipped = shippedWorkspace();
@@ -110,6 +130,7 @@ describe('the Foundations pack, applied to a copy of the shipped content', () =>
         // The live recipe list, changed in place: a registered fixture pool would sit beside the
         // shipped recipes of the same ids rather than replace them.
         for (const e of PACK.entries.filter(x => x.kind === 'recipe')) {
+            if ((LATER[e.id] || []).includes('foundationKinds')) continue;
             Object.assign(listRecipes().find(r => r.id === e.id), { foundationKinds: e.value.foundationKinds });
         }
     });
@@ -120,21 +141,25 @@ describe('the Foundations pack, applied to a copy of the shipped content', () =>
         expect(PACK.entries).toHaveLength(29);
     });
 
-    it('the Shop sells the five Foundations only, in the authored order, with their icons', () => {
+    it('the Shop sells the Foundations only (the five and the Dock a later pack added), in the authored order, with their icons', () => {
         const entries = Shop.catalogue();
         expect(entries.map(e => e.typeId)).toEqual([
-            'token_wood_foundation', 'token_stone_foundation', 'token_farmland', 'token_excavation', 'token_battlefield'
+            'token_wood_foundation', 'token_stone_foundation', 'token_farmland', 'token_excavation', 'token_battlefield', 'token_dock'
         ]);
         expect(entries.map(e => e.skills)).toEqual([
-            ['crafting', 'cooking', 'alchemy', 'fishing', 'forestry'], ['smithing', 'faith'], ['farming', 'forestry'],
-            ['mining'], ['melee', 'ranged', 'magic']
+            ['crafting', 'cooking', 'alchemy', 'forestry'], ['smithing', 'faith'], ['farming', 'forestry'],
+            ['mining'], ['melee', 'ranged', 'magic'], ['fishing']
         ]);
         expect(Shop.canBuy('token_coast')).toEqual({ success: false, reason: 'Not sold at the Shop' });
         expect(Shop.canBuy('token_goblin_camp').success).toBe(false);
     });
 
     it('each Foundation builds its own list', () => {
-        expect(builds('token_excavation').sort()).toEqual(['token_coal_mine', 'token_copper_mine', 'token_quarry']);
+        expect(builds('token_excavation').sort()).toEqual([
+            'token_adamantium_ore', 'token_coal_vein', 'token_copper_ore_vein', 'token_darkmetal_ore_vein', 'token_gold_ore_vein',
+            'token_iron_ore_vein', 'token_mythril_ore_vein', 'token_quarry', 'token_silver_ore_vein'
+        ]);
+        expect(builds('token_stone_foundation')).toEqual(expect.arrayContaining(['token_copper_mine', 'token_coal_mine']));
         expect(builds('token_battlefield').sort()).toEqual([...BANNER_SPAWNERS].sort());
         const wood = builds('token_wood_foundation');
         expect(wood).toEqual(expect.arrayContaining(['token_workbench', 'token_logging_camp', 'token_mining_camp', 'token_copper_ore_minecart']));

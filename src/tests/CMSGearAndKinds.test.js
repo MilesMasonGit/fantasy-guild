@@ -335,17 +335,18 @@ describe('⭐ the kinds: none, one or two library effects', () => {
     const withKinds = () => useEntityStore.setState((st) => ({ effects: { ...st.effects, ...KINDS } }));
     const options = (select) => [...select.options].map((o) => o.value);
 
-    it('until the library has its effect, a built-in preset shows as one and is read as before', () => {
+    it('a kind naming no effect the library holds (an old preset\'s id) shows as None and adds nothing', () => {
+        withKinds();
         store().updateToken(cow, { enemy: { ...store().tokens[cow].enemy, kinds: ['armoured'] } });
         const { container } = tokenEditor(cow);
-        expect(field(container, 'enemy-kind-1').value).toBe('armoured');
-        expect(field(container, 'enemy-kind-1').selectedOptions[0].textContent).toBe('Armoured (built in)');
-        for (const type of ['slash', 'crush', 'stab']) {
-            expect(field(container, `enemy-resist-${type}-step`).selectedOptions[0].textContent).toBe('Resist 50% (from kinds)');
-        }
-        expect(field(container, 'enemy-speed').selectedOptions[0].textContent).toBe('4 s (Slow)');
-        expect(field(container, 'enemy-speed-source').textContent).toBe('from level + kinds');
-        expect(field(container, 'enemy-kinds-note').textContent).toContain('until the library has its effect effect_armoured');
+        expect(field(container, 'enemy-kind-1').value).toBe('');
+        expect(options(field(container, 'enemy-kind-1'))).not.toContain('armoured');
+        expect(field(container, 'enemy-resist-slash')).toBeNull();
+        expect(field(container, 'enemy-speed').selectedOptions[0].textContent).toBe('3 s (Normal)');
+        expect(field(container, 'enemy-speed-source').textContent).toBe('from level');
+        // Picking a kind writes over it.
+        fireEvent.change(field(container, 'enemy-kind-1'), { target: { value: 'effect_armoured' } });
+        expect(store().tokens[cow].enemy.kinds).toEqual(['effect_armoured']);
     });
 
     it('the boxes offer effects that can be a trait, never a status; picking writes the effect\'s id, the second box opens', () => {
@@ -382,10 +383,6 @@ describe('⭐ the kinds: none, one or two library effects', () => {
         const box = within(container).getByText('What the fight uses').parentElement.parentElement;
         expect(box.textContent).toContain('Attacks every4.0s');
         expect(field(container, 'enemy-speed-source').textContent).toBe('from level; kinds add in a fight');
-        // A preset id on content reads as its effect now the library has it.
-        cleanup();
-        store().updateToken(cow, { enemy: { ...store().tokens[cow].enemy, kinds: ['armoured'] } });
-        expect(field(tokenEditor(cow).container, 'enemy-kind-1').value).toBe('effect_armoured');
     });
 
     it('a Brute\'s Damage % rolls on its written hit, which may be a fraction: 2.25 hits 3', () => {
@@ -486,10 +483,10 @@ describe('⭐ damage types in the CMS: a weapon\'s type, an arrow, an enemy\'s r
         store().updateItem(wand, { type: 'weapon', styles: ['magic'], damage: 2, damageType: 'ice' });
         const arrow = store().addItem({ name: 'Arrow Fixture', equipSlot: 'consumable' });
         store().updateItem(arrow, { arrow: { damage: 1, damageType: 'stab' } });
-        store().updateToken(cow, { enemy: { level: 1, style: 'melee', kinds: ['armoured'], resistances: { crush: -50 } } });
+        store().updateToken(cow, { enemy: { level: 1, style: 'melee', kinds: ['effect_armoured'], resistances: { crush: -100 } } });
         const synced = expectStableRoundTrip();
         expect(synced['items.json'][wand]).toMatchObject({ damageType: 'ice' });
         expect(synced['items.json'][arrow]).toMatchObject({ arrow: { damage: 1, damageType: 'stab' } });
-        expect(synced['tokens.json'][cow].enemy).toMatchObject({ kinds: ['armoured'], resistances: { crush: -50 } });
+        expect(synced['tokens.json'][cow].enemy).toMatchObject({ kinds: ['effect_armoured'], resistances: { crush: -100 } });
     });
 });

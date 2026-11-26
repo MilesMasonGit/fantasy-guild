@@ -859,9 +859,7 @@ export default function TokenEditor() {
  * (`enemyKinds.js`). A kind is an ordinary effect, edited in the Effects library; its numbers add to
  * the ones below in every fight. Only an effect that can be a trait is offered (`isKindCandidate`: no
  * status, every rule a combat number or a fight moment). Written in box order; none drops the key.
- *
- * ⚠️ A kind still naming a built-in preset (Armoured, Nimble, Swift, Brute) shows as that preset until
- * the library holds its effect; picking anything writes the effect's id.
+ * A kind naming no effect the library holds shows as None (the audit names it).
  */
 function EnemyKinds({ enemy, effects, onChange }) {
   const kinds = enemyKindsOf(enemy, effects);
@@ -875,11 +873,11 @@ function EnemyKinds({ enemy, effects, onChange }) {
     onChange(copy);
   };
   const pick = (slot, id) => {
-    const next = Array.from({ length: MAX_ENEMY_KINDS }, (_, i) => kinds[i]?.id || '');
+    const next = Array.from({ length: MAX_ENEMY_KINDS }, (_, i) => kinds[i] || '');
     next[slot] = id;
     write(next.filter((k, i) => k && next.indexOf(k) === i));
   };
-  const nameOf = (k) => (k.effectId ? effects?.[k.effectId]?.name || k.effectId : `${k.preset.label} (built in)`);
+  const nameOf = (id) => effects?.[id]?.name || id;
   /** What one kind does to this enemy, by the game's own numbers: the enemy with it against the enemy without any. */
   const summaryOf = (effectId) => {
     const bare = enemyFightNumbers({ enemy: { level: enemy?.level ?? 1 } }, effects);
@@ -902,20 +900,20 @@ function EnemyKinds({ enemy, effects, onChange }) {
       <div className="grid grid-cols-2 gap-3">
         {Array.from({ length: MAX_ENEMY_KINDS }, (_, slot) => {
           const current = kinds[slot] || null;
-          const taken = new Set(kinds.filter((_, i) => i !== slot).map((k) => k.id));
+          const taken = new Set(kinds.filter((_, i) => i !== slot));
           const disabled = slot > kinds.length;
           return (
             <select
               key={slot}
               aria-label={`Kind ${slot + 1}`}
               data-field={`enemy-kind-${slot + 1}`}
-              value={current?.id || ''}
+              value={current || ''}
               disabled={disabled}
               onChange={(e) => pick(slot, e.target.value)}
               className={`w-full ${disabled ? 'opacity-40' : ''}`}
             >
               <option value="">None</option>
-              {current?.preset && <option value={current.id}>{nameOf(current)}</option>}
+              {current && !offered.some((e) => e.id === current) && <option value={current}>{nameOf(current)}</option>}
               {offered.filter((e) => !taken.has(e.id)).map((e) => (
                 <option key={e.id} value={e.id}>{e.name || e.id}</option>
               ))}
@@ -925,9 +923,7 @@ function EnemyKinds({ enemy, effects, onChange }) {
       </div>
       <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed" data-field="enemy-kinds-note">
         {kinds.length
-          ? kinds.map((k) => (k.effectId
-            ? `${nameOf(k)}: ${summaryOf(k.effectId)}.`
-            : `${k.preset.label} (built in, until the library has its effect ${k.preset.effectId}): ${k.preset.blurb}`)).join(' ')
+          ? kinds.map((id) => `${nameOf(id)}: ${summaryOf(id)}.`).join(' ')
           : 'The player finds out its kinds by fighting it. A kind is an effect from the library; its numbers add to the ones below.'}
       </p>
     </div>
@@ -960,7 +956,7 @@ function EnemyLeftovers({ enemy, onChange }) {
   );
 }
 
-/** The numbers the level and kinds fill, each one the author may replace, in the order the fight card lists them. */
+/** The numbers the level fills, each one the author may replace, in the order the fight card lists them. */
 const ENEMY_NUMBER_FIELDS = [
   { field: 'hp', label: 'HP', min: 1 },
   { field: 'hit', label: 'Hit', min: 0.25 },
@@ -1022,17 +1018,14 @@ const resistWords = (n) => (n > 0 ? `Resist ${n}%` : n < 0 ? `Weak ${-n}%` : 'No
  * What the enemy resists and is weak to, by damage type, in the owner's fixed steps: resist 25, 50
  * or 100 %, weak 25, 50 or 100 %. Written as `resistances: { slash: 50, crush: -50 }`; Set all fills a
  * group's three types, and a line still on a group (ignored by the game) shows with a Split button.
- * A kind that is an effect adds its lines to these in a fight, so a type it touches shows what the
- * fight adds up to (the Crab's own Crush −100 and Armoured's 50 make weak 50 %); a built-in preset's
- * line shows greyed until the author writes that type, which then replaces it.
+ * Its kinds add their lines to these in a fight, so a type one touches shows what the fight adds up
+ * to (the Crab's own Crush −100 and Armoured's 50 make weak 50 %).
  * Removing the last line drops the key. Retired numbers (Armour, Pierce) still on older content
  * show here with a button to remove them.
  */
 function EnemyResistances({ enemy, effects, onChange }) {
   const own = enemy?.resistances && typeof enemy.resistances === 'object' ? enemy.resistances : {};
-  const fromKinds = enemyFilledStats(enemy, effects).resistances || {};
-  const kindEffects = enemyKindsOf(enemy, effects).filter((k) => k.effectId).map((k) => k.effectId);
-  const addedByKinds = kindResistances(kindEffects, effects);
+  const addedByKinds = kindResistances(enemyKindsOf(enemy, effects), effects);
   const write = (next) => {
     const copy = { ...enemy };
     if (Object.keys(next).length) copy.resistances = next; else delete copy.resistances;
@@ -1045,7 +1038,7 @@ function EnemyResistances({ enemy, effects, onChange }) {
   };
   const fillGroup = (groupId, step) => write(withGroupFilled(own, groupId, step));
   const ids = DAMAGE_TYPES.map((x) => x.id);
-  const rows = ids.filter((id) => own[id] != null || fromKinds[id] != null || addedByKinds[id] != null);
+  const rows = ids.filter((id) => own[id] != null || addedByKinds[id] != null);
   const groupLines = Object.keys(own).filter((id) => isDamageGroupId(id));
   const unknown = Object.keys(own).filter((id) => !isDamageTypeId(id) && !isDamageGroupId(id));
   const free = ids.filter((id) => own[id] == null);
@@ -1067,7 +1060,7 @@ function EnemyResistances({ enemy, effects, onChange }) {
                 onChange={(e) => setLine(id, e.target.value)}
                 className={`flex-1 ${mine ? '' : 'text-gray-500 italic'}`}
               >
-                <option value="">{fromKinds[id] != null ? `${STEP_WORDS[fromKinds[id]]} (from kinds)` : 'None'}</option>
+                <option value="">None</option>
                 {RESISTANCE_STEPS.map((step) => (
                   <option key={step} value={String(step)}>{STEP_WORDS[step]}</option>
                 ))}
@@ -1118,7 +1111,7 @@ function EnemyResistances({ enemy, effects, onChange }) {
         <SetAllTypes dataField="enemy-resist-fill" steps={RESISTANCE_STEPS} stepWords={STEP_WORDS} initial={50} onFill={fillGroup} />
       </div>
       <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
-        Shown on the enemy&apos;s card. Only types carry numbers: Set all fills a group&apos;s three types, and a kind&apos;s lines add to the ones you write (a built-in preset&apos;s are replaced by yours). Keep most enemies to 0 or 1 lines, bosses up to 3, and never shut out every type a style can reach.
+        Shown on the enemy&apos;s card. Only types carry numbers: Set all fills a group&apos;s three types, and a kind&apos;s lines add to the ones you write. Keep most enemies to 0 or 1 lines, bosses up to 3, and never shut out every type a style can reach.
       </p>
       {retired.length > 0 && (
         <p className="text-[11px] mt-1 leading-relaxed" style={{ color: 'var(--color-warning)' }} data-field="enemy-retired-numbers">
@@ -1145,14 +1138,13 @@ const speedWords = (id) => `${(ATTACK_SPEED_MS[id] || 0) / 1000} s (${SPEED_WORD
 /**
  * The enemy's own numbers, shown filled from the level (greyed, "from level") until the author types
  * one, which is then written on the enemy ("yours", with a button back to the filled value). Its
- * kinds add to these in a fight, as every effect does (a built-in preset still replaces them, as it
- * always has). The Hit may be a fraction: a hit of 2.25 rolls 2 or 3, as every hit's fraction does.
- * Changing the level moves every number the author has not typed.
+ * kinds add to these in a fight, as every effect does. The Hit may be a fraction: a hit of 2.25
+ * rolls 2 or 3, as every hit's fraction does. Changing the level moves every number the author has
+ * not typed.
  */
 function EnemyNumbers({ enemy, effects, onChange }) {
-  const filled = enemyFilledStats(enemy, effects);
-  const kinds = enemyKindsOf(enemy, effects);
-  const source = kinds.some((k) => k.preset) ? 'from level + kinds' : kinds.length ? 'from level; kinds add in a fight' : 'from level';
+  const filled = enemyFilledStats(enemy);
+  const source = enemyKindsOf(enemy, effects).length ? 'from level; kinds add in a fight' : 'from level';
   const authored = (field) => enemy?.[field] !== undefined && enemy?.[field] !== null && enemy?.[field] !== '';
   const set = (field, value) => {
     const copy = { ...enemy };

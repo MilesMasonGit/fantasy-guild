@@ -29,6 +29,7 @@ import { ModifierAggregator } from '../systems/effects/ModifierAggregator.js';
 import { findUnknownRefs } from '../systems/core/unknownRefRule.js';
 import * as CF from '../systems/combat/CombatFormulas.js';
 import { enemyProfileOf, ENEMY_OVERRIDE_FIELDS } from '../config/registries/enemyProfile.js';
+import { enemyFightNumbers } from '../systems/effects/enemyKindEffects.js';
 import {
     DAMAGE_TYPES, DAMAGE_GROUPS, groupOf, typesOfGroup, withGroupFilled, PLAIN_ENEMY_HIT_TYPE, weaponDamageTypeOf, arrowOf, normaliseResistances,
     resistanceFor, RESISTANCE_STEPS, DEFAULT_DAMAGE_TYPE_BY_STYLE, BAREHANDED_DAMAGE_TYPE
@@ -85,11 +86,14 @@ const enemyType = (id, enemy) => ({
 });
 registerTokenTypes({
     dt_fire_elemental: enemyType('dt_fire_elemental', { resistances: { fire: 100, ice: -50 } }),
-    dt_crab: enemyType('dt_crab', { style: 'stealth', kinds: ['armoured'], resistances: { crush: -50 } }),
+    // Armoured's Crush 50 and its own −100 make it weak 50 % to Crush, as the shipped Crab.
+    dt_crab: enemyType('dt_crab', { style: 'stealth', kinds: ['effect_armoured'], resistances: { crush: -100 } }),
     dt_dummy: enemyType('dt_dummy', {})
 });
 
 const profile = (enemy) => enemyProfileOf({ id: 'e', name: 'E', enemy: { level: 1, style: 'melee', ...enemy } });
+/** What a fight starts from: the stat block with its kinds' numbers added. */
+const fightNumbers = (enemy) => enemyFightNumbers({ id: 'e', name: 'E', enemy: { level: 1, style: 'melee', ...enemy } });
 
 function addHero(name, skills = {}) {
     const hero = generateHero({ name });
@@ -201,9 +205,9 @@ describe('the registry: nine types in three groups', () => {
 
 describe('the enemy profile', () => {
     it('Armoured resists Slash, Crush and Stab 50 %, and is slow; flat armour and Pierce are gone', () => {
-        const p = profile({ kinds: ['armoured'] });
+        const p = fightNumbers({ kinds: ['effect_armoured'] });
         expect(p.resistances).toEqual({ slash: 50, crush: 50, stab: 50 });
-        expect(p.speed).toBe('slow');
+        expect(p.attackSpeed).toBe(4000);
         expect(p).not.toHaveProperty('armor');
         expect(p).not.toHaveProperty('pierce');
         expect(ENEMY_OVERRIDE_FIELDS).not.toContain('armor');
@@ -212,13 +216,13 @@ describe('the enemy profile', () => {
         expect(profile({ armor: 5, pierce: 2 })).not.toHaveProperty('armor');
     });
 
-    it('the author\'s line replaces the kind\'s for that type; other lines add', () => {
-        expect(profile({ kinds: ['armoured'], resistances: { slash: 25, crush: -50 } }).resistances)
-            .toEqual({ slash: 25, crush: -50, stab: 50 });
-        expect(profile({ kinds: ['armoured'], resistances: { fire: 100 } }).resistances)
+    it('the author\'s line adds to the kind\'s for that type, as any effect\'s; other lines stand beside it', () => {
+        expect(fightNumbers({ kinds: ['effect_armoured'], resistances: { slash: 25, crush: -100 } }).resistances)
+            .toEqual({ slash: 75, crush: -50, stab: 50 });
+        expect(fightNumbers({ kinds: ['effect_armoured'], resistances: { fire: 100 } }).resistances)
             .toEqual({ slash: 50, crush: 50, stab: 50, fire: 100 });
         // A line still written on a group is ignored: the kind's three lines stand.
-        expect(profile({ kinds: ['armoured'], resistances: { physical: 25 } }).resistances)
+        expect(fightNumbers({ kinds: ['effect_armoured'], resistances: { physical: 25 } }).resistances)
             .toEqual({ slash: 50, crush: 50, stab: 50 });
     });
 
@@ -471,14 +475,17 @@ describe('the audits', () => {
 
     it('say nothing about good content', () => {
         expect(findUnknownRefs({
-            tokens: { t: { id: 't', enemy: { level: 1, kinds: ['armoured'], resistances: { slash: 50, crush: -50 } } } },
+            tokens: { t: { id: 't', enemy: { level: 1, kinds: ['effect_armoured'], resistances: { slash: 50, crush: -50 } } } },
             items: {
                 // Since brief 750 S2 a Magic weapon names the Mote it burns (one naming none is named).
                 w: { id: 'w', equipSlot: 'hand', styles: ['magic'], damageType: 'ice', mote: 'm' },
                 m: { id: 'm', equipSlot: 'consumable' },
                 a: { id: 'a', equipSlot: 'consumable', arrow: { damage: 1, damageType: 'stab' } }
             },
-            effects: { e: { id: 'e', statements: [provides(EFFECT_TYPES.TYPE_DAMAGE, 15, 'light')] } }
+            effects: {
+                e: { id: 'e', statements: [provides(EFFECT_TYPES.TYPE_DAMAGE, 15, 'light')] },
+                effect_armoured: { id: 'effect_armoured', name: 'Armoured', statements: [provides(EFFECT_TYPES.TYPE_RESIST, 50, 'slash')] }
+            }
         })).toEqual([]);
     });
 });

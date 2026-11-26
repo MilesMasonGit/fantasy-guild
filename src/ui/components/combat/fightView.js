@@ -10,13 +10,13 @@ import { nextArrowOf, shootsArrows, carriedArrowIds, nextAmmoOf, AMMO } from '..
 import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
 import { getEquippedEntries, isConsumableCategory } from '../../../config/registries/equipmentConstants.js';
 import { getEnemyProfile } from '../../../config/registries/enemyProfile.js';
-import { getEnemyKind } from '../../../config/registries/enemyKinds.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { tokenName, getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { EFFECTS } from '../../../config/registries/effectRegistry.js';
 import { statusBlockOf } from '../../../systems/effects/effectLibrary.js';
-import { enemyAtRest } from '../../../systems/effects/enemyKindEffects.js';
+import { enemyAtRest, enemyFightNumbers } from '../../../systems/effects/enemyKindEffects.js';
+import { lengthText } from '../../../utils/Formatters.js';
 import { rulesLinesOf } from '../../../systems/effects/statementText.js';
 import { carriedRuleNames } from '../dock/heroPerks.js';
 import { explainLinesOf, effectTypesOfStatements } from '../base/effectExplain.js';
@@ -338,19 +338,41 @@ export function enemySide(typeId, fight = null) {
 }
 
 /**
- * A kind as the player reads it: its name and what it does. A kind that is a library effect is
- * called by the effect's name; what it does is the effect's description once it has one, else the
- * built-in words of the preset it replaces (Armoured, Nimble, Swift, Brute), else none.
+ * A kind as the player reads it: its effect's name, and what it does: the effect's own description
+ * where it has one, else what it does to an enemy with nothing else of its own ({@link kindNumbersText}).
+ * Null for an id the library does not hold.
  */
 export function kindView(id) {
     const entry = EFFECTS[id];
-    const preset = getEnemyKind(id);
-    if (entry) {
-        const own = typeof entry.description === 'string' ? entry.description.trim() : '';
-        return { id, name: entry.name || id, tip: own || (preset ? t(`fight.kinds.${preset.id}.tip`) : '') };
-    }
-    if (!preset) return null;
-    return { id, name: t(`fight.kinds.${preset.id}.name`), tip: t(`fight.kinds.${preset.id}.tip`) };
+    if (!entry) return null;
+    const own = typeof entry.description === 'string' ? entry.description.trim() : '';
+    return { id, name: entry.name || id, tip: own || kindNumbersText(id) };
+}
+
+const signed = (n) => (n > 0 ? `+${n}` : `−${-n}`);
+
+/**
+ * What a kind adds to a level 1 enemy with no numbers of its own, in the enemy card's words, by the
+ * numbers the fight uses (`enemyFightNumbers`): "Resists Slash 50%, Crush 50%, Stab 50%; attacks
+ * every 4s", "Dodge +15", "Hits +33%; attacks every 4s". Empty for a kind with none of these.
+ */
+function kindNumbersText(id) {
+    const bare = enemyFightNumbers({ id: '', enemy: { level: 1 } });
+    const kinded = enemyFightNumbers({ id: '', enemy: { level: 1, kinds: [id] } });
+    if (!bare || !kinded) return '';
+    const step = (line) => t('fight.card.step', { type: damageTypeName(line.id), n: Math.abs(line.value) });
+    const lines = enemyResistLines(kinded.resistances);
+    const parts = [];
+    const resists = lines.filter(l => l.value > 0);
+    const weak = lines.filter(l => l.value < 0);
+    if (resists.length) parts.push(t('fight.kinds.resists', { lines: resists.map(step).join(', ') }));
+    if (weak.length) parts.push(t('fight.kinds.weak', { lines: weak.map(step).join(', ') }));
+    const dodge = Math.round(kinded.dodge - bare.dodge);
+    if (dodge) parts.push(t('fight.kinds.dodge', { n: signed(dodge) }));
+    const hits = bare.hit > 0 ? Math.round((kinded.hit / bare.hit - 1) * 100) : 0;
+    if (hits) parts.push(t('fight.kinds.hits', { n: `${signed(hits)}%` }));
+    if (kinded.attackSpeed !== bare.attackSpeed) parts.push(t('fight.kinds.every', { time: lengthText(kinded.attackSpeed) }));
+    return parts.join('; ');
 }
 
 /** The enemy card's rows for an enemy Token type, or null. */

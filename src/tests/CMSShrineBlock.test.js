@@ -146,7 +146,8 @@ describe('⭐ the Offering row on a recipe a shrine burns', () => {
         const { recipe } = authorShrine({ maxLitMs: 600_000 });
         const row = openRecipe(recipe.id);
         expect(row()).toBeTruthy();
-        expect(within(row()).getByText(/Burned at Fixture Shrine/)).toBeTruthy();
+        // The shipped Nature Shrine burns the same offerings, so it may be named beside the fixture's.
+        expect(within(row()).getByText(/Burned at (.+, )?Fixture Shrine(?![a-z])/)).toBeTruthy();
         expect(within(row()).getByText(/Not yet written/)).toBeTruthy();
         fireEvent.change(within(row()).getByLabelText('Keeps it lit for (s)'), { target: { value: '90' } });
         const written = useEntityStore.getState().recipePools.faith.find((r) => r.id === recipe.id);

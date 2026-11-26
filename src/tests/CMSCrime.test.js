@@ -225,7 +225,8 @@ describe('the content rule, shared by both audits', () => {
     });
 
     it('the shipped content raises no Crime finding at boot', () => {
-        const crime = auditContent().filter(f => /steal|Hideout|caught curve|robbed/i.test(f.message || f.what || JSON.stringify(f)));
+        // A whole word: a Stealth finding is not a Crime one.
+        const crime = auditContent().filter(f => /(?<![a-z])steal(?![a-z])|Hideout|caught curve|robbed/i.test(f.message || f.what || JSON.stringify(f)));
         expect(crime).toEqual([]);
     });
 

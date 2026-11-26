@@ -14,9 +14,10 @@ import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { DiscoveryManager } from '../systems/core/DiscoveryManager.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { registerTokenTypes, tokenStartingUses, getTokenType } from '../config/registries/tokenRegistry.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
 import { getEnemyProfile } from '../config/registries/enemyProfile.js';
+import { enemyFightNumbers } from '../systems/effects/enemyKindEffects.js';
 import { TokenCard } from '../ui/components/board/TokenCard.jsx';
 import { tokenCardModel, CARD_BLOCK, enemyMovesOnCard, enemyKindsOnCard } from '../ui/components/board/tokenCard.js';
 import { t } from '../i18n/index.js';
@@ -41,7 +42,7 @@ registerTokenTypes({
         id: 'etc_hen', name: 'Card Hen', tokenType: 'enemy', rarity: 'common', theme: 'fixture', uses: 5, sprite: 'e_chicken',
         requiresHero: true,
         enemy: {
-            level: 4, style: 'ranged', kinds: ['brute', 'nimble'],
+            level: 4, style: 'ranged', kinds: ['effect_brute', 'effect_nimble'],
             resistances: { slash: 25, crush: 25, stab: 25, fire: -50 },
             moves: [
                 { name: 'Peck', damageType: 'stab' },
@@ -106,10 +107,12 @@ describe('the model: every field, read from the enemy', () => {
         expect(model.blocks.find(b => b.id === CARD_BLOCK.HP)).toMatchObject({ cur: profile.hp, max: profile.hp });
     });
 
+    // What a fight starts from: Brute's Damage +33 % and slower attacks added to the level's.
     it('its hit, moves, resistances and attack speed', () => {
-        const profile = getEnemyProfile('etc_hen');
+        const numbers = enemyFightNumbers(getTokenType('etc_hen'));
         const fight = fightBlock();
-        expect(fight).toMatchObject({ hit: profile.hit, hitTypes: ['stab'], attackEveryMs: profile.attackSpeed });
+        expect(fight).toMatchObject({ hit: numbers.hit, hitTypes: ['stab'], attackEveryMs: numbers.attackSpeed });
+        expect(numbers.attackSpeed).toBe(4000);
         expect(fight.moves.map(m => [m.name, m.hits, m.type])).toEqual([['Peck', true, 'stab'], ['Flutter', false, null]]);
         expect(fight.resists).toEqual([{ id: 'slash', value: 25 }, { id: 'crush', value: 25 }, { id: 'stab', value: 25 }, { id: 'fire', value: -50 }]);
     });
@@ -122,13 +125,13 @@ describe('the model: every field, read from the enemy', () => {
     it('⭐ kinds are hidden until one has been fought, then named', () => {
         expect(fightBlock().kinds).toBeNull();
         fightOne();
-        expect(fightBlock().kinds.map(k => k.id)).toEqual(['brute', 'nimble']);
-        expect(fightBlock().kinds[0]).toMatchObject({ name: 'Brute', tip: 'Big hits, attacks every 4s' });
+        expect(fightBlock().kinds.map(k => k.id)).toEqual(['effect_brute', 'effect_nimble']);
+        expect(fightBlock().kinds[0]).toMatchObject({ name: 'Brute', tip: 'Hits +33%; attacks every 4s' });
     });
 
     it('an enemy with no kinds, fought, says it has none (an empty list, not hidden)', () => {
         expect(enemyKindsOnCard({ kinds: [] }, true)).toEqual([]);
-        expect(enemyKindsOnCard({ kinds: ['brute'] }, false)).toBeNull();
+        expect(enemyKindsOnCard({ kinds: ['effect_brute'] }, false)).toBeNull();
     });
 
     it('an enemy with no moves makes a plain Crush Strike and lists none', () => {
@@ -171,7 +174,7 @@ describe('the card as drawn', () => {
         first.rerender(h(DndContext, null, h(TokenCard, { typeId: 'etc_hen', instanceId: hen.id })));
         kinds = q(first.container, '[data-enemy-card-kinds]');
         expect(kinds.getAttribute('data-enemy-card-kinds')).toBe('known');
-        expect([...first.container.querySelectorAll('[data-enemy-card-kind]')].map(e => e.getAttribute('data-enemy-card-kind'))).toEqual(['brute', 'nimble']);
+        expect([...first.container.querySelectorAll('[data-enemy-card-kind]')].map(e => e.getAttribute('data-enemy-card-kind'))).toEqual(['effect_brute', 'effect_nimble']);
     });
 
     it('off the mat (no instance) the card shows the same fight rows', () => {

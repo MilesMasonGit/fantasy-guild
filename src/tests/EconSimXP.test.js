@@ -359,6 +359,33 @@ describe('write-back — only the fields the runtime reads (finding S18)', () =>
         expect(pools.mining[0].xp).toBe(17);
     });
 
+    // A kill pays its level's XP (`getCombatXpAward`); a work cycle's XP on an enemy is never paid,
+    // and the boot audit names one. Recalculate on Sync must not write one back once a pack strips it.
+    it('never writes a work cycle’s xp onto an enemy, even one tagged with a Purpose', () => {
+        const sim = {
+            xp: new Map([['fx_beast', 2], ['fx_mine', 5]]),
+            cycleTimes: new Map(), downcycles: new Map(), tunings: new Map(), scrapValues: new Map(),
+        };
+        const tokens = applyTokenResults({
+            fx_beast: { id: 'fx_beast', enemy: { level: 1, style: 'melee' }, sim: { purpose: 'iph' }, config: { cycleTimeMs: 16000, outputs: [] } },
+            fx_old: { id: 'fx_old', enemy: { level: 1, style: 'melee' }, config: { xp: 3, outputs: [] } },
+            fx_mine: { id: 'fx_mine', config: { outputs: [] } }
+        }, sim);
+        expect('xp' in tokens.fx_beast.config).toBe(false);
+        expect(tokens.fx_old.config.xp).toBe(3);
+        expect(tokens.fx_mine.config.xp).toBe(5);
+    });
+
+    it('a Recalculate over the shipped content gives no enemy a work cycle’s xp it was not written with', () => {
+        const stripped = Object.fromEntries(Object.entries(tokenData).map(([id, t]) => {
+            if (!t?.enemy || !t.config) return [id, t];
+            const { xp: _xp, ...config } = t.config;
+            return [id, { ...t, config }];
+        }));
+        const tokens = applyTokenResults(stripped, runSim({ tokens: stripped, recipes: recipeData, items: itemData }));
+        expect(Object.entries(tokens).filter(([, t]) => t?.enemy && t.config && 'xp' in t.config).map(([id]) => id)).toEqual([]);
+    });
+
     it('writes a recipe’s xp through the pool write-back', () => {
         const sim = {
             xp: new Map([['fx_r', 88]]),

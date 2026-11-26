@@ -1,7 +1,7 @@
 // Content that names a skill, a job or a damage type the game does not have, or a rule, style or number it no longer reads; an enemy's malformed moves.
 
 import { isSkillId, COMBAT_SKILL_IDS, getSkill } from '../../config/registries/skillRegistry.js';
-import { getEnemyKind, kindEffectIdOf, kindsClash, MAX_ENEMY_KINDS } from '../../config/registries/enemyKinds.js';
+import { MAX_ENEMY_KINDS } from '../../config/registries/enemyKinds.js';
 import { isWeapon, authoredWeaponStyles, weaponStyleOf, weaponMoteOf } from '../../config/registries/weaponStyles.js';
 import { getPaletteEntry, isCombatStyleScope } from '../../config/registries/modifierPalette.js';
 import { isDamageTypeId, isDamageGroupId, groupLineAdvice, resistanceProblems } from '../../config/registries/damageTypes.js';
@@ -177,32 +177,25 @@ function ammoFindings(def, push, itemOf) {
 const RETIRED_VENOMOUS_KIND = 'venomous';
 
 /**
- * Findings for an enemy's kinds: one that is neither a library effect nor a built-in preset, more than
- * two, or two presets that clash. Effects are looked up only when the library is given; without it a
- * kind that is no preset is taken on trust.
+ * Findings for an enemy's kinds: one that is no library effect, or more than two. Effects are looked
+ * up only when the library is given; without it a kind is taken on trust.
  */
 function enemyKindFindings(def, push, effectById) {
     const kinds = Array.isArray(def?.enemy?.kinds) ? def.enemy.kinds : [];
-    const library = effectById ? Object.fromEntries(effectById) : null;
     const known = [];
     for (const id of kinds) {
         if (id === RETIRED_VENOMOUS_KIND) {
             push('enemy.kinds', `has the enemy kind "${id}", which is retired — it lands nothing. Give the moves that poison the Venom effect instead, and untick it in the CMS.`);
             continue;
         }
-        const effectId = library ? kindEffectIdOf(id, library) : null;
-        if (effectId || getEnemyKind(id) || (!library && typeof id === 'string' && id)) {
-            known.push(effectId ? { id: effectId } : getEnemyKind(id) || { id });
+        if (typeof id === 'string' && id && (!effectById || effectById.has(id))) {
+            known.push(id);
             continue;
         }
         push('enemy.kinds', `has the enemy kind "${id}", which is no effect in the library — it changes nothing. Pick its kinds again in the CMS.`);
     }
     if (known.length > MAX_ENEMY_KINDS) {
         push('enemy.kinds', `has ${known.length} enemy kinds; an enemy carries at most ${MAX_ENEMY_KINDS}, so only the first ${MAX_ENEMY_KINDS} count.`);
-    }
-    const used = known.slice(0, MAX_ENEMY_KINDS);
-    if (used.length === 2 && kindsClash(used[0], used[1])) {
-        push('enemy.kinds', `is both ${used[0].id} and ${used[1].id}, which set different attack speeds — the second wins. Untick one in the CMS.`);
     }
 }
 
