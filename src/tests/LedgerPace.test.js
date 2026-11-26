@@ -176,7 +176,7 @@ describe('supply, level tracks and path time', () => {
 
         const track = pace.trackOf('construction');
         expect(track.top).toBe(15);
-        // Every level at 600 XP an hour, Bare, for three heroes' work: the Starter Camp's one hero builds and fells in turn, a third as fast (brief 900 B1).
+        // Every level at 600 XP an hour, Bare, for three heroes' work: the Starter Camp's one hero builds and fells in turn, a third as fast.
         expect(track.levels[13].cumulative.bare).toBeCloseTo(xpForLevel(15) / (600 / 3));
         expect(track.levels[13].cumulativeWork.bare).toBeCloseTo(xpForLevel(15) / (600 / 3));
         expect(track.levels[13].cumulative.typical).toBeLessThan(track.levels[13].cumulative.bare);
@@ -397,7 +397,7 @@ describe('the shipped content', () => {
         // The ledger fix pack raised the build recipes' XP; the wall the check found before is gone with heroes to spare.
         const spare = buildPace(content, ledger, { heroesByTier: [{ tier: 0, heroes: 8 }] });
         expect(spare.findings().filter(f => f.check === 'wall' && f.key === 'skill:construction')).toEqual([]);
-        // With the reference guild's heroes, a Construction wall is only its chain short of heroes (brief 900 B1).
+        // With the reference guild's heroes, a Construction wall is only its chain short of heroes.
         for (const run of pace.walls('construction')) expect(run.source.chain).toBeLessThan(1);
 
         const vein = pace.rateAt({ token: 'token_copper_ore_vein' }, PROFILE.TYPICAL);

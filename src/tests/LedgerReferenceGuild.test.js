@@ -7,7 +7,7 @@ import { settingsOf, heroesAt, chainHeroesAt } from '../../cms/src/engine/ledger
 import { paceContent } from './fixtures/paceWorld.js';
 
 /**
- * ⭐ The ledger times the reference guild (BALANCE_RULES section 8, brief 900 B1, T-716): heroes
+ * ⭐ The ledger times the reference guild (BALANCE_RULES section 8): heroes
  * arrive about one a tier and staff a chain of at most one maker and about two gatherers, each doing
  * everything in turn when there are fewer; the guild's time is spent once, so a stage waits for its
  * heroes to do all its work; a camp works the layout's nodes (two sparse, four dense) and its own

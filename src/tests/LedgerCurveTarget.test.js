@@ -108,7 +108,7 @@ describe('supply counts the gatherers a crafter needs', () => {
         expect(hut.gatherers.item_oak_wood.heroes).toBeCloseTo(2);
         expect(hut.gatherers.item_oak_wood.work.key).toBe('token_oak||');
         expect(pace.heroesOf({ token: 'token_plot', recipe: 'recipe_build_hut' }, PROFILE.BARE)).toBeCloseTo(3);
-        // Fed in full, but the Starter Camp's one hero builds and fells in turn: a third as fast (brief 900 B1).
+        // Fed in full, but the Starter Camp's one hero builds and fells in turn: a third as fast.
         const track = pace.trackOf('construction');
         expect(track.levels[13].cumulative.bare).toBeCloseTo(xpForLevel(15) / (600 / 3));
     });
@@ -126,7 +126,7 @@ describe('supply counts the gatherers a crafter needs', () => {
     });
 
     it('⭐ times a maker as the reference chain runs it: past the heroes its chain has, at their share of what it needs', () => {
-        // Rewritten for brief 900 B1: a chain's heroes are the guild's, at most one maker and
+        // A chain's heroes are the guild's, at most one maker and
         // `gatherersPerMaker` gatherers, and they share all its work, the maker's too (the 2.2 cap counted gatherers alone).
         const hut = { token: 'token_plot', recipe: 'recipe_build_hut' };
         const eight = [{ tier: 0, heroes: 8 }];

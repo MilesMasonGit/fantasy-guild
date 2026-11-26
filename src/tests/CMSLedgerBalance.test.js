@@ -46,8 +46,8 @@ function balanceWorkspace() {
     for (const r of c.recipes) (recipePools[r.skill] ||= []).push(r);
     return {
         items: c.items, tokens: c.tokens, effects: c.effects, recipePools, starterCamp: c.starterCamp, skillPerks: null,
-        // The camp is done when the pace rule reaches level 9, about 30 minutes in (brief 880 L3), with eight
-        // heroes from the start so a stage is its slowest path, the levers' measure (brief 900 B1).
+        // The camp is done when the pace rule reaches level 9, about 30 minutes in, with eight
+        // heroes from the start so a stage is its slowest path, the levers' measure.
         planSettings: { tierLevels: [{ tier: 0, level: 1 }, { tier: 1, level: 9 }], heroesByTier: [{ tier: 0, heroes: 8 }] }
     };
 }

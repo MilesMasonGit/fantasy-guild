@@ -85,7 +85,7 @@ describe('the report', () => {
     });
 
     it('reads the Ledger settings: a longer payback lets Typical buy the statue', () => {
-        // Yield's places have room for it beside the four Mines (brief 900 B1).
+        // Yield's places have room for it beside the four Mines.
         const { pace } = workspaceReport({ ...paceWorkspace(), planSettings: { paybackHours: 1000, sitePlaces: { buildings: 8, perKind: 5 } } });
         expect(pace.rateAt({ token: 'token_vein' }, 'typical').chosen.map((c) => c.id)).toContain('token_statue');
     });
@@ -112,7 +112,7 @@ describe('the tab', { timeout: 20000 }, () => {
         const view = mount();
         openRow(view, 'tokens:token_vein', 'Copper Vein');
         const rates = within(view.getByLabelText('Rates'));
-        // Typical: the camp, four Mines and Beer; the camp's two veins, 480 cycles an hour, 1.5 ore, four Mines' sure double (brief 900 B1).
+        // Typical: the camp, four Mines and Beer; the camp's two veins, 480 cycles an hour, 1.5 ore, four Mines' sure double.
         const items = () => view.container.querySelector('[data-rate-items]').textContent;
         expect(items()).toBe('1440 Copper Ore');
         expect(view.container.querySelector('[data-rate-factor="support:token_mine"]').textContent).toMatch(/Mine ×4.*double drop/i);
@@ -130,7 +130,7 @@ describe('the tab', { timeout: 20000 }, () => {
         openRow(view, 'tokens:token_big_hut', 'Big Hut');
         const path = within(view.getByLabelText('Path time'));
         expect([...view.container.querySelectorAll('[data-path-profile]')].map((r) => r.getAttribute('data-path-profile'))).toEqual(['bare', 'typical', 'maxed']);
-        // Construction 15 fed by the foresters it needs, the Starter Camp's one hero building and felling in turn (brief 900 B1; 3 h 41 min with a hero for each before).
+        // Construction 15 fed by the foresters it needs, the Starter Camp's one hero building and felling in turn.
         expect(view.container.querySelector('[data-path-profile="typical"] [data-path-hours]').textContent).toMatch(/^11 h 9 min/);
         expect(path.getByText(/waits for Construction 15/)).toBeTruthy();
         // The Construction wall is filed under the skill; the page of what waits on it shows it too.

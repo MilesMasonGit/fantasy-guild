@@ -13,7 +13,7 @@ import { balanceContent, calmContent } from './fixtures/balanceWorld.js';
 
 // The stages follow the pace rule (brief 880 L3): the Starter Camp is done when the curve reaches level 9, about 30 minutes in.
 // Eight heroes from the start, so a stage is its slowest path, the levers' measure; with the reference guild's one hero
-// the camp is its hero's work, which no lever shrinks alone (brief 900 B1, below).
+// the camp is its hero's work, which no lever shrinks alone (below).
 const SPARE_HEROES = [{ tier: 0, heroes: 8 }];
 const CAMP_ONLY = { tierLevels: [{ tier: 0, level: 1 }, { tier: 1, level: 9 }], heroesByTier: SPARE_HEROES };
 const proposalOf = (result, key, field) => result.proposals.find(p => p.key === key && p.field === field) || null;
@@ -25,7 +25,7 @@ describe('the balancing preview', () => {
     it('moves a too-slow stage to its budget: the camp is hours late before, within the tolerance after', () => {
         const before = stage(result.before, 0);
         const after = stage(result.after, 0);
-        // Over an hour late: four Groves round the Oak (brief 900 B1) bring the Statue's wood faster than one did.
+        // Over an hour late: four Groves round the Oak bring the Statue's wood faster than one did.
         expect(before.hours).toBeGreaterThan(1);
         expect(before.within).toBe(false);
         expect(Math.abs(after.hours * 60 / 30 - 1)).toBeLessThanOrEqual(0.25);

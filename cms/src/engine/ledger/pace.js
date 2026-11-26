@@ -29,7 +29,7 @@ import { shopCoinsOf, enemyCoinDropOf } from '../../../../src/config/registries/
  *   brewed by one hero on theirs, as the profile weighed them (a boost the guild cannot brew fast
  *   enough starves its work). A loop (seeds that make seeds) takes its own input as in stock. An
  *   input nothing makes by then holds a work back.
- * - **The reference guild** (BALANCE_RULES section 8, T-716): its heroes arrive about one a tier
+ * - **The reference guild** (BALANCE_RULES section 8): its heroes arrive about one a tier
  *   (`settings.heroesByTier`), and one chain has at most one maker and `gatherersPerMaker`
  *   gatherers; fewer heroes than that run one chain together, each doing everything in turn. A work
  *   whose chain needs more heroes than it has (its maker, the gatherers down its chain and the

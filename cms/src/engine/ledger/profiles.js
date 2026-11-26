@@ -52,7 +52,7 @@ import { hallTracksOf, hallGraph, freeRanks, openingPath, starRulesOf, starMoves
  * the Bare hours one takes to make, inputs and drinks taken off) plus XP (an hour's worth at the
  * rate before it).
  *
- * **A work site** (BALANCE_RULES sections 5 and 8, brief 890): a camp works `campNodes` nodes in
+ * **A work site** (BALANCE_RULES sections 5 and 8): a camp works `campNodes` nodes in
  * turn (a vein, a Field, a forest's trees: the layout's), and stands within reach of them, so its
  * own rules reach them too (a Sawmill's double loot, a Mine Head's quicker rest). The buildings round
  * a work hold `sitePlaces.buildings` places, at most `sitePlaces.perKind` of them boosting one kind
@@ -121,7 +121,7 @@ export function pickKindOf(pick, rate) {
 }
 
 /** The nodes a camp hands one hero by default: the sparse layout's (`settings.layouts`). */
-export const DEFAULT_CAMP_NODES = 2;
+const DEFAULT_CAMP_NODES = 2;
 
 /** A site's building places by default (`settings.sitePlaces`). */
 const DEFAULT_SITE_PLACES = Object.freeze({ buildings: 8, perKind: 4 });
@@ -135,7 +135,7 @@ const AXIS_KIND = Object.freeze({
     [EFFECT_TYPES.LUCKY]: 'rare', [EFFECT_TYPES.BONUS_DROP]: 'rare'
 });
 
-/** The copies of a support a setup holds (a camp's own place is not a building's). */
+/** The copies of a support a setup names. */
 function copiesIn(setup, id) {
     let n = 0;
     for (const e of list(setup.supports)) {

@@ -108,7 +108,7 @@ describe('npm run cms -- ledger', () => {
             expect(l.guildBare).toBeGreaterThanOrEqual(l.bare - 1e-9);
         }
         // ⭐ Guild time is the hero-hours the level takes: a build fed by two foresters at Bare, which the Starter
-        // Camp's one hero does in turn, a third as fast, its guild time its own (brief 900 B1).
+        // Camp's one hero does in turn, a third as fast, its guild time its own.
         const build = construction.levels[0];
         expect(build.best.bare).toBe('Build Hut at Plot');
         expect(build.gatherers.bare).toBeCloseTo(2, 3);
@@ -184,7 +184,7 @@ describe('npm run cms -- ledger', () => {
     });
 
     it('⭐ times a level on the reference chain, keeps the full gatherer count, and its guild time is that chain\'s', () => {
-        // Rewritten for brief 900 B1: the chain's heroes share all its work. Eight heroes, a chain of one maker
+        // The chain's heroes share all its work. Eight heroes, a chain of one maker
         // and one gatherer: two heroes for the Hut builder's three heroes' work, half as long again.
         const eight = [{ tier: 0, heroes: 8 }];
         const loose = ledgerReadout({ ...paceWorkspace(), planSettings: { heroesByTier: eight } }).pace.construction.levels[0];

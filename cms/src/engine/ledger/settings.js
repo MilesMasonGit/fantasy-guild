@@ -118,7 +118,7 @@ const DEFAULT_BOOST_TARGETS = {
 const DEFAULT_COIN_CURVE = [{ tier: 0, minutes: 10 }];
 
 /**
- * The reference guild's heroes (BALANCE_RULES section 8, owner 2026-11-26): about one a tier, one
+ * The reference guild's heroes (BALANCE_RULES section 8): about one a tier, one
  * at copper (the Starter Camp and Plane 1), two at iron, on to eight at darkmetal, where the two
  * tiers of adamantine's twenty levels bring two.
  */
@@ -135,7 +135,7 @@ export const LAYOUTS = Object.freeze(['sparse', 'dense']);
 const DEFAULT_LAYOUTS = Object.freeze({ sparse: 2, dense: 4 });
 
 /**
- * A work site's building places (BALANCE_RULES section 5, brief 890: Tokens 128 u apart within the
+ * A work site's building places (BALANCE_RULES section 5: Tokens 128 u apart within the
  * 240 u reach, twelve places round a node): about eight for buildings once the camp, the nodes and
  * a spawner stand, and about four of them max one kind of boost, so a site leans one or two ways.
  */
