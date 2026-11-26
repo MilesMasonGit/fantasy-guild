@@ -321,6 +321,18 @@ export function planCycle(instanceId, instance, io) {
 }
 
 /**
+ * Whether {@link planCycle} would come out `ok`, without building the plan: asked every tick for
+ * every Token at work (`WorkCheck.fixableReason`), where the plan itself is never spent.
+ */
+export function cyclePayable(instanceId, instance, io) {
+    const requirements = io?.recipe?.requiresContext;
+    if (Array.isArray(requirements) && requirements.length && !planContextCharges(instanceId, requirements).ok) return false;
+    const def = getTokenType(instance?.typeId);
+    const ownCost = (def?.foundation ? 0 : DEFAULT_STATION_CHARGE_COST) + statementCycleCost(def);
+    return !(ownCost > 0) || isUnlimited(instance) || canAfford(instance, ownCost);
+}
+
+/**
  * Spend a plan. Every debit, or none — the caller has already established that
  * the whole cycle is affordable, including its bank items.
  *

@@ -2,7 +2,7 @@
 
 import { neighbourIds } from './nearby.js';
 import { getTokenType, hasAdjacencyEffect, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
-import { recipesForToken, contextTagsOf, contextRequirementsOf } from '../../config/registries/recipePoolRegistry.js';
+import { contextTagsOf, contextRequirementsOf } from '../../config/registries/recipePoolRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as InputCost from './InputCost.js';
 import * as StationRecipe from './StationRecipe.js';
@@ -94,7 +94,7 @@ export function unmetContext(instanceId, recipe) {
  * A Token with no recipes at all is not a station (a Forest makes Wood regardless of its
  * neighbours), so it resolves `OK` with a null recipe and its own authored outputs stand.
  *
- * The pool is the station's declared skill: `recipesForToken` returns every recipe of the skill
+ * The pool is the station's declared skill: `StationRecipe.poolFor` returns every recipe of the skill
  * named in the Token's `Works as` statement. A Token without that statement gets an empty list, the
  * not-a-station case above.
  *
@@ -121,7 +121,7 @@ export function resolveRecipe(instanceId, instance, lane = StationRecipe.LANE.FI
         return study.ok ? { status: RECIPE.OK, recipe: null } : { status: RECIPE.NONE, recipe: null, reason: study.reason };
     }
 
-    const recipes = recipesForToken(def);
+    const recipes = StationRecipe.poolFor(def);
 
     // Not a station: its config's own inputs/outputs apply.
     if (!recipes.length) return { status: RECIPE.OK, recipe: null };

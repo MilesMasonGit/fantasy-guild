@@ -237,8 +237,9 @@ describe('⚠️ read once per Token, not per tick (GDD §14, catch-up)', () => 
         const reads = vi.spyOn(ModifierAggregator.prototype, 'collectPercentages');
         for (let i = 0; i < 1000; i++) TimedChanges.tick(10);
         expect(typeAtMiddle()).toBe('gt_sapling');
-        // Once from the Sapling's own aggregator, once from the guild-wide one.
-        expect(reads.mock.calls.length).toBe(2);
+        // Once, from the Sapling's own aggregator: the guild-wide one holds no Grow Time, so it is
+        // not walked at all.
+        expect(reads.mock.calls.length).toBe(1);
     });
 
     it('a support arriving later is read at once, and one leaving too', () => {

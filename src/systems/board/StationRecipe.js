@@ -1,7 +1,7 @@
 // station recipe selection
 
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
-import { recipesForToken } from '../../config/registries/recipePoolRegistry.js';
+import { getTokenType, registryVersion } from '../../config/registries/tokenRegistry.js';
+import { recipesForToken, recipePoolsVersion } from '../../config/registries/recipePoolRegistry.js';
 import { fieldOf, shrineOf } from '../../config/registries/tokenConstants.js';
 import { hasCatchPools } from '../../config/registries/catchPools.js';
 import { SUMMONING_SKILL } from '../../config/registries/summonRules.js';
@@ -40,9 +40,30 @@ export function recipeLevel(recipe) {
     return typeof recipe?.levelRequirement === 'number' ? recipe.levelRequirement : 0;
 }
 
-/** The recipes this Token may choose between: its `Works as` skill's pool. */
+/**
+ * Each Token type's pool, kept while the Token registry and the recipe pools are as they were
+ * (`registryVersion`, `recipePoolsVersion`). ⚠️ A pool is a filter over every recipe in the game,
+ * and the runner, the flags and the resolver each ask a station's several times a tick.
+ */
+let pools = { tokens: -1, version: -1, byDef: new WeakMap() };
+
+const NO_POOL = Object.freeze([]);
+
+/**
+ * The recipes this Token may choose between: its `Works as` skill's pool. Shared and frozen: read
+ * it, never change it.
+ */
 export function poolFor(def) {
-    return recipesForToken(def) || [];
+    if (!def || typeof def !== 'object') return NO_POOL;
+    const tokens = registryVersion();
+    const version = recipePoolsVersion();
+    if (pools.tokens !== tokens || pools.version !== version) pools = { tokens, version, byDef: new WeakMap() };
+    let pool = pools.byDef.get(def);
+    if (!pool) {
+        pool = Object.freeze(recipesForToken(def) || []);
+        pools.byDef.set(def, pool);
+    }
+    return pool;
 }
 
 /** The Token type behind an instance, tolerating a def the caller already has. */
