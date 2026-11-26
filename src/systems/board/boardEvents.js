@@ -268,6 +268,13 @@ export const BOARD_EVENTS = {
      */
     PROGRESS: 'board:progress',
 
+    /**
+     * A station's second recipe's cycle progress (Many Hands), for its card alone: the mat draws
+     * the first recipe's only. Payload as the work runner's `PROGRESS`: `{ instanceId, percent,
+     * elapsedMs, cycleTimeMs }`; a reset to zero sends `percent: 0` alone.
+     */
+    SECOND_PROGRESS: 'board:second_progress',
+
     /** A loot sprite was dropped, merged, collected or consumed. Payload: `{ spriteId? }` */
     SPRITES_CHANGED: 'board:sprites_changed',
 

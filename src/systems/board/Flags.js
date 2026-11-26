@@ -16,7 +16,7 @@ import * as Growth from './Growth.js';
 import * as Fields from './Fields.js';
 import * as Fishing from './Fishing.js';
 import * as Demolition from './Demolition.js';
-import { workConfigOf } from './StationRecipe.js';
+import { workConfigOf, forfeitSecond } from './StationRecipe.js';
 import * as BoardCombat from './BoardCombat.js';
 import * as Camps from './Camps.js';
 import * as Occupation from './Occupation.js';
@@ -249,8 +249,9 @@ function canTake(heroId, kind, def, instance) {
     return true;
 }
 
-/** Zero a Token's cycle: the forfeit when a hero leaves it. */
+/** Zero a Token's cycle, and a Many Hands station's second recipe's: the forfeit when a hero leaves it. */
 function resetProgress(instance) {
+    forfeitSecond(instance);
     if (!instance || !(instance.cycleElapsedMs > 0)) return;
     instance.cycleElapsedMs = 0;
     EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: instance.id, percent: 0 });

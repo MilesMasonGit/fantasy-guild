@@ -10,6 +10,7 @@ import { EventsDevSection } from '../dev/EventsDevSection.jsx';
 import { FaithDevSection } from '../dev/FaithDevSection.jsx';
 import { setUpCrimeScene } from '../dev/crimeScene.js';
 import { setUpCoinScene } from '../dev/coinScene.js';
+import { setUpManyHandsScene } from '../dev/manyHandsScene.js';
 import { ScienceDevSection } from '../dev/ScienceDevSection.jsx';
 import { CombatStylesDevSection } from '../dev/CombatStylesDevSection.jsx';
 import { CombatTricksDevSection } from '../dev/CombatTricksDevSection.jsx';
@@ -287,6 +288,21 @@ export const TestDashboard = /* @__PURE__ */ React.memo(() => {
                                 }}
                             >
                                 Set up a coin scene
+                            </button>
+                        </div>
+                        {/* ⚠️ Temporary: the Many Hands eye-check's scene (brief 800 P3), deleted with its test once the look is accepted. */}
+                        <div className="mb-3 pb-3 border-b border-gi-border space-y-1" data-testid="qa-many-hands-scene">
+                            <div className={labelClass}>Eye-check: Many Hands</div>
+                            <button
+                                type="button"
+                                data-qa-many-hands-scene
+                                className={cn(buttonClass, 'w-full')}
+                                onClick={() => {
+                                    const r = setUpManyHandsScene();
+                                    say(r.ok ? 'A Workshop set to Charcoal and Leather, a QA Crafter holding Test Many Hands on it; 4 Hide, so the Leather runs dry after two' : r.error);
+                                }}
+                            >
+                                Set up a Many Hands scene
                             </button>
                         </div>
 

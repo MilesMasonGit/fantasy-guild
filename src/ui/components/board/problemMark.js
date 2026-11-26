@@ -108,8 +108,8 @@ export function problemOf({ alert = null, spawner = null, growth = null, choose 
 const joinOr = (names) => (names.length < 2 ? names[0] || '' : `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`);
 
 /** The skill the Token's work needs, by id and name, and the level it asks for. */
-function skillNeeded(instance) {
-    const config = workConfigOf(getTokenType(instance.typeId), instance);
+function skillNeeded(instance, lane) {
+    const config = workConfigOf(getTokenType(instance.typeId), instance, lane);
     const skillId = config?.skill || null;
     return {
         id: skillId,
@@ -129,18 +129,20 @@ function workerHero(instance) {
  * in the way.
  * @param {{kind: string, needs?: string[]}} problem from {@link problemOf}
  * @param {string} instanceId
+ * @param {number} [lane] which of a station's recipes the problem is (`StationRecipe.LANE`): a Many
+ * Hands station's second recipe names its own wants
  */
-export function problemText(problem, instanceId) {
+export function problemText(problem, instanceId, lane = undefined) {
     if (!problem) return '';
     const instance = BoardState.getTokenById(instanceId);
     switch (problem.kind) {
         case ALERT.INPUTS: {
-            const missing = instance ? getMissingRequirements(instanceId, instance) : null;
+            const missing = instance ? getMissingRequirements(instanceId, instance, lane) : null;
             const items = missing?.type === 'items' ? missing.items : [];
             return items.length ? `Needs ${joinNames(items)}` : 'Needs items';
         }
         case ALERT.NO_RECIPE: {
-            const missing = instance ? getMissingRequirements(instanceId, instance) : null;
+            const missing = instance ? getMissingRequirements(instanceId, instance, lane) : null;
             const tokens = missing?.type === 'tokens' ? missing.items : [];
             return tokens.length ? `Needs ${joinNames(tokens.map(withArticle))} nearby` : 'Nothing to make';
         }
@@ -176,11 +178,11 @@ export function problemText(problem, instanceId) {
             return MatCap.canPlaceMore(1) ? 'No room for what it makes' : 'Token cap full';
         }
         case ALERT.ACCESS: {
-            const skill = instance ? skillNeeded(instance) : { name: null };
+            const skill = instance ? skillNeeded(instance, lane) : { name: null };
             return skill.id ? levelNeed(skill.id, skill.level, heroLevel(workerHero(instance), skill.id)).text : 'Hero’s level is too low';
         }
         case ALERT.UNSKILLED: {
-            const skill = instance ? skillNeeded(instance) : { name: null };
+            const skill = instance ? skillNeeded(instance, lane) : { name: null };
             return skill.name ? `Needs the ${skill.name} skill` : 'Hero lacks the skill';
         }
         case ALERT.NO_TOOL: {

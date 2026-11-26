@@ -72,12 +72,13 @@ const READ_AXES = new Set([
  * Axes the board reads on some work this calculator does not model yet: reaching one is reported.
  * Faith's blessings too: a shrine's hold only while it is lit, which a rate cannot know. Build
  * Discount cuts a build's materials and its Foundation's price, which a build's rate does not take off.
+ * Second Recipe (Many Hands) runs a second recipe beside the one rated, which a one-recipe rate cannot add.
  */
 const UNREAD_WORK_AXES = new Set([
     EFFECT_TYPES.REFRESH, EFFECT_TYPES.PRESERVATION, EFFECT_TYPES.NEVER_RUNS_OUT, EFFECT_TYPES.ECHO,
     EFFECT_TYPES.FORTUNE, EFFECT_TYPES.WISDOM,
     EFFECT_TYPES.FREE_REPLANT, EFFECT_TYPES.GROVE_FELLING, EFFECT_TYPES.BETTER_CATCH,
-    EFFECT_TYPES.BUILD_DISCOUNT
+    EFFECT_TYPES.BUILD_DISCOUNT, EFFECT_TYPES.SECOND_RECIPE
 ]);
 
 /** The kinds of factor, as the switches name them. */

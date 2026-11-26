@@ -925,6 +925,22 @@ export function resolveAxis(instanceId, effectType, base, category = TARGET_CATE
 }
 
 /**
+ * One axis as the hero working Token `instanceId` holds it (their gear, perks, the tool in use, what
+ * lingers on them) with the guild's stars, the Token's own neighbours left out: an effect a hero
+ * holds rather than one a building lends (`heroOrGuild` in the palette). `heroId` as in
+ * {@link resolveAxis}.
+ */
+export function resolveHeroAxis(instanceId, effectType, base, category = TARGET_CATEGORIES.ALL, heroId = undefined) {
+    const guild = getGlobalAggregator();
+    const hero = heroContributions(instanceId, effectType, category, null, heroId);
+    return applyThreeBucket(base, {
+        flat: [guild.getFlat(effectType, category, null), hero.flat],
+        multipliers: [...guild.collectMultipliers(effectType, category, null), ...hero.multipliers],
+        percentages: [...guild.collectPercentages(effectType, category, null), ...hero.percentages]
+    });
+}
+
+/**
  * One axis at a Token exactly as {@link resolveAxis} resolves it, with where every part came from:
  * read only, for the effect breakdown (brief 600's badges).
  *

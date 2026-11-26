@@ -1,0 +1,61 @@
+{
+  "format": "fantasy-guild-change-pack",
+  "version": 1,
+  "id": "2026-11-25-crafting-signature-perk",
+  "createdAt": "2026-11-25T23:00:00Z",
+  "asked": "The Crafting 99 signature perk, Many Hands: a master crafter works two recipes at once at their station (concept_milestone_perks.md, owner 2026-11-21; rule built by brief 800 P3, owner rulings 2026-11-25). The Crafting 50 and 75 perks (Thrifty Hands, Batch Work) are the content agent's T-522 tables and are not here.",
+  "entries": [
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_many_hands",
+      "value": {
+        "name": "Many Hands",
+        "statements": [
+          {
+            "id": "stm_many_hands",
+            "keyword": "provides",
+            "payload": {
+              "type": "SECOND_RECIPE",
+              "bucket": "flat",
+              "value": 1,
+              "category": "crafting"
+            },
+            "chargeDelta": 0,
+            "to": {
+              "mode": "all",
+              "value": ""
+            },
+            "target": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true
+      },
+      "note": "Crafting 99: a Crafting station this hero works runs a second recipe the player picks on its card, beside the first, each with its own cycle and materials (Second Recipe, on, narrowed to Crafting). On or off: no number to set."
+    },
+    {
+      "op": "edit",
+      "kind": "skillPerks",
+      "id": "crafting",
+      "value": {
+        "id": "crafting",
+        "perks": [
+          {
+            "level": 10,
+            "effectId": "effect_nimble_fingers",
+            "scale": 1
+          },
+          {
+            "level": 99,
+            "effectId": "effect_many_hands",
+            "scale": 1
+          }
+        ]
+      },
+      "note": "Crafting's table as data/ holds it at 0bf0e866 (Nimble Fingers at 10), plus Many Hands at 99. Re-stamp against the live workspace, and fold into the content agent's T-522 tables if those land first.",
+      "fingerprint": "fp:553fb4efa6648c2d"
+    }
+  ]
+}

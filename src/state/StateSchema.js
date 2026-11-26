@@ -226,6 +226,8 @@ export const INITIAL_STATE = {
     //               + origin 'placed'|'spawned' (absent reads as placed), clocks? { growMs, spawnMs, ... },
     //                 fixture? true on a node a map wrote, fixture? 'camp' on a Token the Starter Camp laid (`BoardState.isFixture`),
     //                 demolish? true on a Token marked for demolition (`Demolition.js`; its progress is cycleElapsedMs),
+    //                 secondRecipeId?, secondElapsedMs? on a Many Hands station: its second recipe and that recipe's cycle (`StationRecipe.js`),
+    //                 secondAlert? that recipe's problem, for its card (`BoardRunner`),
     //                 paid? { items: [{ itemId, quantity }], coins } what the guild paid for it: its Shop price as bought, a building's
     //                 Foundation and build materials as paid; a refund gives it back, Salvage a share of it (`BuildPrices.js`),
     //                 field? { cropId?, load?, full?, seedOwed? } on a Field: the crop in its ground, the harvests left, the seed its first harvest still owes (`Fields.js`; its growth on clocks.fieldMs)
