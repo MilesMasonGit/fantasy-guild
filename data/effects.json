@@ -5493,7 +5493,7 @@
         "payload": {
           "type": "DODGE_CRIT",
           "bucket": "flat",
-          "value": 100,
+          "value": 75,
           "category": "stealth"
         },
         "chargeDelta": 0,
@@ -5865,6 +5865,31 @@
         "chargeDelta": 0,
         "to": null,
         "reach": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true
+  },
+  "effect_counting_house": {
+    "id": "effect_counting_house",
+    "name": "Counting House",
+    "statements": [
+      {
+        "id": "stm_counting_house",
+        "keyword": "provides",
+        "payload": {
+          "type": "COIN_FIND",
+          "bucket": "percentage",
+          "value": 0.1
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
         "target": null,
         "when": null,
         "upkeep": null

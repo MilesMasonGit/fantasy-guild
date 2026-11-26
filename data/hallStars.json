@@ -137,6 +137,7 @@
               "quantity": 50
             }
           ],
+          "coins": 290,
           "rules": [
             {
               "id": "stm_star_forestry_speed_1_1",
@@ -168,6 +169,7 @@
               "quantity": 34
             }
           ],
+          "coins": 1900,
           "rules": [
             {
               "id": "stm_star_forestry_speed_2_2",
@@ -215,6 +217,7 @@
               "quantity": 600
             }
           ],
+          "coins": 290,
           "rules": [
             {
               "id": "stm_star_forestry_yield_1_3",
@@ -246,6 +249,7 @@
               "quantity": 130
             }
           ],
+          "coins": 1900,
           "rules": [
             {
               "id": "stm_star_forestry_yield_2_4",
@@ -293,6 +297,7 @@
               "quantity": 2000
             }
           ],
+          "coins": 290,
           "rules": [
             {
               "id": "stm_star_forestry_regrowth_1_6",
@@ -357,6 +362,7 @@
               "quantity": 510
             }
           ],
+          "coins": 290,
           "rules": [
             {
               "id": "stm_star_mining_speed_1_10",
@@ -388,6 +394,7 @@
               "quantity": 135
             }
           ],
+          "coins": 1900,
           "rules": [
             {
               "id": "stm_star_mining_speed_2_11",
@@ -435,6 +442,7 @@
               "quantity": 1300
             }
           ],
+          "coins": 290,
           "rules": [
             {
               "id": "stm_star_mining_yield_1_12",
@@ -466,6 +474,7 @@
               "quantity": 290
             }
           ],
+          "coins": 1900,
           "rules": [
             {
               "id": "stm_star_mining_yield_2_13",
@@ -513,6 +522,7 @@
               "quantity": 3100
             }
           ],
+          "coins": 290,
           "rules": [
             {
               "id": "stm_star_mining_vein_rest_1_15",
@@ -543,6 +553,7 @@
               "quantity": 690
             }
           ],
+          "coins": 1900,
           "rules": [
             {
               "id": "stm_star_mining_vein_rest_2_16",
@@ -589,6 +600,7 @@
               "quantity": 2700
             }
           ],
+          "coins": 290,
           "rules": [
             {
               "id": "stm_star_smithing_speed_1_19",
@@ -620,6 +632,7 @@
               "quantity": 1100
             }
           ],
+          "coins": 1900,
           "rules": [
             {
               "id": "stm_star_smithing_speed_2_20",
@@ -667,6 +680,7 @@
               "quantity": 2800
             }
           ],
+          "coins": 290,
           "rules": [
             {
               "id": "stm_star_smithing_yield_1_21",
@@ -698,6 +712,7 @@
               "quantity": 730
             }
           ],
+          "coins": 1900,
           "rules": [
             {
               "id": "stm_star_smithing_yield_2_22",
@@ -745,6 +760,7 @@
               "quantity": 1000
             }
           ],
+          "coins": 290,
           "rules": [
             {
               "id": "stm_star_fishing_speed_1_24",
@@ -776,6 +792,7 @@
               "quantity": 950
             }
           ],
+          "coins": 1900,
           "rules": [
             {
               "id": "stm_star_fishing_speed_2_25",
@@ -823,6 +840,7 @@
               "quantity": 940
             }
           ],
+          "coins": 290,
           "rules": [
             {
               "id": "stm_star_fishing_yield_1_26",
@@ -854,6 +872,7 @@
               "quantity": 680
             }
           ],
+          "coins": 1900,
           "rules": [
             {
               "id": "stm_star_fishing_yield_2_27",
@@ -901,6 +920,7 @@
               "quantity": 2700
             }
           ],
+          "coins": 290,
           "rules": [
             {
               "id": "stm_star_farming_speed_1_31",
@@ -932,6 +952,7 @@
               "quantity": 4000
             }
           ],
+          "coins": 1100,
           "rules": [
             {
               "id": "stm_star_farming_speed_2_32",
@@ -963,6 +984,7 @@
               "quantity": 870
             }
           ],
+          "coins": 2800,
           "rules": [
             {
               "id": "stm_star_farming_speed_3_33",
@@ -1010,6 +1032,7 @@
               "quantity": 2600
             }
           ],
+          "coins": 290,
           "rules": [
             {
               "id": "stm_star_farming_yield_1_34",
@@ -1041,6 +1064,7 @@
               "quantity": 3600
             }
           ],
+          "coins": 1100,
           "rules": [
             {
               "id": "stm_star_farming_yield_2_35",
@@ -1072,6 +1096,7 @@
               "quantity": 710
             }
           ],
+          "coins": 2800,
           "rules": [
             {
               "id": "stm_star_farming_yield_3_36",
@@ -1119,6 +1144,7 @@
               "quantity": 6100
             }
           ],
+          "coins": 290,
           "rules": [
             {
               "id": "stm_star_farming_refill_1_38",
@@ -1293,6 +1319,7 @@
               "quantity": 8900
             }
           ],
+          "coins": 1100,
           "rules": [
             {
               "id": "stm_star_farming_refill_2_47",
@@ -1467,6 +1494,7 @@
               "quantity": 2200
             }
           ],
+          "coins": 2800,
           "rules": [
             {
               "id": "stm_star_farming_refill_3_56",
@@ -1657,6 +1685,7 @@
               "quantity": 3200
             }
           ],
+          "coins": 290,
           "rules": [
             {
               "id": "stm_star_cooking_speed_1_68",
@@ -1688,6 +1717,7 @@
               "quantity": 4000
             }
           ],
+          "coins": 1100,
           "rules": [
             {
               "id": "stm_star_cooking_speed_2_69",
@@ -1719,6 +1749,7 @@
               "quantity": 1000
             }
           ],
+          "coins": 2800,
           "rules": [
             {
               "id": "stm_star_cooking_speed_3_70",
@@ -1766,6 +1797,7 @@
               "quantity": 3000
             }
           ],
+          "coins": 290,
           "rules": [
             {
               "id": "stm_star_cooking_yield_1_71",
@@ -1797,6 +1829,7 @@
               "quantity": 4100
             }
           ],
+          "coins": 1100,
           "rules": [
             {
               "id": "stm_star_cooking_yield_2_72",
@@ -1828,6 +1861,7 @@
               "quantity": 810
             }
           ],
+          "coins": 2800,
           "rules": [
             {
               "id": "stm_star_cooking_yield_3_73",
@@ -1875,6 +1909,7 @@
               "quantity": 2700
             }
           ],
+          "coins": 290,
           "rules": [
             {
               "id": "stm_star_crafting_speed_1_75",
@@ -1906,6 +1941,7 @@
               "quantity": 4000
             }
           ],
+          "coins": 1100,
           "rules": [
             {
               "id": "stm_star_crafting_speed_2_76",
@@ -1937,6 +1973,7 @@
               "quantity": 880
             }
           ],
+          "coins": 2800,
           "rules": [
             {
               "id": "stm_star_crafting_speed_3_77",
@@ -1984,6 +2021,7 @@
               "quantity": 3000
             }
           ],
+          "coins": 290,
           "rules": [
             {
               "id": "stm_star_crafting_yield_1_78",
@@ -2015,6 +2053,7 @@
               "quantity": 4100
             }
           ],
+          "coins": 1100,
           "rules": [
             {
               "id": "stm_star_crafting_yield_2_79",
@@ -2046,6 +2085,7 @@
               "quantity": 820
             }
           ],
+          "coins": 2800,
           "rules": [
             {
               "id": "stm_star_crafting_yield_3_80",
@@ -2093,6 +2133,7 @@
               "quantity": 2700
             }
           ],
+          "coins": 290,
           "rules": [
             {
               "id": "stm_star_construction_speed_1_82",
@@ -2124,6 +2165,7 @@
               "quantity": 730
             }
           ],
+          "coins": 1900,
           "rules": [
             {
               "id": "stm_star_construction_speed_2_83",
@@ -2171,6 +2213,7 @@
               "quantity": 32
             }
           ],
+          "coins": 960,
           "rules": [
             {
               "id": "stm_star_alchemy_speed_1_86",
@@ -2218,6 +2261,7 @@
               "quantity": 320
             }
           ],
+          "coins": 960,
           "rules": [
             {
               "id": "stm_star_alchemy_yield_1_87",
@@ -2265,6 +2309,7 @@
               "quantity": 470
             }
           ],
+          "coins": 960,
           "rules": [
             {
               "id": "stm_star_alchemy_herb_refill_1_89",
@@ -2311,6 +2356,7 @@
               "quantity": 940
             }
           ],
+          "coins": 290,
           "rules": [
             {
               "id": "stm_star_infirmary_1_90",
@@ -2341,6 +2387,7 @@
               "quantity": 4000
             }
           ],
+          "coins": 1100,
           "rules": [
             {
               "id": "stm_star_infirmary_2_91",
@@ -2371,6 +2418,7 @@
               "quantity": 820
             }
           ],
+          "coins": 2800,
           "rules": [
             {
               "id": "stm_star_infirmary_3_92",
@@ -2417,6 +2465,7 @@
               "quantity": 4000
             }
           ],
+          "coins": 560,
           "rules": [
             {
               "id": "stm_star_larder_1_93",
@@ -2465,6 +2514,7 @@
               "quantity": 820
             }
           ],
+          "coins": 960,
           "rules": [
             {
               "id": "stm_star_trinket_case_1_94",
@@ -2512,6 +2562,7 @@
               "quantity": 76
             }
           ],
+          "coins": 290,
           "rules": [],
           "lines": [
             {
@@ -2528,6 +2579,7 @@
               "quantity": 3400
             }
           ],
+          "coins": 1100,
           "rules": [],
           "lines": [
             {
@@ -2544,6 +2596,7 @@
               "quantity": 160
             }
           ],
+          "coins": 2800,
           "rules": [],
           "lines": [
             {
@@ -2576,6 +2629,7 @@
               "quantity": 2200
             }
           ],
+          "coins": 290,
           "rules": [],
           "lines": [
             {
@@ -2592,6 +2646,7 @@
               "quantity": 4100
             }
           ],
+          "coins": 1100,
           "rules": [],
           "lines": [
             {
@@ -2608,6 +2663,7 @@
               "quantity": 580
             }
           ],
+          "coins": 2800,
           "rules": [],
           "lines": [
             {
@@ -2640,6 +2696,7 @@
               "quantity": 2700
             }
           ],
+          "coins": 290,
           "rules": [],
           "lines": [
             {
@@ -2656,6 +2713,7 @@
               "quantity": 4700
             }
           ],
+          "coins": 1100,
           "rules": [],
           "lines": [
             {
@@ -2672,6 +2730,7 @@
               "quantity": 660
             }
           ],
+          "coins": 2800,
           "rules": [],
           "lines": [
             {
@@ -2704,6 +2763,7 @@
               "quantity": 2200
             }
           ],
+          "coins": 290,
           "rules": [],
           "lines": [
             {
@@ -2720,6 +2780,7 @@
               "quantity": 4000
             }
           ],
+          "coins": 1100,
           "rules": [],
           "lines": [
             {
@@ -2736,6 +2797,7 @@
               "quantity": 580
             }
           ],
+          "coins": 2800,
           "rules": [],
           "lines": [
             {
@@ -2768,6 +2830,7 @@
               "quantity": 2200
             }
           ],
+          "coins": 290,
           "rules": [],
           "lines": [
             {
@@ -2784,6 +2847,7 @@
               "quantity": 11000
             }
           ],
+          "coins": 1100,
           "rules": [],
           "lines": [
             {
@@ -2800,6 +2864,7 @@
               "quantity": 2200
             }
           ],
+          "coins": 2800,
           "rules": [],
           "lines": [
             {
@@ -2832,6 +2897,7 @@
               "quantity": 1200
             }
           ],
+          "coins": 960,
           "rules": [],
           "lines": [
             {
@@ -2864,6 +2930,7 @@
               "quantity": 38
             }
           ],
+          "coins": 960,
           "rules": [],
           "lines": [
             {
@@ -2897,6 +2964,7 @@
               "quantity": 200
             }
           ],
+          "coins": 560,
           "rules": [],
           "lines": []
         }
@@ -2925,6 +2993,7 @@
               "quantity": 12000
             }
           ],
+          "coins": 960,
           "rules": [],
           "lines": []
         }
@@ -2953,6 +3022,7 @@
               "quantity": 110000
             }
           ],
+          "coins": 2000,
           "rules": [],
           "lines": []
         }
@@ -2981,6 +3051,7 @@
               "quantity": 160000
             }
           ],
+          "coins": 2000,
           "rules": [],
           "lines": []
         }
@@ -3009,6 +3080,7 @@
               "quantity": 230000
             }
           ],
+          "coins": 2000,
           "rules": [],
           "lines": []
         }
@@ -3036,6 +3108,7 @@
               "quantity": 110000
             }
           ],
+          "coins": 290,
           "rules": [
             {
               "id": "stm_star_well_lap_1",
@@ -3066,6 +3139,7 @@
               "quantity": 140000
             }
           ],
+          "coins": 1100,
           "rules": [
             {
               "id": "stm_star_well_lap_2",
@@ -3096,6 +3170,7 @@
               "quantity": 30000
             }
           ],
+          "coins": 2800,
           "rules": [
             {
               "id": "stm_star_well_lap_3",
@@ -3138,6 +3213,7 @@
         {
           "tier": 0,
           "price": [],
+          "coins": 290,
           "rules": [],
           "lines": []
         },
@@ -3149,6 +3225,7 @@
               "quantity": 20
             }
           ],
+          "coins": 580,
           "rules": [],
           "lines": []
         },
@@ -3160,6 +3237,7 @@
               "quantity": 30
             }
           ],
+          "coins": 870,
           "rules": [],
           "lines": []
         },
@@ -3171,6 +3249,7 @@
               "quantity": 40
             }
           ],
+          "coins": 1100,
           "rules": [],
           "lines": []
         },
@@ -3182,6 +3261,7 @@
               "quantity": 50
             }
           ],
+          "coins": 1400,
           "rules": [],
           "lines": []
         },
@@ -3193,6 +3273,7 @@
               "quantity": 60
             }
           ],
+          "coins": 1700,
           "rules": [],
           "lines": []
         },
@@ -3204,6 +3285,7 @@
               "quantity": 70
             }
           ],
+          "coins": 2000,
           "rules": [],
           "lines": []
         },
@@ -3215,6 +3297,7 @@
               "quantity": 80
             }
           ],
+          "coins": 2300,
           "rules": [],
           "lines": []
         }
@@ -3243,6 +3326,7 @@
               "quantity": 10
             }
           ],
+          "coins": 290,
           "rules": [],
           "lines": []
         },
@@ -3254,6 +3338,7 @@
               "quantity": 20
             }
           ],
+          "coins": 580,
           "rules": [],
           "lines": []
         },
@@ -3265,6 +3350,7 @@
               "quantity": 30
             }
           ],
+          "coins": 870,
           "rules": [],
           "lines": []
         },
@@ -3276,6 +3362,7 @@
               "quantity": 40
             }
           ],
+          "coins": 1100,
           "rules": [],
           "lines": []
         },
@@ -3287,6 +3374,7 @@
               "quantity": 50
             }
           ],
+          "coins": 1400,
           "rules": [],
           "lines": []
         },
@@ -3298,6 +3386,7 @@
               "quantity": 60
             }
           ],
+          "coins": 1700,
           "rules": [],
           "lines": []
         },
@@ -3309,6 +3398,7 @@
               "quantity": 70
             }
           ],
+          "coins": 2000,
           "rules": [],
           "lines": []
         },
@@ -3320,6 +3410,7 @@
               "quantity": 80
             }
           ],
+          "coins": 2300,
           "rules": [],
           "lines": []
         },
@@ -3331,6 +3422,7 @@
               "quantity": 90
             }
           ],
+          "coins": 2600,
           "rules": [],
           "lines": []
         },
@@ -3342,6 +3434,7 @@
               "quantity": 100
             }
           ],
+          "coins": 2900,
           "rules": [],
           "lines": []
         },
@@ -3353,6 +3446,7 @@
               "quantity": 110
             }
           ],
+          "coins": 3200,
           "rules": [],
           "lines": []
         },
@@ -3364,6 +3458,7 @@
               "quantity": 120
             }
           ],
+          "coins": 3500,
           "rules": [],
           "lines": []
         },
@@ -3375,6 +3470,7 @@
               "quantity": 130
             }
           ],
+          "coins": 3800,
           "rules": [],
           "lines": []
         },
@@ -3386,6 +3482,7 @@
               "quantity": 140
             }
           ],
+          "coins": 4000,
           "rules": [],
           "lines": []
         },
@@ -3397,6 +3494,7 @@
               "quantity": 150
             }
           ],
+          "coins": 4300,
           "rules": [],
           "lines": []
         }
@@ -3420,6 +3518,7 @@
         {
           "tier": 0,
           "price": [],
+          "coins": 290,
           "rules": [],
           "lines": [
             {
@@ -3436,6 +3535,7 @@
               "quantity": 20
             }
           ],
+          "coins": 580,
           "rules": [],
           "lines": [
             {
@@ -3452,6 +3552,7 @@
               "quantity": 30
             }
           ],
+          "coins": 870,
           "rules": [],
           "lines": [
             {
@@ -3468,6 +3569,7 @@
               "quantity": 40
             }
           ],
+          "coins": 1100,
           "rules": [],
           "lines": [
             {
@@ -3484,6 +3586,7 @@
               "quantity": 50
             }
           ],
+          "coins": 1400,
           "rules": [],
           "lines": [
             {
@@ -3500,6 +3603,7 @@
               "quantity": 60
             }
           ],
+          "coins": 1700,
           "rules": [],
           "lines": [
             {
@@ -3516,6 +3620,7 @@
               "quantity": 70
             }
           ],
+          "coins": 2000,
           "rules": [],
           "lines": [
             {
@@ -3532,6 +3637,7 @@
               "quantity": 80
             }
           ],
+          "coins": 2300,
           "rules": [],
           "lines": [
             {
@@ -3548,6 +3654,7 @@
               "quantity": 90
             }
           ],
+          "coins": 2600,
           "rules": [],
           "lines": [
             {
@@ -3564,6 +3671,7 @@
               "quantity": 100
             }
           ],
+          "coins": 2900,
           "rules": [],
           "lines": [
             {

@@ -735,7 +735,8 @@
           "skill": "line",
           "level": 5
         }
-      ]
+      ],
+      "coins": 420
     },
     "2": {
       "items": [
@@ -755,7 +756,8 @@
           "skill": "line",
           "level": 15
         }
-      ]
+      ],
+      "coins": 590
     },
     "3": {
       "items": [
@@ -775,7 +777,8 @@
           "skill": "line",
           "level": 30
         }
-      ]
+      ],
+      "coins": 8700
     }
   },
   "wild": {

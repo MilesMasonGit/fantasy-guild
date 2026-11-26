@@ -1741,6 +1741,12 @@
         "status": "live",
         "tier": 3,
         "note": "Seed map: a rare drop that builds its camp."
+      },
+      "item_beeswax_candle": {
+        "catalogueId": "beeswax_candle",
+        "status": "live",
+        "tier": 2,
+        "note": "Faith's offering for the Shrine of Fortune (Faith 20), which waits for its blessing (T-705)."
       }
     },
     "tokens": {
@@ -2526,6 +2532,11 @@
         "catalogueId": "void_rift",
         "status": "live",
         "tier": 3
+      },
+      "token_counting_house": {
+        "catalogueId": "counting_house",
+        "status": "live",
+        "tier": 0
       }
     },
     "recipes": {
@@ -3395,6 +3406,11 @@
         "status": "live",
         "tier": 0
       },
+      "recipe_beeswax_candle": {
+        "catalogueId": "beeswax_candle",
+        "status": "live",
+        "tier": 2
+      },
       "recipe_wheat": {
         "status": "live",
         "tier": 0
@@ -3925,6 +3941,11 @@
         "tier": 3,
         "note": "Builds a creature camp from its map."
       },
+      "recipe_build_counting_house": {
+        "catalogueId": "counting_house",
+        "status": "live",
+        "tier": 0
+      },
       "recipe_birdwatcher": {
         "status": "live",
         "tier": 2,
@@ -4033,7 +4054,10 @@
         "plan": {
           "status": "planned",
           "tier": 2,
-          "note": "concept_basic_content rounds 5 and 9: leather boots from Lizard Scale at the Tannery."
+          "note": "concept_basic_content rounds 5 and 9: leather boots from Lizard Scale at the Tannery.",
+          "catalogueId": "leather_boots",
+          "skill": "crafting",
+          "level": 8
         },
         "autoSyncId": true,
         "id": "item_leather_boots"
@@ -4044,7 +4068,10 @@
         "plan": {
           "status": "planned",
           "tier": 2,
-          "note": "concept_basic_content rounds 5 and 9: leather gloves from Lizard Scale at the Tannery."
+          "note": "concept_basic_content rounds 5 and 9: leather gloves from Lizard Scale at the Tannery.",
+          "catalogueId": "leather_gloves",
+          "skill": "crafting",
+          "level": 7
         },
         "autoSyncId": true,
         "id": "item_leather_gloves"
@@ -4066,7 +4093,10 @@
         "plan": {
           "status": "planned",
           "tier": 2,
-          "note": "Caught at the Coast from Fishing 15 with any tool; for Alchemy's Angler's Luck and Green Thumb. Planned until the waters pack after G2."
+          "note": "Caught at the Coast from Fishing 15 with any tool; for Alchemy's Angler's Luck and Green Thumb. Planned until the waters pack after G2.",
+          "catalogueId": "seaweed",
+          "skill": "fishing",
+          "level": 15
         },
         "autoSyncId": true,
         "id": "item_seaweed"
@@ -4077,7 +4107,10 @@
         "plan": {
           "status": "planned",
           "tier": 3,
-          "note": "A rare Oyster Bed catch from Fishing 25; for Alchemy's Elixir of Keen Eye and Grand Scholar's Tonic. Planned until the waters pack after G2."
+          "note": "A rare Oyster Bed catch from Fishing 25; for Alchemy's Elixir of Keen Eye and Grand Scholar's Tonic. Planned until the waters pack after G2.",
+          "catalogueId": "pearl",
+          "skill": "fishing",
+          "level": 25
         },
         "autoSyncId": true,
         "id": "item_pearl"
@@ -5654,7 +5687,7 @@
       },
       "item_enchanted_silver_ruby_ring": {
         "name": "Enchanted Silver Ruby Ring",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -5668,7 +5701,8 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_silver_ruby_ring"
+        "id": "item_enchanted_silver_ruby_ring",
+        "equipSlot": "trinket"
       },
       "item_expert_fire_staff": {
         "name": "Expert Fire Staff",
@@ -5692,7 +5726,7 @@
       },
       "item_enchanted_silver_sapphire_ring": {
         "name": "Enchanted Silver Sapphire Ring",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -5706,7 +5740,8 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_silver_sapphire_ring"
+        "id": "item_enchanted_silver_sapphire_ring",
+        "equipSlot": "trinket"
       },
       "item_expert_ice_staff": {
         "name": "Expert Ice Staff",
@@ -5731,7 +5766,7 @@
       },
       "item_enchanted_silver_emerald_ring": {
         "name": "Enchanted Silver Emerald Ring",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -5745,7 +5780,8 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_silver_emerald_ring"
+        "id": "item_enchanted_silver_emerald_ring",
+        "equipSlot": "trinket"
       },
       "item_expert_electric_staff": {
         "name": "Expert Electric Staff",
@@ -5770,7 +5806,7 @@
       },
       "item_enchanted_silver_topaz_ring": {
         "name": "Enchanted Silver Topaz Ring",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -5784,11 +5820,12 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_silver_topaz_ring"
+        "id": "item_enchanted_silver_topaz_ring",
+        "equipSlot": "trinket"
       },
       "item_enchanted_silver_amethyst_ring": {
         "name": "Enchanted Silver Amethyst Ring",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -5802,11 +5839,12 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_silver_amethyst_ring"
+        "id": "item_enchanted_silver_amethyst_ring",
+        "equipSlot": "trinket"
       },
       "item_enchanted_silver_diamond_ring": {
         "name": "Enchanted Silver Diamond Ring",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -5820,11 +5858,12 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_silver_diamond_ring"
+        "id": "item_enchanted_silver_diamond_ring",
+        "equipSlot": "trinket"
       },
       "item_enchanted_silver_ruby_amulet": {
         "name": "Enchanted Silver Ruby Amulet",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -5838,11 +5877,12 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_silver_ruby_amulet"
+        "id": "item_enchanted_silver_ruby_amulet",
+        "equipSlot": "trinket"
       },
       "item_enchanted_silver_sapphire_amulet": {
         "name": "Enchanted Silver Sapphire Amulet",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -5856,7 +5896,8 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_silver_sapphire_amulet"
+        "id": "item_enchanted_silver_sapphire_amulet",
+        "equipSlot": "trinket"
       },
       "item_warded_mythril_chestplate": {
         "name": "Warded Mythril Chestplate",
@@ -5878,7 +5919,7 @@
       },
       "item_enchanted_silver_emerald_amulet": {
         "name": "Enchanted Silver Emerald Amulet",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -5892,11 +5933,12 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_silver_emerald_amulet"
+        "id": "item_enchanted_silver_emerald_amulet",
+        "equipSlot": "trinket"
       },
       "item_enchanted_silver_topaz_amulet": {
         "name": "Enchanted Silver Topaz Amulet",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -5910,11 +5952,12 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_silver_topaz_amulet"
+        "id": "item_enchanted_silver_topaz_amulet",
+        "equipSlot": "trinket"
       },
       "item_enchanted_silver_amethyst_amulet": {
         "name": "Enchanted Silver Amethyst Amulet",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -5928,11 +5971,12 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_silver_amethyst_amulet"
+        "id": "item_enchanted_silver_amethyst_amulet",
+        "equipSlot": "trinket"
       },
       "item_enchanted_silver_diamond_amulet": {
         "name": "Enchanted Silver Diamond Amulet",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -5946,7 +5990,8 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_silver_diamond_amulet"
+        "id": "item_enchanted_silver_diamond_amulet",
+        "equipSlot": "trinket"
       },
       "item_master_wand": {
         "name": "Master Wand",
@@ -5987,7 +6032,7 @@
       },
       "item_enchanted_gold_ruby_ring": {
         "name": "Enchanted Gold Ruby Ring",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -6001,7 +6046,8 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_gold_ruby_ring"
+        "id": "item_enchanted_gold_ruby_ring",
+        "equipSlot": "trinket"
       },
       "item_master_fire_staff": {
         "name": "Master Fire Staff",
@@ -6025,7 +6071,7 @@
       },
       "item_enchanted_gold_sapphire_ring": {
         "name": "Enchanted Gold Sapphire Ring",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -6039,7 +6085,8 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_gold_sapphire_ring"
+        "id": "item_enchanted_gold_sapphire_ring",
+        "equipSlot": "trinket"
       },
       "item_master_ice_staff": {
         "name": "Master Ice Staff",
@@ -6064,7 +6111,7 @@
       },
       "item_enchanted_gold_emerald_ring": {
         "name": "Enchanted Gold Emerald Ring",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -6078,7 +6125,8 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_gold_emerald_ring"
+        "id": "item_enchanted_gold_emerald_ring",
+        "equipSlot": "trinket"
       },
       "item_master_electric_staff": {
         "name": "Master Electric Staff",
@@ -6103,7 +6151,7 @@
       },
       "item_enchanted_gold_topaz_ring": {
         "name": "Enchanted Gold Topaz Ring",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -6117,11 +6165,12 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_gold_topaz_ring"
+        "id": "item_enchanted_gold_topaz_ring",
+        "equipSlot": "trinket"
       },
       "item_enchanted_gold_amethyst_ring": {
         "name": "Enchanted Gold Amethyst Ring",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -6135,11 +6184,12 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_gold_amethyst_ring"
+        "id": "item_enchanted_gold_amethyst_ring",
+        "equipSlot": "trinket"
       },
       "item_enchanted_gold_diamond_ring": {
         "name": "Enchanted Gold Diamond Ring",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -6153,11 +6203,12 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_gold_diamond_ring"
+        "id": "item_enchanted_gold_diamond_ring",
+        "equipSlot": "trinket"
       },
       "item_enchanted_gold_ruby_amulet": {
         "name": "Enchanted Gold Ruby Amulet",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -6171,11 +6222,12 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_gold_ruby_amulet"
+        "id": "item_enchanted_gold_ruby_amulet",
+        "equipSlot": "trinket"
       },
       "item_enchanted_gold_sapphire_amulet": {
         "name": "Enchanted Gold Sapphire Amulet",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -6189,11 +6241,12 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_gold_sapphire_amulet"
+        "id": "item_enchanted_gold_sapphire_amulet",
+        "equipSlot": "trinket"
       },
       "item_enchanted_gold_emerald_amulet": {
         "name": "Enchanted Gold Emerald Amulet",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -6207,11 +6260,12 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_gold_emerald_amulet"
+        "id": "item_enchanted_gold_emerald_amulet",
+        "equipSlot": "trinket"
       },
       "item_enchanted_gold_topaz_amulet": {
         "name": "Enchanted Gold Topaz Amulet",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -6225,11 +6279,12 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_gold_topaz_amulet"
+        "id": "item_enchanted_gold_topaz_amulet",
+        "equipSlot": "trinket"
       },
       "item_enchanted_gold_amethyst_amulet": {
         "name": "Enchanted Gold Amethyst Amulet",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -6243,11 +6298,12 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_gold_amethyst_amulet"
+        "id": "item_enchanted_gold_amethyst_amulet",
+        "equipSlot": "trinket"
       },
       "item_enchanted_gold_diamond_amulet": {
         "name": "Enchanted Gold Diamond Amulet",
-        "type": "trinket",
+        "type": "armor",
         "plan": {
           "status": "planned",
           "tier": 3,
@@ -6261,7 +6317,8 @@
           ]
         },
         "autoSyncId": true,
-        "id": "item_enchanted_gold_diamond_amulet"
+        "id": "item_enchanted_gold_diamond_amulet",
+        "equipSlot": "trinket"
       },
       "item_warded_adamantine_chestplate": {
         "name": "Warded Adamantine Chestplate",
@@ -7790,6 +7847,68 @@
         },
         "autoSyncId": true,
         "id": "item_feather"
+      },
+      "item_tallow_candle": {
+        "name": "Tallow Candle",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Crafting 39 (a free level below its shrine), made with Raw Beef (Cows), String (Tailor); Faith's offering for the Shrine of the Valiant (Faith 40). Planned until its ingredients and shrine are in the game. (content_faith.md)",
+          "catalogueId": "tallow_candle",
+          "skill": "crafting",
+          "level": 39,
+          "madeWith": [
+            "item_raw_beef",
+            "item_string"
+          ],
+          "usedBy": [
+            "token_shrine_of_the_valiant"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_tallow_candle"
+      },
+      "item_sage_incense": {
+        "name": "Sage Incense",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Crafting 37 (a free level below its shrine), made with Sage; Faith's offering for the Shrine of Wisdom (Faith 60). Planned until its ingredients and shrine are in the game. (content_faith.md)",
+          "catalogueId": "sage_incense",
+          "skill": "crafting",
+          "level": 37,
+          "madeWith": [
+            "item_sage"
+          ],
+          "usedBy": [
+            "token_shrine_of_wisdom"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_sage_incense"
+      },
+      "item_rose_garland": {
+        "name": "Rose Garland",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Crafting 79 (a free level below its shrine), made with Roses, String; Faith's offering for the Shrine of Echoes (Faith 80). Planned until its ingredients and shrine are in the game. (content_faith.md)",
+          "catalogueId": "rose_garland",
+          "skill": "crafting",
+          "level": 79,
+          "madeWith": [
+            "item_rose",
+            "item_string"
+          ],
+          "usedBy": [
+            "token_shrine_of_echoes"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_rose_garland"
       }
     },
     "tokens": {
@@ -7908,7 +8027,10 @@
         "plan": {
           "status": "planned",
           "tier": 2,
-          "note": "A rare spot kind with the Shipwreck's goods as its fixed catch (owner 2026-11-24); waits for its goods (a Fishing rare table, T-553)."
+          "note": "A rare spot kind with the Shipwreck's goods as its fixed catch (owner 2026-11-24); waits for its goods (a Fishing rare table, T-553).",
+          "catalogueId": "shipwreck",
+          "skill": "fishing",
+          "level": 45
         },
         "autoSyncId": true,
         "id": "token_shipwreck"
@@ -7983,13 +8105,23 @@
         "plan": {
           "status": "planned",
           "tier": 3,
-          "note": "Mining 70 (Token); gives Adamantine Ore, Darkmetal Ore; its job: A head start on the next metal; what's different: A rare find; one rich strike, then gone. (content_mining_forestry.md, Mining)",
+          "note": "Mining 70 (Token); gives Adamantine Ore, Darkmetal Ore; its job: A head start on the next metal; what's different: A rare find; one rich strike, then gone. (content_mining_forestry.md, Mining) Its cycle is timed on Adamantine Ore (its level-70 metal); Darkmetal Ore, the head start on the next metal, comes at a chance on top, about one in four, the ledger's number.",
           "catalogueId": "fallen_star",
           "skill": "mining",
           "level": 70,
           "gives": [
             "item_adamantine_ore",
             "item_darkmetal_ore"
+          ],
+          "split": [
+            {
+              "itemId": "item_adamantine_ore",
+              "share": 1
+            },
+            {
+              "itemId": "item_darkmetal_ore",
+              "share": 0.25
+            }
           ]
         },
         "autoSyncId": true,
@@ -8016,13 +8148,23 @@
         "plan": {
           "status": "planned",
           "tier": 2,
-          "note": "Forestry 10 (Token); gives Feather, Bird Nest; its job: Fletching's Feathers; what's different: Never falls; pays in bursts as birds come and go. (content_mining_forestry.md, Forestry)",
+          "note": "Forestry 10 (Token); gives Feather, Bird Nest; its job: Fletching's Feathers; what's different: Never falls; pays in bursts as birds come and go. (content_mining_forestry.md, Forestry) Its cycle is timed on the Feather (its job); a Bird Nest comes at a chance on top, about one in five, the ledger's number.",
           "catalogueId": "hollow_tree",
           "skill": "forestry",
           "level": 10,
           "gives": [
             "item_feather",
             "item_bird_nest"
+          ],
+          "split": [
+            {
+              "itemId": "item_feather",
+              "share": 1
+            },
+            {
+              "itemId": "item_bird_nest",
+              "share": 0.2
+            }
           ]
         },
         "autoSyncId": true,
@@ -8033,10 +8175,29 @@
         "plan": {
           "status": "planned",
           "tier": 3,
-          "note": "Forestry 25 (Token); its job: Wood at the water's edge; what's different: Stands on water; a few uses, drifts back later; gives: Mixed wood. (content_mining_forestry.md, Forestry)",
+          "note": "Forestry 25 (Token); its job: Wood at the water's edge; what's different: Stands on water; a few uses, drifts back later; gives: Mixed wood. (content_mining_forestry.md, Forestry) Mixed wood: Oak, Fir and Birch Wood in equal shares of its cycle (content agent 2026-11-26).",
           "catalogueId": "driftwood_logjam",
           "skill": "forestry",
-          "level": 25
+          "level": 25,
+          "gives": [
+            "item_oak_wood",
+            "item_fir_wood",
+            "item_birch_wood"
+          ],
+          "split": [
+            {
+              "itemId": "item_oak_wood",
+              "share": 0.3333333333333333
+            },
+            {
+              "itemId": "item_fir_wood",
+              "share": 0.3333333333333333
+            },
+            {
+              "itemId": "item_birch_wood",
+              "share": 0.3333333333333333
+            }
+          ]
         },
         "autoSyncId": true,
         "id": "token_driftwood_logjam"
@@ -8431,6 +8592,58 @@
         },
         "autoSyncId": true,
         "id": "token_elder_dragon"
+      },
+      "token_shrine_of_fortune": {
+        "name": "Shrine of Fortune",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Faith 20: blessing on everything in its reach while lit, A sure rare find: about every tenth finished cycle a Token gives its rarest drop for certain (replaces the next-tier gift); offerings Beeswax Candles, Honey. Planned until its blessing effect is built (T-705, brief 810 K3). (content_faith.md, The shrines)",
+          "catalogueId": "shrine_of_fortune",
+          "skill": "faith",
+          "level": 20
+        },
+        "autoSyncId": true,
+        "id": "token_shrine_of_fortune"
+      },
+      "token_shrine_of_the_valiant": {
+        "name": "Shrine of the Valiant",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Faith 40: blessing on everything in its reach while lit, A hero fighting here is never Defeated: at 0 HP they flee and keep everything, still wounded; the log says Fled; offerings Tallow Candles, Bones. Planned until its blessing effect is built (T-705, brief 810 K3). (content_faith.md, The shrines)",
+          "catalogueId": "shrine_of_the_valiant",
+          "skill": "faith",
+          "level": 40
+        },
+        "autoSyncId": true,
+        "id": "token_shrine_of_the_valiant"
+      },
+      "token_shrine_of_wisdom": {
+        "name": "Shrine of Wisdom",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Faith 60: blessing on everything in its reach while lit, Heroes share XP: a working or fighting hero in reach gives a share to the others in the same skill, never re-shared; offerings Sage Incense, Parchment. Planned until its blessing effect is built (T-705, brief 810 K3). (content_faith.md, The shrines)",
+          "catalogueId": "shrine_of_wisdom",
+          "skill": "faith",
+          "level": 60
+        },
+        "autoSyncId": true,
+        "id": "token_shrine_of_wisdom"
+      },
+      "token_shrine_of_echoes": {
+        "name": "Shrine of Echoes",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Faith 80: blessing on everything in its reach while lit, A finished cycle sometimes repeats at once, for free; offerings Rose Garlands, Light Mote. Planned until its blessing effect is built (T-705, brief 810 K3). (content_faith.md, The shrines)",
+          "catalogueId": "shrine_of_echoes",
+          "skill": "faith",
+          "level": 80
+        },
+        "autoSyncId": true,
+        "id": "token_shrine_of_echoes"
       }
     },
     "recipes": [
