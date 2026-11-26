@@ -1707,6 +1707,40 @@
       "item_lavender_incense": {
         "status": "live",
         "tier": 0
+      },
+      "item_blue_scale": {
+        "catalogueId": "blue_scale",
+        "usedBy": [
+          "item_drake_leather"
+        ],
+        "status": "live",
+        "tier": 3,
+        "note": "A Blue Drake drop, for Crafting's Drake Leather (content_crafting.md)."
+      },
+      "item_drake_roost_map": {
+        "status": "live",
+        "tier": 3,
+        "note": "Seed map: a rare drop that builds its camp."
+      },
+      "item_treant_grove_map": {
+        "status": "live",
+        "tier": 3,
+        "note": "Seed map: a rare drop that builds its camp."
+      },
+      "item_troll_bridge_map": {
+        "status": "live",
+        "tier": 3,
+        "note": "Seed map: a rare drop that builds its camp."
+      },
+      "item_phoenix_nest_map": {
+        "status": "live",
+        "tier": 3,
+        "note": "Seed map: a rare drop that builds its camp."
+      },
+      "item_void_rift_map": {
+        "status": "live",
+        "tier": 3,
+        "note": "Seed map: a rare drop that builds its camp."
       }
     },
     "tokens": {
@@ -2442,6 +2476,56 @@
       "token_slime_puddle": {
         "status": "live",
         "tier": 1
+      },
+      "token_blue_drake": {
+        "catalogueId": "blue_drake",
+        "status": "live",
+        "tier": 3
+      },
+      "token_drake_roost": {
+        "catalogueId": "drake_roost",
+        "status": "live",
+        "tier": 3
+      },
+      "token_treant": {
+        "catalogueId": "treant",
+        "status": "live",
+        "tier": 3
+      },
+      "token_treant_grove": {
+        "catalogueId": "treant_grove",
+        "status": "live",
+        "tier": 3
+      },
+      "token_troll": {
+        "catalogueId": "troll",
+        "status": "live",
+        "tier": 3
+      },
+      "token_troll_bridge": {
+        "catalogueId": "troll_bridge",
+        "status": "live",
+        "tier": 3
+      },
+      "token_phoenix": {
+        "catalogueId": "phoenix",
+        "status": "live",
+        "tier": 3
+      },
+      "token_phoenix_nest": {
+        "catalogueId": "phoenix_nest",
+        "status": "live",
+        "tier": 3
+      },
+      "token_void_beast": {
+        "catalogueId": "void_beast",
+        "status": "live",
+        "tier": 3
+      },
+      "token_void_rift": {
+        "catalogueId": "void_rift",
+        "status": "live",
+        "tier": 3
       }
     },
     "recipes": {
@@ -3815,6 +3899,31 @@
       "recipe_dig_darkmetal_vein": {
         "status": "live",
         "tier": 3
+      },
+      "recipe_build_drake_roost": {
+        "status": "live",
+        "tier": 3,
+        "note": "Builds a creature camp from its map."
+      },
+      "recipe_build_treant_grove": {
+        "status": "live",
+        "tier": 3,
+        "note": "Builds a creature camp from its map."
+      },
+      "recipe_build_troll_bridge": {
+        "status": "live",
+        "tier": 3,
+        "note": "Builds a creature camp from its map."
+      },
+      "recipe_build_phoenix_nest": {
+        "status": "live",
+        "tier": 3,
+        "note": "Builds a creature camp from its map."
+      },
+      "recipe_build_void_rift": {
+        "status": "live",
+        "tier": 3,
+        "note": "Builds a creature camp from its map."
       },
       "recipe_birdwatcher": {
         "status": "live",
@@ -7384,21 +7493,6 @@
         "autoSyncId": true,
         "id": "item_dragonscale_boots"
       },
-      "item_blue_scale": {
-        "name": "Blue Scale",
-        "type": "material",
-        "plan": {
-          "status": "planned",
-          "tier": 3,
-          "note": "No skill, no level of its own (Material); from enemy drop (enemies session); used by Drake Leather.",
-          "catalogueId": "blue_scale",
-          "usedBy": [
-            "item_drake_leather"
-          ]
-        },
-        "autoSyncId": true,
-        "id": "item_blue_scale"
-      },
       "item_oyster_stew": {
         "name": "Oyster Stew",
         "type": "food",
@@ -8077,6 +8171,266 @@
         },
         "autoSyncId": true,
         "id": "token_summoned_greater_slime"
+      },
+      "token_chicken": {
+        "name": "Chicken",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Enemy at level 2, Meadow; fight drops Raw Chicken, Feathers; steal table Eggs, Wheat Seed. Planned until its drops have their items and jobs. (content_enemies.md, The roster)",
+          "catalogueId": "chicken",
+          "skill": "combat",
+          "level": 2
+        },
+        "autoSyncId": true,
+        "id": "token_chicken"
+      },
+      "token_spider": {
+        "name": "Spider",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enemy at level 20, Forest; fight drops Silk, Spider Fang; steal table Silk (cocoons), Feathers. Planned until its drops have their items and jobs. (content_enemies.md, The roster)",
+          "catalogueId": "spider",
+          "skill": "combat",
+          "level": 20
+        },
+        "autoSyncId": true,
+        "id": "token_spider"
+      },
+      "token_bandit": {
+        "name": "Bandit",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enemy at level 22, Meadow, Flower Meadow; fight drops Coins, Iron Ore; steal table Coins, Iron Ingots, Bread. Planned until its drops have their items and jobs. (content_enemies.md, The roster)",
+          "catalogueId": "bandit",
+          "skill": "combat",
+          "level": 22
+        },
+        "autoSyncId": true,
+        "id": "token_bandit"
+      },
+      "token_boar": {
+        "name": "Boar",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enemy at level 25, Forest, Cherry Grove; fight drops Game Meat, Hide; steal table Apples, Cherries. Planned until its drops have their items and jobs. (content_enemies.md, The roster)",
+          "catalogueId": "boar",
+          "skill": "combat",
+          "level": 25
+        },
+        "autoSyncId": true,
+        "id": "token_boar"
+      },
+      "token_spider_queen": {
+        "name": "Spider Queen",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Boss at level 28, Forest; fight drops Silk, Spider Fang, a rare map; a boss, never robbed. Planned until its drops have their items and jobs. (content_enemies.md, The roster)",
+          "catalogueId": "spider_queen",
+          "skill": "combat",
+          "level": 28
+        },
+        "autoSyncId": true,
+        "id": "token_spider_queen"
+      },
+      "token_rock_golem": {
+        "name": "Rock Golem",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enemy at level 30, Mountain; fight drops Stone, Iron Ore, a rare Ore Prospecting Map; steal table Silver Ore, Quartz. Planned until its drops have their items and jobs. (content_enemies.md, The roster)",
+          "catalogueId": "rock_golem",
+          "skill": "combat",
+          "level": 30
+        },
+        "autoSyncId": true,
+        "id": "token_rock_golem"
+      },
+      "token_harpy": {
+        "name": "Harpy",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enemy at level 33, Mountain; fight drops Feathers, Harpy Talon; steal table Feathers, Coins, shiny things (Silver Ingots). Planned until its drops have their items and jobs. (content_enemies.md, The roster)",
+          "catalogueId": "harpy",
+          "skill": "combat",
+          "level": 33
+        },
+        "autoSyncId": true,
+        "id": "token_harpy"
+      },
+      "token_wraith": {
+        "name": "Wraith",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enemy at level 36, Bog; fight drops Ectoplasm, a rare Dark Mote; steal table Coins, Candles (Faith). Planned until its drops have their items and jobs. (content_enemies.md, The roster)",
+          "catalogueId": "wraith",
+          "skill": "combat",
+          "level": 36
+        },
+        "autoSyncId": true,
+        "id": "token_wraith"
+      },
+      "token_bog_witch": {
+        "name": "Bog Witch",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Boss at level 39, Bog; fight drops Ectoplasm, herbs, a rare map; a boss, never robbed. Planned until its drops have their items and jobs. (content_enemies.md, The roster)",
+          "catalogueId": "bog_witch",
+          "skill": "combat",
+          "level": 39
+        },
+        "autoSyncId": true,
+        "id": "token_bog_witch"
+      },
+      "token_naga": {
+        "name": "Naga",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enemy at level 47, Coast; fight drops Naga Scale, fish; steal table Pearls, Seaweed. Planned until its drops have their items and jobs. (content_enemies.md, The roster)",
+          "catalogueId": "naga",
+          "skill": "combat",
+          "level": 47
+        },
+        "autoSyncId": true,
+        "id": "token_naga"
+      },
+      "token_drake_matriarch": {
+        "name": "Drake Matriarch",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Boss at level 49, Coast; fight drops Blue Scale, Drake Meat, a rare map; a boss, never robbed. Planned until its drops have their items and jobs. (content_enemies.md, The roster)",
+          "catalogueId": "drake_matriarch",
+          "skill": "combat",
+          "level": 49
+        },
+        "autoSyncId": true,
+        "id": "token_drake_matriarch"
+      },
+      "token_griffin": {
+        "name": "Griffin",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enemy at level 50, Mountain; fight drops Griffin Feather, Game Meat; steal table Gold Ore, Gold Ingots. Planned until its drops have their items and jobs. (content_enemies.md, The roster)",
+          "catalogueId": "griffin",
+          "skill": "combat",
+          "level": 50
+        },
+        "autoSyncId": true,
+        "id": "token_griffin"
+      },
+      "token_salamander": {
+        "name": "Salamander",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enemy at level 54, Volcano; fight drops Salamander Skin, a rare Fire Mote; steal table Coal, Coins. Planned until its drops have their items and jobs. (content_enemies.md, The roster)",
+          "catalogueId": "salamander",
+          "skill": "combat",
+          "level": 54
+        },
+        "autoSyncId": true,
+        "id": "token_salamander"
+      },
+      "token_minotaur": {
+        "name": "Minotaur",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enemy at level 57, Meadow (ruins); fight drops Hide, Minotaur Horn; steal table Coins, Wheat. Planned until its drops have their items and jobs. (content_enemies.md, The roster)",
+          "catalogueId": "minotaur",
+          "skill": "combat",
+          "level": 57
+        },
+        "autoSyncId": true,
+        "id": "token_minotaur"
+      },
+      "token_minotaur_lord": {
+        "name": "Minotaur Lord",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Boss at level 59, Meadow; fight drops Minotaur Horn, Hide, a rare map; a boss, never robbed. Planned until its drops have their items and jobs. (content_enemies.md, The roster)",
+          "catalogueId": "minotaur_lord",
+          "skill": "combat",
+          "level": 59
+        },
+        "autoSyncId": true,
+        "id": "token_minotaur_lord"
+      },
+      "token_basilisk": {
+        "name": "Basilisk",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enemy at level 65, Yellowstone; fight drops Basilisk Eye, Lizard Scale; steal table Quartz, Coins. Planned until its drops have their items and jobs. (content_enemies.md, The roster)",
+          "catalogueId": "basilisk",
+          "skill": "combat",
+          "level": 65
+        },
+        "autoSyncId": true,
+        "id": "token_basilisk"
+      },
+      "token_lich": {
+        "name": "Lich",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enemy at level 70, Bog; fight drops Bone Dust, a rare Dark Mote; steal table Coins, Parchment. Planned until its drops have their items and jobs. (content_enemies.md, The roster)",
+          "catalogueId": "lich",
+          "skill": "combat",
+          "level": 70
+        },
+        "autoSyncId": true,
+        "id": "token_lich"
+      },
+      "token_kraken": {
+        "name": "Kraken",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Boss at level 75, Coast; fight drops Kraken Ink, fish, a rare map; a boss, never robbed. Planned until its drops have their items and jobs. (content_enemies.md, The roster)",
+          "catalogueId": "kraken",
+          "skill": "combat",
+          "level": 75
+        },
+        "autoSyncId": true,
+        "id": "token_kraken"
+      },
+      "token_red_dragon": {
+        "name": "Red Dragon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enemy at level 88, Volcano; fight drops Red Scale, Dragon Meat; steal table Gold Ingots, Coins (its hoard). Planned until its drops have their items and jobs. (content_enemies.md, The roster)",
+          "catalogueId": "red_dragon",
+          "skill": "combat",
+          "level": 88
+        },
+        "autoSyncId": true,
+        "id": "token_red_dragon"
+      },
+      "token_elder_dragon": {
+        "name": "Elder Dragon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Boss at level 95, Volcano; fight drops Red Scale, Dragon Heart, a rare map; a boss, never robbed. Planned until its drops have their items and jobs. (content_enemies.md, The roster)",
+          "catalogueId": "elder_dragon",
+          "skill": "combat",
+          "level": 95
+        },
+        "autoSyncId": true,
+        "id": "token_elder_dragon"
       }
     },
     "recipes": [

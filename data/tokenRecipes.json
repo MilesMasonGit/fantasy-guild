@@ -13180,6 +13180,201 @@
     ]
   },
   {
+    "id": "recipe_build_drake_roost",
+    "name": "Build Drake Roost",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_drake_roost_map",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_drake_roost",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "battlefield"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_treant_grove",
+    "name": "Build Treant Grove",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_treant_grove_map",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_treant_grove",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "battlefield"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_troll_bridge",
+    "name": "Build Troll Bridge",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_troll_bridge_map",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_troll_bridge",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "battlefield"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_phoenix_nest",
+    "name": "Build Phoenix Nest",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_phoenix_nest_map",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_phoenix_nest",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "battlefield"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_void_rift",
+    "name": "Build Void Rift",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_void_rift_map",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_void_rift",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 15,
+    "foundationKinds": [
+      "battlefield"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
     "id": "recipe_birdwatcher",
     "name": "Birdwatcher",
     "skill": "alchemy",

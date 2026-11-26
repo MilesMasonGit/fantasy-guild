@@ -504,7 +504,45 @@
         ]
       }
     ],
-    "3": []
+    "3": [
+      {
+        "id": "token_drake_roost",
+        "kits": [
+          "highland",
+          "riverside"
+        ]
+      },
+      {
+        "id": "token_treant_grove",
+        "kits": [
+          "woodland"
+        ]
+      },
+      {
+        "id": "token_troll_bridge",
+        "kits": [
+          "highland",
+          "wetland"
+        ]
+      },
+      {
+        "id": "token_phoenix_nest",
+        "kits": [
+          "highland",
+          "plains"
+        ]
+      },
+      {
+        "id": "token_void_rift",
+        "kits": [
+          "highland",
+          "woodland",
+          "plains",
+          "wetland",
+          "riverside"
+        ]
+      }
+    ]
   },
   "heroTokens": {
     "mining": 5,
