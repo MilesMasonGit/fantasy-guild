@@ -136,12 +136,16 @@ function luckyPace() {
     return c;
 }
 
+/** A site with one place a kind: each building stands once. */
+const ONE_A_KIND = { sitePlaces: { buildings: 8, perKind: 1 } };
+
 describe('rare-find boosts have their own strength targets', () => {
     const rowsOf = (content, settings = null) => buildPace(content, buildLedger(content), settings).boostRows()
         .filter((r) => r.work.target.token === 'token_vein' && !r.work.target.recipe);
 
     it('a rare-find potion and building are their own kinds, against x2 and x1.5; a plain drink keeps the +20 %', () => {
-        const rows = rowsOf(luckyPace());
+        // One place a kind, so the Lucky Charm stands once: one building against its own target (stacked copies: LedgerReferenceGuild).
+        const rows = rowsOf(luckyPace(), ONE_A_KIND);
         const potion = rows.find((r) => r.kind === 'rareConsumable');
         const charm = rows.find((r) => r.kind === 'rareSupport');
         const beer = rows.find((r) => r.kind === 'consumable');
@@ -158,10 +162,10 @@ describe('rare-find boosts have their own strength targets', () => {
 
     it('at their targets they are no problem and the balancer leaves them alone', () => {
         const content = luckyPace();
-        const findings = buildPace(content, buildLedger(content), null).findings().filter((f) => f.check === 'boost-target');
+        const findings = buildPace(content, buildLedger(content), ONE_A_KIND).findings().filter((f) => f.check === 'boost-target');
         expect(findings.map((f) => f.key)).not.toContain('item:item_luck_potion');
         expect(findings.map((f) => f.key)).not.toContain('token:token_charm');
-        const proposals = proposeBalance(content, null).proposals.filter((p) => p.lever === 'boost');
+        const proposals = proposeBalance(content, ONE_A_KIND).proposals.filter((p) => p.lever === 'boost');
         expect(proposals.map((p) => p.id)).not.toContain('pw_fx_lucky');
         expect(proposals.map((p) => p.id)).not.toContain('token_charm');
     });

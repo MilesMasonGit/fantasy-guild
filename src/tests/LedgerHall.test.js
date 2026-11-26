@@ -111,16 +111,16 @@ describe('the profiles and the Hall', () => {
         expect(hall.map(c => c.upgrade)).not.toContain('ph_gold');
         expect(hall.map(c => c.upgrade)).not.toContain('ph_rich');
         expect(pace.rateAt(VEIN, PROFILE.TYPICAL, 1).chosen.map(c => c.id)).toContain('ph_rich:1');
-        // Ten XP a cycle, +10 % Beer and +100 % Lore; the camp's three veins, each 2.4 s a cycle and a 30 s rest.
+        // Ten XP a cycle, +10 % Beer and +100 % Lore; the camp's two veins (the sparse layout), each 2.4 s a cycle and a 30 s rest.
         expect(typical.rate.cycleMs).toBe(2400);
-        expect(typical.xp.mining).toBeCloseTo(3 * 5 * 3600 / 42 * 21);
+        expect(typical.xp.mining).toBeCloseTo(2 * 5 * 3600 / 42 * 21);
     });
 
     it('Typical-before-the-Hall is Typical with no star: what a Hall price is gathered at', () => {
         const pace = world();
         expect(pace.rateAt(VEIN, BEFORE_HALL, 0).chosen.some(c => c.kind === 'hall')).toBe(false);
-        // The camp's three veins, the Mine's quarter more.
-        expect(pace.supplyOf('item_copper_ore', BEFORE_HALL, 0).perHour).toBeCloseTo(720 * 1.5 * 1.25);
+        // The camp's two veins, and four Mines (each a 25 % double): a sure double.
+        expect(pace.supplyOf('item_copper_ore', BEFORE_HALL, 0).perHour).toBeCloseTo(480 * 1.5 * 2);
     });
 
     it('Maxed holds every rank on offer, the Gold Leaf too, and nothing from a later tier', () => {
@@ -140,7 +140,7 @@ describe('the profiles and the Hall', () => {
         const pace = buildPace(c, buildLedger(c), null);
         const lore = pace.rateAt(VEIN, PROFILE.TYPICAL, 0).chosen.find(x => x.upgrade === 'ph_lore');
         expect(lore.id).toBe('ph_lore:2');
-        expect(lore.price).toBeCloseTo((10 + 20) / 1350);
+        expect(lore.price).toBeCloseTo((10 + 20) / 1440);
     });
 
     it('the Hall has its own payback time, a day unless set: the boosts\' two hours never decide a rank', () => {
@@ -174,7 +174,7 @@ describe('every rank\'s payback at Typical, and the price the ledger proposes', 
         const pace = world();
         const lore = rowOf(pace, 'ph_lore', 1);
         expect(lore).toMatchObject({ rate: true, tier: 0, cap: 0, pays: true, priceText: '10 Copper Ore' });
-        expect(lore.priceHours).toBeCloseTo(10 / 1350);
+        expect(lore.priceHours).toBeCloseTo(10 / 1440);
         expect(pace.workName(lore.work)).toBe('Copper Vein');
         const measured = pace.profiles.hallRankOn(VEIN, 0, 'ph_lore', 1);
         expect(lore.gain).toBeCloseTo(measured.saves);
@@ -198,9 +198,9 @@ describe('every rank\'s payback at Typical, and the price the ledger proposes', 
     it('proposes the most of its tier\'s material it can cost and still pay back in time, rounded down', () => {
         const pace = world();
         const lore = rowOf(pace, 'ph_lore', 1);
-        // Mining's own material at the Starter Camp, at Typical-before-the-Hall's 1350 an hour.
+        // Mining's own material at the Starter Camp, at Typical-before-the-Hall's 1440 an hour.
         expect(lore.proposed.itemId).toBe('item_copper_ore');
-        expect(lore.proposed.quantity).toBe(roundDown(24 * lore.gain * 1350));
+        expect(lore.proposed.quantity).toBe(roundDown(24 * lore.gain * 1440));
         expect(lore.proposed).toMatchObject({ pays: true });
         expect(lore.proposed.payback).toBeLessThanOrEqual(24);
         expect(lore.proposed.payback).toBeGreaterThan(20);
@@ -228,9 +228,9 @@ describe('every rank\'s payback at Typical, and the price the ledger proposes', 
         const one = rowOf(pace, 'ph_lore', 1).proposed;
         const two = rowOf(pace, 'ph_lore', 2);
         // Rank 2 saves less than rank 1 (+50 % on +50 %), so on its own it would cost less.
-        expect(roundDown(24 * two.gain * 1350)).toBeLessThan(one.quantity);
+        expect(roundDown(24 * two.gain * 1440)).toBeLessThan(one.quantity);
         expect(two.proposed).toMatchObject({ itemId: 'item_copper_ore', quantity: one.quantity, raised: true, pays: false });
-        expect(two.proposed.payback).toBeCloseTo((one.quantity / 1350) / two.gain);
+        expect(two.proposed.payback).toBeCloseTo((one.quantity / 1440) / two.gain);
         expect(two.proposed.payback).toBeGreaterThan(24);
         // Every authored star's proposals, rank by rank, never fall.
         for (const id of ['ph_lore', 'ph_quick', 'ph_deep', 'ph_gold', 'ph_rich', 'ph_spring']) {

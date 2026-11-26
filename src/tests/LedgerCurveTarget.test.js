@@ -108,8 +108,9 @@ describe('supply counts the gatherers a crafter needs', () => {
         expect(hut.gatherers.item_oak_wood.heroes).toBeCloseTo(2);
         expect(hut.gatherers.item_oak_wood.work.key).toBe('token_oak||');
         expect(pace.heroesOf({ token: 'token_plot', recipe: 'recipe_build_hut' }, PROFILE.BARE)).toBeCloseTo(3);
+        // Fed in full, but the Starter Camp's one hero builds and fells in turn: a third as fast.
         const track = pace.trackOf('construction');
-        expect(track.levels[13].cumulative.bare).toBeCloseTo(xpForLevel(15) / 600);
+        expect(track.levels[13].cumulative.bare).toBeCloseTo(xpForLevel(15) / (600 / 3));
     });
 
     it('⭐ counts the heroes down a chain: an Ale from two Beers, each Beer from an Oak\'s wood', () => {
@@ -124,26 +125,29 @@ describe('supply counts the gatherers a crafter needs', () => {
         expect(pace.heroesOf(ale, PROFILE.BARE)).toBeCloseTo(1 + 2 * 1.4);
     });
 
-    it('⭐ times a maker as the reference chain runs it: past its 2.2 gatherers, at their share of what it needs', () => {
+    it('⭐ times a maker as the reference chain runs it: past the heroes its chain has, at their share of what it needs', () => {
+        // A chain's heroes are the guild's, at most one maker and
+        // `gatherersPerMaker` gatherers, and they share all its work, the maker's too (the 2.2 cap counted gatherers alone).
         const hut = { token: 'token_plot', recipe: 'recipe_build_hut' };
-        const loose = paceOf();
-        // A chain of one maker and one gatherer: the Hut builder, needing two foresters, builds half the time.
-        const tight = paceOf(paceContent(), { gatherersPerMaker: 1 });
+        const eight = [{ tier: 0, heroes: 8 }];
+        const loose = paceOf(paceContent(), { heroesByTier: eight });
+        // Eight heroes, a chain of one maker and one gatherer: two heroes for the Hut builder's three heroes' work.
+        const tight = paceOf(paceContent(), { heroesByTier: eight, gatherersPerMaker: 1 });
         expect(tight.settings.gatherersPerMaker).toBe(1);
         // The count stays the full one.
         expect(tight.rateAt(hut, PROFILE.BARE).gatherers.item_oak_wood.heroes).toBeCloseTo(2);
         expect(tight.heroesOf(hut, PROFILE.BARE)).toBeCloseTo(3);
-        expect(tight.chainOf(hut, PROFILE.BARE)).toBeCloseTo(0.5);
+        expect(tight.chainOf(hut, PROFILE.BARE)).toBeCloseTo(2 / 3);
         expect(loose.chainOf(hut, PROFILE.BARE)).toBe(1);
         const first = (pace) => pace.trackOf('construction').levels[0];
         expect(first(loose).source.bare.xp).toBeCloseTo(600);
-        expect(first(tight).source.bare.xp).toBeCloseTo(300);
-        expect(first(tight).source.bare.chain).toBeCloseTo(0.5);
-        expect(first(tight).hours.bare).toBeCloseTo(first(loose).hours.bare * 2);
-        // The path waits on Construction 15 the longer, and the Big Hut's own wood comes at the chain's pace.
+        expect(first(tight).source.bare.xp).toBeCloseTo(400);
+        expect(first(tight).source.bare.chain).toBeCloseTo(2 / 3);
+        expect(first(tight).hours.bare).toBeCloseTo(first(loose).hours.bare * 1.5);
+        // The path waits on Construction 15 the longer.
         const gate = (pace) => pace.trackOf('construction').levels[13].cumulative.bare;
-        expect(gate(tight)).toBeCloseTo(gate(loose) * 2);
-        expect(tight.pathOf('token:token_big_hut', PROFILE.BARE).hours).toBeGreaterThan(loose.pathOf('token:token_big_hut', PROFILE.BARE).hours * 1.9);
+        expect(gate(tight)).toBeCloseTo(gate(loose) * 1.5);
+        expect(tight.pathOf('token:token_big_hut', PROFILE.BARE).hours).toBeGreaterThan(loose.pathOf('token:token_big_hut', PROFILE.BARE).hours * 1.4);
     });
 
     it('⭐ finds a maker needing more gatherers than the reference guild gives one, at Typical', () => {
@@ -191,15 +195,17 @@ describe('the boost budget', () => {
         const c = paceContent();
         c.tokens.token_rush = { id: 'token_rush', name: 'Rush Hut', tokenType: 'buff', uses: null, requiresHero: false, config: null, statements: [{ id: 'stm_rush', keyword: 'provides', to: { mode: 'id', value: 'token_vein' }, reach: 'nearby', payload: { type: 'WORK_TIME', bucket: 'percentage', value: -0.25 } }] };
         c.recipes.push({ id: 'recipe_build_rush', name: 'Build Rush Hut', skill: 'construction', levelRequirement: 1, xp: 5, durationMs: 30000, foundationKinds: ['wood'], inputs: [{ itemId: 'item_oak_wood', quantity: 5 }], outputs: [{ tokenId: 'token_rush', chance: 100, minQty: 1, maxQty: 1 }] });
+        // One place a kind, so the Rush Hut stands once: the cell is what is tested, not how copies stack.
+        const one = { sitePlaces: { buildings: 8, perKind: 1 } };
         const speedOf = (pace) => pace.budgetRows().find(r => r.work.key === 'token_vein||' && r.kind === 'speed' && r.profile === PROFILE.MAXED);
-        const copper = speedOf(paceOf(c));
+        const copper = speedOf(paceOf(c, one));
         expect(copper).toMatchObject({ budget: 20, tier: 0 });
         expect(copper.pct).toBeCloseTo(25);
         // Planned for silver (tier 3), it is held against silver's cell from its opening, level 1 or not.
         c.tokens.token_vein.plan = { tier: 3 };
-        const silver = speedOf(paceOf(c));
+        const silver = speedOf(paceOf(c, one));
         expect(silver).toMatchObject({ budget: 35, entryTier: 3, level: 1 });
-        expect(paceOf(c).findings().filter(f => f.check === 'boost-budget' && /^Speed at Maxed/.test(f.message) && f.related.includes('token:token_vein'))).toEqual([]);
+        expect(paceOf(c, one).findings().filter(f => f.check === 'boost-budget' && /^Speed at Maxed/.test(f.message) && f.related.includes('token:token_vein'))).toEqual([]);
     });
 
     it('⭐ judges a work by the tier it is had at, where its entry is planned earlier', () => {
@@ -210,7 +216,8 @@ describe('the boost budget', () => {
         ws.starterCamp.tokens.push({ typeId: 'token_rush', x: 9, y: 9 });
         ws.tokens.token_ores_3.plan = { tier: 1 };
         const content = { ...worldContentOf(ws), worldTables: WORLD_FIXTURE_TABLES };
-        const pace = buildPace(content, buildLedger(content), null);
+        // One place a kind, so the hut stands once: the cell is what is tested.
+        const pace = buildPace(content, buildLedger(content), { sitePlaces: { buildings: 8, perKind: 1 } });
         const row = pace.budgetRows().find(r => r.work.key === 'token_ores_3||' && r.kind === 'speed' && r.profile === PROFILE.MAXED);
         expect(row).toMatchObject({ tier: 3, entryTier: 3, budget: 35 });
         expect(row.pct).toBeCloseTo(30);

@@ -59,13 +59,15 @@ export const USAGE = `Usage: npm run cms -- <command> [options]
                                   commit only the files it wrote.
   restore                         Rebuild the workspace from data/ and cms/plan/plan.json (Restore
                                   from Game); the old one is kept in Backups first.
-  ledger [--json=<file>]          The ledger's read-out, for the balancer: each skill's pace (levels 1
+  ledger [--json=<file>] [--one-layout]
+                                  The ledger's read-out, for the balancer: each skill's pace (levels 1
                                   to 99, hero and guild time) at Maxed (opt), Typical (typ) and Bare
                                   (bare), each entry's numbers and arrival, Planned entries marked,
                                   the boost budget and the ledger's checks. Reads the workspace,
                                   never saves it; a worktree with no workspace of its own reads the
                                   main checkout's. --json writes the whole read-out; a summary
-                                  prints either way.
+                                  prints either way. Both layouts are timed (a camp's sparse and
+                                  dense nodes); --one-layout times only the pace's, about half the time.
 
 Options (every command):
   --workspace=<file>   the workspace (default cms/workspace/workspace.json)
@@ -370,7 +372,7 @@ async function cmdLedger(paths, options, load, out) {
     const { ledgerReadout, readoutText } = await load('/src/engine/ledgerReadout.js');
     // As the page reads it: the stored workspace seeded, nothing recalculated, nothing saved.
     const workspace = { ...disk.workspace, ...seedStoredWorkspace(disk.workspace) };
-    const readout = ledgerReadout(workspace);
+    const readout = ledgerReadout(workspace, { layouts: options['one-layout'] !== true });
     readout.workspace = { file: shortPath(paths.root, paths.workspaceFile), revision: disk.revision, savedAt: disk.savedAt ?? null };
     out(`The ledger of ${shortPath(paths.root, paths.workspaceFile)} (revision ${disk.revision}), worked out in ${(readout.ms / 1000).toFixed(1)} s. opt is the ledger's Maxed player (the curve's), typ its Typical, bare its Bare.`);
     for (const line of readoutText(readout)) out(line);

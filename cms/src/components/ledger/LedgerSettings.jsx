@@ -4,7 +4,7 @@ import { Plus, Trash2, RotateCcw } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
 import {
-  settingsOf, minutesToReach, minutesPerLevelAt, formatMinutes, DEFAULT_LEDGER_SETTINGS, RULES_VERSIONS, BOOST_TARGET_KINDS, BOOST_BUDGET_KINDS,
+  settingsOf, minutesToReach, minutesPerLevelAt, formatMinutes, DEFAULT_LEDGER_SETTINGS, RULES_VERSIONS, BOOST_TARGET_KINDS, BOOST_BUDGET_KINDS, LAYOUTS,
 } from '../../engine/ledger/settings.js';
 
 /** The levels the pace curve card shows its rule at. */
@@ -13,7 +13,8 @@ const CURVE_LEVELS = [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 99];
 /**
  * The Ledger settings (`ledger/settings.js`): the stages the pace rule sets, the tolerance, the
  * tiers' opening levels, the target player, the pace rule, the profiles (their bounds, the payback a
- * sensible investor asks, a camp's copies), the boost targets and budget, and the roster rules. Kept
+ * sensible investor asks), the reference guild (its heroes by stage, a chain's size, the layouts'
+ * nodes a camp works, a site's building places), the boost targets and budget, and the roster rules. Kept
  * in the workspace and written with the plan into `cms/plan/plan.json` by Sync; Restore from Game
  * reads them back.
  */
@@ -163,12 +164,42 @@ export default function LedgerSettings() {
           <div className="flex items-center gap-2">
             A chain is one maker and about
             <NumberInput value={settings.gatherersPerMaker} min={0.1} onCommit={(v) => save({ gatherersPerMaker: v })} label="Gatherers per maker" width={60} />
-            gatherers (the reference guild): a maker needing more down its chain runs at their share, and is a problem.
+            gatherers (the reference guild): a chain has no more heroes than that, and a maker needing more down its chain runs at their share, and is a problem.
+          </div>
+          <div className="flex flex-wrap items-center gap-2" data-heroes-by-tier>
+            The guild's heroes from each stage on (one chain has them all until it is full):
+            {settings.heroesByTier.map((p, i) => (
+              <span key={p.tier} className="flex items-center gap-1">
+                {tierLabel(p.tier)}
+                <NumberInput
+                  value={p.heroes} min={1} whole width={44} label={`Heroes from ${tierLabel(p.tier)}`}
+                  onCommit={(v) => save({ heroesByTier: settings.heroesByTier.map((q, j) => (j === i ? { ...q, heroes: v } : q)) })}
+                />
+              </span>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            A camp hands one hero
+            <NumberInput value={settings.layouts.sparse} min={1} whole onCommit={(v) => save({ layouts: { ...settings.layouts, sparse: v } })} label="Sparse layout nodes" width={50} />
+            nodes in turn in the sparse layout and
+            <NumberInput value={settings.layouts.dense} min={1} whole onCommit={(v) => save({ layouts: { ...settings.layouts, dense: v } })} label="Dense layout nodes" width={50} />
+            in the dense one (veins, Fields, a forest's trees); the pace is timed
+            <select
+              value={settings.layout}
+              onChange={(e) => save({ layout: e.target.value })}
+              aria-label="Layout the pace times"
+              style={{ fontSize: 11, padding: '2px 6px' }}
+            >
+              {LAYOUTS.map((l) => <option key={l} value={l}>{l}</option>)}
+            </select>
+            and the other reported beside it.
           </div>
           <div className="flex items-center gap-2">
-            A camp hands one hero
-            <NumberInput value={settings.campMembers} min={1} whole onCommit={(v) => save({ campMembers: v })} label="Camp copies" width={60} />
-            veins or Fields in turn (a forest's camp: every tree of its family).
+            A work site has
+            <NumberInput value={settings.sitePlaces.buildings} min={1} whole onCommit={(v) => save({ sitePlaces: { ...settings.sitePlaces, buildings: v } })} label="Building places" width={50} />
+            places for buildings, at most
+            <NumberInput value={settings.sitePlaces.perKind} min={1} whole onCommit={(v) => save({ sitePlaces: { ...settings.sitePlaces, perKind: v } })} label="Places a kind" width={50} />
+            boosting one kind (speed, XP, yield or rare finds); the same building may stand in several.
           </div>
           <div className="flex items-center gap-2">
             A rare find on repeatable work is a steady source at

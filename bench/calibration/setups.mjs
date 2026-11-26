@@ -154,6 +154,35 @@ export const SETUPS = [
         }
     },
     {
+        id: 'mine-head-camp',
+        name: 'A Mine Head with two Copper Ore Veins in its reach (the ledger\'s sparse layout), one miner working them in turn; the camp\'s own quicker rest reaching them',
+        warmupMs: 10 * 60_000,
+        compare: { items: ['item_copper_ore'], skills: ['mining'] },
+        // The camp stands by the veins it works, so its own rules reach them: the ledger names it a support too.
+        works: [{ target: { token: 'token_copper_ore_vein' }, setup: { level: 10, camp: { id: 'token_mine_head', members: 2 }, supports: ['token_mine_head'] } }],
+        build({ place, hero, order }) {
+            const camp = place('token_mine_head', 800, 560);
+            place('token_copper_ore_vein', 800 + STEP, 560);
+            place('token_copper_ore_vein', 800 - STEP, 560);
+            const miner = hero('Miner', { mining: 10 }, ['item_copper_pickaxe']);
+            order(miner, camp);
+        }
+    },
+    {
+        id: 'two-mines',
+        name: 'One building in two places: a vein with two Copper Mines in reach, each a 25 % double',
+        warmupMs: 10 * 60_000,
+        compare: { items: ['item_copper_ore'], skills: ['mining'] },
+        works: [{ target: { token: 'token_copper_ore_vein' }, setup: { level: 10, supports: [{ id: 'token_copper_mine', count: 2 }] } }],
+        build({ place, hero, order }) {
+            const vein = place('token_copper_ore_vein', 800, 560);
+            place('token_copper_mine', 800 + STEP, 560);
+            place('token_copper_mine', 800 - STEP, 560);
+            const miner = hero('Miner', { mining: 10 }, ['item_copper_pickaxe']);
+            order(miner, vein);
+        }
+    },
+    {
         id: 'field',
         name: 'A Field: one farmer on a Wild Wheat Patch, harvesting its load and waiting out each regrowth',
         // An hour and a half in, the patch is part-way through a regrowth, as it is at any time after.

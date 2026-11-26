@@ -52,9 +52,13 @@ import { hallTracksOf, hallGraph, freeRanks, openingPath, starRulesOf, starMoves
  * the Bare hours one takes to make, inputs and drinks taken off) plus XP (an hour's worth at the
  * rate before it).
  *
- * ⚠️ One copy of each support: stacking copies is the player's choice and the calculator cannot know
- * where things stand on the mat. A camp works `campMembers` copies of a refilling Token (a vein, a
- * Field) in turn, or every tree of a forest's family (its allowance).
+ * **A work site** (BALANCE_RULES sections 5 and 8): a camp works `campNodes` nodes in
+ * turn (a vein, a Field, a forest's trees: the layout's), and stands within reach of them, so its
+ * own rules reach them too (a Sawmill's double loot, a Mine Head's quicker rest). The buildings round
+ * a work hold `sitePlaces.buildings` places, at most `sitePlaces.perKind` of them boosting one kind
+ * (speed, XP, yield or rare finds, {@link supportKinds}), and the same building may stand in several
+ * of them: each copy is chosen as any boost is, Typical's when it pays back, Maxed's while it lifts
+ * the rate and the site has room. The neighbour a work needs and its camp take no building place.
  *
  * Pure: reads only the rate book and what it is handed.
  */
@@ -116,8 +120,40 @@ export function pickKindOf(pick, rate) {
     return pick?.kind;
 }
 
-/** The default copies a camp hands one hero of a refilling Token (a vein, a Field). */
-export const DEFAULT_CAMP_MEMBERS = 3;
+/** The nodes a camp hands one hero by default: the sparse layout's (`settings.layouts`). */
+const DEFAULT_CAMP_NODES = 2;
+
+/** A site's building places by default (`settings.sitePlaces`). */
+const DEFAULT_SITE_PLACES = Object.freeze({ buildings: 8, perKind: 4 });
+
+/** The kind of boost each axis a building moves on a work is counted under, for the site's places a kind. */
+const AXIS_KIND = Object.freeze({
+    [EFFECT_TYPES.WORK_TIME]: 'speed', [EFFECT_TYPES.GROW_TIME]: 'speed',
+    [EFFECT_TYPES.XP_BONUS]: 'xp',
+    [EFFECT_TYPES.YIELD]: 'yield', [EFFECT_TYPES.DOUBLE_DROP]: 'yield', [EFFECT_TYPES.LOOT_MULT]: 'yield', [EFFECT_TYPES.CROP_LOAD]: 'yield',
+    [EFFECT_TYPES.GIANT_HARVEST]: 'yield', [EFFECT_TYPES.INPUT_COST]: 'yield', [EFFECT_TYPES.FAIL_CHANCE]: 'yield', [EFFECT_TYPES.CATCH_WEIGHT]: 'yield',
+    [EFFECT_TYPES.LUCKY]: 'rare', [EFFECT_TYPES.BONUS_DROP]: 'rare'
+});
+
+/** The copies of a support a setup names. */
+function copiesIn(setup, id) {
+    let n = 0;
+    for (const e of list(setup.supports)) {
+        if (typeof e === 'string') { if (e === id) n += 1; continue; }
+        if (isObject(e) && e.id === id) n += Math.max(0, Math.floor(Number(e.count ?? 1)));
+    }
+    return n;
+}
+
+/** A setup with one more copy of a support standing by the work: its entry counted up, or a new one. */
+function withCopy(setup, id) {
+    const supports = list(setup.supports);
+    const at = supports.findIndex(e => (typeof e === 'string' ? e : e?.id) === id);
+    if (at < 0) return { ...setup, supports: [...supports, id] };
+    const next = [...supports];
+    next[at] = { id, count: copiesIn({ supports: [supports[at]] }, id) + 1 };
+    return { ...setup, supports: next };
+}
 
 const AMBIENT = new Set([KEYWORD.PROVIDES, KEYWORD.GRANTS]);
 
@@ -197,13 +233,17 @@ function familySpawnerOf(book, def, spawners) {
  * @param {(rate: object, cap: number, profile: string) => number} [options.inputScale]  the share of a rate
  *   the guild can feed at that profile (its materials in full where anything makes them, what its
  *   boosts spend by one hero on each): a boost that starves its work is worth that much less
- * @param {number} [options.campMembers]  copies of a refilling Token a camp hands one hero
+ * @param {number} [options.campNodes]  the nodes a camp hands one hero (a vein, a Field, a forest's trees)
+ * @param {{ buildings: number, perKind: number }} [options.sitePlaces]  a work site's building places, and the most boosting one kind
  * @param {(itemId: string, cap: number) => number} [options.hallUnitHours]  hours one of an item takes
  *   to gather at Typical before the Hall (a Hall rank's price); Bare's when absent
  * @param {(coins: number, cap: number) => number} [options.hallCoinHours]  hours `coins` take to earn at
  *   Typical before the Hall (a Hall rank's coins); never asked of a rank that asks none
  */
-export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours, hallHorizonHours = horizonHours, inputScale = () => 1, campMembers = DEFAULT_CAMP_MEMBERS, hallUnitHours = unitHours, hallCoinHours = () => Infinity }) {
+export function buildProfiles(book, {
+    tierOf, unitHours, costHours, horizonHours, hallHorizonHours = horizonHours, inputScale = () => 1, campNodes = DEFAULT_CAMP_NODES,
+    sitePlaces = DEFAULT_SITE_PLACES, hallUnitHours = unitHours, hallCoinHours = () => Infinity
+}) {
     const tokenIds = book.tokenIds();
     const supports = tokenIds.filter(id => {
         const def = book.token(id);
@@ -292,6 +332,50 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
         return ctx;
     }
 
+    const kindsMemo = new Map();
+    /**
+     * The kinds of boost a building moves on a piece of work, for the site's places a kind: the axes
+     * of its ambient rules that may reach the work (its Token or a step of its regrowth, narrowed to
+     * nothing, the work's skill or an item), each counted under its kind ({@link AXIS_KIND}); a
+     * fishing-spot raiser's, speed (its spots come sooner). Empty when none is one the budget counts.
+     */
+    function supportKinds(ctx, id) {
+        const key = `${ctx.key}|${id}`;
+        if (kindsMemo.has(key)) return kindsMemo.get(key);
+        const def = book.token(id);
+        const targets = chainOf(book, ctx.def);
+        const kinds = new Set();
+        for (const s of statementsOf(def)) {
+            if (!AMBIENT.has(s?.keyword) || s?.when?.event || !AXIS_KIND[s.payload?.type]) continue;
+            if (!targets.some(t => targetModeMatches(s.to, t))) continue;
+            const cat = s.payload.category;
+            if (cat && cat !== 'all' && cat !== ctx.skill && !book.items[cat]) continue;
+            kinds.add(AXIS_KIND[s.payload.type]);
+        }
+        if (spotRateOf(def) > 0) kinds.add('speed');
+        const out = Object.freeze([...kinds].sort());
+        kindsMemo.set(key, out);
+        return out;
+    }
+
+    /**
+     * Whether a work site has a place for one more copy of a building: fewer buildings than its
+     * places, and fewer than the most a kind may hold boosting each kind the building moves. The
+     * neighbour the work needs and its camp are not buildings.
+     */
+    function siteHasRoom(ctx, setup, offer) {
+        let total = 0;
+        const byKind = {};
+        for (const id of ctx.supports) {
+            const n = copiesIn(setup, id);
+            if (!n) continue;
+            total += n;
+            for (const k of supportKinds(ctx, id)) byKind[k] = (byKind[k] || 0) + n;
+        }
+        if (total >= sitePlaces.buildings) return false;
+        return offer.kinds.every(k => (byKind[k] || 0) < sitePlaces.perKind);
+    }
+
     /** The setup every profile starts from: what the work needs to run, one copy, the lowest tool, the Hall ranks a new guild holds. */
     function bareSetup(ctx, cap, level) {
         const setup = { supports: ctx.required.filter(id => within(tokenTier(id), cap) || tokenTier(id) === null) };
@@ -316,15 +400,18 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
         }
         for (const id of ctx.supports) {
             if (!within(tokenTier(id), cap)) continue;
-            out.push({ kind: BOOST_KIND.SUPPORT, id, factor: factorId(BOOST_KIND.SUPPORT, id), oneOff: true, apply: (s) => ({ ...s, supports: [...s.supports, id] }) });
+            out.push({ kind: BOOST_KIND.SUPPORT, id, factor: factorId(BOOST_KIND.SUPPORT, id), oneOff: true, kinds: supportKinds(ctx, id), apply: (s) => withCopy(s, id) });
         }
         for (const id of ctx.camps) {
             if (!within(tokenTier(id), cap)) continue;
-            const members = ctx.family ? null : campMembers;
             const family = ctx.family ? { spawner: ctx.family } : undefined;
+            // The camp stands by the nodes it works, so its own rules reach them; a hero works from one camp, so it takes another's place.
             out.push({
                 kind: BOOST_KIND.CAMP, id, factor: factorId(BOOST_KIND.SUPPORT, id), oneOff: true, camp: true,
-                apply: (s) => ({ ...s, camp: members ? { id, members } : id, ...(family ? { family } : {}) })
+                apply: (s) => ({
+                    ...s, supports: [...list(s.supports).filter(e => !ctx.camps.includes(typeof e === 'string' ? e : e?.id)), id],
+                    camp: { id, members: campNodes }, ...(family ? { family } : {})
+                })
             });
         }
         for (const id of ctx.tools) {
@@ -487,24 +574,30 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
                 full = typical.rate;
                 chosen = [...typical.chosen];
                 // Then every boost that lifts the rate whatever it costs, the best of each one-slot kind (a drink, a tool, a hat),
+                // each building in as many places as still lift it and the site has room for,
                 // then every Hall rank in rank order (a rank waits for the one before it), each fed as the guild feeds Typical.
                 const value = (r) => valueOf(r, cap, baseXp, { gross: true, profile });
                 const taken = new Set(chosen.map(c => c.id));
-                const ranked = pool.filter(o => !taken.has(o.id) && o.kind !== BOOST_KIND.HALL).map(o => {
-                    const r = book.numbersOf(target, o.apply(setup));
-                    return { o, gain: value(r) - value(rate) };
-                }).filter(x => x.gain > 1e-9).sort((x, y) => y.gain - x.gain);
+                const ranked = pool.filter(o => (o.kind === BOOST_KIND.SUPPORT || !taken.has(o.id)) && o.kind !== BOOST_KIND.HALL)
+                    .filter(o => o.kind !== BOOST_KIND.SUPPORT || siteHasRoom(ctx, setup, o)).map(o => {
+                        const r = book.numbersOf(target, o.apply(setup));
+                        return { o, gain: value(r) - value(rate) };
+                    }).filter(x => x.gain > 1e-9).sort((x, y) => y.gain - x.gain);
                 const hallOffers = pool.filter(o => !taken.has(o.id) && o.kind === BOOST_KIND.HALL).sort((x, y) => x.rank - y.rank);
                 for (const o of [...ranked.map(x => x.o), ...hallOffers]) {
-                    if (slotFull(chosen, o)) continue;
-                    const step = o.kind === BOOST_KIND.HALL ? hallStep(setup, o, cap) : { next: o.apply(setup), path: [] };
-                    if (!step) continue;
-                    const r = book.numbersOf(target, step.next);
-                    if (!(value(r) - value(rate) > 1e-9)) continue;
-                    setup = step.next;
-                    rate = r;
-                    full = null;
-                    chosen.push({ kind: o.kind, id: o.id, factor: o.factor, slot: o.slot ?? null, ...hallPick(o, step) });
+                    for (;;) {
+                        if (slotFull(chosen, o)) break;
+                        if (o.kind === BOOST_KIND.SUPPORT && !siteHasRoom(ctx, setup, o)) break;
+                        const step = o.kind === BOOST_KIND.HALL ? hallStep(setup, o, cap) : { next: o.apply(setup), path: [] };
+                        if (!step) break;
+                        const r = book.numbersOf(target, step.next);
+                        if (!(value(r) - value(rate) > 1e-9)) break;
+                        setup = step.next;
+                        rate = r;
+                        full = null;
+                        chosen.push({ kind: o.kind, id: o.id, factor: o.factor, slot: o.slot ?? null, ...hallPick(o, step) });
+                        if (o.kind !== BOOST_KIND.SUPPORT) break;
+                    }
                 }
             } else {
                 const horizon = horizonHours(cap);
@@ -518,6 +611,7 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
                     const weighed = new Set();
                     for (const o of left) {
                         if (slotFull(chosen, o)) continue;
+                        if (o.kind === BOOST_KIND.SUPPORT && !siteHasRoom(ctx, setup, o)) continue;
                         let next;
                         let r;
                         let gain;
@@ -548,7 +642,8 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
                     setup = best.next;
                     rate = best.r;
                     chosen.push({ kind: best.o.kind, id: best.o.id, factor: best.o.factor, slot: best.o.slot ?? null, gain: best.gain, payback: best.payback, price: best.price, ...hallPick(best.o, best.step) });
-                    left = left.filter(o => o !== best.o);
+                    // A building stays on offer for its next place.
+                    if (best.o.kind !== BOOST_KIND.SUPPORT) left = left.filter(o => o !== best.o);
                 }
             }
         }
@@ -602,8 +697,30 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
         return { saves: hallSaves(ctx, r0, r1, cap, baseXp, PROFILE.TYPICAL), r0, r1, setup: at(rank), opening };
     }
 
+    /**
+     * The buildings a setup stands round a piece of work, in its site's places: `{ places, room,
+     * perKind, byKind, buildings: [{ id, count, kinds }], camp }`, `places` the copies standing,
+     * `room` the site's building places, `camp` the camp it works from and the nodes that hands it.
+     */
+    function siteOf(target, setup) {
+        const ctx = contextOf(target);
+        const buildings = [];
+        const byKind = {};
+        let places = 0;
+        for (const id of ctx.supports) {
+            const count = copiesIn(setup, id);
+            if (!count) continue;
+            const kinds = supportKinds(ctx, id);
+            buildings.push({ id, count, kinds: [...kinds] });
+            places += count;
+            for (const k of kinds) byKind[k] = (byKind[k] || 0) + count;
+        }
+        const camp = isObject(setup.camp) ? { id: setup.camp.id, nodes: setup.camp.members ?? null } : typeof setup.camp === 'string' ? { id: setup.camp, nodes: null } : null;
+        return { places, room: sitePlaces.buildings, perKind: sitePlaces.perKind, byKind, buildings, camp };
+    }
+
     return {
-        contextOf, profileOf, bareSetup, offers, valueOf, everythingOf,
+        contextOf, profileOf, bareSetup, offers, valueOf, everythingOf, siteOf, supportKinds,
         hallTracks: tracks, hallTrack: (id) => trackById.get(id) || null, hallPriceHours, hallRankOn, rankWithin
     };
 }

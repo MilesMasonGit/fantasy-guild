@@ -162,12 +162,16 @@ describe('its rate: how often a spot arrives and how long it stays', () => {
         expect(raised.factors.find(f => f.id === 'support:token_chum')).toMatchObject({ on: true, axes: ['spotRate'] });
         expect(b.rateOf({ token: 'token_spot', pool: poolOf(0) }, { supports: ['token_chum'], off: ['support:token_chum'] }).cyclesPerHour).toBeCloseTo(250);
         expect(b.rateOf({ token: 'token_spot', pool: poolOf(0) }, { supports: [{ id: 'token_chum', distant: true }] }).cyclesPerHour).toBeCloseTo(250);
-        // Standing in the camp, Maxed builds it beside the spots.
+        // Standing in the camp, Maxed builds it beside the spots, in as many places as still help: a second brings
+        // them every two minutes, past the hero's 600, and a third adds nothing.
         c.starterCamp.tokens.push({ typeId: 'token_chum', x: 9, y: 0 });
         const pace = buildPace(c, buildLedger(c), null);
         const maxed = pace.rateAt({ token: 'token_spot', pool: poolOf(0) }, PROFILE.MAXED);
         expect(maxed.chosen.map(x => x.id)).toContain('token_chum');
-        expect(maxed.items.item_spot_shrimp).toBeCloseTo(500);
+        expect(pace.siteOf({ token: 'token_spot', pool: poolOf(0) }, PROFILE.MAXED).buildings).toEqual([{ id: 'token_chum', count: 2, kinds: ['speed'] }]);
+        expect(maxed.items.item_spot_shrimp).toBeCloseTo(600);
+        const one = buildPace(c, buildLedger(c), { sitePlaces: { buildings: 1, perKind: 1 } }).rateAt({ token: 'token_spot', pool: poolOf(0) }, PROFILE.MAXED);
+        expect(one.items.item_spot_shrimp).toBeCloseTo(500);
     });
 
     it('arriving faster than a hero fishes, the hero is the limit', () => {

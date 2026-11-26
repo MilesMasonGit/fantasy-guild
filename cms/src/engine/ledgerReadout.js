@@ -1,7 +1,7 @@
 import { workspaceReport } from './ledgerReport.js';
 import { ledgerRows } from './ledgerRows.js';
 import { PROFILE } from './ledger/pace.js';
-import { minutesPerLevelAt, boostBudgetAt } from './ledger/settings.js';
+import { minutesPerLevelAt, boostBudgetAt, chainHeroesAt } from './ledger/settings.js';
 import { COMBAT, parseKey } from '../../../src/systems/progression/ledger/engine.js';
 import { PLAN_STATUS, tierLabel } from '../../../src/systems/progression/ledger/plan.js';
 import { MAX_SKILL_LEVEL } from '../../../src/utils/XPCurve.js';
@@ -10,8 +10,9 @@ import { MAX_SKILL_LEVEL } from '../../../src/utils/XPCurve.js';
  * The ledger's read-out for an agent (`npm run cms -- ledger`): the pace of each skill at three
  * profiles, each entry's numbers and arrival at two, the boost budget and the ledger's checks, as
  * plain JSON. Built only from the ledger's own report (`workspaceReport`); nothing here times
- * anything itself: the guild time is a level's hours times the heroes the pace counts for its work
- * (`pace.heroesOf`: the hero and the gatherers down its chain).
+ * anything itself: the guild time is the hero-hours the pace counts for a level (`track.work`: its
+ * chain's heroes at work all the while), the stages are timed with the reference guild's heroes
+ * (`pace.stageOf`), and the other layout is the pace's own second timing (`pace.layoutSpread`).
  *
  * Keys and units follow the balancer's solver (`.claude/skills/balancer/balance_solver.cjs`): `opt`,
  * `typ` and `bare` for the players, minutes per level and to arrive, days to 99, seconds an action.
@@ -23,7 +24,7 @@ import { MAX_SKILL_LEVEL } from '../../../src/utils/XPCurve.js';
  */
 
 export const READOUT_FORMAT = 'fantasy-guild-ledger-readout';
-export const READOUT_VERSION = 2;
+export const READOUT_VERSION = 3;
 
 /** The solver's players and the ledger profiles they are read at. */
 export const READOUT_PROFILES = Object.freeze({ opt: PROFILE.MAXED, typ: PROFILE.TYPICAL, bare: PROFILE.BARE });
@@ -36,8 +37,12 @@ const GUILD_KEY = Object.freeze({ opt: 'guild', typ: 'guildTyp', bare: 'guildBar
 
 export const NOTES = Object.freeze([
     'opt is the ledger\'s Maxed profile (every boost the stage offers), the curve\'s player; typ its Typical (boosts that pay back); bare its Bare (no boosts). The balance rules\' optimized boost factor at a level is bare / opt there.',
-    'Times are hero-work hours turned to minutes: heroes work around the clock, one hero per skill, all levelling side by side.',
-    'gatherers (per level and profile) is the full count of heroes a level\'s work needs down its chain besides its own to run in full, each at the same profile\'s setup. Levels are timed on the reference chain (BALANCE_RULES section 8: one maker and at most gatherersPerMaker gatherers, a Ledger setting, 2.2): a work needing more runs at that many over its need. guild is the hours times that chain (one plus the lesser of gatherers and gatherersPerMaker). The drinks and potions a profile\'s boosts spend are brewed by one hero on each, as the profile weighed them, and are not in guild, as in the solver.',
+    'Times are hero-work hours turned to minutes: heroes work around the clock. A skill\'s levels are one hero\'s climb on its chain; a stage and an arrival also wait for the guild\'s heroes to do all the work on the way (heroes, stages).',
+    'heroes lists the reference guild\'s heroes by stage (BALANCE_RULES section 8: about one a tier, a Ledger setting), each arriving as the curve reaches its tier, and the heroes one chain has there (chainHeroes: the guild\'s, at most one maker and gatherersPerMaker gatherers).',
+    'gatherers and brewers (per level and profile) are the heroes a level\'s work needs besides its maker to run in full: the gatherers down its chain and the brewers of the drinks and potions its boosts spend (each with their own gatherers), at the same profile\'s setup. chain is the share of its full pace the level runs at: the chain\'s heroes over the heroes it needs, each doing its share of everything in turn, at most 1. guild is the hero-hours the level takes: its hours times the chain\'s heroes at work, the lesser of what it needs and what it has.',
+    'A stage\'s minutes are the later of its slowest entry\'s arrival and the time the guild\'s heroes take to put in all the work planned for it and the stages before (workMinutes, from heroMinutes of hero time: each level and each price once); pathMinutes is the slowest entry\'s path with every skill levelled side by side, and byWork says the heroes set it. An entry\'s arrival is likewise the later of its path and its own path\'s work.',
+    'layouts times each skill\'s days to 99 at both layouts (a camp working the sparse or the dense layout\'s nodes, a Ledger setting; the pace and everything else here is the timed one) and warns where they differ past the tolerance; nodes lists the nodes the dense layout makes past the tolerance more of (the layout check).',
+    'site (per entry with a work, at opt and typ) is the buildings its profile stands round the work in its site\'s places (BALANCE_RULES section 5: room for sitePlaces.buildings, at most sitePlaces.perKind boosting one kind), each with its copies and the kinds it boosts, and the camp it works from with the nodes that hands it.',
     'Levels above the highest level any entry asks (pastTop) are worked at the best work open by the last stage; their best work is not named, and their guild time and gatherers keep the last named level\'s.',
     'An entry\'s numbers (xp, seconds, inputs, makes) are its work\'s own at Bare: one action, before boosts. Items have no work of their own: see via for the work that first gives them.',
     'Arrivals (arriveOpt, arriveTyp) are minutes from a new game along the ledger\'s path; null when never reached, and for Planned entries (the ledger times nothing Planned).',
@@ -54,14 +59,15 @@ function skillPace(pace, skill) {
     const track = pace.trackOf(skill);
     const levels = [];
     const reach = { opt: 0, typ: 0, bare: 0, guild: 0, guildTyp: 0, guildBare: 0 };
-    const last = { opt: 1, typ: 1, bare: 1 };
-    const heroes = new Map();
-    const heroesOf = (src, as, cap) => {
+    // The last named level's staffing, which the levels past the top keep.
+    const last = Object.fromEntries(Object.keys(READOUT_PROFILES).map((who) => [who, { gatherers: 0, brewers: 0, chain: 1, atWork: 1 }]));
+    const staff = new Map();
+    const staffingOf = (src, as, cap) => {
         if (!src?.work) return null;
         const profile = src.profile ?? as;
         const key = `${src.work.key}|${profile}|${cap}|${src.at ?? ''}`;
-        if (!heroes.has(key)) heroes.set(key, pace.heroesOf(src.work.target, profile, cap, src.at ?? null));
-        return heroes.get(key);
+        if (!staff.has(key)) staff.set(key, pace.staffingOf(src.work.target, profile, cap, src.at ?? null));
+        return staff.get(key);
     };
     const before = { opt: 0, typ: 0, bare: 0 };
     for (let L = 1; L < MAX_SKILL_LEVEL; L++) {
@@ -69,30 +75,36 @@ function skillPace(pace, skill) {
         const out = { L, curve: round(minutesPerLevelAt(pace.settings, L), 3) };
         const best = {};
         const gatherers = {};
+        const brewers = {};
+        const chain = {};
         for (const [who, profile] of Object.entries(READOUT_PROFILES)) {
             let hours;
             if (row) {
                 hours = row.hours[profile];
                 const src = row.source[profile];
                 best[who] = src?.work ? pace.workName(src.work) : null;
-                const n = heroesOf(src, profile, row.tier);
-                if (n !== null) last[who] = n;
+                const s = staffingOf(src, profile, row.tier);
+                if (s) last[who] = { gatherers: s.gatherers, brewers: s.brewers, chain: s.scale, atWork: Math.min(s.need, s.have) };
             } else {
                 const to = pace.hoursToLevel(skill, L + 1, profile);
                 hours = to - before[who];
                 best[who] = null;
             }
             before[who] += Number.isFinite(hours) ? hours : Infinity;
-            // The level is timed on the reference chain (one maker, at most `gatherersPerMaker` gatherers): its guild is that chain.
-            const chain = 1 + Math.min(last[who] - 1, pace.settings.gatherersPerMaker);
+            // The level's hero-hours: its chain's heroes at work all the while, as the pace counts them.
+            const work = row ? row.work[profile] : hours * last[who].atWork;
             out[who] = minutes(hours);
-            out[GUILD_KEY[who]] = minutes(hours * chain);
-            gatherers[who] = round(last[who] - 1, 3);
+            out[GUILD_KEY[who]] = minutes(work);
+            gatherers[who] = round(last[who].gatherers, 3);
+            brewers[who] = round(last[who].brewers, 3);
+            chain[who] = round(last[who].chain, 4);
             reach[who] += Number.isFinite(hours) ? hours : Infinity;
-            reach[GUILD_KEY[who]] += Number.isFinite(hours) ? hours * chain : Infinity;
+            reach[GUILD_KEY[who]] += Number.isFinite(work) ? work : Infinity;
         }
         out.best = best;
         out.gatherers = gatherers;
+        out.brewers = brewers;
+        out.chain = chain;
         out.reach = Object.fromEntries(Object.entries(reach).map(([k, v]) => [k, minutes(v)]));
         if (!row) out.pastTop = true;
         levels.push(out);
@@ -123,6 +135,44 @@ function budgetOf(pace) {
         .sort((a, b) => (b.pct - b.budget) - (a.pct - a.budget))
         .map((r) => ({ entry: r.entry, work: pace.workName(r.work), tier: r.tier, entryTier: r.entryTier, level: r.level, profile: r.profile, kind: r.kind, pct: round(r.pct, 1), budget: round(r.budget, 1) }));
     return { tiers, speedCapPct: s.speedCapPct, over };
+}
+
+/** The reference guild's heroes by stage, each with when it arrives and leaves on the curve, and the heroes one chain has there. */
+function heroesOf(pace) {
+    return pace.heroSpans().map((s) => ({
+        tier: s.tier, label: tierLabel(s.tier), heroes: s.heroes, chainHeroes: round(chainHeroesAt(pace.settings, s.tier), 3),
+        fromMinutes: minutes(s.from), toMinutes: minutes(s.to),
+    }));
+}
+
+/** Both layouts' days to 99 per skill, with the warnings, and the nodes the dense layout makes past the tolerance more of. */
+function layoutsOf(pace, both = true) {
+    const nodes = pace.layoutRows().map((r) => ({
+        entry: r.work.entry, work: pace.workName(r.work), camp: r.camp, sparse: round(r.sparse, 2), dense: round(r.dense, 2), offPct: round(r.off * 100, 1),
+    }));
+    const other = pace.settings.layout === 'sparse' ? 'dense' : 'sparse';
+    const base = { timed: pace.settings.layout, other, nodes: { ...pace.settings.layouts }, tolerancePct: pace.settings.tolerancePct, nodesOff: nodes };
+    if (!both) return { ...base, skills: null, warnings: null, skipped: true };
+    const spread = pace.layoutSpread();
+    const days = (d) => Object.fromEntries(Object.entries(READOUT_PROFILES).map(([who, profile]) => [who, Number.isFinite(d[profile]) ? round(d[profile], 2) : null]));
+    const skills = {};
+    for (const s of spread.skills) {
+        if (s.skill === COMBAT) continue;
+        skills[s.skill] = { sparse: days(s.days.sparse), dense: days(s.days.dense), offPct: round(s.off * 100, 1), warn: s.warn };
+    }
+    return { ...base, skills, warnings: Object.keys(skills).filter((k) => skills[k].warn) };
+}
+
+/** The buildings a profile stands round a work in its site's places, named. */
+function siteText(pace, report, target, profile) {
+    const site = pace.siteOf(target, profile);
+    if (!site) return null;
+    const name = (id) => report.ledger.world.names.get(`token:${id}`) ?? id;
+    return {
+        places: site.places, room: site.room, byKind: site.byKind,
+        buildings: site.buildings.map((b) => ({ id: b.id, name: name(b.id), count: b.count, kinds: b.kinds })),
+        camp: site.camp ? { ...site.camp, name: name(site.camp.id) } : null,
+    };
 }
 
 /** The highest level its reach asks of a skill other than Combat, as `{ skill, level }`. */
@@ -158,9 +208,10 @@ function workNumbers(pace, report, work) {
 /**
  * The read-out of a workspace (the collections, as the CMS's store holds them).
  * @param {object} state
- * @param {{ report?: object }} options  a `workspaceReport` already worked out, to reuse
+ * @param {{ report?: object, layouts?: boolean }} options  a `workspaceReport` already worked out, to reuse;
+ *   `layouts: false` leaves out the other layout's days to 99 (a second pace, most of the time), keeping its node check
  */
-export function ledgerReadout(state = {}, { report = null } = {}) {
+export function ledgerReadout(state = {}, { report = null, layouts = true } = {}) {
     const started = Date.now();
     const r = report || workspaceReport(state);
     const { pace, ledger, findings } = r;
@@ -182,9 +233,13 @@ export function ledgerReadout(state = {}, { report = null } = {}) {
         const numbers = works.length ? workNumbers(pace, r, works[0]) : null;
         const gate = gateOf(at);
         const arrive = {};
+        const path = {};
         for (const [who, profile] of Object.entries(ARRIVAL_PROFILES)) {
-            arrive[who] = planned ? null : minutes(pace.pathOf(key, profile).hours);
+            const a = planned ? null : pace.arrivalOf(key, profile);
+            arrive[who] = a ? minutes(a.hours) : null;
+            path[who] = a ? minutes(a.pathHours) : null;
         }
+        const site = works.length ? { opt: siteText(pace, r, works[0].target, PROFILE.MAXED), typ: siteText(pace, r, works[0].target, PROFILE.TYPICAL) } : null;
         rows.push({
             key, id: entry.id, name: entry.name, kind: entry.kind, status: entry.status, planned,
             tier: entry.tier ?? (Number.isInteger(at?.tier) ? at.tier : null),
@@ -194,14 +249,24 @@ export function ledgerReadout(state = {}, { report = null } = {}) {
             inputs: numbers?.inputs ?? [], makes: numbers?.makes ?? [],
             ...(numbers && !numbers.ok ? { workWhy: numbers.why ?? 'its work cannot run' } : {}),
             via: at?.via ?? at?.rule?.via ?? null, how: at?.how ?? at?.rule?.how ?? null,
-            arriveOpt: arrive.opt, arriveTyp: arrive.typ,
+            arriveOpt: arrive.opt, arriveTyp: arrive.typ, pathOpt: path.opt, pathTyp: path.typ,
+            ...(site ? { site } : {}),
             ...(planned ? { why: 'planned' } : arrive.typ === null ? { why: at ? 'never reached' : 'not in the ledger' } : {}),
         });
     }
 
     const stages = pace.settings.stages.map((s) => {
         const stage = pace.stageOf(s.tier);
-        return { tier: s.tier, label: tierLabel(s.tier), profile: stage.profile, entries: stage.entries, minutes: stage.entries ? minutes(finite(stage.hours) ?? Infinity) : null, untimed: stage.untimed.length, budgetMinutes: round(s.budgetMinutes, 3), endsAt: s.endsAt };
+        const work = stage.entries ? pace.workOfStage(s.tier) : null;
+        return {
+            tier: s.tier, label: tierLabel(s.tier), profile: stage.profile, entries: stage.entries,
+            minutes: stage.entries ? minutes(finite(stage.hours) ?? Infinity) : null, untimed: stage.untimed.length, budgetMinutes: round(s.budgetMinutes, 3), endsAt: s.endsAt,
+            heroes: stage.heroes,
+            ...(work ? {
+                pathMinutes: minutes(stage.pathHours), workMinutes: minutes(stage.workHours), heroMinutes: minutes(stage.heroHours), byWork: stage.byWork,
+                levels: work.levels, levelHeroMinutes: minutes(work.levelHeroHours), stepHeroMinutes: minutes(work.stepHeroHours),
+            } : {}),
+        };
     });
     const nameOf = (key) => (key ? ledger.world.names.get(key) ?? parseKey(key).id : null);
     const checks = findings.map((f) => ({ check: f.check, key: f.key ?? null, name: f.name ?? nameOf(f.key), severity: f.severity, message: f.message }));
@@ -209,11 +274,16 @@ export function ledgerReadout(state = {}, { report = null } = {}) {
     return {
         format: READOUT_FORMAT, version: READOUT_VERSION,
         profiles: { ...READOUT_PROFILES },
-        units: { levelTimes: 'minutes', days: 'days (24 hero-hours)', arrive: 'minutes', seconds: 'seconds an action', xp: 'XP an action' },
+        units: { levelTimes: 'minutes', days: 'days (24 hero-hours)', arrive: 'minutes', seconds: 'seconds an action', xp: 'XP an action', heroMinutes: 'minutes of one hero\'s work' },
         notes: [...NOTES],
+        guild: {
+            heroes: heroesOf(pace), gatherersPerMaker: pace.settings.gatherersPerMaker, layout: pace.settings.layout, layoutNodes: { ...pace.settings.layouts },
+            sitePlaces: { ...pace.settings.sitePlaces },
+        },
         pace: skills,
         rows,
         stages,
+        layouts: layoutsOf(pace, layouts),
         boostBudget: budgetOf(pace),
         checks,
         counts: {
@@ -233,8 +303,21 @@ export function readoutText(out) {
     for (const [skill, p] of Object.entries(out.pace).sort(([a], [b]) => a.localeCompare(b))) {
         lines.push(`${skill} ${p.days.opt ?? 'never'} ${p.days.typ ?? 'never'} ${p.days.bare ?? 'never'} ${p.days.guild ?? 'never'} ${p.days.curve} ${p.top}`);
     }
-    lines.push('', 'Stage | Maxed time | budget | entries (untimed)');
-    for (const s of out.stages) lines.push(`${s.label} ${fmtMin(s.minutes)} ${fmtMin(s.budgetMinutes)} ${s.entries} (${s.untimed})`);
+    lines.push('', 'Stage | Maxed time | budget | entries (untimed) | heroes | path side by side | the heroes\' work');
+    for (const s of out.stages) {
+        const heroes = s.workMinutes !== undefined ? ` | ${s.heroes} | ${fmtMin(s.pathMinutes)} | ${fmtMin(s.workMinutes)}${s.byWork ? ' (sets it)' : ''}` : ` | ${s.heroes}`;
+        lines.push(`${s.label} ${fmtMin(s.minutes)} ${fmtMin(s.budgetMinutes)} ${s.entries} (${s.untimed})${heroes}`);
+    }
+    const l = out.layouts;
+    if (l?.skipped) {
+        lines.push('', `Layouts: timed ${l.timed} only (the ${l.other} layout left out); ${l.nodesOff.length} node${l.nodesOff.length === 1 ? '' : 's'} make past the tolerance more in the dense layout (the layout check).`);
+    } else if (l) {
+        lines.push('', `Layouts: a camp works ${l.nodes.sparse} nodes (sparse) or ${l.nodes.dense} (dense); timed ${l.timed}. Days to 99 opt sparse | dense:`);
+        for (const [skill, x] of Object.entries(l.skills).sort(([a], [b]) => a.localeCompare(b))) {
+            lines.push(`${skill} ${x.sparse.opt ?? 'never'} | ${x.dense.opt ?? 'never'}${x.warn ? `  differ ${x.offPct} % (past ±${l.tolerancePct} %)` : ''}`);
+        }
+        if (l.nodesOff.length) lines.push(`${l.nodesOff.length} node${l.nodesOff.length === 1 ? '' : 's'} make past the tolerance more in the dense layout (the layout check).`);
+    }
     const over = out.boostBudget?.over || [];
     if (over.length) lines.push('', `Boost budget: ${over.length} total${over.length === 1 ? '' : 's'} over a cell (${[...new Set(over.map((o) => `${o.kind} at ${o.profile}`))].join(', ')}).`);
     const sev = Object.entries(out.counts.bySeverity).map(([k, n]) => `${n} ${k}`).join(', ') || 'none';

@@ -15,8 +15,11 @@ import { PLAN_TIER_LEVELS, tierOrNull, tierLevelsOf, tierLevelAt } from '../../.
  *       boostTargets: { support: [{ tier, pct }], … }, // how strong each kind of boost should be, by tier
  *       boostBudget: [{ tier, speed, xp, yield, rare }], // what Typical and Maxed hold at each tier's opening, in percent
  *       speedCapPct: 65,                             // no speed cut past this at Maxed
- *       campMembers: 3,                              // copies of a vein or Field a camp hands one hero
- *       gatherersPerMaker: 2.2,                      // the reference chain's gatherers a maker: the pace runs one needing more at their share
+ *       heroesByTier: [{ tier, heroes }],            // the reference guild's heroes from a stage on: one at copper to eight
+ *       gatherersPerMaker: 2.2,                      // a full chain is one maker and this many gatherers: a chain's heroes at most
+ *       layouts: { sparse: 2, dense: 4 },            // the nodes a camp works in each layout the pace can time
+ *       layout: 'sparse',                            // the layout the pace times (the other is reported beside it)
+ *       sitePlaces: { buildings: 8, perKind: 4 },    // building places round a work, and at most this many boosting one kind
  *       paybackHours: 2,                             // a sensible investor's boost pays for itself within this
  *       hallPaybackHours: 24,                        // and a Guild Hall rank within this
  *       steadyFindsPerDay: 1,                        // a rare find on repeatable work this often a day is a steady source
@@ -114,6 +117,30 @@ const DEFAULT_BOOST_TARGETS = {
  */
 const DEFAULT_COIN_CURVE = [{ tier: 0, minutes: 10 }];
 
+/**
+ * The reference guild's heroes (BALANCE_RULES section 8): about one a tier, one
+ * at copper (the Starter Camp and Plane 1), two at iron, on to eight at darkmetal, where the two
+ * tiers of adamantine's twenty levels bring two.
+ */
+const DEFAULT_HEROES_BY_TIER = Object.freeze([[0, 1], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 8]]
+    .map(([tier, heroes]) => Object.freeze({ tier, heroes })));
+
+/**
+ * The layouts a work site is timed at (BALANCE_RULES sections 2 and 8): how many nodes a camp works.
+ * Sparse is the rule's own, a camp with two (the rest rule keeps one hero fully busy on two); dense
+ * gives the site's four places that are not buildings (its camp, a second node or two, a spawner) to
+ * nodes, four with the worked one. Bare has no camp: one node.
+ */
+export const LAYOUTS = Object.freeze(['sparse', 'dense']);
+const DEFAULT_LAYOUTS = Object.freeze({ sparse: 2, dense: 4 });
+
+/**
+ * A work site's building places (BALANCE_RULES section 5: Tokens 128 u apart within the
+ * 240 u reach, twelve places round a node): about eight for buildings once the camp, the nodes and
+ * a spawner stand, and about four of them max one kind of boost, so a site leans one or two ways.
+ */
+const DEFAULT_SITE_PLACES = Object.freeze({ buildings: 8, perKind: 4 });
+
 export const DEFAULT_LEDGER_SETTINGS = Object.freeze({
     paceRule: DEFAULT_PACE_RULE,
     tierLevels: PLAN_TIER_LEVELS,
@@ -125,9 +152,12 @@ export const DEFAULT_LEDGER_SETTINGS = Object.freeze({
     boostBudget: DEFAULT_BOOST_BUDGET,
     // The owner (2026-11-07): at most a 65 % cut at Maxed, inside the game's 80 % cap.
     speedCapPct: 65,
-    campMembers: 3,
+    heroesByTier: DEFAULT_HEROES_BY_TIER,
     // The reference guild (BALANCE_RULES section 8, owner 2026-11-25): a chain is one maker and about 2 gatherers at every tier, 2.2 at Typical.
     gatherersPerMaker: 2.2,
+    layouts: DEFAULT_LAYOUTS,
+    layout: LAYOUTS[0],
+    sitePlaces: DEFAULT_SITE_PLACES,
     paybackHours: 2,
     // The owner (2026-10-30): a Guild Hall rank may take about a day to pay for itself.
     hallPaybackHours: 24,
@@ -149,12 +179,14 @@ const clone = (v) => JSON.parse(JSON.stringify(v));
  * Settings with every field present and sane: anything missing or unreadable falls back to its
  * default, and the stages follow from the pace rule and the tier levels ({@link stagesOf}). Fields
  * this file does not know are kept, for later phases; the hand budgets and curve points of before
- * (`stages`, `paceCurve`) are dropped, as the rule now sets them.
+ * (`stages`, `paceCurve`) are dropped, as the rule now sets them, and so is the camp's copies of
+ * before (`campMembers`), which the layouts replace.
  */
 export function settingsOf(raw) {
     const src = { ...(isObject(raw) ? raw : {}) };
     delete src.stages;
     delete src.paceCurve;
+    delete src.campMembers;
     const d = DEFAULT_LEDGER_SETTINGS;
 
     const player = isObject(src.player) ? src.player : {};
@@ -181,8 +213,11 @@ export function settingsOf(raw) {
         boostTargets: boostTargetsOf(src.boostTargets),
         boostBudget: boostBudgetOf(src.boostBudget),
         speedCapPct: Math.min(100, positive(src.speedCapPct, d.speedCapPct)),
-        campMembers: Math.max(1, Math.floor(positive(src.campMembers, d.campMembers))),
+        heroesByTier: heroesByTierOf(src.heroesByTier),
         gatherersPerMaker: positive(src.gatherersPerMaker, d.gatherersPerMaker),
+        layouts: layoutsOf(src.layouts),
+        layout: LAYOUTS.includes(src.layout) ? src.layout : d.layout,
+        sitePlaces: sitePlacesOf(src.sitePlaces),
         paybackHours: positive(src.paybackHours, d.paybackHours),
         hallPaybackHours: positive(src.hallPaybackHours, d.hallPaybackHours),
         steadyFindsPerDay: positive(src.steadyFindsPerDay, d.steadyFindsPerDay),
@@ -309,6 +344,49 @@ function boostTargetsOf(raw) {
         if (byTier.size) out[id] = [...byTier.values()].sort((a, b) => a.tier - b.tier);
     }
     return out;
+}
+
+/** The heroes by tier: one point per tier in tier order, each a whole number of heroes from 1; the reference guild's when none is readable. */
+function heroesByTierOf(raw) {
+    const byTier = new Map();
+    for (const p of Array.isArray(raw) ? raw : []) {
+        const tier = tierOrNull(p?.tier);
+        const heroes = Math.floor(Number(p?.heroes));
+        if (tier !== null && heroes >= 1) byTier.set(tier, { tier, heroes });
+    }
+    return byTier.size ? [...byTier.values()].sort((a, b) => a.tier - b.tier) : clone(DEFAULT_HEROES_BY_TIER);
+}
+
+/** The layouts' nodes a camp works, each whole from 1, dense never under sparse. */
+function layoutsOf(raw) {
+    const src = isObject(raw) ? raw : {};
+    const sparse = Math.max(1, Math.floor(positive(src.sparse, DEFAULT_LAYOUTS.sparse)));
+    return { sparse, dense: Math.max(sparse, Math.floor(positive(src.dense, DEFAULT_LAYOUTS.dense))) };
+}
+
+/** A site's building places and the most of one kind, each whole from 1, the kind's never past the places. */
+function sitePlacesOf(raw) {
+    const src = isObject(raw) ? raw : {};
+    const buildings = Math.max(1, Math.floor(positive(src.buildings, DEFAULT_SITE_PLACES.buildings)));
+    return { buildings, perKind: Math.min(buildings, Math.max(1, Math.floor(positive(src.perKind, DEFAULT_SITE_PLACES.perKind)))) };
+}
+
+/** The reference guild's heroes at a stage: the last point at or before it, else the first point's. */
+export function heroesAt(settings, tier) {
+    const points = settings?.heroesByTier && Array.isArray(settings.heroesByTier) ? settings.heroesByTier : settingsOf(settings).heroesByTier;
+    let out = points[0]?.heroes ?? 1;
+    for (const p of points) if (p.tier <= tier) out = p.heroes;
+    return out;
+}
+
+/**
+ * The heroes one chain has at a stage (BALANCE_RULES section 8): a full chain is one maker and
+ * `gatherersPerMaker` gatherers, and a guild with fewer heroes than that runs one chain with them
+ * all, each doing everything in turn. Eight heroes so run two or three chains.
+ */
+export function chainHeroesAt(settings, tier) {
+    const s = settings?.heroesByTier && Number.isFinite(settings?.gatherersPerMaker) ? settings : settingsOf(settings);
+    return Math.min(heroesAt(s, tier), 1 + s.gatherersPerMaker);
 }
 
 /** The coin curve's points, one per tier in tier order, each a whole tier and minutes above 0. */

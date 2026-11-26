@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
-import { render, fireEvent, cleanup, within } from '@testing-library/react';
+import { render, fireEvent, cleanup, within, waitFor } from '@testing-library/react';
 
 import { useEntityStore } from '../../cms/src/stores/useEntityStore.js';
 import { useSimulationStore } from '../../cms/src/stores/useSimulationStore.js';
 import { workspaceReport } from '../../cms/src/engine/ledgerReport';
+import { runLedgerJobNow } from '../../cms/src/engine/ledgerJobs.js';
 import { bundledSources } from '../../cms/src/engine/calibrationStatus';
 import LedgerPanel from '../../cms/src/components/ledger/LedgerPanel.jsx';
 import {
@@ -63,6 +64,18 @@ describe('the calibration stamp', () => {
     });
 });
 
+describe('the layouts job', () => {
+    it('times the layout the workspace’s pace does not, as plain data the Pace page sets beside its own', () => {
+        const other = runLedgerJobNow('layouts', { workspace: paceWorkspace() });
+        expect(other.layout).toBe('dense');
+        expect(Object.keys(other.skills)).toEqual(expect.arrayContaining(['mining', 'construction']));
+        const { pace } = workspaceReport(paceWorkspace());
+        const spread = pace.layoutSpread(JSON.parse(JSON.stringify(other)));
+        expect(spread.skills.find((s) => s.skill === 'mining').days.dense.maxed).toBeCloseTo(other.skills.mining.maxed, 9);
+        expect(spread.skills.find((s) => s.skill === 'mining').warn).toBe(true);
+    });
+});
+
 describe('the report', () => {
     it('carries the pace and its findings beside checks A to C', () => {
         const { pace, findings } = workspaceReport(paceWorkspace());
@@ -72,7 +85,8 @@ describe('the report', () => {
     });
 
     it('reads the Ledger settings: a longer payback lets Typical buy the statue', () => {
-        const { pace } = workspaceReport({ ...paceWorkspace(), planSettings: { paybackHours: 1000 } });
+        // Yield's places have room for it beside the four Mines.
+        const { pace } = workspaceReport({ ...paceWorkspace(), planSettings: { paybackHours: 1000, sitePlaces: { buildings: 8, perKind: 5 } } });
         expect(pace.rateAt({ token: 'token_vein' }, 'typical').chosen.map((c) => c.id)).toContain('token_statue');
     });
 });
@@ -98,14 +112,14 @@ describe('the tab', { timeout: 20000 }, () => {
         const view = mount();
         openRow(view, 'tokens:token_vein', 'Copper Vein');
         const rates = within(view.getByLabelText('Rates'));
-        // Typical: the camp, the Mine and Beer; 720 cycles an hour, 1.5 ore, the Mine's quarter more.
+        // Typical: the camp, four Mines and Beer; the camp's two veins, 480 cycles an hour, 1.5 ore, four Mines' sure double.
         const items = () => view.container.querySelector('[data-rate-items]').textContent;
-        expect(items()).toBe('1350 Copper Ore');
-        expect(view.container.querySelector('[data-rate-factor="support:token_mine"]').textContent).toMatch(/Mine.*double drop/i);
-        fireEvent.click(rates.getByLabelText('Switch Mine'));
-        expect(items()).toBe('1080 Copper Ore');
-        fireEvent.click(rates.getByLabelText('Switch Mine'));
-        expect(items()).toBe('1350 Copper Ore');
+        expect(items()).toBe('1440 Copper Ore');
+        expect(view.container.querySelector('[data-rate-factor="support:token_mine"]').textContent).toMatch(/Mine ×4.*double drop/i);
+        fireEvent.click(rates.getByLabelText('Switch Mine ×4'));
+        expect(items()).toBe('720 Copper Ore');
+        fireEvent.click(rates.getByLabelText('Switch Mine ×4'));
+        expect(items()).toBe('1440 Copper Ore');
         // Bare: one vein, no boosts.
         fireEvent.click(rates.getByRole('tab', { name: 'Bare' }));
         expect(items()).toBe('360 Copper Ore');
@@ -116,8 +130,8 @@ describe('the tab', { timeout: 20000 }, () => {
         openRow(view, 'tokens:token_big_hut', 'Big Hut');
         const path = within(view.getByLabelText('Path time'));
         expect([...view.container.querySelectorAll('[data-path-profile]')].map((r) => r.getAttribute('data-path-profile'))).toEqual(['bare', 'typical', 'maxed']);
-        // Construction 15 at the build's full pace, fed by the foresters it needs (brief 880 L3; 7 h with one forester before).
-        expect(view.container.querySelector('[data-path-profile="typical"] [data-path-hours]').textContent).toMatch(/^3 h 41 min/);
+        // Construction 15 fed by the foresters it needs, the Starter Camp's one hero building and felling in turn.
+        expect(view.container.querySelector('[data-path-profile="typical"] [data-path-hours]').textContent).toMatch(/^11 h 9 min/);
         expect(path.getByText(/waits for Construction 15/)).toBeTruthy();
         // The Construction wall is filed under the skill; the page of what waits on it shows it too.
         expect(view.container.querySelector('[data-waits-on="wall"]').textContent).toMatch(/Construction 1 → 15/);
@@ -132,8 +146,37 @@ describe('the tab', { timeout: 20000 }, () => {
         fireEvent.click(view.getAllByText('Construction')[0]);
         expect(view.getByRole('tab', { name: 'Pace' }).getAttribute('aria-selected')).toBe('true');
         expect(view.container.querySelector('[data-breakdown="construction|0"]')).toBeTruthy();
-        expect(view.container.querySelector('[data-stage="0"] [data-stage-hours]').textContent).toMatch(/^3 h 41 min/);
+        expect(view.container.querySelector('[data-stage="0"] [data-stage-hours]').textContent).toMatch(/^11 h 9 min/);
+        expect(view.container.querySelector('[data-stage="0"] [data-stage-heroes]').textContent).toMatch(/^1 hero/);
         expect(view.container.querySelector('[data-hall="roster_size|2"]')).toBeTruthy();
+    });
+
+    it('⭐ shows both layouts: the nodes the dense one makes more of, and on a click each skill’s days to 99 in both, worked out as a job', async () => {
+        const view = mount();
+        fireEvent.click(view.getByRole('tab', { name: 'Pace' }));
+        expect(view.container.querySelector('[data-layout-nodes="1"]').textContent).toMatch(/Copper Vein: .* an hour with 2, .* with 4 \(\+100 %\)/);
+        expect(view.container.querySelector('[data-layout-spread]')).toBeNull();
+        fireEvent.click(view.container.querySelector('[data-layout-spread-button]'));
+        await waitFor(() => expect(view.container.querySelector('[data-layout-spread]')).toBeTruthy(), { timeout: 20000 });
+        expect(view.container.querySelector('[data-layout-skill="mining"]').textContent).toMatch(/Mining.*Maxed .* d.*Maxed .* d/);
+        // The stages say their heroes, and what their work takes.
+        expect(view.container.querySelector('[data-stage="0"] [data-stage-heroes]').textContent).toMatch(/^1 hero.*their work .* side by side/);
+    });
+
+    it('edits the reference guild: heroes by stage, the layouts’ nodes and the layout timed, a site’s places', () => {
+        const view = mount();
+        fireEvent.click(view.getByRole('tab', { name: 'Settings' }));
+        const set = (label, value) => { const input = view.getByLabelText(label); fireEvent.change(input, { target: { value } }); fireEvent.blur(input); };
+        set('Heroes from Plane 2', '3');
+        expect(store().planSettings.heroesByTier.find((p) => p.tier === 2).heroes).toBe(3);
+        set('Dense layout nodes', '6');
+        expect(store().planSettings.layouts).toEqual({ sparse: 2, dense: 6 });
+        fireEvent.change(view.getByLabelText('Layout the pace times'), { target: { value: 'dense' } });
+        expect(store().planSettings.layout).toBe('dense');
+        set('Building places', '10');
+        set('Places a kind', '3');
+        expect(store().planSettings.sitePlaces).toEqual({ buildings: 10, perKind: 3 });
+        expect(view.queryByLabelText('Camp copies')).toBeNull();
     });
 
     it('edits the profile settings', () => {
