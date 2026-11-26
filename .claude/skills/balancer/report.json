@@ -45,10 +45,12 @@
     "Cooking, Smithing and Enchanting: none."
   ],
   "waiting": [
+    "On the owner: review and Sync the six Planned packs in the CMS (the content session staged the plan on 2026-11-26: 210 entries). They apply cleanly in a test copy.",
     "On the director, briefed and in the queue (brief 900): the ledger timing a real guild and site (building now), the simulator's curves from the balance rules (building now), the two coin curves, and three checks.",
+    "On the director, a new ticket (T-724): a writer that puts the page's numbers onto the Planned entries as a pack, and a ledger option that times Planned work. Without both, the plan still can't be checked against the engine.",
     "On the director: the ledger prices every coin cost from one curve; the rule needs an everyday curve and a big-purchase curve (a new ticket, T-713).",
     "On the director, with the first number pack: the new XP table (9.4 million XP to 99) and the 25-cycle dose for drinks and potions.",
-    "On the content session: the plan in the CMS as Planned entries, and the fifteen gaps. Also to look at: Arrowheads unlock later than the arrows that need them at every metal.",
-    "On the balancer: Construction once its repeatable work is planned, and re-checking the gaps as the content session fills them."
+    "On the balancer: Construction once its repeatable work is planned, and re-checking the gaps as the content session fills them.",
+    "On the content session: packs for Crime, Summoning, Faith and the enemies, then the fifteen gaps; purpose leanings, the Arrowheads levels and Construction's repeatable work."
   ]
 }
