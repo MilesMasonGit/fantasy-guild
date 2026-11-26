@@ -1,0 +1,51 @@
+{
+  "title": "First run: food and drink, metal and gear",
+  "date": "2026-11-25",
+  "summary": "Both trial chains sit on the curve: Cooking and Smithing each reach 99 in 15.1 days for an optimized player (the curve says 15.3) and about 27 days for a typical one, with no empty stretches in either. The run found three slips in the page's own sums, now fixed, and two things that need the owner's call.",
+  "checked": [
+    "Cooking: 99 recipes, one per level from 1 to 99. No level is more than 15 % off the curve. No empty stretches.",
+    "Smithing: 77 recipes. No level is more than 15 % off the curve. No empty stretches; the longest run with nothing new is 5 levels (93 to 98).",
+    "Every ingredient arrives in time: the worst wait is a new metal's ingot waiting about 20 minutes on its ore, far inside the wall rule.",
+    "Gathering behind the work: a darkmetal Chestplate needs about 10 minutes of gathering for 41 seconds at the anvil, in line with the rules' 9 gatherers per crafter at darkmetal with no boosts.",
+    "Not checked yet: the ledger's own timing. The ledger read-out isn't built and the plan isn't in the CMS, so these are the page's numbers only."
+  ],
+  "moved": [
+    "Fixed: late food was costed like armour. A Voidcap Pie took 3 Dough (the page read cap), a Harvest Platter 5 Bread (vest), Swordfish in Sofrito 2 Sofrito (sword). Food, drinks and potions now always take 1 of a made ingredient.",
+    "Fixed: Water is 1 in every recipe, as the rules say. Late soups and teas were asking for 3 to 5 Water.",
+    "Fixed: an unlock no longer moves below the level of an ingredient from another skill. Elixir of Ironskin stays at 8 (it had moved to 6, below its Clay), and four arrows stay with their arrowheads. This brings back an empty stretch at Alchemy 2 to 7 and two short ones in Fletching, for week 2.",
+    "Adjusted, inside the limits: action lengths are trimmed by up to 15 % so whole XP pays the rule's XP an hour exactly. A Copper Ingot is 8.9 s for 3 XP (was 8.1 s), a Copper Dagger 11.5 s for 4 XP (was 12.2 s). Early recipes no longer pay unevenly from rounding.",
+    "Unlock moves in the two chains: Copper Chestplate 13 to 16 and Adamantine Chestplate 73 to 76, each to break up a long run with nothing new before the next metal.",
+    "Two new dials to try, both set to the rules as they stand: Longer per extra bar, and Boosts between tiers."
+  ],
+  "proposals": [
+    {
+      "question": "Should the optimized player's boosts climb level by level instead of stepping up at each tier?",
+      "why": "XP per action is cut by the boosts a good player holds, and that cut jumps at each new metal. So the first recipes of a new tier pay a hero less than the last recipes of the old one: a Darkmetal Ingot at 80 pays 14 % less a second than an Adamantine Chestplate, Coconut Pie at 80 pays 17 % less than Coconut Swordfish at 79. It happens at every tier in both chains (10 Cooking recipes, 8 Smithing) and lasts about three levels each time.",
+      "options": [
+        { "label": "Climb level by level", "text": "Every new recipe pays more than the last, in both chains. Time to 99 stays at 15.2 to 15.3 days optimized; a typical player takes about 28 days instead of 27." },
+        { "label": "Keep the steps", "text": "No change. A new tier opens with about three levels where the old work still pays best, then the new work overtakes." }
+      ],
+      "tryIt": "set Boosts between tiers to climb each level and watch Cooking and Smithing on Item numbers."
+    },
+    {
+      "question": "How much longer should a piece of gear take for each extra bar it uses?",
+      "why": "Today each extra bar adds 20 %, so a 5-bar Chestplate takes 1.8x a 1-bar Dagger and pays 1.8x the XP. The smith's XP an hour is the same either way, but Daggers use far less metal: a bar spent on Daggers earns 2.8x the XP of a bar spent on Chestplates. A guild short on ore levels Smithing fastest by making Daggers.",
+      "options": [
+        { "label": "+50 % a bar", "text": "A Chestplate takes 3x a Dagger (36 s at copper, 69 s at darkmetal). A bar in Daggers earns 1.7x a bar in Chestplates: still the thrifty choice, no longer the only sensible one." },
+        { "label": "Keep +20 %", "text": "Chestplates stay quick (24 s at copper, 41 s at darkmetal). Daggers stay 2.8x better per bar." },
+        { "label": "+100 % a bar", "text": "XP per bar is the same for every piece. A Chestplate takes 5x a Dagger: a minute at copper, nearly two at darkmetal." }
+      ],
+      "tryIt": "move Longer per extra bar. Pace doesn't change; look at Action and XP an action for Smithing on Item numbers."
+    }
+  ],
+  "gaps": [
+    "Cooking and Smithing: none.",
+    "The other skills' stretches are still the solver's raw list, to be reviewed in week 2: docs/active/balance_gaps.md."
+  ],
+  "waiting": [
+    "On the director: the ledger read-out and the ledger's new tiers and boost budget (brief 880, L1 to L3). Until then the page can't be checked against the engine.",
+    "On the content session: the plan in the CMS as Planned entries. No number pack before that.",
+    "On the balancer, as week 1 reaches them: how many Nails, Arrowheads and Kunai one bar makes, and how long a drink's dose lasts. No rule sets these yet, so the page shows them as 1 a craft.",
+    "The worked examples in BALANCE_RULES.md were written before the boost budget was counted and are a little high (a Copper Ingot shows 4 XP; the page says 3). They get regenerated once this run's proposals are answered."
+  ]
+}

@@ -18,6 +18,8 @@
     typicalShare: 0.5,        // a typical player holds this share of each speed and XP boost
     moveMax: 3,               // the most the solver may move an unlock, in levels
     gapFlag: 6,               // levels with nothing new before a stretch is flagged
+    extraPerBar: 0.2,         // a make step takes this much longer for each main ingredient past the first
+    boostSmooth: 0,           // 0: the boost budget steps up at each tier's opening level; 1: it climbs level by level between them
   };
   const XP_HOUR_AT_1 = 1660;  // level 1's 83 XP in 3 minutes; keeps today's start
   const TIERS = [['Copper', 1], ['Iron', 20], ['Silver', 30], ['Mythril', 40], ['Gold', 50], ['Adamantine', 60], ['Darkmetal', 80]];
@@ -29,6 +31,9 @@
     [/helmet|hat|hood|cap\b/i, 3], [/shield|buckler/i, 3], [/mace|cleaver|axe\b|hammer/i, 3], [/cape|cloak/i, 3],
     [/chestplate|chest|robe|tunic|vest/i, 5]];
   const PREPARE_TYPES = /^(material|prep)$/i;
+  // Fixed counts are gear's: a Voidcap Pie is not a cap, a Harvest Platter not a vest.
+  const CONSUMABLE_TYPES = /^(food|drink|prep|elixir|poison|work|ingredient)/i;
+  const ALWAYS_ONE = new Set(['water']);  // water is 1 in every recipe (section 3)
   const UNTIMED = { building: 'Builds follow the one-off step rule; Construction XP has no rule yet',
     event: 'Events copy the Token they stand in for' };
 
@@ -43,7 +48,12 @@
     const xpToNext = L => Math.round(xpHour(L) * minutes(L) / 60);
     const cycle = (kind, L) => ({ gather: d.baseGather, prepare: d.basePrepare, make: d.baseMake })[kind] * Math.pow(d.cycleGrowth, L / 20);
     const count = (base, L) => Math.max(1, Math.round(base * Math.pow(2, L / d.countDoublesEvery)));
-    const boost = (L, share) => { const k = tierIndex(L); return 1 / (1 - share * OPT_SPEED_CUT[k] / 100) * (1 + share * OPT_XP[k] / 100); };
+    const held = (table, L) => {
+      const k = tierIndex(L), next = TIERS[k + 1];
+      if (!d.boostSmooth || !next) return table[k];
+      return table[k] + (table[k + 1] - table[k]) * (L - TIERS[k][1]) / (next[1] - TIERS[k][1]);
+    };
+    const boost = (L, share) => 1 / (1 - share * held(OPT_SPEED_CUT, L) / 100) * (1 + share * held(OPT_XP, L) / 100);
     const opt = L => boost(L, 1), typ = L => boost(L, d.typicalShare);
     return { d, minutes, xpHour, xpToNext, cycle, count, opt, typ };
   }
@@ -77,7 +87,7 @@
     // Move unlocks a little to even out thin stretches: only a task beside a gap over the flag,
     // never one on a tier's opening level (that is the tier arriving),
     // only if it shrinks the larger of its two gaps, never across a tier's opening, never onto a
-    // taken level, never below a same-skill ingredient's level.
+    // taken level, never below the level of an ingredient it needs, in any skill.
     for (const list of Object.values(skills)) {
       for (let pass = 0; pass < 4; pass++) {
         list.sort((a, b) => a.level - b.level);
@@ -87,7 +97,7 @@
           if (Math.max(left, right) <= d.gapFlag || !p || !n || TIERS.some(([, lo]) => lo === t.planned)) continue;
           const taken = new Set(list.map(x => x.level));
           const floor = Math.max(tierStart(t.planned), t.planned - d.moveMax,
-            ...(byId.get(t.id).madeWith || []).map(i2 => out.get(i2)).filter(x => x && x.skill === t.skill && x.level != null).map(x => x.level));
+            ...(byId.get(t.id).madeWith || []).map(i2 => out.get(i2)).filter(x => x && x.level != null).map(x => x.level));
           const ceil = Math.min(nextTierStart(t.planned) - 1, t.planned + d.moveMax, 99);
           let best = t.level, bestGap = Math.max(left, right);
           for (let L = floor; L <= ceil; L++) {
@@ -110,17 +120,23 @@
         t.xpLevel = next > t.level + 1 ? (t.level + next) / 2 : t.level;
         const ins = e.madeWith || [];
         const made = ins.filter(x => !isRaw(x));
-        const fixed = (FIXED.find(([re]) => re.test(e.name)) || [, 1])[1];
+        const fixed = CONSUMABLE_TYPES.test(e.type || '') ? 1 : (FIXED.find(([re]) => re.test(e.name)) || [, 1])[1];
         t.inputs = ins.map(x => {
           let n;
-          if (!isRaw(x)) n = x === made[0] ? fixed : 1;
+          if (ALWAYS_ONE.has(x)) n = 1;
+          else if (!isRaw(x)) n = x === made[0] ? fixed : 1;
           else if (made.length) n = 1;  // a handle's wood, a weird item
           else n = R.count(t.work === 'prepare' && /ore|wood|wheat/i.test(x) ? 2 : 1, t.level);
           return { id: x, name: byId.get(x) ? byId.get(x).name : x, count: n };
         });
         const bars = made.length ? fixed : 1;
-        t.seconds = R.cycle(t.work, t.level) * (t.work === 'make' ? 1 + 0.2 * (bars - 1) : 1);
-        t.xp = Math.max(1, Math.round(R.xpHour(t.xpLevel) * t.seconds / 3600 / R.opt(t.level)));
+        t.seconds = R.cycle(t.work, t.level) * (t.work === 'make' ? 1 + d.extraPerBar * (bars - 1) : 1);
+        // XP is whole, so the action's length is trimmed to pay the rule's XP an hour exactly,
+        // within 15 % of the rule's time (section 1: seconds that give whole XP early on).
+        const perSecond = R.xpHour(t.xpLevel) / 3600 / R.opt(t.level);
+        t.ruleSeconds = t.seconds;
+        t.xp = Math.max(1, Math.round(perSecond * t.seconds));
+        t.seconds = Math.round(Math.min(t.ruleSeconds * 1.15, Math.max(t.ruleSeconds * 0.85, t.xp / perSecond)) * 10) / 10;
         t.xpHourOpt = t.xp * 3600 / t.seconds * R.opt(t.level);
         if (/ammo/i.test(t.type)) t.note = 'Arrows per craft have no rule yet';
       });

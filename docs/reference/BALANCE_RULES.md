@@ -52,7 +52,7 @@ About 11.6 million XP to 99. Today's table needs about 13 million.
 
 **Which level's XP an hour**: the level halfway between this unlock and the skill's next one, not the unlock itself. In a skill with few unlocks (Mining's metals, Fletching), XP an hour stays flat while the table keeps rising, so without this those skills climb about 40 % slower than the curve (review, on the old curve: Mining 47.7 days against 34.4; with the midpoint, 35.0). Where the next unlock is the next level, it's the same as the unlock level.
 
-**Pick action seconds that give whole XP early on**: at 3 to 12 XP an action, rounding can be 13 % off.
+**Pick action seconds that give whole XP early on**: at 3 to 12 XP an action, rounding can be 13 % off. The solver does this itself (balancer, 2026-11-25): it rounds the XP, then trims the action's length by up to 15 % so the whole XP pays the rule's XP an hour exactly. A Copper Ingot is 8.9 s for 3 XP.
 
 - **An old task falls behind**: 2x slower a tier later, 4x two tiers on, and about 30x slower at 99. Reaching 99 on a level-1 task alone would take about 290 days of one hero's work.
 - **Crafting and gathering pay the same an hour** at the same level (owner). A craft pays more per action only because it takes longer.
@@ -87,7 +87,7 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 
 **What one gather action gives stays the same at every tier** (owner, after the review): "Increased ingredient gain is expected through building and Star upgrades. In practice we do grow yields, but for the base numbers they should not." So a Bare guild needs more gatherers per crafter as it climbs (about 2 per smelter at copper, 8 at darkmetal), and **yield boosts close the gap**: Double Output buildings, the Logging and Mining Camps' variants, and the Hall's yield stars. Their targets grow by tier so a Typical guild keeps about one or two gatherers per crafter (section 5).
 
-**Fixed counts by kind** (agent's call, starting values): Dagger 1, Sword 2, Woodaxe and Pickaxe 2, Gloves and Boots 2, Helmet or Hat 3, Shield 3, Mace and Cleaver 3, Cape 3, Chestplate, Chest, Robe and Tunic 5. A handle is 1 wood. Nails, Arrowheads, Chain and Bands take 1 bar and make several. Weird items in potions are 1. Water and juices in drinks and potions are 1.
+**Fixed counts by kind** (agent's call, starting values): Dagger 1, Sword 2, Woodaxe and Pickaxe 2, Gloves and Boots 2, Helmet or Hat 3, Shield 3, Mace and Cleaver 3, Cape 3, Chestplate, Chest, Robe and Tunic 5. A handle is 1 wood. Nails, Arrowheads, Chain and Bands take 1 bar and make several. Weird items in potions are 1. Water and juices in drinks and potions are 1. Water is 1 in every recipe, soups and stews too, and the fixed counts by kind are gear's alone: food, drinks and potions take 1 of each made ingredient (balancer, 2026-11-25).
 
 ## 4. Drops and finds
 

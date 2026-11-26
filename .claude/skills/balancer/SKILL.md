@@ -57,9 +57,10 @@ director, through tickets); combat numbers (a later pass); `data/` (the owner's 
    moved, the proposals, a link to the gaps list): `python .claude/skills/balancer/build_balance.py
    <scratchpad>/balance`, then publish `<scratchpad>/balance/guild_balance_dials.html` with `url`
    https://claude.ai/artifact/LFSTcCGMiCsQUSDArMH3z6, `root` that folder and `files`
-   `["solver.js", "catalogue.json"]` (read the artifact first in a new session). The page has no
-   report section yet: add one to `balance.html` on the first run (a report file beside the page,
-   listed in `files`, keeps the template unchanged between runs).
+   `["solver.js", "catalogue.json", "report.json"]` (read the artifact first in a new session). The
+   report is `report.json` in this folder, shown on the page's Balance report tab: rewrite it each
+   run (title, date, summary, checked, moved, proposals with the recommended option first, gaps,
+   waiting); the template stays unchanged between runs.
 7. **Dials the owner keeps** (the page's Copy settings, or an answer): record them as a dated ruling
    in `BALANCE_RULES.md`, change `DIALS` in `balance_solver.cjs` and the constants in
    `balance_rules.py` together, regenerate the rules page's tables, rebuild the page.
