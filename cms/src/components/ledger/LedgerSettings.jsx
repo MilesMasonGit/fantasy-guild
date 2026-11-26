@@ -161,9 +161,9 @@ export default function LedgerSettings() {
             hours (a rank slower than that is red, and the proposed prices are sized to it).
           </div>
           <div className="flex items-center gap-2">
-            A maker is fed by about
-            <NumberInput value={settings.gatherersPerCrafter} min={0.1} onCommit={(v) => save({ gatherersPerCrafter: v })} label="Gatherers per maker" width={60} />
-            gatherers at Typical (the reference guild); a work needing more down its chain is a problem.
+            A chain is one maker and about
+            <NumberInput value={settings.gatherersPerMaker} min={0.1} onCommit={(v) => save({ gatherersPerMaker: v })} label="Gatherers per maker" width={60} />
+            gatherers (the reference guild): a maker needing more down its chain runs at their share, and is a problem.
           </div>
           <div className="flex items-center gap-2">
             A camp hands one hero

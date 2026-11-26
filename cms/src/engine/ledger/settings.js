@@ -16,7 +16,7 @@ import { PLAN_TIER_LEVELS, tierOrNull, tierLevelsOf, tierLevelAt } from '../../.
  *       boostBudget: [{ tier, speed, xp, yield, rare }], // what Typical and Maxed hold at each tier's opening, in percent
  *       speedCapPct: 65,                             // no speed cut past this at Maxed
  *       campMembers: 3,                              // copies of a vein or Field a camp hands one hero
- *       gatherersPerCrafter: 2.2,                    // the gatherers the reference guild gives one maker, at Typical
+ *       gatherersPerMaker: 2.2,                      // the reference chain's gatherers a maker: the pace runs one needing more at their share
  *       paybackHours: 2,                             // a sensible investor's boost pays for itself within this
  *       hallPaybackHours: 24,                        // and a Guild Hall rank within this
  *       steadyFindsPerDay: 1,                        // a rare find on repeatable work this often a day is a steady source
@@ -126,8 +126,8 @@ export const DEFAULT_LEDGER_SETTINGS = Object.freeze({
     // The owner (2026-11-07): at most a 65 % cut at Maxed, inside the game's 80 % cap.
     speedCapPct: 65,
     campMembers: 3,
-    // The reference guild (BALANCE_RULES sections 5 and 8): one maker and about 2 gatherers at every tier, 2.2 at Typical.
-    gatherersPerCrafter: 2.2,
+    // The reference guild (BALANCE_RULES section 8, owner 2026-11-25): a chain is one maker and about 2 gatherers at every tier, 2.2 at Typical.
+    gatherersPerMaker: 2.2,
     paybackHours: 2,
     // The owner (2026-10-30): a Guild Hall rank may take about a day to pay for itself.
     hallPaybackHours: 24,
@@ -182,7 +182,7 @@ export function settingsOf(raw) {
         boostBudget: boostBudgetOf(src.boostBudget),
         speedCapPct: Math.min(100, positive(src.speedCapPct, d.speedCapPct)),
         campMembers: Math.max(1, Math.floor(positive(src.campMembers, d.campMembers))),
-        gatherersPerCrafter: positive(src.gatherersPerCrafter, d.gatherersPerCrafter),
+        gatherersPerMaker: positive(src.gatherersPerMaker, d.gatherersPerMaker),
         paybackHours: positive(src.paybackHours, d.paybackHours),
         hallPaybackHours: positive(src.hallPaybackHours, d.hallPaybackHours),
         steadyFindsPerDay: positive(src.steadyFindsPerDay, d.steadyFindsPerDay),

@@ -123,11 +123,33 @@ describe('supply counts the gatherers a crafter needs', () => {
         expect(pace.heroesOf(ale, PROFILE.BARE)).toBeCloseTo(1 + 2 * 1.4);
     });
 
+    it('⭐ times a maker as the reference chain runs it: past its 2.2 gatherers, at their share of what it needs', () => {
+        const hut = { token: 'token_plot', recipe: 'recipe_build_hut' };
+        const loose = paceOf();
+        // A chain of one maker and one gatherer: the Hut builder, needing two foresters, builds half the time.
+        const tight = paceOf(paceContent(), { gatherersPerMaker: 1 });
+        expect(tight.settings.gatherersPerMaker).toBe(1);
+        // The count stays the full one.
+        expect(tight.rateAt(hut, PROFILE.BARE).gatherers.item_oak_wood.heroes).toBeCloseTo(2);
+        expect(tight.heroesOf(hut, PROFILE.BARE)).toBeCloseTo(3);
+        expect(tight.chainOf(hut, PROFILE.BARE)).toBeCloseTo(0.5);
+        expect(loose.chainOf(hut, PROFILE.BARE)).toBe(1);
+        const first = (pace) => pace.trackOf('construction').levels[0];
+        expect(first(loose).source.bare.xp).toBeCloseTo(600);
+        expect(first(tight).source.bare.xp).toBeCloseTo(300);
+        expect(first(tight).source.bare.chain).toBeCloseTo(0.5);
+        expect(first(tight).hours.bare).toBeCloseTo(first(loose).hours.bare * 2);
+        // The path waits on Construction 15 the longer, and the Big Hut's own wood comes at the chain's pace.
+        const gate = (pace) => pace.trackOf('construction').levels[13].cumulative.bare;
+        expect(gate(tight)).toBeCloseTo(gate(loose) * 2);
+        expect(tight.pathOf('token:token_big_hut', PROFILE.BARE).hours).toBeGreaterThan(loose.pathOf('token:token_big_hut', PROFILE.BARE).hours * 1.9);
+    });
+
     it('⭐ finds a maker needing more gatherers than the reference guild gives one, at Typical', () => {
         // Two foresters a Hut builder: within the reference guild's 2.2 a maker, over 1.
         expect(paceOf().findings().filter(f => f.check === 'gatherers')).toEqual([]);
-        expect(settingsOf(null).gatherersPerCrafter).toBe(2.2);
-        const tight = paceOf(paceContent(), { gatherersPerCrafter: 1 }).findings().filter(f => f.check === 'gatherers');
+        expect(settingsOf(null).gatherersPerMaker).toBe(2.2);
+        const tight = paceOf(paceContent(), { gatherersPerMaker: 1 }).findings().filter(f => f.check === 'gatherers');
         expect(tight.map(f => f.key)).toEqual(['skill:construction']);
         expect(tight[0].message).toMatch(/^Construction 1 → \d+ at Typical: Build \w+ at Plot needs 2 gatherers down its chain to run in full, over the reference guild's 1 a maker/);
         expect(CHECKS.gatherers).toMatchObject({ group: 'D' });
@@ -163,6 +185,22 @@ describe('supply counts the gatherers a crafter needs', () => {
 });
 
 describe('the boost budget', () => {
+    it('⭐ judges a work by the cell of the tier its entry is planned for, not its level alone', () => {
+        // A Rush Hut cuts the vein's work 25 %: over copper's 20 % at Maxed, within silver's 35 %.
+        const c = paceContent();
+        c.tokens.token_rush = { id: 'token_rush', name: 'Rush Hut', tokenType: 'buff', uses: null, requiresHero: false, config: null, statements: [{ id: 'stm_rush', keyword: 'provides', to: { mode: 'id', value: 'token_vein' }, reach: 'nearby', payload: { type: 'WORK_TIME', bucket: 'percentage', value: -0.25 } }] };
+        c.recipes.push({ id: 'recipe_build_rush', name: 'Build Rush Hut', skill: 'construction', levelRequirement: 1, xp: 5, durationMs: 30000, foundationKinds: ['wood'], inputs: [{ itemId: 'item_oak_wood', quantity: 5 }], outputs: [{ tokenId: 'token_rush', chance: 100, minQty: 1, maxQty: 1 }] });
+        const speedOf = (pace) => pace.budgetRows().find(r => r.work.key === 'token_vein||' && r.kind === 'speed' && r.profile === PROFILE.MAXED);
+        const copper = speedOf(paceOf(c));
+        expect(copper).toMatchObject({ budget: 20, tier: 0 });
+        expect(copper.pct).toBeCloseTo(25);
+        // Planned for silver (tier 3), it is held against silver's cell from its opening, level 1 or not.
+        c.tokens.token_vein.plan = { tier: 3 };
+        const silver = speedOf(paceOf(c));
+        expect(silver).toMatchObject({ budget: 35, entryTier: 3, level: 1 });
+        expect(paceOf(c).findings().filter(f => f.check === 'boost-budget' && /^Speed at Maxed/.test(f.message) && f.related.includes('token:token_vein'))).toEqual([]);
+    });
+
     it('⭐ holds BALANCE_RULES section 5\'s table, the 65 % speed cap its last row', () => {
         const s = settingsOf(null);
         expect(s.boostBudget.map(r => r.tier)).toEqual([0, 2, 3, 4, 5, 6, 7]);

@@ -6,6 +6,7 @@ import crypto from 'crypto';
 
 import { runCli, USAGE } from '../../cms/cliCommands.mjs';
 import { saveWorkspaceFile } from '../../cms/workspaceFile.js';
+import { ledgerReadout } from '../../cms/src/engine/ledgerReadout.js';
 import { paceWorkspace } from './fixtures/paceWorld.js';
 
 /**
@@ -157,6 +158,39 @@ describe('npm run cms -- ledger', () => {
         const bare = await cms(dir, 'ledger', '--json');
         expect(bare.code).toBe(2);
         expect(bare.err).toMatch(/--json=<file>/);
+    });
+
+    it('⭐ times a level on the reference chain, keeps the full gatherer count, and its guild time is that chain\'s', () => {
+        // A chain of one maker and one gatherer: the Hut builder, needing two foresters, builds half the time.
+        const loose = ledgerReadout(paceWorkspace()).pace.construction.levels[0];
+        const tight = ledgerReadout({ ...paceWorkspace(), planSettings: { gatherersPerMaker: 1 } }).pace.construction.levels[0];
+        expect(tight.bare).toBeCloseTo(loose.bare * 2, 2);
+        expect(tight.gatherers.bare).toBeCloseTo(2, 3);
+        expect(loose.gatherers.bare).toBeCloseTo(2, 3);
+        // The maker and its one gatherer, for twice as long: the same hero-hours as three heroes for the shorter time.
+        expect(tight.guildBare).toBeCloseTo(tight.bare * 2, 2);
+        expect(loose.guildBare).toBeCloseTo(loose.bare * 3, 2);
+    });
+
+    it('⭐ run from a worktree with no workspace of its own, reads the main checkout\'s, and says so', async () => {
+        const main = fs.mkdtempSync(path.join(os.tmpdir(), 'fg-cms-main-'));
+        tmpRoots.push(main);
+        fs.mkdirSync(path.join(main, 'cms', 'workspace'), { recursive: true });
+        const mainFile = path.join(main, 'cms', 'workspace', 'workspace.json');
+        saveWorkspaceFile(mainFile, paceWorkspace(), { baseRevision: 0, savedBy: 'test' });
+        const worktree = path.join(main, '.claude', 'worktrees', 'x');
+        fs.mkdirSync(worktree, { recursive: true });
+        fs.writeFileSync(path.join(worktree, '.git'), `gitdir: ${main.split(path.sep).join('/')}/.git/worktrees/x\n`);
+        const before = hashOf(mainFile);
+        const out = [];
+        const err = [];
+        const code = await runCli(['ledger'], { root: worktree, load, out: (x) => out.push(x), err: (x) => err.push(x) });
+        expect(code, err.join('\n')).toBe(0);
+        expect(out.join('\n')).toMatch(/the main checkout's workspace/);
+        expect(out.join('\n')).toMatch(/^mining /m);
+        expect(hashOf(mainFile)).toBe(before);
+        expect(fs.readdirSync(worktree)).toEqual(['.git']);
+        expect(USAGE).toMatch(/a worktree with no workspace of its own reads the\s+main checkout's/);
     });
 
     it('refuses a sandbox with no workspace, writing nothing', async () => {

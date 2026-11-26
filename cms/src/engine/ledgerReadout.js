@@ -37,7 +37,7 @@ const GUILD_KEY = Object.freeze({ opt: 'guild', typ: 'guildTyp', bare: 'guildBar
 export const NOTES = Object.freeze([
     'opt is the ledger\'s Maxed profile (every boost the stage offers), the curve\'s player; typ its Typical (boosts that pay back); bare its Bare (no boosts). The balance rules\' optimized boost factor at a level is bare / opt there.',
     'Times are hero-work hours turned to minutes: heroes work around the clock, one hero per skill, all levelling side by side.',
-    'A level\'s work has its materials gathered in full by as many heroes as it needs on the best source of each (gatherers, per level and profile: the heroes down its chain besides its own, each at the same profile\'s setup); guild is the hours times one plus them, from the ledger\'s own count. The drinks and potions a profile\'s boosts spend are brewed by one hero on each, as the profile weighed them, and are not in guild, as in the solver.',
+    'gatherers (per level and profile) is the full count of heroes a level\'s work needs down its chain besides its own to run in full, each at the same profile\'s setup. Levels are timed on the reference chain (BALANCE_RULES section 8: one maker and at most gatherersPerMaker gatherers, a Ledger setting, 2.2): a work needing more runs at that many over its need. guild is the hours times that chain (one plus the lesser of gatherers and gatherersPerMaker). The drinks and potions a profile\'s boosts spend are brewed by one hero on each, as the profile weighed them, and are not in guild, as in the solver.',
     'Levels above the highest level any entry asks (pastTop) are worked at the best work open by the last stage; their best work is not named, and their guild time and gatherers keep the last named level\'s.',
     'An entry\'s numbers (xp, seconds, inputs, makes) are its work\'s own at Bare: one action, before boosts. Items have no work of their own: see via for the work that first gives them.',
     'Arrivals (arriveOpt, arriveTyp) are minutes from a new game along the ledger\'s path; null when never reached, and for Planned entries (the ledger times nothing Planned).',
@@ -83,11 +83,13 @@ function skillPace(pace, skill) {
                 best[who] = null;
             }
             before[who] += Number.isFinite(hours) ? hours : Infinity;
+            // The level is timed on the reference chain (one maker, at most `gatherersPerMaker` gatherers): its guild is that chain.
+            const chain = 1 + Math.min(last[who] - 1, pace.settings.gatherersPerMaker);
             out[who] = minutes(hours);
-            out[GUILD_KEY[who]] = minutes(hours * last[who]);
+            out[GUILD_KEY[who]] = minutes(hours * chain);
             gatherers[who] = round(last[who] - 1, 3);
             reach[who] += Number.isFinite(hours) ? hours : Infinity;
-            reach[GUILD_KEY[who]] += Number.isFinite(hours) ? hours * last[who] : Infinity;
+            reach[GUILD_KEY[who]] += Number.isFinite(hours) ? hours * chain : Infinity;
         }
         out.best = best;
         out.gatherers = gatherers;
@@ -119,7 +121,7 @@ function budgetOf(pace) {
     const over = pace.budgetRows()
         .filter((r) => r.pct > r.budget + 0.5)
         .sort((a, b) => (b.pct - b.budget) - (a.pct - a.budget))
-        .map((r) => ({ entry: r.entry, work: pace.workName(r.work), tier: r.tier, level: r.level, profile: r.profile, kind: r.kind, pct: round(r.pct, 1), budget: round(r.budget, 1) }));
+        .map((r) => ({ entry: r.entry, work: pace.workName(r.work), tier: r.tier, entryTier: r.entryTier, level: r.level, profile: r.profile, kind: r.kind, pct: round(r.pct, 1), budget: round(r.budget, 1) }));
     return { tiers, speedCapPct: s.speedCapPct, over };
 }
 

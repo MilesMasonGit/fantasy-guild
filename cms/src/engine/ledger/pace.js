@@ -9,7 +9,7 @@ import { HOW, COMBAT, LUCK_BELOW, parseKey, itemKey, tokenKey, recipeKey, wedgeK
 import { spotOf } from '../../../../src/config/registries/fishingSpots.js';
 import { ringOfStar } from '../../../../src/systems/world/ringStars.js';
 import { HALL_NODE, ROSTER_STAR } from '../../../../src/config/guildUpgrades.js';
-import { planOf, PLAN_STATUS, tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
+import { planOf, PLAN_STATUS, tierLabel, tierLevelAt } from '../../../../src/systems/progression/ledger/plan.js';
 import { xpForLevel, MAX_SKILL_LEVEL } from '../../../../src/utils/XPCurve.js';
 import { SKILLS, SKILL_LAYERS } from '../../../../src/config/registries/skillRegistry.js';
 import { STRICT_RINGS } from '../../../../src/config/worldTablesShape.js';
@@ -25,7 +25,9 @@ import { shopCoinsOf, enemyCoinDropOf } from '../../../../src/config/registries/
  * - **Supply**: how fast the guild gets each item at a stage: the best source reachable by then,
  *   one hero on it, its materials gathered by as many heroes on the best source of each as it needs
  *   (a smith fed by two smelters, each fed by three miners: the gatherers a crafter needs, T-338
- *   part 2), counted down the chain ({@link heroesOf}); the drinks and potions its boosts spend
+ *   part 2), counted down the chain ({@link heroesOf}); the pace runs it as the reference chain
+ *   does (one maker and `gatherersPerMaker` gatherers, BALANCE_RULES section 8), at their share of
+ *   what it needs past them ({@link chainScale}); the drinks and potions its boosts spend
  *   brewed by one hero on theirs, as the profile weighed them (a boost the guild cannot brew fast
  *   enough starves its work). A loop (seeds that make seeds) takes its own input as in stock. An
  *   input nothing makes by then holds a work back.
@@ -447,6 +449,31 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         return heroes;
     }
 
+    /**
+     * The share of its full pace a work runs at in the reference chain (BALANCE_RULES section 8: one
+     * maker and about `gatherersPerMaker` gatherers at every tier): 1 while its chain needs no more
+     * than that, else that many over what it needs. Level times, path steps and prices gathered run
+     * at it; the gatherers counted ({@link heroesOf}) stay the full need.
+     */
+    function chainScale(work, profile, cap, level = null) {
+        const needed = heroesOf(work, profile, cap, level) - 1;
+        const g = settings.gatherersPerMaker;
+        return needed > g ? g / needed : 1;
+    }
+    /** A fed rate as the reference chain runs it: its items, Tokens, XP and scale at {@link chainScale}. */
+    const paced = (work, profile, cap, level = null) => {
+        const f = workAt(work, profile, cap, level);
+        const chain = chainScale(work, profile, cap, level);
+        if (chain === 1) return f;
+        const times = (m) => Object.fromEntries(Object.entries(m || {}).map(([k, v]) => [k, v * chain]));
+        return { ...f, chain, scale: f.scale * chain, items: times(f.items), tokens: times(f.tokens), xp: times(f.xp), inputs: times(f.inputs) };
+    };
+    /** What the guild gets of an item an hour on its best source as the reference chain runs it. */
+    const pacedSupply = (itemId, profile, cap) => {
+        const s = supplyOf(itemId, profile, cap);
+        return s.work && Number.isFinite(s.perHour) ? s.perHour * chainScale(s.work, profile, cap) : s.perHour;
+    };
+
     // ── coins ──────────────────────────────────────────────────────────────────────────────────
     /** One copy's coin worth, as Recalculate writes it (`coins.js`). */
     const worthOf = (itemId) => ledgerCoinWorth(rates.items[itemId]);
@@ -673,7 +700,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                     const at = bandLevel(w, skill, band);
                     return levelledAs(profile).map(as => {
                         const f = workAt(w, as, cap, at);
-                        return { work: w, at, profile: as, gate: f.rate.gates?.needed ?? 1, xp: f.xp[skill] || 0, scale: f.scale, short: f.short };
+                        const chain = chainScale(w, as, cap, at);
+                        return { work: w, at, profile: as, gate: f.rate.gates?.needed ?? 1, xp: (f.xp[skill] || 0) * chain, scale: f.scale, short: f.short, chain };
                     });
                 })
                 .filter(x => x.xp > 0)
@@ -726,7 +754,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         let item = null;
         for (const { key, quantity } of inputs) {
             if (!(quantity > 0)) continue;
-            const s = supplyOf(parseKey(key).id, profile, cap).perHour;
+            const s = pacedSupply(parseKey(key).id, profile, cap);
             const h = s > 0 ? quantity / s : Infinity;
             if (h > worst) { worst = h; item = key; }
         }
@@ -745,7 +773,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const done = (hours, why = null, extra = {}) => ({ hours, complete: Number.isFinite(hours), why, ...extra });
         const ratedBy = (target) => {
             const work = byKey.get(targetKey(target));
-            return work ? workAt(work, profile, Math.max(cap, work.tier ?? cap)) : null;
+            return work ? paced(work, profile, Math.max(cap, work.tier ?? cap)) : null;
         };
         const firstOf = (f, what) => {
             if (!f || !f.rate.ok) return done(Infinity, f?.rate?.reason ? `not worked: ${f.rate.reason}` : 'not rated');
@@ -779,7 +807,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             let best = done(Infinity, 'no pool catches it');
             for (const w of pools) {
                 const level = Math.max(asks, profiles.contextOf(w.target).gate ?? 1);
-                const r = firstOf(workAt(w, profile, Math.max(cap, w.tier ?? cap), level > 1 ? level : null), give.key);
+                const r = firstOf(paced(w, profile, Math.max(cap, w.tier ?? cap), level > 1 ? level : null), give.key);
                 if (r.hours < best.hours) best = r;
             }
             return best;
@@ -1035,7 +1063,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 const waiting = run.waiting;
                 const src = run.source.work;
                 const why = src
-                    ? `the best ${AT_TARGET} source is ${workName(src)} (${Math.round(run.source.xp)} XP an hour${run.source.scale < 1 ? `, short of ${nameOf(itemKey(run.source.short))}` : ''})`
+                    ? `the best ${AT_TARGET} source is ${workName(src)} (${Math.round(run.source.xp)} XP an hour${run.source.scale < 1 ? `, short of ${nameOf(itemKey(run.source.short))}` : ''}${run.source.chain < 1 ? `, its chain held to ${settings.gatherersPerMaker} gatherers of the ${Math.round(settings.gatherersPerMaker / run.source.chain)} it needs` : ''})`
                     : 'no work of the skill gives XP there';
                 add('wall', `skill:${skill}`, `${PACE_TEXT.skill(skill)} ${run.from} → ${run.to + 1} (${tierLabel(run.tier)}) takes ${PACE_TEXT.hours(run.hours)} at ${AT_TARGET} against the curve's ${formatMinutes(run.curveTotal)} (${PACE_TEXT.times(run.hours * 60 / run.curveTotal)}; a level at worst ${PACE_TEXT.times(run.worst)}): ${why}.${waiting.length ? ` Waiting on it: ${listNames(waiting)}.` : ''}`, {
                     name: PACE_TEXT.skill(skill), related: waiting, severity: run.hours === Infinity ? 'warn' : undefined
@@ -1074,7 +1102,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         for (const skill of [...askedAt.keys()].sort()) {
             for (const band of gathererBands(skill)) {
                 const n = band.gatherers >= 10 ? Math.round(band.gatherers) : Math.round(band.gatherers * 10) / 10;
-                add('gatherers', `skill:${skill}`, `${PACE_TEXT.skill(skill)} ${band.from} → ${band.to + 1} at Typical: ${workName(band.work)} needs ${n} gatherers down its chain to run in full, over the reference guild's ${settings.gatherersPerCrafter} a maker (±${settings.tolerancePct} %).`, {
+                add('gatherers', `skill:${skill}`, `${PACE_TEXT.skill(skill)} ${band.from} → ${band.to + 1} at Typical: ${workName(band.work)} needs ${n} gatherers down its chain to run in full, over the reference guild's ${settings.gatherersPerMaker} a maker (±${settings.tolerancePct} %).`, {
                     name: PACE_TEXT.skill(skill), related: [band.work.entry]
                 });
             }
@@ -1161,11 +1189,11 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
 
     /**
      * A skill's levels whose best Typical work needs more gatherers down its chain than the reference
-     * guild gives a maker (`settings.gatherersPerCrafter`, past the tolerance), one run per work:
+     * guild gives a maker (`settings.gatherersPerMaker`, past the tolerance), one run per work:
      * `[{ work, from, to, gatherers }]`, levels `from` to `to + 1`, `gatherers` the most in the run.
      */
     function gathererBands(skill) {
-        const limit = settings.gatherersPerCrafter * (1 + settings.tolerancePct / 100);
+        const limit = settings.gatherersPerMaker * (1 + settings.tolerancePct / 100);
         const out = [];
         let band = null;
         for (const row of trackOf(skill).levels) {
@@ -1693,7 +1721,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             hours = budgetHours - start;
             if (!(hours > 0)) return { why: `${name}, its material, is first had ${PACE_TEXT.hours(start)} in, after ${tierLabel(budgetTierOf(ring))} ends` };
         }
-        const perHour = supplyOf(material.itemId, TARGET, at).perHour;
+        const perHour = pacedSupply(material.itemId, TARGET, at);
         if (!(perHour > 0)) return { why: `${name} is not gathered at ${AT_TARGET} by then` };
         const quantity = Math.max(1, roundDown(hours * perHour));
         const priceHours = quantity / perHour;
@@ -1762,13 +1790,21 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     }
 
     // ── the boost budget ───────────────────────────────────────────────────────────────────────
+    /** A level held within a tier's span on the ladder: from the level the tier opens at to before the next tier's. */
+    const levelInTier = (tier, level) => {
+        const from = tierLevelAt(settings.tierLevels, tier);
+        const next = settings.tierLevels.find(p => p.tier > tier && p.level > from);
+        return Math.max(from, next ? Math.min(level, next.level - 1) : level);
+    };
     let budgetMemo = null;
     /**
      * Every boost the profiles hold, counted against the boost budget (BALANCE_RULES section 5): for
      * each piece of work at its own stage, what Typical's and Maxed's boosts together add by kind
-     * against Bare ({@link boostTotals}), beside the budget's cell at the work's level
-     * (`settings.boostBudgetAt`). `[{ work, entry, tier, level, profile, kind, pct, budget }]`, kinds
-     * that add nothing left out. Fights are combat's, and Passive Production is no hero's work.
+     * against Bare ({@link boostTotals}), beside the budget's cell of the tier where the boost is held:
+     * its entry's (the owner's tier, else when it is first reached), climbing within that tier by the
+     * work's level (`settings.boostBudgetAt`). `[{ work, entry, tier, entryTier, level, profile, kind,
+     * pct, budget }]`, kinds that add nothing left out. Fights are combat's, and Passive Production is
+     * no hero's work.
      */
     function budgetRows() {
         if (budgetMemo) return budgetMemo;
@@ -1780,13 +1816,14 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const bare = profiles.profileOf(work.target, PROFILE.BARE, work.tier).rate;
             if (!bare.ok) continue;
             const level = ctx.gate ?? 1;
-            const cell = boostBudgetAt(settings, level);
+            const entryTier = effTier(work.entry) ?? work.tier;
+            const cell = boostBudgetAt(settings, levelInTier(entryTier, level));
             for (const profile of [PROFILE.TYPICAL, PROFILE.MAXED]) {
                 const totals = boostTotals(bare, profiles.profileOf(work.target, profile, work.tier).rate);
                 for (const { id: kind } of BOOST_BUDGET_KINDS) {
                     const pct = totals[kind];
                     if (pct === null || !(pct > 0.05)) continue;
-                    rows.push({ work, entry: work.entry, tier: work.tier, level, profile, kind, pct, budget: cell[kind][profile] });
+                    rows.push({ work, entry: work.entry, tier: work.tier, entryTier, level, profile, kind, pct, budget: cell[kind][profile] });
                 }
             }
         }
@@ -1848,7 +1885,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 for (const profile of [PROFILE.TYPICAL, PROFILE.MAXED]) {
                     const best = bestXp(skill, level, profile, tier);
                     if (!best.work) { row.profiles[profile] = null; continue; }
-                    const bareRate = workAt(best.work, PROFILE.BARE, tier, best.at);
+                    const bareRate = paced(best.work, PROFILE.BARE, tier, best.at);
                     // What the hero levels with: its own profile's boosts, or a profile's with less where that levels faster.
                     const kinds = {};
                     for (const kind of BOOSTED) {
@@ -1859,7 +1896,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                     if (perks.length) kinds[BOOST_KIND.PERK] = { gain: null, names: perks.map(f => f.name) };
                     row.profiles[profile] = {
                         work: best.work, name: workName(best.work), xp: best.xp, bareXp: bareRate.xp[skill] || 0,
-                        fed: best.scale, short: best.short ? nameOf(itemKey(best.short)) : null, kinds,
+                        fed: best.scale * (best.chain ?? 1), short: best.short ? nameOf(itemKey(best.short)) : null, kinds,
                         gatherers: heroesOf(best.work, best.profile, tier, best.at) - 1
                     };
                 }
@@ -1883,6 +1920,12 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         supplyOf: (itemId, profile, cap = maxTier) => supplyOf(itemId, profile, cap),
         /** Hero-hours one of an item takes at a profile and stage, the gatherers down its chain counted: what a boost's price and a drink's cost are weighed in. */
         heroHoursOf: (itemId, profile, cap = maxTier) => heroHoursOf(itemId, profile, cap),
+        /** The share of its full pace a work runs at in the reference chain, at a profile and stage (its own tier by default). */
+        chainOf: (target, profile, cap = null, level = null) => {
+            const work = byKey.get(targetKey(target));
+            if (!work) return null;
+            return chainScale(work, profile, cap ?? work.tier ?? maxTier, level);
+        },
         /** The guild's heroes an hour of a work takes at a profile and stage (its own tier by default): its hero and the gatherers down its chain. */
         heroesOf: (target, profile, cap = null, level = null) => {
             const work = byKey.get(targetKey(target));
