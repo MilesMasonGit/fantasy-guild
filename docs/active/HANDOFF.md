@@ -31,6 +31,10 @@ Everything from batches 12 to 16, plus this week:
 
 ## Building
 
+Nothing: **the briefs queue is empty** (Many Hands merged cdbc76ad). Quiet-night bench baseline retake (T-181) queued for 01:00: main and every branch ran about 27 % slower than the 14 Nov baseline in daytime runs.
+
+## Was building
+
 **800 P3 Many Hands**, as two lanes per the owner's rulings (STATUS 16:30). Branch `feat/many-hands`, worktree `mh2`, cut from merge/round. When it reports:
 - read the diff of `BoardRunner`;
 - run the work check plus a timing look, since it is the hot path;
