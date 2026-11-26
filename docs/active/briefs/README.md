@@ -113,6 +113,7 @@ multiple choice at wave start.
 | 93 | [900 B2 One rulebook](900_ledger_reference_guild.md) (T-715): the simulator's XP curve, purpose tilt (training 1.5x XP and half the goods, earning the reverse) and worth curve (doubles every 20 levels) from BALANCE_RULES | parallel with B1 | no |
 | 94 | [900 B3 Two coin curves](900_ledger_reference_guild.md) (T-713): everyday (one level's time) and big (half the payback curve), no rank multiplier for stars | B1 | no |
 | 95 | [900 B4 Three checks](900_ledger_reference_guild.md) (T-717): a chain's XP per raw unit, the 4x batch payback (25-cycle doses), Hall payback over all boosted work | B1 | no |
+| 96 | [900 B5 Numbers onto the plan](900_ledger_reference_guild.md) (T-724, balancer 2026-11-26): a pack writer from the solver's rows giving each Planned entry its work, still Planned; `ledger --with-planned` times the plan in the read-out only; the last step before the engine can check the planned game | (a) beside B1; (b) after B1 | no |
 
 Order ruled by the owner 2026-10-07: UI phases that don't touch skills first,
 then class rework v2, then the hero bar/panel on the new skill list, then

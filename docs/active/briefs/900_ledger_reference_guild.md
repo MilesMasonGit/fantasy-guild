@@ -3,7 +3,7 @@
 *Written 2026-11-26 by the planning agent at the balancer's request. Every ruling is already the
 owner's, in [BALANCE_RULES.md](../../reference/BALANCE_RULES.md) (sections 1, 2, 5, 7, 8) and
 [balance_method_review.md](../balance_method_review.md); this brief adds none. Closes T-716, T-715,
-T-713 and T-717. Builds on brief 880 (L1 to L3 on `main`; its 2.2 gatherers-per-maker cap stays as
+T-713, T-717 and T-724. Builds on brief 880 (L1 to L3 on `main`; its 2.2 gatherers-per-maker cap stays as
 the interim until B1 replaces it).*
 
 **What the player gets.** Nothing to see. The balancer can then trust the engine on boosts and the
@@ -28,8 +28,9 @@ rather than guess**; a design question goes to the balancer, who asks the owner.
 | B2 | T-715 | **One rulebook for the simulator** (sections 1 and 7). Recalculate's XP curve comes from section 1 (XP an hour doubling every 20 levels), not `dials.js`'s own pins; the **purpose tilt** is the owner's moderate one: training 1.5x the XP and half the goods, balanced both in full, earning half the XP and 1.5x the goods; the **worth (gold an hour) curve doubles every 20 levels**, 1,200 at level 1 to about 35,000 at 99. Read the numbers from one place the ledger also reads; say where the simulator can't. | builder | — (parallel with B1: different files) |
 | B3 | T-713 | **Two coin curves** (section 7). An **everyday** curve (Shop Tokens, Foundations: one level's time of selling, section 7's points) and a **big** one (settling a place, a Guild Hall star: half the payback curve), with **no multiplier for a star's rank**; the default curve set to the everyday points (`settings.js` `coinCurve`, `coins.js`, `pace.coinPrices`). | builder | B1 (both in `pace.js`) |
 | B4 | T-717 | **Three checks** (sections 1 and 5): a chain's **total XP per raw unit** (ore to ingot to dagger pays three times; flag chains far off their tier's median); a consumable batch **paying back at least 4x** its making time, ingredients included (a drink or work potion: 25 cycles a dose, 5 a craft, twice as strong; today any net gain passes, `profiles.js`); a **Hall star's payback over all the work it boosts**, on the payback curve, not one work against a flat 24 hours (`pace.js`). | builder | B1 |
+| B5 | T-724 | **Numbers onto the plan, and a ledger that times it** (concept_balancer_agent step 8). (a) **A pack writer**, a CMS command (named in `USAGE` and `cms/README.md`): from the balance solver's rows (`node .claude/skills/balancer/balance_solver.cjs`, keyed by catalogueId) write a number pack giving each Planned entry (T-305's six packs) its work as the CMS holds it, a recipe or a Token's cycle: level, seconds, XP, inputs with counts, what it makes and how many, its station. Entries **stay Planned** and never reach the game; the writer saves nothing to the workspace, it only writes the pack for the balancer to stage and gate with `pack check`. Where a catalogue entry maps to no clear recipe or Token cycle, **ask the content session, don't guess**. (b) **`ledger --with-planned`**: the read-out times Planned work as if it were live, marked as Planned; without the flag nothing changes. | builder | (a) any time, beside B1 (CMS tooling); (b) after B1 (the ledger) |
 
-**Order.** B1 and B2 side by side; B3 and B4 after B1 (either order). All CMS-side: **same work** in
+**Order.** B1, B2 and B5(a) side by side; B3, B4 and B5(b) after B1. All CMS-side: **same work** in
 the game.
 
 ## Done when
@@ -39,6 +40,7 @@ the game.
   timed by the heroes on hand; a sparse and a dense layout with any warning; sites timed by building
   places; the two coin curves; the three checks with what they flag. The CMS Ledger page loads and
   shows the same.
+- B5: the writer turns the solver's rows into a pack that `pack check` passes and that applies cleanly in a sandbox after the six Planned packs, with every entry still Planned; `ledger --with-planned` times them and the plain read-out is unchanged.
 - Recalculate's XP and worth come out on section 1's and section 7's curves (spot-check level 1, 40
   and 99 against BALANCE_RULES).
 - The director tells the balancer (a line in `STATUS.md`) as each phase reaches `main`.
