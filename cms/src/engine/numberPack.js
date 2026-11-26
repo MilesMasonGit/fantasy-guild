@@ -12,31 +12,53 @@
  * Its live mode ({@link writeLiveNumberPack}) does the same for the Live recipes and gathering
  * Tokens the content session's id map (`docs/active/content_cms_ids.json`) matches to the
  * catalogue, with their XP pinned. Both modes give a gathering Token its uses and rest by the rest
- * rule (BALANCE_RULES section 2, {@link restTerms}).
+ * rule (BALANCE_RULES section 2, {@link restTerms}), pin every time they write (`sim.timePinned`,
+ * so Recalculate keeps it), and leave a gather's yield as the content has it: what one gather
+ * gives is the content's, the same at every tier (BALANCE_RULES section 3), so only a plan's split
+ * and a craft's count ({@link ruledMakes}) are written.
  */
 
 import { fingerprint, currentValue, PACK_FORMAT, PACK_VERSION } from './changePacks.js';
 import { isSkillId, isGatheringSkill } from '../../../src/config/registries/skillRegistry.js';
 import { PLAN_STATUS, DEFAULT_PLAN_STATUS } from '../../../src/systems/progression/ledger/plan.js';
 import { respawnOf } from '../../../src/config/registries/tokenConstants.js';
+import { hasCatchPools } from '../../../src/config/registries/catchPools.js';
 
 const isPlanned = (record) => record?.plan?.status === PLAN_STATUS.PLANNED;
 const sameName = (a, b) => typeof a === 'string' && typeof b === 'string' && a.trim().toLowerCase() === b.trim().toLowerCase();
 const ms = (seconds) => Math.round(seconds * 1000);
 const output = (itemId, qty, chance = 100) => ({ itemId, chance, minQty: qty, maxQty: qty, baseQty: { min: qty, max: qty }, variable: false });
 const isLive = (record) => (record?.plan?.status ?? DEFAULT_PLAN_STATUS) === PLAN_STATUS.LIVE;
+/** A record's `sim` with its time pinned: every edit that writes a time carries it, or Recalculate puts a Tempo band's time back. */
+const pinTime = (sim) => ({ ...(sim || {}), timePinned: true });
+
+/** A work potion's batch (BALANCE_RULES section 5): a drink or a work potion lasts 25 work cycles and a craft makes 5. */
+export const WORK_POTIONS_A_CRAFT = 5;
+
+/**
+ * What one craft makes, by the owner's counts (BALANCE_RULES section 3): the solver's `makes`
+ * carries the table (40 arrows a Fletching craft, 40 Arrowheads or Kunai a bar, 5 Nails a bar,
+ * 5 drinks a craft, 1 otherwise). ⚠️ The solver counts a drink by its type alone, so a work potion
+ * (catalogue type `work: ...`) is given its 5 here.
+ */
+export function ruledMakes(row) {
+    if (/^work:/i.test(row?.type || '')) return WORK_POTIONS_A_CRAFT;
+    return Number.isInteger(row?.makes) && row.makes >= 1 ? row.makes : 1;
+}
 
 /** The rest rule (BALANCE_RULES section 2): about 30 s of work at a node, then back in about 30 s. */
 export const REST_RULE = Object.freeze({ workMs: 30000, restMs: 30000 });
 
 /**
- * A gathering Token's uses and rest by the rest rule, for a cycle of `cycleMs`: `{ patch, unclear }`.
+ * A gathering Token's uses and rest by the rest rule, for a cycle of `cycleMs`: `{ patch, unclear, stump }`.
  * It runs out by a chance a cycle (`tokenConstants.endTermsOf`), so its average work is
  * cycle × 100 / chance; the chance that makes that about 30 s is 100 × cycle / 30 s, one decimal,
  * 100 at most. `patch` holds the Token's new `endChance` (its `uses` then mean nothing and go, as
- * the Token editor does) and, for a refill that needs no owner, its 30 s rest. `unclear` says why
- * the rest (or the whole of it) is not written: a regrow's time is its Stump's growth and a gated
- * refill rests only beside its owner, so "back in 30 s" is not one number on this record.
+ * the Token editor does) and, for a refill that needs no owner, its 30 s rest. A regrow's rest is
+ * its Stump's regrowth, so `stump` is the Stump's new value (`{ id, value }`) with `grows.afterMs`
+ * at 30 s and its needs (its Forest) as they are; the Forest's own spawning is not the rest and is
+ * left alone. `unclear` says why the rest (or the whole of it) is not written: a gated refill
+ * rests only beside its owner, and a regrow into a Token with no growth has nowhere to hold it.
  * ⚠️ Assumes a cycle spends one charge, which every gathering Token does today.
  */
 export function restTerms(record, cycleMs, workspace) {
@@ -49,6 +71,12 @@ export function restTerms(record, cycleMs, workspace) {
         return { patch, unclear: null };
     }
     if (back.mode === 'refill') return { patch, unclear: `its end chance written (${endChance} %); its rest not: it refills only while its ${back.needsNearby.join(' or ')} stands` };
+    const stump = workspace?.tokens?.[back.into];
+    if (stump?.grows && typeof stump.grows === 'object') {
+        const value = { ...stump, grows: { ...stump.grows, afterMs: REST_RULE.restMs } };
+        delete value.id;
+        return { patch, unclear: null, stump: { id: back.into, value } };
+    }
     return { patch, unclear: `its end chance written (${endChance} %); its rest not: it regrows as ${back.into}, whose own growth is its time back${growthOf(workspace, back.into)}` };
 }
 
@@ -176,10 +204,11 @@ function itemWork(entry, row, workspace) {
         levelRequirement: row.level,
         requiresContext: existing?.requiresContext ?? [],
         inputs: got.inputs,
-        outputs: [output(id, row.makes || 1)],
+        outputs: [output(id, ruledMakes(row))],
         xp: row.xp,
         durationMs: ms(row.seconds),
         stationChargeCost: existing?.stationChargeCost ?? 1,
+        sim: pinTime(existing?.sim),
         plan: {
             ...(existing?.plan || {}),
             status: PLAN_STATUS.PLANNED,
@@ -194,7 +223,7 @@ function itemWork(entry, row, workspace) {
     return {
         entry: existing
             ? { op: 'edit', kind: 'recipe', id: recipeId, value, fingerprint: fingerprint(existing), note: `${record.name}: ${numbersLine(row)}, from the balance solver.` }
-            : { op: 'create', kind: 'recipe', id: recipeId, value, note: `${record.name}: its recipe, ${numbersLine(row)}, makes ${row.makes || 1}, from the balance solver.` },
+            : { op: 'create', kind: 'recipe', id: recipeId, value, note: `${record.name}: its recipe, ${numbersLine(row)}, makes ${ruledMakes(row)}, from the balance solver.` },
         station: skill,
     };
 }
@@ -219,6 +248,17 @@ function givesOf(record, workspace) {
     return { gives };
 }
 
+/**
+ * A Planned gather's outputs: its outputs as they are, with a line of 1 for each thing it gives
+ * that has none yet. What one gather gives is the content's, the same at every tier
+ * (BALANCE_RULES section 3), so the solver's count is never written onto a gather.
+ */
+function plannedGatherOutputs(current, gives) {
+    const list = Array.isArray(current) ? current : [];
+    const have = new Set(list.map((o) => o?.itemId));
+    return [...list, ...gives.filter((g) => !have.has(g)).map((g) => output(g, 1))];
+}
+
 /** A gathering Token: its cycle on its own record (the skill, level, time, XP and what it gives). */
 function tokenWork(entry, row, workspace) {
     const { id, record } = entry;
@@ -228,7 +268,6 @@ function tokenWork(entry, row, workspace) {
     }
     const got = givesOf(record, workspace);
     if (got.unclear) return got;
-    const qty = row.makes || 1;
     const rest = restTerms(record, ms(row.seconds), workspace);
     const value = withRest({
         ...record,
@@ -239,12 +278,16 @@ function tokenWork(entry, row, workspace) {
             cycleTimeMs: ms(row.seconds),
             xp: row.xp,
             inputs: record.config?.inputs ?? [],
-            outputs: got.outputs ?? got.gives.map((itemId) => output(itemId, qty)),
+            outputs: got.outputs ?? plannedGatherOutputs(record.config?.outputs, got.gives),
         },
+        sim: pinTime(record.sim),
     }, rest.patch);
     delete value.id;
+    // ⚠️ This pack touches Planned entries only: a Live Stump's regrowth would reach the game.
+    const stumpLive = rest.stump && !isPlanned(workspace?.tokens?.[rest.stump.id]);
     return {
-        rest: rest.unclear,
+        rest: stumpLive ? `its end chance written (${value.endChance} %); its rest not: its Stump ${rest.stump.id} is not Planned, and this pack writes Planned entries only` : rest.unclear,
+        stump: stumpLive ? null : rest.stump,
         entry: { op: 'edit', kind: 'token', id, value, fingerprint: fingerprint(currentValue(workspace, 'token', id)), note: `${record.name}: its cycle, ${numbersLine(row)}, gives ${got.gives.join(', ')}, from the balance solver.` },
         station: id,
     };
@@ -255,16 +298,16 @@ function cropWork(entry, row, workspace) {
     const { id, record } = entry;
     const got = givesOf(record, workspace);
     if (got.unclear) return got;
-    const qty = row.makes || 1;
     const value = {
         ...record,
         levelRequirement: row.level,
         requiresContext: record.requiresContext ?? [],
         inputs: record.inputs ?? [],
-        outputs: got.gives.map((itemId) => output(itemId, qty)),
+        outputs: got.outputs ?? plannedGatherOutputs(record.outputs, got.gives),
         xp: row.xp,
         durationMs: ms(row.seconds),
         stationChargeCost: record.stationChargeCost ?? 1,
+        sim: pinTime(record.sim),
     };
     delete value.id;
     return {
@@ -278,7 +321,7 @@ function cropWork(entry, row, workspace) {
  * @param {object} workspace the CMS workspace (its collections), read only
  * @param {object[]} rows the solver's rows (`solve(...).rows`)
  * @param {{ id: string, createdAt?: string, asked?: string }} meta
- * @returns {{ pack: object|null, filled: object[], unclear: object[], skipped: object[] }}
+ * @returns {{ pack: object|null, filled: object[], unclear: object[], skipped: object[], restUnclear: object[], stumps: object[] }}
  *   `filled` one line per entry written, `unclear` the entries for the content session (each with
  *   its reason), `skipped` the Planned entries with no work to write and why.
  */
@@ -297,6 +340,7 @@ export function writeNumberPack(workspace, rows, { id, createdAt = new Date().to
     const unclear = [];
     const skipped = [];
     const restUnclear = [];
+    const stumps = [];
     const at = (e, row) => ({ kind: e.kind, id: e.id, name: e.record.name ?? e.id, catalogueId: e.record.plan?.catalogueId ?? null, skill: row?.skill || e.record.plan?.skill || '' });
 
     for (const e of planned) {
@@ -319,7 +363,8 @@ export function writeNumberPack(workspace, rows, { id, createdAt = new Date().to
         if (result.unclear) { unclear.push({ ...at(e, row), reason: result.unclear }); continue; }
         entries.push(result.entry);
         if (result.rest) restUnclear.push({ ...at(e, row), reason: result.rest });
-        filled.push({ ...at(e, row), op: result.entry.op, writes: `${result.entry.kind} ${result.entry.id}`, level: row.level, seconds: row.seconds, xp: row.xp, makes: row.makes || 1, station: result.station });
+        if (result.stump) addStump(entries, stumps, result.stump, workspace, e.record.name ?? e.id);
+        filled.push({ ...at(e, row), op: result.entry.op, writes: `${result.entry.kind} ${result.entry.id}`, level: row.level, seconds: row.seconds, xp: row.xp, makes: e.kind === 'item' ? ruledMakes(row) : null, station: result.station });
     }
 
     const pack = entries.length ? {
@@ -330,7 +375,7 @@ export function writeNumberPack(workspace, rows, { id, createdAt = new Date().to
         asked: asked || 'The balance solver\'s numbers onto the plan\'s Planned entries, still Planned (T-724).',
         entries,
     } : null;
-    return { pack, filled, unclear, skipped, restUnclear };
+    return { pack, filled, unclear, skipped, restUnclear, stumps };
 }
 
 /**
@@ -357,11 +402,37 @@ const qtyRange = (o) => {
     const max = o?.maxQty ?? o?.baseQty?.max ?? o?.quantity ?? 1;
     return min === max ? `${min}` : `${min} to ${max}`;
 };
+const isSure = (o) => (o?.chance ?? 100) >= 100;
 
 /**
- * A Live record's outputs with the solver's numbers: by its plan's split when it has one, else its
- * one sure output (chance 100) given the solver's count and its chance extras kept as they are.
- * The things it gives must be the catalogue's (`want`, CMS ids). `{ outputs, was }` or `{ unclear }`.
+ * The content session's answers (main 3c7d1657) the live writer follows, by catalogue id.
+ * * `TIMED_BY_INPUT`: one catalogue row many Live recipes share, each recipe timed by the row of
+ *   its one ingredient (the 14 Bait recipes, each timed by its own fish). Their ingredients and
+ *   counts are the content's and stay as they are.
+ * * `NUMBERED_AS_THEY_ARE`: Live recipes whose ingredients differ from the catalogue's on purpose
+ *   (the two fishing rods): their level, time and XP are written, their ingredients left alone.
+ */
+export const TIMED_BY_INPUT = Object.freeze(['bait']);
+export const NUMBERED_AS_THEY_ARE = Object.freeze(['fishing_rod', 'fine_fishing_rod']);
+
+/**
+ * A Live record's things against the catalogue's (`want`, CMS ids): every thing the catalogue says
+ * it gives is among its outputs, and anything else is a chance extra (a seed, a worm, a Bird Nest),
+ * kept as it is. `null` when they agree, else why not.
+ */
+function outputsDiffer(current, want, name) {
+    const have = [...new Set((current || []).map((o) => o?.itemId))];
+    const missing = want.filter((w) => !have.includes(w));
+    if (missing.length) return `its output (${have.join(', ') || 'none'}) lacks the catalogue's ${missing.join(', ')}`;
+    const surely = (current || []).filter((o) => !want.includes(o?.itemId) && isSure(o)).map((o) => o.itemId);
+    if (surely.length) return `its output (${have.join(', ')}) gives ${surely.map(name).join(', ')} every cycle, which the catalogue's (${want.join(', ')}) does not`;
+    return null;
+}
+
+/**
+ * A made Live record's outputs with the craft's count: by its plan's split when it has one, else
+ * its one sure output given the owner's count ({@link ruledMakes}), its chance extras as they are.
+ * `{ outputs, was }` or `{ unclear }`.
  */
 function liveOutputs(record, current, want, makes, workspace, name) {
     const split = splitOf(record);
@@ -371,11 +442,11 @@ function liveOutputs(record, current, want, makes, workspace, name) {
         const got = splitOutputs(split, workspace);
         return got.unclear ? got : { outputs: got.outputs, was: '' };
     }
-    const have = [...new Set((current || []).map((o) => o?.itemId))];
-    if (!sameSet(have, want)) return { unclear: `its output (${have.join(', ') || 'none'}) differs from the catalogue's (${want.join(', ')})` };
-    const sure = (current || []).filter((o) => (o?.chance ?? 100) >= 100);
+    const differ = outputsDiffer(current, want, name);
+    if (differ) return { unclear: differ };
+    const sure = (current || []).filter(isSure);
     if (sure.length !== 1) {
-        return { unclear: sure.length ? `${sure.length} sure outputs (${sure.map((o) => name(o.itemId)).join(', ')}) share its cycle with no split saying how` : 'it has no sure output, only chances: the solver\'s count has nowhere to go' };
+        return { unclear: sure.length ? `${sure.length} sure outputs (${sure.map((o) => name(o.itemId)).join(', ')}) share its cycle with no split saying how` : 'it has no sure output, only chances: the craft\'s count has nowhere to go' };
     }
     const main = sure[0];
     const was = qtyRange(main) === String(makes) ? '' : ` (${name(main.itemId)} was ${qtyRange(main)} a cycle)`;
@@ -386,18 +457,53 @@ function liveOutputs(record, current, want, makes, workspace, name) {
 }
 
 /**
+ * A gather's outputs (a Live gathering Token's or a Field's crop): its plan's split written as
+ * shares, else its outputs exactly as they are. What one gather gives is the content's, the same
+ * at every tier (BALANCE_RULES section 3), so the solver's count is never written onto it; a
+ * chance-only gather (the Geode) is so by design. A water's catch lives on each fish's `fish` block
+ * and its catch pools, never on its outputs, so a water is not checked here.
+ * `{ outputs }` (undefined: leave them) or `{ unclear }`.
+ */
+function gatherOutputs(record, current, want, workspace, name) {
+    const split = splitOf(record);
+    if (split) {
+        const named = split.map((x) => x?.itemId);
+        if (!sameSet(named, want)) return { unclear: `its split (${named.map(name).join(', ')}) differs from the catalogue's output (${want.map(name).join(', ')})` };
+        const got = splitOutputs(split, workspace);
+        return got.unclear ? got : { outputs: got.outputs };
+    }
+    if (hasCatchPools(record)) return { outputs: undefined };
+    const differ = outputsDiffer(current, want, name);
+    return differ ? { unclear: differ } : { outputs: undefined };
+}
+
+/** The Tokens a Live recipe places (a build or a Dig recipe), or none. */
+const tokensBuilt = (record) => {
+    const outs = record?.outputs || [];
+    return outs.length && outs.every((o) => typeof o?.tokenId === 'string' && !o.itemId) ? outs.map((o) => o.tokenId) : [];
+};
+
+/** The Live shrines a Faith offering is made at (`stationKinds: ['shrine']`): its numbers follow its shrine. */
+function shrinesOf(record, workspace) {
+    if (!(record?.stationKinds || []).includes('shrine') && !record?.offering) return [];
+    return Object.entries(workspace?.tokens || {}).filter(([, t]) => t?.shrine && isLive(t)).map(([id]) => id);
+}
+
+/**
  * The live pack: the solver's numbers onto each Live recipe and gathering Token the id map matches
- * to a catalogue entry, as fingerprinted edits. Each carries its level, time, XP (pinned, so
- * Recalculate keeps it: `sim.xpPinned`), its input counts and its output counts; a gathering Token
- * also its uses and rest. A Live entry with no match, two, ingredients or an output other than the
- * catalogue's, is listed as unclear and left alone.
- * ⚠️ Recalculate still derives the cycle time and output counts of a record tagged with a Tempo and
- * a Purpose (`sim/tempoPass.js`, `tuningPass.js`); only the XP has a pin. `filled[].tagged` says which.
+ * to a catalogue entry, as fingerprinted edits. Each carries its level, its time (pinned:
+ * `sim.timePinned`), its XP (pinned: `sim.xpPinned`), so Recalculate keeps both; a made thing its
+ * input counts and the craft's count; a gathering Token its uses and rest, a regrowing one its
+ * Stump's regrowth. A gather's yield stays as the content has it, a plan's split aside.
+ * A build or Dig recipe follows the Token it places, and an offering its shrine: none has work the
+ * solver times, so they are skipped with the reason. The Bait recipes share the bait row, each timed
+ * by its own fish ({@link TIMED_BY_INPUT}). A Live entry with no match, two, ingredients or an output
+ * other than the catalogue's is listed as unclear and left alone.
  * @param {object} workspace the CMS workspace, read only
  * @param {object[]} rows the solver's rows
  * @param {{ ids: object, catalogue: object|object[], id: string, createdAt?: string, asked?: string }} options
  *   `ids` the id map file's contents, `catalogue` the catalogue (`{ entries }` or the list)
- * @returns {{ pack: object|null, filled: object[], unclear: object[], skipped: object[], restUnclear: object[] }}
+ * @returns {{ pack: object|null, filled: object[], unclear: object[], skipped: object[], restUnclear: object[], stumps: object[] }}
  */
 export function writeLiveNumberPack(workspace, rows, { ids, catalogue, id, createdAt = new Date().toISOString(), asked } = {}) {
     const { toCms, toCatalogue } = liveIdMap(ids);
@@ -406,39 +512,67 @@ export function writeLiveNumberPack(workspace, rows, { ids, catalogue, id, creat
     const byEntry = new Map(catalogueEntries.map((e) => [e.id, e]));
     const byCatalogue = new Map();
     for (const row of rows || []) if (row?.id) byCatalogue.set(row.id, row);
-    const name = (itemId) => workspace?.items?.[itemId]?.name ?? itemId;
+    const name = (itemId) => workspace?.items?.[itemId]?.name ?? workspace?.tokens?.[itemId]?.name ?? itemId;
 
     const candidates = [];
     for (const [pool, list] of Object.entries(workspace?.recipePools || {})) {
         for (const record of list || []) {
             if (!record?.id || !isLive(record)) continue;
             const own = toCatalogue.get(record.id);
+            const built = tokensBuilt(record);
+            const shrines = shrinesOf(record, workspace);
+            const follows = built.length ? built : shrines;
             const viaOutputs = [...new Set((record.outputs || []).flatMap((o) => toCatalogue.get(o?.itemId) || []))];
-            candidates.push({ kind: 'recipe', id: record.id, record, pool, matches: own || viaOutputs });
+            const viaFollowed = [...new Set(follows.flatMap((t) => toCatalogue.get(t) || []))];
+            const role = built.length ? 'build' : shrines.length ? 'offering' : 'recipe';
+            candidates.push({ kind: 'recipe', id: record.id, record, pool, role, follows, matches: own || (role === 'recipe' ? viaOutputs : viaFollowed) });
         }
     }
     for (const [tokenId, record] of Object.entries(workspace?.tokens || {})) {
         if (!isLive(record) || !isGatheringSkill(record?.config?.skill)) continue;
-        candidates.push({ kind: 'token', id: tokenId, record, matches: toCatalogue.get(tokenId) || [] });
+        candidates.push({ kind: 'token', id: tokenId, record, role: 'token', matches: toCatalogue.get(tokenId) || [] });
     }
+    // A build or an offering claims nothing: the Token it follows keeps its own row. A row shared on purpose (the Bait) is not a clash.
     const claims = new Map();
-    for (const c of candidates) if (c.matches.length === 1) claims.set(c.matches[0], [...(claims.get(c.matches[0]) || []), `${c.kind} ${c.id}`]);
+    for (const c of candidates) {
+        if (c.role === 'build' || c.role === 'offering' || c.matches.length !== 1 || TIMED_BY_INPUT.includes(c.matches[0])) continue;
+        claims.set(c.matches[0], [...(claims.get(c.matches[0]) || []), `${c.kind} ${c.id}`]);
+    }
 
     const entries = [];
     const filled = [];
     const unclear = [];
     const skipped = [];
     const restUnclear = [];
+    const stumps = [];
     const at = (c, catalogueId, row) => ({ kind: c.kind, id: c.id, name: c.record.name ?? c.id, catalogueId: catalogueId ?? null, skill: row?.skill || c.record.skill || c.record.config?.skill || '' });
 
     for (const c of candidates) {
+        if (c.role === 'build' || c.role === 'offering') {
+            const what = c.role === 'build' ? `it places ${c.follows.map(name).join(', ')}` : `an offering at ${c.follows.map(name).join(' or ')}`;
+            if (!c.matches.length) {
+                if (c.role === 'offering') skipped.push({ ...at(c), reason: `${what}, which has no catalogue entry: an offering follows its shrine, and there is no work of the shrine's to write` });
+                else unclear.push({ ...at(c), reason: `${what}, which has no catalogue match in the id map` });
+                continue;
+            }
+            const catalogueId = c.matches[0];
+            const row = byCatalogue.get(catalogueId);
+            const why = row && !row.work && row.why ? row.why : 'builds follow the one-off step rule, which the solver does not time';
+            skipped.push({ ...at(c, catalogueId, row), reason: `${what} (catalogue ${c.matches.join(', ')}): ${why}` });
+            continue;
+        }
         if (!c.matches.length) { unclear.push({ ...at(c), reason: 'no catalogue match in the id map' }); continue; }
         if (c.matches.length > 1) { unclear.push({ ...at(c), reason: `it matches several catalogue entries (${c.matches.join(', ')})` }); continue; }
         const catalogueId = c.matches[0];
         const entry = byEntry.get(catalogueId);
-        const row = byCatalogue.get(catalogueId);
+        let row = byCatalogue.get(catalogueId);
         if (!entry || !row) { unclear.push({ ...at(c, catalogueId), reason: `the ${entry ? 'solver has no row' : 'catalogue has no entry'} for ${catalogueId}` }); continue; }
-        if (claims.get(catalogueId).length > 1) { unclear.push({ ...at(c, catalogueId, row), reason: `catalogue entry ${catalogueId} is matched by ${claims.get(catalogueId).join(' and ')}` }); continue; }
+        if (claims.get(catalogueId)?.length > 1) { unclear.push({ ...at(c, catalogueId, row), reason: `catalogue entry ${catalogueId} is matched by ${claims.get(catalogueId).join(' and ')}` }); continue; }
+        if (c.kind === 'recipe' && TIMED_BY_INPUT.includes(catalogueId)) {
+            const timed = inputRow(c.record, { toCatalogue, byCatalogue, name });
+            if (timed.unclear) { unclear.push({ ...at(c, catalogueId, row), reason: timed.unclear }); continue; }
+            row = { ...timed.row, makes: row.makes, type: row.type, timedBy: timed.row.id };
+        }
         if (!row.work) { skipped.push({ ...at(c, catalogueId, row), reason: row.why || 'no work of its own' }); continue; }
         if (row.level == null || !(row.seconds > 0) || !(row.xp >= 1)) { skipped.push({ ...at(c, catalogueId, row), reason: row.why || 'the solver gave it no numbers' }); continue; }
         if (/^combat$/i.test(row.skill)) { skipped.push({ ...at(c, catalogueId, row), reason: 'combat numbers are not the balance solver\'s' }); continue; }
@@ -448,12 +582,14 @@ export function writeLiveNumberPack(workspace, rows, { ids, catalogue, id, creat
         const { record } = c;
         const current = currentValue(workspace, c.kind, c.id);
         const tagged = Boolean(record.sim?.tempo && record.sim?.purpose);
+        const timedBy = row.timedBy ? `, timed by its ${name(toCms.get(row.timedBy) ?? row.timedBy)}` : '';
         entries.push({
             op: 'edit', kind: c.kind, id: c.id, value: result.value, fingerprint: fingerprint(current),
-            note: `${record.name ?? c.id}: ${numbersLine(row)}${result.was}, from the balance solver; XP pinned, so Recalculate keeps it.`,
+            note: `${record.name ?? c.id}: ${numbersLine(row)}${timedBy}${result.was}, from the balance solver; time and XP pinned, so Recalculate keeps them.`,
         });
         if (result.rest) restUnclear.push({ ...at(c, catalogueId, row), reason: result.rest });
-        filled.push({ ...at(c, catalogueId, row), op: 'edit', writes: `${c.kind} ${c.id}`, level: row.level, seconds: row.seconds, xp: row.xp, makes: row.makes || 1, tagged });
+        if (result.stump) addStump(entries, stumps, result.stump, workspace, c.record.name ?? c.id);
+        filled.push({ ...at(c, catalogueId, row), op: 'edit', writes: `${c.kind} ${c.id}`, level: row.level, seconds: row.seconds, xp: row.xp, makes: result.makes ?? null, tagged });
     }
 
     const pack = entries.length ? {
@@ -461,28 +597,60 @@ export function writeLiveNumberPack(workspace, rows, { ids, catalogue, id, creat
         version: PACK_VERSION,
         id,
         createdAt,
-        asked: asked || 'The balance solver\'s numbers onto the Live recipes and gathering Tokens the catalogue matches, XP pinned (T-724, live mode).',
+        asked: asked || 'The balance solver\'s numbers onto the Live recipes and gathering Tokens the catalogue matches, time and XP pinned (T-724, live mode).',
         entries,
     } : null;
-    return { pack, filled, unclear, skipped, restUnclear };
+    return { pack, filled, unclear, skipped, restUnclear, stumps };
 }
 
-/** One Live candidate's new value: `{ value, was, rest }` or `{ unclear }`. */
+/** A Stump's regrowth as an edit, once however many trees regrow into it. */
+function addStump(entries, stumps, stump, workspace, treeName) {
+    if (entries.some((e) => e.kind === 'token' && e.id === stump.id)) return;
+    entries.push({
+        op: 'edit', kind: 'token', id: stump.id, value: stump.value, fingerprint: fingerprint(currentValue(workspace, 'token', stump.id)),
+        note: `${stump.value.name ?? stump.id}: grows back in ${REST_RULE.restMs / 1000} s, ${treeName}'s rest by the rest rule (its needs as they are).`,
+    });
+    stumps.push({ id: stump.id, name: stump.value.name ?? stump.id, tree: treeName, afterMs: REST_RULE.restMs });
+}
+
+/** The row a recipe shared on purpose is timed by: its one ingredient's (a Bait recipe's fish). `{ row }` or `{ unclear }`. */
+function inputRow(record, { toCatalogue, byCatalogue, name }) {
+    const inputs = record.inputs || [];
+    if (inputs.length !== 1) return { unclear: `it shares its catalogue row, each recipe timed by its one ingredient, and it has ${inputs.length}` };
+    const itemId = inputs[0]?.itemId;
+    const ids = toCatalogue.get(itemId) || [];
+    if (ids.length !== 1) return { unclear: `it is timed by its ${name(itemId)}, which ${ids.length ? `matches several catalogue entries (${ids.join(', ')})` : 'has no catalogue match'}` };
+    const row = byCatalogue.get(ids[0]);
+    if (!row || !row.work || row.level == null || !(row.seconds > 0) || !(row.xp >= 1)) {
+        return { unclear: `it is timed by its ${name(itemId)}, whose row has no numbers of its own (${row?.why || 'no row'})` };
+    }
+    return { row };
+}
+
+/** One Live candidate's new value: `{ value, was, rest, stump, makes }` or `{ unclear }`. */
 function liveWork(c, entry, row, { workspace, toCms, name }) {
     const { record } = c;
-    const makes = row.makes || 1;
+    const makes = ruledMakes(row);
     const seconds = ms(row.seconds);
-    const pin = { ...(record.sim || {}), xpPinned: true };
+    const pin = pinTime({ ...(record.sim || {}), xpPinned: true });
+
+    if (c.kind === 'recipe' && row.timedBy) {
+        // Its ingredient and its Bait a craft are the content's (rarer fish give more).
+        const value = { ...record, skill: record.skill ?? c.pool, levelRequirement: row.level, xp: row.xp, durationMs: seconds, sim: pin };
+        delete value.id;
+        return { value, was: '' };
+    }
 
     if (c.kind === 'recipe' && (row.work === 'make' || row.work === 'prepare')) {
+        const asTheyAre = NUMBERED_AS_THEY_ARE.includes(entry.id);
         const madeWith = entry.madeWith || [];
         const unmapped = madeWith.filter((m) => !toCms.has(m));
-        if (unmapped.length) return { unclear: `its catalogue ingredients ${unmapped.join(', ')} have no CMS id in the id map` };
+        if (unmapped.length && !asTheyAre) return { unclear: `its catalogue ingredients ${unmapped.join(', ')} have no CMS id in the id map` };
         const want = madeWith.map((m) => toCms.get(m));
         const have = (record.inputs || []).map((i) => i?.itemId);
-        if (!sameSet(have, want)) return { unclear: `its ingredients (${have.map(name).join(', ') || 'none'}) differ from the catalogue's (${want.map(name).join(', ') || 'none'})` };
+        if (!asTheyAre && !sameSet(have, want)) return { unclear: `its ingredients (${have.map(name).join(', ') || 'none'}) differ from the catalogue's (${want.map(name).join(', ') || 'none'})` };
         const counts = new Map((row.inputs || []).map((i) => [toCms.get(i.id), i.count]));
-        const bad = want.find((w) => !(Number.isInteger(counts.get(w)) && counts.get(w) >= 1));
+        const bad = asTheyAre ? null : want.find((w) => !(Number.isInteger(counts.get(w)) && counts.get(w) >= 1));
         if (bad) return { unclear: `the solver gives ${name(bad)} a count of ${counts.get(bad)}` };
         const out = toCms.get(entry.id);
         if (!out) return { unclear: `the catalogue's ${entry.id} has no CMS id in the id map` };
@@ -492,14 +660,14 @@ function liveWork(c, entry, row, { workspace, toCms, name }) {
             ...record,
             skill: record.skill ?? c.pool,
             levelRequirement: row.level,
-            inputs: (record.inputs || []).map((i) => ({ ...i, quantity: counts.get(i.itemId) })),
+            inputs: asTheyAre ? record.inputs : (record.inputs || []).map((i) => ({ ...i, quantity: counts.get(i.itemId) })),
             outputs: outs.outputs,
             xp: row.xp,
             durationMs: seconds,
             sim: pin,
         };
         delete value.id;
-        return { value, was: outs.was };
+        return { value, was: outs.was + (asTheyAre ? ', its ingredients as they are' : ''), makes };
     }
 
     if (row.work !== 'gather') return { unclear: `a Live ${c.kind} whose solver work is ${row.work}: no clear recipe or Token cycle` };
@@ -510,24 +678,24 @@ function liveWork(c, entry, row, { workspace, toCms, name }) {
     const want = gives.map((g) => toCms.get(g));
 
     if (c.kind === 'recipe') {
-        // A crop recipe (a Field's): its seeds and grow time stay as they are.
-        const outs = liveOutputs(record, record.outputs, want, makes, workspace, name);
+        // A crop recipe (a Field's): its seeds, its grow time and its yield stay as they are.
+        const outs = gatherOutputs(record, record.outputs, want, workspace, name);
         if (outs.unclear) return outs;
-        const value = { ...record, skill: record.skill ?? c.pool, levelRequirement: row.level, outputs: outs.outputs, xp: row.xp, durationMs: seconds, sim: pin };
+        const value = { ...record, skill: record.skill ?? c.pool, levelRequirement: row.level, ...(outs.outputs ? { outputs: outs.outputs } : {}), xp: row.xp, durationMs: seconds, sim: pin };
         delete value.id;
-        return { value, was: outs.was };
+        return { value, was: '' };
     }
 
-    const outs = liveOutputs(record, record.config?.outputs, want, makes, workspace, name);
+    const outs = gatherOutputs(record, record.config?.outputs, want, workspace, name);
     if (outs.unclear) return outs;
     const rest = restTerms(record, seconds, workspace);
     const value = withRest({
         ...record,
-        config: { ...(record.config || {}), skillRequired: row.level, cycleTimeMs: seconds, xp: row.xp, outputs: outs.outputs },
+        config: { ...(record.config || {}), skillRequired: row.level, cycleTimeMs: seconds, xp: row.xp, ...(outs.outputs ? { outputs: outs.outputs } : {}) },
         sim: pin,
     }, rest.patch);
     delete value.id;
-    return { value, was: outs.was, rest: rest.unclear };
+    return { value, was: '', rest: rest.unclear, stump: rest.stump };
 }
 
 /** The unclear list as text for the content session. */

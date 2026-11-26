@@ -37,7 +37,7 @@ const fixtureWorkspace = () => ({
             id: 'token_copper_vein', name: 'Copper Vein', uses: 5, respawn: { mode: 'refill', afterMs: 60000 }, sim: { tempo: 'quick', purpose: 'iph' }, plan: live,
             config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 3000, xp: 6, inputs: [], outputs: [range('item_copper_ore', 1, 2), range('item_gem', 1, 1, 5)] },
         },
-        // Its rest lives on its Stump, which needs its Forest: the end chance is written, the rest listed.
+        // Its rest is its Stump's regrowth: the end chance on the tree, the 30 s on the Stump, which still needs its Forest.
         token_oak_tree: {
             id: 'token_oak_tree', name: 'Oak Tree', uses: 5, respawn: { mode: 'regrow', into: 'token_oak_stump' }, plan: live,
             config: { skill: 'forestry', skillRequired: 1, cycleTimeMs: 3000, xp: 6, inputs: [], outputs: [range('item_oak_wood', 1, 2)] },
@@ -155,7 +155,7 @@ describe('pack numbers --live', () => {
         expect(run.code, run.err).toBe(0);
         expect(pack).not.toBeNull();
         expect(validatePack(pack, { fileName: 'test-live-numbers.json' })).toEqual({ ok: true });
-        expect(Object.keys(byId).sort()).toEqual(['recipe_twine', 'token_copper_vein', 'token_logjam', 'token_oak_tree']);
+        expect(Object.keys(byId).sort()).toEqual(['recipe_twine', 'token_copper_vein', 'token_logjam', 'token_oak_stump', 'token_oak_tree']);
         for (const e of pack.entries) {
             expect(e.op).toBe('edit');
             expect(e.fingerprint).toMatch(/^fp:[0-9a-f]{16}$/);
@@ -165,20 +165,21 @@ describe('pack numbers --live', () => {
         expect(check.out).toMatch(/No entry conflicts/);
     });
 
-    it('gives a matched Live recipe its level, time, XP and counts, XP pinned', () => {
+    it('gives a matched Live recipe its level, time, XP and counts, time and XP pinned', () => {
         expect(byId.recipe_twine.value).toMatchObject({
             name: 'Twine', skill: 'crafting', levelRequirement: 1, durationMs: 7500, xp: 3,
             inputs: [{ itemId: 'item_flax', quantity: 2 }], outputs: [out1('item_twine', 1)],
-            sim: { tempo: 'quick', purpose: 'iph', xpPinned: true }, plan: { status: 'live' },
+            plan: { status: 'live' },
         });
+        expect(byId.recipe_twine.value.sim).toEqual({ tempo: 'quick', purpose: 'iph', xpPinned: true, timePinned: true });
     });
 
-    it('gives a matched Live Token its cycle, XP pinned, its chance extras kept', () => {
+    it('gives a matched Live Token its cycle, time and XP pinned, its outputs as they are', () => {
         const v = byId.token_copper_vein.value;
         expect(v.config).toMatchObject({ skill: 'mining', skillRequired: 1, cycleTimeMs: 6000, xp: 2 });
-        expect(v.config.outputs).toEqual([out1('item_copper_ore', 1), range('item_gem', 1, 1, 5)]);
-        expect(v.sim).toEqual({ tempo: 'quick', purpose: 'iph', xpPinned: true });
-        expect(byId.token_copper_vein.note).toMatch(/was 1 to 2/);
+        expect(v.config.outputs).toEqual([range('item_copper_ore', 1, 2), range('item_gem', 1, 1, 5)]);
+        expect(v.sim).toEqual({ tempo: 'quick', purpose: 'iph', xpPinned: true, timePinned: true });
+        expect(byId.token_copper_vein.note).not.toMatch(/was 1 to 2/);
     });
 
     it('writes uses and rest by the rest rule: about 30 s of work, back in about 30 s', () => {
@@ -197,13 +198,15 @@ describe('pack numbers --live', () => {
         expect(v.endChance).toBe(22);
     });
 
-    it('writes a regrowing tree\'s end chance and lists its rest, which its Stump and Forest hold', () => {
+    it('writes a regrowing tree\'s end chance, and its rest as its Stump\'s regrowth', () => {
         const v = byId.token_oak_tree.value;
         expect(v.endChance).toBe(16.7);
         expect(v.respawn).toEqual({ mode: 'regrow', into: 'token_oak_stump' });
-        expect(pack.entries.some((e) => e.id === 'token_oak_stump')).toBe(false);
+        expect(byId.token_oak_stump.value.grows).toEqual({ into: 'token_oak_tree', afterMs: 30000, needsNearby: ['token_oak_forest'] });
+        expect(byId.token_oak_stump.fingerprint).toMatch(/^fp:[0-9a-f]{16}$/);
         const listed = fs.readFileSync(f.unclearFile, 'utf8');
-        expect(listed).toMatch(/Oak Tree.*token_oak_stump.*token_oak_forest/);
+        expect(listed).not.toMatch(/Oak Tree/);
+        expect(run.out).toMatch(/1 Stump given its tree's rest, back in 30 s: Oak Stump/);
     });
 
     it('lists, never writes, a Live entry with no match, other ingredients or another output', () => {
@@ -228,7 +231,7 @@ describe('pack numbers --live', () => {
             next = { ...next, ...setValue(next, entry.kind, entry.id, proposedValue(entry)) };
         }
         expect(next.tokens.token_planned_vein).toEqual(ws.tokens.token_planned_vein);
-        expect(next.tokens.token_oak_stump).toEqual(ws.tokens.token_oak_stump);
+        expect(next.tokens.token_oak_stump).toEqual({ ...ws.tokens.token_oak_stump, grows: { ...ws.tokens.token_oak_stump.grows, afterMs: 30000 } });
         expect(next.recipePools.crafting.slice(1)).toEqual(ws.recipePools.crafting.slice(1));
         for (const entry of pack.entries) expect(entry.value.plan.status).toBe('live');
     });
