@@ -169,8 +169,24 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     const maxTier = tiers.size ? Math.max(...tiers) : 0;
 
     // ── supply: Bare first (it prices every boost), then the profiles that buy them ─────────────
+    // Kept by profile, then stage (as text, as one key would name it), then item or level: asked
+    // millions of times, mostly answered here.
     const supplyMemo = new Map();
     const fedMemo = new Map();
+    const level2 = (memo, a, b) => {
+        let m = memo.get(a);
+        if (!m) memo.set(a, (m = new Map()));
+        const k = String(b);
+        let n = m.get(k);
+        if (!n) m.set(k, (n = new Map()));
+        return n;
+    };
+    const suppliesAt = (profile, cap) => level2(supplyMemo, profile, cap);
+    const fedAt = (work, profile, cap) => {
+        let byProfile = fedMemo.get(work.key);
+        if (!byProfile) fedMemo.set(work.key, (byProfile = new Map()));
+        return level2(byProfile, profile, cap);
+    };
     // Per open supply or fed question, innermost last: the outermost question it read an item in stock
     // from (that question's place here), Infinity while it read none: its answer then stands on its own.
     const open = [];
@@ -220,8 +236,10 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
      * `level`: the working hero's level (its milestone perks), the work's own gate when null.
      */
     function fed(work, profile, cap, stack, level = null) {
-        const key = `${work.key}|${profile}|${cap}|${level ?? ''}`;
-        if (fedMemo.has(key)) return fedMemo.get(key);
+        const kept = fedAt(work, profile, cap);
+        const levelKey = String(level ?? '');
+        const hit = kept.get(levelKey);
+        if (hit) return hit;
         enter();
         const { rate } = profiles.profileOf(work.target, profile, cap, level);
         let out;
@@ -245,14 +263,17 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             out = { rate, scale, items: times(rate.items), xp: times(rate.xp), tokens: times(rate.tokens), inputs: times(rate.inputs), short };
             if (rate.coins !== undefined) out.coins = rate.coins * scale;
         }
-        if (leave() === Infinity) fedMemo.set(key, out);
+        if (leave() === Infinity) kept.set(levelKey, out);
         return out;
     }
 
     /** How fast the guild gets an item at a stage: `{ perHour, work }`, the best source then. */
-    function supplyOf(itemId, profile, cap, stack = new Map()) {
+    function supplyOf(itemId, profile, cap, stack = null) {
+        const kept = suppliesAt(profile, cap);
+        const hit = kept.get(itemId);
+        if (hit) return hit;
+        if (stack === null) stack = new Map();
         const key = `${itemId}|${profile}|${cap}`;
-        if (supplyMemo.has(key)) return supplyMemo.get(key);
         // An item asked for inside its own making (seeds for the tree that drops them) is in stock, for
         // every question inside that making: their answers are kept only inside the loop (`inLoop`).
         if (stack.has(itemId)) {
@@ -276,7 +297,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         }
         stack.delete(itemId);
         const at = leave();
-        if (at === Infinity) supplyMemo.set(key, best);
+        if (at === Infinity) kept.set(itemId, best);
         else inLoop.set(key, { best, stack, at, ask: asks[at] });
         return best;
     }

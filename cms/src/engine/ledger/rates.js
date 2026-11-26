@@ -132,6 +132,67 @@ function recipeMap({ recipes, recipePools }) {
     return out;
 }
 
+/**
+ * A value as a string two values share only when the calculator reads them alike: numbers exactly
+ * (NaN, the infinities and -0 apart), strings quoted, `undefined` apart from a missing entry is not
+ * needed but kept apart. Null when it holds anything but plain data (a function, a Map, a class),
+ * which is then never kept.
+ */
+function keyOf(v) {
+    switch (typeof v) {
+    case 'string': return JSON.stringify(v);
+    case 'number': return Object.is(v, -0) ? '-0' : String(v);
+    case 'boolean': return v ? 'T' : 'F';
+    case 'undefined': return 'U';
+    case 'object': {
+        if (v === null) return 'N';
+        if (Array.isArray(v)) {
+            let out = '[';
+            for (let i = 0; i < v.length; i++) {
+                const k = i in v ? keyOf(v[i]) : 'H';
+                if (k === null) return null;
+                out += (i ? ',' : '') + k;
+            }
+            return out + ']';
+        }
+        const proto = Object.getPrototypeOf(v);
+        if (proto !== Object.prototype && proto !== null) return null;
+        let out = '{';
+        let first = true;
+        for (const name of Object.keys(v)) {
+            const k = keyOf(v[name]);
+            if (k === null) return null;
+            out += (first ? '' : ',') + JSON.stringify(name) + ':' + k;
+            first = false;
+        }
+        return out + '}';
+    }
+    default: return null;
+    }
+}
+
+/** Notes nobody reads: a rate asked for its numbers alone (`numbersOf`) keeps none. */
+const NO_NOTE = Object.freeze({ push() {} });
+const NO_NOTES = Object.freeze({ unmodelled: NO_NOTE, assumptions: NO_NOTE });
+
+/**
+ * One answer per key, worked out once: what it noted (`unmodelled`, `assumptions`) is kept with it
+ * and noted again, as copies, on every ask, so each rate lists exactly what it listed before. A null
+ * key keeps nothing.
+ */
+function noted(memo, key, notes, make) {
+    let hit = key === null ? undefined : memo.get(key);
+    if (!hit) {
+        const own = { unmodelled: [], assumptions: [] };
+        hit = { value: make(own), own };
+        if (key !== null) memo.set(key, hit);
+    }
+    if (notes === NO_NOTES) return hit.value;
+    for (const n of hit.own.unmodelled) notes.unmodelled.push({ ...n });
+    for (const n of hit.own.assumptions) notes.assumptions.push({ ...n });
+    return hit.value;
+}
+
 /** A support named in a setup: an id, or `{ id, count, distant }`. */
 function supportEntry(entry) {
     if (typeof entry === 'string') return { id: entry, count: 1, distant: false };
@@ -169,16 +230,25 @@ export function buildRateBook(content = {}) {
     const sky = skyWithFallback(isObject(content.hallSky) ? content.hallSky : {});
     const stars = sky.stars;
     const starsById = new Map(stars.map(s => [s.id, s]));
-    const hall = { stars, constellations: sky.constellations, star: (id) => starsById.get(id) || null, memo: new WeakMap() };
+    const hall = { stars, constellations: sky.constellations, star: (id) => starsById.get(id) || null, memo: new WeakMap(), byRanks: new WeakMap(), byKey: new Map(), ids: 0 };
 
     // The events that can land, for a fishing spot an event brings: its share of them all.
     const events = Object.values(normaliseEventTable(content.events)).filter(e => isRunnable(e) && rawTokens[e.typeId] && !isPlanned(rawTokens[e.typeId]));
 
     const book = {
         library, items, recipes, perkTables, hall, events,
+        // The parts of a rate many setups share, each kept by what it reads of the setup (`keyOf`).
+        // ⚠️ The pace asks hundreds of thousands of rates, mostly of setups one boost apart.
+        parts: { hero: new Map(), tile: new Map(), guild: new Map(), guildByHall: new WeakMap() },
         tokenIds: () => Object.keys(rawTokens),
         token: tokenDef,
         rateOf: (target, setup) => rateOf(book, target, setup),
+        /**
+         * What a rate makes, spends and teaches an hour and whether it runs, `{ ok, items, inputs, xp }`,
+         * exactly as `rateOf` has them, without the factors and notes: what weighing one boost
+         * against another reads. A work the calculator cannot rate comes back refused, as `rateOf` gives it.
+         */
+        numbersOf: (target, setup) => rateOf(book, target, setup, true),
         stationsFor: (recipeId) => stationsFor(book, recipeId),
         buildsOn: (recipeId) => buildsOn(book, recipeId),
         workTargets: () => workTargets(book),
@@ -295,12 +365,34 @@ function tileRules(book, targetDef, setup, hero, notes) {
  * The Guild Hall's stars a setup holds (`hallRanks`, a rank past a star's top read as its top), as
  * the guild holds them (`hallModifiers.hallRulesOf`, which `HallRules.apply` registers): modifiers
  * for the guild-wide scope and modifiers aimed at some Tokens. Each star is one factor,
- * `hall:<id>`. Worked out once per setup.
+ * `hall:<id>`. Worked out once per setup, and once per ranks and switches held: one answer stands
+ * for every setup holding those, `id` naming it (null when they cannot be named) for the parts of a
+ * rate that read them.
+ * ⚠️ Kept by the ranks object too, as setups one boost apart share it: a setup's ranks are never
+ * changed once it is rated.
  */
 function hallRules(book, setup) {
     const memo = book.hall.memo;
     if (memo.has(setup)) return memo.get(setup);
-    const out = { guild: [], aimed: [], held: [] };
+    const ranks = setup.hallRanks;
+    const byRanks = setup.off === undefined && typeof ranks === 'object' && ranks !== null;
+    let out = byRanks ? book.hall.byRanks.get(ranks) : undefined;
+    if (!out) {
+        const key = keyOf([ranks, setup.off]);
+        out = key === null ? undefined : book.hall.byKey.get(key);
+        if (!out) {
+            out = starsHeld(book, setup, key === null ? null : book.hall.ids++);
+            if (key !== null) book.hall.byKey.set(key, out);
+        }
+        if (byRanks) book.hall.byRanks.set(ranks, out);
+    }
+    memo.set(setup, out);
+    return out;
+}
+
+/** {@link hallRules} worked out. */
+function starsHeld(book, setup, id) {
+    const out = { guild: [], aimed: [], held: [], id };
     for (const star of book.hall.stars) {
         const rank = Math.min(star.ranks.length, Math.floor(Number(setup.hallRanks?.[star.id]) || 0));
         if (rank < 1) continue;
@@ -311,7 +403,6 @@ function hallRules(book, setup) {
         for (const modifier of modifiers) out.guild.push({ factorId, modifier });
         for (const a of aimed) out.aimed.push({ factorId, ...a });
     }
-    memo.set(setup, out);
     return out;
 }
 
@@ -471,14 +562,10 @@ function factorOfItems(itemIds, items) {
  * `Provides` of the axis, narrowed by an exact category match when it names one; a rule applied for
  * the cycle on only some cycles counts at its share.
  */
-function heroBuckets(hero, effectType, category) {
+function heroBuckets(contributing, effectType, category) {
     let flat = 0;
     const multipliers = [];
     const percentages = [];
-    const contributing = [
-        ...hero.statements.map(s => ({ ...s, weight: 1 })),
-        ...hero.live
-    ];
     const used = new Set();
     for (const { statement, weight, factorId } of contributing) {
         if (statement.keyword !== KEYWORD.PROVIDES) continue;
@@ -493,6 +580,63 @@ function heroBuckets(hero, effectType, category) {
         else percentages.push(value);
     }
     return { flat, multipliers, percentages, used };
+}
+
+/** The hero's rules as `heroBuckets` reads them, every one at its weight: the always-on at 1, then those lent for the cycle. */
+const contributions = new WeakMap();
+function contributingOf(hero) {
+    let out = contributions.get(hero);
+    if (!out) {
+        out = [...hero.statements.map(s => ({ ...s, weight: 1 })), ...hero.live];
+        contributions.set(hero, out);
+    }
+    return out;
+}
+
+/** {@link heroRules}, once per what it reads: the skill, the tool, the level and the setup's gear, drinks, perks, levels and switches. */
+function heroOf(book, gates, setup, notes) {
+    const key = keyOf([gates.skill, gates.toolItem, gates.level, setup.gear, setup.consumables, setup.perks, setup.levels, setup.off]);
+    return noted(book.parts.hero, key, notes, (own) => heroRules(book, gates.skill, setup, gates, own));
+}
+
+/** No hero: what reaches a growing or resting Token, which no hero works. */
+const NO_HERO = Object.freeze({ carries: new Set(), statements: [], live: [] });
+
+/**
+ * {@link tileRules} with its scope, once per what it reads: the worked Token, the supports, the
+ * switches, the effects the hero carries and, when the Hall aims any rule at some Tokens, the Hall
+ * ranks. `{ scope, grants }`.
+ */
+function tileOf(book, targetDef, setup, hero, notes) {
+    const hall = hallRules(book, setup);
+    const aimed = hall.aimed.length > 0;
+    const own = book.token(targetDef.id) === targetDef && (!aimed || hall.id !== null);
+    const key = own ? keyOf([targetDef.id, setup.supports, setup.off, [...hero.carries], aimed ? hall.id : null]) : null;
+    return noted(book.parts.tile, key, notes, (into) => {
+        const reaching = tileRules(book, targetDef, setup, hero, into);
+        return { scope: tileScope(reaching.modifiers), grants: reaching.grants };
+    });
+}
+
+/** {@link guildScope}, once per the guild-wide rules, and the Hall ranks and switches held ({@link hallRules}). */
+function guildOf(book, setup) {
+    const hall = hallRules(book, setup);
+    if (setup.guild === undefined) {
+        let out = book.parts.guildByHall.get(hall);
+        if (!out) {
+            out = guildScope(book, setup);
+            book.parts.guildByHall.set(hall, out);
+        }
+        return out;
+    }
+    const key = hall.id === null ? null : keyOf([setup.guild, hall.id]);
+    if (key === null) return guildScope(book, setup);
+    let out = book.parts.guild.get(key);
+    if (!out) {
+        out = guildScope(book, setup);
+        book.parts.guild.set(key, out);
+    }
+    return out;
 }
 
 /** The hero's bonus-drop grants (`TileModifiers.loadoutPayloads` for `Grants`, and the ones lent for the cycle). */
@@ -553,20 +697,78 @@ function matchedFactors(scope, effectType, category, into) {
 }
 
 /**
+ * What one side puts into an axis's buckets and which factors it matched, kept per side, axis and
+ * narrowing: none of it reads the base, and a scope or a hero is shared by every rate whose setup
+ * reads alike (`tileOf`, `guildOf`, `heroOf`). Never changed once made.
+ */
+const shares = new WeakMap();
+/** A side's shares, by axis then narrowing. */
+function sharesOf(side) {
+    let out = shares.get(side);
+    if (!out) {
+        out = new Map();
+        shares.set(side, out);
+    }
+    return out;
+}
+/** The shares kept for one axis of a side, by narrowing: null for a narrowing that is not a plain name, never kept. */
+function axisShares(byAxis, effectType, category) {
+    if (typeof category !== 'string') return null;
+    let out = byAxis.get(effectType);
+    if (!out) {
+        out = new Map();
+        byAxis.set(effectType, out);
+    }
+    return out;
+}
+function scopeShare(byAxis, scope, effectType, category) {
+    const kept = axisShares(byAxis, effectType, category);
+    let out = kept?.get(category);
+    if (!out) {
+        const used = new Set();
+        matchedFactors(scope, effectType, category, used);
+        out = {
+            flat: scope.agg.getFlat(effectType, category),
+            multipliers: scope.agg.collectMultipliers(effectType, category),
+            percentages: scope.agg.collectPercentages(effectType, category),
+            used: [...used]
+        };
+        kept?.set(category, out);
+    }
+    return out;
+}
+function heroShare(byAxis, contributing, effectType, category) {
+    const kept = axisShares(byAxis, effectType, category);
+    let out = kept?.get(category);
+    if (!out) {
+        out = heroBuckets(contributing, effectType, category);
+        kept?.set(category, out);
+    }
+    return out;
+}
+const NO_SHARE = Object.freeze({ flat: 0, multipliers: Object.freeze([]), percentages: Object.freeze([]), used: Object.freeze([]) });
+
+/**
  * One axis resolved across every scope at once, into one set of buckets (`TileModifiers.resolveAxis`):
  * the Token's tile, the guild-wide rules and the hero's own. `used` names the factors that moved it.
  */
 function makeResolver(tile, guild, hero) {
+    const contributing = contributingOf(hero);
+    const heroShares = sharesOf(hero);
+    const tileShares = sharesOf(tile);
+    const guildShares = sharesOf(guild);
     return (effectType, base, category = TARGET_CATEGORIES.ALL, { withHero = true } = {}) => {
-        const h = withHero ? heroBuckets(hero, effectType, category) : { flat: 0, multipliers: [], percentages: [], used: new Set() };
+        const h = withHero ? heroShare(heroShares, contributing, effectType, category) : NO_SHARE;
+        const t = scopeShare(tileShares, tile, effectType, category);
+        const g = scopeShare(guildShares, guild, effectType, category);
         const value = applyThreeBucket(base, {
-            flat: [tile.agg.getFlat(effectType, category), guild.agg.getFlat(effectType, category), h.flat],
-            multipliers: [...tile.agg.collectMultipliers(effectType, category), ...guild.agg.collectMultipliers(effectType, category), ...h.multipliers],
-            percentages: [...tile.agg.collectPercentages(effectType, category), ...guild.agg.collectPercentages(effectType, category), ...h.percentages]
+            flat: [t.flat, g.flat, h.flat],
+            multipliers: [...t.multipliers, ...g.multipliers, ...h.multipliers],
+            percentages: [...t.percentages, ...g.percentages, ...h.percentages]
         });
         const used = new Set(h.used);
-        matchedFactors(tile, effectType, category, used);
-        matchedFactors(guild, effectType, category, used);
+        for (const f of t.used) used.add(f);
+        for (const f of g.used) used.add(f);
         return { value, used };
     };
 }
@@ -615,8 +817,8 @@ function growSkillOf(book, typeId) {
 function growTime(book, typeId, baseMs, setup, guild, notes) {
     const def = book.token(typeId);
     if (!def) return { ms: baseMs, used: new Set() };
-    const tile = tileScope(tileRules(book, def, setup, { carries: new Set() }, notes).modifiers);
-    const resolve = makeResolver(tile, guild, { statements: [], live: [] });
+    const tile = tileOf(book, def, setup, NO_HERO, notes).scope;
+    const resolve = makeResolver(tile, guild, NO_HERO);
     const { value, used } = resolve(EFFECT_TYPES.GROW_TIME, baseMs, growSkillOf(book, typeId), { withHero: false });
     return { ms: floorSpeedUp(baseMs, value), used };
 }
@@ -788,8 +990,8 @@ function spotLifecycle(book, def, cycleMs, setup, notes) {
  */
 function fieldLifecycle(book, def, recipe, cycleMs, setup, guild, notes, skill) {
     const terms = cropTermsOf(recipe);
-    const tile = tileScope(tileRules(book, def, setup, { carries: new Set() }, notes).modifiers);
-    const resolve = makeResolver(tile, guild, { statements: [], live: [] });
+    const tile = tileOf(book, def, setup, NO_HERO, notes).scope;
+    const resolve = makeResolver(tile, guild, NO_HERO);
     const load = resolve(EFFECT_TYPES.CROP_LOAD, terms.load, skill || TARGET_CATEGORIES.ALL, { withHero: false });
     const cycles = Math.max(1, Number(load.value) || 1);
     const grown = resolve(EFFECT_TYPES.GROW_TIME, terms.growMs, growSkillOf(book, def.id), { withHero: false });
@@ -848,8 +1050,8 @@ function expectedYield(output, resolve, skill) {
  * gates, and the resolver over every scope. `refused` holds the answer instead when the work cannot be
  * rated (no such Token, a kind the calculator does not model, no cycle time).
  */
-function prepare(book, target, setup) {
-    const notes = { unmodelled: [], assumptions: [] };
+function prepare(book, target, setup, light = false) {
+    const notes = light ? NO_NOTES : { unmodelled: [], assumptions: [] };
     const refuse = (reason, unmodelled = []) => ({ refused: { ok: false, reason, target, unmodelled, assumptions: [] } });
     const def = book.token(target.token);
     if (!def) return refuse('no such Token');
@@ -906,11 +1108,10 @@ function prepare(book, target, setup) {
         }
         baseCycleMs = fishing.cycleMs;
     }
-    const hero = heroRules(book, gates.skill, setup, gates, notes);
-    const reaching = tileRules(book, def, setup, hero, notes);
-    const tile = tileScope(reaching.modifiers);
-    const guild = guildScope(book, setup);
-    const resolve = makeResolver(tile, guild, hero);
+    const hero = heroOf(book, gates, setup, notes);
+    const reaching = tileOf(book, def, setup, hero, notes);
+    const guild = guildOf(book, setup);
+    const resolve = makeResolver(reaching.scope, guild, hero);
     return { def, recipe, kind: kind.kind, pool, fishing, io, baseCycleMs, gates, hero, tileGrants: reaching.grants, guild, resolve, notes };
 }
 
@@ -1028,7 +1229,7 @@ function passiveRate(book, def, setup) {
         if (text(line?.itemId) && q > 0) perLap[line.itemId] = (perLap[line.itemId] || 0) + q;
     }
     const factors = [{ id: `${FACTOR.SELF}:${def.id}`, kind: FACTOR.SELF, name: def.name || def.id, on: true, axes: [] }];
-    const guild = guildScope(book, setup);
+    const guild = guildOf(book, setup);
     const lapBy = new Set();
     matchedFactors(guild, EFFECT_TYPES.PASSIVE_LAP, TARGET_CATEGORIES.ALL, lapBy);
     const lapMs = passiveLapMs(guild.agg.resolveAxis(EFFECT_TYPES.PASSIVE_LAP, PASSIVE_LAP_BASE_MS));
@@ -1088,19 +1289,24 @@ export function axisResolverOf(book, target, setup = {}) {
  *     rules reach the work, its lines pay at the Hall)
  *   - `heroes`: how many heroes work it (default 1; only a family can take more than one)
  *   - `off`: factor ids or kinds switched off (`support:token_copper_mine`, `consumable`, …)
+ * @param {boolean} [light]  only the numbers a choice weighs: `{ ok, items, inputs, xp }`, as the
+ *   whole rate has them (`book.numbersOf`)
  * @returns {object} the rate, its factors and what it could not read
  */
-function rateOf(book, target = {}, setup = {}) {
+function rateOf(book, target = {}, setup = {}, light = false) {
     const passiveDef = book.token(target.token);
-    if (passiveDef && !text(target.recipe) && workKindOf(passiveDef, null).kind === WORK.PASSIVE) return passiveRate(book, passiveDef, setup);
-    const prepared = prepare(book, target, setup);
+    if (passiveDef && !text(target.recipe) && workKindOf(passiveDef, null).kind === WORK.PASSIVE) {
+        const r = passiveRate(book, passiveDef, setup);
+        return light ? { ok: r.ok, items: r.items, inputs: r.inputs, xp: r.xp } : r;
+    }
+    const prepared = prepare(book, target, setup, light);
     if (prepared.refused) return prepared.refused;
     const { def, recipe, kind, pool, fishing, baseCycleMs, gates, hero, tileGrants, guild, resolve, notes } = prepared;
     const io = { ...prepared.io };
     const skill = gates.skill;
     const category = skill || TARGET_CATEGORIES.ALL;
     const usedBy = new Map();
-    const note = (axis, used) => {
+    const note = light ? () => {} : (axis, used) => {
         for (const f of used) {
             if (!usedBy.has(f)) usedBy.set(f, new Set());
             usedBy.get(f).add(axis);
@@ -1224,10 +1430,16 @@ function rateOf(book, target = {}, setup = {}) {
     const cyclesPerHour = Math.min(heroPerHour, supplyPerHour);
     const limitedBy = heroPerHour <= supplyPerHour ? LIMIT.HERO : LIMIT.SUPPLY;
 
-    const perHour = (map) => Object.fromEntries(Object.entries(map).map(([k, v]) => [k, v * cyclesPerHour]));
+    const perHour = (map) => {
+        const out = {};
+        for (const k in map) out[k] = map[k] * cyclesPerHour;
+        return out;
+    };
     // A regrowth's cost (a stump's seedling) or a crop's seed is paid once a life, and a life is `cycles` cycles.
     const inputs = perHour(inputsPerCycle);
     for (const c of life.costs || []) inputs[c.itemId] = (inputs[c.itemId] || 0) + c.perLife * cyclesPerHour / life.cycles;
+    const xp = skill ? { [skill]: xpPerCycle * cyclesPerHour } : {};
+    if (light) return { ok: gates.ok, items: perHour(perCycle), inputs, xp };
 
     // Coins a cycle: a kill's Coin drop, raised by Coin Find in reach and dropped in whole coins
     // (`CoinDrops.killCoins`), less what a build pays for its Foundation's coins at the Shop.
@@ -1266,7 +1478,7 @@ function rateOf(book, target = {}, setup = {}) {
         tokens: perHour(tokensPerCycle),
         inputs,
         xpPerCycle,
-        xp: skill ? { [skill]: xpPerCycle * cyclesPerHour } : {},
+        xp,
         ...coins,
         factors: factorList(book, def, setup, hero, usedBy),
         unmodelled: dedupe(notes.unmodelled),

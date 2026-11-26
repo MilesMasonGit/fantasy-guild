@@ -222,8 +222,16 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
         AMBIENT.has(s?.keyword) && !s?.when?.event && WORK_AXES.has(s.payload?.type));
     const gear = withEffects.filter(def => !isSpentCategory(def.equipSlot) && !toolOf(def) && worksOnWork(def));
     const tools = items.filter(def => toolOf(def));
-    const tokenTier = (id) => tierOf(`token:${id}`);
-    const itemTier = (id) => tierOf(`item:${id}`);
+    const tiers = { token: new Map(), item: new Map() };
+    const tierBy = (kind, id) => {
+        const kept = tiers[kind];
+        if (kept.has(id)) return kept.get(id);
+        const tier = tierOf(`${kind}:${id}`);
+        kept.set(id, tier);
+        return tier;
+    };
+    const tokenTier = (id) => tierBy('token', id);
+    const itemTier = (id) => tierBy('item', id);
     const within = (tier, cap) => Number.isInteger(tier) && tier <= cap;
     const tracks = hallTracksOf(book);
     const trackById = new Map(tracks.map(t => [t.id, t]));
@@ -464,7 +472,9 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
         busy.add(key);
         const bare = bareSetup(ctx, cap, level);
         let setup = bare;
-        let rate = book.rateOf(target, setup);
+        // Each setup weighed is rated for its numbers alone (`numbersOf`); the one chosen is rated in full at the end.
+        let rate = profile === PROFILE.BARE ? book.rateOf(target, setup) : book.numbersOf(target, setup);
+        let full = profile === PROFILE.BARE ? rate : null;
         let chosen = [];
         if (profile !== PROFILE.BARE && rate.ok) {
             const baseXp = Object.values(rate.xp || {}).reduce((a, b) => a + b, 0);
@@ -473,13 +483,14 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
                 const typical = profileOf(target, PROFILE.TYPICAL, cap, level);
                 setup = typical.setup;
                 rate = typical.rate;
+                full = typical.rate;
                 chosen = [...typical.chosen];
                 // Then every boost that lifts the rate whatever it costs, the best of each one-slot kind (a drink, a tool, a hat),
                 // then every Hall rank in rank order (a rank waits for the one before it), each fed as the guild feeds Typical.
                 const value = (r) => valueOf(r, cap, baseXp, { gross: true, profile });
                 const taken = new Set(chosen.map(c => c.id));
                 const ranked = pool.filter(o => !taken.has(o.id) && o.kind !== BOOST_KIND.HALL).map(o => {
-                    const r = book.rateOf(target, o.apply(setup));
+                    const r = book.numbersOf(target, o.apply(setup));
                     return { o, gain: value(r) - value(rate) };
                 }).filter(x => x.gain > 1e-9).sort((x, y) => y.gain - x.gain);
                 const hallOffers = pool.filter(o => !taken.has(o.id) && o.kind === BOOST_KIND.HALL).sort((x, y) => x.rank - y.rank);
@@ -487,10 +498,11 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
                     if (slotFull(chosen, o)) continue;
                     const step = o.kind === BOOST_KIND.HALL ? hallStep(setup, o, cap) : { next: o.apply(setup), path: [] };
                     if (!step) continue;
-                    const r = book.rateOf(target, step.next);
+                    const r = book.numbersOf(target, step.next);
                     if (!(value(r) - value(rate) > 1e-9)) continue;
                     setup = step.next;
                     rate = r;
+                    full = null;
                     chosen.push({ kind: o.kind, id: o.id, factor: o.factor, slot: o.slot ?? null, ...hallPick(o, step) });
                 }
             } else {
@@ -515,13 +527,13 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
                             step = hallStep(setup, o, cap);
                             if (!step) continue;
                             next = step.next;
-                            r = book.rateOf(target, next);
+                            r = book.numbersOf(target, next);
                             gain = hallSaves(ctx, rate, r, cap, baseXp, profile);
                             price = step.price;
                             if (gain > 1e-9) weighed.add(o.upgrade);
                         } else {
                             next = o.apply(setup);
-                            r = book.rateOf(target, next);
+                            r = book.numbersOf(target, next);
                             gain = value(r) - before;
                             // Drunk as it is used, a consumable's cost is already in the rate's inputs: any gain pays at once.
                             price = o.oneOff ? priceOf(o, cap) : 0;
@@ -540,7 +552,7 @@ export function buildProfiles(book, { tierOf, unitHours, costHours, horizonHours
             }
         }
         busy.delete(key);
-        const out = { setup, rate, chosen, context: ctx };
+        const out = { setup, rate: full ?? book.rateOf(target, setup), chosen, context: ctx };
         memo.set(key, out);
         return out;
     }
