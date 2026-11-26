@@ -1,0 +1,94 @@
+{
+  "format": "fantasy-guild-change-pack",
+  "version": 1,
+  "id": "2026-11-25-building-signature-perks",
+  "createdAt": "2026-11-25T19:00:00Z",
+  "asked": "The Construction signature perks: Salvage at 75 and Master Builder at 99 (concept_milestone_perks.md, owner 2026-11-21; rules built by brief 800 P4). Many Hands (Crafting 99, P3) is not built yet and has no effect here.",
+  "entries": [
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_salvage",
+      "value": {
+        "name": "Salvage",
+        "statements": [
+          {
+            "id": "stm_salvage",
+            "keyword": "provides",
+            "payload": {
+              "type": "SALVAGE",
+              "bucket": "flat",
+              "value": 50
+            },
+            "chargeDelta": 0,
+            "to": {
+              "mode": "all",
+              "value": ""
+            },
+            "target": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true
+      },
+      "note": "Construction 75: a Token this hero demolishes gives back half of what it cost, as loot where it stood (Salvage 50%; a starting number for the content agent to set with the ledger, at most 100)"
+    },
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_master_builder",
+      "value": {
+        "name": "Master Builder",
+        "statements": [
+          {
+            "id": "stm_master_builder",
+            "keyword": "provides",
+            "payload": {
+              "type": "BUILD_DISCOUNT",
+              "bucket": "flat",
+              "value": 20
+            },
+            "chargeDelta": 0,
+            "to": {
+              "mode": "all",
+              "value": ""
+            },
+            "target": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true
+      },
+      "note": "Construction 99: Foundations and their builds cost 20% less while this hero is in the guild (Build Discount 20%; the guild's best holder counts, at most 50%; a starting number for the content agent)"
+    },
+    {
+      "op": "edit",
+      "kind": "skillPerks",
+      "id": "construction",
+      "value": {
+        "id": "construction",
+        "perks": [
+          {
+            "level": 10,
+            "effectId": "effect_quick_builder",
+            "scale": 1
+          },
+          {
+            "level": 75,
+            "effectId": "effect_salvage",
+            "scale": 1
+          },
+          {
+            "level": 99,
+            "effectId": "effect_master_builder",
+            "scale": 1
+          }
+        ]
+      },
+      "note": "Construction's table as data/ holds it at d40d513a, plus Salvage at 75 and Master Builder at 99. Re-stamp against the live workspace, and fold into the content agent's T-522 tables if those land first.",
+      "fingerprint": "fp:d5f66ccb2ce5cded"
+    }
+  ]
+}

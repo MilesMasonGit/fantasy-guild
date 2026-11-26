@@ -116,6 +116,14 @@ export const EFFECT_TYPES = {
     // Coin Find: a percentage on the coins an enemy defeated in reach drops, and on the coins a
     // Hideout in reach steals. A building's only: no Guild Hall star touches coins — CoinDrops.
     COIN_FIND: 'COIN_FIND',
+    // Salvage (the Construction 75 perk): the percent of what a Token cost that comes back, as loot
+    // where it stood, when a hero holding it demolishes it. Read off the demolisher (their gear,
+    // perks and lingering effects) and the guild's stars, never a Token — BuildPrices.salvageOf.
+    SALVAGE: 'SALVAGE',
+    // Build Discount (the Master Builder perk, Construction 99): percent off a Foundation's Shop price
+    // and off the materials of a build on a Foundation, while a hero holding it is in the guild. The
+    // guild's best holder counts, never the sum — BuildPrices.buildDiscount.
+    BUILD_DISCOUNT: 'BUILD_DISCOUNT',
 
     // Faith's blessings, the effects no building gives (owner, 2026-11-25), carried by a shrine.
     // Can't Run Out (also the Motherlode perk): a chance a work cycle at a Token it reaches spends none

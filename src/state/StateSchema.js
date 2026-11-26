@@ -226,6 +226,8 @@ export const INITIAL_STATE = {
     //               + origin 'placed'|'spawned' (absent reads as placed), clocks? { growMs, spawnMs, ... },
     //                 fixture? true on a node a map wrote, fixture? 'camp' on a Token the Starter Camp laid (`BoardState.isFixture`),
     //                 demolish? true on a Token marked for demolition (`Demolition.js`; its progress is cycleElapsedMs),
+    //                 paid? { items: [{ itemId, quantity }], coins } what the guild paid for it: its Shop price as bought, a building's
+    //                 Foundation and build materials as paid; a refund gives it back, Salvage a share of it (`BuildPrices.js`),
     //                 field? { cropId?, load?, full?, seedOwed? } on a Field: the crop in its ground, the harvests left, the seed its first harvest still owes (`Fields.js`; its growth on clocks.fieldMs)
     //                 fightHp? { current, heroId?, restMs?, leftAt? } on a hurt enemy: its health (`BoardCombat.keepHp`); heroId while its fight is live (a reload goes on with that hero),
     //                 restMs the part second of healing out of a fight, leftAt (on a frozen Region's board) when the guild left, so the rest it missed is played on return; absent is whole

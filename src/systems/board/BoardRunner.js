@@ -447,7 +447,12 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         setAlert(instance,ALERT.INPUTS);
         return;
     }
-    const pay = () => InputAllocator.consumeInputs(InputCost.rolledInputs(costed));
+    // What was paid, kept for a build: the building remembers what its materials cost.
+    let paid = [];
+    const pay = () => {
+        paid = InputCost.rolledInputs(costed);
+        InputAllocator.consumeInputs(paid);
+    };
     if (!(keepChance > 0)) pay();
 
     instance.cycleElapsedMs = 0;
@@ -604,7 +609,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // failed cycle.
     if (buildTypeId && !failed) {
         const fromTypeId = instance.typeId;
-        const built = Foundations.buildInPlace(instance, buildTypeId);
+        const built = Foundations.buildInPlace(instance, buildTypeId, paid);
         if (built) {
             noteTokenBuilt(buildTypeId);
             EventBus.publish(BOARD_EVENTS.TOKEN_BUILT, {

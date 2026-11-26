@@ -15,6 +15,7 @@ import * as MatCap from './MatCap.js';
 import * as Placement from './Placement.js';
 import * as Foundations from './Foundations.js';
 import * as Landmarks from './Landmarks.js';
+import * as BuildPrices from './BuildPrices.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { getCoins, addCoins, spendCoins } from '../inventory/Coins.js';
 import { shopCoinsOf, COIN_ITEM_ID } from '../../config/registries/coinCosts.js';
@@ -65,14 +66,27 @@ export function shopOrderOf(typeId) {
     return Number.isFinite(order) ? order : Infinity;
 }
 
-/** A Token's price, merged per item: `[{ itemId, quantity }]`. */
-export function priceOf(typeId) {
+/** A Token's price as authored, merged per item: `[{ itemId, quantity }]`. */
+export function listPriceOf(typeId) {
     return totalPrice(shopBlockOf(typeId)?.price || []);
 }
 
-/** The coins a Token's price asks beside its items (0: none). */
-export function coinPriceOf(typeId) {
+/** The coins a Token's price asks beside its items as authored (0: none). */
+export function listCoinsOf(typeId) {
     return shopBlockOf(typeId) ? shopCoinsOf(getTokenType(typeId)) : 0;
+}
+
+/**
+ * A Token's price now, merged per item: `[{ itemId, quantity }]`. A Foundation's comes down by the
+ * guild's Build Discount (Master Builder, `BuildPrices.shopLines`).
+ */
+export function priceOf(typeId) {
+    return BuildPrices.shopLines(getTokenType(typeId), listPriceOf(typeId));
+}
+
+/** The coins a Token's price asks beside its items now (0: none), a Foundation's with the Build Discount off. */
+export function coinPriceOf(typeId) {
+    return BuildPrices.shopCoins(getTokenType(typeId), listCoinsOf(typeId));
 }
 
 /** The heading a section is shown under: the skill's name, or "General". */
@@ -190,6 +204,8 @@ function purchase(typeId, place) {
         return refuse('Not enough items');
     }
     spendCoins(coins);
+    // What it cost, kept on it: what a refund gives back and Salvage a share of.
+    BuildPrices.recordPaid(instance, price, coins);
 
     EventBus.publish(ENGINE_EVENTS.TOKEN_PURCHASED, { typeId, instanceId: instance.id, price, coins });
     logger.info('Shop', `Bought ${tokenName(typeId)}`);
@@ -222,10 +238,12 @@ export function canRefund(instanceId) {
 }
 
 /**
- * Take an unbuilt Foundation off the mat and give its whole Shop price back, its coins too ({@link canRefund}
- * says which). A build in progress is simply stopped: a cycle takes its inputs only when it
- * completes, so nothing of the build was ever paid. The Token leaves the mat by the one removal
- * path (`Placement.removePlacedToken`), so a hero working it lets go as when any Token leaves.
+ * Take an unbuilt Foundation off the mat and give back what it was bought for, its coins too ({@link canRefund}
+ * says which): the price it paid as kept on it (a Build Discount then counted), or for one bought
+ * before that was kept, its price as authored. A build in progress is simply stopped: a cycle takes
+ * its inputs only when it completes, so nothing of the build was ever paid. The Token leaves the
+ * mat by the one removal path (`Placement.removePlacedToken`), so a hero working it lets go as when
+ * any Token leaves.
  *
  * The price goes in through `InventoryManager.addItem`: what the Bank has no room for waits on the
  * floor as loot, as all income does.
@@ -238,8 +256,9 @@ export function refund(instanceId) {
     const instance = BoardState.getTokenById(instanceId);
     const { typeId } = instance;
     const at = { x: instance.x, y: instance.y };
-    const price = priceOf(typeId);
-    const coins = coinPriceOf(typeId);
+    const paid = BuildPrices.paidOf(instance);
+    const price = paid ? paid.items : listPriceOf(typeId);
+    const coins = paid ? paid.coins : listCoinsOf(typeId);
 
     const removed = Placement.removePlacedToken(instanceId);
     if (!removed?.success) return refuse(removed?.reason || 'It cannot leave the mat');
@@ -255,8 +274,8 @@ export function refund(instanceId) {
     return { success: true, typeId, price, coins, heroId };
 }
 
-/** Total quantity of a price, used to order a group cheapest first. */
-const priceWeight = (typeId) => priceOf(typeId).reduce((n, l) => n + l.quantity, 0);
+/** Total quantity of a price as authored, used to order a group cheapest first. */
+const priceWeight = (typeId) => listPriceOf(typeId).reduce((n, l) => n + l.quantity, 0);
 
 /** A group member's Foundation tier, or 0 for a Token that is not a Foundation. */
 const tierWeight = (typeId) => {

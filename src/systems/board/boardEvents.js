@@ -165,7 +165,7 @@ export const BOARD_EVENTS = {
      * A hero finished demolishing a marked Token and it left the board, or an event Token was
      * demolished at once (`Demolition.js`). Payload: `{ instanceId, typeId, x, y, heroId, event? }`,
      * `event` the event Token's `instance.event`. ⚠️ Never with `TOKEN_DEPLETED`: nothing ran out,
-     * and nothing is refunded or dropped.
+     * and nothing is refunded or dropped, but for its hero's Salvage, landed as loot after it.
      */
     TOKEN_DEMOLISHED: 'board:token_demolished',
 
