@@ -10,10 +10,9 @@ import { describe, it, expect } from 'vitest';
 
 import {
     runXpPass, xphAt, purposeXpFactor, xpPerCycle, hoursToMastery,
-    buildProjection, hoursForGold,
+    buildProjection, hoursForGold, PRINTED_XPH_PINS,
 } from '../../cms/src/engine/sim/xpPass.js';
-import { normaliseDials } from '../../cms/src/engine/sim/dials.js';
-import { PURPOSE_TILT } from '../../cms/src/engine/balanceRules.js';
+import { normaliseDials, XPH_PINS, PURPOSE_XP_FACTORS } from '../../cms/src/engine/sim/dials.js';
 import { runSim } from '../../cms/src/engine/sim/simRunner.js';
 import { adaptCorpus } from '../../cms/src/engine/sim/fieldAdapter.js';
 import { applyTokenResults, applyRecipePoolResults } from '../../cms/src/engine/sim/writeBack.js';
@@ -25,8 +24,8 @@ import itemData from '../../data/items.json';
 
 const DIALS = normaliseDials();
 
-/** BALANCE_RULES section 1: 1,660 XP an hour at level 1, doubling every 20 levels. */
-const stated = (level) => 1660 * 2 ** ((level - 1) / 20);
+/** The plan's stated mechanism: 7.5% compounding per level from 700 at level 1. */
+const stated = (level) => 700 * Math.pow(1.075, level - 1);
 
 /** A minimal adapted-entity shape, so no test needs a shipped record. */
 function fixtureEntity(overrides = {}) {
@@ -44,22 +43,42 @@ function fixtureEntity(overrides = {}) {
     };
 }
 
-// === The rules' curve =======================================================
+// === §13.2's curve ===========================================================
 
-describe('the XP curve (BALANCE_RULES section 1)', () => {
-    it('is the rule at every level', () => {
-        for (let level = 1; level <= 99; level++) {
-            expect(xphAt(level, DIALS)).toBeCloseTo(stated(level), 6);
+describe('the XPH curve (plan §13.2)', () => {
+    it('reproduces every printed pin exactly', () => {
+        for (const [level, value] of Object.entries(PRINTED_XPH_PINS)) {
+            expect(xphAt(Number(level), DIALS)).toBe(value);
         }
     });
 
-    it('doubles every 20 levels', () => {
-        for (let level = 1; level + 20 <= 99; level++) {
-            expect(xphAt(level + 20, DIALS) / xphAt(level, DIALS)).toBeCloseTo(2, 9);
+    it('reconciles every printed pin with 7.5%/level compounding from 700', () => {
+        // The reconciliation the plan asks for, done as an assertion rather than
+        // as a note: mechanism and printed table must be one curve, not two.
+        for (const [level, value] of Object.entries(PRINTED_XPH_PINS)) {
+            const drift = Math.abs(value / stated(Number(level)) - 1);
+            expect(drift).toBeLessThan(0.01);
         }
     });
 
-    it('is flat below level 1 and above 99', () => {
+    it('grows at close to 7.5% per level across every stored segment', () => {
+        const levels = Object.keys(XPH_PINS).map(Number).sort((a, b) => a - b);
+        for (let i = 1; i < levels.length; i++) {
+            const span = levels[i] - levels[i - 1];
+            const rate = Math.pow(XPH_PINS[levels[i]] / XPH_PINS[levels[i - 1]], 1 / span) - 1;
+            expect(rate).toBeGreaterThan(0.07);
+            expect(rate).toBeLessThan(0.08);
+        }
+    });
+
+    it('interpolates in a straight line between pins, like the gold curve', () => {
+        const pins = { 10: 1000, 20: 3000 };
+        const dials = { ...DIALS, xphPins: pins };
+        expect(xphAt(15, dials)).toBe(2000);   // the midpoint, not the geometric mean
+        expect(xphAt(12, dials)).toBe(1400);
+    });
+
+    it('is flat below the first pin and above the last', () => {
         expect(xphAt(0, DIALS)).toBe(xphAt(1, DIALS));
         expect(xphAt(-5, DIALS)).toBe(xphAt(1, DIALS));
         expect(xphAt(200, DIALS)).toBe(xphAt(99, DIALS));
@@ -78,26 +97,26 @@ describe('xp per cycle (plan §8)', () => {
     it('is curve × purpose factor × cycle hours, rounded', () => {
         const level = 60;
         const cycleTimeMs = 60_000; // one minute
-        const expected = Math.round(xphAt(level, DIALS) * PURPOSE_TILT.xph.xp * (1 / 60));
+        const expected = Math.round(xphAt(level, DIALS) * PURPOSE_XP_FACTORS.xph * (1 / 60));
         expect(xpPerCycle(level, 'xph', cycleTimeMs, DIALS)).toBe(expected);
     });
 
     it('scales linearly with cycle length', () => {
         const short = xpPerCycle(60, 'xph', 30_000, DIALS);
         const long = xpPerCycle(60, 'xph', 60_000, DIALS);
-        // Each is rounded on its own, so the two may differ by the one XP rounding can add.
-        expect(Math.abs(long - 2 * short)).toBeLessThanOrEqual(1);
+        expect(long).toBe(2 * short);
     });
 });
 
 describe('the Purpose seesaw', () => {
-    it('trains an XPH source 3× a GPH source at the same level and cycle', () => {
-        // The tilt is 1.5 / 1 / 0.5, so XPH ÷ GPH is 3 before rounding.
+    it('trains an XPH source about 3× a GPH source at the same level and cycle', () => {
+        // The factors are 1.0 / 0.5 / 0.3, so XPH ÷ GPH is 3⅓ before rounding.
         const level = 70;
         const cycleTimeMs = 120_000; // long enough that rounding is negligible
         const xph = xpPerCycle(level, 'xph', cycleTimeMs, DIALS);
         const gph = xpPerCycle(level, 'gph', cycleTimeMs, DIALS);
-        expect(xph / gph).toBeCloseTo(3, 2);
+        expect(xph / gph).toBeGreaterThan(3);
+        expect(xph / gph).toBeLessThan(3.5);
     });
 
     it('orders the three tags XPH > IPH > GPH, the mirror of the gold factors', () => {
@@ -124,12 +143,12 @@ describe('the min-1 floor, and F8’s accepted granularity wobble', () => {
 
     it('over-teaches a fast, gold-tagged, low-level source — expected, not a bug', () => {
         // F8, stated as an assertion so nobody later reads it off the data and
-        // files it as a defect. A 2s cycle at level 1 on the GPH tag is priced
+        // files it as a defect. A 10s cycle at level 1 on the GPH tag is priced
         // by the curve at well under one XP, rounds up to 1, and therefore
         // delivers roughly double the curve's hourly target. Accepted: those
         // levels pass in minutes, and closing the gap would mean running XP
         // through the lever machinery for precision worth nothing.
-        const cycleTimeMs = 2_000;
+        const cycleTimeMs = 10_000;
         const awarded = xpPerCycle(1, 'gph', cycleTimeMs, DIALS);
         const target = xphAt(1, DIALS) * purposeXpFactor('gph', DIALS);
         const delivered = awarded * (3600000 / cycleTimeMs);
@@ -158,7 +177,7 @@ describe('the min-1 floor, and F8’s accepted granularity wobble', () => {
     it('files an Info row naming the wobble, rather than leaving it silent', () => {
         const entity = fixtureEntity({ level: 1, purpose: 'gph' });
         const { rows } = runXpPass([entity], {
-            cycleTimes: new Map([[entity.id, 2_000]]),
+            cycleTimes: new Map([[entity.id, 10_000]]),
             dials: DIALS,
         });
         const wobble = rows.filter((r) => r.code === 'xp-granularity');
@@ -228,12 +247,10 @@ describe('the non-finite guard (the P7 lesson, applied ahead of time)', () => {
 // === The mastery integration =================================================
 
 describe('the mastery check (plan §13.2)', () => {
-    it('reads the rules’ XP an hour against the game’s threshold table: about 411 board-hours of new work', () => {
-        // ⚠️ The game still has the old threshold table (about 13 million XP to 99); BALANCE_RULES'
-        // own table (about 9.4 million) waits on a game change, so this is not the rules' 12.6 days.
+    it('takes one focused skill 1→99 inside the 50–60 board-hour band', () => {
         const hours = hoursToMastery(DIALS);
-        expect(hours).toBeGreaterThan(400);
-        expect(hours).toBeLessThan(420);
+        expect(hours).toBeGreaterThanOrEqual(50);
+        expect(hours).toBeLessThanOrEqual(60);
     });
 
     it('integrates against the game’s own threshold curve, not a copy of it', () => {
@@ -246,7 +263,7 @@ describe('the mastery check (plan §13.2)', () => {
         expect(hoursToMastery(DIALS)).toBeCloseTo(hours, 6);
     });
 
-    it('is classically back-loaded: the last ten levels are well over a third of the climb', () => {
+    it('is classically back-loaded: the last ten levels are a quarter to a third of the climb', () => {
         const segment = (from, to) => {
             let hours = 0;
             for (let level = from; level < to; level++) {
@@ -258,8 +275,8 @@ describe('the mastery check (plan §13.2)', () => {
         const lastTen = segment(89, 99);
         const firstTwenty = segment(1, 20);
 
-        expect(lastTen / total).toBeGreaterThan(0.35);
-        expect(lastTen / total).toBeLessThan(0.6);
+        expect(lastTen / total).toBeGreaterThan(0.20);
+        expect(lastTen / total).toBeLessThan(0.35);
         // Early levels are minutes, not hours — the other half of "back-loaded".
         expect(firstTwenty).toBeLessThan(5);
         // And every single one of the last ten costs over half an hour.
@@ -268,9 +285,12 @@ describe('the mastery check (plan §13.2)', () => {
         }
     });
 
-    it('does not move for an XP pin a stored dial set still carries', () => {
-        const pins = { 1: 700, 99: 837000 };
-        expect(hoursToMastery(normaliseDials({ xphPins: pins }))).toBe(hoursToMastery(DIALS));
+    it('moves when a pin moves, so the read-out is not decorative', () => {
+        const doubled = Object.fromEntries(
+            Object.entries(XPH_PINS).map(([level, value]) => [level, value * 2])
+        );
+        const faster = hoursToMastery(normaliseDials({ xphPins: doubled }));
+        expect(faster).toBeCloseTo(hoursToMastery(DIALS) / 2, 5);
     });
 });
 

@@ -1,6 +1,6 @@
 /**
  * Economic simulator: the check pass. It derives nothing: it reads the settled line and says out loud what looks wrong, in two checks.
- * 1. The progression guard: the band ceiling at level L must sit below the band floor one tier up (L+20, where the balance rules' worth curve doubles), everywhere on the curve. It is aimed at the developer's band dials, not at content. It holds for anchor bands only, because the doubled non-anchor band overlaps at the seam. ⚠️ Ten levels of the rules' curve are only 1.41x, inside level 1's ±25 % band, so a ten-level stride would refuse the owner's own curve. The tail row below is for a curve that flattens past a bend, which the rules' curve does not.
+ * 1. The progression guard: the band ceiling at level L must sit below the band floor at level L+10, everywhere on the curve. It is aimed at the developer's dials, not at content. It holds for anchor bands only, because the doubled non-anchor band overlaps at the seam. ⚠️ It also fails by a fraction of a percent where the earn curve flattens past its bend, so the guard refuses only where the curve is still compounding and reports the flattened tail as one Info row.
  * 2. Charge scale, hours first: the panel shows lifetime in hours, with soft Info rows for outliers (a Common living over about a day, any Token living under about ten minutes). ⚠️ `entity.charges` is set by the adapter from `uses` (`liveCharges`), never from an authored `charges`.
  * Like every pass here it writes nothing: a caller gets rows and a Map.
  */
@@ -12,15 +12,23 @@ import { cyclesPerHour } from './tuningPass.js';
 import { makeRow, SEVERITY } from './rows.js';
 import { makeRefusal } from './refusals.js';
 
-/** The stride the guard compares over: one tier, the levels the worth curve takes to double. */
-export const GUARD_STRIDE = LEVELS_TO_DOUBLE;
+/** The stride criterion 4 is stated over: ten levels of progress. */
+export const GUARD_STRIDE = 10;
+
+/**
+ * The stride the guard walks: ten levels, or one tier (20 levels, where the balance rules' worth curve doubles) with the rulebook on.
+ * ⚠️ Ten levels of the rules' curve are only x1.41, inside level 1's ±25 % band, so a ten-level stride would refuse the owner's own curve.
+ */
+export function guardStride(dials = DEFAULT_DIALS) {
+    return dials?.rulebook === true ? LEVELS_TO_DOUBLE : GUARD_STRIDE;
+}
 
 /** The top of the skill range the guard walks. */
 export const GUARD_MAX_LEVEL = 99;
 
 /**
  * Where the earn curve stops compounding and flattens.
- * ⚠️ A pair reaching past this level is reported, never refused: a curve that flattens there cannot keep the ordering whatever anyone types. The rules' curve keeps doubling, so no pair overlaps there today.
+ * ⚠️ Above this level the ±10% band is wider than ten levels of growth, so the ordering cannot hold there whatever anyone types; pairs that reach past it are reported, never refused.
  */
 export const CURVE_FLATTENS_AT = 70;
 
@@ -40,11 +48,12 @@ export const SHORT_LIFETIME_HOURS = 10 / 60;
  */
 export function progressionGuardFindings(dials = DEFAULT_DIALS) {
     const violations = [];
-    for (let level = 1; level + GUARD_STRIDE <= GUARD_MAX_LEVEL; level++) {
-        const upper = level + GUARD_STRIDE;
+    const stride = guardStride(dials);
+    for (let level = 1; level + stride <= GUARD_MAX_LEVEL; level++) {
+        const upper = level + stride;
         // Anchor bands only: `toleranceFor` defaults to the anchor band, and the doubled non-anchor band is the accepted seam overlap.
-        const ceiling = gphAt(level) * (1 + toleranceFor(level, dials));
-        const floor = gphAt(upper) * (1 - toleranceFor(upper, dials));
+        const ceiling = gphAt(level, dials) * (1 + toleranceFor(level, dials));
+        const floor = gphAt(upper, dials) * (1 - toleranceFor(upper, dials));
         if (ceiling < floor) continue;
         violations.push({ level, upper, ceiling, floor, tail: upper > CURVE_FLATTENS_AT });
     }
@@ -66,8 +75,9 @@ export function progressionGuardRows(dials = DEFAULT_DIALS) {
         const worst = [...refusable].sort((a, b) => (b.ceiling - b.floor) - (a.ceiling - a.floor))[0];
         rows.push(makeRefusal('progression-guard', {
             what: `A level ${worst.level} source may earn up to ${g(worst.ceiling)}g/h, and a level ${worst.upper} source may earn as little as ${g(worst.floor)}g/h.`,
-            why: `A tier of progress (${GUARD_STRIDE} levels) is supposed to be worth more than the spread inside one level, and at these dials it is not — ${refusable.length === 1 ? 'one pair of levels overlaps' : `${refusable.length} pairs of levels overlap`}, so a player levelling up can end up earning less than they did before.`,
+            why: `${dials?.rulebook === true ? `A tier of progress (${guardStride(dials)} levels)` : 'Ten levels of progress'} is supposed to be worth more than the spread inside one level, and at these dials it is not — ${refusable.length === 1 ? 'one pair of levels overlaps' : `${refusable.length} pairs of levels overlap`}, so a player levelling up can end up earning less than they did before.`,
         }, {
+            rulebook: dials?.rulebook === true,
             detail: {
                 pairs: refusable.length,
                 worst: { level: worst.level, upper: worst.upper, ceiling: worst.ceiling, floor: worst.floor },
@@ -81,12 +91,12 @@ export function progressionGuardRows(dials = DEFAULT_DIALS) {
         rows.push(makeRow(
             SEVERITY.INFO,
             'progression-guard-tail',
-            `Above level ${CURVE_FLATTENS_AT} the earn curve flattens on purpose, and a tier of it no longer clears the tolerance band — ${tail.length} level pairs between ${first.level} and ${last.upper} overlap slightly. Named and accepted, not refused: it is the late-game compression the earn curve is designed around.`,
+            `Above level ${CURVE_FLATTENS_AT} the earn curve flattens on purpose, and ten levels of it no longer clear the tolerance band — ${tail.length} level pairs between ${first.level} and ${last.upper} overlap slightly. Named and accepted, not refused: it is the late-game compression the earn curve is designed around.`,
             {
                 remedies: [
                     'Nothing, if late levels are meant to be about efficiency rather than rate.',
                     'Narrow the top band width dial, if the overlap up here bothers you.',
-                    'Change the worth curve in the balance rules (section 7), if the curve should keep climbing to 99 (the owner decides it).',
+                    'Raise the late earn-curve pins, if the curve should keep climbing to 99.',
                 ],
                 detail: { pairs: tail.length, from: first.level, to: last.upper },
             }

@@ -29,15 +29,13 @@ import itemData from '../../data/items.json';
 
 const out = (itemId, over = {}) => ({ itemId, chance: 100, minQty: 1, maxQty: 1, ...over });
 
-// Balanced (IPH) by default: its tilt is 1, so a level-1 fixture's target is the worth curve's own 1,200 gold an hour.
-
-const token = (id, { level = 1, tempo = 'medium', purpose = 'iph', inputs = [], outputs = [out('item_x')] } = {}) => ({
+const token = (id, { level = 1, tempo = 'medium', purpose = 'gph', inputs = [], outputs = [out('item_x')] } = {}) => ({
     id, name: id, rarity: 'common', tokenType: 'resource', uses: 10,
     config: { skill: 'forestry', skillRequired: level, cycleTimeMs: 10000, inputs, outputs },
     sim: { tempo, purpose },
 });
 
-const recipe = (id, { level = 1, tempo = 'medium', purpose = 'iph', inputs = [], outputs = [out('item_x')] } = {}) => ({
+const recipe = (id, { level = 1, tempo = 'medium', purpose = 'gph', inputs = [], outputs = [out('item_x')] } = {}) => ({
     id, name: id, skill: 'crafting', levelRequirement: level, durationMs: 10000,
     inputs, outputs, sim: { tempo, purpose },
 });

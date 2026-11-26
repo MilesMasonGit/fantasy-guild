@@ -10,7 +10,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import {
     progressionGuardFindings, progressionGuardRows, runCheckPass, lifetimeOf, formatHours,
-    GUARD_STRIDE, LONG_LIFETIME_HOURS, SHORT_LIFETIME_HOURS,
+    CURVE_FLATTENS_AT, GUARD_STRIDE, LONG_LIFETIME_HOURS, SHORT_LIFETIME_HOURS,
 } from '../../cms/src/engine/sim/checkPass';
 import { DEFAULT_DIALS, normaliseDials, gphAt, toleranceFor } from '../../cms/src/engine/sim/dials';
 import { adaptCorpus } from '../../cms/src/engine/sim/fieldAdapter';
@@ -21,34 +21,47 @@ import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 // ── The progression guard ────────────────────────────────────────────────────
 
 describe('The progression guard (§13.5, F1)', () => {
-    it('holds one tier up on the rules\' worth curve, at anchor bands only', () => {
-        // Level 10's anchor ceiling against level 30's anchor floor, a tier (20 levels) up.
-        const ceiling10 = gphAt(10) * (1 + toleranceFor(10, DEFAULT_DIALS));
-        const floor30 = gphAt(30) * (1 - toleranceFor(30, DEFAULT_DIALS));
-        expect(Math.round(ceiling10)).toBe(2049);
-        expect(Math.round(floor30)).toBe(2787);
-        expect(ceiling10).toBeLessThan(floor30);
+    it('verifies the plan\'s two worked numbers against the shipped curve', () => {
+        // §13.5: "anchors at level 10 top out at ~2,875 while anchors at 20
+        // bottom at ~4,040 — clean."
+        const ceiling10 = gphAt(10, DEFAULT_DIALS) * (1 + toleranceFor(10, DEFAULT_DIALS));
+        const floor20 = gphAt(20, DEFAULT_DIALS) * (1 - toleranceFor(20, DEFAULT_DIALS));
+        expect(Math.round(ceiling10)).toBe(2875);
+        expect(Math.round(floor20)).toBe(4038);
+        expect(ceiling10).toBeLessThan(floor20);
 
-        // The DOUBLED non-anchor band does overlap there, which is why the guard checks anchor bands only.
-        const nonAnchorCeiling10 = gphAt(10) * (1 + toleranceFor(10, DEFAULT_DIALS, { isAnchor: false }));
-        const nonAnchorFloor30 = gphAt(30) * (1 - toleranceFor(30, DEFAULT_DIALS, { isAnchor: false }));
-        expect(nonAnchorCeiling10).toBeGreaterThan(nonAnchorFloor30);
+        // And F1's correction: the DOUBLED non-anchor band does overlap there.
+        // The guard checks anchor bands only precisely because of this.
+        const nonAnchorCeiling10 = gphAt(10, DEFAULT_DIALS) * (1 + toleranceFor(10, DEFAULT_DIALS, { isAnchor: false }));
+        const nonAnchorFloor20 = gphAt(20, DEFAULT_DIALS) * (1 - toleranceFor(20, DEFAULT_DIALS, { isAnchor: false }));
+        expect(Math.round(nonAnchorCeiling10)).toBe(3450);
+        expect(Math.round(nonAnchorFloor20)).toBe(3325);
+        expect(nonAnchorCeiling10).toBeGreaterThan(nonAnchorFloor20);
     });
 
-    it('⚠️ would refuse the rules\' own curve over ten levels, which is why it strides a tier', () => {
-        // Ten levels of the rules' curve are x1.41; level 1's ±25 % band needs more than x1.47 to clear.
-        const ceiling = gphAt(5) * (1 + toleranceFor(5, DEFAULT_DIALS));
-        const floor = gphAt(15) * (1 - toleranceFor(15, DEFAULT_DIALS));
-        expect(ceiling).toBeGreaterThan(floor);
-        expect(progressionGuardFindings(DEFAULT_DIALS).violations).toEqual([]);
+    it('⚠️ finds the plan\'s claim untrue in the flattened tail, and does not refuse it', () => {
+        // Found in P9 and NOT in the plan: above level 70 the earn curve
+        // deliberately flattens to ~2%/level, and ten levels of that (×1.219)
+        // does not clear a ±10% band (which needs ×1.223). So the shipped
+        // defaults DO break the stated ordering at the top — by a fraction of a
+        // percent, with no dial turned wrongly.
+        const { refusable, tail } = progressionGuardFindings(DEFAULT_DIALS);
+        expect(tail.length).toBeGreaterThan(0);
+        for (const v of tail) expect(v.upper).toBeGreaterThan(CURVE_FLATTENS_AT);
+        // The part of the curve that is still compounding is clean, which is
+        // what makes naming the tail defensible rather than a shrug.
+        expect(refusable).toEqual([]);
     });
 
-    it('does not refuse the shipped dial set, and has no tail to name', () => {
-        expect(progressionGuardRows(DEFAULT_DIALS)).toEqual([]);
-        expect(progressionGuardFindings(DEFAULT_DIALS).tail).toEqual([]);
+    it('does not refuse the shipped dial set', () => {
+        const rows = progressionGuardRows(DEFAULT_DIALS);
+        expect(rows.filter((r) => r.code === 'progression-guard')).toEqual([]);
+        // It says so out loud rather than staying quiet about it.
+        expect(rows.filter((r) => r.code === 'progression-guard-tail')).toHaveLength(1);
+        expect(rows[0].severity).toBe('info');
     });
 
-    it('refuses a band width wide enough to swallow a tier of progress', () => {
+    it('refuses a band width wide enough to swallow ten levels of progress', () => {
         const dials = normaliseDials({
             toleranceBrackets: [{ maxLevel: Infinity, band: 0.5 }],
         });
@@ -62,13 +75,14 @@ describe('The progression guard (§13.5, F1)', () => {
         expect(refusal.detail.pairs).toBeGreaterThan(0);
     });
 
-    it('cannot be flattened by a gold pin a stored dial set still carries', () => {
-        const rows = progressionGuardRows(normaliseDials({ gphPins: { 1: 1000, 99: 1000 } }));
-        expect(rows.some((r) => r.code === 'progression-guard')).toBe(false);
+    it('refuses an earn curve flattened everywhere, even at the default bands', () => {
+        const flat = Object.fromEntries(Object.keys(DEFAULT_DIALS.gphPins).map((l) => [l, 1000]));
+        const rows = progressionGuardRows(normaliseDials({ gphPins: flat }));
+        expect(rows.some((r) => r.code === 'progression-guard')).toBe(true);
     });
 
-    it('is stated over one tier, and compares a ceiling with a floor', () => {
-        expect(GUARD_STRIDE).toBe(20);
+    it('is stated over ten levels, and compares a ceiling with a floor', () => {
+        expect(GUARD_STRIDE).toBe(10);
         const { violations } = progressionGuardFindings(normaliseDials({
             toleranceBrackets: [{ maxLevel: Infinity, band: 0.5 }],
         }));

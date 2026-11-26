@@ -137,7 +137,7 @@ function priceEntity(entity, anchoredItemIds, { timing, values, details, dials, 
 
     const inputValue = inputValuePerCycle(entity, values) ?? 0;
 
-    const targetPerHour = gphAt(entity.level) * purposeGoldFactor(entity.purpose);
+    const targetPerHour = gphAt(entity.level, dials) * purposeGoldFactor(entity.purpose, dials);
     const targetPerCycle = targetPerHour / t.cyclesPerHour;
 
     // Crafted anchors: value × units = input value + target profit per cycle, floored at input value × (1 + craft margin per step).

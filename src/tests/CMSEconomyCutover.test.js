@@ -47,7 +47,7 @@ function staleWorkspace() {
         recipePools: {
             crafting: [{
                 id: 'recipe_plank', name: 'Plank', skill: 'crafting', levelRequirement: 1,
-                durationMs: 12000, xp: 9, stationChargeCost: 1, requiresContext: [],
+                durationMs: 12000, xp: 4, stationChargeCost: 1, requiresContext: [],
                 inputs: [{ itemId: 'item_log', quantity: 2 }],
                 outputs: [{
                     itemId: 'item_plank', chance: 100, minQty: 1, maxQty: 1,
@@ -176,10 +176,10 @@ describe('What Recalculate writes', () => {
         expect(recipe.xp).toBe(
             expectedFor(1, 'gph', recipe.durationMs)
         );
-        // Both moved off what the workspace authored (7 and 9), which is the
+        // Both moved off what the workspace authored (7 and 4), which is the
         // point: they are no longer authored numbers.
         expect(token.config.xp).not.toBe(7);
-        expect(recipe.xp).not.toBe(9);
+        expect(recipe.xp).not.toBe(4);
     });
 
     it('⚠️ DELETES the Token’s dead top-level `xp` rather than preserving it', () => {
@@ -277,19 +277,17 @@ describe('The dial store', () => {
     it('hands the dials to the passes — turning one moves a price', () => {
         load(staleWorkspace());
         const base = useEntityStore.getState().recalculateEconomy(useGlobalStore.getState());
-        const margined = useEntityStore.getState().recalculateEconomy({
-            simDials: { ...DEFAULT_DIALS, craftMarginPerStep: 5 },
-        });
-        expect(margined.items.item_plank.value).toBeGreaterThan(base.items.item_plank.value);
-    });
 
-    it('takes the earn curve from the balance rules, whatever a stored dial set says', () => {
-        load(staleWorkspace());
-        const base = useEntityStore.getState().recalculateEconomy(useGlobalStore.getState());
-        const stored = useEntityStore.getState().recalculateEconomy({
-            simDials: { ...DEFAULT_DIALS, gphPins: { 1: 4800, 99: 1256000 }, purposeGoldFactors: { gph: 4, iph: 4, xph: 4 } },
+        const doubled = useEntityStore.getState().recalculateEconomy({
+            simDials: {
+                ...DEFAULT_DIALS,
+                gphPins: Object.fromEntries(
+                    Object.entries(DEFAULT_DIALS.gphPins).map(([l, g]) => [l, g * 4])
+                ),
+            },
         });
-        expect(stored.items.item_log.value).toBe(base.items.item_log.value);
+
+        expect(doubled.items.item_log.value).toBeGreaterThan(base.items.item_log.value);
     });
 
     /**
@@ -313,7 +311,7 @@ describe('The dial store', () => {
             const turned = { simDials: { craftMarginPerStep: 0.5 } };
             const merged = options.merge(turned, useGlobalStore.getState());
             expect(merged.simDials.craftMarginPerStep).toBe(0.5);
-            expect(merged.simDials.trainingLossCap).toEqual(DEFAULT_DIALS.trainingLossCap);
+            expect(merged.simDials.gphPins).toEqual(DEFAULT_DIALS.gphPins);
         });
 
         it('survives a null persisted blob', () => {

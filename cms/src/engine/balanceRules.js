@@ -12,9 +12,16 @@
  *   leaning toward XP or toward goods. Training work pays 1.5x the XP and half the goods, balanced
  *   work both in full, earning work half the XP and 1.5x the goods.
  *
+ * - **The optimized boost factor** (section 1): how much faster a well-optimized hero earns than one
+ *   with no boosts, 1 / (1 − Maxed speed) × (1 + Maxed XP), read from the ledger's boost budget
+ *   (section 5) and climbing level by level between tier openings. XP per action is divided by it,
+ *   because the XP curve is the boosted player's.
+ *
  * ⚠️ Pure numbers, no store and no file: the CMS page, its server, its Node tools and the ledger's
  * Worker all import this module.
  */
+
+import { boostBudgetAt, DEFAULT_LEDGER_SETTINGS } from './ledger/settings.js';
 
 /** Levels for XP an hour and worth an hour to double (one tier, BALANCE_RULES section 1). */
 export const LEVELS_TO_DOUBLE = 20;
@@ -68,4 +75,16 @@ export function xpTilt(purpose) {
 /** The tilt's goods factor for a Purpose tag; 0 for an unknown or missing tag. */
 export function goodsTilt(purpose) {
     return PURPOSE_TILT[purpose]?.goods ?? 0;
+}
+
+/**
+ * The optimized boost factor at `level`: 1 / (1 − Maxed speed) × (1 + Maxed XP), from the boost
+ * budget of `ledgerSettings` (the ledger's settings, the plan's `planSettings`; the ledger's defaults
+ * when none), climbing in a straight line between tier openings as the ledger's own budget does.
+ */
+export function optimizedBoostFactor(level, ledgerSettings = DEFAULT_LEDGER_SETTINGS) {
+    const cell = boostBudgetAt(ledgerSettings || DEFAULT_LEDGER_SETTINGS, curveLevel(level));
+    const speed = Math.min(0.95, Math.max(0, (cell.speed?.maxed ?? 0) / 100));
+    const xp = Math.max(0, (cell.xp?.maxed ?? 0) / 100);
+    return (1 / (1 - speed)) * (1 + xp);
 }
