@@ -99,16 +99,16 @@ describe('⭐ shipped content', () => {
         expect(tokenStartingUses(id)).toBeNull();
     });
 
-    it.each(['token_blackberry_bush', 'token_shrimp_coast', 'token_oak_tree', 'token_copper_ore_vein'])(
+    it.each(['token_blackberry_bush', 'token_copper_comet', 'token_oak_tree', 'token_copper_ore_vein'])(
         '%s wears: its charges, or the one life of a Token that runs out by chance', (id) => {
             expect(neverWearsOutType(id)).toBe(false);
             const def = getTokenType(id);
             expect(tokenStartingUses(id)).toBe(endTermsOf(def) ? CHANCE_LIFE : def.uses);
         });
 
-    it('a vein, an Oak and a bush come back, so they run out by chance; the Shrimp Coast keeps a count', () => {
+    it('a vein, an Oak and a bush come back, so they run out by chance; the Copper Comet keeps a count', () => {
         for (const id of ['token_blackberry_bush', 'token_oak_tree', 'token_copper_ore_vein']) expect(endTermsOf(getTokenType(id))).not.toBeNull();
-        expect(endTermsOf(getTokenType('token_shrimp_coast'))).toBeNull();
+        expect(endTermsOf(getTokenType('token_copper_comet'))).toBeNull();
     });
 });
 
