@@ -347,7 +347,7 @@ function Summary({ result, asking, restoring, undoFailed, onClose, onAsk, onCanc
                                         data-hero-id={k.heroId}
                                         icon={<CombatGlyph name="down" colour={GLYPH_COLOUR.red} />}
                                         name={k.heroName}
-                                        subtitle={k.lost.length ? t('catchUp.news.lost', { items: k.lost.join(', ') }) : null}
+                                        subtitle={k.lost.length ? t('catchUp.news.lost', { items: k.lost.join(', ') }) : (k.fled ? t('catchUp.news.fled') : null)}
                                         countText={`×${k.times}`}
                                         size="sm"
                                         className={e.className}

@@ -511,9 +511,10 @@ export function watchMatFx() {
             }
             const from = p.fromTokenId && p.fromTokenId !== p.instanceId ? p.fromTokenId : null;
             if (from) spark(from, p.instanceId);
-            // An Echo: the shrine's spark, then "Echo!" off the Token whose cycle came again.
-            if (p.echo) {
-                floatNumber(p.instanceId, i18n('effectBadges.float.echo'), 'gain', { delay: from ? SPARK_MS : 0 });
+            // An Echo: the shrine's spark, then "Echo!" off the Token whose cycle came again; Fortune's
+            // sure find the same, "Fortune!".
+            if (p.echo || p.fortune) {
+                floatNumber(p.instanceId, i18n(p.echo ? 'effectBadges.float.echo' : 'effectBadges.float.fortune'), 'gain', { delay: from ? SPARK_MS : 0 });
                 return;
             }
             const n = Number(p.amount);

@@ -74,8 +74,20 @@ export function giantHarvest(instanceId) {
  * @param {(() => string|null)|null} [sourceOf]
  */
 export function echo(instanceId, sourceOf = null) {
+    sayBlessing(instanceId, 'echo', sourceOf);
+}
+
+/**
+ * Fortune just gave Token `instanceId` its rarest drop for certain: the mat says "Fortune!" over it
+ * with a spark from the shrine, as an Echo is said. Silent during a catch-up.
+ */
+export function fortune(instanceId, sourceOf = null) {
+    sayBlessing(instanceId, 'fortune', sourceOf);
+}
+
+function sayBlessing(instanceId, flag, sourceOf) {
     if (instanceId == null || EventBus.isQuiet()) return;
-    const payload = { instanceId, echo: true };
+    const payload = { instanceId, [flag]: true };
     const from = sourceOf?.() ?? null;
     if (from != null) payload.fromTokenId = from;
     EventBus.publish(BOARD_EVENTS.EFFECT_FIRED, payload);

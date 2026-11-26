@@ -25,6 +25,7 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
 import { KEYWORD, statementsWith } from '../effects/statements.js';
 import * as LiveEffects from '../effects/LiveEffects.js';
 import * as Ammo from '../combat/Ammo.js';
+import { isSummoned } from '../hero/summoned.js';
 
 /**
  * Orders: the player drags a hero onto a Token and they work only it ({@link orderToken}), onto
@@ -73,7 +74,9 @@ import * as Ammo from '../combat/Ammo.js';
  * board publishes none (`Flags.test.js` runs 100 ticks).
  *
  * A hero fights only an enemy the player sent them at (or one their enemy camp or War Camp hands
- * them): no enemy attacks first, and nothing pulls a hero off their job.
+ * them): no enemy attacks first, and nothing pulls a hero off their job, but for one thing of their
+ * own: a thief caught at a Hideout goes for the guard the catch set, then back to the Hideout
+ * ({@link goForGuard}, {@link returnFromGuard}).
  */
 
 /** How long a flag with nothing to do waits before looking again, in game ms. */
@@ -618,6 +621,8 @@ function lapsePins(r, order) {
         const flag = BoardState.flagOf(heroId);
         if (!flag || !('pinnedTo' in flag)) continue;
         if (typeof flag.pinnedTo === 'string' && BoardState.getTokenById(flag.pinnedTo)) continue;
+        // A caught thief's guard is gone: back to stealing at the Hideout.
+        if (returnFromGuard(r, heroId, flag)) continue;
         // An arrival enemy beaten while others stand: the hero takes on the nearest free one, so
         // heroes sent at the encounter keep fighting while the player is away. Heroes are re-pinned
         // in planting order, so one re-pinned earlier this tick already counts as taken.
@@ -630,7 +635,7 @@ function lapsePins(r, order) {
             continue;
         }
         // Gone for good: the hero waits at its last spot for a new order.
-        const { pinnedTo: _gone, ...rest } = flag;
+        const { pinnedTo: _gone, returnTo: _back, ...rest } = flag;
         BoardState.setFlag(heroId, { ...rest, spot: true, needsJob: true });
         r.nextTryAt.delete(heroId);
         r.dirty = true;
@@ -886,6 +891,9 @@ export function furl(heroId, reason = 'recall') {
  */
 function stopAfterBrokenWeapon({ heroId, use } = {}) {
     if (use !== 'fight') return;
+    // A caught thief's weapon broke on the guard it beat: stealing needs none, so back they go.
+    const r = rt();
+    if (r && returnFromGuard(r, heroId, BoardState.flagOf(heroId))) return;
     lapseWhereStanding(heroId, (at) => at);
 }
 
@@ -907,12 +915,54 @@ function lapseWhereStanding(heroId, pointFor) {
         r.nextTryAt.delete(heroId);
         const body = BoardState.heroBodyOf(heroId);
         const at = pointFor(body && Number.isFinite(body.x) && Number.isFinite(body.y) ? body : flag);
-        const { pinnedTo: _left, ...rest } = flag;
+        const { pinnedTo: _left, returnTo: _back, ...rest } = flag;
         BoardState.setFlag(heroId, { ...rest, x: at.x, y: at.y, spot: true, needsJob: true });
         r.dirty = true;
     } finally {
         quiet--;
     }
+    announceMoved(heroId);
+    return true;
+}
+
+/**
+ * A thief caught at Hideout `instanceId` (a `THEFT` that was `caught`): they go straight for the guard
+ * the catch set (`guardId`). Their order becomes a fight order on it that remembers the Hideout
+ * (`returnTo`, saved with the order), keeping its place in the planting order; the next pass lets go
+ * of the Hideout and takes the guard. The guard never comes for them: they are sent, as any fighter
+ * is. Only a thief whose order is the Hideout goes. ⚠️ A Summoned worker never fights: it
+ * waits at the Hideout, as a catch always had a thief do.
+ */
+function goForGuard({ instanceId, heroId, caught, guardId } = {}) {
+    if (!caught || !heroId || !guardId) return;
+    const flag = BoardState.flagOf(heroId);
+    if (!flag || flag.pinnedTo !== instanceId || isSummoned(heroRecord(heroId))) return;
+    const guard = BoardState.getTokenById(guardId);
+    if (!guard || orderRefusal(heroId, guard)) return;
+    const { spot: _spot, needsJob: _needs, ...rest } = flag;
+    BoardState.setFlag(heroId, { ...rest, x: guard.x, y: guard.y, pinnedTo: guard.id, returnTo: instanceId });
+    const r = rt();
+    if (r) {
+        r.nextTryAt.delete(heroId);
+        r.dirty = true;
+    }
+    announceMoved(heroId);
+}
+
+/**
+ * The guard a caught thief went for is gone (beaten: by them, or by anyone): their order turns back
+ * to the Hideout it remembers, which they steal from again. Not when the Hideout is gone or they
+ * can no longer work it: then the order lapses as any does. A defeat, a flee and the player's next
+ * order all take the order down or replace it, so they never come back.
+ * @returns {boolean} whether the hero was sent back
+ */
+function returnFromGuard(r, heroId, flag) {
+    const hideout = typeof flag?.returnTo === 'string' ? BoardState.getTokenById(flag.returnTo) : null;
+    if (!hideout || orderRefusal(heroId, hideout)) return false;
+    const { pinnedTo: _guard, returnTo: _back, ...rest } = flag;
+    BoardState.setFlag(heroId, { ...rest, x: hideout.x, y: hideout.y, pinnedTo: hideout.id });
+    r.nextTryAt.delete(heroId);
+    r.dirty = true;
     announceMoved(heroId);
     return true;
 }
@@ -1149,4 +1199,7 @@ export function init() {
     // `resolveDefeat`'s own `TILE_CHANGED`/`COMBAT_RESOLVED` publishes.
     unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.HERO_DEFEATED, ({ heroId }) => furl(heroId, 'defeat')));
     unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.GEAR_BROKE, stopAfterBrokenWeapon));
+    // `Thefts.afterTheft` says a catch instead of calling here: `Thefts` is the runner's, and the
+    // runner's import of `Flags` would make a cycle of it.
+    unsubscribers.push(EventBus.subscribe(BOARD_EVENTS.THEFT, goForGuard));
 }

@@ -24,7 +24,7 @@ import { guildHeroes } from '../hero/summoned.js';
  *   finds: {itemId: string, count: number}[],
  *   bankFull: string[],
  *   stackFull: string[],
- *   knockouts: {heroId: string, heroName: string, times: number, lost: string[]}[]
+ *   knockouts: {heroId: string, heroName: string, times: number, fled: number, lost: string[]}[]
  * } }}
  */
 export function startNewsCollector() {
@@ -59,14 +59,16 @@ export function startNewsCollector() {
             const list = reason === 'stack' ? stackFull : bankFull;
             if (itemId && !list.includes(itemId)) list.push(itemId);
         }),
-        EventBus.subscribe(BOARD_EVENTS.HERO_DEFEATED, ({ heroId, heroName, lost } = {}) => {
+        // A hero who fled under Valiant was still carried home wounded: counted, `fled` saying how often.
+        EventBus.subscribe(BOARD_EVENTS.HERO_DEFEATED, ({ heroId, heroName, lost, fled } = {}) => {
             if (!heroId) return;
             if (!knockouts.has(heroId)) {
                 const name = heroName || GameState.heroes.find(h => h?.id === heroId)?.name || 'Your hero';
-                knockouts.set(heroId, { heroId, heroName: name, times: 0, lost: [] });
+                knockouts.set(heroId, { heroId, heroName: name, times: 0, fled: 0, lost: [] });
             }
             const row = knockouts.get(heroId);
             row.times++;
+            if (fled) row.fled++;
             for (const what of Array.isArray(lost) ? lost : []) if (!row.lost.includes(what)) row.lost.push(what);
         })
     ];

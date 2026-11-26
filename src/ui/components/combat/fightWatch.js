@@ -45,7 +45,7 @@ export const TONE = Object.freeze({ HIT: 'hit', HURT: 'hurt', HEAL: 'heal', MISS
 export const MOMENT = Object.freeze({ HIT: 'hit', CRIT: 'crit', MISS: 'miss', HEAL: 'heal', TICK: 'tick', MOVE: 'move' });
 
 /** How a fight ended. */
-export const OUTCOME = Object.freeze({ WON: 'won', LOST: 'lost', LEFT: 'left' });
+export const OUTCOME = Object.freeze({ WON: 'won', LOST: 'lost', FLED: 'fled', LEFT: 'left' });
 
 /** `heroId` → `{ current, last }`, each a record or null. */
 const byHero = new Map();
@@ -438,11 +438,13 @@ function onResolved(p) {
     const record = byHero.get(heroId)?.current;
     if (!record || (p.instanceId != null && record.instanceId !== p.instanceId)) return;
     const won = p.outcome === 'victory';
+    // Brought down under Valiant: they fled, losing nothing.
+    const fled = p.outcome === 'fled';
     say(record, {
-        icon: won ? 'fight' : 'down', tone: won ? TONE.HIT : TONE.HURT, key: won ? 'won' : 'lost',
+        icon: won ? 'fight' : 'down', tone: won ? TONE.HIT : TONE.HURT, key: won ? 'won' : (fled ? 'fled' : 'lost'),
         vars: { hero: record.heroName, enemy: record.enemyName }
     });
-    endCurrent(heroId, won ? OUTCOME.WON : OUTCOME.LOST);
+    endCurrent(heroId, won ? OUTCOME.WON : (fled ? OUTCOME.FLED : OUTCOME.LOST));
     changed(heroId);
 }
 

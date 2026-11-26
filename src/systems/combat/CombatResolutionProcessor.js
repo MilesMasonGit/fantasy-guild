@@ -5,6 +5,7 @@ import * as SkillSystem from '../hero/SkillSystem.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 import { noteEnemyBeaten } from '../progression/collectionLog.js';
 import * as TileModifiers from '../board/TileModifiers.js';
+import * as Wisdom from '../board/Wisdom.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import * as CombatTricks from './CombatTricks.js';
 
@@ -37,14 +38,17 @@ export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
 
     // The full award goes into the style the hero fought in, the weapon's (barehanded is Melee):
     // Defence is folded into it, so there is no second bar. XP bonuses aimed at that style, or at
-    // every skill, widen it as a work cycle's are widened for its skill (`BoardRunner`).
+    // every skill, widen it as a work cycle's are widened for its skill (`BoardRunner`). A Wisdom
+    // rule reaching the enemy shares it, in that style, with the heroes working in its reach.
     const award = CombatFormulas.getCombatXpAward(enemy);
     assignedHeroIds.forEach(id => {
         const h = HeroManager.getHero(id);
         if (h) {
             const style = CombatFormulas.getHeroCombatStyle(h);
             // Floored at 0 as a work cycle's is: a flat cut larger than the award takes nothing away.
-            SkillSystem.addXP(id, style, Math.max(0, killXp(fight, award, style)));
+            const xp = Math.max(0, killXp(fight, award, style));
+            SkillSystem.addXP(id, style, xp);
+            if (fight.instanceId) Wisdom.shareXp(fight.instanceId, id, style, xp);
         }
     });
 

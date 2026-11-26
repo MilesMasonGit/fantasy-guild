@@ -16,6 +16,7 @@ import * as HeroEffects from '../hero/HeroEffects.js';
 import { statementsOf } from '../effects/statements.js';
 import * as BoardState from './BoardState.js';
 import * as Charges from './Charges.js';
+import * as CycleSavings from './CycleSavings.js';
 import * as FightRoom from './FightRoom.js';
 import { momentSupplies } from '../../config/registries/triggerRegistry.js';
 import { ROLE, opponentSeekerOf } from '../../config/registries/roleRegistry.js';
@@ -606,6 +607,11 @@ function resolveVictory(instance, fight, enemy, heroId) {
  * sitting in the Dock, with no Token to tidy up.
  */
 function resolveDefeat(instance, heroId) {
+    // VALIANT (a shrine's blessing): a hero brought down in a fight it reaches flees instead, carried
+    // home wounded as ever but losing nothing. Read at the enemy they fought, before the fight ends;
+    // a hero downed out of a fight (a poison in the Dock) is Defeated as ever.
+    const fight = fightOfHero(heroId);
+    const fled = !!fight && CycleSavings.fleesDefeat(fight.instanceId, heroId);
     endFight(instance?.id);
     CombatTricks.forgetFight(heroId);
 
@@ -615,7 +621,7 @@ function resolveDefeat(instance, heroId) {
     // Whatever the hero had for the fight (statuses, an elixir's effect) ends with it, even when the
     // Token they worked was not the enemy they fought.
     LiveEffects.endHeroFightEffects(heroId);
-    const lost = applyDefeatPenalties(heroId) || [];
+    const lost = fled ? [] : (applyDefeatPenalties(heroId) || []);
 
     // Off the board. Recovery is tracked on the HERO (`woundedRemainingMs`), never on the tile, so
     // the tile is immediately free for someone else and simply idles until re-staffed. A defeated
@@ -624,13 +630,13 @@ function resolveDefeat(instance, heroId) {
     // `Flags.init` subscribes to the defeat event and furls the hero's flag; `EventBus.publish` is
     // synchronous, so the furl happens here, before the `TILE_CHANGED` / `COMBAT_RESOLVED`
     // publishes below.
-    // The knock-out banner says who fell and what it cost from this one event.
-    EventBus.publish(BOARD_EVENTS.HERO_DEFEATED, { heroId, heroName: hero?.name || null, lost });
+    // The knock-out banner says who fell and what it cost from this one event (`fled`: Fled).
+    EventBus.publish(BOARD_EVENTS.HERO_DEFEATED, { heroId, heroName: hero?.name || null, lost, ...(fled ? { fled: true } : {}) });
     if (instance) {
         instance.cycleElapsedMs = 0;
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
         EventBus.publish(BOARD_EVENTS.COMBAT_RESOLVED, {
-            instanceId: instance.id, outcome: 'defeat', heroId: heroId || null, typeId: instance.typeId || null
+            instanceId: instance.id, outcome: fled ? 'fled' : 'defeat', heroId: heroId || null, typeId: instance.typeId || null
         });
     }
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'board_combat_defeat' });

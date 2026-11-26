@@ -18,7 +18,8 @@ import * as ItemStubs from '../systems/notifications/itemStubs.js';
 import * as Banners from '../systems/notifications/banners.js';
 import * as NotificationSystem from '../systems/core/NotificationSystem.js';
 import { AudioSystem } from '../systems/core/AudioSystem.js';
-import { ROUTES, wireNotifications, unwireNotifications, pins, MAX_FIND_STUBS, BANNER_SOUND } from '../systems/notifications/routing.js';
+import { ROUTES, wireNotifications, unwireNotifications, pins, MAX_FIND_STUBS, BANNER_SOUND, deliverCatchUpNews } from '../systems/notifications/routing.js';
+import { startNewsCollector } from '../systems/notifications/catchUpNews.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
 import { recipesUnlockedBy } from '../systems/notifications/recipeUnlocks.js';
 import { announce } from '../ui/components/board/dropOnMat.js';
@@ -206,6 +207,32 @@ describe('milestones and problems are banners', () => {
         const all = Banners.getAll();
         expect(all.map(b => [b.kind, b.tone])).toEqual([['bankFull', 'problem'], ['knockout', 'problem']]);
         expect(all[1].line).toBe('Aela was carried home, injured. Lost: Iron Sword.');
+    });
+
+    it('a hero who fled under Valiant gets a Fled banner, saying nothing was lost', () => {
+        EventBus.publish(BOARD_EVENTS.HERO_DEFEATED, { heroId: 'h1', heroName: 'Aela', lost: [], fled: true });
+        const all = Banners.getAll();
+        expect(all.map(b => [b.kind, b.tone])).toEqual([['fled', 'problem']]);
+        expect(all[0].title).toBe('Fled!');
+        expect(all[0].line).toBe('Aela fled the fight and went home to heal. Nothing was lost.');
+    });
+
+    it('time away: a hero who only fled is told as Fled, one also Defeated as Defeated', () => {
+        const collector = startNewsCollector();
+        EventBus.publish(BOARD_EVENTS.HERO_DEFEATED, { heroId: 'h1', heroName: 'Aela', lost: [], fled: true });
+        EventBus.publish(BOARD_EVENTS.HERO_DEFEATED, { heroId: 'h1', heroName: 'Aela', lost: [], fled: true });
+        EventBus.publish(BOARD_EVENTS.HERO_DEFEATED, { heroId: 'h2', heroName: 'Bram', lost: [], fled: true });
+        EventBus.publish(BOARD_EVENTS.HERO_DEFEATED, { heroId: 'h2', heroName: 'Bram', lost: ['Iron Sword'] });
+        const news = collector.stop();
+        expect(news.knockouts).toEqual([
+            { heroId: 'h1', heroName: 'Aela', times: 2, fled: 2, lost: [] },
+            { heroId: 'h2', heroName: 'Bram', times: 2, fled: 1, lost: ['Iron Sword'] }
+        ]);
+        Banners.reset();
+        deliverCatchUpNews(news);
+        const kinds = Banners.getAll().map(b => [b.kind, b.line]);
+        expect(kinds).toContainEqual(['fled', 'Aela fled the fight and went home to heal. Nothing was lost.']);
+        expect(kinds).toContainEqual(['knockout', 'Bram was carried home, injured. Lost: Iron Sword.']);
     });
 
     it('a banner coming on screen plays a chime, or a warning tone for a problem', () => {

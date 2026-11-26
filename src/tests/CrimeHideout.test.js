@@ -19,6 +19,9 @@ import * as Flags from '../systems/board/Flags.js';
 import * as Camps from '../systems/board/Camps.js';
 import * as MatCap from '../systems/board/MatCap.js';
 import * as Hideouts from '../systems/board/Hideouts.js';
+import * as BoardCombat from '../systems/board/BoardCombat.js';
+import * as HeroManager from '../systems/hero/HeroManager.js';
+import * as Summons from '../systems/board/Summons.js';
 import { BOARD_EVENTS, ALERT } from '../systems/board/boardEvents.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { KEYWORD } from '../systems/effects/statements.js';
@@ -67,7 +70,12 @@ const BOSS = 'fixture_ch_boss';
 const BOSS_CAMP = 'fixture_ch_boss_camp';
 const FOREST = 'fixture_ch_forest';
 const ECHO_SHRINE = 'fixture_ch_echo_shrine';
+const VALIANT_SHRINE = 'fixture_ch_valiant_shrine';
 const TREE = 'fixture_ch_tree';
+const BRUTE = 'fixture_ch_brute';
+const BRUTE_CAMP = 'fixture_ch_brute_camp';
+const CIRCLE = 'fixture_ch_circle';
+const SUMMONED_THIEF = 'fixture_ch_summoned_thief';
 
 const THEFT_MS = 2000;
 const QUIET_POINTS = 20;
@@ -125,13 +133,38 @@ function registerFixtures() {
         [BARE_CAMP]: camp(BARE_CAMP, 'Fixture Wolf Den', WOLF),
         [BOSS]: enemy(BOSS, 'Fixture Boss', 12, { steal: { outputs: [{ itemId: INGOT, chance: 100, minQty: 1, maxQty: 1 }] } }),
         [BOSS_CAMP]: camp(BOSS_CAMP, 'Fixture Boss Tent', BOSS, 1),
+        // Far too strong for the thief: every fight with its guard is lost.
+        [BRUTE]: enemy(BRUTE, 'Fixture Brute', 60, { steal: { outputs: [{ itemId: INGOT, chance: 100, minQty: 1, maxQty: 1 }] } }),
+        [BRUTE_CAMP]: camp(BRUTE_CAMP, 'Fixture Brute Camp', BRUTE),
         [TREE]: {
             id: TREE, name: 'Fixture Tree', tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: null,
             sprite: 't_tree_oak', requiresHero: true,
             config: { skill: 'forestry', skillRequired: 1, cycleTimeMs: 4000, xp: 1, inputs: [], outputs: [] }
         },
         [FOREST]: camp(FOREST, 'Fixture Forest', TREE),
+        // A Summoning Circle and the Summoned worker it calls: a thief at Crime 30 who never fights.
+        [CIRCLE]: {
+            id: CIRCLE, name: 'Fixture Circle', tokenType: 'station', rarity: 'rare', theme: 'fixture', uses: null, sprite: 's_occult',
+            summonCircle: { charges: 10, perLevel: 0 },
+            config: { skill: 'summoning', skillRequired: 1, cycleTimeMs: 2000, xp: 0, inputs: [], outputs: [] },
+            statements: [{ id: 'stm_ch_circle_station', keyword: KEYWORD.STATION, payload: { skill: 'summoning' } }]
+        },
+        [SUMMONED_THIEF]: {
+            id: SUMMONED_THIEF, name: 'Fixture Summoned Thief', rarity: 'common', theme: 'fixture', sprite: 's_occult',
+            summon: { of: GOBLIN, skills: { crime: 30 } }
+        },
         // A Faith shrine whose Echo (100) reaches the Hideout once it is lit.
+        // A Faith shrine whose Valiant (100) reaches the camp's enemies once it is lit.
+        [VALIANT_SHRINE]: {
+            id: VALIANT_SHRINE, name: 'Fixture Valiant Shrine', tokenType: 'station', rarity: 'common', theme: 'fixture', uses: null,
+            sprite: 't_shrine_forest', requiresHero: true, shrine: { maxLitMs: 600_000 },
+            config: { skill: 'faith', skillRequired: 1, cycleTimeMs: 2000, xp: 0, inputs: [], outputs: [] },
+            statements: [
+                { id: `stm_${VALIANT_SHRINE}_works`, keyword: KEYWORD.STATION, payload: { skill: 'faith', stationKind: 'shrine' } },
+                { id: `stm_${VALIANT_SHRINE}_valiant`, keyword: KEYWORD.PROVIDES, to: { mode: 'all', value: '' }, reach: 'nearby',
+                    payload: { type: EFFECT_TYPES.VALIANT, bucket: 'flat', value: 100 } }
+            ]
+        },
         [ECHO_SHRINE]: {
             id: ECHO_SHRINE, name: 'Fixture Echo Shrine', tokenType: 'station', rarity: 'common', theme: 'fixture', uses: null,
             sprite: 't_shrine_forest', requiresHero: true, shrine: { maxLitMs: 600_000 },
@@ -149,6 +182,7 @@ const HIDEOUT_AT = { x: 800, y: 500 };
 const CAMP_AT = { x: 960, y: 500 };
 const NEAR_AT = { x: 800, y: 660 };
 const FAR_AT = { x: 1700, y: 500 };
+const CIRCLE_AT = { x: 300, y: 1000 };
 
 const step = (ms, by = 100) => { for (let t = 0; t < ms; t += by) GameLoop.runHandlers(by); };
 /** What has come in of an item, on the mat or already in the Bank (each case starts with neither). */
@@ -174,19 +208,31 @@ function fillCamp(c) {
 
 /**
  * A Hideout with a Goblin Camp in its reach, the camp filled, and optionally a thief (Crime
- * `crime`) ordered onto the Hideout with the camp chosen.
+ * `crime`) ordered onto the Hideout with the camp chosen; `summoned`: the thief is a Summoned worker
+ * (Crime 30) a Circle called, who robs and never fights.
  */
-function build({ typeId = HIDEOUT, crime = 30, chosen = true, thief = true } = {}) {
+function build({ typeId = HIDEOUT, crime = 30, chosen = true, thief = true, campType = CAMP, melee = 50, summoned = false } = {}) {
     freshBoard();
     const hide = fixtures.placeAt(typeId, HIDEOUT_AT.x, HIDEOUT_AT.y);
-    const goblins = fixtures.placeAt(CAMP, CAMP_AT.x, CAMP_AT.y);
+    const goblins = fixtures.placeAt(campType, CAMP_AT.x, CAMP_AT.y);
     fillCamp(goblins);
     TileModifiers.rebuildAll();
     if (chosen) expect(Hideouts.setTarget(hide, goblins.id)).toBe(true);
     let heroId = null;
     if (thief) {
-        const [hero] = fixtures.makeHeroes(1, { crime, melee: 50 });
-        heroId = hero.id;
+        if (summoned) {
+            const circle = fixtures.placeAt(CIRCLE, CIRCLE_AT.x, CIRCLE_AT.y);
+            const record = Summons.chargeFromCircle(circle, SUMMONED_THIEF, null);
+            expect(record).toBeTruthy();
+            // One charge a cycle, and at none it leaves: enough for every theft a test runs.
+            record.summon.charges = 1000;
+            heroId = record.id;
+        } else {
+            const [hero] = fixtures.makeHeroes(1, { crime, melee });
+            HeroManager.updateHeroFromSkills(hero);
+            hero.hp.current = hero.hp.max;
+            heroId = hero.id;
+        }
         expect(fixtures.orderAt(heroId, HIDEOUT_AT).success).toBe(true);
     }
     return { hide, goblins, heroId };
@@ -411,8 +457,8 @@ describe('a thief caught: a guard on the camp until beaten', () => {
         expect(heard).toEqual([expect.objectContaining({ instanceId: hide.id, campId: goblins.id, heroId, caught: true, guardId: guard.id, items: [] })]);
     });
 
-    it('while the guard stands nobody robs the camp: the Hideout waits, its thief beside it', () => {
-        const { hide, goblins, heroId } = build({ typeId: ALWAYS_CAUGHT });
+    it('while the guard stands nobody robs the camp: a Summoned thief, who never fights, waits by the Hideout', () => {
+        const { hide, goblins, heroId } = build({ typeId: ALWAYS_CAUGHT, summoned: true });
         step(THEFT_MS + 100);
         expect(guardsOf(goblins)).toHaveLength(1);
         step(THEFT_MS * 3);
@@ -430,7 +476,7 @@ describe('a thief caught: a guard on the camp until beaten', () => {
     });
 
     it('once the guard is beaten the camp can be robbed again', () => {
-        const { hide, goblins, heroId } = build({ typeId: ALWAYS_CAUGHT });
+        const { hide, goblins, heroId } = build({ typeId: ALWAYS_CAUGHT, summoned: true });
         step(THEFT_MS + 100);
         const [guard] = guardsOf(goblins);
         const [fighter] = fixtures.makeHeroes(2, { melee: 99 }).slice(1);
@@ -454,6 +500,147 @@ describe('a thief caught: a guard on the camp until beaten', () => {
         expect(MatCap.canPlaceMore(1)).toBe(false);
         step(THEFT_MS + 100);
         expect(guardsOf(goblins)).toHaveLength(1);
+    });
+});
+
+describe('a caught thief goes for the guard, then back to stealing (owner 2026-11-25)', () => {
+    /** Step until `done()` holds (or `ms` has passed); whether it held. */
+    const until = (done, ms = 120_000) => {
+        for (let t = 0; t < ms && !done(); t += 100) step(100);
+        return done();
+    };
+
+    it('a catch sends the thief straight for the guard: a fight order on it that remembers the Hideout', () => {
+        const { hide, goblins, heroId } = build({ typeId: ALWAYS_CAUGHT });
+        step(THEFT_MS + 100);
+        const [guard] = guardsOf(goblins);
+        expect(BoardState.flagOf(heroId)).toMatchObject({ pinnedTo: guard.id, returnTo: hide.id });
+        expect(BoardState.flagOf(heroId).spot).toBeUndefined();
+        const at = { x: guard.x, y: guard.y };
+        expect(until(() => BoardCombat.fightOfHero(heroId)?.instanceId === guard.id, 5000)).toBe(true);
+        // The hero was sent; the guard never came for them.
+        expect({ x: guard.x, y: guard.y }).toEqual(at);
+    });
+
+    it('once the thief has beaten the guard they go back to the Hideout and steal there again', () => {
+        const { hide, goblins, heroId } = build({ typeId: ALWAYS_CAUGHT });
+        step(THEFT_MS + 100);
+        const [guard] = guardsOf(goblins);
+        expect(until(() => !BoardState.getTokenById(guard.id))).toBe(true);
+        step(100);
+        expect(BoardState.flagOf(heroId)).toMatchObject({ pinnedTo: hide.id });
+        expect(BoardState.flagOf(heroId).returnTo).toBeUndefined();
+        const heard = [];
+        const off = EventBus.subscribe(BOARD_EVENTS.THEFT, (p) => heard.push(p));
+        expect(until(() => heard.length > 0, THEFT_MS * 3)).toBe(true);
+        off();
+        expect(heard[0]).toMatchObject({ instanceId: hide.id, heroId, caught: true });
+        expect(heard[0].guardId).not.toBe(guard.id);
+    });
+
+    it('on a loss the thief is Defeated as ever, goes home, and does not come back; the guard stands', () => {
+        const { goblins, heroId } = build({ typeId: ALWAYS_CAUGHT, campType: BRUTE_CAMP, melee: 1 });
+        const defeats = [];
+        const off = EventBus.subscribe(BOARD_EVENTS.HERO_DEFEATED, (p) => defeats.push(p));
+        step(THEFT_MS + 100);
+        const [guard] = guardsOf(goblins);
+        expect(until(() => defeats.length > 0)).toBe(true);
+        off();
+        expect(defeats[0].fled).toBeFalsy();
+        expect(BoardState.flagOf(heroId)).toBeNull();
+        step(1000);
+        expect(BoardState.getTokenById(guard.id)).toBe(guard);
+        expect(BoardState.flagOf(heroId)).toBeNull();
+    });
+
+    it('under Valiant the beaten thief flees, losing nothing, and does not come back either', () => {
+        const { goblins, heroId } = build({ typeId: ALWAYS_CAUGHT, campType: BRUTE_CAMP, melee: 1 });
+        const shrine = fixtures.placeAt(VALIANT_SHRINE, CAMP_AT.x + 160, CAMP_AT.y);
+        shrine.shrine = { litMs: 600_000 };
+        TileModifiers.rebuildAll();
+        const defeats = [];
+        const off = EventBus.subscribe(BOARD_EVENTS.HERO_DEFEATED, (p) => defeats.push(p));
+        step(THEFT_MS + 100);
+        expect(guardsOf(goblins)).toHaveLength(1);
+        expect(until(() => defeats.length > 0)).toBe(true);
+        off();
+        expect(defeats[0]).toMatchObject({ fled: true, lost: [] });
+        expect(BoardState.flagOf(heroId)).toBeNull();
+    });
+
+    it('a weapon broken on the guard still sends the thief back: the fight was won', () => {
+        const { hide, goblins, heroId } = build({ typeId: ALWAYS_CAUGHT });
+        step(THEFT_MS + 100);
+        const [guard] = guardsOf(goblins);
+        expect(until(() => BoardCombat.fightOfHero(heroId)?.instanceId === guard.id, 5000)).toBe(true);
+        EventBus.publish(BOARD_EVENTS.GEAR_BROKE, { heroId, itemId: 'fixture_ch_blade', use: 'fight' });
+        expect(BoardState.flagOf(heroId)).toMatchObject({ pinnedTo: hide.id });
+        expect(BoardState.flagOf(heroId).returnTo).toBeUndefined();
+    });
+
+    it('a new order from the player forgets the Hideout', () => {
+        const { goblins, heroId } = build({ typeId: ALWAYS_CAUGHT });
+        step(THEFT_MS + 100);
+        expect(BoardState.flagOf(heroId).returnTo).toBeTruthy();
+        expect(fixtures.orderAt(heroId, NEAR_AT).success).toBe(true);
+        expect(BoardState.flagOf(heroId).returnTo).toBeUndefined();
+        expect(guardsOf(goblins)).toHaveLength(1);
+    });
+
+    it('a Summoned thief caught never goes for the guard: it waits at the Hideout', () => {
+        const { hide, goblins, heroId } = build({ typeId: ALWAYS_CAUGHT, summoned: true });
+        step(THEFT_MS + 100);
+        expect(guardsOf(goblins)).toHaveLength(1);
+        expect(BoardState.flagOf(heroId)).toMatchObject({ pinnedTo: hide.id });
+        expect(BoardState.flagOf(heroId).returnTo).toBeUndefined();
+        step(THEFT_MS);
+        expect(BoardCombat.fightOfHero(heroId)).toBeNull();
+    });
+
+    it('a save keeps the order to the guard and the Hideout it returns to', () => {
+        const { hide, goblins, heroId } = build({ typeId: ALWAYS_CAUGHT });
+        step(THEFT_MS + 100);
+        const [guard] = guardsOf(goblins);
+        reload();
+        expect(BoardState.flagOf(heroId)).toMatchObject({ pinnedTo: guard.id, returnTo: hide.id });
+        expect(until(() => !BoardState.getTokenById(guard.id))).toBe(true);
+        step(100);
+        expect(BoardState.flagOf(heroId)).toMatchObject({ pinnedTo: hide.id });
+    });
+
+    it('time away: the catch-up catches, fights and returns as the plain loop in its 1 s steps does', async () => {
+        const AWAY = 3 * 60_000;
+        // Token ids carry the clock they were made at, so the order is told by what it names.
+        const tally = ({ heroId, hide }, heard) => {
+            const { pinnedTo, returnTo, ...flag } = BoardState.flagOf(heroId) || {};
+            return {
+                thefts: heard.length,
+                caught: heard.filter(p => p.caught).length,
+                guards: BoardState.tokens().filter(t => t.guardOf).length,
+                flag: { ...flag, onGuard: !!BoardState.getTokenById(pinnedTo)?.guardOf, onHideout: pinnedTo === hide.id, returnsHome: returnTo === hide.id },
+                xp: GameState.state.heroes[0].skills.melee.xp
+            };
+        };
+        const listen = () => {
+            const heard = [];
+            const off = EventBus.subscribe(BOARD_EVENTS.THEFT, (p) => heard.push(p));
+            return { heard, off };
+        };
+        const a = build({ typeId: ALWAYS_CAUGHT });
+        const liveEars = listen();
+        step(AWAY, 1000);
+        liveEars.off();
+        const live = tally(a, liveEars.heard);
+        const b = build({ typeId: ALWAYS_CAUGHT });
+        const ears = listen();
+        const NOW = 1_800_000_000_000;
+        await CatchUp.run({ save: false, yieldFn: () => Promise.resolve(), savedAt: NOW - AWAY, now: NOW });
+        ears.off();
+        const caught = tally(b, ears.heard);
+        expect(caught).toEqual(live);
+        // Caught every time, the thief beat guard after guard and came back each time.
+        expect(caught.caught).toBeGreaterThanOrEqual(3);
+        expect(caught.thefts).toBe(caught.caught);
     });
 });
 
@@ -488,7 +675,7 @@ describe('a Hideout through a save and time away', () => {
     });
 
     it('a save keeps the guard: loaded, the camp is still guarded until it is beaten', () => {
-        const { hide, goblins, heroId } = build({ typeId: ALWAYS_CAUGHT });
+        const { hide, goblins, heroId } = build({ typeId: ALWAYS_CAUGHT, summoned: true });
         step(THEFT_MS + 100);
         const [guard] = guardsOf(goblins);
         reload();
@@ -516,7 +703,7 @@ describe('a Hideout through a save and time away', () => {
     });
 
     it('time away: a catch sets its guard, and the rest of the time nobody robs the guarded camp', async () => {
-        const { hide, goblins } = build({ typeId: ALWAYS_CAUGHT });
+        const { hide, goblins } = build({ typeId: ALWAYS_CAUGHT, summoned: true });
         const NOW = 1_800_000_000_000;
         const heard = [];
         const off = EventBus.subscribe(BOARD_EVENTS.THEFT, (p) => heard.push(p));

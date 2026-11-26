@@ -146,6 +146,7 @@
         "mastery": "Mastery!",
         "settled": "New place settled!",
         "knockout": "Defeated!",
+        "fled": "Fled!",
         "bankFull": "Bank full!",
         "stackFull": "Stack full!",
         "saveProblem": "Save problem",
@@ -498,6 +499,7 @@
             "drops": "Drops {items}",
             "won": "{hero} defeats {enemy}",
             "lost": "{hero} is defeated by {enemy}",
+            "fled": "{hero} flees from {enemy}, losing nothing",
             "left": "{hero} leaves the fight",
             "guard": "{enemy} caught a thief at {camp}: it stands guard, and nobody robs {camp} until it is beaten",
             "guardGone": "a camp now gone"
@@ -549,6 +551,7 @@
             "trimmed": "Earlier lines dropped",
             "won": "Defeated {enemy} in {time}",
             "lost": "Defeated by {enemy} after {time}",
+            "fled": "Fled from {enemy} after {time}",
             "left": "Left the fight after {time}",
             "unknownKinds": "? fight one to learn",
             "noKinds": "None",
@@ -567,6 +570,7 @@
             "log": "Log",
             "won": "Won",
             "lost": "Lost",
+            "fled": "Fled",
             "hit": "Hit",
             "attackEvery": "Attacks every",
             "resist": "Resist"
@@ -660,6 +664,7 @@
             "empty": "No other news.",
             "knockouts": "Defeats",
             "lost": "Lost: {items}",
+            "fled": "Fled, losing nothing",
             "broken": "Broken",
             "brokeStopped": "{hero} stopped",
             "bankFull": "Bank full: waiting on the mat",
@@ -907,7 +912,8 @@
         },
         "float": {
             "giantHarvest": "Giant!",
-            "echo": "Echo!"
+            "echo": "Echo!",
+            "fortune": "Fortune!"
         },
         "source": {
             "star": "Hall star {star} {rank}",

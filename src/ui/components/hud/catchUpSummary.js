@@ -158,14 +158,14 @@ export function summaryView(result, live = LIVE_EVENTS) {
     // The news hears what each knock-out cost; a catch-up without it still counts them.
     const knockouts = (news.knockouts?.length ? news.knockouts : summary.wounded || [])
         .filter(w => w.times > 0)
-        .map(w => ({ heroId: w.heroId, heroName: w.heroName, times: w.times, lost: w.lost || [] }));
+        .map(w => ({ heroId: w.heroId, heroName: w.heroName, times: w.times, fled: w.fled || 0, lost: w.lost || [] }));
     const view = {
         awayText: elapsedText(result?.awayMs),
         droppedText: result?.droppedMs >= MINUTE
             ? `${elapsedText(result.droppedMs)} past the ${lengthText(CATCH_UP.CAP_MS)} limit was skipped.`
             : null,
         items: itemChanges(summary.items),
-        /** Heroes knocked out: `{ heroId, heroName, times, lost }`, `lost` the gear it cost. */
+        /** Heroes knocked out: `{ heroId, heroName, times, fled, lost }`, `lost` the gear it cost, `fled` how often Valiant let them flee. */
         knockouts,
         /** Tools and weapons that broke, each stopping its hero: `{ key, heroId, heroName, itemId, name, times }`. */
         broken: (summary.broken || []).map(b => ({

@@ -683,6 +683,75 @@ export const MODIFIER_PALETTE = [
         group: 'Blessing',
         hint: 'A shrine\'s blessing: a chance a finished work cycle repeats at once, for free: its outputs again and its XP again, with no inputs, charges, Bait or tool wear, and no chance to end. In percent. Two shrines add their chances. Never a kill or a build.'
     },
+    {
+        /**
+         * Read by `Fortune.countCycle` once per finished work cycle (not failed, no build) of a Token
+         * with a rarest drop: its number is added to the Token's saved count, and the cycle that
+         * fills it to 100 lands that drop for certain, unrolled (`BoardRunner.landOutputs`). Points
+         * a cycle, not a chance, though resolved from 0 like one: 10 is every tenth cycle.
+         */
+        type: EFFECT_TYPES.FORTUNE,
+        reads: {
+            up: (n) => `have each finished cycle count ${n} toward a sure rare find`,
+            down: (n) => `have each finished cycle count ${n} less toward a sure rare find`
+        },
+        label: 'Fortune',
+        explains: 'Every so many finished cycles, the Token gives its rarest drop for certain',
+        when: 'never',
+        scales: 'value',
+        blessing: true,
+        buckets: ['flat'],
+        categories: 'skill',
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Blessing',
+        hint: 'A shrine\'s blessing: each finished work cycle of a Token it reaches counts this many percent toward a sure rare find, and the cycle that reaches 100% gives the Token\'s rarest drop for certain (10 is every tenth cycle, 25 every fourth). The rarest drop is the lowest-chance entry of its rare table, or with no table its lowest-chance output line; a Token whose lines all drop for certain has none. Each Token keeps its own count. Two shrines add up. Never a failed cycle, a kill or a build.'
+    },
+    {
+        /**
+         * Read by `CycleSavings.fleesDefeat` once, as a hero falls to 0 HP in a fight
+         * (`BoardCombat.resolveDefeat`), at the enemy Token they fight with their own scope: on a hit
+         * no defeat cost is taken (the food and drink share, the gear roll), and the fight's end
+         * says Fled. The hero is wounded and carried home as ever. Sure at 100 (no draw).
+         */
+        type: EFFECT_TYPES.VALIANT,
+        reads: {
+            up: (n) => `have a ${n} chance a hero brought down fighting here flees, losing nothing`,
+            down: (n) => `have ${n} less chance a hero brought down fighting here flees, losing nothing`
+        },
+        label: 'Valiant',
+        explains: 'A hero brought down fighting here flees instead of being Defeated, losing nothing',
+        when: 'never',
+        scales: 'value',
+        blessing: true,
+        // A chance is a plain number of percent; resolved from a base of 0, so any other bucket is 0.
+        buckets: ['flat'],
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Blessing',
+        hint: 'A shrine\'s blessing: a hero brought to 0 HP fighting an enemy it reaches is never Defeated. They flee and keep all their food, drink and gear, though they still go home wounded and heal; the log and banner say Fled. In percent: 100 is always. Aim it at the enemies (or camps\' enemies) in the shrine\'s reach.'
+    },
+    {
+        /**
+         * Read by `Wisdom.shareXp` each time a hero earns XP (a work cycle, a kill) at a Token it
+         * reaches: every other hero working or fighting a Token the same rule reaches gets this share
+         * of it, in the same skill. Off the Tokens' own rules only: on gear or a Hall star it reaches
+         * nobody. The skill is the one the XP was earned in (a kill's, its combat style).
+         */
+        type: EFFECT_TYPES.WISDOM,
+        reads: {
+            up: (n) => `share ${n} of the XP earned here with every other hero working or fighting in reach`,
+            down: (n) => `share ${n} less of the XP earned here with every other hero working or fighting in reach`
+        },
+        label: 'Wisdom',
+        explains: 'Heroes working or fighting in its reach share a part of the XP each earns',
+        when: 'never',
+        scales: 'value',
+        blessing: true,
+        buckets: ['flat'],
+        categories: 'skill',
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Blessing',
+        hint: 'A shrine\'s blessing: when a hero earns XP at a Token it reaches (a work cycle or a kill), every other hero working or fighting a Token in the same shrine\'s reach gets this many percent of it, in the same skill (a kill\'s, its combat style). A share is never shared again; heroes walking, idle or at home get none. Two shrines add up. In percent. Pick a skill to share only that work\'s XP. Only a Token\'s rule shares: on gear or a Hall star it does nothing.'
+    },
 
     // The gathering signature perks (Motherlode, Evergreen, Grove Feller, Master Angler): each a
     // chance, so the perk is 100 and a star or gear may hold less. Read at the worked Token through

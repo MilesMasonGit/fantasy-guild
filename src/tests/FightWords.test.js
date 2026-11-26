@@ -135,6 +135,20 @@ describe('Defeated, for winning and losing', () => {
         expect(t(`fight.log.${lost.key}`, lost.vars)).toBe('Kira is defeated by Wolf');
     });
 
+    it('a hero who fled under Valiant: the log heads Fled from Goblin, its last line and the window say Fled, and the banner Fled', async () => {
+        const { t } = await import('../i18n/index.js');
+        const { resultWord } = await import('../ui/components/combat/FightPanel.jsx');
+        engage();
+        resolve('fled');
+        const record = fightsOf('h1').last;
+        expect(record.outcome).toBe('fled');
+        const last = record.log.at(-1);
+        expect(t(`fight.log.${last.key}`, last.vars)).toBe('Kira flees from Goblin, losing nothing');
+        expect(heading(timed(65_000))).toBe('Fled from Goblin after 1m 5s');
+        expect(resultWord('fled').text).toBe('Fled');
+        expect(bannerText('fled', { heroes: ['Kira'] })).toEqual({ title: 'Fled!', line: 'Kira fled the fight and went home to heal. Nothing was lost.' });
+    });
+
     it('the banner and the hero who won say Defeated', () => {
         expect(bannerText('knockout', { heroes: ['Aela'], lost: [] }).title).toBe('Defeated!');
         expect(bannerText('knockout', { heroes: ['Aela', 'Bram'], losses: [] }).line).toBe('Aela and Bram were defeated and carried home. Nothing was lost.');
