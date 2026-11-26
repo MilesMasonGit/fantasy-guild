@@ -101,8 +101,9 @@ const PROGRESS_EVERY = 3;
  * cycle that starts on the very next tick, so a cycle ending part-way through a tick loses nothing:
  * without it a 1500 ms cycle at 1000 ms steps runs every 2 s instead of every 1.5 s. A station that
  * does not start again on the next tick (waiting for inputs, its hero gone) loses it, as it would
- * have lost the time anyway. Negative for a Token that refilled during this tick: the part of the
- * tick it was still resting (`TimedChanges.lateRefillsThisTick`).
+ * have lost the time anyway. Negative for a Token a timed change put in place or brought back
+ * during this tick (a refill, a Sapling's Oak, a spawn): the part of the tick before it stood
+ * there (`TimedChanges.arrivalsThisTick`).
  */
 let carryIn = new Map();
 let carryOut = new Map();
@@ -112,7 +113,7 @@ let carryOut = new Map();
  * another Token (a camp hero whose tree was just used up moves to the next one), so moving on loses
  * nothing either, and a catch-up's 1 s steps take the next Token at the same moment many small live
  * steps do. Where both a Token's and its hero's leftover stand, the later start wins (the smaller
- * leftover: a Token that refilled during the tick is not worked before it refilled).
+ * leftover: a Token that came during the tick is not worked before it came).
  */
 let heroCarryIn = new Map();
 let heroCarryOut = new Map();
@@ -612,8 +613,9 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     const ended = refreshed ? [] : Charges.commitPlan(chargePlan, { heroId });
     // Used up just now: its rest began when this cycle ended, `overMs` before the tick's end.
     Respawn.restBeganEarlier(instance, overMs);
-    // A tree felled by a cycle that worked may fell the touching trees of its kind (Grove Felling).
-    if (!failed && heroId && ended.includes(id)) GroveFelling.afterFall(instance, def, io, heroId, config.skill);
+    // A tree felled by a cycle that worked may fell the touching trees of its kind (Grove Felling),
+    // whose rests begin at the same moment.
+    if (!failed && heroId && ended.includes(id)) GroveFelling.afterFall(instance, def, io, heroId, config.skill, overMs);
 
     // A Field spends one harvest of its load; the last sows its crop again, growing from the moment
     // this cycle ended (`overMs` into the tick), or stops it without a seed (`Fields.js`).
@@ -962,10 +964,10 @@ export function tick(delta) {
     // whose Token just changed under them lets go and chooses again this same tick, and before any
     // Token ticks, so a cycle on a Token that has gone is never advanced or completed.
     TimedChanges.tick(delta);
-    // A Token that refilled during this tick works only the part of it after the refill: its
-    // cycle starts owing the time it was still resting (a negative carry, read where a cycle
+    // A Token that came during this tick (refilled, grown into, spawned) works only the part of it
+    // after it came: its cycle starts owing the time before (a negative carry, read where a cycle
     // begins), so a big catch-up step and many small live ones end in the same place.
-    for (const [id, sinceMs] of TimedChanges.lateRefillsThisTick()) {
+    for (const [id, sinceMs] of TimedChanges.arrivalsThisTick()) {
         if (sinceMs < delta) {
             carryIn.set(id, sinceMs - delta);
             carry2In.set(id, sinceMs - delta);

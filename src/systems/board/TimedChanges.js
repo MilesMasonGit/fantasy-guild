@@ -42,8 +42,8 @@ import { logger } from '../../utils/Logger.js';
  *
  * One big tick equals many small ones: a change that falls due part-way through a tick hands the
  * rest of that tick to the Token it became, and that one may change in turn (bounded by {@link
- * MAX_CHANGES_PER_TICK}). So ten minutes in one tick end in the same state as ten minutes in 100 ms
- * ticks.
+ * MAX_CHANGES_PER_TICK}); a hero works it only for that rest ({@link arrivals}). So ten minutes in
+ * one tick end in the same state as ten minutes in 100 ms ticks.
  *
  * A spawner's attempt that finds no room acts without replacing the Token: the clock starts its next
  * lap, keeping any time past due, so a long tick consumes `random` in the same order as many small
@@ -167,8 +167,9 @@ function gatePaused(instance, needsNearby) {
  * * `applies(instance, def)` — whether this Token runs it;
  * * `dueMs(instance, def)` — when it fires;
  * * `fire(instance, def, random, ctx)` — what happens. `ctx` is
- *   `{ overMs, advance }`: how long ago it fell due, and {@link advance}, so a
- *   Token a handler creates can live the rest of the tick. Returns the instance that
+ *   `{ overMs, advance, arrived }`: how long ago it fell due, {@link advance}, so a
+ *   Token a handler creates can live the rest of the tick, and `arrived(token, overMs)`,
+ *   which says that Token came to stand there `overMs` ago ({@link arrivals}). Returns the instance that
  *   now stands there (a new one after a transform, or the same one for a
  *   handler that acts without replacing), {@link REMOVED} when the Token left
  *   the mat, or null when it could not happen (the clock is held full and
@@ -212,7 +213,7 @@ export const HANDLERS = [
             const ripening = Fields.stageOf(instance, def) === Fields.STAGE.GROWING;
             const next = Fields.clockFired(instance, def);
             // A crop that ripened part-way through the tick is harvested only after it ripened.
-            if (ripening && next) lateRefills.set(instance.id, Math.max(0, Number(ctx?.overMs) || 0));
+            if (ripening && next) arrivedAt(instance, ctx?.overMs);
             return next;
         }
     },
@@ -240,7 +241,7 @@ export const HANDLERS = [
         applies: (instance, def) => !!def?.respawn && Respawn.restingMode(instance, def) === 'refill',
         dueMs: (instance, def) => Respawn.restMsOf(instance, def),
         fire: (instance, def, random, ctx) => {
-            lateRefills.set(instance.id, Math.max(0, Number(ctx?.overMs) || 0));
+            arrivedAt(instance, ctx?.overMs);
             return Respawn.refill(instance);
         }
     },
@@ -388,7 +389,7 @@ export function advance(instance, delta, random = Math.random) {
             return;
         }
 
-        const next = due.h.fire(current, def, random, { overMs: due.over, advance });
+        const next = due.h.fire(current, def, random, { overMs: due.over, advance, arrived: arrivedAt });
         if (!next) {
             // Nowhere to stand (or nothing to become): held full, retried next tick.
             clocks[due.h.clock] = due.at;
@@ -405,25 +406,34 @@ export function advance(instance, delta, random = Math.random) {
             continue;
         }
 
-        // Replaced: the Token it became lives the rest of this tick.
+        // Replaced: the Token it became lives the rest of this tick, and is worked only from the
+        // moment it stood there.
         logger.debug('TimedChanges', `${current.typeId} → ${next.typeId} (${due.h.id})`);
+        arrivals.delete(current.id);
+        arrivedAt(next, due.over);
         current = next;
         remaining = due.over;
     }
 }
 
 /**
- * The Tokens that refilled during this tick, by instance id: how long before the tick's end each
- * came back (0 when it fell due at the very end). The clocks are advanced before any Token works,
- * so the runner would otherwise work a refilled vein for the whole tick, rest included: a 1000 ms
- * step would give it up to a second more than ten 100 ms steps. It works only the part after the
- * refill instead. Filled by {@link tick}, read by `BoardRunner.tick` straight after.
+ * The Tokens a timed change put in place or brought back during this tick, by instance id: how
+ * long before the tick's end each came (0 when it fell due at the very end). A refill, a ripened
+ * crop, the Token a growth or a regrow became (a Sapling's Oak), a spawner's new Token. The clocks
+ * are advanced before any Token works, so the runner would otherwise work such a Token for the
+ * whole tick, the part before it stood there included: a 1000 ms step would give it up to a second
+ * more than ten 100 ms steps. It works only the part after it came instead. Filled by {@link tick},
+ * read by `BoardRunner.tick` straight after.
  */
-const lateRefills = new Map();
+const arrivals = new Map();
 
-/** This tick's late refills (see {@link lateRefills}); empty until the next {@link tick}. */
-export function lateRefillsThisTick() {
-    return lateRefills;
+function arrivedAt(token, overMs) {
+    if (token?.id) arrivals.set(token.id, Math.max(0, Number(overMs) || 0));
+}
+
+/** This tick's arrivals (see {@link arrivals}); empty until the next {@link tick}. */
+export function arrivalsThisTick() {
+    return arrivals;
 }
 
 /**
@@ -434,7 +444,7 @@ export function lateRefillsThisTick() {
  * @param {() => number} [random] for the weighted picks; tests pass a seeded one
  */
 export function tick(delta, random = Math.random) {
-    lateRefills.clear();
+    arrivals.clear();
     if (!(delta > 0)) return;
     // A stopped growth reads what the Bank and the mat hold afresh each tick, once per item.
     Growth.supplyChanged();
