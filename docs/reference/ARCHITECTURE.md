@@ -558,7 +558,8 @@ directly (mostly `src/config/registries`, `src/systems/progression/ledger/engine
 the content rules in `src/systems/core/*Rule.js`, and one UI file,
 `src/ui/components/atlas/worldMapLayout.js`), so a game-side change can break it. Its Recalculate
 writes the derived fields the game reads (`cms/src/engine/sim/writeBack.js`): an item's `value` and
-the `coinWorth` that follows from it (`cms/src/engine/ledger/coins.js`, kept as typed when pinned),
+the `coinWorth` that follows from it once the content uses coins (`cms/src/engine/ledger/coins.js`,
+kept as typed when pinned),
 cycle times, output quantities and XP. Internals: see [`cms/README.md`](../../cms/README.md).
 
 ---

@@ -280,7 +280,7 @@ function BreakChanceField({ item, isTool, onChange }) {
 
 /**
  * What one copy sells for from the Bank, `coinWorth` (`itemCoins.js`). Recalculate writes it from
- * the item's value (`engine/ledger/coins.js`); a whole number of 0 or more typed here is written and
+ * the item's value once the content uses coins (`engine/ledger/coins.js`); a whole number of 0 or more typed here is written and
  * pinned (`sim.coinWorthPinned`), so Recalculate keeps it, and unticking the pin derives it again.
  * Blank, or a number that is not one, writes nothing and drops the pin. The words typed are kept while typing.
  */
@@ -332,7 +332,7 @@ function CoinWorthField({ item, onChange }) {
           ? 'Pinned: Recalculate keeps it. Untick to take it from the value again.'
           : fromValue === null
             ? 'Nothing prices it yet, so Recalculate writes none (it sells for 0) unless a number is pinned.'
-            : `From its value (${fromValue}) at each Recalculate; a number typed here is pinned.`}
+            : `From its value (${fromValue}) at each Recalculate, once anything in the game asks or drops coins; a number typed here is pinned.`}
       </p>
     </Field>
   );

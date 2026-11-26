@@ -4,7 +4,7 @@ import { buildRateBook } from '../../cms/src/engine/ledger/rates.js';
 import { buildPace, roundDown } from '../../cms/src/engine/ledger/pace.js';
 import { PROFILE, PROFILES, BEFORE_HALL } from '../../cms/src/engine/ledger/profiles.js';
 import { settingsOf, coinMinutesAt, minutesToReach, DEFAULT_LEDGER_SETTINGS } from '../../cms/src/engine/ledger/settings.js';
-import { ledgerCoinWorth } from '../../cms/src/engine/ledger/coins.js';
+import { ledgerCoinWorth, coinsInPlay } from '../../cms/src/engine/ledger/coins.js';
 import { proposeBalance, LEVER } from '../../cms/src/engine/ledger/balance.js';
 import { CHECKS } from '../../cms/src/engine/ledger/checks.js';
 import { paceContent } from './fixtures/paceWorld.js';
@@ -62,6 +62,19 @@ function withStall(c, coins) {
     };
     return c;
 }
+
+describe('⭐ coins in play: what turns Recalculate\'s coin worths on', () => {
+    it('a Shop price, a Coin drop, steal coins, a Hall rank or a ring that asks coins; nothing else', () => {
+        expect(coinsInPlay({})).toBe(false);
+        expect(coinsInPlay({ tokens: paceContent().tokens, hallStars: paceHallSky().stars, world: WORLD_FIXTURE_RAW })).toBe(false);
+        expect(coinsInPlay({ tokens: { a: { shop: { price: [], coins: 2 } } } })).toBe(true);
+        expect(coinsInPlay({ tokens: { a: { enemy: { level: 1, coinDrop: 1 } } } })).toBe(true);
+        expect(coinsInPlay({ tokens: { a: { enemy: { level: 1 }, steal: { coins: 4 } } } })).toBe(true);
+        expect(coinsInPlay({ tokens: { a: { shop: { price: [], coins: 0 } }, b: { enemy: { coinDrop: 2.5 } } } })).toBe(false);
+        expect(coinsInPlay({ hallStars: { s: { ranks: [{ price: [] }, { price: [], coins: 9 }] } } })).toBe(true);
+        expect(coinsInPlay({ world: { prices: { 1: { items: [] }, 2: { items: [], coins: 30 } } } })).toBe(true);
+    });
+});
 
 describe('⭐ an item\'s coin worth comes from its value', () => {
     it('its value in whole coins, a pinned worth kept, nothing without either', () => {

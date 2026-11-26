@@ -113,17 +113,36 @@ describe('⭐ the item editor\'s Coin worth', () => {
     });
 });
 
-describe('⭐ Recalculate fills the worth from the value; a pinned worth survives Recalculate and Sync', () => {
-    it('every priced item worth its value in coins, an unpriced one none', () => {
-        const files = syncPayload();
-        const items = Object.values(files['items.json']);
+describe('⭐ Recalculate fills the worth from the value once the content uses coins; a pinned worth survives Recalculate and Sync', () => {
+    /** A coin cost on the first Shop Token: the content now uses coins. */
+    const askCoins = () => {
+        const shopId = Object.values(store().tokens).find(t => t.shop)?.id;
+        store().updateToken(shopId, { shop: { ...store().tokens[shopId].shop, coins: 5 } });
+        return shopId;
+    };
+
+    it('no coin anywhere (today\'s content): no item gains a worth, so the files round-trip as they were', () => {
+        const items = Object.values(syncPayload()['items.json']);
+        expect(items.some(i => 'coinWorth' in i)).toBe(false);
+    });
+
+    it('⭐ with a coin cost: every priced item worth its value in coins, an unpriced one none', () => {
+        askCoins();
+        const items = Object.values(syncPayload()['items.json']);
         const priced = items.filter(i => i.value != null);
         expect(priced.length).toBeGreaterThan(100);
         for (const item of priced) expect(item.coinWorth, item.id).toBe(item.value);
         for (const item of items.filter(i => i.value == null)) expect('coinWorth' in item, item.id).toBe(false);
     });
 
+    it('an enemy\'s Coin drop puts coins in play as a Shop price does', () => {
+        const enemyId = Object.values(store().tokens).find(t => t.enemy)?.id;
+        store().updateToken(enemyId, { enemy: { ...store().tokens[enemyId].enemy, coinDrop: 3 } });
+        expect(Object.values(syncPayload()['items.json']).filter(i => 'coinWorth' in i).length).toBeGreaterThan(100);
+    });
+
     it('pinned: written as typed, priced or not; unpinned: a typed number gives way to the value', () => {
+        askCoins();
         const pinned = { coinWorthPinned: true };
         const ore = store().addItem({ name: 'Coin Fixture Ore', coinWorth: 7, sim: pinned });
         const free = store().addItem({ name: 'Coin Fixture Free', coinWorth: 0, sim: pinned });
@@ -139,6 +158,11 @@ describe('⭐ Recalculate fills the worth from the value; a pinned worth survive
         expect('coinWorth' in files['items.json'][blank]).toBe(false);
         // Nothing makes it, so it has no value: the number typed without a pin is not kept.
         expect('coinWorth' in files['items.json'][loose]).toBe(false);
+    });
+
+    it('with no coins in play a typed worth is left exactly as typed, pinned or not', () => {
+        const loose = store().addItem({ name: 'Coin Fixture Loose', coinWorth: 9 });
+        expect(syncPayload()['items.json'][loose].coinWorth).toBe(9);
     });
 });
 

@@ -171,8 +171,9 @@ beside the entry's `tempo` and `purpose` keeps its `config.xp` (a recipe's `xp`)
 `changePackTool.mjs balance --out` sets it on the XP numbers it proposes. The owner sees and clears a
 pin in the editor, under the XP field.
 
-An item's coin worth (`coinWorth`) is derived the same way: Recalculate writes its value in whole
-coins. A pack that sets a worth by hand pins it beside: `"sim": { "coinWorthPinned": true }` on the
+An item's coin worth (`coinWorth`) is derived the same way: once anything asks or drops coins
+(`cms/src/engine/ledger/coins.js` `coinsInPlay`), Recalculate writes its value in whole coins. A
+pack that sets a worth by hand pins it beside: `"sim": { "coinWorthPinned": true }` on the
 item, and Recalculate keeps the number. Coin costs (`shop.coins` on a Shop Token, `coins` on a Guild
 Hall star's rank, `prices[ring].coins` in the world tables) and an enemy's `enemy.coinDrop` are never
 derived: a pack writes them. `node cms/changePackTool.mjs coins [--from <workspace.json>]` lists

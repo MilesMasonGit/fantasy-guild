@@ -1,7 +1,7 @@
 import { workspacePace } from './ledgerReport.js';
 import { PROFILE, PROFILES } from './ledger/pace.js';
 import { tierLabel, isPlanned } from '../../../src/systems/progression/ledger/plan.js';
-import { derivedCoinWorth, isCoinWorthPinned } from './ledger/coins.js';
+import { derivedCoinWorth, isCoinWorthPinned, coinsInPlay } from './ledger/coins.js';
 
 /**
  * The ledger's coins over the CMS workspace (brief 870 C3), for the content agent's coin pack
@@ -38,7 +38,8 @@ export function workspaceCoins(state = {}) {
         if (derivedCoinWorth(item) !== null) priced++;
         if (isCoinWorthPinned(item)) pinned++;
     }
-    return { supply, prices: pace.coinPrices(), drops: pace.coinDrops(), worth: { priced, pinned }, ms: Date.now() - started };
+    const inPlay = coinsInPlay({ tokens: state.tokens, hallStars: state.hallStars, world: state.world });
+    return { supply, prices: pace.coinPrices(), drops: pace.coinDrops(), worth: { priced, pinned, inPlay }, ms: Date.now() - started };
 }
 
 const round = (n) => (Number.isFinite(n) ? Math.round(n) : n);
@@ -46,7 +47,9 @@ const round = (n) => (Number.isFinite(n) ? Math.round(n) : n);
 /** The coins in plain text, for the change pack tool. */
 export function coinsText(result, { rows = 40 } = {}) {
     const lines = [];
-    lines.push(`Coin worth: ${result.worth.priced} items sell for their value in coins (${result.worth.pinned} pinned by hand).`);
+    lines.push(result.worth.inPlay
+        ? `Coin worth: ${result.worth.priced} items sell for their value in coins (${result.worth.pinned} pinned by hand); Recalculate writes them.`
+        : `Coin worth: nothing asks or drops coins yet, so Recalculate writes no sale prices; once something does, ${result.worth.priced} items sell for their value in coins (${result.worth.pinned} pinned by hand).`);
     lines.push('Coins one hero earns an hour from each stage\'s start to its end (its budget; the levels the pace curve has by then), at Typical, Bare and Maxed in brackets:');
     const when = (h) => (Number.isFinite(h) ? `${Math.round(h * 60)} min` : 'any level');
     for (const s of result.supply) {

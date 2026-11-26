@@ -233,9 +233,9 @@ function deriveOutputs(outputs, downcycleEntry, tuning) {
 /**
  * Items: derived `value` and `valueSource`, the coin worth that follows from the value, retired fields gone.
  * ⚠️ An item the passes could not price keeps `value: null` and gains `valueSource: null` rather than being skipped: null means not yet computed, which is what an unreachable item is and what the audit raises as Critical.
- * ⚠️ `coinWorth` is the new value in whole coins unless the author pinned it (`sim.coinWorthPinned`, `ledger/coins.js`); with neither it is removed, so an item sells for 0.
+ * ⚠️ With `coins` (the content uses coins, `ledger/coins.coinsInPlay`), `coinWorth` is the new value in whole coins unless the author pinned it (`sim.coinWorthPinned`); with neither it is removed, so an item sells for 0. Without, it is left exactly as it was.
  */
-export function applyItemResults(items = {}, sim) {
+export function applyItemResults(items = {}, sim, { coins = false } = {}) {
     const next = {};
     for (const [id, item] of Object.entries(items)) {
         const itemId = item?.id ?? id;
@@ -246,9 +246,11 @@ export function applyItemResults(items = {}, sim) {
             value: priced ? sim.values.get(itemId) : null,
             valueSource: priced ? (sim.elections.get(itemId)?.sourceId ?? null) : null,
         };
-        const worth = derivedCoinWorth(record);
-        if (worth === null) delete record.coinWorth;
-        else if (!isCoinWorthPinned(record)) record.coinWorth = worth;
+        if (coins) {
+            const worth = derivedCoinWorth(record);
+            if (worth === null) delete record.coinWorth;
+            else if (!isCoinWorthPinned(record)) record.coinWorth = worth;
+        }
         next[id] = record;
     }
     return next;
