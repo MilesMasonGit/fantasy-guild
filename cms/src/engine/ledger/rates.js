@@ -133,10 +133,10 @@ function recipeMap({ recipes, recipePools }) {
 }
 
 /**
- * A value as a string two values share only when the calculator reads them alike: numbers exactly
- * (NaN, the infinities and -0 apart), strings quoted, `undefined` apart from a missing entry is not
- * needed but kept apart. Null when it holds anything but plain data (a function, a Map, a class),
- * which is then never kept.
+ * Plain data as a string: two values share one only when they hold the same, every number exactly
+ * (NaN, the infinities and -0 apart from each other and from null), every string quoted, entries in
+ * the order they were made. Null when it holds anything else (a function, a Map, a class), which a
+ * memo then never keeps.
  */
 function keyOf(v) {
     switch (typeof v) {
@@ -174,6 +174,38 @@ function keyOf(v) {
 /** Notes nobody reads: a rate asked for its numbers alone (`numbersOf`) keeps none. */
 const NO_NOTE = Object.freeze({ push() {} });
 const NO_NOTES = Object.freeze({ unmodelled: NO_NOTE, assumptions: NO_NOTE });
+
+/**
+ * A memo that keeps about `size` answers, in two halves: the newest, and the ones before them, which
+ * an ask moves back to the newest. When the newest are full they become the ones before, and those
+ * before are let go. The pace asks its parts in runs (one work, one hero), so few asks miss.
+ */
+function keeper(size) {
+    let now = new Map();
+    let before = new Map();
+    const set = (key, value) => {
+        if (now.size >= size) {
+            before = now;
+            now = new Map();
+        }
+        now.set(key, value);
+    };
+    return {
+        get(key) {
+            let value = now.get(key);
+            if (value === undefined) {
+                value = before.get(key);
+                if (value !== undefined) set(key, value);
+            }
+            return value;
+        },
+        set,
+        get size() { return now.size + before.size; }
+    };
+}
+
+/** How many of each part of a rate a rate book keeps (`keeper`): a few megabytes, where every part would be hundreds. */
+const PARTS_KEPT = 2000;
 
 /**
  * One answer per key, worked out once: what it noted (`unmodelled`, `assumptions`) is kept with it
@@ -230,16 +262,18 @@ export function buildRateBook(content = {}) {
     const sky = skyWithFallback(isObject(content.hallSky) ? content.hallSky : {});
     const stars = sky.stars;
     const starsById = new Map(stars.map(s => [s.id, s]));
-    const hall = { stars, constellations: sky.constellations, star: (id) => starsById.get(id) || null, memo: new WeakMap(), byRanks: new WeakMap(), byKey: new Map(), ids: 0 };
+    const hall = { stars, constellations: sky.constellations, star: (id) => starsById.get(id) || null, byRanks: new WeakMap(), byKey: keeper(PARTS_KEPT), ids: 0 };
 
     // The events that can land, for a fishing spot an event brings: its share of them all.
     const events = Object.values(normaliseEventTable(content.events)).filter(e => isRunnable(e) && rawTokens[e.typeId] && !isPlanned(rawTokens[e.typeId]));
 
     const book = {
         library, items, recipes, perkTables, hall, events,
-        // The parts of a rate many setups share, each kept by what it reads of the setup (`keyOf`).
-        // ⚠️ The pace asks hundreds of thousands of rates, mostly of setups one boost apart.
-        parts: { hero: new Map(), tile: new Map(), guild: new Map(), guildByHall: new WeakMap() },
+        // The parts of a rate many setups share, each kept by what it reads of the setup (`keyOf`), the
+        // Hall's rules by the ranks object itself: the pace asks hundreds of thousands of rates, mostly
+        // of setups one boost apart.
+        // ⚠️ A setup is read as it stands when rated: make a new one rather than change one in place.
+        parts: { hero: keeper(PARTS_KEPT), tile: keeper(PARTS_KEPT), guild: keeper(PARTS_KEPT), guildByHall: new WeakMap() },
         tokenIds: () => Object.keys(rawTokens),
         token: tokenDef,
         rateOf: (target, setup) => rateOf(book, target, setup),
@@ -365,28 +399,22 @@ function tileRules(book, targetDef, setup, hero, notes) {
  * The Guild Hall's stars a setup holds (`hallRanks`, a rank past a star's top read as its top), as
  * the guild holds them (`hallModifiers.hallRulesOf`, which `HallRules.apply` registers): modifiers
  * for the guild-wide scope and modifiers aimed at some Tokens. Each star is one factor,
- * `hall:<id>`. Worked out once per setup, and once per ranks and switches held: one answer stands
- * for every setup holding those, `id` naming it (null when they cannot be named) for the parts of a
- * rate that read them.
- * ⚠️ Kept by the ranks object too, as setups one boost apart share it: a setup's ranks are never
- * changed once it is rated.
+ * `hall:<id>`. Worked out once per ranks and switches held: one answer stands for every setup holding
+ * those, `id` naming it (null when they cannot be named) for the parts of a rate that read them.
+ * ⚠️ Kept by the ranks object itself, which setups one boost apart share (see `buildRateBook`).
  */
 function hallRules(book, setup) {
-    const memo = book.hall.memo;
-    if (memo.has(setup)) return memo.get(setup);
     const ranks = setup.hallRanks;
     const byRanks = setup.off === undefined && typeof ranks === 'object' && ranks !== null;
     let out = byRanks ? book.hall.byRanks.get(ranks) : undefined;
+    if (out) return out;
+    const key = keyOf([ranks, setup.off]);
+    out = key === null ? undefined : book.hall.byKey.get(key);
     if (!out) {
-        const key = keyOf([ranks, setup.off]);
-        out = key === null ? undefined : book.hall.byKey.get(key);
-        if (!out) {
-            out = starsHeld(book, setup, key === null ? null : book.hall.ids++);
-            if (key !== null) book.hall.byKey.set(key, out);
-        }
-        if (byRanks) book.hall.byRanks.set(ranks, out);
+        out = starsHeld(book, setup, key === null ? null : book.hall.ids++);
+        if (key !== null) book.hall.byKey.set(key, out);
     }
-    memo.set(setup, out);
+    if (byRanks) book.hall.byRanks.set(ranks, out);
     return out;
 }
 
