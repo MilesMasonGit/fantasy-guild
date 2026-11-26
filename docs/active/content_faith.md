@@ -1,4 +1,4 @@
-Status: approved 2026-11-25 (a CMS pack of Planned entries still to come, T-663)
+Status: approved 2026-11-25 (pack `2026-11-26-faith-offerings` staged 2026-11-26: the Beeswax Candle Live at Crafting 19, Lavender Incense off the Altar; the other offerings and four shrines Planned)
 
 # Faith: shrines and offerings
 
@@ -38,7 +38,7 @@ the ledger's.*
 | 55 | Sage Incense | Sage | Shrine of Wisdom |
 | 75 | Rose Garland | Roses, String | Shrine of Echoes |
 
-*Planning agent's calls:* the levels are Crafting levels for now, kept just below the Faith level of the shrine that first asks for each offering (the content agent fits them into Crafting's open levels);
+*Placed 2026-11-26 (content agent), at free Crafting levels below each shrine: Beeswax Candle 19, Sage Incense 37, Tallow Candle 39, Rose Garland 79; Lavender Incense stays at 7.* *Planning agent's calls:* the levels are Crafting levels for now, kept just below the Faith level of the shrine that first asks for each offering (the content agent fits them into Crafting's open levels);
 Lavender Incense, which the owner approved, has no shrine of its own, so it is the Nature Shrine's
 richer offering (no item without a job). Interlocks: Faith takes from Combat (wax, tallow, bones),
 Farming and Alchemy (herbs, roses), Tailor (String), Crafting (Charcoal, Parchment) and Enchanting

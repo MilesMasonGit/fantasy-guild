@@ -9771,6 +9771,578 @@
         "for": "Fishing",
         "its job": "spots arrive twice as often nearby"
       }
+    },
+    {
+      "id": "blue_drake",
+      "name": "Blue Drake",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 40,
+      "gives": [
+        "blue_scale"
+      ],
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster",
+      "notes": {
+        "steal": "Mythril Ore"
+      }
+    },
+    {
+      "id": "drake_roost",
+      "name": "Drake Roost",
+      "category": "token",
+      "type": "Camp",
+      "skill": "Combat",
+      "level": 40,
+      "gives": [
+        "blue_drake"
+      ],
+      "art": "A",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "treant",
+      "name": "Treant",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 44,
+      "gives": [
+        "maple_wood",
+        "cedar_wood"
+      ],
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster",
+      "notes": {
+        "steal": "Seedlings, Honey"
+      }
+    },
+    {
+      "id": "treant_grove",
+      "name": "Treant Grove",
+      "category": "token",
+      "type": "Camp",
+      "skill": "Combat",
+      "level": 44,
+      "gives": [
+        "treant"
+      ],
+      "art": "A",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "troll",
+      "name": "Troll",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 60,
+      "gives": [
+        "mahogany_wood"
+      ],
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster",
+      "notes": {
+        "steal": "Adamantine Ore"
+      }
+    },
+    {
+      "id": "troll_bridge",
+      "name": "Troll Bridge",
+      "category": "token",
+      "type": "Camp",
+      "skill": "Combat",
+      "level": 60,
+      "gives": [
+        "troll"
+      ],
+      "art": "A",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "phoenix",
+      "name": "Phoenix",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 80,
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster",
+      "notes": {
+        "steal": "Ebony Wood"
+      }
+    },
+    {
+      "id": "phoenix_nest",
+      "name": "Phoenix Nest",
+      "category": "token",
+      "type": "Camp",
+      "skill": "Combat",
+      "level": 80,
+      "gives": [
+        "phoenix"
+      ],
+      "art": "A",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "void_beast",
+      "name": "Void Beast",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 85,
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster",
+      "notes": {
+        "steal": "Darkmetal Ore"
+      }
+    },
+    {
+      "id": "void_rift",
+      "name": "Void Rift",
+      "category": "token",
+      "type": "Camp",
+      "skill": "Combat",
+      "level": 85,
+      "gives": [
+        "void_beast"
+      ],
+      "art": "A",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "chicken",
+      "name": "Chicken",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 2,
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "spider",
+      "name": "Spider",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 20,
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "bandit",
+      "name": "Bandit",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 22,
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "boar",
+      "name": "Boar",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 25,
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "spider_queen",
+      "name": "Spider Queen",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 28,
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "rock_golem",
+      "name": "Rock Golem",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 30,
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "harpy",
+      "name": "Harpy",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 33,
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "wraith",
+      "name": "Wraith",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 36,
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "bog_witch",
+      "name": "Bog Witch",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 39,
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "naga",
+      "name": "Naga",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 47,
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "drake_matriarch",
+      "name": "Drake Matriarch",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 49,
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "griffin",
+      "name": "Griffin",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 50,
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "salamander",
+      "name": "Salamander",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 54,
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "minotaur",
+      "name": "Minotaur",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 57,
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "minotaur_lord",
+      "name": "Minotaur Lord",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 59,
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "basilisk",
+      "name": "Basilisk",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 65,
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "lich",
+      "name": "Lich",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 70,
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "kraken",
+      "name": "Kraken",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 75,
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "red_dragon",
+      "name": "Red Dragon",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 88,
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "elder_dragon",
+      "name": "Elder Dragon",
+      "category": "token",
+      "type": "Enemy",
+      "skill": "Combat",
+      "level": 95,
+      "art": "N",
+      "page": "content_enemies.md",
+      "section": "The roster"
+    },
+    {
+      "id": "slime_puddle",
+      "name": "Slime Puddle",
+      "category": "token",
+      "type": "Camp",
+      "skill": "Combat",
+      "level": 1,
+      "art": "A",
+      "page": "content_crime.md",
+      "section": "The steal tables"
+    },
+    {
+      "id": "summoned_small_slime",
+      "name": "Summoned Small Slime",
+      "category": "token",
+      "type": "Summon",
+      "skill": "Summoning",
+      "level": 1,
+      "art": "A",
+      "page": "content_summoning.md",
+      "section": "The list",
+      "notes": {
+        "works": "Farming 10"
+      }
+    },
+    {
+      "id": "summoned_water_elemental",
+      "name": "Summoned Water Elemental",
+      "category": "token",
+      "type": "Summon",
+      "skill": "Summoning",
+      "level": 20,
+      "art": "A",
+      "page": "content_summoning.md",
+      "section": "The list",
+      "notes": {
+        "works": "Fishing 30"
+      }
+    },
+    {
+      "id": "summoned_fire_elemental",
+      "name": "Summoned Fire Elemental",
+      "category": "token",
+      "type": "Summon",
+      "skill": "Summoning",
+      "level": 40,
+      "art": "A",
+      "page": "content_summoning.md",
+      "section": "The list",
+      "notes": {
+        "works": "Mining 50"
+      }
+    },
+    {
+      "id": "summoned_thorn_elemental",
+      "name": "Summoned Thorn Elemental",
+      "category": "token",
+      "type": "Summon",
+      "skill": "Summoning",
+      "level": 60,
+      "art": "A",
+      "page": "content_summoning.md",
+      "section": "The list",
+      "notes": {
+        "works": "Forestry 70"
+      }
+    },
+    {
+      "id": "summoned_greater_slime",
+      "name": "Summoned Greater Slime",
+      "category": "token",
+      "type": "Summon",
+      "skill": "Summoning",
+      "level": 80,
+      "art": "A",
+      "page": "content_summoning.md",
+      "section": "The list",
+      "notes": {
+        "works": "Mining 90"
+      }
+    },
+    {
+      "id": "beeswax_candle",
+      "name": "Beeswax Candle",
+      "category": "item",
+      "type": "Faith offering",
+      "skill": "Crafting",
+      "level": 19,
+      "madeWith": [
+        "beeswax_comb"
+      ],
+      "art": "N",
+      "page": "content_faith.md",
+      "section": "The offerings' recipes (Crafting)"
+    },
+    {
+      "id": "tallow_candle",
+      "name": "Tallow Candle",
+      "category": "item",
+      "type": "Faith offering",
+      "skill": "Crafting",
+      "level": 39,
+      "madeWith": [
+        "raw_beef",
+        "string"
+      ],
+      "art": "N",
+      "page": "content_faith.md",
+      "section": "The offerings' recipes (Crafting)"
+    },
+    {
+      "id": "sage_incense",
+      "name": "Sage Incense",
+      "category": "item",
+      "type": "Faith offering",
+      "skill": "Crafting",
+      "level": 37,
+      "madeWith": [
+        "sage"
+      ],
+      "art": "N",
+      "page": "content_faith.md",
+      "section": "The offerings' recipes (Crafting)"
+    },
+    {
+      "id": "rose_garland",
+      "name": "Rose Garland",
+      "category": "item",
+      "type": "Faith offering",
+      "skill": "Crafting",
+      "level": 79,
+      "madeWith": [
+        "rose",
+        "string"
+      ],
+      "art": "N",
+      "page": "content_faith.md",
+      "section": "The offerings' recipes (Crafting)"
+    },
+    {
+      "id": "shrine_of_fortune",
+      "name": "Shrine of Fortune",
+      "category": "building",
+      "type": "Shrine",
+      "skill": "Faith",
+      "level": 20,
+      "art": "N",
+      "page": "content_faith.md",
+      "section": "The shrines"
+    },
+    {
+      "id": "shrine_of_the_valiant",
+      "name": "Shrine of the Valiant",
+      "category": "building",
+      "type": "Shrine",
+      "skill": "Faith",
+      "level": 40,
+      "art": "N",
+      "page": "content_faith.md",
+      "section": "The shrines"
+    },
+    {
+      "id": "shrine_of_wisdom",
+      "name": "Shrine of Wisdom",
+      "category": "building",
+      "type": "Shrine",
+      "skill": "Faith",
+      "level": 60,
+      "art": "N",
+      "page": "content_faith.md",
+      "section": "The shrines"
+    },
+    {
+      "id": "shrine_of_echoes",
+      "name": "Shrine of Echoes",
+      "category": "building",
+      "type": "Shrine",
+      "skill": "Faith",
+      "level": 80,
+      "art": "N",
+      "page": "content_faith.md",
+      "section": "The shrines"
+    },
+    {
+      "id": "counting_house",
+      "name": "Counting House",
+      "category": "building",
+      "type": "Support building",
+      "skill": "Construction",
+      "level": 10,
+      "madeWith": [
+        "oak_plank",
+        "stone",
+        "copper_ingot"
+      ],
+      "art": "N",
+      "page": "content_construction.md",
+      "section": "Other buildings",
+      "notes": {
+        "its job": "Coin Find +10 % in reach: more coins from enemies and Hideouts (concept_gold_coins.md point 12)"
+      }
     }
   ]
 }

@@ -1,4 +1,4 @@
-Status: approved 2026-11-25 (a CMS pack of Planned entries still to come, T-706)
+Status: approved 2026-11-25 (pack `2026-11-26-enemy-roster` staged 2026-11-26: five enemies Live for Rule 1, twenty Planned; the new materials still need a job or a cut)
 
 # Enemies: the roster up the tiers
 

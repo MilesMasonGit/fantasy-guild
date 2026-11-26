@@ -1,4 +1,4 @@
-Status: approved 2026-11-25 (a CMS pack of Planned entries still to come, T-663)
+Status: approved 2026-11-25 (Planned entries staged 2026-11-26, `2026-11-26-planned-summoning`: every summon needs a Mote, so they go Live with Enchanting's Leylines)
 
 # Summoning: the summons
 

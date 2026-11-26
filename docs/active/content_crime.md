@@ -1,4 +1,4 @@
-Status: approved 2026-11-25 (a CMS pack of Planned entries still to come, T-663)
+Status: approved 2026-11-25 (pack `2026-11-26-crime-first-hideout` staged 2026-11-26: the first Hideout, ten steal tables, a regular Slime Puddle camp for the Small Slime; coins in the coin pack)
 
 # Crime: steal tables and the Hideout
 
@@ -36,7 +36,7 @@ and the Slime that swallows things); Pearls, Seaweed, Feathers and Motes are pla
 the game, so those lines wait for their items. Bosses (the Chief's Tent, Alpha's Den, Queen's Hive,
 Tide Pool, Wind Stones, Smoking Crater, Basking Stone, Toxic Pool) have no table.
 
-⚠️ *Slime Pit* spawns the Greater Slime boss and the world tables list it as a boss camp, so it can't be robbed as built (director 2026-11-25): the pack moves this table to a regular Small Slime camp or makes Slime Pit a regular camp.
+*Done 2026-11-26 (content agent): the table sits on the Small Slime, and a new regular **Slime Puddle** camp (Wetland, ring 1) spawns them, so it can be robbed; the Slime Pit stays a boss camp.* Was: ⚠️ *Slime Pit* spawns the Greater Slime boss and the world tables list it as a boss camp, so it can't be robbed as built (director 2026-11-25): the pack moves this table to a regular Small Slime camp or makes Slime Pit a regular camp.
 
 ## The Hideout's variants
 
