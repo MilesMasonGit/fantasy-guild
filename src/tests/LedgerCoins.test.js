@@ -3,7 +3,7 @@ import { buildLedger, tokenKey, wedgeKey, starKey, HOW } from '../systems/progre
 import { buildRateBook } from '../../cms/src/engine/ledger/rates.js';
 import { buildPace, roundDown } from '../../cms/src/engine/ledger/pace.js';
 import { PROFILE, PROFILES, BEFORE_HALL } from '../../cms/src/engine/ledger/profiles.js';
-import { settingsOf, coinMinutesAt, minutesToReach, DEFAULT_LEDGER_SETTINGS } from '../../cms/src/engine/ledger/settings.js';
+import { settingsOf, coinMinutesAt, minutesToReach, minutesPerLevelAt, COIN_CURVE, DEFAULT_LEDGER_SETTINGS } from '../../cms/src/engine/ledger/settings.js';
 import { ledgerCoinWorth, coinsInPlay } from '../../cms/src/engine/ledger/coins.js';
 import { proposeBalance, LEVER } from '../../cms/src/engine/ledger/balance.js';
 import { CHECKS } from '../../cms/src/engine/ledger/checks.js';
@@ -16,7 +16,7 @@ import { workspaceBalance, balancePack } from '../../cms/src/engine/ledgerBalanc
  * ⭐ The ledger prices coins (brief 870 C3): an item's coin worth comes from its value; selling, kill
  * coin drops and Hideout thefts are the guild's coin supply; a Shop price, a Guild Hall rank and a
  * ring's settling that ask coins wait for them on the timeline; a coin cost is proposed as the
- * coins one hero earns in the coin curve's minutes for its stage, times its rank; and a price that
+ * coins one hero earns in its curve's minutes for its stage (everyday or big, never times its rank); and a price that
  * asks no coins moves nothing. On the pace world (`fixtures/paceWorld.js`) with values: Copper Ore
  * 2, Oak Wood 1, Beer 5. At Bare its vein makes 360 ore an hour (720 coins), the oak 900 wood (900
  * coins) and the Still 360 Beer from 360 wood (1800 less 360: 1440 coins), the best.
@@ -273,49 +273,76 @@ describe('⭐ asking no coins moves nothing', () => {
     });
 });
 
-describe('⭐ proposed coin costs: the coins one hero earns in the coin curve\'s minutes, rising with rank and distance', () => {
-    it('the curve is a Ledger setting by stage, read as the last point at or before it; ten minutes to start', () => {
-        expect(DEFAULT_LEDGER_SETTINGS.coinCurve).toEqual([{ tier: 0, minutes: 10 }]);
-        const s = settingsOf({ coinCurve: [{ tier: 2, minutes: 40 }, { tier: 0, minutes: 10 }, { tier: 1, minutes: 'x' }] });
+describe('⭐ proposed coin costs: two curves by kind of purchase (BALANCE_RULES section 7), rising with distance, never with rank', () => {
+    it("the everyday curve by default: one level's time at each tier's opening level on the pace rule, copper at level 10's", () => {
+        expect(DEFAULT_LEDGER_SETTINGS.coinCurve).toEqual([
+            { tier: 0, minutes: 5 }, { tier: 2, minutes: 9 }, { tier: 3, minutes: 17 }, { tier: 4, minutes: 32 },
+            { tier: 5, minutes: 59 }, { tier: 6, minutes: 107 }, { tier: 7, minutes: 361 }
+        ]);
+        // ⚠️ The points follow the pace step: a moved pace rule fails here until the points are moved with it.
+        const s = settingsOf(null);
+        for (const { tier, level } of s.tierLevels) {
+            expect(coinMinutesAt(s, tier), `tier ${tier}`).toBe(Math.round(minutesPerLevelAt(s, Math.max(10, level))));
+        }
+    });
+
+    it('the big curve by default: half the payback curve, 1 hour x 24^(L/80), copper at its start', () => {
+        expect(DEFAULT_LEDGER_SETTINGS.bigCoinCurve).toEqual([
+            { tier: 0, minutes: 30 }, { tier: 2, minutes: 66 }, { tier: 3, minutes: 99 }, { tier: 4, minutes: 147 },
+            { tier: 5, minutes: 219 }, { tier: 6, minutes: 325 }, { tier: 7, minutes: 720 }
+        ]);
+        const s = settingsOf(null);
+        for (const { tier, level } of s.tierLevels) {
+            const L = tier <= 1 ? 0 : level;
+            expect(coinMinutesAt(s, tier, COIN_CURVE.BIG), `tier ${tier}`).toBe(Math.round(30 * 24 ** (L / 80)));
+        }
+    });
+
+    it('each curve is a Ledger setting by stage, read as the last point at or before it', () => {
+        const s = settingsOf({ coinCurve: [{ tier: 2, minutes: 40 }, { tier: 0, minutes: 10 }, { tier: 1, minutes: 'x' }], bigCoinCurve: [{ tier: 1, minutes: 90 }] });
         expect(s.coinCurve).toEqual([{ tier: 0, minutes: 10 }, { tier: 2, minutes: 40 }]);
         expect(coinMinutesAt(s, 0)).toBe(10);
         expect(coinMinutesAt(s, 1)).toBe(10);
         expect(coinMinutesAt(s, 3)).toBe(40);
+        expect(coinMinutesAt(s, 3, COIN_CURVE.EVERYDAY)).toBe(40);
+        expect(coinMinutesAt(s, 0, COIN_CURVE.BIG)).toBeNull();
+        expect(coinMinutesAt(s, 4, COIN_CURVE.BIG)).toBe(90);
         expect(coinMinutesAt(settingsOf({ coinCurve: [] }), 1)).toBeNull();
+        expect(coinMinutesAt(settingsOf({ bigCoinCurve: [] }), 1, COIN_CURVE.BIG)).toBeNull();
     });
 
-    it('a Shop Token at its stage; a Guild Hall rank times its rank; each named with the work that earns them', () => {
+    it('a Shop Token on the everyday curve; a Guild Hall rank on the big one, with no multiplier for its rank', () => {
         const c = withStall(coinContent(), 0);
         c.hallSky = paceHallSky();
         const pace = paceOf(c);
         const rows = pace.coinPrices();
         const typical = pace.coinSupplyOf(PROFILE.TYPICAL, 0).perHour;
         const stall = rows.find(r => r.kind === 'shop' && r.id === 'token_stall');
-        expect(stall).toMatchObject({ tier: 0, coins: 0, minutes: 10, perHour: typical, proposed: roundDown(typical * 10 / 60) });
+        expect(stall).toMatchObject({ tier: 0, coins: 0, curve: COIN_CURVE.EVERYDAY, minutes: 5, perHour: typical, proposed: roundDown(typical * 5 / 60) });
         expect(stall.source).toBeTruthy();
         const hallIncome = pace.coinSupplyOf(BEFORE_HALL, 0).perHour;
         const lore1 = rows.find(r => r.kind === 'hall' && r.id === 'ph_lore' && r.rank === 1);
         const lore2 = rows.find(r => r.kind === 'hall' && r.id === 'ph_lore' && r.rank === 2);
-        expect(lore1.proposed).toBe(roundDown(hallIncome * 10 / 60));
-        expect(lore2.proposed).toBe(roundDown(hallIncome * 10 / 60 * 2));
-        expect(lore2.proposed).toBeGreaterThan(lore1.proposed);
+        expect(lore1).toMatchObject({ curve: COIN_CURVE.BIG, minutes: 30, proposed: roundDown(hallIncome * 30 / 60) });
+        // Both ranks are of the Starter Camp: the same coins, the rank adds nothing.
+        expect(lore2).toMatchObject({ curve: COIN_CURVE.BIG, minutes: 30, proposed: lore1.proposed });
     });
 
-    it('further out costs more: the curve\'s minutes and the income both rise by stage', () => {
+    it("further out costs more: the curve's minutes and the income both rise by stage; a ring on the big curve", () => {
         const c = withStall(coinContent(), 0);
         c.tokens.token_stall.plan = { tier: 1 };
         const near = paceOf(c, { coinCurve: [{ tier: 0, minutes: 10 }, { tier: 1, minutes: 30 }] }).coinPrices().find(r => r.id === 'token_stall');
         expect(near).toMatchObject({ tier: 1, minutes: 30 });
         expect(near.proposed).toBe(roundDown(near.perHour * 30 / 60));
-        // A ring: settled with the income of the stage before it, at its own ring's minutes.
+        // A ring: settled with the income of the stage before it, at its own ring's minutes on the big curve.
         const ws = worldWorkspace();
         ws.items.item_copper_ore.value = 4;
         const world = { ...contentOf(ws), worldTables: WORLD_FIXTURE_TABLES };
-        const pace = paceOf(world, { coinCurve: [{ tier: 0, minutes: 10 }, { tier: 2, minutes: 20 }] });
+        const pace = paceOf(world, { coinCurve: [{ tier: 0, minutes: 1 }], bigCoinCurve: [{ tier: 0, minutes: 10 }, { tier: 2, minutes: 20 }] });
         const rings = pace.coinPrices().filter(r => r.kind === 'ring');
         expect(rings.map(r => r.ring)).toEqual([1, 2, 3]);
         const two = rings.find(r => r.ring === 2);
-        expect(two).toMatchObject({ tier: 2, cap: 1, minutes: 20 });
+        expect(two).toMatchObject({ tier: 2, cap: 1, curve: COIN_CURVE.BIG, minutes: 20 });
         expect(two.proposed).toBe(roundDown(pace.coinSupplyOf(PROFILE.TYPICAL, 1).perHour * 20 / 60));
         expect(rings.find(r => r.ring === 1).minutes).toBe(10);
     });
@@ -323,7 +350,12 @@ describe('⭐ proposed coin costs: the coins one hero earns in the coin curve\'s
     it('no curve point, or nothing earning coins: no proposal, and why', () => {
         const row = paceOf(withStall(coinContent(), 0), { coinCurve: [] }).coinPrices().find(r => r.id === 'token_stall');
         expect(row.proposed).toBeNull();
-        expect(row.why).toMatch(/curve/);
+        expect(row.why).toMatch(/everyday coin curve/);
+        const c = withStall(coinContent(), 0);
+        c.hallSky = paceHallSky();
+        const hall = paceOf(c, { bigCoinCurve: [] }).coinPrices().find(r => r.kind === 'hall');
+        expect(hall.proposed).toBeNull();
+        expect(hall.why).toMatch(/big coin curve/);
         const dry = paceOf(withStall(coinContent({ values: false }), 0)).coinPrices().find(r => r.id === 'token_stall');
         expect(dry.proposed).toBeNull();
         expect(dry.why).toMatch(/earns/);

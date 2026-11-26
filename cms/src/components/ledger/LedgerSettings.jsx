@@ -18,6 +18,12 @@ const CURVE_LEVELS = [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 99];
  * in the workspace and written with the plan into `cms/plan/plan.json` by Sync; Restore from Game
  * reads them back.
  */
+/** The two coin curves the Coin costs card edits, each under its own setting. */
+const COIN_CURVES = [
+  { field: 'coinCurve', kind: 'everyday', label: 'Everyday', article: 'an' },
+  { field: 'bigCoinCurve', kind: 'big', label: 'Big', article: 'a' },
+];
+
 export default function LedgerSettings() {
   const stored = useEntityStore((s) => s.planSettings);
   const setPlanSettings = useEntityStore((s) => s.setPlanSettings);
@@ -291,27 +297,33 @@ export default function LedgerSettings() {
         </div>
       </Card>
 
-      <Card title="Coin costs" help="The coin curve: from a stage on, a coin cost (a Shop Token, a Guild Hall rank, settling a ring) asks the coins one hero earns in this many minutes there, and a Guild Hall rank that many times its rank. A later stage earns more an hour, so the same minutes already cost more further out. The balancing preview sets the prices that ask coins to these numbers; which prices ask coins is the content's.">
-        <div className="flex flex-wrap items-center gap-3 text-[11px]" style={{ color: 'var(--color-text-secondary)' }} data-coin-curve>
-          {settings.coinCurve.length === 0 && <span className="text-gray-500">no curve: no coin cost is proposed</span>}
-          {settings.coinCurve.map((p, i) => (
-            <span key={p.tier} className="flex items-center gap-1">
-              {tierLabel(p.tier)}:
-              <NumberInput value={p.minutes} min={0.1} onCommit={(v) => save({ coinCurve: settings.coinCurve.map((q, j) => (j === i ? { ...q, minutes: v } : q)) })} label={`Coin cost minutes from ${tierLabel(p.tier)}`} width={56} />
-              min
-              <IconButton onClick={() => save({ coinCurve: settings.coinCurve.filter((_, j) => j !== i) })} label={`Remove the coin cost point at ${tierLabel(p.tier)}`}><Trash2 size={11} /></IconButton>
-            </span>
-          ))}
-          <IconButton
-            onClick={() => {
-              const last = settings.coinCurve[settings.coinCurve.length - 1];
-              save({ coinCurve: [...settings.coinCurve, { tier: last ? last.tier + 1 : 0, minutes: last ? last.minutes : 10 }] });
-            }}
-            label="Add a coin cost point"
-          >
-            <Plus size={12} />
-          </IconButton>
-        </div>
+      <Card title="Coin costs" help="The two coin curves (BALANCE_RULES section 7): from a stage on, a coin cost asks the coins one hero earns by selling in this many minutes there. Everyday (a Shop Token, a Foundation): one level's time on the pace curve, so these move with the pace step. Big (settling a place, a Guild Hall star): half the payback curve; a star's rank adds no multiplier, each rank is priced at its own stage. A later stage earns more an hour, so the same minutes already cost more further out. The balancing preview sets the prices that ask coins to these numbers; which prices ask coins is the content's.">
+        {COIN_CURVES.map(({ field, kind, label, article }) => {
+          const points = settings[field];
+          return (
+            <div key={field} className="flex flex-wrap items-center gap-3 text-[11px] mb-2" style={{ color: 'var(--color-text-secondary)' }} data-coin-curve={kind}>
+              <span style={{ color: 'var(--color-text-primary)' }}>{label}</span>
+              {points.length === 0 && <span className="text-gray-500">no curve: no {kind} coin cost is proposed</span>}
+              {points.map((p, i) => (
+                <span key={p.tier} className="flex items-center gap-1">
+                  {tierLabel(p.tier)}:
+                  <NumberInput value={p.minutes} min={0.1} onCommit={(v) => save({ [field]: points.map((q, j) => (j === i ? { ...q, minutes: v } : q)) })} label={`${label} coin cost minutes from ${tierLabel(p.tier)}`} width={56} />
+                  min
+                  <IconButton onClick={() => save({ [field]: points.filter((_, j) => j !== i) })} label={`Remove the ${kind} coin cost point at ${tierLabel(p.tier)}`}><Trash2 size={11} /></IconButton>
+                </span>
+              ))}
+              <IconButton
+                onClick={() => {
+                  const last = points[points.length - 1];
+                  save({ [field]: [...points, { tier: last ? last.tier + 1 : 0, minutes: last ? last.minutes : DEFAULT_LEDGER_SETTINGS[field][0].minutes }] });
+                }}
+                label={`Add ${article} ${kind} coin cost point`}
+              >
+                <Plus size={12} />
+              </IconButton>
+            </div>
+          );
+        })}
       </Card>
 
       <Card title="Rules" help="The roster rules the pace follows.">

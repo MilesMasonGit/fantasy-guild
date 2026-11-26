@@ -57,12 +57,12 @@ export function coinsText(result, { rows = 40 } = {}) {
         lines.push(`- ${s.label}: from ${round(t.start)}${t.startSource ? ` (${t.startSource})` : ''} at ${when(s.startHours)} to ${round(t.end)}${t.endSource ? ` (${t.endSource})` : ''} at ${when(s.endHours)} [Bare ${round(s[PROFILE.BARE].start)} to ${round(s[PROFILE.BARE].end)}, Maxed ${round(s[PROFILE.MAXED].start)} to ${round(s[PROFILE.MAXED].end)}]`);
     }
     const asking = result.prices.filter((p) => p.coins > 0);
-    lines.push(`Prices: ${result.prices.length}, ${asking.length} asking coins. What the coin curve proposes for each (the coins one hero earns there in the curve's minutes, a Guild Hall rank times its rank):`);
+    lines.push(`Prices: ${result.prices.length}, ${asking.length} asking coins. What the coin curves propose for each (the coins one hero earns there in its curve's minutes: everyday for a Shop Token, big for a Guild Hall rank or a ring):`);
     for (const p of result.prices.slice(0, rows)) {
         const what = `${p.name}${p.kind === 'hall' ? ` rank ${p.rank}` : ''}`;
         const now = p.coins > 0 ? `asks ${p.coins}` : 'asks none';
         const at = p.tier === null ? '' : ` at ${tierLabel(p.tier)}`;
-        lines.push(`- ${what} (${p.kind}${at}): ${now}; ${p.proposed !== null ? `proposed ${p.proposed} (${p.minutes} min of ${round(p.perHour)} an hour)` : `no proposal: ${p.why}`}`);
+        lines.push(`- ${what} (${p.kind}${at}): ${now}; ${p.proposed !== null ? `proposed ${p.proposed} (${p.minutes} min on the ${p.curve} curve of ${round(p.perHour)} an hour)` : `no proposal: ${p.why}`}`);
     }
     if (result.prices.length > rows) lines.push(`- and ${result.prices.length - rows} more`);
     lines.push('Enemies: Coin drop now, and what one kill\'s loot sells for (proposed):');

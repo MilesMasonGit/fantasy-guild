@@ -24,7 +24,8 @@ import { PLAN_TIER_LEVELS, tierOrNull, tierLevelsOf, tierLevelAt } from '../../.
  *       paybackHours: 2,                             // a sensible investor's boost pays for itself within this
  *       hallPaybackHours: 24,                        // and a Guild Hall rank within this
  *       steadyFindsPerDay: 1,                        // a rare find on repeatable work this often a day is a steady source
- *       coinCurve: [{ tier, minutes }],              // a coin cost asks one hero's coins earned in this long, from a stage on
+ *       coinCurve: [{ tier, minutes }],              // an everyday coin cost asks one hero's coins earned in this long, from a stage on
+ *       bigCoinCurve: [{ tier, minutes }],           // and a big one this long
  *       rulesVersion: 'classless-one-job'            // which roster rules the pace follows
  *     }
  *
@@ -112,11 +113,22 @@ const DEFAULT_BOOST_TARGETS = {
 };
 
 /**
- * The coin curve (brief 870 C3): from each stage on, the minutes of one hero's coin income a coin
- * cost asks (`pace.coinPrices`). The same minutes everywhere still rise with rank and distance,
- * since a later stage earns more an hour; more minutes further out make them rise faster.
+ * The two coin curves (BALANCE_RULES section 7): from each stage on, the minutes of one hero's coin
+ * income a coin cost asks (`pace.coinPrices`), by kind of purchase. The same minutes everywhere
+ * would still rise with distance, since a later stage earns more an hour.
+ * - **Everyday** (a Shop Token, a Foundation): one level's time at the tier's opening level on the
+ *   pace rule, copper at level 10's (few purchases come in the first minutes).
+ * - **Big** (settling a place, a Guild Hall star): half the payback curve, 1 hour x 24^(L / 80) at
+ *   the tier's opening level, copper at its start. A star's rank adds no multiplier: each rank is
+ *   priced at its own stage.
+ * ⚠️ The everyday points follow the pace step but are written out, not worked out: a test pins them
+ * to the pace rule, so a moved step fails it until the points move with it.
  */
-const DEFAULT_COIN_CURVE = [{ tier: 0, minutes: 10 }];
+export const COIN_CURVE = Object.freeze({ EVERYDAY: 'everyday', BIG: 'big' });
+const COIN_CURVE_FIELD = Object.freeze({ [COIN_CURVE.EVERYDAY]: 'coinCurve', [COIN_CURVE.BIG]: 'bigCoinCurve' });
+const curvePoints = (pairs) => Object.freeze(pairs.map(([tier, minutes]) => Object.freeze({ tier, minutes })));
+const DEFAULT_COIN_CURVE = curvePoints([[0, 5], [2, 9], [3, 17], [4, 32], [5, 59], [6, 107], [7, 361]]);
+const DEFAULT_BIG_COIN_CURVE = curvePoints([[0, 30], [2, 66], [3, 99], [4, 147], [5, 219], [6, 325], [7, 720]]);
 
 /**
  * The reference guild's heroes (BALANCE_RULES section 8): about one a tier, one
@@ -173,8 +185,8 @@ export const DEFAULT_LEDGER_SETTINGS = Object.freeze({
     hallPaybackHours: 24,
     // The owner (2026-11-07): a low rate on repeatable work is still steady. ⚠️ Matches the engine's STEADY_FINDS_PER_DAY (pinned by a test).
     steadyFindsPerDay: 1,
-    // A starting point for the content agent to tune: costs rise with the stage because what a hero earns does.
     coinCurve: DEFAULT_COIN_CURVE,
+    bigCoinCurve: DEFAULT_BIG_COIN_CURVE,
     rulesVersion: RULES_VERSIONS[0].id,
 });
 
@@ -233,6 +245,7 @@ export function settingsOf(raw) {
         hallPaybackHours: positive(src.hallPaybackHours, d.hallPaybackHours),
         steadyFindsPerDay: positive(src.steadyFindsPerDay, d.steadyFindsPerDay),
         coinCurve: Array.isArray(src.coinCurve) ? coinCurveOf(src.coinCurve) : clone(d.coinCurve),
+        bigCoinCurve: Array.isArray(src.bigCoinCurve) ? coinCurveOf(src.bigCoinCurve) : clone(d.bigCoinCurve),
         rulesVersion: RULES_VERSIONS.some((r) => r.id === src.rulesVersion) ? src.rulesVersion : d.rulesVersion,
     };
 }
@@ -416,10 +429,14 @@ function coinCurveOf(raw) {
     return [...byTier.values()].sort((a, b) => a.tier - b.tier);
 }
 
-/** The coin curve's minutes at a tier: the last point at or before it, else null (no coin cost is proposed there). */
-export function coinMinutesAt(settings, tier) {
+/**
+ * A coin curve's minutes at a tier, the everyday curve's unless `curve` names the big one: the last
+ * point at or before it, else null (no coin cost is proposed there).
+ */
+export function coinMinutesAt(settings, tier, curve = COIN_CURVE.EVERYDAY) {
+    const field = COIN_CURVE_FIELD[curve] ?? COIN_CURVE_FIELD[COIN_CURVE.EVERYDAY];
     let out = null;
-    for (const p of settingsOf(settings).coinCurve) if (p.tier <= tier) out = p.minutes;
+    for (const p of settingsOf(settings)[field]) if (p.tier <= tier) out = p.minutes;
     return out;
 }
 
