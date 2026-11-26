@@ -36,6 +36,7 @@ import { blockedText } from '../ui/components/board/heroBubbles.js';
 import { SKIP_HINT, skipHint } from '../ui/components/board/boardConstants.js';
 import { skipLine } from '../ui/components/board/flagText.js';
 import { calloutText, dueAgain, TOOL_CALLOUT_GAP_MS } from '../ui/components/board/callouts.js';
+import { planeWorld, startersMissing } from './fixtures/planeReach.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -532,7 +533,24 @@ describe('content: the rules the audit checks', () => {
         expect(found.find(f => f.entityId === 'reed').message).toMatch(/no item is a Sickle/);
     });
 
-    it('the shipped content answers every need it sets, the starter tools cover every kind it needs, and the audit finds nothing', () => {
+    it('a starter tool is owed only for a kind the first two planes need for their work', () => {
+        const items = {
+            pick: { id: 'pick', name: 'Starter Pick', equipSlot: 'hand', tool: { kind: 'pickaxe', tier: 1, starter: true } },
+            harpoon: { id: 'harpoon', name: 'Harpoon', equipSlot: 'hand', tool: { kind: 'harpoon', tier: 1 } }
+        };
+        // A plane's vein and a plane's harpoon water: the pickaxe has a starter, the harpoon none.
+        const needs = new Map([['vein', { kind: 'pickaxe', minTier: 1 }], ['sharks', { kind: 'harpoon', kinds: ['harpoon'], minTier: 1 }]]);
+        expect(startersMissing(needs, items)).toEqual(['harpoon']);
+        expect(startersMissing(new Map([['vein', { kind: 'pickaxe', minTier: 1 }]]), items)).toEqual([]);
+        // A Token no plane places is first needed later: it owes no starter.
+        registerTokenTypes({
+            fx_later_sharks: { id: 'fx_later_sharks', name: 'Fixture Later Sharks', tokenType: 'resource', rarity: 'common', theme: 'fixture', uses: null, sprite: 's_nature', needsTool: { kind: 'harpoon', minTier: 1 } }
+        });
+        expect(neededToolOf(getTokenType('fx_later_sharks'))).toEqual({ kind: 'harpoon', minTier: 1 });
+        expect(planeWorld(2).needs.has('fx_later_sharks')).toBe(false);
+    });
+
+    it('the shipped content answers every need it sets, the starter tools cover every kind the first two planes need, and the audit finds nothing', () => {
         const read = (f) => JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../data', f), 'utf8'));
         const items = read('items.json');
         const tokens = read('tokens.json');
@@ -541,10 +559,13 @@ describe('content: the rules the audit checks', () => {
         for (const [tokenId, def] of needing) {
             expect(toolItemFor(neededToolOf(def), items), tokenId).toBeTruthy();
         }
-        // Every kind a shipped Token needs (any of a water's kinds) has a starter, one each, in kind order.
+        // Every kind the work of planes 1 and 2 needs (any of a water's kinds) has a starter; a kind
+        // first needed later owes none. The starters come one each, in kind order.
+        const { needs } = planeWorld(2);
+        const missing = startersMissing(needs, items);
+        const who = (kind) => [...needs].filter(([, n]) => (n.kinds || [n.kind]).includes(kind)).map(([id]) => id);
+        expect(missing.map(kind => `${kind}: ${who(kind).join(', ')}`)).toEqual([]);
         const starters = starterToolIds(items).map(id => items[id].tool.kind);
-        const needed = new Set(needing.flatMap(([, def]) => neededToolOf(def).kinds || [neededToolOf(def).kind]));
-        for (const kind of needed) expect(starters, kind).toContain(kind);
         expect(starters).toEqual(TOOL_KINDS.map(k => k.id).filter(k => starters.includes(k)));
         // A water's rod pool with no bait is never fished, and the audit would name it.
         expect(toolFindings({ items, tokens, recipes: read('tokenRecipes.json') })).toEqual([]);
