@@ -101,14 +101,20 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": null,
     "autoSyncId": true,
     "id": "item_raw_shrimp",
-    "valueSource": "token_shrimp_coast",
+    "valueSource": null,
     "tags": [
       "Seafood",
       "Raw"
-    ]
+    ],
+    "fish": {
+      "level": 1,
+      "cycleMs": 6000,
+      "bait": 0,
+      "xp": 2
+    }
   },
   "item_shrimp": {
     "name": "Shrimp",
@@ -118,10 +124,10 @@
     "stackable": true,
     "restoreAmount": 5,
     "equipSlot": "food",
-    "value": 2,
+    "value": null,
     "autoSyncId": true,
     "id": "item_shrimp",
-    "valueSource": "recipe_shrimp",
+    "valueSource": null,
     "tags": [
       "Food",
       "Seafood",
@@ -1377,7 +1383,8 @@
     "tool": {
       "kind": "fishing_rod",
       "tier": 1,
-      "starter": true
+      "starter": true,
+      "baitSaving": 0
     },
     "tags": [
       "Tool",
@@ -1694,14 +1701,20 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
-    "valueSource": "token_lake",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_trout",
     "tags": [
       "Fish",
       "Seafood"
-    ]
+    ],
+    "fish": {
+      "level": 5,
+      "cycleMs": 8000,
+      "bait": 1,
+      "xp": 6
+    }
   },
   "item_salmon": {
     "name": "Salmon",
@@ -1711,14 +1724,20 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 5,
-    "valueSource": "token_lake",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_salmon",
     "tags": [
       "Fish",
       "Seafood"
-    ]
+    ],
+    "fish": {
+      "level": 40,
+      "cycleMs": 12000,
+      "bait": 2,
+      "xp": 25
+    }
   },
   "item_tropical_fish": {
     "name": "Tropical Fish",
@@ -1728,14 +1747,20 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
-    "valueSource": "token_coast",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_tropical_fish",
     "tags": [
       "Fish",
       "Seafood"
-    ]
+    ],
+    "fish": {
+      "level": 30,
+      "cycleMs": 11000,
+      "bait": 2,
+      "xp": 18
+    }
   },
   "item_lobster": {
     "name": "Lobster",
@@ -1751,7 +1776,13 @@
     "id": "item_lobster",
     "tags": [
       "Seafood"
-    ]
+    ],
+    "fish": {
+      "level": 50,
+      "cycleMs": 12000,
+      "bait": 2,
+      "xp": 35
+    }
   },
   "item_swordfish": {
     "name": "Swordfish",
@@ -1761,14 +1792,20 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 7,
-    "valueSource": "token_coast",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_swordfish",
     "tags": [
       "Fish",
       "Seafood"
-    ]
+    ],
+    "fish": {
+      "level": 63,
+      "cycleMs": 16000,
+      "bait": 4,
+      "xp": 70
+    }
   },
   "item_worm": {
     "name": "Worm",
@@ -1782,38 +1819,6 @@
     "valueSource": "recipe_potato",
     "autoSyncId": true,
     "id": "item_worm",
-    "tags": [
-      "Bait"
-    ]
-  },
-  "item_worm_bait": {
-    "name": "Worm Bait",
-    "description": "",
-    "type": "material",
-    "sprite": "i_fish_bait",
-    "stackable": true,
-    "restoreAmount": 0,
-    "equipSlot": "consumable",
-    "value": 1,
-    "valueSource": "recipe_worm_bait",
-    "autoSyncId": true,
-    "id": "item_worm_bait",
-    "tags": [
-      "Bait"
-    ]
-  },
-  "item_shrimp_bait": {
-    "name": "Shrimp Bait",
-    "description": "",
-    "type": "material",
-    "sprite": "i_shrimp_raw",
-    "stackable": true,
-    "restoreAmount": 0,
-    "equipSlot": "consumable",
-    "value": 1,
-    "valueSource": "recipe_shrimp_bait",
-    "autoSyncId": true,
-    "id": "item_shrimp_bait",
     "tags": [
       "Bait"
     ]
@@ -1854,7 +1859,8 @@
     "autoSyncId": true,
     "tool": {
       "kind": "fishing_rod",
-      "tier": 2
+      "tier": 2,
+      "baitSaving": 1
     },
     "effects": [
       {
@@ -2064,8 +2070,8 @@
     "stackable": true,
     "restoreAmount": 15,
     "equipSlot": "food",
-    "value": 4,
-    "valueSource": "recipe_cooked_trout",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_cooked_trout",
     "tags": [
@@ -2332,8 +2338,8 @@
     "stackable": true,
     "restoreAmount": 4,
     "equipSlot": "food",
-    "value": 23,
-    "valueSource": "recipe_cooked_tropical_fish",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "tags": [
       "Food",
@@ -2350,8 +2356,8 @@
     "stackable": true,
     "restoreAmount": 8,
     "equipSlot": "food",
-    "value": 337,
-    "valueSource": "recipe_cooked_swordfish",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": false,
     "tags": [
       "Food",
@@ -2386,8 +2392,8 @@
     "stackable": true,
     "restoreAmount": 16,
     "equipSlot": "food",
-    "value": 211,
-    "valueSource": "recipe_lavender_salmon",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "tags": [
       "Food",
@@ -4136,8 +4142,8 @@
     "stackable": true,
     "restoreAmount": 21,
     "equipSlot": "food",
-    "value": 21,
-    "valueSource": "recipe_trout_and_leek",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_trout_and_leek",
     "tags": [
@@ -4343,8 +4349,8 @@
     "stackable": true,
     "restoreAmount": 29,
     "equipSlot": "food",
-    "value": 54,
-    "valueSource": "recipe_cooked_salmon",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_cooked_salmon",
     "tags": [
@@ -4958,8 +4964,8 @@
     "stackable": true,
     "restoreAmount": 55,
     "equipSlot": "food",
-    "value": 967,
-    "valueSource": "recipe_swordfish_in_sofrito",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_swordfish_in_sofrito",
     "tags": [
@@ -6978,12 +6984,339 @@
     "autoSyncId": true,
     "tool": {
       "kind": "fishing_rod",
-      "tier": 3
+      "tier": 3,
+      "baitSaving": 2
     },
     "id": "item_master_rod",
     "tags": [
       "Tool",
       "Fishing"
     ]
+  },
+  "item_oyster": {
+    "name": "Oyster",
+    "type": "material",
+    "autoSyncId": true,
+    "id": "item_oyster",
+    "fish": {
+      "level": 25,
+      "cycleMs": 12000,
+      "bait": 2,
+      "xp": 15
+    },
+    "valueSource": null,
+    "stackable": true,
+    "sprite": "i_shrimp_raw",
+    "equipSlot": "",
+    "value": null,
+    "restoreAmount": 0,
+    "tags": [
+      "Fish",
+      "Seafood"
+    ]
+  },
+  "item_anchovy": {
+    "name": "Anchovy",
+    "description": "",
+    "type": "material",
+    "sprite": "i_trout_raw",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_anchovy",
+    "tags": [
+      "Fish",
+      "Seafood"
+    ],
+    "fish": {
+      "level": 25,
+      "cycleMs": 10000,
+      "bait": 1,
+      "xp": 15
+    }
+  },
+  "item_tuna": {
+    "name": "Tuna",
+    "description": "",
+    "type": "material",
+    "sprite": "i_salmon_raw",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_tuna",
+    "tags": [
+      "Fish",
+      "Seafood"
+    ],
+    "fish": {
+      "level": 45,
+      "cycleMs": 13000,
+      "bait": 2,
+      "xp": 30
+    }
+  },
+  "item_stingray": {
+    "name": "Stingray",
+    "description": "",
+    "type": "material",
+    "sprite": "i_swordfish",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_stingray",
+    "tags": [
+      "Fish",
+      "Seafood"
+    ],
+    "fish": {
+      "level": 54,
+      "cycleMs": 14000,
+      "bait": 3,
+      "xp": 45
+    }
+  },
+  "item_sturgeon": {
+    "name": "Sturgeon",
+    "description": "",
+    "type": "material",
+    "sprite": "i_salmon_raw",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_sturgeon",
+    "tags": [
+      "Fish",
+      "Seafood"
+    ],
+    "fish": {
+      "level": 60,
+      "cycleMs": 15000,
+      "bait": 3,
+      "xp": 55
+    }
+  },
+  "item_shark": {
+    "name": "Shark",
+    "description": "",
+    "type": "material",
+    "sprite": "i_shark_raw",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_shark",
+    "tags": [
+      "Fish",
+      "Seafood"
+    ],
+    "fish": {
+      "level": 83,
+      "cycleMs": 20000,
+      "bait": 5,
+      "xp": 110
+    }
+  },
+  "item_anglerfish": {
+    "name": "Anglerfish",
+    "description": "",
+    "type": "material",
+    "sprite": "i_trout_raw",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_anglerfish",
+    "tags": [
+      "Fish",
+      "Seafood"
+    ],
+    "fish": {
+      "level": 89,
+      "cycleMs": 18000,
+      "bait": 5,
+      "xp": 130
+    }
+  },
+  "item_cooked_shark": {
+    "name": "Cooked Shark",
+    "description": "",
+    "type": "food",
+    "sprite": "i_shark",
+    "stackable": true,
+    "restoreAmount": 28,
+    "equipSlot": "food",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_cooked_shark",
+    "tags": [
+      "Food",
+      "Fish",
+      "Cooked"
+    ]
+  },
+  "item_bait": {
+    "name": "Bait",
+    "description": "",
+    "type": "material",
+    "sprite": "i_fish_bait",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "consumable",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_bait",
+    "tags": [
+      "Bait"
+    ]
+  },
+  "item_fly_lure": {
+    "name": "Fly Lure",
+    "description": "",
+    "type": "material",
+    "sprite": "i_fish_bait",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "consumable",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_fly_lure",
+    "tags": [
+      "Lure"
+    ],
+    "lure": {
+      "fish": [
+        "item_trout",
+        "item_salmon"
+      ],
+      "breakChance": 5
+    }
+  },
+  "item_spinner_lure": {
+    "name": "Spinner Lure",
+    "description": "",
+    "type": "material",
+    "sprite": "i_fish_bait",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "consumable",
+    "value": 50,
+    "valueSource": "recipe_spinner_lure",
+    "autoSyncId": true,
+    "id": "item_spinner_lure",
+    "tags": [
+      "Lure"
+    ],
+    "lure": {
+      "fish": [
+        "item_anchovy",
+        "item_sturgeon"
+      ],
+      "breakChance": 5
+    }
+  },
+  "item_glow_lure": {
+    "name": "Glow Lure",
+    "description": "",
+    "type": "material",
+    "sprite": "i_fish_bait",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "consumable",
+    "value": 34,
+    "valueSource": "recipe_glow_lure",
+    "autoSyncId": true,
+    "id": "item_glow_lure",
+    "tags": [
+      "Lure"
+    ],
+    "lure": {
+      "fish": [
+        "item_tuna",
+        "item_anglerfish"
+      ],
+      "breakChance": 5
+    }
+  },
+  "item_mythril_harpoon": {
+    "name": "Mythril Harpoon",
+    "description": "",
+    "type": "tool",
+    "sprite": "i_rod_wood",
+    "stackable": false,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 1456,
+    "valueSource": "recipe_mythril_harpoon",
+    "autoSyncId": true,
+    "id": "item_mythril_harpoon",
+    "tags": [
+      "Tool"
+    ],
+    "tool": {
+      "kind": "harpoon",
+      "tier": 1,
+      "baitSaving": 0
+    }
+  },
+  "item_adamantine_harpoon": {
+    "name": "Adamantine Harpoon",
+    "description": "",
+    "type": "tool",
+    "sprite": "i_rod_wood",
+    "stackable": false,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 30804,
+    "valueSource": "recipe_adamantine_harpoon",
+    "autoSyncId": true,
+    "id": "item_adamantine_harpoon",
+    "tags": [
+      "Tool"
+    ],
+    "tool": {
+      "kind": "harpoon",
+      "tier": 2,
+      "baitSaving": 1
+    }
+  },
+  "item_darkmetal_harpoon": {
+    "name": "Darkmetal Harpoon",
+    "description": "",
+    "type": "tool",
+    "sprite": "i_rod_wood",
+    "stackable": false,
+    "restoreAmount": 0,
+    "equipSlot": "hand",
+    "value": 32415,
+    "valueSource": "recipe_darkmetal_harpoon",
+    "autoSyncId": true,
+    "id": "item_darkmetal_harpoon",
+    "tags": [
+      "Tool"
+    ],
+    "tool": {
+      "kind": "harpoon",
+      "tier": 3,
+      "baitSaving": 2
+    }
   }
 }

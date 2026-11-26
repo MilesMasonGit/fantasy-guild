@@ -254,44 +254,9 @@
         "wetland": 1
       },
       "origins": {
-        "1": [
-          {
-            "id": "token_coast",
-            "weight": 2
-          },
-          {
-            "id": "token_shrimp_coast",
-            "weight": 1
-          }
-        ],
-        "2": [
-          {
-            "id": "token_river",
-            "weight": 2
-          },
-          {
-            "id": "token_lake",
-            "weight": 2
-          },
-          {
-            "id": "token_bog_pool",
-            "weight": 1
-          }
-        ],
-        "3": [
-          {
-            "id": "token_river",
-            "weight": 1
-          },
-          {
-            "id": "token_lake",
-            "weight": 1
-          },
-          {
-            "id": "token_bog_pool",
-            "weight": 1
-          }
-        ]
+        "1": [],
+        "2": [],
+        "3": []
       }
     },
     {

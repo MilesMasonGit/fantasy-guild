@@ -25,7 +25,7 @@
         "variable": false
       }
     ],
-    "xp": 4,
+    "xp": 6,
     "id": "recipe_copper_ingot",
     "durationMs": 8000,
     "levelRequirement": 1,
@@ -2042,10 +2042,11 @@
     ],
     "durationMs": 29000,
     "stationChargeCost": 1,
-    "xp": 161,
+    "xp": 242,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -2075,10 +2076,11 @@
     ],
     "durationMs": 29000,
     "stationChargeCost": 1,
-    "xp": 192,
+    "xp": 292,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -2141,7 +2143,119 @@
     ],
     "durationMs": 26000,
     "stationChargeCost": 1,
-    "xp": 65,
+    "xp": 266,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph",
+      "xpPinned": true
+    }
+  },
+  {
+    "id": "recipe_mythril_harpoon",
+    "name": "Mythril Harpoon",
+    "skill": "smithing",
+    "levelRequirement": 54,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_mythril_ingot",
+        "quantity": 3
+      },
+      {
+        "itemId": "item_maple_plank",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_mythril_harpoon",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 28000,
+    "stationChargeCost": 1,
+    "xp": 135,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_adamantine_harpoon",
+    "name": "Adamantine Harpoon",
+    "skill": "smithing",
+    "levelRequirement": 63,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_adamantine_ingot",
+        "quantity": 3
+      },
+      {
+        "itemId": "item_mahogany_plank",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_adamantine_harpoon",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 275,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_darkmetal_harpoon",
+    "name": "Darkmetal Harpoon",
+    "skill": "smithing",
+    "levelRequirement": 83,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_darkmetal_ingot",
+        "quantity": 3
+      },
+      {
+        "itemId": "item_ebony_plank",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_darkmetal_harpoon",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 35000,
+    "stationChargeCost": 1,
+    "xp": 1365,
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
@@ -2208,7 +2322,7 @@
         "anchor": true
       }
     ],
-    "xp": 2,
+    "xp": 4,
     "id": "recipe_shrimp",
     "durationMs": 8000,
     "levelRequirement": 1,
@@ -2319,10 +2433,11 @@
     ],
     "durationMs": 28000,
     "stationChargeCost": 1,
-    "xp": 135,
+    "xp": 62,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -2629,10 +2744,11 @@
       }
     ],
     "durationMs": 30000,
-    "xp": 275,
+    "xp": 169,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -2662,10 +2778,11 @@
       }
     ],
     "durationMs": 27000,
-    "xp": 91,
+    "xp": 58,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -2699,10 +2816,11 @@
       }
     ],
     "durationMs": 29000,
-    "xp": 171,
+    "xp": 71,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -3596,10 +3714,11 @@
     ],
     "durationMs": 24000,
     "stationChargeCost": 1,
-    "xp": 31,
+    "xp": 20,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -3752,10 +3871,11 @@
     ],
     "durationMs": 26000,
     "stationChargeCost": 1,
-    "xp": 56,
+    "xp": 27,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -3789,10 +3909,11 @@
     ],
     "durationMs": 26000,
     "stationChargeCost": 1,
-    "xp": 61,
+    "xp": 29,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -3863,10 +3984,11 @@
     ],
     "durationMs": 27000,
     "stationChargeCost": 1,
-    "xp": 77,
+    "xp": 34,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -3941,10 +4063,11 @@
     ],
     "durationMs": 27000,
     "stationChargeCost": 1,
-    "xp": 101,
+    "xp": 38,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -3982,10 +4105,11 @@
     ],
     "durationMs": 28000,
     "stationChargeCost": 1,
-    "xp": 114,
+    "xp": 40,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -4019,10 +4143,11 @@
     ],
     "durationMs": 28000,
     "stationChargeCost": 1,
-    "xp": 125,
+    "xp": 44,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -4052,10 +4177,11 @@
     ],
     "durationMs": 29000,
     "stationChargeCost": 1,
-    "xp": 161,
+    "xp": 61,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -4134,10 +4260,11 @@
     ],
     "durationMs": 29000,
     "stationChargeCost": 1,
-    "xp": 192,
+    "xp": 94,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -4216,10 +4343,11 @@
     ],
     "durationMs": 30000,
     "stationChargeCost": 1,
-    "xp": 254,
+    "xp": 83,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -4249,10 +4377,11 @@
     ],
     "durationMs": 30000,
     "stationChargeCost": 1,
-    "xp": 297,
+    "xp": 133,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -4331,10 +4460,11 @@
     ],
     "durationMs": 31000,
     "stationChargeCost": 1,
-    "xp": 353,
+    "xp": 95,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -4409,10 +4539,11 @@
     ],
     "durationMs": 31000,
     "stationChargeCost": 1,
-    "xp": 398,
+    "xp": 102,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -4487,10 +4618,11 @@
     ],
     "durationMs": 32000,
     "stationChargeCost": 1,
-    "xp": 458,
+    "xp": 130,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -4651,10 +4783,11 @@
     ],
     "durationMs": 33000,
     "stationChargeCost": 1,
-    "xp": 676,
+    "xp": 424,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -4684,10 +4817,11 @@
     ],
     "durationMs": 33000,
     "stationChargeCost": 1,
-    "xp": 726,
+    "xp": 149,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -4721,10 +4855,11 @@
     ],
     "durationMs": 33000,
     "stationChargeCost": 1,
-    "xp": 777,
+    "xp": 114,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -4762,10 +4897,11 @@
     ],
     "durationMs": 33000,
     "stationChargeCost": 1,
-    "xp": 828,
+    "xp": 127,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -4799,10 +4935,11 @@
     ],
     "durationMs": 34000,
     "stationChargeCost": 1,
-    "xp": 906,
+    "xp": 203,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -4836,10 +4973,11 @@
     ],
     "durationMs": 34000,
     "stationChargeCost": 1,
-    "xp": 958,
+    "xp": 315,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -4955,10 +5093,11 @@
     ],
     "durationMs": 35000,
     "stationChargeCost": 1,
-    "xp": 1257,
+    "xp": 162,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -5107,10 +5246,11 @@
     ],
     "durationMs": 36000,
     "stationChargeCost": 1,
-    "xp": 1851,
+    "xp": 212,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -5226,10 +5366,11 @@
     ],
     "durationMs": 37000,
     "stationChargeCost": 1,
-    "xp": 2474,
+    "xp": 328,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -5271,10 +5412,11 @@
     ],
     "durationMs": 37000,
     "stationChargeCost": 1,
-    "xp": 2931,
+    "xp": 824,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -5312,10 +5454,11 @@
     ],
     "durationMs": 37000,
     "stationChargeCost": 1,
-    "xp": 3159,
+    "xp": 1229,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -5353,10 +5496,11 @@
     ],
     "durationMs": 37000,
     "stationChargeCost": 1,
-    "xp": 3388,
+    "xp": 291,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -5401,6 +5545,39 @@
     }
   },
   {
+    "id": "recipe_cooked_shark",
+    "name": "Cooked Shark",
+    "skill": "cooking",
+    "levelRequirement": 83,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_shark",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_cooked_shark",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 35000,
+    "stationChargeCost": 1,
+    "xp": 1365,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
     "id": "recipe_muily2pf",
     "name": "Charcoal",
     "skill": "crafting",
@@ -5427,7 +5604,7 @@
     ],
     "durationMs": 6000,
     "stationChargeCost": 1,
-    "xp": 4,
+    "xp": 8,
     "sim": {
       "tempo": "fast"
     }
@@ -5711,74 +5888,6 @@
           "max": 1
         },
         "variable": true
-      }
-    ],
-    "durationMs": 8000,
-    "stationChargeCost": 1,
-    "xp": 1,
-    "sim": {
-      "tempo": "fast",
-      "purpose": "iph"
-    }
-  },
-  {
-    "id": "recipe_shrimp_bait",
-    "name": "Shrimp Bait",
-    "skill": "crafting",
-    "levelRequirement": 1,
-    "requiresContext": [],
-    "inputs": [
-      {
-        "itemId": "item_raw_shrimp",
-        "quantity": 1
-      }
-    ],
-    "outputs": [
-      {
-        "itemId": "item_shrimp_bait",
-        "chance": 100,
-        "minQty": 2,
-        "maxQty": 2,
-        "baseQty": {
-          "min": 2,
-          "max": 2
-        },
-        "variable": false,
-        "anchor": true
-      }
-    ],
-    "durationMs": 8000,
-    "stationChargeCost": 1,
-    "xp": 1,
-    "sim": {
-      "tempo": "fast",
-      "purpose": "iph"
-    }
-  },
-  {
-    "id": "recipe_worm_bait",
-    "name": "Worm Bait",
-    "skill": "crafting",
-    "levelRequirement": 1,
-    "requiresContext": [],
-    "inputs": [
-      {
-        "itemId": "item_worm",
-        "quantity": 1
-      }
-    ],
-    "outputs": [
-      {
-        "itemId": "item_worm_bait",
-        "chance": 100,
-        "minQty": 2,
-        "maxQty": 2,
-        "baseQty": {
-          "min": 2,
-          "max": 2
-        },
-        "variable": false,
-        "anchor": true
       }
     ],
     "durationMs": 8000,
@@ -6133,10 +6242,11 @@
     ],
     "durationMs": 29000,
     "stationChargeCost": 1,
-    "xp": 203,
+    "xp": 81,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -6166,10 +6276,11 @@
     ],
     "durationMs": 34000,
     "stationChargeCost": 1,
-    "xp": 1011,
+    "xp": 179,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -6636,10 +6747,11 @@
     ],
     "durationMs": 22000,
     "stationChargeCost": 1,
-    "xp": 15,
+    "xp": 43,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -7737,6 +7849,117 @@
     }
   },
   {
+    "id": "recipe_fly_lure",
+    "name": "Fly Lure",
+    "skill": "crafting",
+    "levelRequirement": 11,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_wool",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_copper_nails",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_fly_lure",
+        "chance": 100,
+        "minQty": 3,
+        "maxQty": 3,
+        "baseQty": {
+          "min": 3,
+          "max": 3
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 18000,
+    "stationChargeCost": 1,
+    "xp": 4,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_spinner_lure",
+    "name": "Spinner Lure",
+    "skill": "crafting",
+    "levelRequirement": 30,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_iron_nails",
+        "quantity": 2
+      },
+      {
+        "itemId": "item_fir_plank",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_spinner_lure",
+        "chance": 100,
+        "minQty": 3,
+        "maxQty": 3,
+        "baseQty": {
+          "min": 3,
+          "max": 3
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 23000,
+    "stationChargeCost": 1,
+    "xp": 18,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_glow_lure",
+    "name": "Glow Lure",
+    "skill": "crafting",
+    "levelRequirement": 38,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_beeswax_comb",
+        "quantity": 2
+      },
+      {
+        "itemId": "item_iron_nails",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_glow_lure",
+        "chance": 100,
+        "minQty": 3,
+        "maxQty": 3,
+        "baseQty": {
+          "min": 3,
+          "max": 3
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 24000,
+    "stationChargeCost": 1,
+    "xp": 35,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
     "id": "recipe_wheat",
     "name": "Wheat",
     "skill": "farming",
@@ -7942,7 +8165,7 @@
     ],
     "durationMs": 3000,
     "stationChargeCost": 1,
-    "xp": 1,
+    "xp": 2,
     "crop": {
       "growMs": 3600000,
       "load": 10,
@@ -7950,7 +8173,8 @@
     },
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -8362,7 +8586,7 @@
     ],
     "durationMs": 5000,
     "stationChargeCost": 1,
-    "xp": 19,
+    "xp": 12,
     "crop": {
       "growMs": 3600000,
       "load": 10,
@@ -8370,7 +8594,8 @@
     },
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -8482,7 +8707,7 @@
     ],
     "durationMs": 6000,
     "stationChargeCost": 1,
-    "xp": 64,
+    "xp": 21,
     "crop": {
       "growMs": 3600000,
       "load": 10,
@@ -8490,7 +8715,8 @@
     },
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -8542,7 +8768,7 @@
     ],
     "durationMs": 6000,
     "stationChargeCost": 1,
-    "xp": 141,
+    "xp": 31,
     "crop": {
       "growMs": 3600000,
       "load": 10,
@@ -8550,7 +8776,8 @@
     },
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -8846,7 +9073,7 @@
     ],
     "durationMs": 6000,
     "stationChargeCost": 1,
-    "xp": 42,
+    "xp": 21,
     "crop": {
       "growMs": 5400000,
       "load": 8,
@@ -8854,7 +9081,8 @@
     },
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -8907,7 +9135,7 @@
     ],
     "durationMs": 6000,
     "stationChargeCost": 1,
-    "xp": 178,
+    "xp": 44,
     "crop": {
       "growMs": 5400000,
       "load": 8,
@@ -8915,7 +9143,8 @@
     },
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -9245,7 +9474,7 @@
     ],
     "durationMs": 60000,
     "stationChargeCost": 1,
-    "xp": 40,
+    "xp": 75,
     "foundationKinds": [
       "wood"
     ],
@@ -12239,10 +12468,11 @@
     ],
     "durationMs": 26000,
     "stationChargeCost": 1,
-    "xp": 65,
+    "xp": 113,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -12392,6 +12622,88 @@
     }
   },
   {
+    "id": "recipe_build_bait_shed",
+    "name": "Build Bait Shed",
+    "skill": "construction",
+    "levelRequirement": 2,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 10
+      },
+      {
+        "itemId": "item_stone",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_bait_shed",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 60000,
+    "stationChargeCost": 1,
+    "xp": 30,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_chum_station",
+    "name": "Build Chum Station",
+    "skill": "construction",
+    "levelRequirement": 12,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 15
+      },
+      {
+        "itemId": "item_stone",
+        "quantity": 10
+      },
+      {
+        "itemId": "item_bait",
+        "quantity": 20
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_chum_station",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 60000,
+    "stationChargeCost": 1,
+    "xp": 30,
+    "foundationKinds": [
+      "wood"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
     "id": "recipe_birdwatcher",
     "name": "Birdwatcher",
     "skill": "alchemy",
@@ -12427,7 +12739,7 @@
     ],
     "durationMs": 16000,
     "stationChargeCost": 1,
-    "xp": 40,
+    "xp": 122,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
@@ -12514,10 +12826,11 @@
     ],
     "durationMs": 20000,
     "stationChargeCost": 1,
-    "xp": 7,
+    "xp": 20,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -12597,10 +12910,11 @@
     ],
     "durationMs": 24000,
     "stationChargeCost": 1,
-    "xp": 35,
+    "xp": 71,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -12765,10 +13079,11 @@
     ],
     "durationMs": 34000,
     "stationChargeCost": 1,
-    "xp": 1011,
+    "xp": 235,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -12813,6 +13128,468 @@
     "xp": 2185,
     "sim": {
       "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_bait_from_raw_shrimp",
+    "name": "Bait from Raw Shrimp",
+    "skill": "fishing",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_raw_shrimp",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_bait",
+        "chance": 100,
+        "minQty": 3,
+        "maxQty": 3,
+        "baseQty": {
+          "min": 3,
+          "max": 3
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 3000,
+    "stationChargeCost": 1,
+    "xp": 1,
+    "sim": {
+      "tempo": "quick",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_bait_from_worm",
+    "name": "Bait from Worm",
+    "skill": "fishing",
+    "levelRequirement": 2,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_worm",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_bait",
+        "chance": 100,
+        "minQty": 2,
+        "maxQty": 2,
+        "baseQty": {
+          "min": 2,
+          "max": 2
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 3000,
+    "stationChargeCost": 1,
+    "xp": 1,
+    "sim": {
+      "tempo": "quick",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_bait_from_trout",
+    "name": "Bait from Trout",
+    "skill": "fishing",
+    "levelRequirement": 5,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_trout",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_bait",
+        "chance": 100,
+        "minQty": 4,
+        "maxQty": 4,
+        "baseQty": {
+          "min": 4,
+          "max": 4
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 3000,
+    "stationChargeCost": 1,
+    "xp": 1,
+    "sim": {
+      "tempo": "quick",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_bait_from_anchovy",
+    "name": "Bait from Anchovy",
+    "skill": "fishing",
+    "levelRequirement": 25,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_anchovy",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_bait",
+        "chance": 100,
+        "minQty": 4,
+        "maxQty": 4,
+        "baseQty": {
+          "min": 4,
+          "max": 4
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 4000,
+    "stationChargeCost": 1,
+    "xp": 2,
+    "sim": {
+      "tempo": "quick",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_bait_from_tropical_fish",
+    "name": "Bait from Tropical Fish",
+    "skill": "fishing",
+    "levelRequirement": 30,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_tropical_fish",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_bait",
+        "chance": 100,
+        "minQty": 5,
+        "maxQty": 5,
+        "baseQty": {
+          "min": 5,
+          "max": 5
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 4000,
+    "stationChargeCost": 1,
+    "xp": 3,
+    "sim": {
+      "tempo": "quick",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_bait_from_oyster",
+    "name": "Bait from Oyster",
+    "skill": "fishing",
+    "levelRequirement": 25,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oyster",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_bait",
+        "chance": 100,
+        "minQty": 5,
+        "maxQty": 5,
+        "baseQty": {
+          "min": 5,
+          "max": 5
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 4000,
+    "stationChargeCost": 1,
+    "xp": 2,
+    "sim": {
+      "tempo": "quick",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_bait_from_salmon",
+    "name": "Bait from Salmon",
+    "skill": "fishing",
+    "levelRequirement": 40,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_salmon",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_bait",
+        "chance": 100,
+        "minQty": 6,
+        "maxQty": 6,
+        "baseQty": {
+          "min": 6,
+          "max": 6
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 5000,
+    "stationChargeCost": 1,
+    "xp": 8,
+    "sim": {
+      "tempo": "quick",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_bait_from_tuna",
+    "name": "Bait from Tuna",
+    "skill": "fishing",
+    "levelRequirement": 45,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_tuna",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_bait",
+        "chance": 100,
+        "minQty": 6,
+        "maxQty": 6,
+        "baseQty": {
+          "min": 6,
+          "max": 6
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 5000,
+    "stationChargeCost": 1,
+    "xp": 13,
+    "sim": {
+      "tempo": "quick",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_bait_from_stingray",
+    "name": "Bait from Stingray",
+    "skill": "fishing",
+    "levelRequirement": 54,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_stingray",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_bait",
+        "chance": 100,
+        "minQty": 8,
+        "maxQty": 8,
+        "baseQty": {
+          "min": 8,
+          "max": 8
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 5000,
+    "stationChargeCost": 1,
+    "xp": 24,
+    "sim": {
+      "tempo": "quick",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_bait_from_lobster",
+    "name": "Bait from Lobster",
+    "skill": "fishing",
+    "levelRequirement": 50,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_lobster",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_bait",
+        "chance": 100,
+        "minQty": 6,
+        "maxQty": 6,
+        "baseQty": {
+          "min": 6,
+          "max": 6
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 5000,
+    "stationChargeCost": 1,
+    "xp": 17,
+    "sim": {
+      "tempo": "quick",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_bait_from_sturgeon",
+    "name": "Bait from Sturgeon",
+    "skill": "fishing",
+    "levelRequirement": 60,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_sturgeon",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_bait",
+        "chance": 100,
+        "minQty": 8,
+        "maxQty": 8,
+        "baseQty": {
+          "min": 8,
+          "max": 8
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 6000,
+    "stationChargeCost": 1,
+    "xp": 42,
+    "sim": {
+      "tempo": "quick",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_bait_from_swordfish",
+    "name": "Bait from Swordfish",
+    "skill": "fishing",
+    "levelRequirement": 63,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_swordfish",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_bait",
+        "chance": 100,
+        "minQty": 10,
+        "maxQty": 10,
+        "baseQty": {
+          "min": 10,
+          "max": 10
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 6000,
+    "stationChargeCost": 1,
+    "xp": 55,
+    "sim": {
+      "tempo": "quick",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_bait_from_shark",
+    "name": "Bait from Shark",
+    "skill": "fishing",
+    "levelRequirement": 83,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_shark",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_bait",
+        "chance": 100,
+        "minQty": 12,
+        "maxQty": 12,
+        "baseQty": {
+          "min": 12,
+          "max": 12
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 7000,
+    "stationChargeCost": 1,
+    "xp": 273,
+    "sim": {
+      "tempo": "quick",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_bait_from_anglerfish",
+    "name": "Bait from Anglerfish",
+    "skill": "fishing",
+    "levelRequirement": 89,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_anglerfish",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_bait",
+        "chance": 100,
+        "minQty": 12,
+        "maxQty": 12,
+        "baseQty": {
+          "min": 12,
+          "max": 12
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 7000,
+    "stationChargeCost": 1,
+    "xp": 403,
+    "sim": {
+      "tempo": "quick",
       "purpose": "iph"
     }
   }

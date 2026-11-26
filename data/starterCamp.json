@@ -76,11 +76,6 @@
       "y": 250
     },
     {
-      "typeId": "token_coast",
-      "x": 1460,
-      "y": 270
-    },
-    {
       "typeId": "token_goblin_camp",
       "x": 400,
       "y": 890

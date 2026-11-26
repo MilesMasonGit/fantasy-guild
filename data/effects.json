@@ -95,24 +95,6 @@
     ],
     "autoSyncId": true
   },
-  "effect_fishing_net": {
-    "id": "effect_fishing_net",
-    "name": "Fishing Net",
-    "statements": [
-      {
-        "id": "stm_89rtrtpcq",
-        "keyword": "acts_as",
-        "payload": {
-          "tag": "fishing_net",
-          "tier": 1
-        },
-        "to": null,
-        "when": null,
-        "upkeep": null
-      }
-    ],
-    "autoSyncId": true
-  },
   "effect_bonus_wheat": {
     "id": "effect_bonus_wheat",
     "name": "Bonus Wheat",
@@ -944,56 +926,6 @@
     "autoSyncId": true,
     "id": "effect_faster_station"
   },
-  "effect_oak_forest_growth": {
-    "name": "Oak Forest Growth",
-    "statements": [
-      {
-        "id": "stm_s8_oak_forest_growth",
-        "keyword": "provides",
-        "payload": {
-          "type": "GROW_TIME",
-          "bucket": "percentage",
-          "value": -0.25
-        },
-        "chargeDelta": 0,
-        "to": {
-          "mode": "tag",
-          "value": "Oak"
-        },
-        "reach": "nearby",
-        "target": null,
-        "when": null,
-        "upkeep": null
-      }
-    ],
-    "autoSyncId": true,
-    "id": "effect_oak_forest_growth"
-  },
-  "effect_apple_orchard_growth": {
-    "name": "Apple Orchard Growth",
-    "statements": [
-      {
-        "id": "stm_s8_apple_orchard_growth",
-        "keyword": "provides",
-        "payload": {
-          "type": "GROW_TIME",
-          "bucket": "percentage",
-          "value": -0.25
-        },
-        "chargeDelta": 0,
-        "to": {
-          "mode": "id",
-          "value": "token_apple_tree"
-        },
-        "reach": "nearby",
-        "target": null,
-        "when": null,
-        "upkeep": null
-      }
-    ],
-    "autoSyncId": true,
-    "id": "effect_apple_orchard_growth"
-  },
   "effect_copper_mine_doubling": {
     "name": "Copper Mine Doubling",
     "statements": [
@@ -1613,31 +1545,6 @@
     ],
     "autoSyncId": true,
     "id": "effect_fire_elemental_ambush"
-  },
-  "effect_fir_forest_growth": {
-    "name": "Fir Forest Growth",
-    "statements": [
-      {
-        "id": "stm_k2_fir_forest_growth",
-        "keyword": "provides",
-        "payload": {
-          "type": "GROW_TIME",
-          "bucket": "percentage",
-          "value": -0.25
-        },
-        "chargeDelta": 0,
-        "to": {
-          "mode": "tag",
-          "value": "Fir"
-        },
-        "reach": "nearby",
-        "target": null,
-        "when": null,
-        "upkeep": null
-      }
-    ],
-    "autoSyncId": true,
-    "id": "effect_fir_forest_growth"
   },
   "effect_anglers_calm": {
     "name": "Angler's Calm",
@@ -2383,131 +2290,6 @@
     ],
     "autoSyncId": true,
     "id": "effect_thorns_struck"
-  },
-  "effect_birch_forest_growth": {
-    "name": "Birch Forest Growth",
-    "statements": [
-      {
-        "id": "stm_birch_forest_growth",
-        "keyword": "provides",
-        "payload": {
-          "type": "GROW_TIME",
-          "bucket": "percentage",
-          "value": -0.25
-        },
-        "chargeDelta": 0,
-        "to": {
-          "mode": "tag",
-          "value": "Birch"
-        },
-        "reach": "nearby",
-        "target": null,
-        "when": null,
-        "upkeep": null
-      }
-    ],
-    "autoSyncId": true,
-    "id": "effect_birch_forest_growth"
-  },
-  "effect_maple_forest_growth": {
-    "name": "Maple Forest Growth",
-    "statements": [
-      {
-        "id": "stm_maple_forest_growth",
-        "keyword": "provides",
-        "payload": {
-          "type": "GROW_TIME",
-          "bucket": "percentage",
-          "value": -0.25
-        },
-        "chargeDelta": 0,
-        "to": {
-          "mode": "tag",
-          "value": "Maple"
-        },
-        "reach": "nearby",
-        "target": null,
-        "when": null,
-        "upkeep": null
-      }
-    ],
-    "autoSyncId": true,
-    "id": "effect_maple_forest_growth"
-  },
-  "effect_cedar_forest_growth": {
-    "name": "Cedar Forest Growth",
-    "statements": [
-      {
-        "id": "stm_cedar_forest_growth",
-        "keyword": "provides",
-        "payload": {
-          "type": "GROW_TIME",
-          "bucket": "percentage",
-          "value": -0.25
-        },
-        "chargeDelta": 0,
-        "to": {
-          "mode": "tag",
-          "value": "Cedar"
-        },
-        "reach": "nearby",
-        "target": null,
-        "when": null,
-        "upkeep": null
-      }
-    ],
-    "autoSyncId": true,
-    "id": "effect_cedar_forest_growth"
-  },
-  "effect_mahogany_forest_growth": {
-    "name": "Mahogany Forest Growth",
-    "statements": [
-      {
-        "id": "stm_mahogany_forest_growth",
-        "keyword": "provides",
-        "payload": {
-          "type": "GROW_TIME",
-          "bucket": "percentage",
-          "value": -0.25
-        },
-        "chargeDelta": 0,
-        "to": {
-          "mode": "tag",
-          "value": "Mahogany"
-        },
-        "reach": "nearby",
-        "target": null,
-        "when": null,
-        "upkeep": null
-      }
-    ],
-    "autoSyncId": true,
-    "id": "effect_mahogany_forest_growth"
-  },
-  "effect_ebony_forest_growth": {
-    "name": "Ebony Forest Growth",
-    "statements": [
-      {
-        "id": "stm_ebony_forest_growth",
-        "keyword": "provides",
-        "payload": {
-          "type": "GROW_TIME",
-          "bucket": "percentage",
-          "value": -0.25
-        },
-        "chargeDelta": 0,
-        "to": {
-          "mode": "tag",
-          "value": "Ebony"
-        },
-        "reach": "nearby",
-        "target": null,
-        "when": null,
-        "upkeep": null
-      }
-    ],
-    "autoSyncId": true,
-    "id": "effect_ebony_forest_growth"
   },
   "effect_forestry_draught": {
     "name": "Forestry Draught",
@@ -5407,5 +5189,22 @@
         "upkeep": null
       }
     ]
+  },
+  "effect_bait_shed_station": {
+    "id": "effect_bait_shed_station",
+    "name": "Bait Shed Station",
+    "statements": [
+      {
+        "id": "stm_bait_shed_station",
+        "keyword": "station",
+        "payload": {
+          "skill": "fishing"
+        },
+        "to": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true
   }
 }

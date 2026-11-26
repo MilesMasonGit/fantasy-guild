@@ -474,39 +474,25 @@
       },
       "item_trout": {
         "status": "live",
-        "tier": 2
+        "tier": 0
       },
       "item_salmon": {
         "status": "live",
-        "tier": 0,
-        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
+        "tier": 3
       },
       "item_tropical_fish": {
         "status": "live",
-        "tier": 0,
-        "note": "Tier inferred (ledger first fill, to confirm): the camp Coast catches it (rod, or trap with Worm Bait); the docs name only shrimp for the fishing spot."
+        "tier": 3
       },
       "item_lobster": {
         "status": "live",
-        "tier": 1,
-        "note": "Plane 1 (director 2026-11-02, with Cooked Lobster): its first catch is a chain (Worm, Worm Bait, then the trap) that held the Starter Camp at 44 min; the camp Coast still catches it."
+        "tier": 3
       },
       "item_swordfish": {
         "status": "live",
-        "tier": 0,
-        "note": "Tier inferred (ledger first fill, to confirm): the camp Coast catches it (rod, or trap with Worm Bait); the docs name only shrimp for the fishing spot."
+        "tier": 3
       },
       "item_worm": {
-        "status": "live",
-        "tier": 0,
-        "note": "Tier inferred (ledger first fill, to confirm): made at level 1 from camp materials only (oak, copper, coal, wheat, water, raw shrimp)."
-      },
-      "item_worm_bait": {
-        "status": "live",
-        "tier": 0,
-        "note": "Tier inferred (ledger first fill, to confirm): made at level 1 from camp materials only (oak, copper, coal, wheat, water, raw shrimp)."
-      },
-      "item_shrimp_bait": {
         "status": "live",
         "tier": 0,
         "note": "Tier inferred (ledger first fill, to confirm): made at level 1 from camp materials only (oak, copper, coal, wheat, water, raw shrimp)."
@@ -1592,6 +1578,66 @@
       "item_master_rod": {
         "status": "live",
         "tier": 3
+      },
+      "item_oyster": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_anchovy": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_tuna": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_stingray": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_sturgeon": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_shark": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_anglerfish": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_cooked_shark": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_bait": {
+        "status": "live",
+        "tier": 0
+      },
+      "item_fly_lure": {
+        "status": "live",
+        "tier": 2
+      },
+      "item_spinner_lure": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_glow_lure": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_mythril_harpoon": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_adamantine_harpoon": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_darkmetal_harpoon": {
+        "status": "live",
+        "tier": 3
       }
     },
     "tokens": {
@@ -1626,15 +1672,6 @@
       "token_oak_tree": {
         "status": "live",
         "tier": 0
-      },
-      "token_coast": {
-        "status": "live",
-        "tier": 0
-      },
-      "token_shrimp_coast": {
-        "status": "live",
-        "tier": 0,
-        "note": "Tier inferred (ledger first fill, to confirm): part of a camp node's cycle (oak sapling and stump; the Coast's shrimp state; the old wheat stages)."
       },
       "token_shrimp_market": {
         "status": "parked",
@@ -1931,16 +1968,6 @@
         "tier": 0,
         "note": "Tier inferred (ledger first fill, to confirm): built at Construction 1 from camp materials (oak, stone, copper ingots, seeds the camp has)."
       },
-      "token_river": {
-        "status": "live",
-        "tier": 2,
-        "note": "Tier inferred (ledger first fill, to confirm): catches trout and salmon (plane-2 fish); no map writes it today."
-      },
-      "token_lake": {
-        "status": "live",
-        "tier": 2,
-        "note": "Tier inferred (ledger first fill, to confirm): catches trout and salmon (plane-2 fish); no map writes it today."
-      },
       "token_dock": {
         "status": "live",
         "tier": 0,
@@ -2042,10 +2069,6 @@
       "token_wild_lavender": {
         "status": "live",
         "tier": 1
-      },
-      "token_bog_pool": {
-        "status": "live",
-        "tier": 2
       },
       "token_fire_elemental": {
         "status": "live",
@@ -2160,6 +2183,10 @@
         "tier": 0
       },
       "token_battlefield": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_fish_shoal": {
         "status": "live",
         "tier": 0
       },
@@ -2314,6 +2341,30 @@
       "token_sheep_pasture": {
         "status": "live",
         "tier": 1
+      },
+      "token_fishing_spot": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_coral_reef": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_oyster_bed": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_shark_waters": {
+        "status": "live",
+        "tier": 3
+      },
+      "token_bait_shed": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_chum_station": {
+        "status": "live",
+        "tier": 2
       }
     },
     "recipes": {
@@ -2556,6 +2607,18 @@
         "tier": 3
       },
       "recipe_iron_gears": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_mythril_harpoon": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_adamantine_harpoon": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_darkmetal_harpoon": {
         "status": "live",
         "tier": 3
       },
@@ -2913,6 +2976,10 @@
         "status": "live",
         "tier": 3
       },
+      "recipe_cooked_shark": {
+        "status": "live",
+        "tier": 3
+      },
       "recipe_muily2pf": {
         "status": "live",
         "tier": 0,
@@ -2927,16 +2994,6 @@
         "status": "live",
         "tier": 0,
         "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
-      },
-      "recipe_shrimp_bait": {
-        "status": "live",
-        "tier": 0,
-        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (item_shrimp_bait, Starter Camp)."
-      },
-      "recipe_worm_bait": {
-        "status": "live",
-        "tier": 0,
-        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (item_worm_bait, Starter Camp)."
       },
       "recipe_fine_fishing_rod": {
         "status": "live",
@@ -3158,6 +3215,18 @@
         "tier": 3
       },
       "recipe_master_rod": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_fly_lure": {
+        "status": "live",
+        "tier": 2
+      },
+      "recipe_spinner_lure": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_glow_lure": {
         "status": "live",
         "tier": 3
       },
@@ -3631,6 +3700,14 @@
         "tier": 2,
         "note": "Builds a creature camp from its banner (brief 330 W6)."
       },
+      "recipe_build_bait_shed": {
+        "status": "live",
+        "tier": 0
+      },
+      "recipe_build_chum_station": {
+        "status": "live",
+        "tier": 2
+      },
       "recipe_birdwatcher": {
         "status": "live",
         "tier": 2,
@@ -3672,6 +3749,62 @@
       "recipe_masters_draught": {
         "status": "live",
         "tier": 3
+      },
+      "recipe_bait_from_raw_shrimp": {
+        "status": "live",
+        "tier": 0
+      },
+      "recipe_bait_from_worm": {
+        "status": "live",
+        "tier": 0
+      },
+      "recipe_bait_from_trout": {
+        "status": "live",
+        "tier": 0
+      },
+      "recipe_bait_from_anchovy": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_bait_from_tropical_fish": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_bait_from_oyster": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_bait_from_salmon": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_bait_from_tuna": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_bait_from_stingray": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_bait_from_lobster": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_bait_from_sturgeon": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_bait_from_swordfish": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_bait_from_shark": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_bait_from_anglerfish": {
+        "status": "live",
+        "tier": 3
       }
     }
   },
@@ -3710,39 +3843,6 @@
         "autoSyncId": true,
         "id": "item_healing_potion"
       },
-      "item_trout_bait": {
-        "name": "Trout Bait",
-        "type": "material",
-        "plan": {
-          "status": "planned",
-          "tier": 3,
-          "note": "Bait for the Mythril-tier fish (Salmon 40, Lobster 50): Crafting 38, 1 Trout makes 2. Planned until brief 770 G2 lets a pool ask it."
-        },
-        "autoSyncId": true,
-        "id": "item_trout_bait"
-      },
-      "item_salmon_bait": {
-        "name": "Salmon Bait",
-        "type": "material",
-        "plan": {
-          "status": "planned",
-          "tier": 3,
-          "note": "Bait for the Adamantine-tier fish (Swordfish 63): Crafting 39 (its Salmon comes at Fishing 40; Crafting 60 to 79 are full), 1 Salmon makes 2. Planned until G2."
-        },
-        "autoSyncId": true,
-        "id": "item_salmon_bait"
-      },
-      "item_swordfish_chum": {
-        "name": "Swordfish Chum",
-        "type": "material",
-        "plan": {
-          "status": "planned",
-          "tier": 3,
-          "note": "Bait for the Darkmetal-tier fish (Shark 83): Crafting 79, 1 Swordfish makes 2. Planned until G2."
-        },
-        "autoSyncId": true,
-        "id": "item_swordfish_chum"
-      },
       "item_seaweed": {
         "name": "Seaweed",
         "type": "material",
@@ -3753,17 +3853,6 @@
         },
         "autoSyncId": true,
         "id": "item_seaweed"
-      },
-      "item_oyster": {
-        "name": "Oyster",
-        "type": "material",
-        "plan": {
-          "status": "planned",
-          "tier": 3,
-          "note": "Caught at the Oyster Bed with a Trap from Fishing 25; for Cooking's Oyster Stew, and rarely a Pearl. Planned until the waters pack after G2."
-        },
-        "autoSyncId": true,
-        "id": "item_oyster"
       },
       "item_pearl": {
         "name": "Pearl",
@@ -3887,6 +3976,16 @@
         },
         "autoSyncId": true,
         "id": "token_construction_endgame_site"
+      },
+      "token_shipwreck": {
+        "name": "Shipwreck",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "A rare spot kind with the Shipwreck's goods as its fixed catch (owner 2026-11-24); waits for its goods (a Fishing rare table, T-553)."
+        },
+        "autoSyncId": true,
+        "id": "token_shipwreck"
       }
     },
     "recipes": []
