@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 
 import {
@@ -47,13 +47,14 @@ export default function LedgerPace({ report, onRefresh, onOpen, focusSkill }) {
 
       <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Stages">
         <h3 className={sectionHead}>Stages at Maxed</h3>
-        <p className="text-[10px] text-gray-500">When a new game first has everything planned for each stage, at the Maxed player's rates (the curve's player), against its budget: the pace curve's time to the level the next tier opens at (red beyond ±{tol} %).</p>
+        <p className="text-[10px] text-gray-500">When a new game first has everything planned for each stage, at the Maxed player's rates (the curve's player), against its budget: the pace curve's time to the level the next tier opens at (red beyond ±{tol} %). Timed with the reference guild's heroes (about one a tier): a stage is had no sooner than they can put in all its work and the stages' before, each level and each price once, however fast every skill would climb side by side.</p>
         <table className="w-full" style={{ borderCollapse: 'collapse' }}>
           <thead>
             <tr>
               <th style={{ ...head, textAlign: 'left', width: 110 }}>Stage</th>
               <th style={{ ...head, textAlign: 'left', width: 100 }}>Budget</th>
               <th style={{ ...head, textAlign: 'left', width: 120 }}>Maxed</th>
+              <th style={{ ...head, textAlign: 'left', width: 190 }}>Heroes</th>
               <th style={{ ...head, textAlign: 'left' }}>Slowest</th>
             </tr>
           </thead>
@@ -68,6 +69,14 @@ export default function LedgerPace({ report, onRefresh, onOpen, focusSkill }) {
                   <td style={{ ...cell, color: red ? 'var(--color-error)' : 'var(--color-success)' }} data-stage-hours>
                     {hoursText(s.hours)} ({off >= 0 ? '+' : ''}{Math.round(off * 100)} %){!s.complete || s.untimed.length ? '*' : ''}
                   </td>
+                  <td style={{ ...cell, color: 'var(--color-text-secondary)' }} data-stage-heroes>
+                    {PACE_TEXT.heroes(s.heroes)}
+                    {s.entries > 0 && (
+                      <div className="text-gray-500" style={{ fontWeight: s.byWork ? 700 : 400 }}>
+                        their work {hoursText(s.workHours)}{s.byWork ? ' (sets it)' : ''}; side by side {hoursText(s.pathHours)}
+                      </div>
+                    )}
+                  </td>
                   <td style={{ ...cell, color: 'var(--color-text-secondary)' }}>
                     {s.slowest.slice(0, 3).map((x, i) => (
                       <span key={x.key}>{i > 0 && ', '}<Link k={x.key} name={name(x.key)} onOpen={onOpen} /> {hoursText(x.hours)}</span>
@@ -81,6 +90,9 @@ export default function LedgerPace({ report, onRefresh, onOpen, focusSkill }) {
         </table>
         <p className="text-[10px] text-gray-500">* a floor: some entries or steps are not timed (never reached, a fighting style's levels, or a step the calculator cannot time).</p>
       </section>
+
+      <Layouts pace={pace} onOpen={onOpen} />
+
 
       <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Rate sources by skill">
         <h3 className={sectionHead}>Where each skill's rate comes from</h3>
@@ -165,6 +177,71 @@ export default function LedgerPace({ report, onRefresh, onOpen, focusSkill }) {
         </table>
       </section>
     </div>
+  );
+}
+
+/**
+ * The two layouts a work site is timed at: the nodes the dense one makes past the tolerance more of
+ * (cheap, always shown), and on a click each skill's days to 99 in both (a second pace, so asked for).
+ */
+function Layouts({ pace, onOpen }) {
+  const [spread, setSpread] = useState(null);
+  const nodes = useMemo(() => pace.layoutRows(), [pace]);
+  const n = pace.settings.layouts;
+  const tol = pace.settings.tolerancePct;
+  const days = (d) => (Number.isFinite(d) ? `${Math.round(d * 10) / 10} d` : 'never');
+  return (
+    <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Layouts">
+      <h3 className={sectionHead}>Layouts</h3>
+      <p className="text-[10px] text-gray-500">
+        A camp works {n.sparse} nodes in the sparse layout and {n.dense} in the dense one (Ledger settings); the pace above is timed {pace.settings.layout}. A node that rests no longer than it works keeps one hero busy on two, and the layout then moves nothing; one that rests longer makes more the more of it stands in reach (red beyond ±{tol} %).
+      </p>
+      {nodes.length === 0 ? (
+        <p className="text-[11px] text-gray-500" data-layout-nodes="0">No node makes past the tolerance more in the dense layout.</p>
+      ) : (
+        <ul className="text-[11px] space-y-0.5" data-layout-nodes={nodes.length}>
+          {nodes.map((r) => (
+            <li key={r.work.key} style={{ color: 'var(--color-warning)' }}>
+              <Link k={r.work.entry} name={pace.workName(r.work)} onOpen={onOpen} />: {rateText(r.sparse)} an hour with {n.sparse}, {rateText(r.dense)} with {n.dense} (+{Math.round(r.off * 100)} %)
+            </li>
+          ))}
+        </ul>
+      )}
+      {!spread ? (
+        <button
+          onClick={() => setSpread(pace.layoutSpread())}
+          className="px-3 py-1.5 rounded-lg text-xs font-bold"
+          style={{ background: 'transparent', color: 'var(--color-text-muted)', border: '1px solid var(--color-border-subtle)', cursor: 'pointer' }}
+          data-layout-spread-button
+        >
+          Time the {spread?.other ?? (pace.settings.layout === 'sparse' ? 'dense' : 'sparse')} layout too
+        </button>
+      ) : (
+        <table className="w-full" style={{ borderCollapse: 'collapse' }} data-layout-spread>
+          <thead>
+            <tr>
+              <th style={{ ...head, textAlign: 'left', width: 110 }}>Skill</th>
+              <th style={{ ...head, textAlign: 'left' }}>Days to 99, sparse ({n.sparse})</th>
+              <th style={{ ...head, textAlign: 'left' }}>Dense ({n.dense})</th>
+              <th style={{ ...head, textAlign: 'left', width: 110 }}>Apart</th>
+            </tr>
+          </thead>
+          <tbody>
+            {spread.skills.map((s) => (
+              <tr key={s.skill} data-layout-skill={s.skill}>
+                <td style={cell}>{PACE_TEXT.skill(s.skill)}</td>
+                {['sparse', 'dense'].map((l) => (
+                  <td key={l} style={{ ...cell, color: 'var(--color-text-secondary)' }}>
+                    {PROFILES.map((p) => `${PROFILE_TEXT[p]} ${days(s.days[l][p])}`).join(' · ')}
+                  </td>
+                ))}
+                <td style={{ ...cell, color: s.warn ? 'var(--color-error)' : 'var(--color-text-muted)' }}>{Math.round(s.off * 100)} %</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </section>
   );
 }
 
