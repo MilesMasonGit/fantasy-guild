@@ -6,6 +6,7 @@ import { gearDefenceFindings } from '../systems/core/gearDefenceRule.js';
 import { gearResistancesOf } from '../config/registries/gearDefence.js';
 import { enemyProfileOf } from '../config/registries/enemyProfile.js';
 import { enemyMovesOf } from '../config/registries/enemyMoves.js';
+import { enemyFightNumbers } from '../systems/effects/enemyKindEffects.js';
 import { DAMAGE_GROUPS, isDamageGroupId } from '../config/registries/damageTypes.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 
@@ -55,7 +56,9 @@ describe('a line on a damage group in the shipped content', () => {
     });
 
     it('the Crab keeps its Crush weakness through Armoured\'s Slash, Crush and Stab', () => {
+        // Its own Crush −100 and Armoured's 50 add up in a fight.
         const crab = list(content.tokens).find((t) => t.id === 'token_crab');
-        expect(enemyProfileOf(crab).resistances).toMatchObject({ slash: 50, crush: -50, stab: 50 });
+        expect(crab.enemy).toMatchObject({ kinds: ['effect_armoured'], resistances: { crush: -100 } });
+        expect(enemyFightNumbers(crab).resistances).toMatchObject({ slash: 50, crush: -50, stab: 50 });
     });
 });

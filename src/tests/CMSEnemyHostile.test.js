@@ -10,7 +10,7 @@ import { useEntityStore } from '../../cms/src/stores/useEntityStore';
 import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 import { syncFiles } from '../../cms/src/engine/recipeSync';
 import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
-import { enemyProfileOf } from '../config/registries/enemyProfile.js';
+import { enemyFightNumbers } from '../systems/effects/enemyKindEffects.js';
 import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
 import { DAMAGE_TYPES, damageTypeLabel } from '../config/registries/damageTypes.js';
 
@@ -22,8 +22,8 @@ const resistText = (map) => {
 
 /** The preview's hit: a plain Crush swing, or its moves by name and the type each hits with. */
 const hitText = (p) => (p.moves?.length
-    ? `${p.hit} · ${p.moves.map(m => `${m.name || 'Attack'}${m.hits ? ` ${damageTypeLabel(m.type)}` : ''}`).join(', ')}`
-    : `${p.hit} Crush`);
+    ? `${Math.round(p.hit * 100) / 100} · ${p.moves.map(m => `${m.name || 'Attack'}${m.hits ? ` ${damageTypeLabel(m.type)}` : ''}`).join(', ')}`
+    : `${Math.round(p.hit * 100) / 100} Crush`);
 
 /**
  * The CMS's enemy block: a control Sync changes nothing, the Style dropdown, the level preview. No
@@ -122,9 +122,10 @@ describe('no Hostile box: an old hostile mark is carried, and read by nothing', 
 describe('the Token editor’s level preview', () => {
     // Renders every shipped enemy's editor, so it needs more than the default timeout under full-suite load.
     // Rewritten for damage types: flat armour gave way to the enemy's resistances, and the hit names its type.
+    // Its kinds' numbers are added, as the fight adds them.
     it('shows the fight’s own numbers for every shipped enemy: HP, hit, resistances, swing time, XP', { timeout: 20000 }, () => {
         for (const id of enemyIds) {
-            const p = enemyProfileOf(useEntityStore.getState().tokens[id]);
+            const p = enemyFightNumbers(useEntityStore.getState().tokens[id], useEntityStore.getState().effects);
             const { container, unmount } = editor(id);
             const box = within(container).getByText('What the fight uses').parentElement.parentElement;
             expect(box.textContent, id).toContain(

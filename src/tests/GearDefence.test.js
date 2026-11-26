@@ -103,7 +103,8 @@ const enemyType = (id, enemy) => ({
 });
 registerTokenTypes({
     gd_dummy: enemyType('gd_dummy', { hit: 10 }),
-    gd_crab: enemyType('gd_crab', { kinds: ['armoured'], resistances: { crush: -50 } }),
+    // Armoured's Crush 50 and its own −100 make it weak 50 % to Crush, as the shipped Crab.
+    gd_crab: enemyType('gd_crab', { kinds: ['effect_armoured'], resistances: { crush: -100 } }),
     gd_venom_rat: enemyType('gd_venom_rat', { hit: 4, moves: [{ name: 'Venom Bite', damageType: 'crush', effectId: VENOM_EFFECT_ID, target: 'hero' }] })
 });
 
