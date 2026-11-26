@@ -3,6 +3,7 @@
   "date": "2026-11-26",
   "summary": "The method review's rulings are in, spacing is settled, and the boost budget is restated by places. For one hero in one skill: 12.3 to 12.8 days to 99 optimized at 6.25 % a level, about 17.5 days typical (three quarters of each boost), no walls, fifteen gaps with the content session.",
   "checked": [
+    "The ledger now counts heroes (one at the start, eight at the end), spends each hour of work once and times a work site by its building places. With one hero, everything the Starter Camp offers today takes about 7 hours: nine skills and its prices, about 15 hours of work in all. That is information, not a fault, by the ruling on leaving a stage; it is a lot for a first camp.",
     "The ledger's reading of the live game, 2026-11-26 (the 6.25 % curve, a maker held to about 2 gatherers, the new boost budget). Days to 99 for a maxed hero against the curve's 12.6: Cooking 3.8, Alchemy 5.3, Farming 6.6, Forestry 6.8, Construction 7.3, Smithing 7.6, Crafting 9.1, Mining 9.5, Fishing 21.7. So before any number pack the live game is mostly 1.3 to 3.3 times too fast, Cooking most of all, and Fishing is well too slow (it moved from 14.7 with the day's content changes).",
     "Boosts in the live game: 462 pieces of work hold more boost than their tier's budget (it was 883 before the typical player's budget rose to three quarters), most of them speed from station upgrades. A typical hero falls more than 1.45 times behind the curve in Fishing, Farming 20 to 30 and early Forestry.",
     "Three walls, where a stretch takes over twice the curve's time; eighteen chains need more than about 2 gatherers a maker to run in full.",
@@ -14,6 +15,7 @@
     "The method itself, with two read-only readings of the CMS's simulator and ledger: docs/active/balance_method_review.md. The page is on the curve by construction (XP is worked back from the curve), so it cannot test whether a guild's set-up is realistic; only the ledger or play can."
   ],
   "moved": [
+    "Approved by the owner, 2026-11-26: leaving a stage means settling the next place (level 10 in one or two skills and its price, about 35 minutes for the Starter Camp), not finishing everything the stage offers.",
     "Approved by the owner, 2026-11-26, after spacing was settled (reach 240, Tokens 128 apart, 12 places round a node, about 8 for buildings): the same building all game and more of them. A Faster Work building is 5 % off work time, one held at copper and four at darkmetal; a More XP building is +2.5 % XP; a Double Output building +25 % yield.",
     "Approved by the owner, 2026-11-26: a typical player holds three quarters of each boost, not half. The typical line on this page moves from about 23 days a skill to about 17.5, and typical ends about 1.4 times behind optimized, not 2 times.",
     "Approved by the owner, 2026-11-26: worth follows the XP rule (an hour of work is worth twice as much every 20 levels, not the simulator's 260-fold rise), and a well-run guild is comfortable for coins.",

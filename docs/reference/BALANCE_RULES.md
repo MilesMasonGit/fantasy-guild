@@ -241,6 +241,7 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 | **A late recruit** | **XP for Everyone brings a new hero to about half the guild's level** in every skill (owner, 2026-11-26): a catch-up, not a second way to level |
 | **Summoned workers** | Outside the roster: capped by charges, priced like a consumable (owner, 2026-11-26) |
 | **The first sitting** | **The Starter Camp ends at level 10**, 35 minutes in on the curve; **a skilled, efficient player using the early boosts leaves it in about 20 minutes** (owner, 2026-11-26). Only-training work at 1.5x gives 23 minutes, so the early boosts need add little more |
+| **Leaving a stage** | **Leaving means settling the next place** (owner, 2026-11-26): one hero reaches the place's level in the one or two skills it asks and pays its price; that is what a stage's budget times. Everything else a stage offers (the Starter Camp asks nine skills, about 15 hours of one hero's work today) is done over the following hours, alongside the new place |
 | **The pace that governs** | **One skill, for one hero** (section 1). Every skill at 99 on all 8 heroes is then a goal of one to one and a half years for a typical player, and that is accepted (owner: "Keep 6 to 6.5%") |
 
 ## Worked examples
