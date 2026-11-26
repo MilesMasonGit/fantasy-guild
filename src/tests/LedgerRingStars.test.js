@@ -155,6 +155,10 @@ describe('the pace: the star\'s price is on the way to its ring', () => {
         const hours = three.proposed.priceHours * WORLD_FIXTURE_TABLES.wild.priceGrowth;
         expect(four.proposed.priceHours).toBeLessThanOrEqual(hours + 1e-9);
         expect(four.proposed.priceHours).toBeGreaterThan(hours * 0.85);
+        // The ladder's stages all lie in the strict rings: a wild ring grows from the star before, whatever stages there are.
+        const full = paceOf(worldWorkspace(), null).hallPaybacks().find(r => r.ring === 4);
+        expect(full.budgetHours).toBeNull();
+        expect(full.proposed.grown).toEqual({ from: 'star_ring_3', growth: WORLD_FIXTURE_TABLES.wild.priceGrowth });
         // A strict ring with no budget proposes nothing, and says why.
         const bare = paceOf(worldWorkspace(), { tierLevels: [{ tier: 0, level: 1 }] });
         expect(bare.hallPaybacks().find(r => r.ring === 2).proposed.why).toMatch(/no budget/);

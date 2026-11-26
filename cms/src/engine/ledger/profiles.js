@@ -30,8 +30,9 @@ import { hallTracksOf, hallGraph, freeRanks, openingPath, starRulesOf, starMoves
  *   each slot, every Guild Hall rank. Only what the guild can make by then is on offer.
  *
  * Whether the guild can feed a boost (make enough of what the boosted work spends) is weighed on
- * the supply of the profile below ({@link FED_AS}): Typical on Bare's, Maxed on Typical's. A drink
- * or a potion the guild cannot make fast enough starves its work and lifts nothing.
+ * the supply of the profile below ({@link FED_AS}): Typical on Bare's, Maxed on Typical's. The
+ * work's materials are gathered by as many heroes as it needs (`pace.js`); a drink or a potion is
+ * brewed by one, and one the guild cannot make fast enough starves its work and lifts nothing.
  *
  * **The Guild Hall** (brief 320): a star's ranks are on offer to every work its rules reach (its
  * skill, its Token, a Passive Production line at the Hall), a rank only from the tier the owner gave
@@ -194,8 +195,8 @@ function familySpawnerOf(book, def, spawners) {
  * @param {(cap: number) => number} options.horizonHours  how soon a one-off boost must pay for itself
  * @param {(cap: number) => number} [options.hallHorizonHours]  how soon a Guild Hall rank must; the boosts' when absent
  * @param {(rate: object, cap: number, profile: string) => number} [options.inputScale]  the share of a rate
- *   the guild can feed at that profile (one hero on each input): a boost that starves its work is
- *   worth that much less
+ *   the guild can feed at that profile (its materials in full where anything makes them, what its
+ *   boosts spend by one hero on each): a boost that starves its work is worth that much less
  * @param {number} [options.campMembers]  copies of a refilling Token a camp hands one hero
  * @param {(itemId: string, cap: number) => number} [options.hallUnitHours]  hours one of an item takes
  *   to gather at Typical before the Hall (a Hall rank's price); Bare's when absent

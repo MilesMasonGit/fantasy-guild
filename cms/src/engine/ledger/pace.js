@@ -365,14 +365,18 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         return level !== null && level > (profiles.contextOf(work.target).gate ?? 1) ? level : null;
     }
 
-    const unitHours = (itemId, cap) => {
-        const s = supplyOf(itemId, PROFILE.BARE, cap).perHour;
-        return s > 0 ? 1 / s : Infinity;
+    /**
+     * Hero-hours one of an item takes at a profile and stage: its best source's heroes, the gatherers
+     * down its chain counted ({@link heroesOf}), over what it makes an hour. In stock (a loop) is free.
+     */
+    const heroHoursOf = (itemId, profile, cap) => {
+        const s = supplyOf(itemId, profile, cap);
+        if (!(s.perHour > 0)) return Infinity;
+        if (!Number.isFinite(s.perHour)) return 0;
+        return (s.work ? heroesOf(s.work, profile, cap) : 1) / s.perHour;
     };
-    const hallUnitHours = (itemId, cap) => {
-        const s = supplyOf(itemId, BEFORE_HALL, cap).perHour;
-        return s > 0 ? 1 / s : Infinity;
-    };
+    const unitHours = (itemId, cap) => heroHoursOf(itemId, PROFILE.BARE, cap);
+    const hallUnitHours = (itemId, cap) => heroHoursOf(itemId, BEFORE_HALL, cap);
     /**
      * Hours `coins` take to earn at a profile and stage, starting `hours` into a new game
      * ({@link coinHoursFrom}); a price no path times starts as its stage begins. 0 for none.
@@ -425,14 +429,21 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
      * cycle (T-338 part 1). A work met again down its own chain, or past twelve steps, counts its one
      * hero (a loop's input is in stock).
      */
-    function heroesOf(work, profile, cap, level = null, seen = new Set()) {
-        if (!work || seen.has(work.key) || seen.size > 12) return 1;
-        seen.add(work.key);
+    const heroMemo = new Map();
+    function heroesOf(work, profile, cap, level = null, seen = null) {
+        if (!work) return 1;
+        // Asked afresh (not inside a chain), the answer depends on nothing else: kept.
+        const key = seen ? null : `${work.key}|${profile}|${cap}|${level ?? ''}`;
+        if (key && heroMemo.has(key)) return heroMemo.get(key);
+        const path = seen || new Set();
+        if (path.has(work.key) || path.size > 12) return 1;
+        path.add(work.key);
         let heroes = 1;
         for (const g of Object.values(workAt(work, profile, cap, level).gatherers || {})) {
-            if (g.heroes > 0) heroes += g.heroes * heroesOf(g.work, profile, cap, null, seen);
+            if (g.heroes > 0) heroes += g.heroes * heroesOf(g.work, profile, cap, null, path);
         }
-        seen.delete(work.key);
+        path.delete(work.key);
+        if (key) heroMemo.set(key, heroes);
         return heroes;
     }
 
@@ -922,8 +933,13 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         ringMemo.set(memoKey, best);
         return best;
     }
-    /** Hours from a new game at which the stage ring `ring` opens after ends (its budget), or null with none set. */
+    /**
+     * Hours from a new game at which the stage ring `ring` opens after ends (its budget), or null with
+     * none set. A wild ring has none: the ladder's stages all lie in the strict rings, so its star
+     * grows from the one before (`wild.priceGrowth`).
+     */
     const ringBudgetHours = (ring) => {
+        if (ring > STRICT_RINGS) return null;
         const stage = settings.stages.find(s => s.tier === budgetTierOf(ring));
         return stage ? stage.budgetMinutes / 60 : null;
     };
@@ -1865,6 +1881,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             return { ...workAt(work, profile, c), ...profiles.profileOf(work.target, profile, c), cap: c };
         },
         supplyOf: (itemId, profile, cap = maxTier) => supplyOf(itemId, profile, cap),
+        /** Hero-hours one of an item takes at a profile and stage, the gatherers down its chain counted: what a boost's price and a drink's cost are weighed in. */
+        heroHoursOf: (itemId, profile, cap = maxTier) => heroHoursOf(itemId, profile, cap),
         /** The guild's heroes an hour of a work takes at a profile and stage (its own tier by default): its hero and the gatherers down its chain. */
         heroesOf: (target, profile, cap = null, level = null) => {
             const work = byKey.get(targetKey(target));

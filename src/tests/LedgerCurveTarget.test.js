@@ -145,6 +145,13 @@ describe('supply counts the gatherers a crafter needs', () => {
         expect(pace.heroesOf({ token: 'token_vein' }, PROFILE.TYPICAL)).toBe(1);
     });
 
+    it('⭐ prices a made thing in the hero-hours of its whole chain: a Beer is its brewer and two fifths of a forester', () => {
+        const pace = paceOf();
+        // 360 Beers an hour at the Still want 360 wood: 0.4 of a forester's 900.
+        expect(pace.heroHoursOf('item_beer', PROFILE.BARE)).toBeCloseTo(1.4 / 360, 9);
+        expect(pace.heroHoursOf('item_oak_wood', PROFILE.BARE)).toBeCloseTo(1 / 900, 9);
+    });
+
     it('an input nothing makes still starves its work', () => {
         const c = paceContent();
         c.items.item_nothing = { id: 'item_nothing', name: 'Nothing', type: 'material', plan: { tier: 0 } };
