@@ -461,7 +461,11 @@ function liveOutputs(record, current, want, makes, workspace, name) {
     const main = sure[0];
     const was = qtyRange(main) === String(makes) ? '' : ` (${name(main.itemId)} was ${qtyRange(main)} a cycle)`;
     // ⚠️ A `baseChance` an earlier tuning left would price a chance other than the 100 written here.
-    const counted = ({ baseChance, ...o }) => ({ ...o, chance: 100, minQty: makes, maxQty: makes, baseQty: { min: makes, max: makes }, variable: false });
+    const counted = (o) => {
+        const next = { ...o, chance: 100, minQty: makes, maxQty: makes, baseQty: { min: makes, max: makes }, variable: false };
+        delete next.baseChance;
+        return next;
+    };
     return {
         outputs: current.map((o) => (o === main ? counted(o) : o)),
         was,
