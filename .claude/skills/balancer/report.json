@@ -1,7 +1,7 @@
 {
   "title": "Method review, and the ledger's first full reading",
   "date": "2026-11-26",
-  "summary": "A review of how we balance, at the owner's request, found that what counts as a normal guild was a set of hidden numbers, that nothing weighed one use of an item against another, and that three tools held three rulebooks. The owner ruled on a reference guild and a tilt between XP and goods. The page's numbers for one hero in one skill stand: 12.3 to 12.8 days to 99 optimized at 6.25 % a level, no walls, fifteen gaps with the content session.",
+  "summary": "The method review's rulings are in, spacing is settled, and the boost budget is restated by places. For one hero in one skill: 12.3 to 12.8 days to 99 optimized at 6.25 % a level, about 17.5 days typical (three quarters of each boost), no walls, fifteen gaps with the content session.",
   "checked": [
     "The ledger's reading of the live game, 2026-11-26, now with the 6.25 % curve and a maker held to about 2 gatherers (the reference guild). Days to 99 for a maxed hero against the curve's 12.6: Cooking 3.7, Alchemy 5.3, Farming 6.6, Forestry 6.8, Construction 7.3, Smithing 7.7, Crafting 9.3, Mining 9.5, Fishing 14.7. So before any number pack the live game is mostly 1.3 to 3.5 times too fast, Cooking most of all (its last 40 levels take a quarter of the curve's time), and Fishing is too slow late.",
     "Boosts in the live game: a maxed hero is 1.7 to 3.9 times faster than one with no boosts (the rules expect 1.4 to 3), but a typical hero is within 1.0 to 1.4 of maxed (the rules expect 1.2 to 1.9): the boosts that exist are cheap enough that everyone takes them. 883 pieces of work hold more boost than their tier's budget, mostly speed from station upgrades.",
@@ -14,6 +14,8 @@
     "The method itself, with two read-only readings of the CMS's simulator and ledger: docs/active/balance_method_review.md. The page is on the curve by construction (XP is worked back from the curve), so it cannot test whether a guild's set-up is realistic; only the ledger or play can."
   ],
   "moved": [
+    "Approved by the owner, 2026-11-26, after spacing was settled (reach 240, Tokens 128 apart, 12 places round a node, about 8 for buildings): the same building all game and more of them. A Faster Work building is 5 % off work time, one held at copper and four at darkmetal; a More XP building is +2.5 % XP; a Double Output building +25 % yield.",
+    "Approved by the owner, 2026-11-26: a typical player holds three quarters of each boost, not half. The typical line on this page moves from about 23 days a skill to about 17.5, and typical ends about 1.4 times behind optimized, not 2 times.",
     "Approved by the owner, 2026-11-26: worth follows the XP rule (an hour of work is worth twice as much every 20 levels, not the simulator's 260-fold rise), and a well-run guild is comfortable for coins.",
     "Approved by the owner, 2026-11-26: boosts are placed and a site must choose. With Tokens edges touching and reach unchanged (the owner's leaning), a node has about 8 places for buildings, about 4 of them max one kind of boost, and a typical player fills most places. A station's own upgrade counts as a boost.",
     "Approved by the owner, 2026-11-26: drinks and work potions last 25 work cycles, 5 a craft, at twice the strength (this replaces yesterday's 50 cycles). The extra comes from the buildings' share: about 5 % a building for speed.",
@@ -43,11 +45,10 @@
     "Cooking, Smithing and Enchanting: none."
   ],
   "waiting": [
-    "On the owner, with the planning agent: Token spacing and reach (T-718), before any boost numbers are balanced.",
     "On the director, three new tickets: the simulator's XP curve and purpose tilt set from the balance rules (T-715); the ledger timing a guild of 8 with output spent once, nodes from the reference set-ups, camp variants and stacked buildings counted (T-716); checks for a chain's total XP, the 4x batch payback and Hall payback (T-717).",
     "On the director: the ledger prices every coin cost from one curve; the rule needs an everyday curve and a big-purchase curve (a new ticket, T-713).",
     "On the director, with the first number pack: the new XP table (9.4 million XP to 99) and the 25-cycle dose for drinks and potions.",
     "On the content session: the plan in the CMS as Planned entries, and the fifteen gaps. Also to look at: Arrowheads unlock later than the arrows that need them at every metal.",
-    "On the balancer: the boost budget's table restated by places (after spacing is settled), Construction once its repeatable work is planned, and re-checking the gaps as the content session fills them."
+    "On the balancer: Construction once its repeatable work is planned, and re-checking the gaps as the content session fills them."
   ]
 }

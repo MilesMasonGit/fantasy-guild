@@ -20,13 +20,13 @@ Status: approved 2026-11-07, amended the same day after a critical review and th
 | Gates | **No gate holds an optimized player past about two levels' time**; places priced on the same 1 hour to 1 day curve | A steady climb, every gate visible |
 | Coins | **Worth is the time in an item; an everyday coin cost is one level's time of selling, a big one half its item price's work** | A second gate: does the guild make more than it uses |
 
-**The curve describes a well-optimized player** (owner, 2026-11-07): one who holds the boosts a good player would at that point. A typical player is slower than the curve, about 1.5 to 2x, and a player with no boosts at most 3x.
+**The curve describes a well-optimized player** (owner, 2026-11-07): one who holds the boosts a good player would at that point. A typical player is slower than the curve, about 1.1x early to 1.4x late, and a player with no boosts at most 3x.
 
 **These are starting numbers.** The ledger reads them, times the whole game at each player, and its balancing preview proposes nudges. A nudge that goes beyond what these rules allow means the rule changes, on this page.
 
 ## 1. XP
 
-**The pace curve is one smooth rule** (owner, 2026-11-07): "I want our progression curve to be consistent across the game." **Each level takes 6.25 % longer than the one before**, starting at 3 minutes: about 5 minutes at 10, 32 at 40, 1.8 hours at 60, 6 at 80, 11 at 90 and 19 at 99. **One skill's climb is about 12.6 days** for a well-optimized player and about 23 for a typical one. **The step's range is 6 % to 6.5 %** (owner, 2026-11-25: "I would want to tighten the level up speed for late game... our desired range is somewhere within 6% and 6.5%. This might vary as we balance the game, as we may have more powerful buffs added."); 6.25 %, the middle of the range, is the working value until the boosts are balanced (owner, 2026-11-25). At 6.5 % levels 81 to 98 took 10 days optimized and 20 typical; at 6.25 % they take 8.4 and 16. *The CMS Ledger holds the same rule (3 minutes, 6.25 % a level, range 6 to 6.5 %) and works its stage budgets out from it (built 2026-11-26). For reference, in minutes a level: 1 = 3, 10 = 5, 20 = 9, 30 = 17, 40 = 32, 50 = 59, 60 = 107, 70 = 197, 80 = 361, 90 = 661, 99 = 1141.*
+**The pace curve is one smooth rule** (owner, 2026-11-07): "I want our progression curve to be consistent across the game." **Each level takes 6.25 % longer than the one before**, starting at 3 minutes: about 5 minutes at 10, 32 at 40, 1.8 hours at 60, 6 at 80, 11 at 90 and 19 at 99. **One skill's climb is about 12.6 days** for a well-optimized player and about 17.6 for a typical one (three quarters of each boost). **The step's range is 6 % to 6.5 %** (owner, 2026-11-25: "I would want to tighten the level up speed for late game... our desired range is somewhere within 6% and 6.5%. This might vary as we balance the game, as we may have more powerful buffs added."); 6.25 %, the middle of the range, is the working value until the boosts are balanced (owner, 2026-11-25). At 6.5 % levels 81 to 98 took 10 days optimized and 20 typical; at 6.25 % they take 8.4 and 16. *The CMS Ledger holds the same rule (3 minutes, 6.25 % a level, range 6 to 6.5 %) and works its stage budgets out from it (built 2026-11-26). For reference, in minutes a level: 1 = 3, 10 = 5, 20 = 9, 30 = 17, 40 = 32, 50 = 59, 60 = 107, 70 = 197, 80 = 361, 90 = 661, 99 = 1141.*
 
 **XP an hour doubles every 20 levels** (owner, 2026-11-07: "2x a tier"). A task unlocked at level L pays **1,660 × 2^((L − 1) / 20) XP an hour**. That's what level 1's 83 XP in 3 minutes makes, so the start stays as it is today.
 
@@ -59,7 +59,7 @@ About 9.4 million XP to 99. Today's table needs about 13 million.
 - **One total reward an hour, tilted by purpose** (owner, 2026-11-25, replacing "crafting and gathering pay the same XP an hour"): every hour of work at a level is worth the same in total, XP and goods together; a Token or recipe leans toward XP or toward goods, so work that hands over valuable goods teaches less. **The tilt is moderate** (owner): training work pays 1.5x the XP and half the goods, balanced work both in full, earning work half the XP and 1.5x the goods. The plan's entries carry no leaning yet, so the solver treats all of them as balanced until the content session tags them.
 - **Construction earns from builds and from repeatable work** (owner, 2026-11-21). A build pays XP by its price: the hours its materials took to gather, at the build's level's XP an hour, so a big build pays big. Builds alone leave Construction about 4x behind the curve to 20 and 8x to 85 (the ledger), so Construction also gets repeatable work between builds, priced like any make step; what that work is, the content agent proposes and the owner picks (T-656).
 - **Each link of a chain pays its own XP**, to its own skill. A late item earns the guild several skills' XP, and the guild pays for that in materials.
-- **Aimed at a well-optimized hero.** The ledger checks that a typical player lands about 1.5 to 2x slower and a player with no boosts no more than 3x slower, and nudges XP if not.
+- **Aimed at a well-optimized hero.** The ledger checks that a typical player lands about 1.1 to 1.4x slower and a player with no boosts no more than 3x slower, and nudges XP if not.
 
 ## 2. Action time
 
@@ -129,19 +129,19 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 | Rule | Ruling |
 |---|---|
 | **Size** | An optimized hero earns 1.4x a hero with no boosts at copper, rising to **3x at darkmetal**, the most the 3x bound allows. Boosts matter more as the game goes on |
-| **Typical** | Holds about half of each speed and XP boost: close to optimized early (about 1.2x), **about 2x behind late** |
+| **Typical** | Holds about **three quarters** of each speed and XP boost (owner, 2026-11-26, was half): a typical player fills most of a site's places and chooses less well. About 1.1x behind optimized early, **about 1.4x behind late** |
 | **Gatherers** | Yield boosts grow with the tier so **a typical guild needs about 2 gatherers per crafter at every tier**, against 9 at darkmetal with no boosts |
 | **Speed ceiling** | At most a 65 % cut at Maxed, inside the game's 80 % cap, so one more Faster Work building always still helps |
 
 | Tier | Speed cut | XP | Yield | Rare finds | Earns, against no boosts | Optimized over typical | Gatherers per crafter: none, typical, optimized |
 |---|---|---|---|---|---|---|---|
-| Copper (1) | 10 / 20 % | +5 / +10 % | +2 / +27 % | +0 / +100 % | 1.17x / 1.38x | 1.18x | 2.2 / 2.2 / 1.8 |
-| Iron (20) | 15 / 30 % | +5 / +10 % | +41 / +77 % | +0 / +100 % | 1.24x / 1.57x | 1.27x | 3.1 / 2.2 / 1.8 |
-| Silver (30) | 18 / 35 % | +8 / +15 % | +68 / +110 % | +0 / +100 % | 1.30x / 1.77x | 1.36x | 3.7 / 2.2 / 1.8 |
-| Mythril (40) | 20 / 40 % | +8 / +15 % | +100 / +150 % | +50 / +150 % | 1.34x / 1.92x | 1.43x | 4.4 / 2.2 / 1.8 |
-| Gold (50) | 22 / 45 % | +10 / +20 % | +138 / +197 % | +50 / +150 % | 1.42x / 2.18x | 1.54x | 5.2 / 2.2 / 1.8 |
-| Adamantine (60) | 25 / 50 % | +10 / +20 % | +183 / +254 % | +50 / +250 % | 1.47x / 2.40x | 1.64x | 6.2 / 2.2 / 1.8 |
-| Darkmetal (80) | 30 / 60 % | +10 / +20 % | +300 / +400 % | +50 / +250 % | 1.57x / 3.00x | 1.91x | 8.8 / 2.2 / 1.8 |
+| Copper (1) | 15 / 20 % | +8 / +10 % | +2 / +27 % | +0 / +100 % | 1.26x / 1.38x | 1.09x | 2.2 / 2.2 / 1.8 |
+| Iron (20) | 22 / 30 % | +8 / +10 % | +41 / +77 % | +0 / +100 % | 1.39x / 1.57x | 1.13x | 3.1 / 2.2 / 1.8 |
+| Silver (30) | 26 / 35 % | +11 / +15 % | +68 / +110 % | +0 / +100 % | 1.51x / 1.77x | 1.17x | 3.7 / 2.2 / 1.8 |
+| Mythril (40) | 30 / 40 % | +11 / +15 % | +100 / +150 % | +50 / +150 % | 1.59x / 1.92x | 1.21x | 4.4 / 2.2 / 1.8 |
+| Gold (50) | 34 / 45 % | +15 / +20 % | +138 / +197 % | +50 / +150 % | 1.74x / 2.18x | 1.26x | 5.2 / 2.2 / 1.8 |
+| Adamantine (60) | 38 / 50 % | +15 / +20 % | +183 / +254 % | +50 / +250 % | 1.84x / 2.40x | 1.30x | 6.2 / 2.2 / 1.8 |
+| Darkmetal (80) | 45 / 60 % | +15 / +20 % | +300 / +400 % | +50 / +250 % | 2.09x / 3.00x | 1.43x | 8.8 / 2.2 / 1.8 |
 
 *Cells are typical / optimized, at each tier's opening level; between openings the speed and XP columns climb level by level (owner, 2026-11-25). "Earns" is speed and XP together. Made by `balance_rules.py`; the speed and XP columns, the typical share and the yield gap are its settings.*
 
@@ -151,7 +151,7 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 |---|---|
 | Speed | Faster Work buildings −20 % (about four places at 5 % each), skill perks −15 %, drink −20 %, Hall stars −5 % (owner, 2026-11-26: drinks are twice as strong and the extra comes from buildings; perks took 10 % of the stars' share, owner 2026-11-21, [concept_milestone_perks.md](../active/concept_milestone_perks.md)). A station's own upgrade counts inside the buildings' share |
 | Yield | Double Output building (a sure double at most) +100 %, Hall stars +200 %, camp variants and perks +100 % |
-| XP | More XP buildings +5 %, Hall stars +5 %, drink +10 % (the drink doubled as for speed; balancer's call) |
+| XP | More XP buildings +10 % (four places at 2.5 % each), drink +10 % (owner, 2026-11-26: the buildings' share doubled, taken from the Hall stars, which no longer carry an XP percentage) |
 | Rare finds | A rare-find potion +100 %, rising to +200 % for late potions (owner); a Rare Finds building +50 % (owner), from mythril, when the first Rare Finds variants come |
 
 ⚠️ **Today's Hall is over budget on XP**: its Lore stars give +15 % XP (Builder's Lore +30 %) in the first tiers, where the whole XP budget is +10 %. The paper pass brings them in. A Double Output building can give at most +100 % (a sure double), so most late yield is the Hall's.
@@ -162,10 +162,21 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 
 | Rule | Ruling |
 |---|---|
-| **Places** | With Tokens spaced edges touching and reach kept at 240 u (the owner's leaning; T-718 settles it), a node has 12 neighbours: after its camp, a second node and a spawner, **about 8 places for buildings** |
+| **Places** | **Reach 240 u, Tokens at least 128 u apart (edges touching): 12 places round a node** (owner, 2026-11-26, [concept_token_spacing.md](../active/concept_token_spacing.md), brief 890). A typical site spends about 4 on its camp, a second node or two and a spawner, leaving **about 8 for buildings** |
 | **Choosing** | **A perfect site cannot max every kind**: about 4 places max one kind (speed, yield, XP or rare finds), so a site leans one or two ways. One building's number is the kind's building share ÷ 4 |
 | **Typical** | **A typical player fills most of the places** (6 or more). Players differ by which boosts they pick, not by how many they fit |
 | **Station upgrades** | **A station's own upgrade is a boost** and shares the tier's budget with the buildings round it. Today's upgraded stations run up to 60 % faster by themselves; they come down to the budget |
+
+**The same building all game, and more of them** (owner, 2026-11-26). A building's number does not grow by tier; what grows is how many of a kind an optimized guild holds at a site, because price and payback let it afford one early and four late.
+
+| Kind | One building | Copper | Iron | Silver | Mythril | Gold | Adamantine | Darkmetal |
+|---|---|---|---|---|---|---|---|---|
+| Faster Work | 5 % off work time | 1 | 2 | 2 | 3 | 3 | 3 | 4 |
+| More XP | +2.5 % XP | 2 | 2 | 3 | 3 | 4 | 4 | 4 |
+| Double Output | +25 % yield | 0 | 1 | 1 | 2 | 2 | 3 | 4 |
+| Rare Finds | +12.5 % rare finds (balancer's call: the +50 % ruled for one building, over four places) | 0 | 0 | 0 | 2 | 2 | 4 | 4 |
+
+*How many an optimized site holds, from the tier's budget for buildings ÷ one building. A site has about 8 places, so it cannot hold four of every kind: at darkmetal, two kinds in full or a mix. A station's own upgrade takes Faster Work's share when it has one.*
 
 **Upgrade prices go by payback** (owner): the hours of the boosted work it takes to earn back the price. **For a Hall star that boosts the whole guild, payback counts all the work it boosts**, not one hero's. **Payback = 1 hour × 24^(L / 80)**: 1 hour at 1, 2.2 at 20, 4.9 at 40, 10.8 at 60, a day at 80. That covers Guild Hall stars and building variants, priced in the tier's materials.
 
@@ -230,7 +241,7 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 | **A late recruit** | **XP for Everyone brings a new hero to about half the guild's level** in every skill (owner, 2026-11-26): a catch-up, not a second way to level |
 | **Summoned workers** | Outside the roster: capped by charges, priced like a consumable (owner, 2026-11-26) |
 | **The first sitting** | **The Starter Camp ends at level 10**, 35 minutes in on the curve; **a skilled, efficient player using the early boosts leaves it in about 20 minutes** (owner, 2026-11-26). Only-training work at 1.5x gives 23 minutes, so the early boosts need add little more |
-| **The pace that governs** | **One skill, for one hero** (section 1). Every skill at 99 on all 8 heroes is then a goal of one to two years for a typical player, and that is accepted (owner: "Keep 6 to 6.5%") |
+| **The pace that governs** | **One skill, for one hero** (section 1). Every skill at 99 on all 8 heroes is then a goal of one to one and a half years for a typical player, and that is accepted (owner: "Keep 6 to 6.5%") |
 
 ## Worked examples
 

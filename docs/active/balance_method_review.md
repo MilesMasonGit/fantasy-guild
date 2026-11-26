@@ -169,3 +169,8 @@ ledger to time a real work site and a real roster, and the first needs the spaci
 - **Drinks and work potions: 25 cycles, 5 a craft, twice as strong**, the extra strength taken from
   the buildings' share (speed: buildings 20 %, perks 15 %, drink 20 %, Hall 5 % at darkmetal).
 - **The Starter Camp ends at level 10** (35 minutes on the curve); a skilled player leaves in about 20.
+- **Spacing ruled** (planning agent's interview, brief 890): reach 240 u, Tokens 128 u apart, 12
+  places round a node, about 8 for buildings.
+- **The boost budget restated by places**: the same building all game and more of them (a Faster Work
+  building is 5 %, one at copper to four at darkmetal); a typical player holds three quarters of each
+  boost, ending about 1.4x behind optimized; XP buildings are four places at 2.5 %.

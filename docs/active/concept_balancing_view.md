@@ -30,7 +30,7 @@ Status: built 2026-11-19 (approved by the owner 2026-11-19): the [Guild Balance 
 | Action time growth every 20 levels | 1.15 | Late cycles' length |
 | Base seconds: gather, prepare, make | 6, 8, 12 | Every action's length |
 | Raw counts double every | 40 levels | Late raw cost |
-| Typical player behind optimized | 1.2x early to 2x late | The typical line |
+| Typical player behind optimized | 1.1x early to 1.4x late (three quarters of each boost; owner, 2026-11-26) | The typical line |
 | Unlock move allowed | up to 3 levels | How much the system may shift an unlock |
 | Longer per extra bar | +50 % (owner, 2026-11-25; was +20 %) | A 5-bar Chestplate against a 1-bar Dagger |
 | Boosts between tiers | climb each level (owner, 2026-11-25; was a step at each tier) | How the optimized player's boosts arrive |

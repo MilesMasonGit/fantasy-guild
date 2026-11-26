@@ -15,7 +15,7 @@
     cycleGrowth: 1.15,        // action time grows this much every 20 levels
     baseGather: 6, basePrepare: 8, baseMake: 12,   // seconds at level 0
     countDoublesEvery: 40,    // raw ingredient counts double every this many levels
-    typicalShare: 0.5,        // a typical player holds this share of each speed and XP boost
+    typicalShare: 0.75,       // a typical player holds this share of each speed and XP boost (owner, 2026-11-26)
     moveMax: 3,               // the most the solver may move an unlock, in levels
     gapFlag: 6,               // levels with nothing new before a stretch is flagged
     extraPerBar: 0.5,         // a make step takes this much longer for each main ingredient past the first

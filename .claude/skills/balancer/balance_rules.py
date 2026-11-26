@@ -74,7 +74,7 @@ def payback_hours(level):
 TIERS = [('Copper', 1), ('Iron', 20), ('Silver', 30), ('Mythril', 40), ('Gold', 50), ('Adamantine', 60), ('Darkmetal', 80)]
 OPT_SPEED_CUT = [20, 30, 35, 40, 45, 50, 60]
 OPT_XP = [10, 10, 15, 15, 20, 20, 20]
-TYPICAL_SHARE = 0.5      # a typical player holds about half of each speed and XP boost
+TYPICAL_SHARE = 0.75     # a typical player holds about three quarters of each speed and XP boost (owner, 2026-11-26)
 GATHERERS_BARE_COPPER = 2.2   # gatherers a smelter needs with no boosts (review)
 OPT_YIELD_OVER_TYPICAL = 1.25
 RARE = [(0, 100), (0, 100), (0, 100), (50, 150), (50, 150), (50, 250), (50, 250)]   # (typical, optimized)
@@ -82,7 +82,7 @@ RARE = [(0, 100), (0, 100), (0, 100), (50, 150), (50, 150), (50, 250), (50, 250)
 SHARES = {
     'speed': [('Faster Work buildings (about 4 places)', 1 / 3), ('skill perks', 0.25), ('drink', 1 / 3), ('Hall stars', 1 / 12)],
     'yield': [('Double Output building (a sure double at most)', 0.25), ('Hall stars', 0.5), ('camp variants and perks', 0.25)],
-    'xp': [('More XP buildings', 0.25), ('Hall stars', 0.25), ('drink', 0.5)],
+    'xp': [('More XP buildings (four places at 2.5 %)', 0.5), ('drink', 0.5)],
 }
 
 
