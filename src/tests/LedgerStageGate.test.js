@@ -74,6 +74,28 @@ describe('the way out of a stage', () => {
         expect(many.hours).toBeCloseTo(many.pathHours, 9);
     });
 
+    it('⭐ is levelled with the stage\'s own work, never with what the next place gives', () => {
+        // Every ring 1 place asks Mining 3; a Rich Vein of fifty times the XP stands only in ring 1.
+        const rich = gateWorld({ skills: [{ skill: 'mining', level: 3 }] });
+        rich.tokens.token_rich_vein = {
+            id: 'token_rich_vein', name: 'Rich Vein', uses: 3, respawn: { mode: 'refill', afterMs: 60000 },
+            config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 6000, xp: 50, inputs: [], outputs: [{ itemId: 'item_ores_1', chance: 100, minQty: 1, maxQty: 1 }] }
+        };
+        const raw = structuredClone(WORLD_FIXTURE_RAW);
+        raw.prices[1] = { ...raw.prices[1], skills: [{ skill: 'mining', level: 3 }] };
+        raw.lines.find(l => l.id === 'ores').origins[1].push({ id: 'token_rich_vein', weight: 1 });
+        rich.worldTables = normaliseWorldTables(raw);
+        const pace = paceOf(rich);
+        const g = pace.gateOf(0);
+        expect(g.asks).toEqual([expect.objectContaining({ skill: 'mining', level: 3 })]);
+        // The level track, which times Mining 1 to 3 at the stage that first asks past them (ring 1's), levels on the Rich Vein.
+        expect(pace.hoursToLevel('mining', 3, PROFILE.MAXED)).toBeLessThan(g.levelHours / 2);
+        // The way out does not: the same as with no Rich Vein at all.
+        const plain = paceOf(gateWorld({ skills: [{ skill: 'mining', level: 3 }] })).gateOf(0);
+        expect(g.levelHours).toBeCloseTo(plain.levelHours, 9);
+        expect(g.heroHours).toBeCloseTo(plain.heroHours, 9);
+    });
+
     it('⭐ is what the stage\'s budget times: a stage whose way out is on its budget is on it, however long its full content takes', () => {
         const first = paceOf(gateWorld());
         const out = first.gateOf(0).hours;

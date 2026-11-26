@@ -1279,28 +1279,39 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         placesByTier.get(rule.floor).push(key);
     }
 
-    /** As {@link hoursToLevel}, the guild's hero-hours to a skill level: the track's cumulative work, on past its top at the best source open by stage `cap`. */
-    function workToLevel(skill, level, profile, cap) {
+    /**
+     * Hours from a new game to a skill level at a profile with no work later than stage `cap`, and the
+     * guild's hero-hours they take: each level as its track has it ({@link trackOf}: at the stage that
+     * first asks past it), but at `cap` where that stage is later, and on past the track's top.
+     * `{ hours, work }`. A way out is levelled with its own stage's work, never the next stage's.
+     */
+    function levelTimeTo(skill, level, profile, cap) {
         const target = Math.min(MAX_SKILL_LEVEL, Math.floor(level));
-        if (target <= 1) return 0;
         const track = trackOf(skill);
-        const within = Math.min(target, track.top);
-        let work = within >= 2 ? track.levels[within - 2].cumulativeWork[profile] : 0;
-        for (let l = Math.max(1, track.top); l < target && Number.isFinite(work); l++) {
+        let hours = 0;
+        let work = 0;
+        for (let l = 1; l < target && Number.isFinite(hours); l++) {
+            const row = track.levels[l - 1];
+            if (row && row.tier <= cap) {
+                hours += row.hours[profile];
+                work += row.work[profile];
+                continue;
+            }
             const best = bestXp(skill, l, profile, cap);
-            const hours = best.xp > 0 ? (xpForLevel(l + 1) - xpForLevel(l)) / best.xp : Infinity;
-            work += hours * (best.work ? Math.min(best.need, best.have) : 1);
+            const h = best.xp > 0 ? (xpForLevel(l + 1) - xpForLevel(l)) / best.xp : Infinity;
+            hours += h;
+            work += h * (best.work ? Math.min(best.need, best.have) : 1);
         }
-        return work;
+        return { hours, work };
     }
 
     /**
      * Settling one place as the way out of stage `tier` at the curve's player: its level in each
-     * skill it asks (each by its own hero, at the stage's work), then its price (`priceHours`: its
-     * coins, earned from then), the path (`pathHours`); and the guild's hero-hours for both
-     * (`heroHours`: each level's work and the price once), put in by the guild's heroes
-     * ({@link hoursForWork}). What else settling it needs (the place before, the ring's star) is
-     * left out: it has its own times.
+     * skill it asks (each by its own hero, with no work past the stage: {@link levelTimeTo}), then its
+     * price (`priceHours`: its coins, earned from then), the path (`pathHours`); and the guild's
+     * hero-hours for both (`heroHours`: each level's work and the price once), put in by the guild's
+     * heroes ({@link hoursForWork}). What else settling it needs (the place before, the ring's star)
+     * is left out: it has its own times.
      */
     function placeWayOut(key, tier) {
         const at = reach.get(key);
@@ -1316,10 +1327,10 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 complete = false;
                 continue;
             }
-            const hours = hoursToLevel(g.skill, g.level, TARGET, tier);
+            const { hours, work } = levelTimeTo(g.skill, g.level, TARGET, tier);
             asks.push({ skill: g.skill, level: g.level, hours });
             if (hours > start) start = hours;
-            levelHeroHours += workToLevel(g.skill, g.level, TARGET, tier);
+            levelHeroHours += work;
         }
         const give = rule.gives.find(x => x.key === key) || { key, chance: 1 };
         const price = stepOf(rule, give, TARGET, at.tier, start);
@@ -1339,12 +1350,12 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     /**
      * The way out of a stage at the curve's player (BALANCE_RULES section 8, owner 2026-11-26:
      * leaving a stage means settling the next place): the soonest of the next stage's places
-     * ({@link placeWayOut}), with the stage's heroes, a fully timed one before any floor. `{ tier, next, why, heroes, place, name, ring,
-     * asks: [{ skill, level, hours }], coins, levelHours, priceHours, pathHours, heroHours, workHours,
-     * hours, byWork, complete, needs: [{ key, name, hours }], places }`: `why` is null, `'last'` for
-     * the last stage, or `'none'` when no place is of the next stage's tier; `needs` what else
-     * settling the place needs, each at its arrival, as information; `places` how many it was the
-     * soonest of.
+     * ({@link placeWayOut}), with the stage's heroes, a fully timed one before any floor.
+     * `{ tier, next, why, heroes, place, name, ring, asks: [{ skill, level, hours }], coins,
+     * levelHours, priceHours, pathHours, levelHeroHours, heroHours, workHours, hours, byWork, complete,
+     * needs: [{ key, name, hours }], places }`: `why` is null, `'last'` for the last stage, or
+     * `'none'` when no place is of the next stage's tier; `needs` what else settling the place needs,
+     * each at its arrival, as information; `places` how many it was the soonest of.
      */
     function gateOf(tier) {
         if (gateMemo.has(tier)) return gateMemo.get(tier);

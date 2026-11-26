@@ -61,7 +61,7 @@ import { hallTracksOf, hallGraph, freeRanks, openingPath, starRulesOf, starMoves
  * `sitePlaces.buildings`, at most `sitePlaces.perKind` of them boosting one kind (speed, XP, yield
  * or rare finds, {@link supportKinds}), and the same building may stand in several of them: each
  * copy is chosen as any boost is, Typical's when it pays back, Maxed's while it lifts the rate and
- * the site has room. The neighbour a work needs takes no place.
+ * the site has room. A neighbour the work needs that is not its spawner takes no place.
  *
  * Pure: reads only the rate book and what it is handed.
  */
@@ -390,12 +390,12 @@ export function buildProfiles(book, {
      * The places round the node a work site's own Tokens take, the node itself at the centre: where a
      * camp may work it, the camp and the layout's other nodes and spawners (a vein's second node; a
      * Forest and its other trees); else the work's own spawner and the rest of its allowance, or none.
-     * Laid out so whether or not the profile has its camp yet.
+     * Counted the same whether or not a profile has its camp yet.
      */
     function placesTaken(ctx) {
         if (ctx.camps.length) {
-            const site = siteNodesOf(ctx);
-            return 1 + site.spawners + site.nodes - 1;
+            const own = siteNodesOf(ctx);
+            return 1 + own.spawners + (own.nodes - 1);
         }
         if (ctx.family && ctx.kind !== WORK.FIGHT) return allowanceOf(book, ctx.family);
         return 0;
