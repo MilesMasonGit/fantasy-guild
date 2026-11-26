@@ -432,6 +432,27 @@
             "randomDraws"
           ]
         }
+      },
+      {
+        "ticket": "T-712",
+        "commit": "15ae8769",
+        "branch": "fix/fs-bench-fixture-spots",
+        "dirty": true,
+        "date": "2026-11-26T03:04:39.761Z",
+        "node": "v24.11.1",
+        "scenarios": {
+          "FS": [
+            "tokens",
+            "bankItems",
+            "heroXp",
+            "sprites",
+            "tokensHash",
+            "bankHash",
+            "heroHash",
+            "spriteHash",
+            "randomDraws"
+          ]
+        }
       }
     ]
   },
@@ -710,18 +731,18 @@
       "p50": 0.044800000000122964,
       "p99": 0.18220000000019354,
       "fingerprint": {
-        "tokens": 12,
+        "tokens": 8,
         "uses": 0,
-        "bankItems": 100911,
-        "heroXp": 53548,
-        "sprites": 2,
+        "bankItems": 100915,
+        "heroXp": 53542,
+        "sprites": 3,
         "gameTimeMs": 600000,
-        "tokensHash": "75a5881d",
-        "bankHash": "846a5ada",
-        "heroHash": "65090e82",
-        "spriteHash": "d24b5daa",
+        "tokensHash": "5a62516b",
+        "bankHash": "43f2b0f4",
+        "heroHash": "1b9b3dd1",
+        "spriteHash": "a6a83174",
         "binHash": "811c9dc5",
-        "randomDraws": 1753
+        "randomDraws": 1724
       },
       "fingerprintOptions": {
         "seed": 1
