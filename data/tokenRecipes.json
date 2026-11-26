@@ -7960,6 +7960,37 @@
     }
   },
   {
+    "id": "recipe_lavender_incense",
+    "name": "Lavender Incense",
+    "skill": "crafting",
+    "levelRequirement": 7,
+    "requiresContext": [],
+    "stationKinds": [
+      "altar"
+    ],
+    "inputs": [
+      {
+        "itemId": "item_lavender",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_lavender_incense",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 6000,
+    "xp": 8
+  },
+  {
     "id": "recipe_wheat",
     "name": "Wheat",
     "skill": "farming",
@@ -9631,41 +9662,6 @@
     }
   },
   {
-    "id": "recipe_build_dock",
-    "name": "Build Dock",
-    "skill": "construction",
-    "levelRequirement": 1,
-    "requiresContext": [],
-    "inputs": [
-      {
-        "itemId": "item_oak_wood",
-        "quantity": 8
-      }
-    ],
-    "outputs": [
-      {
-        "tokenId": "token_dock",
-        "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
-        "baseQty": {
-          "min": 1,
-          "max": 1
-        },
-        "variable": false
-      }
-    ],
-    "durationMs": 30000,
-    "stationChargeCost": 1,
-    "xp": 15,
-    "foundationKinds": [
-      "wood"
-    ],
-    "sim": {
-      "tempo": "heavy"
-    }
-  },
-  {
     "id": "recipe_build_minecart",
     "name": "Build Minecart",
     "skill": "construction",
@@ -9737,7 +9733,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "excavation"
+      "stone"
     ],
     "sim": {
       "tempo": "heavy"
@@ -9757,10 +9753,6 @@
       {
         "itemId": "item_stone",
         "quantity": 5
-      },
-      {
-        "itemId": "item_coal_prospecting_map",
-        "quantity": 1
       }
     ],
     "outputs": [
@@ -9780,7 +9772,7 @@
     "stationChargeCost": 1,
     "xp": 15,
     "foundationKinds": [
-      "excavation"
+      "stone"
     ],
     "sim": {
       "tempo": "heavy"
@@ -10096,7 +10088,7 @@
     "stationChargeCost": 1,
     "xp": 30,
     "foundationKinds": [
-      "wood"
+      "dock"
     ],
     "sim": {
       "tempo": "heavy"
@@ -11943,7 +11935,7 @@
     "stationChargeCost": 1,
     "xp": 30,
     "foundationKinds": [
-      "wood"
+      "dock"
     ],
     "sim": {
       "tempo": "heavy"
@@ -11990,7 +11982,7 @@
     "stationChargeCost": 1,
     "xp": 30,
     "foundationKinds": [
-      "wood"
+      "dock"
     ],
     "sim": {
       "tempo": "heavy"
@@ -12033,7 +12025,7 @@
     "stationChargeCost": 1,
     "xp": 30,
     "foundationKinds": [
-      "wood"
+      "dock"
     ],
     "sim": {
       "tempo": "heavy"
@@ -12654,7 +12646,7 @@
     "stationChargeCost": 1,
     "xp": 30,
     "foundationKinds": [
-      "wood"
+      "dock"
     ],
     "sim": {
       "tempo": "heavy"
@@ -12697,11 +12689,460 @@
     "stationChargeCost": 1,
     "xp": 30,
     "foundationKinds": [
-      "wood"
+      "dock"
     ],
     "sim": {
       "tempo": "heavy"
     }
+  },
+  {
+    "id": "recipe_dig_copper_vein",
+    "name": "Dig Copper Vein",
+    "skill": "construction",
+    "levelRequirement": 3,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_copper_prospecting_map",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 10
+      },
+      {
+        "itemId": "item_stone",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_copper_ore_vein",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 18,
+    "foundationKinds": [
+      "excavation"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_dig_coal_vein",
+    "name": "Dig Coal Vein",
+    "skill": "construction",
+    "levelRequirement": 4,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_coal_prospecting_map",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 10
+      },
+      {
+        "itemId": "item_stone",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_coal_vein",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 19,
+    "foundationKinds": [
+      "excavation"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_dig_iron_vein",
+    "name": "Dig Iron Vein",
+    "skill": "construction",
+    "levelRequirement": 21,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_iron_prospecting_map",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_fir_frame",
+        "quantity": 2
+      },
+      {
+        "itemId": "item_cut_stone",
+        "quantity": 4
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_iron_ore_vein",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 36,
+    "foundationKinds": [
+      "excavation"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_dig_silver_vein",
+    "name": "Dig Silver Vein",
+    "skill": "construction",
+    "levelRequirement": 31,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_silver_prospecting_map",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_fir_frame",
+        "quantity": 2
+      },
+      {
+        "itemId": "item_cut_stone",
+        "quantity": 6
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_silver_ore_vein",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 46,
+    "foundationKinds": [
+      "excavation"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_dig_mythril_vein",
+    "name": "Dig Mythril Vein",
+    "skill": "construction",
+    "levelRequirement": 41,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_mythril_prospecting_map",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_maple_frame",
+        "quantity": 2
+      },
+      {
+        "itemId": "item_marble_block",
+        "quantity": 3
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_mythril_ore_vein",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 56,
+    "foundationKinds": [
+      "excavation"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_dig_gold_vein",
+    "name": "Dig Gold Vein",
+    "skill": "construction",
+    "levelRequirement": 51,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_gold_prospecting_map",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_maple_frame",
+        "quantity": 2
+      },
+      {
+        "itemId": "item_marble_block",
+        "quantity": 4
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_gold_ore_vein",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 66,
+    "foundationKinds": [
+      "excavation"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_dig_adamantine_vein",
+    "name": "Dig Adamantine Vein",
+    "skill": "construction",
+    "levelRequirement": 61,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_adamantine_prospecting_map",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_mahogany_frame",
+        "quantity": 2
+      },
+      {
+        "itemId": "item_marble_block",
+        "quantity": 4
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_adamantium_ore",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 76,
+    "foundationKinds": [
+      "excavation"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_dig_darkmetal_vein",
+    "name": "Dig Darkmetal Vein",
+    "skill": "construction",
+    "levelRequirement": 81,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_darkmetal_prospecting_map",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_ebony_frame",
+        "quantity": 2
+      },
+      {
+        "itemId": "item_basalt_block",
+        "quantity": 4
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_darkmetal_ore_vein",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 30000,
+    "stationChargeCost": 1,
+    "xp": 96,
+    "foundationKinds": [
+      "excavation"
+    ],
+    "sim": {
+      "tempo": "heavy"
+    }
+  },
+  {
+    "id": "recipe_build_nature_shrine",
+    "name": "Build Nature Shrine",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_stone",
+        "quantity": 5
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_nature_shrine",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 90000,
+    "xp": 15,
+    "foundationKinds": [
+      "stone"
+    ]
+  },
+  {
+    "id": "recipe_build_laboratory",
+    "name": "Build Laboratory",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 10
+      },
+      {
+        "itemId": "item_stone",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_laboratory",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 90000,
+    "xp": 15,
+    "foundationKinds": [
+      "wood"
+    ]
+  },
+  {
+    "id": "recipe_build_university",
+    "name": "Build University",
+    "skill": "construction",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_stone",
+        "quantity": 10
+      },
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_university",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 90000,
+    "xp": 15,
+    "foundationKinds": [
+      "stone"
+    ]
   },
   {
     "id": "recipe_birdwatcher",
@@ -13592,5 +14033,53 @@
       "tempo": "quick",
       "purpose": "iph"
     }
+  },
+  {
+    "id": "recipe_offer_oak_charcoal",
+    "name": "Offer Oak Wood and Charcoal",
+    "skill": "faith",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "stationKinds": [
+      "shrine"
+    ],
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 2
+      },
+      {
+        "itemId": "item_charcoal",
+        "quantity": 1
+      }
+    ],
+    "outputs": [],
+    "offering": {
+      "litMs": 60000
+    },
+    "durationMs": 4000,
+    "xp": 3
+  },
+  {
+    "id": "recipe_offer_lavender_incense",
+    "name": "Offer Lavender Incense",
+    "skill": "faith",
+    "levelRequirement": 5,
+    "requiresContext": [],
+    "stationKinds": [
+      "shrine"
+    ],
+    "inputs": [
+      {
+        "itemId": "item_lavender_incense",
+        "quantity": 1
+      }
+    ],
+    "outputs": [],
+    "offering": {
+      "litMs": 180000
+    },
+    "durationMs": 4000,
+    "xp": 5
   }
 ]

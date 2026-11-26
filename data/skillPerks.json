@@ -6,6 +6,11 @@
         "level": 10,
         "effectId": "effect_steady_pick",
         "scale": 1
+      },
+      {
+        "level": 99,
+        "effectId": "effect_motherlode",
+        "scale": 1
       }
     ]
   },
@@ -16,6 +21,11 @@
         "level": 10,
         "effectId": "effect_clean_felling",
         "scale": 1
+      },
+      {
+        "level": 99,
+        "effectId": "effect_grove_feller",
+        "scale": 1
       }
     ]
   },
@@ -25,6 +35,11 @@
       {
         "level": 10,
         "effectId": "effect_patient_line",
+        "scale": 1
+      },
+      {
+        "level": 99,
+        "effectId": "effect_master_angler",
         "scale": 1
       }
     ]
@@ -46,6 +61,11 @@
         "level": 10,
         "effectId": "effect_nimble_fingers",
         "scale": 1
+      },
+      {
+        "level": 99,
+        "effectId": "effect_many_hands",
+        "scale": 1
       }
     ]
   },
@@ -66,6 +86,11 @@
         "level": 10,
         "effectId": "effect_green_thumb",
         "scale": 1
+      },
+      {
+        "level": 99,
+        "effectId": "effect_evergreen",
+        "scale": 1
       }
     ]
   },
@@ -85,6 +110,61 @@
       {
         "level": 10,
         "effectId": "effect_quick_builder",
+        "scale": 1
+      },
+      {
+        "level": 75,
+        "effectId": "effect_salvage",
+        "scale": 1
+      },
+      {
+        "level": 99,
+        "effectId": "effect_master_builder",
+        "scale": 1
+      }
+    ]
+  },
+  "melee": {
+    "id": "melee",
+    "perks": [
+      {
+        "level": 75,
+        "effectId": "effect_perk_second_wind",
+        "scale": 1
+      },
+      {
+        "level": 99,
+        "effectId": "effect_unbreakable",
+        "scale": 1
+      }
+    ]
+  },
+  "ranged": {
+    "id": "ranged",
+    "perks": [
+      {
+        "level": 99,
+        "effectId": "effect_twin_shot",
+        "scale": 1
+      }
+    ]
+  },
+  "magic": {
+    "id": "magic",
+    "perks": [
+      {
+        "level": 99,
+        "effectId": "effect_double_cast",
+        "scale": 1
+      }
+    ]
+  },
+  "stealth": {
+    "id": "stealth",
+    "perks": [
+      {
+        "level": 99,
+        "effectId": "effect_shadowstep",
         "scale": 1
       }
     ]

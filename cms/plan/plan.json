@@ -29,23 +29,43 @@
       },
       {
         "level": 10,
-        "minutesPerLevel": 8
+        "minutesPerLevel": 5
       },
       {
         "level": 20,
-        "minutesPerLevel": 30
+        "minutesPerLevel": 10
+      },
+      {
+        "level": 30,
+        "minutesPerLevel": 19
       },
       {
         "level": 40,
-        "minutesPerLevel": 180
+        "minutesPerLevel": 35
+      },
+      {
+        "level": 50,
+        "minutesPerLevel": 66
       },
       {
         "level": 60,
-        "minutesPerLevel": 1440
+        "minutesPerLevel": 123
+      },
+      {
+        "level": 70,
+        "minutesPerLevel": 231
+      },
+      {
+        "level": 80,
+        "minutesPerLevel": 434
+      },
+      {
+        "level": 90,
+        "minutesPerLevel": 815
       },
       {
         "level": 99,
-        "minutesPerLevel": 4320
+        "minutesPerLevel": 1437
       }
     ],
     "wallFactor": 2,
@@ -80,12 +100,29 @@
           "tier": 4,
           "pct": 100
         }
+      ],
+      "rareConsumable": [
+        {
+          "tier": 0,
+          "pct": 100
+        },
+        {
+          "tier": 6,
+          "pct": 200
+        }
+      ],
+      "rareSupport": [
+        {
+          "tier": 0,
+          "pct": 50
+        }
       ]
     },
     "campMembers": 3,
     "paybackHours": 2,
     "hallPaybackHours": 24,
-    "rulesVersion": "classless-one-job"
+    "rulesVersion": "classless-one-job",
+    "steadyFindsPerDay": 1
   },
   "entries": {
     "items": {
@@ -1638,6 +1675,38 @@
       "item_darkmetal_harpoon": {
         "status": "live",
         "tier": 3
+      },
+      "item_copper_prospecting_map": {
+        "status": "live",
+        "tier": 0
+      },
+      "item_iron_prospecting_map": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_silver_prospecting_map": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_mythril_prospecting_map": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_gold_prospecting_map": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_adamantine_prospecting_map": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_darkmetal_prospecting_map": {
+        "status": "live",
+        "tier": 3
+      },
+      "item_lavender_incense": {
+        "status": "live",
+        "tier": 0
       }
     },
     "tokens": {
@@ -3230,6 +3299,10 @@
         "status": "live",
         "tier": 3
       },
+      "recipe_lavender_incense": {
+        "status": "live",
+        "tier": 0
+      },
       "recipe_wheat": {
         "status": "live",
         "tier": 0
@@ -3371,11 +3444,6 @@
         "status": "live",
         "tier": 0,
         "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_beehive, Starter Camp)."
-      },
-      "recipe_build_dock": {
-        "status": "live",
-        "tier": 0,
-        "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (token_dock, Starter Camp)."
       },
       "recipe_build_minecart": {
         "status": "live",
@@ -3707,6 +3775,38 @@
       "recipe_build_chum_station": {
         "status": "live",
         "tier": 2
+      },
+      "recipe_dig_copper_vein": {
+        "status": "live",
+        "tier": 0
+      },
+      "recipe_dig_coal_vein": {
+        "status": "live",
+        "tier": 0
+      },
+      "recipe_dig_iron_vein": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_dig_silver_vein": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_dig_mythril_vein": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_dig_gold_vein": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_dig_adamantine_vein": {
+        "status": "live",
+        "tier": 3
+      },
+      "recipe_dig_darkmetal_vein": {
+        "status": "live",
+        "tier": 3
       },
       "recipe_birdwatcher": {
         "status": "live",

@@ -1130,31 +1130,6 @@
     "autoSyncId": true,
     "id": "effect_field_blossom"
   },
-  "effect_dock_speed": {
-    "name": "Dock Speed",
-    "statements": [
-      {
-        "id": "stm_s8_dock_speed",
-        "keyword": "provides",
-        "payload": {
-          "type": "WORK_TIME",
-          "bucket": "percentage",
-          "value": -0.2
-        },
-        "chargeDelta": 0,
-        "to": {
-          "mode": "tag",
-          "value": "Water"
-        },
-        "reach": "nearby",
-        "target": null,
-        "when": null,
-        "upkeep": null
-      }
-    ],
-    "autoSyncId": true,
-    "id": "effect_dock_speed"
-  },
   "effect_keen_line": {
     "name": "Keen Line",
     "statements": [
@@ -3046,7 +3021,7 @@
     "id": "effect_pineapple_punch_drink"
   },
   "effect_taming_draught": {
-    "name": "Taming Draught",
+    "name": "Farming Draught",
     "statements": [
       {
         "id": "stm_taming_draught",
@@ -3055,7 +3030,7 @@
           "type": "XP_BONUS",
           "bucket": "percentage",
           "value": 0.1,
-          "category": "taming"
+          "category": "farming"
         },
         "chargeDelta": 0,
         "to": {
@@ -5201,6 +5176,675 @@
           "skill": "fishing"
         },
         "to": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true
+  },
+  "effect_armoured": {
+    "id": "effect_armoured",
+    "name": "Armoured",
+    "autoSyncId": true,
+    "statements": [
+      {
+        "id": "stm_armoured_slash",
+        "keyword": "provides",
+        "payload": {
+          "type": "TYPE_RESIST",
+          "bucket": "flat",
+          "value": 50,
+          "category": "slash"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      },
+      {
+        "id": "stm_armoured_crush",
+        "keyword": "provides",
+        "payload": {
+          "type": "TYPE_RESIST",
+          "bucket": "flat",
+          "value": 50,
+          "category": "crush"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      },
+      {
+        "id": "stm_armoured_stab",
+        "keyword": "provides",
+        "payload": {
+          "type": "TYPE_RESIST",
+          "bucket": "flat",
+          "value": 50,
+          "category": "stab"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      },
+      {
+        "id": "stm_armoured_swing",
+        "keyword": "provides",
+        "payload": {
+          "type": "SWING_TIME",
+          "bucket": "percentage",
+          "value": 0.3333333333333333
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ]
+  },
+  "effect_nimble": {
+    "id": "effect_nimble",
+    "name": "Nimble",
+    "autoSyncId": true,
+    "statements": [
+      {
+        "id": "stm_nimble_dodge",
+        "keyword": "provides",
+        "payload": {
+          "type": "DODGE",
+          "bucket": "flat",
+          "value": 15
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ]
+  },
+  "effect_swift": {
+    "id": "effect_swift",
+    "name": "Swift",
+    "autoSyncId": true,
+    "statements": [
+      {
+        "id": "stm_swift_swing",
+        "keyword": "provides",
+        "payload": {
+          "type": "SWING_TIME",
+          "bucket": "percentage",
+          "value": -0.3333333333333333
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      },
+      {
+        "id": "stm_swift_damage",
+        "keyword": "provides",
+        "payload": {
+          "type": "DAMAGE",
+          "bucket": "percentage",
+          "value": -0.3333333333333333
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ]
+  },
+  "effect_brute": {
+    "id": "effect_brute",
+    "name": "Brute",
+    "autoSyncId": true,
+    "statements": [
+      {
+        "id": "stm_brute_swing",
+        "keyword": "provides",
+        "payload": {
+          "type": "SWING_TIME",
+          "bucket": "percentage",
+          "value": 0.3333333333333333
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      },
+      {
+        "id": "stm_brute_damage",
+        "keyword": "provides",
+        "payload": {
+          "type": "DAMAGE",
+          "bucket": "percentage",
+          "value": 0.3333333333333333
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ]
+  },
+  "effect_salvage": {
+    "name": "Salvage",
+    "statements": [
+      {
+        "id": "stm_salvage",
+        "keyword": "provides",
+        "payload": {
+          "type": "SALVAGE",
+          "bucket": "flat",
+          "value": 50
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_salvage"
+  },
+  "effect_master_builder": {
+    "name": "Master Builder",
+    "statements": [
+      {
+        "id": "stm_master_builder",
+        "keyword": "provides",
+        "payload": {
+          "type": "BUILD_DISCOUNT",
+          "bucket": "flat",
+          "value": 20
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_master_builder"
+  },
+  "effect_perk_second_wind": {
+    "name": "Bloodrush",
+    "statements": [
+      {
+        "id": "stm_perk_second_wind",
+        "keyword": "provides",
+        "payload": {
+          "type": "KILL_HEAL",
+          "bucket": "flat",
+          "value": 3,
+          "category": "melee"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_perk_second_wind"
+  },
+  "effect_unbreakable": {
+    "name": "Unbreakable",
+    "statements": [
+      {
+        "id": "stm_unbreakable",
+        "keyword": "provides",
+        "payload": {
+          "type": "LAST_STAND",
+          "bucket": "flat",
+          "value": 100,
+          "category": "melee"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_unbreakable"
+  },
+  "effect_twin_shot": {
+    "name": "Twin Shot",
+    "statements": [
+      {
+        "id": "stm_twin_shot",
+        "keyword": "provides",
+        "payload": {
+          "type": "TWIN_STRIKE",
+          "bucket": "flat",
+          "value": 20,
+          "category": "ranged"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_twin_shot"
+  },
+  "effect_double_cast": {
+    "name": "Double Cast",
+    "statements": [
+      {
+        "id": "stm_double_cast",
+        "keyword": "provides",
+        "payload": {
+          "type": "TWIN_STRIKE",
+          "bucket": "flat",
+          "value": 20,
+          "category": "magic"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_double_cast"
+  },
+  "effect_shadowstep": {
+    "name": "Shadowstep",
+    "statements": [
+      {
+        "id": "stm_shadowstep",
+        "keyword": "provides",
+        "payload": {
+          "type": "DODGE_CRIT",
+          "bucket": "flat",
+          "value": 100,
+          "category": "stealth"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_shadowstep"
+  },
+  "effect_many_hands": {
+    "name": "Many Hands",
+    "statements": [
+      {
+        "id": "stm_many_hands",
+        "keyword": "provides",
+        "payload": {
+          "type": "SECOND_RECIPE",
+          "bucket": "flat",
+          "value": 1,
+          "category": "crafting"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_many_hands"
+  },
+  "effect_shrine_station": {
+    "id": "effect_shrine_station",
+    "name": "Shrine Station",
+    "statements": [
+      {
+        "id": "stm_shrine_station",
+        "keyword": "station",
+        "payload": {
+          "skill": "faith",
+          "stationKind": "shrine"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true
+  },
+  "effect_nature_blessing": {
+    "id": "effect_nature_blessing",
+    "name": "Nature's Blessing",
+    "statements": [
+      {
+        "id": "stm_nature_blessing",
+        "keyword": "provides",
+        "payload": {
+          "type": "NEVER_RUNS_OUT",
+          "bucket": "flat",
+          "value": 100
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true
+  },
+  "effect_motherlode": {
+    "name": "Motherlode",
+    "statements": [
+      {
+        "id": "stm_motherlode",
+        "keyword": "provides",
+        "payload": {
+          "type": "NEVER_RUNS_OUT",
+          "bucket": "flat",
+          "value": 100,
+          "category": "mining"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_motherlode"
+  },
+  "effect_evergreen": {
+    "name": "Evergreen",
+    "statements": [
+      {
+        "id": "stm_evergreen",
+        "keyword": "provides",
+        "payload": {
+          "type": "FREE_REPLANT",
+          "bucket": "flat",
+          "value": 100,
+          "category": "farming"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_evergreen"
+  },
+  "effect_grove_feller": {
+    "name": "Grove Feller",
+    "statements": [
+      {
+        "id": "stm_grove_feller",
+        "keyword": "provides",
+        "payload": {
+          "type": "GROVE_FELLING",
+          "bucket": "flat",
+          "value": 100,
+          "category": "forestry"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_grove_feller"
+  },
+  "effect_master_angler": {
+    "name": "Master Angler",
+    "statements": [
+      {
+        "id": "stm_master_angler",
+        "keyword": "provides",
+        "payload": {
+          "type": "BETTER_CATCH",
+          "bucket": "flat",
+          "value": 20,
+          "category": "fishing"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true,
+    "id": "effect_master_angler"
+  },
+  "effect_laboratory_station": {
+    "id": "effect_laboratory_station",
+    "name": "Laboratory Station",
+    "statements": [
+      {
+        "id": "stm_laboratory_station",
+        "keyword": "station",
+        "payload": {
+          "skill": "science",
+          "stationKind": "laboratory"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true
+  },
+  "effect_university_study": {
+    "id": "effect_university_study",
+    "name": "University",
+    "statements": [
+      {
+        "id": "stm_university_study",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.1,
+          "category": "science"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "nearby",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true
+  },
+  "effect_oak_mastery_speed": {
+    "id": "effect_oak_mastery_speed",
+    "name": "Oak Mastery: Quick Felling",
+    "statements": [
+      {
+        "id": "stm_oak_mastery_speed",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.05
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "self",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true
+  },
+  "effect_oak_mastery_yield": {
+    "id": "effect_oak_mastery_yield",
+    "name": "Oak Mastery: Heavy Logs",
+    "statements": [
+      {
+        "id": "stm_oak_mastery_yield",
+        "keyword": "provides",
+        "payload": {
+          "type": "YIELD",
+          "bucket": "percentage",
+          "value": 0.05
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "self",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true
+  },
+  "effect_oak_mastery_refresh": {
+    "id": "effect_oak_mastery_refresh",
+    "name": "Oak Mastery: Deep Roots",
+    "statements": [
+      {
+        "id": "stm_oak_mastery_refresh",
+        "keyword": "provides",
+        "payload": {
+          "type": "REFRESH",
+          "bucket": "flat",
+          "value": 5,
+          "category": "forestry"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "self",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true
+  },
+  "effect_oak_mastery_lucky": {
+    "id": "effect_oak_mastery_lucky",
+    "name": "Oak Mastery: Keen Eye",
+    "statements": [
+      {
+        "id": "stm_oak_mastery_lucky",
+        "keyword": "provides",
+        "payload": {
+          "type": "LUCKY",
+          "bucket": "percentage",
+          "value": 0.25
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "self",
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true
+  },
+  "effect_oak_mastery_double": {
+    "id": "effect_oak_mastery_double",
+    "name": "Oak Mastery: Twin Logs",
+    "statements": [
+      {
+        "id": "stm_oak_mastery_double",
+        "keyword": "provides",
+        "payload": {
+          "type": "DOUBLE_DROP",
+          "bucket": "flat",
+          "value": 5,
+          "category": "item_oak_wood"
+        },
+        "chargeDelta": 0,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "reach": "self",
+        "target": null,
         "when": null,
         "upkeep": null
       }
