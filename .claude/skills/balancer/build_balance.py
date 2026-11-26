@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Builds the Guild Balance Dials page's files from the content catalogue.
 
-Run from the worktree root: python .claude/skills/content/build_balance.py <out dir>
+Run from the worktree root: python .claude/skills/balancer/build_balance.py <out dir>
 Writes guild_balance_dials.html, solver.js (balance_solver.cjs, the one copy of the rules'
 calculation) and catalogue.json. Then republish to the page's URL (SKILL.md) with `root` =
 <out dir> and `files` = ["solver.js", "catalogue.json"].

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The balance rules' formulas (docs/reference/BALANCE_RULES.md), with the page's tables.
 
-Run from the repository root: python .claude/skills/content/balance_rules.py
+Run from the repository root: python .claude/skills/balancer/balance_rules.py
 Every number on the rules page comes from here; change a constant, re-run, and copy the tables.
 """
 

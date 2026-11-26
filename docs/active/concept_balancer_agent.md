@@ -1,4 +1,4 @@
-Status: draft
+Status: briefed 2026-11-25 (approved by the owner 2026-11-25): brief 880 for the ledger work; the `/balancer` skill drafted in `.claude/skills/balancer/`
 
 # The balancer: an agent for the game's numbers
 
@@ -91,7 +91,7 @@ Combat numbers are out of scope.
 
 - **The ledger needs a read-out an agent can run.** Today the ledger runs only
   inside the CMS page (`cms/src/engine/ledgerReport.js` and friends); there is no
-  command. The brief adds `npm run ledger:report`, writing the pace per skill
+  command. The brief adds a `ledger` command to the CMS command line (`npm run cms -- ledger`, brief 880 L1), writing the pace per skill
   and each entry's arrival and numbers as JSON, so the balancer reads the
   engine's timing without the owner copying it out.
 - **The gaps list is a doc, not the Dials page**, so `/content` can edit it on its

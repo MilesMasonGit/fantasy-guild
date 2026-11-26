@@ -1,6 +1,6 @@
 /* The balance solver: the rules of docs/reference/BALANCE_RULES.md over the content catalogue.
  * One copy, run by the balancing page (as the BalanceSolver global) and by Node for packs:
- *   node .claude/skills/content/balance_solver.cjs [dials.json]   prints a summary
+ *   node .claude/skills/balancer/balance_solver.cjs [dials.json]   prints a summary
  * The owner sets the dials; the solver works out each entry's numbers, may move an unlock a
  * few levels to even out a thin stretch, and flags only the empty stretches it can't smooth
  * (docs/active/concept_balancing_view.md). Numbers are never stored in the catalogue.

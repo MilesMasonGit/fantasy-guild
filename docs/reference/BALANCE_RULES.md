@@ -2,7 +2,7 @@ Status: approved 2026-11-07, amended the same day after a critical review and th
 
 # Balance rules
 
-*The formulas that give every item, recipe, Token and upgrade its starting numbers, from the owner's rulings in [concept_balancing.md](../active/concept_balancing.md) (2026-11-07). A script turns them into CMS change packs; the progression ledger then times the result and nudges what's off the curve. Every number here comes from `.claude/skills/content/balance_rules.py`: change a constant there, re-run, and copy the tables. Combat (damage, defence, healing, enemy strength) is its own segment, later.*
+*The formulas that give every item, recipe, Token and upgrade its starting numbers, from the owner's rulings in [concept_balancing.md](../active/concept_balancing.md) (2026-11-07). A script turns them into CMS change packs; the progression ledger then times the result and nudges what's off the curve. Every number here comes from `.claude/skills/balancer/balance_rules.py`: change a constant there, re-run, and copy the tables. Combat (damage, defence, healing, enemy strength) is its own segment, later.*
 
 ## How to read this page
 
