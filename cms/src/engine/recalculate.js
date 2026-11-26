@@ -8,6 +8,7 @@ import { composeTokenDescription } from './descriptionDictionary';
 import { deriveTokenType, expandBearer, expandAll } from '../utils/constants';
 import { splitPlanned, rejoinPlanned } from './planFile';
 import { seedEffectLibrary } from './workspaceSeeds';
+import { coinsInPlay } from './ledger/coins.js';
 
 /**
  * Recalculate, as a function: the economic simulator's whole line (TIME → ANCHOR → PRICE → TUNE →
@@ -95,7 +96,8 @@ export function recalculateWorkspace(workspace, dials = {}, { previousChurn = nu
         dials || {}
     );
 
-    const items = applyItemResults(state.items, sim);
+    // Sale prices follow the values once the content uses coins (`ledger/coins.js`).
+    const items = applyItemResults(state.items, sim, { coins: coinsInPlay({ tokens: migrated.tokens, hallStars: state.hallStars, world: state.world }) });
     const tokens = applyTokenResults(migrated.tokens, sim);
     const recipePools = applyRecipePoolResults(migrated.recipePools, sim);
     const recipes = flatten(recipePools);

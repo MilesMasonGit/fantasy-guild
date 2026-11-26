@@ -20,6 +20,7 @@ import { biomeRow } from '../../../config/biomeTerrain.js';
 import { normaliseEventTable, isRunnable } from '../../../config/eventTable.js';
 import { EVENT_WAIT_MIN_MS, EVENT_WAIT_MAX_MS } from '../../../config/eventTiming.js';
 import { allowsTerrain, TERRAIN } from '../../atlas/TerrainMap.js';
+import { coinsOf, shopCoinsOf } from '../../../config/registries/coinCosts.js';
 
 /**
  * Two engines over one picture of the content (`buildWorld`), shared by the CMS's ledger views and
@@ -205,6 +206,8 @@ const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v)
 const list = (v) => (Array.isArray(v) ? v.filter(Boolean) : []);
 const finite = (n, fallback) => (Number.isFinite(n) ? n : fallback);
 const text = (v) => (typeof v === 'string' && v ? v : null);
+/** A price's coins on its rule, `{ coins }`, only when it asks some: a rule asking none is as it always was. */
+const coinsField = (coins) => (coins > 0 ? { coins } : {});
 
 /** A collection (a list or an object) as an object keyed by each record's id, or its list place / key. */
 export function keyed(collection) {
@@ -282,7 +285,9 @@ export function isOneOff(def) {
  *
  * A rule: `{ id, how, via, needs: key[], tool: key|null, gives: [{ key, chance, perCycle, maybe, min, max, rare }],
  * floor, gates: [{ skill, level }], cycleMs, rollMs, inputs: [{ key, quantity }], passive, oneOff, repeatable }`,
- * and a catch's `pool: { tool, bait }`. A give's `min` and `max` are its amount as the card shows it (where
+ * a catch's `pool: { tool, bait }`, and `coins` on a price that asks coins beside its items (a Shop
+ * Token's, a Guild Hall star's first rank, settling a ring: absent when it asks none, so a rule
+ * without coins is exactly as it was). A give's `min` and `max` are its amount as the card shows it (where
  * known), `rare` marks a rare drop table's entry; the engines read neither.
  * `oneOff` marks the work of a one-off find (a chest the world places); `repeatable` work that keeps
  * rolling (not a one-off find, nor the work of a Token that wears out for good); `rollMs` the time
@@ -393,10 +398,10 @@ export function buildWorld(content = {}) {
         const isSpawner = isObject(def.spawner);
         const isFoundation = isObject(def.foundation);
 
-        // The Shop sells Token types, for items, from the start.
+        // The Shop sells Token types, for items and maybe coins, from the start.
         if (isObject(def.shop)) {
             const price = inputsOf(def.shop.price);
-            add({ id: `shop:${id}`, how: HOW.SHOP, via: null, needs: needKeys(price), inputs: price, gives: [{ key: self, chance: 1 }] });
+            add({ id: `shop:${id}`, how: HOW.SHOP, via: null, needs: needKeys(price), inputs: price, gives: [{ key: self, chance: 1 }], ...coinsField(shopCoinsOf(def)) });
         }
 
         // A spawner's spawns, paid by its upkeep (none for a Forest or an Orchard); no hero needed.
@@ -824,7 +829,7 @@ function hallStarRules(hallSky, { add, names, inputsOf }) {
     const byId = new Map(stars.map(s => [s.id, s]));
     const recordOf = (id) => {
         const star = byId.get(id);
-        return star ? { id, name: star.name, links: star.links, price: star.ranks[0]?.price || [], ring: ringOfStar(star) } : null;
+        return star ? { id, name: star.name, links: star.links, price: star.ranks[0]?.price || [], coins: coinsOf(star.ranks[0]?.coins), ring: ringOfStar(star) } : null;
     };
     // A link counts from both ends: a star's neighbours are the ones it names and the ones naming it.
     const neighbours = (record) => [...record.links, ...stars.filter(s => s.links.includes(record.id)).map(s => s.id)];
@@ -849,7 +854,7 @@ function hallStarRules(hallSky, { add, names, inputsOf }) {
             add({
                 id: `star:${record.id}:${way}`, how: HOW.STAR, via: null,
                 needs: [...(way === HALL_NODE ? [] : [starKey(way)]), ...inputs.map(i => i.key)],
-                inputs, gives
+                inputs, gives, ...coinsField(record.coins)
             });
         }
     }
@@ -884,7 +889,7 @@ function worldRules(tables, { add, names, placeable, ringNeeds = () => [] }) {
                 id: `settle:${line.id}:${ring}`, how: HOW.SETTLE, via: null, floor: ring,
                 needs: [...(ring > 1 ? [wedgeKey(line.id, ring - 1)] : []), ...ringNeeds(ring)],
                 gates: [...top].map(([skill, level]) => ({ skill, level })),
-                gives: [{ key, chance: 1 }]
+                gives: [{ key, chance: 1 }], ...coinsField(coinsOf(template.coins))
             });
         }
     }

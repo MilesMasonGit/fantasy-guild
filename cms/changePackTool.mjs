@@ -23,6 +23,11 @@
  *       and after the numbers it proposes, the largest moves, and what numbers cannot fix. --out
  *       writes the proposals as a change pack (never into cms/incoming/: a preview is not for the
  *       inbox); --json writes the whole preview.
+ *   node cms/changePackTool.mjs coins [--from <workspace.json>] [--rows <n>] [--json <result.json>]
+ *       The ledger's coins (src/engine/ledgerCoins.js): what one hero earns by each stage, every
+ *       price that may ask coins with the coin curve's proposal, each enemy's Coin drop beside what
+ *       its loot sells for. For the coin pack: only `balance` writes coin numbers, and only for
+ *       prices that already ask coins.
  *
  * Reads only; writes nothing but the pack file it was given (stamp, and gate with --write) and the
  * files balance is told to write.
@@ -119,10 +124,35 @@ if (cmd === 'balance') {
     process.exit(0);
 }
 
+if (cmd === 'coins') {
+    const args = process.argv.slice(3);
+    const opt = (name) => { const i = args.indexOf(name); return i !== -1 ? args[i + 1] : null; };
+    const { source, workspace } = loadWorkspace(opt('--from'));
+    const { createServer } = await import('vite');
+    const server = await createServer({
+        configFile: false, root: cmsDir, logLevel: 'error', appType: 'custom',
+        server: { middlewareMode: true, hmr: false, ws: false }, optimizeDeps: { noDiscovery: true, include: [] },
+    });
+    try {
+        const coins = await server.ssrLoadModule('/src/engine/ledgerCoins.js');
+        const result = coins.workspaceCoins(workspace);
+        console.log(`Against ${source}.`);
+        console.log(coins.coinsText(result, { rows: Number(opt('--rows')) || 40 }));
+        if (opt('--json')) {
+            fs.writeFileSync(opt('--json'), JSON.stringify(result, (k, v) => (v === Infinity ? 'Infinity' : v), 2) + '\n');
+            console.log(`The whole list written to ${opt('--json')}.`);
+        }
+    } finally {
+        await server.close();
+    }
+    process.exit(0);
+}
+
 if (!['check', 'stamp', 'gate'].includes(cmd) || !file) {
     console.log('Usage: node cms/changePackTool.mjs check|stamp|gate <pack.json> [--from <workspace.json>] [--write]');
     console.log('       node cms/changePackTool.mjs world [--seeds <n>] [--from <workspace.json>]');
     console.log('       node cms/changePackTool.mjs balance [--from <workspace.json>] [--out <pack.json>] [--json <result.json>]');
+    console.log('       node cms/changePackTool.mjs coins [--from <workspace.json>] [--rows <n>] [--json <result.json>]');
     process.exit(2);
 }
 const fromIdx = rest.indexOf('--from');

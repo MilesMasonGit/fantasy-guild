@@ -28,6 +28,10 @@ import { SKILLS, SKILL_LAYERS } from '../../../../src/config/registries/skillReg
  *   not moved here.
  * - **Costs and times**: a one-off step far longer than the pace allows (a Shop price, a build's
  *   inputs or time, a growth) is cut to the wait the pace allows there.
+ * - **Coins** (brief 870 C3): a price that asks coins (a Shop Token's `shop.coins`, a Guild Hall
+ *   rank's `coins`, a ring's `prices[ring].coins`) beyond the tolerance from the coin curve's number
+ *   (`pace.coinPrices`) is set to it. Which prices ask coins is the author's: one asking none is
+ *   never given a coin cost.
  *
  * What none of them can fix is reported with its cause (`CANT_FIX`): a skill with no source where
  * the curve needs one, a source that wears out, luck, the world tables, the XP floor, the Hall, a
@@ -41,7 +45,7 @@ import { SKILLS, SKILL_LAYERS } from '../../../../src/config/registries/skillReg
  * building recipes and growths, which Recalculate does not time.
  */
 
-export const LEVER = Object.freeze({ XP: 'xp', GATE: 'gate', COST: 'cost', TIME: 'time', BOOST: 'boost' });
+export const LEVER = Object.freeze({ XP: 'xp', GATE: 'gate', COST: 'cost', TIME: 'time', BOOST: 'boost', COINS: 'coins' });
 
 export const CANT_FIX = Object.freeze({
     CONTENT: 'content',
@@ -59,15 +63,17 @@ export const CANT_FIX = Object.freeze({
 
 /** Author-facing words, kept together for translation. */
 export const BALANCE_TEXT = Object.freeze({
-    lever: Object.freeze({ xp: 'XP a cycle', gate: 'Level gate', cost: 'Cost', time: 'Time', boost: 'Boost strength' }),
+    lever: Object.freeze({ xp: 'XP a cycle', gate: 'Level gate', cost: 'Cost', time: 'Time', boost: 'Boost strength', coins: 'Coins' }),
     cause: Object.freeze({
         content: 'Needs content', 'one-off': 'A source that wears out', luck: 'Luck', rare: 'A rare find', world: 'World tables',
         floor: 'The XP floor', hall: 'Guild Hall pass', untimed: 'Not timed', chain: 'A chain of first finds',
         limit: 'At its cap', other: 'Other'
     }),
+    worldTables: 'World tables',
+    coins: (row) => `${row.name}${row.kind === 'hall' ? ` rank ${row.rank}` : ''} asks ${row.coins} coins; the coin curve asks the coins one hero earns at ${tierLabel(row.cap)} (${Math.round(row.perHour)} an hour${row.source ? `, ${row.source}` : ''}) in ${row.minutes} min${row.kind === 'hall' && row.rank > 1 ? `, times its rank` : ''}.`,
     field: Object.freeze({
         'config.xp': 'XP a cycle', xp: 'XP a cycle', 'config.skillRequired': 'Level needed', levelRequirement: 'Level needed',
-        durationMs: 'Time (ms)', 'config.cycleTimeMs': 'Cycle (ms)', 'grows.afterMs': 'Grow time (ms)'
+        durationMs: 'Time (ms)', 'config.cycleTimeMs': 'Cycle (ms)', 'grows.afterMs': 'Grow time (ms)', 'shop.coins': 'Shop coins'
     })
 });
 
@@ -101,6 +107,9 @@ function findIn(collection, id) {
 /** The record of an entity in content shaped as the ledger takes it (recipes as `recipes` or in `recipePools`). */
 export function recordOf(content, kind, id) {
     if (kind === 'item') return findIn(content.items, id);
+    if (kind === 'hallStar') return findIn(content.hallSky?.stars, id);
+    // The world tables as the ledger reads them (normalised); a change pack carries the workspace's own record.
+    if (kind === 'world') return isObject(content.worldTables) ? content.worldTables : null;
     if (kind === 'token') return findIn(content.tokens, id);
     if (kind === 'effect') return findIn(content.effects, id);
     if (kind === 'recipe') {
@@ -210,7 +219,7 @@ export function proposeBalance(content, rawSettings = null, { rounds = DEFAULT_R
     for (let round = 0; round < rounds; round++) {
         used = round + 1;
         let any = false;
-        for (const pass of [boostPass, xpPass, gatePass, costPass]) {
+        for (const pass of [coinPass, boostPass, xpPass, gatePass, costPass]) {
             if (pass(state)) {
                 any = true;
                 state.eval = evaluate(state.content, settings);
@@ -270,7 +279,7 @@ function propose(state, { kind, id, field, to, lever, problem, result = null }) 
     const was = state.proposals.get(id_);
     const from = was?.from ?? getPath(recordOf(state.original, kind, id), field);
     setPath(record, field, to);
-    const name = kind === 'effect' ? (record.name || id) : (state.eval.ledger.world.names.get(key) ?? id);
+    const name = kind === 'effect' || kind === 'hallStar' ? (record.name || id) : kind === 'world' ? BALANCE_TEXT.worldTables : (state.eval.ledger.world.names.get(key) ?? id);
     state.proposals.set(id_, {
         key, kind, id, name, field, label: BALANCE_TEXT.field[field] || fieldLabel(field, lever), lever, from, to,
         problem: was?.problem ?? problem, result
@@ -284,7 +293,31 @@ const finalBands = (state) => (state.final.bands ??= xpBands(state));
 function fieldLabel(field, lever) {
     if (lever === LEVER.COST) return 'Quantity';
     if (lever === LEVER.BOOST) return 'Value';
+    if (lever === LEVER.COINS) return 'Coins';
     return BALANCE_TEXT.lever[lever] || field;
+}
+
+// ── coins ───────────────────────────────────────────────────────────────────────────────────────
+
+/** The field a coin price row is written in: its record's kind, id and path. */
+function coinField(row) {
+    if (row.kind === 'shop') return { kind: 'token', id: row.id, field: 'shop.coins' };
+    if (row.kind === 'hall') return { kind: 'hallStar', id: row.id, field: `ranks.${row.rank - 1}.coins` };
+    return { kind: 'world', id: 'world', field: `prices.${row.ring}.coins` };
+}
+
+/** Every price that asks coins, beyond the tolerance from the coin curve's number, set to it. */
+function coinPass(state) {
+    // Nothing asks coins: nothing to price, and no coin income worked out for it.
+    if (!state.eval.pace.asksCoins()) return false;
+    const tol = state.settings.tolerancePct / 100;
+    let changed = false;
+    for (const row of state.eval.pace.coinPrices()) {
+        if (!(row.coins > 0) || !(row.proposed > 0)) continue;
+        if (Math.abs(row.coins / row.proposed - 1) <= tol + 1e-9) continue;
+        changed = propose(state, { ...coinField(row), to: row.proposed, lever: LEVER.COINS, problem: BALANCE_TEXT.coins(row) }) || changed;
+    }
+    return changed;
 }
 
 // ── boost strengths ─────────────────────────────────────────────────────────────────────────────

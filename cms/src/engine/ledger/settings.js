@@ -17,6 +17,7 @@ import { PLAN_TIERS, tierBudgetMs, tierOrNull } from '../../../../src/systems/pr
  *       paybackHours: 2,                             // a sensible investor's boost pays for itself within this
  *       hallPaybackHours: 24,                        // and a Guild Hall rank within this
  *       steadyFindsPerDay: 1,                        // a rare find on repeatable work this often a day is a steady source
+ *       coinCurve: [{ tier, minutes }],              // a coin cost asks one hero's coins earned in this long, from a stage on
  *       rulesVersion: 'classless-one-job'            // which roster rules the pace follows
  *     }
  *
@@ -75,6 +76,13 @@ const DEFAULT_BOOST_TARGETS = {
     rareSupport: [{ tier: 0, pct: 50 }],
 };
 
+/**
+ * The coin curve (brief 870 C3): from each stage on, the minutes of one hero's coin income a coin
+ * cost asks (`pace.coinPrices`). The same minutes everywhere still rise with rank and distance,
+ * since a later stage earns more an hour; more minutes further out make them rise faster.
+ */
+const DEFAULT_COIN_CURVE = [{ tier: 0, minutes: 10 }];
+
 export const DEFAULT_LEDGER_SETTINGS = Object.freeze({
     stages: DEFAULT_STAGES,
     tolerancePct: 25,
@@ -89,6 +97,8 @@ export const DEFAULT_LEDGER_SETTINGS = Object.freeze({
     hallPaybackHours: 24,
     // The owner (2026-11-07): a low rate on repeatable work is still steady. ⚠️ Matches the engine's STEADY_FINDS_PER_DAY (pinned by a test).
     steadyFindsPerDay: 1,
+    // A starting point for the content agent to tune: costs rise with the stage because what a hero earns does.
+    coinCurve: DEFAULT_COIN_CURVE,
     rulesVersion: RULES_VERSIONS[0].id,
 });
 
@@ -151,6 +161,7 @@ export function settingsOf(raw) {
         paybackHours: positive(src.paybackHours, d.paybackHours),
         hallPaybackHours: positive(src.hallPaybackHours, d.hallPaybackHours),
         steadyFindsPerDay: positive(src.steadyFindsPerDay, d.steadyFindsPerDay),
+        coinCurve: Array.isArray(src.coinCurve) ? coinCurveOf(src.coinCurve) : clone(d.coinCurve),
         rulesVersion: RULES_VERSIONS.some((r) => r.id === src.rulesVersion) ? src.rulesVersion : d.rulesVersion,
     };
 }
@@ -175,6 +186,24 @@ function boostTargetsOf(raw) {
         }
         if (byTier.size) out[id] = [...byTier.values()].sort((a, b) => a.tier - b.tier);
     }
+    return out;
+}
+
+/** The coin curve's points, one per tier in tier order, each a whole tier and minutes above 0. */
+function coinCurveOf(raw) {
+    const byTier = new Map();
+    for (const p of raw) {
+        const tier = tierOrNull(p?.tier);
+        const minutes = Number(p?.minutes);
+        if (tier !== null && Number.isFinite(minutes) && minutes > 0) byTier.set(tier, { tier, minutes });
+    }
+    return [...byTier.values()].sort((a, b) => a.tier - b.tier);
+}
+
+/** The coin curve's minutes at a tier: the last point at or before it, else null (no coin cost is proposed there). */
+export function coinMinutesAt(settings, tier) {
+    let out = null;
+    for (const p of settingsOf(settings).coinCurve) if (p.tier <= tier) out = p.minutes;
     return out;
 }
 

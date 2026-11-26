@@ -4,6 +4,7 @@ import { quantityRange } from './fieldAdapter.js';
 import { deriveTokenType } from '../../utils/constants';
 import { slugify } from '../../utils/idGenerator';
 import { hasCatchPools } from '../../../../src/config/registries/catchPools.js';
+import { derivedCoinWorth, isCoinWorthPinned } from '../ledger/coins.js';
 
 /** Item fields the retired balance engine wrote. Deleted on every run. */
 export const RETIRED_ITEM_FIELDS = Object.freeze(['trueCost', 'sellPrice']);
@@ -230,20 +231,27 @@ function deriveOutputs(outputs, downcycleEntry, tuning) {
 }
 
 /**
- * Items: derived `value` and `valueSource`, retired fields gone.
+ * Items: derived `value` and `valueSource`, the coin worth that follows from the value, retired fields gone.
  * ⚠️ An item the passes could not price keeps `value: null` and gains `valueSource: null` rather than being skipped: null means not yet computed, which is what an unreachable item is and what the audit raises as Critical.
+ * ⚠️ With `coins` (the content uses coins, `ledger/coins.coinsInPlay`), `coinWorth` is the new value in whole coins unless the author pinned it (`sim.coinWorthPinned`); with neither it is removed, so an item sells for 0. Without, it is left exactly as it was.
  */
-export function applyItemResults(items = {}, sim) {
+export function applyItemResults(items = {}, sim, { coins = false } = {}) {
     const next = {};
     for (const [id, item] of Object.entries(items)) {
         const itemId = item?.id ?? id;
         const stripped = without(item, RETIRED_ITEM_FIELDS);
         const priced = sim.values.has(itemId);
-        next[id] = {
+        const record = {
             ...stripped,
             value: priced ? sim.values.get(itemId) : null,
             valueSource: priced ? (sim.elections.get(itemId)?.sourceId ?? null) : null,
         };
+        if (coins) {
+            const worth = derivedCoinWorth(record);
+            if (worth === null) delete record.coinWorth;
+            else if (!isCoinWorthPinned(record)) record.coinWorth = worth;
+        }
+        next[id] = record;
     }
     return next;
 }

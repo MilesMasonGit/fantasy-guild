@@ -29,6 +29,8 @@
         },
         "value": { "type": ["number", "null"], "description": "Gold value, derived by Recalculate (cms/src/engine/sim/writeBack.js), never typed. Null means not yet derived. Read by the ledger only." },
         "valueSource": { "type": ["string", "null"], "description": "The Token or recipe id the value was derived from (the simulator's anchor election); sticky until re-elected (cms/src/components/shared/AnchorElections.jsx)." },
+        "coinWorth": { "type": "integer", "minimum": 0, "description": "Coins one copy sells for from the Bank (src/config/registries/itemCoins.js coinWorthOf, src/systems/inventory/Coins.js). Written by Recalculate from the value (cms/src/engine/ledger/coins.js) unless sim.coinWorthPinned; typed in cms/src/components/editors/ItemEditor.jsx. Absent sells for 0." },
+        "sim": { "$ref": "common.schema.json#/$defs/sim" },
         "autoSyncId": { "type": "boolean", "description": "CMS only: true makes the id follow the name." },
         "effects": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/effectRef" }, "description": "Rules the item carries, as references into data/effects.json (src/systems/hero/HeroEffects.js itemStatements)." },
         "tool": {
