@@ -411,6 +411,48 @@
             "heroHash"
           ]
         }
+      },
+      {
+        "ticket": "T-684",
+        "commit": "0bf0e866",
+        "branch": "merge/round",
+        "dirty": false,
+        "date": "2026-11-26T02:54:53.621Z",
+        "node": "v24.11.1",
+        "scenarios": {
+          "FS": [
+            "tokens",
+            "bankItems",
+            "heroXp",
+            "sprites",
+            "tokensHash",
+            "bankHash",
+            "heroHash",
+            "spriteHash",
+            "randomDraws"
+          ]
+        }
+      },
+      {
+        "ticket": "T-712",
+        "commit": "15ae8769",
+        "branch": "fix/fs-bench-fixture-spots",
+        "dirty": true,
+        "date": "2026-11-26T03:04:39.761Z",
+        "node": "v24.11.1",
+        "scenarios": {
+          "FS": [
+            "tokens",
+            "bankItems",
+            "heroXp",
+            "sprites",
+            "tokensHash",
+            "bankHash",
+            "heroHash",
+            "spriteHash",
+            "randomDraws"
+          ]
+        }
       }
     ]
   },

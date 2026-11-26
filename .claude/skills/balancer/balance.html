@@ -86,6 +86,14 @@ td.why { color: var(--muted); font-size: 12px }
 .bar .o { background: var(--accent) } .bar .t { background: color-mix(in srgb, var(--accent) 35%, transparent) }
 .note { font-size: 12px; color: var(--muted); margin-top: 14px; max-width: 90ch }
 .more { margin-top: 8px }
+.report { display: grid; gap: 12px; max-width: 90ch }
+.report section { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px }
+.report h3 { font-family: var(--display); font-weight: 500; font-size: 18px; margin: 0 0 6px }
+.report h4 { font-size: 14px; margin: 12px 0 4px }
+.report ul, .report ol { margin: 4px 0; padding-left: 20px } .report li { margin: 3px 0 }
+.report .when { font-family: var(--mono); font-size: 12px; color: var(--muted) }
+.report .rec { color: var(--accent); font-weight: 600 }
+.report .try { font-size: 12px; color: var(--muted) }
 </style>
 
 <div class="wrap">
@@ -100,16 +108,16 @@ td.why { color: var(--muted); font-size: 12px }
       <div id="dialList"></div>
       <div class="btns"><button id="reset">Back to the rules</button><button class="primary" id="copy">Copy settings</button></div>
       <span id="copied" aria-live="polite"></span>
-      <textarea id="settings" readonly aria-label="Settings to send the content agent" hidden></textarea>
+      <textarea id="settings" readonly aria-label="Settings to send the balancer" hidden></textarea>
     </aside>
 
     <main>
       <div class="summary" id="summary"></div>
       <nav class="tabs" id="tabs">
-        <a href="#pace">Pace by skill</a><a href="#items">Item numbers</a><a href="#arrivals">When things arrive</a>
+        <a href="#pace">Pace by skill</a><a href="#items">Item numbers</a><a href="#arrivals">When things arrive</a><a href="#report">Balance report</a>
       </nav>
       <section id="view"></section>
-      <p class="note">Built from the content catalogue and the rules in BALANCE_RULES.md. The optimized player holds the boost budget's boosts; typical holds half. Hero time is the crafter's own work; guild time adds the gathering behind it. Arrivals count one hero per skill, all climbing together, as the CMS ledger does. The ledger's engine-checked timing is the proof once the plan is in the CMS. Builds, events, arrows per craft and combat have no rule yet and show blank with the reason.</p>
+      <p class="note">Built from the content catalogue and the rules in BALANCE_RULES.md. The optimized player holds the boost budget's boosts; typical holds half. Hero time is the crafter's own work; guild time adds the gathering behind it. Arrivals count one hero per skill, all climbing together, as the CMS ledger does. The ledger's engine-checked timing is the proof once the plan is in the CMS. Builds, events and combat have no rule yet and show blank with the reason.</p>
     </main>
   </div>
 </div>
@@ -128,9 +136,11 @@ const DIALS = [
   ["typicalShare", "Typical player's boosts", 0, 1, 0.05, v => Math.round(v * 100) + " %", "Share of the optimized boosts"],
   ["moveMax", "Unlocks may move", 0, 6, 1, v => "up to " + v, "Levels, within the tier"],
   ["gapFlag", "Flag a stretch longer than", 3, 15, 1, v => v + " levels", "With nothing new to make"],
+  ["extraPerBar", "Longer per extra bar", 0, 1, 0.1, v => "+" + Math.round(v * 100) + " %", "A 5-bar Chestplate against a 1-bar Dagger"],
+  ["boostSmooth", "Boosts between tiers", 0, 1, 1, v => v ? "climb each level" : "step at each tier", "How the optimized player's boosts arrive"],
 ];
 const S = window.BalanceSolver;
-const state = { dials: { ...S.DIALS }, cat: [], res: null, view: "pace", skill: "", rung: "", q: "", showAll: false, limit: 200 };
+const state = { dials: { ...S.DIALS }, cat: [], report: null, res: null, view: "pace", skill: "", rung: "", q: "", showAll: false, limit: 200 };
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const RUNGS = ["Copper", "Iron", "Silver", "Mythril", "Gold", "Adamantine", "Darkmetal"];
@@ -168,7 +178,7 @@ $("copy").addEventListener("click", async () => {
   const changed = Object.fromEntries(Object.entries(state.dials).filter(([k, v]) => S.DIALS[k] !== v));
   const text = Object.keys(changed).length ? "Balance dials to keep: " + JSON.stringify(changed) : "Balance dials: the rules as they are.";
   const ta = $("settings"); ta.value = text; ta.hidden = false;
-  try { await navigator.clipboard.writeText(text); $("copied").textContent = "Copied. Paste it to the content agent."; }
+  try { await navigator.clipboard.writeText(text); $("copied").textContent = "Copied. Paste it to the balancer."; }
   catch { ta.select(); $("copied").textContent = "Select the text below and copy it."; }
 });
 
@@ -224,11 +234,11 @@ function viewItems() {
     if (!r.work || r.seconds == null) return `<tr><td>${esc(r.name)}</td><td>${esc(r.skill)}</td><td class="num">${lv}</td><td>${esc(r.type)}</td><td colspan="6" class="why">${esc(r.why)}</td></tr>`;
     return `<tr><td>${esc(r.name)}</td><td>${esc(r.skill)}</td><td class="num">${lv}</td><td>${esc(r.work)}</td>
       <td class="num">${r.seconds.toFixed(1)} s</td><td class="num">${r.xp}</td><td class="num">${Math.round(r.xpHourOpt).toLocaleString()}</td>
-      <td>${(r.inputs || []).map(i => `${i.count} ${esc(i.name)}`).join(", ") || "—"}</td>
+      <td>${(r.inputs || []).map(i => `${i.count} ${esc(i.name)}`).join(", ") || "—"}</td><td class="num">${r.makes || 1}</td>
       <td class="num">${r.rawGathers || "—"}</td><td class="num">${fmtMin(r.guildSeconds / 60)}</td>${r.note ? `` : ""}</tr>${r.note ? `<tr><td></td><td colspan="9" class="why">${esc(r.note)}</td></tr>` : ""}`;
   }).join("");
   return filters(`<label class="tog"><input type="checkbox" id="fAll"${state.showAll ? " checked" : ""}> Show untimed entries</label>`) +
-    `<div class="tbl"><table><thead><tr><th>Name</th><th>Skill</th><th>Level</th><th>Work</th><th>Action</th><th>XP an action</th><th>XP an hour, optimized</th><th>Ingredients</th><th>Raw gathers</th><th>Guild time a piece</th></tr></thead><tbody>${body || `<tr><td colspan="10" class="why">Nothing matches these filters.</td></tr>`}</tbody></table></div>${more(rows.length)}`;
+    `<div class="tbl"><table><thead><tr><th>Name</th><th>Skill</th><th>Level</th><th>Work</th><th>Action</th><th>XP an action</th><th>XP an hour, optimized</th><th>Ingredients</th><th>Makes</th><th>Raw gathers</th><th>Guild time a craft</th></tr></thead><tbody>${body || `<tr><td colspan="11" class="why">Nothing matches these filters.</td></tr>`}</tbody></table></div>${more(rows.length)}`;
 }
 
 function viewArrivals() {
@@ -241,10 +251,26 @@ function viewArrivals() {
   return filters() + `<div class="tbl"><table><thead><tr><th>Name</th><th>Skill</th><th>Level</th><th>Optimized</th><th>Typical</th><th>From a new game (log scale: minutes to weeks)</th></tr></thead><tbody>${body || `<tr><td colspan="6" class="why">Nothing matches these filters.</td></tr>`}</tbody></table></div>${more(rows.length)}`;
 }
 
+function viewReport() {
+  const r = state.report;
+  if (!r) return `<p class="note">No balance report yet.</p>`;
+  const list = a => (a || []).map(x => `<li>${esc(x)}</li>`).join("");
+  const props = (r.proposals || []).map((p, i) => `<h4>${i + 1}. ${esc(p.question)}</h4><p>${esc(p.why)}</p>
+    <ul>${p.options.map((o, j) => `<li>${j === 0 ? `<span class="rec">Recommended: </span>` : ""}<b>${esc(o.label)}</b>: ${esc(o.text)}</li>`).join("")}</ul>
+    ${p.tryIt ? `<p class="try">Try it: ${esc(p.tryIt)}</p>` : ""}`).join("");
+  return `<div class="report">
+    <section><h3>${esc(r.title)}</h3><p class="when">${esc(r.date)}</p><p>${esc(r.summary)}</p></section>
+    <section><h3>What was checked</h3><ul>${list(r.checked)}</ul></section>
+    <section><h3>What moved</h3><ul>${list(r.moved)}</ul></section>
+    <section><h3>Proposals, for the owner</h3>${props || "<p>None this run.</p>"}</section>
+    <section><h3>Gaps for content</h3><ul>${list(r.gaps)}</ul></section>
+    <section><h3>Waiting</h3><ul>${list(r.waiting)}</ul></section></div>`;
+}
+
 function renderView() {
   const v = state.view;
   document.querySelectorAll("#tabs a").forEach(a => a.setAttribute("aria-current", a.getAttribute("href") === "#" + v ? "page" : "false"));
-  $("view").innerHTML = v === "items" ? viewItems() : v === "arrivals" ? viewArrivals() : viewPace();
+  $("view").innerHTML = v === "items" ? viewItems() : v === "arrivals" ? viewArrivals() : v === "report" ? viewReport() : viewPace();
 }
 $("view").addEventListener("change", ev => {
   if (ev.target.id === "fSkill") state.skill = ev.target.value;
@@ -254,7 +280,7 @@ $("view").addEventListener("change", ev => {
 });
 $("view").addEventListener("input", ev => { if (ev.target.id === "fQ") { state.q = ev.target.value; renderView(); const q = $("fQ"); q.focus(); q.setSelectionRange(q.value.length, q.value.length); } });
 $("view").addEventListener("click", ev => { if (ev.target.id === "more") { state.limit = 1e9; renderView(); } });
-function route() { const h = location.hash.slice(1); state.view = ["pace", "items", "arrivals"].includes(h) ? h : "pace"; if (state.res) renderView(); }
+function route() { const h = location.hash.slice(1); state.view = ["pace", "items", "arrivals", "report"].includes(h) ? h : "pace"; if (state.res) renderView(); }
 window.addEventListener("hashchange", route);
 
 (async function boot() {
@@ -262,6 +288,7 @@ window.addEventListener("hashchange", route);
   if (!S) { $("view").innerHTML = `<p class="note">The calculation didn't load. Reload the page.</p>`; return; }
   try { state.cat = (await (await fetch("catalogue.json")).json()).entries; }
   catch { $("view").innerHTML = `<p class="note">The catalogue didn't load. Reload the page.</p>`; return; }
+  try { state.report = await (await fetch("report.json")).json(); } catch {}
   run();
 })();
 </script>
