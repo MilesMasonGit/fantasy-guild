@@ -9,6 +9,8 @@ import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as Flags from '../systems/board/Flags.js';
 import * as InputCost from '../systems/board/InputCost.js';
+import * as BuildPrices from '../systems/board/BuildPrices.js';
+import { getGlobalAggregator } from '../systems/effects/GuildModifiers.js';
 import * as Shop from '../systems/board/Shop.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as StationRecipe from '../systems/board/StationRecipe.js';
@@ -177,6 +179,19 @@ describe('a Foundation\'s Shop price', () => {
         // 80% asked, 50% given: 4.5 is 5, 2 is 2, 2.5 coins is 3.
         expect(MAX_BUILD_DISCOUNT).toBe(50);
         expect(priceOf('bd_foundation')).toEqual([[WOOD, 5], [STONE, 2], ['item_coins', 3]]);
+    });
+
+    it('a Guild Hall star\'s reaches every hero, so it adds to the best holder\'s once, and needs a hero to count', () => {
+        const guild = getGlobalAggregator();
+        guild.addModifier({ type: EFFECT_TYPES.BUILD_DISCOUNT, bucket: 'flat', value: 10, source: 'bd_star' });
+        try {
+            roster(hero('master', 99), hero('second', 99));
+            expect(BuildPrices.buildDiscount()).toBe(30);
+            roster();
+            expect(BuildPrices.buildDiscount()).toBe(0);
+        } finally {
+            guild.removeModifiersBySource('bd_star');
+        }
     });
 
     it('goes back up once the holder leaves the guild', () => {
