@@ -88,12 +88,13 @@
       }
     },
     "sim": {
-      "description": "The economic simulator's intent (cms/src/engine/sim/). Written by cms/src/components/shared/SimIntentControls.jsx and XpPin.jsx. No reader in the running game.",
+      "description": "The economic simulator's intent (cms/src/engine/sim/). Written by cms/src/components/shared/SimIntentControls.jsx, XpPin.jsx and TimePin.jsx. No reader in the running game.",
       "type": "object",
       "properties": {
         "tempo": { "type": "string", "enum": ["quick", "fast", "medium", "slow", "heavy"], "description": "TEMPO_NAMES (src/config/registries/tempoBands.js): the cycle-time band." },
         "purpose": { "type": "string", "enum": ["gph", "iph", "xph"], "description": "SIM_PURPOSES (cms/src/utils/simVocabulary.js): gold, items or XP per hour." },
         "xpPinned": { "type": "boolean", "description": "The author typed the XP; Recalculate leaves it." },
+        "timePinned": { "type": "boolean", "description": "The author (or a number pack) typed the cycle time (durationMs, config.cycleTimeMs); Recalculate leaves it." },
         "coinWorthPinned": { "type": "boolean", "description": "An item's: the author typed its coinWorth; Recalculate leaves it (cms/src/engine/ledger/coins.js)." }
       }
     },

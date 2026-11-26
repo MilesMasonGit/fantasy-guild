@@ -1,4 +1,4 @@
-/** Economic simulator, pass 1 of 5: TIME. Picks every cycle time from its Tempo band (the middle of the band at the required level, snapped to whole seconds) and the units per hour of each output. Value-independent: it never reads an item value, which is half of why the design has no feedback loop. It writes nothing: a caller gets a Map, and `sim/writeBack.js` lands each cycle time on `config.cycleTimeMs` (Tokens) or `durationMs` (recipes). */
+/** Economic simulator, pass 1 of 5: TIME. Picks every cycle time from its Tempo band (the middle of the band at the required level, snapped to whole seconds), or keeps the record's own where it is pinned (`sim.timePinned`) and the units per hour of each output. Value-independent: it never reads an item value, which is half of why the design has no feedback loop. It writes nothing: a caller gets a Map, and `sim/writeBack.js` lands each cycle time on `config.cycleTimeMs` (Tokens) or `durationMs` (recipes). */
 
 import { bandFor } from '../ledger/tempoBands.js';
 import { isInert, isUntagged } from './fieldAdapter.js';
@@ -70,8 +70,8 @@ export function runTempoPass(entities) {
             continue;
         }
 
-        const cycleTimeMs = bandMiddleMs(entity.tempo, entity.level);
-        if (!Number.isFinite(cycleTimeMs) || cycleTimeMs <= 0) {
+        const bandMs = bandMiddleMs(entity.tempo, entity.level);
+        if (!Number.isFinite(bandMs) || bandMs <= 0) {
             // A tempo outside the five names. `bandFor` returns null rather
             // than guessing, so this is a mistyped tag, not a missing one.
             skipped.set(entity.id, 'untagged');
@@ -82,6 +82,24 @@ export function runTempoPass(entities) {
                 { entityId: entity.id, remedies: ['Re-tag it with one of the five tempos.'] }
             ));
             continue;
+        }
+
+        // ⚠️ A pin (`sim.timePinned`, set in the editors or by a number pack) keeps the record's own time, and every later pass prices and pays it at that time, so the write-back puts the same number back.
+        const pinned = entity.timePinned && Number.isFinite(entity.authoredCycleTimeMs) && entity.authoredCycleTimeMs > 0;
+        const cycleTimeMs = pinned ? entity.authoredCycleTimeMs : bandMs;
+        if (pinned) {
+            rows.push(makeRow(
+                SEVERITY.INFO,
+                'time-pinned',
+                `${entity.name}'s cycle is pinned at ${cycleTimeMs / 1000} s; its ${entity.tempo} band would give ${bandMs / 1000} s.`,
+                {
+                    entityId: entity.id,
+                    what: `${entity.name} keeps the cycle time written on it, whatever its level and Tempo would derive.`,
+                    why: 'Recalculate and Sync leave a pinned time alone. A number pack pins the times it sets, so they survive.',
+                    remedies: ['Untick the pin beside its cycle time in the editor to let Recalculate derive it again.'],
+                    detail: { pinnedMs: cycleTimeMs, bandMs },
+                }
+            ));
         }
 
         const outputs = entity.outputs.map(output => ({
