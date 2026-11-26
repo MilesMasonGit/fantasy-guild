@@ -119,6 +119,28 @@ describe('callout stacking', () => {
     });
 });
 
+describe('a Summoned worker spent: a popup where it stood', () => {
+    it('"{name} is spent" over where it stood, gone by itself; one replaced on its Circle says nothing', () => {
+        const { container } = render(h(CalloutLayer));
+        act(() => {
+            EventBus.publish(BOARD_EVENTS.SUMMON_CHANGED, { heroId: 's1', typeId: 'k5_slime', change: 'left', reason: 'replaced', name: 'Summoned Small Slime', x: 300, y: 400 });
+        });
+        expect(container.querySelector('[data-callout]')).toBeNull();
+        act(() => {
+            EventBus.publish(BOARD_EVENTS.SUMMON_CHANGED, { heroId: 's1', typeId: 'k5_slime', change: 'spent', charges: 0, name: 'Summoned Small Slime' });
+        });
+        expect(container.querySelector('[data-callout]')).toBeNull();
+        act(() => {
+            EventBus.publish(BOARD_EVENTS.SUMMON_CHANGED, { heroId: 's1', typeId: 'k5_slime', change: 'left', reason: 'spent', name: 'Summoned Small Slime', x: 300, y: 400 });
+        });
+        const bubble = container.querySelector('[data-callout]');
+        expect(bubble.textContent).toBe('Summoned Small Slime is spent');
+        expect(bubble.parentElement.style.transform).toContain('translate(300px');
+        act(() => { vi.advanceTimersByTime(CALLOUT_MS + 50); });
+        expect(container.querySelector('[data-callout]')).toBeNull();
+    });
+});
+
 describe('a Token used up: a popup where it stood', () => {
     it('the engine names that hero on TOKEN_DEPLETED', () => {
         const oak = placeAt('fixture_producer', 600, 500);

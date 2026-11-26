@@ -726,6 +726,7 @@
         "recovered": "Recovered, ready to work!",
         "needs": "Needs {item}",
         "needsLevel": "Needs {skill} {level}",
+        "summonSpent": "{name} is spent",
         "noFishHere": "No {fish} here"
     },
     "orders": {

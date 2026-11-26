@@ -325,13 +325,18 @@ describe('⭐ a Summoned worker is ordered like a hero, works only, and leaves a
         const vein = placeAt('k5_vein', VEIN.x, VEIN.y);
         Orders.orderAt(s.id, VEIN);
         const left = [];
-        const off = EventBus.subscribe(BOARD_EVENTS.SUMMON_CHANGED, (p) => { if (p.change === 'left') left.push(p); });
+        let stood = null;
+        const off = EventBus.subscribe(BOARD_EVENTS.SUMMON_CHANGED, (p) => {
+            if (p.change === 'spent' && p.charges === 0) stood = { ...BoardState.heroBodyOf(s.id) };
+            if (p.change === 'left') left.push(p);
+        });
         run(1000);
         expect(summoned()).toHaveLength(1);
         run(1000);
         off();
         expect(summoned()).toHaveLength(0);
-        expect(left).toEqual([expect.objectContaining({ heroId: s.id, typeId: 'k5_summoned_slime', reason: 'spent' })]);
+        // Where it stood and its name, for the popup that says it is spent.
+        expect(left).toEqual([expect.objectContaining({ heroId: s.id, typeId: 'k5_summoned_slime', reason: 'spent', name: s.name, x: stood.x, y: stood.y })]);
         expect(BoardState.flagOf(s.id)).toBeNull();
         expect(BoardState.heroBodyOf(s.id)).toBeFalsy();
         expect(BoardState.claimOfHero(s.id)).toBeFalsy();

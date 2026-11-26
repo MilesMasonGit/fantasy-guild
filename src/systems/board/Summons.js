@@ -173,6 +173,8 @@ export function afterWorkCycle(heroId) {
 export function dismiss(heroId, reason = 'replaced') {
     const record = recordOf(heroId);
     if (!isSummoned(record)) return false;
+    const body = BoardState.heroBodyOf(heroId);
+    const stood = body ? { x: body.x, y: body.y } : null;
     Flags.furl(heroId, 'summon_left');
     BoardState.setHeroBody(heroId, null);
     BoardState.forgetHeroOn(GameState.state?.board, heroId);
@@ -182,7 +184,7 @@ export function dismiss(heroId, reason = 'replaced') {
     const heroes = GameState.state.heroes;
     const at = heroes.indexOf(record);
     if (at !== -1) heroes.splice(at, 1);
-    announce(record, 'left', { reason });
+    announce(record, 'left', { reason, name: record.name, x: stood?.x ?? null, y: stood?.y ?? null });
     EventBus.publish(ENGINE_EVENTS.HEROES_UPDATED, { source: 'summon', heroId });
     return true;
 }
