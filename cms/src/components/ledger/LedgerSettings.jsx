@@ -14,7 +14,7 @@ const CURVE_LEVELS = [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 99];
  * The Ledger settings (`ledger/settings.js`): the stages the pace rule sets, the tolerance, the
  * tiers' opening levels, the target player, the pace rule, the profiles (their bounds, the payback a
  * sensible investor asks), the reference guild (its heroes by stage, a chain's size, the layouts'
- * nodes a camp works, a site's building places), the boost targets and budget, and the roster rules. Kept
+ * nodes a camp works and the spawners a site stands, a site's places), the boost targets and budget, and the roster rules. Kept
  * in the workspace and written with the plan into `cms/plan/plan.json` by Sync; Restore from Game
  * reads them back.
  */
@@ -47,7 +47,7 @@ export default function LedgerSettings() {
         </button>
       </div>
 
-      <Card title="Stages" help="When a new game should have finished each stage at the curve's player (Maxed). Not set by hand: each stage is done when the pace curve reaches the level the next tier opens at (Tiers, below), the last at 99.">
+      <Card title="Stages" help="When a new game should have left each stage at the curve's player (Maxed): settled the next place, its level in the skills it asks and its price; the rest of the stage is done over the following hours. Not set by hand: each stage ends when the pace curve reaches the level the next tier opens at (Tiers, below), the last at 99.">
         <table className="w-full" style={{ borderCollapse: 'collapse' }} data-stages>
           <thead>
             <tr>
@@ -183,7 +183,11 @@ export default function LedgerSettings() {
             <NumberInput value={settings.layouts.sparse} min={1} whole onCommit={(v) => save({ layouts: { ...settings.layouts, sparse: v } })} label="Sparse layout nodes" width={50} />
             nodes in turn in the sparse layout and
             <NumberInput value={settings.layouts.dense} min={1} whole onCommit={(v) => save({ layouts: { ...settings.layouts, dense: v } })} label="Dense layout nodes" width={50} />
-            in the dense one (veins, Fields, a forest's trees); the pace is timed
+            in the dense one (veins, Fields); a site worked from a spawner stands
+            <NumberInput value={settings.layoutSpawners.sparse} min={1} whole onCommit={(v) => save({ layoutSpawners: { ...settings.layoutSpawners, sparse: v } })} label="Sparse layout spawners" width={50} />
+            and
+            <NumberInput value={settings.layoutSpawners.dense} min={1} whole onCommit={(v) => save({ layoutSpawners: { ...settings.layoutSpawners, dense: v } })} label="Dense layout spawners" width={50} />
+            of them (Forests, Orchards, Quarries), its camp working each one's whole allowance; the pace is timed
             <select
               value={settings.layout}
               onChange={(e) => save({ layout: e.target.value })}
@@ -194,10 +198,12 @@ export default function LedgerSettings() {
             </select>
             and the other reported beside it.
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             A work site has
+            <NumberInput value={settings.sitePlaces.places} min={1} whole onCommit={(v) => save({ sitePlaces: { ...settings.sitePlaces, places: v } })} label="Places round a node" width={50} />
+            places round the node it works; its camp, its other nodes and its spawners stand in some, and what they leave holds buildings, at most
             <NumberInput value={settings.sitePlaces.buildings} min={1} whole onCommit={(v) => save({ sitePlaces: { ...settings.sitePlaces, buildings: v } })} label="Building places" width={50} />
-            places for buildings, at most
+            of them, at most
             <NumberInput value={settings.sitePlaces.perKind} min={1} whole onCommit={(v) => save({ sitePlaces: { ...settings.sitePlaces, perKind: v } })} label="Places a kind" width={50} />
             boosting one kind (speed, XP, yield or rare finds); the same building may stand in several.
           </div>
