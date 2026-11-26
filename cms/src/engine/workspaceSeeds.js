@@ -1,5 +1,5 @@
 import {
-    KEYWORD, statementsOf, migrateBearers, migrateAppliesTargetsIn, migrateSkillIdsIn, migrateRecipePools,
+    statementsOf, migrateBearers, migrateAppliesTargetsIn, migrateSkillIdsIn, migrateRecipePools,
 } from '../utils/constants';
 import { seedSimIntent } from '../stores/simIntentNormaliser';
 import { normaliseStarterCamp } from './starterCamp';
@@ -46,42 +46,6 @@ export function seedAppliesTargets(state = {}) {
         return state;
     }
     return { ...state, effects, tokens, items };
-}
-
-/**
- * The blank `durationMs: 0` every `Applies` rule was once born with goes: timed effects are retired, and a 0 never asked for a time. A real time stays, for the game's content check to name and the rule's "old timer" to clear (`statementSlots`).
- * ⚠️ Runs on the same three load paths: Sync to Game writes this workspace wholesale, so the 0 would otherwise go back into `data/` forever. Idempotent; an entry with nothing to drop is the same object.
- */
-export function seedRetiredDurations(state = {}) {
-    if (!state) return state;
-    const effects = withoutBlankDurationsIn(state.effects || {});
-    const tokens = withoutBlankDurationsIn(state.tokens || {});
-    const items = withoutBlankDurationsIn(state.items || {});
-    if (effects === (state.effects || {}) && tokens === (state.tokens || {}) && items === (state.items || {})) {
-        return state;
-    }
-    return { ...state, effects, tokens, items };
-}
-
-function withoutBlankDuration(statement) {
-    const payload = statement?.payload;
-    if (statement?.keyword !== KEYWORD.APPLIES || !payload || !Object.prototype.hasOwnProperty.call(payload, 'durationMs')) return statement;
-    if (Number(payload.durationMs) > 0) return statement;
-    const { durationMs, ...rest } = payload;
-    void durationMs;
-    return { ...statement, payload: rest };
-}
-
-function withoutBlankDurationsIn(collection) {
-    let changed = false;
-    const out = {};
-    for (const [id, def] of Object.entries(collection)) {
-        const statements = statementsOf(def);
-        const next = statements.map(withoutBlankDuration);
-        out[id] = next.some((s, i) => s !== statements[i]) ? { ...def, statements: next } : def;
-        if (out[id] !== def) changed = true;
-    }
-    return changed ? out : collection;
 }
 
 /**
@@ -132,7 +96,7 @@ export function seedWorldBiomes(state) {
  * store's persist `merge` and `migrate` run.
  */
 export function seedStoredWorkspace(state) {
-    return seedWorldBiomes(seedRenames(seedRetiredDurations(seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(state))))))));
+    return seedWorldBiomes(seedRenames(seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent(dropRetiredCollections(state)))))));
 }
 
 /**
@@ -140,13 +104,13 @@ export function seedStoredWorkspace(state) {
  * holds it: what `hydrate` sets, without the open-entity selection.
  */
 export function workspaceFromImport(data = {}) {
-    const seeded = seedRetiredDurations(seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent({
+    const seeded = seedAppliesTargets(seedEffectLibrary(seedSkillIds(seedSimIntent({
         items: data.items || {},
         tokens: data.tokens || {},
         effects: data.effects || {},
         recipePools: data.recipePools || {},
         skillPerks: data.skillPerks,
-    })))));
+    }))));
     return {
         items: seeded.items,
         tokens: seeded.tokens,

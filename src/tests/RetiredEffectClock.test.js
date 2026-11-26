@@ -5,13 +5,13 @@ import { auditContent } from '../systems/core/ContentAudit.js';
 import { KEYWORD, makeStatement, blankPayload } from '../systems/effects/statements.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { slotsOf } from '../../cms/src/engine/ledger/statementSlots.js';
-import { seedStoredWorkspace, workspaceFromImport } from '../../cms/src/engine/workspaceSeeds.js';
 
 /**
  * Timed effects are retired: what an `Applies` puts on somebody lasts for the fight, the swing or
  * the work cycle, never "for N seconds". The rule's old time (`durationMs`) is read by nothing.
- * The CMS stops offering it and drops the blank 0 every rule was born with; a rule still asking
- * for a real time is named by the content check, and the CMS lets it be cleared.
+ * The CMS stops offering it; the blank 0 every rule was once born with stays where it is (a Sync
+ * of today's data must write it back byte for byte); a rule still asking for a real time is named
+ * by the content check, and the CMS lets it be cleared.
  */
 
 const applies = (payload, extra = {}) => ({
@@ -69,32 +69,6 @@ describe('the CMS no longer offers a time', () => {
         expect(slot.hint).toMatch(/retired/);
         expect(slot.patch(false).payload).toEqual({ effectId: 'fx_rc_quick', scale: 1, chance: 100 });
         expect(slot.patch(true).payload).toEqual(old.payload);
-    });
-});
-
-describe('a workspace loses the blank 0 as it loads, so the next Sync writes none', () => {
-    const workspace = () => ({
-        effects: {
-            fx_rc_blank: { id: 'fx_rc_blank', name: 'Blank', statements: [applies({ effectId: 'fx_rc_quick', scale: 1, durationMs: 0, forCycle: true, chance: 100 })] },
-            fx_rc_timed: { id: 'fx_rc_timed', name: 'Timed', statements: [applies({ effectId: 'fx_rc_quick', scale: 1, durationMs: 30_000, chance: 100 })] },
-            fx_rc_quick: { id: 'fx_rc_quick', name: 'Quick', statements: [{ ...makeStatement(KEYWORD.PROVIDES), id: 'stm_rc_quick', to: null, payload: { type: 'WORK_TIME', bucket: 'percentage', value: -0.1 } }] }
-        },
-        tokens: {},
-        items: {}
-    });
-
-    it('drops the 0 on every load path, and keeps a real time for the content check to name', () => {
-        for (const seeded of [seedStoredWorkspace(workspace()), workspaceFromImport(workspace())]) {
-            expect(seeded.effects.fx_rc_blank.statements[0].payload).toEqual({ effectId: 'fx_rc_quick', scale: 1, forCycle: true, chance: 100 });
-            expect(seeded.effects.fx_rc_timed.statements[0].payload.durationMs).toBe(30_000);
-        }
-    });
-
-    it('leaves an entry with nothing to drop as the same object', () => {
-        const ws = workspace();
-        const seeded = seedStoredWorkspace(ws);
-        expect(seeded.effects.fx_rc_quick).toBe(ws.effects.fx_rc_quick);
-        expect(seeded.effects.fx_rc_timed).toBe(ws.effects.fx_rc_timed);
     });
 });
 

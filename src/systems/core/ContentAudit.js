@@ -457,8 +457,8 @@ function auditAppliesTargetShape(out, where, def) {
  * ⚠️ **A time left on an `Applies` rule.** Timed effects are retired: what a rule applies lasts for
  * the fight, the swing or the work cycle, and with none of them fires once as the rule runs. A time
  * kept from before is read by nothing, so a buff meant to last a while is never carried. The blank 0
- * every rule was once born with means no time, and the CMS drops it as it loads; only a real time
- * is named.
+ * every rule was once born with (still in shipped effects) means no time, so only a real time is
+ * named.
  */
 function auditRetiredTime(out, where, def) {
     for (const statement of statementsOf(def)) {
