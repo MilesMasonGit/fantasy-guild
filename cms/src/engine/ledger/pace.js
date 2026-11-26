@@ -1801,8 +1801,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
      * Every boost the profiles hold, counted against the boost budget (BALANCE_RULES section 5): for
      * each piece of work at its own stage, what Typical's and Maxed's boosts together add by kind
      * against Bare ({@link boostTotals}), beside the budget's cell of the tier where the boost is held:
-     * its entry's (the owner's tier, else when it is first reached), climbing within that tier by the
-     * work's level (`settings.boostBudgetAt`). `[{ work, entry, tier, entryTier, level, profile, kind,
+     * the work's own tier (a recipe at a tier-3 station is tier 3), or its entry's planned tier where
+     * that is later, climbing within that tier by the work's level (`settings.boostBudgetAt`). `[{ work, entry, tier, entryTier, level, profile, kind,
      * pct, budget }]`, kinds that add nothing left out. Fights are combat's, and Passive Production is
      * no hero's work.
      */
@@ -1816,7 +1816,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const bare = profiles.profileOf(work.target, PROFILE.BARE, work.tier).rate;
             if (!bare.ok) continue;
             const level = ctx.gate ?? 1;
-            const entryTier = effTier(work.entry) ?? work.tier;
+            // Held where the work is had: its own tier (the station's, the water's), or its entry's planned tier where later.
+            const entryTier = Math.max(work.tier, effTier(work.entry) ?? work.tier);
             const cell = boostBudgetAt(settings, levelInTier(entryTier, level));
             for (const profile of [PROFILE.TYPICAL, PROFILE.MAXED]) {
                 const totals = boostTotals(bare, profiles.profileOf(work.target, profile, work.tier).rate);

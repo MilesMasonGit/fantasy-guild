@@ -8,6 +8,7 @@ import {
 } from '../../cms/src/engine/ledger/settings.js';
 import { xpForLevel } from '../utils/XPCurve.js';
 import { paceContent } from './fixtures/paceWorld.js';
+import { WORLD_FIXTURE_TABLES, worldWorkspace, contentOf as worldContentOf } from './fixtures/ledgerWorldMap.js';
 
 /**
  * ⭐ The ledger follows the smooth curve and the optimized player (brief 880 L3, T-383, T-338 part 2):
@@ -199,6 +200,20 @@ describe('the boost budget', () => {
         const silver = speedOf(paceOf(c));
         expect(silver).toMatchObject({ budget: 35, entryTier: 3, level: 1 });
         expect(paceOf(c).findings().filter(f => f.check === 'boost-budget' && /^Speed at Maxed/.test(f.message) && f.related.includes('token:token_vein'))).toEqual([]);
+    });
+
+    it('⭐ judges a work by the tier it is had at, where its entry is planned earlier', () => {
+        // A ring-3 node (tier 3 on the world map) planned for Plane 1, cut 30 % by a hut in the camp:
+        // over Plane 1's cell, within silver's 35 %, the cell of the tier where the boost is held.
+        const ws = worldWorkspace();
+        ws.tokens.token_rush = { id: 'token_rush', name: 'Rush Hut', tokenType: 'buff', uses: null, requiresHero: false, config: null, statements: [{ id: 'stm_rush', keyword: 'provides', to: { mode: 'id', value: 'token_ores_3' }, reach: 'nearby', payload: { type: 'WORK_TIME', bucket: 'percentage', value: -0.3 } }] };
+        ws.starterCamp.tokens.push({ typeId: 'token_rush', x: 9, y: 9 });
+        ws.tokens.token_ores_3.plan = { tier: 1 };
+        const content = { ...worldContentOf(ws), worldTables: WORLD_FIXTURE_TABLES };
+        const pace = buildPace(content, buildLedger(content), null);
+        const row = pace.budgetRows().find(r => r.work.key === 'token_ores_3||' && r.kind === 'speed' && r.profile === PROFILE.MAXED);
+        expect(row).toMatchObject({ tier: 3, entryTier: 3, budget: 35 });
+        expect(row.pct).toBeCloseTo(30);
     });
 
     it('⭐ holds BALANCE_RULES section 5\'s table, the 65 % speed cap its last row', () => {
