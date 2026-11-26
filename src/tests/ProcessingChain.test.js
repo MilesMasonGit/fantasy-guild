@@ -39,7 +39,7 @@ describe('The Processing chain in shipped data (7.5)', () => {
     });
 
     describe('Foundations', () => {
-        it('the Wood Foundation is a wood Foundation built with Construction, sold for 15 Oak Wood, first in the list', () => {
+        it('the Wood Foundation is a wood Foundation built with Construction, sold for 15 Oak Wood and coins, first in the list', () => {
             const def = tokens.token_wood_foundation;
             expect(def.name).toBe('Wood Foundation');
             expect(def.foundation).toEqual({ kind: 'wood', skill: 'construction' });
@@ -48,11 +48,12 @@ describe('The Processing chain in shipped data (7.5)', () => {
                 section: 'construction',
                 skills: ['crafting', 'cooking', 'alchemy', 'forestry'],
                 order: 1,
+                coins: 420,
             });
             expect(def.config).toBeNull();
         });
 
-        it('the Stone Foundation is a stone Foundation, sold for 10 Stone and 5 Oak Wood, second in the list', () => {
+        it('the Stone Foundation is a stone Foundation, sold for 10 Stone, 5 Oak Wood and coins, second in the list', () => {
             const def = tokens.token_stone_foundation;
             expect(def.name).toBe('Stone Foundation');
             expect(def.foundation).toEqual({ kind: 'stone', skill: 'construction' });
@@ -61,6 +62,7 @@ describe('The Processing chain in shipped data (7.5)', () => {
                 section: 'construction',
                 skills: ['smithing', 'faith'],
                 order: 2,
+                coins: 420,
             });
             expect(def.config).toBeNull();
         });
@@ -84,9 +86,9 @@ describe('The Processing chain in shipped data (7.5)', () => {
             ]);
         });
 
-        it('a Stone Foundation offers the Blacksmith, the Well, the mines, the shrine and the better Smithing stations (SP-62)', () => {
+        it('a Stone Foundation offers the Blacksmith, the Well, the mines, the shrine, the Counting House and the better Smithing stations (SP-62)', () => {
             expect(poolNames('token_stone_foundation')).toEqual([
-                'Build Blacksmith', 'Build Coal Mine', 'Build Copper Mine', 'Build Foundry', 'Build Grand Forge', 'Build Master Smithy',
+                'Build Blacksmith', 'Build Coal Mine', 'Build Copper Mine', 'Build Counting House', 'Build Foundry', 'Build Grand Forge', 'Build Master Smithy',
                 'Build Nature Shrine', "Build Smiths' Row", 'Build Town Square', 'Build University', 'Build Well',
             ]);
         });

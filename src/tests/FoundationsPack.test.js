@@ -10,6 +10,7 @@ import * as StationRecipe from '../systems/board/StationRecipe.js';
 import * as WorkCheck from '../systems/board/WorkCheck.js';
 import { ALERT } from '../systems/board/boardEvents.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
+import { getCoins, addCoins } from '../systems/inventory/Coins.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { registerTokenTypes, getTokenType, TOKENS } from '../config/registries/tokenRegistry.js';
@@ -51,12 +52,15 @@ const shippedWorkspace = () => workspaceFromDataFiles({
 
 // Fields a later pack has moved since, by entry: the fishing buildings went to the Dock (and with them
 // Fishing off the Wood Foundation's Shop skills), Farmland stands on grass and an Excavation on stone,
-// and the mines went onto the Stone Foundation, the Coal Mine asking for a Coal Prospecting Map. And
-// entries a later pack deleted: the Coast (the fishing spots pack retired the fixed waters).
+// and the mines went onto the Stone Foundation, the Coal Mine asking for a Coal Prospecting Map; the
+// coin pack put coins on every Shop price. And entries a later pack deleted: the Coast (the fishing
+// spots pack retired the fixed waters).
 const LATER = {
     token_wood_foundation: ['shop'],
-    token_farmland: ['standsOn'],
-    token_excavation: ['standsOn'],
+    token_stone_foundation: ['shop'],
+    token_farmland: ['standsOn', 'shop'],
+    token_excavation: ['standsOn', 'shop'],
+    token_battlefield: ['shop'],
     recipe_build_copper_mine: ['foundationKinds'],
     recipe_build_coal_mine: ['inputs', 'foundationKinds']
 };
@@ -170,16 +174,19 @@ describe('the Foundations pack, applied to a copy of the shipped content', () =>
         expect(builds('token_farmland')).toEqual(expect.arrayContaining(['token_wheat_field', 'token_oak_forest']));
     });
 
-    it('a new game buys an Excavation for Oak Wood alone and sets it to build the first Quarry', () => {
+    it('a new game buys an Excavation for Oak Wood and its coins, no Stone, and sets it to build the first Quarry', () => {
         InventoryManager.addItem('item_oak_wood', 15);
+        addCoins(Shop.listCoinsOf('token_excavation'));
         const bought = Shop.buy('token_excavation');
-        expect(bought.success).toBe(true);
+        expect(bought.success, bought.reason).toBe(true);
         expect(InventoryManager.getItemCount('item_oak_wood')).toBe(0);
+        expect(getCoins()).toBe(0);
         expect(StationRecipe.setSelectedRecipe(bought.instance, 'recipe_build_quarry')).toBe(true);
     });
 
     it('a saved Wood Foundation already set to build a Quarry reads as no pick and asks for a new one', () => {
         InventoryManager.addItem('item_oak_wood', 15);
+        addCoins(Shop.listCoinsOf('token_wood_foundation'));
         const { instance } = Shop.buy('token_wood_foundation');
         // As a save made before the Sync holds it; the setter would refuse it now.
         instance.selectedRecipeId = 'recipe_build_quarry';
@@ -194,6 +201,7 @@ describe('the Foundations pack, applied to a copy of the shipped content', () =>
         const bought = [];
         const off = EventBus.subscribe(ENGINE_EVENTS.TOKEN_PURCHASED, (e) => bought.push(e.typeId));
         InventoryManager.addItem('item_oak_wood', 15);
+        addCoins(Shop.listCoinsOf('token_wood_foundation'));
         expect(Shop.buy('token_wood_foundation').success).toBe(true);
         off?.();
         expect(bought).toEqual(['token_wood_foundation']);

@@ -13,6 +13,7 @@ import { escapeLayerCount } from '../ui/utils/escapeLayers.js';
 import { GuildUpgradeInspection } from '../ui/components/drawer/GuildUpgradeInspection.jsx';
 import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
+import { getCoins, addCoins } from '../systems/inventory/Coins.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { GUILD_UPGRADES, HALL_NODE, getUpgradeDef, getUpgradeWebLinks } from '../config/guildUpgrades.js';
 import { withOuterUpgrade, OUTER_UPGRADE_ID as OUTER } from './fixtures/outerUpgrade.js';
@@ -103,6 +104,7 @@ describe('the Guild Hall upgrade web', () => {
 
     it('opens the inspection for a selection made by id, and buying there updates the web', async () => {
         InventoryManager.addItem('item_oak_wood', 10);
+        addCoins(GuildUpgradeManager.getRanksCoins('bank_tabs', 1));
         const { container } = render((React.createElement(React.Fragment, null,
             React.createElement(GuildHallBoard, {}),
             React.createElement(GuildUpgradeInspection, { upgradeDef: getUpgradeDef('bank_tabs') })
@@ -116,6 +118,7 @@ describe('the Guild Hall upgrade web', () => {
         await act(async () => { fireEvent.click(button); });
 
         expect(GuildUpgradeManager.getRank('bank_tabs')).toBe(1);
+        expect(getCoins()).toBe(0);
         expect(stateOf(container, 'bank_tabs')).toBe('bought');
         expect(stateOf(container, OUTER)).toBe('buyable');
         expect(litOf(container, `bank_tabs:${HALL_NODE}`)).toBe('true');

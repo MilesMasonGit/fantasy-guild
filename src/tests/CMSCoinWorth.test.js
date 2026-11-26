@@ -33,7 +33,31 @@ function workspaceFromFiles(files) {
     for (const recipe of files['tokenRecipes.json']) (recipePools[recipe.skill || 'general'] ||= []).push(recipe);
     return { items: files['items.json'], tokens: files['tokens.json'], effects: files['effects.json'], recipePools };
 }
-const loadShipped = () => useEntityStore.getState().hydrate(workspaceFromFiles(Object.fromEntries(FILES.map((f) => [f, JSON.parse(raw[f])]))));
+const shippedFiles = () => Object.fromEntries(FILES.map((f) => [f, JSON.parse(raw[f])]));
+const loadShipped = () => useEntityStore.getState().hydrate(workspaceFromFiles(shippedFiles()));
+
+const omit = (record, key) => {
+    if (!record || !(key in record)) return record;
+    const { [key]: _gone, ...rest } = record;
+    return rest;
+};
+/**
+ * The shipped content with every coin taken out, as it was before the coin pack: no Shop coins, no
+ * enemy Coin drop, no steal-table coins and no item Coin worth.
+ */
+function loadWithoutCoins() {
+    const files = shippedFiles();
+    for (const [id, def] of Object.entries(files['tokens.json'])) {
+        files['tokens.json'][id] = {
+            ...def,
+            ...(def.shop ? { shop: omit(def.shop, 'coins') } : {}),
+            ...(def.enemy ? { enemy: omit(def.enemy, 'coinDrop') } : {}),
+            ...(def.steal ? { steal: omit(def.steal, 'coins') } : {})
+        };
+    }
+    for (const [id, item] of Object.entries(files['items.json'])) files['items.json'][id] = omit(item, 'coinWorth');
+    useEntityStore.getState().hydrate(workspaceFromFiles(files));
+}
 const syncPayload = () => JSON.parse(JSON.stringify(syncFiles(useEntityStore.getState().recalculateEconomy({}))));
 
 const noStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
@@ -121,7 +145,8 @@ describe('⭐ Recalculate fills the worth from the value once the content uses c
         return shopId;
     };
 
-    it('no coin anywhere (today\'s content): no item gains a worth, so the files round-trip as they were', () => {
+    it('no coin anywhere (the content before the coin pack): no item gains a worth, so the files round-trip as they were', () => {
+        loadWithoutCoins();
         const items = Object.values(syncPayload()['items.json']);
         expect(items.some(i => 'coinWorth' in i)).toBe(false);
     });
@@ -161,6 +186,7 @@ describe('⭐ Recalculate fills the worth from the value once the content uses c
     });
 
     it('with no coins in play a typed worth is left exactly as typed, pinned or not', () => {
+        loadWithoutCoins();
         const loose = store().addItem({ name: 'Coin Fixture Loose', coinWorth: 9 });
         expect(syncPayload()['items.json'][loose].coinWorth).toBe(9);
     });
