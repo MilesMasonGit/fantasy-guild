@@ -164,6 +164,13 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  * summed in the same bucket as what they carry (`CombatFormulas`). Enemies never read the guild's.
  * Any other `heroOnly` axis on a star or a guild rule reaches nobody.
  *
+ * ## `carriedPercentage` — a hero's gear and perks lend it as a percentage
+ *
+ * The loadout registers its combat numbers on the hero's aggregator flat (`HeroEffects`), as the
+ * combat axes are read. A row marked so is read as a percentage (Attack Speed's
+ * `getPercentageBucket`), so the loadout registers its percentage rules too, in the bucket the
+ * reader sums them in, beside a lingering effect's and a star's.
+ *
  * ## `neverOnGuild` — a star or a guild rule cannot carry it
  *
  * Sunder lands on the fighter struck: a star carrying it is refused by the CMS's pack check and
@@ -749,9 +756,9 @@ export const MODIFIER_PALETTE = [
     },
     {
         /**
-         * Read as a percentage off whoever carries it (`CombatFormulas` attack speeds), so it lives
-         * on a lingering effect: an elixir's faster attacks, a boss's enrage. Gear's flat-only
-         * contributions do not carry it.
+         * Read as a percentage off whoever carries it (`CombatFormulas` attack speeds): a lingering
+         * effect (an elixir's faster attacks, a boss's enrage), a Hall star, and a hero's worn gear
+         * and perks (`carriedPercentage`), all in one bucket.
          */
         type: EFFECT_TYPES.SWING_TIME,
         label: 'Attack Speed',
@@ -762,10 +769,11 @@ export const MODIFIER_PALETTE = [
         categories: 'combatStyle',
         heroOnly: true,
         fromGuild: true,
+        carriedPercentage: true,
         inverted: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'How long between attacks, shown as Attack Speed. A negative value is faster: -25% attacks a quarter sooner (attacks every 3s become every 2.25s). On a lingering effect: an elixir on a hero, or a rule putting it on an enemy.'
+        hint: 'How long between attacks, shown as Attack Speed. A negative value is faster: -25% attacks a quarter sooner (attacks every 3s become every 2.25s). On worn gear or the weapon in use (a weapon\'s Attacks every counts its own), a perk, a Guild Hall star, an elixir on a hero, or a rule putting it on an enemy; every source adds in one bucket. Narrow it to a style to help only that style\'s fighters.'
     },
     {
         // Read by `ConsumptionSystem` when a hero eats in a fight: Burn's half heal.

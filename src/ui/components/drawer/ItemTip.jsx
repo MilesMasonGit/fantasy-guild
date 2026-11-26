@@ -20,6 +20,10 @@ import { KEYWORD } from '../../../systems/effects/statements.js';
 import { carriedRuleNames } from '../dock/heroPerks.js';
 import { RuleLine } from '../base/EffectName.jsx';
 import { explainLinesOf, effectTypesOfStatements } from '../base/effectExplain.js';
+import { combatContributions, itemStatements } from '../../../systems/hero/HeroEffects.js';
+import { keptSwingFactor } from '../../../systems/combat/CombatFormulas.js';
+import { ModifierAggregator } from '../../../systems/effects/ModifierAggregator.js';
+import { EFFECT_TYPES } from '../../../systems/effects/constants.js';
 
 /** What kind of item it is, in the player's words. */
 export function itemTypeLabel(item) {
@@ -45,10 +49,26 @@ function cutLines(item) {
         .map(id => t('itemTip.styleCut', { style: getSkill(id)?.name || id, n: cuts[id] }));
 }
 
-/** How often a weapon attacks: "4s". Anything but the three speeds fights at normal. */
-function attackEveryValue(item) {
+/**
+ * The factor a weapon's own Attack Speed puts on its attacks, for the style it fights in: its rules
+ * as the hero's loadout registers them (`HeroEffects.combatContributions`), matched to the style as a
+ * fight matches them. 1 with none.
+ */
+function ownSwingFactor(item, style) {
+    const rules = combatContributions(itemStatements(item?.id), { carried: true })
+        .filter(c => c.type === EFFECT_TYPES.SWING_TIME && c.bucket === 'percentage');
+    if (!rules.length) return 1;
+    const aggregator = new ModifierAggregator('item_tip');
+    for (const { type, value, category } of rules) {
+        aggregator.addModifier({ type, value, bucket: 'percentage', source: 'item', ...(category ? { target: { category } } : {}) });
+    }
+    return keptSwingFactor(aggregator.getPercentageBucket(EFFECT_TYPES.SWING_TIME, style));
+}
+
+/** How often a weapon attacks: "4s", moved by its own Attack Speed. Anything but the three speeds fights at normal. */
+function attackEveryValue(item, style) {
     const speed = ATTACK_SPEED_MS[item?.speed] ? item.speed : DEFAULT_ATTACK_SPEED;
-    return lengthText(attackSpeedMs(speed));
+    return lengthText(Math.round(attackSpeedMs(speed) * ownSwingFactor(item, style)));
 }
 
 /** A weapon's stat block, as `{ id, label, value }` rows; null for anything that is not a weapon. */
@@ -59,7 +79,7 @@ function weaponStats(item, style, hands) {
         row('damage', Number(item.damage) > 0 ? Number(item.damage) : UNARMED_DAMAGE),
         row('type', t(`fight.types.${weaponDamageTypeOf(item, style)}`)),
         row('skill', getSkill(style)?.name || style),
-        row('attackEvery', attackEveryValue(item)),
+        row('attackEvery', attackEveryValue(item, style)),
         ...(hands >= HANDS ? [row('hands', hands)] : [])
     ];
 }

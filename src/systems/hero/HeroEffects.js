@@ -388,15 +388,17 @@ export function payLoadoutCost(statement, keep = null) {
  * would invert that dependency and risk an import cycle. `EquipmentManager`
  * refreshes the registration whenever equipment changes.
  *
- * ⚠️ Flat bucket only. `ModifierAggregator.query` sums flats and skips
+ * ⚠️ Flat bucket only, unless `carried`. `ModifierAggregator.query` sums flats and skips
  * percentage and multiplier entries, so anything else would be registered and
  * never read. The palette refuses to author other buckets on these axes, and
- * this mirrors that refusal.
+ * this mirrors that refusal. `carried` (a hero's own loadout) also passes the percentage rules
+ * of a row read as a percentage (`carriedPercentage`: Attack Speed), marked `bucket: 'percentage'`.
  *
  * @param {Array<object>} statements expanded statements from any bearer
- * @returns {Array<{type: string, value: number}>}
+ * @param {{ carried?: boolean }} [options]
+ * @returns {Array<{type: string, value: number, category?: string, bucket?: string}>}
  */
-export function combatContributions(statements) {
+export function combatContributions(statements, { carried = false } = {}) {
     const out = [];
 
     for (const statement of statements || []) {
@@ -408,24 +410,27 @@ export function combatContributions(statements) {
         // hero's aggregator too and is not combat, so keying on a group label would
         // leave it registered by nobody.
         if (!entry?.heroOnly) continue;
-        if (payload.bucket && payload.bucket !== 'flat') continue;
+        const percentage = payload.bucket === 'percentage' && carried && !!entry.carriedPercentage;
+        if (payload.bucket && payload.bucket !== 'flat' && !percentage) continue;
 
         const value = Number(payload.value);
         if (!Number.isFinite(value) || value === 0) continue;
 
         // `STATUS_IMMUNITY` is meaningless without it: an immunity naming no status
         // would block everything.
-        out.push(payload.category
-            ? { type: payload.type, value, category: payload.category }
-            : { type: payload.type, value });
+        out.push({
+            type: payload.type, value,
+            ...(payload.category ? { category: payload.category } : {}),
+            ...(percentage ? { bucket: 'percentage' } : {})
+        });
     }
 
     return out;
 }
 
-/** The combat numbers a hero's own loadout contributes. */
+/** The combat numbers a hero's own loadout contributes: its gear's and its perks'. */
 export function loadoutCombatContributions(hero) {
-    return combatContributions(loadoutStatements(hero));
+    return combatContributions(loadoutStatements(hero), { carried: true });
 }
 
 /**

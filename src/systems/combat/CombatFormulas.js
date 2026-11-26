@@ -117,14 +117,17 @@ export function heroMaxHpFromSkills(skills) {
 export function swingTimeFactor(entity) {
     const aggregator = entity?.aggregator;
     if (!aggregator?.getPercentageBucket) return 1;
-    const factor = aggregator.getPercentageBucket(EFFECT_TYPES.SWING_TIME);
+    return keptSwingFactor(aggregator.getPercentageBucket(EFFECT_TYPES.SWING_TIME));
+}
+
+/** A Swing Time bucket as the factor a swing's time is multiplied by, kept within `SWING_TIME_FACTOR_RANGE`. */
+export function keptSwingFactor(factor) {
     return Math.min(SWING_TIME_FACTOR_RANGE.max, Math.max(SWING_TIME_FACTOR_RANGE.min, factor));
 }
 
-/** {@link swingTimeFactor} for a hero: what they carry and the guild's stars for their style. */
+/** {@link swingTimeFactor} for a hero: what they carry (gear, perks, lingering effects) and the guild's stars for their style. */
 function heroSwingTimeFactor(hero) {
-    const factor = heroPercentBucket(hero, EFFECT_TYPES.SWING_TIME);
-    return Math.min(SWING_TIME_FACTOR_RANGE.max, Math.max(SWING_TIME_FACTOR_RANGE.min, factor));
+    return keptSwingFactor(heroPercentBucket(hero, EFFECT_TYPES.SWING_TIME));
 }
 
 /** How long a hero's swing takes: the weapon's speed, normal (3 s) barehanded. */
