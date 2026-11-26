@@ -1,0 +1,98 @@
+Status: draft 2026-11-25 (balancer; findings checked in the code, decisions open with the owner)
+
+# How we balance: a review of the method
+
+*The owner's two concerns, 2026-11-25: (1) "our input data on what is a normal gameplay scenario may be
+flawed": trees in reach of a camp, buildings, potions; (2) "we may not be fully factoring in the rewards
+of working a cycle": the item can be sold, turned into a boost, or made into something else for more XP.
+Two read-only agents read the CMS's simulator and ledger; the balancer checked their main claims in the
+code and audited its own Dials page. Rulings go in [BALANCE_RULES.md](../reference/BALANCE_RULES.md).*
+
+## The short answer
+
+Both concerns are right, and there is a third one underneath them.
+
+- **The "normal guild" is a handful of fixed numbers nobody chose**, and the biggest one, how many
+  nodes a gatherer has in reach, moves a gatherer's speed by up to 20 times.
+- **Nothing weighs one use of an item against another.** The ledger lets the same ore feed the smith,
+  a building's price and a sale all at once, as if the guild had unlimited heroes.
+- **Three tools hold three different rulebooks**, and they disagree on XP.
+
+## 1. What "a normal guild" is today
+
+| Assumption | The ledger (the engine's timing) | The Dials page (the rules) | How wrong it can be |
+|---|---|---|---|
+| **Nodes in reach** | 1 with no camp; with a camp, 3 veins or Fields, or one Forest's trees (Oak: 5) | Not counted: a hero never waits | **The largest lever.** An Oak Tree is 5 chops of 3 s, then a 5-minute stump. One tree keeps a hero busy 5 % of the time; a camp with one Forest 24 %; two Forests in reach 48 %; four or more, 100 %. That is a 20-times range, and the ledger's best case is a quarter of what a dense camp does |
+| **Walking between nodes** | None | None | Small |
+| **Buildings** | One of each kind, always in reach. A camp only adds nodes: its own boost (a Sawmill's double loot, a Mine Head's faster regrowth) is dropped | A budget table: 1.4x at copper to 3x at darkmetal for the optimized player, half of each boost for typical | The page assumes boosts that mostly aren't built: in the live game a typical gatherer is as fast as a maxed one from mid-game on. The ledger undercounts stacked buildings and camp variants |
+| **Drinks and potions** | Typical takes any drink that gains anything, at no price beyond its ingredients; a hidden extra hero brews it | Inside the budget table; no cost | The 4x batch payback rule is checked nowhere |
+| **Heroes** | No count. Every skill has its own hero, and every ingredient its own full-time gatherer | One hero per skill; one gatherer per ingredient for "guild time" | A real guild shares a few heroes among all of this, so it is slower than either tool says |
+| **A typical player** | Buys what pays back within 2 hours (Hall stars within 24) | Holds half of every boost | Two different definitions |
+| **Proof against the real game** | A calibration stamp from 18 Nov over nine one-hero set-ups; the rate code has changed since | None: XP is worked back from the curve, so the page is on the curve by construction | The page cannot test a scenario; only the ledger or play can |
+
+**The rules already say what a node should be**, and the live Tokens don't follow it: the rest rule
+(section 2) wants one hero on one copy busy at least 75 % of the time, which would shrink the
+nodes-in-reach lever from 20 times to 1.3 times. Live Oak Trees give 5 %, live Copper Veins 20 %.
+
+## 2. What a cycle's rewards are counted as today
+
+A cycle pays XP and an item. The item can feed another hero's recipe (more XP, in another skill), become
+a boost, pay a price, or be sold.
+
+- **XP and worth are worked out apart.** The CMS's simulator gives each Token and recipe a purpose
+  (XP-rich, item-rich or gold-rich) and trades one against the other: XP-rich work pays full XP and a
+  tenth of the worth; gold-rich pays full worth and 30 % of the XP. The balance rules say the opposite:
+  all work at one level pays the same XP an hour. The owner has ruled on neither as a pair.
+- **An item's worth is not "the time in it"**, as the balancer told the owner in the coin interview. It
+  is the work in it priced at its level's gold an hour, a curve that rises 260 times from level 1 to 99
+  (1,200 to 314,000), plus at least 15 % a making step. So an hour of selling level-40 goods earns
+  about 17 times an hour of selling level-1 goods. A Mythril Ingot is worth 384 against a Copper
+  Ingot's 6 for that reason.
+- **Worth leaves things out that take time**: a node's rest and regrowth, station charges, tools, rare
+  and bonus drops. The ledger's hours include them; the two are compared only loosely (4 times off,
+  for information).
+- **No use competes with another.** The ledger asks "how fast can the guild get ore" once and gives
+  that whole flow to every asker. Nothing is ever spent. Selling is done by a separate hero who does
+  not level. So opportunity cost does not exist in the tools.
+- **A chain's total XP is never added up.** Ore to ingot to dagger pays Mining, then Smithing twice;
+  nothing checks what one ore is worth in XP down its chain, so deep chains can overpay unnoticed.
+- **Items against XP has one hidden exchange rate**: when the ledger picks boosts, an hour of a work's
+  XP counts the same as an hour of its goods. Fixed, and written nowhere the owner would see it.
+- **Not enforced anywhere**: the 4x batch payback for consumables; Hall payback counted over all the
+  work a star boosts (the ledger checks one work against a flat 24 hours).
+
+## 3. Three rulebooks
+
+| | Sets | XP an hour, level 1 to 99 | Whole skill |
+|---|---|---|---|
+| **The simulator** (the CMS's Recalculate) | Every item's worth, and XP unless pinned | 700 to 837,000 (7.5 % a level) | Expects 55 hours of play |
+| **The ledger** | Nothing; it times what is there | Reads what is stored | The pace curve setting: 15.3 days (old 6.5 % points) |
+| **The balance rules** (the Dials page) | Proposed XP, times, counts | 1,660 to 49,000 (doubling every 20 levels) | 12.6 days at 6.25 % |
+
+Today the simulator writes the live numbers, the ledger says they are off the owner's curve (Cooking
+to 99 in 3.8 days), and the balance rules describe a third set that is not in the game. A number pack
+would pin XP by hand over the simulator's, and its worths would still come from the simulator's gold
+curve, which no ruling of the owner's set.
+
+## 4. What the balancer proposes
+
+1. **A reference guild, written down and owned by the owner** (a new section of the balance rules):
+   for bare, typical and optimized at each tier, how many heroes, how many nodes in reach, which
+   buildings and how many, which drink. Both tools read it; no hidden constants.
+2. **Bound the nodes-in-reach lever with the rest rule**: number packs bring live nodes to the rule
+   (one hero on one copy busy at least 75 %), so layout can speed a gatherer up by a third, not by 20
+   times. More copies then mean more heroes can work, not that one hero is suddenly 4 times faster.
+3. **The ledger times a spread, not a point** (director): each skill at a sparse and a dense layout,
+   with a warning where they differ by more than the tolerance; camp variants' own boosts and several
+   buildings in reach counted.
+4. **One rulebook**: the balance rules are the source; the simulator's XP and gold curves are set from
+   them (or its XP pass retired), and the worth curve becomes a rule the owner has seen.
+5. **A guild's time is spent once**: a reference roster with a stated split of its output (feeding
+   crafters, boosts, prices, sold), and the ledger made to allocate a gatherer's output rather than
+   hand it to everyone. Coin costs are then sized against the share that is really spare.
+6. **Checks for what the rules promise**: a chain's total XP per raw unit, the 4x batch payback, Hall
+   payback over all boosted work.
+
+## Open decisions (owner)
+
+Asked in the session of 2026-11-25; rulings recorded below as they come.

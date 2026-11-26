@@ -180,7 +180,7 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 
 *Owner interview with the balancer, 2026-11-25, on top of [concept_gold_coins.md](../active/concept_gold_coins.md): coins are a second cost beside items, the measure of whether a guild makes more than it uses.*
 
-**An item's worth is the time in it** (owner): every step counts, so a Copper Dagger is worth its ore, its smelting and its forging together. An hour of work earns about the same coins whatever the guild sells; no item is a trap or a jackpot. A worth set by hand is an exception with its reason.
+**An item's worth is the work in it** (owner): every step counts, so a Copper Dagger is worth its ore, its smelting and its forging together. A worth set by hand is an exception with its reason. ⚠️ *Corrected 2026-11-25:* the balancer first wrote that an hour of work earns the same coins whatever is sold. It does not: the CMS's simulator prices work at its level's gold an hour, a curve rising 260 times from level 1 to 99, plus at least 15 % a making step, so later goods sell for far more an hour. That curve is not yet a rule the owner has ruled on ([balance_method_review.md](../active/balance_method_review.md)).
 
 **A coin cost is one hero's selling for a set time at the price's stage**, by kind of purchase:
 
