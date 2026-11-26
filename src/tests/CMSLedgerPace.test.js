@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
-import { render, fireEvent, cleanup, within } from '@testing-library/react';
+import { render, fireEvent, cleanup, within, waitFor } from '@testing-library/react';
 
 import { useEntityStore } from '../../cms/src/stores/useEntityStore.js';
 import { useSimulationStore } from '../../cms/src/stores/useSimulationStore.js';
 import { workspaceReport } from '../../cms/src/engine/ledgerReport';
+import { runLedgerJobNow } from '../../cms/src/engine/ledgerJobs.js';
 import { bundledSources } from '../../cms/src/engine/calibrationStatus';
 import LedgerPanel from '../../cms/src/components/ledger/LedgerPanel.jsx';
 import {
@@ -60,6 +61,18 @@ describe('the calibration stamp', () => {
         expect(stale).toMatchObject({ state: 'stale', changed: ['src/systems/board/BoardRunner.js'] });
         expect(calibrationFinding(stale)).toMatchObject({ check: 'calibration-stale', key: 'calibration:engine' });
         expect(calibrationFinding(stale).message).toMatch(/BoardRunner\.js.*npm run bench:calibrate/);
+    });
+});
+
+describe('the layouts job', () => {
+    it('times the layout the workspace’s pace does not, as plain data the Pace page sets beside its own', () => {
+        const other = runLedgerJobNow('layouts', { workspace: paceWorkspace() });
+        expect(other.layout).toBe('dense');
+        expect(Object.keys(other.skills)).toEqual(expect.arrayContaining(['mining', 'construction']));
+        const { pace } = workspaceReport(paceWorkspace());
+        const spread = pace.layoutSpread(JSON.parse(JSON.stringify(other)));
+        expect(spread.skills.find((s) => s.skill === 'mining').days.dense.maxed).toBeCloseTo(other.skills.mining.maxed, 9);
+        expect(spread.skills.find((s) => s.skill === 'mining').warn).toBe(true);
     });
 });
 
@@ -133,9 +146,37 @@ describe('the tab', { timeout: 20000 }, () => {
         fireEvent.click(view.getAllByText('Construction')[0]);
         expect(view.getByRole('tab', { name: 'Pace' }).getAttribute('aria-selected')).toBe('true');
         expect(view.container.querySelector('[data-breakdown="construction|0"]')).toBeTruthy();
-        expect(view.container.querySelector('[data-stage="0"] [data-stage-hours]').textContent).toMatch(/^11 h 10 min/);
+        expect(view.container.querySelector('[data-stage="0"] [data-stage-hours]').textContent).toMatch(/^11 h 9 min/);
         expect(view.container.querySelector('[data-stage="0"] [data-stage-heroes]').textContent).toMatch(/^1 hero/);
         expect(view.container.querySelector('[data-hall="roster_size|2"]')).toBeTruthy();
+    });
+
+    it('⭐ shows both layouts: the nodes the dense one makes more of, and on a click each skill’s days to 99 in both, worked out as a job', async () => {
+        const view = mount();
+        fireEvent.click(view.getByRole('tab', { name: 'Pace' }));
+        expect(view.container.querySelector('[data-layout-nodes="1"]').textContent).toMatch(/Copper Vein: .* an hour with 2, .* with 4 \(\+100 %\)/);
+        expect(view.container.querySelector('[data-layout-spread]')).toBeNull();
+        fireEvent.click(view.container.querySelector('[data-layout-spread-button]'));
+        await waitFor(() => expect(view.container.querySelector('[data-layout-spread]')).toBeTruthy(), { timeout: 20000 });
+        expect(view.container.querySelector('[data-layout-skill="mining"]').textContent).toMatch(/Mining.*Maxed .* d.*Maxed .* d/);
+        // The stages say their heroes, and what their work takes.
+        expect(view.container.querySelector('[data-stage="0"] [data-stage-heroes]').textContent).toMatch(/^1 hero.*their work .* side by side/);
+    });
+
+    it('edits the reference guild: heroes by stage, the layouts’ nodes and the layout timed, a site’s places', () => {
+        const view = mount();
+        fireEvent.click(view.getByRole('tab', { name: 'Settings' }));
+        const set = (label, value) => { const input = view.getByLabelText(label); fireEvent.change(input, { target: { value } }); fireEvent.blur(input); };
+        set('Heroes from Plane 2', '3');
+        expect(store().planSettings.heroesByTier.find((p) => p.tier === 2).heroes).toBe(3);
+        set('Dense layout nodes', '6');
+        expect(store().planSettings.layouts).toEqual({ sparse: 2, dense: 6 });
+        fireEvent.change(view.getByLabelText('Layout the pace times'), { target: { value: 'dense' } });
+        expect(store().planSettings.layout).toBe('dense');
+        set('Building places', '10');
+        set('Places a kind', '3');
+        expect(store().planSettings.sitePlaces).toEqual({ buildings: 10, perKind: 3 });
+        expect(view.queryByLabelText('Camp copies')).toBeNull();
     });
 
     it('edits the profile settings', () => {

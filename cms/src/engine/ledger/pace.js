@@ -707,8 +707,9 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const tier = needing.length ? Math.min(...needing.map(a => a.tier).filter(Number.isInteger)) : maxTier;
             const cap = Number.isFinite(tier) ? tier : maxTier;
             const xp = xpForLevel(level + 1) - xpForLevel(level);
-            // `work`: the guild's hero-hours the level takes, its chain's heroes at work all the while (its maker, gatherers and brewers, as many as it has).
-            const row = { level, tier: cap, xp, curveMinutes: minutesPerLevelAt(settings, level), hours: {}, cumulative: {}, work: {}, cumulativeWork: {}, source: {} };
+            // `work`: the guild's hero-hours the level takes, its chain's heroes at work all the while (its maker, gatherers and
+            // brewers, as many as it has); `made`: what its work makes meanwhile, free for a price (its inputs are its gatherers').
+            const row = { level, tier: cap, xp, curveMinutes: minutesPerLevelAt(settings, level), hours: {}, cumulative: {}, work: {}, cumulativeWork: {}, made: {}, source: {} };
             for (const profile of PROFILES) {
                 const best = bestXp(skill, level, profile, cap);
                 const hours = best.xp > 0 ? xp / best.xp : Infinity;
@@ -720,6 +721,12 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 row.work[profile] = work;
                 row.cumulativeWork[profile] = spent[profile];
                 row.source[profile] = best;
+                const made = {};
+                if (best.work && Number.isFinite(hours)) {
+                    const f = workAt(best.work, best.profile, cap, best.at);
+                    for (const [item, n] of Object.entries(f.items || {})) if (n > 0) made[item] = n * best.chain * hours;
+                }
+                row.made[profile] = made;
             }
             levels.push(row);
         }
@@ -1027,75 +1034,125 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         return out;
     }
 
-    /** Hero-hours a price takes at a profile and stage: each item's hero-hours, its gatherers down the chain counted, and its coins' earning. */
-    const priceWork = (inputs, profile, cap, coins = 0) => {
-        let out = 0;
-        for (const { key, quantity } of inputs || []) {
-            const h = quantity > 0 ? quantity * heroHoursOf(parseKey(key).id, profile, cap) : 0;
-            if (Number.isFinite(h)) out += h;
-        }
-        const c = coins > 0 ? coinCostHours(coins, profile, cap) : 0;
-        return Number.isFinite(c) ? out + c : out;
-    };
-    const stepWorkMemo = new Map();
+    const NO_PARTS = Object.freeze({ goods: Object.freeze([]), coins: 0, coinCap: 0, cap: 0, fixed: 0, own: 0, gives: null });
+    const partsMemo = new Map();
     /**
-     * The guild's hero-hours one step takes at a profile: a price's gathering (a Shop Token, a Guild
-     * Hall star, a build's materials, settling a ring's coins) and a build's own time; a hero's own
-     * time on a piece of work (the first of something, a find at average luck). A clock no hero works
-     * (a spawn, a growth, a regrowth, a trickle) spends none.
+     * What one step asks of the guild at a profile: the goods its price takes (a Shop Token, a Guild
+     * Hall star, a build's materials, what a spawn or a growth spends) and its coins, a build's own
+     * time (`fixed`), and a hero's own time on a piece of work (`own`: the first of something, a find
+     * at average luck) with what it gives (`gives`). A clock no hero works (a spawn's wait, a growth,
+     * a regrowth, a trickle) asks none.
      */
-    function stepWorkOf(key, profile) {
+    function stepPartsOf(key, profile) {
         const memoKey = `${key}|${profile}`;
-        if (stepWorkMemo.has(memoKey)) return stepWorkMemo.get(memoKey);
+        if (partsMemo.has(memoKey)) return partsMemo.get(memoKey);
         const at = reach.get(key);
         const rule = at?.rule;
-        let out = 0;
+        let out = NO_PARTS;
         if (rule && Number.isInteger(at.tier)) {
             const cap = at.tier;
-            const own = readyOf(key, profile).own;
+            const base = { ...NO_PARTS, cap, coinCap: cap };
+            const own = () => {
+                const h = readyOf(key, profile).own;
+                return Number.isFinite(h) ? h : 0;
+            };
+            const gives = parseKey(key).kind === 'item' ? parseKey(key).id : null;
             switch (rule.how) {
             case HOW.SHOP:
             case HOW.STAR:
-                out = priceWork(rule.inputs, profile, cap, rule.coins);
+                out = { ...base, goods: rule.inputs || [], coins: rule.coins || 0 };
                 break;
             case HOW.SETTLE:
-                out = rule.coins > 0 ? priceWork([], profile, Math.min(cap, budgetTierOf(rule.ring ?? rule.floor)), rule.coins) : 0;
+                out = { ...base, coins: rule.coins || 0, coinCap: Math.min(cap, budgetTierOf(rule.ring ?? rule.floor)) };
                 break;
             case HOW.CRAFT: {
                 const recipe = rates.recipes[parseKey(rule.via).id];
                 out = list(recipe?.foundationKinds).length
-                    ? priceWork(rule.inputs, profile, cap) + (Number(recipe.durationMs) || 0) / HOUR_MS
-                    : Number.isFinite(own) ? own : 0;
+                    ? { ...base, goods: rule.inputs || [], fixed: (Number(recipe.durationMs) || 0) / HOUR_MS }
+                    : { ...base, own: own(), gives };
                 break;
             }
             case HOW.SPAWN:
             case HOW.GROW:
-                out = priceWork(rule.inputs, profile, cap);
+                out = { ...base, goods: rule.inputs || [] };
                 break;
             case HOW.WORK:
             case HOW.DROP:
             case HOW.CATCH:
             case HOW.BONUS:
-                out = Number.isFinite(own) ? own : 0;
+                out = { ...base, own: own(), gives };
                 break;
             default:
-                out = 0;
+                out = base;
             }
         }
-        stepWorkMemo.set(memoKey, out);
+        partsMemo.set(memoKey, out);
         return out;
     }
 
-    /** The guild's hero-hours for a path's work at a profile: its levels' hero-hours (each skill once, to the highest asked) and its steps'. */
-    function heroHoursFor(work, profile) {
-        let out = 0;
-        for (const skill in work.levels) {
-            const h = levelWork(skill, work.levels[skill], profile);
+    /**
+     * The guild's hero-hours one step takes at a profile, its goods drawn first from `stock` (what the
+     * levels on the way made, which it takes from): what is left gathered at its hero-hours, its
+     * gatherers down the chain counted, and its coins earned. A hero's own time on a piece of work is
+     * spent only when the stock holds none of what it gives.
+     */
+    function stepWork(key, profile, stock) {
+        const p = stepPartsOf(key, profile);
+        let out = p.fixed;
+        for (const { key: k, quantity } of p.goods) {
+            if (!(quantity > 0)) continue;
+            const id = parseKey(k).id;
+            const free = Math.min(quantity, stock.get(id) || 0);
+            if (free > 0) stock.set(id, stock.get(id) - free);
+            const h = quantity > free ? (quantity - free) * heroHoursOf(id, profile, p.cap) : 0;
             if (Number.isFinite(h)) out += h;
         }
-        for (const key of work.steps) out += stepWorkOf(key, profile);
+        if (p.coins > 0) {
+            const c = coinCostHours(p.coins, profile, p.coinCap);
+            if (Number.isFinite(c)) out += c;
+        }
+        if (p.own > 0 && !((stock.get(p.gives) || 0) >= 1)) out += p.own;
         return out;
     }
+
+    const madeMemo = new Map();
+    /** What a skill's levels make from a new game to `level` at a profile, at their best sources: `Map<itemId, count>`. */
+    function levelMade(skill, level, profile) {
+        const track = trackOf(skill);
+        const to = Math.min(level, track.top);
+        const key = `${skill}|${to}|${profile}`;
+        if (madeMemo.has(key)) return madeMemo.get(key);
+        const out = to > 2 ? new Map(levelMade(skill, to - 1, profile)) : new Map();
+        const row = to >= 2 ? track.levels[to - 2] : null;
+        for (const [item, n] of Object.entries(row?.made?.[profile] || {})) out.set(item, (out.get(item) || 0) + n);
+        madeMemo.set(key, out);
+        return out;
+    }
+
+    /**
+     * The guild's hero-hours for a path's work at a profile, its time spent once: its levels' hero-
+     * hours (each skill once, to the highest asked), and its steps', each price taken first from what
+     * those levels made on the way (a forester levelling fells the wood a build asks).
+     * `{ heroHours, levelHeroHours, stepHeroHours, steps: [{ key, heroHours }] }`.
+     */
+    function workFor(work, profile) {
+        const stock = new Map();
+        let levelHeroHours = 0;
+        for (const skill in work.levels) {
+            const h = levelWork(skill, work.levels[skill], profile);
+            if (Number.isFinite(h)) levelHeroHours += h;
+            for (const [item, n] of levelMade(skill, work.levels[skill], profile)) stock.set(item, (stock.get(item) || 0) + n);
+        }
+        let stepHeroHours = 0;
+        const steps = [];
+        for (const key of work.steps) {
+            const h = stepWork(key, profile, stock);
+            stepHeroHours += h;
+            if (h > 0) steps.push({ key, heroHours: h });
+        }
+        return { heroHours: levelHeroHours + stepHeroHours, levelHeroHours, stepHeroHours, steps };
+    }
+    const heroHoursFor = (work, profile) => workFor(work, profile).heroHours;
 
     /**
      * The guild's heroes by stage, each from when the curve reaches it to when the curve leaves it
@@ -1485,23 +1542,32 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         return otherPace;
     }
 
+    /** Each skill's days to 99 at each profile in this pace's layout: `{ layout, skills: { [skill]: { maxed, typical, bare } } }`, plain data. */
+    function layoutDays() {
+        const skills = {};
+        for (const skill of [...new Set([...askedAt.keys(), ...skillsOfWork.keys()])].sort()) {
+            skills[skill] = Object.fromEntries(PROFILES.map(profile => [profile, hoursToLevel(skill, MAX_SKILL_LEVEL, profile) / 24]));
+        }
+        return { layout: settings.layout, skills };
+    }
+
     /**
      * Each skill's days to 99 in both layouts at each profile, and how far apart they are:
-     * `{ timed, other, nodes, skills: [{ skill, days: { [layout]: { maxed, typical, bare } }, off }] }`,
-     * `off` the largest difference over the profiles, as a fraction of the sparse layout's.
+     * `{ timed, other, nodes, skills: [{ skill, days: { [layout]: { maxed, typical, bare } }, off, warn }] }`,
+     * `off` the largest difference over the profiles, as a fraction of the sparse layout's. The other
+     * layout's days (`layoutDays` of a pace timed there, worked out elsewhere: the CMS's Worker) when
+     * handed, else its pace built here.
      */
-    function layoutSpread() {
-        const other = otherLayoutPace();
-        const out = { timed: settings.layout, other: other.settings.layout, nodes: { ...settings.layouts }, skills: [] };
-        for (const skill of [...new Set([...askedAt.keys(), ...skillsOfWork.keys()])].sort()) {
-            const days = {};
-            for (const [layout, p] of [[settings.layout, api], [other.settings.layout, other]]) {
-                days[layout] = Object.fromEntries(PROFILES.map(profile => [profile, p.hoursToLevel(skill, MAX_SKILL_LEVEL, profile) / 24]));
-            }
+    function layoutSpread(otherDays = null) {
+        const mine = layoutDays();
+        const theirs = otherDays || otherLayoutPace().layoutDays();
+        const out = { timed: settings.layout, other: theirs.layout, nodes: { ...settings.layouts }, skills: [] };
+        for (const skill of Object.keys(mine.skills)) {
+            const days = { [mine.layout]: mine.skills[skill], [theirs.layout]: theirs.skills[skill] || Object.fromEntries(PROFILES.map(p => [p, Infinity])) };
             let off = 0;
             for (const profile of PROFILES) {
-                const a = days.sparse[profile];
-                const b = days.dense[profile];
+                const a = days.sparse?.[profile];
+                const b = days.dense?.[profile];
                 if (Number.isFinite(a) && Number.isFinite(b) && a > 0) off = Math.max(off, Math.abs(a - b) / a);
             }
             out.skills.push({ skill, days, off, warn: off * 100 > settings.tolerancePct });
@@ -2263,20 +2329,19 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         arrivalOf,
         /** The reference guild's heroes by stage, each over its span on the curve, in hours. */
         heroSpans: () => heroSpans.map(s => ({ ...s })),
+        /** What a skill's levels make from a new game to a level at a profile, at their best sources: `{ itemId: count }`. */
+        levelMade: (skill, level, profile = TARGET) => Object.fromEntries(levelMade(skill, level, profile)),
         /**
          * Everything planned for a stage and the ones before at the curve's player, each once: the level
          * each skill must reach and the steps on the way, with their hero-hours.
          */
         workOfStage: (tier) => {
             const w = stageWorkOf(tier);
-            let levelHeroHours = 0;
-            for (const skill in w.levels) {
-                const h = levelWork(skill, w.levels[skill], TARGET);
-                if (Number.isFinite(h)) levelHeroHours += h;
-            }
-            let stepHeroHours = 0;
-            for (const key of w.steps) stepHeroHours += stepWorkOf(key, TARGET);
-            return { levels: { ...w.levels }, steps: [...w.steps], levelHeroHours, stepHeroHours, heroHours: levelHeroHours + stepHeroHours };
+            const done = workFor(w, TARGET);
+            return {
+                levels: { ...w.levels }, steps: [...w.steps], levelHeroHours: done.levelHeroHours, stepHeroHours: done.stepHeroHours, heroHours: done.heroHours,
+                costliest: done.steps.sort((a, b) => b.heroHours - a.heroHours).slice(0, 5)
+            };
         },
         /** The guild's heroes an hour of a work takes at a profile and stage (its own tier by default): its hero and the gatherers down its chain. */
         heroesOf: (target, profile, cap = null, level = null) => {
@@ -2320,7 +2385,9 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         layoutRows,
         /** The same content timed at the other layout, built when first asked. */
         otherLayoutPace,
-        /** Each skill's days to 99 in both layouts, and how far apart they are. */
+        /** Each skill's days to 99 at each profile in this pace's layout, plain data for the CMS's Worker to hand back. */
+        layoutDays,
+        /** Each skill's days to 99 in both layouts, and how far apart they are (the other layout's days when handed). */
         layoutSpread,
         /** The buildings a profile stands round a work at a stage (its own tier by default), in its site's places. */
         siteOf: (target, profile, cap = null) => {

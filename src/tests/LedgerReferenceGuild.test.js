@@ -124,6 +124,35 @@ describe('the guild\'s time is spent once', () => {
         expect(work.steps.filter(k => k === 'token:token_plot')).toHaveLength(1);
     });
 
+    it('⭐ a price is paid first from what the levels on the way made: a forester levelling fells the wood a Woodpile asks', () => {
+        // Plane 1 asks Forestry 6 (an Old Oak) and a Woodpile bought for Oak Wood.
+        const c = paceContent();
+        c.items.item_old_wood = { id: 'item_old_wood', name: 'Old Wood', type: 'material', plan: { tier: 1 } };
+        c.tokens.token_old_oak = {
+            id: 'token_old_oak', name: 'Old Oak', uses: null, needsTool: { kind: 'woodaxe', minTier: 1 }, plan: { tier: 1 },
+            config: { skill: 'forestry', skillRequired: 6, cycleTimeMs: 4000, xp: 1, inputs: [], outputs: [{ itemId: 'item_old_wood', chance: 100, minQty: 1, maxQty: 1 }] }
+        };
+        c.starterCamp.tokens.push({ typeId: 'token_old_oak', x: 5, y: 0 });
+        c.tokens.token_woodpile = { ...building('token_woodpile', 'Woodpile', []), shop: { price: [{ itemId: 'item_oak_wood', quantity: 100 }] }, plan: { tier: 1 } };
+        // The Gold Statue's thousand would take the wood first; the other prices on the way ask 50 between them.
+        delete c.tokens.token_statue;
+        c.recipes = c.recipes.filter(r => r.id !== 'recipe_build_statue');
+        const one = { heroesByTier: [{ tier: 0, heroes: 1 }] };
+        const small = paceOf(c, one);
+        const wood = small.levelMade('forestry', 6, PROFILE.MAXED).item_oak_wood;
+        expect(wood).toBeGreaterThan(150);
+        // A hundred Oak Wood the forester has felled already: the Woodpile costs the guild nothing more.
+        expect(small.workOfStage(1).levels.forestry).toBe(6);
+        expect(small.workOfStage(1).costliest.map(s => s.key)).not.toContain('token:token_woodpile');
+        // Ten thousand: what the levels made pays part, the rest is gathered.
+        c.tokens.token_woodpile.shop.price[0].quantity = 10000;
+        const big = paceOf(c, one);
+        const pile = big.workOfStage(1).costliest.find(s => s.key === 'token:token_woodpile');
+        const hh = big.heroHoursOf('item_oak_wood', PROFILE.MAXED, 1);
+        expect(pile.heroHours).toBeGreaterThanOrEqual((10000 - wood) * hh - 1e-9);
+        expect(pile.heroHours).toBeLessThanOrEqual((10000 - wood + 50) * hh + 1e-9);
+    });
+
     it('⭐ with heroes to spare, the path sets the stage again', () => {
         const many = paceOf(twoSkills(), { heroesByTier: [{ tier: 0, heroes: 40 }], gatherersPerMaker: 2.2 });
         const s = many.stageOf(1);

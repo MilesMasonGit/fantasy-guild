@@ -199,6 +199,18 @@ describe('npm run cms -- ledger', () => {
         expect(tight.guildBare).toBeCloseTo(loose.guildBare, 2);
     });
 
+    it('⭐ --one-layout leaves out the other layout\'s days to 99, keeping its node check', async () => {
+        const dir = sandbox();
+        const jsonFile = path.join(dir, 'one.json');
+        const r = await cms(dir, 'ledger', '--one-layout', `--json=${jsonFile}`);
+        expect(r.code, r.err).toBe(0);
+        expect(r.out).toMatch(/Layouts: timed sparse only \(the dense layout left out\); 1 node make/);
+        const out = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
+        expect(out.layouts).toMatchObject({ skipped: true, skills: null, timed: 'sparse', other: 'dense' });
+        expect(out.layouts.nodesOff.map((n) => n.entry)).toEqual(['token:token_vein']);
+        expect(USAGE).toMatch(/--one-layout times only the pace's/);
+    });
+
     it('⭐ run from a worktree with no workspace of its own, reads the main checkout\'s, and says so', async () => {
         const main = fs.mkdtempSync(path.join(os.tmpdir(), 'fg-cms-main-'));
         tmpRoots.push(main);

@@ -146,7 +146,13 @@ function heroesOf(pace) {
 }
 
 /** Both layouts' days to 99 per skill, with the warnings, and the nodes the dense layout makes past the tolerance more of. */
-function layoutsOf(pace) {
+function layoutsOf(pace, both = true) {
+    const nodes = pace.layoutRows().map((r) => ({
+        entry: r.work.entry, work: pace.workName(r.work), camp: r.camp, sparse: round(r.sparse, 2), dense: round(r.dense, 2), offPct: round(r.off * 100, 1),
+    }));
+    const other = pace.settings.layout === 'sparse' ? 'dense' : 'sparse';
+    const base = { timed: pace.settings.layout, other, nodes: { ...pace.settings.layouts }, tolerancePct: pace.settings.tolerancePct, nodesOff: nodes };
+    if (!both) return { ...base, skills: null, warnings: null, skipped: true };
     const spread = pace.layoutSpread();
     const days = (d) => Object.fromEntries(Object.entries(READOUT_PROFILES).map(([who, profile]) => [who, Number.isFinite(d[profile]) ? round(d[profile], 2) : null]));
     const skills = {};
@@ -154,10 +160,7 @@ function layoutsOf(pace) {
         if (s.skill === COMBAT) continue;
         skills[s.skill] = { sparse: days(s.days.sparse), dense: days(s.days.dense), offPct: round(s.off * 100, 1), warn: s.warn };
     }
-    const nodes = pace.layoutRows().map((r) => ({
-        entry: r.work.entry, work: pace.workName(r.work), camp: r.camp, sparse: round(r.sparse, 2), dense: round(r.dense, 2), offPct: round(r.off * 100, 1),
-    }));
-    return { timed: spread.timed, other: spread.other, nodes: spread.nodes, tolerancePct: pace.settings.tolerancePct, skills, warnings: Object.keys(skills).filter((k) => skills[k].warn), nodesOff: nodes };
+    return { ...base, skills, warnings: Object.keys(skills).filter((k) => skills[k].warn) };
 }
 
 /** The buildings a profile stands round a work in its site's places, named. */
@@ -205,9 +208,10 @@ function workNumbers(pace, report, work) {
 /**
  * The read-out of a workspace (the collections, as the CMS's store holds them).
  * @param {object} state
- * @param {{ report?: object }} options  a `workspaceReport` already worked out, to reuse
+ * @param {{ report?: object, layouts?: boolean }} options  a `workspaceReport` already worked out, to reuse;
+ *   `layouts: false` leaves out the other layout's days to 99 (a second pace, most of the time), keeping its node check
  */
-export function ledgerReadout(state = {}, { report = null } = {}) {
+export function ledgerReadout(state = {}, { report = null, layouts = true } = {}) {
     const started = Date.now();
     const r = report || workspaceReport(state);
     const { pace, ledger, findings } = r;
@@ -279,7 +283,7 @@ export function ledgerReadout(state = {}, { report = null } = {}) {
         pace: skills,
         rows,
         stages,
-        layouts: layoutsOf(pace),
+        layouts: layoutsOf(pace, layouts),
         boostBudget: budgetOf(pace),
         checks,
         counts: {
@@ -305,7 +309,9 @@ export function readoutText(out) {
         lines.push(`${s.label} ${fmtMin(s.minutes)} ${fmtMin(s.budgetMinutes)} ${s.entries} (${s.untimed})${heroes}`);
     }
     const l = out.layouts;
-    if (l) {
+    if (l?.skipped) {
+        lines.push('', `Layouts: timed ${l.timed} only (the ${l.other} layout left out); ${l.nodesOff.length} node${l.nodesOff.length === 1 ? '' : 's'} make past the tolerance more in the dense layout (the layout check).`);
+    } else if (l) {
         lines.push('', `Layouts: a camp works ${l.nodes.sparse} nodes (sparse) or ${l.nodes.dense} (dense); timed ${l.timed}. Days to 99 opt sparse | dense:`);
         for (const [skill, x] of Object.entries(l.skills).sort(([a], [b]) => a.localeCompare(b))) {
             lines.push(`${skill} ${x.sparse.opt ?? 'never'} | ${x.dense.opt ?? 'never'}${x.warn ? `  differ ${x.offPct} % (past ±${l.tolerancePct} %)` : ''}`);

@@ -6,6 +6,9 @@ import {
 } from '../../engine/ledgerPace';
 import { tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
 import { calibrationStatus } from '../../engine/calibrationStatus';
+import { useEntityStore } from '../../stores/useEntityStore';
+import { workspaceContent } from '../../stores/useLedgerWatchStore';
+import { runLedgerJob } from '../../engine/ledgerJobsClient';
 
 const sectionHead = 'text-[10px] font-black uppercase tracking-wider text-gray-400';
 const cell = { padding: '4px 8px', fontSize: 11, borderBottom: '1px solid rgba(255,255,255,0.04)', verticalAlign: 'top' };
@@ -182,11 +185,28 @@ export default function LedgerPace({ report, onRefresh, onOpen, focusSkill }) {
 
 /**
  * The two layouts a work site is timed at: the nodes the dense one makes past the tolerance more of
- * (cheap, always shown), and on a click each skill's days to 99 in both (a second pace, so asked for).
+ * (cheap, always shown), and on a click each skill's days to 99 in both (a second pace, worked out in
+ * the ledger's Worker and set beside this pace's own).
  */
 function Layouts({ pace, onOpen }) {
   const [spread, setSpread] = useState(null);
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState(null);
+  const alive = useRef(true);
+  useEffect(() => () => { alive.current = false; }, []);
   const nodes = useMemo(() => pace.layoutRows(), [pace]);
+  const timeOther = async () => {
+    setRunning(true);
+    setError(null);
+    try {
+      const other = await runLedgerJob('layouts', { workspace: workspaceContent(useEntityStore.getState()) });
+      if (alive.current) setSpread(pace.layoutSpread(other));
+    } catch (err) {
+      if (alive.current) setError(err.message);
+    } finally {
+      if (alive.current) setRunning(false);
+    }
+  };
   const n = pace.settings.layouts;
   const tol = pace.settings.tolerancePct;
   const days = (d) => (Number.isFinite(d) ? `${Math.round(d * 10) / 10} d` : 'never');
@@ -207,14 +227,16 @@ function Layouts({ pace, onOpen }) {
           ))}
         </ul>
       )}
+      {error && <p className="text-[11px]" style={{ color: 'var(--color-error)' }}>{error}</p>}
       {!spread ? (
         <button
-          onClick={() => setSpread(pace.layoutSpread())}
+          onClick={timeOther}
+          disabled={running}
           className="px-3 py-1.5 rounded-lg text-xs font-bold"
-          style={{ background: 'transparent', color: 'var(--color-text-muted)', border: '1px solid var(--color-border-subtle)', cursor: 'pointer' }}
+          style={{ background: 'transparent', color: 'var(--color-text-muted)', border: '1px solid var(--color-border-subtle)', cursor: running ? 'wait' : 'pointer' }}
           data-layout-spread-button
         >
-          Time the {spread?.other ?? (pace.settings.layout === 'sparse' ? 'dense' : 'sparse')} layout too
+          {running ? 'Timing the other layout…' : `Time the ${pace.settings.layout === 'sparse' ? 'dense' : 'sparse'} layout too`}
         </button>
       ) : (
         <table className="w-full" style={{ borderCollapse: 'collapse' }} data-layout-spread>
