@@ -4,11 +4,12 @@ import { runGate } from './packGate.js';
 import { workspaceBalance } from './ledgerBalance.js';
 
 /**
- * The ledger's slow jobs (the whole report takes about a third of a second on today's content),
- * run in the ledger's Web Worker (`ledgerWorker.js`), or here directly where there is no Worker.
+ * The ledger's slow jobs (a whole report takes many seconds on today's content, nearly all of it the
+ * pace's level tracks), run in the ledger's Web Worker (`ledgerWorker.js`), or here directly where
+ * there is no Worker.
  * - `snapshot` `{ workspace }`: the ledger's snapshot of a workspace (`ledgerCompare.js`)
- * - `gate` `{ workspace, pack }`: the agent gate (`packGate.js`)
- * - `balance` `{ workspace }`: the balancing preview (`ledgerBalance.js`), several seconds
+ * - `gate` `{ workspace, pack }`: the agent gate (`packGate.js`), two reports
+ * - `balance` `{ workspace }`: the balancing preview (`ledgerBalance.js`), a pace for every trial
  */
 export function workspaceSnapshot(workspace) {
     return snapshotOf(workspaceReport(workspace));
