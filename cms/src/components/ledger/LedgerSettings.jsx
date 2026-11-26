@@ -91,6 +91,20 @@ export default function LedgerSettings() {
         </div>
       </Card>
 
+      <Card title="Tiers" help="The level each tier opens at: the ladder (iron 20, silver 30, mythril 40, gold 50, adamantine 60, darkmetal 80), copper in two stages. A world place whose main material is planned for a later tier than its ring asks this level in its line's skill to settle, where the ring's price asks less.">
+        <div className="flex flex-wrap items-center gap-3 text-[11px]" style={{ color: 'var(--color-text-secondary)' }} data-tier-levels>
+          {settings.tierLevels.map((p, i) => (
+            <span key={p.tier} className="flex items-center gap-1">
+              {tierLabel(p.tier)}:
+              <NumberInput
+                value={p.level} min={1} whole width={56} label={`Opening level of ${tierLabel(p.tier)}`}
+                onCommit={(v) => save({ tierLevels: settings.tierLevels.map((q, j) => (j === i ? { ...q, level: v } : q)) })}
+              />
+            </span>
+          ))}
+        </div>
+      </Card>
+
       <Card title="Target player" help="The player the budgets assume: the game runs in the background and they check in now and then.">
         <div className="flex flex-wrap items-center gap-2 text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
           Checks in every

@@ -1,12 +1,13 @@
 // the progression ledger's settings: stage budgets, the tolerance, the target player, the pace curve
 
-import { PLAN_TIERS, tierBudgetMs, tierOrNull } from '../../../../src/systems/progression/ledger/plan.js';
+import { PLAN_TIERS, PLAN_TIER_LEVELS, tierBudgetMs, tierOrNull, tierLevelsOf } from '../../../../src/systems/progression/ledger/plan.js';
 
 /**
  * What the owner sets once for the whole ledger, kept with the plan in `cms/plan/plan.json`:
  *
  *     {
  *       stages: [{ tier, budgetMinutes }],          // time from a new game to the end of each stage
+ *       tierLevels: [{ tier, level }],               // the level each tier opens at (the ladder)
  *       tolerancePct: 25,                            // a stage is red beyond this, either way
  *       player: { checkInMinMinutes, checkInMaxMinutes, overnightHours },
  *       paceCurve: [{ level, minutesPerLevel }],     // the target time one level takes, at a few levels
@@ -85,6 +86,7 @@ const DEFAULT_COIN_CURVE = [{ tier: 0, minutes: 10 }];
 
 export const DEFAULT_LEDGER_SETTINGS = Object.freeze({
     stages: DEFAULT_STAGES,
+    tierLevels: PLAN_TIER_LEVELS,
     tolerancePct: 25,
     player: { checkInMinMinutes: 30, checkInMaxMinutes: 60, overnightHours: 8 },
     paceCurve: DEFAULT_PACE_CURVE,
@@ -146,6 +148,7 @@ export function settingsOf(raw) {
     return {
         ...src,
         stages,
+        tierLevels: tierLevelsOf(src.tierLevels),
         tolerancePct: Number.isFinite(Number(src.tolerancePct)) && Number(src.tolerancePct) >= 0 ? Number(src.tolerancePct) : d.tolerancePct,
         player: {
             ...player,

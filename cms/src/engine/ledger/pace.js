@@ -104,13 +104,22 @@ export const PACE_TEXT = Object.freeze({
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 /**
- * The stage a ring of the world map opens after: ring n opens when stage n − 1 ends, so its Guild
- * Hall star is priced to be lit then.
- * ⚠️ The ledger reads ring n as tier n (`world.js`); once the ladder puts several tiers in one ring
- * (T-294), this is the one place that changes: a ring opens after the last tier of the ring before.
+ * The stage a ring of the world map opens after, so its Guild Hall star is priced to be lit then:
+ * the ring before's last tier. On the ladder a ring holds several rungs (ring 2 iron and silver), so
+ * that is the tier before the ring's own first rung (`ringRungs`, the engine's `worldRules`); a ring
+ * whose tables list nothing (a wild ring) opens after the last rung of the ring before. With no
+ * rungs (`ringRungs` absent, or every ring one rung), ring n opens when stage n − 1 ends.
+ * ⚠️ The ring's first rung rather than the last of the ring before, so an origin planned later than
+ * the ring that lists it (a tier-3 bush in ring 1) leaves the next ring where it is.
+ *
+ * @param {number} ring
+ * @param {Map<number, {first, last}>} [ringRungs]  the ledger world's
  */
-export function ringBudgetTier(ring) {
-    return ring - 1;
+export function ringBudgetTier(ring, ringRungs = null) {
+    const own = ringRungs?.get(ring);
+    if (own) return own.first - 1;
+    const before = ringRungs?.get(ring - 1);
+    return before ? before.last : ring - 1;
 }
 const list = (v) => (Array.isArray(v) ? v.filter(Boolean) : []);
 const sum = (xs) => xs.reduce((a, b) => a + b, 0);
@@ -136,6 +145,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     const settings = settingsOf(rawSettings);
     const rates = book || buildRateBook(content);
     const reach = ledger.reach;
+    const budgetTierOf = (ring) => ringBudgetTier(ring, ledger.world.ringRungs);
     const tierOfKey = (key) => {
         const t = reach.get(key)?.tier;
         return Number.isInteger(t) ? t : null;
@@ -716,7 +726,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         case HOW.SETTLE: {
             // A ring's coins are earned with what the rings before it give: settling is the way in.
             if (!(rule.coins > 0)) return done(0);
-            const g = gatherHours([], profile, Math.min(cap, ringBudgetTier(rule.floor)), rule.coins, start);
+            const g = gatherHours([], profile, Math.min(cap, budgetTierOf(rule.ring ?? rule.floor)), rule.coins, start);
             return done(g.hours, priceWhy(g), { gather: g });
         }
         case HOW.SPAWN: {
@@ -847,7 +857,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     }
     /** Hours from a new game at which the stage ring `ring` opens after ends (its budget), or null with none set. */
     const ringBudgetHours = (ring) => {
-        const stage = settings.stages.find(s => s.tier === ringBudgetTier(ring));
+        const stage = settings.stages.find(s => s.tier === budgetTierOf(ring));
         return stage ? stage.budgetMinutes / 60 : null;
     };
 
@@ -1006,7 +1016,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const star = stars.length
                 ? `its Guild Hall star (${stars.map(hallName).join(' or ')}) is lit ${PACE_TEXT.hours(readyOf(starKey(stars[0]), PROFILE.TYPICAL).hours)} in`
                 : 'no Guild Hall star opens it';
-            add('ring-open', `ring:${ring}`, `Ring ${ring} can first be settled ${PACE_TEXT.hours(opens.hours)} into a new game at Typical (${nameOf(opens.key)}), ${Math.round(early * 100)} % before ${tierLabel(ringBudgetTier(ring))} ends at ${formatMinutes(budget * 60)} (±${settings.tolerancePct} %): ${star}.`, {
+            add('ring-open', `ring:${ring}`, `Ring ${ring} can first be settled ${PACE_TEXT.hours(opens.hours)} into a new game at Typical (${nameOf(opens.key)}), ${Math.round(early * 100)} % before ${tierLabel(budgetTierOf(ring))} ends at ${formatMinutes(budget * 60)} (±${settings.tolerancePct} %): ${star}.`, {
                 name: `Ring ${ring}`
             });
         }
@@ -1081,12 +1091,13 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             if (!rule || !(rule.coins > 0) || !Number.isInteger(at.tier) || key.startsWith('ring:')) continue;
             if (isEntry(key) && !counted(key)) continue;
             const settle = rule.how === HOW.SETTLE;
-            const id = settle ? `ring:${rule.floor}` : key;
+            const ring = rule.ring ?? rule.floor;
+            const id = settle ? `ring:${ring}` : key;
             if (seen.has(id)) continue;
             seen.add(id);
-            const cap = settle ? Math.min(at.tier, ringBudgetTier(rule.floor)) : at.tier;
+            const cap = settle ? Math.min(at.tier, budgetTierOf(ring)) : at.tier;
             if (coinSourcesOf(PROFILE.TYPICAL, cap).length) continue;
-            out.push({ key: id, name: settle ? `Ring ${rule.floor}` : nameOf(key), coins: rule.coins, cap });
+            out.push({ key: id, name: settle ? `Ring ${ring}` : nameOf(key), coins: rule.coins, cap });
         }
         return out;
     }
@@ -1155,7 +1166,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             for (let ring = 1; ring <= STRICT_RINGS; ring++) {
                 const first = ringOpensAt(ring).key;
                 const start = first ? readyOf(first, PROFILE.TYPICAL).start : null;
-                rows.push(propose({ kind: 'ring', id: `ring:${ring}`, name: `Ring ${ring}`, ring, coins: Number(tables.prices?.[ring]?.coins) || 0 }, PROFILE.TYPICAL, ring, ringBudgetTier(ring), start));
+                const tier = budgetTierOf(ring) + 1;
+                rows.push(propose({ kind: 'ring', id: `ring:${ring}`, name: `Ring ${ring}`, ring, coins: Number(tables.prices?.[ring]?.coins) || 0 }, PROFILE.TYPICAL, tier, budgetTierOf(ring), start));
             }
         }
         coinPriceMemo = rows;
@@ -1493,7 +1505,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
 
     /** The material a ring star is priced in and when its gathering can start: `{ material, start, at }` or `{ why }`. */
     function ringMaterial(track, ring) {
-        const tier = track.tier(1) ?? ringBudgetTier(ring);
+        const tier = track.tier(1) ?? budgetTierOf(ring);
         const cap = Math.min(maxTier, tier);
         const material = materialFor(track.star, tier, cap);
         if (!material) return { why: 'no gathered material at its tier' };
@@ -1538,7 +1550,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const before = (ledger.world.ringStars?.get(ring - 1) || []).map(id => profiles.hallTrack(id)).find(Boolean);
             const growth = Number(ledger.world.worldTables?.wild?.priceGrowth) || 0;
             if (ring <= STRICT_RINGS || !before || !(growth > 0)) {
-                return { why: `no budget is set for ${tierLabel(ringBudgetTier(ring))}, the stage its ring opens after` };
+                return { why: `no budget is set for ${tierLabel(budgetTierOf(ring))}, the stage its ring opens after` };
             }
             const prev = proposeRingPrice(before, ring - 1);
             if (!prev.itemId) return { why: `the star of the ring before has no proposal (${prev.why})` };
@@ -1551,7 +1563,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const name = nameOf(itemKey(material.itemId));
         if (hours === null) {
             hours = budgetHours - start;
-            if (!(hours > 0)) return { why: `${name}, its material, is first had ${PACE_TEXT.hours(start)} in, after ${tierLabel(ringBudgetTier(ring))} ends` };
+            if (!(hours > 0)) return { why: `${name}, its material, is first had ${PACE_TEXT.hours(start)} in, after ${tierLabel(budgetTierOf(ring))} ends` };
         }
         const perHour = supplyOf(material.itemId, PROFILE.TYPICAL, at).perHour;
         if (!(perHour > 0)) return { why: `${name} is not gathered at Typical by then` };

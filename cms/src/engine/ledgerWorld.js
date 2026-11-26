@@ -5,7 +5,7 @@ import {
 } from './ledger/world.js';
 import { planPlaceOf } from '../../../src/systems/progression/ledger/plan.js';
 import { CHECKS } from './ledger/checks.js';
-import { formatMinutes } from './ledger/settings.js';
+import { formatMinutes, settingsOf } from './ledger/settings.js';
 import { usableTables } from './worldTables.js';
 
 /**
@@ -54,7 +54,7 @@ const worldContent = (state) => ({
  * built from the same state; `baseTables`: other tables to generate from (the tests' fixtures).
  */
 export function workspaceWorldContext(state, ledger = null, baseTables = baseWorldTables(state)) {
-    return worldContext(worldContent(state), { baseTables: baseTables ?? baseWorldTables(state), ledger });
+    return worldContext(worldContent(state), { baseTables: baseTables ?? baseWorldTables(state), ledger, tierLevels: settingsOf(state?.planSettings).tierLevels });
 }
 
 /** The seed-free check F (wild origins no wedge places) as findings for the ledger's report. */

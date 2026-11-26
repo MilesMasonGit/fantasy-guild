@@ -152,7 +152,7 @@ export function applyProposals(content, proposals) {
 // ── the pace and its summary ─────────────────────────────────────────────────────────────────────
 
 function evaluate(content, settings) {
-    const ledger = buildLedger(content, { steadyPerDay: settings.steadyFindsPerDay });
+    const ledger = buildLedger(content, { steadyPerDay: settings.steadyFindsPerDay, tierLevels: settings.tierLevels });
     return { content, ledger, pace: buildPace(content, ledger, settings) };
 }
 
@@ -393,7 +393,7 @@ function boostPass(state) {
             last = signature;
             const trial = structuredClone(state.content);
             for (const v of next) setPath(recordOf(trial, v.kind, v.id), v.path, v.to);
-            const p = buildPace(trial, buildLedger(trial, { steadyPerDay: state.settings.steadyFindsPerDay }), state.settings);
+            const p = buildPace(trial, buildLedger(trial, { steadyPerDay: state.settings.steadyFindsPerDay, tierLevels: state.settings.tierLevels }), state.settings);
             gain = Math.max(0, ...g.works.map(w => p.boostGain(w.work.target, g.kind, PROFILE.MAXED, w.tier) ?? 0));
             if (!best || gain < best.gain) best = { gain, next };
         }

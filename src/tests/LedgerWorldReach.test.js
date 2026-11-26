@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { buildLedger, tokenKey, itemKey, wedgeKey, ringKey, HOW } from '../systems/progression/ledger/engine.js';
+import { buildLedger, tokenKey, itemKey, wedgeKey, rungWedgeKey, ringKey, HOW } from '../systems/progression/ledger/engine.js';
 import { buildPace, PROFILE } from '../../cms/src/engine/ledger/pace.js';
 import { worldPlan } from '../../cms/src/engine/ledger/world.js';
 import { normaliseWorldTables } from '../config/worldTablesShape.js';
@@ -53,8 +53,11 @@ describe('origins at their table ring', () => {
     it('lays the plan\'s wedge and ring on the tables, as the World plan does, through the CMS', () => {
         const ws = worldWorkspace();
         ws.tokens.token_ores_3.plan = { wedge: 'trees', ring: 1 };
+        // Its goods are planned for tier 3: in ring 1 it stands on the ring's place of that rung (levels by rung).
         const l = workspaceLedger({ ...ws, world: WORLD_FIXTURE_RAW });
-        expect(l.reachOf(tokenKey('token_ores_3'))).toMatchObject({ tier: 1, via: wedgeKey('trees', 1) });
+        expect(l.reachOf(tokenKey('token_ores_3'))).toMatchObject({ tier: 3, via: rungWedgeKey('trees', 1, 3) });
+        ws.items.item_ores_3.plan = { tier: 1 };
+        expect(workspaceLedger({ ...ws, world: WORLD_FIXTURE_RAW }).reachOf(tokenKey('token_ores_3'))).toMatchObject({ tier: 1, via: wedgeKey('trees', 1) });
         expect(reportContent({ ...ws, world: WORLD_FIXTURE_RAW }).worldTables.lines.find(l2 => l2.id === 'trees').origins[1].map(o => o.id)).toContain('token_ores_3');
     });
 
