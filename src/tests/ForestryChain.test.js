@@ -36,15 +36,15 @@ describe('The Forestry chain in shipped data (7.0, 7.1)', () => {
         expect(items.item_oak_seedling).toMatchObject({ id: 'item_oak_seedling', name: 'Oak Seedling' });
     });
 
-    it('the Oak Forest is a spawner of whole Oak Trees within its reach that pays one Oak Seedling per spawn', () => {
+    it('the Oak Forest is a spawner of whole Oak Trees within its reach, for free, and speeds no growth', () => {
         expect(forest.spawner).toEqual({
             spawns: [{ typeId: 'token_oak_tree', weight: 1 }],
             allowance: 5,
             intervalMs: 20000,
-            upkeep: [{ itemId: 'item_oak_seedling', quantity: 1 }],
             withinReach: true,
         });
         expect(forest.tokenType).toBe('spawner');
+        expect(forest.effects ?? []).toEqual([]);
     });
 
     it('the Oak Forest is no longer worked directly', () => {
@@ -59,12 +59,11 @@ describe('The Forestry chain in shipped data (7.0, 7.1)', () => {
         expect(build.inputs).toEqual([{ itemId: 'item_oak_seedling', quantity: 3 }]);
     });
 
-    it('a felled Oak Tree regrows into an Oak Stump, which grows back into its Tree in 300 s with a Forest in reach', () => {
+    it('a felled Oak Tree regrows into an Oak Stump, which grows back into its Tree in 300 s with a Forest in reach, for free', () => {
         expect(tree.staysPut).toBe(true);
         expect(tree.respawn).toEqual({ mode: 'regrow', into: 'token_oak_stump' });
         expect(stump.grows).toEqual({
             into: 'token_oak_tree', afterMs: 300000, needsNearby: ['token_oak_forest'],
-            cost: [{ itemId: 'item_oak_seedling', quantity: 1 }],
         });
     });
 
