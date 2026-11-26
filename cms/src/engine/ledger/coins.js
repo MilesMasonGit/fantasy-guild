@@ -16,9 +16,10 @@ import { coinsOf, shopCoinsOf, enemyCoinDropOf, stealCoinsOf } from '../../../..
  *   ⚠️ Until then Recalculate leaves `coinWorth` alone: content with no coins round-trips through
  *   Recalculate and Sync byte for byte, and the coin pack that brings coin costs brings the sale
  *   prices with it.
- * - **A proposed coin cost** is the coins one hero earns in the coin curve's minutes at the price's
- *   stage (`settings.coinCurve`, `pace.coinPrices`), times its rank for a Guild Hall rank, rounded
- *   down to two figures.
+ * - **A proposed coin cost** is the coins one hero earns in its coin curve's minutes at the price's
+ *   stage, rounded down to two figures (`pace.coinPrices`): the everyday curve for a Shop Token or a
+ *   Foundation (`settings.coinCurve`), the big one for settling a place or a Guild Hall star
+ *   (`settings.bigCoinCurve`), with no multiplier for a star's rank (BALANCE_RULES section 7).
  *
  * Pure.
  */

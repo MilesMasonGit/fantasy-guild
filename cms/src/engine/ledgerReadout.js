@@ -49,6 +49,7 @@ export const NOTES = Object.freeze([
     'Arrivals (arriveOpt, arriveTyp) are minutes from a new game along the ledger\'s path; null when never reached, and for Planned entries (the ledger times nothing Planned).',
     'The solver\'s curve is its own dials; curve here is the CMS pace rule (Ledger settings) at that level, and the stages\' budgets follow from it.',
     'boostBudget lists the budget\'s cells by tier and, under over, every total a profile holds over its cell (the boost-budget check).',
+    'coins holds the two coin curves (BALANCE_RULES section 7, Ledger settings, minutes of one hero\'s selling from a stage on: everyday for a Shop Token or a Foundation, one level\'s time; big for settling a place or a Guild Hall star, half the payback curve) and every price that asks coins with its curve, its minutes there, the income it is earned at (perHour) and the coins the curve proposes; off marks one beyond the tolerance from it.',
 ]);
 
 const minutes = (hours) => (Number.isFinite(hours) ? round(hours * 60, 3) : null);
@@ -219,6 +220,24 @@ function workNumbers(pace, report, work) {
 }
 
 /**
+ * The two coin curves (BALANCE_RULES section 7) and every price that asks coins on its curve, with
+ * what the curve proposes and whether it is beyond the tolerance from it (as the balancing preview
+ * reads it). No price asking coins: no coin income is worked out.
+ */
+function coinsOf(pace) {
+    const curves = { everyday: pace.settings.coinCurve.map((p) => ({ ...p })), big: pace.settings.bigCoinCurve.map((p) => ({ ...p })) };
+    if (!pace.asksCoins()) return { curves, prices: [] };
+    const tol = pace.settings.tolerancePct / 100;
+    const prices = pace.coinPrices().filter((p) => p.coins > 0).map((p) => ({
+        kind: p.kind, id: p.id, name: p.name, ...(p.rank ? { rank: p.rank } : {}), ...(p.ring ? { ring: p.ring } : {}),
+        tier: p.tier, curve: p.curve, minutes: p.minutes, perHour: round(p.perHour, 1), coins: p.coins, proposed: p.proposed,
+        off: p.proposed > 0 && Math.abs(p.coins / p.proposed - 1) > tol + 1e-9,
+        ...(p.why ? { why: p.why } : {}),
+    }));
+    return { curves, prices };
+}
+
+/**
  * The read-out of a workspace (the collections, as the CMS's store holds them).
  * @param {object} state
  * @param {{ report?: object, layouts?: boolean }} options  a `workspaceReport` already worked out, to reuse;
@@ -305,6 +324,7 @@ export function ledgerReadout(state = {}, { report = null, layouts = true } = {}
         stages,
         layouts: layoutsOf(pace, layouts),
         boostBudget: budgetOf(pace),
+        coins: coinsOf(pace),
         checks,
         counts: {
             skills: Object.keys(skills).length, rows: rows.length, planned: rows.filter((x) => x.planned).length,
@@ -344,6 +364,18 @@ export function readoutText(out) {
     }
     const over = out.boostBudget?.over || [];
     if (over.length) lines.push('', `Boost budget: ${over.length} total${over.length === 1 ? '' : 's'} over a cell (${[...new Set(over.map((o) => `${o.kind} at ${o.profile}`))].join(', ')}).`);
+    if (out.coins) {
+        const curve = (points) => points.map((p) => `${tierLabel(p.tier)} ${p.minutes}`).join(', ') || 'no points';
+        lines.push('', `Coin curves, minutes of one hero's selling from a stage on: everyday ${curve(out.coins.curves.everyday)}; big ${curve(out.coins.curves.big)}.`);
+        const asking = out.coins.prices;
+        if (!asking.length) {
+            lines.push('Coin prices: none ask coins.');
+        } else {
+            const kinds = ['shop', 'hall', 'ring'].map((k) => [k, asking.filter((p) => p.kind === k).length]).filter(([, n]) => n).map(([k, n]) => `${k} ${n}`).join(', ');
+            const off = asking.filter((p) => p.off).length;
+            lines.push(`Coin prices: ${asking.length} ask${asking.length === 1 ? 's' : ''} coins (${kinds}); ${off} beyond the tolerance from ${off === 1 ? 'its' : 'their'} curve's proposal.`);
+        }
+    }
     const sev = Object.entries(out.counts.bySeverity).map(([k, n]) => `${n} ${k}`).join(', ') || 'none';
     lines.push('', `${out.counts.rows} entries (${out.counts.planned} Planned, marked), ${out.counts.checks} checks: ${sev}.`);
     return lines;

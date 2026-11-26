@@ -3,7 +3,7 @@
 import { buildRateBook, LIFECYCLE, WORK } from './rates.js';
 import { buildProfiles, targetKey, PROFILE, PROFILES, PROFILE_TEXT, BOOST_KIND, BOOST_KIND_TEXT, boostKindOf, BEFORE_HALL, pickKindOf, RARE_FIND_KINDS } from './profiles.js';
 import { starAddsRate } from './hall.js';
-import { settingsOf, minutesPerLevelAt, minutesToReach, formatMinutes, levelAtMinutes, coinMinutesAt, boostBudgetAt, BOOST_BUDGET_KINDS, heroesAt, chainHeroesAt } from './settings.js';
+import { settingsOf, minutesPerLevelAt, minutesToReach, formatMinutes, levelAtMinutes, coinMinutesAt, COIN_CURVE, boostBudgetAt, BOOST_BUDGET_KINDS, heroesAt, chainHeroesAt } from './settings.js';
 import { ledgerCoinWorth } from './coins.js';
 import { HOW, COMBAT, LUCK_BELOW, parseKey, itemKey, tokenKey, recipeKey, wedgeKey, starKey, spotPoolKey, LEDGER_ENGINE_TEXT } from '../../../../src/systems/progression/ledger/engine.js';
 import { spotOf } from '../../../../src/config/registries/fishingSpots.js';
@@ -47,8 +47,8 @@ import { shopCoinsOf, enemyCoinDropOf } from '../../../../src/config/registries/
  * - **Coins** (brief 870 C3): the guild's coin supply at a stage, the best one hero earns
  *   ({@link COINS}: selling what a work makes at its coin worth less what it spends, a kill's Coin
  *   drop, a Hideout's thefts); a price that asks coins (a Shop Token, a Guild Hall rank, settling a
- *   ring) gathers them beside its items, so its step waits for them; a coin cost proposed from the
- *   coin curve (`coinPrices`).
+ *   ring) gathers them beside its items, so its step waits for them; a coin cost proposed from its
+ *   coin curve, everyday or big by kind of purchase (`coinPrices`).
  * - **The curve's player is Maxed** ({@link TARGET}, owner 2026-11-07: the curve describes a well-
  *   optimized player): walls, long waits, the stages and the ring stars are read at Maxed; Typical
  *   and Bare are held to their bounds against the curve.
@@ -119,7 +119,7 @@ export const PACE_TEXT = Object.freeze({
     noCoins: 'nothing earns its coins by then',
     coinSupply: (name, coins, stage) => `${name} asks ${coins} ${coins === 1 ? 'coin' : 'coins'}, but nothing the guild has by ${stage} earns coins: give what its work makes a coin worth (a value), an enemy a Coin drop or a steal table coins.`,
     theft: (enemy, hideout) => `thefts from ${enemy} at ${hideout}`,
-    noCurve: (stage) => `no coin curve point at or before ${stage}`,
+    noCurve: (curve, stage) => `no ${curve} coin curve point at or before ${stage}`,
     noIncome: (stage) => `nothing the guild has by ${stage} earns coins`,
     notReached: 'never reached'
 });
@@ -1815,49 +1815,50 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
 
     let coinPriceMemo = null;
     /**
-     * A coin cost for every price that may ask coins, proposed from the coin curve: the coins one hero
-     * earns an hour when it is paid ({@link coinSupplyOf}: the best way whose level the pace curve has
-     * reached by then) times the curve's minutes at its stage (`settings.coinMinutesAt`), times its
-     * rank for a Guild Hall rank, rounded down to two figures. Further out costs more twice over: later
-     * on a hero earns more an hour, and the curve may ask more minutes.
-     * - A Shop Token: at its stage (the owner's tier, else when first reached), paid when its step may
-     *   start at Typical (as its stage begins when no path times it).
-     * - A Guild Hall rank: at its tier (else its price's), earned at Typical before the Hall as its
-     *   items are, as its stage begins.
-     * - Settling a ring-n cell: at stage n, earned with what the stage before gives (`ringBudgetTier`),
-     *   when its first cell's step may start.
+     * A coin cost for every price that may ask coins, proposed from its coin curve (BALANCE_RULES
+     * section 7): the coins one hero earns an hour when it is paid ({@link coinSupplyOf}: the best way
+     * whose level the pace curve has reached by then) times its curve's minutes at its stage
+     * (`settings.coinMinutesAt`), rounded down to two figures. Further out costs more twice over:
+     * later on a hero earns more an hour, and the curve asks more minutes.
+     * - A Shop Token (a Foundation is one), on the everyday curve: at its stage (the owner's tier,
+     *   else when first reached), paid when its step may start at Typical (as its stage begins when no
+     *   path times it).
+     * - A Guild Hall rank, on the big curve: at its tier (else its price's), earned at Typical before
+     *   the Hall as its items are, as its stage begins. Its rank adds no multiplier.
+     * - Settling a ring-n cell, on the big curve: at stage n, earned with what the stage before gives
+     *   (`ringBudgetTier`), when its first cell's step may start.
      * A stage past the last the pace knows is earned at the last.
      *
-     * @returns {{ kind: 'shop'|'hall'|'ring', id, name, rank?, ring?, coins, tier, cap, at, minutes, perHour,
-     *   source, proposed: number|null, why: string|null }[]} `coins` what it asks now; `at` the hours
-     *   from a new game it is paid at; `proposed` null with `why` when the curve has no point there or
-     *   nothing earns coins by then
+     * @returns {{ kind: 'shop'|'hall'|'ring', id, name, rank?, ring?, coins, curve: 'everyday'|'big', tier, cap, at,
+     *   minutes, perHour, source, proposed: number|null, why: string|null }[]} `coins` what it asks now;
+     *   `at` the hours from a new game it is paid at; `proposed` null with `why` when its curve has no
+     *   point there or nothing earns coins by then
      */
     function coinPrices() {
         if (coinPriceMemo) return coinPriceMemo;
         const rows = [];
-        const propose = (base, profile, tier, earnAt, paidAt, rank = 1) => {
-            if (tier === null) return { ...base, tier: null, cap: null, at: null, minutes: null, perHour: 0, source: null, proposed: null, why: PACE_TEXT.notReached };
+        const propose = (base, curve, profile, tier, earnAt, paidAt) => {
+            if (tier === null) return { ...base, curve, tier: null, cap: null, at: null, minutes: null, perHour: 0, source: null, proposed: null, why: PACE_TEXT.notReached };
             const cap = Math.min(maxTier, earnAt);
             const at = Number.isFinite(paidAt) ? paidAt : stageStartHours(earnAt);
-            const minutes = coinMinutesAt(settings, tier);
+            const minutes = coinMinutesAt(settings, tier, curve);
             const s = coinSupplyOf(profile, cap, at);
-            const out = { ...base, tier, cap, at, minutes, perHour: s.perHour, source: coinSourceName(s) };
-            if (minutes === null) return { ...out, proposed: null, why: PACE_TEXT.noCurve(tierLabel(tier)) };
+            const out = { ...base, curve, tier, cap, at, minutes, perHour: s.perHour, source: coinSourceName(s) };
+            if (minutes === null) return { ...out, proposed: null, why: PACE_TEXT.noCurve(curve, tierLabel(tier)) };
             if (!(s.perHour > 0)) return { ...out, proposed: null, why: PACE_TEXT.noIncome(tierLabel(cap)) };
-            return { ...out, proposed: Math.max(1, roundDown(s.perHour * minutes / 60 * rank)), why: null };
+            return { ...out, proposed: Math.max(1, roundDown(s.perHour * minutes / 60)), why: null };
         };
         for (const [id, def] of Object.entries(ledger.world.tokens)) {
             if (!isObject(def.shop) || !counted(tokenKey(id))) continue;
             const tier = effTier(tokenKey(id));
             const start = readyOf(tokenKey(id), PROFILE.TYPICAL).start;
-            rows.push(propose({ kind: 'shop', id, name: nameOf(tokenKey(id)), coins: shopCoinsOf(def) }, PROFILE.TYPICAL, tier, tier, start));
+            rows.push(propose({ kind: 'shop', id, name: nameOf(tokenKey(id)), coins: shopCoinsOf(def) }, COIN_CURVE.EVERYDAY, PROFILE.TYPICAL, tier, tier, start));
         }
         for (const track of profiles.hallTracks) {
             if (track.builtIn) continue;
             for (let rank = 1; rank <= track.maxRank; rank++) {
                 const tier = track.tier(rank) ?? priceTierOf(track.price(rank));
-                rows.push(propose({ kind: 'hall', id: track.id, name: track.name, rank, coins: track.coins(rank) }, BEFORE_HALL, tier, tier, null, rank));
+                rows.push(propose({ kind: 'hall', id: track.id, name: track.name, rank, coins: track.coins(rank) }, COIN_CURVE.BIG, BEFORE_HALL, tier, tier, null));
             }
         }
         const tables = ledger.world.worldTables;
@@ -1866,7 +1867,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 const first = ringOpensAt(ring).key;
                 const start = first ? readyOf(first, PROFILE.TYPICAL).start : null;
                 const tier = budgetTierOf(ring) + 1;
-                rows.push(propose({ kind: 'ring', id: `ring:${ring}`, name: `Ring ${ring}`, ring, coins: Number(tables.prices?.[ring]?.coins) || 0 }, PROFILE.TYPICAL, tier, budgetTierOf(ring), start));
+                rows.push(propose({ kind: 'ring', id: `ring:${ring}`, name: `Ring ${ring}`, ring, coins: Number(tables.prices?.[ring]?.coins) || 0 }, COIN_CURVE.BIG, PROFILE.TYPICAL, tier, budgetTierOf(ring), start));
             }
         }
         coinPriceMemo = rows;
