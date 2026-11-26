@@ -10,13 +10,15 @@ import { GUILD_UPGRADES, HALL_NODE } from '../config/guildUpgrades.js';
 import { registerHallSky } from '../config/registries/hallStarRegistry.js';
 import { ledgerContent } from './fixtures/ledgerWorld.js';
 import en from '../i18n/en.json';
+import { getTokenType } from '../config/registries/tokenRegistry.js';
+import { poolForTool } from '../config/registries/catchPools.js';
 
 /**
  * ⭐ The Encyclopedia lists every way the game really pays out an item, with amounts (brief 790 W7):
  * the Guild Hall's star lines and the Wishing Well at each rank, events as the source of their
  * Tokens, every catch pool with its tool and bait, a Token's second row for an item it gives twice,
  * a spawn with no weight never picked, as the engine picks; each source box shows its amount as the
- * card does (`×6`, `×4 · 70% base`).
+ * card does (`×6`, `×2 · 50% base`).
  */
 
 const I = itemKey;
@@ -257,9 +259,15 @@ describe('the shipped content', () => {
         expect(waysIn(book, T('token_copper_comet')).map(w => w.how)).toEqual([EVENT_WAY]);
     });
 
-    it('Trout from the Fish Shoal, ×4 at 70 %', () => {
-        // Every catch pool of a water is a way in: the fixture world's Coast, above (the shipped River is retired).
-        expect(from(I('item_trout'), T('token_fish_shoal')).map(w => [yieldText(w.yields), w.chance])).toEqual([['×4', 0.7]]);
+    it('Trout from the Fish Shoal: a catch, at its share of the pool a rod fishes on the Starter Camp\'s pond', () => {
+        // Every catch pool of a water is a way in (the fixture world's Coast, above); a catch lands one fish, so no amount.
+        const pond = poolForTool(getTokenType('token_fish_shoal'), 'fishing_rod', { water: 'fresh', biomes: ['meadow'] });
+        const share = pond.catches.find(c => c.itemId === 'item_trout').weight / pond.catches.reduce((n, c) => n + c.weight, 0);
+        expect(from(I('item_trout'), T('token_fish_shoal')).map(w => [yieldText(w.yields), w.chance, w.how])).toEqual([[null, share, HOW.CATCH]]);
+    });
+
+    it('Blackberries from the Berry Thicket, ×2 at 50 %', () => {
+        expect(from(I('item_blackberry'), T('token_berry_thicket')).map(w => [yieldText(w.yields), w.chance])).toEqual([['×2', 0.5]]);
     });
 
     it('every new word and hover sentence is in the strings file', () => {
@@ -277,12 +285,12 @@ describe('on the page', () => {
     }));
     const box = (c, key) => c.querySelector(`[data-codex-key="${key}"][data-codex-side="in"]`);
 
-    it('a source box reads its amount, then its odds: "×4 ·" "70% base"', () => {
+    it('a source box reads its amount, then its odds: "×2 ·" "50% base"', () => {
         const book = encyclopedia();
-        const { container } = view(book, I('item_trout'));
-        const shoal = box(container, T('token_fish_shoal'));
-        expect(shoal.querySelector('[data-codex-gives]').textContent).toBe('×4 ·');
-        expect(shoal.querySelector('[data-codex-chance]').textContent).toBe('70% base');
+        const { container } = view(book, I('item_blackberry'));
+        const thicket = box(container, T('token_berry_thicket'));
+        expect(thicket.querySelector('[data-codex-gives]').textContent).toBe('×2 ·');
+        expect(thicket.querySelector('[data-codex-chance]').textContent).toBe('50% base');
     });
 
     it('a sure way reads its amount alone; the Guild Hall its star\'s ranks', () => {

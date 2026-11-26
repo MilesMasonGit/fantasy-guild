@@ -220,8 +220,9 @@ describe('spots arrive on their own', () => {
         const clock = GameState.state.board.spotClocks.fs_spot;
         expect(clock.ms).toBe(10000);
         expect(clock.waitMs).toBeGreaterThanOrEqual(30000);
-        // The rare kind's clock runs beside it on this warm sea.
-        expect(Object.keys(GameState.state.board.spotClocks)).toEqual(['fs_spot', 'fs_bed']);
+        // The rare kind's clock runs beside it on this warm sea, and the kinds with no rate keep none.
+        // Every kind that fits the place keeps one, so the shipped spot kinds' clocks run here too.
+        expect(Object.keys(GameState.state.board.spotClocks).filter(k => k.startsWith('fs_'))).toEqual(['fs_spot', 'fs_bed']);
         expect(JSON.parse(JSON.stringify(GameState.state.board)).spotClocks).toEqual(GameState.state.board.spotClocks);
     });
 });

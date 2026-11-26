@@ -100,7 +100,7 @@ describe('⭐ the Fishing spot block', () => {
 
     it('survives Recalculate and Sync as authored', () => {
         const spot = { water: ['sea'], biomes: ['coast'], everyMinutes: 60, most: 1, leaveChance: 3, unworkedMinutes: 45 };
-        store().updateToken(SPOT_ID, { spot, standsOn: ['water'], catchPools: [{ tool: 'fishing_rod', bait: 'item_shrimp_bait', catches: [{ itemId: 'item_raw_shrimp', weight: 1 }] }] });
+        store().updateToken(SPOT_ID, { spot, standsOn: ['water'], catchPools: [{ tool: 'fishing_rod', bait: 'item_bait', catches: [{ itemId: 'item_raw_shrimp', weight: 1 }] }] });
         const synced = syncPayload()['tokens.json'][SPOT_ID];
         expect(synced.spot).toEqual(spot);
         expect(synced.standsOn).toEqual(['water']);
@@ -131,7 +131,7 @@ describe('⭐ the Draws fishing spots block (any Token: the spot building)', () 
 
 describe('⭐ a catch pool names where it holds', () => {
     it('water and biome chips write `water` and `biomes`; none ticked drops each key', () => {
-        store().updateToken(SPOT_ID, { catchPools: [{ tool: 'fishing_rod', bait: 'item_shrimp_bait', catches: [{ itemId: 'item_raw_shrimp', weight: 1 }] }] });
+        store().updateToken(SPOT_ID, { catchPools: [{ tool: 'fishing_rod', bait: 'item_bait', catches: [{ itemId: 'item_raw_shrimp', weight: 1 }] }] });
         const container = openEditor(SPOT_ID);
         fireEvent.click(q(container, '[data-pool-water="sea"]'));
         fireEvent.click(q(container, '[data-pool-biome="coast"]'));
@@ -153,15 +153,15 @@ describe('⭐ the audit', () => {
     });
 
     it('names every retired fixed water still in the data, for deletion', () => {
-        const named = new Set(spotFindings({ tokens: store().tokens })
-            .filter(f => /retired/.test(f.message)).map(f => f.entityId));
-        for (const id of ['token_coast', 'token_river', 'token_lake', 'token_bog_pool']) {
-            if (store().tokens[id]) expect(named.has(id), id).toBe(true);
-        }
-        const issues = auditConnectivity({ items: store().items, tokens: store().tokens, recipes: [] });
-        if (store().tokens.token_coast) {
-            expect(issues.some(i => i.entityId === 'token_coast' && /retired/.test(i.details))).toBe(true);
-        }
+        // The shipped data holds none since the Fishing pack: an old workspace's are put back.
+        const RETIRED = ['token_coast', 'token_river', 'token_lake', 'token_bog_pool'];
+        expect(RETIRED.filter(id => store().tokens[id])).toEqual([]);
+        const tokens = { ...store().tokens, ...Object.fromEntries(RETIRED.map(id => [id, { id, name: id, tokenType: 'resource' }])) };
+        const named = new Set(spotFindings({ tokens }).filter(f => /retired/.test(f.message)).map(f => f.entityId));
+        expect(RETIRED.filter(id => !named.has(id))).toEqual([]);
+        expect(spotFindings({ tokens: store().tokens }).filter(f => /retired/.test(f.message))).toEqual([]);
+        const issues = auditConnectivity({ items: store().items, tokens, recipes: [] });
+        expect(issues.some(i => i.entityId === 'token_coast' && /retired/.test(i.details))).toBe(true);
     });
 
     it('names a spot kind that can never land or catches nothing, and a water or biome the game lacks', () => {

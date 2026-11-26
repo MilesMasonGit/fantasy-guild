@@ -67,8 +67,9 @@ describe('The Processing chain in shipped data (7.5)', () => {
 
         it('a Wood Foundation offers the wooden buildings: the Workshop, the Kitchen, the Mining Camp and the rest', () => {
             expect(poolNames('token_wood_foundation')).toEqual([
-                "Build Alchemist's Hall", 'Build Apothecary', 'Build Bakehouse', 'Build Banquet Hall', 'Build Barn', 'Build Beehive',
-                'Build Brewery', "Build Builder's Yard", 'Build Composter', "Build Craftsmen's Yard", 'Build Deep Workings', 'Build Dock',
+                "Build Alchemist's Hall", 'Build Apothecary', 'Build Bait Shed', 'Build Bakehouse', 'Build Banquet Hall', 'Build Barn',
+                'Build Beehive', 'Build Brewery', "Build Builder's Yard", 'Build Chum Station', 'Build Composter', "Build Craftsmen's Yard",
+                'Build Deep Workings', 'Build Dock',
                 "Build Farmers' Market", 'Build Farmstead', 'Build Fish Market', 'Build Fishing Hut', "Build Fishmonger's",
                 "Build Forester's Lodge", 'Build Greenhouse', "Build Grovekeeper's Hut", 'Build Guild Workshop', "Build Herbalist's Hut",
                 "Build Jeweller's Hall", 'Build Kitchen', 'Build Logging Camp', 'Build Manor Farm', 'Build Market Kitchen',
@@ -149,10 +150,11 @@ describe('The Processing chain in shipped data (7.5)', () => {
         });
 
         it('the Workbench offers every Crafting recipe, and a new one starts on none (TL-15)', () => {
-            // Its old kind narrows nothing now, nor does the Tannery's: each offers the whole skill.
+            // Its old kind narrows nothing now, nor does the Tannery's: each offers the whole skill. Bait is
+            // a Fishing recipe (the Bait Shed's); the lures are Crafting's.
             expect(poolNames('token_workbench')).toEqual(expect.arrayContaining([
-                'Charcoal', 'Fine Fishing Rod', 'Fishing Rod', 'Search a Bird Nest', 'Shrimp Bait', 'Torch', 'Trap', 'Worm Bait',
-                'Leather', 'Leather Chest', 'Leather Hat',
+                'Charcoal', 'Fine Fishing Rod', 'Fishing Rod', 'Search a Bird Nest', 'Torch', 'Trap', 'Fly Lure', 'Spinner Lure',
+                'Glow Lure', 'Leather', 'Leather Chest', 'Leather Hat',
             ]));
             expect(poolNames('token_tannery')).toEqual(poolNames('token_workbench'));
             const bench = BoardState.createTokenInstance('token_workbench');

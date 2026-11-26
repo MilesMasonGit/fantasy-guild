@@ -6,7 +6,8 @@
  * W6). Until `data/world.json` exists the game generates from these tables, so the machinery runs
  * on something readable. Every number here is a stand-in; nothing here is a design decision.
  *
- * Today's Tokens fill what they can: Herbs has one herb, Arcane has nothing yet, so those wedges
+ * Today's Tokens fill what they can: Herbs has one herb, Arcane has nothing yet, and Waters has no
+ * node at all (fish come from spots on the water, as in `data/world.json`), so those wedges
  * generate with holes the world lists as problems.
  *
  * Shape: `worldTablesShape.js`.
@@ -46,14 +47,8 @@ export const PLACEHOLDER_WORLD_TABLES = Object.freeze({
             origins: { 1: [], 2: [w('token_wild_lavender')], 3: [] }
         },
         {
-            // The fixed waters are retired (fish come from spots on the water): the one fishing
-            // node left stands in for every ring.
             id: 'waters', name: 'Waters', skill: 'fishing', kits: { riverside: 3, wetland: 1 },
-            origins: {
-                1: [w('token_shrimp_coast')],
-                2: [w('token_shrimp_coast')],
-                3: [w('token_shrimp_coast')]
-            }
+            origins: { 1: [], 2: [], 3: [] }
         },
         {
             id: 'arcane', name: 'Arcane', skill: 'magic',

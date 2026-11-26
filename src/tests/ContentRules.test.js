@@ -11,6 +11,7 @@ import { isTokenType, isTokenRarity } from '../config/registries/tokenConstants.
 import { isTempo, bandFor, isInBand } from '../../cms/src/engine/ledger/tempoBands.js';
 import { openingMat } from '../systems/core/EngineBootstrap.js';
 import { stationSkillOf } from '../systems/effects/statements.js';
+import { toolMaterialGaps } from '../systems/core/toolRule.js';
 import { runSim } from '../../cms/src/engine/sim/simRunner.js';
 import {
     migrateLegacyIntent, applyItemResults, RETIRED_ITEM_FIELDS,
@@ -93,67 +94,83 @@ const RUNNING = ALL_IDS.filter(
     id => (TOKENS[id].config || stationSkillOf(TOKENS[id])) && !isEnemyDef(TOKENS[id])
 );
 
-describe('⚠️ Rule 1 — every material has a tool-free source (D-213)', () => {
+describe('⚠️ Rule 1 — every material a tool is made from has a source that needs no tool (D-213)', () => {
     /**
-     * A barehanded route back must always exist, and **this test is the only
-     * thing preventing the lock.**
+     * A hero who loses or breaks a tool must be able to make it again without one: every material a
+     * tool's recipe needs, and every material those materials are made from, has at least one source
+     * that needs no tool in hand (an enemy's drop, a Token worked barehanded, a Token's trickle). A
+     * Token whose work needs a held tool, and every catch, needs a tool. Materials no tool is made
+     * from (fish, food) are outside the rule: losing a rod never stops a pickaxe being made.
+     *
+     * **This test is the only thing preventing the lock.** The rule is `toolRule.toolMaterialGaps`.
      */
     const TOOL_TAGS = toolContextTags();
+    const gapsIn = (content) => toolMaterialGaps(content).map(g => `${g.itemId}: only from ${
+        g.sources.map(s => (s.needsTool ? `${s.by} (needs a tool)` : s.by)).join(', ') || 'nothing'}`);
 
-    /** Every item any Token can produce without a tool gating the route. */
-    const toolFreeOutputs = new Set();
-    for (const id of ALL_IDS) {
-        for (const route of productionRoutes(id)) {
-            if (route.requiresContext.some(tag => TOOL_TAGS.has(tag))) continue;
-            for (const out of route.outputs) {
-                if (out.itemId) toolFreeOutputs.add(out.itemId);
-            }
-        }
-    }
+    // Tool materials for the owner to fix in the CMS, as `{ itemId: why }`. `it.fails` passes while
+    // the gap is there and fails the day it closes, so the entry is deleted with the fix.
+    const KNOWN_TOOL_MATERIAL_GAPS = {};
 
-    it('gives every produced material a route needing no tool', () => {
-        const produced = new Set();
-        for (const id of ALL_IDS) {
-            for (const route of productionRoutes(id)) {
-                for (const out of route.outputs) if (out.itemId) produced.add(out.itemId);
-            }
-        }
-
-        const locked = [...produced].filter(item => !toolFreeOutputs.has(item));
-        expect(locked).toEqual([]);
+    it('gives every material a tool is made from a source that needs no tool', () => {
+        const gaps = gapsIn({ tokens: TOKENS, items: shippedItems, routesOf: (def) => productionRoutes(def.id), toolTags: TOOL_TAGS })
+            .filter(line => !KNOWN_TOOL_MATERIAL_GAPS[line.split(':')[0]]);
+        expect(gaps).toEqual([]);
     });
 
-    /** Everything any route consumes. */
-    const consumed = new Set();
-    for (const id of ALL_IDS) {
-        for (const route of productionRoutes(id)) {
-            for (const input of route.inputs) consumed.add(input.itemId);
-        }
-    }
-
-    // Content for the owner to fix in the CMS, as `{ itemId: why }`: a material a recipe spends whose
-    // only source needs a tool. `it.fails` passes while the assertion fails and fails the day it
-    // passes, so when the content is fixed this goes red: delete the entry.
-    const KNOWN_LOCKED_INPUTS = {};
-
-    it('gives every material a Token CONSUMES a tool-free route too', () => {
-        // The deadlock that matters: an input you cannot obtain barehanded is
-        // an input whose whole chain stops when the tool runs out.
-        //
-        // P2.5 had to narrow this to items something produced, because the
-        // migrated corpus consumed 16 things nothing made. P2.6 pruned those
-        // recipes, so the full assertion holds again: every input has a
-        // producer, and every producer has a barehanded route.
-        const locked = [...consumed].filter(item => !toolFreeOutputs.has(item) && !KNOWN_LOCKED_INPUTS[item]);
-        expect(locked).toEqual([]);
-    });
-
-    for (const [item, why] of Object.entries(KNOWN_LOCKED_INPUTS)) {
-        it.fails(`${item} has a tool-free route (known drift: ${why})`, () => {
-            expect(!consumed.has(item) || toolFreeOutputs.has(item)).toBe(true);
+    for (const [item, why] of Object.entries(KNOWN_TOOL_MATERIAL_GAPS)) {
+        it.fails(`${item} has a source that needs no tool (known gap: ${why})`, () => {
+            const gaps = toolMaterialGaps({ tokens: TOKENS, items: shippedItems, routesOf: (def) => productionRoutes(def.id), toolTags: TOOL_TAGS });
+            expect(gaps.map(g => g.itemId)).not.toContain(item);
         });
     }
 
+    describe('the rule on a fixture world', () => {
+        const material = (id) => ({ id, name: id, type: 'material' });
+        const ITEMS = {
+            fx_ore: material('fx_ore'), fx_ingot: material('fx_ingot'), fx_wood: material('fx_wood'),
+            fx_fish: material('fx_fish'), fx_bait: material('fx_bait'),
+            fx_pick: { id: 'fx_pick', name: 'Pick', type: 'tool', equipSlot: 'hand', tool: { kind: 'pickaxe', tier: 1 } }
+        };
+        const line = (itemId) => ({ itemId, quantity: 1, chance: 100 });
+        const work = (outputs, inputs = []) => ({ skill: 'mining', skillRequired: 1, cycleTimeMs: 10000, xp: 1, inputs, outputs });
+        const TOKENS_FX = {
+            // The ore needs a pickaxe in hand; the wood is cut barehanded.
+            fx_vein: { id: 'fx_vein', config: work([line('fx_ore')]), needsTool: { kind: 'pickaxe', minTier: 1 } },
+            fx_tree: { id: 'fx_tree', config: work([line('fx_wood')]) },
+            // The pickaxe is made from an ingot, smelted from the ore: the ore is a tool material through its chain.
+            fx_forge: { id: 'fx_forge', recipes: [
+                { id: 'r_ingot', inputs: [line('fx_ore')], outputs: [line('fx_ingot')] },
+                { id: 'r_pick', inputs: [line('fx_ingot'), line('fx_wood')], outputs: [line('fx_pick')] }
+            ] },
+            // The fish is only ever caught, and only Bait is made from it.
+            fx_water: { id: 'fx_water', config: work([]), catchPools: [{ tool: 'fishing_rod', catches: [{ itemId: 'fx_fish', weight: 1 }] }] },
+            fx_shed: { id: 'fx_shed', recipes: [{ id: 'r_bait', inputs: [line('fx_fish')], outputs: [line('fx_bait')] }] }
+        };
+        const routesOf = (def) => (def.recipes
+            ? def.recipes.map(r => ({ id: r.id, inputs: r.inputs, outputs: r.outputs, requiresContext: [] }))
+            : def.config?.outputs?.length ? [{ id: null, inputs: def.config.inputs, outputs: def.config.outputs, requiresContext: [] }] : []);
+
+        it('flags a tool material whose only source needs a tool, through the chain the tool is made by', () => {
+            expect(gapsIn({ tokens: TOKENS_FX, items: ITEMS, routesOf })).toEqual(['fx_ore: only from fx_vein (needs a tool)']);
+        });
+
+        it('leaves out a fish that only a catch lands, as no tool is made from it', () => {
+            expect(toolMaterialGaps({ tokens: TOKENS_FX, items: ITEMS, routesOf }).map(g => g.itemId)).not.toContain('fx_fish');
+        });
+
+        it('an enemy that drops the ore is a source that needs no tool, and the gap closes', () => {
+            const goblin = { id: 'fx_goblin', tokenType: 'enemy', config: work([line('fx_ore')]) };
+            expect(gapsIn({ tokens: { ...TOKENS_FX, fx_goblin: goblin }, items: ITEMS, routesOf })).toEqual([]);
+        });
+
+        it('a recipe asking for a tool nearby needs a tool too', () => {
+            const tokens = { ...TOKENS_FX, fx_tree: { id: 'fx_tree', recipes: [{ id: 'r_wood', inputs: [], outputs: [line('fx_wood')], ctx: ['axe'] }] } };
+            const withContext = (def) => routesOf(def).map(r => ({ ...r, requiresContext: def.recipes?.find(x => x.id === r.id)?.ctx || [] }));
+            expect(gapsIn({ tokens, items: ITEMS, routesOf: withContext, toolTags: new Set(['axe']) }))
+                .toEqual(['fx_ore: only from fx_vein (needs a tool)', 'fx_wood: only from fx_tree (r_wood) (needs a tool)']);
+        });
+    });
 });
 
 describe('⚠️ Rule 2 — Passive Generators are strictly worse (D-116, risk 11)', () => {

@@ -54,7 +54,7 @@ const open = (id) => {
 
 describe('⭐ the item editor: fishing fields', () => {
     it('a fish a water lands takes a level, a catch time, its Bait and its XP; blanks drop the block', () => {
-        store().updateToken('token_coast', { catchPools: [{ tool: 'fishing_rod', bait: 'item_shrimp_bait', catches: [{ itemId: 'item_salmon', weight: 1 }] }] });
+        store().updateToken('token_fishing_spot', { catchPools: [{ tool: 'fishing_rod', bait: 'item_bait', catches: [{ itemId: 'item_salmon', weight: 1 }] }] });
         const container = open('item_salmon');
         input(container, 'fish-level', 40);
         input(container, 'fish-cycle', 6.5);

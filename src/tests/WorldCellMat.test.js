@@ -26,7 +26,7 @@ const SEEDS = Array.from({ length: 40 }, (_, i) => 1000 + i * 7);
 const strictCells = (world) => world.cells.filter(c => c.ring >= 1 && c.ring <= STRICT_RINGS);
 
 describe('⭐ a cell\'s mat (the placeholder tables)', () => {
-    // A cell with no origin at all (the placeholder's empty Herbs and Arcane tables) is a content
+    // A cell with no origin at all (the placeholder's empty Herbs, Waters and Arcane tables) is a content
     // hole the world's problems already list; every other cell is held to the band.
     it('⭐ keeps four to six heroes busy on every strict cell with an origin, over many worlds', () => {
         let lowest = Infinity;
@@ -37,7 +37,8 @@ describe('⭐ a cell\'s mat (the placeholder tables)', () => {
                 lowest = Math.min(lowest, busy);
                 highest = Math.max(highest, busy);
                 expect(busy, `${seed} ${cell.id}`).toBeGreaterThanOrEqual(4);
-                expect(busy, `${seed} ${cell.id}`).toBeLessThanOrEqual(MAX_HEROES);
+                // A sum of thirds and fifths can land a hair over a whole number; cellMat trims to the same hair.
+                expect(busy, `${seed} ${cell.id}`).toBeLessThanOrEqual(MAX_HEROES + 1e-9);
             }
         }
         expect(highest).toBeGreaterThan(lowest);
