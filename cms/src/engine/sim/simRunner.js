@@ -67,7 +67,6 @@ export function runSim({ tokens = {}, recipes = {}, items = {} } = {}, dialOverr
     const xpPass = runXpPass(entities, {
         cycleTimes,
         skipped: time.skipped,
-        dials,
     });
 
     // The check pass derives nothing and writes nothing: it reads the settled line and the dial set. It runs last because the charge half needs the cycle times TUNE may have moved.

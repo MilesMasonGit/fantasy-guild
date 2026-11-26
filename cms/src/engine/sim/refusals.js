@@ -67,8 +67,7 @@ export const REFUSAL_CATALOGUE = Object.freeze({
     'progression-guard': {
         severity: SEVERITY.CRITICAL,
         remedies: () => [
-            'Narrow the band widths — a wide band is how much slack the sim is allowed, and this much slack swallows a decade of levelling.',
-            'Steepen the earn curve pins, so ten levels of progress is worth more than one level\'s spread.',
+            'Narrow the band widths — a wide band is how much slack the sim is allowed, and this much slack swallows a tier of levelling.',
             'Nothing about the content — no Token caused this, and re-tagging one will not clear it.',
         ],
     },

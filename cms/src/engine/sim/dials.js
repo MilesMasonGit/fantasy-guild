@@ -1,46 +1,15 @@
 /**
  * Economic simulator: the dials the passes read. Every pass stays a pure function: dials arrive as a plain argument and the defaults below are the whole list. Nothing here touches a store or a file: `useGlobalStore` holds the developer's turned copy under `simDials` and `recalculateEconomy` hands it in.
+ * The earn curves and the purpose tilt are not dials: they are the balance rules' (`../balanceRules.js`), which the ledger reads too, so the simulator and the ledger cannot price work by two rulebooks.
  * ⚠️ The one dial no pass reads is `skillMasteryHours`: it is an expectation, not an input, so turning it does not move the curve (see `PaceDials`).
  */
 
-/** Gold per hour, as pinned points: the developer edits ten pins, not 99 cells. A flat 7.5%/level compounding to level 70, then 2%/level to 99. It is what a worker earns on content at its required level; a skill level adds no work speed. */
-export const GPH_PINS = Object.freeze({
-    1: 1200,
-    10: 2300,
-    20: 4750,
-    30: 9800,
-    40: 20200,
-    50: 41600,
-    60: 85800,
-    70: 177000,
-    85: 238000,
-    99: 314000,
-});
+import { worthAnHourAt, goodsTilt } from '../balanceRules.js';
 
 /**
- * Experience per hour, as pinned points: 7.5% compounding per level from about 700 XPH at level 1.
- * ⚠️ The pins are denser than a readable sample, deliberately: the curve is read by straight-line interpolation (`xphAt`), and a chord across twenty levels of a compounding curve sits well above it, so a sparse set overstates mid-segment XPH.
+ * The dials that once held the earn curves and the purpose factors. A dial set stored before the curves moved to the balance rules still carries them (the owner's workspace does), so `normaliseDials` drops them: kept, they would read as live dials that change nothing.
  */
-export const XPH_PINS = Object.freeze({
-    1: 700,
-    10: 1340,
-    20: 2750,
-    30: 5700,
-    40: 11800,
-    50: 24200,
-    60: 50300,
-    70: 103000,
-    80: 214000,
-    90: 437000,
-    99: 837000,
-});
-
-/** What the Purpose tag is worth in gold. This factor is the only thing that makes the Purpose tag economically real: under value-absorbs-yield, an IPH firehose and a GPH treasure would earn identically if their targets matched. */
-export const PURPOSE_GOLD_FACTORS = Object.freeze({
-    gph: 1.0,
-    iph: 0.35,
-    xph: 0.10,
-});
+export const RETIRED_CURVE_DIALS = Object.freeze(['gphPins', 'xphPins', 'purposeGoldFactors', 'purposeXpFactors']);
 
 /** Tolerance around the target, bracketed by the anchor's level. Integer gold forces the band wide where values are small. */
 export const TOLERANCE_BRACKETS = Object.freeze([
@@ -49,26 +18,15 @@ export const TOLERANCE_BRACKETS = Object.freeze([
     Object.freeze({ maxLevel: Infinity, band: 0.10 }),
 ]);
 
-/** What the Purpose tag is worth in XP: the mirror of the gold factors, so Purpose is a seesaw rather than a label (GPH pays and teaches little, XPH teaches and pays little, IPH sits between). XP is derived, never targeted independently, so the two cannot conflict. */
-export const PURPOSE_XP_FACTORS = Object.freeze({
-    xph: 1.0,
-    iph: 0.5,
-    gph: 0.3,
-});
-
 export const DEFAULT_DIALS = Object.freeze({
-    gphPins: GPH_PINS,
-    xphPins: XPH_PINS,
     /**
      * Hours to take one skill 1→99.
-     * ⚠️ An expectation, not an input: no pass reads it to decide anything. The XP pass integrates `xphPins` against the game's own threshold curve (`src/utils/XPCurve.js`) and reports the hours that actually fall out; the Pace dial shows the two side by side. Turning this alone moves nothing.
+     * ⚠️ An expectation, not an input: no pass reads it to decide anything. The XP pass integrates the rules' XP an hour against the game's own threshold curve (`src/utils/XPCurve.js`) and reports the hours that actually fall out; the Pace dial shows the two side by side. Turning this alone moves nothing.
      */
     skillMasteryHours: 55,
     /** The player the projections assume, not a property of the game: the Pace dial's curve preview reads it. */
     hoursPerDay: 8,
 
-    purposeGoldFactors: PURPOSE_GOLD_FACTORS,
-    purposeXpFactors: PURPOSE_XP_FACTORS,
     /** How expensive training may be, as a fraction of the level's GPH. Read by the TUNE pass: an XP-tagged source that runs gold-negative is fine inside this and refuses beyond it. */
     trainingLossCap: 0.25,
 
@@ -96,7 +54,7 @@ export function normaliseDials(overrides = {}) {
     // object built by hand can carry it explicitly undefined — and spreading
     // that over the defaults would blank a required number and throw below.
     const supplied = Object.fromEntries(
-        Object.entries(overrides || {}).filter(([, value]) => value !== undefined)
+        Object.entries(overrides || {}).filter(([key, value]) => value !== undefined && !RETIRED_CURVE_DIALS.includes(key))
     );
     const dials = { ...DEFAULT_DIALS, ...supplied };
     const ratio = dials.downcycleRecoveryRatio;
@@ -112,27 +70,14 @@ export function normaliseDials(overrides = {}) {
     return Object.freeze(dials);
 }
 
-/** Gold per hour at `level`, linearly interpolated between the pins: between two neighbouring pins the value moves by an equal number of gold per level, so moving one pin moves only the two segments touching it. Flat below the first pin and above the last. */
-export function gphAt(level, dials = DEFAULT_DIALS) {
-    const pins = dials.gphPins || GPH_PINS;
-    const levels = Object.keys(pins).map(Number).sort((a, b) => a - b);
-    const L = Number.isFinite(level) ? level : 1;
-    if (L <= levels[0]) return pins[levels[0]];
-    if (L >= levels[levels.length - 1]) return pins[levels[levels.length - 1]];
-    for (let i = 0; i < levels.length - 1; i++) {
-        const lo = levels[i];
-        const hi = levels[i + 1];
-        if (L >= lo && L <= hi) {
-            const t = (L - lo) / (hi - lo);
-            return pins[lo] + t * (pins[hi] - pins[lo]);
-        }
-    }
-    return pins[levels[levels.length - 1]];
+/** Gold an hour of work at `level`, before its Purpose: the balance rules' worth curve (section 7). No dial moves it. */
+export function gphAt(level) {
+    return worthAnHourAt(level);
 }
 
-export function purposeGoldFactor(purpose, dials = DEFAULT_DIALS) {
-    const factors = dials.purposeGoldFactors || PURPOSE_GOLD_FACTORS;
-    return factors[purpose] ?? 0;
+/** The Purpose tag's share of the worth curve: the balance rules' tilt (training 0.5, balanced 1, earning 1.5); 0 for an unknown tag. */
+export function purposeGoldFactor(purpose) {
+    return goodsTilt(purpose);
 }
 
 export function toleranceFor(level, dials = DEFAULT_DIALS, { isAnchor = true } = {}) {

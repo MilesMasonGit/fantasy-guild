@@ -113,7 +113,7 @@ for (const entity of result.entities) {
     if (xp === undefined) continue;
     const ms = result.cycleTimes.get(entity.id);
     const perHour = xp * (3600000 / ms);
-    const target = xphAt(entity.level, result.dials) * purposeXpFactor(entity.purpose, result.dials);
+    const target = xphAt(entity.level) * purposeXpFactor(entity.purpose);
     console.log(`  ${pad(entity.id, 26)}${pad(entity.level, 5)}${pad(entity.purpose, 9)}${pad(`${ms / 1000}s`, 8)}${pad(xp, 10)}${pad(perHour.toFixed(0), 10)}${target.toFixed(0)}`);
 }
 console.log(`\n  one focused skill climbs 1→99 in ${result.masteryHours.toFixed(1)} board-hours (plan §13.2 says 50–60).`);

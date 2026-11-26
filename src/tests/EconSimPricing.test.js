@@ -14,17 +14,17 @@ import { describe, it, expect } from 'vitest';
 
 import { runSim } from '../../cms/src/engine/sim/simRunner.js';
 import { chooseInteger, splitByScarcity } from '../../cms/src/engine/sim/pricingPass.js';
-import { normaliseDials, gphAt, DEFAULT_DIALS } from '../../cms/src/engine/sim/dials.js';
+import { normaliseDials, gphAt } from '../../cms/src/engine/sim/dials.js';
 
 const out = (itemId, over = {}) => ({ itemId, chance: 100, minQty: 1, maxQty: 1, ...over });
 
-const token = (id, { level = 1, tempo = 'fast', purpose = 'gph', inputs = [], outputs = [out('item_a')], rarity = 'common', tokenType = 'resource' } = {}) => ({
+const token = (id, { level = 1, tempo = 'fast', purpose = 'iph', inputs = [], outputs = [out('item_a')], rarity = 'common', tokenType = 'resource' } = {}) => ({
     id, name: id, rarity, tokenType, uses: 10,
     config: { skill: 'forestry', skillRequired: level, cycleTimeMs: 10000, inputs, outputs },
     sim: { tempo, purpose },
 });
 
-const recipe = (id, { level = 1, tempo = 'fast', purpose = 'gph', inputs = [], outputs = [out('item_a')], downcycle = false } = {}) => ({
+const recipe = (id, { level = 1, tempo = 'fast', purpose = 'iph', inputs = [], outputs = [out('item_a')], downcycle = false } = {}) => ({
     id, name: id, skill: 'crafting', levelRequirement: level, durationMs: 10000,
     inputs, outputs, downcycle, sim: { tempo, purpose },
 });
@@ -53,10 +53,10 @@ describe('EconSim — PRICE pass', () => {
 
     describe('a worked single-output anchor', () => {
         it('lands on a neighbouring integer', () => {
-            // Level 1, fast (band middle 8s, 4–12s), GPH (factor
-            // 1.0), one unit a cycle.
+            // Level 1, fast (band middle 8s, 4–12s), IPH (balanced,
+            // tilt 1), one unit a cycle.
             //   units/hour = 1 ÷ 8s × 3600 = 450
-            //   target = GPH(1) × 1.0 = 1,200/h
+            //   target = worth(1) × 1 = 1,200/h
             //   ideal = 1200 ÷ 450 = 2.67g
             // Band at level 1 is ±25%, so both 2 and 3 land; 3 is closer.
             const result = runSim({ tokens: { a: token('token_grove') }, items: itemsFor('item_a') });
@@ -70,9 +70,10 @@ describe('EconSim — PRICE pass', () => {
         });
 
         it('the Purpose tag is the only thing that changes the target', () => {
-            const gph = runSim({ tokens: { a: token('token_g', { purpose: 'gph' }) }, items: itemsFor('item_a') });
-            const iph = runSim({ tokens: { a: token('token_g', { purpose: 'iph' }) }, items: itemsFor('item_a') });
-            expect(iph.details.get('item_a').targetPerHour).toBeCloseTo(gph.details.get('item_a').targetPerHour * 0.35, 6);
+            const target = (purpose) => runSim({ tokens: { a: token('token_g', { purpose }) }, items: itemsFor('item_a') }).details.get('item_a').targetPerHour;
+            // The balance rules' tilt: earning work 1.5x the goods, training half.
+            expect(target('gph')).toBeCloseTo(target('iph') * 1.5, 6);
+            expect(target('xph')).toBeCloseTo(target('iph') * 0.5, 6);
         });
     });
 
@@ -128,12 +129,12 @@ describe('EconSim — PRICE pass', () => {
         });
 
         it('files an Info row when the floor, not the target, decides the price', () => {
-            // An XPH craft (factor 0.10) on a slow, expensive input: the Purpose
-            // target is smaller than 15% of the inputs, so the floor decides.
+            // A fast XPH craft (goods tilt 0.5) on a heavy, expensive input: the
+            // Purpose target a cycle is smaller than 15% of the inputs, so the floor decides.
             const result = runSim({
                 tokens: { a: token('token_gems', { level: 30, tempo: 'heavy', purpose: 'gph', outputs: [out('item_gem')] }) },
                 recipes: [recipe('recipe_cut_gem', {
-                    level: 30, tempo: 'heavy', purpose: 'xph',
+                    level: 30, tempo: 'fast', purpose: 'xph',
                     inputs: [{ itemId: 'item_gem', quantity: 1 }],
                     outputs: [out('item_cut_gem')],
                 })],
@@ -149,8 +150,9 @@ describe('EconSim — PRICE pass', () => {
 
         it('a four-step chain compounds the 15% margin to about ×1.75', () => {
             // The plan's own arithmetic (§13.6): "four steps compound to ~×1.75".
+            // Fast crafts on a heavy gatherer's output, so each step's Purpose target sits under the 15 % floor.
             const steps = [1, 2, 3, 4].map(n => recipe(`recipe_step_${n}`, {
-                level: 30, tempo: 'heavy', purpose: 'xph',
+                level: 30, tempo: 'fast', purpose: 'xph',
                 inputs: [{ itemId: n === 1 ? 'item_raw' : `item_step_${n - 1}`, quantity: 1 }],
                 outputs: [out(`item_step_${n}`)],
             }));
@@ -182,9 +184,9 @@ describe('EconSim — PRICE pass', () => {
         // to `tuningPass.js`. Two rows for one situation, the louder of them
         // carrying less information, was the alternative.
         it('records an Info row when neither neighbouring integer lands in band', () => {
-            // A cheap, fast IPH source: ideal well under 1g, and 1g is the floor.
+            // A cheap, fast XPH source (goods tilt 0.5): ideal well under 1g, and 1g is the floor.
             const result = runSim({
-                tokens: { a: token('token_clay', { purpose: 'iph', outputs: [out('item_clay', { minQty: 1, maxQty: 4 })] }) },
+                tokens: { a: token('token_clay', { purpose: 'xph', outputs: [out('item_clay', { minQty: 1, maxQty: 4 })] }) },
                 items: itemsFor('item_clay'),
             });
 
@@ -348,14 +350,14 @@ describe('EconSim — PRICE pass', () => {
         });
     });
 
-    describe('the GPH curve is pinned points, interpolated (plan §13.1)', () => {
-        it('hits its endpoints and interpolates linearly between them and interpolates between them', () => {
-            expect(gphAt(1, DEFAULT_DIALS)).toBe(1200);
-            expect(gphAt(70, DEFAULT_DIALS)).toBe(177000);
-            expect(gphAt(99, DEFAULT_DIALS)).toBe(314000);
-            expect(gphAt(5, DEFAULT_DIALS)).toBeCloseTo(1200 + (4 / 9) * 1100, 6);
-            // Flat outside the pins rather than extrapolated into nonsense.
-            expect(gphAt(120, DEFAULT_DIALS)).toBe(314000);
+    describe('the gold curve is the balance rules worth curve (section 7)', () => {
+        it('doubles every 20 levels from 1,200, flat outside 1 to 99', () => {
+            expect(gphAt(1)).toBe(1200);
+            expect(gphAt(41)).toBeCloseTo(4800, 6);
+            expect(gphAt(5)).toBeCloseTo(1200 * 2 ** (4 / 20), 6);
+            // Flat outside the levels rather than extrapolated into nonsense.
+            expect(gphAt(120)).toBe(gphAt(99));
+            expect(gphAt(0)).toBe(1200);
         });
     });
 });

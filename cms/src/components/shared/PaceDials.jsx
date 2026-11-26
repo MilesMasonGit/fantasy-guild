@@ -1,14 +1,15 @@
 /**
- * The Pace dials: the two earn curves, the player the projections assume, and the mastery expectation. Pins are typed rows with a read-only curve beside them, because dragging points on a log axis is a fiddly way to type a number.
- * ⚠️ `skillMasteryHours` is an expectation, not an input: no pass reads it. The read-out beside it is what the XP curve actually integrates to against the game's threshold table (`src/utils/XPCurve.js`), so an XPH edit shows at once whether the climb still lands where intended.
+ * The Pace dials: the two earn curves, the player the projections assume, and the mastery expectation. The curves are the balance rules' (`engine/balanceRules.js`, BALANCE_RULES sections 1 and 7), shown here read-only: Recalculate and the ledger read the same rule, so a number typed here would only make the two disagree.
+ * ⚠️ `skillMasteryHours` is an expectation, not an input: no pass reads it. The read-out beside it is what the XP curve actually integrates to against the game's threshold table (`src/utils/XPCurve.js`).
  */
 
 import { useGlobalStore } from '../../stores/useGlobalStore';
 import { Section, Field } from './EditorLayout';
-import { GPH_PINS, XPH_PINS, normaliseDials, gphAt } from '../../engine/sim/dials';
+import { gphAt } from '../../engine/sim/dials';
 import { hoursToMastery, xphAt } from '../../engine/sim/xpPass';
+import { PURPOSE_TILT } from '../../engine/balanceRules';
 
-const MASTERY_BAND = Object.freeze({ min: 50, max: 60 });
+const SAMPLE_LEVELS = Object.freeze([1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 99]);
 
 const num = (value, fallback) => (Number.isFinite(value) ? value : fallback);
 const inputClass = 'w-full text-emerald-400 font-bold font-mono text-xs';
@@ -18,48 +19,23 @@ export default function PaceDials() {
   const globals = useGlobalStore();
   const dials = globals.simDials || {};
   const setDial = (key, value) => globals.setGlobal('simDials', { ...dials, [key]: value });
-
-  const gphPins = dials.gphPins || GPH_PINS;
-  const xphPins = dials.xphPins || XPH_PINS;
-  const setPin = (key, base, level, value) => setDial(key, { ...base, [level]: value });
-
-  // The climb the current pins actually produce. `normaliseDials` refuses a
-  // dial set the simulator would refuse, and a half-typed number in some other
-  // section must not blank the whole settings modal.
-  let actualHours;
-  try {
-    actualHours = hoursToMastery(normaliseDials(dials));
-  } catch {
-    actualHours = null;
-  }
-  const inBand = Number.isFinite(actualHours)
-    && actualHours >= MASTERY_BAND.min && actualHours <= MASTERY_BAND.max;
+  const actualHours = hoursToMastery();
 
   return (
-    <Section title="Pace Dials — the earn curves (economic simulator §13.1–13.2)">
+    <Section title="Pace Dials — the earn curves (balance rules, sections 1 and 7)">
       <p className={`${note} block mb-3`}>
-        Two curves, one growth number. Gold per hour and experience per hour are both pinned
-        and read by straight lines between the pins, so moving one pin moves only the two
-        segments touching it. The drawing is a read-out of the numbers below it.
+        Set by the balance rules, not here: XP an hour and gold an hour both double every 20
+        levels (one tier), from 1,660 XP and 1,200 gold at level 1. Recalculate and the ledger read
+        the same rule. A work&apos;s Purpose tilts it: training (XPH) {PURPOSE_TILT.xph.xp}x the XP
+        and {PURPOSE_TILT.xph.goods}x the goods, balanced (IPH) both in full, earning (GPH){' '}
+        {PURPOSE_TILT.gph.xp}x the XP and {PURPOSE_TILT.gph.goods}x the goods.
       </p>
 
-      <CurvePreview gphPins={gphPins} xphPins={xphPins} hoursPerDay={num(dials.hoursPerDay, 8)} />
+      <CurvePreview read={{ gold: gphAt, xp: xphAt }} hoursPerDay={num(dials.hoursPerDay, 8)} />
 
       <div className="grid grid-cols-2 gap-6 mt-4">
-        <PinColumn
-          title="Gold per hour (§13.1)"
-          pins={gphPins}
-          fallback={GPH_PINS}
-          onChange={(level, value) => setPin('gphPins', gphPins, level, value)}
-          hint="What a worker earns on content at its required level."
-        />
-        <PinColumn
-          title="Experience per hour (§13.2)"
-          pins={xphPins}
-          fallback={XPH_PINS}
-          onChange={(level, value) => setPin('xphPins', xphPins, level, value)}
-          hint="7.5% per level all the way to 99 — unlike gold, this curve never flattens. A source splits off it by its Purpose tag: XPH 1.0, IPH 0.5, GPH 0.3."
-        />
+        <CurveColumn title="Gold an hour (section 7)" at={gphAt} />
+        <CurveColumn title="XP an hour (section 1)" at={xphAt} />
       </div>
 
       <div className="grid grid-cols-2 gap-4 mt-4">
@@ -87,17 +63,13 @@ export default function PaceDials() {
               className={inputClass}
             />
             <span className={note}>
-              An expectation, not an input — no pass reads it. The XP curve above is integrated
-              against the game's own XP thresholds, and that is the number to watch:
+              An expectation, not an input — no pass reads it. The XP curve above, integrated
+              against the game&apos;s own XP thresholds, climbs 1→99 in:
             </span>
-            <span
-              className="text-xs font-mono font-bold"
-              style={{ color: inBand ? 'var(--color-success, #10b981)' : 'var(--color-warning, #f59e0b)' }}
-            >
+            <span className="text-xs font-mono font-bold">
               {Number.isFinite(actualHours)
-                ? `these pins climb 1→99 in ${actualHours.toFixed(1)} board-hours`
-                  + (inBand ? '' : ` — outside the ${MASTERY_BAND.min}–${MASTERY_BAND.max} band`)
-                : 'these pins do not produce a finite climb'}
+                ? `${actualHours.toFixed(1)} board-hours of new work`
+                : 'no finite climb'}
             </span>
           </div>
         </Field>
@@ -106,68 +78,41 @@ export default function PaceDials() {
   );
 }
 
-function PinColumn({ title, pins, fallback, onChange, hint }) {
-  const levels = Object.keys(pins).map(Number).sort((a, b) => a - b);
+function CurveColumn({ title, at }) {
   return (
     <div>
       <h4 className="text-xs font-bold uppercase text-amber-400 mb-2">{title}</h4>
       <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-        {levels.map((level) => (
-          <label key={level} className="flex items-center gap-2">
+        {SAMPLE_LEVELS.map((level) => (
+          <div key={level} className="flex items-center gap-2">
             <span className="text-[10px] font-mono w-10 shrink-0" style={{ color: 'var(--color-text-muted)' }}>
               lv {level}
             </span>
-            <input
-              type="number" step="1" min="0"
-              value={num(pins[level], fallback[level] ?? 0)}
-              onChange={(e) => onChange(level, Number(e.target.value))}
-              className={inputClass}
-            />
-          </label>
+            <span className="text-emerald-400 font-bold font-mono text-xs">{Math.round(at(level)).toLocaleString()}</span>
+          </div>
         ))}
       </div>
-      <p className={`${note} block mt-2`}>{hint}</p>
     </div>
   );
 }
 
-/** Both curves on a shared logarithmic axis: they span three orders of magnitude, so on a linear axis the low levels lie flat, and on a log axis steady compounding is a straight line, which makes the gold curve's deliberate bend read as a bend. */
-function CurvePreview({ gphPins, xphPins, hoursPerDay }) {
+/** Both curves on a shared logarithmic axis, where a steady doubling is a straight line. */
+function CurvePreview({ read, hoursPerDay }) {
   const W = 640;
   const H = 130;
   const pad = { l: 10, r: 10, t: 8, b: 14 };
   const safe = (v) => (Number.isFinite(v) && v > 0 ? v : 1);
 
-  // The same straight-line reading the passes take, done locally so the preview
-  // cannot throw on a dial set the store has not normalised yet.
-  const read = (pins, level) => {
-    const levels = Object.keys(pins).map(Number).sort((a, b) => a - b);
-    if (levels.length === 0) return 1;
-    if (level <= levels[0]) return safe(pins[levels[0]]);
-    if (level >= levels[levels.length - 1]) return safe(pins[levels[levels.length - 1]]);
-    for (let i = 0; i < levels.length - 1; i++) {
-      const lo = levels[i];
-      const hi = levels[i + 1];
-      if (level >= lo && level <= hi) {
-        const t = (level - lo) / (hi - lo);
-        return safe(safe(pins[lo]) + t * (safe(pins[hi]) - safe(pins[lo])));
-      }
-    }
-    return safe(pins[levels[levels.length - 1]]);
-  };
-
   const samples = [];
   for (let level = 1; level <= 99; level++) samples.push(level);
-  const values = samples.flatMap((l) => [read(gphPins, l), read(xphPins, l)]);
+  const values = samples.flatMap((l) => [safe(read.gold(l)), safe(read.xp(l))]);
   const lo = Math.log10(Math.min(...values));
   const hi = Math.log10(Math.max(...values));
   const span = hi - lo || 1;
 
   const x = (level) => pad.l + ((level - 1) / 98) * (W - pad.l - pad.r);
   const y = (value) => pad.t + (1 - (Math.log10(safe(value)) - lo) / span) * (H - pad.t - pad.b);
-  const line = (pins) => samples.map((l) => `${x(l).toFixed(1)},${y(read(pins, l)).toFixed(1)}`).join(' ');
-  const dots = (pins) => Object.keys(pins).map(Number).sort((a, b) => a - b)
-    .map((l) => ({ l, v: safe(pins[l]) }));
+  const line = (at) => samples.map((l) => `${x(l).toFixed(1)},${y(at(l)).toFixed(1)}`).join(' ');
   const ticks = [1, 20, 40, 60, 80, 99];
 
   return (
@@ -190,18 +135,16 @@ function CurvePreview({ gphPins, xphPins, hoursPerDay }) {
             {l}
           </text>
         ))}
-        <polyline points={line(gphPins)} fill="none" stroke="#fbbf24" strokeWidth="1.5" />
-        <polyline points={line(xphPins)} fill="none" stroke="#38bdf8" strokeWidth="1.5" />
-        {dots(gphPins).map(({ l, v }) => <circle key={`g${l}`} cx={x(l)} cy={y(v)} r="2.5" fill="#fbbf24" />)}
-        {dots(xphPins).map(({ l, v }) => <circle key={`x${l}`} cx={x(l)} cy={y(v)} r="2.5" fill="#38bdf8" />)}
+        <polyline points={line(read.gold)} fill="none" stroke="#fbbf24" strokeWidth="1.5" />
+        <polyline points={line(read.xp)} fill="none" stroke="#38bdf8" strokeWidth="1.5" />
       </svg>
       <div className="flex flex-wrap gap-x-4 mt-1 text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
         <span><span style={{ color: '#fbbf24' }}>&#9632;</span> gold / hour</span>
         <span><span style={{ color: '#38bdf8' }}>&#9632;</span> experience / hour</span>
-        <span className="italic">logarithmic — a straight line is steady compounding</span>
+        <span className="italic">logarithmic — a straight line is steady doubling</span>
         <span className="ml-auto font-mono">
-          {`at lv 50: ${Math.round(gphAt(50, { gphPins })).toLocaleString()}g/h · `}
-          {`${Math.round(xphAt(50, { xphPins })).toLocaleString()} xp/h · ${hoursPerDay}h/day`}
+          {`at lv 50: ${Math.round(read.gold(50)).toLocaleString()}g/h · `}
+          {`${Math.round(read.xp(50)).toLocaleString()} xp/h · ${hoursPerDay}h/day`}
         </span>
       </div>
     </div>

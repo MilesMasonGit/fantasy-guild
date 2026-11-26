@@ -1,7 +1,8 @@
 /**
- * Economic simulator, pass 5's XP half. `xp per cycle = XPH curve(required level) × purpose XP factor × cycle hours`, rounded, minimum 1. Recalculate derives it like every other number the game reads.
+ * Economic simulator, pass 5's XP half. `xp per cycle = XP an hour(required level) × purpose XP tilt × cycle hours`, rounded, minimum 1. Recalculate derives it like every other number the game reads. The curve and the tilt are the balance rules' (`../balanceRules.js`, BALANCE_RULES section 1), not dials.
  * 1. XP is derived, never targeted: nothing asks whether a Token's XP is right and adjusts something to match, so the gold/XP seesaw below can never produce a conflict.
- * 2. The Purpose tag is a seesaw: the XP factors run the opposite way to the gold factors, so a GPH source pays well and teaches a trickle, an XPH source teaches fast and pays a trickle, and IPH sits between.
+ * 2. The Purpose tag is a seesaw, the rules' moderate tilt: training (XPH) pays 1.5x the XP and half the goods, balanced (IPH) both in full, earning (GPH) half the XP and 1.5x the goods.
+ * ⚠️ Where the simulator stops short of section 1: it pays the plain XP an hour at the required level, not divided by the optimized boost factor, not at the midpoint to the skill's next unlock, and with no trimming of the cycle to whole XP. Those need the boost budget and each skill's unlock ladder, which the balancer's solver and the ledger hold; a balancing pack pins its numbers (`sim.xpPinned`) where it sets them.
  * 3. `cycle hours` is the authored cycle length, which every hero runs at: a skill level adds no work speed.
  * ⚠️ The granularity wobble is accepted, not a bug: the minimum-1 rule makes a Fast, GPH-tagged source at low levels over-teach (1 XP on a 10-second cycle is far above its target). It is documented here and files an Info row (`xp-granularity`) so nobody mistakes it for a defect.
  * It writes nothing: like every pass it returns Maps, and `sim/writeBack.js` is the one place a result becomes a stored field.
@@ -9,66 +10,45 @@
  */
 
 import { xpForLevel } from '../../../../src/utils/XPCurve.js';
-import { DEFAULT_DIALS, PURPOSE_XP_FACTORS, XPH_PINS, gphAt } from './dials.js';
+import { gphAt } from './dials.js';
+import { xpAnHourAt, xpTilt } from '../balanceRules.js';
 import { makeRow, SEVERITY } from './rows.js';
-
-export const PRINTED_XPH_PINS = Object.freeze({
-    1: 700, 20: 2750, 40: 11800, 60: 50300, 80: 214000, 99: 837000,
-});
 
 /** How far a derived XP/hour may sit above its target before the granularity wobble is worth saying out loud: rounding one cycle up adds less than one XP, so on any cycle earning more than a couple of XP the effect is invisible. */
 const WOBBLE_FACTOR = 1.5;
 
-/**
- * Experience per hour at `level`, linearly interpolated between the pins.
- * ⚠️ Deliberately identical in shape to `gphAt` (straight lines between pins, flat below the first and above the last), so one growth number governing both curves does not read differently on each.
- */
-export function xphAt(level, dials = DEFAULT_DIALS) {
-    const pins = dials.xphPins || XPH_PINS;
-    const levels = Object.keys(pins).map(Number).sort((a, b) => a - b);
-    if (levels.length === 0) return 0;
-    const L = Number.isFinite(level) ? level : 1;
-    if (L <= levels[0]) return pins[levels[0]];
-    if (L >= levels[levels.length - 1]) return pins[levels[levels.length - 1]];
-    for (let i = 0; i < levels.length - 1; i++) {
-        const lo = levels[i];
-        const hi = levels[i + 1];
-        if (L >= lo && L <= hi) {
-            const t = (L - lo) / (hi - lo);
-            return pins[lo] + t * (pins[hi] - pins[lo]);
-        }
-    }
-    return pins[levels[levels.length - 1]];
+/** Experience an hour of work at `level`, before its Purpose: the balance rules' XP curve (section 1). No dial moves it. */
+export function xphAt(level) {
+    return xpAnHourAt(level);
 }
 
-/** The Purpose tag's XP factor. An unknown or missing tag reads as 0 (it teaches nothing), and `xpPerCycle` turns that into no XP at all rather than the minimum of 1: the min-1 floor is a rounding rule for work that does teach and must never manufacture XP for work that does not. */
-export function purposeXpFactor(purpose, dials = DEFAULT_DIALS) {
-    const factors = dials.purposeXpFactors || PURPOSE_XP_FACTORS;
-    return factors[purpose] ?? 0;
+/** The Purpose tag's XP tilt. An unknown or missing tag reads as 0 (it teaches nothing), and `xpPerCycle` turns that into no XP at all rather than the minimum of 1: the min-1 floor is a rounding rule for work that does teach and must never manufacture XP for work that does not. */
+export function purposeXpFactor(purpose) {
+    return xpTilt(purpose);
 }
 
 /**
  * XP awarded for one cycle. Returns `null` for anything the simulator cannot honestly answer: no solved cycle, a non-finite cycle length, a nonsense level, an untagged or unknown Purpose. `null`, never `NaN` and never 0.
  * ⚠️ A `NaN` here would be written onto a Token's `config.xp` and every comparison against it is `false`, so it would read as fine everywhere it was checked.
  */
-export function xpPerCycle(level, purpose, cycleTimeMs, dials = DEFAULT_DIALS) {
+export function xpPerCycle(level, purpose, cycleTimeMs) {
     if (!Number.isFinite(cycleTimeMs) || cycleTimeMs <= 0) return null;
     if (!Number.isFinite(level) || level < 1) return null;
-    const factor = purposeXpFactor(purpose, dials);
+    const factor = purposeXpFactor(purpose);
     if (!Number.isFinite(factor) || factor <= 0) return null;
-    const xph = xphAt(level, dials);
+    const xph = xphAt(level);
     if (!Number.isFinite(xph) || xph <= 0) return null;
     const raw = xph * factor * (cycleTimeMs / 3600000);
     if (!Number.isFinite(raw) || raw <= 0) return null;
     return Math.max(1, Math.round(raw));
 }
 
-/** How long one focused skill takes to climb 1 → 99, in board-hours. The XPH curve is integrated against the game's own threshold curve, imported from `src/utils/XPCurve.js` rather than reimplemented, so the two cannot drift apart unnoticed. */
-export function hoursToMastery(dials = DEFAULT_DIALS) {
+/** How long one focused skill takes to climb 1 → 99, in board-hours. The XP curve is integrated against the game's own threshold curve, imported from `src/utils/XPCurve.js` rather than reimplemented, so the two cannot drift apart unnoticed. */
+export function hoursToMastery() {
     let hours = 0;
     for (let level = 1; level < 99; level++) {
         const need = xpForLevel(level + 1) - xpForLevel(level);
-        const rate = xphAt(level, dials);
+        const rate = xphAt(level);
         if (!Number.isFinite(need) || need <= 0) continue;
         if (!Number.isFinite(rate) || rate <= 0) return Infinity;
         hours += need / rate;
@@ -80,14 +60,14 @@ export function hoursToMastery(dials = DEFAULT_DIALS) {
  * The pacing projection: where a hero is, and how much gold they have earned, after every board-hour of the climb.
  * ⚠️ It projects the notional worker the curves themselves describe, earning `gphAt(level)` and training at `xphAt(level)` with no Purpose factor on either side; that is the only reading that keeps the two curves talking about the same person.
  */
-export function buildProjection(dials = DEFAULT_DIALS) {
+export function buildProjection() {
     const segments = [];
     let hours = 0;
     let gold = 0;
     for (let level = 1; level < 99; level++) {
         const need = xpForLevel(level + 1) - xpForLevel(level);
-        const rate = xphAt(level, dials);
-        const gph = gphAt(level, dials);
+        const rate = xphAt(level);
+        const gph = gphAt(level);
         if (!Number.isFinite(need) || need <= 0) continue;
         if (!Number.isFinite(rate) || rate <= 0) break;
         const span = need / rate;
@@ -96,7 +76,7 @@ export function buildProjection(dials = DEFAULT_DIALS) {
         hours += span;
         gold += earned;
     }
-    const tailGph = gphAt(99, dials);
+    const tailGph = gphAt(99);
     return Object.freeze({
         segments,
         masteryHours: hours,
@@ -129,7 +109,7 @@ export function hoursForGold(gold, projection) {
  * projection.
  *
  * @param {Array}  entities  adapted entities, as `fieldAdapter` returns them
- * @param {object} ctx  `{ cycleTimes, skipped, dials }`
+ * @param {object} ctx  `{ cycleTimes, skipped }`
  * @returns {{ xp: Map, projection: object, masteryHours: number, rows: Array }}
  *
  * An entity the TIME pass skipped — inert, or untagged — gets **no entry**, and
@@ -140,7 +120,6 @@ export function hoursForGold(gold, projection) {
 export function runXpPass(entities = [], {
     cycleTimes = new Map(),
     skipped = new Map(),
-    dials = DEFAULT_DIALS,
 } = {}) {
     const xp = new Map();
     const rows = [];
@@ -148,7 +127,7 @@ export function runXpPass(entities = [], {
     for (const entity of entities) {
         if (!entity || skipped.has(entity.id)) continue;
         const cycleTimeMs = cycleTimes.get(entity.id);
-        const awarded = xpPerCycle(entity.level, entity.purpose, cycleTimeMs, dials);
+        const awarded = xpPerCycle(entity.level, entity.purpose, cycleTimeMs);
         if (awarded === null) continue;
         if (entity.xpPinned) {
             rows.push(makeRow(
@@ -170,7 +149,7 @@ export function runXpPass(entities = [], {
         // Delivered XP/hour against the target the curve set. Cycles per hour here is the plain cycle rate, matching the formula's own reading.
         const cyclesPerHour = 3600000 / cycleTimeMs;
         const delivered = awarded * cyclesPerHour;
-        const target = xphAt(entity.level, dials) * purposeXpFactor(entity.purpose, dials);
+        const target = xphAt(entity.level) * purposeXpFactor(entity.purpose);
         if (target > 0 && delivered > target * WOBBLE_FACTOR) {
             rows.push(makeRow(
                 SEVERITY.INFO,
@@ -191,6 +170,6 @@ export function runXpPass(entities = [], {
         }
     }
 
-    const projection = buildProjection(dials);
+    const projection = buildProjection();
     return { xp, projection, masteryHours: projection.masteryHours, rows };
 }

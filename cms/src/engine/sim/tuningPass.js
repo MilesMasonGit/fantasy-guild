@@ -225,7 +225,7 @@ export function runTuningPass(entities, {
 function judge(entity, { cycleTimeMs, anchoredItemIds, values, details, dials, rows }) {
     const isAnchor = anchoredItemIds.length > 0;
     const band = toleranceFor(entity.level, dials, { isAnchor });
-    const targetPerHour = gphAt(entity.level, dials) * purposeGoldFactor(entity.purpose, dials);
+    const targetPerHour = gphAt(entity.level) * purposeGoldFactor(entity.purpose);
     const before = baselineState(entity, cycleTimeMs);
     const baseEarnings = earningsPerHour(entity, before, values);
 
@@ -267,7 +267,7 @@ function judge(entity, { cycleTimeMs, anchoredItemIds, values, details, dials, r
     // Training losses: an XP source is allowed to cost the player money, but not to eat a level's whole income.
     if (entity.purpose === 'xph' && baseEarnings.profitPerHour < 0) {
         const loss = -baseEarnings.profitPerHour;
-        const cap = dials.trainingLossCap * gphAt(entity.level, dials);
+        const cap = dials.trainingLossCap * gphAt(entity.level);
         if (loss <= cap) {
             rows.push(makeRow(
                 SEVERITY.INFO,
@@ -279,7 +279,7 @@ function judge(entity, { cycleTimeMs, anchoredItemIds, values, details, dials, r
         }
         rows.push(makeRefusal('training-loss-over-cap', {
             what: `${entity.name} loses ${loss.toFixed(0)}g an hour to train on, past the cap.`,
-            why: `An XP source is meant to cost the player money, but not more than ${(dials.trainingLossCap * 100).toFixed(0)}% of what a level ${entity.level} worker earns in that hour — this one is at ${(loss / gphAt(entity.level, dials) * 100).toFixed(0)}%.`,
+            why: `An XP source is meant to cost the player money, but not more than ${(dials.trainingLossCap * 100).toFixed(0)}% of what a level ${entity.level} worker earns in that hour — this one is at ${(loss / gphAt(entity.level) * 100).toFixed(0)}%.`,
         }, { entityId: entity.id, purpose: entity.purpose, detail: { loss, cap } }));
         return { ...record, refusalCode: 'training-loss-over-cap' };
     }
