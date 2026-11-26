@@ -411,7 +411,28 @@ const NOT_YET_PLACED = Object.freeze({
     token_master_smithy: 'built from Maple Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
     token_masters_study: 'built from Mahogany Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
     token_tannery: 'built from Maple Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
-    token_town_square: 'built from Ebony Frame, Basalt Block, Gold Ingot, which the two planes do not reach yet'
+    token_town_square: 'built from Ebony Frame, Basalt Block, Gold Ingot, which the two planes do not reach yet',
+    // A station offers every tier, and the later tiers wait for later planes (content session,
+    // 2026-11-26): the Excavation offers a Dig for every vein, but a later vein's Prospecting Map
+    // comes only from that vein's own rare finds, as no copper-tier drop feeds a late material.
+    item_silver_prospecting_map: 'a later plane: only the Silver Ore Vein finds it (the Excavation\'s Dig Silver Vein asks for it)',
+    item_gold_prospecting_map: 'a later plane: only the Gold Ore Vein finds it (the Excavation\'s Dig Gold Vein asks for it)',
+    item_mythril_prospecting_map: 'a later plane: only the Mythril Ore Vein finds it (the Excavation\'s Dig Mythril Vein asks for it)',
+    item_adamantine_prospecting_map: 'a later plane: only the Adamantine veins find it (the Excavation\'s Dig Adamantine Vein asks for it)',
+    item_darkmetal_prospecting_map: 'a later plane: only the Darkmetal Ore Vein finds it (the Excavation\'s Dig Darkmetal Vein asks for it)',
+    token_silver_ore_vein: 'a later plane: dug from a Silver Prospecting Map, which only a Silver Ore Vein finds',
+    token_gold_ore_vein: 'a later plane: dug from a Gold Prospecting Map, which only a Gold Ore Vein finds',
+    token_mythril_ore_vein: 'a later plane: dug from a Mythril Prospecting Map, which only a Mythril Ore Vein finds',
+    token_adamantium_ore: 'a later plane: dug from an Adamantine Prospecting Map, which only an Adamantine vein finds',
+    token_darkmetal_ore_vein: 'a later plane: dug from a Darkmetal Prospecting Map, which only a Darkmetal Ore Vein finds',
+    // The harpoon fish moved later (Shark Waters arrive only in Flower Meadow, the Fishing Spot's
+    // harpoon pool bites only in Flower Meadow and Cherry Grove), and so did the harpoons.
+    item_shark: 'a later plane: only Shark Waters land it, in Flower Meadow (Cooked Shark, cooking level 83, and Bait from Shark ask for it)',
+    item_cooked_shark: 'a later plane: cooked from Shark (cooking, level 83)',
+    item_stingray: 'a later plane: only a harpoon in Flower Meadow or Cherry Grove lands it (Bait from Stingray, fishing level 54, asks for it)',
+    item_mythril_harpoon: 'a later plane: forged from Mythril Ingots and Maple Planks (smithy, level 54)',
+    item_adamantine_harpoon: 'a later plane: forged from Adamantine Ingots and Mahogany Planks (smithy, level 63)',
+    item_darkmetal_harpoon: 'a later plane: forged from Darkmetal Ingots and Ebony Planks (smithy, level 83)'
 });
 
 /**
@@ -421,7 +442,11 @@ const NOT_YET_PLACED = Object.freeze({
 const NO_TOOL_YET = Object.freeze({
     token_cedar_tree: 'a tier-3 woodaxe: the Mythril Woodaxe, from Mythril Ingots the two planes do not reach',
     token_mahogany_tree: 'a tier-4 woodaxe: the Adamantine Woodaxe, from Adamantine Ingots the two planes do not reach',
-    token_ebony_tree: 'a tier-5 woodaxe: the Darkmetal Woodaxe, from Darkmetal Ingots the two planes do not reach'
+    token_ebony_tree: 'a tier-5 woodaxe: the Darkmetal Woodaxe, from Darkmetal Ingots the two planes do not reach',
+    // The later veins the Excavation's Digs offer (NOT_YET_PLACED: their maps wait for later planes).
+    token_gold_ore_vein: 'a tier-3 pickaxe: the Mythril Pickaxe, from Mythril Ingots the two planes do not reach',
+    token_adamantium_ore: 'a tier-3 pickaxe: the Mythril Pickaxe, from Mythril Ingots the two planes do not reach',
+    token_darkmetal_ore_vein: 'a tier-4 pickaxe: the Adamantine Pickaxe, from Adamantine Ingots the two planes do not reach'
 });
 
 /** What makes an item anywhere in the content: Token ids and recipe ids. */
