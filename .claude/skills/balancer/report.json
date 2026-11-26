@@ -1,8 +1,10 @@
 {
-  "title": "Method review, and the ledger's first full reading",
+  "title": "First trial of the number pack",
   "date": "2026-11-26",
-  "summary": "The method review's rulings are in, spacing is settled, and the boost budget is restated by places. For one hero in one skill: 12.3 to 12.8 days to 99 optimized at 6.25 % a level, about 17.5 days typical (three quarters of each boost), no walls, fifteen gaps with the content session.",
+  "summary": "A first trial of the live number pack, on a test copy of the CMS, takes the live game from mostly too fast to within about 0.8 to 1.5 times the curve once the new XP table is counted (Fishing is the exception). Nothing is staged: the trial needs the new XP table in the engine before it can be judged properly.",
   "checked": [
+    "The live number pack, trialled 2026-11-26 on a test copy: 303 live recipes and gathering Tokens get the rules' level, time, XP and counts, and a 30-second node. Days to 99 for a maxed hero, before and after, against the curve's 12.6: Cooking 3.3 to 14.2, Farming 4.7 to 18.8, Smithing 5.4 to 22.1, Forestry 5.9 to 13.9, Alchemy 6.0 to 26.3, Crafting 7.0 to 24.0, Construction 8.1 to 23.0, Mining 8.8 to 18.9, Fishing 18.1 to 45.1. The after figures are on today's XP table, which asks about 13 million XP where the pack is written for 9.4 million; allowing for that they read Forestry 10.0, Cooking 10.2, Farming 13.5, Mining 13.6, Smithing 15.9, Construction 16.6, Crafting 17.3, Alchemy 18.9, Fishing 32.5.",
+    "What the trial leaves: making skills run short of gatherers (Smithing's chain runs at 41 % of full pace and would need nearly 7 gatherers; the rules count on yield boosts the live game doesn't have yet), 76 live entries couldn't be matched to the plan and got no numbers, and Fishing is far too slow.",
     "The ledger now counts heroes (one at the start, eight at the end), spends each hour of work once and times a work site by its building places. With one hero, everything the Starter Camp offers today takes about 7 hours: nine skills and its prices, about 15 hours of work in all. That is information, not a fault, by the ruling on leaving a stage; it is a lot for a first camp.",
     "The ledger's reading of the live game, 2026-11-26 (the 6.25 % curve, a maker held to about 2 gatherers, the new boost budget). Days to 99 for a maxed hero against the curve's 12.6: Cooking 3.8, Alchemy 5.3, Farming 6.6, Forestry 6.8, Construction 7.3, Smithing 7.6, Crafting 9.1, Mining 9.5, Fishing 21.7. So before any number pack the live game is mostly 1.3 to 3.3 times too fast, Cooking most of all, and Fishing is well too slow (it moved from 14.7 with the day's content changes).",
     "Boosts in the live game: 462 pieces of work hold more boost than their tier's budget (it was 883 before the typical player's budget rose to three quarters), most of them speed from station upgrades. A typical hero falls more than 1.45 times behind the curve in Fishing, Farming 20 to 30 and early Forestry.",
@@ -47,6 +49,8 @@
     "Cooking, Smithing and Enchanting: none."
   ],
   "waiting": [
+    "On the director: the new XP table on a test branch with the rules' curves switched on, so the pack can be judged against the engine as it will really run; then the ledger timing Planned work.",
+    "On the owner, later, with the pack: the first places should ask level 10 in the skill they name (today the first ore place asks Mining 5, so a player leaves the Starter Camp in 12 to 17 minutes, not about 35).",
     "On the owner: review and Sync the six Planned packs in the CMS (the content session staged the plan on 2026-11-26: 210 entries). They apply cleanly in a test copy.",
     "On the director, briefed and in the queue (brief 900): the ledger timing a real guild and site (building now), the simulator's curves from the balance rules (building now), the two coin curves, and three checks.",
     "On the director, a new ticket (T-724): a writer that puts the page's numbers onto the Planned entries as a pack, and a ledger option that times Planned work. Without both, the plan still can't be checked against the engine.",
