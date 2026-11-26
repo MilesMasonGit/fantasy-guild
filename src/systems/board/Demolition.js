@@ -143,6 +143,12 @@ function restart(instance) {
         instance.cycleElapsedMs = 0;
         EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: instance.id, percent: 0 });
     }
+    // A Many Hands station's second recipe starts again too (`StationRecipe.forfeitSecond`, which
+    // imports this file).
+    if (instance.secondElapsedMs > 0) {
+        instance.secondElapsedMs = 0;
+        EventBus.publish(BOARD_EVENTS.SECOND_PROGRESS, { instanceId: instance.id, percent: 0 });
+    }
     // ⚠️ Cleared now, not on the runner's next pass: flags read the alert before the runner runs,
     // and a stale fixable alert would send the hero standing there off to other work.
     if (instance.alert) {

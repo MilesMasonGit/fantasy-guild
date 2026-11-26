@@ -33,9 +33,10 @@ import { warnMissingContent } from '../../utils/missingContent.js';
  * Nothing on the mat is addressed by anything but a mat point or an instance id.
  */
 
-/** Wipe in-flight cycle progress: the forfeit of an interrupted cycle, in one place. */
+/** Wipe in-flight cycle progress, a second recipe's too: the forfeit of an interrupted cycle, in one place. */
 function forfeitCycle(instance) {
     if (instance) instance.cycleElapsedMs = 0;
+    StationRecipe.forfeitSecond(instance);
 }
 
 /**

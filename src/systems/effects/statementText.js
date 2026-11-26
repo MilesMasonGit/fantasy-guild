@@ -828,6 +828,11 @@ function bodySegments(statement, names) {
             if (carried && payload.type === EFFECT_TYPES.BUILD_DISCOUNT) {
                 return segs(head(), ' on Foundations and their builds, while the hero is in the guild');
             }
+            // "Second Recipe at the Crafting stations the hero works": a station runs two recipes while they work it.
+            if (carried && payload.type === EFFECT_TYPES.SECOND_RECIPE) {
+                const skill = payload.category ? segs(d(getSkill(payload.category)?.name || payload.category, categorySlot(statement)), ' ') : [];
+                return segs(head(), ' at the ', skill, 'stations the hero works');
+            }
             if (carried) return segs(head(), carriedScopeSegments(statement));
             // "Double Item 10% on Raw Beef at every nearby Token": the lead's own "on" names the item.
             const prep = namesItsNarrowing(statement) ? 'at' : 'on';

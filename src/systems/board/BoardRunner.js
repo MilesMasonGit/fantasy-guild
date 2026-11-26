@@ -24,7 +24,8 @@ import * as TimedChanges from './TimedChanges.js';
 import * as WorkCheck from './WorkCheck.js';
 import * as Foundations from './Foundations.js';
 import * as Demolition from './Demolition.js';
-import { workConfigOf } from './StationRecipe.js';
+import { workConfigOf, LANE } from './StationRecipe.js';
+import * as SecondRecipe from './SecondRecipe.js';
 import * as Restrictions from './Restrictions.js';
 import * as Placement from './Placement.js';
 import * as RoomWait from './RoomWait.js';
@@ -117,6 +118,16 @@ let heroCarryIn = new Map();
 let heroCarryOut = new Map();
 
 /**
+ * A Many Hands station's second recipe's leftover, by instance id, as {@link carryIn} is its first's:
+ * each lane's cycle ends on its own clock, so each hands its own leftover on. A Token that refilled
+ * during the tick owes its rest on both. ⚠️ No hero record for it: a hero arrives at both lanes at
+ * once and the first's carries the hero's leftover; a second leftover beside it would cut the first
+ * lane's own (the later start wins in {@link carryAtStart}).
+ */
+let carry2In = new Map();
+let carry2Out = new Map();
+
+/**
  * The board the leftovers above were made on. ⚠️ A new game, a load and a journey to another Region
  * each put a new board object in place, and the leftovers go with the old one: a hero keeps their
  * id across all three and a load brings back the same Token ids, so a leftover kept would start the
@@ -132,6 +143,8 @@ function forgetCarryOffItsBoard() {
     carryOut.clear();
     heroCarryIn.clear();
     heroCarryOut.clear();
+    carry2In.clear();
+    carry2Out.clear();
 }
 
 // Why the hero on a Token cannot work it (possession, level, then tool) lives in `WorkCheck.heroReason`,
@@ -154,6 +167,29 @@ function setAlert(instance, reason) {
     instance.alert = next;
     EventBus.publish(BOARD_EVENTS.ALERT_CHANGED, { instanceId: instance.id, alert: instance.alert });
     return true;
+}
+
+/**
+ * A station's second recipe's problem (an `ALERT` reason), or none: kept on the instance as
+ * `secondAlert` for its card alone, which names it. Never the mat's mark, never news: the red mark
+ * is the first recipe's (owner, 2026-11-25).
+ */
+function setSecondAlert(instance, reason) {
+    const next = reason || null;
+    if ((instance.secondAlert || null) === next) return;
+    if (next) instance.secondAlert = next;
+    else delete instance.secondAlert;
+}
+
+/** The problem of `lane`'s recipe: the first's is the Token's mark, the second's its card's. */
+function setLaneAlert(instance, lane, reason) {
+    if (lane === LANE.SECOND) setSecondAlert(instance, reason);
+    else setAlert(instance, reason);
+}
+
+/** What a station's no-room wait is told under: the Token's id for its first recipe. */
+function roomKeyOf(id, lane) {
+    return lane === LANE.SECOND ? `${id}:second` : id;
 }
 
 /**
@@ -386,8 +422,12 @@ function giveCycleXp({ instance, io, config, caught, failed }, heroId) {
  * what stops a Token handing out output it cannot afford.
  *
  * Every reader is asked by the Token's instance id, and every event names it by `instanceId`.
+ *
+ * `lane` is the station's recipe that finished (`StationRecipe.LANE`): a Many Hands station's second
+ * recipe finishes on its own clock, with its own problem, and says so on `CYCLE_COMPLETE`
+ * (`lane: 2`); everything else a cycle does, it does.
  */
-function completeCycle(instance, def, io, heroId, config = def.config, overMs = 0) {
+function completeCycle(instance, def, io, heroId, config = def.config, overMs = 0, lane = LANE.FIRST) {
     const id = instance.id;
 
     // Building in place: a Foundation's cycle ends with it BECOMING the Token its recipe outputs.
@@ -406,11 +446,11 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // progress with the `NO_ROOM` mark, nothing is spent and nothing is lost, and it retries every
     // tick.
     if (!buildTypeId && !hasRoomForTokenOutputs(id, io)) {
-        setAlert(instance, ALERT.NO_ROOM);
-        RoomWait.tell(id, { source: RoomWait.SOURCE.STATION, instanceId: id, typeId: instance.typeId });
+        setLaneAlert(instance, lane, ALERT.NO_ROOM);
+        RoomWait.tell(roomKeyOf(id, lane), { source: RoomWait.SOURCE.STATION, instanceId: id, typeId: instance.typeId });
         return;
     }
-    RoomWait.landed(id);
+    RoomWait.landed(roomKeyOf(id, lane));
 
     // INPUT_COST (Efficiency), widened to read the Token's neighbours: a Tool Rack beside a Forge
     // makes it cheaper to run. Each input carries its exact cost and the most it can take (the cost
@@ -428,7 +468,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     // once the cycle it paid for has actually produced.
     const chargePlan = Charges.planCycle(id, instance, io);
     if (!chargePlan.ok) {
-        setAlert(instance,ALERT.CHARGES);
+        setLaneAlert(instance, lane, ALERT.CHARGES);
         return;
     }
 
@@ -444,7 +484,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     if (!InputAllocator.checkInputs(costed).ok) {
         // Raced by another Token between the availability check and here.
         // Keep the progress and wait — the cycle is not lost, only delayed.
-        setAlert(instance,ALERT.INPUTS);
+        setLaneAlert(instance, lane, ALERT.INPUTS);
         return;
     }
     // What was paid, kept for a build: the building remembers what its materials cost.
@@ -455,7 +495,8 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     };
     if (!(keepChance > 0)) pay();
 
-    instance.cycleElapsedMs = 0;
+    if (lane === LANE.SECOND) instance.secondElapsedMs = 0;
+    else instance.cycleElapsedMs = 0;
 
     // FAIL_CHANCE: a probability axis, resolved through the same three-bucket formula as everything
     // else and then rolled once. Base 0: nothing fails unless something nearby says so. A failed
@@ -583,7 +624,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
 
     // The board's universal unit of work. One kill counts as one cycle too, so combat feeds this
     // exactly as production does.
-    EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, {
+    const finished = {
         instanceId: id,
         typeId: instance.typeId,
         // ⚠️ The cycle that spends a Token's last charge has already taken it off the mat above
@@ -597,7 +638,10 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
         // completed a cycle" trigger has always been able to say *that* one
         // finished; this is what lets a listener care about *what* it made.
         produced
-    });
+    };
+    // A second recipe's cycle is a cycle to every rule; the mat's work bar follows the first alone.
+    if (lane === LANE.SECOND) finished.lane = LANE.SECOND;
+    EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, finished);
 
     // Cheap tally, used by the Token-type statistics surface.
     const counts = GameState.state?.collection?.cardUseCounts;
@@ -679,6 +723,220 @@ function carryAtStart(id, heroId) {
 }
 
 /**
+ * A Many Hands station's second recipe, for one tick, after its first (`SecondRecipe.js`): it runs
+ * only while the hero who worked the first this tick still works the station and holds Second
+ * Recipe, on its own clock (`secondElapsedMs`) with its own materials, and its own problem
+ * (`secondAlert`, the card's). Its own recipe's level is asked; the hero's other gates were the
+ * first lane's. Its progress goes to the card (`SECOND_PROGRESS`), never the mat.
+ *
+ * ⚠️ After the first lane's cycle, which may have taken the Token off the mat, dismissed a Summoned
+ * worker that spent its last charge, or broken a tool: asked again here.
+ */
+function tickSecondLane(instance, def, heroId, delta, publishProgress) {
+    const id = instance.id;
+    if (!heroId || !BoardState.getTokenById(id) || BoardState.workerOf(id) !== heroId) return;
+    if (!SecondRecipe.runsSecond(instance, def, heroId)) return;
+
+    const config = workConfigOf(def, instance, LANE.SECOND);
+    const skillAlert = WorkCheck.heroReason(heroId, config, instance);
+    if (skillAlert) {
+        setSecondAlert(instance, skillAlert);
+        return;
+    }
+    const check = WorkCheck.fixableReason(id, instance, undefined, LANE.SECOND);
+    if (check.reason) {
+        // Resting is the whole station's, and its mark the first lane's: no second problem then.
+        setSecondAlert(instance, WorkCheck.AWAY.has(check.reason) ? null : check.reason);
+        return;
+    }
+    const io = check.io;
+    if (instance.secondAlert === ALERT.NO_ROOM && !hasRoomForTokenOutputs(id, io)) return;
+    setSecondAlert(instance, null);
+
+    const owed = carry2In.get(id);
+    const running = instance.secondElapsedMs > 0;
+    if (!running && owed !== undefined && owed + delta <= 0) return;
+    if (!running) {
+        EventBus.publish(BOARD_EVENTS.CYCLE_START, { instanceId: id, typeId: instance.typeId, heroId, lane: LANE.SECOND });
+        LoadoutMoments.fire(id, heroId, 'CYCLE_START');
+    }
+
+    const before = running ? instance.secondElapsedMs : (owed ?? 0);
+    instance.secondElapsedMs = before + delta;
+    const cycleTime = TileModifiers.workTimeOf(id, io.cycleTimeMs || config.cycleTimeMs || 10000, config.skill);
+
+    if (instance.secondElapsedMs >= cycleTime) {
+        const overshoot = before < cycleTime ? instance.secondElapsedMs - cycleTime : 0;
+        completeCycle(instance, def, io, heroId, config, overshoot, LANE.SECOND);
+        if (overshoot > 0 && instance.secondElapsedMs === 0) carry2Out.set(id, overshoot);
+    } else if (publishProgress) {
+        EventBus.publish(BOARD_EVENTS.SECOND_PROGRESS, {
+            instanceId: id,
+            percent: Math.min(100, (instance.secondElapsedMs / cycleTime) * 100),
+            elapsedMs: instance.secondElapsedMs,
+            cycleTimeMs: cycleTime
+        });
+    }
+}
+
+/**
+ * A station's first recipe, for one tick, once every guard on the Token itself has passed: whether
+ * the board lets it run (`WorkCheck.fixableReason`), then its cycle's start, progress and end. The
+ * Token's red mark is this lane's alone.
+ */
+function tickFirstLane(instance, def, config, heroId, delta, publishProgress) {
+    const id = instance.id;
+    // What is this station making? Whatever the player set it to (see `StationRecipe.js`).
+    // `WorkCheck` resolves whether the board around it lets that recipe run, whether the inputs
+    // are there and whether the charges are affordable: the same check a flag makes before
+    // claiming. The side effects stay here: they describe a hero actually standing on the
+    // Token.
+    const check = WorkCheck.fixableReason(id, instance);
+    const io = check.io;
+
+    // Resting until it respawns, or a Field with nothing ripe: no cycle and no mark. Its hero
+    // lets go on the next flag pass.
+    if (WorkCheck.AWAY.has(check.reason)) {
+        setAlert(instance, null);
+        return;
+    }
+
+    if (check.reason === ALERT.NO_RECIPE) {
+        // Its selected recipe wants context that is not beside it (or the Token's pool is empty
+        // and it has nothing to select). Adjacency does not decide what a station makes, only
+        // whether it can make it.
+        const reqs = RecipeResolver.getMissingRequirements(id, instance);
+        const missingNames = reqs.items?.length > 0
+            ? reqs.items.join(', ')
+            : (def?.name || tokenName(instance.typeId) || instance.typeId);
+
+        if (setAlert(instance, ALERT.NO_RECIPE)) EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+            instanceId: id,
+            severity: 'yellow',
+            type: 'out_of_token',
+            name: missingNames,
+            title: `Missing token: ${missingNames}`,
+            message: `Missing token: ${missingNames}`
+        });
+        return;
+    }
+
+    if (check.reason === ALERT.CHOOSE_BUILD || check.reason === ALERT.CHOOSE_RECIPE || check.reason === ALERT.BUILD_SITE
+        || check.reason === ALERT.CHOOSE_CAMP || check.reason === ALERT.GUARDED
+        || check.reason === ALERT.CHOOSE_NODE || check.reason === ALERT.NODE_MASTERED) {
+        // A Foundation or a station with nothing picked. Flags do not claim one, so this is
+        // only reached by a hero already on it when the pick was cleared. It waits, saying so.
+        // Likewise a Foundation whose build may not stand where it is (moved off its Stone),
+        // a Hideout whose camp has left its reach or has a guard on it (its thief stays by it),
+        // and a Laboratory whose node has left its reach or whose kind is fully mastered.
+        setAlert(instance, check.reason);
+        return;
+    }
+
+    if (check.reason === ALERT.INPUTS) {
+        // Waits, keeping whatever progress it had. There are no partial cycles: it does not run
+        // slower, it runs later.
+        const startsNow = setAlert(instance, ALERT.INPUTS);
+
+        const missingItem = check.inputCheck?.missing?.[0];
+        const itemDef = missingItem ? getItem(missingItem.itemId) : null;
+        const itemName = itemDef?.name || missingItem?.itemId || 'Item';
+        if (startsNow) EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+            instanceId: id,
+            severity: 'yellow',
+            type: 'out_of_item',
+            name: itemName,
+            message: `Out of item: ${itemName}`
+        });
+        return;
+    }
+
+    // Charges are a requirement like any other, so they are checked in the same place as the
+    // items: before the timer advances, not when it expires. A station that cannot afford a
+    // full cycle waits and says so, rather than counting down to a completion it will have to
+    // abandon. Nothing is deducted by the check.
+    if (check.reason === ALERT.CHARGES) {
+        if (setAlert(instance, ALERT.CHARGES)) EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+            instanceId: id,
+            severity: 'yellow',
+            type: 'out_of_charges',
+            name: def?.name || tokenName(instance.typeId) || instance.typeId,
+            message: `Out of charges: ${def?.name || tokenName(instance.typeId) || instance.typeId}`
+        });
+        return;
+    }
+
+    // A finished build still waiting for room holds its full progress and its mark until the
+    // room appears, rather than clearing the mark and raising it again every tick.
+    if (instance.alert === ALERT.NO_ROOM && Foundations.isFoundation(def)
+        && Foundations.buildTargetOf(io)
+        && !Foundations.hasRoomToBuild(instance, Foundations.buildTargetOf(io))) {
+        return;
+    }
+    // Likewise a station whose finished cycle makes a Token with no room beside it or no room
+    // under the mat cap.
+    if (instance.alert === ALERT.NO_ROOM && !Foundations.isFoundation(def)
+        && !hasRoomForTokenOutputs(id, io)) {
+        return;
+    }
+
+    setAlert(instance,null);
+
+    // Refilled at the very end of this tick, it rested all of it: its cycle begins next tick and
+    // is announced once, there. Begun here, its clock would stand at exactly zero and the next
+    // tick would announce it a second time.
+    const owed = carryIn.get(id);
+    if (!(instance.cycleElapsedMs > 0) && owed !== undefined && owed + delta <= 0) return;
+
+    // A new cycle begins here.
+    // ⚠️ This position is the whole meaning of the event. Everything above it is a guard (a
+    // hero is present, the recipe resolved, the inputs are in the Bank, the charges are
+    // affordable), so a Token that reaches this line is genuinely starting work, not merely
+    // being ticked. A Token stalled for want of ore never gets here and never claims to have
+    // started; when it finally resumes, it fires once.
+    // `cycleElapsedMs` is still zero for exactly one tick per cycle, which is what makes this
+    // fire once rather than every tick. `completeCycle` resets it, so the next cycle announces
+    // itself too.
+    if (!(instance.cycleElapsedMs > 0)) {
+        // `heroId` rides along so a rule reacting to a cycle STARTING can know who started it,
+        // as the same rule on a cycle COMPLETING can.
+        EventBus.publish(BOARD_EVENTS.CYCLE_START, { instanceId: id, typeId: instance.typeId, heroId: heroId || null });
+        LoadoutMoments.fire(id, heroId, 'CYCLE_START');
+    }
+
+    // The fast path: everything above is a cheap guard, this is the work.
+    const before = instance.cycleElapsedMs > 0 ? instance.cycleElapsedMs : carryAtStart(id, heroId);
+    instance.cycleElapsedMs = before + delta;
+
+    // WORK_TIME, widened to the neighbours, then floored twice (`TileModifiers.workTimeOf`).
+    // `io.cycleTimeMs` is the active recipe's own timing when it has one, falling back to the
+    // station's flat config. At water it is the catch's own (`Fishing.cycleMsOf`).
+    const authoredCycle = io.cycleTimeMs || config.cycleTimeMs || 10000;
+    const baseCycle = Fishing.isWater(def) ? Fishing.cycleMsOf(def, heroId, instance, authoredCycle) : authoredCycle;
+    const cycleTime = TileModifiers.workTimeOf(id, baseCycle, config.skill);
+
+    if (instance.cycleElapsedMs >= cycleTime) {
+        // Only a cycle that crossed its end during this tick has a leftover; one that held at
+        // full progress (no room, a raced input) and finishes on a retry does not.
+        const overshoot = before < cycleTime ? instance.cycleElapsedMs - cycleTime : 0;
+        completeCycle(instance, def, io, heroId, config, overshoot);
+        if (overshoot > 0 && instance.cycleElapsedMs === 0) {
+            carryOut.set(id, overshoot);
+            if (heroId) heroCarryOut.set(heroId, overshoot);
+        }
+    } else if (publishProgress) {
+        // Ref-based UI updates only: this bypasses React entirely, because re-rendering every
+        // tile several times a second would be a cascade.
+        EventBus.publish(BOARD_EVENTS.PROGRESS, {
+            instanceId: id,
+            percent: Math.min(100, (instance.cycleElapsedMs / cycleTime) * 100),
+            elapsedMs: instance.cycleElapsedMs,
+            cycleTimeMs: cycleTime
+        });
+    }
+}
+
+/**
  * Advance every Token on the board.
  *
  * @param {number} delta game milliseconds since the last tick
@@ -689,6 +947,8 @@ export function tick(delta) {
     carryOut.clear();
     [heroCarryIn, heroCarryOut] = [heroCarryOut, heroCarryIn];
     heroCarryOut.clear();
+    [carry2In, carry2Out] = [carry2Out, carry2In];
+    carry2Out.clear();
 
     // An older save's untethered enemies join their nearest camp, and a gone camp's enemies the
     // next camp of their kind, before any camp counts what it spawned below.
@@ -706,7 +966,10 @@ export function tick(delta) {
     // cycle starts owing the time it was still resting (a negative carry, read where a cycle
     // begins), so a big catch-up step and many small live ones end in the same place.
     for (const [id, sinceMs] of TimedChanges.lateRefillsThisTick()) {
-        if (sinceMs < delta) carryIn.set(id, sinceMs - delta);
+        if (sinceMs < delta) {
+            carryIn.set(id, sinceMs - delta);
+            carry2In.set(id, sinceMs - delta);
+        }
     }
 
     // Fishing spots arrive on the water by themselves: after the timed changes, before Flags, so
@@ -771,6 +1034,7 @@ export function tick(delta) {
         if (Hand.isInHand(id)) {
             if (BoardCombat.getFight(id)) BoardCombat.endFight(id);
             if (carryIn.has(id)) carryOut.set(id, carryIn.get(id));
+            if (carry2In.has(id)) carry2Out.set(id, carry2In.get(id));
             continue;
         }
 
@@ -844,154 +1108,11 @@ export function tick(delta) {
             }
         }
 
-        // What is this station making? Whatever the player set it to (see `StationRecipe.js`).
-        // `WorkCheck` resolves whether the board around it lets that recipe run, whether the inputs
-        // are there and whether the charges are affordable: the same check a flag makes before
-        // claiming. The side effects stay here: they describe a hero actually standing on the
-        // Token.
-        const check = WorkCheck.fixableReason(id, instance);
-        const io = check.io;
+        tickFirstLane(instance, def, config, heroId, delta, publishProgress);
 
-        // Resting until it respawns, or a Field with nothing ripe: no cycle and no mark. Its hero
-        // lets go on the next flag pass.
-        if (WorkCheck.AWAY.has(check.reason)) {
-            setAlert(instance, null);
-            continue;
-        }
-
-        if (check.reason === ALERT.NO_RECIPE) {
-            // Its selected recipe wants context that is not beside it (or the Token's pool is empty
-            // and it has nothing to select). Adjacency does not decide what a station makes, only
-            // whether it can make it.
-            const reqs = RecipeResolver.getMissingRequirements(id, instance);
-            const missingNames = reqs.items?.length > 0
-                ? reqs.items.join(', ')
-                : (def?.name || tokenName(instance.typeId) || instance.typeId);
-
-            if (setAlert(instance, ALERT.NO_RECIPE)) EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-                instanceId: id,
-                severity: 'yellow',
-                type: 'out_of_token',
-                name: missingNames,
-                title: `Missing token: ${missingNames}`,
-                message: `Missing token: ${missingNames}`
-            });
-            continue;
-        }
-
-        if (check.reason === ALERT.CHOOSE_BUILD || check.reason === ALERT.CHOOSE_RECIPE || check.reason === ALERT.BUILD_SITE
-            || check.reason === ALERT.CHOOSE_CAMP || check.reason === ALERT.GUARDED
-            || check.reason === ALERT.CHOOSE_NODE || check.reason === ALERT.NODE_MASTERED) {
-            // A Foundation or a station with nothing picked. Flags do not claim one, so this is
-            // only reached by a hero already on it when the pick was cleared. It waits, saying so.
-            // Likewise a Foundation whose build may not stand where it is (moved off its Stone),
-            // a Hideout whose camp has left its reach or has a guard on it (its thief stays by it),
-            // and a Laboratory whose node has left its reach or whose kind is fully mastered.
-            setAlert(instance, check.reason);
-            continue;
-        }
-
-        if (check.reason === ALERT.INPUTS) {
-            // Waits, keeping whatever progress it had. There are no partial cycles: it does not run
-            // slower, it runs later.
-            const startsNow = setAlert(instance, ALERT.INPUTS);
-
-            const missingItem = check.inputCheck?.missing?.[0];
-            const itemDef = missingItem ? getItem(missingItem.itemId) : null;
-            const itemName = itemDef?.name || missingItem?.itemId || 'Item';
-            if (startsNow) EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-                instanceId: id,
-                severity: 'yellow',
-                type: 'out_of_item',
-                name: itemName,
-                message: `Out of item: ${itemName}`
-            });
-            continue;
-        }
-
-        // Charges are a requirement like any other, so they are checked in the same place as the
-        // items: before the timer advances, not when it expires. A station that cannot afford a
-        // full cycle waits and says so, rather than counting down to a completion it will have to
-        // abandon. Nothing is deducted by the check.
-        if (check.reason === ALERT.CHARGES) {
-            if (setAlert(instance, ALERT.CHARGES)) EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-                instanceId: id,
-                severity: 'yellow',
-                type: 'out_of_charges',
-                name: def?.name || tokenName(instance.typeId) || instance.typeId,
-                message: `Out of charges: ${def?.name || tokenName(instance.typeId) || instance.typeId}`
-            });
-            continue;
-        }
-
-        // A finished build still waiting for room holds its full progress and its mark until the
-        // room appears, rather than clearing the mark and raising it again every tick.
-        if (instance.alert === ALERT.NO_ROOM && Foundations.isFoundation(def)
-            && Foundations.buildTargetOf(io)
-            && !Foundations.hasRoomToBuild(instance, Foundations.buildTargetOf(io))) {
-            continue;
-        }
-        // Likewise a station whose finished cycle makes a Token with no room beside it or no room
-        // under the mat cap.
-        if (instance.alert === ALERT.NO_ROOM && !Foundations.isFoundation(def)
-            && !hasRoomForTokenOutputs(id, io)) {
-            continue;
-        }
-
-        setAlert(instance,null);
-
-        // Refilled at the very end of this tick, it rested all of it: its cycle begins next tick and
-        // is announced once, there. Begun here, its clock would stand at exactly zero and the next
-        // tick would announce it a second time.
-        const owed = carryIn.get(id);
-        if (!(instance.cycleElapsedMs > 0) && owed !== undefined && owed + delta <= 0) continue;
-
-        // A new cycle begins here.
-        // ⚠️ This position is the whole meaning of the event. Everything above it is a guard (a
-        // hero is present, the recipe resolved, the inputs are in the Bank, the charges are
-        // affordable), so a Token that reaches this line is genuinely starting work, not merely
-        // being ticked. A Token stalled for want of ore never gets here and never claims to have
-        // started; when it finally resumes, it fires once.
-        // `cycleElapsedMs` is still zero for exactly one tick per cycle, which is what makes this
-        // fire once rather than every tick. `completeCycle` resets it, so the next cycle announces
-        // itself too.
-        if (!(instance.cycleElapsedMs > 0)) {
-            // `heroId` rides along so a rule reacting to a cycle STARTING can know who started it,
-            // as the same rule on a cycle COMPLETING can.
-            EventBus.publish(BOARD_EVENTS.CYCLE_START, { instanceId: id, typeId: instance.typeId, heroId: heroId || null });
-            LoadoutMoments.fire(id, heroId, 'CYCLE_START');
-        }
-
-        // The fast path: everything above is a cheap guard, this is the work.
-        const before = instance.cycleElapsedMs > 0 ? instance.cycleElapsedMs : carryAtStart(id, heroId);
-        instance.cycleElapsedMs = before + delta;
-
-        // WORK_TIME, widened to the neighbours, then floored twice (`TileModifiers.workTimeOf`).
-        // `io.cycleTimeMs` is the active recipe's own timing when it has one, falling back to the
-        // station's flat config. At water it is the catch's own (`Fishing.cycleMsOf`).
-        const authoredCycle = io.cycleTimeMs || config.cycleTimeMs || 10000;
-        const baseCycle = Fishing.isWater(def) ? Fishing.cycleMsOf(def, heroId, instance, authoredCycle) : authoredCycle;
-        const cycleTime = TileModifiers.workTimeOf(id, baseCycle, config.skill);
-
-        if (instance.cycleElapsedMs >= cycleTime) {
-            // Only a cycle that crossed its end during this tick has a leftover; one that held at
-            // full progress (no room, a raced input) and finishes on a retry does not.
-            const overshoot = before < cycleTime ? instance.cycleElapsedMs - cycleTime : 0;
-            completeCycle(instance, def, io, heroId, config, overshoot);
-            if (overshoot > 0 && instance.cycleElapsedMs === 0) {
-                carryOut.set(id, overshoot);
-                if (heroId) heroCarryOut.set(heroId, overshoot);
-            }
-        } else if (publishProgress) {
-            // Ref-based UI updates only: this bypasses React entirely, because re-rendering every
-            // tile several times a second would be a cascade.
-            EventBus.publish(BOARD_EVENTS.PROGRESS, {
-                instanceId: id,
-                percent: Math.min(100, (instance.cycleElapsedMs / cycleTime) * 100),
-                elapsedMs: instance.cycleElapsedMs,
-                cycleTimeMs: cycleTime
-            });
-        }
+        // A Many Hands station's second recipe, after the first whatever the first is doing: one
+        // short of materials, the other carries on (`SecondRecipe.js`).
+        if (instance.secondRecipeId !== undefined) tickSecondLane(instance, def, heroId, delta, publishProgress);
     }
 }
 
@@ -1068,5 +1189,8 @@ export function isHeroIdle(heroId) {
         return kind !== 'node';
     }
     if (status.state === 'walking') return false;
-    return !!BoardState.getTokenById(status.instanceId)?.alert;   // working, but stuck
+    const at = BoardState.getTokenById(status.instanceId);
+    if (!at?.alert) return false;
+    // Working, but stuck: unless it is a Many Hands station whose second recipe runs while its first waits.
+    return !(at.secondRecipeId !== undefined && !at.secondAlert && SecondRecipe.runsSecond(at, getTokenType(at.typeId), heroId));
 }

@@ -101,10 +101,14 @@ export function unmetContext(instanceId, recipe) {
  * The selected recipe is returned even when it cannot run, so callers can say what is missing
  * rather than only that something is.
  *
+ * `lane` names which of a station's recipes is asked about: the first (every station's) or the
+ * second (a Many Hands station's, `StationRecipe.LANE`). Only a plain making station has a second.
+ *
  * @returns {{status: string, recipe: object|null, reason?: string, missingContext?: object[]}}
  */
-export function resolveRecipe(instanceId, instance) {
+export function resolveRecipe(instanceId, instance, lane = StationRecipe.LANE.FIRST) {
     const def = getTokenType(instance?.typeId);
+    if (lane === StationRecipe.LANE.SECOND) return checkContext(instanceId, StationRecipe.validateSelection(instance, def, lane));
 
     // A Hideout runs no recipe: it robs the camp its player chose, while it may (`Hideouts.js`).
     if (Hideouts.isHideout(def)) {
@@ -131,12 +135,16 @@ export function resolveRecipe(instanceId, instance) {
     if (!recipe) {
         return { status: RECIPE.NONE, recipe: null, reason: def?.foundation ? 'choose_build' : 'choose_recipe' };
     }
+    return checkContext(instanceId, recipe);
+}
 
+/** A chosen recipe against the context beside the station: it runs, or it says what is missing. */
+function checkContext(instanceId, recipe) {
+    if (!recipe) return { status: RECIPE.NONE, recipe: null, reason: 'choose_recipe' };
     const missing = unmetContext(instanceId, recipe);
     if (missing.length) {
         return { status: RECIPE.NONE, recipe, reason: 'missing_context', missingContext: missing };
     }
-
     return { status: RECIPE.OK, recipe };
 }
 
@@ -149,12 +157,21 @@ export function resolveRecipe(instanceId, instance) {
  * running no recipe falls back to the flat `config.cycleTimeMs` on its own definition. The returned
  * key stays `cycleTimeMs` because `BoardRunner` and `TileProgressBar` read it by that name for both
  * kinds of Token.
+ *
+ * `lane` as in {@link resolveRecipe}: a station's second recipe runs with its own inputs, outputs,
+ * time and XP.
  */
-export function effectiveIO(instanceId, instance) {
+export function effectiveIO(instanceId, instance, lane = StationRecipe.LANE.FIRST) {
     const def = getTokenType(instance?.typeId);
-    const { status, recipe, reason } = resolveRecipe(instanceId, instance);
+    const { status, recipe, reason } = resolveRecipe(instanceId, instance, lane);
 
     if (status !== RECIPE.OK) return { status, reason, inputs: [], outputs: [] };
+    if (lane === StationRecipe.LANE.SECOND) {
+        return {
+            status, recipe, inputs: recipe.inputs ?? [], outputs: recipe.outputs ?? [],
+            cycleTimeMs: recipe.durationMs ?? def?.config?.cycleTimeMs, xp: recipe.xp ?? def?.config?.xp
+        };
+    }
 
     // A Hideout's cycle is a theft: its camp's steal table in place of outputs, and the table's XP
     // where it writes one (a camp worth more to rob teaches more). `steal` tells the runner to roll
@@ -252,9 +269,11 @@ export function servesStation(providedTags, instance) {
  * 1. Tokens priority: the selected recipe's context Tokens are missing.
  * 2. Items priority: Only once all token requirements are satisfied and recipe is resolved.
  *
+ * `lane` as in {@link resolveRecipe}.
+ *
  * @returns {{ type: 'tokens'|'items'|null, items: string[] }}
  */
-export function getMissingRequirements(instanceId, instance) {
+export function getMissingRequirements(instanceId, instance, lane = StationRecipe.LANE.FIRST) {
     if (!instance?.typeId) return { type: null, items: [] };
     const def = getTokenType(instance.typeId);
     if (!def) return { type: null, items: [] };
@@ -262,7 +281,7 @@ export function getMissingRequirements(instanceId, instance) {
     // 1. Check the context the SELECTED recipe asks for. Only that one recipe's requirements are
     // listed: the station has already chosen, and listing the rest would tell the player to fetch
     // Tokens for work they did not ask for.
-    const { recipe } = resolveRecipe(instanceId, instance);
+    const { recipe } = resolveRecipe(instanceId, instance, lane);
     const missingContext = unmetContext(instanceId, recipe);
     if (missingContext.length) {
         return {
@@ -274,7 +293,7 @@ export function getMissingRequirements(instanceId, instance) {
     }
 
     // 2. Tokens are satisfied! Now check missing input Items
-    const io = effectiveIO(instanceId, instance);
+    const io = effectiveIO(instanceId, instance, lane);
     if (io.inputs?.length) {
         const check = InputCost.checkCost(instance, io.inputs);
         if (!check.ok) {

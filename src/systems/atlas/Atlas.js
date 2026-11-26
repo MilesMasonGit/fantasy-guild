@@ -415,6 +415,7 @@ function frozenCopy(board) {
 function startWorkCyclesFresh(board) {
     for (const token of Object.values(board?.tokens || {})) {
         if (token && token.cycleElapsedMs > 0) token.cycleElapsedMs = 0;
+        if (token && token.secondElapsedMs > 0) token.secondElapsedMs = 0;
     }
 }
 

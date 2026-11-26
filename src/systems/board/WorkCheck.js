@@ -18,6 +18,8 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import * as Ammo from '../combat/Ammo.js';
 import { toolNeedOf } from './toolNeed.js';
+import { workConfigOf, LANE } from './StationRecipe.js';
+import * as SecondRecipe from './SecondRecipe.js';
 
 /**
  * One answer to why a Token can't run, shared by the board runner (while a hero works a Token) and
@@ -145,9 +147,11 @@ export { toolNeedOf };
  * advances a demolition on its own path and never reads it.
  *
  * `heroId`, when given, is whose Efficiency the inputs are costed with (a flag weighing the Token
- * for that hero); otherwise whoever works it.
+ * for that hero); otherwise whoever works it. `lane` names the station's recipe asked about
+ * (`StationRecipe.LANE`): the first, or a Many Hands station's second, whose own inputs and context
+ * are checked.
  */
-export function fixableReason(instanceId, instance, heroId = undefined) {
+export function fixableReason(instanceId, instance, heroId = undefined, lane = undefined) {
     if (Demolition.isMarked(instance)) return { reason: null, io: null };
     if (Respawn.isResting(instance)) return { reason: ALERT.RESTING, io: null };
     // A Field with nothing ripe: its crop grows (or is about to be sown), or it is stopped for
@@ -155,7 +159,7 @@ export function fixableReason(instanceId, instance, heroId = undefined) {
     const field = Fields.workReason(instance);
     if (field) return { reason: field, io: null };
 
-    const io = RecipeResolver.effectiveIO(instanceId, instance);
+    const io = RecipeResolver.effectiveIO(instanceId, instance, lane);
 
     if (io.status === RECIPE.NONE) {
         // A Foundation with nothing picked says so in its own words rather than as a missing Token.
@@ -198,10 +202,25 @@ export function fixableReason(instanceId, instance, heroId = undefined) {
 /**
  * The first reason `heroId` cannot run Token `instanceId` — the hero's gate
  * first, then their bait, then the Token's — or null if they can. What a flag records as a skip.
+ *
+ * A Many Hands station is work while either of its recipes can run for this hero: its first waiting
+ * for something the player can fix, a second the hero holds Second Recipe for and can run carries
+ * on (owner, 2026-11-25), so the hero takes it and the first keeps its mark.
  */
 export function whyCannotRun(instanceId, instance, heroId, config) {
     const hero = heroReason(heroId, config, instance) || baitReason(heroId, instance);
     if (hero) return hero;
     // Costed with this hero's own Efficiency: they are the one who would pay.
-    return fixableReason(instanceId, instance, heroId).reason;
+    const reason = fixableReason(instanceId, instance, heroId).reason;
+    if (reason && instance?.secondRecipeId !== undefined && FIXABLE.has(reason)
+        && secondCanRun(instanceId, instance, heroId)) return null;
+    return reason;
+}
+
+/** Whether `heroId` would run station `instance`'s second recipe now: open to them, their level, its own needs. */
+function secondCanRun(instanceId, instance, heroId) {
+    const def = getTokenType(instance.typeId);
+    if (!SecondRecipe.runsSecond(instance, def, heroId)) return false;
+    if (heroReason(heroId, workConfigOf(def, instance, LANE.SECOND), instance)) return false;
+    return fixableReason(instanceId, instance, heroId, LANE.SECOND).reason == null;
 }

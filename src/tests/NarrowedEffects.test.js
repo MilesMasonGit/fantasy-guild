@@ -264,7 +264,9 @@ describe('the palette declares both, rather than inferring them', () => {
             // The other gathering signature perks' readers pass the worked Token's skill: Free
             // Replant (`Fields.harvested`), Grove Felling (`GroveFelling.afterFall`) and Better Catch
             // (`Fishing.catchOf`).
-            EFFECT_TYPES.FREE_REPLANT, EFFECT_TYPES.GROVE_FELLING, EFFECT_TYPES.BETTER_CATCH
+            EFFECT_TYPES.FREE_REPLANT, EFFECT_TYPES.GROVE_FELLING, EFFECT_TYPES.BETTER_CATCH,
+            // Second Recipe's (`SecondRecipe.holdsSecondRecipe`, the Many Hands perk) the station's work skill.
+            EFFECT_TYPES.SECOND_RECIPE
         ]));
     });
 

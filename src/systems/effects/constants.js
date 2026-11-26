@@ -124,6 +124,12 @@ export const EFFECT_TYPES = {
     // and off the materials of a build on a Foundation, while a hero holding it is in the guild. The
     // guild's best holder counts, never the sum — BuildPrices.buildDiscount.
     BUILD_DISCOUNT: 'BUILD_DISCOUNT',
+    // Second Recipe (the Many Hands perk, Crafting 99): on or off. A making station worked by a hero
+    // holding it runs a second chosen recipe beside the first, each with its own cycle and
+    // materials. Read off the station's worker (their gear, perks, lingering effects, a Summoned
+    // worker's trait) and the guild's stars, never a Token; narrowed to the station's skill —
+    // SecondRecipe.runsSecond.
+    SECOND_RECIPE: 'SECOND_RECIPE',
 
     // Faith's blessings, the effects no building gives (owner, 2026-11-25), carried by a shrine.
     // Can't Run Out (also the Motherlode perk): a chance a work cycle at a Token it reaches spends none

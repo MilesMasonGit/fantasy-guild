@@ -863,6 +863,25 @@ export const MODIFIER_PALETTE = [
         group: 'Support',
         hint: `Percent off the Shop price of every Foundation (its items and coins, each rounded up) and off the materials of every build on a Foundation, while a hero holding this is in the guild. Only the guild's best holder counts, never the sum of several, and at most ${MAX_BUILD_DISCOUNT}% comes off. A Foundation goes back to the Shop for what it was bought for. On gear or a perk; a Token's reaches nobody.`
     },
+    {
+        /**
+         * Read by `SecondRecipe.runsSecond` every tick for a station set to a second recipe, off the
+         * hero working it (and the guild's stars), narrowed to the station's skill: on, the station
+         * runs its second recipe beside the first. `flag`: no number, only on or off.
+         */
+        type: EFFECT_TYPES.SECOND_RECIPE,
+        reads: { up: () => 'run a second recipe at the station they work', down: () => 'run no second recipe' },
+        label: 'Second Recipe',
+        explains: 'A station this hero works runs a second chosen recipe beside the first',
+        when: 'never',
+        flag: true,
+        buckets: ['flat'],
+        categories: 'skill',
+        heroOrGuild: true,
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Support',
+        hint: 'While a hero holding this works a making station (one with a recipe list, never a Foundation, Field, water, Hideout, shrine, Laboratory or Summoning Circle), the station runs a second recipe the player picks on its card beside the first: a different recipe, with its own cycle and its own materials, and when one is short the other carries on. No number: it is on or off. On gear or a perk, narrowed to the skill (Many Hands: Crafting); a Token\'s reaches nobody.'
+    },
 
     // --- Combat ---------------------------------------------------------
     //
