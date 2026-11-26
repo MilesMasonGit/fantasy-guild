@@ -4,7 +4,9 @@ import process from 'node:process';
 import { readWorkspaceFile, saveWorkspaceFile, writeBackup, stamp, RevisionConflict, WORKSPACE_FILE } from './workspaceFile.js';
 import { loadGameData, writeSync } from './gameData.js';
 import { archivePack, packFilePath } from './changePackInbox.js';
+import { createRequire } from 'module';
 import { validatePack, entryConflict } from './src/engine/changePacks.js';
+import { writeNumberPack, solverRows, unclearText } from './src/engine/numberPack.js';
 import { emptySession, accept, force, finish } from './src/engine/packReview.js';
 import { describeSyncDiff, SYNC_COLLECTIONS } from './src/engine/syncGuard.js';
 import { PLAN_SYNC_KEY } from './src/engine/planFile.js';
@@ -28,6 +30,17 @@ export const USAGE = `Usage: npm run cms -- <command> [options]
   pack check <pack.json>          Will the CMS accept this change pack? Lists entries that conflict.
   pack apply <pack.json> [--yes]  Apply a pack to the workspace as the CMS's review does, and move it
                                   to applied/ beside it. Conflicts refuse it unless --yes.
+  pack numbers --out=<pack.json> [--rows=<solved.json>] [--dials=<dials.json>] [--unclear=<file>]
+                                  The number pack writer: the balance solver's rows onto the plan's
+                                  Planned entries, as a change pack written to --out (never into
+                                  cms/incoming/). A made item gets a Planned recipe, a gathering
+                                  Token its cycle, a crop its numbers: level, seconds, XP, inputs
+                                  with counts, what it makes. Everything stays Planned. --rows reads
+                                  a solver output ({ rows } or a list); without it the solver runs
+                                  on docs/active/content_catalogue.json (with --dials). Entries with
+                                  no clear recipe or Token cycle are listed for the content session
+                                  (and written to --unclear), never guessed. Reads the workspace,
+                                  never saves it; a worktree reads the main checkout's.
   recalc [--all]                  Recalculate (the economic simulator) on the workspace and save it.
   sync [--confirm-removals] [--no-commit]
                                   Recalculate, then write data/ exactly as Sync to Game does, and
@@ -357,6 +370,85 @@ async function cmdLedger(paths, options, load, out) {
     return 0;
 }
 
+const SOLVER = ['.claude', 'skills', 'balancer', 'balance_solver.cjs'];
+const CATALOGUE = ['docs', 'active', 'content_catalogue.json'];
+
+function readJsonFile(file, what) {
+    try {
+        return JSON.parse(fs.readFileSync(file, 'utf8'));
+    } catch (err) {
+        throw new CliError(`The ${what} cannot be read (${shortPath(process.cwd(), file)}): ${err.message}`);
+    }
+}
+
+/** The solver's rows: a file of them (--rows), or the solver run on the content catalogue with the dials given. */
+function rowsFor(paths, options, out) {
+    if (typeof options.rows === 'string') {
+        const file = path.resolve(options.rows);
+        let rows;
+        try {
+            rows = solverRows(readJsonFile(file, 'solver output'));
+        } catch (err) {
+            throw err instanceof CliError ? err : new CliError(err.message);
+        }
+        out(`The solver's rows from ${shortPath(paths.root, file)}: ${plural(rows.length, 'row')}.`);
+        return rows;
+    }
+    const solver = createRequire(import.meta.url)(path.join(paths.root, ...SOLVER));
+    const catalogue = readJsonFile(path.join(paths.root, ...CATALOGUE), 'content catalogue');
+    const dials = typeof options.dials === 'string' ? readJsonFile(path.resolve(options.dials), 'dials file') : {};
+    const rows = solver.solve(catalogue.entries, dials).rows;
+    out(`The solver run on ${CATALOGUE.join('/')}${typeof options.dials === 'string' ? ` with the dials in ${shortPath(paths.root, path.resolve(options.dials))}` : ' with its own dials'}: ${plural(rows.length, 'row')}.`);
+    return rows;
+}
+
+async function cmdPackNumbers(paths, options, out) {
+    if (typeof options.out !== 'string') throw new CliError('Name the pack to write: --out=<pack.json> (a scratch folder; the balancer copies it to cms/incoming/ once it passes).', 2);
+    const file = path.resolve(options.out);
+    const inbox = path.join(paths.root, 'cms', 'incoming');
+    if (same(path.dirname(file), inbox) || same(path.dirname(path.dirname(file)), inbox)) {
+        throw new CliError(`Refused: ${shortPath(paths.root, file)} is in the CMS's inbox. Write the pack to a scratch folder, check it, and copy it to cms/incoming/ once it passes.`);
+    }
+    const id = path.basename(file).replace(/\.json$/i, '');
+    if (!/\.json$/i.test(file) || !/^[a-z0-9][a-z0-9_-]{0,79}$/i.test(id)) {
+        throw new CliError(`The pack's file name is its id: letters, digits, _ and -, ending .json (not ${path.basename(file)}).`, 2);
+    }
+    // Read-only, so a worktree with no workspace of its own reads the main checkout's.
+    const asked = typeof options.workspace === 'string' || typeof options.sandbox === 'string';
+    if (!asked && !readDisk(paths).exists) {
+        const main = mainCheckoutWorkspace(paths.root);
+        if (main && fs.existsSync(main)) {
+            paths = { ...paths, workspaceFile: main };
+            out(`This is a worktree with no workspace of its own: reading the main checkout's workspace, ${main}.`);
+        }
+    }
+    const disk = requireDisk(paths);
+    const rows = rowsFor(paths, options, out);
+    const { pack, filled, unclear, skipped } = writeNumberPack(disk.workspace, rows, { id });
+    out(`Against ${shortPath(paths.root, paths.workspaceFile)} (revision ${disk.revision}), never saved: ${plural(filled.length, 'entry', 'entries')} written, ${unclear.length} unclear, ${skipped.length} skipped.`);
+    const reasons = new Map();
+    for (const s of skipped) reasons.set(s.reason, (reasons.get(s.reason) || 0) + 1);
+    for (const [reason, n] of reasons) out(`  skipped ${n}: ${reason}`);
+    if (unclear.length) {
+        out('Unclear, for the content session (not written):');
+        for (const line of unclearText(unclear)) out(line);
+    }
+    if (typeof options.unclear === 'string') {
+        const listFile = path.resolve(options.unclear);
+        fs.writeFileSync(listFile, ['Planned entries with no clear recipe or Token cycle, for the content session:', ...unclearText(unclear), ''].join('\n'));
+        out(`The unclear list written to ${shortPath(paths.root, listFile)}.`);
+    }
+    if (!pack) {
+        out('Nothing to write: no Planned entry has numbers from the solver.');
+        return 0;
+    }
+    const check = validatePack(pack, { fileName: path.basename(file) });
+    if (!check.ok) throw new CliError('The pack came out malformed, so it was not written:\n- ' + check.errors.join('\n- '));
+    fs.writeFileSync(file, JSON.stringify(pack, null, 2) + '\n');
+    out(`The pack written to ${shortPath(paths.root, file)}: ${plural(pack.entries.length, 'entry', 'entries')} (${pack.entries.filter((e) => e.op === 'create').length} new Planned recipes, ${pack.entries.filter((e) => e.op === 'edit').length} edits). Check it with: npm run cms -- pack check ${shortPath(paths.root, file)}`);
+    return 0;
+}
+
 async function cmdValidate(paths, options, out) {
     const { validateWorkspace, validateDataDir, reportLines } = await import('./schemaCheck.js');
     let result;
@@ -385,6 +477,7 @@ export async function runCli(argv, { root, load, out = (s) => console.log(s), er
         if (command === 'validate') return await cmdValidate(paths, options, out);
         if (command === 'pack' && sub === 'check') return await cmdPackCheck(file, paths, out);
         if (command === 'pack' && sub === 'apply') return await cmdPackApply(file, paths, options, load, out);
+        if (command === 'pack' && sub === 'numbers') return await cmdPackNumbers(paths, options, out);
         if (command === 'recalc') return await cmdRecalc(paths, options, load, out);
         if (command === 'sync') return await cmdSync(paths, options, load, out);
         if (command === 'restore') return await cmdRestore(paths, load, out);
