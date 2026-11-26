@@ -147,8 +147,9 @@ function buildBoard(withPerks = true) {
     const vein = fixtures.placeAt('gp_vein', VEIN.x, VEIN.y);
     const field = fixtures.placeAt('gp_field', FIELD.x, FIELD.y);
     const oak = fixtures.placeAt('gp_oak', OAK.x, OAK.y);
-    fixtures.placeAt('gp_oak', OAK.x + 110, OAK.y);
-    fixtures.placeAt('gp_oak', OAK.x, OAK.y + 110);
+    // Edges touching (128 u), the closest two Tokens may stand, so Grove Feller reaches them.
+    fixtures.placeAt('gp_oak', OAK.x + 128, OAK.y);
+    fixtures.placeAt('gp_oak', OAK.x, OAK.y + 128);
     const lake = fixtures.placeAt('gp_lake', LAKE.x, LAKE.y);
     fixtures.orderAt(miner.id, VEIN);
     fixtures.orderAt(farmer.id, FIELD);

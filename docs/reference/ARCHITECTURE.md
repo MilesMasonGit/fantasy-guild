@@ -1,6 +1,6 @@
 # Tabletop Guild — Architecture
 
-**Status:** reference, the map of the code **as it is** on `main` (v0.8.0, save schema 0.8.1).
+**Status:** reference, the map of the code **as it is** on `main` (v0.8.0, save schema 0.8.2).
 **Checked against code:** 2026-11-06, commit `93338609` (branch `prep/ar`); the module map's sizes and the boot-order line numbers re-measured 2026-11-08 at `7796f8a9`. Every claim below
 carries a `path:line` or `path`; where something was reasoned rather than read, it says
 **unverified**. Code wins if this document disagrees; fix the document.
@@ -268,8 +268,9 @@ point** (`board.tokens`, `:56`), heroes' orders in `board.flags` (`:63`), floor 
 1. Read the slot (file or localStorage), parse; unreadable or invalid → one retry from the
    backup (`loadDamaged`, `:406-423`).
 2. `migrateState` (`:353` → `src/systems/core/SaveMigration.js:24-123`). **Any save whose
-   version is not exactly `GAME_VERSION` = `'0.8.1'` is refused** (`SaveMigration.js:28-30`,
-   `StateSchema.js:40`); reworks break saves on purpose (`StateSchema.js:8-39`). For a current
+   version is not exactly `GAME_VERSION` = `'0.8.2'` is refused** (`SaveMigration.js:28-30`,
+   `StateSchema.js:40`); reworks break saves on purpose (`StateSchema.js:8-39`). The slot screen
+   shows such a save as an older version, with no Load (`SaveSlotHelper.getSlotInfo`'s `outdated`). For a current
    save it back-fills missing keys two levels deep from `INITIAL_STATE` (`:35-63`), converts
    old flags to orders, and drops retired fields (`currency`, `cartographer`, Vault/Tray board
    fields, retired upgrade ranks, old sprite names) (`:65-121`). Last, it follows the CMS's
@@ -360,10 +361,12 @@ The mat is a **free playmat**: Tokens stand at points in mat units, no grid, no 
 must call `matW()`/`matH()` rather than cache them (`matGeometry.js:16-30`).
 
 A Token has two sizes. Its **drawn body** (`artRadiusOf`) is what is drawn, clicked and stood
-beside. Its **room** (`MatPlacement.roomRadiusOf`) is the largest body of its cycle: what it grows
-into, regrows as, or (a Foundation) can build. Every spacing gap, the mat-edge test, every search
-and every push read the room, so a small Stump keeps its Tree's spot and a transform finds its
-own point free.
+beside: its footprint's alone (1×1 or 2×2; every Token is one size, a leftover `artSize` is read
+as standard and named by the boot audit). Its **room** (`MatPlacement.roomRadiusOf`) is the largest
+body of its cycle: what it grows into, regrows as, or (a Foundation) can build. Every spacing gap,
+the mat-edge test, every search and every push read the room, so a Foundation keeps room for its
+largest build and a transform finds its own point free. Two rooms may meet edge to edge, never
+overlap (`matTuning.js`: hitbox 100 %, overlap 0 %).
 
 The mat is fitted to the window by **CSS `zoom`** (`Board.jsx` `matZoomStyle`, the fit from
 `useBoardScale`), not a transform: Chrome lays it out at screen size, so every sprite, sized in

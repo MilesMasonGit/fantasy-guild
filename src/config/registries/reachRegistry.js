@@ -36,7 +36,8 @@
  * ⭐ **The one standard reach**, in mat units centre to centre: a game value,
  * the same for every Token and never changed by anything in play. How far a `nearby` rule carries,
  * how far a camp hands out work, where a Forest plants and what a "Stands near" or `Cannot` rule
- * counts. 240 takes in all eight neighbours of a small Token one step away (diagonals 226 u).
+ * counts. Against the closest two Tokens may stand (edges touching, 128 u), 240 holds twelve round
+ * one in a honeycomb; ⚠️ arranged by hand a few more fit (up to about fifteen).
  *
  * Read it live through `systems/board/nearby.reachRadius()`, which a dev build's Mat Tuner may
  * override (`matTuning.js`, kept in step by `ShippedBuild.test.js`). Here, in a file that imports

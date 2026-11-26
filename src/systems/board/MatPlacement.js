@@ -86,10 +86,10 @@ let roomMemo = { tokens: -1, recipes: -1, radii: new Map() };
 
 /**
  * The radius of the room a Token of `typeId` takes on the mat: the largest art radius of its whole
- * cycle ({@link cycleFormsOf}). A Stump is drawn small but takes its Tree's room, and
- * a Foundation the room of the largest Token it can build, so nothing can be put down tight against
- * the small form and what it becomes stands exactly where it stood. Spacing, the mat edge and every
- * push read this; drawing, clicks and where a hero stands read the drawn body (`artRadiusOf`).
+ * cycle ({@link cycleFormsOf}). A Foundation takes the room of the largest Token it can build, and
+ * a Token that grows into a 2×2 the 2×2's, so nothing can be put down tight against the smaller
+ * form and what it becomes stands exactly where it stood. Spacing, the mat edge and every push read
+ * this; drawing, clicks and where a hero stands read the drawn body (`artRadiusOf`).
  */
 export function roomRadiusOf(typeId) {
     const tokens = registryVersion();

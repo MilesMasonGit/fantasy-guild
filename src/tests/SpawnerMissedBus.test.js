@@ -37,7 +37,9 @@ registerTokenTypes({
     }
 });
 
-const FOREST_AT = { x: 200, y: 200 };
+// A point of the blockers' lattice on the 6-step mat (`packedMat`), so they pack right up to the
+// Forest and leave no gap beside it for a spawn (they stand 128 u apart, edges touching).
+const FOREST_AT = { x: 224, y: 196 };
 
 /** A 6-step mat packed with placed blockers at the minimum gap, clear only round `FOREST_AT`. */
 function packedMat() {

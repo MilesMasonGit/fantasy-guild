@@ -23,7 +23,7 @@
         "description": { "type": "string", "description": "Derived by Recalculate from the Token's rules (cms/src/engine/descriptionDictionary.js), never typed. Display only." },
         "sprite": { "type": "string", "description": "A sprite id or path; missing falls back to the type id (tokenRegistry.js)." },
         "cardArt": { "type": "string", "description": "The card's own backdrop picture (src/ui/components/board/tokenCard.js cardArtOf)." },
-        "artSize": { "type": "string", "enum": ["small"], "description": "Only small counts, and only on a 1-by-1 Token (src/config/matGeometry.js)." },
+        "artSize": { "type": "string", "enum": ["small"], "description": "Retired: every Token is one size (src/config/matGeometry.js), so nothing reads it and no editor writes it. The boot audit names a Token still carrying it (ContentAudit.js); a change pack removes it." },
         "tokenType": {
           "type": "string",
           "enum": ["resource", "station", "passive", "context", "buff", "manager", "market", "enemy", "promotion", "spawner", "camp", "summon"],

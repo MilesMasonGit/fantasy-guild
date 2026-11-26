@@ -613,7 +613,8 @@ describe('⭐ there and back plays exactly like save and load (fresh engine per 
     it('both runs reach the branch point identically (the comparison is fair)', () => {
         expect(results.travelled).toEqual([true, true]);
         expect(results.branchT).toEqual(results.branchL);
-        expect(results.branchT.tokens).toBeGreaterThan(80);
+        // A busy board: S2's ~108 Tokens at the old 81 u spacing, 56 edges touching (128 u).
+        expect(results.branchT.tokens).toBeGreaterThan(50);
     });
 
     it('a minute after, Tokens, Bank, heroes, loot, the bin and every random draw agree', () => {

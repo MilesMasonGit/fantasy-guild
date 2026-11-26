@@ -15,12 +15,13 @@ import { areaBannerSrc } from '../config/areaBanners.js';
 import { slotAwayText } from '../ui/components/title/slotAway.js';
 import { AWAY_REPLACES_LAST_SAVED } from '../ui/modals/SlotSelectionModal.jsx';
 import { CATCH_UP } from '../config/loopConstants.js';
+import { GAME_VERSION } from '../state/StateSchema.js';
 
 const h = React.createElement;
 const HOUR = 60 * 60 * 1000;
 
 const slotSave = (heroes, savedAt) => JSON.stringify({
-    version: '0.8.1', savedAt, state: { heroes: Array.from({ length: heroes }, (_, i) => ({ id: `h${i}` })), meta: { totalPlaytime: 2 * HOUR + 5 * 60 * 1000 } }
+    version: GAME_VERSION, savedAt, state: { heroes: Array.from({ length: heroes }, (_, i) => ({ id: `h${i}` })), meta: { totalPlaytime: 2 * HOUR + 5 * 60 * 1000 } }
 });
 
 const row = (n) => document.querySelector(`[data-save-slot="${n}"]`);
