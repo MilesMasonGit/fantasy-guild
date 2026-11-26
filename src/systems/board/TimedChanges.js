@@ -42,8 +42,8 @@ import { logger } from '../../utils/Logger.js';
  *
  * One big tick equals many small ones: a change that falls due part-way through a tick hands the
  * rest of that tick to the Token it became, and that one may change in turn (bounded by {@link
- * MAX_CHANGES_PER_TICK}). So ten minutes in one tick end in the same state as ten minutes in 100 ms
- * ticks.
+ * MAX_CHANGES_PER_TICK}); a hero works it only for that rest ({@link arrivals}). So ten minutes in
+ * one tick end in the same state as ten minutes in 100 ms ticks.
  *
  * A spawner's attempt that finds no room acts without replacing the Token: the clock starts its next
  * lap, keeping any time past due, so a long tick consumes `random` in the same order as many small
@@ -168,8 +168,8 @@ function gatePaused(instance, needsNearby) {
  * * `dueMs(instance, def)` — when it fires;
  * * `fire(instance, def, random, ctx)` — what happens. `ctx` is
  *   `{ overMs, advance, arrived }`: how long ago it fell due, {@link advance}, so a
- *   Token a handler creates can live the rest of the tick, and `arrived(token)`, which
- *   says that Token came to stand there `overMs` ago ({@link arrivals}). Returns the instance that
+ *   Token a handler creates can live the rest of the tick, and `arrived(token, overMs)`,
+ *   which says that Token came to stand there `overMs` ago ({@link arrivals}). Returns the instance that
  *   now stands there (a new one after a transform, or the same one for a
  *   handler that acts without replacing), {@link REMOVED} when the Token left
  *   the mat, or null when it could not happen (the clock is held full and
@@ -389,9 +389,7 @@ export function advance(instance, delta, random = Math.random) {
             return;
         }
 
-        const next = due.h.fire(current, def, random, {
-            overMs: due.over, advance, arrived: (token) => arrivedAt(token, due.over)
-        });
+        const next = due.h.fire(current, def, random, { overMs: due.over, advance, arrived: arrivedAt });
         if (!next) {
             // Nowhere to stand (or nothing to become): held full, retried next tick.
             clocks[due.h.clock] = due.at;

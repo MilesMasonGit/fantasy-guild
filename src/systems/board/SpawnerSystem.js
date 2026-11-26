@@ -395,7 +395,7 @@ function tryToSpawn(instance, def, random, ctx) {
     }
     // It came `overMs` before the tick's end: worked only from then, and its clocks live the rest.
     // Said first, so a change of its own within that time hands the moment on to what it became.
-    if (spawned && typeof ctx.arrived === 'function') ctx.arrived(spawned);
+    if (spawned && typeof ctx.arrived === 'function') ctx.arrived(spawned, ctx.overMs);
     if (spawned && ctx.overMs > 0 && typeof ctx.advance === 'function') ctx.advance(spawned, ctx.overMs, random);
 
     // "! Spawned Oak Tree", said from the spawner.
