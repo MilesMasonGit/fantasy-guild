@@ -9,7 +9,7 @@ import { lengthText, chanceText } from '../../../utils/Formatters.js';
 import * as HeroManager from '../../../systems/hero/HeroManager.js';
 import { ENGINE_EVENTS } from '../../../systems/core/engineEvents.js';
 import { heroCombatStats } from './heroCombatStats.js';
-import { MISS } from '../../../config/FormulaRegistry.js';
+import { MISS, CRIT_CHANCE_CAP } from '../../../config/FormulaRegistry.js';
 import { t } from '../../../i18n/index.js';
 
 /** How many stat rows stand in one column of the Combat view. */
@@ -73,7 +73,7 @@ export const HeroCombatView = ({ heroId }) => {
                 <CombatGlyph name="clock" colour={GLYPH_COLOUR.text} />
                 {lengthText(s.attackEveryMs)}
             </Row>
-            <Row stat="crit" label={t('heroPanel.combat.critChance')} tip={t('heroPanel.combat.critChanceTip')}>
+            <Row stat="crit" label={t('heroPanel.combat.critChance')} tip={t('heroPanel.combat.critChanceTip', { cap: CRIT_CHANCE_CAP })}>
                 {chanceText(s.critChance)}
             </Row>
             <Row stat="accuracy" label={t('heroPanel.combat.accuracy')} tip={t('heroPanel.combat.accuracyTip', MISS_BOUNDS)}>

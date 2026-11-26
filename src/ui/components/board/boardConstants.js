@@ -65,6 +65,7 @@ export const SKIP_HINT = {
     [ALERT.NO_TOOL]: 'needs {tool} in hand',
     [ALERT.NO_BAIT]: 'needs bait',
     [ALERT.FISH_LEVEL]: 'fish here need a higher Fishing level',
+    [ALERT.NO_AMMO]: 'needs arrows',
     [ALERT.NO_RECIPE]: 'missing a Token its recipe needs beside it',
     [ALERT.CHARGES]: 'not enough charges for a cycle',
     [ALERT.CHOOSE_BUILD]: 'nothing chosen to build',

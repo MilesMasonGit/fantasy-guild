@@ -403,6 +403,12 @@ export const ALERT = {
      */
     FISH_LEVEL: 'fish_level',
     /**
+     * At an enemy, the hero's bow has no arrow: none carried that the Bank still holds
+     * (`Ammo.leavesWithout`). Like `NO_BAIT`: never a badge, never a refusal; the hero lets go of
+     * the enemy (which keeps its wounds) and says which arrow they need.
+     */
+    NO_AMMO: 'no_ammo',
+    /**
      * The station cannot run the recipe it is set to, because the context Tokens that recipe names
      * are not beside it. (A station with nothing picked says `CHOOSE_RECIPE` instead.)
      */

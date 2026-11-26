@@ -6,7 +6,7 @@ import {
     CHARGE_MOMENT, chargeMomentsFor, chargeMomentOf, chargeDeltaOf
 } from '../../../../src/config/registries/chargeMomentRegistry.js';
 import { TRIGGER_EVENTS, getTriggerEvent, rolesOf, isFightMoment, everyOf, healthBelowOf, momentWords } from '../../../../src/config/registries/triggerRegistry.js';
-import { isWorkMoment } from '../../../../src/systems/core/consumableRule.js';
+import { isWorkMoment, FIGHT_START } from '../../../../src/systems/core/consumableRule.js';
 import { ROLES, getRole } from '../../../../src/config/registries/roleRegistry.js';
 import { REACHES, reachOf, getReach } from '../../../../src/config/registries/reachRegistry.js';
 import {
@@ -190,8 +190,8 @@ function appliesSlots(statement, ctx) {
                 const { statusId, stacks, ...rest } = payload;
                 void statusId; void stacks;
                 if (isStatus(v)) {
-                    const { forFight, forSwing, forCycle, durationMs, ...lifeless } = rest;
-                    void forFight; void forSwing; void forCycle; void durationMs;
+                    const { forFight, forSwing, forCycle, durationMs, forAttacks, ...lifeless } = rest;
+                    void forFight; void forSwing; void forCycle; void durationMs; void forAttacks;
                     return { payload: { ...lifeless, effectId: v } };
                 }
                 return { payload: { ...rest, effectId: v } };
@@ -202,7 +202,7 @@ function appliesSlots(statement, ctx) {
             value: payload.scale ?? 1,
             patch: v => ({ payload: { ...payload, scale: Math.max(1, Number(v) || 1) } })
         },
-        ...(status ? [] : lifetimeSlots(payload, onFightMoment, onWorkMoment)),
+        ...(status ? [] : lifetimeSlots(payload, onFightMoment, onWorkMoment, statement?.when?.event === FIGHT_START)),
         ...appliesExtras(payload)
     ];
 }
@@ -211,7 +211,7 @@ function appliesSlots(statement, ctx) {
  * How long an applied effect lasts: for the swing (on a fight moment), for the fight, for the cycle
  * (on a work moment), or a number of seconds; none of them fires it once, now (chaining).
  */
-function lifetimeSlots(payload, onFightMoment, onWorkMoment = false) {
+function lifetimeSlots(payload, onFightMoment, onWorkMoment = false, onFightStart = false) {
     return [
         // A boss's heavy strike: on until the swing being made is over. Offered on a fight
         // moment, or where it is already set so it can be cleared.
@@ -223,6 +223,19 @@ function lifetimeSlots(payload, onFightMoment, onWorkMoment = false) {
                 const { forSwing, ...rest } = payload;
                 void forSwing;
                 return { payload: v ? { ...rest, forSwing: true } : rest };
+            }
+        }] : []),
+        // A poison's case: on for that many of its hero's attacks, hit or miss, carried into later
+        // fights. Offered on the fight-start moment, or where already set so it can be cleared.
+        ...(onFightStart || payload.forAttacks ? [{
+            id: 'forAttacks', kind: SLOT_KIND.NUMBER, label: 'for N attacks', min: 0, optional: true,
+            value: payload.forAttacks ?? 0,
+            hint: 'A poison: a Consumable whose fight-start rule lasts this many of its hero\'s attacks, hit or miss. Taken only by a hero holding a Stealth weapon; what is left carries into later fights. Zero: not a poison.',
+            patch: v => {
+                const { forAttacks, ...rest } = payload;
+                void forAttacks;
+                const n = Math.max(0, Math.floor(Number(v) || 0));
+                return { payload: n > 0 ? { ...rest, forAttacks: n } : rest };
             }
         }] : []),
         {

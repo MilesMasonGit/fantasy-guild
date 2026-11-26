@@ -24,6 +24,7 @@ import { ensureFlagColour } from './FlagColours.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 import { KEYWORD, statementsWith } from '../effects/statements.js';
 import * as LiveEffects from '../effects/LiveEffects.js';
+import * as Ammo from '../combat/Ammo.js';
 
 /**
  * Orders: the player drags a hero onto a Token and they work only it ({@link orderToken}), onto
@@ -308,14 +309,18 @@ function announceInputNeeded(instance, heroId) {
 }
 
 /** The skip reasons a hero says as "Needs {item}". */
-const NEEDS_ITEM = new Set([ALERT.INPUTS, ALERT.NO_BAIT, ALERT.GROW_NEEDS_ITEM, ALERT.FISH_LEVEL]);
+const NEEDS_ITEM = new Set([ALERT.INPUTS, ALERT.NO_BAIT, ALERT.GROW_NEEDS_ITEM, ALERT.FISH_LEVEL, ALERT.NO_AMMO]);
 
 /**
  * What a hero passed over `instance` for `reason` (one of {@link NEEDS_ITEM}) needs, as
- * `{ itemId, needed, carried?, left? }`, or null: the input it is short of, the bait they must
- * carry, or the seed the Field cannot sow (`left`: the hero let go of the Token for it).
+ * `{ itemId, needed, carried?, left? }`, or null: the input it is short of, the bait or arrow they
+ * must carry, or the seed the Field cannot sow (`left`: the hero let go of the Token for it).
  */
 function itemNeeded(instance, heroId, reason) {
+    if (reason === ALERT.NO_AMMO) {
+        const need = Ammo.ammoNeedOf(heroId);
+        return need ? { ...need, left: true } : null;
+    }
     if (reason === ALERT.INPUTS) return WorkCheck.fixableReason(instance.id, instance, heroId).inputCheck?.missing?.[0] || null;
     if (reason === ALERT.NO_BAIT) {
         const need = Fishing.baitNeedOf(getTokenType(instance.typeId), heroId, instance);
@@ -452,6 +457,10 @@ function evaluate(heroId, flag, excludeInstanceId = null) {
         if (c.kind === 'work') {
             const reason = WorkCheck.whyCannotRun(c.instance.id, c.instance, heroId, workConfigOf(c.def, c.instance));
             if (reason) { skips.push({ instanceId, reason }); continue; }
+        } else {
+            // A bow with no arrow starts no fight: the hero waits by the enemy (`WorkCheck.carriedStop`).
+            const reason = WorkCheck.carriedStop(heroId, c.instance, c.def);
+            if (reason) { skips.push({ instanceId, reason }); continue; }
         }
         return { pick: c, skips };
     }
@@ -535,10 +544,11 @@ function keepOrRelease(r, heroId, dirty) {
                 // A Token that ran out and rests until it respawns (or a Field with nothing ripe) is
                 // let go at once, with no badge: a camp hero works the next thing, an ordered hero
                 // waits by it. Unless it is marked for demolition, which a resting Token can still be.
-                && (Demolition.isMarked(instance) || !WorkCheck.isAway(instance, def))
-                // Likewise a water the hero has no bait for: they wait by it until given some.
-                && !WorkCheck.baitReason(heroId, instance, def))
-        );
+                && (Demolition.isMarked(instance) || !WorkCheck.isAway(instance, def)))
+        )
+            // Likewise a water the hero has no bait for, and an enemy their bow has no arrow for:
+            // they let go (the enemy keeping its wounds) and wait by it until given some.
+            && !WorkCheck.carriedStop(heroId, instance, def);
 
         if (!eligible) {
             release(heroId);

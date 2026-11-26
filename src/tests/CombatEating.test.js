@@ -7,7 +7,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const { state } = vi.hoisted(() => ({ state: { meal: null, drink: null } }));
 
 vi.mock('../systems/hero/ConsumptionSystem.js', () => ({
-    tryEat: vi.fn(() => [state.meal, state.drink].filter(Boolean))
+    tryEat: vi.fn(() => [state.meal, state.drink].filter(Boolean)),
+    // A poison counts each attack (brief 750 S3); none here.
+    countPoisonAttack: vi.fn(() => [])
 }));
 
 vi.mock('../systems/hero/HeroManager.js', () => ({
@@ -29,7 +31,13 @@ vi.mock('../systems/combat/CombatFormulas.js', () => ({
     enemyMissChance: vi.fn(() => 10),
     enemyCritChance: vi.fn(() => 5),
     enemyBlow: vi.fn(() => ({ exact: 5, parts: [{ type: 'physical', pre: 5, amount: 5, resist: 0 }] })),
-    enemyAttackSpeedMs: vi.fn(() => 2000)
+    enemyAttackSpeedMs: vi.fn(() => 2000),
+    // No combat tricks on these heroes.
+    heroTwinStrikeChance: vi.fn(() => 0),
+    heroLastStandChance: vi.fn(() => 0),
+    heroDodgeCritChance: vi.fn(() => 0),
+    heroKillHeal: vi.fn(() => 0),
+    SURE_CRIT_CHANCE: 100
 }));
 
 vi.mock('../config/registries/itemRegistry.js', () => ({ getItem: vi.fn(() => null) }));

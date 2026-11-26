@@ -21,10 +21,10 @@ const ALERT_VALUES = Object.values(ALERT);
 
 /**
  * Every alert the engine writes on a Token: all but resting, a Field's growing crop, a hero with
- * no bait or a fish above them, and a shrine lit too full for an offering, which are never written
- * as one.
+ * no bait, no arrows or a fish above them, a shrine lit too full for an offering, and a
+ * Laboratory whose node is away, which are never written as one.
  */
-const NOT_WRITTEN = [ALERT.RESTING, ALERT.GROWING, ALERT.NO_BAIT, ALERT.FISH_LEVEL, ALERT.SHRINE_FULL, ALERT.NODE_AWAY];
+const NOT_WRITTEN = [ALERT.RESTING, ALERT.GROWING, ALERT.NO_BAIT, ALERT.NO_AMMO, ALERT.FISH_LEVEL, ALERT.SHRINE_FULL, ALERT.NODE_AWAY];
 const TOKEN_ALERTS = ALERT_VALUES.filter(a => !NOT_WRITTEN.includes(a));
 
 const tree = (el) => React.createElement(DndContext, null, el);

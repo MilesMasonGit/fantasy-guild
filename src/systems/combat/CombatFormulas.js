@@ -9,6 +9,8 @@ import {
     missChance,
     BASE_CRIT_CHANCE,
     CRIT_MULTIPLIER,
+    cappedCritChance,
+    NO_AMMO_DAMAGE_FACTOR,
     matchupMultiplier,
     SWING_TIME_FACTOR_RANGE,
 } from '../../config/FormulaRegistry.js';
@@ -119,14 +121,17 @@ export function heroMaxHpFromSkills(skills) {
 export function swingTimeFactor(entity) {
     const aggregator = entity?.aggregator;
     if (!aggregator?.getPercentageBucket) return 1;
-    const factor = aggregator.getPercentageBucket(EFFECT_TYPES.SWING_TIME);
+    return keptSwingFactor(aggregator.getPercentageBucket(EFFECT_TYPES.SWING_TIME));
+}
+
+/** A Swing Time bucket as the factor a swing's time is multiplied by, kept within `SWING_TIME_FACTOR_RANGE`. */
+export function keptSwingFactor(factor) {
     return Math.min(SWING_TIME_FACTOR_RANGE.max, Math.max(SWING_TIME_FACTOR_RANGE.min, factor));
 }
 
-/** {@link swingTimeFactor} for a hero: what they carry and the guild's stars for their style. */
+/** {@link swingTimeFactor} for a hero: what they carry (gear, perks, lingering effects) and the guild's stars for their style. */
 function heroSwingTimeFactor(hero) {
-    const factor = heroPercentBucket(hero, EFFECT_TYPES.SWING_TIME);
-    return Math.min(SWING_TIME_FACTOR_RANGE.max, Math.max(SWING_TIME_FACTOR_RANGE.min, factor));
+    return keptSwingFactor(heroPercentBucket(hero, EFFECT_TYPES.SWING_TIME));
 }
 
 /** How long a hero's swing takes: the weapon's speed, normal (3 s) barehanded. */
@@ -178,10 +183,35 @@ export function heroDodge(hero) {
     return heroGuildAxis(hero, EFFECT_TYPES.DODGE);
 }
 
-/** Crit chance in percent: 5 plus what the hero carries and the guild gives. */
+/** Crit chance in percent: 5 plus what the hero carries and the guild gives, at most the cap (`CRIT_CHANCE_CAP`). */
 export function heroCritChance(hero) {
-    return BASE_CRIT_CHANCE + heroGuildAxis(hero, EFFECT_TYPES.CRIT_CHANCE);
+    return cappedCritChance(BASE_CRIT_CHANCE + heroGuildAxis(hero, EFFECT_TYPES.CRIT_CHANCE));
 }
+
+// --- The combat tricks: each read for the style the hero fights in, theirs and the guild's added --
+
+/** Whole health the hero heals on each kill (Heal on Kill): every source added, a fraction dropped, never below 0. */
+export function heroKillHeal(hero) {
+    return Math.max(0, Math.floor(heroStyleAxis(hero, EFFECT_TYPES.KILL_HEAL)));
+}
+
+/** The percent chance, once a fight, that a defeating blow leaves the hero at 1 health (Last Stand). */
+export function heroLastStandChance(hero) {
+    return heroStyleAxis(hero, EFFECT_TYPES.LAST_STAND);
+}
+
+/** The percent chance a hero's attack strikes again at once (Twin Strike). */
+export function heroTwinStrikeChance(hero) {
+    return heroStyleAxis(hero, EFFECT_TYPES.TWIN_STRIKE);
+}
+
+/** The percent chance a dodge makes the hero's next landed hit a sure crit (Crit After Dodge). */
+export function heroDodgeCritChance(hero) {
+    return heroStyleAxis(hero, EFFECT_TYPES.DODGE_CRIT);
+}
+
+/** A sure crit's chance in percent: above the cap, so the roll always crits. */
+export const SURE_CRIT_CHANCE = 100;
 
 /**
  * The most stacks of status `statusId` (a status effect's id) that can build up on this fighter:
@@ -204,8 +234,9 @@ export function enemyAccuracy(enemy) {
     return (enemy?.accuracy || 0) + axis(enemy, EFFECT_TYPES.ACCURACY);
 }
 
+/** An enemy's crit chance in percent: its own (5 unless authored) plus what effects lend it, at most the cap. */
 export function enemyCritChance(enemy) {
-    return (enemy?.critChance ?? BASE_CRIT_CHANCE) + axis(enemy, EFFECT_TYPES.CRIT_CHANCE);
+    return cappedCritChance((enemy?.critChance ?? BASE_CRIT_CHANCE) + axis(enemy, EFFECT_TYPES.CRIT_CHANCE));
 }
 
 /** How long an enemy's swing takes: its speed, moved by any Swing Time on it (an enrage). */
@@ -399,12 +430,15 @@ function landedBlow(parts, multiplier, crit, boostOf, resistOf) {
 
 /**
  * A hero's landed blow on an enemy, before the fraction sub-roll. The multiplier holds the buffs, the
- * matchup and the cut their worn gear makes to the style they fight in ({@link styleCutFactor}).
- * @param {{ crit?: boolean, arrow?: {damage: number, damageType: string}|null }} [options]
+ * matchup and the cut their worn gear makes to the style they fight in ({@link styleCutFactor}), and
+ * halves the blow when the weapon's ammo is out and the hero fights on (`short`: no Mote, the last
+ * Kunai; `NO_AMMO_DAMAGE_FACTOR`, `Ammo.js`).
+ * @param {{ crit?: boolean, arrow?: {damage: number, damageType: string}|null, short?: boolean }} [options]
  */
-export function heroBlow(hero, enemy, { crit = false, arrow = null } = {}) {
+export function heroBlow(hero, enemy, { crit = false, arrow = null, short = false } = {}) {
     const style = getHeroCombatStyle(hero);
-    const multiplier = heroDamageMultiplier(hero, style) * matchupMultiplier(style, enemy?.combatType) * styleCutFactor(hero, style);
+    const multiplier = heroDamageMultiplier(hero, style) * matchupMultiplier(style, enemy?.combatType) * styleCutFactor(hero, style)
+        * (short ? NO_AMMO_DAMAGE_FACTOR : 1);
     return landedBlow(heroHitParts(hero, arrow), multiplier, crit,
         (type) => heroTypeDamageBoost(hero, type),
         (type) => enemyTypeResistance(enemy, type));
@@ -466,7 +500,7 @@ export function rollFraction(exact) {
 
 /**
  * A hero's landed hit on an enemy, as a whole number. ⚠️ Draws for a fraction ({@link rollFraction}).
- * @param {{ crit?: boolean, arrow?: {damage: number, damageType: string}|null }} [options]
+ * @param {{ crit?: boolean, arrow?: {damage: number, damageType: string}|null, short?: boolean }} [options]
  */
 export function heroHitDamage(hero, enemy, options = {}) {
     return rollFraction(heroBlow(hero, enemy, options).exact);

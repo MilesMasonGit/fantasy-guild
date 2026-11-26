@@ -15,7 +15,7 @@ import { toolOf, HAND_CATEGORY } from './toolKinds.js';
  */
 
 /**
- * Whether an item is an off-hand item (a shield, a quiver, a focus orb): held in one hand beside a
+ * Whether an item is an off-hand item (a shield): held in one hand beside a
  * weapon, never swung, lending its resistances and its rules like a piece of armour.
  * `offHand: true` on a hand item that is not a gathering tool.
  */
@@ -51,6 +51,25 @@ export function authoredWeaponStyles(item) {
 export function weaponStyleOf(item) {
     if (!isWeapon(item)) return null;
     return authoredWeaponStyles(item)[0] || BAREHANDED_STYLE_ID;
+}
+
+/**
+ * The Mote a Magic weapon burns, one a cast: the item id in its `mote` field, or null (not a Magic
+ * weapon, or it names none and casts free). Whether that item exists is the content check's.
+ * @returns {string|null}
+ */
+export function weaponMoteOf(item) {
+    if (weaponStyleOf(item) !== 'magic') return null;
+    const id = typeof item.mote === 'string' ? item.mote.trim() : '';
+    return id || null;
+}
+
+/**
+ * Whether a weapon is thrown and spends itself, one a throw (a Kunai): `thrown: true` on a Stealth
+ * weapon. The copy in hand is kept; each throw spends another from the Bank.
+ */
+export function isThrownWeapon(item) {
+    return item?.thrown === true && weaponStyleOf(item) === 'stealth';
 }
 
 const wholeLevel = (value) => {

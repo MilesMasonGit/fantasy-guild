@@ -1,0 +1,213 @@
+{
+  "format": "fantasy-guild-change-pack",
+  "version": 1,
+  "id": "2026-11-25-combat-signature-perks",
+  "createdAt": "2026-11-25T20:00:00Z",
+  "asked": "The combat styles' signature perks: Second Wind (Melee 75), Unbreakable (Melee 99), Twin Shot (Ranged 99), Double Cast (Magic 99), Shadowstep (Stealth 99) (concept_milestone_perks.md, owner 2026-11-21; rules built by brief 800 P5)",
+  "entries": [
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_perk_second_wind",
+      "value": {
+        "name": "Second Wind",
+        "statements": [
+          {
+            "id": "stm_perk_second_wind",
+            "keyword": "provides",
+            "payload": {
+              "type": "KILL_HEAL",
+              "bucket": "flat",
+              "value": 3,
+              "category": "melee"
+            },
+            "chargeDelta": 0,
+            "to": null,
+            "target": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true
+      },
+      "note": "Melee 75: heals a little on each kill (Heal on Kill +3 as a Melee fighter; 3 is a starting number for the content agent to set). Its id is not effect_second_wind: that is the Emerald Amulets' Second Wind (heals 10 below half health), a different effect of the same name; the content agent may rename one of the two"
+    },
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_unbreakable",
+      "value": {
+        "name": "Unbreakable",
+        "statements": [
+          {
+            "id": "stm_unbreakable",
+            "keyword": "provides",
+            "payload": {
+              "type": "LAST_STAND",
+              "bucket": "flat",
+              "value": 100,
+              "category": "melee"
+            },
+            "chargeDelta": 0,
+            "to": null,
+            "target": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true
+      },
+      "note": "Melee 99: once a fight, survives a defeating blow at 1 health (Last Stand 100% as a Melee fighter)"
+    },
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_twin_shot",
+      "value": {
+        "name": "Twin Shot",
+        "statements": [
+          {
+            "id": "stm_twin_shot",
+            "keyword": "provides",
+            "payload": {
+              "type": "TWIN_STRIKE",
+              "bucket": "flat",
+              "value": 20,
+              "category": "ranged"
+            },
+            "chargeDelta": 0,
+            "to": null,
+            "target": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true
+      },
+      "note": "Ranged 99: sometimes shoots twice, one arrow spent (Twin Strike as a Ranged fighter; 20% is a starting number)"
+    },
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_double_cast",
+      "value": {
+        "name": "Double Cast",
+        "statements": [
+          {
+            "id": "stm_double_cast",
+            "keyword": "provides",
+            "payload": {
+              "type": "TWIN_STRIKE",
+              "bucket": "flat",
+              "value": 20,
+              "category": "magic"
+            },
+            "chargeDelta": 0,
+            "to": null,
+            "target": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true
+      },
+      "note": "Magic 99: sometimes casts twice, one Mote spent (the same Twin Strike rule as a Magic fighter; 20% is a starting number)"
+    },
+    {
+      "op": "create",
+      "kind": "effect",
+      "id": "effect_shadowstep",
+      "value": {
+        "name": "Shadowstep",
+        "statements": [
+          {
+            "id": "stm_shadowstep",
+            "keyword": "provides",
+            "payload": {
+              "type": "DODGE_CRIT",
+              "bucket": "flat",
+              "value": 100,
+              "category": "stealth"
+            },
+            "chargeDelta": 0,
+            "to": null,
+            "target": null,
+            "when": null,
+            "upkeep": null
+          }
+        ],
+        "autoSyncId": true
+      },
+      "note": "Stealth 99: after a dodge the next hit is a sure crit (Crit After Dodge 100% as a Stealth fighter)"
+    },
+    {
+      "op": "create",
+      "kind": "skillPerks",
+      "id": "melee",
+      "value": {
+        "id": "melee",
+        "perks": [
+          {
+            "level": 75,
+            "effectId": "effect_perk_second_wind",
+            "scale": 1
+          },
+          {
+            "level": 99,
+            "effectId": "effect_unbreakable",
+            "scale": 1
+          }
+        ]
+      },
+      "note": "Melee has no perk table yet: Second Wind at 75 and Unbreakable at 99; the content agent adds the rest of the table (T-522)"
+    },
+    {
+      "op": "create",
+      "kind": "skillPerks",
+      "id": "ranged",
+      "value": {
+        "id": "ranged",
+        "perks": [
+          {
+            "level": 99,
+            "effectId": "effect_twin_shot",
+            "scale": 1
+          }
+        ]
+      },
+      "note": "Ranged has no perk table yet: Twin Shot at 99; the rest is T-522"
+    },
+    {
+      "op": "create",
+      "kind": "skillPerks",
+      "id": "magic",
+      "value": {
+        "id": "magic",
+        "perks": [
+          {
+            "level": 99,
+            "effectId": "effect_double_cast",
+            "scale": 1
+          }
+        ]
+      },
+      "note": "Magic has no perk table yet: Double Cast at 99; the rest is T-522"
+    },
+    {
+      "op": "create",
+      "kind": "skillPerks",
+      "id": "stealth",
+      "value": {
+        "id": "stealth",
+        "perks": [
+          {
+            "level": 99,
+            "effectId": "effect_shadowstep",
+            "scale": 1
+          }
+        ]
+      },
+      "note": "Stealth has no perk table yet: Shadowstep at 99; the rest is T-522"
+    }
+  ]
+}

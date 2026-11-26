@@ -1,6 +1,6 @@
 // Perk tables that name a skill the game does not have, an effect that is gone, or a level no hero reaches.
 
-import { isSkillId, getSkill } from '../../config/registries/skillRegistry.js';
+import { isSkillId, getSkill, COMBAT_SKILL_IDS } from '../../config/registries/skillRegistry.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { statementsOf, getKeyword, KEYWORD } from '../effects/statements.js';
 import { TARGET_CATEGORIES } from '../effects/constants.js';
@@ -62,6 +62,11 @@ function perkEffectFindings(effect, skillId, push) {
         const unscoped = !payload.category || payload.category === TARGET_CATEGORIES.ALL;
         if ((palette?.categories === 'skill' || palette?.categories === 'skillOrCarried') && unscoped) {
             push(`changes ${palette.label} on every skill's work, not only ${skillName}'s. Narrow the rule to ${skillName} in the CMS if that is not meant.`);
+        }
+        // A combat skill's perk is held whatever weapon the hero swings: unnarrowed, it helps them in
+        // every style.
+        if (palette?.categories === 'combatStyle' && COMBAT_SKILL_IDS.includes(skillId) && (unscoped || payload.category === TARGET_CATEGORIES.COMBAT)) {
+            push(`changes ${palette.label} in every fighting style, not only as a ${skillName} fighter. Narrow the rule to ${skillName} in the CMS if that is not meant.`);
         }
     }
 }
