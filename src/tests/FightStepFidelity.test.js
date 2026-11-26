@@ -13,7 +13,7 @@ import * as HeroMotion from '../systems/board/HeroMotion.js';
 import * as FightRoom from '../systems/board/FightRoom.js';
 import { AudioSystem } from '../systems/core/AudioSystem.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
-import { matTuning, resetMatTuning } from '../config/matTuning.js';
+import { matTuning, resetMatTuning, setMatTuning } from '../config/matTuning.js';
 import { xpForLevel } from '../utils/XPCurve.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
 import * as fixtures from '../../bench/fixtures.mjs';
@@ -68,6 +68,10 @@ const realRandom = Math.random;
 function buildBoard() {
     stream.state = 11;
     resetMatTuning();
+    // ⚠️ With Tokens edges touching, the camp often has no free place within the shipped nudge
+    // reach, and its spawn then pushes, sometimes an enemy part-way through its step, which moves
+    // that fight. A wider reach lands every spawn in free room, so only the steps are measured.
+    setMatTuning('nudgeReach', 400);
     GameState.initNew();
     InventoryManager.init();
     BoardState.setInstantArrival(false);
@@ -80,7 +84,8 @@ function buildBoard() {
         hero.hp = { current: 1e6, max: 1e6 };
     }
     const camp = fixtures.placeAt('fsf_camp', 800, 520);
-    [[-110, -20], [100, 10], [-20, 110], [30, -100]].forEach(([dx, dy]) => {
+    // Each just past edges touching the camp (128 u), and clear of one another.
+    [[-130, -20], [130, 10], [-20, 130], [30, -130]].forEach(([dx, dy]) => {
         fixtures.placeAt('fsf_goblin', 800 + dx, 520 + dy).tether = camp.id;
     });
     heroes.slice(0, 3).forEach(h => fixtures.orderAt(h.id, { x: camp.x, y: camp.y }));
@@ -160,8 +165,9 @@ describe('⭐ an hour of crowded fights, in 1000 ms steps and in 100 ms ticks', 
     for (const stepMs of [1000, 100]) {
         it(`in ${stepMs} ms ticks every stepped fight counts from the moment its enemy got there`, () => {
             const steps = huntAnHour(stepMs);
-            // Crowded: hundreds of fights stepped, some across more than one 1 s step.
-            expect(steps.length).toBeGreaterThan(500);
+            // Crowded: hundreds of fights stepped, some across more than one 1 s step (fewer than at
+            // the old spacing: edges touching, the enemies stand further apart).
+            expect(steps.length).toBeGreaterThan(250);
             expect(steps.some(s => s.walkMs > 1000)).toBe(true);
             // The time the swing clock did not count is the enemy's walk. Measured from the Token's
             // point, the rounded copy of where the enemy really stands (half a unit each way, 8 ms

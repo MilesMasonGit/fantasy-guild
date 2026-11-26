@@ -189,11 +189,22 @@ function auditTokens(out) {
         auditStatements(out, where, def);
         auditDerivedType(out, where, def);
         auditStandsOn(out, where, def);
+        auditRetiredArtSize(out, where, def);
         for (const id of Array.isArray(def.standsNear) ? def.standsNear : []) {
             checkRef(out, where, 'Token', id, 'Its "Stands near"');
         }
     }
 
+}
+
+/**
+ * The retired Token Size (`artSize`): every Token is one size now, so the game reads a Token still
+ * carrying it as standard. Harmless, so named here rather than among the CMS's blocking findings;
+ * the CMS has no control for it, so a change pack removes it.
+ */
+function auditRetiredArtSize(out, where, def) {
+    if (def.artSize === undefined) return;
+    out.push(finding(where, `still carries a Token Size ("${def.artSize}"), which the game no longer reads: every Token is drawn and spaced at one size. A change pack removes it.`));
 }
 
 /** A "Stands on" word as the CMS's chip shows it, or a terrain the chips do not name as it is. */

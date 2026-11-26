@@ -224,7 +224,9 @@ describe('⭐ a spawn pushes spawned Tokens, never placed ones (SP-68)', () => {
         const ring = [];
         for (let k = 0; k < 8; k++) {
             const a = (k / 8) * Math.PI * 2;
-            ring.push(make('fixture_kitchen', bearer.x + Math.cos(a) * 100, bearer.y + Math.sin(a) * 100));
+            // 168 u out: eight round it just clear of one another (128 u apart), and no room
+            // between them and the bearer for a newcomer.
+            ring.push(make('fixture_kitchen', bearer.x + Math.cos(a) * 168, bearer.y + Math.sin(a) * 168));
         }
         return ring;
     }

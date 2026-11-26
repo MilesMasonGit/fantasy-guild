@@ -470,13 +470,14 @@ describe('⭐ spawns push spawned Tokens but never placed ones (SP-46, SP-68)', 
         setMatTuning('matSteps', 6);
         setMatTuning('tokenCap', 2000);   // crowding is the point, not the Token cap
         give(SEED, 10);
-        const forest = placeAt('fixture_sp_forest', 200, 200);
+        // On a point of the blockers' lattice, so they pack right up to it (128 u apart).
+        const forest = placeAt('fixture_sp_forest', 224, 196);
         const gap = Math.ceil(MatPlacement.minGap('fixture_kitchen', 'fixture_kitchen'));
         // Centred, so no strip wide enough for a Token is left at the far edges.
         const blockers = [];
         for (let x = 64 + ((matW() - 128) % gap) / 2; x <= matW() - 64; x += gap) {
             for (let y = 64 + ((matH() - 128) % gap) / 2; y <= matH() - 64; y += gap) {
-                if (Math.hypot(x - 200, y - 200) < gap) continue;
+                if (Math.hypot(x - 224, y - 196) < gap) continue;
                 blockers.push(placeAt('fixture_kitchen', x, y));
             }
         }
@@ -489,7 +490,7 @@ describe('⭐ spawns push spawned Tokens but never placed ones (SP-46, SP-68)', 
         expect(SpawnerSystem.spawnerStatus(forest.id)).toMatchObject({ state: 'no_room', nextInMs: 15000, count: 0, cap: 5 });
 
         for (const b of blockers) {
-            if (Math.hypot(b.x - 200, b.y - 200) < 400) BoardState.removeToken(b.id);
+            if (Math.hypot(b.x - 224, b.y - 196) < 400) BoardState.removeToken(b.id);
         }
         TimedChanges.tick(14900);
         expect(family()).toHaveLength(0);                 // room now, but the next try is at 40 s
@@ -615,13 +616,14 @@ describe('⭐ a waiting spawner raises an on-mat alert, and drops it when fixed 
         setMatTuning('matSteps', 6);
         setMatTuning('tokenCap', 2000);   // crowding is the point, not the Token cap
         give(SEED, 10);
-        const forest = placeAt('fixture_sp_forest', 200, 200);
+        // On a point of the blockers' lattice, so they pack right up to it (128 u apart).
+        const forest = placeAt('fixture_sp_forest', 224, 196);
         const gap = Math.ceil(MatPlacement.minGap('fixture_kitchen', 'fixture_kitchen'));
         // Centred, so no strip wide enough for a Token is left at the far edges.
         const blockers = [];
         for (let x = 64 + ((matW() - 128) % gap) / 2; x <= matW() - 64; x += gap) {
             for (let y = 64 + ((matH() - 128) % gap) / 2; y <= matH() - 64; y += gap) {
-                if (Math.hypot(x - 200, y - 200) < gap) continue;
+                if (Math.hypot(x - 224, y - 196) < gap) continue;
                 blockers.push(placeAt('fixture_kitchen', x, y));
             }
         }
@@ -633,7 +635,7 @@ describe('⭐ a waiting spawner raises an on-mat alert, and drops it when fixed 
         expect(SpawnerSystem.spawnerAlertOf(forest.id)).toEqual({ alert: ALERT.SPAWN_NO_ROOM, needs: [] });
 
         for (const b of blockers) {
-            if (Math.hypot(b.x - 200, b.y - 200) < 400) BoardState.removeToken(b.id);
+            if (Math.hypot(b.x - 224, b.y - 196) < 400) BoardState.removeToken(b.id);
         }
         TimedChanges.tick(100);
         expect(family()).toHaveLength(0);                 // missed at 20 s: next try at 40 s

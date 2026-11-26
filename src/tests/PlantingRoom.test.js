@@ -32,12 +32,14 @@ beforeAll(() => {
     registerTokenTypes({
         [FOREST]: base(FOREST, { tokenType: 'spawner', spawner: { spawns: [{ typeId: SAPLING, weight: 1 }], allowance: 5, intervalMs: 1000, withinReach: true } }),
         [THICKET]: base(THICKET, { tokenType: 'spawner', spawner: { spawns: [{ typeId: BUSH, weight: 1 }], allowance: 5, intervalMs: 1000, withinReach: true } }),
-        [TREE]: base(TREE, { staysPut: true }),
+        // A 2×2: every Token is drawn at its footprint's size, so a Sapling's tree is bigger only
+        // by being a 2×2.
+        [TREE]: base(TREE, { staysPut: true, size: 2 }),
         [STUMP]: base(STUMP, { artSize: 'small', grows: { into: SAPLING, afterMs: 1000, needsNearby: [FOREST] } }),
         [SAPLING]: base(SAPLING, { artSize: 'small', grows: { into: TREE, afterMs: 1000 } }),
         [BUSH]: base(BUSH, { artSize: 'small' }),
         [LOOP_A]: base(LOOP_A, { artSize: 'small', grows: { into: LOOP_B, afterMs: 1000 } }),
-        [LOOP_B]: base(LOOP_B, { grows: { into: LOOP_A, afterMs: 1000 } })
+        [LOOP_B]: base(LOOP_B, { size: 2, grows: { into: LOOP_A, afterMs: 1000 } })
     });
 });
 beforeEach(() => {
@@ -75,7 +77,7 @@ describe('⭐ a Sapling is planted with room for its tree', () => {
 
     it('⭐ stands the tree\'s gap from a neighbour small today, a Stump that will be a tree too', () => {
         const forest = placeAt(FOREST, 900, 500);
-        const stump = placeAt(STUMP, 1050, 500);
+        const stump = placeAt(STUMP, 1108, 500);
         const landed = plant(forest);
         expect(gapTo(landed, stump)).toBeGreaterThanOrEqual(MatPlacement.minGap(TREE, TREE) - 1e-6);
         expect(gapTo(landed, forest)).toBeLessThanOrEqual(reachRadius());
@@ -83,14 +85,14 @@ describe('⭐ a Sapling is planted with room for its tree', () => {
 
     it('⭐ the tree in line behind it stays in reach when both have grown: nothing moves', () => {
         const forest = placeAt(FOREST, 900, 500);
-        const behind = placeAt(SAPLING, 1050, 500);
+        const behind = placeAt(SAPLING, 1108, 500);
         const planted = plant(forest);
 
         const grownPlanted = grow(BoardState.getTokenById(planted.instanceId));
         const grownBehind = grow(behind);
         // Growing rounds a point to whole units, and moves it no further.
         expect(gapTo(grownPlanted, planted)).toBeLessThanOrEqual(1);
-        expect({ x: grownBehind.x, y: grownBehind.y }).toEqual({ x: 1050, y: 500 });
+        expect({ x: grownBehind.x, y: grownBehind.y }).toEqual({ x: 1108, y: 500 });
         expect(gapTo(grownBehind, forest)).toBeLessThanOrEqual(reachRadius());
     });
 

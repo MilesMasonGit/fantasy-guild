@@ -167,7 +167,8 @@ describe('a Token in the hand', () => {
     it('⭐ shows its landing ring at once, with no rest', async () => {
         vi.useFakeTimers();
         const camp = placeAt('rrest_camp', 400, 300);
-        placeAt('rrest_tree', 1300, 700);
+        // In reach of where the hand lands, and clear of it (edges touching is 128 u).
+        placeAt('rrest_tree', 1330, 700);
         const { container } = mount();
         const hit = container.querySelector(`[data-token-hit="${camp.id}"]`);
         const ptr = (x, y) => ({ pointerId: 1, isPrimary: true, button: 0, clientX: x, clientY: y });

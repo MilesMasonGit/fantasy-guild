@@ -89,38 +89,38 @@ const gap = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 // ---------------------------------------------------------------------------
 
 describe('how close two Tokens may sit (FP-63)', () => {
-    it('two small Tokens may sit 81.4 u apart, but not 81.0', () => {
-        expect(MatPlacement.minGap('mp_small', 'mp_small')).toBeCloseTo(81.2, 6);
+    it('two 1×1 Tokens may stand edges touching, 128 u apart, but no closer', () => {
+        expect(MatPlacement.minGap('mp_small', 'mp_small')).toBe(128);
 
         placeAt('mp_small', 800, 600);
-        expect(MatPlacement.isLegal('mp_small', { x: 800 + 81.4, y: 600 })).toBe(true);
-        expect(MatPlacement.isLegal('mp_small', { x: 800 + 81.0, y: 600 })).toBe(false);
+        expect(MatPlacement.isLegal('mp_small', { x: 800 + 128, y: 600 })).toBe(true);
+        expect(MatPlacement.isLegal('mp_small', { x: 800 + 127.5, y: 600 })).toBe(false);
     });
 
-    it('a small beside a large needs 132, not 131.4', () => {
-        expect(MatPlacement.minGap('mp_small', 'mp_large')).toBeCloseTo(131.6, 6);
+    it('a 1×1 beside a 2×2 needs 208 (64 + 144), not 207.5', () => {
+        expect(MatPlacement.minGap('mp_small', 'mp_large')).toBe(208);
 
         placeAt('mp_large', 800, 600);
-        expect(MatPlacement.isLegal('mp_small', { x: 800 + 132, y: 600 })).toBe(true);
-        expect(MatPlacement.isLegal('mp_small', { x: 800 + 131.4, y: 600 })).toBe(false);
+        expect(MatPlacement.isLegal('mp_small', { x: 800 + 208, y: 600 })).toBe(true);
+        expect(MatPlacement.isLegal('mp_small', { x: 800 + 207.5, y: 600 })).toBe(false);
     });
 
-    it('two large Tokens need 182', () => {
-        expect(MatPlacement.minGap('mp_large', 'mp_large')).toBeCloseTo(182, 6);
+    it('two 2×2 Tokens need 288', () => {
+        expect(MatPlacement.minGap('mp_large', 'mp_large')).toBe(288);
 
         placeAt('mp_large', 800, 600);
-        expect(MatPlacement.isLegal('mp_large', { x: 800 + 182, y: 600 })).toBe(true);
-        expect(MatPlacement.isLegal('mp_large', { x: 800 + 181.5, y: 600 })).toBe(false);
+        expect(MatPlacement.isLegal('mp_large', { x: 800 + 288, y: 600 })).toBe(true);
+        expect(MatPlacement.isLegal('mp_large', { x: 800 + 287.5, y: 600 })).toBe(false);
     });
 
     it('⭐ the Mat Tuner changes the rule for the very next drop, with no reload', () => {
         placeAt('mp_small', 800, 600);
-        expect(MatPlacement.isLegal('mp_small', { x: 800 + 61.0, y: 600 })).toBe(false);
+        expect(MatPlacement.isLegal('mp_small', { x: 800 + 100, y: 600 })).toBe(false);
 
-        // More overlap allowed: the same spot becomes legal.
-        setMatTuning('overlapPct', 70);
-        expect(MatPlacement.minGap('mp_small', 'mp_small')).toBeCloseTo(34.8, 6);
-        expect(MatPlacement.isLegal('mp_small', { x: 800 + 61.0, y: 600 })).toBe(true);
+        // Some overlap allowed: the same spot becomes legal (128 × 0.7 = 89.6).
+        setMatTuning('overlapPct', 30);
+        expect(MatPlacement.minGap('mp_small', 'mp_small')).toBeCloseTo(89.6, 6);
+        expect(MatPlacement.isLegal('mp_small', { x: 800 + 100, y: 600 })).toBe(true);
 
         // A smaller hitbox shrinks it again: 40% of a 64 u art radius is 26 u
         // (rounded), so two of them at 40% overlap need 31.2 u.
@@ -174,15 +174,15 @@ describe('where a dropped Token actually lands', () => {
         const sitting = placeAt('mp_small', 800, 600);
 
         // 40 u away: too close, and the nearest legal point is straight on out
-        // along the same line, at the 81.2 u limit.
+        // along the same line, at the 128 u limit (edges touching).
         const res = Placement.placeTokenAt(instance('mp_small'), { x: 840, y: 600 });
 
         expect(res.success).toBe(true);
         expect(res.nudged).toBe(true);
         const landed = { x: res.x, y: res.y };
-        expect(gap(landed, sitting)).toBeGreaterThanOrEqual(81.2 - 1e-6);
+        expect(gap(landed, sitting)).toBeGreaterThanOrEqual(128 - 1e-6);
         // Nearest means nearest: it should not have wandered past the limit.
-        expect(gap(landed, sitting)).toBeLessThan(81.2 + 6);
+        expect(gap(landed, sitting)).toBeLessThan(128 + 6);
         // And it went the way it was pushed, not backwards over the other Token.
         expect(landed.x).toBeGreaterThan(sitting.x);
     });
@@ -288,7 +288,7 @@ describe('a Token dropped on a copy of itself lands beside it: Tokens never merg
         const beside = BoardState.getTokenById(incoming.id);
         expect(beside.usesRemaining).toBe(50);
         expect(gap(beside, copy)).toBeGreaterThanOrEqual(MatPlacement.minGap('mp_small', 'mp_small') - 1e-6);
-        expect(gap(beside, copy)).toBeLessThan(120);
+        expect(gap(beside, copy)).toBeLessThan(136);
         expect(said).toEqual([]);
     });
 
@@ -312,7 +312,7 @@ describe('a Token dropped on a copy of itself lands beside it: Tokens never merg
         expect(BoardState.getTokenById(copy.id)).toMatchObject({ x: 800, y: 600, usesRemaining: 40, cycleElapsedMs: 700 });
         const moved = BoardState.getTokenById(mover.id);
         expect(moved).toMatchObject({ usesRemaining: 50, cycleElapsedMs: 1500 });
-        expect(gap(moved, copy)).toBeLessThan(120);
+        expect(gap(moved, copy)).toBeLessThan(136);
         expect(changed.filter(p => p.typeId === null && p.x === 400 && p.y === 300)).toHaveLength(1);
     });
 
@@ -393,9 +393,11 @@ describe('an arrival pushes instead of falling back (FP-17)', () => {
     });
 
     it('settles a packed block at fractional points (rounding each pass never settled)', () => {
+        // A block at exactly the closest spacing, edges touching.
+        const g = MatPlacement.minGap('mp_small', 'mp_small');
         const ids = [];
         for (let r = -1; r <= 1; r++) {
-            for (let c = -3; c <= 3; c++) ids.push(placeAt('mp_small', 500 + c * 69.6, 800 + r * 69.6).id);
+            for (let c = -3; c <= 3; c++) ids.push(placeAt('mp_small', 500 + c * g, 800 + r * g).id);
         }
 
         const where = MatPlacement.forceSpot('mp_small', { x: 505, y: 790 });

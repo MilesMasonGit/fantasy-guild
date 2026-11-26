@@ -103,8 +103,8 @@ describe('a new game has one Region, holding the live board', () => {
 });
 
 describe('the save schema moved: a save from before the Atlas is refused', () => {
-    it('the schema is 0.8.1', () => {
-        expect(GAME_VERSION).toBe('0.8.1');
+    it('the schema has moved past 0.8.0 (the Atlas made it 0.8.1, the Token spacing 0.8.2)', () => {
+        expect(GAME_VERSION).toBe('0.8.2');
     });
 
     it('a 0.8.0 save is refused, not migrated', () => {

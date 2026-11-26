@@ -346,11 +346,12 @@ describe('Token upgrades: aimed at a Token kind or a tag', () => {
     });
 
     it('⭐ Green Thumb regrows a Forest’s own Stump faster, and rests an Orchard’s own fruit tree shorter', () => {
+        // Each own Token edges touching its Forest or Orchard (128 u), the closest it may stand.
         const forest = place({ x: 300, y: 300 }, OWN_FOREST);
-        const stump = place({ x: 400, y: 300 }, OWN_STUMP);
+        const stump = place({ x: 428, y: 300 }, OWN_STUMP);
         BoardState.setTether(stump, forest.id);
         const orchard = place({ x: 900, y: 300 }, OWN_ORCHARD);
-        const fruit = place({ x: 1000, y: 300 }, OWN_FRUIT);
+        const fruit = place({ x: 1028, y: 300 }, OWN_FRUIT);
         BoardState.setTether(fruit, orchard.id);
         expect(TimedChanges.growMsOf(stump)).toBe(100000);
         expect(Respawn.restMsOf(fruit)).toBe(60000);
@@ -361,9 +362,9 @@ describe('Token upgrades: aimed at a Token kind or a tag', () => {
 
         // Its own Stump grows back in the shortened time.
         for (let t = 0; t < 49000; t += 1000) TimedChanges.tick(1000);
-        expect(BoardState.tokensAtPoint(400, 300)[0]?.typeId).toBe(OWN_STUMP);
+        expect(BoardState.tokensAtPoint(428, 300)[0]?.typeId).toBe(OWN_STUMP);
         for (let t = 0; t < 2000; t += 1000) TimedChanges.tick(1000);
-        expect(BoardState.tokensAtPoint(400, 300)[0]?.typeId).toBe(FELLER);
+        expect(BoardState.tokensAtPoint(428, 300)[0]?.typeId).toBe(FELLER);
     });
 
     it('a Camp Reach star (retired) widens no camp: every camp keeps the one standard reach', () => {

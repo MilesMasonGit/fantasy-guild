@@ -45,10 +45,9 @@ export const BAR_STRIP_ART = BAR.H + 2 * BAR.OUTLINE + 1 + 2 * BAR.PAD_Y;
 /** How far the marks under the art tuck up under its foot (the art's last rows are its shadow), in plate pixels. */
 const TUCK = 2;
 
-/** The art the marks stand under: the Token's, never less than a full-size Token's. */
+/** The art the marks stand under: the Token's. */
 function artOf(typeId, fit) {
-    const artUnit = boardScaleAt(fit);
-    return Math.max(tokenSizeFor(TOKEN_SURFACE.BOARD, typeId, artUnit), tokenSizeFor(TOKEN_SURFACE.BOARD, 1, artUnit));
+    return tokenSizeFor(TOKEN_SURFACE.BOARD, typeId, boardScaleAt(fit));
 }
 
 /**

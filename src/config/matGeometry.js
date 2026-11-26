@@ -106,58 +106,16 @@ export function artRadius(size = 1) {
 }
 
 /**
- * ## Two Token sizes — standard and small
+ * ## One Token size
  *
- * A Token type may carry **`artSize: 'small'`** (authored in the CMS Token
- * editor's *Token Size* control). A small Token is drawn at **half size** —
- * 32 px art at 64 u on the mat, where a standard one is 64 px art at 128 u —
- * and everything about its body halves with it: the art radius (32 u), so the
- * hit area, the hitbox and the spacing gaps, the mat-edge clamp and where a
- * hero stands beside it.
- *
- * ⚠️ **`artSize`, not `size`.** `size` is the Token's *footprint* (1 = 1×1,
- * 2 = 2×2). A missing `artSize` (or `'standard'`) is a standard Token.
- *
- * ⚠️ **Small applies to 1×1 Tokens only.** A 2×2 marked small is drawn and
- * spaced as a normal 2×2 — the game ignores the field there, and the CMS
- * refuses it (the control is disabled on a 2×2 and a switch to 2×2 clears it).
- *
- * ⚠️ **A small Token that becomes something bigger is spaced as that.** A
- * Stump or a Sapling is drawn, clicked and stood beside at its small size, but
- * its hitbox, spacing gaps and mat-edge clamp are its Tree's
- * (`MatPlacement.roomRadiusOf`), so the Tree finds its own point free.
- *
- * The one question every reader asks — "how much of the standard body does this
- * Token have?" — is {@link tokenBodyScale}; nothing else reads `artSize`.
+ * Every Token is drawn and spaced by its footprint alone (`size`: 1 = 1×1, 2 = 2×2). The half-size
+ * "small" Token is retired: a Token type still carrying the old `artSize` field reads as standard,
+ * and the boot audit names it (`ContentAudit`) until a change pack removes it. A picture authored
+ * at 32 px is drawn at the standard size, so at twice its old size, until 64 px art replaces it.
  */
-export const TOKEN_ART_SIZE = Object.freeze({ STANDARD: 'standard', SMALL: 'small' });
-
-/** How much of a standard body a small Token has: exactly half. */
-export const SMALL_TOKEN_SCALE = 0.5;
 
 /**
- * Whether a Token type (id or definition) is a **small** Token: marked
- * `artSize: 'small'` and 1×1. Unknown types are standard.
- */
-export function isSmallToken(typeIdOrDef) {
-    const def = typeof typeIdOrDef === 'string' ? getTokenType(typeIdOrDef) : typeIdOrDef;
-    if (!def || def.artSize !== TOKEN_ART_SIZE.SMALL) return false;
-    return (def.size || 1) === 1;
-}
-
-/**
- * ⭐ The single helper for a Token's body size: **0.5 for a small Token,
- * 1 for everything else.** `artRadiusOf` (so every hit test, gap, clamp and
- * standing spot) and `TokenSprite.tokenSizeFor` (so every on-mat drawing and
- * the drag ghost) both multiply by it.
- */
-export function tokenBodyScale(typeIdOrDef) {
-    return isSmallToken(typeIdOrDef) ? SMALL_TOKEN_SCALE : 1;
-}
-
-/**
- * The art radius of a Token type — its footprint's radius, halved for a small
- * Token (32 u rather than 64 u). ⭐ Every engine consumer of a Token's
+ * The art radius of a Token type — its footprint's radius. ⭐ Every engine consumer of a Token's
  * body goes through this: `Flags.pointOnToken` / `tokenAtPoint` (hover, click,
  * flag pins), `MatPlacement` (hitbox, `minGap`, the mat edge,
  * `findSpot` and so every drop, nudge, spawn and `MatResize` clamp),
@@ -165,6 +123,5 @@ export function tokenBodyScale(typeIdOrDef) {
  * spawn-beside, the pinned flag's point, and `MatToken`'s box.
  */
 export function artRadiusOf(typeId) {
-    const def = getTokenType(typeId);
-    return artRadius(def?.size || 1) * tokenBodyScale(def);
+    return artRadius(getTokenType(typeId)?.size || 1);
 }

@@ -86,6 +86,7 @@ const tickClocks = (ms, step = 100) => { for (let t = 0; t < ms; t += step) Time
 const ofType = (typeId) => BoardState.tokens().filter(t => t.typeId === typeId);
 const seeds = () => InventoryManager.getItemCount(SEED);
 
+/** Put a Token down at a point, no rules. ⚠️ Tokens stand edges touching at the closest, 128 u. */
 function arrive(typeId, x, y) {
     const t = placeAt(typeId, x, y);
     TileModifiers.rebuildAround([{ x, y }]);
@@ -166,7 +167,7 @@ describe('⭐ a Forest plants its own trees', () => {
 
     it('counts only its own: a lone tree of its species in its reach does not fill it', () => {
         const forest = arrive('ot_forest', 800, 500);
-        const lone = arrive('ot_tree', 900, 500);
+        const lone = arrive('ot_tree', 928, 500);
         BoardState.setTether(lone, null);
         run(10000);
         expect(ofType('ot_tree').filter(t => t.tether === forest.id)).toHaveLength(3);
@@ -175,7 +176,7 @@ describe('⭐ a Forest plants its own trees', () => {
 
     it('a spawner whose spawns need nothing of it still counts what stands in its reach', () => {
         const quarry = arrive('ot_quarry', 800, 500);
-        arrive('ot_rock', 900, 500);
+        arrive('ot_rock', 928, 500);
         run(10000);
         expect(ofType('ot_rock')).toHaveLength(2);
         expect(ofType('ot_rock').every(r => r.tether === undefined)).toBe(true);
@@ -186,7 +187,7 @@ describe('⭐ a Forest plants its own trees', () => {
 describe('⭐ a Forest regrows only its own Stumps, for free, in their Grow Time', () => {
     function ownTree() {
         const forest = arrive('ot_forest', 800, 500);
-        const tree = arrive('ot_tree', 900, 500);
+        const tree = arrive('ot_tree', 928, 500);
         BoardState.setTether(tree, forest.id);
         return { forest, tree };
     }
@@ -195,25 +196,25 @@ describe('⭐ a Forest regrows only its own Stumps, for free, in their Grow Time
         const { forest, tree } = ownTree();
         useUp(tree);
         tickClocks(100);
-        const stump = at(900, 500);
+        const stump = at(928, 500);
         expect(stump.typeId).toBe('ot_stump');
         expect(stump.tether).toBe(forest.id);
         // The fixture Forest's own −50 % on its species reaches the Stump, as Green Thumb would.
         expect(TimedChanges.nextGrowth(stump).totalMs).toBe(10000);
         tickClocks(9800);
-        expect(at(900, 500).typeId).toBe('ot_stump');
+        expect(at(928, 500).typeId).toBe('ot_stump');
         tickClocks(200);
-        expect(at(900, 500).typeId).toBe('ot_tree');
-        expect(at(900, 500).tether).toBe(forest.id);
+        expect(at(928, 500).typeId).toBe('ot_tree');
+        expect(at(928, 500).tether).toBe(forest.id);
         expect(seeds()).toBe(0);
     });
 
     it('a Stump beside a Forest of its species that is not its own never regrows', () => {
         arrive('ot_forest', 800, 500);
-        const stump = arrive('ot_stump', 900, 500);
+        const stump = arrive('ot_stump', 928, 500);
         BoardState.setTether(stump, null);
         tickClocks(60000);
-        expect(at(900, 500).typeId).toBe('ot_stump');
+        expect(at(928, 500).typeId).toBe('ot_stump');
         expect(Growth.growthAlertOf(stump.id)?.needs).toEqual(['ot_forest']);
     });
 
@@ -222,14 +223,14 @@ describe('⭐ a Forest regrows only its own Stumps, for free, in their Grow Time
         InventoryManager.addItem(SEED, 5);
         const { forest, tree } = ownTree();
         leave(forest);
-        expect(at(900, 500).typeId).toBe('ot_tree');
+        expect(at(928, 500).typeId).toBe('ot_tree');
         useUp(tree);
         tickClocks(60000);
-        expect(at(900, 500).typeId).toBe('ot_stump');
+        expect(at(928, 500).typeId).toBe('ot_stump');
         // A new Forest of the species does not take them in.
         const next = arrive('ot_forest', 800, 500);
         tickClocks(60000);
-        expect(at(900, 500).typeId).toBe('ot_stump');
+        expect(at(928, 500).typeId).toBe('ot_stump');
         expect(next.id).not.toBe(forest.id);
     });
 });
@@ -237,9 +238,9 @@ describe('⭐ a Forest regrows only its own Stumps, for free, in their Grow Time
 describe('⭐ an Orchard plants its own fruit trees, which rest and fruit again', () => {
     it('its own picked-empty tree fruits again in its rest (Grow Time reaching it shortens it); one not its own stays bare', () => {
         const orchard = arrive('ot_orchard', 800, 500);
-        const own = arrive('ot_apple', 900, 500);
+        const own = arrive('ot_apple', 928, 500);
         BoardState.setTether(own, orchard.id);
-        const stranger = arrive('ot_apple', 800, 600);
+        const stranger = arrive('ot_apple', 800, 628);
         BoardState.setTether(stranger, null);
         useUp(own);
         useUp(stranger);
@@ -263,8 +264,8 @@ describe('an older save: its trees join the Forest in their reach, once', () => 
         GameState.state.board.groveTethers = 0;
         const forest = arrive('ot_forest', 800, 500);
         const far = arrive('ot_forest', 1500, 500);
-        const tree = arrive('ot_tree', 900, 500);
-        const stump = arrive('ot_stump', 700, 500);
+        const tree = arrive('ot_tree', 928, 500);
+        const stump = arrive('ot_stump', 672, 500);
         const lone = arrive('ot_tree', 300, 900);
         const apple = arrive('ot_apple', 1400, 500);
         expect(Groves.attachUntethered()).toBe(2);
@@ -275,7 +276,7 @@ describe('an older save: its trees join the Forest in their reach, once', () => 
         expect(far.id).not.toBe(forest.id);
         expect(GameState.state.board.groveTethers).toBe(1);
         // Once: a tree placed later is not adopted by a reload.
-        const later = arrive('ot_tree', 850, 600);
+        const later = arrive('ot_tree', 850, 640);
         expect(Groves.attachUntethered()).toBe(0);
         expect('tether' in later).toBe(false);
     });
@@ -283,9 +284,9 @@ describe('an older save: its trees join the Forest in their reach, once', () => 
     it('the board tick runs it, so an old save Stump beside its Forest regrows', () => {
         GameState.state.board.groveTethers = 0;
         arrive('ot_forest', 800, 500);
-        arrive('ot_stump', 900, 500);
+        arrive('ot_stump', 928, 500);
         run(20100);
-        expect(at(900, 500).typeId).toBe('ot_tree');
+        expect(at(928, 500).typeId).toBe('ot_tree');
     });
 });
 

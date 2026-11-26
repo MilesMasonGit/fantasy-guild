@@ -1,6 +1,7 @@
 import { cleanGuildName } from './GuildName.js';
 import * as SaveFiles from './SaveFiles.js';
 import { guildHeroes } from '../hero/summoned.js';
+import { GAME_VERSION } from '../../state/StateSchema.js';
 
 const SLOT_KEY_PREFIX = 'tabletop_guild_slot_';
 const LAST_SLOT_KEY = 'tabletop_guild_last_slot';
@@ -40,6 +41,8 @@ export function hasSlot(slotIndex) {
  * Get info about a specific slot for UI display: null for an empty slot, and
  * `{ slotIndex, damaged: true }` for one whose save can't be read at all, so the
  * slot screen shows it as damaged rather than empty (it can still be deleted).
+ * `outdated` is true for a save of any other version than this game's: loading it is refused
+ * (`SaveMigration`), so the slot screen offers no Load for it, only Delete.
  * @param {number} slotIndex 
  * @returns {Object|null}
  */
@@ -51,13 +54,15 @@ export function getSlotInfo(slotIndex) {
         const data = JSON.parse(json);
         const state = data.state || data;
 
+        const version = data.version || state.meta?.version || '0.0.0';
         return {
             slotIndex,
             guildName: cleanGuildName(state.meta?.guildName),
             heroCount: guildHeroes(state.heroes).length,
             playtime: state.meta?.totalPlaytime || 0,
             lastSavedAt: data.savedAt || state.meta?.lastSavedAt || null,
-            version: data.version || state.meta?.version || '0.0.0',
+            version,
+            outdated: version !== GAME_VERSION,
             isLastActive: parseInt(localStorage.getItem(LAST_SLOT_KEY)) === slotIndex
         };
     } catch (e) {

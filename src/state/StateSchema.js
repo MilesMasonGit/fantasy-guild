@@ -38,8 +38,12 @@ import { BANK_STARTING_SLOTS } from '../config/guildUpgrades.js';
  * '0.8.1' — the Atlas: a save holds every Region the guild has settled
  *           (`atlas`), each with its own board. A pre-Atlas save is refused, not
  *           carried over as a first Region.
+ * '0.8.2' — Token spacing (brief 890): Tokens stand edges touching, 128 u apart
+ *           at the closest. An older save's boards hold them closer; the owner
+ *           chose a fresh start over moving them apart, so it is refused, and the
+ *           slot screen says so (`SaveSlotHelper.getSlotInfo`'s `outdated`).
  */
-export const GAME_VERSION = '0.8.1';
+export const GAME_VERSION = '0.8.2';
 
 /**
  * The board's default shape, in one place.
