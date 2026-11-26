@@ -7,7 +7,7 @@ import { EFFECT_TYPES, TARGET_CATEGORIES } from '../effects/constants.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import * as Growth from './Growth.js';
-import { growTimeOf, resolveAxis } from './TileModifiers.js';
+import { growTimeOf, resolveAxis, kindMayHaveChanged } from './TileModifiers.js';
 import * as EffectFeedback from './EffectFeedback.js';
 import * as SupportLinks from './supportLinks.js';
 import { endsNow } from './endRoll.js';
@@ -228,6 +228,8 @@ function settle(instance, def) {
 }
 
 function announce(instance) {
+    // The crop in the ground is the Field's node kind: Science's mastery of it follows (`Mastery.js`).
+    kindMayHaveChanged(instance.id);
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: instance.id, typeId: instance.typeId });
 }
 

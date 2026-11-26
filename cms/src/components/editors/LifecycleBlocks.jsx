@@ -10,6 +10,7 @@ import {
 import { Section, Field } from '../shared/EditorLayout';
 import { ItemPicker, ItemList } from './Statements';
 import SpritePickerModal from './SpritePickerModal';
+import { MasteryTrack, LaboratoryBlock } from './MasteryBlock';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
 /**
@@ -27,6 +28,8 @@ const BLOCK_INFO = {
   field: { title: 'Field', what: 'Grows its own crop: empty, growing, ripe. Its crops are the recipes it works (a Field or Herb Garden station); the player picks one on it.' },
   camp: { title: 'Camp', what: 'Heroes sent to it work the Tokens of its skill within its reach, one hero per Token (a Logging Camp, a Farmstead). Built on a Foundation like a station.' },
   shrine: { title: 'Shrine', what: 'Its rules (its blessing) hold only while it is lit. A Faith hero working it spends an offering each cycle, which keeps it lit longer; untended it burns down and the blessing goes out.' },
+  laboratory: { title: 'Laboratory', what: 'Studies one node in its reach, picked on its card, for its kind’s mastery (a Science station of kind Laboratory). How high a node it reaches.' },
+  mastery: { title: 'Mastery track', what: 'Science’s ranks for this node kind: each, reached at its points, gives its effect to every Token of the kind, guild-wide.' },
 };
 
 export default function LifecycleBlocks({ token, onChange }) {
@@ -104,6 +107,10 @@ export default function LifecycleBlocks({ token, onChange }) {
                   )}
                   {key === 'shrine' && (
                     <ShrineBlock block={token.shrine} token={token} effects={effects} recipePools={recipePools} items={items} onChange={(v) => set('shrine', v)} />
+                  )}
+                  {key === 'laboratory' && <LaboratoryBlock block={token.laboratory} onChange={(v) => set('laboratory', v)} />}
+                  {key === 'mastery' && (
+                    <MasteryTrack block={token.mastery} holder={token} effects={effects} tokens={tokens} onChange={(v) => set('mastery', v)} />
                   )}
                 </div>
               )}

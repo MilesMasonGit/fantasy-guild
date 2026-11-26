@@ -441,10 +441,10 @@ export function makeTokenOutputEntry(tokenId) {
     return { tokenId, chance: 100, minQty: 1, maxQty: 1 };
 }
 
-// Token Lifecycle blocks: `spawner`, `grows`, `foundation`, `shop`, `trickle`, `respawn`, `field`, `camp`, `shrine`. These factories only give the editor a starting value when an author ADDS a block.
+// Token Lifecycle blocks: `spawner`, `grows`, `foundation`, `shop`, `trickle`, `respawn`, `field`, `camp`, `shrine`, `laboratory`, `mastery`. These factories only give the editor a starting value when an author ADDS a block.
 // ⚠️ Absent means absent: `makeToken` creates none of them and nothing on the load or sync path fills them in, so a Token without a block round-trips without one, byte for byte.
 
-export const TOKEN_LIFECYCLE_BLOCKS = Object.freeze(['spawner', 'grows', 'foundation', 'shop', 'trickle', 'respawn', 'field', 'camp', 'shrine']);
+export const TOKEN_LIFECYCLE_BLOCKS = Object.freeze(['spawner', 'grows', 'foundation', 'shop', 'trickle', 'respawn', 'field', 'camp', 'shrine', 'laboratory', 'mastery']);
 
 export function makeWeightedTokenEntry(typeId = '') {
     return { typeId, weight: 1 };
@@ -480,6 +480,12 @@ export function makeLifecycleBlock(key) {
         case 'shrine':
             // A shrine lit at most for the game's default; each offering recipe says how long it keeps it lit.
             return { maxLitMs: SHRINE_DEFAULTS.maxLitMs };
+        case 'laboratory':
+            // A base Laboratory reaches nodes up to level 20 (content_science.md); a variant writes its own.
+            return { maxLevel: 20 };
+        case 'mastery':
+            // A track with no rank yet: the author adds them, each with its points and effect.
+            return { ranks: [] };
         default:
             return undefined;
     }

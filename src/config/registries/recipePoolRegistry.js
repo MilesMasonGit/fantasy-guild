@@ -67,6 +67,7 @@ import { stationSkillOf, stationKindOf } from '../../systems/effects/statements.
 import { foundationTierMeets, stationKindOffers } from './tokenConstants.js';
 import { migrateRecipeList } from '../../systems/effects/skillIdMigration.js';
 import { HIDEOUT_KIND } from './crime.js';
+import { LABORATORY_KIND } from './mastery.js';
 
 /** Concatenate every recipe JSON source into one flat list. */
 function loadJsonRecipes() {
@@ -163,12 +164,20 @@ export function recipesForToken(def) {
 }
 
 /**
+ * Whether a station of this kind runs no recipe at all: a Hideout robs the camp and a Laboratory
+ * studies the node chosen on its card instead (`Hideouts.js`, `Laboratories.js`). Its skill needs
+ * no recipe pool, and a recipe of its skill is never offered there.
+ */
+export function runsNoRecipe(kind) {
+    return kind === HIDEOUT_KIND || kind === LABORATORY_KIND;
+}
+
+/**
  * A station's pool: the ordinary recipes of its skill that its kind offers (`stationKindOffers`).
- * A null kind is the whole skill pool. A Hideout has none: it robs the camp chosen on its card
- * instead (`Hideouts.js`), and a Crime recipe is never offered there.
+ * A null kind is the whole skill pool; a kind that {@link runsNoRecipe} has none.
  */
 export function recipesForStation(skillId, kind = null) {
-    if (kind === HIDEOUT_KIND) return [];
+    if (runsNoRecipe(kind)) return [];
     const pool = getSkillRecipePool(skillId);
     return kind ? pool.filter(r => stationKindOffers(kind, r)) : pool;
 }

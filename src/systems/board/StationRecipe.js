@@ -6,6 +6,7 @@ import { fieldOf } from '../../config/registries/tokenConstants.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import * as Demolition from './Demolition.js';
+import * as Laboratories from './Laboratories.js';
 
 /**
  * Which recipe a station is set to: the one place `selectedRecipeId` is read or written.
@@ -128,7 +129,10 @@ export function workConfigOf(def, instance = null) {
     if (Demolition.isMarked(instance)) return Demolition.DEMOLITION_CONFIG;
     if (!def?.foundation) {
         if (!def?.config) return null;
-        const level = recipeLevel(instance ? selectedRecipe(instance, def) : null);
+        // A Laboratory asks its chosen node's gathering level in Science, as a station its recipe's.
+        const level = instance && Laboratories.isLaboratory(def)
+            ? Laboratories.studyLevelOf(instance)
+            : recipeLevel(instance ? selectedRecipe(instance, def) : null);
         if (level <= (def.config.skillRequired || 0)) return def.config;
         return { ...def.config, skillRequired: level };
     }

@@ -88,8 +88,8 @@ describe('the station kind on the Works as rule', () => {
         expect(recipeStationKinds({ stationKinds: 'field' })).toEqual([]);
     });
 
-    it('the kinds left are Farming\'s, Faith\'s and Crime\'s Hideout, each with words', () => {
-        expect([...STATION_KINDS]).toEqual(['field', 'herb_garden', 'windmill', 'altar', 'shrine', 'hideout']);
+    it('the kinds left are Farming\'s, Faith\'s, Crime\'s Hideout and Science\'s Laboratory, each with words', () => {
+        expect([...STATION_KINDS]).toEqual(['field', 'herb_garden', 'windmill', 'altar', 'shrine', 'hideout', 'laboratory']);
         for (const kind of STATION_KINDS) expect(stationKindLabel(kind)).toMatch(/\S/);
         expect(stationKindLabel('herb_garden')).toBe('Herb Garden');
     });

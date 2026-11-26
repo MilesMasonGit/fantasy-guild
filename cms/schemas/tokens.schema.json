@@ -200,6 +200,14 @@
             "maxLitMs": { "type": "number", "minimum": 0, "description": "The most milliseconds it can be lit at once (minimum 1000, default 600000)." }
           }
         },
+        "laboratory": {
+          "description": "A Laboratory (src/config/registries/mastery.js laboratoryOf; src/systems/board/Laboratories.js): a Science station of kind laboratory that studies a node in its reach, picked on its card, for mastery of the node's kind.",
+          "type": "object",
+          "properties": {
+            "maxLevel": { "type": "number", "minimum": 1, "description": "The highest gathering level of a node it can study (a variant reaches higher). Missing: any level, the hero's Science level still deciding." }
+          }
+        },
+        "mastery": { "$ref": "common.schema.json#/$defs/masteryTrack" },
         "camp": {
           "description": "A camp that heroes of a skill work from (tokenConstants.js campOf; src/systems/board/Camps.js). No skill means not a camp.",
           "type": "object",

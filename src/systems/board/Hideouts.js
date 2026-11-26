@@ -6,13 +6,11 @@ import { worldTables } from '../../config/registries/worldTablesRegistry.js';
 import { HIDEOUT_KIND, stealOf, crimeLevelOf, caughtCurveOf, caughtChance } from '../../config/registries/crime.js';
 import { stationKindOf } from '../effects/statements.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
-import { EventBus } from '../core/EventBus.js';
-import { BOARD_EVENTS } from './boardEvents.js';
 import * as BoardState from './BoardState.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as Demolition from './Demolition.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
-import { centreOf, distanceSq, reachRadius } from './nearby.js';
+import { inReach, tokensInReach, writePick } from './reachPick.js';
 
 /**
  * Crime's one building. A **Hideout** is a station that works as Crime with the station kind
@@ -86,21 +84,9 @@ export function isRobbable(camp) {
     return robbedEnemyOfType(camp.typeId) != null;
 }
 
-/** Whether `camp` stands in `hideout`'s reach: the one standard reach, centre to centre, inclusive. */
-export function inReach(hideout, camp) {
-    const a = centreOf(hideout);
-    const b = centreOf(camp);
-    const r = reachRadius();
-    return !!a && !!b && distanceSq(a, b) <= r * r;
-}
-
 /** The camps `hideout` may rob now, nearest first (then the earlier placed). */
 export function campsInReach(hideout) {
-    if (!hideout) return [];
-    const at = centreOf(hideout);
-    return BoardState.tokens()
-        .filter(t => t.id !== hideout.id && isRobbable(t) && inReach(hideout, t))
-        .sort((a, b) => (distanceSq(at, centreOf(a)) - distanceSq(at, centreOf(b))) || ((a.placedAt ?? 0) - (b.placedAt ?? 0)));
+    return tokensInReach(hideout).filter(isRobbable);
 }
 
 /**
@@ -124,14 +110,7 @@ export function targetOf(hideout) {
 export function setTarget(hideout, campId) {
     if (!hideout || !isHideout(getTokenType(hideout.typeId))) return false;
     if (!campsInReach(hideout).some(c => c.id === campId)) return false;
-    if (hideout.stealFrom === campId) return true;
-    hideout.stealFrom = campId;
-    if (hideout.cycleElapsedMs > 0 && !Demolition.isMarked(hideout)) {
-        hideout.cycleElapsedMs = 0;
-        EventBus.publish(BOARD_EVENTS.PROGRESS, { instanceId: hideout.id, percent: 0 });
-    }
-    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { instanceId: hideout.id, typeId: hideout.typeId });
-    return true;
+    return writePick(hideout, 'stealFrom', campId);
 }
 
 /** Whether a Token on the mat is a guard a catch set on a camp. */

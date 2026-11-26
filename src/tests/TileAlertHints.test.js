@@ -24,7 +24,7 @@ const ALERT_VALUES = Object.values(ALERT);
  * no bait or a fish above them, and a shrine lit too full for an offering, which are never written
  * as one.
  */
-const NOT_WRITTEN = [ALERT.RESTING, ALERT.GROWING, ALERT.NO_BAIT, ALERT.FISH_LEVEL, ALERT.SHRINE_FULL];
+const NOT_WRITTEN = [ALERT.RESTING, ALERT.GROWING, ALERT.NO_BAIT, ALERT.FISH_LEVEL, ALERT.SHRINE_FULL, ALERT.NODE_AWAY];
 const TOKEN_ALERTS = ALERT_VALUES.filter(a => !NOT_WRITTEN.includes(a));
 
 const tree = (el) => React.createElement(DndContext, null, el);

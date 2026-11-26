@@ -357,7 +357,14 @@ export const BOARD_EVENTS = {
      * is gone from the roster and the mat: `reason` `'spent'` at no charges, `'replaced'` when its
      * Circle was set to call another).
      */
-    SUMMON_CHANGED: 'board:summon_changed'
+    SUMMON_CHANGED: 'board:summon_changed',
+
+    /**
+     * A Laboratory's hero finished a study of its node (`Laboratories.js`): `{ instanceId, typeId,
+     * nodeId, kind, kindName, points, rank, heroId }`, `instanceId` the Laboratory, `points` and
+     * `rank` the kind's after it. Its card and the node's re-read on it.
+     */
+    STUDIED: 'board:studied'
 };
 
 /**
@@ -426,6 +433,21 @@ export const ALERT = {
      * (`Hideouts.js`): nobody robs the camp until the guard is beaten. Its thief stays by it.
      */
     GUARDED: 'guarded',
+    /**
+     * A Laboratory with no node chosen to study, or whose chosen node is no longer one it can (out
+     * of its reach, gone, above its level). The Laboratory twin of `CHOOSE_RECIPE`.
+     */
+    CHOOSE_NODE: 'choose_node',
+    /**
+     * A Laboratory whose node's kind the guild has fully mastered: nothing is left to learn from it,
+     * so nobody studies it until the player picks another.
+     */
+    NODE_MASTERED: 'node_mastered',
+    /**
+     * A Laboratory whose node is away: resting, a Stump growing back, a Field with nothing ripe. Like
+     * `RESTING`, never a badge: its hero lets go and waits until the node is back.
+     */
+    NODE_AWAY: 'node_away',
     /**
      * A Foundation is set to build a Token that may not stand where the Foundation is: a mine off
      * its Stone, a crystal with no leyline in reach (`SiteRules`). Nobody works it and nothing is

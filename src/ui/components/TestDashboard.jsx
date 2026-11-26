@@ -10,6 +10,7 @@ import { EventsDevSection } from '../dev/EventsDevSection.jsx';
 import { FaithDevSection } from '../dev/FaithDevSection.jsx';
 import { setUpCrimeScene } from '../dev/crimeScene.js';
 import { setUpCoinScene } from '../dev/coinScene.js';
+import { ScienceDevSection } from '../dev/ScienceDevSection.jsx';
 import { saveLiveMatToCms, DEFAULT_CMS_URL } from '../dev/starterCampDev.js';
 import {
     PICKER_ROWS, itemChoices, tokenChoices, filterByName, giveAndSay, dropAndSay, devBankEveryKind, devFillBank,
@@ -286,6 +287,8 @@ export const TestDashboard = /* @__PURE__ */ React.memo(() => {
                                 Set up a coin scene
                             </button>
                         </div>
+
+                        <ScienceDevSection />
 
                         <div className="space-y-1" data-testid="qa-tools" data-qa-group>
                             <div className={labelClass}>Tools</div>

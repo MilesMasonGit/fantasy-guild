@@ -18,6 +18,7 @@ import {
 } from './encyclopediaChart.js';
 import { EntrySprite, Tick, heroHas, isCollected, unscroll, SPRITE_PX } from './encyclopediaParts.jsx';
 import { levelNeed } from '../../../systems/core/levelNeed.js';
+import { masteryLinesOf } from './encyclopediaMastery.js';
 
 /**
  * The ink the chart's lines are drawn in on the parchment: `--color-ui-ink`'s value, written out.
@@ -126,6 +127,8 @@ const EntryCard = ({ book, entry, node, have, startName, got, hint }) => {
     if (starts.length) lines.push(t('encyclopedia.alsoFrom', { ways: starts.map(w => t(`encyclopedia.via.${w}`)).join(', ') }));
     // A Guild Hall track's every rank, which its box has room only to sum up.
     if (node.ranks) lines.push(t('encyclopedia.hallRanks', { star: node.star ?? '', ranks: ranksText(node.ranks) }));
+    // A node kind's Science mastery: the guild's rank in it and the next buff.
+    lines.push(...masteryLinesOf(entry));
     return (
         <div data-codex-card={entry.key} className="flex flex-col gap-1">
             {entry.kind === KIND.ITEM && <ItemTipContent item={entry.def} />}
