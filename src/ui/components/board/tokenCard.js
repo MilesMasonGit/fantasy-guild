@@ -15,6 +15,7 @@ import { stationSkillOf } from '../../../systems/effects/statements.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as BoardCombat from '../../../systems/board/BoardCombat.js';
 import * as StationRecipe from '../../../systems/board/StationRecipe.js';
+import * as SecondRecipe from '../../../systems/board/SecondRecipe.js';
 import * as Fields from '../../../systems/board/Fields.js';
 import * as Charges from '../../../systems/board/Charges.js';
 import * as Fishing from '../../../systems/board/Fishing.js';
@@ -39,6 +40,7 @@ import { spotFishRows, luresIn } from './spotFish.js';
 import { isHideout } from '../../../systems/board/Hideouts.js';
 import { theftBlockOf } from './hideoutCard.js';
 import { isLaboratory } from '../../../systems/board/Laboratories.js';
+import { problemOf, problemText } from './problemMark.js';
 import { studyBlockOf, nodeMasteryOf } from './laboratoryCard.js';
 import {
     liveTimerSources, demolitionLine, leaveLine, spawnLine, growthLine, fieldTimerLine, respawnLine, produceLine, litLine
@@ -59,6 +61,7 @@ export const CARD_BLOCK = Object.freeze({
     WORK: 'work',
     CYCLE: 'cycle',
     RECIPE: 'recipe',
+    SECOND: 'second',
     THEFT: 'theft',
     STUDY: 'study',
     MASTERY: 'mastery',
@@ -176,7 +179,13 @@ export function liveCardSources() {
         theft: (instance, def) => theftBlockOf(instance, def),
         study: (instance, def) => studyBlockOf(instance, def),
         mastery: (instance, def) => nodeMasteryOf(instance, def),
-        workConfig: StationRecipe.workConfigOf
+        workConfig: StationRecipe.workConfigOf,
+        takesSecond: StationRecipe.takesSecondRecipe,
+        secondOpen: SecondRecipe.isOpenNow,
+        secondProblem: (instance) => {
+            const problem = problemOf({ alert: instance.secondAlert || null });
+            return problem ? { kind: problem.kind, severity: problem.severity, text: problemText(problem, instance.id, StationRecipe.LANE.SECOND) } : null;
+        }
     };
 }
 
@@ -589,6 +598,9 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
         if (needs.length || tools.length || makes.length || bonus.length || rare || change || catches || fish) {
             blocks.push({ id: CARD_BLOCK.RECIPE, recipeName: recipe?.name || null, recipeId: recipe?.id || null, needs, tools, makes, bonus, rare, change, catches, fish });
         }
+        // A Many Hands station's second recipe, right after its first.
+        const second = isStation ? secondBlockOf(def, instance, src) : null;
+        if (second) blocks.push(second);
         // A Hideout: the camp it robs, what a theft takes, the odds of a catch (`hideoutCard.js`).
         if (isHideout(def) && src.theft) blocks.push({ id: CARD_BLOCK.THEFT, ...src.theft(instance, def) });
         // A Laboratory: the node it studies, its kind's mastery, Change node (`laboratoryCard.js`).
@@ -612,6 +624,49 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
     };
     if (more.landmark || more.buff || more.drives) blocks.push({ id: CARD_BLOCK.MORE, ...more });
     return { enemy: false, name, art, blocks, effects: effectsOf(instance, src) };
+}
+
+/** The second recipe's problem when no hero holding Second Recipe works the station. */
+export const SECOND_CLOSED = 'second_closed';
+
+/**
+ * A Many Hands station's second recipe (`SecondRecipe.js`): shown while the hero working it holds
+ * Second Recipe, or once a second recipe is set (owner, 2026-11-25), else null. What it needs and
+ * makes, its time here, how far its cycle is, its own problem (the mat's mark is the first's), and
+ * its Change button. `open`: it runs while its hero is there; not open, its problem says so.
+ */
+function secondBlockOf(def, instance, src) {
+    if (!instance || !src.takesSecond?.(def)) return null;
+    const open = !!src.secondOpen?.(instance, def);
+    if (!open && instance.secondRecipeId === undefined) return null;
+    const recipe = src.selectedRecipe(instance, def, StationRecipe.LANE.SECOND);
+    const skillId = def.config?.skill || null;
+    const baseMs = Number(recipe?.durationMs ?? def.config?.cycleTimeMs) || 0;
+    const cycleMs = recipe && baseMs > 0 && src.workTime ? Number(src.workTime(instance.id, baseMs, skillId)) || baseMs : (recipe ? baseMs : 0);
+    const problem = !open
+        ? { kind: SECOND_CLOSED, severity: 'waiting', text: 'Runs only while a hero with Second Recipe works here' }
+        : (recipe ? src.secondProblem?.(instance) ?? null : null);
+    return {
+        id: CARD_BLOCK.SECOND,
+        open,
+        recipeName: recipe?.name || null,
+        recipeId: recipe?.id || null,
+        level: recipe ? Math.max(1, StationRecipe.recipeLevel(recipe)) : null,
+        skillId,
+        xp: Number(recipe?.xp) || 0,
+        needs: needsOf(recipe?.inputs || [], src, instance),
+        // The tool in hand is the first recipe's Requires; here only what this recipe wants beside it.
+        tools: recipe ? toolsOf(def, recipe, src).filter(t => !t.inHand) : [],
+        makes: makesOf(recipe?.outputs || []),
+        cycleMs,
+        elapsedMs: Number(instance.secondElapsedMs) || 0,
+        problem,
+        change: {
+            label: recipe ? 'Change second recipe' : 'Choose a second recipe',
+            chosen: !!recipe,
+            empty: 'No second recipe chosen'
+        }
+    };
 }
 
 /** The chance a Token type runs out each cycle, off the mat (a shop, the Encyclopedia), or null. */

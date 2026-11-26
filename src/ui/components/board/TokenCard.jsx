@@ -310,6 +310,75 @@ const RecipeChoice = ({ block, instanceId, onChangeRecipe }) => {
     );
 };
 
+/**
+ * A Many Hands station's second recipe's cycle: a thin bar on the card (never on the mat), filled
+ * from the engine's `SECOND_PROGRESS` without a redraw, started from where the cycle stood when the
+ * card drew.
+ */
+const SecondProgress = ({ instanceId, elapsedMs, cycleMs }) => {
+    const fill = useRef(null);
+    const start = cycleMs > 0 ? Math.min(100, (elapsedMs / cycleMs) * 100) : 0;
+    useEffect(() => subscribeToken(BOARD_EVENTS.SECOND_PROGRESS, instanceId, (p) => {
+        if (fill.current) fill.current.style.width = `${Math.max(0, Math.min(100, Number(p?.percent) || 0))}%`;
+    }), [instanceId]);
+    return (
+        <div data-card-second-progress className="h-1.5 bg-black/60 overflow-hidden">
+            <div ref={fill} data-card-second-fill className="h-full bg-gi-gold" style={{ width: `${start}%` }} />
+        </div>
+    );
+};
+
+/**
+ * A Many Hands station's second recipe (owner, 2026-11-25): what it is, its time and its cycle, its
+ * own problem in the mark's colour (the mat's mark is the first recipe's), and the button that
+ * changes it. Its Requires and Loot follow it.
+ */
+const SecondRecipeSection = ({ block, instanceId, onChange }) => (
+    <Section data-card-block="second" data-card-second-open={block.open ? 'true' : 'false'}>
+        <div className="flex items-baseline justify-between gap-2">
+            <Heading>Second recipe</Heading>
+            {block.cycleMs > 0 && (
+                <Stat icon={<PixelGlyph name="clock" />} text={lengthText(block.cycleMs)} tip="One round of the second recipe takes this long" data-card-second-cycle />
+            )}
+        </div>
+        {block.recipeId ? (
+            <button
+                type="button"
+                data-card-second-link={block.recipeId}
+                title={t('encyclopedia.lookUp')}
+                onClick={(e) => { e.stopPropagation(); lookUpRecipe(block.recipeId); }}
+                className="self-start ui-text-body font-bold text-white hover:underline cursor-pointer text-left"
+            >
+                {block.recipeName}
+            </button>
+        ) : (
+            <span className="ui-text-body" style={{ color: 'var(--color-ui-gold)' }}>{block.change.empty}</span>
+        )}
+        {block.recipeId && block.open && <SecondProgress instanceId={instanceId} elapsedMs={block.elapsedMs} cycleMs={block.cycleMs} />}
+        {block.problem && (
+            <span
+                data-card-second-problem={block.problem.kind}
+                className="flex items-center gap-1.5 ui-text-body font-bold"
+                style={{ color: PROBLEM_COLOUR[block.problem.severity] || 'var(--color-ui-gold)' }}
+            >
+                {PROBLEM_SPRITE[block.problem.severity] && (
+                    <img src={PROBLEM_SPRITE[block.problem.severity]} alt="" draggable={false} className="w-4 h-4 shrink-0" style={{ imageRendering: 'pixelated' }} />
+                )}
+                {block.problem.text}
+            </span>
+        )}
+        <button
+            type="button"
+            data-card-change-second
+            onClick={(e) => { e.stopPropagation(); onChange?.(); }}
+            className="ui-frame-chamfer self-start px-3 py-1 ui-text-body font-bold cursor-pointer"
+            style={{ color: 'var(--color-ui-gold)' }}
+        >
+            {block.change.label}
+        </button>
+    </Section>
+);
+
 /** A Summoning Circle's Summoned worker and its charges left, while one it called stands. */
 const CircleSummonLine = ({ instanceId }) => {
     const summon = useGameState(
@@ -329,11 +398,11 @@ const CircleSummonLine = ({ instanceId }) => {
     );
 };
 
-/** What the work takes: the tools a hero or the spot must have, and the items it uses up. */
-const RequiresSection = ({ block, effects }) => {
+/** What the work takes: the tools a hero or the spot must have, and the items it uses up. `second`: a Many Hands station's second recipe's. */
+const RequiresSection = ({ block, effects, second = false }) => {
     if (!block.needs.length && !block.tools.length) return null;
     return (
-        <Section data-card-block="requires">
+        <Section data-card-block={second ? 'second-requires' : 'requires'}>
             <Heading>Requires</Heading>
             {block.tools.length > 0 && (
                 <div data-card-tools className="flex flex-col gap-1">
@@ -375,12 +444,12 @@ const RequiresSection = ({ block, effects }) => {
     );
 };
 
-const MakesSection = ({ makes, bonus = [], effects }) => {
+const MakesSection = ({ makes, bonus = [], effects, second = false }) => {
     if (!makes.length && !bonus.length) return null;
     return (
         <>
             {makes.length > 0 && (
-                <Section data-card-block="makes">
+                <Section data-card-block={second ? 'second-makes' : 'makes'}>
                     <Heading>Loot</Heading>
                     <div data-card-makes className="flex flex-col gap-1">
                         {makes.map(m => (
@@ -879,6 +948,9 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
     const [dismissing, setDismissing] = useState(null);
 
     const listing = view === 'recipes' && canList;
+    // A Many Hands station's second picker: the recipe list again, for its second recipe.
+    const secondBlock = model?.blocks.find(b => b.id === CARD_BLOCK.SECOND) || null;
+    const secondListing = view === 'second' && !!secondBlock && !!instance;
     if (!model) return null;
     const { art } = model;
 
@@ -892,6 +964,14 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
         const warning = Summons.dismissWarning(BoardState.getTokenById(instanceId), recipeId);
         if (warning) setDismissing({ recipeId, ...warning });
         else pick(recipeId);
+    };
+    // `setSecondRecipe` is the only writer of a second recipe, and refuses the first's or one outside the pool.
+    const chooseSecond = (recipeId) => {
+        if (StationRecipe.setSecondRecipe(BoardState.getTokenById(instanceId), recipeId, def)) setView('card');
+    };
+    const clearSecond = () => {
+        StationRecipe.clearSecondRecipe(BoardState.getTokenById(instanceId));
+        setView('card');
     };
     // `setTarget` is the only writer of a Hideout's camp, and refuses one not in its reach.
     const chooseCamp = (campId) => {
@@ -914,6 +994,11 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
                 block.fish ? <FishSection key="fish" fish={block.fish} /> : null,
                 block.catches ? <CatchSection key="catch" catches={block.catches} effects={effects} /> : null
             ];
+            case CARD_BLOCK.SECOND: return [
+                <SecondRecipeSection key="second" block={block} instanceId={instanceId} onChange={() => setView('second')} />,
+                <RequiresSection key="second-requires" block={block} second />,
+                <MakesSection key="second-makes" makes={block.makes} second />
+            ];
             case CARD_BLOCK.THEFT: return [
                 <TheftSection key="theft" block={block} onChangeCamp={() => setView('recipes')} />,
                 <StealsSection key="steals" block={block} rare={block.rare ? <RareFinds rare={block.rare} lucky={luckyOf(effects)} /> : null} />
@@ -933,7 +1018,25 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
     });
 
     const header = <NameBlock name={model.name} onClose={onClose} onLookUp={onClose ? () => lookUpToken(typeId) : null} />;
-    const panel = listing && theft ? (
+    const panel = secondListing ? (
+        <div className="p-1.5">
+            {/* The first recipe is not offered: the two are always different. */}
+            <RecipeList
+                key={`${instanceId}:second`}
+                def={def}
+                instanceId={instanceId}
+                selectedRecipeId={instance.secondRecipeId || null}
+                excludeRecipeId={instance.selectedRecipeId || null}
+                workerId={BoardState.workerOf(instanceId) || null}
+                heroes={GameState.state?.heroes || []}
+                onChoose={chooseSecond}
+                onBack={() => setView('card')}
+                onClear={instance.secondRecipeId ? clearSecond : undefined}
+                clearLabel="No second recipe"
+                onLookUp={onClose ? (itemId) => lookUpItem(itemId, { back: { recipesOf: instanceId } }) : undefined}
+            />
+        </div>
+    ) : listing && theft ? (
         <div className="p-1.5">
             <CampList key={instanceId} block={theft} onChoose={chooseCamp} onBack={() => setView('card')} />
         </div>
@@ -976,11 +1079,11 @@ export const TokenCard = ({ typeId, instanceId = null, onClose = null, onViewCha
         <div
             data-token-card={model.enemy ? 'enemy' : 'token'}
             data-card-art={art ? art.source : 'none'}
-            data-card-view={listing ? 'recipes' : 'card'}
+            data-card-view={secondListing ? 'second' : listing ? 'recipes' : 'card'}
             className="relative overflow-hidden flex flex-col max-h-[75vh]"
-            style={listing ? { width: 'max-content', minWidth: CARD_WIDTH_PX, maxWidth: 'calc(100vw - 48px)' } : { width: CARD_WIDTH_PX }}
+            style={listing || secondListing ? { width: 'max-content', minWidth: CARD_WIDTH_PX, maxWidth: 'calc(100vw - 48px)' } : { width: CARD_WIDTH_PX }}
         >
-            <CardBody art={art} header={header} panel={panel} listing={listing} />
+            <CardBody art={art} header={header} panel={panel} listing={listing || secondListing} />
         </div>
     );
 };

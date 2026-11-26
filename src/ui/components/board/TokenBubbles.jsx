@@ -133,8 +133,9 @@ export const TokenBubbles = ({
             bar.progress(p, liveRef.current.hasHero);
         };
 
-        const onCycleComplete = () => {
-            if (liveRef.current.blocked || combatRef.current) return;
+        // A Many Hands station's second recipe finishing is the card's to show, never this bar's.
+        const onCycleComplete = (p) => {
+            if (p?.lane === 2 || liveRef.current.blocked || combatRef.current) return;
             bar.complete(liveRef.current.hasHero);
         };
 

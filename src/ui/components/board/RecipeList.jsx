@@ -248,14 +248,22 @@ const HeroDivider = ({ entry, heroesById, skill }) => (
 );
 
 /**
+ * `excludeRecipeId`: a recipe not offered (a Many Hands station's second list leaves out its first
+ * recipe). `onClear`, with `clearLabel`: a button beside Back that chooses nothing (its second recipe
+ * stopped).
+ *
  * @param {{ def: object, instanceId?: string|null, selectedRecipeId?: string|null,
- *   workerId?: string|null, heroes?: object[], onChoose: (id: string) => void,
- *   onBack?: () => void, onLookUp?: (itemId: string) => void }} props
+ *   excludeRecipeId?: string|null, workerId?: string|null, heroes?: object[], onChoose: (id: string) => void,
+ *   onBack?: () => void, onClear?: () => void, clearLabel?: string, onLookUp?: (itemId: string) => void }} props
  */
-export const RecipeList = ({ def, instanceId = null, selectedRecipeId = null, workerId = null, heroes = [], onChoose, onBack, onLookUp }) => {
+export const RecipeList = ({ def, instanceId = null, selectedRecipeId = null, excludeRecipeId = null, workerId = null, heroes = [], onChoose, onBack, onClear, clearLabel = '', onLookUp }) => {
     const [query, setQuery] = useState('');
     const rootRef = useRef(null);
-    const { skill, entries } = recipeListFor(def, { workerId, heroes, query });
+    const listed = recipeListFor(def, { workerId, heroes, query });
+    const { skill } = listed;
+    const entries = excludeRecipeId
+        ? listed.entries.filter(e => !(e.kind === ENTRY.RECIPE && e.recipe?.id === excludeRecipeId))
+        : listed.entries;
     const heroesById = new Map((heroes || []).map(h => [h?.id, h]));
     const isField = !!fieldOf(def);
     // The skill the card's Time cell narrows Work Time rules to, so a row and the card agree.
@@ -289,6 +297,16 @@ export const RecipeList = ({ def, instanceId = null, selectedRecipeId = null, wo
                     aria-label="Search recipes"
                     className="flex-1 min-w-0 bg-black/65 border border-white/30 focus:border-white px-2 py-1 ui-text-body text-white outline-none"
                 />
+                {onClear && (
+                    <button
+                        type="button"
+                        data-recipe-clear
+                        onClick={(e) => { e.stopPropagation(); onClear(); }}
+                        className="shrink-0 bg-black/65 px-2 py-1 ui-text-body text-gi-muted hover:text-white cursor-pointer"
+                    >
+                        {clearLabel}
+                    </button>
+                )}
                 {onBack && (
                     <button
                         type="button"
