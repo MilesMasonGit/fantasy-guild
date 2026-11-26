@@ -194,7 +194,7 @@ export function fixableReason(instanceId, instance, heroId = undefined, lane = u
         if (!inputCheck.ok) return { reason: ALERT.INPUTS, io, inputCheck };
     }
 
-    if (!Charges.planCycle(instanceId, instance, io).ok) return { reason: ALERT.CHARGES, io };
+    if (!Charges.cyclePayable(instanceId, instance, io)) return { reason: ALERT.CHARGES, io };
 
     return { reason: null, io };
 }

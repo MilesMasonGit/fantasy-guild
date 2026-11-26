@@ -532,7 +532,8 @@ function runtimeOf(b) {
             // `HeroMotion.js`.
             bodies: new Map(),
             clock: 0,
-            dirty: true
+            dirty: true,
+            claimIndex: null
         };
         runtimes.set(b, rt);
     }
@@ -556,6 +557,7 @@ export function setClaim(heroId, claim) {
     if (!rt || !heroId) return;
     if (claim) rt.claims.set(heroId, claim);
     else rt.claims.delete(heroId);
+    claimsEpoch++;
     // A saved note about different work is stale the moment the claim changes.
     const saved = board()?.workClaims?.[heroId];
     if (saved && saved.instanceId !== claim?.instanceId) delete board().workClaims[heroId];
@@ -596,15 +598,31 @@ export function claimedInstanceIds() {
     return out;
 }
 
+/**
+ * Every claimed Token's hero, `instanceId → heroId`, the first in claim order as a walk of the claims
+ * finds it: {@link heroOfInstance} is asked of every Token on every tick. Rebuilt after any
+ * {@link setClaim} (it bumps `claimsEpoch`) or when the claims' size moves (`Flags.reset` clears them
+ * in place). ⚠️ Anything else that writes `claims` must bump `claimsEpoch`, or a hero is missed.
+ */
+let claimsEpoch = 0;
+
+function claimIndexOf(rt) {
+    const index = rt.claimIndex;
+    if (index && index.epoch === claimsEpoch && index.size === rt.claims.size) return index.byInstance;
+    const byInstance = new Map();
+    for (const [heroId, claim] of rt.claims) {
+        if (!byInstance.has(claim.instanceId)) byInstance.set(claim.instanceId, heroId);
+    }
+    rt.claimIndex = { epoch: claimsEpoch, size: rt.claims.size, byInstance };
+    return byInstance;
+}
+
 /** The hero whose flag has claimed Token instance `instanceId`, or null. */
 export function heroOfInstance(instanceId) {
     if (!instanceId) return null;
     const rt = flagRuntime();
     if (!rt) return null;
-    for (const [heroId, claim] of rt.claims) {
-        if (claim.instanceId === instanceId) return heroId;
-    }
-    return null;
+    return claimIndexOf(rt).get(instanceId) ?? null;
 }
 
 /**

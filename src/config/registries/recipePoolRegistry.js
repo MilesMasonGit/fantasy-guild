@@ -247,4 +247,16 @@ export function registerRecipePools(pools, { takeOver = true } = {}) {
         const fresh = takeOver ? recipes : recipes.filter(r => !RECIPES.some(known => known.id === r.id));
         RECIPES.push(...fresh.map(r => ({ skill: skillId, ...r })));
     }
+    poolsVersion++;
+}
+
+/**
+ * Bumped by every {@link registerRecipePools}, even one that adds no recipe (a takeover with an empty
+ * list still empties a skill's pool), so a memo of the pools (`StationRecipe.poolFor`) knows to drop them.
+ */
+let poolsVersion = 0;
+
+/** The pools' version: see above. */
+export function recipePoolsVersion() {
+    return poolsVersion;
 }
