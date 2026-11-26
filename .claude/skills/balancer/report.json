@@ -16,7 +16,8 @@
     "Adjusted, inside the limits: action lengths are trimmed by up to 15 % so whole XP pays the rule's XP an hour exactly. A Copper Ingot is 8.9 s for 3 XP (was 8.1 s), a Copper Dagger 11.5 s for 4 XP (was 12.2 s). Early recipes no longer pay unevenly from rounding.",
     "Unlock moves in the two chains: Copper Chestplate 13 to 16 and Adamantine Chestplate 73 to 76, each to break up a long run with nothing new before the next metal.",
     "Approved by the owner, 2026-11-25: the optimized player's boosts climb level by level between tiers instead of stepping up at each one. A new tier's first recipes used to pay up to 17 % less than the old tier's last (Coconut Pie at 80 against Coconut Swordfish at 79); now none does.",
-    "Approved by the owner, 2026-11-25: gear takes 50 % longer for each bar past the first, up from 20 %. A Chestplate takes 3x a Dagger (40 s at copper, 69 s at darkmetal) and a bar spent on Daggers earns 1.7x a bar spent on Chestplates, down from 2.8x."
+    "Approved by the owner, 2026-11-25: gear takes 50 % longer for each bar past the first, up from 20 %. A Chestplate takes 3x a Dagger (40 s at copper, 69 s at darkmetal) and a bar spent on Daggers earns 1.7x a bar spent on Chestplates, down from 2.8x.",
+    "Approved by the owner, 2026-11-25: a recipe with a made base (a stew on Sofrito, a potion on a Draught, a pie on Dough) takes 1 of each raw ingredient at every level. The page already worked this way; the rules page now says so."
   ],
   "proposals": [],
   "gaps": [
@@ -26,7 +27,7 @@
   "waiting": [
     "On the director: the ledger read-out and the ledger's new tiers and boost budget (brief 880, L1 to L3). Until then the page can't be checked against the engine.",
     "On the content session: the plan in the CMS as Planned entries. No number pack before that.",
-    "On the balancer, next run: how many Nails, Arrowheads and Kunai one bar makes, how long a drink's dose lasts, and whether herbs and vegetables in a recipe with a made base (a stew on Sofrito, a potion on a Draught) grow with level or stay at 1. No rule sets the first two yet; the rules page and the solver read the third differently.",
+    "On the balancer, next run: how many Nails, Arrowheads and Kunai one bar makes, and how long a drink's dose lasts. No rule sets these yet, so the page shows them as 1 a craft.",
     "The rules page's metal and Bread examples are regenerated from the solver. Its XP table and boost budget are unchanged."
   ]
 }

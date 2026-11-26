@@ -87,6 +87,8 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 
 **What one gather action gives stays the same at every tier** (owner, after the review): "Increased ingredient gain is expected through building and Star upgrades. In practice we do grow yields, but for the base numbers they should not." So a Bare guild needs more gatherers per crafter as it climbs (about 2 per smelter at copper, 8 at darkmetal), and **yield boosts close the gap**: Double Output buildings, the Logging and Mining Camps' variants, and the Hall's yield stars. Their targets grow by tier so a Typical guild keeps about one or two gatherers per crafter (section 5).
 
+**A recipe with a made base takes 1 of each raw ingredient, at every level** (owner, 2026-11-25): a stew on Sofrito, a potion on a Draught, a pie on Dough. The made base already carries the rising cost; only a recipe made from raw things alone grows.
+
 **Fixed counts by kind** (agent's call, starting values): Dagger 1, Sword 2, Woodaxe and Pickaxe 2, Gloves and Boots 2, Helmet or Hat 3, Shield 3, Mace and Cleaver 3, Cape 3, Chestplate, Chest, Robe and Tunic 5. A handle is 1 wood. Nails, Arrowheads, Chain and Bands take 1 bar and make several. Weird items in potions are 1. Water and juices in drinks and potions are 1. Water is 1 in every recipe, soups and stews too, and the fixed counts by kind are gear's alone: food, drinks and potions take 1 of each made ingredient (balancer, 2026-11-25).
 
 ## 4. Drops and finds
@@ -188,7 +190,7 @@ The veins themselves (gather): copper 6.0 s and 2 XP, iron 7.4 s and 5 XP, mythr
 | Dough (Cooking) | 4 | prepare | 8.2 | 3 |
 | Bread (Cooking) | 7 | make | 12.6 | 5 |
 
-**Master's Draught, a late potion** (Alchemy 90; ⚠️ written before the boost factor, its XP is high, and the solver gives a recipe with a made base 1 of each herb, not 5: an open question for the Alchemy run): 5 Starflower and 5 Moonpetal (base 1 at L 90), 1 Voidcap as the weird item, 1 Elder Draught as the base. It takes 22.5 s and pays 227 XP. Its herbs pay Farming 75 XP (Starflower, L 80) and 33 XP (Moonpetal, L 60) each, and the Elder Draught pays Cooking.
+**Master's Draught, a late potion** (Alchemy 90): 1 Starflower, 1 Moonpetal, 1 Voidcap as the weird item, 1 Elder Draught as the base; a recipe with a made base takes 1 of everything (owner, 2026-11-25). It takes 22.5 s and pays 90 XP. Its herbs pay Farming 28 XP (Starflower, L 80) and 15 XP (Moonpetal, L 60) each, and the Elder Draught pays Cooking.
 
 ## Not covered yet
 
