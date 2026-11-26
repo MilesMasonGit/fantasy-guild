@@ -123,6 +123,28 @@ describe('supply counts the gatherers a crafter needs', () => {
         expect(pace.heroesOf(ale, PROFILE.BARE)).toBeCloseTo(1 + 2 * 1.4);
     });
 
+    it('⭐ finds a maker needing more gatherers than the reference guild gives one, at Typical', () => {
+        // Two foresters a Hut builder: within the reference guild's 2.2 a maker, over 1.
+        expect(paceOf().findings().filter(f => f.check === 'gatherers')).toEqual([]);
+        expect(settingsOf(null).gatherersPerCrafter).toBe(2.2);
+        const tight = paceOf(paceContent(), { gatherersPerCrafter: 1 }).findings().filter(f => f.check === 'gatherers');
+        expect(tight.map(f => f.key)).toEqual(['skill:construction']);
+        expect(tight[0].message).toMatch(/^Construction 1 → \d+ at Typical: Build \w+ at Plot needs 2 gatherers down its chain to run in full, over the reference guild's 1 a maker/);
+        expect(CHECKS.gatherers).toMatchObject({ group: 'D' });
+    });
+
+    it('a drink or potion a boost spends is brewed by one hero, and counts no gatherer', () => {
+        const pace = paceOf();
+        // Typical drinks Beer at the vein: one brewer at the Still, not counted as the vein's gatherer.
+        const vein = pace.rateAt({ token: 'token_vein' }, PROFILE.TYPICAL);
+        expect(vein.chosen.map(c => c.id)).toContain('item_beer');
+        expect(vein.rate.boostInputs.item_beer).toBeGreaterThan(0);
+        expect(vein.brewers.item_beer.heroes).toBeGreaterThan(0);
+        expect(vein.brewers.item_beer.heroes).toBeLessThanOrEqual(1);
+        expect(vein.gatherers).toEqual({});
+        expect(pace.heroesOf({ token: 'token_vein' }, PROFILE.TYPICAL)).toBe(1);
+    });
+
     it('an input nothing makes still starves its work', () => {
         const c = paceContent();
         c.items.item_nothing = { id: 'item_nothing', name: 'Nothing', type: 'material', plan: { tier: 0 } };

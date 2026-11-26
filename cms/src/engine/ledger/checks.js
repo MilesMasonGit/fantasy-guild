@@ -76,6 +76,7 @@ export const CHECKS = Object.freeze({
     'ring-open': { group: 'D', severity: SEVERITY.WARN, label: 'A ring of the world map opening before the stage before it ends' },
     'boost-target': { group: 'D', severity: SEVERITY.WARN, label: 'A boost over its target strength' },
     'boost-budget': { group: 'D', severity: SEVERITY.WARN, label: 'Boosts held over the boost budget' },
+    gatherers: { group: 'D', severity: SEVERITY.WARN, label: 'A maker needing more gatherers than the guild gives' },
     'coin-supply': { group: 'D', severity: SEVERITY.WARN, label: 'A coin price nothing earns by then' },
     unmodelled: { group: 'D', severity: SEVERITY.INFO, label: 'A factor the calculator cannot read' },
     'calibration-stale': { group: 'D', severity: SEVERITY.WARN, label: 'The calculator needs calibrating' },

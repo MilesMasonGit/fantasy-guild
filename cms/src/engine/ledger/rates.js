@@ -1331,7 +1331,7 @@ export function axisResolverOf(book, target, setup = {}) {
  *     rules reach the work, its lines pay at the Hall)
  *   - `heroes`: how many heroes work it (default 1; only a family can take more than one)
  *   - `off`: factor ids or kinds switched off (`support:token_copper_mine`, `consumable`, …)
- * @param {boolean} [light]  only the numbers a choice weighs: `{ ok, items, inputs, xp }`, as the
+ * @param {boolean} [light]  only the numbers a choice weighs: `{ ok, items, inputs, boostInputs, xp }`, as the
  *   whole rate has them (`book.numbersOf`)
  * @returns {object} the rate, its factors and what it could not read
  */
@@ -1454,7 +1454,12 @@ function rateOf(book, target = {}, setup = {}, light = false) {
         // (`InputCost`), so a cycle pays the exact cost on average.
         inputsPerCycle[input.itemId] = (inputsPerCycle[input.itemId] || 0) + Math.max(0, ic.value);
     }
-    for (const c of hero.costs) inputsPerCycle[c.itemId] = (inputsPerCycle[c.itemId] || 0) + c.perCycle;
+    // What the hero's drinks and potions cost a cycle: in the inputs, and apart as what the boosts spend (`boostInputs`).
+    const boostPerCycle = {};
+    for (const c of hero.costs) {
+        inputsPerCycle[c.itemId] = (inputsPerCycle[c.itemId] || 0) + c.perCycle;
+        boostPerCycle[c.itemId] = (boostPerCycle[c.itemId] || 0) + c.perCycle;
+    }
     // A catch spends its fish's Bait less the tool's saving, and may break the lure that picked it;
     // a failed cycle keeps both (`BoardRunner.completeCycle`).
     if (fishing?.bait && baitPerCatch > 0) inputsPerCycle[fishing.bait.itemId] = (inputsPerCycle[fishing.bait.itemId] || 0) + (1 - pFail) * baitPerCatch;
@@ -1481,7 +1486,8 @@ function rateOf(book, target = {}, setup = {}, light = false) {
     const inputs = perHour(inputsPerCycle);
     for (const c of life.costs || []) inputs[c.itemId] = (inputs[c.itemId] || 0) + c.perLife * cyclesPerHour / life.cycles;
     const xp = skill ? { [skill]: xpPerCycle * cyclesPerHour } : {};
-    if (light) return { ok: gates.ok, items: perHour(perCycle), inputs, xp };
+    const boostInputs = perHour(boostPerCycle);
+    if (light) return { ok: gates.ok, items: perHour(perCycle), inputs, boostInputs, xp };
 
     // Coins a cycle: a kill's Coin drop, raised by Coin Find in reach and dropped in whole coins
     // (`CoinDrops.killCoins`), less what a build pays for its Foundation's coins at the Shop.
@@ -1519,6 +1525,7 @@ function rateOf(book, target = {}, setup = {}, light = false) {
         items: perHour(perCycle),
         tokens: perHour(tokensPerCycle),
         inputs,
+        boostInputs,
         xpPerCycle,
         xp,
         ...coins,

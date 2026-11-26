@@ -23,10 +23,12 @@ import { shopCoinsOf, enemyCoinDropOf } from '../../../../src/config/registries/
  * no pretend player):
  *
  * - **Supply**: how fast the guild gets each item at a stage: the best source reachable by then,
- *   one hero on it, fed by as many heroes on the best source of each of its inputs as it needs (a
- *   smith fed by two smelters, each fed by three miners: the gatherers a crafter needs, T-338 part
- *   2), counted down the chain ({@link heroesOf}). A loop (seeds that make seeds) takes its own input
- *   as in stock. Only an input nothing makes by then holds a work back.
+ *   one hero on it, its materials gathered by as many heroes on the best source of each as it needs
+ *   (a smith fed by two smelters, each fed by three miners: the gatherers a crafter needs, T-338
+ *   part 2), counted down the chain ({@link heroesOf}); the drinks and potions its boosts spend
+ *   brewed by one hero on theirs, as the profile weighed them (a boost the guild cannot brew fast
+ *   enough starves its work). A loop (seeds that make seeds) takes its own input as in stock. An
+ *   input nothing makes by then holds a work back.
  * - **Level tracks**: for each skill, the hours each level takes: the XP it needs over the best
  *   XP an hour any work of the skill gives at that level (with the milestone perks held by then),
  *   fed the same way, among the work reachable by the stage that first asks for that level, with
@@ -182,11 +184,20 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         byKey.set(work.key, work);
     }
     // Only the content's own entries: a world cell, a tool need or a Token the world tables name but
-    // the content lacks sets no stage and asks no level.
+    // the content lacks sets no stage and asks no level. The pace goes as far as the content reaches,
+    // or is planned or set for (an entry's tier, a Guild Hall rank's), never past the last stage: the
+    // stages run to the ladder's last tier whatever the content holds, and a stage nothing is planned
+    // for has nothing to work there.
     const isEntry = (key) => plans.has(key);
     const tiers = new Set([...reach.values()].filter(a => isEntry(a.key)).map(a => a.tier).filter(Number.isInteger));
-    for (const s of settings.stages) tiers.add(s.tier);
-    const maxTier = tiers.size ? Math.max(...tiers) : 0;
+    const named = [...tiers];
+    for (const key of plans.keys()) {
+        const { tier, status } = planOf(plans.get(key));
+        if (Number.isInteger(tier) && status !== PLAN_STATUS.PLANNED && status !== PLAN_STATUS.PARKED) named.push(tier);
+    }
+    for (const star of rates.hall?.stars || []) for (const rank of list(star.ranks)) if (Number.isInteger(rank.tier)) named.push(rank.tier);
+    const lastStage = Math.max(0, ...settings.stages.map(s => s.tier));
+    const maxTier = Math.max(tiers.size ? Math.max(...tiers) : 0, Math.min(lastStage, Math.max(0, ...named)));
 
     // ── supply: Bare first (it prices every boost), then the profiles that buy them ─────────────
     // Kept in maps by profile, stage and item (a fed rate by work, profile, stage and level), the stage
@@ -252,11 +263,12 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     };
 
     /**
-     * A work's rate fed by the guild: as many heroes on the best source of each input as the work
-     * spends (`gatherers`, by item: `{ heroes, work, perHour }`, a share of one hero or several), so
-     * it runs in full; only an input nothing makes by then holds it back, to what it makes of that
-     * input itself (`scale`, `short`). `level`: the working hero's level (its milestone perks), the
-     * work's own gate when null.
+     * A work's rate fed by the guild: its materials by as many heroes on the best source of each as
+     * it spends (`gatherers`, by item: `{ heroes, work, perHour }`, a share of one hero or several);
+     * what its boosts spend (`rate.boostInputs`, its drinks and potions) by one hero on the best
+     * source of each (`brewers`, the same shape, never past one hero), the scarcest setting its scale
+     * (`scale`, `short`), as an input nothing makes by then does, to what the work makes of it itself.
+     * `level`: the working hero's level (its milestone perks), the work's own gate when null.
      */
     function fed(work, profile, cap, stack, level = null) {
         const kept = fedAt(work, profile, cap);
@@ -267,7 +279,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const { rate } = profiles.profileOf(work.target, profile, cap, level);
         let out;
         if (!rate.ok) {
-            out = { rate, scale: 0, items: {}, xp: {}, tokens: {}, inputs: {}, short: null, gatherers: {} };
+            out = { rate, scale: 0, items: {}, xp: {}, tokens: {}, inputs: {}, short: null, gatherers: {}, brewers: {} };
         } else {
             let scale = 1;
             let short = null;
@@ -277,8 +289,13 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 const own = rate.items?.[item] || 0;
                 if (!(need > own)) continue;
                 const s = supplyOf(item, profile, cap, stack);
+                const boost = Math.min(need - own, rate.boostInputs?.[item] || 0);
                 if (s.perHour > 0) {
-                    sources.push({ item, left: need - own, s });
+                    sources.push({ item, material: need - own - boost, boost, s });
+                    if (boost > 0 && s.perHour / boost < scale) {
+                        scale = s.perHour / boost;
+                        short = item;
+                    }
                     continue;
                 }
                 if (own / need < scale) {
@@ -288,12 +305,15 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             }
             scale = Math.max(0, Math.min(1, scale));
             const gatherers = {};
-            for (const { item, left, s } of sources) {
+            const brewers = {};
+            for (const { item, material, boost, s } of sources) {
                 // In stock inside a loop (Infinity) asks no one.
-                gatherers[item] = { heroes: Number.isFinite(s.perHour) ? (left * scale) / s.perHour : 0, work: s.work, perHour: s.perHour };
+                const per = (n) => (Number.isFinite(s.perHour) ? (n * scale) / s.perHour : 0);
+                if (material > 0) gatherers[item] = { heroes: per(material), work: s.work, perHour: s.perHour };
+                if (boost > 0) brewers[item] = { heroes: Math.min(1, per(boost)), work: s.work, perHour: s.perHour };
             }
             const times = (m) => Object.fromEntries(Object.entries(m || {}).map(([k, v]) => [k, v * scale]));
-            out = { rate, scale, items: times(rate.items), xp: times(rate.xp), tokens: times(rate.tokens), inputs: times(rate.inputs), short, gatherers };
+            out = { rate, scale, items: times(rate.items), xp: times(rate.xp), tokens: times(rate.tokens), inputs: times(rate.inputs), short, gatherers, brewers };
             if (rate.coins !== undefined) out.coins = rate.coins * scale;
         }
         if (leave() === Infinity) kept.set(levelKey, out);
@@ -379,12 +399,16 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         tierOf: tierOfKey, unitHours, costHours, hallUnitHours, horizonHours: () => settings.paybackHours, hallHorizonHours: () => settings.hallPaybackHours,
         hallCoinHours: (coins, cap) => coinCostHours(coins, BEFORE_HALL, cap),
         campMembers: settings.campMembers,
-        // The guild feeds a boosted work in full where every input it spends is made by then (the gatherers it needs).
+        // As `fed` feeds it: materials in full by the gatherers they need, what boosts spend by one hero on each.
         inputScale: (rate, cap, profile) => {
             let scale = 1;
             for (const [item, need] of Object.entries(rate.inputs || {})) {
                 const own = rate.items?.[item] || 0;
-                if (need > own && !(supplyOf(item, profile, cap).perHour > 0)) scale = Math.min(scale, own / need);
+                if (!(need > own)) continue;
+                const s = supplyOf(item, profile, cap).perHour;
+                const boost = Math.min(need - own, rate.boostInputs?.[item] || 0);
+                if (!(s > 0)) scale = Math.min(scale, own / need);
+                else if (boost > 0) scale = Math.min(scale, s / boost);
             }
             return Math.max(0, scale);
         }
@@ -395,11 +419,14 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
 
     /**
      * The guild's heroes an hour of a work takes at a profile and stage: its own hero and the
-     * gatherers it needs, each with the gatherers their own work needs, down the chain. A work met
-     * again down its own chain counts its one hero (a loop's input is in stock).
+     * gatherers its materials need, each with the gatherers their own work needs, down the chain (the
+     * solver's guild time). The brewers of what boosts spend (`brewers`) are left out: at Maxed every
+     * brewer drinks the potions it brews for, so their count has no end while a work potion lasts one
+     * cycle (T-338 part 1). A work met again down its own chain, or past twelve steps, counts its one
+     * hero (a loop's input is in stock).
      */
     function heroesOf(work, profile, cap, level = null, seen = new Set()) {
-        if (!work || seen.has(work.key)) return 1;
+        if (!work || seen.has(work.key) || seen.size > 12) return 1;
         seen.add(work.key);
         let heroes = 1;
         for (const g of Object.values(workAt(work, profile, cap, level).gatherers || {})) {
@@ -1027,6 +1054,16 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             }
         }
 
+        // A crafter whose materials need more gatherers than the reference guild gives a maker, at Typical.
+        for (const skill of [...askedAt.keys()].sort()) {
+            for (const band of gathererBands(skill)) {
+                const n = band.gatherers >= 10 ? Math.round(band.gatherers) : Math.round(band.gatherers * 10) / 10;
+                add('gatherers', `skill:${skill}`, `${PACE_TEXT.skill(skill)} ${band.from} → ${band.to + 1} at Typical: ${workName(band.work)} needs ${n} gatherers down its chain to run in full, over the reference guild's ${settings.gatherersPerCrafter} a maker (±${settings.tolerancePct} %).`, {
+                    name: PACE_TEXT.skill(skill), related: [band.work.entry]
+                });
+            }
+        }
+
         // A price that asks coins nothing the guild has by then earns.
         for (const c of coinGaps()) add('coin-supply', c.key, PACE_TEXT.coinSupply(c.name, c.coins, tierLabel(c.cap)), { name: c.name });
 
@@ -1103,6 +1140,30 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             for (const u of notes) seen.get(work.entry).add(`${u.what}: ${u.why}${u.source && u.source !== work.target.token ? ` (${nameOf(tokenKey(u.source)) || u.source})` : ''}`);
         }
         for (const [key, set] of seen) add('unmodelled', key, `The calculator cannot read: ${[...set].join('; ')}.`);
+        return out;
+    }
+
+    /**
+     * A skill's levels whose best Typical work needs more gatherers down its chain than the reference
+     * guild gives a maker (`settings.gatherersPerCrafter`, past the tolerance), one run per work:
+     * `[{ work, from, to, gatherers }]`, levels `from` to `to + 1`, `gatherers` the most in the run.
+     */
+    function gathererBands(skill) {
+        const limit = settings.gatherersPerCrafter * (1 + settings.tolerancePct / 100);
+        const out = [];
+        let band = null;
+        for (const row of trackOf(skill).levels) {
+            const src = row.source[PROFILE.TYPICAL];
+            const n = src?.work ? heroesOf(src.work, src.profile ?? PROFILE.TYPICAL, row.tier, src.at ?? null) - 1 : 0;
+            if (!(n > limit)) { band = null; continue; }
+            if (band && band.work === src.work) {
+                band.to = row.level;
+                band.gatherers = Math.max(band.gatherers, n);
+                continue;
+            }
+            band = { work: src.work, from: row.level, to: row.level, gatherers: n };
+            out.push(band);
+        }
         return out;
     }
 

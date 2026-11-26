@@ -161,6 +161,11 @@ export default function LedgerSettings() {
             hours (a rank slower than that is red, and the proposed prices are sized to it).
           </div>
           <div className="flex items-center gap-2">
+            A maker is fed by about
+            <NumberInput value={settings.gatherersPerCrafter} min={0.1} onCommit={(v) => save({ gatherersPerCrafter: v })} label="Gatherers per maker" width={60} />
+            gatherers at Typical (the reference guild); a work needing more down its chain is a problem.
+          </div>
+          <div className="flex items-center gap-2">
             A camp hands one hero
             <NumberInput value={settings.campMembers} min={1} whole onCommit={(v) => save({ campMembers: v })} label="Camp copies" width={60} />
             veins or Fields in turn (a forest's camp: every tree of its family).

@@ -212,7 +212,7 @@ describe('every rank\'s payback at Typical, and the price the ledger proposes', 
 
     it('a rank set past the last stage the pace knows is measured at that stage, and says so', () => {
         const c = content();
-        // The pace knows the ladder's tiers to Plane 7 (its stages), whatever the content reaches.
+        // The stages run to Plane 7 on the ladder: a rank set past it is measured there.
         c.hallSky.stars.ph_gold.ranks[0].tier = 9;
         const pace = buildPace(c, buildLedger(c), null);
         const gold = rowOf(pace, 'ph_gold', 1);
