@@ -31,6 +31,7 @@ import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { isEnemyDef } from '../config/registries/enemyProfile.js';
 import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
+import { stockSettleCoins } from './fixtures/worldQa.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -80,6 +81,7 @@ function settleFirst() {
     const cell = World.currentWorld().cells.find(c => c.ring === 1);
     const hero = heroFor(cell);
     for (const { itemId, qty } of cell.requires.items) InventoryManager.addItem(itemId, qty);
+    stockSettleCoins(cell);
     const result = World.settleCell(cell.id);
     expect(result.success, result.reason).toBe(true);
     return { cell, hero, result };

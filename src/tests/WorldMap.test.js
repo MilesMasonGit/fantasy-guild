@@ -36,7 +36,7 @@ import {
     HEX_R, TILE_W, TILE_H, ART_SCALE
 } from '../ui/components/atlas/worldMapLayout.js';
 import { paintWorld, paintRope, ringEdges, pictureFrame, tileStandIn, FOG_RGB } from '../ui/components/atlas/worldPicture.js';
-import { meetFrontierPrices } from './fixtures/worldQa.js';
+import { meetFrontierPrices, stockSettleCoins } from './fixtures/worldQa.js';
 import * as LimesLessons from '../systems/quests/LimesLessons.js';
 import { lessonSteps } from '../systems/quests/lessonPlan.js';
 
@@ -83,6 +83,7 @@ const payFor = (id) => {
     const hero = HeroManager.getAllHeroes()[0] || HeroManager.addHero(generateHero());
     for (const { skill, level } of cellOf(id).requires.skills) addXP(hero.id, skill, xpForLevel(level));
     for (const { itemId, qty } of cellOf(id).requires.items) InventoryManager.addItem(itemId, qty);
+    stockSettleCoins(cellOf(id));
 };
 
 beforeAll(() => {

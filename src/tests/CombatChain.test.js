@@ -121,7 +121,8 @@ describe('The Combat chain in shipped data (7.7)', () => {
     it('a Goblin is a plain level 5 enemy with one charge, so a kill clears it and the camp spawns again', () => {
         expect(goblin.enemy).toEqual({
             level: 5, style: 'ranged',
-            moves: [{ name: 'Sling Stone', damageType: 'crush' }, { name: 'Shiv', damageType: 'stab' }]
+            moves: [{ name: 'Sling Stone', damageType: 'crush' }, { name: 'Shiv', damageType: 'stab' }],
+            coinDrop: 28
         });
         expect(goblin.uses).toBe(1);
     });
@@ -144,7 +145,8 @@ describe('The Combat chain in shipped data (7.7)', () => {
                 { name: 'Cleave', damageType: 'slash', weight: 5 },
                 { name: 'Bash', damageType: 'crush', weight: 5 },
                 { name: 'Heavy Strike', damageType: 'crush', weight: 2, effectId: 'effect_heavy_strike', target: 'self', lasts: 'swing' }
-            ]
+            ],
+            coinDrop: 37
         });
         expect(isBossCampType(TENT)).toBe(true);
         expect(enemyFightNumbers(chief).hit).toBeCloseTo(3, 9);

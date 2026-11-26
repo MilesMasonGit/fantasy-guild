@@ -257,8 +257,18 @@ describe('⭐ settling a place that asks coins', () => {
     });
 
     it('a ring asking no coins shows no coin row and settles with coins untouched', () => {
+        // The placeholder tables ask no coins anywhere: the shipped ones do from ring 1.
+        setWorldTablesForTests(PLACEHOLDER_WORLD_TABLES);
         World.createWorld({ seed: 4242 });
         const cell = World.currentWorld().cells.find(c => c.ring === 1);
         expect(World.priceOf(cell).coins).toBeNull();
+        GameState.state.progress.rosterLimit = 4;
+        const hero = HeroManager.addHero(generateHero());
+        for (const { skill, level } of cell.requires.skills) addXP(hero.id, skill, xpForLevel(level) - (hero.skills[skill]?.xp || 0));
+        for (const { itemId, qty } of cell.requires.items) InventoryManager.addItem(itemId, qty);
+        addCoins(25);
+        const result = World.settleCell(cell.id);
+        expect(result.success, result.reason).toBe(true);
+        expect(getCoins()).toBe(25);
     });
 });

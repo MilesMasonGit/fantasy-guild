@@ -20,7 +20,7 @@ import { xpForLevel } from '../utils/XPCurve.js';
 import * as Atlas from '../systems/atlas/Atlas.js';
 import * as World from '../systems/world/World.js';
 import * as Arrival from '../systems/world/Arrival.js';
-import { fixtureCell } from './fixtures/worldQa.js';
+import { fixtureCell, stockSettleCoins } from './fixtures/worldQa.js';
 import { worldTables } from '../config/registries/worldTablesRegistry.js';
 import { MAX_ARRIVAL } from '../config/worldTablesShape.js';
 import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
@@ -73,6 +73,7 @@ function settleRingOne(index = 0) {
     // A new game starts with its first hero: every hero on the roster walks in.
     const crew = HeroManager.getAllHeroes();
     for (const { itemId, qty } of cell.requires.items) InventoryManager.addItem(itemId, qty);
+    stockSettleCoins(cell);
     const result = World.settleCell(cell.id);
     expect(result.success, result.reason).toBe(true);
     return { cell, crew, result };
@@ -275,6 +276,7 @@ describe('⭐ every enemy can be reached', () => {
             for (const cell of world.cells.filter(c => c.ring === 1)) {
                 for (const { skill, level } of cell.requires.skills) addXP(crew[0].id, skill, Math.max(0, xpForLevel(level) - (GameState.heroes[0].skills[skill]?.xp || 0)));
                 for (const { itemId, qty } of cell.requires.items) InventoryManager.addItem(itemId, qty);
+                stockSettleCoins(cell);
                 const result = World.settleCell(cell.id);
                 expect(result.success, `${seed} ${cell.id}: ${result.reason}`).toBe(true);
                 expect(result.arrival.ids.length).toBe(cell.arrival.reduce((n, r) => n + r.count, 0));
@@ -421,6 +423,7 @@ describe('⭐ the heroes walk in', () => {
         const spot = { x: 300, y: 300 };
         expect(Flags.orderSpot(crew[1].id, spot).success).toBe(true);
         for (const { itemId, qty } of cell.requires.items) InventoryManager.addItem(itemId, qty);
+        stockSettleCoins(cell);
         const result = World.settleCell(cell.id);
         expect(result.success).toBe(true);
         for (const hero of crew) expect(BoardState.flagOf(hero.id)).toBeNull();
