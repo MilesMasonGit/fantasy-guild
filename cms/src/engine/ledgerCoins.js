@@ -16,11 +16,18 @@ export function workspaceCoins(state = {}) {
     const started = Date.now();
     const pace = workspacePace(state);
     const supply = [];
+    const budgets = pace.settings.stages;
+    const sourceOf = (s) => (s.work ? pace.workName(s.work) : s.theft ? `thefts from ${s.theft.enemy} at ${s.theft.hideout}` : null);
     for (let tier = 0; tier <= pace.maxTier; tier++) {
-        const row = { tier, label: tierLabel(tier) };
+        // From the stage's start to its end on the owner's budgets: the levels the pace curve has by then.
+        const startHours = Math.max(0, ...budgets.filter((b) => b.tier < tier).map((b) => b.budgetMinutes)) / 60;
+        const own = budgets.find((b) => b.tier === tier);
+        const endHours = own ? own.budgetMinutes / 60 : Infinity;
+        const row = { tier, label: tierLabel(tier), startHours, endHours };
         for (const p of PROFILES) {
-            const s = pace.coinSupplyOf(p, tier);
-            row[p] = { perHour: s.perHour, source: s.work ? pace.workName(s.work) : s.theft ? `thefts from ${s.theft.enemy} at ${s.theft.hideout}` : null };
+            const start = pace.coinSupplyOf(p, tier, startHours);
+            const end = pace.coinSupplyOf(p, tier, endHours);
+            row[p] = { start: start.perHour, end: end.perHour, startSource: sourceOf(start), endSource: sourceOf(end) };
         }
         supply.push(row);
     }
@@ -40,10 +47,11 @@ const round = (n) => (Number.isFinite(n) ? Math.round(n) : n);
 export function coinsText(result, { rows = 40 } = {}) {
     const lines = [];
     lines.push(`Coin worth: ${result.worth.priced} items sell for their value in coins (${result.worth.pinned} pinned by hand).`);
-    lines.push('Coins one hero earns an hour, by stage (Typical; Bare and Maxed in brackets):');
+    lines.push('Coins one hero earns an hour from each stage\'s start to its end (its budget; the levels the pace curve has by then), at Typical, Bare and Maxed in brackets:');
+    const when = (h) => (Number.isFinite(h) ? `${Math.round(h * 60)} min` : 'any level');
     for (const s of result.supply) {
         const t = s[PROFILE.TYPICAL];
-        lines.push(`- ${s.label}: ${round(t.perHour)}${t.source ? ` (${t.source})` : ''} [Bare ${round(s[PROFILE.BARE].perHour)}, Maxed ${round(s[PROFILE.MAXED].perHour)}]`);
+        lines.push(`- ${s.label}: from ${round(t.start)}${t.startSource ? ` (${t.startSource})` : ''} at ${when(s.startHours)} to ${round(t.end)}${t.endSource ? ` (${t.endSource})` : ''} at ${when(s.endHours)} [Bare ${round(s[PROFILE.BARE].start)} to ${round(s[PROFILE.BARE].end)}, Maxed ${round(s[PROFILE.MAXED].start)} to ${round(s[PROFILE.MAXED].end)}]`);
     }
     const asking = result.prices.filter((p) => p.coins > 0);
     lines.push(`Prices: ${result.prices.length}, ${asking.length} asking coins. What the coin curve proposes for each (the coins one hero earns there in the curve's minutes, a Guild Hall rank times its rank):`);

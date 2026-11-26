@@ -3,7 +3,7 @@ import { buildLedger, tokenKey, wedgeKey, starKey, HOW } from '../systems/progre
 import { buildRateBook } from '../../cms/src/engine/ledger/rates.js';
 import { buildPace, roundDown } from '../../cms/src/engine/ledger/pace.js';
 import { PROFILE, PROFILES, BEFORE_HALL } from '../../cms/src/engine/ledger/profiles.js';
-import { settingsOf, coinMinutesAt, DEFAULT_LEDGER_SETTINGS } from '../../cms/src/engine/ledger/settings.js';
+import { settingsOf, coinMinutesAt, minutesToReach, DEFAULT_LEDGER_SETTINGS } from '../../cms/src/engine/ledger/settings.js';
 import { ledgerCoinWorth } from '../../cms/src/engine/ledger/coins.js';
 import { proposeBalance, LEVER } from '../../cms/src/engine/ledger/balance.js';
 import { CHECKS } from '../../cms/src/engine/ledger/checks.js';
@@ -157,17 +157,38 @@ describe('⭐ coin costs on the timeline: a price that asks coins waits for them
         expect(CHECKS['coin-supply']).toMatchObject({ group: 'D' });
     });
 
-    it('a building\'s Foundation that asks coins: every build pays them, its levelling fed by the coin supply', () => {
+    it('a Foundation that asks coins: bought only once they are earned; each build lists them, its levelling not held back', () => {
         const c = coinContent();
         c.tokens.token_plot.shop.coins = 50;
-        const book = buildRateBook(c);
-        const r = book.rateOf({ token: 'token_plot', recipe: 'recipe_build_hut' });
+        const r = buildRateBook(c).rateOf({ token: 'token_plot', recipe: 'recipe_build_hut' });
         expect(r).toMatchObject({ coinsPerCycle: -50, coins: expect.closeTo(-6000, 6) });
-        // 120 builds an hour would spend 6000 coins: Bare earns 1440, so builds run at 24 % of their pace.
+        expect(r.unmodelled).toContainEqual(expect.objectContaining({ source: 'token_plot', what: 'coins' }));
         const pace = paceOf(c);
-        const fed = pace.rateAt({ token: 'token_plot', recipe: 'recipe_build_hut' }, PROFILE.BARE, 0);
-        expect(fed.scale).toBeCloseTo(1440 / 6000);
-        expect(fed.short).toBe('coins');
+        // 10 Oak Wood (40 s of the oak) and 50 coins (125 s of the Still) at Bare.
+        expect(pace.pathOf(tokenKey('token_plot'), PROFILE.BARE).own).toBeCloseTo(50 / 1440);
+        // Paying coins, it is never a way to earn them.
+        expect(pace.coinSourcesOf(PROFILE.BARE, 0).some(src => src.work?.target.recipe === 'recipe_build_hut')).toBe(false);
+    });
+
+    it('⭐ the timeline waits for coins: income at the levels the pace curve has reached; a better way worth waiting for is waited for', () => {
+        const c = withStall(coinContent(), 2880);
+        // A rich seam at Mining 20, worth 100 an ore: 360 ore an hour at 36,000 coins.
+        c.items.item_gold = { id: 'item_gold', name: 'Gold', type: 'material', value: 100, plan: { tier: 0 } };
+        c.tokens.token_seam = {
+            id: 'token_seam', name: 'Gold Seam', tags: ['Ore'], uses: 5, needsTool: { kind: 'pickaxe', minTier: 1 }, respawn: { mode: 'refill', afterMs: 60000 },
+            config: { skill: 'mining', skillRequired: 20, cycleTimeMs: 3000, xp: 1, inputs: [], outputs: [{ itemId: 'item_gold', chance: 100, minQty: 1, maxQty: 2 }] }
+        };
+        c.starterCamp.tokens.push({ typeId: 'token_seam', x: 7, y: 0 });
+        const pace = paceOf(c);
+        const ready = minutesToReach(settingsOf(null), 20) / 60;
+        const seam = pace.coinSourcesOf(PROFILE.BARE, 0).find(src => src.work?.target.token === 'token_seam');
+        expect(seam).toMatchObject({ perHour: expect.closeTo(36000, 3), readyHours: expect.closeTo(ready, 9) });
+        // At the start only level-1 work earns: the Still's 1440 an hour; any level, the seam.
+        expect(pace.coinSupplyOf(PROFILE.BARE, 0, 0).perHour).toBeCloseTo(1440);
+        expect(pace.coinSupplyOf(PROFILE.BARE, 0).perHour).toBeCloseTo(36000);
+        // 2880 coins: two hours at the Still now, or the seam once Mining 20 is had, whichever is sooner.
+        const own = pace.pathOf(tokenKey('token_stall'), PROFILE.BARE).own;
+        expect(own).toBeCloseTo(Math.min(2, ready + 2880 / 36000));
     });
 
     it('⭐ a Guild Hall rank: its coins are part of its price, gathered at Typical before the Hall', () => {

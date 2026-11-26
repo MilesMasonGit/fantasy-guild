@@ -1238,6 +1238,7 @@ function rateOf(book, target = {}, setup = {}) {
         }
     } else if (kind === WORK.BUILD) {
         coinsPerCycle -= shopCoinsOf(def);
+        if (coinsPerCycle < 0) notes.unmodelled.push({ source: def.id, what: 'coins', why: "each build pays its Foundation's coins; the levelling its builds give does not wait for them" });
     }
     const coins = coinsPerCycle !== 0 ? { coinsPerCycle, coins: coinsPerCycle * cyclesPerHour } : {};
 
