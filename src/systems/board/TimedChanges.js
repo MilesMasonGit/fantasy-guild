@@ -335,6 +335,13 @@ function activeHandlers(instance) {
     return { def, active };
 }
 
+/** Whether a handler before `active[i]` runs on its clock (a handful of rows: no Set to allocate). */
+function clockTakenBefore(active, i) {
+    const clock = active[i].clock;
+    for (let j = 0; j < i; j++) if (active[j].clock === clock) return true;
+    return false;
+}
+
 /**
  * Advance one Token's clocks by `delta`, carrying out whatever falls due.
  * Exported for tests; the game calls {@link tick}.
@@ -348,13 +355,13 @@ export function advance(instance, delta, random = Math.random) {
         if (!active.length) return;
 
         const clocks = current.clocks && typeof current.clocks === 'object' ? current.clocks : (current.clocks = {});
-        const advanced = new Set();
         // The handler whose clock stands still this step (a Set in the unlikely case of two), kept
         // without allocating in the usual case of none or one.
         let paused = null;
-        for (const h of active) {
-            if (advanced.has(h.clock)) continue;
-            advanced.add(h.clock);
+        for (let i = 0; i < active.length; i++) {
+            const h = active[i];
+            // A clock two handlers share advances once, by the first of them.
+            if (clockTakenBefore(active, i)) continue;
             // ⚠️ An idle clock (`idleWhile`) is held at zero rather than paused, so the wait never
             // banks: not across a big catch-up step, and not from an older save that held it full.
             if (h.idleWhile?.(current, def)) {

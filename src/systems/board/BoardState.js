@@ -44,6 +44,12 @@ import { noteTokenHad } from '../progression/collectionLog.js';
 function board() {
     const state = GameState.state;
     if (!state) return null;
+    // Asked hundreds of times a tick: a board found whole, its parts still the ones it was found
+    // with, needs no repair. ⚠️ `vacancies` never comes back once dropped: nothing writes it, and an
+    // older save's arrives on a new board.
+    const b = state.board;
+    if (b && b === whole.board && b.tokens === whole.tokens && b.flags === whole.flags && b.workClaims === whole.workClaims
+        && typeof b.nextTokenOrder === 'number' && typeof b.nextFlagOrder === 'number') return b;
     if (!state.board) state.board = createEmptyBoard();
     if (!state.board.tokens || typeof state.board.tokens !== 'object') state.board.tokens = {};
     if (typeof state.board.nextTokenOrder !== 'number') state.board.nextTokenOrder = 0;
@@ -51,8 +57,13 @@ function board() {
     if (typeof state.board.nextFlagOrder !== 'number') state.board.nextFlagOrder = 0;
     if (!state.board.workClaims || typeof state.board.workClaims !== 'object') state.board.workClaims = {};
     if ('vacancies' in state.board) delete state.board.vacancies;
-    return state.board;
+    const found = state.board;
+    whole = { board: found, tokens: found.tokens, flags: found.flags, workClaims: found.workClaims };
+    return found;
 }
+
+/** The board {@link board} last found whole, with the parts it was found with. */
+let whole = { board: null, tokens: null, flags: null, workClaims: null };
 
 /**
  * A fresh Token instance of `typeId`. `uses` of null means unlimited.
