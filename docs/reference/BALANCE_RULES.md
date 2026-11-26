@@ -89,7 +89,19 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 
 **A recipe with a made base takes 1 of each raw ingredient, at every level** (owner, 2026-11-25): a stew on Sofrito, a potion on a Draught, a pie on Dough. The made base already carries the rising cost; only a recipe made from raw things alone grows.
 
-**Fixed counts by kind** (agent's call, starting values): Dagger 1, Sword 2, Woodaxe and Pickaxe 2, Gloves and Boots 2, Helmet or Hat 3, Shield 3, Mace and Cleaver 3, Cape 3, Chestplate, Chest, Robe and Tunic 5. A handle is 1 wood. Nails, Arrowheads, Chain and Bands take 1 bar and make several. Weird items in potions are 1. Water and juices in drinks and potions are 1. Water is 1 in every recipe, soups and stews too, and the fixed counts by kind are gear's alone: food, drinks and potions take 1 of each made ingredient (balancer, 2026-11-25).
+**Fixed counts by kind** (agent's call, starting values): Dagger 1, Sword 2, Woodaxe and Pickaxe 2, Gloves and Boots 2, Helmet or Hat 3, Shield 3, Mace and Cleaver 3, Cape 3, Chestplate, Chest, Robe and Tunic 5. A handle is 1 wood. Nails, Arrowheads, Chain and Bands take 1 bar (counts below). Weird items in potions are 1. Water and juices in drinks and potions are 1. Water is 1 in every recipe, soups and stews too, and the fixed counts by kind are gear's alone: food, drinks and potions take 1 of each made ingredient (balancer, 2026-11-25).
+
+**What one craft makes** (owner, 2026-11-25). Most crafts make 1. The exceptions:
+
+| Craft | Makes | Why |
+|---|---|---|
+| Arrows (Fletching) | **40**, from 1 wood, 1 feather and 40 Arrowheads | An archer shooting non-stop uses about 1,200 arrows an hour. At 40, keeping one archer shooting costs about half a hero's work at copper, 1.4 heroes at darkmetal with no boosts, about 0.6 with a typical guild's yield boosts |
+| Arrowheads, Kunai | **40 a bar** | One bar's Arrowheads feed one arrow craft; Kunai are thrown and used up like arrows |
+| Nails | **5 a bar** | A Fishing Rod, Trap or Frame costs a fifth of a bar in nails |
+| Ring Band, Chain, Gears | 1 a bar | Jewellery and machines take one part each |
+| Drinks | **5 a craft** | With the dose below, one craft covers 250 work cycles |
+
+**XP goes by the time the craft takes, however many it makes.** These counts are the same at every tier, like a gather's yield.
 
 ## 4. Drops and finds
 
@@ -143,7 +155,7 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 
 ⚠️ **Today's Hall is over budget on XP**: its Lore stars give +15 % XP (Builder's Lore +30 %) in the first tiers, where the whole XP budget is +10 %. The paper pass brings them in. A Double Output building can give at most +100 % (a sure double), so most late yield is the Hall's.
 
-**Consumables last a number of cycles, and crafts make batches** (owner, after the review: "A dose is meant to last a number of cycles, not time. But also we will make batches."). **A batch must pay back at least 4x**: the work time the whole batch saves (or the finds it adds) is at least four times the hero time it took to make, its ingredients included. ⚠️ Today a work potion lasts 1 cycle and a drink 10 (`consumableRule.js`), so a batch would need to be very large: the dose lengths are worth raising (T-338).
+**Consumables last a number of cycles, and crafts make batches** (owner, after the review: "A dose is meant to last a number of cycles, not time. But also we will make batches."). **A batch must pay back at least 4x**: the work time the whole batch saves (or the finds it adds) is at least four times the hero time it took to make, its ingredients included. **A drink lasts 50 work cycles and a craft makes 5** (owner, 2026-11-25): one craft has to cover about 100 to 250 cycles to pay back 4x (a drink carries a sixth of the speed budget and a quarter of the XP budget), and 250 covers every planned drink but the level-95 Sunset Punch, which falls a little short. A drink then lasts roughly 8 to 15 minutes of work and a hero gets through 4 to 7 an hour. ⚠️ Today a drink lasts 10 cycles and a work potion 1 (`consumableRule.js`): the drink's 50 lands with the first number pack (T-338 part 1); the work potion's dose is set with the Alchemy run.
 
 **Upgrade prices go by payback** (owner): the hours of the boosted work it takes to earn back the price. **For a Hall star that boosts the whole guild, payback counts all the work it boosts**, not one hero's. **Payback = 1 hour × 24^(L / 80)**: 1 hour at 1, 2.2 at 20, 4.9 at 40, 10.8 at 60, a day at 80. That covers Guild Hall stars and building variants, priced in the tier's materials.
 
@@ -196,8 +208,8 @@ The veins themselves (gather): copper 6.0 s and 2 XP, iron 7.4 s and 5 XP, mythr
 
 The review listed numbers no rule sets yet; each needs a rule when its chain is balanced:
 
-- **Arrows and Kunai per craft**: an archer can loose about 1,200 arrows an hour, so a craft must make many.
-- **Recipes with several outputs, or chance outputs**: how their XP is split.
+- **Recipes with chance outputs**: how their XP is split (a craft that makes several of one thing pays by its time, section 3).
+- **A work potion's dose and batch**, with the Alchemy run.
 - **Food's healing** against the time it takes to make, with combat.
 - **Station charges, Construction prices and tool prices**, against what they save.
 - **Combat XP**, with combat.

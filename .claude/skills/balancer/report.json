@@ -17,7 +17,11 @@
     "Unlock moves in the two chains: Copper Chestplate 13 to 16 and Adamantine Chestplate 73 to 76, each to break up a long run with nothing new before the next metal.",
     "Approved by the owner, 2026-11-25: the optimized player's boosts climb level by level between tiers instead of stepping up at each one. A new tier's first recipes used to pay up to 17 % less than the old tier's last (Coconut Pie at 80 against Coconut Swordfish at 79); now none does.",
     "Approved by the owner, 2026-11-25: gear takes 50 % longer for each bar past the first, up from 20 %. A Chestplate takes 3x a Dagger (40 s at copper, 69 s at darkmetal) and a bar spent on Daggers earns 1.7x a bar spent on Chestplates, down from 2.8x.",
-    "Approved by the owner, 2026-11-25: a recipe with a made base (a stew on Sofrito, a potion on a Draught, a pie on Dough) takes 1 of each raw ingredient at every level. The page already worked this way; the rules page now says so."
+    "Approved by the owner, 2026-11-25: a recipe with a made base (a stew on Sofrito, a potion on a Draught, a pie on Dough) takes 1 of each raw ingredient at every level. The page already worked this way; the rules page now says so.",
+    "Approved by the owner, 2026-11-25: a Fletching craft makes 40 arrows from 40 Arrowheads, and a bar makes 40 Arrowheads or 40 Kunai. Keeping one archer shooting non-stop costs about half a hero's work at copper and 1.4 heroes at darkmetal with no boosts.",
+    "Approved by the owner, 2026-11-25: a drink lasts 50 work cycles and a craft makes 5, so one craft covers 250 cycles: roughly 8 to 15 minutes of work a drink, 4 to 7 drinks a hero an hour. Every planned drink pays back at least 4x except Sunset Punch at 95, a little short.",
+    "Approved by the owner, 2026-11-25: a bar makes 5 Nails, or 1 Ring Band, Chain or Gears. XP goes by the time a craft takes, however many it makes.",
+    "The Item numbers view has a Makes column."
   ],
   "proposals": [],
   "gaps": [
@@ -25,9 +29,10 @@
     "The other skills' stretches are still the solver's raw list, to be reviewed in week 2: docs/active/balance_gaps.md."
   ],
   "waiting": [
-    "On the director: the ledger read-out and the ledger's new tiers and boost budget (brief 880, L1 to L3). Until then the page can't be checked against the engine.",
+    "On the director: the ledger read-out and the ledger's new tiers and boost budget (brief 880, L1 to L3); and with the first number pack, the drink's 50-cycle dose in the game (today it is 10).",
     "On the content session: the plan in the CMS as Planned entries. No number pack before that.",
-    "On the balancer, next run: how many Nails, Arrowheads and Kunai one bar makes, and how long a drink's dose lasts. No rule sets these yet, so the page shows them as 1 a craft.",
-    "The rules page's metal and Bread examples are regenerated from the solver. Its XP table and boost budget are unchanged."
+    "On the balancer, with the Alchemy run in week 2: how long a work potion lasts and how many a craft makes.",
+    "The rules page's metal and Bread examples are regenerated from the solver. Its XP table and boost budget are unchanged.",
+    "For the content session to look at: Arrowheads unlock later than the arrows that need them (Copper Arrowheads at Smithing 8, Copper Arrow at Fletching 2; the same at every metal), so each new arrow waits on Smithing."
   ]
 }

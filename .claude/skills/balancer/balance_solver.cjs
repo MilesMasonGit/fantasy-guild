@@ -34,6 +34,9 @@
   // Fixed counts are gear's: a Voidcap Pie is not a cap, a Harvest Platter not a vest.
   const CONSUMABLE_TYPES = /^(food|drink|prep|elixir|poison|work|ingredient)/i;
   const ALWAYS_ONE = new Set(['water']);  // water is 1 in every recipe (section 3)
+  // What one craft makes when it isn't 1 (section 3, owner 2026-11-25). An arrow craft uses a bar's worth of arrowheads.
+  const AMMO_A_CRAFT = 40, NAILS_A_BAR = 5, DRINKS_A_CRAFT = 5;
+  const makesOf = e => /^drink/i.test(e.type || '') ? DRINKS_A_CRAFT : /arrowheads|kunai|\barrow$/i.test(e.name) ? AMMO_A_CRAFT : /\bnails$/i.test(e.name) ? NAILS_A_BAR : 1;
   const UNTIMED = { building: 'Builds follow the one-off step rule; Construction XP has no rule yet',
     event: 'Events copy the Token they stand in for' };
 
@@ -124,6 +127,7 @@
         t.inputs = ins.map(x => {
           let n;
           if (ALWAYS_ONE.has(x)) n = 1;
+          else if (/arrowheads/i.test(x)) n = AMMO_A_CRAFT;
           else if (!isRaw(x)) n = x === made[0] ? fixed : 1;
           else if (made.length) n = 1;  // a handle's wood, a weird item
           else n = R.count(t.work === 'prepare' && /ore|wood|wheat/i.test(x) ? 2 : 1, t.level);
@@ -138,7 +142,7 @@
         t.xp = Math.max(1, Math.round(perSecond * t.seconds));
         t.seconds = Math.round(Math.min(t.ruleSeconds * 1.15, Math.max(t.ruleSeconds * 0.85, t.xp / perSecond)) * 10) / 10;
         t.xpHourOpt = t.xp * 3600 / t.seconds * R.opt(t.level);
-        if (/ammo/i.test(t.type)) t.note = 'Arrows per craft have no rule yet';
+        t.makes = makesOf(e);
       });
     }
 
@@ -150,7 +154,7 @@
       if (depth > 12 || !r) return { s: 0, raw: 0 };
       if (r.work && r.seconds) {
         s = r.seconds;
-        for (const inp of r.inputs || []) { const g = guild(inp.id, depth + 1); s += inp.count * g.s; raw += inp.count * (g.raw || 1); }
+        for (const inp of r.inputs || []) { const g = guild(inp.id, depth + 1), per = inp.count / ((out.get(inp.id) || {}).makes || 1); s += per * g.s; raw += per * (g.raw || 1); }
         if (r.work === 'gather' && !(r.inputs || []).length) raw = 0;
       } else {
         const src = (givenBy.get(id) || []).map(g => out.get(g)).find(x => x && x.seconds);
