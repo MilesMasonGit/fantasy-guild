@@ -233,7 +233,7 @@ describe('the enemy card', () => {
         const known = enemyCardView('cs_ui_brute');
         root = render(React.createElement(EnemyCardRows, { card: known })).container;
         expect([...root.querySelectorAll('[data-enemy-card-kind]')].map(e => e.getAttribute('data-enemy-card-kind'))).toEqual(['effect_brute', 'effect_nimble']);
-        expect(text(q(root, '[data-enemy-card-kind="effect_brute"]'))).toBe('Brute Big hits, attacks every 4s');
+        expect(text(q(root, '[data-enemy-card-kind="effect_brute"]'))).toBe('Brute Hits +33%; attacks every 4s');
     });
 
     // Brute's Damage +33 % on the level's hit of 2, rolled each hit: no floor of one above the level.

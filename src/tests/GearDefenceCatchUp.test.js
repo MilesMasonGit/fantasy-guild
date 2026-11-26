@@ -77,7 +77,7 @@ const enemy = (id, block) => ({
 registerTokenTypes({
     gdc_rat: enemy('gdc_rat', { style: 'melee', hit: 3, moves: [{ name: 'Venom Bite', damageType: 'crush', effectId: VENOM, target: 'hero' }] }),
     gdc_dummy: enemy('gdc_dummy', { style: 'melee' }),
-    gdc_crab: enemy('gdc_crab', { style: 'stealth', kinds: ['armoured'], resistances: { crush: -50 } })
+    gdc_crab: enemy('gdc_crab', { style: 'stealth', kinds: ['effect_armoured'], resistances: { crush: -100 } })
 });
 
 /** A seeded `Math.random` (mulberry32) that counts its draws, as the bench's prelude does. */

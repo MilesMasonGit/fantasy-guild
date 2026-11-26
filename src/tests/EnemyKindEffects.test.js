@@ -18,7 +18,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import * as CF from '../systems/combat/CombatFormulas.js';
 import { enemyProfileOf } from '../config/registries/enemyProfile.js';
-import { enemyKindsOf, kindEffectIdOf } from '../config/registries/enemyKinds.js';
+import { enemyKindsOf, MAX_ENEMY_KINDS } from '../config/registries/enemyKinds.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { registerEffects, EFFECTS } from '../config/registries/effectRegistry.js';
 import { ROLE } from '../config/registries/roleRegistry.js';
@@ -36,8 +36,8 @@ import { registerStatusFixtures, providesPct, providesFlat, VENOM } from './fixt
  * effects the owner edits, picked in the Token editor's kind boxes; a kind's numbers go on the
  * enemy's own aggregator for the fight and add to its written lines like any effect's (the Crab's own
  * Crush −100 and Armoured's 50 make weak 50 %); Swift and Brute are plain Attack Speed and Damage %,
- * rolled each hit. Until the library holds a preset's effect, the preset is read as before
- * (`EnemyKinds.test.js`).
+ * rolled each hit. A kind naming no effect the library holds changes nothing, and the audit names
+ * it. (Venomous retired: a poisoning move carries Venom itself, `EnemyMoves.test.js`.)
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -92,20 +92,37 @@ function withKinds(fn) {
 
 afterEach(() => vi.restoreAllMocks());
 
+const stats = (level, kinds, more = {}) => enemyProfileOf({ id: 'e', name: 'E', enemy: { level, style: 'melee', kinds, ...more } });
+const pick = (p) => ({ hp: p.hp, hit: p.hit, resistances: p.resistances, speed: p.speed, xp: p.xpAwarded, dodge: p.dodge });
+const PHYS_50 = { slash: 50, crush: 50, stab: 50 };
+
 describe('a kind is the library effect it names', () => {
-    it('a preset id reads as its effect once the library holds it, and as the preset until then', () => {
-        expect(kindEffectIdOf('armoured', {})).toBeNull();
-        expect(kindEffectIdOf('armoured', KIND_EFFECTS)).toBe('effect_armoured');
-        expect(kindEffectIdOf('effect_brute', KIND_EFFECTS)).toBe('effect_brute');
-        expect(kindEffectIdOf('ek_thorny', { ek_thorny: THORNY })).toBe('ek_thorny');
-        expect(enemyKindsOf({ kinds: ['armoured'] }, {})).toEqual([expect.objectContaining({ id: 'armoured', effectId: null })]);
-        expect(enemyKindsOf({ kinds: ['armoured', 'effect_armoured', 'brute'] }, KIND_EFFECTS).map(k => k.id)).toEqual(['effect_armoured', 'effect_brute']);
-        // An effect the library lacks falls back to its preset.
-        expect(enemyKindsOf({ kinds: ['effect_armoured'] }, {}).map(k => k.preset?.id)).toEqual(['armoured']);
+    it('an effect the library holds, each once, in the order authored, at most two; anything else is skipped', () => {
+        expect(MAX_ENEMY_KINDS).toBe(2);
+        expect(enemyKindsOf({ kinds: ['effect_armoured'] }, KIND_EFFECTS)).toEqual(['effect_armoured']);
+        expect(enemyKindsOf({ kinds: ['ek_thorny'] }, { ek_thorny: THORNY })).toEqual(['ek_thorny']);
+        // An old preset's id, a repeat, an unknown id and the retired Venomous count for nothing.
+        expect(enemyKindsOf({ kinds: ['armoured', 'effect_nimble', 'effect_nimble', 'giant', 'venomous', 'effect_brute', 'effect_armoured'] }, KIND_EFFECTS))
+            .toEqual(['effect_nimble', 'effect_brute']);
+        expect(enemyKindsOf({ kinds: ['effect_armoured'] }, {})).toEqual([]);
+        expect(enemyKindsOf({ kinds: ['effect_armoured'] }, null)).toEqual([]);
     });
 
+    it('no kind: exactly the level table (level 1: 21 HP, hit 1, no resistances, 3 s, 10 XP)', () => withKinds(() => {
+        expect(pick(stats(1, undefined))).toEqual({ hp: 21, hit: 1, resistances: {}, speed: 'normal', xp: 10, dodge: 0 });
+        expect(stats(1, []).kinds).toEqual([]);
+        expect(stats(1, [])).not.toHaveProperty('kindEffects');
+        expect(CF.enemyNumbers(enemyAtRest(stats(1, [])))).toMatchObject({ hit: 1, attackSpeedMs: 3000, resistances: {} });
+    }));
+
+    it('Venomous is retired: an enemy still carrying it is a plain enemy that lands nothing', () => withKinds(() => {
+        expect(stats(1, ['venomous']).kinds).toEqual([]);
+        expect(pick(stats(1, ['venomous']))).toEqual(pick(stats(1, [])));
+        expect(stats(1, ['venomous']).onHit).toBeUndefined();
+    }));
+
     it('an effect kind adds nothing to the stat block itself: its numbers wait for the fight', () => withKinds(() => {
-        const p = profile({ kinds: ['armoured'], resistances: { crush: -100, electric: -25 } });
+        const p = profile({ kinds: ['effect_armoured'], resistances: { crush: -100, electric: -25 } });
         expect(p.kindEffects).toEqual(['effect_armoured']);
         expect(p.kinds).toEqual(['effect_armoured']);
         expect(p.resistances).toEqual({ crush: -100, electric: -25 });
@@ -135,6 +152,27 @@ describe('a kind\'s numbers add to the enemy\'s own, as any effect\'s', () => {
         expect(CF.enemyNumbers(enemyAtRest(profile({ kinds: ['effect_brute'] }))).hit).toBeCloseTo(4 / 3, 9);
     }));
 
+    it('Nimble\'s Dodge 15: a hero misses it 15 points more', () => withKinds(() => {
+        const hero = { skills: { melee: { level: 1 } } };
+        expect(CF.heroMissChance(hero, enemyAtRest(stats(1, ['effect_nimble']))))
+            .toBe(CF.heroMissChance(hero, enemyAtRest(stats(1, []))) + 15);
+    }));
+
+    it('two kinds add, as two effects do, and never clash: Armoured Brute at 20 resists Slash, Crush and Stab 50, hits 2 × 4/3, every 5 s', () => withKinds(() => {
+        const n = CF.enemyNumbers(enemyAtRest(stats(20, ['effect_armoured', 'effect_brute'])));
+        expect(n).toMatchObject({ resistances: PHYS_50, attackSpeedMs: 5000 });
+        expect(n.hit).toBeCloseTo(8 / 3, 9);
+        // Swift's faster attacks and Armoured's slower ones cancel.
+        expect(CF.enemyNumbers(enemyAtRest(stats(1, ['effect_swift', 'effect_armoured']))).attackSpeedMs).toBe(3000);
+    }));
+
+    it('a number the author typed replaces the level\'s outright; its kinds add on top in the fight', () => withKinds(() => {
+        expect(pick(stats(1, ['effect_brute'], { hit: 9 }))).toMatchObject({ hit: 9 });
+        expect(CF.enemyNumbers(enemyAtRest(stats(1, ['effect_brute'], { hit: 9 }))).hit).toBeCloseTo(12, 9);
+        expect(CF.enemyNumbers(enemyAtRest(stats(1, ['effect_armoured'], { speed: 'fast' }))).attackSpeedMs).toBe(Math.round(2000 * (1 + THIRD)));
+        expect(CF.enemyNumbers(enemyAtRest(stats(1, ['effect_nimble'], { dodge: 0 }))).dodge).toBe(15);
+    }));
+
     it('a kind\'s Damage % adds to a heavy strike\'s, and its Attack Speed to an enrage\'s, in one bucket', () => withKinds(() => {
         registerEffects(ek);
         const brute = enemyAtRest(profile({ kinds: ['effect_brute'], hit: 3 }));
@@ -156,9 +194,9 @@ describe('a kind\'s numbers add to the enemy\'s own, as any effect\'s', () => {
     it('the CMS preview reads the totals the fight starts from, from the library it is handed', () => {
         const numbers = enemyFightNumbers({ id: 'c', enemy: { level: 3, kinds: ['effect_armoured'], resistances: { crush: -100 } } }, KIND_EFFECTS);
         expect(numbers).toMatchObject({ resistances: { slash: 50, crush: -50, stab: 50 }, attackSpeed: 4000, hp: 23 });
-        // Without the effect in that library, the preset as before: a written line replaces the preset's for its type.
-        expect(enemyFightNumbers({ id: 'c', enemy: { level: 3, kinds: ['armoured'], resistances: { crush: -50 } } }, {}))
-            .toMatchObject({ resistances: { slash: 50, crush: -50, stab: 50 }, attackSpeed: 4000 });
+        // A kind that library lacks adds nothing: the enemy's own lines and the level's speed.
+        expect(enemyFightNumbers({ id: 'c', enemy: { level: 3, kinds: ['effect_armoured'], resistances: { crush: -100 } } }, {}))
+            .toMatchObject({ resistances: { crush: -100 }, attackSpeed: 3000 });
     });
 });
 
@@ -182,6 +220,16 @@ describe('a fight against an enemy whose kinds are effects', () => {
         ek_thorn: {
             id: 'ek_thorn', name: 'Kind Thorn', tokenType: 'enemy', rarity: 'common', theme: 'fixture', uses: 50, sprite: 's_occult',
             enemy: { level: 1, style: 'magic', hp: 500, kinds: ['ek_thorny'] },
+            config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] }
+        },
+        ek_none: {
+            id: 'ek_none', name: 'Kind None', tokenType: 'enemy', rarity: 'common', theme: 'fixture', uses: 50, sprite: 's_occult',
+            enemy: { level: 1, style: 'magic', hp: 500 },
+            config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] }
+        },
+        ek_swift: {
+            id: 'ek_swift', name: 'Kind Swift', tokenType: 'enemy', rarity: 'common', theme: 'fixture', uses: 50, sprite: 's_occult',
+            enemy: { level: 1, style: 'magic', hp: 500, kinds: ['effect_swift'] },
             config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [] }
         }
     });
@@ -243,6 +291,14 @@ describe('a fight against an enemy whose kinds are effects', () => {
     }
     const gaps = (times) => times.slice(1).map((v, i) => v - times[i]);
 
+    it('no kind attacks every 3 s, and Swift every 2 s', () => {
+        for (const [typeId, every] of [['ek_none', 3000], ['ek_swift', 2000]]) {
+            const { enemySwings } = duel(typeId, 12000);
+            expect(enemySwings.length, typeId).toBeGreaterThan(3);
+            for (const gap of gaps(enemySwings)) expect(gap, typeId).toBe(every);
+        }
+    });
+
     it('Armoured as an effect swings every 4 s and halves the hero\'s Crush fist (5 → 2.5, rolled to 2 at 0.5)', () => {
         const { enemySwings, heroHits } = duel('ek_plated');
         expect(enemySwings.length).toBeGreaterThan(3);
@@ -279,12 +335,20 @@ describe('a fight against an enemy whose kinds are effects', () => {
 });
 
 describe('the card and the fight window read the kinds\' numbers', () => {
-    it('an effect kind is named by its effect, its words the preset\'s until the effect has a description', () => withKinds(() => {
-        expect(kindView('effect_armoured')).toMatchObject({ id: 'effect_armoured', name: 'Armoured', tip: expect.stringContaining('Slash, Crush and Stab 50%') });
+    it('a kind is named by its effect and says what it does to a plain enemy, until the effect has a description', () => withKinds(() => {
+        expect(kindView('effect_armoured')).toEqual({ id: 'effect_armoured', name: 'Armoured', tip: 'Resists Slash 50%, Crush 50%, Stab 50%; attacks every 4s' });
+        expect(kindView('effect_nimble').tip).toBe('Dodge +15');
+        expect(kindView('effect_swift').tip).toBe('Hits −33%; attacks every 2s');
+        expect(kindView('effect_brute').tip).toBe('Hits +33%; attacks every 4s');
+        // A kind of fight-moment rules alone moves none of those numbers.
+        registerEffects({ ek_thorny: THORNY });
+        expect(kindView('ek_thorny')).toEqual({ id: 'ek_thorny', name: 'Thorny', tip: '' });
         EFFECTS.effect_armoured = { ...EFFECTS.effect_armoured, description: 'Plated all over.' };
         expect(kindView('effect_armoured').tip).toBe('Plated all over.');
-        expect(kindView('armoured')).toMatchObject({ id: 'armoured', name: 'Armoured' });
+        // An old preset's id, or any the library lacks, is no kind.
+        expect(kindView('armoured')).toBeNull();
         expect(kindView('no_such_kind')).toBeNull();
+        delete EFFECTS.ek_thorny;
     }));
 
     it('the enemy card and the Token card add the kinds\' resistances and speed before any fight', () => withKinds(() => {
@@ -307,14 +371,46 @@ describe('the card and the fight window read the kinds\' numbers', () => {
 describe('the audits read kinds against the library', () => {
     const fields = (kinds, effects) => findUnknownRefs({ tokens: { t: { id: 't', name: 'T', enemy: { level: 1, kinds } } }, effects }).map(f => f.message);
 
-    it('a kind naming an effect the library holds, or a preset, is fine; one naming neither is named', () => {
-        expect(fields(['effect_armoured', 'brute'], KIND_EFFECTS)).toEqual([]);
+    it('a kind naming an effect the library holds is fine; one naming none, an old preset\'s id among them, is named once', () => {
+        expect(fields(['effect_armoured', 'effect_brute'], KIND_EFFECTS)).toEqual([]);
         expect(fields(['ek_thorny'], { ek_thorny: THORNY })).toEqual([]);
-        expect(fields(['armoured'], {})).toEqual([]);
-        expect(fields(['effect_gone'], {})[0]).toContain('"effect_gone", which is no effect in the library');
+        expect(fields(['effect_gone'], {})).toEqual([expect.stringContaining('"effect_gone", which is no effect in the library')]);
+        expect(fields(['effect_armoured', 'brute'], KIND_EFFECTS)).toEqual([expect.stringContaining('"brute", which is no effect in the library')]);
+        // Without a library to look in, a kind is taken on trust.
+        expect(findUnknownRefs({ tokens: { t: { id: 't', name: 'T', enemy: { level: 1, kinds: ['effect_armoured'] } } } })).toEqual([]);
         // Effect kinds never clash: their numbers add.
         expect(fields(['effect_swift', 'effect_armoured'], KIND_EFFECTS)).toEqual([]);
+        expect(fields(['effect_armoured', 'effect_nimble', 'effect_brute'], KIND_EFFECTS)).toEqual([expect.stringContaining('at most 2')]);
     });
+
+    it('names a Venomous kind left on an enemy as retired, saying a poisoning move carries Venom now', () => {
+        const [message, ...rest] = fields(['venomous'], KIND_EFFECTS);
+        expect(rest).toEqual([]);
+        expect(message).toContain('"venomous"');
+        expect(message).toContain('retired');
+        expect(message).toContain('Venom effect');
+    });
+
+    it('older content\'s marks and a work cycle\'s XP are read by nothing; the boot audit names them, never as blocking', () => withKinds(() => {
+        expect(pick(stats(1, ['effect_brute'], { budgetScale: 0.3 }))).toEqual(pick(stats(1, ['effect_brute'])));
+        const enemy = (id, block, config) => ({
+            id, name: id, tokenType: 'enemy', rarity: 'common', theme: 'fixture', uses: 1, sprite: 's_occult',
+            enemy: { level: 1, style: 'melee', ...block },
+            config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, inputs: [], outputs: [], ...config }
+        });
+        registerTokenTypes({
+            ek_left: enemy('ek_left', { budgetScale: 0.3, boss: true }, { xp: 0 }),
+            ek_xp: enemy('ek_xp', {}, { xp: 2 })
+        });
+        const named = (id) => auditContent().filter(f => f.where === `Token "${id}"`).map(f => f.what);
+        expect(named('ek_left').filter(w => w.includes('which the game no longer reads'))).toEqual([
+            expect.stringContaining('"boss"'), expect.stringContaining('"budgetScale"')
+        ]);
+        expect(findUnknownRefs({ tokens: { ek_left: enemy('ek_left', { budgetScale: 0.3, boss: true }) } })).toEqual([]);
+        // A work cycle's XP on an enemy is never paid; a 0 left by the editor's default says nothing.
+        expect(named('ek_xp').some(w => w.includes("carries a work cycle's XP (2)"))).toBe(true);
+        expect(named('ek_left').some(w => w.includes("work cycle's XP"))).toBe(false);
+    }));
 
     it('an effect used only as a kind is not "used by nothing"', () => withKinds(() => {
         registerTokenTypes({

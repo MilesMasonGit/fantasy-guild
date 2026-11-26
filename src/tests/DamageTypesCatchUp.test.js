@@ -51,7 +51,7 @@ const enemy = (id, block) => ({
     config: { skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0, inputs: [], outputs: [{ itemId: 'item_bones', chance: 100, minQty: 1, maxQty: 1 }] }
 });
 registerTokenTypes({
-    dtc_crab: enemy('dtc_crab', { style: 'stealth', kinds: ['armoured'] }),
+    dtc_crab: enemy('dtc_crab', { style: 'stealth', kinds: ['effect_armoured'] }),
     dtc_elemental: enemy('dtc_elemental', { style: 'melee', resistances: { fire: 100, ice: -50 } })
 });
 

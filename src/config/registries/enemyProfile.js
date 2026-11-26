@@ -3,7 +3,7 @@
 import { getTokenType } from './tokenRegistry.js';
 import { EFFECTS } from './effectRegistry.js';
 import { outputRange } from './tokenConstants.js';
-import { enemyLevelStats, attackSpeedMs, ATTACK_SPEED_MS, BASE_CRIT_CHANCE, roundHalfUp } from '../FormulaRegistry.js';
+import { enemyLevelStats, attackSpeedMs, ATTACK_SPEED_MS, BASE_CRIT_CHANCE } from '../FormulaRegistry.js';
 import { COMBAT_SKILL_IDS } from './skillRegistry.js';
 import { enemyKindsOf } from './enemyKinds.js';
 import { normaliseResistances } from './damageTypes.js';
@@ -56,7 +56,7 @@ export function isEnemyDef(def) {
     return def?.enemy?.level != null;
 }
 
-/** The numbers an author may type on an enemy to replace what the level and kinds fill. */
+/** The numbers an author may type on an enemy to replace what the level fills. */
 export const ENEMY_OVERRIDE_FIELDS = Object.freeze(['hp', 'hit', 'speed', 'xp', 'dodge', 'accuracy', 'critChance']);
 
 /**
@@ -77,21 +77,17 @@ export const LEFTOVER_ENEMY_FIELDS = Object.freeze(['boss', 'hostile', 'budgetSc
  * defaults, and `enemyProfileOf` starts from them.
  *
  * The level fills HP, hit, speed and XP from the level table (`enemyLevelStats`), with no
- * Dodge or Accuracy, no resistances and the base 5 % crit. A kind that is still a preset then
- * adjusts the result, in the order ticked (`enemyKinds.js` says how); a kind that is an effect
- * changes nothing here: it adds in the fight.
+ * Dodge or Accuracy, no resistances and the base 5 % crit. Its kinds change nothing here: they add
+ * in the fight.
  *
  * @param {Object} enemy a Token's `enemy` block
- * @param {Object|null} [library] the effect library by id (the CMS hands in its own)
  * @returns {{hp: number, hit: number, speed: string, xp: number, dodge: number, accuracy: number, critChance: number, resistances: Object<string, number>}}
  */
-export function enemyFilledStats(enemy, library = EFFECTS) {
+export function enemyFilledStats(enemy) {
     const table = enemyLevelStats(enemy?.level);
-
-    const levelHit = table.hit;
-    const filled = {
+    return {
         hp: table.hp,
-        hit: levelHit,
+        hit: table.hit,
         speed: table.speed,
         xp: table.xp,
         dodge: 0,
@@ -99,25 +95,13 @@ export function enemyFilledStats(enemy, library = EFFECTS) {
         critChance: BASE_CRIT_CHANCE,
         resistances: {}
     };
-
-    for (const { preset: kind } of enemyKindsOf(enemy, library)) {
-        if (!kind) continue;
-        if (kind.resistances) Object.assign(filled.resistances, kind.resistances);
-        if (kind.dodge) filled.dodge += kind.dodge;
-        if (kind.speed) filled.speed = kind.speed;
-        if (kind.hitScale) filled.hit = Math.max(1, roundHalfUp(filled.hit * kind.hitScale));
-        if (kind.hitAtLeastMore) filled.hit = Math.max(filled.hit, levelHit + kind.hitAtLeastMore);
-    }
-
-    return filled;
 }
 
 /**
  * Build the enemy stat block for a Token definition: what the level fills (`enemyFilledStats`), with
  * any number the author wrote beside the level on the Token's `enemy` (`hp`, `hit`, `speed`, `xp`,
- * `dodge`, `accuracy`, `critChance`) replacing that one outright. Its kinds that are effects
- * (`kindEffects`) add on top in a fight, as every effect does (`enemyKindEffects.js`); a kind still
- * a preset is in the filled numbers, and a resistance the author wrote replaces its line.
+ * `dodge`, `accuracy`, `critChance`) replacing that one outright. Its kinds (`kindEffects`) add on
+ * top in a fight, as every effect does (`enemyKindEffects.js`).
  *
  * `id` is the **Token's** id: the Bestiary, kill counts and discovery
  * notifications key on an id and look up a name.
@@ -131,12 +115,10 @@ export function enemyProfileOf(def, library = EFFECTS) {
 
     const authored = def.enemy;
     const level = authored.level;
-    const filled = enemyFilledStats(authored, library);
+    const filled = enemyFilledStats(authored);
     const style = ENEMY_STYLES.includes(authored.style) ? authored.style : 'melee';
     const speed = ATTACK_SPEED_MS[authored.speed] ? authored.speed : filled.speed;
-    const kindList = enemyKindsOf(authored, library);
-    const kinds = kindList.map(k => k.id);
-    const kindEffects = kindList.filter(k => k.effectId).map(k => k.effectId);
+    const kinds = enemyKindsOf(authored, library);
     const moves = enemyMovesOf(authored);
 
     return {
@@ -151,17 +133,17 @@ export function enemyProfileOf(def, library = EFFECTS) {
         dodge: numberOr(authored.dodge, filled.dodge),
         accuracy: numberOr(authored.accuracy, filled.accuracy),
         critChance: numberOr(authored.critChance, filled.critChance),
-        resistances: { ...filled.resistances, ...normaliseResistances(authored.resistances) },
+        resistances: normaliseResistances(authored.resistances),
         // ⚠️ Load-bearing, and easy to miss: `getCombatXpAward` reads
         // `enemy.xpAwarded` and falls back to a flat **1** when it is absent.
         // Leaving it out does not throw — it silently pays 1 XP for every kill
         // at every level, which is exactly the kind of quiet wrongness a
         // missing field is supposed to make loud.
         xpAwarded: Math.max(0, numberOr(authored.xp, filled.xp)),
-        // The kinds it carries (an effect's id, or a preset's), for the enemy card once the guild has fought one.
+        // The kinds it carries, library effects' ids, for the enemy card once the guild has fought one.
         kinds,
-        // The kinds that are library effects: their numbers go on the fight's aggregator (`enemyKindEffects.js`).
-        ...(kindEffects.length ? { kindEffects } : {}),
+        // The same effects, whose numbers go on the fight's aggregator (`enemyKindEffects.js`).
+        ...(kinds.length ? { kindEffects: kinds } : {}),
         // The moves it picks from each swing (`enemyMoves.js`); without any, a plain Crush hit.
         ...(moves.length ? { moves } : {})
     };

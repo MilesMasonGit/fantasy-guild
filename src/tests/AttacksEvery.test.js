@@ -11,8 +11,7 @@ import { rehydrateHero } from '../systems/hero/logic/HeroRehydration.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { heroDamageMultiplier } from '../systems/combat/CombatFormulas.js';
 import { getPaletteEntry } from '../config/registries/modifierPalette.js';
-import { ENEMY_KINDS } from '../config/registries/enemyKinds.js';
-import { movesView } from '../ui/components/combat/fightView.js';
+import { movesView, kindView } from '../ui/components/combat/fightView.js';
 import { buildSystemPrompt, buildUserPrompt, resolveAndImport } from '../../cms/src/engine/contentGenerator.js';
 
 /**
@@ -49,10 +48,11 @@ describe('the words', () => {
     });
 
     it('an enemy kind says how often it attacks, in the game and the CMS', () => {
-        expect(t('fight.kinds.armoured.tip')).toBe('Resists Slash, Crush and Stab 50%, attacks every 4s');
-        expect(t('fight.kinds.swift.tip')).toBe('Small hits, attacks every 2s');
-        expect(t('fight.kinds.brute.tip')).toBe('Big hits, attacks every 4s');
-        for (const kind of ENEMY_KINDS) expect(kind.blurb, kind.id).not.toMatch(/swing/i);
+        expect(t('fight.kinds.every', { time: '4s' })).toBe('attacks every 4s');
+        for (const id of ['effect_armoured', 'effect_swift', 'effect_brute']) {
+            expect(kindView(id).tip, id).toMatch(/attacks every \d/);
+            expect(kindView(id).tip, id).not.toMatch(/swing/i);
+        }
     });
 
     it('the CMS rule Attack Speed says attacks, and an enemy\'s plain hit is a Strike', () => {

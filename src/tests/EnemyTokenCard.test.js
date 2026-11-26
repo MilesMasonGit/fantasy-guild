@@ -126,7 +126,7 @@ describe('the model: every field, read from the enemy', () => {
         expect(fightBlock().kinds).toBeNull();
         fightOne();
         expect(fightBlock().kinds.map(k => k.id)).toEqual(['effect_brute', 'effect_nimble']);
-        expect(fightBlock().kinds[0]).toMatchObject({ name: 'Brute', tip: 'Big hits, attacks every 4s' });
+        expect(fightBlock().kinds[0]).toMatchObject({ name: 'Brute', tip: 'Hits +33%; attacks every 4s' });
     });
 
     it('an enemy with no kinds, fought, says it has none (an empty list, not hidden)', () => {

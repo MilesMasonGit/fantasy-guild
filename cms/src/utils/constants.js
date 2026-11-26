@@ -152,8 +152,8 @@ export {
 // Enemy moves: the few attacks an enemy picks from each swing (a type to hit with, an effect to land), their shapes and the audit's sentences. The game's own.
 export { MOVE_TARGETS, MOVE_LASTS, moveLastsFor, moveProblems, enemyMovesOf } from '../../../src/config/registries/enemyMoves.js';
 
-// Enemy kinds: none to two library effects an enemy always carries (built-in presets until the library has Armoured, Nimble, Swift and Brute), what the Token editor offers in its kind boxes, and the numbers a fight starts from with them added. The game's own.
-export { ENEMY_KINDS, MAX_ENEMY_KINDS, kindsClash, enemyKindsOf } from '../../../src/config/registries/enemyKinds.js';
+// Enemy kinds: none to two library effects an enemy always carries, what the Token editor offers in its kind boxes, and the numbers a fight starts from with them added. The game's own.
+export { MAX_ENEMY_KINDS, enemyKindsOf } from '../../../src/config/registries/enemyKinds.js';
 export { enemyFightNumbers, isKindCandidate, kindResistances } from '../../../src/systems/effects/enemyKindEffects.js';
 
 // Weapons: the one style a weapon fights in, and the level gear asks of its wearer, for the item editor's Weapon and Requirement blocks.

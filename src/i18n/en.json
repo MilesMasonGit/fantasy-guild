@@ -630,22 +630,11 @@
             "step": "{type} {n}%"
         },
         "kinds": {
-            "armoured": {
-                "name": "Armoured",
-                "tip": "Resists Slash, Crush and Stab 50%, attacks every 4s"
-            },
-            "nimble": {
-                "name": "Nimble",
-                "tip": "Dodges: your hits miss it more often"
-            },
-            "swift": {
-                "name": "Swift",
-                "tip": "Small hits, attacks every 2s"
-            },
-            "brute": {
-                "name": "Brute",
-                "tip": "Big hits, attacks every 4s"
-            }
+            "resists": "Resists {lines}",
+            "weak": "Weak to {lines}",
+            "dodge": "Dodge {n}",
+            "hits": "Hits {n}",
+            "every": "attacks every {time}"
         }
     },
     "catchUp": {
