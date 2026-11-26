@@ -112,6 +112,8 @@ export const PACE_TEXT = Object.freeze({
     waits: Object.freeze({ need: 'waits for', level: 'levels', own: 'its own time' }),
     coins: (n) => `${n} ${n === 1 ? 'coin' : 'coins'}`,
     heroes: (n) => `${n} ${n === 1 ? 'hero' : 'heroes'}`,
+    /** A count of a named thing: "1 Oak Forest", "2 Quarries". */
+    count: (n, name) => `${n} ${n === 1 ? name : /[^aeiou]y$/i.test(name) ? `${name.slice(0, -1)}ies` : /(s|x|ch|sh)$/i.test(name) ? `${name}es` : `${name}s`}`,
     rate: (n) => (n >= 100 ? `${Math.round(n)}` : n >= 10 ? n.toFixed(1) : n.toFixed(2)),
     earning: (n) => `earning ${n} ${n === 1 ? 'coin' : 'coins'}`,
     noCoins: 'nothing earns its coins by then',
@@ -1536,7 +1538,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         // A node whose camp makes much more of it in the dense layout than in the sparse one: the site's layout moves the pace.
         for (const row of layoutRows()) {
             const n = row.nodes;
-            const by = (layout) => (row.spawner ? ` (${row.spawners[layout]} ${nameOf(tokenKey(row.spawner))}${row.spawners[layout] === 1 ? '' : 's'})` : '');
+            const by = (layout) => (row.spawner ? ` (${PACE_TEXT.count(row.spawners[layout], nameOf(tokenKey(row.spawner)))})` : '');
             add('layout', row.work.entry, `${workName(row.work)} at ${AT_TARGET}, worked from ${nameOf(tokenKey(row.camp))}: ${n.sparse} in reach${by('sparse')} make ${PACE_TEXT.rate(row.sparse)} an hour and ${n.dense}${by('dense')} make ${PACE_TEXT.rate(row.dense)} (+${Math.round(row.off * 100)} %, over ±${settings.tolerancePct} %): one hero is not kept busy by ${n.sparse}, so how its site is laid out moves the pace (BALANCE_RULES section 2: a lone hero at one node is busy about half the time).`, {
                 name: workName(row.work)
             });

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import { buildLedger } from '../systems/progression/ledger/engine.js';
-import { buildPace, PROFILE } from '../../cms/src/engine/ledger/pace.js';
+import { buildPace, PROFILE, PACE_TEXT } from '../../cms/src/engine/ledger/pace.js';
 import { settingsOf } from '../../cms/src/engine/ledger/settings.js';
 import { paceContent } from './fixtures/paceWorld.js';
 
@@ -114,6 +114,7 @@ describe('a site worked from a spawner', () => {
         expect(row.dense / row.sparse).toBeCloseTo(2, 6);
         const found = pace.findings().find(f => f.check === 'layout' && f.key === 'token:token_elm');
         expect(found.message).toMatch(/Elm Tree at Maxed, worked from Logging Camp: 4 in reach \(1 Elm Forest\) make .* an hour and 8 \(2 Elm Forests\) make /);
+        expect([PACE_TEXT.count(2, 'Quarry'), PACE_TEXT.count(2, 'Apple Orchard'), PACE_TEXT.count(1, 'Elm Forest')]).toEqual(['2 Quarries', '2 Apple Orchards', '1 Elm Forest']);
         // Two Forests in both layouts: the layout moves nothing.
         expect(paceOf(forestContent(), { layoutSpawners: { sparse: 2, dense: 2 } }).layoutRows().find(r => r.work.key === 'token_elm||')).toBeUndefined();
     });
