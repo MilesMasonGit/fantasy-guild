@@ -40,7 +40,8 @@ const BANNER_SPAWNERS = [
     'token_wild_hive', 'token_basking_stone', 'token_cow_pasture', 'token_crab_rocks', 'token_ember_vents',
     'token_smoking_crater', 'token_frog_pond', 'token_goblin_camp', 'token_chief_tent', 'token_slime_pit',
     'token_queens_hive', 'token_sulphur_rocks', 'token_thorn_thicket', 'token_toxic_pool', 'token_tide_pool',
-    'token_wind_stones', 'token_wolf_den', 'token_alpha_den', 'token_sheep_pasture'
+    'token_wind_stones', 'token_wolf_den', 'token_alpha_den', 'token_sheep_pasture',
+    'token_drake_roost', 'token_treant_grove', 'token_troll_bridge', 'token_phoenix_nest', 'token_void_rift'
 ];
 
 const shippedWorkspace = () => workspaceFromDataFiles({

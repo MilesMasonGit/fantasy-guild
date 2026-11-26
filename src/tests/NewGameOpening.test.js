@@ -432,7 +432,20 @@ const NOT_YET_PLACED = Object.freeze({
     item_stingray: 'a later plane: only a harpoon in Flower Meadow or Cherry Grove lands it (Bait from Stingray, fishing level 54, asks for it)',
     item_mythril_harpoon: 'a later plane: forged from Mythril Ingots and Maple Planks (smithy, level 54)',
     item_adamantine_harpoon: 'a later plane: forged from Adamantine Ingots and Mahogany Planks (smithy, level 63)',
-    item_darkmetal_harpoon: 'a later plane: forged from Darkmetal Ingots and Ebony Planks (smithy, level 83)'
+    item_darkmetal_harpoon: 'a later plane: forged from Darkmetal Ingots and Ebony Planks (smithy, level 83)',
+    // Plane 3's lairs: the Battlefield offers a Build for every lair, but a lair's map drops only
+    // from its own enemy, which only that lair on plane 3 spawns.
+    item_blue_scale: 'plane 3: only the Blue Drake drops it, and only the Drake Roost spawns one',
+    item_drake_roost_map: 'plane 3: only the Blue Drake drops it (the Battlefield\'s Build Drake Roost asks for it)',
+    item_treant_grove_map: 'plane 3: only the Treant drops it (the Battlefield\'s Build Treant Grove asks for it)',
+    item_troll_bridge_map: 'plane 3: only the Troll drops it (the Battlefield\'s Build Troll Bridge asks for it)',
+    item_phoenix_nest_map: 'plane 3: only the Phoenix drops it (the Battlefield\'s Build Phoenix Nest asks for it)',
+    item_void_rift_map: 'plane 3: only the Void Beast drops it (the Battlefield\'s Build Void Rift asks for it)',
+    token_drake_roost: 'plane 3: built from a Drake Roost Map, which only a Blue Drake drops',
+    token_treant_grove: 'plane 3: built from a Treant Grove Map, which only a Treant drops',
+    token_troll_bridge: 'plane 3: built from a Troll Bridge Map, which only a Troll drops',
+    token_phoenix_nest: 'plane 3: built from a Phoenix Nest Map, which only a Phoenix drops',
+    token_void_rift: 'plane 3: built from a Void Rift Map, which only a Void Beast drops'
 });
 
 /**

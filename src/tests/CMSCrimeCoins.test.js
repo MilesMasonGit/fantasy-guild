@@ -51,6 +51,12 @@ afterEach(() => {
 });
 
 const store = () => useEntityStore.getState();
+// The cow ships with a steal table of its own; these tests build one from nothing.
+function openCowWithNoSteal() {
+    store().updateToken('token_cow', { steal: undefined });
+    return openToken('token_cow');
+}
+
 function openToken(id) {
     store().setActiveEntity(id, 'token');
     return render(React.createElement(TokenEditor)).container;
@@ -62,7 +68,7 @@ describe('⭐ the steal table\'s Coins', () => {
     });
 
     it('a whole number above 0 is written; 0, blank, a fraction or below 0 writes nothing; a table of coins alone is kept; it reaches tokens.json', () => {
-        const container = openToken('token_cow');
+        const container = openCowWithNoSteal();
         const input = () => container.querySelector('[data-field="steal-table"] [data-field="steal-coins"]');
         const line = () => container.querySelector('[data-field="steal-coins-line"]');
         expect(input()).not.toBeNull();
@@ -80,7 +86,7 @@ describe('⭐ the steal table\'s Coins', () => {
     });
 
     it('coins beside a line: removing the coins keeps the line, removing the line keeps the coins', () => {
-        const container = openToken('token_cow');
+        const container = openCowWithNoSteal();
         const block = () => container.querySelector('[data-field="steal-table"]');
         fireEvent.click(block().querySelector('[data-add-steal]'));
         fireEvent.change(block().querySelector('[data-steal-item]'), { target: { value: 'item_wheat' } });
