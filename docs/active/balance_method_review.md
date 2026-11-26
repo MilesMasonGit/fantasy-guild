@@ -122,12 +122,11 @@ Asked in the session of 2026-11-25; rulings recorded below as they come.
   99 in all 20 skills would need a step of about 4 to 4.5 %; asked which governs, the owner kept 6 to
   6.5 %, so maxing everything is a goal of one to two years for a typical player.
 
-## Still open
+## Settled after the review (owner, 2026-11-26)
 
-- **The worth curve** (gold an hour by level, rising 260 times today): the balancer proposes a rule.
-- **The split of a guild's output** (feeding makers, boosts, prices, sold) and what that makes of the
-  coin costs in section 7.
-- **Purpose leanings on the plan's entries**: the content session tags them; untagged is balanced.
+- **The worth curve follows the XP rule**: worth an hour doubles every 20 levels.
+- **A well-run guild is comfortable**: coins hold it up only on big buys or when it is wasteful.
+- **Purpose leanings on the plan's entries** are the content session's to tag; untagged is balanced.
 
 ## The challenge round (owner interview, 2026-11-26)
 
@@ -160,3 +159,13 @@ sound and the owner has now said whose pace it is. Three things it rests on are 
 definitions, neither tied to places filled). None can be fixed in the rules alone: each needs the
 ledger to time a real work site and a real roster, and the first needs the spacing decision.
 
+## The follow-up interview (owner, 2026-11-26)
+
+- **Spacing: wider, same reach** (the owner's leaning; T-718 settles it): Tokens edges touching,
+  reach 240 u, 12 neighbours a node, about 8 places for buildings.
+- **A site must choose**: about 4 places max one kind of boost; a perfect site cannot max all four.
+- **A typical player fills most places**; players differ by which boosts they pick.
+- **A station's own upgrade is a boost**, inside the tier's budget.
+- **Drinks and work potions: 25 cycles, 5 a craft, twice as strong**, the extra strength taken from
+  the buildings' share (speed: buildings 20 %, perks 15 %, drink 20 %, Hall 5 % at darkmetal).
+- **The Starter Camp ends at level 10** (35 minutes on the curve); a skilled player leaves in about 20.

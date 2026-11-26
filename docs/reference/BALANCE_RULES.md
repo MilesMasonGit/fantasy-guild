@@ -149,14 +149,23 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 
 | Kind | Shared out |
 |---|---|
-| Speed | Faster Work building −30 %, skill perks −15 %, drink −10 %, Hall stars −5 % (perks took 10 % of the stars' share, owner 2026-11-21, [concept_milestone_perks.md](../active/concept_milestone_perks.md)) |
+| Speed | Faster Work buildings −20 % (about four places at 5 % each), skill perks −15 %, drink −20 %, Hall stars −5 % (owner, 2026-11-26: drinks are twice as strong and the extra comes from buildings; perks took 10 % of the stars' share, owner 2026-11-21, [concept_milestone_perks.md](../active/concept_milestone_perks.md)). A station's own upgrade counts inside the buildings' share |
 | Yield | Double Output building (a sure double at most) +100 %, Hall stars +200 %, camp variants and perks +100 % |
-| XP | More XP building +10 %, Hall stars +5 %, drink +5 % |
+| XP | More XP buildings +5 %, Hall stars +5 %, drink +10 % (the drink doubled as for speed; balancer's call) |
 | Rare finds | A rare-find potion +100 %, rising to +200 % for late potions (owner); a Rare Finds building +50 % (owner), from mythril, when the first Rare Finds variants come |
 
 ⚠️ **Today's Hall is over budget on XP**: its Lore stars give +15 % XP (Builder's Lore +30 %) in the first tiers, where the whole XP budget is +10 %. The paper pass brings them in. A Double Output building can give at most +100 % (a sure double), so most late yield is the Hall's.
 
-**Consumables last a number of cycles, and crafts make batches** (owner, after the review: "A dose is meant to last a number of cycles, not time. But also we will make batches."). **A batch must pay back at least 4x**: the work time the whole batch saves (or the finds it adds) is at least four times the hero time it took to make, its ingredients included. **A drink lasts 50 work cycles and a craft makes 5** (owner, 2026-11-25): one craft has to cover about 100 to 250 cycles to pay back 4x (a drink carries a sixth of the speed budget and a quarter of the XP budget), and 250 covers every planned drink but the level-95 Sunset Punch, which falls a little short. A drink then lasts roughly 8 to 15 minutes of work and a hero gets through 4 to 7 an hour. ⚠️ Today a drink lasts 10 cycles and a work potion 1 (`consumableRule.js`): the drink's 50 lands with the first number pack (T-338 part 1); the work potion's dose is set with the Alchemy run.
+**Consumables last a number of cycles, and crafts make batches** (owner, after the review: "A dose is meant to last a number of cycles, not time. But also we will make batches."). **A batch must pay back at least 4x**: the work time the whole batch saves (or the finds it adds) is at least four times the hero time it took to make, its ingredients included. **A drink or a work potion lasts 25 work cycles, a craft makes 5, and it is twice as strong** (owner, 2026-11-26: "I prefer shorter and stronger, but for both drinks and potions"; it replaces the 50 cycles ruled on 2026-11-25). One craft covers 125 cycles at double strength, the same payback as 250 at single: at least 4x for every planned drink but the level-95 Sunset Punch, a little short. A drink then lasts roughly 4 to 8 minutes of work and a hero gets through 8 to 14 an hour. ⚠️ Today a drink lasts 10 cycles and a work potion 1 (`consumableRule.js`): the 25 lands with the first number pack (T-338 part 1).
+
+**Boosts are placed, and a site must choose** (owner, 2026-11-26). Several buildings may boost one node; that is the game's spatial puzzle.
+
+| Rule | Ruling |
+|---|---|
+| **Places** | With Tokens spaced edges touching and reach kept at 240 u (the owner's leaning; T-718 settles it), a node has 12 neighbours: after its camp, a second node and a spawner, **about 8 places for buildings** |
+| **Choosing** | **A perfect site cannot max every kind**: about 4 places max one kind (speed, yield, XP or rare finds), so a site leans one or two ways. One building's number is the kind's building share ÷ 4 |
+| **Typical** | **A typical player fills most of the places** (6 or more). Players differ by which boosts they pick, not by how many they fit |
+| **Station upgrades** | **A station's own upgrade is a boost** and shares the tier's budget with the buildings round it. Today's upgraded stations run up to 60 % faster by themselves; they come down to the budget |
 
 **Upgrade prices go by payback** (owner): the hours of the boosted work it takes to earn back the price. **For a Hall star that boosts the whole guild, payback counts all the work it boosts**, not one hero's. **Payback = 1 hour × 24^(L / 80)**: 1 hour at 1, 2.2 at 20, 4.9 at 40, 10.8 at 60, a day at 80. That covers Guild Hall stars and building variants, priced in the tier's materials.
 
@@ -180,7 +189,7 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 
 *Owner interview with the balancer, 2026-11-25, on top of [concept_gold_coins.md](../active/concept_gold_coins.md): coins are a second cost beside items, the measure of whether a guild makes more than it uses.*
 
-**An item's worth is the work in it** (owner): every step counts, so a Copper Dagger is worth its ore, its smelting and its forging together. A worth set by hand is an exception with its reason. ⚠️ *Corrected 2026-11-25:* the balancer first wrote that an hour of work earns the same coins whatever is sold. It does not: the CMS's simulator prices work at its level's gold an hour, a curve rising 260 times from level 1 to 99, plus at least 15 % a making step, so later goods sell for far more an hour. That curve is not yet a rule the owner has ruled on ([balance_method_review.md](../active/balance_method_review.md)).
+**An item's worth is the work in it** (owner): every step counts, so a Copper Dagger is worth its ore, its smelting and its forging together. A worth set by hand is an exception with its reason. ⚠️ *Corrected 2026-11-25:* the balancer first wrote that an hour of work earns the same coins whatever is sold. It does not: the CMS's simulator prices work at its level's gold an hour, a curve rising 260 times from level 1 to 99, plus at least 15 % a making step, so later goods sell for far more an hour. **Ruled 2026-11-26: worth follows the XP rule**: an hour of work is worth twice as much every 20 levels (29 times from level 1 to 99, not 260), so work a tier old earns half the coins and half the XP of current work. The simulator's gold curve is set from it (T-715).
 
 **A coin cost is one hero's selling for a set time at the price's stage**, by kind of purchase:
 
@@ -197,6 +206,8 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 **Enemy coins: a fighter earns about half a worker's coins** (owner): fighting already pays in drops and combat XP. A Hideout's stolen coins are priced the same way (balancer's call).
 
 **The coin building adds at most 10 %** to enemy and Hideout coins in its reach (owner: "Probably only a 10% increase at most. Remember, the player may have multiple buildings affecting the same token."). Several buildings can reach one Token and their boosts add up, so a building's own number stays small.
+
+**A well-run guild is comfortable** (owner, 2026-11-26): a guild that keeps its chains fed usually has the coins when it has the goods; coins hold it up only on big buys or when it is run wastefully.
 
 **No coin stars, no coin costs on recipes** (the concept's rulings).
 
@@ -218,6 +229,7 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 | **Boosts and layout** | **Several buildings may boost one node, and that is the game** (owner, 2026-11-26): boosts act on the node, and a building takes a place a node could have had. The boost budget (section 5) counts one of each and is to be restated as places in reach × a small number each, once spacing and reach are settled (T-718; the owner's target is at most 12 Tokens in a radius) |
 | **A late recruit** | **XP for Everyone brings a new hero to about half the guild's level** in every skill (owner, 2026-11-26): a catch-up, not a second way to level |
 | **Summoned workers** | Outside the roster: capped by charges, priced like a consumable (owner, 2026-11-26) |
+| **The first sitting** | **The Starter Camp ends at level 10**, 35 minutes in on the curve; **a skilled, efficient player using the early boosts leaves it in about 20 minutes** (owner, 2026-11-26). Only-training work at 1.5x gives 23 minutes, so the early boosts need add little more |
 | **The pace that governs** | **One skill, for one hero** (section 1). Every skill at 99 on all 8 heroes is then a goal of one to two years for a typical player, and that is accepted (owner: "Keep 6 to 6.5%") |
 
 ## Worked examples

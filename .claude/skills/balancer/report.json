@@ -14,6 +14,10 @@
     "The method itself, with two read-only readings of the CMS's simulator and ledger: docs/active/balance_method_review.md. The page is on the curve by construction (XP is worked back from the curve), so it cannot test whether a guild's set-up is realistic; only the ledger or play can."
   ],
   "moved": [
+    "Approved by the owner, 2026-11-26: worth follows the XP rule (an hour of work is worth twice as much every 20 levels, not the simulator's 260-fold rise), and a well-run guild is comfortable for coins.",
+    "Approved by the owner, 2026-11-26: boosts are placed and a site must choose. With Tokens edges touching and reach unchanged (the owner's leaning), a node has about 8 places for buildings, about 4 of them max one kind of boost, and a typical player fills most places. A station's own upgrade counts as a boost.",
+    "Approved by the owner, 2026-11-26: drinks and work potions last 25 work cycles, 5 a craft, at twice the strength (this replaces yesterday's 50 cycles). The extra comes from the buildings' share: about 5 % a building for speed.",
+    "Approved by the owner, 2026-11-26: the Starter Camp ends at level 10, 35 minutes in on the curve; a skilled player leaves in about 20.",
     "Approved by the owner, 2026-11-26, from a challenge of the method: the pace curve describes a hero who splits time between training and supplying the guild; heroes arrive about one a tier; two or three heroes share each job; a new hero starts at about half the guild's level through XP for Everyone.",
     "Found, not yet fixed: the boost budget counts one of each building, but stacking buildings on a node is intended and today's spacing lets 30 Tokens stand in reach of one node. The owner wants spacing and reach settled first, with at most 12 in a radius (T-718). Until then the page's optimized and typical lines are estimates.",
     "Found, not yet fixed: early arrivals on this page assume a full chain from the first minute. With one hero, Smithing 1 to 19 is about 7 hours of chain work, not 1.7; with two at iron, 20 to 29 is 4.8 hours, not 2.1.",
@@ -42,8 +46,8 @@
     "On the owner, with the planning agent: Token spacing and reach (T-718), before any boost numbers are balanced.",
     "On the director, three new tickets: the simulator's XP curve and purpose tilt set from the balance rules (T-715); the ledger timing a guild of 8 with output spent once, nodes from the reference set-ups, camp variants and stacked buildings counted (T-716); checks for a chain's total XP, the 4x batch payback and Hall payback (T-717).",
     "On the director: the ledger prices every coin cost from one curve; the rule needs an everyday curve and a big-purchase curve (a new ticket, T-713).",
-    "On the director, with the first number pack: the new XP table (9.4 million XP to 99) and the drink's 50-cycle dose.",
+    "On the director, with the first number pack: the new XP table (9.4 million XP to 99) and the 25-cycle dose for drinks and potions.",
     "On the content session: the plan in the CMS as Planned entries, and the fifteen gaps. Also to look at: Arrowheads unlock later than the arrows that need them at every metal.",
-    "On the balancer: a work potion's dose and batch; Construction once its repeatable work is planned; checking coin prices against the engine once the ledger read-out exists; a rule for the worth curve; the split of a guild's output and what it makes of coin costs."
+    "On the balancer: the boost budget's table restated by places (after spacing is settled), Construction once its repeatable work is planned, and re-checking the gaps as the content session fills them."
   ]
 }

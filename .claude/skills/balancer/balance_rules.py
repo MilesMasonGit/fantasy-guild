@@ -17,7 +17,7 @@ EXTRA_PER_BAR = 0.5      # a make step is this much longer for each bar past the
 AMMO_A_CRAFT = 40        # arrows a Fletching craft, and Arrowheads or Kunai a bar (owner, 2026-11-25)
 NAILS_A_BAR = 5          # Ring Bands, Chains and Gears are 1 a bar (owner, 2026-11-25)
 DRINKS_A_CRAFT = 5       # and a drink lasts DRINK_DOSE_CYCLES work cycles (owner, 2026-11-25)
-DRINK_DOSE_CYCLES = 50
+DRINK_DOSE_CYCLES = 25   # drinks and work potions alike, at twice the strength (owner, 2026-11-26)
 BOOSTS_CLIMB = True      # between tier openings the boost budget climbs level by level (owner, 2026-11-25); the solver applies it
 COUNT_DOUBLES_EVERY = 40  # levels: ingredient counts double every two tiers
 FINDS_A_DAY = {'bonus find': 20, 'rare gear drop': 1}
@@ -80,9 +80,9 @@ OPT_YIELD_OVER_TYPICAL = 1.25
 RARE = [(0, 100), (0, 100), (0, 100), (50, 150), (50, 150), (50, 250), (50, 250)]   # (typical, optimized)
 # How each kind is shared among sources at optimized: buildings carry the most (owner).
 SHARES = {
-    'speed': [('Faster Work building', 0.5), ('Hall stars', 0.25), ('drink', 1 / 6), ('skill perk', 1 / 12)],
+    'speed': [('Faster Work buildings (about 4 places)', 1 / 3), ('skill perks', 0.25), ('drink', 1 / 3), ('Hall stars', 1 / 12)],
     'yield': [('Double Output building (a sure double at most)', 0.25), ('Hall stars', 0.5), ('camp variants and perks', 0.25)],
-    'xp': [('More XP building', 0.5), ('Hall stars', 0.25), ('drink', 0.25)],
+    'xp': [('More XP buildings', 0.25), ('Hall stars', 0.25), ('drink', 0.5)],
 }
 
 
