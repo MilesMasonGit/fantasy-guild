@@ -13,8 +13,9 @@ import { paceContent, potionWebContent } from './fixtures/paceWorld.js';
 /**
  * The ledger report's speed: the pace weighs hundreds of thousands of setups, so a setup it only
  * weighs is rated for its numbers alone (`numbersOf`), and the parts of a rate many setups share
- * (the hero's rules, the Token's tile, the guild-wide scope) are worked out once. Each must give
- * exactly what the whole rate, worked out afresh, gives: the report is the same to the last digit.
+ * (the hero's rules, the Token's tile, the guild-wide scope, each one's share of an axis) are worked
+ * out once. Each must give exactly what the whole rate, worked out afresh, gives: the report is the
+ * same to the last digit. Counts, not times, so a busy machine cannot fail them.
  */
 
 const DATA = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../data');
@@ -87,6 +88,24 @@ describe('the parts of a rate kept for the setups that share them', () => {
         }
         expect(checked).toBeGreaterThan(100);
     }, 60000);
+
+    it('keep each scope\'s share of an axis apart for every narrowing it is asked', () => {
+        const c = paceContent();
+        c.items.item_stone = { id: 'item_stone', name: 'Stone', type: 'material' };
+        c.tokens.token_vein.config.outputs.push({ itemId: 'item_stone', chance: 100, minQty: 1, maxQty: 1 });
+        const book = buildRateBook(c);
+        // One guild-wide rule narrowed to Mining, the same scope for both works: the vein first, then the oak.
+        const guild = [{ type: 'YIELD', bucket: 'percentage', value: 0.5, target: { category: 'mining' }, source: 'test:mining-yield' }];
+        const vein = book.rateOf({ token: 'token_vein' }, { guild });
+        const oak = book.rateOf({ token: 'token_oak' }, { guild });
+        expect(exact(oak.items)).toBe(exact(buildRateBook(c).rateOf({ token: 'token_oak' }, {}).items));
+        expect(vein.items.item_copper_ore).toBeGreaterThan(buildRateBook(c).rateOf({ token: 'token_vein' }, {}).items.item_copper_ore);
+        // The Mine's double drop is narrowed to Copper Ore: the Stone beside it lands as it did.
+        const mined = book.rateOf({ token: 'token_vein' }, { supports: ['token_mine'] });
+        const bare = book.rateOf({ token: 'token_vein' }, {});
+        expect(mined.items.item_copper_ore).toBeCloseTo(bare.items.item_copper_ore * 1.25);
+        expect(mined.items.item_stone).toBe(bare.items.item_stone);
+    });
 
     it('works out one hero for setups that differ only in what stands beside the work', () => {
         const book = buildRateBook(paceContent());

@@ -169,8 +169,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     const maxTier = tiers.size ? Math.max(...tiers) : 0;
 
     // ── supply: Bare first (it prices every boost), then the profiles that buy them ─────────────
-    // Kept by profile, then stage (as text, as one key would name it), then item or level: asked
-    // millions of times, mostly answered here.
+    // Kept in maps by profile, stage and item (a fed rate by work, profile, stage and level), the stage
+    // and level as text, as one joined key spelled them: asked millions of times, nearly always kept.
     const supplyMemo = new Map();
     const fedMemo = new Map();
     const level2 = (memo, a, b) => {
