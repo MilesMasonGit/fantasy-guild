@@ -10,7 +10,7 @@
 
   const DIALS = {
     paceStartMinutes: 3,      // level 1's length
-    paceGrowth: 1.065,        // each level this much longer
+    paceGrowth: 1.0625,       // each level this much longer; the owner's range is 1.06 to 1.065
     oldTaskPerTier: 2,        // XP an hour doubles every 20 levels, so an old task is this much slower a tier on
     cycleGrowth: 1.15,        // action time grows this much every 20 levels
     baseGather: 6, basePrepare: 8, baseMake: 12,   // seconds at level 0
@@ -73,6 +73,12 @@
       if (e.work) return e.work;
       if (UNTIMED[e.category]) return null;
       if (e.category === 'token') return 'gather';
+      // A catch or find with a level of its own, later than the Token that gives it (Salmon at 40 from
+      // the level-1 Fishing Spot), is new work at that level.
+      if (e.category === 'item' && e.level != null && !(e.madeWith || []).length && givenBy.has(e.id)) {
+        const own = givenBy.get(e.id).map(g => byId.get(g)).filter(g => g.skill === e.skill);
+        if (own.length && !own.some(g => g.level === e.level)) return 'gather';
+      }
       if ((e.madeWith || []).length) return PREPARE_TYPES.test(e.type || '') ? 'prepare' : 'make';
       if (e.from && !givenBy.has(e.id)) return 'gather';  // a catch or a find worked directly
       return null;
@@ -87,17 +93,24 @@
     const skills = {};
     for (const t of tasks) (skills[t.skill] = skills[t.skill] || []).push(t);
 
+    // Gather and use together: a Token stays on the level of what it gives, and a gathered thing on
+    // the level of a recipe that uses it (Swordfish and Swordfish Steak at 63, with the Harpoon).
+    const usedAt = new Map();
+    for (const e of entries) for (const i of e.madeWith || []) { if (!usedAt.has(i)) usedAt.set(i, new Set()); usedAt.get(i).add(e.level); }
+    const pinned = t => (byId.get(t.id).gives || []).some(g => byId.get(g) && byId.get(g).level === t.planned) ||
+      (usedAt.has(t.id) && usedAt.get(t.id).has(t.planned));
+
     // Move unlocks a little to even out thin stretches: only a task beside a gap over the flag,
     // never one on a tier's opening level (that is the tier arriving),
     // only if it shrinks the larger of its two gaps, never across a tier's opening, never onto a
-    // taken level, never below the level of an ingredient it needs, in any skill.
+    // taken level, never below the level of an ingredient it needs, in any skill, never off the level of what it gives or feeds.
     for (const list of Object.values(skills)) {
       for (let pass = 0; pass < 4; pass++) {
         list.sort((a, b) => a.level - b.level);
         for (let i = 0; i < list.length; i++) {
           const t = list[i], p = list[i - 1], n = list[i + 1];
           const left = p ? t.level - p.level : t.level - 1, right = n ? n.level - t.level : 99 - t.level;
-          if (Math.max(left, right) <= d.gapFlag || !p || !n || TIERS.some(([, lo]) => lo === t.planned)) continue;
+          if (Math.max(left, right) <= d.gapFlag || !p || !n || TIERS.some(([, lo]) => lo === t.planned) || pinned(t)) continue;
           const taken = new Set(list.map(x => x.level));
           const floor = Math.max(tierStart(t.planned), t.planned - d.moveMax,
             ...(byId.get(t.id).madeWith || []).map(i2 => out.get(i2)).filter(x => x && x.level != null).map(x => x.level));

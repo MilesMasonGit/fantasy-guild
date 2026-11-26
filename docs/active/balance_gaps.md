@@ -8,31 +8,49 @@ the date and what filled it. The balancer removes struck gaps on its next run on
 
 ## Open
 
+*A gap is a stretch that lasts **more than a day of typical play** with nothing new (owner, 2026-11-25).
+None is a wall: the slowest level in any of them is 1.3x the curve. Times are for one hero, at the
+6.25 % pace.*
+
 | Skill | Levels | What's missing | Suggestion | Added |
 |---|---|---|---|---|
+| Alchemy | 81-89 | 3.1 days optimized, 6.0 typical on Elixir of Legends | One strong late potion around 85 | 2026-11-25 |
+| Alchemy | 91-98 | 4.9 days optimized, 9.3 typical on Master's Draught | A capstone at 95 or later, as Smithing has at 98 and 99 | 2026-11-25 |
+| Crafting | 87-98 | 6.6 days optimized, 12.7 typical on Dragonscale Chest | One or two capstones from 90 up | 2026-11-25 |
+| Farming | 81-86 | 45 hours optimized, 3.6 days typical on Starflower | A late crop around 84 | 2026-11-25 |
+| Farming | 88-98 | 6.2 days optimized, 11.9 typical on Voidcap | One or two late crops from 90 up | 2026-11-25 |
+| Fishing | 64-82 | 3.1 days optimized, 5.7 typical on Swordfish | A catch or a creative water around 70 to 75 | 2026-11-25 |
+| Fishing | 90-98 | 5.3 days optimized, 10.2 typical on Anglerfish | A capstone catch at 95 or later | 2026-11-25 |
+| Fletching | 69-79 | 44 hours optimized, 3.4 days typical on Adamantine Crossbow | One item around 74 | 2026-11-25 |
+| Fletching | 86-98 | 7.0 days optimized, 13.4 typical on Darkmetal Crossbow | One or two capstones from 90 up | 2026-11-25 |
+| Forestry | 61-79 | 2.6 days optimized, 4.6 typical on Mahogany | A creative Token around 70 | 2026-11-25 |
+| Forestry | 81-98 | 8.9 days optimized, 16.9 typical on Ebony: the longest in the game | Two creative Tokens, around 87 and 94 | 2026-11-25 |
+| Mining | 61-69 | 21 hours optimized, 36 typical on Adamantine | A creative Token around 65 | 2026-11-25 |
+| Mining | 71-79 | 39 hours optimized, 3.0 days typical on the Fallen Star | A creative Token around 75 | 2026-11-25 |
+| Mining | 91-98 | 4.9 days optimized, 9.3 typical on the Fossil Bed | A capstone Token at 95 or later | 2026-11-25 |
+| Tailor | 92-98 | 4.4 days optimized, 8.3 typical on Void Cape | A capstone at 96 or later | 2026-11-25 |
+
+## Waiting on something else
+
+- **Construction** 61-79 and 86-98 (4.6 and 13.4 days typical): its eight building parts aren't its
+  training; the repeatable work between builds is being planned (T-656). Checked again once that lands.
 
 ## Checked, no gaps
 
-- **Cooking** and **Smithing** (balancer, 2026-11-25): something new at least every 5 levels from 1 to 99.
+- **Cooking**, **Smithing**, **Enchanting** (balancer, 2026-11-25): no stretch flagged.
 
-## Unreviewed: the solver's raw list (2026-11-25)
+## Dropped: under a day of typical play (2026-11-25)
 
-*Printed by `node .claude/skills/balancer/balance_solver.cjs` on the catalogue as it stands. Not yet
-checked by the balancer: some are by design (gathering tiers leave gaps), and Construction's
-buildings may not all count as training. Combat is left off (out of scope). The balancer's week-2
-run moves the real ones into "Open" and drops the rest with a reason. Alchemy 2-7 and Fletching's
-short stretches came back on 2026-11-25: an unlock may no longer move below an ingredient from
-another skill, so Elixir of Ironskin stays at 8 with its Clay (week 2: check whether Clay follows its Deposit to 6) and the arrows stay with their
-arrowheads.*
+*Flagged by the solver, left alone by the owner's rule that gaps beat filler.*
 
-| Skill | Empty stretches |
+| Skill | Stretches |
 |---|---|
-| Alchemy | 2-7, 51-59, 81-89, 91-98 |
-| Construction | 2-9, 11-19, 21-39, 41-47, 49-59, 61-79, 86-98 |
-| Crafting | 87-98 |
-| Farming | 81-86, 88-98 |
-| Fishing | 2-11, 13-21, 31-47, 49-82, 84-98 |
-| Fletching | 9-19, 32-39, 42-47, 49-59, 62-67, 69-79, 86-98 |
-| Forestry | 14-19, 41-49, 51-59, 61-79, 81-98 |
-| Mining | 21-29, 31-39, 51-59, 61-69, 71-79, 91-98 |
-| Tailor | 92-98 |
+| Alchemy | 2-7 (27 min), 51-59 (under a day) |
+| Fishing | 6-14, 16-24, 31-39 (each under 5 hours) |
+| Fletching | 9-19, 32-39, 42-47, 49-59, 62-67 (each under a day) |
+| Forestry | 11-19, 41-49, 51-59 (each under a day) |
+| Mining | 2-7, 21-29, 31-39, 51-59 (each under a day) |
+| Construction | 2-9, 11-19, 21-39, 41-47, 49-59 (each under a day) |
+
+*Fishing's old list (2-11, 13-21, 31-47, 49-82, 84-98) was mostly the solver's mistake: it didn't
+count a catch with its own level (Salmon at 40, Lobster at 50, Swordfish at 63) as something new.*

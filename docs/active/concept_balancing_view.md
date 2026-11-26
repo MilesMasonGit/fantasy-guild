@@ -25,7 +25,7 @@ Status: built 2026-11-19 (approved by the owner 2026-11-19): the [Guild Balance 
 | Dial | Today | What it moves |
 |---|---|---|
 | Pace: minutes at level 1 | 3 | Every level's length |
-| Pace: each level longer by | 6.5 % | Quick early, slow late |
+| Pace: each level longer by | 6.25 % (owner's range 6 to 6.5 %, 2026-11-25) | Quick early, slow late |
 | Old task slowdown a tier later | 2x | How hard staying on an old task gets |
 | Action time growth every 20 levels | 1.15 | Late cycles' length |
 | Base seconds: gather, prepare, make | 6, 8, 12 | Every action's length |

@@ -1,38 +1,34 @@
 {
-  "title": "First run: food and drink, metal and gear",
+  "title": "Second run: every non-combat skill",
   "date": "2026-11-25",
-  "summary": "Both trial chains sit on the curve: Cooking and Smithing each reach 99 in 15.2 to 15.3 days for an optimized player (the curve says 15.3) and about 28 days for a typical one, with no empty stretches in either. The run fixed three slips in the page's own sums, and the owner approved two rule changes the same day.",
+  "summary": "Every skill the rules can time reaches 99 in 12.3 to 12.8 days for an optimized player and about 23 days for a typical one, at the new 6.25 % pace. No stretch anywhere is a wall. Fifteen stretches of more than a day with nothing new, all from level 60 up, went to the content session. Eight rulings were approved today.",
   "checked": [
-    "Cooking: 99 recipes, one per level from 1 to 99. No level is more than 15 % off the curve, and every new recipe pays more than the one before. No empty stretches.",
-    "Smithing: 77 recipes. No level is more than 15 % off the curve, and every new recipe pays more than the one before. No empty stretches; the longest run with nothing new is 5 levels (93 to 98).",
-    "Every ingredient arrives in time: the worst wait is a new metal's ingot waiting about 20 minutes on its ore, far inside the wall rule.",
-    "Gathering behind the work: a darkmetal Chestplate needs about 10 minutes of gathering for 69 seconds at the anvil, in line with the rules' 9 gatherers per crafter at darkmetal with no boosts.",
+    "Pace, all twelve skills: no level is slower than 1.3x the curve. The slowest is the end of Forestry's run from 81 to 98.",
+    "Empty stretches: 33 flagged. 15 last more than a day of typical play and are on the gaps list; 2 in Construction wait on its repeatable work; the rest last minutes or hours and are left alone.",
+    "Fishing: most of its old stretches were the page's mistake. It didn't count a catch with its own level (Salmon at 40, Lobster at 50, Swordfish at 63) as something new. Fishing now has 17 unlocks, not 8, and Cooked Salmon no longer shows as arriving at the start of the game.",
+    "Cooking and Smithing (first run, same day): on the curve, no empty stretches, every new recipe pays more than the one before.",
     "Not checked yet: the ledger's own timing. The ledger read-out isn't built and the plan isn't in the CMS, so these are the page's numbers only."
   ],
   "moved": [
-    "Fixed: late food was costed like armour. A Voidcap Pie took 3 Dough (the page read cap), a Harvest Platter 5 Bread (vest), Swordfish in Sofrito 2 Sofrito (sword). Food, drinks and potions now always take 1 of a made ingredient.",
-    "Fixed: Water is 1 in every recipe, as the rules say. Late soups and teas were asking for 3 to 5 Water.",
-    "Fixed: an unlock no longer moves below the level of an ingredient from another skill. Elixir of Ironskin stays at 8 (it had moved to 6, below its Clay), and four arrows stay with their arrowheads. This brings back an empty stretch at Alchemy 2 to 7 and two short ones in Fletching, for week 2.",
-    "Adjusted, inside the limits: action lengths are trimmed by up to 15 % so whole XP pays the rule's XP an hour exactly. A Copper Ingot is 8.9 s for 3 XP (was 8.1 s), a Copper Dagger 11.5 s for 4 XP (was 12.2 s). Early recipes no longer pay unevenly from rounding.",
-    "Unlock moves in the two chains: Copper Chestplate 13 to 16 and Adamantine Chestplate 73 to 76, each to break up a long run with nothing new before the next metal.",
-    "Approved by the owner, 2026-11-25: the optimized player's boosts climb level by level between tiers instead of stepping up at each one. A new tier's first recipes used to pay up to 17 % less than the old tier's last (Coconut Pie at 80 against Coconut Swordfish at 79); now none does.",
-    "Approved by the owner, 2026-11-25: gear takes 50 % longer for each bar past the first, up from 20 %. A Chestplate takes 3x a Dagger (40 s at copper, 69 s at darkmetal) and a bar spent on Daggers earns 1.7x a bar spent on Chestplates, down from 2.8x.",
-    "Approved by the owner, 2026-11-25: a recipe with a made base (a stew on Sofrito, a potion on a Draught, a pie on Dough) takes 1 of each raw ingredient at every level. The page already worked this way; the rules page now says so.",
-    "Approved by the owner, 2026-11-25: a Fletching craft makes 40 arrows from 40 Arrowheads, and a bar makes 40 Arrowheads or 40 Kunai. Keeping one archer shooting non-stop costs about half a hero's work at copper and 1.4 heroes at darkmetal with no boosts.",
-    "Approved by the owner, 2026-11-25: a drink lasts 50 work cycles and a craft makes 5, so one craft covers 250 cycles: roughly 8 to 15 minutes of work a drink, 4 to 7 drinks a hero an hour. Every planned drink pays back at least 4x except Sunset Punch at 95, a little short.",
-    "Approved by the owner, 2026-11-25: a bar makes 5 Nails, or 1 Ring Band, Chain or Gears. XP goes by the time a craft takes, however many it makes.",
-    "The Item numbers view has a Makes column."
+    "Approved by the owner, 2026-11-25: the pace step's range is 6 % to 6.5 % a level, to tighten the late game; the page uses 6.25 %, the middle, until the boosts are balanced. Level 98 takes 18 hours instead of 22.5, levels 81 to 98 take 8.4 days optimized and 16 typical (were 10 and 20), and levels 1 to 60 barely change.",
+    "Approved by the owner, 2026-11-25: a gap for content is a stretch of more than a day of typical play with nothing new.",
+    "Approved by the owner, 2026-11-25: the optimized player's boosts climb level by level between tiers, so a new tier's first recipes never pay less than the old tier's last.",
+    "Approved by the owner, 2026-11-25: gear takes 50 % longer for each bar past the first. A Chestplate takes 3x a Dagger.",
+    "Approved by the owner, 2026-11-25: a recipe with a made base takes 1 of each raw ingredient at every level.",
+    "Approved by the owner, 2026-11-25: a Fletching craft makes 40 arrows; a bar makes 40 Arrowheads or 40 Kunai, or 5 Nails.",
+    "Approved by the owner, 2026-11-25: a drink lasts 50 work cycles and a craft makes 5.",
+    "Fixed: a Token no longer moves off the level of what it gives, and a catch stays on the level of the recipe that uses it. The page had moved the Oyster Bed, the Clay Deposit, the Hollow Tree and Seaweed away from their items. 12 unlocks still move, each by 3 levels, to break up a thin stretch.",
+    "Fixed earlier today: food costed like armour, Water counts, unlocks moving below an ingredient, and action lengths trimmed so whole XP pays exactly."
   ],
   "proposals": [],
   "gaps": [
-    "Cooking and Smithing: none.",
-    "The other skills' stretches are still the solver's raw list, to be reviewed in week 2: docs/active/balance_gaps.md."
+    "15 stretches are open for the content session, in docs/active/balance_gaps.md. The longest: Forestry 81 to 98 (17 days typical on Ebony alone), Fletching 86 to 98 and Crafting 87 to 98 (13 days each), Farming 88 to 98 (12 days).",
+    "Nine of the fifteen are a skill's last run to 99. Smithing and Cooking don't have one, because they have something new at 98 and 99.",
+    "Cooking, Smithing and Enchanting: none."
   ],
   "waiting": [
-    "On the director: the ledger read-out and the ledger's new tiers and boost budget (brief 880, L1 to L3); and with the first number pack, the drink's 50-cycle dose in the game (today it is 10).",
-    "On the content session: the plan in the CMS as Planned entries. No number pack before that.",
-    "On the balancer, with the Alchemy run in week 2: how long a work potion lasts and how many a craft makes.",
-    "The rules page's metal and Bread examples are regenerated from the solver. Its XP table and boost budget are unchanged.",
-    "For the content session to look at: Arrowheads unlock later than the arrows that need them (Copper Arrowheads at Smithing 8, Copper Arrow at Fletching 2; the same at every metal), so each new arrow waits on Smithing."
+    "On the director: the ledger read-out and the ledger's new tiers and boost budget (brief 880, L1 to L3). The ledger's pace curve should use the 6.25 % points in BALANCE_RULES section 1, not the 6.5 % ones. With the first number pack: the new XP table (9.4 million XP to 99) and the drink's 50-cycle dose.",
+    "On the content session: the plan in the CMS as Planned entries, and the fifteen gaps. Also to look at: Arrowheads unlock later than the arrows that need them at every metal.",
+    "On the balancer: a work potion's dose and batch, and Construction once its repeatable work is planned."
   ]
 }

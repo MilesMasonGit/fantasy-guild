@@ -25,7 +25,7 @@ Status: approved 2026-11-07, amended the same day after a critical review and th
 
 ## 1. XP
 
-**The pace curve is one smooth rule** (owner, 2026-11-07): "I want our progression curve to be consistent across the game." **Each level takes 6.5 % longer than the one before**, starting at 3 minutes: about 5 minutes at 10, 35 at 40, 2 hours at 60, 7 at 80, 14 at 90 and a day at 99. **One skill's climb is about 15 days** for a well-optimized player, so the whole game is about 6 weeks optimized and about 2 to 3 months for a typical player. This replaces the ladder's points (12 hours at 60, a day at 99, 34 days a skill): a single percentage can't keep all three of 3 minutes at 1, a day at 99 and 34 days, and the owner kept the first two. *Confirmed 2026-11-25 (owner) for the first XP pass; the CMS Ledger's pace curve writes it as points, in minutes a level: 1 = 3, 10 = 5, 20 = 10, 30 = 19, 40 = 35, 50 = 66, 60 = 123, 70 = 231, 80 = 434, 90 = 815, 99 = 1437.*
+**The pace curve is one smooth rule** (owner, 2026-11-07): "I want our progression curve to be consistent across the game." **Each level takes 6.25 % longer than the one before**, starting at 3 minutes: about 5 minutes at 10, 32 at 40, 1.8 hours at 60, 6 at 80, 11 at 90 and 19 at 99. **One skill's climb is about 12.6 days** for a well-optimized player and about 23 for a typical one. **The step's range is 6 % to 6.5 %** (owner, 2026-11-25: "I would want to tighten the level up speed for late game... our desired range is somewhere within 6% and 6.5%. This might vary as we balance the game, as we may have more powerful buffs added."); 6.25 % is the balancer's working value, the middle of the range, until the boosts are balanced. At 6.5 % levels 81 to 98 took 10 days optimized and 20 typical; at 6.25 % they take 8.4 and 16. *The CMS Ledger's pace curve writes it as points, in minutes a level: 1 = 3, 10 = 5, 20 = 9, 30 = 17, 40 = 32, 50 = 59, 60 = 107, 70 = 197, 80 = 361, 90 = 661, 99 = 1141 (these replace the 6.5 % points confirmed earlier on 2026-11-25).*
 
 **XP an hour doubles every 20 levels** (owner, 2026-11-07: "2x a tier"). A task unlocked at level L pays **1,660 × 2^((L − 1) / 20) XP an hour**. That's what level 1's 83 XP in 3 minutes makes, so the start stays as it is today.
 
@@ -34,19 +34,19 @@ Status: approved 2026-11-07, amended the same day after a critical review and th
 | Level | Minutes a level | XP an hour, new work | XP to the next level | XP to reach it |
 |---|---|---|---|---|
 | 1 | 3 min | 1,660 | 83 | 0 |
-| 5 | 4 min | 1,907 | 123 | 387 |
-| 10 | 5 min | 2,268 | 200 | 1,139 |
-| 20 | 10 min | 3,207 | 531 | 4,363 |
-| 30 | 19 min | 4,535 | 1,408 | 12,923 |
-| 40 | 35 min | 6,414 | 3,739 | 35,646 |
-| 50 | 66 min | 9,071 | 9,925 | 95,968 |
-| 60 | 2.1 h | 12,828 | 26,348 | 256,100 |
-| 70 | 3.9 h | 18,141 | 69,945 | 681,200 |
-| 80 | 7.2 h | 25,655 | 185,680 | 1,809,700 |
-| 90 | 13.6 h | 36,282 | 492,920 | 4,805,494 |
-| 98 | 22.5 h | 47,874 | 1,076,429 | 10,495,094 |
+| 5 | 4 min | 1,907 | 122 | 384 |
+| 10 | 5 min | 2,268 | 196 | 1,127 |
+| 20 | 9 min | 3,207 | 507 | 4,244 |
+| 30 | 17 min | 4,535 | 1,316 | 12,328 |
+| 40 | 32 min | 6,414 | 3,411 | 33,291 |
+| 50 | 59 min | 9,071 | 8,845 | 87,649 |
+| 60 | 1.8 h | 12,828 | 22,936 | 228,602 |
+| 70 | 3.3 h | 18,141 | 59,474 | 594,093 |
+| 80 | 6.0 h | 25,655 | 154,217 | 1,541,815 |
+| 90 | 11.0 h | 36,282 | 399,887 | 3,999,274 |
+| 98 | 17.9 h | 47,874 | 857,000 | 8,571,820 |
 
-About 11.6 million XP to 99. Today's table needs about 13 million.
+About 9.4 million XP to 99. Today's table needs about 13 million.
 
 **XP per action** = the XP an hour × the action's seconds ÷ 3,600 ÷ **the optimized boost factor** for that tier, rounded, at least 1. The factor is how much faster a well-optimized hero earns than a hero with no boosts (speed and XP boosts together), read from the boost budget (section 5). **Between tier openings the factor climbs level by level** (owner, 2026-11-25), in a straight line from one tier's budget to the next: with a step at each tier, a new tier's first recipes paid a hero up to 17 % less than the old tier's last ones for about three levels. The seconds are **the work cycle alone**: rests don't count, because the rest rule (section 2) keeps a lone hero busy most of the time.
 
@@ -54,7 +54,7 @@ About 11.6 million XP to 99. Today's table needs about 13 million.
 
 **Pick action seconds that give whole XP early on**: at 3 to 12 XP an action, rounding can be 13 % off. The solver does this itself (balancer, 2026-11-25): it rounds the XP, then trims the action's length by up to 15 % so the whole XP pays the rule's XP an hour exactly. A Copper Ingot is 8.9 s for 3 XP.
 
-- **An old task falls behind**: 2x slower a tier later, 4x two tiers on, and about 30x slower at 99. Reaching 99 on a level-1 task alone would take about 290 days of one hero's work.
+- **An old task falls behind**: 2x slower a tier later, 4x two tiers on, and about 30x slower at 99. Reaching 99 on a level-1 task alone would take about 237 days of one hero's work.
 - **Crafting and gathering pay the same an hour** at the same level (owner). A craft pays more per action only because it takes longer.
 - **Construction earns from builds and from repeatable work** (owner, 2026-11-21). A build pays XP by its price: the hours its materials took to gather, at the build's level's XP an hour, so a big build pays big. Builds alone leave Construction about 4x behind the curve to 20 and 8x to 85 (the ledger), so Construction also gets repeatable work between builds, priced like any make step; what that work is, the content agent proposes and the owner picks (T-656).
 - **Each link of a chain pays its own XP**, to its own skill. A late item earns the guild several skills' XP, and the guild pays for that in materials.

@@ -8,7 +8,7 @@ Every number on the rules page comes from here; change a constant, re-run, and c
 # The pace curve (owner, 2026-11-07): one smooth rule, each level 6.5 % longer than the last,
 # 3 minutes at level 1, for a well-optimized player.
 PACE_START_MINUTES = 3
-PACE_GROWTH = 1.065
+PACE_GROWTH = 1.0625     # the owner's range is 1.06 to 1.065 (2026-11-25); the midpoint until the boosts are balanced
 XP_HOUR_AT_1 = 1660      # what level 1's 83 XP in 3 minutes makes an hour; keeps today's start
 OLD_TASK_PER_TIER = 2    # an old task is this many times slower 20 levels later (owner, 2026-11-07)
 CYCLE_BASE = {'gather': 6, 'prepare': 8, 'make': 12}   # seconds at level 0
