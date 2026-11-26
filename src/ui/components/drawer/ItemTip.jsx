@@ -58,7 +58,7 @@ function ownSwingFactor(item, style) {
     const rules = combatContributions(itemStatements(item?.id), { carried: true })
         .filter(c => c.type === EFFECT_TYPES.SWING_TIME && c.bucket === 'percentage');
     if (!rules.length) return 1;
-    const aggregator = new ModifierAggregator('item_tip');
+    const aggregator = new ModifierAggregator('tooltip_swing');
     for (const { type, value, category } of rules) {
         aggregator.addModifier({ type, value, bucket: 'percentage', source: 'item', ...(category ? { target: { category } } : {}) });
     }
