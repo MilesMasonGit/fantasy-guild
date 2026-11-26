@@ -96,3 +96,20 @@ curve, which no ruling of the owner's set.
 ## Open decisions (owner)
 
 Asked in the session of 2026-11-25; rulings recorded below as they come.
+
+## Rulings (owner, 2026-11-25)
+
+- **One total reward, tilted by purpose.** Every hour of work at a level is worth the same in total; a
+  Token or recipe leans toward XP or toward goods. A cycle that hands over valuable goods teaches less.
+  This replaces "all work at a level pays the same XP an hour" (BALANCE_RULES section 1); how far the
+  tilt goes is still to set.
+- **The balance rules are the one rulebook.** They set the XP curve and the worth curve; the
+  simulator's curves are set from them and the ledger checks the result (a director ticket).
+- **A lone hero at one node: bursts and waits**, busy about half the time. **A node is back in about 30
+  seconds** ("A five minute rest for a stump is far too long, it should be much shorter than that").
+  **More nodes in reach make one hero much faster**: with half the time spent waiting at one node, two
+  nodes in reach keep a hero fully busy, so a camp doubles a gatherer. This replaces the rest rule's
+  "busy at least 75 %".
+- **A normal late guild runs a few chains at a time**: the 8 heroes (the game's limit) staff two or
+  three supply chains and move between chains over days; a skill climbs only while its chain is
+  staffed. Neither tool models this yet: both give every skill its own hero and free gatherers.

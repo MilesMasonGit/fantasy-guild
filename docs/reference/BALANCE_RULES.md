@@ -56,7 +56,7 @@ About 9.4 million XP to 99. Today's table needs about 13 million.
 **Pick action seconds that give whole XP early on**: at 3 to 12 XP an action, rounding can be 13 % off. The solver does this itself (balancer, 2026-11-25): it rounds the XP, then trims the action's length by up to 15 % so the whole XP pays the rule's XP an hour exactly. A Copper Ingot is 8.9 s for 3 XP.
 
 - **An old task falls behind**: 2x slower a tier later, 4x two tiers on, and about 30x slower at 99. Reaching 99 on a level-1 task alone would take about 237 days of one hero's work.
-- **Crafting and gathering pay the same an hour** at the same level (owner). A craft pays more per action only because it takes longer.
+- **One total reward an hour, tilted by purpose** (owner, 2026-11-25, replacing "crafting and gathering pay the same XP an hour"): every hour of work at a level is worth the same in total, XP and goods together; a Token or recipe leans toward XP or toward goods, so work that hands over valuable goods teaches less. How far the tilt goes is not set yet; until it is, the solver pays every work the same XP an hour.
 - **Construction earns from builds and from repeatable work** (owner, 2026-11-21). A build pays XP by its price: the hours its materials took to gather, at the build's level's XP an hour, so a big build pays big. Builds alone leave Construction about 4x behind the curve to 20 and 8x to 85 (the ledger), so Construction also gets repeatable work between builds, priced like any make step; what that work is, the content agent proposes and the owner picks (T-656).
 - **Each link of a chain pays its own XP**, to its own skill. A late item earns the guild several skills' XP, and the guild pays for that in materials.
 - **Aimed at a well-optimized hero.** The ledger checks that a typical player lands about 1.5 to 2x slower and a player with no boosts no more than 3x slower, and nudges XP if not.
@@ -75,7 +75,7 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 
 **A make step takes longer the more bars it uses**: seconds × (1 + 0.5 × (count − 1)). A Chestplate (5 bars) takes 3x a Dagger (1 bar): about 40 s for a Copper Chestplate, 69 s for a Darkmetal one. *Owner, 2026-11-25, raised from 0.2:* at 0.2 a bar spent on Daggers earned 2.8x the XP of a bar spent on Chestplates, so a guild short on ore ground Daggers; at 0.5 it is 1.7x, still the thrifty choice and no longer the only sensible one.
 
-**The rest rule**: a gathering Token's uses × its cycle is at least 3 × its rest, so one hero on one copy is busy at least 75 % of the time. Today's veins hold 5 uses of 3 to 4 seconds, then rest 60 to 90 seconds, so a lone hero waits most of the time and a camp of three copies earns 3 to 4x as much (review, from `rates.js`).
+**The rest rule** (owner, 2026-11-25, replacing "busy at least 75 %"): **a lone hero at one node works in bursts and waits, busy about half the time, and a node is back in about 30 seconds.** So a node's uses × its cycle is about 30 seconds of work (five uses of 6 seconds), then about 30 seconds of rest or regrowth. **A second node in reach keeps the hero fully busy**: a camp doubles a gatherer, and nodes past that are room for more heroes. ⚠️ Today's nodes are far from it: an Oak Tree is 15 seconds of work and a 5-minute stump (busy 5 %), a Copper Vein 15 seconds and a minute's rest (busy 20 %); the number pack brings them to the rule. The reference set-ups: bare is one node (half busy), typical and optimized a camp with two or more (fully busy).
 
 ## 3. Ingredient counts
 
