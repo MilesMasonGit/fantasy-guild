@@ -13,7 +13,7 @@ import { getTokenType, getAllTokenTypes, registerTokenTypes } from '../config/re
 import { setStarterCampForTests, resetStarterCampForTests } from '../config/registries/starterCampRegistry.js';
 import { recipesForToken } from '../config/registries/recipePoolRegistry.js';
 import { getItem, getAllItems, registerItems } from '../config/registries/itemRegistry.js';
-import { starterToolIds, neededToolOf, toolOf, toolMeets } from '../config/registries/toolKinds.js';
+import { starterToolIds, toolOf, toolMeets } from '../config/registries/toolKinds.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { catchPoolsOf } from '../config/registries/catchPools.js';
 import { stationSkillOf } from '../systems/effects/statements.js';
@@ -22,7 +22,9 @@ import {
 } from '../config/guildUpgrades.js';
 
 import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
-import { effectYields, worldTokens, arrivingSpots, planeWorld, wellItems } from './fixtures/planeReach.js';
+import {
+    effectYields, worldTokens, arrivingSpots, planeWorld, wellItems, poolsOnPlanes, planeNeedOf, rareFindsOf
+} from './fixtures/planeReach.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -222,7 +224,8 @@ describe('a new game opens in the Starter Camp the owner laid out', () => {
  * Close over what the player can get: Tokens (in the Starter Camp, drifting in on its water or a
  * world cell's ({@link arrivingSpots}), bought, spawned, grown,
  * built, ambushing) and items (the camp's Bank and the starter tools, trickle, worked from a
- * Token whose inputs are already reachable, caught from water's catch pools, a bonus drop of an
+ * Token whose inputs are already reachable with its rare finds, caught from the catch pools that
+ * bite on the planes' ground ({@link poolsOnPlanes}), a bonus drop of an
  * effect on a reachable Token or item, the Wishing Well's Water). A Token is bought
  * once its whole price is reachable; a recipe runs once its inputs are; a Token whose work needs a
  * tool is worked once a tool that will do is. The world map's cells of rings up to `maxPlane` write
@@ -244,7 +247,7 @@ function reachable({ maxPlane = 2 } = {}) {
     const all = Object.values(getAllTokenTypes());
     const have = (list) => (list || []).every(x => items.has(x.itemId));
     const toolFor = (def) => {
-        const need = neededToolOf(def);
+        const need = planeNeedOf(def);
         return !need || [...items].some(id => toolMeets(toolOf(getItem(id)), need));
     };
     const gain = (outputs) => {
@@ -269,10 +272,11 @@ function reachable({ maxPlane = 2 } = {}) {
                 const fx = effectYields(def);
                 for (const id of fx.items) items.add(id);
                 for (const id of fx.tokens) tokens.add(id);
+                for (const id of rareFindsOf(def)) items.add(id);
             }
             // Water lands its catch instead of its Outputs: a pool bites once a tool of its kind is
             // in hand and its bait (if any) can be had.
-            for (const pool of catchPoolsOf(def)) {
+            for (const pool of poolsOnPlanes(def)) {
                 const tool = [...items].some(id => toolOf(getItem(id))?.kind === pool.tool);
                 if (!tool || (pool.bait && !items.has(pool.bait))) continue;
                 for (const c of pool.catches) items.add(c.itemId);
@@ -428,7 +432,8 @@ function makersOf(itemId) {
             ...(def.config?.outputs || []),
             ...(def.trickle || []),
             ...catchPoolsOf(def).flatMap(p => p.catches),
-            ...effectYields(def).items.map(id => ({ itemId: id }))
+            ...effectYields(def).items.map(id => ({ itemId: id })),
+            ...rareFindsOf(def).map(id => ({ itemId: id }))
         ];
         if (lines.some(o => o.itemId === itemId)) makers.push(def.id);
         for (const r of recipesForToken(def) || []) {

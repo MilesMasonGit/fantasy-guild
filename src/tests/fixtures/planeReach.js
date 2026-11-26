@@ -2,8 +2,9 @@ import * as StarterCamp from '../../systems/atlas/StarterCamp.js';
 import { getTokenType, getAllTokenTypes } from '../../config/registries/tokenRegistry.js';
 import { recipesForToken } from '../../config/registries/recipePoolRegistry.js';
 import { getItem, getAllItems } from '../../config/registries/itemRegistry.js';
-import { starterToolIds, neededToolOf } from '../../config/registries/toolKinds.js';
-import { catchPoolsOf } from '../../config/registries/catchPools.js';
+import { starterToolIds, neededToolOf, isToolKind } from '../../config/registries/toolKinds.js';
+import { catchPoolsOf, hasCatchPools, poolFits } from '../../config/registries/catchPools.js';
+import { rareTableOf } from '../../config/registries/rareTables.js';
 import { worldTables } from '../../config/registries/worldTablesRegistry.js';
 import { spotOf, arrivesByItself, groundWaterKinds } from '../../config/registries/fishingSpots.js';
 import { kitBiome } from '../../config/worldTablesShape.js';
@@ -85,12 +86,7 @@ export function worldTokens(maxRing) {
  * kit, as any may draw any extra its ring allows. A spot kind that only an event lands is not here.
  */
 export function arrivingSpots() {
-    const tables = worldTables();
-    const places = [STARTER_CAMP_GROUND, ...tables.kits.map((kit) => {
-        const biome = kitBiome(tables, kit.id);
-        const row = biomeRow(tables, biome);
-        return { biome, waters: groundWaterKinds(row.sea[1], row.water) };
-    })];
+    const places = planePlaces();
     const fits = (spot, place) => (!spot.biomes.length || spot.biomes.includes(place.biome))
         && spot.water.some(w => place.waters.includes(w));
     return Object.values(getAllTokenTypes())
@@ -99,12 +95,49 @@ export function arrivingSpots() {
 }
 
 /**
+ * The ground a Token of the planes may stand on, `{ biome, waters }`: the Starter Camp's and that of
+ * every kit a world cell may draw, with the water its biome's terrain row may roll.
+ */
+export function planePlaces() {
+    const tables = worldTables();
+    return [STARTER_CAMP_GROUND, ...tables.kits.map((kit) => {
+        const biome = kitBiome(tables, kit.id);
+        const row = biomeRow(tables, biome);
+        return { biome, waters: groundWaterKinds(row.sea[1], row.water) };
+    })];
+}
+
+/**
+ * A water's catch pools that hold somewhere the planes' ground is (`catchPools.poolFits`): a pool
+ * naming only biomes or water the planes never hold bites later, not here.
+ */
+export function poolsOnPlanes(def) {
+    const places = planePlaces();
+    return catchPoolsOf(def).filter(pool => places.some(place => (place.waters.length ? place.waters : [null])
+        .some(water => poolFits(pool, { water, biomes: [place.biome] }))));
+}
+
+/**
+ * The tool a Token's work needs on the planes: a water's kinds from the pools that bite there
+ * ({@link poolsOnPlanes}), none when none does; any other Token's own need (`neededToolOf`).
+ */
+export function planeNeedOf(def) {
+    if (!hasCatchPools(def)) return neededToolOf(def);
+    const kinds = [...new Set(poolsOnPlanes(def).map(pool => pool.tool))].filter(isToolKind);
+    return kinds.length ? { kind: kinds[0], kinds, minTier: 1 } : null;
+}
+
+/** The items a Token's rare drop table may land on a cycle or a kill (`rareTables.js`). */
+export const rareFindsOf = (def) => (rareTableOf(def)?.entries || []).map(e => e.itemId).filter(Boolean);
+
+/**
  * What planes 1 to `maxPlane` put in the game, on paper: the Starter Camp, the Shop, and every Token
  * the world map's rings up to it write, followed through everything those Tokens spawn, grow
  * into or build, whether or not their inputs can be had. `produced` is every item that world makes,
- * drops or pays; `asked` every item it asks for (inputs, prices, costs, bait), each with who asks;
- * `needs` the tools its work needs; `built` the Tokens it builds or sells. This is the list the
- * reachability check holds to account.
+ * drops (its rare finds among them) or pays, and catches from the pools that bite on its ground;
+ * `asked` every item it asks for (inputs, prices, costs, bait), each with who asks; `needs` the
+ * tools its work needs there ({@link planeNeedOf}); `built` the Tokens it builds or sells. This is
+ * the list the reachability check holds to account.
  */
 export function planeWorld(maxPlane = 2) {
     const camp = StarterCamp.starterCamp();
@@ -150,10 +183,11 @@ export function planeWorld(maxPlane = 2) {
                 const fx = effectYields(def);
                 for (const id of fx.items) produced.add(id);
                 for (const id of fx.tokens) tokens.add(id);
+                for (const id of rareFindsOf(def)) produced.add(id);
             }
-            const need = neededToolOf(def);
+            const need = planeNeedOf(def);
             if (need) needs.set(typeId, need);
-            for (const pool of catchPoolsOf(def)) {
+            for (const pool of poolsOnPlanes(def)) {
                 for (const c of pool.catches) produced.add(c.itemId);
                 if (pool.bait) ask([{ itemId: pool.bait }], `${typeId} (bait)`);
             }
