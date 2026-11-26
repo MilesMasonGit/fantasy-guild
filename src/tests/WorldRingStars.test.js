@@ -14,7 +14,7 @@ import { ringLock, ringStarsOf, ringOfStar } from '../systems/world/ringStars.js
 import { normaliseStar, normaliseHallSky } from '../config/hallStars.js';
 import { getUpgradeDef, getUpgradePrice, authoredStars, skyWithFallback } from '../config/guildUpgrades.js';
 import { registerHallSky, authoredHallSky } from '../config/registries/hallStarRegistry.js';
-import { installRingStars, meetFrontierPrices } from './fixtures/worldQa.js';
+import { installRingStars, meetFrontierPrices, stockSettleCoins } from './fixtures/worldQa.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { starSentence, starAmount, RING_STAR_TEXT } from '../systems/progression/hallStarText.js';
 import { outlineSpriteName } from '../ui/components/board/hallStarOutline.js';
@@ -61,7 +61,7 @@ function newGame() {
     World.createWorld({ seed: SEED });
 }
 
-/** A hero at every level the price of `cell` asks, and its items in the Bank. */
+/** A hero at every level the price of `cell` asks, its items in the Bank and its coins in the purse. */
 function meet(cell) {
     GameState.state.progress.rosterLimit = 4;
     const hero = HeroManager.getAllHeroes().find(h => !h.isVillager) || HeroManager.addHero(generateHero());
@@ -70,6 +70,7 @@ function meet(cell) {
         if (xp < xpForLevel(level)) addXP(hero.id, skill, xpForLevel(level) - xp);
     }
     for (const { itemId, qty } of cell.requires.items) InventoryManager.addItem(itemId, qty);
+    stockSettleCoins(cell);
 }
 
 const world = () => World.currentWorld();

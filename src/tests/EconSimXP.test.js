@@ -17,6 +17,7 @@ import { runSim } from '../../cms/src/engine/sim/simRunner.js';
 import { adaptCorpus } from '../../cms/src/engine/sim/fieldAdapter.js';
 import { applyTokenResults, applyRecipePoolResults } from '../../cms/src/engine/sim/writeBack.js';
 import { xpForLevel } from '../utils/XPCurve.js';
+import { isEnemyDef } from '../config/registries/enemyProfile.js';
 
 import tokenData from '../../data/tokens.json';
 import recipeData from '../../data/tokenRecipes.json';
@@ -322,17 +323,24 @@ describe('the gold ladder', () => {
 // === Write-back ==============================================================
 
 describe('write-back — only the fields the runtime reads (finding S18)', () => {
-    it('writes a recipe’s `xp` and a Token’s `config.xp`', () => {
+    it('writes a recipe’s `xp` and a Token’s `config.xp`; never onto an enemy, whose kill pays its level’s', () => {
         const sim = runSim({ tokens: tokenData, recipes: recipeData, items: itemData });
         const tokens = applyTokenResults(tokenData, sim);
         let written = 0;
+        let enemies = 0;
         for (const [id, token] of Object.entries(tokens)) {
             const derived = sim.xp.get(token?.id ?? id);
             if (derived === undefined) continue;
-            expect(token.config.xp).toBe(derived);
+            if (isEnemyDef(token)) {
+                expect(token.config.xp, id).toBe(tokenData[id].config.xp);
+                enemies += 1;
+                continue;
+            }
+            expect(token.config.xp, id).toBe(derived);
             written += 1;
         }
         expect(written).toBeGreaterThan(0);
+        expect(enemies).toBeGreaterThan(0);
     });
 
     it('leaves a Token’s dead top-level `xp` exactly as authored', () => {

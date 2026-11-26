@@ -6,6 +6,7 @@ import * as Orders from '../systems/board/Orders.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
+import { addCoins } from '../systems/inventory/Coins.js';
 import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { openingMat } from '../systems/core/EngineBootstrap.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
@@ -26,6 +27,11 @@ const idAt = (i) => tokenAt(i)?.id ?? null;
 /** Put a Token on spot `i`, and send a hero there. */
 const put = (i, instance) => Placement.placeTokenAt(instance, C(i));
 const sendTo = (heroId, i) => Orders.orderAt(heroId, C(i));
+/** Everything the next rank of an upgrade asks, its items in the Bank and its coins in the purse. */
+const stockNext = (id) => {
+    GuildUpgradeManager.getNextCost(id).forEach(p => InventoryManager.addItem(p.itemId, p.quantity));
+    addCoins(GuildUpgradeManager.getRanksCoins(id, 1));
+};
 
 describe('Guild Hall Mobile Token (New Token System)', () => {
     beforeEach(() => {
@@ -117,10 +123,8 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
             const before = { config: ghDef.config, tokenType: ghDef.tokenType, requiresHero: ghDef.requiresHero };
             expect(ghDef.config).toBeNull();
 
-            expect(GuildUpgradeManager.purchase('wishing_well').success).toBe(true);   // rank 1 is free
-            for (let i = 0; i < 2; i++) {
-                GuildUpgradeManager.getNextCost('wishing_well')
-                    .forEach(p => InventoryManager.addItem(p.itemId, p.quantity));
+            for (let i = 0; i < 3; i++) {
+                stockNext('wishing_well');
                 expect(GuildUpgradeManager.purchase('wishing_well').success).toBe(true);
             }
             expect(GuildUpgradeManager.getRank('wishing_well')).toBe(3);
@@ -135,13 +139,14 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
             BoardRunner.tick(PASSIVE_LAP_BASE_MS);
             expect(water()).toBe(0);                                // rank 0: no Water
 
+            stockNext('wishing_well');
             GuildUpgradeManager.purchase('wishing_well');            // rank 1
             BoardRunner.tick(PASSIVE_LAP_BASE_MS - 1);
             expect(water()).toBe(0);
             BoardRunner.tick(1);
             expect(water()).toBe(10);
 
-            GuildUpgradeManager.getNextCost('wishing_well').forEach(p => InventoryManager.addItem(p.itemId, p.quantity));
+            stockNext('wishing_well');
             GuildUpgradeManager.purchase('wishing_well');            // rank 2
             BoardRunner.tick(PASSIVE_LAP_BASE_MS);
             expect(water()).toBe(30);
@@ -149,6 +154,7 @@ describe('Guild Hall Mobile Token (New Token System)', () => {
 
         it("a hero dropped on the Hall changes nothing: no work cycle, the same timer", () => {
             SpriteLayer.init();
+            stockNext('wishing_well');
             GuildUpgradeManager.purchase('wishing_well');
             const gh = BoardState.createTokenInstance('token_guild_hall');
             put(24, gh);

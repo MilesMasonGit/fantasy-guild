@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
+import { getCoins, addCoins } from '../systems/inventory/Coins.js';
 import {
     isUpgradeAccessible, getUpgradeLinks, getUpgradeWebLinks, getLockDetail, LOCK_KIND, HALL_NODE,
     getUpgradePrice, getUpgradeDef,
@@ -20,6 +21,15 @@ const stock = (price) => price.forEach(p => InventoryManager.addItem(p.itemId, p
 
 /** The price of the next rank of an upgrade, as the manager sees it. */
 const nextPrice = (id) => GuildUpgradeManager.getNextCost(id);
+
+/** The coins the next rank of an upgrade asks beside its items. */
+const nextCoins = (id) => GuildUpgradeManager.getRanksCoins(id, 1);
+
+/** Everything the next rank of an upgrade asks, its items in the Bank and its coins in the purse. */
+const stockNext = (id) => {
+    stock(nextPrice(id));
+    addCoins(nextCoins(id));
+};
 
 withOuterUpgrade();
 
@@ -135,7 +145,7 @@ describe('Guild Hall upgrade web', () => {
     });
 
     it('keeps ranks keyed by upgrade id, so saves need no migration', () => {
-        stock(nextPrice('bank_tabs'));
+        stockNext('bank_tabs');
         expect(GuildUpgradeManager.purchase('bank_tabs').success).toBe(true);
         expect(GameState.state.progress.guildUpgrades).toEqual({ bank_tabs: 1 });
         // A save written before B9 carries the same shape and opens the same way.
@@ -150,11 +160,13 @@ describe('Guild Hall upgrade web', () => {
         expect(res.error).toContain('Requires a linked upgrade');
     });
 
-    it('allows purchasing roster_size rank 0 for free and recruits initial starter hero', () => {
+    it('allows purchasing roster_size rank 0 with no items and recruits initial starter hero', () => {
         expect(GameState.heroes.length).toBe(0);
         const def = getUpgradeDef('roster_size');
-        // The first recruit is free: an empty item list, and an empty Bank pays it.
+        // The first recruit asks no items: an empty item list, and an empty Bank pays it with the
+        // rank's coins. A new game holds this rank from the start (`createFirstHero`).
         expect(getUpgradePrice(def, 0)).toEqual([]);
+        addCoins(nextCoins('roster_size'));
 
         const res = GuildUpgradeManager.purchase('roster_size');
         expect(res.success).toBe(true);
@@ -169,12 +181,13 @@ describe('Guild Hall upgrade web', () => {
     // Was 'charges gold' until slice 2.1: Hall upgrades now cost items, so
     // the second recruit is paid from the Bank and gold is left alone.
     it('recruits another hero on subsequent roster_size upgrades by paying items', () => {
-        GuildUpgradeManager.purchase('roster_size'); // Rank 1 (free)
+        stockNext('roster_size');
+        GuildUpgradeManager.purchase('roster_size'); // Rank 1 (no items)
         expect(GameState.heroes.length).toBe(1);
 
         const price = nextPrice('roster_size');
         expect(price.length).toBeGreaterThan(0);
-        stock(price);
+        stockNext('roster_size');
 
         const res = GuildUpgradeManager.purchase('roster_size'); // Rank 2
         expect(res.success).toBe(true);
@@ -182,19 +195,20 @@ describe('Guild Hall upgrade web', () => {
         expect(GameState.heroes.length).toBe(2);
         expect(GameState.progress.rosterLimit).toBe(ROSTER_BASE + 2);
         price.forEach(p => expect(InventoryManager.getItemCount(p.itemId)).toBe(0));
+        expect(getCoins()).toBe(0);
         expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
     });
 
     it('unlocks dependent tracks upon upgrading predecessor', () => {
         expect(isUpgradeAccessible(OUTER, GuildUpgradeManager.getRanks())).toBe(false);
 
-        stock(nextPrice('bank_tabs'));
+        stockNext('bank_tabs');
         GuildUpgradeManager.purchase('bank_tabs');
         expect(GuildUpgradeManager.getRank('bank_tabs')).toBe(1);
 
         // Now the star beyond it is open and purchasable
         expect(isUpgradeAccessible(OUTER, GuildUpgradeManager.getRanks())).toBe(true);
-        stock(nextPrice(OUTER));
+        stockNext(OUTER);
         const res = GuildUpgradeManager.purchase(OUTER);
         expect(res.success).toBe(true);
         expect(GuildUpgradeManager.getRank(OUTER)).toBe(1);
@@ -245,20 +259,23 @@ describe('Guild Hall upgrades are paid in items', () => {
         ]);
     });
 
-    it('succeeds and deducts exactly the price from the Bank, leaving gold alone', () => {
+    it('succeeds and deducts exactly the price from the Bank and the purse, leaving gold alone', () => {
         const [{ itemId, quantity }] = nextPrice('bank_tabs');
         InventoryManager.addItem(itemId, quantity + 7);
+        addCoins(nextCoins('bank_tabs') + 5);
 
         const res = GuildUpgradeManager.purchase('bank_tabs');
         expect(res.success).toBe(true);
         expect(GuildUpgradeManager.getRank('bank_tabs')).toBe(1);
         expect(InventoryManager.getItemCount(itemId)).toBe(7);
+        expect(getCoins()).toBe(5);
         expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
     });
 
     it('refuses when the Bank is short, names what is missing, and takes nothing', () => {
         const [{ itemId, quantity }] = nextPrice('bank_tabs');
         InventoryManager.addItem(itemId, quantity - 1);
+        addCoins(nextCoins('bank_tabs'));
 
         const res = GuildUpgradeManager.purchase('bank_tabs');
         expect(res.success).toBe(false);
@@ -267,6 +284,7 @@ describe('Guild Hall upgrades are paid in items', () => {
         expect(res.error).toContain(`have ${quantity - 1}`);
         expect(GuildUpgradeManager.getRank('bank_tabs')).toBe(0);
         expect(InventoryManager.getItemCount(itemId)).toBe(quantity - 1);
+        expect(getCoins()).toBe(nextCoins('bank_tabs'));
         expect(GameState.state.currency).toBeUndefined();   // no gold anywhere (9.4)
     });
 
@@ -278,6 +296,7 @@ describe('Guild Hall upgrades are paid in items', () => {
         def.prices = [[first, { itemId: 'item_charcoal', quantity: 3 }], ...saved.slice(1)];
         try {
             InventoryManager.addItem(first.itemId, first.quantity);
+            addCoins(nextCoins('bank_tabs'));
             const res = GuildUpgradeManager.purchase('bank_tabs');
             expect(res.success).toBe(false);
             expect(res.error).toContain(getItem('item_charcoal').name);
@@ -298,13 +317,15 @@ describe('Guild Hall upgrades are paid in items', () => {
         for (let i = 0; i < 3; i++) {
             const price = nextPrice('bank_tabs');
             paid.push(price[0].quantity);
-            stock(price);
+            stockNext('bank_tabs');
             expect(GuildUpgradeManager.purchase('bank_tabs').success).toBe(true);
         }
         expect(paid).toEqual([10, 20, 30]);
     });
 
-    it('keeps the first recruit free on an empty Bank, then asks items for the second', () => {
+    it('asks no items for the first recruit, an empty Bank and its coins paying it, then items for the second', () => {
+        expect(GuildUpgradeManager.canAfford('roster_size')).toBe(nextCoins('roster_size') === 0);
+        addCoins(nextCoins('roster_size'));
         expect(GuildUpgradeManager.canAfford('roster_size')).toBe(true);
         expect(GuildUpgradeManager.purchase('roster_size').success).toBe(true);
         expect(GameState.heroes.length).toBe(1);
@@ -314,7 +335,7 @@ describe('Guild Hall upgrades are paid in items', () => {
         expect(refused.success).toBe(false);
         expect(GameState.heroes.length).toBe(1);
 
-        stock(nextPrice('roster_size'));
+        stockNext('roster_size');
         expect(GuildUpgradeManager.canAfford('roster_size')).toBe(true);
         expect(GuildUpgradeManager.purchase('roster_size').success).toBe(true);
         expect(GameState.heroes.length).toBe(2);

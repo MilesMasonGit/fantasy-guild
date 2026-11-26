@@ -16,6 +16,7 @@ import * as EquipmentManager from '../systems/equipment/EquipmentManager.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { EngineBootstrap } from '../systems/core/EngineBootstrap.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
+import { addCoins } from '../systems/inventory/Coins.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as BoardCombat from '../systems/board/BoardCombat.js';
@@ -200,12 +201,14 @@ describe('⭐ the lessons, step by step, through the real systems', () => {
         // 5. Buy Bunk Beds: another star does not count; Bunk Beds' next rank does, and brings a second hero.
         const bunkPrice = GuildUpgradeManager.getNextCost(LESSON_TARGETS.bunkBeds);
         for (const { itemId, quantity } of bunkPrice) give(itemId, quantity);
+        addCoins(GuildUpgradeManager.getRanksCoins(LESSON_TARGETS.bunkBeds, 1));
         expect(GuildUpgradeManager.purchase(LESSON_TARGETS.bunkBeds)).toMatchObject({ success: true });
         expect(GameState.heroes).toHaveLength(2);
         expect(step()).toBe('foundation');
 
         // 6. Buy a Wood Foundation (another purchase does not count), then build the Workbench on it.
         give('item_oak_wood', 40);
+        addCoins(Shop.listCoinsOf('token_farmland') + Shop.listCoinsOf(LESSON_TARGETS.foundation));
         const other = Shop.buy('token_farmland');
         expect(other.success, other.reason).toBe(true);
         Placement.removePlacedToken(other.instance.id);

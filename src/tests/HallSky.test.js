@@ -13,6 +13,7 @@ import { HallSky, SKY_TILE_PX, SKY_STARS_SRC, SKY_CLOUDS_SRC } from '../ui/compo
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
+import { addCoins } from '../systems/inventory/Coins.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import {
     GUILD_UPGRADES, CONSTELLATIONS, FALLBACK_CONSTELLATION_IDS, HALL_NODE, UPGRADE_SPRITES, getUpgradeDef, totalPrice
@@ -40,12 +41,13 @@ const SKY_SAMPLE_RANKS = { roster_size: 1, wishing_well: 10 };
 /** The stars the sample makes blue, by putting their next price in the Bank. */
 const SKY_SAMPLE_PAID = ['bank_tabs'];
 
-/** Put each upgrade's next price in the Bank, so the Bank can pay for it now. */
+/** Put each upgrade's next price in the Bank and its coins in the purse, so the guild can pay for it now. */
 function devGiveNextPrice(ids) {
     for (const id of ids) {
         for (const { itemId, quantity } of totalPrice(GuildUpgradeManager.getNextCost(id))) {
             InventoryManager.addItem(itemId, quantity);
         }
+        addCoins(GuildUpgradeManager.getRanksCoins(id, 1));
     }
 }
 
@@ -179,7 +181,7 @@ describe('the Hall sky: stars by state', () => {
     });
 
     it('outlines a star only under the pointer or keyboard focus, never at rest', () => {
-        InventoryManager.addItem('item_oak_wood', 10);
+        devGiveNextPrice(['bank_tabs']);
         const { container } = renderWeb({ selectedUpgradeId: 'bank_tabs' });
         // An affordable, pinned star at rest: blue, with no outline class or bouncing badge.
         const node = container.querySelector('[data-hall-node="bank_tabs"]');

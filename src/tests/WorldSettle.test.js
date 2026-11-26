@@ -20,6 +20,8 @@ import { HALL_CELL, CELL_STATE, settledIds, cellStates, priceRows, cellOutputs }
 import { cellsWithin, cellId } from '../systems/world/hex.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { getTokenType } from '../config/registries/tokenRegistry.js';
+import { getCoins } from '../systems/inventory/Coins.js';
+import { stockSettleCoins, settleCoinsOf } from './fixtures/worldQa.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -60,9 +62,10 @@ function heroFor(cell) {
     return hero;
 }
 
-/** Everything `cell`'s price asks for, put in the Bank. */
+/** Everything `cell`'s price asks for, put in the Bank, and the coins it asks in the guild's purse. */
 function stock(cell, extra = 0) {
     for (const { itemId, qty } of cell.requires.items) InventoryManager.addItem(itemId, qty + extra);
+    stockSettleCoins(cell, extra);
 }
 
 const world = () => World.currentWorld();
@@ -130,12 +133,15 @@ describe('⭐ settling a cell', () => {
         stock(cell, 3);
         const ids = cell.requires.items.map(i => i.itemId);
         const before = bankOf(ids);
+        const coinsBefore = getCoins();
+        const coinsAsked = settleCoinsOf(cell);
         const home = Atlas.activeRegionId();
         expect(World.priceOf(cell).met).toBe(true);
 
         const result = World.settleCell(cell.id);
         expect(result.success, result.reason).toBe(true);
         for (const { itemId, qty } of cell.requires.items) expect(InventoryManager.getItemCount(itemId), itemId).toBe(before[itemId] - qty);
+        expect(getCoins()).toBe(coinsBefore - coinsAsked);
         expect(result.region.cellId).toBe(cell.id);
         expect(Atlas.activeRegionId()).toBe(result.region.id);
         expect(Atlas.activeRegionId()).not.toBe(home);
@@ -203,6 +209,7 @@ describe('⭐ settling a cell', () => {
         stock(cell);
         const ids = cell.requires.items.map(i => i.itemId);
         const before = bankOf(ids);
+        const coinsBefore = getCoins();
         const regions = Object.keys(GameState.state.atlas.regions).length;
 
         // No hero has the skill.
@@ -214,6 +221,7 @@ describe('⭐ settling a cell', () => {
         InventoryManager.removeItem(ids[0], 1);
         expect(World.settleCell(cell.id)).toMatchObject({ success: false, reason: SETTLE_TEXT.SHORT });
         expect(bankOf(ids)).toEqual({ ...before, [ids[0]]: before[ids[0]] - 1 });
+        expect(getCoins()).toBe(coinsBefore);
         expect(Object.keys(GameState.state.atlas.regions)).toHaveLength(regions);
         expect(World.activeCellId()).toBe(HALL_CELL);
     });

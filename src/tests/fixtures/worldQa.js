@@ -12,16 +12,27 @@ import { seedFromText } from '../../systems/atlas/seededRandom.js';
 import { ORIGIN_ROLE } from '../../systems/world/generate.js';
 import { worldTables } from '../../config/registries/worldTablesRegistry.js';
 import { authoredHallSky, registerHallSky } from '../../config/registries/hallStarRegistry.js';
-import { authoredStars, getUpgradeDef, getUpgradePrice } from '../../config/guildUpgrades.js';
+import { authoredStars, getUpgradeDef, getUpgradePrice, getUpgradeCoins } from '../../config/guildUpgrades.js';
 import { ringStarsOf } from '../../systems/world/ringStars.js';
+import { getCoins, addCoins } from '../../systems/inventory/Coins.js';
 import { qaRingStarSky } from './qaRingStars.js';
+
+/** The coins settling `cell` asks now (the world tables' price for its ring), 0 for none. */
+export const settleCoinsOf = (cell) => World.priceOf(cell).coins?.need || 0;
+
+/** Top the guild's coins up to what settling `cell` asks, plus `extra`. */
+export function stockSettleCoins(cell, extra = 0) {
+    const short = settleCoinsOf(cell) + extra - getCoins();
+    if (short > 0) addCoins(short);
+}
 
 /**
  * Everything the frontier asks, put in place so any frontier cell can be settled at once: each
- * item short added to the Bank (enough for every frontier cell together), and each skill raised
- * on the first hero to the highest level asked, through ordinary XP. A frontier cell whose ring
- * waits for a Guild Hall star gets that star's price in the Bank too, for the star to be bought in
- * the Hall (it is not bought here). Nothing is taken.
+ * item short added to the Bank and the coins short to the guild's purse (enough for every
+ * frontier cell together), and each skill raised on the first hero to the highest level asked,
+ * through ordinary XP. A frontier cell whose ring waits for a Guild Hall star gets that star's
+ * price, its coins too, for the star to be bought in the Hall (it is not bought here). Nothing is
+ * taken.
  *
  * @returns {{success: boolean, reason?: string, cells?: number, items?: number, skills?: number, stars?: number}}
  */
@@ -33,14 +44,18 @@ export function meetFrontierPrices() {
     const items = new Map();
     const skills = new Map();
     const stars = new Set();
+    let coins = 0;
     for (const cell of frontier) {
         for (const { itemId, qty } of cell.requires?.items || []) items.set(itemId, (items.get(itemId) || 0) + qty);
         for (const { skill, level } of cell.requires?.skills || []) skills.set(skill, Math.max(skills.get(skill) || 0, level));
+        coins += settleCoinsOf(cell);
         const lock = World.ringLockOf(cell);
         if (lock) stars.add(lock.stars[0].id);
     }
     for (const id of stars) {
-        for (const { itemId, quantity } of getUpgradePrice(getUpgradeDef(id), 0) || []) items.set(itemId, (items.get(itemId) || 0) + quantity);
+        const def = getUpgradeDef(id);
+        for (const { itemId, quantity } of getUpgradePrice(def, 0) || []) items.set(itemId, (items.get(itemId) || 0) + quantity);
+        coins += getUpgradeCoins(def, 0);
     }
     let added = 0;
     for (const [itemId, need] of items) {
@@ -50,6 +65,7 @@ export function meetFrontierPrices() {
             added++;
         }
     }
+    if (coins > getCoins()) addCoins(coins - getCoins());
     const hero = (HeroManager.getAllHeroes() || []).find(h => !h.isVillager);
     let raised = 0;
     if (skills.size && !hero) return { success: false, reason: 'Recruit a hero first: the price asks for skill levels', cells: frontier.length, items: added };

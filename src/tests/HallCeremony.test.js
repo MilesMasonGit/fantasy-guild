@@ -16,6 +16,7 @@ import { planStarThatOpens, planConstellationOneShort } from './fixtures/hallCer
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
+import { addCoins } from '../systems/inventory/Coins.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { totalPrice } from '../config/guildUpgrades.js';
@@ -29,9 +30,10 @@ const renderWeb = () => render(React.createElement(GuildHallBoard, {}));
 const ceremonyIn = (container) => container.querySelector('[data-hall-ceremony]');
 const src = (rel) => readFileSync(resolve(__dirname, rel), 'utf8');
 
-/** Buy a star's next rank as the panel does: its price in the Bank, then the purchase. */
+/** Buy a star's next rank as the panel does: its price in the Bank and its coins in the purse, then the purchase. */
 function buy(id) {
     for (const { itemId, quantity } of totalPrice(GuildUpgradeManager.getNextCost(id))) InventoryManager.addItem(itemId, quantity);
+    addCoins(GuildUpgradeManager.getRanksCoins(id, 1));
     expect(GuildUpgradeManager.purchase(id).success, id).toBe(true);
 }
 

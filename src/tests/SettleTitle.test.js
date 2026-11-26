@@ -18,6 +18,7 @@ import * as World from '../systems/world/World.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { ArrivalCard } from '../ui/components/atlas/ArrivalCard.jsx';
 import { SETTLE_TITLE, SETTLE_FANFARE } from '../ui/components/atlas/SettleTitle.jsx';
+import { stockSettleCoins } from './fixtures/worldQa.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -53,6 +54,7 @@ function settleRingOne() {
     const hero = HeroManager.addHero(generateHero());
     for (const { skill, level } of cell.requires.skills) addXP(hero.id, skill, xpForLevel(level) - (hero.skills[skill]?.xp || 0));
     for (const { itemId, qty } of cell.requires.items) InventoryManager.addItem(itemId, qty);
+    stockSettleCoins(cell);
     let result;
     act(() => { result = World.settleCell(cell.id); });
     expect(result.success, result.reason).toBe(true);
@@ -134,6 +136,7 @@ describe('⭐ the title on settling a place', () => {
         const hero = GameState.heroes[0];
         for (const { skill, level } of cell.requires.skills) addXP(hero.id, skill, Math.max(0, xpForLevel(level) - (hero.skills[skill]?.xp || 0)));
         for (const { itemId, qty } of cell.requires.items) InventoryManager.addItem(itemId, qty);
+        stockSettleCoins(cell);
         act(() => { expect(World.settleCell(cell.id).success).toBe(true); });
         act(() => { vi.advanceTimersByTime(SETTLE_TITLE.delayMs + 10); });
         fireEvent.keyDown(window, { key: 'Enter' });

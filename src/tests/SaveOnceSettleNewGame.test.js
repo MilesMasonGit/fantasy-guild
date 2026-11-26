@@ -17,6 +17,7 @@ import { xpForLevel } from '../utils/XPCurve.js';
 import { isGuildHall } from '../systems/board/MatCap.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { fakeSaveDisk } from './fixtures/fakeSaveDisk.js';
+import { stockSettleCoins } from './fixtures/worldQa.js';
 
 /**
  * Settling a place and starting a new game each write one save, of the finished result: a crash
@@ -134,6 +135,7 @@ describe('settling a place saves once, at the very end', () => {
         const hero = GameState.heroes[0];
         for (const { skill, level } of cell.requires.skills) addXP(hero.id, skill, xpForLevel(level) - (hero.skills[skill]?.xp || 0));
         for (const { itemId, qty } of cell.requires.items) InventoryManager.addItem(itemId, qty);
+        stockSettleCoins(cell);
         const bankBefore = Object.fromEntries(cell.requires.items.map(({ itemId }) => [itemId, InventoryManager.getItemCount(itemId)]));
         const writesBefore = disk.writes().length;
 

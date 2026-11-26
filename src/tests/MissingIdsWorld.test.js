@@ -25,6 +25,7 @@ import { resetMatTuning } from '../config/matTuning.js';
 import { getItem } from '../config/registries/itemRegistry.js';
 import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { PriceRows } from '../ui/components/atlas/WorldPrice.jsx';
+import { stockSettleCoins } from './fixtures/worldQa.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -62,6 +63,7 @@ function meet(cell) {
     const hero = HeroManager.addHero(generateHero());
     for (const { skill, level } of cell.requires.skills) addXP(hero.id, skill, xpForLevel(level) - (hero.skills[skill]?.xp || 0));
     for (const { itemId, qty } of cell.requires.items) if (getItem(itemId)) InventoryManager.addItem(itemId, qty);
+    stockSettleCoins(cell);
     return hero;
 }
 

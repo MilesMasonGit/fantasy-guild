@@ -309,6 +309,8 @@ describe('⭐ the Token editor: an enemy\'s numbers, filled from the level and k
     });
 
     it('an enemy\'s work-cycle XP is shown as never paid (a kill pays its level\'s), and one click removes it', () => {
+        // As the Cow was written before its work-cycle XP was taken off.
+        store().updateToken(cow, { config: { ...store().tokens[cow].config, xp: 2 } });
         expect(store().tokens[cow].config.xp).toBe(2);
         const { container } = tokenEditor(cow);
         expect(field(container, 'enemy-cycle-xp').textContent).toContain('a kill never pays it');

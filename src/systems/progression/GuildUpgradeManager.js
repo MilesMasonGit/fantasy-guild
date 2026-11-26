@@ -44,8 +44,9 @@ export const GuildUpgradeManager = {
     },
 
     /**
-     * Item price of the next rank as `[{ itemId, quantity }]` (`[]` = free),
-     * or null when maxed. Hall upgrades cost items, never gold.
+     * Item price of the next rank as `[{ itemId, quantity }]` (`[]` = no items),
+     * or null when maxed. ⚠️ Items only: the coins a rank asks beside them are
+     * `getRanksCoins`, and `purchase` takes both.
      */
     getNextCost(upgradeId) {
         const def = getUpgradeDef(upgradeId);
