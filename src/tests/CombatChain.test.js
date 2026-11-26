@@ -10,7 +10,9 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { auditLifecycleBlocks } from '../systems/core/lifecycleAudit.js';
 import { SKILLS } from '../config/registries/skillRegistry.js';
-import { enemyProfileOf, enemyDropsOf, enemyFilledStats } from '../config/registries/enemyProfile.js';
+import { enemyProfileOf, enemyDropsOf } from '../config/registries/enemyProfile.js';
+import { enemyFightNumbers } from '../systems/effects/enemyKindEffects.js';
+import { isBossCampType } from '../systems/board/Hideouts.js';
 import { getTokenType, registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { expandBearer } from '../systems/effects/effectLibrary.js';
 
@@ -118,7 +120,7 @@ describe('The Combat chain in shipped data (7.7)', () => {
     // name the type each swing hits with.
     it('a Goblin is a plain level 5 enemy with one charge, so a kill clears it and the camp spawns again', () => {
         expect(goblin.enemy).toEqual({
-            level: 5, style: 'ranged', hostile: true,
+            level: 5, style: 'ranged',
             moves: [{ name: 'Sling Stone', damageType: 'crush' }, { name: 'Shiv', damageType: 'stab' }]
         });
         expect(goblin.uses).toBe(1);
@@ -133,24 +135,25 @@ describe('The Combat chain in shipped data (7.7)', () => {
         ]);
     });
 
-    // A boss is beaten in one kill and fights only heroes sent at it (never
-    // hostile); its typed hit sits one above what its level and kind fill.
-    it('a Chief is a tougher boss: higher level, a Brute, one kill, a typed hit of 3', () => {
+    // A boss is what a boss camp spawns: the Chief's Tent is one. It is beaten in one kill; its
+    // written hit and its Brute kind's Damage +33 % hit 3 in a fight.
+    it('a Chief is a tougher boss: higher level, a Brute, one kill, a hit of 3 in a fight', () => {
         expect(chief.enemy).toEqual({
-            level: 12, style: 'melee', kinds: ['brute'], boss: true, hit: 3,
+            level: 12, style: 'melee', kinds: ['effect_brute'], hit: 2.25,
             moves: [
                 { name: 'Cleave', damageType: 'slash', weight: 5 },
                 { name: 'Bash', damageType: 'crush', weight: 5 },
                 { name: 'Heavy Strike', damageType: 'crush', weight: 2, effectId: 'effect_heavy_strike', target: 'self', lasts: 'swing' }
             ]
         });
-        expect(chief.enemy.hit).toBe(enemyFilledStats(chief.enemy).hit + 1);
+        expect(isBossCampType(TENT)).toBe(true);
+        expect(enemyFightNumbers(chief).hit).toBeCloseTo(3, 9);
         expect(chief.uses).toBe(1);
         const g = enemyProfileOf(goblin);
         const c = enemyProfileOf(chief);
         expect(c.hp).toBeGreaterThan(g.hp);
         expect(c.level).toBeGreaterThan(g.level);
-        expect(c.hit).toBeGreaterThan(g.hit);
+        expect(enemyFightNumbers(chief).hit).toBeGreaterThan(enemyFightNumbers(goblin).hit);
         expect(c.xpAwarded).toBeGreaterThan(g.xpAwarded);
     });
 

@@ -46,7 +46,7 @@ describe('The Processing chain in shipped data (7.5)', () => {
             expect(def.shop).toEqual({
                 price: [{ itemId: 'item_oak_wood', quantity: 15 }],
                 section: 'construction',
-                skills: ['crafting', 'cooking', 'alchemy', 'fishing', 'forestry'],
+                skills: ['crafting', 'cooking', 'alchemy', 'forestry'],
                 order: 1,
             });
             expect(def.config).toBeNull();
@@ -67,26 +67,35 @@ describe('The Processing chain in shipped data (7.5)', () => {
 
         it('a Wood Foundation offers the wooden buildings: the Workshop, the Kitchen, the Mining Camp and the rest', () => {
             expect(poolNames('token_wood_foundation')).toEqual([
-                "Build Alchemist's Hall", 'Build Apothecary', 'Build Bait Shed', 'Build Bakehouse', 'Build Banquet Hall', 'Build Barn',
-                'Build Beehive', 'Build Brewery', "Build Builder's Yard", 'Build Chum Station', 'Build Composter', "Build Craftsmen's Yard",
-                'Build Deep Workings', 'Build Dock',
-                "Build Farmers' Market", 'Build Farmstead', 'Build Fish Market', 'Build Fishing Hut', "Build Fishmonger's",
+                "Build Alchemist's Hall", 'Build Apothecary', 'Build Bakehouse', 'Build Banquet Hall', 'Build Barn',
+                'Build Beehive', 'Build Brewery', "Build Builder's Yard", 'Build Composter', "Build Craftsmen's Yard",
+                'Build Deep Workings',
+                "Build Farmers' Market", 'Build Farmstead',
                 "Build Forester's Lodge", 'Build Greenhouse', "Build Grovekeeper's Hut", 'Build Guild Workshop', "Build Herbalist's Hut",
-                "Build Jeweller's Hall", 'Build Kitchen', 'Build Logging Camp', 'Build Manor Farm', 'Build Market Kitchen',
+                "Build Jeweller's Hall", 'Build Kitchen', 'Build Laboratory', 'Build Logging Camp', 'Build Manor Farm', 'Build Market Kitchen',
                 "Build Master's Study", 'Build Mine Head', 'Build Minecart', 'Build Mining Camp', 'Build Ore Market', 'Build Physic Garden',
-                'Build Pier', 'Build Sawmill', 'Build Tannery', 'Build Timber Yard', 'Build Windmill', 'Build Workshop',
+                'Build Sawmill', 'Build Tannery', 'Build Timber Yard', 'Build Windmill', 'Build Workshop',
             ]);
         });
 
-        it('a Stone Foundation offers the Blacksmith, the Well and the better Smithing stations (SP-62)', () => {
+        it('a Dock offers the fishing buildings: the Fishing Hut, the Bait Shed, the Pier and the rest', () => {
+            expect(poolNames('token_dock')).toEqual([
+                'Build Bait Shed', 'Build Chum Station', 'Build Fish Market', 'Build Fishing Hut', "Build Fishmonger's", 'Build Pier',
+            ]);
+        });
+
+        it('a Stone Foundation offers the Blacksmith, the Well, the mines, the shrine and the better Smithing stations (SP-62)', () => {
             expect(poolNames('token_stone_foundation')).toEqual([
-                'Build Blacksmith', 'Build Foundry', 'Build Grand Forge', 'Build Master Smithy', "Build Smiths' Row",
-                'Build Town Square', 'Build Well',
+                'Build Blacksmith', 'Build Coal Mine', 'Build Copper Mine', 'Build Foundry', 'Build Grand Forge', 'Build Master Smithy',
+                'Build Nature Shrine', "Build Smiths' Row", 'Build Town Square', 'Build University', 'Build Well',
             ]);
         });
 
-        it('an Excavation offers the mines and the Quarry', () => {
-            expect(poolNames('token_excavation')).toEqual(['Build Coal Mine', 'Build Copper Mine', 'Build Quarry']);
+        it('an Excavation offers the Quarry and a Dig for each vein', () => {
+            expect(poolNames('token_excavation')).toEqual([
+                'Build Quarry', 'Dig Adamantine Vein', 'Dig Coal Vein', 'Dig Copper Vein', 'Dig Darkmetal Vein', 'Dig Gold Vein',
+                'Dig Iron Vein', 'Dig Mythril Vein', 'Dig Silver Vein',
+            ]);
         });
 
         it('a Battlefield offers every creature camp from its banner', () => {

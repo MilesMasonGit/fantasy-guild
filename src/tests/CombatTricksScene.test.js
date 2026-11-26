@@ -12,7 +12,9 @@ import * as BoardCombat from '../systems/board/BoardCombat.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
 import { TRICK } from '../systems/combat/CombatTricks.js';
-import { registerSkillPerks } from '../config/registries/perkRegistry.js';
+import { registerSkillPerks, perkRowsFor } from '../config/registries/perkRegistry.js';
+import { getEffect } from '../config/registries/effectRegistry.js';
+import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import {
     setUpSecondWindScene, setUpUnbreakableScene, setUpTwinShotScene, setUpDoubleCastScene, setUpShadowstepScene, QA_CT
@@ -76,7 +78,13 @@ describe('the QA combat tricks scenes', () => {
         step(60_000);
         const heals = of(hero.id, 'trick', TRICK.KILL_HEAL);
         expect(heals.length).toBeGreaterThan(3);
-        expect(heals.every(h => h.amount === 3)).toBe(true);
+        // The scene keeps the style's shipped perks beside its Test one, so a shipped kill heal
+        // (Bloodrush) adds to the Test Second Wind's 3.
+        const killHeal = (effectId) => (getEffect(effectId)?.statements || [])
+            .filter(s => s.payload?.type === EFFECT_TYPES.KILL_HEAL).reduce((n, s) => n + s.payload.value, 0);
+        const perKill = perkRowsFor('melee').reduce((n, r) => n + killHeal(r.effectId) * (r.scale ?? 1), 0);
+        expect(perKill).toBeGreaterThanOrEqual(3);
+        expect(heals.every(h => h.amount === perKill)).toBe(true);
     });
 
     it('Unbreakable: held at 1 by the first defeating blow, defeated by the next', () => {

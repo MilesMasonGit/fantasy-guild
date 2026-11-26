@@ -64,6 +64,8 @@ afterEach(() => {
 
 /** A copper vein's rare finds: Copper Ore 3 to Iron Ore 1, at half a percent a cycle. */
 const VEIN = 'token_copper_ore_vein';
+/** The shipped vein's own table (its Prospecting Map) taken off, so a test can start from none. */
+const clearShippedTable = () => store().updateToken(VEIN, { rareTable: undefined });
 const GEMS = {
     chance: 0.5,
     entries: [
@@ -78,6 +80,7 @@ describe('⭐ the Rare drop table block', () => {
     });
 
     it('a Token has none to begin with; adding the first find writes a 1 % table', () => {
+        clearShippedTable();
         expect(store().tokens[VEIN]).toBeDefined();
         expect(store().tokens[VEIN].rareTable).toBeUndefined();
         const container = openEditor(VEIN);
@@ -89,6 +92,7 @@ describe('⭐ the Rare drop table block', () => {
     });
 
     it('the chance takes decimals; finds take an item, a weight and a range; the share and the odds read back', () => {
+        clearShippedTable();
         const container = openEditor(VEIN);
         fireEvent.click(q(container, '[data-add-rare]'));
         fireEvent.change(input(container, '[data-rare-chance]'), { target: { value: '0.5' } });

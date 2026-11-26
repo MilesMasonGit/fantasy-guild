@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 
-import { KEYWORD, makeStatement, blankPayload, getKeyword, stationSkillOf } from '../systems/effects/statements.js';
+import { KEYWORD, makeStatement, blankPayload, getKeyword, stationSkillOf, stationKindOf } from '../systems/effects/statements.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { deriveTokenType, derivedTokenType } from '../config/registries/tokenTypeDerivation.js';
-import { recipesForToken } from '../config/registries/recipePoolRegistry.js';
+import { recipesForToken, runsNoRecipe } from '../config/registries/recipePoolRegistry.js';
 import { TOKENS } from '../config/registries/tokenRegistry.js';
 import { poolFor } from '../systems/board/StationRecipe.js';
 import { SKILLS } from '../config/registries/skillRegistry.js';
@@ -126,12 +126,15 @@ describe('the shipped Tokens that declare themselves stations', () => {
         expect(stations.length).toBeGreaterThan(0);
     });
 
+    // A station of a kind that runs no recipe (a Hideout robs, a Laboratory studies) has none to pick.
     for (const [id] of stations) {
-        it(`${id} names a real skill and can pick a recipe`, () => {
+        const recipeless = runsNoRecipe(stationKindOf(TOKENS[id]));
+        it(`${id} names a real skill and ${recipeless ? 'runs no recipe, as its kind says' : 'can pick a recipe'}`, () => {
             const def = TOKENS[id];
             expect(SKILL_IDS, `${id} claims skill "${stationSkillOf(def)}"`).toContain(stationSkillOf(def));
             expect(derivedTokenType(def)).toBe('station');
-            expect(poolFor(def).length, `${id} has an empty pool`).toBeGreaterThan(0);
+            if (recipeless) expect(poolFor(def), `${id} runs no recipe`).toEqual([]);
+            else expect(poolFor(def).length, `${id} has an empty pool`).toBeGreaterThan(0);
         });
     }
 

@@ -24,9 +24,9 @@ const expanded = Object.fromEntries(Object.entries(tokens).map(([id, t]) => [id,
 // the Mountain map placed veins of their own; they stay supports (a 25 % double
 // drop on the veins in reach). The Quarry still spawns its outcrops.
 const CHAIN = [
-    { mine: 'token_copper_mine', name: 'Copper Mine', worked: 'token_copper_ore_vein', item: 'item_copper_ore', spawns: false },
-    { mine: 'token_coal_mine', name: 'Coal Mine', worked: 'token_coal_vein', item: 'item_coal', spawns: false },
-    { mine: 'token_quarry', name: 'Quarry', worked: 'token_stone_outcrop', item: 'item_stone', spawns: true },
+    { mine: 'token_copper_mine', name: 'Copper Mine', worked: 'token_copper_ore_vein', item: 'item_copper_ore', spawns: false, on: ['stone', 'a Stone Foundation'] },
+    { mine: 'token_coal_mine', name: 'Coal Mine', worked: 'token_coal_vein', item: 'item_coal', spawns: false, on: ['stone', 'a Stone Foundation'] },
+    { mine: 'token_quarry', name: 'Quarry', worked: 'token_stone_outcrop', item: 'item_stone', spawns: true, on: ['excavation', 'an Excavation'] },
 ];
 
 describe('The Mining chain in shipped data (7.2)', () => {
@@ -38,7 +38,7 @@ describe('The Mining chain in shipped data (7.2)', () => {
         expect(tokens.token_stone_outcrop).toMatchObject({ id: 'token_stone_outcrop', name: 'Stone Outcrop' });
     });
 
-    for (const { mine, name, worked, item, spawns } of CHAIN) {
+    for (const { mine, name, worked, item, spawns, on: [foundationKind, foundationName] } of CHAIN) {
         describe(name, () => {
             const def = tokens[mine];
             const vein = tokens[worked];
@@ -74,11 +74,11 @@ describe('The Mining chain in shipped data (7.2)', () => {
                 expect(def.requiresHero).toBe(false);
             });
 
-            it('is not sold: it is built on an Excavation', () => {
+            it(`is not sold: it is built on ${foundationName}`, () => {
                 expect(def.shop).toBeUndefined();
                 const build = recipes.find((r) => r.outputs?.some((o) => o.tokenId === mine));
                 expect(build.skill).toBe('construction');
-                expect(build.foundationKinds).toEqual(['excavation']);
+                expect(build.foundationKinds).toEqual([foundationKind]);
             });
 
             it(spawns ? 'its family is just the Token it spawns (no growth stage)' : 'has no family: it spawns nothing', () => {
