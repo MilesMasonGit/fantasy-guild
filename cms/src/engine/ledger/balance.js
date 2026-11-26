@@ -308,6 +308,8 @@ function coinField(row) {
 
 /** Every price that asks coins, beyond the tolerance from the coin curve's number, set to it. */
 function coinPass(state) {
+    // Nothing asks coins: nothing to price, and no coin income worked out for it.
+    if (!state.eval.pace.asksCoins()) return false;
     const tol = state.settings.tolerancePct / 100;
     let changed = false;
     for (const row of state.eval.pace.coinPrices()) {

@@ -1070,6 +1070,18 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         return out;
     }
 
+    let asksMemo = null;
+    /** Whether any price asks coins: a Shop Token, a Guild Hall rank or a ring of the world tables. */
+    function asksCoins() {
+        if (asksMemo !== null) return asksMemo;
+        const shop = Object.values(ledger.world.tokens).some(def => isObject(def.shop) && shopCoinsOf(def) > 0);
+        const hall = profiles.hallTracks.some(t => Array.from({ length: t.maxRank }, (_, i) => t.coins(i + 1)).some(c => c > 0));
+        const prices = ledger.world.worldTables?.prices || {};
+        const ring = Array.from({ length: STRICT_RINGS }, (_, i) => Number(prices[i + 1]?.coins) || 0).some(c => c > 0);
+        asksMemo = shop || hall || ring;
+        return asksMemo;
+    }
+
     let coinPriceMemo = null;
     /**
      * A coin cost for every price that may ask coins, proposed from the coin curve: the coins one hero
@@ -1669,6 +1681,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         /** One copy's coin worth, as Recalculate writes it. */
         coinWorthOf: worthOf,
         coinPrices,
+        asksCoins,
         coinDrops,
         findings
     };

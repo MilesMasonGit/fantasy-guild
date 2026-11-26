@@ -9,7 +9,8 @@ import { proposeBalance, LEVER } from '../../cms/src/engine/ledger/balance.js';
 import { CHECKS } from '../../cms/src/engine/ledger/checks.js';
 import { paceContent } from './fixtures/paceWorld.js';
 import { paceHallSky } from './fixtures/paceHallSky.js';
-import { WORLD_FIXTURE_TABLES, worldWorkspace, contentOf } from './fixtures/ledgerWorldMap.js';
+import { WORLD_FIXTURE_TABLES, WORLD_FIXTURE_RAW, worldWorkspace, contentOf } from './fixtures/ledgerWorldMap.js';
+import { workspaceBalance, balancePack } from '../../cms/src/engine/ledgerBalance.js';
 
 /**
  * ⭐ The ledger prices coins (brief 870 C3): an item's coin worth comes from its value; selling, kill
@@ -317,6 +318,21 @@ describe('⭐ proposed coin costs: the coins one hero earns in the coin curve\'s
 });
 
 describe('⭐ the balance tool sets the coins of a price that asks them', () => {
+    it('whether anything asks coins: a Shop Token, a Guild Hall rank or a ring; with none the balance works out no coin income', () => {
+        expect(paceOf(withStall(coinContent(), 0)).asksCoins()).toBe(false);
+        expect(paceOf(withStall(coinContent(), 5)).asksCoins()).toBe(true);
+        const c = coinContent();
+        c.hallSky = paceHallSky();
+        c.hallSky.stars.ph_lore.ranks[1].coins = 3;
+        expect(paceOf(c).asksCoins()).toBe(true);
+        const ws = worldWorkspace();
+        const tables = structuredClone(WORLD_FIXTURE_TABLES);
+        tables.prices[3].coins = 9;
+        const world = { ...contentOf(ws), worldTables: tables };
+        expect(paceOf(world).asksCoins()).toBe(true);
+        expect(proposeBalance(withStall(coinContent(), 0), null, { rounds: 1 }).proposals.filter(p => p.lever === LEVER.COINS)).toEqual([]);
+    });
+
     it('a price asking coins is moved to the curve\'s number; one asking none is left alone', () => {
         const c = withStall(coinContent(), 1);
         c.hallSky = paceHallSky();
@@ -332,5 +348,24 @@ describe('⭐ the balance tool sets the coins of a price that asks them', () => 
         expect(coins.filter(p => p.id === 'token_plot' || p.field === 'ranks.0.coins')).toEqual([]);
         // The content handed in is never changed.
         expect(c.tokens.token_stall.shop.coins).toBe(1);
+    });
+});
+
+describe('⭐ a coin proposal as a change pack', () => {
+    it('a ring asking coins: the pack carries the workspace own world record with the new coins', () => {
+        const ws = worldWorkspace();
+        ws.items.item_copper_ore.value = 4;
+        ws.world = structuredClone(WORLD_FIXTURE_RAW);
+        ws.world.prices[2].coins = 5;
+        const result = workspaceBalance(ws);
+        const p = result.proposals.find(x => x.lever === LEVER.COINS && x.kind === 'world');
+        expect(p).toMatchObject({ id: 'world', field: 'prices.2.coins', from: 5 });
+        expect(p.to).toBeGreaterThan(5);
+        const pack = balancePack(ws, result, { id: 'coin-test', createdAt: '2026-11-25T00:00:00Z' });
+        const entry = pack.entries.find(e => e.kind === 'world');
+        expect(entry.value.prices[2].coins).toBe(p.to);
+        expect(entry.value.prices[1].coins).toBeUndefined();
+        expect(entry.value.lines).toEqual(ws.world.lines);
+        expect(ws.world.prices[2].coins).toBe(5);
     });
 });
