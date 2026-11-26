@@ -1,16 +1,21 @@
 {
-  "title": "Second run: every non-combat skill",
+  "title": "Method review, after the second run",
   "date": "2026-11-25",
-  "summary": "Every skill the rules can time reaches 99 in 12.3 to 12.8 days for an optimized player and about 23 days for a typical one, at the new 6.25 % pace. No stretch anywhere is a wall. Fifteen stretches of more than a day with nothing new, all from level 60 up, went to the content session. Eight rulings were approved today.",
+  "summary": "A review of how we balance, at the owner's request, found that what counts as a normal guild was a set of hidden numbers, that nothing weighed one use of an item against another, and that three tools held three rulebooks. The owner ruled on a reference guild and a tilt between XP and goods. The page's numbers for one hero in one skill stand: 12.3 to 12.8 days to 99 optimized at 6.25 % a level, no walls, fifteen gaps with the content session.",
   "checked": [
     "Pace, all twelve skills: no level is slower than 1.3x the curve. The slowest is the end of Forestry's run from 81 to 98.",
     "Empty stretches: 33 flagged. 15 last more than a day of typical play and are on the gaps list; 2 in Construction wait on its repeatable work; the rest last minutes or hours and are left alone.",
     "Fishing: most of its old stretches were the page's mistake. It didn't count a catch with its own level (Salmon at 40, Lobster at 50, Swordfish at 63) as something new. Fishing now has 17 unlocks, not 8, and Cooked Salmon no longer shows as arriving at the start of the game.",
     "Cooking and Smithing (first run, same day): on the curve, no empty stretches, every new recipe pays more than the one before.",
     "The ledger read-out now runs (the director built it tonight), on the live game, not the plan: the plan isn't in the CMS and no number pack has gone in. Before the pack, the live game is far off the curve: Cooking reaches 99 in 3.8 days for a maxed player and Farming and Forestry in under 7 (the curve says 15.3 at the ledger's old 6.5 % setting), Fishing takes 19.6, Smithing 11.6. Live recipes pay about 1.5 to 3.5 times the XP a second the rules give, on the old XP table. This is what the first number pack is for.",
-    "The page and the ledger can't be compared on the plan yet. What the ledger shows so far about the page's assumptions: in the gathering skills a typical player is as fast as a maxed one from mid-game on, because the boosts the budget counts on mostly aren't built for them yet; in Smithing and Crafting the gap late is 1.8 to 2.3 times, close to the page's 1.9."
+    "The page and the ledger can't be compared on the plan yet. What the ledger shows so far about the page's assumptions: in the gathering skills a typical player is as fast as a maxed one from mid-game on, because the boosts the budget counts on mostly aren't built for them yet; in Smithing and Crafting the gap late is 1.8 to 2.3 times, close to the page's 1.9.",
+    "The method itself, with two read-only readings of the CMS's simulator and ledger: docs/active/balance_method_review.md. The page is on the curve by construction (XP is worked back from the curve), so it cannot test whether a guild's set-up is realistic; only the ledger or play can."
   ],
   "moved": [
+    "Approved by the owner, 2026-11-25, the reference guild: 8 heroes running a few supply chains at a time, about 2 gatherers per maker at every tier. A lone hero at one node is busy half the time and a node is back in about 30 seconds; a camp with two nodes keeps a gatherer fully busy.",
+    "Approved by the owner, 2026-11-25: one total reward an hour, tilted by purpose. Training work pays 1.5x the XP and half the goods, earning work half the XP and 1.5x the goods. The plan's entries aren't tagged yet, so the page treats all of them as balanced.",
+    "Approved by the owner, 2026-11-25: the balance rules are the one rulebook; a typical player is one who buys what pays back soon; and the pace of one skill for one hero governs, so every skill at 99 on all 8 heroes is a one to two year goal.",
+    "Corrected: the page's typical line is a planning estimate (half of every boost). The engine's definition applies once the content is in the CMS.",
     "Approved by the owner, 2026-11-25, the coin rule: an item's worth is the time in it; an everyday purchase's coins cost one level's time of one hero's selling (5 minutes at copper, 6 hours at darkmetal) and a big one (a new place, a Hall star) half its item price's work (30 minutes at copper, 12 hours at darkmetal); a fighter earns about half a worker's coins; the coin building adds at most 10 %.",
     "Approved by the owner, 2026-11-25: the pace step's range is 6 % to 6.5 % a level, to tighten the late game; the page uses 6.25 %, the middle, until the boosts are balanced. Level 98 takes 18 hours instead of 22.5, levels 81 to 98 take 8.4 days optimized and 16 typical (were 10 and 20), and levels 1 to 60 barely change.",
     "Approved by the owner, 2026-11-25: a gap for content is a stretch of more than a day of typical play with nothing new.",
@@ -30,9 +35,10 @@
   ],
   "waiting": [
     "On the owner: the CMS Ledger's pace curve still holds the 6.5 % points (1 = 3 ... 99 = 1437). Set it to the 6.25 % points when convenient: 1 = 3, 10 = 5, 20 = 9, 30 = 17, 40 = 32, 50 = 59, 60 = 107, 70 = 197, 80 = 361, 90 = 661, 99 = 1141.",
+    "On the director, three new tickets: the simulator's XP curve and purpose tilt set from the balance rules (T-715); the ledger timing a guild of 8 with output spent once, nodes from the reference set-ups, camp variants and stacked buildings counted (T-716); checks for a chain's total XP, the 4x batch payback and Hall payback (T-717).",
     "On the director: the ledger prices every coin cost from one curve; the rule needs an everyday curve and a big-purchase curve (a new ticket, T-713).",
     "On the director: the ledger's new tiers, gatherers per crafter and boost budget (brief 880, L2 and L3), and a no-boosts column in the read-out so the page's boost factor (1.4x at copper to 3x at darkmetal) can be checked. The ledger's pace curve should use the 6.25 % points. With the first number pack: the new XP table (9.4 million XP to 99) and the drink's 50-cycle dose.",
     "On the content session: the plan in the CMS as Planned entries, and the fifteen gaps. Also to look at: Arrowheads unlock later than the arrows that need them at every metal.",
-    "On the balancer: a work potion's dose and batch; Construction once its repeatable work is planned; checking coin prices against the engine once the ledger read-out exists."
+    "On the balancer: a work potion's dose and batch; Construction once its repeatable work is planned; checking coin prices against the engine once the ledger read-out exists; a rule for the worth curve; the split of a guild's output and what it makes of coin costs."
   ]
 }

@@ -1,4 +1,4 @@
-Status: draft 2026-11-25 (balancer; findings checked in the code, decisions open with the owner)
+Status: approved 2026-11-25 (owner's rulings below; in BALANCE_RULES sections 1, 2, 7 and 8; tickets T-715, T-716, T-717)
 
 # How we balance: a review of the method
 
@@ -113,3 +113,18 @@ Asked in the session of 2026-11-25; rulings recorded below as they come.
 - **A normal late guild runs a few chains at a time**: the 8 heroes (the game's limit) staff two or
   three supply chains and move between chains over days; a skill climbs only while its chain is
   staffed. Neither tool models this yet: both give every skill its own hero and free gatherers.
+- **About 2 gatherers per maker at every tier**, as the rules already said.
+- **The tilt is moderate**: training 1.5x the XP and half the goods, balanced both in full, earning
+  half the XP and 1.5x the goods.
+- **A typical player buys what pays back soon** (the ledger's definition); the Dials page's
+  half-of-every-boost is a planning estimate.
+- **The per-skill pace governs** (6 to 6.5 % a level). The owner's "3 to 6 months" for all 8 heroes at
+  99 in all 20 skills would need a step of about 4 to 4.5 %; asked which governs, the owner kept 6 to
+  6.5 %, so maxing everything is a goal of one to two years for a typical player.
+
+## Still open
+
+- **The worth curve** (gold an hour by level, rising 260 times today): the balancer proposes a rule.
+- **The split of a guild's output** (feeding makers, boosts, prices, sold) and what that makes of the
+  coin costs in section 7.
+- **Purpose leanings on the plan's entries**: the content session tags them; untagged is balanced.

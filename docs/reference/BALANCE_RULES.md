@@ -8,7 +8,7 @@ Status: approved 2026-11-07, amended the same day after a critical review and th
 
 **Everything follows the level a thing unlocks at** (written L). Tiers start at copper 1, iron 20, silver 30, mythril 40, gold 50, adamantine 60 and darkmetal 80, so "one tier later" means about 20 levels on.
 
-**Seven rules, one per kind of number:**
+**Seven rules, one per kind of number, and the reference guild they are measured on (section 8):**
 
 | Number | Rule | In one line |
 |---|---|---|
@@ -56,7 +56,7 @@ About 9.4 million XP to 99. Today's table needs about 13 million.
 **Pick action seconds that give whole XP early on**: at 3 to 12 XP an action, rounding can be 13 % off. The solver does this itself (balancer, 2026-11-25): it rounds the XP, then trims the action's length by up to 15 % so the whole XP pays the rule's XP an hour exactly. A Copper Ingot is 8.9 s for 3 XP.
 
 - **An old task falls behind**: 2x slower a tier later, 4x two tiers on, and about 30x slower at 99. Reaching 99 on a level-1 task alone would take about 237 days of one hero's work.
-- **One total reward an hour, tilted by purpose** (owner, 2026-11-25, replacing "crafting and gathering pay the same XP an hour"): every hour of work at a level is worth the same in total, XP and goods together; a Token or recipe leans toward XP or toward goods, so work that hands over valuable goods teaches less. How far the tilt goes is not set yet; until it is, the solver pays every work the same XP an hour.
+- **One total reward an hour, tilted by purpose** (owner, 2026-11-25, replacing "crafting and gathering pay the same XP an hour"): every hour of work at a level is worth the same in total, XP and goods together; a Token or recipe leans toward XP or toward goods, so work that hands over valuable goods teaches less. **The tilt is moderate** (owner): training work pays 1.5x the XP and half the goods, balanced work both in full, earning work half the XP and 1.5x the goods. The plan's entries carry no leaning yet, so the solver treats all of them as balanced until the content session tags them.
 - **Construction earns from builds and from repeatable work** (owner, 2026-11-21). A build pays XP by its price: the hours its materials took to gather, at the build's level's XP an hour, so a big build pays big. Builds alone leave Construction about 4x behind the curve to 20 and 8x to 85 (the ledger), so Construction also gets repeatable work between builds, priced like any make step; what that work is, the content agent proposes and the owner picks (T-656).
 - **Each link of a chain pays its own XP**, to its own skill. A late item earns the guild several skills' XP, and the guild pays for that in materials.
 - **Aimed at a well-optimized hero.** The ledger checks that a typical player lands about 1.5 to 2x slower and a player with no boosts no more than 3x slower, and nudges XP if not.
@@ -199,6 +199,19 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 **The coin building adds at most 10 %** to enemy and Hideout coins in its reach (owner: "Probably only a 10% increase at most. Remember, the player may have multiple buildings affecting the same token."). Several buildings can reach one Token and their boosts add up, so a building's own number stays small.
 
 **No coin stars, no coin costs on recipes** (the concept's rulings).
+
+## 8. The reference guild
+
+*What "a normal guild" means in every sum (owner, 2026-11-25; [balance_method_review.md](../active/balance_method_review.md)). Both tools read from this; neither does fully yet (T-716).*
+
+| | Ruling |
+|---|---|
+| **Heroes** | 8, the game's limit. Skills are each hero's own: 8 heroes with 20 skills each |
+| **What they do** | **A few chains at a time**: two or three supply chains staffed at once, the guild moving between chains over days. A skill climbs only while its chain is staffed |
+| **A chain** | One maker and **about 2 gatherers, at every tier**; yield boosts grow with the tier to hold it there (section 5) |
+| **A gatherer** | Bare: one node, busy half the time. Typical and optimized: a camp with two or more nodes in reach, fully busy (section 2) |
+| **A typical player** | **Buys what pays back soon**: of the boosts that exist, those that earn back their price within about 2 hours of play, a day for Hall stars (the ledger's Typical). The Dials page's "half of every boost" is a planning estimate only, used until the content is in the CMS |
+| **The pace that governs** | **One skill, for one hero** (section 1). Every skill at 99 on all 8 heroes is then a goal of one to two years for a typical player, and that is accepted (owner: "Keep 6 to 6.5%") |
 
 ## Worked examples
 
