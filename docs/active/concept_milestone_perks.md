@@ -78,7 +78,7 @@ things come out better (Heirloom, Deep Attunement, Fine Stitching, Fine
 Fletching, a hearty Feast) are dropped; those skills get a bigger Double Item
 instead. Every item of one kind stays identical and stacks.
 
-**Faith, Summoning, Crime, Taming and Science** get their tables once their
+**Faith, Summoning, Crime and Science** get their tables (Taming is cut) once their
 identities are settled ([concept_skill_identities.md](concept_skill_identities.md)).
 
 ## Today (for reference)

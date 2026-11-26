@@ -36,7 +36,7 @@ line each is enough.
 - Alchemy has no hit animation when a hero works it (Explore's rustle is now
   free); the Starting skills otherwise each have their own.
 - New skills and classes use emoji placeholders: Stealth, Fletching, Trapping,
-  Taming, Shadowcraft and the reused Advanced/Master skills; the jobs
+  Shadowcraft and the reused Advanced/Master skills; the jobs
   Beastmaster, Hunter, Necromancer and Scholar (job icons are all emoji).
   Forestry shows the Logging sprite.
 - The tutorial step still reads Log an Oak Tree (let your Hero log 3 times);

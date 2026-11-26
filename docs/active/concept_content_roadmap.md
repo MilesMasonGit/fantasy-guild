@@ -36,7 +36,8 @@ them; they don't re-open their rulings.
 - **Recipes by skill**: Construction 51, Smithing 34, Cooking 16, Crafting 11,
   Farming 3, Alchemy 2.
 - **Seven specialist skills have no content**: Fletching, Faith, Summoning,
-  Enchanting, Crime, Taming, Science. Arrows wait on Fletching.
+  Enchanting, Crime, Taming, Science. Arrows wait on Fletching. (Taming was
+  cut 2026-11-22, confirmed 2026-11-25; see concept_skill_identities.)
 - **The Planned list has 15 entries**, for the whole unmade game.
 - **Every item has a sprite file**, and one Token (Coconut Tree) has none. That
   doesn't say which are final art: the roadmap's art column records that.
