@@ -17,6 +17,10 @@ import { starterToolIds, neededToolOf, toolOf, toolMeets } from '../config/regis
 import { matW, matH } from '../config/matGeometry.js';
 import { catchPoolsOf } from '../config/registries/catchPools.js';
 import { worldTables } from '../config/registries/worldTablesRegistry.js';
+import { spotOf, arrivesByItself, groundWaterKinds } from '../config/registries/fishingSpots.js';
+import { kitBiome } from '../config/worldTablesShape.js';
+import { biomeRow } from '../config/biomeTerrain.js';
+import { STARTER_CAMP_GROUND } from '../systems/progression/ledger/engine.js';
 import { getEffect } from '../config/registries/effectRegistry.js';
 import { stationSkillOf } from '../systems/effects/statements.js';
 import {
@@ -254,7 +258,8 @@ function effectYields(def) {
 }
 
 /**
- * Close over what the player can get: Tokens (in the Starter Camp, bought, spawned, grown,
+ * Close over what the player can get: Tokens (in the Starter Camp, drifting in on its water or a
+ * world cell's ({@link arrivingSpots}), bought, spawned, grown,
  * built, ambushing) and items (the camp's Bank and the starter tools, trickle, worked from a
  * Token whose inputs are already reachable, caught from water's catch pools, a bonus drop of an
  * effect on a reachable Token or item, the Wishing Well's Water). A Token is bought
@@ -270,7 +275,7 @@ function effectYields(def) {
  */
 function reachable({ maxPlane = 2 } = {}) {
     const camp = StarterCamp.starterCamp();
-    const tokens = new Set([...StarterCamp.placementsOf(camp).map(t => t.typeId), ...worldTokens(maxPlane)]);
+    const tokens = new Set([...StarterCamp.placementsOf(camp).map(t => t.typeId), ...worldTokens(maxPlane), ...arrivingSpots()]);
     const items = new Set([
         ...StarterCamp.openingBank(camp).map(i => i.itemId),
         ...starterToolIds(getAllItems()),
@@ -355,6 +360,26 @@ function worldTokens(maxRing) {
 }
 
 /**
+ * The fishing spot kinds that drift in by themselves on the water of a place the planes hold: the
+ * Starter Camp's pond (meadow, fresh water, `StarterCampPond.test.js`) and the ground of every kit
+ * a world cell may stand on, with the water its biome's terrain row may roll. Any cell may draw any
+ * kit, as any may draw any extra its ring allows. A spot kind that only an event lands is not here.
+ */
+function arrivingSpots() {
+    const tables = worldTables();
+    const places = [STARTER_CAMP_GROUND, ...tables.kits.map((kit) => {
+        const biome = kitBiome(tables, kit.id);
+        const row = biomeRow(tables, biome);
+        return { biome, waters: groundWaterKinds(row.sea[1], row.water) };
+    })];
+    const fits = (spot, place) => (!spot.biomes.length || spot.biomes.includes(place.biome))
+        && spot.water.some(w => place.waters.includes(w));
+    return Object.values(getAllTokenTypes())
+        .filter(def => arrivesByItself(spotOf(def)) && places.some(place => fits(spotOf(def), place)))
+        .map(def => def.id);
+}
+
+/**
  * What planes 1 to `maxPlane` put in the game, on paper: the Starter Camp, the Shop, and every Token
  * the world map's rings up to it write, followed through everything those Tokens spawn, grow
  * into or build, whether or not their inputs can be had. `produced` is every item that world makes,
@@ -366,7 +391,7 @@ function planeWorld(maxPlane = 2) {
     const camp = StarterCamp.starterCamp();
     const allItems = getAllItems();
     const all = Object.values(getAllTokenTypes());
-    const tokens = new Set([...StarterCamp.placementsOf(camp).map(t => t.typeId), ...worldTokens(maxPlane)]);
+    const tokens = new Set([...StarterCamp.placementsOf(camp).map(t => t.typeId), ...worldTokens(maxPlane), ...arrivingSpots()]);
     const built = new Set();
     for (const def of all) if (def.shop) { tokens.add(def.id); built.add(def.id); }
     const produced = new Set([
@@ -432,7 +457,7 @@ describe('the §6 circularity check: every chain is reachable from the Starter C
     const SIX = {
         Forestry: ['token_oak_forest', 'token_oak_tree'],
         Mining: ['token_copper_mine', 'token_coal_mine', 'token_quarry', 'token_copper_ore_vein', 'token_coal_vein', 'token_stone_outcrop'],
-        Fishing: ['token_coast', 'token_dock'],
+        Fishing: ['token_fishing_spot', 'token_dock'],
         Farming: ['token_farmland', 'token_wheat_field', 'token_herb_garden', 'token_windmill', 'token_apple_orchard', 'token_apple_tree'],
         Construction: ['token_wood_foundation', 'token_stone_foundation', 'token_well'],
         Crafting: ['token_workbench'],
