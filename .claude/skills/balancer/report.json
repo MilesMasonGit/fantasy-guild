@@ -1,6 +1,6 @@
 {
-  "title": "Method review, after the second run",
-  "date": "2026-11-25",
+  "title": "Method review and challenge round",
+  "date": "2026-11-26",
   "summary": "A review of how we balance, at the owner's request, found that what counts as a normal guild was a set of hidden numbers, that nothing weighed one use of an item against another, and that three tools held three rulebooks. The owner ruled on a reference guild and a tilt between XP and goods. The page's numbers for one hero in one skill stand: 12.3 to 12.8 days to 99 optimized at 6.25 % a level, no walls, fifteen gaps with the content session.",
   "checked": [
     "Pace, all twelve skills: no level is slower than 1.3x the curve. The slowest is the end of Forestry's run from 81 to 98.",
@@ -12,6 +12,9 @@
     "The method itself, with two read-only readings of the CMS's simulator and ledger: docs/active/balance_method_review.md. The page is on the curve by construction (XP is worked back from the curve), so it cannot test whether a guild's set-up is realistic; only the ledger or play can."
   ],
   "moved": [
+    "Approved by the owner, 2026-11-26, from a challenge of the method: the pace curve describes a hero who splits time between training and supplying the guild; heroes arrive about one a tier; two or three heroes share each job; a new hero starts at about half the guild's level through XP for Everyone.",
+    "Found, not yet fixed: the boost budget counts one of each building, but stacking buildings on a node is intended and today's spacing lets 30 Tokens stand in reach of one node. The owner wants spacing and reach settled first, with at most 12 in a radius (T-718). Until then the page's optimized and typical lines are estimates.",
+    "Found, not yet fixed: early arrivals on this page assume a full chain from the first minute. With one hero, Smithing 1 to 19 is about 7 hours of chain work, not 1.7; with two at iron, 20 to 29 is 4.8 hours, not 2.1.",
     "Approved by the owner, 2026-11-25, the reference guild: 8 heroes running a few supply chains at a time, about 2 gatherers per maker at every tier. A lone hero at one node is busy half the time and a node is back in about 30 seconds; a camp with two nodes keeps a gatherer fully busy.",
     "Approved by the owner, 2026-11-25: one total reward an hour, tilted by purpose. Training work pays 1.5x the XP and half the goods, earning work half the XP and 1.5x the goods. The plan's entries aren't tagged yet, so the page treats all of them as balanced.",
     "Approved by the owner, 2026-11-25: the balance rules are the one rulebook; a typical player is one who buys what pays back soon; and the pace of one skill for one hero governs, so every skill at 99 on all 8 heroes is a one to two year goal.",
@@ -34,6 +37,7 @@
     "Cooking, Smithing and Enchanting: none."
   ],
   "waiting": [
+    "On the owner, with the planning agent: Token spacing and reach (T-718), before any boost numbers are balanced.",
     "On the owner: the CMS Ledger's pace curve still holds the 6.5 % points (1 = 3 ... 99 = 1437). Set it to the 6.25 % points when convenient: 1 = 3, 10 = 5, 20 = 9, 30 = 17, 40 = 32, 50 = 59, 60 = 107, 70 = 197, 80 = 361, 90 = 661, 99 = 1141.",
     "On the director, three new tickets: the simulator's XP curve and purpose tilt set from the balance rules (T-715); the ledger timing a guild of 8 with output spent once, nodes from the reference set-ups, camp variants and stacked buildings counted (T-716); checks for a chain's total XP, the 4x batch payback and Hall payback (T-717).",
     "On the director: the ledger prices every coin cost from one curve; the rule needs an everyday curve and a big-purchase curve (a new ticket, T-713).",

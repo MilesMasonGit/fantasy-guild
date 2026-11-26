@@ -128,3 +128,35 @@ Asked in the session of 2026-11-25; rulings recorded below as they come.
 - **The split of a guild's output** (feeding makers, boosts, prices, sold) and what that makes of the
   coin costs in section 7.
 - **Purpose leanings on the plan's entries**: the content session tags them; untagged is balanced.
+
+## The challenge round (owner interview, 2026-11-26)
+
+*The owner asked the balancer to challenge the method: name scenarios that could break it, ask whether
+each is realistic, and check whether the tools capture the realistic ones.*
+
+| Scenario | The owner | Do the tools capture it? | What must change |
+|---|---|---|---|
+| **Several of the same building boost one node** | Realistic and intended. "These boosts should be designed to affect the resource node, not the camp... The game is a spatial puzzle of tradeoffs. A building takes up space, naturally limiting the number of tokens in range." | **No.** The ledger places one of each building, always in reach, and knows no layout; the page uses a fixed budget table. Today's spacing lets 30 Tokens stand in reach of one node, so a stack could run several times past "optimized" | Spacing and reach first (T-718: the owner's target is at most 12 in a radius). Then the boost budget is restated as *places in reach × a small number each*, typical and optimized differ by places filled, and the ledger times a site by its places (T-716) |
+| **Heroes stall or the player is away** | A typical hero works nearly all of every day | Yes: both tools time round-the-clock work | Nothing. Stalls from short supply are the ledger's to show |
+| **Who levels a skill** | Two or three heroes share each job | **Partly.** The tools time one hero's climb, which stands. Nothing says the guild climbs each skill two or three times, on low-tier work again | The reference guild says so; total-game sums use 2 to 3 climbs a skill, not 1 or 8 |
+| **Early chains are understaffed** | Heroes arrive steadily, about one a tier | **No.** Both tools give every maker its gatherers from minute one. With one hero, Smithing 1 to 19 is 7.0 hours of chain work, not the page's 1.7; with two heroes at iron, 20 to 29 is 4.8 hours, not 2.1 | The page's arrivals and the ledger's stage budgets are counted with the heroes a guild has at that tier (T-716) |
+| **Levels bought, not worked** (XP for Everyone) | A catch-up for new heroes: a recruit starts at about half the guild's level | **No**: the ledger does not rate it. It is small by this ruling: starting at 30 when the guild is at 60 saves 3.8 hours of work a skill, 5 % of the XP | A rule for the star's ranks (below); no change to pace |
+| **Extra hands** (Summoned workers) | "Capped and balanced by charges. It costs resources to summon and the creature will only get a set number of cycles per summon... A hero might be temporarily wounded but they're never gone" | Not built yet; the ledger would list it as unmodelled | Priced like a consumable when designed: a summon's cycles must pay back its cost. Outside the roster of 8 |
+| **Heroes do needed work, not the best work** | About half and half | **No**: both tools assume the best-paying work always | The curve now describes the half-and-half hero (below) |
+
+**Rulings from the round:**
+
+- **The pace curve describes the half-and-half hero**: one who splits time between training and
+  supplying the guild, with a good set of boosts. With the moderate tilt that averages to the plain
+  rate, so the figures stand; a hero who only trains is up to 1.5x faster than the curve, one who
+  only supplies 2x slower.
+- **XP for Everyone brings a recruit to about half the guild's level** in every skill.
+- **Stacking is the game**: boosts act on nodes, buildings compete with nodes for the places in reach.
+- **Spacing and reach come before boost numbers** (T-718).
+
+**The balancer's own verdict on the method, after the round.** The per-skill pace for one hero is
+sound and the owner has now said whose pace it is. Three things it rests on are not: the boost budget
+(no layout, one of each), the early game (no hero count), and typical-versus-optimized (two
+definitions, neither tied to places filled). None can be fixed in the rules alone: each needs the
+ledger to time a real work site and a real roster, and the first needs the spacing decision.
+

@@ -211,6 +211,13 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 | **A chain** | One maker and **about 2 gatherers, at every tier**; yield boosts grow with the tier to hold it there (section 5) |
 | **A gatherer** | Bare: one node, busy half the time. Typical and optimized: a camp with two or more nodes in reach, fully busy (section 2) |
 | **A typical player** | **Buys what pays back soon**: of the boosts that exist, those that earn back their price within about 2 hours of play, a day for Hall stars (the ledger's Typical). The Dials page's "half of every boost" is a planning estimate only, used until the content is in the CMS |
+| **Heroes by tier** | **About one a tier** (owner, 2026-11-26): one at copper, two at iron, on to eight at darkmetal. An early chain is one or two heroes doing everything in turn, and early arrivals are counted that way |
+| **Who levels a skill** | **Two or three heroes share each job** (owner, 2026-11-26), so the guild climbs each skill two or three times |
+| **Uptime** | A typical hero works nearly all of every day (owner, 2026-11-26) |
+| **The curve's hero** | **Half and half** (owner, 2026-11-26): time split between training work and supplying the guild, which with the moderate tilt averages to the plain rate. Only training: up to 1.5x faster than the curve. Only supplying: 2x slower |
+| **Boosts and layout** | **Several buildings may boost one node, and that is the game** (owner, 2026-11-26): boosts act on the node, and a building takes a place a node could have had. The boost budget (section 5) counts one of each and is to be restated as places in reach × a small number each, once spacing and reach are settled (T-718; the owner's target is at most 12 Tokens in a radius) |
+| **A late recruit** | **XP for Everyone brings a new hero to about half the guild's level** in every skill (owner, 2026-11-26): a catch-up, not a second way to level |
+| **Summoned workers** | Outside the roster: capped by charges, priced like a consumable (owner, 2026-11-26) |
 | **The pace that governs** | **One skill, for one hero** (section 1). Every skill at 99 on all 8 heroes is then a goal of one to two years for a typical player, and that is accepted (owner: "Keep 6 to 6.5%") |
 
 ## Worked examples
