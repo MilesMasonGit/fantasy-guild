@@ -3,9 +3,9 @@
   "date": "2026-11-26",
   "summary": "The method review's rulings are in, spacing is settled, and the boost budget is restated by places. For one hero in one skill: 12.3 to 12.8 days to 99 optimized at 6.25 % a level, about 17.5 days typical (three quarters of each boost), no walls, fifteen gaps with the content session.",
   "checked": [
-    "The ledger's reading of the live game, 2026-11-26, now with the 6.25 % curve and a maker held to about 2 gatherers (the reference guild). Days to 99 for a maxed hero against the curve's 12.6: Cooking 3.7, Alchemy 5.3, Farming 6.6, Forestry 6.8, Construction 7.3, Smithing 7.7, Crafting 9.3, Mining 9.5, Fishing 14.7. So before any number pack the live game is mostly 1.3 to 3.5 times too fast, Cooking most of all (its last 40 levels take a quarter of the curve's time), and Fishing is too slow late.",
-    "Boosts in the live game: a maxed hero is 1.7 to 3.9 times faster than one with no boosts (the rules expect 1.4 to 3), but a typical hero is within 1.0 to 1.4 of maxed (the rules expect 1.2 to 1.9): the boosts that exist are cheap enough that everyone takes them. 883 pieces of work hold more boost than their tier's budget, mostly speed from station upgrades.",
-    "One wall: Farming 20 to 27 takes 2.3 times the curve's time. Sixteen chains need more than about 2 gatherers a maker to run in full; the worst is the Birdwatcher potion at 24.",
+    "The ledger's reading of the live game, 2026-11-26 (the 6.25 % curve, a maker held to about 2 gatherers, the new boost budget). Days to 99 for a maxed hero against the curve's 12.6: Cooking 3.8, Alchemy 5.3, Farming 6.6, Forestry 6.8, Construction 7.3, Smithing 7.6, Crafting 9.1, Mining 9.5, Fishing 21.7. So before any number pack the live game is mostly 1.3 to 3.3 times too fast, Cooking most of all, and Fishing is well too slow (it moved from 14.7 with the day's content changes).",
+    "Boosts in the live game: 462 pieces of work hold more boost than their tier's budget (it was 883 before the typical player's budget rose to three quarters), most of them speed from station upgrades. A typical hero falls more than 1.45 times behind the curve in Fishing, Farming 20 to 30 and early Forestry.",
+    "Three walls, where a stretch takes over twice the curve's time; eighteen chains need more than about 2 gatherers a maker to run in full.",
     "The page and the ledger still time different content: the plan isn't in the CMS. The ledger's method now matches the rules on the curve, the chain and the budget; it does not yet count heroes by tier or stacked buildings (T-716).",
     "Pace, all twelve skills: no level is slower than 1.3x the curve. The slowest is the end of Forestry's run from 81 to 98.",
     "Empty stretches: 33 flagged. 15 last more than a day of typical play and are on the gaps list; 2 in Construction wait on its repeatable work; the rest last minutes or hours and are left alone.",
@@ -45,7 +45,7 @@
     "Cooking, Smithing and Enchanting: none."
   ],
   "waiting": [
-    "On the director, three new tickets: the simulator's XP curve and purpose tilt set from the balance rules (T-715); the ledger timing a guild of 8 with output spent once, nodes from the reference set-ups, camp variants and stacked buildings counted (T-716); checks for a chain's total XP, the 4x batch payback and Hall payback (T-717).",
+    "On the director, briefed and in the queue (brief 900): the ledger timing a real guild and site (building now), the simulator's curves from the balance rules (building now), the two coin curves, and three checks.",
     "On the director: the ledger prices every coin cost from one curve; the rule needs an everyday curve and a big-purchase curve (a new ticket, T-713).",
     "On the director, with the first number pack: the new XP table (9.4 million XP to 99) and the 25-cycle dose for drinks and potions.",
     "On the content session: the plan in the CMS as Planned entries, and the fifteen gaps. Also to look at: Arrowheads unlock later than the arrows that need them at every metal.",
