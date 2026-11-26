@@ -72,7 +72,7 @@ describe('The Processing chain in shipped data (7.5)', () => {
                 'Build Deep Workings',
                 "Build Farmers' Market", 'Build Farmstead',
                 "Build Forester's Lodge", 'Build Greenhouse', "Build Grovekeeper's Hut", 'Build Guild Workshop', "Build Herbalist's Hut",
-                "Build Jeweller's Hall", 'Build Kitchen', 'Build Laboratory', 'Build Logging Camp', 'Build Manor Farm', 'Build Market Kitchen',
+                'Build Hideout', "Build Jeweller's Hall", 'Build Kitchen', 'Build Laboratory', 'Build Logging Camp', 'Build Manor Farm', 'Build Market Kitchen',
                 "Build Master's Study", 'Build Mine Head', 'Build Minecart', 'Build Mining Camp', 'Build Ore Market', 'Build Physic Garden',
                 'Build Sawmill', 'Build Tannery', 'Build Timber Yard', 'Build Windmill', 'Build Workshop',
             ]);
@@ -101,9 +101,9 @@ describe('The Processing chain in shipped data (7.5)', () => {
         it('a Battlefield offers every creature camp from its banner', () => {
             expect(poolNames('token_battlefield')).toEqual([
                 "Build Alpha's Den", 'Build Basking Stone', "Build Chief's Tent", 'Build Cow Pasture', 'Build Crab Rocks',
-                'Build Ember Vents', 'Build Frog Pond', 'Build Goblin Camp', "Build Queen's Hive", 'Build Sheep Pasture', 'Build Slime Pit',
+                'Build Drake Roost', 'Build Ember Vents', 'Build Frog Pond', 'Build Goblin Camp', 'Build Phoenix Nest', "Build Queen's Hive", 'Build Sheep Pasture', 'Build Slime Pit',
                 'Build Smoking Crater', 'Build Sulphur Rocks', 'Build Thorn Thicket', 'Build Tide Pool', 'Build Toxic Pool',
-                'Build Wild Hive', 'Build Wind Stones', 'Build Wolf Den',
+                'Build Treant Grove', 'Build Troll Bridge', 'Build Void Rift', 'Build Wild Hive', 'Build Wind Stones', 'Build Wolf Den',
             ]);
         });
 

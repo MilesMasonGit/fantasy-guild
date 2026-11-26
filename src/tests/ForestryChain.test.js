@@ -39,7 +39,7 @@ describe('The Forestry chain in shipped data (7.0, 7.1)', () => {
     it('the Oak Forest is a spawner of whole Oak Trees within its reach, for free, and speeds no growth', () => {
         expect(forest.spawner).toEqual({
             spawns: [{ typeId: 'token_oak_tree', weight: 1 }],
-            allowance: 5,
+            allowance: 4,
             intervalMs: 20000,
             withinReach: true,
         });

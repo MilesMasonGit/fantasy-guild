@@ -12,7 +12,7 @@ import { SETTLE_TEXT } from '../systems/world/Settling.js';
 import { CELL_STATE } from '../systems/world/frontier.js';
 import { ringLock, ringStarsOf, ringOfStar } from '../systems/world/ringStars.js';
 import { normaliseStar, normaliseHallSky } from '../config/hallStars.js';
-import { getUpgradeDef, authoredStars, skyWithFallback } from '../config/guildUpgrades.js';
+import { getUpgradeDef, getUpgradePrice, authoredStars, skyWithFallback } from '../config/guildUpgrades.js';
 import { registerHallSky, authoredHallSky } from '../config/registries/hallStarRegistry.js';
 import { installRingStars, meetFrontierPrices } from './fixtures/worldQa.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
@@ -205,9 +205,10 @@ describe('the ring stars ship in the sky, and the QA panel\'s ring-star button l
 
         const { next } = ringTwoFrontier();
         expect(World.ringLockOf(next).stars[0].name).toBe('Charted Roads');
-        const cherries = InventoryManager.getItemCount('item_cherry');
+        const price = getUpgradePrice(getUpgradeDef('star_ring_2'), 0);
+        expect(price.length).toBeGreaterThan(0);
         expect(meetFrontierPrices()).toMatchObject({ success: true, stars: 1 });
-        expect(InventoryManager.getItemCount('item_cherry')).toBeGreaterThanOrEqual(cherries + 1700);
+        for (const { itemId, quantity } of price) expect(InventoryManager.getItemCount(itemId), itemId).toBeGreaterThanOrEqual(quantity);
         expect(GuildUpgradeManager.purchase('star_ring_2').success).toBe(true);
         expect(World.ringLockOf(next)).toBeNull();
     });

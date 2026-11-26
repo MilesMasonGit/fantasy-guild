@@ -65,6 +65,12 @@ afterEach(() => {
     expect(globalThis.localStorage?.getItem('fantasy-guild-cms-v2') ?? null).toBe(storedBefore);
 });
 
+// The cow ships with a steal table of its own; these tests build one from nothing.
+function openCowWithNoSteal() {
+    useEntityStore.getState().updateToken('token_cow', { steal: undefined });
+    return openToken('token_cow');
+}
+
 function openToken(id) {
     useEntityStore.getState().setActiveEntity(id, 'token');
     return render(React.createElement(TokenEditor)).container;
@@ -96,7 +102,7 @@ describe('the vocabulary comes from the game', () => {
 
 describe('⭐ an enemy\'s steal table', () => {
     it('the enemy editor writes a steal line and the camp\'s Crime level, and an emptied table leaves no key', () => {
-        const container = openToken('token_cow');
+        const container = openCowWithNoSteal();
         const block = () => container.querySelector('[data-field="steal-table"]');
         expect(block()).not.toBeNull();
         fireEvent.click(within(block()).getByText('Add a stolen item'));
