@@ -4,6 +4,8 @@
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { getAllItems, getItem } from '../../config/registries/itemRegistry.js';
 import * as SpawnerSystem from '../board/SpawnerSystem.js';
+import { addCoins } from '../inventory/Coins.js';
+import { COIN_ITEM_ID } from '../../config/registries/coinCosts.js';
 
 /**
  * Every live item id, sorted. Only `item_*` ids: the registry also holds
@@ -25,7 +27,8 @@ export function listGivableItemIds() {
  * @param {string} itemId
  * @param {number} amount - whole number, at least 1
  * @param {object} [deps] - injection seam for tests
- * @returns {{ ok: boolean, added: number, overflow: number, error?: string }}
+ * Coins are the guild's whole number, not a Bank stack: giving them calls `addCoins`.
+ * @returns {{ ok: boolean, added: number, overflow: number, coins?: boolean, error?: string }}
  *   `overflow` is the part that did not fit in the Bank and went to the mat.
  */
 export function giveItem(itemId, amount, { inventory = InventoryManager } = {}) {
@@ -35,6 +38,11 @@ export function giveItem(itemId, amount, { inventory = InventoryManager } = {}) 
     if (!getItem(id)) return { ok: false, added: 0, overflow: 0, error: `Unknown item id: ${id}` };
     if (!Number.isFinite(n) || n < 1) {
         return { ok: false, added: 0, overflow: 0, error: 'Amount must be a whole number of at least 1.' };
+    }
+
+    if (id === COIN_ITEM_ID) {
+        addCoins(n);
+        return { ok: true, added: n, overflow: 0, coins: true };
     }
 
     const added = inventory.addItem(id, n, 'dev_give_item');

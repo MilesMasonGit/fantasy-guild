@@ -4,6 +4,7 @@
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../../systems/core/engineEvents.js';
+import { COIN_ITEM_ID } from '../../config/registries/coinCosts.js';
 import { giveItem, listGivableItemIds } from '../../systems/core/DevTools.js';
 import { InventoryManager } from '../../systems/inventory/InventoryManager.js';
 import { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManager.js';
@@ -59,6 +60,7 @@ export function giveAndSay(itemId, amount) {
     const r = giveItem(itemId, amount);
     if (!r.ok) return r.error;
     const name = getItem(itemId)?.name || itemId;
+    if (r.coins) return `Gave ${r.added} ${name} to the guild`;
     return r.overflow > 0
         ? `Gave ${r.added} ${name} to the Bank; ${r.overflow} went onto the mat`
         : `Gave ${r.added} ${name} to the Bank`;
@@ -82,7 +84,7 @@ export function devBankEveryKind() {
     let left = 0;
     InventoryManager.batch(() => {
         for (const item of Object.values(getAllItems())) {
-            if (!item?.id || InventoryManager.getItemCount(item.id) > 0) continue;
+            if (!item?.id || item.id === COIN_ITEM_ID || InventoryManager.getItemCount(item.id) > 0) continue;
             if (InventoryManager.lacksSlotFor(item.id)) { left++; continue; }
             if (InventoryManager.addItem(item.id, 1) > 0) added++;
         }
@@ -99,7 +101,7 @@ export function devBankEveryKind() {
 export function devFillBank() {
     let filled = 0;
     for (const item of Object.values(getAllItems())) {
-        if (!item?.id || takesCopy(item.id)) continue;
+        if (!item?.id || item.id === COIN_ITEM_ID || takesCopy(item.id)) continue;
         if (InventoryManager.getItemCount(item.id) > 0) continue;
         if (InventoryManager.lacksSlotFor(item.id)) break;
         if (InventoryManager.addItem(item.id, 1) > 0) filled++;
